@@ -20,12 +20,15 @@ extern "C"
 #define PIX_FMT PIX_FMT_RGB32
 #endif //CONFIG_EZX
 
+struct SwsContext;
 namespace QtAV {
 class VideoRendererPrivate
 {
 public:
-    VideoRendererPrivate():width(0),height(0),pix_fmt(PIX_FMT),numBytes(0) {
+    VideoRendererPrivate():width(0),height(0),pix_fmt(PIX_FMT)
+      ,numBytes(0),sws_ctx(0){
     }
+    ~VideoRendererPrivate();
 
     void resizePicture(int width, int height);
 
@@ -34,6 +37,7 @@ public:
     enum PixelFormat pix_fmt;
     int numBytes;
     QByteArray data;
+    SwsContext *sws_ctx;
 };
 }
 

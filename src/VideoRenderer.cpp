@@ -8,16 +8,21 @@
 
 namespace QtAV {
 
+VideoRendererPrivate::~VideoRendererPrivate()
+{
+    sws_freeContext(sws_ctx); //NULL: does nothing
+    sws_ctx = NULL;
+}
+
 void VideoRendererPrivate::resizePicture(int width, int height)
 {
     int v_numBytes = avpicture_get_size(pix_fmt, width, height);
     qDebug("[v_numBytes][m_numBytes] %d %d", v_numBytes, numBytes);
-    if(numBytes < v_numBytes)
-    {
+    if(numBytes < v_numBytes) {
         numBytes = v_numBytes;
         data.resize(numBytes);
     }
-    //pictureµÄÊý¾Ý°´pix_fmt¸ñÊ½×Ô¶¯"¹ØÁª"µ½ data
+    //pictureçš„æ•°æ®æŒ‰pix_fmtæ ¼å¼è‡ªåŠ¨"å…³è”"åˆ° data
     avpicture_fill(
             &picture,
             reinterpret_cast<uint8_t*>(data.data()),
@@ -56,10 +61,12 @@ void VideoRenderer::resizeVideo(int width, int height)
         d->resizePicture(width, height);
 }
 
+//TODO: if size not change, reuse.
 QByteArray VideoRenderer::scale(AVCodecContext *codecCtx, AVFrame *frame)
 {
     Q_D(VideoRenderer);
-    SwsContext *v_sws_ctx = sws_getContext(
+    /*
+    d->sws_ctx = sws_getContext(
             codecCtx->width, //int srcW,
             codecCtx->height, //int srcH,
             codecCtx->pix_fmt, //enum PixelFormat srcFormat,
@@ -71,8 +78,15 @@ QByteArray VideoRenderer::scale(AVCodecContext *codecCtx, AVFrame *frame)
             NULL, //SwsFilter *dstFilter,
             NULL  //const double *param
             );
+    */
+    d->sws_ctx = sws_getCachedContext(d->sws_ctx
+            , codecCtx->width, codecCtx->height, codecCtx->pix_fmt
+            , d->width, d->height, d->pix_fmt
+            , (d->width == codecCtx->width && d->height == codecCtx->height) ? SWS_POINT : SWS_BICUBIC
+            , NULL, NULL, NULL
+            );
     int v_scale_result = sws_scale(
-            v_sws_ctx,
+            d->sws_ctx,
             frame->data,
             frame->linesize,
             0,
@@ -81,8 +95,8 @@ QByteArray VideoRenderer::scale(AVCodecContext *codecCtx, AVFrame *frame)
             d->picture.linesize
             );
     Q_UNUSED(v_scale_result);
-    sws_freeContext(v_sws_ctx);
-    if (frame->interlaced_frame)
+    //sws_freeContext(v_sws_ctx);
+    if (frame->interlaced_frame) //?
         avpicture_deinterlace(&d->picture, &d->picture, d->pix_fmt, d->width, d->height);
     return d->data;
 }
