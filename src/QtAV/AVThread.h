@@ -17,6 +17,7 @@ public:
 	explicit AVThread(QObject *parent = 0);
     virtual ~AVThread();
 
+    void stop();
     void wakeAll();
 
     void setPacketQueue(QAVPacketQueue *queue);

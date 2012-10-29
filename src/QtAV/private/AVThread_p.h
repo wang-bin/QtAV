@@ -17,7 +17,7 @@ class QAVPacket;
 class AVThreadPrivate
 {
 public:
-    AVThreadPrivate():packets(0),dec(0),writer(0) {}
+    AVThreadPrivate():stop(false),packets(0),dec(0),writer(0) {}
     virtual ~AVThreadPrivate() {
         /*if (dec) {
             delete dec;
@@ -38,6 +38,7 @@ public:
     }
 
 
+    volatile bool stop;
     QAVPacketQueue *packets;
     AVDecoder *dec;
     AVOutput *writer;

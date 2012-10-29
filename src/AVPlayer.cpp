@@ -28,7 +28,8 @@ AVPlayer::AVPlayer(QObject *parent) :
 
 AVPlayer::~AVPlayer()
 {
-    audio_thread->terminate();
+    audio_thread->stop();
+    killTimer(avTimerId);
     if (aFrame)
         av_free(aFrame);
     if (vFrame)
@@ -94,7 +95,7 @@ bool AVPlayer::play(const QString& path)
     audio_thread->setDecoder(audio_dec);
     audio_thread->start(QThread::HighestPriority);
 
-	avTimerId = startTimer(1000/avinfo.frameRate());
+    avTimerId = startTimer(1000/avinfo.frameRate());
     m_fps1.wake();
 
     return true;

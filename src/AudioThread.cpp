@@ -34,12 +34,17 @@ void AudioThread::run()
     if (!d_ptr->dec || !d_ptr->writer)
         return;
 	Q_ASSERT(d_ptr->packets != 0);
-	while (true) {
+    //TODO: volatile d_ptr->stop
+    while (!d_ptr->stop) {
         d_ptr->mutex.lock();
 		int i = 0;
-		while (d_ptr->packets->isEmpty()) {
-            d_ptr->not_empty_cond.wait(&d_ptr->mutex, 1000); //why sometines return immediatly?
+        while (d_ptr->packets->isEmpty() && !d_ptr->stop) {
+            d_ptr->not_empty_cond.wait(&d_ptr->mutex); //why sometines return immediatly?
 			qDebug("audio data size: %d, loop %d", d_ptr->packets->size(), ++i);
+        }
+        if (d_ptr->stop) {
+            d_ptr->mutex.unlock();
+            break;
         }
         QAVPacket pkt = d_ptr->packets->dequeue();
 		//qDebug("audio data size after dequeue: %d", d_ptr->packets->size());
@@ -67,7 +72,9 @@ void AudioThread::run()
             }
 		}
         d_ptr->mutex.unlock();
+        qDebug("new loop %d", d_ptr->stop);
     }
+    qDebug("Audio thread stops running...");
 }
 
 }

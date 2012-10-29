@@ -17,9 +17,16 @@ AVThread::~AVThread()
 {
 }
 
+void AVThread::stop()
+{
+    d_ptr->stop = true;
+    wakeAll();
+    //terminate();
+}
+
 void AVThread::wakeAll()
 {
-	d_ptr->not_empty_cond.wakeOne();
+    d_ptr->not_empty_cond.wakeAll();
 }
 
 void AVThread::setPacketQueue(QAVPacketQueue *queue)
