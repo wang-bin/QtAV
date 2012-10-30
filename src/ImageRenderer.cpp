@@ -2,6 +2,7 @@
 #include <private/VideoRenderer_p.h>
 
 namespace QtAV {
+
 ImageRenderer::~ImageRenderer()
 {
 

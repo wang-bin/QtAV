@@ -5,6 +5,7 @@
 #include <qimage.h>
 
 namespace QtAV {
+
 class Q_EXPORT ImageRenderer : public VideoRenderer
 {
 public:
@@ -14,9 +15,8 @@ public:
     QImage previewImage() const;
     QImage currentImage() const;
 protected:
-    QImage image;
-    QImage preview;
+    QImage image, preview;
 };
-}
 
+} //namespace QtAV
 #endif // QAVIMAGERENDERER_H

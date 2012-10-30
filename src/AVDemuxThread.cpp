@@ -50,20 +50,15 @@ void AVDemuxThread::stop()
 
 void AVDemuxThread::run()
 {
-    qDebug("%s %d", __FUNCTION__, __LINE__);
     Q_ASSERT(audio_thread != 0);
     Q_ASSERT(video_thread != 0);
-    qDebug("%s %d", __FUNCTION__, __LINE__);
     if (!audio_thread->isRunning())
         audio_thread->start(QThread::HighPriority);
     if (!video_thread->isRunning())
         video_thread->start();
 
-    qDebug("%s %d", __FUNCTION__, __LINE__);
     audio_stream = demuxer->audioStream();
-    qDebug("%s %d", __FUNCTION__, __LINE__);
     video_stream = demuxer->videoStream();
-    qDebug("%s %d", __FUNCTION__, __LINE__);
     //demuxer->read()
     //enqueue()
     int index = 0;

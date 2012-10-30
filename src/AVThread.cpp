@@ -10,7 +10,6 @@ AVThread::AVThread(QObject *parent) :
 AVThread::AVThread(AVThreadPrivate &d, QObject *parent)
     :QThread(parent),d_ptr(&d)
 {
-	qDebug("protected ctor");
 }
 
 AVThread::~AVThread()
