@@ -14,6 +14,8 @@
 #include <QtAV/AVClock.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/WidgetRenderer.h>
+#include <QtAV/VideoThread.h>
+#include <QtAV/AVDemuxThread.h>
 
 namespace QtAV {
 AVPlayer::AVPlayer(QObject *parent) :
@@ -31,13 +33,22 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     video_dec = new VideoDecoder();
 
-	video_thread = 0;
+    video_thread = new VideoThread(this);
+    video_thread->setClock(clock);
+    video_thread->setDecoder(video_dec);
+
+    demuxer_thread = new AVDemuxThread(this);
+    demuxer_thread->setDemuxer(&demuxer);
+    demuxer_thread->setAudioThread(audio_thread);
+    demuxer_thread->setVideoThread(video_thread);
 }
 
 AVPlayer::~AVPlayer()
 {
+    video_thread->stop();
     audio_thread->stop();
-    killTimer(avTimerId);
+    if (avTimerId > 0)
+        killTimer(avTimerId);
 
     if (audio) {
         delete audio;
@@ -61,6 +72,7 @@ void AVPlayer::setRenderer(VideoRenderer *r)
     }
     renderer = r;
     connect((WidgetRenderer*)renderer, SIGNAL(sizeChanged(QSize)), SLOT(resizeVideo(QSize)));
+    video_thread->setOutput(renderer);
 }
 
 void AVPlayer::resizeVideo(const QSize &size)
@@ -75,24 +87,23 @@ bool AVPlayer::play(const QString& path)
         filename = path;
     if (avTimerId > 0)
         killTimer(avTimerId);
-    if (!avinfo.loadFile(filename)) {
+    if (!demuxer.loadFile(filename)) {
 		return false;
 	}
-	avinfo.dump();
+    demuxer.dump();
 
-	formatCtx = avinfo.formatContext();
-    vCodecCtx = avinfo.videoCodecContext();
-    aCodecCtx = avinfo.audioCodecContext();
+    formatCtx = demuxer.formatContext();
+    vCodecCtx = demuxer.videoCodecContext();
+    aCodecCtx = demuxer.audioCodecContext();
     audio->setSampleRate(aCodecCtx->sample_rate);
     audio->setChannels(aCodecCtx->channels);
     audio->open();
-	int videoStream = avinfo.videoStream();
+    int videoStream = demuxer.videoStream();
 	//audio
 	//if (videoStream < 0)
 	//	return false;
-
     AVStream *m_v_stream = formatCtx->streams[videoStream];
-	qDebug("[AVFormatContext::duration = %lld]", avinfo.duration());
+    qDebug("[AVFormatContext::duration = %lld]", demuxer.duration());
 	qDebug("[AVStream::start_time = %lld]", m_v_stream->start_time);
     qDebug("[AVCodecContext::time_base = %d, %d, %.2f %.2f]", vCodecCtx->time_base.num, vCodecCtx->time_base.den
             ,1.0 * vCodecCtx->time_base.num / vCodecCtx->time_base.den
@@ -107,13 +118,16 @@ bool AVPlayer::play(const QString& path)
     m_drop_count = 0;
 
     audio_dec->setCodecContext(aCodecCtx);
-    audio_thread->setDecoder(audio_dec);
     audio_thread->start(QThread::HighestPriority);
 
     video_dec->setCodecContext(vCodecCtx);
+    video_thread->start();
 
-    avTimerId = startTimer(1000/avinfo.frameRate());
+    demuxer_thread->start();
 
+#if 0
+    avTimerId = startTimer(1000/demuxer.frameRate());
+#endif
     return true;
 }
 
@@ -123,8 +137,8 @@ void AVPlayer::timerEvent(QTimerEvent* e)
 	if (e->timerId() != avTimerId)
 		return;
 	static AVPacket packet;
-	static int videoStream = avinfo.videoStream();
-    static int audioStream = avinfo.audioStream();
+    static int videoStream = demuxer.videoStream();
+    static int audioStream = demuxer.audioStream();
     while (av_read_frame(formatCtx, &packet) >=0 ) {
         QAVPacket pkt;
         pkt.data = QByteArray((const char*)packet.data, packet.size);

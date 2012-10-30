@@ -12,7 +12,8 @@ class Q_EXPORT AVDemuxThread : public QThread
 {
     Q_OBJECT
 public:
-    explicit AVDemuxThread(AVDemuxer *dmx = 0, QObject *parent = 0);
+    explicit AVDemuxThread(QObject *parent = 0);
+    explicit AVDemuxThread(AVDemuxer *dmx, QObject *parent = 0);
     void setDemuxer(AVDemuxer *dmx);
     void setAudioThread(AVThread *thread);
     void setVideoThread(AVThread *thread);

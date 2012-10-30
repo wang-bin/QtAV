@@ -18,6 +18,7 @@ extern "C"
 #endif //__cplusplus
 
 namespace QtAV {
+
 class AudioThreadPrivate : public AVThreadPrivate
 {
 public:
@@ -35,13 +36,12 @@ void AudioThread::run()
     if (!d_ptr->dec || !d_ptr->writer)
         return;
     Q_ASSERT(d_ptr->clock != 0);
-    //TODO: volatile d_ptr->stop
+
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
-		int i = 0;
         while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            d_ptr->not_empty_cond.wait(&d_ptr->mutex); //why sometines return immediatly?
-            qDebug("audio data size: %d, loop %d", d_ptr->packets.size(), ++i);
+            d_ptr->condition.wait(&d_ptr->mutex); //why sometines return immediatly?
+            qDebug("audio data size: %d", d_ptr->packets.size());
         }
         if (d_ptr->stop) {
             d_ptr->mutex.unlock();
@@ -69,12 +69,14 @@ void AudioThread::run()
 
                 decodedPos += chunk;
                 decodedSize -= chunk;
-				d_func()->writer->write(decodedChunk);
+
+                d_ptr->clock->updateDelay(decodedChunk.size()/(double)(sizeof(float)*channels*sample_rate));
+                if (d_func()->writer)
+                    d_func()->writer->write(decodedChunk);
 				//qApp->processEvents(QEventLoop::AllEvents);
             }
 		}
         d_ptr->mutex.unlock();
-        qDebug("new loop %d", d_ptr->stop);
     }
     qDebug("Audio thread stops running...");
 }

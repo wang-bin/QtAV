@@ -5,6 +5,12 @@
 #include <QtAV/QAVPacket.h>
 
 namespace QtAV {
+
+AVDemuxThread::AVDemuxThread(QObject *parent) :
+    QThread(parent),end(false),demuxer(0),audio_thread(0),video_thread(0)
+{
+}
+
 AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
     QThread(parent),end(false),audio_thread(0),video_thread(0)
 {
@@ -15,8 +21,6 @@ void AVDemuxThread::setDemuxer(AVDemuxer *dmx)
 {
     demuxer = dmx;
     connect(dmx, SIGNAL(finished()), SLOT(stop()));
-    audio_stream = demuxer->audioStream();
-    video_stream = demuxer->videoStream();
 }
 
 void AVDemuxThread::setAudioThread(AVThread *thread)
@@ -46,14 +50,26 @@ void AVDemuxThread::stop()
 
 void AVDemuxThread::run()
 {
+    qDebug("%s %d", __FUNCTION__, __LINE__);
     Q_ASSERT(audio_thread != 0);
     Q_ASSERT(video_thread != 0);
+    qDebug("%s %d", __FUNCTION__, __LINE__);
+    if (!audio_thread->isRunning())
+        audio_thread->start(QThread::HighPriority);
+    if (!video_thread->isRunning())
+        video_thread->start();
+
+    qDebug("%s %d", __FUNCTION__, __LINE__);
+    audio_stream = demuxer->audioStream();
+    qDebug("%s %d", __FUNCTION__, __LINE__);
+    video_stream = demuxer->videoStream();
+    qDebug("%s %d", __FUNCTION__, __LINE__);
     //demuxer->read()
     //enqueue()
     int index = 0;
     QAVPacket pkt;
     while (!end) {
-        if (!demuxer->readPacket()) {
+        if (!demuxer->readFrame()) {
             continue;
         }
         index = demuxer->stream();
@@ -68,5 +84,7 @@ void AVDemuxThread::run()
             continue;
         }
     }
+    qDebug("stop demux thread....");
 }
+
 }

@@ -24,7 +24,6 @@
 #include <QtAV/QtAV_Global.h>
 #include <qstring.h>
 #include <qsize.h>
-#include <QtCore/qglobal.h>
 
 struct AVFormatContext;
 struct AVCodecContext;

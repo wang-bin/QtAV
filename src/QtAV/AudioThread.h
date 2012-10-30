@@ -1,7 +1,6 @@
 #ifndef QAVAUDIOTHREAD_H
 #define QAVAUDIOTHREAD_H
 
-#include <QtAV/QtAV_Global.h>
 #include <QtAV/AVThread.h>
 
 namespace QtAV {
@@ -14,7 +13,7 @@ class Q_EXPORT AudioThread : public AVThread
     Q_DECLARE_PRIVATE(AudioThread)
 public:
     explicit AudioThread(QObject *parent = 0);
-    
+
 protected:
     virtual void run();
 };

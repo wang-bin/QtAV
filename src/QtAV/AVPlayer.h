@@ -8,11 +8,12 @@
 namespace QtAV {
 class AudioOutput;
 class AudioThread;
-class QAVVideoThread;
+class VideoThread;
 class AudioDecoder;
 class VideoDecoder;
 class VideoRenderer;
 class AVClock;
+class AVDemuxThread;
 class Q_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -34,14 +35,15 @@ protected:
     QString		filename;
     int m_drop_count;
 
-    AVDemuxer avinfo;
+    AVDemuxer demuxer;
+    AVDemuxThread *demuxer_thread;
     AVClock *clock;
     VideoRenderer *renderer; //list?
     AudioOutput *audio;
     AudioDecoder *audio_dec;
     VideoDecoder *video_dec;
     AudioThread *audio_thread;
-    QAVVideoThread *video_thread;
+    VideoThread *video_thread;
 protected:
 	virtual void timerEvent(QTimerEvent *);
 

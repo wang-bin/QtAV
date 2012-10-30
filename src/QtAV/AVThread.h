@@ -18,7 +18,7 @@ public:
 	explicit AVThread(QObject *parent = 0);
     virtual ~AVThread();
 
-    void stop();
+    virtual void stop();
     void wakeAll();
 
     void setClock(AVClock *clock);

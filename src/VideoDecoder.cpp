@@ -84,6 +84,7 @@ bool VideoDecoder::decode(const QByteArray &encoded)
             , (d->width == d->codec_ctx->width && d->height == d->codec_ctx->height) ? SWS_POINT : SWS_BICUBIC
             , NULL, NULL, NULL
             );
+    //TODO: resize once
     int bytes = avpicture_get_size(PIX_FMT, d->width, d->height);
     if(d->decoded.size() < bytes) {
         d->decoded.resize(bytes);

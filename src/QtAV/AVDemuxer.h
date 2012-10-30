@@ -22,7 +22,7 @@ public:
 
     bool atEnd() const;
     bool loadFile(const QString& fileName);
-    bool readPacket();
+    bool readFrame();
     QAVPacket* packet() const; //current readed packet
     int stream() const; //current readed stream index
 

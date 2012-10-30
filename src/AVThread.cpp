@@ -26,7 +26,7 @@ void AVThread::stop()
 
 void AVThread::wakeAll()
 {
-    d_ptr->not_empty_cond.wakeAll();
+    d_ptr->condition.wakeAll();
 }
 
 void AVThread::setClock(AVClock *clock)

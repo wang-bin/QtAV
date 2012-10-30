@@ -12,7 +12,7 @@ extern "C" {
 
 namespace QtAV {
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
-    :QObject(parent),eof(false),pkt(0),stream_idx(-1)
+    :QObject(parent),eof(false),pkt(new QAVPacket()),stream_idx(-1)
     ,_is_input(true),format_context(0),a_codec_context(0),v_codec_context(0)
     ,_file_name(fileName)
 {
@@ -34,7 +34,7 @@ AVDemuxer::~AVDemuxer()
 }
 
 
-bool AVDemuxer::readPacket()
+bool AVDemuxer::readFrame()
 {
     static AVPacket packet;
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
@@ -42,6 +42,7 @@ bool AVDemuxer::readPacket()
     if (ret != 0) {
         if (ret = AVERROR_EOF) { //end of file
             eof = true;
+            qDebug("%s %d", __FUNCTION__, __LINE__);
             emit finished();
         }
         qDebug("[AVDemuxer] %s", av_err2str(ret));
@@ -50,8 +51,8 @@ bool AVDemuxer::readPacket()
     eof = false;
 
     stream_idx = packet.stream_index; //TODO: check index
-    if (stream_idx < 0) {
-        qWarning("[AVDemuxer] stream index: %d", stream_idx);
+    if (stream_idx != videoStream() && stream_idx != audioStream()) {
+        qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
         return false;
     }
     pkt->data = QByteArray((const char*)packet.data, packet.size);

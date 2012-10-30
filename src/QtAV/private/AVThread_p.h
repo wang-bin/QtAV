@@ -36,7 +36,7 @@ public:
     }
     void enqueue(const QAVPacket& pkt) {
         packets.enqueue(pkt);
-        not_empty_cond.wakeAll();
+        condition.wakeAll();
     }
 
 
@@ -46,7 +46,7 @@ public:
     AVDecoder *dec;
     AVOutput *writer;
     QMutex mutex;
-    QWaitCondition not_empty_cond;
+    QWaitCondition condition;
 };
 }
 

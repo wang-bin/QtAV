@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 
-#include "AVClock.h"
+#include <QtAV/AVClock.h>
 
 namespace QtAV {
 

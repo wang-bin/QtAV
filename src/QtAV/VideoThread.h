@@ -1,5 +1,5 @@
 /******************************************************************************
-    AVClock.h: description
+    VideoThread.h: description
     Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
@@ -17,54 +17,25 @@
 ******************************************************************************/
 
 
-#ifndef AVCLOCK_H
-#define AVCLOCK_H
+#ifndef VIDEOTHREAD_H
+#define VIDEOTHREAD_H
 
-#include <QtAV/QtAV_Global.h>
-#include <qglobal.h>
+#include <QtAV/AVThread.h>
 
 namespace QtAV {
 
-class Q_EXPORT AVClock
+class VideoThreadPrivate;
+class VideoThread : public AVThread
 {
+    Q_OBJECT
+    Q_DECLARE_PRIVATE(VideoThread)
 public:
-    typedef enum {
-        AudioClock, VideoClock, ExternalClock
-    } ClockType;
+    explicit VideoThread(QObject *parent = 0);
+    virtual void stop();
 
-    AVClock(ClockType c = AudioClock);
-
-    inline double value() const;
-    inline void updateValue(double pts);
-
-    inline double delay() const; //playing audio spends some time
-    inline void updateDelay(double delay);
-
-private:
-    ClockType clock_type;
-    double t;
-    double delay_;
+protected:
+    virtual void run();
 };
 
-double AVClock::value() const
-{
-    return t;
-}
-
-void AVClock::updateValue(double pts)
-{
-    t = pts;
-}
-
-double AVClock::delay() const
-{
-    return delay_;
-}
-
-void AVClock::updateDelay(double delay)
-{
-    delay_ = delay;
-}
-
 } //namespace QtAV
-#endif // AVCLOCK_H
+#endif // VIDEOTHREAD_H
