@@ -29,11 +29,25 @@ void AVThread::wakeAll()
     d_ptr->not_empty_cond.wakeAll();
 }
 
+void AVThread::setClock(AVClock *clock)
+{
+    d_ptr->clock = clock;
+}
+
+AVClock* AVThread::clock() const
+{
+    return d_ptr->clock;
+}
+/*
 void AVThread::setPacketQueue(QAVPacketQueue *queue)
 {
     d_ptr->packets = queue;
 }
-
+*/
+QAVPacketQueue* AVThread::packetQueue() const
+{
+    return &d_ptr->packets;
+}
 
 void AVThread::setDecoder(AVDecoder *decoder)
 {

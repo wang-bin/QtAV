@@ -3,6 +3,7 @@
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/QAVPacket.h>
 #include <QtAV/AudioOutput.h>
+#include <QtAV/AVClock.h>
 #include <QtCore/QCoreApplication>
 
 #ifdef __cplusplus
@@ -33,21 +34,22 @@ void AudioThread::run()
     //No decoder or output, no audio
     if (!d_ptr->dec || !d_ptr->writer)
         return;
-	Q_ASSERT(d_ptr->packets != 0);
+    Q_ASSERT(d_ptr->clock != 0);
     //TODO: volatile d_ptr->stop
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
 		int i = 0;
-        while (d_ptr->packets->isEmpty() && !d_ptr->stop) {
+        while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
             d_ptr->not_empty_cond.wait(&d_ptr->mutex); //why sometines return immediatly?
-			qDebug("audio data size: %d, loop %d", d_ptr->packets->size(), ++i);
+            qDebug("audio data size: %d, loop %d", d_ptr->packets.size(), ++i);
         }
         if (d_ptr->stop) {
             d_ptr->mutex.unlock();
             break;
         }
-        QAVPacket pkt = d_ptr->packets->dequeue();
-		//qDebug("audio data size after dequeue: %d", d_ptr->packets->size());
+        QAVPacket pkt = d_ptr->packets.dequeue();
+        d_ptr->clock->updateValue(pkt.pts);
+        //qDebug("audio data size after dequeue: %d", d_ptr->packets.size());
         if (d_ptr->dec->decode(pkt.data)) {
             //play sound
             QByteArray decoded(d_ptr->dec->data());

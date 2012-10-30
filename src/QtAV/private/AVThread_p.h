@@ -9,15 +9,17 @@
 #include <QtAV/QAVPacketQueue.h>
 #include <QtAV/AVDecoder.h>
 #include <QtAV/AVOutput.h>
+#include <QtAV/QAVPacketQueue.h>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
 class AVDecoder;
 class QAVPacket;
+class AVClock;
 class AVThreadPrivate
 {
 public:
-    AVThreadPrivate():stop(false),packets(0),dec(0),writer(0) {}
+    AVThreadPrivate():stop(false),clock(0),dec(0),writer(0) {}
     virtual ~AVThreadPrivate() {
         /*if (dec) {
             delete dec;
@@ -33,13 +35,14 @@ public:
         }*/
     }
     void enqueue(const QAVPacket& pkt) {
-        packets->enqueue(pkt);
+        packets.enqueue(pkt);
         not_empty_cond.wakeAll();
     }
 
 
     volatile bool stop;
-    QAVPacketQueue *packets;
+    AVClock *clock;
+    QAVPacketQueue packets;
     AVDecoder *dec;
     AVOutput *writer;
     QMutex mutex;

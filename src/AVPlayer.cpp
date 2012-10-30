@@ -4,23 +4,26 @@
 #include <qpainter.h>
 #include <QApplication>
 
-#include <QtAV/AVInfo.h>
+#include <QtAV/AVDemuxer.h>
 #include <private/VideoRenderer_p.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AudioThread.h>
 #include <QtAV/QAVPacket.h>
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/VideoRenderer.h>
+#include <QtAV/AVClock.h>
 
 namespace QtAV {
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),aFrame(0),renderer(0),vFrame(0),audio(0)
 {
     avTimerId = -1;
+    clock = new AVClock(AVClock::AudioClock);
     audio = new AudioOutput();
     audio_dec = new AudioDecoder();
     audio_thread = new AudioThread(this);
-    audio_thread->setPacketQueue(&audio_queue);
+    audio_thread->setClock(clock);
+    //audio_thread->setPacketQueue(&audio_queue);
     audio_thread->setDecoder(audio_dec);
     audio_thread->setOutput(audio);
 	video_thread = 0;
@@ -101,6 +104,7 @@ bool AVPlayer::play(const QString& path)
     return true;
 }
 
+//TODO: what if no audio stream?
 void AVPlayer::timerEvent(QTimerEvent* e)
 {
 	if (e->timerId() != avTimerId)
@@ -109,12 +113,29 @@ void AVPlayer::timerEvent(QTimerEvent* e)
 	static int videoStream = avinfo.videoStream();
     static int audioStream = avinfo.audioStream();
     while (av_read_frame(formatCtx, &packet) >=0 ) {
-        if (packet.stream_index == audioStream) {
-            QAVPacket pkt;
-            pkt.data = QByteArray((const char*)packet.data, packet.size);
-            pkt.duration = packet.duration;
+        QAVPacket pkt;
+        pkt.data = QByteArray((const char*)packet.data, packet.size);
+        pkt.duration = packet.duration;
+        if (packet.dts != AV_NOPTS_VALUE) //has B-frames
+            pkt.pts = packet.dts;
+        else if (packet.pts != AV_NOPTS_VALUE)
             pkt.pts = packet.pts;
-            audio_queue.enqueue(pkt);
+        else
+            pkt.pts = 0;
+        AVStream *stream = formatCtx->streams[packet.stream_index];
+        pkt.pts *= av_q2d(stream->time_base);
+
+        if (stream->codec->codec_type == AVMEDIA_TYPE_SUBTITLE
+                && (packet.flags & AV_PKT_FLAG_KEY)
+                &&  packet.convergence_duration != AV_NOPTS_VALUE)
+            pkt.duration = packet.convergence_duration * av_q2d(stream->time_base);
+        else if (packet.duration > 0)
+            pkt.duration = packet.duration * av_q2d(stream->time_base);
+        else
+            pkt.duration = 0;
+
+        if (packet.stream_index == audioStream) {
+            audio_thread->packetQueue()->enqueue(pkt);
             audio_thread->wakeAll();
             av_free_packet(&packet); //TODO: why is needed for static var?
         } else if (packet.stream_index == videoStream) {

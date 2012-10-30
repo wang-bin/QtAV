@@ -28,13 +28,13 @@ SOURCES += \
     AVDemuxThread.cpp \
     GraphicsItemRenderer.cpp \
     ImageRenderer.cpp \
-    AVInfo.cpp \
     QAVPacket.cpp \
     QAVPacketQueue.cpp \
     AVPlayer.cpp \
     VideoRenderer.cpp \
     WidgetRenderer.cpp \
-    AVOutput.cpp
+    AVOutput.cpp \
+    AVClock.cpp
 
 HEADERS += QtAV/QtAV_Global.h QtAV/qtav.h \
     QtAV/AVThread.h \
@@ -47,13 +47,14 @@ HEADERS += QtAV/QtAV_Global.h QtAV/qtav.h \
     QtAV/AVDemuxThread.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageRenderer.h \
-    QtAV/AVInfo.h \
     QtAV/QAVPacket.h \
     QtAV/QAVPacketQueue.h \
     QtAV/AVPlayer.h \
     QtAV/VideoRenderer.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/WidgetRenderer.h \
-    QtAV/AVOutput.h
+    QtAV/AVOutput.h \
+    AVClock.h
+
 
 

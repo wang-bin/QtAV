@@ -38,7 +38,7 @@ public:
     }
 };
 
-#include <QtAV/AVInfo.h>
+#include <QtAV/AVDemuxer.h>
 #include <QtAV/QAVPacketQueue.h>
 #include <QtAV/QtAV_Global.h>
 
@@ -48,6 +48,7 @@ class AudioThread;
 class QAVVideoThread;
 class AudioDecoder;
 class VideoRenderer;
+class AVClock;
 class Q_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -73,13 +74,13 @@ protected:
     int m_drop_count;
 	T_FPS m_fps1;
 
-    AVInfo avinfo;
+    AVDemuxer avinfo;
+    AVClock *clock;
     VideoRenderer *renderer; //list?
     AudioOutput *audio;
     AudioDecoder *audio_dec;
     AudioThread *audio_thread;
     QAVVideoThread *video_thread;
-    QAVPacketQueue audio_queue, video_queue;
 protected:
 	virtual void timerEvent(QTimerEvent *);
 

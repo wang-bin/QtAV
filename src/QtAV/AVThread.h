@@ -10,6 +10,7 @@ class AVDecoder;
 class QAVPacketQueue;
 class AVThreadPrivate;
 class AVOutput;
+class AVClock;
 class Q_EXPORT AVThread : public QThread
 {
     Q_OBJECT
@@ -20,8 +21,11 @@ public:
     void stop();
     void wakeAll();
 
-    void setPacketQueue(QAVPacketQueue *queue);
-    void packetQueue() const;
+    void setClock(AVClock *clock);
+    AVClock* clock() const;
+
+    //void setPacketQueue(QAVPacketQueue *queue);
+    QAVPacketQueue* packetQueue() const;
 
     void setDecoder(AVDecoder *decoder);
     AVDecoder *decoder() const;
