@@ -1,5 +1,7 @@
 #include <QtAV/VideoRenderer.h>
+#include <QtAV/VideoDecoder.h>
 #include <private/VideoRenderer_p.h>
+
 /*!
     EZX:
     PIX_FMT_BGR565, 16bpp,
@@ -7,12 +9,6 @@
 */
 
 namespace QtAV {
-
-VideoRendererPrivate::~VideoRendererPrivate()
-{
-    sws_freeContext(sws_ctx); //NULL: does nothing
-    sws_ctx = NULL;
-}
 
 void VideoRendererPrivate::resizePicture(int width, int height)
 {
@@ -37,7 +33,7 @@ void VideoRendererPrivate::resizePicture(int width, int height)
 
 
 VideoRenderer::VideoRenderer()
-    :d_ptr(new VideoRendererPrivate)
+    :AVOutput(*new VideoRendererPrivate)
 {
 }
 
@@ -57,8 +53,12 @@ void VideoRenderer::resizeVideo(const QSize &size)
 void VideoRenderer::resizeVideo(int width, int height)
 {
     Q_D(VideoRenderer);
-    if (width >0 && height >0)
+    if (width == 0 || height == 0)
+        return;
+    if (d->dec) {
+        static_cast<VideoDecoder*>(d->dec)->resizeVideo(width, height);
         d->resizePicture(width, height);
+    }
 }
 
 //TODO: if size not change, reuse.

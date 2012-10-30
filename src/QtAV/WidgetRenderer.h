@@ -15,9 +15,6 @@ public:
     virtual int write(const QByteArray &data);
     void setPreview(const QImage& preivew);
 
-signals:
-    void sizeChanged(const QSize& size);
-
 protected:
     virtual void resizeEvent(QResizeEvent *);
     virtual void mousePressEvent(QMouseEvent *);
@@ -25,6 +22,8 @@ protected:
     virtual void mouseDoubleClickEvent(QMouseEvent *);
 #if !CONFIG_EZX
     virtual void paintEvent(QPaintEvent *);
+    virtual void dragEnterEvent(QDragEnterEvent *);
+    virtual void dropEvent(QDropEvent *);
 #endif
     
 private:

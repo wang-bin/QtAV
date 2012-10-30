@@ -71,8 +71,8 @@ void AVPlayer::setRenderer(VideoRenderer *r)
         delete renderer;
     }
     renderer = r;
-    connect((WidgetRenderer*)renderer, SIGNAL(sizeChanged(QSize)), SLOT(resizeVideo(QSize)));
     video_thread->setOutput(renderer);
+    renderer->bindDecoder(video_dec);
 }
 
 void AVPlayer::resizeVideo(const QSize &size)

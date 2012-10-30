@@ -42,6 +42,9 @@ HEADERS += QtAV/QtAV_Global.h QtAV/qtav.h \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
     QtAV/private/AVThread_p.h \
+    QtAV/private/AVDecoder_p.h \
+    QtAV/private/AVOutput_p.h \
+    QtAV/private/VideoRenderer_p.h \
     QtAV/AudioDecoder.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \
@@ -53,11 +56,10 @@ HEADERS += QtAV/QtAV_Global.h QtAV/qtav.h \
     QtAV/QAVPacketQueue.h \
     QtAV/AVPlayer.h \
     QtAV/VideoRenderer.h \
-    QtAV/private/VideoRenderer_p.h \
     QtAV/WidgetRenderer.h \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
-    QtAV/private/AVDecoder_p.h \
     QtAV/VideoThread.h
+
 

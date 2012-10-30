@@ -24,12 +24,9 @@ public:
     QSize videoSize() const;
     int videoWidth() const;
     int videoHeight() const;
-    //return the bytes writed
-    //virtual int write(const QByteArray& data) = 0;
 
 protected:
     Q_DECLARE_PRIVATE(VideoRenderer)
-    VideoRendererPrivate* d_ptr;
 };
 }
 

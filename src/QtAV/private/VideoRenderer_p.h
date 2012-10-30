@@ -2,6 +2,7 @@
 #define QAVVIDEORENDERER_P_H
 
 #include <qbytearray.h>
+#include <private/AVOutput_p.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -22,13 +23,17 @@ extern "C"
 
 struct SwsContext;
 namespace QtAV {
-class VideoRendererPrivate
+
+class VideoRendererPrivate : public AVOutputPrivate
 {
 public:
     VideoRendererPrivate():width(0),height(0),pix_fmt(PIX_FMT)
       ,numBytes(0),sws_ctx(0){
     }
-    ~VideoRendererPrivate();
+    ~VideoRendererPrivate(){
+        sws_freeContext(sws_ctx); //NULL: does nothing
+        sws_ctx = 0;
+    }
 
     void resizePicture(int width, int height);
 
@@ -39,6 +44,6 @@ public:
     QByteArray data;
     SwsContext *sws_ctx;
 };
-}
 
+} //namespace QtAV
 #endif // QAVVIDEORENDERER_P_H
