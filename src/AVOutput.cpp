@@ -19,6 +19,12 @@ AVOutput::~AVOutput()
 
 }
 
+int AVOutput::write(const QByteArray &data)
+{
+    Q_UNUSED(data);
+    return 0;
+}
+
 void AVOutput::bindDecoder(AVDecoder *dec)
 {
     d_ptr->dec = dec;
