@@ -44,6 +44,7 @@ int WidgetRenderer::write(const QByteArray &data)
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
 {
     resizeVideo(e->size());
+    emit sizeChanged(e->size());
 }
 
 void WidgetRenderer::mousePressEvent(QMouseEvent *e)

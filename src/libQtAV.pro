@@ -34,7 +34,8 @@ SOURCES += \
     VideoRenderer.cpp \
     WidgetRenderer.cpp \
     AVOutput.cpp \
-    AVClock.cpp
+    AVClock.cpp \
+    VideoDecoder.cpp
 
 HEADERS += QtAV/QtAV_Global.h QtAV/qtav.h \
     QtAV/AVThread.h \
@@ -54,7 +55,9 @@ HEADERS += QtAV/QtAV_Global.h QtAV/qtav.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/WidgetRenderer.h \
     QtAV/AVOutput.h \
-    AVClock.h
+    AVClock.h \
+    VideoDecoder.h
 
-
+HEADERS += \
+    QtAV/private/AVDecoder_p.h
 

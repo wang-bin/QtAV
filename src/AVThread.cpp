@@ -38,12 +38,7 @@ AVClock* AVThread::clock() const
 {
     return d_ptr->clock;
 }
-/*
-void AVThread::setPacketQueue(QAVPacketQueue *queue)
-{
-    d_ptr->packets = queue;
-}
-*/
+
 QAVPacketQueue* AVThread::packetQueue() const
 {
     return &d_ptr->packets;

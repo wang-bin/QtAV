@@ -1,5 +1,5 @@
 /******************************************************************************
-    AVClock.h: description
+    VideoDecoder.h: description
     Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
@@ -17,42 +17,36 @@
 ******************************************************************************/
 
 
-#ifndef AVCLOCK_H
-#define AVCLOCK_H
+#ifndef VIDEODECODER_H
+#define VIDEODECODER_H
 
-#include <QtAV/QtAV_Global.h>
-#include <qglobal.h>
+#include <qsize.h>
+#include <QtAV/AVDecoder.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif //__cplusplus
+#include "libavcodec/avcodec.h"
+#ifdef __cplusplus
+}
+#endif //__cplusplus
+
+struct SwsContext;
 namespace QtAV {
-
-class Q_EXPORT AVClock
+class VideoDecoderPrivate;
+class Q_EXPORT VideoDecoder : public AVDecoder
 {
 public:
-    typedef enum {
-        AudioClock, VideoClock, ExternalClock
-    } ClockType;
+    VideoDecoder();
+    virtual bool decode(const QByteArray &encoded);
 
-    AVClock(ClockType c = AudioClock);
-
-    inline qreal value() const;
-    inline void updateValue(qreal pts);
+    void resizeVideo(const QSize& size);
+    void resizeVideo(int width, int height);
 
 private:
-    ClockType clock_type;
-    qreal t;
-
-
+    Q_DECLARE_PRIVATE(VideoDecoder)
 };
 
-qreal AVClock::value() const
-{
-    return t;
-}
-
-void AVClock::updateValue(qreal pts)
-{
-    t = pts;
-}
-
 } //namespace QtAV
-#endif // AVCLOCK_H
+#endif // VIDEODECODER_H

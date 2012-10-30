@@ -12,10 +12,12 @@
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/VideoDecoder.h>
+#include <QtAV/WidgetRenderer.h>
 
 namespace QtAV {
 AVPlayer::AVPlayer(QObject *parent) :
-    QObject(parent),aFrame(0),renderer(0),vFrame(0),audio(0)
+    QObject(parent),renderer(0),audio(0)
 {
     avTimerId = -1;
     clock = new AVClock(AVClock::AudioClock);
@@ -26,6 +28,9 @@ AVPlayer::AVPlayer(QObject *parent) :
     //audio_thread->setPacketQueue(&audio_queue);
     audio_thread->setDecoder(audio_dec);
     audio_thread->setOutput(audio);
+
+    video_dec = new VideoDecoder();
+
 	video_thread = 0;
 }
 
@@ -33,10 +38,7 @@ AVPlayer::~AVPlayer()
 {
     audio_thread->stop();
     killTimer(avTimerId);
-    if (aFrame)
-        av_free(aFrame);
-    if (vFrame)
-        av_free(vFrame);
+
     if (audio) {
         delete audio;
         audio = 0;
@@ -45,13 +47,27 @@ AVPlayer::~AVPlayer()
         delete audio_dec;
         audio_dec = 0;
     }
+    if (video_dec) {
+        delete video_dec;
+        video_dec = 0;
+    }
 
 }
 
-void AVPlayer::setRenderer(VideoRenderer *renderer)
+void AVPlayer::setRenderer(VideoRenderer *r)
 {
-    this->renderer = renderer;
+    if (renderer) {
+        delete renderer;
+    }
+    renderer = r;
+    connect((WidgetRenderer*)renderer, SIGNAL(sizeChanged(QSize)), SLOT(resizeVideo(QSize)));
 }
+
+void AVPlayer::resizeVideo(const QSize &size)
+{
+    video_dec->resizeVideo(size);
+}
+
 //TODO: when is the end
 bool AVPlayer::play(const QString& path)
 {
@@ -87,19 +103,16 @@ bool AVPlayer::play(const QString& path)
 			,1.0 * m_v_stream->r_frame_rate.num / m_v_stream->r_frame_rate.den);
 	qDebug("[AVStream::time_base = %d, %d, %.2f]", m_v_stream->time_base.num, m_v_stream->time_base.den
 			,1.0 * m_v_stream->time_base.num / m_v_stream->time_base.den);
-    frameNo=0;
+
     m_drop_count = 0;
 
-    aFrame = avcodec_alloc_frame();
-    vFrame = avcodec_alloc_frame();
-
     audio_dec->setCodecContext(aCodecCtx);
-    audio_dec->setFrame(aFrame);
     audio_thread->setDecoder(audio_dec);
     audio_thread->start(QThread::HighestPriority);
 
+    video_dec->setCodecContext(vCodecCtx);
+
     avTimerId = startTimer(1000/avinfo.frameRate());
-    m_fps1.wake();
 
     return true;
 }
@@ -134,33 +147,15 @@ void AVPlayer::timerEvent(QTimerEvent* e)
         else
             pkt.duration = 0;
 
+
+
         if (packet.stream_index == audioStream) {
             audio_thread->packetQueue()->enqueue(pkt);
             audio_thread->wakeAll();
             av_free_packet(&packet); //TODO: why is needed for static var?
         } else if (packet.stream_index == videoStream) {
-            int len = avcodec_decode_video2(vCodecCtx, vFrame, &frameFinished, &packet);
-            if (len < 0) {
-                fprintf(stderr, "Error while decoding vFrame %d\n", frameNo);
-                return;
-            }
-            if (frameFinished) {
-                frameNo++;
-                m_fps1.add(1);
-                if(m_time_line.isNull())
-                    m_time_line.start();
-                //qDebug() << "m_time_line.elapsed()" << m_time_line.elapsed();
-                if(packet.pts < m_time_line.elapsed()) {
-                    printf("=====>SKIP[frameNo] %d [packet.pts] %lld\r", frameNo, packet.pts);
-                    m_drop_count++;
-                    //continue;
-                }
-                //qDebug("          [frameNo] %d" "[packet.pts] %d", frameNo, packet.pts);
-
-                QByteArray data = renderer->scale(vCodecCtx, vFrame); //scaler?
-                renderer->write(data);
-            }
-            av_free_packet(&packet);
+            if (video_dec->decode(QByteArray((char*)packet.data, packet.size)))
+                renderer->write(video_dec->data());
             break;
         } else { //subtitle
             av_free_packet(&packet);

@@ -1,44 +1,45 @@
 #include <QtAV/AVDecoder.h>
+#include <private/AVDecoder_p.h>
 
 namespace QtAV {
 AVDecoder::AVDecoder()
-    :codec_ctx(0),frame_(0)
+    :d_ptr(new AVDecoderPrivate())
 {
+}
+
+AVDecoder::AVDecoder(AVDecoderPrivate &d)
+    :d_ptr(&d)
+{
+
 }
 
 AVDecoder::~AVDecoder()
 {
+    if (d_ptr) {
+        delete d_ptr;
+        d_ptr = 0;
+    }
 }
 
 void AVDecoder::setCodecContext(AVCodecContext *codecCtx)
 {
-    codec_ctx = codecCtx;
+    d_ptr->codec_ctx = codecCtx;
 }
 
 AVCodecContext* AVDecoder::codecContext() const
 {
-    return codec_ctx;
-}
-
-void AVDecoder::setFrame(AVFrame *frame)
-{
-    frame_ = frame;
-}
-
-AVFrame* AVDecoder::frame() const
-{
-    return frame_;
+    return d_ptr->codec_ctx;
 }
 
 bool AVDecoder::decode(const QByteArray &encoded)
 {
-    decoded = encoded;
+    d_ptr->decoded = encoded;
     return true;
 }
 
 QByteArray AVDecoder::data() const
 {
-    return decoded;
+    return d_ptr->decoded;
 }
 
 }

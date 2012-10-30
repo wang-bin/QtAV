@@ -1,5 +1,5 @@
 /******************************************************************************
-    AVClock.h: description
+    AVDecoder_p.h: description
     Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
@@ -17,42 +17,50 @@
 ******************************************************************************/
 
 
-#ifndef AVCLOCK_H
-#define AVCLOCK_H
+#ifndef AVDECODER_P_H
+#define AVDECODER_P_H
 
-#include <QtAV/QtAV_Global.h>
-#include <qglobal.h>
+#ifdef __cplusplus
+extern "C"
+{
+#endif //__cplusplus
+#include "libavformat/avformat.h"
+#include "libswscale/swscale.h"
+#include "libavcodec/avcodec.h"
+#ifdef __cplusplus
+}
+#endif //__cplusplus
+
+#if CONFIG_EZX
+#define PIX_FMT PIX_FMT_BGR565
+#else
+#define PIX_FMT PIX_FMT_RGB32
+#endif //CONFIG_EZX
+
+#include <qbytearray.h>
+#include <QtCore/QMutex>
 
 namespace QtAV {
 
-class Q_EXPORT AVClock
+class AVDecoderPrivate
 {
 public:
-    typedef enum {
-        AudioClock, VideoClock, ExternalClock
-    } ClockType;
+    AVDecoderPrivate():codec_ctx(0),frame(0) {
+        frame = avcodec_alloc_frame();
+    }
+    ~AVDecoderPrivate() {
+        if (frame) {
+            av_free(frame);
+            frame = 0;
+        }
+    }
 
-    AVClock(ClockType c = AudioClock);
-
-    inline qreal value() const;
-    inline void updateValue(qreal pts);
-
-private:
-    ClockType clock_type;
-    qreal t;
-
-
+    AVCodecContext *codec_ctx; //set once and not change
+    AVFrame *frame; //set once and not change
+    QByteArray decoded;
+    int got_frame_ptr;
+    QMutex mutex;
 };
 
-qreal AVClock::value() const
-{
-    return t;
-}
-
-void AVClock::updateValue(qreal pts)
-{
-    t = pts;
-}
-
 } //namespace QtAV
-#endif // AVCLOCK_H
+#endif // AVDECODER_P_H

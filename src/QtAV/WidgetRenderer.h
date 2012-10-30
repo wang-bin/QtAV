@@ -15,6 +15,9 @@ public:
     virtual int write(const QByteArray &data);
     void setPreview(const QImage& preivew);
 
+signals:
+    void sizeChanged(const QSize& size);
+
 protected:
     virtual void resizeEvent(QResizeEvent *);
     virtual void mousePressEvent(QMouseEvent *);
