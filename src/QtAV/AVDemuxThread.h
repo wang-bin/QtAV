@@ -6,7 +6,6 @@
 
 namespace QtAV {
 class AVDemuxer;
-class QAVPacketQueue;
 class AVThread;
 class Q_EXPORT AVDemuxThread : public QThread
 {

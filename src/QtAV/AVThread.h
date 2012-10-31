@@ -3,11 +3,10 @@
 
 #include <QtCore/QThread>
 #include <QtCore/QScopedPointer>
-#include <QtAV/QtAV_Global.h>
+#include <QtAV/Packet.h>
 
 namespace QtAV {
 class AVDecoder;
-class QAVPacketQueue;
 class AVThreadPrivate;
 class AVOutput;
 class AVClock;
@@ -24,8 +23,8 @@ public:
     void setClock(AVClock *clock);
     AVClock* clock() const;
 
-    //void setPacketQueue(QAVPacketQueue *queue);
-    QAVPacketQueue* packetQueue() const;
+    //void setPacketQueue(PacketQueue *queue);
+    PacketQueue* packetQueue() const;
 
     void setDecoder(AVDecoder *decoder);
     AVDecoder *decoder() const;

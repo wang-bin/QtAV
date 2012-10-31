@@ -19,7 +19,7 @@
 
 #include <QtAV/VideoThread.h>
 #include <private/AVThread_p.h>
-#include <QtAV/QAVPacket.h>
+#include <QtAV/Packet.h>
 #include <QtAV/AVClock.h>
 
 namespace QtAV {
@@ -61,7 +61,7 @@ void VideoThread::run()
             d_ptr->mutex.unlock();
             break;
         }
-        QAVPacket pkt = d_ptr->packets.dequeue();
+        Packet pkt = d_ptr->packets.dequeue();
         //Compare to the clock
         if (pkt.pts <= 0) {
             d_ptr->mutex.unlock();
@@ -74,7 +74,8 @@ void VideoThread::run()
             d->delay_cond.wait(&d->mutex, d->delay*1000);
         } else if (d->delay < -kSyncThreshold) { //Speed up
             //drop frame?
-
+            //d_ptr->mutex.unlock();
+            //continue;
         }
         //qDebug("audio data size after dequeue: %d", d_ptr->packets.size());
         if (d_ptr->dec->decode(pkt.data)) {

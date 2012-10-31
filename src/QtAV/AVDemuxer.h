@@ -12,7 +12,7 @@ struct AVFrame;
 struct AVStream;
 
 namespace QtAV {
-class QAVPacket;
+class Packet;
 class Q_EXPORT AVDemuxer : public QObject //QIODevice?
 {
     Q_OBJECT
@@ -23,7 +23,7 @@ public:
     bool atEnd() const;
     bool loadFile(const QString& fileName);
     bool readFrame();
-    QAVPacket* packet() const; //current readed packet
+    Packet* packet() const; //current readed packet
     int stream() const; //current readed stream index
 
     //void seek();
@@ -63,7 +63,7 @@ signals:
 
 private:
     bool eof;
-    QAVPacket *pkt;
+    Packet *pkt;
     int stream_idx;
     bool findAVCodec();
     QString formatName(AVFormatContext *ctx, bool longName = false) const;

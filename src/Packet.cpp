@@ -1,44 +1,49 @@
-#include <QtAV/QAVPacketQueue.h>
-#include <QtAV/QAVPacket.h>
+#include <QtAV/Packet.h>
 
 namespace QtAV {
 
-QAVPacketQueue::QAVPacketQueue()
+Packet::Packet()
+    :pts(0),duration(0)
+{
+}
+
+#if THREAD_SAFE_QUEUE
+PacketQueue::PacketQueue()
     :mutex(QMutex::Recursive)
 {
 }
 
-QAVPacketQueue::~QAVPacketQueue()
+PacketQueue::~PacketQueue()
 {
     queue.clear();
 }
 
-void QAVPacketQueue::enqueue(const QAVPacket& packet)
+void PacketQueue::enqueue(const Packet& packet)
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     queue.enqueue(packet);
 }
 
-QAVPacket QAVPacketQueue::dequeue()
+Packet PacketQueue::dequeue()
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     return queue.dequeue();
 }
 
-QAVPacket QAVPacketQueue::head()
+Packet PacketQueue::head()
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     return queue.head();
 }
 
-QAVPacket QAVPacketQueue::tail()
+Packet PacketQueue::tail()
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     return queue.last();
 }
-
+#endif //THREAD_SAFE_QUEUE
 }

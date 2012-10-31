@@ -2,8 +2,6 @@
 #define WIDGET_H
 
 #include <QtAV/AVDemuxer.h>
-#include <QtAV/QAVPacketQueue.h>
-#include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
 class AudioOutput;

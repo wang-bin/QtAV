@@ -1,8 +1,7 @@
 #include <QtAV/AVDemuxThread.h>
 #include <QtAV/AVDemuxer.h>
-#include <QtAV/QAVPacketQueue.h>
+#include <QtAV/Packet.h>
 #include <QtAV/AVThread.h>
-#include <QtAV/QAVPacket.h>
 
 namespace QtAV {
 
@@ -62,7 +61,7 @@ void AVDemuxThread::run()
     //demuxer->read()
     //enqueue()
     int index = 0;
-    QAVPacket pkt;
+    Packet pkt;
     while (!end) {
         if (!demuxer->readFrame()) {
             continue;
@@ -79,7 +78,7 @@ void AVDemuxThread::run()
             continue;
         }
     }
-    qDebug("stop demux thread....");
+    qDebug("Demux thread stops running....");
 }
 
 }

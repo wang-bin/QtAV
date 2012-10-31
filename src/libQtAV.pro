@@ -28,8 +28,7 @@ SOURCES += \
     AVDemuxThread.cpp \
     GraphicsItemRenderer.cpp \
     ImageRenderer.cpp \
-    QAVPacket.cpp \
-    QAVPacketQueue.cpp \
+    Packet.cpp \
     AVPlayer.cpp \
     VideoRenderer.cpp \
     WidgetRenderer.cpp \
@@ -38,7 +37,7 @@ SOURCES += \
     VideoDecoder.cpp \
     VideoThread.cpp
 
-HEADERS += QtAV/QtAV_Global.h QtAV/qtav.h \
+HEADERS += QtAV/QtAV_Global.h \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
     QtAV/private/AVThread_p.h \
@@ -52,8 +51,7 @@ HEADERS += QtAV/QtAV_Global.h QtAV/qtav.h \
     QtAV/AVDemuxThread.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageRenderer.h \
-    QtAV/QAVPacket.h \
-    QtAV/QAVPacketQueue.h \
+    QtAV/Packet.h \
     QtAV/AVPlayer.h \
     QtAV/VideoRenderer.h \
     QtAV/WidgetRenderer.h \

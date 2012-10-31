@@ -1,7 +1,7 @@
 #include <QtAV/AudioThread.h>
 #include <private/AVThread_p.h>
 #include <QtAV/AudioDecoder.h>
-#include <QtAV/QAVPacket.h>
+#include <QtAV/Packet.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AVClock.h>
 #include <QtCore/QCoreApplication>
@@ -47,7 +47,7 @@ void AudioThread::run()
             d_ptr->mutex.unlock();
             break;
         }
-        QAVPacket pkt = d_ptr->packets.dequeue();
+        Packet pkt = d_ptr->packets.dequeue();
         d_ptr->clock->updateValue(pkt.pts);
         //qDebug("audio data size after dequeue: %d", d_ptr->packets.size());
         if (d_ptr->dec->decode(pkt.data)) {

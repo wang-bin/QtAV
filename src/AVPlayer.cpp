@@ -8,7 +8,7 @@
 #include <private/VideoRenderer_p.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AudioThread.h>
-#include <QtAV/QAVPacket.h>
+#include <QtAV/Packet.h>
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/AVClock.h>
@@ -153,7 +153,7 @@ void AVPlayer::timerEvent(QTimerEvent* e)
     static int videoStream = demuxer.videoStream();
     static int audioStream = demuxer.audioStream();
     while (av_read_frame(formatCtx, &packet) >=0 ) {
-        QAVPacket pkt;
+        Packet pkt;
         pkt.data = QByteArray((const char*)packet.data, packet.size);
         pkt.duration = packet.duration;
         if (packet.dts != AV_NOPTS_VALUE) //has B-frames

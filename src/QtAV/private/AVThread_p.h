@@ -5,16 +5,14 @@
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
 #include <QtCore/QWaitCondition>
-
-#include <QtAV/QAVPacketQueue.h>
+#include <QtAV/Packet.h>
 #include <QtAV/AVDecoder.h>
 #include <QtAV/AVOutput.h>
-#include <QtAV/QAVPacketQueue.h>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
 class AVDecoder;
-class QAVPacket;
+class Packet;
 class AVClock;
 class AVThreadPrivate
 {
@@ -34,7 +32,7 @@ public:
             packets = 0;
         }*/
     }
-    void enqueue(const QAVPacket& pkt) {
+    void enqueue(const Packet& pkt) {
         packets.enqueue(pkt);
         condition.wakeAll();
     }
@@ -42,7 +40,7 @@ public:
 
     volatile bool stop;
     AVClock *clock;
-    QAVPacketQueue packets;
+    PacketQueue packets;
     AVDecoder *dec;
     AVOutput *writer;
     QMutex mutex;

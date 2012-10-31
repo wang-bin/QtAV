@@ -8,11 +8,11 @@ extern "C" {
 #endif //__cplusplus
 
 #include <qthread.h>
-#include <QtAV/QAVPacket.h>
+#include <QtAV/Packet.h>
 
 namespace QtAV {
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
-    :QObject(parent),eof(false),pkt(new QAVPacket()),stream_idx(-1)
+    :QObject(parent),eof(false),pkt(new Packet()),stream_idx(-1)
     ,_is_input(true),format_context(0),a_codec_context(0),v_codec_context(0)
     ,_file_name(fileName)
 {
@@ -80,7 +80,7 @@ bool AVDemuxer::readFrame()
     return true;
 }
 
-QAVPacket* AVDemuxer::packet() const
+Packet* AVDemuxer::packet() const
 {
     return pkt;
 }

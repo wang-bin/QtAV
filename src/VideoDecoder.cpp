@@ -18,8 +18,7 @@
 
 #include <QtAV/VideoDecoder.h>
 #include <private/AVDecoder_p.h>
-#include <QtAV/QAVPacket.h>
-#include <QtCore/QMutexLocker>
+#include <QtAV/Packet.h>
 
 namespace QtAV {
 
@@ -46,7 +45,7 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     AVPacket packet;
     av_new_packet(&packet, encoded.size());
     memcpy(packet.data, encoded.data(), encoded.size());
-//TODO: use AVPacket directly instead of QAVPacket?
+//TODO: use AVPacket directly instead of Packet?
     //AVStream *stream = format_context->streams[stream_idx];
 
     //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
@@ -56,12 +55,10 @@ bool VideoDecoder::decode(const QByteArray &encoded)
         qDebug("[VideoDecoder] %s", av_err2str(ret));
         return false;
     }
-
     if (!d->got_frame_ptr) {
         qDebug("no frame could be decompressed");
         return false;
     }
-    
     /*
     d->sws_ctx = sws_getContext(
             codecCtx->width, //int srcW,

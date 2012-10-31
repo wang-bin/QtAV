@@ -35,7 +35,6 @@ void VideoRenderer::resizeVideo(int width, int height)
         return;
     if (d->dec) {
         static_cast<VideoDecoder*>(d->dec)->resizeVideo(width, height);
-//        d->resizePicture(width, height);
     }
     d->width = width;
     d->height = height;

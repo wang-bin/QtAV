@@ -32,7 +32,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     AVPacket packet;
     av_new_packet(&packet, encoded.size());
     memcpy(packet.data, encoded.data(), encoded.size());
-//TODO: use AVPacket directly instead of QAVPacket?
+//TODO: use AVPacket directly instead of Packet?
     int ret = avcodec_decode_audio4(d_ptr->codec_ctx, d_ptr->frame, &d_ptr->got_frame_ptr, &packet);
     av_free_packet(&packet);
     if (ret < 0) {
