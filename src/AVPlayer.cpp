@@ -57,6 +57,7 @@ AVPlayer::AVPlayer(QObject *parent) :
 
 AVPlayer::~AVPlayer()
 {
+    demuxer_thread->stop();
     video_thread->stop();
     audio_thread->stop();
     if (avTimerId > 0)
