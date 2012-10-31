@@ -61,7 +61,7 @@ bool VideoDecoder::decode(const QByteArray &encoded)
         qDebug("no frame could be decompressed");
         return false;
     }
-
+    
     /*
     d->sws_ctx = sws_getContext(
             codecCtx->width, //int srcW,
@@ -84,19 +84,7 @@ bool VideoDecoder::decode(const QByteArray &encoded)
             , (d->width == d->codec_ctx->width && d->height == d->codec_ctx->height) ? SWS_POINT : SWS_BICUBIC
             , NULL, NULL, NULL
             );
-    //TODO: resize once
-    int bytes = avpicture_get_size(PIX_FMT, d->width, d->height);
-    if(d->decoded.size() < bytes) {
-        d->decoded.resize(bytes);
-    }
-    //picture的数据按PIX_FMT格式自动"关联"到 data
-    avpicture_fill(
-            &d->picture,
-            reinterpret_cast<uint8_t*>(d->decoded.data()),
-            d->pix_fmt,
-            d->width,
-            d->height
-            );
+    
     int v_scale_result = sws_scale(
             d->sws_ctx,
             d->frame->data,
@@ -122,10 +110,9 @@ void VideoDecoder::resizeVideo(int width, int height)
 {
     if (width == 0 || height == 0)
         return;
-    qDebug("reize to: %d x %d", width, height);
 
     Q_D(VideoDecoder);
-/*
+
     int bytes = avpicture_get_size(PIX_FMT, width, height);
     if(d->decoded.size() < bytes) {
         d->decoded.resize(bytes);
@@ -138,7 +125,7 @@ void VideoDecoder::resizeVideo(int width, int height)
             width,
             height
             );
-*/
+
     d->width = width;
     d->height = height;
 }

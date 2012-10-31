@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     qDebug("%s %d", __FUNCTION__, __LINE__);
     player.setRenderer(&w);
     w.resize(400, 300);
-    w.resizeVideo(w.size());
+    //w.resizeVideo(w.size());
     w.show();
     player.play();
     return a.exec();

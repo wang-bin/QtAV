@@ -17,6 +17,18 @@
 #include <QtAV/VideoThread.h>
 #include <QtAV/AVDemuxThread.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif //__cplusplus
+#include "libavformat/avformat.h"
+#include "libswscale/swscale.h"
+#include "libavcodec/avcodec.h"
+#ifdef __cplusplus
+}
+#endif //__cplusplus
+
+
 namespace QtAV {
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),renderer(0),audio(0)

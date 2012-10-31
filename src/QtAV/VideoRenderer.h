@@ -20,7 +20,6 @@ public:
     virtual bool close() {return true;}
     void resizeVideo(const QSize& size);
     void resizeVideo(int width, int height);
-    QByteArray scale(AVCodecContext* codecCtx, AVFrame *frame);
     QSize videoSize() const;
     int videoWidth() const;
     int videoHeight() const;
