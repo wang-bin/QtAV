@@ -1,3 +1,21 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
 #if CONFIG_EZX
 #include <ZApplication.h>
 #else
@@ -19,7 +37,6 @@ int main(int argc, char *argv[])
 	ZApplication a(argc, argv);
     
     AVPlayer player;
-    qDebug("%s %d", __FUNCTION__, __LINE__);
     if (argc>1)
         player.setFile(argv[1]);
     else
@@ -28,16 +45,13 @@ int main(int argc, char *argv[])
     QGraphicsScene s;
     s.setSceneRect(0, 0, 800, 600);
     QGraphicsView v(&s);
-    qDebug("%s %d", __FUNCTION__, __LINE__);
 
     GraphicsItemRenderer g;
     g.resizeVideo(800, 600);
     s.addItem(&g);
-    qDebug("%s %d", __FUNCTION__, __LINE__);
 
     WidgetRenderer w;
     w.setWindowTitle(argv[1]);
-    qDebug("%s %d", __FUNCTION__, __LINE__);
     player.setRenderer(&w);
     w.resize(400, 300);
     //w.resizeVideo(w.size());

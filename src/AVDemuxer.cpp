@@ -1,3 +1,21 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
 #include <QtAV/AVDemuxer.h>
 #ifdef __cplusplus
 extern "C" {
@@ -13,6 +31,7 @@ extern "C" {
 namespace QtAV {
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     :QObject(parent),eof(false),pkt(new Packet()),stream_idx(-1)
+    ,audio_stream(-2),video_stream(-2),subtitle_stream(-2)
     ,_is_input(true),format_context(0),a_codec_context(0),v_codec_context(0)
     ,_file_name(fileName)
 {
@@ -36,7 +55,7 @@ AVDemuxer::~AVDemuxer()
 
 bool AVDemuxer::readFrame()
 {
-    static AVPacket packet;
+    AVPacket packet;
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
 
     if (ret != 0) {
@@ -274,12 +293,11 @@ bool AVDemuxer::isInput() const
 
 int AVDemuxer::audioStream() const
 {
-    static int audio_stream = -2; //-2: not parsed, -1 not found.
-    if (audio_stream != -2)
+    if (audio_stream != -2) //-2: not parsed, -1 not found.
         return audio_stream;
     audio_stream = -1;
     for(unsigned int i=0; i<format_context->nb_streams; ++i) {
-        if(format_context->streams[i]->codec->codec_type==AVMEDIA_TYPE_AUDIO) {
+        if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
             audio_stream = i;
             break;
         }
@@ -289,17 +307,30 @@ int AVDemuxer::audioStream() const
 
 int AVDemuxer::videoStream() const
 {
-    static int video_stream = -2; //-2: not parsed, -1 not found.
-    if (video_stream != -2)
+    if (video_stream != -2) //-2: not parsed, -1 not found.
         return video_stream;
     video_stream = -1;
     for(unsigned int i=0; i<format_context->nb_streams; ++i) {
-        if(format_context->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO) {
+        if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             video_stream = i;
             break;
         }
     }
     return video_stream;
+}
+
+int AVDemuxer::subtitleStream() const
+{
+    if (subtitle_stream != -2) //-2: not parsed, -1 not found.
+        return subtitle_stream;
+    subtitle_stream = -1;
+    for(unsigned int i=0; i<format_context->nb_streams; ++i) {
+        if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_SUBTITLE) {
+            subtitle_stream = i;
+            break;
+        }
+    }
+    return subtitle_stream;
 }
 
 int AVDemuxer::width() const
@@ -357,15 +388,13 @@ QString AVDemuxer::videoCodecLongName() const
 
 bool AVDemuxer::findAVCodec()
 {
-    static int video_stream = -2; //-2: not parsed, -1 not found.
-    static int audio_stream = -2; //-2: not parsed, -1 not found.
-    if (video_stream != -2 && audio_stream != -2)
-        return (video_stream != -1) && (audio_stream != -1);
-    video_stream = -1;
-    audio_stream = -1;
-    for(unsigned int i=0; i<format_context->nb_streams; ++i) {
-        if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO
-                && video_stream < 0) {
+    if (video_stream != -2 && audio_stream != -2 && subtitle_stream != -2)
+        return (video_stream != -1) && (audio_stream != -1) && (subtitle_stream != -1);
+    video_stream = audio_stream = subtitle_stream = -1;
+    AVMediaType type = AVMEDIA_TYPE_UNKNOWN;
+    for (unsigned int i=0; i<format_context->nb_streams; ++i) {
+        type = format_context->streams[i]->codec->codec_type;
+        if (type == AVMEDIA_TYPE_VIDEO && video_stream < 0) {
             video_stream = i;
             v_codec_context = format_context->streams[video_stream]->codec;
             //if !vaapi
@@ -375,13 +404,13 @@ bool AVDemuxer::findAVCodec()
             } else {
                 //v_codec_context->lowres = lowres;
             }
-        }
-        if(format_context->streams[i]->codec->codec_type==AVMEDIA_TYPE_AUDIO
-                && audio_stream < 0) {
+        } else if (type == AVMEDIA_TYPE_AUDIO && audio_stream < 0) {
             audio_stream = i;
             a_codec_context = format_context->streams[audio_stream]->codec;
+        } else if (type == AVMEDIA_TYPE_SUBTITLE && subtitle_stream < 0) {
+            subtitle_stream = i;
         }
-        if (audio_stream >=0 && video_stream >= 0)
+        if (audio_stream >=0 && video_stream >= 0 && subtitle_stream >= 0)
             return true;
     }
     return false;
@@ -395,4 +424,4 @@ QString AVDemuxer::formatName(AVFormatContext *ctx, bool longName) const
         return longName ? ctx->oformat->long_name : ctx->oformat->name;
 }
 
-}
+} //namespace QtAV

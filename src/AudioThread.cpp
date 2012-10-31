@@ -1,3 +1,21 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
 #include <QtAV/AudioThread.h>
 #include <private/AVThread_p.h>
 #include <QtAV/AudioDecoder.h>
@@ -10,9 +28,7 @@
 extern "C"
 {
 #endif //__cplusplus
-#include "libavformat/avformat.h"
-#include "libswscale/swscale.h"
-#include "libavcodec/avcodec.h"
+#include <libavcodec/avcodec.h>
 #ifdef __cplusplus
 }
 #endif //__cplusplus
@@ -37,6 +53,10 @@ void AudioThread::run()
         return;
     Q_ASSERT(d_ptr->clock != 0);
 
+    int sample_rate = d_ptr->dec->codecContext()->sample_rate;
+    int channels = d_ptr->dec->codecContext()->channels;
+    int csf = channels * sample_rate * sizeof(float);
+    const double max_len = 0.02;
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
         while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
@@ -49,28 +69,17 @@ void AudioThread::run()
         }
         Packet pkt = d_ptr->packets.dequeue();
         d_ptr->clock->updateValue(pkt.pts);
-        //qDebug("audio data size after dequeue: %d", d_ptr->packets.size());
         if (d_ptr->dec->decode(pkt.data)) {
-            //play sound
             QByteArray decoded(d_ptr->dec->data());
             int decodedSize = decoded.size();
             int decodedPos = 0;
             while (decodedSize > 0) {
-                static int sample_rate = d_ptr->dec->codecContext()->sample_rate;
-                static int channels = d_ptr->dec->codecContext()->channels;
-                const double max_len = /*playC.frame_last_delay > 0.0 ? qMin( playC.frame_last_delay, 0.02 ) :*/ 0.02;
-                const int chunk = qMin(decodedSize, int(ceil(sample_rate * max_len) * channels * sizeof(float)));
-
-                QByteArray decodedChunk;
-                //if ( playC.vol == 0.0 || playC.muted )
-                //  decodedChunk.fill( 0, chunk );
-                //else
-                decodedChunk = QByteArray::fromRawData(decoded.data() + decodedPos, chunk);
-
+                const int chunk = qMin(decodedSize, int(max_len*csf));
+                QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
+                decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                 decodedPos += chunk;
                 decodedSize -= chunk;
-
-                d_ptr->clock->updateDelay(decodedChunk.size()/(double)(sizeof(float)*channels*sample_rate));
+                d_ptr->clock->updateDelay(chunk/csf);
                 if (d_func()->writer)
                     d_func()->writer->write(decodedChunk);
 				//qApp->processEvents(QEventLoop::AllEvents);
@@ -81,4 +90,4 @@ void AudioThread::run()
     qDebug("Audio thread stops running...");
 }
 
-}
+} //namespace QtAV

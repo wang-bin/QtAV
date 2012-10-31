@@ -1,16 +1,23 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
 #include <QtAV/AudioDecoder.h>
 #include <private/AVDecoder_p.h>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif //__cplusplus
-#include "libavformat/avformat.h"
-#include "libswscale/swscale.h"
-#include "libavcodec/avcodec.h"
-#ifdef __cplusplus
-}
-#endif //__cplusplus
 
 namespace QtAV {
 
@@ -49,7 +56,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     case AV_SAMPLE_FMT_U8:
     {    uint8_t *data = (uint8_t*)*d_ptr->frame->data;
         for (int i = 0; i < samples_with_channels; i++)
-            decoded_data[i] = (data[i] - 0x7F) / 128.0f;
+            decoded_data[i] = (data[i] - 0x7F) / 128.0f; //TODO: use bit
         break;}
     case AV_SAMPLE_FMT_S16:
     {    int16_t *data = (int16_t*)*d_ptr->frame->data;
@@ -65,9 +72,9 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     {    memcpy(decoded_data, *d_ptr->frame->data, d_ptr->decoded.size());
         break;}
     case AV_SAMPLE_FMT_DBL:
-    {    double *data = ( double * )*d_ptr->frame->data;
+    {    double *data = (double*)*d_ptr->frame->data;
         for (int i = 0; i < samples_with_channels; i++)
-            decoded_data[ i ] = data[ i ];
+            decoded_data[i] = data[i];
         break;}
     default:
         d_ptr->decoded.clear();
@@ -83,4 +90,4 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     return true;
 }
 
-}
+} //namespace QtAV
