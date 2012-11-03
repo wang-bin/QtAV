@@ -20,9 +20,11 @@
 #include <private/AVThread_p.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/AVDemuxThread.h>
 
 namespace QtAV {
 
+const int kVPktBufferMin = 256;
 const double kSyncThreshold = 0.005; // 5 ms
 
 class VideoThreadPrivate : public AVThreadPrivate
@@ -49,6 +51,7 @@ void VideoThread::run()
     if (!d_ptr->dec || !d_ptr->writer)
         return;
     Q_ASSERT(d_ptr->clock != 0);
+    Q_ASSERT(d_ptr->demux_thread != 0);
 
     Q_D(VideoThread);
     while (!d_ptr->stop) {
@@ -61,6 +64,9 @@ void VideoThread::run()
             break;
         }
         Packet pkt = d_ptr->packets.dequeue();
+        if (d_ptr->packets.size() < kVPktBufferMin) {
+            d_ptr->demux_thread->readMoreFrames();
+        }
         //Compare to the clock
         if (pkt.pts <= 0) {
             d_ptr->mutex.unlock();

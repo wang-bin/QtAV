@@ -23,6 +23,8 @@
 
 namespace QtAV {
 
+const int kPktBufferSize = 512;
+
 AVDemuxThread::AVDemuxThread(QObject *parent) :
     QThread(parent),end(false),demuxer(0),audio_thread(0),video_thread(0)
 {
@@ -48,6 +50,7 @@ void AVDemuxThread::setAudioThread(AVThread *thread)
         audio_thread = 0;
     }
     audio_thread = thread;
+    audio_thread->setDemuxThread(this);
 }
 
 void AVDemuxThread::setVideoThread(AVThread *thread)
@@ -58,6 +61,12 @@ void AVDemuxThread::setVideoThread(AVThread *thread)
         video_thread = 0;
     }
     video_thread = thread;
+    video_thread->setDemuxThread(this);
+}
+
+void AVDemuxThread::readMoreFrames()
+{
+    buffer_cond.wakeAll();
 }
 
 void AVDemuxThread::stop()
@@ -81,7 +90,13 @@ void AVDemuxThread::run()
     int index = 0;
     Packet pkt;
     while (!end) {
+        buffer_mutex.lock();
+        if (audio_thread->packetQueue()->size() > kPktBufferSize
+                && video_thread->packetQueue()->size() > kPktBufferSize) {
+            buffer_cond.wait(&buffer_mutex);
+        }
         if (!demuxer->readFrame()) {
+            buffer_mutex.unlock();
             continue;
         }
         index = demuxer->stream();
@@ -93,8 +108,10 @@ void AVDemuxThread::run()
             video_thread->packetQueue()->enqueue(pkt);
             video_thread->wakeAll(); //need it?
         } else { //subtitle
+            buffer_mutex.unlock();
             continue;
         }
+        buffer_mutex.unlock();
     }
     qDebug("Demux thread stops running....");
 }

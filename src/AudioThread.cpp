@@ -22,6 +22,7 @@
 #include <QtAV/Packet.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/AVDemuxThread.h>
 #include <QtCore/QCoreApplication>
 
 #ifdef __cplusplus
@@ -34,6 +35,8 @@ extern "C"
 #endif //__cplusplus
 
 namespace QtAV {
+
+const int kAPktBufferMin = 256;
 
 class AudioThreadPrivate : public AVThreadPrivate
 {
@@ -52,7 +55,7 @@ void AudioThread::run()
     if (!d_ptr->dec || !d_ptr->writer)
         return;
     Q_ASSERT(d_ptr->clock != 0);
-
+    Q_ASSERT(d_ptr->demux_thread != 0);
     int sample_rate = d_ptr->dec->codecContext()->sample_rate;
     int channels = d_ptr->dec->codecContext()->channels;
     int csf = channels * sample_rate * sizeof(float);
@@ -68,6 +71,9 @@ void AudioThread::run()
             break;
         }
         Packet pkt = d_ptr->packets.dequeue();
+        if (d_ptr->packets.size() < kAPktBufferMin) {
+            d_ptr->demux_thread->readMoreFrames();
+        }
         d_ptr->clock->updateValue(pkt.pts);
         if (d_ptr->dec->decode(pkt.data)) {
             QByteArray decoded(d_ptr->dec->data());

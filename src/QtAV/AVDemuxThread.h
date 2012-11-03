@@ -19,7 +19,9 @@
 #ifndef QAV_DEMUXTHREAD_H
 #define QAV_DEMUXTHREAD_H
 
+#include <QtCore/QMutex>
 #include <QtCore/QThread>
+#include <QtCore/QWaitCondition>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -35,6 +37,7 @@ public:
     void setDemuxer(AVDemuxer *dmx);
     void setAudioThread(AVThread *thread);
     void setVideoThread(AVThread *thread);
+    void readMoreFrames(); //called by AVThread to demux more
 
 public slots:
     void stop();
@@ -47,6 +50,8 @@ private:
     AVDemuxer *demuxer;
     AVThread *audio_thread, *video_thread;
     int audio_stream, video_stream;
+    QMutex buffer_mutex;
+    QWaitCondition buffer_cond;
 };
 
 } //namespace QtAV

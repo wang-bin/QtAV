@@ -46,6 +46,16 @@ void AVThread::wakeAll()
     d_ptr->condition.wakeAll();
 }
 
+void AVThread::setDemuxThread(AVDemuxThread *thread)
+{
+    d_ptr->demux_thread = thread;
+}
+
+AVDemuxThread* AVThread::demuxThread() const
+{
+    return d_ptr->demux_thread;
+}
+
 void AVThread::setClock(AVClock *clock)
 {
     d_ptr->clock = clock;
