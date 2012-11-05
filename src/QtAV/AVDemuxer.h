@@ -40,6 +40,7 @@ public:
     ~AVDemuxer();
 
     bool atEnd() const;
+    bool close();
     bool loadFile(const QString& fileName);
     bool readFrame();
     Packet* packet() const; //current readed packet
@@ -86,6 +87,7 @@ private:
     Packet *pkt;
     int stream_idx;
     mutable int audio_stream, video_stream, subtitle_stream;
+
     bool findAVCodec();
     QString formatName(AVFormatContext *ctx, bool longName = false) const;
 

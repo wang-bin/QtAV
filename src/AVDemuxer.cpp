@@ -46,10 +46,7 @@ AVDemuxer::~AVDemuxer()
         delete pkt;
         pkt = 0;
     }
-    avcodec_close(a_codec_context);
-    avcodec_close(v_codec_context);
-    //av_close_input_file(format_context); //deprecated
-    avformat_close_input(&format_context); //libavf > 53.10.0
+
 }
 
 
@@ -114,22 +111,45 @@ bool AVDemuxer::atEnd() const
     return eof;
 }
 
+bool AVDemuxer::close()
+{
+    eof = false;
+    stream_idx = -1;
+    audio_stream = video_stream = subtitle_stream = -2;
+    if (a_codec_context) {
+        avcodec_close(a_codec_context);
+        a_codec_context = 0;
+    }
+    if (v_codec_context) {
+        avcodec_close(v_codec_context);
+        v_codec_context = 0;
+    }
+    //av_close_input_file(format_context); //deprecated
+    if (format_context) {
+        avformat_close_input(&format_context); //libavf > 53.10.0
+        format_context = 0;
+    }
+}
+
 bool AVDemuxer::loadFile(const QString &fileName)
 {
+    close();
     _file_name = fileName;
     //deprecated
     // Open an input stream and read the header. The codecs are not opened.
     //if(av_open_input_file(&format_context, _file_name.toLocal8Bit().constData(), NULL, 0, NULL)) {
-    if (avformat_open_input(&format_context, qPrintable(_file_name), NULL, NULL)) {
+    int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, NULL);
+    if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
-        qDebug("Can't open video");
+        qDebug("Can't open video: %s", av_err2str(ret));
         return false;
     }
     format_context->flags |= AVFMT_FLAG_GENPTS;
     //deprecated
     //if(av_find_stream_info(format_context)<0) {
-    if (avformat_find_stream_info(format_context, NULL)<0) {
-        qDebug("Can't find stream info");
+    ret = avformat_find_stream_info(format_context, NULL);
+    if (ret < 0) {
+        qDebug("Can't find stream info: %s", av_err2str(ret));
         return false;
     }
 
@@ -138,9 +158,10 @@ bool AVDemuxer::loadFile(const QString &fileName)
     findAVCodec();
 
     AVCodec *aCodec = avcodec_find_decoder(a_codec_context->codec_id);
-    if(aCodec) {
-        if(avcodec_open2(a_codec_context, aCodec, NULL)<0) {
-            qDebug("open audio codec failed");
+    if (aCodec) {
+        ret = avcodec_open2(a_codec_context, aCodec, NULL);
+        if (ret < 0) {
+            qDebug("open audio codec failed: %s", av_err2str(ret));
         }
     } else {
         qDebug("Unsupported audio codec. id=%d.", v_codec_context->codec_id);
@@ -152,8 +173,9 @@ bool AVDemuxer::loadFile(const QString &fileName)
     }
     ////v_codec_context->time_base = (AVRational){1,30};
     //avcodec_open(v_codec_context, vCodec) //deprecated
-    if(avcodec_open2(v_codec_context, vCodec, NULL)<0) {
-        qDebug("open video codec failed");
+    ret = avcodec_open2(v_codec_context, vCodec, NULL);
+    if (ret < 0) {
+        qDebug("open video codec failed: %s", av_err2str(ret));
         return false;
     }
     return true;
