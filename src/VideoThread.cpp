@@ -53,6 +53,7 @@ void VideoThread::run()
     Q_ASSERT(d_ptr->clock != 0);
     Q_ASSERT(d_ptr->demux_thread != 0);
 
+    d_ptr->stop = false;
     Q_D(VideoThread);
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
@@ -75,7 +76,6 @@ void VideoThread::run()
 
         d->delay = pkt.pts  - (d_ptr->clock->value() + d_ptr->clock->delay());
         if (d->delay > kSyncThreshold) { //Slow down
-            //qDebug("waiting... %f", d->delay);
             d->delay_cond.wait(&d->mutex, d->delay*1000);
         } else if (d->delay < -kSyncThreshold) { //Speed up. drop frame?
             //d_ptr->mutex.unlock();

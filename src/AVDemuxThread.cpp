@@ -39,7 +39,7 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
 void AVDemuxThread::setDemuxer(AVDemuxer *dmx)
 {
     demuxer = dmx;
-    connect(dmx, SIGNAL(finished()), SLOT(stop()));
+    connect(dmx, SIGNAL(finished()), this, SLOT(stop()), Qt::QueuedConnection);
 }
 
 void AVDemuxThread::setAudioThread(AVThread *thread)
@@ -76,6 +76,7 @@ void AVDemuxThread::stop()
 
 void AVDemuxThread::run()
 {
+    end = false;
     Q_ASSERT(audio_thread != 0);
     Q_ASSERT(video_thread != 0);
     if (!audio_thread->isRunning())
