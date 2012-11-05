@@ -63,7 +63,7 @@ void VideoRenderer::resizeVideo(int width, int height)
 QSize VideoRenderer::videoSize() const
 {
     Q_D(const VideoRenderer);
-    return QSize(d->width, d->width);
+    return QSize(d->width, d->height);
 }
 
 int VideoRenderer::videoWidth() const
@@ -75,7 +75,7 @@ int VideoRenderer::videoWidth() const
 int VideoRenderer::videoHeight() const
 {
     Q_D(const VideoRenderer);
-    return d->width;
+    return d->height;
 }
 
 } //namespace QtAV
