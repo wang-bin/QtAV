@@ -98,11 +98,12 @@ AVPlayer::~AVPlayer()
 void AVPlayer::setRenderer(VideoRenderer *r)
 {
     if (renderer) {
-        delete renderer;
+        //delete renderer; //Do not own the ptr
     }
     renderer = r;
     video_thread->setOutput(renderer);
     renderer->bindDecoder(video_dec);
+    renderer->resizeVideo(renderer->videoSize()); //IMPORTANT: the swscaler will resize
 }
 
 void AVPlayer::resizeVideo(const QSize &size)
@@ -113,6 +114,9 @@ void AVPlayer::resizeVideo(const QSize &size)
 //TODO: when is the end
 bool AVPlayer::play(const QString& path)
 {
+    demuxer_thread->stop();
+    video_thread->stop();
+    audio_thread->stop();
     if (!path.isEmpty())
         filename = path;
     if (avTimerId > 0)
