@@ -39,9 +39,9 @@
 #define TOSTR(x)  _TOSTR(x)
 
 /* C++11 requires a space between literal and identifier */
-static const char* const version_string = TOSTR(MAJOR) "." TOSTR(MINOR) "." TOSTR(PATCH) "(" __DATE__ ", " __TIME__ ")";
-#define LIB_VERSION_STR		TOSTR(MAJOR) "." TOSTR(MINOR) "." TOSTR(PATCH)
-#define LIB_VERSION_STR_LONG	LIB_VERSION_STR "(" __DATE__ ", " __TIME__ ")"
+static const char* const qtav_version_string = TOSTR(MAJOR) "." TOSTR(MINOR) "." TOSTR(PATCH) "(" __DATE__ ", " __TIME__ ")";
+#define QTAV_VERSION_STR		TOSTR(MAJOR) "." TOSTR(MINOR) "." TOSTR(PATCH)
+#define QTAV_VERSION_STR_LONG	QTAV_VERSION_STR "(" __DATE__ ", " __TIME__ ")"
 
 
 
