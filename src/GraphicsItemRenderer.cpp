@@ -44,7 +44,10 @@ QRectF GraphicsItemRenderer::boundingRect() const
 
 void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    painter->drawImage(QPointF(), image);
+    if (image.isNull())
+        painter->drawImage(QPointF(), preview);
+    else
+        painter->drawImage(QPointF(), image);
 }
 
 } //namespace QtAV
