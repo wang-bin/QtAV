@@ -32,7 +32,7 @@ class VideoThreadPrivate : public AVThreadPrivate
 public:
     VideoThreadPrivate():delay(0){}
     double delay;
-    QWaitCondition delay_cond;
+    //QWaitCondition delay_cond;
 };
 
 VideoThread::VideoThread(QObject *parent) :
@@ -43,7 +43,7 @@ VideoThread::VideoThread(QObject *parent) :
 void VideoThread::stop()
 {
     AVThread::stop();
-    d_func()->delay_cond.wakeAll();
+    //d_func()->delay_cond.wakeAll();
 }
 
 void VideoThread::run()
@@ -60,7 +60,11 @@ void VideoThread::run()
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
         while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            d_ptr->condition.wait(&d_ptr->mutex); //why sometines return immediatly?
+            if (d_ptr->demux_thread->isRunning())
+                d_ptr->condition.wait(&d_ptr->mutex); //why sometines return immediatly?
+            else
+                d_ptr->stop = true;
+            //qDebug("video data size: %d", d_ptr->packets.size());
         }
         if (d_ptr->stop) {
             d_ptr->mutex.unlock();
@@ -78,7 +82,8 @@ void VideoThread::run()
         //TODO: use QThread wait instead
         d->delay = pkt.pts  - (d_ptr->clock->value() + d_ptr->clock->delay());
         if (d->delay > kSyncThreshold) { //Slow down
-            d->delay_cond.wait(&d->mutex, d->delay*1000);
+            //d->delay_cond.wait(&d->mutex, d->delay*1000); //replay may fail. why?
+            usleep(d->delay * 1000000);
         } else if (d->delay < -kSyncThreshold) { //Speed up. drop frame?
             //d_ptr->mutex.unlock();
             //continue;

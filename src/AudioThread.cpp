@@ -65,8 +65,11 @@ void AudioThread::run()
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
         while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            d_ptr->condition.wait(&d_ptr->mutex); //why sometines return immediatly?
-            qDebug("audio data size: %d", d_ptr->packets.size());
+            if (d_ptr->demux_thread->isRunning())
+                d_ptr->condition.wait(&d_ptr->mutex); //why sometines return immediatly?
+            else
+                d_ptr->stop = true;
+            //qDebug("audio data size: %d", d_ptr->packets.size());
         }
         if (d_ptr->stop) {
             d_ptr->mutex.unlock();
