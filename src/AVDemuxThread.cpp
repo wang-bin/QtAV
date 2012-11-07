@@ -72,6 +72,7 @@ void AVDemuxThread::readMoreFrames()
 void AVDemuxThread::stop()
 {
     end = true;
+    buffer_cond.wakeAll();
 }
 
 void AVDemuxThread::run()
@@ -86,10 +87,11 @@ void AVDemuxThread::run()
 
     audio_stream = demuxer->audioStream();
     video_stream = demuxer->videoStream();
-    //demuxer->read()
-    //enqueue()
+
     int index = 0;
     Packet pkt;
+    end = false;
+    buffer_mutex.unlock();
     while (!end) {
         buffer_mutex.lock();
         if (audio_thread->packetQueue()->size() > kPktBufferSize

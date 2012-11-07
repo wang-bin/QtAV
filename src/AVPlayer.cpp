@@ -74,12 +74,10 @@ AVPlayer::AVPlayer(QObject *parent) :
 
 AVPlayer::~AVPlayer()
 {
-    demuxer_thread->stop();
-    video_thread->stop();
-    audio_thread->stop();
     if (avTimerId > 0)
         killTimer(avTimerId);
 
+    stop();
     if (audio) {
         delete audio;
         audio = 0;
@@ -92,7 +90,6 @@ AVPlayer::~AVPlayer()
         delete video_dec;
         video_dec = 0;
     }
-
 }
 
 void AVPlayer::setRenderer(VideoRenderer *r)
@@ -111,18 +108,23 @@ void AVPlayer::resizeVideo(const QSize &size)
     video_dec->resizeVideo(size);
 }
 
-//TODO: when is the end
 bool AVPlayer::play(const QString& path)
 {
-    demuxer_thread->stop();
-    video_thread->stop();
-    audio_thread->stop();
-    if (!path.isEmpty())
-        filename = path;
+    filename = path;
+    play();
+    return true;//isPlaying();
+}
+
+//TODO: when is the end
+void AVPlayer::play()
+{
+    stop();
+    qDebug("all stoped");
     if (avTimerId > 0)
         killTimer(avTimerId);
+    qDebug("loading: %s ...", qPrintable(filename));
     if (!demuxer.loadFile(filename)) {
-		return false;
+        return;
 	}
     demuxer.dump();
 
@@ -162,7 +164,26 @@ bool AVPlayer::play(const QString& path)
 #if 0
     avTimerId = startTimer(1000/demuxer.frameRate());
 #endif
-    return true;
+}
+
+void AVPlayer::stop()
+{
+    if (demuxer_thread->isRunning()) {
+        demuxer_thread->stop();
+        demuxer_thread->terminate(); //may waiting. We need it stop immediately
+        //wait for finish then we can safely set the vars, e.g. a/v decoders
+        demuxer_thread->wait();
+    }
+    if (audio_thread->isRunning()) {
+        audio_thread->stop();
+        audio_thread->terminate();
+        audio_thread->wait();
+    }
+    if (video_thread->isRunning()) {
+        video_thread->stop();
+        video_thread->terminate();
+        video_thread->wait();
+    }
 }
 
 //TODO: what if no audio stream?
@@ -194,8 +215,6 @@ void AVPlayer::timerEvent(QTimerEvent* e)
             pkt.duration = packet.duration * av_q2d(stream->time_base);
         else
             pkt.duration = 0;
-
-
 
         if (packet.stream_index == audioStream) {
             audio_thread->packetQueue()->enqueue(pkt);

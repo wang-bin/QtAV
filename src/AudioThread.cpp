@@ -57,6 +57,7 @@ void AudioThread::run()
     Q_ASSERT(d_ptr->clock != 0);
     Q_ASSERT(d_ptr->demux_thread != 0);
     d_ptr->stop = false;
+    d_ptr->mutex.unlock();
     int sample_rate = d_ptr->dec->codecContext()->sample_rate;
     int channels = d_ptr->dec->codecContext()->channels;
     int csf = channels * sample_rate * sizeof(float);

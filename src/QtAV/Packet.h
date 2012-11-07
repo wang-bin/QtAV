@@ -44,6 +44,7 @@ public:
     PacketQueue();
     ~PacketQueue();
 
+    inline void clear();
     inline bool isEmpty() const;
     inline int size() const;
     void enqueue(const Packet& packet);
@@ -55,6 +56,11 @@ private:
     QQueue<Packet> queue;
     QMutex mutex;
 };
+
+void PacketQueue::clear()
+{
+    queue.clear();
+}
 
 bool PacketQueue::isEmpty() const
 {

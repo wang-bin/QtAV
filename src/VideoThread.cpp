@@ -42,18 +42,20 @@ VideoThread::VideoThread(QObject *parent) :
 
 void VideoThread::stop()
 {
-    d_func()->delay_cond.wakeAll();
     AVThread::stop();
+    d_func()->delay_cond.wakeAll();
 }
 
 void VideoThread::run()
 {
+    qDebug("start video thread...");
     if (!d_ptr->dec || !d_ptr->writer)
         return;
     Q_ASSERT(d_ptr->clock != 0);
     Q_ASSERT(d_ptr->demux_thread != 0);
 
     d_ptr->stop = false;
+    d_ptr->mutex.unlock();
     Q_D(VideoThread);
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
@@ -73,7 +75,7 @@ void VideoThread::run()
             d_ptr->mutex.unlock();
             continue;
         }
-
+        //TODO: use QThread wait instead
         d->delay = pkt.pts  - (d_ptr->clock->value() + d_ptr->clock->delay());
         if (d->delay > kSyncThreshold) { //Slow down
             d->delay_cond.wait(&d->mutex, d->delay*1000);

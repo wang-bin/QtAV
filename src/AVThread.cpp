@@ -39,6 +39,8 @@ void AVThread::stop()
     d_ptr->stop = true;
     wakeAll();
     //terminate();
+    d_ptr->packets.clear();
+    //d_ptr->mutex.unlock(); //put it to run(). or unlock after terminate()
 }
 
 void AVThread::wakeAll()

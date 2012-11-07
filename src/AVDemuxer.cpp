@@ -42,11 +42,11 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
 
 AVDemuxer::~AVDemuxer()
 {
+    close();
     if (pkt) {
         delete pkt;
         pkt = 0;
     }
-
 }
 
 
@@ -117,15 +117,18 @@ bool AVDemuxer::close()
     stream_idx = -1;
     audio_stream = video_stream = subtitle_stream = -2;
     if (a_codec_context) {
+        qDebug("closing a_codec_context");
         avcodec_close(a_codec_context);
         a_codec_context = 0;
     }
     if (v_codec_context) {
+        qDebug("closing v_codec_context");
         avcodec_close(v_codec_context);
         v_codec_context = 0;
     }
     //av_close_input_file(format_context); //deprecated
     if (format_context) {
+        qDebug("closing format_context");
         avformat_close_input(&format_context); //libavf > 53.10.0
         format_context = 0;
     }
@@ -134,6 +137,7 @@ bool AVDemuxer::close()
 bool AVDemuxer::loadFile(const QString &fileName)
 {
     close();
+    qDebug("all closed and reseted");
     _file_name = fileName;
     //deprecated
     // Open an input stream and read the header. The codecs are not opened.
@@ -185,8 +189,6 @@ AVFormatContext* AVDemuxer::formatContext()
 {
     return format_context;
 }
-
-
 /*
 static void dump_stream_format(AVFormatContext *ic, int i, int index, int is_output)
 {

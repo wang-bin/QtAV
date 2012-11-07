@@ -38,8 +38,12 @@ public:
     ~AVPlayer();
     
     void setFile(const QString& fileName) {filename=fileName;}
-    bool play(const QString& path = QString());
+    bool play(const QString& path);
     void setRenderer(VideoRenderer* renderer);
+
+public slots:
+    void play(); //replay
+    void stop();
 
 protected slots:
     void resizeVideo(const QSize& size);
