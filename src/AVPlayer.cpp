@@ -21,6 +21,7 @@
 #include <qevent.h>
 #include <qpainter.h>
 #include <QApplication>
+#include <QEvent>
 
 #include <QtAV/AVDemuxer.h>
 #include <private/VideoRenderer_p.h>
@@ -50,6 +51,7 @@ namespace QtAV {
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),renderer(0),audio(0)
 {
+    qApp->installEventFilter(this);
     avTimerId = -1;
     clock = new AVClock(AVClock::AudioClock);
     audio = new AudioOutput();
@@ -229,6 +231,74 @@ void AVPlayer::timerEvent(QTimerEvent* e)
             continue;
         }
     }
+}
+
+bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
+{
+    Q_UNUSED(watched);
+    //TODO: if not send to QWidget based class, return false; instanceOf()?
+    QEvent::Type type = event->type();
+    switch (type) {
+    case QEvent::MouseButtonPress:
+        static_cast<QMouseEvent*>(event)->button();
+        //TODO: wheel to control volume etc.
+        return false;
+        break;
+    case QEvent::KeyPress: {
+        int key = static_cast<QKeyEvent*>(event)->key();
+        switch (key) {
+        case Qt::Key_P:
+            play();
+            break;
+        case Qt::Key_S:
+            stop();
+            break;
+        case Qt::Key_F: {
+            QWidget *w = qApp->activeWindow();
+            if (!w)
+                return false;
+            if (w->isFullScreen())
+                w->showNormal();
+            else
+                w->showFullScreen();
+        }
+            break;
+        case Qt::Key_Up:
+            audio->setVolume(audio->volume() + 0.1);
+            qDebug("vol = %.1f", audio->volume());
+            break;
+        case Qt::Key_Down:
+            audio->setVolume(audio->volume() - 0.1);
+            qDebug("vol = %.1f", audio->volume());
+            break;
+        case Qt::Key_M:
+            audio->setMute(!audio->isMute());
+            break;
+        case Qt::Key_T: {
+            QWidget *w = qApp->activeWindow();
+            if (!w)
+                return false;
+            Qt::WindowFlags wf = w->windowFlags();
+            if (wf & Qt::WindowStaysOnTopHint) {
+                qDebug("Window  notstay on top");
+                w->setWindowFlags(wf & ~Qt::WindowStaysOnTopHint);
+            } else {
+                qDebug("Window stay on top");
+                w->setWindowFlags(wf | Qt::WindowStaysOnTopHint);
+            }
+            //call setParent() when changing the flags, causing the widget to be hidden
+            w->show();
+        }
+            break;
+        default:
+            return false;
+        }
+        break;
+    }
+    default:
+        return false;
+    }
+    return true;
 }
 
 } //namespace QtAV

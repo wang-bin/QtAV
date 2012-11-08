@@ -41,6 +41,8 @@ public:
     bool play(const QString& path);
     void setRenderer(VideoRenderer* renderer);
 
+    virtual bool eventFilter(QObject *watcher, QEvent *event);
+
 public slots:
     void play(); //replay
     void stop();
