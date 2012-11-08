@@ -67,18 +67,17 @@ void WidgetRenderer::resizeEvent(QResizeEvent *e)
 
 void WidgetRenderer::mousePressEvent(QMouseEvent *e)
 {
-    gPos = e->globalPos();
-    pos = e->pos();
+    gMousePos = e->globalPos();
+    iMousePos = e->pos();
 }
 
 void WidgetRenderer::mouseMoveEvent(QMouseEvent *e)
 {
-    int dx = e->globalPos().x() - gPos.x();
-    int dy = e->globalPos().y() - gPos.y();
-    gPos = e->globalPos();
-
-    int x = mapToGlobal(QPoint()).x();
-    int y = mapToGlobal(QPoint()).y();
+    int x = pos().x();
+    int y = pos().y();
+    int dx = e->globalPos().x() - gMousePos.x();
+    int dy = e->globalPos().y() - gMousePos.y();
+    gMousePos = e->globalPos();
     int w = width();
     int h = height();
     switch (action) {
@@ -88,21 +87,23 @@ void WidgetRenderer::mouseMoveEvent(QMouseEvent *e)
         move(x, y);
         break;
     case GestureResize:
-        if(pos.x()<w/2) {
+        if(iMousePos.x() < w/2) {
             x += dx;
             w -= dx;
         }
-        if(pos.x()>w/2) {
+        if(iMousePos.x() > w/2) {
             w += dx;
         }
-        if(pos.y()<h/2) {
+        if(iMousePos.y() < h/2) {
             y += dy;
             h -= dy;
         }
-        if(pos.y()>h/2) {
+        if(iMousePos.y() > h/2) {
             h += dy;
         }
-        setGeometry(x, y, w, h);
+        //setGeometry(x, y, w, h);
+        move(x, y);
+        resize(w, h);
         break;
     }
 #if CONFIG_EZX

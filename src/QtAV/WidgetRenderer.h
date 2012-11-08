@@ -27,6 +27,7 @@ class Q_EXPORT WidgetRenderer : public QWidget, public ImageRenderer
 {
     Q_OBJECT
 public:
+    //GestureAction is useful for small screen windows that are hard to select frame
     enum GestureAction { GestureMove, GestureResize};
     explicit WidgetRenderer(QWidget *parent = 0);
     virtual ~WidgetRenderer();
@@ -45,7 +46,7 @@ protected:
 #endif
     
 private:
-    QPoint pos, gPos;
+    QPoint iMousePos, gMousePos;
     GestureAction action;
 };
 }
