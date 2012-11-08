@@ -56,6 +56,7 @@ void AudioThread::run()
         return;
     Q_ASSERT(d_ptr->clock != 0);
     Q_ASSERT(d_ptr->demux_thread != 0);
+    AudioOutput *ao = static_cast<AudioOutput*>(d_func()->writer);
     d_ptr->stop = false;
     d_ptr->mutex.unlock();
     int sample_rate = d_ptr->dec->codecContext()->sample_rate;
@@ -87,12 +88,22 @@ void AudioThread::run()
             while (decodedSize > 0) {
                 const int chunk = qMin(decodedSize, int(max_len*csf));
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
-                decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
+                d_ptr->clock->updateDelay(chunk/csf);
+                if (ao) {
+                    if (!ao->isMute()) {
+                        decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
+                        qreal vol = ao->volume();
+                        if (vol != 1.0) {
+                            int len = decodedChunk.size()/sizeof(float); //TODO: why???
+                            float *data = (float*)decodedChunk.data();
+                            for (int i = 0; i < len; ++i)
+                                data[i] *= vol;
+                        }
+                    }
+                    ao->write(decodedChunk);
+                }
                 decodedPos += chunk;
                 decodedSize -= chunk;
-                d_ptr->clock->updateDelay(chunk/csf);
-                if (d_func()->writer)
-                    d_func()->writer->write(decodedChunk);
 				//qApp->processEvents(QEventLoop::AllEvents);
             }
 		}

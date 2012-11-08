@@ -21,7 +21,7 @@
 
 namespace QtAV {
 AudioOutput::AudioOutput()
-    :AVOutput()
+    :AVOutput(),mute(false),vol(1)
 {
     outputParameters = new PaStreamParameters;
     Pa_Initialize();
@@ -121,6 +121,27 @@ bool AudioOutput::close()
     if (err != paNoError)
         qWarning("Close portaudio stream error: %s", Pa_GetErrorText(err));
     return err == paNoError;
+}
+
+void AudioOutput::setVolume(qreal volume)
+{
+    vol = qMax<qreal>(volume, 0);
+    mute = vol == 0;
+}
+
+qreal AudioOutput::volume() const
+{
+    return qMax<qreal>(vol, 0);
+}
+
+void AudioOutput::setMute(bool yes)
+{
+    mute = yes;
+}
+
+bool AudioOutput::isMute() const
+{
+    return mute;
 }
 
 } //namespace QtAV

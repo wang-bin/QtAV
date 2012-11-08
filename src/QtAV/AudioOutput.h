@@ -39,7 +39,14 @@ public:
     virtual bool open();
     virtual bool close();
 
+    void setVolume(qreal volume); //double?
+    qreal volume() const;
+    void setMute(bool yes);
+    bool isMute() const;
+
 protected:
+    bool mute;
+    qreal vol;
     PaStreamParameters *outputParameters;
     PaStream *stream;
     int sample_rate;
