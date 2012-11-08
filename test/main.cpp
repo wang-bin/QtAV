@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
 	ZApplication a(argc, argv);
     
     AVPlayer player;
-    if (argc>1)
-        player.setFile(argv[1]);
+    if (argc > 1)
+        player.setFile(a.arguments().at(1));
     else
         QMessageBox::warning(0, "Usage", QString("%1 path/of/video").arg(qApp->arguments().at(0)));
 
@@ -51,11 +51,9 @@ int main(int argc, char *argv[])
     s.addItem(&g);
 
     WidgetRenderer w;
-    w.setWindowTitle(argv[1]);
+    w.setWindowTitle(a.arguments().at(1));
     player.setRenderer(&w);
-    w.resize(400, 300);
-    //w.resizeVideo(w.size());
-    w.show();
+    w.showMaximized();
     player.play();
     return a.exec();
 }
