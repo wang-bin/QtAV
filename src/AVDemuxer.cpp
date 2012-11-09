@@ -56,7 +56,7 @@ bool AVDemuxer::readFrame()
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
 
     if (ret != 0) {
-        if (ret = AVERROR_EOF) { //end of file
+        if (ret == AVERROR_EOF) { //end of file
             eof = true;
             qDebug("%s %d", __FUNCTION__, __LINE__);
             emit finished();
@@ -132,6 +132,7 @@ bool AVDemuxer::close()
         avformat_close_input(&format_context); //libavf > 53.10.0
         format_context = 0;
     }
+    return true;
 }
 
 bool AVDemuxer::loadFile(const QString &fileName)
