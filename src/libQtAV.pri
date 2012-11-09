@@ -46,7 +46,7 @@ NAME = QtAV
 #!isEmpty(LIBQTAV_PRI_INCLUDED):error("libQtAV.pri already included")
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
-LIB_VERSION = 1.0.0 #0.x.y may be wrong for dll
+LIB_VERSION = 1.1.0 #0.x.y may be wrong for dll
 isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
 
 TEMPLATE += fakelib

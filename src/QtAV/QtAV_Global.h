@@ -25,7 +25,7 @@
 #undef LIB_VERSION
 
 #define MAJOR 1	//((LIB_VERSION&0xff0000)>>16)
-#define MINOR 0	//((LIB_VERSION&0xff00)>>8)
+#define MINOR 1	//((LIB_VERSION&0xff00)>>8)
 #define PATCH 0	//(LIB_VERSION&0xff)
 
 #define VERSION_CHK(major, minor, patch) \

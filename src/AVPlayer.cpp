@@ -51,6 +51,9 @@ namespace QtAV {
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),renderer(0),audio(0)
 {
+    qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
+           "\nDistributed under GPLv3 or later"
+           , QTAV_VERSION_STR_LONG);
     qApp->installEventFilter(this);
     avTimerId = -1;
     clock = new AVClock(AVClock::AudioClock);
