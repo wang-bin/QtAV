@@ -38,7 +38,6 @@ public:
     virtual ~AVThread();
 
     virtual void stop();
-    void wakeAll();
 
     void setClock(AVClock *clock);
     AVClock* clock() const;

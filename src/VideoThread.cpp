@@ -24,7 +24,6 @@
 
 namespace QtAV {
 
-const int kVPktBufferMin = 256;
 const double kSyncThreshold = 0.005; // 5 ms
 
 class VideoThreadPrivate : public AVThreadPrivate
@@ -32,7 +31,6 @@ class VideoThreadPrivate : public AVThreadPrivate
 public:
     VideoThreadPrivate():delay(0){}
     double delay;
-    //QWaitCondition delay_cond;
 };
 
 VideoThread::VideoThread(QObject *parent) :
@@ -40,40 +38,28 @@ VideoThread::VideoThread(QObject *parent) :
 {
 }
 
-void VideoThread::stop()
-{
-    AVThread::stop();
-    //d_func()->delay_cond.wakeAll();
-}
-
 void VideoThread::run()
 {
-    qDebug("start video thread...");
     if (!d_ptr->dec || !d_ptr->writer)
         return;
     Q_ASSERT(d_ptr->clock != 0);
     Q_ASSERT(d_ptr->demux_thread != 0);
 
     d_ptr->stop = false;
+    d_ptr->packets.setBlocking(true);
     d_ptr->mutex.unlock();
     Q_D(VideoThread);
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
         while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            if (d_ptr->demux_thread->isRunning())
-                d_ptr->condition.wait(&d_ptr->mutex); //why sometines return immediatly?
-            else
+            if (!d_ptr->demux_thread->isRunning()) //is it possible not to use demux_thread?
                 d_ptr->stop = true;
-            //qDebug("video data size: %d", d_ptr->packets.size());
         }
         if (d_ptr->stop) {
             d_ptr->mutex.unlock();
             break;
         }
-        Packet pkt = d_ptr->packets.dequeue();
-        if (d_ptr->packets.size() < kVPktBufferMin) {
-            d_ptr->demux_thread->readMoreFrames();
-        }
+        Packet pkt = d_ptr->packets.take(); //wait to dequeue
         //Compare to the clock
         if (pkt.pts <= 0) {
             d_ptr->mutex.unlock();

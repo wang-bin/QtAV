@@ -49,6 +49,7 @@ HEADERS += QtAV/QtAV_Global.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
     QtAV/AVDemuxThread.h \
+    QtAV/BlockingQueue.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageRenderer.h \
     QtAV/Packet.h \
@@ -59,5 +60,4 @@ HEADERS += QtAV/QtAV_Global.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoThread.h
-
 

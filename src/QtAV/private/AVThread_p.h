@@ -47,15 +47,7 @@ public:
         if (writer) {
             delete writer;
             writer = 0;
-        }
-        if (packets) {
-            delete packets;
-            packets = 0;
         }*/
-    }
-    void enqueue(const Packet& pkt) {
-        packets.enqueue(pkt);
-        condition.wakeAll();
     }
 
     volatile bool stop;
@@ -64,7 +56,6 @@ public:
     AVDecoder *dec;
     AVOutput *writer;
     QMutex mutex;
-    QWaitCondition condition;
     AVDemuxThread *demux_thread; //notify it to read more packets
 };
 

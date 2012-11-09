@@ -22,6 +22,7 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QQueue>
 #include <QtCore/QMutex>
+#include <QtAV/BlockingQueue.h>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -34,44 +35,8 @@ public:
     qreal pts, duration;
 };
 
-#define THREAD_SAFE_QUEUE 1
-#if !THREAD_SAFE_QUEUE
-typedef QQueue<Packet> PacketQueue;
-#else
-class Q_EXPORT PacketQueue
-{
-public:
-    PacketQueue();
-    ~PacketQueue();
+typedef BlockingQueue<Packet> PacketQueue;
 
-    inline void clear();
-    inline bool isEmpty() const;
-    inline int size() const;
-    void enqueue(const Packet& packet);
-    Packet dequeue();
-    Packet head();
-    Packet tail();
-
-private:
-    QQueue<Packet> queue;
-    QMutex mutex;
-};
-
-void PacketQueue::clear()
-{
-    queue.clear();
-}
-
-bool PacketQueue::isEmpty() const
-{
-    return queue.isEmpty();
-}
-
-int PacketQueue::size() const
-{
-    return queue.size();
-}
-#endif //THREAD_SAFE_QUEUE
-}
+} //namespace QtAV
 
 #endif // QAV_PACKET_H

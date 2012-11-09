@@ -37,15 +37,10 @@ AVThread::~AVThread()
 void AVThread::stop()
 {
     d_ptr->stop = true;
-    wakeAll();
     //terminate();
+    d_ptr->packets.setBlocking(false); //stop blocking take()
     d_ptr->packets.clear();
     //d_ptr->mutex.unlock(); //put it to run(). or unlock after terminate()
-}
-
-void AVThread::wakeAll()
-{
-    d_ptr->condition.wakeAll();
 }
 
 void AVThread::setDemuxThread(AVDemuxThread *thread)

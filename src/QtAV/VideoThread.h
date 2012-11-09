@@ -31,7 +31,6 @@ class VideoThread : public AVThread
     Q_DECLARE_PRIVATE(VideoThread)
 public:
     explicit VideoThread(QObject *parent = 0);
-    virtual void stop();
 
 protected:
     virtual void run();

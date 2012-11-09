@@ -23,8 +23,6 @@
 
 namespace QtAV {
 
-const int kPktBufferSize = 512;
-
 AVDemuxThread::AVDemuxThread(QObject *parent) :
     QThread(parent),end(false),demuxer(0),audio_thread(0),video_thread(0)
 {
@@ -64,15 +62,12 @@ void AVDemuxThread::setVideoThread(AVThread *thread)
     video_thread->setDemuxThread(this);
 }
 
-void AVDemuxThread::readMoreFrames()
-{
-    buffer_cond.wakeAll();
-}
-
+//No more data to put. So stop blocking the queue to take the reset elements
 void AVDemuxThread::stop()
 {
     end = true;
-    buffer_cond.wakeAll();
+    audio_thread->packetQueue()->setBlocking(false);
+    video_thread->packetQueue()->setBlocking(false);
 }
 
 void AVDemuxThread::run()
@@ -94,10 +89,6 @@ void AVDemuxThread::run()
     buffer_mutex.unlock();
     while (!end) {
         buffer_mutex.lock();
-        if (audio_thread->packetQueue()->size() > kPktBufferSize
-                && video_thread->packetQueue()->size() > kPktBufferSize) {
-            buffer_cond.wait(&buffer_mutex);
-        }
         if (!demuxer->readFrame()) {
             buffer_mutex.unlock();
             continue;
@@ -105,11 +96,9 @@ void AVDemuxThread::run()
         index = demuxer->stream();
         pkt = *demuxer->packet(); //TODO: how to avoid additional copy?
         if (index == audio_stream) {
-            audio_thread->packetQueue()->enqueue(pkt);
-            audio_thread->wakeAll();
+            audio_thread->packetQueue()->put(pkt); //affect video_thread
         } else if (index == video_stream) {
-            video_thread->packetQueue()->enqueue(pkt);
-            video_thread->wakeAll(); //need it?
+            video_thread->packetQueue()->put(pkt); //affect audio_thread
         } else { //subtitle
             buffer_mutex.unlock();
             continue;

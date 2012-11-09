@@ -172,18 +172,18 @@ void AVPlayer::stop()
 {
     if (demuxer_thread->isRunning()) {
         demuxer_thread->stop();
-        demuxer_thread->terminate(); //may waiting. We need it stop immediately
+        //demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
         //wait for finish then we can safely set the vars, e.g. a/v decoders
         demuxer_thread->wait();
     }
     if (audio_thread->isRunning()) {
         audio_thread->stop();
-        audio_thread->terminate();
+        //audio_thread->terminate();
         audio_thread->wait();
     }
     if (video_thread->isRunning()) {
         video_thread->stop();
-        video_thread->terminate();
+        //video_thread->terminate();
         video_thread->wait();
     }
 }
@@ -219,8 +219,7 @@ void AVPlayer::timerEvent(QTimerEvent* e)
             pkt.duration = 0;
 
         if (packet.stream_index == audioStream) {
-            audio_thread->packetQueue()->enqueue(pkt);
-            audio_thread->wakeAll();
+            audio_thread->packetQueue()->put(pkt);
             av_free_packet(&packet); //TODO: why is needed for static var?
         } else if (packet.stream_index == videoStream) {
             if (video_dec->decode(QByteArray((char*)packet.data, packet.size)))

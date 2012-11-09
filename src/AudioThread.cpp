@@ -36,8 +36,6 @@ extern "C"
 
 namespace QtAV {
 
-const int kAPktBufferMin = 256;
-
 class AudioThreadPrivate : public AVThreadPrivate
 {
 public:
@@ -58,6 +56,7 @@ void AudioThread::run()
     Q_ASSERT(d_ptr->demux_thread != 0);
     AudioOutput *ao = static_cast<AudioOutput*>(d_func()->writer);
     d_ptr->stop = false;
+    d_ptr->packets.setBlocking(true);
     d_ptr->mutex.unlock();
     int sample_rate = d_ptr->dec->codecContext()->sample_rate;
     int channels = d_ptr->dec->codecContext()->channels;
@@ -66,20 +65,14 @@ void AudioThread::run()
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
         while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            if (d_ptr->demux_thread->isRunning())
-                d_ptr->condition.wait(&d_ptr->mutex); //why sometines return immediatly?
-            else
+            if (!d_ptr->demux_thread->isRunning())
                 d_ptr->stop = true;
-            //qDebug("audio data size: %d", d_ptr->packets.size());
         }
         if (d_ptr->stop) {
             d_ptr->mutex.unlock();
             break;
         }
-        Packet pkt = d_ptr->packets.dequeue();
-        if (d_ptr->packets.size() < kAPktBufferMin) {
-            d_ptr->demux_thread->readMoreFrames();
-        }
+        Packet pkt = d_ptr->packets.take(); //wait to dequeue
         d_ptr->clock->updateValue(pkt.pts);
         if (d_ptr->dec->decode(pkt.data)) {
             QByteArray decoded(d_ptr->dec->data());
