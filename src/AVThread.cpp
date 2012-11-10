@@ -43,16 +43,6 @@ void AVThread::stop()
     //d_ptr->mutex.unlock(); //put it to run(). or unlock after terminate()
 }
 
-void AVThread::setDemuxThread(AVDemuxThread *thread)
-{
-    d_ptr->demux_thread = thread;
-}
-
-AVDemuxThread* AVThread::demuxThread() const
-{
-    return d_ptr->demux_thread;
-}
-
 void AVThread::setClock(AVClock *clock)
 {
     d_ptr->clock = clock;
@@ -86,6 +76,19 @@ void AVThread::setOutput(AVOutput *out)
 AVOutput* AVThread::output() const
 {
     return d_ptr->writer;
+}
+
+void AVThread::setDemuxEnded(bool ended)
+{
+    d_ptr->demux_end = ended;
+}
+
+void AVThread::resetState()
+{
+    d_ptr->stop = false;
+    d_ptr->demux_end = false;
+    d_ptr->packets.setBlocking(true);
+    d_ptr->mutex.unlock();
 }
 
 } //namespace QtAV

@@ -29,7 +29,6 @@ class AVDecoder;
 class AVThreadPrivate;
 class AVOutput;
 class AVClock;
-class AVDemuxThread;
 class Q_EXPORT AVThread : public QThread
 {
     Q_OBJECT
@@ -51,14 +50,10 @@ public:
     void setOutput(AVOutput *out);
     AVOutput* output() const;
 
-private:
-    friend class AVDemuxThread;
-    //notify demux thread to read more packets. call it internally when demux thread sets the avthread
-   void setDemuxThread(AVDemuxThread *thread);
-   AVDemuxThread* demuxThread() const;
-
+    void setDemuxEnded(bool ended);
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
+    void resetState();
 
     Q_DECLARE_PRIVATE(AVThread)
     QScopedPointer<AVThreadPrivate> d_ptr;

@@ -20,7 +20,6 @@
 #include <private/AVThread_p.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AVClock.h>
-#include <QtAV/AVDemuxThread.h>
 
 namespace QtAV {
 
@@ -38,26 +37,22 @@ VideoThread::VideoThread(QObject *parent) :
 {
 }
 
+//TODO: if output is null or dummy, the use duration to wait
 void VideoThread::run()
 {
     if (!d_ptr->dec || !d_ptr->writer)
         return;
+    resetState();
     Q_ASSERT(d_ptr->clock != 0);
-    Q_ASSERT(d_ptr->demux_thread != 0);
-
-    d_ptr->stop = false;
-    d_ptr->packets.setBlocking(true);
-    d_ptr->mutex.unlock();
     Q_D(VideoThread);
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
-        while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            if (!d_ptr->demux_thread->isRunning()) //is it possible not to use demux_thread?
-                d_ptr->stop = true;
-        }
-        if (d_ptr->stop) {
-            d_ptr->mutex.unlock();
-            break;
+        if (d_ptr->packets.isEmpty() && !d_ptr->stop) {
+            d_ptr->stop = d_ptr->demux_end;
+            if (d_ptr->stop) {
+                d_ptr->mutex.unlock();
+                break;
+            }
         }
         Packet pkt = d_ptr->packets.take(); //wait to dequeue
         //Compare to the clock

@@ -22,7 +22,6 @@
 #include <QtAV/Packet.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AVClock.h>
-#include <QtAV/AVDemuxThread.h>
 #include <QtCore/QCoreApplication>
 
 #ifdef __cplusplus
@@ -47,30 +46,27 @@ AudioThread::AudioThread(QObject *parent)
 {
 }
 
+//TODO: if output is null or dummy, the use duration to wait
 void AudioThread::run()
 {
     //No decoder or output, no audio
     if (!d_ptr->dec || !d_ptr->writer)
         return;
+    resetState();
     Q_ASSERT(d_ptr->clock != 0);
-    Q_ASSERT(d_ptr->demux_thread != 0);
     AudioOutput *ao = static_cast<AudioOutput*>(d_func()->writer);
-    d_ptr->stop = false;
-    d_ptr->packets.setBlocking(true);
-    d_ptr->mutex.unlock();
     int sample_rate = d_ptr->dec->codecContext()->sample_rate;
     int channels = d_ptr->dec->codecContext()->channels;
     int csf = channels * sample_rate * sizeof(float);
-    const double max_len = 0.02;
+    static const double max_len = 0.02;
     while (!d_ptr->stop) {
         d_ptr->mutex.lock();
-        while (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            if (!d_ptr->demux_thread->isRunning())
-                d_ptr->stop = true;
-        }
-        if (d_ptr->stop) {
-            d_ptr->mutex.unlock();
-            break;
+        if (d_ptr->packets.isEmpty() && !d_ptr->stop) {
+            d_ptr->stop = d_ptr->demux_end;
+            if (d_ptr->stop) {
+                d_ptr->mutex.unlock();
+                break;
+            }
         }
         Packet pkt = d_ptr->packets.take(); //wait to dequeue
         d_ptr->clock->updateValue(pkt.pts);

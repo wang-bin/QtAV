@@ -33,11 +33,11 @@ namespace QtAV {
 class AVDecoder;
 class Packet;
 class AVClock;
-class AVDemuxThread;
 class AVThreadPrivate
 {
 public:
-    AVThreadPrivate():stop(false),clock(0),dec(0),writer(0),demux_thread(0){
+    AVThreadPrivate():demux_end(false),stop(false),clock(0)
+      ,dec(0),writer(0) {
     }
     virtual ~AVThreadPrivate() {
         /*if (dec) {
@@ -50,13 +50,13 @@ public:
         }*/
     }
 
-    volatile bool stop;
+    bool demux_end;
+    volatile bool stop; //true when packets is empty and demux is end.
     AVClock *clock;
     PacketQueue packets;
     AVDecoder *dec;
     AVOutput *writer;
     QMutex mutex;
-    AVDemuxThread *demux_thread; //notify it to read more packets
 };
 
 } //namespace QtAV

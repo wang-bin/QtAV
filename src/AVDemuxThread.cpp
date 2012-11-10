@@ -48,7 +48,6 @@ void AVDemuxThread::setAudioThread(AVThread *thread)
         audio_thread = 0;
     }
     audio_thread = thread;
-    audio_thread->setDemuxThread(this);
 }
 
 void AVDemuxThread::setVideoThread(AVThread *thread)
@@ -59,13 +58,15 @@ void AVDemuxThread::setVideoThread(AVThread *thread)
         video_thread = 0;
     }
     video_thread = thread;
-    video_thread->setDemuxThread(this);
 }
 
 //No more data to put. So stop blocking the queue to take the reset elements
 void AVDemuxThread::stop()
 {
     end = true;
+    //this will not affect the pause state if we pause the output
+    audio_thread->setDemuxEnded(true);
+    video_thread->setDemuxEnded(true);
     audio_thread->packetQueue()->setBlocking(false);
     video_thread->packetQueue()->setBlocking(false);
 }
