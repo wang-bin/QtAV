@@ -55,6 +55,11 @@ AVPlayer::AVPlayer(QObject *parent) :
            "\nDistributed under GPLv3 or later"
            , QTAV_VERSION_STR_LONG);
     qApp->installEventFilter(this);
+    /*
+     * call stop() before the window(renderer) closed to stop the waitcondition
+     * If close the renderer widget, the the renderer may destroy before waking up.
+     */
+    connect(qApp, SIGNAL(aboutToQuit()), SLOT(stop()));
     avTimerId = -1;
     clock = new AVClock(AVClock::AudioClock);
     audio = new AudioOutput();
@@ -81,7 +86,6 @@ AVPlayer::~AVPlayer()
 {
     if (avTimerId > 0)
         killTimer(avTimerId);
-
     stop();
     if (audio) {
         delete audio;
@@ -120,11 +124,28 @@ bool AVPlayer::play(const QString& path)
     return true;//isPlaying();
 }
 
+void AVPlayer::pause(bool p)
+{
+    if (audio)
+        audio->pause(p);
+    if (renderer)
+        renderer->pause(p);
+}
+
+bool AVPlayer::isPaused() const
+{
+    bool p = false;
+    if (audio)
+        p |= audio->isPaused();
+    if (renderer)
+        p |= renderer->isPaused();
+    return p;
+}
+
 //TODO: when is the end
 void AVPlayer::play()
 {
     stop();
-    qDebug("all stoped");
     if (avTimerId > 0)
         killTimer(avTimerId);
     qDebug("loading: %s ...", qPrintable(filename));
@@ -255,6 +276,10 @@ bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_S:
             stop();
             break;
+        case Qt::Key_Space:
+            qDebug("isPaused = %d", isPaused());
+            pause(!isPaused());
+            break;
         case Qt::Key_F: {
             QWidget *w = qApp->activeWindow();
             if (!w)
@@ -282,10 +307,10 @@ bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
                 return false;
             Qt::WindowFlags wf = w->windowFlags();
             if (wf & Qt::WindowStaysOnTopHint) {
-                qDebug("Window  notstay on top");
+                qDebug("Window not stays on top");
                 w->setWindowFlags(wf & ~Qt::WindowStaysOnTopHint);
             } else {
-                qDebug("Window stay on top");
+                qDebug("Window stays on top");
                 w->setWindowFlags(wf | Qt::WindowStaysOnTopHint);
             }
             //call setParent() when changing the flags, causing the widget to be hidden

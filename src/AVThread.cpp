@@ -32,10 +32,12 @@ AVThread::AVThread(AVThreadPrivate &d, QObject *parent)
 
 AVThread::~AVThread()
 {
+    //d_ptr destroyed automatically
 }
 
 void AVThread::stop()
 {
+    d_ptr->writer->pause(false); //stop waiting
     d_ptr->stop = true;
     //terminate();
     d_ptr->packets.setBlocking(false); //stop blocking take()
@@ -85,6 +87,7 @@ void AVThread::setDemuxEnded(bool ended)
 
 void AVThread::resetState()
 {
+    d_ptr->writer->pause(false); //stop waiting. Important when replay
     d_ptr->stop = false;
     d_ptr->demux_end = false;
     d_ptr->packets.setBlocking(true);

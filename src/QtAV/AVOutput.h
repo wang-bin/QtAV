@@ -31,13 +31,19 @@ class Q_EXPORT AVOutput
 public:
     AVOutput();
     virtual ~AVOutput() = 0;
+    //Call tryPause() first to try to pause
     virtual int write(const QByteArray& data);// = 0; //TODO: why pure may case "pure virtual method called"
     virtual bool open() = 0;
     virtual bool close() = 0;
+    //Demuxer thread automatically paused because packets will be full
+    void pause(bool p); //processEvents when waiting?
+    bool isPaused() const;
     void bindDecoder(AVDecoder *dec); //for resizing video (or resample audio?)
-
 protected:
     AVOutput(AVOutputPrivate& d);
+    /* If paused is true, block the thread(block write()) and wait
+     * for paused be false, else do nothing. */
+    void tryPause();
 
     Q_DECLARE_PRIVATE(AVOutput)
     AVOutputPrivate *d_ptr; //TODO: ambiguous with Qt class d_ptr when it is a base class together with Qt classes

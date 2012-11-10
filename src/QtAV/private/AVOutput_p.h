@@ -19,14 +19,24 @@
 #ifndef QTAV_AVOUTPUT_P_H
 #define QTAV_AVOUTPUT_P_H
 
+#include <QtCore/QMutex>
+#include <QtCore/QWaitCondition>
+
 namespace QtAV {
 
 class AVDecoder;
 class AVOutputPrivate
 {
 public:
-    AVOutputPrivate():dec(0){}
+    AVOutputPrivate():paused(false),dec(0){}
+    ~AVOutputPrivate() {
+        cond.wakeAll(); //WHY: failed to wake up
+    }
+
+    bool paused;
     AVDecoder *dec;
+    QMutex mutex; //pause
+    QWaitCondition cond; //pause
 };
 
 } //namespace QtAV

@@ -28,6 +28,7 @@ ImageRenderer::~ImageRenderer()
 
 int ImageRenderer::write(const QByteArray &data)
 {
+    tryPause();
     //picture.data[0]
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
     image = QImage((uchar*)data.data(), d_func()->width, d_func()->height, QImage::Format_RGB32);

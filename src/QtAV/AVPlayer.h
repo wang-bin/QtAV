@@ -39,6 +39,8 @@ public:
     
     void setFile(const QString& fileName) {filename=fileName;}
     bool play(const QString& path);
+    void pause(bool p);
+    bool isPaused() const;
     void setRenderer(VideoRenderer* renderer);
 
     virtual bool eventFilter(QObject *watcher, QEvent *event);
@@ -57,6 +59,7 @@ protected:
     QString		filename;
     int m_drop_count;
 
+    //the following things are required and must be setted not null
     AVDemuxer demuxer;
     AVDemuxThread *demuxer_thread;
     AVClock *clock;

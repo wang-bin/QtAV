@@ -33,9 +33,7 @@ AudioOutput::AudioOutput()
     outputParameters->sampleFormat = paFloat32;
     outputParameters->hostApiSpecificStreamInfo = NULL;
     outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
-
 }
-
 
 AudioOutput::~AudioOutput()
 {
@@ -59,6 +57,7 @@ void AudioOutput::setChannels(int channels)
 
 int AudioOutput::write(const QByteArray &data)
 {
+    tryPause(); //Pa_AbortStream?
     if (Pa_IsStreamStopped(stream))
         Pa_StartStream(stream);
 
