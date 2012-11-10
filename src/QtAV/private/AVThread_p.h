@@ -39,16 +39,8 @@ public:
     AVThreadPrivate():demux_end(false),stop(false),clock(0)
       ,dec(0),writer(0) {
     }
-    virtual ~AVThreadPrivate() {
-        /*if (dec) {
-            delete dec;
-            dec = 0;
-        }
-        if (writer) {
-            delete writer;
-            writer = 0;
-        }*/
-    }
+    //DO NOT delete dec and writer. We do not own them
+    virtual ~AVThreadPrivate() {}
 
     bool demux_end;
     volatile bool stop; //true when packets is empty and demux is end.

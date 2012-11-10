@@ -36,12 +36,11 @@ WidgetRenderer::WidgetRenderer(QWidget *parent) :
 
 WidgetRenderer::~WidgetRenderer()
 {
-
 }
 
 int WidgetRenderer::write(const QByteArray &data)
 {
-    ImageRenderer::write(data);
+    int s = ImageRenderer::write(data);
 
 #if CONFIG_EZX
     QPixmap pix;
@@ -56,7 +55,7 @@ int WidgetRenderer::write(const QByteArray &data)
 #else
     update();
 #endif
-    return data.size();
+    return s;
 }
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)

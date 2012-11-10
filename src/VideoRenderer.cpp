@@ -35,10 +35,6 @@ VideoRenderer::VideoRenderer()
 
 VideoRenderer::~VideoRenderer()
 {
-    if (d_ptr) {
-        delete d_ptr;
-        d_ptr = 0;
-    }
 }
 
 void VideoRenderer::resizeVideo(const QSize &size)
@@ -57,8 +53,6 @@ void VideoRenderer::resizeVideo(int width, int height)
     d->width = width;
     d->height = height;
 }
-
-
 
 QSize VideoRenderer::videoSize() const
 {
