@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <QtAV/GraphicsItemRenderer.h>
+#include <QGraphicsScene>
 #include <QtGui/QPainter>
 
 namespace QtAV {
@@ -33,7 +34,8 @@ GraphicsItemRenderer::~GraphicsItemRenderer()
 int GraphicsItemRenderer::write(const QByteArray &data)
 {
     int s = ImageRenderer::write(data);
-    update();
+    scene()->update(sceneBoundingRect());
+    //update(); //does not cause an immediate paint. my not redraw.
     return s;
 }
 
