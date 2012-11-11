@@ -1,5 +1,5 @@
 TEMPLATE = app
-
+QT += opengl
 
 TARGET = tst_qtav
 STATICLINK = 0

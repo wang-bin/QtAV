@@ -26,6 +26,7 @@ typedef QApplication ZApplication;
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QMessageBox>
+#include <QtOpenGL/QGLWidget>
 
 #include <QtAV/AVPlayer.h>
 #include <QtAV/WidgetRenderer.h>
@@ -41,19 +42,24 @@ int main(int argc, char *argv[])
         player.setFile(a.arguments().at(1));
     else
         QMessageBox::warning(0, "Usage", QString("%1 path/of/video").arg(qApp->arguments().at(0)));
-
+#if 0
     QGraphicsScene s;
     s.setSceneRect(0, 0, 800, 600);
     QGraphicsView v(&s);
+    //QGLWidget gw;
+    //v.setViewport(&gw); //may flick
 
     GraphicsItemRenderer g;
     g.resizeVideo(800, 600);
+    player.setRenderer(&g);
     s.addItem(&g);
-
+    v.show();
+#else
     WidgetRenderer w;
     w.setWindowTitle(a.arguments().at(1));
     player.setRenderer(&w);
     w.showMaximized();
+ #endif
     player.play();
     return a.exec();
 }
