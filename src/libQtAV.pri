@@ -42,7 +42,10 @@
 #
 
 NAME = QtAV
-!isEmpty(LIB$$upper($$NAME)_PRI_INCLUDED):error("lib$${NAME}.pri already included"), unset(NAME)
+!isEmpty(LIB$$upper($$NAME)_PRI_INCLUDED): {
+	error("lib$${NAME}.pri already included")
+	unset(NAME)
+}
 #!isEmpty(LIBQTAV_PRI_INCLUDED):error("libQtAV.pri already included")
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
