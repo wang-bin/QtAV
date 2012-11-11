@@ -19,17 +19,19 @@
 #ifndef QAV_VIDEORENDERER_H
 #define QAV_VIDEORENDERER_H
 
-#include <qbytearray.h>
-#include <qsize.h>
+#include <QtCore/QByteArray>
+#include <QtCore/QSize>
 #include <QtAV/AVOutput.h>
 
 struct AVCodecContext;
 struct AVFrame;
 
 namespace QtAV {
+
 class VideoRendererPrivate;
 class Q_EXPORT VideoRenderer : public AVOutput
 {
+    DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
@@ -43,8 +45,8 @@ public:
     int videoHeight() const;
 
 protected:
-    Q_DECLARE_PRIVATE(VideoRenderer)
+    VideoRenderer(VideoRendererPrivate &d);
 };
-}
 
+} //namespace QtAV
 #endif // QAV_VIDEORENDERER_H

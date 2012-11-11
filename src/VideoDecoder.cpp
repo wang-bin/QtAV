@@ -41,7 +41,7 @@ VideoDecoder::VideoDecoder()
 
 bool VideoDecoder::decode(const QByteArray &encoded)
 {
-    Q_D(VideoDecoder);
+    DPTR_D(VideoDecoder);
 
     AVPacket packet;
     av_new_packet(&packet, encoded.size());
@@ -50,24 +50,24 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     //AVStream *stream = format_context->streams[stream_idx];
 
     //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
-    int ret = avcodec_decode_video2(d->codec_ctx, d->frame, &d->got_frame_ptr, &packet);
+    int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
     av_free_packet(&packet);
     if (ret < 0) {
         qDebug("[VideoDecoder] %s", av_err2str(ret));
         return false;
     }
-    if (!d->got_frame_ptr) {
+    if (!d.got_frame_ptr) {
         qDebug("no frame could be decompressed");
         return false;
     }
     /*
-    d->sws_ctx = sws_getContext(
+    d.sws_ctx = sws_getContext(
             codecCtx->width, //int srcW,
             codecCtx->height, //int srcH,
             codecCtx->pix_fmt, //enum PixelFormat srcFormat,
-            d->width, //int dstW,
-            d->height, //int dstH,
-            d->pix_fmt, //enum PixelFormat dstFormat,
+            d.width, //int dstW,
+            d.height, //int dstH,
+            d.pix_fmt, //enum PixelFormat dstFormat,
             SWS_BICUBIC, //int flags,
             NULL, //SwsFilter *srcFilter,
             NULL, //SwsFilter *dstFilter,
@@ -76,26 +76,26 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     */
 
 
-    d->sws_ctx = sws_getCachedContext(d->sws_ctx
-            , d->codec_ctx->width, d->codec_ctx->height, d->codec_ctx->pix_fmt
-            , d->width, d->height, d->pix_fmt
-            , (d->width == d->codec_ctx->width && d->height == d->codec_ctx->height) ? SWS_POINT : SWS_BICUBIC
+    d.sws_ctx = sws_getCachedContext(d.sws_ctx
+            , d.codec_ctx->width, d.codec_ctx->height, d.codec_ctx->pix_fmt
+            , d.width, d.height, d.pix_fmt
+            , (d.width == d.codec_ctx->width && d.height == d.codec_ctx->height) ? SWS_POINT : SWS_BICUBIC
             , NULL, NULL, NULL
             );
     
     int v_scale_result = sws_scale(
-            d->sws_ctx,
-            d->frame->data,
-            d->frame->linesize,
+            d.sws_ctx,
+            d.frame->data,
+            d.frame->linesize,
             0,
-            d->codec_ctx->height,
-            d->picture.data,
-            d->picture.linesize
+            d.codec_ctx->height,
+            d.picture.data,
+            d.picture.linesize
             );
     Q_UNUSED(v_scale_result);
     //sws_freeContext(v_sws_ctx);
-    if (d->frame->interlaced_frame) //?
-        avpicture_deinterlace(&d->picture, &d->picture, d->pix_fmt, d->width, d->height);
+    if (d.frame->interlaced_frame) //?
+        avpicture_deinterlace(&d.picture, &d.picture, d.pix_fmt, d.width, d.height);
     return true;
 }
 
@@ -109,23 +109,23 @@ void VideoDecoder::resizeVideo(int width, int height)
     if (width == 0 || height == 0)
         return;
 
-    Q_D(VideoDecoder);
+    DPTR_D(VideoDecoder);
 
     int bytes = avpicture_get_size(PIX_FMT, width, height);
-    if(d->decoded.size() < bytes) {
-        d->decoded.resize(bytes);
+    if(d.decoded.size() < bytes) {
+        d.decoded.resize(bytes);
     }
     //picture的数据按PIX_FMT格式自动"关联"到 data
     avpicture_fill(
-            &d->picture,
-            reinterpret_cast<uint8_t*>(d->decoded.data()),
-            d->pix_fmt,
+            &d.picture,
+            reinterpret_cast<uint8_t*>(d.decoded.data()),
+            d.pix_fmt,
             width,
             height
             );
 
-    d->width = width;
-    d->height = height;
+    d.width = width;
+    d.height = height;
 }
 
 } //namespace QtAV

@@ -21,15 +21,17 @@
 
 #include <QtCore/QMutex>
 #include <QtCore/QWaitCondition>
+#include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
 
+class AVOutput;
 class AVDecoder;
-class AVOutputPrivate
+class Q_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
 {
 public:
     AVOutputPrivate():paused(false),dec(0){}
-    ~AVOutputPrivate() {
+    virtual ~AVOutputPrivate() {
         cond.wakeAll(); //WHY: failed to wake up
     }
 

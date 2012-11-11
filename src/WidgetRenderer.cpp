@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <QtAV/WidgetRenderer.h>
+#include <private/WidgetRenderer_p.h>
 #include <qfont.h>
 #include <qevent.h>
 #include <qpainter.h>
@@ -26,12 +27,16 @@
 
 namespace QtAV {
 WidgetRenderer::WidgetRenderer(QWidget *parent) :
-    QWidget(parent),ImageRenderer()
+    QWidget(parent),ImageRenderer(*new WidgetRendererPrivate())
 {
 #if CONFIG_EZX
     QWallpaper::setAppWallpaperMode(QWallpaper::Off);
 #endif
-    action = GestureMove;
+}
+
+WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent)
+    :QWidget(parent),ImageRenderer(d)
+{
 }
 
 WidgetRenderer::~WidgetRenderer()
@@ -44,7 +49,7 @@ int WidgetRenderer::write(const QByteArray &data)
 
 #if CONFIG_EZX
     QPixmap pix;
-    pix.convertFromImage(image);
+    pix.convertFromImage(d_func().image);
     //QPainter v_p(&pix);
 #else
     //QPainter v_p(&image);
@@ -66,38 +71,40 @@ void WidgetRenderer::resizeEvent(QResizeEvent *e)
 
 void WidgetRenderer::mousePressEvent(QMouseEvent *e)
 {
-    gMousePos = e->globalPos();
-    iMousePos = e->pos();
+    DPTR_D(WidgetRenderer);
+    d.gMousePos = e->globalPos();
+    d.iMousePos = e->pos();
 }
 
 void WidgetRenderer::mouseMoveEvent(QMouseEvent *e)
 {
+    DPTR_D(WidgetRenderer);
     int x = pos().x();
     int y = pos().y();
-    int dx = e->globalPos().x() - gMousePos.x();
-    int dy = e->globalPos().y() - gMousePos.y();
-    gMousePos = e->globalPos();
+    int dx = e->globalPos().x() - d.gMousePos.x();
+    int dy = e->globalPos().y() - d.gMousePos.y();
+    d.gMousePos = e->globalPos();
     int w = width();
     int h = height();
-    switch (action) {
+    switch (d.action) {
     case GestureMove:
         x += dx;
         y += dy;
         move(x, y);
         break;
     case GestureResize:
-        if(iMousePos.x() < w/2) {
+        if(d.iMousePos.x() < w/2) {
             x += dx;
             w -= dx;
         }
-        if(iMousePos.x() > w/2) {
+        if(d.iMousePos.x() > w/2) {
             w += dx;
         }
-        if(iMousePos.y() < h/2) {
+        if(d.iMousePos.y() < h/2) {
             y += dy;
             h -= dy;
         }
-        if(iMousePos.y() > h/2) {
+        if(d.iMousePos.y() > h/2) {
             h += dy;
         }
         //setGeometry(x, y, w, h);
@@ -114,27 +121,26 @@ void WidgetRenderer::mouseMoveEvent(QMouseEvent *e)
 
 void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 {
-    if (action == GestureMove)
-        action = GestureResize;
+    DPTR_D(WidgetRenderer);
+    if (d.action == GestureMove)
+        d.action = GestureResize;
     else
-        action = GestureMove;
+        d.action = GestureMove;
 }
 
 #if !CONFIG_EZX
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
-    p.drawImage(QPoint(), image);
+    p.drawImage(QPoint(), d_func().image);
 }
 
 void WidgetRenderer::dragEnterEvent(QDragEnterEvent *)
 {
-
 }
 
 void WidgetRenderer::dropEvent(QDropEvent *)
 {
-
 }
 #endif //CONFIG_EZX
 } //namespace QtAV

@@ -21,43 +21,39 @@
 
 namespace QtAV {
 AVDecoder::AVDecoder()
-    :d_ptr(new AVDecoderPrivate())
 {
 }
 
 AVDecoder::AVDecoder(AVDecoderPrivate &d)
-    :d_ptr(&d)
+    :DPTR_INIT(&d)
 {
 
 }
 
 AVDecoder::~AVDecoder()
 {
-    if (d_ptr) {
-        delete d_ptr;
-        d_ptr = 0;
-    }
 }
 
 void AVDecoder::setCodecContext(AVCodecContext *codecCtx)
 {
-    d_ptr->codec_ctx = codecCtx;
+    DPTR_D(AVDecoder);
+    d.codec_ctx = codecCtx;
 }
 
 AVCodecContext* AVDecoder::codecContext() const
 {
-    return d_ptr->codec_ctx;
+    return d_func().codec_ctx;
 }
 
 bool AVDecoder::decode(const QByteArray &encoded)
 {
-    d_ptr->decoded = encoded;
+    d_func().decoded = encoded;
     return true;
 }
 
 QByteArray AVDecoder::data() const
 {
-    return d_ptr->decoded;
+    return d_func().decoded;
 }
 
 } //namespace QtAV

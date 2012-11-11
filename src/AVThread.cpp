@@ -21,12 +21,12 @@
 
 namespace QtAV {
 AVThread::AVThread(QObject *parent) :
-	QThread(parent),d_ptr(new AVThreadPrivate())
+    QThread(parent)
 {
 }
 
 AVThread::AVThread(AVThreadPrivate &d, QObject *parent)
-    :QThread(parent),d_ptr(&d)
+    :QThread(parent),DPTR_INIT(&d)
 {
 }
 
@@ -37,61 +37,63 @@ AVThread::~AVThread()
 
 void AVThread::stop()
 {
-    d_ptr->writer->pause(false); //stop waiting
-    d_ptr->stop = true;
+    DPTR_D(AVThread);
+    d.writer->pause(false); //stop waiting
+    d.stop = true;
     //terminate();
-    d_ptr->packets.setBlocking(false); //stop blocking take()
-    d_ptr->packets.clear();
-    //d_ptr->mutex.unlock(); //put it to run(). or unlock after terminate()
+    d.packets.setBlocking(false); //stop blocking take()
+    d.packets.clear();
+    //d.mutex.unlock(); //put it to run(). or unlock after terminate()
 }
 
 void AVThread::setClock(AVClock *clock)
 {
-    d_ptr->clock = clock;
+    d_func().clock = clock;
 }
 
 AVClock* AVThread::clock() const
 {
-    return d_ptr->clock;
+    return d_func().clock;
 }
 
 PacketQueue* AVThread::packetQueue() const
 {
-    return &d_ptr->packets;
+    return const_cast<PacketQueue*>(&d_func().packets);
 }
 
 void AVThread::setDecoder(AVDecoder *decoder)
 {
-    d_ptr->dec = decoder;
+    d_func().dec = decoder;
 }
 
 AVDecoder* AVThread::decoder() const
 {
-    return d_ptr->dec;
+    return d_func().dec;
 }
 
 void AVThread::setOutput(AVOutput *out)
 {
-    d_ptr->writer = out;
+    d_func().writer = out;
 }
 
 AVOutput* AVThread::output() const
 {
-    return d_ptr->writer;
+    return d_func().writer;
 }
 
 void AVThread::setDemuxEnded(bool ended)
 {
-    d_ptr->demux_end = ended;
+    d_func().demux_end = ended;
 }
 
 void AVThread::resetState()
 {
-    d_ptr->writer->pause(false); //stop waiting. Important when replay
-    d_ptr->stop = false;
-    d_ptr->demux_end = false;
-    d_ptr->packets.setBlocking(true);
-    d_ptr->mutex.unlock();
+    DPTR_D(AVThread);
+    d.writer->pause(false); //stop waiting. Important when replay
+    d.stop = false;
+    d.demux_end = false;
+    d.packets.setBlocking(true);
+    d.mutex.unlock();
 }
 
 } //namespace QtAV

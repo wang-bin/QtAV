@@ -17,18 +17,24 @@
 ******************************************************************************/
 
 #include <QtAV/GraphicsItemRenderer.h>
+#include <private/GraphicsItemRenderer_p.h>
 #include <QGraphicsScene>
 #include <QtGui/QPainter>
 
 namespace QtAV {
+
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
-    :QGraphicsItem(parent),ImageRenderer()
+    :QGraphicsItem(parent),ImageRenderer(*new GraphicsItemRendererPrivate())
+{
+}
+
+GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGraphicsItem *parent)
+    :QGraphicsItem(parent),ImageRenderer(d)
 {
 }
 
 GraphicsItemRenderer::~GraphicsItemRenderer()
 {
-
 }
 
 int GraphicsItemRenderer::write(const QByteArray &data)
@@ -46,10 +52,11 @@ QRectF GraphicsItemRenderer::boundingRect() const
 
 void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if (image.isNull())
-        painter->drawImage(QPointF(), preview);
+    DPTR_D(GraphicsItemRenderer);
+    if (d.image.isNull())
+        painter->drawImage(QPointF(), d.preview);
     else
-        painter->drawImage(QPointF(), image);
+        painter->drawImage(QPointF(), d.image);
 }
 
 } //namespace QtAV

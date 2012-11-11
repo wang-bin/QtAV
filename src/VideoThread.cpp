@@ -40,42 +40,42 @@ VideoThread::VideoThread(QObject *parent) :
 //TODO: if output is null or dummy, the use duration to wait
 void VideoThread::run()
 {
-    if (!d_ptr->dec || !d_ptr->writer)
+    DPTR_D(VideoThread);
+    if (!d.dec || !d.writer)
         return;
     resetState();
-    Q_ASSERT(d_ptr->clock != 0);
-    Q_D(VideoThread);
-    while (!d_ptr->stop) {
-        d_ptr->mutex.lock();
-        if (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            d_ptr->stop = d_ptr->demux_end;
-            if (d_ptr->stop) {
-                d_ptr->mutex.unlock();
+    Q_ASSERT(d.clock != 0);
+    while (!d.stop) {
+        d.mutex.lock();
+        if (d.packets.isEmpty() && !d.stop) {
+            d.stop = d.demux_end;
+            if (d.stop) {
+                d.mutex.unlock();
                 break;
             }
         }
-        Packet pkt = d_ptr->packets.take(); //wait to dequeue
+        Packet pkt = d.packets.take(); //wait to dequeue
         //Compare to the clock
         if (pkt.pts <= 0) {
-            d_ptr->mutex.unlock();
+            d.mutex.unlock();
             continue;
         }
         //TODO: use QThread wait instead
-        d->delay = pkt.pts  - (d_ptr->clock->value() + d_ptr->clock->delay());
-        if (d->delay > kSyncThreshold) { //Slow down
-            //d->delay_cond.wait(&d->mutex, d->delay*1000); //replay may fail. why?
-            usleep(d->delay * 1000000);
-        } else if (d->delay < -kSyncThreshold) { //Speed up. drop frame?
-            //d_ptr->mutex.unlock();
+        d.delay = pkt.pts  - (d.clock->value() + d.clock->delay());
+        if (d.delay > kSyncThreshold) { //Slow down
+            //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
+            usleep(d.delay * 1000000);
+        } else if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
+            //d.mutex.unlock();
             //continue;
         }
-        //qDebug("audio data size after dequeue: %d", d_ptr->packets.size());
-        if (d_ptr->dec->decode(pkt.data)) {
-            if (d_func()->writer)
-                d_func()->writer->write(d_ptr->dec->data());
+        //qDebug("audio data size after dequeue: %d", d.packets.size());
+        if (d.dec->decode(pkt.data)) {
+            if (d.writer)
+                d.writer->write(d.dec->data());
             //qApp->processEvents(QEventLoop::AllEvents);
         }
-        d_ptr->mutex.unlock();
+        d.mutex.unlock();
     }
     qDebug("Video thread stops running...");
 }

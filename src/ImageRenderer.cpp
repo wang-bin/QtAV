@@ -17,23 +17,33 @@
 ******************************************************************************/
 
 #include <QtAV/ImageRenderer.h>
-#include <private/VideoRenderer_p.h>
+#include <private/ImageRenderer_p.h>
 
 namespace QtAV {
 
+ImageRenderer::ImageRenderer()
+    :VideoRenderer(*new ImageRendererPrivate())
+{
+}
+
+ImageRenderer::ImageRenderer(ImageRendererPrivate &d)
+    :VideoRenderer(d)
+{
+}
+
 ImageRenderer::~ImageRenderer()
 {
-
 }
 
 int ImageRenderer::write(const QByteArray &data)
 {
+    DPTR_D(ImageRenderer);
     tryPause();
     //picture.data[0]
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-    image = QImage((uchar*)data.data(), d_func()->width, d_func()->height, QImage::Format_RGB32);
+    d.image = QImage((uchar*)data.data(), d.width, d.height, QImage::Format_RGB32);
 #else
-    image = QImage((uchar*)data.data(), d_func()->width, d_func()->height, 16, NULL, 0, QImage::IgnoreEndian);
+    d.image = QImage((uchar*)data.data(), d.width, d.height, 16, NULL, 0, QImage::IgnoreEndian);
 #endif
     return data.size();
 }
@@ -41,18 +51,19 @@ int ImageRenderer::write(const QByteArray &data)
 
 void ImageRenderer::setPreview(const QImage &preivew)
 {
-    this->preview = preivew;
-    image = preivew;
+    DPTR_D(ImageRenderer);
+    d.preview = preivew;
+    d.image = preivew;
 }
 
 QImage ImageRenderer::previewImage() const
 {
-    return preview;
+    return d_func().preview;
 }
 
 QImage ImageRenderer::currentImage() const
 {
-    return image;
+    return d_func().image;
 }
 
 } //namespace QtAV

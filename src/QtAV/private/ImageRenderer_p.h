@@ -1,40 +1,36 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    ImageRenderer_p.h: description
     Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
-
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef QAV_AUDIOTHREAD_H
-#define QAV_AUDIOTHREAD_H
 
-#include <QtAV/AVThread.h>
+#ifndef QTAV_IMAGERENDERER_P_H
+#define QTAV_IMAGERENDERER_P_H
+
+#include <QtGui/QImage>
+#include <private/VideoRenderer_p.h>
 
 namespace QtAV {
 
-class AudioDecoder;
-class AudioThreadPrivate;
-class Q_EXPORT AudioThread : public AVThread
+class Q_EXPORT ImageRendererPrivate : public VideoRendererPrivate
 {
-    Q_OBJECT
-    DPTR_DECLARE_PRIVATE(AudioThread)
 public:
-    explicit AudioThread(QObject *parent = 0);
-
-protected:
-    virtual void run();
+    virtual ~ImageRendererPrivate(){}
+    QImage image, preview;
 };
 
 } //namespace QtAV
-#endif // QAV_AUDIOTHREAD_H
+#endif // QTAV_IMAGERENDERER_P_H

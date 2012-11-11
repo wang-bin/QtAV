@@ -23,12 +23,16 @@
 #include <qwidget.h>
 
 namespace QtAV {
+
+class WidgetRendererPrivate;
 class Q_EXPORT WidgetRenderer : public QWidget, public ImageRenderer
 {
     Q_OBJECT
+    DPTR_DECLARE_PRIVATE(WidgetRenderer)
 public:
     //GestureAction is useful for small screen windows that are hard to select frame
     enum GestureAction { GestureMove, GestureResize};
+
     explicit WidgetRenderer(QWidget *parent = 0);
     virtual ~WidgetRenderer();
     virtual int write(const QByteArray &data);
@@ -45,10 +49,9 @@ protected:
     virtual void dropEvent(QDropEvent *);
 #endif
     
-private:
-    QPoint iMousePos, gMousePos;
-    GestureAction action;
+protected:
+    WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent);
 };
-}
 
+} //namespace QtAV
 #endif // QAV_WIDGETRENDERER_H

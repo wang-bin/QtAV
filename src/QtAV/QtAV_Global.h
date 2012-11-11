@@ -21,6 +21,8 @@
 #define QTAV_GLOBAL_H
 
 #include <qglobal.h>
+#include <QtAV/QtAV_Compat.h>
+#include <dptr.h>
 
 #undef QTAV_VERSION
 

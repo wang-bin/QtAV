@@ -23,8 +23,11 @@
 #include <QGraphicsItem>
 
 namespace QtAV {
+
+class GraphicsItemRendererPrivate;
 class Q_EXPORT GraphicsItemRenderer : public QGraphicsItem, public ImageRenderer
 {
+    DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)
 public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
     virtual ~GraphicsItemRenderer();
@@ -32,6 +35,9 @@ public:
 
     QRectF boundingRect() const;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+
+protected:
+    GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
 };
 }
 

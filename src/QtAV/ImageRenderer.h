@@ -24,16 +24,19 @@
 
 namespace QtAV {
 
+class ImageRendererPrivate;
 class Q_EXPORT ImageRenderer : public VideoRenderer
 {
+    DPTR_DECLARE_PRIVATE(ImageRenderer)
 public:
+    ImageRenderer();
     virtual ~ImageRenderer();
     virtual int write(const QByteArray &data);
     void setPreview(const QImage& preview);
     QImage previewImage() const;
     QImage currentImage() const;
 protected:
-    QImage image, preview;
+    ImageRenderer(ImageRendererPrivate& d);
 };
 
 } //namespace QtAV

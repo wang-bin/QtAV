@@ -36,18 +36,19 @@ extern "C"
 #define PIX_FMT PIX_FMT_RGB32
 #endif //CONFIG_EZX
 
-#include <qbytearray.h>
+#include <QtCore/QByteArray>
 #include <QtCore/QMutex>
+#include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
 
-class AVDecoderPrivate
+class Q_EXPORT AVDecoderPrivate : public DPtrPrivate<AVDecoder>
 {
 public:
     AVDecoderPrivate():codec_ctx(0),frame(0) {
         frame = avcodec_alloc_frame();
     }
-    ~AVDecoderPrivate() {
+    virtual ~AVDecoderPrivate() {
         if (frame) {
             av_free(frame);
             frame = 0;

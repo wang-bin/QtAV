@@ -49,35 +49,36 @@ AudioThread::AudioThread(QObject *parent)
 //TODO: if output is null or dummy, the use duration to wait
 void AudioThread::run()
 {
+    DPTR_D(AudioThread);
     //No decoder or output, no audio
-    if (!d_ptr->dec || !d_ptr->writer)
+    if (!d.dec || !d.writer)
         return;
     resetState();
-    Q_ASSERT(d_ptr->clock != 0);
-    AudioOutput *ao = static_cast<AudioOutput*>(d_func()->writer);
-    int sample_rate = d_ptr->dec->codecContext()->sample_rate;
-    int channels = d_ptr->dec->codecContext()->channels;
+    Q_ASSERT(d.clock != 0);
+    AudioOutput *ao = static_cast<AudioOutput*>(d.writer);
+    int sample_rate = d.dec->codecContext()->sample_rate;
+    int channels = d.dec->codecContext()->channels;
     int csf = channels * sample_rate * sizeof(float);
     static const double max_len = 0.02;
-    while (!d_ptr->stop) {
-        d_ptr->mutex.lock();
-        if (d_ptr->packets.isEmpty() && !d_ptr->stop) {
-            d_ptr->stop = d_ptr->demux_end;
-            if (d_ptr->stop) {
-                d_ptr->mutex.unlock();
+    while (!d.stop) {
+        d.mutex.lock();
+        if (d.packets.isEmpty() && !d.stop) {
+            d.stop = d.demux_end;
+            if (d.stop) {
+                d.mutex.unlock();
                 break;
             }
         }
-        Packet pkt = d_ptr->packets.take(); //wait to dequeue
-        d_ptr->clock->updateValue(pkt.pts);
-        if (d_ptr->dec->decode(pkt.data)) {
-            QByteArray decoded(d_ptr->dec->data());
+        Packet pkt = d.packets.take(); //wait to dequeue
+        d.clock->updateValue(pkt.pts);
+        if (d.dec->decode(pkt.data)) {
+            QByteArray decoded(d.dec->data());
             int decodedSize = decoded.size();
             int decodedPos = 0;
             while (decodedSize > 0) {
                 const int chunk = qMin(decodedSize, int(max_len*csf));
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
-                d_ptr->clock->updateDelay(chunk/csf);
+                d.clock->updateDelay(chunk/csf);
                 if (ao) {
                     if (!ao->isMute()) {
                         decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
@@ -96,7 +97,7 @@ void AudioThread::run()
 				//qApp->processEvents(QEventLoop::AllEvents);
             }
 		}
-        d_ptr->mutex.unlock();
+        d.mutex.unlock();
     }
     qDebug("Audio thread stops running...");
 }

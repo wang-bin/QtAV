@@ -19,6 +19,7 @@ unix: SOURCES +=
 else:win32: SOURCES += 
 
 SOURCES += \
+    QtAV_Compat.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \
@@ -37,13 +38,19 @@ SOURCES += \
     VideoDecoder.cpp \
     VideoThread.cpp
 
-HEADERS += QtAV/QtAV_Global.h \
+HEADERS += \
+    QtAV/dptr.h \
+    QtAV/QtAV_Global.h \
+    QtAV/QtAV_Compat.h \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
+    QtAV/private/GraphicsItemRenderer_p.h \
+    QtAV/private/ImageRenderer_p.h \
     QtAV/private/VideoRenderer_p.h \
+    QtAV/private/WidgetRenderer_p.h \
     QtAV/AudioDecoder.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \

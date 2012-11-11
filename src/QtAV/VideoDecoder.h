@@ -27,15 +27,13 @@ namespace QtAV {
 class VideoDecoderPrivate;
 class Q_EXPORT VideoDecoder : public AVDecoder
 {
+    DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:
     VideoDecoder();
     virtual bool decode(const QByteArray &encoded);
 
     void resizeVideo(const QSize& size);
     void resizeVideo(int width, int height);
-
-private:
-    Q_DECLARE_PRIVATE(VideoDecoder)
 };
 
 } //namespace QtAV

@@ -30,6 +30,7 @@ namespace QtAV {
 class AVDecoderPrivate;
 class Q_EXPORT AVDecoder
 {
+    DPTR_DECLARE_PRIVATE(AVDecoder)
 public:
     AVDecoder();
     virtual ~AVDecoder();
@@ -42,8 +43,7 @@ public:
 protected:
     AVDecoder(AVDecoderPrivate& d);
 
-    Q_DECLARE_PRIVATE(AVDecoder)
-    AVDecoderPrivate *d_ptr;
+    DPTR_DECLARE(AVDecoder)
 };
 
 } //namespace QtAV

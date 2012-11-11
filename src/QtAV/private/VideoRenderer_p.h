@@ -19,17 +19,15 @@
 #ifndef QAV_VIDEORENDERER_P_H
 #define QAV_VIDEORENDERER_P_H
 
-#include <qbytearray.h>
 #include <private/AVOutput_p.h>
+
 namespace QtAV {
 
-class VideoRendererPrivate : public AVOutputPrivate
+class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
-    VideoRendererPrivate():width(0),height(0)
-      {
-    }
-
+    VideoRendererPrivate():width(480),height(320) {}
+    virtual ~VideoRendererPrivate(){}
     int width, height;
 };
 

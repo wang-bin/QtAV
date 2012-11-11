@@ -22,12 +22,11 @@
 namespace QtAV {
 
 AVOutput::AVOutput()
-    :d_ptr(new AVOutputPrivate())
 {
 }
 
 AVOutput::AVOutput(AVOutputPrivate &d)
-    :d_ptr(&d)
+    :DPTR_INIT(&d)
 {
 }
 
@@ -35,45 +34,43 @@ AVOutput::AVOutput(AVOutputPrivate &d)
 AVOutput::~AVOutput()
 {
     pause(false); //Does not work. cond may still waiting when destroyed
-    if (d_ptr) {
-        delete d_ptr;
-        d_ptr = 0;
-    }
 }
 
 int AVOutput::write(const QByteArray &data)
 {
     Q_UNUSED(data);
+    tryPause();
     return 0;
 }
 
 void AVOutput::pause(bool p)
 {
-    if (!d_ptr)
-        return;
-    d_ptr->paused = p;
-    if (!d_ptr->paused)
-        d_ptr->cond.wakeAll();
+    DPTR_D(AVOutput);
+    d.paused = p;
+    if (!d.paused)
+        d.cond.wakeAll();
 }
 
 bool AVOutput::isPaused() const
 {
-    return d_ptr->paused;
+    return d_func().paused;
 }
 
 void AVOutput::bindDecoder(AVDecoder *dec)
 {
-    d_ptr->dec = dec;
+    d_func().dec = dec;
 }
 
 //TODO: how to call this automatically before write()?
 void AVOutput::tryPause()
 {
-    if (!d_ptr->paused)
+    DPTR_D(AVOutput);
+    if (!d.paused)
         return;
-    QMutexLocker lock(&d_ptr->mutex);
+    QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
-    d_ptr->cond.wait(&d_ptr->mutex); //TODO: qApp->processEvents?
+    qDebug("%s @%d: pause pause begin.", __PRETTY_FUNCTION__, __LINE__);
+    d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
     qDebug("%s @%d: pause end.", __PRETTY_FUNCTION__, __LINE__);
 }
 

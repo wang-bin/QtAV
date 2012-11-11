@@ -26,8 +26,10 @@ typedef void PaStream;
 
 namespace QtAV {
 
+class AudioOutputPrivate;
 class Q_EXPORT AudioOutput : public AVOutput
 {
+    DPTR_DECLARE_PRIVATE(AudioOutput)
 public:
     AudioOutput();
     virtual ~AudioOutput();

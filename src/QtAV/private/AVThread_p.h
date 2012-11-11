@@ -19,7 +19,6 @@
 #ifndef QTAV_AVTHREAD_P_H
 #define QTAV_AVTHREAD_P_H
 
-//#include <private/qthread_p.h>
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
 #include <QtCore/QWaitCondition>
@@ -33,7 +32,7 @@ namespace QtAV {
 class AVDecoder;
 class Packet;
 class AVClock;
-class AVThreadPrivate
+class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
     AVThreadPrivate():demux_end(false),stop(false),clock(0)

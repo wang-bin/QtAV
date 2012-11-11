@@ -33,6 +33,11 @@ VideoRenderer::VideoRenderer()
 {
 }
 
+VideoRenderer::VideoRenderer(VideoRendererPrivate &d)
+    :AVOutput(d)
+{
+}
+
 VideoRenderer::~VideoRenderer()
 {
 }
@@ -44,32 +49,29 @@ void VideoRenderer::resizeVideo(const QSize &size)
 
 void VideoRenderer::resizeVideo(int width, int height)
 {
-    Q_D(VideoRenderer);
+    DPTR_D(VideoRenderer);
     if (width == 0 || height == 0)
         return;
-    if (d->dec) {
-        static_cast<VideoDecoder*>(d->dec)->resizeVideo(width, height);
+    if (d.dec) {
+        static_cast<VideoDecoder*>(d.dec)->resizeVideo(width, height);
     }
-    d->width = width;
-    d->height = height;
+    d.width = width;
+    d.height = height;
 }
 
 QSize VideoRenderer::videoSize() const
 {
-    Q_D(const VideoRenderer);
-    return QSize(d->width, d->height);
+    return QSize(d_func().width, d_func().height);
 }
 
 int VideoRenderer::videoWidth() const
 {
-    Q_D(const VideoRenderer);
-    return d->width;
+    return d_func().width;
 }
 
 int VideoRenderer::videoHeight() const
 {
-    Q_D(const VideoRenderer);
-    return d->height;
+    return d_func().height;
 }
 
 } //namespace QtAV

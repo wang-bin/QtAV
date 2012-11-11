@@ -19,7 +19,7 @@
 #ifndef QAV_WRITER_H
 #define QAV_WRITER_H
 
-#include <qbytearray.h>
+#include <QtCore/QByteArray>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -28,6 +28,7 @@ class AVDecoder;
 class AVOutputPrivate;
 class Q_EXPORT AVOutput
 {
+    DPTR_DECLARE_PRIVATE(AVOutput)
 public:
     AVOutput();
     virtual ~AVOutput() = 0;
@@ -45,8 +46,7 @@ protected:
      * for paused be false, else do nothing. */
     void tryPause();
 
-    Q_DECLARE_PRIVATE(AVOutput)
-    AVOutputPrivate *d_ptr; //TODO: ambiguous with Qt class d_ptr when it is a base class together with Qt classes
+    DPTR_DECLARE(AVOutput)
 };
 
 } //namespace QtAV

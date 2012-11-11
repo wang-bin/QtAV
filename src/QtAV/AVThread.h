@@ -32,6 +32,7 @@ class AVClock;
 class Q_EXPORT AVThread : public QThread
 {
     Q_OBJECT
+    DPTR_DECLARE_PRIVATE(AVThread)
 public:
 	explicit AVThread(QObject *parent = 0);
     virtual ~AVThread();
@@ -55,8 +56,7 @@ protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
     void resetState();
 
-    Q_DECLARE_PRIVATE(AVThread)
-    QScopedPointer<AVThreadPrivate> d_ptr;
+    DPTR_DECLARE(AVThread)
 };
 }
 
