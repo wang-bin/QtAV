@@ -3,6 +3,26 @@ QtAV
 
 QtAV is a media playing library based on Qt and FFmpeg.
 
+
+Shortcut
+--------
+Space: pause/continue
+
+F: fullscreen on/off
+
+T: stays on top on/off
+
+P: replay
+
+S: stop
+
+M: mute on/off
+
+Up: volume +
+
+Down: volume -
+
+
 Build
 ------
   BUILD_DIR=/your/build/dir qmake
