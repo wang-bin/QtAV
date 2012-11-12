@@ -12,6 +12,8 @@ F: fullscreen on/off
 
 T: stays on top on/off
 
+O: open a file
+
 P: replay
 
 S: stop

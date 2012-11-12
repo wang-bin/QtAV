@@ -22,6 +22,7 @@
 #include <qpainter.h>
 #include <QApplication>
 #include <QEvent>
+#include <QFileDialog>
 
 #include <QtAV/AVDemuxer.h>
 #include <private/VideoRenderer_p.h>
@@ -297,6 +298,12 @@ bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_Down:
             audio->setVolume(audio->volume() - 0.1);
             qDebug("vol = %.1f", audio->volume());
+            break;
+        case Qt::Key_O: {
+            QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
+            if (!file.isEmpty())
+                play(file);
+        }
             break;
         case Qt::Key_M:
             audio->setMute(!audio->isMute());

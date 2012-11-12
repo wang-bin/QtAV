@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     if (argc > 1)
         player.setFile(a.arguments().at(1));
     else
-        QMessageBox::warning(0, "Usage", QString("%1 path/of/video").arg(qApp->arguments().at(0)));
+        QMessageBox::warning(0, "Usage", QString("Command line: %1 path/of/video\nPress \"O\" to open a file").arg(qApp->arguments().at(0)));
 #if 0
     QGraphicsScene s;
     s.setSceneRect(0, 0, 800, 600);
