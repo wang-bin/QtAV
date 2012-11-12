@@ -37,7 +37,7 @@ public:
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
     
-    void setFile(const QString& fileName) {filename=fileName;}
+    void setFile(const QString& fileName);
     bool play(const QString& path);
     void pause(bool p);
     bool isPaused() const;

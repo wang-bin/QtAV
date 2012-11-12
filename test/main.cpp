@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 #if 0
     QGraphicsScene s;
     s.setSceneRect(0, 0, 800, 600);
-    QGraphicsView v(&s);
+    QGraphicsView w(&s);
     //QGLWidget gw;
     //v.setViewport(&gw); //may flick
 
@@ -53,13 +53,11 @@ int main(int argc, char *argv[])
     g.resizeVideo(800, 600);
     player.setRenderer(&g);
     s.addItem(&g);
-    v.show();
 #else
     WidgetRenderer w;
-    w.setWindowTitle(a.arguments().at(1));
+ #endif
     player.setRenderer(&w);
     w.showMaximized();
- #endif
     player.play();
     return a.exec();
 }

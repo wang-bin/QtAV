@@ -118,9 +118,15 @@ void AVPlayer::resizeVideo(const QSize &size)
     video_dec->resizeVideo(size);
 }
 
+void AVPlayer::setFile(const QString &fileName)
+{
+    filename = fileName;
+    qApp->activeWindow()->setWindowTitle(filename);
+}
+
 bool AVPlayer::play(const QString& path)
 {
-    filename = path;
+    setFile(path);
     play();
     return true;//isPlaying();
 }
