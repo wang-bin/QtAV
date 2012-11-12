@@ -212,6 +212,16 @@ void AVPlayer::stop()
     }
 }
 
+void AVPlayer::seekForward()
+{
+    demuxer_thread->seekForward();
+}
+
+void AVPlayer::seekBackward()
+{
+    demuxer_thread->seekBackward();
+}
+
 //TODO: what if no audio stream?
 void AVPlayer::timerEvent(QTimerEvent* e)
 {
@@ -297,6 +307,14 @@ bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_Down:
             audio->setVolume(audio->volume() - 0.1);
             qDebug("vol = %.1f", audio->volume());
+            break;
+        case Qt::Key_Left:
+            qDebug("<-");
+            seekBackward();
+            break;
+        case Qt::Key_Right:
+            qDebug("->");
+            seekForward();
             break;
         case Qt::Key_M:
             audio->setMute(!audio->isMute());

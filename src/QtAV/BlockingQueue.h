@@ -1,5 +1,5 @@
 /******************************************************************************
-    BlockingQueue.h: description
+    QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@
 ******************************************************************************/
 
 
-#ifndef BLOCKINGQUEUE_H
-#define BLOCKINGQUEUE_H
+#ifndef QTAV_BLOCKINGQUEUE_H
+#define QTAV_BLOCKINGQUEUE_H
 
 #include <QtCore/QMutex>
 #include <QtCore/QQueue>
@@ -100,6 +100,8 @@ T BlockingQueue<T>::take()
 template <typename T>
 void BlockingQueue<T>::setBlocking(bool block)
 {
+    QMutexLocker lock(&mutex);
+    Q_UNUSED(lock);
     this->block = block;
     if (!block) {
         cond_empty.wakeAll();
@@ -110,6 +112,8 @@ void BlockingQueue<T>::setBlocking(bool block)
 template <typename T>
 void BlockingQueue<T>::clear()
 {
+    cond_empty.wakeAll();
+    cond_full.wakeAll();
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     queue.clear();
@@ -128,4 +132,4 @@ int BlockingQueue<T>::size() const
 }
 
 } //namespace QtAV
-#endif // BLOCKINGQUEUE_H
+#endif // QTAV_BLOCKINGQUEUE_H

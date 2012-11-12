@@ -20,7 +20,7 @@
 #include <private/AVThread_p.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AVClock.h>
-
+#include <QDateTime>
 namespace QtAV {
 
 const double kSyncThreshold = 0.005; // 5 ms
@@ -60,16 +60,23 @@ void VideoThread::run()
             d.mutex.unlock();
             continue;
         }
-        //TODO: use QThread wait instead
         d.delay = pkt.pts  - (d.clock->value() + d.clock->delay());
-        if (d.delay > kSyncThreshold) { //Slow down
-            //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
-            usleep(d.delay * 1000000);
-        } else if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
-            //d.mutex.unlock();
-            //continue;
+        /*
+         *after seeking forward, a packet may be the old, v packet may be
+         *the new packet, then the d.delay is very large, omit it.
+         *TODO: 1. how to choose the value
+         * 2. use last delay when seeking
+        */
+        //qDebug("delay %f", d.delay);
+        if (qAbs(d.delay) < 2.718) {
+            if (d.delay > kSyncThreshold) { //Slow down
+                //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
+                usleep(d.delay * 1000000);
+            } else if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
+                //d.mutex.unlock();
+                //continue;
+            }
         }
-        //qDebug("audio data size after dequeue: %d", d.packets.size());
         if (d.dec->decode(pkt.data)) {
             if (d.writer)
                 d.writer->write(d.dec->data());

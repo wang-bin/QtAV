@@ -18,7 +18,17 @@
 
 #include <QtAV/AudioOutput.h>
 #include <portaudio.h>
-
+#if 0
+//#include <guiddef.h>
+typedef struct _GUID
+{
+unsigned long Data1;
+unsigned short Data2;
+unsigned short Data3;
+unsigned char Data4[8];
+} GUID;
+extern const GUID GUID_NULL = {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
+#endif
 namespace QtAV {
 AudioOutput::AudioOutput()
     :AVOutput(),mute(false),vol(1)
@@ -57,6 +67,7 @@ void AudioOutput::setChannels(int channels)
 
 int AudioOutput::write(const QByteArray &data)
 {
+    //qDebug("%s", __PRETTY_FUNCTION__);
     tryPause(); //Pa_AbortStream?
     if (Pa_IsStreamStopped(stream))
         Pa_StartStream(stream);
