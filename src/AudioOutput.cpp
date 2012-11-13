@@ -17,141 +17,64 @@
 ******************************************************************************/
 
 #include <QtAV/AudioOutput.h>
-#include <portaudio.h>
-#if 0
-//#include <guiddef.h>
-typedef struct _GUID
-{
-unsigned long Data1;
-unsigned short Data2;
-unsigned short Data3;
-unsigned char Data4[8];
-} GUID;
-extern const GUID GUID_NULL = {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
-#endif
+#include <private/AudioOutput_p.h>
+
 namespace QtAV {
 AudioOutput::AudioOutput()
-    :AVOutput(),mute(false),vol(1)
+    :AVOutput(*new AudioOutputPrivate())
 {
-    outputParameters = new PaStreamParameters;
-    Pa_Initialize();
+}
 
-    stream = NULL;
-    sample_rate = 0;
-    memset(outputParameters, 0, sizeof(PaStreamParameters));
-    outputParameters->device = Pa_GetDefaultOutputDevice();
-    outputParameters->sampleFormat = paFloat32;
-    outputParameters->hostApiSpecificStreamInfo = NULL;
-    outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
+AudioOutput::AudioOutput(AudioOutputPrivate &d)
+    :AVOutput(d)
+{
 }
 
 AudioOutput::~AudioOutput()
 {
-    close();
-    Pa_Terminate();
-    if (outputParameters) {
-        delete outputParameters;
-        outputParameters = 0;
-    }
 }
 
 void AudioOutput::setSampleRate(int rate)
 {
-    sample_rate = rate;
+    d_func().sample_rate = rate;
+}
+
+int AudioOutput::sampleRate() const
+{
+    return d_func().sample_rate;
 }
 
 void AudioOutput::setChannels(int channels)
 {
-    outputParameters->channelCount = channels;
+    d_func().channels = channels;
+    //outputParameters->channelCount = channels;
 }
 
-int AudioOutput::write(const QByteArray &data)
+int AudioOutput::channels() const
 {
-    //qDebug("%s", __PRETTY_FUNCTION__);
-    tryPause(); //Pa_AbortStream?
-    if (Pa_IsStreamStopped(stream))
-        Pa_StartStream(stream);
-
-#ifndef Q_OS_MAC //?
-    int diff = Pa_GetStreamWriteAvailable(stream) - outputLatency * sample_rate;
-    if (diff > 0) {
-        int newsize = diff * outputParameters->channelCount * sizeof(float);
-        char a[newsize];
-        memset(a, 0, newsize);
-        Pa_WriteStream(stream, a, diff);
-    }
-#endif
-
-#ifdef Q_OS_LINUX
-    int chn = outputParameters->channelCount;
-	if (chn == 6 || chn == 8) {
-		float *audio_buffer = (float *)data.data();
-		int size_per_chn = data.size() >> 2;
-		for (int i = 0 ; i < size_per_chn; i += chn) {
-            float tmp = audio_buffer[i+2];
-            audio_buffer[i+2] = audio_buffer[i+4];
-            audio_buffer[i+4] = tmp;
-            tmp = audio_buffer[i+3];
-            audio_buffer[i+3] = audio_buffer[i+5];
-            audio_buffer[i+5] = tmp;
-        }
-    }
-#endif
-
-    PaError err = Pa_WriteStream(stream, data.data(), data.size() / outputParameters->channelCount / sizeof(float));
-    if (err == paUnanticipatedHostError) {
-        qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
-        return 0;
-    }
-
-    return data.size();
-}
-
-bool AudioOutput::open()
-{
-    PaError err = Pa_OpenStream(&stream, NULL, outputParameters, sample_rate, 0, paNoFlag, NULL, NULL);
-    if (err == paNoError)
-        outputLatency = Pa_GetStreamInfo(stream)->outputLatency;
-    else
-        qWarning("Open portaudio stream error: %s", Pa_GetErrorText(err));
-    return err == paNoError;
-}
-
-bool AudioOutput::close()
-{
-    PaError err = paNoError;
-    if (!stream) {
-        return true;
-    }
-    err = Pa_StopStream(stream);
-    if (err != paNoError)
-        qWarning("Stop portaudio stream error: %s", Pa_GetErrorText(err));
-    err = Pa_CloseStream(stream);
-    stream = NULL;
-    if (err != paNoError)
-        qWarning("Close portaudio stream error: %s", Pa_GetErrorText(err));
-    return err == paNoError;
+    return d_func().channels;
 }
 
 void AudioOutput::setVolume(qreal volume)
 {
-    vol = qMax<qreal>(volume, 0);
-    mute = vol == 0;
+    DPTR_D(AudioOutput);
+    d.vol = qMax<qreal>(volume, 0);
+    d.mute = d.vol == 0;
 }
 
 qreal AudioOutput::volume() const
 {
-    return qMax<qreal>(vol, 0);
+    return qMax<qreal>(d_func().vol, 0);
 }
 
 void AudioOutput::setMute(bool yes)
 {
-    mute = yes;
+    d_func().mute = yes;
 }
 
 bool AudioOutput::isMute() const
 {
-    return mute;
+    return d_func().mute;
 }
 
 } //namespace QtAV

@@ -20,6 +20,7 @@ else:win32: SOURCES +=
 
 SOURCES += \
     QtAV_Compat.cpp \
+    AOPortAudio.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \
@@ -44,6 +45,9 @@ HEADERS += \
     QtAV/QtAV_Compat.h \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
+    QtAV/AOPortAudio.h \
+    QtAV/private/AOPortAudio_p.h \
+    QtAV/private/AudioOutput_p.h \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
