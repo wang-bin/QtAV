@@ -21,12 +21,12 @@
 #define QTAV_BLOCKINGQUEUE_H
 
 #include <QtCore/QMutex>
-#include <QtCore/QQueue>
 #include <QtCore/QWaitCondition>
 
+template<typename T> class QQueue;
 namespace QtAV {
 
-template <typename T>
+template <typename T, typename Container = QQueue<T> >
 class BlockingQueue
 {
 public:
@@ -46,36 +46,36 @@ public:
 private:
     bool block;
     int cap, thres;
-    QQueue<T> queue;
+    Container queue;
     QMutex mutex;
     QWaitCondition cond_full, cond_empty;
 };
 
 
-template <typename T>
-BlockingQueue<T>::BlockingQueue()
+template <typename T, typename Container>
+BlockingQueue<T, Container>::BlockingQueue()
     :block(true),cap(512),thres(256)
 {
 }
 
-template <typename T>
-void BlockingQueue<T>::setCapacity(int max)
+template <typename T, typename Container>
+void BlockingQueue<T, Container>::setCapacity(int max)
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     cap = max;
 }
 
-template <typename T>
-void BlockingQueue<T>::setThreshold(int min)
+template <typename T, typename Container>
+void BlockingQueue<T, Container>::setThreshold(int min)
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     thres = min;
 }
 
-template <typename T>
-void BlockingQueue<T>::put(const T& t)
+template <typename T, typename Container>
+void BlockingQueue<T, Container>::put(const T& t)
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
@@ -85,8 +85,8 @@ void BlockingQueue<T>::put(const T& t)
     queue.enqueue(t);
 }
 
-template <typename T>
-T BlockingQueue<T>::take()
+template <typename T, typename Container>
+T BlockingQueue<T, Container>::take()
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
@@ -97,8 +97,8 @@ T BlockingQueue<T>::take()
     return queue.dequeue();
 }
 
-template <typename T>
-void BlockingQueue<T>::setBlocking(bool block)
+template <typename T, typename Container>
+void BlockingQueue<T, Container>::setBlocking(bool block)
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
@@ -109,8 +109,8 @@ void BlockingQueue<T>::setBlocking(bool block)
     }
 }
 
-template <typename T>
-void BlockingQueue<T>::clear()
+template <typename T, typename Container>
+void BlockingQueue<T, Container>::clear()
 {
     cond_empty.wakeAll();
     cond_full.wakeAll();
@@ -119,14 +119,14 @@ void BlockingQueue<T>::clear()
     queue.clear();
 }
 
-template <typename T>
-bool BlockingQueue<T>::isEmpty() const
+template <typename T, typename Container>
+bool BlockingQueue<T, Container>::isEmpty() const
 {
     return queue.isEmpty();
 }
 
-template <typename T>
-int BlockingQueue<T>::size() const
+template <typename T, typename Container>
+int BlockingQueue<T, Container>::size() const
 {
     return queue.size();
 }
