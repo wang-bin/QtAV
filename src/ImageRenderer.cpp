@@ -37,6 +37,7 @@ ImageRenderer::~ImageRenderer()
 
 int ImageRenderer::write(const QByteArray &data)
 {
+    //qDebug("%s", __PRETTY_FUNCTION__);
     DPTR_D(ImageRenderer);
     tryPause();
     //picture.data[0]

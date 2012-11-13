@@ -36,6 +36,10 @@ public:
     void setDemuxer(AVDemuxer *dmx);
     void setAudioThread(AVThread *thread);
     void setVideoThread(AVThread *thread);
+    void seek(qreal pos);
+    void seekForward();
+    void seekBackward();
+    //AVDemuxer* demuxer
 
 public slots:
     void stop();

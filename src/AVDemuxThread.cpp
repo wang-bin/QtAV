@@ -60,6 +60,26 @@ void AVDemuxThread::setVideoThread(AVThread *thread)
     video_thread = thread;
 }
 
+void AVDemuxThread::seek(qreal pos)
+{
+    audio_thread->packetQueue()->clear();
+    video_thread->packetQueue()->clear();
+    demuxer->seek(pos);
+}
+
+void AVDemuxThread::seekForward()
+{
+    audio_thread->packetQueue()->clear();
+    video_thread->packetQueue()->clear();
+    demuxer->seekForward();
+}
+
+void AVDemuxThread::seekBackward()
+{
+    audio_thread->packetQueue()->clear();
+    video_thread->packetQueue()->clear();
+    demuxer->seekBackward();
+}
 //No more data to put. So stop blocking the queue to take the reset elements
 void AVDemuxThread::stop()
 {
@@ -88,7 +108,7 @@ void AVDemuxThread::run()
     Packet pkt;
     end = false;
     buffer_mutex.unlock();
-    while (!end) {
+    while (!end) { //TODO: mutex locker
         buffer_mutex.lock();
         if (!demuxer->readFrame()) {
             buffer_mutex.unlock();
@@ -96,9 +116,15 @@ void AVDemuxThread::run()
         }
         index = demuxer->stream();
         pkt = *demuxer->packet(); //TODO: how to avoid additional copy?
+        /*1 is empty but another is enough, then do not block to
+          ensure the empty one can put packets immediatly.
+          But usually it will not happen, why?
+        */
         if (index == audio_stream) {
+            //audio_thread->packetQueue()->setBlocking(video_thread->packetQueue()->size() >= 256);
             audio_thread->packetQueue()->put(pkt); //affect video_thread
         } else if (index == video_stream) {
+            //video_thread->packetQueue()->setBlocking(audio_thread->packetQueue()->size() >= 256);
             video_thread->packetQueue()->put(pkt); //affect audio_thread
         } else { //subtitle
             buffer_mutex.unlock();

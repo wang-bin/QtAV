@@ -20,8 +20,9 @@
 #define QAV_DEMUXER_H
 
 #include <QtAV/QtAV_Global.h>
-#include <qobject.h>
-#include <qsize.h>
+#include <QtCore/QObject>
+#include <QtCore/QSize>
+#include <QtCore/QMutex>
 
 struct AVFormatContext;
 struct AVCodecContext;
@@ -46,8 +47,10 @@ public:
     Packet* packet() const; //current readed packet
     int stream() const; //current readed stream index
 
-    //void seek();
-
+    void seek(qreal q); //q: [0,1]
+    //seek default steps
+    void seekForward();
+    void seekBackward();
 
     //format
     AVFormatContext* formatContext();
@@ -85,6 +88,7 @@ signals:
 private:
     bool eof;
     Packet *pkt;
+    qint64 ipts;
     int stream_idx;
     mutable int audio_stream, video_stream, subtitle_stream;
 
@@ -96,6 +100,7 @@ private:
     AVCodecContext *a_codec_context, *v_codec_context;
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
+    QMutex mutex; //for seek and readFrame
 };
 
 } //namespace QtAV

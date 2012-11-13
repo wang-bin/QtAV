@@ -30,10 +30,10 @@ extern "C" {
 
 namespace QtAV {
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
-    :QObject(parent),eof(false),pkt(new Packet()),stream_idx(-1)
-    ,audio_stream(-2),video_stream(-2),subtitle_stream(-2)
-    ,_is_input(true),format_context(0),a_codec_context(0),v_codec_context(0)
-    ,_file_name(fileName)
+    :QObject(parent),eof(false),pkt(new Packet())
+    ,ipts(0),stream_idx(-1),audio_stream(-2),video_stream(-2)
+    ,subtitle_stream(-2),_is_input(true),format_context(0)
+    ,a_codec_context(0),v_codec_context(0),_file_name(fileName)
 {
     av_register_all();
     if (!_file_name.isEmpty())
@@ -52,6 +52,8 @@ AVDemuxer::~AVDemuxer()
 
 bool AVDemuxer::readFrame()
 {
+    QMutexLocker lock(&mutex);
+    Q_UNUSED(lock);
     AVPacket packet;
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
 
@@ -91,6 +93,7 @@ bool AVDemuxer::readFrame()
         pkt->duration = packet.duration * av_q2d(stream->time_base);
     else
         pkt->duration = 0;
+    //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", pkt->pts, pkt->duration, packet.dts);
 
     av_free_packet(&packet); //important!
     return true;
@@ -133,6 +136,46 @@ bool AVDemuxer::close()
         format_context = 0;
     }
     return true;
+}
+
+//TODO: seek by byte
+void AVDemuxer::seek(qreal q)
+{
+    QMutexLocker lock(&mutex);
+    Q_UNUSED(lock);
+    q = qMax<qreal>(0.0, q);
+    if (q >= 1.0)
+        return;
+#if 0
+    //t: unit is s
+    qreal t = q;// * (double)format_context->duration; //
+    int ret = av_seek_frame(format_context, -1, (int64_t)(t*AV_TIME_BASE), t > pkt->pts ? 0 : AVSEEK_FLAG_BACKWARD);
+    qDebug("[AVDemuxer] seek to %f %f %lld / %lld", q, pkt->pts, (int64_t)(t*AV_TIME_BASE), duration());
+#else
+    //t: unit is us (10^-6 s, AV_TIME_BASE)
+    int64_t t = int64_t(q*duration());///AV_TIME_BASE;
+    //TODO: pkt->pts may be 0, compute manually. Check wether exceed the length
+    if (t >= duration())
+        return;
+    bool backward = t <= (int64_t)(pkt->pts*AV_TIME_BASE);
+    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", q, pkt->pts, t, duration(), backward);
+    int ret = av_seek_frame(format_context, -1, t, backward ? 0 : AVSEEK_FLAG_BACKWARD);
+#endif
+    if (ret < 0)
+        qDebug("[AVDemuxer] seek error: %s", av_err2str(ret));
+    //calc pts
+}
+
+void AVDemuxer::seekForward()
+{
+    long double q = (long double)((pkt->pts + 2.718)*AV_TIME_BASE)/(long double)duration();
+    seek(q);
+}
+
+void AVDemuxer::seekBackward()
+{
+    long double q = (long double)((pkt->pts - 2.718)*AV_TIME_BASE)/(long double)duration();
+    seek(q);
 }
 
 bool AVDemuxer::loadFile(const QString &fileName)

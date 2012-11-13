@@ -22,6 +22,7 @@
 #include <QtAV/AVDemuxer.h>
 
 namespace QtAV {
+
 class AudioOutput;
 class AudioThread;
 class VideoThread;
@@ -36,7 +37,7 @@ class Q_EXPORT AVPlayer : public QObject
 public:
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
-    
+
     void setFile(const QString& fileName);
     bool play(const QString& path);
     void pause(bool p);
@@ -48,6 +49,8 @@ public:
 public slots:
     void play(); //replay
     void stop();
+    void seekForward();
+    void seekBackward();
 
 protected slots:
     void resizeVideo(const QSize& size);
@@ -56,7 +59,7 @@ protected:
 	int avTimerId;
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
-    QString		filename;
+    QString filename;
     int m_drop_count;
 
     //the following things are required and must be setted not null
@@ -71,7 +74,6 @@ protected:
     VideoThread *video_thread;
 protected:
     virtual void timerEvent(QTimerEvent *);
-
 };
 
 } //namespace QtAV

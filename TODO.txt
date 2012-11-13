@@ -1,0 +1,11 @@
+Roadmap:
+1.0: can play
+2.0: base functions, gui
+3.0: components structure. base a/v filters
+4.0: own graphics library.
+5.0: Encoding
+6.0: Advanced filters: transform (play on 3D surface)
+
+
+network stream
+avio pause network
