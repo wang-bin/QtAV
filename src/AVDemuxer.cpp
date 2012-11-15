@@ -75,6 +75,7 @@ bool AVDemuxer::readFrame()
     }
     pkt->data = QByteArray((const char*)packet.data, packet.size);
     pkt->duration = packet.duration;
+    //if (packet.dts == AV_NOPTS_VALUE && )
     if (packet.dts != AV_NOPTS_VALUE) //has B-frames
         pkt->pts = packet.dts;
     else if (packet.pts != AV_NOPTS_VALUE)

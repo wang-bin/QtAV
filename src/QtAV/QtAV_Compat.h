@@ -1,7 +1,7 @@
 #ifndef QTAV_COMPAT_H
 #define QTAV_COMPAT_H
 
-
+//TODO: How to detect version without including ffmpeg headers
 //avutil: error.h
 #ifndef av_err2str
 #define AV_ERROR_MAX_STRING_SIZE 64

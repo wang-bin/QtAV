@@ -28,7 +28,7 @@ class Q_EXPORT AudioOutputPrivate : public AVOutputPrivate
 {
 public:
     AudioOutputPrivate():mute(false),channels(2)
-      ,vol(1),sample_rate(44000)
+      ,vol(1),sample_rate(44100)
     {
     }
     virtual ~AudioOutputPrivate(){}

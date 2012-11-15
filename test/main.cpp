@@ -15,7 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-
+#include <cstdio>
+#include <cstdlib>
 #if CONFIG_EZX
 #include <ZApplication.h>
 #else
@@ -33,10 +34,37 @@ typedef QApplication ZApplication;
 #include <QtAV/GraphicsItemRenderer.h>
 using namespace QtAV;
 
+FILE *log;
+
+void Logger(QtMsgType type, const char *msg)
+ {
+     switch (type) {
+     case QtDebugMsg:
+         fprintf(log, "Debug: %s\n", msg);
+         break;
+     case QtWarningMsg:
+         fprintf(log, "Warning: %s\n", msg);
+         break;
+     case QtCriticalMsg:
+         fprintf(log, "Critical: %s\n", msg);
+         break;
+     case QtFatalMsg:
+         fprintf(log, "Fatal: %s\n", msg);
+         abort();
+     }
+     fflush(0);
+ }
+
 int main(int argc, char *argv[])
 {
 	ZApplication a(argc, argv);
-    
+
+    log = fopen("log.txt", "w+");
+    if (!log) {
+        qWarning("Failed to open log file");
+        log = stdout;
+    }
+    qInstallMsgHandler(Logger);
     AVPlayer player;
     if (argc > 1)
         player.setFile(a.arguments().at(1));
@@ -55,8 +83,8 @@ int main(int argc, char *argv[])
     s.addItem(&g);
 #else
     WidgetRenderer w;
- #endif
     player.setRenderer(&w);
+#endif
     w.showMaximized();
     player.play();
     return a.exec();
