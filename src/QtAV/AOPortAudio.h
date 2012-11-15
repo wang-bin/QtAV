@@ -1,6 +1,6 @@
 /******************************************************************************
-    AOPortAudio.h: description
-    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+	QtAV:  Media play library based on Qt and FFmpeg
+	Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
