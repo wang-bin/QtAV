@@ -19,7 +19,8 @@
 #include <QtAV/VideoDecoder.h>
 #include <private/AVDecoder_p.h>
 #include <QtAV/Packet.h>
-#include <qsize.h>
+#include <QtAV/QtAV_Compat.h>
+#include <QtCore/QSize>
 
 namespace QtAV {
 

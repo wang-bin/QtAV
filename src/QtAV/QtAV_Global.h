@@ -21,10 +21,8 @@
 #define QTAV_GLOBAL_H
 
 #include <qglobal.h>
-#include <QtAV/QtAV_Compat.h>
 #include <dptr.h>
 
-#undef QTAV_VERSION
 
 #define QTAV_MAJOR 1	//((QTAV_VERSION&0xff0000)>>16)
 #define QTAV_MINOR 1	//((QTAV_VERSION&0xff00)>>8)
@@ -53,6 +51,8 @@ static const char* const qtav_version_string = TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_
 #  undef Q_EXPORT
 #  define Q_EXPORT //Q_DECL_IMPORT //only for vc?
 #endif
+
+//TODO: always inline
 
 #endif // QTAV_GLOBAL_H
 

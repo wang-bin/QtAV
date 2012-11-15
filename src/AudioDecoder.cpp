@@ -18,6 +18,7 @@
 
 #include <QtAV/AudioDecoder.h>
 #include <private/AVDecoder_p.h>
+#include <QtAV/QtAV_Compat.h>
 
 namespace QtAV {
 

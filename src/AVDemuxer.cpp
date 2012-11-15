@@ -27,6 +27,7 @@ extern "C" {
 
 #include <qthread.h>
 #include <QtAV/Packet.h>
+#include <QtAV/QtAV_Compat.h>
 
 namespace QtAV {
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
