@@ -34,23 +34,31 @@ typedef QApplication ZApplication;
 #include <QtAV/GraphicsItemRenderer.h>
 using namespace QtAV;
 
-FILE *log;
+FILE *log = 0;
 
 void Logger(QtMsgType type, const char *msg)
  {
      switch (type) {
      case QtDebugMsg:
-         fprintf(log, "Debug: %s\n", msg);
+		 fprintf(stdout, "Debug: %s\n", msg);
+		 if (log)
+			fprintf(log, "Debug: %s\n", msg);
          break;
      case QtWarningMsg:
-         fprintf(log, "Warning: %s\n", msg);
-         break;
+		 fprintf(stdout, "Warning: %s\n", msg);
+		 if (log)
+			fprintf(log, "Warning: %s\n", msg);
+		 break;
      case QtCriticalMsg:
-         fprintf(log, "Critical: %s\n", msg);
-         break;
+		 fprintf(stderr, "Critical: %s\n", msg);
+		 if (log)
+			fprintf(log, "Critical: %s\n", msg);
+		 break;
      case QtFatalMsg:
-         fprintf(log, "Fatal: %s\n", msg);
-         abort();
+		 fprintf(stderr, "Fatal: %s\n", msg);
+		 if (log)
+			fprintf(log, "Fatal: %s\n", msg);
+		 abort();
      }
      fflush(0);
  }
@@ -65,27 +73,30 @@ int main(int argc, char *argv[])
         log = stdout;
     }
     qInstallMsgHandler(Logger);
-    AVPlayer player;
-    if (argc > 1)
-        player.setFile(a.arguments().at(1));
-    else
-        QMessageBox::warning(0, "Usage", QString("Command line: %1 path/of/video\nPress \"O\" to open a file").arg(qApp->arguments().at(0)));
 #if 0
     QGraphicsScene s;
     s.setSceneRect(0, 0, 800, 600);
     QGraphicsView w(&s);
+	w.showMaximized();
     //QGLWidget gw;
     //v.setViewport(&gw); //may flick
 
-    GraphicsItemRenderer g;
-    g.resizeVideo(800, 600);
-    player.setRenderer(&g);
-    s.addItem(&g);
+	GraphicsItemRenderer renderer;
+	renderer.resizeVideo(800, 600);
+	s.addItem(&renderer);
 #else
-    WidgetRenderer w;
-    player.setRenderer(&w);
+	WidgetRenderer renderer;
+	renderer.showMaximized();
 #endif
-    w.showMaximized();
-    player.play();
+	QString fileName;
+	if (argc > 1)
+		fileName = a.arguments().at(1);
+	else
+		QMessageBox::warning(0, "Usage", QString("Command line: %1 path/of/video\nPress \"O\" to open a file").arg(qApp->arguments().at(0)));
+
+	AVPlayer player;
+	player.setRenderer(&renderer);
+	if (!player.file().isEmpty())
+		player.play();
     return a.exec();
 }
