@@ -68,7 +68,7 @@ void VideoThread::run()
          * 2. use last delay when seeking
         */
         //qDebug("delay %f", d.delay);
-        if (qAbs(d.delay) < 2.718) {
+		if (qAbs(d.delay) < 0.618) {
             if (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
                 usleep(d.delay * 1000000);

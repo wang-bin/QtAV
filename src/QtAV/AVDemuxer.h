@@ -32,6 +32,7 @@ struct AVStream;
 
 namespace QtAV {
 
+class AVClock;
 class Packet;
 class Q_EXPORT AVDemuxer : public QObject //QIODevice?
 {
@@ -47,6 +48,8 @@ public:
     Packet* packet() const; //current readed packet
     int stream() const; //current readed stream index
 
+	void setClock(AVClock *c);
+	AVClock *clock() const;
     void seek(qreal q); //q: [0,1]
     //seek default steps
     void seekForward();
@@ -101,6 +104,7 @@ private:
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
     QMutex mutex; //for seek and readFrame
+	AVClock *master_clock;
 };
 
 } //namespace QtAV

@@ -62,6 +62,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(stop()));
     avTimerId = -1;
     clock = new AVClock(AVClock::AudioClock);
+	demuxer.setClock(clock);
     audio = new AOPortAudio();
     audio_dec = new AudioDecoder();
     audio_thread = new AudioThread(this);
@@ -163,6 +164,10 @@ bool AVPlayer::isPaused() const
 //TODO: when is the end
 void AVPlayer::play()
 {
+	if (filename.isEmpty()) {
+		qDebug("No file to play...");
+		return;
+	}
 	if (isPlaying())
 		stop();
     if (avTimerId > 0)
