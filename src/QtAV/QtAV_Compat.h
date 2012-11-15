@@ -35,7 +35,7 @@ extern "C"
 
 //TODO: libav
 //avutil: error.h
-
+#ifndef av_err2str
 /**
  * Fill the provided buffer with a string containing an error string
  * corresponding to the AVERROR code errnum.
@@ -51,7 +51,6 @@ static inline char *av_make_error_string(char *errbuf, size_t errbuf_size, int e
 	av_strerror(errnum, errbuf, errbuf_size);
 	return errbuf;
 }
-#ifndef av_err2str
 #define AV_ERROR_MAX_STRING_SIZE 64
 inline char* av_err2str(int errnum)
 {
