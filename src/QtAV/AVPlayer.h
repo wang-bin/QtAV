@@ -39,7 +39,9 @@ public:
     ~AVPlayer();
 
     void setFile(const QString& fileName);
+	QString file() const;
     bool play(const QString& path);
+	bool isPlaying() const;
     void pause(bool p);
     bool isPaused() const;
     void setRenderer(VideoRenderer* renderer);

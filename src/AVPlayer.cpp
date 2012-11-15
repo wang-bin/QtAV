@@ -104,7 +104,9 @@ AVPlayer::~AVPlayer()
 void AVPlayer::setRenderer(VideoRenderer *r)
 {
     if (renderer) {
-        //delete renderer; //Do not own the ptr
+		if (isPlaying())
+			stop();
+		//delete renderer; //Do not own the ptr
     }
     renderer = r;
     video_thread->setOutput(renderer);
@@ -120,7 +122,12 @@ void AVPlayer::resizeVideo(const QSize &size)
 void AVPlayer::setFile(const QString &fileName)
 {
     filename = fileName;
-    qApp->activeWindow()->setWindowTitle(filename);
+	//qApp->activeWindow()->setWindowTitle(filename); //crash on linux
+}
+
+QString AVPlayer::file() const
+{
+	return filename;
 }
 
 bool AVPlayer::play(const QString& path)
@@ -128,6 +135,11 @@ bool AVPlayer::play(const QString& path)
     setFile(path);
     play();
     return true;//isPlaying();
+}
+
+bool AVPlayer::isPlaying() const
+{
+	return demuxer_thread->isRunning() || audio_thread->isRunning() || video_thread->isRunning();
 }
 
 void AVPlayer::pause(bool p)
@@ -151,7 +163,8 @@ bool AVPlayer::isPaused() const
 //TODO: when is the end
 void AVPlayer::play()
 {
-    stop();
+	if (isPlaying())
+		stop();
     if (avTimerId > 0)
         killTimer(avTimerId);
     qDebug("loading: %s ...", qPrintable(filename));
