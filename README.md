@@ -24,6 +24,10 @@ Up: volume +
 
 Down: volume -
 
+->: seek forward
+
+<-: seek backward
+
 
 Build
 ------
