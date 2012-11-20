@@ -34,11 +34,20 @@ typedef QApplication ZApplication;
 #include <QtAV/GraphicsItemRenderer.h>
 using namespace QtAV;
 
+
+
 FILE *log = 0;
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#define qInstallMessageHandler qInstallMsgHandler
 void Logger(QtMsgType type, const char *msg)
- {
-     switch (type) {
+{
+#else
+void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
+{
+	const char* msg = qPrintable(qmsg);
+#endif
+	 switch (type) {
      case QtDebugMsg:
 		 fprintf(stdout, "Debug: %s\n", msg);
 		 if (log)
@@ -72,7 +81,7 @@ int main(int argc, char *argv[])
         qWarning("Failed to open log file");
         log = stdout;
     }
-    qInstallMsgHandler(Logger);
+    qInstallMessageHandler(Logger);
 #if 0
     QGraphicsScene s;
     s.setSceneRect(0, 0, 800, 600);
