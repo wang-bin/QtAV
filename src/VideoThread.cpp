@@ -60,7 +60,7 @@ void VideoThread::run()
             d.mutex.unlock();
             continue;
         }
-        d.delay = pkt.pts  - (d.clock->value() + d.clock->delay());
+        d.delay = pkt.pts  - d.clock->value();
         /*
          *after seeking forward, a packet may be the old, v packet may be
          *the new packet, then the d.delay is very large, omit it.

@@ -32,26 +32,27 @@ public:
 
     AVClock(ClockType c = AudioClock);
 
-    inline double value() const;
-    inline void updateValue(double pts);
+    inline double pts() const;
+    inline double value() const; //the real timestamp: pts + delay
+    inline void updateValue(double pts); //update the pts
 
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
 
 private:
     ClockType clock_type;
-    double t;
+    double pts_;
     double delay_;
 };
 
 double AVClock::value() const
 {
-    return t;
+    return pts_ + delay_;
 }
 
 void AVClock::updateValue(double pts)
 {
-    t = pts;
+    pts_ = pts;
 }
 
 double AVClock::delay() const
