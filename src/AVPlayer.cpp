@@ -143,7 +143,7 @@ void AVPlayer::setCaptureSaveDir(const QString &dir)
 
 bool AVPlayer::capture()
 {
-    double pts = clock->value();
+    double pts = clock->videoPts();
     QImage cap = renderer->currentFrameImage();
     if (cap.isNull()) {
         qWarning("Null image");
@@ -160,7 +160,7 @@ bool AVPlayer::capture()
         cap_path += QFileInfo(path).completeBaseName();
     else
         cap_path += capture_name;
-    cap_path += "_" + QString::number(pts, 'f') + ".jpg";
+    cap_path += "_" + QString::number(pts, 'f', 3) + ".jpg";
     qDebug("Saving capture to [%s]", qPrintable(cap_path));
     if (!cap.save(cap_path, "jpg")) {
         qWarning("Save capture failed");

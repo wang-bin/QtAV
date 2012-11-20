@@ -35,13 +35,14 @@ public:
     inline double pts() const;
     inline double value() const; //the real timestamp: pts + delay
     inline void updateValue(double pts); //update the pts
-
+    inline void updateVideoPts(double pts);
+    inline double videoPts() const;
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
 
 private:
     ClockType clock_type;
-    double pts_;
+    double pts_, pts_v;
     double delay_;
 };
 
@@ -53,6 +54,16 @@ double AVClock::value() const
 void AVClock::updateValue(double pts)
 {
     pts_ = pts;
+}
+
+void AVClock::updateVideoPts(double pts)
+{
+    pts_v = pts;
+}
+
+double AVClock::videoPts() const
+{
+    return pts_v;
 }
 
 double AVClock::delay() const

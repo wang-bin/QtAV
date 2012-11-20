@@ -77,6 +77,7 @@ void VideoThread::run()
                 //continue;
             }
         }
+        d.clock->updateVideoPts(pkt.pts); //here?
         if (d.dec->decode(pkt.data)) {
             if (d.writer)
                 d.writer->write(d.dec->data());
