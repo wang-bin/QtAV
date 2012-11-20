@@ -79,6 +79,7 @@ protected:
     VideoDecoder *video_dec;
     AudioThread *audio_thread;
     VideoThread *video_thread;
+    QObject *event_target; //key event may receive multiple times for different targets
 protected:
     virtual void timerEvent(QTimerEvent *);
 };

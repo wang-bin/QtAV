@@ -50,6 +50,7 @@ namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),renderer(0),capture_dir("capture"),audio(0)
+  ,event_target(0)
 {
     qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
            "\nDistributed under GPLv3 or later"
@@ -340,6 +341,11 @@ bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
         return false;
         break;
     case QEvent::KeyPress: {
+        //avoid receive an event multiple times
+        if (!event_target)
+            event_target = watched;
+        if (event_target != watched)
+            return false;
         int key = static_cast<QKeyEvent*>(event)->key();
         switch (key) {
         case Qt::Key_C: //capture
