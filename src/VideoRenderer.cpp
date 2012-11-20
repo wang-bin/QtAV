@@ -42,6 +42,16 @@ VideoRenderer::~VideoRenderer()
 {
 }
 
+bool VideoRenderer::open()
+{
+    return true;
+}
+
+bool VideoRenderer::close()
+{
+    return true;
+}
+
 void VideoRenderer::resizeVideo(const QSize &size)
 {
     resizeVideo(size.width(), size.height());

@@ -38,8 +38,12 @@ public:
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
 
-    void setFile(const QString& fileName);
+    void setFile(const QString& path);
 	QString file() const;
+    //capture is a jpeg image by default
+    void setCaptureName(const QString& name);//base name
+    void setCaptureSaveDir(const QString& dir);
+    bool capture();
     bool play(const QString& path);
 	bool isPlaying() const;
     void pause(bool p);
@@ -61,7 +65,8 @@ protected:
 	int avTimerId;
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
-    QString filename;
+    QString path;
+    QString capture_name, capture_dir;
     int m_drop_count;
 
     //the following things are required and must be setted not null

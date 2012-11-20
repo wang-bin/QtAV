@@ -49,7 +49,7 @@ extern "C"
 namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
-    QObject(parent),renderer(0),audio(0)
+    QObject(parent),renderer(0),capture_dir("capture"),audio(0)
 {
     qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
            "\nDistributed under GPLv3 or later"
@@ -120,15 +120,53 @@ void AVPlayer::resizeVideo(const QSize &size)
     video_dec->resizeVideo(size);
 }
 
-void AVPlayer::setFile(const QString &fileName)
+void AVPlayer::setFile(const QString &path)
 {
-    filename = fileName;
-	//qApp->activeWindow()->setWindowTitle(filename); //crash on linux
+    this->path = path;
+    //qApp->activeWindow()->setWindowTitle(path); //crash on linux
 }
 
 QString AVPlayer::file() const
 {
-	return filename;
+    return path;
+}
+
+void AVPlayer::setCaptureName(const QString &name)
+{
+    capture_name = name;
+}
+
+void AVPlayer::setCaptureSaveDir(const QString &dir)
+{
+    capture_dir = dir;
+}
+
+bool AVPlayer::capture()
+{
+    double pts = clock->value();
+    QImage cap = renderer->currentFrameImage();
+    if (cap.isNull()) {
+        qWarning("Null image");
+        return false;
+    }
+    if (!QDir(capture_dir).exists()) {
+        if (!QDir().mkpath(capture_dir)) {
+            qWarning("Failed to create capture dir [%s]", qPrintable(capture_dir));
+            return false;
+        }
+    }
+    QString cap_path = capture_dir + "/";
+    if (capture_name.isEmpty())
+        cap_path += QFileInfo(path).completeBaseName();
+    else
+        cap_path += capture_name;
+    cap_path += "_" + QString::number(pts, 'f') + ".jpg";
+    qDebug("Saving capture to [%s]", qPrintable(cap_path));
+    if (!cap.save(cap_path, "jpg")) {
+        qWarning("Save capture failed");
+        return false;
+    }
+    return true;
 }
 
 bool AVPlayer::play(const QString& path)
@@ -164,7 +202,7 @@ bool AVPlayer::isPaused() const
 //TODO: when is the end
 void AVPlayer::play()
 {
-	if (filename.isEmpty()) {
+    if (path.isEmpty()) {
 		qDebug("No file to play...");
 		return;
 	}
@@ -172,8 +210,8 @@ void AVPlayer::play()
 		stop();
     if (avTimerId > 0)
         killTimer(avTimerId);
-    qDebug("loading: %s ...", qPrintable(filename));
-    if (!demuxer.loadFile(filename)) {
+    qDebug("loading: %s ...", qPrintable(path));
+    if (!demuxer.loadFile(path)) {
         return;
 	}
     demuxer.dump();
@@ -304,13 +342,20 @@ bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
     case QEvent::KeyPress: {
         int key = static_cast<QKeyEvent*>(event)->key();
         switch (key) {
+        case Qt::Key_C: //capture
+            capture();
+            break;
+        case Qt::Key_N: //check playing?
+            pause(false);
+            pause(true);
+            break;
         case Qt::Key_P:
             play();
             break;
         case Qt::Key_S:
-            stop();
+            stop(); //check playing?
             break;
-        case Qt::Key_Space:
+        case Qt::Key_Space: //check playing?
             qDebug("isPaused = %d", isPaused());
             pause(!isPaused());
             break;
@@ -373,7 +418,7 @@ bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
     default:
         return false;
     }
-    return true;
+    return false; //for text input
 }
 
 } //namespace QtAV

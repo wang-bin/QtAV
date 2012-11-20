@@ -35,6 +35,11 @@ ImageRenderer::~ImageRenderer()
 {
 }
 
+QImage ImageRenderer::currentFrameImage() const
+{
+    return d_func().image;
+}
+
 int ImageRenderer::write(const QByteArray &data)
 {
     //qDebug("%s", __PRETTY_FUNCTION__);

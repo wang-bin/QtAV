@@ -25,7 +25,7 @@
 
 struct AVCodecContext;
 struct AVFrame;
-
+class QImage;
 namespace QtAV {
 
 class VideoRendererPrivate;
@@ -36,8 +36,9 @@ public:
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
 
-    virtual bool open() {return true;}
-    virtual bool close() {return true;}
+    virtual bool open();
+    virtual bool close();
+    virtual QImage currentFrameImage() const = 0;
     void resizeVideo(const QSize& size);
     void resizeVideo(int width, int height);
     QSize videoSize() const;
