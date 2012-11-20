@@ -50,6 +50,9 @@ public:
     bool isPaused() const;
     void setRenderer(VideoRenderer* renderer);
 
+    void setMute(bool mute);
+    bool isMute() const;
+
     virtual bool eventFilter(QObject *watcher, QEvent *event);
 
 public slots:

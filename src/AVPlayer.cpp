@@ -116,6 +116,16 @@ void AVPlayer::setRenderer(VideoRenderer *r)
     renderer->resizeVideo(renderer->videoSize()); //IMPORTANT: the swscaler will resize
 }
 
+void AVPlayer::setMute(bool mute)
+{
+    audio->setMute(mute);
+}
+
+bool AVPlayer::isMute() const
+{
+    return audio->isMute();
+}
+
 void AVPlayer::resizeVideo(const QSize &size)
 {
     video_dec->resizeVideo(size);
@@ -141,7 +151,7 @@ void AVPlayer::setCaptureSaveDir(const QString &dir)
 {
     capture_dir = dir;
 }
-
+//TODO: capture in another thread
 bool AVPlayer::capture()
 {
     double pts = clock->videoPts();

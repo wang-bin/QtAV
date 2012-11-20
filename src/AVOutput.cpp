@@ -69,9 +69,7 @@ void AVOutput::tryPause()
         return;
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
-    qDebug("%s @%d: pause pause begin.", __PRETTY_FUNCTION__, __LINE__);
     d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
-    qDebug("%s @%d: pause end.", __PRETTY_FUNCTION__, __LINE__);
 }
 
 } //namespace QtAV

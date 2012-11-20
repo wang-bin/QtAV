@@ -12,6 +12,8 @@ F: fullscreen on/off
 
 T: stays on top on/off
 
+N: show next frame. Continue the playing by pressing "Space"
+
 O: open a file
 
 P: replay
