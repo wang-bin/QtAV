@@ -46,13 +46,13 @@ extern "C"
  * @return the buffer in input, filled with the error description
  * @see av_strerror()
  */
-static inline char *av_make_error_string(char *errbuf, size_t errbuf_size, int errnum)
+static av_always_inline char *av_make_error_string(char *errbuf, size_t errbuf_size, int errnum)
 {
 	av_strerror(errnum, errbuf, errbuf_size);
 	return errbuf;
 }
 #define AV_ERROR_MAX_STRING_SIZE 64
-inline char* av_err2str(int errnum)
+av_always_inline char* av_err2str(int errnum)
 {
 	static char str[AV_ERROR_MAX_STRING_SIZE];
 	memset(str, 0, sizeof(str));
