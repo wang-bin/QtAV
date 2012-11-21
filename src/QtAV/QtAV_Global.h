@@ -26,7 +26,7 @@
 
 #define QTAV_MAJOR 1	//((QTAV_VERSION&0xff0000)>>16)
 #define QTAV_MINOR 1	//((QTAV_VERSION&0xff00)>>8)
-#define QTAV_PATCH 0	//(QTAV_VERSION&0xff)
+#define QTAV_PATCH 1	//(QTAV_VERSION&0xff)
 
 #define QTAV_VERSION_CHK(major, minor, patch) \
     (((major&0xff)<<16) | ((minor&0xff)<<8) | (patch&0xff))
