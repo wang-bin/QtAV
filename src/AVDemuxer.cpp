@@ -146,6 +146,8 @@ AVClock* AVDemuxer::clock() const
 //TODO: seek by byte
 void AVDemuxer::seek(qreal q)
 {
+    if (!a_codec_context || !v_codec_context || !format_context)
+        return;
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     q = qMax<qreal>(0.0, q);
@@ -180,6 +182,8 @@ void AVDemuxer::seek(qreal q)
 */
 void AVDemuxer::seekForward()
 {
+    if (!a_codec_context || !v_codec_context || !format_context)
+        return;
 	double pts = pkt->pts;
 	if (master_clock)
 		pts = master_clock->value();
@@ -189,6 +193,8 @@ void AVDemuxer::seekForward()
 
 void AVDemuxer::seekBackward()
 {
+    if (!a_codec_context || !v_codec_context || !format_context)
+        return;
 	double pts = pkt->pts;
 	if (master_clock)
 		pts = master_clock->value();
