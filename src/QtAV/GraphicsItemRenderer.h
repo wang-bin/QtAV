@@ -20,17 +20,27 @@
 #define QAV_GRAPHICSITEMRENDERER_H
 
 #include <QtAV/ImageRenderer.h>
-#include <QGraphicsItem>
+#include <QGraphicsWidget>
+
+//QGraphicsWidget will lose focus forever if TextItem inserted text. Why?
+#define CONFIG_GRAPHICSWIDGET 0
+#if CONFIG_GRAPHICSWIDGET
+#define GraphicsWidget QGraphicsWidget
+#else
+#define GraphicsWidget QGraphicsObject
+#endif
 
 namespace QtAV {
 
 class GraphicsItemRendererPrivate;
-class Q_EXPORT GraphicsItemRenderer : public QGraphicsItem, public ImageRenderer
+class Q_EXPORT GraphicsItemRenderer : public GraphicsWidget, public ImageRenderer
 {
     DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)
 public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
     virtual ~GraphicsItemRenderer();
+
+    virtual void registerEventFilter(EventFilter *filter);
     virtual int write(const QByteArray &data);
 
     QRectF boundingRect() const;
@@ -38,6 +48,12 @@ public:
 
 protected:
     GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
+
+#if CONFIG_GRAPHICSWIDGET
+    virtual bool event(QEvent *event);
+#else
+    //virtual bool sceneEvent(QEvent *event);
+#endif //CONFIG_GRAPHICSWIDGET
 };
 }
 

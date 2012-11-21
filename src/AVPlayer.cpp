@@ -22,7 +22,7 @@
 #include <qpainter.h>
 #include <QApplication>
 #include <QEvent>
-#include <QFileDialog>
+#include <QtCore/QDir>
 
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/AOPortAudio.h>
@@ -35,6 +35,7 @@
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/VideoThread.h>
 #include <QtAV/AVDemuxThread.h>
+#include <QtAV/EventFilter.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -50,12 +51,12 @@ namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),renderer(0),capture_dir("capture"),audio(0)
-  ,event_target(0)
+  ,event_filter(0)
 {
     qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
            "\nDistributed under GPLv3 or later"
            , QTAV_VERSION_STR_LONG);
-    qApp->installEventFilter(this);
+    //qApp->installEventFilter(this);
     /*
      * call stop() before the window(renderer) closed to stop the waitcondition
      * If close the renderer widget, the the renderer may destroy before waking up.
@@ -82,6 +83,8 @@ AVPlayer::AVPlayer(QObject *parent) :
     demuxer_thread->setDemuxer(&demuxer);
     demuxer_thread->setAudioThread(audio_thread);
     demuxer_thread->setVideoThread(video_thread);
+
+    event_filter = new EventFilter(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -111,6 +114,7 @@ void AVPlayer::setRenderer(VideoRenderer *r)
 		//delete renderer; //Do not own the ptr
     }
     renderer = r;
+    renderer->registerEventFilter(event_filter);
     video_thread->setOutput(renderer);
     renderer->bindDecoder(video_dec);
     renderer->resizeVideo(renderer->videoSize()); //IMPORTANT: the swscaler will resize
@@ -337,104 +341,6 @@ void AVPlayer::timerEvent(QTimerEvent* e)
             continue;
         }
     }
-}
-
-bool AVPlayer::eventFilter(QObject *watched, QEvent *event)
-{
-    Q_UNUSED(watched);
-    //TODO: if not send to QWidget based class, return false; instanceOf()?
-    QEvent::Type type = event->type();
-    switch (type) {
-    case QEvent::MouseButtonPress:
-        static_cast<QMouseEvent*>(event)->button();
-        //TODO: wheel to control volume etc.
-        return false;
-        break;
-    case QEvent::KeyPress: {
-        //avoid receive an event multiple times
-        if (!event_target)
-            event_target = watched;
-        if (event_target != watched)
-            return false;
-        int key = static_cast<QKeyEvent*>(event)->key();
-        switch (key) {
-        case Qt::Key_C: //capture
-            capture();
-            break;
-        case Qt::Key_N: //check playing?
-            pause(false);
-            pause(true);
-            break;
-        case Qt::Key_P:
-            play();
-            break;
-        case Qt::Key_S:
-            stop(); //check playing?
-            break;
-        case Qt::Key_Space: //check playing?
-            qDebug("isPaused = %d", isPaused());
-            pause(!isPaused());
-            break;
-        case Qt::Key_F: {
-            QWidget *w = qApp->activeWindow();
-            if (!w)
-                return false;
-            if (w->isFullScreen())
-                w->showNormal();
-            else
-                w->showFullScreen();
-        }
-            break;
-        case Qt::Key_Up:
-            audio->setVolume(audio->volume() + 0.1);
-            qDebug("vol = %.1f", audio->volume());
-            break;
-        case Qt::Key_Down:
-            audio->setVolume(audio->volume() - 0.1);
-            qDebug("vol = %.1f", audio->volume());
-            break;
-        case Qt::Key_O: {
-            QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
-            if (!file.isEmpty())
-                play(file);
-        }
-            break;
-        case Qt::Key_Left:
-            qDebug("<-");
-            seekBackward();
-            break;
-        case Qt::Key_Right:
-            qDebug("->");
-            seekForward();
-            break;
-        case Qt::Key_M:
-            audio->setMute(!audio->isMute());
-            break;
-        case Qt::Key_T: {
-            QWidget *w = qApp->activeWindow();
-            if (!w)
-                return false;
-            Qt::WindowFlags wf = w->windowFlags();
-            if (wf & Qt::WindowStaysOnTopHint) {
-                qDebug("Window not stays on top");
-                w->setWindowFlags(wf & ~Qt::WindowStaysOnTopHint);
-            } else {
-                qDebug("Window stays on top");
-                w->setWindowFlags(wf | Qt::WindowStaysOnTopHint);
-            }
-            //call setParent() when changing the flags, causing the widget to be hidden
-            w->show();
-        }
-            break;
-        default:
-            return false;
-        }
-        break;
-    }
-    default:
-        return false;
-    }
-    return false; //for text input
 }
 
 } //namespace QtAV

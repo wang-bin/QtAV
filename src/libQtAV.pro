@@ -28,6 +28,7 @@ SOURCES += \
     AVDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
+    EventFilter.cpp \
     GraphicsItemRenderer.cpp \
     ImageRenderer.cpp \
     Packet.cpp \
@@ -46,6 +47,7 @@ HEADERS += \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
     QtAV/AOPortAudio.h \
+    QtAV/EventFilter.h \
     QtAV/private/AOPortAudio_p.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AVThread_p.h \
@@ -71,4 +73,5 @@ HEADERS += \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoThread.h
+
 

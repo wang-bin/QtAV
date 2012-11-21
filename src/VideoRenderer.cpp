@@ -19,6 +19,8 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/VideoDecoder.h>
 #include <private/VideoRenderer_p.h>
+#include <QtCore/QCoreApplication>
+#include <QtAV/EventFilter.h>
 
 /*!
     EZX:
@@ -40,6 +42,12 @@ VideoRenderer::VideoRenderer(VideoRendererPrivate &d)
 
 VideoRenderer::~VideoRenderer()
 {
+}
+
+void VideoRenderer::registerEventFilter(EventFilter *filter)
+{
+    d_func().event_filter = filter;
+    qApp->installEventFilter(filter);
 }
 
 bool VideoRenderer::open()

@@ -35,6 +35,8 @@ public:
 
     explicit WidgetRenderer(QWidget *parent = 0);
     virtual ~WidgetRenderer();
+
+    virtual void registerEventFilter(EventFilter *filter);
     virtual int write(const QByteArray &data);
     void setPreview(const QImage& preivew);
 

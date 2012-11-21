@@ -20,21 +20,41 @@
 #include <private/GraphicsItemRenderer_p.h>
 #include <QGraphicsScene>
 #include <QtGui/QPainter>
+#include <QEvent>
+#include <QKeyEvent>
+#include <QtAV/EventFilter.h>
+#include <QGraphicsSceneEvent>
 
 namespace QtAV {
 
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
-    :QGraphicsItem(parent),ImageRenderer(*new GraphicsItemRendererPrivate())
+    :GraphicsWidget(parent),ImageRenderer(*new GraphicsItemRendererPrivate())
 {
+    setFlag(ItemIsFocusable); //receive key events
+    //setAcceptHoverEvents(true);
+#if CONFIG_GRAPHICSWIDGET
+    setFocusPolicy(Qt::ClickFocus); //for widget
+#endif //CONFIG_GRAPHICSWIDGET
 }
 
 GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGraphicsItem *parent)
-    :QGraphicsItem(parent),ImageRenderer(d)
+    :GraphicsWidget(parent),ImageRenderer(d)
 {
+    setFlag(ItemIsFocusable); //receive key events
+    //setAcceptHoverEvents(true);
+#if CONFIG_GRAPHICSWIDGET
+    setFocusPolicy(Qt::ClickFocus); //for widget
+#endif //CONFIG_GRAPHICSWIDGET
 }
 
 GraphicsItemRenderer::~GraphicsItemRenderer()
 {
+}
+
+void GraphicsItemRenderer::registerEventFilter(EventFilter *filter)
+{
+    d_func().event_filter = filter;
+    installEventFilter(filter);
 }
 
 int GraphicsItemRenderer::write(const QByteArray &data)
@@ -58,5 +78,33 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
     else
         painter->drawImage(QPointF(), d.image);
 }
+//GraphicsWidget will lose focus forever if focus out. Why?
 
+#if CONFIG_GRAPHICSWIDGET
+bool GraphicsItemRenderer::event(QEvent *event)
+{
+    setFocus(); //WHY: Force focus
+    QEvent::Type type = event->type();
+    qDebug("GraphicsItemRenderer event type = %d", type);
+    if (type == QEvent::KeyPress) {
+        qDebug("KeyPress Event. key=%d", static_cast<QKeyEvent*>(event)->key());
+    }
+    return true;
+}
+#else
+/*simply passes event to QGraphicsWidget::event(). you should not have to
+ *reimplement sceneEvent() in a subclass of QGraphicsWidget.
+ */
+/*
+bool GraphicsItemRenderer::sceneEvent(QEvent *event)
+{
+    QEvent::Type type = event->type();
+    qDebug("sceneEvent type = %d", type);
+    if (type == QEvent::KeyPress) {
+        qDebug("KeyPress Event. key=%d", static_cast<QKeyEvent*>(event)->key());
+    }
+    return true;
+}
+*/
+#endif //!CONFIG_GRAPHICSWIDGET
 } //namespace QtAV

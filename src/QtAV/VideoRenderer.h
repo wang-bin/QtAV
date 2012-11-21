@@ -28,6 +28,7 @@ struct AVFrame;
 class QImage;
 namespace QtAV {
 
+class EventFilter;
 class VideoRendererPrivate;
 class Q_EXPORT VideoRenderer : public AVOutput
 {
@@ -35,10 +36,11 @@ class Q_EXPORT VideoRenderer : public AVOutput
 public:
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
-
+    //TODO: unregister
+    virtual void registerEventFilter(EventFilter* filter);
     virtual bool open();
     virtual bool close();
-    virtual QImage currentFrameImage() const = 0;
+    virtual QImage currentFrameImage() const = 0; //const QImage& const?
     void resizeVideo(const QSize& size);
     void resizeVideo(int width, int height);
     QSize videoSize() const;

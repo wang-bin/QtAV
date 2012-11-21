@@ -31,6 +31,7 @@ class VideoDecoder;
 class VideoRenderer;
 class AVClock;
 class AVDemuxThread;
+class EventFilter;
 class Q_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -52,8 +53,6 @@ public:
 
     void setMute(bool mute);
     bool isMute() const;
-
-    virtual bool eventFilter(QObject *watcher, QEvent *event);
 
 public slots:
     void play(); //replay
@@ -82,7 +81,10 @@ protected:
     VideoDecoder *video_dec;
     AudioThread *audio_thread;
     VideoThread *video_thread;
-    QObject *event_target; //key event may receive multiple times for different targets
+
+    //tODO: (un)register api
+    friend class EventFilter;
+    EventFilter *event_filter;
 protected:
     virtual void timerEvent(QTimerEvent *);
 };
