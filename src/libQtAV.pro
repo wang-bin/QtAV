@@ -14,6 +14,8 @@ isEmpty(BUILD_DIR):BUILD_IN_SRC = yes
 include($${PROJECTROOT}/common.pri)
 !include(libQtAV.pri): error(could not find libQtAV.pri)
 
+win32:RC_FILE = $${PROJECTROOT}/res/QtAV.rc
+OTHER_FILES += $$RC_FILE
 #src
 unix: SOURCES += 
 else:win32: SOURCES += 
