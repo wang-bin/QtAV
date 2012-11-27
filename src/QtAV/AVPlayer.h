@@ -57,6 +57,7 @@ public:
 public slots:
     void play(); //replay
     void stop();
+    void playNextFrame();
     void seekForward();
     void seekBackward();
 

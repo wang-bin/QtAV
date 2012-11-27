@@ -289,6 +289,15 @@ void AVPlayer::stop()
     }
 }
 
+void AVPlayer::playNextFrame()
+{
+    if (!isPlaying()) {
+        play();
+    }
+    pause(false);
+    pause(true);
+}
+
 void AVPlayer::seekForward()
 {
     demuxer_thread->seekForward();

@@ -58,8 +58,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             player->capture();
             break;
         case Qt::Key_N: //check playing?
-            player->pause(false);
-            player->pause(true);
+            player->playNextFrame();
             break;
         case Qt::Key_P:
             player->play();
