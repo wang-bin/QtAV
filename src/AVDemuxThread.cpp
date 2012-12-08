@@ -108,6 +108,8 @@ void AVDemuxThread::run()
     Packet pkt;
     end = false;
     buffer_mutex.unlock();
+    PacketQueue *aqueue = audio_thread->packetQueue();
+    PacketQueue *vqueue = video_thread->packetQueue();
     while (!end) { //TODO: mutex locker
         buffer_mutex.lock();
         if (!demuxer->readFrame()) {
@@ -121,11 +123,11 @@ void AVDemuxThread::run()
           But usually it will not happen, why?
         */
         if (index == audio_stream) {
-            //audio_thread->packetQueue()->setBlocking(video_thread->packetQueue()->size() >= 256);
-            audio_thread->packetQueue()->put(pkt); //affect video_thread
+            aqueue->setBlocking(vqueue->size() >= vqueue->threshold());
+            aqueue->put(pkt); //affect video_thread
         } else if (index == video_stream) {
-            //video_thread->packetQueue()->setBlocking(audio_thread->packetQueue()->size() >= 256);
-            video_thread->packetQueue()->put(pkt); //affect audio_thread
+            vqueue->setBlocking(aqueue->size() >= aqueue->threshold());
+            vqueue->put(pkt); //affect audio_thread
         } else { //subtitle
             buffer_mutex.unlock();
             continue;

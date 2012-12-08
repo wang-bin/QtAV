@@ -42,10 +42,12 @@ public:
     inline void clear();
     inline bool isEmpty() const;
     inline int size() const;
+    inline int threshold() const;
+    inline int capacity() const;
 
 private:
     bool block;
-    int cap, thres;
+    int cap, thres; //static?
     Container<T> queue;
     QMutex mutex;
     QWaitCondition cond_full, cond_empty;
@@ -54,7 +56,7 @@ private:
 
 template <typename T, template <typename> class Container>
 BlockingQueue<T, Container>::BlockingQueue()
-    :block(true),cap(512),thres(256)
+    :block(true),cap(512),thres(128)
 {
 }
 
@@ -94,6 +96,11 @@ T BlockingQueue<T, Container>::take()
         cond_full.wakeAll();
     if (block && queue.isEmpty())
         cond_empty.wait(&mutex);
+    //TODO: Why still empty?
+    if (queue.isEmpty()) {
+        qWarning("Queue is still empty");
+        return T();
+    }
     return queue.dequeue();
 }
 
@@ -117,6 +124,7 @@ void BlockingQueue<T, Container>::clear()
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     queue.clear();
+    //TODO: assert not empty
 }
 
 template <typename T, template <typename> class Container>
@@ -129,6 +137,18 @@ template <typename T, template <typename> class Container>
 int BlockingQueue<T, Container>::size() const
 {
     return queue.size();
+}
+
+template <typename T, template <typename> class Container>
+int BlockingQueue<T, Container>::threshold() const
+{
+    return thres;
+}
+
+template <typename T, template <typename> class Container>
+int BlockingQueue<T, Container>::capacity() const
+{
+    return cap;
 }
 
 } //namespace QtAV
