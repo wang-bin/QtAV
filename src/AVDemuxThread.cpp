@@ -62,23 +62,30 @@ void AVDemuxThread::setVideoThread(AVThread *thread)
 
 void AVDemuxThread::seek(qreal pos)
 {
+    QMutexLocker lock(&buffer_mutex);
+    Q_UNUSED(lock);
+    demuxer->seek(pos);
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
-    demuxer->seek(pos);
 }
 
 void AVDemuxThread::seekForward()
 {
+    QMutexLocker lock(&buffer_mutex);
+    Q_UNUSED(lock);
+    demuxer->seekForward();
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
-    demuxer->seekForward();
+    qDebug("Seek end");
 }
 
 void AVDemuxThread::seekBackward()
 {
+    QMutexLocker lock(&buffer_mutex);
+    Q_UNUSED(lock);
+    demuxer->seekBackward();
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
-    demuxer->seekBackward();
 }
 //No more data to put. So stop blocking the queue to take the reset elements
 void AVDemuxThread::stop()
