@@ -38,7 +38,7 @@ public:
     void put(const T& t);
     T take();
     void setBlocking(bool block); //will wake if false. called when no more data can enqueue
-
+//TODO:setMinBlock,MaxBlock
     inline void clear();
     inline bool isEmpty() const;
     inline int size() const;
@@ -83,8 +83,8 @@ void BlockingQueue<T, Container>::put(const T& t)
     Q_UNUSED(lock);
     if (block && queue.size() >= cap)
         cond_full.wait(&mutex);
-    cond_empty.wakeAll();
     queue.enqueue(t);
+    cond_empty.wakeAll();
 }
 
 template <typename T, template <typename> class Container>
@@ -94,7 +94,7 @@ T BlockingQueue<T, Container>::take()
     Q_UNUSED(lock);
     if (queue.size() < thres)
         cond_full.wakeAll();
-    if (block && queue.isEmpty())
+    if (/*block && */queue.isEmpty())//TODO:always block?
         cond_empty.wait(&mutex);
     //TODO: Why still empty?
     if (queue.isEmpty()) {
@@ -111,7 +111,7 @@ void BlockingQueue<T, Container>::setBlocking(bool block)
     Q_UNUSED(lock);
     this->block = block;
     if (!block) {
-        cond_empty.wakeAll();
+        //cond_empty.wakeAll(); //empty still wait. setBlock=>setCapacity(-1)
         cond_full.wakeAll();
     }
 }
@@ -119,7 +119,7 @@ void BlockingQueue<T, Container>::setBlocking(bool block)
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::clear()
 {
-    cond_empty.wakeAll();
+    //cond_empty.wakeAll();
     cond_full.wakeAll();
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
