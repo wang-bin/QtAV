@@ -56,7 +56,8 @@ void VideoThread::run()
         }
         Packet pkt = d.packets.take(); //wait to dequeue
         //Compare to the clock
-        if (pkt.pts <= 0) {
+        if (pkt.pts <= 0 || pkt.data.isNull()) {
+            qDebug("Invalid pts or empty packet!");
             d.mutex.unlock();
             continue;
         }
@@ -67,8 +68,7 @@ void VideoThread::run()
          *TODO: 1. how to choose the value
          * 2. use last delay when seeking
         */
-        //qDebug("delay %f", d.delay);
-		if (qAbs(d.delay) < 0.618) {
+        if (qAbs(d.delay) < 1.618) {
             if (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
                 usleep(d.delay * 1000000);
@@ -76,6 +76,9 @@ void VideoThread::run()
                 //d.mutex.unlock();
                 //continue;
             }
+        } else {
+            qDebug("delay %f", d.delay);
+            //audio packet not cleaned up?
         }
         d.clock->updateVideoPts(pkt.pts); //here?
         if (d.dec->decode(pkt.data)) {

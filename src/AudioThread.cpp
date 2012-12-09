@@ -70,6 +70,11 @@ void AudioThread::run()
             }
         }
         Packet pkt = d.packets.take(); //wait to dequeue
+        if (pkt.data.isNull()) {
+            qDebug("Empty packet!");
+            d.mutex.unlock();
+            continue;
+        }
         d.clock->updateValue(pkt.pts);
         if (d.dec->decode(pkt.data)) {
             QByteArray decoded(d.dec->data());
