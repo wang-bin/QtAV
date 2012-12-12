@@ -288,7 +288,7 @@ void AVPlayer::stop()
         video_thread->wait();
     }
 }
-
+//FIXME: If not playing, it will just play but not play one frame.
 void AVPlayer::playNextFrame()
 {
     if (!isPlaying()) {
