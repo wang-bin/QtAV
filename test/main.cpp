@@ -105,7 +105,9 @@ int main(int argc, char *argv[])
 
 	AVPlayer player;
 	player.setRenderer(&renderer);
-	if (!player.file().isEmpty())
-		player.play();
+    if (!fileName.isEmpty()) {
+        player.play(fileName);
+    }
+
     return a.exec();
 }
