@@ -43,6 +43,8 @@ Build
 
   The binaries is in $BUILD_DIR/bin
 
+NOTE: If you are using QtCreator to build the project, you should go to "project" page then add an environment variable "BUILD_DIR" and set the vaule.
+
 
 Screenshot
 -------
