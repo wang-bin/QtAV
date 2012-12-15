@@ -36,6 +36,8 @@ class Q_EXPORT VideoRenderer : public AVOutput
 public:
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
+    //the size of image (QByteArray) that decoded
+    void setSourceSize(int width, int height); //private?
     //TODO: unregister
     virtual void registerEventFilter(EventFilter* filter);
     virtual bool open();

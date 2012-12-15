@@ -44,6 +44,13 @@ VideoRenderer::~VideoRenderer()
 {
 }
 
+void VideoRenderer::setSourceSize(int width, int height)
+{
+    DPTR_D(VideoRenderer);
+    d.src_width = width;
+    d.src_height = height;
+}
+
 void VideoRenderer::registerEventFilter(EventFilter *filter)
 {
     d_func().event_filter = filter;
@@ -70,9 +77,7 @@ void VideoRenderer::resizeVideo(int width, int height)
     DPTR_D(VideoRenderer);
     if (width == 0 || height == 0)
         return;
-    if (d.dec) {
-        static_cast<VideoDecoder*>(d.dec)->resizeVideo(width, height);
-    }
+
     d.width = width;
     d.height = height;
 }

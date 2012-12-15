@@ -34,6 +34,9 @@ public:
 
     void resizeVideo(const QSize& size);
     void resizeVideo(int width, int height);
+
+    int width() const;
+    int height() const;
 };
 
 } //namespace QtAV

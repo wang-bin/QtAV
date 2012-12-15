@@ -116,7 +116,6 @@ void AVPlayer::setRenderer(VideoRenderer *r)
     renderer = r;
     renderer->registerEventFilter(event_filter);
     video_thread->setOutput(renderer);
-    renderer->bindDecoder(video_dec);
     renderer->resizeVideo(renderer->videoSize()); //IMPORTANT: the swscaler will resize
 }
 
@@ -130,9 +129,11 @@ bool AVPlayer::isMute() const
     return audio->isMute();
 }
 
+//TODO: remove?
 void AVPlayer::resizeVideo(const QSize &size)
 {
-    video_dec->resizeVideo(size);
+    renderer->resizeVideo(size); //TODO: deprecate
+    //video_dec->resizeVideo(size);
 }
 
 void AVPlayer::setFile(const QString &path)

@@ -47,9 +47,9 @@ int ImageRenderer::write(const QByteArray &data)
     tryPause();
     //picture.data[0]
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-    d.image = QImage((uchar*)data.data(), d.width, d.height, QImage::Format_RGB32);
+    d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
 #else
-    d.image = QImage((uchar*)data.data(), d.width, d.height, 16, NULL, 0, QImage::IgnoreEndian);
+    d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
 #endif
     return data.size();
 }

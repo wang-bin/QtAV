@@ -27,9 +27,11 @@ class EventFilter;
 class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
-    VideoRendererPrivate():width(480),height(320),event_filter(0) {}
+    VideoRendererPrivate():width(480),height(320),src_width(0)
+      ,src_height(0),event_filter(0) {}
     virtual ~VideoRendererPrivate(){}
     int width, height;
+    int src_width, src_height;
     EventFilter *event_filter;
 };
 

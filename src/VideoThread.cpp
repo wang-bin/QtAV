@@ -20,6 +20,8 @@
 #include <private/AVThread_p.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/VideoDecoder.h>
+#include <QtAV/VideoRenderer.h>
 #include <QDateTime>
 namespace QtAV {
 
@@ -45,6 +47,7 @@ void VideoThread::run()
         return;
     resetState();
     Q_ASSERT(d.clock != 0);
+    VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     while (!d.stop) {
         d.mutex.lock();
         if (d.packets.isEmpty() && !d.stop) {
@@ -82,8 +85,10 @@ void VideoThread::run()
         }
         d.clock->updateVideoPts(pkt.pts); //here?
         if (d.dec->decode(pkt.data)) {
-            if (d.writer)
+            if (d.writer) {
+                ((VideoRenderer*)d.writer)->setSourceSize(dec->width(), dec->height());
                 d.writer->write(d.dec->data());
+            }
             //qApp->processEvents(QEventLoop::AllEvents);
         }
         d.mutex.unlock();

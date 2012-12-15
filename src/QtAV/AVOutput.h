@@ -39,7 +39,6 @@ public:
     //Demuxer thread automatically paused because packets will be full
     void pause(bool p); //processEvents when waiting?
     bool isPaused() const;
-    void bindDecoder(AVDecoder *dec); //for resizing video (or resample audio?)
 protected:
     AVOutput(AVOutputPrivate& d);
     /* If paused is true, block the thread(block write()) and wait

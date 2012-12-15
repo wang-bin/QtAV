@@ -73,10 +73,17 @@ QRectF GraphicsItemRenderer::boundingRect() const
 void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     DPTR_D(GraphicsItemRenderer);
-    if (d.image.isNull())
-        painter->drawImage(QPointF(), d.preview);
-    else
-        painter->drawImage(QPointF(), d.image);
+    if (d.image.isNull()) {
+        if (d.image.size() == QSize(d.width, d.height))
+            painter->drawImage(QPointF(), d.preview);
+        else
+            painter->drawImage(boundingRect(), d.preview);
+    } else {
+        if (d.image.size() == QSize(d.width, d.height))
+            painter->drawImage(QPointF(), d.image);
+        else
+            painter->drawImage(boundingRect(), d.image);
+    }
 }
 //GraphicsWidget will lose focus forever if focus out. Why?
 

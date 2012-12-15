@@ -56,11 +56,6 @@ bool AVOutput::isPaused() const
     return d_func().paused;
 }
 
-void AVOutput::bindDecoder(AVDecoder *dec)
-{
-    d_func().dec = dec;
-}
-
 //TODO: how to call this automatically before write()?
 void AVOutput::tryPause()
 {

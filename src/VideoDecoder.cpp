@@ -76,7 +76,13 @@ bool VideoDecoder::decode(const QByteArray &encoded)
             );
     */
 
-
+    if (d.width <= 0 || d.height <= 0) {
+        qDebug("decoded video size not seted. use original size [%d x %d]"
+            , d.codec_ctx->width, d.codec_ctx->height);
+        if (!d.codec_ctx->width || !d.codec_ctx->height)
+            return false;
+        resizeVideo(d.codec_ctx->width, d.codec_ctx->height);
+    }
     d.sws_ctx = sws_getCachedContext(d.sws_ctx
             , d.codec_ctx->width, d.codec_ctx->height, d.codec_ctx->pix_fmt
             , d.width, d.height, d.pix_fmt
@@ -129,4 +135,13 @@ void VideoDecoder::resizeVideo(int width, int height)
     d.height = height;
 }
 
+int VideoDecoder::width() const
+{
+    return d_func().width;
+}
+
+int VideoDecoder::height() const
+{
+    return d_func().height;
+}
 } //namespace QtAV

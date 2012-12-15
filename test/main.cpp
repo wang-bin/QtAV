@@ -91,13 +91,14 @@ int main(int argc, char *argv[])
     //v.setViewport(&gw); //may flick
 
 	GraphicsItemRenderer renderer;
-	renderer.resizeVideo(800, 600);
-	s.addItem(&renderer);
+    renderer.resizeVideo(800, 600);
+    s.addItem(&renderer);
 #else
 	WidgetRenderer renderer;
-	renderer.showMaximized();
+    renderer.show();
+    //renderer.resize(800, 600);
 #endif
-	QString fileName;
+    QString fileName;
 	if (argc > 1)
 		fileName = a.arguments().at(1);
 	else

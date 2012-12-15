@@ -138,8 +138,13 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 #if !CONFIG_EZX
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
+    DPTR_D(WidgetRenderer);
     QPainter p(this);
     p.drawImage(QPoint(), d_func().image);
+    if (d.image.size() == QSize(d.width, d.height))
+        p.drawImage(QPoint(), d_func().image);
+    else
+        p.drawImage(rect(), d.image);
 }
 
 void WidgetRenderer::dragEnterEvent(QDragEnterEvent *)
