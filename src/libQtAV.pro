@@ -35,6 +35,7 @@ SOURCES += \
     ImageRenderer.cpp \
     Packet.cpp \
     AVPlayer.cpp \
+    VideoCapture.cpp \
     VideoRenderer.cpp \
     WidgetRenderer.cpp \
     AVOutput.cpp \
@@ -69,11 +70,10 @@ HEADERS += \
     QtAV/ImageRenderer.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
+    QtAV/VideoCapture.h \
     QtAV/VideoRenderer.h \
     QtAV/WidgetRenderer.h \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoThread.h
-
-

@@ -21,6 +21,7 @@
 #define QTAV_VIDEOTHREAD_H
 
 #include <QtAV/AVThread.h>
+#include <QtCore/QSize>
 
 namespace QtAV {
 
@@ -28,10 +29,12 @@ class VideoThreadPrivate;
 class VideoThread : public AVThread
 {
     Q_OBJECT
-    Q_DECLARE_PRIVATE(VideoThread)
+    DPTR_DECLARE_PRIVATE(VideoThread)
 public:
     explicit VideoThread(QObject *parent = 0);
-
+    QByteArray currentRawImage() const;
+    QSize currentRawImageSize() const; //TODO: remove it? use dec's size outside?
+    double currentPts() const;
 protected:
     virtual void run();
 };

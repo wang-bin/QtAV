@@ -31,11 +31,13 @@
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/VideoCapture.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/VideoThread.h>
 #include <QtAV/AVDemuxThread.h>
 #include <QtAV/EventFilter.h>
+#include <QtAV/VideoCapture.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -51,7 +53,7 @@ namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),renderer(0),capture_dir("capture"),audio(0)
-  ,event_filter(0)
+  ,event_filter(0),video_capture(0)
 {
     qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
            "\nDistributed under GPLv3 or later"
@@ -85,6 +87,9 @@ AVPlayer::AVPlayer(QObject *parent) :
     demuxer_thread->setVideoThread(video_thread);
 
     event_filter = new EventFilter(this);
+
+    video_capture = new VideoCapture();
+
 }
 
 AVPlayer::~AVPlayer()
@@ -147,6 +152,18 @@ QString AVPlayer::file() const
     return path;
 }
 
+VideoCapture* AVPlayer::setVideoCapture(VideoCapture *cap)
+{
+    VideoCapture *old = video_capture;
+    video_capture = cap;
+    return old;
+}
+
+VideoCapture* AVPlayer::videoCapture()
+{
+    return video_capture;
+}
+
 void AVPlayer::setCaptureName(const QString &name)
 {
     capture_name = name;
@@ -159,29 +176,48 @@ void AVPlayer::setCaptureSaveDir(const QString &dir)
 //TODO: capture in another thread
 bool AVPlayer::capture()
 {
-    double pts = clock->videoPts();
-    QImage cap = renderer->currentFrameImage();
-    if (cap.isNull()) {
-        qWarning("Null image");
+    if (!video_capture)
         return false;
-    }
+#if 1
+    //always return ture
+    double pts = video_thread->currentPts();
+    QByteArray raw_image(video_thread->currentRawImage());
+    //check raw_image? not empty if not empty before
+    video_capture->setRawImageData(raw_image);
+    video_capture->setRawImageSize(video_thread->currentRawImageSize());
+    video_capture->setCaptureDir(capture_dir);
+    QString cap_name(capture_name);
+    if (cap_name.isEmpty())
+        cap_name = QFileInfo(path).completeBaseName();
+    cap_name += "_" + QString::number(pts, 'f', 3);
+    video_capture->setCaptureName(cap_name);
+    qDebug("request capture: %s", qPrintable(cap_name));
+    video_capture->request();
+#else
     if (!QDir(capture_dir).exists()) {
         if (!QDir().mkpath(capture_dir)) {
             qWarning("Failed to create capture dir [%s]", qPrintable(capture_dir));
             return false;
         }
     }
+    QImage cap = renderer->currentFrameImage();
+    if (cap.isNull()) {
+        qWarning("Null image");
+        return false;
+    }
     QString cap_path = capture_dir + "/";
     if (capture_name.isEmpty())
         cap_path += QFileInfo(path).completeBaseName();
     else
         cap_path += capture_name;
+    double pts = clock->videoPts();
     cap_path += "_" + QString::number(pts, 'f', 3) + ".jpg";
     qDebug("Saving capture to [%s]", qPrintable(cap_path));
     if (!cap.save(cap_path, "jpg")) {
         qWarning("Save capture failed");
         return false;
     }
+#endif
     return true;
 }
 

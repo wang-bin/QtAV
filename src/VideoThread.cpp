@@ -32,11 +32,30 @@ class VideoThreadPrivate : public AVThreadPrivate
 public:
     VideoThreadPrivate():delay(0){}
     double delay;
+    double pts; //current decoded pts. for capture
+    QByteArray decoded_data; //for capture. cow
+    int width, height;
 };
 
 VideoThread::VideoThread(QObject *parent) :
     AVThread(*new VideoThreadPrivate(), parent)
 {
+}
+
+QByteArray VideoThread::currentRawImage() const
+{
+    return d_func().decoded_data;
+}
+
+QSize VideoThread::currentRawImageSize() const
+{
+    DPTR_D(const VideoThread);
+    return QSize(d.width, d.height);
+}
+
+double VideoThread::currentPts() const
+{
+    return d_func().pts;
 }
 
 //TODO: if output is null or dummy, the use duration to wait
@@ -85,6 +104,10 @@ void VideoThread::run()
         }
         d.clock->updateVideoPts(pkt.pts); //here?
         if (d.dec->decode(pkt.data)) {
+            d.pts = pkt.pts;
+            d.width = dec->width();
+            d.height = dec->height();
+            d.decoded_data = d.dec->data();
             if (d.writer) {
                 ((VideoRenderer*)d.writer)->setSourceSize(dec->width(), dec->height());
                 d.writer->write(d.dec->data());

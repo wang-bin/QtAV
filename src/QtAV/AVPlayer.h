@@ -32,6 +32,7 @@ class VideoRenderer;
 class AVClock;
 class AVDemuxThread;
 class EventFilter;
+class VideoCapture;
 class Q_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -41,10 +42,16 @@ public:
 
     void setFile(const QString& path);
 	QString file() const;
-    //capture is a jpeg image by default
-    void setCaptureName(const QString& name);//base name
-    void setCaptureSaveDir(const QString& dir);
-    bool capture();
+    /*
+     * default: [fmt: PNG, dir: capture, name: basename]
+     * replace the existing capture; return the replaced one
+     * set 0 will disable the capture
+     */
+    VideoCapture* setVideoCapture(VideoCapture* cap);
+    VideoCapture *videoCapture();
+    void setCaptureName(const QString& name);//TODO: remove. base name
+    void setCaptureSaveDir(const QString& dir); //TODO: remove
+    bool capture(); //TODO: api=>captureVideo
     bool play(const QString& path);
 	bool isPlaying() const;
     void pause(bool p);
@@ -86,6 +93,7 @@ protected:
     //tODO: (un)register api
     friend class EventFilter;
     EventFilter *event_filter;
+    VideoCapture *video_capture;
 protected:
     virtual void timerEvent(QTimerEvent *);
 };
