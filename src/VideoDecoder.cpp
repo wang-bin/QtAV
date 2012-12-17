@@ -86,7 +86,7 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     d.sws_ctx = sws_getCachedContext(d.sws_ctx
             , d.codec_ctx->width, d.codec_ctx->height, d.codec_ctx->pix_fmt
             , d.width, d.height, d.pix_fmt
-            , (d.width == d.codec_ctx->width && d.height == d.codec_ctx->height) ? SWS_POINT : SWS_BICUBIC
+            , (d.width == d.codec_ctx->width && d.height == d.codec_ctx->height) ? SWS_POINT : SWS_FAST_BILINEAR //SWS_BICUBIC
             , NULL, NULL, NULL
             );
     
