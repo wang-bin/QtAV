@@ -148,7 +148,7 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 }
 !ezx: LIBS += -L/usr/local/lib
 LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale  -lportaudio
-win32: LIBS += -lwinmm -lksguid #portaudio
+win32: LIBS += -lwinmm -lksguid# -luuid -lws2_32 #portaudio
 
 unix:QMAKE_RPATHDIR += /usr/local/lib
 

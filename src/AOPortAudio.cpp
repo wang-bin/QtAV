@@ -20,17 +20,6 @@
 #include <QtAV/AOPortAudio.h>
 #include <private/AOPortAudio_p.h>
 
-#if 0
-//#include <guiddef.h>
-typedef struct {
-    unsigned long Data1;
-    unsigned short Data2;
-    unsigned short Data3;
-    unsigned char Data4[8];
-} GUID;
-extern const GUID GUID_NULL = {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
-#endif
-
 namespace QtAV {
 
 AOPortAudio::AOPortAudio()
