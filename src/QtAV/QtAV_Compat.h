@@ -64,9 +64,10 @@ av_always_inline char* av_err2str(int errnum)
  * function arguments but never stand-alone.
  */
 //GCC: taking address of temporary array
-//#define av_err2str(errnum) \
-//	av_make_error_string((char[AV_ERROR_MAX_STRING_SIZE]){0}, AV_ERROR_MAX_STRING_SIZE, errnum)
-
+/*
+#define av_err2str(errnum) \
+    av_make_error_string((char[AV_ERROR_MAX_STRING_SIZE]){0}, AV_ERROR_MAX_STRING_SIZE, errnum)
+*/
 #endif //av_err2str
 
 #endif

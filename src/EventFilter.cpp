@@ -89,6 +89,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             qDebug("vol = %.1f", player->audio->volume());
             break;
         case Qt::Key_O: {
+            //TODO: emit a signal so we can use custome dialogs
             QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
             if (!file.isEmpty())
                 player->play(file);

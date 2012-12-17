@@ -45,10 +45,11 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
     av_free_packet(&packet);
     if (ret < 0) {
-        qDebug("[AudioDecoder] %s", av_err2str(ret));
-        return 0;
+        qWarning("[AudioDecoder] %s", av_err2str(ret));
+        return false;
     }
     if (!d.got_frame_ptr) {
+        qWarning("[AudioDecoder] got_frame_ptr=false");
         return false;
     }
     const int samples_with_channels = d.frame->nb_samples * d.codec_ctx->channels;
