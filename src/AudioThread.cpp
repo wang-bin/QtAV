@@ -80,10 +80,10 @@ void AudioThread::run()
             QByteArray decoded(d.dec->data());
             int decodedSize = decoded.size();
             int decodedPos = 0;
+            qreal delay =0;
             while (decodedSize > 0) {
-                const int chunk = qMin(decodedSize, int(max_len*csf));
+                int chunk = qMin(decodedSize, int(max_len*csf));
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
-                d.clock->updateDelay(chunk/csf);
                 if (ao) {
                     if (!ao->isMute()) {
                         decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
@@ -97,9 +97,9 @@ void AudioThread::run()
                     }
                     ao->write(decodedChunk);
                 }
+                d.clock->updateDelay(delay += chunk/csf);
                 decodedPos += chunk;
                 decodedSize -= chunk;
-				//qApp->processEvents(QEventLoop::AllEvents);
             }
 		}
         d.mutex.unlock();
