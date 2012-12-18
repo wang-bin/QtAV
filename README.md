@@ -33,17 +33,14 @@ Down: volume -
 
 Build
 ------
-  BUILD_DIR=/your/build/dir qmake
 
-  or  qmake   (BUILD_DIR is $PWD/out)
-
-  or  cd build_dir ; qmake /path/to/QtAV.pro
+  qmake -r "BUILD_DIR=/your/build/dir" [path/to/pro]
 
   make -j4
 
   The binaries is in $BUILD_DIR/bin
 
-NOTE: If you are using QtCreator to build the project, you should go to "project" page then add an environment variable "BUILD_DIR" and set the vaule.
+NOTE: If you are using QtCreator to build the project, you should go to Projects->Build Steps->qmake->Additional arguments, add "BUILD_DIR=your/buid/dir"
 
 
 Screenshot
