@@ -1,7 +1,7 @@
 TEMPLATE = app
 QT += opengl
 
-TARGET = tst_qtav
+TARGET = player
 STATICLINK = 0
 PROJECTROOT = $$PWD/..
 isEmpty(BUILD_DIR):BUILD_DIR=$$(BUILD_DIR)
