@@ -20,7 +20,7 @@
 #ifndef QTAV_BLOCKINGQUEUE_H
 #define QTAV_BLOCKINGQUEUE_H
 
-#include <QtCore/QMutex>
+#include <QtCore/QReadWriteLock>
 #include <QtCore/QWaitCondition>
 
 template<typename T> class QQueue;
@@ -49,7 +49,7 @@ private:
     bool block;
     int cap, thres; //static?
     Container<T> queue;
-    QMutex mutex;
+    mutable QReadWriteLock lock; //locker in const func
     QWaitCondition cond_full, cond_empty;
 };
 
@@ -63,26 +63,26 @@ BlockingQueue<T, Container>::BlockingQueue()
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::setCapacity(int max)
 {
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
     cap = max;
 }
 
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::setThreshold(int min)
 {
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
     thres = min;
 }
 
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::put(const T& t)
 {
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
     if (block && queue.size() >= cap)
-        cond_full.wait(&mutex);
+        cond_full.wait(&lock);
     queue.enqueue(t);
     cond_empty.wakeAll();
 }
@@ -90,12 +90,12 @@ void BlockingQueue<T, Container>::put(const T& t)
 template <typename T, template <typename> class Container>
 T BlockingQueue<T, Container>::take()
 {
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
     if (queue.size() < thres)
         cond_full.wakeAll();
     if (/*block && */queue.isEmpty())//TODO:always block?
-        cond_empty.wait(&mutex);
+        cond_empty.wait(&lock);
     //TODO: Why still empty?
     if (queue.isEmpty()) {
         qWarning("Queue is still empty");
@@ -107,8 +107,8 @@ T BlockingQueue<T, Container>::take()
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::setBlocking(bool block)
 {
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
     this->block = block;
     if (!block) {
         //cond_empty.wakeAll(); //empty still wait. setBlock=>setCapacity(-1)
@@ -119,10 +119,10 @@ void BlockingQueue<T, Container>::setBlocking(bool block)
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::clear()
 {
+    QWriteLocker locker(&lock);
     //cond_empty.wakeAll();
     cond_full.wakeAll();
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+    Q_UNUSED(locker);
     queue.clear();
     //TODO: assert not empty
 }
@@ -130,24 +130,28 @@ void BlockingQueue<T, Container>::clear()
 template <typename T, template <typename> class Container>
 bool BlockingQueue<T, Container>::isEmpty() const
 {
+    QReadLocker locker(&lock);
     return queue.isEmpty();
 }
 
 template <typename T, template <typename> class Container>
 int BlockingQueue<T, Container>::size() const
 {
+    QReadLocker locker(&lock);
     return queue.size();
 }
 
 template <typename T, template <typename> class Container>
 int BlockingQueue<T, Container>::threshold() const
 {
+    QReadLocker locker(&lock);
     return thres;
 }
 
 template <typename T, template <typename> class Container>
 int BlockingQueue<T, Container>::capacity() const
 {
+    QReadLocker locker(&lock);
     return cap;
 }
 
