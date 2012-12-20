@@ -32,11 +32,11 @@ public:
     AOPortAudio();
     virtual ~AOPortAudio();
 
-    virtual int write(const QByteArray& data);
-
     virtual bool open();
     virtual bool close();
 
+protected:
+	virtual bool write();
 };
 
 } //namespace QtAV

@@ -90,7 +90,7 @@ void VideoThread::run()
          *TODO: 1. how to choose the value
          * 2. use last delay when seeking
         */
-        if (qAbs(d.delay) < 1.618) {
+        if (qAbs(d.delay) < 2.718) {
             if (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
                 usleep(d.delay * 1000000);
@@ -98,9 +98,11 @@ void VideoThread::run()
                 //d.mutex.unlock();
                 //continue;
             }
-        } else {
+        } else { //when to drop off?
             qDebug("delay %f", d.delay);
             //audio packet not cleaned up?
+            //d.mutex.unlock();
+            //continue;
         }
         d.clock->updateVideoPts(pkt.pts); //here?
         if (d.dec->decode(pkt.data)) {
@@ -110,7 +112,7 @@ void VideoThread::run()
             d.decoded_data = d.dec->data();
             if (d.writer) {
                 ((VideoRenderer*)d.writer)->setSourceSize(dec->width(), dec->height());
-                d.writer->write(d.dec->data());
+				d.writer->writeData(d.dec->data());
             }
             //qApp->processEvents(QEventLoop::AllEvents);
         }

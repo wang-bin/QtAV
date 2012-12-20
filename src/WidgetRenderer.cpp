@@ -50,10 +50,8 @@ void WidgetRenderer::registerEventFilter(EventFilter *filter)
     installEventFilter(filter);
 }
 
-int WidgetRenderer::write(const QByteArray &data)
+bool WidgetRenderer::write()
 {
-    int s = ImageRenderer::write(data);
-
 #if CONFIG_EZX
     QPixmap pix;
     pix.convertFromImage(d_func().image);
@@ -67,7 +65,7 @@ int WidgetRenderer::write(const QByteArray &data)
 #else
     update();
 #endif
-    return s;
+	return true;
 }
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)

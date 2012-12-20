@@ -44,6 +44,7 @@ public:
 
 protected:
     AudioOutput(AudioOutputPrivate& d);
+	virtual void convertData(const QByteArray &data);
 };
 
 } //namespace QtAV

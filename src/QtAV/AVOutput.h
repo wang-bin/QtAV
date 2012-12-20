@@ -33,7 +33,7 @@ public:
     AVOutput();
     virtual ~AVOutput() = 0;
     //Call tryPause() first to try to pause
-    virtual int write(const QByteArray& data);// = 0; //TODO: why pure may case "pure virtual method called"
+	bool writeData(const QByteArray& data);
     virtual bool open() = 0;
     virtual bool close() = 0;
     //Demuxer thread automatically paused because packets will be full
@@ -41,9 +41,15 @@ public:
     bool isPaused() const;
 protected:
     AVOutput(AVOutputPrivate& d);
-    /* If paused is true, block the thread(block write()) and wait
+	/*
+	 * Reimplement this. You should convert and save the decoded data, e.g. QImage,
+	 * which will be used in write() or some other functions. Do nothing by default.
+	 */
+	virtual void convertData(const QByteArray& data) = 0;// = 0; //TODO: why pure may case "pure virtual method called"
+	virtual bool write() = 0; //TODO: why pure may case "pure virtual method called"
+	/* If paused is true, block the thread(block write()) and wait
      * for paused be false, else do nothing. */
-    void tryPause();
+	void tryPause();
 
     DPTR_DECLARE(AVOutput)
 };

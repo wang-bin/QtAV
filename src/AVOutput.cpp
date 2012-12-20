@@ -36,11 +36,14 @@ AVOutput::~AVOutput()
     pause(false); //Does not work. cond may still waiting when destroyed
 }
 
-int AVOutput::write(const QByteArray &data)
+bool AVOutput::writeData(const QByteArray &data)
 {
     Q_UNUSED(data);
+	convertData(data);
+	bool result = write();
+	//write then pause: if capture when pausing, the displayed picture is captured
     tryPause();
-    return 0;
+	return result;
 }
 
 void AVOutput::pause(bool p)

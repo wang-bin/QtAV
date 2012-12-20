@@ -32,7 +32,7 @@ public:
     ImageRenderer();
     virtual ~ImageRenderer();
     virtual QImage currentFrameImage() const;
-    virtual int write(const QByteArray &data);
+	virtual void convertData(const QByteArray &data);
     void setPreview(const QImage& preview);
     QImage previewImage() const;
     QImage currentImage() const;

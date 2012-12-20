@@ -52,7 +52,7 @@ extern "C"
 namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
-    QObject(parent),renderer(0),capture_dir("capture"),audio(0)
+	QObject(parent),capture_dir("capture"),renderer(0),audio(0)
   ,event_filter(0),video_capture(0)
 {
     qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
@@ -380,7 +380,7 @@ void AVPlayer::timerEvent(QTimerEvent* e)
             av_free_packet(&packet); //TODO: why is needed for static var?
         } else if (packet.stream_index == videoStream) {
             if (video_dec->decode(QByteArray((char*)packet.data, packet.size)))
-                renderer->write(video_dec->data());
+				renderer->writeData(video_dec->data());
             break;
         } else { //subtitle
             av_free_packet(&packet);

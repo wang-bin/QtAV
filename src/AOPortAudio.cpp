@@ -32,10 +32,9 @@ AOPortAudio::~AOPortAudio()
     close();
 }
 
-int AOPortAudio::write(const QByteArray &data)
+bool AOPortAudio::write()
 {
     DPTR_D(AOPortAudio);
-    tryPause(); //Pa_AbortStream?
     if (Pa_IsStreamStopped(d.stream))
         Pa_StartStream(d.stream);
 
@@ -51,8 +50,8 @@ int AOPortAudio::write(const QByteArray &data)
 #ifdef Q_OS_LINUX
     int chn = d.channels;
     if (chn == 6 || chn == 8) {
-        float *audio_buffer = (float *)data.data();
-        int size_per_chn = data.size() >> 2;
+		float *audio_buffer = (float *)d.data.data();
+		int size_per_chn = d.data.size() >> 2;
         for (int i = 0 ; i < size_per_chn; i += chn) {
             float tmp = audio_buffer[i+2];
             audio_buffer[i+2] = audio_buffer[i+4];
@@ -64,12 +63,12 @@ int AOPortAudio::write(const QByteArray &data)
     }
 #endif
 
-    PaError err = Pa_WriteStream(d.stream, data.data(), data.size()/d.channels/sizeof(float));
+	PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/d.channels/sizeof(float));
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
-        return 0;
+		return false;
     }
-    return data.size();
+	return true;
 }
 
 bool AOPortAudio::open()

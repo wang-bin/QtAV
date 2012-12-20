@@ -57,12 +57,11 @@ void GraphicsItemRenderer::registerEventFilter(EventFilter *filter)
     installEventFilter(filter);
 }
 
-int GraphicsItemRenderer::write(const QByteArray &data)
+bool GraphicsItemRenderer::write()
 {
-    int s = ImageRenderer::write(data);
     scene()->update(sceneBoundingRect());
     //update(); //does not cause an immediate paint. my not redraw.
-    return s;
+	return true;
 }
 
 QRectF GraphicsItemRenderer::boundingRect() const
@@ -72,7 +71,9 @@ QRectF GraphicsItemRenderer::boundingRect() const
 
 void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    DPTR_D(GraphicsItemRenderer);
+	Q_UNUSED(option);
+	Q_UNUSED(widget);
+	DPTR_D(GraphicsItemRenderer);
     if (d.image.isNull()) {
         if (d.image.size() == QSize(d.width, d.height))
             painter->drawImage(QPointF(), d.preview);

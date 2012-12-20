@@ -37,7 +37,7 @@ public:
     virtual ~WidgetRenderer();
 
     virtual void registerEventFilter(EventFilter *filter);
-    virtual int write(const QByteArray &data);
+	virtual bool write();
     void setPreview(const QImage& preivew);
 
 protected:

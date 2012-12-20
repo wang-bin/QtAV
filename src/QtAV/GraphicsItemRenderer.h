@@ -41,7 +41,7 @@ public:
     virtual ~GraphicsItemRenderer();
 
     virtual void registerEventFilter(EventFilter *filter);
-    virtual int write(const QByteArray &data);
+	virtual bool write();
 
     QRectF boundingRect() const;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);

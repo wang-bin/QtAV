@@ -40,18 +40,16 @@ QImage ImageRenderer::currentFrameImage() const
     return d_func().image;
 }
 
-int ImageRenderer::write(const QByteArray &data)
+void ImageRenderer::convertData(const QByteArray &data)
 {
     //qDebug("%s", __PRETTY_FUNCTION__);
     DPTR_D(ImageRenderer);
-    tryPause();
     //picture.data[0]
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
     d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
 #else
     d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
 #endif
-    return data.size();
 }
 
 

@@ -95,7 +95,7 @@ void AudioThread::run()
                                 data[i] *= vol;
                         }
                     }
-                    ao->write(decodedChunk);
+					ao->writeData(decodedChunk);
                 }
                 d.clock->updateDelay(delay += chunk/csf);
                 decodedPos += chunk;
