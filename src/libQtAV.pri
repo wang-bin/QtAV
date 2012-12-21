@@ -49,7 +49,7 @@ NAME = QtAV
 #!isEmpty(LIBQTAV_PRI_INCLUDED):error("libQtAV.pri already included")
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
-LIB_VERSION = 1.1.2 #0.x.y may be wrong for dll
+LIB_VERSION = 1.1.3 #0.x.y may be wrong for dll
 isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
 
 TEMPLATE += fakelib
@@ -148,7 +148,7 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 }
 !ezx: LIBS += -L/usr/local/lib
 LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale  -lportaudio
-win32: LIBS += -lwinmm -lksguid# -luuid -lws2_32 #portaudio
+win32: LIBS += -lwinmm -lksguid -luuid# -lws2_32 #portaudio
 
 unix:QMAKE_RPATHDIR += /usr/local/lib
 
