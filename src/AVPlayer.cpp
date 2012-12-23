@@ -273,7 +273,8 @@ void AVPlayer::play()
     aCodecCtx = demuxer.audioCodecContext();
     audio->setSampleRate(aCodecCtx->sample_rate);
     audio->setChannels(aCodecCtx->channels);
-    audio->open();
+    if (!audio->open())
+        return;
     int videoStream = demuxer.videoStream();
 	//audio
 	//if (videoStream < 0)
