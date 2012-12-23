@@ -32,6 +32,7 @@ class VideoCapture : public QObject
 public:
     explicit VideoCapture(QObject *parent = 0);
     ~VideoCapture();
+    //void setAsync(bool async);
     void request();
     void setFormat(const QString& format);
     QString format() const;

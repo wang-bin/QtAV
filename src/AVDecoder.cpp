@@ -47,6 +47,7 @@ AVCodecContext* AVDecoder::codecContext() const
 
 bool AVDecoder::decode(const QByteArray &encoded)
 {
+    Q_UNUSED(encoded);
     return true;
 }
 
