@@ -310,20 +310,29 @@ void AVPlayer::play()
 void AVPlayer::stop()
 {
     if (demuxer_thread->isRunning()) {
+        qDebug("stop d");
         demuxer_thread->stop();
-        //demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
         //wait for finish then we can safely set the vars, e.g. a/v decoders
-        demuxer_thread->wait();
+        if (!demuxer_thread->wait()) {
+            qWarning("Timeout waiting for demux thread stopped. Terminate it.");
+            demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
+        }
     }
     if (audio_thread->isRunning()) {
+        qDebug("stop a");
         audio_thread->stop();
-        //audio_thread->terminate();
-        audio_thread->wait();
+        if (!audio_thread->wait(1000)) {
+            qWarning("Timeout waiting for audio thread stopped. Terminate it.");
+            audio_thread->terminate();
+        }
     }
     if (video_thread->isRunning()) {
+        qDebug("stopv");
         video_thread->stop();
-        //video_thread->terminate();
-        video_thread->wait();
+        if (!video_thread->wait(1000)) {
+            qWarning("Timeout waiting for video thread stopped. Terminate it.");
+            video_thread->terminate(); ///if time out
+        }
     }
 }
 //FIXME: If not playing, it will just play but not play one frame.
