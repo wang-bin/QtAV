@@ -53,14 +53,16 @@ bool AVDemuxer::readFrame()
 
     if (ret != 0) {
         if (ret == AVERROR_EOF) { //end of file
-            eof = true;
-            qDebug("%s %d", __FUNCTION__, __LINE__);
-            emit finished();
+            if (!eof) {
+                eof = true;
+                qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
+                emit finished();
+            }
+            return false; //frames after eof are eof frames
         }
-        qDebug("[AVDemuxer] %s", av_err2str(ret));
+        qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         return false;
     }
-    eof = false;
 
     stream_idx = packet.stream_index; //TODO: check index
     if (stream_idx != videoStream() && stream_idx != audioStream()) {
