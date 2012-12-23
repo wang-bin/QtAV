@@ -173,6 +173,8 @@ void AVDemuxer::seek(qreal q)
     if (ret < 0)
         qDebug("[AVDemuxer] seek error: %s", av_err2str(ret));
     //calc pts
+    avcodec_flush_buffers(videoCodecContext());
+    avcodec_flush_buffers(audioCodecContext());
 }
 
 /*
@@ -187,7 +189,7 @@ void AVDemuxer::seekForward()
 	double pts = pkt->pts;
 	if (master_clock)
 		pts = master_clock->value();
-	double q = (double)((pts + 8)*AV_TIME_BASE)/(double)duration();
+    double q = (double)((pts + 16)*AV_TIME_BASE)/(double)duration();
     seek(q);
 }
 
@@ -198,7 +200,7 @@ void AVDemuxer::seekBackward()
 	double pts = pkt->pts;
 	if (master_clock)
 		pts = master_clock->value();
-	double q = (double)((pts - 8)*AV_TIME_BASE)/(double)duration();
+    double q = (double)((pts - 16)*AV_TIME_BASE)/(double)duration();
     seek(q);
 }
 
