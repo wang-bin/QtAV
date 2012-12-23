@@ -93,6 +93,7 @@ void AVThread::resetState()
     d.stop = false;
     d.demux_end = false;
     d.packets.setBlocking(true);
+    d.packets.clear();
     d.mutex.unlock();
 }
 
