@@ -54,11 +54,11 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
     av_free_packet(&packet);
     if (ret < 0) {
-        qDebug("[VideoDecoder] %s", av_err2str(ret));
+        qWarning("[VideoDecoder] %s", av_err2str(ret));
         return false;
     }
     if (!d.got_frame_ptr) {
-        qDebug("no frame could be decompressed");
+        qWarning("no frame could be decompressed");
         return false;
     }
     /*

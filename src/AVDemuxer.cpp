@@ -173,7 +173,7 @@ void AVDemuxer::seek(qreal q)
 	int ret = av_seek_frame(format_context, -1, t, seek_flag);
 #endif
     if (ret < 0)
-        qDebug("[AVDemuxer] seek error: %s", av_err2str(ret));
+        qWarning("[AVDemuxer] seek error: %s", av_err2str(ret));
     //calc pts
     avcodec_flush_buffers(videoCodecContext());
     avcodec_flush_buffers(audioCodecContext());
@@ -217,7 +217,7 @@ bool AVDemuxer::loadFile(const QString &fileName)
     int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, NULL);
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
-        qDebug("Can't open video: %s", av_err2str(ret));
+        qWarning("Can't open video: %s", av_err2str(ret));
         return false;
     }
     format_context->flags |= AVFMT_FLAG_GENPTS;
@@ -225,7 +225,7 @@ bool AVDemuxer::loadFile(const QString &fileName)
     //if(av_find_stream_info(format_context)<0) {
     ret = avformat_find_stream_info(format_context, NULL);
     if (ret < 0) {
-        qDebug("Can't find stream info: %s", av_err2str(ret));
+        qWarning("Can't find stream info: %s", av_err2str(ret));
         return false;
     }
 
@@ -237,21 +237,21 @@ bool AVDemuxer::loadFile(const QString &fileName)
     if (aCodec) {
         ret = avcodec_open2(a_codec_context, aCodec, NULL);
         if (ret < 0) {
-            qDebug("open audio codec failed: %s", av_err2str(ret));
+            qWarning("open audio codec failed: %s", av_err2str(ret));
         }
     } else {
         qDebug("Unsupported audio codec. id=%d.", v_codec_context->codec_id);
     }
     AVCodec *vCodec = avcodec_find_decoder(v_codec_context->codec_id);
     if(!vCodec) {
-        qDebug("Unsupported video codec. id=%d.", v_codec_context->codec_id);
+        qWarning("Unsupported video codec. id=%d.", v_codec_context->codec_id);
         return false;
     }
     ////v_codec_context->time_base = (AVRational){1,30};
     //avcodec_open(v_codec_context, vCodec) //deprecated
     ret = avcodec_open2(v_codec_context, vCodec, NULL);
     if (ret < 0) {
-        qDebug("open video codec failed: %s", av_err2str(ret));
+        qWarning("open video codec failed: %s", av_err2str(ret));
         return false;
     }
     return true;
