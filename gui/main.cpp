@@ -43,7 +43,7 @@ FILE *log = 0;
 void Logger(QtMsgType type, const char *msg)
 {
 #else
-void Logger(QtMsgType type, const QMessageLogContext &, const char* qmsg)
+void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 {
 	const char* msg = qPrintable(qmsg);
 #endif

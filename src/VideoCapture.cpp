@@ -51,7 +51,7 @@ public:
 #endif
         QString path(dir + "/" + name + "." + format.toLower());
         qDebug("Saving capture to %s", qPrintable(path));
-        bool ok = image.save(path, format.toAscii().constData(), quality);
+		bool ok = image.save(path, format.toLatin1().constData(), quality);
         if (!ok)
             qWarning("Failed to save capture");
         QMetaObject::invokeMethod(cap, "finished");
