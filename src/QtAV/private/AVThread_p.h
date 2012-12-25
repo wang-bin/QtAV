@@ -37,6 +37,8 @@ class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 public:
     AVThreadPrivate():demux_end(false),stop(false),clock(0)
       ,dec(0),writer(0) {
+		packets.setCapacity(512);
+		packets.setThreshold(128);
     }
     //DO NOT delete dec and writer. We do not own them
     virtual ~AVThreadPrivate() {}

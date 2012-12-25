@@ -1,6 +1,6 @@
 TEMPLATE = lib
 
-QT += core gui opengl 
+QT += core gui opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG *= qtav-buildlib
@@ -77,3 +77,10 @@ HEADERS += \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoThread.h
+
+HEADERS += \
+    QtAV/BlockingRing.h \
+    QtAV/IOC.h
+
+SOURCES += \
+    IOC.cpp
