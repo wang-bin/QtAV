@@ -36,7 +36,7 @@
     };
     //Base.cpp:
     Base::Base(){}
-    Base::Base(BasePrivate& d):DPTR_INIT(d){}
+    Base::Base(BasePrivate& d):DPTR_INIT(&d){}
     ...
     //Base_p.h:
     class Base;
