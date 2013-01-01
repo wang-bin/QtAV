@@ -59,7 +59,7 @@ TEMPLATE -= fakelib
 isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/..
 include($${PROJECTROOT}/common.pri)
 #load($${PROJECTROOT}/common.pri)
-CONFIG += depend_includepath #?
+CONFIG *= depend_includepath #?
 
 PROJECT_SRCPATH = $$PWD
 isEmpty(BUILD_DIR):BUILD_DIR=$$(BUILD_DIR)
@@ -146,11 +146,23 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 		INSTALLS += target
 	}
 }
-!ezx: LIBS += -L/usr/local/lib
-LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale  -lportaudio
-win32: LIBS += -lwinmm -lksguid -luuid# -lws2_32 #portaudio
-
-unix:QMAKE_RPATHDIR += /usr/local/lib
+unix {
+    LIBS += -L/usr/local/lib
+    QMAKE_RPATHDIR += /usr/local/lib
+}
+LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
+CONFIG *= portaudio
+#CONFIG *= openal
+portaudio {
+    DEFINES *= HAVE_PORTAUDIO=1
+    LIBS *= -lportaudio
+    win32: LIBS *= -lwinmm -lksguid -luuid# -lws2_32 #portaudio
+}
+openal {
+    DEFINES *= HAVE_OPENAL=1
+    win32:LIBS *= -lOpenAL32
+    else: LIBS *= -lopenal
+}
 
 unset(LIB_VERSION)
 unset(PROJECT_SRCPATH)

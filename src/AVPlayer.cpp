@@ -25,7 +25,6 @@
 #include <QtCore/QDir>
 
 #include <QtAV/AVDemuxer.h>
-#include <QtAV/AOPortAudio.h>
 #include <QtAV/AudioThread.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AudioDecoder.h>
@@ -38,7 +37,12 @@
 #include <QtAV/AVDemuxThread.h>
 #include <QtAV/EventFilter.h>
 #include <QtAV/VideoCapture.h>
-
+#if HAVE_OPENAL
+#include <QtAV/AOOpenAL.h>
+#endif //HAVE_OPENAL
+#if HAVE_PORTAUDIO
+#include <QtAV/AOPortAudio.h>
+#endif //HAVE_PORTAUDIO
 #ifdef __cplusplus
 extern "C"
 {
@@ -67,7 +71,11 @@ AVPlayer::AVPlayer(QObject *parent) :
     avTimerId = -1;
     clock = new AVClock(AVClock::AudioClock);
 	demuxer.setClock(clock);
+#if HAVE_OPENAL
+    audio = new AOOpenAL();
+#elif HAVE_PORTAUDIO
     audio = new AOPortAudio();
+#endif
     audio_dec = new AudioDecoder();
     audio_thread = new AudioThread(this);
     audio_thread->setClock(clock);
@@ -126,12 +134,13 @@ void AVPlayer::setRenderer(VideoRenderer *r)
 
 void AVPlayer::setMute(bool mute)
 {
-    audio->setMute(mute);
+    if (audio)
+        audio->setMute(mute);
 }
 
 bool AVPlayer::isMute() const
 {
-    return audio->isMute();
+    return audio && audio->isMute();
 }
 
 //TODO: remove?
@@ -271,10 +280,12 @@ void AVPlayer::play()
     formatCtx = demuxer.formatContext();
     vCodecCtx = demuxer.videoCodecContext();
     aCodecCtx = demuxer.audioCodecContext();
-    audio->setSampleRate(aCodecCtx->sample_rate);
-    audio->setChannels(aCodecCtx->channels);
-    if (!audio->open())
-        return;
+    if (audio) {
+        audio->setSampleRate(aCodecCtx->sample_rate);
+        audio->setChannels(aCodecCtx->channels);
+        if (!audio->open())
+            return; //audio not ready
+    }
     int videoStream = demuxer.videoStream();
 	//audio
 	//if (videoStream < 0)

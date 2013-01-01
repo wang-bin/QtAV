@@ -1,6 +1,6 @@
 TEMPLATE = lib
 
-QT += core gui opengl 
+QT += core gui opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG *= qtav-buildlib
@@ -20,9 +20,19 @@ OTHER_FILES += $$RC_FILE
 unix: SOURCES += 
 else:win32: SOURCES += 
 
+portaudio {
+SOURCES += AOPortAudio.cpp
+HEADERS += QtAV/AOPortAudio.h \
+           QtAV/private/AOPortAudio_p.h
+}
+openal {
+SOURCES += AOOpenAL.cpp
+HEADERS += QtAV/AOOpenAL.h \
+           QtAV/private/AOOpenAL_p.h
+}
+
 SOURCES += \
     QtAV_Compat.cpp \
-    AOPortAudio.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \
@@ -49,9 +59,7 @@ HEADERS += \
     QtAV/QtAV_Compat.h \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
-    QtAV/AOPortAudio.h \
     QtAV/EventFilter.h \
-    QtAV/private/AOPortAudio_p.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
