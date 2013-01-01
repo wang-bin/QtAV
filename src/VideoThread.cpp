@@ -93,6 +93,7 @@ void VideoThread::run()
         if (qAbs(d.delay) < 2.718) {
             if (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
+                //qDebug("~~~~~wating for %f msecs", d.delay*1000);
                 usleep(d.delay * 1000000);
             } else if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //d.mutex.unlock();
@@ -100,9 +101,13 @@ void VideoThread::run()
             }
         } else { //when to drop off?
             qDebug("delay %f", d.delay);
-            //audio packet not cleaned up?
-            //d.mutex.unlock();
-            //continue;
+            if (d.delay > 0) {
+                msleep(64);
+            } else {
+                //audio packet not cleaned up?
+                d.mutex.unlock();
+                continue;
+            }
         }
         d.clock->updateVideoPts(pkt.pts); //here?
         if (d.dec->decode(pkt.data)) {
