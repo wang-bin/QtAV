@@ -74,16 +74,16 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 	Q_UNUSED(option);
 	Q_UNUSED(widget);
 	DPTR_D(GraphicsItemRenderer);
-    if (d.image.isNull()) {
-        if (d.image.size() == QSize(d.width, d.height))
-            painter->drawImage(QPointF(), d.preview);
-        else
-            painter->drawImage(boundingRect(), d.preview);
-    } else {
+    if (!d.image.isNull()) {
         if (d.image.size() == QSize(d.width, d.height))
             painter->drawImage(QPointF(), d.image);
         else
             painter->drawImage(boundingRect(), d.image);
+    } else if (!d.preview.isNull()){
+        if (d.preview.size() == QSize(d.width, d.height))
+            painter->drawImage(QPointF(), d.preview);
+        else
+            painter->drawImage(boundingRect(), d.preview);
     }
 }
 //GraphicsWidget will lose focus forever if focus out. Why?

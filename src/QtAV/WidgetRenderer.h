@@ -16,8 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef QAV_WIDGETRENDERER_H
-#define QAV_WIDGETRENDERER_H
+#ifndef QTAV_WIDGETRENDERER_H
+#define QTAV_WIDGETRENDERER_H
 
 #include <QtAV/ImageRenderer.h>
 #include <qwidget.h>
@@ -33,7 +33,7 @@ public:
     //GestureAction is useful for small screen windows that are hard to select frame
     enum GestureAction { GestureMove, GestureResize};
 
-    explicit WidgetRenderer(QWidget *parent = 0);
+    explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
     virtual ~WidgetRenderer();
 
     virtual void registerEventFilter(EventFilter *filter);
@@ -52,8 +52,8 @@ protected:
 #endif
     
 protected:
-    WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent);
+    WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent, Qt::WindowFlags f);
 };
 
 } //namespace QtAV
-#endif // QAV_WIDGETRENDERER_H
+#endif // QTAV_WIDGETRENDERER_H

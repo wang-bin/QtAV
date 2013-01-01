@@ -27,16 +27,17 @@
 #include <QtAV/EventFilter.h>
 
 namespace QtAV {
-WidgetRenderer::WidgetRenderer(QWidget *parent) :
-    QWidget(parent),ImageRenderer(*new WidgetRendererPrivate())
+WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
+    QWidget(parent, f),ImageRenderer(*new WidgetRendererPrivate())
 {
 #if CONFIG_EZX
     QWallpaper::setAppWallpaperMode(QWallpaper::Off);
 #endif
+    setAutoFillBackground(false);
 }
 
-WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent)
-    :QWidget(parent),ImageRenderer(d)
+WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
+    :QWidget(parent, f),ImageRenderer(d)
 {
 }
 
@@ -138,11 +139,17 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
     QPainter p(this);
-    p.drawImage(QPoint(), d_func().image);
-    if (d.image.size() == QSize(d.width, d.height))
-        p.drawImage(QPoint(), d_func().image);
-    else
-        p.drawImage(rect(), d.image);
+    if (!d.image.isNull()) {
+        if (d.image.size() == QSize(d.width, d.height))
+            p.drawImage(QPoint(), d.image);
+        else
+            p.drawImage(rect(), d.image);
+    } else if (!d.preview.isNull()){
+        if (d.preview.size() == QSize(d.width, d.height))
+            p.drawImage(QPoint(), d.preview);
+        else
+            p.drawImage(rect(), d.preview);
+    }
 }
 
 void WidgetRenderer::dragEnterEvent(QDragEnterEvent *)
