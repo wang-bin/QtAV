@@ -15,6 +15,10 @@ external clock
 avcodec_flush_buffer when seeking
 use v,a,-1 stream when seeking
 hardware acceleration, ffmpeg-mt
+modular
+OpenCL, OpenGL, OpenAL, OpenSL, cuda, ipp
+set audio output
+capture: set async
 
 BUG:
 Debug: no frame could be decompressed
