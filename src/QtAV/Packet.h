@@ -19,10 +19,12 @@
 #ifndef QAV_PACKET_H
 #define QAV_PACKET_H
 
+#include <queue>
 #include <QtCore/QByteArray>
 #include <QtCore/QQueue>
 #include <QtCore/QMutex>
 #include <QtAV/BlockingQueue.h>
+//#include <QtAV/BlockingRing.h>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -35,8 +37,17 @@ public:
     qreal pts, duration;
 };
 
-typedef BlockingQueue<Packet> PacketQueue;
-
+template <typename T> class StdQueue : public std::queue<T>
+{
+public:
+	bool isEmpty() const { return this->empty(); }
+	void clear() { while (!this->empty()) { this->pop(); } }
+	T dequeue() { this->pop(); return this->front(); }
+	void enqueue(const T& t) { this->push(t); }
+};
+typedef BlockingQueue<Packet, QQueue> PacketQueue;
+//typedef BlockingQueue<Packet, StdQueue> PacketQueue;
+//typedef BlockingRing<Packet> PacketQueue;
 } //namespace QtAV
 
 #endif // QAV_PACKET_H
