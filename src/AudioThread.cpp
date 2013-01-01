@@ -95,9 +95,15 @@ void AudioThread::run()
                                 data[i] *= vol;
                         }
                     }
-					ao->writeData(decodedChunk);
+                    ao->writeData(decodedChunk);
                 }
-                d.clock->updateDelay(delay += chunk/csf);
+                /*
+                 * why need this even if we add delay? and usleep sounds weird
+                 * the advantage is if no audio device, the play speed is ok too
+                 * So is portaudio blocking the thread when playing?
+                 */
+                msleep((qreal)chunk/(qreal)csf * 1000);
+                d.clock->updateDelay(delay += (qreal)chunk/(qreal)csf);
                 decodedPos += chunk;
                 decodedSize -= chunk;
             }
