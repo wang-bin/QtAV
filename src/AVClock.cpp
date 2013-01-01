@@ -24,6 +24,7 @@ namespace QtAV {
 AVClock::AVClock(AVClock::ClockType c)
     :clock_type(c)
 {
+    pts_ = pts_v = delay_ = 0;
 }
 
 } //namespace QtAV
