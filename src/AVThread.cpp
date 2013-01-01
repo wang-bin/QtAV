@@ -38,7 +38,8 @@ AVThread::~AVThread()
 void AVThread::stop()
 {
     DPTR_D(AVThread);
-    d.writer->pause(false); //stop waiting
+    if (d.writer)
+        d.writer->pause(false); //stop waiting
     d.stop = true;
     //terminate();
     d.packets.setBlocking(false); //stop blocking take()
@@ -89,7 +90,8 @@ void AVThread::setDemuxEnded(bool ended)
 void AVThread::resetState()
 {
     DPTR_D(AVThread);
-    d.writer->pause(false); //stop waiting. Important when replay
+    if (d.writer)
+        d.writer->pause(false); //stop waiting. Important when replay
     d.stop = false;
     d.demux_end = false;
     d.packets.setBlocking(true);

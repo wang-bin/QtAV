@@ -50,8 +50,8 @@ AudioThread::AudioThread(QObject *parent)
 void AudioThread::run()
 {
     DPTR_D(AudioThread);
-    //No decoder or output, no audio
-    if (!d.dec || !d.writer)
+    //No decoder or output. No audio output is ok, just display picture
+    if (!d.dec)
         return;
     resetState();
     Q_ASSERT(d.clock != 0);
@@ -96,13 +96,14 @@ void AudioThread::run()
                         }
                     }
                     ao->writeData(decodedChunk);
-                }
+                } else {
                 /*
                  * why need this even if we add delay? and usleep sounds weird
                  * the advantage is if no audio device, the play speed is ok too
                  * So is portaudio blocking the thread when playing?
                  */
-                msleep((qreal)chunk/(qreal)csf * 1000);
+                    msleep((qreal)chunk/(qreal)csf * 1000);
+                }
                 d.clock->updateDelay(delay += (qreal)chunk/(qreal)csf);
                 decodedPos += chunk;
                 decodedSize -= chunk;

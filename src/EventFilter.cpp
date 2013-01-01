@@ -81,12 +81,16 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         }
             break;
         case Qt::Key_Up:
-            player->audio->setVolume(player->audio->volume() + 0.1);
-            qDebug("vol = %.1f", player->audio->volume());
+            if (player->audio) {
+                player->audio->setVolume(player->audio->volume() + 0.1);
+                qDebug("vol = %.1f", player->audio->volume());
+            }
             break;
         case Qt::Key_Down:
-            player->audio->setVolume(player->audio->volume() - 0.1);
-            qDebug("vol = %.1f", player->audio->volume());
+            if (player->audio) {
+                player->audio->setVolume(player->audio->volume() - 0.1);
+                qDebug("vol = %.1f", player->audio->volume());
+            }
             break;
         case Qt::Key_O: {
             //TODO: emit a signal so we can use custome dialogs
@@ -104,7 +108,9 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             player->seekForward();
             break;
         case Qt::Key_M:
-            player->audio->setMute(!player->audio->isMute());
+            if (player->audio) {
+                player->audio->setMute(!player->audio->isMute());
+            }
             break;
         case Qt::Key_T: {
             QWidget *w = qApp->activeWindow();
