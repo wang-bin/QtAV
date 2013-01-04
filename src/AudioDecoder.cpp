@@ -52,33 +52,56 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         qWarning("[AudioDecoder] got_frame_ptr=false");
         return false;
     }
-    const int samples_with_channels = d.frame->nb_samples * d.codec_ctx->channels;
+    int samples_with_channels = d.frame->nb_samples * d.codec_ctx->channels;
+    int samples_with_channels_half = samples_with_channels/2;
     d.decoded.resize(samples_with_channels * sizeof(float));
     float *decoded_data = (float*)d.decoded.data();
+     //TODO: use bit. SIMD, hwa
     switch (d.codec_ctx->sample_fmt) {
     case AV_SAMPLE_FMT_U8:
-    {    uint8_t *data = (uint8_t*)*d.frame->data;
-        for (int i = 0; i < samples_with_channels; i++)
-            decoded_data[i] = (data[i] - 0x7F) / 128.0f; //TODO: use bit
-        break;}
+    {
+        uint8_t *data = (uint8_t*)*d.frame->data;
+        static const float kInt8_inv = 1.0f/128.0f;
+        for (int i = 0; i < samples_with_channels_half; i++) {
+            decoded_data[i] = (data[i] - 0x7F) * kInt8_inv;
+            decoded_data[samples_with_channels - i] = (data[samples_with_channels - i] - 0x7F) * kInt8_inv;
+        }
+        break;
+    }
     case AV_SAMPLE_FMT_S16:
-    {    int16_t *data = (int16_t*)*d.frame->data;
-        for (int i = 0; i < samples_with_channels; i++)
-            decoded_data[i] = data[i] / 32768.0f;
-        break;}
+    {
+        int16_t *data = (int16_t*)*d.frame->data;
+        static const float kInt16_inv = 1.0f/32768.0f;
+        for (int i = 0; i < samples_with_channels_half; i++) {
+            decoded_data[i] = data[i] * kInt16_inv;
+            decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt16_inv;
+        }
+        break;
+    }
     case AV_SAMPLE_FMT_S32:
-    {    int32_t *data = (int32_t*)*d.frame->data;
-        for (int i = 0; i < samples_with_channels; i++)
-            decoded_data[i] = data[i] / 2147483648.0f;
-        break;}
+    {
+        int32_t *data = (int32_t*)*d.frame->data;
+        static const float kInt64_inv = 1.0f/2147483648.0f;
+        for (int i = 0; i < samples_with_channels_half; i++) {
+            decoded_data[i] = data[i] * kInt64_inv;
+            decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt64_inv;
+        }
+        break;
+    }
     case AV_SAMPLE_FMT_FLT:
-    {    memcpy(decoded_data, *d.frame->data, d.decoded.size());
-        break;}
+    {
+        memcpy(decoded_data, *d.frame->data, d.decoded.size());
+        break;
+    }
     case AV_SAMPLE_FMT_DBL:
-    {    double *data = (double*)*d.frame->data;
-        for (int i = 0; i < samples_with_channels; i++)
+    {
+        double *data = (double*)*d.frame->data;
+        for (int i = 0; i < samples_with_channels_half; i++) {
             decoded_data[i] = data[i];
-        break;}
+            decoded_data[samples_with_channels - i] = data[samples_with_channels - i];
+        }
+        break;
+    }
     default:
         d.decoded.clear();
         break;

@@ -100,7 +100,7 @@ void VideoThread::run()
                 //continue;
             }
         } else { //when to drop off?
-            qDebug("delay %f", d.delay);
+            qDebug("delay %f/%f", d.delay, d.clock->value());
             if (d.delay > 0) {
                 msleep(64);
             } else {
@@ -110,6 +110,7 @@ void VideoThread::run()
             }
         }
         d.clock->updateVideoPts(pkt.pts); //here?
+        //DO NOT decode and convert if vo is not available or null!
         if (d.dec->decode(pkt.data)) {
             d.pts = pkt.pts;
             d.width = dec->width();

@@ -76,6 +76,7 @@ void AudioThread::run()
             continue;
         }
         d.clock->updateValue(pkt.pts);
+        //DO NOT decode and convert if ao is not available or mute!
         if (d.dec->decode(pkt.data)) {
             QByteArray decoded(d.dec->data());
             int decodedSize = decoded.size();
@@ -83,6 +84,7 @@ void AudioThread::run()
             qreal delay =0;
             while (decodedSize > 0) {
                 int chunk = qMin(decodedSize, int(max_len*csf));
+                d.clock->updateDelay(delay += (qreal)chunk/(qreal)csf);
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
                 if (ao) {
                     if (!ao->isMute()) {
@@ -104,7 +106,6 @@ void AudioThread::run()
                  */
                     msleep((qreal)chunk/(qreal)csf * 1000);
                 }
-                d.clock->updateDelay(delay += (qreal)chunk/(qreal)csf);
                 decodedPos += chunk;
                 decodedSize -= chunk;
             }
