@@ -22,6 +22,12 @@
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QSize>
 
+#if CONFIG_EZX
+#define PIX_FMT PIX_FMT_BGR565
+#else
+#define PIX_FMT PIX_FMT_RGB32
+#endif //CONFIG_EZX
+
 namespace QtAV {
 
 class VideoDecoderPrivate : public AVDecoderPrivate
@@ -39,7 +45,7 @@ VideoDecoder::VideoDecoder()
     :AVDecoder(*new VideoDecoderPrivate())
 {
 }
-
+//TODO: use ipp, cuda decode and yuv functions. is sws_scale necessary?
 bool VideoDecoder::decode(const QByteArray &encoded)
 {
     DPTR_D(VideoDecoder);

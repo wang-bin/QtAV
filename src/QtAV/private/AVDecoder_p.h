@@ -30,12 +30,6 @@ extern "C"
 }
 #endif //__cplusplus
 
-#if CONFIG_EZX
-#define PIX_FMT PIX_FMT_BGR565
-#else
-#define PIX_FMT PIX_FMT_RGB32
-#endif //CONFIG_EZX
-
 #include <QtCore/QByteArray>
 #include <QtCore/QMutex>
 #include <QtAV/QtAV_Global.h>
