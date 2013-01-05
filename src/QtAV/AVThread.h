@@ -22,7 +22,7 @@
 #include <QtCore/QThread>
 #include <QtCore/QScopedPointer>
 #include <QtAV/Packet.h>
-
+//TODO: pause functions. AVOutput may be null, use AVThread's pause state
 namespace QtAV {
 
 class AVDecoder;

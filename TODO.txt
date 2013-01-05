@@ -16,9 +16,15 @@ avcodec_flush_buffer when seeking
 use v,a,-1 stream when seeking
 hardware acceleration, ffmpeg-mt
 modular
+decode and yuv2rgb: GLSL, ipp, cuda
 OpenCL, OpenGL, OpenAL, OpenSL, cuda, ipp
+OpenAL:http://www.cocoachina.com/bbs/read.php?tid=51579
 set audio output
 capture: set async
+structure:{
+AVObject=>AVDemux, AVDecoder{,ipp,cuda,cl}, ImageConvert{,ipp,GLSL,cuda,cl}, Resample{,ipp,GLSL,cuda,cl}, Filter{,ipp,GLSL,cuda,cl}, Output{GL,AL,SL.DX}
+api: name, hwaName(ff,ipp,cuda,cl,gl,cuda}, hwaSupported,hwaInfo
+}
 
 BUG:
 Debug: no frame could be decompressed
