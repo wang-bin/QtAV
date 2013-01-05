@@ -29,25 +29,38 @@ class Q_EXPORT AOPortAudioPrivate : public AudioOutputPrivate
 {
 public:
     AOPortAudioPrivate():outputParameters(new PaStreamParameters)
-      ,stream(0)
+      ,stream(0),initialized(true)
     {
-        Pa_Initialize();
+        PaError err = paNoError;
+        if ((err = Pa_Initialize()) != paNoError) {
+            qWarning("Error when init portaudio: %s", Pa_GetErrorText(err));
+            available = false;
+            initialized = false;
+            return;
+        }
 
         memset(outputParameters, 0, sizeof(PaStreamParameters));
         outputParameters->device = Pa_GetDefaultOutputDevice();
+        if (outputParameters->device == paNoDevice) {
+            qWarning("PortAudio get device error!");
+            available = false;
+            return;
+        }
         outputParameters->sampleFormat = paFloat32;
         outputParameters->hostApiSpecificStreamInfo = NULL;
         outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
 
     }
     ~AOPortAudioPrivate() {
-        Pa_Terminate();
+        if (initialized)
+            Pa_Terminate(); //Do NOT call this if init failed. See document
         if (outputParameters) {
             delete outputParameters;
             outputParameters = 0;
         }
     }
 
+    bool initialized;
     PaStreamParameters *outputParameters;
     PaStream *stream;
 #ifdef Q_OS_LINUX

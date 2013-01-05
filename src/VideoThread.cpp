@@ -116,9 +116,9 @@ void VideoThread::run()
             d.width = dec->width();
             d.height = dec->height();
             d.decoded_data = d.dec->data();
-            if (d.writer) {
+            if (d.writer && d.writer->isAvailable()) {
                 ((VideoRenderer*)d.writer)->setSourceSize(dec->width(), dec->height());
-				d.writer->writeData(d.dec->data());
+                d.writer->writeData(d.dec->data());
             }
             //qApp->processEvents(QEventLoop::AllEvents);
         }

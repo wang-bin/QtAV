@@ -30,12 +30,13 @@ class AVDecoder;
 class Q_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
 {
 public:
-    AVOutputPrivate():paused(false) {}
+    AVOutputPrivate():paused(false),available(true) {}
     virtual ~AVOutputPrivate() {
         cond.wakeAll(); //WHY: failed to wake up
     }
 
     bool paused;
+    bool available;
     QMutex mutex; //pause
     QWaitCondition cond; //pause
 };

@@ -46,6 +46,11 @@ bool AVOutput::writeData(const QByteArray &data)
 	return result;
 }
 
+bool AVOutput::isAvailable() const
+{
+    return d_func().available;
+}
+
 void AVOutput::pause(bool p)
 {
     DPTR_D(AVOutput);

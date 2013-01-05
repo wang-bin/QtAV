@@ -33,7 +33,8 @@ public:
     AVOutput();
     virtual ~AVOutput() = 0;
     //Call tryPause() first to try to pause
-	bool writeData(const QByteArray& data);
+    bool writeData(const QByteArray& data);
+    bool isAvailable() const;
     virtual bool open() = 0;
     virtual bool close() = 0;
     //Demuxer thread automatically paused because packets will be full

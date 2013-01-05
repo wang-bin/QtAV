@@ -77,10 +77,13 @@ bool AOPortAudio::open()
     //
     d.outputParameters->channelCount = d.channels;
     PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, d.sample_rate, 0, paNoFlag, NULL, NULL);
-    if (err == paNoError)
+    if (err == paNoError) {
         d.outputLatency = Pa_GetStreamInfo(d.stream)->outputLatency;
-    else
+        d.available = true;
+    } else {
         qWarning("Open portaudio stream error: %s", Pa_GetErrorText(err));
+        d.available = false;
+    }
     return err == paNoError;
 }
 
