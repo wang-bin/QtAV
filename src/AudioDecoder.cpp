@@ -89,6 +89,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         break;
     }
     case AV_SAMPLE_FMT_FLT:
+    //case AV_SAMPLE_FMT_FLTP:
     {
         memcpy(decoded_data, *d.frame->data, d.decoded.size());
         break;
@@ -102,7 +103,12 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         }
         break;
     }
-    default:
+    default: //TODO: planar format
+        static bool sWarn_a_fmt = true; //FIXME: no warning when replay. warn only once
+        if (sWarn_a_fmt) {
+            qWarning("Unsupported audio format: %d", d.codec_ctx->sample_fmt);
+            sWarn_a_fmt = false;
+        }
         d.decoded.clear();
         break;
     }
@@ -113,7 +119,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         pts = clock;
     clock += (double)d.frame->nb_samples / (double)d.codec_ctx->sample_rate;
 */
-    return true;
+    return !d.decoded.isEmpty();
 }
 
 } //namespace QtAV
