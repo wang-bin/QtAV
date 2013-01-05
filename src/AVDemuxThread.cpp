@@ -71,7 +71,8 @@ void AVDemuxThread::seek(qreal pos)
 
 void AVDemuxThread::seekForward()
 {
-    QMutexLocker lock(&buffer_mutex);
+    buffer_mutex.unlock(); //may be still blocking in demux thread
+    QMutexLocker lock(&buffer_mutex); //demux thread wait for the seeking end
     Q_UNUSED(lock);
     demuxer->seekForward();
     audio_thread->packetQueue()->clear();
@@ -81,7 +82,8 @@ void AVDemuxThread::seekForward()
 
 void AVDemuxThread::seekBackward()
 {
-    QMutexLocker lock(&buffer_mutex);
+    buffer_mutex.unlock(); //may be still blocking in demux thread
+    QMutexLocker lock(&buffer_mutex); //demux thread wait for the seeking end
     Q_UNUSED(lock);
     demuxer->seekBackward();
     audio_thread->packetQueue()->clear();
