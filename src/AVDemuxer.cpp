@@ -148,13 +148,17 @@ AVClock* AVDemuxer::clock() const
 //TODO: seek by byte
 void AVDemuxer::seek(qreal q)
 {
-    if (!a_codec_context || !v_codec_context || !format_context)
+    if (!a_codec_context || !v_codec_context || !format_context) {
+        qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
         return;
+    }
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     q = qMax<qreal>(0.0, q);
-    if (q >= 1.0)
+    if (q >= 1.0) {
+        qWarning("Invalid seek position %f/1.0", q);
         return;
+    }
 #if 0
     //t: unit is s
     qreal t = q;// * (double)format_context->duration; //
@@ -164,16 +168,22 @@ void AVDemuxer::seek(qreal q)
     //t: unit is us (10^-6 s, AV_TIME_BASE)
     int64_t t = int64_t(q*duration());///AV_TIME_BASE;
     //TODO: pkt->pts may be 0, compute manually. Check wether exceed the length
-    if (t >= duration())
+    if (t >= duration()) {
+        qWarning("Invailid seek position: %lld/%lld", t, duration());
         return;
+    }
     bool backward = t <= (int64_t)(pkt->pts*AV_TIME_BASE);
     qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", q, pkt->pts, t, duration(), backward);
 	//AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
 	int seek_flag =  (backward ? 0 : AVSEEK_FLAG_BACKWARD); //AVSEEK_FLAG_ANY
 	int ret = av_seek_frame(format_context, -1, t, seek_flag);
 #endif
-    if (ret < 0)
+    if (ret < 0) {
         qWarning("[AVDemuxer] seek error: %s", av_err2str(ret));
+        return;
+    }
+    if (master_clock)
+        master_clock->updateValue(qreal(t)/qreal(AV_TIME_BASE));
     //calc pts
     avcodec_flush_buffers(videoCodecContext());
     avcodec_flush_buffers(audioCodecContext());
@@ -186,22 +196,32 @@ void AVDemuxer::seek(qreal q)
 */
 void AVDemuxer::seekForward()
 {
-    if (!a_codec_context || !v_codec_context || !format_context)
+    if (!a_codec_context || !v_codec_context || !format_context) {
+        qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
         return;
-	double pts = pkt->pts;
-	if (master_clock)
-		pts = master_clock->value();
+    }
+    double pts = pkt->pts;
+    if (master_clock) {
+        pts = master_clock->value();
+    } else {
+        qWarning("[AVDemux] No master clock!");
+    }
     double q = (double)((pts + 16)*AV_TIME_BASE)/(double)duration();
     seek(q);
 }
 
 void AVDemuxer::seekBackward()
 {
-    if (!a_codec_context || !v_codec_context || !format_context)
+    if (!a_codec_context || !v_codec_context || !format_context) {
+        qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
         return;
+    }
 	double pts = pkt->pts;
-	if (master_clock)
-		pts = master_clock->value();
+    if (master_clock) {
+        pts = master_clock->value();
+    } else {
+        qWarning("[AVDemux] No master clock!");
+    }
     double q = (double)((pts - 16)*AV_TIME_BASE)/(double)duration();
     seek(q);
 }
