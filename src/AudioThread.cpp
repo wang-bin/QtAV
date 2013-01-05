@@ -38,7 +38,7 @@ namespace QtAV {
 class AudioThreadPrivate : public AVThreadPrivate
 {
 public:
-
+    qreal last_pts; //used when audio output is not available, to calculate the aproximate sleeping time
 };
 
 AudioThread::AudioThread(QObject *parent)
@@ -60,6 +60,7 @@ void AudioThread::run()
     int channels = d.dec->codecContext()->channels;
     int csf = channels * sample_rate * sizeof(float);
     static const double max_len = 0.02;
+    d.last_pts = 0;
     while (!d.stop) {
         d.mutex.lock();
         if (d.packets.isEmpty() && !d.stop) {
@@ -86,7 +87,7 @@ void AudioThread::run()
                 int chunk = qMin(decodedSize, int(max_len*csf));
                 d.clock->updateDelay(delay += (qreal)chunk/(qreal)csf);
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
-                if (ao) {
+                if (ao && ao->isAvailable()) {
                     if (!ao->isMute()) {
                         decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                         qreal vol = ao->volume();
@@ -104,12 +105,26 @@ void AudioThread::run()
                  * the advantage is if no audio device, the play speed is ok too
                  * So is portaudio blocking the thread when playing?
                  */
-                    msleep((qreal)chunk/(qreal)csf * 1000);
+                    static bool sWarn_no_ao = true; //FIXME: no warning when replay. warn only once
+                    if (sWarn_no_ao) {
+                        qDebug("Audio output not available! msleep(%lu)", (unsigned long)((qreal)chunk/(qreal)csf * 1000));
+                        sWarn_no_ao = false;
+                    }
+                    msleep((unsigned long)((qreal)chunk/(qreal)csf * 1000.0));
                 }
                 decodedPos += chunk;
                 decodedSize -= chunk;
             }
-		}
+        } else {
+            //qWarning("Decode audio failed");
+            qreal dt = pkt.pts - d.last_pts;
+            if (abs(dt) > 0.618 || dt < 0) {
+                dt = 0;
+            }
+            //qDebug("sleep %f", dt);
+            msleep((unsigned long)(dt*1000.0));
+        }
+        d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
         d.mutex.unlock();
     }
     qDebug("Audio thread stops running...");
