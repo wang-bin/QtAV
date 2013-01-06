@@ -110,6 +110,7 @@ void AudioThread::run()
                         qDebug("Audio output not available! msleep(%lu)", (unsigned long)((qreal)chunk/(qreal)csf * 1000));
                         sWarn_no_ao = false;
                     }
+                    //TODO: avoid acummulative error. External clock?
                     msleep((unsigned long)((qreal)chunk/(qreal)csf * 1000.0));
                 }
                 decodedPos += chunk;
@@ -122,6 +123,7 @@ void AudioThread::run()
                 dt = 0;
             }
             //qDebug("sleep %f", dt);
+            //TODO: avoid acummulative error. External clock?
             msleep((unsigned long)(dt*1000.0));
         }
         d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!

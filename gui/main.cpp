@@ -32,9 +32,8 @@ typedef QApplication ZApplication;
 #include <QtAV/AVPlayer.h>
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/GraphicsItemRenderer.h>
+//#include <QtAV/GLWidgetRenderer.h>
 using namespace QtAV;
-
-
 
 FILE *log = 0;
 
@@ -87,14 +86,20 @@ int main(int argc, char *argv[])
     s.setSceneRect(0, 0, 800, 600);
     QGraphicsView w(&s);
 	w.showMaximized();
-    //QGLWidget gw;
-    //v.setViewport(&gw); //may flick
 
+#ifndef QT_NO_OPENGL
+    QGLWidget *glw = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+    glw->setAutoFillBackground(false);
+    w.setCacheMode(QGraphicsView::CacheNone);
+    w.setViewport(glw);
+#else
+    setCacheMode(QGraphicsView::CacheBackground);
+#endif
 	GraphicsItemRenderer renderer;
     renderer.resizeVideo(800, 600);
     s.addItem(&renderer);
 #else
-	WidgetRenderer renderer;
+    WidgetRenderer renderer;
     renderer.show();
     renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG);
     //renderer.resize(800, 600);
