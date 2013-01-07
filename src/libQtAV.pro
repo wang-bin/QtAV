@@ -54,6 +54,7 @@ SOURCES += \
     VideoThread.cpp
 
 HEADERS += \
+    QtAV/prepost.h \
     QtAV/dptr.h \
     QtAV/QtAV_Global.h \
     QtAV/QtAV_Compat.h \

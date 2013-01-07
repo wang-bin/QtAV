@@ -345,15 +345,6 @@ static void dump_stream_format(AVFormatContext *ic, int i, int index, int is_out
 }*/
 void AVDemuxer::dump()
 {
-    qDebug("Version\n"
-           "libavcodec: %#x\n"
-           "libavformat: %#x\n"
-//	       "libavdevice: %#x\n"
-           "libavutil: %#x"
-           ,avcodec_version()
-           ,avformat_version()
-//	       ,avdevice_version()
-           ,avutil_version());
     av_dump_format(format_context, 0, qPrintable(_file_name), false);
     qDebug("video format: %s [%s]", qPrintable(videoFormatName()), qPrintable(videoFormatLongName()));
     qDebug("Audio: %s [%s]", qPrintable(audioCodecName()), qPrintable(audioCodecLongName()));
