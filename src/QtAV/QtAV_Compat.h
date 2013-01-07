@@ -19,7 +19,6 @@
 #ifndef QTAV_COMPAT_H
 #define QTAV_COMPAT_H
 
-#include <qglobal.h>
 #ifdef __cplusplus
 extern "C"
 {
@@ -32,6 +31,12 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif //__cplusplus
+
+#ifndef AV_VERSION_INT
+#define AV_VERSION_INT(a, b, c) (a<<16 | b<<8 | c)
+#endif //AV_VERSION_INT
+
+void ffmpeg_version_print();
 
 //TODO: libav
 //avutil: error.h
@@ -69,5 +74,15 @@ av_always_inline char* av_err2str(int errnum)
     av_make_error_string((char[AV_ERROR_MAX_STRING_SIZE]){0}, AV_ERROR_MAX_STRING_SIZE, errnum)
 */
 #endif //av_err2str
+
+#if (LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52,23,0))
+#define avcodec_decode_audio3(avctx, samples, frame_size_ptr, avpkt) \
+    avcodec_decode_audio2(avctx, samples, frame_size_ptr, (*avpkt).data, (*avpkt).size);
+
+#endif
+
+#if (LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52,101,0))
+#define av_dump_format(...) dump_format(__VA_ARGS__)
+#endif
 
 #endif
