@@ -56,12 +56,15 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     int samples_with_channels_half = samples_with_channels/2;
     d.decoded.resize(samples_with_channels * sizeof(float));
     float *decoded_data = (float*)d.decoded.data();
-     //TODO: use bit. SIMD, hwa
+    static const float kInt8_inv = 1.0f/128.0f;
+    static const float kInt16_inv = 1.0f/32768.0f;
+    static const float kInt32_inv = 1.0f/2147483648.0f;
+    //TODO: hwa
+    //https://code.google.com/p/lavfilters/source/browse/decoder/LAVAudio/LAVAudio.cpp
     switch (d.codec_ctx->sample_fmt) {
     case AV_SAMPLE_FMT_U8:
     {
         uint8_t *data = (uint8_t*)*d.frame->data;
-        static const float kInt8_inv = 1.0f/128.0f;
         for (int i = 0; i < samples_with_channels_half; i++) {
             decoded_data[i] = (data[i] - 0x7F) * kInt8_inv;
             decoded_data[samples_with_channels - i] = (data[samples_with_channels - i] - 0x7F) * kInt8_inv;
@@ -71,7 +74,6 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     case AV_SAMPLE_FMT_S16:
     {
         int16_t *data = (int16_t*)*d.frame->data;
-        static const float kInt16_inv = 1.0f/32768.0f;
         for (int i = 0; i < samples_with_channels_half; i++) {
             decoded_data[i] = data[i] * kInt16_inv;
             decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt16_inv;
@@ -81,15 +83,13 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     case AV_SAMPLE_FMT_S32:
     {
         int32_t *data = (int32_t*)*d.frame->data;
-        static const float kInt64_inv = 1.0f/2147483648.0f;
         for (int i = 0; i < samples_with_channels_half; i++) {
-            decoded_data[i] = data[i] * kInt64_inv;
-            decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt64_inv;
+            decoded_data[i] = data[i] * kInt32_inv;
+            decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt32_inv;
         }
         break;
     }
     case AV_SAMPLE_FMT_FLT:
-    //case AV_SAMPLE_FMT_FLTP:
     {
         memcpy(decoded_data, *d.frame->data, d.decoded.size());
         break;
@@ -103,7 +103,57 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         }
         break;
     }
-    default: //TODO: planar format
+    case AV_SAMPLE_FMT_U8P:
+    {
+        uint8_t **data = (uint8_t**)d.frame->extended_data;
+        for (int i = 0; i < d.frame->nb_samples; ++i) {
+            for (int ch = 0; ch < d.codec_ctx->channels; ++ch) {
+                *decoded_data++ = (data[ch][i] - 0x7F) * kInt8_inv;
+            }
+        }
+        break;
+    }
+    case AV_SAMPLE_FMT_S16P:
+    {
+        uint16_t **data = (uint16_t**)d.frame->extended_data;
+        for (int i = 0; i < d.frame->nb_samples; ++i) {
+            for (int ch = 0; ch < d.codec_ctx->channels; ++ch) {
+                *decoded_data++ = data[ch][i] * kInt16_inv;
+            }
+        }
+        break;
+    }
+    case AV_SAMPLE_FMT_S32P:
+    {
+        uint32_t **data = (uint32_t**)d.frame->extended_data;
+        for (int i = 0; i < d.frame->nb_samples; ++i) {
+            for (int ch = 0; ch < d.codec_ctx->channels; ++ch) {
+                *decoded_data++ = data[ch][i] * kInt32_inv;
+            }
+        }
+        break;
+    }
+    case AV_SAMPLE_FMT_FLTP:
+    {
+        float **data = (float**)d.frame->extended_data;
+        for (int i = 0; i < d.frame->nb_samples; ++i) {
+            for (int ch = 0; ch < d.codec_ctx->channels; ++ch) {
+                *decoded_data++ = data[ch][i];
+            }
+        }
+        break;
+    }
+    case AV_SAMPLE_FMT_DBLP:
+    {
+        double **data = (double**)d.frame->extended_data;
+        for (int i = 0; i < d.frame->nb_samples; ++i) {
+            for (int ch = 0; ch < d.codec_ctx->channels; ++ch) {
+                *decoded_data++ = data[ch][i];
+            }
+        }
+        break;
+    }
+    default:
         static bool sWarn_a_fmt = true; //FIXME: no warning when replay. warn only once
         if (sWarn_a_fmt) {
             qWarning("Unsupported audio format: %d", d.codec_ctx->sample_fmt);
