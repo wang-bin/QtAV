@@ -32,6 +32,8 @@ extern "C"
 }
 #endif //__cplusplus
 
+#include "QtAV_Global.h"
+
 #ifndef AV_VERSION_INT
 #define AV_VERSION_INT(a, b, c) (a<<16 | b<<8 | c)
 #endif //AV_VERSION_INT
@@ -40,7 +42,11 @@ void ffmpeg_version_print();
 
 //TODO: libav
 //avutil: error.h
-#ifndef av_err2str
+#if !defined(av_err2str) || GCC_VERSION_AT_LEAST(4, 7, 2)
+#ifdef av_err2str
+#undef av_err2str
+//#define av_make_error_string qtav_make_error_string
+#else
 /**
  * Fill the provided buffer with a string containing an error string
  * corresponding to the AVERROR code errnum.
@@ -56,6 +62,8 @@ static av_always_inline char *av_make_error_string(char *errbuf, size_t errbuf_s
 	av_strerror(errnum, errbuf, errbuf_size);
 	return errbuf;
 }
+#endif //av_err2str
+
 #define AV_ERROR_MAX_STRING_SIZE 64
 av_always_inline char* av_err2str(int errnum)
 {
@@ -73,7 +81,7 @@ av_always_inline char* av_err2str(int errnum)
 #define av_err2str(errnum) \
     av_make_error_string((char[AV_ERROR_MAX_STRING_SIZE]){0}, AV_ERROR_MAX_STRING_SIZE, errnum)
 */
-#endif //av_err2str
+#endif //!defined(av_err2str) || GCC_VERSION_AT_LEAST(4, 7, 2)
 
 #if (LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52,23,0))
 #define avcodec_decode_audio3(avctx, samples, frame_size_ptr, avpkt) \
