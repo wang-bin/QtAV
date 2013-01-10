@@ -306,10 +306,16 @@ void AVPlayer::play()
     m_drop_count = 0;
 
     audio_dec->setCodecContext(aCodecCtx);
-    audio_thread->start(QThread::HighestPriority);
+    if (aCodecCtx) {
+        qDebug("Starting audio thread...");
+        audio_thread->start(QThread::HighestPriority);
+    }
 
     video_dec->setCodecContext(vCodecCtx);
-    video_thread->start();
+    if (vCodecCtx) {
+        qDebug("Starting video thread...");
+        video_thread->start();
+    }
 
     demuxer_thread->start();
 
