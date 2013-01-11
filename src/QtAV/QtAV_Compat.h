@@ -33,6 +33,30 @@ extern "C"
 #endif //__cplusplus
 
 #include "QtAV_Global.h"
+/*!
+ * Guide to uniform the api for different FFMpeg version(or other libraries)
+ * We use the existing old api to simulater .
+ * 1. The old version does not have this api: Just add it.
+ * 2. The old version has similar api: Try using macro.
+ * e.g. the old is bool my_play(char* data, size_t size)
+ *      the new is bool my_play2(const ByteArray& data)
+ * change:
+ *    #define my_play2(data) my_play(data.data(), data.size());
+ *
+ * 3. The old version api is conflicted with the latest's. We can redefine the api
+ * e.g. the old is bool my_play(char* data, size_t size)
+ *      the new is bool my_play(const ByteArray& data)
+ * change:
+ *    typedef bool (*my_play_t)(const ByteArray&);
+ *    static my_play_t my_play_ptr = my_play; //using the existing my_play(char*, size_t)
+ *    #define my_play my_play_compat
+ *    inline bool my_play_compat(const ByteArray& data)
+ *    {
+ *        return my_play_ptr(data.data(), data.size());
+ *    }
+ * 4. conflict macros
+ * see av_err2str
+ */
 
 #ifndef AV_VERSION_INT
 #define AV_VERSION_INT(a, b, c) (a<<16 | b<<8 | c)
