@@ -46,4 +46,10 @@ NOTE: If you are using QtCreator to build the project, you should go to Projects
 Screenshot
 -------
 
+QtAV on Win8
 ![Alt text](https://github.com/downloads/wang-bin/QtAV/screenshot.png "screenshot")
+
+<div>
+IP camera using QtAV (some developers from Italy)
+<img src="https://sourceforge.net/projects/qtav/screenshots/ip_camera.jpg"/>
+</div>
