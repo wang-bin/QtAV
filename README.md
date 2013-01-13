@@ -50,6 +50,6 @@ QtAV on Win8
 ![Alt text](https://github.com/downloads/wang-bin/QtAV/screenshot.png "screenshot")
 
 <div>
-IP camera using QtAV (some developers from Italy)
+IP camera using QtAV. OS: Fedora 18 (some developers from Italy)
 <img src="https://sourceforge.net/projects/qtav/screenshots/ip_camera.jpg"/>
 </div>

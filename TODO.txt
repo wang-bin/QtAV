@@ -1,5 +1,5 @@
 Roadmap:
-1.0: can play
+1.0: can play. statble. plugin framework
 2.0: base functions, gui
 3.0: components structure. base a/v filters
 4.0: own graphics library.
@@ -11,10 +11,12 @@ network stream
 avio pause network
 
 TODO:
+type.h
+QtAV_Compat.h=>pch
 external clock
-avcodec_flush_buffer when seeking
 use v,a,-1 stream when seeking
 hardware acceleration, ffmpeg-mt
+libx264
 modular
 decode and yuv2rgb: GLSL, ipp, cuda
 OpenCL, OpenGL, OpenAL, OpenSL, cuda, ipp
@@ -22,7 +24,7 @@ OpenAL:http://www.cocoachina.com/bbs/read.php?tid=51579
 set audio output
 capture: set async
 structure:{
-AVObject=>AVDemux, AVDecoder{,ipp,cuda,cl}, ImageConvert{,ipp,GLSL,cuda,cl}, Resample{,ipp,GLSL,cuda,cl}, Filter{,ipp,GLSL,cuda,cl}, Output{GL,AL,SL.DX}
+AVObject=>AVDemux, AVDecoder{,ipp,cuda,cl}, ImageConverter{,ipp,GLSL,cuda,cl}, Resample{,ipp,GLSL,cuda,cl}, Filter{,ipp,GLSL,cuda,cl}, Output{GL,AL,SL.DX}
 api: name, hwaName(ff,ipp,cuda,cl,gl,cuda}, hwaSupported,hwaInfo
 }
 

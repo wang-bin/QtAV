@@ -271,7 +271,7 @@ void AVPlayer::play()
 		stop();
     if (avTimerId > 0)
         killTimer(avTimerId);
-    qDebug("loading: %s ...", qPrintable(path));
+    qDebug("loading: %s ...", path.toUtf8().constData());
     if (!demuxer.loadFile(path)) {
         return;
 	}
