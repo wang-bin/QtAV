@@ -22,7 +22,9 @@
 #include <QtAV/AVClock.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/VideoRenderer.h>
-#include <QDateTime>
+#include <QtAV/ImageConverter.h>
+#include <QtGui/QImage>
+
 namespace QtAV {
 
 const double kSyncThreshold = 0.005; // 5 ms
@@ -30,16 +32,31 @@ const double kSyncThreshold = 0.005; // 5 ms
 class VideoThreadPrivate : public AVThreadPrivate
 {
 public:
-    VideoThreadPrivate():delay(0){}
+    VideoThreadPrivate():conv(0),delay(0){}
+    ImageConverter *conv;
     double delay;
     double pts; //current decoded pts. for capture
     QByteArray decoded_data; //for capture. cow
     int width, height;
+    QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
 };
 
 VideoThread::VideoThread(QObject *parent) :
     AVThread(*new VideoThreadPrivate(), parent)
 {
+}
+
+ImageConverter* VideoThread::setImageConverter(ImageConverter *converter)
+{
+    DPTR_D(VideoThread);
+    QtAV::ImageConverter* old = d.conv;
+    d.conv = converter;
+    return old;
+}
+
+ImageConverter* VideoThread::imageConverter() const
+{
+    return d_func().conv;
 }
 
 QByteArray VideoThread::currentRawImage() const
@@ -62,11 +79,13 @@ double VideoThread::currentPts() const
 void VideoThread::run()
 {
     DPTR_D(VideoThread);
-    if (!d.dec || !d.writer)
+    //TODO: no d.writer is ok, just a audio player
+    if (!d.dec || !d.writer)// || !d.conv)
         return;
     resetState();
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
+    VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
     while (!d.stop) {
         d.mutex.lock();
         if (d.packets.isEmpty() && !d.stop) {
@@ -111,16 +130,23 @@ void VideoThread::run()
         }
         d.clock->updateVideoPts(pkt.pts); //here?
         //DO NOT decode and convert if vo is not available or null!
+        //if ()
         if (d.dec->decode(pkt.data)) {
             d.pts = pkt.pts;
             d.width = dec->width();
             d.height = dec->height();
             d.decoded_data = d.dec->data();
-            if (d.writer && d.writer->isAvailable()) {
-                ((VideoRenderer*)d.writer)->setSourceSize(dec->width(), dec->height());
-                d.writer->writeData(d.dec->data());
+            //TODO: Add filters here
+            /*if (d.image.width() != d.width || d.image.height() != d.height)
+                d.image = QImage(d.width, d.height, QImage::Format_RGB32);
+            d.conv->setInSize(d.width, d.height);
+            if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
+
+            }*/
+            if (vo && vo->isAvailable()) {
+                vo->setSourceSize(dec->width(), dec->height());
+                vo->writeData(d.decoded_data);
             }
-            //qApp->processEvents(QEventLoop::AllEvents);
         }
         d.mutex.unlock();
     }

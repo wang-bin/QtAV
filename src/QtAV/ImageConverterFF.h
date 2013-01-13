@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+    ImageConverterFF: Image resizing & color model convertion using FFMpeg swscale
+    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,30 +16,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef QAV_VIDEORENDERER_P_H
-#define QAV_VIDEORENDERER_P_H
+#ifndef QTAV_IMAGECONVERTERFF_H
+#define QTAV_IMAGECONVERTERFF_H
 
-#include <private/AVOutput_p.h>
-//#include <QtAV/ImageConverter.h>
-#include <QtAV/QtAV_Compat.h>
+#include <QtAV/ImageConverter.h>
 
 namespace QtAV {
 
-class EventFilter;
-class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
+class ImageConverterFFPrivate;
+class ImageConverterFF : public ImageConverter
 {
+    DPTR_DECLARE_PRIVATE(ImageConverterFF)
 public:
-    VideoRendererPrivate():width(480),height(320),src_width(0)
-      ,src_height(0),event_filter(0) {
-        //conv.setInFormat(PIX_FMT_YUV420P);
-        //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
-    }
-    virtual ~VideoRendererPrivate(){}
-    int width, height;
-    int src_width, src_height;
-    EventFilter *event_filter;
-    //ImageConverter conv;
+    ImageConverterFF();
+    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
+protected:
+    virtual bool prepareData(); //Allocate memory for out data
 };
-
 } //namespace QtAV
-#endif // QAV_VIDEORENDERER_P_H
+#endif // QTAV_IMAGECONVERTERFF_H

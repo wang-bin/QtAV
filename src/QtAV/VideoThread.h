@@ -25,6 +25,7 @@
 
 namespace QtAV {
 
+class ImageConverter;
 class VideoThreadPrivate;
 class VideoThread : public AVThread
 {
@@ -32,6 +33,9 @@ class VideoThread : public AVThread
     DPTR_DECLARE_PRIVATE(VideoThread)
 public:
     explicit VideoThread(QObject *parent = 0);
+    //return the old
+    ImageConverter* setImageConverter(ImageConverter *converter);
+    ImageConverter* imageConverter() const;
     QByteArray currentRawImage() const;
     QSize currentRawImageSize() const; //TODO: remove it? use dec's size outside?
     double currentPts() const;

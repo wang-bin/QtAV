@@ -20,6 +20,8 @@
 #ifndef QTAV_GLOBAL_H
 #define QTAV_GLOBAL_H
 
+#define CONFIG_IMAGECONVERTER 1
+
 #include <qglobal.h>
 #include <dptr.h>
 

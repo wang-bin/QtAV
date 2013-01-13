@@ -40,11 +40,15 @@ QImage ImageRenderer::currentFrameImage() const
     return d_func().image;
 }
 
+//FIXME: why crash if QImage use widget size?
 void ImageRenderer::convertData(const QByteArray &data)
 {
-    //qDebug("%s", __PRETTY_FUNCTION__);
     DPTR_D(ImageRenderer);
     //picture.data[0]
+    /*d.conv.setInSize(d.src_width, d.src_height);
+    if (d.image.width() != d.src_width || d.image.height() != d.src_height)
+        d.image = QImage(d.src_width, d.src_height, QImage::Format_RGB32);
+    d.conv.scale(data.constData(), d.image.bits());*/
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
     d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
 #else

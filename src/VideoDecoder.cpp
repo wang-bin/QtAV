@@ -22,10 +22,14 @@
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QSize>
 
+#if CONFIG_IMAGECONVERTER
+#include <QtAV/ImageConverterFF.h>
+#endif //CONFIG_IMAGECONVERTER
+
 #if CONFIG_EZX
 #define PIX_FMT PIX_FMT_BGR565
 #else
-#define PIX_FMT PIX_FMT_RGB32
+#define PIX_FMT PIX_FMT_RGB32 //PIX_FMT_YUV420P
 #endif //CONFIG_EZX
 
 namespace QtAV {
@@ -33,12 +37,32 @@ namespace QtAV {
 class VideoDecoderPrivate : public AVDecoderPrivate
 {
 public:
-    VideoDecoderPrivate():sws_ctx(0),width(0),height(0),pix_fmt(PIX_FMT)
-    {}
-    SwsContext *sws_ctx;
+    VideoDecoderPrivate():width(0),height(0)
+#if CONFIG_IMAGECONVERTER
+    {
+        conv = new ImageConverterFF(); //TODO: set in AVPlayer
+        conv->setOutFormat(PIX_FMT_RGB32);
+    }
+    ~VideoDecoderPrivate() {
+        if (conv) {
+            delete conv;
+            conv = 0;
+        }
+    }
+
+#else
+    ,sws_ctx(0),pix_fmt(PIX_FMT){}
+#endif //!CONFIG_IMAGECONVERTER
+
     int width, height;
+
+#if CONFIG_IMAGECONVERTER
+    ImageConverter* conv;
+#else
+    SwsContext *sws_ctx;
     enum PixelFormat pix_fmt;
     AVPicture picture;
+#endif //CONFIG_IMAGECONVERTER
 };
 
 VideoDecoder::VideoDecoder()
@@ -58,29 +82,16 @@ bool VideoDecoder::decode(const QByteArray &encoded)
 
     //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
     int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
+    //TODO: decoded format is YUV420P, YUV422P?
     av_free_packet(&packet);
     if (ret < 0) {
         qWarning("[VideoDecoder] %s", av_err2str(ret));
         return false;
     }
     if (!d.got_frame_ptr) {
-        qWarning("no frame could be decompressed");
+        qWarning("no frame could be decompressed: %s", av_err2str(ret));
         return false;
     }
-    /*
-    d.sws_ctx = sws_getContext(
-            codecCtx->width, //int srcW,
-            codecCtx->height, //int srcH,
-            codecCtx->pix_fmt, //enum PixelFormat srcFormat,
-            d.width, //int dstW,
-            d.height, //int dstH,
-            d.pix_fmt, //enum PixelFormat dstFormat,
-            SWS_BICUBIC, //int flags,
-            NULL, //SwsFilter *srcFilter,
-            NULL, //SwsFilter *dstFilter,
-            NULL  //const double *param
-            );
-    */
 
     if (d.width <= 0 || d.height <= 0) {
         qDebug("decoded video size not seted. use original size [%d x %d]"
@@ -89,6 +100,17 @@ bool VideoDecoder::decode(const QByteArray &encoded)
             return false;
         resizeVideo(d.codec_ctx->width, d.codec_ctx->height);
     }
+    //d.decoded = QByteArray::fromRawData((char*)d.frame->data[0], d.decoded.size());
+    //return true;
+    //If not YUV420P or ImageConverter supported format pair, convert to YUV420P first. or directly convert to RGB?(no hwa)
+    //TODO: move convertion out. decoder only do some decoding
+#if CONFIG_IMAGECONVERTER
+    //if not yuv420p or conv supported convertion pair(in/out), convert to yuv420p first using ff, then use other yuv2rgb converter
+    d.conv->setInFormat(d.codec_ctx->pix_fmt);
+    d.conv->setInSize(d.codec_ctx->width, d.codec_ctx->height);
+    d.conv->convert(d.frame->data, d.frame->linesize);
+    d.decoded = d.conv->outData();
+#else
     d.sws_ctx = sws_getCachedContext(d.sws_ctx
             , d.codec_ctx->width, d.codec_ctx->height, d.codec_ctx->pix_fmt
             , d.width, d.height, d.pix_fmt
@@ -109,6 +131,7 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     //sws_freeContext(v_sws_ctx);
     if (d.frame->interlaced_frame) //?
         avpicture_deinterlace(&d.picture, &d.picture, d.pix_fmt, d.width, d.height);
+#endif //CONFIG_IMAGECONVERTER
     return true;
 }
 
@@ -124,6 +147,9 @@ void VideoDecoder::resizeVideo(int width, int height)
 
     DPTR_D(VideoDecoder);
 
+#if CONFIG_IMAGECONVERTER
+    d.conv->setOutSize(width, height);
+#else
     int bytes = avpicture_get_size(PIX_FMT, width, height);
     if(d.decoded.size() < bytes) {
         d.decoded.resize(bytes);
@@ -136,6 +162,7 @@ void VideoDecoder::resizeVideo(int width, int height)
             width,
             height
             );
+#endif //CONFIG_IMAGECONVERTER
 
     d.width = width;
     d.height = height;

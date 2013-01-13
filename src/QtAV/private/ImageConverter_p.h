@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,30 +16,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef QAV_VIDEORENDERER_P_H
-#define QAV_VIDEORENDERER_P_H
 
-#include <private/AVOutput_p.h>
-//#include <QtAV/ImageConverter.h>
-#include <QtAV/QtAV_Compat.h>
+#ifndef QTAV_IMAGECONVERTER_P_H
+#define QTAV_IMAGECONVERTER_P_H
+
+#include <QtAV/QtAV_Global.h>
+#include <QtCore/QByteArray>
 
 namespace QtAV {
 
-class EventFilter;
-class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
+class ImageConverter;
+class Q_EXPORT ImageConverterPrivate : public DPtrPrivate<ImageConverter>
 {
 public:
-    VideoRendererPrivate():width(480),height(320),src_width(0)
-      ,src_height(0),event_filter(0) {
-        //conv.setInFormat(PIX_FMT_YUV420P);
-        //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
-    }
-    virtual ~VideoRendererPrivate(){}
-    int width, height;
-    int src_width, src_height;
-    EventFilter *event_filter;
-    //ImageConverter conv;
+    ImageConverterPrivate():interlaced(false){}
+    bool interlaced;
+    int w_in, h_in, w_out, h_out;
+    int fmt_in, fmt_out;
+    QByteArray data_out;
 };
 
 } //namespace QtAV
-#endif // QAV_VIDEORENDERER_P_H
+#endif // QTAV_IMAGECONVERTER_P_H

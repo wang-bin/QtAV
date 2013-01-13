@@ -12,7 +12,7 @@ isEmpty(BUILD_DIR):BUILD_DIR=$$[BUILD_DIR]
 isEmpty(BUILD_DIR):BUILD_IN_SRC = yes
 !isEmpty(BUILD_IN_SRC):BUILD_DIR=$$OUT_PWD/../out
 include($${PROJECTROOT}/common.pri)
-!include(libQtAV.pri): error(could not find libQtAV.pri)
+!include(libQtAV.pri): error("could not find libQtAV.pri")
 
 win32:RC_FILE = $${PROJECTROOT}/res/QtAV.rc
 OTHER_FILES += $$RC_FILE
@@ -42,6 +42,8 @@ SOURCES += \
     AVDemuxThread.cpp \
     EventFilter.cpp \
     GraphicsItemRenderer.cpp \
+    ImageConverter.cpp \
+    ImageConverterFF.cpp \
     ImageRenderer.cpp \
     Packet.cpp \
     AVPlayer.cpp \
@@ -66,6 +68,7 @@ HEADERS += \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
+    QtAV/private/ImageConverter_p.h \
     QtAV/private/ImageRenderer_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \
@@ -76,6 +79,8 @@ HEADERS += \
     QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
     QtAV/GraphicsItemRenderer.h \
+    QtAV/ImageConverter.h \
+    QtAV/ImageConverterFF.h \
     QtAV/ImageRenderer.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
@@ -86,3 +91,12 @@ HEADERS += \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoThread.h
+
+HEADERS += \
+
+
+HEADERS += \
+
+
+SOURCES += \
+
