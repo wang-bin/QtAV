@@ -4,13 +4,8 @@ QT += opengl
 TARGET = player
 STATICLINK = 0
 PROJECTROOT = $$PWD/..
-isEmpty(BUILD_DIR):BUILD_DIR=$$(BUILD_DIR)
-isEmpty(BUILD_DIR):BUILD_DIR=$$[BUILD_DIR]
-isEmpty(BUILD_DIR):BUILD_IN_SRC = yes
-
-!isEmpty(BUILD_IN_SRC):BUILD_DIR=$$OUT_PWD/../out
-include($${PROJECTROOT}/common.pri)
 include($$PROJECTROOT/src/libQtAV.pri)
+preparePaths($$OUT_PWD/../out)
 
 #win32:LIBS += -lUser32
 

@@ -7,12 +7,8 @@ CONFIG *= qtav-buildlib
 #var with '_' can not pass to pri?
 STATICLINK = 0
 PROJECTROOT = $$PWD/..
-isEmpty(BUILD_DIR):BUILD_DIR=$$(BUILD_DIR)
-isEmpty(BUILD_DIR):BUILD_DIR=$$[BUILD_DIR]
-isEmpty(BUILD_DIR):BUILD_IN_SRC = yes
-!isEmpty(BUILD_IN_SRC):BUILD_DIR=$$OUT_PWD/../out
-include($${PROJECTROOT}/common.pri)
 !include(libQtAV.pri): error("could not find libQtAV.pri")
+preparePaths($$OUT_PWD/../out)
 
 win32:RC_FILE = $${PROJECTROOT}/res/QtAV.rc
 OTHER_FILES += $$RC_FILE
