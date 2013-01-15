@@ -44,7 +44,6 @@ void AVThread::stop()
     //terminate();
     d.packets.setBlocking(false); //stop blocking take()
     d.packets.clear();
-    //d.mutex.unlock(); //put it to run(). or unlock after terminate()
 }
 
 void AVThread::setClock(AVClock *clock)
@@ -96,7 +95,6 @@ void AVThread::resetState()
     d.demux_end = false;
     d.packets.setBlocking(true);
     d.packets.clear();
-    d.mutex.unlock();
 }
 
 } //namespace QtAV

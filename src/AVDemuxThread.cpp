@@ -71,23 +71,28 @@ void AVDemuxThread::seek(qreal pos)
 
 void AVDemuxThread::seekForward()
 {
-    buffer_mutex.unlock(); //may be still blocking in demux thread
-    QMutexLocker lock(&buffer_mutex); //demux thread wait for the seeking end
-    Q_UNUSED(lock);
-    demuxer->seekForward();
+    //demux thread wait for the seeking end
+    if (!buffer_mutex.tryLock()) {
+        buffer_mutex.unlock(); //may be still blocking in demux thread
+        buffer_mutex.lock();
+    }
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
-    qDebug("Seek end");
+    demuxer->seekForward();
+    buffer_mutex.unlock();
 }
 
 void AVDemuxThread::seekBackward()
 {
-    buffer_mutex.unlock(); //may be still blocking in demux thread
-    QMutexLocker lock(&buffer_mutex); //demux thread wait for the seeking end
-    Q_UNUSED(lock);
-    demuxer->seekBackward();
+    //demux thread wait for the seeking end
+    if (!buffer_mutex.tryLock()) {
+        buffer_mutex.unlock(); //may be still blocking in demux thread
+        buffer_mutex.lock();
+    }
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
+    demuxer->seekBackward();
+    buffer_mutex.unlock();
 }
 //No more data to put. So stop blocking the queue to take the reset elements
 void AVDemuxThread::stop()
@@ -116,7 +121,6 @@ void AVDemuxThread::run()
     int index = 0;
     Packet pkt;
     end = false;
-    buffer_mutex.unlock();
     PacketQueue *aqueue = audio_thread->packetQueue();
     PacketQueue *vqueue = video_thread->packetQueue();
     while (!end) { //TODO: mutex locker
