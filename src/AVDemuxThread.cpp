@@ -123,10 +123,10 @@ void AVDemuxThread::run()
     end = false;
     PacketQueue *aqueue = audio_thread->packetQueue();
     PacketQueue *vqueue = video_thread->packetQueue();
-    while (!end) { //TODO: mutex locker
-        buffer_mutex.lock();
+    while (!end) {
+        QMutexLocker locker(&buffer_mutex);
+        Q_UNUSED(locker);
         if (!demuxer->readFrame()) {
-            buffer_mutex.unlock();
             continue;
         }
         index = demuxer->stream();
@@ -142,10 +142,8 @@ void AVDemuxThread::run()
             vqueue->setBlocking(aqueue->size() >= aqueue->threshold());
             vqueue->put(pkt); //affect audio_thread
         } else { //subtitle
-            buffer_mutex.unlock();
             continue;
         }
-        buffer_mutex.unlock();
     }
     qDebug("Demux thread stops running....");
 }

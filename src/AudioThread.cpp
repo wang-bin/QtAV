@@ -62,18 +62,17 @@ void AudioThread::run()
     static const double max_len = 0.02;
     d.last_pts = 0;
     while (!d.stop) {
-        d.mutex.lock();
+        QMutexLocker locker(&d.mutex);
+        Q_UNUSED(locker);
         if (d.packets.isEmpty() && !d.stop) {
             d.stop = d.demux_end;
             if (d.stop) {
-                d.mutex.unlock();
                 break;
             }
         }
         Packet pkt = d.packets.take(); //wait to dequeue
         if (pkt.data.isNull()) {
             qDebug("Empty packet!");
-            d.mutex.unlock();
             continue;
         }
         d.clock->updateValue(pkt.pts);
@@ -127,7 +126,6 @@ void AudioThread::run()
             msleep((unsigned long)(dt*1000.0));
         }
         d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
-        d.mutex.unlock();
     }
     qDebug("Audio thread stops running...");
 }

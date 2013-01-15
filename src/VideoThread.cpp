@@ -87,11 +87,11 @@ void VideoThread::run()
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
     while (!d.stop) {
-        d.mutex.lock();
+        QMutexLocker locker(&d.mutex);
+        Q_UNUSED(locker);
         if (d.packets.isEmpty() && !d.stop) {
             d.stop = d.demux_end;
             if (d.stop) {
-                d.mutex.unlock();
                 break;
             }
         }
@@ -99,7 +99,6 @@ void VideoThread::run()
         //Compare to the clock
         if (pkt.pts <= 0 || pkt.data.isNull()) {
             qDebug("Invalid pts or empty packet!");
-            d.mutex.unlock();
             continue;
         }
         d.delay = pkt.pts  - d.clock->value();
@@ -115,7 +114,6 @@ void VideoThread::run()
                 //qDebug("~~~~~wating for %f msecs", d.delay*1000);
                 usleep(d.delay * 1000000);
             } else if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
-                //d.mutex.unlock();
                 //continue;
             }
         } else { //when to drop off?
@@ -124,7 +122,6 @@ void VideoThread::run()
                 msleep(64);
             } else {
                 //audio packet not cleaned up?
-                d.mutex.unlock();
                 continue;
             }
         }
@@ -148,7 +145,6 @@ void VideoThread::run()
                 vo->writeData(d.decoded_data);
             }
         }
-        d.mutex.unlock();
     }
     qDebug("Video thread stops running...");
 }
