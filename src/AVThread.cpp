@@ -35,8 +35,14 @@ AVThread::~AVThread()
     //d_ptr destroyed automatically
 }
 
+bool AVThread::isPaused() const
+{
+    return d_func().paused;
+}
+
 void AVThread::stop()
 {
+    pause(false);
     DPTR_D(AVThread);
     if (d.writer)
         d.writer->pause(false); //stop waiting
@@ -44,6 +50,16 @@ void AVThread::stop()
     //terminate();
     d.packets.setBlocking(false); //stop blocking take()
     d.packets.clear();
+}
+
+void AVThread::pause(bool p)
+{
+    DPTR_D(AVThread);
+    d.paused = p;
+    if (!d.paused) {
+        qDebug("wake up paused thread");
+        d.cond.wakeAll();
+    }
 }
 
 void AVThread::setClock(AVClock *clock)
@@ -89,12 +105,24 @@ void AVThread::setDemuxEnded(bool ended)
 void AVThread::resetState()
 {
     DPTR_D(AVThread);
+    pause(false);
     if (d.writer)
         d.writer->pause(false); //stop waiting. Important when replay
     d.stop = false;
     d.demux_end = false;
     d.packets.setBlocking(true);
     d.packets.clear();
+}
+
+void AVThread::tryPause()
+{
+    DPTR_D(AVThread);
+    if (!d.paused)
+        return;
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
+    d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
+    qDebug("paused thread waked up!!!");
 }
 
 } //namespace QtAV

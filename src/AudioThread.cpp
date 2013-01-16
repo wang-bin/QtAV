@@ -62,6 +62,10 @@ void AudioThread::run()
     static const double max_len = 0.02;
     d.last_pts = 0;
     while (!d.stop) {
+        tryPause();
+        if (d.stop) { //the queue is empty and may block. should setBlocking(false) wake up cond empty?
+            break;
+        }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
         if (d.packets.isEmpty() && !d.stop) {

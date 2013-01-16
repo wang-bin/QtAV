@@ -37,8 +37,6 @@ public:
 	explicit AVThread(QObject *parent = 0);
     virtual ~AVThread();
 
-    virtual void stop();
-
     void setClock(AVClock *clock);
     AVClock* clock() const;
 
@@ -52,9 +50,17 @@ public:
     AVOutput* output() const;
 
     void setDemuxEnded(bool ended);
+
+    bool isPaused() const;
+public slots:
+    virtual void stop();
+    /*change pause state. the pause/continue action will do in the next loop*/
+    void pause(bool p); //processEvents when waiting?
+
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
     void resetState();
+    void tryPause();
 
     DPTR_DECLARE(AVThread)
 };

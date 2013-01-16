@@ -21,6 +21,7 @@
 
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
+#include <QtCore/QWaitCondition>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -40,19 +41,23 @@ public:
     void seekForward();
     void seekBackward();
     //AVDemuxer* demuxer
-
+    bool isPaused() const;
 public slots:
     void stop();
+    void pause(bool p);
 
 protected:
     virtual void run();
-    
+    void tryPause();
+
 private:
+    bool paused;
     volatile bool end;
     AVDemuxer *demuxer;
     AVThread *audio_thread, *video_thread;
     int audio_stream, video_stream;
     QMutex buffer_mutex;
+    QWaitCondition cond;
 };
 
 } //namespace QtAV

@@ -87,6 +87,10 @@ void VideoThread::run()
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
     while (!d.stop) {
+        tryPause();
+        if (d.stop) { //the queue is empty and will block. should setBlocking(false) wake up cond empty?
+            break;
+        }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
         if (d.packets.isEmpty() && !d.stop) {

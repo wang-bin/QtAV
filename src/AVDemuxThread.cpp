@@ -24,7 +24,7 @@
 namespace QtAV {
 
 AVDemuxThread::AVDemuxThread(QObject *parent) :
-    QThread(parent),end(false),demuxer(0),audio_thread(0),video_thread(0)
+    QThread(parent),paused(false),end(false),demuxer(0),audio_thread(0),video_thread(0)
 {
 }
 
@@ -94,6 +94,12 @@ void AVDemuxThread::seekBackward()
     demuxer->seekBackward();
     buffer_mutex.unlock();
 }
+
+bool AVDemuxThread::isPaused() const
+{
+    return paused;
+}
+
 //No more data to put. So stop blocking the queue to take the reset elements
 void AVDemuxThread::stop()
 {
@@ -103,6 +109,14 @@ void AVDemuxThread::stop()
     video_thread->setDemuxEnded(true);
     audio_thread->packetQueue()->setBlocking(false);
     video_thread->packetQueue()->setBlocking(false);
+    pause(false);
+}
+
+void AVDemuxThread::pause(bool p)
+{
+    paused = p;
+    if (!paused)
+        cond.wakeAll();
 }
 
 void AVDemuxThread::run()
@@ -121,9 +135,14 @@ void AVDemuxThread::run()
     int index = 0;
     Packet pkt;
     end = false;
+    pause(false);
     PacketQueue *aqueue = audio_thread->packetQueue();
     PacketQueue *vqueue = video_thread->packetQueue();
     while (!end) {
+        tryPause();
+        if (end) { //the queue is empty and will block
+            break;
+        }
         QMutexLocker locker(&buffer_mutex);
         Q_UNUSED(locker);
         if (!demuxer->readFrame()) {
@@ -147,5 +166,15 @@ void AVDemuxThread::run()
     }
     qDebug("Demux thread stops running....");
 }
+
+void AVDemuxThread::tryPause()
+{
+    if (!paused)
+        return;
+    QMutexLocker lock(&buffer_mutex);
+    Q_UNUSED(lock);
+    cond.wait(&buffer_mutex); //TODO: qApp->processEvents?
+}
+
 
 } //namespace QtAV

@@ -35,12 +35,13 @@ class AVClock;
 class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
-    AVThreadPrivate():demux_end(false),stop(false),clock(0)
+    AVThreadPrivate():paused(false),demux_end(false),stop(false),clock(0)
       ,dec(0),writer(0) {
     }
     //DO NOT delete dec and writer. We do not own them
     virtual ~AVThreadPrivate() {}
 
+    bool paused;
     bool demux_end;
     volatile bool stop; //true when packets is empty and demux is end.
     AVClock *clock;
@@ -48,6 +49,7 @@ public:
     AVDecoder *dec;
     AVOutput *writer;
     QMutex mutex;
+    QWaitCondition cond; //pause
 };
 
 } //namespace QtAV
