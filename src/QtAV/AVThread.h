@@ -60,7 +60,11 @@ public slots:
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
     void resetState();
-    void tryPause();
+    /*
+     * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)
+     * and return true. Otherwise, return false immediatly.
+     */
+    bool tryPause();
 
     DPTR_DECLARE(AVThread)
 };

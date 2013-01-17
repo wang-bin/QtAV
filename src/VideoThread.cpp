@@ -87,10 +87,8 @@ void VideoThread::run()
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
     while (!d.stop) {
-        tryPause();
-        if (d.stop) { //the queue is empty and will block. should setBlocking(false) wake up cond empty?
-            break;
-        }
+        if (tryPause())
+            continue; //the queue is empty and may block. should setBlocking(false) wake up cond empty?
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
         if (d.packets.isEmpty() && !d.stop) {

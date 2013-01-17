@@ -48,7 +48,11 @@ public slots:
 
 protected:
     virtual void run();
-    void tryPause();
+    /*
+     * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)
+     * and return true. Otherwise, return false immediatly.
+     */
+    bool tryPause();
 
 private:
     bool paused;

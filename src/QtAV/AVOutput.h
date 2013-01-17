@@ -48,9 +48,11 @@ protected:
 	 */
 	virtual void convertData(const QByteArray& data) = 0;// = 0; //TODO: why pure may case "pure virtual method called"
 	virtual bool write() = 0; //TODO: why pure may case "pure virtual method called"
-	/* If paused is true, block the thread(block write()) and wait
-     * for paused be false, else do nothing. */
-	void tryPause();
+    /*
+     * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)
+     * and return true. Otherwise, return false immediatly.
+     */
+	bool tryPause();
 
     DPTR_DECLARE(AVOutput)
 };

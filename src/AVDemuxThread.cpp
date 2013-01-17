@@ -139,10 +139,8 @@ void AVDemuxThread::run()
     PacketQueue *aqueue = audio_thread->packetQueue();
     PacketQueue *vqueue = video_thread->packetQueue();
     while (!end) {
-        tryPause();
-        if (end) { //the queue is empty and will block
-            break;
-        }
+        if (tryPause())
+            continue; //the queue is empty and will block
         QMutexLocker locker(&buffer_mutex);
         Q_UNUSED(locker);
         if (!demuxer->readFrame()) {
@@ -167,13 +165,14 @@ void AVDemuxThread::run()
     qDebug("Demux thread stops running....");
 }
 
-void AVDemuxThread::tryPause()
+bool AVDemuxThread::tryPause()
 {
     if (!paused)
-        return;
+        return false;
     QMutexLocker lock(&buffer_mutex);
     Q_UNUSED(lock);
     cond.wait(&buffer_mutex); //TODO: qApp->processEvents?
+    return true;
 }
 
 

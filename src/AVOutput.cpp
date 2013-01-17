@@ -65,14 +65,15 @@ bool AVOutput::isPaused() const
 }
 
 //TODO: how to call this automatically before write()?
-void AVOutput::tryPause()
+bool AVOutput::tryPause()
 {
     DPTR_D(AVOutput);
     if (!d.paused)
-        return;
+        return false;
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
+    return true;
 }
 
 } //namespace QtAV

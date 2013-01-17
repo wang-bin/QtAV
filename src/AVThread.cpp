@@ -114,15 +114,16 @@ void AVThread::resetState()
     d.packets.clear();
 }
 
-void AVThread::tryPause()
+bool AVThread::tryPause()
 {
     DPTR_D(AVThread);
     if (!d.paused)
-        return;
+        return false;
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
     qDebug("paused thread waked up!!!");
+    return true;
 }
 
 } //namespace QtAV
