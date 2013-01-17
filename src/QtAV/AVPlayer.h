@@ -40,6 +40,8 @@ public:
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
 
+    //NOT const. This is the only way to access the clock.
+    AVClock* masterClock();
     void setFile(const QString& path);
 	QString file() const;
     /*

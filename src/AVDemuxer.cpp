@@ -24,7 +24,7 @@
 
 namespace QtAV {
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
-    :QObject(parent),eof(false),pkt(new Packet())
+    :QObject(parent),started_(false),eof(false),pkt(new Packet())
     ,ipts(0),stream_idx(-1),audio_stream(-2),video_stream(-2)
     ,subtitle_stream(-2),_is_input(true),format_context(0)
 	,a_codec_context(0),v_codec_context(0),_file_name(fileName),master_clock(0)
@@ -55,6 +55,7 @@ bool AVDemuxer::readFrame()
         if (ret == AVERROR_EOF) { //end of file
             if (!eof) {
                 eof = true;
+                started_ = false;
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
             }
@@ -65,6 +66,14 @@ bool AVDemuxer::readFrame()
     }
 
     stream_idx = packet.stream_index; //TODO: check index
+    //check whether the 1st frame is alreay got. emit only once
+    if (!started_ && v_codec_context && v_codec_context->frame_number == 0) {
+        started_ = true;
+        emit started();
+    } else if (!started_ && a_codec_context && a_codec_context->frame_number == 0) {
+        started_ = true;
+        emit started();
+    }
     if (stream_idx != videoStream() && stream_idx != audioStream()) {
         qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
         return false;
@@ -182,8 +191,10 @@ void AVDemuxer::seek(qreal q)
         qWarning("[AVDemuxer] seek error: %s", av_err2str(ret));
         return;
     }
-    if (master_clock)
+    if (master_clock) {
         master_clock->updateValue(qreal(t)/qreal(AV_TIME_BASE));
+        master_clock->updateExternalClock(t/1000LL); //in msec. ignore usec part using t/1000
+    }
     //calc pts
     avcodec_flush_buffers(videoCodecContext());
     avcodec_flush_buffers(audioCodecContext());
@@ -196,7 +207,7 @@ void AVDemuxer::seek(qreal q)
 */
 void AVDemuxer::seekForward()
 {
-    if (!a_codec_context || !v_codec_context || !format_context) {
+    if ((!a_codec_context && !v_codec_context) || !format_context) {
         qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
         return;
     }
@@ -212,7 +223,7 @@ void AVDemuxer::seekForward()
 
 void AVDemuxer::seekBackward()
 {
-    if (!a_codec_context || !v_codec_context || !format_context) {
+    if ((!a_codec_context && !v_codec_context) || !format_context) {
         qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
         return;
     }
@@ -243,6 +254,7 @@ bool AVDemuxer::loadFile(const QString &fileName)
     format_context->flags |= AVFMT_FLAG_GENPTS;
     //deprecated
     //if(av_find_stream_info(format_context)<0) {
+    //TODO: avformat_find_stream_info is too slow, only useful for some video format
     ret = avformat_find_stream_info(format_context, NULL);
     if (ret < 0) {
         qWarning("Can't find stream info: %s", av_err2str(ret));
@@ -253,28 +265,43 @@ bool AVDemuxer::loadFile(const QString &fileName)
     //v_codec_context = format_context->streams[videoStream()]->codec;
     findAVCodec();
 
-    AVCodec *aCodec = avcodec_find_decoder(a_codec_context->codec_id);
-    if (aCodec) {
-        ret = avcodec_open2(a_codec_context, aCodec, NULL);
-        if (ret < 0) {
-            qWarning("open audio codec failed: %s", av_err2str(ret));
+    bool _has_audio = a_codec_context != 0;
+    if (a_codec_context) {
+        AVCodec *aCodec = avcodec_find_decoder(a_codec_context->codec_id);
+        if (aCodec) {
+            ret = avcodec_open2(a_codec_context, aCodec, NULL);
+            if (ret < 0) {
+                _has_audio = false;
+                qWarning("open audio codec failed: %s", av_err2str(ret));
+            }
+        } else {
+            _has_audio = false;
+            qDebug("Unsupported audio codec. id=%d.", a_codec_context->codec_id);
         }
-    } else {
-        qDebug("Unsupported audio codec. id=%d.", v_codec_context->codec_id);
     }
-    AVCodec *vCodec = avcodec_find_decoder(v_codec_context->codec_id);
-    if(!vCodec) {
-        qWarning("Unsupported video codec. id=%d.", v_codec_context->codec_id);
-        return false;
+    //FIXME: it will keep the ExternalClock type even if the next media stream has audio. Use global settings?
+    if (!_has_audio) {
+        qWarning("No audio found or audio not supported. Using ExternalClock");
+        master_clock->setClockType(AVClock::ExternalClock);
     }
-    ////v_codec_context->time_base = (AVRational){1,30};
-    //avcodec_open(v_codec_context, vCodec) //deprecated
-    ret = avcodec_open2(v_codec_context, vCodec, NULL);
-    if (ret < 0) {
-        qWarning("open video codec failed: %s", av_err2str(ret));
-        return false;
+
+    bool _has_vedio = v_codec_context != 0;
+    if (v_codec_context) {
+        AVCodec *vCodec = avcodec_find_decoder(v_codec_context->codec_id);
+        if(!vCodec) {
+            qWarning("Unsupported video codec. id=%d.", v_codec_context->codec_id);
+            _has_vedio = false;
+        }
+        ////v_codec_context->time_base = (AVRational){1,30};
+        //avcodec_open(v_codec_context, vCodec) //deprecated
+        ret = avcodec_open2(v_codec_context, vCodec, NULL);
+        if (ret < 0) {
+            qWarning("open video codec failed: %s", av_err2str(ret));
+            _has_vedio = false;
+        }
     }
-    return true;
+    started_ = false;
+    return _has_audio || _has_vedio;
 }
 
 AVFormatContext* AVDemuxer::formatContext()
@@ -348,7 +375,8 @@ void AVDemuxer::dump()
     av_dump_format(format_context, 0, qPrintable(_file_name), false);
     qDebug("video format: %s [%s]", qPrintable(videoFormatName()), qPrintable(videoFormatLongName()));
     qDebug("Audio: %s [%s]", qPrintable(audioCodecName()), qPrintable(audioCodecLongName()));
-    qDebug("sample rate: %d, channels: %d", a_codec_context->sample_rate, a_codec_context->channels);
+    if (a_codec_context)
+        qDebug("sample rate: %d, channels: %d", a_codec_context->sample_rate, a_codec_context->channels);
 }
 
 QString AVDemuxer::fileName() const
@@ -472,24 +500,32 @@ AVCodecContext* AVDemuxer::videoCodecContext() const
 */
 QString AVDemuxer::audioCodecName() const
 {
-    return a_codec_context->codec->name;
+    if (a_codec_context)
+        return a_codec_context->codec->name;
     //return v_codec_context->codec_name; //codec_name is empty? codec_id is correct
+    return "";
 }
 
 QString AVDemuxer::audioCodecLongName() const
 {
-    return a_codec_context->codec->long_name;
+    if (a_codec_context)
+        return a_codec_context->codec->long_name;
+    return "";
 }
 
 QString AVDemuxer::videoCodecName() const
 {
-    return v_codec_context->codec->name;
+    if (v_codec_context)
+        return v_codec_context->codec->name;
     //return v_codec_context->codec_name; //codec_name is empty? codec_id is correct
+    return "";
 }
 
 QString AVDemuxer::videoCodecLongName() const
 {
-    return v_codec_context->codec->long_name;
+    if (v_codec_context)
+        return v_codec_context->codec->long_name;
+    return "";
 }
 
 

@@ -86,9 +86,12 @@ public:
     QString videoCodecLongName() const;
 
 signals:
+    /*emit when the first frame is read*/
+    void started();
     void finished(); //end of file
 
 private:
+    bool started_;
     bool eof;
     Packet *pkt;
     qint64 ipts;

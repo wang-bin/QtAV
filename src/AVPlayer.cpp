@@ -70,7 +70,9 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(stop()));
     avTimerId = -1;
     clock = new AVClock(AVClock::AudioClock);
+    //clock->setClockType(AVClock::ExternalClock);
 	demuxer.setClock(clock);
+    connect(&demuxer, SIGNAL(started()), clock, SLOT(start()));
 #if HAVE_OPENAL
     audio = new AOOpenAL();
 #elif HAVE_PORTAUDIO
@@ -117,6 +119,11 @@ AVPlayer::~AVPlayer()
         delete video_dec;
         video_dec = 0;
     }
+}
+
+AVClock* AVPlayer::masterClock()
+{
+    return clock;
 }
 
 void AVPlayer::setRenderer(VideoRenderer *r)
@@ -244,20 +251,33 @@ bool AVPlayer::isPlaying() const
 
 void AVPlayer::pause(bool p)
 {
+    //pause thread.
+    demuxer_thread->pause(p);
+    audio_thread->pause(p);
+    video_thread->pause(p);
+    clock->pause(p);
+#if 0
+    /*Pause output. all threads using those outputs will be paused. If a output is not paused
+     *, then other players' avthread can use it.
+     */
     if (audio)
         audio->pause(p);
     if (renderer)
         renderer->pause(p);
+#endif
 }
 
 bool AVPlayer::isPaused() const
 {
+    return demuxer_thread->isPaused() | audio_thread->isPaused() | video_thread->isPaused();
+#if 0
     bool p = false;
     if (audio)
         p |= audio->isPaused();
     if (renderer)
         p |= renderer->isPaused();
     return p;
+#endif
 }
 
 //TODO: when is the end
@@ -276,11 +296,12 @@ void AVPlayer::play()
         return;
 	}
     demuxer.dump();
-
+    Q_ASSERT(clock != 0);
+    clock->reset();
     formatCtx = demuxer.formatContext();
     vCodecCtx = demuxer.videoCodecContext();
     aCodecCtx = demuxer.audioCodecContext();
-    if (audio) {
+    if (audio && aCodecCtx) {
         audio->setSampleRate(aCodecCtx->sample_rate);
         audio->setChannels(aCodecCtx->channels);
         if (!audio->open())
