@@ -80,7 +80,7 @@ void VideoThread::run()
 {
     DPTR_D(VideoThread);
     //TODO: no d.writer is ok, just a audio player
-    if (!d.dec || !d.writer)// || !d.conv)
+    if (!d.dec || !d.dec->isAvailable() || !d.writer)// || !d.conv)
         return;
     resetState();
     Q_ASSERT(d.clock != 0);

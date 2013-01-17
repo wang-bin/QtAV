@@ -51,7 +51,7 @@ void AudioThread::run()
 {
     DPTR_D(AudioThread);
     //No decoder or output. No audio output is ok, just display picture
-    if (!d.dec)
+    if (!d.dec || !d.dec->isAvailable())
         return;
     resetState();
     Q_ASSERT(d.clock != 0);

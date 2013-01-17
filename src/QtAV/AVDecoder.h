@@ -36,7 +36,8 @@ public:
     virtual ~AVDecoder();
     void setCodecContext(AVCodecContext* codecCtx); //protected
     AVCodecContext* codecContext() const;
-
+    /*not available if AVCodecContext == 0*/
+    bool isAvailable() const;
     virtual bool decode(const QByteArray& encoded) = 0; //decode AVPacket?
     QByteArray data() const; //decoded data
 

@@ -45,6 +45,11 @@ AVCodecContext* AVDecoder::codecContext() const
     return d_func().codec_ctx;
 }
 
+bool AVDecoder::isAvailable() const
+{
+    return d_func().codec_ctx != 0;
+}
+
 bool AVDecoder::decode(const QByteArray &encoded)
 {
     Q_UNUSED(encoded);

@@ -37,6 +37,8 @@ AudioDecoder::AudioDecoder()
 //
 bool AudioDecoder::decode(const QByteArray &encoded)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(AudioDecoder);
     AVPacket packet;
     av_new_packet(&packet, encoded.size());

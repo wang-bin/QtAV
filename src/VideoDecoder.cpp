@@ -57,8 +57,9 @@ VideoDecoder::VideoDecoder()
 //TODO: use ipp, cuda decode and yuv functions. is sws_scale necessary?
 bool VideoDecoder::decode(const QByteArray &encoded)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoDecoder);
-
     AVPacket packet;
     av_new_packet(&packet, encoded.size());
     memcpy(packet.data, encoded.data(), encoded.size());
