@@ -18,6 +18,7 @@
 
 #include <QtAV/AVDemuxThread.h>
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/AVDecoder.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AVThread.h>
 
@@ -138,6 +139,8 @@ void AVDemuxThread::run()
     pause(false);
     PacketQueue *aqueue = audio_thread->packetQueue();
     PacketQueue *vqueue = video_thread->packetQueue();
+    bool _has_audio = audio_thread->decoder()->isAvailable();
+    bool _has_video = video_thread->decoder()->isAvailable();
     while (!end) {
         if (tryPause())
             continue; //the queue is empty and will block
@@ -153,10 +156,10 @@ void AVDemuxThread::run()
           But usually it will not happen, why?
         */
         if (index == audio_stream) {
-            aqueue->setBlocking(vqueue->size() >= vqueue->threshold());
+            aqueue->setBlocking(!_has_video || vqueue->size() >= vqueue->threshold());
             aqueue->put(pkt); //affect video_thread
         } else if (index == video_stream) {
-            vqueue->setBlocking(aqueue->size() >= aqueue->threshold());
+            vqueue->setBlocking(!_has_audio || aqueue->size() >= aqueue->threshold());
             vqueue->put(pkt); //affect audio_thread
         } else { //subtitle
             continue;
