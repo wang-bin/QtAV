@@ -20,40 +20,89 @@
 #define QTAV_AVCLOCK_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtCore/QObject>
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+#include <QtCore/QElapsedTimer>
+#else
+#include <QtCore/QTimer>
+typedef QTimer QElapsedTimer
+#endif
 
+/*
+ * AVClock is created by AVPlayer. The only way to access AVClock is through AVPlayer::masterClock()
+ * The default clock type is Audio's clock, i.e. vedio synchronizes to audio. If audio stream is not
+ * detected, then the clock will set to External clock automatically.
+ * I name it ExternalClock because the clock can be corrected outside, though it is a clock inside AVClock
+ */
 namespace QtAV {
 
-class Q_EXPORT AVClock
+static const double kMillionInv = 0.001;
+
+class Q_EXPORT AVClock : public QObject
 {
+    Q_OBJECT
 public:
     typedef enum {
-        AudioClock, VideoClock, ExternalClock
+        AudioClock, ExternalClock
     } ClockType;
 
     AVClock(ClockType c = AudioClock);
-
+    void setClockType(ClockType ct);
+    /*in seconds*/
     inline double pts() const;
     inline double value() const; //the real timestamp: pts + delay
     inline void updateValue(double pts); //update the pts
+    /*used when seeking and correcting from external*/
+    inline void updateExternalClock(qint64 msec);
+
     inline void updateVideoPts(double pts);
     inline double videoPts() const;
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
 
+public slots:
+    //these slots are not frequently used. so not inline
+    /*start the external clock*/
+    void start();
+    /*pause external clock*/
+    void pause(bool p);
+    /*reset external clock*/
+    void reset();
+
 private:
     ClockType clock_type;
-    double pts_, pts_v;
+    mutable double pts_;
+    double pts_v;
     double delay_;
+    mutable QElapsedTimer timer;
 };
 
 double AVClock::value() const
 {
-    return pts_ + delay_;
+    if (clock_type == AudioClock) {
+        return pts_ + delay_;
+    } else {
+        if (timer.isValid())
+            return pts_ += double(timer.restart()) * kMillionInv;
+        else {//timer is paused
+            qDebug("clock is paused. return the last value %f", pts_);
+            return pts_;
+        }
+    }
 }
 
 void AVClock::updateValue(double pts)
 {
-    pts_ = pts;
+    if (clock_type == AudioClock)
+        pts_ = pts;
+}
+
+void AVClock::updateExternalClock(qint64 msec)
+{
+    if (clock_type != ExternalClock)
+        return;
+    pts_ = double(msec) * kMillionInv; //can not use msec/1000.
+    timer.restart();
 }
 
 void AVClock::updateVideoPts(double pts)

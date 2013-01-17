@@ -27,4 +27,40 @@ AVClock::AVClock(AVClock::ClockType c)
     pts_ = pts_v = delay_ = 0;
 }
 
+void AVClock::setClockType(ClockType ct)
+{
+    clock_type = ct;
+}
+
+void AVClock::start()
+{
+    qDebug("AVClock started!!!!!!!!");
+    timer.start();
+}
+
+void AVClock::pause(bool p)
+{
+    if (clock_type != ExternalClock)
+        return;
+    if (p)
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+        timer.invalidate();
+#else
+        timer.stop();
+#endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+    else
+        timer.start();
+}
+
+void AVClock::reset()
+{
+    pts_ = pts_v = delay_ = 0;
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+    timer.invalidate();
+#else
+    timer.stop();
+#endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+}
+
+
 } //namespace QtAV
