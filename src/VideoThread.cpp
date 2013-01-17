@@ -87,8 +87,11 @@ void VideoThread::run()
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
     while (!d.stop) {
-        if (tryPause())
-            continue; //the queue is empty and may block. should setBlocking(false) wake up cond empty?
+        //TODO: why put it at the end of loop then playNextFrame() not work?
+        if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
+            if (d.stop)
+                break; //the queue is empty and may block. should setBlocking(false) wake up cond empty?
+        }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
         if (d.packets.isEmpty() && !d.stop) {
