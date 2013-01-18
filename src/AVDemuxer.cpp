@@ -375,10 +375,47 @@ static void dump_stream_format(AVFormatContext *ic, int i, int index, int is_out
 void AVDemuxer::dump()
 {
     av_dump_format(format_context, 0, qPrintable(_file_name), false);
+    qDebug("[AVFormatContext::duration = %lld]", duration());
     qDebug("video format: %s [%s]", qPrintable(videoFormatName()), qPrintable(videoFormatLongName()));
     qDebug("Audio: %s [%s]", qPrintable(audioCodecName()), qPrintable(audioCodecLongName()));
     if (a_codec_context)
         qDebug("sample rate: %d, channels: %d", a_codec_context->sample_rate, a_codec_context->channels);
+    struct stream_info {
+        int index;
+        AVCodecContext* ctx;
+        const char* name;
+    };
+
+    stream_info stream_infos[] = {
+          {audioStream(),    a_codec_context, "audio stream"}
+        , {videoStream(),    v_codec_context, "video_stream"}
+        , {0,                0,               0}
+    };
+    for (int idx = 0; stream_infos[idx].name != 0; ++idx) {
+        qDebug("%s: %d", stream_infos[idx].name, stream_infos[idx].index);
+        if (stream_infos[idx].index < 0) {
+            qDebug("stream not available");
+            continue;
+        }
+        AVStream *stream = format_context->streams[idx];
+        if (!stream)
+            continue;
+        qDebug("[AVStream::start_time = %lld]", stream->start_time);
+        AVCodecContext *ctx = stream_infos[idx].ctx;
+        if (ctx) {
+            qDebug("[AVCodecContext::time_base = %d, %d, %.2f %.2f]", ctx->time_base.num, ctx->time_base.den
+                ,1.0 * ctx->time_base.num / (1 + ctx->time_base.den)
+                ,1.0 / (1.0 * ctx->time_base.num / (1 + ctx->time_base.den))
+                );
+        }
+        qDebug("[AVStream::avg_frame_rate = %d, %d, %.2f]", stream->avg_frame_rate.num, stream->avg_frame_rate.den
+                ,1.0 * stream->avg_frame_rate.num / stream->avg_frame_rate.den);
+        qDebug("[AVStream::r_frame_rate = %d, %d, %.2f]", stream->r_frame_rate.num, stream->r_frame_rate.den
+                ,1.0 * stream->r_frame_rate.num / stream->r_frame_rate.den);
+        qDebug("[AVStream::time_base = %d, %d, %.2f]", stream->time_base.num, stream->time_base.den
+                ,1.0 * stream->time_base.num / stream->time_base.den);
+    }
+
 }
 
 QString AVDemuxer::fileName() const

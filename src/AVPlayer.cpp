@@ -307,22 +307,6 @@ void AVPlayer::play()
         if (!audio->open())
             return; //audio not ready
     }
-    int videoStream = demuxer.videoStream();
-	//audio
-	//if (videoStream < 0)
-	//	return false;
-    AVStream *m_v_stream = formatCtx->streams[videoStream];
-    qDebug("[AVFormatContext::duration = %lld]", demuxer.duration());
-    qDebug("[AVStream::start_time = %lld]", m_v_stream->start_time);
-    qDebug("[AVCodecContext::time_base = %d, %d, %.2f %.2f]", vCodecCtx->time_base.num, vCodecCtx->time_base.den
-            ,1.0 * vCodecCtx->time_base.num / vCodecCtx->time_base.den
-            ,1.0 / (1.0 * vCodecCtx->time_base.num / vCodecCtx->time_base.den));
-	qDebug("[AVStream::avg_frame_rate = %d, %d, %.2f]", m_v_stream->avg_frame_rate.num, m_v_stream->avg_frame_rate.den
-			,1.0 * m_v_stream->avg_frame_rate.num / m_v_stream->avg_frame_rate.den);
-	qDebug("[AVStream::r_frame_rate = %d, %d, %.2f]", m_v_stream->r_frame_rate.num, m_v_stream->r_frame_rate.den
-			,1.0 * m_v_stream->r_frame_rate.num / m_v_stream->r_frame_rate.den);
-	qDebug("[AVStream::time_base = %d, %d, %.2f]", m_v_stream->time_base.num, m_v_stream->time_base.den
-			,1.0 * m_v_stream->time_base.num / m_v_stream->time_base.den);
 
     m_drop_count = 0;
 
