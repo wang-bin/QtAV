@@ -23,6 +23,7 @@
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QWaitCondition>
 
+//TODO: block full and empty condition separately
 template<typename T> class QQueue;
 namespace QtAV {
 
@@ -38,6 +39,8 @@ public:
     void put(const T& t);
     T take();
     void setBlocking(bool block); //will wake if false. called when no more data can enqueue
+    void blockEmpty(bool block);
+    void blockFull(bool block);
 //TODO:setMinBlock,MaxBlock
     inline void clear();
     inline bool isEmpty() const;
@@ -46,7 +49,7 @@ public:
     inline int capacity() const;
 
 private:
-    bool block;
+    bool block_empty, block_full;
     int cap, thres; //static?
     Container<T> queue;
     mutable QReadWriteLock lock; //locker in const func
@@ -56,7 +59,7 @@ private:
 
 template <typename T, template <typename> class Container>
 BlockingQueue<T, Container>::BlockingQueue()
-    :block(true),cap(512),thres(128)
+    :block_empty(true),block_full(true),cap(128*3),thres(128)
 {
 }
 
@@ -81,7 +84,7 @@ void BlockingQueue<T, Container>::put(const T& t)
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (block && queue.size() >= cap)
+    if (block_full && queue.size() >= cap)
         cond_full.wait(&lock);
     queue.enqueue(t);
     cond_empty.wakeAll();
@@ -94,7 +97,7 @@ T BlockingQueue<T, Container>::take()
     Q_UNUSED(locker);
     if (queue.size() < thres)
         cond_full.wakeAll();
-    if (/*block && */queue.isEmpty())//TODO:always block?
+    if (block_empty && queue.isEmpty())//TODO:always block?
         cond_empty.wait(&lock);
     //TODO: Why still empty?
     if (queue.isEmpty()) {
@@ -109,9 +112,31 @@ void BlockingQueue<T, Container>::setBlocking(bool block)
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    this->block = block;
+    block_empty = block_full = block;
     if (!block) {
-        //cond_empty.wakeAll(); //empty still wait. setBlock=>setCapacity(-1)
+        cond_empty.wakeAll(); //empty still wait. setBlock=>setCapacity(-1)
+        cond_full.wakeAll();
+    }
+}
+
+template <typename T, template <typename> class Container>
+void BlockingQueue<T, Container>::blockEmpty(bool block)
+{
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
+    block_empty = block;
+    if (!block) {
+        cond_empty.wakeAll();
+    }
+}
+
+template <typename T, template <typename> class Container>
+void BlockingQueue<T, Container>::blockFull(bool block)
+{
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
+    block_full = block;
+    if (!block) {
         cond_full.wakeAll();
     }
 }

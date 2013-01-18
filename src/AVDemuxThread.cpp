@@ -108,8 +108,8 @@ void AVDemuxThread::stop()
     //this will not affect the pause state if we pause the output
     audio_thread->setDemuxEnded(true);
     video_thread->setDemuxEnded(true);
-    audio_thread->packetQueue()->setBlocking(false);
-    video_thread->packetQueue()->setBlocking(false);
+    audio_thread->packetQueue()->blockFull(false); //??
+    video_thread->packetQueue()->blockFull(false); //?
     pause(false);
 }
 
@@ -139,6 +139,8 @@ void AVDemuxThread::run()
     pause(false);
     PacketQueue *aqueue = audio_thread->packetQueue();
     PacketQueue *vqueue = video_thread->packetQueue();
+    aqueue->setBlocking(true);
+    vqueue->setBlocking(true);
     bool _has_audio = audio_thread->decoder()->isAvailable();
     bool _has_video = video_thread->decoder()->isAvailable();
     while (!end) {
@@ -156,10 +158,12 @@ void AVDemuxThread::run()
           But usually it will not happen, why?
         */
         if (index == audio_stream) {
-            aqueue->setBlocking(!_has_video || vqueue->size() >= vqueue->threshold());
+            if (_has_video)
+                aqueue->blockFull(vqueue->size() >= vqueue->threshold());
             aqueue->put(pkt); //affect video_thread
         } else if (index == video_stream) {
-            vqueue->setBlocking(!_has_audio || aqueue->size() >= aqueue->threshold());
+            if (_has_audio)
+                vqueue->blockFull(aqueue->size() >= aqueue->threshold());
             vqueue->put(pkt); //affect audio_thread
         } else { //subtitle
             continue;
