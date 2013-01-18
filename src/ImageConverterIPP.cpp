@@ -1,5 +1,5 @@
 /******************************************************************************
-    ImageConverterFF: Image resizing & color model convertion using FFMpeg swscale
+    ImageConverterIPP: Image resizing & color model convertion using Intel IPP
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -16,22 +16,45 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef QTAV_IMAGECONVERTERFF_H
-#define QTAV_IMAGECONVERTERFF_H
+#include <QtAV/ImageConverterIPP.h>
+#include <private/ImageConverter_p.h>
+#include <QtAV/QtAV_Compat.h>
 
-#include <QtAV/ImageConverter.h>
+#define LINK_IPP 1
+#if LINK_IPP
+#include <ipp.h>
+#else
+
+#endif
 
 namespace QtAV {
 
-class ImageConverterFFPrivate;
-class Q_EXPORT ImageConverterFF : public ImageConverter
+class ImageConverterIPPPrivate : public ImageConverterPrivate
 {
-    DPTR_DECLARE_PRIVATE(ImageConverterFF)
 public:
-    ImageConverterFF();
-    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
-protected:
-    virtual bool prepareData(); //Allocate memory for out data
+
 };
+
+ImageConverterIPP::ImageConverterIPP()
+    :ImageConverter(*new ImageConverterIPPPrivate())
+{
+}
+
+bool ImageConverterIPP::convert(const quint8 *const srcSlice[], const int srcStride[])
+{
+    DPTR_D(ImageConverterIPP);
+    ippiYUV420ToRGB_8u_P3C3(const_cast<const quint8 **>(srcSlice), (Ipp8u*)(d.data_out.data()), (IppiSize){d.w_in, d.h_in});
+    return true;
+}
+
+bool ImageConverterIPP::prepareData()
+{
+    DPTR_D(ImageConverterIPP);
+    int bytes = avpicture_get_size((PixelFormat)d.fmt_out, d.w_out, d.h_out);
+    if(d.data_out.size() < bytes) {
+        d.data_out.resize(bytes);
+    }
+    return true;
+}
+
 } //namespace QtAV
-#endif // QTAV_IMAGECONVERTERFF_H

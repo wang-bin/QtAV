@@ -25,7 +25,7 @@
 namespace QtAV {
 
 class ImageConverterPrivate;
-class ImageConverter
+class Q_EXPORT ImageConverter
 {
     DPTR_DECLARE_PRIVATE(ImageConverter)
 public:
@@ -40,6 +40,8 @@ public:
     void setInterlaced(bool interlaced);
     bool isInterlaced() const;
     virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]) = 0;
+    //virtual bool convertColor(const quint8 *const srcSlice[], const int srcStride[]) = 0;
+    //virtual bool resize(const quint8 *const srcSlice[], const int srcStride[]) = 0;
 protected:
     ImageConverter(ImageConverterPrivate& d);
     //Allocate memory for out data. Called in setOutFormat()
