@@ -157,7 +157,7 @@ AVClock* AVDemuxer::clock() const
 //TODO: seek by byte
 void AVDemuxer::seek(qreal q)
 {
-    if (!a_codec_context || !v_codec_context || !format_context) {
+    if ((!a_codec_context && !v_codec_context) || !format_context) {
         qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
         return;
     }
@@ -196,8 +196,10 @@ void AVDemuxer::seek(qreal q)
         master_clock->updateExternalClock(t/1000LL); //in msec. ignore usec part using t/1000
     }
     //calc pts
-    avcodec_flush_buffers(videoCodecContext());
-    avcodec_flush_buffers(audioCodecContext());
+    if (videoCodecContext())
+        avcodec_flush_buffers(videoCodecContext());
+    if (audioCodecContext())
+        avcodec_flush_buffers(audioCodecContext());
 }
 
 /*
