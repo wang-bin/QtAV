@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     w.setCacheMode(QGraphicsView::CacheNone);
     w.setViewport(glw);
 #else
-    setCacheMode(QGraphicsView::CacheBackground);
+    w.setCacheMode(QGraphicsView::CacheBackground);
 #endif
 	GraphicsItemRenderer renderer;
     renderer.resizeVideo(800, 600);
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 #else
     WidgetRenderer renderer;
     renderer.show();
-    renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG);
+    renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
     //renderer.resize(800, 600);
 #endif
     QString fileName;
