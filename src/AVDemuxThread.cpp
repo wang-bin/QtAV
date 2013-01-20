@@ -21,6 +21,8 @@
 #include <QtAV/AVDecoder.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AVThread.h>
+#include <QtCore/QTimer>
+#include <QtCore/QEventLoop>
 
 namespace QtAV {
 
@@ -63,11 +65,24 @@ void AVDemuxThread::setVideoThread(AVThread *thread)
 
 void AVDemuxThread::seek(qreal pos)
 {
-    QMutexLocker lock(&buffer_mutex);
-    Q_UNUSED(lock);
-    demuxer->seek(pos);
+    //demux thread wait for the seeking end
+    if (!buffer_mutex.tryLock()) {
+        buffer_mutex.unlock(); //may be still blocking in demux thread
+        buffer_mutex.lock();
+    }
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
+    demuxer->seek(pos);
+    buffer_mutex.unlock();
+    if (isPaused()) {
+        pause(false);
+        video_thread->pause(false);
+        QEventLoop loop;
+        QTimer::singleShot(40, &loop, SLOT(quit()));
+        loop.exec();
+        pause(true);
+        video_thread->pause(true);
+    }
 }
 
 void AVDemuxThread::seekForward()
@@ -81,6 +96,15 @@ void AVDemuxThread::seekForward()
     video_thread->packetQueue()->clear();
     demuxer->seekForward();
     buffer_mutex.unlock();
+    if (isPaused()) {
+        pause(false);
+        video_thread->pause(false);
+        QEventLoop loop;
+        QTimer::singleShot(40, &loop, SLOT(quit()));
+        loop.exec();
+        pause(true);
+        video_thread->pause(true);
+    }
 }
 
 void AVDemuxThread::seekBackward()
@@ -94,6 +118,15 @@ void AVDemuxThread::seekBackward()
     video_thread->packetQueue()->clear();
     demuxer->seekBackward();
     buffer_mutex.unlock();
+    if (isPaused()) {
+        pause(false);
+        video_thread->pause(false);
+        QEventLoop loop;
+        QTimer::singleShot(40, &loop, SLOT(quit()));
+        loop.exec();
+        pause(true);
+        video_thread->pause(true);
+    }
 }
 
 bool AVDemuxThread::isPaused() const
