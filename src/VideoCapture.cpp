@@ -41,7 +41,9 @@ public:
     //TODO: ensure dir exists
         if (!QDir(dir).exists()) {
             if (!QDir().mkpath(dir)) {
+                cap->error = VideoCapture::DirCreateError;
                 qWarning("Failed to create capture dir [%s]", qPrintable(dir));
+                QMetaObject::invokeMethod(cap, "failed");
                 return;
             }
         }
@@ -53,8 +55,11 @@ public:
         QString path(dir + "/" + name + "." + format.toLower());
         qDebug("Saving capture to %s", qPrintable(path));
 		bool ok = image.save(path, format.toLatin1().constData(), quality);
-        if (!ok)
+        if (!ok) {
+            cap->error = VideoCapture::SaveError;
             qWarning("Failed to save capture");
+            QMetaObject::invokeMethod(cap, "failed");
+        }
         QMetaObject::invokeMethod(cap, "finished");
     }
 
@@ -65,11 +70,8 @@ public:
 };
 
 VideoCapture::VideoCapture(QObject *parent) :
-    QObject(parent),async(true)
+    QObject(parent),async(true),error(NoError)
 {
-#if CAPTURE_USE_EVENT
-    capture_thread = 0;
-#endif //CAPTURE_USE_EVENT
     fmt = "PNG";
     qual = -1;
 }
@@ -77,13 +79,6 @@ VideoCapture::VideoCapture(QObject *parent) :
 VideoCapture::~VideoCapture()
 {
     qDebug("%p %s %s", QThread::currentThreadId(), __FILE__, __FUNCTION__);
-#if CAPTURE_USE_EVENT
-    if (capture_thread) {
-        capture_thread->quit();
-        delete capture_thread;
-        capture_thread = 0;
-    }
-#endif //CAPTURE_USE_EVENT
 }
 
 void VideoCapture::setAsync(bool async)
@@ -98,16 +93,8 @@ bool VideoCapture::isAsync() const
 
 void VideoCapture::request()
 {
-#if CAPTURE_USE_EVENT
-    if (!capture_thread) {
-        qDebug("Creating capture thread %p", QThread::currentThreadId());
-        capture_thread = new QThread;
-        capture_thread->start();
-        moveToThread(capture_thread);
-    }
-    qDebug("Posting capture event in thread %p", QThread::currentThreadId());
-    qApp->postEvent(this, new QEvent(QEvent::User));
-#else
+    error = NoError;
+    emit ready();
     CaptureTask *task = new CaptureTask(this);
     task->width = width;
     task->height = height;
@@ -121,7 +108,6 @@ void VideoCapture::request()
     } else {
        task->run();
     }
-#endif //CAPTURE_USE_EVENT
 }
 
 void VideoCapture::setFormat(const QString &format)
@@ -179,25 +165,6 @@ void VideoCapture::setRawImageData(const QByteArray &raw)
 {
     data = raw;
 }
-#if CAPTURE_USE_EVENT
-bool VideoCapture::event(QEvent *event)
-{
-    if (event->type() != QEvent::User)
-        return false;
-    qDebug("Receive capture event in thread %p", QThread::currentThreadId());
-//TODO: ensure dir exists
-#if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-    QImage image((uchar*)data.data(), width, height, QImage::Format_RGB32);
-#else
-    QImage image((uchar*)data.data(), width, height, 16, NULL, 0, QImage::IgnoreEndian);
-#endif
-    QString path(dir + "/" + name + "." + fmt.toLower());
-    qDebug("Saving capture to %s", qPrintable(path));
-    bool ok = image.save(path, fmt.toAscii().constData(), qual);
-    if (!ok)
-        qWarning("Failed to save capture");
-    emit finished();
-}
-#endif
+
 } //namespace QtAV
 

@@ -31,11 +31,16 @@ class Q_EXPORT VideoCapture : public QObject
 {
     Q_OBJECT
 public:
+    enum ErrorCode {
+        NoError, DirCreateError, SaveError
+    };
+
     explicit VideoCapture(QObject *parent = 0);
     ~VideoCapture();
     void setAsync(bool async);
     bool isAsync() const;
     void request();
+    ErrorCode errorCode() const;
     void setFormat(const QString& format);
     QString format() const;
     void setQuality(int quality);
@@ -47,13 +52,15 @@ public:
     void setRawImageSize(int width, int height);
     void setRawImageSize(const QSize& size);
     void setRawImageData(const QByteArray& raw);
-#if CAPTURE_USE_EVENT
-    virtual bool event(QEvent *event);
-#endif
 signals:
-    void finished(); //TODO: with error code
+    /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/
+    void ready();
+    void failed();
+    void finished();
 private:
+    friend class CaptureTask;
     bool async;
+    ErrorCode error;
     //TODO: use blocking queue? If not, the parameters will change when thre previous is not finished
     //or use a capture event that wrapper all these parameters
     int width, height;
@@ -61,9 +68,6 @@ private:
     QString fmt;
     QString name, dir;
     QByteArray data;
-#if CAPTURE_USE_EVENT
-    QThread *capture_thread;
-#endif //CAPTURE_USE_EVENT
     //QImage image;
 };
 

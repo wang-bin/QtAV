@@ -99,7 +99,6 @@ AVPlayer::AVPlayer(QObject *parent) :
     event_filter = new EventFilter(this);
 
     video_capture = new VideoCapture();
-
 }
 
 AVPlayer::~AVPlayer()
@@ -189,13 +188,14 @@ void AVPlayer::setCaptureSaveDir(const QString &dir)
 {
     capture_dir = dir;
 }
-//TODO: capture in another thread
+
 bool AVPlayer::captureVideo()
 {
     if (!video_capture)
         return false;
-#if 1
-    //always return ture
+    bool pause_old = isPaused();
+    if (!video_capture->isAsync())
+        pause(true);
     double pts = video_thread->currentPts();
     QByteArray raw_image(video_thread->currentRawImage());
     //check raw_image? not empty if not empty before
@@ -209,31 +209,8 @@ bool AVPlayer::captureVideo()
     video_capture->setCaptureName(cap_name);
     qDebug("request capture: %s", qPrintable(cap_name));
     video_capture->request();
-#else
-    if (!QDir(capture_dir).exists()) {
-        if (!QDir().mkpath(capture_dir)) {
-            qWarning("Failed to create capture dir [%s]", qPrintable(capture_dir));
-            return false;
-        }
-    }
-    QImage cap = renderer->currentFrameImage();
-    if (cap.isNull()) {
-        qWarning("Null image");
-        return false;
-    }
-    QString cap_path = capture_dir + "/";
-    if (capture_name.isEmpty())
-        cap_path += QFileInfo(path).completeBaseName();
-    else
-        cap_path += capture_name;
-    double pts = clock->videoPts();
-    cap_path += "_" + QString::number(pts, 'f', 3) + ".jpg";
-    qDebug("Saving capture to [%s]", qPrintable(cap_path));
-    if (!cap.save(cap_path, "jpg")) {
-        qWarning("Save capture failed");
-        return false;
-    }
-#endif
+    if (!video_capture->isAsync())
+        pause(pause_old);
     return true;
 }
 
@@ -251,7 +228,7 @@ bool AVPlayer::isPlaying() const
 
 void AVPlayer::pause(bool p)
 {
-    //pause thread.
+    //pause thread. check pause state?
     demuxer_thread->pause(p);
     audio_thread->pause(p);
     video_thread->pause(p);
