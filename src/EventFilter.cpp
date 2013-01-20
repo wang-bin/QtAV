@@ -82,14 +82,28 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             break;
         case Qt::Key_Up:
             if (player->audio) {
-                player->audio->setVolume(player->audio->volume() + 0.1);
-                qDebug("vol = %.1f", player->audio->volume());
+                qreal v = player->audio->volume();
+                if (v > 0.5)
+                    v += 0.1;
+                else if (v > 0.1)
+                    v += 0.05;
+                else
+                    v += 0.025;
+                player->audio->setVolume(v);
+                qDebug("vol = %.3f", player->audio->volume());
             }
             break;
         case Qt::Key_Down:
             if (player->audio) {
-                player->audio->setVolume(player->audio->volume() - 0.1);
-                qDebug("vol = %.1f", player->audio->volume());
+                qreal v = player->audio->volume();
+                if (v > 0.5)
+                    v -= 0.1;
+                else if (v > 0.1)
+                    v -= 0.05;
+                else
+                    v -= 0.025;
+                player->audio->setVolume(v);
+                qDebug("vol = %.3f", player->audio->volume());
             }
             break;
         case Qt::Key_O: {
