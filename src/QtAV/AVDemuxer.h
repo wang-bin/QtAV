@@ -24,6 +24,13 @@
 #include <QtCore/QSize>
 #include <QtCore/QMutex>
 
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+#include <QtCore/QElapsedTimer>
+#else
+#include <QtCore/QTimer>
+typedef QTimer QElapsedTimer
+#endif
+
 struct AVFormatContext;
 struct AVCodecContext;
 struct AVCodec;
@@ -108,6 +115,7 @@ private:
     QString _file_name;
     QMutex mutex; //for seek and readFrame
 	AVClock *master_clock;
+    QElapsedTimer seek_timer;
 };
 
 } //namespace QtAV

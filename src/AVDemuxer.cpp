@@ -23,6 +23,8 @@
 #include <QtCore/QThread>
 
 namespace QtAV {
+
+const qint64 kSeekInterval = 168; //ms
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     :QObject(parent),started_(false),eof(false),pkt(new Packet())
     ,ipts(0),stream_idx(-1),audio_stream(-2),video_stream(-2)
@@ -160,6 +162,13 @@ void AVDemuxer::seek(qreal q)
     if ((!a_codec_context && !v_codec_context) || !format_context) {
         qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
         return;
+    }
+    if (seek_timer.isValid()) {
+        if (seek_timer.elapsed() < kSeekInterval)
+            return;
+        seek_timer.restart();
+    } else {
+        seek_timer.start();
     }
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
