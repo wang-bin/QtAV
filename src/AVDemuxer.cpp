@@ -32,6 +32,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
 	,a_codec_context(0),v_codec_context(0),_file_name(fileName),master_clock(0)
 {
     av_register_all();
+    avformat_network_init();
     if (!_file_name.isEmpty())
         loadFile(_file_name);
 }
@@ -43,6 +44,7 @@ AVDemuxer::~AVDemuxer()
         delete pkt;
         pkt = 0;
     }
+    avformat_network_deinit();
 }
 
 

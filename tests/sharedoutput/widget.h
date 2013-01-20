@@ -19,6 +19,7 @@ public:
 public slots:
     void setVideo();
     void playVideo();
+    void testRTSP();
 
 private:
     class
