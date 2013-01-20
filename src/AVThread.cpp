@@ -55,6 +55,8 @@ void AVThread::stop()
 void AVThread::pause(bool p)
 {
     DPTR_D(AVThread);
+    if (d.paused == p)
+        return;
     d.paused = p;
     if (!d.paused) {
         qDebug("wake up paused thread");

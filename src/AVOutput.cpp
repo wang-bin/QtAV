@@ -54,6 +54,8 @@ bool AVOutput::isAvailable() const
 void AVOutput::pause(bool p)
 {
     DPTR_D(AVOutput);
+    if (d.paused == p)
+        return;
     d.paused = p;
     if (!d.paused)
         d.cond.wakeAll();

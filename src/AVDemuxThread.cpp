@@ -115,6 +115,8 @@ void AVDemuxThread::stop()
 
 void AVDemuxThread::pause(bool p)
 {
+    if (paused == p)
+        return;
     paused = p;
     if (!paused)
         cond.wakeAll();
