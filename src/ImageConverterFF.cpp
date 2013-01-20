@@ -58,7 +58,8 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
             , (d.w_in == d.w_out && d.h_in == d.h_out) ? SWS_POINT : SWS_FAST_BILINEAR //SWS_BICUBIC
             , NULL, NULL, NULL
             );
-
+    //int64_t flags = SWS_CPU_CAPS_SSE2 | SWS_CPU_CAPS_MMX | SWS_CPU_CAPS_MMX2;
+    //av_opt_set_int(d.sws_ctx, "sws_flags", flags, 0);
     if (!d.sws_ctx)
         return false;
 #if PREPAREDATA_NO_PICTURE //for YUV420 <=> RGB

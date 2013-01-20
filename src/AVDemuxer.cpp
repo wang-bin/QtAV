@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -375,6 +375,7 @@ static void dump_stream_format(AVFormatContext *ic, int i, int index, int is_out
 void AVDemuxer::dump()
 {
     av_dump_format(format_context, 0, qPrintable(_file_name), false);
+    fflush(0);
     qDebug("[AVFormatContext::duration = %lld]", duration());
     qDebug("video format: %s [%s]", qPrintable(videoFormatName()), qPrintable(videoFormatLongName()));
     qDebug("Audio: %s [%s]", qPrintable(audioCodecName()), qPrintable(audioCodecLongName()));

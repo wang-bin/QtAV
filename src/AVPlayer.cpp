@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -61,8 +61,8 @@ AVPlayer::AVPlayer(QObject *parent) :
 {
     qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
            "\nDistributed under GPLv3 or later"
+           "\nShanghai University, China"
            , QTAV_VERSION_STR_LONG);
-    //qApp->installEventFilter(this);
     /*
      * call stop() before the window(renderer) closed to stop the waitcondition
      * If close the renderer widget, the the renderer may destroy before waking up.
@@ -380,8 +380,8 @@ void AVPlayer::seekBackward()
 //TODO: what if no audio stream?
 void AVPlayer::timerEvent(QTimerEvent* e)
 {
-	if (e->timerId() != avTimerId)
-		return;
+    if (e->timerId() != avTimerId)
+        return;
     AVPacket packet;
     int videoStream = demuxer.videoStream();
     int audioStream = demuxer.audioStream();
@@ -412,7 +412,7 @@ void AVPlayer::timerEvent(QTimerEvent* e)
             av_free_packet(&packet); //TODO: why is needed for static var?
         } else if (packet.stream_index == videoStream) {
             if (video_dec->decode(QByteArray((char*)packet.data, packet.size)))
-				renderer->writeData(video_dec->data());
+                renderer->writeData(video_dec->data());
             break;
         } else { //subtitle
             av_free_packet(&packet);
