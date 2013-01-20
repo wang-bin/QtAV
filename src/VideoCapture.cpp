@@ -36,7 +36,8 @@ public:
     }
 
     virtual void run() {
-        qDebug("capture task running in thread %p", QThread::currentThreadId());
+        bool main_thread = QThread::currentThread() == qApp->thread();
+        qDebug("capture task running in thread %p [main thread=%d]", QThread::currentThreadId(), main_thread);
     //TODO: ensure dir exists
         if (!QDir(dir).exists()) {
             if (!QDir().mkpath(dir)) {
@@ -64,7 +65,7 @@ public:
 };
 
 VideoCapture::VideoCapture(QObject *parent) :
-    QObject(parent)
+    QObject(parent),async(true)
 {
 #if CAPTURE_USE_EVENT
     capture_thread = 0;
@@ -83,6 +84,16 @@ VideoCapture::~VideoCapture()
         capture_thread = 0;
     }
 #endif //CAPTURE_USE_EVENT
+}
+
+void VideoCapture::setAsync(bool async)
+{
+    this->async = async;
+}
+
+bool VideoCapture::isAsync() const
+{
+    return async;
 }
 
 void VideoCapture::request()
@@ -105,7 +116,11 @@ void VideoCapture::request()
     task->name = name;
     task->format = fmt;
     task->data = data;
-    QThreadPool::globalInstance()->start(task);
+    if (isAsync()) {
+        QThreadPool::globalInstance()->start(task);
+    } else {
+       task->run();
+    }
 #endif //CAPTURE_USE_EVENT
 }
 

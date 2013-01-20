@@ -55,7 +55,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         int key = static_cast<QKeyEvent*>(event)->key();
         switch (key) {
         case Qt::Key_C: //capture
-            player->capture();
+            player->captureVideo();
             break;
         case Qt::Key_N: //check playing?
             player->playNextFrame();

@@ -54,7 +54,7 @@ public:
     VideoCapture *videoCapture();
     void setCaptureName(const QString& name);//TODO: remove. base name
     void setCaptureSaveDir(const QString& dir); //TODO: remove
-    bool capture(); //TODO: api=>captureVideo
+    bool captureVideo();
     bool play(const QString& path);
 	bool isPlaying() const;
     void pause(bool p);

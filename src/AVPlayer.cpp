@@ -190,7 +190,7 @@ void AVPlayer::setCaptureSaveDir(const QString &dir)
     capture_dir = dir;
 }
 //TODO: capture in another thread
-bool AVPlayer::capture()
+bool AVPlayer::captureVideo()
 {
     if (!video_capture)
         return false;

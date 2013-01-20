@@ -21,18 +21,20 @@
 #define VIDEOCAPTURE_H
 
 #include <QtCore/QObject>
+#include <QtAV/QtAV_Global.h>
 
 class QSize;
 namespace QtAV {
 
 //on capture per thread or all in one thread?
-class VideoCapture : public QObject
+class Q_EXPORT VideoCapture : public QObject
 {
     Q_OBJECT
 public:
     explicit VideoCapture(QObject *parent = 0);
     ~VideoCapture();
-    //void setAsync(bool async);
+    void setAsync(bool async);
+    bool isAsync() const;
     void request();
     void setFormat(const QString& format);
     QString format() const;
@@ -51,6 +53,7 @@ public:
 signals:
     void finished(); //TODO: with error code
 private:
+    bool async;
     //TODO: use blocking queue? If not, the parameters will change when thre previous is not finished
     //or use a capture event that wrapper all these parameters
     int width, height;
