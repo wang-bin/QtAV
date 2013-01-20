@@ -14,7 +14,7 @@ you must adhere to the terms of the license in question.
 
 QtAV can meet your most demands
 
-- Seeking
+- Seek, pause/resume
 - Video capture
 - Playing frame by frame (currently support forward playing)
 - Variant streams: locale file, http, rtsp, etc.
@@ -60,7 +60,7 @@ If you want to build QtAV outside the source tree
 
 #### How To Write a Player
 
-Wrtie a media player using QtAV is easy.
+Wrtie a media player using QtAV is quite easy.
 
     WidgetRenderer renderer;
     renderer.show();
