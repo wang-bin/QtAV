@@ -84,6 +84,10 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
             painter->drawImage(QPointF(), d.preview);
         else
             painter->drawImage(boundingRect(), d.preview);
+    } else {
+        d.preview = QImage(videoSize(), QImage::Format_RGB32);
+        d.preview.fill(QColor(Qt::black));
+        painter->drawImage(QPointF(), d.preview);
     }
 }
 //GraphicsWidget will lose focus forever if focus out. Why?

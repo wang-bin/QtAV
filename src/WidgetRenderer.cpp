@@ -30,6 +30,7 @@ namespace QtAV {
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     QWidget(parent, f),ImageRenderer(*new WidgetRendererPrivate())
 {
+    setFocusPolicy(Qt::StrongFocus);
 #if CONFIG_EZX
     QWallpaper::setAppWallpaperMode(QWallpaper::Off);
 #endif
@@ -84,6 +85,8 @@ void WidgetRenderer::mousePressEvent(QMouseEvent *e)
 
 void WidgetRenderer::mouseMoveEvent(QMouseEvent *e)
 {
+    if (parentWidget())
+        return;
     DPTR_D(WidgetRenderer);
     int x = pos().x();
     int y = pos().y();
@@ -149,6 +152,10 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
             p.drawImage(QPoint(), d.preview);
         else
             p.drawImage(rect(), d.preview);
+    } else {
+        d.preview = QImage(videoSize(), QImage::Format_RGB32);
+        d.preview.fill(QColor(Qt::black));
+        p.drawImage(QPoint(), d.preview);
     }
 }
 
