@@ -1,0 +1,8 @@
+version 1.1.5    2013-01-18
+
+- playing single stream support. i.e. playing video without audio or playing music
+- plannar audio support
+- output can be shared with multiple player
+- g++ compile error fix
+- external clock
+- optimizations and bug fix
