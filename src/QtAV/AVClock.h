@@ -48,6 +48,12 @@ public:
 
     AVClock(ClockType c = AudioClock);
     void setClockType(ClockType ct);
+    ClockType clockType() const;
+    /*
+     * auto clock: use audio clock if audio stream found, otherwise use external clock
+     */
+    void setClockAuto(bool a);
+    bool isClockAuto() const;
     /*in seconds*/
     inline double pts() const;
     inline double value() const; //the real timestamp: pts + delay
@@ -70,6 +76,7 @@ public slots:
     void reset();
 
 private:
+    bool auto_clock;
     ClockType clock_type;
     mutable double pts_;
     double pts_v;

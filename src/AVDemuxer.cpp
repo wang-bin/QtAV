@@ -281,10 +281,15 @@ bool AVDemuxer::loadFile(const QString &fileName)
             qDebug("Unsupported audio codec. id=%d.", a_codec_context->codec_id);
         }
     }
-    //FIXME: it will keep the ExternalClock type even if the next media stream has audio. Use global settings?
-    if (!_has_audio) {
-        qWarning("No audio found or audio not supported. Using ExternalClock");
-        master_clock->setClockType(AVClock::ExternalClock);
+    if (master_clock->isClockAuto()) {
+        qDebug("auto select clock: audio > external");
+        if (!_has_audio) {
+            qWarning("No audio found or audio not supported. Using ExternalClock");
+            master_clock->setClockType(AVClock::ExternalClock);
+        } else {
+            qDebug("Using AudioClock");
+            master_clock->setClockType(AVClock::AudioClock);
+        }
     }
 
     bool _has_vedio = v_codec_context != 0;

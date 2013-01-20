@@ -19,6 +19,7 @@
 #ifndef QTAV_AVPLAYER_H
 #define QTAV_AVPLAYER_H
 
+#include <QtAV/AVClock.h>
 #include <QtAV/AVDemuxer.h>
 
 namespace QtAV {

@@ -22,7 +22,7 @@
 namespace QtAV {
 
 AVClock::AVClock(AVClock::ClockType c)
-    :clock_type(c)
+    :auto_clock(true),clock_type(c)
 {
     pts_ = pts_v = delay_ = 0;
 }
@@ -30,6 +30,21 @@ AVClock::AVClock(AVClock::ClockType c)
 void AVClock::setClockType(ClockType ct)
 {
     clock_type = ct;
+}
+
+AVClock::ClockType AVClock::clockType() const
+{
+    return clock_type;
+}
+
+void AVClock::setClockAuto(bool a)
+{
+    auto_clock = a;
+}
+
+bool AVClock::isClockAuto() const
+{
+    return auto_clock;
 }
 
 void AVClock::start()
