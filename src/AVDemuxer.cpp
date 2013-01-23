@@ -64,6 +64,8 @@ bool AVDemuxer::readFrame()
                 emit finished();
             }
             return false; //frames after eof are eof frames
+        } else if (ret == AVERROR_INVALIDDATA) {
+            qWarning("AVERROR_INVALIDDATA");
         }
         qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         return false;
@@ -207,10 +209,11 @@ void AVDemuxer::seek(qreal q)
         master_clock->updateExternalClock(t/1000LL); //in msec. ignore usec part using t/1000
     }
     //calc pts
-    if (videoCodecContext())
-        avcodec_flush_buffers(videoCodecContext());
-    if (audioCodecContext())
-        avcodec_flush_buffers(audioCodecContext());
+    //use AVThread::flush() when reaching end
+    //if (videoCodecContext())
+    //    avcodec_flush_buffers(videoCodecContext());
+    //if (audioCodecContext())
+    //    avcodec_flush_buffers(audioCodecContext());
 }
 
 /*
@@ -316,7 +319,21 @@ bool AVDemuxer::loadFile(const QString &fileName)
         if (ret < 0) {
             qWarning("open video codec failed: %s", av_err2str(ret));
             _has_vedio = false;
+        } else {
+            if (vCodec->capabilities & CODEC_CAP_DR1)
+                v_codec_context->flags |= CODEC_FLAG_EMU_EDGE;
         }
+        //if (hurry_up) {
+// 					codec_ctx->skip_frame = AVDISCARD_NONREF;
+            //codec_ctx->skip_loop_filter = codec_ctx->skip_idct = AVDISCARD_ALL;
+            //codec_ctx->flags2 |= CODEC_FLAG2_FAST;
+        //}
+        //else {
+            /*codec_ctx->skip_frame =*/ v_codec_context->skip_loop_filter = v_codec_context->skip_idct = AVDISCARD_DEFAULT;
+            v_codec_context->flags2 &= ~CODEC_FLAG2_FAST;
+        //}
+            bool skipframes = false;
+            v_codec_context->skip_frame = skipframes ? AVDISCARD_NONREF : AVDISCARD_DEFAULT;
     }
     started_ = false;
     return _has_audio || _has_vedio;
@@ -601,7 +618,7 @@ bool AVDemuxer::findAVCodec()
                 v_codec_context->thread_type = FF_THREAD_FRAME; //FF_THREAD_SLICE;
                 v_codec_context->thread_count = QThread::idealThreadCount();
             } else {
-                //v_codec_context->lowres = lowres;
+                //v_codec_context->lowres = 0;
             }
         } else if (type == AVMEDIA_TYPE_AUDIO && audio_stream < 0) {
             audio_stream = i;
