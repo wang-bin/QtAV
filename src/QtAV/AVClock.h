@@ -36,7 +36,7 @@ typedef QTimer QElapsedTimer
  */
 namespace QtAV {
 
-static const double kMillionInv = 0.001;
+static const double kThousandth = 0.001;
 
 class Q_EXPORT AVClock : public QObject
 {
@@ -46,7 +46,8 @@ public:
         AudioClock, ExternalClock
     } ClockType;
 
-    AVClock(ClockType c = AudioClock);
+    AVClock(ClockType c, QObject* parent = 0);
+    AVClock(QObject* parent = 0);
     void setClockType(ClockType ct);
     ClockType clockType() const;
     /*
@@ -59,12 +60,19 @@ public:
     inline double value() const; //the real timestamp: pts + delay
     inline void updateValue(double pts); //update the pts
     /*used when seeking and correcting from external*/
-    inline void updateExternalClock(qint64 msec);
+    void updateExternalClock(qint64 msecs); //(const AVClock& other): external clock outside still running
 
     inline void updateVideoPts(double pts);
     inline double videoPts() const;
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
+
+signals:
+    void paused(bool);
+    void paused(); //equals to paused(true)
+    void resumed();//equals to paused(false)
+    void started();
+    void resetted();
 
 public slots:
     //these slots are not frequently used. so not inline
@@ -72,7 +80,7 @@ public slots:
     void start();
     /*pause external clock*/
     void pause(bool p);
-    /*reset external clock*/
+    /*reset(stop) external clock*/
     void reset();
 
 private:
@@ -90,7 +98,7 @@ double AVClock::value() const
         return pts_ + delay_;
     } else {
         if (timer.isValid())
-            return pts_ += double(timer.restart()) * kMillionInv;
+            return pts_ += double(timer.restart()) * kThousandth;
         else {//timer is paused
             qDebug("clock is paused. return the last value %f", pts_);
             return pts_;
@@ -102,14 +110,6 @@ void AVClock::updateValue(double pts)
 {
     if (clock_type == AudioClock)
         pts_ = pts;
-}
-
-void AVClock::updateExternalClock(qint64 msec)
-{
-    if (clock_type != ExternalClock)
-        return;
-    pts_ = double(msec) * kMillionInv; //can not use msec/1000.
-    timer.restart();
 }
 
 void AVClock::updateVideoPts(double pts)

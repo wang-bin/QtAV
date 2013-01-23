@@ -21,8 +21,14 @@
 
 namespace QtAV {
 
-AVClock::AVClock(AVClock::ClockType c)
-    :auto_clock(true),clock_type(c)
+AVClock::AVClock(AVClock::ClockType c, QObject *parent)
+    :QObject(parent),auto_clock(true),clock_type(c)
+{
+    pts_ = pts_v = delay_ = 0;
+}
+
+AVClock::AVClock(QObject *parent)
+    :QObject(parent),auto_clock(true),clock_type(AudioClock)
 {
     pts_ = pts_v = delay_ = 0;
 }
@@ -47,24 +53,38 @@ bool AVClock::isClockAuto() const
     return auto_clock;
 }
 
+void AVClock::updateExternalClock(qint64 msecs)
+{
+    if (clock_type != ExternalClock)
+        return;
+    qDebug("External clock change: %f ==> %f", value(), double(msecs) * kThousandth);
+    pts_ = double(msecs) * kThousandth; //can not use msec/1000.
+    timer.restart();
+}
+
 void AVClock::start()
 {
     qDebug("AVClock started!!!!!!!!");
     timer.start();
+    emit started();
 }
 
 void AVClock::pause(bool p)
 {
     if (clock_type != ExternalClock)
         return;
-    if (p)
+    if (p) {
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
         timer.invalidate();
 #else
         timer.stop();
 #endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
-    else
+        emit paused();
+    } else {
         timer.start();
+        emit resumed();
+    }
+    emit paused(p);
 }
 
 void AVClock::reset()
@@ -75,6 +95,7 @@ void AVClock::reset()
 #else
     timer.stop();
 #endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+    emit resetted();
 }
 
 
