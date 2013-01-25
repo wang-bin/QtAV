@@ -40,6 +40,7 @@ SOURCES += \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
+    ImageConverterIPP.cpp \
     ImageRenderer.cpp \
     Packet.cpp \
     AVPlayer.cpp \
@@ -77,6 +78,7 @@ HEADERS += \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/ImageConverterFF.h \
+    QtAV/ImageConverterIPP.h \
     QtAV/ImageRenderer.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
@@ -87,12 +89,3 @@ HEADERS += \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoThread.h
-
-HEADERS += \
-
-
-HEADERS += \
-
-
-SOURCES += \
-

@@ -19,6 +19,7 @@
 #include <QtAV/VideoDecoder.h>
 #include <private/AVDecoder_p.h>
 #include <QtAV/ImageConverterFF.h>
+#include <QtAV/ImageConverterIPP.h>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QSize>
@@ -36,7 +37,7 @@ class VideoDecoderPrivate : public AVDecoderPrivate
 public:
     VideoDecoderPrivate():width(0),height(0)
     {
-        conv = new ImageConverterFF(); //TODO: set in AVPlayer
+        conv = new ImageConverterIPP(); //TODO: set in AVPlayer
         conv->setOutFormat(PIX_FMT_RGB32);
     }
     ~VideoDecoderPrivate() {
