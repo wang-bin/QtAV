@@ -43,6 +43,11 @@ AVClock::ClockType AVClock::clockType() const
     return clock_type;
 }
 
+bool AVClock::isActive() const
+{
+    return clock_type == AudioClock || timer.isValid();
+}
+
 void AVClock::setClockAuto(bool a)
 {
     auto_clock = a;

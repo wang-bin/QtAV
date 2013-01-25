@@ -57,19 +57,25 @@ public:
     bool captureVideo();
     bool play(const QString& path);
 	bool isPlaying() const;
-    void pause(bool p);
     bool isPaused() const;
     void setRenderer(VideoRenderer* renderer);
 
     void setMute(bool mute);
     bool isMute() const;
 
+signals:
+    void started();
+    void stopped();
+
 public slots:
+    void pause(bool p);
     void play(); //replay
     void stop();
     void playNextFrame();
+    void seek(qreal pos);
     void seekForward();
     void seekBackward();
+    void updateClock(qint64 msecs); //update AVClock's external clock
 
 protected slots:
     void resizeVideo(const QSize& size);

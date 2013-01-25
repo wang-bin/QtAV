@@ -156,9 +156,9 @@ defineTest(getBuildRoot) {
 #for Qt2, Qt3 which does not have QT_VERSION. Qt4: $$[QT_VERSION]
 defineTest(preparePaths) {
     getBuildRoot($$1, $$2)
-    MOC_DIR = $$BUILD_DIR/.moc/$${QT_VERSION}
-    RCC_DIR = $$BUILD_DIR/.rcc/$${QT_VERSION}
-    UI_DIR  = $$BUILD_DIR/.ui/$${QT_VERSION}
+    MOC_DIR = $$BUILD_DIR/.moc/$${QT_VERSION}/$$TARGET
+    RCC_DIR = $$BUILD_DIR/.rcc/$${QT_VERSION}/$$TARGET
+    UI_DIR  = $$BUILD_DIR/.ui/$${QT_VERSION}/$$TARGET
     #obj is platform dependent
     OBJECTS_DIR = $$qtLongName($$BUILD_DIR/.obj/$$TARGET)
 #before target name changed

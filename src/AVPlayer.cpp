@@ -300,7 +300,7 @@ void AVPlayer::play()
     }
 
     demuxer_thread->start();
-
+    emit started();
 #if 0
     avTimerId = startTimer(1000/demuxer.frameRate());
 #endif
@@ -333,6 +333,7 @@ void AVPlayer::stop()
             video_thread->terminate(); ///if time out
         }
     }
+    emit stopped();
 }
 //FIXME: If not playing, it will just play but not play one frame.
 void AVPlayer::playNextFrame()
@@ -344,6 +345,11 @@ void AVPlayer::playNextFrame()
     pause(true);
 }
 
+void AVPlayer::seek(qreal pos)
+{
+    demuxer_thread->seek(pos);
+}
+
 void AVPlayer::seekForward()
 {
     demuxer_thread->seekForward();
@@ -352,6 +358,11 @@ void AVPlayer::seekForward()
 void AVPlayer::seekBackward()
 {
     demuxer_thread->seekBackward();
+}
+
+void AVPlayer::updateClock(qint64 msecs)
+{
+    clock->updateExternalClock(msecs);
 }
 
 //TODO: what if no audio stream?

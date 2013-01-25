@@ -50,6 +50,7 @@ public:
     AVClock(QObject* parent = 0);
     void setClockType(ClockType ct);
     ClockType clockType() const;
+    bool isActive() const;
     /*
      * auto clock: use audio clock if audio stream found, otherwise use external clock
      */

@@ -15,7 +15,7 @@ PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
 preparePaths($$OUT_PWD/../../out)
 
-SOURCES += main.cpp\
+SOURCES += main.cpp \
         widget.cpp
 
 HEADERS  += widget.h
