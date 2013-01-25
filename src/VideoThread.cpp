@@ -133,23 +133,33 @@ void VideoThread::run()
         d.clock->updateVideoPts(pkt.pts); //here?
         //DO NOT decode and convert if vo is not available or null!
         //if ()
+        bool vo_ok = vo && vo->isAvailable();
+        if (vo_ok) {
+            //use the last size first then update the last size so that decoder(converter) can update output size
+            if (vo->lastWidth() > 0 && vo->lastHeight() > 0 && !vo->scaleInQt())
+                dec->resizeVideo(vo->lastSize());
+            else
+                vo->setSourceSize(dec->width(), dec->height()); //setLastSize()
+        }
+        //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
         if (d.dec->decode(pkt.data)) {
             d.pts = pkt.pts;
             d.width = dec->width();
             d.height = dec->height();
             d.decoded_data = d.dec->data();
-            //TODO: Add filters here
+            //TODO: Add filters here. Capture is also a filter
             /*if (d.image.width() != d.width || d.image.height() != d.height)
                 d.image = QImage(d.width, d.height, QImage::Format_RGB32);
             d.conv->setInSize(d.width, d.height);
             if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
-
             }*/
-            if (vo && vo->isAvailable()) {
-                vo->setSourceSize(dec->width(), dec->height());
+            if (vo_ok) {
                 vo->writeData(d.decoded_data);
             }
         }
+        //use the last size first then update the last size so that decoder(converter) can update output size
+        if (vo_ok && !vo->scaleInQt())
+            vo->setSourceSize(vo->videoSize());
     }
     qDebug("Video thread stops running...");
 }

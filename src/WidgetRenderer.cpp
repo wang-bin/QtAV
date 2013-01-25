@@ -141,21 +141,34 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
+    if (!d.scale_in_qt) {
+        d.img_mutex.lock();
+    }
     QPainter p(this);
     if (!d.image.isNull()) {
-        if (d.image.size() == QSize(d.width, d.height))
+        if (d.image.size() == QSize(d.width, d.height)) {
+            //d.preview = d.image;
             p.drawImage(QPoint(), d.image);
-        else
+        } else {
+            qDebug("size not fit. may slow. %dx%d ==> %dx%d"
+                   , d.image.size().width(), d.image.size().height(), d.width, d.height);
             p.drawImage(rect(), d.image);
+            //what's the difference?
+            //p.drawImage(QPoint(), d.image.scaled(d.width, d.height));
+        }
     } else if (!d.preview.isNull()){
-        if (d.preview.size() == QSize(d.width, d.height))
+        if (d.preview.size() == QSize(d.width, d.height)) {
             p.drawImage(QPoint(), d.preview);
-        else
+        } else {
             p.drawImage(rect(), d.preview);
+        }
     } else {
         d.preview = QImage(videoSize(), QImage::Format_RGB32);
         d.preview.fill(QColor(Qt::black));
         p.drawImage(QPoint(), d.preview);
+    }
+    if (!d.scale_in_qt) {
+        d.img_mutex.unlock();
     }
 }
 

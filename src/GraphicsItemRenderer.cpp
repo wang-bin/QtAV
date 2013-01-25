@@ -74,6 +74,9 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 	Q_UNUSED(option);
 	Q_UNUSED(widget);
 	DPTR_D(GraphicsItemRenderer);
+    if (!d.scale_in_qt) {
+        d.img_mutex.lock();
+    }
     if (!d.image.isNull()) {
         if (d.image.size() == QSize(d.width, d.height))
             painter->drawImage(QPointF(), d.image);
@@ -88,6 +91,9 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
         d.preview = QImage(videoSize(), QImage::Format_RGB32);
         d.preview.fill(QColor(Qt::black));
         painter->drawImage(QPointF(), d.preview);
+    }
+    if (!d.scale_in_qt) {
+        d.img_mutex.unlock();
     }
 }
 //GraphicsWidget will lose focus forever if focus out. Why?

@@ -22,6 +22,7 @@
 #include <private/AVOutput_p.h>
 //#include <QtAV/ImageConverter.h>
 #include <QtAV/QtAV_Compat.h>
+#include <QtCore/QMutex>
 
 namespace QtAV {
 
@@ -29,16 +30,18 @@ class EventFilter;
 class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
-    VideoRendererPrivate():width(480),height(320),src_width(0)
+    VideoRendererPrivate():scale_in_qt(true),width(480),height(320),src_width(0)
       ,src_height(0),event_filter(0) {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
     }
     virtual ~VideoRendererPrivate(){}
+    bool scale_in_qt;
     int width, height;
     int src_width, src_height;
     EventFilter *event_filter;
     //ImageConverter conv;
+    QMutex img_mutex;
 };
 
 } //namespace QtAV

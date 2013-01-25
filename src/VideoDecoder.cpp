@@ -37,7 +37,7 @@ class VideoDecoderPrivate : public AVDecoderPrivate
 public:
     VideoDecoderPrivate():width(0),height(0)
     {
-        conv = new ImageConverterIPP(); //TODO: set in AVPlayer
+        conv = new ImageConverterFF(); //TODO: set in AVPlayer
         conv->setOutFormat(PIX_FMT_RGB32);
     }
     ~VideoDecoderPrivate() {
@@ -79,7 +79,8 @@ bool VideoDecoder::decode(const QByteArray &encoded)
         qWarning("no frame could be decompressed: %s", av_err2str(ret));
         return false;
     }
-
+    d.conv->setInFormat(d.codec_ctx->pix_fmt);
+    d.conv->setInSize(d.codec_ctx->width, d.codec_ctx->height);
     if (d.width <= 0 || d.height <= 0) {
         qDebug("decoded video size not seted. use original size [%d x %d]"
             , d.codec_ctx->width, d.codec_ctx->height);
@@ -90,9 +91,8 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     //If not YUV420P or ImageConverter supported format pair, convert to YUV420P first. or directly convert to RGB?(no hwa)
     //TODO: move convertion out. decoder only do some decoding
     //if not yuv420p or conv supported convertion pair(in/out), convert to yuv420p first using ff, then use other yuv2rgb converter
-    d.conv->setInFormat(d.codec_ctx->pix_fmt);
-    d.conv->setInSize(d.codec_ctx->width, d.codec_ctx->height);
-    d.conv->convert(d.frame->data, d.frame->linesize);
+    if (!d.conv->convert(d.frame->data, d.frame->linesize))
+        return false;
     d.decoded = d.conv->outData();
     return true;
 }

@@ -36,7 +36,6 @@ public:
     int channels;
     qreal vol;
     int sample_rate;
-	QByteArray data;
 };
 
 } //namespace QtAV
