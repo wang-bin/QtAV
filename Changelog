@@ -1,3 +1,14 @@
+version 1.1.6    2013-01-23
+
+- fix video blocking and crash when seeking
+- add tests: network, shared renderer
+- update frames when seeking in a paused state
+- avoid seeking too frequently
+- capture sync/async
+- playing music support
+- Auto select a suitable clock
+
+
 version 1.1.5    2013-01-18
 
 - playing single stream support. i.e. playing video without audio or playing music
