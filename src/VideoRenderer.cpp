@@ -44,11 +44,43 @@ VideoRenderer::~VideoRenderer()
 {
 }
 
+void VideoRenderer::scaleInQt(bool q)
+{
+    d_func().scale_in_qt = q;
+}
+
+bool VideoRenderer::scaleInQt() const
+{
+    return d_func().scale_in_qt;
+}
+
+void VideoRenderer::setSourceSize(const QSize& s)
+{
+    setSourceSize(s.width(), s.height());
+}
+
 void VideoRenderer::setSourceSize(int width, int height)
 {
     DPTR_D(VideoRenderer);
     d.src_width = width;
     d.src_height = height;
+}
+
+QSize VideoRenderer::lastSize() const
+{
+    DPTR_D(const VideoRenderer);
+    return QSize(d.src_width, d.src_height);
+}
+
+int VideoRenderer::lastWidth() const
+{
+    DPTR_D(const VideoRenderer);
+    return d.src_width;
+}
+int VideoRenderer::lastHeight() const
+{
+    DPTR_D(const VideoRenderer);
+    return  d.src_height;
 }
 
 void VideoRenderer::registerEventFilter(EventFilter *filter)

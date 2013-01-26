@@ -20,7 +20,7 @@
 #ifndef QTAV_IMAGECONVERTER_P_H
 #define QTAV_IMAGECONVERTER_P_H
 
-#include <QtAV/QtAV_Global.h>
+#include <QtAV/QtAV_Compat.h>
 #include <QtCore/QByteArray>
 
 namespace QtAV {
@@ -29,7 +29,8 @@ class ImageConverter;
 class Q_EXPORT ImageConverterPrivate : public DPtrPrivate<ImageConverter>
 {
 public:
-    ImageConverterPrivate():interlaced(false){}
+    ImageConverterPrivate():interlaced(false),w_in(0),h_in(0),w_out(0),h_out(0)
+      ,fmt_in(PIX_FMT_YUV420P),fmt_out(PIX_FMT_RGB32){}
     bool interlaced;
     int w_in, h_in, w_out, h_out;
     int fmt_in, fmt_out;

@@ -46,8 +46,8 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
 {
     DPTR_D(ImageConverterFF);
     //Check out dimension. equals to in dimension if not setted. TODO: move to another common func
-    if (d.w_out ==0 || d.h_out == 0) {
-        if (d.w_in ==0 || d.h_in == 0)
+    if (d.w_out == 0 || d.h_out == 0) {
+        if (d.w_in == 0 || d.h_in == 0)
             return false;
         setOutSize(d.w_in, d.h_in);
     }
@@ -101,6 +101,10 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     }
 #endif //PREPAREDATA_NO_PICTURE
     int result_h = sws_scale(d.sws_ctx, srcSlice, srcStride, 0, d.h_in, d.picture.data, d.picture.linesize);
+    if (result_h != d.h_out) {
+        qDebug("convert failed: %d, %d", result_h, d.h_out);
+        return false;
+    }
     if (isInterlaced()) {
         avpicture_deinterlace(&d.picture, &d.picture, (PixelFormat)d.fmt_out, d.w_out, d.h_out);
     }
@@ -112,9 +116,9 @@ bool ImageConverterFF::prepareData()
 {
     DPTR_D(ImageConverterFF);
     int bytes = avpicture_get_size((PixelFormat)d.fmt_out, d.w_out, d.h_out);
-    if(d.data_out.size() < bytes) {
+    //if (d.data_out.size() < bytes) {
         d.data_out.resize(bytes);
-    }
+    //}
     //picture的数据按PIX_FMT格式自动"关联"到 data
     avpicture_fill(
             &d.picture,

@@ -38,14 +38,21 @@ QByteArray ImageConverter::outData() const
 
 void ImageConverter::setInSize(int width, int height)
 {
-    d_func().w_in = width;
-    d_func().h_in = height;
+    DPTR_D(ImageConverter);
+    if (d.w_in == width && d.h_in == height)
+        return;
+    d.w_in = width;
+    d.h_in = height;
+    prepareData();
 }
 
 void ImageConverter::setOutSize(int width, int height)
 {
-    d_func().w_out = width;
-    d_func().h_out = height;
+    DPTR_D(ImageConverter);
+    if (d.w_out == width && d.h_out == height)
+        return;
+    d.w_out = width;
+    d.h_out = height;
     prepareData();
 }
 

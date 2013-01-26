@@ -44,16 +44,40 @@ QImage ImageRenderer::currentFrameImage() const
 void ImageRenderer::convertData(const QByteArray &data)
 {
     DPTR_D(ImageRenderer);
-    //picture.data[0]
-    /*d.conv.setInSize(d.src_width, d.src_height);
-    if (d.image.width() != d.src_width || d.image.height() != d.src_height)
-        d.image = QImage(d.src_width, d.src_height, QImage::Format_RGB32);
-    d.conv.scale(data.constData(), d.image.bits());*/
+    //int ss = 4*d.src_width*d.src_height*sizeof(char);
+    //if (ss != data.size())
+    //    qDebug("src size=%d, data size=%d", ss, data.size());
+    //if (d.src_width != d.width || d.src_height != d.height)
+    //    return;
+    /*
+     * QImage constructed from memory do not deep copy the data, data should be available throughout
+     * image's lifetime and not be modified. painting image happens in main thread, we must ensure the
+     * image data is not changed if not use the original frame size, so we need the lock.
+     * In addition, the data passed by ref, so even if we lock, the original data may changed in decoder
+     * (ImageConverter), so we need a copy of this data(not deep copy) to ensure the image's data not changes before it
+     * is painted.
+     * But if we use the fixed original frame size, the data address and size always the same, so we can
+     * avoid the lock and use the ref data directly and safely
+     */
+    if (!d.scale_in_qt) {
+        /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
+        d.img_mutex.lock();
+        d.data = data;
+        //qDebug("data address = %p, %p", data.data(), d.data.data());
+    #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
+        d.image = QImage((uchar*)d.data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
+    #else
+        d.image = QImage((uchar*)d.data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
+    #endif
+        d.img_mutex.unlock();
+    } else {
+        //qDebug("data address = %p", data.data());
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-    d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
+        d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
 #else
     d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
 #endif
+    }
 }
 
 

@@ -39,6 +39,7 @@ public:
     bool available;
     QMutex mutex; //pause
     QWaitCondition cond; //pause
+    QByteArray data;
 };
 
 } //namespace QtAV

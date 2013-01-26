@@ -1,5 +1,5 @@
 /******************************************************************************
-    ImageConverterFF: Image resizing & color model convertion using FFMpeg swscale
+    ImageConverterIPP: Image resizing & color model convertion using Intel IPP
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -16,22 +16,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef QTAV_IMAGECONVERTERFF_H
-#define QTAV_IMAGECONVERTERFF_H
+#ifndef QTAV_IMAGECONVERTERIPP_H
+#define QTAV_IMAGECONVERTERIPP_H
 
 #include <QtAV/ImageConverter.h>
 
 namespace QtAV {
 
-class ImageConverterFFPrivate;
-class Q_EXPORT ImageConverterFF : public ImageConverter
+class ImageConverterIPPPrivate;
+class Q_EXPORT ImageConverterIPP : public ImageConverter
 {
-    DPTR_DECLARE_PRIVATE(ImageConverterFF)
+    DPTR_DECLARE_PRIVATE(ImageConverterIPP)
 public:
-    ImageConverterFF();
+    ImageConverterIPP();
     virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
 protected:
     virtual bool prepareData(); //Allocate memory for out data
 };
 } //namespace QtAV
-#endif // QTAV_IMAGECONVERTERFF_H
+#endif // QTAV_IMAGECONVERTERIPP_H
