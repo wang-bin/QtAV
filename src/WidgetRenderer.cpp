@@ -150,8 +150,8 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
             //d.preview = d.image;
             p.drawImage(QPoint(), d.image);
         } else {
-            qDebug("size not fit. may slow. %dx%d ==> %dx%d"
-                   , d.image.size().width(), d.image.size().height(), d.width, d.height);
+            //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
+            //       , d.image.size().width(), d.image.size().height(), d.width, d.height);
             p.drawImage(rect(), d.image);
             //what's the difference?
             //p.drawImage(QPoint(), d.image.scaled(d.width, d.height));
