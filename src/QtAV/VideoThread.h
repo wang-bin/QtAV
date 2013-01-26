@@ -26,6 +26,7 @@
 namespace QtAV {
 
 class ImageConverter;
+class VideoCapture;
 class VideoThreadPrivate;
 class VideoThread : public AVThread
 {
@@ -36,9 +37,8 @@ public:
     //return the old
     ImageConverter* setImageConverter(ImageConverter *converter);
     ImageConverter* imageConverter() const;
-    QByteArray currentRawImage() const;
-    QSize currentRawImageSize() const; //TODO: remove it? use dec's size outside?
     double currentPts() const;
+    VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
 protected:
     virtual void run();
 };

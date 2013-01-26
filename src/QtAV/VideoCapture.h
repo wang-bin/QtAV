@@ -21,6 +21,7 @@
 #define VIDEOCAPTURE_H
 
 #include <QtCore/QObject>
+#include <QtCore/QReadWriteLock>
 #include <QtAV/QtAV_Global.h>
 
 class QSize;
@@ -49,9 +50,11 @@ public:
     QString captureName() const;
     void setCaptureDir(const QString& dir);
     QString captureDir() const;
-    void setRawImageSize(int width, int height);
-    void setRawImageSize(const QSize& size);
-    void setRawImageData(const QByteArray& raw);
+    //get/set: ensure thread safe because they are not in the same thread
+    void setRawImage(const QByteArray& raw, const QSize& size);
+    void setRawImage(const QByteArray& raw, int w, int h);
+    //used to get current playing statistics.
+    void getRawImage(QByteArray* raw, int *w, int *h);
 signals:
     /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/
     void ready();
@@ -69,6 +72,7 @@ private:
     QString name, dir;
     QByteArray data;
     //QImage image;
+    mutable QReadWriteLock lock;
 };
 
 } //namespace QtAV

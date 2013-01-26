@@ -20,6 +20,7 @@
 #include <private/AVThread_p.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/VideoCapture.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/ImageConverter.h>
@@ -32,13 +33,12 @@ const double kSyncThreshold = 0.005; // 5 ms
 class VideoThreadPrivate : public AVThreadPrivate
 {
 public:
-    VideoThreadPrivate():conv(0),delay(0){}
+    VideoThreadPrivate():conv(0),delay(0),capture(0){}
     ImageConverter *conv;
     double delay;
     double pts; //current decoded pts. for capture
-    QByteArray decoded_data; //for capture. cow
-    int width, height;
-    QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
+    //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
+    VideoCapture *capture;
 };
 
 VideoThread::VideoThread(QObject *parent) :
@@ -59,20 +59,19 @@ ImageConverter* VideoThread::imageConverter() const
     return d_func().conv;
 }
 
-QByteArray VideoThread::currentRawImage() const
-{
-    return d_func().decoded_data;
-}
-
-QSize VideoThread::currentRawImageSize() const
-{
-    DPTR_D(const VideoThread);
-    return QSize(d.width, d.height);
-}
-
 double VideoThread::currentPts() const
 {
     return d_func().pts;
+}
+//it is called in main thread usually, but is being used in video thread,
+VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
+{
+    qDebug("setCapture %p", cap);
+    DPTR_D(VideoThread);
+    QMutexLocker locker(&d.mutex);
+    VideoCapture *old = d.capture;
+    d.capture = cap;
+    return old;
 }
 
 //TODO: if output is null or dummy, the use duration to wait
@@ -142,11 +141,11 @@ void VideoThread::run()
                 vo->setSourceSize(dec->width(), dec->height()); //setLastSize()
         }
         //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
-        if (d.dec->decode(pkt.data)) {
+        if (dec->decode(pkt.data)) {
             d.pts = pkt.pts;
-            d.width = dec->width();
-            d.height = dec->height();
-            d.decoded_data = d.dec->data();
+            if (d.capture) {
+                d.capture->setRawImage(dec->data(), dec->width(), dec->height());
+            }
             //TODO: Add filters here. Capture is also a filter
             /*if (d.image.width() != d.width || d.image.height() != d.height)
                 d.image = QImage(d.width, d.height, QImage::Format_RGB32);
@@ -154,7 +153,7 @@ void VideoThread::run()
             if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
             }*/
             if (vo_ok) {
-                vo->writeData(d.decoded_data);
+                vo->writeData(dec->data());
             }
         }
         //use the last size first then update the last size so that decoder(converter) can update output size

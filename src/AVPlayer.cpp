@@ -98,7 +98,7 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     event_filter = new EventFilter(this);
 
-    video_capture = new VideoCapture();
+    setVideoCapture(new VideoCapture());
 }
 
 AVPlayer::~AVPlayer()
@@ -171,6 +171,7 @@ VideoCapture* AVPlayer::setVideoCapture(VideoCapture *cap)
 {
     VideoCapture *old = video_capture;
     video_capture = cap;
+    video_thread->setVideoCapture(video_capture);
     return old;
 }
 
@@ -196,15 +197,12 @@ bool AVPlayer::captureVideo()
     bool pause_old = isPaused();
     if (!video_capture->isAsync())
         pause(true);
-    double pts = video_thread->currentPts();
-    QByteArray raw_image(video_thread->currentRawImage());
-    //check raw_image? not empty if not empty before
-    video_capture->setRawImageData(raw_image);
-    video_capture->setRawImageSize(video_thread->currentRawImageSize());
     video_capture->setCaptureDir(capture_dir);
     QString cap_name(capture_name);
     if (cap_name.isEmpty())
         cap_name = QFileInfo(path).completeBaseName();
+    //FIXME: pts is not correct because of multi-thread
+    double pts = video_thread->currentPts();
     cap_name += "_" + QString::number(pts, 'f', 3);
     video_capture->setCaptureName(cap_name);
     qDebug("request capture: %s", qPrintable(cap_name));

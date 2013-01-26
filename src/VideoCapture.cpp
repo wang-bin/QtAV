@@ -34,7 +34,7 @@ public:
         format = "PNG";
         setAutoDelete(true);
     }
-
+    //TODO: abort when app is exiting or wait for capturing finished
     virtual void run() {
         bool main_thread = QThread::currentThread() == qApp->thread();
         qDebug("capture task running in thread %p [main thread=%d]", QThread::currentThreadId(), main_thread);
@@ -93,6 +93,8 @@ bool VideoCapture::isAsync() const
 
 void VideoCapture::request()
 {
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
     error = NoError;
     emit ready();
     CaptureTask *task = new CaptureTask(this);
@@ -150,20 +152,27 @@ QString VideoCapture::captureDir() const
     return dir;
 }
 
-void VideoCapture::setRawImageSize(int width, int height)
+void VideoCapture::setRawImage(const QByteArray &raw, const QSize &size)
 {
-    this->width = width;
-    this->height = height;
+    setRawImage(raw, size.width(), size.height());
 }
 
-void VideoCapture::setRawImageSize(const QSize &size)
+void VideoCapture::setRawImage(const QByteArray &raw, int w, int h)
 {
-    setRawImageSize(size.width(), size.height());
-}
-
-void VideoCapture::setRawImageData(const QByteArray &raw)
-{
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
+    width = w;
+    height = h;
     data = raw;
+}
+
+void VideoCapture::getRawImage(QByteArray *raw, int *w, int *h)
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    *raw = data;
+    *w = width;
+    *h = height;
 }
 
 } //namespace QtAV
