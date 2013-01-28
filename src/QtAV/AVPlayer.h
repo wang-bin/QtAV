@@ -85,7 +85,6 @@ protected slots:
 
 protected:
     bool loaded;
-    int avTimerId;
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
     QString path;

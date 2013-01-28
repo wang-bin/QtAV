@@ -68,7 +68,6 @@ AVPlayer::AVPlayer(QObject *parent) :
      * If close the renderer widget, the the renderer may destroy before waking up.
      */
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(stop()));
-    avTimerId = -1;
     clock = new AVClock(AVClock::AudioClock);
     //clock->setClockType(AVClock::ExternalClock);
 	demuxer.setClock(clock);
@@ -103,8 +102,6 @@ AVPlayer::AVPlayer(QObject *parent) :
 
 AVPlayer::~AVPlayer()
 {
-    if (avTimerId > 0)
-        killTimer(avTimerId);
     stop();
     if (audio) {
         delete audio;
@@ -387,50 +384,6 @@ void AVPlayer::seekBackward()
 void AVPlayer::updateClock(qint64 msecs)
 {
     clock->updateExternalClock(msecs);
-}
-
-//TODO: what if no audio stream?
-void AVPlayer::timerEvent(QTimerEvent* e)
-{
-    if (e->timerId() != avTimerId)
-        return;
-    AVPacket packet;
-    int videoStream = demuxer.videoStream();
-    int audioStream = demuxer.audioStream();
-    while (av_read_frame(formatCtx, &packet) >=0 ) {
-        Packet pkt;
-        pkt.data = QByteArray((const char*)packet.data, packet.size);
-        pkt.duration = packet.duration;
-        if (packet.dts != AV_NOPTS_VALUE) //has B-frames
-            pkt.pts = packet.dts;
-        else if (packet.pts != AV_NOPTS_VALUE)
-            pkt.pts = packet.pts;
-        else
-            pkt.pts = 0;
-        AVStream *stream = formatCtx->streams[packet.stream_index];
-        pkt.pts *= av_q2d(stream->time_base);
-
-        if (stream->codec->codec_type == AVMEDIA_TYPE_SUBTITLE
-                && (packet.flags & AV_PKT_FLAG_KEY)
-                &&  packet.convergence_duration != AV_NOPTS_VALUE)
-            pkt.duration = packet.convergence_duration * av_q2d(stream->time_base);
-        else if (packet.duration > 0)
-            pkt.duration = packet.duration * av_q2d(stream->time_base);
-        else
-            pkt.duration = 0;
-
-        if (packet.stream_index == audioStream) {
-            audio_thread->packetQueue()->put(pkt);
-            av_free_packet(&packet); //TODO: why is needed for static var?
-        } else if (packet.stream_index == videoStream) {
-            if (video_dec->decode(QByteArray((char*)packet.data, packet.size)))
-                renderer->writeData(video_dec->data());
-            break;
-        } else { //subtitle
-            av_free_packet(&packet);
-            continue;
-        }
-    }
 }
 
 } //namespace QtAV
