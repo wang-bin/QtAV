@@ -78,7 +78,7 @@ void AudioThread::run()
         }
         Packet pkt = d.packets.take(); //wait to dequeue
         if (!pkt.isValid()) {
-            qDebug("Invalid packet!");
+            qDebug("Invalid packet! flush audio codec context!!!!!!!!");
             dec->flush();
             continue;
         }

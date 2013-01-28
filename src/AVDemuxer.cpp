@@ -56,7 +56,7 @@ bool AVDemuxer::readFrame()
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
 
     if (ret != 0) {
-        if (ret == AVERROR_EOF) { //end of file
+        if (ret == AVERROR_EOF) { //end of file. FIXME: why no eof if replaying by seek(0)?
             if (!eof) {
                 eof = true;
                 started_ = false;

@@ -299,7 +299,7 @@ bool AVPlayer::load()
     return loaded;
 }
 
-//TODO: when is the end
+//FIXME: why no demuxer will not get an eof if replaying by seek(0)?
 void AVPlayer::play()
 {
     if (isPlaying())

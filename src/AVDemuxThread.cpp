@@ -167,7 +167,6 @@ void AVDemuxThread::run()
 
     audio_stream = demuxer->audioStream();
     video_stream = demuxer->videoStream();
-
     int index = 0;
     Packet pkt;
     end = false;
@@ -204,6 +203,9 @@ void AVDemuxThread::run()
             continue;
         }
     }
+    //flush. seeking will be omitted when stopped
+    aqueue->put(Packet());
+    vqueue->put(Packet());
     qDebug("Demux thread stops running....");
 }
 

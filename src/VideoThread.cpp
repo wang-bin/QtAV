@@ -102,7 +102,7 @@ void VideoThread::run()
         Packet pkt = d.packets.take(); //wait to dequeue
         //Compare to the clock
         if (!pkt.isValid()) {
-            qDebug("Invalid packet!");
+            qDebug("Invalid packet! flush video codec context!!!!!!!!!!");
             dec->flush();
             continue;
         }
