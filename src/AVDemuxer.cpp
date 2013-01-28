@@ -204,6 +204,12 @@ void AVDemuxer::seek(qreal q)
         qWarning("[AVDemuxer] seek error: %s", av_err2str(ret));
         return;
     }
+    //replay
+    if (q == 0) {
+        qDebug("************seek to 0. started = false");
+        started_ = false;
+        v_codec_context->frame_number = 0; //TODO: why frame_number not changed after seek?
+    }
     if (master_clock) {
         master_clock->updateValue(qreal(t)/qreal(AV_TIME_BASE));
         master_clock->updateExternalClock(t/1000LL); //in msec. ignore usec part using t/1000

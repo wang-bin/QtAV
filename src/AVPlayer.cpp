@@ -56,7 +56,7 @@ extern "C"
 namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
-	QObject(parent),capture_dir("capture"),renderer(0),audio(0)
+    QObject(parent),loaded(false),capture_dir("capture"),renderer(0),audio(0)
   ,event_filter(0),video_capture(0)
 {
     qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
@@ -155,10 +155,15 @@ void AVPlayer::resizeVideo(const QSize &size)
     renderer->resizeVideo(size); //TODO: deprecate
     //video_dec->resizeVideo(size);
 }
-
+/*
+ * loaded state is the state of current setted file.
+ * For replaying, we can avoid load a seekable file again.
+ * For playing a new file, load() is required.
+ */
 void AVPlayer::setFile(const QString &path)
 {
     this->path = path;
+    loaded = false; //
     //qApp->activeWindow()->setWindowTitle(path); //crash on linux
 }
 
@@ -255,53 +260,74 @@ bool AVPlayer::isPaused() const
 #endif
 }
 
-//TODO: when is the end
-void AVPlayer::play()
+bool AVPlayer::isLoaded() const
 {
+    return loaded;
+}
+
+bool AVPlayer::load(const QString &path)
+{
+    setFile(path);
+    return load();
+}
+
+bool AVPlayer::load()
+{
+    loaded = false;
     if (path.isEmpty()) {
-		qDebug("No file to play...");
-		return;
-	}
-	if (isPlaying())
-		stop();
-    if (avTimerId > 0)
-        killTimer(avTimerId);
+        qDebug("No file to play...");
+        return loaded;
+    }
     qDebug("loading: %s ...", path.toUtf8().constData());
     if (!demuxer.loadFile(path)) {
-        return;
-	}
+        return loaded;
+    }
+    loaded = true;
     demuxer.dump();
-    Q_ASSERT(clock != 0);
-    clock->reset();
     formatCtx = demuxer.formatContext();
-    vCodecCtx = demuxer.videoCodecContext();
     aCodecCtx = demuxer.audioCodecContext();
+    vCodecCtx = demuxer.videoCodecContext();
     if (audio && aCodecCtx) {
         audio->setSampleRate(aCodecCtx->sample_rate);
         audio->setChannels(aCodecCtx->channels);
-        if (!audio->open())
-            return; //audio not ready
+        if (!audio->open()) {
+            //return; //audio not ready
+        }
     }
-
-    m_drop_count = 0;
-
     audio_dec->setCodecContext(aCodecCtx);
+    video_dec->setCodecContext(vCodecCtx);
+    return loaded;
+}
+
+//TODO: when is the end
+void AVPlayer::play()
+{
+    if (isPlaying())
+        stop();
+    /*
+     * avoid load mutiple times when replaying the same seekable file
+     * TODO: force load unseekable stream? avio.seekable. currently you
+     * must setFile() agian to reload an unseekable stream
+     */
+    if (!isLoaded()) { //if (!isLoaded() && !load())
+        if (!load())
+            return;
+    } else {
+        demuxer.seek(0); //FIXME: now assume it is seekable. for unseekable, setFile() again
+    }
+    Q_ASSERT(clock != 0);
+    clock->reset();
+
     if (aCodecCtx) {
         qDebug("Starting audio thread...");
         audio_thread->start(QThread::HighestPriority);
     }
-
-    video_dec->setCodecContext(vCodecCtx);
     if (vCodecCtx) {
         qDebug("Starting video thread...");
         video_thread->start();
     }
-
     demuxer_thread->start();
     emit started();
-#if 0
-    avTimerId = startTimer(1000/demuxer.frameRate());
-#endif
 }
 
 void AVPlayer::stop()

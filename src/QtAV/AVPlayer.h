@@ -45,6 +45,9 @@ public:
     AVClock* masterClock();
     void setFile(const QString& path);
 	QString file() const;
+    bool load(const QString& path);
+    bool load();
+    bool isLoaded() const;
     /*
      * default: [fmt: PNG, dir: capture, name: basename]
      * replace the existing capture; return the replaced one
@@ -81,12 +84,12 @@ protected slots:
     void resizeVideo(const QSize& size);
 
 protected:
-	int avTimerId;
+    bool loaded;
+    int avTimerId;
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
     QString path;
     QString capture_name, capture_dir;
-    int m_drop_count;
 
     //the following things are required and must be setted not null
     AVDemuxer demuxer;
