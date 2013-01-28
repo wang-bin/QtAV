@@ -34,6 +34,7 @@ class Q_EXPORT AVDecoder
 public:
     AVDecoder();
     virtual ~AVDecoder();
+    void flush();
     void setCodecContext(AVCodecContext* codecCtx); //protected
     AVCodecContext* codecContext() const;
     /*not available if AVCodecContext == 0*/

@@ -101,8 +101,9 @@ void VideoThread::run()
         }
         Packet pkt = d.packets.take(); //wait to dequeue
         //Compare to the clock
-        if (pkt.pts <= 0 || pkt.data.isNull()) {
-            qDebug("Invalid pts or empty packet!");
+        if (!pkt.isValid()) {
+            qDebug("Invalid packet!");
+            dec->flush();
             continue;
         }
         d.delay = pkt.pts  - d.clock->value();

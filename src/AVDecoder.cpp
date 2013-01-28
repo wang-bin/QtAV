@@ -34,6 +34,12 @@ AVDecoder::~AVDecoder()
 {
 }
 
+void AVDecoder::flush()
+{
+    if (isAvailable())
+        avcodec_flush_buffers(d_func().codec_ctx);
+}
+
 void AVDecoder::setCodecContext(AVCodecContext *codecCtx)
 {
     DPTR_D(AVDecoder);

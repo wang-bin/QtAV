@@ -55,9 +55,10 @@ void AudioThread::run()
         return;
     resetState();
     Q_ASSERT(d.clock != 0);
+    AudioDecoder *dec = static_cast<AudioDecoder*>(d.dec);
     AudioOutput *ao = static_cast<AudioOutput*>(d.writer);
-    int sample_rate = d.dec->codecContext()->sample_rate;
-    int channels = d.dec->codecContext()->channels;
+    int sample_rate = dec->codecContext()->sample_rate;
+    int channels = dec->codecContext()->channels;
     int csf = channels * sample_rate * sizeof(float);
     static const double max_len = 0.02;
     d.last_pts = 0;
@@ -76,14 +77,15 @@ void AudioThread::run()
             }
         }
         Packet pkt = d.packets.take(); //wait to dequeue
-        if (pkt.data.isNull()) {
-            qDebug("Empty packet!");
+        if (!pkt.isValid()) {
+            qDebug("Invalid packet!");
+            dec->flush();
             continue;
         }
         d.clock->updateValue(pkt.pts);
         //DO NOT decode and convert if ao is not available or mute!
-        if (d.dec->decode(pkt.data)) {
-            QByteArray decoded(d.dec->data());
+        if (dec->decode(pkt.data)) {
+            QByteArray decoded(dec->data());
             int decodedSize = decoded.size();
             int decodedPos = 0;
             qreal delay =0;
