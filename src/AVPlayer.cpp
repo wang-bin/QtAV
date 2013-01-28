@@ -146,7 +146,7 @@ void AVPlayer::setMute(bool mute)
 
 bool AVPlayer::isMute() const
 {
-    return audio && audio->isMute();
+    return !audio || audio->isMute();
 }
 
 //TODO: remove?

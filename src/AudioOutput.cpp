@@ -74,7 +74,7 @@ void AudioOutput::setMute(bool yes)
 
 bool AudioOutput::isMute() const
 {
-    return d_func().mute;
+    return !isAvailable() || d_func().mute;
 }
 
 void AudioOutput::convertData(const QByteArray &data)
