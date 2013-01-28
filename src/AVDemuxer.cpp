@@ -425,29 +425,22 @@ void AVDemuxer::dump()
         , {videoStream(),    v_codec_context, "video_stream"}
         , {0,                0,               0}
     };
+    AVStream *stream = 0;
     for (int idx = 0; stream_infos[idx].name != 0; ++idx) {
         qDebug("%s: %d", stream_infos[idx].name, stream_infos[idx].index);
-        if (stream_infos[idx].index < 0) {
-            qDebug("stream not available");
+        if (stream_infos[idx].index < 0 || !(stream = format_context->streams[idx])) {
+            qDebug("stream not available: index = %d, stream = %p", stream_infos[idx].index, stream);
             continue;
         }
-        AVStream *stream = format_context->streams[idx];
-        if (!stream)
-            continue;
-        qDebug("[AVStream::start_time = %lld]", stream->start_time);
+        //why not fixed for video without audio?
+        //qDebug("[AVStream::start_time = %lld]", stream->start_time);
         AVCodecContext *ctx = stream_infos[idx].ctx;
         if (ctx) {
-            qDebug("[AVCodecContext::time_base = %d, %d, %.2f %.2f]", ctx->time_base.num, ctx->time_base.den
-                ,1.0 * ctx->time_base.num / (1 + ctx->time_base.den)
-                ,1.0 / (1.0 * ctx->time_base.num / (1 + ctx->time_base.den))
-                );
+            qDebug("[AVCodecContext::time_base = %d / %d = %f]", ctx->time_base.num, ctx->time_base.den, av_q2d(ctx->time_base));
         }
-        qDebug("[AVStream::avg_frame_rate = %d, %d, %.2f]", stream->avg_frame_rate.num, stream->avg_frame_rate.den
-                ,1.0 * stream->avg_frame_rate.num / stream->avg_frame_rate.den);
-        qDebug("[AVStream::r_frame_rate = %d, %d, %.2f]", stream->r_frame_rate.num, stream->r_frame_rate.den
-                ,1.0 * stream->r_frame_rate.num / stream->r_frame_rate.den);
-        qDebug("[AVStream::time_base = %d, %d, %.2f]", stream->time_base.num, stream->time_base.den
-                ,1.0 * stream->time_base.num / stream->time_base.den);
+        ////why avg_frame_rate is not fixed for the same video?
+        //qDebug("[AVStream::avg_frame_rate = %d / %d = %f]", stream->avg_frame_rate.num, stream->avg_frame_rate.den, av_q2d(stream->avg_frame_rate));
+        //qDebug("[AVStream::time_base = %d / %d = %f]", stream->time_base.num, stream->time_base.den, av_q2d(stream->time_base));
     }
 
 }
