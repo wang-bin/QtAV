@@ -105,8 +105,6 @@ protected:
     friend class EventFilter;
     EventFilter *event_filter;
     VideoCapture *video_capture;
-protected:
-    virtual void timerEvent(QTimerEvent *);
 };
 
 } //namespace QtAV
