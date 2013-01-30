@@ -1,10 +1,10 @@
 TEMPLATE = subdirs
 CONFIG += ordered
-SUBDIRS = libqtav gui tests
+SUBDIRS = libqtav examples tests
 
 libqtav.file = src/libQtAV.pro
-gui.file = gui/player.pro
-gui.depends += libqtav
+examples.depends += libqtav
+tests.depends += libqtav
 
 OTHER_FILES += README.md TODO.txt Changelog
 
