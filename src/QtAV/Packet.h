@@ -39,7 +39,7 @@ public:
 
 bool Packet::isValid() const
 {
-    return !data.isNull() && pts >= 0 & duration >= 0; //!data.isEmpty()?
+    return !data.isNull() && pts >= 0 && duration >= 0; //!data.isEmpty()?
 }
 
 template <typename T> class StdQueue : public std::queue<T>
