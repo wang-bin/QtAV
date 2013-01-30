@@ -28,15 +28,23 @@
 
 namespace QtAV {
 
-EventFilter::EventFilter(AVPlayer *parent) :
-    QObject(parent),player(parent)
+EventFilter::EventFilter(QObject *parent) :
+    QObject(parent)
 {
 }
 
+EventFilter::~EventFilter()
+{
+}
+
+//TODO: single player event filter
 bool EventFilter::eventFilter(QObject *watched, QEvent *event)
 {
     //qDebug("EventFilter::eventFilter to %p", watched);
     Q_UNUSED(watched);
+    AVPlayer *player = static_cast<AVPlayer*>(parent());
+    if (!player)
+        return false;
     /*if (watched == reinterpret_cast<QObject*>(player->renderer)) {
         qDebug("Event target is renderer: %s", watched->objectName().toAscii().constData());
     }*/
@@ -81,29 +89,29 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         }
             break;
         case Qt::Key_Up:
-            if (player->audio) {
-                qreal v = player->audio->volume();
+            if (player->audio()) {
+                qreal v = player->audio()->volume();
                 if (v > 0.5)
                     v += 0.1;
                 else if (v > 0.1)
                     v += 0.05;
                 else
                     v += 0.025;
-                player->audio->setVolume(v);
-                qDebug("vol = %.3f", player->audio->volume());
+                player->audio()->setVolume(v);
+                qDebug("vol = %.3f", player->audio()->volume());
             }
             break;
         case Qt::Key_Down:
-            if (player->audio) {
-                qreal v = player->audio->volume();
+            if (player->audio()) {
+                qreal v = player->audio()->volume();
                 if (v > 0.5)
                     v -= 0.1;
                 else if (v > 0.1)
                     v -= 0.05;
                 else
                     v -= 0.025;
-                player->audio->setVolume(v);
-                qDebug("vol = %.3f", player->audio->volume());
+                player->audio()->setVolume(v);
+                qDebug("vol = %.3f", player->audio()->volume());
             }
             break;
         case Qt::Key_O: {
@@ -122,8 +130,8 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             player->seekForward();
             break;
         case Qt::Key_M:
-            if (player->audio) {
-                player->audio->setMute(!player->audio->isMute());
+            if (player->audio()) {
+                player->audio()->setMute(!player->audio()->isMute());
             }
             break;
         case Qt::Key_T: {

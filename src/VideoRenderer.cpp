@@ -83,9 +83,11 @@ int VideoRenderer::lastHeight() const
     return  d.src_height;
 }
 
-void VideoRenderer::registerEventFilter(EventFilter *filter)
+void VideoRenderer::registerEventFilter(QObject *filter)
 {
-    d_func().event_filter = filter;
+    DPTR_D(VideoRenderer);
+    qApp->removeEventFilter(d.event_filter);
+    d.event_filter = filter;
     qApp->installEventFilter(filter);
 }
 

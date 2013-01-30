@@ -61,8 +61,10 @@ public:
     bool play(const QString& path);
 	bool isPlaying() const;
     bool isPaused() const;
-    void setRenderer(VideoRenderer* renderer);
-
+    //this will install the default EventFilter. To use customized filter, register after this
+    VideoRenderer* setRenderer(VideoRenderer* renderer);
+    VideoRenderer* renderer();
+    AudioOutput* audio();
     void setMute(bool mute);
     bool isMute() const;
 
@@ -94,8 +96,8 @@ protected:
     AVDemuxer demuxer;
     AVDemuxThread *demuxer_thread;
     AVClock *clock;
-    VideoRenderer *renderer; //list?
-    AudioOutput *audio;
+    VideoRenderer *_renderer; //list?
+    AudioOutput *_audio;
     AudioDecoder *audio_dec;
     VideoDecoder *video_dec;
     AudioThread *audio_thread;

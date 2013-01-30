@@ -56,7 +56,7 @@ extern "C"
 namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
-    QObject(parent),loaded(false),capture_dir("capture"),renderer(0),audio(0)
+    QObject(parent),loaded(false),capture_dir("capture"),_renderer(0),_audio(0)
   ,event_filter(0),video_capture(0)
 {
     qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
@@ -64,8 +64,8 @@ AVPlayer::AVPlayer(QObject *parent) :
            "\nShanghai University, China"
            , QTAV_VERSION_STR_LONG);
     /*
-     * call stop() before the window(renderer) closed to stop the waitcondition
-     * If close the renderer widget, the the renderer may destroy before waking up.
+     * call stop() before the window(_renderer) closed to stop the waitcondition
+     * If close the _renderer widget, the the _renderer may destroy before waking up.
      */
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(stop()));
     clock = new AVClock(AVClock::AudioClock);
@@ -73,16 +73,16 @@ AVPlayer::AVPlayer(QObject *parent) :
 	demuxer.setClock(clock);
     connect(&demuxer, SIGNAL(started()), clock, SLOT(start()));
 #if HAVE_OPENAL
-    audio = new AOOpenAL();
+    _audio = new AOOpenAL();
 #elif HAVE_PORTAUDIO
-    audio = new AOPortAudio();
+    _audio = new AOPortAudio();
 #endif
     audio_dec = new AudioDecoder();
     audio_thread = new AudioThread(this);
     audio_thread->setClock(clock);
     //audio_thread->setPacketQueue(&audio_queue);
     audio_thread->setDecoder(audio_dec);
-    audio_thread->setOutput(audio);
+    audio_thread->setOutput(_audio);
 
     video_dec = new VideoDecoder();
 
@@ -103,9 +103,9 @@ AVPlayer::AVPlayer(QObject *parent) :
 AVPlayer::~AVPlayer()
 {
     stop();
-    if (audio) {
-        delete audio;
-        audio = 0;
+    if (_audio) {
+        delete _audio;
+        _audio = 0;
     }
     if (audio_dec) {
         delete audio_dec;
@@ -122,34 +122,46 @@ AVClock* AVPlayer::masterClock()
     return clock;
 }
 
-void AVPlayer::setRenderer(VideoRenderer *r)
+VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
 {
-    if (renderer) {
+    VideoRenderer *old = _renderer;
+    _renderer = r;
+    video_thread->setOutput(_renderer);
+    if (_renderer) {
 		if (isPlaying())
 			stop();
-		//delete renderer; //Do not own the ptr
+        //delete _renderer; //Do not own the ptr
+        _renderer->registerEventFilter(event_filter);
+        _renderer->resizeVideo(_renderer->videoSize()); //IMPORTANT: the swscaler will resize
     }
-    renderer = r;
-    renderer->registerEventFilter(event_filter);
-    video_thread->setOutput(renderer);
-    renderer->resizeVideo(renderer->videoSize()); //IMPORTANT: the swscaler will resize
+    return old;
+}
+
+VideoRenderer *AVPlayer::renderer()
+{
+    return _renderer;
+}
+
+AudioOutput* AVPlayer::audio()
+{
+    return _audio;
 }
 
 void AVPlayer::setMute(bool mute)
 {
-    if (audio)
-        audio->setMute(mute);
+    if (_audio)
+        _audio->setMute(mute);
 }
 
 bool AVPlayer::isMute() const
 {
-    return !audio || audio->isMute();
+    return !_audio || _audio->isMute();
 }
 
 //TODO: remove?
 void AVPlayer::resizeVideo(const QSize &size)
 {
-    renderer->resizeVideo(size); //TODO: deprecate
+    _renderer->resizeVideo(size); //TODO: deprecate
     //video_dec->resizeVideo(size);
 }
 /*
@@ -237,10 +249,10 @@ void AVPlayer::pause(bool p)
     /*Pause output. all threads using those outputs will be paused. If a output is not paused
      *, then other players' avthread can use it.
      */
-    if (audio)
-        audio->pause(p);
-    if (renderer)
-        renderer->pause(p);
+    if (_audio)
+        _audio->pause(p);
+    if (_renderer)
+        _renderer->pause(p);
 #endif
 }
 
@@ -249,10 +261,10 @@ bool AVPlayer::isPaused() const
     return demuxer_thread->isPaused() | audio_thread->isPaused() | video_thread->isPaused();
 #if 0
     bool p = false;
-    if (audio)
-        p |= audio->isPaused();
-    if (renderer)
-        p |= renderer->isPaused();
+    if (_audio)
+        p |= _audio->isPaused();
+    if (_renderer)
+        p |= _renderer->isPaused();
     return p;
 #endif
 }
@@ -284,10 +296,10 @@ bool AVPlayer::load()
     formatCtx = demuxer.formatContext();
     aCodecCtx = demuxer.audioCodecContext();
     vCodecCtx = demuxer.videoCodecContext();
-    if (audio && aCodecCtx) {
-        audio->setSampleRate(aCodecCtx->sample_rate);
-        audio->setChannels(aCodecCtx->channels);
-        if (!audio->open()) {
+    if (_audio && aCodecCtx) {
+        _audio->setSampleRate(aCodecCtx->sample_rate);
+        _audio->setChannels(aCodecCtx->channels);
+        if (!_audio->open()) {
             //return; //audio not ready
         }
     }

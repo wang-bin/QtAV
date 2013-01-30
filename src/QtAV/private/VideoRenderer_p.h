@@ -24,9 +24,8 @@
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QMutex>
 
+class QObject;
 namespace QtAV {
-
-class EventFilter;
 class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
@@ -39,7 +38,7 @@ public:
     bool scale_in_qt;
     int width, height;
     int src_width, src_height;
-    EventFilter *event_filter;
+    QObject *event_filter;
     //ImageConverter conv;
     QMutex img_mutex;
 };

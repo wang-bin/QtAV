@@ -21,22 +21,19 @@
 #define EVENTFILTER_H
 
 #include <QtCore/QObject>
+#include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
 
-class AVPlayer;
+//for internal use
 class EventFilter : public QObject
 {
     Q_OBJECT
 public:
-    explicit EventFilter(AVPlayer *parent = 0);
-
-    bool filterEvent(QEvent *e);
+    explicit EventFilter(QObject *parent = 0);
+    virtual ~EventFilter();
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
-
-private:
-    AVPlayer *player;
 };
 
 } //namespace QtAV

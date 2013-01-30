@@ -36,8 +36,7 @@ public:
     explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
     virtual ~WidgetRenderer();
 
-    virtual void registerEventFilter(EventFilter *filter);
-	virtual bool write();
+    virtual bool write();
     void setPreview(const QImage& preivew);
 
 protected:

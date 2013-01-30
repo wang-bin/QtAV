@@ -46,12 +46,6 @@ WidgetRenderer::~WidgetRenderer()
 {
 }
 
-void WidgetRenderer::registerEventFilter(EventFilter *filter)
-{
-    d_func().event_filter = filter;
-    installEventFilter(filter);
-}
-
 bool WidgetRenderer::write()
 {
 #if CONFIG_EZX

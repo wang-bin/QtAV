@@ -51,12 +51,6 @@ GraphicsItemRenderer::~GraphicsItemRenderer()
 {
 }
 
-void GraphicsItemRenderer::registerEventFilter(EventFilter *filter)
-{
-    d_func().event_filter = filter;
-    installEventFilter(filter);
-}
-
 bool GraphicsItemRenderer::write()
 {
     scene()->update(sceneBoundingRect());
