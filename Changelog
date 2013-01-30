@@ -1,3 +1,13 @@
+version 1.1.7    2013-01-30
+
+- scale image without qt support!
+- buggy ipp support.
+- thread safe capture
+- Fix first frame not correctly decoded!
+- new API
+- tests and examples: clockcontrol, videowall
+
+
 version 1.1.6    2013-01-23
 
 - fix video blocking and crash when seeking
