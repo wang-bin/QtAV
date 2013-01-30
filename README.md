@@ -113,6 +113,6 @@ IP camera using QtAV. OS: Fedora 18 (some developers from Italy)
 
 > Copyright &copy; Wang Bin wbsecg1@gmail.com
 
-> Shanghai University, Shanghai, China
+> Shanghai University, Shanghai, China XX
 
 > 2013-01-21
