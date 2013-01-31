@@ -63,7 +63,11 @@ void ImageConverter::setInFormat(int format)
 
 void ImageConverter::setOutFormat(int format)
 {
-    d_func().fmt_out = format;
+    DPTR_D(ImageConverter);
+    if (d.fmt_out == format)
+        return;
+    d.fmt_out = format;
+    prepareData();
 }
 
 void ImageConverter::setInterlaced(bool interlaced)
