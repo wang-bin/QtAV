@@ -17,11 +17,13 @@
 ******************************************************************************/
 
 
-#ifndef EVENTFILTER_H
-#define EVENTFILTER_H
+#ifndef QTAV_EVENTFILTER_H
+#define QTAV_EVENTFILTER_H
 
+/*
+ * This class is used interally as QtAV's default event filter. It is suite for single player object
+ */
 #include <QtCore/QObject>
-#include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
 
@@ -37,4 +39,4 @@ protected:
 };
 
 } //namespace QtAV
-#endif // EVENTFILTER_H
+#endif // QTAV_EVENTFILTER_H

@@ -20,7 +20,6 @@
 #include <QtAV/VideoDecoder.h>
 #include <private/VideoRenderer_p.h>
 #include <QtCore/QCoreApplication>
-#include <QtAV/EventFilter.h>
 
 /*!
     EZX:
@@ -81,14 +80,6 @@ int VideoRenderer::lastHeight() const
 {
     DPTR_D(const VideoRenderer);
     return  d.src_height;
-}
-
-void VideoRenderer::registerEventFilter(QObject *filter)
-{
-    DPTR_D(VideoRenderer);
-    qApp->removeEventFilter(d.event_filter);
-    d.event_filter = filter;
-    qApp->installEventFilter(filter);
 }
 
 bool VideoRenderer::open()

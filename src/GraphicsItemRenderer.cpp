@@ -22,7 +22,6 @@
 #include <QtGui/QPainter>
 #include <QEvent>
 #include <QKeyEvent>
-#include <QtAV/EventFilter.h>
 #include <QGraphicsSceneEvent>
 
 namespace QtAV {

@@ -32,7 +32,6 @@ class VideoDecoder;
 class VideoRenderer;
 class AVClock;
 class AVDemuxThread;
-class EventFilter;
 class VideoCapture;
 class Q_EXPORT AVPlayer : public QObject
 {
@@ -67,6 +66,8 @@ public:
     AudioOutput* audio();
     void setMute(bool mute);
     bool isMute() const;
+    /*only 1 event filter is available. the previous one will be removed. setPlayerEventFilter(0) will remove the event filter*/
+    void setPlayerEventFilter(QObject *obj);
 
 signals:
     void started();
@@ -104,8 +105,7 @@ protected:
     VideoThread *video_thread;
 
     //tODO: (un)register api
-    friend class EventFilter;
-    EventFilter *event_filter;
+    QObject *event_filter;
     VideoCapture *video_capture;
 };
 

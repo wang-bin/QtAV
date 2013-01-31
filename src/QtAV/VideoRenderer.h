@@ -46,7 +46,6 @@ public:
     int lastWidth() const;
     int lastHeight() const;
     //TODO: unregister
-    virtual void registerEventFilter(QObject* filter);
     virtual bool open();
     virtual bool close();
     virtual QImage currentFrameImage() const = 0; //const QImage& const?

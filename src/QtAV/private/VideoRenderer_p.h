@@ -30,7 +30,7 @@ class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
     VideoRendererPrivate():scale_in_qt(true),width(480),height(320),src_width(0)
-      ,src_height(0),event_filter(0) {
+      ,src_height(0) {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
     }
@@ -38,7 +38,6 @@ public:
     bool scale_in_qt;
     int width, height;
     int src_width, src_height;
-    QObject *event_filter;
     //ImageConverter conv;
     QMutex img_mutex;
 };

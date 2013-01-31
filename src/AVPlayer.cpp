@@ -95,8 +95,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     demuxer_thread->setAudioThread(audio_thread);
     demuxer_thread->setVideoThread(video_thread);
 
-    event_filter = new EventFilter(this);
-
+    setPlayerEventFilter(new EventFilter(this));
     setVideoCapture(new VideoCapture());
 }
 
@@ -131,7 +130,6 @@ VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
 		if (isPlaying())
 			stop();
         //delete _renderer; //Do not own the ptr
-        _renderer->registerEventFilter(event_filter);
         _renderer->resizeVideo(_renderer->videoSize()); //IMPORTANT: the swscaler will resize
     }
     return old;
@@ -156,6 +154,20 @@ void AVPlayer::setMute(bool mute)
 bool AVPlayer::isMute() const
 {
     return !_audio || _audio->isMute();
+}
+
+//setPlayerEventFilter(0) will remove the previous event filter
+void AVPlayer::setPlayerEventFilter(QObject *obj)
+{
+    if (event_filter) {
+        qApp->removeEventFilter(event_filter);
+        delete event_filter;
+        event_filter = 0; //the default event filter's parent is this, so AVPlayer will try to delete event_filter
+    }
+    if (obj) {
+        event_filter = obj;
+        qApp->installEventFilter(event_filter);
+    }
 }
 
 //TODO: remove?

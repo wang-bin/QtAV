@@ -96,7 +96,7 @@ void VideoWall::show()
             renderer->show();
             AVPlayer *player = new AVPlayer;
             player->setRenderer(renderer);
-            renderer->registerEventFilter(this);
+            player->setPlayerEventFilter(this);
             players.append(player);
         }
     }

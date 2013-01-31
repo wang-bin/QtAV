@@ -20,7 +20,6 @@
 #define QTAV_VIDEOWALL_H
 
 #include <QtCore/QList>
-#include <QtAV/EventFilter.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/WidgetRenderer.h>
 
