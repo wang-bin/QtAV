@@ -1,5 +1,6 @@
 TEMPLATE = app
 #QT += opengl
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = player
 STATICLINK = 0

@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     wall.setCols(c);
     wall.show();
     QString file;
-    if (a.argc() > 1)
+    if (a.arguments().size() > 1)
         file = a.arguments().last();
     if (QFile(file).exists()) {
         wall.play(file);
