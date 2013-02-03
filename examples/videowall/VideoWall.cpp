@@ -25,7 +25,7 @@
 #include <QtAV/AudioOutput.h>
 
 using namespace QtAV;
-const int kSyncInterval = 5000;
+const int kSyncInterval = 2000;
 
 VideoWall::VideoWall(QObject *parent) :
     QObject(parent),r(3),c(3)
@@ -144,6 +144,7 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
             foreach (AVPlayer* player, players) {
                 player->play();
             }
+            timer_id = startTimer(kSyncInterval);
             break;
         case Qt::Key_S:
             clock->reset();
@@ -153,7 +154,7 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
             }
             break;
         case Qt::Key_Space: //check playing?
-            clock->pause(!clock->isRunning());
+            clock->pause(!clock->isActive());
             foreach (AVPlayer* player, players) {
                 player->pause(!player->isPaused());
             }
@@ -241,7 +242,7 @@ void VideoWall::timerEvent(QTimerEvent *e)
         qDebug("Not clock id");
         return;
     }
-    if (!clock->isRunning()) {
+    if (!clock->isActive()) {
         qDebug("clock not running");
         return;
     }

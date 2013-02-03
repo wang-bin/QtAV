@@ -71,14 +71,9 @@ void AVClock::updateExternalClock(const AVClock &clock)
 {
     if (clock_type != ExternalClock)
         return;
-    qDebug("External clock change: %f ==> %f", value(), double(clock.value()) * kThousandth);
-    pts_ = double(clock.value()) * kThousandth; //can not use msec/1000.
+    qDebug("External clock change: %f ==> %f", value(), clock.value());
+    pts_ = clock.value();
     timer.restart();
-}
-
-bool AVClock::isRunning() const
-{
-    return timer.isValid();
 }
 
 void AVClock::start()

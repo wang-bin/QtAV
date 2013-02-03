@@ -64,7 +64,6 @@ public:
     void updateExternalClock(qint64 msecs);
     /*external clock outside still running, so it's more accurate for syncing multiple clocks serially*/
     void updateExternalClock(const AVClock& clock);
-    bool isRunning() const;
 
     inline void updateVideoPts(double pts);
     inline double videoPts() const;
