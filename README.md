@@ -22,11 +22,11 @@ QtAV can meet your most demands
 - Volume control
 - Fullscreen, stay on top
 - Compatible: QtAV can be built with both Qt4 and Qt5. QtAV will support
-  both FFMpeg and [Libav](http://libav.org).
+  both FFmpeg and [Libav](http://libav.org).
 
 ### Extensible Framework (not finished)
 
-  QtAV currently uses FFMpeg to decode video, convert image and audio data, and uses PortAudio to play
+  QtAV currently uses FFmpeg to decode video, convert image and audio data, and uses PortAudio to play
   sound. Every part in QtAV is designed to be extensible. For example, you can write your audio output
   class using OpenAL, image converting class using cuda to get better performance etc. These features
   will be added in the feature by default.
@@ -36,7 +36,7 @@ QtAV can meet your most demands
 
 #### Requirements
 
-1. [FFMpeg](http://ffmpeg.org) Latest version is recommanded
+1. [FFmpeg](http://ffmpeg.org) Latest version is recommanded
 2. [Qt 4 or 5](http://qt-project.org/downloads)
 3. [PortAudio v19](http://www.portaudio.com/download.html)
 

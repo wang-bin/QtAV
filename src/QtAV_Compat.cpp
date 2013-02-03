@@ -3,7 +3,7 @@
 
 void ffmpeg_version_print()
 {
-    printf("FFMpeg/Libav version:\n"
+    printf("FFmpeg/Libav version:\n"
            "libavcodec-%d.%d.%d\n"
            "libavformat-%d.%d.%d\n"
 //	       "libavdevice-%d.%d.%d\n"

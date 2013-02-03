@@ -71,8 +71,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
             decoded_data[i] = (data[i] - 0x7F) * kInt8_inv;
             decoded_data[samples_with_channels - i] = (data[samples_with_channels - i] - 0x7F) * kInt8_inv;
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_S16:
     {
         int16_t *data = (int16_t*)*d.frame->data;
@@ -80,8 +80,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
             decoded_data[i] = data[i] * kInt16_inv;
             decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt16_inv;
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_S32:
     {
         int32_t *data = (int32_t*)*d.frame->data;
@@ -89,13 +89,11 @@ bool AudioDecoder::decode(const QByteArray &encoded)
             decoded_data[i] = data[i] * kInt32_inv;
             decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt32_inv;
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_FLT:
-    {
         memcpy(decoded_data, *d.frame->data, d.decoded.size());
         break;
-    }
     case AV_SAMPLE_FMT_DBL:
     {
         double *data = (double*)*d.frame->data;
@@ -103,8 +101,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
             decoded_data[i] = data[i];
             decoded_data[samples_with_channels - i] = data[samples_with_channels - i];
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_U8P:
     {
         uint8_t **data = (uint8_t**)d.frame->extended_data;
@@ -113,8 +111,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = (data[ch][i] - 0x7F) * kInt8_inv;
             }
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_S16P:
     {
         uint16_t **data = (uint16_t**)d.frame->extended_data;
@@ -123,8 +121,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = data[ch][i] * kInt16_inv;
             }
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_S32P:
     {
         uint32_t **data = (uint32_t**)d.frame->extended_data;
@@ -133,8 +131,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = data[ch][i] * kInt32_inv;
             }
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_FLTP:
     {
         float **data = (float**)d.frame->extended_data;
@@ -143,8 +141,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = data[ch][i];
             }
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_DBLP:
     {
         double **data = (double**)d.frame->extended_data;
@@ -153,8 +151,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = data[ch][i];
             }
         }
-        break;
     }
+        break;
     default:
         static bool sWarn_a_fmt = true; //FIXME: no warning when replay. warn only once
         if (sWarn_a_fmt) {

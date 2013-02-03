@@ -1,5 +1,5 @@
 /******************************************************************************
-    ImageConverterFF: Image resizing & color model convertion using FFMpeg swscale
+    ImageConverterFF: Image resizing & color model convertion using FFmpeg swscale
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify

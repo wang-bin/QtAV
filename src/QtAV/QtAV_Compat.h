@@ -35,7 +35,7 @@ extern "C"
 
 #include "QtAV_Global.h"
 /*!
- * Guide to uniform the api for different FFMpeg version(or other libraries)
+ * Guide to uniform the api for different FFmpeg version(or other libraries)
  * We use the existing old api to simulater .
  * 1. The old version does not have this api: Just add it.
  * 2. The old version has similar api: Try using macro.
