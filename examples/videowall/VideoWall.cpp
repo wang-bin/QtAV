@@ -25,10 +25,13 @@
 #include <QtAV/AudioOutput.h>
 
 using namespace QtAV;
+const int kSyncInterval = 5000;
 
 VideoWall::VideoWall(QObject *parent) :
     QObject(parent),r(3),c(3)
 {
+    clock = new AVClock(this);
+    clock->setClockType(AVClock::ExternalClock);
 }
 
 VideoWall::~VideoWall()
@@ -97,6 +100,8 @@ void VideoWall::show()
             AVPlayer *player = new AVPlayer;
             player->setRenderer(renderer);
             player->setPlayerEventFilter(this);
+            player->masterClock()->setClockAuto(false);
+            player->masterClock()->setClockType(AVClock::ExternalClock);
             players.append(player);
         }
     }
@@ -106,9 +111,12 @@ void VideoWall::play(const QString &file)
 {
     if (players.isEmpty())
         return;
+    clock->reset();
+    clock->start();
     foreach (AVPlayer *player, players) {
         player->play(file);
     }
+    timer_id = startTimer(kSyncInterval);
 }
 
 
@@ -131,16 +139,21 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
             }
             break;
         case Qt::Key_P:
+            clock->reset();
+            clock->start();
             foreach (AVPlayer* player, players) {
                 player->play();
             }
             break;
         case Qt::Key_S:
+            clock->reset();
+            killTimer(timer_id);
             foreach (AVPlayer* player, players) {
                 player->stop(); //check playing?
             }
             break;
         case Qt::Key_Space: //check playing?
+            clock->pause(!clock->isRunning());
             foreach (AVPlayer* player, players) {
                 player->pause(!player->isPaused());
             }
@@ -181,23 +194,28 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
             QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
             if (!file.isEmpty()) {
                 foreach (AVPlayer* player, players) {
-                    qDebug("%p", player);
-                    player->play(file);
+                    player->load(file);
                 }
+                foreach (AVPlayer* player, players) {
+                    player->play();
+                }
+                timer_id = startTimer(kSyncInterval);
             }
         }
             break;
         case Qt::Key_Left:
             qDebug("<-");
-            foreach (AVPlayer* player, players) {
+            clock->updateExternalClock(clock->value()*1000.0 - 2000.0);
+            /*foreach (AVPlayer* player, players) {
                 player->seekBackward();
-            }
+            }*/
             break;
         case Qt::Key_Right:
             qDebug("->");
-            foreach (AVPlayer* player, players) {
+            clock->updateExternalClock(clock->value()*1000.0 + 2000.0);
+            /*foreach (AVPlayer* player, players) {
                 player->seekForward();
-            }
+            }*/
             break;
         case Qt::Key_M:
             foreach (AVPlayer* player, players) {
@@ -215,4 +233,20 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
         return false;
     }
     return true; //false: for text input
+}
+
+void VideoWall::timerEvent(QTimerEvent *e)
+{
+    if (e->timerId() != timer_id) {
+        qDebug("Not clock id");
+        return;
+    }
+    if (!clock->isRunning()) {
+        qDebug("clock not running");
+        return;
+    }
+    qDebug("timerEvent....");
+    foreach (AVPlayer *player, players) {
+        player->masterClock()->updateExternalClock(*clock);
+    }
 }

@@ -38,9 +38,11 @@ public:
 
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
-
+    virtual void timerEvent(QTimerEvent *e);
 private:
     int r, c;
+    int timer_id;
+    QtAV::AVClock *clock;
     QList<QtAV::AVPlayer*> players;
 };
 
