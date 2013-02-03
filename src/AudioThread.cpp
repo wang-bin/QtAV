@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/AudioThread.h>
@@ -46,7 +49,11 @@ AudioThread::AudioThread(QObject *parent)
 {
 }
 
-//TODO: if output is null or dummy, the use duration to wait
+/*
+ *TODO:
+ * if output is null or dummy, the use duration to wait
+ * if using external clock, keep the same with video thread
+ */
 void AudioThread::run()
 {
     DPTR_D(AudioThread);
@@ -62,6 +69,7 @@ void AudioThread::run()
     int csf = channels * sample_rate * sizeof(float);
     static const double max_len = 0.02;
     d.last_pts = 0;
+    //bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail

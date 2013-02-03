@@ -4,7 +4,7 @@ QtAV is a media playing library based on Qt and FFmpeg. It can help you to write
 with less effort than ever before. Currently only a simple player is supplied. I will write a
 stylish one based on QtAV in the feature.
 
-QtAV is free software licensed under the or GPL v3. If you use QtAV or its constituent libraries,
+QtAV is free software licensed under the term of LGPL v2.1. If you use QtAV or its constituent libraries,
 you must adhere to the terms of the license in question.
 
 #### [Download binaries from sourceforge](https://sourceforge.net/projects/qtav/files)

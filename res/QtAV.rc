@@ -15,7 +15,7 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "Shanghai University & Kazo Vision | wbsecg1@gmail.com"
+            VALUE "CompanyName", "Shanghai University & Kazo Vision & VIA | wbsecg1@gmail.com"
             VALUE "FileDescription", "Media library based on Qt & FFmpeg. https://github.com/wang-bin/QtAV"
             VALUE "FileVersion", "1.1.7.0"
             VALUE "LegalCopyright", "Copyright (C) 2012-2013 WangBin"
