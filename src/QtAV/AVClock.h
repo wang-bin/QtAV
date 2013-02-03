@@ -61,7 +61,10 @@ public:
     inline double value() const; //the real timestamp: pts + delay
     inline void updateValue(double pts); //update the pts
     /*used when seeking and correcting from external*/
-    void updateExternalClock(qint64 msecs); //(const AVClock& other): external clock outside still running
+    void updateExternalClock(qint64 msecs);
+    /*external clock outside still running, so it's more accurate for syncing multiple clocks serially*/
+    void updateExternalClock(const AVClock& clock);
+    bool isRunning() const;
 
     inline void updateVideoPts(double pts);
     inline double videoPts() const;
