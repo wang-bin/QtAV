@@ -63,6 +63,8 @@ bool AVDemuxer::readFrame()
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
             }
+            //pkt->data = QByteArray(); //flush
+            //return true;
             return false; //frames after eof are eof frames
         } else if (ret == AVERROR_INVALIDDATA) {
             qWarning("AVERROR_INVALIDDATA");
@@ -434,19 +436,17 @@ void AVDemuxer::dump()
     AVStream *stream = 0;
     for (int idx = 0; stream_infos[idx].name != 0; ++idx) {
         qDebug("%s: %d", stream_infos[idx].name, stream_infos[idx].index);
-        if (stream_infos[idx].index < 0 || !(stream = format_context->streams[idx])) {
+        if (stream_infos[idx].index < 0 || !(stream = format_context->streams[stream_infos[idx].index])) {
             qDebug("stream not available: index = %d, stream = %p", stream_infos[idx].index, stream);
             continue;
         }
-        //why not fixed for video without audio?
-        //qDebug("[AVStream::start_time = %lld]", stream->start_time);
+        qDebug("[AVStream::start_time = %lld]", stream->start_time);
         AVCodecContext *ctx = stream_infos[idx].ctx;
         if (ctx) {
             qDebug("[AVCodecContext::time_base = %d / %d = %f]", ctx->time_base.num, ctx->time_base.den, av_q2d(ctx->time_base));
         }
-        ////why avg_frame_rate is not fixed for the same video?
-        //qDebug("[AVStream::avg_frame_rate = %d / %d = %f]", stream->avg_frame_rate.num, stream->avg_frame_rate.den, av_q2d(stream->avg_frame_rate));
-        //qDebug("[AVStream::time_base = %d / %d = %f]", stream->time_base.num, stream->time_base.den, av_q2d(stream->time_base));
+        qDebug("[AVStream::avg_frame_rate = %d / %d = %f]", stream->avg_frame_rate.num, stream->avg_frame_rate.den, av_q2d(stream->avg_frame_rate));
+        qDebug("[AVStream::time_base = %d / %d = %f]", stream->time_base.num, stream->time_base.den, av_q2d(stream->time_base));
     }
 
 }
