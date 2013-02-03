@@ -44,6 +44,7 @@ private:
     int timer_id;
     QtAV::AVClock *clock;
     QList<QtAV::AVPlayer*> players;
+    QWidget *view;
 };
 
 #endif // QTAV_VIDEOWALL_H

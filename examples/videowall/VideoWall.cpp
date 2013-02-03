@@ -28,10 +28,17 @@ using namespace QtAV;
 const int kSyncInterval = 2000;
 
 VideoWall::VideoWall(QObject *parent) :
-    QObject(parent),r(3),c(3)
+    QObject(parent),r(3),c(3),view(0)
 {
     clock = new AVClock(this);
     clock->setClockType(AVClock::ExternalClock);
+    //view = new QWidget;
+    if (view) {
+        qDebug("WA_OpaquePaintEvent=%d", view->testAttribute(Qt::WA_OpaquePaintEvent));
+        view->resize(qApp->desktop()->size());
+        view->move(QPoint(0, 0));
+        view->show();
+    }
 }
 
 VideoWall::~VideoWall()
@@ -49,6 +56,7 @@ VideoWall::~VideoWall()
         }
         players.clear();
     }
+    delete view;
 }
 
 void VideoWall::setRows(int n)
@@ -88,11 +96,11 @@ void VideoWall::show()
     }
     qDebug("show wall: %d x %d", r, c);
 
-    int w = qApp->desktop()->width()/c;
-    int h = qApp->desktop()->height()/r;
+    int w = view ? view->frameGeometry().width()/c : qApp->desktop()->width()/c;
+    int h = view ? view->frameGeometry().height()/r : qApp->desktop()->height()/r;
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
-            WidgetRenderer* renderer = new WidgetRenderer;
+            WidgetRenderer* renderer = new WidgetRenderer(view);
             renderer->setWindowFlags(Qt::FramelessWindowHint);
             renderer->resize(w, h);
             renderer->move(j*w, i*h);
@@ -197,6 +205,8 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
                 foreach (AVPlayer* player, players) {
                     player->load(file);
                 }
+                clock->reset();
+                clock->start();
                 foreach (AVPlayer* player, players) {
                     player->play();
                 }
@@ -246,7 +256,6 @@ void VideoWall::timerEvent(QTimerEvent *e)
         qDebug("clock not running");
         return;
     }
-    qDebug("timerEvent....");
     foreach (AVPlayer *player, players) {
         player->masterClock()->updateExternalClock(*clock);
     }
