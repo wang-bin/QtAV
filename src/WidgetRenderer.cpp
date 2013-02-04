@@ -29,6 +29,7 @@ namespace QtAV {
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     QWidget(parent, f),ImageRenderer(*new WidgetRendererPrivate())
 {
+    setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     setAutoFillBackground(false);
 }

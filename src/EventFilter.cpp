@@ -22,6 +22,7 @@
 
 #include <QtAV/EventFilter.h>
 #include <QApplication>
+#include <QtCore/QUrl>
 #include <QEvent>
 #include <QFileDialog>
 #include <QKeyEvent>
@@ -158,6 +159,21 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         }
         break;
     }
+    case QEvent::DragEnter:
+    case QEvent::DragMove: {
+        QDropEvent *e = static_cast<QDropEvent*>(event);
+        e->acceptProposedAction();
+    }
+        break;
+    case QEvent::Drop: {
+        QDropEvent *e = static_cast<QDropEvent*>(event);
+        QString path = e->mimeData()->urls().first().toLocalFile();
+        player->stop();
+        player->load(path);
+        player->play();
+        e->acceptProposedAction();
+    }
+        break;
     default:
         return false;
     }
