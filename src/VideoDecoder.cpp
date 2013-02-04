@@ -27,11 +27,7 @@
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QSize>
 
-#if CONFIG_EZX
-#define PIX_FMT PIX_FMT_BGR565
-#else
 #define PIX_FMT PIX_FMT_RGB32 //PIX_FMT_YUV420P
-#endif //CONFIG_EZX
 
 namespace QtAV {
 
@@ -41,7 +37,7 @@ public:
     VideoDecoderPrivate():width(0),height(0)
     {
         conv = new ImageConverterFF(); //TODO: set in AVPlayer
-        conv->setOutFormat(PIX_FMT_RGB32);
+        conv->setOutFormat(PIX_FMT);
     }
     ~VideoDecoderPrivate() {
         if (conv) {

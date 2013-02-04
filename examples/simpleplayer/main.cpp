@@ -19,12 +19,7 @@
 ******************************************************************************/
 #include <cstdio>
 #include <cstdlib>
-#if CONFIG_EZX
-#include <ZApplication.h>
-#else
-#include <qapplication.h>
-typedef QApplication ZApplication;
-#endif //CONFIG_EZX
+#include <QApplication>
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -75,7 +70,7 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 
 int main(int argc, char *argv[])
 {
-	ZApplication a(argc, argv);
+    QApplication a(argc, argv);
 
     log = fopen("log.txt", "w+");
     if (!log) {

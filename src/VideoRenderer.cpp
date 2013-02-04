@@ -24,12 +24,6 @@
 #include <private/VideoRenderer_p.h>
 #include <QtCore/QCoreApplication>
 
-/*!
-    EZX:
-    PIX_FMT_BGR565, 16bpp,
-    PIX_FMT_RGB18,  18bpp,
-*/
-
 namespace QtAV {
 
 VideoRenderer::VideoRenderer()

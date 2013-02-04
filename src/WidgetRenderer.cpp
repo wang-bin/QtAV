@@ -24,18 +24,12 @@
 #include <qfont.h>
 #include <qevent.h>
 #include <qpainter.h>
-#if CONFIG_EZX
-#include <qwallpaper.h>
-#endif //CONFIG_EZX
 
 namespace QtAV {
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     QWidget(parent, f),ImageRenderer(*new WidgetRendererPrivate())
 {
     setFocusPolicy(Qt::StrongFocus);
-#if CONFIG_EZX
-    QWallpaper::setAppWallpaperMode(QWallpaper::Off);
-#endif
     setAutoFillBackground(false);
 }
 
@@ -50,19 +44,7 @@ WidgetRenderer::~WidgetRenderer()
 
 bool WidgetRenderer::write()
 {
-#if CONFIG_EZX
-    QPixmap pix;
-    pix.convertFromImage(d_func().image);
-    //QPainter v_p(&pix);
-#else
-    //QPainter v_p(&image);
-#endif //CONFIG_EZX
-
-#if CONFIG_EZX
-    bitBlt(this, QPoint(), &pix);
-#else
     update();
-#endif
 	return true;
 }
 
@@ -117,11 +99,7 @@ void WidgetRenderer::mouseMoveEvent(QMouseEvent *e)
         resize(w, h);
         break;
     }
-#if CONFIG_EZX
-    repaint(false);
-#else
     repaint();
-#endif
 }
 
 void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
@@ -133,7 +111,6 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
         d.action = GestureMove;
 }
 
-#if !CONFIG_EZX
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
@@ -168,12 +145,4 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
     }
 }
 
-void WidgetRenderer::dragEnterEvent(QDragEnterEvent *)
-{
-}
-
-void WidgetRenderer::dropEvent(QDropEvent *)
-{
-}
-#endif //CONFIG_EZX
 } //namespace QtAV
