@@ -31,14 +31,11 @@
 
 namespace QtAV {
 
-const double kSyncThreshold = 0.005; // 5 ms
-
 class VideoThreadPrivate : public AVThreadPrivate
 {
 public:
-    VideoThreadPrivate():conv(0),delay(0),capture(0){}
+    VideoThreadPrivate():conv(0),capture(0){}
     ImageConverter *conv;
-    double delay;
     double pts; //current decoded pts. for capture
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;

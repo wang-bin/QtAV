@@ -32,6 +32,8 @@
 
 namespace QtAV {
 
+const double kSyncThreshold = 0.005; // 5 ms
+
 class AVDecoder;
 class Packet;
 class AVClock;
@@ -39,7 +41,7 @@ class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
     AVThreadPrivate():paused(false),demux_end(false),stop(false),clock(0)
-      ,dec(0),writer(0) {
+      ,dec(0),writer(0),delay(0) {
     }
     //DO NOT delete dec and writer. We do not own them
     virtual ~AVThreadPrivate() {}
@@ -53,6 +55,7 @@ public:
     AVOutput *writer;
     QMutex mutex;
     QWaitCondition cond; //pause
+    qreal delay;
 };
 
 } //namespace QtAV

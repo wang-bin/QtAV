@@ -52,7 +52,6 @@ AudioThread::AudioThread(QObject *parent)
 /*
  *TODO:
  * if output is null or dummy, the use duration to wait
- * if using external clock, keep the same with video thread
  */
 void AudioThread::run()
 {
@@ -69,7 +68,8 @@ void AudioThread::run()
     int csf = channels * sample_rate * sizeof(float);
     static const double max_len = 0.02;
     d.last_pts = 0;
-    //bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
+    //TODO: bool need_sync in private class
+    bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -90,7 +90,34 @@ void AudioThread::run()
             dec->flush();
             continue;
         }
-        d.clock->updateValue(pkt.pts);
+        if (is_external_clock) {
+            d.delay = pkt.pts  - d.clock->value();
+            /*
+             *after seeking forward, a packet may be the old, v packet may be
+             *the new packet, then the d.delay is very large, omit it.
+             *TODO: 1. how to choose the value
+             * 2. use last delay when seeking
+            */
+            if (qAbs(d.delay) < 2.718) {
+                if (d.delay > kSyncThreshold) { //Slow down
+                    //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
+                    //qDebug("~~~~~wating for %f msecs", d.delay*1000);
+                    usleep(d.delay * 1000000);
+                } else if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
+                    //continue;
+                }
+            } else { //when to drop off?
+                qDebug("delay %f/%f", d.delay, d.clock->value());
+                if (d.delay > 0) {
+                    msleep(64);
+                } else {
+                    //audio packet not cleaned up?
+                    continue;
+                }
+            }
+        } else {
+            d.clock->updateValue(pkt.pts);
+        }
         //DO NOT decode and convert if ao is not available or mute!
         if (dec->decode(pkt.data)) {
             QByteArray decoded(dec->data());
