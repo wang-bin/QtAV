@@ -12,6 +12,9 @@ preparePaths($$OUT_PWD/../out)
 
 win32:RC_FILE = $${PROJECTROOT}/res/QtAV.rc
 OTHER_FILES += $$RC_FILE
+
+TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
+
 #src
 unix: SOURCES += 
 else:win32: SOURCES += 
@@ -29,6 +32,7 @@ HEADERS += QtAV/AOOpenAL.h \
 
 SOURCES += \
     QtAV_Compat.cpp \
+    QtAV_Global.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \

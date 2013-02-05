@@ -62,10 +62,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),loaded(false),capture_dir("capture"),_renderer(0),_audio(0)
   ,event_filter(0),video_capture(0)
 {
-    qDebug("QtAV %s\nCopyright (C) 2012-2013 Wang Bin (aka. Lucas Wang) <wbsecg1@gmail.com>"
-           "\nDistributed under LGPL v2.1 or later"
-           "\nShanghai University, Shanghai, China"
-           , QTAV_VERSION_STR_LONG);
+    qDebug("%s", aboutQtAV().toUtf8().constData());
     /*
      * call stop() before the window(_renderer) closed to stop the waitcondition
      * If close the _renderer widget, the the _renderer may destroy before waking up.
