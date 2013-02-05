@@ -330,7 +330,8 @@ void AVPlayer::play()
      * TODO: force load unseekable stream? avio.seekable. currently you
      * must setFile() agian to reload an unseekable stream
      */
-    if (!isLoaded()) { //if (!isLoaded() && !load())
+    //FIXME: seek(0) for audio without video crashes, why?
+    if (!isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
         if (!load())
             return;
     } else {
