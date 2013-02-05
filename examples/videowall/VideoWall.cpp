@@ -23,14 +23,18 @@
 #include <QDesktopWidget>
 #include <QEvent>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QKeyEvent>
+#include <QMenu>
+#include <QMessageBox>
+#include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
 
 using namespace QtAV;
 const int kSyncInterval = 2000;
 
 VideoWall::VideoWall(QObject *parent) :
-    QObject(parent),r(3),c(3),view(0)
+    QObject(parent),r(3),c(3),view(0),menu(0)
 {
     clock = new AVClock(this);
     clock->setClockType(AVClock::ExternalClock);
@@ -45,6 +49,10 @@ VideoWall::VideoWall(QObject *parent) :
 
 VideoWall::~VideoWall()
 {
+    if (menu) {
+        delete menu;
+        menu = 0;
+    }
     if (!players.isEmpty()) {
         foreach (AVPlayer *player, players) {
             player->stop();
@@ -129,6 +137,70 @@ void VideoWall::play(const QString &file)
     timer_id = startTimer(kSyncInterval);
 }
 
+void VideoWall::stop()
+{
+    clock->reset();
+    killTimer(timer_id);
+    foreach (AVPlayer* player, players) {
+        player->stop(); //check playing?
+    }
+}
+
+void VideoWall::openLocalFile()
+{
+    QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
+    if (file.isEmpty())
+        return;
+
+    foreach (AVPlayer* player, players) {
+        player->load(file);
+    }
+    clock->reset();
+    clock->start();
+    timer_id = startTimer(kSyncInterval);
+    foreach (AVPlayer* player, players) {
+        player->play();
+    }
+}
+
+void VideoWall::openUrl()
+{
+    QString url = QInputDialog::getText(0, tr("Open an url"), tr("Url"));
+    if (url.isEmpty())
+        return;
+    foreach (AVPlayer* player, players) {
+        player->load(url);
+    }
+    clock->reset();
+    clock->start();
+    timer_id = startTimer(kSyncInterval);
+    foreach (AVPlayer* player, players) {
+        player->play();
+    }
+}
+
+void VideoWall::about()
+{
+    QMessageBox::about(0, tr("About QtAV"), tr("This is a demo for playing and synchronising multiple players")
+                       + "\n\n"
+                       + aboutQtAV());
+}
+
+void VideoWall::help()
+{
+    QMessageBox::about(0, tr("Help"),
+            "Command line: %1 [-r rows=3] [-c cols=3] path/of/video\n"
+       + tr("Drag and drop a file to player\n")
+       + tr("Shortcut:\n"
+            "Space: pause/continue\n"
+            "N: show next frame. Continue the playing by pressing 'Space'\n"
+            "O: open a file\n"
+            "P: replay\n"
+            "S: stop\n"
+            "M: mute on/off\n"
+            "Up/Down: volume +/-\n"
+            "->/<-: seek forward/backward\n"));
+}
 
 bool VideoWall::eventFilter(QObject *watched, QEvent *event)
 {
@@ -157,11 +229,7 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
             timer_id = startTimer(kSyncInterval);
             break;
         case Qt::Key_S:
-            clock->reset();
-            killTimer(timer_id);
-            foreach (AVPlayer* player, players) {
-                player->stop(); //check playing?
-            }
+            stop();
             break;
         case Qt::Key_Space: //check playing?
             clock->pause(!clock->isActive());
@@ -200,21 +268,7 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
 
             break;
         case Qt::Key_O:
-        {
-            //TODO: emit a signal so we can use custome dialogs
-            QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
-            if (!file.isEmpty()) {
-                foreach (AVPlayer* player, players) {
-                    player->load(file);
-                }
-                clock->reset();
-                clock->start();
-                foreach (AVPlayer* player, players) {
-                    player->play();
-                }
-                timer_id = startTimer(kSyncInterval);
-            }
-        }
+            openLocalFile();
             break;
         case Qt::Key_Left:
             qDebug("<-");
@@ -242,6 +296,35 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
         }
         break;
     }
+    case QEvent::ContextMenu: {
+        QContextMenuEvent *e = static_cast<QContextMenuEvent*>(event);
+        if (!menu) {
+            menu = new QMenu();
+            menu->addAction(tr("Open"), this, SLOT(openLocalFile()));
+            menu->addAction(tr("Open Url"), this, SLOT(openUrl()));
+            menu->addSeparator();
+            menu->addAction(tr("About"), this, SLOT(about()));
+            menu->addAction(tr("Help"), this, SLOT(help()));
+            menu->addSeparator();
+            menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
+        }
+        menu->popup(e->globalPos());
+        menu->exec();
+    }
+    case QEvent::DragEnter:
+    case QEvent::DragMove: {
+        QDropEvent *e = static_cast<QDropEvent*>(event);
+        e->acceptProposedAction();
+    }
+        break;
+    case QEvent::Drop: {
+        QDropEvent *e = static_cast<QDropEvent*>(event);
+        QString path = e->mimeData()->urls().first().toLocalFile();
+        stop();
+        play(path);
+        e->acceptProposedAction();
+    }
+        break;
     default:
         return false;
     }

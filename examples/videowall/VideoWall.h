@@ -25,6 +25,7 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/WidgetRenderer.h>
 
+class QMenu;
 class VideoWall : public QObject
 {
     Q_OBJECT
@@ -38,6 +39,13 @@ public:
     void show();
     void play(const QString& file);
 
+public slots:
+    void stop();
+    void openLocalFile();
+    void openUrl();
+    void about();
+    void help();
+
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
     virtual void timerEvent(QTimerEvent *e);
@@ -47,6 +55,7 @@ private:
     QtAV::AVClock *clock;
     QList<QtAV::AVPlayer*> players;
     QWidget *view;
+    QMenu *menu;
 };
 
 #endif // QTAV_VIDEOWALL_H

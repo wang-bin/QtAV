@@ -28,6 +28,7 @@
  */
 #include <QtCore/QObject>
 
+class QMenu;
 namespace QtAV {
 
 //for internal use
@@ -37,8 +38,18 @@ class EventFilter : public QObject
 public:
     explicit EventFilter(QObject *parent = 0);
     virtual ~EventFilter();
+
+public slots:
+    void openLocalFile();
+    void openUrl();
+    void about();
+    void help();
+
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
+
+private:
+    QMenu *menu;
 };
 
 } //namespace QtAV

@@ -104,19 +104,6 @@ int main(int argc, char *argv[])
     QString fileName;
 	if (argc > 1)
 		fileName = a.arguments().at(1);
-	else
-        QMessageBox::warning(0, "Usage", QString("Command line: %1 path/of/video\nPress \"O\" to open a file").arg(qApp->arguments().at(0))
-                + "Shortcut:\n"
-                "Space: pause/continue\n"
-                "F: fullscreen on/off\n"
-                "T: stays on top on/off\n"
-                "N: show next frame. Continue the playing by pressing 'Space'\n"
-                "O: open a file\n"
-                "P: replay\n"
-                "S: stop\n"
-                "M: mute on/off\n"
-                "Up/Down: volume +/-\n"
-                "->/<-: seek forward/backward\n");
 
 	AVPlayer player;
 	player.setRenderer(&renderer);

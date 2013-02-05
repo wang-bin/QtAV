@@ -25,7 +25,10 @@
 #include <QtCore/QUrl>
 #include <QEvent>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QKeyEvent>
+#include <QMenu>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
@@ -33,12 +36,55 @@
 namespace QtAV {
 
 EventFilter::EventFilter(QObject *parent) :
-    QObject(parent)
+    QObject(parent),menu(0)
 {
 }
 
 EventFilter::~EventFilter()
 {
+    if (menu) {
+        delete menu;
+        menu = 0;
+    }
+}
+
+void EventFilter::openLocalFile()
+{
+    QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
+    if (file.isEmpty())
+        return;
+    AVPlayer *player = static_cast<AVPlayer*>(parent());
+    player->play(file);
+}
+
+void EventFilter::openUrl()
+{
+    QString url = QInputDialog::getText(0, tr("Open an url"), tr("Url"));
+    if (url.isEmpty())
+        return;
+    AVPlayer *player = static_cast<AVPlayer*>(parent());
+    player->play(url);
+}
+
+void EventFilter::about()
+{
+    QMessageBox::about(0, tr("About QtAV"), aboutQtAV());
+}
+
+void EventFilter::help()
+{
+    QMessageBox::about(0, tr("Help"), tr("Drag and drop a file to player\n")
+       + tr("Shortcut:\n"
+            "Space: pause/continue\n"
+            "F: fullscreen on/off\n"
+            "T: stays on top on/off\n"
+            "N: show next frame. Continue the playing by pressing 'Space'\n"
+            "O: open a file\n"
+            "P: replay\n"
+            "S: stop\n"
+            "M: mute on/off\n"
+            "Up/Down: volume +/-\n"
+            "->/<-: seek forward/backward\n"));
 }
 
 //TODO: single player event filter
@@ -118,12 +164,9 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                 qDebug("vol = %.3f", player->audio()->volume());
             }
             break;
-        case Qt::Key_O: {
-            //TODO: emit a signal so we can use custome dialogs
-            QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
-            if (!file.isEmpty())
-                player->play(file);
-        }
+        case Qt::Key_O:
+            //TODO: emit a signal so we can use custome dialogs?
+            openLocalFile();
             break;
         case Qt::Key_Left:
             qDebug("<-");
@@ -154,6 +197,9 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             w->show();
         }
             break;
+        case Qt::Key_F1:
+            help();
+            break;
         default:
             return false;
         }
@@ -174,6 +220,21 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         e->acceptProposedAction();
     }
         break;
+    case QEvent::ContextMenu: {
+        QContextMenuEvent *e = static_cast<QContextMenuEvent*>(event);
+        if (!menu) {
+            menu = new QMenu();
+            menu->addAction(tr("Open"), this, SLOT(openLocalFile()));
+            menu->addAction(tr("Open Url"), this, SLOT(openUrl()));
+            menu->addSeparator();
+            menu->addAction(tr("About"), this, SLOT(about()));
+            menu->addAction(tr("Help"), this, SLOT(help()));
+            menu->addSeparator();
+            menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
+        }
+        menu->popup(e->globalPos());
+        menu->exec();
+    }
     default:
         return false;
     }
