@@ -151,7 +151,7 @@ void VideoWall::openLocalFile()
     QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
     if (file.isEmpty())
         return;
-
+    stop();
     foreach (AVPlayer* player, players) {
         player->load(file);
     }
@@ -168,6 +168,7 @@ void VideoWall::openUrl()
     QString url = QInputDialog::getText(0, tr("Open an url"), tr("Url"));
     if (url.isEmpty())
         return;
+    stop();
     foreach (AVPlayer* player, players) {
         player->load(url);
     }
