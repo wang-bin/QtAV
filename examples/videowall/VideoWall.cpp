@@ -190,17 +190,18 @@ void VideoWall::about()
 void VideoWall::help()
 {
     QMessageBox::about(0, tr("Help"),
-            "Command line: %1 [-r rows=3] [-c cols=3] path/of/video\n"
-       + tr("Drag and drop a file to player\n")
-       + tr("Shortcut:\n"
-            "Space: pause/continue\n"
-            "N: show next frame. Continue the playing by pressing 'Space'\n"
-            "O: open a file\n"
-            "P: replay\n"
-            "S: stop\n"
-            "M: mute on/off\n"
-            "Up/Down: volume +/-\n"
-            "->/<-: seek forward/backward\n"));
+                        "Command line: %1 [-r rows=3] [-c cols=3] path/of/video\n"
+                       + tr("Drag and drop a file to player\n")
+                       + tr("Shortcut:\n")
+                       + tr("Space: pause/continue\n")
+                       + tr("N: show next frame. Continue the playing by pressing 'Space'\n")
+                       + tr("O: open a file\n")
+                       + tr("P: replay\n")
+                       + tr("S: stop\n")
+                       + tr("M: mute on/off\n")
+                       + tr("C: capture video")
+                       + tr("Up/Down: volume +/-\n")
+                       + tr("->/<-: seek forward/backward\n"));
 }
 
 bool VideoWall::eventFilter(QObject *watched, QEvent *event)

@@ -24,6 +24,8 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QMessageBox>
+#include <QtCore/QLocale>
+#include <QtCore/QTranslator>
 #include <QtOpenGL/QGLWidget>
 
 #include <QtAV/AVPlayer.h>
@@ -71,6 +73,12 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    QTranslator ts;
+    if (ts.load("i18n/QtAV_" + QLocale::system().name()))
+        a.installTranslator(&ts);
+    QTranslator qtts;
+    if (qtts.load("qt_" + QLocale::system().name()))
+        a.installTranslator(&qtts);
 
     log = fopen("log.txt", "w+");
     if (!log) {

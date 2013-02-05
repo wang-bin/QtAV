@@ -74,17 +74,18 @@ void EventFilter::about()
 void EventFilter::help()
 {
     QMessageBox::about(0, tr("Help"), tr("Drag and drop a file to player\n")
-       + tr("Shortcut:\n"
-            "Space: pause/continue\n"
-            "F: fullscreen on/off\n"
-            "T: stays on top on/off\n"
-            "N: show next frame. Continue the playing by pressing 'Space'\n"
-            "O: open a file\n"
-            "P: replay\n"
-            "S: stop\n"
-            "M: mute on/off\n"
-            "Up/Down: volume +/-\n"
-            "->/<-: seek forward/backward\n"));
+                                   + tr("Shortcut:\n")
+                                   + tr("Space: pause/continue\n")
+                                   + tr("F: fullscreen on/off\n")
+                                   + tr("T: stays on top on/off\n")
+                                   + tr("N: show next frame. Continue the playing by pressing 'Space'\n")
+                                   + tr("O: open a file\n")
+                                   + tr("P: replay\n")
+                                   + tr("S: stop\n")
+                                   + tr("M: mute on/off\n")
+                                   + tr("C: capture video")
+                                   + tr("Up/Down: volume +/-\n")
+                                   + tr("->/<-: seek forward/backward\n"));
 }
 
 //TODO: single player event filter
@@ -232,8 +233,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             menu->addSeparator();
             menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
         }
-        menu->popup(e->globalPos());
-        menu->exec();
+        menu->exec(e->globalPos());
     }
     default:
         return false;
