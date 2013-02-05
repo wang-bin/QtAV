@@ -182,9 +182,9 @@ void VideoWall::openUrl()
 
 void VideoWall::about()
 {
-    QMessageBox::about(0, tr("About QtAV"), tr("This is a demo for playing and synchronising multiple players")
+    QMessageBox::about(0, tr("About QtAV"), "<h3>" + tr("This is a demo for playing and synchronising multiple players") + "</h3>"
                        + "\n\n"
-                       + aboutQtAV());
+                       + aboutQtAV_HTML());
 }
 
 void VideoWall::help()

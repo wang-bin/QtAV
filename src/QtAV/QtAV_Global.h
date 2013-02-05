@@ -66,6 +66,7 @@ static const char* const qtav_version_string = TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_
 
 namespace QtAV {
 Q_EXPORT QString aboutQtAV();
+Q_EXPORT QString aboutQtAV_HTML();
 }
 
 //TODO: always inline

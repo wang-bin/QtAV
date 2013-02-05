@@ -77,7 +77,7 @@
         <location filename="../src/EventFilter.cpp" line="79"/>
         <source>F: fullscreen on/off
 </source>
-        <translation>F: fullscreen on/off
+        <translation>F: 全屏开关
 </translation>
     </message>
     <message>
@@ -112,7 +112,8 @@
         <location filename="../src/EventFilter.cpp" line="84"/>
         <source>S: stop
 </source>
-        <translation>S: 停止播放</translation>
+        <translation>S: 停止播放
+</translation>
     </message>
     <message>
         <location filename="../src/EventFilter.cpp" line="85"/>
@@ -124,7 +125,8 @@
     <message>
         <location filename="../src/EventFilter.cpp" line="86"/>
         <source>C: capture video</source>
-        <translation>C: 视频截图</translation>
+        <translation>C: 视频截图
+</translation>
     </message>
     <message>
         <location filename="../src/EventFilter.cpp" line="87"/>

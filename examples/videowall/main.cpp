@@ -44,16 +44,7 @@ int main(int argc, char *argv[])
     if (QFile(file).exists()) {
         wall.play(file);
     } else {
-        QMessageBox::warning(0, "Usage", QString("Command line: %1 [-r rows=3] [-c cols=3] path/of/video\nPress \"O\" to open a file").arg(qApp->arguments().at(0))
-                + "Shortcut:\n"
-                "Space: pause/continue\n"
-                "N: show next frame. Continue the playing by pressing 'Space'\n"
-                "O: open a file\n"
-                "P: replay\n"
-                "S: stop\n"
-                "M: mute on/off\n"
-                "Up/Down: volume +/-\n"
-                "->/<-: seek forward/backward\n");
+        wall.help();
     }
     return a.exec();
 }

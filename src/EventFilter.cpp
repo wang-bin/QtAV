@@ -68,27 +68,27 @@ void EventFilter::openUrl()
 
 void EventFilter::about()
 {
-    QMessageBox::about(0, tr("About QtAV"), aboutQtAV());
+    QMessageBox::about(0, tr("About QtAV"), aboutQtAV_HTML());
 }
 
 void EventFilter::help()
 {
-    QMessageBox::about(0, tr("Help"), tr("Drag and drop a file to player\n")
-                                   + tr("Shortcut:\n")
-                                   + tr("Space: pause/continue\n")
-                                   + tr("F: fullscreen on/off\n")
-                                   + tr("T: stays on top on/off\n")
-                                   + tr("N: show next frame. Continue the playing by pressing 'Space'\n")
-                                   + tr("O: open a file\n")
-                                   + tr("P: replay\n")
-                                   + tr("S: stop\n")
-                                   + tr("M: mute on/off\n")
-                                   + tr("C: capture video")
-                                   + tr("Up/Down: volume +/-\n")
-                                   + tr("->/<-: seek forward/backward\n"));
+    static QString help = "<h4>" +tr("Drag and drop a file to player\n") + "</h4>"
+                       "<p>" + tr("Shortcut:\n") + "</p>"
+                       "<p>" + tr("Space: pause/continue\n") + "</p>"
+                       "<p>" + tr("F: fullscreen on/off\n") + "</p>"
+                       "<p>" + tr("T: stays on top on/off\n") + "</p>"
+                       "<p>" + tr("N: show next frame. Continue the playing by pressing 'Space'\n") + "</p>"
+                       "<p>" + tr("O: open a file\n") + "</p>"
+                       "<p>" + tr("P: replay\n") + "</p>"
+                       "<p>" + tr("S: stop\n") + "</p>"
+                       "<p>" + tr("M: mute on/off\n") + "</p>"
+                       "<p>" + tr("C: capture video") + "</p>"
+                       "<p>" + tr("Up/Down: volume +/-\n") + "</p>"
+                       "<p>" + tr("->/<-: seek forward/backward\n");
+    QMessageBox::about(0, tr("Help"), help);
 }
 
-//TODO: single player event filter
 bool EventFilter::eventFilter(QObject *watched, QEvent *event)
 {
     //qDebug("EventFilter::eventFilter to %p", watched);
