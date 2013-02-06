@@ -85,7 +85,7 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
             painter->drawImage(boundingRect(), d.preview);
     } else {
         d.preview = QImage(videoSize(), QImage::Format_RGB32);
-        d.preview.fill(QColor(Qt::black));
+        d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
         painter->drawImage(QPointF(), d.preview);
     }
     if (!d.scale_in_qt) {
