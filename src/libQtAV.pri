@@ -49,7 +49,7 @@ NAME = QtAV
 #!isEmpty(LIBQTAV_PRI_INCLUDED):error("libQtAV.pri already included")
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
-LIB_VERSION = 1.1.7 #0.x.y may be wrong for dll
+LIB_VERSION = 1.1.8 #0.x.y may be wrong for dll
 isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
 
 TEMPLATE += fakelib
@@ -107,7 +107,7 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 
 	#TEMPLATE = lib
 	VERSION = $$LIB_VERSION
-	TARGET = $$PROJECT_TARGETNAME
+        #TARGET = $$PROJECT_TARGETNAME ##?
 	DESTDIR= $$PROJECT_LIBDIR
 
 	CONFIG *= create_prl #

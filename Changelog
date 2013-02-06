@@ -1,3 +1,14 @@
+version 1.1.8    2013-02-06
+
+- LGPL version 2.1
+- better Qt5 support
+- better synchronisation and seeking
+- crash fixed when getting stream info
+- crash fixed when replaying a music
+- drag & drop, simple internal gui and internal event filter
+- videowall works better
+
+
 version 1.1.7    2013-01-30
 
 - scale image without qt support!
