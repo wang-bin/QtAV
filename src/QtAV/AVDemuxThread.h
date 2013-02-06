@@ -58,13 +58,13 @@ protected:
     bool tryPause();
 
 private:
-    bool paused;
+    bool paused, seeking;
     volatile bool end;
     AVDemuxer *demuxer;
     AVThread *audio_thread, *video_thread;
     int audio_stream, video_stream;
     QMutex buffer_mutex;
-    QWaitCondition cond;
+    QWaitCondition cond, seek_cond;
 };
 
 } //namespace QtAV
