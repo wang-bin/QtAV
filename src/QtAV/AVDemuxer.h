@@ -92,6 +92,32 @@ public:
     QString videoCodecName() const;
     QString videoCodecLongName() const;
 
+    /**
+     * @brief getInterruptTimeout return the interrupt timeout
+     * @return
+     */
+    qint64 getInterruptTimeout() const;
+
+    /**
+     * @brief setInterruptTimeout set the interrupt timeout
+     * @param timeout
+     * @return
+     */
+    qint64 setInterruptTimeout(qint64 timeout);
+
+    /**
+     * @brief getInterruptStatus return the interrupt status
+     * @return
+     */
+    int getInterruptStatus() const;
+
+    /**
+     * @brief setInterruptStatus set the interrupt status
+     * @param interrupt
+     * @return
+     */
+    int setInterruptStatus(int interrupt);
+
 signals:
     /*emit when the first frame is read*/
     void started();
@@ -116,6 +142,22 @@ private:
     QMutex mutex; //for seek and readFrame
 	AVClock *master_clock;
     QElapsedTimer seek_timer;
+
+    /**
+     * interrupt callback for ffmpeg
+     * @param void*obj: actual object
+     * @return
+     *  >0 interrupt ffmpeg loop!
+     */
+    static int __interrupt_cb(void *obj);
+    // timer for interrupt timeout
+    QElapsedTimer __interrupt_timer;
+    //interrupt timeout
+    qint64 __interrupt_timeout;
+
+    //interrupt status
+    int __interrupt_status;
+
 };
 
 } //namespace QtAV
