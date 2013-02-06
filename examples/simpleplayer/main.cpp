@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     if (qtts.load("qt_" + QLocale::system().name()))
         a.installTranslator(&qtts);
 
-    log = fopen(qApp->applicationDirPath() + "/log.txt", "w+");
+    log = fopen(QString(qApp->applicationDirPath() + "/log.txt").toUtf8().constData(), "w+");
     if (!log) {
         qWarning("Failed to open log file");
         log = stdout;
