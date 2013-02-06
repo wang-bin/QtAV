@@ -74,13 +74,13 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     QTranslator ts;
-    if (ts.load("i18n/QtAV_" + QLocale::system().name()))
+    if (ts.load(qApp->applicationDirPath() + "/i18n/QtAV_" + QLocale::system().name()))
         a.installTranslator(&ts);
     QTranslator qtts;
     if (qtts.load("qt_" + QLocale::system().name()))
         a.installTranslator(&qtts);
 
-    log = fopen("log.txt", "w+");
+    log = fopen(qApp->applicationDirPath() + "/log.txt", "w+");
     if (!log) {
         qWarning("Failed to open log file");
         log = stdout;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 		fileName = a.arguments().at(1);
 
 	AVPlayer player;
-	player.setRenderer(&renderer);
+    player.setRenderer(&renderer);
     if (!fileName.isEmpty()) {
         player.play(fileName);
     }
