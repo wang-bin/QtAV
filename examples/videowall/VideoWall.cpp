@@ -27,6 +27,7 @@
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
 

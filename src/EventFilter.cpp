@@ -29,6 +29,7 @@
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
@@ -222,6 +223,10 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
     }
         break;
     case QEvent::ContextMenu: {
+        int dp = (int*)player->renderer() - (int*)watched;
+        qDebug("@@@@@@@@renderer - watched=%d, %s", dp, watched->metaObject()->className());
+        //if (dp != 0 && dp != 0x5)
+        //    return true;
         QContextMenuEvent *e = static_cast<QContextMenuEvent*>(event);
         if (!menu) {
             menu = new QMenu();
