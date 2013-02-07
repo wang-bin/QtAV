@@ -24,6 +24,7 @@
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QThread>
+#include <QtCore/QCoreApplication>
 
 namespace QtAV {
 
@@ -33,6 +34,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     ,ipts(0),stream_idx(-1),audio_stream(-2),video_stream(-2)
     ,subtitle_stream(-2),_is_input(true),format_context(0)
 	,a_codec_context(0),v_codec_context(0),_file_name(fileName),master_clock(0)
+    ,__interrupt_status(0)
 {
     av_register_all();
     avformat_network_init();
@@ -61,9 +63,9 @@ AVDemuxer::~AVDemuxer()
  *  >0 Interruzione loop di ffmpeg!
 */
 int AVDemuxer::__interrupt_cb(void *obj){
-    int ret,lock,intr;
+    int ret = 0;
     AVDemuxer* demuxer;
-    //
+    //qApp->processEvents();
     if (!obj){
         qWarning("Passed Null object!");
         return(-1);
@@ -72,16 +74,13 @@ int AVDemuxer::__interrupt_cb(void *obj){
     //qDebug("Timer:%lld, timeout:%lld\n",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
 
     //check manual interruption
-    if (demuxer->__interrupt_status > 0){
+    if (demuxer->__interrupt_status > 0) {
         qDebug("User Interrupt: -> quit!");
         ret = 1;//interrupt
-    }
-    else if((demuxer->__interrupt_timer.isValid()) && (demuxer->__interrupt_timer.hasExpired(demuxer->__interrupt_timeout)) ) {
+    } else if((demuxer->__interrupt_timer.isValid()) && (demuxer->__interrupt_timer.hasExpired(demuxer->__interrupt_timeout)) ) {
         qDebug("Timeout expired: %lld/%lld -> quit!",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
         ret = 1;//interrupt
     }
-    else
-        ret = 0;
 
     //qDebug(" END ret:%d\n",ret);
     return(ret);
@@ -179,6 +178,7 @@ bool AVDemuxer::close()
     eof = false;
     stream_idx = -1;
     audio_stream = video_stream = subtitle_stream = -2;
+    __interrupt_status = 0;
     if (a_codec_context) {
         qDebug("closing a_codec_context");
         avcodec_close(a_codec_context);
@@ -216,8 +216,11 @@ void AVDemuxer::seek(qreal q)
         return;
     }
     if (seek_timer.isValid()) {
-        if (seek_timer.elapsed() < kSeekInterval)
+        //why sometimes seek_timer.elapsed() < 0
+        if (!seek_timer.hasExpired(kSeekInterval)) {
+            qDebug("seek too frequent. ignore");
             return;
+        }
         seek_timer.restart();
     } else {
         seek_timer.start();
