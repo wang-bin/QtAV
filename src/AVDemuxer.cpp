@@ -38,6 +38,10 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     avformat_network_init();
     if (!_file_name.isEmpty())
         loadFile(_file_name);
+
+    //default network timeout
+    __interrupt_timeout = QTAV_DEFAULT_NETWORK_TIMEOUT;
+
 }
 
 AVDemuxer::~AVDemuxer()
@@ -50,13 +54,52 @@ AVDemuxer::~AVDemuxer()
     avformat_network_deinit();
 }
 
+/*
+ * metodo per interruzione loop ffmpeg
+ * @param void*obj: classe attuale
+  * @return
+ *  >0 Interruzione loop di ffmpeg!
+*/
+int AVDemuxer::__interrupt_cb(void *obj){
+    int ret,lock,intr;
+    AVDemuxer* demuxer;
+    //
+    if (!obj){
+        qWarning("Passed Null object!");
+        return(-1);
+    }
+    demuxer = (AVDemuxer*)obj;
+    //qDebug("Timer:%lld, timeout:%lld\n",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
+
+    //check manual interruption
+    if (demuxer->__interrupt_status > 0){
+        qDebug("User Interrupt: -> quit!");
+        ret = 1;//interrupt
+    }
+    else if((demuxer->__interrupt_timer.isValid()) && (demuxer->__interrupt_timer.hasExpired(demuxer->__interrupt_timeout)) ) {
+        qDebug("Timeout expired: %lld/%lld -> quit!",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
+        ret = 1;//interrupt
+    }
+    else
+        ret = 0;
+
+    //qDebug(" END ret:%d\n",ret);
+    return(ret);
+}//AVDemuxer::__interrupt_cb()
+
 
 bool AVDemuxer::readFrame()
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     AVPacket packet;
+    //start timeout timer and timeout
+    __interrupt_timer.start();
+
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
+
+    //invalidate the timer
+    __interrupt_timer.invalidate();
 
     if (ret != 0) {
         if (ret == AVERROR_EOF) { //end of file. FIXME: why no eof if replaying by seek(0)?
@@ -272,7 +315,27 @@ bool AVDemuxer::loadFile(const QString &fileName)
     //deprecated
     // Open an input stream and read the header. The codecs are not opened.
     //if(av_open_input_file(&format_context, _file_name.toLocal8Bit().constData(), NULL, 0, NULL)) {
+
+    //alloc av format context
+    if(!format_context)
+        format_context = avformat_alloc_context();
+
+    //install interrupt callback
+    format_context->interrupt_callback.callback = __interrupt_cb;
+    format_context->interrupt_callback.opaque = this;
+
+    qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
+
+    //start timeout timer and timeout
+    __interrupt_timer.start();
+
     int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, NULL);
+
+    //invalidate the timer
+    __interrupt_timer.invalidate();
+
+    qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
+
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
         qWarning("Can't open video: %s", av_err2str(ret));
@@ -640,6 +703,44 @@ QString AVDemuxer::formatName(AVFormatContext *ctx, bool longName) const
         return longName ? ctx->iformat->long_name : ctx->iformat->name;
     else
         return longName ? ctx->oformat->long_name : ctx->oformat->name;
+}
+
+
+/**
+ * @brief getInterruptTimeout return the interrupt timeout
+ * @return
+ */
+qint64 AVDemuxer::getInterruptTimeout() const
+{
+    return __interrupt_timeout;
+}
+
+/**
+ * @brief setInterruptTimeout set the interrupt timeout
+ * @param timeout
+ * @return
+ */
+qint64 AVDemuxer::setInterruptTimeout(qint64 timeout)
+{
+    __interrupt_timeout = timeout;
+}
+
+/**
+ * @brief getInterruptStatus return the interrupt status
+ * @return
+ */
+int AVDemuxer::getInterruptStatus() const{
+    return(__interrupt_status);
+}
+
+/**
+ * @brief setInterruptStatus set the interrupt status
+ * @param interrupt
+ * @return
+ */
+int AVDemuxer::setInterruptStatus(int interrupt){
+    __interrupt_status = (interrupt>0) ? 1 : 0;
+    return(__interrupt_status);
 }
 
 } //namespace QtAV

@@ -62,13 +62,13 @@ static const char* const qtav_version_string = TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_
 #  undef Q_EXPORT
 #  define Q_EXPORT //Q_DECL_IMPORT //only for vc?
 #endif
-
+// default network timeout in ms
+#define QTAV_DEFAULT_NETWORK_TIMEOUT 30000
 
 namespace QtAV {
 Q_EXPORT QString aboutQtAV();
 Q_EXPORT QString aboutQtAV_HTML();
 }
-
 //TODO: always inline
 
 #endif // QTAV_GLOBAL_H
