@@ -30,16 +30,26 @@
 #define QTAV_MINOR 1	//((QTAV_VERSION&0xff00)>>8)
 #define QTAV_PATCH 8	//(QTAV_VERSION&0xff)
 
+
+#define QTAV_VERSION_MAJOR(V) ((V & 0xff0000) >> 16)
+#define QTAV_VERSION_MINOR(V) ((V & 0xff00) >> 8)
+#define QTAV_VERSION_PATCH(V) (V & 0xff)
+
 #define QTAV_VERSION_CHK(major, minor, patch) \
     (((major&0xff)<<16) | ((minor&0xff)<<8) | (patch&0xff))
 
-#define QTAV_VERSION VERSION_CHK(QTAV_MAJOR, QTAV_MINOR, QTAV_PATCH)
+#define QTAV_VERSION QTAV_VERSION_CHK(QTAV_MAJOR, QTAV_MINOR, QTAV_PATCH)
 
 /*! Stringify \a x. */
 #define _TOSTR(x)   #x
 /*! Stringify \a x, perform macro expansion. */
 #define TOSTR(x)  _TOSTR(x)
 
+
+/* runtime version. used to compare with compile time version */
+unsigned QtAV_Version();
+
+/* the following are compile time version */
 /* C++11 requires a space between literal and identifier */
 static const char* const qtav_version_string = TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_MINOR) "." TOSTR(QTAV_PATCH) "(" __DATE__ ", " __TIME__ ")";
 #define QTAV_VERSION_STR		TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_MINOR) "." TOSTR(QTAV_PATCH)

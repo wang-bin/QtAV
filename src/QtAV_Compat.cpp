@@ -24,18 +24,36 @@
 
 void ffmpeg_version_print()
 {
-    printf("FFmpeg/Libav version:\n"
-           "libavcodec-%d.%d.%d\n"
-           "libavformat-%d.%d.%d\n"
-//	       "libavdevice-%d.%d.%d\n"
-           "libavutil-%d.%d.%d\n"
-           "libswscal-%d.%d.%d\n"
-           , LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR, LIBAVCODEC_VERSION_MICRO//,avcodec_version()
-           , LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVFORMAT_VERSION_MICRO //avformat_version()
-//	       ,avdevice_version()
-           , LIBAVUTIL_VERSION_MAJOR, LIBAVUTIL_VERSION_MINOR, LIBAVUTIL_VERSION_MICRO //avutil_version()
-           , LIBSWSCALE_VERSION_MAJOR, LIBSWSCALE_VERSION_MINOR, LIBSWSCALE_VERSION_MICRO
-           );
+    struct _component {
+        const char* lib;
+        unsigned build_version;
+        unsigned rt_version;
+    } components[] = {
+        { "avcodec", LIBAVCODEC_VERSION_INT, avcodec_version()},
+        { "avformat", LIBAVFORMAT_VERSION_INT, avformat_version()},
+        { "avutil", LIBAVUTIL_VERSION_INT, avutil_version()},
+        { "swscale", LIBSWSCALE_VERSION_INT, swscale_version()},
+        { 0, 0, 0}
+    };
+    for (int i = 0; components[i].lib != 0; ++i) {
+        printf("Build with lib%s-%u.%u.%u\n"
+               , components[i].lib
+               , QTAV_VERSION_MAJOR(components[i].build_version)
+               , QTAV_VERSION_MINOR(components[i].build_version)
+               , QTAV_VERSION_PATCH(components[i].build_version)
+               );
+        unsigned rt_version = components[i].rt_version;
+        if (components[i].build_version != rt_version) {
+            if (LIBAVCODEC_VERSION_INT != rt_version) {
+                fprintf(stderr, "Warning: %s runtime version %u.%u.%u mismatch!\n"
+                        , components[i].lib
+                        , QTAV_VERSION_MAJOR(rt_version)
+                        , QTAV_VERSION_MINOR(rt_version)
+                        , QTAV_VERSION_PATCH(rt_version)
+                        );
+            }
+        }
+    }
     fflush(0);
 }
 

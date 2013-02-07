@@ -23,6 +23,11 @@
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
 
+unsigned QtAV_Version()
+{
+    return QTAV_VERSION;
+}
+
 namespace QtAV {
 
 QString aboutQtAV()
