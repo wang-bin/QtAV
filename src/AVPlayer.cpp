@@ -40,6 +40,7 @@
 #include <QtAV/AVDemuxThread.h>
 #include <QtAV/EventFilter.h>
 #include <QtAV/VideoCapture.h>
+#include <QtAV/AudioOutput.h>
 #if HAVE_OPENAL
 #include <QtAV/AOOpenAL.h>
 #endif //HAVE_OPENAL
@@ -335,6 +336,7 @@ void AVPlayer::play()
         if (!load())
             return;
     } else {
+        qDebug("seek(0)");
         demuxer.seek(0); //FIXME: now assume it is seekable. for unseekable, setFile() again
     }
     Q_ASSERT(clock != 0);
