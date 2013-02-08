@@ -34,6 +34,10 @@ ImageConverter::ImageConverter(ImageConverterPrivate& d):DPTR_INIT(&d)
 {
 }
 
+ImageConverter::~ImageConverter()
+{
+}
+
 QByteArray ImageConverter::outData() const
 {
     return d_func().data_out;

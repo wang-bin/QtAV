@@ -33,6 +33,7 @@ class Q_EXPORT ImageConverter
     DPTR_DECLARE_PRIVATE(ImageConverter)
 public:
     ImageConverter();
+    virtual ~ImageConverter();
 
     QByteArray outData() const;
     void setInSize(int width, int height);

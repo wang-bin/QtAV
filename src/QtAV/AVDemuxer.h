@@ -106,7 +106,7 @@ public:
      * @param timeout
      * @return
      */
-    qint64 setInterruptTimeout(qint64 timeout);
+    void setInterruptTimeout(qint64 timeout);
 
     /**
      * @brief getInterruptStatus return the interrupt status

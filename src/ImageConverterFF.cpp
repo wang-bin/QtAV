@@ -130,6 +130,7 @@ bool ImageConverterFF::prepareData()
             d.w_out,
             d.h_out
             );
+    return true;
 }
 
 } //namespace QtAV

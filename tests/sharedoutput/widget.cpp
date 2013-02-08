@@ -49,6 +49,8 @@
     rtsp://122.192.35.80:554/live/tv62 盐城
     rtsp://122.192.35.80:554/live/tv63
     rtsp://122.192.35.80:554/live/tv73 新闻综合
+
+    rtmp://mirtv.cdnvideo.ru/mirtv-live/mirtv300.sdp
 */
 
 using namespace QtAV;

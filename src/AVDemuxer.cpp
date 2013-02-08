@@ -79,6 +79,7 @@ int AVDemuxer::__interrupt_cb(void *obj){
         ret = 1;//interrupt
     } else if((demuxer->__interrupt_timer.isValid()) && (demuxer->__interrupt_timer.hasExpired(demuxer->__interrupt_timeout)) ) {
         qDebug("Timeout expired: %lld/%lld -> quit!",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
+        //TODO: emit a signal
         ret = 1;//interrupt
     }
 
@@ -723,7 +724,7 @@ qint64 AVDemuxer::getInterruptTimeout() const
  * @param timeout
  * @return
  */
-qint64 AVDemuxer::setInterruptTimeout(qint64 timeout)
+void AVDemuxer::setInterruptTimeout(qint64 timeout)
 {
     __interrupt_timeout = timeout;
 }
