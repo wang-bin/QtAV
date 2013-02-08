@@ -8,7 +8,7 @@ QtAV is free software licensed under the term of LGPL v2.1. If you use QtAV or i
 you must adhere to the terms of the license in question.
 
 #### [Download binaries from sourceforge](https://sourceforge.net/projects/qtav/files)
-
+#### [Source code on github](https://github.com/wang-bin/QtAV)
 
 ### Features
 
@@ -41,7 +41,7 @@ QtAV can meet your most demands
 3. [PortAudio v19](http://www.portaudio.com/download.html)
 
 The required development files for MinGW can be found in sourceforge
-page: [mingw_libs-extra.7z](http://sourceforge.net/projects/qtav/files/mingw_libs-extra.7z/download)
+page: [depends](https://sourceforge.net/projects/qtav/files/depends)
 
 #### Build
 
