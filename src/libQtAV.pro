@@ -1,4 +1,5 @@
 TEMPLATE = lib
+TARGET = QtAV
 
 QT += core gui opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -54,7 +55,8 @@ SOURCES += \
     AVOutput.cpp \
     AVClock.cpp \
     VideoDecoder.cpp \
-    VideoThread.cpp
+    VideoThread.cpp \
+    ImageConverterTypes.cpp
 
 HEADERS += \
     QtAV/prepost.h \
@@ -81,8 +83,6 @@ HEADERS += \
     QtAV/BlockingQueue.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
-    QtAV/ImageConverterFF.h \
-    QtAV/ImageConverterIPP.h \
     QtAV/ImageRenderer.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
@@ -92,4 +92,8 @@ HEADERS += \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
-    QtAV/VideoThread.h
+    QtAV/VideoThread.h \
+    QtAV/singleton.h \
+    QtAV/factory.h \
+    QtAV/FactoryDefine.h \
+    QtAV/ImageConverterTypes.h

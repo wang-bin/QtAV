@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/ImageConverterIPP.h>
+#include <QtAV/ImageConverter.h>
 #include <private/ImageConverter_p.h>
 #include <QtAV/QtAV_Compat.h>
 
@@ -30,6 +30,25 @@
 #endif
 
 namespace QtAV {
+
+class ImageConverterIPPPrivate;
+class ImageConverterIPP : public ImageConverter //Q_EXPORT is not needed
+{
+    DPTR_DECLARE_PRIVATE(ImageConverterIPP)
+public:
+    ImageConverterIPP();
+    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
+protected:
+    virtual bool prepareData(); //Allocate memory for out data
+};
+
+extern ImageConverterId ImageConverterId_IPP;
+FACTORY_REGISTER_ID_AUTO(ImageConverter, IPP, "IPP")
+
+void RegisterImageConverterIPP_Man()
+{
+    FACTORY_REGISTER_ID_MAN(ImageConverter, IPP, "IPP")
+}
 
 class ImageConverterIPPPrivate : public ImageConverterPrivate
 {

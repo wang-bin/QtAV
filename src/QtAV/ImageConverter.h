@@ -24,11 +24,16 @@
 #define QTAV_IMAGECONVERTER_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtAV/FactoryDefine.h>
 
 namespace QtAV {
 
+typedef int ImageConverterId;
+class ImageConverter;
+FACTORY_DECLARE(ImageConverter)
+
 class ImageConverterPrivate;
-class Q_EXPORT ImageConverter
+class Q_EXPORT ImageConverter //export is not needed
 {
     DPTR_DECLARE_PRIVATE(ImageConverter)
 public:

@@ -1,6 +1,6 @@
 /******************************************************************************
-    ImageConverterFF: Image resizing & color model convertion using FFmpeg swscale
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    ImageConverterTypes: type id and manually id register function
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,22 +19,23 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_IMAGECONVERTERFF_H
-#define QTAV_IMAGECONVERTERFF_H
 
-#include <QtAV/ImageConverter.h>
+#include <QtAV/ImageConverterTypes.h>
+#include "FactoryDefine.h"
 
 namespace QtAV {
 
-class ImageConverterFFPrivate;
-class Q_EXPORT ImageConverterFF : public ImageConverter
+extern const ImageConverterId ImageConverterId_FF = 0;
+extern const ImageConverterId ImageConverterId_IPP = 1;
+
+
+extern void RegisterImageConverterFF_Man();
+extern void RegisterImageConverterIPP_Man();
+
+void ImageConverter_RegisterAll()
 {
-    DPTR_DECLARE_PRIVATE(ImageConverterFF)
-public:
-    ImageConverterFF();
-    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
-protected:
-    virtual bool prepareData(); //Allocate memory for out data
-};
+    RegisterImageConverterFF_Man();
+    RegisterImageConverterIPP_Man();
+}
+
 } //namespace QtAV
-#endif // QTAV_IMAGECONVERTERFF_H

@@ -19,11 +19,31 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/ImageConverterFF.h>
+#include <QtAV/ImageConverter.h>
 #include <private/ImageConverter_p.h>
 #include <QtAV/QtAV_Compat.h>
 
 namespace QtAV {
+
+class ImageConverterFFPrivate;
+class ImageConverterFF : public ImageConverter //Q_EXPORT is not needed
+{
+    DPTR_DECLARE_PRIVATE(ImageConverterFF)
+public:
+    ImageConverterFF();
+    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
+protected:
+    virtual bool prepareData(); //Allocate memory for out data
+};
+
+
+extern ImageConverterId ImageConverterId_FF;
+FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
+
+void RegisterImageConverterFF_Man()
+{
+    FACTORY_REGISTER_ID_MAN(ImageConverter, FF, "FFmpeg")
+}
 
 class ImageConverterFFPrivate : public ImageConverterPrivate
 {
