@@ -22,6 +22,7 @@
 #include <QtAV/ImageConverter.h>
 #include <private/ImageConverter_p.h>
 #include <QtAV/QtAV_Compat.h>
+#include "prepost.h"
 
 #ifdef IPP_LINK
 #include <ipp.h>

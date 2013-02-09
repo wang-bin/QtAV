@@ -21,7 +21,6 @@
 #define FACTORYDEFINE_H
 
 #include <string>
-#include "prepost.h"
 
 /*!
  * Suppose we need a factory for class MyClass. We can query a derived class
@@ -37,6 +36,7 @@
  * To create and register a new subclass MyClassSubA with it's id
  * 1. create a source file MyClassSubA.cpp and implement the required members
  * 2. In MyClassSubA.cpp, add the following lines
+ *      #include "prepost.h" //for PRE_FUNC_ADD()
  *      extern MyClassId MyClassId_SubA;
  *      FACTORY_REGISTER_ID_AUTO(MyClass, SubA, "SubA's name")
  *      void RegisterMyClassSubA_Man()
