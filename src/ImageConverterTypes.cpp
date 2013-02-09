@@ -25,8 +25,8 @@
 
 namespace QtAV {
 
-extern const ImageConverterId ImageConverterId_FF = 0;
-extern const ImageConverterId ImageConverterId_IPP = 1;
+ImageConverterId ImageConverterId_FF = 0;
+ImageConverterId ImageConverterId_IPP = 1;
 
 
 extern void RegisterImageConverterFF_Man();

@@ -45,7 +45,7 @@ bool AOPortAudio::write()
     int diff = Pa_GetStreamWriteAvailable(d.stream) - d.outputLatency * d.sample_rate;
     if (diff > 0) {
         int newsize = diff * d.channels * sizeof(float);
-        char a[newsize];
+        static char *a = new char[newsize];
         memset(a, 0, newsize);
         Pa_WriteStream(d.stream, a, diff);
     }

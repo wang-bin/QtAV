@@ -70,7 +70,7 @@ void ffmpeg_version_print();
 
 //TODO: libav
 //avutil: error.h
-#if !defined(av_err2str) || (GCC_VERSION_AT_LEAST(4, 7, 2) && __cplusplus)
+#if defined(Q_CC_MSVC) || !defined(av_err2str) || (GCC_VERSION_AT_LEAST(4, 7, 2) && __cplusplus)
 #ifdef av_err2str
 #undef av_err2str
 //#define av_make_error_string qtav_make_error_string

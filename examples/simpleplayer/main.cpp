@@ -34,7 +34,7 @@
 //#include <QtAV/GLWidgetRenderer.h>
 using namespace QtAV;
 
-FILE *log = 0;
+static FILE *sLogfile = 0; //'log' is a function in msvc math.h
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #define qInstallMessageHandler qInstallMsgHandler
@@ -48,23 +48,23 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 	 switch (type) {
      case QtDebugMsg:
 		 fprintf(stdout, "Debug: %s\n", msg);
-		 if (log)
-			fprintf(log, "Debug: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Debug: %s\n", msg);
          break;
      case QtWarningMsg:
 		 fprintf(stdout, "Warning: %s\n", msg);
-		 if (log)
-			fprintf(log, "Warning: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Warning: %s\n", msg);
 		 break;
      case QtCriticalMsg:
 		 fprintf(stderr, "Critical: %s\n", msg);
-		 if (log)
-			fprintf(log, "Critical: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Critical: %s\n", msg);
 		 break;
      case QtFatalMsg:
 		 fprintf(stderr, "Fatal: %s\n", msg);
-		 if (log)
-			fprintf(log, "Fatal: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Fatal: %s\n", msg);
 		 abort();
      }
      fflush(0);
@@ -80,10 +80,10 @@ int main(int argc, char *argv[])
     if (qtts.load("qt_" + QLocale::system().name()))
         a.installTranslator(&qtts);
 
-    log = fopen(QString(qApp->applicationDirPath() + "/log.txt").toUtf8().constData(), "w+");
-    if (!log) {
+    sLogfile = fopen(QString(qApp->applicationDirPath() + "/log.txt").toUtf8().constData(), "w+");
+    if (!sLogfile) {
         qWarning("Failed to open log file");
-        log = stdout;
+        sLogfile = stdout;
     }
     qInstallMessageHandler(Logger);
 #if 0

@@ -20,6 +20,10 @@ TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 unix: SOURCES += 
 else:win32: SOURCES += 
 
+*msvc* {
+INCLUDEPATH += compat/msvc
+}
+
 portaudio {
 SOURCES += AOPortAudio.cpp
 HEADERS += QtAV/AOPortAudio.h \

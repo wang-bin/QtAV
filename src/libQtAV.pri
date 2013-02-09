@@ -153,7 +153,7 @@ CONFIG *= portaudio
 portaudio {
     DEFINES *= HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
-    win32: LIBS *= -lwinmm -lksguid -luuid# -lws2_32 #portaudio
+    win32: LIBS *= -lwinmm -luuid
 }
 openal {
     DEFINES *= HAVE_OPENAL=1

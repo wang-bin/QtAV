@@ -45,9 +45,13 @@
  *      }
  * 3. In MyClassTypes.h (Usually you just include this enough to use the factory),
  *    declare a function and add MyClassSubA's ID:
- *      void RegisterMyClassSubA_Man();
- *      extern const MyClassId MyClassId_SubA;
+ *      extern MyClassId MyClassId_SubA;
  *    In MyClassTypes.cpp, define the id and add the function into MyClass_RegisterAll();
+ *      extern void RegisterMyClassSubA_Man();
+ *      void MyClass_RegisterAll()
+ *      {
+ *          RegisterMyClassSubA_Man(); //add this line
+ *      }
  *
  */
 
