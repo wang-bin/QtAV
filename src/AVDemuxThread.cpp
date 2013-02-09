@@ -180,7 +180,9 @@ void AVDemuxThread::run()
         Q_UNUSED(locker);
         if (seeking) {
             qDebug("Demuxer is seeking... wait for seek end");
-            seek_cond.wait(&buffer_mutex); //will return the same state(i.e. lock)
+            if (!seek_cond.wait(&buffer_mutex, 1000)) { //will return the same state(i.e. lock)
+                qWarning("seek timed out");
+            }
         }
         if (!demuxer->readFrame()) {
             continue;
