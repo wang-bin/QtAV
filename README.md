@@ -45,11 +45,6 @@ page: [depends](https://sourceforge.net/projects/qtav/files/depends)
 
 #### Build
 
-    qmake
-    make
-
-If you want to build QtAV outside the source tree
-
     cd your_build_dir
     qmake QtAV_dir/QtAV.pro -r "BUILD_DIR=your_build_dir"
     make -j4
@@ -57,6 +52,12 @@ If you want to build QtAV outside the source tree
   The binaries will be created in $BUILD_DIR/bin
 
   NOTE: If you are using QtCreator to build the project, you should go to Projects->Build Steps->qmake->Additional arguments, add "BUILD_DIR=your/buid/dir"
+
+##### Build with MSVC
+
+  See the wiki [Compile with MSVC](https://github.com/wang-bin/QtAV/wiki/Compile-with-MSVC)
+
+
 
 #### How To Write a Player
 
@@ -82,6 +83,8 @@ Default Shortcuts
 - M: mute on/off
 - Up / Down: volume + / -
 - -> / <-: seek forward / backward
+- Drag and drop a media file to player
+
 
 The default behavior can be replaced by subclassing the EventFilter class.
 
