@@ -51,7 +51,7 @@ extern ImageConverterId ImageConverterId_IPP;
  *   2. add RegisterImageConverterXXX_Man() in mageConverter_RegisterAll();
  *   3. define the function In ImageConverterXXX.cpp
  */
-void ImageConverter_RegisterAll();
+Q_EXPORT void ImageConverter_RegisterAll();
 
 } //namespace QtAV
 #endif // QTAV_IMAGECONVERTERTYPES_H
