@@ -25,7 +25,8 @@
 #ifdef __cplusplus
 extern "C"
 {
-#endif //__cplusplus
+/*UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS*/
+#endif /*__cplusplus*/
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libavcodec/avcodec.h>
@@ -34,7 +35,7 @@ extern "C"
 #include <libavutil/opt.h>
 #ifdef __cplusplus
 }
-#endif //__cplusplus
+#endif /*__cplusplus*/
 
 #include "QtAV_Global.h"
 /*!
@@ -64,16 +65,17 @@ extern "C"
 
 #ifndef AV_VERSION_INT
 #define AV_VERSION_INT(a, b, c) (a<<16 | b<<8 | c)
-#endif //AV_VERSION_INT
+#endif /*AV_VERSION_INT*/
 
 void ffmpeg_version_print();
 
-//TODO: libav
-//avutil: error.h
+/*TODO: libav
+avutil: error.h
+*/
 #if defined(Q_CC_MSVC) || !defined(av_err2str) || (GCC_VERSION_AT_LEAST(4, 7, 2) && __cplusplus)
 #ifdef av_err2str
 #undef av_err2str
-//#define av_make_error_string qtav_make_error_string
+/*#define av_make_error_string qtav_make_error_string*/
 #else
 /**
  * Fill the provided buffer with a string containing an error string
@@ -90,7 +92,7 @@ static av_always_inline char *av_make_error_string(char *errbuf, size_t errbuf_s
 	av_strerror(errnum, errbuf, errbuf_size);
 	return errbuf;
 }
-#endif //av_err2str
+#endif /*av_err2str*/
 
 #define AV_ERROR_MAX_STRING_SIZE 64
 av_always_inline char* av_err2str(int errnum)
@@ -104,12 +106,12 @@ av_always_inline char* av_err2str(int errnum)
  * Convenience macro, the return value should be used only directly in
  * function arguments but never stand-alone.
  */
-//GCC: taking address of temporary array
+/*GCC: taking address of temporary array*/
 /*
 #define av_err2str(errnum) \
     av_make_error_string((char[AV_ERROR_MAX_STRING_SIZE]){0}, AV_ERROR_MAX_STRING_SIZE, errnum)
 */
-#endif //!defined(av_err2str) || GCC_VERSION_AT_LEAST(4, 7, 2)
+#endif /*!defined(av_err2str) || GCC_VERSION_AT_LEAST(4, 7, 2)*/
 
 #if (LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52,23,0))
 #define avcodec_decode_audio3(avctx, samples, frame_size_ptr, avpkt) \

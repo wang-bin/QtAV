@@ -33,6 +33,7 @@
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/QtAV_Compat.h>
 #include <QtAV/VideoCapture.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/WidgetRenderer.h>
@@ -47,15 +48,6 @@
 #if HAVE_PORTAUDIO
 #include <QtAV/AOPortAudio.h>
 #endif //HAVE_PORTAUDIO
-#ifdef __cplusplus
-extern "C"
-{
-#endif //__cplusplus
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#ifdef __cplusplus
-}
-#endif //__cplusplus
 
 namespace QtAV {
 

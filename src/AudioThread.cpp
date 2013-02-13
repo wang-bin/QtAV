@@ -25,16 +25,8 @@
 #include <QtAV/Packet.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/QtAV_Compat.h>
 #include <QtCore/QCoreApplication>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif //__cplusplus
-#include <libavcodec/avcodec.h>
-#ifdef __cplusplus
-}
-#endif //__cplusplus
 
 namespace QtAV {
 

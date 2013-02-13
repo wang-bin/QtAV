@@ -22,20 +22,9 @@
 #ifndef QTAV_AVDECODER_P_H
 #define QTAV_AVDECODER_P_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif //__cplusplus
-#include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-#include <libavcodec/avcodec.h>
-#ifdef __cplusplus
-}
-#endif //__cplusplus
-
 #include <QtCore/QByteArray>
 #include <QtCore/QMutex>
-#include <QtAV/QtAV_Global.h>
+#include <QtAV/QtAV_Compat.h>
 
 namespace QtAV {
 
