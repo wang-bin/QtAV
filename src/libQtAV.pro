@@ -5,6 +5,9 @@ QT += core gui opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG *= qtav-buildlib
+CONFIG *= portaudio
+#CONFIG *= openal
+
 #var with '_' can not pass to pri?
 STATICLINK = 0
 PROJECTROOT = $$PWD/..
@@ -16,23 +19,38 @@ OTHER_FILES += $$RC_FILE
 
 TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 
-#src
-unix: SOURCES += 
-else:win32: SOURCES += 
-
 *msvc* {
-INCLUDEPATH += compat/msvc
+    INCLUDEPATH += compat/msvc
+}
+#UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
+DEFINES += __STDC_CONSTANT_MACROS
+
+LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
+
+ipp-link {
+    DEFINES += IPP_LINK
+    ICCROOT = $$(IPPROOT)/../compiler
+    INCLUDEPATH += $$(IPPROOT)/include
+    LIBS *= -L$$(IPPROOT)/lib/intel64 -L$$(IPPROOT)/lib/ia32 -lippcc -lippcore -lippi \
+            -L$$(IPPROOT)/../compiler/lib/ia32 -L$$(IPPROOT)/../compiler/lib/intel64 -lsvml -limf
+    #omp for static link. _t is multi-thread static link
 }
 
 portaudio {
-SOURCES += AOPortAudio.cpp
-HEADERS += QtAV/AOPortAudio.h \
-           QtAV/private/AOPortAudio_p.h
+    SOURCES += AOPortAudio.cpp
+    HEADERS += QtAV/AOPortAudio.h \
+               QtAV/private/AOPortAudio_p.h
+    DEFINES *= HAVE_PORTAUDIO=1
+    LIBS *= -lportaudio
+    win32: LIBS *= -lwinmm -luuid
 }
 openal {
-SOURCES += AOOpenAL.cpp
-HEADERS += QtAV/AOOpenAL.h \
-           QtAV/private/AOOpenAL_p.h
+    SOURCES += AOOpenAL.cpp
+    HEADERS += QtAV/AOOpenAL.h \
+               QtAV/private/AOOpenAL_p.h
+    DEFINES *= HAVE_OPENAL=1
+    win32:LIBS *= -lOpenAL32
+    else: LIBS *= -lopenal
 }
 
 SOURCES += \
