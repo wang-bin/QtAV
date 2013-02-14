@@ -45,13 +45,21 @@ page: [depends](https://sourceforge.net/projects/qtav/files/depends)
 
 #### Build
 
-    cd your_build_dir
-    qmake QtAV_dir/QtAV.pro -r "BUILD_DIR=your_build_dir"
-    make -j4
+For most platforms, just
 
-  The binaries will be created in $BUILD_DIR/bin
+    qmake
+    make
 
-  NOTE: If you are using QtCreator to build the project, you should go to Projects->Build Steps->qmake->Additional arguments, add "BUILD_DIR=your/buid/dir"
+>>If the above command failed to build it, try
+
+>>    `cd your_build_dir`
+
+>>    `qmake QtAV_dir/QtAV.pro -r BUILD_DIR=your_build_dir`
+
+>>    `make`
+
+>>  The binaries will be created in $BUILD_DIR/bin.
+>>  If you are using QtCreator to build the project, you should go to Projects->Build Steps->qmake->Additional arguments, add "BUILD_DIR=your/buid/dir"
 
 ##### Build with MSVC
 
