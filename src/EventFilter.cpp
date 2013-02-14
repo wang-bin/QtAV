@@ -19,7 +19,6 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-
 #include <QtAV/EventFilter.h>
 #include <QApplication>
 #include <QtCore/QUrl>
@@ -33,6 +32,7 @@
 #include <QMouseEvent>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
+#include <QtAV/VideoRenderer.h>
 
 namespace QtAV {
 
@@ -92,15 +92,15 @@ void EventFilter::help()
 
 bool EventFilter::eventFilter(QObject *watched, QEvent *event)
 {
-    //qDebug("EventFilter::eventFilter to %p", watched);
     Q_UNUSED(watched);
     AVPlayer *player = static_cast<AVPlayer*>(parent());
     if (!player)
         return false;
-    /*if (watched == reinterpret_cast<QObject*>(player->renderer)) {
-        qDebug("Event target is renderer: %s", watched->objectName().toAscii().constData());
-    }*/
-    //TODO: if not send to QWidget based class, return false; instanceOf()?
+#ifndef QT_NO_DYNAMIC_CAST //dynamic_cast is defined as a macro to force a compile error
+    if (player->renderer() != dynamic_cast<VideoRenderer*>(watched)) {
+        return false;
+    }
+#endif
     QEvent::Type type = event->type();
     switch (type) {
     case QEvent::MouseButtonPress:
@@ -110,8 +110,6 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         return false;
         break;
     case QEvent::KeyPress: {
-        //qDebug("Event target = %p %p", watched, player->renderer);
-        //avoid receive an event multiple times
         int key = static_cast<QKeyEvent*>(event)->key();
         switch (key) {
         case Qt::Key_C: //capture
@@ -223,10 +221,6 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
     }
         break;
     case QEvent::ContextMenu: {
-        int dp = (int*)player->renderer() - (int*)watched;
-        qDebug("@@@@@@@@renderer - watched=%d, %s", dp, watched->metaObject()->className());
-        //if (dp != 0 && dp != 0x5)
-        //    return true;
         QContextMenuEvent *e = static_cast<QContextMenuEvent*>(event);
         if (!menu) {
             menu = new QMenu();
