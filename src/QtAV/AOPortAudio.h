@@ -33,13 +33,13 @@ class Q_EXPORT AOPortAudio : public AudioOutput
     DPTR_DECLARE_PRIVATE(AOPortAudio)
 public:
     AOPortAudio();
-    virtual ~AOPortAudio();
+    ~AOPortAudio();
 
-    virtual bool open();
-    virtual bool close();
+    bool open();
+    bool close();
 
 protected:
-	virtual bool write();
+    bool write();
 };
 
 } //namespace QtAV

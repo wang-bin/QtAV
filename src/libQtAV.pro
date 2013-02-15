@@ -38,8 +38,7 @@ ipp-link {
 
 portaudio {
     SOURCES += AOPortAudio.cpp
-    HEADERS += QtAV/AOPortAudio.h \
-               QtAV/private/AOPortAudio_p.h
+    HEADERS += QtAV/AOPortAudio.h
     DEFINES *= HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
     win32: LIBS *= -lwinmm -luuid

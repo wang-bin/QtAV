@@ -21,9 +21,72 @@
 
 
 #include <QtAV/AOPortAudio.h>
-#include <private/AOPortAudio_p.h>
+#include <private/AudioOutput_p.h>
+#include <portaudio.h>
+#include <QtCore/QString>
 
 namespace QtAV {
+
+class AOPortAudioPrivate : public AudioOutputPrivate
+{
+public:
+    AOPortAudioPrivate():outputParameters(new PaStreamParameters)
+      ,stream(0),initialized(false)
+    {
+        PaError err = paNoError;
+        if ((err = Pa_Initialize()) != paNoError) {
+            qWarning("Error when init portaudio: %s", Pa_GetErrorText(err));
+            available = false;
+            return;
+        }
+        initialized = true;
+
+        int numDevices = Pa_GetDeviceCount();
+        for (int i = 0 ; i < numDevices ; ++i) {
+            const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
+            if (deviceInfo) {
+                const PaHostApiInfo *hostApiInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
+                if ( deviceInfo->maxOutputChannels > 0 ) {
+                    QString name = QString(hostApiInfo->name) + ": " + QString::fromLocal8Bit(deviceInfo->name);
+                    qDebug("audio device %d: %s", i, name.toUtf8().constData());
+                }
+            }
+        }
+        memset(outputParameters, 0, sizeof(PaStreamParameters));
+        outputParameters->device = Pa_GetDefaultOutputDevice();
+/*
+#ifdef Q_OS_LINUX
+        if ( getOutputDeviceNames().contains( "ALSA: default" ) )
+        outputParameters->device = getDeviceIndexForOutput( "ALSA: default" );
+#endif
+*/
+        if (outputParameters->device == paNoDevice) {
+            qWarning("PortAudio get device error!");
+            available = false;
+            return;
+        }
+        qDebug("audio device: %s", QString::fromLocal8Bit(Pa_GetDeviceInfo(outputParameters->device)->name).toUtf8().constData());
+        outputParameters->sampleFormat = paFloat32;
+        outputParameters->hostApiSpecificStreamInfo = NULL;
+        outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
+    }
+    ~AOPortAudioPrivate() {
+        if (initialized)
+            Pa_Terminate(); //Do NOT call this if init failed. See document
+        if (outputParameters) {
+            delete outputParameters;
+            outputParameters = 0;
+        }
+    }
+
+    bool initialized;
+    PaStreamParameters *outputParameters;
+    PaStream *stream;
+#ifdef Q_OS_LINUX
+    bool autoFindMultichannelDevice;
+#endif
+    double outputLatency;
+};
 
 AOPortAudio::AOPortAudio()
     :AudioOutput(*new AOPortAudioPrivate())
@@ -40,7 +103,7 @@ bool AOPortAudio::write()
     DPTR_D(AOPortAudio);
     if (Pa_IsStreamStopped(d.stream))
         Pa_StartStream(d.stream);
-
+#if KNOW_WHY
 #ifndef Q_OS_MAC //?
     int diff = Pa_GetStreamWriteAvailable(d.stream) - d.outputLatency * d.sample_rate;
     if (diff > 0) {
@@ -65,7 +128,7 @@ bool AOPortAudio::write()
         }
     }
 #endif
-
+#endif //KNOW_WHY
 	PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/d.channels/sizeof(float));
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
@@ -77,7 +140,6 @@ bool AOPortAudio::write()
 bool AOPortAudio::open()
 {
     DPTR_D(AOPortAudio);
-    //
     d.outputParameters->channelCount = d.channels;
     PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, d.sample_rate, 0, paNoFlag, NULL, NULL);
     if (err == paNoError) {
