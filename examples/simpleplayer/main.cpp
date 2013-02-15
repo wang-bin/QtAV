@@ -21,17 +21,12 @@
 #include <cstdlib>
 #include <QApplication>
 
-#include <QGraphicsView>
-#include <QGraphicsScene>
-#include <QMessageBox>
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
-#include <QtOpenGL/QGLWidget>
 
 #include <QtAV/AVPlayer.h>
 #include <QtAV/WidgetRenderer.h>
-#include <QtAV/GraphicsItemRenderer.h>
-//#include <QtAV/GLWidgetRenderer.h>
+
 using namespace QtAV;
 
 static FILE *sLogfile = 0; //'log' is a function in msvc math.h
@@ -86,29 +81,11 @@ int main(int argc, char *argv[])
         sLogfile = stdout;
     }
     qInstallMessageHandler(Logger);
-#if 0
-    QGraphicsScene s;
-    s.setSceneRect(0, 0, 800, 600);
-    QGraphicsView w(&s);
-	w.showMaximized();
 
-#ifndef QT_NO_OPENGL
-    QGLWidget *glw = new QGLWidget(QGLFormat(QGL::SampleBuffers));
-    glw->setAutoFillBackground(false);
-    w.setCacheMode(QGraphicsView::CacheNone);
-    w.setViewport(glw);
-#else
-    w.setCacheMode(QGraphicsView::CacheBackground);
-#endif
-	GraphicsItemRenderer renderer;
-    renderer.resizeVideo(800, 600);
-    s.addItem(&renderer);
-#else
     WidgetRenderer renderer;
     renderer.show();
     renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
     //renderer.resize(800, 600);
-#endif
     QString fileName;
 	if (argc > 1)
 		fileName = a.arguments().at(1);
