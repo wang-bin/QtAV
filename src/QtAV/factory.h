@@ -1,7 +1,7 @@
 /******************************************************************************
     Factory: factory template
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
-    
+
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
     License as published by the Free Software Foundation; either
@@ -78,8 +78,6 @@ protected:
     Factory() {}
     //virtual ~Factory() {}
 
-    static ID current_id;
-    static Type *current_value;
     typedef std::map<ID, Creator> CreatorMap;
     CreatorMap creators;
     std::vector<ID> ids;
@@ -87,11 +85,6 @@ protected:
     NameMap name_map;
 };
 
-
-template<typename Id, typename T, class Class>
-typename Factory<Id, T, Class>::Type* Factory<Id, T, Class>::current_value = 0;
-template<typename Id, typename T, class Class>
-typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::current_id = 0;
 
 template<typename Id, typename T, class Class>
 typename Factory<Id, T, Class>::Type *Factory<Id, T, Class>::create(const ID& id)
@@ -102,24 +95,7 @@ typename Factory<Id, T, Class>::Type *Factory<Id, T, Class>::create(const ID& id
         return 0;
         //throw std::runtime_error(err_msg.arg(id).toStdString());
     }
-
-    if (current_id == it->first) {
-        if (!current_value)
-            current_value = (it->second)();
-        return current_value;
-    }
-
-    current_id = it->first;
-    Type *ptr = current_value;
-    std::cout << "old addr=" << current_value << std::endl;
-    current_value = (it->second)();
-    DBG("id %d (%p) created", id, current_value);
-    if (ptr) {
-        DBG("new=%p, deleting old %p", current_value, ptr);
-        delete ptr;
-        ptr = 0;
-    }
-    return current_value;
+    return (it->second)();
 }
 
 template<typename Id, typename T, class Class>
