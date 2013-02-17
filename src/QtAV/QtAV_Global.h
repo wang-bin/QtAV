@@ -46,9 +46,6 @@
 #define TOSTR(x)  _TOSTR(x)
 
 
-/* runtime version. used to compare with compile time version */
-unsigned QtAV_Version();
-
 /* the following are compile time version */
 /* C++11 requires a space between literal and identifier */
 static const char* const qtav_version_string = TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_MINOR) "." TOSTR(QTAV_PATCH) "(" __DATE__ ", " __TIME__ ")";
@@ -73,6 +70,11 @@ static const char* const qtav_version_string = TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_
 #  undef Q_EXPORT
 #  define Q_EXPORT //Q_DECL_IMPORT //only for vc?
 #endif
+
+/* runtime version. used to compare with compile time version */
+Q_EXPORT unsigned QtAV_Version();
+
+
 // default network timeout in ms
 #define QTAV_DEFAULT_NETWORK_TIMEOUT 30000
 
