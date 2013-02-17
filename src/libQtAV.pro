@@ -41,7 +41,7 @@ portaudio {
     HEADERS += QtAV/AOPortAudio.h
     DEFINES *= HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
-    win32: LIBS *= -lwinmm -luuid
+    #win32: LIBS *= -lwinmm #-lksguid #-luuid
 }
 openal {
     SOURCES += AOOpenAL.cpp

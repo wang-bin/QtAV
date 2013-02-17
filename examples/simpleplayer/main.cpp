@@ -63,7 +63,7 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 		 abort();
      }
      fflush(0);
- }
+}
 
 int main(int argc, char *argv[])
 {

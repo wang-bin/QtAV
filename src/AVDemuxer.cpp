@@ -129,7 +129,7 @@ bool AVDemuxer::readFrame()
         emit started();
     }
     if (stream_idx != videoStream() && stream_idx != audioStream()) {
-        qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
+        //qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
         return false;
     }
     pkt->data = QByteArray((const char*)packet.data, packet.size);

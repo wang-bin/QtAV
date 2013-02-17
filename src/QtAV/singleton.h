@@ -61,7 +61,7 @@ private:
 
 /*if it is used as dll, template will instanced in dll and exe
  *, and pInstance_ are 0 for both*/
-
+//TODO: use static Singleton<T> inst; return inst;
 template<typename T>
 T* Singleton<T>::pInstance_ = 0; //Why it will be initialized twice? The order?
 template<typename T>
@@ -70,7 +70,7 @@ bool Singleton<T>::destroyed_ = false;
 template<typename T>
 T &Singleton<T>::Instance()
 {
-    //DBG("instance = %p\n", pInstance_);
+    DBG("instance = %p\n", pInstance_);
     if (!pInstance_) {
         MakeInstance();
     }

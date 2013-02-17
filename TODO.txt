@@ -29,6 +29,7 @@ api: name, hwaName(ff,ipp,cuda,cl,gl,cuda}, hwaSupported,hwaInfo
 }
 
 BUG:
+[udp @ 02d18740] 'circular_buffer_size' option was set but it is not supported on this build (pthread support is required)
 Debug: no frame could be decompressed
 Error - RtlWerpReportException failed with status code :-1073741696. Will try to launch the process directly
 [h264 @ 11793ee0] reference picture missing during reorder

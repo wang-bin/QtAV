@@ -30,8 +30,10 @@ namespace QtAV {
 class AOPortAudioPrivate : public AudioOutputPrivate
 {
 public:
-    AOPortAudioPrivate():outputParameters(new PaStreamParameters)
-      ,stream(0),initialized(false)
+    AOPortAudioPrivate():
+        initialized(false)
+      ,outputParameters(new PaStreamParameters)
+      ,stream(0)
     {
         PaError err = paNoError;
         if ((err = Pa_Initialize()) != paNoError) {
