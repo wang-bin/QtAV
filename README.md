@@ -16,6 +16,7 @@ QtAV can meet your most demands
 
 - Seek, pause/resume
 - Video capture
+- Transform video using GraphicsItemRenderer. (rotate, shear, etc)
 - Playing frame by frame (currently support forward playing)
 - Variant streams: locale file, http, rtsp, etc.
 - Playing music (not perfect)
@@ -77,6 +78,7 @@ Wrtie a media player using QtAV is quite easy.
     player.setRenderer(&renderer);
     player.play("test.avi");
 
+For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Project)
 
 
 Default Shortcuts
@@ -94,7 +96,8 @@ Default Shortcuts
 - Drag and drop a media file to player
 
 
-The default behavior can be replaced by subclassing the EventFilter class.
+The default behavior can be replaced by subclassing QObject and call `void AVPlayer::setPlayerEventFilter(QObject *obj)` (use null to disable).
+
 
 # TODO
 
@@ -106,9 +109,11 @@ The default behavior can be replaced by subclassing the EventFilter class.
   * image, audio and filters convertion
   * rendering
 4. Stylish GUI based on Qt Graphics View Framework
-5. Document
-6. Other: play speed, better sync method and seeking, tests, playing statistics,
-   more platforms etc.
+5. Document and SDK
+6. Other: play speed, better sync method and seeking, tests, playing statistics, etc.
+7. Region of interest support.
+8. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.
+
 
 Screenshots
 ----------
@@ -117,9 +122,17 @@ QtAV on Win8
 
 ![Alt text](https://github.com/downloads/wang-bin/QtAV/screenshot.png "simple player")
 
+QtAV on Mac OS X
+
+![Alt text](https://sourceforge.net/p/qtav/screenshot/mac.jpg "simple player on Mac")
+
 IP camera using QtAV. OS: Fedora 18 (some developers from Italy)
 
 ![Alt text](https://sourceforge.net/projects/qtav/screenshots/ip_camera.jpg "ip camera")
+
+Rotate a video item
+
+![Alt text](https://sourceforge.net/p/qtav/screenshot/QtAV_videoitem.jpg "rotated video")
 
 
 > Copyright &copy; Wang Bin wbsecg1@gmail.com
