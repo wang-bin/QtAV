@@ -22,6 +22,7 @@
 #ifndef QTAV_COMPAT_H
 #define QTAV_COMPAT_H
 
+#include "QtAV_Global.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -33,11 +34,19 @@ extern "C"
 #include <libavutil/avutil.h>
 #include <libavutil/error.h>
 #include <libavutil/opt.h>
+
+/* TODO: how to check whether we have swresample or not? how to check avresample?*/
+#include <libavutil/samplefmt.h>
+#if QTAV_HAVE(SWRESAMPLE)
+#include <libswresample/swresample.h>
+#endif //QTAV_HAVE(SWRESAMPLE)
+#if QTAV_HAVE(AVRESAMPLE)
+#endif //QTAV_HAVE(AVRESAMPLE)
+#include <libavresample/avresample.h>
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/
 
-#include "QtAV_Global.h"
 /*!
  * Guide to uniform the api for different FFmpeg version(or other libraries)
  * We use the existing old api to simulater .

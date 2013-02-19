@@ -7,6 +7,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG *= qtav-buildlib
 CONFIG *= portaudio
 #CONFIG *= openal
+CONFIG *= swresample
+#CONFIG *= avresample
 
 #var with '_' can not pass to pri?
 STATICLINK = 0
@@ -26,6 +28,14 @@ TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 DEFINES += __STDC_CONSTANT_MACROS
 
 LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
+swresample {
+    DEFINES += QTAV_HAVE_SWRESAMPLE=1
+    LIBS += -lswresample
+}
+avresample {
+    DEFINES += QTAV_HAVE_AVRESAMPLE=1
+    LIBS += -lavresample
+}
 
 ipp-link {
     DEFINES += IPP_LINK
@@ -59,6 +69,8 @@ SOURCES += \
     AVThread.cpp \
     AudioDecoder.cpp \
     AudioOutput.cpp \
+    AudioResampler.cpp \
+    AudioResamplerFF.cpp \
     AVDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
@@ -85,12 +97,14 @@ HEADERS += \
     QtAV/QtAV_Global.h \
     QtAV/QtAV_Compat.h \
     QtAV/AVThread.h \
+    QtAV/AudioResampler.h \
     QtAV/AudioThread.h \
     QtAV/EventFilter.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
+    QtAV/private/AudioResampler_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/ImageRenderer_p.h \

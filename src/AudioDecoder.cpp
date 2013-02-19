@@ -66,6 +66,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     static const float kInt32_inv = 1.0f/2147483648.0f;
     //TODO: hwa
     //https://code.google.com/p/lavfilters/source/browse/decoder/LAVAudio/LAVAudio.cpp
+#if 1 || (!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)))
     switch (d.codec_ctx->sample_fmt) {
     case AV_SAMPLE_FMT_U8:
     {
@@ -165,6 +166,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         d.decoded.clear();
         break;
     }
+#endif //1 || (!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)))
+
 /*
     if ( pts )
         clock = pts;

@@ -53,6 +53,8 @@ static const char* const qtav_version_string = TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_
 #define QTAV_VERSION_STR_LONG	QTAV_VERSION_STR "(" __DATE__ ", " __TIME__ ")"
 
 
+#define QTAV_HAVE(FEATURE) (defined(QTAV_HAVE_##FEATURE) && QTAV_HAVE_##FEATURE)
+
 /* --gnu option of the RVCT compiler also defines __GNUC__ */
 #if defined(Q_CC_GNU) && !defined(Q_CC_RVCT)
 #define GCC_VERSION_AT_LEAST(major, minor, patch) \
