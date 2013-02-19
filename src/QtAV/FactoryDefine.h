@@ -23,7 +23,7 @@
 #include <string>
 
 /*!
- * Suppose we need a factory for class MyClass. We can query a derived class
+ * A: Suppose we need a factory for class MyClass. We can query a derived class
  * of MyClass from factory by an id type MyClassId.
  * To create the factory, just 2 steps
  * 1. In MyClass.h:
@@ -53,6 +53,24 @@
  *          RegisterMyClassSubA_Man(); //add this line
  *      }
  *
+ *******************************************************************************************************
+ * B: If MyClass and it's factory already exist in the library and you want to add a new subclass without
+ * changing the library,
+ *  just create MyClassSubA.cpp with the content:
+ *
+ *      #include "MyClass.h"
+ *      #include "prepost.h" //for PRE_FUNC_ADD()
+ *      MyClassId MyClassId_SubA = some_value; //it can be used somewhere else as "extern"
+ *      FACTORY_REGISTER_ID_AUTO(MyClass, SubA, "SubA's name")
+ *      void RegisterMyClassSubA_Man() //call it when you need as "extern"
+ *      {
+ *          FACTORY_REGISTER_ID_MAN(MyClass, SubA, "SubA's name")
+ *      }
+ *
+ *      class MyClassSubA : public MyClass
+ *      {
+ *          ...
+ *      };
  */
 
 /*

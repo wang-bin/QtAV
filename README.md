@@ -7,7 +7,7 @@ stylish one based on QtAV in the feature.
 QtAV is free software licensed under the term of LGPL v2.1. If you use QtAV or its constituent libraries,
 you must adhere to the terms of the license in question.
 
-#### [Download binaries from sourceforge](https://sourceforge.net/projects/qtav/files)
+#### [Download binaries from sourceforge](https://sourceforge.net/projects/qtav)
 #### [Source code on github](https://github.com/wang-bin/QtAV)
 
 ### Features
@@ -126,13 +126,17 @@ QtAV on Mac OS X
 
 ![Alt text](https://sourceforge.net/p/qtav/screenshot/mac.jpg "simple player on Mac")
 
-IP camera using QtAV. OS: Fedora 18 (some developers from Italy)
+IP camera using QtAV. OS: Fedora 18 (some developers from Italy http://www.selcomsrl.eu/)
 
 ![Alt text](https://sourceforge.net/projects/qtav/screenshots/ip_camera.jpg "ip camera")
 
 Rotate a video item
 
 ![Alt text](https://sourceforge.net/p/qtav/screenshot/QtAV_videoitem.jpg "rotated video")
+
+Video Wall
+
+![Alt text](https://sourceforge.net/p/qtav/screenshot/videowall.png "video wall")
 
 
 > Copyright &copy; Wang Bin wbsecg1@gmail.com
