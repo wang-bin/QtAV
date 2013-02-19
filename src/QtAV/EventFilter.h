@@ -29,6 +29,7 @@
 #include <QtCore/QObject>
 
 class QMenu;
+class QPoint;
 namespace QtAV {
 
 //for internal use
@@ -47,6 +48,7 @@ public slots:
 
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
+    void showMenu(const QPoint& p);
 
 private:
     QMenu *menu;

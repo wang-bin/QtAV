@@ -24,6 +24,7 @@
 #include <QtCore/QUrl>
 #include <QEvent>
 #include <QFileDialog>
+#include <QGraphicsSceneContextMenuEvent>
 #include <QInputDialog>
 #include <QKeyEvent>
 #include <QMenu>
@@ -220,24 +221,35 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         e->acceptProposedAction();
     }
         break;
+    case QEvent::GraphicsSceneContextMenu: {
+        QGraphicsSceneContextMenuEvent *e = static_cast<QGraphicsSceneContextMenuEvent*>(event);
+        showMenu(e->screenPos());
+    }
+        break;
     case QEvent::ContextMenu: {
         QContextMenuEvent *e = static_cast<QContextMenuEvent*>(event);
-        if (!menu) {
-            menu = new QMenu();
-            menu->addAction(tr("Open"), this, SLOT(openLocalFile()));
-            menu->addAction(tr("Open Url"), this, SLOT(openUrl()));
-            menu->addSeparator();
-            menu->addAction(tr("About"), this, SLOT(about()));
-            menu->addAction(tr("Help"), this, SLOT(help()));
-            menu->addSeparator();
-            menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
-        }
-        menu->exec(e->globalPos());
+        showMenu(e->globalPos());
     }
+        break;
     default:
         return false;
     }
     return true; //false: for text input
+}
+
+void EventFilter::showMenu(const QPoint &p)
+{
+    if (!menu) {
+        menu = new QMenu();
+        menu->addAction(tr("Open"), this, SLOT(openLocalFile()));
+        menu->addAction(tr("Open Url"), this, SLOT(openUrl()));
+        menu->addSeparator();
+        menu->addAction(tr("About"), this, SLOT(about()));
+        menu->addAction(tr("Help"), this, SLOT(help()));
+        menu->addSeparator();
+        menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
+    }
+    menu->exec(p);
 }
 
 } //namespace QtAV
