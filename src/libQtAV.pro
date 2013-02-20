@@ -76,8 +76,7 @@ SOURCES += \
     AVOutput.cpp \
     AVClock.cpp \
     VideoDecoder.cpp \
-    VideoThread.cpp \
-    ImageConverterTypes.cpp
+    VideoThread.cpp
 
 HEADERS += \
     QtAV/prepost.h \

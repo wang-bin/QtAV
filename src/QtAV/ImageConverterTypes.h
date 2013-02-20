@@ -36,8 +36,8 @@ namespace QtAV {
  * When a new type is created, declare the type here, define the value in cpp
  */
 //why can not be const for msvc?
-extern ImageConverterId ImageConverterId_FF;
-extern ImageConverterId ImageConverterId_IPP;
+extern ImageConverterId ImageConverterId_FF;    //0
+extern ImageConverterId ImageConverterId_IPP;   //1
 
 /*
  * This must be called manually in your program(outside this library) if your compiler does
@@ -45,11 +45,11 @@ extern ImageConverterId ImageConverterId_IPP;
  * to register a new type.
  * See prepost.h. Currently supports c++ compilers, and C compilers such as gnu compiler
  * (including llvm based compilers) and msvc
+ * Another case is link this library as static library. Not all data will be pulled to you program
+ * especially the automatically called functions.
  * Steps:
- *   1. add declare here
- *      void RegisterImageConverterXXX_Man();
- *   2. add RegisterImageConverterXXX_Man() in mageConverter_RegisterAll();
- *   3. define the function In ImageConverterXXX.cpp
+ *   1. add RegisterImageConverterXXX_Man() in ImageConverter_RegisterAll() in ImageConverter.cpp;
+ *   2. define the RegisterImageConverterXXX_Man() In ImageConverterXXX.cpp
  */
 Q_EXPORT void ImageConverter_RegisterAll();
 
