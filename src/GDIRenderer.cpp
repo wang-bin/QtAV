@@ -71,8 +71,8 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     DPTR_INIT_PRIVATE(GDIRenderer);
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
-    setAttribute(Qt::WA_OpaquePaintEvent);
-    setAttribute(Qt::WA_NoSystemBackground);
+    //setAttribute(Qt::WA_OpaquePaintEvent);
+    //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
     d_func().getDeviceContext();
     if (d_func().device_context) {
@@ -111,33 +111,30 @@ void GDIRenderer::paintEvent(QPaintEvent *)
     if (!d.scale_in_qt) {
         d.img_mutex.lock();
     }
-    QPainter p(this);
+    HDC hdc = d.device_context;
+    if (!hdc) {
+        QPainter p(this);
+        hdc = p.paintEngine()->getDC();
+    }
+    Graphics g(hdc);
     if (!d.image.isNull()) {
         Bitmap bitmap(d.image.width(), d.image.height(), d.image.bytesPerLine()
                       , PixelFormat32bppRGB, d.image.bits());
-
-        HDC hdc = d.device_context;
-        if (!hdc)
-            hdc = p.paintEngine()->getDC();
-        Graphics g(hdc);
-        if (d.image.size() == QSize(d.width, d.height)) {
-            //d.preview = d.image;
-            g.DrawImage(&bitmap, 0, 0);
-        } else {
-            //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
-            //       , d.image.size().width(), d.image.size().height(), d.width, d.height);
-            g.DrawImage(&bitmap, 0, 0, d.width, d.height);
-        }
+        /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
+         * Improving Performance by Avoiding Automatic Scaling
+         * TODO: How about QPainter?
+         */
+        g.DrawImage(&bitmap, 0, 0, d.width, d.height);
     } else if (!d.preview.isNull()){
-        if (d.preview.size() == QSize(d.width, d.height)) {
-            p.drawImage(QPoint(), d.preview);
-        } else {
-            p.drawImage(rect(), d.preview);
-        }
+        Bitmap bitmap(d.preview.width(), d.preview.height(), d.preview.bytesPerLine()
+                      , PixelFormat32bppRGB, d.preview.bits());
+        g.DrawImage(&bitmap, 0, 0, d.width, d.height);
     } else {
         d.preview = QImage(videoSize(), QImage::Format_RGB32);
         d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-        p.drawImage(QPoint(), d.preview);
+        Bitmap bitmap(d.preview.width(), d.preview.height(), d.preview.bytesPerLine()
+                      , PixelFormat32bppRGB, d.preview.bits());
+        g.DrawImage(&bitmap, 0, 0, d.width, d.height);
     }
     if (!d.scale_in_qt) {
         d.img_mutex.unlock();
