@@ -3,8 +3,8 @@
 //IDI_ICON1               ICON    DISCARDABLE     "QtAV.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,8,0
- PRODUCTVERSION 1,1,8,0
+ FILEVERSION 1,1,9,0
+ PRODUCTVERSION 1,1,9,0
  FILEFLAGS 0x0L
  FILEFLAGSMASK 0x3fL
  FILEOS 0x00040004L
@@ -17,12 +17,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Shanghai University & Kazo Vision & VIA | wbsecg1@gmail.com"
             VALUE "FileDescription", "Media library based on Qt & FFmpeg. https://github.com/wang-bin/QtAV"
-            VALUE "FileVersion", "1.1.8.0"
+            VALUE "FileVersion", "1.1.9.0"
             VALUE "LegalCopyright", "Copyright (C) 2012-2013 WangBin"
             VALUE "InternalName", "QtAV"
             VALUE "OriginalFilename", "QtAV.dll"
             VALUE "ProductName", "QtAV"
-            VALUE "ProductVersion", "1.1.8.0"
+            VALUE "ProductVersion", "1.1.9.0"
         END
     END
     BLOCK "VarFileInfo"
