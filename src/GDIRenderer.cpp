@@ -38,7 +38,8 @@ public:
     DPTR_DECLARE_PUBLIC(GDIRenderer)
 
     GDIRendererPrivate():
-        gdiplus_token(0)
+        dc_painter(false)
+      , gdiplus_token(0)
       , device_context(0)
     {
         GdiplusStartupInput gdiplusStartupInput;
@@ -57,6 +58,7 @@ public:
         device_context = GetDC(p.winId());
     }
 
+    bool dc_painter;
     ULONG_PTR gdiplus_token;
     /*
      * GetDC(winID()): will flick
@@ -74,10 +76,7 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
-    d_func().getDeviceContext();
-    if (d_func().device_context) {
-        setAttribute(Qt::WA_PaintOnScreen); //use native engine
-    }
+    //setDCFromPainter(false); //changeEvent will be called on show()
 }
 
 GDIRenderer::~GDIRenderer()
@@ -92,10 +91,33 @@ bool GDIRenderer::write()
 
 QPaintEngine* GDIRenderer::paintEngine() const
 {
-    if (d_func().device_context) {
-        return 0;
-    } else {
+    if (d_func().dc_painter) {
         return QWidget::paintEngine();
+    } else {
+        return 0;
+    }
+}
+
+void GDIRenderer::setDCFromPainter(bool dc)
+{
+    DPTR_D(GDIRenderer);
+    d.dc_painter = dc;
+    if (dc) {
+        setAttribute(Qt::WA_PaintOnScreen, false);
+    } else {
+        d_func().getDeviceContext();
+        if (d_func().device_context) {
+            setAttribute(Qt::WA_PaintOnScreen, true); //use native engine
+        }
+    }
+}
+
+void GDIRenderer::changeEvent(QEvent *event)
+{
+    QWidget::changeEvent(event);
+    if (event->type() == QEvent::ActivationChange) { //auto called when show
+        setDCFromPainter(d_func().dc_painter);
+        event->accept();
     }
 }
 
@@ -112,7 +134,7 @@ void GDIRenderer::paintEvent(QPaintEvent *)
         d.img_mutex.lock();
     }
     HDC hdc = d.device_context;
-    if (!hdc) {
+    if (d.dc_painter) {
         QPainter p(this);
         hdc = p.paintEngine()->getDC();
     }

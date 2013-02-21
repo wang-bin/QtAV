@@ -25,9 +25,6 @@
 #include <QtAV/ImageRenderer.h>
 #include <QWidget>
 
-/*TODO:
- *  how to choose paintEngine.getDC() or GetDC(winId())?
- */
 namespace QtAV {
 
 class GDIRendererPrivate;
@@ -45,7 +42,14 @@ public:
      * return 0 and set this flag
      */
     virtual QPaintEngine* paintEngine() const;
+
+    /*
+     * true: paintEngine.getDC()
+     * false: GetDC(winId())
+     */
+    void setDCFromPainter(bool dc);
 protected:
+    virtual void changeEvent(QEvent *event); //stay on top will change parent, we need GetDC() again
     virtual void resizeEvent(QResizeEvent *);
     virtual void paintEvent(QPaintEvent *);
 };
