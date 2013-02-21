@@ -53,9 +53,15 @@ openal {
 }
 
 win32 {
-    SOURCES += GDIRenderer.cpp
-    HEADERS += QtAV/GDIRenderer.h
-    LIBS += -lgdiplus
+#TODO: check whether support Direct2D, i.e. version at least XP
+    SOURCES += \
+        Direct2DRenderer.cpp \
+        GDIRenderer.cpp
+    HEADERS += \
+        QtAV/Direct2DRenderer.h \
+        QtAV/GDIRenderer.h
+    LIBS += -lgdiplus -lD2d1
+
 }
 
 SOURCES += \
