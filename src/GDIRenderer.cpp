@@ -38,7 +38,7 @@ public:
     DPTR_DECLARE_PUBLIC(GDIRenderer)
 
     GDIRendererPrivate():
-        dc_painter(false)
+        use_qpainter(false)
       , support_bitblt(true)
       , gdiplus_token(0)
       , device_context(0)
@@ -62,7 +62,7 @@ public:
         qDebug("bitblt=%d", ret);
     }
 
-    bool dc_painter;
+    bool use_qpainter;
     bool support_bitblt;
     ULONG_PTR gdiplus_token;
     /*
@@ -96,32 +96,34 @@ bool GDIRenderer::write()
 
 QPaintEngine* GDIRenderer::paintEngine() const
 {
-    if (d_func().dc_painter) {
+    if (d_func().use_qpainter) {
         return QWidget::paintEngine();
     } else {
         return 0;
     }
 }
 
-void GDIRenderer::setDCFromPainter(bool dc)
+void GDIRenderer::useQPainter(bool qp)
 {
     DPTR_D(GDIRenderer);
-    d.dc_painter = dc;
-    if (dc) {
-        setAttribute(Qt::WA_PaintOnScreen, false);
-    } else {
+    d.use_qpainter = qp;
+    setAttribute(Qt::WA_PaintOnScreen, !d.use_qpainter);
+    if (!d.use_qpainter) {
         d_func().getDeviceContext();
-        if (d_func().device_context) {
-            setAttribute(Qt::WA_PaintOnScreen, true); //use native engine
-        }
     }
+}
+
+bool GDIRenderer::useQPainter() const
+{
+    DPTR_D(const GDIRenderer);
+    return d.use_qpainter;
 }
 
 void GDIRenderer::changeEvent(QEvent *event)
 {
     QWidget::changeEvent(event);
     if (event->type() == QEvent::ActivationChange) { //auto called when show
-        setDCFromPainter(d_func().dc_painter);
+        useQPainter(d_func().use_qpainter);
         event->accept();
     }
 }
@@ -149,10 +151,12 @@ void GDIRenderer::paintEvent(QPaintEvent *)
     Bitmap bitmap(image.width(), image.height(), image.bytesPerLine()
                   , PixelFormat32bppRGB, image.bits());
     HDC hdc = d.device_context;
-    if (d.dc_painter) {
+    if (d.use_qpainter) {
         QPainter p(this);
         hdc = p.paintEngine()->getDC();
     }
+    //begin paint
+    // && image.size() != size()
     if (d.scale_in_qt) { //TODO:rename scale_on_paint
         //qDebug("image size and target size not match. SLOW!!!");
         /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
@@ -160,11 +164,12 @@ void GDIRenderer::paintEvent(QPaintEvent *)
          * TODO: How about QPainter?
          */
         Graphics g(hdc);
+        g.SetSmoothingMode(SmoothingModeHighSpeed);
         g.DrawImage(&bitmap, 0, 0, d.width, d.height);
     } else {
         //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
         HBITMAP hbmp = 0;// CreateCompatibleBitmap(hdc, d.image.width(), d.image.height());
-        if (bitmap.GetHBITMAP(Color(), &hbmp) == 0) {
+        if (SUCCEEDED(bitmap.GetHBITMAP(Color(), &hbmp))) {
             //PAINTSTRUCT ps;
             //BeginPaint(winId(), &ps); //why it's not necessary?
             HDC hdc_mem = CreateCompatibleDC(hdc);
@@ -175,6 +180,7 @@ void GDIRenderer::paintEvent(QPaintEvent *)
             //EndPaint(winId(), &ps);
         }
     }
+    //end paint
     if (!d.scale_in_qt) {
         d.img_mutex.unlock();
     }

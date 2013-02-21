@@ -22,6 +22,7 @@ public:
      * return 0 and set this flag
      */
     virtual QPaintEngine* paintEngine() const;
+    //TODO: move to base class
 	bool useQPainter() const;
 	void useQPainter(bool qp);
 protected:
