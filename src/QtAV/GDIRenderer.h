@@ -43,9 +43,9 @@ public:
      */
     virtual QPaintEngine* paintEngine() const;
 
-    /*
-     * true: paintEngine.getDC()
-     * false: GetDC(winId())
+    /*http://lists.trolltech.com/qt4-preview-feedback/2005-04/thread00609-0.html
+     * true: paintEngine.getDC(), double buffer is enabled by defalut.
+     * false: GetDC(winId()), no double buffer, should reimplement paintEngine()
      */
     void setDCFromPainter(bool dc);
 protected:

@@ -39,6 +39,7 @@ public:
 
     GDIRendererPrivate():
         dc_painter(false)
+      , support_bitblt(true)
       , gdiplus_token(0)
       , device_context(0)
     {
@@ -56,9 +57,13 @@ public:
     void getDeviceContext() {
         DPTR_P(GDIRenderer);
         device_context = GetDC(p.winId());
+        //TODO: check bitblt support
+        int ret = GetDeviceCaps(device_context, RC_BITBLT);
+        qDebug("bitblt=%d", ret);
     }
 
     bool dc_painter;
+    bool support_bitblt;
     ULONG_PTR gdiplus_token;
     /*
      * GetDC(winID()): will flick
@@ -133,35 +138,46 @@ void GDIRenderer::paintEvent(QPaintEvent *)
     if (!d.scale_in_qt) {
         d.img_mutex.lock();
     }
+    QImage image = d.image; //TODO: other renderer use this style
+    if (image.isNull()) {
+        if (d.preview.isNull()) {
+            d.preview = QImage(videoSize(), QImage::Format_RGB32);
+            d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
+        }
+        image = d.preview;
+    }
+    Bitmap bitmap(image.width(), image.height(), image.bytesPerLine()
+                  , PixelFormat32bppRGB, image.bits());
     HDC hdc = d.device_context;
     if (d.dc_painter) {
         QPainter p(this);
         hdc = p.paintEngine()->getDC();
     }
-    Graphics g(hdc);
-    if (!d.image.isNull()) {
-        Bitmap bitmap(d.image.width(), d.image.height(), d.image.bytesPerLine()
-                      , PixelFormat32bppRGB, d.image.bits());
+    if (d.scale_in_qt) { //TODO:rename scale_on_paint
+        //qDebug("image size and target size not match. SLOW!!!");
         /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
          * Improving Performance by Avoiding Automatic Scaling
          * TODO: How about QPainter?
          */
-        g.DrawImage(&bitmap, 0, 0, d.width, d.height);
-    } else if (!d.preview.isNull()){
-        Bitmap bitmap(d.preview.width(), d.preview.height(), d.preview.bytesPerLine()
-                      , PixelFormat32bppRGB, d.preview.bits());
+        Graphics g(hdc);
         g.DrawImage(&bitmap, 0, 0, d.width, d.height);
     } else {
-        d.preview = QImage(videoSize(), QImage::Format_RGB32);
-        d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-        Bitmap bitmap(d.preview.width(), d.preview.height(), d.preview.bytesPerLine()
-                      , PixelFormat32bppRGB, d.preview.bits());
-        g.DrawImage(&bitmap, 0, 0, d.width, d.height);
+        //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
+        HBITMAP hbmp = 0;// CreateCompatibleBitmap(hdc, d.image.width(), d.image.height());
+        if (bitmap.GetHBITMAP(Color(), &hbmp) == 0) {
+            //PAINTSTRUCT ps;
+            //BeginPaint(winId(), &ps); //why it's not necessary?
+            HDC hdc_mem = CreateCompatibleDC(hdc);
+            HBITMAP hbmp_old = (HBITMAP)SelectObject(hdc_mem, hbmp);
+            BitBlt(hdc, 0, 0, image.width(), image.height(), hdc_mem, 0, 0, SRCCOPY);
+            SelectObject(hdc_mem, hbmp_old);
+            DeleteDC(hdc_mem);
+            //EndPaint(winId(), &ps);
+        }
     }
     if (!d.scale_in_qt) {
         d.img_mutex.unlock();
     }
-
 }
 
 } //namespace QtAV
