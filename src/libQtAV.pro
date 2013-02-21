@@ -52,6 +52,12 @@ openal {
     else: LIBS *= -lopenal
 }
 
+win32 {
+    SOURCES += GDIRenderer.cpp
+    HEADERS += QtAV/GDIRenderer.h
+    LIBS += -lgdiplus
+}
+
 SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \
