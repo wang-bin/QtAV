@@ -7,6 +7,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG *= qtav-buildlib
 CONFIG *= portaudio
 #CONFIG *= openal
+win32 {
+CONFIG *= gdi
+}
 
 #var with '_' can not pass to pri?
 STATICLINK = 0
@@ -54,7 +57,7 @@ openal {
     else: LIBS *= -lopenal
 }
 
-win32 {
+gdi {
     SOURCES += GDIRenderer.cpp
     HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus
