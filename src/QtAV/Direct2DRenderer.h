@@ -25,6 +25,10 @@
 #include <QtAV/ImageRenderer.h>
 #include <QWidget>
 
+/*TODO:
+ *  draw yuv directly
+ */
+
 namespace QtAV {
 
 class Direct2DRendererPrivate;

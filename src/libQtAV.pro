@@ -10,7 +10,7 @@ CONFIG *= portaudio
 win32 {
 CONFIG *= gdi
 #TODO: link or dynamic link?
-*msvc*: CONFIG *= direct2d #gcc may not have heeaders and libs
+#*msvc*: CONFIG *= direct2d #gcc may not have heeaders and libs
 }
 
 #var with '_' can not pass to pri?
