@@ -7,6 +7,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG *= qtav-buildlib
 CONFIG *= portaudio
 #CONFIG *= openal
+win32 {
+CONFIG *= gdi
+#TODO: link or dynamic link?
+*msvc*: CONFIG *= direct2d #gcc may not have heeaders and libs
+}
 
 #var with '_' can not pass to pri?
 STATICLINK = 0
@@ -20,6 +25,8 @@ OTHER_FILES += $$RC_FILE
 TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 
 *msvc* {
+#link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
+    QMAKE_LFLAGS += /SAFESEH:NO
     INCLUDEPATH += compat/msvc
 }
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
@@ -52,16 +59,16 @@ openal {
     else: LIBS *= -lopenal
 }
 
-win32 {
+gdi {
+    SOURCES += GDIRenderer.cpp
+    HEADERS += QtAV/GDIRenderer.h
+    LIBS += -lgdiplus
+}
+direct2d {
 #TODO: check whether support Direct2D, i.e. version at least XP
-    SOURCES += \
-        Direct2DRenderer.cpp \
-        GDIRenderer.cpp
-    HEADERS += \
-        QtAV/Direct2DRenderer.h \
-        QtAV/GDIRenderer.h
-    LIBS += -lgdiplus -lD2d1
-
+    SOURCES += Direct2DRenderer.cpp
+    HEADERS += QtAV/Direct2DRenderer.h
+    LIBS += -lD2d1
 }
 
 SOURCES += \
@@ -128,4 +135,5 @@ HEADERS += \
     QtAV/singleton.h \
     QtAV/factory.h \
     QtAV/FactoryDefine.h \
-    QtAV/ImageConverterTypes.h
+    QtAV/ImageConverterTypes.h \
+    QtAV/version.h

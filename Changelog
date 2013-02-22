@@ -1,3 +1,16 @@
+version 1.1.9
+
+- Add network interrupt callback. Thanks Vito vcovito
+- QtAV and FFmpeg runtime version check
+- Add factory model to manager the components. Currently used in ImageConverter
+- MSVC support
+- Seek bug fix: some times blocked
+- qmake: no additional arguments required(if source dir is writable)
+- Add 2 graphics item renderer examples
+- GDI+ renderer support
+- Start to use script to create new classes
+
+
 version 1.1.8    2013-02-06
 
 - LGPL version 2.1
