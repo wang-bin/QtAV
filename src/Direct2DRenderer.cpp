@@ -27,7 +27,9 @@
 
 #include <d2d1.h>
 
-//http://msdn.microsoft.com/zh-cn/library/dd317121(v=vs.85).aspx
+//steps: http://msdn.microsoft.com/zh-cn/library/dd317121(v=vs.85).aspx
+//performance: http://msdn.microsoft.com/en-us/library/windows/desktop/dd372260(v=vs.85).aspx
+//vlc is helpful
 
 namespace QtAV {
 
@@ -49,6 +51,9 @@ public:
         use_qpainter(false)
       , m_pD2DFactory(0)
       , m_pRenderTarget(0)
+      , bitmap(0)
+      , bitmap_width(0)
+      , bitmap_height(0)
     {
         HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
         if (FAILED(hr)) {
@@ -63,6 +68,7 @@ public:
     ~Direct2DRendererPrivate() {
         SafeRelease(&m_pD2DFactory);
         SafeRelease(&m_pRenderTarget);
+        SafeRelease(&bitmap);
     }
     bool createDeviceResource() {
         DPTR_P(Direct2DRenderer);
@@ -85,9 +91,30 @@ public:
                         );
             if (FAILED(hr)) {
                 qWarning("CreateHwndRenderTarget() failed: %d", GetLastError());
+                return false;
             }
+            SafeRelease(&bitmap);
+            prepareBitmap(src_width, src_height); //bitmap is depend on render target
         }
         return hr == S_OK;
+    }
+    //create an empty bitmap with given size. if size is equal as current and bitmap already exists, do nothing
+    bool prepareBitmap(int w, int h) {
+        if (w == bitmap_width && h == bitmap_height && bitmap)
+            return true;
+        bitmap_width = w;
+        bitmap_height = h;
+        qDebug("Resize bitmap to %d x %d", w, h);
+        SafeRelease(&bitmap);
+        HRESULT hr = m_pRenderTarget->CreateBitmap(D2D1::SizeU(w, h)
+                                                   , NULL
+                                                   , 0
+                                                   , &bitmap_properties
+                                                   , &bitmap);
+        if (FAILED(hr)) {
+            qWarning("Failed to create ID2D1Bitmap (%#x)", hr);
+        }
+        return SUCCEEDED(hr);
     }
 
     bool use_qpainter; //TODO: move to base class
@@ -95,6 +122,8 @@ public:
     ID2D1HwndRenderTarget *m_pRenderTarget;
     D2D1_PIXEL_FORMAT pixel_format;
     D2D1_BITMAP_PROPERTIES bitmap_properties;
+    ID2D1Bitmap *bitmap;
+    int bitmap_width, bitmap_height; //can not use src_width, src height because bitmap not update when they changes
 };
 
 Direct2DRenderer::Direct2DRenderer(QWidget *parent, Qt::WindowFlags f):
@@ -182,24 +211,28 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
         }
         image = d.preview;
     }
+    HRESULT hr = S_OK;
     //begin paint
+    if (!d.prepareBitmap(image.width(), image.height()))
+        return;
+    hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
+                             , image.bits()
+                             , image.bytesPerLine());
+    if (hr != S_OK) {
+        qWarning("Failed to copy from memory to bitmap (%#x)", hr);
+        return;
+    }
     //http://www.daimakuai.net/?page_id=1574
-    ID2D1Bitmap *pBitmap = 0;
-    HRESULT hr = d.m_pRenderTarget->CreateBitmap(D2D1::SizeU(image.width(), image.height()), image.bits()
-                                         , image.bytesPerLine()
-                                         , &d.bitmap_properties
-                                         , &pBitmap);
     if (SUCCEEDED(hr)) {
         d.m_pRenderTarget->BeginDraw();
         d.m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
         //d.m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
-        d.m_pRenderTarget->DrawBitmap(pBitmap
+        d.m_pRenderTarget->DrawBitmap(d.bitmap
                                       , &D2D1::RectF(0, 0, width(), height())
                                       , 1 //opacity
                                       , D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
                                       , &D2D1::RectF(0, 0, image.width(), image.height()));
         hr = d.m_pRenderTarget->EndDraw();
-        SafeRelease(&pBitmap);
         if (hr == D2DERR_RECREATE_TARGET) {
             qDebug("D2DERR_RECREATE_TARGET");
             hr = S_OK;
@@ -207,7 +240,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
             //d.createDeviceResource(); //?
         }
     } else {
-        qWarning("create bitmap failed: %d", GetLastError());
+        qWarning("create bitmap failed: %d", hr);
     }
     //end paint
     if (!d.scale_in_qt) {
