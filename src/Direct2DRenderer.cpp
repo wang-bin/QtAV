@@ -49,13 +49,13 @@ public:
 
     Direct2DRendererPrivate():
         use_qpainter(false)
-      , m_pD2DFactory(0)
-      , m_pRenderTarget(0)
+      , d2d_factory(0)
+      , render_target(0)
       , bitmap(0)
       , bitmap_width(0)
       , bitmap_height(0)
     {
-        HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+        HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &d2d_factory);
         if (FAILED(hr)) {
             qWarning("Create d2d factory failed");
         }
@@ -66,13 +66,13 @@ public:
         bitmap_properties = D2D1::BitmapProperties(pixel_format);
     }
     ~Direct2DRendererPrivate() {
-        SafeRelease(&m_pD2DFactory);
-        SafeRelease(&m_pRenderTarget);
+        SafeRelease(&d2d_factory);
+        SafeRelease(&render_target);
         SafeRelease(&bitmap);
     }
     bool createDeviceResource() {
         DPTR_P(Direct2DRenderer);
-        SafeRelease(&m_pRenderTarget); //force create a new one
+        SafeRelease(&render_target); //force create a new one
         //
         //  This method creates resources which are bound to a particular
         //  Direct3D device. It's all centralized here, in case the resources
@@ -80,22 +80,19 @@ public:
         //  change, remoting, removal of video card, etc).
         //
         //TODO: move to prepare(), or private. how to call less times
-        HRESULT hr = S_OK;
-        if (!m_pRenderTarget) {
-            D2D1_SIZE_U size = D2D1::SizeU(p.width(), p.height());//d.width, d.height?
-            // Create a Direct2D render target.
-            hr = m_pD2DFactory->CreateHwndRenderTarget(
-                        D2D1::RenderTargetProperties(),
-                        D2D1::HwndRenderTargetProperties(p.winId(), size),
-                        &m_pRenderTarget
-                        );
-            if (FAILED(hr)) {
-                qWarning("CreateHwndRenderTarget() failed: %d", GetLastError());
-                return false;
-            }
-            SafeRelease(&bitmap);
-            prepareBitmap(src_width, src_height); //bitmap is depend on render target
+        D2D1_SIZE_U size = D2D1::SizeU(p.width(), p.height());//d.width, d.height?
+        // Create a Direct2D render target.
+        HRESULT hr = d2d_factory->CreateHwndRenderTarget(
+                    D2D1::RenderTargetProperties(), //TODO: vlc set properties
+                    D2D1::HwndRenderTargetProperties(p.winId(), size),
+                    &render_target
+                    );
+        if (FAILED(hr)) {
+            qWarning("CreateHwndRenderTarget() failed: %d", GetLastError());
+            return false;
         }
+        SafeRelease(&bitmap);
+        prepareBitmap(src_width, src_height); //bitmap depends on render target
         return hr == S_OK;
     }
     //create an empty bitmap with given size. if size is equal as current and bitmap already exists, do nothing
@@ -106,20 +103,21 @@ public:
         bitmap_height = h;
         qDebug("Resize bitmap to %d x %d", w, h);
         SafeRelease(&bitmap);
-        HRESULT hr = m_pRenderTarget->CreateBitmap(D2D1::SizeU(w, h)
+        HRESULT hr = render_target->CreateBitmap(D2D1::SizeU(w, h)
                                                    , NULL
                                                    , 0
                                                    , &bitmap_properties
                                                    , &bitmap);
         if (FAILED(hr)) {
             qWarning("Failed to create ID2D1Bitmap (%#x)", hr);
+            return false;
         }
-        return SUCCEEDED(hr);
+        return true;
     }
 
     bool use_qpainter; //TODO: move to base class
-    ID2D1Factory *m_pD2DFactory;
-    ID2D1HwndRenderTarget *m_pRenderTarget;
+    ID2D1Factory *d2d_factory;
+    ID2D1HwndRenderTarget *render_target;
     D2D1_PIXEL_FORMAT pixel_format;
     D2D1_BITMAP_PROPERTIES bitmap_properties;
     ID2D1Bitmap *bitmap;
@@ -185,14 +183,15 @@ void Direct2DRenderer::resizeEvent(QResizeEvent *e)
     resizeVideo(e->size());
 
     DPTR_D(Direct2DRenderer);
-    if (d.m_pRenderTarget) {
-        D2D1_SIZE_U size;
-        size.width = e->size().width();
-        size.height = e->size().height();
+    if (d.render_target) {
+        D2D1_SIZE_U size = {
+            e->size().width(),
+            e->size().height()
+        };
         // Note: This method can fail, but it's okay to ignore the
         // error here -- it will be repeated on the next call to
         // EndDraw.
-        d.m_pRenderTarget->Resize(size);
+        d.render_target->Resize(size);
     }
     update();
 }
@@ -223,24 +222,20 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
         return;
     }
     //http://www.daimakuai.net/?page_id=1574
-    if (SUCCEEDED(hr)) {
-        d.m_pRenderTarget->BeginDraw();
-        d.m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-        //d.m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
-        d.m_pRenderTarget->DrawBitmap(d.bitmap
-                                      , &D2D1::RectF(0, 0, width(), height())
-                                      , 1 //opacity
-                                      , D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
-                                      , &D2D1::RectF(0, 0, image.width(), image.height()));
-        hr = d.m_pRenderTarget->EndDraw();
-        if (hr == D2DERR_RECREATE_TARGET) {
-            qDebug("D2DERR_RECREATE_TARGET");
-            hr = S_OK;
-            SafeRelease(&d.m_pRenderTarget);
-            //d.createDeviceResource(); //?
-        }
-    } else {
-        qWarning("create bitmap failed: %d", hr);
+    d.render_target->BeginDraw();
+    d.render_target->SetTransform(D2D1::Matrix3x2F::Identity());
+    //d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+    d.render_target->DrawBitmap(d.bitmap
+                                , &D2D1::RectF(0, 0, width(), height())
+                                , 1 //opacity
+                                , D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
+                                , &D2D1::RectF(0, 0, image.width(), image.height()));
+    hr = d.render_target->EndDraw();
+    if (hr == D2DERR_RECREATE_TARGET) {
+        qDebug("D2DERR_RECREATE_TARGET");
+        hr = S_OK;
+        SafeRelease(&d.render_target);
+        //d.createDeviceResource(); //?
     }
     //end paint
     if (!d.scale_in_qt) {
