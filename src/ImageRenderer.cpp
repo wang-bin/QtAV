@@ -75,6 +75,7 @@ void ImageRenderer::convertData(const QByteArray &data)
         d.img_mutex.unlock();
     } else {
         //qDebug("data address = %p", data.data());
+        //Format_RGB32 is fast. see document
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
         d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
 #else
