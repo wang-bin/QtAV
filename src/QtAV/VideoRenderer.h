@@ -51,7 +51,7 @@ public:
     //TODO: unregister
     virtual bool open();
     virtual bool close();
-    virtual QImage currentFrameImage() const = 0; //const QImage& const?
+    //virtual QImage currentFrameImage() const = 0; //const QImage& const?
     void resizeVideo(const QSize& size);
     void resizeVideo(int width, int height);
     QSize videoSize() const;

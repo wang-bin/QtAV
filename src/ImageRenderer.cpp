@@ -37,12 +37,12 @@ ImageRenderer::ImageRenderer(ImageRendererPrivate &d)
 ImageRenderer::~ImageRenderer()
 {
 }
-
+/*
 QImage ImageRenderer::currentFrameImage() const
 {
     return d_func().image;
 }
-
+*/
 //FIXME: why crash if QImage use widget size?
 void ImageRenderer::convertData(const QByteArray &data)
 {
