@@ -108,9 +108,6 @@ void GDIRenderer::useQPainter(bool qp)
     DPTR_D(GDIRenderer);
     d.use_qpainter = qp;
     setAttribute(Qt::WA_PaintOnScreen, !d.use_qpainter);
-    if (!d.use_qpainter) {
-        d_func().getDeviceContext();
-    }
 }
 
 bool GDIRenderer::useQPainter() const
@@ -119,12 +116,12 @@ bool GDIRenderer::useQPainter() const
     return d.use_qpainter;
 }
 
-void GDIRenderer::changeEvent(QEvent *event)
+void GDIRenderer::showEvent(QShowEvent *)
 {
-    QWidget::changeEvent(event);
-    if (event->type() == QEvent::ActivationChange) { //auto called when show
-        useQPainter(d_func().use_qpainter);
-        event->accept();
+    DPTR_D(const GDIRenderer);
+    useQPainter(d.use_qpainter);
+    if (!d.use_qpainter) {
+        d_func().getDeviceContext();
     }
 }
 
