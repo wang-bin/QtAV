@@ -1,19 +1,19 @@
 
 #include "QtAV/%CLASS%.h"
-#include "private/ImageRenderer_p.h"
+#include "private/VideoRenderer_p.h"
 #include <QtGui/QPainter>
 #include <QtGui/QPaintEngine>
 #include <QResizeEvent>
 
 namespace QtAV {
 
-class %CLASS%Private : public ImageRendererPrivate
+class %CLASS%Private : public VideoRendererPrivate
 {
 public:
     DPTR_DECLARE_PUBLIC(%CLASS%)
 
     %CLASS%Private():
-		use_qpainter(true)
+		use_qpainter(false) //default is to use custome paint engine, e.g. dx. gl
     {
     }
     ~%CLASS%Private() {
@@ -22,7 +22,7 @@ public:
 };
 
 %CLASS%::%CLASS%(QWidget *parent, Qt::WindowFlags f):
-    QWidget(parent, f),ImageRenderer(*new %CLASS%Private())
+    QWidget(parent, f),VideoRenderer(*new %CLASS%Private())
 {
     DPTR_INIT_PRIVATE(%CLASS%);
     setAcceptDrops(true);
@@ -34,6 +34,22 @@ public:
 
 %CLASS%::~%CLASS%()
 {
+}
+
+
+void %CLASS%::convertData(const QByteArray &data)
+{
+    DPTR_D(%CLASS%);
+    //TODO: if date is deep copied, mutex can be avoided
+    if (!d.scale_in_qt) {
+        /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
+        d.img_mutex.lock();
+        /* convert data to your image below*/
+        d.img_mutex.unlock();
+    } else {
+        //TODO: move to private class
+        /* convert data to your image below. image size is (d.src_width, d.src_height)*/
+    }
 }
 
 bool %CLASS%::write()
@@ -64,12 +80,17 @@ bool %CLASS%::useQPainter() const
 	return d.use_qpainter;
 }
 
-void %CLASS%::changeEvent(QEvent *event)
+void %CLASS%::paintEvent(QPaintEvent *)
 {
-    QWidget::changeEvent(event);
-    if (event->type() == QEvent::ActivationChange) { //auto called when show
-        useQPainter(d_func().use_qpainter);
-        event->accept();
+    DPTR_D(%CLASS%);
+    if (!d.scale_in_qt) {
+        d.img_mutex.lock();
+    }
+    //begin paint. how about QPainter::beginNativePainting()?
+
+    //end paint. how about QPainter::endNativePainting()?
+    if (!d.scale_in_qt) {
+        d.img_mutex.unlock();
     }
 }
 
@@ -79,26 +100,16 @@ void %CLASS%::resizeEvent(QResizeEvent *e)
     update();
 }
 
-void %CLASS%::paintEvent(QPaintEvent *)
+void %CLASS%::showEvent(QShowEvent *event)
 {
+    Q_UNUSED(event);
     DPTR_D(%CLASS%);
-    if (!d.scale_in_qt) {
-        d.img_mutex.lock();
-    }
-    QImage image = d.image; //TODO: other renderer use this style
-    if (image.isNull()) {
-        if (d.preview.isNull()) {
-            d.preview = QImage(videoSize(), QImage::Format_RGB32);
-            d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-        }
-        image = d.preview;
-    }
-    //begin paint
-    
-    //end paint
-    if (!d.scale_in_qt) {
-        d.img_mutex.unlock();
-    }
+    useQPainter(d.use_qpainter);
+    /*
+     * Do something that depends on widget below! e.g. recreate render target for direct2d.
+     * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you
+     * don't do anything here, the widget content will never be updated.
+     */
 }
 
 } //namespace QtAV
