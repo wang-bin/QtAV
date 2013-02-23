@@ -50,8 +50,9 @@ public:
 	bool useQPainter() const;
     void useQPainter(bool qp);
 protected:
-    virtual void changeEvent(QEvent *event); //stay on top will change parent, we need GetDC() again
+    //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void resizeEvent(QResizeEvent *);
+    virtual void showEvent(QShowEvent *);
     virtual void paintEvent(QPaintEvent *);
 };
 

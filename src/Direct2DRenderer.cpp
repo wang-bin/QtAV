@@ -199,17 +199,6 @@ bool Direct2DRenderer::useQPainter() const
 	return d.use_qpainter;
 }
 
-void Direct2DRenderer::changeEvent(QEvent *event)
-{
-    QWidget::changeEvent(event);
-    if (event->type() == QEvent::ActivationChange) { //auto called when show
-        DPTR_D(Direct2DRenderer);
-        useQPainter(d.use_qpainter);
-        d.createDeviceResource();
-        event->accept();
-    }
-}
-
 void Direct2DRenderer::resizeEvent(QResizeEvent *e)
 {
     resizeVideo(e->size());
@@ -226,6 +215,13 @@ void Direct2DRenderer::resizeEvent(QResizeEvent *e)
         d.render_target->Resize(size);
     }
     update();
+}
+
+void Direct2DRenderer::showEvent(QShowEvent *)
+{
+    DPTR_D(Direct2DRenderer);
+    useQPainter(d.use_qpainter);
+    d.createDeviceResource();
 }
 
 void Direct2DRenderer::paintEvent(QPaintEvent *)
