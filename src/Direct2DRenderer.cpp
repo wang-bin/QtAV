@@ -89,6 +89,7 @@ public:
                     );
         if (FAILED(hr)) {
             qWarning("CreateHwndRenderTarget() failed: %d", GetLastError());
+            render_target = 0;
             return false;
         }
         SafeRelease(&bitmap);
@@ -99,6 +100,10 @@ public:
     bool prepareBitmap(int w, int h) {
         if (w == bitmap_width && h == bitmap_height && bitmap)
             return true;
+        if (!render_target) {
+            qWarning("No render target, bitmap will not be created!!!");
+            return false;
+        }
         bitmap_width = w;
         bitmap_height = h;
         qDebug("Resize bitmap to %d x %d", w, h);
@@ -110,6 +115,8 @@ public:
                                                    , &bitmap);
         if (FAILED(hr)) {
             qWarning("Failed to create ID2D1Bitmap (%#x)", hr);
+            bitmap = 0;
+            SafeRelease(&render_target);
             return false;
         }
         return true;
@@ -227,9 +234,12 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     if (!d.scale_in_qt) {
         d.img_mutex.lock();
     }
+    if (!d.render_target) {
+        qWarning("No render target!!!");
+        return;
+    }
     HRESULT hr = S_OK;
     //begin paint
-
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
     d.render_target->SetTransform(D2D1::Matrix3x2F::Identity());
@@ -247,7 +257,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
         qDebug("D2DERR_RECREATE_TARGET");
         hr = S_OK;
         SafeRelease(&d.render_target);
-        //d.createDeviceResource(); //?
+        d.createDeviceResource(); //?
     }
     //end paint
     if (!d.scale_in_qt) {
