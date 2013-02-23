@@ -73,18 +73,15 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
     if (!d.scale_in_qt) {
         d.img_mutex.lock();
     }
-    QImage image = d.image;
-    if (image.isNull()) {
-        if (d.preview.isNull()) {
-            d.preview = QImage(videoSize(), QImage::Format_RGB32);
-            d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-        }
-        image = d.preview;
+    if (d.image.isNull()) {
+        //TODO: when setSourceSize()?
+        d.image = QImage(videoSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
-    if (image.size() == QSize(d.width, d.height))
-        painter->drawImage(QPointF(), image);
+    if (d.image.size() == QSize(d.width, d.height))
+        painter->drawImage(QPointF(), d.image);
     else
-        painter->drawImage(boundingRect(), image);
+        painter->drawImage(boundingRect(), d.image);
     if (!d.scale_in_qt) {
         d.img_mutex.unlock();
     }

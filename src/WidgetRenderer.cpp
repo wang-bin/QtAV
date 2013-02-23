@@ -119,27 +119,20 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
         d.img_mutex.lock();
     }
     QPainter p(this);
-    if (!d.image.isNull()) {
-        if (d.image.size() == QSize(d.width, d.height)) {
-            //d.preview = d.image;
-            p.drawImage(QPoint(), d.image);
-        } else {
-            //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
-            //       , d.image.size().width(), d.image.size().height(), d.width, d.height);
-            p.drawImage(rect(), d.image);
-            //what's the difference?
-            //p.drawImage(QPoint(), d.image.scaled(d.width, d.height));
-        }
-    } else if (!d.preview.isNull()){
-        if (d.preview.size() == QSize(d.width, d.height)) {
-            p.drawImage(QPoint(), d.preview);
-        } else {
-            p.drawImage(rect(), d.preview);
-        }
+    if (d.image.isNull()) {
+        //TODO: when setSourceSize()?
+        d.image = QImage(videoSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
+    }
+    if (d.image.size() == QSize(d.width, d.height)) {
+        //d.preview = d.image;
+        p.drawImage(QPoint(), d.image);
     } else {
-        d.preview = QImage(videoSize(), QImage::Format_RGB32);
-        d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-        p.drawImage(QPoint(), d.preview);
+        //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
+        //       , d.image.size().width(), image.size().height(), d.width, d.height);
+        p.drawImage(rect(), d.image);
+        //what's the difference?
+        //p.drawImage(QPoint(), image.scaled(d.width, d.height));
     }
     if (!d.scale_in_qt) {
         d.img_mutex.unlock();

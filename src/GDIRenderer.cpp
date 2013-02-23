@@ -137,16 +137,13 @@ void GDIRenderer::paintEvent(QPaintEvent *)
     if (!d.scale_in_qt) {
         d.img_mutex.lock();
     }
-    QImage image = d.image; //TODO: other renderer use this style
-    if (image.isNull()) {
-        if (d.preview.isNull()) {
-            d.preview = QImage(videoSize(), QImage::Format_RGB32);
-            d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-        }
-        image = d.preview;
+    if (d.image.isNull()) {
+        //TODO: when setSourceSize()?
+        d.image = QImage(videoSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
-    Bitmap bitmap(image.width(), image.height(), image.bytesPerLine()
-                  , PixelFormat32bppRGB, image.bits());
+    Bitmap bitmap(d.image.width(), d.image.height(), d.image.bytesPerLine()
+                  , PixelFormat32bppRGB, d.image.bits());
     HDC hdc = d.device_context;
     if (d.use_qpainter) {
         QPainter p(this);
@@ -171,7 +168,7 @@ void GDIRenderer::paintEvent(QPaintEvent *)
             //BeginPaint(winId(), &ps); //why it's not necessary?
             HDC hdc_mem = CreateCompatibleDC(hdc);
             HBITMAP hbmp_old = (HBITMAP)SelectObject(hdc_mem, hbmp);
-            BitBlt(hdc, 0, 0, image.width(), image.height(), hdc_mem, 0, 0, SRCCOPY);
+            BitBlt(hdc, 0, 0, d.image.width(), d.image.height(), hdc_mem, 0, 0, SRCCOPY);
             SelectObject(hdc_mem, hbmp_old);
             DeleteDC(hdc_mem);
             //EndPaint(winId(), &ps);

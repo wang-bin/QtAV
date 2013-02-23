@@ -84,22 +84,4 @@ void ImageRenderer::convertData(const QByteArray &data)
     }
 }
 
-
-void ImageRenderer::setPreview(const QImage &preivew)
-{
-    DPTR_D(ImageRenderer);
-    d.preview = preivew;
-    d.image = preivew;
-}
-
-QImage ImageRenderer::previewImage() const
-{
-    return d_func().preview;
-}
-
-QImage ImageRenderer::currentImage() const
-{
-    return d_func().image;
-}
-
 } //namespace QtAV

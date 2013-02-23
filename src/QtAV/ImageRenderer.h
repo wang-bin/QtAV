@@ -36,9 +36,6 @@ public:
     virtual ~ImageRenderer();
     //virtual QImage currentFrameImage() const;
 	virtual void convertData(const QByteArray &data);
-    void setPreview(const QImage& preview); //TODO: rmeove
-    QImage previewImage() const; //TODO: rmeove
-    QImage currentImage() const;
 protected:
     ImageRenderer(ImageRendererPrivate& d);
 };
