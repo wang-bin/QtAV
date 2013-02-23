@@ -22,7 +22,7 @@
 #ifndef QTAV_DIRECT2DRENDERER_H
 #define QTAV_DIRECT2DRENDERER_H
 
-#include <QtAV/ImageRenderer.h>
+#include <QtAV/VideoRenderer.h>
 #include <QWidget>
 
 /*TODO:
@@ -32,13 +32,14 @@
 namespace QtAV {
 
 class Direct2DRendererPrivate;
-class Q_EXPORT Direct2DRenderer : public QWidget, public ImageRenderer
+class Q_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(Direct2DRenderer)
 public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~Direct2DRenderer();
+    virtual void convertData(const QByteArray &data);
     virtual bool write();
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
@@ -49,8 +50,9 @@ public:
 	bool useQPainter() const;
     void useQPainter(bool qp);
 protected:
-    virtual void changeEvent(QEvent *event); //stay on top will change parent, we need GetDC() again
+    //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void resizeEvent(QResizeEvent *);
+    virtual void showEvent(QShowEvent *);
     virtual void paintEvent(QPaintEvent *);
 };
 
