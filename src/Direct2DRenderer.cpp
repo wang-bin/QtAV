@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/Direct2DRenderer.h"
-#include "private/ImageRenderer_p.h"
+#include "private/VideoRenderer_p.h"
 #include <QtGui/QPainter>
 #include <QtGui/QPaintEngine>
 #include <QResizeEvent>
@@ -42,7 +42,7 @@ inline void SafeRelease(Interface **ppInterfaceToRelease)
     }
 }
 
-class Direct2DRendererPrivate : public ImageRendererPrivate
+class Direct2DRendererPrivate : public VideoRendererPrivate
 {
 public:
     DPTR_DECLARE_PUBLIC(Direct2DRenderer)
@@ -125,7 +125,7 @@ public:
 };
 
 Direct2DRenderer::Direct2DRenderer(QWidget *parent, Qt::WindowFlags f):
-    QWidget(parent, f),ImageRenderer(*new Direct2DRendererPrivate())
+    QWidget(parent, f),VideoRenderer(*new Direct2DRendererPrivate())
 {
     DPTR_INIT_PRIVATE(Direct2DRenderer);
     setAcceptDrops(true);
@@ -137,6 +137,31 @@ Direct2DRenderer::Direct2DRenderer(QWidget *parent, Qt::WindowFlags f):
 
 Direct2DRenderer::~Direct2DRenderer()
 {
+}
+
+void Direct2DRenderer::convertData(const QByteArray &data)
+{
+    DPTR_D(Direct2DRenderer);
+    if (!d.prepareBitmap(d.src_width, d.src_height))
+        return;
+    HRESULT hr = S_OK;
+    //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
+    if (!d.scale_in_qt) {
+        /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
+        d.img_mutex.lock();
+        hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
+                                  , data.constData()
+                                  , d.src_width*4*sizeof(char));
+        d.img_mutex.unlock();
+    } else {
+        hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
+                                  , data.constData()
+                                  , d.src_width*4*sizeof(char));
+    }
+    if (hr != S_OK) {
+        qWarning("Failed to copy from memory to bitmap (%#x)", hr);
+        return;
+    }
 }
 
 bool Direct2DRenderer::write()
@@ -202,34 +227,21 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     if (!d.scale_in_qt) {
         d.img_mutex.lock();
     }
-    QImage image = d.image; //TODO: other renderer use this style
-    if (image.isNull()) {
-        if (d.preview.isNull()) {
-            d.preview = QImage(videoSize(), QImage::Format_RGB32);
-            d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-        }
-        image = d.preview;
-    }
     HRESULT hr = S_OK;
     //begin paint
-    if (!d.prepareBitmap(image.width(), image.height()))
-        return;
-    hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
-                             , image.bits()
-                             , image.bytesPerLine());
-    if (hr != S_OK) {
-        qWarning("Failed to copy from memory to bitmap (%#x)", hr);
-        return;
-    }
+
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
     d.render_target->SetTransform(D2D1::Matrix3x2F::Identity());
-    //d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+    if (!d.bitmap) {
+        d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+        return;
+    }
     d.render_target->DrawBitmap(d.bitmap
                                 , &D2D1::RectF(0, 0, width(), height())
                                 , 1 //opacity
                                 , D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
-                                , &D2D1::RectF(0, 0, image.width(), image.height()));
+                                , &D2D1::RectF(0, 0, d.src_width, d.src_height));
     hr = d.render_target->EndDraw();
     if (hr == D2DERR_RECREATE_TARGET) {
         qDebug("D2DERR_RECREATE_TARGET");
