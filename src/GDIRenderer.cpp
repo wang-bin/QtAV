@@ -50,16 +50,38 @@ public:
         if (device_context) {
             DPTR_P(GDIRenderer);
             ReleaseDC(p.winId(), device_context);
+            DeleteDC(off_dc);
             device_context = 0;
         }
         GdiplusShutdown(gdiplus_token);
     }
-    void getDeviceContext() {
+    void prepare() {
         DPTR_P(GDIRenderer);
         device_context = GetDC(p.winId());
         //TODO: check bitblt support
         int ret = GetDeviceCaps(device_context, RC_BITBLT);
         qDebug("bitblt=%d", ret);
+        //TODO: wingapi? vlc
+#if 0
+        BITMAPINFOHEADER bih;
+        bih.biSize          = sizeof(BITMAPINFOHEADER);
+        bih.biSizeImage     = 0;
+        bih.biPlanes        = 1;
+        bih.biCompression   = BI_RGB; //vlc: 16bpp=>BI_RGB, 15bpp=>BI_BITFIELDS
+        bih.biBitCount      = 32;
+        bih.biWidth         = src_width;
+        bih.biHeight        = src_height;
+        bih.biClrImportant  = 0;
+        bih.biClrUsed       = 0;
+        bih.biXPelsPerMeter = 0;
+        bih.biYPelsPerMeter = 0;
+
+        off_bitmap = CreateDIBSection(device_context,
+                                      , (BITMAPINFO*)&bih
+                                      , DIB_RGB_COLORS
+                                      , &p_pic_buffer, NULL, 0);
+#endif //0
+        off_dc = CreateCompatibleDC(device_context);
     }
 
     bool use_qpainter;
@@ -70,6 +92,10 @@ public:
      * QPainter.paintEngine()->getDC() in paintEvent: doc says it's for internal use
      */
     HDC device_context;
+    /* Our offscreen bitmap and its framebuffer */
+    HDC        off_dc;
+    HBITMAP    off_bitmap;
+
 };
 
 GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
@@ -129,7 +155,7 @@ void GDIRenderer::showEvent(QShowEvent *)
     DPTR_D(const GDIRenderer);
     useQPainter(d.use_qpainter);
     if (!d.use_qpainter) {
-        d_func().getDeviceContext();
+        d_func().prepare();
     }
 }
 
@@ -156,47 +182,26 @@ void GDIRenderer::paintEvent(QPaintEvent *)
         g.FillRectangle(&brush, 0, 0, width(), height());
         return;
     }
+    /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
+     * Improving Performance by Avoiding Automatic Scaling
+     * TODO: How about QPainter?
+     */
+    //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
     Bitmap bitmap(d.src_width, d.src_height, d.src_width*4*sizeof(char)
                   , PixelFormat32bppRGB, (BYTE*)d.data.data());
-    // && image.size() != size()
-    if (d.scale_in_qt) { //TODO:rename scale_on_paint
-        //qDebug("image size and target size not match. SLOW!!!");
-        /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
-         * Improving Performance by Avoiding Automatic Scaling
-         * TODO: How about QPainter?
-         */
-#if 0
-        Graphics g(hdc);
-        g.SetSmoothingMode(SmoothingModeHighSpeed);
-        g.DrawImage(&bitmap, 0, 0, d.width, d.height);
-#else
-        HBITMAP hbmp = 0; //in init: off_bitmap: CreateDIBSection; off_dc: CreateCompatibleDC
-        if (FAILED(bitmap.GetHBITMAP(Color(), &hbmp))) {
-            qWarning("Failed GetHBITMAP");
-            return;
-        }
-        HDC hdc_mem = CreateCompatibleDC(hdc);
-        HBITMAP hbmp_old = (HBITMAP)SelectObject(hdc_mem, hbmp);
-        StretchBlt(hdc, 0, 0, width(), height(), hdc_mem, 0, 0, d.src_width, d.src_height, SRCCOPY);
-        SelectObject(hdc_mem, hbmp_old);
-        DeleteDC(hdc_mem);
-        DeleteObject(hbmp); //avoid mem leak
-#endif //0
-    } else {
-        //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
-        HBITMAP hbmp = 0;// CreateCompatibleBitmap(hdc, d.image.width(), d.image.height());
-        if (SUCCEEDED(bitmap.GetHBITMAP(Color(), &hbmp))) {
-            //PAINTSTRUCT ps;
-            //BeginPaint(winId(), &ps); //why it's not necessary?
-            HDC hdc_mem = CreateCompatibleDC(hdc);
-            HBITMAP hbmp_old = (HBITMAP)SelectObject(hdc_mem, hbmp);
-            BitBlt(hdc, 0, 0, d.src_width, d.src_height, hdc_mem, 0, 0, SRCCOPY);
-            SelectObject(hdc_mem, hbmp_old);
-            DeleteDC(hdc_mem);
-            DeleteObject(hbmp); //avoid mem leak
-            //EndPaint(winId(), &ps);
-        }
+    if (FAILED(bitmap.GetHBITMAP(Color(), &d.off_bitmap))) {
+        qWarning("Failed GetHBITMAP");
+        return;
     }
+    HBITMAP hbmp_old = (HBITMAP)SelectObject(d.off_dc, d.off_bitmap);
+    // && image.size() != size()
+    if (d.scale_in_qt || d.src_width != d.width || d.src_height != d.height) { //TODO:rename scale_on_paint
+        StretchBlt(hdc, 0, 0, width(), height(), d.off_dc, 0, 0, d.src_width, d.src_height, SRCCOPY);
+    } else {
+        BitBlt(hdc, 0, 0, d.src_width, d.src_height, d.off_dc, 0, 0, SRCCOPY);
+    }
+    SelectObject(d.off_dc, hbmp_old);
+    DeleteObject(d.off_bitmap); //avoid mem leak
     //end paint
 }
 
