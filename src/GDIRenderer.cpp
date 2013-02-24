@@ -165,9 +165,23 @@ void GDIRenderer::paintEvent(QPaintEvent *)
          * Improving Performance by Avoiding Automatic Scaling
          * TODO: How about QPainter?
          */
+#if 0
         Graphics g(hdc);
         g.SetSmoothingMode(SmoothingModeHighSpeed);
         g.DrawImage(&bitmap, 0, 0, d.width, d.height);
+#else
+        HBITMAP hbmp = 0; //in init: off_bitmap: CreateDIBSection; off_dc: CreateCompatibleDC
+        if (FAILED(bitmap.GetHBITMAP(Color(), &hbmp))) {
+            qWarning("Failed GetHBITMAP");
+            return;
+        }
+        HDC hdc_mem = CreateCompatibleDC(hdc);
+        HBITMAP hbmp_old = (HBITMAP)SelectObject(hdc_mem, hbmp);
+        StretchBlt(hdc, 0, 0, width(), height(), hdc_mem, 0, 0, d.src_width, d.src_height, SRCCOPY);
+        SelectObject(hdc_mem, hbmp_old);
+        DeleteDC(hdc_mem);
+        DeleteObject(hbmp); //avoid mem leak
+#endif //0
     } else {
         //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
         HBITMAP hbmp = 0;// CreateCompatibleBitmap(hdc, d.image.width(), d.image.height());
@@ -179,6 +193,7 @@ void GDIRenderer::paintEvent(QPaintEvent *)
             BitBlt(hdc, 0, 0, d.src_width, d.src_height, hdc_mem, 0, 0, SRCCOPY);
             SelectObject(hdc_mem, hbmp_old);
             DeleteDC(hdc_mem);
+            DeleteObject(hbmp); //avoid mem leak
             //EndPaint(winId(), &ps);
         }
     }
