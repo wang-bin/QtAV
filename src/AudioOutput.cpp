@@ -80,9 +80,4 @@ bool AudioOutput::isMute() const
     return !isAvailable() || d_func().mute;
 }
 
-void AudioOutput::convertData(const QByteArray &data)
-{;
-	d_func().data = data;
-}
-
 } //namespace QtAV

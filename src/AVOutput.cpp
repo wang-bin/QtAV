@@ -42,6 +42,7 @@ AVOutput::~AVOutput()
 bool AVOutput::writeData(const QByteArray &data)
 {
     Q_UNUSED(data);
+    d_func().data = data;
 	convertData(data);
 	bool result = write();
 	//write then pause: if capture when pausing, the displayed picture is captured
@@ -79,6 +80,10 @@ bool AVOutput::tryPause()
     Q_UNUSED(lock);
     d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
     return true;
+}
+
+void AVOutput::convertData(const QByteArray &data)
+{
 }
 
 } //namespace QtAV
