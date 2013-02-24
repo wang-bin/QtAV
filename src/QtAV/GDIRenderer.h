@@ -22,13 +22,13 @@
 #ifndef QTAV_GDIRENDERER_H
 #define QTAV_GDIRENDERER_H
 
-#include <QtAV/ImageRenderer.h>
+#include <QtAV/VideoRenderer.h>
 #include <QWidget>
 
 namespace QtAV {
 
 class GDIRendererPrivate;
-class Q_EXPORT GDIRenderer : public QWidget, public ImageRenderer
+class Q_EXPORT GDIRenderer : public QWidget, public VideoRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GDIRenderer)
@@ -51,6 +51,7 @@ public:
     bool useQPainter() const;
     void useQPainter(bool qp);
 protected:
+    virtual void convertData(const QByteArray &data);
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void showEvent(QShowEvent *);
     virtual void resizeEvent(QResizeEvent *);

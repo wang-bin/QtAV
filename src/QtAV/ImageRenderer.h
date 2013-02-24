@@ -35,8 +35,8 @@ public:
     ImageRenderer();
     virtual ~ImageRenderer();
     //virtual QImage currentFrameImage() const;
-	virtual void convertData(const QByteArray &data);
 protected:
+    virtual void convertData(const QByteArray &data);
     ImageRenderer(ImageRendererPrivate& d);
 };
 

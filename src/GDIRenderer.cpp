@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "GDIRenderer.h"
-#include "private/ImageRenderer_p.h"
+#include "private/VideoRenderer_p.h"
 #include <windows.h> //GetDC()
 #include <gdiplus.h>
 #include <QtGui/QPainter>
@@ -32,7 +32,7 @@
 using namespace Gdiplus;
 namespace QtAV {
 
-class GDIRendererPrivate : public ImageRendererPrivate
+class GDIRendererPrivate : public VideoRendererPrivate
 {
 public:
     DPTR_DECLARE_PUBLIC(GDIRenderer)
@@ -73,7 +73,7 @@ public:
 };
 
 GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
-    QWidget(parent, f),ImageRenderer(*new GDIRendererPrivate())
+    QWidget(parent, f),VideoRenderer(*new GDIRendererPrivate())
 {
     DPTR_INIT_PRIVATE(GDIRenderer);
     setAcceptDrops(true);
@@ -116,6 +116,14 @@ bool GDIRenderer::useQPainter() const
     return d.use_qpainter;
 }
 
+void GDIRenderer::convertData(const QByteArray &data)
+{
+    DPTR_D(GDIRenderer);
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+    d.data = data;
+}
+
 void GDIRenderer::showEvent(QShowEvent *)
 {
     DPTR_D(const GDIRenderer);
@@ -134,22 +142,22 @@ void GDIRenderer::resizeEvent(QResizeEvent *e)
 void GDIRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(GDIRenderer);
-    if (!d.scale_in_qt) {
-        d.img_mutex.lock();
-    }
-    if (d.image.isNull()) {
-        //TODO: when setSourceSize()?
-        d.image = QImage(videoSize(), QImage::Format_RGB32);
-        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-    }
-    Bitmap bitmap(d.image.width(), d.image.height(), d.image.bytesPerLine()
-                  , PixelFormat32bppRGB, d.image.bits());
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+    //begin paint
     HDC hdc = d.device_context;
     if (d.use_qpainter) {
         QPainter p(this);
         hdc = p.paintEngine()->getDC();
     }
-    //begin paint
+    if (d.data.isEmpty()) {
+        Graphics g(hdc);
+        SolidBrush brush(Color(255, 0, 0, 0)); //argb
+        g.FillRectangle(&brush, 0, 0, width(), height());
+        return;
+    }
+    Bitmap bitmap(d.src_width, d.src_height, d.src_width*4*sizeof(char)
+                  , PixelFormat32bppRGB, (BYTE*)d.data.data());
     // && image.size() != size()
     if (d.scale_in_qt) { //TODO:rename scale_on_paint
         //qDebug("image size and target size not match. SLOW!!!");
@@ -168,16 +176,13 @@ void GDIRenderer::paintEvent(QPaintEvent *)
             //BeginPaint(winId(), &ps); //why it's not necessary?
             HDC hdc_mem = CreateCompatibleDC(hdc);
             HBITMAP hbmp_old = (HBITMAP)SelectObject(hdc_mem, hbmp);
-            BitBlt(hdc, 0, 0, d.image.width(), d.image.height(), hdc_mem, 0, 0, SRCCOPY);
+            BitBlt(hdc, 0, 0, d.src_width, d.src_height, hdc_mem, 0, 0, SRCCOPY);
             SelectObject(hdc_mem, hbmp_old);
             DeleteDC(hdc_mem);
             //EndPaint(winId(), &ps);
         }
     }
     //end paint
-    if (!d.scale_in_qt) {
-        d.img_mutex.unlock();
-    }
 }
 
 } //namespace QtAV

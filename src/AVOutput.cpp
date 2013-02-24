@@ -42,7 +42,12 @@ AVOutput::~AVOutput()
 bool AVOutput::writeData(const QByteArray &data)
 {
     Q_UNUSED(data);
-    d_func().data = data;
+    //DPTR_D(AVOutput);
+    //locker(&mutex)
+    //TODO: make sure d.data thread safe. lock around here? for audio and video(main thread problem)?
+    /* you can use d.data directly in AVThread. In other thread, it's not safe, you must do something
+     * to make sure the data is not be modified in AVThread when using it*/
+    //d_func().data = data;
 	convertData(data);
 	bool result = write();
 	//write then pause: if capture when pausing, the displayed picture is captured
@@ -84,6 +89,9 @@ bool AVOutput::tryPause()
 
 void AVOutput::convertData(const QByteArray &data)
 {
+    //TODO: make sure d.data thread safe. lock here?
+    DPTR_D(AVOutput);
+    d.data = data;
 }
 
 } //namespace QtAV
