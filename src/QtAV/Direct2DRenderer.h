@@ -39,7 +39,6 @@ class Q_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
 public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~Direct2DRenderer();
-    virtual bool write();
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
@@ -54,6 +53,7 @@ protected:
     virtual void resizeEvent(QResizeEvent *);
     virtual void showEvent(QShowEvent *);
     virtual void paintEvent(QPaintEvent *);
+    virtual bool write();
 };
 
 } //namespace QtAV

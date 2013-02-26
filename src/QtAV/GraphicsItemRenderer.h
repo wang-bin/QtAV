@@ -43,13 +43,13 @@ public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
     virtual ~GraphicsItemRenderer();
 
-	virtual bool write();
     QRectF boundingRect() const;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
 protected:
     GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
 
+    virtual bool write();
 #if CONFIG_GRAPHICSWIDGET
     virtual bool event(QEvent *event);
 #else

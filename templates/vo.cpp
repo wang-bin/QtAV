@@ -22,7 +22,8 @@ public:
 };
 
 %CLASS%::%CLASS%(QWidget *parent, Qt::WindowFlags f):
-    QWidget(parent, f),VideoRenderer(*new %CLASS%Private())
+    QWidget(parent, f)
+  , VideoRenderer(*new %CLASS%Private())
 {
     DPTR_INIT_PRIVATE(%CLASS%);
     setAcceptDrops(true);
@@ -36,27 +37,6 @@ public:
 {
 }
 
-
-void %CLASS%::convertData(const QByteArray &data)
-{
-    DPTR_D(%CLASS%);
-    //TODO: if date is deep copied, mutex can be avoided
-    if (!d.scale_in_qt) {
-        /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
-        d.img_mutex.lock();
-        /* convert data to your image below*/
-        d.img_mutex.unlock();
-    } else {
-        //TODO: move to private class
-        /* convert data to your image below. image size is (d.src_width, d.src_height)*/
-    }
-}
-
-bool %CLASS%::write()
-{
-    update();
-    return true;
-}
 
 QPaintEngine* %CLASS%::paintEngine() const
 {
@@ -77,7 +57,22 @@ void %CLASS%::useQPainter(bool qp)
 bool %CLASS%::useQPainter() const
 {
     DPTR_D(const %CLASS%);
-	return d.use_qpainter;
+    return d.use_qpainter;
+}
+
+void %CLASS%::convertData(const QByteArray &data)
+{
+    DPTR_D(%CLASS%);
+    //TODO: if date is deep copied, mutex can be avoided
+    if (!d.scale_in_qt) {
+        /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
+        d.img_mutex.lock();
+        /* convert data to your image below*/
+        d.img_mutex.unlock();
+    } else {
+        //TODO: move to private class
+        /* convert data to your image below. image size is (d.src_width, d.src_height)*/
+    }
 }
 
 void %CLASS%::paintEvent(QPaintEvent *)
@@ -110,6 +105,12 @@ void %CLASS%::showEvent(QShowEvent *event)
      * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you
      * don't do anything here, the widget content will never be updated.
      */
+}
+
+bool %CLASS%::write()
+{
+    update();
+    return true;
 }
 
 } //namespace QtAV
