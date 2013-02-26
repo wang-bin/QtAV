@@ -232,6 +232,9 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     }
     if (!d.render_target) {
         qWarning("No render target!!!");
+        if (!d.scale_in_qt) {
+            d.img_mutex.unlock();
+        }
         return;
     }
     HRESULT hr = S_OK;
@@ -241,6 +244,9 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     d.render_target->SetTransform(D2D1::Matrix3x2F::Identity());
     if (!d.bitmap) {
         d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+        if (!d.scale_in_qt) {
+            d.img_mutex.unlock();
+        }
         return;
     }
     d.render_target->DrawBitmap(d.bitmap

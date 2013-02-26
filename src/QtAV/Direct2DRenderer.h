@@ -39,7 +39,6 @@ class Q_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
 public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~Direct2DRenderer();
-    virtual void convertData(const QByteArray &data);
     virtual bool write();
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
@@ -50,6 +49,7 @@ public:
 	bool useQPainter() const;
     void useQPainter(bool qp);
 protected:
+    virtual void convertData(const QByteArray &data);
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void resizeEvent(QResizeEvent *);
     virtual void showEvent(QShowEvent *);
