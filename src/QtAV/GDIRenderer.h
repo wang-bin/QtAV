@@ -35,7 +35,6 @@ class Q_EXPORT GDIRenderer : public QWidget, public VideoRenderer
 public:
     GDIRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0); //offscreen?
     virtual ~GDIRenderer();
-    virtual bool write();
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
@@ -56,6 +55,7 @@ protected:
     virtual void showEvent(QShowEvent *);
     virtual void resizeEvent(QResizeEvent *);
     virtual void paintEvent(QPaintEvent *);
+    virtual bool write();
 };
 
 } //namespace QtAV
