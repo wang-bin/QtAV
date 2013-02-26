@@ -66,6 +66,7 @@ gdi {
 }
 direct2d {
 #TODO: check whether support Direct2D, i.e. version at least XP
+    #INCLUDEPATH += $${PROJECTROOT}/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
     HEADERS += QtAV/Direct2DRenderer.h
     LIBS += -lD2d1
@@ -82,6 +83,7 @@ SOURCES += \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
     EventFilter.cpp \
+    GLWidgetRenderer.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
@@ -120,6 +122,7 @@ HEADERS += \
     QtAV/AVDemuxer.h \
     QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
+    QtAV/GLWidgetRenderer.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/ImageRenderer.h \
