@@ -24,25 +24,57 @@
 
 #include <private/AVOutput_p.h>
 //#include <QtAV/ImageConverter.h>
+#include <QtAV/VideoRenderer.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QMutex>
+#include <QtCore/QRect>
 
 class QObject;
 namespace QtAV {
 class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
-    VideoRendererPrivate():scale_in_qt(true),width(480),height(320),src_width(0)
-      ,src_height(0) {
+    VideoRendererPrivate():
+        scale_in_qt(true)
+      , width(480)
+      , height(320)
+      , src_width(0)
+      , src_height(0)
+      , source_aspect_ratio(0)
+      , aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
+      , out_aspect_ratio(0)
+    {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
     }
     virtual ~VideoRendererPrivate(){}
     bool scale_in_qt;
+    // width, height: the renderer's size. i.e. size of video frame with the value with borders
+    //TODO: rename to renderer_width/height
     int width, height;
+    qreal source_aspect_ratio;
     int src_width, src_height;
     //ImageConverter conv;
     QMutex img_mutex;
+    VideoRenderer::FrameAspectRatioMode aspect_ratio_mode;
+    qreal out_aspect_ratio;
+    //out_rect: the displayed video frame out_rect in the renderer
+    QRect out_rect; //TODO: out_out_rect
+
+    void computeOutParameters(qreal rendererAspectRatio, qreal outAspectRatio) {
+        if (rendererAspectRatio > outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
+            //renderer is too wide, use renderer's height, horizonal align center
+            int h = height;
+            int w = source_aspect_ratio * qreal(h);
+            out_rect = QRect((width - w)/2, 0, w, h);
+        } else if (rendererAspectRatio < outAspectRatio) {
+            //renderer is too high, use renderer's width
+            int w = width;
+            int h = qreal(w)/source_aspect_ratio;
+            out_rect = QRect(0, (height - h)/2, w, h);
+        }
+        out_aspect_ratio = outAspectRatio;
+    }
 };
 
 } //namespace QtAV

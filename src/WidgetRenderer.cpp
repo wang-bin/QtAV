@@ -37,6 +37,9 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
     :QWidget(parent, f),ImageRenderer(d)
 {
+    setAcceptDrops(true);
+    setFocusPolicy(Qt::StrongFocus);
+    setAutoFillBackground(false);
 }
 
 WidgetRenderer::~WidgetRenderer()
@@ -119,18 +122,19 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
         d.img_mutex.lock();
     }
     QPainter p(this);
+    p.fillRect(rect(), QColor(0, 0, 0));
     if (d.image.isNull()) {
         //TODO: when setSourceSize()?
         d.image = QImage(videoSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
-    if (d.image.size() == QSize(d.width, d.height)) {
+    if (d.image.size() == d.out_rect.size()) {
         //d.preview = d.image;
-        p.drawImage(QPoint(), d.image);
+        p.drawImage(d.out_rect.topLeft(), d.image);
     } else {
         //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
         //       , d.image.size().width(), image.size().height(), d.width, d.height);
-        p.drawImage(rect(), d.image);
+        p.drawImage(d.out_rect, d.image);
         //what's the difference?
         //p.drawImage(QPoint(), image.scaled(d.width, d.height));
     }

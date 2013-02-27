@@ -50,6 +50,50 @@ bool VideoRenderer::scaleInQt() const
     return d_func().scale_in_qt;
 }
 
+void VideoRenderer::setOutAspectRatioMode(FrameAspectRatioMode mode)
+{
+    DPTR_D(VideoRenderer);
+    if (mode == d.aspect_ratio_mode)
+        return;
+    d.aspect_ratio_mode = mode;
+    if (mode == RendererAspectRatio) {
+        //compute out_rect
+        d.out_rect = QRect(0, 0, d.width, d.height);
+        d.out_aspect_ratio = qreal(d.width)/qreal(d.height);
+        //is that thread safe?
+        resizeFrame(d.out_rect.width(), d.out_rect.height());
+    } else if (mode == VideoAspectRatio) {
+        /* do nothing here. the out_rect should be calculated when the next frame is ready
+         * and setSource() will pass the original video size.
+         * Alternatively we can store the original aspect ratio, which can be got from AVCodecContext
+         */
+    }
+}
+
+VideoRenderer::FrameAspectRatioMode VideoRenderer::outAspectRatioMode() const
+{
+    return d_func().aspect_ratio_mode;
+}
+
+void VideoRenderer::setOutAspectRatio(qreal ratio)
+{
+    DPTR_D(VideoRenderer);
+    bool ratio_changed = d.out_aspect_ratio != ratio;
+    d.out_aspect_ratio = ratio;
+    d.aspect_ratio_mode = CustomAspectRation;
+    //compute the out out_rect
+    qreal r = qreal(d.width)/qreal(d.height); //renderer aspect ratio
+    d.computeOutParameters(r, ratio);
+    if (ratio_changed) {
+        resizeFrame(d.out_rect.width(), d.out_rect.height());
+    }
+}
+
+qreal VideoRenderer::outAspectRatio() const
+{
+    return d_func().out_aspect_ratio;
+}
+
 void VideoRenderer::setSourceSize(const QSize& s)
 {
     setSourceSize(s.width(), s.height());
@@ -58,8 +102,19 @@ void VideoRenderer::setSourceSize(const QSize& s)
 void VideoRenderer::setSourceSize(int width, int height)
 {
     DPTR_D(VideoRenderer);
+    //check
+    if (d.src_width == width && d.src_height == height)
+        return;
     d.src_width = width;
     d.src_height = height;
+    d.source_aspect_ratio = qreal(d.src_width)/qreal(d.src_height);
+    //see setOutAspectRatioMode
+    if (d.aspect_ratio_mode == VideoAspectRatio) {
+        qreal r = qreal(d.width)/qreal(d.height); //renderer aspect ratio
+        //source_aspect_ratio equals to original video aspect ratio here, also equals to out ratio
+        d.computeOutParameters(r, d.source_aspect_ratio);
+        resizeFrame(d.out_rect.width(), d.out_rect.height());
+    }
 }
 
 QSize VideoRenderer::lastSize() const
@@ -102,6 +157,9 @@ void VideoRenderer::resizeVideo(int width, int height)
 
     d.width = width;
     d.height = height;
+    qreal r = qreal(d.width)/qreal(d.height);
+    d.computeOutParameters(r, d.out_aspect_ratio);
+    resizeFrame(d.out_rect.width(), d.out_rect.height());
 }
 
 QSize VideoRenderer::videoSize() const
@@ -117,6 +175,15 @@ int VideoRenderer::videoWidth() const
 int VideoRenderer::videoHeight() const
 {
     return d_func().height;
+}
+
+QRect VideoRenderer::videoRect() const
+{
+    return d_func().out_rect;
+}
+
+void VideoRenderer::resizeFrame(int width, int height)
+{
 }
 
 } //namespace QtAV
