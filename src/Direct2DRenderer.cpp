@@ -153,21 +153,17 @@ void Direct2DRenderer::convertData(const QByteArray &data)
     if (!d.prepareBitmap(d.src_width, d.src_height))
         return;
     HRESULT hr = S_OK;
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
-    if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
-        d.img_mutex.lock();//TODO: d2d often crash, should we always lock? How about other renderer?
-        hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
+        //d.img_mutex.lock();//TODO: d2d often crash, should we always lock? How about other renderer?
+    hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
                                   , data.constData()
                                   , d.src_width*4*sizeof(char));
-        d.img_mutex.unlock();
-    } else {
-        hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
-                                  , data.constData()
-                                  , d.src_width*4*sizeof(char));
-    }
     if (hr != S_OK) {
         qWarning("Failed to copy from memory to bitmap (%#x)", hr);
+        //forgot unlock before, so use locker for easy
         return;
     }
 }
@@ -184,14 +180,10 @@ QPaintEngine* Direct2DRenderer::paintEngine() const
 void Direct2DRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(Direct2DRenderer);
-    if (!d.scale_in_renderer) {
-        d.img_mutex.lock();
-    }
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     if (!d.render_target) {
         qWarning("No render target!!!");
-        if (!d.scale_in_renderer) {
-            d.img_mutex.unlock();
-        }
         return;
     }
     HRESULT hr = S_OK;
@@ -202,9 +194,6 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     if (!d.bitmap) {
         //TODO: It seems that the target's background keeps the color
         d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
-        if (!d.scale_in_renderer) {
-            d.img_mutex.unlock();
-        }
         return;
     }
     D2D1_RECT_F out_rect = {
@@ -226,9 +215,6 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
         d.createDeviceResource(); //?
     }
     //end paint
-    if (!d.scale_in_renderer) {
-        d.img_mutex.unlock();
-    }
 }
 
 void Direct2DRenderer::resizeEvent(QResizeEvent *e)
