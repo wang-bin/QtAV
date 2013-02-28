@@ -118,17 +118,21 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.lock();
     }
     QPainter p(this);
-    p.fillRect(rect(), QColor(0, 0, 0));
+    //fill background color only when the displayed frame rect not equas to renderer's
+    if (d.out_rect != rect()) {
+        p.fillRect(rect(), QColor(0, 0, 0));
+    }
     if (d.image.isNull()) {
         //TODO: when setInSize()?
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
-    if (d.image.size() == d.out_rect.size()) {
+    //assume that the image data is already scaled to out_size(NOT renderer size!)
+    if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
         //d.preview = d.image;
         p.drawImage(d.out_rect.topLeft(), d.image);
     } else {
@@ -138,7 +142,7 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
         //what's the difference?
         //p.drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
     }
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.unlock();
     }
 }

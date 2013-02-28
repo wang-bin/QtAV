@@ -159,12 +159,29 @@ void GDIRenderer::paintEvent(QPaintEvent *)
         qWarning("Failed GetHBITMAP");
         return;
     }
+
+    //fill background color only when the displayed frame rect not equas to renderer's
+    if (d.out_rect != rect()) {
+
+    }
     HBITMAP hbmp_old = (HBITMAP)SelectObject(d.off_dc, d.off_bitmap);
     // && image.size() != size()
-    if (d.scale_in_renderer || d.src_width != d.renderer_width || d.src_height != d.renderer_height) { //TODO:rename scale_on_paint
-        StretchBlt(hdc, 0, 0, width(), height(), d.off_dc, 0, 0, d.src_width, d.src_height, SRCCOPY);
+    //assume that the image data is already scaled to out_size(NOT renderer size!)
+    if (!d.scale_in_renderer || (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height())) {
+        BitBlt(hdc
+               , d.out_rect.left(), d.out_rect.top()
+               , d.out_rect.width(), d.out_rect.height()
+               , d.off_dc
+               , 0, 0
+               , SRCCOPY);
     } else {
-        BitBlt(hdc, 0, 0, d.src_width, d.src_height, d.off_dc, 0, 0, SRCCOPY);
+        StretchBlt(hdc
+                   , d.out_rect.left(), d.out_rect.top()
+                   , d.out_rect.width(), d.out_rect.height()
+                   , d.off_dc
+                   , 0, 0
+                   , d.src_width, d.src_height
+                   , SRCCOPY);
     }
     SelectObject(d.off_dc, hbmp_old);
     DeleteObject(d.off_bitmap); //avoid mem leak

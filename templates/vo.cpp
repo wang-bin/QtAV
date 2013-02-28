@@ -71,6 +71,18 @@ void %CLASS%::paintEvent(QPaintEvent *)
     }
     //begin paint. how about QPainter::beginNativePainting()?
 
+    //fill background color only when the displayed frame rect not equas to renderer's
+    if (d.out_rect != rect()) {
+        //fill background color
+    }
+
+    //assume that the image data is already scaled to out_size(NOT renderer size!)
+    if (!d.scale_in_renderer || (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height())) {
+        //you may copy data to video buffer directly
+    } else {
+        //paint with scale
+    }
+
     //end paint. how about QPainter::endNativePainting()?
     if (!d.scale_in_renderer) {
         d.img_mutex.unlock();

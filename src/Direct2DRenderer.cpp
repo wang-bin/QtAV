@@ -156,7 +156,7 @@ void Direct2DRenderer::convertData(const QByteArray &data)
     //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
     if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
-        d.img_mutex.lock();
+        d.img_mutex.lock();//TODO: d2d often crash, should we always lock? How about other renderer?
         hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
                                   , data.constData()
                                   , d.src_width*4*sizeof(char));
@@ -200,14 +200,21 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     d.render_target->BeginDraw();
     d.render_target->SetTransform(D2D1::Matrix3x2F::Identity());
     if (!d.bitmap) {
+        //TODO: It seems that the target's background keeps the color
         d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
         if (!d.scale_in_renderer) {
             d.img_mutex.unlock();
         }
         return;
     }
+    D2D1_RECT_F out_rect = {
+        d.out_rect.left(),
+        d.out_rect.top(),
+        d.out_rect.right(),
+        d.out_rect.bottom()
+    };
     d.render_target->DrawBitmap(d.bitmap
-                                , &D2D1::RectF(0, 0, width(), height())
+                                , &out_rect
                                 , 1 //opacity
                                 , D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
                                 , &D2D1::RectF(0, 0, d.src_width, d.src_height));

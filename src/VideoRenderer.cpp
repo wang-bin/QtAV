@@ -43,12 +43,12 @@ VideoRenderer::~VideoRenderer()
 
 void VideoRenderer::scaleInRenderer(bool q)
 {
-    d_func().scale_in_qt = q;
+    d_func().scale_in_renderer = q;
 }
 
 bool VideoRenderer::scaleInRenderer() const
 {
-    return d_func().scale_in_qt;
+    return d_func().scale_in_renderer;
 }
 
 void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
