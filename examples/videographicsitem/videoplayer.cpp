@@ -35,7 +35,7 @@ VideoPlayer::VideoPlayer(QWidget *parent)
     , videoItem(0)
 {
     videoItem = new GraphicsItemRenderer;
-    videoItem->resizeVideo(640, 360);
+    videoItem->resizeRenderer(640, 360);
     videoItem->setOutAspectRatioMode(VideoRenderer::RendererAspectRatio);
 
     QGraphicsScene *scene = new QGraphicsScene(this);

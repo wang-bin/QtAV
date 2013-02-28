@@ -54,7 +54,7 @@ bool WidgetRenderer::write()
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
 {
-    resizeVideo(e->size());
+    resizeRenderer(e->size());
     update();
 }
 
@@ -124,8 +124,8 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
     QPainter p(this);
     p.fillRect(rect(), QColor(0, 0, 0));
     if (d.image.isNull()) {
-        //TODO: when setSourceSize()?
-        d.image = QImage(videoSize(), QImage::Format_RGB32);
+        //TODO: when setInSize()?
+        d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
     if (d.image.size() == d.out_rect.size()) {
@@ -133,10 +133,10 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
         p.drawImage(d.out_rect.topLeft(), d.image);
     } else {
         //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
-        //       , d.image.size().width(), image.size().height(), d.width, d.height);
+        //       , d.image.size().width(), image.size().height(), d.renderer_width, d.renderer_height);
         p.drawImage(d.out_rect, d.image);
         //what's the difference?
-        //p.drawImage(QPoint(), image.scaled(d.width, d.height));
+        //p.drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
     }
     if (!d.scale_in_qt) {
         d.img_mutex.unlock();

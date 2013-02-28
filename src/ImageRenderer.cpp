@@ -50,7 +50,7 @@ void ImageRenderer::convertData(const QByteArray &data)
     //int ss = 4*d.src_width*d.src_height*sizeof(char);
     //if (ss != data.size())
     //    qDebug("src size=%d, data size=%d", ss, data.size());
-    //if (d.src_width != d.width || d.src_height != d.height)
+    //if (d.src_width != d.renderer_width || d.src_height != d.renderer_height)
     //    return;
     /*
      * QImage constructed from memory do not deep copy the data, data should be available throughout

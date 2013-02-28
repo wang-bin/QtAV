@@ -80,7 +80,7 @@ public:
         //  change, remoting, removal of video card, etc).
         //
         //TODO: move to prepare(), or private. how to call less times
-        D2D1_SIZE_U size = D2D1::SizeU(p.width(), p.height());//d.width, d.height?
+        D2D1_SIZE_U size = D2D1::SizeU(p.width(), p.height());//d.renderer_width, d.renderer_height?
         // Create a Direct2D render target.
         HRESULT hr = d2d_factory->CreateHwndRenderTarget(
                     D2D1::RenderTargetProperties(), //TODO: vlc set properties
@@ -201,7 +201,7 @@ bool Direct2DRenderer::useQPainter() const
 
 void Direct2DRenderer::resizeEvent(QResizeEvent *e)
 {
-    resizeVideo(e->size());
+    resizeRenderer(e->size());
 
     DPTR_D(Direct2DRenderer);
     if (d.render_target) {

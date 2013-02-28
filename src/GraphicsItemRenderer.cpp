@@ -62,7 +62,7 @@ bool GraphicsItemRenderer::write()
 
 QRectF GraphicsItemRenderer::boundingRect() const
 {
-    return QRectF(0, 0, videoWidth(), videoHeight());
+    return QRectF(0, 0, rendererWidth(), rendererHeight());
 }
 
 void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -75,11 +75,11 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
     }
     painter->fillRect(boundingRect(), QColor(0, 0, 0));
     if (d.image.isNull()) {
-        //TODO: when setSourceSize()?
-        d.image = QImage(videoSize(), QImage::Format_RGB32);
+        //TODO: when setInSize()?
+        d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
-    if (d.image.size() == QSize(d.width, d.height))
+    if (d.image.size() == QSize(d.renderer_width, d.renderer_height))
         painter->drawImage(d.out_rect.topLeft(), d.image);
     else
         painter->drawImage(d.out_rect, d.image);

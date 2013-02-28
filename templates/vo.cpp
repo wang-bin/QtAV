@@ -91,7 +91,7 @@ void %CLASS%::paintEvent(QPaintEvent *)
 
 void %CLASS%::resizeEvent(QResizeEvent *e)
 {
-    resizeVideo(e->size());
+    resizeRenderer(e->size());
     update();
 }
 

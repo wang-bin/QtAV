@@ -40,17 +40,17 @@ VideoRenderer::~VideoRenderer()
 {
 }
 
-void VideoRenderer::scaleInQt(bool q)
+void VideoRenderer::scaleInRenderer(bool q)
 {
     d_func().scale_in_qt = q;
 }
 
-bool VideoRenderer::scaleInQt() const
+bool VideoRenderer::scaleInRenderer() const
 {
     return d_func().scale_in_qt;
 }
 
-void VideoRenderer::setOutAspectRatioMode(FrameAspectRatioMode mode)
+void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
 {
     DPTR_D(VideoRenderer);
     if (mode == d.aspect_ratio_mode)
@@ -58,8 +58,8 @@ void VideoRenderer::setOutAspectRatioMode(FrameAspectRatioMode mode)
     d.aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
         //compute out_rect
-        d.out_rect = QRect(0, 0, d.width, d.height);
-        d.out_aspect_ratio = qreal(d.width)/qreal(d.height);
+        d.out_rect = QRect(0, 0, d.renderer_width, d.renderer_height);
+        d.out_aspect_ratio = qreal(d.renderer_width)/qreal(d.renderer_height);
         //is that thread safe?
         resizeFrame(d.out_rect.width(), d.out_rect.height());
     } else if (mode == VideoAspectRatio) {
@@ -70,7 +70,7 @@ void VideoRenderer::setOutAspectRatioMode(FrameAspectRatioMode mode)
     }
 }
 
-VideoRenderer::FrameAspectRatioMode VideoRenderer::outAspectRatioMode() const
+VideoRenderer::OutAspectRatioMode VideoRenderer::outAspectRatioMode() const
 {
     return d_func().aspect_ratio_mode;
 }
@@ -82,7 +82,7 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
     d.out_aspect_ratio = ratio;
     d.aspect_ratio_mode = CustomAspectRation;
     //compute the out out_rect
-    qreal r = qreal(d.width)/qreal(d.height); //renderer aspect ratio
+    qreal r = qreal(d.renderer_width)/qreal(d.renderer_height); //renderer aspect ratio
     d.computeOutParameters(r, ratio);
     if (ratio_changed) {
         resizeFrame(d.out_rect.width(), d.out_rect.height());
@@ -94,12 +94,12 @@ qreal VideoRenderer::outAspectRatio() const
     return d_func().out_aspect_ratio;
 }
 
-void VideoRenderer::setSourceSize(const QSize& s)
+void VideoRenderer::setInSize(const QSize& s)
 {
-    setSourceSize(s.width(), s.height());
+    setInSize(s.width(), s.height());
 }
 
-void VideoRenderer::setSourceSize(int width, int height)
+void VideoRenderer::setInSize(int width, int height)
 {
     DPTR_D(VideoRenderer);
     //check
@@ -110,7 +110,7 @@ void VideoRenderer::setSourceSize(int width, int height)
     d.source_aspect_ratio = qreal(d.src_width)/qreal(d.src_height);
     //see setOutAspectRatioMode
     if (d.aspect_ratio_mode == VideoAspectRatio) {
-        qreal r = qreal(d.width)/qreal(d.height); //renderer aspect ratio
+        qreal r = qreal(d.renderer_width)/qreal(d.renderer_height); //renderer aspect ratio
         //source_aspect_ratio equals to original video aspect ratio here, also equals to out ratio
         d.computeOutParameters(r, d.source_aspect_ratio);
         resizeFrame(d.out_rect.width(), d.out_rect.height());
@@ -144,37 +144,38 @@ bool VideoRenderer::close()
     return true;
 }
 
-void VideoRenderer::resizeVideo(const QSize &size)
+void VideoRenderer::resizeRenderer(const QSize &size)
 {
-    resizeVideo(size.width(), size.height());
+    resizeRenderer(size.width(), size.height());
 }
 
-void VideoRenderer::resizeVideo(int width, int height)
+void VideoRenderer::resizeRenderer(int width, int height)
 {
     DPTR_D(VideoRenderer);
     if (width == 0 || height == 0)
         return;
 
-    d.width = width;
-    d.height = height;
-    qreal r = qreal(d.width)/qreal(d.height);
+    d.renderer_width = width;
+    d.renderer_height = height;
+    qreal r = qreal(d.renderer_width)/qreal(d.renderer_height);
     d.computeOutParameters(r, d.out_aspect_ratio);
     resizeFrame(d.out_rect.width(), d.out_rect.height());
 }
 
-QSize VideoRenderer::videoSize() const
+QSize VideoRenderer::rendererSize() const
 {
-    return QSize(d_func().width, d_func().height);
+    DPTR_D(const VideoRenderer);
+    return QSize(d.renderer_width, d.renderer_height);
 }
 
-int VideoRenderer::videoWidth() const
+int VideoRenderer::rendererWidth() const
 {
-    return d_func().width;
+    return d_func().renderer_width;
 }
 
-int VideoRenderer::videoHeight() const
+int VideoRenderer::rendererHeight() const
 {
-    return d_func().height;
+    return d_func().renderer_height;
 }
 
 QRect VideoRenderer::videoRect() const
@@ -184,6 +185,8 @@ QRect VideoRenderer::videoRect() const
 
 void VideoRenderer::resizeFrame(int width, int height)
 {
+    Q_UNUSED(width);
+    Q_UNUSED(height);
 }
 
 } //namespace QtAV

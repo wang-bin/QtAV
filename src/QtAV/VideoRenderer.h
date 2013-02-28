@@ -32,13 +32,12 @@
  *api:
  *  inSize: the converted image size
  *  outSize: the displaying frame size with out borders in renderer
- *  videoSize: the original video size
- *
+ *  rendererSize: the original video size
  *  outAspectRatio:
  *  videoAspectRatio:
  *  rendererAspectRatio:
  *
- *  resizeVideo=>resizeRenderer(), rendererSize(), etc.
+ *  or videoXXX is out(display) XXX, the original XXX is videoOriginalXXX
  */
 struct AVCodecContext;
 struct AVFrame;
@@ -52,28 +51,58 @@ class Q_EXPORT VideoRenderer : public AVOutput
 {
     DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:
-    enum FrameAspectRatioMode {
+    enum OutAspectRatioMode {
         RendererAspectRatio //Use renderer's aspect ratio, i.e. stretch to fit the renderer rect
       , VideoAspectRatio    //Use video's aspect ratio and align center in renderer.
       , CustomAspectRation  //Use the ratio set by setOutAspectRatio(qreal). Mode will be set to this if that function is called
       //, AspectRatio4_3, AspectRatio16_9
     };
+    enum Quality {
+
+    };
 
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
     //for testing performance
-    void scaleInQt(bool q);
-    bool scaleInQt() const;
+    void scaleInRenderer(bool q);
+    bool scaleInRenderer() const;
 
-    void setOutAspectRatioMode(FrameAspectRatioMode mode);
-    FrameAspectRatioMode outAspectRatioMode() const;
-    //If setOutAspectRatio(qreal) is used, then FrameAspectRatioMode is CustomAspectRation
+    void setOutAspectRatioMode(OutAspectRatioMode mode);
+    OutAspectRatioMode outAspectRatioMode() const;
+    //If setOutAspectRatio(qreal) is used, then OutAspectRatioMode is CustomAspectRation
     void setOutAspectRatio(qreal ratio);
     qreal outAspectRatio() const;//
 
+    //TODO: unregister
+    virtual bool open();
+    virtual bool close();
+    //virtual QImage currentFrameImage() const = 0; //const QImage& const?
+    //TODO: resizeRenderer
+    void resizeRenderer(const QSize& size);
+    void resizeRenderer(int width, int height);
+    QSize rendererSize() const;
+    int rendererWidth() const;
+    int rendererHeight() const;
+    //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
+    QRect videoRect() const;
+
+protected:
+    VideoRenderer(VideoRendererPrivate &d);
+    /*!
+     * This function is called whenever resizeRenderer() is called or aspect ratio is changed?
+     * You can reimplement it to recreate the offscreen surface.
+     * The default does nothing.
+     * NOTE: usually it is thread safe, because it is called in main thread resizeEvent,
+     * and the surface is only used by painting, which is usually in main thread too.
+     * If you are doing offscreen painting in other threads, pay attention to thread safe
+     */
+    virtual void resizeFrame(int width, int height);
+private:
+    friend class VideoThread;
+
     //the size of image (QByteArray) that decoded
-    void setSourceSize(const QSize& s); //private? for internal use only, called by VideoThread.
-    void setSourceSize(int width, int height); //private? for internal use only, called by VideoThread.
+    void setInSize(const QSize& s); //private? for internal use only, called by VideoThread.
+    void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
     //qreal sourceAspectRatio() const;//TODO: from AVCodecContext
     //we don't need api like QSize sourceSize() const. you should get them from player or avinfo(not implemented)
 
@@ -82,30 +111,6 @@ public:
     int lastWidth() const;
     int lastHeight() const;
 
-    //TODO: unregister
-    virtual bool open();
-    virtual bool close();
-    //virtual QImage currentFrameImage() const = 0; //const QImage& const?
-    //TODO: resizeRenderer
-    void resizeVideo(const QSize& size);
-    void resizeVideo(int width, int height);
-    QSize videoSize() const;
-    int videoWidth() const;
-    int videoHeight() const;
-    //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
-    QRect videoRect() const;
-
-protected:
-    VideoRenderer(VideoRendererPrivate &d);
-    /*!
-     * This function is called whenever resizeVideo() is called or aspect ratio is changed?
-     * You can reimplement it to recreate the offscreen surface.
-     * The default does nothing.
-     * NOTE: usually it is thread safe, because it is called in main thread resizeEvent,
-     * and the surface is only used by painting, which is usually in main thread too.
-     * If you are doing offscreen painting in other threads, pay attention to thread safe
-     */
-    virtual void resizeFrame(int width, int height);
 };
 
 } //namespace QtAV

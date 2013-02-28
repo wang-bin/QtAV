@@ -123,7 +123,7 @@ VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
 		if (isPlaying())
 			stop();
         //delete _renderer; //Do not own the ptr
-        _renderer->resizeVideo(_renderer->videoSize()); //IMPORTANT: the swscaler will resize
+        _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
     }
     return old;
 }
@@ -164,10 +164,10 @@ void AVPlayer::setPlayerEventFilter(QObject *obj)
 }
 
 //TODO: remove?
-void AVPlayer::resizeVideo(const QSize &size)
+void AVPlayer::resizeRenderer(const QSize &size)
 {
-    _renderer->resizeVideo(size); //TODO: deprecate
-    //video_dec->resizeVideo(size);
+    _renderer->resizeRenderer(size); //TODO: deprecate
+    //video_dec->resizeVideoFrame(size);
 }
 /*
  * loaded state is the state of current setted file.
