@@ -48,13 +48,13 @@ public:
     DPTR_DECLARE_PUBLIC(Direct2DRenderer)
 
     Direct2DRendererPrivate():
-        use_qpainter(false)
-      , d2d_factory(0)
+        d2d_factory(0)
       , render_target(0)
       , bitmap(0)
       , bitmap_width(0)
       , bitmap_height(0)
     {
+        use_qpainter = false;
         HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &d2d_factory);
         if (FAILED(hr)) {
             qWarning("Create d2d factory failed");
@@ -135,6 +135,7 @@ Direct2DRenderer::Direct2DRenderer(QWidget *parent, Qt::WindowFlags f):
     QWidget(parent, f),VideoRenderer(*new Direct2DRendererPrivate())
 {
     DPTR_INIT_PRIVATE(Direct2DRenderer);
+    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     //setAttribute(Qt::WA_OpaquePaintEvent);
@@ -171,12 +172,6 @@ void Direct2DRenderer::convertData(const QByteArray &data)
     }
 }
 
-bool Direct2DRenderer::write()
-{
-    update();
-    return true;
-}
-
 QPaintEngine* Direct2DRenderer::paintEngine() const
 {
     if (d_func().use_qpainter) {
@@ -184,44 +179,6 @@ QPaintEngine* Direct2DRenderer::paintEngine() const
     } else {
         return 0; //use native engine
     }
-}
-
-void Direct2DRenderer::useQPainter(bool qp)
-{
-    DPTR_D(Direct2DRenderer);
-    d.use_qpainter = qp;
-    setAttribute(Qt::WA_PaintOnScreen, !d.use_qpainter);
-}
-
-bool Direct2DRenderer::useQPainter() const
-{
-    DPTR_D(const Direct2DRenderer);
-	return d.use_qpainter;
-}
-
-void Direct2DRenderer::resizeEvent(QResizeEvent *e)
-{
-    resizeRenderer(e->size());
-
-    DPTR_D(Direct2DRenderer);
-    if (d.render_target) {
-        D2D1_SIZE_U size = {
-            e->size().width(),
-            e->size().height()
-        };
-        // Note: This method can fail, but it's okay to ignore the
-        // error here -- it will be repeated on the next call to
-        // EndDraw.
-        d.render_target->Resize(size);
-    }
-    update();
-}
-
-void Direct2DRenderer::showEvent(QShowEvent *)
-{
-    DPTR_D(Direct2DRenderer);
-    useQPainter(d.use_qpainter);
-    d.createDeviceResource();
 }
 
 void Direct2DRenderer::paintEvent(QPaintEvent *)
@@ -265,6 +222,37 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     if (!d.scale_in_qt) {
         d.img_mutex.unlock();
     }
+}
+
+void Direct2DRenderer::resizeEvent(QResizeEvent *e)
+{
+    resizeRenderer(e->size());
+
+    DPTR_D(Direct2DRenderer);
+    if (d.render_target) {
+        D2D1_SIZE_U size = {
+            e->size().width(),
+            e->size().height()
+        };
+        // Note: This method can fail, but it's okay to ignore the
+        // error here -- it will be repeated on the next call to
+        // EndDraw.
+        d.render_target->Resize(size);
+    }
+    update();
+}
+
+void Direct2DRenderer::showEvent(QShowEvent *)
+{
+    DPTR_D(Direct2DRenderer);
+    useQPainter(d.use_qpainter);
+    d.createDeviceResource();
+}
+
+bool Direct2DRenderer::write()
+{
+    update();
+    return true;
 }
 
 } //namespace QtAV

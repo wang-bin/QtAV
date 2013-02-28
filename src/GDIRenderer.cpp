@@ -38,11 +38,11 @@ public:
     DPTR_DECLARE_PUBLIC(GDIRenderer)
 
     GDIRendererPrivate():
-        use_qpainter(false)
-      , support_bitblt(true)
+        support_bitblt(true)
       , gdiplus_token(0)
       , device_context(0)
     {
+        use_qpainter = false;
         GdiplusStartupInput gdiplusStartupInput;
         GdiplusStartup(&gdiplus_token, &gdiplusStartupInput, NULL);
     }
@@ -84,7 +84,6 @@ public:
         off_dc = CreateCompatibleDC(device_context);
     }
 
-    bool use_qpainter;
     bool support_bitblt;
     ULONG_PTR gdiplus_token;
     /*
@@ -102,6 +101,7 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     QWidget(parent, f),VideoRenderer(*new GDIRendererPrivate())
 {
     DPTR_INIT_PRIVATE(GDIRenderer);
+    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     //setAttribute(Qt::WA_OpaquePaintEvent);
@@ -114,12 +114,6 @@ GDIRenderer::~GDIRenderer()
 {
 }
 
-bool GDIRenderer::write()
-{
-    update();
-    return true;
-}
-
 QPaintEngine* GDIRenderer::paintEngine() const
 {
     if (d_func().use_qpainter) {
@@ -129,40 +123,12 @@ QPaintEngine* GDIRenderer::paintEngine() const
     }
 }
 
-void GDIRenderer::useQPainter(bool qp)
-{
-    DPTR_D(GDIRenderer);
-    d.use_qpainter = qp;
-    setAttribute(Qt::WA_PaintOnScreen, !d.use_qpainter);
-}
-
-bool GDIRenderer::useQPainter() const
-{
-    DPTR_D(const GDIRenderer);
-    return d.use_qpainter;
-}
-
 void GDIRenderer::convertData(const QByteArray &data)
 {
     DPTR_D(GDIRenderer);
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
     d.data = data;
-}
-
-void GDIRenderer::showEvent(QShowEvent *)
-{
-    DPTR_D(const GDIRenderer);
-    useQPainter(d.use_qpainter);
-    if (!d.use_qpainter) {
-        d_func().prepare();
-    }
-}
-
-void GDIRenderer::resizeEvent(QResizeEvent *e)
-{
-    resizeRenderer(e->size());
-    update();
 }
 
 void GDIRenderer::paintEvent(QPaintEvent *)
@@ -203,6 +169,27 @@ void GDIRenderer::paintEvent(QPaintEvent *)
     SelectObject(d.off_dc, hbmp_old);
     DeleteObject(d.off_bitmap); //avoid mem leak
     //end paint
+}
+
+void GDIRenderer::resizeEvent(QResizeEvent *e)
+{
+    resizeRenderer(e->size());
+    update();
+}
+
+void GDIRenderer::showEvent(QShowEvent *)
+{
+    DPTR_D(const GDIRenderer);
+    useQPainter(d.use_qpainter);
+    if (!d.use_qpainter) {
+        d_func().prepare();
+    }
+}
+
+bool GDIRenderer::write()
+{
+    update();
+    return true;
 }
 
 } //namespace QtAV

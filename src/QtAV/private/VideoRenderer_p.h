@@ -33,12 +33,14 @@
  * Region of Interest(ROI)
  */
 class QObject;
+class QWidget;
 namespace QtAV {
 class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
     VideoRendererPrivate():
-        scale_in_qt(true)
+        use_qpainter(true)
+      , scale_in_qt(true)
       , renderer_width(480)
       , renderer_height(320)
       , source_aspect_ratio(0)
@@ -46,24 +48,14 @@ public:
       , src_height(0)
       , aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
+      , widget_holder(0)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
     }
-    virtual ~VideoRendererPrivate(){}
-    bool scale_in_qt;
-    // width, height: the renderer's size. i.e. size of video frame with the value with borders
-    //TODO: rename to renderer_width/height
-    int renderer_width, renderer_height;
-    qreal source_aspect_ratio;
-    int src_width, src_height;
-    //ImageConverter conv;
-    QMutex img_mutex;
-    VideoRenderer::OutAspectRatioMode aspect_ratio_mode;
-    qreal out_aspect_ratio;
-    //out_rect: the displayed video frame out_rect in the renderer
-    QRect out_rect; //TODO: out_out_rect
-
+    virtual ~VideoRendererPrivate(){
+        widget_holder = 0;
+    }
     void computeOutParameters(qreal rendererAspectRatio, qreal outAspectRatio) {
         if (rendererAspectRatio > outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
             //renderer is too wide, use renderer's height, horizonal align center
@@ -78,6 +70,25 @@ public:
         }
         out_aspect_ratio = outAspectRatio;
     }
+
+    bool use_qpainter;
+    bool scale_in_qt;
+    // width, height: the renderer's size. i.e. size of video frame with the value with borders
+    //TODO: rename to renderer_width/height
+    int renderer_width, renderer_height;
+    qreal source_aspect_ratio;
+    int src_width, src_height;
+    //ImageConverter conv;
+    QMutex img_mutex;
+    VideoRenderer::OutAspectRatioMode aspect_ratio_mode;
+    qreal out_aspect_ratio;
+    //out_rect: the displayed video frame out_rect in the renderer
+    QRect out_rect; //TODO: out_out_rect
+
+    /* Stores but not own the ptr if renderer is a subclass of QWidget.
+     * Some operations are based on QWidget
+     */
+    QWidget *widget_holder;
 };
 
 } //namespace QtAV

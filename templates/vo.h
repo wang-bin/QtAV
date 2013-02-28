@@ -27,9 +27,6 @@ public:
      * true: paintEngine is QPainter. Painting with QPainter support double buffer
      * false: no double buffer, should reimplement paintEngine() to return 0 to avoid flicker
      */
-    //TODO: move to base class
-	bool useQPainter() const;
-	void useQPainter(bool qp);
 protected:
     virtual void convertData(const QByteArray &data);
     virtual void paintEvent(QPaintEvent *);

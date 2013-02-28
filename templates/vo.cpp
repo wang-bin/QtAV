@@ -12,9 +12,9 @@ class %CLASS%Private : public VideoRendererPrivate
 public:
     DPTR_DECLARE_PUBLIC(%CLASS%)
 
-    %CLASS%Private():
-		use_qpainter(false) //default is to use custome paint engine, e.g. dx. gl
+    %CLASS%Private()
     {
+        use_qpainter = false; //default is to use custome paint engine, e.g. dx. gl
     }
     ~%CLASS%Private() {
     }
@@ -26,6 +26,7 @@ public:
   , VideoRenderer(*new %CLASS%Private())
 {
     DPTR_INIT_PRIVATE(%CLASS%);
+    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     //setAttribute(Qt::WA_OpaquePaintEvent);
@@ -45,19 +46,6 @@ QPaintEngine* %CLASS%::paintEngine() const
     } else {
         return 0; //use native engine
     }
-}
-
-void %CLASS%::useQPainter(bool qp)
-{
-    DPTR_D(%CLASS%);
-    d.use_qpainter = qp;
-    setAttribute(Qt::WA_PaintOnScreen, !d.use_qpainter);
-}
-
-bool %CLASS%::useQPainter() const
-{
-    DPTR_D(const %CLASS%);
-    return d.use_qpainter;
 }
 
 void %CLASS%::convertData(const QByteArray &data)

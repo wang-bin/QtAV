@@ -45,14 +45,12 @@ public:
      * return 0 and set this flag
      */
     virtual QPaintEngine* paintEngine() const;
-	bool useQPainter() const;
-    void useQPainter(bool qp);
 protected:
     virtual void convertData(const QByteArray &data);
-    //stay on top will change parent, hide then show(windows). we need GetDC() again
-    virtual void resizeEvent(QResizeEvent *);
-    virtual void showEvent(QShowEvent *);
     virtual void paintEvent(QPaintEvent *);
+    virtual void resizeEvent(QResizeEvent *);
+    //stay on top will change parent, hide then show(windows). we need GetDC() again
+    virtual void showEvent(QShowEvent *);
     virtual bool write();
 };
 
