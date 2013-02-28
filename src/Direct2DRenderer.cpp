@@ -154,7 +154,7 @@ void Direct2DRenderer::convertData(const QByteArray &data)
         return;
     HRESULT hr = S_OK;
     //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
         d.img_mutex.lock();
         hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
@@ -184,12 +184,12 @@ QPaintEngine* Direct2DRenderer::paintEngine() const
 void Direct2DRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(Direct2DRenderer);
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.lock();
     }
     if (!d.render_target) {
         qWarning("No render target!!!");
-        if (!d.scale_in_qt) {
+        if (!d.scale_in_renderer) {
             d.img_mutex.unlock();
         }
         return;
@@ -201,7 +201,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     d.render_target->SetTransform(D2D1::Matrix3x2F::Identity());
     if (!d.bitmap) {
         d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
-        if (!d.scale_in_qt) {
+        if (!d.scale_in_renderer) {
             d.img_mutex.unlock();
         }
         return;
@@ -219,7 +219,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
         d.createDeviceResource(); //?
     }
     //end paint
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.unlock();
     }
 }

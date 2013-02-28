@@ -40,7 +40,7 @@ class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 public:
     VideoRendererPrivate():
         use_qpainter(true)
-      , scale_in_qt(true)
+      , scale_in_renderer(true)
       , renderer_width(480)
       , renderer_height(320)
       , source_aspect_ratio(0)
@@ -72,7 +72,7 @@ public:
     }
 
     bool use_qpainter;
-    bool scale_in_qt;
+    bool scale_in_renderer;
     // width, height: the renderer's size. i.e. size of video frame with the value with borders
     //TODO: rename to renderer_width/height
     int renderer_width, renderer_height;

@@ -52,7 +52,7 @@ void %CLASS%::convertData(const QByteArray &data)
 {
     DPTR_D(%CLASS%);
     //TODO: if date is deep copied, mutex can be avoided
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
         d.img_mutex.lock();
         /* convert data to your image below*/
@@ -66,13 +66,13 @@ void %CLASS%::convertData(const QByteArray &data)
 void %CLASS%::paintEvent(QPaintEvent *)
 {
     DPTR_D(%CLASS%);
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.lock();
     }
     //begin paint. how about QPainter::beginNativePainting()?
 
     //end paint. how about QPainter::endNativePainting()?
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.unlock();
     }
 }
