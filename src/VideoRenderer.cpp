@@ -86,6 +86,9 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
         d.out_aspect_ratio_mode = CustomAspectRation;
     }
     d.aspect_ratio_mode_changed = false;
+    if (d.out_aspect_ratio_mode != RendererAspectRatio) {
+        d.update_background = true; //can not fill the whole renderer with video
+    }
     //compute the out out_rect
     qreal r = qreal(d.renderer_width)/qreal(d.renderer_height); //renderer aspect ratio
     d.computeOutParameters(r, ratio);
