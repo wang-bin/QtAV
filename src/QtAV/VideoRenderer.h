@@ -51,6 +51,7 @@ class Q_EXPORT VideoRenderer : public AVOutput
 {
     DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:
+    //TODO: original video size mode
     enum OutAspectRatioMode {
         RendererAspectRatio //Use renderer's aspect ratio, i.e. stretch to fit the renderer rect
       , VideoAspectRatio    //Use video's aspect ratio and align center in renderer.

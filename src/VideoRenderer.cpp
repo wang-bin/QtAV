@@ -54,15 +54,15 @@ bool VideoRenderer::scaleInRenderer() const
 void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
 {
     DPTR_D(VideoRenderer);
-    if (mode == d.aspect_ratio_mode)
+    if (mode == d.out_aspect_ratio_mode)
         return;
-    d.aspect_ratio_mode = mode;
+    d.aspect_ratio_mode_changed = true;
+    d.out_aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
         //compute out_rect
         d.out_rect = QRect(0, 0, d.renderer_width, d.renderer_height);
-        d.out_aspect_ratio = qreal(d.renderer_width)/qreal(d.renderer_height);
+        setOutAspectRatio(qreal(d.renderer_width)/qreal(d.renderer_height));
         //is that thread safe?
-        resizeFrame(d.out_rect.width(), d.out_rect.height());
     } else if (mode == VideoAspectRatio) {
         /* do nothing here. the out_rect should be calculated when the next frame is ready
          * and setSource() will pass the original video size.
@@ -73,7 +73,7 @@ void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
 
 VideoRenderer::OutAspectRatioMode VideoRenderer::outAspectRatioMode() const
 {
-    return d_func().aspect_ratio_mode;
+    return d_func().out_aspect_ratio_mode;
 }
 
 void VideoRenderer::setOutAspectRatio(qreal ratio)
@@ -81,7 +81,11 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
     DPTR_D(VideoRenderer);
     bool ratio_changed = d.out_aspect_ratio != ratio;
     d.out_aspect_ratio = ratio;
-    d.aspect_ratio_mode = CustomAspectRation;
+    //indicate that this function is called by user. otherwise, called in VideoRenderer
+    if (!d.aspect_ratio_mode_changed) {
+        d.out_aspect_ratio_mode = CustomAspectRation;
+    }
+    d.aspect_ratio_mode_changed = false;
     //compute the out out_rect
     qreal r = qreal(d.renderer_width)/qreal(d.renderer_height); //renderer aspect ratio
     d.computeOutParameters(r, ratio);
@@ -103,18 +107,18 @@ void VideoRenderer::setInSize(const QSize& s)
 void VideoRenderer::setInSize(int width, int height)
 {
     DPTR_D(VideoRenderer);
-    //check
-    if (d.src_width == width && d.src_height == height)
+    if (d.src_width != width || d.src_height != height) {
+        d.aspect_ratio_mode_changed = true; //for VideoAspectRatio mode
+    }
+    if (!d.aspect_ratio_mode_changed)// && (d.src_width == width && d.src_height == height))
         return;
     d.src_width = width;
     d.src_height = height;
     d.source_aspect_ratio = qreal(d.src_width)/qreal(d.src_height);
     //see setOutAspectRatioMode
-    if (d.aspect_ratio_mode == VideoAspectRatio) {
-        qreal r = qreal(d.renderer_width)/qreal(d.renderer_height); //renderer aspect ratio
+    if (d.out_aspect_ratio_mode == VideoAspectRatio) {
         //source_aspect_ratio equals to original video aspect ratio here, also equals to out ratio
-        d.computeOutParameters(r, d.source_aspect_ratio);
-        resizeFrame(d.out_rect.width(), d.out_rect.height());
+        setOutAspectRatio(d.source_aspect_ratio);
     }
 }
 
