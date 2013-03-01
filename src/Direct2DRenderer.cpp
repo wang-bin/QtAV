@@ -191,8 +191,9 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
     d.render_target->SetTransform(D2D1::Matrix3x2F::Identity());
-    if (!d.bitmap) {
-        //TODO: It seems that the target's background keeps the color
+    if (update_background || !d.bitmap) {
+        d.update_background = false;
+        //TODO: It seems that the target's background keeps the color even if resize without clear color
         d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
         return;
     }
@@ -202,6 +203,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
         d.out_rect.right(),
         d.out_rect.bottom()
     };
+    //d.render_target->SetTransform
     d.render_target->DrawBitmap(d.bitmap
                                 , &out_rect
                                 , 1 //opacity
@@ -222,6 +224,7 @@ void Direct2DRenderer::resizeEvent(QResizeEvent *e)
     resizeRenderer(e->size());
 
     DPTR_D(Direct2DRenderer);
+    d.update_background = true;
     if (d.render_target) {
         D2D1_SIZE_U size = {
             e->size().width(),
@@ -238,6 +241,7 @@ void Direct2DRenderer::resizeEvent(QResizeEvent *e)
 void Direct2DRenderer::showEvent(QShowEvent *)
 {
     DPTR_D(Direct2DRenderer);
+    d.update_background = true;
     useQPainter(d.use_qpainter);
     d.createDeviceResource();
 }

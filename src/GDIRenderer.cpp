@@ -27,6 +27,7 @@
 #include <QtGui/QPaintEngine>
 #include <QResizeEvent>
 
+//http://msdn.microsoft.com/en-us/library/ms927613.aspx
 //#pragma comment(lib, "gdiplus.lib")
 
 using namespace Gdiplus;
@@ -57,6 +58,7 @@ public:
     }
     void prepare() {
         DPTR_P(GDIRenderer);
+        update_background = true;
         device_context = GetDC(p.winId());
         //TODO: check bitblt support
         int ret = GetDeviceCaps(device_context, RC_BITBLT);
@@ -142,10 +144,12 @@ void GDIRenderer::paintEvent(QPaintEvent *)
         QPainter p(this);
         hdc = p.paintEngine()->getDC();
     }
-    if (d.data.isEmpty()) {
+    if (d.update_background || d.data.isEmpty()) {
+        d.update_background = false;
         Graphics g(hdc);
         SolidBrush brush(Color(255, 0, 0, 0)); //argb
         g.FillRectangle(&brush, 0, 0, width(), height());
+        //Rectangle(hdc, 0, 0, width(), height());
         return;
     }
     /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
@@ -190,6 +194,7 @@ void GDIRenderer::paintEvent(QPaintEvent *)
 
 void GDIRenderer::resizeEvent(QResizeEvent *e)
 {
+    d_func().update_background = true;
     resizeRenderer(e->size());
     update();
 }

@@ -71,8 +71,9 @@ void %CLASS%::paintEvent(QPaintEvent *)
     }
     //begin paint. how about QPainter::beginNativePainting()?
 
-    //fill background color only when the displayed frame rect not equas to renderer's
-    if (d.out_rect != rect()) {
+    //fill background color when necessary, e.g. renderer is resized.
+    if (d.update_background /*&& d.out_rect != rect()*/) {
+        d.update_background = false;
         //fill background color
     }
 
@@ -91,6 +92,8 @@ void %CLASS%::paintEvent(QPaintEvent *)
 
 void %CLASS%::resizeEvent(QResizeEvent *e)
 {
+    DPTR_D(%CLASS%);
+    d.update_background = true;
     resizeRenderer(e->size());
     update();
 }
@@ -99,6 +102,7 @@ void %CLASS%::showEvent(QShowEvent *event)
 {
     Q_UNUSED(event);
     DPTR_D(%CLASS%);
+    d.update_background = true;
     useQPainter(d.use_qpainter);
     /*
      * Do something that depends on widget below! e.g. recreate render target for direct2d.

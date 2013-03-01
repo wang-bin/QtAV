@@ -40,6 +40,7 @@ class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 public:
     VideoRendererPrivate():
         use_qpainter(true)
+      , update_background(true)
       , scale_in_renderer(true)
       , renderer_width(480)
       , renderer_height(320)
@@ -72,6 +73,8 @@ public:
     }
 
     bool use_qpainter;
+    //draw background when necessary, for example, renderer is resized. Then set to false
+    bool update_background;
     bool scale_in_renderer;
     // width, height: the renderer's size. i.e. size of video frame with the value with borders
     //TODO: rename to renderer_width/height
