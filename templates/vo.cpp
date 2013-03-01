@@ -71,12 +71,14 @@ void %CLASS%::paintEvent(QPaintEvent *)
     }
     //begin paint. how about QPainter::beginNativePainting()?
 
-    //fill background color when necessary, e.g. renderer is resized.
-    if (d.update_background /*&& d.out_rect != rect()*/) {
+    //fill background color when necessary, e.g. renderer is resized, image is null
+    if ((d.update_background && d.out_rect != rect()) || d.data.isEmpty()) {
         d.update_background = false;
-        //fill background color
+        //fill background color. DO NOT return, you must continue drawing
     }
-
+    if (d.data.isEmpty()) {
+        return;
+    }
     //assume that the image data is already scaled to out_size(NOT renderer size!)
     if (!d.scale_in_renderer || (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height())) {
         //you may copy data to video buffer directly

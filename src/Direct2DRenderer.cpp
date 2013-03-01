@@ -72,6 +72,7 @@ public:
     }
     bool createDeviceResource() {
         DPTR_P(Direct2DRenderer);
+        update_background = true;
         SafeRelease(&render_target); //force create a new one
         //
         //  This method creates resources which are bound to a particular
@@ -191,12 +192,20 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
     d.render_target->SetTransform(D2D1::Matrix3x2F::Identity());
-    if (update_background || !d.bitmap) {
+    //The first bitmap size is 0x0, we should only draw the background
+
+    if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
         d.update_background = false;
-        //TODO: It seems that the target's background keeps the color even if resize without clear color
         d.render_target->Clear(D2D1::ColorF(D2D1::ColorF::Black));
-        return;
+//http://msdn.microsoft.com/en-us/library/windows/desktop/dd535473(v=vs.85).aspx
+        //ID2D1SolidColorBrush *brush;
+        //d.render_target->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &brush);
+        //d.render_target->FillRectangle(D2D1::RectF(0, 0, width(), height()), brush);
     }
+    if (d.data.isEmpty()) {
+        //return; //why the background is whit if return? the below code draw an empty bitmap?
+    }
+
     D2D1_RECT_F out_rect = {
         d.out_rect.left(),
         d.out_rect.top(),

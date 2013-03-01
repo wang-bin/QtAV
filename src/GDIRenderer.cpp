@@ -144,12 +144,14 @@ void GDIRenderer::paintEvent(QPaintEvent *)
         QPainter p(this);
         hdc = p.paintEngine()->getDC();
     }
-    if (d.update_background || d.data.isEmpty()) {
+    if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
         d.update_background = false;
         Graphics g(hdc);
         SolidBrush brush(Color(255, 0, 0, 0)); //argb
         g.FillRectangle(&brush, 0, 0, width(), height());
         //Rectangle(hdc, 0, 0, width(), height());
+    }
+    if (d.data.isEmpty()) {
         return;
     }
     /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
@@ -164,10 +166,6 @@ void GDIRenderer::paintEvent(QPaintEvent *)
         return;
     }
 
-    //fill background color only when the displayed frame rect not equas to renderer's
-    if (d.out_rect != rect()) {
-
-    }
     HBITMAP hbmp_old = (HBITMAP)SelectObject(d.off_dc, d.off_bitmap);
     // && image.size() != size()
     //assume that the image data is already scaled to out_size(NOT renderer size!)
@@ -201,7 +199,8 @@ void GDIRenderer::resizeEvent(QResizeEvent *e)
 
 void GDIRenderer::showEvent(QShowEvent *)
 {
-    DPTR_D(const GDIRenderer);
+    DPTR_D(GDIRenderer);
+    d.update_background = true;
     useQPainter(d.use_qpainter);
     if (!d.use_qpainter) {
         d_func().prepare();
