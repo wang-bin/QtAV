@@ -97,6 +97,7 @@ Default Shortcuts
 - O: open a file
 - P: replay
 - S: stop
+- R: switch aspect ratio
 - M: mute on/off
 - Up / Down: volume + / -
 - -> / <-: seek forward / backward
