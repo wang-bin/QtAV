@@ -16,6 +16,7 @@ QtAV can meet your most demands
 
 - Seek, pause/resume
 - Video capture
+- Aspect ratio
 - Transform video using GraphicsItemRenderer. (rotate, shear, etc)
 - Playing frame by frame (currently support forward playing)
 - Variant streams: locale file, http, rtsp, etc.
@@ -24,6 +25,7 @@ QtAV can meet your most demands
 - Fullscreen, stay on top
 - Compatible: QtAV can be built with both Qt4 and Qt5. QtAV will support
   both FFmpeg and [Libav](http://libav.org).
+- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D.
 
 ### Extensible Framework (not finished)
 
@@ -37,9 +39,12 @@ QtAV can meet your most demands
 
 #### Requirements
 
-1. [FFmpeg](http://ffmpeg.org) Latest version is recommanded
-2. [Qt 4 or 5](http://qt-project.org/downloads)
-3. [PortAudio v19](http://www.portaudio.com/download.html)
+1. [FFmpeg](http://ffmpeg.org) Latest version is recommanded.  
+[![FFmpeg](http://ffmpeg.org/ffmpeg-logo.png)](http://ffmpeg.org)
+2. [Qt 4 or 5](http://qt-project.org/downloads)  
+[![Qt](http://blog.qt.digia.com/wp-content/themes/qt_blog/images/Qt_master_logo_CMYK_noback.gif)](http://qt-project.org)
+3. [PortAudio v19](http://www.portaudio.com/download.html)  
+[![PortAudio Logo](http://www.portaudio.com/images/portaudio_logo.png)](http://www.portaudio.com)[![PortAudio](http://www.portaudio.com/images/portaudio_logotext.png)](http://www.portaudio.com)
 
 The required development files for MinGW can be found in sourceforge
 page: [depends](https://sourceforge.net/projects/qtav/files/depends)
@@ -61,6 +66,8 @@ For most platforms, just
 
 >>  The binaries will be created in $BUILD_DIR/bin.
 >>  If you are using QtCreator to build the project, you should go to Projects->Build Steps->qmake->Additional arguments, add "BUILD_DIR=your/buid/dir"
+
+To build with direct2d support, you should add additional arguments to qmake `CONFIG+=direct2d`, or add it in src/libQtAV.pro.
 
 ##### Build with MSVC
 
@@ -104,16 +111,16 @@ The default behavior can be replaced by subclassing QObject and call `void AVPla
 0. Component framework
 1. Subtitle
 2. Filters
-3. Hardware acceleration using NVIDIA Cuda, Intel IPP, OpenCL and OpenGL:
-  * decoding
-  * image, audio and filters convertion
-  * rendering
+3. Hardware acceleration using DirectX, NVIDIA Cuda, ATI UVD, Intel IPP, OpenCL and OpenGL:
+  * decoding: DXVA, XvBA, cuvid
+  * image, audio and filters
+  * rendering: DirectX, XV, OpenGL
 4. Stylish GUI based on Qt Graphics View Framework
 5. Document and SDK
 6. Other: play speed, better sync method and seeking, tests, playing statistics, etc.
 7. Region of interest support.
 8. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.
-
+9. Try to write decoders myself.
 
 Screenshots
 ----------
