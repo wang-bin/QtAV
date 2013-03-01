@@ -32,7 +32,7 @@ class Q_EXPORT ImageRendererPrivate : public VideoRendererPrivate
 {
 public:
     virtual ~ImageRendererPrivate(){}
-    QImage image, preview;
+    QImage image;
 };
 
 } //namespace QtAV

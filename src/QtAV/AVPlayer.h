@@ -87,7 +87,7 @@ public slots:
     void updateClock(qint64 msecs); //update AVClock's external clock
 
 protected slots:
-    void resizeVideo(const QSize& size);
+    void resizeRenderer(const QSize& size);
 
 protected:
     bool loaded;

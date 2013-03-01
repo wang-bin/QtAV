@@ -38,7 +38,7 @@ protected:
 };
 
 
-extern ImageConverterId ImageConverterId_FF;
+ImageConverterId ImageConverterId_FF = 0;
 FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
 
 void RegisterImageConverterFF_Man()
@@ -75,7 +75,7 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
             return false;
         setOutSize(d.w_in, d.h_in);
     }
-
+//TODO: move those code to prepare()
     d.sws_ctx = sws_getCachedContext(d.sws_ctx
             , d.w_in, d.h_in, (PixelFormat)d.fmt_in
             , d.w_out, d.h_out, (PixelFormat)d.fmt_out

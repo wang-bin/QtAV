@@ -35,7 +35,7 @@ class Q_EXPORT AVOutput
 public:
     AVOutput();
     virtual ~AVOutput() = 0;
-    //Call tryPause() first to try to pause
+    /* store the data ref, then call convertData() and write(). tryPause() will be called*/
     bool writeData(const QByteArray& data);
     bool isAvailable() const;
     virtual bool open() = 0;
@@ -49,7 +49,7 @@ protected:
 	 * Reimplement this. You should convert and save the decoded data, e.g. QImage,
 	 * which will be used in write() or some other functions. Do nothing by default.
 	 */
-	virtual void convertData(const QByteArray& data) = 0;// = 0; //TODO: why pure may case "pure virtual method called"
+    virtual void convertData(const QByteArray& data);
 	virtual bool write() = 0; //TODO: why pure may case "pure virtual method called"
     /*
      * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)

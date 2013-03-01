@@ -29,6 +29,16 @@ namespace QtAV {
 
 FACTORY_DEFINE(ImageConverter)
 
+extern void RegisterImageConverterFF_Man();
+extern void RegisterImageConverterIPP_Man();
+
+void ImageConverter_RegisterAll()
+{
+    RegisterImageConverterFF_Man();
+    RegisterImageConverterIPP_Man();
+}
+
+
 ImageConverter::ImageConverter()
 {
 }

@@ -39,7 +39,7 @@ Widget::Widget(QWidget *parent) :
     QHBoxLayout *btn_layout = new QHBoxLayout;
     renderer = new WidgetRenderer;
     renderer->setFocusPolicy(Qt::StrongFocus);
-    renderer->resizeVideo(640, 480);
+    renderer->resizeRenderer(640, 480);
     player = new AVPlayer(this);
     player->setRenderer(renderer);
     player->masterClock()->setClockAuto(false);

@@ -34,19 +34,20 @@
  *      FACTORY_DEFINE(MyClass)
  *
  * To create and register a new subclass MyClassSubA with it's id
+ * 0. In MyClassTypes.h (Usually you just include this enough to use the factory),
+ *    MyClassSubA's ID:
+ *      extern MyClassId MyClassId_SubA;
  * 1. create a source file MyClassSubA.cpp and implement the required members
  * 2. In MyClassSubA.cpp, add the following lines
  *      #include "prepost.h" //for PRE_FUNC_ADD()
- *      extern MyClassId MyClassId_SubA;
+ *      MyClassId MyClassId_SubA = some_unique_id;
  *      FACTORY_REGISTER_ID_AUTO(MyClass, SubA, "SubA's name")
  *      void RegisterMyClassSubA_Man()
  *      {
  *          FACTORY_REGISTER_ID_MAN(MyClass, SubA, "SubA's name")
  *      }
- * 3. In MyClassTypes.h (Usually you just include this enough to use the factory),
- *    declare a function and add MyClassSubA's ID:
- *      extern MyClassId MyClassId_SubA;
- *    In MyClassTypes.cpp, define the id and add the function into MyClass_RegisterAll();
+ *
+ * 3. In MyClass.cpp, add register function into MyClass_RegisterAll();
  *      extern void RegisterMyClassSubA_Man();
  *      void MyClass_RegisterAll()
  *      {

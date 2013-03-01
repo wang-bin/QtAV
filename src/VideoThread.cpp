@@ -136,10 +136,10 @@ void VideoThread::run()
         bool vo_ok = vo && vo->isAvailable();
         if (vo_ok) {
             //use the last size first then update the last size so that decoder(converter) can update output size
-            if (vo->lastWidth() > 0 && vo->lastHeight() > 0 && !vo->scaleInQt())
-                dec->resizeVideo(vo->lastSize());
+            if (vo->lastWidth() > 0 && vo->lastHeight() > 0 && !vo->scaleInRenderer())
+                dec->resizeVideoFrame(vo->lastSize());
             else
-                vo->setSourceSize(dec->width(), dec->height()); //setLastSize()
+                vo->setInSize(dec->width(), dec->height()); //setLastSize()
         }
         //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
         if (dec->decode(pkt.data)) {
@@ -148,9 +148,9 @@ void VideoThread::run()
                 d.capture->setRawImage(dec->data(), dec->width(), dec->height());
             }
             //TODO: Add filters here. Capture is also a filter
-            /*if (d.image.width() != d.width || d.image.height() != d.height)
-                d.image = QImage(d.width, d.height, QImage::Format_RGB32);
-            d.conv->setInSize(d.width, d.height);
+            /*if (d.image.width() != d.renderer_width || d.image.height() != d.renderer_height)
+                d.image = QImage(d.renderer_width, d.renderer_height, QImage::Format_RGB32);
+            d.conv->setInSize(d.renderer_width, d.renderer_height);
             if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
             }*/
             if (vo_ok) {
@@ -158,8 +158,8 @@ void VideoThread::run()
             }
         }
         //use the last size first then update the last size so that decoder(converter) can update output size
-        if (vo_ok && !vo->scaleInQt())
-            vo->setSourceSize(vo->videoSize());
+        if (vo_ok && !vo->scaleInRenderer())
+            vo->setInSize(vo->rendererSize());
     }
     qDebug("Video thread stops running...");
 }

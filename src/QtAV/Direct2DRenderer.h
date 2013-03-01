@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,36 +19,41 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_WIDGETRENDERER_H
-#define QTAV_WIDGETRENDERER_H
+#ifndef QTAV_DIRECT2DRENDERER_H
+#define QTAV_DIRECT2DRENDERER_H
 
-#include <QtAV/ImageRenderer.h>
-#include <qwidget.h>
+#include <QtAV/VideoRenderer.h>
+#include <QWidget>
+
+/*TODO:
+ *  draw yuv directly
+ */
 
 namespace QtAV {
 
-class WidgetRendererPrivate;
-class Q_EXPORT WidgetRenderer : public QWidget, public ImageRenderer
+class Direct2DRendererPrivate;
+class Q_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
 {
     Q_OBJECT
-    DPTR_DECLARE_PRIVATE(WidgetRenderer)
+    DPTR_DECLARE_PRIVATE(Direct2DRenderer)
 public:
-    //GestureAction is useful for small screen windows that are hard to select frame
-    enum GestureAction { GestureMove, GestureResize};
+    Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    virtual ~Direct2DRenderer();
 
-    explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
-    virtual ~WidgetRenderer();
-
+    /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
+     * native painting primitives, you need to reimplement QWidget::paintEngine() to
+     * return 0 and set this flag
+     */
+    virtual QPaintEngine* paintEngine() const;
 protected:
-    virtual void resizeEvent(QResizeEvent *);
-    virtual void mousePressEvent(QMouseEvent *);
-    virtual void mouseMoveEvent(QMouseEvent *);
-    virtual void mouseDoubleClickEvent(QMouseEvent *);
+    virtual void convertData(const QByteArray &data);
     virtual void paintEvent(QPaintEvent *);
+    virtual void resizeEvent(QResizeEvent *);
+    //stay on top will change parent, hide then show(windows). we need GetDC() again
+    virtual void showEvent(QShowEvent *);
     virtual bool write();
-protected:
-    WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent, Qt::WindowFlags f);
 };
 
 } //namespace QtAV
-#endif // QTAV_WIDGETRENDERER_H
+
+#endif // QTAV_Direct2DRenderer_H

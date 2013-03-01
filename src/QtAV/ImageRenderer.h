@@ -34,12 +34,9 @@ class Q_EXPORT ImageRenderer : public VideoRenderer
 public:
     ImageRenderer();
     virtual ~ImageRenderer();
-    virtual QImage currentFrameImage() const;
-	virtual void convertData(const QByteArray &data);
-    void setPreview(const QImage& preview);
-    QImage previewImage() const;
-    QImage currentImage() const;
+    //virtual QImage currentFrameImage() const;
 protected:
+    virtual void convertData(const QByteArray &data);
     ImageRenderer(ImageRendererPrivate& d);
 };
 

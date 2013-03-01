@@ -37,6 +37,9 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
     :QWidget(parent, f),ImageRenderer(d)
 {
+    setAcceptDrops(true);
+    setFocusPolicy(Qt::StrongFocus);
+    setAutoFillBackground(false);
 }
 
 WidgetRenderer::~WidgetRenderer()
@@ -51,7 +54,7 @@ bool WidgetRenderer::write()
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
 {
-    resizeVideo(e->size());
+    resizeRenderer(e->size());
     update();
 }
 
@@ -115,33 +118,31 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.lock();
     }
     QPainter p(this);
-    if (!d.image.isNull()) {
-        if (d.image.size() == QSize(d.width, d.height)) {
-            //d.preview = d.image;
-            p.drawImage(QPoint(), d.image);
-        } else {
-            //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
-            //       , d.image.size().width(), d.image.size().height(), d.width, d.height);
-            p.drawImage(rect(), d.image);
-            //what's the difference?
-            //p.drawImage(QPoint(), d.image.scaled(d.width, d.height));
-        }
-    } else if (!d.preview.isNull()){
-        if (d.preview.size() == QSize(d.width, d.height)) {
-            p.drawImage(QPoint(), d.preview);
-        } else {
-            p.drawImage(rect(), d.preview);
-        }
-    } else {
-        d.preview = QImage(videoSize(), QImage::Format_RGB32);
-        d.preview.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-        p.drawImage(QPoint(), d.preview);
+    //fill background color only when the displayed frame rect not equas to renderer's
+    if (d.out_rect != rect()) {
+        p.fillRect(rect(), QColor(0, 0, 0));
     }
-    if (!d.scale_in_qt) {
+    if (d.image.isNull()) {
+        //TODO: when setInSize()?
+        d.image = QImage(rendererSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
+    }
+    //assume that the image data is already scaled to out_size(NOT renderer size!)
+    if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
+        //d.preview = d.image;
+        p.drawImage(d.out_rect.topLeft(), d.image);
+    } else {
+        //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
+        //       , d.image.size().width(), image.size().height(), d.renderer_width, d.renderer_height);
+        p.drawImage(d.out_rect, d.image);
+        //what's the difference?
+        //p.drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
+    }
+    if (!d.scale_in_renderer) {
         d.img_mutex.unlock();
     }
 }

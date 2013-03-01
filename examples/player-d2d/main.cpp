@@ -25,7 +25,7 @@
 #include <QtCore/QTranslator>
 
 #include <QtAV/AVPlayer.h>
-#include <QtAV/WidgetRenderer.h>
+#include <QtAV/Direct2DRenderer.h>
 
 using namespace QtAV;
 
@@ -74,16 +74,15 @@ int main(int argc, char *argv[])
     QTranslator qtts;
     if (qtts.load("qt_" + QLocale::system().name()))
         a.installTranslator(&qtts);
-
+/*
     sLogfile = fopen(QString(qApp->applicationDirPath() + "/log.txt").toUtf8().constData(), "w+");
     if (!sLogfile) {
         qWarning("Failed to open log file");
         sLogfile = stdout;
     }
     qInstallMessageHandler(Logger);
-
-    WidgetRenderer renderer;
-    renderer.setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
+*/
+    Direct2DRenderer renderer;
     renderer.show();
     renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
     //renderer.resize(800, 600);

@@ -37,12 +37,12 @@ ImageRenderer::ImageRenderer(ImageRendererPrivate &d)
 ImageRenderer::~ImageRenderer()
 {
 }
-
+/*
 QImage ImageRenderer::currentFrameImage() const
 {
     return d_func().image;
 }
-
+*/
 //FIXME: why crash if QImage use widget size?
 void ImageRenderer::convertData(const QByteArray &data)
 {
@@ -50,7 +50,7 @@ void ImageRenderer::convertData(const QByteArray &data)
     //int ss = 4*d.src_width*d.src_height*sizeof(char);
     //if (ss != data.size())
     //    qDebug("src size=%d, data size=%d", ss, data.size());
-    //if (d.src_width != d.width || d.src_height != d.height)
+    //if (d.src_width != d.renderer_width || d.src_height != d.renderer_height)
     //    return;
     /*
      * QImage constructed from memory do not deep copy the data, data should be available throughout
@@ -62,7 +62,7 @@ void ImageRenderer::convertData(const QByteArray &data)
      * But if we use the fixed original frame size, the data address and size always the same, so we can
      * avoid the lock and use the ref data directly and safely
      */
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
         d.img_mutex.lock();
         d.data = data;
@@ -75,30 +75,13 @@ void ImageRenderer::convertData(const QByteArray &data)
         d.img_mutex.unlock();
     } else {
         //qDebug("data address = %p", data.data());
+        //Format_RGB32 is fast. see document
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
         d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
 #else
     d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
 #endif
     }
-}
-
-
-void ImageRenderer::setPreview(const QImage &preivew)
-{
-    DPTR_D(ImageRenderer);
-    d.preview = preivew;
-    d.image = preivew;
-}
-
-QImage ImageRenderer::previewImage() const
-{
-    return d_func().preview;
-}
-
-QImage ImageRenderer::currentImage() const
-{
-    return d_func().image;
 }
 
 } //namespace QtAV

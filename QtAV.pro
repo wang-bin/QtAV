@@ -7,6 +7,7 @@ examples.depends += libqtav
 tests.depends += libqtav
 
 OTHER_FILES += README.md TODO.txt Changelog
+OTHER_FILES += templates/vo.h templates/vo.cpp templates/COPYRIGHT.h templates/mkclass.sh
 
 #use the following lines when building as a sub-project, write cache to this project src dir.
 #if build this project alone and do not have sub-project depends on this lib, those lines are not necessary

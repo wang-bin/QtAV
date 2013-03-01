@@ -1,6 +1,6 @@
 /******************************************************************************
-    ImageConverterTypes: type id and manually id register function
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) %YEAR% Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -18,24 +18,3 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-
-#include <QtAV/ImageConverterTypes.h>
-#include "FactoryDefine.h"
-
-namespace QtAV {
-
-ImageConverterId ImageConverterId_FF = 0;
-ImageConverterId ImageConverterId_IPP = 1;
-
-
-extern void RegisterImageConverterFF_Man();
-extern void RegisterImageConverterIPP_Man();
-
-void ImageConverter_RegisterAll()
-{
-    RegisterImageConverterFF_Man();
-    RegisterImageConverterIPP_Man();
-}
-
-} //namespace QtAV

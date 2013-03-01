@@ -24,6 +24,40 @@
  *e.g. PRE_FUNC_ADD(foo). The right one is PRE_FUNC_ADD(f,)*/
 
 /*
+ * TODO:
+ *  boost::call_once
+ *  http://stackoverflow.com/questions/4173384/how-to-make-sure-a-function-is-only-called-once
+ *  http://publib.boulder.ibm.com/infocenter/lnxpcomp/v8v101/index.jsp?topic=%2Fcom.ibm.xlcpp8l.doc%2Flanguage%2Fref%2Fco.htm
+ */
+#ifdef __cplusplus
+/* for C++, we use non-local static object to call the functions automatically before main().
+ * anonymous namespace: avoid name confliction('static' keyword is not necessary)
+ *
+ */
+#define PRE_FUNC_ADD(f, .../*args*/) \
+    namespace { \
+        class initializer_for_##f { \
+        public: \
+            initializer_for_##f() { \
+                f(__VA_ARGS__); \
+            } \
+        }; \
+        static initializer_for_##f __sInit_##f; \
+    }
+
+#define POST_FUNC_ADD(f, .../*args*/) \
+    namespace { \
+        class deinitializer_for_##f { \
+        public: \
+            ~deinitializer_for_##f() { \
+                f(__VA_ARGS__); \
+            } \
+        }; \
+        static deinitializer_for_##f __sDeinit_##f; \
+    }
+
+#else /*for C. ! defined __cplusplus*/
+/*
  *http://buliedian.iteye.com/blog/1069072
  *http://research.microsoft.com/en-us/um/redmond/projects/invisible/src/crt/md/ppc/_crt.c.htm
  */
@@ -63,5 +97,5 @@ typedef int (__cdecl *_PF)(); /* why not void? */
     static void atexit_##f() { atexit(f); } \
     PRE_FUNC_ADD(atexit_##f)
 #endif
-
+#endif //__cplusplus
 #endif // PREPOST_H

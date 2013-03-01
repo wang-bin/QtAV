@@ -191,7 +191,7 @@ void VideoWall::about()
 void VideoWall::help()
 {
     QMessageBox::about(0, tr("Help"),
-                        "Command line: %1 [-r rows=3] [-c cols=3] path/of/video\n"
+                        tr("Command line: %1 [-r rows=3] [-c cols=3] path/of/video\n").arg(qApp->applicationFilePath())
                        + tr("Drag and drop a file to player\n")
                        + tr("Shortcut:\n")
                        + tr("Space: pause/continue\n")
