@@ -1,0 +1,131 @@
+### ONLY FOR Qt4. common.pri must be included before it so that write_file() can be used#######
+### .qmake.cache MUST be created before it!
+####ASSUME compile tests and .qmake.cache is in project out root dir
+defineTest(cache) {
+    !isEmpty(4): error("cache(var, [set|add|sub] [transient] [super], [srcvar]) requires one to three arguments.")
+    isEmpty(1) {
+        write_file($$_QMAKE_CACHE_):return(true)
+        return(false)
+    }
+
+    !isEmpty(2):isEqual(2, set):mode_set=1
+    isEmpty(3) {
+        isEmpty(mode_set):error("cache(): modes other than 'set' require a source variable.")
+        srcvar = $$1
+    } else {
+        eval(srcvar = $$3)
+        dstvar = $$1
+        #We need the ref value, so the function's parameter must be a var name. join() is!
+        varstr = $$1 = $$join($$srcvar, $$escape_expand(\t)) ##TODO: how to use white space?
+        isEqual(2, add) {
+            varstr = "$$1 += $$join($$srcvar, $$escape_expand(\t))" ##TODO: how to use white space?
+        } else:isEqual(2, sub) {
+            varstr = "$$1 -= $$join($$srcvar, $$escape_expand(\t))" ##TODO: how to use white space?
+        } else:isEqual(2, set) {
+            varstr = "$$1 = $$join($$srcvar, $$escape_expand(\t))" ##TODO: how to use white space?
+        } else {
+            error("cache(): invalid flag $$2.")
+        }
+    }
+    #error("varstr: $$varstr")
+##TODO: remove existing lines contain $$srcvar
+    #because write_file() will write 1 line for each value(seperated by space), so the value must be closed with "", then it's 1 value, not list
+    write_file($$_QMAKE_CACHE_, varstr, append)
+}
+
+equals(MAKEFILE_GENERATOR, UNIX) {
+    QMAKE_MAKE = make
+} else:equals(MAKEFILE_GENERATOR, MINGW) {
+    !equals(QMAKE_HOST.os, Windows): \
+        QMAKE_MAKE = make
+    else: \
+        QMAKE_MAKE = mingw32-make
+} else:if(equals(MAKEFILE_GENERATOR, MSVC.NET)|equals(MAKEFILE_GENERATOR, MSBUILD)) {
+    QMAKE_MAKE = nmake
+} else {
+    error("Configure tests are not supported with the $$MAKEFILE_GENERATOR Makefile generator.")
+}
+
+# Ensure that a cache is present. If none was found on startup, this will create
+# one in the build directory of the project which loads this feature.
+#cache()
+
+QMAKE_CONFIG_LOG = $$dirname(_QMAKE_CACHE_)/config.log
+QMAKE_CONFIG_TESTS_DIR = $$_PRO_FILE_PWD_/config.tests
+
+defineTest(qtRunLoggedCommand) {
+    msg = "+ $$1"
+    write_file($$QMAKE_CONFIG_LOG, msg, append)
+    system("$$1 >> \"$$QMAKE_CONFIG_LOG\" 2>&1")|return(false)
+    return(true)
+}
+
+# Try to build the test project in $$QMAKE_CONFIG_TESTS_DIR/$$1
+# ($$_PRO_FILE_PWD_/config.tests/$$1 by default).
+#
+# If the test passes, config_$$1 will be added to CONFIG.
+# The result is automatically cached. Use of cached results
+# can be suppressed by passing CONFIG+=recheck to qmake.
+#
+# Returns: true iff the test passes
+defineTest(qtCompileTest) {
+    positive = config_$$1
+    done = done_config_$$1
+
+    $$done:!recheck {
+        $$positive:return(true)
+        return(false)
+    }
+
+#    log("Checking for $${1}... ")
+    message("Checking for $${1}... ")
+    msg = "executing config test $$1"
+    write_file($$QMAKE_CONFIG_LOG, msg, append)
+
+    test_dir = $$QMAKE_CONFIG_TESTS_DIR/$$1
+    test_out_dir = $$shadowed($$test_dir)
+    test_cmd_base = "cd $$system_quote($$system_path($$test_out_dir)) &&"
+
+    # Disable qmake features which are typically counterproductive for tests
+    qmake_configs = "\"CONFIG -= qt debug_and_release app_bundle lib_bundle\""
+
+    # Clean up after previous run
+    exists($$test_out_dir/Makefile):qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE distclean")
+
+    mkpath($$test_out_dir)|error("Aborting.")
+
+    qtRunLoggedCommand("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$shell_quote($$test_dir)") {
+        qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE") {
+#            log("yes$$escape_expand(\\n)")
+            message("yes$$escape_expand(\\n)")
+            msg = "test $$1 succeeded"
+            write_file($$QMAKE_CONFIG_LOG, msg, append)
+
+            !$$positive {
+                CONFIG += $$positive
+                cache(CONFIG, add, positive)
+            }
+            !$$done {
+                CONFIG += $$done
+                cache(CONFIG, add, done)
+            }
+            export(CONFIG)
+            return(true)
+        }
+    }
+
+    log("no$$escape_expand(\\n)")
+    msg = "test $$1 FAILED"
+    write_file($$QMAKE_CONFIG_LOG, msg, append)
+
+    $$positive {
+        CONFIG -= $$positive
+        cache(CONFIG, sub, positive)
+    }
+    !$$done {
+        CONFIG += $$done
+        cache(CONFIG, add, done)
+    }
+    export(CONFIG)
+    return(false)
+}

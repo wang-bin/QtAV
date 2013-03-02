@@ -142,12 +142,13 @@ defineTest(empty_file) {
     }
 }
 
+##TODO: add defineReplace(getValue): parameter is varname
 lessThan(QT_MAJOR_VERSION, 5): {
 
 defineTest(write_file) {
     !isEmpty(4): error("write_file(name, [content var, [append]]) requires one to three arguments.")
     ##TODO: 1.how to replace old value
-##getting the value requires a function whose parameter has var name and return a string. join() is the only function
+##getting the ref value requires a function whose parameter has var name and return a string. join() is the only function
 ## var name is $$2.
 ## echo a string with "\n" will fail, so we can not use join
     #val = $$join($$2, $$escape_expand(\n))$$escape_expand(\n)
@@ -173,9 +174,9 @@ defineTest(getBuildRoot) {
     isEmpty(BUILD_DIR) {
         BUILD_DIR=$$(BUILD_DIR)
         isEmpty(BUILD_DIR) {
-            build_cache = $$PROJECTROOT/.build.cache #use root project's cache for subdir projects
-            !exists($$build_cache):build_cache = $$PWD/.build.cache #common.pri is in the root dir of a sub project
-            exists($$build_cache):include($$build_cache)
+            #build_cache = $$PROJECTROOT/.build.cache #use root project's cache for subdir projects
+            #!exists($$build_cache):build_cache = $$PWD/.build.cache #common.pri is in the root dir of a sub project
+            #exists($$build_cache):include($$build_cache)
             isEmpty(BUILD_DIR) {
                 BUILD_DIR=$$[BUILD_DIR]
                 isEmpty(BUILD_DIR) {
