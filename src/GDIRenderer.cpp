@@ -43,14 +43,13 @@ public:
       , gdiplus_token(0)
       , device_context(0)
     {
-        use_qpainter = false;
         GdiplusStartupInput gdiplusStartupInput;
         GdiplusStartup(&gdiplus_token, &gdiplusStartupInput, NULL);
     }
     ~GDIRendererPrivate() {
         if (device_context) {
             DPTR_P(GDIRenderer);
-            ReleaseDC(p.winId(), device_context);
+            ReleaseDC((HWND)p.winId(), device_context); /*Q5: must cast WID to HWND*/
             DeleteDC(off_dc);
             device_context = 0;
         }
@@ -59,7 +58,7 @@ public:
     void prepare() {
         DPTR_P(GDIRenderer);
         update_background = true;
-        device_context = GetDC(p.winId());
+        device_context = GetDC((HWND)p.winId()); /*Q5: must cast WID to HWND*/
         //TODO: check bitblt support
         int ret = GetDeviceCaps(device_context, RC_BITBLT);
         qDebug("bitblt=%d", ret);
@@ -110,6 +109,7 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
     //setDCFromPainter(false); //changeEvent will be called on show()
+    setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
 GDIRenderer::~GDIRenderer()
@@ -118,11 +118,7 @@ GDIRenderer::~GDIRenderer()
 
 QPaintEngine* GDIRenderer::paintEngine() const
 {
-    if (d_func().use_qpainter) {
-        return QWidget::paintEngine();
-    } else {
-        return 0;
-    }
+    return 0;
 }
 
 void GDIRenderer::convertData(const QByteArray &data)
@@ -140,10 +136,6 @@ void GDIRenderer::paintEvent(QPaintEvent *)
     Q_UNUSED(locker);
     //begin paint
     HDC hdc = d.device_context;
-    if (d.use_qpainter) {
-        QPainter p(this);
-        hdc = p.paintEngine()->getDC();
-    }
     if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
         d.update_background = false;
         Graphics g(hdc);
@@ -201,10 +193,7 @@ void GDIRenderer::showEvent(QShowEvent *)
 {
     DPTR_D(GDIRenderer);
     d.update_background = true;
-    useQPainter(d.use_qpainter);
-    if (!d.use_qpainter) {
-        d_func().prepare();
-    }
+    d_func().prepare();
 }
 
 bool GDIRenderer::write()

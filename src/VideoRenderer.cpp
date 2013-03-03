@@ -191,21 +191,6 @@ QRect VideoRenderer::videoRect() const
     return d_func().out_rect;
 }
 
-void VideoRenderer::useQPainter(bool qp)
-{
-    DPTR_D(VideoRenderer);
-    d.use_qpainter = qp;
-    if (d.widget_holder) {
-        d.widget_holder->setAttribute(Qt::WA_PaintOnScreen, !d.use_qpainter);
-    }
-}
-
-bool VideoRenderer::useQPainter() const
-{
-    DPTR_D(const VideoRenderer);
-    return d.use_qpainter;
-}
-
 void VideoRenderer::resizeFrame(int width, int height)
 {
     Q_UNUSED(width);

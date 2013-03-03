@@ -86,9 +86,6 @@ public:
     int rendererHeight() const;
     //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
     QRect videoRect() const;
-
-    bool useQPainter() const;
-    void useQPainter(bool qp);
 protected:
     VideoRenderer(VideoRendererPrivate &d);
     /*!

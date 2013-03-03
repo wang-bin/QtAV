@@ -14,11 +14,9 @@ public:
 
     %CLASS%Private()
     {
-        use_qpainter = false; //default is to use custome paint engine, e.g. dx. gl
     }
     ~%CLASS%Private() {
     }
-    bool use_qpainter; //TODO: move to base class
 };
 
 %CLASS%::%CLASS%(QWidget *parent, Qt::WindowFlags f):
@@ -32,6 +30,7 @@ public:
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
+    setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
 %CLASS%::~%CLASS%()
@@ -41,11 +40,7 @@ public:
 
 QPaintEngine* %CLASS%::paintEngine() const
 {
-    if (d_func().use_qpainter) {
-        return QWidget::paintEngine();
-    } else {
-        return 0; //use native engine
-    }
+    return 0; //use native engine
 }
 
 void %CLASS%::convertData(const QByteArray &data)
@@ -105,7 +100,6 @@ void %CLASS%::showEvent(QShowEvent *event)
     Q_UNUSED(event);
     DPTR_D(%CLASS%);
     d.update_background = true;
-    useQPainter(d.use_qpainter);
     /*
      * Do something that depends on widget below! e.g. recreate render target for direct2d.
      * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you

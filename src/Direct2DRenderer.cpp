@@ -54,7 +54,6 @@ public:
       , bitmap_width(0)
       , bitmap_height(0)
     {
-        use_qpainter = false;
         HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &d2d_factory);
         if (FAILED(hr)) {
             qWarning("Create d2d factory failed");
@@ -123,7 +122,6 @@ public:
         return true;
     }
 
-    bool use_qpainter; //TODO: move to base class
     ID2D1Factory *d2d_factory;
     ID2D1HwndRenderTarget *render_target;
     D2D1_PIXEL_FORMAT pixel_format;
@@ -142,6 +140,7 @@ Direct2DRenderer::Direct2DRenderer(QWidget *parent, Qt::WindowFlags f):
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
+    setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
 Direct2DRenderer::~Direct2DRenderer()
@@ -171,11 +170,7 @@ void Direct2DRenderer::convertData(const QByteArray &data)
 
 QPaintEngine* Direct2DRenderer::paintEngine() const
 {
-    if (d_func().use_qpainter) {
-        return QWidget::paintEngine();
-    } else {
-        return 0; //use native engine
-    }
+    return 0; //use native engine
 }
 
 void Direct2DRenderer::paintEvent(QPaintEvent *)
@@ -251,7 +246,6 @@ void Direct2DRenderer::showEvent(QShowEvent *)
 {
     DPTR_D(Direct2DRenderer);
     d.update_background = true;
-    useQPainter(d.use_qpainter);
     d.createDeviceResource();
 }
 
