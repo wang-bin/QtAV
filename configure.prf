@@ -93,8 +93,7 @@ defineTest(qtCompileTest) {
     exists($$test_out_dir/Makefile):qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE distclean")
 
     mkpath($$test_out_dir)#|error("Aborting.") #mkpath currently return false, do not know why
-
-    qtRunLoggedCommand("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$shell_quote($$test_dir)") {
+    qtRunLoggedCommand("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$system_path($$test_dir)") {
         qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE") {
             log("yes$$escape_expand(\\n)")
             msg = "test $$1 succeeded"
@@ -106,8 +105,6 @@ defineTest(qtCompileTest) {
             }
             !$$done {
                 CONFIG += $$done
-                cache(CONFIG, add, done)
-            }
             export(CONFIG)
             return(true)
         }
@@ -116,6 +113,8 @@ defineTest(qtCompileTest) {
     log("no$$escape_expand(\\n)")
     msg = "test $$1 FAILED"
     write_file($$QMAKE_CONFIG_LOG, msg, append)
+                cache(CONFIG, add, done)
+            }
 
     $$positive {
         CONFIG -= $$positive
