@@ -42,8 +42,10 @@ greaterThan(QT_MAJOR_VERSION, 5) {
     #if build this project alone and do not have sub-project depends on this lib, those lines are not necessary
     ####ASSUME compile tests and .qmake.cache is in project out root dir
     #vars in .qmake.cache will affect all projects in subdirs, even if qmake's working dir is not in .qmake.cache dir
-    write_file($$BUILD_DIR/.qmake.cache) ##TODO: erase the existing lines!!
+    #write_file($$BUILD_DIR/.qmake.cache) ##TODO: erase the existing lines!!
     include(configure.prf)
+#clear config.log iff reconfigure is required
+    write_file($$QMAKE_CONFIG_LOG)
     #cache() is available after include configure.prf
     #load(configure.prf) #what's the difference?
     message("cache: $$_QMAKE_CACHE_QT4_")
@@ -53,8 +55,11 @@ cache(BUILD_ROOT, set, BUILD_DIR)
 cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
-#qtCompileTest(ffmpeg)|error("FFmpeg is required, but not available")
-#qtCompileTest(portaudio)|warning("PortAudio is not available. No audio output in QtAV")
-#qtCompileTest(gdiplus)
-#qtCompileTest(direct2d)
+qtCompileTest(avutil)|error("FFmpeg avutil is required, but not available")
+qtCompileTest(avcodec)|error("FFmpeg avcodec is required, but not available")
+qtCompileTest(avformat)|error("FFmpeg avformat is required, but not available")
+qtCompileTest(swscale)|error("FFmpeg swscale is required, but not available")
+qtCompileTest(portaudio)|warning("PortAudio is not available. No audio output in QtAV")
+qtCompileTest(direct2d)
+qtCompileTest(gdiplus)
 #qtCompileTest(openal)

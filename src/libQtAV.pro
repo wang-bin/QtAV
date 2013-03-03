@@ -10,7 +10,7 @@ CONFIG *= portaudio
 win32 {
 CONFIG *= gdi
 #TODO: link or dynamic link?
-#*msvc*: CONFIG *= direct2d #gcc may not have heeaders and libs
+*msvc*: CONFIG *= direct2d #gcc may not have heeaders and libs
 }
 
 #var with '_' can not pass to pri?
@@ -43,14 +43,14 @@ ipp-link {
     #omp for static link. _t is multi-thread static link
 }
 
-portaudio {
+config_portaudio {
     SOURCES += AOPortAudio.cpp
     HEADERS += QtAV/AOPortAudio.h
     DEFINES *= HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
     #win32: LIBS *= -lwinmm #-lksguid #-luuid
 }
-openal {
+config_openal {
     SOURCES += AOOpenAL.cpp
     HEADERS += QtAV/AOOpenAL.h \
                QtAV/private/AOOpenAL_p.h
@@ -59,12 +59,12 @@ openal {
     else: LIBS *= -lopenal
 }
 
-gdi {
+config_gdiplus {
     SOURCES += GDIRenderer.cpp
     HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus
 }
-direct2d {
+config_direct2d {
 #TODO: check whether support Direct2D, i.e. version at least XP
     SOURCES += Direct2DRenderer.cpp
     HEADERS += QtAV/Direct2DRenderer.h
