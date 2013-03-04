@@ -76,11 +76,13 @@ config_gdiplus {
     HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus
 }
+
 config_direct2d {
 #TODO: check whether support Direct2D, i.e. version at least XP
+    !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
     HEADERS += QtAV/Direct2DRenderer.h
-    LIBS += -lD2d1
+    #LIBS += -lD2d1
 }
 
 SOURCES += \
