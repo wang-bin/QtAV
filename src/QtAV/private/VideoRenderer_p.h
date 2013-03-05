@@ -85,7 +85,7 @@ public:
     //TODO: rename to renderer_width/height
     int renderer_width, renderer_height;
     qreal source_aspect_ratio;
-    int src_width, src_height;
+    int src_width, src_height; //TODO: in_xxx
     //ImageConverter conv;
     QMutex img_mutex;
     //for both source, out aspect ratio. because source change may result in out change if mode is VideoAspectRatio

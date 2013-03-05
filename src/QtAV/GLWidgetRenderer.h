@@ -41,8 +41,13 @@ public:
     virtual ~GLWidgetRenderer();
 
 protected:
+    virtual void convertData(const QByteArray &data);
     virtual bool write();
-    virtual void paintEvent(QPaintEvent *);
+
+    virtual void initializeGL();
+    virtual void paintGL();
+    virtual void resizeGL(int w, int h);
+
     virtual void resizeEvent(QResizeEvent *);
 };
 
