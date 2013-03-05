@@ -60,7 +60,7 @@ void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
     d.out_aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
         //compute out_rect
-        d.out_rect = QRect(0, 0, d.renderer_width, d.renderer_height);
+        d.out_rect = QRect(1, 0, d.renderer_width, d.renderer_height); //remove? already in computeOutParameters()
         setOutAspectRatio(qreal(d.renderer_width)/qreal(d.renderer_height));
         //is that thread safe?
     } else if (mode == VideoAspectRatio) {
@@ -90,8 +90,7 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
         d.update_background = true; //can not fill the whole renderer with video
     }
     //compute the out out_rect
-    qreal r = qreal(d.renderer_width)/qreal(d.renderer_height); //renderer aspect ratio
-    d.computeOutParameters(r, ratio);
+    d.computeOutParameters(ratio);
     if (ratio_changed) {
         resizeFrame(d.out_rect.width(), d.out_rect.height());
     }
@@ -165,8 +164,7 @@ void VideoRenderer::resizeRenderer(int width, int height)
 
     d.renderer_width = width;
     d.renderer_height = height;
-    qreal r = qreal(d.renderer_width)/qreal(d.renderer_height);
-    d.computeOutParameters(r, d.out_aspect_ratio);
+    d.computeOutParameters(d.out_aspect_ratio);
     resizeFrame(d.out_rect.width(), d.out_rect.height());
 }
 

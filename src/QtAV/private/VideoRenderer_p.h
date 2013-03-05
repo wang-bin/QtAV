@@ -57,7 +57,13 @@ public:
     virtual ~VideoRendererPrivate(){
         widget_holder = 0;
     }
-    void computeOutParameters(qreal rendererAspectRatio, qreal outAspectRatio) {
+    void computeOutParameters(qreal outAspectRatio) {
+        qreal rendererAspectRatio = qreal(renderer_width)/qreal(renderer_height);
+        if (out_aspect_ratio_mode == VideoRenderer::RendererAspectRatio) {
+            out_aspect_ratio = rendererAspectRatio;
+            out_rect = QRect(0, 0, renderer_width, renderer_height);
+            return;
+        }
         if (rendererAspectRatio > outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
             //renderer is too wide, use renderer's height, horizonal align center
             int h = renderer_height;
