@@ -50,7 +50,7 @@ void ImageRenderer::convertData(const QByteArray &data)
     //int ss = 4*d.src_width*d.src_height*sizeof(char);
     //if (ss != data.size())
     //    qDebug("src size=%d, data size=%d", ss, data.size());
-    //if (d.src_width != d.width || d.src_height != d.height)
+    //if (d.src_width != d.renderer_width || d.src_height != d.renderer_height)
     //    return;
     /*
      * QImage constructed from memory do not deep copy the data, data should be available throughout
@@ -62,7 +62,7 @@ void ImageRenderer::convertData(const QByteArray &data)
      * But if we use the fixed original frame size, the data address and size always the same, so we can
      * avoid the lock and use the ref data directly and safely
      */
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
         d.img_mutex.lock();
         d.data = data;

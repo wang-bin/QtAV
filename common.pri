@@ -142,15 +142,33 @@ defineTest(empty_file) {
     }
 }
 
+##TODO: add defineReplace(getValue): parameter is varname
 lessThan(QT_MAJOR_VERSION, 5): {
 
+defineTest(log){
+    system(echo $$1)
+}
+
+defineTest(mkpath) {
+    win32 {
+        #why always return false?
+        system("md $$system_path($$1) 2>nul")|return(false)
+    } else {
+        log("mkdir -p $$shell_path($$1)")
+        #why msys failed?
+        system("mkdir -p $$shell_path($$1)")|return(false)
+    }
+    return(true)
+}
+
 defineTest(write_file) {
+    #log("write_file($$1, $$2, $$3)")
     !isEmpty(4): error("write_file(name, [content var, [append]]) requires one to three arguments.")
     ##TODO: 1.how to replace old value
-##getting the value requires a function whose parameter has var name and return a string. join() is the only function
+##getting the ref value requires a function whose parameter has var name and return a string. join() is the only function
 ## var name is $$2.
 ## echo a string with "\n" will fail, so we can not use join
-    #val = $$join($$2, $$escape_expand(\n))$$escape_expand(\n)
+    #val = $$join($$2, $$escape_expand(\\n))$$escape_expand(\\n)
     isEmpty(3)|!isEqual(3, append) {
 #system("$$QMAKE_DEL_FILE $$1") #for win commad "del", path format used in qmake such as D:/myfile is not supported, "/" will be treated as an otpion for "del"
         empty_file($$1)
@@ -165,6 +183,55 @@ defineTest(write_file) {
 #    !isEmpty(4): error("cache(var, [set|add|sub] [transient] [super], [srcvar]) requires one to three arguments.")
 #}
 
+defineReplace(clean_path) {
+    win32:1 ~= s|\\\\|/|g
+    contains(1, ^/.*):pfx = /
+    else:pfx =
+    segs = $$split(1, /)
+    out =
+    for(seg, segs) {
+        equals(seg, ..):out = $$member(out, 0, -2)
+        else:!equals(seg, .):out += $$seg
+    }
+    return($$join(out, /, $$pfx))
+}
+
+#make sure BUILD_DIR is already defined. otherwise return the input path
+#only operate on string, seperator is always "/"
+defineReplace(shadowed) {
+    isEmpty(SOURCE_ROOT):return($$1)
+    1 ~= s,$$SOURCE_ROOT,,g
+    shadow_dir = $$BUILD_DIR/$$1
+    shadow_dir ~= s,//,/,g
+    return($$shadow_dir)
+}
+
+defineReplace(shell_path) {
+# QMAKE_DIR_SEP: \ for win cmd and / for sh
+    return($$replace(1, /, $$QMAKE_DIR_SEP))
+}
+
+##TODO: see qmake/library/ioutils.cpp
+defineReplace(shell_quote) {
+    isEmpty(1):error("shell_quote(arg) requires one argument.")
+    return($$quote($$1))
+}
+
+defineReplace(system_path) {
+    win32 {
+        1 ~= s,/,\\,g
+    } else {
+        1 ~= s,\\,/,g
+    }
+    return($$1)
+}
+
+##TODO: see qmake/library/ioutils.cpp
+defineReplace(system_quote) {
+    isEmpty(1):error("system_quote(arg) requires one argument.")
+    return($$quote($$1))
+}
+
 }
 
 #argument 1 is default dir if not defined
@@ -173,9 +240,9 @@ defineTest(getBuildRoot) {
     isEmpty(BUILD_DIR) {
         BUILD_DIR=$$(BUILD_DIR)
         isEmpty(BUILD_DIR) {
-            build_cache = $$PROJECTROOT/.build.cache #use root project's cache for subdir projects
-            !exists($$build_cache):build_cache = $$PWD/.build.cache #common.pri is in the root dir of a sub project
-            exists($$build_cache):include($$build_cache)
+            #build_cache = $$PROJECTROOT/.build.cache #use root project's cache for subdir projects
+            #!exists($$build_cache):build_cache = $$PWD/.build.cache #common.pri is in the root dir of a sub project
+            #exists($$build_cache):include($$build_cache)
             isEmpty(BUILD_DIR) {
                 BUILD_DIR=$$[BUILD_DIR]
                 isEmpty(BUILD_DIR) {
@@ -190,7 +257,7 @@ defineTest(getBuildRoot) {
         }
     }
     export(BUILD_DIR)
-    message(BUILD_DIR=$$BUILD_DIR)
+    #message(BUILD_DIR=$$BUILD_DIR)
     return(true)
 }
 
