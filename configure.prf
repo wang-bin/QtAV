@@ -105,6 +105,8 @@ defineTest(qtCompileTest) {
             }
             !$$done {
                 CONFIG += $$done
+                cache(CONFIG, add, done)
+            }
             export(CONFIG)
             return(true)
         }
@@ -113,8 +115,6 @@ defineTest(qtCompileTest) {
     log("no$$escape_expand(\\n)")
     msg = "test $$1 FAILED"
     write_file($$QMAKE_CONFIG_LOG, msg, append)
-                cache(CONFIG, add, done)
-            }
 
     $$positive {
         CONFIG -= $$positive
