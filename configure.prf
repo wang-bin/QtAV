@@ -40,7 +40,7 @@ defineTest(cache) {
 ##TODO: remove existing lines contain $$srcvar
     #because write_file() will write 1 line for each value(seperated by space), so the value must be closed with "", then it's 1 value, not list
 #erase the existing value
-    win32:isEmpty(QMAKE_SH) {
+    win32 {#:isEmpty(QMAKE_SH) { #windows sucks. can not access the cache
 
     } else {
 #use sed for unix or msys
