@@ -20,17 +20,18 @@ defineTest(cache) {
     isEmpty(3) {
         isEmpty(mode_set):error("cache(): modes other than 'set' require a source variable.")
         srcvar = $$1
+        srcval = $$join($$srcvar, $$escape_expand(\\t)) ##TODO: how to use white space?
     } else {
-        eval(srcvar = $$3)
+        srcvar = $$3
         dstvar = $$1
         #We need the ref value, so the function's parameter must be a var name. join() is!
-        varstr = $$1 = $$join($$srcvar, $$escape_expand(\\t)) ##TODO: how to use white space?
+        srcval = $$join($$srcvar, $$escape_expand(\\t)) ##TODO: how to use white space?
         isEqual(2, add) {
-            varstr = "$$1 += $$join($$srcvar, $$escape_expand(\\t))" ##TODO: how to use white space?
+            varstr = "$$1 += $$srcval" ##TODO: how to use white space?
         } else:isEqual(2, sub) {
-            varstr = "$$1 -= $$join($$srcvar, $$escape_expand(\\t))" ##TODO: how to use white space?
+            varstr = "$$1 -= $$srcval"
         } else:isEqual(2, set) {
-            varstr = "$$1 = $$join($$srcvar, $$escape_expand(\\t))" ##TODO: how to use white space?
+            varstr = "$$1 = $$srcval"
         } else {
             error("cache(): invalid flag $$2.")
         }
@@ -38,6 +39,15 @@ defineTest(cache) {
     #log("varstr: $$varstr")
 ##TODO: remove existing lines contain $$srcvar
     #because write_file() will write 1 line for each value(seperated by space), so the value must be closed with "", then it's 1 value, not list
+#erase the existing value
+    win32:isEmpty(QMAKE_SH) {
+
+    } else {
+#use sed for unix or msys
+#convert '/' to '\/' for sed
+        srcval ~= s,/,\/,g
+        system("sed -i '/$${srcval}/d' $$_QMAKE_CACHE_QT4_ >/dev/null")
+    }
     write_file($$_QMAKE_CACHE_QT4_, varstr, append)
 }
 
