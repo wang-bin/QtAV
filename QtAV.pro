@@ -51,7 +51,7 @@ greaterThan(QT_MAJOR_VERSION, 5) {
     message("cache: $$_QMAKE_CACHE_QT4_")
 }
 cache(BUILD_DIR, set, BUILD_DIR)
-cache(BUILD_ROOT, set, BUILD_DIR)
+#cache(BUILD_ROOT, set, BUILD_DIR)
 cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
