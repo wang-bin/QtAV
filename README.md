@@ -56,11 +56,20 @@ For most platforms, just
     qmake
     make
 
+It's recommend not to build in source dir.  
+
+    cd your_build_dir
+    qmake QtAV_source_dir/QtAV.pro
+    make
+
+qmake will run check the required libraries at the first time, so you must make sure those libraries can be found by compiler.
+Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, delete _.qmake.cache_ and run qmake again
+
 >>If the above command failed to build it, try
 
 >>    `cd your_build_dir`
 
->>    `qmake QtAV_dir/QtAV.pro -r BUILD_DIR=your_build_dir`
+>>    `qmake QtAV_source_dir/QtAV.pro -r BUILD_DIR=your_build_dir`
 
 >>    `make`
 
