@@ -12,13 +12,9 @@ I don't put any vs project file in QtAV, because it's easy to create by qmake.
 
 Open cmd
 
-    qmake -r BUILD_DIR=%CD%\out -tp vc QtAV.pro
+    qmake -r -tp vc QtAV.pro
 
-If you are in sh environment
-
-    qmake -r BUILD_DIR=$PWD/out -tp vc QtAV.pro
-
-Then the sln and vcxproj(vcproj) files will be created. Open QtAV.sln in your Visual Studio, Compile it.
+Then the sln and vcxproj(vcproj) files will be created. Open QtAV.sln in your Visual Studio, Compile it. You may have to set INCLUDE and LIB dir in Visual Studio to ensure that compiler can find FFmepg and portaudio development files.
 
 Another solution is using Qt vs plugin. It will help you to load qmake projects.
 
