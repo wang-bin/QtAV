@@ -46,15 +46,12 @@ public:
      * true: paintEngine.getDC(), double buffer is enabled by defalut.
      * false: GetDC(winId()), no double buffer, should reimplement paintEngine()
      */
-    //TODO: move to base class
-    bool useQPainter() const;
-    void useQPainter(bool qp);
 protected:
     virtual void convertData(const QByteArray &data);
+    virtual void paintEvent(QPaintEvent *);
+    virtual void resizeEvent(QResizeEvent *);
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void showEvent(QShowEvent *);
-    virtual void resizeEvent(QResizeEvent *);
-    virtual void paintEvent(QPaintEvent *);
     virtual bool write();
 };
 

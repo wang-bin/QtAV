@@ -84,7 +84,7 @@ bool VideoDecoder::decode(const QByteArray &encoded)
             , d.codec_ctx->width, d.codec_ctx->height);
         if (!d.codec_ctx->width || !d.codec_ctx->height)
             return false;
-        resizeVideo(d.codec_ctx->width, d.codec_ctx->height);
+        resizeVideoFrame(d.codec_ctx->width, d.codec_ctx->height);
     }
     //If not YUV420P or ImageConverter supported format pair, convert to YUV420P first. or directly convert to RGB?(no hwa)
     //TODO: move convertion out. decoder only do some decoding
@@ -95,12 +95,12 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     return true;
 }
 
-void VideoDecoder::resizeVideo(const QSize &size)
+void VideoDecoder::resizeVideoFrame(const QSize &size)
 {
-    resizeVideo(size.width(), size.height());
+    resizeVideoFrame(size.width(), size.height());
 }
 
-void VideoDecoder::resizeVideo(int width, int height)
+void VideoDecoder::resizeVideoFrame(int width, int height)
 {
     if (width == 0 || height == 0)
         return;

@@ -84,6 +84,7 @@ void EventFilter::help()
                        "<p>" + tr("O: open a file\n") + "</p>"
                        "<p>" + tr("P: replay\n") + "</p>"
                        "<p>" + tr("S: stop\n") + "</p>"
+                       "<p>" + tr("R: switch aspect ratio") + "</p>"
                        "<p>" + tr("M: mute on/off\n") + "</p>"
                        "<p>" + tr("C: capture video") + "</p>"
                        "<p>" + tr("Up/Down: volume +/-\n") + "</p>"
@@ -181,6 +182,15 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             if (player->audio()) {
                 player->audio()->setMute(!player->audio()->isMute());
             }
+            break;
+        case Qt::Key_R: {
+            VideoRenderer* renderer = player->renderer();
+            VideoRenderer::OutAspectRatioMode r = renderer->outAspectRatioMode();
+            if (r == VideoRenderer::VideoAspectRatio)
+                renderer->setOutAspectRatioMode(VideoRenderer::RendererAspectRatio);
+            else
+                renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
+        }
             break;
         case Qt::Key_T: {
             QWidget *w = qApp->activeWindow();

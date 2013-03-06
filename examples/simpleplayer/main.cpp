@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
     qInstallMessageHandler(Logger);
 
     WidgetRenderer renderer;
+    renderer.setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
     renderer.show();
     renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
     //renderer.resize(800, 600);

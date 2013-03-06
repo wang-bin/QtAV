@@ -1,4 +1,16 @@
-version 1.1.9
+version 1.1.10   2013-03-04
+
+- Direct2D support. Auto check before compile
+- GDI+ renderer improved
+- Custom renderer template
+- Aspect ratio switch support
+- Config test support for both Qt4 and Qt5
+- Better build system
+- Auto update rc file
+- Some documents
+
+
+version 1.1.9    2013-02-22
 
 - Add network interrupt callback. Thanks Vito vcovito
 - QtAV and FFmpeg runtime version check

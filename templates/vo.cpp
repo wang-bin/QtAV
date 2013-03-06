@@ -12,13 +12,11 @@ class %CLASS%Private : public VideoRendererPrivate
 public:
     DPTR_DECLARE_PUBLIC(%CLASS%)
 
-    %CLASS%Private():
-		use_qpainter(false) //default is to use custome paint engine, e.g. dx. gl
+    %CLASS%Private()
     {
     }
     ~%CLASS%Private() {
     }
-    bool use_qpainter; //TODO: move to base class
 };
 
 %CLASS%::%CLASS%(QWidget *parent, Qt::WindowFlags f):
@@ -26,11 +24,13 @@ public:
   , VideoRenderer(*new %CLASS%Private())
 {
     DPTR_INIT_PRIVATE(%CLASS%);
+    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
+    setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
 %CLASS%::~%CLASS%()
@@ -40,31 +40,14 @@ public:
 
 QPaintEngine* %CLASS%::paintEngine() const
 {
-    if (d_func().use_qpainter) {
-        return QWidget::paintEngine();
-    } else {
-        return 0; //use native engine
-    }
-}
-
-void %CLASS%::useQPainter(bool qp)
-{
-    DPTR_D(%CLASS%);
-    d.use_qpainter = qp;
-    setAttribute(Qt::WA_PaintOnScreen, !d.use_qpainter);
-}
-
-bool %CLASS%::useQPainter() const
-{
-    DPTR_D(const %CLASS%);
-    return d.use_qpainter;
+    return 0; //use native engine
 }
 
 void %CLASS%::convertData(const QByteArray &data)
 {
     DPTR_D(%CLASS%);
     //TODO: if date is deep copied, mutex can be avoided
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
         d.img_mutex.lock();
         /* convert data to your image below*/
@@ -78,20 +61,37 @@ void %CLASS%::convertData(const QByteArray &data)
 void %CLASS%::paintEvent(QPaintEvent *)
 {
     DPTR_D(%CLASS%);
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.lock();
     }
     //begin paint. how about QPainter::beginNativePainting()?
 
+    //fill background color when necessary, e.g. renderer is resized, image is null
+    if ((d.update_background && d.out_rect != rect()) || d.data.isEmpty()) {
+        d.update_background = false;
+        //fill background color. DO NOT return, you must continue drawing
+    }
+    if (d.data.isEmpty()) {
+        return;
+    }
+    //assume that the image data is already scaled to out_size(NOT renderer size!)
+    if (!d.scale_in_renderer || (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height())) {
+        //you may copy data to video buffer directly
+    } else {
+        //paint with scale
+    }
+
     //end paint. how about QPainter::endNativePainting()?
-    if (!d.scale_in_qt) {
+    if (!d.scale_in_renderer) {
         d.img_mutex.unlock();
     }
 }
 
 void %CLASS%::resizeEvent(QResizeEvent *e)
 {
-    resizeVideo(e->size());
+    DPTR_D(%CLASS%);
+    d.update_background = true;
+    resizeRenderer(e->size());
     update();
 }
 
@@ -99,7 +99,7 @@ void %CLASS%::showEvent(QShowEvent *event)
 {
     Q_UNUSED(event);
     DPTR_D(%CLASS%);
-    useQPainter(d.use_qpainter);
+    d.update_background = true;
     /*
      * Do something that depends on widget below! e.g. recreate render target for direct2d.
      * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you

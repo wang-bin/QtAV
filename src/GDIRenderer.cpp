@@ -27,6 +27,7 @@
 #include <QtGui/QPaintEngine>
 #include <QResizeEvent>
 
+//http://msdn.microsoft.com/en-us/library/ms927613.aspx
 //#pragma comment(lib, "gdiplus.lib")
 
 using namespace Gdiplus;
@@ -38,8 +39,7 @@ public:
     DPTR_DECLARE_PUBLIC(GDIRenderer)
 
     GDIRendererPrivate():
-        use_qpainter(false)
-      , support_bitblt(true)
+        support_bitblt(true)
       , gdiplus_token(0)
       , device_context(0)
     {
@@ -49,7 +49,7 @@ public:
     ~GDIRendererPrivate() {
         if (device_context) {
             DPTR_P(GDIRenderer);
-            ReleaseDC(p.winId(), device_context);
+            ReleaseDC((HWND)p.winId(), device_context); /*Q5: must cast WID to HWND*/
             DeleteDC(off_dc);
             device_context = 0;
         }
@@ -57,7 +57,8 @@ public:
     }
     void prepare() {
         DPTR_P(GDIRenderer);
-        device_context = GetDC(p.winId());
+        update_background = true;
+        device_context = GetDC((HWND)p.winId()); /*Q5: must cast WID to HWND*/
         //TODO: check bitblt support
         int ret = GetDeviceCaps(device_context, RC_BITBLT);
         qDebug("bitblt=%d", ret);
@@ -84,7 +85,6 @@ public:
         off_dc = CreateCompatibleDC(device_context);
     }
 
-    bool use_qpainter;
     bool support_bitblt;
     ULONG_PTR gdiplus_token;
     /*
@@ -102,44 +102,23 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     QWidget(parent, f),VideoRenderer(*new GDIRendererPrivate())
 {
     DPTR_INIT_PRIVATE(GDIRenderer);
+    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
     //setDCFromPainter(false); //changeEvent will be called on show()
+    setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
 GDIRenderer::~GDIRenderer()
 {
 }
 
-bool GDIRenderer::write()
-{
-    update();
-    return true;
-}
-
 QPaintEngine* GDIRenderer::paintEngine() const
 {
-    if (d_func().use_qpainter) {
-        return QWidget::paintEngine();
-    } else {
-        return 0;
-    }
-}
-
-void GDIRenderer::useQPainter(bool qp)
-{
-    DPTR_D(GDIRenderer);
-    d.use_qpainter = qp;
-    setAttribute(Qt::WA_PaintOnScreen, !d.use_qpainter);
-}
-
-bool GDIRenderer::useQPainter() const
-{
-    DPTR_D(const GDIRenderer);
-    return d.use_qpainter;
+    return 0;
 }
 
 void GDIRenderer::convertData(const QByteArray &data)
@@ -150,21 +129,6 @@ void GDIRenderer::convertData(const QByteArray &data)
     d.data = data;
 }
 
-void GDIRenderer::showEvent(QShowEvent *)
-{
-    DPTR_D(const GDIRenderer);
-    useQPainter(d.use_qpainter);
-    if (!d.use_qpainter) {
-        d_func().prepare();
-    }
-}
-
-void GDIRenderer::resizeEvent(QResizeEvent *e)
-{
-    resizeVideo(e->size());
-    update();
-}
-
 void GDIRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(GDIRenderer);
@@ -172,14 +136,14 @@ void GDIRenderer::paintEvent(QPaintEvent *)
     Q_UNUSED(locker);
     //begin paint
     HDC hdc = d.device_context;
-    if (d.use_qpainter) {
-        QPainter p(this);
-        hdc = p.paintEngine()->getDC();
-    }
-    if (d.data.isEmpty()) {
+    if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
+        d.update_background = false;
         Graphics g(hdc);
         SolidBrush brush(Color(255, 0, 0, 0)); //argb
         g.FillRectangle(&brush, 0, 0, width(), height());
+        //Rectangle(hdc, 0, 0, width(), height());
+    }
+    if (d.data.isEmpty()) {
         return;
     }
     /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
@@ -193,16 +157,49 @@ void GDIRenderer::paintEvent(QPaintEvent *)
         qWarning("Failed GetHBITMAP");
         return;
     }
+
     HBITMAP hbmp_old = (HBITMAP)SelectObject(d.off_dc, d.off_bitmap);
     // && image.size() != size()
-    if (d.scale_in_qt || d.src_width != d.width || d.src_height != d.height) { //TODO:rename scale_on_paint
-        StretchBlt(hdc, 0, 0, width(), height(), d.off_dc, 0, 0, d.src_width, d.src_height, SRCCOPY);
+    //assume that the image data is already scaled to out_size(NOT renderer size!)
+    if (!d.scale_in_renderer || (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height())) {
+        BitBlt(hdc
+               , d.out_rect.left(), d.out_rect.top()
+               , d.out_rect.width(), d.out_rect.height()
+               , d.off_dc
+               , 0, 0
+               , SRCCOPY);
     } else {
-        BitBlt(hdc, 0, 0, d.src_width, d.src_height, d.off_dc, 0, 0, SRCCOPY);
+        StretchBlt(hdc
+                   , d.out_rect.left(), d.out_rect.top()
+                   , d.out_rect.width(), d.out_rect.height()
+                   , d.off_dc
+                   , 0, 0
+                   , d.src_width, d.src_height
+                   , SRCCOPY);
     }
     SelectObject(d.off_dc, hbmp_old);
     DeleteObject(d.off_bitmap); //avoid mem leak
     //end paint
+}
+
+void GDIRenderer::resizeEvent(QResizeEvent *e)
+{
+    d_func().update_background = true;
+    resizeRenderer(e->size());
+    update();
+}
+
+void GDIRenderer::showEvent(QShowEvent *)
+{
+    DPTR_D(GDIRenderer);
+    d.update_background = true;
+    d_func().prepare();
+}
+
+bool GDIRenderer::write()
+{
+    update();
+    return true;
 }
 
 } //namespace QtAV

@@ -10,7 +10,7 @@ CONFIG *= portaudio
 win32 {
 CONFIG *= gdi
 #TODO: link or dynamic link?
-#*msvc*: CONFIG *= direct2d #gcc may not have heeaders and libs
+*msvc*: CONFIG *= direct2d #gcc may not have heeaders and libs
 }
 
 #var with '_' can not pass to pri?
@@ -19,7 +19,19 @@ PROJECTROOT = $$PWD/..
 !include(libQtAV.pri): error("could not find libQtAV.pri")
 preparePaths($$OUT_PWD/../out)
 
-win32:RC_FILE = $${PROJECTROOT}/res/QtAV.rc
+win32 {
+    RC_FILE = $${PROJECTROOT}/res/QtAV.rc
+#no depends for rc file by default, even if rc includes a header
+    rc.target = $$clean_path($$RC_FILE) #rc obj depends on clean path target
+    rc.depends = $$PWD/QtAV/version.h
+#why use multiple rule failed? i.e. add a rule without command
+    isEmpty(QMAKE_SH) {
+        rc.commands = @copy /B $$system_path($$RC_FILE)+,, #change file time
+    } else {
+        rc.commands = @touch $$RC_FILE #change file time
+    }
+    QMAKE_EXTRA_TARGETS += rc
+}
 OTHER_FILES += $$RC_FILE
 
 TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
@@ -43,14 +55,14 @@ ipp-link {
     #omp for static link. _t is multi-thread static link
 }
 
-portaudio {
+config_portaudio {
     SOURCES += AOPortAudio.cpp
     HEADERS += QtAV/AOPortAudio.h
     DEFINES *= HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
     #win32: LIBS *= -lwinmm #-lksguid #-luuid
 }
-openal {
+config_openal {
     SOURCES += AOOpenAL.cpp
     HEADERS += QtAV/AOOpenAL.h \
                QtAV/private/AOOpenAL_p.h
@@ -59,17 +71,18 @@ openal {
     else: LIBS *= -lopenal
 }
 
-gdi {
+config_gdiplus {
     SOURCES += GDIRenderer.cpp
     HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus
 }
-direct2d {
+
+config_direct2d {
 #TODO: check whether support Direct2D, i.e. version at least XP
-    #INCLUDEPATH += $${PROJECTROOT}/contrib/d2d1headers
+    !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
     HEADERS += QtAV/Direct2DRenderer.h
-    LIBS += -lD2d1
+    #LIBS += -lD2d1
 }
 
 SOURCES += \

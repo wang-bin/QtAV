@@ -35,8 +35,8 @@ public:
     VideoDecoder();
     virtual bool decode(const QByteArray &encoded);
 
-    void resizeVideo(const QSize& size);
-    void resizeVideo(int width, int height);
+    void resizeVideoFrame(const QSize& size);
+    void resizeVideoFrame(int width, int height);
 
     int width() const;
     int height() const;
