@@ -12,6 +12,7 @@ OTHER_FILES += templates/vo.h templates/vo.cpp templates/COPYRIGHT.h templates/m
 
 #cache mkspecs. compare mkspec with cached one. if not equal, remove old cache to run new compile tests
 mkspecs_build = $$[QMAKE_MKSPECS]
+mkspecs_build ~= s,\\\\,/,g #avoid warning for '\'. qmake knows how to deal with '/'
 !isEmpty(mkspecs_cached) {
     !isEqual(mkspecs_cached, $$mkspecs_build):new_compile_tests = 1
 } else {
@@ -21,7 +22,9 @@ mkspecs_build = $$[QMAKE_MKSPECS]
 ##TODO: BUILD_DIR=>BUILD_ROOT
 #if not empty, it means the parent project may already set it
 isEmpty(out_dir):out_dir = $$OUT_PWD
+out_dir ~= s,\\\\,/,g #avoid warning for '\'. qmake knows how to deal with '/'
 isEmpty(SOURCE_ROOT):SOURCE_ROOT = $$PWD
+SOURCE_ROOT ~= s,\\\\,/,g #avoid warning for '\'. qmake knows how to deal with '/'
 isEmpty(BUILD_DIR):BUILD_DIR=$$out_dir
 message("BUILD_DIR=$$BUILD_DIR")
 

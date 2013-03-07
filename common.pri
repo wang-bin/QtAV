@@ -196,10 +196,10 @@ defineReplace(clean_path) {
     return($$join(out, /, $$pfx))
 }
 
-#make sure BUILD_DIR is already defined. otherwise return the input path
+#make sure BUILD_DIR and SOURCE_ROOT is already defined. otherwise return the input path
 #only operate on string, seperator is always "/"
 defineReplace(shadowed) {
-    isEmpty(SOURCE_ROOT):return($$1)
+    isEmpty(SOURCE_ROOT)|isEmpty(BUILD_DIR):return($$1)
     1 ~= s,$$SOURCE_ROOT,,g
     shadow_dir = $$BUILD_DIR/$$1
     shadow_dir ~= s,//,/,g
@@ -219,9 +219,9 @@ defineReplace(shell_quote) {
 
 defineReplace(system_path) {
     win32 {
-        1 ~= s,/,\\,g
+        1 ~= s,/,\\,g #qmake \\=>put \\=>real \?
     } else {
-        1 ~= s,\\,/,g
+        1 ~= s,\\\\,/,g  ##why is \\\\. real \=>we read \\=>qmake \\\\?
     }
     return($$1)
 }
