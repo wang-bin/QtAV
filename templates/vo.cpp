@@ -1,8 +1,6 @@
 
 #include "QtAV/%CLASS%.h"
 #include "private/VideoRenderer_p.h"
-#include <QtGui/QPainter>
-#include <QtGui/QPaintEngine>
 #include <QResizeEvent>
 
 namespace QtAV {

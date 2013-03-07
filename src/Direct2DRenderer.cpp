@@ -22,8 +22,6 @@
 #include "QtAV/Direct2DRenderer.h"
 #include "private/VideoRenderer_p.h"
 #include <QtCore/QLibrary>
-#include <QtGui/QPainter>
-#include <QtGui/QPaintEngine>
 #include <QResizeEvent>
 
 //#define CINTERFACE //http://rxlib.ru/faqs/faqc_en/15596.html

@@ -23,8 +23,6 @@
 #include "private/VideoRenderer_p.h"
 #include <windows.h> //GetDC()
 #include <gdiplus.h>
-#include <QtGui/QPainter>
-#include <QtGui/QPaintEngine>
 #include <QResizeEvent>
 
 //http://msdn.microsoft.com/en-us/library/ms927613.aspx
