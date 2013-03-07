@@ -20,7 +20,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <QApplication>
-
+#include <QMessageBox>
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
 
@@ -83,6 +83,10 @@ int main(int argc, char *argv[])
     qInstallMessageHandler(Logger);
 */
     Direct2DRenderer renderer;
+    if (!renderer.isAvailable()) {
+        QMessageBox::critical(0, "QtAV", "Direct2D is not availabe on your platform!");
+        return 0;
+    }
     renderer.show();
     renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
     //renderer.resize(800, 600);
