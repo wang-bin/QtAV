@@ -20,14 +20,20 @@
 ******************************************************************************/
 
 #include "QtAV/GLWidgetRenderer.h"
-#include "private/ImageRenderer_p.h"
-#include <QtGui/QPainter>
-#include <QtGui/QPaintEngine>
+#include "private/VideoRenderer_p.h"
 #include <QResizeEvent>
+
+#include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1
+
+//TODO: check gl errors
+//GL_BGRA is available in OpenGL >= 1.2
+#ifndef GL_BGRA
+#define GL_BGRA GL_BGRA_EXT
+#endif //GL_BGRA
 
 namespace QtAV {
 
-class GLWidgetRendererPrivate : public ImageRendererPrivate
+class GLWidgetRendererPrivate : public VideoRendererPrivate
 {
 public:
     GLWidgetRendererPrivate():
@@ -36,14 +42,21 @@ public:
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
             available = false;
             return;
+            glGenTextures(1, &texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         }
+    }
+    ~GLWidgetRendererPrivate() {
+        glDeleteTextures(1, &texture);
     }
 
     GLuint texture;
 };
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
-    QGLWidget(parent, shareWidget, f),ImageRenderer(*new GLWidgetRendererPrivate())
+    QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRendererPrivate())
 {
     DPTR_INIT_PRIVATE(GLWidgetRenderer);
     setAcceptDrops(true);
@@ -51,7 +64,7 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
-    makeCurrent();
+//    makeCurrent();
 }
 
 GLWidgetRenderer::~GLWidgetRenderer()
@@ -101,16 +114,16 @@ void GLWidgetRenderer::paintGL()
     }
     //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glPushMatrix();
-    glGenTextures(1, &d.texture);
-    glBindTexture(GL_TEXTURE_2D, d.texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, 4/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_RGBA, GL_UNSIGNED_BYTE, d.data.constData());
+//    glGenTextures(1, &d.texture);
+    //glBindTexture(GL_TEXTURE_2D, d.texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_BGRA, GL_UNSIGNED_BYTE, d.data.constData());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();									// Reset The View
-    glTranslatef(0.0f, 0.0f, -0.4f); //?
-    glRotatef(180.0f, 1.0f, 0.0f, 0.0f); //?
+    //glLoadIdentity();									// Reset The View
+    //glTranslatef(0.0f, 0.0f, -0.4f); //?
+    //glRotatef(180.0f, 1.0f, 0.0f, 0.0f); //?
 
     glBegin(GL_QUADS);
     glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, -1.0);
@@ -120,7 +133,7 @@ void GLWidgetRenderer::paintGL()
     glEnd();
     glFlush();
 
-    glDeleteTextures(1, &d.texture);
+//    glDeleteTextures(1, &d.texture);
 
     swapBuffers();
 }

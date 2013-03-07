@@ -22,7 +22,7 @@
 #ifndef QTAV_GLWIDGETRENDERER_H
 #define QTAV_GLWIDGETRENDERER_H
 
-#include <QtAV/ImageRenderer.h>
+#include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
 
 /*TODO:
@@ -32,7 +32,7 @@
 namespace QtAV {
 
 class GLWidgetRendererPrivate;
-class Q_EXPORT GLWidgetRenderer : public QGLWidget, public ImageRenderer
+class Q_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer)
