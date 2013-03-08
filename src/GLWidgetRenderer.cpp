@@ -52,6 +52,7 @@ public:
         glDeleteTextures(1, &texture);
     }
 
+    QRect out_rect_old;
     GLuint texture;
 };
 
@@ -102,17 +103,18 @@ void GLWidgetRenderer::initializeGL()
 void GLWidgetRenderer::paintGL()
 {
     DPTR_D(GLWidgetRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
+    if (d.aspect_ratio_changed || d.update_background || d.out_rect_old != d.out_rect) {
+        d.out_rect_old = d.out_rect;
+        resizeGL(width(), height());
+        d.update_background = false;
+    }
     //begin paint
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
-        d.update_background = false;
-        glClearColor(0, 0, 0, 255);
-    }
     if (d.data.isEmpty()) {
         return;
     }
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     glTexImage2D(GL_TEXTURE_2D, 0, 3/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_BGRA, GL_UNSIGNED_BYTE, d.data.constData());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -134,6 +136,8 @@ void GLWidgetRenderer::paintGL()
 
 void GLWidgetRenderer::resizeGL(int w, int h)
 {
+    Q_UNUSED(w);
+    Q_UNUSED(h);
     DPTR_D(GLWidgetRenderer);
     qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
     glViewport(d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
@@ -146,12 +150,10 @@ void GLWidgetRenderer::resizeGL(int w, int h)
 
 void GLWidgetRenderer::resizeEvent(QResizeEvent *e)
 {
+    DPTR_D(GLWidgetRenderer);
+    d.update_background = true;
     resizeRenderer(e->size());
-    //?
-    //if (e)
-        QGLWidget::resizeEvent(e); //will call resizeGL()
-    //else
-        updateGL();
+    QGLWidget::resizeEvent(e); //will call resizeGL(). TODO:will call paintEvent()?
 }
 
 } //namespace QtAV

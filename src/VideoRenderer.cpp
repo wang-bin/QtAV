@@ -56,7 +56,7 @@ void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
     DPTR_D(VideoRenderer);
     if (mode == d.out_aspect_ratio_mode)
         return;
-    d.aspect_ratio_mode_changed = true;
+    d.aspect_ratio_changed = true;
     d.out_aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
         //compute out_rect
@@ -82,10 +82,10 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
     bool ratio_changed = d.out_aspect_ratio != ratio;
     d.out_aspect_ratio = ratio;
     //indicate that this function is called by user. otherwise, called in VideoRenderer
-    if (!d.aspect_ratio_mode_changed) {
+    if (!d.aspect_ratio_changed) {
         d.out_aspect_ratio_mode = CustomAspectRation;
     }
-    d.aspect_ratio_mode_changed = false;
+    d.aspect_ratio_changed = false; //TODO: when is false?
     if (d.out_aspect_ratio_mode != RendererAspectRatio) {
         d.update_background = true; //can not fill the whole renderer with video
     }
@@ -110,13 +110,14 @@ void VideoRenderer::setInSize(int width, int height)
 {
     DPTR_D(VideoRenderer);
     if (d.src_width != width || d.src_height != height) {
-        d.aspect_ratio_mode_changed = true; //for VideoAspectRatio mode
+        d.aspect_ratio_changed = true; //?? for VideoAspectRatio mode
     }
-    if (!d.aspect_ratio_mode_changed)// && (d.src_width == width && d.src_height == height))
+    if (!d.aspect_ratio_changed)// && (d.src_width == width && d.src_height == height))
         return;
     d.src_width = width;
     d.src_height = height;
     d.source_aspect_ratio = qreal(d.src_width)/qreal(d.src_height);
+    qDebug("%s => calculating aspect ratio from converted input data(%f)", __FUNCTION__, d.source_aspect_ratio);
     //see setOutAspectRatioMode
     if (d.out_aspect_ratio_mode == VideoAspectRatio) {
         //source_aspect_ratio equals to original video aspect ratio here, also equals to out ratio
