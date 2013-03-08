@@ -25,10 +25,6 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
 
-/*TODO:
- *  gl command
- */
-
 namespace QtAV {
 
 class GLWidgetRendererPrivate;

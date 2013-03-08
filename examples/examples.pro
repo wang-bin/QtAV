@@ -1,7 +1,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    playerGL \
+    player-gl \
     simpleplayer \
     videographicsitem \
     videowall

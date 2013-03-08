@@ -25,11 +25,15 @@
 
 #include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1
 
+//TODO: vsync http://stackoverflow.com/questions/589064/how-to-enable-vertical-sync-in-opengl
 //TODO: check gl errors
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
 #define GL_BGRA GL_BGRA_EXT
 #endif //GL_BGRA
+#ifndef GL_BGR
+#define GL_BGR GL_BGR_EXT
+#endif //GL_BGR
 
 namespace QtAV {
 
@@ -64,7 +68,7 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     setFocusPolicy(Qt::StrongFocus);
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
-    //setAutoFillBackground(false);
+    setAutoFillBackground(false);
 //    makeCurrent();
 }
 
@@ -120,7 +124,7 @@ void GLWidgetRenderer::paintGL()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glPushMatrix();
-    glLoadIdentity();									// Reset The View
+    glLoadIdentity();
     //glRotatef(180.0f, 0.0f, 0.0f, 0.0f); //flip the image
 
     glBegin(GL_QUADS);
@@ -129,7 +133,7 @@ void GLWidgetRenderer::paintGL()
     glTexCoord2d(1.0, 1.0); glVertex2d(+1.0, -1.0);
     glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, -1.0);
     glEnd();
-    glFlush();
+    //glFlush();
     glPopMatrix();
     //swapBuffers(); //why flickers?
 }
@@ -140,6 +144,7 @@ void GLWidgetRenderer::resizeGL(int w, int h)
     Q_UNUSED(h);
     DPTR_D(GLWidgetRenderer);
     qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
+    //TODO: if whole widget as viewport, we can set rect by glVertex, thus paint logic is the same as others
     glViewport(d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
     //??
     glMatrixMode(GL_PROJECTION);
