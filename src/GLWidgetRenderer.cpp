@@ -63,7 +63,7 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     setFocusPolicy(Qt::StrongFocus);
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
-    setAutoFillBackground(false);
+    //setAutoFillBackground(false);
 //    makeCurrent();
 }
 
@@ -81,17 +81,18 @@ void GLWidgetRenderer::convertData(const QByteArray &data)
 
 bool GLWidgetRenderer::write()
 {
-    updateGL();
+    update();
     return true;
 }
 
 void GLWidgetRenderer::initializeGL()
 {
     glEnable(GL_TEXTURE_2D);
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 //
     glShadeModel(GL_SMOOTH);
+    glClearColor(0.0, 0.0, 0.0, 0.5);
     glClearDepth(1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -104,43 +105,37 @@ void GLWidgetRenderer::paintGL()
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
     //begin paint
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
         d.update_background = false;
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0, 0, 0, 255);
     }
     if (d.data.isEmpty()) {
         return;
     }
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glPushMatrix();
-//    glGenTextures(1, &d.texture);
-    //glBindTexture(GL_TEXTURE_2D, d.texture);
     glTexImage2D(GL_TEXTURE_2D, 0, 3/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_BGRA, GL_UNSIGNED_BYTE, d.data.constData());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glLoadIdentity();									// Reset The View
-    //glTranslatef(0.0f, 0.0f, -0.4f); //?
-    //glRotatef(180.0f, 1.0f, 0.0f, 0.0f); //?
+    glPushMatrix();
+    glLoadIdentity();									// Reset The View
+    //glRotatef(180.0f, 0.0f, 0.0f, 0.0f); //flip the image
 
     glBegin(GL_QUADS);
-    glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, -1.0);
-    glTexCoord2d(1.0, 0.0); glVertex2d(+1.0, -1.0);
-    glTexCoord2d(1.0, 1.0); glVertex2d(+1.0, +1.0);
-    glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, +1.0);
+    glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, +1.0);
+    glTexCoord2d(1.0, 0.0); glVertex2d(+1.0, +1.0);
+    glTexCoord2d(1.0, 1.0); glVertex2d(+1.0, -1.0);
+    glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, -1.0);
     glEnd();
     glFlush();
-
-//    glDeleteTextures(1, &d.texture);
-
-    swapBuffers();
+    glPopMatrix();
+    //swapBuffers(); //why flickers?
 }
 
 void GLWidgetRenderer::resizeGL(int w, int h)
 {
     DPTR_D(GLWidgetRenderer);
+    qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
     glViewport(d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
     //??
     glMatrixMode(GL_PROJECTION);
@@ -153,9 +148,9 @@ void GLWidgetRenderer::resizeEvent(QResizeEvent *e)
 {
     resizeRenderer(e->size());
     //?
-    if (e)
-        QGLWidget::resizeEvent(e);
-    else
+    //if (e)
+        QGLWidget::resizeEvent(e); //will call resizeGL()
+    //else
         updateGL();
 }
 
