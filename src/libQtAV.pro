@@ -96,6 +96,7 @@ SOURCES += \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
     EventFilter.cpp \
+    GLWidgetRenderer.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
@@ -134,6 +135,7 @@ HEADERS += \
     QtAV/AVDemuxer.h \
     QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
+    QtAV/GLWidgetRenderer.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/ImageRenderer.h \

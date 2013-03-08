@@ -46,7 +46,7 @@ public:
       , source_aspect_ratio(0)
       , src_width(0)
       , src_height(0)
-      , aspect_ratio_mode_changed(true) //to set the initial parameters
+      , aspect_ratio_changed(true) //to set the initial parameters
       , out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
       , widget_holder(0)
@@ -85,11 +85,11 @@ public:
     //TODO: rename to renderer_width/height
     int renderer_width, renderer_height;
     qreal source_aspect_ratio;
-    int src_width, src_height;
+    int src_width, src_height; //TODO: in_xxx
     //ImageConverter conv;
     QMutex img_mutex;
     //for both source, out aspect ratio. because source change may result in out change if mode is VideoAspectRatio
-    bool aspect_ratio_mode_changed;
+    bool aspect_ratio_changed;
     VideoRenderer::OutAspectRatioMode out_aspect_ratio_mode;
     qreal out_aspect_ratio;
     //out_rect: the displayed video frame out_rect in the renderer
