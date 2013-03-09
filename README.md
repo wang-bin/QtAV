@@ -25,7 +25,7 @@ QtAV can meet your most demands
 - Fullscreen, stay on top
 - Compatible: QtAV can be built with both Qt4 and Qt5. QtAV will support
   both FFmpeg and [Libav](http://libav.org).
-- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D.
+- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D and OpenGL.
 
 ### Extensible Framework (not finished)
 
