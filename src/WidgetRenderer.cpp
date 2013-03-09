@@ -27,7 +27,7 @@
 
 namespace QtAV {
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
-    QWidget(parent, f),ImageRenderer(*new WidgetRendererPrivate())
+    QWidget(parent, f),QPainterRenderer(*new WidgetRendererPrivate())
 {
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
@@ -35,7 +35,7 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
 }
 
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
-    :QWidget(parent, f),ImageRenderer(d)
+    :QWidget(parent, f),QPainterRenderer(d)
 {
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);

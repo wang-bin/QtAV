@@ -23,11 +23,11 @@
 #ifndef QTAV_GRAPHICSITEMRENDERER_P_H
 #define QTAV_GRAPHICSITEMRENDERER_P_H
 
-#include <private/ImageRenderer_p.h>
+#include <private/QPainterRenderer_p.h>
 
 namespace QtAV {
 
-class Q_EXPORT GraphicsItemRendererPrivate : public ImageRendererPrivate
+class Q_EXPORT GraphicsItemRendererPrivate : public QPainterRendererPrivate
 {
 public:
     virtual ~GraphicsItemRendererPrivate(){}

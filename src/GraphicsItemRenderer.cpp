@@ -30,7 +30,7 @@
 namespace QtAV {
 
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
-    :GraphicsWidget(parent),ImageRenderer(*new GraphicsItemRendererPrivate())
+    :GraphicsWidget(parent),QPainterRenderer(*new GraphicsItemRendererPrivate())
 {
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
@@ -40,7 +40,7 @@ GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
 }
 
 GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGraphicsItem *parent)
-    :GraphicsWidget(parent),ImageRenderer(d)
+    :GraphicsWidget(parent),QPainterRenderer(d)
 {
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);

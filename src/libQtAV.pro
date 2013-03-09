@@ -101,7 +101,7 @@ SOURCES += \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     ImageConverterIPP.cpp \
-    ImageRenderer.cpp \
+    QPainterRenderer.cpp \
     Packet.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
@@ -126,8 +126,8 @@ HEADERS += \
     QtAV/private/AVOutput_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
-    QtAV/private/ImageRenderer_p.h \
     QtAV/private/VideoRenderer_p.h \
+    QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \
     QtAV/AudioDecoder.h \
     QtAV/AudioOutput.h \
@@ -138,7 +138,7 @@ HEADERS += \
     QtAV/GLWidgetRenderer.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
-    QtAV/ImageRenderer.h \
+    QtAV/QPainterRenderer.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
@@ -153,3 +153,4 @@ HEADERS += \
     QtAV/FactoryDefine.h \
     QtAV/ImageConverterTypes.h \
     QtAV/version.h
+

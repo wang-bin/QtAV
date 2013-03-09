@@ -19,34 +19,34 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/ImageRenderer.h>
-#include <private/ImageRenderer_p.h>
+#include <QtAV/QPainterRenderer.h>
+#include <private/QPainterRenderer_p.h>
 
 namespace QtAV {
 
-ImageRenderer::ImageRenderer()
-    :VideoRenderer(*new ImageRendererPrivate())
+QPainterRenderer::QPainterRenderer()
+    :VideoRenderer(*new QPainterRendererPrivate())
 {
 }
 
-ImageRenderer::ImageRenderer(ImageRendererPrivate &d)
+QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
     :VideoRenderer(d)
 {
 }
 
-ImageRenderer::~ImageRenderer()
+QPainterRenderer::~QPainterRenderer()
 {
 }
 /*
-QImage ImageRenderer::currentFrameImage() const
+QImage QPainterRenderer::currentFrameImage() const
 {
     return d_func().image;
 }
 */
 //FIXME: why crash if QImage use widget size?
-void ImageRenderer::convertData(const QByteArray &data)
+void QPainterRenderer::convertData(const QByteArray &data)
 {
-    DPTR_D(ImageRenderer);
+    DPTR_D(QPainterRenderer);
     //int ss = 4*d.src_width*d.src_height*sizeof(char);
     //if (ss != data.size())
     //    qDebug("src size=%d, data size=%d", ss, data.size());

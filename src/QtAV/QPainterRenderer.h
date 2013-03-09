@@ -19,26 +19,26 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QAV_IMAGERENDERER_H
-#define QAV_IMAGERENDERER_H
+#ifndef QAV_QPAINTERRENDERER_H
+#define QAV_QPAINTERRENDERER_H
 
 #include <QtAV/VideoRenderer.h>
 #include <qimage.h>
 
 namespace QtAV {
 
-class ImageRendererPrivate;
-class Q_EXPORT ImageRenderer : public VideoRenderer
+class QPainterRendererPrivate;
+class Q_EXPORT QPainterRenderer : public VideoRenderer
 {
-    DPTR_DECLARE_PRIVATE(ImageRenderer)
+    DPTR_DECLARE_PRIVATE(QPainterRenderer)
 public:
-    ImageRenderer();
-    virtual ~ImageRenderer();
+    QPainterRenderer();
+    virtual ~QPainterRenderer();
     //virtual QImage currentFrameImage() const;
 protected:
     virtual void convertData(const QByteArray &data);
-    ImageRenderer(ImageRendererPrivate& d);
+    QPainterRenderer(QPainterRendererPrivate& d);
 };
 
 } //namespace QtAV
-#endif // QAV_IMAGERENDERER_H
+#endif // QAV_QPAINTERRENDERER_H

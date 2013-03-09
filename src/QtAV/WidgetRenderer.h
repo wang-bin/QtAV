@@ -22,13 +22,13 @@
 #ifndef QTAV_WIDGETRENDERER_H
 #define QTAV_WIDGETRENDERER_H
 
-#include <QtAV/ImageRenderer.h>
+#include <QtAV/QPainterRenderer.h>
 #include <qwidget.h>
 
 namespace QtAV {
 
 class WidgetRendererPrivate;
-class Q_EXPORT WidgetRenderer : public QWidget, public ImageRenderer
+class Q_EXPORT WidgetRenderer : public QWidget, public QPainterRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(WidgetRenderer)

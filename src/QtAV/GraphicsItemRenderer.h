@@ -22,7 +22,7 @@
 #ifndef QAV_GRAPHICSITEMRENDERER_H
 #define QAV_GRAPHICSITEMRENDERER_H
 
-#include <QtAV/ImageRenderer.h>
+#include <QtAV/QPainterRenderer.h>
 #include <QGraphicsWidget>
 
 //QGraphicsWidget will lose focus forever if TextItem inserted text. Why?
@@ -36,7 +36,7 @@
 namespace QtAV {
 
 class GraphicsItemRendererPrivate;
-class Q_EXPORT GraphicsItemRenderer : public GraphicsWidget, public ImageRenderer
+class Q_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRenderer
 {
     DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)
 public:

@@ -23,12 +23,12 @@
 #ifndef QTAV_WIDGETRENDERER_P_H
 #define QTAV_WIDGETRENDERER_P_H
 
-#include <private/ImageRenderer_p.h>
+#include <private/QPainterRenderer_p.h>
 #include <QtAV/WidgetRenderer.h>
 
 namespace QtAV {
 
-class Q_EXPORT WidgetRendererPrivate : public ImageRendererPrivate
+class Q_EXPORT WidgetRendererPrivate : public QPainterRendererPrivate
 {
 public:
     WidgetRendererPrivate():action(WidgetRenderer::GestureMove) {}

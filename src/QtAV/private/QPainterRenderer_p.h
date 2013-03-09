@@ -20,20 +20,20 @@
 ******************************************************************************/
 
 
-#ifndef QTAV_IMAGERENDERER_P_H
-#define QTAV_IMAGERENDERER_P_H
+#ifndef QTAV_QPAINTERRENDERER_P_H
+#define QTAV_QPAINTERRENDERER_P_H
 
 #include <QtGui/QImage>
 #include <private/VideoRenderer_p.h>
 
 namespace QtAV {
 
-class Q_EXPORT ImageRendererPrivate : public VideoRendererPrivate
+class Q_EXPORT QPainterRendererPrivate : public VideoRendererPrivate
 {
 public:
-    virtual ~ImageRendererPrivate(){}
+    virtual ~QPainterRendererPrivate(){}
     QImage image;
 };
 
 } //namespace QtAV
-#endif // QTAV_IMAGERENDERER_P_H
+#endif // QTAV_QPAINTERRENDERER_P_H
