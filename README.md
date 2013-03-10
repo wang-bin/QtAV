@@ -76,7 +76,6 @@ Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file
 >>  The binaries will be created in $BUILD_DIR/bin.
 >>  If you are using QtCreator to build the project, you should go to Projects->Build Steps->qmake->Additional arguments, add "BUILD_DIR=your/buid/dir"
 
-To build with direct2d support, you should add additional arguments to qmake `CONFIG+=direct2d`, or add it in src/libQtAV.pro.
 
 ##### Build with MSVC
 
