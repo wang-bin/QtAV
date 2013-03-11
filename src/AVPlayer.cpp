@@ -313,6 +313,11 @@ bool AVPlayer::load()
     return loaded;
 }
 
+qreal AVPlayer::duration() const
+{
+    return qreal(demuxer.duration())/qreal(AV_TIME_BASE);
+}
+
 //FIXME: why no demuxer will not get an eof if replaying by seek(0)?
 void AVPlayer::play()
 {
@@ -393,11 +398,13 @@ void AVPlayer::seek(qreal pos)
 void AVPlayer::seekForward()
 {
     demuxer_thread->seekForward();
+    qDebug("seek %f%%", clock->value()/duration()*100.0);
 }
 
 void AVPlayer::seekBackward()
 {
     demuxer_thread->seekBackward();
+    qDebug("seek %f%%", clock->value()/duration()*100.0);
 }
 
 void AVPlayer::updateClock(qint64 msecs)
