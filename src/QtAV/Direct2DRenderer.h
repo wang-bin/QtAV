@@ -53,6 +53,7 @@ protected:
     virtual void showEvent(QShowEvent *);
     virtual bool write();
 };
+typedef Direct2DRenderer VideoRendererDirect2D;
 
 } //namespace QtAV
 

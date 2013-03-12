@@ -108,6 +108,7 @@ SOURCES += \
     AVPlayer.cpp \
     VideoCapture.cpp \
     VideoRenderer.cpp \
+    VideoRendererTypes.cpp \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     AVClock.cpp \
@@ -145,6 +146,7 @@ HEADERS += \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
     QtAV/VideoRenderer.h \
+    QtAV/VideoRendererTypes.h \
     QtAV/WidgetRenderer.h \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \

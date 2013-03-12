@@ -24,7 +24,7 @@
 
 #include <QtAV/VideoRenderer.h>
 #include <qimage.h>
-
+//TODO: not abstract.
 namespace QtAV {
 
 class QPainterRendererPrivate;

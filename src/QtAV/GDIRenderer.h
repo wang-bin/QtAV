@@ -54,6 +54,7 @@ protected:
     virtual void showEvent(QShowEvent *);
     virtual bool write();
 };
+typedef GDIRenderer VideoRendererGDI;
 
 } //namespace QtAV
 

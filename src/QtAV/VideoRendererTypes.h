@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    VideoRendererTypes: type id and manually id register function
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -19,35 +19,25 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_GLWIDGETRENDERER_H
-#define QTAV_GLWIDGETRENDERER_H
+#ifndef QTAV_VIDEORENDERERTYPES_H
+#define QTAV_VIDEORENDERERTYPES_H
 
-#include <QtAV/VideoRenderer.h>
-#include <QtOpenGL/QGLWidget>
+#include "VideoRenderer.h"
+#include <QtAV/FactoryDefine.h>
 
 namespace QtAV {
 
-class GLWidgetRendererPrivate;
-class Q_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
-{
-    Q_OBJECT
-    DPTR_DECLARE_PRIVATE(GLWidgetRenderer)
-public:
-    GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
-    virtual ~GLWidgetRenderer();
+typedef int VideoRendererId;
+class VideoRenderer;
+FACTORY_DECLARE(VideoRenderer)
 
-protected:
-    virtual void convertData(const QByteArray &data);
-    virtual bool write();
+static VideoRendererId VideoRendererId_Widget = 0;
+static VideoRendererId VideoRendererId_GLWidget = 1;
+static VideoRendererId VideoRendererId_GDI = 2;
+static VideoRendererId VideoRendererId_Direct2D = 3;
 
-    virtual void initializeGL();
-    virtual void paintGL();
-    virtual void resizeGL(int w, int h);
-
-    virtual void resizeEvent(QResizeEvent *);
-};
-typedef GLWidgetRenderer VideoRendererGLWidget;
+Q_EXPORT void VideoRenderer_RegisterAll();
 
 } //namespace QtAV
 
-#endif // QTAV_GLWidgetRenderer_H
+#endif // QTAV_VIDEORENDERERTYPES_H

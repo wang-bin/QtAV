@@ -50,5 +50,6 @@ protected:
     WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent, Qt::WindowFlags f);
 };
 
+typedef WidgetRenderer VideoRendererWidget;
 } //namespace QtAV
 #endif // QTAV_WIDGETRENDERER_H
