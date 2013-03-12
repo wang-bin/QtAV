@@ -36,7 +36,9 @@
  * To create and register a new subclass MyClassSubA with it's id
  * 0. In MyClassTypes.h (Usually you just include this enough to use the factory. And MyClassXXX.{h,cpp} can NOT include this file),
  *    MyClassSubA's ID:
- *      static MyClassId MyClassId_SubA = some_unique_id; //"extern" can only used by this lib internally. app linked to this can not get the value.
+ *  //"extern" can only used by this lib internally. app linked to this can not get the value.
+ *  //it's better to define in MyClassTypes.h than in MyClassSubA.cpp, so that user can check whether it is available in runtime even if MyClassSubA.cpp is not compiled
+ *      static MyClassId MyClassId_SubA = some_unique_id;
  * 1. create a source file MyClassSubA.cpp and implement the required members
  * 2. In MyClassSubA.cpp, add the following lines
  *      #include "prepost.h" //for PRE_FUNC_ADD()
