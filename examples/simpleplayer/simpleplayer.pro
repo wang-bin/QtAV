@@ -7,6 +7,12 @@ PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
 preparePaths($$OUT_PWD/../../out)
 
+config_gdiplus {
+    DEFINES *= HAVE_GDIPLUS=1
+}
+config_direct2d {
+    DEFINES *= HAVE_DIRECT2D=1
+}
 SOURCES += main.cpp
 HEADERS += 
 

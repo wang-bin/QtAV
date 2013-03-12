@@ -23,10 +23,17 @@
 
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
+#include <QMessageBox>
 
 #include <QtAV/AVPlayer.h>
 #include <QtAV/WidgetRenderer.h>
-
+#include <QtAV/GLWidgetRenderer.h>
+#if HAVE_DIRECT2D
+#include <QtAV/Direct2DRenderer.h>
+#endif //HAVE_DIRECT2D
+#if HAVE_GDIPLUS
+#include <QtAV/GDIRenderer.h>
+#endif //HAVE_GDIPLUS
 using namespace QtAV;
 
 static FILE *sLogfile = 0; //'log' is a function in msvc math.h
@@ -82,20 +89,57 @@ int main(int argc, char *argv[])
     }
     qInstallMessageHandler(Logger);
 
-    WidgetRenderer renderer;
-    renderer.setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
-    renderer.show();
-    renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
-    //renderer.resize(800, 600);
+    QString vo("qpainter");
+    int idx = a.arguments().indexOf("-vo");
+    if (idx > 0) {
+        vo = a.arguments().at(idx+1);
+    }
     QString fileName;
-	if (argc > 1)
-		fileName = a.arguments().at(1);
-
-	AVPlayer player;
-    player.setRenderer(&renderer);
+    if (argc > idx + 2 ) { //>-1+2=1
+        fileName = a.arguments().last();
+    }
+    vo = vo.toLower();
+    if (vo != "gl" && vo != "d2d" && vo != "gdi")
+        vo = "qpainter";
+    QString title = "QtAV " + vo + " " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com";
+    VideoRenderer *renderer = 0;
+    if (vo == "gl") {
+        GLWidgetRenderer *r = new GLWidgetRenderer();
+        r->show();
+        r->setWindowTitle(title);
+        renderer = r;
+    } else if (vo == "d2d") {
+#if HAVE_DIRECT2D
+        Direct2DRenderer *r = new Direct2DRenderer();
+        r->show();
+        r->setWindowTitle(title);
+        renderer = r;
+#endif
+    } else if (vo == "gdi") {
+#if HAVE_GDIPLUS
+        GDIRenderer *r = new GDIRenderer();
+        r->show();
+        r->setWindowTitle(title);
+        renderer = r;
+#endif //HAVE_GDIPLUS
+    } else {
+        WidgetRenderer *r = new WidgetRenderer();
+        r->show();
+        r->setWindowTitle(title);
+        renderer = r;
+    }
+    if (!renderer) {
+        QMessageBox::critical(0, "QtAV", "vo '" + vo + "' not supported");
+        return 1;
+    }
+    renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
+    AVPlayer player;
+    player.setRenderer(renderer);
     if (!fileName.isEmpty()) {
         player.play(fileName);
     }
 
-    return a.exec();
+    int ret = a.exec();
+    delete renderer;
+    return ret;
 }

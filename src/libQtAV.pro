@@ -72,12 +72,14 @@ config_openal {
 }
 
 config_gdiplus {
+    DEFINES *= HAVE_GDIPLUS=1
     SOURCES += GDIRenderer.cpp
     HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus
 }
 
 config_direct2d {
+    DEFINES *= HAVE_DIRECT2D=1
 #TODO: check whether support Direct2D, i.e. version at least XP
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
