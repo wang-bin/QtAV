@@ -26,14 +26,12 @@
 #include <QMessageBox>
 
 #include <QtAV/AVPlayer.h>
+#include <QtAV/VideoRendererTypes.h>
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/GLWidgetRenderer.h>
-#if HAVE_DIRECT2D
 #include <QtAV/Direct2DRenderer.h>
-#endif //HAVE_DIRECT2D
-#if HAVE_GDIPLUS
 #include <QtAV/GDIRenderer.h>
-#endif //HAVE_GDIPLUS
+
 using namespace QtAV;
 
 static FILE *sLogfile = 0; //'log' is a function in msvc math.h
@@ -104,28 +102,32 @@ int main(int argc, char *argv[])
     QString title = "QtAV " + vo + " " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com";
     VideoRenderer *renderer = 0;
     if (vo == "gl") {
-        GLWidgetRenderer *r = new GLWidgetRenderer();
-        r->show();
-        r->setWindowTitle(title);
+        GLWidgetRenderer *r = static_cast<GLWidgetRenderer*>(VideoRendererFactory::create(VideoRendererId_GLWidget));
+        if (r) {
+            r->show();
+            r->setWindowTitle(title);
+        }
         renderer = r;
     } else if (vo == "d2d") {
-#if HAVE_DIRECT2D
-        Direct2DRenderer *r = new Direct2DRenderer();
-        r->show();
-        r->setWindowTitle(title);
+        Direct2DRenderer *r = static_cast<Direct2DRenderer*>(VideoRendererFactory::create(VideoRendererId_Direct2D));
+        if (r) { //may not support
+            r->show();
+            r->setWindowTitle(title);
+        }
         renderer = r;
-#endif
     } else if (vo == "gdi") {
-#if HAVE_GDIPLUS
-        GDIRenderer *r = new GDIRenderer();
-        r->show();
-        r->setWindowTitle(title);
+        GDIRenderer *r = static_cast<GDIRenderer*>(VideoRendererFactory::create(VideoRendererId_GDI));
+        if (r) {
+            r->show();
+            r->setWindowTitle(title);
+        }
         renderer = r;
-#endif //HAVE_GDIPLUS
     } else {
-        WidgetRenderer *r = new WidgetRenderer();
-        r->show();
-        r->setWindowTitle(title);
+        WidgetRenderer *r = static_cast<WidgetRenderer*>(VideoRendererFactory::create(VideoRendererId_Widget));
+        if (r) {
+            r->show();
+            r->setWindowTitle(title);
+        }
         renderer = r;
     }
     if (!renderer) {
