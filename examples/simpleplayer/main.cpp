@@ -87,14 +87,22 @@ int main(int argc, char *argv[])
     }
     qInstallMessageHandler(Logger);
 
-    QString vo("qpainter");
+    QString vo;
     int idx = a.arguments().indexOf("-vo");
     if (idx > 0) {
         vo = a.arguments().at(idx+1);
+    } else {
+        QString exe(a.arguments().at(0));
+        qDebug("exe: %s", exe.toUtf8().constData());
+        int i = exe.lastIndexOf('-');
+        if (i > 0) {
+            vo = exe.mid(i+1, exe.indexOf('.') - i - 1);
+        }
     }
-    QString fileName;
+    qDebug("vo: %s", vo.toUtf8().constData());
+    QString media_file;
     if (argc > idx + 2 ) { //>-1+2=1
-        fileName = a.arguments().last();
+        media_file = a.arguments().last();
     }
     vo = vo.toLower();
     if (vo != "gl" && vo != "d2d" && vo != "gdi")
@@ -137,8 +145,8 @@ int main(int argc, char *argv[])
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
     AVPlayer player;
     player.setRenderer(renderer);
-    if (!fileName.isEmpty()) {
-        player.play(fileName);
+    if (!media_file.isEmpty()) {
+        player.play(media_file);
     }
 
     int ret = a.exec();
