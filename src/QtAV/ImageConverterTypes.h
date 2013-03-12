@@ -23,6 +23,7 @@
 #define QTAV_IMAGECONVERTERTYPES_H
 
 /*
+ * This file can not be included by ImageConverterXXX.{h,cpp}
  * Usually you just include this and then you can use factory
  * e.g.
  *      ImageConverter* c = ImageConverter::create(ImageConverterId_FF);
@@ -36,8 +37,8 @@ namespace QtAV {
  * When a new type is created, declare the type here, define the value in cpp
  */
 //why can not be const for msvc?
-extern ImageConverterId ImageConverterId_FF;    //0
-extern ImageConverterId ImageConverterId_IPP;   //1
+static ImageConverterId ImageConverterId_FF = 0;    //0
+static ImageConverterId ImageConverterId_IPP = 1;   //1
 
 /*
  * This must be called manually in your program(outside this library) if your compiler does
