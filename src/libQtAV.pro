@@ -5,13 +5,6 @@ QT += core gui opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG *= qtav-buildlib
-CONFIG *= portaudio
-#CONFIG *= openal
-win32 {
-CONFIG *= gdi
-#TODO: link or dynamic link?
-*msvc*: CONFIG *= direct2d #gcc may not have heeaders and libs
-}
 
 #var with '_' can not pass to pri?
 STATICLINK = 0
