@@ -1,8 +1,8 @@
 . ../scripts/functions.sh
 
 help(){
-  cecho green "Usage: $0 [-class Class] [-template Template]"
-  cecho green "Or $0 [--class=Class] [--template=Template]"
+  cecho green "Usage: $0 [-class Class] [-base Base] [-template Template]"
+  cecho green "Or $0 [--class=Class] [--base=Base] [--template=Template]"
   exit 0
 }
 
@@ -42,7 +42,17 @@ YEAR=`date +%Y`
 echo "generating ${CLASS}.h..."
 cat $COPY | sed "s/%YEAR%/$YEAR/g" > ${CLASS}.h
 cat ${TEMPLATE}.h |sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}.h
+[ -n "$BASE" ] && sed -i "s/%BASE%/$BASE/g" ${CLASS}.h
 
 echo "generating ${CLASS}.cpp..."
 cat $COPY | sed "s/%YEAR%/$YEAR/g" > ${CLASS}.cpp
 cat ${TEMPLATE}.cpp | sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}.cpp
+[ -n "$BASE" ] && sed -i "s/%BASE%/$BASE/g" ${CLASS}.cpp
+
+if [ -f ${CLASS}_p.h ]; then
+  echo "generating ${CLASS}_p.h..."
+  cat $COPY | sed "s/%YEAR%/$YEAR/g" > ${CLASS}_p.h
+  cat ${TEMPLATE}.h |sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}_p.h
+  [ -n "$BASE" ] && sed -i "s/%BASE%/$BASE/g" ${CLASS}_p.h
+fi
+
