@@ -62,26 +62,26 @@ void QPainterRenderer::convertData(const QByteArray &data)
      * But if we use the fixed original frame size, the data address and size always the same, so we can
      * avoid the lock and use the ref data directly and safely
      */
-    if (!d.scale_in_renderer) {
+    //if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
-        d.img_mutex.lock();
-        d.data = data;
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+        d.data = data; //TODO: why need this line? Then use data.data() is OK? If use d.data.data() it will eat more cpu, why?
         //qDebug("data address = %p, %p", data.data(), d.data.data());
     #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-        d.image = QImage((uchar*)d.data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
+        d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
     #else
-        d.image = QImage((uchar*)d.data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
+        d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
     #endif
-        d.img_mutex.unlock();
-    } else {
+    //} else {
         //qDebug("data address = %p", data.data());
         //Format_RGB32 is fast. see document
 #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-        d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
+        //d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
 #else
     d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
 #endif
-    }
+    //}
 }
 
 } //namespace QtAV
