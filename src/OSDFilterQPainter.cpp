@@ -24,6 +24,10 @@
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 
+/* TODO:
+ * Render on VideoRenderer directly to fix the position
+ */
+
 namespace QtAV {
 
 class OSDFilterQPainterPrivate : public OSDFilterPrivate
@@ -73,7 +77,7 @@ void OSDFilterQPainter::process(QByteArray &data)
     f.setPixelSize(26);
     painter.setFont(f);
     painter.setPen(Qt::white);
-    painter.drawText(60, 60, text);
+    painter.drawText(32, 32, text);
 }
 
 } //namespace QtAV

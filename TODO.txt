@@ -11,7 +11,7 @@ network stream
 avio pause network
 
 TODO:
-Filter framework: use FrameContext instead of QByteArray.
+Filter framework: use FrameContext instead of QByteArray. Render on vo or image
 
 type.h
 QtAV_Compat.h=>pch
