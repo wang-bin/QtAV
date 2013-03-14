@@ -22,10 +22,21 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
+#include "QtAV/version.h"
 
 unsigned QtAV_Version()
 {
     return QTAV_VERSION;
+}
+
+QString QtAV_Version_String()
+{
+    return QTAV_VERSION_STR;
+}
+
+QString QtAV_Version_String_Long()
+{
+    return QTAV_VERSION_STR_LONG;
 }
 
 namespace QtAV {

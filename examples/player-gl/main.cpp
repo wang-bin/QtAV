@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
     GLWidgetRenderer renderer;
     renderer.show();
-    renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
+    renderer.setWindowTitle("QtAV " + QtAV_Version_String_Long() + " wbsecg1@gmail.com");
     //renderer.resize(800, 600);
     QString fileName;
 	if (argc > 1)

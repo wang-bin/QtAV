@@ -58,7 +58,7 @@ using namespace QtAV;
 Widget::Widget(QWidget *parent) :
     QWidget(parent)
 {
-    setWindowTitle("A test for shared video renderer. QtAV" QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
+    setWindowTitle("A test for shared video renderer. QtAV" + QtAV_Version_String_Long() + " wbsecg1@gmail.com");
     QVBoxLayout *main_layout = new QVBoxLayout;
     QHBoxLayout *btn_layout = new QHBoxLayout;
     renderer = new WidgetRenderer;

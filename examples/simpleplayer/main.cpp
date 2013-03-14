@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     vo = vo.toLower();
     if (vo != "gl" && vo != "d2d" && vo != "gdi")
         vo = "qpainter";
-    QString title = "QtAV " + vo + " " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com";
+    QString title = "QtAV " + vo + " " + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
     VideoRenderer *renderer = 0;
     if (vo == "gl") {
         GLWidgetRenderer *r = static_cast<GLWidgetRenderer*>(VideoRendererFactory::create(VideoRendererId_GLWidget));
