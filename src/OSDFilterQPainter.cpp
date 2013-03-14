@@ -39,9 +39,10 @@ OSDFilterQPainter::OSDFilterQPainter():
 void OSDFilterQPainter::process(QByteArray &data)
 {
     DPTR_D(OSDFilterQPainter);
-    if (d.sec_current < 0 || d.sec_total < 0)
+    if (d.show_type == ShowNone || d.sec_current < 0 || d.sec_total < 0)
         return;
     QString text;
+    //TODO: calculation move to a function
     if (hasShowType(ShowCurrentTime) || hasShowType(ShowCurrentAndTotalTime)) {
         int h = d.sec_current/3600;
         int m = (d.sec_current%3600)/60;
@@ -63,7 +64,7 @@ void OSDFilterQPainter::process(QByteArray &data)
         text += QString(" -%1:%2:%3").arg(h, 2, 10, QChar('0')).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
     }
     if (hasShowType(ShowPercent) && d.sec_total > 0)
-        text += QString::number(qreal(d.sec_current)/qreal(d.sec_total)*100.0) + "%";
+        text += QString::number(qreal(d.sec_current)/qreal(d.sec_total)*100, 'f', 1) + "%";
 
     QImage image((uchar*)data.data(), d.width, d.height, QImage::Format_RGB32);
     QPainter painter(&image);

@@ -11,6 +11,8 @@ network stream
 avio pause network
 
 TODO:
+Filter framework: use FrameContext instead of QByteArray.
+
 type.h
 QtAV_Compat.h=>pch
 external clock
