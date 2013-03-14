@@ -28,17 +28,23 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/ImageConverter.h>
 #include <QtGui/QImage>
+#include <QtAV/OSDFilter.h>
 
 namespace QtAV {
 
 class VideoThreadPrivate : public AVThreadPrivate
 {
 public:
-    VideoThreadPrivate():conv(0),capture(0){}
+    VideoThreadPrivate():
+        conv(0)
+      , capture(0)
+      , osd(0)
+    {}
     ImageConverter *conv;
     double pts; //current decoded pts. for capture
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
+    OSDFilter *osd;
 };
 
 VideoThread::VideoThread(QObject *parent) :
@@ -73,7 +79,16 @@ VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
     d.capture = cap;
     return old;
 }
-
+//it may be called in main thread usually, but is being used in video thread,
+OSDFilter* VideoThread::setOSDFilter(OSDFilter *osd)
+{
+    qDebug("setOSDFilter %p", osd);
+    DPTR_D(VideoThread);
+    QMutexLocker locker(&d.mutex);
+    OSDFilter *old = d.osd;
+    d.osd = osd;
+    return old;
+}
 //TODO: if output is null or dummy, the use duration to wait
 void VideoThread::run()
 {
@@ -153,8 +168,14 @@ void VideoThread::run()
             d.conv->setInSize(d.renderer_width, d.renderer_height);
             if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
             }*/
+            QByteArray data = dec->data();
+            if (d.osd) {
+                d.osd->setImageSize(dec->width(), dec->height());
+                d.osd->setCurrentTime(pkt.pts);
+                d.osd->process(data);
+            }
             if (vo_ok) {
-                vo->writeData(dec->data());
+                vo->writeData(data);
             }
         }
         //use the last size first then update the last size so that decoder(converter) can update output size

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,34 +19,30 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
+#ifndef QTAV_OSDFILTER_P_H
+#define QTAV_OSDFILTER_P_H
 
-#ifndef QTAV_VIDEOTHREAD_H
-#define QTAV_VIDEOTHREAD_H
-
-#include <QtAV/AVThread.h>
-#include <QtCore/QSize>
+#include "Filter_p.h"
+#include "QtAV/OSDFilter.h"
 
 namespace QtAV {
 
-class ImageConverter;
-class OSDFilter;
-class VideoCapture;
-class VideoThreadPrivate;
-class VideoThread : public AVThread
+class OSDFilterPrivate : public FilterPrivate
 {
-    Q_OBJECT
-    DPTR_DECLARE_PRIVATE(VideoThread)
 public:
-    explicit VideoThread(QObject *parent = 0);
-    //return the old
-    ImageConverter* setImageConverter(ImageConverter *converter);
-    ImageConverter* imageConverter() const;
-    double currentPts() const;
-    VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
-    OSDFilter *setOSDFilter(OSDFilter* osd);
-protected:
-    virtual void run();
+    OSDFilterPrivate():
+        show_type(OSDFilter::ShowCurrentAndTotalTime)
+      , width(0)
+      , height(0)
+      , sec_current(0)
+      , sec_total(0)
+    {
+    }
+    virtual ~OSDFilterPrivate() {}
+    OSDFilter::ShowType show_type;
+    int width, height;
+    int sec_current, sec_total;
 };
 
 } //namespace QtAV
-#endif // QTAV_VIDEOTHREAD_H
+#endif // QTAV_OSDFILTER_P_H
