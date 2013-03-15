@@ -59,6 +59,12 @@
         <translation>O: OSD</translation>
     </message>
     <message>
+        <location filename="../src/EventFilter.cpp" line="94"/>
+        <source>-&amp;gt;/&amp;lt;-: seek forward/backward
+</source>
+        <translation>光标左右: 快退 快进</translation>
+    </message>
+    <message>
         <location filename="../src/EventFilter.cpp" line="95"/>
         <location filename="../src/EventFilter.cpp" line="272"/>
         <source>Help</source>
@@ -158,10 +164,9 @@
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="94"/>
         <source>-&gt;/&lt;-: seek forward/backward
 </source>
-        <translation>光标左右: 快退 快进
+        <translation type="obsolete">光标左右: 快退 快进
 </translation>
     </message>
     <message>

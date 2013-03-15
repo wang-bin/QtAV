@@ -12,6 +12,10 @@ PROJECTROOT = $$PWD/..
 !include(libQtAV.pri): error("could not find libQtAV.pri")
 preparePaths($$OUT_PWD/../out)
 
+
+RESOURCES += \
+	../i18n/QtAV.qrc
+
 win32 {
     RC_FILE = $${PROJECTROOT}/res/QtAV.rc
 #no depends for rc file by default, even if rc includes a header. Makefile target use '/' as default, so not works iwth win cmd

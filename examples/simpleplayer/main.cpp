@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <QApplication>
 
+#include <QtCore/QDir>
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
 #include <QMessageBox>
@@ -73,9 +74,18 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    if (a.arguments().contains("-h") || a.arguments().contains("--help")) {
+        qDebug("Usage: %s [-vo qt/gl/d2d/gdi] [url/path]filename", a.applicationFilePath().section(QDir::separator(), -1).toUtf8().constData());
+        qDebug("\n%s", aboutQtAV().toUtf8().constData());
+        return 0;
+    }
     QTranslator ts;
-    if (ts.load(qApp->applicationDirPath() + "/i18n/QtAV_" + QLocale::system().name()))
+    if (ts.load(qApp->applicationDirPath() + "/i18n/QtAV_" + QLocale::system().name())) {
         a.installTranslator(&ts);
+    } else {
+        if (ts.load(":/i18n/QtAV_" + QLocale::system().name()))
+            a.installTranslator(&ts);
+    }
     QTranslator qtts;
     if (qtts.load("qt_" + QLocale::system().name()))
         a.installTranslator(&qtts);
