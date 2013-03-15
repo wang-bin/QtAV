@@ -1,3 +1,14 @@
+version 1.1.11   2013-03-15
+
+- OpenGL support. Only rendering now.
+- OSD support.
+- New shortcuts: Ctrl+O=>open, O=>switch OSD, Q/ESC=>quit
+- Command line option: -vo gl/d2d/gdi/qt, -h|--help
+- Fix wrong aspect ratio when resizing
+- Better qmake project
+- Building debian package support: make deb
+- Bug fix
+
 version 1.1.10   2013-03-04
 
 - Direct2D support. Auto check before compile
