@@ -118,9 +118,8 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
-    if (!d.scale_in_renderer) {
-        d.img_mutex.lock();
-    }
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     QPainter p(this);
     //fill background color only when the displayed frame rect not equas to renderer's
     if (d.out_rect != rect()) {
@@ -142,9 +141,7 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
         //what's the difference?
         //p.drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
     }
-    if (!d.scale_in_renderer) {
-        d.img_mutex.unlock();
-    }
+
 }
 
 } //namespace QtAV

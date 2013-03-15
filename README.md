@@ -16,6 +16,7 @@ QtAV can meet your most demands
 
 - Seek, pause/resume
 - Video capture
+- OSD
 - Aspect ratio
 - Transform video using GraphicsItemRenderer. (rotate, shear, etc)
 - Playing frame by frame (currently support forward playing)
@@ -98,12 +99,14 @@ For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://g
 
 Default Shortcuts
 -----------------
+- Ctrl+O: open a file
 - Space: pause/continue
 - F: fullscreen on/off
 - T: stays on top on/off
 - N: show next frame. Continue the playing by pressing "Space"
-- O: open a file
+- O: OSD
 - P: replay
+- Q/ESC: quit
 - S: stop
 - R: switch aspect ratio
 - M: mute on/off

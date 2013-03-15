@@ -14,7 +14,7 @@ preparePaths($$OUT_PWD/../out)
 
 win32 {
     RC_FILE = $${PROJECTROOT}/res/QtAV.rc
-#no depends for rc file by default, even if rc includes a header
+#no depends for rc file by default, even if rc includes a header. Makefile target use '/' as default, so not works iwth win cmd
     rc.target = $$clean_path($$RC_FILE) #rc obj depends on clean path target
     rc.depends = $$PWD/QtAV/version.h
 #why use multiple rule failed? i.e. add a rule without command
@@ -97,12 +97,15 @@ SOURCES += \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
     EventFilter.cpp \
+    Filter.cpp \
     GLWidgetRenderer.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     ImageConverterIPP.cpp \
     QPainterRenderer.cpp \
+    OSDFilter.cpp \
+    OSDFilterQPainter.cpp \
     Packet.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
@@ -126,8 +129,10 @@ HEADERS += \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
+    QtAV/private/Filter_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
+    QtAV/private/OSDFilter_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \
@@ -137,10 +142,13 @@ HEADERS += \
     QtAV/AVDemuxer.h \
     QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
+    QtAV/Filter.h \
     QtAV/GLWidgetRenderer.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/QPainterRenderer.h \
+    QtAV/OSDFilter.h \
+    QtAV/OSDFilterQPainter.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
@@ -156,4 +164,3 @@ HEADERS += \
     QtAV/FactoryDefine.h \
     QtAV/ImageConverterTypes.h \
     QtAV/version.h
-

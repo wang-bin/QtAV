@@ -70,9 +70,8 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 	Q_UNUSED(option);
 	Q_UNUSED(widget);
 	DPTR_D(GraphicsItemRenderer);
-    if (!d.scale_in_renderer) {
-        d.img_mutex.lock();
-    }
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     //fill background color only when the displayed frame rect not equas to renderer's
     if (d.out_rect != boundingRect()) {
         painter->fillRect(boundingRect(), QColor(0, 0, 0));
@@ -87,9 +86,6 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
         painter->drawImage(d.out_rect.topLeft(), d.image);
     } else {
         painter->drawImage(d.out_rect, d.image);
-    }
-    if (!d.scale_in_renderer) {
-        d.img_mutex.unlock();
     }
 }
 //GraphicsWidget will lose focus forever if focus out. Why?
