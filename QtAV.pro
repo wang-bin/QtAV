@@ -8,6 +8,10 @@ tests.depends += libqtav
 
 OTHER_FILES += README.md TODO.txt Changelog
 OTHER_FILES += templates/vo.h templates/vo.cpp templates/COPYRIGHT.h templates/mkclass.sh
+OTHER_FILES += \
+	templates/base.h templates/base.cpp templates/base_p.h \
+	templates/derived.h templates/derived.cpp templates/derived_p.h \
+	templates/final.h templates/final.cpp
 #OTHER_FILES += config.test/mktest.sh
 
 #cache mkspecs. compare mkspec with cached one. if not equal, remove old cache to run new compile tests

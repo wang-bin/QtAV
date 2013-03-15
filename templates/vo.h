@@ -35,7 +35,7 @@ protected:
     virtual void showEvent(QShowEvent *);
     virtual bool write();
 };
-
+//typedef %CLASS% VideoRenderer??
 } //namespace QtAV
 
 #endif // QTAV_%CLASS%_H

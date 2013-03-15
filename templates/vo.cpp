@@ -45,23 +45,15 @@ void %CLASS%::convertData(const QByteArray &data)
 {
     DPTR_D(%CLASS%);
     //TODO: if date is deep copied, mutex can be avoided
-    if (!d.scale_in_renderer) {
-        /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
-        d.img_mutex.lock();
-        /* convert data to your image below*/
-        d.img_mutex.unlock();
-    } else {
-        //TODO: move to private class
-        /* convert data to your image below. image size is (d.src_width, d.src_height)*/
-    }
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
 }
 
 void %CLASS%::paintEvent(QPaintEvent *)
 {
     DPTR_D(%CLASS%);
-    if (!d.scale_in_renderer) {
-        d.img_mutex.lock();
-    }
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     //begin paint. how about QPainter::beginNativePainting()?
 
     //fill background color when necessary, e.g. renderer is resized, image is null
@@ -80,9 +72,6 @@ void %CLASS%::paintEvent(QPaintEvent *)
     }
 
     //end paint. how about QPainter::endNativePainting()?
-    if (!d.scale_in_renderer) {
-        d.img_mutex.unlock();
-    }
 }
 
 void %CLASS%::resizeEvent(QResizeEvent *e)
