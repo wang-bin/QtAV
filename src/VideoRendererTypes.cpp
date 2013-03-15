@@ -32,6 +32,9 @@
 #if HAVE_DIRECT2D
 #include <QtAV/Direct2DRenderer.h>
 #endif //HAVE_DIRECT2D
+#if HAVE_XV
+#include <QtAV/XVRenderer.h>
+#endif //HAVE_XV
 #include <QtAV/factory.h>
 
 namespace QtAV {
@@ -69,6 +72,14 @@ void RegisterVideoRendererDirect2D_Man()
     FACTORY_REGISTER_ID_MAN(VideoRenderer, Direct2D, "Direct2D")
 }
 #endif //HAVE_DIRECT2D
+#if HAVE_XV
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
+
+void RegisterVideoRendererXV_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, XV, "XVideo")
+}
+#endif //HAVE_XV
 
 void VideoRenderer_RegisterAll()
 {
@@ -80,6 +91,9 @@ void VideoRenderer_RegisterAll()
 #if HAVE_DIRECT2D
     RegisterVideoRendererDirect2D_Man();
 #endif //HAVE_DIRECT2D
+#if HAVE_XV
+    RegisterVideoRendererXV_Man();
+#endif //HAVE_XV
 }
 
 

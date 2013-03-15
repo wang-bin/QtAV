@@ -35,6 +35,7 @@ static VideoRendererId VideoRendererId_Widget = 0;
 static VideoRendererId VideoRendererId_GLWidget = 1;
 static VideoRendererId VideoRendererId_GDI = 2;
 static VideoRendererId VideoRendererId_Direct2D = 3;
+static VideoRendererId VideoRendererId_XV = 4;
 
 Q_EXPORT void VideoRenderer_RegisterAll();
 

@@ -65,4 +65,5 @@ qtCompileTest(swscale)|error("FFmpeg swscale is required, but compiler can not f
 qtCompileTest(portaudio)|warning("PortAudio is not available. No audio output in QtAV")
 qtCompileTest(direct2d)
 qtCompileTest(gdiplus)
+qtCompileTest(xv)
 #qtCompileTest(openal)
