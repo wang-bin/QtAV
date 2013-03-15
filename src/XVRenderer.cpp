@@ -41,6 +41,7 @@ public:
         use_shm(true)
       , num_adaptors(0)
       , format_id(0x32315659) /*YV12*/
+      , xv_image(0)
       , xv_image_width(0)
       , xv_image_height(0)
       , xv_port(0)
@@ -200,7 +201,31 @@ void XVRenderer::convertData(const QByteArray &data)
     //TODO: if date is deep copied, mutex can be avoided
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
-    memcpy(d.xv_image->data, d.data.data(), d.xv_image->data_size);
+
+    const int Cr = d.src_width * d.src_height;
+    const int Cb = Cr + d.src_width/2 * d.src_height/2;
+    const uint *subs_data = (const uint *)data.constData();
+    for (int h = 0 ; h < d.src_height; h++) {
+        for (int w = 0 ; w < d.src_width; w++) {
+            const uint &pixel = subs_data[h*d.src_width + w];
+            uchar A = (pixel >> 24) & 0xFF;
+            if (!A) {
+                continue;
+            }
+            uchar R = (pixel >> 16) & 0xFF;
+            uchar G = (pixel >> 8) & 0xFF;
+            uchar B = pixel & 0xFF;
+//TODO Alpha channel
+            uchar Y = 0.257*R + 0.504*G + 0.098*B + 16;
+// 				double dA = ( 255 - A ) / 255.;
+            d.xv_image->data[h*d.src_width + w] = Y;
+            if (!(w%2) && !(h%2)) {// (!(w&0x1) && !(h&0x1)) {
+                d.xv_image->data[Cb + (h/2*d.src_width/2 + w/2)] = -0.148*R - 0.291*G + 0.439*B + 128;
+                d.xv_image->data[Cr + (h/2*d.src_width/2 + w/2)] =  0.439*R - 0.368*G - 0.071*B + 128;
+            }
+        }
+    }
+    //memcpy(d.xv_image->data, d.data.data(), d.xv_image->data_size);
 }
 
 void XVRenderer::paintEvent(QPaintEvent *)
@@ -215,7 +240,8 @@ void XVRenderer::paintEvent(QPaintEvent *)
         d.update_background = false;
         //fill background color. DO NOT return, you must continue drawing
     }
-    if (d.data.isEmpty()) {
+    if (d.data.isEmpty() && !d.xv_image) {
+        qDebug("empty image data");
         return;
     }
     if (!d.use_shm)
