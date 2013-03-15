@@ -70,3 +70,11 @@ qtCompileTest(portaudio)|warning("PortAudio is not available. No audio output in
 qtCompileTest(direct2d)
 qtCompileTest(gdiplus)
 #qtCompileTest(openal)
+
+
+
+PACKAGE_VERSION = 1.1.11
+PACKAGE_NAME= QtAV
+
+include(pack.pri)
+#packageSet(1.1.11, QtAV)

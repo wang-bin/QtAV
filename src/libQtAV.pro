@@ -51,6 +51,7 @@ ipp-link {
 config_portaudio {
     SOURCES += AOPortAudio.cpp
     HEADERS += QtAV/AOPortAudio.h
+    SDK_HEADERS += QtAV/AOPortAudio.h
     DEFINES *= HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
     #win32: LIBS *= -lwinmm #-lksguid #-luuid
@@ -59,6 +60,7 @@ config_openal {
     SOURCES += AOOpenAL.cpp
     HEADERS += QtAV/AOOpenAL.h \
                QtAV/private/AOOpenAL_p.h
+    SDK_HEADERS += QtAV/AOOpenAL.h
     DEFINES *= HAVE_OPENAL=1
     win32:LIBS *= -lOpenAL32
     else: LIBS *= -lopenal
@@ -68,6 +70,7 @@ config_gdiplus {
     DEFINES *= HAVE_GDIPLUS=1
     SOURCES += GDIRenderer.cpp
     HEADERS += QtAV/GDIRenderer.h
+    SDK_HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus
 }
 
@@ -77,6 +80,7 @@ config_direct2d {
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
     HEADERS += QtAV/Direct2DRenderer.h
+    SDK_HEADERS += QtAV/Direct2DRenderer.h
     #LIBS += -lD2d1
 }
 
@@ -111,26 +115,13 @@ SOURCES += \
     VideoDecoder.cpp \
     VideoThread.cpp
 
-HEADERS += \
-    QtAV/prepost.h \
+
+SDK_HEADERS *= \
     QtAV/dptr.h \
     QtAV/QtAV_Global.h \
-    QtAV/QtAV_Compat.h \
+    QtAV/AudioDecoder.h \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
-    QtAV/EventFilter.h \
-    QtAV/private/AudioOutput_p.h \
-    QtAV/private/AVThread_p.h \
-    QtAV/private/AVDecoder_p.h \
-    QtAV/private/AVOutput_p.h \
-    QtAV/private/Filter_p.h \
-    QtAV/private/GraphicsItemRenderer_p.h \
-    QtAV/private/ImageConverter_p.h \
-    QtAV/private/OSDFilter_p.h \
-    QtAV/private/VideoRenderer_p.h \
-    QtAV/private/QPainterRenderer_p.h \
-    QtAV/private/WidgetRenderer_p.h \
-    QtAV/AudioDecoder.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
@@ -153,8 +144,30 @@ HEADERS += \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoThread.h \
-    QtAV/singleton.h \
-    QtAV/factory.h \
     QtAV/FactoryDefine.h \
     QtAV/ImageConverterTypes.h \
     QtAV/version.h
+
+
+HEADERS *= \
+    $$SDK_HEADERS \
+    QtAV/prepost.h \
+    QtAV/QtAV_Compat.h \
+    QtAV/EventFilter.h \
+    QtAV/singleton.h \
+    QtAV/factory.h \
+    QtAV/private/AudioOutput_p.h \
+    QtAV/private/AVThread_p.h \
+    QtAV/private/AVDecoder_p.h \
+    QtAV/private/AVOutput_p.h \
+    QtAV/private/Filter_p.h \
+    QtAV/private/GraphicsItemRenderer_p.h \
+    QtAV/private/ImageConverter_p.h \
+    QtAV/private/OSDFilter_p.h \
+    QtAV/private/VideoRenderer_p.h \
+    QtAV/private/QPainterRenderer_p.h \
+    QtAV/private/WidgetRenderer_p.h
+
+
+SDK_INCLUDE_FOLDER = QtAV
+include($$PROJECTROOT/deploy.pri)

@@ -1,0 +1,21 @@
+Source: qtav
+Section: user/other
+Priority: optional
+Maintainer: wbin <wbin@unknown>
+Build-Depends: debhelper (>= 5), libqt4-dev
+Standards-Version: 3.7.3
+Homepage: <insert the upstream URL, if relevant>
+
+Package: qtav
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
+XSBC-Maemo-Display-Name: QtAV
+XB-Maemo-Flags: visible
+XB-MeeGo-Desktop-Entry-Filename: QtAV_harmattan
+XB-MeeGo-Desktop-Entry: 
+ [Desktop Entry]
+ Type=Application
+ Name=QtAV
+ Icon=/usr/share/icons/hicolor/80x80/apps/QtAV80.png
