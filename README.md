@@ -104,6 +104,7 @@ Default Shortcuts
 - N: show next frame. Continue the playing by pressing "Space"
 - O: open a file
 - P: replay
+- Q/ESC: quit
 - S: stop
 - R: switch aspect ratio
 - M: mute on/off

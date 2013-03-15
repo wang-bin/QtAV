@@ -83,6 +83,7 @@ void EventFilter::help()
                        "<p>" + tr("N: show next frame. Continue the playing by pressing 'Space'\n") + "</p>"
                        "<p>" + tr("O: open a file\n") + "</p>"
                        "<p>" + tr("P: replay\n") + "</p>"
+                       "<p>" + tr("Q/ESC: quit\n") + "</p>"
                        "<p>" + tr("S: stop\n") + "</p>"
                        "<p>" + tr("R: switch aspect ratio") + "</p>"
                        "<p>" + tr("M: mute on/off\n") + "</p>"
@@ -122,6 +123,10 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             break;
         case Qt::Key_P:
             player->play();
+            break;
+        case Qt::Key_Q:
+        case Qt::Key_Escape:
+            qApp->quit();
             break;
         case Qt::Key_S:
             player->stop(); //check playing?
