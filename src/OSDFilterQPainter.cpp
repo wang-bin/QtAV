@@ -32,7 +32,14 @@ namespace QtAV {
 
 class OSDFilterQPainterPrivate : public OSDFilterPrivate
 {
+public:
+    OSDFilterQPainterPrivate()
+    {
+        font.setBold(true);
+        font.setPixelSize(26);
+    }
 
+    QFont font;
 };
 
 OSDFilterQPainter::OSDFilterQPainter():
@@ -48,34 +55,26 @@ void OSDFilterQPainter::process(QByteArray &data)
     QString text;
     //TODO: calculation move to a function
     if (hasShowType(ShowCurrentTime) || hasShowType(ShowCurrentAndTotalTime)) {
-        int h = d.sec_current/3600;
-        int m = (d.sec_current%3600)/60;
-        int s = d.sec_current%60;
+        int h, m, s;
+        d.computeTime(d.sec_current, &h, &m, &s);
         text += QString("%1:%2:%3").arg(h, 2, 10, QChar('0')).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
         if (hasShowType(ShowCurrentAndTotalTime))
             text += " / ";
     }
     if (hasShowType(ShowCurrentAndTotalTime)) {
-        int h = d.sec_total/3600;
-        int m = (d.sec_total%3600)/60;
-        int s = d.sec_total%60;
-        text += QString("%1:%2:%3").arg(h, 2, 10, QChar('0')).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+        text += QString("%1:%2:%3").arg(d.total_hour, 2, 10, QChar('0')).arg(d.total_min, 2, 10, QChar('0')).arg(d.total_sec, 2, 10, QChar('0'));
     }
     if (hasShowType(ShowRemainTime)) {
-        int h = (d.sec_total-d.sec_current)/3600;
-        int m = ((d.sec_total-d.sec_current)%3600)/60;
-        int s = (d.sec_total-d.sec_current)%60;
+        int h, m, s;
+        d.computeTime(d.sec_total-d.sec_current, &h, &m, &s);
         text += QString(" -%1:%2:%3").arg(h, 2, 10, QChar('0')).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
     }
     if (hasShowType(ShowPercent) && d.sec_total > 0)
         text += QString::number(qreal(d.sec_current)/qreal(d.sec_total)*100, 'f', 1) + "%";
-
     QImage image((uchar*)data.data(), d.width, d.height, QImage::Format_RGB32);
     QPainter painter(&image);
-    QFont f;
-    f.setBold(true);
-    f.setPixelSize(26);
-    painter.setFont(f);
+    //painter.setRenderHint(QPainter::TextAntialiasing);
+    painter.setFont(d.font);
     painter.setPen(Qt::white);
     painter.drawText(32, 32, text);
 }

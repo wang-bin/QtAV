@@ -53,6 +53,7 @@ void OSDFilter::setTotalTime(int totalSeconds)
 {
     DPTR_D(OSDFilter);
     d.sec_total = totalSeconds;
+    d.computeTime(totalSeconds, &d.total_hour, &d.total_min, &d.total_sec);
 }
 
 void OSDFilter::setImageSize(int width, int height)

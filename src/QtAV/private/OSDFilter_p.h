@@ -36,12 +36,22 @@ public:
       , height(0)
       , sec_current(0)
       , sec_total(0)
+      , total_hour(0)
+      , total_min(0)
+      , total_sec(0)
     {
     }
     virtual ~OSDFilterPrivate() {}
+    void computeTime(int seconds, int *hour, int *min, int *sec) {
+        *hour = seconds/3600;
+        *min = (seconds%3600)/60;
+        *sec = seconds%60;
+    }
+
     OSDFilter::ShowType show_type;
     int width, height;
     int sec_current, sec_total;
+    int total_hour, total_min, total_sec;
 };
 
 } //namespace QtAV
