@@ -36,6 +36,7 @@ class VideoRenderer;
 class AVClock;
 class AVDemuxThread;
 class VideoCapture;
+class OSDFilter;
 class Q_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -61,6 +62,8 @@ public:
     void setCaptureName(const QString& name);//TODO: remove. base name
     void setCaptureSaveDir(const QString& dir); //TODO: remove
     bool captureVideo();
+    OSDFilter* setOSDFilter(OSDFilter* osd);
+    OSDFilter* osdFilter();
     bool play(const QString& path);
 	bool isPlaying() const;
     bool isPaused() const;
@@ -111,6 +114,7 @@ protected:
     //tODO: (un)register api
     QObject *event_filter;
     VideoCapture *video_capture;
+    OSDFilter *osd;
 };
 
 } //namespace QtAV

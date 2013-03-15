@@ -34,6 +34,7 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/VideoRenderer.h>
+#include <QtAV/OSDFilter.h>
 
 namespace QtAV {
 
@@ -81,7 +82,8 @@ void EventFilter::help()
                        "<p>" + tr("F: fullscreen on/off\n") + "</p>"
                        "<p>" + tr("T: stays on top on/off\n") + "</p>"
                        "<p>" + tr("N: show next frame. Continue the playing by pressing 'Space'\n") + "</p>"
-                       "<p>" + tr("O: open a file\n") + "</p>"
+                       "<p>" + tr("Ctrl+O: open a file\n") + "</p>"
+                       "<p>" + tr("O: OSD\n") + "</p>"
                        "<p>" + tr("P: replay\n") + "</p>"
                        "<p>" + tr("Q/ESC: quit\n") + "</p>"
                        "<p>" + tr("S: stop\n") + "</p>"
@@ -113,7 +115,8 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         return false;
         break;
     case QEvent::KeyPress: {
-        int key = static_cast<QKeyEvent*>(event)->key();
+        QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
+        int key = key_event->key();
         switch (key) {
         case Qt::Key_C: //capture
             player->captureVideo();
@@ -171,9 +174,15 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                 qDebug("vol = %.3f", player->audio()->volume());
             }
             break;
-        case Qt::Key_O:
-            //TODO: emit a signal so we can use custome dialogs?
-            openLocalFile();
+        case Qt::Key_O: {
+            Qt::KeyboardModifiers m = key_event->modifiers();
+            if (m == Qt::ControlModifier) {
+                //TODO: emit a signal so we can use custome dialogs?
+                openLocalFile();
+            } else/* if (m == Qt::NoModifier) */{
+                player->osdFilter()->useNextShowType();
+            }
+        }
             break;
         case Qt::Key_Left:
             qDebug("<-");

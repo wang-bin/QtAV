@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,34 +19,19 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-
-#ifndef QTAV_VIDEOTHREAD_H
-#define QTAV_VIDEOTHREAD_H
-
-#include <QtAV/AVThread.h>
-#include <QtCore/QSize>
+#include "QtAV/Filter.h"
+#include "private/Filter_p.h"
 
 namespace QtAV {
 
-class ImageConverter;
-class OSDFilter;
-class VideoCapture;
-class VideoThreadPrivate;
-class VideoThread : public AVThread
+Filter::Filter(FilterPrivate &d)
+    :DPTR_INIT(&d)
 {
-    Q_OBJECT
-    DPTR_DECLARE_PRIVATE(VideoThread)
-public:
-    explicit VideoThread(QObject *parent = 0);
-    //return the old
-    ImageConverter* setImageConverter(ImageConverter *converter);
-    ImageConverter* imageConverter() const;
-    double currentPts() const;
-    VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
-    OSDFilter *setOSDFilter(OSDFilter* osd);
-protected:
-    virtual void run();
-};
+
+}
+
+Filter::~Filter()
+{
+}
 
 } //namespace QtAV
-#endif // QTAV_VIDEOTHREAD_H

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,34 +19,34 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
+#ifndef QTAV_FILTER_H
+#define QTAV_FILTER_H
 
-#ifndef QTAV_VIDEOTHREAD_H
-#define QTAV_VIDEOTHREAD_H
+#include <QtAV/QtAV_Global.h>
 
-#include <QtAV/AVThread.h>
-#include <QtCore/QSize>
-
+class QByteArray;
 namespace QtAV {
 
-class ImageConverter;
-class OSDFilter;
-class VideoCapture;
-class VideoThreadPrivate;
-class VideoThread : public AVThread
+class FilterPrivate;
+class Q_EXPORT Filter
 {
-    Q_OBJECT
-    DPTR_DECLARE_PRIVATE(VideoThread)
+    DPTR_DECLARE_PRIVATE(Filter)
 public:
-    explicit VideoThread(QObject *parent = 0);
-    //return the old
-    ImageConverter* setImageConverter(ImageConverter *converter);
-    ImageConverter* imageConverter() const;
-    double currentPts() const;
-    VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
-    OSDFilter *setOSDFilter(OSDFilter* osd);
+    virtual ~Filter() = 0;
+
+    //TODO: parameter FrameContext
 protected:
-    virtual void run();
+    /*
+     * If the filter is in AVThread, it's safe to operate on ref.
+     */
+    virtual void process(QByteArray& data) = 0;
+    Filter(FilterPrivate& d);
+
+    friend class AVThread;
+    friend class VideoThread;
+    DPTR_DECLARE(Filter)
 };
 
 } //namespace QtAV
-#endif // QTAV_VIDEOTHREAD_H
+
+#endif // QTAV_FILTER_H
