@@ -1,4 +1,4 @@
-#http://jarit.iteye.com/blog/1070117
+
 cecho() {
   while [[ $# > 1 ]]; do
     case $1 in
@@ -25,3 +25,5 @@ die(){
 print_copyright(){
   cecho red bold "Author: wbsecg1@gmail.com"
 }
+
+#http://jarit.iteye.com/blog/1070117
