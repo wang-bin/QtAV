@@ -190,6 +190,16 @@ QRect VideoRenderer::videoRect() const
     return d_func().out_rect;
 }
 
+QWidget* VideoRenderer::widget()
+{
+    return d_func().widget_holder;
+}
+
+QGraphicsItem* VideoRenderer::graphicsItem()
+{
+    return d_func().item_holder;
+}
+
 void VideoRenderer::drawBackground()
 {
 }
