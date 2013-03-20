@@ -32,6 +32,7 @@ namespace QtAV {
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
     :GraphicsWidget(parent),QPainterRenderer(*new GraphicsItemRendererPrivate())
 {
+    d_func().item_holder = this;
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
 #if CONFIG_GRAPHICSWIDGET
@@ -42,6 +43,7 @@ GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
 GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGraphicsItem *parent)
     :GraphicsWidget(parent),QPainterRenderer(d)
 {
+    d_func().item_holder = this;
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
 #if CONFIG_GRAPHICSWIDGET
@@ -69,7 +71,7 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 {
 	Q_UNUSED(option);
 	Q_UNUSED(widget);
-	DPTR_D(GraphicsItemRenderer);
+    DPTR_D(GraphicsItemRenderer);
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
     //fill background color only when the displayed frame rect not equas to renderer's

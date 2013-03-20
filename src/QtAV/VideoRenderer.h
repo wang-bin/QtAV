@@ -44,6 +44,8 @@ struct AVFrame;
 class QImage;
 class QObject;
 class QRect;
+class QWidget;
+class QGraphicsItem;
 namespace QtAV {
 
 class VideoRendererPrivate;
@@ -86,6 +88,9 @@ public:
     int rendererHeight() const;
     //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
     QRect videoRect() const;
+
+    QWidget* widget();
+    QGraphicsItem* graphicsItem();
 protected:
     VideoRenderer(VideoRendererPrivate &d);
     //TODO: drawXXX() is pure virtual

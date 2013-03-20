@@ -53,6 +53,7 @@ public:
       , out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
       , widget_holder(0)
+      , item_holder(0)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -103,6 +104,7 @@ public:
      * Some operations are based on QWidget
      */
     QWidget *widget_holder;
+    QGraphicsItem *item_holder;
 };
 
 } //namespace QtAV
