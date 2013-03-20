@@ -49,28 +49,62 @@ void %CLASS%::convertData(const QByteArray &data)
     Q_UNUSED(locker);
 }
 
-void %CLASS%::paintEvent(QPaintEvent *)
-{
-    DPTR_D(%CLASS%);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    //begin paint. how about QPainter::beginNativePainting()?
 
-    //fill background color when necessary, e.g. renderer is resized, image is null
-    if ((d.update_background && d.out_rect != rect()) || d.data.isEmpty()) {
-        d.update_background = false;
-        //fill background color. DO NOT return, you must continue drawing
-    }
-    if (d.data.isEmpty()) {
-        return;
-    }
+void %CLASS%::drawBackground()
+{
+}
+
+void %CLASS%::drawFrame()
+{
     //assume that the image data is already scaled to out_size(NOT renderer size!)
     if (!d.scale_in_renderer || (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height())) {
         //you may copy data to video buffer directly
     } else {
         //paint with scale
     }
+}
 
+void %CLASS%::drawSubtitle()
+{
+}
+
+void %CLASS%::drawOSD()
+{
+}
+
+void %CLASS%::drawCustom()
+{
+}
+
+
+void %CLASS%::paintEvent(QPaintEvent *)
+{
+    DPTR_D(%CLASS%);
+    {
+        //lock is required only when drawing the frame
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        //begin paint. how about QPainter::beginNativePainting()?
+        //fill background color when necessary, e.g. renderer is resized, image is null
+        //we access d.data which will be modified in AVThread, so must be protected
+        if ((d.update_background && d.out_rect != rect()) || d.data.isEmpty()) {
+            d.update_background = false;
+            //fill background color. DO NOT return, you must continue drawing
+            drawBackground();
+        }
+        //DO NOT return if no data. we should draw other things
+        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
+        if (!d.data.isEmpty()) {
+            drawFrame();
+        }
+    }
+    //drawXXX only implement the painting, no other logic
+    if (d.draw_osd)
+        drawOSD();
+    if (d.draw_subtitle)
+        drawSubtitle();
+    if (d.draw_custom)
+        drawCustom();
     //end paint. how about QPainter::endNativePainting()?
 }
 

@@ -190,6 +190,26 @@ QRect VideoRenderer::videoRect() const
     return d_func().out_rect;
 }
 
+void VideoRenderer::drawBackground()
+{
+}
+
+void VideoRenderer::drawFrame()
+{
+}
+
+void VideoRenderer::drawSubtitle()
+{
+}
+
+void VideoRenderer::drawOSD()
+{
+}
+
+void VideoRenderer::drawCustom()
+{
+}
+
 void VideoRenderer::resizeFrame(int width, int height)
 {
     Q_UNUSED(width);

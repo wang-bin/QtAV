@@ -127,23 +127,18 @@ void GDIRenderer::convertData(const QByteArray &data)
     d.data = data;
 }
 
-void GDIRenderer::paintEvent(QPaintEvent *)
+void GDIRenderer::drawBackground()
 {
     DPTR_D(GDIRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    //begin paint
-    HDC hdc = d.device_context;
-    if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
-        d.update_background = false;
-        Graphics g(hdc);
-        SolidBrush brush(Color(255, 0, 0, 0)); //argb
-        g.FillRectangle(&brush, 0, 0, width(), height());
-        //Rectangle(hdc, 0, 0, width(), height());
-    }
-    if (d.data.isEmpty()) {
-        return;
-    }
+    //HDC hdc = d.device_context;
+    Graphics g(d.device_context);
+    SolidBrush brush(Color(255, 0, 0, 0)); //argb
+    g.FillRectangle(&brush, 0, 0, width(), height());
+}
+
+void GDIRenderer::drawFrame()
+{
+    DPTR_D(GDIRenderer);
     /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms533829%28v=vs.85%29.aspx
      * Improving Performance by Avoiding Automatic Scaling
      * TODO: How about QPainter?
@@ -156,6 +151,7 @@ void GDIRenderer::paintEvent(QPaintEvent *)
         return;
     }
 
+    HDC hdc = d.device_context;
     HBITMAP hbmp_old = (HBITMAP)SelectObject(d.off_dc, d.off_bitmap);
     // && image.size() != size()
     //assume that the image data is already scaled to out_size(NOT renderer size!)
@@ -178,6 +174,49 @@ void GDIRenderer::paintEvent(QPaintEvent *)
     SelectObject(d.off_dc, hbmp_old);
     DeleteObject(d.off_bitmap); //avoid mem leak
     //end paint
+}
+
+void GDIRenderer::drawSubtitle()
+{
+}
+
+void GDIRenderer::drawOSD()
+{
+}
+
+void GDIRenderer::drawCustom()
+{
+}
+
+void GDIRenderer::paintEvent(QPaintEvent *)
+{
+    DPTR_D(GDIRenderer);
+    {
+        //lock is required only when drawing the frame
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        //begin paint. how about QPainter::beginNativePainting()?
+        //fill background color when necessary, e.g. renderer is resized, image is null
+        //we access d.data which will be modified in AVThread, so must be protected
+        if ((d.update_background && d.out_rect != rect()) || d.data.isEmpty()) {
+            d.update_background = false;
+            //fill background color. DO NOT return, you must continue drawing
+            drawBackground();
+        }
+        //DO NOT return if no data. we should draw other things
+        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
+        if (!d.data.isEmpty()) {
+            drawFrame();
+        }
+    }
+    //drawXXX only implement the painting, no other logic
+    if (d.draw_osd)
+        drawOSD();
+    if (d.draw_subtitle)
+        drawSubtitle();
+    if (d.draw_custom)
+        drawCustom();
+    //end paint. how about QPainter::endNativePainting()?
 }
 
 void GDIRenderer::resizeEvent(QResizeEvent *e)

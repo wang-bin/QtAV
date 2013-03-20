@@ -88,6 +88,17 @@ public:
     QRect videoRect() const;
 protected:
     VideoRenderer(VideoRendererPrivate &d);
+    //TODO: drawXXX() is pure virtual
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
+    //called in paintEvent() after drawFrame. leave it empty is ok
+    virtual void drawSubtitle();
+    //called in paintEvent() after drawFrame. leave it empty is ok
+    virtual void drawOSD();
+    //called in paintEvent() after drawFrame. leave it empty is ok
+    virtual void drawCustom();
     /*!
      * This function is called whenever resizeRenderer() is called or aspect ratio is changed?
      * You can reimplement it to recreate the offscreen surface.
