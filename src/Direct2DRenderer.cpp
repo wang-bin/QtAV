@@ -211,6 +211,11 @@ Direct2DRenderer::~Direct2DRenderer()
 {
 }
 
+QPaintEngine* Direct2DRenderer::paintEngine() const
+{
+    return 0; //use native engine
+}
+
 void Direct2DRenderer::convertData(const QByteArray &data)
 {
     DPTR_D(Direct2DRenderer);
@@ -232,9 +237,44 @@ void Direct2DRenderer::convertData(const QByteArray &data)
     }
 }
 
-QPaintEngine* Direct2DRenderer::paintEngine() const
+void Direct2DRenderer::drawBackground()
 {
-    return 0; //use native engine
+    DPTR_D(Direct2DRenderer);
+    D2D1_COLOR_F c = {0, 0, 0, 255};
+    d.render_target->Clear(&c); //const D2D1_COlOR_F&?
+//http://msdn.microsoft.com/en-us/library/windows/desktop/dd535473(v=vs.85).aspx
+    //ID2D1SolidColorBrush *brush;
+    //d.render_target->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &brush);
+    //d.render_target->FillRectangle(D2D1::RectF(0, 0, width(), height()), brush);
+}
+
+void Direct2DRenderer::drawFrame()
+{
+    DPTR_D(Direct2DRenderer);
+    D2D1_RECT_F out_rect = {
+        (FLOAT)d.out_rect.left(),
+        (FLOAT)d.out_rect.top(),
+        (FLOAT)d.out_rect.right(),
+        (FLOAT)d.out_rect.bottom()
+    };
+    //d.render_target->SetTransform
+    d.render_target->DrawBitmap(d.bitmap
+                                , &out_rect
+                                , 1 //opacity
+                                , D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
+                                , NULL);//&D2D1::RectF(0, 0, d.src_width, d.src_height));
+}
+
+void Direct2DRenderer::drawSubtitle()
+{
+}
+
+void Direct2DRenderer::drawOSD()
+{
+}
+
+void Direct2DRenderer::drawCustom()
+{
 }
 
 void Direct2DRenderer::paintEvent(QPaintEvent *)
@@ -251,33 +291,23 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
     //The first bitmap size is 0x0, we should only draw the background
-
+    //we access d.data which will be modified in AVThread, so must be protected
     if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
         d.update_background = false;
-        D2D1_COLOR_F c = {0, 0, 0, 255};
-        d.render_target->Clear(&c); //const D2D1_COlOR_F&?
-//http://msdn.microsoft.com/en-us/library/windows/desktop/dd535473(v=vs.85).aspx
-        //ID2D1SolidColorBrush *brush;
-        //d.render_target->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &brush);
-        //d.render_target->FillRectangle(D2D1::RectF(0, 0, width(), height()), brush);
+        drawBackground();
     }
     //d.data is always empty because we did not assign a vaule in convertData?
-    if (d.data.isEmpty()) {
+    if (!d.data.isEmpty()) {
         //return; //why the background is white if return? the below code draw an empty bitmap?
     }
-
-    D2D1_RECT_F out_rect = {
-        (FLOAT)d.out_rect.left(),
-        (FLOAT)d.out_rect.top(),
-        (FLOAT)d.out_rect.right(),
-        (FLOAT)d.out_rect.bottom()
-    };
-    //d.render_target->SetTransform
-    d.render_target->DrawBitmap(d.bitmap
-                                , &out_rect
-                                , 1 //opacity
-                                , D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
-                                , NULL);//&D2D1::RectF(0, 0, d.src_width, d.src_height));
+    drawFrame();
+    //drawXXX only implement the painting, no other logic
+    if (d.draw_osd)
+        drawOSD();
+    if (d.draw_subtitle)
+        drawSubtitle();
+    if (d.draw_custom)
+        drawCustom();
     hr = d.render_target->EndDraw(NULL, NULL);
     if (hr == D2DERR_RECREATE_TARGET) {
         qDebug("D2DERR_RECREATE_TARGET");

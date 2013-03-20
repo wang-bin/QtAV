@@ -52,8 +52,50 @@ bool WidgetRenderer::write()
 	return true;
 }
 
+void WidgetRenderer::drawBackground()
+{
+    QPainter p(this);
+    p.fillRect(rect(), QColor(0, 0, 0));
+}
+
+void WidgetRenderer::drawFrame()
+{
+    DPTR_D(WidgetRenderer);
+    QPainter p(this);
+    if (d.image.isNull()) {
+        //TODO: when setInSize()?
+        d.image = QImage(rendererSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
+    }
+    //assume that the image data is already scaled to out_size(NOT renderer size!)
+    if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
+        //d.preview = d.image;
+        p.drawImage(d.out_rect.topLeft(), d.image);
+    } else {
+        //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
+        //       , d.image.size().width(), image.size().height(), d.renderer_width, d.renderer_height);
+        p.drawImage(d.out_rect, d.image);
+        //what's the difference?
+        //p.drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
+    }
+}
+
+void WidgetRenderer::drawSubtitle()
+{
+}
+
+void WidgetRenderer::drawOSD()
+{
+}
+
+void WidgetRenderer::drawCustom()
+{
+}
+
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
 {
+    DPTR_D(WidgetRenderer);
+    d.update_background = true;
     resizeRenderer(e->size());
     update();
 }
@@ -118,30 +160,31 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    QPainter p(this);
-    //fill background color only when the displayed frame rect not equas to renderer's
+    //begin paint. how about QPainter::beginNativePainting()?
+    //fill background color when necessary, e.g. renderer is resized, image is null
+    //if we access d.data which will be modified in AVThread, the following must be protected
     if (d.out_rect != rect()) {
-        p.fillRect(rect(), QColor(0, 0, 0));
+        d.update_background = false;
+        //fill background color. DO NOT return, you must continue drawing
+        drawBackground();
     }
-    if (d.image.isNull()) {
-        //TODO: when setInSize()?
-        d.image = QImage(rendererSize(), QImage::Format_RGB32);
-        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
+    {
+        //lock is required only when drawing the frame
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        //DO NOT return if no data. we should draw other things
+        if (!d.data.isEmpty()) {
+            drawFrame();
+        }
     }
-    //assume that the image data is already scaled to out_size(NOT renderer size!)
-    if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
-        //d.preview = d.image;
-        p.drawImage(d.out_rect.topLeft(), d.image);
-    } else {
-        //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
-        //       , d.image.size().width(), image.size().height(), d.renderer_width, d.renderer_height);
-        p.drawImage(d.out_rect, d.image);
-        //what's the difference?
-        //p.drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
-    }
-
+    //drawXXX only implement the painting, no other logic
+    if (d.draw_osd)
+        drawOSD();
+    if (d.draw_subtitle)
+        drawSubtitle();
+    if (d.draw_custom)
+        drawCustom();
+    //end paint. how about QPainter::endNativePainting()?
 }
 
 } //namespace QtAV
