@@ -86,6 +86,45 @@ void GLWidgetRenderer::convertData(const QByteArray &data)
     d.data = data;
 }
 
+void GLWidgetRenderer::drawBackground()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void GLWidgetRenderer::drawFrame()
+{
+    DPTR_D(GLWidgetRenderer);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_BGRA, GL_UNSIGNED_BYTE, d.data.constData());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glPushMatrix();
+    glLoadIdentity();
+    //glRotatef(180.0f, 0.0f, 0.0f, 0.0f); //flip the image
+
+    glBegin(GL_QUADS);
+    glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, +1.0);
+    glTexCoord2d(1.0, 0.0); glVertex2d(+1.0, +1.0);
+    glTexCoord2d(1.0, 1.0); glVertex2d(+1.0, -1.0);
+    glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, -1.0);
+    glEnd();
+    //glFlush();
+    glPopMatrix();
+    //swapBuffers(); //why flickers?
+}
+
+void GLWidgetRenderer::drawSubtitle()
+{
+}
+
+void GLWidgetRenderer::drawOSD()
+{
+}
+
+void GLWidgetRenderer::drawCustom()
+{
+}
+
 bool GLWidgetRenderer::write()
 {
     update();
@@ -108,36 +147,34 @@ void GLWidgetRenderer::initializeGL()
 
 void GLWidgetRenderer::paintGL()
 {
+    drawBackground(); //TODO: why this is always required? otherwise flicker when aspect ratio changed
     DPTR_D(GLWidgetRenderer);
-    if (d.aspect_ratio_changed || d.update_background || d.out_rect_old != d.out_rect) {
-        d.out_rect_old = d.out_rect;
-        resizeGL(width(), height());
-        d.update_background = false;
+    {
+        //lock is required only when drawing the frame
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        //begin paint. how about QPainter::beginNativePainting()?
+        //fill background color when necessary, e.g. renderer is resized, image is null
+        //we access d.data which will be modified in AVThread, so must be protected
+        if (d.aspect_ratio_changed || d.update_background || d.out_rect_old != d.out_rect) {
+            d.out_rect_old = d.out_rect;
+            resizeGL(width(), height());
+            d.update_background = false;
+            //drawBackground();
+        }
+        //DO NOT return if no data. we should draw other things
+        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
+        if (!d.data.isEmpty()) {
+            drawFrame();
+        }
     }
-    //begin paint
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if (d.data.isEmpty()) {
-        return;
-    }
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_BGRA, GL_UNSIGNED_BYTE, d.data.constData());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glPushMatrix();
-    glLoadIdentity();
-    //glRotatef(180.0f, 0.0f, 0.0f, 0.0f); //flip the image
-
-    glBegin(GL_QUADS);
-    glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, +1.0);
-    glTexCoord2d(1.0, 0.0); glVertex2d(+1.0, +1.0);
-    glTexCoord2d(1.0, 1.0); glVertex2d(+1.0, -1.0);
-    glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, -1.0);
-    glEnd();
-    //glFlush();
-    glPopMatrix();
-    //swapBuffers(); //why flickers?
+    //drawXXX only implement the painting, no other logic
+    if (d.draw_osd)
+        drawOSD();
+    if (d.draw_subtitle)
+        drawSubtitle();
+    if (d.draw_custom)
+        drawCustom();
 }
 
 void GLWidgetRenderer::resizeGL(int w, int h)
@@ -163,4 +200,15 @@ void GLWidgetRenderer::resizeEvent(QResizeEvent *e)
     QGLWidget::resizeEvent(e); //will call resizeGL(). TODO:will call paintEvent()?
 }
 
+//TODO: out_rect not correct when top level changed
+void GLWidgetRenderer::showEvent(QShowEvent *)
+{
+    DPTR_D(GLWidgetRenderer);
+    d.update_background = true;
+    /*
+     * Do something that depends on widget below! e.g. recreate render target for direct2d.
+     * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you
+     * don't do anything here, the widget content will never be updated.
+     */
+}
 } //namespace QtAV
