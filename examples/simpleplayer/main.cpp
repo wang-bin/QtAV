@@ -33,6 +33,8 @@
 #include <QtAV/Direct2DRenderer.h>
 #include <QtAV/GDIRenderer.h>
 
+#include "MainWindow.h"
+
 using namespace QtAV;
 
 static FILE *sLogfile = 0; //'log' is a function in msvc math.h
@@ -153,12 +155,20 @@ int main(int argc, char *argv[])
         return 1;
     }
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
+
+    MainWindow window;
+    window.setRenderer(renderer);
+    window.show();
+    if (!media_file.isEmpty()) {
+        window.play(media_file);
+    }
+    /*
     AVPlayer player;
     player.setRenderer(renderer);
     if (!media_file.isEmpty()) {
         player.play(media_file);
     }
-
+    */
     int ret = a.exec();
     delete renderer;
     return ret;

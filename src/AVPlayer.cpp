@@ -266,6 +266,7 @@ void AVPlayer::pause(bool p)
     audio_thread->pause(p);
     video_thread->pause(p);
     clock->pause(p);
+    emit paused(p);
 #if 0
     /*Pause output. all threads using those outputs will be paused. If a output is not paused
      *, then other players' avthread can use it.

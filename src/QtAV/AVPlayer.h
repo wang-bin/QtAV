@@ -77,6 +77,7 @@ public:
     void setPlayerEventFilter(QObject *obj);
 
 signals:
+    void paused(bool p);
     void started();
     void stopped();
 

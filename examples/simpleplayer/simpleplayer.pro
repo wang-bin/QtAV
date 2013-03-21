@@ -7,8 +7,10 @@ PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
 preparePaths($$OUT_PWD/../../out)
 
-SOURCES += main.cpp
-HEADERS += 
+SOURCES += main.cpp \
+    MainWindow.cpp
+HEADERS += \
+    MainWindow.h
 
 
 include($$PROJECTROOT/deploy.pri)
