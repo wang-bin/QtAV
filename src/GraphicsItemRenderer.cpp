@@ -72,12 +72,49 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 	Q_UNUSED(option);
 	Q_UNUSED(widget);
     DPTR_D(GraphicsItemRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    //fill background color only when the displayed frame rect not equas to renderer's
-    if (d.out_rect != boundingRect()) {
-        painter->fillRect(boundingRect(), QColor(0, 0, 0));
+    d.painter = painter;
+    {
+        //lock is required only when drawing the frame
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        //begin paint. how about QPainter::beginNativePainting()?
+        //fill background color when necessary, e.g. renderer is resized, image is null
+        //if we access d.data which will be modified in AVThread, the following must be protected
+        if (d.out_rect != boundingRect() || d.data.isEmpty()) {
+            d.update_background = false;
+            drawBackground();
+        }
+        //DO NOT return if no data. we should draw other things
+        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
+        if (!d.data.isEmpty()) {
+            drawFrame();
+        }
     }
+    //drawXXX only implement the painting, no other logic
+    if (d.draw_osd)
+        drawOSD();
+    if (d.draw_subtitle)
+        drawSubtitle();
+    if (d.draw_custom)
+        drawCustom();
+    //end paint. how about QPainter::endNativePainting()?
+    d.painter = 0; //painter may be not available outside this function
+}
+
+void GraphicsItemRenderer::drawBackground()
+{
+    DPTR_D(GraphicsItemRenderer);
+    if (!d.painter)
+        return;
+    d.painter->fillRect(boundingRect(), QColor(0, 0, 0));
+}
+
+void GraphicsItemRenderer::drawFrame()
+{
+    DPTR_D(GraphicsItemRenderer);
+    if (!d.painter)
+        return;
+    //fill background color only when the displayed frame rect not equas to renderer's
     if (d.image.isNull()) {
         //TODO: when setInSize()?
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
@@ -85,11 +122,33 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
     }
     //assume that the image data is already scaled to out_size(NOT renderer size!)
     if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
-        painter->drawImage(d.out_rect.topLeft(), d.image);
+        d.painter->drawImage(d.out_rect.topLeft(), d.image);
     } else {
-        painter->drawImage(d.out_rect, d.image);
+        d.painter->drawImage(d.out_rect, d.image);
     }
 }
+
+void GraphicsItemRenderer::drawSubtitle()
+{
+    DPTR_D(GraphicsItemRenderer);
+    if (!d.painter)
+        return;
+}
+
+void GraphicsItemRenderer::drawOSD()
+{
+    DPTR_D(GraphicsItemRenderer);
+    if (!d.painter)
+        return;
+}
+
+void GraphicsItemRenderer::drawCustom()
+{
+    DPTR_D(GraphicsItemRenderer);
+    if (!d.painter)
+        return;
+}
+
 //GraphicsWidget will lose focus forever if focus out. Why?
 
 #if CONFIG_GRAPHICSWIDGET
