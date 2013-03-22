@@ -32,6 +32,7 @@
 #include <QtAV/GLWidgetRenderer.h>
 #include <QtAV/Direct2DRenderer.h>
 #include <QtAV/GDIRenderer.h>
+#include <QtAV/XVRenderer.h>
 
 using namespace QtAV;
 
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
         media_file = a.arguments().last();
     }
     vo = vo.toLower();
-    if (vo != "gl" && vo != "d2d" && vo != "gdi")
+    if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv")
         vo = "qpainter";
     QString title = "QtAV " + vo + " " + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
     VideoRenderer *renderer = 0;
@@ -140,7 +141,14 @@ int main(int argc, char *argv[])
             r->setWindowTitle(title);
         }
         renderer = r;
-    } else {
+    } else if (vo == "xv") {
+        XVRenderer *r = static_cast<XVRenderer*>(VideoRendererFactory::create(VideoRendererId_XV));
+        if (r) {
+            r->show();
+            r->setWindowTitle(title);
+        }
+        renderer = r;
+    }else {
         WidgetRenderer *r = static_cast<WidgetRenderer*>(VideoRendererFactory::create(VideoRendererId_Widget));
         if (r) {
             r->show();
@@ -152,6 +160,7 @@ int main(int argc, char *argv[])
         QMessageBox::critical(0, "QtAV", "vo '" + vo + "' not supported");
         return 1;
     }
+    //renderer->scaleInRenderer(false);
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
     AVPlayer player;
     player.setRenderer(renderer);

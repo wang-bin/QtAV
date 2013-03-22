@@ -87,6 +87,12 @@ config_direct2d {
     SDK_HEADERS += QtAV/Direct2DRenderer.h
     #LIBS += -lD2d1
 }
+config_xv {
+	DEFINES *= HAVE_XV=1
+	SOURCES += XVRenderer.cpp
+	HEADERS += QtAV/XVRenderer.h
+	LIBS += -lXv
+}
 
 SOURCES += \
     QtAV_Compat.cpp \
