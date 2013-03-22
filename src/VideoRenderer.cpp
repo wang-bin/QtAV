@@ -123,6 +123,7 @@ void VideoRenderer::setInSize(int width, int height)
         //source_aspect_ratio equals to original video aspect ratio here, also equals to out ratio
         setOutAspectRatio(d.source_aspect_ratio);
     }
+    d.aspect_ratio_changed = false; //TODO: why graphicsitemrenderer need this? otherwise aspect_ratio_changed is always true?
 }
 
 QSize VideoRenderer::lastSize() const
