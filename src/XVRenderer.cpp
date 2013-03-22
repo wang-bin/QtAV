@@ -126,6 +126,7 @@ public:
             qCritical("Create GC failed!");
             return false;
         }
+        XSetBackground(display, gc, BlackPixel(display, DefaultScreen(display)));
     }
 
     bool prepairImage(int w, int h) {
@@ -190,6 +191,7 @@ XVRenderer::~XVRenderer()
 
 QPaintEngine* XVRenderer::paintEngine() const
 {
+    return QWidget::paintEngine();
     return 0; //use native engine
 }
 
@@ -236,9 +238,11 @@ void XVRenderer::paintEvent(QPaintEvent *)
     //begin paint. how about QPainter::beginNativePainting()?
 
     //fill background color when necessary, e.g. renderer is resized, image is null
-    if ((d.update_background && d.out_rect != rect()) || d.data.isEmpty()) {
-        d.update_background = false;
+    if ((d.update_background && d.out_rect != rect())/* || d.data.isEmpty()*/) {//data is always empty because we never copy it.
+//        d.update_background = false; //xv should always draw the background. so shall we only paint the border rectangles, but not the whole widget
         //fill background color. DO NOT return, you must continue drawing
+//       qDebug("Fill background");
+        XFillRectangle(d.display, winId(), d.gc, 0, 0, width(), height());
     }
     if (d.data.isEmpty() && !d.xv_image) {
         qDebug("empty image data");
