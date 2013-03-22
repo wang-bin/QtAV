@@ -11,3 +11,4 @@ SOURCES += main.cpp
 HEADERS += 
 
 
+include($$PROJECTROOT/deploy.pri)

@@ -137,7 +137,7 @@ public:
         };//d.renderer_width, d.renderer_height?
         // Create a Direct2D render target.
         D2D1_HWND_RENDER_TARGET_PROPERTIES hwnd_rtp = {
-            p.winId(),
+            (HWND)p.winId(),
             size,
             D2D1_PRESENT_OPTIONS_IMMEDIATELY /* this might need fiddling */
         };
@@ -261,6 +261,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
         //d.render_target->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &brush);
         //d.render_target->FillRectangle(D2D1::RectF(0, 0, width(), height()), brush);
     }
+    //d.data is always empty because we did not assign a vaule in convertData?
     if (d.data.isEmpty()) {
         //return; //why the background is white if return? the below code draw an empty bitmap?
     }

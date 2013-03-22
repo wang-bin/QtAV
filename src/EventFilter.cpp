@@ -91,7 +91,7 @@ void EventFilter::help()
                        "<p>" + tr("M: mute on/off\n") + "</p>"
                        "<p>" + tr("C: capture video") + "</p>"
                        "<p>" + tr("Up/Down: volume +/-\n") + "</p>"
-                       "<p>" + tr("->/<-: seek forward/backward\n");
+                       "<p>" + tr("-&gt;/&lt;-: seek forward/backward\n");
     QMessageBox::about(0, tr("Help"), help);
 }
 

@@ -46,8 +46,8 @@ defineTest(cache) {
     } else {
 #use sed for unix or msys
 #convert '/' to '\/' for sed
-        srcval ~= s,/,\/,g
-        srcval ~= s,\+,\\+,g #for sed regexp. '+' in qmake is '\+' ?
+        srcval ~= s,/,\\/,g
+        srcval ~= s,\\+,\\\\+,g #for sed regexp. '+' in qmake is '\+' ?
         system("sed -i -r '/.*$${dstvar}.*$${srcval}.*/d' $$_QMAKE_CACHE_QT4_ >/dev/null")
     }
     write_file($$_QMAKE_CACHE_QT4_, varstr, append)

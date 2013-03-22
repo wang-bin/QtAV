@@ -1,0 +1,13 @@
+Package: QtAV
+Version: %version%
+Architecture: %arch%
+Maintainer: Wang Bin(Lucas Wang) <wbsecg1@gmail.com>
+Source: QtAV
+Section: video
+Priority: optional
+Homepage: https://github.com/wang-bin/QtAV
+Depends:
+Description: A media playing framework based on Qt and FFmpeg
+ QtAV is a media playing framework based on Qt and FFmpeg. It can help you to write a player with less effort than ever before.
+
+
