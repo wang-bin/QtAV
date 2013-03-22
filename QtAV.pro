@@ -62,15 +62,19 @@ cache(BUILD_DIR, set, BUILD_DIR)
 cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
-qtCompileTest(avutil)|error("FFmpeg avutil is required, but compiler can not find it")
-qtCompileTest(avcodec)|error("FFmpeg avcodec is required, but compiler can not find it")
-qtCompileTest(avformat)|error("FFmpeg avformat is required, but compiler can not find it")
-qtCompileTest(swscale)|error("FFmpeg swscale is required, but compiler can not find it")
-qtCompileTest(portaudio)|warning("PortAudio is not available. No audio output in QtAV")
-qtCompileTest(direct2d)
-qtCompileTest(gdiplus)
-#qtCompileTest(openal)
-
+EssentialDepends = avutil avcodec avformat swscale
+OptionalDepends = portaudio direct2d gdiplus #openal
+for(d, EssentialDepends) {
+   !config_$$d {
+        CONFIG *= recheck
+   }
+   qtCompileTest($$d)|error("$$d is required, but compiler can not find it")
+#   CONFIG -= recheck
+}
+message("checking for optional features...")
+for(d, OptionalDepends) {
+    qtCompileTest($$d)
+}
 
 
 PACKAGE_VERSION = 1.1.11
