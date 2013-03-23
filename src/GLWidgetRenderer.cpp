@@ -22,13 +22,17 @@
 #include "QtAV/GLWidgetRenderer.h"
 #include "private/VideoRenderer_p.h"
 #include <QResizeEvent>
-
+#ifdef Q_OS_MAC
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif //Q_OS_MAC
 //TODO: vsync http://stackoverflow.com/questions/589064/how-to-enable-vertical-sync-in-opengl
 //TODO: check gl errors
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
 #ifndef GL_BGRA_EXT
-#include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1
+#include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1 //TODO Apple include <OpenGL/xxx>
 #endif //GL_BGRA_EXT
 #ifndef GL_BGRA //it may be defined in glext.h
 #define GL_BGRA GL_BGRA_EXT

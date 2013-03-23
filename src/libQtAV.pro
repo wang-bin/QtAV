@@ -88,12 +88,18 @@ config_direct2d {
     #LIBS += -lD2d1
 }
 config_xv {
-	DEFINES *= HAVE_XV=1
-	SOURCES += XVRenderer.cpp
-	HEADERS += QtAV/XVRenderer.h
-	LIBS += -lXv
+    DEFINES *= HAVE_XV=1
+    SOURCES += XVRenderer.cpp
+    HEADERS += QtAV/XVRenderer.h
+    SDK_HEADERS += QtAV/XVRenderer.h
+    LIBS += -lXv
 }
-
+config_gl {
+    DEFINES *= HAVE_GL=1
+    SOURCES += GLWidgetRenderer.cpp
+    HEADERS += QtAV/GLWidgetRenderer.h
+    SDK_HEADERS += QtAV/GLWidgetRenderer.h
+}
 SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \
@@ -106,7 +112,6 @@ SOURCES += \
     AVDemuxThread.cpp \
     EventFilter.cpp \
     Filter.cpp \
-    GLWidgetRenderer.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
@@ -138,7 +143,6 @@ SDK_HEADERS *= \
     QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
     QtAV/Filter.h \
-    QtAV/GLWidgetRenderer.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/QPainterRenderer.h \

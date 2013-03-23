@@ -1,7 +1,6 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    player-gl \
     simpleplayer \
     videographicsitem \
     videowall
@@ -12,4 +11,7 @@ config_gdiplus {
 }
 config_direct2d {
     SUBDIRS += player-d2d
+}
+config_gl {
+    SUBDIRS += player-gl
 }

@@ -48,14 +48,14 @@ void RegisterVideoRendererWidget_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, Widget, "QWidegt")
 }
-
+#if HAVE_GL
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget, "QGLWidegt")
 
 void RegisterVideoRendererGLWidget_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, GLWidget, "QGLWidegt")
 }
-
+#endif //HAVE_GL
 #if HAVE_GDIPLUS
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GDI, "GDI")
 
@@ -84,7 +84,9 @@ void RegisterVideoRendererXV_Man()
 void VideoRenderer_RegisterAll()
 {
     RegisterVideoRendererWidget_Man();
+#if HAVE_GL
     RegisterVideoRendererGLWidget_Man();
+#endif //HAVE_GL
 #if HAVE_GDIPLUS
     RegisterVideoRendererGDI_Man();
 #endif //HAVE_GDIPLUS

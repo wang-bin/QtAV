@@ -64,7 +64,7 @@ cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
 EssentialDepends = avutil avcodec avformat swscale
-OptionalDepends = portaudio direct2d gdiplus xv #openal
+OptionalDepends = portaudio direct2d gdiplus xv gl #openal
 for(d, EssentialDepends) {
    !config_$$d {
         CONFIG *= recheck
