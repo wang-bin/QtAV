@@ -1,7 +1,7 @@
 TEMPLATE = lib
 TARGET = QtAV
 
-QT += core gui opengl
+QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG *= qtav-buildlib
@@ -95,6 +95,7 @@ config_xv {
     LIBS += -lXv
 }
 config_gl {
+    QT *= opengl
     DEFINES *= HAVE_GL=1
     SOURCES += GLWidgetRenderer.cpp
     HEADERS += QtAV/GLWidgetRenderer.h
