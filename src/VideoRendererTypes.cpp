@@ -25,7 +25,9 @@
 #include "prepost.h"
 
 #include <QtAV/WidgetRenderer.h>
+#if HAVE_GL
 #include <QtAV/GLWidgetRenderer.h>
+#endif //HAVE_GL
 #if HAVE_GDIPLUS
 #include <QtAV/GDIRenderer.h>
 #endif //HAVE_GDIPLUS
