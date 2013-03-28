@@ -54,10 +54,10 @@ page: [depends](https://sourceforge.net/projects/qtav/files/depends)
 
 #### Build
 
-For most platforms, just
+You can build QtAV with many compilers and on many platforms. You can use gcc, clang, vc to compile it.  
+See the wiki [Build QtAV](https://github.com/wang-bin/QtAV/wiki/Build-QtAV)
 
-    qmake
-    make
+Here is a brief guide:
 
 It's recommend not to build in source dir.  
 
@@ -69,10 +69,6 @@ qmake will run check the required libraries at the first time, so you must make 
 Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, delete _**.qmake.cache**_ and run qmake again
 
 _WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice.
-
-##### Build with MSVC
-
-  See the wiki [Compile with MSVC](https://github.com/wang-bin/QtAV/wiki/Compile-with-MSVC)
 
 
 ##### Known Issues
