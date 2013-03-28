@@ -71,7 +71,7 @@ public:
     //bool unregisterAll();
     ID id(const std::string& name) const;
     std::string name(const ID &id) const;
-    int count() const;
+    size_t count() const;
     Type* getRandom(); //remove
 
 protected:
@@ -142,7 +142,7 @@ std::string Factory<Id, T, Class>::name(const ID &id) const
 }
 
 template<typename Id, typename T, class Class>
-int Factory<Id, T, Class>::count() const
+size_t Factory<Id, T, Class>::count() const
 {
     //DBG("%p size = %d", &Factory<Id, T, Class>::Instance(), ids.size());
     return ids.size();

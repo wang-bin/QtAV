@@ -113,7 +113,7 @@
         static bool unregisterCreator(const ID& id); \
         static ID id(const std::string& name); \
         static std::string name(const ID &id); \
-        static int count(); \
+        static size_t count(); \
         static T* getRandom(); \
     };
 
@@ -129,7 +129,7 @@
     bool T##Factory::unregisterCreator(const ID& id) { return T##FactoryBridge::Instance().unregisterCreator(id); } \
     ID T##Factory::id(const std::string& name) { return T##FactoryBridge::Instance().id(name); } \
     std::string T##Factory::name(const ID &id) { return T##FactoryBridge::Instance().name(id); } \
-    int T##Factory::count() { return T##FactoryBridge::Instance().count(); } \
+    size_t T##Factory::count() { return T##FactoryBridge::Instance().count(); } \
     T* T##Factory::getRandom() { fflush(0);return T##FactoryBridge::Instance().getRandom(); }
 
 #endif // FACTORYDEFINE_H
