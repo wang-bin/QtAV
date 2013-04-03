@@ -40,10 +40,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     _QMAKE_CACHE_QT4_ = $$_QMAKE_CACHE_
     #_QMAKE_CACHE_QT4_ is built in and always not empty
     isEmpty(_QMAKE_CACHE_QT4_)|isEqual(_QMAKE_CACHE_QT4_,) {
-        message("No .qmake.cache found")
         _QMAKE_CACHE_QT4_=$$BUILD_DIR/.qmake.cache
     }
-    message("_QMAKE_CACHE_QT4_: $$_QMAKE_CACHE_QT4_")
     include(common.pri)
     #recheck:write_file($$BUILD_DIR/.qmake.cache) #FIXME: empty_file result in no qtCompileTest result in cache
     #use the following lines when building as a sub-project, write cache to this project src dir.
@@ -83,3 +81,7 @@ PACKAGE_NAME= QtAV
 
 include(pack.pri)
 #packageSet(1.1.11, QtAV)
+
+!isEmpty(EssentialDepends)|!isEmpty(OptionalDepends) {
+    message("To recheck the dependencies, run qmake with argument 'CONFIG+=recheck'")
+}
