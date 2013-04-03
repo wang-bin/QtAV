@@ -19,156 +19,13 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
+/*
+ * X11 headers define 'Bool' type which is used in qmetatype.h. we must include X11 files at last, i.e. XVRenderer_p.h. otherwise compile error
+*/
 #include "QtAV/XVRenderer.h"
-#include "private/VideoRenderer_p.h"
 #include <QResizeEvent>
-#include <QX11Info>
-
-#include <sys/shm.h>
-#include <X11/Xlib.h>
-#include <X11/extensions/Xvlib.h>
-
-//http://huangbster.i.sohu.com/blog/view/256490057.htm
-
+#include "private/XVRenderer_p.h"
 namespace QtAV {
-
-class XVRendererPrivate : public VideoRendererPrivate
-{
-public:
-    DPTR_DECLARE_PUBLIC(XVRenderer)
-
-    XVRendererPrivate():
-        use_shm(true)
-      , num_adaptors(0)
-      , format_id(0x32315659) /*YV12*/
-      , xv_image(0)
-      , xv_image_width(0)
-      , xv_image_height(0)
-      , xv_port(0)
-    {
-        //XvQueryExtension()
-        display = QX11Info::display();
-        if (XvQueryAdaptors(display, DefaultRootWindow(display), &num_adaptors, &xv_adaptor_info) != Success) {
-            available = false;
-            qCritical("Query adaptors failed!");
-            return;
-        }
-        if (num_adaptors < 1) {
-            available = false;
-            qCritical("No adaptor found!");
-            return;
-        }
-        for (uint i = 0; i < num_adaptors; ++i) {
-            //??
-            if ((xv_adaptor_info[i].type & (XvInputMask | XvImageMask)) == (XvInputMask | XvImageMask)) {
-                //if ( !adaptorName.isEmpty() && adaptorName != ai[ i ].name )
-                //    continue;
-                for (XvPortID p = xv_adaptor_info[i].base_id; p < xv_adaptor_info[i].base_id + xv_adaptor_info[i].num_ports; ++p) {
-                    if (findYV12Port(p))
-                        break;
-                }
-            }
-            if (xv_port)
-                break;
-        }
-        if (!xv_port) {
-            available = false;
-            qCritical("YV12 port not found!");
-            return;
-        }
-    }
-    ~XVRendererPrivate() {
-        if (xv_adaptor_info) {
-            XvFreeAdaptorInfo(xv_adaptor_info);
-            xv_adaptor_info = 0;
-        }
-        if (xv_image) {
-            if (use_shm) {
-                if (shm.shmaddr) {
-                    XShmDetach(display, &shm);
-                    shmctl(shm.shmid, IPC_RMID, 0);
-                    shmdt(shm.shmaddr);
-                }
-            } else {
-                delete [] xv_image->data;
-            }
-            XFree(xv_image);
-        }
-        if (gc) {
-            XFreeGC(display, gc);
-            gc = 0;
-        }
-        if (xv_port) {
-            XvUngrabPort(display, xv_port, 0);
-            xv_port = 0;
-        }
-    }
-    bool findYV12Port(XvPortID port) {
-        int count = 0;
-        XvImageFormatValues *xv_image_formats = XvListImageFormats(display, port, &count);
-        for (int j = 0; j < count; ++j) {
-            if (xv_image_formats[j].type == XvYUV && QLatin1String(xv_image_formats[j].guid) == QLatin1String("YV12")) {
-                if (XvGrabPort(display, port, 0) == Success) {
-                    xv_port = port;
-                    format_id = xv_image_formats[j].id;
-                    XFree(xv_image_formats);
-                    return true;
-                }
-            }
-        }
-        XFree(xv_image_formats);
-        return false;
-    }
-    bool prepairDeviceResource() {
-        gc = XCreateGC(display, q_func().winId(), 0, 0);
-        if (!gc) {
-            available = false;
-            qCritical("Create GC failed!");
-            return false;
-        }
-        XSetBackground(display, gc, BlackPixel(display, DefaultScreen(display)));
-    }
-
-    bool prepairImage(int w, int h) {
-        //TODO: check shm
-        if (xv_image_width == w && xv_image_height == h && xv_image)
-            return true;
-        xv_image_width = w;
-        xv_image_height = h;
-        if (!use_shm) {
-            xv_image = XvCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height);
-            xv_image->data = new char[xv_image->data_size];
-        } else {
-            xv_image = XvShmCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height, &shm);
-            shm.shmid = shmget(IPC_PRIVATE, xv_image->data_size, IPC_CREAT | 0777);
-            if (shm.shmid < 0) {
-                qCritical("get shm failed");
-                return false;
-            }
-            shm.shmaddr = (char *)shmat(shm.shmid, 0, 0);
-            xv_image->data = shm.shmaddr;
-            shm.readOnly = 0;
-            if (!XShmAttach(display, &shm)) {
-                qCritical("Attach to shm failed!");
-                return false;
-            }
-            XSync(display, false);
-            shmctl(shm.shmid, IPC_RMID, 0);
-        }
-        return true;
-    }
-
-    bool use_shm;
-    unsigned int num_adaptors;
-    XvAdaptorInfo *xv_adaptor_info;
-    Display *display;
-    XvImage *xv_image;
-    int format_id;
-    int xv_image_width, xv_image_height;
-    XvPortID xv_port;
-    GC gc;
-    XShmSegmentInfo shm;
-};
 
 XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
     QWidget(parent, f)
@@ -230,24 +87,15 @@ void XVRenderer::convertData(const QByteArray &data)
     //memcpy(d.xv_image->data, d.data.data(), d.xv_image->data_size);
 }
 
-void XVRenderer::paintEvent(QPaintEvent *)
+void XVRenderer::drawBackground()
 {
     DPTR_D(XVRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    //begin paint. how about QPainter::beginNativePainting()?
+    XFillRectangle(d.display, winId(), d.gc, 0, 0, width(), height());
+}
 
-    //fill background color when necessary, e.g. renderer is resized, image is null
-    if ((d.update_background && d.out_rect != rect())/* || d.data.isEmpty()*/) {//data is always empty because we never copy it.
-//        d.update_background = false; //xv should always draw the background. so shall we only paint the border rectangles, but not the whole widget
-        //fill background color. DO NOT return, you must continue drawing
-//       qDebug("Fill background");
-        XFillRectangle(d.display, winId(), d.gc, 0, 0, width(), height());
-    }
-    if (d.data.isEmpty() && !d.xv_image) {
-        qDebug("empty image data");
-        return;
-    }
+void XVRenderer::drawFrame()
+{
+    DPTR_D(XVRenderer);
     if (!d.use_shm)
         XvPutImage(d.display, d.xv_port, winId(), d.gc, d.xv_image
                    , 0, 0, d.src_width, d.src_height
@@ -257,6 +105,49 @@ void XVRenderer::paintEvent(QPaintEvent *)
                       , 0, 0, d.src_width, d.src_height
                       , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height()
                       , false /*true: send event*/);
+}
+
+void XVRenderer::drawSubtitle()
+{
+}
+
+void XVRenderer::drawOSD()
+{
+}
+
+void XVRenderer::drawCustom()
+{
+}
+
+void XVRenderer::paintEvent(QPaintEvent *)
+{
+    DPTR_D(XVRenderer);
+    {
+        //lock is required only when drawing the frame
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        //begin paint. how about QPainter::beginNativePainting()?
+        //fill background color when necessary, e.g. renderer is resized, image is null
+        //we access d.data which will be modified in AVThread, so must be protected. Otherwise, put it outside this scope is ok
+        //TODO: move outside is ok
+        if ((d.update_background && d.out_rect != rect())/* || d.data.isEmpty()*/) {//data is always empty because we never copy it.
+//            d.update_background = false; //xv should always draw the background. so shall we only paint the border rectangles, but not the whole widget
+            //fill background color. DO NOT return, you must continue drawing
+            drawBackground();
+        }
+        //DO NOT return if no data. we should draw other things
+        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
+        if (!d.data.isEmpty() || d.xv_image) {
+            drawFrame();
+        }
+    }
+    //drawXXX only implement the painting, no other logic
+    if (d.draw_osd)
+        drawOSD();
+    if (d.draw_subtitle)
+        drawSubtitle();
+    if (d.draw_custom)
+        drawCustom();
     //end paint. how about QPainter::endNativePainting()?
 }
 

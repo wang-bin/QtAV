@@ -20,9 +20,7 @@
 ******************************************************************************/
 
 #include "GDIRenderer.h"
-#include "private/VideoRenderer_p.h"
-#include <windows.h> //GetDC()
-#include <gdiplus.h>
+#include "private/GDIRenderer_p.h"
 #include <QResizeEvent>
 
 //http://msdn.microsoft.com/en-us/library/ms927613.aspx
@@ -30,71 +28,6 @@
 
 using namespace Gdiplus;
 namespace QtAV {
-
-class GDIRendererPrivate : public VideoRendererPrivate
-{
-public:
-    DPTR_DECLARE_PUBLIC(GDIRenderer)
-
-    GDIRendererPrivate():
-        support_bitblt(true)
-      , gdiplus_token(0)
-      , device_context(0)
-    {
-        GdiplusStartupInput gdiplusStartupInput;
-        GdiplusStartup(&gdiplus_token, &gdiplusStartupInput, NULL);
-    }
-    ~GDIRendererPrivate() {
-        if (device_context) {
-            DPTR_P(GDIRenderer);
-            ReleaseDC((HWND)p.winId(), device_context); /*Q5: must cast WID to HWND*/
-            DeleteDC(off_dc);
-            device_context = 0;
-        }
-        GdiplusShutdown(gdiplus_token);
-    }
-    void prepare() {
-        DPTR_P(GDIRenderer);
-        update_background = true;
-        device_context = GetDC((HWND)p.winId()); /*Q5: must cast WID to HWND*/
-        //TODO: check bitblt support
-        int ret = GetDeviceCaps(device_context, RC_BITBLT);
-        qDebug("bitblt=%d", ret);
-        //TODO: wingapi? vlc
-#if 0
-        BITMAPINFOHEADER bih;
-        bih.biSize          = sizeof(BITMAPINFOHEADER);
-        bih.biSizeImage     = 0;
-        bih.biPlanes        = 1;
-        bih.biCompression   = BI_RGB; //vlc: 16bpp=>BI_RGB, 15bpp=>BI_BITFIELDS
-        bih.biBitCount      = 32;
-        bih.biWidth         = src_width;
-        bih.biHeight        = src_height;
-        bih.biClrImportant  = 0;
-        bih.biClrUsed       = 0;
-        bih.biXPelsPerMeter = 0;
-        bih.biYPelsPerMeter = 0;
-
-        off_bitmap = CreateDIBSection(device_context,
-                                      , (BITMAPINFO*)&bih
-                                      , DIB_RGB_COLORS
-                                      , &p_pic_buffer, NULL, 0);
-#endif //0
-        off_dc = CreateCompatibleDC(device_context);
-    }
-
-    bool support_bitblt;
-    ULONG_PTR gdiplus_token;
-    /*
-     * GetDC(winID()): will flick
-     * QPainter.paintEngine()->getDC() in paintEvent: doc says it's for internal use
-     */
-    HDC device_context;
-    /* Our offscreen bitmap and its framebuffer */
-    HDC        off_dc;
-    HBITMAP    off_bitmap;
-
-};
 
 GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     QWidget(parent, f),VideoRenderer(*new GDIRendererPrivate())

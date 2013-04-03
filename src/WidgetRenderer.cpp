@@ -51,7 +51,7 @@ WidgetRenderer::~WidgetRenderer()
 bool WidgetRenderer::write()
 {
     update();
-	return true;
+    return true;
 }
 
 void WidgetRenderer::drawBackground()

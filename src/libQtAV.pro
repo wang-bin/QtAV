@@ -181,7 +181,11 @@ HEADERS *= \
     QtAV/private/OSDFilter_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
-    QtAV/private/WidgetRenderer_p.h
+    QtAV/private/WidgetRenderer_p.h \
+    QtAV/private/Direct2DRenderer_p.h \
+    QtAV/private/GLWidgetRenderer_p.h \
+    QtAV/private/GDIRenderer_p.h \
+    QtAV/private/XVRenderer_p.h
 
 
 SDK_INCLUDE_FOLDER = QtAV

@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/GLWidgetRenderer.h"
-#include "private/VideoRenderer_p.h"
+#include "private/GLWidgetRenderer_p.h"
 #include <QResizeEvent>
 #ifdef Q_OS_MAC
 #include <OpenGL/gl.h>
@@ -39,31 +39,7 @@
 #define GL_BGR GL_BGR_EXT
 #endif //GL_BGRA
 #endif //GL_BGRA
-
 namespace QtAV {
-
-class GLWidgetRendererPrivate : public VideoRendererPrivate
-{
-public:
-    GLWidgetRendererPrivate():
-        texture(0)
-    {
-        if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
-            available = false;
-            return;
-            glGenTextures(1, &texture);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        }
-    }
-    ~GLWidgetRendererPrivate() {
-        glDeleteTextures(1, &texture);
-    }
-
-    QRect out_rect_old;
-    GLuint texture;
-};
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
     QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRendererPrivate())
