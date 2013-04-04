@@ -97,7 +97,7 @@ protected:
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
     //draw the current frame using the current paint engine. called by paintEvent()
-    virtual void drawFrame();
+    virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
     //called in paintEvent() after drawFrame. leave it empty is ok
     virtual void drawSubtitle();
     //called in paintEvent() after drawFrame. leave it empty is ok

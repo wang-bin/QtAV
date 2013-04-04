@@ -205,10 +205,6 @@ void VideoRenderer::drawBackground()
 {
 }
 
-void VideoRenderer::drawFrame()
-{
-}
-
 void VideoRenderer::drawSubtitle()
 {
 }
