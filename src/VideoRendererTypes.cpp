@@ -100,5 +100,15 @@ void VideoRenderer_RegisterAll()
 #endif //HAVE_XV
 }
 
-
+namespace {
+static void FixUnusedCompileWarning()
+{
+    FixUnusedCompileWarning(); //avoid warning about this function may not be used
+    Q_UNUSED(VideoRendererId_GDI);
+    Q_UNUSED(VideoRendererId_GLWidget);
+    Q_UNUSED(VideoRendererId_Direct2D);
+    Q_UNUSED(VideoRendererId_XV);
 }
+}//namespace
+
+}//namespace QtAV
