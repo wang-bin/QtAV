@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/AVClock.h>
@@ -21,6 +24,7 @@
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QThread>
+#include <QtCore/QCoreApplication>
 
 namespace QtAV {
 
@@ -30,11 +34,16 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     ,ipts(0),stream_idx(-1),audio_stream(-2),video_stream(-2)
     ,subtitle_stream(-2),_is_input(true),format_context(0)
 	,a_codec_context(0),v_codec_context(0),_file_name(fileName),master_clock(0)
+    ,__interrupt_status(0)
 {
     av_register_all();
     avformat_network_init();
     if (!_file_name.isEmpty())
         loadFile(_file_name);
+
+    //default network timeout
+    __interrupt_timeout = QTAV_DEFAULT_NETWORK_TIMEOUT;
+
 }
 
 AVDemuxer::~AVDemuxer()
@@ -47,13 +56,50 @@ AVDemuxer::~AVDemuxer()
     avformat_network_deinit();
 }
 
+/*
+ * metodo per interruzione loop ffmpeg
+ * @param void*obj: classe attuale
+  * @return
+ *  >0 Interruzione loop di ffmpeg!
+*/
+int AVDemuxer::__interrupt_cb(void *obj){
+    int ret = 0;
+    AVDemuxer* demuxer;
+    //qApp->processEvents();
+    if (!obj){
+        qWarning("Passed Null object!");
+        return(-1);
+    }
+    demuxer = (AVDemuxer*)obj;
+    //qDebug("Timer:%lld, timeout:%lld\n",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
+
+    //check manual interruption
+    if (demuxer->__interrupt_status > 0) {
+        qDebug("User Interrupt: -> quit!");
+        ret = 1;//interrupt
+    } else if((demuxer->__interrupt_timer.isValid()) && (demuxer->__interrupt_timer.hasExpired(demuxer->__interrupt_timeout)) ) {
+        qDebug("Timeout expired: %lld/%lld -> quit!",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
+        //TODO: emit a signal
+        ret = 1;//interrupt
+    }
+
+    //qDebug(" END ret:%d\n",ret);
+    return(ret);
+}//AVDemuxer::__interrupt_cb()
+
 
 bool AVDemuxer::readFrame()
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     AVPacket packet;
+    //start timeout timer and timeout
+    __interrupt_timer.start();
+
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
+
+    //invalidate the timer
+    __interrupt_timer.invalidate();
 
     if (ret != 0) {
         if (ret == AVERROR_EOF) { //end of file. FIXME: why no eof if replaying by seek(0)?
@@ -63,6 +109,8 @@ bool AVDemuxer::readFrame()
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
             }
+            //pkt->data = QByteArray(); //flush
+            //return true;
             return false; //frames after eof are eof frames
         } else if (ret == AVERROR_INVALIDDATA) {
             qWarning("AVERROR_INVALIDDATA");
@@ -81,7 +129,7 @@ bool AVDemuxer::readFrame()
         emit started();
     }
     if (stream_idx != videoStream() && stream_idx != audioStream()) {
-        qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
+        //qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
         return false;
     }
     pkt->data = QByteArray((const char*)packet.data, packet.size);
@@ -131,6 +179,7 @@ bool AVDemuxer::close()
     eof = false;
     stream_idx = -1;
     audio_stream = video_stream = subtitle_stream = -2;
+    __interrupt_status = 0;
     if (a_codec_context) {
         qDebug("closing a_codec_context");
         avcodec_close(a_codec_context);
@@ -168,8 +217,11 @@ void AVDemuxer::seek(qreal q)
         return;
     }
     if (seek_timer.isValid()) {
-        if (seek_timer.elapsed() < kSeekInterval)
+        //why sometimes seek_timer.elapsed() < 0
+        if (!seek_timer.hasExpired(kSeekInterval)) {
+            qDebug("seek too frequent. ignore");
             return;
+        }
         seek_timer.restart();
     } else {
         seek_timer.start();
@@ -267,7 +319,27 @@ bool AVDemuxer::loadFile(const QString &fileName)
     //deprecated
     // Open an input stream and read the header. The codecs are not opened.
     //if(av_open_input_file(&format_context, _file_name.toLocal8Bit().constData(), NULL, 0, NULL)) {
+
+    //alloc av format context
+    if(!format_context)
+        format_context = avformat_alloc_context();
+
+    //install interrupt callback
+    format_context->interrupt_callback.callback = __interrupt_cb;
+    format_context->interrupt_callback.opaque = this;
+
+    qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
+
+    //start timeout timer and timeout
+    __interrupt_timer.start();
+
     int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, NULL);
+
+    //invalidate the timer
+    __interrupt_timer.invalidate();
+
+    qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
+
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
         qWarning("Can't open video: %s", av_err2str(ret));
@@ -434,19 +506,17 @@ void AVDemuxer::dump()
     AVStream *stream = 0;
     for (int idx = 0; stream_infos[idx].name != 0; ++idx) {
         qDebug("%s: %d", stream_infos[idx].name, stream_infos[idx].index);
-        if (stream_infos[idx].index < 0 || !(stream = format_context->streams[idx])) {
+        if (stream_infos[idx].index < 0 || !(stream = format_context->streams[stream_infos[idx].index])) {
             qDebug("stream not available: index = %d, stream = %p", stream_infos[idx].index, stream);
             continue;
         }
-        //why not fixed for video without audio?
-        //qDebug("[AVStream::start_time = %lld]", stream->start_time);
+        qDebug("[AVStream::start_time = %lld]", stream->start_time);
         AVCodecContext *ctx = stream_infos[idx].ctx;
         if (ctx) {
             qDebug("[AVCodecContext::time_base = %d / %d = %f]", ctx->time_base.num, ctx->time_base.den, av_q2d(ctx->time_base));
         }
-        ////why avg_frame_rate is not fixed for the same video?
-        //qDebug("[AVStream::avg_frame_rate = %d / %d = %f]", stream->avg_frame_rate.num, stream->avg_frame_rate.den, av_q2d(stream->avg_frame_rate));
-        //qDebug("[AVStream::time_base = %d / %d = %f]", stream->time_base.num, stream->time_base.den, av_q2d(stream->time_base));
+        qDebug("[AVStream::avg_frame_rate = %d / %d = %f]", stream->avg_frame_rate.num, stream->avg_frame_rate.den, av_q2d(stream->avg_frame_rate));
+        qDebug("[AVStream::time_base = %d / %d = %f]", stream->time_base.num, stream->time_base.den, av_q2d(stream->time_base));
     }
 
 }
@@ -637,6 +707,44 @@ QString AVDemuxer::formatName(AVFormatContext *ctx, bool longName) const
         return longName ? ctx->iformat->long_name : ctx->iformat->name;
     else
         return longName ? ctx->oformat->long_name : ctx->oformat->name;
+}
+
+
+/**
+ * @brief getInterruptTimeout return the interrupt timeout
+ * @return
+ */
+qint64 AVDemuxer::getInterruptTimeout() const
+{
+    return __interrupt_timeout;
+}
+
+/**
+ * @brief setInterruptTimeout set the interrupt timeout
+ * @param timeout
+ * @return
+ */
+void AVDemuxer::setInterruptTimeout(qint64 timeout)
+{
+    __interrupt_timeout = timeout;
+}
+
+/**
+ * @brief getInterruptStatus return the interrupt status
+ * @return
+ */
+int AVDemuxer::getInterruptStatus() const{
+    return(__interrupt_status);
+}
+
+/**
+ * @brief setInterruptStatus set the interrupt status
+ * @param interrupt
+ * @return
+ */
+int AVDemuxer::setInterruptStatus(int interrupt){
+    __interrupt_status = (interrupt>0) ? 1 : 0;
+    return(__interrupt_status);
 }
 
 } //namespace QtAV

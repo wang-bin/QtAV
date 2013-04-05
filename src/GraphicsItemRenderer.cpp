@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/GraphicsItemRenderer.h>
@@ -22,13 +25,12 @@
 #include <QtGui/QPainter>
 #include <QEvent>
 #include <QKeyEvent>
-#include <QtAV/EventFilter.h>
 #include <QGraphicsSceneEvent>
 
 namespace QtAV {
 
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
-    :GraphicsWidget(parent),ImageRenderer(*new GraphicsItemRendererPrivate())
+    :GraphicsWidget(parent),QPainterRenderer(*new GraphicsItemRendererPrivate())
 {
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
@@ -38,7 +40,7 @@ GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
 }
 
 GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGraphicsItem *parent)
-    :GraphicsWidget(parent),ImageRenderer(d)
+    :GraphicsWidget(parent),QPainterRenderer(d)
 {
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
@@ -60,7 +62,7 @@ bool GraphicsItemRenderer::write()
 
 QRectF GraphicsItemRenderer::boundingRect() const
 {
-    return QRectF(0, 0, videoWidth(), videoHeight());
+    return QRectF(0, 0, rendererWidth(), rendererHeight());
 }
 
 void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -68,26 +70,22 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 	Q_UNUSED(option);
 	Q_UNUSED(widget);
 	DPTR_D(GraphicsItemRenderer);
-    if (!d.scale_in_qt) {
-        d.img_mutex.lock();
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+    //fill background color only when the displayed frame rect not equas to renderer's
+    if (d.out_rect != boundingRect()) {
+        painter->fillRect(boundingRect(), QColor(0, 0, 0));
     }
-    if (!d.image.isNull()) {
-        if (d.image.size() == QSize(d.width, d.height))
-            painter->drawImage(QPointF(), d.image);
-        else
-            painter->drawImage(boundingRect(), d.image);
-    } else if (!d.preview.isNull()){
-        if (d.preview.size() == QSize(d.width, d.height))
-            painter->drawImage(QPointF(), d.preview);
-        else
-            painter->drawImage(boundingRect(), d.preview);
+    if (d.image.isNull()) {
+        //TODO: when setInSize()?
+        d.image = QImage(rendererSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
+    }
+    //assume that the image data is already scaled to out_size(NOT renderer size!)
+    if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
+        painter->drawImage(d.out_rect.topLeft(), d.image);
     } else {
-        d.preview = QImage(videoSize(), QImage::Format_RGB32);
-        d.preview.fill(QColor(Qt::black));
-        painter->drawImage(QPointF(), d.preview);
-    }
-    if (!d.scale_in_qt) {
-        d.img_mutex.unlock();
+        painter->drawImage(d.out_rect, d.image);
     }
 }
 //GraphicsWidget will lose focus forever if focus out. Why?

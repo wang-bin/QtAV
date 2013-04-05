@@ -49,7 +49,7 @@ NAME = QtAV
 #!isEmpty(LIBQTAV_PRI_INCLUDED):error("libQtAV.pri already included")
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
-LIB_VERSION = 1.1.7 #0.x.y may be wrong for dll
+LIB_VERSION = 1.1.11 #0.x.y may be wrong for dll
 isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
 
 TEMPLATE += fakelib
@@ -99,15 +99,13 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 	}
 } else {
 	#Add your additional configuration first. e.g.
-        #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
-        DEFINES += __STDC_CONSTANT_MACROS
 
 #	win32: LIBS += -lUser32
 # The following may not need to change
 
 	#TEMPLATE = lib
 	VERSION = $$LIB_VERSION
-	TARGET = $$PROJECT_TARGETNAME
+        TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
 	DESTDIR= $$PROJECT_LIBDIR
 
 	CONFIG *= create_prl #
@@ -147,27 +145,7 @@ unix {
     LIBS += -L/usr/local/lib
     QMAKE_RPATHDIR += /usr/local/lib
 }
-LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
-CONFIG *= portaudio
-#CONFIG *= openal
-portaudio {
-    DEFINES *= HAVE_PORTAUDIO=1
-    LIBS *= -lportaudio
-    win32: LIBS *= -lwinmm -lksguid -luuid# -lws2_32 #portaudio
-}
-openal {
-    DEFINES *= HAVE_OPENAL=1
-    win32:LIBS *= -lOpenAL32
-    else: LIBS *= -lopenal
-}
-ipp-link {
-    DEFINES += IPP_LINK
-    ICCROOT = $$(IPPROOT)/../compiler
-    INCLUDEPATH += $$(IPPROOT)/include
-    LIBS *= -L$$(IPPROOT)/lib/intel64 -L$$(IPPROOT)/lib/ia32 -lippcc -lippcore -lippi \
-            -L$$(IPPROOT)/../compiler/lib/ia32 -L$$(IPPROOT)/../compiler/lib/intel64 -lsvml -limf
-    #omp for static link. _t is multi-thread static link
-}
+
 unset(LIB_VERSION)
 unset(PROJECT_SRCPATH)
 unset(PROJECT_LIBDIR)

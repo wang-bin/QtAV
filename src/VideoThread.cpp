@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/VideoThread.h>
@@ -25,20 +28,23 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/ImageConverter.h>
 #include <QtGui/QImage>
+#include <QtAV/OSDFilter.h>
 
 namespace QtAV {
-
-const double kSyncThreshold = 0.005; // 5 ms
 
 class VideoThreadPrivate : public AVThreadPrivate
 {
 public:
-    VideoThreadPrivate():conv(0),delay(0),capture(0){}
+    VideoThreadPrivate():
+        conv(0)
+      , capture(0)
+      , osd(0)
+    {}
     ImageConverter *conv;
-    double delay;
     double pts; //current decoded pts. for capture
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
+    OSDFilter *osd;
 };
 
 VideoThread::VideoThread(QObject *parent) :
@@ -73,7 +79,16 @@ VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
     d.capture = cap;
     return old;
 }
-
+//it may be called in main thread usually, but is being used in video thread,
+OSDFilter* VideoThread::setOSDFilter(OSDFilter *osd)
+{
+    qDebug("setOSDFilter %p", osd);
+    DPTR_D(VideoThread);
+    QMutexLocker locker(&d.mutex);
+    OSDFilter *old = d.osd;
+    d.osd = osd;
+    return old;
+}
 //TODO: if output is null or dummy, the use duration to wait
 void VideoThread::run()
 {
@@ -136,10 +151,10 @@ void VideoThread::run()
         bool vo_ok = vo && vo->isAvailable();
         if (vo_ok) {
             //use the last size first then update the last size so that decoder(converter) can update output size
-            if (vo->lastWidth() > 0 && vo->lastHeight() > 0 && !vo->scaleInQt())
-                dec->resizeVideo(vo->lastSize());
+            if (vo->lastWidth() > 0 && vo->lastHeight() > 0 && !vo->scaleInRenderer())
+                dec->resizeVideoFrame(vo->lastSize());
             else
-                vo->setSourceSize(dec->width(), dec->height()); //setLastSize()
+                vo->setInSize(dec->width(), dec->height()); //setLastSize()
         }
         //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
         if (dec->decode(pkt.data)) {
@@ -148,18 +163,24 @@ void VideoThread::run()
                 d.capture->setRawImage(dec->data(), dec->width(), dec->height());
             }
             //TODO: Add filters here. Capture is also a filter
-            /*if (d.image.width() != d.width || d.image.height() != d.height)
-                d.image = QImage(d.width, d.height, QImage::Format_RGB32);
-            d.conv->setInSize(d.width, d.height);
+            /*if (d.image.width() != d.renderer_width || d.image.height() != d.renderer_height)
+                d.image = QImage(d.renderer_width, d.renderer_height, QImage::Format_RGB32);
+            d.conv->setInSize(d.renderer_width, d.renderer_height);
             if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
             }*/
+            QByteArray data = dec->data();
+            if (d.osd) {
+                d.osd->setImageSize(dec->width(), dec->height());
+                d.osd->setCurrentTime(pkt.pts);
+                d.osd->process(data);
+            }
             if (vo_ok) {
-                vo->writeData(dec->data());
+                vo->writeData(data);
             }
         }
         //use the last size first then update the last size so that decoder(converter) can update output size
-        if (vo_ok && !vo->scaleInQt())
-            vo->setSourceSize(vo->videoSize());
+        if (vo_ok && !vo->scaleInRenderer())
+            vo->setInSize(vo->rendererSize());
     }
     qDebug("Video thread stops running...");
 }

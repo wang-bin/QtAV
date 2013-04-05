@@ -2,6 +2,8 @@
     VideoWall:  this file is part of QtAV examples
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
+*   This file is part of QtAV
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -21,18 +23,37 @@
 #include <QDesktopWidget>
 #include <QEvent>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QKeyEvent>
+#include <QMenu>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
 
 using namespace QtAV;
+const int kSyncInterval = 2000;
 
 VideoWall::VideoWall(QObject *parent) :
-    QObject(parent),r(3),c(3)
+    QObject(parent),r(3),c(3),view(0),menu(0)
 {
+    clock = new AVClock(this);
+    clock->setClockType(AVClock::ExternalClock);
+    //view = new QWidget;
+    if (view) {
+        qDebug("WA_OpaquePaintEvent=%d", view->testAttribute(Qt::WA_OpaquePaintEvent));
+        view->resize(qApp->desktop()->size());
+        view->move(QPoint(0, 0));
+        view->show();
+    }
 }
 
 VideoWall::~VideoWall()
 {
+    if (menu) {
+        delete menu;
+        menu = 0;
+    }
     if (!players.isEmpty()) {
         foreach (AVPlayer *player, players) {
             player->stop();
@@ -46,6 +67,7 @@ VideoWall::~VideoWall()
         }
         players.clear();
     }
+    delete view;
 }
 
 void VideoWall::setRows(int n)
@@ -85,18 +107,20 @@ void VideoWall::show()
     }
     qDebug("show wall: %d x %d", r, c);
 
-    int w = qApp->desktop()->width()/c;
-    int h = qApp->desktop()->height()/r;
+    int w = view ? view->frameGeometry().width()/c : qApp->desktop()->width()/c;
+    int h = view ? view->frameGeometry().height()/r : qApp->desktop()->height()/r;
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
-            WidgetRenderer* renderer = new WidgetRenderer;
+            WidgetRenderer* renderer = new WidgetRenderer(view);
             renderer->setWindowFlags(Qt::FramelessWindowHint);
             renderer->resize(w, h);
             renderer->move(j*w, i*h);
             renderer->show();
             AVPlayer *player = new AVPlayer;
             player->setRenderer(renderer);
-            renderer->registerEventFilter(this);
+            player->setPlayerEventFilter(this);
+            player->masterClock()->setClockAuto(false);
+            player->masterClock()->setClockType(AVClock::ExternalClock);
             players.append(player);
         }
     }
@@ -106,11 +130,80 @@ void VideoWall::play(const QString &file)
 {
     if (players.isEmpty())
         return;
+    clock->reset();
+    clock->start();
     foreach (AVPlayer *player, players) {
         player->play(file);
     }
+    timer_id = startTimer(kSyncInterval);
 }
 
+void VideoWall::stop()
+{
+    clock->reset();
+    killTimer(timer_id);
+    foreach (AVPlayer* player, players) {
+        player->stop(); //check playing?
+    }
+}
+
+void VideoWall::openLocalFile()
+{
+    QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
+    if (file.isEmpty())
+        return;
+    stop();
+    foreach (AVPlayer* player, players) {
+        player->load(file);
+    }
+    clock->reset();
+    clock->start();
+    timer_id = startTimer(kSyncInterval);
+    foreach (AVPlayer* player, players) {
+        player->play();
+    }
+}
+
+void VideoWall::openUrl()
+{
+    QString url = QInputDialog::getText(0, tr("Open an url"), tr("Url"));
+    if (url.isEmpty())
+        return;
+    stop();
+    foreach (AVPlayer* player, players) {
+        player->load(url);
+    }
+    clock->reset();
+    clock->start();
+    timer_id = startTimer(kSyncInterval);
+    foreach (AVPlayer* player, players) {
+        player->play();
+    }
+}
+
+void VideoWall::about()
+{
+    QMessageBox::about(0, tr("About QtAV"), "<h3>" + tr("This is a demo for playing and synchronising multiple players") + "</h3>"
+                       + "\n\n"
+                       + aboutQtAV_HTML());
+}
+
+void VideoWall::help()
+{
+    QMessageBox::about(0, tr("Help"),
+                        tr("Command line: %1 [-r rows=3] [-c cols=3] path/of/video\n").arg(qApp->applicationFilePath())
+                       + tr("Drag and drop a file to player\n")
+                       + tr("Shortcut:\n")
+                       + tr("Space: pause/continue\n")
+                       + tr("N: show next frame. Continue the playing by pressing 'Space'\n")
+                       + tr("O: open a file\n")
+                       + tr("P: replay\n")
+                       + tr("S: stop\n")
+                       + tr("M: mute on/off\n")
+                       + tr("C: capture video")
+                       + tr("Up/Down: volume +/-\n")
+                       + tr("->/<-: seek forward/backward\n"));
+}
 
 bool VideoWall::eventFilter(QObject *watched, QEvent *event)
 {
@@ -131,16 +224,18 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
             }
             break;
         case Qt::Key_P:
+            clock->reset();
+            clock->start();
             foreach (AVPlayer* player, players) {
                 player->play();
             }
+            timer_id = startTimer(kSyncInterval);
             break;
         case Qt::Key_S:
-            foreach (AVPlayer* player, players) {
-                player->stop(); //check playing?
-            }
+            stop();
             break;
         case Qt::Key_Space: //check playing?
+            clock->pause(!clock->isActive());
             foreach (AVPlayer* player, players) {
                 player->pause(!player->isPaused());
             }
@@ -176,28 +271,21 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
 
             break;
         case Qt::Key_O:
-        {
-            //TODO: emit a signal so we can use custome dialogs
-            QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
-            if (!file.isEmpty()) {
-                foreach (AVPlayer* player, players) {
-                    qDebug("%p", player);
-                    player->play(file);
-                }
-            }
-        }
+            openLocalFile();
             break;
         case Qt::Key_Left:
             qDebug("<-");
-            foreach (AVPlayer* player, players) {
+            clock->updateExternalClock(clock->value()*1000.0 - 2000.0);
+            /*foreach (AVPlayer* player, players) {
                 player->seekBackward();
-            }
+            }*/
             break;
         case Qt::Key_Right:
             qDebug("->");
-            foreach (AVPlayer* player, players) {
+            clock->updateExternalClock(clock->value()*1000.0 + 2000.0);
+            /*foreach (AVPlayer* player, players) {
                 player->seekForward();
-            }
+            }*/
             break;
         case Qt::Key_M:
             foreach (AVPlayer* player, players) {
@@ -211,8 +299,52 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
         }
         break;
     }
+    case QEvent::ContextMenu: {
+        QContextMenuEvent *e = static_cast<QContextMenuEvent*>(event);
+        if (!menu) {
+            menu = new QMenu();
+            menu->addAction(tr("Open"), this, SLOT(openLocalFile()));
+            menu->addAction(tr("Open Url"), this, SLOT(openUrl()));
+            menu->addSeparator();
+            menu->addAction(tr("About"), this, SLOT(about()));
+            menu->addAction(tr("Help"), this, SLOT(help()));
+            menu->addSeparator();
+            menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
+        }
+        menu->popup(e->globalPos());
+        menu->exec();
+    }
+    case QEvent::DragEnter:
+    case QEvent::DragMove: {
+        QDropEvent *e = static_cast<QDropEvent*>(event);
+        e->acceptProposedAction();
+    }
+        break;
+    case QEvent::Drop: {
+        QDropEvent *e = static_cast<QDropEvent*>(event);
+        QString path = e->mimeData()->urls().first().toLocalFile();
+        stop();
+        play(path);
+        e->acceptProposedAction();
+    }
+        break;
     default:
         return false;
     }
     return true; //false: for text input
+}
+
+void VideoWall::timerEvent(QTimerEvent *e)
+{
+    if (e->timerId() != timer_id) {
+        qDebug("Not clock id");
+        return;
+    }
+    if (!clock->isActive()) {
+        qDebug("clock not running");
+        return;
+    }
+    foreach (AVPlayer *player, players) {
+        player->masterClock()->updateExternalClock(*clock);
+    }
 }

@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/AVPlayer.h>
@@ -24,12 +27,14 @@
 #include <QEvent>
 #include <QtCore/QDir>
 
+#include <QtAV/OSDFilterQPainter.h>
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/AudioThread.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/QtAV_Compat.h>
 #include <QtAV/VideoCapture.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/WidgetRenderer.h>
@@ -37,32 +42,22 @@
 #include <QtAV/AVDemuxThread.h>
 #include <QtAV/EventFilter.h>
 #include <QtAV/VideoCapture.h>
+#include <QtAV/AudioOutput.h>
 #if HAVE_OPENAL
 #include <QtAV/AOOpenAL.h>
 #endif //HAVE_OPENAL
 #if HAVE_PORTAUDIO
 #include <QtAV/AOPortAudio.h>
 #endif //HAVE_PORTAUDIO
-#ifdef __cplusplus
-extern "C"
-{
-#endif //__cplusplus
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#ifdef __cplusplus
-}
-#endif //__cplusplus
 
 namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),loaded(false),capture_dir("capture"),_renderer(0),_audio(0)
   ,event_filter(0),video_capture(0)
+  , osd(0)
 {
-    qDebug("QtAV %s\nCopyright (C) 2012 Wang Bin <wbsecg1@gmail.com>"
-           "\nDistributed under GPLv3 or later"
-           "\nShanghai University, China"
-           , QTAV_VERSION_STR_LONG);
+    qDebug("%s", aboutQtAV().toUtf8().constData());
     /*
      * call stop() before the window(_renderer) closed to stop the waitcondition
      * If close the _renderer widget, the the _renderer may destroy before waking up.
@@ -95,9 +90,9 @@ AVPlayer::AVPlayer(QObject *parent) :
     demuxer_thread->setAudioThread(audio_thread);
     demuxer_thread->setVideoThread(video_thread);
 
-    event_filter = new EventFilter(this);
-
+    setPlayerEventFilter(new EventFilter(this));
     setVideoCapture(new VideoCapture());
+    setOSDFilter(new OSDFilterQPainter());
 }
 
 AVPlayer::~AVPlayer()
@@ -131,8 +126,7 @@ VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
 		if (isPlaying())
 			stop();
         //delete _renderer; //Do not own the ptr
-        _renderer->registerEventFilter(event_filter);
-        _renderer->resizeVideo(_renderer->videoSize()); //IMPORTANT: the swscaler will resize
+        _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
     }
     return old;
 }
@@ -158,11 +152,25 @@ bool AVPlayer::isMute() const
     return !_audio || _audio->isMute();
 }
 
-//TODO: remove?
-void AVPlayer::resizeVideo(const QSize &size)
+//setPlayerEventFilter(0) will remove the previous event filter
+void AVPlayer::setPlayerEventFilter(QObject *obj)
 {
-    _renderer->resizeVideo(size); //TODO: deprecate
-    //video_dec->resizeVideo(size);
+    if (event_filter) {
+        qApp->removeEventFilter(event_filter);
+        delete event_filter;
+        event_filter = 0; //the default event filter's parent is this, so AVPlayer will try to delete event_filter
+    }
+    if (obj) {
+        event_filter = obj;
+        qApp->installEventFilter(event_filter);
+    }
+}
+
+//TODO: remove?
+void AVPlayer::resizeRenderer(const QSize &size)
+{
+    _renderer->resizeRenderer(size); //TODO: deprecate
+    //video_dec->resizeVideoFrame(size);
 }
 /*
  * loaded state is the state of current setted file.
@@ -224,6 +232,19 @@ bool AVPlayer::captureVideo()
     if (!video_capture->isAsync())
         pause(pause_old);
     return true;
+}
+
+OSDFilter* AVPlayer::setOSDFilter(OSDFilter *osd)
+{
+    OSDFilter *old = osd;
+    this->osd = osd;
+    video_thread->setOSDFilter(osd);
+    return old;
+}
+
+OSDFilter* AVPlayer::osdFilter()
+{
+    return osd;
 }
 
 bool AVPlayer::play(const QString& path)
@@ -308,6 +329,11 @@ bool AVPlayer::load()
     return loaded;
 }
 
+qreal AVPlayer::duration() const
+{
+    return qreal(demuxer.duration())/qreal(AV_TIME_BASE);
+}
+
 //FIXME: why no demuxer will not get an eof if replaying by seek(0)?
 void AVPlayer::play()
 {
@@ -318,15 +344,20 @@ void AVPlayer::play()
      * TODO: force load unseekable stream? avio.seekable. currently you
      * must setFile() agian to reload an unseekable stream
      */
-    if (!isLoaded()) { //if (!isLoaded() && !load())
+    //FIXME: seek(0) for audio without video crashes, why?
+    if (!isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
         if (!load())
             return;
     } else {
+        qDebug("seek(0)");
         demuxer.seek(0); //FIXME: now assume it is seekable. for unseekable, setFile() again
     }
     Q_ASSERT(clock != 0);
     clock->reset();
 
+    if (osd) {
+        osd->setTotalTime(duration());
+    }
     if (aCodecCtx) {
         qDebug("Starting audio thread...");
         audio_thread->start(QThread::HighestPriority);
@@ -386,11 +417,13 @@ void AVPlayer::seek(qreal pos)
 void AVPlayer::seekForward()
 {
     demuxer_thread->seekForward();
+    qDebug("seek %f%%", clock->value()/duration()*100.0);
 }
 
 void AVPlayer::seekBackward()
 {
     demuxer_thread->seekBackward();
+    qDebug("seek %f%%", clock->value()/duration()*100.0);
 }
 
 void AVPlayer::updateClock(qint64 msecs)

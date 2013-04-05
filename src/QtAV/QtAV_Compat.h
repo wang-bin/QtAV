@@ -3,18 +3,21 @@
 	solve the version problem and diffirent api in FFmpeg and libav
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
+*   This file is part of QtAV
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
 
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 #ifndef QTAV_COMPAT_H
 #define QTAV_COMPAT_H
@@ -22,7 +25,8 @@
 #ifdef __cplusplus
 extern "C"
 {
-#endif //__cplusplus
+/*UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS*/
+#endif /*__cplusplus*/
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libavcodec/avcodec.h>
@@ -31,11 +35,11 @@ extern "C"
 #include <libavutil/opt.h>
 #ifdef __cplusplus
 }
-#endif //__cplusplus
+#endif /*__cplusplus*/
 
 #include "QtAV_Global.h"
 /*!
- * Guide to uniform the api for different FFMpeg version(or other libraries)
+ * Guide to uniform the api for different FFmpeg version(or other libraries)
  * We use the existing old api to simulater .
  * 1. The old version does not have this api: Just add it.
  * 2. The old version has similar api: Try using macro.
@@ -61,16 +65,17 @@ extern "C"
 
 #ifndef AV_VERSION_INT
 #define AV_VERSION_INT(a, b, c) (a<<16 | b<<8 | c)
-#endif //AV_VERSION_INT
+#endif /*AV_VERSION_INT*/
 
 void ffmpeg_version_print();
 
-//TODO: libav
-//avutil: error.h
-#if !defined(av_err2str) || (GCC_VERSION_AT_LEAST(4, 7, 2) && __cplusplus)
+/*TODO: libav
+avutil: error.h
+*/
+#if defined(Q_CC_MSVC) || !defined(av_err2str) || (GCC_VERSION_AT_LEAST(4, 7, 2) && __cplusplus)
 #ifdef av_err2str
 #undef av_err2str
-//#define av_make_error_string qtav_make_error_string
+/*#define av_make_error_string qtav_make_error_string*/
 #else
 /**
  * Fill the provided buffer with a string containing an error string
@@ -87,7 +92,7 @@ static av_always_inline char *av_make_error_string(char *errbuf, size_t errbuf_s
 	av_strerror(errnum, errbuf, errbuf_size);
 	return errbuf;
 }
-#endif //av_err2str
+#endif /*av_err2str*/
 
 #define AV_ERROR_MAX_STRING_SIZE 64
 av_always_inline char* av_err2str(int errnum)
@@ -101,12 +106,12 @@ av_always_inline char* av_err2str(int errnum)
  * Convenience macro, the return value should be used only directly in
  * function arguments but never stand-alone.
  */
-//GCC: taking address of temporary array
+/*GCC: taking address of temporary array*/
 /*
 #define av_err2str(errnum) \
     av_make_error_string((char[AV_ERROR_MAX_STRING_SIZE]){0}, AV_ERROR_MAX_STRING_SIZE, errnum)
 */
-#endif //!defined(av_err2str) || GCC_VERSION_AT_LEAST(4, 7, 2)
+#endif /*!defined(av_err2str) || GCC_VERSION_AT_LEAST(4, 7, 2)*/
 
 #if (LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52,23,0))
 #define avcodec_decode_audio3(avctx, samples, frame_size_ptr, avpkt) \

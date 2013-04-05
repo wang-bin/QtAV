@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/AVDemuxThread.h>
@@ -27,12 +30,14 @@
 namespace QtAV {
 
 AVDemuxThread::AVDemuxThread(QObject *parent) :
-    QThread(parent),paused(false),end(false),demuxer(0),audio_thread(0),video_thread(0)
+    QThread(parent),paused(false),seeking(false),end(false)
+    ,demuxer(0),audio_thread(0),video_thread(0)
 {
 }
 
 AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
-    QThread(parent),end(false),audio_thread(0),video_thread(0)
+    QThread(parent),paused(false),seeking(false),end(false)
+    ,audio_thread(0),video_thread(0)
 {
     setDemuxer(dmx);
 }
@@ -65,15 +70,12 @@ void AVDemuxThread::setVideoThread(AVThread *thread)
 
 void AVDemuxThread::seek(qreal pos)
 {
-    //demux thread wait for the seeking end
-    if (!buffer_mutex.tryLock()) {
-        buffer_mutex.unlock(); //may be still blocking in demux thread
-        buffer_mutex.lock();
-    }
+    seeking = true;
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
     demuxer->seek(pos);
-    buffer_mutex.unlock();
+    seeking = false;
+    seek_cond.wakeAll();
     if (isPaused()) {
         pause(false);
         video_thread->pause(false);
@@ -87,15 +89,12 @@ void AVDemuxThread::seek(qreal pos)
 
 void AVDemuxThread::seekForward()
 {
-    //demux thread wait for the seeking end
-    if (!buffer_mutex.tryLock()) {
-        buffer_mutex.unlock(); //may be still blocking in demux thread
-        buffer_mutex.lock();
-    }
+    seeking = true;
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
     demuxer->seekForward();
-    buffer_mutex.unlock();
+    seeking = false;
+    seek_cond.wakeAll();
     if (isPaused()) {
         pause(false);
         video_thread->pause(false);
@@ -109,15 +108,12 @@ void AVDemuxThread::seekForward()
 
 void AVDemuxThread::seekBackward()
 {
-    //demux thread wait for the seeking end
-    if (!buffer_mutex.tryLock()) {
-        buffer_mutex.unlock(); //may be still blocking in demux thread
-        buffer_mutex.lock();
-    }
+    seeking = true;
     audio_thread->packetQueue()->clear();
     video_thread->packetQueue()->clear();
     demuxer->seekBackward();
-    buffer_mutex.unlock();
+    seeking = false;
+    seek_cond.wakeAll();
     if (isPaused()) {
         pause(false);
         video_thread->pause(false);
@@ -182,6 +178,12 @@ void AVDemuxThread::run()
             continue; //the queue is empty and will block
         QMutexLocker locker(&buffer_mutex);
         Q_UNUSED(locker);
+        if (seeking) {
+            qDebug("Demuxer is seeking... wait for seek end");
+            if (!seek_cond.wait(&buffer_mutex, 1000)) { //will return the same state(i.e. lock)
+                qWarning("seek timed out");
+            }
+        }
         if (!demuxer->readFrame()) {
             continue;
         }

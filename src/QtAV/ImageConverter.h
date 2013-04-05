@@ -2,18 +2,21 @@
     ImageConverter: Base class for image resizing & color model convertion
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
     
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 
@@ -21,15 +24,21 @@
 #define QTAV_IMAGECONVERTER_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtAV/FactoryDefine.h>
 
 namespace QtAV {
 
+typedef int ImageConverterId;
+class ImageConverter;
+FACTORY_DECLARE(ImageConverter)
+
 class ImageConverterPrivate;
-class Q_EXPORT ImageConverter
+class Q_EXPORT ImageConverter //export is not needed
 {
     DPTR_DECLARE_PRIVATE(ImageConverter)
 public:
     ImageConverter();
+    virtual ~ImageConverter();
 
     QByteArray outData() const;
     void setInSize(int width, int height);

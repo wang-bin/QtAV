@@ -2,33 +2,31 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/VideoDecoder.h>
 #include <private/AVDecoder_p.h>
-#include <QtAV/ImageConverterFF.h>
-#include <QtAV/ImageConverterIPP.h>
+#include <QtAV/ImageConverterTypes.h>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QSize>
 
-#if CONFIG_EZX
-#define PIX_FMT PIX_FMT_BGR565
-#else
 #define PIX_FMT PIX_FMT_RGB32 //PIX_FMT_YUV420P
-#endif //CONFIG_EZX
 
 namespace QtAV {
 
@@ -37,8 +35,8 @@ class VideoDecoderPrivate : public AVDecoderPrivate
 public:
     VideoDecoderPrivate():width(0),height(0)
     {
-        conv = new ImageConverterFF(); //TODO: set in AVPlayer
-        conv->setOutFormat(PIX_FMT_RGB32);
+        conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
+        conv->setOutFormat(PIX_FMT);
     }
     ~VideoDecoderPrivate() {
         if (conv) {
@@ -86,7 +84,7 @@ bool VideoDecoder::decode(const QByteArray &encoded)
             , d.codec_ctx->width, d.codec_ctx->height);
         if (!d.codec_ctx->width || !d.codec_ctx->height)
             return false;
-        resizeVideo(d.codec_ctx->width, d.codec_ctx->height);
+        resizeVideoFrame(d.codec_ctx->width, d.codec_ctx->height);
     }
     //If not YUV420P or ImageConverter supported format pair, convert to YUV420P first. or directly convert to RGB?(no hwa)
     //TODO: move convertion out. decoder only do some decoding
@@ -97,12 +95,12 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     return true;
 }
 
-void VideoDecoder::resizeVideo(const QSize &size)
+void VideoDecoder::resizeVideoFrame(const QSize &size)
 {
-    resizeVideo(size.width(), size.height());
+    resizeVideoFrame(size.width(), size.height());
 }
 
-void VideoDecoder::resizeVideo(int width, int height)
+void VideoDecoder::resizeVideoFrame(int width, int height)
 {
     if (width == 0 || height == 0)
         return;

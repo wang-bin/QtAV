@@ -1,26 +1,50 @@
 /******************************************************************************
-    ImageConverterFF: Image resizing & color model convertion using FFMpeg swscale
+    ImageConverterFF: Image resizing & color model convertion using FFmpeg swscale
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/ImageConverterFF.h>
+#include <QtAV/ImageConverter.h>
 #include <private/ImageConverter_p.h>
 #include <QtAV/QtAV_Compat.h>
+#include "prepost.h"
 
 namespace QtAV {
+
+class ImageConverterFFPrivate;
+class ImageConverterFF : public ImageConverter //Q_EXPORT is not needed
+{
+    DPTR_DECLARE_PRIVATE(ImageConverterFF)
+public:
+    ImageConverterFF();
+    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
+protected:
+    virtual bool prepareData(); //Allocate memory for out data
+};
+
+
+ImageConverterId ImageConverterId_FF = 0;
+FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
+
+void RegisterImageConverterFF_Man()
+{
+    FACTORY_REGISTER_ID_MAN(ImageConverter, FF, "FFmpeg")
+}
 
 class ImageConverterFFPrivate : public ImageConverterPrivate
 {
@@ -51,7 +75,7 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
             return false;
         setOutSize(d.w_in, d.h_in);
     }
-
+//TODO: move those code to prepare()
     d.sws_ctx = sws_getCachedContext(d.sws_ctx
             , d.w_in, d.h_in, (PixelFormat)d.fmt_in
             , d.w_out, d.h_out, (PixelFormat)d.fmt_out
@@ -127,6 +151,7 @@ bool ImageConverterFF::prepareData()
             d.w_out,
             d.h_out
             );
+    return true;
 }
 
 } //namespace QtAV

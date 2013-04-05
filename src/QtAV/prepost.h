@@ -1,19 +1,20 @@
 /******************************************************************************
     prepost.h: Add function calls before/after main()
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
-    
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #ifndef PREPOST_H
@@ -22,6 +23,40 @@
 /*Avoid a compiler warning when the arguments is empty,
  *e.g. PRE_FUNC_ADD(foo). The right one is PRE_FUNC_ADD(f,)*/
 
+/*
+ * TODO:
+ *  boost::call_once
+ *  http://stackoverflow.com/questions/4173384/how-to-make-sure-a-function-is-only-called-once
+ *  http://publib.boulder.ibm.com/infocenter/lnxpcomp/v8v101/index.jsp?topic=%2Fcom.ibm.xlcpp8l.doc%2Flanguage%2Fref%2Fco.htm
+ */
+#ifdef __cplusplus
+/* for C++, we use non-local static object to call the functions automatically before main().
+ * anonymous namespace: avoid name confliction('static' keyword is not necessary)
+ *
+ */
+#define PRE_FUNC_ADD(f, .../*args*/) \
+    namespace { \
+        class initializer_for_##f { \
+        public: \
+            initializer_for_##f() { \
+                f(__VA_ARGS__); \
+            } \
+        }; \
+        static initializer_for_##f __sInit_##f; \
+    }
+
+#define POST_FUNC_ADD(f, .../*args*/) \
+    namespace { \
+        class deinitializer_for_##f { \
+        public: \
+            ~deinitializer_for_##f() { \
+                f(__VA_ARGS__); \
+            } \
+        }; \
+        static deinitializer_for_##f __sDeinit_##f; \
+    }
+
+#else /*for C. ! defined __cplusplus*/
 /*
  *http://buliedian.iteye.com/blog/1069072
  *http://research.microsoft.com/en-us/um/redmond/projects/invisible/src/crt/md/ppc/_crt.c.htm
@@ -62,5 +97,5 @@ typedef int (__cdecl *_PF)(); /* why not void? */
     static void atexit_##f() { atexit(f); } \
     PRE_FUNC_ADD(atexit_##f)
 #endif
-
+#endif //__cplusplus
 #endif // PREPOST_H

@@ -2,52 +2,55 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/ImageRenderer.h>
-#include <private/ImageRenderer_p.h>
+#include <QtAV/QPainterRenderer.h>
+#include <private/QPainterRenderer_p.h>
 
 namespace QtAV {
 
-ImageRenderer::ImageRenderer()
-    :VideoRenderer(*new ImageRendererPrivate())
+QPainterRenderer::QPainterRenderer()
+    :VideoRenderer(*new QPainterRendererPrivate())
 {
 }
 
-ImageRenderer::ImageRenderer(ImageRendererPrivate &d)
+QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
     :VideoRenderer(d)
 {
 }
 
-ImageRenderer::~ImageRenderer()
+QPainterRenderer::~QPainterRenderer()
 {
 }
-
-QImage ImageRenderer::currentFrameImage() const
+/*
+QImage QPainterRenderer::currentFrameImage() const
 {
     return d_func().image;
 }
-
+*/
 //FIXME: why crash if QImage use widget size?
-void ImageRenderer::convertData(const QByteArray &data)
+void QPainterRenderer::convertData(const QByteArray &data)
 {
-    DPTR_D(ImageRenderer);
+    DPTR_D(QPainterRenderer);
     //int ss = 4*d.src_width*d.src_height*sizeof(char);
     //if (ss != data.size())
     //    qDebug("src size=%d, data size=%d", ss, data.size());
-    //if (d.src_width != d.width || d.src_height != d.height)
+    //if (d.src_width != d.renderer_width || d.src_height != d.renderer_height)
     //    return;
     /*
      * QImage constructed from memory do not deep copy the data, data should be available throughout
@@ -59,43 +62,26 @@ void ImageRenderer::convertData(const QByteArray &data)
      * But if we use the fixed original frame size, the data address and size always the same, so we can
      * avoid the lock and use the ref data directly and safely
      */
-    if (!d.scale_in_qt) {
+    //if (!d.scale_in_renderer) {
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
-        d.img_mutex.lock();
-        d.data = data;
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+        d.data = data; //TODO: why need this line? Then use data.data() is OK? If use d.data.data() it will eat more cpu, why?
         //qDebug("data address = %p, %p", data.data(), d.data.data());
     #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-        d.image = QImage((uchar*)d.data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
-    #else
-        d.image = QImage((uchar*)d.data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
-    #endif
-        d.img_mutex.unlock();
-    } else {
-        //qDebug("data address = %p", data.data());
-#if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
         d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
+    #else
+        d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
+    #endif
+    //} else {
+        //qDebug("data address = %p", data.data());
+        //Format_RGB32 is fast. see document
+#if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
+        //d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
 #else
     d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
 #endif
-    }
-}
-
-
-void ImageRenderer::setPreview(const QImage &preivew)
-{
-    DPTR_D(ImageRenderer);
-    d.preview = preivew;
-    d.image = preivew;
-}
-
-QImage ImageRenderer::previewImage() const
-{
-    return d_func().preview;
-}
-
-QImage ImageRenderer::currentImage() const
-{
-    return d_func().image;
+    //}
 }
 
 } //namespace QtAV

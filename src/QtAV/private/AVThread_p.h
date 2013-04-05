@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #ifndef QTAV_AVTHREAD_P_H
@@ -29,6 +32,8 @@
 
 namespace QtAV {
 
+const double kSyncThreshold = 0.005; // 5 ms
+
 class AVDecoder;
 class Packet;
 class AVClock;
@@ -36,7 +41,7 @@ class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
     AVThreadPrivate():paused(false),demux_end(false),stop(false),clock(0)
-      ,dec(0),writer(0) {
+      ,dec(0),writer(0),delay(0) {
     }
     //DO NOT delete dec and writer. We do not own them
     virtual ~AVThreadPrivate() {}
@@ -50,6 +55,7 @@ public:
     AVOutput *writer;
     QMutex mutex;
     QWaitCondition cond; //pause
+    qreal delay;
 };
 
 } //namespace QtAV

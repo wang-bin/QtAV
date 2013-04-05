@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/AudioDecoder.h>
@@ -71,8 +74,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
             decoded_data[i] = (data[i] - 0x7F) * kInt8_inv;
             decoded_data[samples_with_channels - i] = (data[samples_with_channels - i] - 0x7F) * kInt8_inv;
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_S16:
     {
         int16_t *data = (int16_t*)*d.frame->data;
@@ -80,8 +83,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
             decoded_data[i] = data[i] * kInt16_inv;
             decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt16_inv;
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_S32:
     {
         int32_t *data = (int32_t*)*d.frame->data;
@@ -89,13 +92,11 @@ bool AudioDecoder::decode(const QByteArray &encoded)
             decoded_data[i] = data[i] * kInt32_inv;
             decoded_data[samples_with_channels - i] = data[samples_with_channels - i] * kInt32_inv;
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_FLT:
-    {
         memcpy(decoded_data, *d.frame->data, d.decoded.size());
         break;
-    }
     case AV_SAMPLE_FMT_DBL:
     {
         double *data = (double*)*d.frame->data;
@@ -103,8 +104,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
             decoded_data[i] = data[i];
             decoded_data[samples_with_channels - i] = data[samples_with_channels - i];
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_U8P:
     {
         uint8_t **data = (uint8_t**)d.frame->extended_data;
@@ -113,8 +114,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = (data[ch][i] - 0x7F) * kInt8_inv;
             }
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_S16P:
     {
         uint16_t **data = (uint16_t**)d.frame->extended_data;
@@ -123,8 +124,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = data[ch][i] * kInt16_inv;
             }
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_S32P:
     {
         uint32_t **data = (uint32_t**)d.frame->extended_data;
@@ -133,8 +134,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = data[ch][i] * kInt32_inv;
             }
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_FLTP:
     {
         float **data = (float**)d.frame->extended_data;
@@ -143,8 +144,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = data[ch][i];
             }
         }
-        break;
     }
+        break;
     case AV_SAMPLE_FMT_DBLP:
     {
         double **data = (double**)d.frame->extended_data;
@@ -153,8 +154,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
                 *decoded_data++ = data[ch][i];
             }
         }
-        break;
     }
+        break;
     default:
         static bool sWarn_a_fmt = true; //FIXME: no warning when replay. warn only once
         if (sWarn_a_fmt) {

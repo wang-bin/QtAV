@@ -1,6 +1,8 @@
 /******************************************************************************
-    ImageConverterIPP: Image resizing & color model convertion using Intel IPP
+    this file is part of QtAV examples
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,22 +18,29 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef QTAV_IMAGECONVERTERIPP_H
-#define QTAV_IMAGECONVERTERIPP_H
+#ifndef QTAV_VIDEOPLAYER_H
+#define QTAV_VIDEOPLAYER_H
 
-#include <QtAV/ImageConverter.h>
+#include <QtAV/AVPlayer.h>
+#include <QtAV/GraphicsItemRenderer.h>
+#include <QWidget>
 
-namespace QtAV {
-
-class ImageConverterIPPPrivate;
-class Q_EXPORT ImageConverterIPP : public ImageConverter
+class VideoPlayer : public QWidget
 {
-    DPTR_DECLARE_PRIVATE(ImageConverterIPP)
+    Q_OBJECT
+
 public:
-    ImageConverterIPP();
-    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
-protected:
-    virtual bool prepareData(); //Allocate memory for out data
+    VideoPlayer(QWidget *parent = 0);
+    ~VideoPlayer();
+
+    QSize sizeHint() const { return QSize(720, 640); }
+
+private slots:
+    void rotateVideo(int angle);
+
+private:
+    QtAV::AVPlayer mediaPlayer;
+    QtAV::GraphicsItemRenderer *videoItem;
 };
-} //namespace QtAV
-#endif // QTAV_IMAGECONVERTERIPP_H
+
+#endif //QTAV_VIDEOPLAYER_H

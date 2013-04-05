@@ -1,20 +1,60 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
 #include <QtAV/QtAV_Compat.h>
+#include "QtAV/version.h"
 #include "prepost.h"
 
 void ffmpeg_version_print()
 {
-    printf("FFMpeg/Libav version:\n"
-           "libavcodec-%d.%d.%d\n"
-           "libavformat-%d.%d.%d\n"
-//	       "libavdevice-%d.%d.%d\n"
-           "libavutil-%d.%d.%d\n"
-           "libswscal-%d.%d.%d\n"
-           , LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR, LIBAVCODEC_VERSION_MICRO//,avcodec_version()
-           , LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVFORMAT_VERSION_MICRO //avformat_version()
-//	       ,avdevice_version()
-           , LIBAVUTIL_VERSION_MAJOR, LIBAVUTIL_VERSION_MINOR, LIBAVUTIL_VERSION_MICRO //avutil_version()
-           , LIBSWSCALE_VERSION_MAJOR, LIBSWSCALE_VERSION_MINOR, LIBSWSCALE_VERSION_MICRO
-           );
+    struct _component {
+        const char* lib;
+        unsigned build_version;
+        unsigned rt_version;
+    } components[] = {
+        { "avcodec", LIBAVCODEC_VERSION_INT, avcodec_version()},
+        { "avformat", LIBAVFORMAT_VERSION_INT, avformat_version()},
+        { "avutil", LIBAVUTIL_VERSION_INT, avutil_version()},
+        { "swscale", LIBSWSCALE_VERSION_INT, swscale_version()},
+        { 0, 0, 0}
+    };
+    for (int i = 0; components[i].lib != 0; ++i) {
+        printf("Build with lib%s-%u.%u.%u\n"
+               , components[i].lib
+               , QTAV_VERSION_MAJOR(components[i].build_version)
+               , QTAV_VERSION_MINOR(components[i].build_version)
+               , QTAV_VERSION_PATCH(components[i].build_version)
+               );
+        unsigned rt_version = components[i].rt_version;
+        if (components[i].build_version != rt_version) {
+            if (LIBAVCODEC_VERSION_INT != rt_version) {
+                fprintf(stderr, "Warning: %s runtime version %u.%u.%u mismatch!\n"
+                        , components[i].lib
+                        , QTAV_VERSION_MAJOR(rt_version)
+                        , QTAV_VERSION_MINOR(rt_version)
+                        , QTAV_VERSION_PATCH(rt_version)
+                        );
+            }
+        }
+    }
     fflush(0);
 }
 

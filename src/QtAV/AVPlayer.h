@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #ifndef QTAV_AVPLAYER_H
@@ -32,8 +35,8 @@ class VideoDecoder;
 class VideoRenderer;
 class AVClock;
 class AVDemuxThread;
-class EventFilter;
 class VideoCapture;
+class OSDFilter;
 class Q_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -48,6 +51,7 @@ public:
     bool load(const QString& path);
     bool load();
     bool isLoaded() const;
+    qreal duration() const; //This function may be removed in the future.
     /*
      * default: [fmt: PNG, dir: capture, name: basename]
      * replace the existing capture; return the replaced one
@@ -58,6 +62,8 @@ public:
     void setCaptureName(const QString& name);//TODO: remove. base name
     void setCaptureSaveDir(const QString& dir); //TODO: remove
     bool captureVideo();
+    OSDFilter* setOSDFilter(OSDFilter* osd);
+    OSDFilter* osdFilter();
     bool play(const QString& path);
 	bool isPlaying() const;
     bool isPaused() const;
@@ -67,6 +73,8 @@ public:
     AudioOutput* audio();
     void setMute(bool mute);
     bool isMute() const;
+    /*only 1 event filter is available. the previous one will be removed. setPlayerEventFilter(0) will remove the event filter*/
+    void setPlayerEventFilter(QObject *obj);
 
 signals:
     void started();
@@ -83,7 +91,7 @@ public slots:
     void updateClock(qint64 msecs); //update AVClock's external clock
 
 protected slots:
-    void resizeVideo(const QSize& size);
+    void resizeRenderer(const QSize& size);
 
 protected:
     bool loaded;
@@ -104,9 +112,9 @@ protected:
     VideoThread *video_thread;
 
     //tODO: (un)register api
-    friend class EventFilter;
-    EventFilter *event_filter;
+    QObject *event_filter;
     VideoCapture *video_capture;
+    OSDFilter *osd;
 };
 
 } //namespace QtAV

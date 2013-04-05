@@ -1,0 +1,47 @@
+__init_VideoRendererWidget id=0
+instance = 00000000
+Singleton 00697B88 created...
+instance = 00697B88
+__init_VideoRendererGLWidget id=1
+instance = 00697B88
+instance = 00697B88
+__init_VideoRendererGDI id=2
+instance = 00697B88
+instance = 00697B88
+__init_VideoRendererDirect2D id=3
+instance = 00697B88
+instance = 00697B88
+__init_ImageConverterIPP id=1
+instance = 00000000
+Singleton 00698E68 created...
+instance = 00698E68
+__init_ImageConverterFF id=0
+instance = 00698E68
+instance = 00698E68
+Build with libavcodec-54.86.100
+Build with libavformat-54.59.106
+Build with libavutil-52.13.100
+Build with libswscale-2.1.103
+Warning: avutil runtime version 52.19.100 mismatch!
+Warning: swscale runtime version 2.2.100 mismatch!
+Debug: vo: d2d
+instance = 00697B88
+Debug: Resize bitmap to 0 x 0
+Debug: QtAV 1.1.10(Mar 14 2013, 12:03:58)
+基于 Qt 和 FFmpeg 的音视频播放库.
+Distributed under the terms of LGPLv2.1 or later.
+Copyright (C) 2012-2013 Wang Bin (aka. Lucas Wang) wbsecg1@gmail.com
+上海大学，中国上海
+https://github.com/wang-bin/QtAV
+https://sourceforge.net/projects/qtav
+Debug: audio device 2: MME: Microsoft 声音映射器 - Output
+Debug: audio device 3: MME: 扬声器/耳机 (SigmaTel High Defi
+Debug: audio device 4: MME: 数字输出设备 (SPDIF 输出) (Sigm
+Debug: audio device: 扬声器/耳机 (SigmaTel High Defi
+instance = 00698E68
+Debug: setCapture 0x1e02c50
+Debug: setOSDFilter 0x0
+Debug: loading: e:/video/XTM.mkv ...
+Debug: all closed and reseted
+Debug: avformat_open_input: format_context:'0x1e05380', url:'e:/video/XTM.mkv'...
+Debug: avformat_open_input: url:'e:/video/XTM.mkv' ret:0

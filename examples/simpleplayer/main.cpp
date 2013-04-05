@@ -2,6 +2,8 @@
     Simple Player:  this file is part of QtAV examples
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
+*   This file is part of QtAV
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -17,25 +19,24 @@
 ******************************************************************************/
 #include <cstdio>
 #include <cstdlib>
-#if CONFIG_EZX
-#include <ZApplication.h>
-#else
-#include <qapplication.h>
-typedef QApplication ZApplication;
-#endif //CONFIG_EZX
+#include <QApplication>
 
-#include <QGraphicsView>
-#include <QGraphicsScene>
+#include <QtCore/QDir>
+#include <QtCore/QLocale>
+#include <QtCore/QTranslator>
 #include <QMessageBox>
-#include <QtOpenGL/QGLWidget>
 
 #include <QtAV/AVPlayer.h>
+#include <QtAV/VideoRendererTypes.h>
 #include <QtAV/WidgetRenderer.h>
-#include <QtAV/GraphicsItemRenderer.h>
-//#include <QtAV/GLWidgetRenderer.h>
+#include <QtAV/GLWidgetRenderer.h>
+#include <QtAV/Direct2DRenderer.h>
+#include <QtAV/GDIRenderer.h>
+#include <QtAV/XVRenderer.h>
+
 using namespace QtAV;
 
-FILE *log = 0;
+static FILE *sLogfile = 0; //'log' is a function in msvc math.h
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #define qInstallMessageHandler qInstallMsgHandler
@@ -49,83 +50,125 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 	 switch (type) {
      case QtDebugMsg:
 		 fprintf(stdout, "Debug: %s\n", msg);
-		 if (log)
-			fprintf(log, "Debug: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Debug: %s\n", msg);
          break;
      case QtWarningMsg:
 		 fprintf(stdout, "Warning: %s\n", msg);
-		 if (log)
-			fprintf(log, "Warning: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Warning: %s\n", msg);
 		 break;
      case QtCriticalMsg:
 		 fprintf(stderr, "Critical: %s\n", msg);
-		 if (log)
-			fprintf(log, "Critical: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Critical: %s\n", msg);
 		 break;
      case QtFatalMsg:
 		 fprintf(stderr, "Fatal: %s\n", msg);
-		 if (log)
-			fprintf(log, "Fatal: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Fatal: %s\n", msg);
 		 abort();
      }
      fflush(0);
- }
+}
 
 int main(int argc, char *argv[])
 {
-	ZApplication a(argc, argv);
+    QApplication a(argc, argv);
+    if (a.arguments().contains("-h") || a.arguments().contains("--help")) {
+        qDebug("Usage: %s [-vo qt/gl/d2d/gdi] [url/path]filename", a.applicationFilePath().section(QDir::separator(), -1).toUtf8().constData());
+        qDebug("\n%s", aboutQtAV().toUtf8().constData());
+        return 0;
+    }
+    QTranslator ts;
+    if (ts.load(qApp->applicationDirPath() + "/i18n/QtAV_" + QLocale::system().name())) {
+        a.installTranslator(&ts);
+    } else {
+        if (ts.load(":/i18n/QtAV_" + QLocale::system().name()))
+            a.installTranslator(&ts);
+    }
+    QTranslator qtts;
+    if (qtts.load("qt_" + QLocale::system().name()))
+        a.installTranslator(&qtts);
 
-    log = fopen("log.txt", "w+");
-    if (!log) {
+    sLogfile = fopen(QString(qApp->applicationDirPath() + "/log.txt").toUtf8().constData(), "w+");
+    if (!sLogfile) {
         qWarning("Failed to open log file");
-        log = stdout;
+        sLogfile = stdout;
     }
     qInstallMessageHandler(Logger);
-#if 0
-    QGraphicsScene s;
-    s.setSceneRect(0, 0, 800, 600);
-    QGraphicsView w(&s);
-	w.showMaximized();
 
-#ifndef QT_NO_OPENGL
-    QGLWidget *glw = new QGLWidget(QGLFormat(QGL::SampleBuffers));
-    glw->setAutoFillBackground(false);
-    w.setCacheMode(QGraphicsView::CacheNone);
-    w.setViewport(glw);
-#else
-    w.setCacheMode(QGraphicsView::CacheBackground);
-#endif
-	GraphicsItemRenderer renderer;
-    renderer.resizeVideo(800, 600);
-    s.addItem(&renderer);
-#else
-    WidgetRenderer renderer;
-    renderer.show();
-    renderer.setWindowTitle("QtAV " QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
-    //renderer.resize(800, 600);
-#endif
-    QString fileName;
-	if (argc > 1)
-		fileName = a.arguments().at(1);
-	else
-        QMessageBox::warning(0, "Usage", QString("Command line: %1 path/of/video\nPress \"O\" to open a file").arg(qApp->arguments().at(0))
-                + "Shortcut:\n"
-                "Space: pause/continue\n"
-                "F: fullscreen on/off\n"
-                "T: stays on top on/off\n"
-                "N: show next frame. Continue the playing by pressing 'Space'\n"
-                "O: open a file\n"
-                "P: replay\n"
-                "S: stop\n"
-                "M: mute on/off\n"
-                "Up/Down: volume +/-\n"
-                "->/<-: seek forward/backward\n");
-
-	AVPlayer player;
-	player.setRenderer(&renderer);
-    if (!fileName.isEmpty()) {
-        player.play(fileName);
+    QString vo;
+    int idx = a.arguments().indexOf("-vo");
+    if (idx > 0) {
+        vo = a.arguments().at(idx+1);
+    } else {
+        QString exe(a.arguments().at(0));
+        qDebug("exe: %s", exe.toUtf8().constData());
+        int i = exe.lastIndexOf('-');
+        if (i > 0) {
+            vo = exe.mid(i+1, exe.indexOf('.') - i - 1);
+        }
+    }
+    qDebug("vo: %s", vo.toUtf8().constData());
+    QString media_file;
+    if (argc > idx + 2 ) { //>-1+2=1
+        media_file = a.arguments().last();
+    }
+    vo = vo.toLower();
+    if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv")
+        vo = "qpainter";
+    QString title = "QtAV " + vo + " " + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
+    VideoRenderer *renderer = 0;
+    if (vo == "gl") {
+        GLWidgetRenderer *r = static_cast<GLWidgetRenderer*>(VideoRendererFactory::create(VideoRendererId_GLWidget));
+        if (r) {
+            r->show();
+            r->setWindowTitle(title);
+        }
+        renderer = r;
+    } else if (vo == "d2d") {
+        Direct2DRenderer *r = static_cast<Direct2DRenderer*>(VideoRendererFactory::create(VideoRendererId_Direct2D));
+        if (r) { //may not support
+            r->show();
+            r->setWindowTitle(title);
+        }
+        renderer = r;
+    } else if (vo == "gdi") {
+        GDIRenderer *r = static_cast<GDIRenderer*>(VideoRendererFactory::create(VideoRendererId_GDI));
+        if (r) {
+            r->show();
+            r->setWindowTitle(title);
+        }
+        renderer = r;
+    } else if (vo == "xv") {
+        XVRenderer *r = static_cast<XVRenderer*>(VideoRendererFactory::create(VideoRendererId_XV));
+        if (r) {
+            r->show();
+            r->setWindowTitle(title);
+        }
+        renderer = r;
+    }else {
+        WidgetRenderer *r = static_cast<WidgetRenderer*>(VideoRendererFactory::create(VideoRendererId_Widget));
+        if (r) {
+            r->show();
+            r->setWindowTitle(title);
+        }
+        renderer = r;
+    }
+    if (!renderer) {
+        QMessageBox::critical(0, "QtAV", "vo '" + vo + "' not supported");
+        return 1;
+    }
+    //renderer->scaleInRenderer(false);
+    renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
+    AVPlayer player;
+    player.setRenderer(renderer);
+    if (!media_file.isEmpty()) {
+        player.play(media_file);
     }
 
-    return a.exec();
+    int ret = a.exec();
+    delete renderer;
+    return ret;
 }

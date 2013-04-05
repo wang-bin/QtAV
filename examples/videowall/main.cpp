@@ -2,6 +2,8 @@
     VideoWall:  this file is part of QtAV examples
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
+*   This file is part of QtAV
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -37,21 +39,12 @@ int main(int argc, char *argv[])
     wall.setCols(c);
     wall.show();
     QString file;
-    if (a.argc() > 1)
+    if (a.arguments().size() > 1)
         file = a.arguments().last();
     if (QFile(file).exists()) {
         wall.play(file);
     } else {
-        QMessageBox::warning(0, "Usage", QString("Command line: %1 [-r rows=3] [-c cols=3] path/of/video\nPress \"O\" to open a file").arg(qApp->arguments().at(0))
-                + "Shortcut:\n"
-                "Space: pause/continue\n"
-                "N: show next frame. Continue the playing by pressing 'Space'\n"
-                "O: open a file\n"
-                "P: replay\n"
-                "S: stop\n"
-                "M: mute on/off\n"
-                "Up/Down: volume +/-\n"
-                "->/<-: seek forward/backward\n");
+        wall.help();
     }
     return a.exec();
 }

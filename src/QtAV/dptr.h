@@ -109,7 +109,7 @@
 
 #define DPTR_DECLARE_PUBLIC(Class) \
     inline Class& q_func() { return *static_cast<Class*>(dptr_ptr()); } \
-    inline const Class& q_func() const { return *static_cast<Class*>(dptr_ptr()); } \
+    inline const Class& q_func() const { return *static_cast<const Class*>(dptr_ptr()); } \
     friend class Class;
 
 #define DPTR_INIT_PRIVATE(Class) dptr.setPublic(this);

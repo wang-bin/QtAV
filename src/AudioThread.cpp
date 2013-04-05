@@ -2,18 +2,21 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include <QtAV/AudioThread.h>
@@ -22,16 +25,8 @@
 #include <QtAV/Packet.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/QtAV_Compat.h>
 #include <QtCore/QCoreApplication>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif //__cplusplus
-#include <libavcodec/avcodec.h>
-#ifdef __cplusplus
-}
-#endif //__cplusplus
 
 namespace QtAV {
 
@@ -46,7 +41,10 @@ AudioThread::AudioThread(QObject *parent)
 {
 }
 
-//TODO: if output is null or dummy, the use duration to wait
+/*
+ *TODO:
+ * if output is null or dummy, the use duration to wait
+ */
 void AudioThread::run()
 {
     DPTR_D(AudioThread);
@@ -62,6 +60,8 @@ void AudioThread::run()
     int csf = channels * sample_rate * sizeof(float);
     static const double max_len = 0.02;
     d.last_pts = 0;
+    //TODO: bool need_sync in private class
+    bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -82,7 +82,34 @@ void AudioThread::run()
             dec->flush();
             continue;
         }
-        d.clock->updateValue(pkt.pts);
+        if (is_external_clock) {
+            d.delay = pkt.pts  - d.clock->value();
+            /*
+             *after seeking forward, a packet may be the old, v packet may be
+             *the new packet, then the d.delay is very large, omit it.
+             *TODO: 1. how to choose the value
+             * 2. use last delay when seeking
+            */
+            if (qAbs(d.delay) < 2.718) {
+                if (d.delay > kSyncThreshold) { //Slow down
+                    //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
+                    //qDebug("~~~~~wating for %f msecs", d.delay*1000);
+                    usleep(d.delay * 1000000);
+                } else if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
+                    //continue;
+                }
+            } else { //when to drop off?
+                qDebug("delay %f/%f", d.delay, d.clock->value());
+                if (d.delay > 0) {
+                    msleep(64);
+                } else {
+                    //audio packet not cleaned up?
+                    continue;
+                }
+            }
+        } else {
+            d.clock->updateValue(pkt.pts);
+        }
         //DO NOT decode and convert if ao is not available or mute!
         if (dec->decode(pkt.data)) {
             QByteArray decoded(dec->data());

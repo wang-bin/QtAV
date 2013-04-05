@@ -2,23 +2,27 @@
     ImageConverterIPP: Image resizing & color model convertion using Intel IPP
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+*   This file is part of QtAV
 
-    This program is distributed in the hope that it will be useful,
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/ImageConverterIPP.h>
+#include <QtAV/ImageConverter.h>
 #include <private/ImageConverter_p.h>
 #include <QtAV/QtAV_Compat.h>
+#include "prepost.h"
 
 #ifdef IPP_LINK
 #include <ipp.h>
@@ -27,6 +31,25 @@
 #endif
 
 namespace QtAV {
+
+class ImageConverterIPPPrivate;
+class ImageConverterIPP : public ImageConverter //Q_EXPORT is not needed
+{
+    DPTR_DECLARE_PRIVATE(ImageConverterIPP)
+public:
+    ImageConverterIPP();
+    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
+protected:
+    virtual bool prepareData(); //Allocate memory for out data
+};
+
+ImageConverterId ImageConverterId_IPP = 1;
+FACTORY_REGISTER_ID_AUTO(ImageConverter, IPP, "IPP")
+
+void RegisterImageConverterIPP_Man()
+{
+    FACTORY_REGISTER_ID_MAN(ImageConverter, IPP, "IPP")
+}
 
 class ImageConverterIPPPrivate : public ImageConverterPrivate
 {
