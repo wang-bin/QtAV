@@ -1,6 +1,6 @@
 TEMPLATE = subdirs
 CONFIG += ordered
-SUBDIRS = libqtav examples tests
+SUBDIRS = libqtav
 
 libqtav.file = src/libQtAV.pro
 examples.depends += libqtav
@@ -64,7 +64,14 @@ cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
 EssentialDepends = avutil avcodec avformat swscale
-OptionalDepends = portaudio direct2d gdiplus xv gl #openal
+
+greaterThan(QT_MAJOR_VERSION, 4) {
+    OptionalDepends = portaudio direct2d gdiplus gl #openal
+}
+else{
+    OptionalDepends = portaudio direct2d gdiplus xv gl #openal
+}
+
 for(d, EssentialDepends) {
    !config_$$d {
         CONFIG *= recheck
@@ -74,7 +81,9 @@ for(d, EssentialDepends) {
 }
 message("checking for optional features...")
 for(d, OptionalDepends) {
-    qtCompileTest($$d)
+    message("checking for $$d optional features...")
+    qtCompileTest($$d)|warning("$$d is optional , the compiler can not find it")
+    message("Config: $$CONFIG ...")
 }
 
 
