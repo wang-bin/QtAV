@@ -71,10 +71,6 @@ Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file
 _WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice.
 
 
-##### Known Issues
-
-Debug library name may be wrong, you should manually rename the generated library to the name that compiler complains.
-
 
 #### How To Write a Player
 
