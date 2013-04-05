@@ -11,10 +11,11 @@ QMAKE_CONFIG_TESTS_DIR = $$_PRO_FILE_PWD_/config.tests
 
 defineTest(cache) {
     !isEmpty(4): error("cache(var, [set|add|sub] [transient] [super], [srcvar]) requires one to three arguments.")
-    isEmpty(1) {
-        write_file($$_QMAKE_CACHE_QT4_):return(true)
-        return(false)
+    !exists($$_QMAKE_CACHE_QT4_) {
+        log("Info: creating cache file $$_QMAKE_CACHE_QT4_")
+        write_file($$_QMAKE_CACHE_QT4_)|return(false)
     }
+    isEmpty(1):return(true)
 
     !isEmpty(2):isEqual(2, set):mode_set=1
     isEmpty(3) {

@@ -31,6 +31,7 @@ typedef int VideoRendererId;
 class VideoRenderer;
 FACTORY_DECLARE(VideoRenderer)
 
+//TODO graphics item?
 static VideoRendererId VideoRendererId_Widget = 0;
 static VideoRendererId VideoRendererId_GLWidget = 1;
 static VideoRendererId VideoRendererId_GDI = 2;
