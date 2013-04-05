@@ -6,6 +6,16 @@ DEFINES += __STDC_CONSTANT_MACROS
     QMAKE_LFLAGS += /SAFESEH:NO
     INCLUDEPATH += ../../src/compat/msvc
 }
+*mingw* {
+    INCLUDEPATH +=C:\Development\ffmpeg_$$QT_ARCH\include
+    LIBS += -LC:\Development\ffmpeg_$$QT_ARCH\lib
+    QMAKE_RPATHDIR += C:\Development\ffmpeg_$$QT_ARCH\lib
+}
+unix {
+    CONFIG += link_pkgconfig
+    PKGCONFIG +=  libavutil
+}
+
 SOURCES += main.cpp
 
 LIBS += -lavutil
