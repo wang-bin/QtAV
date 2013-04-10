@@ -40,7 +40,10 @@ It's strongly recommend not to build in source dir.
     make
 
 qmake will run check the required libraries at the first time, so you must make sure those libraries can be found by compiler.
-Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, delete _**.qmake.cache**_ and run qmake again
+Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, you can either delete _**.qmake.cache**_ and run qmake again, or run
+
+    qmake QtAV_source_dir/QtAV.pro  CONFIG+=recheck
+
 
 _WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice. I have not find out the reason!
 

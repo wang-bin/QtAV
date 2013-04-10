@@ -40,7 +40,10 @@ windows 无sh.exe的环境下的 gcc
     make
 
 qmake 在第一次运行的时候会检测所依赖的库, 你要保证这些库能被找到。
-然后 qmake 会在编译目录生成一个 cache 文件 _.qmake.cache_ . cache 文件包含了检测结果，比如 portaudio 是否支持。 如果你想重新检测, 则需要删除 _**.qmake.cache**_ 再运行 qmake
+然后 qmake 会在编译目录生成一个 cache 文件 _.qmake.cache_ . cache 文件包含了检测结果，比如 portaudio 是否支持。 如果你想重新检测, 则可以删除 _**.qmake.cache**_ 再运行 qmake， 也可以直接给 qmake 加个额外参数
+
+    qmake QtAV_source_dir/QtAV.pro  CONFIG+=recheck
+
 
 _WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice. I have not find out the reason!
 
