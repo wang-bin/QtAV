@@ -121,45 +121,22 @@ int main(int argc, char *argv[])
     QString title = "QtAV " + vo + " " + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
     VideoRenderer *renderer = 0;
     if (vo == "gl") {
-        GLWidgetRenderer *r = static_cast<GLWidgetRenderer*>(VideoRendererFactory::create(VideoRendererId_GLWidget));
-        if (r) {
-            r->show();
-            r->setWindowTitle(title);
-        }
-        renderer = r;
+        renderer = VideoRendererFactory::create(VideoRendererId_GLWidget);
     } else if (vo == "d2d") {
-        Direct2DRenderer *r = static_cast<Direct2DRenderer*>(VideoRendererFactory::create(VideoRendererId_Direct2D));
-        if (r) { //may not support
-            r->show();
-            r->setWindowTitle(title);
-        }
-        renderer = r;
+        renderer = VideoRendererFactory::create(VideoRendererId_Direct2D);
     } else if (vo == "gdi") {
-        GDIRenderer *r = static_cast<GDIRenderer*>(VideoRendererFactory::create(VideoRendererId_GDI));
-        if (r) {
-            r->show();
-            r->setWindowTitle(title);
-        }
-        renderer = r;
+        renderer = VideoRendererFactory::create(VideoRendererId_GDI);
     } else if (vo == "xv") {
-        XVRenderer *r = static_cast<XVRenderer*>(VideoRendererFactory::create(VideoRendererId_XV));
-        if (r) {
-            r->show();
-            r->setWindowTitle(title);
-        }
-        renderer = r;
-    }else {
-        WidgetRenderer *r = static_cast<WidgetRenderer*>(VideoRendererFactory::create(VideoRendererId_Widget));
-        if (r) {
-            r->show();
-            r->setWindowTitle(title);
-        }
-        renderer = r;
+        renderer = VideoRendererFactory::create(VideoRendererId_XV);
+    } else {
+        renderer = VideoRendererFactory::create(VideoRendererId_Widget);
     }
     if (!renderer) {
         QMessageBox::critical(0, "QtAV", "vo '" + vo + "' not supported");
         return 1;
     }
+    renderer->widget()->show();
+    renderer->widget()->setWindowTitle(title);
     //renderer->scaleInRenderer(false);
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
     AVPlayer player;
