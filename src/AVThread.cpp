@@ -63,8 +63,16 @@ void AVThread::pause(bool p)
     d.paused = p;
     if (!d.paused) {
         qDebug("wake up paused thread");
+        d.next_pause = false;
         d.cond.wakeAll();
     }
+}
+
+void AVThread::nextAndPause()
+{
+    DPTR_D(AVThread);
+    d.next_pause = true;
+    d.cond.wakeAll();
 }
 
 void AVThread::setClock(AVClock *clock)
@@ -122,7 +130,7 @@ void AVThread::resetState()
 bool AVThread::tryPause()
 {
     DPTR_D(AVThread);
-    if (!d.paused)
+    if (!d.paused && !d.next_pause)
         return false;
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);

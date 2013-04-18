@@ -59,6 +59,7 @@ public slots:
     virtual void stop();
     /*change pause state. the pause/continue action will do in the next loop*/
     void pause(bool p); //processEvents when waiting?
+    void nextAndPause(); //process 1 frame and pause
 
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);

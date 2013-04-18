@@ -40,13 +40,21 @@ class AVClock;
 class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
-    AVThreadPrivate():paused(false),demux_end(false),stop(false),clock(0)
-      ,dec(0),writer(0),delay(0) {
+    AVThreadPrivate():
+        paused(false)
+      , next_pause(false)
+      , demux_end(false)
+      , stop(false)
+      , clock(0)
+      , dec(0)
+      , writer(0)
+      , delay(0)
+    {
     }
     //DO NOT delete dec and writer. We do not own them
     virtual ~AVThreadPrivate() {}
 
-    bool paused;
+    bool paused, next_pause;
     bool demux_end;
     volatile bool stop; //true when packets is empty and demux is end.
     AVClock *clock;

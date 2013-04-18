@@ -405,8 +405,12 @@ void AVPlayer::playNextFrame()
     if (!isPlaying()) {
         play();
     }
-    pause(false);
-    pause(true);
+    demuxer_thread->pause(false);
+    clock->pause(false);
+    audio_thread->nextAndPause();
+    video_thread->nextAndPause();
+    clock->pause(true);
+    demuxer_thread->pause(true);
 }
 
 void AVPlayer::seek(qreal pos)
