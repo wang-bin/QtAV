@@ -35,11 +35,11 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     ####ASSUME compile tests and .qmake.cache is in project out root dir
     #vars in .qmake.cache will affect all projects in subdirs, even if qmake's working dir is not in .qmake.cache dir
     #write_file($$BUILD_DIR/.qmake.cache) ##TODO: erase the existing lines!!
-    include(configure.prf)
+    include(configure.pri)
 #clear config.log iff reconfigure is required
     write_file($$QMAKE_CONFIG_LOG)
-    #cache() is available after include configure.prf
-    #load(configure.prf) #what's the difference?
+    #cache() is available after include configure.pri
+    #load(configure.pri) #what's the difference?
     message("cache: $$_QMAKE_CACHE_QT4_")
 }
 cache(BUILD_DIR, set, BUILD_DIR)
