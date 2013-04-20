@@ -1,3 +1,5 @@
+#Designed by Wang Bin(Lucas Wang). 2013 <wbsecg1@gmail.com>
+
 ### ONLY FOR Qt4. common.pri must be included before it so that write_file() can be used#######
 ### .qmake.cache MUST be created before it!
 ####ASSUME compile tests and .qmake.cache is in project out root dir

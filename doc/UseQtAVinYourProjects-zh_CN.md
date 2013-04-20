@@ -10,7 +10,8 @@ myproject/myproject.pro
     TEMPLATE = subdirs
     SUBDIRS +=  libQtAV  myplayer
     myplayer.depends += libQtAV
-    libQtAV.file = QtAV/src/libQtAV.pro
+    libQtAV.file = QtAV/QtAV.pro
+    include(QtAV/root.pri)
 
 ###2. 把 QtAV 放到myproject
 
@@ -20,6 +21,7 @@ myproject/myproject.pro
 
 > myproject/myproject.pro  
 > myproject/myplayer/myplayer.pro  
+> myproject/QtAV/QtAV.pro  
 > myproject/QtAV/src/libQtAV.pro  
 > myproject/QtAV/src/libQtAV.pri
 
@@ -31,11 +33,13 @@ myproject/myproject.pro
 
 ###4. 生成 Makefile
 
-`qmake -r BUILD_DIR=some_dir`
+    qmake
 
-  必须使用参数 **_-r_** 和 **_BUILD_DIR=some_dir_**, 否则可能会出现依赖问题.
+or
 
-  如果使用 QtCreator 来构建, 你可以点 _Projects_->_Build Steps_->_qmake_->_Additional arguments_, 添加 BUILD_DIR=your/buid/dir
+    qmake -r
 
 ###5. make  
-player 会生成在 $$BUILD_DIR/bin. 在windows下, QtAV 的 dll文件也会在那里生成
+player 会生成在编译目录下的bin目录. 在windows下, QtAV 的 dll文件也会在那里生成
+
+注意：windows 下如果用`qmake`命令（命令行下。QtCreator 默认使用`qmake -r`），则可能需要运行`qmake`两次，否则 make 可能失败

@@ -10,7 +10,8 @@ myproject/myproject.pro
     TEMPLATE = subdirs
     SUBDIRS +=  libQtAV  myplayer
     myplayer.depends += libQtAV
-    libQtAV.file = QtAV/src/libQtAV.pro
+    libQtAV.file = QtAV/QtAV.pro
+    include(QtAV/root.pri)
 
 ###2. Put QtAV to myproject
 
@@ -20,6 +21,7 @@ the directory now is
 
 > myproject/myproject.pro  
 > myproject/myplayer/myplayer.pro  
+> myproject/QtAV/QtAV.pro  
 > myproject/QtAV/src/libQtAV.pro  
 > myproject/QtAV/src/libQtAV.pri
 
@@ -30,11 +32,13 @@ in myproject/myplayer/myplayer.pro, add
 
 ###4. generate Makefile
 
-`qmake -r BUILD_DIR=some_dir`
+    qmake
 
-  YOU MUST use parameter **_-r_** and **_BUILD_DIR=some_dir_**, or the dependence will be broken when building due to my pro structure.
+or
 
-  If you are using QtCreator to build the project, you should go to _Projects_->_Build Steps_->_qmake_->_Additional arguments_, add BUILD_DIR=your/buid/dir
+    qmake -r
 
 ###5. make  
-you player binary will be created in $$BUILD_DIR/bin. If you are in windows, the QtAV dll also be there
+you player binary will be created in `bin` under build dir. If you are in windows, the QtAV dll also be there
+
+Note: for windows user, if you run `qmake`(command line build. QtCreator uses `qmake -r` by default) you may run `qmake` twice. otherwise make may fail.
