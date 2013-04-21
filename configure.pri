@@ -18,7 +18,6 @@ defineTest(cache) {
         write_file($$_QMAKE_CACHE_QT4_)|return(false)
     }
     isEmpty(1):return(true)
-
     !isEmpty(2):isEqual(2, set):mode_set=1
     isEmpty(3) {
         isEmpty(mode_set):error("cache(): modes other than 'set' require a source variable.")
@@ -71,7 +70,7 @@ equals(MAKEFILE_GENERATOR, UNIX) {
 
 defineTest(qtRunLoggedCommand) {
     msg = "+ $$1"
-    write_file($$QMAKE_CONFIG_LOG, msg, append)
+    write_file($$QMAKE_CONFIG_LOG, msg, append)#|error("write file failed") #for debug
     system("$$1 >> \"$$QMAKE_CONFIG_LOG\" 2>&1")|return(false)
     return(true)
 }
