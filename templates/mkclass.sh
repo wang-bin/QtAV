@@ -1,5 +1,7 @@
 . ../scripts/functions.sh
 
+#TODO: auto add virtual functions
+
 help(){
   cecho green "Usage: $0 [-class Class] [-base Base] [-template Template]"
   cecho green "Or $0 [--class=Class] [--base=Base] [--template=Template]"
