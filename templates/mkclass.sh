@@ -49,10 +49,10 @@ cat $COPY | sed "s/%YEAR%/$YEAR/g" > ${CLASS}.cpp
 cat ${TEMPLATE}.cpp | sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}.cpp
 [ -n "$BASE" ] && sed -i "s/%BASE%/$BASE/g" ${CLASS}.cpp
 
-if [ -f ${CLASS}_p.h ]; then
+if [ -f ${TEMPLATE}_p.h ]; then
   echo "generating ${CLASS}_p.h..."
   cat $COPY | sed "s/%YEAR%/$YEAR/g" > ${CLASS}_p.h
-  cat ${TEMPLATE}.h |sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}_p.h
+  cat ${TEMPLATE}_p.h |sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}_p.h
   [ -n "$BASE" ] && sed -i "s/%BASE%/$BASE/g" ${CLASS}_p.h
 fi
 
