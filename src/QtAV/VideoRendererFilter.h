@@ -19,31 +19,24 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/Filter.h"
-#include "private/Filter_p.h"
+#ifndef QTAV_VIDEORENDERERFILTER_H
+#define QTAV_VIDEORENDERERFILTER_H
+
+#include <QtAV/Filter.h>
 
 namespace QtAV {
 
-Filter::Filter(FilterPrivate &d)
-    :DPTR_INIT(&d)
+class VideoRendererFilterPrivate;
+class Q_EXPORT VideoRendererFilter : public Filter
 {
+    DPTR_DECLARE_PRIVATE(VideoRendererFilter)
+public:
+    virtual ~VideoRendererFilter();
+protected:
+    VideoRendererFilter(VideoRendererFilterPrivate &d);
 
-}
-
-Filter::~Filter()
-{
-}
-
-void Filter::setEnabled(bool enabled)
-{
-    DPTR_D(Filter);
-    d.enabled = enabled;
-}
-
-bool Filter::isEnabled() const
-{
-    DPTR_D(const Filter);
-    return d.enabled;
-}
+};
 
 } //namespace QtAV
+
+#endif // QTAV_VideoRendererFilter_H

@@ -23,6 +23,7 @@
 #define QTAV_FILTER_P_H
 
 #include <QtAV/QtAV_Global.h>
+#include "QtAV/Filter.h"
 
 namespace QtAV {
 
@@ -30,7 +31,13 @@ class Filter;
 class FilterPrivate : public DPtrPrivate<Filter>
 {
 public:
+    FilterPrivate():
+        enabled(true)
+    {}
     virtual ~FilterPrivate() {}
+
+    bool enabled;
+    FilterContext context;
 };
 
 } //namespace QtAV
