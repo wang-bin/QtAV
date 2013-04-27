@@ -19,44 +19,56 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_FILTER_H
-#define QTAV_FILTER_H
+#ifndef QTAV_FILTERCONTEXT_H
+#define QTAV_FILTERCONTEXT_H
 
 #include <QtAV/QtAV_Global.h>
-#include <QtAV/FilterContext.h>
+#include <QtCore/QByteArray>
+#include <QtCore/QRect>
+#include <QtCore/QTime>
 /*
- * QPainterFilter, D2DFilter, ...
+ * QPainterFilterContext, D2DFilterContext, ...
  */
 
-class QByteArray;
+class QPainter;
 namespace QtAV {
 
+class FilterContext;
 class FilterPrivate;
-class Q_EXPORT Filter
+class Q_EXPORT FilterContext
 {
-    DPTR_DECLARE_PRIVATE(Filter)
 public:
-    virtual ~Filter() = 0;
-    //isEnabled() then setContext
-    virtual void process(FilterContext* context);
-    //TODO: parameter FrameContext
-    void setEnabled(bool enabled); //AVComponent.enabled
-    bool isEnabled() const;
-
-    FilterContext::Type contextType() const;
-
-protected:
-    /*
-     * If the filter is in AVThread, it's safe to operate on ref.
-     */
-    virtual void process(QByteArray& data);
-    Filter(FilterPrivate& d);
-
-    friend class AVThread;
-    friend class VideoThread;
-    DPTR_DECLARE(Filter)
+    enum Type { ////audio and video...
+        QtPainter,
+        OpenGL,
+        Direct2D,
+        GdiPlus,
+        XV,
+        None
+    };
+    virtual ~FilterContext();
+    virtual Type type() const = 0;
+    void shareCommonData(FilterContext* other);
+    QByteArray data;
+    //common audio/video info
+    QTime current_time, total_time;
+    //QPainter, paintdevice, surface etc. contains all of them here?
 };
+
+class Q_EXPORT VideoFilterContext : public FilterContext
+{
+public:
+    QRect out_rect;
+};
+
+class Q_EXPORT QPainterFilterContext : public VideoFilterContext
+{
+public:
+    QPainter *painter;
+    virtual Type type() const; //QtPainter
+};
+
 
 } //namespace QtAV
 
-#endif // QTAV_FILTER_H
+#endif // QTAV_FILTERCONTEXT_H

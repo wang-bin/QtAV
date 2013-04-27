@@ -27,15 +27,18 @@
 namespace QtAV {
 
 class Filter;
+class FilterContext;
 class FilterPrivate : public DPtrPrivate<Filter>
 {
 public:
     FilterPrivate():
         enabled(true)
+      , context(0)
     {}
     virtual ~FilterPrivate() {}
 
     bool enabled;
+    FilterContext *context; //used only when is necessary
 };
 
 } //namespace QtAV

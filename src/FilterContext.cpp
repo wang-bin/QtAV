@@ -19,44 +19,23 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_FILTER_H
-#define QTAV_FILTER_H
+#include "QtAV/FilterContext.h"
 
-#include <QtAV/QtAV_Global.h>
-#include <QtAV/FilterContext.h>
-/*
- * QPainterFilter, D2DFilter, ...
- */
-
-class QByteArray;
 namespace QtAV {
 
-class FilterPrivate;
-class Q_EXPORT Filter
+FilterContext::~FilterContext()
 {
-    DPTR_DECLARE_PRIVATE(Filter)
-public:
-    virtual ~Filter() = 0;
-    //isEnabled() then setContext
-    virtual void process(FilterContext* context);
-    //TODO: parameter FrameContext
-    void setEnabled(bool enabled); //AVComponent.enabled
-    bool isEnabled() const;
+}
 
-    FilterContext::Type contextType() const;
+FilterContext::Type QPainterFilterContext::type() const
+{
+    return FilterContext::QtPainter;
+}
 
-protected:
-    /*
-     * If the filter is in AVThread, it's safe to operate on ref.
-     */
-    virtual void process(QByteArray& data);
-    Filter(FilterPrivate& d);
+void FilterContext::shareCommonData(FilterContext *other)
+{
 
-    friend class AVThread;
-    friend class VideoThread;
-    DPTR_DECLARE(Filter)
-};
+}
+
 
 } //namespace QtAV
-
-#endif // QTAV_FILTER_H
