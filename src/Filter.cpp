@@ -34,6 +34,18 @@ Filter::~Filter()
 {
 }
 
+void Filter::process(FilterContext *context)
+{
+    Q_UNUSED(context);
+}
+
+void Filter::process(QByteArray &data)
+{
+    Q_UNUSED(data);
+}
+
+
+
 void Filter::setEnabled(bool enabled)
 {
     DPTR_D(Filter);

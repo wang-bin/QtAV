@@ -22,6 +22,7 @@
 #ifndef QTAV_AVOUTPUT_P_H
 #define QTAV_AVOUTPUT_P_H
 
+#include <QtCore/QList>
 #include <QtCore/QMutex>
 #include <QtCore/QWaitCondition>
 #include <QtAV/QtAV_Global.h>
@@ -30,10 +31,14 @@ namespace QtAV {
 
 class AVOutput;
 class AVDecoder;
+class Filter;
 class Q_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
 {
 public:
-    AVOutputPrivate():paused(false),available(true) {}
+    AVOutputPrivate():
+        paused(false)
+      , available(true)
+    {}
     virtual ~AVOutputPrivate() {
         cond.wakeAll(); //WHY: failed to wake up
     }
@@ -43,6 +48,7 @@ public:
     QMutex mutex; //pause
     QWaitCondition cond; //pause
     QByteArray data;
+    QList<Filter*> filters;
 };
 
 } //namespace QtAV

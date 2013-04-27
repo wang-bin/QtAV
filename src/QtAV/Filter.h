@@ -24,18 +24,14 @@
 
 #include <QtAV/QtAV_Global.h>
 
+/*
+ * QPainterFilter, D2DFilter, ...
+ */
+
 class QByteArray;
 namespace QtAV {
-//refcount
-/*
- * QPainterFilterContext, D2DFilterContext, ...
- */
-class Q_EXPORT FilterContext
-{
-public:
 
-};
-
+class FilterContext;
 class FilterPrivate;
 class Q_EXPORT Filter
 {
@@ -43,7 +39,7 @@ class Q_EXPORT Filter
 public:
     virtual ~Filter() = 0;
     //isEnabled() then setContext
-    void setContext(const FilterContext& context);
+    virtual void process(FilterContext* context);
     //TODO: parameter FrameContext
     void setEnabled(bool enabled); //AVComponent.enabled
     bool isEnabled() const;
@@ -52,7 +48,7 @@ protected:
     /*
      * If the filter is in AVThread, it's safe to operate on ref.
      */
-    virtual void process(QByteArray& data) = 0;
+    virtual void process(QByteArray& data);
     Filter(FilterPrivate& d);
 
     friend class AVThread;

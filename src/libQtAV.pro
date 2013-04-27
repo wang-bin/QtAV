@@ -113,6 +113,7 @@ SOURCES += \
     AVDemuxThread.cpp \
     EventFilter.cpp \
     Filter.cpp \
+    FilterContext.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
@@ -124,9 +125,7 @@ SOURCES += \
     AVPlayer.cpp \
     VideoCapture.cpp \
     VideoRenderer.cpp \
-    VideoRendererFilter.cpp \
     VideoRendererTypes.cpp \
-    VideoRendererOSD.cpp \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     AVClock.cpp \
@@ -146,6 +145,7 @@ SDK_HEADERS *= \
     QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
     QtAV/Filter.h \
+    QtAV/FilterContext.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/QPainterRenderer.h \
@@ -155,8 +155,6 @@ SDK_HEADERS *= \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
     QtAV/VideoRenderer.h \
-    QtAV/VideoRendererFilter.h \
-    QtAV/VideoRendererOSD.h \
     QtAV/VideoRendererTypes.h \
     QtAV/WidgetRenderer.h \
     QtAV/AVOutput.h \
@@ -184,7 +182,6 @@ HEADERS *= \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/OSDFilter_p.h \
     QtAV/private/VideoRenderer_p.h \
-    QtAV/private/VideoRendererFilter_p.h \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \
     QtAV/private/Direct2DRenderer_p.h \
