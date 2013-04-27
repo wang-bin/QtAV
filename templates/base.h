@@ -19,4 +19,4 @@ protected:
 
 } //namespace QtAV
 
-#endif // QTAV_%CLASS%_H
+#endif // QTAV_%CLASS:u%_H
