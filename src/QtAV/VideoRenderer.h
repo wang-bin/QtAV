@@ -48,6 +48,7 @@ class QWidget;
 class QGraphicsItem;
 namespace QtAV {
 
+class Filter;
 class VideoRendererPrivate;
 class Q_EXPORT VideoRenderer : public AVOutput
 {
@@ -91,6 +92,14 @@ public:
 
     QWidget* widget();
     QGraphicsItem* graphicsItem();
+
+    //TODO: enable/disable = new a default for this vo engine or push back/remove from list
+    //filter: null means disable
+    //return the old filter. you may release the ptr manually
+    Filter* setOSDFilter(Filter *filter);
+    Filter* OSDFilter();
+    Filter* setSubtitleFilter(Filter *filter);
+    Filter* subtitleFilter();
 protected:
     VideoRenderer(VideoRendererPrivate &d);
     //TODO: drawXXX() is pure virtual

@@ -26,6 +26,9 @@
 #include <QtAV/FilterContext.h>
 /*
  * QPainterFilter, D2DFilter, ...
+ *
+ *TODO: force apply. e.g. an animation filter on vo, update vo and apply filter even not video is
+ * playing.
  */
 
 class QByteArray;

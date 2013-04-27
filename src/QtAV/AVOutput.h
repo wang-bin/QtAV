@@ -29,6 +29,8 @@ namespace QtAV {
 
 class AVDecoder;
 class AVOutputPrivate;
+class Filter;
+class FilterContext;
 class Q_EXPORT AVOutput
 {
     DPTR_DECLARE_PRIVATE(AVOutput)
@@ -43,6 +45,17 @@ public:
     //Demuxer thread automatically paused because packets will be full
     void pause(bool p); //processEvents when waiting?
     bool isPaused() const;
+
+    /* check context.type, if not compatible(e.g. type is QtPainter but vo is d2d)
+     * but type is not same is also ok if we just use render engine in vo but not in context.
+     * TODO:
+     * what if multiple vo(different render engines) share 1 player?
+     * private?: set in AVThread, context is used by this class internally
+     */
+    bool setFilterContext(FilterContext* context);
+    //No filters() api, they are used internally?
+    //for add/remove/clear on list. avo.add/remove/clear?
+    QList<Filter*>& filters();
 protected:
     AVOutput(AVOutputPrivate& d);
 	/*

@@ -32,12 +32,14 @@ namespace QtAV {
 class AVOutput;
 class AVDecoder;
 class Filter;
+class FilterContext;
 class Q_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
 {
 public:
     AVOutputPrivate():
         paused(false)
       , available(true)
+      , filter_context(0)
     {}
     virtual ~AVOutputPrivate() {
         cond.wakeAll(); //WHY: failed to wake up
@@ -48,6 +50,8 @@ public:
     QMutex mutex; //pause
     QWaitCondition cond; //pause
     QByteArray data;
+
+    FilterContext *filter_context;
     QList<Filter*> filters;
 };
 

@@ -201,6 +201,62 @@ QGraphicsItem* VideoRenderer::graphicsItem()
     return d_func().item_holder;
 }
 
+Filter* VideoRenderer::setOSDFilter(Filter *filter)
+{
+    DPTR_D(VideoRenderer);
+    Filter *old = d.osd_filter;
+    //may be both null
+    if (old == filter) {
+        return old;
+    }
+    d.osd_filter = filter;
+    //subtitle and osd is at the end
+    int idx = d.filters.lastIndexOf(old);
+    if (idx != -1) {
+        if (filter)
+            d.filters.replace(idx, filter);
+        else //null==disable
+            d.filters.takeAt(idx);
+    } else {
+        if (filter)
+            d.filters.push_back(filter);
+    }
+    return old;
+}
+
+Filter* VideoRenderer::OSDFilter()
+{
+    return d_func().osd_filter;
+}
+//TODO: setSubtitleFilter and setOSDFilter are almost the same. refine code
+Filter* VideoRenderer::setSubtitleFilter(Filter *filter)
+{
+    DPTR_D(VideoRenderer);
+    Filter *old = d.subtitle_filter;
+    //may be both null
+    if (old == filter) {
+        return old;
+    }
+    d.subtitle_filter = filter;
+    //subtitle and osd is at the end
+    int idx = d.filters.lastIndexOf(old);
+    if (idx != -1) {
+        if (filter)
+            d.filters.replace(idx, filter);
+        else //null==disable
+            d.filters.takeAt(idx);
+    } else {
+        if (filter)
+            d.filters.push_back(filter);
+    }
+    return old;
+}
+
+Filter* VideoRenderer::subtitleFilter()
+{
+    return d_func().subtitle_filter;
+}
+
 void VideoRenderer::drawBackground()
 {
 }

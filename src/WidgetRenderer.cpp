@@ -24,6 +24,7 @@
 #include <qfont.h>
 #include <qevent.h>
 #include <qpainter.h>
+#include <QtAV/Filter.h>
 
 namespace QtAV {
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
@@ -187,6 +188,15 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
     if (d.draw_custom)
         drawCustom();
     //end paint. how about QPainter::endNativePainting()?
+
+    //TODO: move to applyFilters() //private?
+    foreach(Filter* filter, d.filters) {
+        if (!filter) {
+            qWarning("a null filter!");
+            continue;
+        }
+        filter->process(d.filter_context);
+    }
 }
 
 } //namespace QtAV

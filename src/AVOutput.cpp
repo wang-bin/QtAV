@@ -94,4 +94,15 @@ void AVOutput::convertData(const QByteArray &data)
     d.data = data;
 }
 
+bool AVOutput::setFilterContext(FilterContext *context)
+{
+    d_func().filter_context = context;
+    return true;
+}
+
+QList<Filter*>& AVOutput::filters()
+{
+    return d_func().filters;
+}
+
 } //namespace QtAV
