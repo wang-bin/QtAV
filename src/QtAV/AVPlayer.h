@@ -24,6 +24,7 @@
 
 #include <QtAV/AVClock.h>
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/Statistics.h>
 
 namespace QtAV {
 
@@ -76,6 +77,8 @@ public:
     /*only 1 event filter is available. the previous one will be removed. setPlayerEventFilter(0) will remove the event filter*/
     void setPlayerEventFilter(QObject *obj);
 
+    Statistics& statistics();
+    const Statistics& statistics() const;
 signals:
     void started();
     void stopped();
@@ -115,6 +118,7 @@ protected:
     QObject *event_filter;
     VideoCapture *video_capture;
     OSDFilter *osd;
+    Statistics mStatistics;
 };
 
 } //namespace QtAV

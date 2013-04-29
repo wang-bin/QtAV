@@ -25,7 +25,6 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QByteArray>
 #include <QtCore/QRect>
-#include <QtCore/QTime>
 /*
  * QPainterFilterContext, D2DFilterContext, ...
  */
@@ -48,10 +47,7 @@ public:
     };
     virtual ~FilterContext();
     virtual Type type() const = 0;
-    void shareCommonData(FilterContext* other);
     QByteArray data;
-    //common audio/video info
-    QTime current_time, total_time;
     //QPainter, paintdevice, surface etc. contains all of them here?
 };
 

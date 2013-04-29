@@ -19,18 +19,42 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/FilterContext.h"
+#include "QtAV/Statistics.h"
 
 namespace QtAV {
 
-FilterContext::~FilterContext()
+Statistics::Common::Common():
+    bit_rate(0)
+  , avg_frame_rate(0)
+  , frames(0)
+  , size(0)
 {
 }
 
-FilterContext::Type QPainterFilterContext::type() const
+Statistics::AudioOnly::AudioOnly():
+    sample_rate(0)
+  , channels(0)
+  , frame_size(0)
+  , frame_number(0)
+  , block_align(0)
 {
-    return FilterContext::QtPainter;
 }
 
+Statistics::VideoOnly::VideoOnly():
+    width(0)
+  , height(0)
+  , coded_width(0)
+  , coded_height(0)
+  , gop_size(0)
+{
+}
+
+Statistics::Statistics()
+{
+}
+
+Statistics::~Statistics()
+{
+}
 
 } //namespace QtAV

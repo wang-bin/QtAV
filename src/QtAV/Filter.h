@@ -35,13 +35,14 @@ class QByteArray;
 namespace QtAV {
 
 class FilterPrivate;
+class Statistics;
 class Q_EXPORT Filter
 {
     DPTR_DECLARE_PRIVATE(Filter)
 public:
     virtual ~Filter() = 0;
     //isEnabled() then setContext
-    virtual void process(FilterContext* context);
+    virtual void process(FilterContext* context, Statistics* statistics);
     //TODO: parameter FrameContext
     void setEnabled(bool enabled); //AVComponent.enabled
     bool isEnabled() const;

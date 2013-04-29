@@ -162,6 +162,7 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
+    //TODO: set QPainter to context;
     DPTR_D(WidgetRenderer);
     //begin paint. how about QPainter::beginNativePainting()?
     //fill background color when necessary, e.g. renderer is resized, image is null
@@ -193,9 +194,10 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
     foreach(Filter* filter, d.filters) {
         if (!filter) {
             qWarning("a null filter!");
+            //d.filters.removeOne(filter);
             continue;
         }
-        filter->process(d.filter_context);
+        filter->process(d.filter_context, d.statistics);
     }
 }
 

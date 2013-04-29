@@ -129,6 +129,7 @@ SOURCES += \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     AVClock.cpp \
+    Statistics.cpp \
     VideoDecoder.cpp \
     VideoThread.cpp
 
@@ -163,6 +164,7 @@ SDK_HEADERS *= \
     QtAV/VideoThread.h \
     QtAV/FactoryDefine.h \
     QtAV/ImageConverterTypes.h \
+    QtAV/Statistics.h \
     QtAV/version.h
 
 

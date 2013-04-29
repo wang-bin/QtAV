@@ -34,16 +34,16 @@ Filter::~Filter()
 {
 }
 
-void Filter::process(FilterContext *context)
+void Filter::process(FilterContext *context, Statistics *statistics)
 {
     Q_UNUSED(context);
+    Q_UNUSED(statistics);
 }
 
 void Filter::process(QByteArray &data)
 {
     Q_UNUSED(data);
 }
-
 
 
 void Filter::setEnabled(bool enabled)

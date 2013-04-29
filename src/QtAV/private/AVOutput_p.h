@@ -33,12 +33,14 @@ class AVOutput;
 class AVDecoder;
 class Filter;
 class FilterContext;
+class Statistics;
 class Q_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
 {
 public:
     AVOutputPrivate():
         paused(false)
       , available(true)
+      , statistics(0)
       , filter_context(0)
     {}
     virtual ~AVOutputPrivate() {
@@ -51,6 +53,9 @@ public:
     QWaitCondition cond; //pause
     QByteArray data;
 
+    //paintEvent is in main thread, copy it(only dynamic information) is better.
+    //the static data are copied from AVPlayer when open
+    Statistics *statistics;
     FilterContext *filter_context;
     QList<Filter*> filters;
 };

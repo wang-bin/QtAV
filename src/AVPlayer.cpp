@@ -166,6 +166,15 @@ void AVPlayer::setPlayerEventFilter(QObject *obj)
     }
 }
 
+Statistics& AVPlayer::statistics()
+{
+    return mStatistics;
+}
+
+const Statistics& AVPlayer::statistics() const
+{
+    return mStatistics;
+}
 //TODO: remove?
 void AVPlayer::resizeRenderer(const QSize &size)
 {
@@ -326,6 +335,7 @@ bool AVPlayer::load()
     }
     audio_dec->setCodecContext(aCodecCtx);
     video_dec->setCodecContext(vCodecCtx);
+    //TODO: init statistics
     return loaded;
 }
 
