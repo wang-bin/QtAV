@@ -1,24 +1,25 @@
 
 cecho() {
-  while [[ $# > 1 ]]; do
+  while [ $# -gt 1 ]; do
     case $1 in
-      red)      echo -e "\033[49;31m$@\033[0m";;
-      green)    echo -e "\033[49;32m$@\033[0m";;
-      brown)    echo -e "\033[49;33m$@\033[0m";;
-      blue)     echo -e "\033[49;34m$@\033[0m";;
-      purple)   echo -e "\033[49;35m$@\033[0m";;
-      cyan)     echo -e "\033[49;36m$@\033[0m";;
-      white)    echo -e "\033[49;37m$@\033[0m";;
-      line)     echo -e "\033[4m$@\033[0m";;
-      bold)     echo -e "\033[1m$@\033[0m";;
-      *)        break;;
+      red)      echo -ne "\033[49;31m";;
+      green)    echo -ne "\033[49;32m";;
+      brown)    echo -ne "\033[49;33m";;
+      blue)     echo -ne "\033[49;34m";;
+      purple)   echo -ne "\033[49;35m";;
+      cyan)     echo -ne "\033[49;36m";;
+      white)    echo -ne "\033[49;37m";;
+      line)     echo -ne "\033[4m";;
+      bold)     echo -ne "\033[1m";;
+      *)        echo  $*; break;;
     esac
     shift
   done
+  echo -ne "\033[0m"
 }
 
 die(){
-  cecho red bold "$@"
+  cecho red bold "$@" >&2
   exit 1
 }
 
