@@ -62,11 +62,6 @@ WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::Wi
 
 WidgetRenderer::~WidgetRenderer()
 {
-    DPTR_D(WidgetRenderer);
-    if (d.painter) {
-        delete d.painter;
-        d.painter = 0; //move to private class? what about graphicsitem
-    }
 }
 
 bool WidgetRenderer::write()

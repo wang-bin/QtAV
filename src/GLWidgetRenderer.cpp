@@ -18,6 +18,11 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+/*
+ * TODO:
+ *   inherits QPainterRenderer? GL is wrapped as QPainter
+ *   GLuint bindTexture(const QImage & image, GLenum target = GL_TEXTURE_2D, GLint format)
+ */
 
 #include "QtAV/GLWidgetRenderer.h"
 #include "private/GLWidgetRenderer_p.h"
