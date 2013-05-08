@@ -31,7 +31,7 @@ QPainterRenderer::QPainterRenderer()
 {
     DPTR_D(QPainterRenderer);
     d.filter_context = FilterContext::create(FilterContext::QtPainter);
-    d.osd_filter = new OSFilterQPainter2();
+    d.osd_filter = new OSFilterQPainter();
     d.filters.append(d.osd_filter);
 }
 
@@ -39,7 +39,7 @@ QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
     :VideoRenderer(d)
 {
     d.filter_context = FilterContext::create(FilterContext::QtPainter);
-    d.osd_filter = new OSFilterQPainter2();
+    d.osd_filter = new OSFilterQPainter();
     d.filters.append(d.osd_filter);
 }
 

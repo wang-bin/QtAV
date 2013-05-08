@@ -27,7 +27,6 @@
 #include <QEvent>
 #include <QtCore/QDir>
 
-#include <QtAV/OSDFilterQPainter.h>
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/AudioThread.h>
 #include <QtAV/Packet.h>
@@ -54,8 +53,7 @@ namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),loaded(false),capture_dir("capture"),_renderer(0),_audio(0)
-  ,event_filter(0),video_capture(0)
-  , osd(0)
+  , event_filter(0),video_capture(0)
 {
     qDebug("%s", aboutQtAV().toUtf8().constData());
     /*
@@ -97,7 +95,6 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     setPlayerEventFilter(new EventFilter(this));
     setVideoCapture(new VideoCapture());
-    setOSDFilter(new OSDFilterQPainter());
 }
 
 AVPlayer::~AVPlayer()
@@ -249,19 +246,6 @@ bool AVPlayer::captureVideo()
     return true;
 }
 
-OSDFilter* AVPlayer::setOSDFilter(OSDFilter *osd)
-{
-    OSDFilter *old = osd;
-    this->osd = osd;
-    video_thread->setOSDFilter(osd);
-    return old;
-}
-
-OSDFilter* AVPlayer::osdFilter()
-{
-    return osd;
-}
-
 bool AVPlayer::play(const QString& path)
 {
     setFile(path);
@@ -372,9 +356,6 @@ void AVPlayer::play()
     clock->reset();
     mStatistics.reset();
 
-    if (osd) {
-        osd->setTotalTime(duration());
-    }
     if (aCodecCtx) {
         qDebug("Starting audio thread...");
         audio_thread->start(QThread::HighestPriority);

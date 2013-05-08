@@ -28,8 +28,9 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/ImageConverter.h>
 #include <QtGui/QImage>
-#include <QtAV/OSDFilter.h>
 #include <QtAV/Statistics.h>
+#include <QtAV/Filter.h>
+#include <QtAV/FilterContext.h>
 
 namespace QtAV {
 
@@ -39,13 +40,11 @@ public:
     VideoThreadPrivate():
         conv(0)
       , capture(0)
-      , osd(0)
     {}
     ImageConverter *conv;
     double pts; //current decoded pts. for capture. TODO: remove
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
-    OSDFilter *osd;
 };
 
 VideoThread::VideoThread(QObject *parent) :
@@ -80,16 +79,7 @@ VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
     d.capture = cap;
     return old;
 }
-//it may be called in main thread usually, but is being used in video thread,
-OSDFilter* VideoThread::setOSDFilter(OSDFilter *osd)
-{
-    qDebug("setOSDFilter %p", osd);
-    DPTR_D(VideoThread);
-    QMutexLocker locker(&d.mutex);
-    OSDFilter *old = d.osd;
-    d.osd = osd;
-    return old;
-}
+
 //TODO: if output is null or dummy, the use duration to wait
 void VideoThread::run()
 {
@@ -101,6 +91,7 @@ void VideoThread::run()
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
+    //TODO: do not init filter_context
     d.filter_context = FilterContext::create(FilterContext::QtPainter); //vo->filterContextType()
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -171,11 +162,6 @@ void VideoThread::run()
             if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
             }*/
             QByteArray data = dec->data();
-            if (d.osd) {
-                d.osd->setImageSize(dec->width(), dec->height());
-                d.osd->setCurrentTime(pkt.pts);
-                d.osd->process(data);
-            }
             if (d.statistics && d.filter_context) {
                 d.statistics->video.current_time = QTime().addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
                 foreach (Filter *filter, d.filters) {

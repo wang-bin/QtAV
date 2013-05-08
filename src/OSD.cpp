@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/OSD.h"
+#include <QtAV/Statistics.h>
 
 namespace QtAV {
 
@@ -62,6 +63,27 @@ void OSD::useNextShowType()
 bool OSD::hasShowType(ShowType t) const
 {
     return (t&mShowType) == t;
+}
+
+QString OSD::text(Statistics *statistics)
+{
+    QString text;
+    //TODO: calculation move to a function
+    if (hasShowType(ShowCurrentTime) || hasShowType(ShowCurrentAndTotalTime)) {
+        text = statistics->video.current_time.toString("HH:mm:ss");
+        if (hasShowType(ShowCurrentAndTotalTime))
+            text += " / ";
+    }
+    if (hasShowType(ShowCurrentAndTotalTime)) {
+        text += statistics->video.total_time.toString("HH:mm:ss");
+    }
+    if (hasShowType(ShowRemainTime)) {
+        text += QTime().addSecs(statistics->video.current_time.secsTo(statistics->video.total_time)).toString("HH:mm:ss");
+    }
+    if (hasShowType(ShowPercent) && statistics->video.total_time.secsTo(QTime(0, 0, 0)) > 0)
+        text += QString::number(qreal(statistics->video.current_time.secsTo(QTime(0, 0, 0)))
+                                /qreal(statistics->video.total_time.secsTo(QTime(0, 0, 0)))*100, 'f', 1) + "%";
+    return text;
 }
 
 

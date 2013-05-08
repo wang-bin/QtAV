@@ -22,8 +22,11 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/VideoDecoder.h>
 #include <private/VideoRenderer_p.h>
+#include <QtAV/Filter.h>
+#include <QtAV/OSDFilter.h>
 #include <QtCore/QCoreApplication>
 #include <QWidget>
+#include <QGraphicsItem>
 
 namespace QtAV {
 
@@ -201,13 +204,13 @@ QGraphicsItem* VideoRenderer::graphicsItem()
     return d_func().item_holder;
 }
 
-Filter* VideoRenderer::setOSDFilter(Filter *filter)
+OSDFilter *VideoRenderer::setOSDFilter(OSDFilter *filter)
 {
     DPTR_D(VideoRenderer);
     Filter *old = d.osd_filter;
     //may be both null
     if (old == filter) {
-        return old;
+        return static_cast<OSDFilter*>(old);
     }
     d.osd_filter = filter;
     //subtitle and osd is at the end
@@ -221,12 +224,12 @@ Filter* VideoRenderer::setOSDFilter(Filter *filter)
         if (filter)
             d.filters.push_back(filter);
     }
-    return old;
+    return static_cast<OSDFilter*>(old);
 }
 
-Filter* VideoRenderer::OSDFilter()
+OSDFilter* VideoRenderer::osdFilter()
 {
-    return d_func().osd_filter;
+    return static_cast<OSDFilter*>(d_func().osd_filter);
 }
 //TODO: setSubtitleFilter and setOSDFilter are almost the same. refine code
 Filter* VideoRenderer::setSubtitleFilter(Filter *filter)
@@ -265,6 +268,43 @@ void VideoRenderer::resizeFrame(int width, int height)
 {
     Q_UNUSED(width);
     Q_UNUSED(height);
+}
+
+void VideoRenderer::handlePaintEvent(QPaintEvent *event)
+{
+    DPTR_D(VideoRenderer);
+    //begin paint. how about QPainter::beginNativePainting()?
+    //fill background color when necessary, e.g. renderer is resized, image is null
+    //if we access d.data which will be modified in AVThread, the following must be protected
+    if ((d.widget_holder && d.out_rect != d.widget_holder->rect())
+            || (d.item_holder && d.out_rect != d.item_holder->boundingRect())
+             ) {
+        d.update_background = false;
+        //fill background color. DO NOT return, you must continue drawing
+        drawBackground();
+    }
+    {
+        //lock is required only when drawing the frame
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        //DO NOT return if no data. we should draw other things
+        if (!d.data.isEmpty()) {
+            drawFrame();
+        }
+    }
+    //TODO: move to applyFilters() //private?
+    if (d.filter_context && d.statistics) {
+        foreach(Filter* filter, d.filters) {
+            if (!filter) {
+                qWarning("a null filter!");
+                //d.filters.removeOne(filter);
+                continue;
+            }
+            filter->process(d.filter_context, d.statistics);
+        }
+    } else {
+        //warn once
+    }
 }
 
 } //namespace QtAV

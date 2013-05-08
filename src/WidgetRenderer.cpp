@@ -169,7 +169,6 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
-    //TODO: set QPainter to context;
     DPTR_D(WidgetRenderer);
     d.painter->begin(this); //Widget painting can only begin as a result of a paintEvent
     //begin paint. how about QPainter::beginNativePainting()?

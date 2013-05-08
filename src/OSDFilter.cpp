@@ -1,79 +1,52 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
 #include "QtAV/OSDFilter.h"
-#include "private/OSDFilter_p.h"
 #include "QtAV/Statistics.h"
+#include <private/Filter_p.h>
 #include <QtGui/QPainter>
 
 namespace QtAV {
+
+class OSDFilterPrivate : public FilterPrivate
+{
+public:
+};
 
 OSDFilter::OSDFilter(OSDFilterPrivate &d):
     Filter(d)
 {
 }
 
-OSDFilter::~OSDFilter()
-{
-}
-
-void OSDFilter::setShowType(ShowType type)
-{
-    DPTR_D(OSDFilter);
-    d.show_type = type;
-}
-
-OSDFilter::ShowType OSDFilter::showType() const
-{
-    return d_func().show_type;
-}
-
-void OSDFilter::useNextShowType()
-{
-    DPTR_D(OSDFilter);
-    if (d.show_type == ShowNone) {
-        d.show_type = (ShowType)1;
-        return;
-    }
-    if (d.show_type + 1 == ShowNone) {
-        d.show_type = ShowNone;
-        return;
-    }
-    d.show_type = (ShowType)(d.show_type << 1);
-}
-
-bool OSDFilter::hasShowType(ShowType t) const
-{
-    DPTR_D(const OSDFilter);
-    return (t&d.show_type) == t;
-}
-
-void OSDFilter::setCurrentTime(int currentSeconds)
-{
-    DPTR_D(OSDFilter);
-    d.sec_current = currentSeconds;
-}
-
-void OSDFilter::setTotalTime(int totalSeconds)
-{
-    DPTR_D(OSDFilter);
-    d.sec_total = totalSeconds;
-    d.computeTime(totalSeconds, &d.total_hour, &d.total_min, &d.total_sec);
-}
-
-void OSDFilter::setImageSize(int width, int height)
-{
-    DPTR_D(OSDFilter);
-    d.width = width;
-    d.height = height;
-}
-
 template<>
-OSDFilter2<QPainterFilterContext>::OSDFilter2():
-    Filter(*new FilterPrivate())
+OSDFilterImpl<QPainterFilterContext>::OSDFilterImpl():
+    OSDFilter(*new OSDFilterPrivate())
 {
 }
 
 template<>
-void OSFilterQPainter2::process(FilterContext *context, Statistics *statistics)
+void OSFilterQPainter::process(FilterContext *context, Statistics *statistics)
 {
+    if (mShowType == ShowNone)
+        return;
     QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(context);
     if (!ctx->painter)
         return;

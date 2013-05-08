@@ -85,13 +85,6 @@ void %CLASS%::paintEvent(QPaintEvent *)
             drawFrame();
         }
     }
-    //drawXXX only implement the painting, no other logic
-    if (d.draw_osd)
-        drawOSD();
-    if (d.draw_subtitle)
-        drawSubtitle();
-    if (d.draw_custom)
-        drawCustom();
     //end paint. how about QPainter::endNativePainting()?
 }
 

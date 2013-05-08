@@ -28,6 +28,7 @@
 
 namespace QtAV {
 
+class Statistics;
 class Q_EXPORT OSD
 {
 public:
@@ -45,7 +46,7 @@ public:
     ShowType showType() const;
     void useNextShowType();
     bool hasShowType(ShowType t) const;
-
+    QString text(Statistics* statistics);
 protected:
     ShowType mShowType;
     QPoint mPosition;

@@ -121,7 +121,6 @@ SOURCES += \
     QPainterRenderer.cpp \
     OSD.cpp \
     OSDFilter.cpp \
-    OSDFilterQPainter.cpp \
     Packet.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
@@ -152,7 +151,6 @@ SDK_HEADERS *= \
     QtAV/QPainterRenderer.h \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
-    QtAV/OSDFilterQPainter.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
@@ -183,7 +181,6 @@ HEADERS *= \
     QtAV/private/Filter_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
-    QtAV/private/OSDFilter_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \
