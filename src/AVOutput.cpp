@@ -21,9 +21,20 @@
 
 #include <QtAV/AVOutput.h>
 #include <private/AVOutput_p.h>
+#include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
 
 namespace QtAV {
+
+AVOutputPrivate::~AVOutputPrivate() {
+    cond.wakeAll(); //WHY: failed to wake up
+    if (filter_context) {
+        delete filter_context;
+        filter_context = 0;
+    }
+    qDeleteAll(filters);
+    filters.clear();
+}
 
 AVOutput::AVOutput()
 {

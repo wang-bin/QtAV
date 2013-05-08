@@ -26,8 +26,6 @@
 #include <QtCore/QMutexLocker>
 #include <QtCore/QWaitCondition>
 #include <QtAV/Packet.h>
-#include <QtAV/AVDecoder.h>
-#include <QtAV/AVOutput.h>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -35,7 +33,7 @@ namespace QtAV {
 const double kSyncThreshold = 0.005; // 5 ms
 
 class AVDecoder;
-class Packet;
+class AVOutput;
 class AVClock;
 class Filter;
 class FilterContext;
@@ -57,14 +55,7 @@ public:
     {
     }
     //DO NOT delete dec and writer. We do not own them
-    virtual ~AVThreadPrivate() {
-        if (filter_context) {
-            delete filter_context;
-            filter_context = 0;
-        }
-        qDeleteAll(filters); //TODO: is it safe?
-        filters.clear();
-    }
+    virtual ~AVThreadPrivate();
 
     bool paused, next_pause;
     bool demux_end;

@@ -21,8 +21,20 @@
 
 #include <QtAV/AVThread.h>
 #include <private/AVThread_p.h>
+#include <QtAV/AVOutput.h>
+#include <QtAV/Filter.h>
 
 namespace QtAV {
+
+AVThreadPrivate::~AVThreadPrivate() {
+    if (filter_context) {
+        delete filter_context;
+        filter_context = 0;
+    }
+    qDeleteAll(filters); //TODO: is it safe?
+    filters.clear();
+}
+
 AVThread::AVThread(QObject *parent) :
     QThread(parent)
 {

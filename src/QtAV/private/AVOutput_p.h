@@ -43,15 +43,7 @@ public:
       , statistics(0)
       , filter_context(0)
     {}
-    virtual ~AVOutputPrivate() {
-        cond.wakeAll(); //WHY: failed to wake up
-        if (filter_context) {
-            delete filter_context;
-            filter_context = 0;
-        }
-        qDeleteAll(filters);
-        filters.clear();
-    }
+    virtual ~AVOutputPrivate();
 
     bool paused;
     bool available;
