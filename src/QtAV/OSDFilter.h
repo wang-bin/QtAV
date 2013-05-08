@@ -2,7 +2,8 @@
 #define QTAV_OSDFILTER_H
 
 #include <QtAV/Filter.h>
-
+#include <QtAV/OSD.h>
+#include <QtAV/FilterContext.h>
 namespace QtAV {
 
 class OSDFilterPrivate;
@@ -29,6 +30,16 @@ public:
 protected:
     OSDFilter(OSDFilterPrivate& d);
 };
+
+template<class Context>
+class OSDFilter2 : public Filter, public OSD
+{
+public:
+    ~OSDFilter2() {}
+    virtual void process(FilterContext* context, Statistics* statistics);
+};
+
+typedef OSDFilter2<QPainterFilterContext> OSFilterQPainter2;
 
 } //namespace QtAV
 

@@ -1,5 +1,7 @@
 #include "QtAV/OSDFilter.h"
 #include "private/OSDFilter_p.h"
+#include "QtAV/Statistics.h"
+#include <QtGui/QPainter>
 
 namespace QtAV {
 
@@ -61,6 +63,15 @@ void OSDFilter::setImageSize(int width, int height)
     DPTR_D(OSDFilter);
     d.width = width;
     d.height = height;
+}
+
+template<>
+void OSFilterQPainter2::process(FilterContext *context, Statistics *statistics)
+{
+    QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(context);
+    if (!ctx->painter)
+        return;
+    ctx->painter->drawText(mPosition, statistics->video.current_time.toString("HH:mm:ss"));
 }
 
 } //namespace QtAV

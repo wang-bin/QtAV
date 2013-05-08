@@ -119,6 +119,7 @@ SOURCES += \
     ImageConverterFF.cpp \
     ImageConverterIPP.cpp \
     QPainterRenderer.cpp \
+    OSD.cpp \
     OSDFilter.cpp \
     OSDFilterQPainter.cpp \
     Packet.cpp \
@@ -132,7 +133,6 @@ SOURCES += \
     Statistics.cpp \
     VideoDecoder.cpp \
     VideoThread.cpp
-
 
 SDK_HEADERS *= \
     QtAV/dptr.h \
@@ -150,6 +150,7 @@ SDK_HEADERS *= \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/QPainterRenderer.h \
+    QtAV/OSD.h \
     QtAV/OSDFilter.h \
     QtAV/OSDFilterQPainter.h \
     QtAV/Packet.h \
