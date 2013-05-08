@@ -102,18 +102,6 @@ void WidgetRenderer::drawFrame()
     }
 }
 
-void WidgetRenderer::drawSubtitle()
-{
-}
-
-void WidgetRenderer::drawOSD()
-{
-}
-
-void WidgetRenderer::drawCustom()
-{
-}
-
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
 {
     DPTR_D(WidgetRenderer);
@@ -201,15 +189,6 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
             drawFrame();
         }
     }
-    //drawXXX only implement the painting, no other logic
-    if (d.draw_osd)
-        drawOSD();
-    if (d.draw_subtitle)
-        drawSubtitle();
-    if (d.draw_custom)
-        drawCustom();
-    //end paint. how about QPainter::endNativePainting()?
-
     //TODO: move to applyFilters() //private?
     if (d.filter_context && d.statistics) {
         foreach(Filter* filter, d.filters) {
@@ -223,6 +202,7 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
     } else {
         //warn once
     }
+    //end paint. how about QPainter::endNativePainting()?
     d.painter->end();
 }
 

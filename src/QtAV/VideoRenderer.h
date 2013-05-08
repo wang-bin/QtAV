@@ -107,12 +107,6 @@ protected:
     virtual void drawBackground();
     //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawSubtitle();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawOSD();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawCustom();
     /*!
      * This function is called whenever resizeRenderer() is called or aspect ratio is changed?
      * You can reimplement it to recreate the offscreen surface.

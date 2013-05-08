@@ -90,13 +90,7 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
             drawFrame();
         }
     }
-    //drawXXX only implement the painting, no other logic
-    if (d.draw_osd)
-        drawOSD();
-    if (d.draw_subtitle)
-        drawSubtitle();
-    if (d.draw_custom)
-        drawCustom();
+
     //end paint. how about QPainter::endNativePainting()?
     d.painter = 0; //painter may be not available outside this function
 }
@@ -126,27 +120,6 @@ void GraphicsItemRenderer::drawFrame()
     } else {
         d.painter->drawImage(d.out_rect, d.image);
     }
-}
-
-void GraphicsItemRenderer::drawSubtitle()
-{
-    DPTR_D(GraphicsItemRenderer);
-    if (!d.painter)
-        return;
-}
-
-void GraphicsItemRenderer::drawOSD()
-{
-    DPTR_D(GraphicsItemRenderer);
-    if (!d.painter)
-        return;
-}
-
-void GraphicsItemRenderer::drawCustom()
-{
-    DPTR_D(GraphicsItemRenderer);
-    if (!d.painter)
-        return;
 }
 
 //GraphicsWidget will lose focus forever if focus out. Why?

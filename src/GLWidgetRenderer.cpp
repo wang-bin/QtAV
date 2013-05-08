@@ -93,18 +93,6 @@ void GLWidgetRenderer::drawFrame()
     //swapBuffers(); //why flickers?
 }
 
-void GLWidgetRenderer::drawSubtitle()
-{
-}
-
-void GLWidgetRenderer::drawOSD()
-{
-}
-
-void GLWidgetRenderer::drawCustom()
-{
-}
-
 bool GLWidgetRenderer::write()
 {
     update();
@@ -148,13 +136,6 @@ void GLWidgetRenderer::paintGL()
             drawFrame();
         }
     }
-    //drawXXX only implement the painting, no other logic
-    if (d.draw_osd)
-        drawOSD();
-    if (d.draw_subtitle)
-        drawSubtitle();
-    if (d.draw_custom)
-        drawCustom();
 }
 
 void GLWidgetRenderer::resizeGL(int w, int h)

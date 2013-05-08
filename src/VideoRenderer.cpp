@@ -261,18 +261,6 @@ void VideoRenderer::drawBackground()
 {
 }
 
-void VideoRenderer::drawSubtitle()
-{
-}
-
-void VideoRenderer::drawOSD()
-{
-}
-
-void VideoRenderer::drawCustom()
-{
-}
-
 void VideoRenderer::resizeFrame(int width, int height)
 {
     Q_UNUSED(width);

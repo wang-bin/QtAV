@@ -107,18 +107,6 @@ void XVRenderer::drawFrame()
                       , false /*true: send event*/);
 }
 
-void XVRenderer::drawSubtitle()
-{
-}
-
-void XVRenderer::drawOSD()
-{
-}
-
-void XVRenderer::drawCustom()
-{
-}
-
 void XVRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(XVRenderer);

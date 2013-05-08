@@ -64,19 +64,6 @@ void %CLASS%::drawFrame()
     }
 }
 
-void %CLASS%::drawSubtitle()
-{
-}
-
-void %CLASS%::drawOSD()
-{
-}
-
-void %CLASS%::drawCustom()
-{
-}
-
-
 void %CLASS%::paintEvent(QPaintEvent *)
 {
     DPTR_D(%CLASS%);

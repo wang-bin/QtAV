@@ -44,13 +44,6 @@ protected:
     virtual void drawBackground();
     //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawSubtitle();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawOSD();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawCustom();
-
     virtual void resizeEvent(QResizeEvent *);
     virtual void mousePressEvent(QMouseEvent *);
     virtual void mouseMoveEvent(QMouseEvent *);

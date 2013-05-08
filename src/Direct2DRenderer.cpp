@@ -96,18 +96,6 @@ void Direct2DRenderer::drawFrame()
                                 , NULL);//&D2D1::RectF(0, 0, d.src_width, d.src_height));
 }
 
-void Direct2DRenderer::drawSubtitle()
-{
-}
-
-void Direct2DRenderer::drawOSD()
-{
-}
-
-void Direct2DRenderer::drawCustom()
-{
-}
-
 void Direct2DRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(Direct2DRenderer);
@@ -132,13 +120,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
         //return; //why the background is white if return? the below code draw an empty bitmap?
     }
     drawFrame();
-    //drawXXX only implement the painting, no other logic
-    if (d.draw_osd)
-        drawOSD();
-    if (d.draw_subtitle)
-        drawSubtitle();
-    if (d.draw_custom)
-        drawCustom();
+    //filters
     hr = d.render_target->EndDraw(NULL, NULL);
     if (hr == D2DERR_RECREATE_TARGET) {
         qDebug("D2DERR_RECREATE_TARGET");
