@@ -27,8 +27,18 @@
 namespace QtAV {
 
 AVThreadPrivate::~AVThreadPrivate() {
+    demux_end = true;
+    stop = true;
+    if (!paused) {
+        qDebug("~AVThreadPrivate wake up paused thread");
+        paused = false;
+        next_pause = false;
+        cond.wakeAll();
+    }
+    packets.setBlocking(true); //???
+    packets.clear();
     if (filter_context) {
-        delete filter_context;
+        delete filter_context; //TODO: need it?
         filter_context = 0;
     }
     qDeleteAll(filters); //TODO: is it safe?
@@ -48,7 +58,6 @@ AVThread::AVThread(AVThreadPrivate &d, QObject *parent)
 AVThread::~AVThread()
 {
     //d_ptr destroyed automatically
-    resetState();
 }
 
 bool AVThread::isPaused() const
