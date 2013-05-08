@@ -35,6 +35,7 @@ template<class Context>
 class OSDFilter2 : public Filter, public OSD
 {
 public:
+    OSDFilter2();
     ~OSDFilter2() {}
     virtual void process(FilterContext* context, Statistics* statistics);
 };

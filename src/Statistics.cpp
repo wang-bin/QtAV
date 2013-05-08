@@ -57,4 +57,13 @@ Statistics::~Statistics()
 {
 }
 
+void Statistics::reset()
+{
+    url = "";
+    audio = Common();
+    video = Common();
+    audio_only = AudioOnly();
+    video_only = VideoOnly();
+}
+
 } //namespace QtAV

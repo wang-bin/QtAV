@@ -66,12 +66,23 @@ void OSDFilter::setImageSize(int width, int height)
 }
 
 template<>
+OSDFilter2<QPainterFilterContext>::OSDFilter2():
+    Filter(*new FilterPrivate())
+{
+}
+
+template<>
 void OSFilterQPainter2::process(FilterContext *context, Statistics *statistics)
 {
     QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(context);
     if (!ctx->painter)
         return;
-    ctx->painter->drawText(mPosition, statistics->video.current_time.toString("HH:mm:ss"));
+    QPainter *p = ctx->painter;
+    p->save(); //TODO: move outside?
+    p->setFont(mFont);
+    p->setPen(Qt::white);
+    p->drawText(mPosition, statistics->video.current_time.toString("HH:mm:ss"));
+    p->restore(); //TODO: move outside?
 }
 
 } //namespace QtAV

@@ -37,6 +37,9 @@ const double kSyncThreshold = 0.005; // 5 ms
 class AVDecoder;
 class Packet;
 class AVClock;
+class Filter;
+class FilterContext;
+class Statistics;
 class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
@@ -49,10 +52,19 @@ public:
       , dec(0)
       , writer(0)
       , delay(0)
+      , filter_context(0)
+      , statistics(0)
     {
     }
     //DO NOT delete dec and writer. We do not own them
-    virtual ~AVThreadPrivate() {}
+    virtual ~AVThreadPrivate() {
+        if (filter_context) {
+            delete filter_context;
+            filter_context = 0;
+        }
+        qDeleteAll(filters); //TODO: is it safe?
+        filters.clear();
+    }
 
     bool paused, next_pause;
     bool demux_end;
@@ -64,6 +76,9 @@ public:
     QMutex mutex;
     QWaitCondition cond; //pause
     qreal delay;
+    FilterContext *filter_context;
+    QList<Filter*> filters;
+    Statistics *statistics; //not obj. Statistics is unique for the player, which is in AVPlayer
 };
 
 } //namespace QtAV

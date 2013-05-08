@@ -26,13 +26,18 @@
 #include <QtGui/QImage>
 #include <private/VideoRenderer_p.h>
 
+class QPainter;
 namespace QtAV {
 
 class Q_EXPORT QPainterRendererPrivate : public VideoRendererPrivate
 {
 public:
+    QPainterRendererPrivate():
+        painter(0)
+    {}
     virtual ~QPainterRendererPrivate(){}
     QImage image;
+    QPainter *painter;
 };
 
 } //namespace QtAV

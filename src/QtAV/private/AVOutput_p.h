@@ -45,6 +45,12 @@ public:
     {}
     virtual ~AVOutputPrivate() {
         cond.wakeAll(); //WHY: failed to wake up
+        if (filter_context) {
+            delete filter_context;
+            filter_context = 0;
+        }
+        qDeleteAll(filters);
+        filters.clear();
     }
 
     bool paused;
@@ -55,8 +61,8 @@ public:
 
     //paintEvent is in main thread, copy it(only dynamic information) is better.
     //the static data are copied from AVPlayer when open
-    Statistics *statistics;
-    FilterContext *filter_context;
+    Statistics *statistics; //do not own the ptr. just use AVPlayer's statistics ptr
+    FilterContext *filter_context; //create internally by the renderer with correct type
     QList<Filter*> filters;
 };
 

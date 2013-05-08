@@ -37,6 +37,7 @@ class Q_EXPORT Statistics
 public:
     Statistics();
     ~Statistics();
+    void reset();
 
     QString url;
     class Common {

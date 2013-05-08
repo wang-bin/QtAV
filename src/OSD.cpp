@@ -26,6 +26,9 @@ namespace QtAV {
 OSD::OSD():
     mShowType(ShowCurrentAndTotalTime)
 {
+    mPosition = QPoint(32, 32);
+    mFont.setBold(true);
+    mFont.setPixelSize(26);
 }
 
 OSD::~OSD()

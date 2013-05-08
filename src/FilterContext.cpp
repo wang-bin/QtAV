@@ -23,6 +23,19 @@
 
 namespace QtAV {
 
+FilterContext* FilterContext::create(Type t)
+{
+    FilterContext *ctx = 0;
+    switch (t) {
+    case QtPainter:
+        ctx = new QPainterFilterContext();
+        break;
+    default:
+        break;
+    }
+    return ctx;
+}
+
 FilterContext::~FilterContext()
 {
 }

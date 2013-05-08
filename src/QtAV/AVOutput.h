@@ -31,6 +31,7 @@ class AVDecoder;
 class AVOutputPrivate;
 class Filter;
 class FilterContext;
+class Statistics;
 class Q_EXPORT AVOutput
 {
     DPTR_DECLARE_PRIVATE(AVOutput)
@@ -52,25 +53,29 @@ public:
      * what if multiple vo(different render engines) share 1 player?
      * private?: set in AVThread, context is used by this class internally
      */
-    bool setFilterContext(FilterContext* context);
+    virtual int filterContextType() const;
     //No filters() api, they are used internally?
     //for add/remove/clear on list. avo.add/remove/clear?
     QList<Filter*>& filters();
 protected:
     AVOutput(AVOutputPrivate& d);
-	/*
-	 * Reimplement this. You should convert and save the decoded data, e.g. QImage,
-	 * which will be used in write() or some other functions. Do nothing by default.
-	 */
+    /*
+     * Reimplement this. You should convert and save the decoded data, e.g. QImage,
+     * which will be used in write() or some other functions. Do nothing by default.
+     */
     virtual void convertData(const QByteArray& data);
-	virtual bool write() = 0; //TODO: why pure may case "pure virtual method called"
+    virtual bool write() = 0; //TODO: why pure may case "pure virtual method called"
     /*
      * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)
      * and return true. Otherwise, return false immediatly.
      */
-	bool tryPause();
+    bool tryPause();
 
     DPTR_DECLARE(AVOutput)
+
+private:
+    void setStatistics(Statistics* statistics);
+    friend class AVPlayer;
 };
 
 } //namespace QtAV

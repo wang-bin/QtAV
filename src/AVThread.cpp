@@ -36,6 +36,7 @@ AVThread::AVThread(AVThreadPrivate &d, QObject *parent)
 AVThread::~AVThread()
 {
     //d_ptr destroyed automatically
+    resetState();
 }
 
 bool AVThread::isPaused() const
@@ -125,6 +126,10 @@ void AVThread::resetState()
     d.demux_end = false;
     d.packets.setBlocking(true);
     d.packets.clear();
+    if (d.filter_context) {
+        delete d.filter_context;
+        d.filter_context = 0;
+    }
 }
 
 bool AVThread::tryPause()
@@ -137,6 +142,12 @@ bool AVThread::tryPause()
     d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
     qDebug("paused thread waked up!!!");
     return true;
+}
+
+void AVThread::setStatistics(Statistics *statistics)
+{
+    DPTR_D(AVThread);
+    d.statistics = statistics;
 }
 
 } //namespace QtAV

@@ -45,6 +45,7 @@ public:
         XV,
         None
     };
+    static FilterContext* create(Type t);
     virtual ~FilterContext();
     virtual Type type() const = 0;
     QByteArray data;

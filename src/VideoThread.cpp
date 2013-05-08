@@ -29,6 +29,7 @@
 #include <QtAV/ImageConverter.h>
 #include <QtGui/QImage>
 #include <QtAV/OSDFilter.h>
+#include <QtAV/Statistics.h>
 
 namespace QtAV {
 
@@ -41,7 +42,7 @@ public:
       , osd(0)
     {}
     ImageConverter *conv;
-    double pts; //current decoded pts. for capture
+    double pts; //current decoded pts. for capture. TODO: remove
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
     OSDFilter *osd;
@@ -100,6 +101,7 @@ void VideoThread::run()
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
+    d.filter_context = FilterContext::create(FilterContext::QtPainter); //vo->filterContextType()
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -174,6 +176,13 @@ void VideoThread::run()
                 d.osd->setCurrentTime(pkt.pts);
                 d.osd->process(data);
             }
+            if (d.statistics && d.filter_context) {
+                d.statistics->video.current_time = QTime().addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
+                foreach (Filter *filter, d.filters) {
+                    filter->process(d.filter_context, d.statistics);
+                }
+            }
+
             if (vo_ok) {
                 vo->writeData(data);
             }

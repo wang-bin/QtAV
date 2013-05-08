@@ -32,6 +32,7 @@ class AVDecoder;
 class AVThreadPrivate;
 class AVOutput;
 class AVClock;
+class Statistics;
 class Q_EXPORT AVThread : public QThread
 {
     Q_OBJECT
@@ -71,6 +72,10 @@ protected:
     bool tryPause();
 
     DPTR_DECLARE(AVThread)
+
+private:
+    void setStatistics(Statistics* statistics);
+    friend class AVPlayer;
 };
 }
 

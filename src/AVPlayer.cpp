@@ -72,18 +72,23 @@ AVPlayer::AVPlayer(QObject *parent) :
 #elif HAVE_PORTAUDIO
     _audio = new AOPortAudio();
 #endif
+    if (_audio) {
+        _audio->setStatistics(&mStatistics);
+    }
     audio_dec = new AudioDecoder();
     audio_thread = new AudioThread(this);
     audio_thread->setClock(clock);
     //audio_thread->setPacketQueue(&audio_queue);
     audio_thread->setDecoder(audio_dec);
     audio_thread->setOutput(_audio);
+    audio_thread->setStatistics(&mStatistics);
 
     video_dec = new VideoDecoder();
 
     video_thread = new VideoThread(this);
     video_thread->setClock(clock);
     video_thread->setDecoder(video_dec);
+    video_thread->setStatistics(&mStatistics);
 
     demuxer_thread = new AVDemuxThread(this);
     demuxer_thread->setDemuxer(&demuxer);
@@ -123,6 +128,7 @@ VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
     _renderer = r;
     video_thread->setOutput(_renderer);
     if (_renderer) {
+        _renderer->setStatistics(&mStatistics);
 		if (isPlaying())
 			stop();
         //delete _renderer; //Do not own the ptr
@@ -364,6 +370,7 @@ void AVPlayer::play()
     }
     Q_ASSERT(clock != 0);
     clock->reset();
+    mStatistics.reset();
 
     if (osd) {
         osd->setTotalTime(duration());

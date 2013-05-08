@@ -21,6 +21,7 @@
 
 #include <QtAV/AVOutput.h>
 #include <private/AVOutput_p.h>
+#include <QtAV/FilterContext.h>
 
 namespace QtAV {
 
@@ -94,15 +95,20 @@ void AVOutput::convertData(const QByteArray &data)
     d.data = data;
 }
 
-bool AVOutput::setFilterContext(FilterContext *context)
+int AVOutput::filterContextType() const
 {
-    d_func().filter_context = context;
-    return true;
+    return FilterContext::None;
 }
 
 QList<Filter*>& AVOutput::filters()
 {
     return d_func().filters;
+}
+
+void AVOutput::setStatistics(Statistics *statistics)
+{
+    DPTR_D(AVOutput);
+    d.statistics = statistics;
 }
 
 } //namespace QtAV
