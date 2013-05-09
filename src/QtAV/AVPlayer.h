@@ -93,7 +93,9 @@ public slots:
 protected slots:
     void resizeRenderer(const QSize& size);
 
-protected:
+private:
+    void initStatistics();
+
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change

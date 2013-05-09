@@ -49,6 +49,7 @@ public:
     QString text(Statistics* statistics);
 protected:
     ShowType mShowType;
+    int mSecsTotal;
     QFont mFont;
 };
 

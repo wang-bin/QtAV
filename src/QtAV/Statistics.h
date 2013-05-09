@@ -43,13 +43,14 @@ public:
     class Common {
     public:
         Common();
-        QString format;
+        QString format;//?
         QString codec, codec_long;
         //common audio/video info that may be used(visualize) by filters
-        QTime current_time, total_time, start_time;
-        qreal bit_rate, avg_frame_rate; //Kps
-        qint64 frames;
-        qint64 size; //audio/video stream size
+        QTime current_time, total_time, start_time; //TODO: in AVFormatContext and AVStream, what's the difference?
+        qreal bit_rate;
+        qreal avg_frame_rate; //AVStream.avg_frame_rate Kps
+        qint64 frames; //AVStream.nb_frames. AVCodecContext.frame_number?
+        qint64 size; //audio/video stream size. AVCodecContext.frame_size?
 
         //union member with ctor, dtor, copy ctor only works in c++11
         /*union {

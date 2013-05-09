@@ -126,8 +126,8 @@ VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
     video_thread->setOutput(_renderer);
     if (_renderer) {
         _renderer->setStatistics(&mStatistics);
-		if (isPlaying())
-			stop();
+        if (isPlaying())
+            stop();
         //delete _renderer; //Do not own the ptr
         _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
     }
@@ -331,7 +331,7 @@ bool AVPlayer::load()
 
 qreal AVPlayer::duration() const
 {
-    return qreal(demuxer.duration())/qreal(AV_TIME_BASE);
+    return qreal(demuxer.duration())/qreal(AV_TIME_BASE); //AVFrameContext.duration time base: AV_TIME_BASE
 }
 
 //FIXME: why no demuxer will not get an eof if replaying by seek(0)?
@@ -348,13 +348,14 @@ void AVPlayer::play()
     if (!isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
         if (!load())
             return;
+        else
+            initStatistics();
     } else {
         qDebug("seek(0)");
         demuxer.seek(0); //FIXME: now assume it is seekable. for unseekable, setFile() again
     }
     Q_ASSERT(clock != 0);
     clock->reset();
-    mStatistics.reset();
 
     if (aCodecCtx) {
         qDebug("Starting audio thread...");
@@ -431,6 +432,50 @@ void AVPlayer::seekBackward()
 void AVPlayer::updateClock(qint64 msecs)
 {
     clock->updateExternalClock(msecs);
+}
+
+
+void AVPlayer::initStatistics()
+{
+    mStatistics.reset();
+    mStatistics.url = path;
+    AVStream *stream = formatCtx->streams[demuxer.audioStream()];
+    qDebug("duration=%lld (%d ms==%f), time_base=%f", stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+           , duration(), av_q2d(stream->time_base));
+    //mStatistics.audio.format =
+    mStatistics.audio.codec = aCodecCtx->codec->name;
+    mStatistics.audio.codec_long = aCodecCtx->codec->long_name;
+    mStatistics.audio.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+    mStatistics.audio.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+    mStatistics.audio.bit_rate = aCodecCtx->bit_rate; //formatCtx
+    mStatistics.audio.avg_frame_rate = av_q2d(stream->avg_frame_rate);
+    mStatistics.audio.frames = stream->nb_frames;
+    //mStatistics.audio.size =
+
+    stream = formatCtx->streams[demuxer.videoStream()];
+    //mStatistics.audio.format =
+    mStatistics.video.codec = vCodecCtx->codec->name;
+    mStatistics.video.codec_long = vCodecCtx->codec->long_name;
+    qDebug("duration=%lld (%d ms==%f), time_base=%f", stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+           , duration(), av_q2d(stream->time_base));
+    mStatistics.video.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+    mStatistics.video.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+    mStatistics.video.bit_rate = vCodecCtx->bit_rate; //formatCtx
+    mStatistics.video.avg_frame_rate = av_q2d(stream->avg_frame_rate);
+    mStatistics.video.frames = stream->nb_frames;
+    //mStatistics.audio.size =
+
+    mStatistics.audio_only.block_align = aCodecCtx->block_align;
+    mStatistics.audio_only.channels = aCodecCtx->channels;
+    mStatistics.audio_only.frame_number = aCodecCtx->frame_number;
+    mStatistics.audio_only.frame_size = aCodecCtx->frame_size;
+    mStatistics.audio_only.sample_rate = aCodecCtx->sample_rate;
+
+    mStatistics.video_only.coded_height = vCodecCtx->coded_height;
+    mStatistics.video_only.coded_width = vCodecCtx->coded_width;
+    mStatistics.video_only.gop_size = vCodecCtx->gop_size;
+    mStatistics.video_only.height = vCodecCtx->height;
+    mStatistics.video_only.width = vCodecCtx->width;
 }
 
 } //namespace QtAV

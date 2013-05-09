@@ -26,6 +26,7 @@ namespace QtAV {
 
 OSD::OSD():
     mShowType(ShowCurrentAndTotalTime)
+  , mSecsTotal(-1)
 {
     mFont.setBold(true);
     mFont.setPixelSize(26);
@@ -66,22 +67,25 @@ bool OSD::hasShowType(ShowType t) const
 
 QString OSD::text(Statistics *statistics)
 {
+    //TODO: choose video or audio?
     QString text;
-    //TODO: calculation move to a function
     if (hasShowType(ShowCurrentTime) || hasShowType(ShowCurrentAndTotalTime)) {
         text = statistics->video.current_time.toString("HH:mm:ss");
-        if (hasShowType(ShowCurrentAndTotalTime))
-            text += " / ";
+    }
+    if (mSecsTotal < 0) {
+        if (statistics->video.total_time.isNull())
+            return text;
+        mSecsTotal = statistics->video.total_time.secsTo(QTime(0, 0, 0));
     }
     if (hasShowType(ShowCurrentAndTotalTime)) {
-        text += statistics->video.total_time.toString("HH:mm:ss");
+        text += "/" + statistics->video.total_time.toString("HH:mm:ss");
     }
     if (hasShowType(ShowRemainTime)) {
         text += QTime().addSecs(statistics->video.current_time.secsTo(statistics->video.total_time)).toString("HH:mm:ss");
     }
-    if (hasShowType(ShowPercent) && statistics->video.total_time.secsTo(QTime(0, 0, 0)) > 0)
+    if (hasShowType(ShowPercent))
         text += QString::number(qreal(statistics->video.current_time.secsTo(QTime(0, 0, 0)))
-                                /qreal(statistics->video.total_time.secsTo(QTime(0, 0, 0)))*100, 'f', 1) + "%";
+                                /qreal(mSecsTotal)*100, 'f', 1) + "%";
     return text;
 }
 

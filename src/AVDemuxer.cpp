@@ -541,9 +541,10 @@ qint64 AVDemuxer::startTime() const
     return format_context->start_time;
 }
 
+//AVFrameContext use AV_TIME_BASE as time base.
 qint64 AVDemuxer::duration() const
 {
-    return format_context->duration;
+    return format_context->duration; //time base: AV_TIME_BASE
 }
 
 int AVDemuxer::bitRate() const
