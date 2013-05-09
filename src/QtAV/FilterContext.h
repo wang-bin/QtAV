@@ -55,7 +55,8 @@ public:
 class Q_EXPORT VideoFilterContext : public FilterContext
 {
 public:
-    QRect out_rect;
+    VideoFilterContext();
+    QRect rect;
 };
 
 class Q_EXPORT QPainterFilterContext : public VideoFilterContext

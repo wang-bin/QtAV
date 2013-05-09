@@ -49,7 +49,6 @@ public:
     QString text(Statistics* statistics);
 protected:
     ShowType mShowType;
-    QPoint mPosition;
     QFont mFont;
 };
 

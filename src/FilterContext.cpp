@@ -40,6 +40,12 @@ FilterContext::~FilterContext()
 {
 }
 
+
+VideoFilterContext::VideoFilterContext():
+    rect(32, 32, 0, 0)
+{
+}
+
 FilterContext::Type QPainterFilterContext::type() const
 {
     return FilterContext::QtPainter;

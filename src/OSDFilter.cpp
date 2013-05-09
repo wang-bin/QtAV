@@ -54,7 +54,7 @@ void OSFilterQPainter::process(FilterContext *context, Statistics *statistics)
     p->save(); //TODO: move outside?
     p->setFont(mFont);
     p->setPen(Qt::white);
-    p->drawText(mPosition, statistics->video.current_time.toString("HH:mm:ss"));
+    p->drawText(ctx->rect.topLeft(), statistics->video.current_time.toString("HH:mm:ss"));
     p->restore(); //TODO: move outside?
 }
 
