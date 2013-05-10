@@ -181,7 +181,9 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                 openLocalFile();
             } else/* if (m == Qt::NoModifier) */{
                 //foreach renderer, or just current widget? add shortcuts for all vo?
-                player->renderer()->osdFilter()->useNextShowType();
+                OSDFilter *osd = player->renderer()->osdFilter();
+                if (osd)
+                    osd->useNextShowType();
             }
         }
             break;
