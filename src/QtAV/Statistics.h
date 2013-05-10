@@ -40,6 +40,8 @@ public:
     void reset();
 
     QString url;
+    QTime start_time, duration;
+    //TODO: filter, decoder, resampler info etc.
     class Common {
     public:
         Common();

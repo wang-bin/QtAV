@@ -441,6 +441,8 @@ void AVPlayer::initStatistics()
 {
     mStatistics.reset();
     mStatistics.url = path;
+    mStatistics.start_time = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->start_time*(qreal)av_q2d(AV_TIME_BASE_Q)*1000.0));
+    mStatistics.duration = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->duration*(qreal)av_q2d(AV_TIME_BASE_Q)*1000.0));
     AVStream *stream = formatCtx->streams[demuxer.audioStream()];
     qDebug("duration=%lld (%d ms==%f), time_base=%f", stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
            , duration(), av_q2d(stream->time_base));
