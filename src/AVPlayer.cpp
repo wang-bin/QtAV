@@ -346,10 +346,12 @@ void AVPlayer::play()
      */
     //FIXME: seek(0) for audio without video crashes, why?
     if (!isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
-        if (!load())
+        if (!load()) {
+            mStatistics.reset();
             return;
-        else
+        } else {
             initStatistics();
+        }
     } else {
         qDebug("seek(0)");
         demuxer.seek(0); //FIXME: now assume it is seekable. for unseekable, setFile() again
