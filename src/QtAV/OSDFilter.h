@@ -42,10 +42,13 @@ class OSDFilterImpl : public OSDFilter
 public:
     OSDFilterImpl();
     ~OSDFilterImpl() {}
-    virtual void process(FilterContext* context, Statistics* statistics);
+    virtual void process(FilterContext *context, Statistics* statistics);
+    FilterContext::Type contextType() const {
+        return (FilterContext::Type)TypeTrait<Context>::type;
+    }
 };
 
-typedef OSDFilterImpl<QPainterFilterContext> OSFilterQPainter;
+typedef OSDFilterImpl<QPainterFilterContext> OSDFilterQPainter;
 
 } //namespace QtAV
 

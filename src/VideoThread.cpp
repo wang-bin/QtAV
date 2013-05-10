@@ -91,8 +91,6 @@ void VideoThread::run()
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
-    //TODO: do not init filter_context
-    d.filter_context = FilterContext::create(FilterContext::QtPainter); //vo->filterContextType()
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -162,7 +160,7 @@ void VideoThread::run()
             if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
             }*/
             QByteArray data = dec->data();
-            if (d.statistics && d.filter_context) {
+            if (d.statistics) {
                 d.statistics->video.current_time = QTime().addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
                 foreach (Filter *filter, d.filters) {
                     filter->process(d.filter_context, d.statistics);

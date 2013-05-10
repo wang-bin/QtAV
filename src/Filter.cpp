@@ -40,12 +40,6 @@ void Filter::process(FilterContext *context, Statistics *statistics)
     Q_UNUSED(statistics);
 }
 
-void Filter::process(QByteArray &data)
-{
-    Q_UNUSED(data);
-}
-
-
 void Filter::setEnabled(bool enabled)
 {
     DPTR_D(Filter);
@@ -56,6 +50,22 @@ bool Filter::isEnabled() const
 {
     DPTR_D(const Filter);
     return d.enabled;
+}
+
+void Filter::setOpacity(qreal o)
+{
+    DPTR_D(Filter);
+    d.opacity = o;
+}
+
+qreal Filter::opacity() const
+{
+    return d_func().opacity;
+}
+
+FilterContext::Type Filter::contextType() const
+{
+    return FilterContext::None;
 }
 
 } //namespace QtAV

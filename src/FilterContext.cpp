@@ -46,6 +46,12 @@ VideoFilterContext::VideoFilterContext():
 {
 }
 
+QPainterFilterContext::QPainterFilterContext():
+    painter(0)
+{
+
+}
+
 FilterContext::Type QPainterFilterContext::type() const
 {
     return FilterContext::QtPainter;

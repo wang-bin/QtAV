@@ -42,18 +42,23 @@ class Q_EXPORT Filter
 public:
     virtual ~Filter() = 0;
     //isEnabled() then setContext
-    virtual void process(FilterContext* context, Statistics* statistics);
+    /*!
+     * if context is null, or contextType() != context->type(), then create a right one and assign it to context.
+     */
+    virtual void process(FilterContext *context, Statistics* statistics);
     //TODO: parameter FrameContext
     void setEnabled(bool enabled); //AVComponent.enabled
     bool isEnabled() const;
 
-    FilterContext::Type contextType() const;
+    qreal opacity() const;
+    void setOpacity(qreal o);
+
+    virtual FilterContext::Type contextType() const;
 
 protected:
     /*
      * If the filter is in AVThread, it's safe to operate on ref.
      */
-    virtual void process(QByteArray& data);
     Filter(FilterPrivate& d);
 
     friend class AVThread;

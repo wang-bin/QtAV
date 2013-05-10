@@ -34,11 +34,13 @@ public:
     FilterPrivate():
         enabled(true)
       , context(0)
+      , opacity(1)
     {}
     virtual ~FilterPrivate() {}
 
     bool enabled;
     FilterContext *context; //used only when is necessary
+    qreal opacity;
 };
 
 } //namespace QtAV

@@ -43,13 +43,31 @@ OSDFilterImpl<QPainterFilterContext>::OSDFilterImpl():
 }
 
 template<>
-void OSFilterQPainter::process(FilterContext *context, Statistics *statistics)
+void OSDFilterQPainter::process(FilterContext *context, Statistics *statistics)
 {
     if (mShowType == ShowNone)
         return;
+    if (!context || context->type() != contextType()) {
+        if (context && context->type() != contextType()) {
+            qDebug("incompatible context type");
+            delete context;
+            context = 0;
+        } else {
+            qDebug("null context");
+        }
+        context = FilterContext::create(FilterContext::QtPainter);
+        QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(context);
+        ctx->painter = new QPainter();
+    }
     QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(context);
-    if (!ctx->painter)
+    if (!ctx->painter) {
+        //qWarning("null QPainter in OSDFilterQPainter!");
         return;
+    }
+    if (!ctx->painter->isActive()) {
+        qWarning("QPainter in OSDFilterQPainter is not active");
+        return;
+    }
     QPainter *p = ctx->painter;
     p->save(); //TODO: move outside?
     p->setFont(mFont);
@@ -57,5 +75,11 @@ void OSFilterQPainter::process(FilterContext *context, Statistics *statistics)
     p->drawText(ctx->rect.topLeft(), text(statistics));
     p->restore(); //TODO: move outside?
 }
-
+/*
+template<>
+FilterContext::Type OSDFilterQPainter::contextType() const
+{
+    return FilterContext::QtPainter;
+}
+*/
 } //namespace QtAV

@@ -25,6 +25,7 @@
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
 #include <QtCore/QWaitCondition>
+
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Global.h>
 
@@ -67,7 +68,7 @@ public:
     QMutex mutex;
     QWaitCondition cond; //pause
     qreal delay;
-    FilterContext *filter_context;
+    FilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
     QList<Filter*> filters;
     Statistics *statistics; //not obj. Statistics is unique for the player, which is in AVPlayer
 };

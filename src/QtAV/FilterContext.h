@@ -48,7 +48,7 @@ public:
     static FilterContext* create(Type t);
     virtual ~FilterContext();
     virtual Type type() const = 0;
-    QByteArray data;
+    QByteArray data; //TODO: initialize() on data
     //QPainter, paintdevice, surface etc. contains all of them here?
 };
 
@@ -59,13 +59,22 @@ public:
     QRect rect;
 };
 
+//TODO: font, pen, brush etc?
 class Q_EXPORT QPainterFilterContext : public VideoFilterContext
 {
 public:
+    QPainterFilterContext();
     QPainter *painter;
     virtual Type type() const; //QtPainter
 };
 
+
+template<class T> struct TypeTrait {};
+template<> struct TypeTrait<QPainterFilterContext> {
+    enum {
+        type = FilterContext::QtPainter
+    };
+};
 
 } //namespace QtAV
 
