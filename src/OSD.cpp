@@ -72,7 +72,8 @@ QString OSD::text(Statistics *statistics)
     if (hasShowType(ShowCurrentTime) || hasShowType(ShowCurrentAndTotalTime)) {
         text = statistics->video.current_time.toString("HH:mm:ss");
     }
-    if (mSecsTotal < 0) {
+    //how to compute mSecsTotal only once?
+    if (hasShowType(ShowCurrentAndTotalTime) || hasShowType(ShowPercent) /*mSecsTotal < 0*/) {
         if (statistics->video.total_time.isNull())
             return text;
         mSecsTotal = statistics->video.total_time.secsTo(QTime(0, 0, 0));
