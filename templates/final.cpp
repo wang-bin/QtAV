@@ -18,8 +18,7 @@ public:
 {
 }
 
-%CLASS%::%CLASS%(%CLASS%Private &d):
-    %BASE%(d)
+%CLASS%::~%CLASS%()
 {
 }
 

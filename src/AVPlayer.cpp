@@ -27,7 +27,6 @@
 #include <QEvent>
 #include <QtCore/QDir>
 
-#include <QtAV/OSDFilterQPainter.h>
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/AudioThread.h>
 #include <QtAV/Packet.h>
@@ -54,8 +53,7 @@ namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent),loaded(false),capture_dir("capture"),_renderer(0),_audio(0)
-  ,event_filter(0),video_capture(0)
-  , osd(0)
+  , event_filter(0),video_capture(0)
 {
     qDebug("%s", aboutQtAV().toUtf8().constData());
     /*
@@ -72,18 +70,23 @@ AVPlayer::AVPlayer(QObject *parent) :
 #elif HAVE_PORTAUDIO
     _audio = new AOPortAudio();
 #endif
+    if (_audio) {
+        _audio->setStatistics(&mStatistics);
+    }
     audio_dec = new AudioDecoder();
     audio_thread = new AudioThread(this);
     audio_thread->setClock(clock);
     //audio_thread->setPacketQueue(&audio_queue);
     audio_thread->setDecoder(audio_dec);
     audio_thread->setOutput(_audio);
+    audio_thread->setStatistics(&mStatistics);
 
     video_dec = new VideoDecoder();
 
     video_thread = new VideoThread(this);
     video_thread->setClock(clock);
     video_thread->setDecoder(video_dec);
+    video_thread->setStatistics(&mStatistics);
 
     demuxer_thread = new AVDemuxThread(this);
     demuxer_thread->setDemuxer(&demuxer);
@@ -92,7 +95,6 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     setPlayerEventFilter(new EventFilter(this));
     setVideoCapture(new VideoCapture());
-    setOSDFilter(new OSDFilterQPainter());
 }
 
 AVPlayer::~AVPlayer()
@@ -123,8 +125,9 @@ VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
     _renderer = r;
     video_thread->setOutput(_renderer);
     if (_renderer) {
-		if (isPlaying())
-			stop();
+        _renderer->setStatistics(&mStatistics);
+        if (isPlaying())
+            stop();
         //delete _renderer; //Do not own the ptr
         _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
     }
@@ -166,6 +169,15 @@ void AVPlayer::setPlayerEventFilter(QObject *obj)
     }
 }
 
+Statistics& AVPlayer::statistics()
+{
+    return mStatistics;
+}
+
+const Statistics& AVPlayer::statistics() const
+{
+    return mStatistics;
+}
 //TODO: remove?
 void AVPlayer::resizeRenderer(const QSize &size)
 {
@@ -232,19 +244,6 @@ bool AVPlayer::captureVideo()
     if (!video_capture->isAsync())
         pause(pause_old);
     return true;
-}
-
-OSDFilter* AVPlayer::setOSDFilter(OSDFilter *osd)
-{
-    OSDFilter *old = osd;
-    this->osd = osd;
-    video_thread->setOSDFilter(osd);
-    return old;
-}
-
-OSDFilter* AVPlayer::osdFilter()
-{
-    return osd;
 }
 
 bool AVPlayer::play(const QString& path)
@@ -326,12 +325,13 @@ bool AVPlayer::load()
     }
     audio_dec->setCodecContext(aCodecCtx);
     video_dec->setCodecContext(vCodecCtx);
+    //TODO: init statistics
     return loaded;
 }
 
 qreal AVPlayer::duration() const
 {
-    return qreal(demuxer.duration())/qreal(AV_TIME_BASE);
+    return qreal(demuxer.duration())/qreal(AV_TIME_BASE); //AVFrameContext.duration time base: AV_TIME_BASE
 }
 
 //FIXME: why no demuxer will not get an eof if replaying by seek(0)?
@@ -346,8 +346,12 @@ void AVPlayer::play()
      */
     //FIXME: seek(0) for audio without video crashes, why?
     if (!isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
-        if (!load())
+        if (!load()) {
+            mStatistics.reset();
             return;
+        } else {
+            initStatistics();
+        }
     } else {
         qDebug("seek(0)");
         demuxer.seek(0); //FIXME: now assume it is seekable. for unseekable, setFile() again
@@ -355,9 +359,6 @@ void AVPlayer::play()
     Q_ASSERT(clock != 0);
     clock->reset();
 
-    if (osd) {
-        osd->setTotalTime(duration());
-    }
     if (aCodecCtx) {
         qDebug("Starting audio thread...");
         audio_thread->start(QThread::HighestPriority);
@@ -433,6 +434,53 @@ void AVPlayer::seekBackward()
 void AVPlayer::updateClock(qint64 msecs)
 {
     clock->updateExternalClock(msecs);
+}
+
+
+void AVPlayer::initStatistics()
+{
+    mStatistics.reset();
+    mStatistics.url = path;
+    //AV_TIME_BASE_Q: msvc error C2143
+    mStatistics.start_time = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->start_time/(qreal)AV_TIME_BASE*1000.0));
+    mStatistics.duration = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->duration/(qreal)AV_TIME_BASE*1000.0));
+    AVStream *stream = formatCtx->streams[demuxer.audioStream()];
+    qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+           , duration(), av_q2d(stream->time_base));
+    //mStatistics.audio.format =
+    mStatistics.audio.codec = aCodecCtx->codec->name;
+    mStatistics.audio.codec_long = aCodecCtx->codec->long_name;
+    mStatistics.audio.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+    mStatistics.audio.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+    mStatistics.audio.bit_rate = aCodecCtx->bit_rate; //formatCtx
+    mStatistics.audio.avg_frame_rate = av_q2d(stream->avg_frame_rate);
+    mStatistics.audio.frames = stream->nb_frames;
+    //mStatistics.audio.size =
+
+    stream = formatCtx->streams[demuxer.videoStream()];
+    //mStatistics.audio.format =
+    mStatistics.video.codec = vCodecCtx->codec->name;
+    mStatistics.video.codec_long = vCodecCtx->codec->long_name;
+    qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+           , duration(), av_q2d(stream->time_base));
+    mStatistics.video.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+    mStatistics.video.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+    mStatistics.video.bit_rate = vCodecCtx->bit_rate; //formatCtx
+    mStatistics.video.avg_frame_rate = av_q2d(stream->avg_frame_rate);
+    mStatistics.video.frames = stream->nb_frames;
+    //mStatistics.audio.size =
+
+    mStatistics.audio_only.block_align = aCodecCtx->block_align;
+    mStatistics.audio_only.channels = aCodecCtx->channels;
+    mStatistics.audio_only.frame_number = aCodecCtx->frame_number;
+    mStatistics.audio_only.frame_size = aCodecCtx->frame_size;
+    mStatistics.audio_only.sample_rate = aCodecCtx->sample_rate;
+
+    mStatistics.video_only.coded_height = vCodecCtx->coded_height;
+    mStatistics.video_only.coded_width = vCodecCtx->coded_width;
+    mStatistics.video_only.gop_size = vCodecCtx->gop_size;
+    mStatistics.video_only.height = vCodecCtx->height;
+    mStatistics.video_only.width = vCodecCtx->width;
 }
 
 } //namespace QtAV

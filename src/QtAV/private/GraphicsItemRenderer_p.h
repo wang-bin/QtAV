@@ -30,13 +30,7 @@ namespace QtAV {
 class Q_EXPORT GraphicsItemRendererPrivate : public QPainterRendererPrivate
 {
 public:
-    GraphicsItemRendererPrivate():
-        painter(0)
-    {
-    }
     virtual ~GraphicsItemRendererPrivate(){}
-
-    QPainter *painter;
 };
 
 } //namespace QtAV

@@ -109,18 +109,6 @@ void GDIRenderer::drawFrame()
     //end paint
 }
 
-void GDIRenderer::drawSubtitle()
-{
-}
-
-void GDIRenderer::drawOSD()
-{
-}
-
-void GDIRenderer::drawCustom()
-{
-}
-
 void GDIRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(GDIRenderer);
@@ -142,13 +130,6 @@ void GDIRenderer::paintEvent(QPaintEvent *)
             drawFrame();
         }
     }
-    //drawXXX only implement the painting, no other logic
-    if (d.draw_osd)
-        drawOSD();
-    if (d.draw_subtitle)
-        drawSubtitle();
-    if (d.draw_custom)
-        drawCustom();
     //end paint. how about QPainter::endNativePainting()?
 }
 

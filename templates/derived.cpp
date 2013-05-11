@@ -9,4 +9,8 @@ namespace QtAV {
 {
 }
 
+%CLASS%::~%CLASS%()
+{
+}
+
 } //namespace QtAV

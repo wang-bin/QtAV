@@ -21,8 +21,28 @@
 
 #include <QtAV/AVThread.h>
 #include <private/AVThread_p.h>
+#include <QtAV/AVOutput.h>
+#include <QtAV/Filter.h>
 
 namespace QtAV {
+
+AVThreadPrivate::~AVThreadPrivate() {
+    demux_end = true;
+    stop = true;
+    if (!paused) {
+        qDebug("~AVThreadPrivate wake up paused thread");
+        paused = false;
+        next_pause = false;
+        cond.wakeAll();
+    }
+    packets.setBlocking(true); //???
+    packets.clear();
+    //not neccesary context is managed by filters.
+    filter_context = 0;
+    qDeleteAll(filters); //TODO: is it safe?
+    filters.clear();
+}
+
 AVThread::AVThread(QObject *parent) :
     QThread(parent)
 {
@@ -125,6 +145,8 @@ void AVThread::resetState()
     d.demux_end = false;
     d.packets.setBlocking(true);
     d.packets.clear();
+    //not neccesary context is managed by filters.
+    d.filter_context = 0;
 }
 
 bool AVThread::tryPause()
@@ -137,6 +159,12 @@ bool AVThread::tryPause()
     d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
     qDebug("paused thread waked up!!!");
     return true;
+}
+
+void AVThread::setStatistics(Statistics *statistics)
+{
+    DPTR_D(AVThread);
+    d.statistics = statistics;
 }
 
 } //namespace QtAV

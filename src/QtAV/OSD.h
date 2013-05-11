@@ -19,40 +19,39 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_OSDFILTER_P_H
-#define QTAV_OSDFILTER_P_H
+#ifndef QTAV_OSD_H
+#define QTAV_OSD_H
 
-#include "Filter_p.h"
-#include "QtAV/OSDFilter.h"
+#include <QtAV/QtAV_Global.h>
+#include <QtCore/QPoint>
+#include <QtGui/QFont>
 
 namespace QtAV {
 
-class OSDFilterPrivate : public FilterPrivate
+class Statistics;
+class Q_EXPORT OSD
 {
 public:
-    OSDFilterPrivate():
-        show_type(OSDFilter::ShowCurrentAndTotalTime)
-      , width(0)
-      , height(0)
-      , sec_current(0)
-      , sec_total(0)
-      , total_hour(0)
-      , total_min(0)
-      , total_sec(0)
-    {
-    }
-    virtual ~OSDFilterPrivate() {}
-    void computeTime(int seconds, int *hour, int *min, int *sec) {
-        *hour = seconds/3600;
-        *min = (seconds%3600)/60;
-        *sec = seconds%60;
-    }
+    enum ShowType {
+        ShowCurrentTime = 1,
+        ShowCurrentAndTotalTime = 1<<1,
+        ShowRemainTime = 1<<2,
+        ShowPercent = 1<<3,
+        ShowNone
+    };
 
-    OSDFilter::ShowType show_type;
-    int width, height;
-    int sec_current, sec_total;
-    int total_hour, total_min, total_sec;
+    OSD();
+    virtual ~OSD();
+    void setShowType(ShowType type);
+    ShowType showType() const;
+    void useNextShowType();
+    bool hasShowType(ShowType t) const;
+    QString text(Statistics* statistics);
+protected:
+    ShowType mShowType;
+    int mSecsTotal;
+    QFont mFont;
 };
 
-} //namespace QtAV
-#endif // QTAV_OSDFILTER_P_H
+}//namespace QtAV
+#endif // QTAV_OSD_H

@@ -24,6 +24,7 @@
 
 #include <QtAV/AVClock.h>
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/Statistics.h>
 
 namespace QtAV {
 
@@ -36,7 +37,6 @@ class VideoRenderer;
 class AVClock;
 class AVDemuxThread;
 class VideoCapture;
-class OSDFilter;
 class Q_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -62,8 +62,6 @@ public:
     void setCaptureName(const QString& name);//TODO: remove. base name
     void setCaptureSaveDir(const QString& dir); //TODO: remove
     bool captureVideo();
-    OSDFilter* setOSDFilter(OSDFilter* osd);
-    OSDFilter* osdFilter();
     bool play(const QString& path);
 	bool isPlaying() const;
     bool isPaused() const;
@@ -76,6 +74,8 @@ public:
     /*only 1 event filter is available. the previous one will be removed. setPlayerEventFilter(0) will remove the event filter*/
     void setPlayerEventFilter(QObject *obj);
 
+    Statistics& statistics();
+    const Statistics& statistics() const;
 signals:
     void started();
     void stopped();
@@ -93,7 +93,9 @@ public slots:
 protected slots:
     void resizeRenderer(const QSize& size);
 
-protected:
+private:
+    void initStatistics();
+
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
@@ -114,7 +116,7 @@ protected:
     //tODO: (un)register api
     QObject *event_filter;
     VideoCapture *video_capture;
-    OSDFilter *osd;
+    Statistics mStatistics;
 };
 
 } //namespace QtAV

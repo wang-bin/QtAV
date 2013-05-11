@@ -24,24 +24,40 @@
 #include <qfont.h>
 #include <qevent.h>
 #include <qpainter.h>
+#include <QtAV/Filter.h>
 
 namespace QtAV {
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     QWidget(parent, f),QPainterRenderer(*new WidgetRendererPrivate())
 {
-    d_func().widget_holder = this;
+    DPTR_D(WidgetRenderer);
+    d.widget_holder = this;
+    d.painter = new QPainter();
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     setAutoFillBackground(false);
+    QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
+    if (ctx) {
+        ctx->painter = d.painter;
+    } else {
+        qWarning("FilterContext not available!");
+    }
 }
 
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
     :QWidget(parent, f),QPainterRenderer(d)
 {
-    d_func().widget_holder = this;
+    d.widget_holder = this;
+    d.painter = new QPainter();
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     setAutoFillBackground(false);
+    QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
+    if (ctx) {
+        ctx->painter = d.painter;
+    } else {
+        qWarning("FilterContext not available!");
+    }
 }
 
 WidgetRenderer::~WidgetRenderer()
@@ -56,14 +72,13 @@ bool WidgetRenderer::write()
 
 void WidgetRenderer::drawBackground()
 {
-    QPainter p(this);
-    p.fillRect(rect(), QColor(0, 0, 0));
+    DPTR_D(WidgetRenderer);
+    d.painter->fillRect(rect(), QColor(0, 0, 0));
 }
 
 void WidgetRenderer::drawFrame()
 {
     DPTR_D(WidgetRenderer);
-    QPainter p(this);
     if (d.image.isNull()) {
         //TODO: when setInSize()?
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
@@ -72,26 +87,14 @@ void WidgetRenderer::drawFrame()
     //assume that the image data is already scaled to out_size(NOT renderer size!)
     if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
         //d.preview = d.image;
-        p.drawImage(d.out_rect.topLeft(), d.image);
+        d.painter->drawImage(d.out_rect.topLeft(), d.image);
     } else {
         //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
         //       , d.image.size().width(), image.size().height(), d.renderer_width, d.renderer_height);
-        p.drawImage(d.out_rect, d.image);
+        d.painter->drawImage(d.out_rect, d.image);
         //what's the difference?
-        //p.drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
+        //d.painter->drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
     }
-}
-
-void WidgetRenderer::drawSubtitle()
-{
-}
-
-void WidgetRenderer::drawOSD()
-{
-}
-
-void WidgetRenderer::drawCustom()
-{
 }
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
@@ -162,6 +165,7 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
 void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
+    d.painter->begin(this); //Widget painting can only begin as a result of a paintEvent
     //begin paint. how about QPainter::beginNativePainting()?
     //fill background color when necessary, e.g. renderer is resized, image is null
     //if we access d.data which will be modified in AVThread, the following must be protected
@@ -179,14 +183,21 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
             drawFrame();
         }
     }
-    //drawXXX only implement the painting, no other logic
-    if (d.draw_osd)
-        drawOSD();
-    if (d.draw_subtitle)
-        drawSubtitle();
-    if (d.draw_custom)
-        drawCustom();
+    //TODO: move to applyFilters() //private?
+    if (!d.filters.isEmpty() && d.filter_context && d.statistics) {
+        foreach(Filter* filter, d.filters) {
+            if (!filter) {
+                qWarning("a null filter!");
+                //d.filters.removeOne(filter);
+                continue;
+            }
+            filter->process(d.filter_context, d.statistics);
+        }
+    } else {
+        //warn once
+    }
     //end paint. how about QPainter::endNativePainting()?
+    d.painter->end();
 }
 
 } //namespace QtAV

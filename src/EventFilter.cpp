@@ -180,7 +180,10 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                 //TODO: emit a signal so we can use custome dialogs?
                 openLocalFile();
             } else/* if (m == Qt::NoModifier) */{
-                player->osdFilter()->useNextShowType();
+                //foreach renderer, or just current widget? add shortcuts for all vo?
+                OSDFilter *osd = player->renderer()->osdFilter();
+                if (osd)
+                    osd->useNextShowType();
             }
         }
             break;

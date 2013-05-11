@@ -113,13 +113,14 @@ SOURCES += \
     AVDemuxThread.cpp \
     EventFilter.cpp \
     Filter.cpp \
+    FilterContext.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     ImageConverterIPP.cpp \
     QPainterRenderer.cpp \
+    OSD.cpp \
     OSDFilter.cpp \
-    OSDFilterQPainter.cpp \
     Packet.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
@@ -128,9 +129,9 @@ SOURCES += \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     AVClock.cpp \
+    Statistics.cpp \
     VideoDecoder.cpp \
     VideoThread.cpp
-
 
 SDK_HEADERS *= \
     QtAV/dptr.h \
@@ -144,11 +145,12 @@ SDK_HEADERS *= \
     QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
     QtAV/Filter.h \
+    QtAV/FilterContext.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/QPainterRenderer.h \
+    QtAV/OSD.h \
     QtAV/OSDFilter.h \
-    QtAV/OSDFilterQPainter.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
@@ -161,6 +163,7 @@ SDK_HEADERS *= \
     QtAV/VideoThread.h \
     QtAV/FactoryDefine.h \
     QtAV/ImageConverterTypes.h \
+    QtAV/Statistics.h \
     QtAV/version.h
 
 
@@ -178,7 +181,6 @@ HEADERS *= \
     QtAV/private/Filter_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
-    QtAV/private/OSDFilter_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \

@@ -19,19 +19,51 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_OSDFILTERQPAINTER_H
-#define QTAV_OSDFILTERQPAINTER_H
-
-#include <QtAV/OSDFilter.h>
+#include "QtAV/Statistics.h"
 
 namespace QtAV {
 
-class OSDFilterQPainter : public OSDFilter
+Statistics::Common::Common():
+    bit_rate(0)
+  , avg_frame_rate(0)
+  , frames(0)
+  , size(0)
 {
-public:
-    OSDFilterQPainter();
-    virtual void process(QByteArray &data);
-};
+}
+
+Statistics::AudioOnly::AudioOnly():
+    sample_rate(0)
+  , channels(0)
+  , frame_size(0)
+  , frame_number(0)
+  , block_align(0)
+{
+}
+
+Statistics::VideoOnly::VideoOnly():
+    width(0)
+  , height(0)
+  , coded_width(0)
+  , coded_height(0)
+  , gop_size(0)
+{
+}
+
+Statistics::Statistics()
+{
+}
+
+Statistics::~Statistics()
+{
+}
+
+void Statistics::reset()
+{
+    url = "";
+    audio = Common();
+    video = Common();
+    audio_only = AudioOnly();
+    video_only = VideoOnly();
+}
 
 } //namespace QtAV
-#endif // QTAV_OSDFILTERQPAINTER_H
