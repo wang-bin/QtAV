@@ -51,7 +51,6 @@ FilterContext::~FilterContext()
 void FilterContext::initializeOnData(QByteArray *data)
 {
     Q_UNUSED(data);
-    qDebug("%s", __PRETTY_FUNCTION__);
 }
 
 VideoFilterContext::VideoFilterContext():

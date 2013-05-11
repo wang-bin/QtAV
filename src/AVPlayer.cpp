@@ -441,10 +441,11 @@ void AVPlayer::initStatistics()
 {
     mStatistics.reset();
     mStatistics.url = path;
-    mStatistics.start_time = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->start_time*(qreal)av_q2d(AV_TIME_BASE_Q)*1000.0));
-    mStatistics.duration = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->duration*(qreal)av_q2d(AV_TIME_BASE_Q)*1000.0));
+    //AV_TIME_BASE_Q: msvc error C2143
+    mStatistics.start_time = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->start_time/(qreal)AV_TIME_BASE*1000.0));
+    mStatistics.duration = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->duration/(qreal)AV_TIME_BASE*1000.0));
     AVStream *stream = formatCtx->streams[demuxer.audioStream()];
-    qDebug("duration=%lld (%d ms==%f), time_base=%f", stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+    qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
            , duration(), av_q2d(stream->time_base));
     //mStatistics.audio.format =
     mStatistics.audio.codec = aCodecCtx->codec->name;
@@ -460,7 +461,7 @@ void AVPlayer::initStatistics()
     //mStatistics.audio.format =
     mStatistics.video.codec = vCodecCtx->codec->name;
     mStatistics.video.codec_long = vCodecCtx->codec->long_name;
-    qDebug("duration=%lld (%d ms==%f), time_base=%f", stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+    qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
            , duration(), av_q2d(stream->time_base));
     mStatistics.video.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
     mStatistics.video.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
