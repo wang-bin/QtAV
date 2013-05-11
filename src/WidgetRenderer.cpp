@@ -184,7 +184,7 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
         }
     }
     //TODO: move to applyFilters() //private?
-    if (d.filter_context && d.statistics) {
+    if (!d.filters.isEmpty() && d.filter_context && d.statistics) {
         foreach(Filter* filter, d.filters) {
             if (!filter) {
                 qWarning("a null filter!");
