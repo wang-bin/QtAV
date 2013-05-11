@@ -48,7 +48,7 @@ cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
 #config.tests
-isEmpty(EssentialDepends) {
+!isEmpty(EssentialDepends) {
     for(d, EssentialDepends) {
        !config_$$d {
             CONFIG *= recheck
