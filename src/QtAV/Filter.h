@@ -40,12 +40,8 @@ class Q_EXPORT Filter
 {
     DPTR_DECLARE_PRIVATE(Filter)
 public:
-    virtual ~Filter() = 0;
+    virtual ~Filter();
     //isEnabled() then setContext
-    /*!
-     * if context is null, or contextType() != context->type(), then create a right one and assign it to context.
-     */
-    virtual void process(FilterContext *context, Statistics* statistics);
     //TODO: parameter FrameContext
     void setEnabled(bool enabled); //AVComponent.enabled
     bool isEnabled() const;
@@ -55,14 +51,19 @@ public:
 
     virtual FilterContext::Type contextType() const;
 
+    /*!
+     * check context and apply the filter
+     * if context is null, or contextType() != context->type(), then create a right one and assign it to context.
+     */
+    void process(FilterContext *&context, Statistics* statistics, QByteArray* data = 0);
+
 protected:
     /*
      * If the filter is in AVThread, it's safe to operate on ref.
      */
     Filter(FilterPrivate& d);
+    virtual void process() = 0;
 
-    friend class AVThread;
-    friend class VideoThread;
     DPTR_DECLARE(Filter)
 };
 

@@ -37,10 +37,8 @@ AVThreadPrivate::~AVThreadPrivate() {
     }
     packets.setBlocking(true); //???
     packets.clear();
-    if (filter_context) {
-        delete filter_context; //TODO: need it?
-        filter_context = 0;
-    }
+    //not neccesary context is managed by filters.
+    filter_context = 0;
     qDeleteAll(filters); //TODO: is it safe?
     filters.clear();
 }
@@ -147,10 +145,8 @@ void AVThread::resetState()
     d.demux_end = false;
     d.packets.setBlocking(true);
     d.packets.clear();
-    if (d.filter_context) {
-        delete d.filter_context;
-        d.filter_context = 0;
-    }
+    //not neccesary context is managed by filters.
+    d.filter_context = 0;
 }
 
 bool AVThread::tryPause()

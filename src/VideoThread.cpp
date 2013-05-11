@@ -162,8 +162,10 @@ void VideoThread::run()
             QByteArray data = dec->data();
             if (d.statistics) {
                 d.statistics->video.current_time = QTime().addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
-                foreach (Filter *filter, d.filters) {
-                    filter->process(d.filter_context, d.statistics);
+                if (!d.filters.isEmpty()) {
+                    foreach (Filter *filter, d.filters) {
+                        filter->process(d.filter_context, d.statistics, &data);
+                    }
                 }
             }
 

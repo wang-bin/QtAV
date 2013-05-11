@@ -31,21 +31,23 @@ class OSDFilterPrivate;
 //TODO: not template. OSDFilter : public Filter, public OSD
 class OSDFilter : public Filter, public OSD
 {
-    DPTR_DECLARE_PRIVATE(OSDFilter)
 protected:
+    DPTR_DECLARE_PRIVATE(OSDFilter)
     OSDFilter(OSDFilterPrivate& d);
 };
 
 template<class Context>
 class OSDFilterImpl : public OSDFilter
 {
+    //DPTR_DECLARE_PRIVATE(OSDFilterImpl<Context>)
 public:
     OSDFilterImpl();
     ~OSDFilterImpl() {}
-    virtual void process(FilterContext *context, Statistics* statistics);
     FilterContext::Type contextType() const {
         return (FilterContext::Type)TypeTrait<Context>::type;
     }
+protected:
+    virtual void process();
 };
 
 typedef OSDFilterImpl<QPainterFilterContext> OSDFilterQPainter;

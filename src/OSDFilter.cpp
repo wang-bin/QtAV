@@ -43,25 +43,15 @@ OSDFilterImpl<QPainterFilterContext>::OSDFilterImpl():
 }
 
 template<>
-void OSDFilterQPainter::process(FilterContext *context, Statistics *statistics)
+void OSDFilterQPainter::process()
 {
     if (mShowType == ShowNone)
         return;
-    if (!context || context->type() != contextType()) {
-        if (context && context->type() != contextType()) {
-            qDebug("incompatible context type");
-            delete context;
-            context = 0;
-        } else {
-            qDebug("null context");
-        }
-        context = FilterContext::create(FilterContext::QtPainter);
-        QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(context);
-        ctx->painter = new QPainter();
-    }
-    QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(context);
+    DPTR_D(Filter);
+    QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(d.context);
+    //qDebug("ctx=%p tid=%p main tid=%p", ctx, QThread::currentThread(), qApp->thread());
     if (!ctx->painter) {
-        //qWarning("null QPainter in OSDFilterQPainter!");
+        qWarning("null QPainter in OSDFilterQPainter!");
         return;
     }
     if (!ctx->painter->isActive()) {
@@ -72,7 +62,7 @@ void OSDFilterQPainter::process(FilterContext *context, Statistics *statistics)
     p->save(); //TODO: move outside?
     p->setFont(mFont);
     p->setPen(Qt::white);
-    p->drawText(ctx->rect.topLeft(), text(statistics));
+    p->drawText(ctx->rect.topLeft(), text(d.statistics));
     p->restore(); //TODO: move outside?
 }
 /*

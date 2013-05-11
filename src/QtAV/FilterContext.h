@@ -30,6 +30,7 @@
  */
 
 class QPainter;
+class QPaintDevice;
 namespace QtAV {
 
 class FilterContext;
@@ -46,10 +47,16 @@ public:
         None
     };
     static FilterContext* create(Type t);
+
+    FilterContext();
     virtual ~FilterContext();
     virtual Type type() const = 0;
-    QByteArray data; //TODO: initialize() on data
+    //TODO: how to move them to VideoFilterContext?
+    int video_width, video_height; //original size
     //QPainter, paintdevice, surface etc. contains all of them here?
+protected:
+    virtual void initializeOnData(QByteArray *data); //private?
+    friend class Filter;
 };
 
 class Q_EXPORT VideoFilterContext : public FilterContext
@@ -64,8 +71,17 @@ class Q_EXPORT QPainterFilterContext : public VideoFilterContext
 {
 public:
     QPainterFilterContext();
+    virtual ~QPainterFilterContext();
+
     QPainter *painter;
+    /*
+     * for the filters apply on decoded data, paint_device must be initialized once the data changes
+     * can we allocate memory on stack?
+     */
+    QPaintDevice *paint_device;
     virtual Type type() const; //QtPainter
+protected:
+    virtual void initializeOnData(QByteArray* data);
 };
 
 

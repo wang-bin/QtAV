@@ -21,6 +21,7 @@
 
 #include "QtAV/Filter.h"
 #include "private/Filter_p.h"
+#include "QtAV/Statistics.h"
 
 namespace QtAV {
 
@@ -34,10 +35,35 @@ Filter::~Filter()
 {
 }
 
-void Filter::process(FilterContext *context, Statistics *statistics)
+void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray* data)
 {
-    Q_UNUSED(context);
-    Q_UNUSED(statistics);
+    DPTR_D(Filter);
+    if(context)
+        context->type();
+    if (!context || context->type() != contextType()) {
+        if (context) {
+            qDebug("incompatible context type");
+            //we don't delete it because the context MUST be used by other filters
+            //TODO: How to release them at the end? refcount?
+        } else {
+            qDebug("null context");
+        }
+        //use internal context
+        if (d.context) {
+            qDebug("replace context with internal one");
+            context = d.context;
+        } else {
+            context = FilterContext::create(contextType());
+            qDebug("new filter context=%p, type=%d", context, contextType());
+            context->video_width = statistics->video_only.width;
+            context->video_height = statistics->video_only.height;
+        }
+    }
+    if (data)
+        context->initializeOnData(data);
+    d.context = context;
+    d.statistics = statistics;
+    process();
 }
 
 void Filter::setEnabled(bool enabled)

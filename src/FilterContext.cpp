@@ -20,6 +20,8 @@
 ******************************************************************************/
 
 #include "QtAV/FilterContext.h"
+#include <QtGui/QImage>
+#include <QtGui/QPainter>
 
 namespace QtAV {
 
@@ -36,10 +38,21 @@ FilterContext* FilterContext::create(Type t)
     return ctx;
 }
 
+FilterContext::FilterContext():
+    video_width(0)
+  , video_height(0)
+{
+}
+
 FilterContext::~FilterContext()
 {
 }
 
+void FilterContext::initializeOnData(QByteArray *data)
+{
+    Q_UNUSED(data);
+    qDebug("%s", __PRETTY_FUNCTION__);
+}
 
 VideoFilterContext::VideoFilterContext():
     rect(32, 32, 0, 0)
@@ -48,13 +61,48 @@ VideoFilterContext::VideoFilterContext():
 
 QPainterFilterContext::QPainterFilterContext():
     painter(0)
+  , paint_device(0)
 {
+}
 
+QPainterFilterContext::~QPainterFilterContext()
+{
+    if (paint_device) {
+        if (painter) { //painter may assigned by vo
+            painter->end();
+            qDebug("delete painter");
+            delete painter;
+            painter = 0;
+        }
+        qDebug("delete paint device");
+        delete paint_device;
+        paint_device = 0;
+    }
 }
 
 FilterContext::Type QPainterFilterContext::type() const
 {
     return FilterContext::QtPainter;
+}
+
+void QPainterFilterContext::initializeOnData(QByteArray *data)
+{
+    Q_ASSERT(video_width > 0 && video_height > 0);
+    if (!data)
+        return;
+    if (data->isEmpty())
+        return;
+    if (paint_device) {
+        if (painter) {
+            painter->end(); //destroy a paint device that is being painted is not allowed!
+        }
+        delete paint_device;
+        paint_device = 0;
+    }
+    paint_device = new QImage((uchar*)data->data(), video_width, video_height, QImage::Format_RGB32);
+    if (!painter)
+        painter = new QPainter();
+    painter->begin((QImage*)paint_device);
 }
 
 

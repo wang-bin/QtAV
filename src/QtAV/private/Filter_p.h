@@ -28,18 +28,21 @@ namespace QtAV {
 
 class Filter;
 class FilterContext;
+class Statistics;
 class FilterPrivate : public DPtrPrivate<Filter>
 {
 public:
     FilterPrivate():
         enabled(true)
       , context(0)
+      , statistics(0)
       , opacity(1)
     {}
     virtual ~FilterPrivate() {}
 
     bool enabled;
     FilterContext *context; //used only when is necessary
+    Statistics *statistics;
     qreal opacity;
 };
 
