@@ -74,19 +74,20 @@ QString OSD::text(Statistics *statistics)
     }
     //how to compute mSecsTotal only once?
     if (hasShowType(ShowCurrentAndTotalTime) || hasShowType(ShowPercent) /*mSecsTotal < 0*/) {
-        if (statistics->video.total_time.isNull())
+        if (statistics->duration.isNull())
             return text;
-        mSecsTotal = statistics->video.total_time.secsTo(QTime(0, 0, 0));
+        mSecsTotal = QTime(0, 0, 0).secsTo(statistics->duration); //why video.total_time may be wrong(mkv)
+        //qDebug("secs=%d/%d", QTime(0, 0, 0).secsTo(statistics->video.current_time), mSecsTotal);
     }
     if (hasShowType(ShowCurrentAndTotalTime)) {
-        text += "/" + statistics->video.total_time.toString("HH:mm:ss");
+        text += "/" + statistics->duration.toString("HH:mm:ss");
     }
     if (hasShowType(ShowRemainTime)) {
-        text += QTime().addSecs(statistics->video.current_time.secsTo(statistics->video.total_time)).toString("HH:mm:ss");
+        text += "-" + QTime().addSecs(statistics->video.current_time.secsTo(statistics->duration)).toString("HH:mm:ss");
     }
     if (hasShowType(ShowPercent))
-        text += QString::number(qreal(statistics->video.current_time.secsTo(QTime(0, 0, 0)))
-                                /qreal(mSecsTotal)*100, 'f', 1) + "%";
+        text += QString::number(qreal(QTime(0, 0, 0).secsTo(statistics->video.current_time))
+                                /qreal(mSecsTotal)*100.0, 'f', 1) + "%";
     return text;
 }
 
