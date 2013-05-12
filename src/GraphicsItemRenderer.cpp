@@ -21,6 +21,7 @@
 
 #include <QtAV/GraphicsItemRenderer.h>
 #include <private/GraphicsItemRenderer_p.h>
+#include <QtAV/FilterContext.h>
 #include <QGraphicsScene>
 #include <QtGui/QPainter>
 #include <QEvent>
@@ -73,8 +74,15 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 	Q_UNUSED(widget);
     DPTR_D(GraphicsItemRenderer);
     d.painter = painter;
+    QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
+    if (ctx) {
+        ctx->painter = d.painter;
+    } else {
+        qWarning("FilterContext not available!");
+    }
     handlePaintEvent();
     d.painter = 0; //painter may be not available outside this function
+    ctx->painter = 0;
 }
 
 bool GraphicsItemRenderer::needUpdateBackground() const
