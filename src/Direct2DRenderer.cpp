@@ -107,7 +107,7 @@ void Direct2DRenderer::drawFrame()
                                 , NULL);//&D2D1::RectF(0, 0, d.src_width, d.src_height));
 }
 
-void Direct2DRenderer::paintEvent(QPaintEvent *e)
+void Direct2DRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(Direct2DRenderer);
 
@@ -136,7 +136,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *e)
     }
     drawFrame();
     //filters
-#endif 0
+#endif //0
     //TODO: the following code should be protected by mutex
     hr = d.render_target->EndDraw(NULL, NULL);
     if (hr == D2DERR_RECREATE_TARGET) {

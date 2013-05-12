@@ -116,7 +116,7 @@ bool Factory<Id, T, Class>::registerIdName(const ID& id, const std::string& name
 template<typename Id, typename T, class Class>
 bool Factory<Id, T, Class>::unregisterCreator(const ID& id)
 {
-    DBG("Id [%d] unregistered", id);
+    //DBG("Id [%d] unregistered", id);
     ids.erase(std::remove(ids.begin(), ids.end(), id), ids.end());
     name_map.erase(id);
     return creators.erase(id) == 1;
@@ -153,9 +153,9 @@ typename Factory<Id, T, Class>::Type* Factory<Id, T, Class>::getRandom()
 {
     srand(time(0));
     int index = rand() % ids.size();
-    DBG("random %d/%d", index, ids.size());
+    //DBG("random %d/%d", index, ids.size());
     int new_eid = ids.at(index);
-    DBG("id %d", new_eid);
+    //DBG("id %d", new_eid);
     return create(new_eid);
 }
 
