@@ -20,6 +20,7 @@
 ******************************************************************************/
 /*
  * TODO:
+ *   GLES 2 support
  *   inherits QPainterRenderer? GL is wrapped as QPainter
  *   GLuint bindTexture(const QImage & image, GLenum target = GL_TEXTURE_2D, GLint format)
  */
@@ -71,9 +72,20 @@ void GLWidgetRenderer::convertData(const QByteArray &data)
     d.data = data;
 }
 
+bool GLWidgetRenderer::needUpdateBackground() const
+{
+    DPTR_D(const GLWidgetRenderer);
+    return d.aspect_ratio_changed || d.update_background || d.out_rect_old != d.out_rect;
+}
+
 void GLWidgetRenderer::drawBackground()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //FIXME: the following is hack for aspect ratio change
+    DPTR_D(GLWidgetRenderer);
+    d.out_rect_old = d.out_rect;
+    resizeGL(width(), height());
 }
 
 void GLWidgetRenderer::drawFrame()
@@ -120,27 +132,8 @@ void GLWidgetRenderer::initializeGL()
 
 void GLWidgetRenderer::paintGL()
 {
-    drawBackground(); //TODO: why this is always required? otherwise flicker when aspect ratio changed
-    DPTR_D(GLWidgetRenderer);
-    {
-        //lock is required only when drawing the frame
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
-        //begin paint. how about QPainter::beginNativePainting()?
-        //fill background color when necessary, e.g. renderer is resized, image is null
-        //we access d.data which will be modified in AVThread, so must be protected
-        if (d.aspect_ratio_changed || d.update_background || d.out_rect_old != d.out_rect) {
-            d.out_rect_old = d.out_rect;
-            resizeGL(width(), height());
-            d.update_background = false;
-            //drawBackground();
-        }
-        //DO NOT return if no data. we should draw other things
-        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
-        if (!d.data.isEmpty()) {
-            drawFrame();
-        }
-    }
+    //drawBackground(); //TODO: why this is always required? otherwise flicker when aspect ratio changed
+    handlePaintEvent();
 }
 
 void GLWidgetRenderer::resizeGL(int w, int h)

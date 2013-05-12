@@ -260,8 +260,18 @@ Filter* VideoRenderer::subtitleFilter()
     return d_func().subtitle_filter;
 }
 
+bool VideoRenderer::needUpdateBackground() const
+{
+    return d_func().update_background;
+}
+
 void VideoRenderer::drawBackground()
 {
+}
+
+bool VideoRenderer::needDrawFrame() const
+{
+    return !d_func().data.isEmpty();
 }
 
 void VideoRenderer::resizeFrame(int width, int height)
@@ -272,23 +282,35 @@ void VideoRenderer::resizeFrame(int width, int height)
 
 void VideoRenderer::handlePaintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event);
     DPTR_D(VideoRenderer);
     //begin paint. how about QPainter::beginNativePainting()?
-    //fill background color when necessary, e.g. renderer is resized, image is null
-    //if we access d.data which will be modified in AVThread, the following must be protected
-    if ((d.widget_holder && d.out_rect != d.widget_holder->rect())
-            || (d.item_holder && d.out_rect != d.item_holder->boundingRect())
-             ) {
-        d.update_background = false;
-        //fill background color. DO NOT return, you must continue drawing
-        drawBackground();
-    }
     {
         //lock is required only when drawing the frame
         QMutexLocker locker(&d.img_mutex);
         Q_UNUSED(locker);
+        /* begin paint. how about QPainter::beginNativePainting()?
+         * fill background color when necessary, e.g. renderer is resized, image is null
+         * if we access d.data which will be modified in AVThread, the following must be
+         * protected by mutex. otherwise, e.g. QPainterRenderer, it's not required if drawing
+         * on the shared data is safe
+         */
+        if (needUpdateBackground()) {
+            /* xv: should always draw the background. so shall we only paint the border
+             * rectangles, but not the whole widget
+             */
+            d.update_background = false;
+            //fill background color. DO NOT return, you must continue drawing
+            drawBackground();
+        }
+        /* DO NOT return if no data. we should draw other things
+         * NOTE: if data is not copyed in convertData, you should always call drawFrame()
+         */
+        /* d2d: d.data is always empty because we did not assign a vaule in convertData?
+         * why the background is white if return? the below code draw an empty bitmap?
+         */
         //DO NOT return if no data. we should draw other things
-        if (!d.data.isEmpty()) {
+        if (needDrawFrame()) {
             drawFrame();
         }
     }
@@ -305,6 +327,7 @@ void VideoRenderer::handlePaintEvent(QPaintEvent *event)
     } else {
         //warn once
     }
+    //end paint. how about QPainter::endNativePainting()?
 }
 
 } //namespace QtAV

@@ -87,10 +87,24 @@ void XVRenderer::convertData(const QByteArray &data)
     //memcpy(d.xv_image->data, d.data.data(), d.xv_image->data_size);
 }
 
+bool XVRenderer::needUpdateBackground() const
+{
+    DPTR_D(const XVRenderer);
+    return d.update_background && d.out_rect != rect();/* || d.data.isEmpty()*/ //data is always empty because we never copy it now.
+}
+
 void XVRenderer::drawBackground()
 {
     DPTR_D(XVRenderer);
     XFillRectangle(d.display, winId(), d.gc, 0, 0, width(), height());
+    //FIXME: xv should always draw the background. so shall we only paint the border rectangles, but not the whole widget
+    d.update_background = true;
+}
+
+bool XVRenderer::needDrawFrame() const
+{
+    DPTR_D(const XVRenderer);
+    return  d.xv_image || !d.data.isEmpty();
 }
 
 void XVRenderer::drawFrame()
@@ -109,27 +123,7 @@ void XVRenderer::drawFrame()
 
 void XVRenderer::paintEvent(QPaintEvent *)
 {
-    DPTR_D(XVRenderer);
-    {
-        //lock is required only when drawing the frame
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
-        //begin paint. how about QPainter::beginNativePainting()?
-        //fill background color when necessary, e.g. renderer is resized, image is null
-        //we access d.data which will be modified in AVThread, so must be protected. Otherwise, put it outside this scope is ok
-        //TODO: move outside is ok
-        if ((d.update_background && d.out_rect != rect())/* || d.data.isEmpty()*/) {//data is always empty because we never copy it.
-//            d.update_background = false; //xv should always draw the background. so shall we only paint the border rectangles, but not the whole widget
-            //fill background color. DO NOT return, you must continue drawing
-            drawBackground();
-        }
-        //DO NOT return if no data. we should draw other things
-        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
-        if (!d.data.isEmpty() || d.xv_image) {
-            drawFrame();
-        }
-    }
-    //end paint. how about QPainter::endNativePainting()?
+    handlePaintEvent();
 }
 
 void XVRenderer::resizeEvent(QResizeEvent *e)

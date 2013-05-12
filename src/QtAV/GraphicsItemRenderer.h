@@ -50,7 +50,7 @@ protected:
     GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
 
     virtual bool write();
-    //TODO: abstract draw image and font. too many drawXXX()
+    virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
     //draw the current frame using the current paint engine. called by paintEvent()

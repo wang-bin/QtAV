@@ -70,6 +70,12 @@ bool WidgetRenderer::write()
     return true;
 }
 
+bool WidgetRenderer::needUpdateBackground() const
+{
+    DPTR_D(const WidgetRenderer);
+    return d.out_rect != rect();
+}
+
 void WidgetRenderer::drawBackground()
 {
     DPTR_D(WidgetRenderer);
@@ -162,40 +168,11 @@ void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
         d.action = GestureMove;
 }
 
-void WidgetRenderer::paintEvent(QPaintEvent *)
+void WidgetRenderer::paintEvent(QPaintEvent *e)
 {
     DPTR_D(WidgetRenderer);
     d.painter->begin(this); //Widget painting can only begin as a result of a paintEvent
-    //begin paint. how about QPainter::beginNativePainting()?
-    //fill background color when necessary, e.g. renderer is resized, image is null
-    //if we access d.data which will be modified in AVThread, the following must be protected
-    if (d.out_rect != rect()) {
-        d.update_background = false;
-        //fill background color. DO NOT return, you must continue drawing
-        drawBackground();
-    }
-    {
-        //lock is required only when drawing the frame
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
-        //DO NOT return if no data. we should draw other things
-        if (!d.data.isEmpty()) {
-            drawFrame();
-        }
-    }
-    //TODO: move to applyFilters() //private?
-    if (!d.filters.isEmpty() && d.filter_context && d.statistics) {
-        foreach(Filter* filter, d.filters) {
-            if (!filter) {
-                qWarning("a null filter!");
-                //d.filters.removeOne(filter);
-                continue;
-            }
-            filter->process(d.filter_context, d.statistics);
-        }
-    } else {
-        //warn once
-    }
+    handlePaintEvent(e);
     //end paint. how about QPainter::endNativePainting()?
     d.painter->end();
 }

@@ -104,9 +104,11 @@ public:
     Filter* subtitleFilter();
 protected:
     VideoRenderer(VideoRendererPrivate &d);
+    virtual bool needUpdateBackground() const;
     //TODO: drawXXX() is pure virtual
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
+    virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
     //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
     /*!
@@ -118,7 +120,8 @@ protected:
      * If you are doing offscreen painting in other threads, pay attention to thread safe
      */
     virtual void resizeFrame(int width, int height);
-    void handlePaintEvent(QPaintEvent* event);
+    //TODO: parameter event is not required(e.g. paintGL)
+    void handlePaintEvent(QPaintEvent* event = 0);
 private:
     friend class VideoThread;
 

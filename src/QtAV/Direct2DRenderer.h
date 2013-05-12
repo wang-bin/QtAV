@@ -47,9 +47,10 @@ public:
     virtual QPaintEngine* paintEngine() const;
 protected:
     virtual void convertData(const QByteArray &data);
-    //TODO: abstract draw image and font. too many drawXXX()
+    virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
+    virtual bool needDrawFrame() const;
     //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame();
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all

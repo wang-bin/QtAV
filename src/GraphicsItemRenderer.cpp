@@ -73,26 +73,14 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 	Q_UNUSED(widget);
     DPTR_D(GraphicsItemRenderer);
     d.painter = painter;
-    {
-        //lock is required only when drawing the frame
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
-        //begin paint. how about QPainter::beginNativePainting()?
-        //fill background color when necessary, e.g. renderer is resized, image is null
-        //if we access d.data which will be modified in AVThread, the following must be protected
-        if (d.out_rect != boundingRect() || d.data.isEmpty()) {
-            d.update_background = false;
-            drawBackground();
-        }
-        //DO NOT return if no data. we should draw other things
-        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
-        if (!d.data.isEmpty()) {
-            drawFrame();
-        }
-    }
-
-    //end paint. how about QPainter::endNativePainting()?
+    handlePaintEvent();
     d.painter = 0; //painter may be not available outside this function
+}
+
+bool GraphicsItemRenderer::needUpdateBackground() const
+{
+    DPTR_D(const GraphicsItemRenderer);
+    return d.out_rect != boundingRect() || d.data.isEmpty();
 }
 
 void GraphicsItemRenderer::drawBackground()

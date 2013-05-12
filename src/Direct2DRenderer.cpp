@@ -68,6 +68,12 @@ void Direct2DRenderer::convertData(const QByteArray &data)
     }
 }
 
+bool Direct2DRenderer::needUpdateBackground() const
+{
+    DPTR_D(const Direct2DRenderer);
+    return (d.update_background && d.out_rect != rect()) || d.data.isEmpty();
+}
+
 void Direct2DRenderer::drawBackground()
 {
     DPTR_D(Direct2DRenderer);
@@ -77,6 +83,11 @@ void Direct2DRenderer::drawBackground()
     //ID2D1SolidColorBrush *brush;
     //d.render_target->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &brush);
     //d.render_target->FillRectangle(D2D1::RectF(0, 0, width(), height()), brush);
+}
+
+bool Direct2DRenderer::needDrawFrame() const
+{
+    return true;
 }
 
 void Direct2DRenderer::drawFrame()
@@ -96,11 +107,10 @@ void Direct2DRenderer::drawFrame()
                                 , NULL);//&D2D1::RectF(0, 0, d.src_width, d.src_height));
 }
 
-void Direct2DRenderer::paintEvent(QPaintEvent *)
+void Direct2DRenderer::paintEvent(QPaintEvent *e)
 {
     DPTR_D(Direct2DRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
+
     if (!d.render_target) {
         qWarning("No render target!!!");
         return;
@@ -109,6 +119,11 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     //begin paint
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
+#if 0
+    handlePaintEvent(e);
+#else
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     //The first bitmap size is 0x0, we should only draw the background
     //we access d.data which will be modified in AVThread, so must be protected
     if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
@@ -121,6 +136,8 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     }
     drawFrame();
     //filters
+#endif 0
+    //TODO: the following code should be protected by mutex
     hr = d.render_target->EndDraw(NULL, NULL);
     if (hr == D2DERR_RECREATE_TARGET) {
         qDebug("D2DERR_RECREATE_TARGET");

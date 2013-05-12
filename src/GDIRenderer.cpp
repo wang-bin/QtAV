@@ -60,6 +60,12 @@ void GDIRenderer::convertData(const QByteArray &data)
     d.data = data;
 }
 
+bool GDIRenderer::needUpdateBackground() const
+{
+    DPTR_D(const GDIRenderer);
+    return (d.update_background && d.out_rect != rect()) || d.data.isEmpty();
+}
+
 void GDIRenderer::drawBackground()
 {
     DPTR_D(GDIRenderer);
@@ -109,28 +115,9 @@ void GDIRenderer::drawFrame()
     //end paint
 }
 
-void GDIRenderer::paintEvent(QPaintEvent *)
+void GDIRenderer::paintEvent(QPaintEvent *e)
 {
-    DPTR_D(GDIRenderer);
-    {
-        //lock is required only when drawing the frame
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
-        //begin paint. how about QPainter::beginNativePainting()?
-        //fill background color when necessary, e.g. renderer is resized, image is null
-        //we access d.data which will be modified in AVThread, so must be protected
-        if ((d.update_background && d.out_rect != rect()) || d.data.isEmpty()) {
-            d.update_background = false;
-            //fill background color. DO NOT return, you must continue drawing
-            drawBackground();
-        }
-        //DO NOT return if no data. we should draw other things
-        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
-        if (!d.data.isEmpty()) {
-            drawFrame();
-        }
-    }
-    //end paint. how about QPainter::endNativePainting()?
+    handlePaintEvent(e);
 }
 
 void GDIRenderer::resizeEvent(QResizeEvent *e)
