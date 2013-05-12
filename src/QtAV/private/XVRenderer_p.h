@@ -127,6 +127,7 @@ public:
             return false;
         }
         XSetBackground(display, gc, BlackPixel(display, DefaultScreen(display)));
+        return true;
     }
 
     bool prepairImage(int w, int h) {
