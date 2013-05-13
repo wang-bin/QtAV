@@ -36,7 +36,6 @@ OSD::~OSD()
 {
 }
 
-
 void OSD::setShowType(ShowType type)
 {
     mShowType = type;
@@ -63,6 +62,16 @@ void OSD::useNextShowType()
 bool OSD::hasShowType(ShowType t) const
 {
     return (t&mShowType) == t;
+}
+
+void OSD::setFont(const QFont &font)
+{
+    mFont = font;
+}
+
+QFont OSD::font() const
+{
+    return mFont;
 }
 
 QString OSD::text(Statistics *statistics)
