@@ -56,15 +56,13 @@ void Direct2DRenderer::convertData(const QByteArray &data)
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
     //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
-        /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
-        //d.img_mutex.lock();//TODO: d2d often crash, should we always lock? How about other renderer?
+    /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
+    //TODO: d2d often crash, should we always lock? How about other renderer?
     hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
                                   , data.constData() //data.constData() //msdn: const void*
                                   , d.src_width*4*sizeof(char));
     if (hr != S_OK) {
         qWarning("Failed to copy from memory to bitmap (%ld)", hr);
-        //forgot unlock before, so use locker for easy
-        return;
     }
 }
 
@@ -110,48 +108,27 @@ void Direct2DRenderer::drawFrame()
 void Direct2DRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(Direct2DRenderer);
-
     if (!d.render_target) {
         qWarning("No render target!!!");
         return;
     }
-    HRESULT hr = S_OK;
-    //begin paint
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
-#if 0
-    handlePaintEvent(e);
-#else
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    //The first bitmap size is 0x0, we should only draw the background
-    //we access d.data which will be modified in AVThread, so must be protected
-    if ((d.update_background && d.out_rect != rect())|| d.data.isEmpty()) {
-        d.update_background = false;
-        drawBackground();
+    handlePaintEvent();
+    HRESULT hr = S_OK;
+    {
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        hr = d.render_target->EndDraw(NULL, NULL); //TODO: why it need lock? otherwise crash
     }
-    //d.data is always empty because we did not assign a vaule in convertData?
-    if (!d.data.isEmpty()) {
-        //return; //why the background is white if return? the below code draw an empty bitmap?
-    }
-    drawFrame();
-    //filters
-#endif //0
-    //TODO: the following code should be protected by mutex
-    hr = d.render_target->EndDraw(NULL, NULL);
     if (hr == D2DERR_RECREATE_TARGET) {
-        qDebug("D2DERR_RECREATE_TARGET");
-        hr = S_OK;
-        d.destroyDeviceResource();
-        d.createDeviceResource(); //?
+        d.recreateDeviceResource();
     }
-    //end paint
 }
 
 void Direct2DRenderer::resizeEvent(QResizeEvent *e)
 {
     resizeRenderer(e->size());
-
     DPTR_D(Direct2DRenderer);
     d.update_background = true;
     if (d.render_target) {
@@ -170,9 +147,7 @@ void Direct2DRenderer::resizeEvent(QResizeEvent *e)
 void Direct2DRenderer::showEvent(QShowEvent *)
 {
     DPTR_D(Direct2DRenderer);
-    d.update_background = true;
-    d.destroyDeviceResource();
-    d.createDeviceResource();
+    d.recreateDeviceResource();
 }
 
 bool Direct2DRenderer::write()

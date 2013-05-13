@@ -29,6 +29,7 @@
 //#include <windows.h>
 #include <d2d1.h>
 
+//TODO: why we can link d2d app without it's lib?
 //TODO: only for mingw. why undef?
 //#include <initguid.h>
 //#undef GUID_EXT
@@ -157,6 +158,14 @@ public:
     void destroyDeviceResource() {
         SafeRelease(&render_target);
         SafeRelease(&bitmap);
+    }
+    void recreateDeviceResource() {
+        qDebug("D2DERR_RECREATE_TARGET");
+        QMutexLocker locker(&img_mutex);
+        Q_UNUSED(locker);
+        update_background = true;
+        destroyDeviceResource();
+        createDeviceResource();
     }
 
     //create an empty bitmap with given size. if size is equal as current and bitmap already exists, do nothing
