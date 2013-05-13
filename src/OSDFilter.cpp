@@ -62,6 +62,7 @@ void OSDFilterQPainter::process()
     p->save(); //TODO: move outside?
     p->setFont(mFont);
     p->setPen(Qt::white);
+    p->setOpacity(d.opacity);
     p->drawText(ctx->rect.topLeft(), text(d.statistics));
     p->restore(); //TODO: move outside?
 }
