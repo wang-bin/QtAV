@@ -247,7 +247,7 @@ void AVDemuxer::seek(qreal q)
         return;
     }
     bool backward = t <= (int64_t)(pkt->pts*AV_TIME_BASE);
-    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", q, pkt->pts, t, duration(), backward);
+    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%lld", q, pkt->pts, t, duration(), backward);
 	//AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
 	int seek_flag =  (backward ? 0 : AVSEEK_FLAG_BACKWARD); //AVSEEK_FLAG_ANY
 	int ret = av_seek_frame(format_context, -1, t, seek_flag);
@@ -541,9 +541,10 @@ qint64 AVDemuxer::startTime() const
     return format_context->start_time;
 }
 
+//AVFrameContext use AV_TIME_BASE as time base.
 qint64 AVDemuxer::duration() const
 {
-    return format_context->duration;
+    return format_context->duration; //time base: AV_TIME_BASE
 }
 
 int AVDemuxer::bitRate() const

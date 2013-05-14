@@ -21,22 +21,37 @@
 
 #include <QtAV/QPainterRenderer.h>
 #include <private/QPainterRenderer_p.h>
+#include <QtAV/FilterContext.h>
+#include <QtAV/OSDFilter.h>
 
 namespace QtAV {
 
 QPainterRenderer::QPainterRenderer()
     :VideoRenderer(*new QPainterRendererPrivate())
 {
+    DPTR_D(QPainterRenderer);
+    d.filter_context = FilterContext::create(FilterContext::QtPainter);
+    d.osd_filter = new OSDFilterQPainter();
+    d.filters.append(d.osd_filter);
 }
 
 QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
     :VideoRenderer(d)
 {
+    d.filter_context = FilterContext::create(FilterContext::QtPainter);
+    d.osd_filter = new OSDFilterQPainter();
+    d.filters.append(d.osd_filter);
 }
 
 QPainterRenderer::~QPainterRenderer()
 {
 }
+
+int QPainterRenderer::filterContextType() const
+{
+    return FilterContext::QtPainter;
+}
+
 /*
 QImage QPainterRenderer::currentFrameImage() const
 {

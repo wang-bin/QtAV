@@ -18,48 +18,34 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+/*
+ * TODO:
+ *   GLES 2 support
+ *   inherits QPainterRenderer? GL is wrapped as QPainter
+ *   GLuint bindTexture(const QImage & image, GLenum target = GL_TEXTURE_2D, GLint format)
+ */
 
 #include "QtAV/GLWidgetRenderer.h"
-#include "private/VideoRenderer_p.h"
+#include "private/GLWidgetRenderer_p.h"
 #include <QResizeEvent>
-
+#ifdef Q_OS_MAC
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif //Q_OS_MAC
 //TODO: vsync http://stackoverflow.com/questions/589064/how-to-enable-vertical-sync-in-opengl
 //TODO: check gl errors
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
 #ifndef GL_BGRA_EXT
-#include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1
+#include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1 //TODO Apple include <OpenGL/xxx>
 #endif //GL_BGRA_EXT
 #ifndef GL_BGRA //it may be defined in glext.h
 #define GL_BGRA GL_BGRA_EXT
 #define GL_BGR GL_BGR_EXT
 #endif //GL_BGRA
 #endif //GL_BGRA
-
 namespace QtAV {
-
-class GLWidgetRendererPrivate : public VideoRendererPrivate
-{
-public:
-    GLWidgetRendererPrivate():
-        texture(0)
-    {
-        if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
-            available = false;
-            return;
-            glGenTextures(1, &texture);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        }
-    }
-    ~GLWidgetRendererPrivate() {
-        glDeleteTextures(1, &texture);
-    }
-
-    QRect out_rect_old;
-    GLuint texture;
-};
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
     QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRendererPrivate())
@@ -86,9 +72,20 @@ void GLWidgetRenderer::convertData(const QByteArray &data)
     d.data = data;
 }
 
+bool GLWidgetRenderer::needUpdateBackground() const
+{
+    DPTR_D(const GLWidgetRenderer);
+    return d.aspect_ratio_changed || d.update_background || d.out_rect_old != d.out_rect;
+}
+
 void GLWidgetRenderer::drawBackground()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //FIXME: the following is hack for aspect ratio change
+    DPTR_D(GLWidgetRenderer);
+    d.out_rect_old = d.out_rect;
+    resizeGL(width(), height());
 }
 
 void GLWidgetRenderer::drawFrame()
@@ -113,18 +110,6 @@ void GLWidgetRenderer::drawFrame()
     //swapBuffers(); //why flickers?
 }
 
-void GLWidgetRenderer::drawSubtitle()
-{
-}
-
-void GLWidgetRenderer::drawOSD()
-{
-}
-
-void GLWidgetRenderer::drawCustom()
-{
-}
-
 bool GLWidgetRenderer::write()
 {
     update();
@@ -147,34 +132,8 @@ void GLWidgetRenderer::initializeGL()
 
 void GLWidgetRenderer::paintGL()
 {
-    drawBackground(); //TODO: why this is always required? otherwise flicker when aspect ratio changed
-    DPTR_D(GLWidgetRenderer);
-    {
-        //lock is required only when drawing the frame
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
-        //begin paint. how about QPainter::beginNativePainting()?
-        //fill background color when necessary, e.g. renderer is resized, image is null
-        //we access d.data which will be modified in AVThread, so must be protected
-        if (d.aspect_ratio_changed || d.update_background || d.out_rect_old != d.out_rect) {
-            d.out_rect_old = d.out_rect;
-            resizeGL(width(), height());
-            d.update_background = false;
-            //drawBackground();
-        }
-        //DO NOT return if no data. we should draw other things
-        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
-        if (!d.data.isEmpty()) {
-            drawFrame();
-        }
-    }
-    //drawXXX only implement the painting, no other logic
-    if (d.draw_osd)
-        drawOSD();
-    if (d.draw_subtitle)
-        drawSubtitle();
-    if (d.draw_custom)
-        drawCustom();
+    //drawBackground(); //TODO: why this is always required? otherwise may flicker when aspect ratio changed(ubuntu 12.10)
+    handlePaintEvent();
 }
 
 void GLWidgetRenderer::resizeGL(int w, int h)

@@ -43,11 +43,14 @@ struct AVCodecContext;
 struct AVFrame;
 class QImage;
 class QObject;
+class QPaintEvent;
 class QRect;
 class QWidget;
 class QGraphicsItem;
 namespace QtAV {
 
+class Filter;
+class OSDFilter;
 class VideoRendererPrivate;
 class Q_EXPORT VideoRenderer : public AVOutput
 {
@@ -91,19 +94,23 @@ public:
 
     QWidget* widget();
     QGraphicsItem* graphicsItem();
+
+    //TODO: enable/disable = new a default for this vo engine or push back/remove from list
+    //filter: null means disable
+    //return the old filter. you may release the ptr manually
+    OSDFilter* setOSDFilter(OSDFilter *filter);
+    OSDFilter *osdFilter();
+    Filter* setSubtitleFilter(Filter *filter);
+    Filter* subtitleFilter();
 protected:
     VideoRenderer(VideoRendererPrivate &d);
+    virtual bool needUpdateBackground() const;
     //TODO: drawXXX() is pure virtual
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
+    virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
     //draw the current frame using the current paint engine. called by paintEvent()
-    virtual void drawFrame();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawSubtitle();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawOSD();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawCustom();
+    virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
     /*!
      * This function is called whenever resizeRenderer() is called or aspect ratio is changed?
      * You can reimplement it to recreate the offscreen surface.
@@ -113,6 +120,8 @@ protected:
      * If you are doing offscreen painting in other threads, pay attention to thread safe
      */
     virtual void resizeFrame(int width, int height);
+    //TODO: parameter event is not required(e.g. paintGL)
+    void handlePaintEvent(QPaintEvent* event = 0);
 private:
     friend class VideoThread;
 

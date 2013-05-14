@@ -4,8 +4,10 @@ QtAV is a media playing library based on Qt and FFmpeg. It can help you to write
 with less effort than ever before. Currently only a simple player is supplied. I will write a
 stylish one based on QtAV in the feature.
 
-QtAV is free software licensed under the term of LGPL v2.1. If you use QtAV or its constituent libraries,
-you must adhere to the terms of the license in question.
+QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](http://ffmpeg.org/projects.html)
+
+**QtAV is free software licensed under the term of LGPL v2.1. If you use QtAV or its constituent libraries,
+you must adhere to the terms of the license in question.**
 
 #### [Download binaries from sourceforge](https://sourceforge.net/projects/qtav)
 #### [Source code on github](https://github.com/wang-bin/QtAV)
@@ -26,7 +28,7 @@ QtAV can meet your most demands
 - Fullscreen, stay on top
 - Compatible: QtAV can be built with both Qt4 and Qt5. QtAV will support
   both FFmpeg and [Libav](http://libav.org).
-- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D and OpenGL.
+- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL.
 
 ### Extensible Framework (not finished)
 
@@ -52,10 +54,10 @@ page: [depends](https://sourceforge.net/projects/qtav/files/depends)
 
 #### Build
 
-For most platforms, just
+You can build QtAV with many compilers and on many platforms. You can use gcc, clang, vc to compile it.  
+See the wiki [Build QtAV](https://github.com/wang-bin/QtAV/wiki/Build-QtAV)
 
-    qmake
-    make
+Here is a brief guide:
 
 It's recommend not to build in source dir.  
 
@@ -64,23 +66,9 @@ It's recommend not to build in source dir.
     make
 
 qmake will run check the required libraries at the first time, so you must make sure those libraries can be found by compiler.
-Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, delete _.qmake.cache_ and run qmake again
+Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, delete _**.qmake.cache**_ and run qmake again
 
->>If the above command failed to build it, try
-
->>    `cd your_build_dir`
-
->>    `qmake QtAV_source_dir/QtAV.pro -r BUILD_DIR=your_build_dir`
-
->>    `make`
-
->>  The binaries will be created in $BUILD_DIR/bin.
->>  If you are using QtCreator to build the project, you should go to Projects->Build Steps->qmake->Additional arguments, add "BUILD_DIR=your/buid/dir"
-
-
-##### Build with MSVC
-
-  See the wiki [Compile with MSVC](https://github.com/wang-bin/QtAV/wiki/Compile-with-MSVC)
+_WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice.
 
 
 
@@ -97,8 +85,23 @@ Wrtie a media player using QtAV is quite easy.
 For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Project)
 
 
-Default Shortcuts
------------------
+For End Users
+-------------
+
+#### Player Usage
+
+An simple player can be found in examples. The command line options is
+
+    player [-vo qt|gl|d2d|gdi|xv] [url/path]filename
+
+You can choose a paint engine with _-vo_ option. For example, in windows that support Direct2D, you can run
+
+    player -vo d2d filename
+
+The default is Qt's paint engine.
+
+#### Default Shortcuts
+
 - Ctrl+O: open a file
 - Space: pause/continue
 - F: fullscreen on/off

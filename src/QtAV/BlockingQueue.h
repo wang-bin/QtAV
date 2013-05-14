@@ -59,10 +59,10 @@ private:
     QWaitCondition cond_full, cond_empty;
 };
 
-
+//cap - thres = 24, about 1s
 template <typename T, template <typename> class Container>
 BlockingQueue<T, Container>::BlockingQueue()
-    :block_empty(true),block_full(true),cap(128*3),thres(128)
+    :block_empty(true),block_full(true),cap(8*4),thres(8)
 {
 }
 

@@ -1,7 +1,7 @@
 TEMPLATE = lib
 TARGET = QtAV
 
-QT += core gui opengl
+QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG *= qtav-buildlib
@@ -87,7 +87,20 @@ config_direct2d {
     SDK_HEADERS += QtAV/Direct2DRenderer.h
     #LIBS += -lD2d1
 }
-
+config_xv {
+    DEFINES *= HAVE_XV=1
+    SOURCES += XVRenderer.cpp
+    HEADERS += QtAV/XVRenderer.h
+    SDK_HEADERS += QtAV/XVRenderer.h
+    LIBS += -lXv
+}
+config_gl {
+    QT *= opengl
+    DEFINES *= HAVE_GL=1
+    SOURCES += GLWidgetRenderer.cpp
+    HEADERS += QtAV/GLWidgetRenderer.h
+    SDK_HEADERS += QtAV/GLWidgetRenderer.h
+}
 SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \
@@ -100,14 +113,14 @@ SOURCES += \
     AVDemuxThread.cpp \
     EventFilter.cpp \
     Filter.cpp \
-    GLWidgetRenderer.cpp \
+    FilterContext.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     ImageConverterIPP.cpp \
     QPainterRenderer.cpp \
+    OSD.cpp \
     OSDFilter.cpp \
-    OSDFilterQPainter.cpp \
     Packet.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
@@ -116,9 +129,9 @@ SOURCES += \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     AVClock.cpp \
+    Statistics.cpp \
     VideoDecoder.cpp \
     VideoThread.cpp
-
 
 SDK_HEADERS *= \
     QtAV/dptr.h \
@@ -132,12 +145,12 @@ SDK_HEADERS *= \
     QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
     QtAV/Filter.h \
-    QtAV/GLWidgetRenderer.h \
+    QtAV/FilterContext.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/QPainterRenderer.h \
+    QtAV/OSD.h \
     QtAV/OSDFilter.h \
-    QtAV/OSDFilterQPainter.h \
     QtAV/Packet.h \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
@@ -150,6 +163,7 @@ SDK_HEADERS *= \
     QtAV/VideoThread.h \
     QtAV/FactoryDefine.h \
     QtAV/ImageConverterTypes.h \
+    QtAV/Statistics.h \
     QtAV/version.h
 
 
@@ -167,10 +181,13 @@ HEADERS *= \
     QtAV/private/Filter_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
-    QtAV/private/OSDFilter_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
-    QtAV/private/WidgetRenderer_p.h
+    QtAV/private/WidgetRenderer_p.h \
+    QtAV/private/Direct2DRenderer_p.h \
+    QtAV/private/GLWidgetRenderer_p.h \
+    QtAV/private/GDIRenderer_p.h \
+    QtAV/private/XVRenderer_p.h
 
 
 SDK_INCLUDE_FOLDER = QtAV

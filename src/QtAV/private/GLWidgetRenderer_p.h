@@ -19,19 +19,35 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_OSDFILTERQPAINTER_H
-#define QTAV_OSDFILTERQPAINTER_H
+#ifndef QTAV_GLWIDGETRENDERER_P_H
+#define QTAV_GLWIDGETRENDERER_P_H
 
-#include <QtAV/OSDFilter.h>
+#include "private/VideoRenderer_p.h"
 
 namespace QtAV {
 
-class OSDFilterQPainter : public OSDFilter
+class GLWidgetRendererPrivate : public VideoRendererPrivate
 {
 public:
-    OSDFilterQPainter();
-    virtual void process(QByteArray &data);
+    GLWidgetRendererPrivate():
+        texture(0)
+    {
+        if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
+            available = false;
+            return;
+            glGenTextures(1, &texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+    }
+    ~GLWidgetRendererPrivate() {
+        glDeleteTextures(1, &texture);
+    }
+
+    QRect out_rect_old;
+    GLuint texture;
 };
 
 } //namespace QtAV
-#endif // QTAV_OSDFILTERQPAINTER_H
+#endif // QTAV_GLWIDGETRENDERER_P_H

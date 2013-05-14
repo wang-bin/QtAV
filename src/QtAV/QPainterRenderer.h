@@ -34,6 +34,7 @@ class Q_EXPORT QPainterRenderer : public VideoRenderer
 public:
     QPainterRenderer();
     virtual ~QPainterRenderer();
+    virtual int filterContextType() const;
     //virtual QImage currentFrameImage() const;
 protected:
     virtual void convertData(const QByteArray &data);

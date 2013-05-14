@@ -1,3 +1,5 @@
+#Designed by Wang Bin(Lucas Wang). 2013 <wbsecg1@gmail.com>
+
 ##TODO: Why use function to add makefile target failed
 # add a make command
 defineReplace(mcmd) {

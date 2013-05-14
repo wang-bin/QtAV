@@ -50,6 +50,11 @@ protected:
     GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
 
     virtual bool write();
+    virtual bool needUpdateBackground() const;
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
 #if CONFIG_GRAPHICSWIDGET
     virtual bool event(QEvent *event);
 #else

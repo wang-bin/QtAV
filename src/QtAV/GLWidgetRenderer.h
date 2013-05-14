@@ -38,24 +38,17 @@ public:
 
 protected:
     virtual void convertData(const QByteArray &data);
+    virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
     //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawSubtitle();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawOSD();
-    //called in paintEvent() after drawFrame. leave it empty is ok
-    virtual void drawCustom();
-    virtual bool write();
-
     virtual void initializeGL();
     virtual void paintGL();
     virtual void resizeGL(int w, int h);
-
     virtual void resizeEvent(QResizeEvent *);
     virtual void showEvent(QShowEvent *);
+    virtual bool write();
 };
 typedef GLWidgetRenderer VideoRendererGLWidget;
 

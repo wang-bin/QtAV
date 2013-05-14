@@ -24,6 +24,7 @@
 #define QTAV_QPAINTERRENDERER_P_H
 
 #include <QtGui/QImage>
+#include <QtGui/QPainter>
 #include <private/VideoRenderer_p.h>
 
 namespace QtAV {
@@ -31,8 +32,17 @@ namespace QtAV {
 class Q_EXPORT QPainterRendererPrivate : public VideoRendererPrivate
 {
 public:
-    virtual ~QPainterRendererPrivate(){}
+    QPainterRendererPrivate():
+        painter(0)
+    {}
+    virtual ~QPainterRendererPrivate(){
+        if (painter) {
+            delete painter;
+            painter = 0;
+        }
+    }
     QImage image;
+    QPainter *painter;
 };
 
 } //namespace QtAV

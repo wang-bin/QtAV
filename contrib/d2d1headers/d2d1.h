@@ -31,6 +31,10 @@
 #include <d2dbasetypes.h>
 #include <d2derr.h>
 
+#ifndef _COM_interface
+#define _COM_interface struct
+#endif
+
 typedef UINT64 D2D1_TAG;
 
 #define D2D1_DEFAULT_FLATTENING_TOLERANCE 0.25f

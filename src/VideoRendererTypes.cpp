@@ -25,13 +25,18 @@
 #include "prepost.h"
 
 #include <QtAV/WidgetRenderer.h>
+#if HAVE_GL
 #include <QtAV/GLWidgetRenderer.h>
+#endif //HAVE_GL
 #if HAVE_GDIPLUS
 #include <QtAV/GDIRenderer.h>
 #endif //HAVE_GDIPLUS
 #if HAVE_DIRECT2D
 #include <QtAV/Direct2DRenderer.h>
 #endif //HAVE_DIRECT2D
+#if HAVE_XV
+#include <QtAV/XVRenderer.h>
+#endif //HAVE_XV
 #include <QtAV/factory.h>
 
 namespace QtAV {
@@ -45,14 +50,14 @@ void RegisterVideoRendererWidget_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, Widget, "QWidegt")
 }
-
+#if HAVE_GL
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget, "QGLWidegt")
 
 void RegisterVideoRendererGLWidget_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, GLWidget, "QGLWidegt")
 }
-
+#endif //HAVE_GL
 #if HAVE_GDIPLUS
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GDI, "GDI")
 
@@ -69,18 +74,41 @@ void RegisterVideoRendererDirect2D_Man()
     FACTORY_REGISTER_ID_MAN(VideoRenderer, Direct2D, "Direct2D")
 }
 #endif //HAVE_DIRECT2D
+#if HAVE_XV
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
+
+void RegisterVideoRendererXV_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, XV, "XVideo")
+}
+#endif //HAVE_XV
 
 void VideoRenderer_RegisterAll()
 {
     RegisterVideoRendererWidget_Man();
+#if HAVE_GL
     RegisterVideoRendererGLWidget_Man();
+#endif //HAVE_GL
 #if HAVE_GDIPLUS
     RegisterVideoRendererGDI_Man();
 #endif //HAVE_GDIPLUS
 #if HAVE_DIRECT2D
     RegisterVideoRendererDirect2D_Man();
 #endif //HAVE_DIRECT2D
+#if HAVE_XV
+    RegisterVideoRendererXV_Man();
+#endif //HAVE_XV
 }
 
-
+namespace {
+static void FixUnusedCompileWarning()
+{
+    FixUnusedCompileWarning(); //avoid warning about this function may not be used
+    Q_UNUSED(VideoRendererId_GDI);
+    Q_UNUSED(VideoRendererId_GLWidget);
+    Q_UNUSED(VideoRendererId_Direct2D);
+    Q_UNUSED(VideoRendererId_XV);
 }
+}//namespace
+
+}//namespace QtAV

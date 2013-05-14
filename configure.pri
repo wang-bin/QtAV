@@ -1,3 +1,5 @@
+#Designed by Wang Bin(Lucas Wang). 2013 <wbsecg1@gmail.com>
+
 ### ONLY FOR Qt4. common.pri must be included before it so that write_file() can be used#######
 ### .qmake.cache MUST be created before it!
 ####ASSUME compile tests and .qmake.cache is in project out root dir
@@ -11,11 +13,11 @@ QMAKE_CONFIG_TESTS_DIR = $$_PRO_FILE_PWD_/config.tests
 
 defineTest(cache) {
     !isEmpty(4): error("cache(var, [set|add|sub] [transient] [super], [srcvar]) requires one to three arguments.")
-    isEmpty(1) {
-        write_file($$_QMAKE_CACHE_QT4_):return(true)
-        return(false)
+    !exists($$_QMAKE_CACHE_QT4_) {
+        log("Info: creating cache file $$_QMAKE_CACHE_QT4_")
+        write_file($$_QMAKE_CACHE_QT4_)|return(false)
     }
-
+    isEmpty(1):return(true)
     !isEmpty(2):isEqual(2, set):mode_set=1
     isEmpty(3) {
         isEmpty(mode_set):error("cache(): modes other than 'set' require a source variable.")
@@ -46,8 +48,8 @@ defineTest(cache) {
     } else {
 #use sed for unix or msys
 #convert '/' to '\/' for sed
-        srcval ~= s,/,\/,g
-        srcval ~= s,\+,\\+,g #for sed regexp. '+' in qmake is '\+' ?
+        srcval ~= s,/,\\/,g
+        srcval ~= s,\\+,\\\\+,g #for sed regexp. '+' in qmake is '\+' ?
         system("sed -i -r '/.*$${dstvar}.*$${srcval}.*/d' $$_QMAKE_CACHE_QT4_ >/dev/null")
     }
     write_file($$_QMAKE_CACHE_QT4_, varstr, append)
@@ -68,7 +70,7 @@ equals(MAKEFILE_GENERATOR, UNIX) {
 
 defineTest(qtRunLoggedCommand) {
     msg = "+ $$1"
-    write_file($$QMAKE_CONFIG_LOG, msg, append)
+    write_file($$QMAKE_CONFIG_LOG, msg, append)#|error("write file failed") #for debug
     system("$$1 >> \"$$QMAKE_CONFIG_LOG\" 2>&1")|return(false)
     return(true)
 }

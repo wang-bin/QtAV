@@ -134,7 +134,7 @@ defineTest(empty_file) {
 lessThan(QT_MAJOR_VERSION, 5): {
 
 defineTest(log){
-    system(echo $$1)
+    system(echo $$system_quote($$1))
 }
 
 defineTest(mkpath) {
@@ -142,7 +142,7 @@ defineTest(mkpath) {
         #why always return false?
         system("md $$system_path($$1) 2>nul")|return(false)
     } else {
-        log("mkdir -p $$shell_path($$1)")
+        #log("mkdir -p $$shell_path($$1)")
         #why msys failed?
         system("mkdir -p $$shell_path($$1)")|return(false)
     }
@@ -162,7 +162,7 @@ defineTest(write_file) {
         empty_file($$1)
     }
     for(val, $$2) {
-        system("echo $$val >> \"$$1\"")|return(false)
+        system("echo $$system_quote($$val) >> \"$$1\"")|return(false)
     }
     return(true)
 }
@@ -196,13 +196,51 @@ defineReplace(shadowed) {
 
 defineReplace(shell_path) {
 # QMAKE_DIR_SEP: \ for win cmd and / for sh
-    return($$replace(1, /, $$QMAKE_DIR_SEP))
+    1 ~= s,\\\\,$$QMAKE_DIR_SEP,g
+    1 ~= s,//,$$QMAKE_DIR_SEP,g
+    return($$1)
+}
+
+defineReplace(shell_quote_win) {
+# Chars that should be quoted (TM).
+# - control chars & space
+# - the windows shell meta chars "&()<>^|
+# - the potential separators ,;=
+#TODO: how to deal with  "^", "|"? every char are seperated by "|"?
+#how to avoid replacing "^" again for the second time
+    isEmpty(1):error("shell_quote(arg) requires one argument.")
+    special_chars = & \( \) < >
+    for(c, special_chars) {
+        1 ~= s,$$c,^$$c,g
+    }
+#for qmake \\
+    #1 ~= s,\\),^\),g
+    #1 ~= s,\\(,^\(,g
+    return($$1)
+}
+
+defineReplace(shell_quote_unix) {
+# - unix shell:  0-32 \'"$`<>|;&(){}*?#!~[]
+#TODO: how to deal with "#" "|" and "^"?
+#how to avoid replacing "^" again for the second time
+# \$ is eol
+    special_chars = & \( \) < > \\ \' \" ` ; \{ \} * ? ! ~ \[ \]
+    for(c, special_chars) {
+        1 ~= s,$$c,\\$$c,g
+    }
+    return($$1)
+}
+##TODO: see qmake/library/ioutils.cpp
+defineReplace(shell_quote) {
+    win32:isEmpty(QMAKE_SH):return($$shell_quote_win($$1))
+    return($$shell_quote_unix($$1))
 }
 
 ##TODO: see qmake/library/ioutils.cpp
-defineReplace(shell_quote) {
-    isEmpty(1):error("shell_quote(arg) requires one argument.")
-    return($$quote($$1))
+defineReplace(system_quote) {
+    isEmpty(1):error("system_quote(arg) requires one argument.")
+    unix:return($$shell_quote_unix($$1))
+    return($$shell_quote_win($$1))
 }
 
 defineReplace(system_path) {
@@ -213,15 +251,7 @@ defineReplace(system_path) {
     }
     return($$1)
 }
-
-##TODO: see qmake/library/ioutils.cpp
-defineReplace(system_quote) {
-    isEmpty(1):error("system_quote(arg) requires one argument.")
-    return($$quote($$1))
-}
-
-}
-
+} #lessThan(QT_MAJOR_VERSION, 5)
 #argument 1 is default dir if not defined
 defineTest(getBuildRoot) {
     !isEmpty(2): unset(BUILD_DIR)

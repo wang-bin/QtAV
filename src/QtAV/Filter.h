@@ -23,27 +23,47 @@
 #define QTAV_FILTER_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtAV/FilterContext.h>
+/*
+ * QPainterFilter, D2DFilter, ...
+ *
+ *TODO: force apply. e.g. an animation filter on vo, update vo and apply filter even not video is
+ * playing.
+ */
 
 class QByteArray;
 namespace QtAV {
 
 class FilterPrivate;
+class Statistics;
 class Q_EXPORT Filter
 {
     DPTR_DECLARE_PRIVATE(Filter)
 public:
-    virtual ~Filter() = 0;
-
+    virtual ~Filter();
+    //isEnabled() then setContext
     //TODO: parameter FrameContext
+    void setEnabled(bool enabled); //AVComponent.enabled
+    bool isEnabled() const;
+
+    qreal opacity() const;
+    void setOpacity(qreal o);
+
+    virtual FilterContext::Type contextType() const;
+
+    /*!
+     * check context and apply the filter
+     * if context is null, or contextType() != context->type(), then create a right one and assign it to context.
+     */
+    void process(FilterContext *&context, Statistics* statistics, QByteArray* data = 0);
+
 protected:
     /*
      * If the filter is in AVThread, it's safe to operate on ref.
      */
-    virtual void process(QByteArray& data) = 0;
     Filter(FilterPrivate& d);
+    virtual void process() = 0;
 
-    friend class AVThread;
-    friend class VideoThread;
     DPTR_DECLARE(Filter)
 };
 

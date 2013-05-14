@@ -25,9 +25,8 @@
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
 #include <QtCore/QWaitCondition>
+
 #include <QtAV/Packet.h>
-#include <QtAV/AVDecoder.h>
-#include <QtAV/AVOutput.h>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -35,18 +34,31 @@ namespace QtAV {
 const double kSyncThreshold = 0.005; // 5 ms
 
 class AVDecoder;
-class Packet;
+class AVOutput;
 class AVClock;
+class Filter;
+class FilterContext;
+class Statistics;
 class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
-    AVThreadPrivate():paused(false),demux_end(false),stop(false),clock(0)
-      ,dec(0),writer(0),delay(0) {
+    AVThreadPrivate():
+        paused(false)
+      , next_pause(false)
+      , demux_end(false)
+      , stop(false)
+      , clock(0)
+      , dec(0)
+      , writer(0)
+      , delay(0)
+      , filter_context(0)
+      , statistics(0)
+    {
     }
     //DO NOT delete dec and writer. We do not own them
-    virtual ~AVThreadPrivate() {}
+    virtual ~AVThreadPrivate();
 
-    bool paused;
+    bool paused, next_pause;
     bool demux_end;
     volatile bool stop; //true when packets is empty and demux is end.
     AVClock *clock;
@@ -56,6 +68,9 @@ public:
     QMutex mutex;
     QWaitCondition cond; //pause
     qreal delay;
+    FilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
+    QList<Filter*> filters;
+    Statistics *statistics; //not obj. Statistics is unique for the player, which is in AVPlayer
 };
 
 } //namespace QtAV

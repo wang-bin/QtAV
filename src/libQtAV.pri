@@ -105,7 +105,7 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 
 	#TEMPLATE = lib
 	VERSION = $$LIB_VERSION
-        #TARGET = $$PROJECT_TARGETNAME ##?
+        TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
 	DESTDIR= $$PROJECT_LIBDIR
 
 	CONFIG *= create_prl #

@@ -21,8 +21,20 @@
 
 #include <QtAV/AVOutput.h>
 #include <private/AVOutput_p.h>
+#include <QtAV/Filter.h>
+#include <QtAV/FilterContext.h>
 
 namespace QtAV {
+
+AVOutputPrivate::~AVOutputPrivate() {
+    cond.wakeAll(); //WHY: failed to wake up
+    if (filter_context) {
+        delete filter_context;
+        filter_context = 0;
+    }
+    qDeleteAll(filters);
+    filters.clear();
+}
 
 AVOutput::AVOutput()
 {
@@ -92,6 +104,22 @@ void AVOutput::convertData(const QByteArray &data)
     //TODO: make sure d.data thread safe. lock here?
     DPTR_D(AVOutput);
     d.data = data;
+}
+
+int AVOutput::filterContextType() const
+{
+    return FilterContext::None;
+}
+
+QList<Filter*>& AVOutput::filters()
+{
+    return d_func().filters;
+}
+
+void AVOutput::setStatistics(Statistics *statistics)
+{
+    DPTR_D(AVOutput);
+    d.statistics = statistics;
 }
 
 } //namespace QtAV

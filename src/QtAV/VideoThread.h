@@ -43,7 +43,6 @@ public:
     ImageConverter* imageConverter() const;
     double currentPts() const;
     VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
-    OSDFilter *setOSDFilter(OSDFilter* osd);
 protected:
     virtual void run();
 };
