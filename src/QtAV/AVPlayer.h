@@ -82,6 +82,7 @@ signals:
     void stopped();
 
 public slots:
+    void togglePause();
     void pause(bool p);
     void play(); //replay
     void stop();

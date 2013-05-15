@@ -258,6 +258,11 @@ bool AVPlayer::isPlaying() const
 	return demuxer_thread->isRunning() || audio_thread->isRunning() || video_thread->isRunning();
 }
 
+void AVPlayer::togglePause()
+{
+    pause(!isPaused());
+}
+
 void AVPlayer::pause(bool p)
 {
     //pause thread. check pause state?
