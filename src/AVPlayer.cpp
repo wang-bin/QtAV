@@ -95,6 +95,9 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     setPlayerEventFilter(new EventFilter(this));
     setVideoCapture(new VideoCapture());
+
+    connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+    connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
 }
 
 AVPlayer::~AVPlayer()
@@ -351,7 +354,8 @@ void AVPlayer::play()
      * must setFile() agian to reload an unseekable stream
      */
     //FIXME: seek(0) for audio without video crashes, why?
-    if (!isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
+    //TODO: no eof if replay by seek(0)
+    if (true || !isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
         if (!load()) {
             mStatistics.reset();
             return;
@@ -379,11 +383,12 @@ void AVPlayer::play()
 
 void AVPlayer::stop()
 {
+    qDebug("AVPlayer::stop");
     if (demuxer_thread->isRunning()) {
         qDebug("stop d");
         demuxer_thread->stop();
         //wait for finish then we can safely set the vars, e.g. a/v decoders
-        if (!demuxer_thread->wait()) {
+        if (!demuxer_thread->wait(1000)) {
             qWarning("Timeout waiting for demux thread stopped. Terminate it.");
             demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
         }
@@ -450,43 +455,47 @@ void AVPlayer::initStatistics()
     //AV_TIME_BASE_Q: msvc error C2143
     mStatistics.start_time = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->start_time/(qreal)AV_TIME_BASE*1000.0));
     mStatistics.duration = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->duration/(qreal)AV_TIME_BASE*1000.0));
-    AVStream *stream = formatCtx->streams[demuxer.audioStream()];
-    qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
-           , duration(), av_q2d(stream->time_base));
-    //mStatistics.audio.format =
-    mStatistics.audio.codec = aCodecCtx->codec->name;
-    mStatistics.audio.codec_long = aCodecCtx->codec->long_name;
-    mStatistics.audio.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
-    mStatistics.audio.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
-    mStatistics.audio.bit_rate = aCodecCtx->bit_rate; //formatCtx
-    mStatistics.audio.avg_frame_rate = av_q2d(stream->avg_frame_rate);
-    mStatistics.audio.frames = stream->nb_frames;
-    //mStatistics.audio.size =
-
-    stream = formatCtx->streams[demuxer.videoStream()];
-    //mStatistics.audio.format =
-    mStatistics.video.codec = vCodecCtx->codec->name;
-    mStatistics.video.codec_long = vCodecCtx->codec->long_name;
-    qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
-           , duration(), av_q2d(stream->time_base));
-    mStatistics.video.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
-    mStatistics.video.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
-    mStatistics.video.bit_rate = vCodecCtx->bit_rate; //formatCtx
-    mStatistics.video.avg_frame_rate = av_q2d(stream->avg_frame_rate);
-    mStatistics.video.frames = stream->nb_frames;
-    //mStatistics.audio.size =
-
-    mStatistics.audio_only.block_align = aCodecCtx->block_align;
-    mStatistics.audio_only.channels = aCodecCtx->channels;
-    mStatistics.audio_only.frame_number = aCodecCtx->frame_number;
-    mStatistics.audio_only.frame_size = aCodecCtx->frame_size;
-    mStatistics.audio_only.sample_rate = aCodecCtx->sample_rate;
-
-    mStatistics.video_only.coded_height = vCodecCtx->coded_height;
-    mStatistics.video_only.coded_width = vCodecCtx->coded_width;
-    mStatistics.video_only.gop_size = vCodecCtx->gop_size;
-    mStatistics.video_only.height = vCodecCtx->height;
-    mStatistics.video_only.width = vCodecCtx->width;
+    AVStream *stream = 0;
+    int stream_idx = demuxer.audioStream();
+    if (stream_idx >= 0) {
+        stream = formatCtx->streams[stream_idx];
+        qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+               , duration(), av_q2d(stream->time_base));
+        //mStatistics.audio.format =
+        mStatistics.audio.codec = aCodecCtx->codec->name;
+        mStatistics.audio.codec_long = aCodecCtx->codec->long_name;
+        mStatistics.audio.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+        mStatistics.audio.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+        mStatistics.audio.bit_rate = aCodecCtx->bit_rate; //formatCtx
+        mStatistics.audio.avg_frame_rate = av_q2d(stream->avg_frame_rate);
+        mStatistics.audio.frames = stream->nb_frames;
+        //mStatistics.audio.size =
+        mStatistics.audio_only.block_align = aCodecCtx->block_align;
+        mStatistics.audio_only.channels = aCodecCtx->channels;
+        mStatistics.audio_only.frame_number = aCodecCtx->frame_number;
+        mStatistics.audio_only.frame_size = aCodecCtx->frame_size;
+        mStatistics.audio_only.sample_rate = aCodecCtx->sample_rate;
+    }
+    stream_idx = demuxer.videoStream();
+    if (stream_idx >= 0) {
+        stream = formatCtx->streams[stream_idx];
+        //mStatistics.audio.format =
+        mStatistics.video.codec = vCodecCtx->codec->name;
+        mStatistics.video.codec_long = vCodecCtx->codec->long_name;
+        qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+               , duration(), av_q2d(stream->time_base));
+        mStatistics.video.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+        mStatistics.video.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+        mStatistics.video.bit_rate = vCodecCtx->bit_rate; //formatCtx
+        mStatistics.video.avg_frame_rate = av_q2d(stream->avg_frame_rate);
+        mStatistics.video.frames = stream->nb_frames;
+        //mStatistics.audio.size =
+        mStatistics.video_only.coded_height = vCodecCtx->coded_height;
+        mStatistics.video_only.coded_width = vCodecCtx->coded_width;
+        mStatistics.video_only.gop_size = vCodecCtx->gop_size;
+        mStatistics.video_only.height = vCodecCtx->height;
+        mStatistics.video_only.width = vCodecCtx->width;
+    }
 }
 
 } //namespace QtAV

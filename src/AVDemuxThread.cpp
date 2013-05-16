@@ -45,7 +45,8 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
 void AVDemuxThread::setDemuxer(AVDemuxer *dmx)
 {
     demuxer = dmx;
-    connect(dmx, SIGNAL(finished()), this, SLOT(stop()), Qt::QueuedConnection);
+    //TODO: will the slot not be called but the packet is token?
+    //connect(dmx, SIGNAL(finished()), this, SLOT(stop()), Qt::QueuedConnection);
 }
 
 void AVDemuxThread::setAudioThread(AVThread *thread)
@@ -154,6 +155,7 @@ void AVDemuxThread::pause(bool p)
 void AVDemuxThread::run()
 {
     end = false;
+    //TODO: no video thread is ok
     Q_ASSERT(audio_thread != 0);
     Q_ASSERT(video_thread != 0);
     if (!audio_thread->isRunning())
@@ -189,6 +191,11 @@ void AVDemuxThread::run()
         }
         index = demuxer->stream();
         pkt = *demuxer->packet(); //TODO: how to avoid additional copy?
+        //connect to stop is ok too
+        if (pkt.isEnd()) {
+            qDebug("read end packet %d A:%d V:%d", index, audio_stream, video_stream);
+            stop();
+        }
         /*1 is empty but another is enough, then do not block to
           ensure the empty one can put packets immediatly.
           But usually it will not happen, why?
