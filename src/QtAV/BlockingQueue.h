@@ -59,10 +59,12 @@ private:
     QWaitCondition cond_full, cond_empty;
 };
 
-//cap - thres = 24, about 1s
+/* cap - thres = 24, about 1s
+ * if fps is large, then larger capacity and threshold is preferred
+ */
 template <typename T, template <typename> class Container>
 BlockingQueue<T, Container>::BlockingQueue()
-    :block_empty(true),block_full(true),cap(8*4),thres(8)
+    :block_empty(true),block_full(true),cap(32*2),thres(32)
 {
 }
 
