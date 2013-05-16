@@ -95,6 +95,9 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     setPlayerEventFilter(new EventFilter(this));
     setVideoCapture(new VideoCapture());
+
+    connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+    connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
 }
 
 AVPlayer::~AVPlayer()
@@ -345,7 +348,8 @@ void AVPlayer::play()
      * must setFile() agian to reload an unseekable stream
      */
     //FIXME: seek(0) for audio without video crashes, why?
-    if (!isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
+    //TODO: no eof if replay by seek(0)
+    if (true || !isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
         if (!load()) {
             mStatistics.reset();
             return;
@@ -373,11 +377,12 @@ void AVPlayer::play()
 
 void AVPlayer::stop()
 {
+    qDebug("AVPlayer::stop");
     if (demuxer_thread->isRunning()) {
         qDebug("stop d");
         demuxer_thread->stop();
         //wait for finish then we can safely set the vars, e.g. a/v decoders
-        if (!demuxer_thread->wait()) {
+        if (!demuxer_thread->wait(1000)) {
             qWarning("Timeout waiting for demux thread stopped. Terminate it.");
             demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
         }
