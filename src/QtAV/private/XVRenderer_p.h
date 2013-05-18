@@ -136,25 +136,29 @@ public:
             return true;
         xv_image_width = w;
         xv_image_height = h;
-        if (!use_shm) {
-            xv_image = XvCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height);
-            xv_image->data = new char[xv_image->data_size];
-        } else {
+
+        if (use_shm) {
             xv_image = XvShmCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height, &shm);
             shm.shmid = shmget(IPC_PRIVATE, xv_image->data_size, IPC_CREAT | 0777);
             if (shm.shmid < 0) {
-                qCritical("get shm failed");
-                return false;
+                qCritical("get shm failed. try to use none shm");
+                use_shm = false;
+            } else {
+                shm.shmaddr = (char *)shmat(shm.shmid, 0, 0);
+                xv_image->data = shm.shmaddr;
+                shm.readOnly = 0;
+                if (XShmAttach(display, &shm)) {
+                    XSync(display, false);
+                    shmctl(shm.shmid, IPC_RMID, 0);
+                } else {
+                    qCritical("Attach to shm failed! try to use none shm");
+                    use_shm = false;
+                }
             }
-            shm.shmaddr = (char *)shmat(shm.shmid, 0, 0);
-            xv_image->data = shm.shmaddr;
-            shm.readOnly = 0;
-            if (!XShmAttach(display, &shm)) {
-                qCritical("Attach to shm failed!");
-                return false;
-            }
-            XSync(display, false);
-            shmctl(shm.shmid, IPC_RMID, 0);
+        }
+        if (!use_shm) {
+            xv_image = XvCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height);
+            xv_image->data = new char[xv_image->data_size];
         }
         return true;
     }
