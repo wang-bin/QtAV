@@ -20,3 +20,5 @@ HEADERS += \
 
 include($$PROJECTROOT/deploy.pri)
 
+RESOURCES += \
+    theme.qrc

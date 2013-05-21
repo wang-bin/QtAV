@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>theme/button-next.png</file>
+        <file>theme/button-fastforward.png</file>
+        <file>theme/button-play-pause.png</file>
+        <file>theme/button-previous.png</file>
+        <file>theme/button-rewind.png</file>
+        <file>theme/button-stop.png</file>
+        <file>theme/open.png</file>
+    </qresource>
+</RCC>

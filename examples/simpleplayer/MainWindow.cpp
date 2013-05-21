@@ -8,6 +8,7 @@
 #include <QLayout>
 #include <QPushButton>
 #include <QFileDialog>
+#include "Button.h"
 #include "Slider.h"
 
 #define SLIDER_ON_VO 0
@@ -27,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent) :
     mpPlayer = new AVPlayer(this);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(0);
+    mainLayout->setMargin(0);
     setLayout(mainLayout);
     layout()->setMargin(0);
 
@@ -43,27 +46,39 @@ MainWindow::MainWindow(QWidget *parent) :
     oe->setOpacity(0.5);
     mpTimeSlider->setGraphicsEffect(oe);
 #endif //SLIDER_ON_VO
-    mpPlayStopBtn = new QPushButton(tr("Play"), this);
-    mpPauseBtn = new QPushButton(tr("Pause"), this);
-    mpBackwardBtn = new QPushButton("<<", this);
-    mpForwardBtn = new QPushButton(">>", this);
-    mpOpenBtn = new QPushButton(tr("Open"), this);
+    mPlayPixmap = QPixmap(":/theme/button-play-pause.png");
+    int w = mPlayPixmap.width(), h = mPlayPixmap.height();
+    mPausePixmap = mPlayPixmap.copy(QRect(w/2, 0, w/2, h));
+    mPlayPixmap = mPlayPixmap.copy(QRect(0, 0, w/2, h));
+    qDebug("%d x %d", mPlayPixmap.width(), mPlayPixmap.height());
+    mpPlayPauseBtn = new Button(this);
+    mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
+    mpStopBtn = new Button(this);
+    mpStopBtn->setIconWithSates(QPixmap(":/theme/button-stop.png"));
+    mpBackwardBtn = new Button(this);
+    mpBackwardBtn->setIconWithSates(QPixmap(":/theme/button-rewind.png"));
+    mpForwardBtn = new Button(this);
+    mpForwardBtn->setIconWithSates(QPixmap(":/theme/button-fastforward.png"));
+    mpOpenBtn = new Button(this);
+    mpOpenBtn->setIconWithSates(QPixmap(":/theme/open.png"));
 
     mainLayout->addLayout(mpPlayerLayout);
     mainLayout->addWidget(mpTimeSlider);
     QHBoxLayout *buttonLayout = new QHBoxLayout(this);
+    buttonLayout->setSpacing(0);
+    buttonLayout->setMargin(0);
     mainLayout->addLayout(buttonLayout);
-    QSpacerItem *space = new QSpacerItem(mpPlayStopBtn->width(), mpPlayStopBtn->height(), QSizePolicy::MinimumExpanding);
+    QSpacerItem *space = new QSpacerItem(mpPlayPauseBtn->width(), mpPlayPauseBtn->height(), QSizePolicy::MinimumExpanding);
     buttonLayout->addSpacerItem(space);
-    buttonLayout->addWidget(mpPlayStopBtn);
-    buttonLayout->addWidget(mpPauseBtn);
+    buttonLayout->addWidget(mpPlayPauseBtn);
+    buttonLayout->addWidget(mpStopBtn);
     buttonLayout->addWidget(mpBackwardBtn);
     buttonLayout->addWidget(mpForwardBtn);
     buttonLayout->addWidget(mpOpenBtn);
 
     connect(mpOpenBtn, SIGNAL(clicked()), SLOT(openFile()));
-    connect(mpPlayStopBtn, SIGNAL(clicked()), SLOT(togglePlayStop()));
-    connect(mpPauseBtn, SIGNAL(clicked()), mpPlayer, SLOT(togglePause()));
+    connect(mpPlayPauseBtn, SIGNAL(clicked()), SLOT(togglePlayPause()));
+    connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
 
@@ -129,39 +144,47 @@ void MainWindow::openFile()
     mpPlayer->play(mFile);
 }
 
-void MainWindow::togglePlayStop()
+void MainWindow::togglePlayPause()
 {
-    if (mpPlayer->isPlaying())
-        mpPlayer->stop();
-    else
+    qDebug("%s", __FUNCTION__);
+    if (mpPlayer->isPlaying()) {
+        qDebug("isPaused = %d", mpPlayer->isPaused());
+        mpPlayer->pause(!mpPlayer->isPaused());
+    } else {
+        if (mFile.isEmpty())
+            return;
         mpPlayer->play();
+        mpPlayPauseBtn->setIconWithSates(mPausePixmap);
+    }
 }
 
 void MainWindow::onPaused(bool p)
 {
     if (p) {
+        qDebug("start pausing...");
         if (mTimerId)
             killTimer(mTimerId);
-        mpPauseBtn->setText(tr("Resume"));
+        mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     } else {
+        qDebug("stop pausing...");
         mTimerId = startTimer(kSliderUpdateInterval);
-        mpPauseBtn->setText(tr("Pause"));
+        mpPlayPauseBtn->setIconWithSates(mPausePixmap);
     }
 }
 
 void MainWindow::onStartPlay()
 {
+    mpPlayPauseBtn->setIconWithSates(mPausePixmap);
     mpTimeSlider->setMaximum(mpPlayer->duration()*1000);
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>enable slider");
     mpTimeSlider->setEnabled(true);
     mTimerId = startTimer(kSliderUpdateInterval);
-    mpPlayStopBtn->setText(tr("Stop"));
 }
 
 void MainWindow::onStopPlay()
 {
-    mpPlayStopBtn->setText(tr("Play"));
+    mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);

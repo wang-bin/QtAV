@@ -12,6 +12,7 @@ class VideoRenderer;
 class QVBoxLayout;
 class QLabel;
 class QPushButton;
+class Button;
 class Slider;
 class MainWindow : public QWidget
 {
@@ -23,7 +24,7 @@ public:
     
 public slots:
     void openFile();
-    void togglePlayStop();
+    void togglePlayPause();
 
 private slots:
     void onStartPlay();
@@ -41,12 +42,15 @@ private:
     QVBoxLayout *mpPlayerLayout;
     //QLabel *mpTitle
     Slider *mpTimeSlider;//, *mpVolumeSlider;
-    QPushButton *mpPlayStopBtn, *mpPauseBtn, *mpForwardBtn, *mpBackwardBtn;
-    QPushButton *mpOpenBtn;
+    Button *mpPlayPauseBtn, *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;
+    Button *mpOpenBtn;
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;
     QtAV::VideoRenderer *mpRenderer;
     QString mFile;
+    QPixmap mPlayPixmap;
+    QPixmap mPausePixmap;
+
 };
 
 #endif // MAINWINDOW_H
