@@ -95,9 +95,6 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     setPlayerEventFilter(new EventFilter(this));
     setVideoCapture(new VideoCapture());
-
-    connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
-    connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
 }
 
 AVPlayer::~AVPlayer()
@@ -372,18 +369,24 @@ void AVPlayer::play()
     if (aCodecCtx) {
         qDebug("Starting audio thread...");
         audio_thread->start(QThread::HighestPriority);
+        connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
     }
     if (vCodecCtx) {
         qDebug("Starting video thread...");
         video_thread->start();
+        connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
     }
     demuxer_thread->start();
+    //blockSignals(false);
     emit started();
 }
 
 void AVPlayer::stop()
 {
     qDebug("AVPlayer::stop");
+    disconnect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+    disconnect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+    //blockSignals(true); //TODO: move emit stopped() before it. or connect avthread.finished() to tryEmitStop() {if (!called_by_stop) emit}
     if (demuxer_thread->isRunning()) {
         qDebug("stop d");
         demuxer_thread->stop();
@@ -446,7 +449,6 @@ void AVPlayer::updateClock(qint64 msecs)
 {
     clock->updateExternalClock(msecs);
 }
-
 
 void AVPlayer::initStatistics()
 {
