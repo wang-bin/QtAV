@@ -1,6 +1,5 @@
 #include "MainWindow.h"
 #include <QLabel>
-#include <QSlider>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QtAV/AVPlayer.h>
@@ -9,6 +8,7 @@
 #include <QLayout>
 #include <QPushButton>
 #include <QFileDialog>
+#include "Slider.h"
 
 #define SLIDER_ON_VO 0
 //TODO: custome slider, mouse pressevent -> <-
@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     layout()->setMargin(0);
 
     mpPlayerLayout = new QVBoxLayout(this);
-    mpTimeSlider = new QSlider(this);
+    mpTimeSlider = new Slider(this);
     mpTimeSlider->setDisabled(true);
     //mpTimeSlider->setFixedHeight(8);
     mpTimeSlider->setMaximumHeight(8);
@@ -71,7 +71,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
     //valueChanged can be triggered by non-mouse event
-    connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
+    //TODO: connect sliderMoved(int) to preview(int)
+    //connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
     connect(mpTimeSlider, SIGNAL(sliderPressed()), SLOT(seek()));
     connect(mpTimeSlider, SIGNAL(sliderReleased()), SLOT(seek()));
 }
@@ -150,9 +151,10 @@ void MainWindow::onPaused(bool p)
 
 void MainWindow::onStartPlay()
 {
-    mpTimeSlider->setEnabled(true);
     mpTimeSlider->setMaximum(mpPlayer->duration()*1000);
     mpTimeSlider->setValue(0);
+    qDebug(">>>>>>>>>>>>>>enable slider");
+    mpTimeSlider->setEnabled(true);
     mTimerId = startTimer(kSliderUpdateInterval);
     mpPlayStopBtn->setText(tr("Stop"));
 }
@@ -161,6 +163,7 @@ void MainWindow::onStopPlay()
 {
     mpPlayStopBtn->setText(tr("Play"));
     mpTimeSlider->setValue(0);
+    qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);
 }
 
@@ -176,6 +179,7 @@ void MainWindow::seek()
 
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
+    Q_UNUSED(e);
 #if SLIDER_ON_VO
     int m = 4;
     QWidget *w = static_cast<QWidget*>(mpTimeSlider->parent());

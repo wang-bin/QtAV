@@ -8,9 +8,12 @@ include($$PROJECTROOT/src/libQtAV.pri)
 preparePaths($$OUT_PWD/../../out)
 
 SOURCES += main.cpp \
-    MainWindow.cpp
+    MainWindow.cpp \
+    Slider.cpp
+
 HEADERS += \
-    MainWindow.h
+    MainWindow.h \
+    Slider.h
 
 
 include($$PROJECTROOT/deploy.pri)

@@ -12,7 +12,7 @@ class VideoRenderer;
 class QVBoxLayout;
 class QLabel;
 class QPushButton;
-class QSlider;
+class Slider;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -40,7 +40,7 @@ private:
     int mTimerId;
     QVBoxLayout *mpPlayerLayout;
     //QLabel *mpTitle
-    QSlider *mpTimeSlider;//, *mpVolumeSlider;
+    Slider *mpTimeSlider;//, *mpVolumeSlider;
     QPushButton *mpPlayStopBtn, *mpPauseBtn, *mpForwardBtn, *mpBackwardBtn;
     QPushButton *mpOpenBtn;
     QtAV::AVClock *mpClock;
