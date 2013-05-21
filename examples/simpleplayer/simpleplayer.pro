@@ -9,11 +9,14 @@ preparePaths($$OUT_PWD/../../out)
 
 SOURCES += main.cpp \
     MainWindow.cpp \
+    Button.cpp \
     Slider.cpp
 
 HEADERS += \
     MainWindow.h \
+    Button.h \
     Slider.h
 
 
 include($$PROJECTROOT/deploy.pri)
+
