@@ -9,6 +9,7 @@ class AVClock;
 class VideoRenderer;
 }
 
+class QTimeEdit;
 class QVBoxLayout;
 class QLabel;
 class QPushButton;
@@ -21,7 +22,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     void setRenderer(QtAV::VideoRenderer* renderer);
     void play(const QString& name);
-    
+
 public slots:
     void openFile();
     void togglePlayPause();
@@ -40,17 +41,20 @@ protected:
 private:
     int mTimerId;
     QVBoxLayout *mpPlayerLayout;
-    //QLabel *mpTitle
+
+    QWidget *mpControl;
+    QLabel *mpCurrent, *mpDuration;
+    QLabel *mpTitle;
     Slider *mpTimeSlider;//, *mpVolumeSlider;
     Button *mpPlayPauseBtn, *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;
     Button *mpOpenBtn;
+
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;
     QtAV::VideoRenderer *mpRenderer;
     QString mFile;
     QPixmap mPlayPixmap;
     QPixmap mPausePixmap;
-
 };
 
 #endif // MAINWINDOW_H

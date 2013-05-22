@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include <QTimeEdit>
 #include <QLabel>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
@@ -27,14 +28,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     mpPlayer = new AVPlayer(this);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->setSpacing(0);
     mainLayout->setMargin(0);
     setLayout(mainLayout);
-    layout()->setMargin(0);
 
-    mpPlayerLayout = new QVBoxLayout(this);
-    mpTimeSlider = new Slider(this);
+    mpPlayerLayout = new QVBoxLayout();
+    mpControl = new QWidget(this);
+    mpControl->setMaximumHeight(22);
+
+    mpTimeSlider = new Slider(mpControl);
     mpTimeSlider->setDisabled(true);
     //mpTimeSlider->setFixedHeight(8);
     mpTimeSlider->setMaximumHeight(8);
@@ -46,49 +49,64 @@ MainWindow::MainWindow(QWidget *parent) :
     oe->setOpacity(0.5);
     mpTimeSlider->setGraphicsEffect(oe);
 #endif //SLIDER_ON_VO
+
+    mpCurrent = new QLabel(mpControl);
+    mpCurrent->setMargin(1);
+    mpCurrent->setText("00:00");
+    mpDuration = new QLabel(mpControl);
+    mpDuration->setMargin(1);
+    mpDuration->setText("00:00");
+    mpTitle = new QLabel(mpControl);
+    mpTitle->setIndent(6);
+
     mPlayPixmap = QPixmap(":/theme/button-play-pause.png");
     int w = mPlayPixmap.width(), h = mPlayPixmap.height();
     mPausePixmap = mPlayPixmap.copy(QRect(w/2, 0, w/2, h));
     mPlayPixmap = mPlayPixmap.copy(QRect(0, 0, w/2, h));
     qDebug("%d x %d", mPlayPixmap.width(), mPlayPixmap.height());
-    mpPlayPauseBtn = new Button(this);
+    mpPlayPauseBtn = new Button(mpControl);
     int a = qMin(w/2, h);
-    const int kMaxButtonIconWidth = 21;
+    const int kMaxButtonIconWidth = 18;
     const int kMaxButtonIconMargin = kMaxButtonIconWidth/3;
     a = qMin(a, kMaxButtonIconWidth);
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     mpPlayPauseBtn->setIconSize(QSize(a, a));
     mpPlayPauseBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpStopBtn = new Button(this);
+    mpStopBtn = new Button(mpControl);
     mpStopBtn->setIconWithSates(QPixmap(":/theme/button-stop.png"));
     mpStopBtn->setIconSize(QSize(a, a));
     mpStopBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpBackwardBtn = new Button(this);
+    mpBackwardBtn = new Button(mpControl);
     mpBackwardBtn->setIconWithSates(QPixmap(":/theme/button-rewind.png"));
     mpBackwardBtn->setIconSize(QSize(a, a));
     mpBackwardBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpForwardBtn = new Button(this);
+    mpForwardBtn = new Button(mpControl);
     mpForwardBtn->setIconWithSates(QPixmap(":/theme/button-fastforward.png"));
     mpForwardBtn->setIconSize(QSize(a, a));
     mpForwardBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpOpenBtn = new Button(this);
+    mpOpenBtn = new Button(mpControl);
     mpOpenBtn->setIconWithSates(QPixmap(":/theme/open.png"));
     mpOpenBtn->setIconSize(QSize(a, a));
     mpOpenBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
 
     mainLayout->addLayout(mpPlayerLayout);
     mainLayout->addWidget(mpTimeSlider);
-    QHBoxLayout *buttonLayout = new QHBoxLayout(this);
-    buttonLayout->setSpacing(0);
-    buttonLayout->setMargin(0);
-    mainLayout->addLayout(buttonLayout);
+    mainLayout->addWidget(mpControl);
+
+    QHBoxLayout *controlLayout = new QHBoxLayout();
+    controlLayout->setSpacing(0);
+    controlLayout->setMargin(1);
+    mpControl->setLayout(controlLayout);
+    controlLayout->addWidget(mpCurrent);
+    controlLayout->addWidget(mpTitle);
     QSpacerItem *space = new QSpacerItem(mpPlayPauseBtn->width(), mpPlayPauseBtn->height(), QSizePolicy::MinimumExpanding);
-    buttonLayout->addSpacerItem(space);
-    buttonLayout->addWidget(mpPlayPauseBtn);
-    buttonLayout->addWidget(mpStopBtn);
-    buttonLayout->addWidget(mpBackwardBtn);
-    buttonLayout->addWidget(mpForwardBtn);
-    buttonLayout->addWidget(mpOpenBtn);
+    controlLayout->addSpacerItem(space);
+    controlLayout->addWidget(mpPlayPauseBtn);
+    controlLayout->addWidget(mpStopBtn);
+    controlLayout->addWidget(mpBackwardBtn);
+    controlLayout->addWidget(mpForwardBtn);
+    controlLayout->addWidget(mpOpenBtn);
+    controlLayout->addWidget(mpDuration);
 
     connect(mpOpenBtn, SIGNAL(clicked()), SLOT(openFile()));
     connect(mpPlayPauseBtn, SIGNAL(clicked()), SLOT(togglePlayPause()));
@@ -145,6 +163,7 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 void MainWindow::play(const QString &name)
 {
     mFile = name;
+    mpTitle->setText(mFile);
     mpPlayer->play(name);
 }
 
@@ -153,9 +172,7 @@ void MainWindow::openFile()
     QString file = QFileDialog::getOpenFileName(0, tr("Open a media file"));
     if (file.isEmpty())
         return;
-    mFile = file;
-    setWindowTitle(mFile);
-    mpPlayer->play(mFile);
+    play(file);
 }
 
 void MainWindow::togglePlayPause()
@@ -193,6 +210,7 @@ void MainWindow::onStartPlay()
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>enable slider");
     mpTimeSlider->setEnabled(true);
+    mpDuration->setText(QTime().addSecs(mpPlayer->duration()).toString("mm:ss"));
     mTimerId = startTimer(kSliderUpdateInterval);
 }
 
@@ -202,6 +220,8 @@ void MainWindow::onStopPlay()
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);
+    mpCurrent->setText("00:00");
+    mpDuration->setText("00:00");
 }
 
 void MainWindow::seekToMSec(int msec)
@@ -230,5 +250,7 @@ void MainWindow::resizeEvent(QResizeEvent *e)
 
 void MainWindow::timerEvent(QTimerEvent *)
 {
-    mpTimeSlider->setValue(int(mpPlayer->masterClock()->value()*1000.0));
+    int ms = mpPlayer->masterClock()->value()*1000.0;
+    mpTimeSlider->setValue(ms);
+    mpCurrent->setText(QTime().addMSecs(ms).toString("mm:ss"));
 }

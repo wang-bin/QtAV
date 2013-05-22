@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
 
     MainWindow window;
+    window.setWindowTitle(title);
     window.setRenderer(renderer);
     window.show();
     if (!media_file.isEmpty()) {
