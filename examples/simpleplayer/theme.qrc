@@ -7,5 +7,11 @@
         <file>theme/button-rewind.png</file>
         <file>theme/button-stop.png</file>
         <file>theme/open.png</file>
+        <file>theme/info.png</file>
+        <file>theme/open_folder.png</file>
+        <file>theme/screenshot.png</file>
+        <file>theme/search-arrow.png</file>
+        <file>theme/search-icon.png</file>
+        <file>theme/url.png</file>
     </qresource>
 </RCC>

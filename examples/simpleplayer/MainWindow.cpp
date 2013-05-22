@@ -2,6 +2,7 @@
 #include <QtCore/QTimer>
 #include <QTimeEdit>
 #include <QLabel>
+#include <QtCore/QFileInfo>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QtAV/AVPlayer.h>
@@ -22,14 +23,15 @@
 const int kSliderUpdateInterval = 500;
 using namespace QtAV;
 
-static void QLabelSetElideText(QLabel *label, QString text)
+static void QLabelSetElideText(QLabel *label, QString text, int W = 0)
 {
     QFontMetrics metrix(label->font());
     int width = label->width() - label->indent() - label->margin();
-    if (label->parent()) {
-        int w = ((QWidget*)label->parent())->width();
-        width = qMax(w - label->indent() - label->margin() - 8*(30), 0); //TODO: why 30?
-        qDebug("w=%d", w);
+    if (W || label->parent()) {
+        int w = W;
+        if (!w)
+            w = ((QWidget*)label->parent())->width();
+        width = qMax(w - label->indent() - label->margin() - 13*(30), 0); //TODO: why 30?
     }
     QString clippedText = metrix.elidedText(text, Qt::ElideRight, width);
     label->setText(clippedText);
@@ -44,7 +46,8 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpTempRenderer(0)
 {
     connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
-    QTimer::singleShot(0, this, SLOT(setupUi()));
+    //QTimer::singleShot(10, this, SLOT(setupUi()));
+    setupUi();
 }
 
 void MainWindow::initPlayer()
@@ -86,13 +89,13 @@ void MainWindow::setupUi()
 #endif //SLIDER_ON_VO
 
     mpCurrent = new QLabel(mpControl);
-    mpCurrent->setMargin(1);
+    mpCurrent->setMargin(2);
     mpCurrent->setText("00:00");
     mpDuration = new QLabel(mpControl);
-    mpDuration->setMargin(1);
+    mpDuration->setMargin(2);
     mpDuration->setText("00:00");
     mpTitle = new QLabel(mpControl);
-    mpTitle->setIndent(6);
+    mpTitle->setIndent(8);
 
     mPlayPixmap = QPixmap(":/theme/button-play-pause.png");
     int w = mPlayPixmap.width(), h = mPlayPixmap.height();
@@ -120,9 +123,23 @@ void MainWindow::setupUi()
     mpForwardBtn->setIconSize(QSize(a, a));
     mpForwardBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
     mpOpenBtn = new Button(mpControl);
-    mpOpenBtn->setIconWithSates(QPixmap(":/theme/open.png"));
+    mpOpenBtn->setIconWithSates(QPixmap(":/theme/open_folder.png"));
     mpOpenBtn->setIconSize(QSize(a, a));
     mpOpenBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+
+    mpInfoBtn = new Button();
+    mpInfoBtn->setIconWithSates(QPixmap(":/theme/info.png"));
+    mpInfoBtn->setIconSize(QSize(a, a));
+    mpInfoBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+    mpCaptureBtn = new Button();
+    mpCaptureBtn->setIconWithSates(QPixmap(":/theme/screenshot.png"));
+    mpCaptureBtn->setIconSize(QSize(a, a));
+    mpCaptureBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+    mpMenuBtn = new Button();
+    mpMenuBtn->setIconWithSates(QPixmap(":/theme/search-arrow.png"));
+    mpMenuBtn->setIconSize(QSize(a, a));
+    mpMenuBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+
 
     mainLayout->addLayout(mpPlayerLayout);
     mainLayout->addWidget(mpTimeSlider);
@@ -136,15 +153,21 @@ void MainWindow::setupUi()
     controlLayout->addWidget(mpTitle);
     QSpacerItem *space = new QSpacerItem(mpPlayPauseBtn->width(), mpPlayPauseBtn->height(), QSizePolicy::MinimumExpanding);
     controlLayout->addSpacerItem(space);
+    controlLayout->addWidget(mpCaptureBtn);
     controlLayout->addWidget(mpPlayPauseBtn);
     controlLayout->addWidget(mpStopBtn);
     controlLayout->addWidget(mpBackwardBtn);
     controlLayout->addWidget(mpForwardBtn);
     controlLayout->addWidget(mpOpenBtn);
+    controlLayout->addWidget(mpInfoBtn);
+    //controlLayout->addWidget(mpSetupBtn);
+    controlLayout->addWidget(mpMenuBtn);
+
     controlLayout->addWidget(mpDuration);
 
     connect(mpOpenBtn, SIGNAL(clicked()), SLOT(openFile()));
     connect(mpPlayPauseBtn, SIGNAL(clicked()), SLOT(togglePlayPause()));
+    connect(mpCaptureBtn, SIGNAL(clicked()), this, SLOT(capture()));
     //valueChanged can be triggered by non-mouse event
     //TODO: connect sliderMoved(int) to preview(int)
     //connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
@@ -285,11 +308,16 @@ void MainWindow::seek()
     mpPlayer->seek(qreal(mpTimeSlider->value())/qreal(mpTimeSlider->maximum()));
 }
 
+void MainWindow::capture()
+{
+    mpPlayer->captureVideo();
+}
+
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e);
     if (mpTitle)
-        QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName());
+        QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName(), e->size().width());
 #if SLIDER_ON_VO
     int m = 4;
     QWidget *w = static_cast<QWidget*>(mpTimeSlider->parent());

@@ -39,6 +39,7 @@ private slots:
     void onPaused(bool p);
     void seekToMSec(int msec);
     void seek();
+    void capture();
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
@@ -55,6 +56,7 @@ private:
     Slider *mpTimeSlider;//, *mpVolumeSlider;
     Button *mpPlayPauseBtn, *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;
     Button *mpOpenBtn;
+    Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
 
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;
