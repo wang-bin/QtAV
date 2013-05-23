@@ -27,7 +27,13 @@ public slots:
     void openFile();
     void togglePlayPause();
 
+signals:
+    void ready();
+
 private slots:
+    void processPendingActions();
+    void initPlayer();
+    void setupUi();
     void onStartPlay();
     void onStopPlay();
     void onPaused(bool p);
@@ -39,6 +45,7 @@ protected:
     virtual void timerEvent(QTimerEvent *);
 
 private:
+    bool mIsReady, mHasPendingPlay;
     int mTimerId;
     QVBoxLayout *mpPlayerLayout;
 
@@ -51,7 +58,7 @@ private:
 
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;
-    QtAV::VideoRenderer *mpRenderer;
+    QtAV::VideoRenderer *mpRenderer, *mpTempRenderer;
     QString mFile;
     QPixmap mPlayPixmap;
     QPixmap mPausePixmap;

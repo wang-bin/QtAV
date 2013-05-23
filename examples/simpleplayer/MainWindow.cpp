@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include <QtCore/QTimer>
 #include <QTimeEdit>
 #include <QLabel>
 #include <QGraphicsOpacityEffect>
@@ -23,11 +24,33 @@ using namespace QtAV;
 
 MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent)
+  , mIsReady(false)
+  , mHasPendingPlay(false)
   , mTimerId(0)
   , mpRenderer(0)
+  , mpTempRenderer(0)
+{
+    connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
+    QTimer::singleShot(0, this, SLOT(setupUi()));
+}
+
+void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
+    mIsReady = true;
+    emit ready();
+    qDebug("player created");
+    connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
+    connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
+    connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
 
+    connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
+    connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
+    connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
+}
+
+void MainWindow::setupUi()
+{
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->setSpacing(0);
     mainLayout->setMargin(0);
@@ -110,22 +133,34 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(mpOpenBtn, SIGNAL(clicked()), SLOT(openFile()));
     connect(mpPlayPauseBtn, SIGNAL(clicked()), SLOT(togglePlayPause()));
-    connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
-    connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
-    connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
-
-    connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
-    connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
-    connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
     //valueChanged can be triggered by non-mouse event
     //TODO: connect sliderMoved(int) to preview(int)
     //connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
     connect(mpTimeSlider, SIGNAL(sliderPressed()), SLOT(seek()));
     connect(mpTimeSlider, SIGNAL(sliderReleased()), SLOT(seek()));
+
+    QTimer::singleShot(0, this, SLOT(initPlayer()));
+}
+
+void MainWindow::processPendingActions()
+{
+    if (!mpTempRenderer)
+        return;
+    setRenderer(mpTempRenderer);
+    mpTempRenderer = 0;
+    if (mHasPendingPlay) {
+        mHasPendingPlay = false;
+        play(mFile);
+    }
 }
 
 void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 {
+    qDebug(">>>>>>>>>>%s @%d", __FUNCTION__, __LINE__);
+    if (!mIsReady) {
+        mpTempRenderer = renderer;
+        return;
+    }
     if (!renderer)
         return;
 #if SLIDER_ON_VO
@@ -156,6 +191,7 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         mpTimeSlider->show();
     }
 #endif //SLIDER_ON_VO
+    qDebug("add renderer to layout");
     mpPlayerLayout->addWidget(mpRenderer->widget());
     resize(mpRenderer->widget()->size());
 }
@@ -163,6 +199,10 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 void MainWindow::play(const QString &name)
 {
     mFile = name;
+    if (!mIsReady) {
+        mHasPendingPlay = true;
+        return;
+    }
     mpTitle->setText(mFile);
     mpPlayer->play(name);
 }
@@ -177,7 +217,6 @@ void MainWindow::openFile()
 
 void MainWindow::togglePlayPause()
 {
-    qDebug("%s", __FUNCTION__);
     if (mpPlayer->isPlaying()) {
         qDebug("isPaused = %d", mpPlayer->isPaused());
         mpPlayer->pause(!mpPlayer->isPaused());
