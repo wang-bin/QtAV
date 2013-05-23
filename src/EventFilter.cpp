@@ -24,6 +24,7 @@
 #include <QtCore/QUrl>
 #include <QEvent>
 #include <QFileDialog>
+#include <QGraphicsObject>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QInputDialog>
 #include <QKeyEvent>
@@ -101,11 +102,18 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
     AVPlayer *player = static_cast<AVPlayer*>(parent());
     if (!player)
         return false;
+#if 0 //TODO: why crash on close?
+    if (player->renderer()->widget() != watched
+            && (QGraphicsObject*)player->renderer()->graphicsItem() != watched) {
+        return false;
+    }
+#else
 #ifndef QT_NO_DYNAMIC_CAST //dynamic_cast is defined as a macro to force a compile error
     if (player->renderer() != dynamic_cast<VideoRenderer*>(watched)) {
         return false;
     }
 #endif
+#endif //0
     QEvent::Type type = event->type();
     switch (type) {
     case QEvent::MouseButtonPress:
@@ -113,6 +121,16 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         static_cast<QMouseEvent*>(event)->button();
         //TODO: wheel to control volume etc.
         return false;
+        break;
+    case QEvent::MouseButtonDblClick: { //TODO: move to gui
+        QWidget *w = qApp->activeWindow();
+        if (!w)
+            return false;
+        if (w->isFullScreen())
+            w->showNormal();
+        else
+            w->showFullScreen();
+    }
         break;
     case QEvent::KeyPress: {
         QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
