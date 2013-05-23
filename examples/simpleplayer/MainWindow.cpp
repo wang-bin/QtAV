@@ -2,9 +2,12 @@
 #include <QtCore/QTimer>
 #include <QTimeEdit>
 #include <QLabel>
+#include <QApplication>
+#include <QDesktopWidget>
 #include <QtCore/QFileInfo>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
+#include <QWindowStateChangeEvent>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h>
 #include <QtAV/WidgetRenderer.h>
@@ -316,6 +319,15 @@ void MainWindow::capture()
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e);
+    if (e->size() == qApp->desktop()->size()) {
+        mpControl->hide();
+        mpTimeSlider->hide();
+    } else {
+        if (mpControl->isHidden())
+            mpControl->show();
+        if (mpTimeSlider->isHidden())
+            mpTimeSlider->show();
+    }
     if (mpTitle)
         QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName(), e->size().width());
 #if SLIDER_ON_VO
