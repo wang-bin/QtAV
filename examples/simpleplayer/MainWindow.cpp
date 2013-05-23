@@ -22,6 +22,19 @@
 const int kSliderUpdateInterval = 500;
 using namespace QtAV;
 
+static void QLabelSetElideText(QLabel *label, QString text)
+{
+    QFontMetrics metrix(label->font());
+    int width = label->width() - label->indent() - label->margin();
+    if (label->parent()) {
+        int w = ((QWidget*)label->parent())->width();
+        width = qMax(w - label->indent() - label->margin() - 8*(30), 0); //TODO: why 30?
+        qDebug("w=%d", w);
+    }
+    QString clippedText = metrix.elidedText(text, Qt::ElideRight, width);
+    label->setText(clippedText);
+}
+
 MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent)
   , mIsReady(false)
@@ -47,6 +60,7 @@ void MainWindow::initPlayer()
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
+
 }
 
 void MainWindow::setupUi()
@@ -203,7 +217,7 @@ void MainWindow::play(const QString &name)
         mHasPendingPlay = true;
         return;
     }
-    mpTitle->setText(mFile);
+    QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName());
     mpPlayer->play(name);
 }
 
@@ -276,6 +290,8 @@ void MainWindow::seek()
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e);
+    if (mpTitle)
+        QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName());
 #if SLIDER_ON_VO
     int m = 4;
     QWidget *w = static_cast<QWidget*>(mpTimeSlider->parent());
