@@ -1,17 +1,17 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    simpleplayer \
+    vo-qt \
+    player \
     videographicsitem \
     videowall
-
 #TODO: mingw cross
 config_gdiplus {
-    SUBDIRS += player-gdi
+    SUBDIRS += vo-gdi
 }
 config_direct2d {
-    SUBDIRS += player-d2d
+    SUBDIRS += vo-d2d
 }
 config_gl {
-    SUBDIRS += player-gl
+    SUBDIRS += vo-gl
 }

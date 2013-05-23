@@ -149,13 +149,6 @@ int main(int argc, char *argv[])
     if (!media_file.isEmpty()) {
         window.play(media_file);
     }
-    /*
-    AVPlayer player;
-    player.setRenderer(renderer);
-    if (!media_file.isEmpty()) {
-        player.play(media_file);
-    }
-    */
     int ret = a.exec();
     delete renderer;
     return ret;
