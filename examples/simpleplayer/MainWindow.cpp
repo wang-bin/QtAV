@@ -51,16 +51,14 @@ void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
-    emit ready();
     qDebug("player created");
     connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
-
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
-
+    emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
 }
 
 void MainWindow::setupUi()
