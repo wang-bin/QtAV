@@ -51,7 +51,7 @@ public:
     bool load(const QString& path);
     bool load();
     bool isLoaded() const;
-    qreal duration() const; //This function may be removed in the future.
+    qreal duration() const; //unit: s, This function may be removed in the future.
     /*
      * default: [fmt: PNG, dir: capture, name: basename]
      * replace the existing capture; return the replaced one
@@ -77,10 +77,12 @@ public:
     Statistics& statistics();
     const Statistics& statistics() const;
 signals:
+    void paused(bool p);
     void started();
     void stopped();
 
 public slots:
+    void togglePause();
     void pause(bool p);
     void play(); //replay
     void stop();

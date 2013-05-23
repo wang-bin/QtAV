@@ -34,6 +34,8 @@
 #include <QtAV/GDIRenderer.h>
 #include <QtAV/XVRenderer.h>
 
+#include "MainWindow.h"
+
 using namespace QtAV;
 
 static FILE *sLogfile = 0; //'log' is a function in msvc math.h
@@ -139,12 +141,21 @@ int main(int argc, char *argv[])
     renderer->widget()->setWindowTitle(title);
     //renderer->scaleInRenderer(false);
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
+
+    MainWindow window;
+    window.show();
+    window.setWindowTitle(title);
+    window.setRenderer(renderer);
+    if (!media_file.isEmpty()) {
+        window.play(media_file);
+    }
+    /*
     AVPlayer player;
     player.setRenderer(renderer);
     if (!media_file.isEmpty()) {
         player.play(media_file);
     }
-
+    */
     int ret = a.exec();
     delete renderer;
     return ret;

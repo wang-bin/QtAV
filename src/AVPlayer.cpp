@@ -95,9 +95,6 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     setPlayerEventFilter(new EventFilter(this));
     setVideoCapture(new VideoCapture());
-
-    connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
-    connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
 }
 
 AVPlayer::~AVPlayer()
@@ -261,6 +258,11 @@ bool AVPlayer::isPlaying() const
 	return demuxer_thread->isRunning() || audio_thread->isRunning() || video_thread->isRunning();
 }
 
+void AVPlayer::togglePause()
+{
+    pause(!isPaused());
+}
+
 void AVPlayer::pause(bool p)
 {
     //pause thread. check pause state?
@@ -268,6 +270,7 @@ void AVPlayer::pause(bool p)
     audio_thread->pause(p);
     video_thread->pause(p);
     clock->pause(p);
+    emit paused(p);
 #if 0
     /*Pause output. all threads using those outputs will be paused. If a output is not paused
      *, then other players' avthread can use it.
@@ -366,18 +369,26 @@ void AVPlayer::play()
     if (aCodecCtx) {
         qDebug("Starting audio thread...");
         audio_thread->start(QThread::HighestPriority);
+        connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
     }
     if (vCodecCtx) {
         qDebug("Starting video thread...");
         video_thread->start();
+        connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
     }
     demuxer_thread->start();
+    //blockSignals(false);
     emit started();
 }
 
 void AVPlayer::stop()
 {
+    if (!isPlaying())
+        return;
     qDebug("AVPlayer::stop");
+    disconnect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+    disconnect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+    //blockSignals(true); //TODO: move emit stopped() before it. or connect avthread.finished() to tryEmitStop() {if (!called_by_stop) emit}
     if (demuxer_thread->isRunning()) {
         qDebug("stop d");
         demuxer_thread->stop();
@@ -440,7 +451,6 @@ void AVPlayer::updateClock(qint64 msecs)
 {
     clock->updateExternalClock(msecs);
 }
-
 
 void AVPlayer::initStatistics()
 {
