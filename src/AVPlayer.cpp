@@ -383,6 +383,8 @@ void AVPlayer::play()
 
 void AVPlayer::stop()
 {
+    if (!isPlaying())
+        return;
     qDebug("AVPlayer::stop");
     disconnect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
     disconnect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));

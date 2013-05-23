@@ -74,7 +74,7 @@ public:
     QString videoFormatName() const; //AVFormatContext::iformat->name
     QString videoFormatLongName() const; //AVFormatContext::iformat->long_name
     qint64 startTime() const; //AVFormatContext::start_time
-    qint64 duration() const; //AVFormatContext::duration
+    qint64 duration() const; //us, AVFormatContext::duration
     int bitRate() const; //AVFormatContext::bit_rate
     qreal frameRate() const; //AVFormatContext::r_frame_rate
     qint64 frames() const; //AVFormatContext::nb_frames
