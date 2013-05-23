@@ -1,13 +1,13 @@
 #include "Button.h"
 
 Button::Button(QWidget *parent) :
-    QPushButton(parent)
+    QToolButton(parent)
   , mState(NotFocused)
 {
 }
 
 Button::Button(const QString& text, QWidget *parent) :
-    QPushButton(text, parent)
+    QToolButton(parent)
   , mState(NotFocused)
 {
 }
@@ -74,7 +74,7 @@ void Button::setIconWithSates(const QPixmap &pixmap, IconState s1, IconState s2,
 
 void Button::enterEvent(QEvent *e)
 {
-    QPushButton::enterEvent(e);
+    QToolButton::enterEvent(e);
     if (mIcons.isEmpty())
         return;
     setIconState(Focused);
@@ -83,7 +83,7 @@ void Button::enterEvent(QEvent *e)
 
 void Button::leaveEvent(QEvent *e)
 {
-    QPushButton::leaveEvent(e);
+    QToolButton::leaveEvent(e);
     if (mIcons.isEmpty())
         return;
     setIconState(NotFocused);
@@ -92,7 +92,7 @@ void Button::leaveEvent(QEvent *e)
 
 void Button::mousePressEvent(QMouseEvent *e)
 {
-    QPushButton::mousePressEvent(e);
+    QToolButton::mousePressEvent(e);
     if (mIcons.isEmpty())
         return;
     setIconState(Pressed);
@@ -100,7 +100,7 @@ void Button::mousePressEvent(QMouseEvent *e)
 
 void Button::mouseReleaseEvent(QMouseEvent *e)
 {
-    QPushButton::mouseReleaseEvent(e);
+    QToolButton::mouseReleaseEvent(e);
     if (mIcons.isEmpty())
         return;
     setIconState(Focused);

@@ -4,9 +4,10 @@
 //TODO: on/off, like qicon
 
 #include <QPushButton>
+#include <QToolButton>
 #include <QMap>
 
-class Button : public QPushButton
+class Button : public QToolButton
 {
     Q_OBJECT
 public:

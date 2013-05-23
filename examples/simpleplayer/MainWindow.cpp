@@ -14,6 +14,7 @@
 #include <QLayout>
 #include <QPushButton>
 #include <QFileDialog>
+#include <QMenu>
 #include "Button.h"
 #include "Slider.h"
 
@@ -139,10 +140,27 @@ void MainWindow::setupUi()
     mpCaptureBtn->setIconSize(QSize(a, a));
     mpCaptureBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
     mpMenuBtn = new Button();
+    mpMenuBtn->setAutoRaise(true);
+    mpMenuBtn->setPopupMode(QToolButton::InstantPopup);
+
+/*
     mpMenuBtn->setIconWithSates(QPixmap(":/theme/search-arrow.png"));
     mpMenuBtn->setIconSize(QSize(a, a));
     mpMenuBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-
+*/
+    mpMenu = new QMenu(mpMenuBtn);
+    mpMenu->addAction(tr("Open Url"), this, SLOT(openUrl()));
+    mpMenu->addSeparator();
+    mpMenu->addAction(tr("Renderer"));
+    mpMenu->addAction(tr("Aspect Ratio"), this, SLOT(switchAspectRatio()));
+    mpMenu->addSeparator();
+    mpMenu->addAction(tr("Setup"), this, SLOT(setup()));
+    mpMenu->addAction(tr("Report")); //report bug, suggestions etc. using maillist?
+    mpMenu->addAction(tr("About"), this, SLOT(about()));
+    mpMenu->addAction(tr("Help"), this, SLOT(help()));
+    mpMenu->addSeparator();
+    mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
+    mpMenuBtn->setMenu(mpMenu);
 
     mainLayout->addLayout(mpPlayerLayout);
     mainLayout->addWidget(mpTimeSlider);

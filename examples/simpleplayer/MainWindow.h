@@ -9,6 +9,7 @@ class AVClock;
 class VideoRenderer;
 }
 
+class QMenu;
 class QTimeEdit;
 class QVBoxLayout;
 class QLabel;
@@ -57,6 +58,7 @@ private:
     Button *mpPlayPauseBtn, *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;
     Button *mpOpenBtn;
     Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
+    QMenu *mpMenu;
 
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;
