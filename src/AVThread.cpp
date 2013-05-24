@@ -95,6 +95,16 @@ void AVThread::nextAndPause()
     d.cond.wakeAll();
 }
 
+void AVThread::lock()
+{
+    d_func().mutex.lock();
+}
+
+void AVThread::unlock()
+{
+    d_func().mutex.unlock();
+}
+
 void AVThread::setClock(AVClock *clock)
 {
     d_func().clock = clock;

@@ -41,6 +41,10 @@ public:
 	explicit AVThread(QObject *parent = 0);
     virtual ~AVThread();
 
+    //used for changing some components when running
+    void lock();
+    void unlock();
+
     void setClock(AVClock *clock);
     AVClock* clock() const;
 

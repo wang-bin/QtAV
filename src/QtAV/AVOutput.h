@@ -25,6 +25,10 @@
 #include <QtCore/QByteArray>
 #include <QtAV/QtAV_Global.h>
 
+/*!
+ * TODO: add api id(), name(), detail()
+ */
+
 namespace QtAV {
 
 class AVDecoder;

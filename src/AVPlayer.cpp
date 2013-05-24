@@ -119,16 +119,21 @@ AVClock* AVPlayer::masterClock()
     return clock;
 }
 
+//TODO: check components compatiblity(also when change the filter chain)
 VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
 {
     VideoRenderer *old = _renderer;
     _renderer = r;
+    //FIXME: what if isPaused()==false but pause(true) in another thread?
+    bool need_lock = isPlaying() && !video_thread->isPaused();
+    if (need_lock)
+        video_thread->lock();
+
     video_thread->setOutput(_renderer);
     if (_renderer) {
         _renderer->setStatistics(&mStatistics);
-        if (isPlaying())
-            stop();
-        //delete _renderer; //Do not own the ptr
+        if (need_lock)
+            video_thread->unlock();
         _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
     }
     return old;

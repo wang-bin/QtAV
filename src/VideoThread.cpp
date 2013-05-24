@@ -90,7 +90,6 @@ void VideoThread::run()
     resetState();
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
-    VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -138,7 +137,8 @@ void VideoThread::run()
         }
         d.clock->updateVideoPts(pkt.pts); //here?
         //DO NOT decode and convert if vo is not available or null!
-        //if ()
+        //NOTE: vo may changes dymanically. we need check it every time we use it. decoder and other components should do this too
+        VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
         bool vo_ok = vo && vo->isAvailable();
         if (vo_ok) {
             //use the last size first then update the last size so that decoder(converter) can update output size

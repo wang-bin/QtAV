@@ -66,6 +66,7 @@ public:
 	bool isPlaying() const;
     bool isPaused() const;
     //this will install the default EventFilter. To use customized filter, register after this
+    //TODO: addRenderer; renderers()
     VideoRenderer* setRenderer(VideoRenderer* renderer);
     VideoRenderer* renderer();
     AudioOutput* audio();

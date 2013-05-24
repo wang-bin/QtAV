@@ -73,6 +73,8 @@ public:
     std::string name(const ID &id) const;
     size_t count() const;
     Type* getRandom(); //remove
+//    Type* at(int index);
+//    ID idAt(int index);
 
 protected:
     Factory() {}

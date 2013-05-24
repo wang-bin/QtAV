@@ -99,6 +99,7 @@ void MainWindow::setupUi()
     mpDuration->setMargin(2);
     mpDuration->setText("00:00");
     mpTitle = new QLabel(mpControl);
+    mpTitle->setText("QPainter");
     mpTitle->setIndent(8);
 
     mPlayPixmap = QPixmap(":/theme/button-play-pause.png");
@@ -162,6 +163,22 @@ void MainWindow::setupUi()
     mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     mpMenuBtn->setMenu(mpMenu);
 
+    mpVOMenu = new QMenu(tr("Renderer"));
+    connect(mpVOMenu, SIGNAL(triggered(QAction*)), SLOT(changeVO(QAction*)));
+    //TODO: AVOutput.name,detail(description). check whether it is available
+    mpAction = mpVOMenu->addAction("QPainter");
+    mpAction->setData(VideoRendererId_Widget);
+    mpVOMenu->addAction("OpenGL")->setData(VideoRendererId_GLWidget);
+    mpVOMenu->addAction("GDI+")->setData(VideoRendererId_GDI);
+    mpVOMenu->addAction("Direct2D")->setData(VideoRendererId_Direct2D);
+    mpVOMenu->addAction("XV")->setData(VideoRendererId_XV);
+    foreach(QAction* action, mpVOMenu->actions()) {
+        action->setCheckable(true);
+    }
+    mpAction->setChecked(true);
+
+    mpMenu->addMenu(mpVOMenu);
+
     mainLayout->addLayout(mpPlayerLayout);
     mainLayout->addWidget(mpTimeSlider);
     mainLayout->addWidget(mpControl);
@@ -198,8 +215,34 @@ void MainWindow::setupUi()
     QTimer::singleShot(0, this, SLOT(initPlayer()));
 }
 
+void MainWindow::changeVO(QAction *action)
+{
+    if (action == mpAction) {
+        action->toggle(); //check state changes if clicked
+        return;
+    }
+    VideoRendererId vid = (VideoRendererId)action->data().toInt();
+    VideoRenderer *vo = VideoRendererFactory::create(vid);
+    if (vo) {
+        mpTitle->setText(action->text()); //TODO: move into setRenderer(). vo.id()
+        if (vo->widget()) {
+            vo->widget()->resize(rect().size()); //TODO: why not mpPlayer->renderer()->rendererSize()?
+            vo->resizeRenderer(mpPlayer->renderer()->rendererSize());
+        }
+        AVDEBUG();
+        setRenderer(vo);
+    } else {
+        action->toggle(); //check state changes if clicked
+        return;
+    }
+    mpAction->setChecked(false);
+    mpAction = action;
+    mpAction->setChecked(true);
+}
+
 void MainWindow::processPendingActions()
 {
+    AVDEBUG();
     if (!mpTempRenderer)
         return;
     setRenderer(mpTempRenderer);
@@ -212,7 +255,7 @@ void MainWindow::processPendingActions()
 
 void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 {
-    qDebug(">>>>>>>>>>%s @%d", __FUNCTION__, __LINE__);
+    AVDEBUG();
     if (!mIsReady) {
         mpTempRenderer = renderer;
         return;
@@ -233,14 +276,19 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     QWidget *r = 0;
     if (mpRenderer)
         r = mpRenderer->widget();
+    AVDEBUG();
+    mpRenderer = renderer;
+    AVDEBUG();
+    mpPlayer->setRenderer(mpRenderer);
+    AVDEBUG();
+    //release old renderer and add new
     if (r) {
+        AVDEBUG();
         mpPlayerLayout->removeWidget(r);
-        r->close();
-        delete r;
+        r->QWidget::close();
+        //delete r; //pure virtual called
         r = 0;
     }
-    mpRenderer = renderer;
-    mpPlayer->setRenderer(mpRenderer);
 #if SLIDER_ON_VO
     if (mpTimeSlider) {
         mpTimeSlider->setParent(mpRenderer->widget());
@@ -248,7 +296,9 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     }
 #endif //SLIDER_ON_VO
     qDebug("add renderer to layout");
+    r = mpRenderer->widget();
     mpPlayerLayout->addWidget(mpRenderer->widget());
+    AVDEBUG();
     resize(mpRenderer->widget()->size());
 }
 
@@ -259,7 +309,8 @@ void MainWindow::play(const QString &name)
         mHasPendingPlay = true;
         return;
     }
-    QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName());
+    //QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName());
+    setWindowTitle(QFileInfo(mFile).fileName());
     mpPlayer->play(name);
 }
 
@@ -346,8 +397,10 @@ void MainWindow::resizeEvent(QResizeEvent *e)
         if (mpTimeSlider->isHidden())
             mpTimeSlider->show();
     }
+    /*
     if (mpTitle)
         QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName(), e->size().width());
+    */
 #if SLIDER_ON_VO
     int m = 4;
     QWidget *w = static_cast<QWidget*>(mpTimeSlider->parent());
