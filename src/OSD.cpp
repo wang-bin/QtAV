@@ -76,26 +76,28 @@ QFont OSD::font() const
 
 QString OSD::text(Statistics *statistics)
 {
-    //TODO: choose video or audio?
     QString text;
+    Statistics::Common *av = &statistics->video;
+    if (!av->available)
+        av = &statistics->audio;
     if (hasShowType(ShowCurrentTime) || hasShowType(ShowCurrentAndTotalTime)) {
-        text = statistics->video.current_time.toString("HH:mm:ss");
+        text = av->current_time.toString("HH:mm:ss");
     }
     //how to compute mSecsTotal only once?
     if (hasShowType(ShowCurrentAndTotalTime) || hasShowType(ShowPercent) /*mSecsTotal < 0*/) {
         if (statistics->duration.isNull())
             return text;
         mSecsTotal = QTime(0, 0, 0).secsTo(statistics->duration); //why video.total_time may be wrong(mkv)
-        //qDebug("secs=%d/%d", QTime(0, 0, 0).secsTo(statistics->video.current_time), mSecsTotal);
+        //qDebug("secs=%d/%d", QTime(0, 0, 0).secsTo(av->current_time), mSecsTotal);
     }
     if (hasShowType(ShowCurrentAndTotalTime)) {
         text += "/" + statistics->duration.toString("HH:mm:ss");
     }
     if (hasShowType(ShowRemainTime)) {
-        text += "-" + QTime().addSecs(statistics->video.current_time.secsTo(statistics->duration)).toString("HH:mm:ss");
+        text += "-" + QTime().addSecs(av->current_time.secsTo(statistics->duration)).toString("HH:mm:ss");
     }
     if (hasShowType(ShowPercent))
-        text += QString::number(qreal(QTime(0, 0, 0).secsTo(statistics->video.current_time))
+        text += QString::number(qreal(QTime(0, 0, 0).secsTo(av->current_time))
                                 /qreal(mSecsTotal)*100.0, 'f', 1) + "%";
     return text;
 }

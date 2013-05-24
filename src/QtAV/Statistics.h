@@ -45,6 +45,7 @@ public:
     class Common {
     public:
         Common();
+        bool available;
         QString format;//?
         QString codec, codec_long;
         //common audio/video info that may be used(visualize) by filters

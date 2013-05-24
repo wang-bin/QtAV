@@ -462,6 +462,7 @@ void AVPlayer::initStatistics()
     AVStream *stream = 0;
     int stream_idx = demuxer.audioStream();
     if (stream_idx >= 0) {
+        mStatistics.audio.available = true;
         stream = formatCtx->streams[stream_idx];
         qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
                , duration(), av_q2d(stream->time_base));
@@ -482,6 +483,7 @@ void AVPlayer::initStatistics()
     }
     stream_idx = demuxer.videoStream();
     if (stream_idx >= 0) {
+        mStatistics.video.available = true;
         stream = formatCtx->streams[stream_idx];
         //mStatistics.audio.format =
         mStatistics.video.codec = vCodecCtx->codec->name;
