@@ -14,6 +14,7 @@
 #include <QLayout>
 #include <QPushButton>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QMenu>
 #include "Button.h"
 #include "Slider.h"
@@ -152,9 +153,6 @@ void MainWindow::setupUi()
     mpMenu = new QMenu(mpMenuBtn);
     mpMenu->addAction(tr("Open Url"), this, SLOT(openUrl()));
     mpMenu->addSeparator();
-    mpMenu->addAction(tr("Renderer"));
-    mpMenu->addAction(tr("Aspect Ratio"), this, SLOT(switchAspectRatio()));
-    mpMenu->addSeparator();
     mpMenu->addAction(tr("Setup"), this, SLOT(setup()));
     mpMenu->addAction(tr("Report")); //report bug, suggestions etc. using maillist?
     mpMenu->addAction(tr("About"), this, SLOT(about()));
@@ -162,22 +160,36 @@ void MainWindow::setupUi()
     mpMenu->addSeparator();
     mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     mpMenuBtn->setMenu(mpMenu);
-
-    mpVOMenu = new QMenu(tr("Renderer"));
-    connect(mpVOMenu, SIGNAL(triggered(QAction*)), SLOT(changeVO(QAction*)));
-    //TODO: AVOutput.name,detail(description). check whether it is available
-    mpAction = mpVOMenu->addAction("QPainter");
-    mpAction->setData(VideoRendererId_Widget);
-    mpVOMenu->addAction("OpenGL")->setData(VideoRendererId_GLWidget);
-    mpVOMenu->addAction("GDI+")->setData(VideoRendererId_GDI);
-    mpVOMenu->addAction("Direct2D")->setData(VideoRendererId_Direct2D);
-    mpVOMenu->addAction("XV")->setData(VideoRendererId_XV);
-    foreach(QAction* action, mpVOMenu->actions()) {
+    mpMenu->addSeparator();
+    QMenu *subMenu = new QMenu(tr("Aspect ratio"), mpMenu);
+    mpMenu->addMenu(subMenu);
+    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(switchAspectRatio(QAction*)));
+    mpARAction = subMenu->addAction(tr("Video"));
+    mpARAction->setData(0);
+    subMenu->addAction(tr("Window"))->setData(-1);
+    subMenu->addAction("4:3")->setData(4.0/3.0);
+    subMenu->addAction("16:9")->setData(16.0/9.0);
+    subMenu->addAction(tr("Custom"))->setData(-2);
+    foreach(QAction* action, subMenu->actions()) {
         action->setCheckable(true);
     }
-    mpAction->setChecked(true);
+    mpARAction->setChecked(true);
 
-    mpMenu->addMenu(mpVOMenu);
+    subMenu = new QMenu(tr("Renderer"));
+    mpMenu->addMenu(subMenu);
+    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeVO(QAction*)));
+    //TODO: AVOutput.name,detail(description). check whether it is available
+    mpVOAction = subMenu->addAction("QPainter");
+    mpVOAction->setData(VideoRendererId_Widget);
+    subMenu->addAction("OpenGL")->setData(VideoRendererId_GLWidget);
+    subMenu->addAction("GDI+")->setData(VideoRendererId_GDI);
+    subMenu->addAction("Direct2D")->setData(VideoRendererId_Direct2D);
+    subMenu->addAction("XV")->setData(VideoRendererId_XV);
+    foreach(QAction* action, subMenu->actions()) {
+        action->setCheckable(true);
+    }
+    mpVOAction->setChecked(true);
+
 
     mainLayout->addLayout(mpPlayerLayout);
     mainLayout->addWidget(mpTimeSlider);
@@ -217,7 +229,7 @@ void MainWindow::setupUi()
 
 void MainWindow::changeVO(QAction *action)
 {
-    if (action == mpAction) {
+    if (action == mpVOAction) {
         action->toggle(); //check state changes if clicked
         return;
     }
@@ -229,20 +241,18 @@ void MainWindow::changeVO(QAction *action)
             vo->widget()->resize(rect().size()); //TODO: why not mpPlayer->renderer()->rendererSize()?
             vo->resizeRenderer(mpPlayer->renderer()->rendererSize());
         }
-        AVDEBUG();
         setRenderer(vo);
     } else {
         action->toggle(); //check state changes if clicked
         return;
     }
-    mpAction->setChecked(false);
-    mpAction = action;
-    mpAction->setChecked(true);
+    mpVOAction->setChecked(false);
+    mpVOAction = action;
+    mpVOAction->setChecked(true);
 }
 
 void MainWindow::processPendingActions()
 {
-    AVDEBUG();
     if (!mpTempRenderer)
         return;
     setRenderer(mpTempRenderer);
@@ -255,7 +265,6 @@ void MainWindow::processPendingActions()
 
 void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 {
-    AVDEBUG();
     if (!mIsReady) {
         mpTempRenderer = renderer;
         return;
@@ -276,14 +285,10 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     QWidget *r = 0;
     if (mpRenderer)
         r = mpRenderer->widget();
-    AVDEBUG();
     mpRenderer = renderer;
-    AVDEBUG();
     mpPlayer->setRenderer(mpRenderer);
-    AVDEBUG();
     //release old renderer and add new
     if (r) {
-        AVDEBUG();
         mpPlayerLayout->removeWidget(r);
         r->QWidget::close();
         //delete r; //pure virtual called
@@ -296,7 +301,6 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     }
 #endif //SLIDER_ON_VO
     qDebug("add renderer to layout");
-    r = mpRenderer->widget();
     mpPlayerLayout->addWidget(mpRenderer->widget());
     AVDEBUG();
     resize(mpRenderer->widget()->size());
@@ -310,7 +314,11 @@ void MainWindow::play(const QString &name)
         return;
     }
     //QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName());
-    setWindowTitle(QFileInfo(mFile).fileName());
+    if (mFile.contains("://") && !mFile.startsWith("file://"))
+        setWindowTitle(mFile);
+    else
+        setWindowTitle(QFileInfo(mFile).fileName());
+
     mpPlayer->play(name);
 }
 
@@ -351,6 +359,12 @@ void MainWindow::onPaused(bool p)
 
 void MainWindow::onStartPlay()
 {
+    mFile = mpPlayer->file(); //open from EventFilter's menu
+    if (mFile.contains("://") && !mFile.startsWith("file://"))
+        setWindowTitle(mFile);
+    else
+        setWindowTitle(QFileInfo(mFile).fileName());
+
     mpPlayPauseBtn->setIconWithSates(mPausePixmap);
     mpTimeSlider->setMaximum(mpPlayer->duration()*1000);
     mpTimeSlider->setValue(0);
@@ -417,4 +431,44 @@ void MainWindow::timerEvent(QTimerEvent *)
     int ms = mpPlayer->masterClock()->value()*1000.0;
     mpTimeSlider->setValue(ms);
     mpCurrent->setText(QTime().addMSecs(ms).toString("mm:ss"));
+}
+
+
+void MainWindow::about()
+{
+    QtAV::aboutQtAV();
+}
+
+void MainWindow::help()
+{
+}
+
+void MainWindow::openUrl()
+{
+    QString url = QInputDialog::getText(0, tr("Open an url"), tr("Url"));
+    if (url.isEmpty())
+        return;
+    play(url);
+}
+
+void MainWindow::switchAspectRatio(QAction *action)
+{
+    qreal r = action->data().toDouble();
+    if (action == mpARAction && r != -2) {
+        action->toggle(); //check state changes if clicked
+        return;
+    }
+    if (r == 0) {
+        mpPlayer->renderer()->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
+    } else if (r == -1) {
+        mpPlayer->renderer()->setOutAspectRatioMode(VideoRenderer::RendererAspectRatio);
+    } else {
+        if (r == -2)
+            r = QInputDialog::getDouble(0, tr("Aspect ratio"), "", 1.0);
+        mpPlayer->renderer()->setOutAspectRatioMode(VideoRenderer::CustomAspectRation);
+        mpPlayer->renderer()->setOutAspectRatio(r);
+    }
+    mpARAction->setChecked(false);
+    mpARAction = action;
+    mpARAction->setChecked(true);
 }

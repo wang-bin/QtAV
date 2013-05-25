@@ -32,6 +32,10 @@ signals:
     void ready();
 
 private slots:
+    void about();
+    void help();
+    void openUrl();
+    void switchAspectRatio(QAction* action);
     void changeVO(QAction* action);
     void processPendingActions();
     void initPlayer();
@@ -59,8 +63,8 @@ private:
     Button *mpPlayPauseBtn, *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;
     Button *mpOpenBtn;
     Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
-    QMenu *mpMenu, *mpVOMenu;
-    QAction *mpAction; //remove if vo.id() is supported
+    QMenu *mpMenu;
+    QAction *mpVOAction, *mpARAction; //remove mpVOAction if vo.id() is supported
 
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;

@@ -33,6 +33,7 @@
 #include <QtAV/Direct2DRenderer.h>
 #include <QtAV/GDIRenderer.h>
 #include <QtAV/XVRenderer.h>
+#include <QtAV/OSDFilter.h>
 
 #include "MainWindow.h"
 
@@ -139,6 +140,7 @@ int main(int argc, char *argv[])
     }
     renderer->widget()->show();
     renderer->widget()->setWindowTitle(title);
+    renderer->osdFilter()->setShowType(OSD::ShowNone);
     //renderer->scaleInRenderer(false);
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
 
