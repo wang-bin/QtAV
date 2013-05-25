@@ -72,7 +72,12 @@ void EventFilter::openUrl()
 
 void EventFilter::about()
 {
-    QMessageBox::about(0, tr("About QtAV"), aboutQtAV_HTML());
+    aboutQtAV();
+}
+
+void EventFilter::aboutFFmpeg()
+{
+    QtAV::aboutFFmpeg();
 }
 
 void EventFilter::help()
@@ -292,6 +297,7 @@ void EventFilter::showMenu(const QPoint &p)
         menu->addAction(tr("About"), this, SLOT(about()));
         menu->addAction(tr("Help"), this, SLOT(help()));
         menu->addSeparator();
+        menu->addAction(tr("About FFmpeg"), this, SLOT(aboutFFmpeg()));
         menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     }
     menu->exec(p);

@@ -45,14 +45,12 @@ void ffmpeg_version_print()
                );
         unsigned rt_version = components[i].rt_version;
         if (components[i].build_version != rt_version) {
-            if (LIBAVCODEC_VERSION_INT != rt_version) {
-                fprintf(stderr, "Warning: %s runtime version %u.%u.%u mismatch!\n"
-                        , components[i].lib
-                        , QTAV_VERSION_MAJOR(rt_version)
-                        , QTAV_VERSION_MINOR(rt_version)
-                        , QTAV_VERSION_PATCH(rt_version)
-                        );
-            }
+            fprintf(stderr, "Warning: %s runtime version %u.%u.%u mismatch!\n"
+                    , components[i].lib
+                    , QTAV_VERSION_MAJOR(rt_version)
+                    , QTAV_VERSION_MINOR(rt_version)
+                    , QTAV_VERSION_PATCH(rt_version)
+                    );
         }
     }
     fflush(0);

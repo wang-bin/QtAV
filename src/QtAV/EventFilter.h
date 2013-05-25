@@ -44,6 +44,7 @@ public slots:
     void openLocalFile();
     void openUrl();
     void about();
+    void aboutFFmpeg();
     void help();
 
 protected:

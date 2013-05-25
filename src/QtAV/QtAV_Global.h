@@ -43,7 +43,12 @@ Q_EXPORT QString QtAV_Version_String_Long();
 #define QTAV_DEFAULT_NETWORK_TIMEOUT 30000
 
 namespace QtAV {
-Q_EXPORT QString aboutQtAV();
+Q_EXPORT void about(); //popup a dialog
+Q_EXPORT void aboutFFmpeg();
+Q_EXPORT QString aboutFFmpeg_PlainText();
+Q_EXPORT QString aboutFFmpeg_HTML();
+Q_EXPORT void aboutQtAV();
+Q_EXPORT QString aboutQtAV_PlainText();
 Q_EXPORT QString aboutQtAV_HTML();
 }
 //TODO: always inline

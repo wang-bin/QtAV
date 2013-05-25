@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     if (a.arguments().contains("-h") || a.arguments().contains("--help")) {
         qDebug("Usage: %s [-vo qt/gl/d2d/gdi] [url/path]filename", a.applicationFilePath().section(QDir::separator(), -1).toUtf8().constData());
-        qDebug("\n%s", aboutQtAV().toUtf8().constData());
+        qDebug("\n%s", aboutQtAV_PlainText().toUtf8().constData());
         return 0;
     }
     QTranslator ts;

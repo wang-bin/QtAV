@@ -22,7 +22,9 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
+#include <QMessageBox>
 #include "QtAV/version.h"
+#include "QtAV/QtAV_Compat.h"
 
 unsigned QtAV_Version()
 {
@@ -41,7 +43,68 @@ QString QtAV_Version_String_Long()
 
 namespace QtAV {
 
-QString aboutQtAV()
+void about()
+{
+
+}
+
+void aboutFFmpeg()
+{
+    QMessageBox::about(0, QObject::tr("About FFmpeg"), aboutFFmpeg_HTML());
+}
+
+QString aboutFFmpeg_PlainText()
+{
+    return aboutFFmpeg_HTML().remove(QRegExp("<[^>]*>"));
+}
+
+QString aboutFFmpeg_HTML()
+{
+    QString text = "<h3>FFmpeg/Libav</h3>\n";
+    struct ff_component {
+        const char* lib;
+        unsigned build_version;
+        unsigned rt_version;
+        const char *config;
+        const char *license;
+    } components[] = {
+#define FF_COMPONENT(name, NAME) #name, LIB##NAME##_VERSION_INT, name##_version(), name##_configuration(), name##_license()
+        { FF_COMPONENT(avcodec, AVCODEC) },
+        { FF_COMPONENT(avformat, AVFORMAT) },
+        { FF_COMPONENT(avutil, AVUTIL) },
+        { FF_COMPONENT(swscale, SWSCALE) },
+#undef FF_COMPONENT
+        { 0, 0, 0, 0, 0 }
+    };
+    for (int i = 0; components[i].lib != 0; ++i) {
+        text += "<h4>" + QObject::tr("Build version")
+                + QString(": lib%1-%2.%3.%4</h4>\n")
+                .arg(components[i].lib)
+                .arg(QTAV_VERSION_MAJOR(components[i].build_version))
+                .arg(QTAV_VERSION_MINOR(components[i].build_version))
+                .arg(QTAV_VERSION_PATCH(components[i].build_version))
+                ;
+        unsigned rt_version = components[i].rt_version;
+        if (components[i].build_version != rt_version) {
+            text += "<h4 style='color:#ff0000;'>" + QString(QObject::tr("Runtime version"))
+                    + QString(": %1.%2.%3</h4>\n")
+                    .arg(QTAV_VERSION_MAJOR(rt_version))
+                    .arg(QTAV_VERSION_MINOR(rt_version))
+                    .arg(QTAV_VERSION_PATCH(rt_version))
+                    ;
+        }
+        text += "<p>" + QString(components[i].config) + "</p>\n"
+                "<p>" + QString(components[i].license) + "</p>\n";
+    }
+    return text;
+}
+
+void aboutQtAV()
+{
+    QMessageBox::about(0, QObject::tr("About QtAV"), aboutQtAV_HTML());
+}
+
+QString aboutQtAV_PlainText()
 {
     return aboutQtAV_HTML().remove(QRegExp("<[^>]*>"));
 }
