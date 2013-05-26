@@ -1,5 +1,6 @@
 TEMPLATE = app
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+TRANSLATIONS = res/player_zh_CN.ts
 
 STATICLINK = 0
 PROJECTROOT = $$PWD/../..
@@ -20,4 +21,5 @@ HEADERS += \
 include($$PROJECTROOT/deploy.pri)
 
 RESOURCES += \
+    res/player.qrc \
     theme.qrc

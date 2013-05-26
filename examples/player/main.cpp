@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <QApplication>
 
+#include <QtDebug>
 #include <QtCore/QDir>
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
@@ -83,12 +84,23 @@ int main(int argc, char *argv[])
         qDebug("\n%s", aboutQtAV_PlainText().toUtf8().constData());
         return 0;
     }
-    QTranslator ts;
-    if (ts.load(qApp->applicationDirPath() + "/i18n/QtAV_" + QLocale::system().name())) {
-        a.installTranslator(&ts);
-    } else {
-        if (ts.load(":/i18n/QtAV_" + QLocale::system().name()))
-            a.installTranslator(&ts);
+
+    QStringList qms;
+    qms << "QtAV" << "player" << "qt";
+    foreach(QString qm, qms) {
+        QTranslator *ts = new QTranslator(qApp);
+        QString path = qApp->applicationDirPath() + "/i18n/" + qm + "_" + QLocale::system().name();
+        qDebug() << "loading qm: " << path;
+        if (ts->load(path)) {
+            a.installTranslator(ts);
+        } else {
+            path = ":/i18n/" + qm + "_" + QLocale::system().name();
+            qDebug() << "loading qm: " << path;
+            if (ts->load(path))
+                a.installTranslator(ts);
+            else
+                delete ts;
+        }
     }
     QTranslator qtts;
     if (qtts.load("qt_" + QLocale::system().name()))
