@@ -444,7 +444,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 
 void MainWindow::about()
 {
-    QtAV::aboutQtAV();
+    QtAV::about();
 }
 
 void MainWindow::help()
