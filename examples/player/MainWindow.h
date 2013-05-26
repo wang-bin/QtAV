@@ -37,6 +37,7 @@ private slots:
     void openUrl();
     void switchAspectRatio(QAction* action);
     void changeVO(QAction* action);
+    void playOnlineVideo(QAction* action);
     void processPendingActions();
     void initPlayer();
     void setupUi();

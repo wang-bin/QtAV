@@ -5,10 +5,12 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QtCore/QFileInfo>
+#include <QtCore/QSettings>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QWindowStateChangeEvent>
 #include <QtAV/AVPlayer.h>
+#include <QtAV/OSDFilter.h>
 #include <QtAV/VideoRendererTypes.h>
 #include <QtAV/WidgetRenderer.h>
 #include <QLayout>
@@ -152,16 +154,24 @@ void MainWindow::setupUi()
 */
     mpMenu = new QMenu(mpMenuBtn);
     mpMenu->addAction(tr("Open Url"), this, SLOT(openUrl()));
+    QMenu *subMenu = new QMenu(tr("Online channels"));
+    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(playOnlineVideo(QAction*)));
+    QSettings tv(qApp->applicationDirPath() + "/tv.ini", QSettings::IniFormat);
+    tv.setIniCodec("UTF-8");
+    foreach (QString key, tv.allKeys()) {
+        subMenu->addAction(key)->setData(tv.value(key).toString());
+    }
+    mpMenu->addMenu(subMenu);
     mpMenu->addSeparator();
-    mpMenu->addAction(tr("Setup"), this, SLOT(setup()));
-    mpMenu->addAction(tr("Report")); //report bug, suggestions etc. using maillist?
+    mpMenu->addAction(tr("Setup"), this, SLOT(setup()))->setEnabled(false);
+    mpMenu->addAction(tr("Report"))->setEnabled(false); //report bug, suggestions etc. using maillist?
     mpMenu->addAction(tr("About"), this, SLOT(about()));
-    mpMenu->addAction(tr("Help"), this, SLOT(help()));
+    mpMenu->addAction(tr("Help"), this, SLOT(help()))->setEnabled(false);
     mpMenu->addSeparator();
     mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
-    QMenu *subMenu = new QMenu(tr("Aspect ratio"), mpMenu);
+    subMenu = new QMenu(tr("Aspect ratio"), mpMenu);
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(switchAspectRatio(QAction*)));
     mpARAction = subMenu->addAction(tr("Video"));
@@ -237,6 +247,9 @@ void MainWindow::changeVO(QAction *action)
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
     VideoRenderer *vo = VideoRendererFactory::create(vid);
     if (vo) {
+        if (vo->osdFilter()) {
+            vo->osdFilter()->setShowType(OSD::ShowNone);
+        }
         if (vo->widget()) {
             vo->widget()->resize(rect().size()); //TODO: why not mpPlayer->renderer()->rendererSize()?
             vo->resizeRenderer(mpPlayer->renderer()->rendererSize());
@@ -479,4 +492,9 @@ void MainWindow::switchAspectRatio(QAction *action)
     mpARAction->setChecked(false);
     mpARAction = action;
     mpARAction->setChecked(true);
+}
+
+void MainWindow::playOnlineVideo(QAction *action)
+{
+    play(action->data().toString());
 }
