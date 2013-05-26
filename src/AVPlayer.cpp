@@ -371,15 +371,16 @@ void AVPlayer::play()
     Q_ASSERT(clock != 0);
     clock->reset();
 
-    if (aCodecCtx) {
-        qDebug("Starting audio thread...");
-        audio_thread->start(QThread::HighestPriority);
-        connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
-    }
     if (vCodecCtx) {
         qDebug("Starting video thread...");
         video_thread->start();
         connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
+    }
+    if (aCodecCtx) {
+        qDebug("Starting audio thread...");
+        audio_thread->start(QThread::HighestPriority);
+        if (!vCodecCtx) //avoid emit stopped() mulltiple times
+            connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
     }
     demuxer_thread->start();
     //blockSignals(false);
@@ -419,7 +420,7 @@ void AVPlayer::stop()
             video_thread->terminate(); ///if time out
         }
     }
-    emit stopped();
+    //we don't need to emit stopped(). it's already triggered by avthread
 }
 //FIXME: If not playing, it will just play but not play one frame.
 void AVPlayer::playNextFrame()
