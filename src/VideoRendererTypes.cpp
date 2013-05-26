@@ -25,6 +25,7 @@
 #include "prepost.h"
 
 #include <QtAV/WidgetRenderer.h>
+#include <QtAV/GraphicsItemRenderer.h>
 #if HAVE_GL
 #include <QtAV/GLWidgetRenderer.h>
 #endif //HAVE_GL
@@ -50,12 +51,33 @@ void RegisterVideoRendererWidget_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, Widget, "QWidegt")
 }
+
+VideoRendererId WidgetRenderer::id() const
+{
+    return VideoRendererId_Widget;
+}
+
+VideoRendererId GraphicsItemRenderer::id() const
+{
+    return VideoRendererId_GraphicsItem;
+}
+
+VideoRendererId QPainterRenderer::id() const
+{
+    return VideoRendererId_QPainter;
+}
+
 #if HAVE_GL
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget, "QGLWidegt")
 
 void RegisterVideoRendererGLWidget_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, GLWidget, "QGLWidegt")
+}
+
+VideoRendererId GLWidgetRenderer::id() const
+{
+    return VideoRendererId_GLWidget;
 }
 #endif //HAVE_GL
 #if HAVE_GDIPLUS
@@ -65,6 +87,11 @@ void RegisterVideoRendererGDI_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, GDI, "GDI")
 }
+
+VideoRendererId GDIRenderer::id() const
+{
+    return VideoRendererId_GDI;
+}
 #endif //HAVE_GDIPLUS
 #if HAVE_DIRECT2D
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Direct2D, "Direct2D")
@@ -73,6 +100,11 @@ void RegisterVideoRendererDirect2D_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, Direct2D, "Direct2D")
 }
+
+VideoRendererId Direct2DRenderer::id() const
+{
+    return VideoRendererId_Direct2D;
+}
 #endif //HAVE_DIRECT2D
 #if HAVE_XV
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
@@ -80,6 +112,11 @@ FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
 void RegisterVideoRendererXV_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, XV, "XVideo")
+}
+
+VideoRendererId XVRenderer::id() const
+{
+    return VideoRendererId_XV;
 }
 #endif //HAVE_XV
 

@@ -65,6 +65,7 @@ private:
     Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
     QMenu *mpMenu;
     QAction *mpVOAction, *mpARAction; //remove mpVOAction if vo.id() is supported
+    QList<QAction*> mVOActions;
 
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;

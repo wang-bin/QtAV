@@ -47,7 +47,10 @@ class QPaintEvent;
 class QRect;
 class QWidget;
 class QGraphicsItem;
+
 namespace QtAV {
+
+typedef int VideoRendererId;
 
 class Filter;
 class OSDFilter;
@@ -69,6 +72,7 @@ public:
 
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
+    virtual VideoRendererId id() const = 0;
     //for testing performance
     void scaleInRenderer(bool q);
     bool scaleInRenderer() const;

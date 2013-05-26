@@ -42,6 +42,7 @@ class Q_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRend
 public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
     virtual ~GraphicsItemRenderer();
+    virtual VideoRendererId id() const;
 
     QRectF boundingRect() const;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);

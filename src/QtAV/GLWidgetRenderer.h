@@ -35,6 +35,7 @@ class Q_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
 public:
     GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     virtual ~GLWidgetRenderer();
+    virtual VideoRendererId id() const;
 
 protected:
     virtual void convertData(const QByteArray &data);

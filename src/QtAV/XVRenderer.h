@@ -35,7 +35,7 @@ class Q_EXPORT XVRenderer : public QWidget, public VideoRenderer
 public:
     XVRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~XVRenderer();
-
+    virtual VideoRendererId id() const;
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
      * return 0 and set this flag

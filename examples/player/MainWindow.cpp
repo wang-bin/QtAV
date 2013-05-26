@@ -185,6 +185,7 @@ void MainWindow::setupUi()
     subMenu->addAction("GDI+")->setData(VideoRendererId_GDI);
     subMenu->addAction("Direct2D")->setData(VideoRendererId_Direct2D);
     subMenu->addAction("XV")->setData(VideoRendererId_XV);
+    mVOActions = subMenu->actions();
     foreach(QAction* action, subMenu->actions()) {
         action->setCheckable(true);
     }
@@ -236,7 +237,6 @@ void MainWindow::changeVO(QAction *action)
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
     VideoRenderer *vo = VideoRendererFactory::create(vid);
     if (vo) {
-        mpTitle->setText(action->text()); //TODO: move into setRenderer(). vo.id()
         if (vo->widget()) {
             vo->widget()->resize(rect().size()); //TODO: why not mpPlayer->renderer()->rendererSize()?
             vo->resizeRenderer(mpPlayer->renderer()->rendererSize());
@@ -246,9 +246,6 @@ void MainWindow::changeVO(QAction *action)
         action->toggle(); //check state changes if clicked
         return;
     }
-    mpVOAction->setChecked(false);
-    mpVOAction = action;
-    mpVOAction->setChecked(true);
 }
 
 void MainWindow::processPendingActions()
@@ -304,6 +301,17 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     mpPlayerLayout->addWidget(mpRenderer->widget());
     AVDEBUG();
     resize(mpRenderer->widget()->size());
+    if (mpVOAction) {
+        mpVOAction->setChecked(false);
+    }
+    foreach (QAction *action, mVOActions) {
+        if (action->data() == renderer->id()) {
+            mpVOAction = action;
+            break;
+        }
+    }
+    mpVOAction->setChecked(true);
+    mpTitle->setText(mpVOAction->text());
 }
 
 void MainWindow::play(const QString &name)
