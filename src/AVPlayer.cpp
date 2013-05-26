@@ -420,7 +420,8 @@ void AVPlayer::stop()
             video_thread->terminate(); ///if time out
         }
     }
-    //we don't need to emit stopped(). it's already triggered by avthread
+    //TODO: why AVThread not trigger the signal?
+    emit stopped();
 }
 //FIXME: If not playing, it will just play but not play one frame.
 void AVPlayer::playNextFrame()
