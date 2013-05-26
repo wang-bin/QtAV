@@ -140,7 +140,8 @@ int main(int argc, char *argv[])
     }
     renderer->widget()->show();
     renderer->widget()->setWindowTitle(title);
-    renderer->osdFilter()->setShowType(OSD::ShowNone);
+    if (renderer->osdFilter())
+        renderer->osdFilter()->setShowType(OSD::ShowNone);
     //renderer->scaleInRenderer(false);
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
 
