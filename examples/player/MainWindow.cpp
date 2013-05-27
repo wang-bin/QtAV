@@ -391,7 +391,7 @@ void MainWindow::onStartPlay()
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>enable slider");
     mpTimeSlider->setEnabled(true);
-    mpDuration->setText(QTime().addSecs(mpPlayer->duration()).toString("mm:ss"));
+    mpDuration->setText(QTime(0, 0, 0).addSecs(mpPlayer->duration()).toString("mm:ss"));
     mTimerId = startTimer(kSliderUpdateInterval);
 }
 
@@ -451,7 +451,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 {
     int ms = mpPlayer->masterClock()->value()*1000.0;
     mpTimeSlider->setValue(ms);
-    mpCurrent->setText(QTime().addMSecs(ms).toString("mm:ss"));
+    mpCurrent->setText(QTime(0, 0, 0).addMSecs(ms).toString("mm:ss"));
 }
 
 
