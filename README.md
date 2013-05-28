@@ -82,7 +82,7 @@ Wrtie a media player using QtAV is quite easy.
     player.setRenderer(&renderer);
     player.play("test.avi");
 
-For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Project) or examples.
+For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Projects) or examples.
 
 
 For End Users
