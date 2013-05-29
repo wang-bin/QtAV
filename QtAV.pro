@@ -25,8 +25,8 @@ unix {
 
 include(root.pri)
 
-PACKAGE_VERSION = 1.1.11
+PACKAGE_VERSION = 1.2.0
 PACKAGE_NAME= QtAV
 
 include(pack.pri)
-#packageSet(1.1.11, QtAV)
+#packageSet(1.2.0, QtAV)
