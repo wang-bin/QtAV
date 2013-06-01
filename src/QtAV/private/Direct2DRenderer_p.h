@@ -64,6 +64,7 @@ public:
       , bitmap(0)
       , bitmap_width(0)
       , bitmap_height(0)
+      , interpolation(D2D1_BITMAP_INTERPOLATION_MODE_LINEAR)
     {
         dll.setFileName("d2d1");
         if (!dll.load()) {
@@ -202,6 +203,26 @@ public:
         }
         return true;
     }
+    //it seems that only D2D1_BITMAP_INTERPOLATION_MODE(used in DrawBitmap) matters when drawing an image
+    void setupQuality() {
+        switch (quality) {
+        case VideoRenderer::QualityFastest:
+            interpolation = D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR;
+            render_target->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+            render_target->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
+        case VideoRenderer::QualityBest:
+            interpolation = D2D1_BITMAP_INTERPOLATION_MODE_LINEAR;
+            render_target->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            render_target->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            break;
+        default:
+            interpolation = D2D1_BITMAP_INTERPOLATION_MODE_LINEAR;
+            render_target->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            render_target->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_DEFAULT);
+            break;
+        }
+    }
 
     ID2D1Factory *d2d_factory;
     ID2D1HwndRenderTarget *render_target;
@@ -209,6 +230,7 @@ public:
     D2D1_BITMAP_PROPERTIES bitmap_properties;
     ID2D1Bitmap *bitmap;
     int bitmap_width, bitmap_height; //can not use src_width, src height because bitmap not update when they changes
+    D2D1_BITMAP_INTERPOLATION_MODE interpolation;
     QLibrary dll;
 };
 

@@ -141,6 +141,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
     case QEvent::KeyPress: {
         QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
         int key = key_event->key();
+        Qt::KeyboardModifiers modifiers = key_event->modifiers();
         switch (key) {
         case Qt::Key_C: //capture
             player->captureVideo();
@@ -152,6 +153,11 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             player->play();
             break;
         case Qt::Key_Q:
+            if (modifiers == Qt::ControlModifier) {
+                VideoRenderer *renderer = player->renderer();
+                renderer->setQuality(VideoRenderer::Quality(((int)renderer->quality()+1)%3));
+                return true;
+            }
         case Qt::Key_Escape:
             qApp->quit();
             break;
@@ -199,8 +205,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             }
             break;
         case Qt::Key_O: {
-            Qt::KeyboardModifiers m = key_event->modifiers();
-            if (m == Qt::ControlModifier) {
+            if (modifiers == Qt::ControlModifier) {
                 //TODO: emit a signal so we can use custome dialogs?
                 openLocalFile();
             } else/* if (m == Qt::NoModifier) */{
@@ -227,10 +232,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_R: {
             VideoRenderer* renderer = player->renderer();
             VideoRenderer::OutAspectRatioMode r = renderer->outAspectRatioMode();
-            if (r == VideoRenderer::VideoAspectRatio)
-                renderer->setOutAspectRatioMode(VideoRenderer::RendererAspectRatio);
-            else
-                renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
+            renderer->setOutAspectRatioMode(VideoRenderer::OutAspectRatioMode(((int)r+1)%2));
         }
             break;
         case Qt::Key_T: {

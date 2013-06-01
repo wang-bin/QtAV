@@ -67,7 +67,9 @@ public:
       //, AspectRatio4_3, AspectRatio16_9
     };
     enum Quality {
-
+        QualityDefault, //good
+        QualityBest,
+        QualityFastest
     };
 
     VideoRenderer();
@@ -82,6 +84,9 @@ public:
     //If setOutAspectRatio(qreal) is used, then OutAspectRatioMode is CustomAspectRation
     void setOutAspectRatio(qreal ratio);
     qreal outAspectRatio() const;//
+
+    void setQuality(Quality q);
+    Quality quality() const;
 
     //TODO: unregister
     virtual bool open();

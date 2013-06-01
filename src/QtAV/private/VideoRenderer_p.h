@@ -53,6 +53,7 @@ public:
       , aspect_ratio_changed(true) //to set the initial parameters
       , out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
+      , quality(VideoRenderer::QualityBest)
       , widget_holder(0)
       , item_holder(0)
       , osd_filter(0)
@@ -100,6 +101,7 @@ public:
     bool aspect_ratio_changed;
     VideoRenderer::OutAspectRatioMode out_aspect_ratio_mode;
     qreal out_aspect_ratio;
+    VideoRenderer::Quality quality;
     //out_rect: the displayed video frame out_rect in the renderer
     QRect out_rect; //TODO: out_out_rect
 

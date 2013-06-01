@@ -92,8 +92,6 @@ void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
     glTexImage2D(GL_TEXTURE_2D, 0, 3/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_BGRA, GL_UNSIGNED_BYTE, d.data.constData());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glPushMatrix();
     glLoadIdentity();
@@ -122,17 +120,18 @@ void GLWidgetRenderer::initializeGL()
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 //
-    glShadeModel(GL_SMOOTH);
+    glShadeModel(GL_SMOOTH); //setupQuality?
     glClearColor(0.0, 0.0, 0.0, 0.5);
     glClearDepth(1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    d_func().setupQuality();
 }
 
 void GLWidgetRenderer::paintGL()
 {
     //drawBackground(); //TODO: why this is always required? otherwise may flicker when aspect ratio changed(ubuntu 12.10)
+    d_func().setupQuality();
     handlePaintEvent();
 }
 

@@ -172,6 +172,7 @@ void WidgetRenderer::paintEvent(QPaintEvent *e)
 {
     DPTR_D(WidgetRenderer);
     d.painter->begin(this); //Widget painting can only begin as a result of a paintEvent
+    d.setupQuality();
     handlePaintEvent(e);
     //end paint. how about QPainter::endNativePainting()?
     d.painter->end();

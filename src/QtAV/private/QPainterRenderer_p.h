@@ -41,6 +41,24 @@ public:
             painter = 0;
         }
     }
+    void setupQuality() {
+        switch (quality) {
+        case VideoRenderer::QualityFastest:
+            painter->setRenderHint(QPainter::Antialiasing, false);
+            painter->setRenderHint(QPainter::TextAntialiasing, false);
+            painter->setRenderHint(QPainter::SmoothPixmapTransform, false);
+            painter->setRenderHint(QPainter::HighQualityAntialiasing, false);
+            break;
+        case VideoRenderer::QualityBest:
+        default:
+            painter->setRenderHint(QPainter::Antialiasing, true);
+            painter->setRenderHint(QPainter::TextAntialiasing, true);
+            painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
+            painter->setRenderHint(QPainter::HighQualityAntialiasing, true);
+            break;
+        }
+    }
+
     QImage image;
     QPainter *painter;
 };

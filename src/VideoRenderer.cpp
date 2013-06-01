@@ -20,7 +20,6 @@
 ******************************************************************************/
 
 #include <QtAV/VideoRenderer.h>
-#include <QtAV/VideoDecoder.h>
 #include <private/VideoRenderer_p.h>
 #include <QtAV/Filter.h>
 #include <QtAV/OSDFilter.h>
@@ -102,6 +101,18 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
 qreal VideoRenderer::outAspectRatio() const
 {
     return d_func().out_aspect_ratio;
+}
+
+void VideoRenderer::setQuality(Quality q)
+{
+    DPTR_D(VideoRenderer);
+    d.quality = q;
+    qDebug("Quality: %d", q);
+}
+
+VideoRenderer::Quality VideoRenderer::quality() const
+{
+    return d_func().quality;
 }
 
 void VideoRenderer::setInSize(const QSize& s)

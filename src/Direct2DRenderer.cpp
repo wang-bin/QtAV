@@ -102,7 +102,7 @@ void Direct2DRenderer::drawFrame()
     d.render_target->DrawBitmap(d.bitmap
                                 , &out_rect
                                 , 1 //opacity
-                                , D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
+                                , d.interpolation
                                 , NULL);//&D2D1::RectF(0, 0, d.src_width, d.src_height));
 }
 
@@ -115,6 +115,7 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     }
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
+    d.setupQuality();
     handlePaintEvent();
     HRESULT hr = S_OK;
     {

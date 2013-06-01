@@ -81,6 +81,15 @@ public:
         off_dc = CreateCompatibleDC(device_context);
     }
 
+    void setupQuality() {
+    //http://www.codeproject.com/Articles/9184/Custom-AntiAliasing-with-GDI
+    //http://msdn.microsoft.com/en-us/library/windows/desktop/ms533836%28v=vs.85%29.aspx
+    /*
+     *Graphics.DrawImage, Graphics.InterpolationMode
+     * bitblit?
+     */
+    }
+
     bool support_bitblt;
     ULONG_PTR gdiplus_token;
     /*
@@ -91,7 +100,6 @@ public:
     /* Our offscreen bitmap and its framebuffer */
     HDC        off_dc;
     HBITMAP    off_bitmap;
-
 };
 
 } //namespace QtAV
