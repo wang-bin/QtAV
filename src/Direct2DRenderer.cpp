@@ -53,8 +53,9 @@ void Direct2DRenderer::convertData(const QByteArray &data)
     if (!d.prepareBitmap(d.src_width, d.src_height))
         return;
     HRESULT hr = S_OK;
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
+    //if d2d factory is D2D1_FACTORY_TYPE_SINGLE_THREADED, we need to lock
+    //QMutexLocker locker(&d.img_mutex);
+    //ttQ_UNUSED(locker);
     //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
     /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
     //TODO: d2d often crash, should we always lock? How about other renderer?
@@ -117,8 +118,9 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     handlePaintEvent();
     HRESULT hr = S_OK;
     {
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
+        //if d2d factory is D2D1_FACTORY_TYPE_SINGLE_THREADED, we need to lock
+        //QMutexLocker locker(&d.img_mutex);
+        //Q_UNUSED(locker);
         hr = d.render_target->EndDraw(NULL, NULL); //TODO: why it need lock? otherwise crash
     }
     if (hr == D2DERR_RECREATE_TARGET) {

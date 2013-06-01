@@ -41,7 +41,7 @@
 //steps: http://msdn.microsoft.com/zh-cn/library/dd317121(v=vs.85).aspx
 //performance: http://msdn.microsoft.com/en-us/library/windows/desktop/dd372260(v=vs.85).aspx
 //vlc is helpful
-
+//layer(opacity): http://www.cnblogs.com/graphics/archive/2013/04/15/2781969.html
 namespace QtAV {
 
 template<class Interface>
@@ -81,7 +81,14 @@ public:
         }
 
         D2D1_FACTORY_OPTIONS factory_opt = { D2D1_DEBUG_LEVEL_NONE };
-        HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED
+        /*
+         * d2d is accessed by AVThread and GUI thread, so we use D2D1_FACTORY_TYPE_MULTI_THREADED
+         * and let d2d to deal with the thread safe problems. otherwise, if we use
+         * D2D1_FACTORY_TYPE_SINGLE_THREADED, we must use lock when copying ID2D1Bitmap and calling EndDraw.
+         * TODO: can we avoid the lock when painting in VideoRenderer::handlePaintEvent()?
+         */
+        /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd368104%28v=vs.85%29.aspx
+        HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED
                                        , (REFIID)IID_ID2D1Factory
                                        , &factory_opt
                                        , (void**)&d2d_factory);
@@ -99,7 +106,7 @@ public:
             D2D1_ALPHA_MODE_IGNORE
         };*/
         pixel_format.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        pixel_format.alphaMode = D2D1_ALPHA_MODE_IGNORE;
+        pixel_format.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;//D2D1_ALPHA_MODE_IGNORE;
         /*bitmap_properties = {
             pixel_format,
             dpiX,
@@ -141,7 +148,8 @@ public:
         D2D1_HWND_RENDER_TARGET_PROPERTIES hwnd_rtp = {
             (HWND)p.winId(),
             size,
-            D2D1_PRESENT_OPTIONS_IMMEDIATELY /* this might need fiddling */
+            //TODO: what do these mean?
+            D2D1_PRESENT_OPTIONS_RETAIN_CONTENTS //D2D1_PRESENT_OPTIONS_IMMEDIATELY /* this might need fiddling */
         };
         HRESULT hr = d2d_factory->CreateHwndRenderTarget(&rtp//D2D1::RenderTargetProperties() //TODO: vlc set properties
                                                          , &hwnd_rtp//D2D1::HwndRenderTargetProperties(, size)
