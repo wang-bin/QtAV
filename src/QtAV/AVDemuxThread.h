@@ -26,7 +26,7 @@
 #include <QtCore/QThread>
 #include <QtCore/QWaitCondition>
 #include <QtAV/QtAV_Global.h>
-
+//TODO: AVThread can be 0
 namespace QtAV {
 
 class AVDemuxer;
@@ -39,12 +39,15 @@ public:
     explicit AVDemuxThread(AVDemuxer *dmx, QObject *parent = 0);
     void setDemuxer(AVDemuxer *dmx);
     void setAudioThread(AVThread *thread);
+    AVThread* audioThread();
     void setVideoThread(AVThread *thread);
+    AVThread* videoThread();
     void seek(qreal pos);
     void seekForward();
     void seekBackward();
     //AVDemuxer* demuxer
     bool isPaused() const;
+    bool isEnd() const;
 public slots:
     void stop();
     void pause(bool p);

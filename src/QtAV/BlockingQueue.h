@@ -51,12 +51,25 @@ public:
     inline int threshold() const;
     inline int capacity() const;
 
+    class StateChangeCallback
+    {
+    public:
+        virtual ~StateChangeCallback(){}
+        virtual void call() = 0;
+    };
+    void setEmptyCallback(StateChangeCallback* call);
+    void setThresholdCallback(StateChangeCallback* call);
+    void setFullCallback(StateChangeCallback* call);
+
 private:
     bool block_empty, block_full;
     int cap, thres; //static?
     Container<T> queue;
     mutable QReadWriteLock lock; //locker in const func
+    QReadWriteLock block_change_lock;
     QWaitCondition cond_full, cond_empty;
+    //upto_threshold_callback, downto_threshold_callback
+    StateChangeCallback *empty_callback, *threshold_callback, *full_callback;
 };
 
 /* cap - thres = 24, about 1s
@@ -64,13 +77,17 @@ private:
  */
 template <typename T, template <typename> class Container>
 BlockingQueue<T, Container>::BlockingQueue()
-    :block_empty(true),block_full(true),cap(32*2),thres(32)
+    :block_empty(true),block_full(true),cap(48),thres(32)
+    , empty_callback(0)
+    , threshold_callback(0)
+    , full_callback(0)
 {
 }
 
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::setCapacity(int max)
 {
+    qDebug("queue capacity==>>%d", max);
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     cap = max;
@@ -79,6 +96,7 @@ void BlockingQueue<T, Container>::setCapacity(int max)
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::setThreshold(int min)
 {
+    qDebug("queue threshold==>>%d", min);
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     thres = min;
@@ -89,8 +107,14 @@ void BlockingQueue<T, Container>::put(const T& t)
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (block_full && queue.size() >= cap)
-        cond_full.wait(&lock);
+    if (queue.size() >= cap) {
+        //qDebug("queue full"); //too frequent
+        if (full_callback) {
+            full_callback->call();
+        }
+        if (block_full)
+            cond_full.wait(&lock);
+    }
     queue.enqueue(t);
     cond_empty.wakeAll();
 }
@@ -102,11 +126,20 @@ T BlockingQueue<T, Container>::take()
     Q_UNUSED(locker);
     if (queue.size() < thres)
         cond_full.wakeAll();
-    if (block_empty && queue.isEmpty())//TODO:always block?
-        cond_empty.wait(&lock);
+    if (queue.isEmpty()) {//TODO:always block?
+        qDebug("queue empty!!");
+        if (empty_callback) {
+            empty_callback->call();
+        }
+        if (block_empty)
+            cond_empty.wait(&lock);
+    }
     //TODO: Why still empty?
     if (queue.isEmpty()) {
         qWarning("Queue is still empty");
+        if (empty_callback) {
+            empty_callback->call();
+        }
         return T();
     }
     return queue.dequeue();
@@ -127,32 +160,34 @@ void BlockingQueue<T, Container>::setBlocking(bool block)
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::blockEmpty(bool block)
 {
-    QWriteLocker locker(&lock);
-    Q_UNUSED(locker);
-    block_empty = block;
     if (!block) {
         cond_empty.wakeAll();
     }
+    QWriteLocker locker(&block_change_lock);
+    Q_UNUSED(locker);
+    block_empty = block;
 }
 
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::blockFull(bool block)
 {
-    QWriteLocker locker(&lock);
-    Q_UNUSED(locker);
-    block_full = block;
     if (!block) {
         cond_full.wakeAll();
     }
+    //DO NOT use the same lock that put() get() use. it may be already locked
+    //this function usualy called in demux thread, so no lock is ok
+    QWriteLocker locker(&block_change_lock);
+    Q_UNUSED(locker);
+    block_full = block;
 }
 
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::clear()
 {
     QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
     //cond_empty.wakeAll();
     cond_full.wakeAll();
-    Q_UNUSED(locker);
     queue.clear();
     //TODO: assert not empty
 }
@@ -161,6 +196,7 @@ template <typename T, template <typename> class Container>
 bool BlockingQueue<T, Container>::isEmpty() const
 {
     QReadLocker locker(&lock);
+    Q_UNUSED(locker);
     return queue.isEmpty();
 }
 
@@ -168,6 +204,7 @@ template <typename T, template <typename> class Container>
 int BlockingQueue<T, Container>::size() const
 {
     QReadLocker locker(&lock);
+    Q_UNUSED(locker);
     return queue.size();
 }
 
@@ -175,6 +212,7 @@ template <typename T, template <typename> class Container>
 int BlockingQueue<T, Container>::threshold() const
 {
     QReadLocker locker(&lock);
+    Q_UNUSED(locker);
     return thres;
 }
 
@@ -182,8 +220,40 @@ template <typename T, template <typename> class Container>
 int BlockingQueue<T, Container>::capacity() const
 {
     QReadLocker locker(&lock);
+    Q_UNUSED(locker);
     return cap;
 }
+
+template <typename T, template <typename> class Container>
+void BlockingQueue<T, Container>::setEmptyCallback(StateChangeCallback *call)
+{
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
+    if (empty_callback)
+        delete empty_callback;
+    empty_callback = call;
+}
+
+template <typename T, template <typename> class Container>
+void BlockingQueue<T, Container>::setThresholdCallback(StateChangeCallback *call)
+{
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
+    if (threshold_callback)
+        delete threshold_callback;
+    threshold_callback = call;
+}
+
+template <typename T, template <typename> class Container>
+void BlockingQueue<T, Container>::setFullCallback(StateChangeCallback *call)
+{
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
+    if (full_callback)
+        delete full_callback;
+    full_callback = call;
+}
+
 
 } //namespace QtAV
 #endif // QTAV_BLOCKINGQUEUE_H

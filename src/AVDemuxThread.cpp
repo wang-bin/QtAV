@@ -29,14 +29,38 @@
 
 namespace QtAV {
 
+class QueueEmptyCall : public PacketQueue::StateChangeCallback
+{
+public:
+    QueueEmptyCall(AVDemuxThread* thread):
+        mDemuxThread(thread)
+    {}
+    virtual void call() {
+        if (!mDemuxThread)
+            return;
+        if (mDemuxThread->isEnd())
+            return;
+        AVThread *thread = mDemuxThread->videoThread();
+        qDebug("try wake up video queue");
+        if (thread)
+            thread->packetQueue()->blockFull(false);
+        qDebug("try wake up audio queue");
+        thread = mDemuxThread->audioThread();
+        if (thread)
+            thread->packetQueue()->blockFull(false);
+    }
+private:
+    AVDemuxThread *mDemuxThread;
+};
+
 AVDemuxThread::AVDemuxThread(QObject *parent) :
-    QThread(parent),paused(false),seeking(false),end(false)
+    QThread(parent),paused(false),seeking(false),end(true)
     ,demuxer(0),audio_thread(0),video_thread(0)
 {
 }
 
 AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
-    QThread(parent),paused(false),seeking(false),end(false)
+    QThread(parent),paused(false),seeking(false),end(true)
     ,audio_thread(0),video_thread(0)
 {
     setDemuxer(dmx);
@@ -57,6 +81,7 @@ void AVDemuxThread::setAudioThread(AVThread *thread)
         audio_thread = 0;
     }
     audio_thread = thread;
+    audio_thread->packetQueue()->setEmptyCallback(new QueueEmptyCall(this));
 }
 
 void AVDemuxThread::setVideoThread(AVThread *thread)
@@ -67,6 +92,17 @@ void AVDemuxThread::setVideoThread(AVThread *thread)
         video_thread = 0;
     }
     video_thread = thread;
+    video_thread->packetQueue()->setEmptyCallback(new QueueEmptyCall(this));
+}
+
+AVThread* AVDemuxThread::videoThread()
+{
+    return video_thread;
+}
+
+AVThread* AVDemuxThread::audioThread()
+{
+    return audio_thread;
 }
 
 void AVDemuxThread::seek(qreal pos)
@@ -131,13 +167,20 @@ bool AVDemuxThread::isPaused() const
     return paused;
 }
 
+bool AVDemuxThread::isEnd() const
+{
+    return end;
+}
+
 //No more data to put. So stop blocking the queue to take the reset elements
 void AVDemuxThread::stop()
 {
+    qDebug("void AVDemuxThread::stop()");
     end = true;
     //this will not affect the pause state if we pause the output
     audio_thread->setDemuxEnded(true);
     video_thread->setDemuxEnded(true);
+    //TODO: why remove the following 2 lines can not play another file?
     audio_thread->packetQueue()->blockFull(false); //??
     video_thread->packetQueue()->blockFull(false); //?
     pause(false);
@@ -200,7 +243,18 @@ void AVDemuxThread::run()
           ensure the empty one can put packets immediatly.
           But usually it will not happen, why?
         */
+        /* demux thread will be blocked only when 1 queue is full and still put
+         * if vqueue is full and aqueue becomes empty, then demux thread
+         * will be blocked. so we should wake up another queue when empty(or threshold?).
+         * TODO: the video stream and audio stream may be group by group. provide it
+         * stream data: aaaaaaavvvvvvvaaaaaaaavvvvvvvvvaaaaaa, it happens
+         * stream data: aavavvavvavavavavavavavavvvaavavavava, it's ok
+         */
+        //TODO: use cache queue, take from cache queue if not empty?
         if (index == audio_stream) {
+            /* if vqueue if not blocked and full, and aqueue is empty, then put to
+             * vqueue will block demuex thread
+             */
             if (_has_video)
                 aqueue->blockFull(vqueue->size() >= vqueue->threshold());
             aqueue->put(pkt); //affect video_thread
