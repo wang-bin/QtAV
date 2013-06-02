@@ -26,6 +26,8 @@
 #include <windows.h> //GetDC()
 #include <gdiplus.h>
 
+#define USE_GRAPHICS 0
+
 using namespace Gdiplus;
 namespace QtAV {
 
@@ -38,6 +40,9 @@ public:
         support_bitblt(true)
       , gdiplus_token(0)
       , device_context(0)
+  #if USE_GRAPHICS
+      , graphics(0)
+  #endif //USE_GRAPHICS
     {
         GdiplusStartupInput gdiplusStartupInput;
         GdiplusStartup(&gdiplus_token, &gdiplusStartupInput, NULL);
@@ -46,15 +51,23 @@ public:
         if (device_context) {
             DPTR_P(GDIRenderer);
             ReleaseDC((HWND)p.winId(), device_context); /*Q5: must cast WID to HWND*/
+#if !USE_GRAPHICS
             DeleteDC(off_dc);
+#endif //USE_GRAPHICS
             device_context = 0;
         }
         GdiplusShutdown(gdiplus_token);
     }
     void prepare() {
-        DPTR_P(GDIRenderer);
         update_background = true;
+        DPTR_P(GDIRenderer);
         device_context = GetDC((HWND)p.winId()); /*Q5: must cast WID to HWND*/
+#if USE_GRAPHICS
+        if (graphics) {
+            delete graphics;
+        }
+        graphics = new Graphics(device_context);
+#endif //USE_GRAPHICS
         //TODO: check bitblt support
         int ret = GetDeviceCaps(device_context, RC_BITBLT);
         qDebug("bitblt=%d", ret);
@@ -78,7 +91,9 @@ public:
                                       , DIB_RGB_COLORS
                                       , &p_pic_buffer, NULL, 0);
 #endif //0
+#if !USE_GRAPHICS
         off_dc = CreateCompatibleDC(device_context);
+#endif //USE_GRAPHICS
     }
 
     void setupQuality() {
@@ -88,6 +103,21 @@ public:
      *Graphics.DrawImage, Graphics.InterpolationMode
      * bitblit?
      */
+#if USE_GRAPHICS
+        if (!graphics)
+            return;
+        switch (quality) {
+        case VideoRenderer::QualityBest:
+            graphics->SetInterpolationMode(InterpolationModeHighQualityBicubic);
+            break;
+        case VideoRenderer::QualityFastest:
+            graphics->SetInterpolationMode(InterpolationModeNearestNeighbor);
+            break;
+        default:
+            graphics->SetInterpolationMode(InterpolationModeDefault);
+            break;
+        }
+#endif //USE_GRAPHICS
     }
 
     bool support_bitblt;
@@ -98,8 +128,13 @@ public:
      */
     HDC device_context;
     /* Our offscreen bitmap and its framebuffer */
+
+#if USE_GRAPHICS
+    Graphics *graphics;
+#else
     HDC        off_dc;
     HBITMAP    off_bitmap;
+#endif //USE_GRAPHICS
 };
 
 } //namespace QtAV

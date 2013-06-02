@@ -85,11 +85,15 @@ void GDIRenderer::drawFrame()
     //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
     Bitmap bitmap(d.src_width, d.src_height, d.src_width*4*sizeof(char)
                   , PixelFormat32bppRGB, (BYTE*)d.data.data());
+    d.setupQuality();
+#if USE_GRAPHICS
+    if (d.graphics)
+        d.graphics->DrawImage(&bitmap, d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
+#else
     if (FAILED(bitmap.GetHBITMAP(Color(), &d.off_bitmap))) {
         qWarning("Failed GetHBITMAP");
         return;
     }
-
     HDC hdc = d.device_context;
     HBITMAP hbmp_old = (HBITMAP)SelectObject(d.off_dc, d.off_bitmap);
     // && image.size() != size()
@@ -112,6 +116,7 @@ void GDIRenderer::drawFrame()
     }
     SelectObject(d.off_dc, hbmp_old);
     DeleteObject(d.off_bitmap); //avoid mem leak
+#endif
     //end paint
 }
 
