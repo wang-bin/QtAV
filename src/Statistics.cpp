@@ -25,6 +25,8 @@ namespace QtAV {
 
 Statistics::Common::Common():
     available(false)
+  , fps_guess(0)
+  , fps(0)
   , bit_rate(0)
   , avg_frame_rate(0)
   , frames(0)

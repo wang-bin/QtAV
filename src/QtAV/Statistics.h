@@ -50,6 +50,10 @@ public:
         QString codec, codec_long;
         //common audio/video info that may be used(visualize) by filters
         QTime current_time, total_time, start_time; //TODO: in AVFormatContext and AVStream, what's the difference?
+        //AVStream.avg_frame_rate may be 0, then use AVStream.r_frame_rate
+        //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
+        qreal fps_guess;
+        qreal fps; //playing fps
         qreal bit_rate;
         qreal avg_frame_rate; //AVStream.avg_frame_rate Kps
         qint64 frames; //AVStream.nb_frames. AVCodecContext.frame_number?

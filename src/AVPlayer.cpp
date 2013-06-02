@@ -371,12 +371,18 @@ void AVPlayer::play()
     Q_ASSERT(clock != 0);
     clock->reset();
 
+    int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
+    int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     if (vCodecCtx) {
+        video_thread->packetQueue()->setThreshold(queue_min);
+        video_thread->packetQueue()->setCapacity(queue_max);
         qDebug("Starting video thread...");
         video_thread->start();
         connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
     }
     if (aCodecCtx) {
+        audio_thread->packetQueue()->setThreshold(queue_min);
+        audio_thread->packetQueue()->setCapacity(queue_max);
         qDebug("Starting audio thread...");
         audio_thread->start(QThread::HighestPriority);
         if (!vCodecCtx) //avoid emit stopped() mulltiple times
@@ -478,9 +484,16 @@ void AVPlayer::initStatistics()
         mStatistics.audio.codec_long = aCodecCtx->codec->long_name;
         mStatistics.audio.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
         mStatistics.audio.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+        //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
+        if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
+            mStatistics.video.fps_guess = av_q2d(stream->avg_frame_rate);
+        else
+            mStatistics.video.fps_guess = av_q2d(stream->r_frame_rate);
+        mStatistics.video.fps = mStatistics.video.fps_guess;
         mStatistics.audio.bit_rate = aCodecCtx->bit_rate; //formatCtx
         mStatistics.audio.avg_frame_rate = av_q2d(stream->avg_frame_rate);
         mStatistics.audio.frames = stream->nb_frames;
+        qDebug("a fps: r=%f avg=%f frames=%lld", av_q2d(stream->r_frame_rate), av_q2d(stream->avg_frame_rate), stream->nb_frames);
         //mStatistics.audio.size =
         mStatistics.audio_only.block_align = aCodecCtx->block_align;
         mStatistics.audio_only.channels = aCodecCtx->channels;
@@ -499,8 +512,15 @@ void AVPlayer::initStatistics()
                , duration(), av_q2d(stream->time_base));
         mStatistics.video.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
         mStatistics.video.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+        //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
+        if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
+            mStatistics.video.fps_guess = av_q2d(stream->avg_frame_rate);
+        else
+            mStatistics.video.fps_guess = av_q2d(stream->r_frame_rate);
+        mStatistics.video.fps = mStatistics.video.fps_guess;
         mStatistics.video.bit_rate = vCodecCtx->bit_rate; //formatCtx
         mStatistics.video.avg_frame_rate = av_q2d(stream->avg_frame_rate);
+        qDebug("v fps: r=%f avg=%f frames=%lld", av_q2d(stream->r_frame_rate), av_q2d(stream->avg_frame_rate), stream->nb_frames);
         mStatistics.video.frames = stream->nb_frames;
         //mStatistics.audio.size =
         mStatistics.video_only.coded_height = vCodecCtx->coded_height;
