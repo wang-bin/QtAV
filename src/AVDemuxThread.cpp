@@ -238,13 +238,14 @@ void AVDemuxThread::stop()
     end = true;
     //this will not affect the pause state if we pause the output
     //TODO: why remove blockFull(false) can not play another file?
-    //avthread can stop. do not clear queue, make sure all data are played
     if (audio_thread) {
         audio_thread->setDemuxEnded(true);
+        audio_thread->packetQueue()->clear();
         audio_thread->packetQueue()->blockFull(false); //??
     }
     if (video_thread) {
         video_thread->setDemuxEnded(true);
+        video_thread->packetQueue()->clear();
         video_thread->packetQueue()->blockFull(false); //?
     }
     pause(false);
@@ -325,7 +326,14 @@ void AVDemuxThread::run()
         //connect to stop is ok too
         if (pkt.isEnd()) {
             qDebug("read end packet %d A:%d V:%d", index, audio_stream, video_stream);
-            stop();
+            end = true;
+            //avthread can stop. do not clear queue, make sure all data are played
+            if (audio_thread) {
+                audio_thread->setDemuxEnded(true);
+            }
+            if (video_thread) {
+                video_thread->setDemuxEnded(true);
+            }
         }
         /*1 is empty but another is enough, then do not block to
           ensure the empty one can put packets immediatly.
@@ -359,8 +367,10 @@ void AVDemuxThread::run()
         }
     }
     //flush. seeking will be omitted when stopped
-    aqueue->put(Packet());
-    vqueue->put(Packet());
+    if (aqueue)
+        aqueue->put(Packet());
+    if (vqueue)
+        vqueue->put(Packet());
     qDebug("Demux thread stops running....");
 }
 

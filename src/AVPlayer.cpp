@@ -137,7 +137,8 @@ VideoRenderer *AVPlayer::renderer()
 
 AudioOutput* AVPlayer::setAudioOutput(AudioOutput* ao)
 {
-
+//Fill code here
+    Q_UNUSED(ao);
 }
 
 AudioOutput* AVPlayer::audio()
@@ -358,22 +359,20 @@ bool AVPlayer::load()
             audio_thread->setDecoder(audio_dec);
             audio_thread->setOutput(_audio);
             audio_thread->setStatistics(&mStatistics);
-        }
+            qDebug("demux thread setAudioThread");
+            demuxer_thread->setAudioThread(audio_thread);}
     } else {
-        //releaseAudioResource()
-        if (audio_thread) {
-            audio_thread->terminate();
-            delete audio_thread;
-            audio_thread = 0;
-        }
+        qDebug("demux thread setAudioThread");
+        //set 0 before delete because demux thread will use the address
+        //TODO: use avthread** ?
+        demuxer_thread->setAudioThread(0);
+        audio_thread = 0; //deleted in demux thread. TODO: better code and logic
         if (audio_dec) {
             delete audio_dec;
             audio_dec = 0;
         }
         //DO NOT delete AVOutput. it is setted by user
     }
-    qDebug("demux thread setAudioThread");
-    demuxer_thread->setAudioThread(audio_thread);
     if (vCodecCtx) {
         if (!video_dec) {
             video_dec = new VideoDecoder();
@@ -384,21 +383,18 @@ bool AVPlayer::load()
             video_thread->setClock(clock);
             video_thread->setDecoder(video_dec);
             video_thread->setVideoCapture(video_capture);
+            demuxer_thread->setVideoThread(video_thread);
         }
         setRenderer(_renderer);
     } else {
-        if (video_thread) {
-            video_thread->terminate();
-            delete video_thread;
-            video_thread = 0;
-        }
-        if (video_dec) {
+        demuxer_thread->setVideoThread(0);
+        video_thread = 0;//deleted in demux thread. TODO: better code and logic
+        if (video_dec) { //TODO: should the decoder managed by avthread?
             delete video_dec;
             video_dec = 0;
         }
         //DO NOT delete AVOutput. it is setted by user
     }
-    demuxer_thread->setVideoThread(video_thread);
     //TODO: init statistics
     return loaded;
 }
@@ -460,13 +456,32 @@ void AVPlayer::stop()
 {
     if (!isPlaying())
         return;
-    qDebug("AVPlayer::stop");
-    if (video_thread)
-        disconnect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
-    if (audio_thread)
-        disconnect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+    qDebug("AVPlayer::stop");        
     //blockSignals(true); //TODO: move emit stopped() before it. or connect avthread.finished() to tryEmitStop() {if (!called_by_stop) emit}
-    //TODO: stop demux thread after avthread is better? it will stop avthread internally actually
+
+    if (audio_thread) {
+        disconnect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+        if (audio_thread->isRunning()) {
+            qDebug("stop a");
+            audio_thread->stop();
+            if (!audio_thread->wait(1000)) {
+                qWarning("Timeout waiting for audio thread stopped. Terminate it.");
+                audio_thread->terminate();
+            }
+        }
+    }
+    if (video_thread) {
+        disconnect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
+        if (video_thread->isRunning()) {
+            qDebug("stopv");
+            video_thread->stop();
+            if (!video_thread->wait(1000)) {
+                qWarning("Timeout waiting for video thread stopped. Terminate it.");
+                video_thread->terminate(); ///if time out
+            }
+        }
+    }
+    //stop demux thread after avthread is better. otherwise demux thread may be terminated when waiting for avthread ?
     if (demuxer_thread->isRunning()) {
         qDebug("stop d");
         demuxer_thread->stop();
@@ -474,22 +489,6 @@ void AVPlayer::stop()
         if (!demuxer_thread->wait(1000)) {
             qWarning("Timeout waiting for demux thread stopped. Terminate it.");
             demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
-        }
-    }
-    if (audio_thread && audio_thread->isRunning()) {
-        qDebug("stop a");
-        audio_thread->stop();
-        if (!audio_thread->wait(1000)) {
-            qWarning("Timeout waiting for audio thread stopped. Terminate it.");
-            audio_thread->terminate();
-        }
-    }
-    if (video_thread && video_thread->isRunning()) {
-        qDebug("stopv");
-        video_thread->stop();
-        if (!video_thread->wait(1000)) {
-            qWarning("Timeout waiting for video thread stopped. Terminate it.");
-            video_thread->terminate(); ///if time out
         }
     }
     //TODO: why AVThread not trigger the signal?
