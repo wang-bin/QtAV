@@ -345,13 +345,13 @@ void AVDemuxThread::run()
              */
             if (aqueue) {
                 if (vqueue)
-                    aqueue->blockFull(vqueue->size() >= vqueue->threshold());
+                    aqueue->blockFull(vqueue->isEnough());
                 aqueue->put(pkt); //affect video_thread
             }
         } else if (index == video_stream) {
             if (vqueue) {
                 if (aqueue)
-                    vqueue->blockFull(aqueue->size() >= aqueue->threshold());
+                    vqueue->blockFull(aqueue->isEnough());
                 vqueue->put(pkt); //affect audio_thread
             }
         } else { //subtitle
