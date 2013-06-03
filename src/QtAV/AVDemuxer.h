@@ -48,6 +48,15 @@ class Q_EXPORT AVDemuxer : public QObject //QIODevice?
 {
     Q_OBJECT
 public:
+    enum SeekFlag {
+        SeekByByte,
+        SeekByTime
+    };
+    enum SeekFrame {
+        SeekIframe,
+        SeekAnyFrame
+    };
+
     AVDemuxer(const QString& fileName = QString(), QObject *parent = 0);
     ~AVDemuxer();
 

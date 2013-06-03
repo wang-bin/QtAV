@@ -101,6 +101,7 @@ void VideoThread::run()
         if (d.packets.isEmpty() && !d.stop) {
             d.stop = d.demux_end;
             if (d.stop) {
+                qDebug("video queue empty and demux end. break video thread");
                 break;
             }
         }

@@ -69,6 +69,7 @@ public:
     //TODO: addRenderer; renderers()
     VideoRenderer* setRenderer(VideoRenderer* renderer);
     VideoRenderer* renderer();
+    AudioOutput* setAudioOutput(AudioOutput* ao);
     AudioOutput* audio();
     void setMute(bool mute);
     bool isMute() const;

@@ -51,6 +51,8 @@ public:
 public slots:
     void stop();
     void pause(bool p);
+private slots:
+    void notifyEnd();
 
 protected:
     virtual void run();

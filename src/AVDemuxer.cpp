@@ -344,7 +344,7 @@ bool AVDemuxer::loadFile(const QString &fileName)
 
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
-        qWarning("Can't open video: %s", av_err2str(ret));
+        qWarning("Can't open media: %s", av_err2str(ret));
         return false;
     }
     format_context->flags |= AVFMT_FLAG_GENPTS;
