@@ -150,7 +150,6 @@ int main(int argc, char *argv[])
         QMessageBox::critical(0, "QtAV", "vo '" + vo + "' not supported");
         return 1;
     }
-    renderer->widget()->show();
     renderer->widget()->setWindowTitle(title);
     if (renderer->osdFilter())
         renderer->osdFilter()->setShowType(OSD::ShowNone);
@@ -161,6 +160,7 @@ int main(int argc, char *argv[])
     window.show();
     window.setWindowTitle(title);
     window.setRenderer(renderer);
+    renderer->widget()->resize(renderer->widget()->width(), renderer->widget()->width()*9/16);
     if (!media_file.isEmpty()) {
         window.play(media_file);
     }

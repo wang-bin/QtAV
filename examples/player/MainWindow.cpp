@@ -6,6 +6,7 @@
 #include <QDesktopWidget>
 #include <QtCore/QFileInfo>
 #include <QtCore/QSettings>
+#include <QtCore/QTextStream>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QWindowStateChangeEvent>
@@ -156,11 +157,28 @@ void MainWindow::setupUi()
     mpMenu->addAction(tr("Open Url"), this, SLOT(openUrl()));
     QMenu *subMenu = new QMenu(tr("Online channels"));
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(playOnlineVideo(QAction*)));
+    QFile tv_file(qApp->applicationDirPath() + "/tv.ini");
+    if (tv_file.open(QIODevice::ReadOnly)) {
+        QTextStream ts(&tv_file);
+        ts.setCodec("UTF-8");
+        QString line;
+        while (!ts.atEnd()) {
+            line = ts.readLine();
+            if (line.isEmpty())
+                continue;
+            QString key = line.section('=', 0, 0);
+            QString value = line.section('=', 1);
+            subMenu->addAction(key)->setData(value);
+        }
+    }
+/*
+    //codec problem
     QSettings tv(qApp->applicationDirPath() + "/tv.ini", QSettings::IniFormat);
     tv.setIniCodec("UTF-8");
     foreach (QString key, tv.allKeys()) {
         subMenu->addAction(key)->setData(tv.value(key).toString());
     }
+*/
     mpMenu->addMenu(subMenu);
     mpMenu->addSeparator();
     mpMenu->addAction(tr("Setup"), this, SLOT(setup()))->setEnabled(false);
