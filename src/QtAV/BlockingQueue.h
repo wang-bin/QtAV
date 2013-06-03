@@ -47,6 +47,8 @@ public:
 //TODO:setMinBlock,MaxBlock
     inline void clear();
     inline bool isEmpty() const;
+    inline bool isEnough() const; //size > thres
+    inline bool isFull() const; //size >= cap
     inline int size() const;
     inline int threshold() const;
     inline int capacity() const;
@@ -198,6 +200,22 @@ bool BlockingQueue<T, Container>::isEmpty() const
     QReadLocker locker(&lock);
     Q_UNUSED(locker);
     return queue.isEmpty();
+}
+
+template <typename T, template <typename> class Container>
+bool BlockingQueue<T, Container>::isEnough() const
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    return queue.size() >= thres;
+}
+
+template <typename T, template <typename> class Container>
+bool BlockingQueue<T, Container>::isFull() const
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    return queue.size() >= cap;
 }
 
 template <typename T, template <typename> class Container>
