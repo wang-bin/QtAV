@@ -87,6 +87,7 @@ void EventFilter::help()
                        "<p>" + tr("Shortcut:\n") + "</p>"
                        "<p>" + tr("Space: pause/continue\n") + "</p>"
                        "<p>" + tr("F: fullscreen on/off\n") + "</p>"
+                       "<p>" + tr("I: switch video display quality\n") + "</p>"
                        "<p>" + tr("T: stays on top on/off\n") + "</p>"
                        "<p>" + tr("N: show next frame. Continue the playing by pressing 'Space'\n") + "</p>"
                        "<p>" + tr("Ctrl+O: open a file\n") + "</p>"
@@ -146,6 +147,11 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_C: //capture
             player->captureVideo();
             break;
+        case Qt::Key_I: { //Interpolation
+            VideoRenderer *renderer = player->renderer();
+            renderer->setQuality(VideoRenderer::Quality(((int)renderer->quality()+1)%3));
+        }
+            break;
         case Qt::Key_N: //check playing?
             player->playNextFrame();
             break;
@@ -153,11 +159,6 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             player->play();
             break;
         case Qt::Key_Q:
-            if (modifiers == Qt::ControlModifier) {
-                VideoRenderer *renderer = player->renderer();
-                renderer->setQuality(VideoRenderer::Quality(((int)renderer->quality()+1)%3));
-                return true;
-            }
         case Qt::Key_Escape:
             qApp->quit();
             break;

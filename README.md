@@ -106,6 +106,7 @@ The default is Qt's paint engine.
 - Ctrl+O: open a file
 - Space: pause/continue
 - F: fullscreen on/off
+- I: switch display quality
 - T: stays on top on/off
 - N: show next frame. Continue the playing by pressing "Space"
 - O: OSD

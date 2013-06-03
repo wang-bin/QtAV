@@ -86,26 +86,26 @@
         <translation type="obsolete">关于 QtAV</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="92"/>
+        <location filename="../src/EventFilter.cpp" line="93"/>
         <source>Ctrl+O: open a file
 </source>
         <translation>Ctrl+O: 打开文件</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="93"/>
+        <location filename="../src/EventFilter.cpp" line="94"/>
         <source>O: OSD
 </source>
         <translation>O: OSD</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="101"/>
+        <location filename="../src/EventFilter.cpp" line="102"/>
         <source>-&amp;gt;/&amp;lt;-: seek forward/backward
 </source>
         <translation>光标左右: 快退 快进</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="102"/>
-        <location filename="../src/EventFilter.cpp" line="299"/>
+        <location filename="../src/EventFilter.cpp" line="103"/>
+        <location filename="../src/EventFilter.cpp" line="302"/>
         <source>Help</source>
         <translation>帮助</translation>
     </message>
@@ -144,13 +144,19 @@
     </message>
     <message>
         <location filename="../src/EventFilter.cpp" line="90"/>
+        <source>I: switch video display quality
+</source>
+        <translation>I: 切换显示质量</translation>
+    </message>
+    <message>
+        <location filename="../src/EventFilter.cpp" line="91"/>
         <source>T: stays on top on/off
 </source>
         <translation>T: 窗口置顶开关
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="91"/>
+        <location filename="../src/EventFilter.cpp" line="92"/>
         <source>N: show next frame. Continue the playing by pressing &apos;Space&apos;
 </source>
         <translation>N: 播放下一帧
@@ -163,45 +169,45 @@
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="94"/>
+        <location filename="../src/EventFilter.cpp" line="95"/>
         <source>P: replay
 </source>
         <translation>P: 重新播放
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="95"/>
+        <location filename="../src/EventFilter.cpp" line="96"/>
         <source>Q/ESC: quit
 </source>
         <translation>Q/ESC: 退出</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="96"/>
+        <location filename="../src/EventFilter.cpp" line="97"/>
         <source>S: stop
 </source>
         <translation>S: 停止播放
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="97"/>
+        <location filename="../src/EventFilter.cpp" line="98"/>
         <source>R: switch aspect ratio</source>
         <translation>R: 切换显示比例</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="98"/>
+        <location filename="../src/EventFilter.cpp" line="99"/>
         <source>M: mute on/off
 </source>
         <translation>M: 静音开关
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="99"/>
+        <location filename="../src/EventFilter.cpp" line="100"/>
         <source>C: capture video</source>
         <translation>C: 视频截图
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="100"/>
+        <location filename="../src/EventFilter.cpp" line="101"/>
         <source>Up/Down: volume +/-
 </source>
         <translation>光标上下: 音量增减
@@ -214,22 +220,22 @@
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="295"/>
+        <location filename="../src/EventFilter.cpp" line="298"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="296"/>
+        <location filename="../src/EventFilter.cpp" line="299"/>
         <source>Open Url</source>
         <translation>打开 Url</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="298"/>
+        <location filename="../src/EventFilter.cpp" line="301"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="301"/>
+        <location filename="../src/EventFilter.cpp" line="304"/>
         <source>About Qt</source>
         <translation>关于 Qt</translation>
     </message>
