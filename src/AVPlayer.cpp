@@ -269,8 +269,10 @@ void AVPlayer::pause(bool p)
 {
     //pause thread. check pause state?
     demuxer_thread->pause(p);
-    audio_thread->pause(p);
-    video_thread->pause(p);
+    if (audio_thread)
+        audio_thread->pause(p);
+    if (video_thread)
+        video_thread->pause(p);
     clock->pause(p);
     emit paused(p);
 #if 0
@@ -286,7 +288,9 @@ void AVPlayer::pause(bool p)
 
 bool AVPlayer::isPaused() const
 {
-    return demuxer_thread->isPaused() | audio_thread->isPaused() | video_thread->isPaused();
+    return (demuxer_thread && demuxer_thread->isPaused())
+            || (audio_thread && audio_thread->isPaused())
+            || (video_thread && video_thread->isPaused());
 #if 0
     bool p = false;
     if (_audio)
@@ -432,14 +436,14 @@ void AVPlayer::play()
 
     int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
-    if (vCodecCtx) {
+    if (vCodecCtx && video_thread) {
         connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
         video_thread->packetQueue()->setThreshold(queue_min);
         video_thread->packetQueue()->setCapacity(queue_max);
         qDebug("Starting video thread...");
         video_thread->start();
     }
-    if (aCodecCtx) {
+    if (aCodecCtx && audio_thread) {
         if (!vCodecCtx) //avoid emit stopped() mulltiple times
             connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
         audio_thread->packetQueue()->setThreshold(queue_min);
@@ -462,6 +466,7 @@ void AVPlayer::stop()
     if (audio_thread)
         disconnect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
     //blockSignals(true); //TODO: move emit stopped() before it. or connect avthread.finished() to tryEmitStop() {if (!called_by_stop) emit}
+    //TODO: stop demux thread after avthread is better? it will stop avthread internally actually
     if (demuxer_thread->isRunning()) {
         qDebug("stop d");
         demuxer_thread->stop();
