@@ -382,6 +382,7 @@ bool AVPlayer::load()
             video_thread = new VideoThread(this);
             video_thread->setClock(clock);
             video_thread->setDecoder(video_dec);
+            video_thread->setStatistics(&mStatistics);
             video_thread->setVideoCapture(video_capture);
             demuxer_thread->setVideoThread(video_thread);
         }
@@ -533,6 +534,7 @@ void AVPlayer::updateClock(qint64 msecs)
     clock->updateExternalClock(msecs);
 }
 
+//TODO: av_guess_frame_rate in latest ffmpeg
 void AVPlayer::initStatistics()
 {
     mStatistics.reset();
