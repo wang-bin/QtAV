@@ -57,7 +57,8 @@ private:
 
 AVDemuxThread::AVDemuxThread(QObject *parent) :
     QThread(parent),paused(false),seeking(false),end(true)
-    ,demuxer(0),audio_thread(0),video_thread(0)
+    ,demuxer(0)
+    ,audio_thread(0),video_thread(0)
 {
 }
 
@@ -75,52 +76,36 @@ void AVDemuxThread::setDemuxer(AVDemuxer *dmx)
     //connect(dmx, SIGNAL(finished()), this, SLOT(stop()), Qt::QueuedConnection);
 }
 
+void AVDemuxThread::setAVThread(AVThread*& pOld, AVThread *pNew)
+{
+    if (pOld == pNew)
+        return;
+    if (pOld) {
+        if (pOld->isRunning())
+            pOld->stop();
+#if CORRECT_END
+        disconnect(pOld, SIGNAL(terminated()), this, SLOT(notifyEnd()));
+        disconnect(pOld, SIGNAL(finished()), this, SLOT(notifyEnd()));
+#endif //CORRECT_END
+    }
+    pOld = pNew;
+    if (!pNew)
+        return;
+#if CORRECT_END
+    connect(pOld, SIGNAL(terminated()), this, SLOT(notifyEnd()), Qt::DirectConnection);
+    connect(pOld, SIGNAL(finished()), this, SLOT(notifyEnd()), Qt::DirectConnection);
+#endif //CORRECT_END
+    pOld->packetQueue()->setEmptyCallback(new QueueEmptyCall(this));
+}
+
 void AVDemuxThread::setAudioThread(AVThread *thread)
 {
-    if (audio_thread == thread)
-        return;
-    if (audio_thread) {
-        if (audio_thread->isRunning())
-            audio_thread->stop();
-#if CORRECT_END
-        disconnect(audio_thread, SIGNAL(terminated()), this, SLOT(notifyEnd()));
-        disconnect(audio_thread, SIGNAL(finished()), this, SLOT(notifyEnd()));
-#endif //CORRECT_END
-        delete audio_thread;
-        audio_thread = 0;
-    }
-    if (!thread)
-        return;
-    audio_thread = thread;
-#if CORRECT_END
-    connect(audio_thread, SIGNAL(terminated()), this, SLOT(notifyEnd()), Qt::DirectConnection);
-    connect(audio_thread, SIGNAL(finished()), this, SLOT(notifyEnd()), Qt::DirectConnection);
-#endif //CORRECT_END
-    audio_thread->packetQueue()->setEmptyCallback(new QueueEmptyCall(this));
+    setAVThread(audio_thread, thread);
 }
 
 void AVDemuxThread::setVideoThread(AVThread *thread)
 {
-    if (video_thread == thread)
-        return;
-    if (video_thread) {
-        if (video_thread->isRunning())
-            video_thread->stop();
-#if CORRECT_END
-        disconnect(video_thread, SIGNAL(terminated()), this, SLOT(notifyEnd()));
-        disconnect(video_thread, SIGNAL(finished()), this, SLOT(notifyEnd()));
-#endif //CORRECT_END
-        delete video_thread;
-        video_thread = 0;
-    }
-    if (!thread)
-        return;
-    video_thread = thread;
-#if CORRECT_END
-    connect(video_thread, SIGNAL(terminated()), this, SLOT(notifyEnd()), Qt::DirectConnection);
-    connect(video_thread, SIGNAL(finished()), this, SLOT(notifyEnd()), Qt::DirectConnection);
-#endif //CORRECT_END
-    video_thread->packetQueue()->setEmptyCallback(new QueueEmptyCall(this));
+    setAVThread(video_thread, thread);
 }
 
 AVThread* AVDemuxThread::videoThread()

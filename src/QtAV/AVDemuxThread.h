@@ -63,6 +63,7 @@ protected:
     bool tryPause();
 
 private:
+    void setAVThread(AVThread *&pOld, AVThread* pNew);
     bool paused, seeking;
     volatile bool end;
     AVDemuxer *demuxer;

@@ -29,6 +29,7 @@
 namespace QtAV {
 
 class AudioOutput;
+class AVThread;
 class AudioThread;
 class VideoThread;
 class AudioDecoder;
@@ -99,6 +100,8 @@ protected slots:
 
 private:
     void initStatistics();
+    void setupAudioThread();
+    void setupVideoThread();
 
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
