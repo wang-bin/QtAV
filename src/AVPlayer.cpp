@@ -137,8 +137,31 @@ VideoRenderer *AVPlayer::renderer()
 
 AudioOutput* AVPlayer::setAudioOutput(AudioOutput* ao)
 {
-//Fill code here
-    Q_UNUSED(ao);
+    qDebug(">>>>>>>>>>>>>>>AVPlayer::setRenderer");
+    if (ao == _audio) {
+        qDebug("audio output not changed");
+        if (audio_thread && audio_thread->output() == ao)
+            return 0;
+    }
+    AudioOutput *old = _audio;
+    _audio = ao;
+    if (!audio_thread) {
+        qDebug("audio thread not ready. can not set output.");
+        return 0;
+    }
+    //FIXME: what if isPaused()==false but pause(true) in another thread?
+    bool need_lock = isPlaying() && !audio_thread->isPaused();
+    if (need_lock)
+        audio_thread->lock();
+    qDebug("set video thread renderer");
+    audio_thread->setOutput(_audio);
+    if (_audio) {
+        _audio->setStatistics(&mStatistics);
+        if (need_lock)
+            audio_thread->unlock();
+    }
+    //old may be in stack. do not delete here
+    return old;
 }
 
 AudioOutput* AVPlayer::audio()
@@ -560,12 +583,12 @@ void AVPlayer::setupAudioThread()
             audio_thread = new AudioThread(this);
             audio_thread->setClock(clock);
             audio_thread->setDecoder(audio_dec);
-            audio_thread->setOutput(_audio);
             audio_thread->setStatistics(&mStatistics);
             qDebug("demux thread setAudioThread");
             demuxer_thread->setAudioThread(audio_thread);
             //reconnect if disconnected
         }
+        setAudioOutput(_audio);
         /*if has video, connect video's only to avoid emitting stopped() mulltiple times
          *otherwise connect audio's. but if video exists previously and now is null.
          *audio thread will not change. so connection should be here
