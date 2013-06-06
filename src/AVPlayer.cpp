@@ -102,28 +102,10 @@ AVClock* AVPlayer::masterClock()
 //TODO: check components compatiblity(also when change the filter chain)
 VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
 {
-    qDebug(">>>>>>>>>>>>>>>AVPlayer::setRenderer");
-    if (r == _renderer) {
-        qDebug("renderer not changed");
-        if (video_thread && video_thread->output() == r)
-            return 0;
-    }
-    VideoRenderer *old = _renderer;
-    _renderer = r;
-    if (!video_thread) {
-        qDebug("video thread not ready. can not set output.");
-        return 0;
-    }
-    //FIXME: what if isPaused()==false but pause(true) in another thread?
-    bool need_lock = isPlaying() && !video_thread->isPaused();
-    if (need_lock)
-        video_thread->lock();
-    qDebug("set video thread renderer");
-    video_thread->setOutput(_renderer);
+    qDebug(">>>>>>>>>>%s", __FUNCTION__);
+    VideoRenderer *old = setAVOutput(_renderer, r, video_thread);
     if (_renderer) {
-        _renderer->setStatistics(&mStatistics);
-        if (need_lock)
-            video_thread->unlock();
+        qDebug("resizeRenderer after setRenderer");
         _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
     }
     //old may be in stack. do not delete here
@@ -137,28 +119,34 @@ VideoRenderer *AVPlayer::renderer()
 
 AudioOutput* AVPlayer::setAudioOutput(AudioOutput* ao)
 {
-    qDebug(">>>>>>>>>>>>>>>AVPlayer::setRenderer");
-    if (ao == _audio) {
-        qDebug("audio output not changed");
-        if (audio_thread && audio_thread->output() == ao)
+    qDebug(">>>>>>>>>>%s", __FUNCTION__);
+    return setAVOutput(_audio, ao, audio_thread);
+}
+
+template<class Out>
+Out *AVPlayer::setAVOutput(Out *&pOut, Out *pNew, AVThread *thread)
+{
+    if (pOut == pNew) {
+        qDebug("output not changed: %p", pOut);
+        if (thread && thread->output() == pNew) //avthread already set that output
             return 0;
     }
-    AudioOutput *old = _audio;
-    _audio = ao;
-    if (!audio_thread) {
-        qDebug("audio thread not ready. can not set output.");
+    Out *old = pOut;
+    pOut = pNew;
+    if (!thread) {
+        qDebug("avthread not ready. can not set output.");
         return 0;
     }
     //FIXME: what if isPaused()==false but pause(true) in another thread?
-    bool need_lock = isPlaying() && !audio_thread->isPaused();
+    bool need_lock = isPlaying() && !thread->isPaused();
     if (need_lock)
-        audio_thread->lock();
-    qDebug("set video thread renderer");
-    audio_thread->setOutput(_audio);
-    if (_audio) {
-        _audio->setStatistics(&mStatistics);
+        thread->lock();
+    qDebug("set AVThread output");
+    thread->setOutput(pOut);
+    if (pOut) {
+        pOut->setStatistics(&mStatistics);
         if (need_lock)
-            audio_thread->unlock();
+            thread->unlock();
     }
     //old may be in stack. do not delete here
     return old;
@@ -408,36 +396,33 @@ void AVPlayer::stop()
         return;
     qDebug("AVPlayer::stop");        
     //blockSignals(true); //TODO: move emit stopped() before it. or connect avthread.finished() to tryEmitStop() {if (!called_by_stop) emit}
-
-    if (audio_thread) {
-        //disconnect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
-        if (audio_thread->isRunning()) {
-            qDebug("stop a");
-            audio_thread->blockSignals(true); //avoid emit stopped multiple times
-            audio_thread->stop();
-            if (!audio_thread->wait(1000)) {
-                qWarning("Timeout waiting for audio thread stopped. Terminate it.");
-                audio_thread->terminate();
+    struct avthreads_t {
+        AVThread *thread;
+        const char *name;
+    } threads[] = {
+        { audio_thread, "audio thread" },
+        { video_thread, "video thread" },
+        { 0, 0 }
+    };
+    for (int i = 0; threads[i].name; ++i) {
+        AVThread *thread = threads[i].thread;
+        if (!thread)
+            continue;
+        if (thread->isRunning()) {
+            qDebug("stopping %s...", threads[i].name);
+            //avoid emit stopped multiple times. AVThread.stopped() connects to AVDemuxThread.stopped().
+            thread->blockSignals(true);
+            thread->stop();
+            if (!thread->wait(1000)) {
+                qWarning("Timeout waiting for %s stopped. Terminate it.", threads[i].name);
+                thread->terminate();
             }
-            audio_thread->blockSignals(false);
-        }
-    }
-    if (video_thread) {
-        //disconnect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
-        if (video_thread->isRunning()) {
-            qDebug("stopv");
-            video_thread->blockSignals(true);
-            video_thread->stop();
-            if (!video_thread->wait(1000)) {
-                qWarning("Timeout waiting for video thread stopped. Terminate it.");
-                video_thread->terminate(); ///if time out
-            }
-            video_thread->blockSignals(false);
+            thread->blockSignals(false);
         }
     }
     //stop demux thread after avthread is better. otherwise demux thread may be terminated when waiting for avthread ?
     if (demuxer_thread->isRunning()) {
-        qDebug("stop d");
+        qDebug("stopping demux thread...");
         demuxer_thread->stop();
         //wait for finish then we can safely set the vars, e.g. a/v decoders
         if (!demuxer_thread->wait(1000)) {
@@ -445,8 +430,7 @@ void AVPlayer::stop()
             demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
         }
     }
-    //TODO: why AVThread not trigger the signal?
-    qDebug("demux thread, avthreads stopped...");
+    qDebug("all threads [a|v|d] stopped...");
     emit stopped();
 }
 //FIXME: If not playing, it will just play but not play one frame.
@@ -495,57 +479,50 @@ void AVPlayer::initStatistics()
     //AV_TIME_BASE_Q: msvc error C2143
     mStatistics.start_time = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->start_time/(qreal)AV_TIME_BASE*1000.0));
     mStatistics.duration = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->duration/(qreal)AV_TIME_BASE*1000.0));
-    AVStream *stream = 0;
-    int stream_idx = demuxer.audioStream();
-    if (stream_idx >= 0) {
-        mStatistics.audio.available = true;
-        stream = formatCtx->streams[stream_idx];
+    struct common_statistics_t {
+        int stream_idx;
+        AVCodecContext *ctx;
+        Statistics::Common *st;
+        const char *name;
+    } common_statistics[] = {
+        { demuxer.audioStream(), aCodecCtx, &mStatistics.audio, "audio"},
+        { demuxer.videoStream(), vCodecCtx, &mStatistics.video, "video"},
+        { 0, 0, 0, 0}
+    };
+    for (int i = 0; common_statistics[i].name; ++i) {
+        common_statistics_t cs = common_statistics[i];
+        if (cs.stream_idx < 0)
+            continue;
+        AVStream *stream = formatCtx->streams[cs.stream_idx];
         qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
                , duration(), av_q2d(stream->time_base));
-        //mStatistics.audio.format =
-        mStatistics.audio.codec = aCodecCtx->codec->name;
-        mStatistics.audio.codec_long = aCodecCtx->codec->long_name;
-        mStatistics.audio.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
-        mStatistics.audio.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+        cs.st->available = true;
+        cs.st->codec = cs.ctx->codec->name;
+        cs.st->codec_long = cs.ctx->codec->long_name;
+        cs.st->total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+        cs.st->start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
         //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
+        qDebug("codec: %s(%s)", qPrintable(cs.st->codec), qPrintable(cs.st->codec_long));
         if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
-            mStatistics.video.fps_guess = av_q2d(stream->avg_frame_rate);
+            cs.st->fps_guess = av_q2d(stream->avg_frame_rate);
         else
-            mStatistics.video.fps_guess = av_q2d(stream->r_frame_rate);
-        mStatistics.video.fps = mStatistics.video.fps_guess;
-        mStatistics.audio.bit_rate = aCodecCtx->bit_rate; //formatCtx
-        mStatistics.audio.avg_frame_rate = av_q2d(stream->avg_frame_rate);
-        mStatistics.audio.frames = stream->nb_frames;
-        qDebug("a fps: r=%f avg=%f frames=%lld", av_q2d(stream->r_frame_rate), av_q2d(stream->avg_frame_rate), stream->nb_frames);
-        //mStatistics.audio.size =
+            cs.st->fps_guess = av_q2d(stream->r_frame_rate);
+        cs.st->fps = cs.st->fps_guess;
+        cs.st->bit_rate = cs.ctx->bit_rate; //formatCtx
+        cs.st->avg_frame_rate = av_q2d(stream->avg_frame_rate);
+        cs.st->frames = stream->nb_frames;
+        qDebug("time: %f~%f, nb_frames=%lld", cs.st->start_time, cs.st->total_time, stream->nb_frames);
+        qDebug("%s fps: r_frame_rate=%f avg_frame_rate=%f", cs.name, av_q2d(stream->r_frame_rate), av_q2d(stream->avg_frame_rate));
+    }
+    if (demuxer.audioStream() >= 0) {
         mStatistics.audio_only.block_align = aCodecCtx->block_align;
         mStatistics.audio_only.channels = aCodecCtx->channels;
         mStatistics.audio_only.frame_number = aCodecCtx->frame_number;
         mStatistics.audio_only.frame_size = aCodecCtx->frame_size;
         mStatistics.audio_only.sample_rate = aCodecCtx->sample_rate;
     }
-    stream_idx = demuxer.videoStream();
-    if (stream_idx >= 0) {
-        mStatistics.video.available = true;
-        stream = formatCtx->streams[stream_idx];
-        //mStatistics.audio.format =
-        mStatistics.video.codec = vCodecCtx->codec->name;
-        mStatistics.video.codec_long = vCodecCtx->codec->long_name;
-        qDebug("stream: %p, duration=%lld (%d ms==%f), time_base=%f", stream, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
-               , duration(), av_q2d(stream->time_base));
-        mStatistics.video.total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
-        mStatistics.video.start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
-        //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
-        if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
-            mStatistics.video.fps_guess = av_q2d(stream->avg_frame_rate);
-        else
-            mStatistics.video.fps_guess = av_q2d(stream->r_frame_rate);
-        mStatistics.video.fps = mStatistics.video.fps_guess;
-        mStatistics.video.bit_rate = vCodecCtx->bit_rate; //formatCtx
-        mStatistics.video.avg_frame_rate = av_q2d(stream->avg_frame_rate);
-        qDebug("v fps: r=%f avg=%f frames=%lld", av_q2d(stream->r_frame_rate), av_q2d(stream->avg_frame_rate), stream->nb_frames);
-        mStatistics.video.frames = stream->nb_frames;
-        //mStatistics.audio.size =
+    if (demuxer.videoStream() >= 0) {
+        mStatistics.video.frames = formatCtx->streams[demuxer.videoStream()]->nb_frames;
         mStatistics.video_only.coded_height = vCodecCtx->coded_height;
         mStatistics.video_only.coded_width = vCodecCtx->coded_width;
         mStatistics.video_only.gop_size = vCodecCtx->gop_size;
@@ -571,7 +548,6 @@ void AVPlayer::setupAudioThread()
 #elif HAVE_PORTAUDIO
             _audio = new AOPortAudio();
 #endif
-            _audio->setStatistics(&mStatistics);
         }
         _audio->setSampleRate(aCodecCtx->sample_rate);
         _audio->setChannels(aCodecCtx->channels);
@@ -653,6 +629,10 @@ void AVPlayer::setupVideoThread()
         }
         //DO NOT delete AVOutput. it is setted by user
     }
+}
+
+void AVPlayer::setupAVThread(AVThread *&thread, AVCodecContext *ctx)
+{
 }
 
 } //namespace QtAV

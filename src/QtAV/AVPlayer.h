@@ -28,6 +28,7 @@
 
 namespace QtAV {
 
+class AVOutput;
 class AudioOutput;
 class AVThread;
 class AudioThread;
@@ -102,6 +103,9 @@ private:
     void initStatistics();
     void setupAudioThread();
     void setupVideoThread();
+    void setupAVThread(AVThread*& thread, AVCodecContext* ctx);
+    template<class Out>
+    Out* setAVOutput(Out*& pOut, Out* pNew, AVThread* thread);
 
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
