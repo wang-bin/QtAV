@@ -287,15 +287,6 @@ void AVPlayer::pause(bool p)
         video_thread->pause(p);
     clock->pause(p);
     emit paused(p);
-#if 0
-    /*Pause output. all threads using those outputs will be paused. If a output is not paused
-     *, then other players' avthread can use it.
-     */
-    if (_audio)
-        _audio->pause(p);
-    if (_renderer)
-        _renderer->pause(p);
-#endif
 }
 
 bool AVPlayer::isPaused() const
@@ -303,14 +294,6 @@ bool AVPlayer::isPaused() const
     return (demuxer_thread && demuxer_thread->isPaused())
             || (audio_thread && audio_thread->isPaused())
             || (video_thread && video_thread->isPaused());
-#if 0
-    bool p = false;
-    if (_audio)
-        p |= _audio->isPaused();
-    if (_renderer)
-        p |= _renderer->isPaused();
-    return p;
-#endif
 }
 
 bool AVPlayer::isLoaded() const
@@ -548,6 +531,10 @@ void AVPlayer::setupAudioThread()
 #elif HAVE_PORTAUDIO
             _audio = new AOPortAudio();
 #endif
+        }
+        if (!_audio) {
+            masterClock()->setClockType(AVClock::ExternalClock);
+            return;
         }
         _audio->setSampleRate(aCodecCtx->sample_rate);
         _audio->setChannels(aCodecCtx->channels);
