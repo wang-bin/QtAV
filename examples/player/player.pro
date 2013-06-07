@@ -17,7 +17,8 @@ HEADERS += \
     Button.h \
     Slider.h
 
-
+tv.files = res/tv.ini
+BIN_INSTALLS += tv
 include($$PROJECTROOT/deploy.pri)
 
 RESOURCES += \

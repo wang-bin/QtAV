@@ -49,6 +49,10 @@ isEqual(TEMPLATE, app) {
 target.path = $${INSTALL_PREFIX}/$${INSTALL_FOLDER}
 INSTALLS += target share
 
-
+for(bin, BIN_INSTALLS) {
+    eval($${bin}.path = $${INSTALL_PREFIX}/$${INSTALL_FOLDER})
+    message("adding $$bin to bin install targets...")
+    INSTALLS += $$bin
+}
 
 
