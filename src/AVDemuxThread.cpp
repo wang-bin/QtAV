@@ -118,7 +118,7 @@ AVThread* AVDemuxThread::audioThread()
     return audio_thread;
 }
 
-void AVDemuxThread::seek(qreal pos)
+void AVDemuxThread::seek(qreal pos, int flag)
 {
     qDebug("demux thread start to seek...");
     seeking = true;
@@ -131,7 +131,13 @@ void AVDemuxThread::seek(qreal pos)
         video_thread->setDemuxEnded(false);
         video_thread->packetQueue()->clear();
     }
-    demuxer->seek(pos);
+    if (flag > 0) {
+        demuxer->seekForward();
+    } else if (flag == 0) {
+        demuxer->seek(pos);
+    } else {
+        demuxer->seekBackward();
+    }
     seeking = false;
     seek_cond.wakeAll();
     if (isPaused()) {
@@ -150,60 +156,12 @@ void AVDemuxThread::seek(qreal pos)
 
 void AVDemuxThread::seekForward()
 {
-    seeking = true;
-    end = false;
-    if (audio_thread) {
-        audio_thread->setDemuxEnded(false);
-        audio_thread->packetQueue()->clear();
-    }
-    if (video_thread) {
-        video_thread->setDemuxEnded(false);
-        video_thread->packetQueue()->clear();
-    }
-    demuxer->seekForward();
-    seeking = false;
-    seek_cond.wakeAll();
-    if (isPaused()) {
-        pause(false);
-        AVThread *avthread = video_thread;
-        if (!avthread)
-            avthread = audio_thread;
-        avthread->pause(false);
-        QEventLoop loop;
-        QTimer::singleShot(40, &loop, SLOT(quit()));
-        loop.exec();
-        pause(true);
-        avthread->pause(true);
-    }
+    seek(0, 1);
 }
 
 void AVDemuxThread::seekBackward()
 {
-    seeking = true;
-    end = false;
-    if (audio_thread) {
-        audio_thread->setDemuxEnded(false);
-        audio_thread->packetQueue()->clear();
-    }
-    if (video_thread) {
-        video_thread->setDemuxEnded(false);
-        video_thread->packetQueue()->clear();
-    }
-    demuxer->seekBackward();
-    seeking = false;
-    seek_cond.wakeAll();
-    if (isPaused()) {
-        pause(false);
-        AVThread *avthread = video_thread;
-        if (!avthread)
-            avthread = audio_thread;
-        avthread->pause(false);
-        QEventLoop loop;
-        QTimer::singleShot(40, &loop, SLOT(quit()));
-        loop.exec();
-        pause(true);
-        avthread->pause(true);
-    }
+    seek(0, -1);
 }
 
 bool AVDemuxThread::isPaused() const
