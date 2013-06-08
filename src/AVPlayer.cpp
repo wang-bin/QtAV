@@ -494,7 +494,7 @@ void AVPlayer::initStatistics()
         cs.st->bit_rate = cs.ctx->bit_rate; //formatCtx
         cs.st->avg_frame_rate = av_q2d(stream->avg_frame_rate);
         cs.st->frames = stream->nb_frames;
-        qDebug("time: %f~%f, nb_frames=%lld", cs.st->start_time, cs.st->total_time, stream->nb_frames);
+        //qDebug("time: %f~%f, nb_frames=%lld", cs.st->start_time, cs.st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
         qDebug("%s fps: r_frame_rate=%f avg_frame_rate=%f", cs.name, av_q2d(stream->r_frame_rate), av_q2d(stream->avg_frame_rate));
     }
     if (demuxer.audioStream() >= 0) {
