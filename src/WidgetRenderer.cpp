@@ -24,6 +24,7 @@
 #include <qfont.h>
 #include <qevent.h>
 #include <qpainter.h>
+#include <QApplication>
 #include <QtAV/Filter.h>
 
 namespace QtAV {
@@ -42,6 +43,7 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     } else {
         qWarning("FilterContext not available!");
     }
+    connect(this, SIGNAL(imageReady()), SLOT(update()));
 }
 
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
@@ -58,6 +60,7 @@ WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::Wi
     } else {
         qWarning("FilterContext not available!");
     }
+    connect(this, SIGNAL(imageReady()), SLOT(update()));
 }
 
 WidgetRenderer::~WidgetRenderer()
@@ -66,7 +69,12 @@ WidgetRenderer::~WidgetRenderer()
 
 bool WidgetRenderer::write()
 {
-    update();
+    //update();
+    /*
+     * workaround for the widget not updated if has parent. don't know why it works and why update() can't
+     * Thanks to Vito Covito and Carlo Scarpato
+     */
+    emit imageReady();
     return true;
 }
 

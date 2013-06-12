@@ -39,6 +39,8 @@ public:
     explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
     virtual ~WidgetRenderer();
     virtual VideoRendererId id() const;
+signals:
+    void imageReady();
 protected:
     virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
