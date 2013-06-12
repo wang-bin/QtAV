@@ -34,7 +34,24 @@ int main(int argc, char *argv[])
         r = a.arguments().at(idx + 1).toInt();
     if ((idx = a.arguments().indexOf("-c")) > 0)
         c = a.arguments().at(idx + 1).toInt();
+    QString vo;
+    idx = a.arguments().indexOf("-vo");
+    if (idx > 0) {
+        vo = a.arguments().at(idx+1);
+    } else {
+        QString exe(a.arguments().at(0));
+        qDebug("exe: %s", exe.toUtf8().constData());
+        int i = exe.lastIndexOf('-');
+        if (i > 0) {
+            vo = exe.mid(i+1, exe.indexOf('.') - i - 1);
+        }
+    }
+    qDebug("vo: %s", vo.toUtf8().constData());
+    vo = vo.toLower();
+    if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv")
+        vo = "qpainter";
     VideoWall wall;
+    wall.setVideoRendererTypeString(vo);
     wall.setRows(r);
     wall.setCols(c);
     wall.show();

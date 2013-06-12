@@ -23,6 +23,7 @@
 #include <QDesktopWidget>
 #include <QEvent>
 #include <QFileDialog>
+#include <QGridLayout>
 #include <QInputDialog>
 #include <QKeyEvent>
 #include <QMenu>
@@ -30,16 +31,19 @@
 #include <QMimeData>
 #include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
+#include <QtAV/OSDFilter.h>
+#include <QtAV/VideoRendererTypes.h>
 
 using namespace QtAV;
 const int kSyncInterval = 2000;
 
 VideoWall::VideoWall(QObject *parent) :
     QObject(parent),r(3),c(3),view(0),menu(0)
+  , vid("qpainter")
 {
     clock = new AVClock(this);
     clock->setClockType(AVClock::ExternalClock);
-    //view = new QWidget;
+    view = new QWidget;
     if (view) {
         qDebug("WA_OpaquePaintEvent=%d", view->testAttribute(Qt::WA_OpaquePaintEvent));
         view->resize(qApp->desktop()->size());
@@ -57,10 +61,10 @@ VideoWall::~VideoWall()
     if (!players.isEmpty()) {
         foreach (AVPlayer *player, players) {
             player->stop();
-            WidgetRenderer* renderer = static_cast<WidgetRenderer*>(player->renderer());
-            if (renderer) {
-                renderer->QWidget::close(); //TODO: rename
-                if (!renderer->testAttribute(Qt::WA_DeleteOnClose))
+            VideoRenderer* renderer = player->renderer();
+            if (renderer->widget()) {
+                renderer->widget()->QWidget::close(); //TODO: rename
+                if (!renderer->widget()->testAttribute(Qt::WA_DeleteOnClose) && !renderer->widget()->parent())
                     delete renderer;
                 delete player;
             }
@@ -68,6 +72,11 @@ VideoWall::~VideoWall()
         players.clear();
     }
     delete view;
+}
+
+void VideoWall::setVideoRendererTypeString(const QString &vt)
+{
+    vid = vt.toLower();
 }
 
 void VideoWall::setRows(int n)
@@ -95,10 +104,10 @@ void VideoWall::show()
     if (!players.isEmpty()) {
         foreach (AVPlayer *player, players) {
             player->stop();
-            WidgetRenderer* renderer = static_cast<WidgetRenderer*>(player->renderer());
-            if (renderer) {
-                renderer->QWidget::close(); //TODO: rename
-                if (!renderer->testAttribute(Qt::WA_DeleteOnClose))
+            VideoRenderer* renderer = player->renderer();
+            if (renderer->widget()) {
+                renderer->widget()->QWidget::close(); //TODO: rename
+                if (!renderer->widget()->testAttribute(Qt::WA_DeleteOnClose) && !renderer->widget()->parent())
                     delete renderer;
                 delete player;
             }
@@ -109,19 +118,43 @@ void VideoWall::show()
 
     int w = view ? view->frameGeometry().width()/c : qApp->desktop()->width()/c;
     int h = view ? view->frameGeometry().height()/r : qApp->desktop()->height()/r;
+    if (view) {
+        QGridLayout *layout = new QGridLayout;
+        layout->setSizeConstraint(QLayout::SetMaximumSize);
+        layout->setSpacing(1);
+        layout->setMargin(0);
+        layout->setContentsMargins(0, 0, 0, 0);
+        view->setLayout(layout);
+    }
+
+    VideoRendererId v = VideoRendererId_Widget;
+    if (vid == "gl")
+        v = VideoRendererId_GLWidget;
+    else if (vid == "d2d")
+        v = VideoRendererId_Direct2D;
+    else if (vid == "gdi")
+        v = VideoRendererId_GDI;
+    else if (vid == "xv")
+        v = VideoRendererId_XV;
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
-            WidgetRenderer* renderer = new WidgetRenderer(view);
-            renderer->setWindowFlags(Qt::FramelessWindowHint);
-            renderer->resize(w, h);
-            renderer->move(j*w, i*h);
-            renderer->show();
+            VideoRenderer* renderer = VideoRendererFactory::create(v);
+            //renderer->widget()->setParent(view);
+            renderer->widget()->setWindowFlags(Qt::FramelessWindowHint);
+            renderer->widget()->resize(w, h);
+            renderer->widget()->move(j*w, i*h);
+            renderer->widget()->show();
+            if (renderer->osdFilter()) {
+                renderer->osdFilter()->setShowType(OSD::ShowNone);
+            }
             AVPlayer *player = new AVPlayer;
             player->setRenderer(renderer);
             player->setPlayerEventFilter(this);
             player->masterClock()->setClockAuto(false);
             player->masterClock()->setClockType(AVClock::ExternalClock);
             players.append(player);
+            if (view)
+                ((QGridLayout*)view->layout())->addWidget(renderer->widget(), i, j);
         }
     }
 }
@@ -216,12 +249,35 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
     case QEvent::KeyPress: {
         //qDebug("Event target = %p %p", watched, player->renderer);
         //avoid receive an event multiple times
-        int key = static_cast<QKeyEvent*>(event)->key();
+        QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
+        int key = key_event->key();
+        Qt::KeyboardModifiers modifiers = key_event->modifiers();
         switch (key) {
+        case Qt::Key_F: { //TODO: move to gui
+            QWidget *w = qApp->activeWindow();
+            if (!w)
+                return false;
+            if (w->isFullScreen())
+                w->showNormal();
+            else
+                w->showFullScreen();
+        }
+            break;
         case Qt::Key_N: //check playing?
             foreach (AVPlayer* player, players) {
                 player->playNextFrame();
             }
+            break;
+
+        case Qt::Key_O: {
+            if (modifiers == Qt::ControlModifier) {
+                //TODO: emit a signal so we can use custome dialogs?
+                openLocalFile();
+                return true;
+            } else/* if (m == Qt::NoModifier) */{
+                return false;
+            }
+        }
             break;
         case Qt::Key_P:
             clock->reset();
@@ -267,11 +323,6 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
                     player->audio()->setVolume(v);
                 }
             }
-
-
-            break;
-        case Qt::Key_O:
-            openLocalFile();
             break;
         case Qt::Key_Left:
             qDebug("<-");
