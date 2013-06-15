@@ -72,18 +72,20 @@ public:
             out_rect = QRect(0, 0, renderer_width, renderer_height);
             return;
         }
+        qDebug("out rect: %f %dx%d ==>", out_aspect_ratio, out_rect.width(), out_rect.height());
         if (rendererAspectRatio > outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
             //renderer is too wide, use renderer's height, horizonal align center
             int h = renderer_height;
-            int w = source_aspect_ratio * qreal(h);
+            int w = outAspectRatio * qreal(h);
             out_rect = QRect((renderer_width - w)/2, 0, w, h);
         } else if (rendererAspectRatio < outAspectRatio) {
             //renderer is too high, use renderer's width
             int w = renderer_width;
-            int h = qreal(w)/source_aspect_ratio;
+            int h = qreal(w)/outAspectRatio;
             out_rect = QRect(0, (renderer_height - h)/2, w, h);
         }
         out_aspect_ratio = outAspectRatio;
+        qDebug("%f %dx%d <<<<<<<<", out_aspect_ratio, out_rect.width(), out_rect.height());
     }
 
     //draw background when necessary, for example, renderer is resized. Then set to false

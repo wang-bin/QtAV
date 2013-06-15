@@ -66,10 +66,7 @@ void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
         setOutAspectRatio(qreal(d.renderer_width)/qreal(d.renderer_height));
         //is that thread safe?
     } else if (mode == VideoAspectRatio) {
-        /* do nothing here. the out_rect should be calculated when the next frame is ready
-         * and setSource() will pass the original video size.
-         * Alternatively we can store the original aspect ratio, which can be got from AVCodecContext
-         */
+        setOutAspectRatio(d.source_aspect_ratio);
     }
 }
 
