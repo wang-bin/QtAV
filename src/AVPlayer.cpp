@@ -103,6 +103,13 @@ AVClock* AVPlayer::masterClock()
 VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
 {
     qDebug(">>>>>>>>>>%s", __FUNCTION__);
+    if (_renderer && r) {
+        VideoRenderer::OutAspectRatioMode oar = _renderer->outAspectRatioMode();
+        r->setOutAspectRatioMode(oar);
+        if (oar == VideoRenderer::CustomAspectRation) {
+            r->setOutAspectRatio(_renderer->outAspectRatio());
+        }
+    }
     VideoRenderer *old = setAVOutput(_renderer, r, video_thread);
     if (_renderer) {
         qDebug("resizeRenderer after setRenderer");
