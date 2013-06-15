@@ -90,6 +90,10 @@ void VideoThread::run()
     resetState();
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
+    if (dec) {
+        //used to initialize the decoder's frame size
+        dec->resizeVideoFrame(0, 0);
+    }
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -176,7 +180,7 @@ void VideoThread::run()
         }
         //use the last size first then update the last size so that decoder(converter) can update output size
         if (vo_ok && !vo->scaleInRenderer())
-            vo->setInSize(vo->rendererSize());
+            vo->setInSize(vo->rendererSize());//out size?
     }
     qDebug("Video thread stops running...");
 }

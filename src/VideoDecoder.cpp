@@ -100,10 +100,12 @@ void VideoDecoder::resizeVideoFrame(const QSize &size)
     resizeVideoFrame(size.width(), size.height());
 }
 
+/*
+ * width, height: the decoded frame size
+ * 0, 0 to reset to original video frame size
+ */
 void VideoDecoder::resizeVideoFrame(int width, int height)
 {
-    if (width == 0 || height == 0)
-        return;
     DPTR_D(VideoDecoder);
     d.conv->setOutSize(width, height);
     d.width = width;
