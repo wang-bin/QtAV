@@ -119,63 +119,6 @@ void WidgetRenderer::resizeEvent(QResizeEvent *e)
     update();
 }
 
-void WidgetRenderer::mousePressEvent(QMouseEvent *e)
-{
-    DPTR_D(WidgetRenderer);
-    d.gMousePos = e->globalPos();
-    d.iMousePos = e->pos();
-}
-
-void WidgetRenderer::mouseMoveEvent(QMouseEvent *e)
-{
-    if (parentWidget())
-        return;
-    DPTR_D(WidgetRenderer);
-    int x = pos().x();
-    int y = pos().y();
-    int dx = e->globalPos().x() - d.gMousePos.x();
-    int dy = e->globalPos().y() - d.gMousePos.y();
-    d.gMousePos = e->globalPos();
-    int w = width();
-    int h = height();
-    switch (d.action) {
-    case GestureMove:
-        x += dx;
-        y += dy;
-        move(x, y);
-        break;
-    case GestureResize:
-        if(d.iMousePos.x() < w/2) {
-            x += dx;
-            w -= dx;
-        }
-        if(d.iMousePos.x() > w/2) {
-            w += dx;
-        }
-        if(d.iMousePos.y() < h/2) {
-            y += dy;
-            h -= dy;
-        }
-        if(d.iMousePos.y() > h/2) {
-            h += dy;
-        }
-        //setGeometry(x, y, w, h);
-        move(x, y);
-        resize(w, h);
-        break;
-    }
-    repaint();
-}
-
-void WidgetRenderer::mouseDoubleClickEvent(QMouseEvent *)
-{
-    DPTR_D(WidgetRenderer);
-    if (d.action == GestureMove)
-        d.action = GestureResize;
-    else
-        d.action = GestureMove;
-}
-
 void WidgetRenderer::paintEvent(QPaintEvent *e)
 {
     DPTR_D(WidgetRenderer);

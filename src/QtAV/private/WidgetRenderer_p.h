@@ -31,10 +31,7 @@ namespace QtAV {
 class Q_EXPORT WidgetRendererPrivate : public QPainterRendererPrivate
 {
 public:
-    WidgetRendererPrivate():action(WidgetRenderer::GestureMove) {}
     virtual ~WidgetRendererPrivate(){}
-    QPoint iMousePos, gMousePos;
-    WidgetRenderer::GestureAction action;
 };
 
 } //namespace QtAV

@@ -33,9 +33,6 @@ class Q_EXPORT WidgetRenderer : public QWidget, public QPainterRenderer
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(WidgetRenderer)
 public:
-    //GestureAction is useful for small screen windows that are hard to select frame
-    enum GestureAction { GestureMove, GestureResize};
-
     explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
     virtual ~WidgetRenderer();
     virtual VideoRendererId id() const;
@@ -48,9 +45,6 @@ protected:
     //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame();
     virtual void resizeEvent(QResizeEvent *);
-    virtual void mousePressEvent(QMouseEvent *);
-    virtual void mouseMoveEvent(QMouseEvent *);
-    virtual void mouseDoubleClickEvent(QMouseEvent *);
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
      *things yourself totally*/
     virtual void paintEvent(QPaintEvent *);

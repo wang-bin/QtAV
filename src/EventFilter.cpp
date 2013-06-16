@@ -123,11 +123,39 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
 #endif //0
     QEvent::Type type = event->type();
     switch (type) {
-    case QEvent::MouseButtonPress:
+    case QEvent::MouseButtonPress: {
         qDebug("EventFilter: Mouse press");
-        static_cast<QMouseEvent*>(event)->button();
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        Qt::MouseButton mbt = me->button();
+        if (mbt == Qt::LeftButton) {
+            gMousePos = me->globalPos();
+            iMousePos = me->pos();
+        }
         //TODO: wheel to control volume etc.
-        return false;
+    }
+        break;
+    case QEvent::MouseButtonRelease: {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        Qt::MouseButton mbt = me->button();
+        qDebug("release btn = %d", mbt);
+        if (mbt != Qt::LeftButton)
+            return false;
+        iMousePos = QPoint();
+        gMousePos = QPoint();
+    }
+        break;
+    case QEvent::MouseMove: {
+        if (iMousePos.isNull() || gMousePos.isNull() || !player->renderer()->widget())
+            return false;
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        QWidget *window = player->renderer()->widget()->window();
+        int x = window->pos().x();
+        int y = window->pos().y();
+        int dx = me->globalPos().x() - gMousePos.x();
+        int dy = me->globalPos().y() - gMousePos.y();
+        gMousePos = me->globalPos();
+        window->move(x + dx, y + dy);
+    }
         break;
     case QEvent::MouseButtonDblClick: { //TODO: move to gui
         QWidget *w = qApp->activeWindow();

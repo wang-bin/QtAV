@@ -27,6 +27,7 @@
  * This class is used interally as QtAV's default event filter. It is suite for single player object
  */
 #include <QtCore/QObject>
+#include <QtCore/QPoint>
 
 class QMenu;
 class QPoint;
@@ -53,6 +54,7 @@ protected:
 
 private:
     QMenu *menu;
+    QPoint gMousePos, iMousePos;
 };
 
 } //namespace QtAV
