@@ -292,6 +292,7 @@ void VideoRenderer::handlePaintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
     DPTR_D(VideoRenderer);
+    d.setupQuality();
     //begin paint. how about QPainter::beginNativePainting()?
     {
         //lock is required only when drawing the frame

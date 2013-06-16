@@ -115,7 +115,6 @@ void Direct2DRenderer::paintEvent(QPaintEvent *)
     }
     //http://www.daimakuai.net/?page_id=1574
     d.render_target->BeginDraw();
-    d.setupQuality();
     handlePaintEvent();
     HRESULT hr = S_OK;
     {

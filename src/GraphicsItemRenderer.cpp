@@ -80,7 +80,6 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
     } else {
         qWarning("FilterContext not available!");
     }
-    d.setupQuality(); //move to handlePaintEvent
     handlePaintEvent();
     d.painter = 0; //painter may be not available outside this function
     ctx->painter = 0;

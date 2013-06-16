@@ -85,7 +85,6 @@ void GDIRenderer::drawFrame()
     //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
     Bitmap bitmap(d.src_width, d.src_height, d.src_width*4*sizeof(char)
                   , PixelFormat32bppRGB, (BYTE*)d.data.data());
-    d.setupQuality();
 #if USE_GRAPHICS
     if (d.graphics)
         d.graphics->DrawImage(&bitmap, d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());

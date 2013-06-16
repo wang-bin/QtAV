@@ -87,6 +87,7 @@ public:
         out_aspect_ratio = outAspectRatio;
         qDebug("%f %dx%d <<<<<<<<", out_aspect_ratio, out_rect.width(), out_rect.height());
     }
+    virtual void setupQuality() {}
 
     //draw background when necessary, for example, renderer is resized. Then set to false
     bool update_background;

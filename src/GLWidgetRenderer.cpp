@@ -131,7 +131,6 @@ void GLWidgetRenderer::initializeGL()
 void GLWidgetRenderer::paintGL()
 {
     //drawBackground(); //TODO: why this is always required? otherwise may flicker when aspect ratio changed(ubuntu 12.10)
-    d_func().setupQuality();
     handlePaintEvent();
 }
 
