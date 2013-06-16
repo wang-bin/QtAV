@@ -15,6 +15,7 @@ public:
     }
     ~%CLASS%Private() {
     }
+    virtual void setupQuality() {}
 };
 
 %CLASS%::%CLASS%(QWidget *parent, Qt::WindowFlags f):
@@ -49,9 +50,18 @@ void %CLASS%::convertData(const QByteArray &data)
     Q_UNUSED(locker);
 }
 
+ool %CLASS%::needUpdateBackground() const
+{
+    return VideoRenderer::needUpdateBackground();
+}
 
 void %CLASS%::drawBackground()
 {
+}
+
+bool %CLASS%::needDrawFrame() const
+{
+    return VideoRenderer::needDrawFrame();
 }
 
 void %CLASS%::drawFrame()
@@ -66,26 +76,11 @@ void %CLASS%::drawFrame()
 
 void %CLASS%::paintEvent(QPaintEvent *)
 {
-    DPTR_D(%CLASS%);
-    {
-        //lock is required only when drawing the frame
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
-        //begin paint. how about QPainter::beginNativePainting()?
-        //fill background color when necessary, e.g. renderer is resized, image is null
-        //we access d.data which will be modified in AVThread, so must be protected
-        if ((d.update_background && d.out_rect != rect()) || d.data.isEmpty()) {
-            d.update_background = false;
-            //fill background color. DO NOT return, you must continue drawing
-            drawBackground();
-        }
-        //DO NOT return if no data. we should draw other things
-        //NOTE: if data is not copyed in convertData, you should always call drawFrame()
-        if (!d.data.isEmpty()) {
-            drawFrame();
-        }
-    }
+    //DPTR_D(%CLASS%);
+    //d.painter->begin(this); //Widget painting can only begin as a result of a paintEvent
+    handlePaintEvent();
     //end paint. how about QPainter::endNativePainting()?
+    //d.painter->end();
 }
 
 void %CLASS%::resizeEvent(QResizeEvent *e)

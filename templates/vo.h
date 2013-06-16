@@ -29,9 +29,11 @@ public:
      */
 protected:
     virtual void convertData(const QByteArray &data);
+    virtual bool needUpdateBackground() const;
     //TODO: abstract draw image and font. too many drawXXX()
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
+    virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
     //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame();
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
