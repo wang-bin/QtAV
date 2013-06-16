@@ -129,8 +129,8 @@ protected:
      * If you are doing offscreen painting in other threads, pay attention to thread safe
      */
     virtual void resizeFrame(int width, int height);
-    //TODO: parameter event is not required(e.g. paintGL)
-    void handlePaintEvent(QPaintEvent* event = 0);
+    //TODO: parameter QRect?
+    void handlePaintEvent();
 private:
     friend class VideoThread;
 

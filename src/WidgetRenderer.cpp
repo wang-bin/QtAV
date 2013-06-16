@@ -119,11 +119,11 @@ void WidgetRenderer::resizeEvent(QResizeEvent *e)
     update();
 }
 
-void WidgetRenderer::paintEvent(QPaintEvent *e)
+void WidgetRenderer::paintEvent(QPaintEvent *)
 {
     DPTR_D(WidgetRenderer);
     d.painter->begin(this); //Widget painting can only begin as a result of a paintEvent
-    handlePaintEvent(e);
+    handlePaintEvent();
     //end paint. how about QPainter::endNativePainting()?
     d.painter->end();
 }

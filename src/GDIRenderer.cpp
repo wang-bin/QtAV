@@ -119,9 +119,9 @@ void GDIRenderer::drawFrame()
     //end paint
 }
 
-void GDIRenderer::paintEvent(QPaintEvent *e)
+void GDIRenderer::paintEvent(QPaintEvent *)
 {
-    handlePaintEvent(e);
+    handlePaintEvent();
 }
 
 void GDIRenderer::resizeEvent(QResizeEvent *e)

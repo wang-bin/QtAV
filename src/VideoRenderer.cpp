@@ -288,9 +288,8 @@ void VideoRenderer::resizeFrame(int width, int height)
     Q_UNUSED(height);
 }
 
-void VideoRenderer::handlePaintEvent(QPaintEvent *event)
+void VideoRenderer::handlePaintEvent()
 {
-    Q_UNUSED(event);
     DPTR_D(VideoRenderer);
     d.setupQuality();
     //begin paint. how about QPainter::beginNativePainting()?
