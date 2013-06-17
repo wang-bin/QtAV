@@ -165,6 +165,5 @@ int main(int argc, char *argv[])
         window.play(media_file);
     }
     int ret = a.exec();
-    delete renderer;
     return ret;
 }

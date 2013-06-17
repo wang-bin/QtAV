@@ -100,7 +100,7 @@ AVClock* AVPlayer::masterClock()
 }
 
 //TODO: check components compatiblity(also when change the filter chain)
-VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
+void AVPlayer::setRenderer(VideoRenderer *r)
 {
     qDebug(">>>>>>>>>>%s", __FUNCTION__);
     if (_renderer && r) {
@@ -110,13 +110,11 @@ VideoRenderer* AVPlayer::setRenderer(VideoRenderer *r)
             r->setOutAspectRatio(_renderer->outAspectRatio());
         }
     }
-    VideoRenderer *old = setAVOutput(_renderer, r, video_thread);
+    setAVOutput(_renderer, r, video_thread);
     if (_renderer) {
         qDebug("resizeRenderer after setRenderer");
         _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
     }
-    //old may be in stack. do not delete here
-    return old;
 }
 
 VideoRenderer *AVPlayer::renderer()
@@ -124,25 +122,36 @@ VideoRenderer *AVPlayer::renderer()
     return _renderer;
 }
 
-AudioOutput* AVPlayer::setAudioOutput(AudioOutput* ao)
+void AVPlayer::setAudioOutput(AudioOutput* ao)
 {
     qDebug(">>>>>>>>>>%s", __FUNCTION__);
-    return setAVOutput(_audio, ao, audio_thread);
+    setAVOutput(_audio, ao, audio_thread);
 }
 
 template<class Out>
-Out *AVPlayer::setAVOutput(Out *&pOut, Out *pNew, AVThread *thread)
+void AVPlayer::setAVOutput(Out *&pOut, Out *pNew, AVThread *thread)
 {
+    Out *old = pOut;
+    bool delete_old = false;
     if (pOut == pNew) {
         qDebug("output not changed: %p", pOut);
-        if (thread && thread->output() == pNew) //avthread already set that output
-            return 0;
+        if (thread && thread->output() == pNew) {//avthread already set that output
+            qDebug("avthread already set that output");
+            return;
+        }
+    } else {
+        pOut = pNew;
+        delete_old = true;
     }
-    Out *old = pOut;
-    pOut = pNew;
     if (!thread) {
         qDebug("avthread not ready. can not set output.");
-        return 0;
+        //no avthread, we can delete it safely
+        //AVOutput must be allocated in heap. Just like QObject's children.
+        if (delete_old) {
+            delete old;
+            old = 0;
+        }
+        return;
     }
     //FIXME: what if isPaused()==false but pause(true) in another thread?
     bool need_lock = isPlaying() && !thread->isPaused();
@@ -155,8 +164,12 @@ Out *AVPlayer::setAVOutput(Out *&pOut, Out *pNew, AVThread *thread)
         if (need_lock)
             thread->unlock();
     }
-    //old may be in stack. do not delete here
-    return old;
+    //now the old avoutput is not used by avthread, we can delete it safely
+    //AVOutput must be allocated in heap. Just like QObject's children.
+    if (delete_old) {
+        delete old;
+        old = 0;
+    }
 }
 
 AudioOutput* AVPlayer::audio()

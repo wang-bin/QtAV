@@ -313,15 +313,13 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     QWidget *r = 0;
     if (mpRenderer)
         r = mpRenderer->widget();
-    mpRenderer = renderer;
-    mpPlayer->setRenderer(mpRenderer);
     //release old renderer and add new
     if (r) {
         mpPlayerLayout->removeWidget(r);
-        r->QWidget::close();
-        //delete r; //pure virtual called
         r = 0;
     }
+    mpRenderer = renderer;
+    mpPlayer->setRenderer(mpRenderer);
 #if SLIDER_ON_VO
     if (mpTimeSlider) {
         mpTimeSlider->setParent(mpRenderer->widget());

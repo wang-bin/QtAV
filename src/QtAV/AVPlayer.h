@@ -69,9 +69,9 @@ public:
     bool isPaused() const;
     //this will install the default EventFilter. To use customized filter, register after this
     //TODO: addRenderer; renderers()
-    VideoRenderer* setRenderer(VideoRenderer* renderer);
+    void setRenderer(VideoRenderer* renderer);
     VideoRenderer* renderer();
-    AudioOutput* setAudioOutput(AudioOutput* ao);
+    void setAudioOutput(AudioOutput* ao);
     AudioOutput* audio();
     void setMute(bool mute);
     bool isMute() const;
@@ -105,7 +105,8 @@ private:
     void setupVideoThread();
     void setupAVThread(AVThread*& thread, AVCodecContext* ctx);
     template<class Out>
-    Out* setAVOutput(Out*& pOut, Out* pNew, AVThread* thread);
+    void setAVOutput(Out*& pOut, Out* pNew, AVThread* thread);
+    //TODO: addAVOutput()
 
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
