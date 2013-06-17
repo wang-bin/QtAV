@@ -98,10 +98,10 @@ void MainWindow::setupUi()
 
     mpCurrent = new QLabel(mpControl);
     mpCurrent->setMargin(2);
-    mpCurrent->setText("00:00");
+    mpCurrent->setText("00:00:00");
     mpDuration = new QLabel(mpControl);
     mpDuration->setMargin(2);
-    mpDuration->setText("00:00");
+    mpDuration->setText("00:00:00");
     mpTitle = new QLabel(mpControl);
     mpTitle->setText("QPainter");
     mpTitle->setIndent(8);
@@ -407,7 +407,7 @@ void MainWindow::onStartPlay()
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>enable slider");
     mpTimeSlider->setEnabled(true);
-    mpDuration->setText(QTime(0, 0, 0).addSecs(mpPlayer->duration()).toString("mm:ss"));
+    mpDuration->setText(QTime(0, 0, 0).addSecs(mpPlayer->duration()).toString("HH:mm:ss"));
     mTimerId = startTimer(kSliderUpdateInterval);
 }
 
@@ -417,8 +417,8 @@ void MainWindow::onStopPlay()
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);
-    mpCurrent->setText("00:00");
-    mpDuration->setText("00:00");
+    mpCurrent->setText("00:00:00");
+    mpDuration->setText("00:00:00");
 }
 
 void MainWindow::seekToMSec(int msec)
@@ -467,7 +467,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 {
     int ms = mpPlayer->masterClock()->value()*1000.0;
     mpTimeSlider->setValue(ms);
-    mpCurrent->setText(QTime(0, 0, 0).addMSecs(ms).toString("mm:ss"));
+    mpCurrent->setText(QTime(0, 0, 0).addMSecs(ms).toString("HH:mm:ss"));
 }
 
 
