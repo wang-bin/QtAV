@@ -10,6 +10,7 @@
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QWindowStateChangeEvent>
+#include <QtAV/AudioOutput.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/OSDFilter.h>
 #include <QtAV/VideoRendererTypes.h>
@@ -30,6 +31,7 @@
 
 const int kSliderUpdateInterval = 500;
 using namespace QtAV;
+const qreal kVolumeInterval = 0.05;
 
 static void QLabelSetElideText(QLabel *label, QString text, int W = 0)
 {
@@ -58,6 +60,15 @@ MainWindow::MainWindow(QWidget *parent) :
     setupUi();
 }
 
+MainWindow::~MainWindow()
+{
+    if (mpVolumeSlider && !mpVolumeSlider->parentWidget()) {
+        mpVolumeSlider->close();
+        delete mpVolumeSlider;
+        mpVolumeSlider = 0;
+    }
+}
+
 void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
@@ -66,6 +77,10 @@ void MainWindow::initPlayer()
     connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
+    connect(mpVolumeBtn, SIGNAL(clicked()), SLOT(showHideVolumeBar()));
+    connect(mpVolumeSlider, SIGNAL(sliderPressed()), SLOT(setVolume()));
+    connect(mpVolumeSlider, SIGNAL(valueChanged(int)), SLOT(setVolume()));
+
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
@@ -144,6 +159,22 @@ void MainWindow::setupUi()
     mpCaptureBtn->setIconWithSates(QPixmap(":/theme/screenshot.png"));
     mpCaptureBtn->setIconSize(QSize(a, a));
     mpCaptureBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+
+    mpVolumeBtn = new Button();
+    mpVolumeBtn->setIconWithSates(QPixmap(":/theme/button-max-volume.png"));
+    mpVolumeBtn->setIconSize(QSize(a, a));
+    mpVolumeBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+
+    mpVolumeSlider = new Slider();
+    mpVolumeSlider->hide();
+    mpVolumeSlider->setOrientation(Qt::Horizontal);
+    mpVolumeSlider->setMinimum(0);
+    const int kVolumeSliderMax = 100;
+    mpVolumeSlider->setMaximum(kVolumeSliderMax);
+    mpVolumeSlider->setMaximumHeight(8);
+    mpVolumeSlider->setMaximumWidth(88);
+    mpVolumeSlider->setValue(int(1.0/kVolumeInterval*qreal(kVolumeSliderMax)/100.0));
+
     mpMenuBtn = new Button();
     mpMenuBtn->setAutoRaise(true);
     mpMenuBtn->setPopupMode(QToolButton::InstantPopup);
@@ -232,6 +263,8 @@ void MainWindow::setupUi()
     controlLayout->addWidget(mpTitle);
     QSpacerItem *space = new QSpacerItem(mpPlayPauseBtn->width(), mpPlayPauseBtn->height(), QSizePolicy::MinimumExpanding);
     controlLayout->addSpacerItem(space);
+    controlLayout->addWidget(mpVolumeSlider);
+    controlLayout->addWidget(mpVolumeBtn);
     controlLayout->addWidget(mpCaptureBtn);
     controlLayout->addWidget(mpPlayPauseBtn);
     controlLayout->addWidget(mpStopBtn);
@@ -408,6 +441,7 @@ void MainWindow::onStartPlay()
     qDebug(">>>>>>>>>>>>>>enable slider");
     mpTimeSlider->setEnabled(true);
     mpDuration->setText(QTime(0, 0, 0).addSecs(mpPlayer->duration()).toString("HH:mm:ss"));
+    setVolume();
     mTimerId = startTimer(kSliderUpdateInterval);
 }
 
@@ -434,6 +468,23 @@ void MainWindow::seek()
 void MainWindow::capture()
 {
     mpPlayer->captureVideo();
+}
+
+void MainWindow::showHideVolumeBar()
+{
+    if (mpVolumeSlider->isHidden()) {
+        mpVolumeSlider->show();
+    } else {
+        mpVolumeSlider->hide();
+    }
+}
+
+void MainWindow::setVolume()
+{
+    AudioOutput *ao = mpPlayer->audio();
+    if (ao) {
+        ao->setVolume(qreal(mpVolumeSlider->value())*0.05);
+    }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *e)
@@ -514,3 +565,4 @@ void MainWindow::playOnlineVideo(QAction *action)
 {
     play(action->data().toString());
 }
+

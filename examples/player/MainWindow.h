@@ -21,6 +21,7 @@ class MainWindow : public QWidget
     Q_OBJECT
 public:
     explicit MainWindow(QWidget *parent = 0);
+    ~MainWindow();
     void setRenderer(QtAV::VideoRenderer* renderer);
     void play(const QString& name);
 
@@ -47,6 +48,8 @@ private slots:
     void seekToMSec(int msec);
     void seek();
     void capture();
+    void showHideVolumeBar();
+    void setVolume();
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
@@ -60,7 +63,8 @@ private:
     QWidget *mpControl;
     QLabel *mpCurrent, *mpDuration;
     QLabel *mpTitle;
-    Slider *mpTimeSlider;//, *mpVolumeSlider;
+    Slider *mpTimeSlider, *mpVolumeSlider;
+    Button *mpVolumeBtn;
     Button *mpPlayPauseBtn, *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;
     Button *mpOpenBtn;
     Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;

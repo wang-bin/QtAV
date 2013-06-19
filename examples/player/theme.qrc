@@ -13,5 +13,6 @@
         <file>theme/search-arrow.png</file>
         <file>theme/search-icon.png</file>
         <file>theme/url.png</file>
+        <file>theme/button-max-volume.png</file>
     </qresource>
 </RCC>

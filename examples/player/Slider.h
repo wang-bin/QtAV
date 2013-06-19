@@ -30,7 +30,7 @@ class Slider : public QSlider
 {
 	Q_OBJECT
 public:
-    Slider(QWidget *parent);
+    Slider(QWidget *parent = 0);
     ~Slider();
 
 protected:
