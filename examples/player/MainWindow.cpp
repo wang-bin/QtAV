@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mIsReady(false)
   , mHasPendingPlay(false)
   , mTimerId(0)
+  , mpPlayer(0)
   , mpRenderer(0)
   , mpTempRenderer(0)
 {
@@ -159,7 +160,7 @@ void MainWindow::setupUi()
     mpCaptureBtn->setIconWithSates(QPixmap(":/theme/screenshot.png"));
     mpCaptureBtn->setIconSize(QSize(a, a));
     mpCaptureBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-
+    mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": capture");
     mpVolumeBtn = new Button();
     mpVolumeBtn->setIconWithSates(QPixmap(":/theme/button-max-volume.png"));
     mpVolumeBtn->setIconSize(QSize(a, a));
@@ -174,6 +175,7 @@ void MainWindow::setupUi()
     mpVolumeSlider->setMaximumHeight(8);
     mpVolumeSlider->setMaximumWidth(88);
     mpVolumeSlider->setValue(int(1.0/kVolumeInterval*qreal(kVolumeSliderMax)/100.0));
+    setVolume();
 
     mpMenuBtn = new Button();
     mpMenuBtn->setAutoRaise(true);
@@ -481,10 +483,13 @@ void MainWindow::showHideVolumeBar()
 
 void MainWindow::setVolume()
 {
-    AudioOutput *ao = mpPlayer->audio();
+    AudioOutput *ao = mpPlayer ? mpPlayer->audio() : 0;
+    qreal v = qreal(mpVolumeSlider->value())*kVolumeInterval;
     if (ao) {
-        ao->setVolume(qreal(mpVolumeSlider->value())*0.05);
+        ao->setVolume(v);
     }
+    mpVolumeSlider->setToolTip(QString::number(v));
+    mpVolumeBtn->setToolTip(QString::number(v));
 }
 
 void MainWindow::resizeEvent(QResizeEvent *e)
