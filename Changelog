@@ -1,3 +1,15 @@
+version 1.2.1    2013-06-19
+
+- Configurable video quality
+- Correct aspect ratio. Any value is supported
+- Fix some media playing problem
+- Fix crash if no audio
+- Fix d2d crash by setting multi-thread type
+- Fix WidgetRenderer can not update problem
+- Fix mem leak if renderer changed
+- player: volume control, display correct online tv name, correct display time
+
+
 version 1.2.0    2013-05-27
 
 - Better gui for the player example
