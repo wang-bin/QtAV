@@ -1,11 +1,12 @@
 # [QtAV](https://sourceforge.net/projects/qtav)
 
 QtAV is a media playing library based on Qt and FFmpeg. It can help you to write a player
-with less effort than ever before. Currently only a simple player is supplied. I will write a
-stylish one based on QtAV in the feature.
+with less effort than ever before.
 
-QtAV is free software licensed under the term of LGPL v2.1. If you use QtAV or its constituent libraries,
-you must adhere to the terms of the license in question.
+QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](http://ffmpeg.org/projects.html)
+
+**QtAV is free software licensed under the term of LGPL v2.1. If you use QtAV or its constituent libraries,
+you must adhere to the terms of the license in question.**
 
 #### [Download binaries from sourceforge](https://sourceforge.net/projects/qtav)
 #### [Source code on github](https://github.com/wang-bin/QtAV)
@@ -16,16 +17,20 @@ QtAV can meet your most demands
 
 - Seek, pause/resume
 - Video capture
+- OSD
+- Aspect ratio
 - Transform video using GraphicsItemRenderer. (rotate, shear, etc)
 - Playing frame by frame (currently support forward playing)
 - Variant streams: locale file, http, rtsp, etc.
 - Playing music (not perfect)
 - Volume control
 - Fullscreen, stay on top
-- Compatible: QtAV can be built with both Qt4 and Qt5. QtAV will support
-  both FFmpeg and [Libav](http://libav.org).
+- Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
+  both FFmpeg(>=0.9) and [Libav](http://libav.org).
+- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL.
+- Dynamically change render engine when playing.
 
-### Extensible Framework (not finished)
+### Extensible Framework (work in progress)
 
   QtAV currently uses FFmpeg to decode video, convert image and audio data, and uses PortAudio to play
   sound. Every part in QtAV is designed to be extensible. For example, you can write your audio output
@@ -37,34 +42,33 @@ QtAV can meet your most demands
 
 #### Requirements
 
-1. [FFmpeg](http://ffmpeg.org) Latest version is recommanded
-2. [Qt 4 or 5](http://qt-project.org/downloads)
-3. [PortAudio v19](http://www.portaudio.com/download.html)
+1. [FFmpeg](http://ffmpeg.org) (>=0.9)Latest version is recommanded.  
+[![FFmpeg](http://ffmpeg.org/ffmpeg-logo.png)](http://ffmpeg.org)
+2. [Qt 4 or 5](http://qt-project.org/downloads)  
+[![Qt](http://blog.qt.digia.com/wp-content/themes/qt_blog/images/Qt_master_logo_CMYK_noback.gif)](http://qt-project.org)
+3. [PortAudio v19](http://www.portaudio.com/download.html)  
+[![PortAudio Logo](http://www.portaudio.com/images/portaudio_logo.png)](http://www.portaudio.com)[![PortAudio](http://www.portaudio.com/images/portaudio_logotext.png)](http://www.portaudio.com)
 
 The required development files for MinGW can be found in sourceforge
 page: [depends](https://sourceforge.net/projects/qtav/files/depends)
 
 #### Build
 
-For most platforms, just
+You can build QtAV with many compilers and on many platforms. You can use gcc, clang, vc to compile it.  
+See the wiki [Build QtAV](https://github.com/wang-bin/QtAV/wiki/Build-QtAV)
 
-    qmake
+Here is a brief guide:
+
+It's recommend not to build in source dir.  
+
+    cd your_build_dir
+    qmake QtAV_project_dir/QtAV.pro
     make
 
->>If the above command failed to build it, try
+qmake will run check the required libraries at the first time, so you must make sure those libraries can be found by compiler.
+Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, run `qmake QtAV_project_dir/QtAV.pro -config recheck`
 
->>    `cd your_build_dir`
-
->>    `qmake QtAV_dir/QtAV.pro -r BUILD_DIR=your_build_dir`
-
->>    `make`
-
->>  The binaries will be created in $BUILD_DIR/bin.
->>  If you are using QtCreator to build the project, you should go to Projects->Build Steps->qmake->Additional arguments, add "BUILD_DIR=your/buid/dir"
-
-##### Build with MSVC
-
-  See the wiki [Compile with MSVC](https://github.com/wang-bin/QtAV/wiki/Compile-with-MSVC)
+_WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice.
 
 
 
@@ -78,18 +82,38 @@ Wrtie a media player using QtAV is quite easy.
     player.setRenderer(&renderer);
     player.play("test.avi");
 
-For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Project)
+For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Projects) or examples.
 
 
-Default Shortcuts
------------------
+For End Users
+-------------
+
+#### Player Usage
+
+An simple player can be found in examples. The command line options is
+
+    player [-vo qt|gl|d2d|gdi|xv] [url/path]
+
+You can choose a paint engine with _-vo_ option. For example, in windows that support Direct2D, you can run
+
+    player -vo d2d filename
+
+The default is Qt's paint engine.
+
+#### Default Shortcuts
+
+- Double click: fullscreen switch
+- Ctrl+O: open a file
 - Space: pause/continue
 - F: fullscreen on/off
+- I: switch display quality
 - T: stays on top on/off
 - N: show next frame. Continue the playing by pressing "Space"
-- O: open a file
+- O: OSD
 - P: replay
+- Q/ESC: quit
 - S: stop
+- R: switch aspect ratio
 - M: mute on/off
 - Up / Down: volume + / -
 - -> / <-: seek forward / backward
@@ -104,23 +128,23 @@ The default behavior can be replaced by subclassing QObject and call `void AVPla
 0. Component framework
 1. Subtitle
 2. Filters
-3. Hardware acceleration using NVIDIA Cuda, Intel IPP, OpenCL and OpenGL:
-  * decoding
-  * image, audio and filters convertion
-  * rendering
+3. Hardware acceleration using DirectX, NVIDIA Cuda, ATI UVD, Intel IPP, OpenCL and OpenGL:
+  * decoding: DXVA, XvBA, cuvid
+  * image, audio and filters
+  * rendering: DirectX, OpenGL ES
 4. Stylish GUI based on Qt Graphics View Framework
 5. Document and SDK
 6. Other: play speed, better sync method and seeking, tests, playing statistics, etc.
 7. Region of interest support.
-8. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.
-
+8. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
+9. ppa, debian package etc.
 
 Screenshots
 ----------
 
 QtAV on Win8
 
-![Alt text](https://github.com/downloads/wang-bin/QtAV/screenshot.png "simple player")
+![Alt text](https://sourceforge.net/p/qtav/screenshot/win8.png "simple player")
 
 QtAV on Mac OS X
 

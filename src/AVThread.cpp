@@ -21,8 +21,28 @@
 
 #include <QtAV/AVThread.h>
 #include <private/AVThread_p.h>
+#include <QtAV/AVOutput.h>
+#include <QtAV/Filter.h>
 
 namespace QtAV {
+
+AVThreadPrivate::~AVThreadPrivate() {
+    demux_end = true;
+    stop = true;
+    if (!paused) {
+        qDebug("~AVThreadPrivate wake up paused thread");
+        paused = false;
+        next_pause = false;
+        cond.wakeAll();
+    }
+    packets.setBlocking(true); //???
+    packets.clear();
+    //not neccesary context is managed by filters.
+    filter_context = 0;
+    qDeleteAll(filters); //TODO: is it safe?
+    filters.clear();
+}
+
 AVThread::AVThread(QObject *parent) :
     QThread(parent)
 {
@@ -63,8 +83,26 @@ void AVThread::pause(bool p)
     d.paused = p;
     if (!d.paused) {
         qDebug("wake up paused thread");
+        d.next_pause = false;
         d.cond.wakeAll();
     }
+}
+
+void AVThread::nextAndPause()
+{
+    DPTR_D(AVThread);
+    d.next_pause = true;
+    d.cond.wakeAll();
+}
+
+void AVThread::lock()
+{
+    d_func().mutex.lock();
+}
+
+void AVThread::unlock()
+{
+    d_func().mutex.unlock();
 }
 
 void AVThread::setClock(AVClock *clock)
@@ -117,18 +155,26 @@ void AVThread::resetState()
     d.demux_end = false;
     d.packets.setBlocking(true);
     d.packets.clear();
+    //not neccesary context is managed by filters.
+    d.filter_context = 0;
 }
 
 bool AVThread::tryPause()
 {
     DPTR_D(AVThread);
-    if (!d.paused)
+    if (!d.paused && !d.next_pause)
         return false;
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
     qDebug("paused thread waked up!!!");
     return true;
+}
+
+void AVThread::setStatistics(Statistics *statistics)
+{
+    DPTR_D(AVThread);
+    d.statistics = statistics;
 }
 
 } //namespace QtAV

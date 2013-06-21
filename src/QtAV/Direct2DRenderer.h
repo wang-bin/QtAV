@@ -39,7 +39,7 @@ class Q_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
 public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~Direct2DRenderer();
-
+    virtual VideoRendererId id() const;
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
      * return 0 and set this flag
@@ -47,12 +47,21 @@ public:
     virtual QPaintEngine* paintEngine() const;
 protected:
     virtual void convertData(const QByteArray &data);
+    virtual bool needUpdateBackground() const;
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    virtual bool needDrawFrame() const;
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
+    /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
+     *things yourself totally*/
     virtual void paintEvent(QPaintEvent *);
     virtual void resizeEvent(QResizeEvent *);
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void showEvent(QShowEvent *);
     virtual bool write();
 };
+typedef Direct2DRenderer VideoRendererDirect2D;
 
 } //namespace QtAV
 

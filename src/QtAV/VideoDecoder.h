@@ -34,10 +34,11 @@ class Q_EXPORT VideoDecoder : public AVDecoder
 public:
     VideoDecoder();
     virtual bool decode(const QByteArray &encoded);
-
+    //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
+    //size: the decoded(actually then resized in ImageConverter) frame size
     void resizeVideoFrame(const QSize& size);
     void resizeVideoFrame(int width, int height);
-
+    //TODO: decodedSize()
     int width() const;
     int height() const;
 };

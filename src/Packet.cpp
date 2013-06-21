@@ -23,9 +23,17 @@
 
 namespace QtAV {
 
+const qreal Packet::kEndPts = -0.618;
+
 Packet::Packet()
     :pts(0),duration(0)
 {
+}
+
+void Packet::markEnd()
+{
+    qDebug("mark as end packet");
+    pts = kEndPts;
 }
 
 } //namespace QtAV

@@ -35,20 +35,29 @@
 class QObject;
 class QWidget;
 namespace QtAV {
+class Filter;
 class Q_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
     VideoRendererPrivate():
-        use_qpainter(true)
+        update_background(true)
       , scale_in_renderer(true)
+      , draw_osd(true)
+      , draw_subtitle(true)
+      , draw_custom(true)
       , renderer_width(480)
       , renderer_height(320)
       , source_aspect_ratio(0)
       , src_width(0)
       , src_height(0)
-      , aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
+      , aspect_ratio_changed(true) //to set the initial parameters
+      , out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
+      , quality(VideoRenderer::QualityBest)
       , widget_holder(0)
+      , item_holder(0)
+      , osd_filter(0)
+      , subtitle_filter(0)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -56,32 +65,46 @@ public:
     virtual ~VideoRendererPrivate(){
         widget_holder = 0;
     }
-    void computeOutParameters(qreal rendererAspectRatio, qreal outAspectRatio) {
+    void computeOutParameters(qreal outAspectRatio) {
+        qreal rendererAspectRatio = qreal(renderer_width)/qreal(renderer_height);
+        if (out_aspect_ratio_mode == VideoRenderer::RendererAspectRatio) {
+            out_aspect_ratio = rendererAspectRatio;
+            out_rect = QRect(0, 0, renderer_width, renderer_height);
+            return;
+        }
+        qDebug("out rect: %f %dx%d ==>", out_aspect_ratio, out_rect.width(), out_rect.height());
         if (rendererAspectRatio > outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
             //renderer is too wide, use renderer's height, horizonal align center
             int h = renderer_height;
-            int w = source_aspect_ratio * qreal(h);
+            int w = outAspectRatio * qreal(h);
             out_rect = QRect((renderer_width - w)/2, 0, w, h);
         } else if (rendererAspectRatio < outAspectRatio) {
             //renderer is too high, use renderer's width
             int w = renderer_width;
-            int h = qreal(w)/source_aspect_ratio;
+            int h = qreal(w)/outAspectRatio;
             out_rect = QRect(0, (renderer_height - h)/2, w, h);
         }
         out_aspect_ratio = outAspectRatio;
+        qDebug("%f %dx%d <<<<<<<<", out_aspect_ratio, out_rect.width(), out_rect.height());
     }
+    virtual void setupQuality() {}
 
-    bool use_qpainter;
+    //draw background when necessary, for example, renderer is resized. Then set to false
+    bool update_background;
     bool scale_in_renderer;
+    bool draw_osd, draw_subtitle, draw_custom;
     // width, height: the renderer's size. i.e. size of video frame with the value with borders
     //TODO: rename to renderer_width/height
     int renderer_width, renderer_height;
     qreal source_aspect_ratio;
-    int src_width, src_height;
+    int src_width, src_height; //TODO: in_xxx
     //ImageConverter conv;
     QMutex img_mutex;
-    VideoRenderer::OutAspectRatioMode aspect_ratio_mode;
+    //for both source, out aspect ratio. because source change may result in out change if mode is VideoAspectRatio
+    bool aspect_ratio_changed;
+    VideoRenderer::OutAspectRatioMode out_aspect_ratio_mode;
     qreal out_aspect_ratio;
+    VideoRenderer::Quality quality;
     //out_rect: the displayed video frame out_rect in the renderer
     QRect out_rect; //TODO: out_out_rect
 
@@ -89,6 +112,9 @@ public:
      * Some operations are based on QWidget
      */
     QWidget *widget_holder;
+    QGraphicsItem *item_holder;
+
+    Filter *osd_filter, *subtitle_filter; //should be at the end of list and draw top level
 };
 
 } //namespace QtAV

@@ -22,33 +22,37 @@
 #ifndef QTAV_WIDGETRENDERER_H
 #define QTAV_WIDGETRENDERER_H
 
-#include <QtAV/ImageRenderer.h>
+#include <QtAV/QPainterRenderer.h>
 #include <qwidget.h>
 
 namespace QtAV {
 
 class WidgetRendererPrivate;
-class Q_EXPORT WidgetRenderer : public QWidget, public ImageRenderer
+class Q_EXPORT WidgetRenderer : public QWidget, public QPainterRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(WidgetRenderer)
 public:
-    //GestureAction is useful for small screen windows that are hard to select frame
-    enum GestureAction { GestureMove, GestureResize};
-
     explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
     virtual ~WidgetRenderer();
-
+    virtual VideoRendererId id() const;
+signals:
+    void imageReady();
 protected:
+    virtual bool needUpdateBackground() const;
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
     virtual void resizeEvent(QResizeEvent *);
-    virtual void mousePressEvent(QMouseEvent *);
-    virtual void mouseMoveEvent(QMouseEvent *);
-    virtual void mouseDoubleClickEvent(QMouseEvent *);
+    /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
+     *things yourself totally*/
     virtual void paintEvent(QPaintEvent *);
     virtual bool write();
 protected:
     WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent, Qt::WindowFlags f);
 };
 
+typedef WidgetRenderer VideoRendererWidget;
 } //namespace QtAV
 #endif // QTAV_WIDGETRENDERER_H

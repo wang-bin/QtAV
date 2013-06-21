@@ -21,6 +21,7 @@
 
 #include <QtAV/GraphicsItemRenderer.h>
 #include <private/GraphicsItemRenderer_p.h>
+#include <QtAV/FilterContext.h>
 #include <QGraphicsScene>
 #include <QtGui/QPainter>
 #include <QEvent>
@@ -30,8 +31,9 @@
 namespace QtAV {
 
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
-    :GraphicsWidget(parent),ImageRenderer(*new GraphicsItemRendererPrivate())
+    :GraphicsWidget(parent),QPainterRenderer(*new GraphicsItemRendererPrivate())
 {
+    d_func().item_holder = this;
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
 #if CONFIG_GRAPHICSWIDGET
@@ -40,8 +42,9 @@ GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
 }
 
 GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGraphicsItem *parent)
-    :GraphicsWidget(parent),ImageRenderer(d)
+    :GraphicsWidget(parent),QPainterRenderer(d)
 {
+    d_func().item_holder = this;
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
 #if CONFIG_GRAPHICSWIDGET
@@ -69,14 +72,39 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 {
 	Q_UNUSED(option);
 	Q_UNUSED(widget);
-	DPTR_D(GraphicsItemRenderer);
-    if (!d.scale_in_renderer) {
-        d.img_mutex.lock();
+    DPTR_D(GraphicsItemRenderer);
+    d.painter = painter;
+    QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
+    if (ctx) {
+        ctx->painter = d.painter;
+    } else {
+        qWarning("FilterContext not available!");
     }
+    handlePaintEvent();
+    d.painter = 0; //painter may be not available outside this function
+    ctx->painter = 0;
+}
+
+bool GraphicsItemRenderer::needUpdateBackground() const
+{
+    DPTR_D(const GraphicsItemRenderer);
+    return d.out_rect != boundingRect() || d.data.isEmpty();
+}
+
+void GraphicsItemRenderer::drawBackground()
+{
+    DPTR_D(GraphicsItemRenderer);
+    if (!d.painter)
+        return;
+    d.painter->fillRect(boundingRect(), QColor(0, 0, 0));
+}
+
+void GraphicsItemRenderer::drawFrame()
+{
+    DPTR_D(GraphicsItemRenderer);
+    if (!d.painter)
+        return;
     //fill background color only when the displayed frame rect not equas to renderer's
-    if (d.out_rect != boundingRect()) {
-        painter->fillRect(boundingRect(), QColor(0, 0, 0));
-    }
     if (d.image.isNull()) {
         //TODO: when setInSize()?
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
@@ -84,14 +112,12 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
     }
     //assume that the image data is already scaled to out_size(NOT renderer size!)
     if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
-        painter->drawImage(d.out_rect.topLeft(), d.image);
+        d.painter->drawImage(d.out_rect.topLeft(), d.image);
     } else {
-        painter->drawImage(d.out_rect, d.image);
-    }
-    if (!d.scale_in_renderer) {
-        d.img_mutex.unlock();
+        d.painter->drawImage(d.out_rect, d.image);
     }
 }
+
 //GraphicsWidget will lose focus forever if focus out. Why?
 
 #if CONFIG_GRAPHICSWIDGET

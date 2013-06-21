@@ -25,7 +25,6 @@
 
 #include <qglobal.h>
 #include <dptr.h>
-#include "QtAV/version.h"
 
 #if defined(Q_DLL_LIBRARY)
 #  undef Q_EXPORT
@@ -37,9 +36,15 @@
 
 /* runtime version. used to compare with compile time version */
 Q_EXPORT unsigned QtAV_Version();
-
+Q_EXPORT QString QtAV_Version_String();
+Q_EXPORT QString QtAV_Version_String_Long();
 namespace QtAV {
-Q_EXPORT QString aboutQtAV();
+Q_EXPORT void about(); //popup a dialog
+Q_EXPORT void aboutFFmpeg();
+Q_EXPORT QString aboutFFmpeg_PlainText();
+Q_EXPORT QString aboutFFmpeg_HTML();
+Q_EXPORT void aboutQtAV();
+Q_EXPORT QString aboutQtAV_PlainText();
 Q_EXPORT QString aboutQtAV_HTML();
 }
 

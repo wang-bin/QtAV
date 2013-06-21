@@ -34,9 +34,11 @@
  *      FACTORY_DEFINE(MyClass)
  *
  * To create and register a new subclass MyClassSubA with it's id
- * 0. In MyClassTypes.h (Usually you just include this enough to use the factory),
+ * 0. In MyClassTypes.h (Usually you just include this enough to use the factory. And MyClassXXX.{h,cpp} can NOT include this file),
  *    MyClassSubA's ID:
- *      extern MyClassId MyClassId_SubA;
+ *  //"extern" can only used by this lib internally. app linked to this can not get the value.
+ *  //it's better to define in MyClassTypes.h than in MyClassSubA.cpp, so that user can check whether it is available in runtime even if MyClassSubA.cpp is not compiled
+ *      static MyClassId MyClassId_SubA = some_unique_id;
  * 1. create a source file MyClassSubA.cpp and implement the required members
  * 2. In MyClassSubA.cpp, add the following lines
  *      #include "prepost.h" //for PRE_FUNC_ADD()
@@ -111,7 +113,7 @@
         static bool unregisterCreator(const ID& id); \
         static ID id(const std::string& name); \
         static std::string name(const ID &id); \
-        static int count(); \
+        static size_t count(); \
         static T* getRandom(); \
     };
 
@@ -127,7 +129,7 @@
     bool T##Factory::unregisterCreator(const ID& id) { return T##FactoryBridge::Instance().unregisterCreator(id); } \
     ID T##Factory::id(const std::string& name) { return T##FactoryBridge::Instance().id(name); } \
     std::string T##Factory::name(const ID &id) { return T##FactoryBridge::Instance().name(id); } \
-    int T##Factory::count() { return T##FactoryBridge::Instance().count(); } \
+    size_t T##Factory::count() { return T##FactoryBridge::Instance().count(); } \
     T* T##Factory::getRandom() { fflush(0);return T##FactoryBridge::Instance().getRandom(); }
 
 #endif // FACTORYDEFINE_H

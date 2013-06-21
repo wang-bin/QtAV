@@ -28,15 +28,21 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/ImageConverter.h>
 #include <QtGui/QImage>
+#include <QtAV/Statistics.h>
+#include <QtAV/Filter.h>
+#include <QtAV/FilterContext.h>
 
 namespace QtAV {
 
 class VideoThreadPrivate : public AVThreadPrivate
 {
 public:
-    VideoThreadPrivate():conv(0),capture(0){}
+    VideoThreadPrivate():
+        conv(0)
+      , capture(0)
+    {}
     ImageConverter *conv;
-    double pts; //current decoded pts. for capture
+    double pts; //current decoded pts. for capture. TODO: remove
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
 };
@@ -84,7 +90,10 @@ void VideoThread::run()
     resetState();
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
-    VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
+    if (dec) {
+        //used to initialize the decoder's frame size
+        dec->resizeVideoFrame(0, 0);
+    }
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -96,6 +105,7 @@ void VideoThread::run()
         if (d.packets.isEmpty() && !d.stop) {
             d.stop = d.demux_end;
             if (d.stop) {
+                qDebug("video queue empty and demux end. break video thread");
                 break;
             }
         }
@@ -132,7 +142,8 @@ void VideoThread::run()
         }
         d.clock->updateVideoPts(pkt.pts); //here?
         //DO NOT decode and convert if vo is not available or null!
-        //if ()
+        //NOTE: vo may changes dymanically. we need check it every time we use it. decoder and other components should do this too
+        VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
         bool vo_ok = vo && vo->isAvailable();
         if (vo_ok) {
             //use the last size first then update the last size so that decoder(converter) can update output size
@@ -153,13 +164,23 @@ void VideoThread::run()
             d.conv->setInSize(d.renderer_width, d.renderer_height);
             if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
             }*/
+            QByteArray data = dec->data();
+            if (d.statistics) {
+                d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
+                if (!d.filters.isEmpty()) {
+                    foreach (Filter *filter, d.filters) {
+                        filter->process(d.filter_context, d.statistics, &data);
+                    }
+                }
+            }
+
             if (vo_ok) {
-                vo->writeData(dec->data());
+                vo->writeData(data);
             }
         }
         //use the last size first then update the last size so that decoder(converter) can update output size
         if (vo_ok && !vo->scaleInRenderer())
-            vo->setInSize(vo->rendererSize());
+            vo->setInSize(vo->rendererSize());//out size?
     }
     qDebug("Video thread stops running...");
 }

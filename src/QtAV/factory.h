@@ -71,8 +71,10 @@ public:
     //bool unregisterAll();
     ID id(const std::string& name) const;
     std::string name(const ID &id) const;
-    int count() const;
+    size_t count() const;
     Type* getRandom(); //remove
+//    Type* at(int index);
+//    ID idAt(int index);
 
 protected:
     Factory() {}
@@ -116,7 +118,7 @@ bool Factory<Id, T, Class>::registerIdName(const ID& id, const std::string& name
 template<typename Id, typename T, class Class>
 bool Factory<Id, T, Class>::unregisterCreator(const ID& id)
 {
-    DBG("Id [%d] unregistered", id);
+    //DBG("Id [%d] unregistered", id);
     ids.erase(std::remove(ids.begin(), ids.end(), id), ids.end());
     name_map.erase(id);
     return creators.erase(id) == 1;
@@ -142,7 +144,7 @@ std::string Factory<Id, T, Class>::name(const ID &id) const
 }
 
 template<typename Id, typename T, class Class>
-int Factory<Id, T, Class>::count() const
+size_t Factory<Id, T, Class>::count() const
 {
     //DBG("%p size = %d", &Factory<Id, T, Class>::Instance(), ids.size());
     return ids.size();
@@ -153,9 +155,9 @@ typename Factory<Id, T, Class>::Type* Factory<Id, T, Class>::getRandom()
 {
     srand(time(0));
     int index = rand() % ids.size();
-    DBG("random %d/%d", index, ids.size());
+    //DBG("random %d/%d", index, ids.size());
     int new_eid = ids.at(index);
-    DBG("id %d", new_eid);
+    //DBG("id %d", new_eid);
     return create(new_eid);
 }
 

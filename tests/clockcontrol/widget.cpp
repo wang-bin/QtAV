@@ -32,7 +32,7 @@ using namespace QtAV;
 Widget::Widget(QWidget *parent) :
     QWidget(parent)
 {
-    setWindowTitle("A test for [clock controlling]. QtAV" QTAV_VERSION_STR_LONG " wbsecg1@gmail.com");
+    setWindowTitle("A test for [clock controlling]. QtAV" + QtAV_Version_String_Long() + " wbsecg1@gmail.com");
     clock = new AVClock(this);
     clock->setClockType(AVClock::ExternalClock);
     QVBoxLayout *main_layout = new QVBoxLayout;

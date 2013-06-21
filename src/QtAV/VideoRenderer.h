@@ -43,14 +43,23 @@ struct AVCodecContext;
 struct AVFrame;
 class QImage;
 class QObject;
+class QPaintEvent;
 class QRect;
+class QWidget;
+class QGraphicsItem;
+
 namespace QtAV {
 
+typedef int VideoRendererId;
+
+class Filter;
+class OSDFilter;
 class VideoRendererPrivate;
 class Q_EXPORT VideoRenderer : public AVOutput
 {
     DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:
+    //TODO: original video size mode
     enum OutAspectRatioMode {
         RendererAspectRatio //Use renderer's aspect ratio, i.e. stretch to fit the renderer rect
       , VideoAspectRatio    //Use video's aspect ratio and align center in renderer.
@@ -58,11 +67,14 @@ public:
       //, AspectRatio4_3, AspectRatio16_9
     };
     enum Quality {
-
+        QualityDefault, //good
+        QualityBest,
+        QualityFastest
     };
 
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
+    virtual VideoRendererId id() const = 0;
     //for testing performance
     void scaleInRenderer(bool q);
     bool scaleInRenderer() const;
@@ -72,6 +84,9 @@ public:
     //If setOutAspectRatio(qreal) is used, then OutAspectRatioMode is CustomAspectRation
     void setOutAspectRatio(qreal ratio);
     qreal outAspectRatio() const;//
+
+    void setQuality(Quality q);
+    Quality quality() const;
 
     //TODO: unregister
     virtual bool open();
@@ -86,10 +101,25 @@ public:
     //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
     QRect videoRect() const;
 
-    bool useQPainter() const;
-    void useQPainter(bool qp);
+    QWidget* widget();
+    QGraphicsItem* graphicsItem();
+
+    //TODO: enable/disable = new a default for this vo engine or push back/remove from list
+    //filter: null means disable
+    //return the old filter. you may release the ptr manually
+    OSDFilter* setOSDFilter(OSDFilter *filter);
+    OSDFilter *osdFilter();
+    Filter* setSubtitleFilter(Filter *filter);
+    Filter* subtitleFilter();
 protected:
     VideoRenderer(VideoRendererPrivate &d);
+    virtual bool needUpdateBackground() const;
+    //TODO: drawXXX() is pure virtual
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
     /*!
      * This function is called whenever resizeRenderer() is called or aspect ratio is changed?
      * You can reimplement it to recreate the offscreen surface.
@@ -99,6 +129,8 @@ protected:
      * If you are doing offscreen painting in other threads, pay attention to thread safe
      */
     virtual void resizeFrame(int width, int height);
+    //TODO: parameter QRect?
+    void handlePaintEvent();
 private:
     friend class VideoThread;
 

@@ -73,6 +73,7 @@ void AudioThread::run()
         if (d.packets.isEmpty() && !d.stop) {
             d.stop = d.demux_end;
             if (d.stop) {
+                qDebug("audio queue empty and demux end. break audio thread");
                 break;
             }
         }

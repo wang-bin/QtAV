@@ -106,8 +106,10 @@ bool AVDemuxer::readFrame()
             if (!eof) {
                 eof = true;
                 started_ = false;
+                pkt->markEnd();
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
+                return true;
             }
             //pkt->data = QByteArray(); //flush
             //return true;
@@ -247,7 +249,7 @@ void AVDemuxer::seek(qreal q)
         return;
     }
     bool backward = t <= (int64_t)(pkt->pts*AV_TIME_BASE);
-    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", q, pkt->pts, t, duration(), backward);
+    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%lld", q, pkt->pts, t, duration(), backward);
 	//AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
 	int seek_flag =  (backward ? 0 : AVSEEK_FLAG_BACKWARD); //AVSEEK_FLAG_ANY
 	int ret = av_seek_frame(format_context, -1, t, seek_flag);
@@ -315,7 +317,11 @@ bool AVDemuxer::loadFile(const QString &fileName)
 {
     close();
     qDebug("all closed and reseted");
-    _file_name = fileName;
+    _file_name = fileName.trimmed();
+    if (_file_name.startsWith("mms:"))
+        _file_name.insert(3, 'h');
+    else if (_file_name.startsWith("file://"))
+        _file_name.remove("file://");
     //deprecated
     // Open an input stream and read the header. The codecs are not opened.
     //if(av_open_input_file(&format_context, _file_name.toLocal8Bit().constData(), NULL, 0, NULL)) {
@@ -342,7 +348,7 @@ bool AVDemuxer::loadFile(const QString &fileName)
 
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
-        qWarning("Can't open video: %s", av_err2str(ret));
+        qWarning("Can't open media: %s", av_err2str(ret));
         return false;
     }
     format_context->flags |= AVFMT_FLAG_GENPTS;
@@ -541,9 +547,10 @@ qint64 AVDemuxer::startTime() const
     return format_context->start_time;
 }
 
+//AVFrameContext use AV_TIME_BASE as time base.
 qint64 AVDemuxer::duration() const
 {
-    return format_context->duration;
+    return format_context->duration; //time base: AV_TIME_BASE
 }
 
 int AVDemuxer::bitRate() const

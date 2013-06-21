@@ -1,4 +1,48 @@
-version 1.1.9
+version 1.2.1    2013-06-19
+
+- Configurable video quality
+- Correct aspect ratio. Any value is supported
+- Fix some media playing problem
+- Fix crash if no audio
+- Fix d2d crash by setting multi-thread type
+- Fix WidgetRenderer can not update problem
+- Fix mem leak if renderer changed
+- player: volume control, display correct online tv name, correct display time
+
+
+version 1.2.0    2013-05-27
+
+- Better gui for the player example
+- Dynamically change renderer engine
+- Filter framework works. Filters on data and renderer support
+- XV rendering support
+- Fix some qmake project bugs
+- Other features, bug fix, code refine
+
+version 1.1.11   2013-03-15
+
+- OpenGL support. Only rendering now.
+- OSD support.
+- New shortcuts: Ctrl+O=>open, O=>switch OSD, Q/ESC=>quit
+- Command line option: -vo gl/d2d/gdi/qt, -h|--help
+- Fix wrong aspect ratio when resizing
+- Better qmake project
+- Building debian package support: make deb
+- Bug fix
+
+version 1.1.10   2013-03-04
+
+- Direct2D support. Auto check before compile
+- GDI+ renderer improved
+- Custom renderer template
+- Aspect ratio switch support
+- Config test support for both Qt4 and Qt5
+- Better build system
+- Auto update rc file
+- Some documents
+
+
+version 1.1.9    2013-02-22
 
 - Add network interrupt callback. Thanks Vito vcovito
 - QtAV and FFmpeg runtime version check

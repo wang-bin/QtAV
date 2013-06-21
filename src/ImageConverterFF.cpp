@@ -129,9 +129,12 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
         qDebug("convert failed: %d, %d", result_h, d.h_out);
         return false;
     }
+#if 0
     if (isInterlaced()) {
+        //deprecated
         avpicture_deinterlace(&d.picture, &d.picture, (PixelFormat)d.fmt_out, d.w_out, d.h_out);
     }
+#endif //0
     Q_UNUSED(result_h);
     return true;
 }

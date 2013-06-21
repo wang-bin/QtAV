@@ -8,10 +8,25 @@ tests.depends += libqtav
 
 OTHER_FILES += README.md TODO.txt Changelog
 OTHER_FILES += templates/vo.h templates/vo.cpp templates/COPYRIGHT.h templates/mkclass.sh
+OTHER_FILES += \
+	templates/base.h templates/base.cpp templates/base_p.h \
+	templates/derived.h templates/derived.cpp templates/derived_p.h \
+	templates/final.h templates/final.cpp
+#OTHER_FILES += config.test/mktest.sh
 
-#use the following lines when building as a sub-project, write cache to this project src dir.
-#if build this project alone and do not have sub-project depends on this lib, those lines are not necessary
-lessThan(QT_MAJOR_VERSION, 5):include(common.pri)
-build_dir = "BUILD_DIR=$$OUT_PWD"
-write_file($$PWD/.build.cache, build_dir)
 
+EssentialDepends = avutil avcodec avformat swscale
+OptionalDepends = portaudio direct2d gdiplus gl #openal
+unix {
+    isEqual(QT_MAJOR_VERSION, 4) {
+        OptionalDepends += xv
+    }
+}
+
+include(root.pri)
+
+PACKAGE_VERSION = 1.2.1
+PACKAGE_NAME= QtAV
+
+include(pack.pri)
+#packageSet(1.2.0, QtAV)

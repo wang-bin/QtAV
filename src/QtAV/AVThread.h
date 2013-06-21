@@ -32,6 +32,7 @@ class AVDecoder;
 class AVThreadPrivate;
 class AVOutput;
 class AVClock;
+class Statistics;
 class Q_EXPORT AVThread : public QThread
 {
     Q_OBJECT
@@ -39,6 +40,10 @@ class Q_EXPORT AVThread : public QThread
 public:
 	explicit AVThread(QObject *parent = 0);
     virtual ~AVThread();
+
+    //used for changing some components when running
+    void lock();
+    void unlock();
 
     void setClock(AVClock *clock);
     AVClock* clock() const;
@@ -59,6 +64,7 @@ public slots:
     virtual void stop();
     /*change pause state. the pause/continue action will do in the next loop*/
     void pause(bool p); //processEvents when waiting?
+    void nextAndPause(); //process 1 frame and pause
 
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
@@ -70,6 +76,10 @@ protected:
     bool tryPause();
 
     DPTR_DECLARE(AVThread)
+
+private:
+    void setStatistics(Statistics* statistics);
+    friend class AVPlayer;
 };
 }
 

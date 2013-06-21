@@ -24,10 +24,13 @@
 
 #include <QtAV/AVClock.h>
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/Statistics.h>
 
 namespace QtAV {
 
+class AVOutput;
 class AudioOutput;
+class AVThread;
 class AudioThread;
 class VideoThread;
 class AudioDecoder;
@@ -50,6 +53,7 @@ public:
     bool load(const QString& path);
     bool load();
     bool isLoaded() const;
+    qreal duration() const; //unit: s, This function may be removed in the future.
     /*
      * default: [fmt: PNG, dir: capture, name: basename]
      * replace the existing capture; return the replaced one
@@ -64,19 +68,25 @@ public:
 	bool isPlaying() const;
     bool isPaused() const;
     //this will install the default EventFilter. To use customized filter, register after this
-    VideoRenderer* setRenderer(VideoRenderer* renderer);
+    //TODO: addRenderer; renderers()
+    void setRenderer(VideoRenderer* renderer);
     VideoRenderer* renderer();
+    void setAudioOutput(AudioOutput* ao);
     AudioOutput* audio();
     void setMute(bool mute);
     bool isMute() const;
     /*only 1 event filter is available. the previous one will be removed. setPlayerEventFilter(0) will remove the event filter*/
     void setPlayerEventFilter(QObject *obj);
 
+    Statistics& statistics();
+    const Statistics& statistics() const;
 signals:
+    void paused(bool p);
     void started();
     void stopped();
 
 public slots:
+    void togglePause();
     void pause(bool p);
     void play(); //replay
     void stop();
@@ -89,7 +99,15 @@ public slots:
 protected slots:
     void resizeRenderer(const QSize& size);
 
-protected:
+private:
+    void initStatistics();
+    void setupAudioThread();
+    void setupVideoThread();
+    void setupAVThread(AVThread*& thread, AVCodecContext* ctx);
+    template<class Out>
+    void setAVOutput(Out*& pOut, Out* pNew, AVThread* thread);
+    //TODO: addAVOutput()
+
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
@@ -110,6 +128,7 @@ protected:
     //tODO: (un)register api
     QObject *event_filter;
     VideoCapture *video_capture;
+    Statistics mStatistics;
 };
 
 } //namespace QtAV

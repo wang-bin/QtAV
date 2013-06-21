@@ -22,7 +22,7 @@
 #ifndef QAV_GRAPHICSITEMRENDERER_H
 #define QAV_GRAPHICSITEMRENDERER_H
 
-#include <QtAV/ImageRenderer.h>
+#include <QtAV/QPainterRenderer.h>
 #include <QGraphicsWidget>
 
 //QGraphicsWidget will lose focus forever if TextItem inserted text. Why?
@@ -36,12 +36,13 @@
 namespace QtAV {
 
 class GraphicsItemRendererPrivate;
-class Q_EXPORT GraphicsItemRenderer : public GraphicsWidget, public ImageRenderer
+class Q_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRenderer
 {
     DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)
 public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
     virtual ~GraphicsItemRenderer();
+    virtual VideoRendererId id() const;
 
     QRectF boundingRect() const;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
@@ -50,6 +51,11 @@ protected:
     GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
 
     virtual bool write();
+    virtual bool needUpdateBackground() const;
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
 #if CONFIG_GRAPHICSWIDGET
     virtual bool event(QEvent *event);
 #else

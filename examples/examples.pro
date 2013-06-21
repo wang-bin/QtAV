@@ -1,12 +1,17 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    simpleplayer \
+    vo-qt \
+    player \
     videographicsitem \
     videowall
-
 #TODO: mingw cross
-win32 {
-SUBDIRS += player-gdi
-#msvc: SUBDIRS += player-d2d
+config_gdiplus {
+    SUBDIRS += vo-gdi
+}
+config_direct2d {
+    SUBDIRS += vo-d2d
+}
+config_gl {
+    SUBDIRS += vo-gl
 }

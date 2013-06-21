@@ -32,6 +32,7 @@ class VideoWall : public QObject
 public:
     explicit VideoWall(QObject *parent = 0);
     ~VideoWall();
+    void setVideoRendererTypeString(const QString& vt);
     void setRows(int n);
     void setCols(int n);
     int rows() const;
@@ -56,6 +57,7 @@ private:
     QList<QtAV::AVPlayer*> players;
     QWidget *view;
     QMenu *menu;
+    QString vid;
 };
 
 #endif // QTAV_VIDEOWALL_H

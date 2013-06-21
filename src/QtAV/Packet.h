@@ -36,13 +36,23 @@ class Q_EXPORT Packet
 public:
     Packet();
     inline bool isValid() const;
+    inline bool isEnd() const;
+    void markEnd();
+
     QByteArray data;
     qreal pts, duration;
+private:
+    static const qreal kEndPts;
 };
 
 bool Packet::isValid() const
 {
     return !data.isNull() && pts >= 0 && duration >= 0; //!data.isEmpty()?
+}
+
+bool Packet::isEnd() const
+{
+    return pts == kEndPts;
 }
 
 template <typename T> class StdQueue : public std::queue<T>
