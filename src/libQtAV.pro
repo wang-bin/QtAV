@@ -137,12 +137,9 @@ SDK_HEADERS *= \
     QtAV/dptr.h \
     QtAV/QtAV_Global.h \
     QtAV/AudioDecoder.h \
-    QtAV/AVThread.h \
-    QtAV/AudioThread.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
-    QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
@@ -160,7 +157,6 @@ SDK_HEADERS *= \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
-    QtAV/VideoThread.h \
     QtAV/FactoryDefine.h \
     QtAV/ImageConverterTypes.h \
     QtAV/Statistics.h \
@@ -170,6 +166,10 @@ SDK_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     QtAV/prepost.h \
+    QtAV/AVDemuxThread.h \
+    QtAV/AVThread.h \
+    QtAV/AudioThread.h \
+    QtAV/VideoThread.h \
     QtAV/QtAV_Compat.h \
     QtAV/EventFilter.h \
     QtAV/singleton.h \
