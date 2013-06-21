@@ -317,7 +317,11 @@ bool AVDemuxer::loadFile(const QString &fileName)
 {
     close();
     qDebug("all closed and reseted");
-    _file_name = fileName;
+    _file_name = fileName.trimmed();
+    if (_file_name.startsWith("mms:"))
+        _file_name.insert(3, 'h');
+    else if (_file_name.startsWith("file://"))
+        _file_name.remove("file://");
     //deprecated
     // Open an input stream and read the header. The codecs are not opened.
     //if(av_open_input_file(&format_context, _file_name.toLocal8Bit().constData(), NULL, 0, NULL)) {
