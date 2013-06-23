@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,22 +19,46 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QAV_AUDIODECODER_H
-#define QAV_AUDIODECODER_H
+#ifndef QTAV_AUDIORESAMPLER_P_H
+#define QTAV_AUDIORESAMPLER_P_H
 
-#include <QtAV/AVDecoder.h>
+
+#include <QtAV/QtAV_Compat.h>
+#include <QtCore/QByteArray>
 
 namespace QtAV {
 
-class AudioDecoderPrivate;
-class Q_EXPORT AudioDecoder : public AVDecoder
+class AudioResampler;
+class AudioResamplerPrivate : public DPtrPrivate<AudioResampler>
 {
-    DPTR_DECLARE_PRIVATE(AudioDecoder)
 public:
-    AudioDecoder();
-    virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
+    AudioResamplerPrivate():
+        in_channel_layout(0)
+      , out_channel_layout(0)
+      , in_nb_channels(0)
+      , out_nb_channels(0)
+      , in_samples(0)
+      , in_sample_rate(0)
+      , out_sample_rate(0)
+      , in_sample_format(AV_SAMPLE_FMT_NONE)
+      , out_sample_format(AV_SAMPLE_FMT_FLT)
+      , in_planes(0)
+      , out_planes(0)
+      , speed(1.0)
+    {
+
+    }
+
+    int in_channel_layout, out_channel_layout;
+    int in_nb_channels, out_nb_channels;
+    int in_samples;
+    int in_sample_rate, out_sample_rate;
+    int in_sample_format, out_sample_format; //AVSampleFormat
+    int in_planes, out_planes;
+    qreal speed;
+    QByteArray data_out;
 };
 
 } //namespace QtAV
-#endif // QAV_AUDIODECODER_H
+
+#endif // QTAV_AUDIORESAMPLER_P_H

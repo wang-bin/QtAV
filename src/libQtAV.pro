@@ -15,8 +15,7 @@ PROJECTROOT = $$PWD/..
 preparePaths($$OUT_PWD/../out)
 
 
-RESOURCES += \
-	../i18n/QtAV.qrc
+RESOURCES += ../i18n/QtAV.qrc
 
 win32 {
     RC_FILE = $${PROJECTROOT}/res/QtAV.rc
@@ -149,7 +148,6 @@ SDK_HEADERS *= \
     QtAV/dptr.h \
     QtAV/QtAV_Global.h \
     QtAV/AudioResampler.h \
-    QtAV/private/AudioResampler_p.h \
     QtAV/AudioDecoder.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \
@@ -189,6 +187,7 @@ HEADERS *= \
     QtAV/singleton.h \
     QtAV/factory.h \
     QtAV/private/AudioOutput_p.h \
+    QtAV/private/AudioResampler_p.h \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
@@ -201,7 +200,8 @@ HEADERS *= \
     QtAV/private/Direct2DRenderer_p.h \
     QtAV/private/GLWidgetRenderer_p.h \
     QtAV/private/GDIRenderer_p.h \
-    QtAV/private/XVRenderer_p.h
+    QtAV/private/XVRenderer_p.h \
+    QtAV/AudioResamplerTypes.h
 
 
 SDK_INCLUDE_FOLDER = QtAV

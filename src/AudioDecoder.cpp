@@ -22,19 +22,45 @@
 #include <QtAV/AudioDecoder.h>
 #include <private/AVDecoder_p.h>
 #include <QtAV/QtAV_Compat.h>
+#include <QtAV/AudioResampler.h>
+#include <QtAV/AudioResamplerTypes.h>
 
 namespace QtAV {
 
 class AudioDecoderPrivate : public AVDecoderPrivate
 {
 public:
-    //AudioDecoderPrivate();
+    AudioDecoderPrivate():
+        resampler(0)
+    {
+        resampler = AudioResamplerFactory::create(AudioResamplerId_FF);
+        resampler->setOutSampleFormat(AV_SAMPLE_FMT_FLT);
+    }
+    virtual ~AudioDecoderPrivate() {
+        if (resampler) {
+            delete resampler;
+            resampler = 0;
+        }
+    }
+
+    AudioResampler *resampler;
 };
 
 AudioDecoder::AudioDecoder()
     :AVDecoder(*new AudioDecoderPrivate)
 {
+}
 
+bool AudioDecoder::prepare()
+{
+    DPTR_D(AudioDecoder);
+    if (!d.codec_ctx || !d.resampler)
+        return false;
+    d.resampler->setInChannelLayout(d.codec_ctx->channel_layout);
+    d.resampler->setInChannels(d.codec_ctx->channels);
+    d.resampler->setInSampleFormat(d.codec_ctx->sample_fmt);
+    d.resampler->setInSampleRate(d.codec_ctx->sample_rate);
+    d.resampler->prepare();
 }
 
 //
@@ -49,6 +75,9 @@ bool AudioDecoder::decode(const QByteArray &encoded)
 //TODO: use AVPacket directly instead of Packet?
     int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
     av_free_packet(&packet);
+    if (ret == AVERROR(EAGAIN)) {
+        return false;
+    }
     if (ret < 0) {
         qWarning("[AudioDecoder] %s", av_err2str(ret));
         return false;
@@ -57,6 +86,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         qWarning("[AudioDecoder] got_frame_ptr=false");
         return false;
     }
+#if 0 || (!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)))
     int samples_with_channels = d.frame->nb_samples * d.codec_ctx->channels;
     int samples_with_channels_half = samples_with_channels/2;
     d.decoded.resize(samples_with_channels * sizeof(float));
@@ -66,7 +96,6 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     static const float kInt32_inv = 1.0f/2147483648.0f;
     //TODO: hwa
     //https://code.google.com/p/lavfilters/source/browse/decoder/LAVAudio/LAVAudio.cpp
-#if 1 || (!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)))
     switch (d.codec_ctx->sample_fmt) {
     case AV_SAMPLE_FMT_U8:
     {
@@ -166,6 +195,13 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         d.decoded.clear();
         break;
     }
+#else
+    d.resampler->setInSampes(d.frame->nb_samples);
+    if (!d.resampler->convert((const quint8**)d.frame->extended_data)) {
+        return false;
+    }
+    d.decoded = d.resampler->outData();
+    return true;
 #endif //1 || (!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)))
 
 /*

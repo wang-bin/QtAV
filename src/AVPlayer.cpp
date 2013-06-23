@@ -543,6 +543,7 @@ void AVPlayer::setupAudioThread()
         }
         qDebug("setCodecContext");
         audio_dec->setCodecContext(aCodecCtx);
+        audio_dec->prepare();
         //TODO: setAudioOutput() like vo
         if (!_audio) {
             qDebug("new audio output");
@@ -608,6 +609,7 @@ void AVPlayer::setupVideoThread()
             video_dec = new VideoDecoder();
         }
         video_dec->setCodecContext(vCodecCtx);
+        video_dec->prepare();
         if (!video_thread) {
             video_thread = new VideoThread(this);
             video_thread->setClock(clock);
