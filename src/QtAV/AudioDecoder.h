@@ -26,6 +26,7 @@
 
 namespace QtAV {
 
+class AudioResampler;
 class AudioDecoderPrivate;
 class Q_EXPORT AudioDecoder : public AVDecoder
 {
@@ -34,6 +35,7 @@ public:
     AudioDecoder();
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
+    AudioResampler *resampler();
 };
 
 } //namespace QtAV

@@ -99,13 +99,19 @@
     </message>
     <message>
         <location filename="../src/EventFilter.cpp" line="102"/>
+        <source>Ctrl+Up/Down: speed +/-
+</source>
+        <translation>Ctrl+光标上下: 速度增减</translation>
+    </message>
+    <message>
+        <location filename="../src/EventFilter.cpp" line="103"/>
         <source>-&amp;gt;/&amp;lt;-: seek forward/backward
 </source>
         <translation>光标左右: 快退 快进</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="103"/>
-        <location filename="../src/EventFilter.cpp" line="330"/>
+        <location filename="../src/EventFilter.cpp" line="104"/>
+        <location filename="../src/EventFilter.cpp" line="355"/>
         <source>Help</source>
         <translation>帮助</translation>
     </message>
@@ -220,22 +226,22 @@
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="326"/>
+        <location filename="../src/EventFilter.cpp" line="351"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="327"/>
+        <location filename="../src/EventFilter.cpp" line="352"/>
         <source>Open Url</source>
         <translation>打开 Url</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="329"/>
+        <location filename="../src/EventFilter.cpp" line="354"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="332"/>
+        <location filename="../src/EventFilter.cpp" line="357"/>
         <source>About Qt</source>
         <translation>关于 Qt</translation>
     </message>

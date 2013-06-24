@@ -80,4 +80,14 @@ bool AudioOutput::isMute() const
     return !isAvailable() || d_func().mute;
 }
 
+void AudioOutput::setSpeed(qreal speed)
+{
+    d_func().speed = speed;
+}
+
+qreal AudioOutput::speed() const
+{
+    return d_func().speed;
+}
+
 } //namespace QtAV

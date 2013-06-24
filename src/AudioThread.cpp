@@ -24,6 +24,7 @@
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AudioOutput.h>
+#include <QtAV/AudioResampler.h>
 #include <QtAV/AVClock.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QCoreApplication>
@@ -112,6 +113,16 @@ void AudioThread::run()
             d.clock->updateValue(pkt.pts);
         }
         //DO NOT decode and convert if ao is not available or mute!
+        bool has_ao = ao && ao->isAvailable();
+        //if (!has_ao) //do not decode?
+
+        if (has_ao && dec->resampler()) {
+            if (dec->resampler()->speed() != ao->speed()) {
+                qDebug("decoder set speed: %.2f", ao->speed());
+                dec->resampler()->setSpeed(ao->speed());
+                dec->resampler()->prepare();
+            }
+        }
         if (dec->decode(pkt.data)) {
             QByteArray decoded(dec->data());
             int decodedSize = decoded.size();
@@ -121,7 +132,7 @@ void AudioThread::run()
                 int chunk = qMin(decodedSize, int(max_len*csf));
                 d.clock->updateDelay(delay += (qreal)chunk/(qreal)csf);
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
-                if (ao && ao->isAvailable()) {
+                if (has_ao) {
                     if (!ao->isMute()) {
                         decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                         qreal vol = ao->volume();

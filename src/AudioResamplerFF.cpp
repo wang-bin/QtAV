@@ -99,7 +99,8 @@ bool AudioResamplerFF::prepare()
     if (d.speed <= 0)
         d.speed = 1.0;
     if (d.speed != 1.0)
-        d.out_sample_rate = qreal(d.out_sample_rate)/d.speed;
+        d.out_sample_rate = int(qreal(d.out_sample_rate)/d.speed);
+    qDebug("swr speed=%.2f", d.speed);
     if (!d.in_channels) {
         if (!d.in_channel_layout) { //FIXME: already return
             d.in_channels = 2;

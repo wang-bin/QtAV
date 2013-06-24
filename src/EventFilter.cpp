@@ -99,6 +99,7 @@ void EventFilter::help()
                        "<p>" + tr("M: mute on/off\n") + "</p>"
                        "<p>" + tr("C: capture video") + "</p>"
                        "<p>" + tr("Up/Down: volume +/-\n") + "</p>"
+                       "<p>" + tr("Ctrl+Up/Down: speed +/-\n") + "</p>"
                        "<p>" + tr("-&gt;/&lt;-: seek forward/backward\n");
     QMessageBox::about(0, tr("Help"), help);
 }
@@ -207,8 +208,19 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                 w->showFullScreen();
         }
             break;
-        case Qt::Key_Up:
-            if (player->audio()) {
+        case Qt::Key_Up: {
+            AudioOutput *ao = player->audio();
+            if (modifiers == Qt::ControlModifier) {
+                qDebug("increase speed");
+                if (ao && ao->isAvailable()) {
+                    qDebug("set speed %.2f =>> %.2f", ao->speed(), ao->speed()+0.1);
+                    ao->setSpeed(ao->speed() + 0.05);
+                } else {
+                    //clock speed
+                }
+                return true;
+            }
+            if (ao && ao->isAvailable()) {
                 qreal v = player->audio()->volume();
                 if (v > 0.5)
                     v += 0.1;
@@ -219,9 +231,21 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                 player->audio()->setVolume(v);
                 qDebug("vol = %.3f", player->audio()->volume());
             }
+        }
             break;
-        case Qt::Key_Down:
-            if (player->audio()) {
+        case Qt::Key_Down: {
+            AudioOutput *ao = player->audio();
+            if (modifiers == Qt::ControlModifier) {
+                qDebug("decrease speed");
+                if (ao && ao->isAvailable()) {
+                    qDebug("set speed %.2f =>> %.2f", ao->speed(), ao->speed()-0.1);
+                    ao->setSpeed(qMax(ao->speed() - 0.05, 0.0));
+                } else {
+                    //clock speed
+                }
+                return true;
+            }
+            if (ao && ao->isAvailable()) {
                 qreal v = player->audio()->volume();
                 if (v > 0.5)
                     v -= 0.1;
@@ -232,6 +256,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                 player->audio()->setVolume(v);
                 qDebug("vol = %.3f", player->audio()->volume());
             }
+        }
             break;
         case Qt::Key_O: {
             if (modifiers == Qt::ControlModifier) {

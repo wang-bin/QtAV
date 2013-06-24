@@ -210,4 +210,9 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     return !d.decoded.isEmpty();
 }
 
+AudioResampler* AudioDecoder::resampler()
+{
+    return d_func().resampler;
+}
+
 } //namespace QtAV
