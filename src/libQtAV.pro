@@ -5,7 +5,6 @@ QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG *= qtav-buildlib
-CONFIG *= swresample
 
 #var with '_' can not pass to pri?
 STATICLINK = 0
@@ -42,11 +41,11 @@ TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 DEFINES += __STDC_CONSTANT_MACROS
 
 LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
-swresample {
+config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
     LIBS += -lswresample
 }
-avresample {
+config_avresample {
     DEFINES += QTAV_HAVE_AVRESAMPLE=1
     LIBS += -lavresample
 }
