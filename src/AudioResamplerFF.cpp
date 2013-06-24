@@ -63,7 +63,9 @@ bool AudioResamplerFF::convert(const quint8 **data)
 #endif //HAVE_SWR_GET_DELAY
 		in_samples_per_channel
                 , d.out_sample_rate, d.in_sample_rate, AV_ROUND_UP);
-    int out_size = av_samples_get_buffer_size(NULL/*out linesize*/, d.out_nb_channels, out_samples_per_channel, (AVSampleFormat)d.out_sample_format, 0/*alignment default*/);
+    //why crash for swr 0.5?
+    //int out_size = av_samples_get_buffer_size(NULL/*out linesize*/, d.out_nb_channels, out_samples_per_channel, (AVSampleFormat)d.out_sample_format, 0/*alignment default*/);
+    int out_size = out_samples_per_channel*d.out_nb_channels*av_get_bytes_per_sample((AVSampleFormat)d.out_sample_format);
     if (out_size > d.data_out.size())
         d.data_out.resize(out_size);
     uint8_t *out[] = { ( uint8_t * )d.data_out.data() };
