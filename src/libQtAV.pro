@@ -6,7 +6,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG *= qtav-buildlib
 CONFIG *= swresample
-#CONFIG *= avresample
 
 #var with '_' can not pass to pri?
 STATICLINK = 0

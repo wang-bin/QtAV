@@ -56,7 +56,11 @@ bool AudioResamplerFF::convert(const quint8 **data)
     int64_t a = qMax(d.in_sample_rate, d.out_sample_rate);
     int in_samples_per_channel = d.in_samples/d.in_nb_channels;
     int out_samples_per_channel = av_rescale_rnd(
-                swr_get_delay(d.context, a) + 
+#if HAVE_SWR_GET_DELAY
+                swr_get_delay(d.context, a) +
+#else
+                128 +
+#endif //HAVE_SWR_GET_DELAY
 		in_samples_per_channel
                 , d.out_sample_rate, d.in_sample_rate, AV_ROUND_UP);
     int out_size = av_samples_get_buffer_size(NULL/*out linesize*/, d.out_nb_channels, out_samples_per_channel, (AVSampleFormat)d.out_sample_format, 0/*alignment default*/);
