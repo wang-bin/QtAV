@@ -55,7 +55,7 @@ QPaintEngine* XVRenderer::paintEngine() const
 void XVRenderer::convertData(const QByteArray &data)
 {
     DPTR_D(XVRenderer);
-    if (!d.prepairImage(d.src_width, d.src_height))
+    if (!d.prepareImage(d.src_width, d.src_height))
         return;
     //TODO: if date is deep copied, mutex can be avoided
     QMutexLocker locker(&d.img_mutex);
@@ -144,7 +144,7 @@ void XVRenderer::showEvent(QShowEvent *event)
      * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you
      * don't do anything here, the widget content will never be updated.
      */
-    d.prepairDeviceResource();
+    d.prepareDeviceResource();
 }
 
 bool XVRenderer::write()

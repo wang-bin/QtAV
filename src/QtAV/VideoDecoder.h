@@ -33,6 +33,7 @@ class Q_EXPORT VideoDecoder : public AVDecoder
     DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:
     VideoDecoder();
+    //virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
     //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
     //size: the decoded(actually then resized in ImageConverter) frame size

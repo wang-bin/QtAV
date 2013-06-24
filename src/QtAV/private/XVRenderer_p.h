@@ -119,7 +119,7 @@ public:
         XFree(xv_image_formats);
         return false;
     }
-    bool prepairDeviceResource() {
+    bool prepareDeviceResource() {
         gc = XCreateGC(display, q_func().winId(), 0, 0);
         if (!gc) {
             available = false;
@@ -130,7 +130,7 @@ public:
         return true;
     }
 
-    bool prepairImage(int w, int h) {
+    bool prepareImage(int w, int h) {
         //TODO: check shm
         if (xv_image_width == w && xv_image_height == h && xv_image)
             return true;
