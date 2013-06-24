@@ -43,6 +43,7 @@ DEFINES += __STDC_CONSTANT_MACROS
 LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
+    SOURCES += AudioResamplerFF.cpp
     LIBS += -lswresample
 }
 config_avresample {
@@ -116,7 +117,6 @@ SOURCES += \
     AudioDecoder.cpp \
     AudioOutput.cpp \
     AudioResampler.cpp \
-    AudioResamplerFF.cpp \
     AVDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \

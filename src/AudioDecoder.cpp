@@ -34,7 +34,8 @@ public:
         resampler(0)
     {
         resampler = AudioResamplerFactory::create(AudioResamplerId_FF);
-        resampler->setOutSampleFormat(AV_SAMPLE_FMT_FLT);
+        if (resampler)
+            resampler->setOutSampleFormat(AV_SAMPLE_FMT_FLT);
     }
     virtual ~AudioDecoderPrivate() {
         if (resampler) {
@@ -54,13 +55,16 @@ AudioDecoder::AudioDecoder()
 bool AudioDecoder::prepare()
 {
     DPTR_D(AudioDecoder);
-    if (!d.codec_ctx || !d.resampler)
+    if (!d.codec_ctx)
         return false;
+    if (!d.resampler)
+        return true;
     d.resampler->setInChannelLayout(d.codec_ctx->channel_layout);
     d.resampler->setInChannels(d.codec_ctx->channels);
     d.resampler->setInSampleFormat(d.codec_ctx->sample_fmt);
     d.resampler->setInSampleRate(d.codec_ctx->sample_rate);
     d.resampler->prepare();
+    return true;
 }
 
 //
@@ -86,7 +90,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         qWarning("[AudioDecoder] got_frame_ptr=false");
         return false;
     }
-#if 0 || (!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)))
+#if !(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE))
     int samples_with_channels = d.frame->nb_samples * d.codec_ctx->channels;
     int samples_with_channels_half = samples_with_channels/2;
     d.decoded.resize(samples_with_channels * sizeof(float));

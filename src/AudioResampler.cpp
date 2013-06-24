@@ -31,7 +31,9 @@ extern void RegisterAudioResamplerFF_Man();
 
 void AudioResampler_RegisterAll()
 {
+#if QTAV_HAVE(SWRESAMPLE) || QTAV_HAVE(AVRESAMPLE)
     RegisterAudioResamplerFF_Man();
+#endif
 }
 
 AudioResampler::AudioResampler()
