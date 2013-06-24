@@ -116,12 +116,12 @@ void AudioResampler::setOutChannelLayout(int ocl)
 
 void AudioResampler::setInChannels(int channels)
 {
-    d_func().in_nb_channels = channels;
+    d_func().in_channels = channels;
 }
 
 void AudioResampler::setOutChannels(int channels)
 {
-    d_func().out_nb_channels = channels;
+    d_func().out_channels = channels;
 }
 
 } //namespace QtAV

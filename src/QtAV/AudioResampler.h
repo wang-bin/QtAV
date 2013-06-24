@@ -46,6 +46,7 @@ public:
     //speed: >0, default is 1
     void setSpeed(qreal speed); //out_sample_rate = out_sample_rate/speed
     qreal speed() const;
+    //decoded frame's samples/channel
     void setInSampesPerChannel(int samples);
     //channel count can be computed by av_get_channel_layout_nb_channels(chl)
     void setInSampleRate(int isr);
@@ -53,7 +54,7 @@ public:
     //TODO: enum
     void setInSampleFormat(int isf);
     void setOutSampleFormat(int osf); //set by user. default is in
-    //TODO: enum
+    //TODO: enum. layout will be set to the default layout of the channels if not defined
     void setInChannelLayout(int icl);
     void setOutChannelLayout(int ocl); //default is in
     void setInChannels(int channels);
