@@ -46,7 +46,7 @@ public:
     //speed: >0, default is 1
     void setSpeed(qreal speed); //out_sample_rate = out_sample_rate/speed
     qreal speed() const;
-    void setInSampes(int samples);
+    void setInSampesPerChannel(int samples);
     //channel count can be computed by av_get_channel_layout_nb_channels(chl)
     void setInSampleRate(int isr);
     void setOutSampleRate(int osr); //default is in

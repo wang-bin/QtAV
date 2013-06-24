@@ -37,7 +37,7 @@ public:
       , out_channel_layout(0)
       , in_nb_channels(0)
       , out_nb_channels(0)
-      , in_samples(0)
+      , in_samples_per_channel(0)
       , in_sample_rate(0)
       , out_sample_rate(0)
       , in_sample_format(AV_SAMPLE_FMT_NONE)
@@ -51,7 +51,7 @@ public:
 
     int in_channel_layout, out_channel_layout;
     int in_nb_channels, out_nb_channels;
-    int in_samples;
+    int in_samples_per_channel;
     int in_sample_rate, out_sample_rate;
     int in_sample_format, out_sample_format; //AVSampleFormat
     int in_planes, out_planes;

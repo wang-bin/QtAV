@@ -200,21 +200,13 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         break;
     }
 #else
-    d.resampler->setInSampes(d.frame->nb_samples);
+    d.resampler->setInSampesPerChannel(d.frame->nb_samples);
     if (!d.resampler->convert((const quint8**)d.frame->extended_data)) {
         return false;
     }
     d.decoded = d.resampler->outData();
     return true;
-#endif //1 || (!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)))
-
-/*
-    if ( pts )
-        clock = pts;
-    else
-        pts = clock;
-    clock += (double)d.frame->nb_samples / (double)d.codec_ctx->sample_rate;
-*/
+#endif //!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE))
     return !d.decoded.isEmpty();
 }
 

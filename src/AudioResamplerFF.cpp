@@ -53,28 +53,27 @@ bool AudioResamplerFF::convert(const quint8 **data)
      * swr_get_delay: Especially when downsampling by a large value, the output sample rate may be a poor choice to represent
      * the delay, similarly  upsampling and the input sample rate.
      */
-    int64_t a = qMax(d.in_sample_rate, d.out_sample_rate);
-    int in_samples_per_channel = d.in_samples/d.in_nb_channels;
     int out_samples_per_channel = av_rescale_rnd(
 #if HAVE_SWR_GET_DELAY
-                swr_get_delay(d.context, a) +
+                swr_get_delay(d.context, qMax(d.in_sample_rate, d.out_sample_rate)) +
 #else
-                128 +
+                128 + //TODO: QtAV_Compat
 #endif //HAVE_SWR_GET_DELAY
-		in_samples_per_channel
+                d.in_samples_per_channel //TODO: wanted_samples(ffplay mplayer2)
                 , d.out_sample_rate, d.in_sample_rate, AV_ROUND_UP);
-    //why crash for swr 0.5?
+    //TODO: why crash for swr 0.5?
     //int out_size = av_samples_get_buffer_size(NULL/*out linesize*/, d.out_nb_channels, out_samples_per_channel, (AVSampleFormat)d.out_sample_format, 0/*alignment default*/);
     int out_size = out_samples_per_channel*d.out_nb_channels*av_get_bytes_per_sample((AVSampleFormat)d.out_sample_format);
     if (out_size > d.data_out.size())
         d.data_out.resize(out_size);
-    uint8_t *out[] = { ( uint8_t * )d.data_out.data() };
+    uint8_t *out[] = {(uint8_t*)d.data_out.data()};
     //number of input/output samples available in one channel
-    int converted_samplers_per_channel = swr_convert(d.context, out, out_samples_per_channel, data, in_samples_per_channel);
+    int converted_samplers_per_channel = swr_convert(d.context, out, out_samples_per_channel, data, d.in_samples_per_channel);
     if (converted_samplers_per_channel < 0) {
         qWarning("[AudioResamplerFF] %s", av_err2str(converted_samplers_per_channel));
         return false;
     }
+    //TODO: converted_samplers_per_channel==out_samples_per_channel means out_size is too small, see mplayer2
     //converted_samplers_per_channel*d.out_nb_channels*av_get_bytes_per_sample(d.out_sample_format)
     //av_samples_get_buffer_size(0, d.out_nb_channels, converted_samplers_per_channel, d.out_sample_format, 0)
     //if (converted_samplers_per_channel != out_size)

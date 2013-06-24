@@ -78,9 +78,9 @@ qreal AudioResampler::speed() const
     return d_func().speed;
 }
 
-void AudioResampler::setInSampes(int samples)
+void AudioResampler::setInSampesPerChannel(int samples)
 {
-    d_func().in_samples = samples;
+    d_func().in_samples_per_channel = samples;
 }
 
 //channel count can be computed by av_get_channel_layout_nb_channels(chl)
