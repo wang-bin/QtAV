@@ -19,6 +19,10 @@ gcc in unix shell environment(including mingw with sh.exe):
     export CPATH=ffmpeg_path/include:portaudio_path/include:$CPATH
     export LIBRARY_PATH=ffmpeg_path/include:portaudio_path/lib:$LIBRARY_PATH
 
+The project includes libQtAV.pri will not add linking options about FFmpeg etc., so the linker may find the depended libraries from $LD_LIBRARY_PATH:
+
+    export LD_LIBRARY_PATH=ffmpeg_path/lib:portaudio_path/lib:$LD_LIBRARY_PATH
+
 gcc in windows cmd environment without sh.exe
 
     set CPATH=ffmpeg_path\include;portaudio_path\include;%CPATH%

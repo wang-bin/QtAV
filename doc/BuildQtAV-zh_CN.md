@@ -19,6 +19,10 @@ unix shell环境下的 gcc (也包括环境中有sh.exe的mingw环境):
     export CPATH=ffmpeg_path/include:portaudio_path/include:$CPATH
     export LIBRARY_PATH=ffmpeg_path/include:portaudio_path/lib:$LIBRARY_PATH
 
+由于包含 libQtAV.pri 的工程不会添加 FFmpeg 等相关的链接参数，所以链接器可能会从 $LD_LIBRARY_PATH 中去找 QtAV 库的依赖库:
+
+    export LD_LIBRARY_PATH=ffmpeg_path/lib:portaudio_path/lib:$LD_LIBRARY_PATH
+
 windows 无sh.exe的环境下的 gcc
 
     set CPATH=ffmpeg_path\include;portaudio_path\include;%CPATH%
