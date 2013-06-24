@@ -1,6 +1,8 @@
+#ifndef QTAV_AUDIORESAMPLERTYPES_H
+#define QTAV_AUDIORESAMPLERTYPES_H
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    VideoRendererTypes: type id and manually id register function
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,22 +21,14 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QAV_AUDIODECODER_H
-#define QAV_AUDIODECODER_H
-
-#include <QtAV/AVDecoder.h>
+#include <QtAV/AudioResampler.h>
 
 namespace QtAV {
 
-class AudioDecoderPrivate;
-class Q_EXPORT AudioDecoder : public AVDecoder
-{
-    DPTR_DECLARE_PRIVATE(AudioDecoder)
-public:
-    AudioDecoder();
-    virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
-};
+static AudioResamplerId AudioResamplerId_FF = 0;
+
+Q_EXPORT void AudioResampler_RegisterAll();
 
 } //namespace QtAV
-#endif // QAV_AUDIODECODER_H
+
+#endif // QTAV_AUDIORESAMPLERTYPES_H

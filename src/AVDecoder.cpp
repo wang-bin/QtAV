@@ -59,6 +59,11 @@ bool AVDecoder::isAvailable() const
     return d_func().codec_ctx != 0;
 }
 
+bool AVDecoder::prepare()
+{
+    return true;
+}
+
 bool AVDecoder::decode(const QByteArray &encoded)
 {
     Q_UNUSED(encoded);

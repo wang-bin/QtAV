@@ -42,6 +42,7 @@ public:
     AVCodecContext* codecContext() const;
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
+    virtual bool prepare(); //if resampler or image converter set, call it
     virtual bool decode(const QByteArray& encoded) = 0; //decode AVPacket?
     QByteArray data() const; //decoded data
 

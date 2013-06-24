@@ -31,7 +31,11 @@ namespace QtAV {
 class Q_EXPORT AVDecoderPrivate : public DPtrPrivate<AVDecoder>
 {
 public:
-    AVDecoderPrivate():codec_ctx(0),frame(0) {
+    AVDecoderPrivate():
+        codec_ctx(0)
+      , frame(0)
+      , got_frame_ptr(0)
+    {
         frame = avcodec_alloc_frame();
     }
     virtual ~AVDecoderPrivate() {

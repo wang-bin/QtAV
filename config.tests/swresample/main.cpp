@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -18,23 +18,9 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#include <libswresample/swresample.h>
 
-#ifndef QAV_AUDIODECODER_H
-#define QAV_AUDIODECODER_H
-
-#include <QtAV/AVDecoder.h>
-
-namespace QtAV {
-
-class AudioDecoderPrivate;
-class Q_EXPORT AudioDecoder : public AVDecoder
+int main()
 {
-    DPTR_DECLARE_PRIVATE(AudioDecoder)
-public:
-    AudioDecoder();
-    virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
-};
-
-} //namespace QtAV
-#endif // QAV_AUDIODECODER_H
+	return 0;
+}
