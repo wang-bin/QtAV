@@ -131,7 +131,7 @@ bool AudioResamplerFF::prepare()
                                    , 0 /*log_offset*/, 0 /*log_ctx*/);
     if (d.context) {
         int ret = swr_init(d.context);
-        if (!ret) {
+        if (ret < 0) {
             qWarning("swr_init failed: %s", av_err2str(ret));
             return false;
         }
