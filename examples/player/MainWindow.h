@@ -37,6 +37,7 @@ private slots:
     void help();
     void openUrl();
     void switchAspectRatio(QAction* action);
+    void setRepeat(QAction* action);
     void changeVO(QAction* action);
     void playOnlineVideo(QAction* action);
     void processPendingActions();
@@ -70,6 +71,7 @@ private:
     Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
     QMenu *mpMenu;
     QAction *mpVOAction, *mpARAction; //remove mpVOAction if vo.id() is supported
+    QAction *mpRepeatAction;
     QList<QAction*> mVOActions;
 
     QtAV::AVClock *mpClock;
