@@ -104,12 +104,12 @@ void AudioResampler::setOutSampleFormat(int osf)
     d_func().out_sample_format = osf;
 }
 
-void AudioResampler::setInChannelLayout(int icl)
+void AudioResampler::setInChannelLayout(qint64 icl)
 {
     d_func().in_channel_layout = icl;
 }
 
-void AudioResampler::setOutChannelLayout(int ocl)
+void AudioResampler::setOutChannelLayout(qint64 ocl)
 {
     d_func().out_channel_layout = ocl;
 }

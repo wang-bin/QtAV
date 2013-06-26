@@ -55,8 +55,8 @@ public:
     void setInSampleFormat(int isf);
     void setOutSampleFormat(int osf); //set by user. default is in
     //TODO: enum. layout will be set to the default layout of the channels if not defined
-    void setInChannelLayout(int icl);
-    void setOutChannelLayout(int ocl); //default is in
+    void setInChannelLayout(qint64 icl);
+    void setOutChannelLayout(qint64 ocl); //default is in
     void setInChannels(int channels);
     void setOutChannels(int channels);
     //Are getter functions required?

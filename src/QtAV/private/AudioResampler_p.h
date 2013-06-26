@@ -50,7 +50,7 @@ public:
 
     }
 
-    int in_channel_layout, out_channel_layout;
+    qint64 in_channel_layout, out_channel_layout;
     int in_channels, out_channels;
     int in_samples_per_channel, out_samples_per_channel;
     int in_sample_rate, out_sample_rate;
