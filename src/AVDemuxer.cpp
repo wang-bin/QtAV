@@ -116,6 +116,8 @@ bool AVDemuxer::readFrame()
             return false; //frames after eof are eof frames
         } else if (ret == AVERROR_INVALIDDATA) {
             qWarning("AVERROR_INVALIDDATA");
+        } else if (ret == AVERROR(EAGAIN)) {
+            return true;
         }
         qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         return false;

@@ -21,6 +21,7 @@
 #include <QInputDialog>
 #include <QMenu>
 #include "Button.h"
+#include "ClickableMenu.h"
 #include "Slider.h"
 
 #define SLIDER_ON_VO 0
@@ -222,6 +223,18 @@ void MainWindow::setupUi()
     mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
+    subMenu = new ClickableMenu(tr("Repeat"));
+    mpMenu->addMenu(subMenu);
+    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(setRepeat(QAction*)));
+    mpRepeatAction = subMenu->addAction(tr("No"));
+    mpRepeatAction->setData(0);
+    subMenu->addAction(tr("Single"))->setData(1);
+    subMenu->addAction(tr("All"))->setData(2);
+    foreach(QAction* action, subMenu->actions()) {
+        action->setCheckable(true);
+    }
+    mpRepeatAction->setChecked(true);
+
     subMenu = new QMenu(tr("Aspect ratio"), mpMenu);
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(switchAspectRatio(QAction*)));
@@ -236,7 +249,7 @@ void MainWindow::setupUi()
     }
     mpARAction->setChecked(true);
 
-    subMenu = new QMenu(tr("Renderer"));
+    subMenu = new ClickableMenu(tr("Renderer"));
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeVO(QAction*)));
     //TODO: AVOutput.name,detail(description). check whether it is available
@@ -455,6 +468,9 @@ void MainWindow::onStopPlay()
     mpTimeSlider->setDisabled(true);
     mpCurrent->setText("00:00:00");
     mpDuration->setText("00:00:00");
+    if (mpRepeatAction->data().toInt() == 1) {
+        play(mFile);
+    }
 }
 
 void MainWindow::seekToMSec(int msec)
@@ -564,6 +580,15 @@ void MainWindow::switchAspectRatio(QAction *action)
     mpARAction->setChecked(false);
     mpARAction = action;
     mpARAction->setChecked(true);
+}
+
+void MainWindow::setRepeat(QAction *action)
+{
+    if (action != mpRepeatAction) {
+        mpRepeatAction->setChecked(false);
+        mpRepeatAction = action;
+    }
+    mpRepeatAction->setChecked(true);
 }
 
 void MainWindow::playOnlineVideo(QAction *action)

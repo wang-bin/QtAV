@@ -34,6 +34,12 @@ void ffmpeg_version_print()
         { "avformat", LIBAVFORMAT_VERSION_INT, avformat_version()},
         { "avutil", LIBAVUTIL_VERSION_INT, avutil_version()},
         { "swscale", LIBSWSCALE_VERSION_INT, swscale_version()},
+#if QTAV_HAVE(SWRESAMPLE)
+        //{ "swresample", LIBSWRESAMPLE_VERSION_INT, swresample_version()}, //swresample_version not declared in 0.9
+#endif //QTAV_HAVE(SWRESAMPLE)
+#if QTAV_HAVE(AVRESAMPLE)
+        { "avresample", LIBAVRESAMPLE_VERSION_INT, avresample_version()},
+#endif //QTAV_HAVE(AVRESAMPLE)
         { 0, 0, 0}
     };
     for (int i = 0; components[i].lib != 0; ++i) {

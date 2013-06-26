@@ -38,10 +38,6 @@
 Q_EXPORT unsigned QtAV_Version();
 Q_EXPORT QString QtAV_Version_String();
 Q_EXPORT QString QtAV_Version_String_Long();
-
-// default network timeout in ms
-#define QTAV_DEFAULT_NETWORK_TIMEOUT 30000
-
 namespace QtAV {
 Q_EXPORT void about(); //popup a dialog
 Q_EXPORT void aboutFFmpeg();
@@ -51,9 +47,12 @@ Q_EXPORT void aboutQtAV();
 Q_EXPORT QString aboutQtAV_PlainText();
 Q_EXPORT QString aboutQtAV_HTML();
 }
+
+// default network timeout in ms
+#define QTAV_DEFAULT_NETWORK_TIMEOUT 30000
+#define QTAV_HAVE(FEATURE) (defined(QTAV_HAVE_##FEATURE) && QTAV_HAVE_##FEATURE)
+
 //TODO: always inline
-
-
 /* --gnu option of the RVCT compiler also defines __GNUC__ */
 #if defined(Q_CC_GNU) && !defined(Q_CC_RVCT)
 #define GCC_VERSION_AT_LEAST(major, minor, patch) \

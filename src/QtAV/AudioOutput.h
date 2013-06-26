@@ -44,6 +44,8 @@ public:
     qreal volume() const;
     void setMute(bool yes);
     bool isMute() const;
+    void setSpeed(qreal speed);
+    qreal speed() const;
 
 protected:
     AudioOutput(AudioOutputPrivate& d);

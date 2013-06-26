@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,38 +19,47 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QAV_DECODER_H
-#define QAV_DECODER_H
+#ifndef QTAV_AUDIORESAMPLER_P_H
+#define QTAV_AUDIORESAMPLER_P_H
 
-#include <QtAV/QtAV_Global.h>
 
-class QByteArray;
-struct AVCodecContext;
-struct AVFrame;
+#include <QtAV/QtAV_Compat.h>
+#include <QtCore/QByteArray>
 
 namespace QtAV {
 
-class AVDecoderPrivate;
-class Q_EXPORT AVDecoder
+class AudioResampler;
+class AudioResamplerPrivate : public DPtrPrivate<AudioResampler>
 {
-    DPTR_DECLARE_PRIVATE(AVDecoder)
 public:
-    AVDecoder();
-    virtual ~AVDecoder();
-    void flush();
-    void setCodecContext(AVCodecContext* codecCtx); //protected
-    AVCodecContext* codecContext() const;
-    /*not available if AVCodecContext == 0*/
-    bool isAvailable() const;
-    virtual bool prepare(); //if resampler or image converter set, call it
-    virtual bool decode(const QByteArray& encoded) = 0; //decode AVPacket?
-    QByteArray data() const; //decoded data
+    AudioResamplerPrivate():
+        in_channel_layout(0)
+      , out_channel_layout(0)
+      , in_channels(0)
+      , out_channels(0)
+      , in_samples_per_channel(0)
+      , out_samples_per_channel(0)
+      , in_sample_rate(0)
+      , out_sample_rate(0)
+      , in_sample_format(AV_SAMPLE_FMT_NONE)
+      , out_sample_format(AV_SAMPLE_FMT_FLT)
+      , in_planes(0)
+      , out_planes(0)
+      , speed(1.0)
+    {
 
-protected:
-    AVDecoder(AVDecoderPrivate& d);
+    }
 
-    DPTR_DECLARE(AVDecoder)
+    qint64 in_channel_layout, out_channel_layout;
+    int in_channels, out_channels;
+    int in_samples_per_channel, out_samples_per_channel;
+    int in_sample_rate, out_sample_rate;
+    int in_sample_format, out_sample_format; //AVSampleFormat
+    int in_planes, out_planes;
+    qreal speed;
+    QByteArray data_out;
 };
 
 } //namespace QtAV
-#endif // QAV_DECODER_H
+
+#endif // QTAV_AUDIORESAMPLER_P_H

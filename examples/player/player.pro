@@ -10,11 +10,13 @@ preparePaths($$OUT_PWD/../../out)
 SOURCES += main.cpp \
     MainWindow.cpp \
     Button.cpp \
+    ClickableMenu.cpp \
     Slider.cpp
 
 HEADERS += \
     MainWindow.h \
     Button.h \
+    ClickableMenu.h \
     Slider.h
 
 tv.files = res/tv.ini

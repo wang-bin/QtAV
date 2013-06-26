@@ -13,8 +13,7 @@ PROJECTROOT = $$PWD/..
 preparePaths($$OUT_PWD/../out)
 
 
-RESOURCES += \
-	../i18n/QtAV.qrc
+RESOURCES += ../i18n/QtAV.qrc
 
 win32 {
     RC_FILE = $${PROJECTROOT}/res/QtAV.rc
@@ -42,6 +41,15 @@ TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 DEFINES += __STDC_CONSTANT_MACROS
 
 LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
+config_swresample {
+    DEFINES += QTAV_HAVE_SWRESAMPLE=1
+    SOURCES += AudioResamplerFF.cpp
+    LIBS += -lswresample
+}
+config_avresample {
+    DEFINES += QTAV_HAVE_AVRESAMPLE=1
+    LIBS += -lavresample
+}
 
 ipp-link {
     DEFINES += IPP_LINK
@@ -108,6 +116,7 @@ SOURCES += \
     AVThread.cpp \
     AudioDecoder.cpp \
     AudioOutput.cpp \
+    AudioResampler.cpp \
     AVDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
@@ -136,13 +145,11 @@ SOURCES += \
 SDK_HEADERS *= \
     QtAV/dptr.h \
     QtAV/QtAV_Global.h \
+    QtAV/AudioResampler.h \
     QtAV/AudioDecoder.h \
-    QtAV/AVThread.h \
-    QtAV/AudioThread.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
-    QtAV/AVDemuxThread.h \
     QtAV/BlockingQueue.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
@@ -160,7 +167,6 @@ SDK_HEADERS *= \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
-    QtAV/VideoThread.h \
     QtAV/FactoryDefine.h \
     QtAV/ImageConverterTypes.h \
     QtAV/Statistics.h \
@@ -170,11 +176,16 @@ SDK_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     QtAV/prepost.h \
+    QtAV/AVDemuxThread.h \
+    QtAV/AVThread.h \
+    QtAV/AudioThread.h \
+    QtAV/VideoThread.h \
     QtAV/QtAV_Compat.h \
     QtAV/EventFilter.h \
     QtAV/singleton.h \
     QtAV/factory.h \
     QtAV/private/AudioOutput_p.h \
+    QtAV/private/AudioResampler_p.h \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
@@ -187,7 +198,8 @@ HEADERS *= \
     QtAV/private/Direct2DRenderer_p.h \
     QtAV/private/GLWidgetRenderer_p.h \
     QtAV/private/GDIRenderer_p.h \
-    QtAV/private/XVRenderer_p.h
+    QtAV/private/XVRenderer_p.h \
+    QtAV/AudioResamplerTypes.h
 
 
 SDK_INCLUDE_FOLDER = QtAV
