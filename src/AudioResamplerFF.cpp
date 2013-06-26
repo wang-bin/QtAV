@@ -93,12 +93,12 @@ bool AudioResamplerFF::prepare()
         return false;
     }
     //TODO: also in do this statistics
-    qDebug("in cs: %d, cl: %s", d.in_channels, av_get_channel_name(d.in_channel_layout));
+    qDebug("in cs: %d, cl: %lld", d.in_channels, d.in_channel_layout);
     if (!d.in_channels) {
         if (!d.in_channel_layout) { //FIXME: already return
             d.in_channels = 2;
             d.in_channel_layout = av_get_default_channel_layout(d.in_channels); //from mplayer2
-            qWarning("both channels and channel layout are not available, assume channels=%d, channel layout=%s", d.in_channels, av_get_channel_name(d.in_channel_layout));
+            qWarning("both channels and channel layout are not available, assume channels=%d, channel layout=%lld", d.in_channels, d.in_channel_layout);
         } else {
             d.in_channels = av_get_channel_layout_nb_channels(d.in_channel_layout);
         }

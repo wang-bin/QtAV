@@ -35,7 +35,7 @@ void ffmpeg_version_print()
         { "avutil", LIBAVUTIL_VERSION_INT, avutil_version()},
         { "swscale", LIBSWSCALE_VERSION_INT, swscale_version()},
 #if QTAV_HAVE(SWRESAMPLE)
-        //{ "swresample", LIBSWRESAMPLE_VERSION_INT, swresample_version()}, //swresample_version not declared in 0.9
+        { "swresample", LIBSWRESAMPLE_VERSION_INT, swresample_version()}, //swresample_version not declared in 0.9
 #endif //QTAV_HAVE(SWRESAMPLE)
 #if QTAV_HAVE(AVRESAMPLE)
         { "avresample", LIBAVRESAMPLE_VERSION_INT, avresample_version()},

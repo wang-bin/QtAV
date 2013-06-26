@@ -136,4 +136,9 @@ av_always_inline char* av_err2str(int errnum)
 #define av_dump_format(...) dump_format(__VA_ARGS__)
 #endif
 
+#if QTAV_HAVE(SWRESAMPLE) && (LIBSWRESAMPLE_VERSION_INT <= AV_VERSION_INT(0, 5, 0))
+#define swresample_version() LIBSWRESAMPLE_VERSION_INT //we can not know the runtime version, so just use build time version
+#define swresample_configuration() "Not available."
+#define swresample_license() "Not available."
+#endif
 #endif
