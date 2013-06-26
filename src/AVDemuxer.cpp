@@ -42,8 +42,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
         loadFile(_file_name);
 
     //default network timeout
-    __interrupt_timeout = QTAV_DEFAULT_NETWORK_TIMEOUT;
-
+    __interrupt_timeout = 30000;
 }
 
 AVDemuxer::~AVDemuxer()
@@ -71,7 +70,7 @@ int AVDemuxer::__interrupt_cb(void *obj){
         return(-1);
     }
     demuxer = (AVDemuxer*)obj;
-    //qDebug("Timer:%lld, timeout:%lld\n",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
+    //qDebug("Timer:%lld, timeout:%lld",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
 
     //check manual interruption
     if (demuxer->__interrupt_status > 0) {
@@ -357,7 +356,9 @@ bool AVDemuxer::loadFile(const QString &fileName)
     //deprecated
     //if(av_find_stream_info(format_context)<0) {
     //TODO: avformat_find_stream_info is too slow, only useful for some video format
+    __interrupt_timer.start();
     ret = avformat_find_stream_info(format_context, NULL);
+    __interrupt_timer.invalidate();
     if (ret < 0) {
         qWarning("Can't find stream info: %s", av_err2str(ret));
         return false;

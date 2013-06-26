@@ -48,8 +48,6 @@ Q_EXPORT QString aboutQtAV_PlainText();
 Q_EXPORT QString aboutQtAV_HTML();
 }
 
-// default network timeout in ms
-#define QTAV_DEFAULT_NETWORK_TIMEOUT 30000
 #define QTAV_HAVE(FEATURE) (defined(QTAV_HAVE_##FEATURE) && QTAV_HAVE_##FEATURE)
 
 //TODO: always inline
