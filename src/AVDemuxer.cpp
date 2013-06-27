@@ -36,8 +36,6 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
 	,a_codec_context(0),v_codec_context(0),_file_name(fileName),master_clock(0)
     ,__interrupt_status(0)
 {
-    av_register_all();
-    avformat_network_init();
     if (!_file_name.isEmpty())
         loadFile(_file_name);
 
@@ -52,7 +50,6 @@ AVDemuxer::~AVDemuxer()
         delete pkt;
         pkt = 0;
     }
-    avformat_network_deinit();
 }
 
 /*
@@ -316,6 +313,20 @@ void AVDemuxer::seekBackward()
 
 bool AVDemuxer::loadFile(const QString &fileName)
 {
+    class AVInitializer {
+    public:
+        AVInitializer() {
+            qDebug("av_register_all and avformat_network_init");
+            av_register_all();
+            avformat_network_init();
+        }
+        ~AVInitializer() {
+            qDebug("avformat_network_deinit");
+            avformat_network_deinit();
+        }
+    };
+    static AVInitializer sAVInit;
+    Q_UNUSED(sAVInit);
     close();
     qDebug("all closed and reseted");
     _file_name = fileName.trimmed();
