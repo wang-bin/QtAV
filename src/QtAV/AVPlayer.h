@@ -54,16 +54,14 @@ public:
     bool load();
     bool isLoaded() const;
     qreal duration() const; //unit: s, This function may be removed in the future.
-    /*
-     * default: [fmt: PNG, dir: capture, name: basename]
-     * replace the existing capture; return the replaced one
-     * set 0 will disable the capture
+    /*!
+     * \brief capture and save current frame to "appdir/filename_pts.png".
+     * To capture with custom configurations, such as name and dir, use
+     * VideoCapture api through AVPlayer::videoCapture()
+     * \return
      */
-    VideoCapture* setVideoCapture(VideoCapture* cap);
-    VideoCapture *videoCapture();
-    void setCaptureName(const QString& name);//TODO: remove. base name
-    void setCaptureSaveDir(const QString& dir); //TODO: remove
     bool captureVideo();
+    VideoCapture *videoCapture();
     bool play(const QString& path);
 	bool isPlaying() const;
     bool isPaused() const;
@@ -112,7 +110,6 @@ private:
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
     QString path;
-    QString capture_name, capture_dir;
 
     //the following things are required and must be setted not null
     AVDemuxer demuxer;

@@ -74,6 +74,7 @@ public:
 
 VideoCapture::VideoCapture(QObject *parent) :
     QObject(parent),async(true),error(NoError)
+  , dir(qApp->applicationDirPath() + "/capture")
 {
     fmt = "PNG";
     qual = -1;
@@ -111,7 +112,7 @@ void VideoCapture::request()
     if (isAsync()) {
         QThreadPool::globalInstance()->start(task);
     } else {
-       task->run();
+        task->run();
     }
 }
 

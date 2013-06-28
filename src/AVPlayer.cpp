@@ -52,12 +52,16 @@
 namespace QtAV {
 
 AVPlayer::AVPlayer(QObject *parent) :
-    QObject(parent),loaded(false),capture_dir("capture"),_renderer(0),_audio(0)
+    QObject(parent)
+  , loaded(false)
+  , _renderer(0)
+  , _audio(0)
   , audio_dec(0)
   , video_dec(0)
   , audio_thread(0)
   , video_thread(0)
-  , event_filter(0),video_capture(0)
+  , event_filter(0)
+  , video_capture(0)
 {
     qDebug("%s", aboutQtAV_PlainText().toUtf8().constData());
     /*
@@ -74,7 +78,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     demuxer_thread->setDemuxer(&demuxer);
 
     setPlayerEventFilter(new EventFilter(this));
-    setVideoCapture(new VideoCapture());
+    video_capture = new VideoCapture(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -234,26 +238,9 @@ QString AVPlayer::file() const
     return path;
 }
 
-VideoCapture* AVPlayer::setVideoCapture(VideoCapture *cap)
-{
-    VideoCapture *old = video_capture;
-    video_capture = cap;
-    return old;
-}
-
 VideoCapture* AVPlayer::videoCapture()
 {
     return video_capture;
-}
-
-void AVPlayer::setCaptureName(const QString &name)
-{
-    capture_name = name;
-}
-
-void AVPlayer::setCaptureSaveDir(const QString &dir)
-{
-    capture_dir = dir;
 }
 
 bool AVPlayer::captureVideo()
@@ -263,15 +250,10 @@ bool AVPlayer::captureVideo()
     bool pause_old = isPaused();
     if (!video_capture->isAsync())
         pause(true);
-    video_capture->setCaptureDir(capture_dir);
-    QString cap_name(capture_name);
-    if (cap_name.isEmpty())
-        cap_name = QFileInfo(path).completeBaseName();
+    QString cap_name = QFileInfo(path).completeBaseName();
     //FIXME: pts is not correct because of multi-thread
     double pts = video_thread->currentPts();
-    cap_name += "_" + QString::number(pts, 'f', 3);
-    video_capture->setCaptureName(cap_name);
-    qDebug("request capture: %s", qPrintable(cap_name));
+    video_capture->setCaptureName(cap_name + "_" + QString::number(pts, 'f', 3));
     video_capture->request();
     if (!video_capture->isAsync())
         pause(pause_old);
