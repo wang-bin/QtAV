@@ -92,6 +92,7 @@ void AVThread::nextAndPause()
 {
     DPTR_D(AVThread);
     d.next_pause = true;
+    d.paused = true;
     d.cond.wakeAll();
 }
 
