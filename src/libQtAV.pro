@@ -115,6 +115,7 @@ SOURCES += \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \
+    AudioFormat.cpp \
     AudioOutput.cpp \
     AudioResampler.cpp \
     AVDecoder.cpp \
@@ -147,6 +148,7 @@ SDK_HEADERS *= \
     QtAV/QtAV_Global.h \
     QtAV/AudioResampler.h \
     QtAV/AudioDecoder.h \
+    QtAV/AudioFormat.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
