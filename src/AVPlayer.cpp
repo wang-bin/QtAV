@@ -64,6 +64,7 @@ AVPlayer::AVPlayer(QObject *parent) :
   , video_thread(0)
   , event_filter(0)
   , video_capture(0)
+  , mSpeed(1.0)
 {
     qDebug("%s", aboutQtAV_PlainText().toUtf8().constData());
     /*
@@ -192,6 +193,26 @@ void AVPlayer::setMute(bool mute)
 bool AVPlayer::isMute() const
 {
     return !_audio || _audio->isMute();
+}
+
+void AVPlayer::setSpeed(qreal speed)
+{
+    if (speed == mSpeed)
+        return;
+    mSpeed = speed;
+    //TODO: check clock type?
+    if (_audio && _audio->isAvailable()) {
+        qDebug("set speed %.2f", mSpeed);
+        _audio->setSpeed(mSpeed);
+    } else {
+        //clock speed
+    }
+    emit speedChanged(mSpeed);
+}
+
+qreal AVPlayer::speed() const
+{
+    return mSpeed;
 }
 
 //setPlayerEventFilter(0) will remove the previous event filter

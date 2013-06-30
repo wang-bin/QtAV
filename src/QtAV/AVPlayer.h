@@ -78,6 +78,12 @@ public:
     AudioOutput* audio();
     void setMute(bool mute);
     bool isMute() const;
+    /*!
+     * \brief setSpeed set playing speed.
+     * \param speed  speed > 0. 1.0: normal speed
+     */
+    void setSpeed(qreal speed);
+    qreal speed() const;
     /*only 1 event filter is available. the previous one will be removed. setPlayerEventFilter(0) will remove the event filter*/
     void setPlayerEventFilter(QObject *obj);
 
@@ -87,6 +93,7 @@ signals:
     void paused(bool p);
     void started();
     void stopped();
+    void speedChanged(qreal speed);
 
 public slots:
     void togglePause();
@@ -131,6 +138,7 @@ private:
     QObject *event_filter;
     VideoCapture *video_capture;
     Statistics mStatistics;
+    qreal mSpeed;
 };
 
 } //namespace QtAV

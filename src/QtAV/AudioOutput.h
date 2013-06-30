@@ -49,6 +49,14 @@ public:
     qreal volume() const;
     void setMute(bool yes);
     bool isMute() const;
+    /*!
+     * \brief setSpeed  set audio playing speed
+     *
+     * The speed affects the playing only if audio is available and clock type is
+     * audio clock. For example, play a video contains audio without special configurations.
+     * To change the playing speed in other cases, use AVPlayer::setSpeed(qreal)
+     * \param speed
+     */
     void setSpeed(qreal speed);
     qreal speed() const;
 
