@@ -19,47 +19,47 @@
         <translation>关于 FFmpeg</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="107"/>
+        <location filename="../src/QtAV_Global.cpp" line="110"/>
         <source>Build version</source>
         <translation>编译时版本</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="116"/>
+        <location filename="../src/QtAV_Global.cpp" line="119"/>
         <source>Runtime version</source>
         <translation>运行时版本</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="131"/>
+        <location filename="../src/QtAV_Global.cpp" line="134"/>
         <source>About QtAV</source>
         <translation>关于 QtAV</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="142"/>
+        <location filename="../src/QtAV_Global.cpp" line="145"/>
         <source>A media playing library base on Qt and FFmpeg.
 </source>
         <translation>基于 Qt 和 FFmpeg 的音视频播放库.
 </translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="143"/>
+        <location filename="../src/QtAV_Global.cpp" line="146"/>
         <source>Distributed under the terms of LGPLv2.1 or later.
 </source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="145"/>
+        <location filename="../src/QtAV_Global.cpp" line="148"/>
         <source>Shanghai University, Shanghai, China
 </source>
         <translation>上海大学，中国上海
 </translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="146"/>
+        <location filename="../src/QtAV_Global.cpp" line="149"/>
         <source>Source</source>
         <translation>源码</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="147"/>
+        <location filename="../src/QtAV_Global.cpp" line="150"/>
         <source>Downloads</source>
         <translation>下载</translation>
     </message>
@@ -111,7 +111,7 @@
     </message>
     <message>
         <location filename="../src/EventFilter.cpp" line="104"/>
-        <location filename="../src/EventFilter.cpp" line="355"/>
+        <location filename="../src/EventFilter.cpp" line="364"/>
         <source>Help</source>
         <translation>帮助</translation>
     </message>
@@ -226,22 +226,22 @@
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="351"/>
+        <location filename="../src/EventFilter.cpp" line="360"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="352"/>
+        <location filename="../src/EventFilter.cpp" line="361"/>
         <source>Open Url</source>
         <translation>打开 Url</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="354"/>
+        <location filename="../src/EventFilter.cpp" line="363"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="357"/>
+        <location filename="../src/EventFilter.cpp" line="366"/>
         <source>About Qt</source>
         <translation>关于 Qt</translation>
     </message>

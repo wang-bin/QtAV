@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
     //QTimer::singleShot(10, this, SLOT(setupUi()));
     setupUi();
+    setToolTip(tr("Click black area to use shortcut(see right click menu)"));
 }
 
 MainWindow::~MainWindow()
@@ -114,12 +115,15 @@ void MainWindow::setupUi()
 #endif //SLIDER_ON_VO
 
     mpCurrent = new QLabel(mpControl);
+    mpCurrent->setToolTip(tr("Current time"));
     mpCurrent->setMargin(2);
     mpCurrent->setText("00:00:00");
     mpDuration = new QLabel(mpControl);
+    mpDuration->setToolTip(tr("Duration"));
     mpDuration->setMargin(2);
     mpDuration->setText("00:00:00");
     mpTitle = new QLabel(mpControl);
+    mpTitle->setToolTip(tr("Render engine"));
     mpTitle->setText("QPainter");
     mpTitle->setIndent(8);
 
@@ -149,11 +153,13 @@ void MainWindow::setupUi()
     mpForwardBtn->setIconSize(QSize(a, a));
     mpForwardBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
     mpOpenBtn = new Button(mpControl);
+    mpOpenBtn->setToolTip(tr("Open"));
     mpOpenBtn->setIconWithSates(QPixmap(":/theme/open_folder.png"));
     mpOpenBtn->setIconSize(QSize(a, a));
     mpOpenBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
 
     mpInfoBtn = new Button();
+    mpInfoBtn->setToolTip(QString("Media information. Not implemented."));
     mpInfoBtn->setIconWithSates(QPixmap(":/theme/info.png"));
     mpInfoBtn->setIconSize(QSize(a, a));
     mpInfoBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
@@ -224,6 +230,7 @@ void MainWindow::setupUi()
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
     subMenu = new ClickableMenu(tr("Repeat"));
+    subMenu->setEnabled(false); //have bug now
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(setRepeat(QAction*)));
     mpRepeatAction = subMenu->addAction(tr("No"));
@@ -289,7 +296,6 @@ void MainWindow::setupUi()
     controlLayout->addWidget(mpInfoBtn);
     //controlLayout->addWidget(mpSetupBtn);
     controlLayout->addWidget(mpMenuBtn);
-
     controlLayout->addWidget(mpDuration);
 
     connect(mpOpenBtn, SIGNAL(clicked()), SLOT(openFile()));
@@ -462,6 +468,7 @@ void MainWindow::onStartPlay()
 
 void MainWindow::onStopPlay()
 {
+    killTimer(mTimerId);
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");
