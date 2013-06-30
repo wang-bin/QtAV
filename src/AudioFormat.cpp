@@ -66,6 +66,15 @@ AudioFormat::~AudioFormat()
 }
 
 /*!
+    Assigns \a other to this QAudioFormat implementation.
+*/
+AudioFormat& AudioFormat::operator=(const AudioFormat &other)
+{
+    d = other.d;
+    return *this;
+}
+
+/*!
   Returns true if this AudioFormat is equal to the \a other
   AudioFormat; otherwise returns false.
 
