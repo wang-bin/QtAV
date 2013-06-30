@@ -37,25 +37,40 @@ AudioOutput::~AudioOutput()
 {
 }
 
+
+void AudioOutput::setAudioFormat(const AudioFormat& format)
+{
+    d_func().format = format;
+}
+
+AudioFormat& AudioOutput::audioFormat()
+{
+    return d_func().format;
+}
+
+const AudioFormat& AudioOutput::audioFormat() const
+{
+    return d_func().format;
+}
+
 void AudioOutput::setSampleRate(int rate)
 {
-    d_func().sample_rate = rate;
+    d_func().format.setSampleRate(rate);
 }
 
 int AudioOutput::sampleRate() const
 {
-    return d_func().sample_rate;
+    return d_func().format.sampleRate();
 }
 
 void AudioOutput::setChannels(int channels)
 {
-    d_func().channels = channels;
-    //outputParameters->channelCount = channels;
+    d_func().format.setChannels(channels);
 }
 
 int AudioOutput::channels() const
 {
-    return d_func().channels;
+    return d_func().format.channels();
 }
 
 void AudioOutput::setVolume(qreal volume)

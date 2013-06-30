@@ -28,6 +28,8 @@
 #include <QtCore/QDir>
 
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/AudioFormat.h>
+#include <QtAV/AudioResampler.h>
 #include <QtAV/AudioThread.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AudioDecoder.h>
@@ -520,12 +522,6 @@ void AVPlayer::setupAudioThread()
 {
     if (aCodecCtx) {
         qDebug("has audio");
-        if (!audio_dec) {
-            audio_dec = new AudioDecoder();
-        }
-        qDebug("setCodecContext");
-        audio_dec->setCodecContext(aCodecCtx);
-        audio_dec->prepare();
         //TODO: setAudioOutput() like vo
         if (!_audio) {
             qDebug("new audio output");
@@ -539,11 +535,19 @@ void AVPlayer::setupAudioThread()
             masterClock()->setClockType(AVClock::ExternalClock);
             return;
         }
-        _audio->setSampleRate(aCodecCtx->sample_rate);
-        _audio->setChannels(aCodecCtx->channels);
+        _audio->audioFormat().setSampleFormat(AudioFormat::SampleFormat_Float);
+        _audio->audioFormat().setSampleRate(aCodecCtx->sample_rate);
+        _audio->audioFormat().setChannels(aCodecCtx->channels);
         if (!_audio->open()) {
             //return; //audio not ready
         }
+        if (!audio_dec) {
+            audio_dec = new AudioDecoder();
+        }
+        qDebug("setCodecContext");
+        audio_dec->setCodecContext(aCodecCtx);
+        audio_dec->resampler()->setOutAudioFormat(_audio->audioFormat());
+        audio_dec->prepare();
         if (!audio_thread) {
             qDebug("new audio thread");
             audio_thread = new AudioThread(this);

@@ -70,7 +70,8 @@ public:
 
     void setSampleFormat(SampleFormat sampleFormat);
     SampleFormat sampleFormat() const;
-
+    void setSampleFormatFFmpeg(int ffSampleFormat);
+    int sampleFormatFFmpeg() const;
 
     // Helper functions
     qint32 bytesForDuration(qint64 duration) const;

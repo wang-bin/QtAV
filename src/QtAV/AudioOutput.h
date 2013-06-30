@@ -26,6 +26,7 @@
 
 namespace QtAV {
 
+class AudioFormat;
 class AudioOutputPrivate;
 class Q_EXPORT AudioOutput : public AVOutput
 {
@@ -34,11 +35,15 @@ public:
     AudioOutput();
     virtual ~AudioOutput() = 0;
 
-    void setSampleRate(int rate);
-    int sampleRate() const;
+    void setAudioFormat(const AudioFormat& format);
+    AudioFormat& audioFormat();
+    const AudioFormat& audioFormat() const;
 
-    void setChannels(int channels);
-    int channels() const;
+    void setSampleRate(int rate); //deprecated
+    int sampleRate() const; //deprecated
+
+    void setChannels(int channels); //deprecated
+    int channels() const; //deprecated
 
     void setVolume(qreal volume);
     qreal volume() const;

@@ -31,6 +31,7 @@ typedef int AudioResamplerId;
 class AudioResampler;
 FACTORY_DECLARE(AudioResampler)
 
+class AudioFormat;
 class AudioResamplerPrivate;
 class Q_EXPORT AudioResampler //export is required for users who want add their own subclass outside QtAV
 {
@@ -46,14 +47,23 @@ public:
     //speed: >0, default is 1
     void setSpeed(qreal speed); //out_sample_rate = out_sample_rate/speed
     qreal speed() const;
+
+    void setInAudioFormat(const AudioFormat& format);
+    AudioFormat& inAudioFormat();
+    const AudioFormat& inAudioFormat() const;
+
+    void setOutAudioFormat(const AudioFormat& format);
+    AudioFormat& outAudioFormat();
+    const AudioFormat& outAudioFormat() const;
+
     //decoded frame's samples/channel
     void setInSampesPerChannel(int samples);
     //channel count can be computed by av_get_channel_layout_nb_channels(chl)
     void setInSampleRate(int isr);
     void setOutSampleRate(int osr); //default is in
     //TODO: enum
-    void setInSampleFormat(int isf);
-    void setOutSampleFormat(int osf); //set by user. default is in
+    void setInSampleFormat(int isf); //FFmpeg sample format
+    void setOutSampleFormat(int osf); //FFmpeg sample format. set by user. default is in
     //TODO: enum. layout will be set to the default layout of the channels if not defined
     void setInChannelLayout(qint64 icl);
     void setOutChannelLayout(qint64 ocl); //default is in

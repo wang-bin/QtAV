@@ -55,15 +55,15 @@ bool AudioResamplerFF::convert(const quint8 **data)
      */
     d.out_samples_per_channel = av_rescale_rnd(
 #if HAVE_SWR_GET_DELAY
-                swr_get_delay(d.context, qMax(d.in_sample_rate, d.out_sample_rate)) +
+                swr_get_delay(d.context, qMax(d.in_format.sampleRate(), d.out_format.sampleRate())) +
 #else
                 128 + //TODO: QtAV_Compat
 #endif //HAVE_SWR_GET_DELAY
                 d.in_samples_per_channel //TODO: wanted_samples(ffplay mplayer2)
-                , d.out_sample_rate, d.in_sample_rate, AV_ROUND_UP);
+                , d.out_format.sampleRate(), d.in_format.sampleRate(), AV_ROUND_UP);
     //TODO: why crash for swr 0.5?
     //int out_size = av_samples_get_buffer_size(NULL/*out linesize*/, d.out_channels, d.out_samples_per_channel, (AVSampleFormat)d.out_sample_format, 0/*alignment default*/);
-    int size_per_sample_with_channels = d.out_channels*av_get_bytes_per_sample((AVSampleFormat)d.out_sample_format);
+    int size_per_sample_with_channels = d.out_format.channels()*d.out_format.bytesPerSample();
     int out_size = d.out_samples_per_channel*size_per_sample_with_channels;
     if (out_size > d.data_out.size())
         d.data_out.resize(out_size);
@@ -88,67 +88,70 @@ bool AudioResamplerFF::convert(const quint8 **data)
 bool AudioResamplerFF::prepare()
 {
     DPTR_D(AudioResamplerFF);
-    if ((!d.in_channel_layout && !d.in_channels) || !d.in_sample_rate || d.in_sample_format == AV_SAMPLE_FMT_NONE) {
+    if ((!d.in_channel_layout && !d.in_format.channels()) || !d.in_format.sampleRate() || d.in_format.sampleFormat() == AudioFormat::SampleFormat_Unknown) {
         qWarning("src audio parameters in_channel_layout, in_sample_rate, in_sample_format must be set before initialize resampler");
         return false;
     }
     //TODO: also in do this statistics
-    qDebug("in cs: %d, cl: %lld", d.in_channels, d.in_channel_layout);
-    if (!d.in_channels) {
+    qDebug("in cs: %d, cl: %lld", d.in_format.channels(), d.in_channel_layout);
+    if (!d.in_format.channels()) {
         if (!d.in_channel_layout) { //FIXME: already return
-            d.in_channels = 2;
-            d.in_channel_layout = av_get_default_channel_layout(d.in_channels); //from mplayer2
-            qWarning("both channels and channel layout are not available, assume channels=%d, channel layout=%lld", d.in_channels, d.in_channel_layout);
+            d.in_format.setChannels(2);
+            d.in_channel_layout = av_get_default_channel_layout(d.in_format.channels()); //from mplayer2
+            qWarning("both channels and channel layout are not available, assume channels=%d, channel layout=%lld", d.in_format.channels(), d.in_channel_layout);
         } else {
-            d.in_channels = av_get_channel_layout_nb_channels(d.in_channel_layout);
+            d.in_format.setChannels(av_get_channel_layout_nb_channels(d.in_channel_layout));
         }
     }
-    if (!d.in_channels)
-        d.in_channels = 2; //TODO: why av_get_channel_layout_nb_channels() may return 0?
+    if (!d.in_format.channels())
+        d.in_format.setChannels(2); //TODO: why av_get_channel_layout_nb_channels() may return 0?
     if (!d.in_channel_layout) {
         qWarning("channel layout not available, use default layout");
-        d.in_channel_layout = av_get_default_channel_layout(d.in_channels);
+        d.in_channel_layout = av_get_default_channel_layout(d.in_format.channels());
     }
-    qDebug("in cs: %d, cl: %lld", d.in_channels, d.in_channel_layout);
+    qDebug("in cs: %d, cl: %lld", d.in_format.channels(), d.in_channel_layout);
 
     if (!d.out_channel_layout)
         d.out_channel_layout = d.in_channel_layout;
-    if (!d.out_channels)
-        d.out_channels = av_get_channel_layout_nb_channels(d.out_channel_layout);
-    if (!d.out_channels)
-        d.out_channels = d.in_channels;
-    if (!d.out_sample_rate)
-        d.out_sample_rate = d.in_sample_rate;
+    if (!d.out_format.channels())
+        d.out_format.setChannels(av_get_channel_layout_nb_channels(d.out_channel_layout));
+    if (!d.out_format.channels())
+        d.out_format.setChannels(inAudioFormat().channels());
+    if (!d.out_format.sampleRate())
+        d.out_format.setSampleRate(inAudioFormat().sampleRate());
     if (d.speed <= 0)
         d.speed = 1.0;
-    if (d.speed != 1.0)
-        d.out_sample_rate = int(qreal(d.out_sample_rate)/d.speed);
+    //DO NOT set sample rate here, we should keep the original and multiply 1/speed when needed
+    //if (d.speed != 1.0)
+    //    d.out_format.setSampleRate(int(qreal(d.out_format.sampleFormat())/d.speed));
     qDebug("swr speed=%.2f", d.speed);
 
-    d.in_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.in_sample_format) ? d.in_channels : 1;
-    d.out_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.out_sample_format) ? d.out_channels : 1;
+    //d.in_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.in_sample_format) ? d.in_channels : 1;
+    //d.out_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.out_sample_format) ? d.out_channels : 1;
     //swr_free(&d.context); //ffplay
     //If use swr_alloc() need to set the parameters (av_opt_set_xxx() manually or with swr_alloc_set_opts()) before calling swr_init()
     d.context = swr_alloc_set_opts(d.context
                                    , d.out_channel_layout
-                                   , (enum AVSampleFormat)d.out_sample_format, d.out_sample_rate
+                                   , (enum AVSampleFormat)outAudioFormat().sampleFormatFFmpeg()
+                                   , qreal(outAudioFormat().sampleRate())/d.speed
                                    , d.in_channel_layout
-                                   , (enum AVSampleFormat)d.in_sample_format, d.in_sample_rate
+                                   , (enum AVSampleFormat)inAudioFormat().sampleFormatFFmpeg()
+                                   , inAudioFormat().sampleRate()
                                    , 0 /*log_offset*/, 0 /*log_ctx*/);
     /*
     av_opt_set_int(d.context, "in_channel_layout",    d.in_channel_layout, 0);
-    av_opt_set_int(d.context, "in_sample_rate",       d.in_sample_rate, 0);
-    av_opt_set_sample_fmt(d.context, "in_sample_fmt", (enum AVSampleFormat)d.in_sample_format, 0);
+    av_opt_set_int(d.context, "in_sample_rate",       d.in_format.sampleRate(), 0);
+    av_opt_set_sample_fmt(d.context, "in_sample_fmt", (enum AVSampleFormat)in_format.sampleFormatFFmpeg(), 0);
     av_opt_set_int(d.context, "out_channel_layout",    d.out_channel_layout, 0);
-    av_opt_set_int(d.context, "out_sample_rate",       d.out_sample_rate, 0);
-    av_opt_set_sample_fmt(d.context, "out_sample_fmt", (enum AVSampleFormat)d.out_sample_format, 0);
+    av_opt_set_int(d.context, "out_sample_rate",       d.out_format.sampleRate(), 0);
+    av_opt_set_sample_fmt(d.context, "out_sample_fmt", (enum AVSampleFormat)out_format.sampleFormatFFmpeg(), 0);
     */
     av_log(NULL, AV_LOG_INFO, "out cl: %lld\n", d.out_channel_layout);
-    av_log(NULL, AV_LOG_INFO, "out fmt: %d\n", d.out_sample_format);
-    av_log(NULL, AV_LOG_INFO, "out freq: %d\n", d.out_sample_rate);
+    av_log(NULL, AV_LOG_INFO, "out fmt: %d\n", d.out_format.sampleFormat());
+    av_log(NULL, AV_LOG_INFO, "out freq: %d\n", d.out_format.sampleRate());
     av_log(NULL, AV_LOG_INFO, "in cl: %lld\n", d.in_channel_layout);
-    av_log(NULL, AV_LOG_INFO, "in fmt: %d\n", d.in_sample_format);
-    av_log(NULL, AV_LOG_INFO, "in freq: %d\n",  d.in_sample_rate);
+    av_log(NULL, AV_LOG_INFO, "in fmt: %d\n", d.in_format.sampleFormat());
+    av_log(NULL, AV_LOG_INFO, "in freq: %d\n",  d.in_format.sampleRate());
 
 
     if (d.context) {

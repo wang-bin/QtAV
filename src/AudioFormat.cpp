@@ -190,6 +190,17 @@ AudioFormat::SampleFormat AudioFormat::sampleFormat() const
     return d->sample_format;
 }
 
+void AudioFormat::setSampleFormatFFmpeg(int ffSampleFormat)
+{
+    //currently keep the values the same as latest FFmpeg's
+    setSampleFormat((AudioFormat::SampleFormat)ffSampleFormat);
+}
+
+int AudioFormat::sampleFormatFFmpeg() const
+{
+    return d->sample_format;
+}
+
 
 /*!
     Returns the number of bytes required for this audio format for \a duration microseconds.

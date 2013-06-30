@@ -22,7 +22,7 @@
 #ifndef QTAV_AUDIORESAMPLER_P_H
 #define QTAV_AUDIORESAMPLER_P_H
 
-
+#include <QtAV/AudioFormat.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QByteArray>
 
@@ -35,28 +35,18 @@ public:
     AudioResamplerPrivate():
         in_channel_layout(0)
       , out_channel_layout(0)
-      , in_channels(0)
-      , out_channels(0)
       , in_samples_per_channel(0)
       , out_samples_per_channel(0)
-      , in_sample_rate(0)
-      , out_sample_rate(0)
-      , in_sample_format(AV_SAMPLE_FMT_NONE)
-      , out_sample_format(AV_SAMPLE_FMT_FLT)
-      , in_planes(0)
-      , out_planes(0)
       , speed(1.0)
     {
-
+        in_format.setSampleFormat(AudioFormat::SampleFormat_Unknown);
+        out_format.setSampleFormat(AudioFormat::SampleFormat_Float);
     }
 
     qint64 in_channel_layout, out_channel_layout;
-    int in_channels, out_channels;
     int in_samples_per_channel, out_samples_per_channel;
-    int in_sample_rate, out_sample_rate;
-    int in_sample_format, out_sample_format; //AVSampleFormat
-    int in_planes, out_planes;
     qreal speed;
+    AudioFormat in_format, out_format;
     QByteArray data_out;
 };
 

@@ -24,6 +24,7 @@
 #define QTAV_AUDIOOUTPUT_P_H
 
 #include <private/AVOutput_p.h>
+#include <QtAV/AudioFormat.h>
 
 namespace QtAV {
 
@@ -32,18 +33,16 @@ class Q_EXPORT AudioOutputPrivate : public AVOutputPrivate
 public:
     AudioOutputPrivate():
         mute(false)
-      , channels(2)
       , vol(1)
       , speed(1.0)
-      , sample_rate(44100)
     {
     }
     virtual ~AudioOutputPrivate(){}
     bool mute;
-    int channels;
     qreal vol;
     qreal speed;
-    int sample_rate;
+
+    AudioFormat format;
 };
 
 } //namespace QtAV

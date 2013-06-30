@@ -131,7 +131,7 @@ bool AOPortAudio::write()
     }
 #endif
 #endif //KNOW_WHY
-	PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/d.channels/sizeof(float));
+    PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/audioFormat().channels()/sizeof(float));
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
 		return false;
@@ -142,8 +142,8 @@ bool AOPortAudio::write()
 bool AOPortAudio::open()
 {
     DPTR_D(AOPortAudio);
-    d.outputParameters->channelCount = d.channels;
-    PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, d.sample_rate, 0, paNoFlag, NULL, NULL);
+    d.outputParameters->channelCount = audioFormat().channels();
+    PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, audioFormat().sampleRate(), 0, paNoFlag, NULL, NULL);
     if (err == paNoError) {
         d.outputLatency = Pa_GetStreamInfo(d.stream)->outputLatency;
         d.available = true;

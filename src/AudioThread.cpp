@@ -23,6 +23,7 @@
 #include <private/AVThread_p.h>
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/Packet.h>
+#include <QtAV/AudioFormat.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AudioResampler.h>
 #include <QtAV/AVClock.h>
@@ -133,12 +134,13 @@ void AudioThread::run()
                 d.clock->updateDelay(delay += (qreal)chunk/(qreal)csf);
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
                 if (has_ao) {
+                    //TODO: volume filter
                     if (!ao->isMute()) {
                         decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                         qreal vol = ao->volume();
                         if (vol != 1.0) {
-                            int len = decodedChunk.size()/sizeof(float); //TODO: why???
-                            float *data = (float*)decodedChunk.data();
+                            int len = decodedChunk.size()/ao->audioFormat().bytesPerSample();
+                            float *data = (float*)decodedChunk.data(); //TODO: other format?
                             for (int i = 0; i < len; ++i)
                                 data[i] *= vol;
                         }
