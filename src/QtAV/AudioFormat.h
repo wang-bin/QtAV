@@ -45,9 +45,9 @@ public:
         SampleFormat_FloatPlanar,
         SampleFormat_DoublePlanar
     };
-    enum ChannelLayout {
-
-    };
+    //enum ChannelLayout {
+    //};
+    typedef qint64 ChannelLayout; //currently use latest FFmpeg's
 
     static bool isPlanar(SampleFormat format);
 
@@ -64,6 +64,10 @@ public:
 
     void setSampleRate(int sampleRate);
     int sampleRate() const;
+
+    //currently use FFmpeg's. see avutil/channel_layout.h
+    void setChannelLayout(ChannelLayout layout);
+    ChannelLayout channelLayout() const;
 
     void setChannels(int channels);
     int channels() const;

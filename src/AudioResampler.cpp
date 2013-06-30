@@ -57,8 +57,8 @@ QByteArray AudioResampler::outData() const
 bool AudioResampler::prepare()
 {
     DPTR_D(AudioResampler);
-    if (!d.in_channel_layout || !inAudioFormat().isValid()) {
-        qWarning("src audio parameters in_channel_layout, in_sample_rate, in_sample_format must be set before initialize resampler");
+    if (!!inAudioFormat().isValid()) {
+        qWarning("src audio parameters 'channel layout(or channels), sample rate and sample format must be set before initialize resampler");
         return false;
     }
     return true;
@@ -66,6 +66,7 @@ bool AudioResampler::prepare()
 
 bool AudioResampler::convert(const quint8 **data)
 {
+    Q_UNUSED(data);
     return false;
 }
 
@@ -138,12 +139,12 @@ void AudioResampler::setOutSampleFormat(int osf)
 
 void AudioResampler::setInChannelLayout(qint64 icl)
 {
-    d_func().in_channel_layout = icl;
+    d_func().in_format.setChannelLayout(icl);
 }
 
 void AudioResampler::setOutChannelLayout(qint64 ocl)
 {
-    d_func().out_channel_layout = ocl;
+    d_func().out_format.setChannelLayout(ocl);
 }
 
 void AudioResampler::setInChannels(int channels)

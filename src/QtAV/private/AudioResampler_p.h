@@ -33,9 +33,7 @@ class AudioResamplerPrivate : public DPtrPrivate<AudioResampler>
 {
 public:
     AudioResamplerPrivate():
-        in_channel_layout(0)
-      , out_channel_layout(0)
-      , in_samples_per_channel(0)
+        in_samples_per_channel(0)
       , out_samples_per_channel(0)
       , speed(1.0)
     {
@@ -43,7 +41,6 @@ public:
         out_format.setSampleFormat(AudioFormat::SampleFormat_Float);
     }
 
-    qint64 in_channel_layout, out_channel_layout;
     int in_samples_per_channel, out_samples_per_channel;
     qreal speed;
     AudioFormat in_format, out_format;

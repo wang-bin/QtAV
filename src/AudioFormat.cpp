@@ -33,12 +33,14 @@ public:
       , sample_format(AudioFormat::SampleFormat_Input)
       , channels(0)
       , sample_rate(0)
+      , channel_layout(0)
     {}
     bool planar;
     AudioFormat::SampleFormat sample_format;
     int channels;
     int sample_rate;
     int bytes_per_sample;
+    AudioFormat::ChannelLayout channel_layout;
 };
 
 bool AudioFormat::isPlanar(SampleFormat format)
@@ -104,10 +106,9 @@ bool AudioFormat::operator!=(const AudioFormat& other) const
 */
 bool AudioFormat::isValid() const
 {
-    return d->sample_rate > 0 && d->channels > 0 &&
+    return d->sample_rate > 0 && (d->channels > 0 || d->channel_layout > 0) &&
             d->sample_format != AudioFormat::SampleFormat_Unknown;
 }
-
 
 bool AudioFormat::isPlanar() const
 {
@@ -130,6 +131,19 @@ void AudioFormat::setSampleRate(int sampleRate)
 int AudioFormat::sampleRate() const
 {
     return d->sample_rate;
+}
+
+/*!
+   Sets the channel layout to \a layout. Currently use FFmpeg's. see avutil/channel_layout.h
+*/
+void AudioFormat::setChannelLayout(ChannelLayout layout)
+{
+    d->channel_layout = layout;
+}
+
+AudioFormat::ChannelLayout AudioFormat::channelLayout() const
+{
+    return d->channel_layout;
 }
 
 /*!

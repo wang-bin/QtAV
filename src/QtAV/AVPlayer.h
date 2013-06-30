@@ -70,6 +70,11 @@ public:
     void setRenderer(VideoRenderer* renderer);
     VideoRenderer* renderer();
     void setAudioOutput(AudioOutput* ao);
+    /*!
+     * To change audio format, you should set both AudioOutput's format and AudioResampler's format
+     * So signals/slots is a better solution.
+     * TODO: AudioOutput.audioFormatChanged (signal)---AudioResampler.setOutAudioFormat (slot)
+     */
     AudioOutput* audio();
     void setMute(bool mute);
     bool isMute() const;
