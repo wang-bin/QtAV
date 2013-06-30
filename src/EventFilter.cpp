@@ -211,10 +211,16 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_Up: {
             AudioOutput *ao = player->audio();
             if (modifiers == Qt::ControlModifier) {
-                qDebug("increase speed");
                 if (ao && ao->isAvailable()) {
-                    qDebug("set speed %.2f =>> %.2f", ao->speed(), ao->speed()+0.1);
-                    ao->setSpeed(ao->speed() + 0.05);
+                    qreal s = ao->speed();
+                    if (s < 1.4)
+                        s += 0.02;
+                    else
+                        s += 0.05;
+                    if (qAbs<qreal>(s-1.0) <= 0.01)
+                        s = 1.0;
+                    qDebug("set speed %.2f =>> %.2f", ao->speed(), s);
+                    ao->setSpeed(s);
                 } else {
                     //clock speed
                 }
@@ -236,10 +242,17 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_Down: {
             AudioOutput *ao = player->audio();
             if (modifiers == Qt::ControlModifier) {
-                qDebug("decrease speed");
+                qreal s = ao->speed();
+                if (s < 1.4)
+                    s -= 0.02;
+                else
+                    s -= 0.05;
+                if (qAbs<qreal>(s-1.0) <= 0.01)
+                    s = 1.0;
+                s = qMax(s, 0.0);
                 if (ao && ao->isAvailable()) {
-                    qDebug("set speed %.2f =>> %.2f", ao->speed(), ao->speed()-0.1);
-                    ao->setSpeed(qMax(ao->speed() - 0.05, 0.0));
+                    qDebug("set speed %.2f =>> %.2f", ao->speed(), s);
+                    ao->setSpeed(s);
                 } else {
                     //clock speed
                 }

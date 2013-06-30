@@ -116,6 +116,7 @@ The default is Qt's paint engine.
 - R: switch aspect ratio
 - M: mute on/off
 - Up / Down: volume + / -
+- Ctrl+Up/Down: speed + / -
 - -> / <-: seek forward / backward
 - Drag and drop a media file to player
 
