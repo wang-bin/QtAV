@@ -56,8 +56,7 @@ QByteArray AudioResampler::outData() const
 
 bool AudioResampler::prepare()
 {
-    DPTR_D(AudioResampler);
-    if (!!inAudioFormat().isValid()) {
+    if (!inAudioFormat().isValid()) {
         qWarning("src audio parameters 'channel layout(or channels), sample rate and sample format must be set before initialize resampler");
         return false;
     }
