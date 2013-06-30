@@ -46,6 +46,7 @@ private slots:
     void onStartPlay();
     void onStopPlay();
     void onPaused(bool p);
+    void onSpeedChange(qreal speed);
     void seekToMSec(int msec);
     void seek();
     void capture();
@@ -64,6 +65,7 @@ private:
     QWidget *mpControl;
     QLabel *mpCurrent, *mpDuration;
     QLabel *mpTitle;
+    QLabel *mpSpeed;
     Slider *mpTimeSlider, *mpVolumeSlider;
     Button *mpVolumeBtn;
     Button *mpPlayPauseBtn, *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;

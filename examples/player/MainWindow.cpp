@@ -87,6 +87,7 @@ void MainWindow::initPlayer()
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
+    connect(mpPlayer, SIGNAL(speedChanged(qreal)), this, SLOT(onSpeedChange(qreal)));
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
 }
 
@@ -126,6 +127,9 @@ void MainWindow::setupUi()
     mpTitle->setToolTip(tr("Render engine"));
     mpTitle->setText("QPainter");
     mpTitle->setIndent(8);
+    mpSpeed = new QLabel("1.00");
+    mpSpeed->setMargin(1);
+    mpSpeed->setToolTip(tr("Speed. Ctrl+Up/Down"));
 
     mPlayPixmap = QPixmap(":/theme/button-play-pause.png");
     int w = mPlayPixmap.width(), h = mPlayPixmap.height();
@@ -294,6 +298,7 @@ void MainWindow::setupUi()
     controlLayout->addWidget(mpForwardBtn);
     controlLayout->addWidget(mpOpenBtn);
     controlLayout->addWidget(mpInfoBtn);
+    controlLayout->addWidget(mpSpeed);
     //controlLayout->addWidget(mpSetupBtn);
     controlLayout->addWidget(mpMenuBtn);
     controlLayout->addWidget(mpDuration);
@@ -478,6 +483,11 @@ void MainWindow::onStopPlay()
     if (mpRepeatAction->data().toInt() == 1) {
         play(mFile);
     }
+}
+
+void MainWindow::onSpeedChange(qreal speed)
+{
+    mpSpeed->setText(QString("%1").arg(speed, 4, 'f', 2, '0'));
 }
 
 void MainWindow::seekToMSec(int msec)
