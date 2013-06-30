@@ -73,6 +73,9 @@ public:
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
 
+    void setSpeed(qreal speed);
+    inline qreal speed() const;
+
 signals:
     void paused(bool);
     void paused(); //equals to paused(true)
@@ -96,6 +99,7 @@ private:
     double pts_v;
     double delay_;
     mutable QElapsedTimer timer;
+    qreal mSpeed;
 };
 
 double AVClock::value() const
@@ -104,10 +108,10 @@ double AVClock::value() const
         return pts_ + delay_;
     } else {
         if (timer.isValid())
-            return pts_ += double(timer.restart()) * kThousandth;
+            return (pts_ += double(timer.restart()) * kThousandth) * speed();
         else {//timer is paused
             qDebug("clock is paused. return the last value %f", pts_);
-            return pts_;
+            return pts_ * speed();
         }
     }
 }
@@ -136,6 +140,11 @@ double AVClock::delay() const
 void AVClock::updateDelay(double delay)
 {
     delay_ = delay;
+}
+
+qreal AVClock::speed() const
+{
+    return mSpeed;
 }
 
 } //namespace QtAV

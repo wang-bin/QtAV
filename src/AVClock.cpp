@@ -24,8 +24,11 @@
 
 namespace QtAV {
 
-AVClock::AVClock(AVClock::ClockType c, QObject *parent)
-    :QObject(parent),auto_clock(true),clock_type(c)
+AVClock::AVClock(AVClock::ClockType c, QObject *parent):
+    QObject(parent)
+  , auto_clock(true)
+  , clock_type(c)
+  , mSpeed(1.0)
 {
     pts_ = pts_v = delay_ = 0;
 }
@@ -77,6 +80,11 @@ void AVClock::updateExternalClock(const AVClock &clock)
     qDebug("External clock change: %f ==> %f", value(), clock.value());
     pts_ = clock.value();
     timer.restart();
+}
+
+void AVClock::setSpeed(qreal speed)
+{
+    mSpeed = speed;
 }
 
 void AVClock::start()

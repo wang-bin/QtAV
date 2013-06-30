@@ -205,7 +205,7 @@ void AVPlayer::setSpeed(qreal speed)
         qDebug("set speed %.2f", mSpeed);
         _audio->setSpeed(mSpeed);
     } else {
-        //clock speed
+        masterClock()->setSpeed(mSpeed);
     }
     emit speedChanged(mSpeed);
 }
