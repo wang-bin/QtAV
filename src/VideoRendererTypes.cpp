@@ -44,6 +44,13 @@ namespace QtAV {
 
 FACTORY_DEFINE(VideoRenderer)
 
+VideoRendererId VideoRendererId_QPainter = 0;
+VideoRendererId VideoRendererId_Widget = 1;
+VideoRendererId VideoRendererId_GraphicsItem = 2;
+VideoRendererId VideoRendererId_GLWidget = 3;
+VideoRendererId VideoRendererId_GDI = 4;
+VideoRendererId VideoRendererId_Direct2D = 5;
+VideoRendererId VideoRendererId_XV = 6;
 
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")
 
@@ -137,6 +144,7 @@ void VideoRenderer_RegisterAll()
 #endif //HAVE_XV
 }
 
+#if ID_STATIC
 namespace {
 static void FixUnusedCompileWarning()
 {
@@ -147,5 +155,5 @@ static void FixUnusedCompileWarning()
     Q_UNUSED(VideoRendererId_XV);
 }
 }//namespace
-
+#endif //ID_STATIC
 }//namespace QtAV

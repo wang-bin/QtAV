@@ -25,7 +25,7 @@
 
 namespace QtAV {
 
-static AudioResamplerId AudioResamplerId_FF = 0;
+extern Q_EXPORT AudioResamplerId AudioResamplerId_FF;
 
 Q_EXPORT void AudioResampler_RegisterAll();
 

@@ -37,8 +37,8 @@ namespace QtAV {
  * When a new type is created, declare the type here, define the value in cpp
  */
 //why can not be const for msvc?
-static ImageConverterId ImageConverterId_FF = 0;    //0
-static ImageConverterId ImageConverterId_IPP = 1;   //1
+extern Q_EXPORT ImageConverterId ImageConverterId_FF;
+extern Q_EXPORT ImageConverterId ImageConverterId_IPP;
 
 /*
  * This must be called manually in your program(outside this library) if your compiler does
