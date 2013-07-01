@@ -31,7 +31,7 @@
 #  define Q_EXPORT Q_DECL_EXPORT
 #else
 #  undef Q_EXPORT
-#  define Q_EXPORT //Q_DECL_IMPORT //only for vc?
+#  define Q_EXPORT Q_DECL_IMPORT //only for vc?
 #endif
 
 /* runtime version. used to compare with compile time version */
