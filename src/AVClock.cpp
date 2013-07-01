@@ -33,8 +33,11 @@ AVClock::AVClock(AVClock::ClockType c, QObject *parent):
     pts_ = pts_v = delay_ = 0;
 }
 
-AVClock::AVClock(QObject *parent)
-    :QObject(parent),auto_clock(true),clock_type(AudioClock)
+AVClock::AVClock(QObject *parent):
+    QObject(parent)
+  , auto_clock(true)
+  , clock_type(AudioClock)
+  , mSpeed(1.0)
 {
     pts_ = pts_v = delay_ = 0;
 }

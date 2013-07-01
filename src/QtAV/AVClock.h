@@ -107,12 +107,12 @@ double AVClock::value() const
     if (clock_type == AudioClock) {
         return pts_ + delay_;
     } else {
-        if (timer.isValid())
-            return (pts_ += double(timer.restart()) * kThousandth) * speed();
-        else {//timer is paused
+        if (timer.isValid()) {
+            pts_ += double(timer.restart()) * kThousandth;
+        } else {//timer is paused
             qDebug("clock is paused. return the last value %f", pts_);
-            return pts_ * speed();
         }
+        return pts_ * speed();
     }
 }
 
