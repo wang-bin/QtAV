@@ -144,9 +144,11 @@ SOURCES += \
     VideoThread.cpp
 
 SDK_HEADERS *= \
+    QtAV/QtAV.h \
     QtAV/dptr.h \
     QtAV/QtAV_Global.h \
     QtAV/AudioResampler.h \
+    QtAV/AudioResamplerTypes.h \
     QtAV/AudioDecoder.h \
     QtAV/AudioFormat.h \
     QtAV/AudioOutput.h \
@@ -157,6 +159,7 @@ SDK_HEADERS *= \
     QtAV/FilterContext.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
+    QtAV/ImageConverterTypes.h \
     QtAV/QPainterRenderer.h \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
@@ -170,7 +173,6 @@ SDK_HEADERS *= \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/FactoryDefine.h \
-    QtAV/ImageConverterTypes.h \
     QtAV/Statistics.h \
     QtAV/version.h
 
@@ -200,8 +202,7 @@ HEADERS *= \
     QtAV/private/Direct2DRenderer_p.h \
     QtAV/private/GLWidgetRenderer_p.h \
     QtAV/private/GDIRenderer_p.h \
-    QtAV/private/XVRenderer_p.h \
-    QtAV/AudioResamplerTypes.h
+    QtAV/private/XVRenderer_p.h
 
 
 SDK_INCLUDE_FOLDER = QtAV
