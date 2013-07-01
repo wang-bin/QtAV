@@ -62,6 +62,7 @@ protected:
     //virtual bool sceneEvent(QEvent *event);
 #endif //CONFIG_GRAPHICSWIDGET
 };
+typedef GraphicsItemRenderer VideoRendererGraphicsItem;
 }
 
 #endif // QAV_GRAPHICSITEMRENDERER_H

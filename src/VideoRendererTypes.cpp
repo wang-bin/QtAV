@@ -52,11 +52,19 @@ VideoRendererId VideoRendererId_GDI = 4;
 VideoRendererId VideoRendererId_Direct2D = 5;
 VideoRendererId VideoRendererId_XV = 6;
 
+//QPainterRenderer is abstract. So can not register(operator new will needed)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")
 
 void RegisterVideoRendererWidget_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, Widget, "QWidegt")
+}
+
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, GraphicsItem, "QGraphicsItem")
+
+void RegisterVideoRendererGraphicsItem_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, GraphicsItem, "QGraphicsItem")
 }
 
 VideoRendererId WidgetRenderer::id() const
