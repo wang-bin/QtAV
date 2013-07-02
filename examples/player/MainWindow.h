@@ -43,6 +43,7 @@ private slots:
     void processPendingActions();
     void initPlayer();
     void setupUi();
+    void onSpinBoxChanged(double v);
     void onStartPlay();
     void onStopPlay();
     void onPaused(bool p);

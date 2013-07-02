@@ -10,16 +10,14 @@
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QWindowStateChangeEvent>
-#include <QtAV/AudioOutput.h>
-#include <QtAV/AVPlayer.h>
-#include <QtAV/OSDFilter.h>
-#include <QtAV/VideoRendererTypes.h>
-#include <QtAV/WidgetRenderer.h>
+#include <QWidgetAction>
 #include <QLayout>
 #include <QPushButton>
+#include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMenu>
+#include <QtAV/QtAV.h>
 #include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"
@@ -233,6 +231,18 @@ void MainWindow::setupUi()
     mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
+
+    subMenu = new QMenu(tr("Speed"));
+    mpMenu->addMenu(subMenu);
+    QDoubleSpinBox *pSpeedBox = new QDoubleSpinBox(0);
+    pSpeedBox->setRange(0.01, 20);
+    pSpeedBox->setValue(1.0);
+    pSpeedBox->setSingleStep(0.01);
+    pSpeedBox->setCorrectionMode(QAbstractSpinBox::CorrectToPreviousValue);
+    QWidgetAction *pWA = new QWidgetAction(0);
+    pWA->setDefaultWidget(pSpeedBox);
+    subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
+    mpMenu->addSeparator();
     subMenu = new ClickableMenu(tr("Repeat"));
     subMenu->setEnabled(false); //have bug now
     mpMenu->addMenu(subMenu);
@@ -303,6 +313,7 @@ void MainWindow::setupUi()
     controlLayout->addWidget(mpMenuBtn);
     controlLayout->addWidget(mpDuration);
 
+    connect(pSpeedBox, SIGNAL(valueChanged(double)), SLOT(onSpinBoxChanged(double)));
     connect(mpOpenBtn, SIGNAL(clicked()), SLOT(openFile()));
     connect(mpPlayPauseBtn, SIGNAL(clicked()), SLOT(togglePlayPause()));
     connect(mpCaptureBtn, SIGNAL(clicked()), this, SLOT(capture()));
@@ -437,6 +448,13 @@ void MainWindow::togglePlayPause()
         mpPlayer->play();
         mpPlayPauseBtn->setIconWithSates(mPausePixmap);
     }
+}
+
+void MainWindow::onSpinBoxChanged(double v)
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setSpeed(v);
 }
 
 void MainWindow::onPaused(bool p)
