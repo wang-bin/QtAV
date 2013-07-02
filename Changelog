@@ -1,3 +1,14 @@
+version 1.2.2    2013-07-03
+
+- Audio resampler using swresample
+- Play speed control
+- Audio format
+- Play good with audio that noise before(mp3, ...)
+- init and deinit FFmpeg only when needed
+- Component id accessed by symbol
+- mms support
+
+
 version 1.2.1    2013-06-19
 
 - Configurable video quality

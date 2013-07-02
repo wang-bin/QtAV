@@ -21,6 +21,7 @@ QtAV can meet your most demands
 - Aspect ratio
 - Transform video using GraphicsItemRenderer. (rotate, shear, etc)
 - Playing frame by frame (currently support forward playing)
+- Playing speed control. At any speed.
 - Variant streams: locale file, http, rtsp, etc.
 - Playing music (not perfect)
 - Volume control
