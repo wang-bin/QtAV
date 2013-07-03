@@ -3,4 +3,4 @@ CONFIG += console
 
 SOURCES += main.cpp
 
-LIBS += -lgdiplus
+LIBS += -lgdiplus -lGdi32

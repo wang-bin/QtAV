@@ -83,7 +83,7 @@ config_gdiplus {
     SOURCES += GDIRenderer.cpp
     HEADERS += QtAV/GDIRenderer.h
     SDK_HEADERS += QtAV/GDIRenderer.h
-    LIBS += -lgdiplus
+    LIBS += -lgdiplus -lGdi32
 }
 
 config_direct2d {
