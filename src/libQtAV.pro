@@ -12,7 +12,6 @@ PROJECTROOT = $$PWD/..
 !include(libQtAV.pri): error("could not find libQtAV.pri")
 preparePaths($$OUT_PWD/../out)
 
-
 RESOURCES += ../i18n/QtAV.qrc
 
 win32 {
@@ -204,6 +203,18 @@ HEADERS *= \
     QtAV/private/GDIRenderer_p.h \
     QtAV/private/XVRenderer_p.h
 
+
+DLLAPI_DIR = $$PROJECTROOT/contrib/DllAPI
+INCLUDEPATH += $$DLLAPI_DIR/lib
+INCLUDEPATH += $$DLLAPI_DIR/src
+
+HEADERS += $$DLLAPI_DIR/src/dllapi_global.h \
+        $$DLLAPI_DIR/src/dllapi_p.h \
+        $$DLLAPI_DIR/src/dllapi.h
+SOURCES += $$DLLAPI_DIR/src/dllapi.cpp
+
+HEADERS += $$DLLAPI_DIR/lib/dllapi/libswresample/swresample.h
+SOURCES += $$DLLAPI_DIR/lib/dllapi/libswresample/swresample.cpp
 
 SDK_INCLUDE_FOLDER = QtAV
 include($$PROJECTROOT/deploy.pri)
