@@ -165,6 +165,17 @@ Video Wall
 ![Alt text](https://sourceforge.net/p/qtav/screenshot/videowall.png "video wall")
 
 
+
+##Donate 资助
+
+软件由我一人利用空余学习和工作时间开发。如果您觉得不错，可以考虑资助一下，非常方便
+[![Alipay](https://img.alipay.com/sys/personalprod/style/mc/top-logo.png)](https://me.alipay.com/lucaswang)
+
+#####资助名单
+
+
+
+
 > Copyright &copy; Wang Bin wbsecg1@gmail.com
 
 > Shanghai University, Shanghai, China
