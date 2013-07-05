@@ -48,13 +48,14 @@ class Q_EXPORT AVDemuxer : public QObject //QIODevice?
 {
     Q_OBJECT
 public:
-    enum SeekFlag {
+    enum SeekUnit {
+        SeekByTime,
         SeekByByte,
-        SeekByTime
+        SeekByFrame
     };
-    enum SeekFrame {
-        SeekIframe,
-        SeekAnyFrame
+    enum SeekTarget {
+        SeekTarget_KeyFrame,
+        SeekTarget_AnyFrame
     };
 
     AVDemuxer(const QString& fileName = QString(), QObject *parent = 0);
@@ -69,6 +70,10 @@ public:
 
 	void setClock(AVClock *c);
 	AVClock *clock() const;
+    void setSeekUnit(SeekUnit unit);
+    SeekUnit seekUnit() const;
+    void setSeekTarget(SeekTarget target);
+    SeekTarget seekTarget() const;
     void seek(qreal q); //q: [0,1]
     //seek default steps
     void seekForward();
@@ -155,6 +160,8 @@ private:
 	AVClock *master_clock;
     QElapsedTimer seek_timer;
 
+    SeekUnit mSeekUnit;
+    SeekTarget mSeekTarget;
     /**
      * interrupt callback for ffmpeg
      * @param void*obj: actual object

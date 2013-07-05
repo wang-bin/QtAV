@@ -34,6 +34,8 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     ,ipts(0),stream_idx(-1),audio_stream(-2),video_stream(-2)
     ,subtitle_stream(-2),_is_input(true),format_context(0)
 	,a_codec_context(0),v_codec_context(0),_file_name(fileName),master_clock(0)
+    , mSeekUnit(SeekByTime)
+    , mSeekTarget(SeekTarget_AnyFrame)
     ,__interrupt_status(0)
 {
     if (!_file_name.isEmpty())
@@ -207,6 +209,26 @@ void AVDemuxer::setClock(AVClock *c)
 AVClock* AVDemuxer::clock() const
 {
 	return master_clock;
+}
+
+void AVDemuxer::setSeekUnit(SeekUnit unit)
+{
+    mSeekUnit = unit;
+}
+
+AVDemuxer::SeekUnit AVDemuxer::seekUnit() const
+{
+    return mSeekUnit;
+}
+
+void AVDemuxer::setSeekTarget(SeekTarget target)
+{
+    mSeekTarget = target;
+}
+
+AVDemuxer::SeekTarget AVDemuxer::seekTarget() const
+{
+    return mSeekTarget;
 }
 
 //TODO: seek by byte
