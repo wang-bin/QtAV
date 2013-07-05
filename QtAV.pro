@@ -16,8 +16,8 @@ OTHER_FILES += \
 
 
 EssentialDepends = avutil avcodec avformat swscale
-OptionalDepends = portaudio direct2d gdiplus gl \
-    swresample
+OptionalDepends = portaudio direct2d gdiplus gl
+denpends_link|swresample_link: OptionalDepends += swresample
 unix {
     isEqual(QT_MAJOR_VERSION, 4) {
         OptionalDepends += xv
