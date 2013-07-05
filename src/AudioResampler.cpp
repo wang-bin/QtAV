@@ -29,12 +29,16 @@ namespace QtAV {
 FACTORY_DEFINE(AudioResampler)
 
 extern void RegisterAudioResamplerFF_Man();
+extern void RegisterAudioResamplerLibav_Man();
 
 void AudioResampler_RegisterAll()
 {
-#if QTAV_HAVE(SWRESAMPLE) || QTAV_HAVE(AVRESAMPLE)
+#if QTAV_HAVE(SWRESAMPLE)
     RegisterAudioResamplerFF_Man();
-#endif
+#endif //QTAV_HAVE(SWRESAMPLE)
+#if QTAV_HAVE(AVRESAMPLE)
+    RegisterAudioResamplerLibav_Man();
+#endif //QTAV_HAVE(AVRESAMPLE)
 }
 
 AudioResampler::AudioResampler()

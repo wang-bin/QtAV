@@ -142,3 +142,28 @@ av_always_inline char* av_err2str(int errnum)
 #define swresample_license() "Not available."
 #endif
 #endif
+
+/*
+ * mapping avresample to swresample
+ * https://github.com/xbmc/xbmc/commit/274679d
+ */
+#if (QTAV_HAVE(SWR_AVR_MAP) || !QTAV_HAVE(SWRESAMPLE)) && QTAV_HAVE(AVRESAMPLE)
+#define SwrContext AVAudioResampleContext
+#define swr_init(ctx) avresample_open(ctx)
+#define swr_free(ctx) avresample_close(*ctx)
+#define swr_get_class() avresample_get_class()
+#define swr_alloc() avresample_alloc_context()
+//#define swr_next_pts()
+#define swr_set_compensation() avresample_set_compensation()
+#define swr_set_channel_mapping(ctx, map) avresample_set_channel_mapping(ctx, map)
+#define swr_set_matrix(ctx, matrix, stride) avresample_set_matrix(ctx, matrix, stride)
+//#define swr_drop_output(ctx, count)
+//#define swr_inject_silence(ctx, count)
+#define swr_get_delay(ctx, ...) avresample_get_delay(ctx)
+#define swr_convert(ctx, out, out_count, in, in_count) \
+    avresample_convert(ctx, out, 0, out_count, const_cast<uint8_t**>(in), 0, in_count)
+struct SwrContext *swr_alloc_set_opts(struct SwrContext *s, int64_t out_ch_layout, enum AVSampleFormat out_sample_fmt, int out_sample_rate, int64_t in_ch_layout, enum AVSampleFormat in_sample_fmt, int in_sample_rate, int log_offset, void *log_ctx);
+#define swresample_version() avresample_version()
+#define swresample_configuration() avresample_configuration()
+#define swresample_license() avresample_license()
+#endif //MAP_SWR_AVR

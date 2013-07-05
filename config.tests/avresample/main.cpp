@@ -1,7 +1,5 @@
-#ifndef QTAV_AUDIORESAMPLERTYPES_H
-#define QTAV_AUDIORESAMPLERTYPES_H
 /******************************************************************************
-    VideoRendererTypes: type id and manually id register function
+    QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -20,16 +18,9 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#include <libavresample/avresample.h>
 
-#include <QtAV/AudioResampler.h>
-
-namespace QtAV {
-
-extern Q_EXPORT AudioResamplerId AudioResamplerId_FF;
-extern Q_EXPORT AudioResamplerId AudioResamplerId_Libav;
-
-Q_EXPORT void AudioResampler_RegisterAll();
-
-} //namespace QtAV
-
-#endif // QTAV_AUDIORESAMPLERTYPES_H
+int main()
+{
+	return 0;
+}

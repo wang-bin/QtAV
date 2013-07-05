@@ -48,6 +48,7 @@ config_swresample {
 }
 config_avresample {
     DEFINES += QTAV_HAVE_AVRESAMPLE=1
+    SOURCES += AudioResamplerLibav.cpp
     LIBS += -lavresample
 }
 

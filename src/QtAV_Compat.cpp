@@ -68,3 +68,35 @@ PRE_FUNC_ADD(ffmpeg_version_print);
 
 #endif //av_err2str
 
+/*
+ * always need this function if avresample available
+ * use AVAudioResampleContext to avoid func type confliction when swr is also available
+ */
+#if QTAV_HAVE(AVRESAMPLE)
+AVAudioResampleContext *swr_alloc_set_opts(AVAudioResampleContext *s
+                                      , int64_t out_ch_layout
+                                      , enum AVSampleFormat out_sample_fmt
+                                      , int out_sample_rate
+                                      , int64_t in_ch_layout
+                                      , enum AVSampleFormat in_sample_fmt
+                                      , int in_sample_rate
+                                      , int log_offset, void *log_ctx)
+{
+    //DO NOT use swr_alloc() because it's not defined as a macro in QtAV_Compat.h
+    if (!s)
+        s = avresample_alloc_context();
+    if (!s)
+        return 0;
+
+    Q_UNUSED(log_offset);
+    Q_UNUSED(log_ctx);
+
+    av_opt_set_int(s, "out_channel_layout", out_ch_layout  , 0);
+    av_opt_set_int(s, "out_sample_fmt"    , out_sample_fmt , 0);
+    av_opt_set_int(s, "out_sample_rate"   , out_sample_rate, 0);
+    av_opt_set_int(s, "in_channel_layout" , in_ch_layout   , 0);
+    av_opt_set_int(s, "in_sample_fmt"     , in_sample_fmt  , 0);
+    av_opt_set_int(s, "in_sample_rate"    , in_sample_rate , 0);
+    return s;
+}
+#endif
