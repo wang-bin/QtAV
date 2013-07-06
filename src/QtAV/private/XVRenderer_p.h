@@ -46,6 +46,9 @@ public:
       , xv_image_height(0)
       , xv_port(0)
     {
+#ifndef _XSHM_H_
+        use_shm = false;
+#endif //_XSHM_H_
         //XvQueryExtension()
         display = QX11Info::display();
         if (XvQueryAdaptors(display, DefaultRootWindow(display), &num_adaptors, &xv_adaptor_info) != Success) {
@@ -83,6 +86,7 @@ public:
             xv_adaptor_info = 0;
         }
         if (xv_image) {
+#ifdef _XSHM_H_
             if (use_shm) {
                 if (shm.shmaddr) {
                     XShmDetach(display, &shm);
@@ -90,8 +94,12 @@ public:
                     shmdt(shm.shmaddr);
                 }
             } else {
+#else //_XSHM_H_
                 delete [] xv_image->data;
+#endif //_XSHM_H_
+#ifdef _XSHM_H_
             }
+#endif //_XSHM_H_
             XFree(xv_image);
         }
         if (gc) {
@@ -136,7 +144,7 @@ public:
             return true;
         xv_image_width = w;
         xv_image_height = h;
-
+#ifdef _XSHM_H_
         if (use_shm) {
             xv_image = XvShmCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height, &shm);
             shm.shmid = shmget(IPC_PRIVATE, xv_image->data_size, IPC_CREAT | 0777);
@@ -156,6 +164,7 @@ public:
                 }
             }
         }
+#endif //_XSHM_H_
         if (!use_shm) {
             xv_image = XvCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height);
             xv_image->data = new char[xv_image->data_size];
@@ -172,7 +181,9 @@ public:
     int xv_image_width, xv_image_height;
     XvPortID xv_port;
     GC gc;
+#ifdef _XSHM_H_
     XShmSegmentInfo shm;
+#endif //_XSHM_H_
 };
 
 } //namespace QtAV
