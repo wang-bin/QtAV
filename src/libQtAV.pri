@@ -67,7 +67,7 @@ PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
 #for system include path
 *msvc* {
 } else {
-    QMAKE_CXXFLAGS += -isystem $$PROJECT_SRCPATH/..
+    QMAKE_CXXFLAGS += -isystem $$PROJECT_SRCPATH -isystem $$PROJECT_SRCPATH/..
 }
 INCLUDEPATH *= $$PROJECT_SRCPATH $$PROJECT_SRCPATH/.. $$PROJECT_SRCPATH/QtAV
 DEPENDPATH *= $$PROJECT_SRCPATH
