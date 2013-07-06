@@ -244,7 +244,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                     s -= 0.05;
                 if (qAbs<qreal>(s-1.0) <= 0.01)
                     s = 1.0;
-                s = qMax(s, 0.0);
+                s = qMax<qreal>(s, 0.0);
                 player->setSpeed(s);
                 return true;
             }
