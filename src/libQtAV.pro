@@ -89,7 +89,6 @@ config_gdiplus {
 
 config_direct2d {
     DEFINES *= HAVE_DIRECT2D=1
-#TODO: check whether support Direct2D, i.e. version at least XP
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
     HEADERS += QtAV/Direct2DRenderer.h

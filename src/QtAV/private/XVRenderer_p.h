@@ -139,7 +139,6 @@ public:
     }
 
     bool prepareImage(int w, int h) {
-        //TODO: check shm
         if (xv_image_width == w && xv_image_height == h && xv_image)
             return true;
         xv_image_width = w;
@@ -172,7 +171,7 @@ public:
         return true;
     }
 
-    bool use_shm;
+    bool use_shm; //TODO: set by user
     unsigned int num_adaptors;
     XvAdaptorInfo *xv_adaptor_info;
     Display *display;

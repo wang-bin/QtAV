@@ -23,7 +23,6 @@
 #define QTAV_GLWIDGETRENDERER_P_H
 
 #include "private/VideoRenderer_p.h"
-
 namespace QtAV {
 
 class GLWidgetRendererPrivate : public VideoRendererPrivate

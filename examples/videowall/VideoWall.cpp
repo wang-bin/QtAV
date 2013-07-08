@@ -253,7 +253,7 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
         int key = key_event->key();
         Qt::KeyboardModifiers modifiers = key_event->modifiers();
         switch (key) {
-        case Qt::Key_F: { //TODO: move to gui
+        case Qt::Key_F: {
             QWidget *w = qApp->activeWindow();
             if (!w)
                 return false;
@@ -271,7 +271,6 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
 
         case Qt::Key_O: {
             if (modifiers == Qt::ControlModifier) {
-                //TODO: emit a signal so we can use custome dialogs?
                 openLocalFile();
                 return true;
             } else/* if (m == Qt::NoModifier) */{

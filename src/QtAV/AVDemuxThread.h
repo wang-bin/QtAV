@@ -26,7 +26,7 @@
 #include <QtCore/QThread>
 #include <QtCore/QWaitCondition>
 #include <QtAV/QtAV_Global.h>
-//TODO: AVThread can be 0
+
 namespace QtAV {
 
 class AVDemuxer;

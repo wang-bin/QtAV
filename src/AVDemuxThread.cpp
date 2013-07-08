@@ -72,8 +72,6 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
 void AVDemuxThread::setDemuxer(AVDemuxer *dmx)
 {
     demuxer = dmx;
-    //TODO: will the slot not be called but the packet is token?
-    //connect(dmx, SIGNAL(finished()), this, SLOT(stop()), Qt::QueuedConnection);
 }
 
 void AVDemuxThread::setAVThread(AVThread*& pOld, AVThread *pNew)
@@ -217,7 +215,6 @@ void AVDemuxThread::run()
 {
     qDebug("demux thread start running...");
     end = false;
-    //TODO: no video thread is ok
     if (audio_thread && !audio_thread->isRunning())
         audio_thread->start(QThread::HighPriority);
     if (video_thread && !video_thread->isRunning())
@@ -323,7 +320,7 @@ bool AVDemuxThread::tryPause()
         return false;
     QMutexLocker lock(&buffer_mutex);
     Q_UNUSED(lock);
-    cond.wait(&buffer_mutex); //TODO: qApp->processEvents?
+    cond.wait(&buffer_mutex);
     return true;
 }
 

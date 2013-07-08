@@ -86,7 +86,6 @@ public:
          * d2d is accessed by AVThread and GUI thread, so we use D2D1_FACTORY_TYPE_MULTI_THREADED
          * and let d2d to deal with the thread safe problems. otherwise, if we use
          * D2D1_FACTORY_TYPE_SINGLE_THREADED, we must use lock when copying ID2D1Bitmap and calling EndDraw.
-         * TODO: can we avoid the lock when painting in VideoRenderer::handlePaintEvent()?
          */
         /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd368104%28v=vs.85%29.aspx
         HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED

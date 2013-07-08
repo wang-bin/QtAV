@@ -95,7 +95,7 @@ bool AVOutput::tryPause()
         return false;
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
-    d.cond.wait(&d.mutex); //TODO: qApp->processEvents?
+    d.cond.wait(&d.mutex);
     return true;
 }
 

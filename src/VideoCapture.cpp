@@ -37,11 +37,9 @@ public:
         format = "PNG";
         setAutoDelete(true);
     }
-    //TODO: abort when app is exiting or wait for capturing finished
     virtual void run() {
         bool main_thread = QThread::currentThread() == qApp->thread();
         qDebug("capture task running in thread %p [main thread=%d]", QThread::currentThreadId(), main_thread);
-    //TODO: ensure dir exists
         if (!QDir(dir).exists()) {
             if (!QDir().mkpath(dir)) {
                 cap->error = VideoCapture::DirCreateError;
