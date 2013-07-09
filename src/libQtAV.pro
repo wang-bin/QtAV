@@ -118,6 +118,7 @@ SOURCES += \
     AudioFormat.cpp \
     AudioOutput.cpp \
     AudioResampler.cpp \
+    AudioResamplerTypes.cpp \
     AVDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \

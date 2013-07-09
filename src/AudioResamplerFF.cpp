@@ -16,7 +16,7 @@ public:
     virtual bool prepare();
 };
 
-AudioResamplerId AudioResamplerId_FF = 0;
+extern AudioResamplerId AudioResamplerId_FF;
 FACTORY_REGISTER_ID_AUTO(AudioResampler, FF, "FFmpeg")
 
 void RegisterAudioResamplerFF_Man()

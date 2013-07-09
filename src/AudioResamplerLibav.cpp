@@ -16,7 +16,7 @@ public:
     virtual bool prepare();
 };
 
-AudioResamplerId AudioResamplerId_Libav = 1;
+extern AudioResamplerId AudioResamplerId_Libav;
 FACTORY_REGISTER_ID_AUTO(AudioResampler, Libav, "Libav")
 
 void RegisterAudioResamplerLibav_Man()
