@@ -34,6 +34,8 @@ public:
         resampler(0)
     {
         resampler = AudioResamplerFactory::create(AudioResamplerId_FF);
+        if (!resampler)
+            resampler = AudioResamplerFactory::create(AudioResamplerId_Libav);
         if (resampler)
             resampler->setOutSampleFormat(AV_SAMPLE_FMT_FLT);
     }
