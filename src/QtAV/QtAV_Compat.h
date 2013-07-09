@@ -32,6 +32,7 @@ extern "C"
 #include <libswscale/swscale.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#include <libavutil/mathematics.h> //AV_ROUND_UP, av_rescale_rnd for libav
 #include <libavutil/error.h>
 #include <libavutil/opt.h>
 
