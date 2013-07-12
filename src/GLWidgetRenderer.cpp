@@ -45,12 +45,17 @@
 #define GL_BGR GL_BGR_EXT
 #endif //GL_BGRA
 #endif //GL_BGRA
+
+#include <QtAV/FilterContext.h>
+#include <QtAV/OSDFilter.h>
+
 namespace QtAV {
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
     QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRendererPrivate())
 {
     DPTR_INIT_PRIVATE(GLWidgetRenderer);
+    DPTR_D(GLWidgetRenderer);
     d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
@@ -58,6 +63,9 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
 //    makeCurrent();
+    d.filter_context = FilterContext::create(FilterContext::OpenGL);
+    ((GLFilterContext*)d.filter_context)->paint_device = this;
+    setOSDFilter(new OSDFilterGL());
 }
 
 GLWidgetRenderer::~GLWidgetRenderer()

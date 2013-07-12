@@ -23,6 +23,7 @@
 #include "QtAV/Statistics.h"
 #include <private/Filter_p.h>
 #include <QtGui/QPainter>
+#include <QGLWidget>
 
 namespace QtAV {
 
@@ -38,6 +39,12 @@ OSDFilter::OSDFilter(OSDFilterPrivate &d):
 
 template<>
 OSDFilterImpl<QPainterFilterContext>::OSDFilterImpl():
+    OSDFilter(*new OSDFilterPrivate())
+{
+}
+
+template<>
+OSDFilterImpl<GLFilterContext>::OSDFilterImpl():
     OSDFilter(*new OSDFilterPrivate())
 {
 }
@@ -73,4 +80,18 @@ FilterContext::Type OSDFilterQPainter::contextType() const
     return FilterContext::QtPainter;
 }
 */
+
+template<>
+void OSDFilterGL::process()
+{
+    if (mShowType == ShowNone)
+        return;
+    DPTR_D(Filter);
+    GLFilterContext *ctx = static_cast<GLFilterContext*>(d.context);
+    //TODO: render off screen
+    QGLWidget *glw = static_cast<QGLWidget*>(ctx->paint_device);
+    if (!glw)
+        return;
+    glw->renderText(ctx->rect.x(), ctx->rect.y(), text(d.statistics), font());
+}
 } //namespace QtAV

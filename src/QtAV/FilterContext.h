@@ -84,11 +84,24 @@ protected:
     virtual void initializeOnData(QByteArray* data);
 };
 
+class Q_EXPORT GLFilterContext : public VideoFilterContext
+{
+public:
+    GLFilterContext();
+    virtual ~GLFilterContext();
+    virtual Type type() const; //OpenGL
+    QPaintDevice *paint_device;
+};
 
 template<class T> struct TypeTrait {};
 template<> struct TypeTrait<QPainterFilterContext> {
     enum {
         type = FilterContext::QtPainter
+    };
+};
+template<> struct TypeTrait<GLFilterContext> {
+    enum {
+        type = FilterContext::OpenGL
     };
 };
 

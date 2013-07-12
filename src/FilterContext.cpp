@@ -32,6 +32,9 @@ FilterContext* FilterContext::create(Type t)
     case QtPainter:
         ctx = new QPainterFilterContext();
         break;
+    case OpenGL:
+        ctx = new GLFilterContext();
+        break;
     default:
         break;
     }
@@ -104,5 +107,17 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
     painter->begin((QImage*)paint_device);
 }
 
+GLFilterContext::GLFilterContext()
+{
+}
+
+GLFilterContext::~GLFilterContext()
+{
+}
+
+FilterContext::Type GLFilterContext::type() const
+{
+    return FilterContext::OpenGL;
+}
 
 } //namespace QtAV

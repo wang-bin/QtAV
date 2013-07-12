@@ -51,6 +51,7 @@ protected:
 };
 
 typedef OSDFilterImpl<QPainterFilterContext> OSDFilterQPainter;
+typedef OSDFilterImpl<GLFilterContext> OSDFilterGL;
 
 } //namespace QtAV
 
