@@ -100,20 +100,21 @@ void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
     glTexImage2D(GL_TEXTURE_2D, 0, 3/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_BGRA, GL_UNSIGNED_BYTE, d.data.constData());
-
     glPushMatrix();
-    glLoadIdentity();
-    //glRotatef(180.0f, 0.0f, 0.0f, 0.0f); //flip the image
-
-    glBegin(GL_QUADS);
-    glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, +1.0);
-    glTexCoord2d(1.0, 0.0); glVertex2d(+1.0, +1.0);
-    glTexCoord2d(1.0, 1.0); glVertex2d(+1.0, -1.0);
-    glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, -1.0);
+    glOrtho( 0, width(), height(), 0, -1, 1 );
+    glBegin(GL_QUADS); //TODO: what if no GL_QUADS? triangle?
+    const int x = d.out_rect.x(), y = d.out_rect.y();
+    const int w = d.out_rect.width(), h = d.out_rect.height();
+    glTexCoord2i(-1, -1);
+    glVertex2f(x, y);
+    glTexCoord2i(0, -1);
+    glVertex2f(x + w, y);
+    glTexCoord2i(0, 0);
+    glVertex2f(x + w, y + h);
+    glTexCoord2i(-1, 0);
+    glVertex2f(x, y + h );
     glEnd();
-    //glFlush();
     glPopMatrix();
-    //swapBuffers(); //why flickers?
 }
 
 bool GLWidgetRenderer::write()
@@ -138,18 +139,15 @@ void GLWidgetRenderer::initializeGL()
 
 void GLWidgetRenderer::paintGL()
 {
-    //drawBackground(); //TODO: why this is always required? otherwise may flicker when aspect ratio changed(ubuntu 12.10)
+    glClear(GL_COLOR_BUFFER_BIT); //why this can avoid filcker?
     handlePaintEvent();
 }
 
 void GLWidgetRenderer::resizeGL(int w, int h)
 {
-    Q_UNUSED(w);
-    Q_UNUSED(h);
     DPTR_D(GLWidgetRenderer);
     qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
-    //TODO: if whole widget as viewport, we can set rect by glVertex, thus paint logic is the same as others
-    glViewport(d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
+    glViewport(0, 0, w, h);
     //??
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
