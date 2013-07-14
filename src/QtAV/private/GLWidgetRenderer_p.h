@@ -84,7 +84,6 @@ public:
         }
     }
 
-    QRect out_rect_old;
     GLuint texture;
 };
 

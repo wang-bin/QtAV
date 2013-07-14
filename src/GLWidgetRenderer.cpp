@@ -82,18 +82,12 @@ void GLWidgetRenderer::convertData(const QByteArray &data)
 
 bool GLWidgetRenderer::needUpdateBackground() const
 {
-    DPTR_D(const GLWidgetRenderer);
-    return d.aspect_ratio_changed || d.update_background || d.out_rect_old != d.out_rect;
+    return true;
 }
 
 void GLWidgetRenderer::drawBackground()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    //FIXME: the following is hack for aspect ratio change
-    DPTR_D(GLWidgetRenderer);
-    d.out_rect_old = d.out_rect;
-    resizeGL(width(), height());
 }
 
 void GLWidgetRenderer::drawFrame()
@@ -127,8 +121,6 @@ void GLWidgetRenderer::initializeGL()
 {
     glEnable(GL_TEXTURE_2D);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//
     glShadeModel(GL_SMOOTH); //setupQuality?
     glClearColor(0.0, 0.0, 0.0, 0.5);
     glClearDepth(1.0f);
@@ -139,7 +131,6 @@ void GLWidgetRenderer::initializeGL()
 
 void GLWidgetRenderer::paintGL()
 {
-    glClear(GL_COLOR_BUFFER_BIT); //why this can avoid filcker?
     handlePaintEvent();
 }
 
