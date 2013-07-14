@@ -161,6 +161,14 @@ int main(int argc, char *argv[])
     window.setWindowTitle(title);
     window.setRenderer(renderer);
     renderer->widget()->resize(renderer->widget()->width(), renderer->widget()->width()*9/16);
+    QString ao = "portaudio";
+    idx = a.arguments().indexOf("-ao");
+    if (idx > 0) {
+        ao = a.arguments().at(idx+1);
+    }
+    ao = ao.toLower();
+    qDebug("AO>>>>>>>>>>> %s", qPrintable(ao));
+    window.enableAudio(ao != "null" && ao != "0");
     if (!media_file.isEmpty()) {
         window.play(media_file);
     }

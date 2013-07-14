@@ -4,6 +4,7 @@
 #include <QWidget>
 
 namespace QtAV {
+class AudioOutput;
 class AVPlayer;
 class AVClock;
 class VideoRenderer;
@@ -22,6 +23,8 @@ class MainWindow : public QWidget
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+    void enableAudio(bool yes = true);
+    void setAudioOutput(QtAV::AudioOutput* ao);
     void setRenderer(QtAV::VideoRenderer* renderer);
     void play(const QString& name);
 
@@ -60,6 +63,7 @@ protected:
 
 private:
     bool mIsReady, mHasPendingPlay;
+    bool mNullAO;
     int mTimerId;
     QVBoxLayout *mpPlayerLayout;
 

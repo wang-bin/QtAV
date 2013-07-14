@@ -23,7 +23,6 @@
 #include "Slider.h"
 
 #define SLIDER_ON_VO 0
-//TODO: custome slider, mouse pressevent -> <-
 
 #define AVDEBUG() \
     qDebug("%s %s @%d", __FILE__, __FUNCTION__, __LINE__);
@@ -50,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent)
   , mIsReady(false)
   , mHasPendingPlay(false)
+  , mNullAO(false)
   , mTimerId(0)
   , mpPlayer(0)
   , mpRenderer(0)
@@ -361,6 +361,19 @@ void MainWindow::processPendingActions()
     }
 }
 
+void MainWindow::enableAudio(bool yes)
+{
+    mNullAO = !yes;
+    if (!mpPlayer)
+        return;
+    mpPlayer->enableAudio(yes);
+}
+
+void MainWindow::setAudioOutput(AudioOutput *ao)
+{
+
+}
+
 void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 {
     if (!mIsReady) {
@@ -425,7 +438,7 @@ void MainWindow::play(const QString &name)
         setWindowTitle(mFile);
     else
         setWindowTitle(QFileInfo(mFile).fileName());
-
+    mpPlayer->enableAudio(!mNullAO);
     mpPlayer->play(name);
 }
 
@@ -577,7 +590,6 @@ void MainWindow::timerEvent(QTimerEvent *)
     mpCurrent->setText(QTime(0, 0, 0).addMSecs(ms).toString("HH:mm:ss"));
 }
 
-
 void MainWindow::about()
 {
     QtAV::about();
@@ -630,4 +642,3 @@ void MainWindow::playOnlineVideo(QAction *action)
 {
     play(action->data().toString());
 }
-
