@@ -65,6 +65,7 @@ AVPlayer::AVPlayer(QObject *parent) :
   , event_filter(0)
   , video_capture(0)
   , mSpeed(1.0)
+  , ao_enable(true)
 {
     qDebug("%s", aboutQtAV_PlainText().toUtf8().constData());
     /*
@@ -182,6 +183,16 @@ void AVPlayer::setAVOutput(Out *&pOut, Out *pNew, AVThread *thread)
 AudioOutput* AVPlayer::audio()
 {
     return _audio;
+}
+
+void AVPlayer::enableAudio(bool enable)
+{
+    ao_enable = enable;
+}
+
+void AVPlayer::disableAudio(bool disable)
+{
+    ao_enable = !disable;
 }
 
 void AVPlayer::setMute(bool mute)
@@ -350,7 +361,6 @@ bool AVPlayer::load()
     vCodecCtx = demuxer.videoCodecContext();
     setupAudioThread();
     setupVideoThread();
-    //TODO: init statistics
     return loaded;
 }
 
@@ -544,7 +554,7 @@ void AVPlayer::setupAudioThread()
     if (aCodecCtx) {
         qDebug("has audio");
         //TODO: setAudioOutput() like vo
-        if (!_audio) {
+        if (!_audio && ao_enable) {
             qDebug("new audio output");
 #if HAVE_OPENAL
             _audio = new AOOpenAL();
@@ -554,20 +564,22 @@ void AVPlayer::setupAudioThread()
         }
         if (!_audio) {
             masterClock()->setClockType(AVClock::ExternalClock);
-            return;
-        }
-        _audio->audioFormat().setSampleFormat(AudioFormat::SampleFormat_Float);
-        _audio->audioFormat().setSampleRate(aCodecCtx->sample_rate);
-        _audio->audioFormat().setChannels(aCodecCtx->channels);
-        if (!_audio->open()) {
-            //return; //audio not ready
+            //return;
+        } else {
+            _audio->audioFormat().setSampleFormat(AudioFormat::SampleFormat_Float);
+            _audio->audioFormat().setSampleRate(aCodecCtx->sample_rate);
+            _audio->audioFormat().setChannels(aCodecCtx->channels);
+            if (!_audio->open()) {
+                //return; //audio not ready
+            }
         }
         if (!audio_dec) {
             audio_dec = new AudioDecoder();
         }
         qDebug("setCodecContext");
         audio_dec->setCodecContext(aCodecCtx);
-        audio_dec->resampler()->setOutAudioFormat(_audio->audioFormat());
+        if (_audio)
+            audio_dec->resampler()->setOutAudioFormat(_audio->audioFormat());
         audio_dec->prepare();
         if (!audio_thread) {
             qDebug("new audio thread");

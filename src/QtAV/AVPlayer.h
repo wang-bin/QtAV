@@ -76,6 +76,8 @@ public:
      * TODO: AudioOutput.audioFormatChanged (signal)---AudioResampler.setOutAudioFormat (slot)
      */
     AudioOutput* audio();
+    void enableAudio(bool enable = true);
+    void disableAudio(bool disable = true);
     void setMute(bool mute);
     bool isMute() const;
     /*!
@@ -139,6 +141,7 @@ private:
     VideoCapture *video_capture;
     Statistics mStatistics;
     qreal mSpeed;
+    bool ao_enable;
 };
 
 } //namespace QtAV
