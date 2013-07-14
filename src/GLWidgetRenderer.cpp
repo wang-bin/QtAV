@@ -20,6 +20,8 @@
 ******************************************************************************/
 /*
  * TODO:
+ *   why image flip
+ *   include gl header?
  *   GLES 2 support
  *   inherits QPainterRenderer? GL is wrapped as QPainter
  *   GLuint bindTexture(const QImage & image, GLenum target = GL_TEXTURE_2D, GLint format)
@@ -28,11 +30,6 @@
 #include "QtAV/GLWidgetRenderer.h"
 #include "private/GLWidgetRenderer_p.h"
 #include <QResizeEvent>
-#ifdef Q_OS_MAC
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
-#endif //Q_OS_MAC
 //TODO: vsync http://stackoverflow.com/questions/589064/how-to-enable-vertical-sync-in-opengl
 //TODO: check gl errors
 //GL_BGRA is available in OpenGL >= 1.2
@@ -93,12 +90,40 @@ void GLWidgetRenderer::drawBackground()
 void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3/*internalFormat? 4?*/, d.src_width, d.src_height, 0/*border*/, GL_BGRA, GL_UNSIGNED_BYTE, d.data.constData());
+    glTexImage2D(GL_TEXTURE_2D
+                 , 0                //level
+                 , 3                //internal format. 4? why GL_RGBA?
+                 , d.src_width, d.src_height
+                 , 0                //border, ES not support
+                 , GL_BGRA          //format, must the same as internal format?
+                 , GL_UNSIGNED_BYTE
+                 , d.data.constData());
     glPushMatrix();
     glOrtho( 0, width(), height(), 0, -1, 1 );
-    glBegin(GL_QUADS); //TODO: what if no GL_QUADS? triangle?
     const int x = d.out_rect.x(), y = d.out_rect.y();
     const int w = d.out_rect.width(), h = d.out_rect.height();
+#if 1
+    //GLfloat?
+    const GLint V[] = {
+        x,     y + h,  //top left
+        x,     y,      //bottom left
+        x + w, y,      //bottom right
+        x + w, y + h   //top right
+    };
+    const GLshort T[] = {
+        0, 1,
+        0, 0,
+        1, 0,
+        1, 1
+    };
+    glVertexPointer(2, GL_INT, 0, V);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glTexCoordPointer(2, GL_SHORT, 0, T);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+#else
+    glBegin(GL_QUADS); //TODO: what if no GL_QUADS? triangle?
     glTexCoord2i(-1, -1);
     glVertex2f(x, y);
     glTexCoord2i(0, -1);
@@ -108,6 +133,7 @@ void GLWidgetRenderer::drawFrame()
     glTexCoord2i(-1, 0);
     glVertex2f(x, y + h );
     glEnd();
+#endif
     glPopMatrix();
 }
 
