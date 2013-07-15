@@ -56,14 +56,18 @@ private slots:
     void capture();
     void showHideVolumeBar();
     void setVolume();
+    void tryHideControlBar();
+    void tryShowControlBar();
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
     virtual void timerEvent(QTimerEvent *);
+    void mouseMoveEvent(QMouseEvent *e);
 
 private:
     bool mIsReady, mHasPendingPlay;
     bool mNullAO;
+    int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
     int mTimerId;
     QVBoxLayout *mpPlayerLayout;
 

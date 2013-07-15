@@ -50,11 +50,13 @@ MainWindow::MainWindow(QWidget *parent) :
   , mIsReady(false)
   , mHasPendingPlay(false)
   , mNullAO(false)
+  , mShowControl(2)
   , mTimerId(0)
   , mpPlayer(0)
   , mpRenderer(0)
   , mpTempRenderer(0)
 {
+    setMouseTracking(true); //mouseMoveEvent without press.
     connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
     //QTimer::singleShot(10, this, SLOT(setupUi()));
     setupUi();
@@ -402,6 +404,7 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         r = 0;
     }
     mpRenderer = renderer;
+    mpRenderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
     mpPlayer->setRenderer(mpRenderer);
 #if SLIDER_ON_VO
     if (mpTimeSlider) {
@@ -500,6 +503,8 @@ void MainWindow::onStartPlay()
     mpDuration->setText(QTime(0, 0, 0).addSecs(mpPlayer->duration()).toString("HH:mm:ss"));
     setVolume();
     mTimerId = startTimer(kSliderUpdateInterval);
+    mShowControl = 0;
+    QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
 }
 
 void MainWindow::onStopPlay()
@@ -513,6 +518,9 @@ void MainWindow::onStopPlay()
     mpDuration->setText("00:00:00");
     if (mpRepeatAction->data().toInt() == 1) {
         play(mFile);
+    } else {
+        mShowControl = 2;
+        tryShowControlBar();
     }
 }
 
@@ -559,6 +567,7 @@ void MainWindow::setVolume()
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e);
+#if 0
     if (e->size() == qApp->desktop()->size()) {
         mpControl->hide();
         mpTimeSlider->hide();
@@ -568,6 +577,7 @@ void MainWindow::resizeEvent(QResizeEvent *e)
         if (mpTimeSlider->isHidden())
             mpTimeSlider->show();
     }
+#endif
     /*
     if (mpTitle)
         QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName(), e->size().width());
@@ -588,6 +598,21 @@ void MainWindow::timerEvent(QTimerEvent *)
     int ms = mpPlayer->masterClock()->value()*1000.0;
     mpTimeSlider->setValue(ms);
     mpCurrent->setText(QTime(0, 0, 0).addMSecs(ms).toString("HH:mm:ss"));
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *e)
+{
+    if (e->pos().y() > height() - mpTimeSlider->height() - mpControl->height()) {
+        if (mShowControl == 0) {
+            mShowControl = 1;
+            tryShowControlBar();
+        }
+    } else {
+        if (mShowControl == 1) {
+            mShowControl = 0;
+            QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
+        }
+    }
 }
 
 void MainWindow::about()
@@ -641,4 +666,23 @@ void MainWindow::setRepeat(QAction *action)
 void MainWindow::playOnlineVideo(QAction *action)
 {
     play(action->data().toString());
+}
+
+void MainWindow::tryHideControlBar()
+{
+    if (mShowControl > 0) {
+        return;
+    }
+    if (mpControl->isHidden() && mpTimeSlider->isHidden())
+        return;
+    mpControl->hide();
+    mpTimeSlider->hide();
+}
+
+void MainWindow::tryShowControlBar()
+{
+    if (mpTimeSlider->isHidden())
+        mpTimeSlider->show();
+    if (mpControl->isHidden())
+        mpControl->show();
 }
