@@ -126,10 +126,7 @@ int main(int argc, char *argv[])
         }
     }
     qDebug("vo: %s", vo.toUtf8().constData());
-    QString media_file;
-    if (argc > idx + 2 ) { //>-1+2=1
-        media_file = a.arguments().last();
-    }
+    bool opt_has_file = argc > idx + 2;
     vo = vo.toLower();
     if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv")
         vo = "qpainter";
@@ -169,8 +166,9 @@ int main(int argc, char *argv[])
     ao = ao.toLower();
     qDebug("AO>>>>>>>>>>> %s", qPrintable(ao));
     window.enableAudio(ao != "null" && ao != "0");
-    if (!media_file.isEmpty()) {
-        window.play(media_file);
+    opt_has_file &= argc > idx + 2;
+    if (opt_has_file) {
+        window.play(a.arguments().last());
     }
     int ret = a.exec();
     return ret;
