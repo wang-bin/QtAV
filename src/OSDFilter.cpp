@@ -23,8 +23,9 @@
 #include "QtAV/Statistics.h"
 #include <private/Filter_p.h>
 #include <QtGui/QPainter>
-#include <QGLWidget>
-
+#if QTAV_HAVE(GL)
+#include <QtOpenGL/QGLWidget>
+#endif //QTAV_HAVE(GL)
 namespace QtAV {
 
 class OSDFilterPrivate : public FilterPrivate
@@ -89,9 +90,11 @@ void OSDFilterGL::process()
     DPTR_D(Filter);
     GLFilterContext *ctx = static_cast<GLFilterContext*>(d.context);
     //TODO: render off screen
+#if QTAV_HAVE(GL)
     QGLWidget *glw = static_cast<QGLWidget*>(ctx->paint_device);
     if (!glw)
         return;
     glw->renderText(ctx->rect.x(), ctx->rect.y(), text(d.statistics), font());
+#endif //QTAV_HAVE(GL)
 }
 } //namespace QtAV

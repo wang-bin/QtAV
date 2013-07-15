@@ -63,7 +63,6 @@ ipp-link {
 
 config_portaudio {
     SOURCES += AOPortAudio.cpp
-    HEADERS += QtAV/AOPortAudio.h
     SDK_HEADERS += QtAV/AOPortAudio.h
     DEFINES *= HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
@@ -71,8 +70,7 @@ config_portaudio {
 }
 config_openal {
     SOURCES += AOOpenAL.cpp
-    HEADERS += QtAV/AOOpenAL.h \
-               QtAV/private/AOOpenAL_p.h
+    HEADERS += QtAV/private/AOOpenAL_p.h
     SDK_HEADERS += QtAV/AOOpenAL.h
     DEFINES *= HAVE_OPENAL=1
     win32:LIBS *= -lOpenAL32
@@ -82,7 +80,7 @@ config_openal {
 config_gdiplus {
     DEFINES *= HAVE_GDIPLUS=1
     SOURCES += GDIRenderer.cpp
-    HEADERS += QtAV/GDIRenderer.h
+    HEADERS += QtAV/private/GDIRenderer_p.h
     SDK_HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus -lGdi32
 }
@@ -91,14 +89,14 @@ config_direct2d {
     DEFINES *= HAVE_DIRECT2D=1
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
-    HEADERS += QtAV/Direct2DRenderer.h
+    HEADERS += QtAV/private/Direct2DRenderer_p.h
     SDK_HEADERS += QtAV/Direct2DRenderer.h
     #LIBS += -lD2d1
 }
 config_xv {
     DEFINES *= HAVE_XV=1
     SOURCES += XVRenderer.cpp
-    HEADERS += QtAV/XVRenderer.h
+    HEADERS += QtAV/private/XVRenderer_p.h
     SDK_HEADERS += QtAV/XVRenderer.h
     LIBS += -lXv
 }
@@ -106,7 +104,7 @@ config_gl {
     QT *= opengl
     DEFINES *= HAVE_GL=1
     SOURCES += GLWidgetRenderer.cpp
-    HEADERS += QtAV/GLWidgetRenderer.h
+    HEADERS += QtAV/private/GLWidgetRenderer_p.h
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
 }
 SOURCES += \
@@ -199,11 +197,7 @@ HEADERS *= \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
-    QtAV/private/WidgetRenderer_p.h \
-    QtAV/private/Direct2DRenderer_p.h \
-    QtAV/private/GLWidgetRenderer_p.h \
-    QtAV/private/GDIRenderer_p.h \
-    QtAV/private/XVRenderer_p.h
+    QtAV/private/WidgetRenderer_p.h
 
 
 SDK_INCLUDE_FOLDER = QtAV
