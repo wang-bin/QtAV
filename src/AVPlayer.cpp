@@ -44,12 +44,12 @@
 #include <QtAV/EventFilter.h>
 #include <QtAV/VideoCapture.h>
 #include <QtAV/AudioOutput.h>
-#if HAVE_OPENAL
+#if QTAV_HAVE(OPENAL)
 #include <QtAV/AOOpenAL.h>
-#endif //HAVE_OPENAL
-#if HAVE_PORTAUDIO
+#endif //QTAV_HAVE(OPENAL)
+#if QTAV_HAVE(PORTAUDIO)
 #include <QtAV/AOPortAudio.h>
-#endif //HAVE_PORTAUDIO
+#endif //QTAV_HAVE(PORTAUDIO)
 
 namespace QtAV {
 
@@ -556,9 +556,9 @@ void AVPlayer::setupAudioThread()
         //TODO: setAudioOutput() like vo
         if (!_audio && ao_enable) {
             qDebug("new audio output");
-#if HAVE_OPENAL
+#if QTAV_HAVE(OPENAL)
             _audio = new AOOpenAL();
-#elif HAVE_PORTAUDIO
+#elif QTAV_HAVE(PORTAUDIO)
             _audio = new AOPortAudio();
 #endif
         }

@@ -26,18 +26,18 @@
 
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/GraphicsItemRenderer.h>
-#if HAVE_GL
+#if QTAV_HAVE(GL)
 #include <QtAV/GLWidgetRenderer.h>
-#endif //HAVE_GL
-#if HAVE_GDIPLUS
+#endif //QTAV_HAVE(GL)
+#if QTAV_HAVE(GDIPLUS)
 #include <QtAV/GDIRenderer.h>
-#endif //HAVE_GDIPLUS
-#if HAVE_DIRECT2D
+#endif //QTAV_HAVE(GDIPLUS)
+#if QTAV_HAVE(DIRECT2D)
 #include <QtAV/Direct2DRenderer.h>
-#endif //HAVE_DIRECT2D
-#if HAVE_XV
+#endif //QTAV_HAVE(DIRECT2D)
+#if QTAV_HAVE(XV)
 #include <QtAV/XVRenderer.h>
-#endif //HAVE_XV
+#endif //QTAV_HAVE(XV)
 #include <QtAV/factory.h>
 
 namespace QtAV {
@@ -82,7 +82,7 @@ VideoRendererId QPainterRenderer::id() const
     return VideoRendererId_QPainter;
 }
 
-#if HAVE_GL
+#if QTAV_HAVE(GL)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget, "QGLWidegt")
 
 void RegisterVideoRendererGLWidget_Man()
@@ -94,8 +94,8 @@ VideoRendererId GLWidgetRenderer::id() const
 {
     return VideoRendererId_GLWidget;
 }
-#endif //HAVE_GL
-#if HAVE_GDIPLUS
+#endif //QTAV_HAVE(GL)
+#if QTAV_HAVE(GDIPLUS)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GDI, "GDI")
 
 void RegisterVideoRendererGDI_Man()
@@ -107,8 +107,8 @@ VideoRendererId GDIRenderer::id() const
 {
     return VideoRendererId_GDI;
 }
-#endif //HAVE_GDIPLUS
-#if HAVE_DIRECT2D
+#endif //QTAV_HAVE(GDIPLUS)
+#if QTAV_HAVE(DIRECT2D)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Direct2D, "Direct2D")
 
 void RegisterVideoRendererDirect2D_Man()
@@ -120,8 +120,8 @@ VideoRendererId Direct2DRenderer::id() const
 {
     return VideoRendererId_Direct2D;
 }
-#endif //HAVE_DIRECT2D
-#if HAVE_XV
+#endif //QTAV_HAVE(DIRECT2D)
+#if QTAV_HAVE(XV)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
 
 void RegisterVideoRendererXV_Man()
@@ -133,23 +133,23 @@ VideoRendererId XVRenderer::id() const
 {
     return VideoRendererId_XV;
 }
-#endif //HAVE_XV
+#endif //QTAV_HAVE(XV)
 
 void VideoRenderer_RegisterAll()
 {
     RegisterVideoRendererWidget_Man();
-#if HAVE_GL
+#if QTAV_HAVE(GL)
     RegisterVideoRendererGLWidget_Man();
-#endif //HAVE_GL
-#if HAVE_GDIPLUS
+#endif //QTAV_HAVE(GL)
+#if QTAV_HAVE(GDIPLUS)
     RegisterVideoRendererGDI_Man();
-#endif //HAVE_GDIPLUS
-#if HAVE_DIRECT2D
+#endif //QTAV_HAVE(GDIPLUS)
+#if QTAV_HAVE(DIRECT2D)
     RegisterVideoRendererDirect2D_Man();
-#endif //HAVE_DIRECT2D
-#if HAVE_XV
+#endif //QTAV_HAVE(DIRECT2D)
+#if QTAV_HAVE(XV)
     RegisterVideoRendererXV_Man();
-#endif //HAVE_XV
+#endif //QTAV_HAVE(XV)
 }
 
 #if ID_STATIC
