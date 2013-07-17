@@ -60,26 +60,32 @@ public:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             //texture zoom in
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+#ifndef QT_OPENGL_ES_2
             glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
             glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
             //glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
             glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+#endif //QT_OPENGL_ES_2
             break;
         case VideoRenderer::QualityFastest:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+#ifndef QT_OPENGL_ES_2
             glHint(GL_POINT_SMOOTH_HINT, GL_FASTEST);
             glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
             //glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
             glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+#endif //QT_OPENGL_ES_2
             break;
         default:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //GL_NEAREST
+#ifndef QT_OPENGL_ES_2
             glHint(GL_POINT_SMOOTH_HINT, GL_DONT_CARE);
             glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
             //glHint(GL_POLYGON_SMOOTH_HINT, GL_DONT_CARE);
             glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+#endif //QT_OPENGL_ES_2
             break;
         }
     }
