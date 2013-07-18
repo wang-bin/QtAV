@@ -191,7 +191,7 @@ void GLWidgetRenderer::drawFrame()
     glBindTexture(GL_TEXTURE_2D, 0);
 #else
 #define FMT_INTERNAL GL_RGBA //why 3 works?
-#define FMT GL_BGR
+#define FMT GL_BGRA
 #endif //QT_OPENGL_ES_2
     glTexImage2D(GL_TEXTURE_2D
                  , 0                //level
