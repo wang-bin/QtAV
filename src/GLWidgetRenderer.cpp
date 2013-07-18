@@ -35,26 +35,22 @@
 #endif //GL_BGRA
 #endif //GL_BGRA
 
+#include <QtAV/FilterContext.h>
+#include <QtAV/OSDFilter.h>
+
+namespace QtAV {
+
 #ifdef QT_OPENGL_ES_2
-const static GLfloat PI = 3.1415f;
-static void printGLString(const char *name, GLenum s) {
-    const char *v = (const char *)glGetString(s);
-    qDebug("GL %s = %s", name, v);
+static inline void checkGlError(const char* op = 0) {
+    GLenum error = glGetError();
+    if (error == GL_NO_ERROR)
+        return;
+    qWarning("GL error %s (%#x): %s", op, error, glGetString(error));
 }
-static void checkGlError(const char* op) {
-    return;
-    for (GLint error = glGetError(); error; error = glGetError()) {
-        qCritical("after %s() glError (0%#x): %s", op, error, glGetString(error));
-    }
-}
-static GLuint textureID = 0;
-static GLuint gProgram = 0;
-static GLuint gPositionHandle = 0;
-static GLuint gTexCoordsHandle = 0;
-static GLuint gTexHandle = 0;
-const GLfloat gVertices[] = { -1, -1, 1, -1, -1, 1, 1, 1 };
-const GLfloat gTexCoords[] = { 0, 1, 1, 1, 0, 0, 1, 0};
-static const char gVertexShader[] =
+
+const GLfloat kVertices[] = { -1, -1, 1, -1, -1, 1, 1, 1 };
+const GLfloat kTexCoords[] = { 0, 1, 1, 1, 0, 0, 1, 0};
+static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
     "attribute vec2 a_TexCoords; \n"
     "varying vec2 v_TexCoords; \n"
@@ -63,7 +59,7 @@ static const char gVertexShader[] =
     "  v_TexCoords = a_TexCoords; \n"
     "}\n";
 
-static const char gFragmentShader[] =
+static const char kFragmentShader[] =
     "precision mediump float;\n"
     "uniform sampler2D u_Texture; \n"
     "varying vec2 v_TexCoords; \n"
@@ -101,12 +97,10 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     if (!vertexShader) {
         return 0;
     }
-
     GLuint pixelShader = loadShader(GL_FRAGMENT_SHADER, pFragmentSource);
     if (!pixelShader) {
         return 0;
     }
-
     GLuint program = glCreateProgram();
     if (program) {
         glAttachShader(program, vertexShader);
@@ -134,11 +128,6 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 #endif
-
-#include <QtAV/FilterContext.h>
-#include <QtAV/OSDFilter.h>
-
-namespace QtAV {
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
     QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRendererPrivate())
@@ -187,7 +176,7 @@ void GLWidgetRenderer::drawFrame()
 #define FMT_INTERNAL GL_BGRA
 #define FMT GL_BGRA
     glActiveTexture(GL_TEXTURE0);
-    glUniform1i(gTexHandle, 0);
+    glUniform1i(d.tex_location, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 #else
 #define FMT_INTERNAL GL_RGBA //why 3 works?
@@ -252,36 +241,37 @@ bool GLWidgetRenderer::write()
 
 void GLWidgetRenderer::initializeGL()
 {
+    DPTR_D(GLWidgetRenderer);
     glEnable(GL_TEXTURE_2D);
     qDebug("initializeGL~~~~~~~");
 #ifdef QT_OPENGL_ES_2
-    if (gProgram)
+    if (d.program)
         return;
-    gProgram = createProgram(gVertexShader, gFragmentShader);
-    if (!gProgram) {
+    d.program = createProgram(kVertexShader, kFragmentShader);
+    if (!d.program) {
         qWarning("Could not create program.");
         return;
     }
-    gPositionHandle = glGetAttribLocation(gProgram, "a_Position");
+    d.position_location = glGetAttribLocation(d.program, "a_Position");
     checkGlError("glGetAttribLocation");
-    qDebug("glGetAttribLocation(\"a_Position\") = %d\n", gPositionHandle);
-    gTexCoordsHandle = glGetAttribLocation(gProgram, "a_TexCoords");
+    qDebug("glGetAttribLocation(\"a_Position\") = %d\n", d.position_location);
+    d.tex_coords_location = glGetAttribLocation(d.program, "a_TexCoords");
     checkGlError("glGetAttribLocation");
-    qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", gTexCoordsHandle);
-    gTexHandle = glGetUniformLocation(gProgram, "u_Texture");
+    qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", d.tex_coords_location);
+    d.tex_location = glGetUniformLocation(d.program, "u_Texture");
     checkGlError("glGetUniformLocation");
-    qDebug("glGetUniformLocation(\"u_Texture\") = %d\n", gTexHandle);
+    qDebug("glGetUniformLocation(\"u_Texture\") = %d\n", d.tex_location);
 
 
-    glUseProgram(gProgram);
+    glUseProgram(d.program);
     checkGlError("glUseProgram");
-    glVertexAttribPointer(gPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gVertices);
+    glVertexAttribPointer(d.position_location, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
     checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(gPositionHandle);
+    glEnableVertexAttribArray(d.position_location);
     checkGlError("glEnableVertexAttribArray");
-    glVertexAttribPointer(gTexCoordsHandle, 2, GL_FLOAT, GL_FALSE, 0, gTexCoords);
+    glVertexAttribPointer(d.tex_coords_location, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
     checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(gTexCoordsHandle);
+    glEnableVertexAttribArray(d.tex_coords_location);
     checkGlError("glEnableVertexAttribArray");
 #else
     glShadeModel(GL_SMOOTH); //setupQuality?
@@ -290,7 +280,7 @@ void GLWidgetRenderer::initializeGL()
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    d_func().setupQuality();
+    d.setupQuality();
 }
 
 void GLWidgetRenderer::paintGL()

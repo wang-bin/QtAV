@@ -30,6 +30,12 @@ class GLWidgetRendererPrivate : public VideoRendererPrivate
 public:
     GLWidgetRendererPrivate():
         texture(0)
+#if QT_OPENGL_ES_2
+      , program(0)
+      , position_location(0)
+      , tex_coords_location(0)
+      , tex_location(0)
+#endif //QT_OPENGL_ES_2
     {
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
             available = false;
@@ -91,6 +97,12 @@ public:
     }
 
     GLuint texture;
+#if QT_OPENGL_ES_2
+    GLuint program;
+    GLuint position_location;
+    GLuint tex_coords_location;
+    GLuint tex_location;
+#endif
 };
 
 } //namespace QtAV
