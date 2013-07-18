@@ -41,7 +41,21 @@
 //TODO: QGLfunctions?
 namespace QtAV {
 
+const GLfloat kTexCoords[] = {
+    0, 0,
+    1, 0,
+    1, 1,
+    0, 1,
+};
+
 #ifdef QT_OPENGL_ES_2
+const GLfloat kVertices[] = {
+    -1, 1,
+    1, 1,
+    1, -1,
+    -1, -1,
+};
+
 static inline void checkGlError(const char* op = 0) {
     GLenum error = glGetError();
     if (error == GL_NO_ERROR)
@@ -49,8 +63,6 @@ static inline void checkGlError(const char* op = 0) {
     qWarning("GL error %s (%#x): %s", op, error, glGetString(error));
 }
 
-const GLfloat kVertices[] = { -1, -1, 1, -1, -1, 1, 1, 1 };
-const GLfloat kTexCoords[] = { 0, 1, 1, 1, 0, 0, 1, 0};
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
     "attribute vec2 a_TexCoords; \n"
@@ -195,25 +207,9 @@ void GLWidgetRenderer::drawFrame()
 #ifndef QT_OPENGL_ES_2
     glPushMatrix();
     glOrtho( 0, width(), height(), 0, -1, 1 );
-    const int x = d.out_rect.x(), y = d.out_rect.y();
-    const int w = d.out_rect.width(), h = d.out_rect.height();
 #if 1
-    //GLfloat?
-    const GLint V[] = {
-        x,     y + h,  //top left
-        x,     y,      //bottom left
-        x + w, y,      //bottom right
-        x + w, y + h   //top right
-    };
-    const GLshort T[] = {
-        0, 1,
-        0, 0,
-        1, 0,
-        1, 1
-    };
-    glVertexPointer(2, GL_INT, 0, V);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glTexCoordPointer(2, GL_SHORT, 0, T);
+    d.setupAspectRatio();
+    glTexCoordPointer(2, GL_FLOAT, 0, kTexCoords);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);

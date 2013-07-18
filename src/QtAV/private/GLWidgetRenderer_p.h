@@ -99,13 +99,25 @@ public:
 
     void setupAspectRatio() {
 #ifdef QT_OPENGL_ES_2
-    const GLfloat matrix[] = {
-        (float)out_rect.width()/(float)renderer_width, 0, 0, 0,
-        0, (float)out_rect.height()/(float)renderer_height, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    };
-    glUniformMatrix4fv(u_matrix, 1, GL_FALSE/*transpose or not*/, matrix);
+        const GLfloat matrix[] = {
+            (float)out_rect.width()/(float)renderer_width, 0, 0, 0,
+            0, (float)out_rect.height()/(float)renderer_height, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        };
+        glUniformMatrix4fv(u_matrix, 1, GL_FALSE/*transpose or not*/, matrix);
+#else
+        const int x = out_rect.x(), y = out_rect.y();
+        const int w = out_rect.width(), h = out_rect.height();
+        //GLfloat?
+        const GLint V[] = {
+            x,     y,      //bottom left
+            x + w, y,      //bottom right
+            x + w, y + h,  //top right
+            x,     y + h,  //top left
+        };
+        glVertexPointer(2, GL_INT, 0, V);
+        glEnableClientState(GL_VERTEX_ARRAY);
 #endif
     }
 
