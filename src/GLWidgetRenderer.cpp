@@ -38,6 +38,7 @@
 #include <QtAV/FilterContext.h>
 #include <QtAV/OSDFilter.h>
 
+//TODO: QGLfunctions?
 namespace QtAV {
 
 #ifdef QT_OPENGL_ES_2
@@ -53,9 +54,10 @@ const GLfloat kTexCoords[] = { 0, 1, 1, 1, 0, 0, 1, 0};
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
     "attribute vec2 a_TexCoords; \n"
+    "uniform highp mat4 u_MVP_matrix;\n"
     "varying vec2 v_TexCoords; \n"
     "void main() {\n"
-    "  gl_Position = a_Position;\n"
+    "  gl_Position = u_MVP_matrix * a_Position;\n"
     "  v_TexCoords = a_TexCoords; \n"
     "}\n";
 
@@ -261,7 +263,9 @@ void GLWidgetRenderer::initializeGL()
     d.tex_location = glGetUniformLocation(d.program, "u_Texture");
     checkGlError("glGetUniformLocation");
     qDebug("glGetUniformLocation(\"u_Texture\") = %d\n", d.tex_location);
-
+    d.u_matrix = glGetUniformLocation(d.program, "u_MVP_matrix");
+    checkGlError("glGetUniformLocation");
+    qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", d.u_matrix);
 
     glUseProgram(d.program);
     checkGlError("glUseProgram");
@@ -293,6 +297,7 @@ void GLWidgetRenderer::resizeGL(int w, int h)
     DPTR_D(GLWidgetRenderer);
     qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
     glViewport(0, 0, w, h);
+    d.setupAspectRatio();
 #ifndef QT_OPENGL_ES_2
     //??
     glMatrixMode(GL_PROJECTION);

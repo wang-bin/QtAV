@@ -35,6 +35,7 @@ public:
       , position_location(0)
       , tex_coords_location(0)
       , tex_location(0)
+      , u_matrix(0)
 #endif //QT_OPENGL_ES_2
     {
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
@@ -96,12 +97,26 @@ public:
         }
     }
 
+    void setupAspectRatio() {
+#ifdef QT_OPENGL_ES_2
+    const GLfloat matrix[] = {
+        (float)out_rect.width()/(float)renderer_width, 0, 0, 0,
+        0, (float)out_rect.height()/(float)renderer_height, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    };
+    glUniformMatrix4fv(u_matrix, 1, GL_FALSE/*transpose or not*/, matrix);
+#endif
+    }
+
     GLuint texture;
 #if QT_OPENGL_ES_2
+    //TODO: u_tex, a_position
     GLuint program;
     GLuint position_location;
     GLuint tex_coords_location;
     GLuint tex_location;
+    GLuint u_matrix;
 #endif
 };
 
