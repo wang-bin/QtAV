@@ -227,7 +227,7 @@ void GLWidgetRenderer::drawFrame()
 #endif
     glPopMatrix();
 #else
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 #endif //QT_OPENGL_ES_2
 }
 
