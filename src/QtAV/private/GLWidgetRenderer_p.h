@@ -21,7 +21,7 @@
 
 #ifndef QTAV_GLWIDGETRENDERER_P_H
 #define QTAV_GLWIDGETRENDERER_P_H
-
+#include <qgl.h>
 #include "private/VideoRenderer_p.h"
 namespace QtAV {
 
@@ -43,8 +43,6 @@ public:
             return;
             glGenTextures(1, &texture);
             glBindTexture(GL_TEXTURE_2D, texture);
-            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         }
     }
     ~GLWidgetRendererPrivate() {
@@ -107,17 +105,7 @@ public:
         };
         glUniformMatrix4fv(u_matrix, 1, GL_FALSE/*transpose or not*/, matrix);
 #else
-        const int x = out_rect.x(), y = out_rect.y();
-        const int w = out_rect.width(), h = out_rect.height();
-        //GLfloat?
-        const GLint V[] = {
-            x,     y,      //bottom left
-            x + w, y,      //bottom right
-            x + w, y + h,  //top right
-            x,     y + h,  //top left
-        };
-        glVertexPointer(2, GL_INT, 0, V);
-        glEnableClientState(GL_VERTEX_ARRAY);
+        glScalef((float)out_rect.width()/(float)renderer_width, (float)out_rect.height()/(float)renderer_height, 0);
 #endif
     }
 

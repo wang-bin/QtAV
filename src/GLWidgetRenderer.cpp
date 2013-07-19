@@ -48,7 +48,6 @@ const GLfloat kTexCoords[] = {
     0, 1,
 };
 
-#ifdef QT_OPENGL_ES_2
 const GLfloat kVertices[] = {
     -1, 1,
     1, 1,
@@ -56,6 +55,7 @@ const GLfloat kVertices[] = {
     -1, -1,
 };
 
+#ifdef QT_OPENGL_ES_2
 static inline void checkGlError(const char* op = 0) {
     GLenum error = glGetError();
     if (error == GL_NO_ERROR)
@@ -154,11 +154,10 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     //setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
-//    makeCurrent();
     d.filter_context = FilterContext::create(FilterContext::OpenGL);
     ((GLFilterContext*)d.filter_context)->paint_device = this;
     setOSDFilter(new OSDFilterGL());
-    initializeGL(); //why here manually?
+    initializeGL(); //TODO: why here manually?
 }
 
 GLWidgetRenderer::~GLWidgetRenderer()
@@ -187,13 +186,13 @@ void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
 #ifdef QT_OPENGL_ES_2
-#define FMT_INTERNAL GL_BGRA
+#define FMT_INTERNAL GL_BGRA //why BGRA?
 #define FMT GL_BGRA
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(d.tex_location, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 #else
-#define FMT_INTERNAL GL_RGBA //why 3 works?
+#define FMT_INTERNAL GL_RGBA //why? why 3 works?
 #define FMT GL_BGRA
 #endif //QT_OPENGL_ES_2
     glTexImage2D(GL_TEXTURE_2D
@@ -206,28 +205,16 @@ void GLWidgetRenderer::drawFrame()
                  , d.data.constData());
 #ifndef QT_OPENGL_ES_2
     glPushMatrix();
-    glOrtho( 0, width(), height(), 0, -1, 1 );
-#if 1
-    d.setupAspectRatio();
+    glVertexPointer(2, GL_FLOAT, 0, kVertices);
+    glEnableClientState(GL_VERTEX_ARRAY);
     glTexCoordPointer(2, GL_FLOAT, 0, kTexCoords);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-#else
-    glBegin(GL_QUADS); //TODO: what if no GL_QUADS? triangle?
-    glTexCoord2i(-1, -1);
-    glVertex2f(x, y);
-    glTexCoord2i(0, -1);
-    glVertex2f(x + w, y);
-    glTexCoord2i(0, 0);
-    glVertex2f(x + w, y + h);
-    glTexCoord2i(-1, 0);
-    glVertex2f(x, y + h );
-    glEnd();
 #endif
-    glPopMatrix();
-#else
+    d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+#ifndef QT_OPENGL_ES_2
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glPopMatrix();
 #endif //QT_OPENGL_ES_2
 }
 
@@ -278,8 +265,6 @@ void GLWidgetRenderer::initializeGL()
     glClearDepth(1.0f);
 #endif //QT_OPENGL_ES_2
     glClearColor(0.0, 0.0, 0.0, 0.0);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
     d.setupQuality();
 }
 
