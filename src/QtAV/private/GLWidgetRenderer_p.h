@@ -21,7 +21,7 @@
 
 #ifndef QTAV_GLWIDGETRENDERER_P_H
 #define QTAV_GLWIDGETRENDERER_P_H
-#include <qgl.h>
+#include <QtOpenGL/qgl.h>
 #include "private/VideoRenderer_p.h"
 namespace QtAV {
 
