@@ -30,7 +30,7 @@ class GLWidgetRendererPrivate : public VideoRendererPrivate
 public:
     GLWidgetRendererPrivate():
         texture(0)
-#if QT_OPENGL_ES_2
+#ifdef QT_OPENGL_ES_2
       , program(0)
       , position_location(0)
       , tex_coords_location(0)
@@ -110,7 +110,7 @@ public:
     }
 
     GLuint texture;
-#if QT_OPENGL_ES_2
+#ifdef QT_OPENGL_ES_2
     //TODO: u_tex, a_position
     GLuint program;
     GLuint position_location;
