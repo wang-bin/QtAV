@@ -35,6 +35,12 @@ namespace QtAV {
 class AudioThreadPrivate : public AVThreadPrivate
 {
 public:
+    void init() {
+        resample = false;
+        last_pts = 0;
+    }
+
+    bool resample;
     qreal last_pts; //used when audio output is not available, to calculate the aproximate sleeping time
 };
 
@@ -61,7 +67,7 @@ void AudioThread::run()
     int channels = dec->codecContext()->channels;
     int csf = channels * sample_rate * sizeof(float);
     static const double max_len = 0.02;
-    d.last_pts = 0;
+    d.init();
     //TODO: bool need_sync in private class
     bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
     while (!d.stop) {
@@ -116,12 +122,19 @@ void AudioThread::run()
         //DO NOT decode and convert if ao is not available or mute!
         bool has_ao = ao && ao->isAvailable();
         //if (!has_ao) //do not decode?
-
         if (has_ao && dec->resampler()) {
-            if (dec->resampler()->speed() != ao->speed()) {
-                qDebug("decoder set speed: %.2f", ao->speed());
-                dec->resampler()->setSpeed(ao->speed());
-                dec->resampler()->prepare();
+            if (dec->resampler()->speed() != ao->speed()
+                    || dec->resampler()->outAudioFormat() != ao->audioFormat()) {
+                //resample later to ensure thread safe. TODO: test
+                if (d.resample) {
+                    qDebug("decoder set speed: %.2f", ao->speed());
+                    dec->resampler()->setOutAudioFormat(ao->audioFormat());
+                    dec->resampler()->setSpeed(ao->speed());
+                    dec->resampler()->prepare();
+                    d.resample = false;
+                } else {
+                    d.resample = true;
+                }
             }
         }
         if (dec->decode(pkt.data)) {

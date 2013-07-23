@@ -580,6 +580,10 @@ void AVPlayer::setupAudioThread()
         audio_dec->setCodecContext(aCodecCtx);
         if (_audio)
             audio_dec->resampler()->setOutAudioFormat(_audio->audioFormat());
+        audio_dec->resampler()->inAudioFormat().setSampleFormatFFmpeg(aCodecCtx->sample_fmt);
+        audio_dec->resampler()->inAudioFormat().setSampleRate(aCodecCtx->sample_rate);
+        audio_dec->resampler()->inAudioFormat().setChannels(aCodecCtx->channels);
+        audio_dec->resampler()->inAudioFormat().setChannelLayout(aCodecCtx->channel_layout);
         audio_dec->prepare();
         if (!audio_thread) {
             qDebug("new audio thread");
