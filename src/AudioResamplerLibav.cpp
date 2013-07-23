@@ -111,12 +111,15 @@ bool AudioResamplerLibav::prepare()
     }
     qDebug("in cs: %d, cl: %lld", d.in_format.channels(), d.in_format.channelLayout());
 
+    if (!d.out_format.channels()) {
+        if (d.out_format.channelLayout())
+            d.out_format.setChannels(av_get_channel_layout_nb_channels(d.out_format.channelLayout()));
+        else
+            d.out_format.setChannels(d.in_format.channels());
+    }
+    //now we have out channels
     if (!d.out_format.channelLayout())
-        d.out_format.setChannelLayout(d.in_format.channelLayout());
-    if (!d.out_format.channels())
-        d.out_format.setChannels(av_get_channel_layout_nb_channels(d.out_format.channelLayout()));
-    if (!d.out_format.channels())
-        d.out_format.setChannels(inAudioFormat().channels());
+        d.out_format.setChannelLayout(av_get_default_channel_layout(d.out_format.channels()));
     if (!d.out_format.sampleRate())
         d.out_format.setSampleRate(inAudioFormat().sampleRate());
     if (d.speed <= 0)
