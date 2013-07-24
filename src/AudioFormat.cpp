@@ -318,4 +318,14 @@ int AudioFormat::bytesPerSample() const
     return d->bytes_per_sample;
 }
 
+int AudioFormat::bitRate() const
+{
+    return bytesPerSecond() << 3;
+}
+
+int AudioFormat::bytesPerSecond() const
+{
+    return channels() * bytesPerSample() * sampleRate();
+}
+
 } //namespace QtAV

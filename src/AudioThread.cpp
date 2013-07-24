@@ -63,10 +63,7 @@ void AudioThread::run()
     Q_ASSERT(d.clock != 0);
     AudioDecoder *dec = static_cast<AudioDecoder*>(d.dec);
     AudioOutput *ao = static_cast<AudioOutput*>(d.writer);
-    int sample_rate = dec->codecContext()->sample_rate;
-    int channels = dec->codecContext()->channels;
-    int csf = channels * sample_rate * sizeof(float);
-    static const double max_len = 0.02;
+    static const double max_len = 0.02; //TODO: how to choose?
     d.init();
     //TODO: bool need_sync in private class
     bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
@@ -121,7 +118,7 @@ void AudioThread::run()
         }
         //DO NOT decode and convert if ao is not available or mute!
         bool has_ao = ao && ao->isAvailable();
-        //if (!has_ao) //do not decode?
+        //if (!has_ao) {//do not decode?
         if (has_ao && dec->resampler()) {
             if (dec->resampler()->speed() != ao->speed()
                     || dec->resampler()->outAudioFormat() != ao->audioFormat()) {
@@ -142,9 +139,12 @@ void AudioThread::run()
             int decodedSize = decoded.size();
             int decodedPos = 0;
             qreal delay =0;
+            //AudioFormat.durationForBytes() calculates int type internally. not accurate
+            AudioFormat &af = dec->resampler()->inAudioFormat();
+            qreal byte_rate = af.bytesPerSecond();
             while (decodedSize > 0) {
-                int chunk = qMin(decodedSize, int(max_len*csf));
-                d.clock->updateDelay(delay += (qreal)chunk/(qreal)csf);
+                int chunk = qMin(decodedSize, int(max_len*byte_rate));
+                d.clock->updateDelay(delay += (qreal)chunk/(qreal)byte_rate);
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
                 if (has_ao) {
                     //TODO: volume filter
@@ -167,11 +167,11 @@ void AudioThread::run()
                  */
                     static bool sWarn_no_ao = true; //FIXME: no warning when replay. warn only once
                     if (sWarn_no_ao) {
-                        qDebug("Audio output not available! msleep(%lu)", (unsigned long)((qreal)chunk/(qreal)csf * 1000));
+                        qDebug("Audio output not available! msleep(%lu)", (unsigned long)((qreal)chunk/(qreal)byte_rate * 1000));
                         sWarn_no_ao = false;
                     }
                     //TODO: avoid acummulative error. External clock?
-                    msleep((unsigned long)((qreal)chunk/(qreal)csf * 1000.0));
+                    msleep((unsigned long)((qreal)chunk/(qreal)byte_rate * 1000.0));
                 }
                 decodedPos += chunk;
                 decodedSize -= chunk;

@@ -31,6 +31,7 @@ class AudioFormatPrivate;
 class Q_EXPORT AudioFormat
 {
 public:
+    //TODO: what about paInt24
     enum SampleFormat {
         SampleFormat_Unknown = -1,
         SampleFormat_Input = SampleFormat_Unknown,
@@ -98,7 +99,8 @@ public:
         \sa bytesPerFrame()
     */
     int bytesPerSample() const;
-
+    int bitRate() const; //bits per second
+    int bytesPerSecond() const;
 private:
     QSharedDataPointer<AudioFormatPrivate> d;
 };
