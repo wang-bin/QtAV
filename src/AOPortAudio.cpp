@@ -68,7 +68,6 @@ public:
             return;
         }
         qDebug("audio device: %s", QString::fromLocal8Bit(Pa_GetDeviceInfo(outputParameters->device)->name).toUtf8().constData());
-        outputParameters->sampleFormat = paFloat32;
         outputParameters->hostApiSpecificStreamInfo = NULL;
         outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
     }
@@ -131,17 +130,35 @@ bool AOPortAudio::write()
     }
 #endif
 #endif //KNOW_WHY
-    PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/audioFormat().channels()/sizeof(float));
+    PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
 		return false;
     }
 	return true;
 }
+//TODO: what about planar, int8, int24 etc that FFmpeg or Pa not support?
+static int toPaSampleFormat(AudioFormat::SampleFormat format)
+{
+    switch (format) {
+    case AudioFormat::SampleFormat_Unsigned8:
+        return paUInt8;
+    case AudioFormat::SampleFormat_Signed16:
+        return paInt16;
+    case AudioFormat::SampleFormat_Signed32:
+        return paInt32;
+    case AudioFormat::SampleFormat_Float:
+        return paFloat32;
+    default:
+        return paCustomFormat;
+    }
+}
 
+//TODO: call open after audio format changed?
 bool AOPortAudio::open()
 {
     DPTR_D(AOPortAudio);
+    d.outputParameters->sampleFormat = toPaSampleFormat(audioFormat().sampleFormat());
     d.outputParameters->channelCount = audioFormat().channels();
     PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, audioFormat().sampleRate(), 0, paNoFlag, NULL, NULL);
     if (err == paNoError) {
