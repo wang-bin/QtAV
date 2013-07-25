@@ -17,6 +17,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMenu>
+#include <QMessageBox>
 #include <QtAV/QtAV.h>
 #include "Button.h"
 #include "ClickableMenu.h"
@@ -336,7 +337,7 @@ void MainWindow::changeVO(QAction *action)
     }
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
     VideoRenderer *vo = VideoRendererFactory::create(vid);
-    if (vo) {
+    if (vo && vo->isAvailable()) {
         if (vo->osdFilter()) {
             vo->osdFilter()->setShowType(OSD::ShowNone);
         }
@@ -347,6 +348,7 @@ void MainWindow::changeVO(QAction *action)
         setRenderer(vo);
     } else {
         action->toggle(); //check state changes if clicked
+        QMessageBox::critical(0, "QtAV", tr("not availabe on your platform!"));
         return;
     }
 }
