@@ -147,15 +147,46 @@ void AudioThread::run()
                 d.clock->updateDelay(delay += (qreal)chunk/(qreal)byte_rate);
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
                 if (has_ao) {
-                    //TODO: volume filter
+                    //TODO: volume filter and other filters!!!
                     if (!ao->isMute()) {
                         decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                         qreal vol = ao->volume();
                         if (vol != 1.0) {
                             int len = decodedChunk.size()/ao->audioFormat().bytesPerSample();
-                            float *data = (float*)decodedChunk.data(); //TODO: other format?
-                            for (int i = 0; i < len; ++i)
-                                data[i] *= vol;
+                            switch (ao->audioFormat().sampleFormat()) {
+                            case AudioFormat::SampleFormat_Unsigned8:
+                            case AudioFormat::SampleFormat_Unsigned8Planar: {
+                                quint8 *data = (quint8*)decodedChunk.data(); //TODO: other format?
+                                for (int i = 0; i < len; data[i++] *= vol) {}
+                            }
+                                break;
+                            case AudioFormat::SampleFormat_Signed16:
+                            case AudioFormat::SampleFormat_Signed16Planar: {
+                                qint16 *data = (qint16*)decodedChunk.data(); //TODO: other format?
+                                for (int i = 0; i < len; data[i++] *= vol) {}
+                            }
+                                break;
+                            case AudioFormat::SampleFormat_Signed32:
+                            case AudioFormat::SampleFormat_Signed32Planar: {
+                                qint32 *data = (qint32*)decodedChunk.data(); //TODO: other format?
+                                for (int i = 0; i < len; data[i++] *= vol) {}
+                            }
+                                break;
+                            case AudioFormat::SampleFormat_Float:
+                            case AudioFormat::SampleFormat_FloatPlanar: {
+                                float *data = (float*)decodedChunk.data(); //TODO: other format?
+                                for (int i = 0; i < len; data[i++] *= vol) {}
+                            }
+                                break;
+                            case AudioFormat::SampleFormat_Double:
+                            case AudioFormat::SampleFormat_DoublePlanar: {
+                                double *data = (double*)decodedChunk.data(); //TODO: other format?
+                                for (int i = 0; i < len; data[i++] *= vol) {}
+                            }
+                                break;
+                            default:
+                                break;
+                            }
                         }
                     }
                     ao->writeData(decodedChunk);
