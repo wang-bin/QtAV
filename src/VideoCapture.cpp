@@ -28,6 +28,11 @@
 #include <QtCore/QThreadPool>
 #include <QtGui/QImage>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QDesktopServices>
+#else
+#include <QtCore/QStandardPaths>
+#endif
 namespace QtAV {
 
 class CaptureTask : public QRunnable
@@ -72,8 +77,14 @@ public:
 
 VideoCapture::VideoCapture(QObject *parent) :
     QObject(parent),async(true),error(NoError)
-  , dir(qApp->applicationDirPath() + "/capture")
 {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    dir = QDesktopServices::storageLocation(QDesktopServices::PicturesLocation);
+#else
+    dir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+#endif
+    if (dir.isEmpty())
+        dir = qApp->applicationDirPath() + "/capture";
     fmt = "PNG";
     qual = -1;
 }
