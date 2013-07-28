@@ -66,10 +66,15 @@ public:
     void setSampleRate(int sampleRate);
     int sampleRate() const;
 
+    /*!
+     * setChannelLayout also sets the correct channels if channels does not match.
+     */
     //currently use FFmpeg's. see avutil/channel_layout.h
     void setChannelLayout(ChannelLayout layout);
     ChannelLayout channelLayout() const;
-
+    /*!
+     * setChannels also sets the default layout for this channels if channels does not match.
+     */
     void setChannels(int channels);
     int channels() const;
 

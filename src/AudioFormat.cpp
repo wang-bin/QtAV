@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/AudioFormat.h"
+#include "QtAV/QtAV_Compat.h"
 
 namespace QtAV {
 
@@ -35,6 +36,19 @@ public:
       , sample_rate(0)
       , channel_layout(0)
     {}
+    void setChannels(int cs) {
+        channels = cs;
+        if (av_get_channel_layout_nb_channels(channel_layout) != channels) {
+            channel_layout = av_get_default_channel_layout(channels);
+        }
+    }
+    void setChannelLayout(AudioFormat::ChannelLayout cl) {
+        channel_layout = cl;
+        if (av_get_channel_layout_nb_channels(channel_layout) != channels) {
+            channels = av_get_channel_layout_nb_channels(channel_layout);
+        }
+    }
+
     bool planar;
     AudioFormat::SampleFormat sample_format;
     int channels;
@@ -138,7 +152,7 @@ int AudioFormat::sampleRate() const
 */
 void AudioFormat::setChannelLayout(ChannelLayout layout)
 {
-    d->channel_layout = layout;
+    d->setChannelLayout(layout);
 }
 
 AudioFormat::ChannelLayout AudioFormat::channelLayout() const
@@ -152,7 +166,7 @@ AudioFormat::ChannelLayout AudioFormat::channelLayout() const
 */
 void AudioFormat::setChannels(int channels)
 {
-    d->channels = channels;
+    d->setChannels(channels);
 }
 
 /*!
