@@ -104,6 +104,7 @@ bool AVDemuxer::readFrame()
             if (!eof) {
                 eof = true;
                 started_ = false;
+                pkt->data = QByteArray(); //flush
                 pkt->markEnd();
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
