@@ -67,6 +67,7 @@ void AudioThread::run()
     d.init();
     //TODO: bool need_sync in private class
     bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
+    Packet pkt;
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -82,14 +83,16 @@ void AudioThread::run()
                 break;
             }
         }
-        Packet pkt = d.packets.take(); //wait to dequeue
         if (!pkt.isValid()) {
-            qDebug("Invalid packet! flush audio codec context!!!!!!!!");
+            pkt = d.packets.take(); //wait to dequeue
+        }
+        if (!pkt.isValid()) {
+            qDebug("Invalid packet! flush audio codec context!!!!!!!! audio queue size=%d", d.packets.size());
             dec->flush();
             continue;
         }
         if (is_external_clock) {
-            d.delay = pkt.pts  - d.clock->value();
+            d.delay = pkt.pts - d.clock->value();
             /*
              *after seeking forward, a packet may be the old, v packet may be
              *the new packet, then the d.delay is very large, omit it.
@@ -144,7 +147,9 @@ void AudioThread::run()
             qreal byte_rate = af.bytesPerSecond();
             while (decodedSize > 0) {
                 int chunk = qMin(decodedSize, int(max_len*byte_rate));
-                d.clock->updateDelay(delay += (qreal)chunk/(qreal)byte_rate);
+                qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
+                pkt.pts += chunk_delay;
+                d.clock->updateDelay(delay += chunk_delay);
                 QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
                 if (has_ao) {
                     //TODO: volume filter and other filters!!!
@@ -202,12 +207,12 @@ void AudioThread::run()
                         sWarn_no_ao = false;
                     }
                     //TODO: avoid acummulative error. External clock?
-                    msleep((unsigned long)((qreal)chunk/(qreal)byte_rate * 1000.0));
+                    msleep((unsigned long)(chunk_delay * 1000.0));
                 }
                 decodedPos += chunk;
                 decodedSize -= chunk;
             }
-        } else {
+        } else { //???
             //qWarning("Decode audio failed");
             qreal dt = pkt.pts - d.last_pts;
             if (abs(dt) > 0.618 || dt < 0) {
@@ -216,6 +221,12 @@ void AudioThread::run()
             //qDebug("sleep %f", dt);
             //TODO: avoid acummulative error. External clock?
             msleep((unsigned long)(dt*1000.0));
+        }
+        int undecoded = dec->undecodedSize();
+        if (undecoded > 0) {
+            pkt.data.remove(0, pkt.data.size() - undecoded);
+        } else {
+            pkt = Packet();
         }
         d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
     }

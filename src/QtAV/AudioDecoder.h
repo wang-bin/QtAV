@@ -24,6 +24,7 @@
 
 #include <QtAV/AVDecoder.h>
 
+//TODO: decoder.in/outAudioFormat()?
 namespace QtAV {
 
 class AudioResampler;
@@ -36,6 +37,7 @@ public:
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
     AudioResampler *resampler();
+    int undecodedSize() const;
 };
 
 } //namespace QtAV

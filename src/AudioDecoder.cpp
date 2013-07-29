@@ -32,6 +32,7 @@ class AudioDecoderPrivate : public AVDecoderPrivate
 public:
     AudioDecoderPrivate():
         resampler(0)
+      , undecoded_size(0)
     {
         resampler = AudioResamplerFactory::create(AudioResamplerId_FF);
         if (!resampler)
@@ -47,6 +48,7 @@ public:
     }
 
     AudioResampler *resampler;
+    int undecoded_size;
 };
 
 AudioDecoder::AudioDecoder()
@@ -80,6 +82,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     memcpy(packet.data, encoded.data(), encoded.size());
 //TODO: use AVPacket directly instead of Packet?
     int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
+    d.undecoded_size = qMin(encoded.size() - ret, encoded.size());
     av_free_packet(&packet);
     if (ret == AVERROR(EAGAIN)) {
         return false;
@@ -215,6 +218,11 @@ bool AudioDecoder::decode(const QByteArray &encoded)
 AudioResampler* AudioDecoder::resampler()
 {
     return d_func().resampler;
+}
+
+int AudioDecoder::undecodedSize() const
+{
+    return d_func().undecoded_size;
 }
 
 } //namespace QtAV
