@@ -147,7 +147,8 @@ bool AVDemuxer::readFrame()
 
     AVStream *stream = format_context->streams[stream_idx];
     pkt->pts *= av_q2d(stream->time_base);
-
+    //TODO: pts must >= 0? look at ffplay
+    pkt->pts = qMax<qreal>(0, pkt->pts);
     if (stream->codec->codec_type == AVMEDIA_TYPE_SUBTITLE
             && (packet.flags & AV_PKT_FLAG_KEY)
             &&  packet.convergence_duration != AV_NOPTS_VALUE)
