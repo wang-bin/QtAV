@@ -39,6 +39,7 @@ public:
         }
     }
     SwrContext *context;
+    int channel_map[SWR_CH_MAX];
 };
 
 AudioResamplerLibav::AudioResamplerLibav():
@@ -156,15 +157,22 @@ bool AudioResamplerLibav::prepare()
     av_log(NULL, AV_LOG_INFO, "in fmt: %d\n", d.in_format.sampleFormat());
     av_log(NULL, AV_LOG_INFO, "in freq: %d\n",  d.in_format.sampleRate());
 
-
-    if (d.context) {
-        int ret = swr_init(d.context);
-        if (ret < 0) {
-            qWarning("swr_init failed: %s", av_err2str(ret));
-            return false;
-        }
-    } else {
+    if (!d.context) {
         qWarning("Allocat swr context failed!");
+        return false;
+    }
+    if (d.in_format.channels() < d.out_format.channels()) {
+        memset(d.channel_map, 0, sizeof(d.channel_map));
+        for (int i = 0; i < d.out_format.channels(); ++i) {
+            d.channel_map[i] = i % d.in_format.channels();
+        }
+        av_opt_set_int(d.context, "icl", d.out_format.channelLayout(), 0);
+        av_opt_set_int(d.context, "uch", d.out_format.channels() , 0);
+        swr_set_channel_mapping(d.context, d.channel_map);
+    }
+    int ret = swr_init(d.context);
+    if (ret < 0) {
+        qWarning("swr_init failed: %s", av_err2str(ret));
         return false;
     }
     return true;
