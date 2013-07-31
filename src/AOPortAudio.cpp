@@ -48,14 +48,16 @@ public:
             const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
             if (deviceInfo) {
                 const PaHostApiInfo *hostApiInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
-                if ( deviceInfo->maxOutputChannels > 0 ) {
-                    QString name = QString(hostApiInfo->name) + ": " + QString::fromLocal8Bit(deviceInfo->name);
-                    qDebug("audio device %d: %s", i, name.toUtf8().constData());
-                }
+                QString name = QString(hostApiInfo->name) + ": " + QString::fromLocal8Bit(deviceInfo->name);
+                qDebug("audio device %d: %s", i, name.toUtf8().constData());
+                qDebug("max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
             }
         }
         memset(outputParameters, 0, sizeof(PaStreamParameters));
         outputParameters->device = Pa_GetDefaultOutputDevice();
+        const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(outputParameters->device);
+        max_channels = deviceInfo->maxOutputChannels;
+        qDebug("DEFAULT max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
 /*
 #ifdef Q_OS_LINUX
         if ( getOutputDeviceNames().contains( "ALSA: default" ) )

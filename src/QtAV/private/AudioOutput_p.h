@@ -35,13 +35,14 @@ public:
         mute(false)
       , vol(1)
       , speed(1.0)
+      , max_channels(1)
     {
     }
     virtual ~AudioOutputPrivate(){}
     bool mute;
     qreal vol;
     qreal speed;
-
+    int max_channels;
     AudioFormat format;
 };
 

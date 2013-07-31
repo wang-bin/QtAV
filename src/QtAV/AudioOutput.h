@@ -23,6 +23,7 @@
 #define QAV_AUDIOOUTPUT_H
 
 #include <QtAV/AVOutput.h>
+//TODO: audio device class
 
 namespace QtAV {
 
@@ -35,6 +36,8 @@ public:
     AudioOutput();
     virtual ~AudioOutput() = 0;
 
+    int maxChannels() const;
+    //virtual bool isSupported(const AudioFormat& format);
     void setAudioFormat(const AudioFormat& format);
     AudioFormat& audioFormat();
     const AudioFormat& audioFormat() const;

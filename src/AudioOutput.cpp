@@ -37,6 +37,10 @@ AudioOutput::~AudioOutput()
 {
 }
 
+int AudioOutput::maxChannels() const
+{
+    return d_func().max_channels;
+}
 
 void AudioOutput::setAudioFormat(const AudioFormat& format)
 {
@@ -65,7 +69,12 @@ int AudioOutput::sampleRate() const
 
 void AudioOutput::setChannels(int channels)
 {
-    d_func().format.setChannels(channels);
+    DPTR_D(AudioOutput);
+    if (channels > d.max_channels) {
+        qWarning("not support. max channels is %d", d.max_channels);
+        return;
+    }
+    d.format.setChannels(channels);
 }
 
 int AudioOutput::channels() const
