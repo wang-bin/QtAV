@@ -19,9 +19,7 @@ EssentialDepends = avutil avcodec avformat swscale
 OptionalDepends = portaudio direct2d gdiplus gl \
     swresample avresample
 unix {
-    isEqual(QT_MAJOR_VERSION, 4) {
-        OptionalDepends += xv
-    }
+    OptionalDepends += xv
 }
 
 include(root.pri)

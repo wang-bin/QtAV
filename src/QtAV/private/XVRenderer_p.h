@@ -23,7 +23,12 @@
 #define QTAV_XVRENDERER_P_H
 
 #include "private/VideoRenderer_p.h"
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QX11Info>
+#else
+#include <qpa/qplatformnativeinterface.h>
+#include <QGuiApplication>
+#endif
 #include <sys/shm.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xvlib.h>
@@ -49,8 +54,12 @@ public:
 #ifndef _XSHM_H_
         use_shm = false;
 #endif //_XSHM_H_
-        //XvQueryExtension()
-        display = QX11Info::display();
+       //XvQueryExtension()
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+       display = QX11Info::display();
+#else
+       display = (Display*)qApp->platformNativeInterface()->nativeResourceForScreen("display", QGuiApplication::primaryScreen());
+#endif
         if (XvQueryAdaptors(display, DefaultRootWindow(display), &num_adaptors, &xv_adaptor_info) != Success) {
             available = false;
             qCritical("Query adaptors failed!");
