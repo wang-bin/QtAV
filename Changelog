@@ -1,3 +1,13 @@
+version 1.2.3    2013-08-01
+
+- FFmpeg/libav avresample support
+- OpenGL ES2 support. Can build against Qt5 GLES2 version now
+- XV support for Qt5
+- more audio format support, e.g. sample format, channels.
+- Fix H.264 decoding error for the beginning frames.
+- Fix audio decoding error if packet should be decoded multiple times. WMA audio.
+- Save video captures to system Picture directory
+
 version 1.2.2    2013-07-03
 
 - Audio resampler using swresample

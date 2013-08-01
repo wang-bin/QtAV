@@ -65,5 +65,5 @@ cache(mkspecs_cached, set, mkspecs_build)
 }
 
 !isEmpty(EssentialDepends)|!isEmpty(OptionalDepends) {
-    message("To recheck the dependencies, run qmake with argument 'CONFIG+=recheck'")
+    message("To recheck the dependencies, delete .qmake.cache or run qmake with argument 'CONFIG+=recheck'")
 }

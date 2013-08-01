@@ -28,7 +28,7 @@ QtAV can meet your most demands
 - Fullscreen, stay on top
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
   both FFmpeg(>=0.9) and [Libav](http://libav.org).
-- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL.
+- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
 - Dynamically change render engine when playing.
 
 ### Extensible Framework (work in progress)
@@ -131,12 +131,12 @@ The default behavior can be replaced by subclassing QObject and call `void AVPla
 1. Subtitle
 2. Filters
 3. Hardware acceleration using DirectX, NVIDIA Cuda, ATI UVD, Intel IPP, OpenCL and OpenGL:
-  * decoding: DXVA, XvBA, cuvid
-  * image, audio and filters
-  * rendering: DirectX, OpenGL ES
+  * decoding: DXVA, XvBA, cuvid, VAAPI
+  * image, audio and text filters
+  * rendering: DirectX
 4. Stylish GUI based on Qt Graphics View Framework
 5. Document and SDK
-6. Other: play speed, better sync method and seeking, tests, playing statistics, etc.
+6. Other: better sync method and seeking, tests, playing statistics, etc.
 7. Region of interest support.
 8. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
 9. ppa, debian package etc.
