@@ -48,7 +48,6 @@ XVRenderer::~XVRenderer()
 
 QPaintEngine* XVRenderer::paintEngine() const
 {
-    return QWidget::paintEngine();
     return 0; //use native engine
 }
 
