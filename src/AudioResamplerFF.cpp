@@ -162,13 +162,31 @@ bool AudioResamplerFF::prepare()
         qWarning("Allocat swr context failed!");
         return false;
     }
+    bool use_channel_map = false;
     if (d.in_format.channels() < d.out_format.channels()) {
+        use_channel_map = true;
         memset(d.channel_map, 0, sizeof(d.channel_map));
         for (int i = 0; i < d.out_format.channels(); ++i) {
             d.channel_map[i] = i % d.in_format.channels();
         }
+    }
+    if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Left) {
+        use_channel_map = true;
+        memset(d.channel_map, 0, sizeof(d.channel_map));
+        for (int i = 0; i < d.out_format.channels(); ++i) {
+            d.channel_map[i] = 0;
+        }
+    }
+    if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Right) {
+        use_channel_map = true;
+        memset(d.channel_map, 0, sizeof(d.channel_map));
+        for (int i = 0; i < d.out_format.channels(); ++i) {
+            d.channel_map[i] = 1;
+        }
+    }
+    if (use_channel_map) {
         av_opt_set_int(d.context, "icl", d.out_format.channelLayout(), 0);
-        av_opt_set_int(d.context, "uch", d.out_format.channels() , 0);
+        av_opt_set_int(d.context, "uch", d.out_format.channels(), 0);
         swr_set_channel_mapping(d.context, d.channel_map);
     }
     int ret = swr_init(d.context);
