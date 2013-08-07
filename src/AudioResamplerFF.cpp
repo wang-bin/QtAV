@@ -98,7 +98,7 @@ bool AudioResamplerFF::prepare()
     if (!d.in_format.channels()) {
         if (!d.in_format.channelLayout()) { //FIXME: already return
             d.in_format.setChannels(2);
-            d.in_format.setChannelLayout(av_get_default_channel_layout(d.in_format.channels())); //from mplayer2
+            d.in_format.setChannelLayoutFFmpeg(av_get_default_channel_layout(d.in_format.channels())); //from mplayer2
             qWarning("both channels and channel layout are not available, assume channels=%d, channel layout=%lld", d.in_format.channels(), d.in_format.channelLayout());
         } else {
             d.in_format.setChannels(av_get_channel_layout_nb_channels(d.in_format.channelLayout()));
@@ -108,7 +108,7 @@ bool AudioResamplerFF::prepare()
         d.in_format.setChannels(2); //TODO: why av_get_channel_layout_nb_channels() may return 0?
     if (!d.in_format.channelLayout()) {
         qWarning("channel layout not available, use default layout");
-        d.in_format.setChannelLayout(av_get_default_channel_layout(d.in_format.channels()));
+        d.in_format.setChannelLayoutFFmpeg(av_get_default_channel_layout(d.in_format.channels()));
     }
     qDebug("in cs: %d, cl: %lld", d.in_format.channels(), d.in_format.channelLayout());
 
@@ -120,7 +120,7 @@ bool AudioResamplerFF::prepare()
     }
     //now we have out channels
     if (!d.out_format.channelLayout())
-        d.out_format.setChannelLayout(av_get_default_channel_layout(d.out_format.channels()));
+        d.out_format.setChannelLayoutFFmpeg(av_get_default_channel_layout(d.out_format.channels()));
     if (!d.out_format.sampleRate())
         d.out_format.setSampleRate(inAudioFormat().sampleRate());
     qDebug("out cs: %d, cl: %lld", d.out_format.channels(), d.out_format.channelLayout());

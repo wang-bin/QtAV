@@ -46,9 +46,15 @@ public:
         SampleFormat_FloatPlanar,
         SampleFormat_DoublePlanar
     };
-    //enum ChannelLayout {
-    //};
-    typedef qint64 ChannelLayout; //currently use latest FFmpeg's
+    enum ChannelLayout {
+        ChannelLayout_Left,
+        ChannelLayout_Right,
+        ChannelLayout_Center,
+        ChannelLayout_Mono = ChannelLayout_Center,
+        ChannelLayout_Stero,
+        ChannelLayout_Unsupported //ok. now it's not complete
+    };
+    //typedef qint64 ChannelLayout; //currently use latest FFmpeg's
 
     static bool isPlanar(SampleFormat format);
 
@@ -67,9 +73,11 @@ public:
     int sampleRate() const;
 
     /*!
-     * setChannelLayout also sets the correct channels if channels does not match.
+     * setChannelLayout and setChannelLayoutFFmpeg also sets the correct channels if channels does not match.
      */
-    //currently use FFmpeg's. see avutil/channel_layout.h
+    void setChannelLayoutFFmpeg(qint64 layout);
+    qint64 channelLayoutFFmpeg() const;
+    //currently a limitted set of channel layout is supported. call setChannelLayoutFFmpeg is recommended
     void setChannelLayout(ChannelLayout layout);
     ChannelLayout channelLayout() const;
     /*!

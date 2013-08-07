@@ -26,6 +26,38 @@ namespace QtAV {
 
 const qint64 kHz = 1000000LL;
 
+typedef struct {
+    qint64 ff;
+    AudioFormat::ChannelLayout cl;
+} ChannelLayoutMap;
+
+static const ChannelLayoutMap kChannelLayoutMap[] = {
+    { AV_CH_FRONT_LEFT, AudioFormat::ChannelLayout_Left },
+    { AV_CH_FRONT_RIGHT, AudioFormat::ChannelLayout_Right },
+    { AV_CH_FRONT_CENTER, AudioFormat::ChannelLayout_Center },
+    { AV_CH_LAYOUT_MONO, AudioFormat::ChannelLayout_Mono },
+    { AV_CH_LAYOUT_STEREO, AudioFormat::ChannelLayout_Stero },
+    { 0, AudioFormat::ChannelLayout_Unsupported}
+};
+
+static AudioFormat::ChannelLayout channelLayoutFromFFmpeg(qint64 clff)
+{
+    for (int i = 0; i < sizeof(kChannelLayoutMap)/sizeof(ChannelLayoutMap); ++i) {
+        if (kChannelLayoutMap[i].ff == clff)
+            return kChannelLayoutMap[i].cl;
+    }
+    return AudioFormat::ChannelLayout_Unsupported;
+}
+
+static qint64 channelLayoutToFFmpeg(AudioFormat::ChannelLayout cl)
+{
+    for (int i = 0; i < sizeof(kChannelLayoutMap)/sizeof(ChannelLayoutMap); ++i) {
+        if (kChannelLayoutMap[i].cl == cl)
+            return kChannelLayoutMap[i].ff;
+    }
+    return 0;
+}
+
 class AudioFormatPrivate : public QSharedData
 {
 public:
@@ -34,18 +66,20 @@ public:
       , sample_format(AudioFormat::SampleFormat_Input)
       , channels(0)
       , sample_rate(0)
-      , channel_layout(0)
+      , channel_layout(AudioFormat::ChannelLayout_Unsupported)
+      , channel_layout_ff(0)
     {}
     void setChannels(int cs) {
         channels = cs;
-        if (av_get_channel_layout_nb_channels(channel_layout) != channels) {
-            channel_layout = av_get_default_channel_layout(channels);
+        if (av_get_channel_layout_nb_channels(channel_layout_ff) != channels) {
+            channel_layout_ff = av_get_default_channel_layout(channels);
+            channel_layout = channelLayoutFromFFmpeg(channel_layout_ff);
         }
     }
-    void setChannelLayout(AudioFormat::ChannelLayout cl) {
-        channel_layout = cl;
-        if (av_get_channel_layout_nb_channels(channel_layout) != channels) {
-            channels = av_get_channel_layout_nb_channels(channel_layout);
+    void setChannelLayoutFF(qint64 clff) {
+        channel_layout_ff = clff;
+        if (av_get_channel_layout_nb_channels(channel_layout_ff) != channels) {
+            channels = av_get_channel_layout_nb_channels(channel_layout_ff);
         }
     }
 
@@ -55,6 +89,7 @@ public:
     int sample_rate;
     int bytes_per_sample;
     AudioFormat::ChannelLayout channel_layout;
+    qint64 channel_layout_ff;
 };
 
 bool AudioFormat::isPlanar(SampleFormat format)
@@ -150,9 +185,25 @@ int AudioFormat::sampleRate() const
 /*!
    Sets the channel layout to \a layout. Currently use FFmpeg's. see avutil/channel_layout.h
 */
+void AudioFormat::setChannelLayoutFFmpeg(qint64 layout)
+{
+    //FFmpeg channel layout is more complete, so we just it
+    d->channel_layout = channelLayoutFromFFmpeg(layout);
+    d->setChannelLayoutFF(layout);
+}
+
+qint64 AudioFormat::channelLayoutFFmpeg() const
+{
+    return d->channel_layout_ff;
+}
+
 void AudioFormat::setChannelLayout(ChannelLayout layout)
 {
-    d->setChannelLayout(layout);
+    qint64 clff = channelLayoutToFFmpeg(layout);
+    if (!clff)
+        return;
+    d->channel_layout = layout;
+    d->setChannelLayoutFF(clff);
 }
 
 AudioFormat::ChannelLayout AudioFormat::channelLayout() const
