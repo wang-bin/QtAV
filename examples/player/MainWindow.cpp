@@ -203,6 +203,8 @@ void MainWindow::setupUi()
     QMenu *subMenu = new QMenu(tr("Online channels"));
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(playOnlineVideo(QAction*)));
     QFile tv_file(qApp->applicationDirPath() + "/tv.ini");
+    if (!tv_file.exists())
+        tv_file.setFileName(":/tv.ini");
     if (tv_file.open(QIODevice::ReadOnly)) {
         QTextStream ts(&tv_file);
         ts.setCodec("UTF-8");
@@ -438,11 +440,10 @@ void MainWindow::play(const QString &name)
         mHasPendingPlay = true;
         return;
     }
-    //QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName());
-    if (mFile.contains("://") && !mFile.startsWith("file://"))
-        setWindowTitle(mFile);
-    else
-        setWindowTitle(QFileInfo(mFile).fileName());
+    if (!mFile.contains("://") || mFile.startsWith("file://")) {
+        mTitle = QFileInfo(mFile).fileName();
+    }
+    setWindowTitle(mTitle);
     mpPlayer->enableAudio(!mNullAO);
     mpPlayer->play(name);
 }
@@ -492,10 +493,7 @@ void MainWindow::onPaused(bool p)
 void MainWindow::onStartPlay()
 {
     mFile = mpPlayer->file(); //open from EventFilter's menu
-    if (mFile.contains("://") && !mFile.startsWith("file://"))
-        setWindowTitle(mFile);
-    else
-        setWindowTitle(QFileInfo(mFile).fileName());
+    setWindowTitle(mTitle);
 
     mpPlayPauseBtn->setIconWithSates(mPausePixmap);
     mpTimeSlider->setMaximum(mpPlayer->duration()*1000);
@@ -667,6 +665,7 @@ void MainWindow::setRepeat(QAction *action)
 
 void MainWindow::playOnlineVideo(QAction *action)
 {
+    mTitle = action->text();
     play(action->data().toString());
 }
 

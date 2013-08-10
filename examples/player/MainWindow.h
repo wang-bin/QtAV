@@ -89,6 +89,7 @@ private:
     QtAV::AVPlayer *mpPlayer;
     QtAV::VideoRenderer *mpRenderer, *mpTempRenderer;
     QString mFile;
+    QString mTitle;
     QPixmap mPlayPixmap;
     QPixmap mPausePixmap;
 };

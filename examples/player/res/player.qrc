@@ -2,4 +2,7 @@
     <qresource prefix="/i18n">
         <file>player_zh_CN.qm</file>
     </qresource>
+    <qresource prefix="/">
+        <file>tv.ini</file>
+    </qresource>
 </RCC>
