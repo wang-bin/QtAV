@@ -134,6 +134,9 @@ AudioFormat& AudioFormat::operator=(const AudioFormat &other)
 bool AudioFormat::operator==(const AudioFormat &other) const
 {
     return d->sample_rate == other.d->sample_rate &&
+            //compare channel layout first because it determines channel count
+            d->channel_layout_ff == other.d->channel_layout_ff &&
+            d->channel_layout == other.d->channel_layout &&
             d->channels == other.d->channels &&
             //d->sampleSize == other.d->sampleSize &&
             d->sample_format == other.d->sample_format;
@@ -200,9 +203,10 @@ qint64 AudioFormat::channelLayoutFFmpeg() const
 void AudioFormat::setChannelLayout(ChannelLayout layout)
 {
     qint64 clff = channelLayoutToFFmpeg(layout);
+    d->channel_layout = layout;
+    //TODO: shall we set ffmpeg channel layout to 0(not valid value)?
     if (!clff)
         return;
-    d->channel_layout = layout;
     d->setChannelLayoutFF(clff);
 }
 
