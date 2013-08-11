@@ -138,7 +138,7 @@ bool AudioResamplerFF::prepare()
 
     //d.in_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.in_sample_format) ? d.in_channels : 1;
     //d.out_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.out_sample_format) ? d.out_channels : 1;
-    //swr_free(&d.context); //ffplay
+    swr_free(&d.context); //TODO: if no free(of cause free is required), why channel mapping and layout not work if change from left to stero?
     //If use swr_alloc() need to set the parameters (av_opt_set_xxx() manually or with swr_alloc_set_opts()) before calling swr_init()
     d.context = swr_alloc_set_opts(d.context
                                    , d.out_format.channelLayoutFFmpeg()
@@ -191,6 +191,7 @@ bool AudioResamplerFF::prepare()
     }
     if (use_channel_map) {
         av_opt_set_int(d.context, "icl", d.out_format.channelLayoutFFmpeg(), 0);
+        //TODO: why crash if layout is mono and set uch(i.e. always the next line)
         av_opt_set_int(d.context, "uch", d.out_format.channels(), 0);
         swr_set_channel_mapping(d.context, d.channel_map);
     }
