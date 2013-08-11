@@ -22,6 +22,11 @@
 #include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"
+/*
+ *TODO:
+ * disable a/v actions if player is 0;
+ * use action's value to set player's parameters when start to play a new file
+ */
 
 #define SLIDER_ON_VO 0
 
@@ -275,6 +280,20 @@ void MainWindow::setupUi()
     }
     mpARAction->setChecked(true);
 
+    subMenu = new ClickableMenu(tr("Channel"));
+    mpMenu->addMenu(subMenu);
+    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeChannel(QAction*)));
+    mpChannelAction = subMenu->addAction(tr("As input"));
+    mpChannelAction->setData(AudioFormat::ChannelLayout_Unsupported); //will set to input in resampler if not supported.
+    subMenu->addAction(tr("Stero"))->setData(AudioFormat::ChannelLayout_Stero);
+    subMenu->addAction(tr("Mono (center)"))->setData(AudioFormat::ChannelLayout_Center);
+    subMenu->addAction(tr("Left"))->setData(AudioFormat::ChannelLayout_Left);
+    subMenu->addAction(tr("Right"))->setData(AudioFormat::ChannelLayout_Right);
+    foreach(QAction* action, subMenu->actions()) {
+        action->setCheckable(true);
+    }
+    mpChannelAction->setChecked(true);
+
     subMenu = new ClickableMenu(tr("Renderer"));
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeVO(QAction*)));
@@ -329,6 +348,32 @@ void MainWindow::setupUi()
     connect(mpTimeSlider, SIGNAL(sliderReleased()), SLOT(seek()));
 
     QTimer::singleShot(0, this, SLOT(initPlayer()));
+}
+
+void MainWindow::changeChannel(QAction *action)
+{
+    if (action == mpChannelAction) {
+        action->toggle();
+        return;
+    }
+    AudioFormat::ChannelLayout cl = (AudioFormat::ChannelLayout)action->data().toInt();
+    AudioOutput *ao = mpPlayer ? mpPlayer->audio() : 0; //getAO()?
+    if (!ao) {
+        qWarning("No audio output!");
+        return;
+    }
+    mpChannelAction->setChecked(false);
+    mpChannelAction = action;
+    mpChannelAction->setChecked(true);
+    if (!ao->close()) {
+        qWarning("close audio failed");
+        return;
+    }
+    ao->audioFormat().setChannelLayout(cl);
+    if (!ao->open()) {
+        qWarning("open audio failed");
+        return;
+    }
 }
 
 void MainWindow::changeVO(QAction *action)
