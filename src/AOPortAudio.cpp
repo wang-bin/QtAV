@@ -1,5 +1,5 @@
 /******************************************************************************
-	QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
@@ -119,8 +119,8 @@ bool AOPortAudio::write()
 #ifdef Q_OS_LINUX
     int chn = d.channels;
     if (chn == 6 || chn == 8) {
-		float *audio_buffer = (float *)d.data.data();
-		int size_per_chn = d.data.size() >> 2;
+        float *audio_buffer = (float *)d.data.data();
+        int size_per_chn = d.data.size() >> 2;
         for (int i = 0 ; i < size_per_chn; i += chn) {
             float tmp = audio_buffer[i+2];
             audio_buffer[i+2] = audio_buffer[i+4];
@@ -135,9 +135,9 @@ bool AOPortAudio::write()
     PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
-		return false;
+        return false;
     }
-	return true;
+    return true;
 }
 //TODO: what about planar, int8, int24 etc that FFmpeg or Pa not support?
 static int toPaSampleFormat(AudioFormat::SampleFormat format)
@@ -176,18 +176,26 @@ bool AOPortAudio::open()
 bool AOPortAudio::close()
 {
     DPTR_D(AOPortAudio);
+    bool available_old = d.available;
+    d.available = false;
     PaError err = paNoError;
     if (!d.stream) {
         return true;
     }
     err = Pa_StopStream(d.stream);
-    if (err != paNoError)
+    if (err != paNoError) {
+        d.available = available_old;
         qWarning("Stop portaudio stream error: %s", Pa_GetErrorText(err));
+        return false;
+    }
     err = Pa_CloseStream(d.stream);
-    d.stream = NULL;
-    if (err != paNoError)
+    if (err != paNoError) {
+        d.available = available_old;
         qWarning("Close portaudio stream error: %s", Pa_GetErrorText(err));
-    return err == paNoError;
+        return false;
+    }
+    d.stream = NULL;
+    return true;
 }
 
 } //namespace QtAV
