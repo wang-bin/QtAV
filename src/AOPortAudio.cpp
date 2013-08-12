@@ -104,6 +104,10 @@ AOPortAudio::~AOPortAudio()
 bool AOPortAudio::write()
 {
     DPTR_D(AOPortAudio);
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
+    if (!d.available)
+        return false;
     if (Pa_IsStreamStopped(d.stream))
         Pa_StartStream(d.stream);
 #if KNOW_WHY
@@ -135,7 +139,7 @@ bool AOPortAudio::write()
     PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
-        return false;
+        return   false;
     }
     return true;
 }
@@ -160,6 +164,8 @@ static int toPaSampleFormat(AudioFormat::SampleFormat format)
 bool AOPortAudio::open()
 {
     DPTR_D(AOPortAudio);
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
     d.outputParameters->sampleFormat = toPaSampleFormat(audioFormat().sampleFormat());
     d.outputParameters->channelCount = audioFormat().channels();
     PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, audioFormat().sampleRate(), 0, paNoFlag, NULL, NULL);
@@ -176,6 +182,8 @@ bool AOPortAudio::open()
 bool AOPortAudio::close()
 {
     DPTR_D(AOPortAudio);
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
     bool available_old = d.available;
     d.available = false;
     PaError err = paNoError;
