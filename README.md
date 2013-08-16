@@ -166,13 +166,36 @@ Video Wall
 
 
 
-##Donate 资助
+***
+###Donate 资助
 
-软件由我一人利用空余学习和工作时间开发。如果您觉得不错，可以考虑资助一下，非常方便
+软件由我一人利用空余学习和工作时间开发。如果您觉得不错，可以考虑资助一下
+
+Thanks
+
 [![Alipay](https://img.alipay.com/sys/personalprod/style/mc/top-logo.png)](https://me.alipay.com/lucaswang)
 
-#####资助名单
+<form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+<input type="hidden" name="cmd" value="_xclick">
+<input type="hidden" name="business" value="06122952wb@163.com">
+<input type="hidden" name="no_shipping" value="1">
+<input type="hidden" name="item_name" value="donation for QtAV">
+<input type="hidden" name="currency_code" value="USD">
+<input type="text" name="amount" value="3.14" onkeyup="if(!/^\d*.?\d{0,2}$/.test(this.value))this.value=this.value.replace(/[^\d.]/g,'').replace(/(^\d*.?\d{0,2}).*/g,'$1')">USD
+<input type="image" src="http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" name="submit" alt="Make payments with PayPal - it is fast, free and secure!">
+</form>
+<form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+<input type="hidden" name="cmd" value="_xclick">
+<input type="hidden" name="business" value="06122952wb@163.com">
+<input type="hidden" name="no_shipping" value="1">
+<input type="hidden" name="item_name" value="捐赠给 QtAV">
+<input type="hidden" name="currency_code" value="USD">
+<input type="text" name="amount" value="3.14" onkeyup="if(!/^\d*.?\d{0,2}$/.test(this.value))this.value=this.value.replace(/[^\d.]/g,'').replace(/(^\d*.?\d{0,2}).*/g,'$1')">美元
+<input type="image" src="http://www.paypal.com/zh_CN/i/btn/btn_donate_LG.gif" name="submit" alt="Make payments with PayPal - it is fast, free and secure!">
+</form>
 
+#####资助名单
+- - -
 
 
 
