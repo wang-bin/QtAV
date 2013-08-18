@@ -36,6 +36,12 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     d.painter = new QPainter();
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
+    /* To rapidly update custom widgets that constantly paint over their entire areas with
+     * opaque content, e.g., video streaming widgets, it is better to set the widget's
+     * Qt::WA_OpaquePaintEvent, avoiding any unnecessary overhead associated with repainting the
+     * widget's background
+     */
+    setAttribute(Qt::WA_OpaquePaintEvent);
     setAutoFillBackground(false);
     QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
     if (ctx) {

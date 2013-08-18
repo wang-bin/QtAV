@@ -36,7 +36,12 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
-    //setAttribute(Qt::WA_OpaquePaintEvent);
+    /* To rapidly update custom widgets that constantly paint over their entire areas with
+     * opaque content, e.g., video streaming widgets, it is better to set the widget's
+     * Qt::WA_OpaquePaintEvent, avoiding any unnecessary overhead associated with repainting the
+     * widget's background
+     */
+    setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
     setAutoFillBackground(false);
     //setDCFromPainter(false); //changeEvent will be called on show()
