@@ -157,12 +157,14 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
      * widget's background
      */
     setAttribute(Qt::WA_OpaquePaintEvent);
-    //setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute(Qt::WA_PaintOnScreen);
+    setAttribute(Qt::WA_NoSystemBackground);
+    //default: swap in qpainter dtor. we should swap before QPainter.endNativePainting()
+    setAutoBufferSwap(false);
     setAutoFillBackground(false);
     d.filter_context = FilterContext::create(FilterContext::OpenGL);
     ((GLFilterContext*)d.filter_context)->paint_device = this;
     setOSDFilter(new OSDFilterGL());
-    initializeGL(); //TODO: why here manually?
 }
 
 GLWidgetRenderer::~GLWidgetRenderer()
@@ -184,6 +186,7 @@ bool GLWidgetRenderer::needUpdateBackground() const
 
 void GLWidgetRenderer::drawBackground()
 {
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -193,13 +196,15 @@ void GLWidgetRenderer::drawFrame()
 #ifdef QT_OPENGL_ES_2
 #define FMT_INTERNAL GL_BGRA //why BGRA?
 #define FMT GL_BGRA
-    glActiveTexture(GL_TEXTURE0);
+    glUseProgram(d.program); //qpainter need
+    glActiveTexture(GL_TEXTURE0); //TODO: can remove??
     glUniform1i(d.tex_location, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-#else
+#else //QT_OPENGL_ES_2
 #define FMT_INTERNAL GL_RGBA //why? why 3 works?
 #define FMT GL_BGRA
 #endif //QT_OPENGL_ES_2
+    glBindTexture(GL_TEXTURE_2D, d.texture);
+    d.setupQuality();
     glTexImage2D(GL_TEXTURE_2D
                  , 0                //level
                  , FMT_INTERNAL               //internal format. 4? why GL_RGBA? GL_RGB?
@@ -209,23 +214,41 @@ void GLWidgetRenderer::drawFrame()
                  , GL_UNSIGNED_BYTE
                  , d.data.constData());
 #ifndef QT_OPENGL_ES_2
+    //qpainter will reset gl state, so need glMatrixMode and clear color(in drawBackground())
+    //TODO: study what state will be reset
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
     glPushMatrix();
+    d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
     glVertexPointer(2, GL_FLOAT, 0, kVertices);
     glEnableClientState(GL_VERTEX_ARRAY);
     glTexCoordPointer(2, GL_FLOAT, 0, kTexCoords);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-#endif
-    d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-#ifndef QT_OPENGL_ES_2
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
     glPopMatrix();
+#else //QT_OPENGL_ES_2
+    d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+    //qpainter need. TODO: VBO?
+    glVertexAttribPointer(d.position_location, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
+    glEnableVertexAttribArray(d.position_location);
+    glVertexAttribPointer(d.tex_coords_location, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
+    glEnableVertexAttribArray(d.tex_coords_location);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    glDisableVertexAttribArray(d.tex_coords_location);
+    glDisableVertexAttribArray(d.position_location);
 #endif //QT_OPENGL_ES_2
 }
 
 bool GLWidgetRenderer::write()
 {
-    update();
+    update(); //can not call updateGL() directly because no event and paintGL() will in video thread
     return true;
 }
 
@@ -233,6 +256,7 @@ void GLWidgetRenderer::initializeGL()
 {
     DPTR_D(GLWidgetRenderer);
     glEnable(GL_TEXTURE_2D);
+    glGenTextures(1, &d.texture);
     qDebug("initializeGL~~~~~~~");
 #ifdef QT_OPENGL_ES_2
     if (d.program)
@@ -275,7 +299,15 @@ void GLWidgetRenderer::initializeGL()
 
 void GLWidgetRenderer::paintGL()
 {
+    /* we can mix gl and qpainter.
+     * QPainter painter(this);
+     * painter.beginNativePainting();
+     * gl functions...
+     * swapBuffers();
+     * painter.endNativePainting();
+     */
     handlePaintEvent();
+    swapBuffers();
 }
 
 void GLWidgetRenderer::resizeGL(int w, int h)
