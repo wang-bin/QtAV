@@ -37,6 +37,7 @@ public:
       , tex_location(0)
       , u_matrix(0)
 #endif //QT_OPENGL_ES_2
+      , painter(0)
     {
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
             available = false;
@@ -118,6 +119,7 @@ public:
     GLuint tex_location;
     GLuint u_matrix;
 #endif
+    QPainter *painter;
 };
 
 } //namespace QtAV

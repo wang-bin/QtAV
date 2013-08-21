@@ -38,8 +38,6 @@ Filter::~Filter()
 void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray* data)
 {
     DPTR_D(Filter);
-    if(context)
-        context->type();
     if (!context || context->type() != contextType()) {
         if (context) {
             qDebug("incompatible context type");

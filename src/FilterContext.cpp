@@ -56,19 +56,15 @@ void FilterContext::initializeOnData(QByteArray *data)
     Q_UNUSED(data);
 }
 
-VideoFilterContext::VideoFilterContext():
-    rect(32, 32, 0, 0)
+VideoFilterContext::VideoFilterContext()
+    : rect(32, 32, 0, 0)
+    , painter(0)
+    , paint_device(0)
+    , own_paint_device(false)
 {
 }
 
-QPainterFilterContext::QPainterFilterContext():
-    painter(0)
-  , paint_device(0)
-  , is_widget(false)
-{
-}
-
-QPainterFilterContext::~QPainterFilterContext()
+VideoFilterContext::~VideoFilterContext()
 {
     if (paint_device) {
         if (painter) { //painter may assigned by vo
@@ -78,8 +74,8 @@ QPainterFilterContext::~QPainterFilterContext()
             painter = 0;
         }
         qDebug("delete paint device %p in %p", paint_device, this);
-        if (!is_widget)
-            delete paint_device; //delete recursively
+        if (!own_paint_device)
+            delete paint_device; //delete recursively for widget
         paint_device = 0;
     }
 }
@@ -98,7 +94,7 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
         if (!painter) {
             painter = new QPainter(); //warning: more than 1 painter on 1 device
         }
-        is_widget = true; //TODO: what about renderer is not a widget?
+        own_paint_device = true; //TODO: what about renderer is not a widget?
         painter->begin(paint_device);
         return;
     }
@@ -116,14 +112,6 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
     if (!painter)
         painter = new QPainter();
     painter->begin((QImage*)paint_device);
-}
-
-GLFilterContext::GLFilterContext()
-{
-}
-
-GLFilterContext::~GLFilterContext()
-{
 }
 
 FilterContext::Type GLFilterContext::type() const

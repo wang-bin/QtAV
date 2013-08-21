@@ -168,8 +168,11 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     //default: swap in qpainter dtor. we should swap before QPainter.endNativePainting()
     setAutoBufferSwap(false);
     setAutoFillBackground(false);
+    d.painter = new QPainter();
     d.filter_context = FilterContext::create(FilterContext::QtPainter);
-    ((QPainterFilterContext*)d.filter_context)->paint_device = this;
+    QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
+    ctx->paint_device = this;
+    ctx->painter = d.painter;
     setOSDFilter(new OSDFilterQPainter());
 }
 
@@ -306,9 +309,6 @@ void GLWidgetRenderer::initializeGL()
 void GLWidgetRenderer::paintGL()
 {
     DPTR_D(GLWidgetRenderer);
-    QPainter p;
-    QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
-    ctx->painter = &p;
     /* we can mix gl and qpainter.
      * QPainter painter(this);
      * painter.beginNativePainting();
@@ -316,11 +316,10 @@ void GLWidgetRenderer::paintGL()
      * painter.endNativePainting();
      * swapBuffers();
      */
-    //p.beginNativePainting();
     handlePaintEvent();
-    //p.endNativePainting();
-    ctx->painter = 0;
     swapBuffers();
+    if (d.painter && d.painter->isActive())
+        d.painter->end();
 }
 
 void GLWidgetRenderer::resizeGL(int w, int h)

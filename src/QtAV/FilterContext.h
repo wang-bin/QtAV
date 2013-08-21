@@ -63,23 +63,23 @@ class Q_EXPORT VideoFilterContext : public FilterContext
 {
 public:
     VideoFilterContext();
+    virtual ~VideoFilterContext();
     QRect rect;
-};
 
-//TODO: font, pen, brush etc?
-class Q_EXPORT QPainterFilterContext : public VideoFilterContext
-{
-public:
-    QPainterFilterContext();
-    virtual ~QPainterFilterContext();
-
+    // Fallback to QPainter if no other paint engine implemented
     QPainter *painter;
     /*
      * for the filters apply on decoded data, paint_device must be initialized once the data changes
      * can we allocate memory on stack?
      */
     QPaintDevice *paint_device;
-    bool is_widget;
+    bool own_paint_device;
+};
+
+//TODO: font, pen, brush etc?
+class Q_EXPORT QPainterFilterContext : public VideoFilterContext
+{
+public:
     virtual Type type() const; //QtPainter
 protected:
     virtual void initializeOnData(QByteArray* data);
@@ -88,10 +88,7 @@ protected:
 class Q_EXPORT GLFilterContext : public VideoFilterContext
 {
 public:
-    GLFilterContext();
-    virtual ~GLFilterContext();
     virtual Type type() const; //OpenGL
-    QPaintDevice *paint_device;
 };
 
 template<class T> struct TypeTrait {};
