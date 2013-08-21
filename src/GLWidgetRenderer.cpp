@@ -27,7 +27,13 @@
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
 #ifndef GL_BGRA_EXT
+#if defined QT_OPENGL_ES_2
+#include <GLES2/gl2ext.h>
+#elif defined QT_OPENGL_ES
+#include <GLES/glext.h>
+#else
 #include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1 //TODO Apple include <OpenGL/xxx>
+#endif
 #endif //GL_BGRA_EXT
 #ifndef GL_BGRA //it may be defined in glext.h
 #define GL_BGRA GL_BGRA_EXT
@@ -55,7 +61,6 @@ const GLfloat kVertices[] = {
     -1, -1,
 };
 
-#ifdef QT_OPENGL_ES_2
 static inline void checkGlError(const char* op = 0) {
     GLenum error = glGetError();
     if (error == GL_NO_ERROR)
@@ -63,6 +68,7 @@ static inline void checkGlError(const char* op = 0) {
     qWarning("GL error %s (%#x): %s", op, error, glGetString(error));
 }
 
+#ifdef QT_OPENGL_ES_2
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
     "attribute vec2 a_TexCoords; \n"
