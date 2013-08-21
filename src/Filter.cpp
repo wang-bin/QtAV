@@ -59,7 +59,7 @@ void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray
             context->video_height = statistics->video_only.height;
         }
     }
-    if (data)
+    //if (data)
         context->initializeOnData(data);
     d.context = context;
     d.statistics = statistics;

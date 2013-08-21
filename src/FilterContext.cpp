@@ -64,6 +64,7 @@ VideoFilterContext::VideoFilterContext():
 QPainterFilterContext::QPainterFilterContext():
     painter(0)
   , paint_device(0)
+  , is_widget(false)
 {
 }
 
@@ -76,8 +77,9 @@ QPainterFilterContext::~QPainterFilterContext()
             delete painter;
             painter = 0;
         }
-        qDebug("delete paint device");
-        delete paint_device;
+        qDebug("delete paint device %p in %p", paint_device, this);
+        if (!is_widget)
+            delete paint_device; //delete recursively
         paint_device = 0;
     }
 }
@@ -89,18 +91,27 @@ FilterContext::Type QPainterFilterContext::type() const
 
 void QPainterFilterContext::initializeOnData(QByteArray *data)
 {
-    Q_ASSERT(video_width > 0 && video_height > 0);
-    if (!data)
+    if (!data) {
+        if (!paint_device) {
+            return;
+        }
+        if (!painter) {
+            painter = new QPainter(); //warning: more than 1 painter on 1 device
+        }
+        is_widget = true; //TODO: what about renderer is not a widget?
+        painter->begin(paint_device);
         return;
+    }
     if (data->isEmpty())
         return;
     if (paint_device) {
-        if (painter) {
+        if (painter && painter->isActive()) {
             painter->end(); //destroy a paint device that is being painted is not allowed!
         }
         delete paint_device;
         paint_device = 0;
     }
+    Q_ASSERT(video_width > 0 && video_height > 0);
     paint_device = new QImage((uchar*)data->data(), video_width, video_height, QImage::Format_RGB32);
     if (!painter)
         painter = new QPainter();

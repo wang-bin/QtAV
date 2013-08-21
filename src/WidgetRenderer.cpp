@@ -130,8 +130,8 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
     DPTR_D(WidgetRenderer);
     d.painter->begin(this); //Widget painting can only begin as a result of a paintEvent
     handlePaintEvent();
-    //end paint. how about QPainter::endNativePainting()?
-    d.painter->end();
+    if (d.painter->isActive())
+        d.painter->end();
 }
 
 } //namespace QtAV

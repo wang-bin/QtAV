@@ -79,6 +79,7 @@ public:
      * can we allocate memory on stack?
      */
     QPaintDevice *paint_device;
+    bool is_widget;
     virtual Type type() const; //QtPainter
 protected:
     virtual void initializeOnData(QByteArray* data);
