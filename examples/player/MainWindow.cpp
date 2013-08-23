@@ -22,6 +22,7 @@
 #include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"
+
 /*
  *TODO:
  * disable a/v actions if player is 0;
@@ -56,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mIsReady(false)
   , mHasPendingPlay(false)
   , mNullAO(false)
+  , mScreensaver(true)
   , mShowControl(2)
   , mTimerId(0)
   , mpPlayer(0)
@@ -550,6 +552,7 @@ void MainWindow::onStartPlay()
     mTimerId = startTimer(kSliderUpdateInterval);
     mShowControl = 0;
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
+    mScreensaver = false;
 }
 
 void MainWindow::onStopPlay()
@@ -567,6 +570,7 @@ void MainWindow::onStopPlay()
         mShowControl = 2;
         tryShowControlBar();
     }
+    mScreensaver = true;
 }
 
 void MainWindow::onSpeedChange(qreal speed)
@@ -732,3 +736,27 @@ void MainWindow::tryShowControlBar()
     if (mpControl->isHidden())
         mpControl->show();
 }
+
+#ifdef Q_OS_WIN
+
+bool MainWindow::nativeEvent(const QByteArray & eventType, void * message, long * result)
+{
+    Q_UNUSED(eventType);
+    MSG* msg = static_cast<MSG*>(message);
+    if (!mScreensaver && msg->message == WM_SYSCOMMAND
+            && ((msg->wParam & 0xFFF0) == SC_SCREENSAVE
+                || (msg->wParam & 0xFFF0) == SC_MONITORPOWER)
+    ) {
+        if (result) {
+            *result = 0;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool MainWindow::winEvent(MSG *message, long *result)
+{
+    return nativeEvent("windows_MSG", message, result);
+}
+#endif //Q_OS_WIN

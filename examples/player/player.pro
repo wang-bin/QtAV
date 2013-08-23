@@ -11,12 +11,14 @@ SOURCES += main.cpp \
     MainWindow.cpp \
     Button.cpp \
     ClickableMenu.cpp \
+    ScreenSaver.cpp \
     Slider.cpp
 
 HEADERS += \
     MainWindow.h \
     Button.h \
     ClickableMenu.h \
+    ScreenSaver.h \
     Slider.h
 
 tv.files = res/tv.ini

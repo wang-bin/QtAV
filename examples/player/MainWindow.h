@@ -64,10 +64,17 @@ protected:
     virtual void resizeEvent(QResizeEvent *);
     virtual void timerEvent(QTimerEvent *);
     void mouseMoveEvent(QMouseEvent *e);
+#ifdef Q_OS_WIN
+    //Qt5
+    virtual bool nativeEvent(const QByteArray & eventType, void * message, long * result);
+    //Qt4
+    virtual bool winEvent(MSG *message, long *result);
+#endif //Q_OS_WIN
 
 private:
     bool mIsReady, mHasPendingPlay;
     bool mNullAO;
+    bool mScreensaver;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
     int mTimerId;
     QVBoxLayout *mpPlayerLayout;
