@@ -469,17 +469,23 @@ void AVPlayer::playNextFrame()
 
 void AVPlayer::seek(qreal pos)
 {
+     if (!demuxer_thread->isRunning())
+        return;
     demuxer_thread->seek(pos);
 }
 
 void AVPlayer::seekForward()
 {
+    if (!demuxer_thread->isRunning())
+        return;
     demuxer_thread->seekForward();
     qDebug("seek %f%%", clock->value()/duration()*100.0);
 }
 
 void AVPlayer::seekBackward()
 {
+     if (!demuxer_thread->isRunning())
+        return;
     demuxer_thread->seekBackward();
     qDebug("seek %f%%", clock->value()/duration()*100.0);
 }
