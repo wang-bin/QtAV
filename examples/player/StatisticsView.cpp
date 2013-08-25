@@ -51,7 +51,7 @@ QVariantList getBaseInfoValues(const Statistics& s) {
     return QVariantList()
             << s.url
             << s.format
-            << QString::number(s.bit_rate/1024) + " Kb/s"
+            << QString::number(s.bit_rate/1000) + " Kb/s"
             << s.start_time
             << s.duration
                ;
@@ -65,7 +65,7 @@ QList<QVariant> getVideoInfoValues(const Statistics& s) {
             << s.video.start_time
             << s.video.fps_guess
             << s.video.avg_frame_rate
-            << QString::number(s.video.bit_rate/1024) + " Kb/s"
+            << QString::number(s.video.bit_rate/1000) + " Kb/s"
             << s.video.frames
             << s.video_only.pix_fmt
             << QString::number(s.video_only.width) + "x" + QString::number(s.video_only.height)
@@ -81,7 +81,7 @@ QList<QVariant> getAudioInfoValues(const Statistics& s) {
             << s.audio.start_time
             << s.audio.fps_guess
             << s.audio.avg_frame_rate
-            << QString::number(s.audio.bit_rate/1024) + " Kb/s"
+            << QString::number(s.audio.bit_rate/1000) + " Kb/s"
             << s.audio.frames
             << s.audio_only.sample_fmt
             << QString::number(s.audio_only.sample_rate) + " Hz"
