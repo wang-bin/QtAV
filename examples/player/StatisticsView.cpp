@@ -8,6 +8,8 @@
 QStringList getBaseInfoKeys() {
     return QStringList()
             << QObject::tr("Url")
+            << QObject::tr("Format")
+            << QObject::tr("Bit rate")
             << QObject::tr("Start time")
             << QObject::tr("Duration")
                ;
@@ -16,7 +18,6 @@ QStringList getBaseInfoKeys() {
 QStringList getCommonInfoKeys() {
     return QStringList()
             << QObject::tr("Available")
-            << QObject::tr("Format")
             << QObject::tr("Codec")
             << QObject::tr("Total time")
             << QObject::tr("Start time")
@@ -29,19 +30,19 @@ QStringList getCommonInfoKeys() {
 
 QStringList getVideoInfoKeys() {
     return getCommonInfoKeys()
-            << QObject::tr("Width")
-            << QObject::tr("Height")
-            << QObject::tr("Coded width")
-            << QObject::tr("Coded height")
+            << QObject::tr("Pixel format")
+            << QObject::tr("Size") //w x h
+            << QObject::tr("Coded size") // w x h
             //<< QObject::tr("Pixel format")
             << QObject::tr("GOP size")
                ;
 }
 QStringList getAudioInfoKeys() {
     return getCommonInfoKeys()
+            << QObject::tr("Sample format")
             << QObject::tr("Sample rate")
-            //<< QObject::tr("Sample format")
             << QObject::tr("Channels")
+            << QObject::tr("Channel layout")
             << QObject::tr("Frame size")
                ;
 }
@@ -49,6 +50,8 @@ QStringList getAudioInfoKeys() {
 QVariantList getBaseInfoValues(const Statistics& s) {
     return QVariantList()
             << s.url
+            << s.format
+            << QString::number(s.bit_rate/1024) + " Kb/s"
             << s.start_time
             << s.duration
                ;
@@ -57,36 +60,33 @@ QVariantList getBaseInfoValues(const Statistics& s) {
 QList<QVariant> getVideoInfoValues(const Statistics& s) {
     return QList<QVariant>()
             << s.video.available
-            << s.video.format
             << s.video.codec + " (" + s.video.codec_long + ")"
             << s.video.total_time
             << s.video.start_time
             << s.video.fps_guess
             << s.video.avg_frame_rate
-            << s.video.bit_rate
+            << QString::number(s.video.bit_rate/1024) + " Kb/s"
             << s.video.frames
-            << s.video_only.width
-            << s.video_only.height
-            << s.video_only.coded_width
-            << s.video_only.coded_height
-            //<< s.video_only.
+            << s.video_only.pix_fmt
+            << QString::number(s.video_only.width) + "x" + QString::number(s.video_only.height)
+            << QString::number(s.video_only.coded_width) + "x" + QString::number(s.video_only.coded_height)
             << s.video_only.gop_size
                ;
 }
 QList<QVariant> getAudioInfoValues(const Statistics& s) {
     return QList<QVariant>()
             << s.audio.available
-            << s.audio.format
             << s.audio.codec + " (" + s.audio.codec_long + ")"
             << s.audio.total_time
             << s.audio.start_time
             << s.audio.fps_guess
             << s.audio.avg_frame_rate
-            << s.audio.bit_rate
+            << QString::number(s.audio.bit_rate/1024) + " Kb/s"
             << s.audio.frames
-            << s.audio_only.sample_rate
-            //<< s.audio_only
+            << s.audio_only.sample_fmt
+            << QString::number(s.audio_only.sample_rate) + " Hz"
             << s.audio_only.channels
+            << s.audio_only.channel_layout
             << s.audio_only.frame_size
                ;
 }
@@ -95,6 +95,7 @@ QList<QVariant> getAudioInfoValues(const Statistics& s) {
 StatisticsView::StatisticsView(QWidget *parent) :
     QDialog(parent)
 {
+    setWindowTitle(tr("Media info"));
     setModal(false);
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
     mpView = new QTreeWidget();
@@ -159,6 +160,7 @@ void StatisticsView::initBaseItems(QList<QTreeWidgetItem *> *items)
 QTreeWidgetItem* StatisticsView::initVideoItems(QList<QTreeWidgetItem *> *items)
 {
     QTreeWidgetItem *videoItem = new QTreeWidgetItem(mpView);
+    videoItem->setData(0, Qt::DisplayRole, QObject::tr("Video"));
     QTreeWidgetItem *item = 0;
     foreach(QString key, getVideoInfoKeys()) {
         item = new QTreeWidgetItem(videoItem);
@@ -173,6 +175,7 @@ QTreeWidgetItem* StatisticsView::initVideoItems(QList<QTreeWidgetItem *> *items)
 QTreeWidgetItem* StatisticsView::initAudioItems(QList<QTreeWidgetItem *> *items)
 {
     QTreeWidgetItem *audioItem = new QTreeWidgetItem(mpView);
+    audioItem->setData(0, Qt::DisplayRole, QObject::tr("Audio"));
     QTreeWidgetItem *item = 0;
     foreach(QString key, getAudioInfoKeys()) {
         item = new QTreeWidgetItem(audioItem);

@@ -27,6 +27,7 @@ private:
     QTreeWidget *mpView;
     QList<QTreeWidgetItem*> mBaseItems;
     QList<QTreeWidgetItem*> mVideoItems;
+    //TODO: multiple streams
     QList<QTreeWidgetItem*> mAudioItems;
     Statistics mStatistics;
 
