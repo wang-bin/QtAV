@@ -22,6 +22,7 @@
 #include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"
+#include "StatisticsView.h"
 
 /*
  *TODO:
@@ -343,6 +344,7 @@ void MainWindow::setupUi()
     connect(mpOpenBtn, SIGNAL(clicked()), SLOT(openFile()));
     connect(mpPlayPauseBtn, SIGNAL(clicked()), SLOT(togglePlayPause()));
     connect(mpCaptureBtn, SIGNAL(clicked()), this, SLOT(capture()));
+    connect(mpInfoBtn, SIGNAL(clicked()), SLOT(showInfo()));
     //valueChanged can be triggered by non-mouse event
     //TODO: connect sliderMoved(int) to preview(int)
     //connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
@@ -760,3 +762,12 @@ bool MainWindow::winEvent(MSG *message, long *result)
     return nativeEvent("windows_MSG", message, result);
 }
 #endif //Q_OS_WIN
+
+
+void MainWindow::showInfo()
+{
+    static StatisticsView sv;
+    if (mpPlayer)
+        sv.setStatistics(mpPlayer->statistics());
+    sv.show();
+}

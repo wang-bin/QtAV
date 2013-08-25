@@ -59,6 +59,7 @@ private slots:
     void setVolume();
     void tryHideControlBar();
     void tryShowControlBar();
+    void showInfo();
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
