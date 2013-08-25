@@ -27,6 +27,7 @@
 
 /*
  * time unit is s
+ * TODO: frame counter, frame droped. see VLC
  */
 
 namespace QtAV {
@@ -40,13 +41,14 @@ public:
     void reset();
 
     QString url;
+    int bit_rate;
+    QString format;
     QTime start_time, duration;
     //TODO: filter, decoder, resampler info etc.
     class Common {
     public:
         Common();
         bool available;
-        QString format;//?
         QString codec, codec_long;
         //common audio/video info that may be used(visualize) by filters
         QTime current_time, total_time, start_time; //TODO: in AVFormatContext and AVStream, what's the difference?
@@ -72,7 +74,8 @@ public:
         AudioOnly();
         int sample_rate; ///< samples per second
         int channels;    ///< number of audio channels
-        //enum AVSampleFormat sample_fmt;  ///< sample format
+        QString channel_layout;
+        QString sample_fmt;  ///< sample format
         /**
          * Number of samples per channel in an audio frame.
          * - decoding: may be set by some decoders to indicate constant frame size
@@ -89,7 +92,6 @@ public:
          */
         int block_align;
         //int cutoff; //Audio cutoff bandwidth (0 means "automatic")
-        //uint64_t channel_layout;
     } audio_only;
     //from AVCodecContext
     class VideoOnly {
@@ -107,7 +109,7 @@ public:
          * the number of pictures in a group of pictures, or 0 for intra_only
          */
         int gop_size;
-        //enum AVPixelFormat pix_fmt; //TODO: new enum in QtAV
+        QString pix_fmt; //TODO: new enum in QtAV
         /**
          * Motion estimation algorithm used for video coding.
          * 1 (zero), 2 (full), 3 (log), 4 (phods), 5 (epzs), 6 (x1), 7 (hex),

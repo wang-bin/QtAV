@@ -35,6 +35,7 @@ extern "C"
 #include <libavutil/mathematics.h> //AV_ROUND_UP, av_rescale_rnd for libav
 #include <libavutil/error.h>
 #include <libavutil/opt.h>
+#include <libavutil/pixdesc.h>
 
 /* TODO: how to check whether we have swresample or not? how to check avresample?*/
 #include <libavutil/samplefmt.h>

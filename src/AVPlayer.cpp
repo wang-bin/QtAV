@@ -500,6 +500,8 @@ void AVPlayer::initStatistics()
 {
     mStatistics.reset();
     mStatistics.url = path;
+    mStatistics.bit_rate = formatCtx->bit_rate;
+    mStatistics.format = formatCtx->iformat->name;
     //AV_TIME_BASE_Q: msvc error C2143
     mStatistics.start_time = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->start_time/(qreal)AV_TIME_BASE*1000.0));
     mStatistics.duration = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->duration/(qreal)AV_TIME_BASE*1000.0));
@@ -541,6 +543,10 @@ void AVPlayer::initStatistics()
     if (demuxer.audioStream() >= 0) {
         mStatistics.audio_only.block_align = aCodecCtx->block_align;
         mStatistics.audio_only.channels = aCodecCtx->channels;
+        char cl[128]; //
+        av_get_channel_layout_string(cl, sizeof(cl), -1, aCodecCtx->channel_layout); //TODO: ff version
+        mStatistics.audio_only.channel_layout = cl;
+        mStatistics.audio_only.sample_fmt = av_get_sample_fmt_name(aCodecCtx->sample_fmt);
         mStatistics.audio_only.frame_number = aCodecCtx->frame_number;
         mStatistics.audio_only.frame_size = aCodecCtx->frame_size;
         mStatistics.audio_only.sample_rate = aCodecCtx->sample_rate;
@@ -550,6 +556,7 @@ void AVPlayer::initStatistics()
         mStatistics.video_only.coded_height = vCodecCtx->coded_height;
         mStatistics.video_only.coded_width = vCodecCtx->coded_width;
         mStatistics.video_only.gop_size = vCodecCtx->gop_size;
+        mStatistics.video_only.pix_fmt = av_get_pix_fmt_name(vCodecCtx->pix_fmt);
         mStatistics.video_only.height = vCodecCtx->height;
         mStatistics.video_only.width = vCodecCtx->width;
     }
