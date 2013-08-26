@@ -204,8 +204,10 @@ bool AudioResamplerLibav::prepare()
             i = (i + i)%in_c;
         }
     }
-    if (remix && matrix)
+    if (remix && matrix) {
         avresample_set_matrix(d.context, matrix, in_c);
+        delete [] matrix;
+    }
 
 #else
     bool use_channel_map = false;
