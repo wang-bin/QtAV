@@ -138,7 +138,8 @@ bool AudioResamplerLibav::prepare()
 
     //d.in_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.in_sample_format) ? d.in_channels : 1;
     //d.out_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.out_sample_format) ? d.out_channels : 1;
-    swr_free(&d.context); //TODO: why channel mapping and layout not work if change from left to stero?
+    if (d.context)
+        swr_free(&d.context); //TODO: why channel mapping and layout not work if change from left to stero?
     //If use swr_alloc() need to set the parameters (av_opt_set_xxx() manually or with swr_alloc_set_opts()) before calling swr_init()
     d.context = swr_alloc_set_opts(d.context
                                    , d.out_format.channelLayoutFFmpeg()
@@ -167,6 +168,46 @@ bool AudioResamplerLibav::prepare()
         qWarning("Allocat swr context failed!");
         return false;
     }
+    //avresample 0.0.2(FFmpeg 0.11)~1.0.1(FFmpeg 1.1) has no channel mapping. but has remix matrix, so does swresample
+//TODO: why crash if use channel mapping for L or R?
+#if 1 //LIBAVRESAMPLE_VERSION_INT < AV_VERSION_INT(1, 1, 0)
+    bool remix = false;
+    int in_c = d.in_format.channels();
+    int out_c = d.out_format.channels();
+    /*
+     * matrix[i + stride * o] is the weight of input channel i in output channel o.
+     */
+    double *matrix = 0;
+    if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Left) {
+        remix = true;
+        matrix = new double[in_c*out_c];
+        memset(matrix, 0, sizeof(matrix));
+        for (int o = 0; o < out_c; ++o) {
+            matrix[0 + in_c * o] = 1;
+        }
+    }
+    if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Right) {
+        remix = true;
+        matrix = new double[in_c*out_c];
+        memset(matrix, 0, sizeof(matrix));
+        for (int o = 0; o < out_c; ++o) {
+            matrix[1 + in_c * o] = 1;
+        }
+    }
+    if (!remix && in_c < out_c) {
+        remix = true;
+        //double matrix[in_c*out_c]; //C99, VLA
+        matrix = new double[in_c*out_c];
+        memset(matrix, 0, sizeof(matrix));
+        for (int i = 0, o = 0; o < out_c; ++o) {
+            matrix[i + in_c * o] = 1;
+            i = (i + i)%in_c;
+        }
+    }
+    if (remix && matrix)
+        avresample_set_matrix(d.context, matrix, in_c);
+
+#else
     bool use_channel_map = false;
     if (d.in_format.channels() < d.out_format.channels()) {
         use_channel_map = true;
@@ -195,6 +236,7 @@ bool AudioResamplerLibav::prepare()
         av_opt_set_int(d.context, "uch", d.out_format.channels(), 0);
         swr_set_channel_mapping(d.context, d.channel_map);
     }
+#endif //LIBAVRESAMPLE_VERSION_INT
     int ret = swr_init(d.context);
     if (ret < 0) {
         qWarning("swr_init failed: %s", av_err2str(ret));
