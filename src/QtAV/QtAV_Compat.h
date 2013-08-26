@@ -152,7 +152,12 @@ av_always_inline char* av_err2str(int errnum)
 #if (QTAV_HAVE(SWR_AVR_MAP) || !QTAV_HAVE(SWRESAMPLE)) && QTAV_HAVE(AVRESAMPLE)
 #define SwrContext AVAudioResampleContext
 #define swr_init(ctx) avresample_open(ctx)
-#define swr_free(ctx) avresample_close(*ctx)
+//free context and set pointer to null. see swresample
+#define swr_free(ctx) \
+    if (ctx && *ctx) { \
+        avresample_close(*ctx); \
+        *ctx = 0; \
+    }
 #define swr_get_class() avresample_get_class()
 #define swr_alloc() avresample_alloc_context()
 //#define swr_next_pts()
