@@ -168,13 +168,6 @@ bool AudioResamplerFF::prepare()
         return false;
     }
     bool use_channel_map = false;
-    if (d.in_format.channels() < d.out_format.channels()) {
-        use_channel_map = true;
-        memset(d.channel_map, 0, sizeof(d.channel_map));
-        for (int i = 0; i < d.out_format.channels(); ++i) {
-            d.channel_map[i] = i % d.in_format.channels();
-        }
-    }
     if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Left) {
         use_channel_map = true;
         memset(d.channel_map, 0, sizeof(d.channel_map));
@@ -187,6 +180,13 @@ bool AudioResamplerFF::prepare()
         memset(d.channel_map, 0, sizeof(d.channel_map));
         for (int i = 0; i < d.out_format.channels(); ++i) {
             d.channel_map[i] = 1;
+        }
+    }
+    if (!use_channel_map && d.in_format.channels() < d.out_format.channels()) {
+        use_channel_map = true;
+        memset(d.channel_map, 0, sizeof(d.channel_map));
+        for (int i = 0; i < d.out_format.channels(); ++i) {
+            d.channel_map[i] = i % d.in_format.channels();
         }
     }
     if (use_channel_map) {
