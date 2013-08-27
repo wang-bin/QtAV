@@ -22,6 +22,12 @@
 #include "QtAV/AudioFormat.h"
 #include "QtAV/QtAV_Compat.h"
 
+//FF_API_OLD_SAMPLE_FMT. e.g. FFmpeg 0.9
+#ifdef SampleFormat
+#undef SampleFormat
+#endif
+
+
 namespace QtAV {
 
 const qint64 kHz = 1000000LL;
@@ -42,7 +48,7 @@ static const ChannelLayoutMap kChannelLayoutMap[] = {
 
 static AudioFormat::ChannelLayout channelLayoutFromFFmpeg(qint64 clff)
 {
-    for (int i = 0; i < sizeof(kChannelLayoutMap)/sizeof(ChannelLayoutMap); ++i) {
+    for (unsigned int i = 0; i < sizeof(kChannelLayoutMap)/sizeof(ChannelLayoutMap); ++i) {
         if (kChannelLayoutMap[i].ff == clff)
             return kChannelLayoutMap[i].cl;
     }
@@ -51,7 +57,7 @@ static AudioFormat::ChannelLayout channelLayoutFromFFmpeg(qint64 clff)
 
 static qint64 channelLayoutToFFmpeg(AudioFormat::ChannelLayout cl)
 {
-    for (int i = 0; i < sizeof(kChannelLayoutMap)/sizeof(ChannelLayoutMap); ++i) {
+    for (unsigned int i = 0; i < sizeof(kChannelLayoutMap)/sizeof(ChannelLayoutMap); ++i) {
         if (kChannelLayoutMap[i].cl == cl)
             return kChannelLayoutMap[i].ff;
     }
