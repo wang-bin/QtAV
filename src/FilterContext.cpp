@@ -74,7 +74,7 @@ VideoFilterContext::~VideoFilterContext()
             painter = 0;
         }
         qDebug("delete paint device %p in %p", paint_device, this);
-        if (!own_paint_device)
+        if (own_paint_device)
             delete paint_device; //delete recursively for widget
         paint_device = 0;
     }
@@ -94,7 +94,6 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
         if (!painter) {
             painter = new QPainter(); //warning: more than 1 painter on 1 device
         }
-        own_paint_device = true; //TODO: what about renderer is not a widget?
         painter->begin(paint_device);
         return;
     }
@@ -111,6 +110,7 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
     paint_device = new QImage((uchar*)data->data(), video_width, video_height, QImage::Format_RGB32);
     if (!painter)
         painter = new QPainter();
+    own_paint_device = true; //TODO: what about renderer is not a widget?
     painter->begin((QImage*)paint_device);
 }
 
