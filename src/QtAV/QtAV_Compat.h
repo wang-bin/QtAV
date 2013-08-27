@@ -152,6 +152,8 @@ av_always_inline char* av_err2str(int errnum)
 #if (QTAV_HAVE(SWR_AVR_MAP) || !QTAV_HAVE(SWRESAMPLE)) && QTAV_HAVE(AVRESAMPLE)
 #ifdef AVRESAMPLE_MAX_CHANNELS
 #define SWR_CH_MAX AVRESAMPLE_MAX_CHANNELS
+#else
+#define SWR_CH_MAX 32
 #endif //AVRESAMPLE_MAX_CHANNELS
 #define SwrContext AVAudioResampleContext
 #define swr_init(ctx) avresample_open(ctx)
