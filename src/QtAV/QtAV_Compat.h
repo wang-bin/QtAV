@@ -150,11 +150,13 @@ av_always_inline char* av_err2str(int errnum)
  * https://github.com/xbmc/xbmc/commit/274679d
  */
 #if (QTAV_HAVE(SWR_AVR_MAP) || !QTAV_HAVE(SWRESAMPLE)) && QTAV_HAVE(AVRESAMPLE)
+#ifndef SWR_CH_MAX
 #ifdef AVRESAMPLE_MAX_CHANNELS
 #define SWR_CH_MAX AVRESAMPLE_MAX_CHANNELS
 #else
 #define SWR_CH_MAX 32
 #endif //AVRESAMPLE_MAX_CHANNELS
+#endif //SWR_CH_MAX
 #define SwrContext AVAudioResampleContext
 #define swr_init(ctx) avresample_open(ctx)
 //free context and set pointer to null. see swresample
