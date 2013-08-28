@@ -4,7 +4,8 @@ SUBDIRS += \
     vo-qt \
     player \
     videographicsitem \
-    videowall
+    videowall \
+    QMLPlayer
 #TODO: mingw cross
 config_gdiplus {
     SUBDIRS += vo-gdi
