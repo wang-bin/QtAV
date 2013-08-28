@@ -7,6 +7,9 @@ PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
 preparePaths($$OUT_PWD/../../out)
 
+#SystemParametersInfo
+*msvc*: LIBS += -lUser32
+
 SOURCES += main.cpp \
     MainWindow.cpp \
     Button.cpp \
