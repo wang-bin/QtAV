@@ -68,6 +68,35 @@ PRE_FUNC_ADD(ffmpeg_version_print);
 
 #endif //av_err2str
 
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 32, 0)
+static const struct {
+    const char *name;
+    int         nb_channels;
+    uint64_t     layout;
+} channel_layout_map[] = {
+    { "mono",        1,  AV_CH_LAYOUT_MONO },
+    { "stereo",      2,  AV_CH_LAYOUT_STEREO },
+    { "4.0",         4,  AV_CH_LAYOUT_4POINT0 },
+    { "quad",        4,  AV_CH_LAYOUT_QUAD },
+    { "5.0",         5,  AV_CH_LAYOUT_5POINT0 },
+    { "5.0",         5,  AV_CH_LAYOUT_5POINT0_BACK },
+    { "5.1",         6,  AV_CH_LAYOUT_5POINT1 },
+    { "5.1",         6,  AV_CH_LAYOUT_5POINT1_BACK },
+    { "5.1+downmix", 8,  AV_CH_LAYOUT_5POINT1|AV_CH_LAYOUT_STEREO_DOWNMIX, },
+    { "7.1",         8,  AV_CH_LAYOUT_7POINT1 },
+    { "7.1(wide)",   8,  AV_CH_LAYOUT_7POINT1_WIDE },
+    { "7.1+downmix", 10, AV_CH_LAYOUT_7POINT1|AV_CH_LAYOUT_STEREO_DOWNMIX, },
+    { 0 }
+};
+int64_t av_get_default_channel_layout(int nb_channels) {
+    int i;
+    for (i = 0; i < FF_ARRAY_ELEMS(channel_layout_map); i++)
+        if (nb_channels == channel_layout_map[i].nb_channels)
+            return channel_layout_map[i].layout;
+    return 0;
+}
+#endif
+
 /*
  * always need this function if avresample available
  * use AVAudioResampleContext to avoid func type confliction when swr is also available

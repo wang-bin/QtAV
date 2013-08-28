@@ -145,6 +145,10 @@ av_always_inline char* av_err2str(int errnum)
 #endif
 #endif
 
+
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 32, 0)
+int64_t av_get_default_channel_layout(int nb_channels);
+#endif
 /*
  * mapping avresample to swresample
  * https://github.com/xbmc/xbmc/commit/274679d
