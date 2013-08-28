@@ -25,8 +25,7 @@ QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent) :
 
 void QQuickItemRenderer::drawFrame()
 {
-//    DPTR_D(QQuickRenderer);
-//    d.texture = this->window()->createTextureFromImage(*d.image);
+
 }
 
 
@@ -45,8 +44,6 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
         static_cast<QSGSimpleTextureNode*>(node)
                 ->setFiltering(QSGTexture::Nearest);
     }
-
-//    handlePaintEvent();
 
     static_cast<QSGSimpleTextureNode*>(node)->setRect(boundingRect());
 
@@ -82,7 +79,6 @@ void QQuickItemRenderer::convertData(const QByteArray &data)
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker)
 
-    // Creating a copy of the image to avoid thread simultaneous access
     d.data = data;
     if (d.image)
         delete d.image;

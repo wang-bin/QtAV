@@ -37,7 +37,6 @@ protected:
 
 private:
 
-    QByteArray cur_data_;
 };
 typedef QQuickItemRenderer VideoRendererQQuickItem;
 }
