@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include "prepost.h"
 
+#include <QtAV/QQuickItemRenderer.h>
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/GraphicsItemRenderer.h>
 #if QTAV_HAVE(GL)
@@ -51,6 +52,14 @@ VideoRendererId VideoRendererId_GLWidget = 3;
 VideoRendererId VideoRendererId_GDI = 4;
 VideoRendererId VideoRendererId_Direct2D = 5;
 VideoRendererId VideoRendererId_XV = 6;
+VideoRendererId VideoRendererId_QQuickItem = 7;
+
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, QQuickItem, "QQuickItem")
+
+void RegisterVideoRendererQQuickItem_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, QQuickItem, "QQuickItem")
+}
 
 //QPainterRenderer is abstract. So can not register(operator new will needed)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")
@@ -66,6 +75,12 @@ void RegisterVideoRendererGraphicsItem_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, GraphicsItem, "QGraphicsItem")
 }
+
+VideoRendererId QQuickItemRenderer::id() const
+{
+    return VideoRendererId_QQuickItem;
+}
+
 
 VideoRendererId WidgetRenderer::id() const
 {
