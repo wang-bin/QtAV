@@ -4,8 +4,6 @@
 #include "QtAV/VideoRenderer.h"
 #include <QtQuick/QQuickItem>
 
-#include <QtAV/private/QQuickItemRenderer_p.h>
-
 namespace QtAV
 {
 

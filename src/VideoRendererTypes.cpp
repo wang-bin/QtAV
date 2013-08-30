@@ -24,7 +24,9 @@
 #include <cstdlib>
 #include "prepost.h"
 
+#ifdef QT_QUICK_LIB
 #include <QtAV/QQuickItemRenderer.h>
+#endif //QT_QUICK_LIB
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/GraphicsItemRenderer.h>
 #if QTAV_HAVE(GL)
@@ -54,13 +56,14 @@ VideoRendererId VideoRendererId_Direct2D = 5;
 VideoRendererId VideoRendererId_XV = 6;
 VideoRendererId VideoRendererId_QQuickItem = 7;
 
+#ifdef QT_QUICK_LIB
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, QQuickItem, "QQuickItem")
 
 void RegisterVideoRendererQQuickItem_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, QQuickItem, "QQuickItem")
 }
-
+#endif //QT_QUICK_LIB
 //QPainterRenderer is abstract. So can not register(operator new will needed)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")
 
@@ -75,12 +78,12 @@ void RegisterVideoRendererGraphicsItem_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, GraphicsItem, "QGraphicsItem")
 }
-
+#ifdef QT_QUICK_LIB
 VideoRendererId QQuickItemRenderer::id() const
 {
     return VideoRendererId_QQuickItem;
 }
-
+#endif //QT_QUICK_LIB
 
 VideoRendererId WidgetRenderer::id() const
 {
@@ -165,6 +168,9 @@ void VideoRenderer_RegisterAll()
 #if QTAV_HAVE(XV)
     RegisterVideoRendererXV_Man();
 #endif //QTAV_HAVE(XV)
+#ifdef QT_QUICK_LIB
+    RegisterVideoRendererQQuickItem_Man();
+#endif //QT_QUICK_LIB
 }
 
 #if ID_STATIC

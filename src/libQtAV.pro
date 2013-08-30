@@ -2,7 +2,12 @@ TEMPLATE = lib
 TARGET = QtAV
 
 QT += core gui
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets gui-private
+greaterThan(QT_MAJOR_VERSION, 4) {
+  QT += widgets gui-private
+  qtHaveModule(quick) {
+    QT += quick
+  }
+}
 
 CONFIG *= qtav-buildlib
 
@@ -106,6 +111,12 @@ config_gl {
     SOURCES += GLWidgetRenderer.cpp
     HEADERS += QtAV/private/GLWidgetRenderer_p.h
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
+}
+
+contains(QT, quick) {
+    SOURCES += QQuickItemRenderer.cpp
+    HEADERS += QtAV/private/QQuickItemRenderer_p.h
+    SDK_HEADERS += QtAV/QQuickItemRenderer.h
 }
 SOURCES += \
     QtAV_Compat.cpp \
