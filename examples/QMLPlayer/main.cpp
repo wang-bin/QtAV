@@ -1,6 +1,6 @@
 #include <QtCore/QFile>
 #include <QtGui/QGuiApplication>
-#include <QtAV/QQuickItemRenderer.h>
+#include <QmlAV/QQuickItemRenderer.h>
 #include <QtAV/AVPlayer.h>
 
 #include "qtquick2applicationviewer.h"

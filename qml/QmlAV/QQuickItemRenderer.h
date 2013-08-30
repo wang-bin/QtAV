@@ -1,11 +1,12 @@
 #ifndef QQUICKRENDERER_H
 #define QQUICKRENDERER_H
 
-#include "QtAV/VideoRenderer.h"
+#include <QtAV/VideoRenderer.h>
 #include <QtQuick/QQuickItem>
 
 namespace QtAV
 {
+extern Q_EXPORT VideoRendererId VideoRendererId_QQuickItem;
 
 class QQuickItemRendererPrivate;
 class Q_EXPORT QQuickItemRenderer : public QQuickItem, public VideoRenderer
@@ -14,7 +15,7 @@ class Q_EXPORT QQuickItemRenderer : public QQuickItem, public VideoRenderer
 public:
     explicit QQuickItemRenderer(QQuickItem *parent = 0);
     ~QQuickItemRenderer() {}
-    virtual VideoRendererId id () const;
+    virtual VideoRendererId id() const;
     
 signals:
     

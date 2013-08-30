@@ -25,7 +25,6 @@
 #include <private/AVOutput_p.h>
 //#include <QtAV/ImageConverter.h>
 #include <QtAV/VideoRenderer.h>
-#include <QtAV/QtAV_Compat.h>
 #include <QtCore/QMutex>
 #include <QtCore/QRect>
 

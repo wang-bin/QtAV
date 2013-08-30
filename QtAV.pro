@@ -2,6 +2,14 @@ TEMPLATE = subdirs
 CONFIG += ordered
 SUBDIRS = libqtav examples tests
 
+greaterThan(QT_MAJOR_VERSION, 4) {
+  qtHaveModule(quick) {
+    SUBDIRS += libqmlav
+    libqmlav.file = qml/libQmlAV.pro
+    libqmlav.depends += libqtav
+    examples.depends += libqmlav
+  }
+}
 libqtav.file = src/libQtAV.pro
 examples.depends += libqtav
 tests.depends += libqtav

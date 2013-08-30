@@ -11,6 +11,9 @@ QML_IMPORT_PATH =
 # CONFIG += mobility
 # MOBILITY +=
 
+RESOURCES += \
+    qmlplayer.qrc
+
 # The .cpp file which was generated for your project. Feel free to hack it.
 SOURCES += main.cpp
 
@@ -24,4 +27,5 @@ qtcAddDeployment()
 STATICLINK = 0
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
+include($$PROJECTROOT/qml/libQmlAV.pri)
 preparePaths($$OUT_PWD/../../out)

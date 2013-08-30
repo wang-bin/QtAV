@@ -1,34 +1,36 @@
-#include <QtAV/QQuickItemRenderer.h>
-
-#include <QtAV/private/QQuickItemRenderer_p.h>
+#include <QmlAV/QQuickItemRenderer.h>
+#include <QmlAV/private/QQuickItemRenderer_p.h>
 #include <QImage>
-
 #include <QtQuick/QSGSimpleTextureNode>
 #include <QtQuick/QQuickWindow>
-#include <QTime>
-
 #include <QtQuick/QSGFlatColorMaterial>
+#include <QtAV/FactoryDefine.h>
+#include <QtAV/VideoRendererTypes.h> //it declares a factory we need
+#include "prepost.h"
 
 namespace QtAV
 {
+VideoRendererId VideoRendererId_QQuickItem = 7;
+
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, QQuickItem, "QQuickItem")
 
 QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent) :
     VideoRenderer(*new QQuickItemRendererPrivate)
 {
-
+    Q_UNUSED(parent);
     DPTR_D(QQuickItemRenderer);
-
     this->setFlag(QQuickItem::ItemHasContents, true);
-
 }
 
+VideoRendererId QQuickItemRenderer::id() const
+{
+    return VideoRendererId_QQuickItem;
+}
 
 void QQuickItemRenderer::drawFrame()
 {
 
 }
-
-
 
 QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePaintNodeData *data)
 {
