@@ -98,6 +98,10 @@ public:
     QSize rendererSize() const;
     int rendererWidth() const;
     int rendererHeight() const;
+    //geometry size of current video frame
+    QSize frameSize() const;
+    int frameWidth() const;
+    int frameHeight() const;
     //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
     QRect videoRect() const;
 

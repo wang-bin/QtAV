@@ -197,6 +197,22 @@ int VideoRenderer::rendererHeight() const
     return d_func().renderer_height;
 }
 
+QSize VideoRenderer::frameSize() const
+{
+    DPTR_D(const VideoRenderer);
+    return QSize(d.src_width, d.src_height);
+}
+
+int VideoRenderer::frameWidth() const
+{
+    return d_func().src_width;
+}
+
+int VideoRenderer::frameHeight() const
+{
+    return d_func().src_height;
+}
+
 QRect VideoRenderer::videoRect() const
 {
     return d_func().out_rect;
