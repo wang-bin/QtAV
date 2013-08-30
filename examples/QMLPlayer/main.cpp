@@ -1,3 +1,4 @@
+#include <QtCore/QFile>
 #include <QtGui/QGuiApplication>
 #include <QtAV/QQuickItemRenderer.h>
 #include <QtAV/AVPlayer.h>
@@ -11,13 +12,17 @@ int main(int argc, char *argv[])
 
     QtQuick2ApplicationViewer viewer;
     qmlRegisterType<QQuickItemRenderer>("QtAV", 1, 0, "QQuickItemRenderer");
-    viewer.setMainQmlFile(QStringLiteral("qml/QMLPlayer/main.qml"));
+    QString qml = "qml/QMLPlayer/main.qml";
+    if (!QFile(qml).exists())
+        qml.prepend("qrc:///");
+    viewer.setMainQmlFile(qml);
     viewer.showExpanded();
 
     AVPlayer player;
     QQuickItemRenderer* renderer = viewer.rootObject()->findChild<QQuickItemRenderer*>("quickItemRenderer");
 
     player.setRenderer(renderer);
-
+    if (argc > 1)
+        player.play(app.arguments().last());
     return app.exec();
 }

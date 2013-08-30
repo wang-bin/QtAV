@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/QMLPlayer/main.qml</file>
+    </qresource>
+</RCC>

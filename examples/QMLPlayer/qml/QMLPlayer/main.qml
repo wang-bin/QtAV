@@ -2,7 +2,7 @@ import QtQuick 2.0
 import QtAV 1.0
 
 Rectangle {
-    width: 360
+    width: 640
     height: 360
 
     QQuickItemRenderer {

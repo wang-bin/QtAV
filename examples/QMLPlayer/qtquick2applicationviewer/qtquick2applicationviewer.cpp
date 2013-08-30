@@ -60,10 +60,14 @@ void QtQuick2ApplicationViewer::setMainQmlFile(const QString &file)
 {
     d->mainQmlFile = QtQuick2ApplicationViewerPrivate::adjustPath(file);
 #ifdef Q_OS_ANDROID
-    setSource(QUrl(QLatin1String("assets:/")+d->mainQmlFile));
+    QUrl qmlUrl(QLatin1String("assets:/")+d->mainQmlFile);
 #else
-    setSource(QUrl::fromLocalFile(d->mainQmlFile));
+    QUrl qmlUrl(QUrl::fromLocalFile(d->mainQmlFile));
 #endif
+    if (d->mainQmlFile.startsWith("qrc:/")) {
+        qmlUrl = QUrl(d->mainQmlFile);
+    }
+    setSource(qmlUrl);
 }
 
 void QtQuick2ApplicationViewer::addImportPath(const QString &path)
