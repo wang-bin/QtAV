@@ -1,7 +1,6 @@
 TEMPLATE = subdirs
-CONFIG += ordered
+CONFIG -= ordered
 SUBDIRS = libqtav examples tests
-
 greaterThan(QT_MAJOR_VERSION, 4) {
   qtHaveModule(quick) {
     SUBDIRS += libqmlav
