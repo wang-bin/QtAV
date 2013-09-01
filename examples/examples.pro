@@ -6,9 +6,6 @@ SUBDIRS += \
     videographicsitem \
     videowall
 
-greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(quick) {
-  SUBDIRS += QMLPlayer
-}
 #TODO: mingw cross
 config_gdiplus {
     SUBDIRS += vo-gdi
@@ -18,4 +15,8 @@ config_direct2d {
 }
 config_gl {
     SUBDIRS += vo-gl
+}
+
+greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(quick) {
+#  SUBDIRS += QMLPlayer
 }
