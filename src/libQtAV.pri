@@ -46,7 +46,6 @@ NAME = QtAV
 	error("lib$${NAME}.pri already included")
 	unset(NAME)
 }
-#!isEmpty(LIBQTAV_PRI_INCLUDED):error("libQtAV.pri already included")
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
 LIB_VERSION = 1.2.3 #0.x.y may be wrong for dll
@@ -63,22 +62,20 @@ CONFIG += depend_includepath #?
 
 PROJECT_SRCPATH = $$PWD
 PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
-
 #for system include path
 *msvc* {
 } else {
     QMAKE_CXXFLAGS += -isystem $$PROJECT_SRCPATH -isystem $$PROJECT_SRCPATH/..
 }
-INCLUDEPATH *= $$PROJECT_SRCPATH $$PROJECT_SRCPATH/.. $$PROJECT_SRCPATH/QtAV
+INCLUDEPATH *= $$PROJECT_SRCPATH $$PROJECT_SRCPATH/.. $$PROJECT_SRCPATH/$$NAME
 DEPENDPATH *= $$PROJECT_SRCPATH
 QMAKE_LFLAGS_RPATH += #will append to rpath dir
 
 #eval() ?
-#!qtav-buildlib {
 !contains(CONFIG, $$lower($$NAME)-buildlib) {
 	#The following may not need to change
 	CONFIG *= link_prl
-	LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
+        LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
 	isEqual(STATICLINK, 1) {
 		PRE_TARGETDEPS += $$PROJECT_LIBDIR/$$qtStaticLib($$NAME)
 	} else {

@@ -46,7 +46,6 @@ NAME = QmlAV
 	error("lib$${NAME}.pri already included")
 	unset(NAME)
 }
-#!isEmpty(LIBQTAV_PRI_INCLUDED):error("libQtAV.pri already included")
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
 LIB_VERSION = 1.2.3 #0.x.y may be wrong for dll
@@ -69,16 +68,16 @@ PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
 } else {
     QMAKE_CXXFLAGS += -isystem $$PROJECT_SRCPATH -isystem $$PROJECT_SRCPATH/..
 }
-INCLUDEPATH *= $$PROJECT_SRCPATH $$PROJECT_SRCPATH/.. $$PROJECT_SRCPATH/QmlAV
+INCLUDEPATH *= $$PROJECT_SRCPATH $$PROJECT_SRCPATH/.. $$PROJECT_SRCPATH/$$NAME
 DEPENDPATH *= $$PROJECT_SRCPATH
 QMAKE_LFLAGS_RPATH += #will append to rpath dir
 
 #eval() ?
-#!qtav-buildlib {
 !contains(CONFIG, $$lower($$NAME)-buildlib) {
+    CONFIG(plugin) {
 	#The following may not need to change
-	CONFIG *= link_prl
-	LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
+        CONFIG *= link_prl
+        LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
 	isEqual(STATICLINK, 1) {
 		PRE_TARGETDEPS += $$PROJECT_LIBDIR/$$qtStaticLib($$NAME)
 	} else {
@@ -97,18 +96,20 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 			}
 		}
 	}
+    }
 } else {
 	#Add your additional configuration first. e.g.
 
 #	win32: LIBS += -lUser32
 # The following may not need to change
+        DESTDIR= $$PROJECT_LIBDIR
 
-	#TEMPLATE = lib
-	VERSION = $$LIB_VERSION
+        #TEMPLATE = lib
+        !CONFIG(plugin):VERSION = $$LIB_VERSION
         TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
 	DESTDIR= $$PROJECT_LIBDIR
 
-	CONFIG *= create_prl #
+        CONFIG *= create_prl #
 	isEqual(STATICLINK, 1) {
 		CONFIG -= shared dll ##otherwise the following shared is true, why?
 		CONFIG *= staticlib
@@ -118,9 +119,12 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 	}
 
 	shared {
+            CONFIG(plugin) {
+                !isEqual(DESTDIR, $$BUILD_DIR/bin/QtAV): DLLDESTDIR = $$BUILD_DIR/bin/QtAV
+            } else {
 		!isEqual(DESTDIR, $$BUILD_DIR/bin): DLLDESTDIR = $$BUILD_DIR/bin #copy shared lib there
 		CONFIG(release, debug|release): !isEmpty(QMAKE_STRIP): QMAKE_POST_LINK = -$$QMAKE_STRIP $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
-
+            }
 		#copy from the pro creator creates.
 		symbian {
 			MMP_RULES += EXPORTUNFROZEN

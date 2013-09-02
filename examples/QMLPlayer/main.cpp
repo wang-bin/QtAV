@@ -11,7 +11,6 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
     QtQuick2ApplicationViewer viewer;
-    qmlRegisterType<QQuickItemRenderer>("QtAV", 1, 0, "QQuickItemRenderer");
     QString qml = "qml/QMLPlayer/main.qml";
     if (!QFile(qml).exists())
         qml.prepend("qrc:///");

@@ -1,18 +1,25 @@
 TEMPLATE = lib
+CONFIG += qt plugin
 TARGET = QmlAV
-QT += quick
-
+QT += quick qml
 
 CONFIG *= qmlav-buildlib
 
 #var with '_' can not pass to pri?
 STATICLINK = 0
 PROJECTROOT = $$PWD/..
+!include($$PROJECTROOT/src/libQtAV.pri): error("could not find libQtAV.pri")
 !include(libQmlAV.pri): error("could not find libQmlAV.pri")
 preparePaths($$OUT_PWD/../out)
-!include($$PROJECTROOT/src/libQtAV.pri): error("could not find libQtAV.pri")
 
 RESOURCES += 
+message($$BUILD_DIR)
+plugin.files = $$PWD/qmldir
+plugin.path = $$BUILD_DIR/bin/QtAV #TODO: Qt install dir
+plugin.commands = -\$\(COPY_FILE\) $$shell_path($$plugin.files) $$shell_path($$plugin.path)
+OTHER_FILES += $$plugin.files
+
+QMAKE_POST_LINK += $$plugin.commands
 
 win32 {
     RC_FILE = #$${PROJECTROOT}/res/QtAV.rc
@@ -37,7 +44,8 @@ OTHER_FILES += $$RC_FILE
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
 
-SOURCES += QQuickItemRenderer.cpp
+SOURCES += QQuickItemRenderer.cpp \
+    plugin.cpp
 HEADERS += QmlAV/private/QQuickItemRenderer_p.h
 SDK_HEADERS += QmlAV/QQuickItemRenderer.h
 
