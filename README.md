@@ -23,7 +23,8 @@ QtAV can meet your most demands
 - Playing frame by frame (currently support forward playing)
 - Playing speed control. At any speed.
 - Variant streams: locale file, http, rtsp, etc.
-- Playing music (not perfect)
+- Playing music
+- Choose audio channel
 - Volume control
 - Fullscreen, stay on top
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
@@ -43,8 +44,14 @@ QtAV can meet your most demands
 
 #### Requirements
 
-1. [FFmpeg](http://ffmpeg.org) (>=0.9)Latest version is recommanded.  
+1. [FFmpeg](http://ffmpeg.org) (>=0.9)Latest version is recommanded.
+ 
 [![FFmpeg](http://ffmpeg.org/ffmpeg-logo.png)](http://ffmpeg.org)
+
+or [Libav](libav.org) (>=0.8) Latest version is recommanded.
+
+[![Libav](http://libav.org/libav-logo-text.png)](http://libav.org)
+
 2. [Qt 4 or 5](http://qt-project.org/downloads)  
 [![Qt](http://blog.qt.digia.com/wp-content/themes/qt_blog/images/Qt_master_logo_CMYK_noback.gif)](http://qt-project.org)
 3. [PortAudio v19](http://www.portaudio.com/download.html)  
@@ -84,6 +91,7 @@ Wrtie a media player using QtAV is quite easy.
     player.play("test.avi");
 
 For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Projects) or examples.
+
 
 
 For End Users
@@ -129,7 +137,7 @@ The default behavior can be replaced by subclassing QObject and call `void AVPla
 
 0. Component framework
 1. Subtitle
-2. Filters
+2. Filters: filter api. integrate all filters in libavfilter.
 3. Hardware acceleration using DirectX, NVIDIA Cuda, ATI UVD, Intel IPP, OpenCL and OpenGL:
   * decoding: DXVA, XvBA, cuvid, VAAPI
   * image, audio and text filters
@@ -140,6 +148,7 @@ The default behavior can be replaced by subclassing QObject and call `void AVPla
 7. Region of interest support.
 8. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
 9. ppa, debian package etc.
+10. QML support (beginning)
 
 Screenshots
 ----------
