@@ -6,16 +6,8 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mpPlayer(0)
   , mpVideoOut(0)
 {
-}
-
-void QmlAVPlayer::classBegin()
-{
     mpPlayer = new AVPlayer(this);
-}
-
-void QmlAVPlayer::componentComplete()
-{
-    mpPlayer->stop();
+    mpPlayer->setPlayerEventFilter(0);
 }
 
 QUrl QmlAVPlayer::source() const
@@ -26,16 +18,22 @@ QUrl QmlAVPlayer::source() const
 void QmlAVPlayer::setSource(const QUrl &url)
 {
     mSource = url;
+    mpPlayer->setRenderer(mpVideoOut);
+    if (mSource.isLocalFile()) {
+        mpPlayer->setFile(mSource.toLocalFile());
+    } else {
+        mpPlayer->setFile(mSource.toString());
+    }
 }
 
-QQuickItemRenderer* QmlAVPlayer::videoOut()
+QObject *QmlAVPlayer::videoOut()
 {
     return mpVideoOut;
 }
 
-void QmlAVPlayer::setVideoOut(QQuickItemRenderer *out)
+void QmlAVPlayer::setVideoOut(QObject *out)
 {
-    mpVideoOut = out;
+    mpVideoOut = static_cast<QQuickItemRenderer*>(out);
 }
 
 
@@ -45,6 +43,5 @@ void QmlAVPlayer::play()
         qWarning("No video output!");
         return;
     }
-    mpPlayer->setRenderer(mpVideoOut);
-    mpPlayer->play(mSource.toString());
+    mpPlayer->play();
 }

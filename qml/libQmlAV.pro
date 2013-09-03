@@ -49,7 +49,8 @@ SOURCES += QQuickItemRenderer.cpp \
     plugin.cpp \
     QmlAVPlayer.cpp
 HEADERS += QmlAV/private/QQuickItemRenderer_p.h \
-    QmlAV/QmlAVPlayer.h
+    QmlAV/QmlAVPlayer.h \
+    QmlAV/Export.h
 SDK_HEADERS += QmlAV/QQuickItemRenderer.h
 
 HEADERS *= \

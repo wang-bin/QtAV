@@ -1,15 +1,16 @@
 #ifndef QQUICKRENDERER_H
 #define QQUICKRENDERER_H
 
+#include <QmlAV/Export.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtQuick/QQuickItem>
 
 namespace QtAV
 {
-extern Q_EXPORT VideoRendererId VideoRendererId_QQuickItem;
+extern QMLAV_EXPORT VideoRendererId VideoRendererId_QQuickItem;
 
 class QQuickItemRendererPrivate;
-class Q_EXPORT QQuickItemRenderer : public QQuickItem, public VideoRenderer
+class QMLAV_EXPORT QQuickItemRenderer : public QQuickItem, public VideoRenderer
 {
     DPTR_DECLARE_PRIVATE(QQuickItemRenderer)
 public:

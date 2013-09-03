@@ -114,7 +114,7 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 		CONFIG -= shared dll ##otherwise the following shared is true, why?
 		CONFIG *= staticlib
 	} else {
-		DEFINES += Q_DLL_LIBRARY #win32-msvc*
+                DEFINES += BUILD_$$upper($$NAME) #win32-msvc*
 		CONFIG *= shared #shared includes dll
 	}
 

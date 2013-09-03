@@ -8,7 +8,7 @@
 namespace QtAV
 {
 
-class Q_EXPORT QQuickItemRendererPrivate : public VideoRendererPrivate
+class QQuickItemRendererPrivate : public VideoRendererPrivate
 {
 public:
     QQuickItemRendererPrivate() : texture(NULL),

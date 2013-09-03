@@ -23,9 +23,3 @@ SOURCES += main.cpp
 # Please do not modify the following two lines. Required for deployment.
 include(qtquick2applicationviewer/qtquick2applicationviewer.pri)
 qtcAddDeployment()
-
-STATICLINK = 0
-PROJECTROOT = $$PWD/../..
-include($$PROJECTROOT/src/libQtAV.pri)
-include($$PROJECTROOT/qml/libQmlAV.pri)
-preparePaths($$OUT_PWD/../../out)
