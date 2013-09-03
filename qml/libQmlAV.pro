@@ -12,10 +12,11 @@ PROJECTROOT = $$PWD/..
 !include(libQmlAV.pri): error("could not find libQmlAV.pri")
 preparePaths($$OUT_PWD/../out)
 
+DESTDIR = $$BUILD_DIR/bin/QtAV
 RESOURCES += 
 message($$BUILD_DIR)
 plugin.files = $$PWD/qmldir
-plugin.path = $$BUILD_DIR/bin/QtAV #TODO: Qt install dir
+plugin.path = $$BUILD_DIR/bin/QtAV/ #TODO: Qt install dir
 plugin.commands = -\$\(COPY_FILE\) $$shell_path($$plugin.files) $$shell_path($$plugin.path)
 OTHER_FILES += $$plugin.files
 

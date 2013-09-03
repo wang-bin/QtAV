@@ -102,12 +102,12 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 
 #	win32: LIBS += -lUser32
 # The following may not need to change
+    !CONFIG(plugin) {
         DESTDIR= $$PROJECT_LIBDIR
-
         #TEMPLATE = lib
-        !CONFIG(plugin):VERSION = $$LIB_VERSION
+        VERSION = $$LIB_VERSION
+    }
         TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
-	DESTDIR= $$PROJECT_LIBDIR
 
         CONFIG *= create_prl #
 	isEqual(STATICLINK, 1) {
@@ -119,9 +119,7 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 	}
 
 	shared {
-            CONFIG(plugin) {
-                !isEqual(DESTDIR, $$BUILD_DIR/bin/QtAV): DLLDESTDIR = $$BUILD_DIR/bin/QtAV
-            } else {
+            !CONFIG(plugin) {
 		!isEqual(DESTDIR, $$BUILD_DIR/bin): DLLDESTDIR = $$BUILD_DIR/bin #copy shared lib there
 		CONFIG(release, debug|release): !isEmpty(QMAKE_STRIP): QMAKE_POST_LINK = -$$QMAKE_STRIP $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
             }
