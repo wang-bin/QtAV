@@ -46,8 +46,10 @@ OTHER_FILES += $$RC_FILE
 DEFINES += __STDC_CONSTANT_MACROS
 
 SOURCES += QQuickItemRenderer.cpp \
-    plugin.cpp
-HEADERS += QmlAV/private/QQuickItemRenderer_p.h
+    plugin.cpp \
+    QmlAVPlayer.cpp
+HEADERS += QmlAV/private/QQuickItemRenderer_p.h \
+    QmlAV/QmlAVPlayer.h
 SDK_HEADERS += QmlAV/QQuickItemRenderer.h
 
 HEADERS *= \

@@ -1,6 +1,7 @@
 #include <QtQml/QQmlExtensionPlugin>
 #include <QtQml/qqml.h>
 #include <QmlAV/QQuickItemRenderer.h>
+#include <QmlAV/QmlAVPlayer.h>
 
 namespace QtAV {
 
@@ -14,6 +15,7 @@ public:
     {
         Q_ASSERT(uri == QLatin1String("QtAV"));
         qmlRegisterType<QQuickItemRenderer>(uri, 1, 0, "QQuickItemRenderer");
+        qmlRegisterType<QmlAVPlayer>(uri, 1, 0, "AVPlayer");
     }
 };
 } //namespace QtAV
