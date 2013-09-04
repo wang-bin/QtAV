@@ -62,17 +62,17 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker)
 
-    if (!node)
-    {
+    if (!node) {
         node = new QSGSimpleTextureNode();
-        static_cast<QSGSimpleTextureNode*>(node)
-                ->setFiltering(QSGTexture::Nearest);
     }
-
+    if (d.quality == VideoRenderer::QualityFastest) {
+        static_cast<QSGSimpleTextureNode*>(node)->setFiltering(QSGTexture::Nearest);
+    } else {
+        static_cast<QSGSimpleTextureNode*>(node)->setFiltering(QSGTexture::Linear);
+    }
     static_cast<QSGSimpleTextureNode*>(node)->setRect(boundingRect());
 
-    if (d.image)
-    {
+    if (d.image) {
         QSGTexture* cur_texture = this->window()->createTextureFromImage(*d.image);
         static_cast<QSGSimpleTextureNode*>(node)->setTexture(cur_texture);
 
@@ -81,9 +81,7 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
 
         d.texture = cur_texture;
 
-    }
-    else
-    {
+    } else {
         QSGTexture* texture = this->window()->createTextureFromImage(QImage(200,200, QImage::Format_ARGB32));
         static_cast<QSGSimpleTextureNode*>(node)->setTexture(texture);
         if (d.texture)
