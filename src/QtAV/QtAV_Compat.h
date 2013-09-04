@@ -178,8 +178,13 @@ int64_t av_get_default_channel_layout(int nb_channels);
 //#define swr_drop_output(ctx, count)
 //#define swr_inject_silence(ctx, count)
 #define swr_get_delay(ctx, ...) avresample_get_delay(ctx)
+#if LIBAVRESAMPLE_VERSION_INT >= AV_VERSION_INT(1, 0, 0) //ffmpeg >= 1.1
 #define swr_convert(ctx, out, out_count, in, in_count) \
-    avresample_convert(ctx, out, 0, out_count, const_cast<uint8_t**>(in), 0, in_count)
+    avresample_convert(ctx, out, 0, out_count, in, 0, in_count)
+#else
+#define swr_convert(ctx, out, out_count, in, in_count) \
+    avresample_convert(ctx, (void**)out, 0, out_count, (void**)in, 0, in_count)
+#endif
 struct SwrContext *swr_alloc_set_opts(struct SwrContext *s, int64_t out_ch_layout, enum AVSampleFormat out_sample_fmt, int out_sample_rate, int64_t in_ch_layout, enum AVSampleFormat in_sample_fmt, int in_sample_rate, int log_offset, void *log_ctx);
 #define swresample_version() avresample_version()
 #define swresample_configuration() avresample_configuration()
