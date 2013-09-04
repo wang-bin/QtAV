@@ -18,5 +18,6 @@ config_gl {
 }
 
 greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(quick) {
-  SUBDIRS += QMLPlayer
+  SUBDIRS += QMLPlayer \
+            qmlvideofx
 }
