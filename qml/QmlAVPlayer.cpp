@@ -21,6 +21,7 @@
 
 #include "QmlAVPlayer.h"
 #include <QtAV/AVPlayer.h>
+#include <QtAV/AudioOutput.h>
 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
@@ -60,6 +61,24 @@ void QmlAVPlayer::setVideoOut(QObject *out)
     mpVideoOut = static_cast<QQuickItemRenderer*>(out);
 }
 
+qreal QmlAVPlayer::volume() const
+{
+    AudioOutput *ao = mpPlayer->audio();
+    if (ao && ao->isAvailable()) {
+        return ao->volume();
+    }
+    return 0;
+}
+
+void QmlAVPlayer::setVolume(qreal volume)
+{
+    AudioOutput *ao = mpPlayer->audio();
+    if (ao && ao->isAvailable() && ao->volume() != volume) {
+        ao->setVolume(volume);
+        emit volumeChanged();
+    }
+}
+
 bool QmlAVPlayer::mute() const
 {
     return mpPlayer->isMute();
@@ -71,6 +90,16 @@ void QmlAVPlayer::setMute(bool m)
         return;
     mpPlayer->setMute(m);
     emit muteChanged();
+}
+
+int QmlAVPlayer::duration() const
+{
+    return mpPlayer->duration();
+}
+
+int QmlAVPlayer::position() const
+{
+    return mpPlayer->masterClock()->value();
 }
 
 QmlAVPlayer::PlaybackState QmlAVPlayer::playbackState() const
@@ -100,6 +129,19 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
     default:
         break;
     }
+}
+
+qreal QmlAVPlayer::speed() const
+{
+    return mpPlayer->speed();
+}
+
+void QmlAVPlayer::setSpeed(qreal s)
+{
+    if (mpPlayer->speed() == s)
+        return;
+    mpPlayer->setSpeed(s);
+    emit speedChanged();
 }
 
 void QmlAVPlayer::play(const QUrl &url)

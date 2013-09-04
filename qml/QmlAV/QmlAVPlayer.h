@@ -33,8 +33,12 @@ using namespace QtAV;
 class QMLAV_EXPORT QmlAVPlayer : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(int duration READ duration NOTIFY durationChanged)
+    Q_PROPERTY(int position READ position NOTIFY positionChanged)
     Q_PROPERTY(bool mute READ mute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(PlaybackState playbackState READ playbackState NOTIFY playbackStateChanged)
+    Q_PROPERTY(qreal speed READ speed WRITE setSpeed NOTIFY speedChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(QObject* videoOut READ videoOut WRITE setVideoOut NOTIFY videoOutChanged)
     Q_ENUMS(PlaybackState)
@@ -50,10 +54,16 @@ public:
     void setSource(const QUrl& url);
     QObject* videoOut();
     void setVideoOut(QObject* out);
+    qreal volume() const;
+    void setVolume(qreal volume);
     bool mute() const;
     void setMute(bool m);
+    int duration() const;
+    int position() const;
     PlaybackState playbackState() const;
     void setPlaybackState(PlaybackState playbackState);
+    qreal speed() const;
+    void setSpeed(qreal s);
     Q_INVOKABLE void play(const QUrl& url);
 
 public Q_SLOTS:
@@ -68,10 +78,14 @@ public Q_SLOTS:
     void seekBackward();
 
 Q_SIGNALS:
+    void volumeChanged();
     void muteChanged();
+    void durationChanged();
+    void positionChanged();
     void sourceChanged();
     void videoOutChanged();
     void playbackStateChanged();
+    void speedChanged();
     void paused();
     void stopped();
     void playing();
