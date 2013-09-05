@@ -47,13 +47,13 @@ unix {
 } else:wince* {
 	_OS = _wince
 } else:win32 { #true for wince
-	_OS = _win32
+        _OS = _win
 }
 #*arm*: _ARCH = $${_ARCH}_arm
 contains(QT_ARCH, arm.*) {
 	_ARCH = $${_ARCH}_$${QT_ARCH}
 }
-*64: _ARCH = $${_ARCH}_x64
+*64|contains(QMAKE_TARGET.arch, x86_64): _ARCH = $${_ARCH}_x64
 *llvm*: _EXTRA = _llvm
 #*msvc*:
 
