@@ -31,6 +31,7 @@ QtAV can meet your most demands
   both FFmpeg(>=0.9) and [Libav](http://libav.org).
 - Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
 - Dynamically change render engine when playing.
+- QML support as a plugin
 
 ### Extensible Framework (work in progress)
 
@@ -93,6 +94,37 @@ Wrtie a media player using QtAV is quite easy.
 For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Projects) or examples.
 
 
+QtAV can also be used in **Qml**
+
+    import QtQuick 2.0
+    import QtAV 1.3
+    Rectangle {
+        width: 640
+        height: 360
+        color: "black"
+        VideoOut {
+            id: vo
+            anchors.fill: parent
+        }
+        AVPlayer {
+            id: player
+            videoOut: vo
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                player.source = "test.mp4"
+                player.play()
+            }
+        }
+    }
+
+
+
+### How To Contribute
+
+- [Fork](https://github.com/wang-bin/QtAV/fork) QtAV project on github and make a branch. Commit in that branch, and push, then create a pull request to be reviewed and merged.
+- [Create an issue](https://github.com/wang-bin/QtAV/issues/new) if you have any problem when using QtAV or you find a bug, etc.
 
 For End Users
 -------------
@@ -148,14 +180,13 @@ The default behavior can be replaced by subclassing QObject and call `void AVPla
 7. Region of interest support.
 8. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
 9. ppa, debian package etc.
-10. QML support (beginning)
 
 Screenshots
 ----------
 
-QtAV on Win8
+Use QtAV in QML with OpenGL shaders(example is from qtmultimedia. But qtmultimedia is replaced by QtAV)
 
-![Alt text](https://sourceforge.net/p/qtav/screenshot/win8.png "simple player")
+![Alt text](https://sourceforge.net/p/qtav/screenshot/QtAV-QML-Shader.jpg "QtAV QML Shaders")
 
 QtAV on Mac OS X
 
