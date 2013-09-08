@@ -5,14 +5,13 @@ isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
 include($${PROJECTROOT}/common.pri)
 preparePaths($$OUT_PWD/../../out)
 
-QT += quick multimedia
+QT += quick #multimedia
 
 SOURCES += filereader.cpp main.cpp
 HEADERS += filereader.h trace.h
 
 RESOURCES += qmlvideofx.qrc
 
-include($$PWD/../snippets/performancemonitor/performancemonitordeclarative.pri)
 
 maemo6: {
     DEFINES += SMALL_SCREEN_LAYOUT
