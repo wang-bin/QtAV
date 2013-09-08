@@ -219,7 +219,7 @@ void MainWindow::setupUi()
         QString line;
         while (!ts.atEnd()) {
             line = ts.readLine();
-            if (line.isEmpty())
+            if (line.isEmpty() || line.startsWith("#") || !line.contains("="))
                 continue;
             QString key = line.section('=', 0, 0);
             QString value = line.section('=', 1);
