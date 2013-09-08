@@ -1,3 +1,12 @@
+version 1.2.3    2013-09-08
+
+- QML support(thanks theoribeiro <theo@fictix.com.br>). Can replace some of qtmultimedia qml apps, e.g. qmlvideofx
+- Fix build for FFmpeg >= 0.9, libav >= 0.8
+- Channel can be choosed by user: original, stero, left, right, centre(mono)
+- OSD for GL ES2 renderer
+- player: statistics viewer, disable screensaver on widows when playing
+
+
 version 1.2.3    2013-08-01
 
 - FFmpeg/libav avresample support

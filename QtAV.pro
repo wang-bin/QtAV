@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 CONFIG -= ordered
 SUBDIRS = libqtav examples tests
+
 greaterThan(QT_MAJOR_VERSION, 4) {
   qtHaveModule(quick) {
     SUBDIRS += libqmlav
@@ -31,8 +32,8 @@ unix {
 
 include(root.pri)
 
-PACKAGE_VERSION = 1.2.3
+PACKAGE_VERSION = 1.2.4
 PACKAGE_NAME= QtAV
 
 include(pack.pri)
-#packageSet(1.2.0, QtAV)
+#packageSet(1.2.4, QtAV)
