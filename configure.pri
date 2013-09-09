@@ -98,8 +98,9 @@ defineTest(qtCompileTest) {
 
     test_dir = $$QMAKE_CONFIG_TESTS_DIR/$$1
     test_out_dir = $$shadowed($$test_dir)
-    test_cmd_base = "cd $$system_quote($$system_path($$test_out_dir)) &&"
-
+    #system always call win32 cmd in windows, so we need "cd /d" to ensure success cd to a different partition
+    win32:test_cmd_base = "cd /d $$system_quote($$system_path($$test_out_dir)) &&"
+    else: test_cmd_base = "cd $$system_quote($$system_path($$test_out_dir)) &&"
     # Disable qmake features which are typically counterproductive for tests
     qmake_configs = "\"CONFIG -= qt debug_and_release app_bundle lib_bundle\""
 
