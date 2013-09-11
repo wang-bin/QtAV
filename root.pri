@@ -47,6 +47,7 @@ cache(BUILD_DIR, set, BUILD_DIR)
 cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
+!CONFIG(no_config_tests) {
 #config.tests
 !isEmpty(EssentialDepends) {
     for(d, EssentialDepends) {
@@ -65,5 +66,11 @@ cache(mkspecs_cached, set, mkspecs_build)
 }
 
 !isEmpty(EssentialDepends)|!isEmpty(OptionalDepends) {
-    message("To recheck the dependencies, delete .qmake.cache or run qmake with argument 'CONFIG+=recheck'")
+    message("To recheck the dependencies, delete '.qmake.cache' in the root of build dir, run qmake with argument 'CONFIG+=recheck' or '-config recheck'")
 }
+}
+
+message("To disable config tests, create '.qmake.conf' in the root source dir, add 'CONFIG += no_config_tests'(Qt5)")
+message("Or pass 'CONFIG += no_config_tests' or '-config no_config_tests' to qmake")
+message("To manually set a config test result to true, disable config tests and pass 'CONFIG += config_name' to qmake")
+message("Or add 'CONFIG += config_name' in '.qmake.config'(Qt5):")
