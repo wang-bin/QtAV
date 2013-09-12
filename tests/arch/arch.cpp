@@ -41,7 +41,7 @@
 ****************************************************************************/
 
 #define QGLOBAL_H
-#include "cpu.h"
+#include "qprocessordetection.h"
 
 /* vc: arm, mips, sh, x86, x86_64, ia64*/
 #if defined(Q_PROCESSOR_ALPHA)

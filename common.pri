@@ -63,6 +63,15 @@ win32-msvc* {
 }
 
 #################################functions#########################################
+defineTest(qtRunQuitly) {
+    #win32 always call windows command
+    win32 { #QMAKE_HOST.os?
+      system("$$1 2>&1 >nul")|return(false)  #system always call win32 cmd
+    } else {
+      system("$$1 2>&1 >/dev/null")|return(false)
+    }
+    return(true)
+}
 
 #Acts like qtLibraryTarget. From qtcreator.pri
 defineReplace(qtLibName) {
@@ -138,14 +147,7 @@ defineTest(log){
 }
 
 defineTest(mkpath) {
-    win32 {
-        #why always return false?
-        system("md $$system_path($$1) 2>nul")|return(false)
-    } else {
-        #log("mkdir -p $$shell_path($$1)")
-        #why msys failed?
-        system("mkdir -p $$shell_path($$1)")|return(false)
-    }
+    qtRunQuitly("$$QMAKE_MKDIR $$system_path($$1)")|return(false)
     return(true)
 }
 
