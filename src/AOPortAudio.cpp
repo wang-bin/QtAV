@@ -55,6 +55,11 @@ public:
         }
         memset(outputParameters, 0, sizeof(PaStreamParameters));
         outputParameters->device = Pa_GetDefaultOutputDevice();
+        if (outputParameters->device == paNoDevice) {
+            qWarning("PortAudio get device error!");
+            available = false;
+            return;
+        }
         const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(outputParameters->device);
         max_channels = deviceInfo->maxOutputChannels;
         qDebug("DEFAULT max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
@@ -64,11 +69,6 @@ public:
         outputParameters->device = getDeviceIndexForOutput( "ALSA: default" );
 #endif
 */
-        if (outputParameters->device == paNoDevice) {
-            qWarning("PortAudio get device error!");
-            available = false;
-            return;
-        }
         qDebug("audio device: %s", QString::fromLocal8Bit(Pa_GetDeviceInfo(outputParameters->device)->name).toUtf8().constData());
         outputParameters->hostApiSpecificStreamInfo = NULL;
         outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
