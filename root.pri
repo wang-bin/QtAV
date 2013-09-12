@@ -57,11 +57,13 @@ defineTest(testArch) {
   # Clean up after previous run
   exists($$test_out_dir/Makefile):qtRunCommandQuitly("$$test_cmd_base $$QMAKE_MAKE distclean")
 
-message("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$system_path($$test_dir)")
+#message("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$system_path($$test_dir)")
   qtRunCommandQuitly("$$test_cmd_base  $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$system_path($$test_dir)") {
     MSG=$$system("$$test_cmd_base  $$QMAKE_MAKE 2>&1")
   }
-  V = $$find(MSG, .*=.*)
+  V = $$find(MSG, ARCH.*=.*)
+  ARCH=
+  ARCH_SUB=
   for(v, V) {
     v=$$replace(v, "", )  # "ARCH=x86". can not evalate with ". why \" may fail? eval("expr")
     greaterThan(QT_MAJOR_VERSION, 4):eval("$$v")
@@ -79,6 +81,8 @@ message("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_co
 isEmpty(mkspecs_cached)|!isEmpty(mkspecs_cached):!isEqual(mkspecs_cached, $$mkspecs_build) {
     CONFIG += recheck
     testArch()
+} else {
+    isEmpty(TARGET_ARCH):testArch()
 }
 
 cache(BUILD_DIR, set, BUILD_DIR)
