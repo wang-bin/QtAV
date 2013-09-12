@@ -114,7 +114,7 @@ defineReplace(qtSharedLib) {
 
 defineReplace(qtLongName) {
 	unset(LONG_NAME)
-		LONG_NAME = $$1$${_OS}$${_ARCH}$${_EXTRA}
+		LONG_NAME = $$1$${_OS}_$${TARGET_ARCH}$${_EXTRA}
 	return($$LONG_NAME)
 }
 
