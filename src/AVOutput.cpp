@@ -23,6 +23,7 @@
 #include <private/AVOutput_p.h>
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
+#include <QtAV/OutputSet.h>
 
 namespace QtAV {
 
@@ -60,10 +61,12 @@ bool AVOutput::writeData(const QByteArray &data)
     /* you can use d.data directly in AVThread. In other thread, it's not safe, you must do something
      * to make sure the data is not be modified in AVThread when using it*/
     //d_func().data = data;
-	convertData(data);
+    if (d_func().paused)
+        return false;
+    convertData(data); //TODO: only once for all outputs
 	bool result = write();
 	//write then pause: if capture when pausing, the displayed picture is captured
-    tryPause();
+    //tryPause(); ///DO NOT pause the thread so that other outputs can still run
 	return result;
 }
 
@@ -78,8 +81,10 @@ void AVOutput::pause(bool p)
     if (d.paused == p)
         return;
     d.paused = p;
+#if V1_2
     if (!d.paused)
         d.cond.wakeAll();
+#endif //V1_2
 }
 
 bool AVOutput::isPaused() const
@@ -97,6 +102,34 @@ bool AVOutput::tryPause()
     Q_UNUSED(lock);
     d.cond.wait(&d.mutex);
     return true;
+}
+
+void AVOutput::addOutputSet(OutputSet *set)
+{
+    d_func().output_sets.append(set);
+}
+
+void AVOutput::removeOutputSet(OutputSet *set)
+{
+    d_func().output_sets.removeAll(set);
+}
+
+void AVOutput::attach(OutputSet *set)
+{
+    set->addOutput(this);
+    //d_func().output_sets.append(set);
+}
+
+void AVOutput::detach(OutputSet *set)
+{
+    DPTR_D(AVOutput);
+    if (set) {
+        set->removeOutput(this);
+        return;
+    }
+    foreach(OutputSet *set, d.output_sets) {
+        set->removeOutput(this);
+    }
 }
 
 void AVOutput::convertData(const QByteArray &data)

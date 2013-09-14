@@ -39,6 +39,7 @@ class VideoRenderer;
 class AVClock;
 class AVDemuxThread;
 class VideoCapture;
+class OutputSet;
 class Q_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -66,10 +67,13 @@ public:
 	bool isPlaying() const;
     bool isPaused() const;
     //this will install the default EventFilter. To use customized filter, register after this
-    //TODO: addRenderer; renderers()
+    void addVideoRenderer(VideoRenderer *renderer);
+    void removeVideoRenderer(VideoRenderer *renderer);
+    void clearVideoRenderers();
     void setRenderer(VideoRenderer* renderer);
     VideoRenderer* renderer();
     void setAudioOutput(AudioOutput* ao);
+
     /*!
      * To change audio format, you should set both AudioOutput's format and AudioResampler's format
      * So signals/slots is a better solution.
@@ -108,9 +112,6 @@ public slots:
     void seekBackward();
     void updateClock(qint64 msecs); //update AVClock's external clock
 
-protected slots:
-    void resizeRenderer(const QSize& size);
-
 private:
     void initStatistics();
     void setupAudioThread();
@@ -142,6 +143,7 @@ private:
     Statistics mStatistics;
     qreal mSpeed;
     bool ao_enable;
+    OutputSet *mpVOSet, *mpAOSet;
 };
 
 } //namespace QtAV

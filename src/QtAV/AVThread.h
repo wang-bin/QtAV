@@ -33,6 +33,7 @@ class AVThreadPrivate;
 class AVOutput;
 class AVClock;
 class Statistics;
+class OutputSet;
 class Q_EXPORT AVThread : public QThread
 {
     Q_OBJECT
@@ -54,8 +55,11 @@ public:
     void setDecoder(AVDecoder *decoder);
     AVDecoder *decoder() const;
 
-    void setOutput(AVOutput *out);
-    AVOutput* output() const;
+    Q_DECL_DEPRECATED void setOutput(AVOutput *out);
+    Q_DECL_DEPRECATED AVOutput* output() const;
+
+    void setOutputSet(OutputSet *set);
+    OutputSet* outputSet() const;
 
     void setDemuxEnded(bool ended);
 

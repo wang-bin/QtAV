@@ -75,6 +75,7 @@ void AVThread::stop()
     d.packets.clear();
 }
 
+//TODO: output set
 void AVThread::pause(bool p)
 {
     DPTR_D(AVThread);
@@ -139,6 +140,16 @@ void AVThread::setOutput(AVOutput *out)
 AVOutput* AVThread::output() const
 {
     return d_func().writer;
+}
+
+void AVThread::setOutputSet(OutputSet *set)
+{
+    d_func().outputSet = set;
+}
+
+OutputSet* AVThread::outputSet() const
+{
+    return d_func().outputSet;
 }
 
 void AVThread::setDemuxEnded(bool ended)

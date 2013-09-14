@@ -34,6 +34,7 @@ class AVDecoder;
 class Filter;
 class FilterContext;
 class Statistics;
+class OutputSet;
 class Q_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
 {
 public:
@@ -56,6 +57,7 @@ public:
     Statistics *statistics; //do not own the ptr. just use AVPlayer's statistics ptr
     FilterContext *filter_context; //create internally by the renderer with correct type
     QList<Filter*> filters;
+    QList<OutputSet*> output_sets;
 };
 
 } //namespace QtAV

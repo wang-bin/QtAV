@@ -34,6 +34,7 @@
 #include <QtAV/Packet.h>
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/VideoRenderer.h>
+#include <QtAV/OutputSet.h>
 #include <QtAV/AVClock.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtAV/VideoCapture.h>
@@ -67,6 +68,8 @@ AVPlayer::AVPlayer(QObject *parent) :
   , mSpeed(1.0)
   , ao_enable(true)
 {
+    mpVOSet = new OutputSet(this);
+    mpAOSet = new OutputSet(this);
     qDebug("%s", aboutQtAV_PlainText().toUtf8().constData());
     /*
      * call stop() before the window(_renderer) closed to stop the waitcondition
@@ -107,10 +110,26 @@ AVClock* AVPlayer::masterClock()
     return clock;
 }
 
+void AVPlayer::addVideoRenderer(VideoRenderer *renderer)
+{
+    mpVOSet->addOutput(renderer);
+}
+
+void AVPlayer::removeVideoRenderer(VideoRenderer *renderer)
+{
+    mpVOSet->removeOutput(renderer);
+}
+
+void AVPlayer::clearVideoRenderers()
+{
+    mpVOSet->clearOutputs();
+}
+
 //TODO: check components compatiblity(also when change the filter chain)
 void AVPlayer::setRenderer(VideoRenderer *r)
 {
     qDebug(">>>>>>>>>>%s", __FUNCTION__);
+#if V1_2
     if (_renderer && r) {
         VideoRenderer::OutAspectRatioMode oar = _renderer->outAspectRatioMode();
         r->setOutAspectRatioMode(oar);
@@ -123,11 +142,30 @@ void AVPlayer::setRenderer(VideoRenderer *r)
         qDebug("resizeRenderer after setRenderer");
         _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
     }
+#else
+    VideoRenderer *vo = renderer();
+    if (vo && r) {
+        VideoRenderer::OutAspectRatioMode oar = _renderer->outAspectRatioMode();
+        r->setOutAspectRatioMode(oar);
+        if (oar == VideoRenderer::CustomAspectRation) {
+            r->setOutAspectRatio(vo->outAspectRatio());
+        }
+    }
+    if (r) {
+        r->resizeRenderer(r->rendererSize()); //IMPORTANT: the swscaler will resize
+    }
+    clearVideoRenderers();
+    addVideoRenderer(r);
+#endif //V1_2
 }
 
 VideoRenderer *AVPlayer::renderer()
 {
+#if V1_2
     return _renderer;
+#else
+    return static_cast<VideoRenderer*>(mpVOSet->outputs().last());
+#endif //V1_2
 }
 
 void AVPlayer::setAudioOutput(AudioOutput* ao)
@@ -170,7 +208,7 @@ void AVPlayer::setAVOutput(Out *&pOut, Out *pNew, AVThread *thread)
     if (pOut) {
         pOut->setStatistics(&mStatistics);
         if (need_lock)
-            thread->unlock();
+            thread->unlock(); //??why here?
     }
     //now the old avoutput is not used by avthread, we can delete it safely
     //AVOutput must be allocated in heap. Just like QObject's children.
@@ -249,12 +287,7 @@ const Statistics& AVPlayer::statistics() const
 {
     return mStatistics;
 }
-//TODO: remove?
-void AVPlayer::resizeRenderer(const QSize &size)
-{
-    _renderer->resizeRenderer(size); //TODO: deprecate
-    //video_dec->resizeVideoFrame(size);
-}
+
 /*
  * loaded state is the state of current setted file.
  * For replaying, we can avoid load a seekable file again.
@@ -653,11 +686,14 @@ void AVPlayer::setupVideoThread()
             video_thread->setDecoder(video_dec);
             video_thread->setStatistics(&mStatistics);
             video_thread->setVideoCapture(video_capture);
+            video_thread->setOutputSet(mpVOSet);
             demuxer_thread->setVideoThread(video_thread);
             //reconnect if disconnected
             connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
         }
+#if V1_2
         setRenderer(_renderer);
+#endif
         int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
         int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
         video_thread->packetQueue()->setThreshold(queue_min);

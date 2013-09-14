@@ -140,6 +140,7 @@ SOURCES += \
     VideoRendererTypes.cpp \
     WidgetRenderer.cpp \
     AVOutput.cpp \
+    OutputSet.cpp \
     AVClock.cpp \
     Statistics.cpp \
     VideoDecoder.cpp \
@@ -186,6 +187,7 @@ HEADERS *= \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
     QtAV/VideoThread.h \
+    QtAV/OutputSet.h \
     QtAV/QtAV_Compat.h \
     QtAV/EventFilter.h \
     QtAV/singleton.h \

@@ -31,6 +31,7 @@
 #include <QtAV/Statistics.h>
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
+#include <QtAV/OutputSet.h>
 
 namespace QtAV {
 
@@ -85,8 +86,13 @@ void VideoThread::run()
 {
     DPTR_D(VideoThread);
     //TODO: no d.writer is ok, just a audio player
+#if V1_2
     if (!d.dec || !d.dec->isAvailable() || !d.writer)// || !d.conv)
         return;
+#else
+    if (!d.dec || !d.dec->isAvailable() || !d.outputSet)// || !d.conv)
+        return;
+#endif //V1_2
     resetState();
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
@@ -94,6 +100,9 @@ void VideoThread::run()
         //used to initialize the decoder's frame size
         dec->resizeVideoFrame(0, 0);
     }
+    int dec_width_last = 0;
+    int dec_height_last = 0;
+
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -141,6 +150,7 @@ void VideoThread::run()
             }
         }
         d.clock->updateVideoPts(pkt.pts); //here?
+#if V1_2
         //DO NOT decode and convert if vo is not available or null!
         //NOTE: vo may changes dymanically. we need check it every time we use it. decoder and other components should do this too
         VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
@@ -150,8 +160,21 @@ void VideoThread::run()
             if (vo->lastWidth() > 0 && vo->lastHeight() > 0 && !vo->scaleInRenderer())
                 dec->resizeVideoFrame(vo->lastSize());
             else
-                vo->setInSize(dec->width(), dec->height()); //setLastSize()
+                vo->setInSize(dec->width(), dec->height()); //setLastSize(). optimize: set only when changed
         }
+#else
+        if (dec_width_last != dec->width() || dec_height_last != dec->height()) {
+            dec_width_last = dec->width();
+            dec_height_last = dec->height();
+            //lock is important when iterating
+            d.outputSet->lock();
+            foreach(AVOutput *out, d.outputSet->outputs()) {
+                VideoRenderer *vo = static_cast<VideoRenderer*>(out);
+                vo->setInSize(dec->width(), dec->height()); //setLastSize(). optimize: set only when changed
+            }
+            d.outputSet->unlock();
+        }
+#endif //V1_2
         //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
         if (dec->decode(pkt.data)) {
             d.pts = pkt.pts;
@@ -173,14 +196,22 @@ void VideoThread::run()
                     }
                 }
             }
-
+#if V1_2
             if (vo_ok) {
                 vo->writeData(data);
             }
+#else
+            if (d.outputSet->canPauseThread())
+                d.outputSet->pauseThread();
+
+            d.outputSet->sendData(data);
+#endif //V1_2
         }
+#if V1_2
         //use the last size first then update the last size so that decoder(converter) can update output size
         if (vo_ok && !vo->scaleInRenderer())
             vo->setInSize(vo->rendererSize());//out size?
+#endif //V1_2
     }
     qDebug("Video thread stops running...");
 }

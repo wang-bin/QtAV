@@ -39,6 +39,7 @@ class AVClock;
 class Filter;
 class FilterContext;
 class Statistics;
+class OutputSet;
 class Q_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
@@ -49,6 +50,7 @@ public:
       , stop(false)
       , clock(0)
       , dec(0)
+      , outputSet(0)
       , writer(0)
       , delay(0)
       , filter_context(0)
@@ -64,6 +66,7 @@ public:
     AVClock *clock;
     PacketQueue packets;
     AVDecoder *dec;
+    OutputSet *outputSet;
     AVOutput *writer;
     QMutex mutex;
     QWaitCondition cond; //pause

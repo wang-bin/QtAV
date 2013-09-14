@@ -36,6 +36,7 @@ class AVOutputPrivate;
 class Filter;
 class FilterContext;
 class Statistics;
+class OutputSet;
 class Q_EXPORT AVOutput
 {
     DPTR_DECLARE_PRIVATE(AVOutput)
@@ -45,9 +46,17 @@ public:
     /* store the data ref, then call convertData() and write(). tryPause() will be called*/
     bool writeData(const QByteArray& data);
     bool isAvailable() const;
-    virtual bool open() = 0;
-    virtual bool close() = 0;
+
+    //void addSource(AVPlayer* player); //call player.addVideoRenderer(this)
+    //void removeSource(AVPlayer* player);
+
+    Q_DECL_DEPRECATED virtual bool open() = 0;
+    Q_DECL_DEPRECATED virtual bool close() = 0;
+
+//    virtual bool prepare() {}
+//    virtual bool finish() {}
     //Demuxer thread automatically paused because packets will be full
+    //only pause the renderering, the thread going on. If all outputs are paused, then pause the thread(OutputSet.tryPause)
     void pause(bool p); //processEvents when waiting?
     bool isPaused() const;
 
@@ -73,13 +82,19 @@ protected:
      * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)
      * and return true. Otherwise, return false immediatly.
      */
-    bool tryPause();
+    Q_DECL_DEPRECATED bool tryPause(); //move to OutputSet
+    //TODO: we need an active set
+    void addOutputSet(OutputSet *set);
+    void removeOutputSet(OutputSet *set);
+    void attach(OutputSet *set); //add this to set
+    void detach(OutputSet *set = 0); //detatch from (all, if 0) output set(s)
 
     DPTR_DECLARE(AVOutput)
 
 private:
     void setStatistics(Statistics* statistics);
     friend class AVPlayer;
+    friend class OutputSet;
 };
 
 } //namespace QtAV
