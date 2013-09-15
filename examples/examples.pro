@@ -4,6 +4,7 @@ SUBDIRS += \
     vo-qt \
     player \
     videographicsitem \
+    videogroup \
     videowall
 
 #TODO: mingw cross
