@@ -43,8 +43,8 @@ public:
     virtual ~AVThread();
 
     //used for changing some components when running
-    void lock();
-    void unlock();
+    Q_DECL_DEPRECATED void lock();
+    Q_DECL_DEPRECATED void unlock();
 
     void setClock(AVClock *clock);
     AVClock* clock() const;
@@ -69,6 +69,9 @@ public slots:
     /*change pause state. the pause/continue action will do in the next loop*/
     void pause(bool p); //processEvents when waiting?
     void nextAndPause(); //process 1 frame and pause
+
+private slots:
+    void addOutputToBeUpdated(AVOutput *output);
 
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);

@@ -145,7 +145,8 @@ void AVPlayer::setRenderer(VideoRenderer *r)
 #else
     VideoRenderer *vo = renderer();
     if (vo && r) {
-        VideoRenderer::OutAspectRatioMode oar = _renderer->outAspectRatioMode();
+        VideoRenderer::OutAspectRatioMode oar = vo->outAspectRatioMode();
+        //r->resizeRenderer(vo->rendererSize());
         r->setOutAspectRatioMode(oar);
         if (oar == VideoRenderer::CustomAspectRation) {
             r->setOutAspectRatio(vo->outAspectRatio());
@@ -154,8 +155,10 @@ void AVPlayer::setRenderer(VideoRenderer *r)
     if (r) {
         r->resizeRenderer(r->rendererSize()); //IMPORTANT: the swscaler will resize
     }
+    r->setStatistics(&mStatistics);
     clearVideoRenderers();
     addVideoRenderer(r);
+
 #endif //V1_2
 }
 

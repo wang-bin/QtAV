@@ -23,6 +23,7 @@
 #include <private/AVThread_p.h>
 #include <QtAV/AVOutput.h>
 #include <QtAV/Filter.h>
+#include <QtAV/OutputSet.h>
 
 namespace QtAV {
 
@@ -41,6 +42,7 @@ AVThreadPrivate::~AVThreadPrivate() {
     filter_context = 0;
     qDeleteAll(filters); //TODO: is it safe?
     filters.clear();
+    update_outputs.clear();
 }
 
 AVThread::AVThread(QObject *parent) :
@@ -145,6 +147,7 @@ AVOutput* AVThread::output() const
 void AVThread::setOutputSet(OutputSet *set)
 {
     d_func().outputSet = set;
+    connect(set, SIGNAL(updateParametersRequired(AVOutput*)), SLOT(addOutputToBeUpdated(AVOutput*)));
 }
 
 OutputSet* AVThread::outputSet() const
@@ -155,6 +158,14 @@ OutputSet* AVThread::outputSet() const
 void AVThread::setDemuxEnded(bool ended)
 {
     d_func().demux_end = ended;
+}
+
+void AVThread::addOutputToBeUpdated(AVOutput *output)
+{
+    DPTR_D(AVThread);
+    if (d.update_outputs.contains(output))
+        return;
+    d.update_outputs.append(output);
 }
 
 void AVThread::resetState()

@@ -84,6 +84,7 @@ void OutputSet::addOutput(AVOutput *output)
     Q_UNUSED(lock);
     mOutputs.append(output);
     output->addOutputSet(this);
+    emit updateParametersRequired(output);
 }
 
 void OutputSet::removeOutput(AVOutput *output)

@@ -100,9 +100,8 @@ void VideoThread::run()
         //used to initialize the decoder's frame size
         dec->resizeVideoFrame(0, 0);
     }
-    int dec_width_last = 0;
-    int dec_height_last = 0;
-
+    bool need_update_vo_parameters = true;
+    QSize dec_size_last;
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -163,17 +162,23 @@ void VideoThread::run()
                 vo->setInSize(dec->width(), dec->height()); //setLastSize(). optimize: set only when changed
         }
 #else
-        if (dec_width_last != dec->width() || dec_height_last != dec->height()) {
-            dec_width_last = dec->width();
-            dec_height_last = dec->height();
+        if (need_update_vo_parameters || !d.update_outputs.isEmpty()) {
             //lock is important when iterating
             d.outputSet->lock();
-            foreach(AVOutput *out, d.outputSet->outputs()) {
+            if (need_update_vo_parameters) {
+                d.update_outputs = d.outputSet->outputs();
+                need_update_vo_parameters = false;
+            }
+            foreach(AVOutput *out, d.update_outputs) {
                 VideoRenderer *vo = static_cast<VideoRenderer*>(out);
                 vo->setInSize(dec->width(), dec->height()); //setLastSize(). optimize: set only when changed
             }
             d.outputSet->unlock();
+            d.update_outputs.clear();
         }
+        need_update_vo_parameters = dec_size_last.width() != dec->width() || dec_size_last.height() != dec->height();
+        dec_size_last = QSize(dec->width(), dec->height());
+
 #endif //V1_2
         //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
         if (dec->decode(pkt.data)) {
