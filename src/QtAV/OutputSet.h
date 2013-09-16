@@ -44,7 +44,7 @@ public:
 
     //implicity shared
     //QList<AVOutput*> outputs();
-    QList<AVOutput*>& outputs();
+    QList<AVOutput*> outputs();
 
     //each(OutputOperation(data))
     //

@@ -35,11 +35,9 @@ OutputSet::OutputSet(AVPlayer *player):
 
 OutputSet::~OutputSet()
 {
-    qDebug("%s", __FUNCTION__);
     mCond.wakeAll();
     //delete? may be deleted by vo's parent
     clearOutputs();
-    qDebug("%s", __FUNCTION__);
 }
 
 void OutputSet::lock()
@@ -52,7 +50,7 @@ void OutputSet::unlock()
     mMutex.unlock();
 }
 
-QList<AVOutput *> &OutputSet::outputs()
+QList<AVOutput *> OutputSet::outputs()
 {
     return mOutputs;
 }
@@ -93,16 +91,6 @@ void OutputSet::removeOutput(AVOutput *output)
     Q_UNUSED(lock);
     mOutputs.removeAll(output);
     output->removeOutputSet(this);
-/*
-    QWidget *vw = renderer->widget();
-    if (vw) {
-        vw->hide();
-        if (vw->testAttribute(Qt::WA_DeleteOnClose)) {
-            vw->setParent(0); //avoid delete multiple times?
-            delete vw; //do not delete. it may be owned by multiple groups
-        }
-    }
-*/
 }
 
 void OutputSet::notifyPauseChange(AVOutput *output)

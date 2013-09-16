@@ -80,6 +80,9 @@ VideoGroup::~VideoGroup()
 void VideoGroup::setSingleWindow(bool s)
 {
     mSingle = s;
+    mRenderers = mpPlayer->videoOutputs();
+    if (mRenderers.isEmpty())
+        return;
     if (!s) {
         if (!view)
             return;
@@ -173,8 +176,9 @@ void VideoGroup::addRenderer()
     else if (vid == "xv")
         v = VideoRendererId_XV;
     VideoRenderer* renderer = VideoRendererFactory::create(v);
+    mRenderers = mpPlayer->videoOutputs();
     mRenderers.append(renderer);
-    //renderer->widget()->setAttribute(Qt::WA_DeleteOnClose);
+    renderer->widget()->setAttribute(Qt::WA_DeleteOnClose);
     int w = view ? view->frameGeometry().width()/c : qApp->desktop()->width()/c;
     int h = view ? view->frameGeometry().height()/r : qApp->desktop()->height()/r;
     renderer->widget()->resize(w, h);
@@ -196,6 +200,7 @@ void VideoGroup::addRenderer()
 
 void VideoGroup::removeRenderer()
 {
+    mRenderers = mpPlayer->videoOutputs();
     if (mRenderers.isEmpty())
         return;
     VideoRenderer *r = mRenderers.takeLast();

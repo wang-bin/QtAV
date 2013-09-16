@@ -42,7 +42,7 @@ class Q_EXPORT AVOutput
     DPTR_DECLARE_PRIVATE(AVOutput)
 public:
     AVOutput();
-    virtual ~AVOutput() = 0;
+    virtual ~AVOutput();
     /* store the data ref, then call convertData() and write(). tryPause() will be called*/
     bool writeData(const QByteArray& data);
     bool isAvailable() const;

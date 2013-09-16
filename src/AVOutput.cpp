@@ -46,10 +46,11 @@ AVOutput::AVOutput(AVOutputPrivate &d)
 {
 }
 
-//TODO: why need this?
 AVOutput::~AVOutput()
 {
+    DPTR_D(AVOutput);
     pause(false); //Does not work. cond may still waiting when destroyed
+    detach();
 }
 
 bool AVOutput::writeData(const QByteArray &data)
@@ -117,7 +118,6 @@ void AVOutput::removeOutputSet(OutputSet *set)
 void AVOutput::attach(OutputSet *set)
 {
     set->addOutput(this);
-    //d_func().output_sets.append(set);
 }
 
 void AVOutput::detach(OutputSet *set)

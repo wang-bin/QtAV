@@ -171,6 +171,16 @@ VideoRenderer *AVPlayer::renderer()
 #endif //V1_2
 }
 
+QList<VideoRenderer*> AVPlayer::videoOutputs()
+{
+    QList<VideoRenderer*> vos;
+    vos.reserve(mpVOSet->outputs().size());
+    foreach (AVOutput *out, mpVOSet->outputs()) {
+        vos.append(static_cast<VideoRenderer*>(out));
+    }
+    return vos;
+}
+
 void AVPlayer::setAudioOutput(AudioOutput* ao)
 {
     qDebug(">>>>>>>>>>%s", __FUNCTION__);

@@ -72,6 +72,7 @@ public:
     void clearVideoRenderers();
     void setRenderer(VideoRenderer* renderer);
     VideoRenderer* renderer();
+    QList<VideoRenderer*> videoOutputs();
     void setAudioOutput(AudioOutput* ao);
 
     /*!
