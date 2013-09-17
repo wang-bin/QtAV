@@ -138,6 +138,7 @@ SOURCES += \
     VideoCapture.cpp \
     VideoRenderer.cpp \
     VideoRendererTypes.cpp \
+    VideoOutputEventFilter.cpp \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     OutputSet.cpp \
@@ -187,6 +188,7 @@ HEADERS *= \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
     QtAV/VideoThread.h \
+    QtAV/VideoOutputEventFilter.h \
     QtAV/OutputSet.h \
     QtAV/QtAV_Compat.h \
     QtAV/EventFilter.h \

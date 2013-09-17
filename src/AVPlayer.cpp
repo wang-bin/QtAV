@@ -43,6 +43,7 @@
 #include <QtAV/VideoThread.h>
 #include <QtAV/AVDemuxThread.h>
 #include <QtAV/EventFilter.h>
+#include <QtAV/VideoOutputEventFilter.h>
 #include <QtAV/VideoCapture.h>
 #include <QtAV/AudioOutput.h>
 #if QTAV_HAVE(OPENAL)
@@ -112,6 +113,12 @@ AVClock* AVPlayer::masterClock()
 
 void AVPlayer::addVideoRenderer(VideoRenderer *renderer)
 {
+    QObject *voo = renderer->widget();
+    if (voo) {
+        //TODO: how to delete filter if no parent?
+        if (renderer->widget())
+            voo->installEventFilter(new VideoOutputEventFilter(renderer));
+    }
     mpVOSet->addOutput(renderer);
 }
 
@@ -167,6 +174,9 @@ VideoRenderer *AVPlayer::renderer()
 #if V1_2
     return _renderer;
 #else
+    //QList assert empty in debug mode
+    if (mpVOSet->outputs().isEmpty())
+	return 0;
     return static_cast<VideoRenderer*>(mpVOSet->outputs().last());
 #endif //V1_2
 }
