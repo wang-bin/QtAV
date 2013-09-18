@@ -25,7 +25,7 @@
 
 #include <QtAV/private/VideoRenderer_p.h>
 #include <QtQuick/QSGTexture>
-
+#include <QtQuick/QSGSimpleTextureNode>
 
 namespace QtAV
 {
@@ -33,13 +33,30 @@ namespace QtAV
 class QQuickItemRendererPrivate : public VideoRendererPrivate
 {
 public:
-    QQuickItemRendererPrivate() : texture(NULL),
-        image(NULL)
+    QQuickItemRendererPrivate():
+        texture(0)
+      , node(0)
     {
     }
+    virtual ~QQuickItemRendererPrivate() {
+        if (texture) {
+            delete texture;
+            texture = 0;
+        }
+    }
+    virtual void setupQuality() {
+        if (!node)
+            return;
+        if (quality == VideoRenderer::QualityFastest) {
+            ((QSGSimpleTextureNode*)node)->setFiltering(QSGTexture::Nearest);
+        } else {
+            ((QSGSimpleTextureNode*)node)->setFiltering(QSGTexture::Linear);
+        }
+    }
 
-    QImage* image;
     QSGTexture* texture;
+    QSGNode *node;
+    QImage image;
 };
 
 } //namespace QtAV
