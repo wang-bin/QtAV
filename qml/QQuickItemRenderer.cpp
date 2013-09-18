@@ -22,8 +22,6 @@
 
 #include <QmlAV/QQuickItemRenderer.h>
 #include <QmlAV/private/QQuickItemRenderer_p.h>
-#include <QImage>
-#include <QtQuick/QSGSimpleTextureNode>
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QSGFlatColorMaterial>
 #include <QtAV/FactoryDefine.h>
@@ -32,7 +30,7 @@
 
 namespace QtAV
 {
-VideoRendererId VideoRendererId_QQuickItem = 7;
+VideoRendererId VideoRendererId_QQuickItem = 65; //leave some for QtAV
 
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, QQuickItem, "QQuickItem")
 
@@ -49,62 +47,53 @@ VideoRendererId QQuickItemRenderer::id() const
     return VideoRendererId_QQuickItem;
 }
 
-void QQuickItemRenderer::drawFrame()
-{
-
-}
-
-QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePaintNodeData *data)
-{
-    Q_UNUSED(data);
-    DPTR_D(QQuickItemRenderer);
-
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker)
-
-    if (!node) {
-        node = new QSGSimpleTextureNode();
-    }
-    if (d.quality == VideoRenderer::QualityFastest) {
-        static_cast<QSGSimpleTextureNode*>(node)->setFiltering(QSGTexture::Nearest);
-    } else {
-        static_cast<QSGSimpleTextureNode*>(node)->setFiltering(QSGTexture::Linear);
-    }
-    static_cast<QSGSimpleTextureNode*>(node)->setRect(boundingRect());
-
-    if (d.image) {
-        QSGTexture* cur_texture = this->window()->createTextureFromImage(*d.image);
-        static_cast<QSGSimpleTextureNode*>(node)->setTexture(cur_texture);
-
-        if (d.texture)
-            delete d.texture;
-
-        d.texture = cur_texture;
-
-    } else {
-        QSGTexture* texture = this->window()->createTextureFromImage(QImage(200,200, QImage::Format_ARGB32));
-        static_cast<QSGSimpleTextureNode*>(node)->setTexture(texture);
-        if (d.texture)
-            delete d.texture;
-        d.texture = texture;
-    }
-
-    node->markDirty(QSGNode::DirtyGeometry);
-
-    return node;
-
-}
-
 void QQuickItemRenderer::convertData(const QByteArray &data)
 {
     DPTR_D(QQuickItemRenderer);
     QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker)
-
+    Q_UNUSED(locker);
     d.data = data;
-    if (d.image)
-        delete d.image;
-    d.image = new QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
+    d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
+}
+
+bool QQuickItemRenderer::needUpdateBackground() const
+{
+    DPTR_D(const QQuickItemRenderer);
+    return d.out_rect != boundingRect().toRect();
+}
+
+bool QQuickItemRenderer::needDrawFrame() const
+{
+    return true; //always call updatePaintNode, node must be set
+}
+
+void QQuickItemRenderer::drawFrame()
+{
+    DPTR_D(QQuickItemRenderer);
+    if (!d.node)
+        return;
+    static_cast<QSGSimpleTextureNode*>(d.node)->setRect(boundingRect());
+    if (d.image.isNull()) { //TODO: move to QPainterRenderer.convertData?
+        d.image = QImage(rendererSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black);
+    }
+    if (d.texture)
+        delete d.texture;
+    d.texture = this->window()->createTextureFromImage(d.image);
+    static_cast<QSGSimpleTextureNode*>(d.node)->setTexture(d.texture);
+    d.node->markDirty(QSGNode::DirtyGeometry);
+}
+
+QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePaintNodeData *data)
+{
+    DPTR_D(QQuickItemRenderer);
+    if (!node) {
+        node = new QSGSimpleTextureNode();
+    }
+    d.node = node;
+    handlePaintEvent();
+    d.node = 0;
+    return node;
 }
 
 bool QQuickItemRenderer::write()
@@ -112,6 +101,5 @@ bool QQuickItemRenderer::write()
     QMetaObject::invokeMethod(this, "update");
     return true;
 }
-
 
 } // namespace QtAV
