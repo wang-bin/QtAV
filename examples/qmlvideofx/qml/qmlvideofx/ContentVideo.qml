@@ -42,18 +42,16 @@
 import QtQuick 2.0
 import QtAV 1.3
 
-VideoOut {
-    id: vo
-    //source: mediaPlayer
+VideoOutput {
+    source: mediaPlayer
     property alias mediaSource: mediaPlayer.source
     property alias volume: mediaPlayer.volume
 
-    AVPlayer {
+    MediaPlayer {
         id: mediaPlayer
         //autoPlay: true
         volume: 0.5
         //loops: Audio.Infinite
-        videoOut: vo
     }
 
     function play() { mediaPlayer.play() }

@@ -67,17 +67,17 @@ void QmlAVPlayer::setVolume(qreal volume)
     }
 }
 
-bool QmlAVPlayer::mute() const
+bool QmlAVPlayer::isMuted() const
 {
     return mpPlayer->isMute();
 }
 
-void QmlAVPlayer::setMute(bool m)
+void QmlAVPlayer::setMuted(bool m)
 {
     if (mpPlayer->isMute() == m)
         return;
     mpPlayer->setMute(m);
-    emit muteChanged();
+    emit mutedChanged();
 }
 
 int QmlAVPlayer::duration() const
