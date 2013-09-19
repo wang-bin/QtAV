@@ -40,7 +40,6 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject
     Q_PROPERTY(PlaybackState playbackState READ playbackState NOTIFY playbackStateChanged)
     Q_PROPERTY(qreal speed READ speed WRITE setSpeed NOTIFY speedChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
-    Q_PROPERTY(QObject* videoOut READ videoOut WRITE setVideoOut NOTIFY videoOutChanged)
     Q_ENUMS(PlaybackState)
 public:
     enum PlaybackState {
@@ -65,6 +64,7 @@ public:
     qreal speed() const;
     void setSpeed(qreal s);
     Q_INVOKABLE void play(const QUrl& url);
+    AVPlayer *player();
 
 public Q_SLOTS:
     void play();
@@ -98,7 +98,6 @@ private:
     Q_DISABLE_COPY(QmlAVPlayer)
     PlaybackState mPlaybackState;
     QtAV::AVPlayer *mpPlayer;
-    QQuickItemRenderer *mpVideoOut;
     QUrl mSource;
 };
 

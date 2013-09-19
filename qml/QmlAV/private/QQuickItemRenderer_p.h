@@ -36,6 +36,7 @@ public:
     QQuickItemRendererPrivate():
         texture(0)
       , node(0)
+      , source(0)
     {
     }
     virtual ~QQuickItemRendererPrivate() {
@@ -56,6 +57,7 @@ public:
 
     QSGTexture* texture;
     QSGNode *node;
+    QObject *source;
     QImage image;
 };
 

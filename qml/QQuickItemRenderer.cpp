@@ -25,6 +25,8 @@
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QSGFlatColorMaterial>
 #include <QtAV/FactoryDefine.h>
+#include <QtAV/AVPlayer.h>
+#include <QmlAV/QmlAVPlayer.h>
 #include <QtAV/VideoRendererTypes.h> //it declares a factory we need
 #include "prepost.h"
 
@@ -45,6 +47,19 @@ QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent) :
 VideoRendererId QQuickItemRenderer::id() const
 {
     return VideoRendererId_QQuickItem;
+}
+
+QObject* QQuickItemRenderer::source() const
+{
+    return d_func().source;
+}
+
+void QQuickItemRenderer::setSource(QObject *source)
+{
+    DPTR_D(QQuickItemRenderer);
+    d.source = source;
+    ((QmlAVPlayer*)source)->player()->addVideoRenderer(this);
+    emit sourceChanged();
 }
 
 void QQuickItemRenderer::convertData(const QByteArray &data)
