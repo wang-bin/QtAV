@@ -454,16 +454,21 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     //release old renderer and add new
     if (r) {
         mpPlayerLayout->removeWidget(r);
+        if (r->testAttribute(Qt::WA_DeleteOnClose)) {
+            r->close();
+        } else {
+            r->close();
+            delete r;
+        }
         r = 0;
     }
+    mpRenderer = renderer;
     //setInSize?
     mpPlayerLayout->addWidget(renderer->widget());
     resize(renderer->widget()->size());
 
     renderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
     mpPlayer->setRenderer(renderer);
-    delete mpRenderer;
-    mpRenderer = renderer;
 #if SLIDER_ON_VO
     if (mpTimeSlider) {
         mpTimeSlider->setParent(mpRenderer->widget());

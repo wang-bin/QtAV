@@ -116,6 +116,7 @@ void AVPlayer::addVideoRenderer(VideoRenderer *renderer)
     QObject *voo = renderer->widget();
     if (voo) {
         //TODO: how to delete filter if no parent?
+        //the filtering object must be in the same thread as this object.
         if (renderer->widget())
             voo->installEventFilter(new VideoOutputEventFilter(renderer));
     }

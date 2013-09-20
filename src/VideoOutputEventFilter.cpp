@@ -51,7 +51,7 @@ bool VideoOutputEventFilter::eventFilter(QObject *watched, QEvent *event)
      * hide event is sent when close. what about QEvent::Close?
      */
     if (event->type() == QEvent::Close || event->type() == QEvent::Hide) {
-	mRendererIsQObj = false;
+        mRendererIsQObj = false;
         return true;
     }
     if (!mpRenderer)
@@ -61,10 +61,6 @@ bool VideoOutputEventFilter::eventFilter(QObject *watched, QEvent *event)
             )
         return false;
     switch (event->type()) {
-    case QEvent::Close: {
-        //mpRenderer->detach();
-    }
-        break;
     case QEvent::KeyPress: {
         QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
         int key = key_event->key();
