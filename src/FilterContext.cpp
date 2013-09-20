@@ -68,7 +68,8 @@ VideoFilterContext::~VideoFilterContext()
 {
     if (paint_device) {
         if (painter) { //painter may assigned by vo
-            painter->end();
+            if (painter->isActive())
+                painter->end();
             qDebug("delete painter");
             delete painter;
             painter = 0;
