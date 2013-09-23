@@ -71,14 +71,19 @@ public:
     // map to Qt types
     //drawSurface?
     virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
-    virtual void drawPlainText(const QRectF& rect, const QString& text);
+    virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
     virtual void drawRichText(const QRectF& rect, const QString& text);
 
-    QRect rect;
+    /*
+     * TODO: x, y, width, height: |?|>=1 is in pixel unit, otherwise is ratio of video context rect
+     * filter.x(a).y(b).width(c).height(d)
+     */
+    QRectF rect;
     // Fallback to QPainter if no other paint engine implemented
     QPainter *painter;
     qreal opacity;
     QTransform transform;
+    QPainterPath clip_path;
     QFont font;
     QPen pen;
     QBrush brush;
@@ -100,7 +105,7 @@ public:
     virtual Type type() const; //QtPainter
     virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
-    virtual void drawRichText(const QRectF& rect, int flags, const QString& text);
+    virtual void drawRichText(const QRectF& rect, const QString& text);
 
 protected:
     virtual bool isReady() const;
