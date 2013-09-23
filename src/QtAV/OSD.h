@@ -46,13 +46,10 @@ public:
     ShowType showType() const;
     void useNextShowType();
     bool hasShowType(ShowType t) const;
-    void setFont(const QFont& font);
-    QFont font() const;
     QString text(Statistics* statistics);
 protected:
     ShowType mShowType;
     int mSecsTotal;
-    QFont mFont;
 };
 
 }//namespace QtAV

@@ -38,19 +38,11 @@ OSDFilter::OSDFilter(OSDFilterPrivate &d):
 {
 }
 
-template<>
-OSDFilterImpl<QPainterFilterContext>::OSDFilterImpl():
+OSDFilterQPainter::OSDFilterQPainter():
     OSDFilter(*new OSDFilterPrivate())
 {
 }
 
-template<>
-OSDFilterImpl<GLFilterContext>::OSDFilterImpl():
-    OSDFilter(*new OSDFilterPrivate())
-{
-}
-
-template<>
 void OSDFilterQPainter::process()
 {
     if (mShowType == ShowNone)
@@ -58,31 +50,14 @@ void OSDFilterQPainter::process()
     DPTR_D(Filter);
     QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(d.context);
     //qDebug("ctx=%p tid=%p main tid=%p", ctx, QThread::currentThread(), qApp->thread());
-    if (!ctx->painter) {
-        qWarning("null QPainter in OSDFilterQPainter!");
-        return;
-    }
-    if (!ctx->painter->isActive()) {
-        qWarning("QPainter in OSDFilterQPainter is not active");
-        return;
-    }
-    QPainter *p = ctx->painter;
-    p->save(); //TODO: move outside?
-    p->setFont(mFont);
-    p->setPen(Qt::white);
-    p->setOpacity(d.opacity);
-    p->drawText(ctx->rect.topLeft(), text(d.statistics));
-    p->restore(); //TODO: move outside?
+    ctx->drawPlainText(ctx->rect, Qt::AlignCenter, text(d.statistics));
 }
-/*
-template<>
-FilterContext::Type OSDFilterQPainter::contextType() const
-{
-    return FilterContext::QtPainter;
-}
-*/
 
-template<>
+OSDFilterGL::OSDFilterGL():
+    OSDFilter(*new OSDFilterPrivate())
+{
+}
+
 void OSDFilterGL::process()
 {
     if (mShowType == ShowNone)
@@ -94,7 +69,7 @@ void OSDFilterGL::process()
     QGLWidget *glw = static_cast<QGLWidget*>(ctx->paint_device);
     if (!glw)
         return;
-    glw->renderText(ctx->rect.x(), ctx->rect.y(), text(d.statistics), font());
+    glw->renderText(ctx->rect.x(), ctx->rect.y(), text(d.statistics), ctx->font);
 #endif //QTAV_HAVE(GL)
 }
 } //namespace QtAV

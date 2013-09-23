@@ -76,17 +76,6 @@ bool Filter::isEnabled() const
     return d.enabled;
 }
 
-void Filter::setOpacity(qreal o)
-{
-    DPTR_D(Filter);
-    d.opacity = o;
-}
-
-qreal Filter::opacity() const
-{
-    return d_func().opacity;
-}
-
 FilterContext::Type Filter::contextType() const
 {
     return FilterContext::None;

@@ -36,22 +36,27 @@ protected:
     OSDFilter(OSDFilterPrivate& d);
 };
 
-template<class Context>
-class OSDFilterImpl : public OSDFilter
+class OSDFilterQPainter : public OSDFilter
 {
-    //DPTR_DECLARE_PRIVATE(OSDFilterImpl<Context>)
 public:
-    OSDFilterImpl();
-    ~OSDFilterImpl() {}
+    OSDFilterQPainter();
     FilterContext::Type contextType() const {
-        return (FilterContext::Type)TypeTrait<Context>::type;
+        return FilterContext::QtPainter;
     }
 protected:
-    virtual void process();
+    void process();
 };
 
-typedef OSDFilterImpl<QPainterFilterContext> OSDFilterQPainter;
-typedef OSDFilterImpl<GLFilterContext> OSDFilterGL;
+class OSDFilterGL : public OSDFilter
+{
+public:
+    OSDFilterGL();
+    FilterContext::Type contextType() const {
+        return FilterContext::OpenGL;
+    }
+protected:
+    void process();
+};
 
 } //namespace QtAV
 

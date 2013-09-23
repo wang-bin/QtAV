@@ -46,10 +46,7 @@ public:
     void setEnabled(bool enabled); //AVComponent.enabled
     bool isEnabled() const;
 
-    qreal opacity() const;
-    void setOpacity(qreal o);
-
-    virtual FilterContext::Type contextType() const;
+    virtual FilterContext::Type contextType() const = 0;
 
     /*!
      * check context and apply the filter

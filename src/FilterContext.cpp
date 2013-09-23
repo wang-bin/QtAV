@@ -61,7 +61,11 @@ VideoFilterContext::VideoFilterContext()
     , painter(0)
     , paint_device(0)
     , own_paint_device(false)
+    , opacity(1)
 {
+    font.setBold(true);
+    font.setPixelSize(26);
+    pen.setColor(Qt::white);
 }
 
 VideoFilterContext::~VideoFilterContext()
@@ -81,9 +85,76 @@ VideoFilterContext::~VideoFilterContext()
     }
 }
 
+void VideoFilterContext::drawImage(const QRectF &target, const QImage &image, const QRectF &source, Qt::ImageConversionFlags flags)
+{
+    Q_UNUSED(target);
+    Q_UNUSED(image);
+    Q_UNUSED(source);
+    Q_UNUSED(flags);
+}
+
+void VideoFilterContext::drawPlainText(const QRectF &rect, const QString &text)
+{
+    Q_UNUSED(rect);
+    Q_UNUSED(text);
+}
+
+void VideoFilterContext::drawRichText(const QRectF &rect, const QString &text)
+{
+    Q_UNUSED(rect);
+    Q_UNUSED(text);
+}
+
+
+
 FilterContext::Type QPainterFilterContext::type() const
 {
     return FilterContext::QtPainter;
+}
+
+void QPainterFilterContext::drawImage(const QRectF &target, const QImage &image, const QRectF &source, Qt::ImageConversionFlags flags)
+{
+    if (!prepare())
+        return;
+    painter->drawImage(target, image, source, flags);
+    painter->restore();
+}
+
+void QPainterFilterContext::drawPlainText(const QRectF &rect, int flags, const QString &text)
+{
+    if (!prepare())
+        return;
+    if (rect.isNull())
+        painter->drawText(rect.topLeft(), text);
+    else
+        painter->drawText(rect, flags, text);
+    painter->restore();
+}
+
+void QPainterFilterContext::drawRichText(const QRectF &rect, int flags, const QString &text)
+{
+    if (!prepare())
+        return;
+    //QTextDocument
+    painter->restore();
+}
+
+bool QPainterFilterContext::isReady() const
+{
+    return !!painter && painter->isActive();
+}
+
+bool QPainterFilterContext::prepare()
+{
+    if (!isReady())
+        return false;
+    painter->save(); //is it necessary?
+    painter->setBrush(brush);
+    painter->setPen(pen);
+    painter->setFont(font);
+    painter->setOpacity(opacity);
+    painter->setTransform(transform);
+    return true;
 }
 
 void QPainterFilterContext::initializeOnData(QByteArray *data)
@@ -118,6 +189,18 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
 FilterContext::Type GLFilterContext::type() const
 {
     return FilterContext::OpenGL;
+}
+
+bool GLFilterContext::isReady() const
+{
+    return false;
+}
+
+bool GLFilterContext::prepare()
+{
+    if (!isReady())
+        return false;
+    return true;
 }
 
 } //namespace QtAV

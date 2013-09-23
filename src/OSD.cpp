@@ -28,8 +28,6 @@ OSD::OSD():
     mShowType(ShowCurrentAndTotalTime)
   , mSecsTotal(-1)
 {
-    mFont.setBold(true);
-    mFont.setPixelSize(26);
 }
 
 OSD::~OSD()
@@ -62,16 +60,6 @@ void OSD::useNextShowType()
 bool OSD::hasShowType(ShowType t) const
 {
     return (t&mShowType) == t;
-}
-
-void OSD::setFont(const QFont &font)
-{
-    mFont = font;
-}
-
-QFont OSD::font() const
-{
-    return mFont;
 }
 
 QString OSD::text(Statistics *statistics)

@@ -25,6 +25,7 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QByteArray>
 #include <QtCore/QRect>
+#include <QtGui/QPainter>
 /*
  * QPainterFilterContext, D2DFilterContext, ...
  */
@@ -59,21 +60,37 @@ protected:
     friend class Filter;
 };
 
+
+//TODO: DrawTarget? New backend for QPaintEngine?
 class Q_EXPORT VideoFilterContext : public FilterContext
 {
 public:
     VideoFilterContext();
     virtual ~VideoFilterContext();
-    QRect rect;
 
+    // map to Qt types
+    //drawSurface?
+    virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    virtual void drawPlainText(const QRectF& rect, const QString& text);
+    virtual void drawRichText(const QRectF& rect, const QString& text);
+
+    QRect rect;
     // Fallback to QPainter if no other paint engine implemented
     QPainter *painter;
+    qreal opacity;
+    QTransform transform;
+    QFont font;
+    QPen pen;
+    QBrush brush;
     /*
      * for the filters apply on decoded data, paint_device must be initialized once the data changes
      * can we allocate memory on stack?
      */
     QPaintDevice *paint_device;
     bool own_paint_device;
+protected:
+    virtual bool isReady() const = 0;
+    virtual bool prepare() = 0;
 };
 
 //TODO: font, pen, brush etc?
@@ -81,7 +98,13 @@ class Q_EXPORT QPainterFilterContext : public VideoFilterContext
 {
 public:
     virtual Type type() const; //QtPainter
+    virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
+    virtual void drawRichText(const QRectF& rect, int flags, const QString& text);
+
 protected:
+    virtual bool isReady() const;
+    virtual bool prepare();
     virtual void initializeOnData(QByteArray* data);
 };
 
@@ -89,19 +112,11 @@ class Q_EXPORT GLFilterContext : public VideoFilterContext
 {
 public:
     virtual Type type() const; //OpenGL
+protected:
+    virtual bool isReady() const;
+    virtual bool prepare();
 };
 
-template<class T> struct TypeTrait {};
-template<> struct TypeTrait<QPainterFilterContext> {
-    enum {
-        type = FilterContext::QtPainter
-    };
-};
-template<> struct TypeTrait<GLFilterContext> {
-    enum {
-        type = FilterContext::OpenGL
-    };
-};
 
 } //namespace QtAV
 
