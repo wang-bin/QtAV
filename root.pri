@@ -65,9 +65,9 @@ defineTest(testArch) {
   ARCH=
   ARCH_SUB=
   for(v, V) {
-    v=$$replace(v, "", )  # "ARCH=x86". can not evalate with ". why \" may fail? eval("expr")
-    greaterThan(QT_MAJOR_VERSION, 4):eval("$$v")
-    else:eval("\"$$v\"")
+# "ARCH=x86". can not evalate with ". why \" may fail? eval("expr")
+    v=$$replace(v, \", )
+    eval("$$v")
   }
   export(ARCH)
   export(ARCH_SUB)
