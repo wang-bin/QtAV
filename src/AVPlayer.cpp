@@ -52,6 +52,7 @@
 #if QTAV_HAVE(PORTAUDIO)
 #include <QtAV/AOPortAudio.h>
 #endif //QTAV_HAVE(PORTAUDIO)
+#include <QtAV/FilterManager.h>
 
 namespace QtAV {
 
@@ -311,6 +312,32 @@ const Statistics& AVPlayer::statistics() const
 {
     return mStatistics;
 }
+
+bool AVPlayer::installFilter(Filter *filter, int thread)
+{
+    if (!FilterManager::instance().registerFilter(filter, this)) {
+        return false;
+    }
+    //TODO: check thread and AVThread.installFilter
+
+    return true;
+}
+
+bool AVPlayer::uninstallFilter(Filter *filter)
+{
+    if (!FilterManager::instance().unregisterFilter(filter)) {
+        qWarning("unregister filter %p failed", filter);
+        return false;
+    }
+    /*
+     * TODO: send FilterUninstallTask(this, filter){this.mFilters.remove} to
+     * active player's AVThread
+     *
+     */
+
+    return true;
+}
+
 
 /*
  * loaded state is the state of current setted file.

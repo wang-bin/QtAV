@@ -38,6 +38,7 @@ class VideoDecoder;
 class VideoRenderer;
 class AVClock;
 class AVDemuxThread;
+class Filter;
 class VideoCapture;
 class OutputSet;
 class Q_EXPORT AVPlayer : public QObject
@@ -92,10 +93,13 @@ public:
     void setSpeed(qreal speed);
     qreal speed() const;
     /*only 1 event filter is available. the previous one will be removed. setPlayerEventFilter(0) will remove the event filter*/
-    void setPlayerEventFilter(QObject *obj);
+    Q_DECL_DEPRECATED void setPlayerEventFilter(QObject *obj);
 
     Statistics& statistics();
     const Statistics& statistics() const;
+
+    bool installFilter(Filter *filter, int thread);
+    bool uninstallFilter(Filter *filter);
 signals:
     void paused(bool p);
     void started();

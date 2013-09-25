@@ -22,8 +22,19 @@
 #include "QtAV/Filter.h"
 #include "private/Filter_p.h"
 #include "QtAV/Statistics.h"
+#include "QtAV/FilterManager.h"
 
 namespace QtAV {
+
+void safeReleaseFilter(Filter **ppFilter)
+{
+    if (!ppFilter || !*ppFilter) {
+        qWarning("filter to release is null!");
+        return;
+    }
+    FilterManager::instance().releaseFilter(*ppFilter);
+    *ppFilter = 0;
+}
 
 Filter::Filter(FilterPrivate &d)
     :DPTR_INIT(&d)
@@ -35,9 +46,13 @@ Filter::~Filter()
 {
 }
 
+//copy qpainter if context nut null
 void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray* data)
 {
     DPTR_D(Filter);
+    if (context) {
+        //context-
+    }
     if (!context || context->type() != contextType()) {
         if (context) {
             qDebug("incompatible context type");

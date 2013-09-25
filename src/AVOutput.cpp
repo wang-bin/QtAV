@@ -23,6 +23,7 @@
 #include <private/AVOutput_p.h>
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
+#include <QtAV/FilterManager.h>
 #include <QtAV/OutputSet.h>
 
 namespace QtAV {
@@ -153,6 +154,31 @@ void AVOutput::setStatistics(Statistics *statistics)
 {
     DPTR_D(AVOutput);
     d.statistics = statistics;
+}
+
+bool AVOutput::installFilter(Filter *filter)
+{
+    if (!FilterManager::instance().registerFilter(filter, this)) {
+        return false;
+    }
+    DPTR_D(AVOutput);
+    d.filters.push_back(filter);
+    return true;
+}
+
+bool AVOutput::uninstallFilter(Filter *filter)
+{
+    if (!FilterManager::instance().unregisterFilter(filter)) {
+        qWarning("unregister filter %p failed", filter);
+        return false;
+    }
+    /*
+     * TODO: send FilterUninstallTask(this, filter){this.filters.remove} to
+     * active player's AVThread
+     *
+     */
+
+    return true;
 }
 
 } //namespace QtAV

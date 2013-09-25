@@ -104,6 +104,7 @@ void VideoThread::run()
     QSize dec_size_last;
     while (!d.stop) {
         //TODO: why put it at the end of loop then playNextFrame() not work?
+        //processNextTask tryPause(timeout) and  and continue outter loop
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
             if (d.stop)
                 break; //the queue is empty and may block. should setBlocking(false) wake up cond empty?
@@ -206,6 +207,7 @@ void VideoThread::run()
                 vo->writeData(data);
             }
 #else
+            //while can pause, processNextTask, not call outset.puase which is deperecated
             if (d.outputSet->canPauseThread())
                 d.outputSet->pauseThread();
 

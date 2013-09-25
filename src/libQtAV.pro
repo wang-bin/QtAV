@@ -126,11 +126,13 @@ SOURCES += \
     EventFilter.cpp \
     Filter.cpp \
     FilterContext.cpp \
+    FilterManager.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     ImageConverterIPP.cpp \
     QPainterRenderer.cpp \
+    RollingTextFilter.cpp \
     OSD.cpp \
     OSDFilter.cpp \
     Packet.cpp \
@@ -165,6 +167,7 @@ SDK_HEADERS *= \
     QtAV/ImageConverter.h \
     QtAV/ImageConverterTypes.h \
     QtAV/QPainterRenderer.h \
+    QtAV/RollingTextFilter.h \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
     QtAV/Packet.h \
@@ -194,12 +197,14 @@ HEADERS *= \
     QtAV/EventFilter.h \
     QtAV/singleton.h \
     QtAV/factory.h \
+    QtAV/FilterManager.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AudioResampler_p.h \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
+    QtAV/private/RollingTextFilter_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/VideoRenderer_p.h \

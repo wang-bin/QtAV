@@ -70,6 +70,8 @@ public:
     //No filters() api, they are used internally?
     //for add/remove/clear on list. avo.add/remove/clear?
     QList<Filter*>& filters();
+    bool installFilter(Filter *filter);
+    bool uninstallFilter(Filter *filter);
 protected:
     AVOutput(AVOutputPrivate& d);
     /*

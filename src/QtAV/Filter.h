@@ -29,13 +29,33 @@
  *
  *TODO: force apply. e.g. an animation filter on vo, update vo and apply filter even not video is
  * playing.
+ *
+ * example:
+ *    using namespace QtAV;
+ *    Filter *f = new XXFilter();
+ *    f.installTo(player);
+ *    ...
+ *    //f.uninstall() //opional. call it on you need
+ *    safeReleaseFilter(&f);
+ *    ...
  */
 
 class QByteArray;
 namespace QtAV {
 
+class Filter;
+/*
+ * convenient function to release a filter
+ * DO NOT delete a filter call safeReleaseFilter(&filter) instead
+ * It will uninstall internally and filter to null
+ */
+Q_EXPORT void safeReleaseFilter(Filter** ppFilter);
+
+class AVOutput;
+class AVPlayer;
 class FilterPrivate;
 class Statistics;
+// TODO: QObject?
 class Q_EXPORT Filter
 {
     DPTR_DECLARE_PRIVATE(Filter)
@@ -48,6 +68,20 @@ public:
 
     virtual FilterContext::Type contextType() const = 0;
 
+    /*
+     * filter.installTo(target,...) calls target.installFilter(filter)
+     * If filter is already registered in FilterManager, then return false
+     * Otherwise, call FilterManager.register(filter) and target.filters.push_back(filter), return true
+     */
+    // filter on output. e.g. subtitle
+    bool installTo(AVOutput *output);
+    // filter on AVThread. thread: 0==video thread, otherwise audio thread
+    bool installTo(AVPlayer *player, int thread);
+
+    /*
+     *
+     */
+    bool uninstall();
     /*!
      * check context and apply the filter
      * if context is null, or contextType() != context->type(), then create a right one and assign it to context.
