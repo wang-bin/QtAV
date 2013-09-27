@@ -115,11 +115,11 @@ bool OutputSet::canPauseThread() const
     return mCanPauseThread;
 }
 
-void OutputSet::pauseThread()
+bool OutputSet::pauseThread(int timeout)
 {
     QMutexLocker lock(&mMutex);
     Q_UNUSED(lock);
-    mCond.wait(&mMutex);
+    return mCond.wait(&mMutex, timeout);
 }
 
 void OutputSet::resumeThread()
