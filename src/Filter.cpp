@@ -23,6 +23,8 @@
 #include "private/Filter_p.h"
 #include "QtAV/Statistics.h"
 #include "QtAV/FilterManager.h"
+#include "QtAV/AVOutput.h"
+#include "QtAV/AVPlayer.h"
 
 namespace QtAV {
 
@@ -94,6 +96,23 @@ bool Filter::isEnabled() const
 FilterContext::Type Filter::contextType() const
 {
     return FilterContext::None;
+}
+
+/*TODO: move to AVOutput.cpp to reduce dependency?*/
+bool Filter::installTo(AVOutput *output)
+{
+    return output->installFilter(this);
+}
+
+/*TODO: move to AVPlayer.cpp to reduce dependency?*/
+bool Filter::installTo(AVPlayer *player, int thread)
+{
+    return player->installFilter(this, thread);
+}
+
+bool Filter::uninstall()
+{
+    return FilterManager::instance().uninstallFilter(this);
 }
 
 } //namespace QtAV

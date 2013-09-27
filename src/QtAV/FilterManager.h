@@ -43,6 +43,7 @@ public:
     bool unregisterFilter(Filter *filter);
     // async. release filter until filter is removed from it's target.filters
     bool releaseFilter(Filter *filter);
+    bool uninstallFilter(Filter *filter);
 signals:
     // invoked in UninstallFilterTask in AVThread.
     void uninstallInTargetDone(Filter *filter);
@@ -53,7 +54,6 @@ private slots:
 
 private:
     //convenient function to uninstall the filter. used by releaseFilter
-    bool uninstallFilter(Filter *filter);
     bool releaseFilterNow(Filter *filter);
     FilterManager();
     ~FilterManager();

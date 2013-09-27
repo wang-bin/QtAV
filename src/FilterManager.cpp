@@ -130,7 +130,7 @@ bool FilterManager::uninstallFilter(Filter *filter)
          * because the filter will never used in old target
          */
 
-        d.filter_out_map.erase(it);
+        d.filter_out_map.erase(it); //use unregister()?
         out->uninstallFilter(filter); //post an uninstall task to active player's AVThread
         return true;
     }
@@ -142,7 +142,7 @@ bool FilterManager::uninstallFilter(Filter *filter)
          * because the filter will never used in old target
          */
 
-        d.filter_player_map.erase(it2);
+        d.filter_player_map.erase(it2); //use unregister()?
         player->uninstallFilter(filter); //post an uninstall task to active player's AVThread
         return true;
     }
