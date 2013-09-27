@@ -41,10 +41,8 @@ public:
     bool registerFilter(Filter *filter, AVOutput *output);
     bool registerFilter(Filter *filter, AVPlayer *player);
     bool unregisterFilter(Filter *filter);
-    // thread safe. async. release filter until filter is removed from it's target.filters
+    // async. release filter until filter is removed from it's target.filters
     bool releaseFilter(Filter *filter);
-    // not thread safe
-    bool releaseFilterNow(Filter *filter);
 signals:
     // invoked in UninstallFilterTask in AVThread.
     void uninstallInTargetDone(Filter *filter);
@@ -56,6 +54,7 @@ private slots:
 private:
     //convenient function to uninstall the filter. used by releaseFilter
     bool uninstallFilter(Filter *filter);
+    bool releaseFilterNow(Filter *filter);
     FilterManager();
     ~FilterManager();
 

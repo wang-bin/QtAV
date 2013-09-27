@@ -103,15 +103,19 @@ bool FilterManager::releaseFilter(Filter *filter)
 {
     DPTR_D(FilterManager);
     d.pending_release_filters.push_back(filter);
-    return uninstallFilter(filter);
     // will delete filter in slot onUninstallInTargetDone()(signal emitted when uninstall task done)
+    return uninstallFilter(filter) || releaseFilterNow(filter);
 }
 
+// is it thread safe? always be called in main thread if releaseFilter() and this slot in main thread
 bool FilterManager::releaseFilterNow(Filter *filter)
 {
     DPTR_D(FilterManager);
     int n = d.pending_release_filters.removeAll(filter);
-    delete filter;
+    if (n > 0) {
+        delete filter;
+        filter = 0; //filter will not changed!
+    }
     return !!n;
 }
 
