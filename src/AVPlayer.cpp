@@ -26,6 +26,7 @@
 #include <QApplication>
 #include <QEvent>
 #include <QtCore/QDir>
+//#include <QtCore/QMetaObject>
 
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/AudioFormat.h>
@@ -318,9 +319,13 @@ bool AVPlayer::installFilter(Filter *filter, int thread)
     if (!FilterManager::instance().registerFilter(filter, this)) {
         return false;
     }
-    //TODO: check thread and AVThread.installFilter
-
-    return true;
+    AVThread *avthread = video_thread;
+    if (thread == 1) { //audio thread
+        avthread = audio_thread;
+    }
+    if (!avthread)
+        return false;
+    return avthread->installFilter(filter);
 }
 
 bool AVPlayer::uninstallFilter(Filter *filter)
@@ -334,7 +339,33 @@ bool AVPlayer::uninstallFilter(Filter *filter)
      * active player's AVThread
      *
      */
+    class UninstallFilterTask : public QRunnable {
+    public:
+        UninstallFilterTask(AVThread *thread, Filter *filter):
+            QRunnable()
+          , mpThread(thread)
+          , mpFilter(filter)
+        {
+            setAutoDelete(true);
+        }
 
+        virtual void run() {
+            mpThread->uninstallFilter(mpFilter, false);
+            //QMetaObject::invokeMethod(FilterManager::instance(), "onUninstallInTargetDone", Qt::AutoConnection, Q_ARG(Filter*, filter));
+            FilterManager::instance().emitOnUninstallInTargetDone(mpFilter);
+        }
+    private:
+        AVThread *mpThread;
+        Filter *mpFilter;
+    };
+    AVThread *avthread = video_thread;
+    if (!avthread || !avthread->filters().contains(filter)) {
+        avthread = audio_thread;
+    }
+    if (!avthread || !avthread->filters().contains(filter)) {
+        return false;
+    }
+    avthread->scheduleTask(new UninstallFilterTask(avthread, filter));
     return true;
 }
 

@@ -67,24 +67,41 @@ bool AVThread::isPaused() const
     return d.paused || d.next_pause;
 }
 
-bool AVThread::installFilter(Filter *filter)
+bool AVThread::installFilter(Filter *filter, bool lock)
 {
     DPTR_D(AVThread);
-    QMutexLocker locker(&d.mutex);
-    d.filters.push_back(filter);
+    if (lock) {
+        QMutexLocker locker(&d.mutex);
+        d.filters.push_back(filter);
+    } else {
+        d.filters.push_back(filter);
+    }
     return true;
 }
 
-bool AVThread::uninstallFilter(Filter *filter)
+bool AVThread::uninstallFilter(Filter *filter, bool lock)
 {
     DPTR_D(AVThread);
-    QMutexLocker locker(&d.mutex);
-    return d.filters.removeOne(filter);
+    if (lock) {
+        QMutexLocker locker(&d.mutex);
+        return d.filters.removeOne(filter);
+    } else {
+        return d.filters.removeOne(filter);
+    }
 }
 
 const QList<Filter*>& AVThread::filters() const
 {
     return d_func().filters;
+}
+
+void AVThread::scheduleTask(QRunnable *task)
+{
+    DPTR_D(AVThread);
+    // FIXME: shall we lock?
+    QMutexLocker locker(&d.mutex);
+    Q_UNUSED(locker);
+    d.tasks.push_back(task);
 }
 
 void AVThread::stop()
@@ -221,7 +238,11 @@ bool AVThread::processNextTask()
     DPTR_D(AVThread);
     if (d.tasks.isEmpty())
         return true;
-    d.tasks.takeFirst()->run();
+    QRunnable *task = d.tasks.takeFirst();
+    task->run();
+    if (task->autoDelete()) {
+        delete task;
+    }
     return true;
 }
 

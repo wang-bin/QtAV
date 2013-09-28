@@ -44,6 +44,9 @@ public:
     // async. release filter until filter is removed from it's target.filters
     bool releaseFilter(Filter *filter);
     bool uninstallFilter(Filter *filter);
+
+    // TODO: use QMetaObject::invokeMethod
+    void emitOnUninstallInTargetDone(Filter *filter);
 signals:
     // invoked in UninstallFilterTask in AVThread.
     void uninstallInTargetDone(Filter *filter);

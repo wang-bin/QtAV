@@ -25,6 +25,7 @@
 #include <QtAV/FilterContext.h>
 #include <QtAV/FilterManager.h>
 #include <QtAV/OutputSet.h>
+//#include <QtCore/QMetaObject>
 
 namespace QtAV {
 
@@ -166,19 +167,32 @@ bool AVOutput::installFilter(Filter *filter)
     return true;
 }
 
+/*
+ * FIXME: how to ensure thread safe using mutex etc? for a video filter, both are in main thread.
+ * an audio filter on audio output may be in audio thread
+ */
 bool AVOutput::uninstallFilter(Filter *filter)
 {
     if (!FilterManager::instance().unregisterFilter(filter)) {
         qWarning("unregister filter %p failed", filter);
         return false;
     }
-    /*
-     * TODO: send FilterUninstallTask(this, filter){this.filters.remove} to
-     * active player's AVThread
-     *
-     */
-
+    DPTR_D(AVOutput);
+    d.pending_uninstall_filters.push_back(filter);
     return true;
+}
+
+void AVOutput::hanlePendingTasks()
+{
+    DPTR_D(AVOutput);
+    if (d.pending_uninstall_filters.isEmpty())
+        return;
+    foreach (Filter *filter, d.pending_uninstall_filters) {
+        d.filters.removeAll(filter);
+        //QMetaObject::invokeMethod(FilterManager::instance(), "onUninstallInTargetDone", Qt::AutoConnection, Q_ARG(Filter*, filter));
+        FilterManager::instance().emitOnUninstallInTargetDone(filter);
+    }
+    d.pending_uninstall_filters.clear();
 }
 
 } //namespace QtAV

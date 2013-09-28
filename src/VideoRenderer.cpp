@@ -338,6 +338,7 @@ void VideoRenderer::handlePaintEvent()
             drawFrame();
         }
     }
+    hanlePendingTasks();
     //TODO: move to applyFilters() //private?
     if (!d.filters.isEmpty() && d.filter_context && d.statistics) {
         foreach(Filter* filter, d.filters) {

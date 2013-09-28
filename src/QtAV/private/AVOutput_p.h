@@ -57,6 +57,7 @@ public:
     Statistics *statistics; //do not own the ptr. just use AVPlayer's statistics ptr
     FilterContext *filter_context; //create internally by the renderer with correct type
     QList<Filter*> filters;
+    QList<Filter*> pending_uninstall_filters;
     QList<OutputSet*> output_sets;
 };
 

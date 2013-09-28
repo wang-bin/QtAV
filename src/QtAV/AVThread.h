@@ -68,10 +68,11 @@ public:
 
     bool isPaused() const;
 
-    bool installFilter(Filter *filter);
-    bool uninstallFilter(Filter *filter);
+    bool installFilter(Filter *filter, bool lock = true);
+    bool uninstallFilter(Filter *filter, bool lock = true);
     const QList<Filter *> &filters() const;
 
+    // TODO: resample, resize task etc.
     void scheduleTask(QRunnable *task);
 
 public slots:

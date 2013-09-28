@@ -45,7 +45,7 @@ public:
 FilterManager::FilterManager():
     QObject(0)
 {
-    connect(this, SIGNAL(uninstallInTargetDone(Filter*)), SLOT(onUninstallInTargetDone(Filter*)));
+    connect(this, SIGNAL(uninstallInTargetDone(Filter*)), this, SLOT(onUninstallInTargetDone(Filter*)), Qt::QueuedConnection);
 }
 
 FilterManager::~FilterManager()
@@ -131,7 +131,7 @@ bool FilterManager::uninstallFilter(Filter *filter)
          */
 
         d.filter_out_map.erase(it); //use unregister()?
-        out->uninstallFilter(filter); //post an uninstall task to active player's AVThread
+        out->uninstallFilter(filter);
         return true;
     }
     QMap<Filter*,AVPlayer*>::Iterator it2 = d.filter_player_map.find(filter);
@@ -147,6 +147,11 @@ bool FilterManager::uninstallFilter(Filter *filter)
         return true;
     }
     return false;
+}
+
+void FilterManager::emitOnUninstallInTargetDone(Filter *filter)
+{
+    emit onUninstallInTargetDone(filter);
 }
 
 } //namespace QtAV
