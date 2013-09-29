@@ -35,7 +35,6 @@ class QPaintDevice;
 namespace QtAV {
 
 class FilterContext;
-class FilterPrivate;
 class Q_EXPORT FilterContext
 {
 public:
@@ -104,6 +103,7 @@ class Q_EXPORT QPainterFilterContext : public VideoFilterContext
 public:
     virtual Type type() const; //QtPainter
     virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    // if rect is null, draw single line text at rect.topLeft(), ignoring flags
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
     virtual void drawRichText(const QRectF& rect, const QString& text);
 

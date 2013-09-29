@@ -57,7 +57,8 @@ void FilterContext::initializeOnData(QByteArray *data)
 }
 
 VideoFilterContext::VideoFilterContext():
-    painter(0)
+    FilterContext()
+    , painter(0)
     , paint_device(0)
     , own_paint_device(false)
     , opacity(1)
@@ -65,7 +66,7 @@ VideoFilterContext::VideoFilterContext():
     font.setBold(true);
     font.setPixelSize(26);
     pen.setColor(Qt::white);
-    clip_path.addRect(100, 100, 128, 48);
+    rect = QRect(32, 32, 0, 0); //TODO: why painting will above the visible area if the draw at (0, 0)?
 }
 
 VideoFilterContext::~VideoFilterContext()
@@ -104,7 +105,6 @@ void VideoFilterContext::drawRichText(const QRectF &rect, const QString &text)
     Q_UNUSED(rect);
     Q_UNUSED(text);
 }
-
 
 
 FilterContext::Type QPainterFilterContext::type() const
@@ -153,8 +153,9 @@ bool QPainterFilterContext::prepare()
     painter->setPen(pen);
     painter->setFont(font);
     painter->setOpacity(opacity);
-    if (!clip_path.isEmpty())
+    if (!clip_path.isEmpty()) {
         painter->setClipPath(clip_path);
+    }
     //transform at last! because clip_path is relative to paint device coord
     painter->setTransform(transform);
 
