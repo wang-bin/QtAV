@@ -56,6 +56,11 @@ void FilterContext::initializeOnData(QByteArray *data)
     Q_UNUSED(data);
 }
 
+void FilterContext::shareFrom(FilterContext *ctx)
+{
+    Q_UNUSED(ctx);
+}
+
 VideoFilterContext::VideoFilterContext():
     FilterContext()
     , painter(0)
@@ -106,6 +111,19 @@ void VideoFilterContext::drawRichText(const QRectF &rect, const QString &text)
     Q_UNUSED(text);
 }
 
+void VideoFilterContext::shareFrom(FilterContext *ctx)
+{
+    if (!ctx) {
+        qWarning("shared filter context is null!");
+        return;
+    }
+    VideoFilterContext *vctx = static_cast<VideoFilterContext*>(ctx);
+    painter = vctx->painter;
+    paint_device = vctx->paint_device;
+    video_width = vctx->video_width;
+    video_height = vctx->video_height;
+}
+
 
 FilterContext::Type QPainterFilterContext::type() const
 {
@@ -133,6 +151,7 @@ void QPainterFilterContext::drawPlainText(const QRectF &rect, int flags, const Q
 
 void QPainterFilterContext::drawRichText(const QRectF &rect, const QString &text)
 {
+    Q_UNUSED(text);
     if (!prepare())
         return;
     //QTextDocument
@@ -165,13 +184,18 @@ bool QPainterFilterContext::prepare()
 void QPainterFilterContext::initializeOnData(QByteArray *data)
 {
     if (!data) {
-        if (!paint_device) {
-            return;
-        }
         if (!painter) {
             painter = new QPainter(); //warning: more than 1 painter on 1 device
         }
-        painter->begin(paint_device);
+        if (!paint_device) {
+            paint_device = painter->device();
+        }
+        if (!paint_device && !painter->isActive()) {
+            qWarning("No paint device and painter is not active. No painting!");
+            return;
+        }
+        if (!painter->isActive())
+            painter->begin(paint_device);
         return;
     }
     if (data->isEmpty())

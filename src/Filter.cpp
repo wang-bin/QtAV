@@ -51,10 +51,8 @@ Filter::~Filter()
 //copy qpainter if context nut null
 void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray* data)
 {
-    DPTR_D(Filter);
-    if (context) {
-        //context-
-    }
+    DPTR_D(Filter);    
+#if V1_2
     if (!context || context->type() != contextType()) {
         if (context) {
             qDebug("incompatible context type");
@@ -77,6 +75,26 @@ void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray
     //if (data)
         context->initializeOnData(data);
     d.context = context;
+#else
+    if (!d.context) {
+        d.context = FilterContext::create(contextType());
+        d.context->video_width = statistics->video_only.width;
+        d.context->video_height = statistics->video_only.height;
+    }
+    // TODO: reduce mem allocation
+    if (!context || context->type() != contextType()) {
+        if (context) {
+            delete context;
+        }
+        context = FilterContext::create(contextType());
+        context->video_width = statistics->video_only.width;
+        context->video_height = statistics->video_only.height;
+    }
+    // share common data
+    d.context->shareFrom(context);
+    d.context->initializeOnData(data);
+    context->shareFrom(d.context);
+#endif //V1_2
     d.statistics = statistics;
     process();
 }
@@ -91,6 +109,15 @@ bool Filter::isEnabled() const
 {
     DPTR_D(const Filter);
     return d.enabled;
+}
+
+FilterContext* Filter::context()
+{
+    DPTR_D(Filter);
+    if (!d.context) {
+        d.context = FilterContext::create(contextType());
+    }
+    return d.context;
 }
 
 FilterContext::Type Filter::contextType() const

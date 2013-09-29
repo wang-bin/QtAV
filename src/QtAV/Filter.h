@@ -66,6 +66,7 @@ public:
     void setEnabled(bool enabled); //AVComponent.enabled
     bool isEnabled() const;
 
+    FilterContext* context();
     virtual FilterContext::Type contextType() const = 0;
 
     /*

@@ -56,6 +56,8 @@ public:
     //QPainter, paintdevice, surface etc. contains all of them here?
 protected:
     virtual void initializeOnData(QByteArray *data); //private?
+    // share qpainter etc.
+    virtual void shareFrom(FilterContext *ctx);
     friend class Filter;
 };
 
@@ -79,7 +81,7 @@ public:
      */
     QRectF rect;
     // Fallback to QPainter if no other paint engine implemented
-    QPainter *painter;
+    QPainter *painter; //TODO: shared_ptr?
     qreal opacity;
     QTransform transform;
     QPainterPath clip_path;
@@ -93,6 +95,7 @@ public:
     QPaintDevice *paint_device;
     bool own_paint_device;
 protected:
+    virtual void shareFrom(FilterContext *ctx);
     virtual bool isReady() const = 0;
     virtual bool prepare() = 0;
 };
