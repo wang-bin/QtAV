@@ -76,8 +76,8 @@ public:
      */
     // filter on output. e.g. subtitle
     bool installTo(AVOutput *output);
-    // filter on AVThread. thread: 0==video thread, otherwise audio thread
-    bool installTo(AVPlayer *player, int thread);
+    bool installToAudioThread(AVPlayer *player);
+    bool installToVideoThread(AVPlayer *player);
 
     /*
      *

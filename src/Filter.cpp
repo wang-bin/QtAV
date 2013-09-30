@@ -132,9 +132,14 @@ bool Filter::installTo(AVOutput *output)
 }
 
 /*TODO: move to AVPlayer.cpp to reduce dependency?*/
-bool Filter::installTo(AVPlayer *player, int thread)
+bool Filter::installToAudioThread(AVPlayer *player)
 {
-    return player->installFilter(this, thread);
+    return player->installAudioFilter(this);
+}
+
+bool Filter::installToVideoThread(AVPlayer *player)
+{
+    return player->installVideoFilter(this);
 }
 
 bool Filter::uninstall()

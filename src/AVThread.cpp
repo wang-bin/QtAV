@@ -72,8 +72,12 @@ bool AVThread::installFilter(Filter *filter, bool lock)
     DPTR_D(AVThread);
     if (lock) {
         QMutexLocker locker(&d.mutex);
+        if (d.filters.contains(filter))
+            return false;
         d.filters.push_back(filter);
     } else {
+        if (d.filters.contains(filter))
+            return false;
         d.filters.push_back(filter);
     }
     return true;

@@ -98,8 +98,14 @@ public:
     Statistics& statistics();
     const Statistics& statistics() const;
 
-    bool installFilter(Filter *filter, int thread);
+    /*
+     * install the filter in AVThread. Filter will apply before rendering data
+     * return false if filter is already registered or audio/video thread is not ready(will install when ready)
+     */
+    bool installAudioFilter(Filter *filter);
+    bool installVideoFilter(Filter *filter);
     bool uninstallFilter(Filter *filter);
+
 signals:
     void paused(bool p);
     void started();
