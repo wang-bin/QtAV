@@ -59,14 +59,17 @@ void FilterContext::initializeOnData(QByteArray *data)
 void FilterContext::shareFrom(FilterContext *ctx)
 {
     Q_UNUSED(ctx);
+    video_width = ctx->video_width;
+    video_height = ctx->video_height;
 }
 
 VideoFilterContext::VideoFilterContext():
     FilterContext()
-    , painter(0)
-    , paint_device(0)
-    , own_paint_device(false)
-    , opacity(1)
+  , painter(0)
+  , paint_device(0)
+  , own_painter(false)
+  , own_paint_device(false)
+  , opacity(1)
 {
     font.setBold(true);
     font.setPixelSize(26);
@@ -76,15 +79,19 @@ VideoFilterContext::VideoFilterContext():
 
 VideoFilterContext::~VideoFilterContext()
 {
-    if (paint_device) {
-        if (painter) { //painter may assigned by vo
-            if (painter->isActive())
-                painter->end();
-            qDebug("delete painter");
+    if (painter) {
+        // painter is shared, so may be end() multiple times.
+        // TODO: use shared ptr
+        //if (painter->isActive())
+        //    painter->end();
+        if (own_painter) {
+            qDebug("VideoFilterContext %p delete painter %p", this, painter);
             delete painter;
             painter = 0;
         }
-        qDebug("delete paint device %p in %p", paint_device, this);
+    }
+    if (paint_device) {
+        qDebug("VideoFilterContext %p delete paint device in %p", this, paint_device);
         if (own_paint_device)
             delete paint_device; //delete recursively for widget
         paint_device = 0;
@@ -120,6 +127,8 @@ void VideoFilterContext::shareFrom(FilterContext *ctx)
     VideoFilterContext *vctx = static_cast<VideoFilterContext*>(ctx);
     painter = vctx->painter;
     paint_device = vctx->paint_device;
+    own_painter = false;
+    own_paint_device = false;
     video_width = vctx->video_width;
     video_height = vctx->video_height;
 }
@@ -211,6 +220,7 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
     paint_device = new QImage((uchar*)data->data(), video_width, video_height, QImage::Format_RGB32);
     if (!painter)
         painter = new QPainter();
+    own_painter = true;
     own_paint_device = true; //TODO: what about renderer is not a widget?
     painter->begin((QImage*)paint_device);
 }

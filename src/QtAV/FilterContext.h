@@ -93,6 +93,9 @@ public:
      * can we allocate memory on stack?
      */
     QPaintDevice *paint_device;
+
+protected:
+    bool own_painter;
     bool own_paint_device;
 protected:
     virtual void shareFrom(FilterContext *ctx);
