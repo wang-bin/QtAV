@@ -39,11 +39,11 @@ class Q_EXPORT FilterManager : public QObject
 public:
     static FilterManager& instance();
     bool registerFilter(Filter *filter, AVOutput *output);
-    const QList<Filter*>& outputFilters(AVOutput* output) const;
+    QList<Filter*> outputFilters(AVOutput* output) const;
     bool registerAudioFilter(Filter *filter, AVPlayer *player);
-    const QList<Filter*>& audioFilters(AVPlayer* player) const;
+    QList<Filter *> audioFilters(AVPlayer* player) const;
     bool registerVideoFilter(Filter *filter, AVPlayer *player);
-    const QList<Filter*>& videoFilters(AVPlayer* player) const;
+    QList<Filter*> videoFilters(AVPlayer* player) const;
     bool unregisterFilter(Filter *filter);
     // async. release filter until filter is removed from it's target.filters
     bool releaseFilter(Filter *filter);

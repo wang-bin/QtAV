@@ -71,7 +71,7 @@ bool FilterManager::registerFilter(Filter *filter, AVOutput *output)
     return true;
 }
 
-const QList<Filter*>& FilterManager::outputFilters(AVOutput *output) const
+QList<Filter*> FilterManager::outputFilters(AVOutput *output) const
 {
     DPTR_D(const FilterManager);
     return d.filter_out_map.keys(output);
@@ -89,7 +89,7 @@ bool FilterManager::registerAudioFilter(Filter *filter, AVPlayer *player)
     return true;
 }
 
-const QList<Filter*>& FilterManager::audioFilters(AVPlayer *player) const
+QList<Filter*> FilterManager::audioFilters(AVPlayer *player) const
 {
     DPTR_D(const FilterManager);
     return d.afilter_player_map.keys(player);
@@ -107,7 +107,7 @@ bool FilterManager::registerVideoFilter(Filter *filter, AVPlayer *player)
     return true;
 }
 
-const QList<Filter*>& FilterManager::videoFilters(AVPlayer *player) const
+QList<Filter *> FilterManager::videoFilters(AVPlayer *player) const
 {
     DPTR_D(const FilterManager);
     return d.vfilter_player_map.keys(player);
