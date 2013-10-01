@@ -98,6 +98,14 @@ VideoFilterContext::~VideoFilterContext()
     }
 }
 
+void VideoFilterContext::drawImage(const QPointF &pos, const QImage &image, const QRectF& source, Qt::ImageConversionFlags flags)
+{
+    Q_UNUSED(pos);
+    Q_UNUSED(image);
+    Q_UNUSED(source);
+    Q_UNUSED(flags);
+}
+
 void VideoFilterContext::drawImage(const QRectF &target, const QImage &image, const QRectF &source, Qt::ImageConversionFlags flags)
 {
     Q_UNUSED(target);
@@ -106,9 +114,16 @@ void VideoFilterContext::drawImage(const QRectF &target, const QImage &image, co
     Q_UNUSED(flags);
 }
 
+void VideoFilterContext::drawPlainText(const QPointF &pos, const QString &text)
+{
+    Q_UNUSED(pos);
+    Q_UNUSED(text);
+}
+
 void VideoFilterContext::drawPlainText(const QRectF &rect, int flags, const QString &text)
 {
     Q_UNUSED(rect);
+    Q_UNUSED(flags);
     Q_UNUSED(text);
 }
 
@@ -139,12 +154,27 @@ FilterContext::Type QPainterFilterContext::type() const
     return FilterContext::QtPainter;
 }
 
+void QPainterFilterContext::drawImage(const QPointF &pos, const QImage &image, const QRectF& source, Qt::ImageConversionFlags flags)
+{
+    if (!prepare())
+        return;
+    painter->drawImage(pos, image, source, flags);
+    painter->restore();
+}
+
 void QPainterFilterContext::drawImage(const QRectF &target, const QImage &image, const QRectF &source, Qt::ImageConversionFlags flags)
 {
     if (!prepare())
         return;
     painter->drawImage(target, image, source, flags);
     painter->restore();
+}
+
+void QPainterFilterContext::drawPlainText(const QPointF &pos, const QString &text)
+{
+    if (!prepare())
+        return;
+    painter->drawText(pos, text);
 }
 
 void QPainterFilterContext::drawPlainText(const QRectF &rect, int flags, const QString &text)
@@ -160,6 +190,7 @@ void QPainterFilterContext::drawPlainText(const QRectF &rect, int flags, const Q
 
 void QPainterFilterContext::drawRichText(const QRectF &rect, const QString &text)
 {
+    Q_UNUSED(rect);
     Q_UNUSED(text);
     if (!prepare())
         return;
