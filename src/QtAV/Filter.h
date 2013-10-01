@@ -60,6 +60,7 @@ class Q_EXPORT Filter
 {
     DPTR_DECLARE_PRIVATE(Filter)
 public:
+    Filter();
     virtual ~Filter();
     //isEnabled() then setContext
     //TODO: parameter FrameContext

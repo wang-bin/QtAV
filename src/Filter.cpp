@@ -38,6 +38,9 @@ void safeReleaseFilter(Filter **ppFilter)
     *ppFilter = 0;
 }
 
+Filter::Filter()
+{}
+
 Filter::Filter(FilterPrivate &d)
     :DPTR_INIT(&d)
 {
