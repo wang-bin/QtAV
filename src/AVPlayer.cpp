@@ -115,6 +115,11 @@ AVClock* AVPlayer::masterClock()
 
 void AVPlayer::addVideoRenderer(VideoRenderer *renderer)
 {
+    if (!renderer) {
+        qWarning("add a null renderer!");
+        return;
+    }
+    renderer->setStatistics(&mStatistics);
     QObject *voo = renderer->widget();
     if (voo) {
         //TODO: how to delete filter if no parent?
@@ -816,6 +821,8 @@ void AVPlayer::setupVideoThread()
 
 void AVPlayer::setupAVThread(AVThread *&thread, AVCodecContext *ctx)
 {
+    Q_UNUSED(thread);
+    Q_UNUSED(ctx);
 }
 
 } //namespace QtAV
