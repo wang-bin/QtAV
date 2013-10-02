@@ -3,6 +3,7 @@ TEMPLATE = subdirs
 SUBDIRS += \
     vo-qt \
     player \
+    filters \
     videographicsitem \
     videogroup \
     videowall
