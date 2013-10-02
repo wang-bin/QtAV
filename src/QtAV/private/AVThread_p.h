@@ -29,6 +29,7 @@
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Global.h>
 
+class QRunnable;
 namespace QtAV {
 
 const double kSyncThreshold = 0.005; // 5 ms
@@ -75,6 +76,7 @@ public:
     QList<Filter*> filters;
     Statistics *statistics; //not obj. Statistics is unique for the player, which is in AVPlayer
     QList<AVOutput*> update_outputs;
+    QList<QRunnable*> tasks;
 };
 
 } //namespace QtAV

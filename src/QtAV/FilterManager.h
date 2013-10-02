@@ -39,12 +39,18 @@ class Q_EXPORT FilterManager : public QObject
 public:
     static FilterManager& instance();
     bool registerFilter(Filter *filter, AVOutput *output);
-    bool registerFilter(Filter *filter, AVPlayer *player);
+    QList<Filter*> outputFilters(AVOutput* output) const;
+    bool registerAudioFilter(Filter *filter, AVPlayer *player);
+    QList<Filter *> audioFilters(AVPlayer* player) const;
+    bool registerVideoFilter(Filter *filter, AVPlayer *player);
+    QList<Filter*> videoFilters(AVPlayer* player) const;
     bool unregisterFilter(Filter *filter);
-    // thread safe. async. release filter until filter is removed from it's target.filters
+    // async. release filter until filter is removed from it's target.filters
     bool releaseFilter(Filter *filter);
-    // not thread safe
-    bool releaseFilterNow(Filter *filter);
+    bool uninstallFilter(Filter *filter);
+
+    // TODO: use QMetaObject::invokeMethod
+    void emitOnUninstallInTargetDone(Filter *filter);
 signals:
     // invoked in UninstallFilterTask in AVThread.
     void uninstallInTargetDone(Filter *filter);
@@ -55,7 +61,7 @@ private slots:
 
 private:
     //convenient function to uninstall the filter. used by releaseFilter
-    bool uninstallFilter(Filter *filter);
+    bool releaseFilterNow(Filter *filter);
     FilterManager();
     ~FilterManager();
 

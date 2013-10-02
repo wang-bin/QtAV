@@ -132,7 +132,6 @@ SOURCES += \
     ImageConverterFF.cpp \
     ImageConverterIPP.cpp \
     QPainterRenderer.cpp \
-    RollingTextFilter.cpp \
     OSD.cpp \
     OSDFilter.cpp \
     Packet.cpp \
@@ -167,7 +166,6 @@ SDK_HEADERS *= \
     QtAV/ImageConverter.h \
     QtAV/ImageConverterTypes.h \
     QtAV/QPainterRenderer.h \
-    QtAV/RollingTextFilter.h \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
     QtAV/Packet.h \
@@ -204,7 +202,6 @@ HEADERS *= \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
-    QtAV/private/RollingTextFilter_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/VideoRenderer_p.h \

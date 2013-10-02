@@ -26,6 +26,7 @@
 #include <QApplication>
 #include <QEvent>
 #include <QtCore/QDir>
+//#include <QtCore/QMetaObject>
 
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/AudioFormat.h>
@@ -313,14 +314,24 @@ const Statistics& AVPlayer::statistics() const
     return mStatistics;
 }
 
-bool AVPlayer::installFilter(Filter *filter, int thread)
+bool AVPlayer::installAudioFilter(Filter *filter)
 {
-    if (!FilterManager::instance().registerFilter(filter, this)) {
+    if (!FilterManager::instance().registerAudioFilter(filter, this)) {
         return false;
     }
-    //TODO: check thread and AVThread.installFilter
+    if (!audio_thread)
+        return false; //install later when avthread created
+    return audio_thread->installFilter(filter);
+}
 
-    return true;
+bool AVPlayer::installVideoFilter(Filter *filter)
+{
+    if (!FilterManager::instance().registerVideoFilter(filter, this)) {
+        return false;
+    }
+    if (!video_thread)
+        return false; //install later when avthread created
+    return video_thread->installFilter(filter);
 }
 
 bool AVPlayer::uninstallFilter(Filter *filter)
@@ -334,7 +345,33 @@ bool AVPlayer::uninstallFilter(Filter *filter)
      * active player's AVThread
      *
      */
+    class UninstallFilterTask : public QRunnable {
+    public:
+        UninstallFilterTask(AVThread *thread, Filter *filter):
+            QRunnable()
+          , mpThread(thread)
+          , mpFilter(filter)
+        {
+            setAutoDelete(true);
+        }
 
+        virtual void run() {
+            mpThread->uninstallFilter(mpFilter, false);
+            //QMetaObject::invokeMethod(FilterManager::instance(), "onUninstallInTargetDone", Qt::AutoConnection, Q_ARG(Filter*, filter));
+            FilterManager::instance().emitOnUninstallInTargetDone(mpFilter);
+        }
+    private:
+        AVThread *mpThread;
+        Filter *mpFilter;
+    };
+    AVThread *avthread = video_thread;
+    if (!avthread || !avthread->filters().contains(filter)) {
+        avthread = audio_thread;
+    }
+    if (!avthread || !avthread->filters().contains(filter)) {
+        return false;
+    }
+    avthread->scheduleTask(new UninstallFilterTask(avthread, filter));
     return true;
 }
 
@@ -692,6 +729,13 @@ void AVPlayer::setupAudioThread()
             qDebug("demux thread setAudioThread");
             demuxer_thread->setAudioThread(audio_thread);
             //reconnect if disconnected
+            QList<Filter*> filters = FilterManager::instance().audioFilters(this);
+            //TODO: isEmpty()==false but size() == 0 in debug mode, it's a Qt bug? we can not just foreach without check empty in debug mode
+            if (filters.size() > 0) {
+                foreach (Filter *filter, filters) {
+                    audio_thread->installFilter(filter);
+                }
+            }
         }
         setAudioOutput(_audio);
         /*if has video, connect video's only to avoid emitting stopped() mulltiple times
@@ -741,6 +785,12 @@ void AVPlayer::setupVideoThread()
             demuxer_thread->setVideoThread(video_thread);
             //reconnect if disconnected
             connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
+            QList<Filter*> filters = FilterManager::instance().videoFilters(this);
+            if (filters.size() > 0) {
+                foreach (Filter *filter, filters) {
+                    video_thread->installFilter(filter);
+                }
+            }
         }
 #if V1_2
         setRenderer(_renderer);

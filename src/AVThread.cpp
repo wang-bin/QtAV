@@ -62,7 +62,50 @@ AVThread::~AVThread()
 
 bool AVThread::isPaused() const
 {
-    return d_func().paused;
+    DPTR_D(const AVThread);
+    //if d.next_pause is true, the thread will pause soon, may happens before you can handle the result
+    return d.paused || d.next_pause;
+}
+
+bool AVThread::installFilter(Filter *filter, bool lock)
+{
+    DPTR_D(AVThread);
+    if (lock) {
+        QMutexLocker locker(&d.mutex);
+        if (d.filters.contains(filter))
+            return false;
+        d.filters.push_back(filter);
+    } else {
+        if (d.filters.contains(filter))
+            return false;
+        d.filters.push_back(filter);
+    }
+    return true;
+}
+
+bool AVThread::uninstallFilter(Filter *filter, bool lock)
+{
+    DPTR_D(AVThread);
+    if (lock) {
+        QMutexLocker locker(&d.mutex);
+        return d.filters.removeOne(filter);
+    } else {
+        return d.filters.removeOne(filter);
+    }
+}
+
+const QList<Filter*>& AVThread::filters() const
+{
+    return d_func().filters;
+}
+
+void AVThread::scheduleTask(QRunnable *task)
+{
+    DPTR_D(AVThread);
+    // FIXME: shall we lock?
+    QMutexLocker locker(&d.mutex);
+    Q_UNUSED(locker);
+    d.tasks.push_back(task);
 }
 
 void AVThread::stop()
@@ -182,15 +225,28 @@ void AVThread::resetState()
     d.filter_context = 0;
 }
 
-bool AVThread::tryPause()
+bool AVThread::tryPause(int timeout)
 {
     DPTR_D(AVThread);
-    if (!d.paused && !d.next_pause)
+    if (!isPaused())
         return false;
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
-    d.cond.wait(&d.mutex);
+    return d.cond.wait(&d.mutex, timeout);
     qDebug("paused thread waked up!!!");
+    return true;
+}
+
+bool AVThread::processNextTask()
+{
+    DPTR_D(AVThread);
+    if (d.tasks.isEmpty())
+        return true;
+    QRunnable *task = d.tasks.takeFirst();
+    task->run();
+    if (task->autoDelete()) {
+        delete task;
+    }
     return true;
 }
 

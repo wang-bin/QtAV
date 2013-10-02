@@ -60,12 +60,14 @@ class Q_EXPORT Filter
 {
     DPTR_DECLARE_PRIVATE(Filter)
 public:
+    Filter();
     virtual ~Filter();
     //isEnabled() then setContext
     //TODO: parameter FrameContext
     void setEnabled(bool enabled); //AVComponent.enabled
     bool isEnabled() const;
 
+    FilterContext* context();
     virtual FilterContext::Type contextType() const = 0;
 
     /*
@@ -75,8 +77,8 @@ public:
      */
     // filter on output. e.g. subtitle
     bool installTo(AVOutput *output);
-    // filter on AVThread. thread: 0==video thread, otherwise audio thread
-    bool installTo(AVPlayer *player, int thread);
+    bool installToAudioThread(AVPlayer *player);
+    bool installToVideoThread(AVPlayer *player);
 
     /*
      *

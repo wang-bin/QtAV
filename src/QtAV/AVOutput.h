@@ -68,7 +68,6 @@ public:
      */
     virtual int filterContextType() const;
     //No filters() api, they are used internally?
-    //for add/remove/clear on list. avo.add/remove/clear?
     QList<Filter*>& filters();
     bool installFilter(Filter *filter);
     bool uninstallFilter(Filter *filter);
@@ -90,6 +89,8 @@ protected:
     void removeOutputSet(OutputSet *set);
     void attach(OutputSet *set); //add this to set
     void detach(OutputSet *set = 0); //detatch from (all, if 0) output set(s)
+    // for thread safe
+    void hanlePendingTasks();
 
     DPTR_DECLARE(AVOutput)
 

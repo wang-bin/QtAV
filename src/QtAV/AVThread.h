@@ -22,16 +22,19 @@
 #ifndef QTAV_AVTHREAD_H
 #define QTAV_AVTHREAD_H
 
-#include <QtCore/QThread>
+#include <QtCore/QRunnable>
 #include <QtCore/QScopedPointer>
+#include <QtCore/QThread>
 #include <QtAV/Packet.h>
 //TODO: pause functions. AVOutput may be null, use AVThread's pause state
+
 namespace QtAV {
 
 class AVDecoder;
 class AVThreadPrivate;
 class AVOutput;
 class AVClock;
+class Filter;
 class Statistics;
 class OutputSet;
 class Q_EXPORT AVThread : public QThread
@@ -39,7 +42,7 @@ class Q_EXPORT AVThread : public QThread
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVThread)
 public:
-	explicit AVThread(QObject *parent = 0);
+    explicit AVThread(QObject *parent = 0);
     virtual ~AVThread();
 
     //used for changing some components when running
@@ -64,6 +67,14 @@ public:
     void setDemuxEnded(bool ended);
 
     bool isPaused() const;
+
+    bool installFilter(Filter *filter, bool lock = true);
+    bool uninstallFilter(Filter *filter, bool lock = true);
+    const QList<Filter *> &filters() const;
+
+    // TODO: resample, resize task etc.
+    void scheduleTask(QRunnable *task);
+
 public slots:
     virtual void stop();
     /*change pause state. the pause/continue action will do in the next loop*/
@@ -80,7 +91,9 @@ protected:
      * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)
      * and return true. Otherwise, return false immediatly.
      */
-    bool tryPause();
+    // has timeout so that the pending tasks can be processed
+    bool tryPause(int timeout = 100);
+    bool processNextTask(); //in AVThread
 
     DPTR_DECLARE(AVThread)
 

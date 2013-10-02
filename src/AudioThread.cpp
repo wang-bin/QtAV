@@ -69,10 +69,14 @@ void AudioThread::run()
     bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
     Packet pkt;
     while (!d.stop) {
+        processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
             if (d.stop)
                 break; //the queue is empty and may block. should setBlocking(false) wake up cond empty?
+        } else {
+            if (isPaused())
+                continue;
         }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);

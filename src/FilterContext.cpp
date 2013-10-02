@@ -56,33 +56,54 @@ void FilterContext::initializeOnData(QByteArray *data)
     Q_UNUSED(data);
 }
 
+void FilterContext::shareFrom(FilterContext *ctx)
+{
+    Q_UNUSED(ctx);
+    video_width = ctx->video_width;
+    video_height = ctx->video_height;
+}
+
 VideoFilterContext::VideoFilterContext():
-    painter(0)
-    , paint_device(0)
-    , own_paint_device(false)
-    , opacity(1)
+    FilterContext()
+  , painter(0)
+  , paint_device(0)
+  , own_painter(false)
+  , own_paint_device(false)
+  , opacity(1)
 {
     font.setBold(true);
     font.setPixelSize(26);
     pen.setColor(Qt::white);
-    clip_path.addRect(100, 100, 128, 48);
+    rect = QRect(32, 32, 0, 0); //TODO: why painting will above the visible area if the draw at (0, 0)?
 }
 
 VideoFilterContext::~VideoFilterContext()
 {
-    if (paint_device) {
-        if (painter) { //painter may assigned by vo
-            if (painter->isActive())
-                painter->end();
-            qDebug("delete painter");
+    if (painter) {
+        // painter is shared, so may be end() multiple times.
+        // TODO: use shared ptr
+        //if (painter->isActive())
+        //    painter->end();
+        if (own_painter) {
+            qDebug("VideoFilterContext %p delete painter %p", this, painter);
             delete painter;
             painter = 0;
         }
-        qDebug("delete paint device %p in %p", paint_device, this);
+    }
+    if (paint_device) {
+        qDebug("VideoFilterContext %p delete paint device in %p", this, paint_device);
         if (own_paint_device)
             delete paint_device; //delete recursively for widget
         paint_device = 0;
     }
+}
+
+void VideoFilterContext::drawImage(const QPointF &pos, const QImage &image, const QRectF& source, Qt::ImageConversionFlags flags)
+{
+    Q_UNUSED(pos);
+    Q_UNUSED(image);
+    Q_UNUSED(source);
+    Q_UNUSED(flags);
 }
 
 void VideoFilterContext::drawImage(const QRectF &target, const QImage &image, const QRectF &source, Qt::ImageConversionFlags flags)
@@ -93,9 +114,16 @@ void VideoFilterContext::drawImage(const QRectF &target, const QImage &image, co
     Q_UNUSED(flags);
 }
 
+void VideoFilterContext::drawPlainText(const QPointF &pos, const QString &text)
+{
+    Q_UNUSED(pos);
+    Q_UNUSED(text);
+}
+
 void VideoFilterContext::drawPlainText(const QRectF &rect, int flags, const QString &text)
 {
     Q_UNUSED(rect);
+    Q_UNUSED(flags);
     Q_UNUSED(text);
 }
 
@@ -105,11 +133,33 @@ void VideoFilterContext::drawRichText(const QRectF &rect, const QString &text)
     Q_UNUSED(text);
 }
 
+void VideoFilterContext::shareFrom(FilterContext *ctx)
+{
+    if (!ctx) {
+        qWarning("shared filter context is null!");
+        return;
+    }
+    VideoFilterContext *vctx = static_cast<VideoFilterContext*>(ctx);
+    painter = vctx->painter;
+    paint_device = vctx->paint_device;
+    own_painter = false;
+    own_paint_device = false;
+    video_width = vctx->video_width;
+    video_height = vctx->video_height;
+}
 
 
 FilterContext::Type QPainterFilterContext::type() const
 {
     return FilterContext::QtPainter;
+}
+
+void QPainterFilterContext::drawImage(const QPointF &pos, const QImage &image, const QRectF& source, Qt::ImageConversionFlags flags)
+{
+    if (!prepare())
+        return;
+    painter->drawImage(pos, image, source, flags);
+    painter->restore();
 }
 
 void QPainterFilterContext::drawImage(const QRectF &target, const QImage &image, const QRectF &source, Qt::ImageConversionFlags flags)
@@ -118,6 +168,13 @@ void QPainterFilterContext::drawImage(const QRectF &target, const QImage &image,
         return;
     painter->drawImage(target, image, source, flags);
     painter->restore();
+}
+
+void QPainterFilterContext::drawPlainText(const QPointF &pos, const QString &text)
+{
+    if (!prepare())
+        return;
+    painter->drawText(pos, text);
 }
 
 void QPainterFilterContext::drawPlainText(const QRectF &rect, int flags, const QString &text)
@@ -133,6 +190,8 @@ void QPainterFilterContext::drawPlainText(const QRectF &rect, int flags, const Q
 
 void QPainterFilterContext::drawRichText(const QRectF &rect, const QString &text)
 {
+    Q_UNUSED(rect);
+    Q_UNUSED(text);
     if (!prepare())
         return;
     //QTextDocument
@@ -153,8 +212,9 @@ bool QPainterFilterContext::prepare()
     painter->setPen(pen);
     painter->setFont(font);
     painter->setOpacity(opacity);
-    if (!clip_path.isEmpty())
+    if (!clip_path.isEmpty()) {
         painter->setClipPath(clip_path);
+    }
     //transform at last! because clip_path is relative to paint device coord
     painter->setTransform(transform);
 
@@ -164,13 +224,18 @@ bool QPainterFilterContext::prepare()
 void QPainterFilterContext::initializeOnData(QByteArray *data)
 {
     if (!data) {
-        if (!paint_device) {
-            return;
-        }
         if (!painter) {
             painter = new QPainter(); //warning: more than 1 painter on 1 device
         }
-        painter->begin(paint_device);
+        if (!paint_device) {
+            paint_device = painter->device();
+        }
+        if (!paint_device && !painter->isActive()) {
+            qWarning("No paint device and painter is not active. No painting!");
+            return;
+        }
+        if (!painter->isActive())
+            painter->begin(paint_device);
         return;
     }
     if (data->isEmpty())
@@ -186,6 +251,7 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
     paint_device = new QImage((uchar*)data->data(), video_width, video_height, QImage::Format_RGB32);
     if (!painter)
         painter = new QPainter();
+    own_painter = true;
     own_paint_device = true; //TODO: what about renderer is not a widget?
     painter->begin((QImage*)paint_device);
 }

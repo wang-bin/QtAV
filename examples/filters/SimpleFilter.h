@@ -19,45 +19,45 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_OSDFILTER_H
-#define QTAV_OSDFILTER_H
+#ifndef QTAV_EXAMPLE_SIMPLEFILTER_H
+#define QTAV_EXAMPLE_SIMPLEFILTER_H
 
 #include <QtAV/Filter.h>
-#include <QtAV/OSD.h>
-#include <QtAV/FilterContext.h>
+#include <QtCore/QTime>
+#include <QtGui/QMatrix4x4>
+
 namespace QtAV {
 
-class OSDFilterPrivate;
-//TODO: not template. OSDFilter : public Filter, public OSD
-class Q_EXPORT OSDFilter : public Filter, public OSD
+class SimpleFilter : public QObject, public Filter
 {
-protected:
-    DPTR_DECLARE_PRIVATE(OSDFilter)
-    OSDFilter(OSDFilterPrivate& d);
-};
-
-class Q_EXPORT OSDFilterQPainter : public OSDFilter
-{
+    Q_OBJECT
 public:
-    OSDFilterQPainter();
-    FilterContext::Type contextType() const {
-        return FilterContext::QtPainter;
-    }
-protected:
-    void process();
-};
+    SimpleFilter(QObject* parent = 0);
+    virtual ~SimpleFilter();
+    void enableRotate(bool r);
+    void enableWaveEffect(bool w);
+    virtual FilterContext::Type contextType() const { return FilterContext::QtPainter; }
+    void setText(const QString& text);
+    QString text() const;
+    //show image if text is null
+    void setImage(const QImage& img);
 
-class Q_EXPORT OSDFilterGL : public OSDFilter
-{
-public:
-    OSDFilterGL();
-    FilterContext::Type contextType() const {
-        return FilterContext::OpenGL;
-    }
+    void prepare();
+
+    void start();
+    void stop();
 protected:
-    void process();
+    virtual void process();
+private:
+    bool mCanRot;
+    bool mWave;
+    qreal mStartValue;
+    QString mText;
+    QTime mTime;
+    QMatrix4x4 mMat;
+    QImage mImage;
 };
 
 } //namespace QtAV
 
-#endif // QTAV_OSDFILTER_H
+#endif // QTAV_EXAMPLE_SIMPLEFILTER_H

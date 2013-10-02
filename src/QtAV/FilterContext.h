@@ -35,7 +35,6 @@ class QPaintDevice;
 namespace QtAV {
 
 class FilterContext;
-class FilterPrivate;
 class Q_EXPORT FilterContext
 {
 public:
@@ -57,6 +56,8 @@ public:
     //QPainter, paintdevice, surface etc. contains all of them here?
 protected:
     virtual void initializeOnData(QByteArray *data); //private?
+    // share qpainter etc.
+    virtual void shareFrom(FilterContext *ctx);
     friend class Filter;
 };
 
@@ -70,7 +71,11 @@ public:
 
     // map to Qt types
     //drawSurface?
+    virtual void drawImage(const QPointF& pos, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    // if target is null, draw image at target.topLeft(). if source is null, draw the whole image
     virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    virtual void drawPlainText(const QPointF& pos, const QString& text);
+    // if rect is null, draw single line text at rect.topLeft(), ignoring flags
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
     virtual void drawRichText(const QRectF& rect, const QString& text);
 
@@ -80,7 +85,7 @@ public:
      */
     QRectF rect;
     // Fallback to QPainter if no other paint engine implemented
-    QPainter *painter;
+    QPainter *painter; //TODO: shared_ptr?
     qreal opacity;
     QTransform transform;
     QPainterPath clip_path;
@@ -92,8 +97,12 @@ public:
      * can we allocate memory on stack?
      */
     QPaintDevice *paint_device;
+
+protected:
+    bool own_painter;
     bool own_paint_device;
 protected:
+    virtual void shareFrom(FilterContext *ctx);
     virtual bool isReady() const = 0;
     virtual bool prepare() = 0;
 };
@@ -103,7 +112,10 @@ class Q_EXPORT QPainterFilterContext : public VideoFilterContext
 {
 public:
     virtual Type type() const; //QtPainter
+    virtual void drawImage(const QPointF& pos, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
     virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    virtual void drawPlainText(const QPointF& pos, const QString& text);
+    // if rect is null, draw single line text at rect.topLeft(), ignoring flags
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
     virtual void drawRichText(const QRectF& rect, const QString& text);
 
