@@ -26,6 +26,7 @@
 #include <QtAV/private/VideoRenderer_p.h>
 #include <QtQuick/QSGTexture>
 #include <QtQuick/QSGSimpleTextureNode>
+#include <QmlAV/QQuickItemRenderer.h>
 
 namespace QtAV
 {
@@ -34,7 +35,9 @@ class QQuickItemRendererPrivate : public VideoRendererPrivate
 {
 public:
     QQuickItemRendererPrivate():
-        texture(0)
+        VideoRendererPrivate()
+      , fill_mode(QQuickItemRenderer::PreserveAspectFit)
+      , texture(0)
       , node(0)
       , source(0)
     {
@@ -55,6 +58,7 @@ public:
         }
     }
 
+    QQuickItemRenderer::FillMode fill_mode;
     QSGTexture* texture;
     QSGNode *node;
     QObject *source;

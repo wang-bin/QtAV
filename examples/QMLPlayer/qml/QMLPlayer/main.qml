@@ -25,25 +25,57 @@ import QtQuick.Dialogs 1.0
 import QtAV 1.3
 
 Rectangle {
-    width: 640
-    height: 360
+    width: 240*3
+    height: 240
     color: "black"
 
     VideoOutput {
-        id: vo
+        id: vo1
+        fillMode: VideoOutput.Stretch
         x: parent.x
         y: parent.y
-        width: parent.width/2
+        width: parent.width/3
         height: parent.height
         source: player
+
+        Text {
+            anchors.fill: parent
+            text: "Stretch"
+            font.pointSize: 24
+            color: "red"
+        }
     }
     VideoOutput {
         id: vo2
-        x: parent.width/2
+        fillMode: VideoOutput.PreserveAspectCrop
+        x: parent.x + parent.width/3
         y: parent.y
-        width: parent.width/2
+        width: parent.width/3
         height: parent.height
         source: player
+
+        Text {
+            anchors.fill: parent
+            text: "PreserveAspectCrop"
+            font.pointSize: 24
+            color: "red"
+        }
+    }
+    VideoOutput {
+        id: vo3
+        fillMode: VideoOutput.PreserveAspectFit
+        x: parent.x + parent.width*2/3
+        y: parent.y
+        width: parent.width/3
+        height: parent.height
+        source: player
+
+        Text {
+            anchors.fill: parent
+            text: "PreserveAspectFit"
+            font.pointSize: 24
+            color: "red"
+        }
     }
     MediaPlayer {
         id: player
@@ -63,12 +95,11 @@ Rectangle {
         font.pointSize: 28
         color: "white"
     }
-    Item {
 
+    Item {
         anchors.fill: parent
         focus: true
         Keys.onPressed: {
-
             switch (event.key) {
             case Qt.Key_M:
                 player.muted = !player.muted

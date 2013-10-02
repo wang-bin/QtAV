@@ -37,7 +37,16 @@ class QMLAV_EXPORT QQuickItemRenderer : public QQuickItem, public VideoRenderer
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(QQuickItemRenderer)
     Q_PROPERTY(QObject* source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
+    Q_ENUMS(FillMode)
 public:
+    enum FillMode
+    {
+        Stretch            = Qt::IgnoreAspectRatio,
+        PreserveAspectFit  = Qt::KeepAspectRatio,
+        PreserveAspectCrop = Qt::KeepAspectRatioByExpanding
+    };
+
     explicit QQuickItemRenderer(QQuickItem *parent = 0);
     ~QQuickItemRenderer() {}
     virtual VideoRendererId id() const;
@@ -45,8 +54,12 @@ public:
     QObject *source() const;
     void setSource(QObject *source);
 
+    FillMode fillMode() const;
+    void setFillMode(FillMode mode);
+
 Q_SIGNALS:
     void sourceChanged();
+    void fillModeChanged(QQuickItemRenderer::FillMode);
 
 protected:
     virtual void convertData(const QByteArray &data);

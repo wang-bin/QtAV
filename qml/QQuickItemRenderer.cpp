@@ -57,9 +57,27 @@ QObject* QQuickItemRenderer::source() const
 void QQuickItemRenderer::setSource(QObject *source)
 {
     DPTR_D(QQuickItemRenderer);
+    if (d.source == source)
+        return;
     d.source = source;
     ((QmlAVPlayer*)source)->player()->addVideoRenderer(this);
     emit sourceChanged();
+}
+
+QQuickItemRenderer::FillMode QQuickItemRenderer::fillMode() const
+{
+    return d_func().fill_mode;
+}
+
+void QQuickItemRenderer::setFillMode(FillMode mode)
+{
+    DPTR_D(QQuickItemRenderer);
+    if (d.fill_mode == mode)
+        return;
+    d_func().fill_mode = mode;
+    //m_geometryDirty = true;
+    //update();
+    emit fillModeChanged(mode);
 }
 
 void QQuickItemRenderer::convertData(const QByteArray &data)
@@ -87,7 +105,19 @@ void QQuickItemRenderer::drawFrame()
     DPTR_D(QQuickItemRenderer);
     if (!d.node)
         return;
-    static_cast<QSGSimpleTextureNode*>(d.node)->setRect(boundingRect());
+    if (d.fill_mode == Stretch) {
+        static_cast<QSGSimpleTextureNode*>(d.node)->setRect(boundingRect());
+    } else if (d.fill_mode == PreserveAspectFit || d.fill_mode == PreserveAspectCrop) {
+        //TODO: optimize by updating content rect only when fill mode changed
+        QSizeF scaled = d.out_rect.size();
+        scaled.scale(boundingRect().size(), d.fill_mode == PreserveAspectFit ?
+                         Qt::KeepAspectRatio : Qt::KeepAspectRatioByExpanding);
+        QRectF rect(QPointF(), scaled);
+        rect.moveCenter(boundingRect().center());
+        //d.out_rect = rect;
+        //rect &= boundingRect(); //FIXME: why QtMultiMedia does not have it?
+        static_cast<QSGSimpleTextureNode*>(d.node)->setRect(rect);
+    }
     if (d.image.isNull()) { //TODO: move to QPainterRenderer.convertData?
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black);
