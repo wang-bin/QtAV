@@ -22,7 +22,6 @@
 #include "SimpleFilter.h"
 #include "private/Filter_p.h"
 #include <math.h>
-#include <QtMath>
 
 namespace QtAV {
 
@@ -32,8 +31,8 @@ SimpleFilter::SimpleFilter(QObject *parent):
   , mWave(true)
   , Filter()
 {
-    qsrand(QTime::currentTime().msec());
-    mStartValue = (qreal)(qrand()%1000)/qreal(1000.0);
+    srand(QTime::currentTime().msec());
+    mStartValue = (qreal)(rand()%1000)/qreal(1000.0);
 }
 
 SimpleFilter::~SimpleFilter()
@@ -108,7 +107,7 @@ void SimpleFilter::process()
         if (mImage.isNull())
             return;
         if (mCanRot)
-            ctx->drawImage(QPointF(-mImage.width()/2, 0), mImage, QRectF(0, 0, mImage.width(), mImage.height()));
+            ctx->drawImage(QPointF(-mImage.width()/2, ctx->rect.y()), mImage, QRectF(0, 0, mImage.width(), mImage.height()));
         else
             ctx->drawImage(ctx->rect.topLeft(), mImage, QRectF(0, 0, mImage.width(), mImage.height()));
         return;
