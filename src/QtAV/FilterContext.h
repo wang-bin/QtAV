@@ -104,6 +104,7 @@ protected:
 protected:
     virtual void shareFrom(FilterContext *ctx);
     virtual bool isReady() const = 0;
+    // save the state then setup new parameters
     virtual bool prepare() = 0;
 };
 

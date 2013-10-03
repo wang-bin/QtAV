@@ -175,6 +175,7 @@ void QPainterFilterContext::drawPlainText(const QPointF &pos, const QString &tex
     if (!prepare())
         return;
     painter->drawText(pos, text);
+    painter->restore();
 }
 
 void QPainterFilterContext::drawPlainText(const QRectF &rect, int flags, const QString &text)
