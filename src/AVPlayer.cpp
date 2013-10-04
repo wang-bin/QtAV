@@ -707,8 +707,11 @@ void AVPlayer::setupAudioThread()
         } else {
             _audio->audioFormat().setSampleFormat(AudioFormat::SampleFormat_Float);
             _audio->audioFormat().setSampleRate(aCodecCtx->sample_rate);
-            //_audio->audioFormat().setChannelLayoutFFmpeg(AV_CH_LAYOUT_STEREO);
-            _audio->audioFormat().setChannels(aCodecCtx->channels);
+            // 5, 6, 7 may not play
+            if (aCodecCtx->channels > 2)
+                _audio->audioFormat().setChannelLayoutFFmpeg(AV_CH_LAYOUT_STEREO);
+            else
+                _audio->audioFormat().setChannels(aCodecCtx->channels);
             if (!_audio->open()) {
                 //return; //audio not ready
             }
