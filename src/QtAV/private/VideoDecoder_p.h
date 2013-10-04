@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,41 +19,27 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEODECODER_H
-#define QTAV_VIDEODECODER_H
+#ifndef QTAV_VIDEODECODER_P_H
+#define QTAV_VIDEODECODER_P_H
 
-#include <QtAV/AVDecoder.h>
-#include <QtAV/FactoryDefine.h>
+#include <private/AVDecoder_p.h>
 
-class QSize;
-struct SwsContext;
 namespace QtAV {
 
-typedef int VideoDecoderId;
-class VideoDecoder;
-FACTORY_DECLARE(VideoDecoder)
 
-
-class VideoDecoderPrivate;
-class Q_EXPORT VideoDecoder : public AVDecoder
+class Q_EXPORT VideoDecoderPrivate : public AVDecoderPrivate
 {
-    DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:
-    VideoDecoder();
-    virtual ~VideoDecoder();
-    //virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
-    //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
-    //size: the decoded(actually then resized in ImageConverter) frame size
-    void resizeVideoFrame(const QSize& size);
-    virtual void resizeVideoFrame(int width, int height);
-    //TODO: decodedSize()
-    int width() const;
-    int height() const;
+    VideoDecoderPrivate():
+        AVDecoderPrivate()
+      , width(0)
+      , height(0)
+    {}
+    virtual ~VideoDecoderPrivate()
+    {}
 
-protected:
-    VideoDecoder(VideoDecoderPrivate& d);
+    int width, height;
 };
 
 } //namespace QtAV
-#endif // QTAV_VIDEODECODER_H
+#endif // QTAV_VIDEODECODER_P_H

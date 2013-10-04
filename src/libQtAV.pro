@@ -146,6 +146,8 @@ SOURCES += \
     AVClock.cpp \
     Statistics.cpp \
     VideoDecoder.cpp \
+    VideoDecoderTypes.cpp \
+    VideoDecoderFFmpeg.cpp \
     VideoThread.cpp
 
 SDK_HEADERS *= \
@@ -177,6 +179,8 @@ SDK_HEADERS *= \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
+    QtAV/VideoDecoderTypes.h \
+    QtAV/VideoDecoderFFmpeg.h \
     QtAV/FactoryDefine.h \
     QtAV/Statistics.h \
     QtAV/version.h
@@ -204,6 +208,7 @@ HEADERS *= \
     QtAV/private/Filter_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
+    QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h

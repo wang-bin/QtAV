@@ -20,79 +20,43 @@
 ******************************************************************************/
 
 #include <QtAV/VideoDecoder.h>
-#include <private/AVDecoder_p.h>
-#include <QtAV/ImageConverterTypes.h>
-#include <QtAV/Packet.h>
-#include <QtAV/QtAV_Compat.h>
+#include <private/VideoDecoder_p.h>
 #include <QtCore/QSize>
-
-#define PIX_FMT PIX_FMT_RGB32 //PIX_FMT_YUV420P
+#include "factory.h"
 
 namespace QtAV {
 
-class VideoDecoderPrivate : public AVDecoderPrivate
-{
-public:
-    VideoDecoderPrivate():width(0),height(0)
-    {
-        conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
-        conv->setOutFormat(PIX_FMT);
-    }
-    ~VideoDecoderPrivate() {
-        if (conv) {
-            delete conv;
-            conv = 0;
-        }
-    }
+FACTORY_DEFINE(VideoDecoder)
 
-    int width, height;
-    ImageConverter* conv;
-};
+extern void RegisterVideoDecoderFFmpeg_Man();
+extern void RegisterVideoDecoderFFmpeg_DXVA_Man();
+
+void VideoDecoder_RegisterAll()
+{
+    RegisterVideoDecoderFFmpeg_Man();
+    //RegisterVideoDecoderFFmpeg_DXVA_Man();
+}
+
+
 
 VideoDecoder::VideoDecoder()
     :AVDecoder(*new VideoDecoderPrivate())
 {
 }
+
+VideoDecoder::VideoDecoder(VideoDecoderPrivate &d):
+    AVDecoder(d)
+{
+}
+
+VideoDecoder::~VideoDecoder()
+{
+}
+
 //TODO: use ipp, cuda decode and yuv functions. is sws_scale necessary?
 bool VideoDecoder::decode(const QByteArray &encoded)
 {
-    if (!isAvailable())
-        return false;
-    DPTR_D(VideoDecoder);
-    AVPacket packet;
-    av_new_packet(&packet, encoded.size());
-    memcpy(packet.data, encoded.data(), encoded.size());
-//TODO: use AVPacket directly instead of Packet?
-    //AVStream *stream = format_context->streams[stream_idx];
-
-    //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
-    int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
-    //TODO: decoded format is YUV420P, YUV422P?
-    av_free_packet(&packet);
-    if (ret < 0) {
-        qWarning("[VideoDecoder] %s", av_err2str(ret));
-        return false;
-    }
-    if (!d.got_frame_ptr) {
-        qWarning("no frame could be decompressed: %s", av_err2str(ret));
-        return false;
-    }
-    d.conv->setInFormat(d.codec_ctx->pix_fmt);
-    d.conv->setInSize(d.codec_ctx->width, d.codec_ctx->height);
-    if (d.width <= 0 || d.height <= 0) {
-        qDebug("decoded video size not seted. use original size [%d x %d]"
-            , d.codec_ctx->width, d.codec_ctx->height);
-        if (!d.codec_ctx->width || !d.codec_ctx->height)
-            return false;
-        resizeVideoFrame(d.codec_ctx->width, d.codec_ctx->height);
-    }
-    //If not YUV420P or ImageConverter supported format pair, convert to YUV420P first. or directly convert to RGB?(no hwa)
-    //TODO: move convertion out. decoder only do some decoding
-    //if not yuv420p or conv supported convertion pair(in/out), convert to yuv420p first using ff, then use other yuv2rgb converter
-    if (!d.conv->convert(d.frame->data, d.frame->linesize))
-        return false;
-    d.decoded = d.conv->outData();
-    return true;
+    return false;
 }
 
 void VideoDecoder::resizeVideoFrame(const QSize &size)
@@ -107,7 +71,6 @@ void VideoDecoder::resizeVideoFrame(const QSize &size)
 void VideoDecoder::resizeVideoFrame(int width, int height)
 {
     DPTR_D(VideoDecoder);
-    d.conv->setOutSize(width, height);
     d.width = width;
     d.height = height;
 }
