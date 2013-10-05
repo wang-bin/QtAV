@@ -40,6 +40,13 @@ public:
     void flush();
     void setCodecContext(AVCodecContext* codecCtx); //protected
     AVCodecContext* codecContext() const;
+    //? low resolution decoding, 0: normal, 1-> 1/2 size, 2->1/4 size
+    void setLowResolution(int lowres);
+    int lowResolution() const;
+    // 0: auto detect by av_cpu_count()
+    void setDecodeThreads(int threads);
+    int decodeThreads() const;
+    void setThreadSlice(bool s);
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
     virtual bool prepare(); //if resampler or image converter set, call it

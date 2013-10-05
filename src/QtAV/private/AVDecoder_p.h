@@ -33,8 +33,12 @@ class Q_EXPORT AVDecoderPrivate : public DPtrPrivate<AVDecoder>
 public:
     AVDecoderPrivate():
         codec_ctx(0)
+      , available(true)
       , frame(0)
       , got_frame_ptr(0)
+      , threads(av_cpu_count())
+      , thread_slice(1)
+      , low_resolution(0)
     {
         frame = avcodec_alloc_frame();
     }
@@ -46,10 +50,14 @@ public:
     }
 
     AVCodecContext *codec_ctx; //set once and not change
+    bool available;
     AVFrame *frame; //set once and not change
     QByteArray decoded;
     int got_frame_ptr;
     QMutex mutex;
+    int threads;
+    bool thread_slice;
+    int low_resolution;
 };
 
 } //namespace QtAV

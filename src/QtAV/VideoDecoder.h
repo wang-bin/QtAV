@@ -42,6 +42,7 @@ public:
     VideoDecoder();
     virtual ~VideoDecoder();
     //virtual bool prepare();
+    virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
     //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
     //size: the decoded(actually then resized in ImageConverter) frame size

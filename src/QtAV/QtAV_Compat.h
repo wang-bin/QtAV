@@ -33,6 +33,7 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavutil/mathematics.h> //AV_ROUND_UP, av_rescale_rnd for libav
+#include <libavutil/cpu.h>
 #include <libavutil/error.h>
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>

@@ -727,13 +727,6 @@ bool AVDemuxer::findAVCodec()
         if (type == AVMEDIA_TYPE_VIDEO && video_stream < 0) {
             video_stream = i;
             v_codec_context = format_context->streams[video_stream]->codec;
-            //if !vaapi
-            if (v_codec_context->codec_id == CODEC_ID_H264) {
-                v_codec_context->thread_type = FF_THREAD_FRAME; //FF_THREAD_SLICE;
-                v_codec_context->thread_count = QThread::idealThreadCount();
-            } else {
-                //v_codec_context->lowres = 0;
-            }
         } else if (type == AVMEDIA_TYPE_AUDIO && audio_stream < 0) {
             audio_stream = i;
             a_codec_context = format_context->streams[audio_stream]->codec;
