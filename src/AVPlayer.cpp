@@ -39,7 +39,7 @@
 #include <QtAV/AVClock.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtAV/VideoCapture.h>
-#include <QtAV/VideoDecoder.h>
+#include <QtAV/VideoDecoderTypes.h>
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/VideoThread.h>
 #include <QtAV/AVDemuxThread.h>
@@ -301,10 +301,9 @@ void AVPlayer::setPlayerEventFilter(QObject *obj)
     if (event_filter) {
         qApp->removeEventFilter(event_filter);
         delete event_filter;
-        event_filter = 0; //the default event filter's parent is this, so AVPlayer will try to delete event_filter
     }
+    event_filter = obj; //the default event filter's parent is this, so AVPlayer will try to delete event_filter
     if (obj) {
-        event_filter = obj;
         qApp->installEventFilter(event_filter);
     }
 }
@@ -779,7 +778,7 @@ void AVPlayer::setupVideoThread()
 {
     if (vCodecCtx) {
         if (!video_dec) {
-            video_dec = new VideoDecoder();
+            video_dec = VideoDecoderFactory::create(VideoDecoderId_FFmpeg);
         }
         video_dec->setCodecContext(vCodecCtx);
         video_dec->prepare();

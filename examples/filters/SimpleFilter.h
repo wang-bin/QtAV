@@ -28,11 +28,10 @@
 
 namespace QtAV {
 
-class SimpleFilter : public QObject, public Filter
+class SimpleFilter : public Filter
 {
-    Q_OBJECT
 public:
-    SimpleFilter(QObject* parent = 0);
+    SimpleFilter();
     virtual ~SimpleFilter();
     void enableRotate(bool r);
     void enableWaveEffect(bool w);

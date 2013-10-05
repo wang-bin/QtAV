@@ -1,5 +1,3 @@
-#ifndef QTAV_AUDIORESAMPLERTYPES_H
-#define QTAV_AUDIORESAMPLERTYPES_H
 /******************************************************************************
     VideoRendererTypes: type id and manually id register function
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
@@ -20,6 +18,8 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#ifndef QTAV_AUDIORESAMPLERTYPES_H
+#define QTAV_AUDIORESAMPLERTYPES_H
 
 #include <QtAV/AudioResampler.h>
 

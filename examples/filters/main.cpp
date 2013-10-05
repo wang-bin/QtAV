@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
         filter->setText("Filter on Renderer");
         VideoFilterContext *ctx = static_cast<VideoFilterContext*>(filter->context());
         ctx->rect = QRect(200, 150, 400, 60);
+        ctx->opacity = 0.7;
         filter->enableRotate(false);
         filter->prepare();
         filter->start();
@@ -107,6 +108,7 @@ int main(int argc, char *argv[])
         filter->setImage(QImage(":/images/qt-logo.png"));
         ctx = static_cast<VideoFilterContext*>(filter->context());
         ctx->rect = QRect(400, 80, 200, 200);
+        ctx->opacity = 0.618;
         filter->enableRotate(true);
         filter->enableWaveEffect(false);
         filter->prepare();

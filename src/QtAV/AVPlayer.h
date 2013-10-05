@@ -92,8 +92,12 @@ public:
      */
     void setSpeed(qreal speed);
     qreal speed() const;
-    /*only 1 event filter is available. the previous one will be removed. setPlayerEventFilter(0) will remove the event filter*/
-    Q_DECL_DEPRECATED void setPlayerEventFilter(QObject *obj);
+    /*
+     * only 1 event filter is available. the previous one will be removed.
+     * setPlayerEventFilter(0) will remove the event filter.
+     * qApp->installEventFilter will be called
+     */
+    void setPlayerEventFilter(QObject *obj);
 
     Statistics& statistics();
     const Statistics& statistics() const;

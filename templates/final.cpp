@@ -7,9 +7,7 @@ namespace QtAV {
 class %CLASS%Private : public %BASE%Private
 {
 public:
-	%CLASS%Private()
-	{
-	}
+    %CLASS%Private() {}
     virtual ~%CLASS%Private() {}
 };
 

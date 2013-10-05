@@ -74,6 +74,7 @@ public:
      * filter.installTo(target,...) calls target.installFilter(filter)
      * If filter is already registered in FilterManager, then return false
      * Otherwise, call FilterManager.register(filter) and target.filters.push_back(filter), return true
+     * NOTE: the installed filter will be deleted by the target!
      */
     // filter on output. e.g. subtitle
     bool installTo(AVOutput *output);

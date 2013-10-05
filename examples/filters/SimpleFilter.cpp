@@ -25,11 +25,10 @@
 
 namespace QtAV {
 
-SimpleFilter::SimpleFilter(QObject *parent):
-    QObject(parent)
+SimpleFilter::SimpleFilter():
+    Filter()
   , mCanRot(true)
   , mWave(true)
-  , Filter()
 {
     srand(QTime::currentTime().msec());
     mStartValue = (qreal)(rand()%1000)/qreal(1000.0);
