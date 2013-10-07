@@ -40,6 +40,8 @@ struct AVCodec;
 struct AVFrame;
 struct AVStream;
 
+
+// TODO: force codec name. clean code
 namespace QtAV {
 
 class AVClock;
@@ -48,6 +50,12 @@ class Q_EXPORT AVDemuxer : public QObject //QIODevice?
 {
     Q_OBJECT
 public:
+    enum StreamType {
+        AudioStream,
+        VideoStream,
+        SubtitleStream,
+    };
+
     enum SeekUnit {
         SeekByTime,
         SeekByByte,
@@ -64,12 +72,29 @@ public:
     bool atEnd() const;
     bool close();
     bool loadFile(const QString& fileName);
+    bool isLoaded(const QString& fileName) const;
+    bool openCodecs();
+    bool closeCodecs();
+
+    /*
+     * set stream by index in stream list
+     * steps to change stream:
+     *    if (!demuxer.setStream(st, index)) return
+     *    player.stop()
+     *    demuxer.openCodecs()
+     *    player.load()
+     *    player.seek()
+     *    player.play()
+     */
+    bool setStreamIndex(StreamType st, int index);
+    // call openCodecs() to read new stream frames
+    bool setStream(StreamType st, int stream);
     bool readFrame();
     Packet* packet() const; //current readed packet
     int stream() const; //current readed stream index
 
-	void setClock(AVClock *c);
-	AVClock *clock() const;
+    void setClock(AVClock *c);
+    AVClock *clock() const;
     void setSeekUnit(SeekUnit unit);
     SeekUnit seekUnit() const;
     void setSeekTarget(SeekTarget target);
@@ -89,25 +114,39 @@ public:
     QString videoFormatLongName() const; //AVFormatContext::iformat->long_name
     qint64 startTime() const; //AVFormatContext::start_time
     qint64 duration() const; //us, AVFormatContext::duration
+
+    //total bit rate
     int bitRate() const; //AVFormatContext::bit_rate
+    int audioBitRate(int stream = -1) const;
+    int videoBitRate(int stream = -1) const;
+
     qreal frameRate() const; //AVFormatContext::r_frame_rate
-    qint64 frames() const; //AVFormatContext::nb_frames
+    // if stream is -1, return the current video(or audio if no video) stream.
+    // TODO: audio/videoFrames?
+    qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames
     bool isInput() const;
+
+    int currentStream(StreamType st) const;
+    QList<int> streams(StreamType st) const;
+    //return current audio stream
     int audioStream() const;
+    QList<int> audioStreams() const;
     int videoStream() const;
+    QList<int> videoStreams() const;
     int subtitleStream() const;
+    QList<int> subtitleStreams() const;
 
     int width() const; //AVCodecContext::width;
     int height() const; //AVCodecContext::height
     QSize frameSize() const;
 
-    //codec
-    AVCodecContext* audioCodecContext() const;
-    AVCodecContext* videoCodecContext() const;
-    QString audioCodecName() const;
-    QString audioCodecLongName() const;
-    QString videoCodecName() const;
-    QString videoCodecLongName() const;
+    //codec. stream < 0: current stream
+    AVCodecContext* audioCodecContext(int stream = -1) const;
+    AVCodecContext* videoCodecContext(int stream = -1) const;
+    QString audioCodecName(int stream = -1) const;
+    QString audioCodecLongName(int stream = -1) const;
+    QString videoCodecName(int stream = -1) const;
+    QString videoCodecLongName(int stream = -1) const;
 
     /**
      * @brief getInterruptTimeout return the interrupt timeout
@@ -147,6 +186,7 @@ private:
     qint64 ipts;
     int stream_idx;
     mutable int audio_stream, video_stream, subtitle_stream;
+    mutable QList<int> audio_streams, video_streams, subtitle_streams;
 
     bool findAVCodec();
     QString formatName(AVFormatContext *ctx, bool longName = false) const;
@@ -157,7 +197,7 @@ private:
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
     QMutex mutex; //for seek and readFrame
-	AVClock *master_clock;
+    AVClock *master_clock;
     QElapsedTimer seek_timer;
 
     SeekUnit mSeekUnit;
