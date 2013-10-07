@@ -278,7 +278,10 @@ void AVDemuxer::seek(qreal q)
     if (q == 0) {
         qDebug("************seek to 0. started = false");
         started_ = false;
-        v_codec_context->frame_number = 0; //TODO: why frame_number not changed after seek?
+        if (a_codec_context)
+            a_codec_context->frame_number = 0;
+        if (v_codec_context)
+            v_codec_context->frame_number = 0; //TODO: why frame_number not changed after seek?
     }
     if (master_clock) {
         master_clock->updateValue(qreal(t)/qreal(AV_TIME_BASE));
