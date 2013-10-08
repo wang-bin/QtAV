@@ -67,7 +67,8 @@ int AVDecoder::lowResolution() const
 void AVDecoder::setDecodeThreads(int threads)
 {
     DPTR_D(AVDecoder);
-    d.threads = threads > 0 ? threads : av_cpu_count();
+    d.threads = threads > 0 ? threads : QThread::idealThreadCount();
+    d.threads = qMax(d.threads, 1);
 }
 
 int AVDecoder::decodeThreads() const

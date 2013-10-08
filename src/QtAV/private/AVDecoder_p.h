@@ -24,6 +24,7 @@
 
 #include <QtCore/QByteArray>
 #include <QtCore/QMutex>
+#include <QtCore/QThread>
 #include <QtAV/QtAV_Compat.h>
 
 namespace QtAV {
@@ -36,11 +37,11 @@ public:
       , available(true)
       , frame(0)
       , got_frame_ptr(0)
-      , threads(av_cpu_count())
       , thread_slice(1)
       , low_resolution(0)
     {
         frame = avcodec_alloc_frame();
+        threads = qMax(1, QThread::idealThreadCount()); //av_cpu_count is not available for old ffmpeg. c++11 thread::hardware_concurrency()
     }
     virtual ~AVDecoderPrivate() {
         if (frame) {
