@@ -65,6 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpRenderer(0)
   , mpTempRenderer(0)
 {
+    mpAudioTrackAction = 0;
     setMouseTracking(true); //mouseMoveEvent without press.
     connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
     //QTimer::singleShot(10, this, SLOT(setupUi()));
@@ -283,6 +284,10 @@ void MainWindow::setupUi()
     }
     mpARAction->setChecked(true);
 
+    subMenu = new ClickableMenu(tr("Audio track"));
+    mpMenu->addMenu(subMenu);
+    mpAudioTrackMenu = subMenu;
+    connect(mpAudioTrackMenu, SIGNAL(triggered(QAction*)), SLOT(changeAudioTrack(QAction*)));
     subMenu = new ClickableMenu(tr("Channel"));
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeChannel(QAction*)));
@@ -378,6 +383,23 @@ void MainWindow::changeChannel(QAction *action)
         qWarning("open audio failed");
         return;
     }
+}
+
+void MainWindow::changeAudioTrack(QAction *action)
+{
+    if (mpAudioTrackAction == action) {
+        action->toggle();
+        return;
+    }
+    int track = action->data().toInt();
+
+    if (!mpPlayer->setAudioStream(track, true)) {
+        action->toggle();
+        return;
+    }
+    mpAudioTrackAction->setChecked(false);
+    mpAudioTrackAction = action;
+    mpAudioTrackAction->setChecked(true);
 }
 
 void MainWindow::changeVO(QAction *action)
@@ -561,6 +583,7 @@ void MainWindow::onStartPlay()
     mShowControl = 0;
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
     mScreensaver = false;
+    initAudioTrackMenu();
 }
 
 void MainWindow::onStopPlay()
@@ -687,6 +710,39 @@ void MainWindow::openUrl()
     if (url.isEmpty())
         return;
     play(url);
+}
+
+void MainWindow::initAudioTrackMenu()
+{
+    int track = mpPlayer->currentAudioStream();
+    if (mpAudioTrackAction && mpAudioTrackAction->data().toInt() == track)
+        return;
+    QList<QAction*> as = mpAudioTrackMenu->actions();
+    int tracks = mpPlayer->audioStreamCount();
+    while (tracks < as.size()) {
+        QAction *a = as.takeLast();
+        mpAudioTrackMenu->removeAction(a);
+        delete a;
+    }
+    while (tracks > as.size()) {
+        QAction *a = mpAudioTrackMenu->addAction(QString::number(as.size()));
+        a->setData(as.size());
+        a->setCheckable(true);
+        a->setChecked(false);
+        as.push_back(a);
+    }
+    if (!as.isEmpty()) {
+        foreach(QAction *a, as) {
+            if (a->data().toInt() == track) {
+                qDebug("track found!!!!!");
+                mpAudioTrackAction = a;
+                a->setChecked(true);
+            } else {
+                a->setChecked(false);
+            }
+        }
+    }
+    mpAudioTrackAction->setChecked(true);
 }
 
 void MainWindow::switchAspectRatio(QAction *action)

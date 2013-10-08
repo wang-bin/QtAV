@@ -39,10 +39,12 @@ private slots:
     void about();
     void help();
     void openUrl();
+    void initAudioTrackMenu();
     void switchAspectRatio(QAction* action);
     void setRepeat(QAction* action);
     void changeVO(QAction* action);
     void changeChannel(QAction* action);
+    void changeAudioTrack(QAction* action);
     void playOnlineVideo(QAction* action);
     void processPendingActions();
     void initPlayer();
@@ -92,6 +94,8 @@ private:
     QMenu *mpMenu;
     QAction *mpVOAction, *mpARAction; //remove mpVOAction if vo.id() is supported
     QAction *mpRepeatAction;
+    QAction *mpAudioTrackAction;
+    QMenu *mpAudioTrackMenu;
     QAction *mpChannelAction;
     QList<QAction*> mVOActions;
 
