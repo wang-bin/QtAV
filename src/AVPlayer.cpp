@@ -71,6 +71,7 @@ AVPlayer::AVPlayer(QObject *parent) :
   , mSpeed(1.0)
   , ao_enable(true)
 {
+    start_pos = 0;
     mpVOSet = new OutputSet(this);
     mpAOSet = new OutputSet(this);
     qDebug("%s", aboutQtAV_PlainText().toUtf8().constData());
@@ -476,8 +477,13 @@ bool AVPlayer::load()
         return loaded;
     }
     qDebug("loading: %s ...", path.toUtf8().constData());
-    if (!demuxer.loadFile(path)) {
-        return loaded;
+    if (demuxer.isLoaded(path)) {
+        if (!demuxer.openCodecs())
+            return loaded;
+    } else {
+        if (!demuxer.loadFile(path)) {
+            return loaded;
+        }
     }
     loaded = true;
     demuxer.dump();
@@ -486,27 +492,113 @@ bool AVPlayer::load()
     vCodecCtx = demuxer.videoCodecContext();
     setupAudioThread();
     setupVideoThread();
+    start_pos = duration() > 0 ? startPosition()/duration() : 0;
+    demuxer.seek(start_pos); //just use demuxer.startTime()/duration()?
     return loaded;
 }
 
 qreal AVPlayer::duration() const
 {
+    if (formatCtx->duration == AV_NOPTS_VALUE)
+        return 0;
     return qreal(demuxer.duration())/qreal(AV_TIME_BASE); //AVFrameContext.duration time base: AV_TIME_BASE
+}
+
+qreal AVPlayer::startPosition() const
+{
+    if (formatCtx->start_time == AV_NOPTS_VALUE)
+        return 0;
+    return qreal(formatCtx->start_time)/qreal(AV_TIME_BASE);
+}
+
+qreal AVPlayer::position() const
+{
+    return clock->value();
+}
+
+bool AVPlayer::setAudioStream(int n, bool now)
+{
+    if (!demuxer.setStreamIndex(AVDemuxer::AudioStream, n)) {
+        qWarning("set video stream to %d failed", n);
+        return false;
+    }
+    start_pos = -1;
+    if (!now)
+        return true;
+    play();
+    return isPlaying();
+}
+
+bool AVPlayer::setVideoStream(int n, bool now)
+{
+    if (!demuxer.setStreamIndex(AVDemuxer::VideoStream, n)) {
+        qWarning("set video stream to %d failed", n);
+        return false;
+    }
+    start_pos = -1;
+    if (!now)
+        return true;
+    play();
+    return isPlaying();
+}
+
+bool AVPlayer::setSubtitleStream(int n, bool now)
+{
+    return false;
+}
+
+int AVPlayer::currentAudioStream() const
+{
+    return demuxer.audioStreams().indexOf(demuxer.audioStream());
+}
+
+int AVPlayer::currentVideoStream() const
+{
+    return demuxer.videoStreams().indexOf(demuxer.videoStream());
+}
+
+int AVPlayer::currentSubtitleStream() const
+{
+    return demuxer.subtitleStreams().indexOf(demuxer.subtitleStream());
+}
+
+int AVPlayer::audioStreamCount() const
+{
+    return demuxer.audioStreams().size();
+}
+
+int AVPlayer::videoStreamCount() const
+{
+    return demuxer.videoStreams().size();
+}
+
+int AVPlayer::subtitleStreamCount() const
+{
+    return demuxer.subtitleStreams().size();
 }
 
 //FIXME: why no demuxer will not get an eof if replaying by seek(0)?
 void AVPlayer::play()
 {
-    if (isPlaying())
-        stop();
+    //FIXME: bad delay after play from here
+    bool start_last =  false; //start_pos == -1;
+    if (isPlaying()) {
+        if (start_last) {
+            //clock->pause(true); //external clock
+            start_pos = duration() > 0 ? position()/duration() :  0;
+            qDebug("start pos is current position: %f", start_pos);
+        } else {
+            stop();
+            qDebug("start pos is stream start time");
+        }
+    }
     /*
      * avoid load mutiple times when replaying the same seekable file
      * TODO: force load unseekable stream? avio.seekable. currently you
      * must setFile() agian to reload an unseekable stream
      */
-    //FIXME: seek(0) for audio without video crashes, why?
     //TODO: no eof if replay by seek(0)
-    if (true || !isLoaded() || !vCodecCtx) { //if (!isLoaded() && !load())
+    if (!isLoaded()) { //if (!isLoaded() && !load())
         if (!load()) {
             mStatistics.reset();
             return;
@@ -514,11 +606,9 @@ void AVPlayer::play()
             initStatistics();
         }
     } else {
-        qDebug("seek(0)");
-        demuxer.seek(0); //FIXME: now assume it is seekable. for unseekable, setFile() again
+        qDebug("seek(%f)", start_pos);
+        demuxer.seek(start_pos); //FIXME: now assume it is seekable. for unseekable, setFile() again
     }
-    Q_ASSERT(clock != 0);
-    clock->reset();
 
     if (vCodecCtx && video_thread) {
         qDebug("Starting video thread...");
@@ -530,7 +620,13 @@ void AVPlayer::play()
     }
     demuxer_thread->start();
     //blockSignals(false);
-    emit started();
+    Q_ASSERT(clock != 0);
+    if (start_last) {
+        //clock->pause(false); //external clock
+    } else {
+        clock->reset();
+        emit started();
+    }
 }
 
 void AVPlayer::stop()
@@ -573,6 +669,7 @@ void AVPlayer::stop()
             demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
         }
     }
+    start_pos = 0;
     qDebug("all threads [a|v|d] stopped...");
     emit stopped();
 }

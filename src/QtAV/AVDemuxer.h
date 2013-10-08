@@ -76,19 +76,7 @@ public:
     bool openCodecs();
     bool closeCodecs();
 
-    /*
-     * set stream by index in stream list
-     * steps to change stream:
-     *    if (!demuxer.setStream(st, index)) return
-     *    player.stop()
-     *    demuxer.openCodecs()
-     *    player.load()
-     *    player.seek()
-     *    player.play()
-     */
-    bool setStreamIndex(StreamType st, int index);
-    // call openCodecs() to read new stream frames
-    bool setStream(StreamType st, int stream);
+    void putFlushPacket();
     bool readFrame();
     Packet* packet() const; //current readed packet
     int stream() const; //current readed stream index
@@ -99,7 +87,7 @@ public:
     SeekUnit seekUnit() const;
     void setSeekTarget(SeekTarget target);
     SeekTarget seekTarget() const;
-    void seek(qreal q); //q: [0,1]
+    void seek(qreal q); //q: [0,1]. TODO: what if duration() is not valid?
     //seek default steps
     void seekForward();
     void seekBackward();
@@ -126,6 +114,20 @@ public:
     qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames
     bool isInput() const;
 
+    /*
+     * set stream by index in stream list
+     * steps to change stream:
+     *    if (!demuxer.setStream(st, index)) return
+     *    player.stop()
+     *    demuxer.openCodecs()
+     *    player.load()
+     *    player.seek()
+     *    player.play()
+     */
+    //You must reopen the stream immediatly. otherwise audio/videoStream(), currentStream() is not current reading stream
+    bool setStreamIndex(StreamType st, int index);
+    // call openCodecs() to read new stream frames
+    bool setStream(StreamType st, int stream);
     int currentStream(StreamType st) const;
     QList<int> streams(StreamType st) const;
     //return current audio stream

@@ -100,6 +100,7 @@ bool AVDemuxer::readFrame()
     __interrupt_timer.invalidate();
 
     if (ret != 0) {
+        //ffplay: AVERROR_EOF || url_eof() || avsq.empty()
         if (ret == AVERROR_EOF) { //end of file. FIXME: why no eof if replaying by seek(0)?
             if (!eof) {
                 eof = true;
@@ -287,12 +288,6 @@ void AVDemuxer::seek(qreal q)
         master_clock->updateValue(qreal(t)/qreal(AV_TIME_BASE));
         master_clock->updateExternalClock(t/1000LL); //in msec. ignore usec part using t/1000
     }
-    //calc pts
-    //use AVThread::flush() when reaching end
-    //if (videoCodecContext())
-    //    avcodec_flush_buffers(videoCodecContext());
-    //if (audioCodecContext())
-    //    avcodec_flush_buffers(audioCodecContext());
 }
 
 /*

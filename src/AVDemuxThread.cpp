@@ -136,6 +136,13 @@ void AVDemuxThread::seek(qreal pos, int flag)
     } else {
         demuxer->seekBackward();
     }
+    if (audio_thread)
+        audio_thread->packetQueue()->put(Packet());
+    if (video_thread)
+        video_thread->packetQueue()->put(Packet());
+    //if (subtitle_thread)
+    //    subtitle_thread->packetQueue()->put(Packet());
+
     seeking = false;
     seek_cond.wakeAll();
     if (isPaused()) {

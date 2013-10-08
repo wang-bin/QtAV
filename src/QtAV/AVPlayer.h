@@ -23,7 +23,7 @@
 #define QTAV_AVPLAYER_H
 
 #include <QtAV/AVClock.h>
-#include <QtAV/AVDemuxer.h>
+#include <QtAV/AVDemuxer.h> //TODO: remove AVDemuxer dependency. it's not a public class
 #include <QtAV/Statistics.h>
 
 namespace QtAV {
@@ -51,11 +51,30 @@ public:
     //NOT const. This is the only way to access the clock.
     AVClock* masterClock();
     void setFile(const QString& path);
-	QString file() const;
+    QString file() const;
     bool load(const QString& path);
     bool load();
     bool isLoaded() const;
     qreal duration() const; //unit: s, This function may be removed in the future.
+    qreal startPosition() const; //unit: s. used by loop
+    qreal position() const; //unit: s.
+
+    /*
+     * set audio/video/subtitle stream to n. n=0, 1, 2..., means the 1st, 2nd, 3rd audio/video/subtitle stream
+     * if now==true, player will change to new stream immediatly. otherwise, you should call
+     * play() to change to new stream
+     * return: false if stream not changed, not valid
+     * TODO: set when not playing
+     */
+    bool setAudioStream(int n, bool now = false);
+    bool setVideoStream(int n, bool now = false);
+    bool setSubtitleStream(int n, bool now = false);
+    int currentAudioStream() const;
+    int currentVideoStream() const;
+    int currentSubtitleStream() const;
+    int audioStreamCount() const;
+    int videoStreamCount() const;
+    int subtitleStreamCount() const;
     /*!
      * \brief capture and save current frame to "appdir/filename_pts.png".
      * To capture with custom configurations, such as name and dir, use
@@ -64,8 +83,12 @@ public:
      */
     bool captureVideo();
     VideoCapture *videoCapture();
+    /*
+     * replay without parsing the stream if it's already loaded.
+     * to force reload the stream, close() then play()
+     */
     bool play(const QString& path);
-	bool isPlaying() const;
+    bool isPlaying() const;
     bool isPaused() const;
     //this will install the default EventFilter. To use customized filter, register after this
     void addVideoRenderer(VideoRenderer *renderer);
@@ -122,6 +145,7 @@ public slots:
     void play(); //replay
     void stop();
     void playNextFrame();
+    // pos: [0, 1]
     void seek(qreal pos);
     void seekForward();
     void seekBackward();
@@ -141,7 +165,14 @@ private:
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
     QString path;
 
-    //the following things are required and must be setted not null
+    /*
+     * unit: s. 0~1. stream's start time/duration(). or last position/duration() if change to new stream
+     * auto set to 0 if stop(). to stream start time if load()
+     *
+     * -1: used by play() to get current playing position
+     */
+    qreal start_pos;
+    //the following things are required and must be set not null
     AVDemuxer demuxer;
     AVDemuxThread *demuxer_thread;
     AVClock *clock;
