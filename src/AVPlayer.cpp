@@ -82,11 +82,15 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(stop()));
     clock = new AVClock(AVClock::AudioClock);
     //clock->setClockType(AVClock::ExternalClock);
-	demuxer.setClock(clock);
+    demuxer.setClock(clock);
     connect(&demuxer, SIGNAL(started()), clock, SLOT(start()));
 
     demuxer_thread = new AVDemuxThread(this);
     demuxer_thread->setDemuxer(&demuxer);
+    //reenter stop() and reset start_pos. will not emit stopped() again because demuxer thread is the last finished thread(i.e. after avthread.finished())
+    //use direct connection otherwise replay may stop immediatly because slot stop() is called after play()
+    //FIXME: stop() may be called twice because of demuxer thread may emit finished() before a avthread.finished()
+    connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stop()), Qt::DirectConnection);
 
     setPlayerEventFilter(new EventFilter(this));
     video_capture = new VideoCapture(this);
@@ -463,13 +467,13 @@ bool AVPlayer::isLoaded() const
     return loaded;
 }
 
-bool AVPlayer::load(const QString &path)
+bool AVPlayer::load(const QString &path, bool reload)
 {
     setFile(path);
-    return load();
+    return load(reload);
 }
 
-bool AVPlayer::load()
+bool AVPlayer::load(bool reload)
 {
     loaded = false;
     if (path.isEmpty()) {
@@ -477,7 +481,7 @@ bool AVPlayer::load()
         return loaded;
     }
     qDebug("loading: %s ...", path.toUtf8().constData());
-    if (demuxer.isLoaded(path)) {
+    if (!reload && demuxer.isLoaded(path)) {
         if (!demuxer.openCodecs())
             return loaded;
     } else {
@@ -492,8 +496,10 @@ bool AVPlayer::load()
     vCodecCtx = demuxer.videoCodecContext();
     setupAudioThread();
     setupVideoThread();
-    start_pos = duration() > 0 ? startPosition()/duration() : 0;
+    if (start_pos <= 0)
+        start_pos = duration() > 0 ? startPosition()/duration() : 0;
     demuxer.seek(start_pos); //just use demuxer.startTime()/duration()?
+
     return loaded;
 }
 
@@ -522,6 +528,7 @@ bool AVPlayer::setAudioStream(int n, bool now)
         qWarning("set video stream to %d failed", n);
         return false;
     }
+    loaded = false;
     start_pos = -1;
     if (!now)
         return true;
@@ -535,6 +542,7 @@ bool AVPlayer::setVideoStream(int n, bool now)
         qWarning("set video stream to %d failed", n);
         return false;
     }
+    loaded = false;
     start_pos = -1;
     if (!now)
         return true;
@@ -581,16 +589,20 @@ int AVPlayer::subtitleStreamCount() const
 void AVPlayer::play()
 {
     //FIXME: bad delay after play from here
-    bool start_last =  false; //start_pos == -1;
+    bool start_last =  start_pos == -1;
     if (isPlaying()) {
         if (start_last) {
-            //clock->pause(true); //external clock
-            start_pos = duration() > 0 ? position()/duration() :  0;
+            clock->pause(true); //external clock
+            start_pos = duration() > 0 ? -position()/duration() : 0;
             qDebug("start pos is current position: %f", start_pos);
         } else {
-            stop();
+            start_pos = 0;
             qDebug("start pos is stream start time");
         }
+        qreal last_pos = start_pos;
+        stop();
+        if (last_pos < 0)
+            start_pos = -last_pos;
     }
     /*
      * avoid load mutiple times when replaying the same seekable file
@@ -599,15 +611,24 @@ void AVPlayer::play()
      */
     //TODO: no eof if replay by seek(0)
     if (!isLoaded()) { //if (!isLoaded() && !load())
-        if (!load()) {
+        if (!load(false)) {
             mStatistics.reset();
             return;
         } else {
             initStatistics();
         }
     } else {
+#if EOF_ISSUE_SOLVED
         qDebug("seek(%f)", start_pos);
         demuxer.seek(start_pos); //FIXME: now assume it is seekable. for unseekable, setFile() again
+#else
+        if (!load(true)) {
+            mStatistics.reset();
+            return;
+        } else {
+            initStatistics();
+        }
+#endif //EOF_ISSUE_SOLVED
     }
 
     if (vCodecCtx && video_thread) {
@@ -622,18 +643,21 @@ void AVPlayer::play()
     //blockSignals(false);
     Q_ASSERT(clock != 0);
     if (start_last) {
-        //clock->pause(false); //external clock
+        clock->pause(false); //external clock
     } else {
         clock->reset();
-        emit started();
     }
+    emit started(); //we called stop(), so must emit started()
 }
 
 void AVPlayer::stop()
 {
-    if (!isPlaying())
+    qDebug("AVPlayer::stop");
+    start_pos = duration() > 0 ? startPosition()/duration() : 0;
+    if (!isPlaying()) {
+        qDebug("Not playing~");
         return;
-    qDebug("AVPlayer::stop");        
+    }
     //blockSignals(true); //TODO: move emit stopped() before it. or connect avthread.finished() to tryEmitStop() {if (!called_by_stop) emit}
     struct avthreads_t {
         AVThread *thread;
@@ -669,7 +693,6 @@ void AVPlayer::stop()
             demuxer_thread->terminate(); //Terminate() causes the wait condition destroyed without waking up
         }
     }
-    start_pos = 0;
     qDebug("all threads [a|v|d] stopped...");
     emit stopped();
 }

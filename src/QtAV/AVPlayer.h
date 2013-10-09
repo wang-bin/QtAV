@@ -52,8 +52,9 @@ public:
     AVClock* masterClock();
     void setFile(const QString& path);
     QString file() const;
-    bool load(const QString& path);
-    bool load();
+    // force reload even if already loaded
+    bool load(const QString& path, bool reload = true);
+    bool load(bool reload = true);
     bool isLoaded() const;
     qreal duration() const; //unit: s, This function may be removed in the future.
     qreal startPosition() const; //unit: s. used by loop
