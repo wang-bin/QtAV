@@ -715,10 +715,10 @@ void MainWindow::openUrl()
 void MainWindow::initAudioTrackMenu()
 {
     int track = mpPlayer->currentAudioStream();
-    if (mpAudioTrackAction && mpAudioTrackAction->data().toInt() == track)
-        return;
     QList<QAction*> as = mpAudioTrackMenu->actions();
     int tracks = mpPlayer->audioStreamCount();
+    if (mpAudioTrackAction && tracks == as.size() && mpAudioTrackAction->data().toInt() == track)
+        return;
     while (tracks < as.size()) {
         QAction *a = as.takeLast();
         mpAudioTrackMenu->removeAction(a);
