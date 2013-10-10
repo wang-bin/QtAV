@@ -94,6 +94,7 @@ bool AVDecoder::prepare()
         return false;
     }
     qDebug("Decoding threads count: %d", d.threads);
+#if DECODER_DONE //currently codec context is opened in demuxer, we must setup context before open
     d.codec_ctx->thread_count = d.threads;
     if (d.threads > 1)
         d.codec_ctx->thread_type = d.thread_slice ? FF_THREAD_SLICE : FF_THREAD_FRAME;
@@ -102,7 +103,7 @@ bool AVDecoder::prepare()
 
     //? !CODEC_ID_H264 && !CODEC_ID_VP8
     d.codec_ctx->lowres = d.low_resolution;
-
+#endif //DECODER_DONE
     return true;
 }
 
