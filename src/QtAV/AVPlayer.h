@@ -52,7 +52,7 @@ public:
     AVClock* masterClock();
     void setFile(const QString& path);
     QString file() const;
-    // force reload even if already loaded
+    // force reload even if already loaded. otherwise only reopen codecs if necessary
     bool load(const QString& path, bool reload = true);
     bool load(bool reload = true);
     bool isLoaded() const;
@@ -64,8 +64,19 @@ public:
      * set audio/video/subtitle stream to n. n=0, 1, 2..., means the 1st, 2nd, 3rd audio/video/subtitle stream
      * if now==true, player will change to new stream immediatly. otherwise, you should call
      * play() to change to new stream
+     * If a new file is set(except the first time) then a best stream will be selected. If the file not changed,
+     * e.g. replay, then the stream not change
      * return: false if stream not changed, not valid
-     * TODO: set when not playing
+     */
+    /*
+     * steps to change stream without close and continue playing:
+     *    player.setAudioStream(N, true)
+     * or player.setAudioStream(N, false) && player.play
+     *
+     * steps to change stream and replay:
+     *    player.setAudioStream(N)
+     *    player.setFile("")
+     *    player.play(file)
      */
     bool setAudioStream(int n, bool now = false);
     bool setVideoStream(int n, bool now = false);

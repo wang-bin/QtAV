@@ -114,27 +114,21 @@ public:
     qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames
     bool isInput() const;
 
-    /*
-     * set stream by index in stream list
-     * steps to change stream:
-     *    if (!demuxer.setStream(st, index)) return
-     *    player.stop()
-     *    demuxer.openCodecs()
-     *    player.load()
-     *    player.seek()
-     *    player.play()
-     */
-    //You must reopen the stream immediatly. otherwise audio/videoStream(), currentStream() is not current reading stream
+    // true: next load with use the best stream instead of specified stream
+    void setAutoResetStream(bool reset);
+    bool autoResetStream() const;
+    //set stream by index in stream list
     bool setStreamIndex(StreamType st, int index);
-    // call openCodecs() to read new stream frames
-    bool setStream(StreamType st, int stream);
+    // current open stream
     int currentStream(StreamType st) const;
     QList<int> streams(StreamType st) const;
-    //return current audio stream
+    // current open stream
     int audioStream() const;
     QList<int> audioStreams() const;
+    // current open stream
     int videoStream() const;
     QList<int> videoStreams() const;
+    // current open stream
     int subtitleStream() const;
     QList<int> subtitleStreams() const;
 
@@ -184,18 +178,23 @@ signals:
 private:
     bool started_;
     bool eof;
+    bool auto_reset_stream;
     Packet *pkt;
     qint64 ipts;
     int stream_idx;
+    // wanted_xx_stream: -1 auto select by ff
+    int wanted_audio_stream, wanted_video_stream, wanted_subtitle_stream;
     mutable int audio_stream, video_stream, subtitle_stream;
     mutable QList<int> audio_streams, video_streams, subtitle_streams;
 
-    bool findAVCodec();
+    // set wanted_xx_stream. call openCodecs() to read new stream frames
+    bool setStream(StreamType st, int stream);
+    bool findStreams();
     QString formatName(AVFormatContext *ctx, bool longName = false) const;
 
     bool _is_input;
     AVFormatContext *format_context;
-    AVCodecContext *a_codec_context, *v_codec_context;
+    AVCodecContext *a_codec_context, *v_codec_context, *s_codec_contex;
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
     QMutex mutex; //for seek and readFrame

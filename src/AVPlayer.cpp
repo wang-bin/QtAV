@@ -392,6 +392,7 @@ bool AVPlayer::uninstallFilter(Filter *filter)
  */
 void AVPlayer::setFile(const QString &path)
 {
+    demuxer.setAutoResetStream(!this->path.isEmpty() && this->path != path);
     this->path = path;
     loaded = false; //
     //qApp->activeWindow()->setWindowTitle(path); //crash on linux
@@ -498,7 +499,8 @@ bool AVPlayer::load(bool reload)
     setupVideoThread();
     if (start_pos <= 0)
         start_pos = duration() > 0 ? startPosition()/duration() : 0;
-    demuxer.seek(start_pos); //just use demuxer.startTime()/duration()?
+    if (start_pos > 0)
+        demuxer.seek(start_pos); //just use demuxer.startTime()/duration()?
 
     return loaded;
 }
