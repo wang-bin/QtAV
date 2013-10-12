@@ -71,6 +71,9 @@ AVPlayer::AVPlayer(QObject *parent) :
   , mSpeed(1.0)
   , ao_enable(true)
 {
+    formatCtx = 0;
+    aCodecCtx = 0;
+    vCodecCtx = 0;
     start_pos = 0;
     mpVOSet = new OutputSet(this);
     mpAOSet = new OutputSet(this);
@@ -507,6 +510,8 @@ bool AVPlayer::load(bool reload)
 
 qreal AVPlayer::duration() const
 {
+    if (!formatCtx)
+        return 0;
     if (formatCtx->duration == AV_NOPTS_VALUE)
         return 0;
     return qreal(demuxer.duration())/qreal(AV_TIME_BASE); //AVFrameContext.duration time base: AV_TIME_BASE
@@ -514,6 +519,8 @@ qreal AVPlayer::duration() const
 
 qreal AVPlayer::startPosition() const
 {
+    if (!formatCtx) //not opened
+        return 0;
     if (formatCtx->start_time == AV_NOPTS_VALUE)
         return 0;
     return qreal(formatCtx->start_time)/qreal(AV_TIME_BASE);
