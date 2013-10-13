@@ -100,24 +100,25 @@ void GDIRenderer::drawFrame()
     }
     HDC hdc = d.device_context;
     HBITMAP hbmp_old = (HBITMAP)SelectObject(d.off_dc, d.off_bitmap);
+    QRect roi = realROI();
     // && image.size() != size()
     //assume that the image data is already scaled to out_size(NOT renderer size!)
-    if (!d.scale_in_renderer || (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height())) {
+    /*if (!d.scale_in_renderer || (roi.size() == d.out_rect.size())) {
         BitBlt(hdc
                , d.out_rect.left(), d.out_rect.top()
                , d.out_rect.width(), d.out_rect.height()
                , d.off_dc
                , 0, 0
                , SRCCOPY);
-    } else {
+    } else {*/
         StretchBlt(hdc
                    , d.out_rect.left(), d.out_rect.top()
                    , d.out_rect.width(), d.out_rect.height()
                    , d.off_dc
-                   , 0, 0
-                   , d.src_width, d.src_height
+                   , roi.x(), roi.y()
+                   , roi.width(), roi.height()
                    , SRCCOPY);
-    }
+    //}
     SelectObject(d.off_dc, hbmp_old);
     DeleteObject(d.off_bitmap); //avoid mem leak
 #endif

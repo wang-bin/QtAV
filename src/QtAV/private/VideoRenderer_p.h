@@ -106,7 +106,7 @@ public:
     VideoRenderer::Quality quality;
     //out_rect: the displayed video frame out_rect in the renderer
     QRect out_rect; //TODO: out_out_rect
-
+    QRectF roi;
     /* Stores but not own the ptr if renderer is a subclass of QWidget.
      * Some operations are based on QWidget
      */

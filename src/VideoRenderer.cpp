@@ -218,6 +218,42 @@ QRect VideoRenderer::videoRect() const
     return d_func().out_rect;
 }
 
+QRectF VideoRenderer::regionOfInterest() const
+{
+    return d_func().roi;
+}
+
+void VideoRenderer::setRegionOfInterest(qreal x, qreal y, qreal width, qreal height)
+{
+    DPTR_D(VideoRenderer);
+    d.roi = QRectF(x, y, width, height);
+}
+
+void VideoRenderer::setRegionOfInterest(const QRectF &roi)
+{
+    d_func().roi = roi;
+}
+
+QRect VideoRenderer::realROI() const
+{
+    DPTR_D(const VideoRenderer);
+    if (!d.roi.isValid()) {
+        return QRect(0, 0, d.src_width, d.src_height);
+    }
+    QRect r = d.roi.toRect();
+    if (qAbs(d.roi.x()) <= 1)
+        r.setX(d.roi.x()*qreal(frameWidth()));
+    if (qAbs(d.roi.y()) <= 1)
+        r.setY(d.roi.y()*qreal(frameHeight()));
+    // whole size use width or height = 0, i.e. null size
+    if (qAbs(d.roi.width()) < 1)
+        r.setWidth(d.roi.width()*qreal(frameWidth()));
+    if (qAbs(d.roi.height() < 1))
+        r.setHeight(d.roi.height()*qreal(frameHeight()));
+    //TODO: insect with source rect?
+    return r;
+}
+
 QWidget* VideoRenderer::widget()
 {
     return d_func().widget_holder;

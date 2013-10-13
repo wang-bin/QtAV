@@ -110,11 +110,12 @@ void GraphicsItemRenderer::drawFrame()
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
+    QRect roi = realROI();
     //assume that the image data is already scaled to out_size(NOT renderer size!)
-    if (!d.scale_in_renderer || d.image.size() == d.out_rect.size()) {
-        d.painter->drawImage(d.out_rect.topLeft(), d.image);
+    if (!d.scale_in_renderer || roi.size() == d.out_rect.size()) {
+        d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
     } else {
-        d.painter->drawImage(d.out_rect, d.image);
+        d.painter->drawImage(d.out_rect, d.image, roi);
     }
 }
 

@@ -24,6 +24,7 @@
 
 #include <QtCore/QByteArray>
 #include <QtCore/QSize>
+#include <QtCore/QRectF>
 #include <QtAV/AVOutput.h>
 
 /*TODO:
@@ -60,6 +61,7 @@ class Q_EXPORT VideoRenderer : public AVOutput
     DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:
     //TODO: original video size mode
+    // fillmode: keepsize
     enum OutAspectRatioMode {
         RendererAspectRatio //Use renderer's aspect ratio, i.e. stretch to fit the renderer rect
       , VideoAspectRatio    //Use video's aspect ratio and align center in renderer.
@@ -104,6 +106,21 @@ public:
     int frameHeight() const;
     //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
     QRect videoRect() const;
+    /*
+     * region of interest, ROI
+     * invalid rect means the whole source rect
+     * null rect is the whole available source rect. e.g. (0, 0, 0, 0) equals whole source rect
+     * (20, 30, 0, 0) equals (20, 30, sourceWidth - 20, sourceHeight - 30)
+     * if |x|<=1, |y|<=1, |width|<1, |height|<1 means the ratio of source rect
+     * call realROI() to get the frame rect actually to be render
+     * TODO: nagtive width or height means invert direction. is nagtive necessary?
+     */
+    QRectF regionOfInterest() const;
+    // TODO: reset aspect ratio to roi.width/roi/heghit
+    void setRegionOfInterest(qreal x, qreal y, qreal width, qreal height);
+    void setRegionOfInterest(const QRectF& roi);
+    // compute the real ROI
+    QRect realROI() const;
 
     QWidget* widget();
     QGraphicsItem* graphicsItem();

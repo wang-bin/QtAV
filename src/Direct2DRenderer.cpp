@@ -103,12 +103,19 @@ void Direct2DRenderer::drawFrame()
         (FLOAT)d.out_rect.right(),
         (FLOAT)d.out_rect.bottom()
     };
+    QRect roi = realROI();
+    D2D1_RECT_F roi_d2d = {
+        (FLOAT)roi.left(),
+        (FLOAT)roi.top(),
+        (FLOAT)roi.right(),
+        (FLOAT)roi.bottom()
+    };
     //d.render_target->SetTransform
     d.render_target->DrawBitmap(d.bitmap
                                 , &out_rect
                                 , 1 //opacity
                                 , d.interpolation
-                                , NULL);//&D2D1::RectF(0, 0, d.src_width, d.src_height));
+                                , &roi_d2d);
 }
 
 void Direct2DRenderer::paintEvent(QPaintEvent *)
