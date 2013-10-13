@@ -25,12 +25,14 @@ QtAV can meet your most demands
 - Variant streams: locale file, http, rtsp, etc.
 - Playing music
 - Choose audio channel
+- Choose media stream, e.g. play a desired audio track
 - Volume control
 - Fullscreen, stay on top
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
   both FFmpeg(>=0.9) and [Libav](http://libav.org).
 - Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
 - Dynamically change render engine when playing.
+- Multiple video outputs for 1 player
 - QML support as a plugin
 
 ### Extensible Framework (work in progress)

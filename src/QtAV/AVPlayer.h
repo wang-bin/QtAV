@@ -69,14 +69,12 @@ public:
      * return: false if stream not changed, not valid
      */
     /*
-     * steps to change stream without close and continue playing:
+     * steps to change stream:
      *    player.setAudioStream(N, true)
-     * or player.setAudioStream(N, false) && player.play
-     *
-     * steps to change stream and replay:
-     *    player.setAudioStream(N)
-     *    player.setFile("")
-     *    player.play(file)
+     * or player.setAudioStream(N) && player.play()
+     * player then will play from previous position. call
+     *    player.seek(player.startPosition())
+     * to play at beginning
      */
     bool setAudioStream(int n, bool now = false);
     bool setVideoStream(int n, bool now = false);
