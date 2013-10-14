@@ -35,6 +35,7 @@
 #include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1 //TODO Apple include <OpenGL/xxx>
 #endif
 #endif //GL_BGRA_EXT
+//TODO: glPixelStorei(GL_PACK_SWAP_BYTES, ) to swap rgba?
 #ifndef GL_BGRA //it may be defined in glext.h
 #define GL_BGRA GL_BGRA_EXT
 #define GL_BGR GL_BGR_EXT
@@ -214,14 +215,39 @@ void GLWidgetRenderer::drawFrame()
 #endif //QT_OPENGL_ES_2
     glBindTexture(GL_TEXTURE_2D, d.texture);
     d.setupQuality();
-    glTexImage2D(GL_TEXTURE_2D
-                 , 0                //level
-                 , FMT_INTERNAL               //internal format. 4? why GL_RGBA? GL_RGB?
-                 , d.src_width, d.src_height
-                 , 0                //border, ES not support
-                 , FMT          //format, must the same as internal format?
-                 , GL_UNSIGNED_BYTE
-                 , d.data.constData());
+    QRect roi = realROI();
+    if (roi.size() == QSize(d.src_width, d.src_height)) {
+        glTexImage2D(GL_TEXTURE_2D
+                     , 0                //level
+                     , FMT_INTERNAL               //internal format. 4? why GL_RGBA? GL_RGB?
+                     , d.src_width, d.src_height
+                     , 0                //border, ES not support
+                     , FMT          //format, must the same as internal format?
+                     , GL_UNSIGNED_BYTE
+                     , d.data.constData());
+    } else {
+#ifdef GL_UNPACK_ROW_LENGTH
+// http://stackoverflow.com/questions/205522/opengl-subtexturing
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, d.src_width);
+        //glPixelStorei or compute pointer
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, roi.x());
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, roi.y());
+        glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, roi.width(), roi.height(), 0, FMT, GL_UNSIGNED_BYTE, d.data.constData());
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+#else // GL ES
+//define it? or any efficient way?
+        glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, roi.width(), roi.height(), 0, FMT, GL_UNSIGNED_BYTE, NULL);
+        // how to use only 1 call?
+        //glTexSubImage2D(GL_TEXTURE_2D, 0, roi.x(), roi.y(), roi.width(), roi.height(), FMT, GL_UNSIGNED_BYTE, d.data.constData());
+        for(int y = 0; y < roi.height(); y++) {
+            char *row = d.data.data() + ((y + roi.y())*d.src_width + roi.x()) * 4;
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, roi.width(), 1, FMT, GL_UNSIGNED_BYTE, row);
+        }
+#endif //GL_UNPACK_ROW_LENGTH
+    }
+
 #ifndef QT_OPENGL_ES_2
     //qpainter will reset gl state, so need glMatrixMode and clear color(in drawBackground())
     //TODO: study what state will be reset
