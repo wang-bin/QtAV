@@ -114,13 +114,14 @@ bool XVRenderer::needDrawFrame() const
 void XVRenderer::drawFrame()
 {
     DPTR_D(XVRenderer);
+    QRect roi = realROI();
     if (!d.use_shm)
         XvPutImage(d.display, d.xv_port, winId(), d.gc, d.xv_image
-                   , 0, 0, d.src_width, d.src_height
+                   , roi.x(), roi.y(), roi.width(), roi.height()
                    , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
     else
         XvShmPutImage(d.display, d.xv_port, winId(), d.gc, d.xv_image
-                      , 0, 0, d.src_width, d.src_height
+                      , roi.x(), roi.y(), roi.width(), roi.height()
                       , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height()
                       , false /*true: send event*/);
 }
