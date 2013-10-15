@@ -39,21 +39,28 @@ public:
     int cols() const;
     void show();
     void play(const QString& file);
+    void updateROI();
 
 public slots:
     void setSingleWindow(bool s);
+    void toggleSingleFrame(bool s);
+    void toggleFrameless(bool f);
     void openLocalFile();
     void addRenderer();
     void removeRenderer();
 
 private:
-    bool mSingle;
+    bool m1Window;
+    bool m1Frame;
+    bool mFrameless;
     int r, c;
     int timer_id;
     QtAV::AVPlayer *mpPlayer;
     QWidget *view;
     QWidget *mpBar;
-    QPushButton *mpAdd, *mpRemove, *mpOpen, *mpPlay, *mpStop, *mpPause, *mpSingle;
+    QPushButton *mpAdd, *mpRemove, *mpOpen, *mpPlay, *mpStop, *mpPause, *mp1Window;
+    QPushButton *mp1Frame;
+    QPushButton *mpFrameless;
     QString vid;
     QList<QtAV::VideoRenderer*> mRenderers;
 };

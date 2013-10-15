@@ -33,7 +33,9 @@ using namespace QtAV;
 
 VideoGroup::VideoGroup(QObject *parent) :
     QObject(parent)
-  , mSingle(false)
+  , m1Window(false)
+  , m1Frame(true)
+  , mFrameless(false)
   , r(3),c(3),view(0)
   , vid("qpainter")
 {
@@ -51,15 +53,22 @@ VideoGroup::VideoGroup(QObject *parent) :
     mpPause->setCheckable(true);
     mpAdd = new QPushButton("+");
     mpRemove = new QPushButton("-");
-    mpSingle = new QPushButton("Single");
-    mpSingle->setCheckable(mpSingle);
+    mp1Window = new QPushButton("Single Window");
+    mp1Window->setCheckable(true);
+    mp1Frame = new QPushButton("Single Frame");
+    mp1Frame->setCheckable(true);
+    mp1Frame->setChecked(true);
+    mpFrameless = new QPushButton("no window frame");
+    mpFrameless->setCheckable(true);
     connect(mpOpen, SIGNAL(clicked()), SLOT(openLocalFile()));
     connect(mpPlay, SIGNAL(clicked()), mpPlayer, SLOT(play()));
     connect(mpStop, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
     connect(mpPause, SIGNAL(toggled(bool)), mpPlayer, SLOT(pause(bool)));
     connect(mpAdd, SIGNAL(clicked()), SLOT(addRenderer()));
     connect(mpRemove, SIGNAL(clicked()), SLOT(removeRenderer()));
-    connect(mpSingle, SIGNAL(toggled(bool)), SLOT(setSingleWindow(bool)));
+    connect(mp1Window, SIGNAL(toggled(bool)), SLOT(setSingleWindow(bool)));
+    connect(mp1Frame, SIGNAL(toggled(bool)), SLOT(toggleSingleFrame(bool)));
+    connect(mpFrameless, SIGNAL(toggled(bool)), SLOT(toggleFrameless(bool)));
 
     mpBar->layout()->addWidget(mpOpen);
     mpBar->layout()->addWidget(mpPlay);
@@ -67,7 +76,9 @@ VideoGroup::VideoGroup(QObject *parent) :
     mpBar->layout()->addWidget(mpPause);
     mpBar->layout()->addWidget(mpAdd);
     mpBar->layout()->addWidget(mpRemove);
-    mpBar->layout()->addWidget(mpSingle);
+    mpBar->layout()->addWidget(mp1Window);
+    mpBar->layout()->addWidget(mp1Frame);
+    //mpBar->layout()->addWidget(mpFrameless);
     mpBar->resize(200, 25);
 }
 
@@ -79,7 +90,7 @@ VideoGroup::~VideoGroup()
 
 void VideoGroup::setSingleWindow(bool s)
 {
-    mSingle = s;
+    m1Window = s;
     mRenderers = mpPlayer->videoOutputs();
     if (mRenderers.isEmpty())
         return;
@@ -89,6 +100,13 @@ void VideoGroup::setSingleWindow(bool s)
         foreach(VideoRenderer *vo, mRenderers) {
             view->layout()->removeWidget(vo->widget());
             vo->widget()->setParent(0);
+            Qt::WindowFlags wf = vo->widget()->windowFlags();
+            if (mFrameless) {
+                wf &= ~Qt::FramelessWindowHint;
+            } else {
+                wf |= Qt::FramelessWindowHint;
+            }
+            vo->widget()->setWindowFlags(wf);
             vo->widget()->show();
         }
         delete view;
@@ -113,7 +131,31 @@ void VideoGroup::setSingleWindow(bool s)
         view->show();
         mRenderers.last()->widget()->showFullScreen();
     }
+}
 
+void VideoGroup::toggleSingleFrame(bool s)
+{
+    if (m1Frame == s)
+        return;
+    m1Frame = s;
+    updateROI();
+}
+
+void VideoGroup::toggleFrameless(bool f)
+{
+    mFrameless = f;
+    if (mRenderers.isEmpty())
+        return;
+    VideoRenderer *renderer = mRenderers.first();
+    Qt::WindowFlags wf = renderer->widget()->windowFlags();
+    if (f) {
+        wf &= ~Qt::FramelessWindowHint;
+    } else {
+        wf |= Qt::FramelessWindowHint;
+    }
+    foreach (VideoRenderer *rd, mRenderers) {
+        rd->widget()->setWindowFlags(wf);
+    }
 }
 
 void VideoGroup::setVideoRendererTypeString(const QString &vt)
@@ -179,6 +221,13 @@ void VideoGroup::addRenderer()
     mRenderers = mpPlayer->videoOutputs();
     mRenderers.append(renderer);
     renderer->widget()->setAttribute(Qt::WA_DeleteOnClose);
+    Qt::WindowFlags wf = renderer->widget()->windowFlags();
+    if (mFrameless) {
+        wf &= ~Qt::FramelessWindowHint;
+    } else {
+        wf |= Qt::FramelessWindowHint;
+    }
+    renderer->widget()->setWindowFlags(wf);
     int w = view ? view->frameGeometry().width()/c : qApp->desktop()->width()/c;
     int h = view ? view->frameGeometry().height()/r : qApp->desktop()->height()/r;
     renderer->widget()->resize(w, h);
@@ -196,6 +245,7 @@ void VideoGroup::addRenderer()
         renderer->widget()->move(j*w, i*h);
         renderer->widget()->show();
     }
+    updateROI();
 }
 
 void VideoGroup::removeRenderer()
@@ -209,4 +259,25 @@ void VideoGroup::removeRenderer()
         view->layout()->removeWidget(r->widget());
     }
     delete r;
+    updateROI();
+}
+
+void VideoGroup::updateROI()
+{
+    if (mRenderers.isEmpty())
+        return;
+    if (!m1Frame) {
+        foreach (VideoRenderer *renderer, mRenderers) {
+            renderer->setRegionOfInterest(0, 0, 0, 0);
+        }
+        return;
+    }
+    int W = view ? view->frameGeometry().width() : qApp->desktop()->width();
+    int H = view ? view->frameGeometry().height() : qApp->desktop()->height();
+    int w = W / c;
+    int h = H / r;
+    for (int i = 0; i < mRenderers.size(); ++i) {
+        VideoRenderer *renderer = mRenderers.at(i);
+        renderer->setRegionOfInterest(qreal((i%c)*w)/qreal(W), qreal((i/c)*h)/qreal(H), qreal(w)/qreal(W), qreal(h)/qreal(H));
+    }
 }
