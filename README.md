@@ -17,7 +17,7 @@ QtAV can meet your most demands
 
 - Seek, pause/resume
 - Video capture
-- OSD
+- OSD and custom filters
 - Aspect ratio
 - Transform video using GraphicsItemRenderer. (rotate, shear, etc)
 - Playing frame by frame (currently support forward playing)
@@ -28,12 +28,14 @@ QtAV can meet your most demands
 - Choose media stream, e.g. play a desired audio track
 - Volume control
 - Fullscreen, stay on top
-- Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
-  both FFmpeg(>=0.9) and [Libav](http://libav.org).
 - Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
 - Dynamically change render engine when playing.
 - Multiple video outputs for 1 player
+- Region of interest(ROI), i.e. video cropping
 - QML support as a plugin
+- Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
+  both FFmpeg(>=0.9) and [Libav](http://libav.org).
+
 
 ### Extensible Framework (work in progress)
 
@@ -179,9 +181,8 @@ The default behavior can be replaced by subclassing QObject and call `void AVPla
 4. Stylish GUI based on Qt Graphics View Framework
 5. Document and SDK
 6. Other: better sync method and seeking, tests, playing statistics, etc.
-7. Region of interest support.
-8. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
-9. ppa, debian package etc.
+7. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
+8. ppa, debian package etc.
 
 Screenshots
 ----------
