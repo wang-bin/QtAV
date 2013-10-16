@@ -48,12 +48,6 @@
 //TODO: QGLfunctions?
 namespace QtAV {
 
-const GLfloat kTexCoords[] = {
-    0, 0,
-    1, 0,
-    1, 1,
-    0, 1,
-};
 
 const GLfloat kVertices[] = {
     -1, 1,
@@ -216,7 +210,10 @@ void GLWidgetRenderer::drawFrame()
     glBindTexture(GL_TEXTURE_2D, d.texture);
     d.setupQuality();
     QRect roi = realROI();
-    if (roi.size() == QSize(d.src_width, d.src_height)) {
+    //uploading part of image eats less gpu memory, but may be more cpu(gles)
+    //FIXME: more cpu usage then qpainter. FBO, VBO?
+#define ROI_TEXCOORDS 1
+    if (ROI_TEXCOORDS || roi.size() == QSize(d.src_width, d.src_height)) {
         glTexImage2D(GL_TEXTURE_2D
                      , 0                //level
                      , FMT_INTERNAL               //internal format. 4? why GL_RGBA? GL_RGB?
@@ -247,7 +244,24 @@ void GLWidgetRenderer::drawFrame()
         }
 #endif //GL_UNPACK_ROW_LENGTH
     }
-
+    //TODO: compute kTexCoords only if roi changed
+#if ROI_TEXCOORDS
+        const GLfloat kTexCoords[] = {
+            (GLfloat)roi.x()/(GLfloat)d.src_width, (GLfloat)roi.y()/(GLfloat)d.src_height,
+            (GLfloat)(roi.x() + roi.width())/(GLfloat)d.src_width, (GLfloat)roi.y()/(GLfloat)d.src_height,
+            (GLfloat)(roi.x() + roi.width())/(GLfloat)d.src_width, (GLfloat)(roi.y()+roi.height())/(GLfloat)d.src_height,
+            (GLfloat)roi.x()/(GLfloat)d.src_width, (GLfloat)(roi.y()+roi.height())/(GLfloat)d.src_height,
+        };
+///        glVertexAttribPointer(d.tex_coords_location, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
+///        glEnableVertexAttribArray(d.tex_coords_location);
+#else
+        const GLfloat kTexCoords[] = {
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 1,
+        };
+#endif //ROI_TEXCOORDS
 #ifndef QT_OPENGL_ES_2
     //qpainter will reset gl state, so need glMatrixMode and clear color(in drawBackground())
     //TODO: study what state will be reset
@@ -319,10 +333,6 @@ void GLWidgetRenderer::initializeGL()
     glVertexAttribPointer(d.position_location, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
     checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(d.position_location);
-    checkGlError("glEnableVertexAttribArray");
-    glVertexAttribPointer(d.tex_coords_location, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
-    checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(d.tex_coords_location);
     checkGlError("glEnableVertexAttribArray");
 #else
     glShadeModel(GL_SMOOTH); //setupQuality?

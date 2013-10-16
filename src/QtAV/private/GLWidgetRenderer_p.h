@@ -29,7 +29,9 @@ class GLWidgetRendererPrivate : public VideoRendererPrivate
 {
 public:
     GLWidgetRendererPrivate():
-        texture(0)
+        VideoRendererPrivate()
+      , update_texcoords(true)
+      , texture(0)
 #ifdef QT_OPENGL_ES_2
       , program(0)
       , position_location(0)
@@ -110,6 +112,7 @@ public:
 #endif
     }
 
+    bool update_texcoords;
     GLuint texture;
 #ifdef QT_OPENGL_ES_2
     //TODO: u_tex, a_position
