@@ -23,6 +23,7 @@
 #define QTAV_VIDEOOUTPUTEVENTFILTER_H
 
 #include <QtCore/QObject>
+#include <QtCore/QPoint>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -38,8 +39,10 @@ public:
 private slots:
     void stopFiltering();
 private:
+    void switchFullScreen();
     bool mRendererIsQObj;
     VideoRenderer *mpRenderer;
+    QPoint gMousePos, iMousePos;
 };
 
 } //namespace QtAV

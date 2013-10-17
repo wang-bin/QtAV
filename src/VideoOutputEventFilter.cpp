@@ -56,6 +56,8 @@ bool VideoOutputEventFilter::eventFilter(QObject *watched, QEvent *event)
     }
     if (!mpRenderer)
         return false;
+    if (!mpRenderer->isDefaultEventFilterEnabled())
+        return false;
     if (watched != mpRenderer->widget()
             /* && watched != mpRenderer->graphicsWidget()*/ //no showFullScreen() etc.
             )
@@ -64,20 +66,46 @@ bool VideoOutputEventFilter::eventFilter(QObject *watched, QEvent *event)
     case QEvent::KeyPress: {
         QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
         int key = key_event->key();
-        Qt::KeyboardModifiers modifiers = key_event->modifiers();
+        //Qt::KeyboardModifiers modifiers = key_event->modifiers();
         switch (key) {
-        case Qt::Key_F: { //TODO: move to gui
-            //TODO: active window
-            QWidget *w = mpRenderer->widget();
-            if (!w)
-                return false;
-            if (w->isFullScreen())
-                w->showNormal();
-            else
-                w->showFullScreen();
-        }
+        case Qt::Key_F:
+            switchFullScreen();
             break;
         }
+    }
+        break;
+    case QEvent::MouseButtonDblClick:
+        switchFullScreen();
+        break;
+    case QEvent::MouseButtonPress: {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        Qt::MouseButton mbt = me->button();
+        if (mbt == Qt::LeftButton) {
+            gMousePos = me->globalPos();
+            iMousePos = me->pos();
+        }
+    }
+        break;
+    case QEvent::MouseButtonRelease: {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        Qt::MouseButton mbt = me->button();
+        if (mbt != Qt::LeftButton)
+            return false;
+        iMousePos = QPoint();
+        gMousePos = QPoint();
+    }
+        break;
+    case QEvent::MouseMove: {
+        if (iMousePos.isNull() || gMousePos.isNull())
+            return false;
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        QWidget *window = mpRenderer->widget()->window();
+        int x = window->pos().x();
+        int y = window->pos().y();
+        int dx = me->globalPos().x() - gMousePos.x();
+        int dy = me->globalPos().y() - gMousePos.y();
+        gMousePos = me->globalPos();
+        window->move(x + dx, y + dy);
     }
         break;
     default:
@@ -89,6 +117,17 @@ bool VideoOutputEventFilter::eventFilter(QObject *watched, QEvent *event)
 void VideoOutputEventFilter::stopFiltering()
 {
     mpRenderer = 0;
+}
+
+void VideoOutputEventFilter::switchFullScreen()
+{
+    if (!mpRenderer || !mpRenderer->widget())
+        return;
+    QWidget *window = mpRenderer->widget()->window();
+    if (window->isFullScreen())
+        window->showNormal();
+    else
+        window->showFullScreen();
 }
 
 } //namespace QtAV

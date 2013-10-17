@@ -391,4 +391,14 @@ void VideoRenderer::handlePaintEvent()
     //end paint. how about QPainter::endNativePainting()?
 }
 
+void VideoRenderer::enableDefaultEventFilter(bool e)
+{
+    d_func().default_event_filter = e;
+}
+
+bool VideoRenderer::isDefaultEventFilterEnabled() const
+{
+    return d_func().default_event_filter;
+}
+
 } //namespace QtAV

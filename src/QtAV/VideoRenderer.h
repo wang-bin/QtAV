@@ -132,6 +132,8 @@ public:
     OSDFilter *osdFilter();
     Filter* setSubtitleFilter(Filter *filter);
     Filter* subtitleFilter();
+    void enableDefaultEventFilter(bool e);
+    bool isDefaultEventFilterEnabled() const;
 protected:
     VideoRenderer(VideoRendererPrivate &d);
     virtual bool needUpdateBackground() const;
@@ -152,6 +154,7 @@ protected:
     virtual void resizeFrame(int width, int height);
     //TODO: parameter QRect?
     void handlePaintEvent();
+
 private:
     friend class VideoThread;
 

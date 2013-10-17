@@ -57,6 +57,7 @@ public:
       , item_holder(0)
       , osd_filter(0)
       , subtitle_filter(0)
+      , default_event_filter(true)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -114,6 +115,7 @@ public:
     QGraphicsItem *item_holder;
 
     Filter *osd_filter, *subtitle_filter; //should be at the end of list and draw top level
+    bool default_event_filter;
 };
 
 } //namespace QtAV

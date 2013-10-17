@@ -313,6 +313,14 @@ void AVPlayer::setPlayerEventFilter(QObject *obj)
     event_filter = obj; //the default event filter's parent is this, so AVPlayer will try to delete event_filter
     if (obj) {
         qApp->installEventFilter(event_filter);
+    } else {
+        //new created renderers keep the event filter
+        QList<VideoRenderer*> vos = videoOutputs();
+        if (!vos.isEmpty()) {
+            foreach (VideoRenderer *vo, vos) {
+                vo->enableDefaultEventFilter(false);
+            }
+        }
     }
 }
 

@@ -124,50 +124,6 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
 #endif //0
     QEvent::Type type = event->type();
     switch (type) {
-    case QEvent::MouseButtonPress: {
-        qDebug("EventFilter: Mouse press");
-        QMouseEvent *me = static_cast<QMouseEvent*>(event);
-        Qt::MouseButton mbt = me->button();
-        if (mbt == Qt::LeftButton) {
-            gMousePos = me->globalPos();
-            iMousePos = me->pos();
-        }
-        //TODO: wheel to control volume etc.
-    }
-        break;
-    case QEvent::MouseButtonRelease: {
-        QMouseEvent *me = static_cast<QMouseEvent*>(event);
-        Qt::MouseButton mbt = me->button();
-        qDebug("release btn = %d", mbt);
-        if (mbt != Qt::LeftButton)
-            return false;
-        iMousePos = QPoint();
-        gMousePos = QPoint();
-    }
-        break;
-    case QEvent::MouseMove: {
-        if (iMousePos.isNull() || gMousePos.isNull() || !player->renderer()->widget())
-            return false;
-        QMouseEvent *me = static_cast<QMouseEvent*>(event);
-        QWidget *window = player->renderer()->widget()->window();
-        int x = window->pos().x();
-        int y = window->pos().y();
-        int dx = me->globalPos().x() - gMousePos.x();
-        int dy = me->globalPos().y() - gMousePos.y();
-        gMousePos = me->globalPos();
-        window->move(x + dx, y + dy);
-    }
-        break;
-    case QEvent::MouseButtonDblClick: { //TODO: move to gui
-        QWidget *w = qApp->activeWindow();
-        if (!w)
-            return false;
-        if (w->isFullScreen())
-            w->showNormal();
-        else
-            w->showFullScreen();
-    }
-        break;
     case QEvent::KeyPress: {
         QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
         int key = key_event->key();

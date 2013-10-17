@@ -54,7 +54,6 @@ protected:
 
 private:
     QMenu *menu;
-    QPoint gMousePos, iMousePos;
 };
 
 } //namespace QtAV
