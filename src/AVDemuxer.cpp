@@ -289,6 +289,7 @@ void AVDemuxer::seek(qreal q)
     //AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
     // FIXME: back flag is opposite? otherwise seek is bad and may crash?
     int seek_flag = (backward ? 0 : AVSEEK_FLAG_BACKWARD); //AVSEEK_FLAG_ANY
+    //bool seek_bytes = !!(format_context->iformat->flags & AVFMT_TS_DISCONT) && strcmp("ogg", format_context->iformat->name);
     int ret = av_seek_frame(format_context, -1, t, seek_flag);
     //avformat_seek_file()
 #endif
@@ -450,6 +451,8 @@ bool AVDemuxer::openCodecs()
     if (a_codec_context) {
         AVCodec *aCodec = avcodec_find_decoder(a_codec_context->codec_id);
         if (aCodec) {
+            if (aCodec->capabilities & CODEC_CAP_DR1)
+                a_codec_context->flags |= CODEC_FLAG_EMU_EDGE;
             ret = avcodec_open2(a_codec_context, aCodec, NULL);
             if (ret < 0) {
                 _has_audio = false;
@@ -478,15 +481,7 @@ bool AVDemuxer::openCodecs()
             _has_vedio = false;
         }
         ////v_codec_context->time_base = (AVRational){1,30};
-        //avcodec_open(v_codec_context, vCodec) //deprecated
-        ret = avcodec_open2(v_codec_context, vCodec, NULL);
-        if (ret < 0) {
-            qWarning("open video codec failed: %s", av_err2str(ret));
-            _has_vedio = false;
-        } else {
-            if (vCodec->capabilities & CODEC_CAP_DR1)
-                v_codec_context->flags |= CODEC_FLAG_EMU_EDGE;
-        }
+        ///
         // TODO: move to AVDecoder
         //if (hurry_up) {
 //                     codec_ctx->skip_frame = AVDISCARD_NONREF;
@@ -499,6 +494,14 @@ bool AVDemuxer::openCodecs()
         //}
             bool skipframes = false;
             v_codec_context->skip_frame = skipframes ? AVDISCARD_NONREF : AVDISCARD_DEFAULT;
+        if (vCodec->capabilities & CODEC_CAP_DR1)
+            v_codec_context->flags |= CODEC_FLAG_EMU_EDGE;
+        //avcodec_open(v_codec_context, vCodec) //deprecated
+        ret = avcodec_open2(v_codec_context, vCodec, NULL);
+        if (ret < 0) {
+            qWarning("open video codec failed: %s", av_err2str(ret));
+            _has_vedio = false;
+        }
     }
     started_ = false;
     return _has_audio || _has_vedio;
@@ -534,7 +537,7 @@ bool AVDemuxer::autoResetStream() const
 {
     return auto_reset_stream;
 }
-
+//TODO: code like setStream, simplify
 bool AVDemuxer::setStreamIndex(StreamType st, int index)
 {
     QList<int> *streams = 0;

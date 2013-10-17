@@ -73,8 +73,8 @@ public:
     bool close();
     bool loadFile(const QString& fileName);
     bool isLoaded(const QString& fileName) const;
-    bool openCodecs();
-    bool closeCodecs();
+    Q_DECL_DEPRECATED bool openCodecs();
+    Q_DECL_DEPRECATED bool closeCodecs();
 
     void putFlushPacket();
     bool readFrame();
@@ -83,6 +83,8 @@ public:
 
     void setClock(AVClock *c);
     AVClock *clock() const;
+
+    bool isSeekable() const;
     void setSeekUnit(SeekUnit unit);
     SeekUnit seekUnit() const;
     void setSeekTarget(SeekTarget target);

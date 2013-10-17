@@ -35,13 +35,14 @@ public:
     AVDecoderPrivate():
         codec_ctx(0)
       , available(true)
+      , fast(false)
       , frame(0)
       , got_frame_ptr(0)
       , thread_slice(1)
       , low_resolution(0)
     {
         frame = avcodec_alloc_frame();
-        threads = qMax(1, QThread::idealThreadCount()); //av_cpu_count is not available for old ffmpeg. c++11 thread::hardware_concurrency()
+        threads = qMax(0, QThread::idealThreadCount()); //av_cpu_count is not available for old ffmpeg. c++11 thread::hardware_concurrency()
     }
     virtual ~AVDecoderPrivate() {
         if (frame) {
@@ -52,6 +53,7 @@ public:
 
     AVCodecContext *codec_ctx; //set once and not change
     bool available;
+    bool fast;
     AVFrame *frame; //set once and not change
     QByteArray decoded;
     int got_frame_ptr;
@@ -59,6 +61,7 @@ public:
     int threads;
     bool thread_slice;
     int low_resolution;
+    QString name;
 };
 
 } //namespace QtAV

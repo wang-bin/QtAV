@@ -37,13 +37,23 @@ class Q_EXPORT AVDecoder
 public:
     AVDecoder();
     virtual ~AVDecoder();
+    /*
+     * default is open FFmpeg codec context
+     * codec config must be done before open
+     */
+    virtual bool open();
+    virtual bool close();
     void flush();
     void setCodecContext(AVCodecContext* codecCtx); //protected
     AVCodecContext* codecContext() const;
+    // force a codec
+    void setCodecName(const QString& name);
+    QString codecName() const;
+
     //? low resolution decoding, 0: normal, 1-> 1/2 size, 2->1/4 size
     void setLowResolution(int lowres);
     int lowResolution() const;
-    // 0: auto detect by av_cpu_count()
+    // -1: auto detect by QThread::idealThreadCount(). 0: set by ffmpeg(default)
     void setDecodeThreads(int threads);
     int decodeThreads() const;
     void setThreadSlice(bool s);
