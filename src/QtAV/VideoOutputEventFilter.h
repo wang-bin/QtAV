@@ -29,7 +29,7 @@
 namespace QtAV {
 
 class VideoRenderer;
-class Q_EXPORT VideoOutputEventFilter : public QObject
+class Q_AV_EXPORT VideoOutputEventFilter : public QObject
 {
     Q_OBJECT
 public:

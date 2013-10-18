@@ -29,7 +29,7 @@
 
 namespace QtAV {
 
-class Q_EXPORT AVDecoderPrivate : public DPtrPrivate<AVDecoder>
+class Q_AV_EXPORT AVDecoderPrivate : public DPtrPrivate<AVDecoder>
 {
 public:
     AVDecoderPrivate():

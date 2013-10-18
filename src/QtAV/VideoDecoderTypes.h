@@ -26,15 +26,15 @@
 
 namespace QtAV {
 
-extern Q_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
-extern Q_EXPORT VideoDecoderId VideoDecoderId_CUDA;
-extern Q_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_DXVA;
-extern Q_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VAAPI;
-extern Q_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDPAU;
-extern Q_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_CUDA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_DXVA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VAAPI;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDPAU;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDA;
 
 
-Q_EXPORT void VideoDecoder_RegisterAll();
+Q_AV_EXPORT void VideoDecoder_RegisterAll();
 
 } //namespace QtAV
 #endif // QTAV_VIDEODECODERTYPES_H

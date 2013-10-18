@@ -35,7 +35,7 @@ FACTORY_DECLARE(VideoDecoder)
 
 
 class VideoDecoderPrivate;
-class Q_EXPORT VideoDecoder : public AVDecoder
+class Q_AV_EXPORT VideoDecoder : public AVDecoder
 {
     DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:

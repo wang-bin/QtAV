@@ -28,7 +28,7 @@
 
 namespace QtAV {
 
-class Q_EXPORT WidgetRendererPrivate : public QPainterRendererPrivate
+class Q_AV_EXPORT WidgetRendererPrivate : public QPainterRendererPrivate
 {
 public:
     virtual ~WidgetRendererPrivate(){}

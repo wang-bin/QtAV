@@ -31,7 +31,7 @@ struct AVFrame;
 namespace QtAV {
 
 class AVDecoderPrivate;
-class Q_EXPORT AVDecoder
+class Q_AV_EXPORT AVDecoder
 {
     DPTR_DECLARE_PRIVATE(AVDecoder)
 public:

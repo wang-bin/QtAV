@@ -25,10 +25,10 @@
 
 namespace QtAV {
 
-extern Q_EXPORT AudioResamplerId AudioResamplerId_FF;
-extern Q_EXPORT AudioResamplerId AudioResamplerId_Libav;
+extern Q_AV_EXPORT AudioResamplerId AudioResamplerId_FF;
+extern Q_AV_EXPORT AudioResamplerId AudioResamplerId_Libav;
 
-Q_EXPORT void AudioResampler_RegisterAll();
+Q_AV_EXPORT void AudioResampler_RegisterAll();
 
 } //namespace QtAV
 

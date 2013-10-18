@@ -7,7 +7,7 @@
 namespace QtAV {
 
 class AudioResamplerLibavPrivate;
-class AudioResamplerLibav : public AudioResampler //Q_EXPORT is not needed
+class AudioResamplerLibav : public AudioResampler //Q_AV_EXPORT is not needed
 {
     DPTR_DECLARE_PRIVATE(AudioResampler)
 public:

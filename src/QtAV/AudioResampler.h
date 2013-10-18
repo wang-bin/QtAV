@@ -33,7 +33,7 @@ FACTORY_DECLARE(AudioResampler)
 
 class AudioFormat;
 class AudioResamplerPrivate;
-class Q_EXPORT AudioResampler //export is required for users who want add their own subclass outside QtAV
+class Q_AV_EXPORT AudioResampler //export is required for users who want add their own subclass outside QtAV
 {
     DPTR_DECLARE_PRIVATE(AudioResampler)
 public:

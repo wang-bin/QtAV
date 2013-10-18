@@ -27,7 +27,7 @@
 
 namespace QtAV {
 
-class Q_EXPORT GraphicsItemRendererPrivate : public QPainterRendererPrivate
+class Q_AV_EXPORT GraphicsItemRendererPrivate : public QPainterRendererPrivate
 {
 public:
     virtual ~GraphicsItemRendererPrivate(){}

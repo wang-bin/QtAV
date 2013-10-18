@@ -28,7 +28,7 @@
 namespace QtAV {
 
 class GLWidgetRendererPrivate;
-class Q_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
+class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer)

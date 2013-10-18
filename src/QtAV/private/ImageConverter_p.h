@@ -29,7 +29,7 @@
 namespace QtAV {
 
 class ImageConverter;
-class Q_EXPORT ImageConverterPrivate : public DPtrPrivate<ImageConverter>
+class Q_AV_EXPORT ImageConverterPrivate : public DPtrPrivate<ImageConverter>
 {
 public:
     ImageConverterPrivate():interlaced(false),w_in(0),h_in(0),w_out(0),h_out(0)

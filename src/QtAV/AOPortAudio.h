@@ -28,7 +28,7 @@
 namespace QtAV {
 
 class AOPortAudioPrivate;
-class Q_EXPORT AOPortAudio : public AudioOutput
+class Q_AV_EXPORT AOPortAudio : public AudioOutput
 {
     DPTR_DECLARE_PRIVATE(AOPortAudio)
 public:

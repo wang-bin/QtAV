@@ -28,7 +28,7 @@
 
 namespace QtAV {
 
-class Q_EXPORT AudioOutputPrivate : public AVOutputPrivate
+class Q_AV_EXPORT AudioOutputPrivate : public AVOutputPrivate
 {
 public:
     AudioOutputPrivate():

@@ -31,7 +31,7 @@ class QSize;
 namespace QtAV {
 
 //on capture per thread or all in one thread?
-class Q_EXPORT VideoCapture : public QObject
+class Q_AV_EXPORT VideoCapture : public QObject
 {
     Q_OBJECT
 public:

@@ -56,7 +56,7 @@ typedef int VideoRendererId;
 class Filter;
 class OSDFilter;
 class VideoRendererPrivate;
-class Q_EXPORT VideoRenderer : public AVOutput
+class Q_AV_EXPORT VideoRenderer : public AVOutput
 {
     DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:

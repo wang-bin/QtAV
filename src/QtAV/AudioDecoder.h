@@ -29,7 +29,7 @@ namespace QtAV {
 
 class AudioResampler;
 class AudioDecoderPrivate;
-class Q_EXPORT AudioDecoder : public AVDecoder
+class Q_AV_EXPORT AudioDecoder : public AVDecoder
 {
     DPTR_DECLARE_PRIVATE(AudioDecoder)
 public:

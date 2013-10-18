@@ -35,7 +35,7 @@ class QPaintDevice;
 namespace QtAV {
 
 class FilterContext;
-class Q_EXPORT FilterContext
+class Q_AV_EXPORT FilterContext
 {
 public:
     enum Type { ////audio and video...
@@ -63,7 +63,7 @@ protected:
 
 
 //TODO: DrawTarget? New backend for QPaintEngine?
-class Q_EXPORT VideoFilterContext : public FilterContext
+class Q_AV_EXPORT VideoFilterContext : public FilterContext
 {
 public:
     VideoFilterContext();
@@ -109,7 +109,7 @@ protected:
 };
 
 //TODO: font, pen, brush etc?
-class Q_EXPORT QPainterFilterContext : public VideoFilterContext
+class Q_AV_EXPORT QPainterFilterContext : public VideoFilterContext
 {
 public:
     virtual Type type() const; //QtPainter
@@ -126,7 +126,7 @@ protected:
     virtual void initializeOnData(QByteArray* data);
 };
 
-class Q_EXPORT GLFilterContext : public VideoFilterContext
+class Q_AV_EXPORT GLFilterContext : public VideoFilterContext
 {
 public:
     virtual Type type() const; //OpenGL

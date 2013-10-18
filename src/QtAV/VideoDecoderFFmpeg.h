@@ -27,7 +27,7 @@
 namespace QtAV {
 
 class VideoDecoderFFmpegPrivate;
-class Q_EXPORT VideoDecoderFFmpeg : public VideoDecoder
+class Q_AV_EXPORT VideoDecoderFFmpeg : public VideoDecoder
 {
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
 public:

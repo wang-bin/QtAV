@@ -37,8 +37,8 @@ namespace QtAV {
  * When a new type is created, declare the type here, define the value in cpp
  */
 //why can not be const for msvc?
-extern Q_EXPORT ImageConverterId ImageConverterId_FF;
-extern Q_EXPORT ImageConverterId ImageConverterId_IPP;
+extern Q_AV_EXPORT ImageConverterId ImageConverterId_FF;
+extern Q_AV_EXPORT ImageConverterId ImageConverterId_IPP;
 
 /*
  * This must be called manually in your program(outside this library) if your compiler does
@@ -52,7 +52,7 @@ extern Q_EXPORT ImageConverterId ImageConverterId_IPP;
  *   1. add RegisterImageConverterXXX_Man() in ImageConverter_RegisterAll() in ImageConverter.cpp;
  *   2. define the RegisterImageConverterXXX_Man() In ImageConverterXXX.cpp
  */
-Q_EXPORT void ImageConverter_RegisterAll();
+Q_AV_EXPORT void ImageConverter_RegisterAll();
 
 } //namespace QtAV
 #endif // QTAV_IMAGECONVERTERTYPES_H

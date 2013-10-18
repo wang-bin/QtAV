@@ -49,14 +49,14 @@ class Filter;
  * DO NOT delete a filter call safeReleaseFilter(&filter) instead
  * It will uninstall internally and filter to null
  */
-Q_EXPORT void safeReleaseFilter(Filter** ppFilter);
+Q_AV_EXPORT void safeReleaseFilter(Filter** ppFilter);
 
 class AVOutput;
 class AVPlayer;
 class FilterPrivate;
 class Statistics;
 // TODO: QObject?
-class Q_EXPORT Filter
+class Q_AV_EXPORT Filter
 {
     DPTR_DECLARE_PRIVATE(Filter)
 public:

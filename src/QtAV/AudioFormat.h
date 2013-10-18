@@ -28,7 +28,7 @@
 namespace QtAV {
 
 class AudioFormatPrivate;
-class Q_EXPORT AudioFormat
+class Q_AV_EXPORT AudioFormat
 {
 public:
     //TODO: what about paInt24

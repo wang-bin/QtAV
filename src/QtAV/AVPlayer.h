@@ -41,7 +41,7 @@ class AVDemuxThread;
 class Filter;
 class VideoCapture;
 class OutputSet;
-class Q_EXPORT AVPlayer : public QObject
+class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
 public:

@@ -36,7 +36,7 @@
 namespace QtAV {
 
 class GraphicsItemRendererPrivate;
-class Q_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRenderer
+class Q_AV_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRenderer
 {
     DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)
 public:

@@ -8,7 +8,7 @@
 namespace QtAV {
 
 class %CLASS%Private;
-class Q_EXPORT %CLASS% : public QWidget, public VideoRenderer
+class Q_AV_EXPORT %CLASS% : public QWidget, public VideoRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(%CLASS%)

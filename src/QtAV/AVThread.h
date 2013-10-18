@@ -37,7 +37,7 @@ class AVClock;
 class Filter;
 class Statistics;
 class OutputSet;
-class Q_EXPORT AVThread : public QThread
+class Q_AV_EXPORT AVThread : public QThread
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVThread)

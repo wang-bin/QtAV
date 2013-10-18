@@ -29,7 +29,7 @@ namespace QtAV {
 
 class AudioFormat;
 class AudioOutputPrivate;
-class Q_EXPORT AudioOutput : public AVOutput
+class Q_AV_EXPORT AudioOutput : public AVOutput
 {
     DPTR_DECLARE_PRIVATE(AudioOutput)
 public:

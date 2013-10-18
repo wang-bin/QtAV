@@ -28,7 +28,7 @@
 namespace QtAV {
 
 class WidgetRendererPrivate;
-class Q_EXPORT WidgetRenderer : public QWidget, public QPainterRenderer
+class Q_AV_EXPORT WidgetRenderer : public QWidget, public QPainterRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(WidgetRenderer)

@@ -33,7 +33,7 @@ class ImageConverter;
 FACTORY_DECLARE(ImageConverter)
 
 class ImageConverterPrivate;
-class Q_EXPORT ImageConverter //export is not needed
+class Q_AV_EXPORT ImageConverter //export is not needed
 {
     DPTR_DECLARE_PRIVATE(ImageConverter)
 public:

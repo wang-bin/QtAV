@@ -32,7 +32,7 @@
 namespace QtAV {
 
 class Direct2DRendererPrivate;
-class Q_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
+class Q_AV_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(Direct2DRenderer)

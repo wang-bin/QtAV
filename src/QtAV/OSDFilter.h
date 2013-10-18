@@ -29,14 +29,14 @@ namespace QtAV {
 
 class OSDFilterPrivate;
 //TODO: not template. OSDFilter : public Filter, public OSD
-class Q_EXPORT OSDFilter : public Filter, public OSD
+class Q_AV_EXPORT OSDFilter : public Filter, public OSD
 {
 protected:
     DPTR_DECLARE_PRIVATE(OSDFilter)
     OSDFilter(OSDFilterPrivate& d);
 };
 
-class Q_EXPORT OSDFilterQPainter : public OSDFilter
+class Q_AV_EXPORT OSDFilterQPainter : public OSDFilter
 {
 public:
     OSDFilterQPainter();
@@ -47,7 +47,7 @@ protected:
     void process();
 };
 
-class Q_EXPORT OSDFilterGL : public OSDFilter
+class Q_AV_EXPORT OSDFilterGL : public OSDFilter
 {
 public:
     OSDFilterGL();

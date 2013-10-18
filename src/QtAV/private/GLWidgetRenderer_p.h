@@ -25,7 +25,7 @@
 #include "private/VideoRenderer_p.h"
 namespace QtAV {
 
-class GLWidgetRendererPrivate : public VideoRendererPrivate
+class Q_AV_EXPORT GLWidgetRendererPrivate : public VideoRendererPrivate
 {
 public:
     GLWidgetRendererPrivate():

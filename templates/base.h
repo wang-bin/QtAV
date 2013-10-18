@@ -7,7 +7,7 @@
 namespace QtAV {
 
 class %CLASS%Private;
-class Q_EXPORT %CLASS%
+class Q_AV_EXPORT %CLASS%
 {
     DPTR_DECLARE_PRIVATE(%CLASS%)
 public:

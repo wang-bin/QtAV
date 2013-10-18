@@ -31,7 +31,7 @@ namespace QtAV {
 
 class AVDemuxer;
 class AVThread;
-class Q_EXPORT AVDemuxThread : public QThread
+class Q_AV_EXPORT AVDemuxThread : public QThread
 {
     Q_OBJECT
 public:

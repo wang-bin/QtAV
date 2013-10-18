@@ -31,7 +31,7 @@
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
-class Q_EXPORT Packet
+class Q_AV_EXPORT Packet
 {
 public:
     Packet();

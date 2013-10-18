@@ -30,17 +30,17 @@ namespace QtAV {
 class VideoRenderer;
 FACTORY_DECLARE(VideoRenderer)
 
-//Q_EXPORT(dllexport/import) is needed if used out of the library
+//Q_AV_EXPORT(dllexport/import) is needed if used out of the library
 //TODO graphics item?
-extern Q_EXPORT VideoRendererId VideoRendererId_QPainter;
-extern Q_EXPORT VideoRendererId VideoRendererId_Widget;
-extern Q_EXPORT VideoRendererId VideoRendererId_GraphicsItem;
-extern Q_EXPORT VideoRendererId VideoRendererId_GLWidget;
-extern Q_EXPORT VideoRendererId VideoRendererId_GDI;
-extern Q_EXPORT VideoRendererId VideoRendererId_Direct2D;
-extern Q_EXPORT VideoRendererId VideoRendererId_XV;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_QPainter;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_Widget;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_GraphicsItem;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_GLWidget;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_GDI;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_Direct2D;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_XV;
 
-Q_EXPORT void VideoRenderer_RegisterAll();
+Q_AV_EXPORT void VideoRenderer_RegisterAll();
 
 } //namespace QtAV
 

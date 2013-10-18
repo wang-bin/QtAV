@@ -31,7 +31,7 @@ class AVOutput;
 class AVPlayer;
 class Filter;
 class FilterManagerPrivate;
-class Q_EXPORT FilterManager : public QObject
+class Q_AV_EXPORT FilterManager : public QObject
 {
     DPTR_DECLARE_PRIVATE(FilterManager)
     Q_OBJECT

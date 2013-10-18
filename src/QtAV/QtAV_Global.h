@@ -27,25 +27,25 @@
 #include <dptr.h>
 
 #if defined(Q_DLL_LIBRARY)
-#  undef Q_EXPORT
-#  define Q_EXPORT Q_DECL_EXPORT
+#  undef Q_AV_EXPORT
+#  define Q_AV_EXPORT Q_DECL_EXPORT
 #else
-#  undef Q_EXPORT
-#  define Q_EXPORT Q_DECL_IMPORT //only for vc?
+#  undef Q_AV_EXPORT
+#  define Q_AV_EXPORT Q_DECL_IMPORT //only for vc?
 #endif
 
 /* runtime version. used to compare with compile time version */
-Q_EXPORT unsigned QtAV_Version();
-Q_EXPORT QString QtAV_Version_String();
-Q_EXPORT QString QtAV_Version_String_Long();
+Q_AV_EXPORT unsigned QtAV_Version();
+Q_AV_EXPORT QString QtAV_Version_String();
+Q_AV_EXPORT QString QtAV_Version_String_Long();
 namespace QtAV {
-Q_EXPORT void about(); //popup a dialog
-Q_EXPORT void aboutFFmpeg();
-Q_EXPORT QString aboutFFmpeg_PlainText();
-Q_EXPORT QString aboutFFmpeg_HTML();
-Q_EXPORT void aboutQtAV();
-Q_EXPORT QString aboutQtAV_PlainText();
-Q_EXPORT QString aboutQtAV_HTML();
+Q_AV_EXPORT void about(); //popup a dialog
+Q_AV_EXPORT void aboutFFmpeg();
+Q_AV_EXPORT QString aboutFFmpeg_PlainText();
+Q_AV_EXPORT QString aboutFFmpeg_HTML();
+Q_AV_EXPORT void aboutQtAV();
+Q_AV_EXPORT QString aboutQtAV_PlainText();
+Q_AV_EXPORT QString aboutQtAV_HTML();
 }
 
 /*

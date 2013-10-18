@@ -27,7 +27,7 @@
 namespace QtAV {
 
 class ImageConverterFFPrivate;
-class ImageConverterFF : public ImageConverter //Q_EXPORT is not needed
+class ImageConverterFF : public ImageConverter //Q_AV_EXPORT is not needed
 {
     DPTR_DECLARE_PRIVATE(ImageConverterFF)
 public:

@@ -33,7 +33,7 @@
 namespace QtAV {
 
 class StatisticsPrivate;
-class Q_EXPORT Statistics
+class Q_AV_EXPORT Statistics
 {
 public:
     Statistics();

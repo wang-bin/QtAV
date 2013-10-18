@@ -28,7 +28,7 @@ namespace QtAV {
 
 class AudioDecoder;
 class AudioThreadPrivate;
-class Q_EXPORT AudioThread : public AVThread
+class AudioThread : public AVThread
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AudioThread)

@@ -33,7 +33,7 @@
 namespace QtAV {
 
 class ImageConverterIPPPrivate;
-class ImageConverterIPP : public ImageConverter //Q_EXPORT is not needed
+class ImageConverterIPP : public ImageConverter //Q_AV_EXPORT is not needed
 {
     DPTR_DECLARE_PRIVATE(ImageConverterIPP)
 public:

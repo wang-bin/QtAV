@@ -28,7 +28,7 @@
 namespace QtAV {
 
 class XVRendererPrivate;
-class Q_EXPORT XVRenderer : public QWidget, public VideoRenderer
+class Q_AV_EXPORT XVRenderer : public QWidget, public VideoRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(XVRenderer)

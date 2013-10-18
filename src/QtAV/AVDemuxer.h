@@ -46,7 +46,7 @@ namespace QtAV {
 
 class AVClock;
 class Packet;
-class Q_EXPORT AVDemuxer : public QObject //QIODevice?
+class Q_AV_EXPORT AVDemuxer : public QObject //QIODevice?
 {
     Q_OBJECT
 public:

@@ -31,7 +31,7 @@
 namespace QtAV {
 
 class AVPlayer;
-class Q_EXPORT OutputSet : public QObject
+class Q_AV_EXPORT OutputSet : public QObject
 {
     Q_OBJECT
 public:
