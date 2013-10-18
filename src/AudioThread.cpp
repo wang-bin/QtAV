@@ -216,8 +216,14 @@ void AudioThread::run()
                 decodedPos += chunk;
                 decodedSize -= chunk;
             }
+            int undecoded = dec->undecodedSize();
+            if (undecoded > 0) {
+                pkt.data.remove(0, pkt.data.size() - undecoded);
+            } else {
+                pkt = Packet();
+            }
         } else { //???
-            //qWarning("Decode audio failed");
+            qWarning("Decode audio failed");
             qreal dt = pkt.pts - d.last_pts;
             if (abs(dt) > 0.618 || dt < 0) {
                 dt = 0;
@@ -225,11 +231,6 @@ void AudioThread::run()
             //qDebug("sleep %f", dt);
             //TODO: avoid acummulative error. External clock?
             msleep((unsigned long)(dt*1000.0));
-        }
-        int undecoded = dec->undecodedSize();
-        if (undecoded > 0) {
-            pkt.data.remove(0, pkt.data.size() - undecoded);
-        } else {
             pkt = Packet();
         }
         d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
