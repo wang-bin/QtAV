@@ -61,6 +61,8 @@ MainWindow::MainWindow(QWidget *parent) :
   , mScreensaver(true)
   , mShowControl(2)
   , mTimerId(0)
+  , mRepeateCount(0)
+  , mRepeateMax(0)
   , mpPlayer(0)
   , mpRenderer(0)
   , mpTempRenderer(0)
@@ -258,17 +260,20 @@ void MainWindow::setupUi()
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
     mpMenu->addSeparator();
     subMenu = new ClickableMenu(tr("Repeat"));
-    subMenu->setEnabled(false); //have bug now
     mpMenu->addMenu(subMenu);
+    //subMenu->setEnabled(false);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(setRepeat(QAction*)));
-    mpRepeatAction = subMenu->addAction(tr("No"));
-    mpRepeatAction->setData(0);
-    subMenu->addAction(tr("Single"))->setData(1);
-    subMenu->addAction(tr("All"))->setData(2);
-    foreach(QAction* action, subMenu->actions()) {
-        action->setCheckable(true);
-    }
-    mpRepeatAction->setChecked(true);
+    subMenu->addAction(tr("Enable"))->setCheckable(true);
+    QSpinBox *pRepeatBox = new QSpinBox(0);
+    pRepeatBox->setMinimum(-1);
+    pRepeatBox->setValue(-1);
+    pRepeatBox->setToolTip("-1: " + tr("infinity"));
+    connect(pRepeatBox, SIGNAL(valueChanged(int)), SLOT(setRepeateMax(int)));
+    pWA = new QWidgetAction(0);
+    pWA->setDefaultWidget(pRepeatBox);
+    pWA->defaultWidget()->setEnabled(false);
+    subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
+    mpRepeatAction = pWA;
 
     subMenu = new QMenu(tr("Aspect ratio"), mpMenu);
     mpMenu->addMenu(subMenu);
@@ -530,6 +535,7 @@ void MainWindow::openFile()
     QString file = QFileDialog::getOpenFileName(0, tr("Open a media file"));
     if (file.isEmpty())
         return;
+    mRepeateCount = 0;
     play(file);
 }
 
@@ -595,9 +601,11 @@ void MainWindow::onStopPlay()
     mpTimeSlider->setDisabled(true);
     mpCurrent->setText("00:00:00");
     mpDuration->setText("00:00:00");
-    if (mpRepeatAction->data().toInt() == 1) {
+    if (mRepeateMax == -1 || mRepeateCount < mRepeateMax) {
+        mRepeateCount++;
         play(mFile);
     } else {
+        mRepeateCount = 0;
         mShowControl = 2;
         tryShowControlBar();
     }
@@ -709,6 +717,7 @@ void MainWindow::openUrl()
     QString url = QInputDialog::getText(0, tr("Open an url"), tr("Url"));
     if (url.isEmpty())
         return;
+    mRepeateCount = 0;
     play(url);
 }
 
@@ -731,15 +740,17 @@ void MainWindow::initAudioTrackMenu()
         a->setChecked(false);
         as.push_back(a);
     }
-    if (!as.isEmpty()) {
-        foreach(QAction *a, as) {
-            if (a->data().toInt() == track) {
-                qDebug("track found!!!!!");
-                mpAudioTrackAction = a;
-                a->setChecked(true);
-            } else {
-                a->setChecked(false);
-            }
+    if (as.isEmpty()) {
+        mpAudioTrackAction = 0;
+        return;
+    }
+    foreach(QAction *a, as) {
+        if (a->data().toInt() == track) {
+            qDebug("track found!!!!!");
+            mpAudioTrackAction = a;
+            a->setChecked(true);
+        } else {
+            a->setChecked(false);
         }
     }
     mpAudioTrackAction->setChecked(true);
@@ -769,11 +780,18 @@ void MainWindow::switchAspectRatio(QAction *action)
 
 void MainWindow::setRepeat(QAction *action)
 {
-    if (action != mpRepeatAction) {
-        mpRepeatAction->setChecked(false);
-        mpRepeatAction = action;
+    if (action->isChecked()) {
+        mpRepeatAction->defaultWidget()->setEnabled(true);
+        mRepeateMax = ((QSpinBox*)mpRepeatAction->defaultWidget())->value();
+    } else {
+        mpRepeatAction->defaultWidget()->setEnabled(false);
+        mRepeateMax = 0;
     }
-    mpRepeatAction->setChecked(true);
+}
+
+void MainWindow::setRepeateMax(int m)
+{
+    mRepeateMax = m;
 }
 
 void MainWindow::playOnlineVideo(QAction *action)

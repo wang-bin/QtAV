@@ -3,6 +3,7 @@
 
 #include <QWidget>
 
+class QWidgetAction;
 namespace QtAV {
 class AudioOutput;
 class AVPlayer;
@@ -42,6 +43,7 @@ private slots:
     void initAudioTrackMenu();
     void switchAspectRatio(QAction* action);
     void setRepeat(QAction* action);
+    void setRepeateMax(int);
     void changeVO(QAction* action);
     void changeChannel(QAction* action);
     void changeAudioTrack(QAction* action);
@@ -80,6 +82,7 @@ private:
     bool mScreensaver;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
     int mTimerId;
+    int mRepeateCount, mRepeateMax;
     QVBoxLayout *mpPlayerLayout;
 
     QWidget *mpControl;
@@ -93,7 +96,7 @@ private:
     Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
     QMenu *mpMenu;
     QAction *mpVOAction, *mpARAction; //remove mpVOAction if vo.id() is supported
-    QAction *mpRepeatAction;
+    QWidgetAction *mpRepeatAction;
     QAction *mpAudioTrackAction;
     QMenu *mpAudioTrackMenu;
     QAction *mpChannelAction;
