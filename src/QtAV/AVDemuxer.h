@@ -89,9 +89,6 @@ public:
     void setSeekTarget(SeekTarget target);
     SeekTarget seekTarget() const;
     void seek(qreal q); //q: [0,1]. TODO: what if duration() is not valid?
-    //seek default steps
-    void seekForward();
-    void seekBackward();
 
     //format
     AVFormatContext* formatContext();
@@ -198,7 +195,6 @@ private:
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
     QMutex mutex; //for seek and readFrame
-    AVClock *master_clock;
     QElapsedTimer seek_timer;
 
     SeekUnit mSeekUnit;

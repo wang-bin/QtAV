@@ -116,7 +116,7 @@ AVThread* AVDemuxThread::audioThread()
     return audio_thread;
 }
 
-void AVDemuxThread::seek(qreal pos, int flag)
+void AVDemuxThread::seek(qreal pos)
 {
     qDebug("demux thread start to seek...");
     seeking = true;
@@ -129,13 +129,7 @@ void AVDemuxThread::seek(qreal pos, int flag)
         video_thread->setDemuxEnded(false);
         video_thread->packetQueue()->clear();
     }
-    if (flag > 0) {
-        demuxer->seekForward();
-    } else if (flag == 0) {
-        demuxer->seek(pos);
-    } else {
-        demuxer->seekBackward();
-    }
+    demuxer->seek(pos);
     if (audio_thread)
         audio_thread->packetQueue()->put(Packet());
     if (video_thread)
@@ -157,16 +151,6 @@ void AVDemuxThread::seek(qreal pos, int flag)
         pause(true);
         avthread->pause(true);
     }
-}
-
-void AVDemuxThread::seekForward()
-{
-    seek(0, 1);
-}
-
-void AVDemuxThread::seekBackward()
-{
-    seek(0, -1);
 }
 
 bool AVDemuxThread::isPaused() const
@@ -261,7 +245,7 @@ void AVDemuxThread::run()
         }
         if (seeking) {
             qDebug("Demuxer is seeking... wait for seek end");
-            if (!seek_cond.wait(&buffer_mutex, 1000)) { //will return the same state(i.e. lock)
+            if (!seek_cond.wait(&buffer_mutex, 200)) { //will return the same state(i.e. lock)
                 qWarning("seek timed out");
             }
         }

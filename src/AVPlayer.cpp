@@ -85,7 +85,6 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(stop()));
     clock = new AVClock(AVClock::AudioClock);
     //clock->setClockType(AVClock::ExternalClock);
-    demuxer.setClock(clock);
     connect(&demuxer, SIGNAL(started()), clock, SLOT(start()));
 
     demuxer_thread = new AVDemuxThread(this);
@@ -762,25 +761,22 @@ void AVPlayer::playNextFrame()
 
 void AVPlayer::seek(qreal pos)
 {
-     if (!demuxer_thread->isRunning())
+    if (!demuxer_thread->isRunning())
         return;
+    qDebug("seek %f%%", pos*100.0);
+    masterClock()->updateValue(pos*duration()); //what is duration == 0
+    masterClock()->updateExternalClock(pos*duration()*1000); //in msec. ignore usec part using t/1000
     demuxer_thread->seek(pos);
 }
 
 void AVPlayer::seekForward()
 {
-    if (!demuxer_thread->isRunning())
-        return;
-    demuxer_thread->seekForward();
-    qDebug("seek %f%%", clock->value()/duration()*100.0);
+    seek((position() + 10.0)/duration());
 }
 
 void AVPlayer::seekBackward()
 {
-     if (!demuxer_thread->isRunning())
-        return;
-    demuxer_thread->seekBackward();
-    qDebug("seek %f%%", clock->value()/duration()*100.0);
+    seek((position() - 10.0)/duration());
 }
 
 void AVPlayer::updateClock(qint64 msecs)

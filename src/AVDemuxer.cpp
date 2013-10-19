@@ -49,7 +49,6 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , v_codec_context(0)
     , s_codec_contex(0)
     , _file_name(fileName)
-    , master_clock(0)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AnyFrame)
     ,__interrupt_status(0)
@@ -216,16 +215,6 @@ bool AVDemuxer::close()
     return true;
 }
 
-void AVDemuxer::setClock(AVClock *c)
-{
-    master_clock = c;
-}
-
-AVClock* AVDemuxer::clock() const
-{
-    return master_clock;
-}
-
 void AVDemuxer::setSeekUnit(SeekUnit unit)
 {
     mSeekUnit = unit;
@@ -307,10 +296,6 @@ void AVDemuxer::seek(qreal q)
         if (s_codec_contex)
             s_codec_contex->frame_number = 0;
     }
-    if (master_clock) {
-        master_clock->updateValue(qreal(t)/qreal(AV_TIME_BASE));
-        master_clock->updateExternalClock(t/1000LL); //in msec. ignore usec part using t/1000
-    }
 }
 
 /*
@@ -318,38 +303,6 @@ void AVDemuxer::seek(qreal q)
   We need to know current playing packet but not current demuxed packet which
   may blocked for a while
 */
-void AVDemuxer::seekForward()
-{
-    if ((!a_codec_context && !v_codec_context) || !format_context) {
-        qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
-        return;
-    }
-    double pts = pkt->pts;
-    if (master_clock) {
-        pts = master_clock->value();
-    } else {
-        qWarning("[AVDemux] No master clock!");
-    }
-    double q = (double)((pts + 16)*AV_TIME_BASE)/(double)duration();
-    seek(q);
-}
-
-void AVDemuxer::seekBackward()
-{
-    if ((!a_codec_context && !v_codec_context) || !format_context) {
-        qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
-        return;
-    }
-    double pts = pkt->pts;
-    if (master_clock) {
-        pts = master_clock->value();
-    } else {
-        qWarning("[AVDemux] No master clock!");
-    }
-    double q = (double)((pts - 16)*AV_TIME_BASE)/(double)duration();
-    seek(q);
-}
-
 bool AVDemuxer::isLoaded(const QString &fileName) const
 {
     return fileName == _file_name && (a_codec_context || v_codec_context || s_codec_contex);

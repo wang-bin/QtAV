@@ -42,11 +42,7 @@ public:
     AVThread* audioThread();
     void setVideoThread(AVThread *thread);
     AVThread* videoThread();
-    //flag: -1 backward, 0 seek to 0<=pos<=1, 1 seek forward
-    //TODO: demuxer(or thread).seek(qreal delta, Flag Cur|Begin|End|Time|Size|Norm|KeyFrame|AnyFrame)
-    void seek(qreal pos, int flag = 0);
-    void seekForward();
-    void seekBackward();
+    void seek(qreal pos);
     //AVDemuxer* demuxer
     bool isPaused() const;
     bool isEnd() const;
