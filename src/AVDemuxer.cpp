@@ -207,7 +207,6 @@ bool AVDemuxer::close()
     video_streams.clear();
     subtitle_streams.clear();
     __interrupt_status = 0;
-    closeCodecs();
     //av_close_input_file(format_context); //deprecated
     if (format_context) {
         qDebug("closing format_context");
@@ -419,15 +418,17 @@ bool AVDemuxer::loadFile(const QString &fileName)
         qWarning("Can't find stream info: %s", av_err2str(ret));
         return false;
     }
-    return openCodecs();
+
+    if (!prepareStreams()) {
+        return false;
+    }
+
+    started_ = false;
+    return true;
 }
 
-bool AVDemuxer::openCodecs()
+bool AVDemuxer::prepareStreams()
 {
-    // all codec related operations must be protected. otherwise readFrame() may be undefined
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
-    closeCodecs();
     if (!findStreams())
         return false;
     // wanted_xx_stream < nb_streams and +valied is always true because setStream() and setStreamIndex() ensure it correct
@@ -445,85 +446,6 @@ bool AVDemuxer::openCodecs()
     if (stream >= 0) {
         s_codec_contex = format_context->streams[stream]->codec;;
         subtitle_stream = stream; //subtitle_stream is the currently opened stream
-    }
-    bool _has_audio = a_codec_context != 0;
-    int ret = 0;
-    if (a_codec_context) {
-        AVCodec *aCodec = avcodec_find_decoder(a_codec_context->codec_id);
-        if (aCodec) {
-            if (aCodec->capabilities & CODEC_CAP_DR1)
-                a_codec_context->flags |= CODEC_FLAG_EMU_EDGE;
-            ret = avcodec_open2(a_codec_context, aCodec, NULL);
-            if (ret < 0) {
-                _has_audio = false;
-                qWarning("open audio codec failed: %s", av_err2str(ret));
-            }
-        } else {
-            _has_audio = false;
-            qDebug("Unsupported audio codec. id=%d.", a_codec_context->codec_id);
-        }
-    }
-    if (master_clock->isClockAuto()) {
-        qDebug("auto select clock: audio > external");
-        if (!_has_audio) {
-            qWarning("No audio found or audio not supported. Using ExternalClock");
-            master_clock->setClockType(AVClock::ExternalClock);
-        } else {
-            qDebug("Using AudioClock");
-            master_clock->setClockType(AVClock::AudioClock);
-        }
-    }
-    bool _has_vedio = v_codec_context != 0;
-    if (v_codec_context) {
-        AVCodec *vCodec = avcodec_find_decoder(v_codec_context->codec_id);
-        if(!vCodec) {
-            qWarning("Unsupported video codec. id=%d.", v_codec_context->codec_id);
-            _has_vedio = false;
-        }
-        ////v_codec_context->time_base = (AVRational){1,30};
-        ///
-        // TODO: move to AVDecoder
-        //if (hurry_up) {
-//                     codec_ctx->skip_frame = AVDISCARD_NONREF;
-            //codec_ctx->skip_loop_filter = codec_ctx->skip_idct = AVDISCARD_ALL;
-            //codec_ctx->flags2 |= CODEC_FLAG2_FAST;
-        //}
-        //else {
-            /*codec_ctx->skip_frame =*/ v_codec_context->skip_loop_filter = v_codec_context->skip_idct = AVDISCARD_DEFAULT;
-            v_codec_context->flags2 &= ~CODEC_FLAG2_FAST;
-        //}
-            bool skipframes = false;
-            v_codec_context->skip_frame = skipframes ? AVDISCARD_NONREF : AVDISCARD_DEFAULT;
-        if (vCodec->capabilities & CODEC_CAP_DR1)
-            v_codec_context->flags |= CODEC_FLAG_EMU_EDGE;
-        //avcodec_open(v_codec_context, vCodec) //deprecated
-        ret = avcodec_open2(v_codec_context, vCodec, NULL);
-        if (ret < 0) {
-            qWarning("open video codec failed: %s", av_err2str(ret));
-            _has_vedio = false;
-        }
-    }
-    started_ = false;
-    return _has_audio || _has_vedio;
-}
-
-bool AVDemuxer::closeCodecs()
-{
-    // TODO: check avcodec_close() return value
-    if (a_codec_context) {
-        qDebug("closing a_codec_context");
-        avcodec_close(a_codec_context);
-        a_codec_context = 0;
-    }
-    if (v_codec_context) {
-        qDebug("closing v_codec_context");
-        avcodec_close(v_codec_context);
-        v_codec_context = 0;
-    }
-    if (s_codec_contex) {
-        qDebug("closing s_codec_contex");
-        avcodec_close(s_codec_contex);
-        s_codec_contex = 0;
     }
     return true;
 }
@@ -606,106 +528,6 @@ bool AVDemuxer::setStream(StreamType st, int stream)
 AVFormatContext* AVDemuxer::formatContext()
 {
     return format_context;
-}
-/*
-static void dump_stream_format(AVFormatContext *ic, int i, int index, int is_output)
-{
-    char buf[256];
-    int flags = (is_output ? ic->oformat->flags : ic->iformat->flags);
-    AVStream *st = ic->streams[i];
-    int g = av_gcd(st->time_base.num, st->time_base.den);
-    AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);
-    avcodec_string(buf, sizeof(buf), st->codec, is_output);
-    av_log(NULL, AV_LOG_INFO, "    Stream #%d.%d", index, i);
-    // the pid is an important information, so we display it
-    // XXX: add a generic system
-    if (flags & AVFMT_SHOW_IDS)
-        av_log(NULL, AV_LOG_INFO, "[0x%x]", st->id);
-    if (lang)
-        av_log(NULL, AV_LOG_INFO, "(%s)", lang->value);
-    av_log(NULL, AV_LOG_DEBUG, ", %d, %d/%d", st->codec_info_nb_frames, st->time_base.num/g, st->time_base.den/g);
-    av_log(NULL, AV_LOG_INFO, ": %s", buf);
-    if (st->sample_aspect_ratio.num && // default
-        av_cmp_q(st->sample_aspect_ratio, st->codec->sample_aspect_ratio)) {
-        AVRational display_aspect_ratio;
-        av_reduce(&display_aspect_ratio.num, &display_aspect_ratio.den,
-                  st->codec->width*st->sample_aspect_ratio.num,
-                  st->codec->height*st->sample_aspect_ratio.den,
-                  1024*1024);
-        av_log(NULL, AV_LOG_INFO, ", PAR %d:%d DAR %d:%d",
-                 st->sample_aspect_ratio.num, st->sample_aspect_ratio.den,
-                 display_aspect_ratio.num, display_aspect_ratio.den);
-    }
-    if(st->codec->codec_type == AVMEDIA_TYPE_VIDEO){
-        if(st->avg_frame_rate.den && st->avg_frame_rate.num)
-            print_fps(av_q2d(st->avg_frame_rate), "fps");
-        if(st->r_frame_rate.den && st->r_frame_rate.num)
-            print_fps(av_q2d(st->r_frame_rate), "tbr");
-        if(st->time_base.den && st->time_base.num)
-            print_fps(1/av_q2d(st->time_base), "tbn");
-        if(st->codec->time_base.den && st->codec->time_base.num)
-            print_fps(1/av_q2d(st->codec->time_base), "tbc");
-    }
-    if (st->disposition & AV_DISPOSITION_DEFAULT)
-        av_log(NULL, AV_LOG_INFO, " (default)");
-    if (st->disposition & AV_DISPOSITION_DUB)
-        av_log(NULL, AV_LOG_INFO, " (dub)");
-    if (st->disposition & AV_DISPOSITION_ORIGINAL)
-        av_log(NULL, AV_LOG_INFO, " (original)");
-    if (st->disposition & AV_DISPOSITION_COMMENT)
-        av_log(NULL, AV_LOG_INFO, " (comment)");
-    if (st->disposition & AV_DISPOSITION_LYRICS)
-        av_log(NULL, AV_LOG_INFO, " (lyrics)");
-    if (st->disposition & AV_DISPOSITION_KARAOKE)
-        av_log(NULL, AV_LOG_INFO, " (karaoke)");
-    if (st->disposition & AV_DISPOSITION_FORCED)
-        av_log(NULL, AV_LOG_INFO, " (forced)");
-    if (st->disposition & AV_DISPOSITION_HEARING_IMPAIRED)
-        av_log(NULL, AV_LOG_INFO, " (hearing impaired)");
-    if (st->disposition & AV_DISPOSITION_VISUAL_IMPAIRED)
-        av_log(NULL, AV_LOG_INFO, " (visual impaired)");
-    if (st->disposition & AV_DISPOSITION_CLEAN_EFFECTS)
-        av_log(NULL, AV_LOG_INFO, " (clean effects)");
-    av_log(NULL, AV_LOG_INFO, "\n");
-    dump_metadata(NULL, st->metadata, "    ");
-}*/
-void AVDemuxer::dump()
-{
-    av_dump_format(format_context, 0, qPrintable(_file_name), false);
-    fflush(0);
-    qDebug("[AVFormatContext::duration = %lld]", duration());
-    qDebug("video format: %s [%s]", qPrintable(videoFormatName()), qPrintable(videoFormatLongName()));
-    qDebug("Audio: %s [%s]", qPrintable(audioCodecName()), qPrintable(audioCodecLongName()));
-    if (a_codec_context)
-        qDebug("sample rate: %d, channels: %d", a_codec_context->sample_rate, a_codec_context->channels);
-    struct stream_info {
-        int index;
-        AVCodecContext* ctx;
-        const char* name;
-    };
-
-    stream_info stream_infos[] = {
-          {audioStream(),    a_codec_context, "audio stream"}
-        , {videoStream(),    v_codec_context, "video_stream"}
-        //s_codec_contex
-        , {0,                0,               0}
-    };
-    AVStream *stream = 0;
-    for (int idx = 0; stream_infos[idx].name != 0; ++idx) {
-        qDebug("%s: %d", stream_infos[idx].name, stream_infos[idx].index);
-        if (stream_infos[idx].index < 0 || !(stream = format_context->streams[stream_infos[idx].index])) {
-            qDebug("stream not available: index = %d, stream = %p", stream_infos[idx].index, stream);
-            continue;
-        }
-        qDebug("[AVStream::start_time = %lld]", stream->start_time);
-        AVCodecContext *ctx = stream_infos[idx].ctx;
-        if (ctx) {
-            qDebug("[AVCodecContext::time_base = %d / %d = %f]", ctx->time_base.num, ctx->time_base.den, av_q2d(ctx->time_base));
-        }
-        qDebug("[AVStream::avg_frame_rate = %d / %d = %f]", stream->avg_frame_rate.num, stream->avg_frame_rate.den, av_q2d(stream->avg_frame_rate));
-        qDebug("[AVStream::time_base = %d / %d = %f]", stream->time_base.num, stream->time_base.den, av_q2d(stream->time_base));
-    }
-
 }
 
 QString AVDemuxer::fileName() const
@@ -912,24 +734,26 @@ QSize AVDemuxer::frameSize() const
 //codec
 AVCodecContext* AVDemuxer::audioCodecContext(int stream) const
 {
+    if (stream < 0)
+        stream = audioStream();
     if (stream < 0) {
-        return a_codec_context;
-    } else {
-        if (stream > format_context->nb_streams)
-            return 0;
-        return format_context->streams[stream]->codec;
+        return 0;
     }
+    if (stream > (int)format_context->nb_streams)
+        return 0;
+    return format_context->streams[stream]->codec;
 }
 
 AVCodecContext* AVDemuxer::videoCodecContext(int stream) const
 {
+    if (stream < 0)
+        stream = videoStream();
     if (stream < 0) {
-        return v_codec_context;
-    } else {
-        if (stream > format_context->nb_streams)
-            return 0;
-        return format_context->streams[stream]->codec;
+        return 0;
     }
+    if (stream > (int)format_context->nb_streams)
+        return 0;
+    return format_context->streams[stream]->codec;
 }
 
 /*!

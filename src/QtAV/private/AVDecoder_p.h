@@ -36,6 +36,7 @@ public:
         codec_ctx(0)
       , available(true)
       , fast(false)
+      , is_open(false)
       , frame(0)
       , got_frame_ptr(0)
       , thread_slice(1)
@@ -54,6 +55,7 @@ public:
     AVCodecContext *codec_ctx; //set once and not change
     bool available;
     bool fast;
+    bool is_open;
     AVFrame *frame; //set once and not change
     QByteArray decoded;
     int got_frame_ptr;

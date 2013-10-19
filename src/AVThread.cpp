@@ -108,6 +108,7 @@ void AVThread::scheduleTask(QRunnable *task)
     d.tasks.push_back(task);
 }
 
+// TODO: shall we close decoder here?
 void AVThread::stop()
 {
     pause(false);

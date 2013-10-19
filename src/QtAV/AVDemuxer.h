@@ -73,8 +73,7 @@ public:
     bool close();
     bool loadFile(const QString& fileName);
     bool isLoaded(const QString& fileName) const;
-    Q_DECL_DEPRECATED bool openCodecs();
-    Q_DECL_DEPRECATED bool closeCodecs();
+    bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
 
     void putFlushPacket();
     bool readFrame();
@@ -96,7 +95,6 @@ public:
 
     //format
     AVFormatContext* formatContext();
-    void dump();
     QString fileName() const; //AVFormatContext::filename
     QString audioFormatName() const;
     QString audioFormatLongName() const;
@@ -138,7 +136,7 @@ public:
     int height() const; //AVCodecContext::height
     QSize frameSize() const;
 
-    //codec. stream < 0: current stream
+    //codec. stream < 0: the stream going to play
     AVCodecContext* audioCodecContext(int stream = -1) const;
     AVCodecContext* videoCodecContext(int stream = -1) const;
     QString audioCodecName(int stream = -1) const;

@@ -76,6 +76,7 @@ bool AVDecoder::open()
     if (codec->capabilities & CODEC_CAP_DR1) {
         d.codec_ctx->flags |= CODEC_FLAG_EMU_EDGE;
     }
+    //AVDISCARD_NONREF, AVDISCARD_ALL
     //set thread
     if (d.threads == -1)
         d.threads = qMax(0, QThread::idealThreadCount());
@@ -91,12 +92,17 @@ bool AVDecoder::open()
         qWarning("open video codec failed: %s", av_err2str(ret));
         return false;
     }
+    d.is_open = true;
     return true;
 }
 
 bool AVDecoder::close()
 {
+    if (!isOpen()) {
+        return true;
+    }
     DPTR_D(AVDecoder);
+    // TODO: reset config?
     if (!d.codec_ctx) {
         qWarning("FFmpeg codec context not ready");
         return false;
@@ -106,7 +112,13 @@ bool AVDecoder::close()
         qWarning("failed to close decoder: %s", av_err2str(ret));
         return false;
     }
+    d.is_open = false;
     return true;
+}
+
+bool AVDecoder::isOpen() const
+{
+    return d_func().is_open;
 }
 
 void AVDecoder::flush()

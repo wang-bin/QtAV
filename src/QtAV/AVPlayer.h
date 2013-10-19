@@ -163,8 +163,8 @@ public slots:
 
 private:
     void initStatistics();
-    void setupAudioThread();
-    void setupVideoThread();
+    bool setupAudioThread();
+    bool setupVideoThread();
     void setupAVThread(AVThread*& thread, AVCodecContext* ctx);
     template<class Out>
     void setAVOutput(Out*& pOut, Out* pNew, AVThread* thread);
