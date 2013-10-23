@@ -19,7 +19,6 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AVClock.h>
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
@@ -137,13 +136,9 @@ bool AVDemuxer::readFrame()
         qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         return false;
     }
-
     stream_idx = packet.stream_index; //TODO: check index
     //check whether the 1st frame is alreay got. emit only once
-    if (!started_ && v_codec_context && v_codec_context->frame_number == 0) {
-        started_ = true;
-        emit started();
-    } else if (!started_ && a_codec_context && a_codec_context->frame_number == 0) {
+    if (!started_) {
         started_ = true;
         emit started();
     }

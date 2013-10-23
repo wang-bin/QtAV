@@ -44,7 +44,6 @@ struct AVStream;
 // TODO: force codec name. clean code
 namespace QtAV {
 
-class AVClock;
 class Packet;
 class Q_AV_EXPORT AVDemuxer : public QObject //QIODevice?
 {
@@ -79,9 +78,6 @@ public:
     bool readFrame();
     Packet* packet() const; //current readed packet
     int stream() const; //current readed stream index
-
-    void setClock(AVClock *c);
-    AVClock *clock() const;
 
     bool isSeekable() const;
     void setSeekUnit(SeekUnit unit);

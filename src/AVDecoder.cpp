@@ -102,6 +102,7 @@ bool AVDecoder::close()
         return true;
     }
     DPTR_D(AVDecoder);
+    d.is_open = false;
     // TODO: reset config?
     if (!d.codec_ctx) {
         qWarning("FFmpeg codec context not ready");
@@ -112,7 +113,6 @@ bool AVDecoder::close()
         qWarning("failed to close decoder: %s", av_err2str(ret));
         return false;
     }
-    d.is_open = false;
     return true;
 }
 

@@ -32,7 +32,7 @@
 class QRunnable;
 namespace QtAV {
 
-const double kSyncThreshold = 0.005; // 5 ms
+const double kSyncThreshold = 0.2; // 200 ms
 
 class AVDecoder;
 class AVOutput;
