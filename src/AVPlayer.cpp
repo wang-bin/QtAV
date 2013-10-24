@@ -89,10 +89,8 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     demuxer_thread = new AVDemuxThread(this);
     demuxer_thread->setDemuxer(&demuxer);
-    //reenter stop() and reset start_pos. will not emit stopped() again because demuxer thread is the last finished thread(i.e. after avthread.finished())
     //use direct connection otherwise replay may stop immediatly because slot stop() is called after play()
-    //FIXME: stop() may be called twice because of demuxer thread may emit finished() before a avthread.finished()
-    //connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stop()), Qt::DirectConnection);
+    connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stop()), Qt::DirectConnection);
 
     setPlayerEventFilter(new EventFilter(this));
     video_capture = new VideoCapture(this);
@@ -696,7 +694,6 @@ void AVPlayer::play()
 
 void AVPlayer::stop()
 {
-    qDebug("AVPlayer::stop");
     start_pos = duration() > 0 ? startPosition()/duration() : 0;
     if (!isPlaying()) {
         qDebug("Not playing~");
@@ -715,24 +712,25 @@ void AVPlayer::stop()
         AVThread *thread = threads[i].thread;
         if (!thread)
             continue;
-        thread->blockSignals(true);
+        qDebug("stopping %s...", threads[i].name);
+        thread->stop();
         while (thread->isRunning()) {
             qDebug("stopping %s...", threads[i].name);
-            //avoid emit stopped multiple times. AVThread.stopped() connects to AVDemuxThread.stopped().
-            thread->stop();
         }
-        thread->blockSignals(false);
     }
     if (audio_dec && audio_dec->isOpen())
         audio_dec->close();
     if (video_dec && video_dec->isOpen())
         video_dec->close();
     // stop feeding packet queue
+    // scoped signal blocker
+    demuxer_thread->blockSignals(true);
+    qDebug("avplayer stopping demux thread...");
+    demuxer_thread->stop();
     if (demuxer_thread->isRunning()) {
-        qDebug("stopping demux thread...");
-        demuxer_thread->stop();
-    }    //blockSignals(true); //TODO: move emit stopped() before it. or connect avthread.finished() to tryEmitStop() {if (!called_by_stop) emit}
-
+        qDebug("avplayer stopping demux thread...");
+    }
+    demuxer_thread->blockSignals(false);
     qDebug("all threads [a|v|d] stopped...");
     emit stopped();
 }
@@ -910,14 +908,6 @@ bool AVPlayer::setupAudioThread()
         }
     }
     setAudioOutput(_audio);
-    /*if has video, connect video's only to avoid emitting stopped() mulltiple times
-     *otherwise connect audio's. but if video exists previously and now is null.
-     *audio thread will not change. so connection should be here
-     */
-    if (!vCodecCtx) {
-        disconnect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
-        connect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
-    }
     int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     audio_thread->packetQueue()->setThreshold(queue_min);
@@ -961,9 +951,6 @@ bool AVPlayer::setupVideoThread()
 #if V1_2
     setRenderer(_renderer);
 #endif
-    //reconnect if disconnected
-    connect(video_thread, SIGNAL(finished()), this, SIGNAL(stopped()), Qt::DirectConnection);
-    disconnect(audio_thread, SIGNAL(finished()), this, SIGNAL(stopped()));
     int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     video_thread->packetQueue()->setThreshold(queue_min);

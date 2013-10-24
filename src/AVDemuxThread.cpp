@@ -227,7 +227,7 @@ void AVDemuxThread::run()
         vqueue->clear();
         vqueue->setBlocking(true);
     }
-    while (true) {
+    while (!end) {
         if (tryPause())
             continue; //the queue is empty and will block
         QMutexLocker locker(&buffer_mutex);
@@ -237,7 +237,7 @@ void AVDemuxThread::run()
             if ((audio_thread && audio_thread->isRunning())
                     || (video_thread && video_thread->isRunning())) {
                 qDebug("demux read end but avthread still running. waiting for finish...");
-                seek_cond.wait(&buffer_mutex);
+                cond.wait(&buffer_mutex);
             }
             if (end)
 #endif //CORRECT_END
@@ -258,13 +258,20 @@ void AVDemuxThread::run()
         if (pkt.isEnd()) {
             qDebug("read end packet %d A:%d V:%d", index, audio_stream, video_stream);
             end = true;
+            bool all_end = true;
             //avthread can stop. do not clear queue, make sure all data are played
             if (audio_thread) {
                 audio_thread->setDemuxEnded(true);
+                all_end &= !audio_thread->isRunning();
             }
             if (video_thread) {
                 video_thread->setDemuxEnded(true);
+                all_end &= !video_thread->isRunning();
             }
+            if (!all_end) {
+                cond.wait(&buffer_mutex);
+            }
+            break;
         }
         /*1 is empty but another is enough, then do not block to
           ensure the empty one can put packets immediatly.
