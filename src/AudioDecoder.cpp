@@ -93,7 +93,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     }
     if (!d.got_frame_ptr) {
         qWarning("[AudioDecoder] got_frame_ptr=false");
-        return false;
+        return true;
     }
 #if !QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)
     int samples_with_channels = d.frame->nb_samples * d.codec_ctx->channels;

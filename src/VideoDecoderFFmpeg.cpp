@@ -87,7 +87,7 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
     }
     if (!d.got_frame_ptr) {
         qWarning("no frame could be decompressed: %s", av_err2str(ret));
-        return false;
+        return true;
     }
     d.conv->setInFormat(d.codec_ctx->pix_fmt);
     d.conv->setInSize(d.codec_ctx->width, d.codec_ctx->height);
