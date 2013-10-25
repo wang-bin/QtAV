@@ -676,10 +676,12 @@ void AVPlayer::play()
     if (aCodecCtx && audio_thread) {
         qDebug("Starting audio thread...");
         audio_thread->start();
+        audio_thread->waitForReady();
     }
     if (vCodecCtx && video_thread) {
         qDebug("Starting video thread...");
         video_thread->start();
+        video_thread->waitForReady();
     }
     demuxer_thread->start();
     //blockSignals(false);
