@@ -670,9 +670,9 @@ void AVPlayer::play()
         if (!load(true)) {
             mStatistics.reset();
             return;
-        } else {
-            initStatistics();
         }
+        initStatistics();
+
 #endif //EOF_ISSUE_SOLVED
 #if EOF_ISSUE_SOLVED
     }
@@ -808,8 +808,10 @@ void AVPlayer::initStatistics()
         qDebug("stream: %d, duration=%lld (%d ms==%f), time_base=%f", cs.stream_idx, stream->duration, int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
                , duration(), av_q2d(stream->time_base));
         cs.st->available = true;
-        cs.st->codec = cs.ctx->codec->name;
-        cs.st->codec_long = cs.ctx->codec->long_name;
+        if (cs.ctx->codec) {
+            cs.st->codec = cs.ctx->codec->name;
+            cs.st->codec_long = cs.ctx->codec->long_name;
+        }
         cs.st->total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
         cs.st->start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
         //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
