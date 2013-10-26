@@ -491,6 +491,11 @@ bool AVPlayer::load(bool reload)
     }
     qDebug("loading: %s ...", path.toUtf8().constData());
     if (reload || !demuxer.isLoaded(path)) {
+        //close decoders here to make sure open and close in the same thread
+        if (audio_dec && audio_dec->isOpen())
+            audio_dec->close();
+        if (video_dec && video_dec->isOpen())
+            video_dec->close();
         if (!demuxer.loadFile(path)) {
             return loaded;
         }
@@ -691,6 +696,7 @@ void AVPlayer::play()
     } else {
         clock->reset();
     }
+
     emit started(); //we called stop(), so must emit started()
 }
 
@@ -720,10 +726,7 @@ void AVPlayer::stop()
             qDebug("stopping %s...", threads[i].name);
         }
     }
-    if (audio_dec && audio_dec->isOpen())
-        audio_dec->close();
-    if (video_dec && video_dec->isOpen())
-        video_dec->close();
+    // can not close decoders here since close and open may be in different threads
     // stop feeding packet queue
     // scoped signal blocker
     demuxer_thread->blockSignals(true);
@@ -852,10 +855,6 @@ bool AVPlayer::setupAudioThread()
     qDebug("has audio");
     if (!audio_dec) {
         audio_dec = new AudioDecoder();
-    } else {
-        if (audio_dec->isOpen() && !audio_dec->close()) {
-            return false;
-        }
     }
     audio_dec->setCodecContext(aCodecCtx);
     if (!audio_dec->open()) {
@@ -924,10 +923,6 @@ bool AVPlayer::setupVideoThread()
     }
     if (!video_dec) {
         video_dec = VideoDecoderFactory::create(VideoDecoderId_FFmpeg);
-    } else {
-        if (video_dec->isOpen() && !video_dec->close()) {
-            return false;
-        }
     }
     video_dec->setCodecContext(vCodecCtx);
     video_dec->prepare();

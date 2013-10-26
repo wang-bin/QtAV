@@ -130,9 +130,17 @@ void AVDecoder::flush()
     avcodec_flush_buffers(d_func().codec_ctx);
 }
 
+/*
+ * do nothing if equal
+ * close the old one. the codec context can not be shared in more than 1 decoder.
+ */
 void AVDecoder::setCodecContext(AVCodecContext *codecCtx)
 {
     DPTR_D(AVDecoder);
+    if (d.codec_ctx == codecCtx)
+        return;
+    close(); //
+    d.is_open = false;
     d.codec_ctx = codecCtx;
 }
 
