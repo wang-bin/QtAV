@@ -36,6 +36,7 @@ AVThreadPrivate::~AVThreadPrivate() {
         next_pause = false;
         cond.wakeAll();
     }
+    ready_cond.wakeAll();
     packets.setBlocking(true); //???
     packets.clear();
     //not neccesary context is managed by filters.
@@ -120,8 +121,9 @@ void AVThread::stop()
     pause(false);
     if (d.writer)
         d.writer->pause(false); //stop waiting
+    QMutexLocker lock(&d.ready_mutex);
+    d.ready = false;
     //terminate();
-
 }
 
 //TODO: output set
@@ -227,6 +229,9 @@ void AVThread::resetState()
     d.packets.clear();
     //not neccesary context is managed by filters.
     d.filter_context = 0;
+    QMutexLocker lock(&d.ready_mutex);
+    d.ready = true;
+    d.ready_cond.wakeOne();
 }
 
 bool AVThread::tryPause(int timeout)
@@ -258,6 +263,14 @@ void AVThread::setStatistics(Statistics *statistics)
 {
     DPTR_D(AVThread);
     d.statistics = statistics;
+}
+
+void AVThread::waitForReady()
+{
+    QMutexLocker lock(&d_func().ready_mutex);
+    while (!d_func().ready) {
+        d_func().ready_cond.wait(&d_func().ready_mutex);
+    }
 }
 
 } //namespace QtAV

@@ -68,6 +68,8 @@ public:
 
     bool isPaused() const;
 
+    void waitForReady();
+
     bool installFilter(Filter *filter, bool lock = true);
     bool uninstallFilter(Filter *filter, bool lock = true);
     const QList<Filter *> &filters() const;

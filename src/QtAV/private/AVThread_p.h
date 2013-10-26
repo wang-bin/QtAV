@@ -56,6 +56,7 @@ public:
       , delay(0)
       , filter_context(0)
       , statistics(0)
+      , ready(false)
     {
     }
     //DO NOT delete dec and writer. We do not own them
@@ -77,6 +78,9 @@ public:
     Statistics *statistics; //not obj. Statistics is unique for the player, which is in AVPlayer
     QList<AVOutput*> update_outputs;
     QList<QRunnable*> tasks;
+    QWaitCondition ready_cond;
+    QMutex ready_mutex;
+    bool ready;
 };
 
 } //namespace QtAV
