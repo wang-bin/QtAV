@@ -69,7 +69,7 @@ PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
 }
 INCLUDEPATH *= $$PROJECT_SRCPATH $$PROJECT_SRCPATH/.. $$PROJECT_SRCPATH/$$NAME
 DEPENDPATH *= $$PROJECT_SRCPATH
-QMAKE_LFLAGS_RPATH += #will append to rpath dir
+#QMAKE_LFLAGS_RPATH += #will append to rpath dir
 
 #eval() ?
 !contains(CONFIG, $$lower($$NAME)-buildlib) {
@@ -83,15 +83,7 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 			PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME, $$LIB_VERSION)
 		} else {
 			PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
-# $$[QT_INSTALL_LIBS] and $$DESTDIR will be auto added to rpath
-# Current (sub)project dir is auto added to the first value as prefix. e.g. QMAKE_RPATHDIR = .. ==> -Wl,-rpath,ROOT/.. 
-# Executable dir search: ld -z origin, g++ -Wl,-R,'$ORIGIN', in makefile -Wl,-R,'$$ORIGIN'
-# Working dir search: "."
-# TODO: for macx. see qtcreator/src/rpath.pri. search exe dir first(use QMAKE_LFLAGS = '$$RPATH_FLAG' $$QMAKE_LFLAGS)
-			unix:!macx {
-				QMAKE_RPATHDIR *= $$PROJECT_LIBDIR:\'\$\$ORIGIN\':\'\$\$ORIGIN/lib\':.
-				QMAKE_LFLAGS *= -Wl,-z,origin
-			}
+
 		}
 	}
 } else {
@@ -138,9 +130,24 @@ QMAKE_LFLAGS_RPATH += #will append to rpath dir
 		INSTALLS += target
 	}
 }
+
 unix {
     LIBS += -L/usr/local/lib
-    QMAKE_RPATHDIR += /usr/local/lib
+# $$[QT_INSTALL_LIBS] and $$DESTDIR and pro dir will be auto added to QMAKE_RPATHDIR if QMAKE_RPATHDIR is not empty
+# Current (sub)project dir is auto added to the first value as prefix. e.g. QMAKE_RPATHDIR = .. ==> -Wl,-rpath,ROOT/..
+# Executable dir search: ld -z origin, g++ -Wl,-R,'$ORIGIN', in makefile -Wl,-R,'$$ORIGIN'
+# Working dir search: "."
+# TODO: for macx. see qtcreator/src/rpath.pri. (-rpath define rpath, @rpath exapand to that path?)
+    macx {
+        QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/PlugIns/
+        QMAKE_LFLAGS += -Wl,-rpath,@loader_path/../,-rpath,@executable_path/../
+    } else {
+        RPATHDIR = \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib
+# $$PROJECT_LIBDIR only for host == target. But QMAKE_TARGET.arch is only available on windows. QT_ARCH is bad, e.g. QT_ARCH=i386 while QMAKE_HOST.arch=i686
+# https://bugreports.qt-project.org/browse/QTBUG-30263
+        isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR
+        QMAKE_LFLAGS *= -Wl,-z,origin \'-Wl,-rpath,$$join(RPATHDIR, ":")\'
+    }
 }
 
 unset(LIB_VERSION)
