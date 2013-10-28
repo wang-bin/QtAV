@@ -141,7 +141,11 @@ int main(int argc, char *argv[])
     } else if (vo == "xv") {
         renderer = VideoRendererFactory::create(VideoRendererId_XV);
     } else {
+#ifndef QT_NO_OPENGL
+        renderer = VideoRendererFactory::create(VideoRendererId_GLWidget);
+#else
         renderer = VideoRendererFactory::create(VideoRendererId_Widget);
+#endif //QT_NO_OPENGL
     }
     if (!renderer) {
         QMessageBox::critical(0, "QtAV", "vo '" + vo + "' not supported");
