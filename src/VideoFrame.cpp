@@ -27,11 +27,11 @@ namespace QtAV {
 class VideoFramePrivate : public FramePrivate
 {
 public:
-    VideoFramePrivate()
+    VideoFramePrivate(int w, int h, VideoFrame::PixelFormat fmt)
         : FramePrivate()
-        , width(0)
-        , height(0)
-        , pixel_format(VideoFrame::Format_Invalid)
+        , width(w)
+        , height(h)
+        , pixel_format(fmt)
     {}
     virtual ~VideoFramePrivate() {}
 
@@ -40,8 +40,8 @@ public:
 };
 
 
-VideoFrame::VideoFrame():
-    Frame(*new VideoFramePrivate)
+VideoFrame::VideoFrame(int width, int height, PixelFormat pixFormat):
+    Frame(*new VideoFramePrivate(width, height, pixFormat))
 {
 }
 
@@ -51,8 +51,21 @@ VideoFrame::~VideoFrame()
 
 int VideoFrame::bytesPerLine(int plane) const
 {
-    Q_UNUSED(plane);
+    DPTR_D(const VideoFrame);
+    switch (d.pixel_format) {
+    case Format_YUV420P:
+        return plane == 0 ? d.width * bytesPerPixel() : d.width * bytesPerPixel()/2;
+    case Format_ARGB32:
+    default:
+        return d.width*bytesPerLine(plane);
+        break;
+    }
     return 0;
+}
+
+int VideoFrame::bytesPerPixel() const
+{
+    return qMax(d_func().pixel_format&kMaxBPP, 1);
 }
 
 QSize VideoFrame::size() const

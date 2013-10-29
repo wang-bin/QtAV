@@ -42,11 +42,17 @@ public:
      * \param plane default is the first plane
      * \return
      */
+    int planeCount() const;
     virtual int bytesPerLine(int plane = 0) const;
+    // deep copy the data
     QByteArray data(int plane = 0) const;
     uchar* bits(int plane = 0);
     const uchar *bits(int plane = 0) const;
-    int planeCount() const;
+    void setBits(uchar* b, int plane = 0);
+    void setBits(const QVector<uchar*>& b);
+    // is it necessary?
+    void setBytesPerLine(int lineSize, int plane = 0);
+    void setBytesPerLine(const QVector<int>& lineSize);
 
     QVariantMap availableMetaData() const;
     QVariant metaData(const QString& key) const;

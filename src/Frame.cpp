@@ -36,12 +36,11 @@ Frame::~Frame()
 
 int Frame::bytesPerLine(int plane) const
 {
-    DPTR_D(const Frame);
     if (plane < 0 || plane >= planeCount()) {
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return 0;
     }
-    return 0;
+    return d_func().line_size[plane];
 }
 
 QByteArray Frame::data(int plane) const
@@ -51,7 +50,7 @@ QByteArray Frame::data(int plane) const
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return QByteArray();
     }
-    return d.planes[plane];
+    return QByteArray((char*)d.planes[plane], bytesPerLine(plane));
 }
 
 uchar* Frame::bits(int plane)
@@ -61,7 +60,7 @@ uchar* Frame::bits(int plane)
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return 0;
     }
-    return (uchar*)d.planes[plane].data();
+    return d.planes[plane];
 }
 
 const uchar* Frame::bits(int plane) const
@@ -71,7 +70,27 @@ const uchar* Frame::bits(int plane) const
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return 0;
     }
-    return (const uchar*)d.planes[plane].constData();
+    return d.planes[plane];
+}
+
+void Frame::setBits(uchar *b, int plane)
+{
+    d_func().planes[plane] = b;
+}
+
+void Frame::setBits(const QVector<uchar *> &b)
+{
+    d_func().planes = b;
+}
+
+void Frame::setBytesPerLine(int lineSize, int plane)
+{
+    d_func().line_size[plane] = lineSize;
+}
+
+void Frame::setBytesPerLine(const QVector<int> &lineSize)
+{
+    d_func().line_size = lineSize;
 }
 
 int Frame::planeCount() const

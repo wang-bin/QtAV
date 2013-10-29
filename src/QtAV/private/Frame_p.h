@@ -34,7 +34,8 @@ class Q_AV_EXPORT FramePrivate : public DPtrPrivate<Frame>
 public:
     virtual ~FramePrivate() {}
 
-    QVector<QByteArray> planes;
+    QVector<uchar*> planes; //slice
+    QVector<int> line_size; //stride
     QVariantMap metadata;
 };
 
