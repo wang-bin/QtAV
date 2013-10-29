@@ -27,7 +27,9 @@ namespace QtAV {
 class AudioFramePrivate : public FramePrivate
 {
 public:
-    AudioFramePrivate() {}
+    AudioFramePrivate()
+        : FramePrivate()
+    {}
     virtual ~AudioFramePrivate() {}
 };
 

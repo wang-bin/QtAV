@@ -29,6 +29,11 @@ Frame::Frame(FramePrivate &d):
 {
 }
 
+Frame::~Frame()
+{
+
+}
+
 int Frame::bytesPerLine(int plane) const
 {
     DPTR_D(const Frame);
@@ -56,7 +61,7 @@ uchar* Frame::bits(int plane)
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return 0;
     }
-    return static_cast<uchar*>(d.planes[plane].data());
+    return (uchar*)d.planes[plane].data();
 }
 
 const uchar* Frame::bits(int plane) const
@@ -66,7 +71,7 @@ const uchar* Frame::bits(int plane) const
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return 0;
     }
-    return static_cast<const char*>(d.planes[plane].constData());
+    return (const uchar*)d.planes[plane].constData();
 }
 
 int Frame::planeCount() const

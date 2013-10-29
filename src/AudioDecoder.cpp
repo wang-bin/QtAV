@@ -30,8 +30,9 @@ namespace QtAV {
 class AudioDecoderPrivate : public AVDecoderPrivate
 {
 public:
-    AudioDecoderPrivate():
-        resampler(0)
+    AudioDecoderPrivate()
+        : AVDecoderPrivate()
+      , resampler(0)
       , undecoded_size(0)
     {
         resampler = AudioResamplerFactory::create(AudioResamplerId_FF);

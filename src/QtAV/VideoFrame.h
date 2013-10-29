@@ -23,12 +23,13 @@
 #define QTAV_VIDEOFRAME_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtAV/Frame.h>
 #include <QtCore/QSize>
 
 namespace QtAV {
 
 class VideoFramePrivate;
-class Q_AV_EXPORT VideoFrame
+class Q_AV_EXPORT VideoFrame : public Frame
 {
     DPTR_DECLARE_PRIVATE(VideoFrame)
 public:
@@ -85,14 +86,13 @@ public:
      * \brief bytesPerLine bytes/line for the given pixel format and size
      * \return
      */
-    virtual int bytesPerLine() const;
+    virtual int bytesPerLine(int plane) const;
 
     QSize size() const;
     int width() const;
     int height() const;
 
 protected:
-    DPTR_DECLARE(VideoFrame)
     //QExplicitlySharedDataPointer<QVideoFramePrivate> d;
 };
 

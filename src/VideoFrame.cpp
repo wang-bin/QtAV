@@ -28,7 +28,8 @@ class VideoFramePrivate : public FramePrivate
 {
 public:
     VideoFramePrivate()
-        : width(0)
+        : FramePrivate()
+        , width(0)
         , height(0)
         , pixel_format(VideoFrame::Format_Invalid)
     {}
@@ -40,12 +41,18 @@ public:
 
 
 VideoFrame::VideoFrame():
-    Frame(*new VideoFramePrivate())
+    Frame(*new VideoFramePrivate)
 {
 }
 
 VideoFrame::~VideoFrame()
 {
+}
+
+int VideoFrame::bytesPerLine(int plane) const
+{
+    Q_UNUSED(plane);
+    return 0;
 }
 
 QSize VideoFrame::size() const
