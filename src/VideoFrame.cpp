@@ -37,6 +37,7 @@ public:
 
     int width, height;
     VideoFrame::PixelFormat pixel_format;
+    QVector<int> textures;
 };
 
 
@@ -65,7 +66,7 @@ int VideoFrame::bytesPerLine(int plane) const
 
 int VideoFrame::bytesPerPixel() const
 {
-    return qMax(d_func().pixel_format&kMaxBPP, 1);
+    return d_func().pixel_format&kMaxBPP;
 }
 
 QSize VideoFrame::size() const
@@ -82,6 +83,29 @@ int VideoFrame::width() const
 int VideoFrame::height() const
 {
     return d_func().height;
+}
+
+bool VideoFrame::convertTo(PixelFormat fmt)
+{
+    return false;
+}
+
+bool VideoFrame::mapToDevice()
+{
+    return false;
+}
+
+bool VideoFrame::mapToHost()
+{
+    return false;
+}
+
+int VideoFrame::texture(int plane) const
+{
+    DPTR_D(const VideoFrame);
+    if (d.textures.size() <= plane)
+        return -1;
+    return d.textures[plane];
 }
 
 } //namespace QtAV

@@ -28,38 +28,9 @@
 
 namespace QtAV {
 
-template<int N>
-struct Log2 {
-    enum {
-        value = 1 + Log2<N/2>::value
-    };
-};
-template<>
-struct Log2<0> { //also for N=1
-    enum {
-        value = 0
-    };
-};
-template<bool Y> struct If {
-    template<int A> struct Then {
-        template<int B> struct Else {
-            enum {
-                value = Y ? A : B
-            };
-        };
-    };
-};
-
-template<int N> struct ULog2 {
-    enum {
-        value = If<(N>>Log2<N>::value)>::Then<Log2<N>::value+1>::Else<Log2<N>::value>::value
-    };
-};
-
-#define VIEW_TEMPLATE_VAL(expr) void view_template_val_##__LINE__() { \
-    const int x = expr; \
-    switch (x) {case expr:;case expr:;} \
-}
+template<int N> struct Log2 { enum { value = 1 + Log2<N/2>::value }; };
+template<> struct Log2<0> { enum { value = 0 }; }; //also for N=1
+template<int N> struct ULog2 { enum { value = (N>>Log2<N>::value) ? Log2<N>::value+1 : Log2<N>::value }; };
 
 class VideoFramePrivate;
 class Q_AV_EXPORT VideoFrame : public Frame
@@ -111,7 +82,7 @@ public:
         Format_AYUV444 = (15<<kBPPS) + 3,
         Format_AYUV444_Premultiplied = (16<<kBPPS) + 3,
         Format_YUV444 = (17<<kBPPS) + 3,
-        Format_YUV420P = (18<<kBPPS),
+        Format_YUV420P = (18<<kBPPS) + 1,
         Format_YV12,
         Format_UYVY,
         Format_YUYV,
@@ -145,6 +116,19 @@ public:
     QSize size() const;
     int width() const;
     int height() const;
+
+    // if use gpu to convert, mapToDevice() first
+    bool convertTo(PixelFormat fmt);
+
+    //upload to GPU. return false if gl(or other, e.g. cl) not supported
+    bool mapToDevice();
+    //copy to host. Used if gpu filter not supported. To avoid copy too frequent, sort the filters first?
+    bool mapToHost();
+    /*!
+       texture in FBO. we can use texture in FBO through filter pipeline then switch to window context to display
+       return -1 if no texture, not uploaded
+     */
+    int texture(int plane = 0) const;
 
 protected:
     //QExplicitlySharedDataPointer<QVideoFramePrivate> d;
