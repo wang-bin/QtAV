@@ -25,6 +25,7 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QVariant>
 
+// TODO: plane=>channel
 namespace QtAV {
 
 class FramePrivate;
@@ -48,9 +49,17 @@ public:
     QByteArray data(int plane = 0) const;
     uchar* bits(int plane = 0);
     const uchar *bits(int plane = 0) const;
+    /*!
+     * \brief setBits set slice from FFmpeg
+     * \param b slice
+     * \param plane color/audio channel
+     */
     void setBits(uchar* b, int plane = 0);
     void setBits(const QVector<uchar*>& b);
-    // is it necessary?
+    /*
+     * It's used now until I complete all pixel formats in QtAV.
+     * set strides from FFmpeg. 4 channels at most for video
+     */
     void setBytesPerLine(int lineSize, int plane = 0);
     void setBytesPerLine(const QVector<int>& lineSize);
 
