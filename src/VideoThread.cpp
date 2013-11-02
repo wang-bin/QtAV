@@ -86,13 +86,8 @@ void VideoThread::run()
 {
     DPTR_D(VideoThread);
     //TODO: no d.writer is ok, just a audio player
-#if V1_2
-    if (!d.dec || !d.dec->isAvailable() || !d.writer)// || !d.conv)
-        return;
-#else
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)// || !d.conv)
         return;
-#endif //V1_2
     resetState();
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
@@ -159,19 +154,6 @@ void VideoThread::run()
             }
         }
         d.clock->updateVideoPts(pkt.pts); //here?
-#if V1_2
-        //DO NOT decode and convert if vo is not available or null!
-        //NOTE: vo may changes dymanically. we need check it every time we use it. decoder and other components should do this too
-        VideoRenderer* vo = static_cast<VideoRenderer*>(d.writer);
-        bool vo_ok = vo && vo->isAvailable();
-        if (vo_ok) {
-            //use the last size first then update the last size so that decoder(converter) can update output size
-            if (vo->lastWidth() > 0 && vo->lastHeight() > 0 && !vo->scaleInRenderer())
-                dec->resizeVideoFrame(vo->lastSize());
-            else
-                vo->setInSize(dec->width(), dec->height()); //setLastSize(). optimize: set only when changed
-        }
-#else
         if (need_update_vo_parameters || !d.update_outputs.isEmpty()) {
             //lock is important when iterating
             d.outputSet->lock();
@@ -194,7 +176,6 @@ void VideoThread::run()
         }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
-#endif //V1_2
         //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
         if (dec->decode(pkt.data)) {
             d.pts = pkt.pts;
@@ -219,11 +200,6 @@ void VideoThread::run()
                     }
                 }
             }
-#if V1_2
-            if (vo_ok) {
-                vo->writeData(data);
-            }
-#else
             //while can pause, processNextTask, not call outset.puase which is deperecated
             while (d.outputSet->canPauseThread()) {
                 if (d.stop) {
@@ -239,13 +215,7 @@ void VideoThread::run()
                 break;
             }
             d.outputSet->sendData(data);
-#endif //V1_2
         }
-#if V1_2
-        //use the last size first then update the last size so that decoder(converter) can update output size
-        if (vo_ok && !vo->scaleInRenderer())
-            vo->setInSize(vo->rendererSize());//out size?
-#endif //V1_2
     }
     qDebug("Video thread stops running...");
 }

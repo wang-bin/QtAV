@@ -84,10 +84,6 @@ void AVOutput::pause(bool p)
     if (d.paused == p)
         return;
     d.paused = p;
-#if V1_2
-    if (!d.paused)
-        d.cond.wakeAll();
-#endif //V1_2
 }
 
 bool AVOutput::isPaused() const
