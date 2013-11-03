@@ -125,11 +125,6 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_C: //capture
             player->captureVideo();
             break;
-        case Qt::Key_I: { //Interpolation
-            VideoRenderer *renderer = player->renderer();
-            renderer->setQuality(VideoRenderer::Quality(((int)renderer->quality()+1)%3));
-        }
-            break;
         case Qt::Key_N: //check playing?
             player->playNextFrame();
             break;
