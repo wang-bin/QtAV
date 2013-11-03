@@ -111,7 +111,7 @@ void MainWindow::setupUi()
 
     mpPlayerLayout = new QVBoxLayout();
     mpControl = new QWidget(this);
-    mpControl->setMaximumHeight(28);
+    mpControl->setMaximumHeight(25);
 
     mpTimeSlider = new Slider(mpControl);
     mpTimeSlider->setDisabled(true);

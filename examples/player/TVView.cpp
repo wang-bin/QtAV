@@ -38,7 +38,6 @@ void TVView::load()
         tv_file.setFileName(":/tv.ini");
     if (!tv_file.open(QIODevice::ReadOnly))
         return;
-    qDebug("tv.ini: %s", tv_file.fileName().toAscii().constData());
     QTextStream ts(&tv_file);
     ts.setCodec("UTF-8");
     QTreeWidgetItem *nodeItem = new QTreeWidgetItem(mpView);
