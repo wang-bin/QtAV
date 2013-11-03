@@ -5,8 +5,6 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QtCore/QFileInfo>
-#include <QtCore/QSettings>
-#include <QtCore/QTextStream>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QWindowStateChangeEvent>
@@ -23,6 +21,7 @@
 #include "ClickableMenu.h"
 #include "Slider.h"
 #include "StatisticsView.h"
+#include "TVView.h"
 
 /*
  *TODO:
@@ -211,33 +210,7 @@ void MainWindow::setupUi()
 */
     mpMenu = new QMenu(mpMenuBtn);
     mpMenu->addAction(tr("Open Url"), this, SLOT(openUrl()));
-    QMenu *subMenu = new QMenu(tr("Online channels"));
-    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(playOnlineVideo(QAction*)));
-    QFile tv_file(qApp->applicationDirPath() + "/tv.ini");
-    if (!tv_file.exists())
-        tv_file.setFileName(":/tv.ini");
-    if (tv_file.open(QIODevice::ReadOnly)) {
-        QTextStream ts(&tv_file);
-        ts.setCodec("UTF-8");
-        QString line;
-        while (!ts.atEnd()) {
-            line = ts.readLine();
-            if (line.isEmpty() || line.startsWith("#") || !line.contains("="))
-                continue;
-            QString key = line.section('=', 0, 0);
-            QString value = line.section('=', 1);
-            subMenu->addAction(key)->setData(value);
-        }
-    }
-/*
-    //codec problem
-    QSettings tv(qApp->applicationDirPath() + "/tv.ini", QSettings::IniFormat);
-    tv.setIniCodec("UTF-8");
-    foreach (QString key, tv.allKeys()) {
-        subMenu->addAction(key)->setData(tv.value(key).toString());
-    }
-*/
-    mpMenu->addMenu(subMenu);
+    mpMenu->addAction(tr("Online channels"), this, SLOT(onTVMenuClick()));
     mpMenu->addSeparator();
     mpMenu->addAction(tr("Setup"), this, SLOT(setup()))->setEnabled(false);
     mpMenu->addAction(tr("Report"))->setEnabled(false); //report bug, suggestions etc. using maillist?
@@ -248,7 +221,7 @@ void MainWindow::setupUi()
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
 
-    subMenu = new QMenu(tr("Speed"));
+    QMenu *subMenu = new QMenu(tr("Speed"));
     mpMenu->addMenu(subMenu);
     QDoubleSpinBox *pSpeedBox = new QDoubleSpinBox(0);
     pSpeedBox->setRange(0.01, 20);
@@ -800,6 +773,21 @@ void MainWindow::playOnlineVideo(QAction *action)
     play(action->data().toString());
 }
 
+void MainWindow::onTVMenuClick()
+{
+    static TVView *tvv = new TVView;
+    tvv->show();
+    connect(tvv, SIGNAL(clicked(QString,QString)), SLOT(onPlayListClick(QString,QString)));
+    tvv->setMaximumHeight(qApp->desktop()->height());
+    tvv->setMinimumHeight(tvv->width()*2);
+}
+
+void MainWindow::onPlayListClick(const QString &key, const QString &value)
+{
+    mTitle = key;
+    play(value);
+}
+
 void MainWindow::tryHideControlBar()
 {
     if (mShowControl > 0) {
@@ -846,8 +834,9 @@ bool MainWindow::winEvent(MSG *message, long *result)
 
 void MainWindow::showInfo()
 {
-    static StatisticsView sv;
+    // why crash if on stack
+    static StatisticsView *sv = new StatisticsView;
     if (mpPlayer)
-        sv.setStatistics(mpPlayer->statistics());
-    sv.show();
+        sv->setStatistics(mpPlayer->statistics());
+    sv->show();
 }
