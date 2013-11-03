@@ -111,7 +111,7 @@ void MainWindow::setupUi()
 
     mpPlayerLayout = new QVBoxLayout();
     mpControl = new QWidget(this);
-    mpControl->setMaximumHeight(22);
+    mpControl->setMaximumHeight(28);
 
     mpTimeSlider = new Slider(mpControl);
     mpTimeSlider->setDisabled(true);
@@ -149,7 +149,7 @@ void MainWindow::setupUi()
     qDebug("%d x %d", mPlayPixmap.width(), mPlayPixmap.height());
     mpPlayPauseBtn = new Button(mpControl);
     int a = qMin(w/2, h);
-    const int kMaxButtonIconWidth = 18;
+    const int kMaxButtonIconWidth = 20;
     const int kMaxButtonIconMargin = kMaxButtonIconWidth/3;
     a = qMin(a, kMaxButtonIconWidth);
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
