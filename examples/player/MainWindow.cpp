@@ -88,6 +88,7 @@ void MainWindow::initPlayer()
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
     qDebug("player created");
+    mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": " + mpPlayer->videoCapture()->captureDir());
     connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
@@ -182,7 +183,6 @@ void MainWindow::setupUi()
     mpCaptureBtn->setIconWithSates(QPixmap(":/theme/screenshot.png"));
     mpCaptureBtn->setIconSize(QSize(a, a));
     mpCaptureBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": capture");
     mpVolumeBtn = new Button();
     mpVolumeBtn->setIconWithSates(QPixmap(":/theme/button-max-volume.png"));
     mpVolumeBtn->setIconSize(QSize(a, a));

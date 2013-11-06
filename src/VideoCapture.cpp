@@ -60,7 +60,7 @@ public:
 #endif
         QString path(dir + "/" + name + "." + format.toLower());
         qDebug("Saving capture to %s", qPrintable(path));
-		bool ok = image.save(path, format.toLatin1().constData(), quality);
+        bool ok = image.save(path, format.toLatin1().constData(), quality);
         if (!ok) {
             cap->error = VideoCapture::SaveError;
             qWarning("Failed to save capture");
