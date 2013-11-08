@@ -123,7 +123,7 @@ AudioFormat::~AudioFormat()
 }
 
 /*!
-    Assigns \a other to this QAudioFormat implementation.
+    Assigns \a other to this AudioFormat implementation.
 */
 AudioFormat& AudioFormat::operator=(const AudioFormat &other)
 {

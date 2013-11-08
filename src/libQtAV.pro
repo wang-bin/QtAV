@@ -139,6 +139,7 @@ SOURCES += \
     Packet.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
+    VideoFormat.cpp \
     VideoFrame.cpp \
     VideoRenderer.cpp \
     VideoRendererTypes.cpp \
@@ -186,6 +187,7 @@ SDK_HEADERS *= \
     QtAV/VideoDecoder.h \
     QtAV/VideoDecoderTypes.h \
     QtAV/VideoDecoderFFmpeg.h \
+    QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
     QtAV/FactoryDefine.h \
     QtAV/Statistics.h \
