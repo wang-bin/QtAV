@@ -149,20 +149,6 @@ void AVPlayer::clearVideoRenderers()
 void AVPlayer::setRenderer(VideoRenderer *r)
 {
     qDebug(">>>>>>>>>>%s", __FUNCTION__);
-#if V1_2
-    if (_renderer && r) {
-        VideoRenderer::OutAspectRatioMode oar = _renderer->outAspectRatioMode();
-        r->setOutAspectRatioMode(oar);
-        if (oar == VideoRenderer::CustomAspectRation) {
-            r->setOutAspectRatio(_renderer->outAspectRatio());
-        }
-    }
-    setAVOutput(_renderer, r, video_thread);
-    if (_renderer) {
-        qDebug("resizeRenderer after setRenderer");
-        _renderer->resizeRenderer(_renderer->rendererSize()); //IMPORTANT: the swscaler will resize
-    }
-#else
     VideoRenderer *vo = renderer();
     if (vo && r) {
         VideoRenderer::OutAspectRatioMode oar = vo->outAspectRatioMode();
@@ -178,20 +164,14 @@ void AVPlayer::setRenderer(VideoRenderer *r)
     r->setStatistics(&mStatistics);
     clearVideoRenderers();
     addVideoRenderer(r);
-
-#endif //V1_2
 }
 
 VideoRenderer *AVPlayer::renderer()
 {
-#if V1_2
-    return _renderer;
-#else
     //QList assert empty in debug mode
     if (mpVOSet->outputs().isEmpty())
 	return 0;
     return static_cast<VideoRenderer*>(mpVOSet->outputs().last());
-#endif //V1_2
 }
 
 QList<VideoRenderer*> AVPlayer::videoOutputs()
@@ -947,9 +927,6 @@ bool AVPlayer::setupVideoThread()
             }
         }
     }
-#if V1_2
-    setRenderer(_renderer);
-#endif
     int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     video_thread->packetQueue()->setThreshold(queue_min);

@@ -16,7 +16,8 @@ SOURCES += main.cpp \
     ClickableMenu.cpp \
     ScreenSaver.cpp \
     StatisticsView.cpp \
-    Slider.cpp
+    Slider.cpp \
+    TVView.cpp
 
 HEADERS += \
     MainWindow.h \
@@ -24,7 +25,8 @@ HEADERS += \
     ClickableMenu.h \
     ScreenSaver.h \
     StatisticsView.h \
-    Slider.h
+    Slider.h \
+    TVView.h
 
 tv.files = res/tv.ini
 BIN_INSTALLS += tv

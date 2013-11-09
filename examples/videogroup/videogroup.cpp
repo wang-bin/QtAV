@@ -40,7 +40,7 @@ VideoGroup::VideoGroup(QObject *parent) :
   , vid("qpainter")
 {
     mpPlayer = new AVPlayer(this);
-    mpPlayer->setPlayerEventFilter(0);
+    //mpPlayer->setPlayerEventFilter(0);
 
     mpBar = new QWidget(0, Qt::WindowStaysOnTopHint);
     mpBar->setMaximumSize(400, 60);

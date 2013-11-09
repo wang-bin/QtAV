@@ -55,30 +55,6 @@ Filter::~Filter()
 void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray* data)
 {
     DPTR_D(Filter);    
-#if V1_2
-    if (!context || context->type() != contextType()) {
-        if (context) {
-            qDebug("incompatible context type");
-            //we don't delete it because the context MUST be used by other filters
-            //TODO: How to release them at the end? refcount?
-        } else {
-            qDebug("null context");
-        }
-        //use internal context
-        if (d.context) {
-            qDebug("replace context with internal one");
-            context = d.context;
-        } else {
-            context = FilterContext::create(contextType());
-            qDebug("new filter context=%p, type=%d", context, contextType());
-            context->video_width = statistics->video_only.width;
-            context->video_height = statistics->video_only.height;
-        }
-    }
-    //if (data)
-        context->initializeOnData(data);
-    d.context = context;
-#else
     if (!d.context) {
         d.context = FilterContext::create(contextType());
         d.context->video_width = statistics->video_only.width;
@@ -97,7 +73,6 @@ void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray
     d.context->shareFrom(context);
     d.context->initializeOnData(data);
     context->shareFrom(d.context);
-#endif //V1_2
     d.statistics = statistics;
     process();
 }

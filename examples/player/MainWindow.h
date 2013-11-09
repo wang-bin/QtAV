@@ -47,7 +47,9 @@ private slots:
     void changeVO(QAction* action);
     void changeChannel(QAction* action);
     void changeAudioTrack(QAction* action);
-    void playOnlineVideo(QAction* action);
+    void onTVMenuClick();
+    void playOnlineVideo(QAction *action);
+    void onPlayListClick(const QString& key, const QString& value);
     void processPendingActions();
     void initPlayer();
     void setupUi();

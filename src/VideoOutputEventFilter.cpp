@@ -71,6 +71,23 @@ bool VideoOutputEventFilter::eventFilter(QObject *watched, QEvent *event)
         case Qt::Key_F:
             switchFullScreen();
             break;
+        case Qt::Key_I:
+            mpRenderer->setQuality(VideoRenderer::Quality(((int)mpRenderer->quality()+1)%3));
+            break;
+        case Qt::Key_T: {
+            QWidget *w = mpRenderer->widget()->window();
+            Qt::WindowFlags wf = w->windowFlags();
+            if (wf & Qt::WindowStaysOnTopHint) {
+                qDebug("Window not stays on top");
+                w->setWindowFlags(wf & ~Qt::WindowStaysOnTopHint);
+            } else {
+                qDebug("Window stays on top");
+                w->setWindowFlags(wf | Qt::WindowStaysOnTopHint);
+            }
+            //call setParent() when changing the flags, causing the widget to be hidden
+            w->show();
+        }
+            break;
         }
     }
         break;

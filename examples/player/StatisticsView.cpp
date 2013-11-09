@@ -103,8 +103,8 @@ StatisticsView::StatisticsView(QWidget *parent) :
     mpView->setColumnCount(2);
     initBaseItems(&mBaseItems);
     mpView->addTopLevelItems(mBaseItems);
-    mpView->addTopLevelItem(initVideoItems(&mVideoItems));
-    mpView->addTopLevelItem(initAudioItems(&mAudioItems));
+    mpView->addTopLevelItem(createNodeWithItems(mpView, QObject::tr("Video"), getVideoInfoKeys(), &mVideoItems));
+    mpView->addTopLevelItem(createNodeWithItems(mpView, QObject::tr("Audio"), getAudioInfoKeys(), &mAudioItems));
     mpView->resizeColumnToContents(0); //call this after content is done
 
     QPushButton *btn = new QPushButton(QObject::tr("Ok"));
@@ -157,32 +157,18 @@ void StatisticsView::initBaseItems(QList<QTreeWidgetItem *> *items)
     }
 }
 
-QTreeWidgetItem* StatisticsView::initVideoItems(QList<QTreeWidgetItem *> *items)
+QTreeWidgetItem* StatisticsView::createNodeWithItems(QTreeWidget *view, const QString &name, const QStringList &itemNames, QList<QTreeWidgetItem *> *items)
 {
-    QTreeWidgetItem *videoItem = new QTreeWidgetItem(mpView);
-    videoItem->setData(0, Qt::DisplayRole, QObject::tr("Video"));
+    QTreeWidgetItem *nodeItem = new QTreeWidgetItem(view);
+    nodeItem->setData(0, Qt::DisplayRole, name);
     QTreeWidgetItem *item = 0;
-    foreach(QString key, getVideoInfoKeys()) {
-        item = new QTreeWidgetItem(videoItem);
+    foreach(QString key, itemNames) {
+        item = new QTreeWidgetItem(nodeItem);
         item->setData(0, Qt::DisplayRole, key);
-        items->append(item);
+        nodeItem->addChild(item);
+        if (items)
+            items->append(item);
     }
-    videoItem->addChildren(*items);
-    videoItem->setExpanded(true);
-    return videoItem;
-}
-
-QTreeWidgetItem* StatisticsView::initAudioItems(QList<QTreeWidgetItem *> *items)
-{
-    QTreeWidgetItem *audioItem = new QTreeWidgetItem(mpView);
-    audioItem->setData(0, Qt::DisplayRole, QObject::tr("Audio"));
-    QTreeWidgetItem *item = 0;
-    foreach(QString key, getAudioInfoKeys()) {
-        item = new QTreeWidgetItem(audioItem);
-        item->setData(0, Qt::DisplayRole, key);
-        items->append(item);
-    }
-    audioItem->addChildren(*items);
-    audioItem->setExpanded(true);
-    return audioItem;
+    nodeItem->setExpanded(true);
+    return nodeItem;
 }

@@ -21,8 +21,7 @@ public slots:
     
 private:
     void initBaseItems(QList<QTreeWidgetItem*>* items);
-    QTreeWidgetItem* initVideoItems(QList<QTreeWidgetItem*>* items);
-    QTreeWidgetItem* initAudioItems(QList<QTreeWidgetItem*>* items);
+    QTreeWidgetItem* createNodeWithItems(QTreeWidget* view, const QString& name, const QStringList& itemNames, QList<QTreeWidgetItem*>* items = 0);
 
     QTreeWidget *mpView;
     QList<QTreeWidgetItem*> mBaseItems;
@@ -30,7 +29,6 @@ private:
     //TODO: multiple streams
     QList<QTreeWidgetItem*> mAudioItems;
     Statistics mStatistics;
-
 };
 
 #endif // STATISTICSVIEW_H
