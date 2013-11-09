@@ -24,6 +24,7 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QVariant>
+#include <QtCore/QSharedData>
 
 // TODO: plane=>channel
 namespace QtAV {
@@ -31,9 +32,11 @@ namespace QtAV {
 class FramePrivate;
 class Q_AV_EXPORT Frame
 {
-    DPTR_DECLARE_PRIVATE(Frame)
+    Q_DECLARE_PRIVATE(Frame)
 public:
+    Frame(const Frame& other);
     virtual ~Frame() = 0;
+    Frame& operator =(const Frame &other);
 
     /*!
      * \brief bytesPerLine
@@ -45,7 +48,9 @@ public:
      */
     int planeCount() const;
     virtual int bytesPerLine(int plane = 0) const;
-    // deep copy the data
+    // the whole frame data
+    QByteArray frameData() const;
+    // deep copy 1 plane data
     QByteArray data(int plane = 0) const;
     uchar* bits(int plane = 0);
     const uchar *bits(int plane = 0) const;
@@ -69,8 +74,7 @@ public:
 
 protected:
     Frame(FramePrivate &d);
-    DPTR_DECLARE(Frame)
-//    QExplicitlySharedDataPointer<QVideoFramePrivate> d;
+    QExplicitlySharedDataPointer<FramePrivate> d_ptr;
 };
 
 } //namespace QtAV

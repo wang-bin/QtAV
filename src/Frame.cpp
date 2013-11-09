@@ -24,14 +24,24 @@
 
 namespace QtAV {
 
+Frame::Frame(const Frame &other)
+    :d_ptr(other.d_ptr)
+{
+}
+
 Frame::Frame(FramePrivate &d):
-    DPTR_INIT(&d)
+    d_ptr(&d)
 {
 }
 
 Frame::~Frame()
 {
+}
 
+Frame &Frame::operator =(const Frame &other)
+{
+    d_ptr = other.d_ptr;
+    return *this;
 }
 
 int Frame::bytesPerLine(int plane) const
@@ -40,63 +50,69 @@ int Frame::bytesPerLine(int plane) const
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return 0;
     }
-    return d_func().line_size[plane];
+    return d_func()->line_sizes[plane];
+}
+
+QByteArray Frame::frameData() const
+{
+    return d_func()->data;
 }
 
 QByteArray Frame::data(int plane) const
 {
-    DPTR_D(const Frame);
     if (plane < 0 || plane >= planeCount()) {
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return QByteArray();
     }
-    return QByteArray((char*)d.planes[plane], bytesPerLine(plane));
+    return QByteArray((char*)d_func()->planes[plane], bytesPerLine(plane));
 }
 
 uchar* Frame::bits(int plane)
 {
-    DPTR_D(Frame);
     if (plane < 0 || plane >= planeCount()) {
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return 0;
     }
-    return d.planes[plane];
+    return d_func()->planes[plane];
 }
 
 const uchar* Frame::bits(int plane) const
 {
-    DPTR_D(const Frame);
     if (plane < 0 || plane >= planeCount()) {
         qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
         return 0;
     }
-    return d.planes[plane];
+    return d_func()->planes[plane];
 }
 
 void Frame::setBits(uchar *b, int plane)
 {
-    d_func().planes[plane] = b;
+    Q_D(Frame);
+    d->planes[plane] = b;
 }
 
 void Frame::setBits(const QVector<uchar *> &b)
 {
-    d_func().planes = b;
+    Q_D(Frame);
+    d->planes = b;
 }
 
 void Frame::setBytesPerLine(int lineSize, int plane)
 {
-    d_func().line_size[plane] = lineSize;
+    Q_D(Frame);
+    d->line_sizes[plane] = lineSize;
 }
 
 void Frame::setBytesPerLine(const QVector<int> &lineSize)
 {
-    d_func().line_size = lineSize;
+    Q_D(Frame);
+    d->line_sizes = lineSize;
 }
 
 int Frame::planeCount() const
 {
-    DPTR_D(const Frame);
-    return d.planes.size();
+    Q_D(const Frame);
+    return d->planes.size();
 }
 
 
@@ -105,7 +121,8 @@ int Frame::planeCount() const
  */
 QVariantMap Frame::availableMetaData() const
 {
-    return d_func().metadata;
+    Q_D(const Frame);
+    return d->metadata;
 }
 
 /*!
@@ -119,13 +136,14 @@ QVariantMap Frame::availableMetaData() const
  */
 QVariant Frame::metaData(const QString &key) const
 {
-    return d_func().metadata.value(key);
+    Q_D(const Frame);
+    return d->metadata.value(key);
 }
 
 /*!
     Sets the metadata for the given \a key to \a value.
 
-    If \a value is a null variant, any metadata for this key will be removed.
+    If \a value is a null variant, any metadata for this key will be removed->
 
     The producer of the video frame might use this to associate
     certain data with this frame, or for an intermediate processor
@@ -133,11 +151,11 @@ QVariant Frame::metaData(const QString &key) const
  */
 void Frame::setMetaData(const QString &key, const QVariant &value)
 {
-    DPTR_D(Frame);
+    Q_D(Frame);
     if (!value.isNull())
-        d.metadata.insert(key, value);
+        d->metadata.insert(key, value);
     else
-        d.metadata.remove(key);
+        d->metadata.remove(key);
 }
 
 } //namespace QtAV

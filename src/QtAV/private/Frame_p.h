@@ -25,18 +25,20 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QVector>
 #include <QtCore/QVariant>
+#include <QtCore/QSharedData>
 
 namespace QtAV {
 
 class Frame;
-class Q_AV_EXPORT FramePrivate : public DPtrPrivate<Frame>
+class Q_AV_EXPORT FramePrivate : public QSharedData
 {
 public:
     virtual ~FramePrivate() {}
 
     QVector<uchar*> planes; //slice
-    QVector<int> line_size; //stride
+    QVector<int> line_sizes; //stride
     QVariantMap metadata;
+    QByteArray data;
 };
 
 } //namespace QtAV

@@ -30,12 +30,33 @@ public:
     AudioFramePrivate()
         : FramePrivate()
     {}
-    virtual ~AudioFramePrivate() {}
+    ~AudioFramePrivate() {}
 };
 
 AudioFrame::AudioFrame():
     Frame(*new AudioFramePrivate())
 {
+}
+
+/*!
+    Constructs a shallow copy of \a other.  Since AudioFrame is
+    explicitly shared, these two instances will reflect the same frame.
+
+*/
+AudioFrame::AudioFrame(const AudioFrame &other)
+    : Frame(other)
+{
+}
+
+/*!
+    Assigns the contents of \a other to this video frame.  Since AudioFrame is
+    explicitly shared, these two instances will reflect the same frame.
+
+*/
+AudioFrame &AudioFrame::operator =(const AudioFrame &other)
+{
+    d_ptr = other.d_ptr;
+    return *this;
 }
 
 AudioFrame::~AudioFrame()

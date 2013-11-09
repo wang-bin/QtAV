@@ -29,10 +29,14 @@ namespace QtAV {
 class AudioFramePrivate;
 class Q_AV_EXPORT AudioFrame : public Frame
 {
-    DPTR_DECLARE_PRIVATE(AudioFrame)
+    Q_DECLARE_PRIVATE(AudioFrame)
 public:
     AudioFrame();
+    AudioFrame(const AudioFrame &other);
     virtual ~AudioFrame();
+
+    AudioFrame &operator =(const AudioFrame &other);
+
 };
 
 } //namespace QtAV

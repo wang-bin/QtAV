@@ -10,12 +10,104 @@
 
 namespace QtAV {
 
+class VideoFormatPrivate : public QSharedData
+{
+public:
+    VideoFormatPrivate(VideoFormat::PixelFormat fmt)
+        : pixfmt(fmt)
+        , bpps(4)
+        , bpps_pad(4)
+        , pixdesc(0)
+    {
+        init();
+    }
+    VideoFormatPrivate(AVPixelFormat fmt)
+        : pixfmt_ff(fmt)
+        , bpps(4)
+        , bpps_pad(4)
+        , pixdesc(0)
+    {
+        init();
+    }
+    void init() {
+        if (pixfmt != VideoFormat::Format_Invalid) {
+            pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
+        } else {
+            pixfmt = VideoFormat::pixelFormatFromFFmpeg(pixfmt_ff);
+        }
+        if (pixfmt == VideoFormat::Format_Invalid) {
+            planes = 0;
+            bpps.fill(0);
+            bpps_pad.fill(0);
+        }
+        pixdesc = const_cast<AVPixFmtDescriptor*>(av_pix_fmt_desc_get(pixfmt_ff));
+        if (!pixdesc)
+            return;
+        initBpp();
+        planes = qMax(av_pix_fmt_count_planes(pixfmt_ff), 0);
+        bpps.resize(planes);
+        bpps_pad.resize(planes);
+    }
+    QString name() const {
+        return av_get_pix_fmt_name(pixfmt_ff);
+    }
+    int flags() const {
+        if (!pixdesc)
+            return 0;
+        return pixdesc->flags;
+    }
+
+    VideoFormat::PixelFormat pixfmt;
+    AVPixelFormat pixfmt_ff;
+    int planes;
+    int bpp;
+    int bpp_pad;
+    QVector<int> bpps;
+    QVector<int> bpps_pad;
+
+private:
+    AVPixFmtDescriptor *pixdesc;
+    // from libavutil/pixdesc.c
+    void initBpp() {
+        int c = 0;
+        bpp = 0;
+        int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
+
+        for (c = 0; c < pixdesc->nb_components; c++) {
+            int s = c == 1 || c == 2 ? 0 : log2_pixels;
+            bpps[c] = pixdesc->comp[c].depth_minus1 + 1;
+            bpp += (pixdesc->comp[c].depth_minus1 + 1) << s;
+        }
+        bpp >>= log2_pixels;
+
+        c = 0;
+        bpp_pad = 0;
+        int steps[4] = {0};
+
+        for (c = 0; c < pixdesc->nb_components; c++) {
+            const AVComponentDescriptor *comp = &pixdesc->comp[c];
+            int s = c == 1 || c == 2 ? 0 : log2_pixels;
+            bpps_pad[c] = comp->step_minus1 + 1;
+            if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
+                bpps_pad[c] *= 8;
+            steps[comp->plane] = (comp->step_minus1 + 1) << s;
+        }
+        for (c = 0; c < 4; c++)
+            bpp_pad += steps[c];
+
+        if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
+            bpp_pad *= 8;
+
+        bpp_pad >>= log2_pixels;
+    }
+
+};
+
 // TODO: use script
 static const struct {
     VideoFormat::PixelFormat fmt;
     AVPixelFormat ff; //int
 } pixfmt_map[] = {
-    { VideoFormat::Format_Invalid, AV_PIX_FMT_NONE },
     { VideoFormat::Format_YUV420P, AV_PIX_FMT_YUV420P },   ///< planar YUV 4:2:0, 12bpp, (1 Cr & Cb sample per 2x2 Y samples)
     { VideoFormat::Format_YUYV, AV_PIX_FMT_YUYV422 }, //??   ///< packed YUV 4:2:2, 16bpp, Y0 Cb Y1 Cr
     { VideoFormat::Format_RGB24, AV_PIX_FMT_RGB24 },     ///< packed RGB 8:8:8, 24bpp, RGBRGB...
@@ -187,9 +279,10 @@ static const struct {
     AV_PIX_FMT_GBRP14BE,    ///< planar GBR 4:4:4 42bpp, big-endian
     AV_PIX_FMT_GBRP14LE,    ///< planar GBR 4:4:4 42bpp, little-endian
 */
+    { VideoFormat::Format_Invalid, AV_PIX_FMT_NONE },
 };
 
-static VideoFormat::PixelFormat pixelFormatFromFFmpeg(AVPixelFormat ff)
+VideoFormat::PixelFormat VideoFormat::pixelFormatFromFFmpeg(int ff)
 {
     for (int i = 0; i < sizeof(pixfmt_map)/sizeof(pixfmt_map[0]); ++i) {
         if (pixfmt_map[i].ff == ff)
@@ -198,7 +291,7 @@ static VideoFormat::PixelFormat pixelFormatFromFFmpeg(AVPixelFormat ff)
     return VideoFormat::Format_Invalid;
 }
 
-static AVPixelFormat pixelFormatToFFmpeg(VideoFormat::PixelFormat fmt)
+int VideoFormat::pixelFormatToFFmpeg(VideoFormat::PixelFormat fmt)
 {
     for (int i = 0; i < sizeof(pixfmt_map)/sizeof(pixfmt_map[0]); ++i) {
         if (pixfmt_map[i].fmt == fmt)
@@ -207,100 +300,58 @@ static AVPixelFormat pixelFormatToFFmpeg(VideoFormat::PixelFormat fmt)
     return AV_PIX_FMT_NONE;
 }
 
+/*!
+    Returns a video pixel format equivalent to an image \a format.  If there is no equivalent
+    format VideoFormat::InvalidType is returned instead.
 
-class VideoFormatPrivate : public QSharedData
-{
-public:
-    VideoFormatPrivate(VideoFormat::PixelFormat fmt)
-        : pixfmt(fmt)
-        , bpps(4)
-        , bpps_pad(4)
-        , pixdesc(0)
-    {
-        init();
-    }
-    VideoFormatPrivate(AVPixelFormat fmt)
-        : pixfmt_ff(fmt)
-        , bpps(4)
-        , bpps_pad(4)
-        , pixdesc(0)
-    {
-        init();
-    }
-    void init() {
-        if (pixfmt != VideoFormat::Format_Invalid) {
-            pixfmt_ff = pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
-        } else {
-            pixfmt = pixelFormatFromFFmpeg(pixfmt_ff);
-        }
-        if (pixfmt == VideoFormat::Format_Invalid) {
-            planes = -1;
-            bpps.fill(0);
-            bpps_pad.fill(0);
-        }
-        pixdesc = const_cast<AVPixFmtDescriptor*>(av_pix_fmt_desc_get(pixfmt_ff));
-        if (!pixdesc)
-            return;
-        initBpp();
-    }
-    QString name() const {
-        return av_get_pix_fmt_name(pixfmt_ff);
-    }
-    int flags() const {
-        if (!pixdesc)
-            return 0;
-        return pixdesc->flags;
-    }
+    \note In general \l QImage does not handle YUV formats.
 
-    VideoFormat::PixelFormat pixfmt;
-    AVPixelFormat pixfmt_ff;
-    int planes;
-    int bpp;
-    int bpp_pad;
-    QVector<int> bpps;
-    QVector<int> bpps_pad;
-
-private:
-    AVPixFmtDescriptor *pixdesc;
-    // from libavutil/pixdesc.c
-    void initBpp() {
-        int c = 0;
-        bpp = 0;
-        int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
-
-        for (c = 0; c < pixdesc->nb_components; c++) {
-            int s = c == 1 || c == 2 ? 0 : log2_pixels;
-            bpps[c] = pixdesc->comp[c].depth_minus1 + 1;
-            bpp += (pixdesc->comp[c].depth_minus1 + 1) << s;
-        }
-        bpp >>= log2_pixels;
-
-        c = 0;
-        bpp_pad = 0;
-        int steps[4] = {0};
-
-        for (c = 0; c < pixdesc->nb_components; c++) {
-            const AVComponentDescriptor *comp = &pixdesc->comp[c];
-            int s = c == 1 || c == 2 ? 0 : log2_pixels;
-            bpps_pad[c] = comp->step_minus1 + 1;
-            if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
-                bpps_pad[c] *= 8;
-            steps[comp->plane] = (comp->step_minus1 + 1) << s;
-        }
-        for (c = 0; c < 4; c++)
-            bpp_pad += steps[c];
-
-        if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
-            bpp_pad *= 8;
-
-        bpp_pad >>= log2_pixels;
-    }
-
+*/
+static const struct {
+    VideoFormat::PixelFormat fmt;
+    QImage::Format qfmt;
+} qpixfmt_map[] = {
+    { VideoFormat::Format_RGB32,QImage::Format_RGB32 },
+    { VideoFormat::Format_ARGB32, QImage::Format_ARGB32 },
+    { VideoFormat::Format_ARGB32_Premultiplied, QImage::Format_ARGB32_Premultiplied },
+    { VideoFormat::Format_RGB565, QImage::Format_RGB16 },
+    { VideoFormat::Format_ARGB8565_Premultiplied, QImage::Format_ARGB8565_Premultiplied },
+    { VideoFormat::Format_RGB555, QImage::Format_RGB555 },
+    { VideoFormat::Format_RGB24, QImage::Format_RGB888 },
+    { VideoFormat::Format_Invalid, QImage::Format_Invalid }
 };
+
+VideoFormat::PixelFormat VideoFormat::pixelFormatFromImageFormat(QImage::Format format)
+{
+    for (int i = 0; qpixfmt_map[i].fmt != Format_Invalid; ++i) {
+        if (qpixfmt_map[i].qfmt == format)
+            return qpixfmt_map[i].fmt;
+    }
+    return Format_Invalid;
+}
+
+QImage::Format VideoFormat::imageFormatFromPixelFormat(PixelFormat format)
+{
+    for (int i = 0; qpixfmt_map[i].fmt != Format_Invalid; ++i) {
+        if (qpixfmt_map[i].fmt == format)
+            return qpixfmt_map[i].qfmt;
+    }
+    return QImage::Format_Invalid;
+}
 
 
 VideoFormat::VideoFormat(PixelFormat format)
     :d(new VideoFormatPrivate(format))
+{
+}
+
+VideoFormat::VideoFormat(int formatFF)
+    :d(new VideoFormatPrivate((AVPixelFormat)formatFF))
+{
+}
+
+VideoFormat::VideoFormat(QImage::Format fmt)
+    :d(new VideoFormatPrivate(VideoFormat::pixelFormatFromImageFormat(fmt)))
 {
 }
 

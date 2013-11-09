@@ -24,6 +24,7 @@
 
 #include <QtCore/QSharedDataPointer>
 #include <QtCore/QString>
+#include <QtGui/QImage>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -74,7 +75,14 @@ public:
         Format_User
     };
 
+    static PixelFormat pixelFormatFromImageFormat(QImage::Format format);
+    static QImage::Format imageFormatFromPixelFormat(PixelFormat format);
+    static PixelFormat pixelFormatFromFFmpeg(int ff); //AVPixelFormat
+    static int pixelFormatToFFmpeg(PixelFormat fmt);
+
     VideoFormat(PixelFormat format = Format_Invalid);
+    VideoFormat(int formatFF);
+    VideoFormat(QImage::Format fmt);
     VideoFormat(const QString& name);
     VideoFormat(const VideoFormat &other);
     ~VideoFormat();
@@ -100,6 +108,10 @@ public:
      * \return -1 if not a valid format
      */
     int planeCount() const;
+    /*!
+     * https://wiki.videolan.org/YUV
+     *  YUV420P: 1pix = 4Y+U+V
+     */
     int bitsPerPixel() const;
     int bitsPerPixelPadded() const;
     int bitsPerPixel(int plane) const;
