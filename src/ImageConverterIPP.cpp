@@ -97,18 +97,7 @@ bool ImageConverterIPP::prepareData()
             d.orig_ori_rgb.resize(bytes);
         //}
     }
-    //for resize
-    d.need_scale = d.w_in != d.w_out || d.h_in != d.h_out;
-    if (d.w_out > 0 && d.h_out > 0) {
-        qDebug("out size=%d x %d", d.w_out, d.h_out);
-        if (d.need_scale) {
-            int bytes = avpicture_get_size((PixelFormat)d.fmt_out, d.w_out, d.h_out);
-            //if(d.data_out.size() < bytes) {
-                d.data_out.resize(bytes);
-            //}
-        }
-    }
-    return true;
+    return ImageConverter::prepareData();
 }
 
 } //namespace QtAV

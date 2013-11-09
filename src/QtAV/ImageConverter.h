@@ -25,6 +25,7 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/FactoryDefine.h>
+#include <QtCore/QVector>
 
 namespace QtAV {
 
@@ -48,13 +49,15 @@ public:
     void setOutFormat(int format);
     void setInterlaced(bool interlaced);
     bool isInterlaced() const;
+    QVector<quint8*> outPlanes() const;
+    QVector<int> outLineSizes() const;
     virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]) = 0;
     //virtual bool convertColor(const quint8 *const srcSlice[], const int srcStride[]) = 0;
     //virtual bool resize(const quint8 *const srcSlice[], const int srcStride[]) = 0;
 protected:
     ImageConverter(ImageConverterPrivate& d);
     //Allocate memory for out data. Called in setOutFormat()
-    virtual bool prepareData();
+    virtual bool prepareData(); //Allocate memory for out data
     DPTR_DECLARE(ImageConverter)
 };
 

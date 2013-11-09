@@ -38,6 +38,7 @@ public:
     int w_in, h_in, w_out, h_out;
     int fmt_in, fmt_out;
     QByteArray data_out;
+    AVPicture picture;
 };
 
 } //namespace QtAV

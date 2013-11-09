@@ -100,9 +100,45 @@ bool ImageConverter::isInterlaced() const
     return d_func().interlaced;
 }
 
+QVector<quint8*> ImageConverter::outPlanes() const
+{
+    DPTR_D(const ImageConverter);
+    QVector<quint8*> planes(4, 0);
+    planes[0] = d.picture.data[0];
+    planes[1] = d.picture.data[1];
+    planes[2] = d.picture.data[2];
+    planes[3] = d.picture.data[3];
+    return planes;
+}
+
+QVector<int> ImageConverter::outLineSizes() const
+{
+    DPTR_D(const ImageConverter);
+    QVector<int> lineSizes(4, 0);
+    lineSizes[0] = d.picture.linesize[0];
+    lineSizes[1] = d.picture.linesize[1];
+    lineSizes[2] = d.picture.linesize[2];
+    lineSizes[3] = d.picture.linesize[3];
+    return lineSizes;
+}
+
 bool ImageConverter::prepareData()
 {
-    return false;
+    DPTR_D(ImageConverter);
+    //TODO: AVPixelFormat. move define to compat.h
+    int bytes = avpicture_get_size((PixelFormat)d.fmt_out, d.w_out, d.h_out);
+    //if (d.data_out.size() < bytes) {
+        d.data_out.resize(bytes);
+    //}
+    //picture的数据按PIX_FMT格式自动"关联"到 data
+    avpicture_fill(
+            &d.picture,
+            reinterpret_cast<uint8_t*>(d.data_out.data()),
+            (PixelFormat)d.fmt_out,
+            d.w_out,
+            d.h_out
+            );
+    return true;
 }
 
 } //namespace QtAV
