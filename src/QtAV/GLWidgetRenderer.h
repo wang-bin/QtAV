@@ -39,7 +39,6 @@ public:
     virtual bool receiveFrame(const VideoFrame& frame);
 
 protected:
-    virtual void convertData(const QByteArray &data);
     virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
@@ -50,7 +49,6 @@ protected:
     virtual void resizeGL(int w, int h);
     virtual void resizeEvent(QResizeEvent *);
     virtual void showEvent(QShowEvent *);
-    virtual bool write();
 };
 typedef GLWidgetRenderer VideoRendererGLWidget;
 

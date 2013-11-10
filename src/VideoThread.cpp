@@ -217,7 +217,6 @@ void VideoThread::run()
             }
             frame.convertTo(VideoFormat(VideoFormat::Format_RGB32));
             d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
-            //d.outputSet->sendData(data);
         }
     }
     qDebug("Video thread stops running...");

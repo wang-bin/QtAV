@@ -56,6 +56,9 @@ bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
     Q_UNUSED(locker);
     d.video_frame = frame;
     d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.imageFormat());
+
+    //update(); //why not this?
+    QMetaObject::invokeMethod(this, "update");
     return true;
 }
 
@@ -90,15 +93,6 @@ void QQuickItemRenderer::setFillMode(FillMode mode)
     emit fillModeChanged(mode);
 }
 
-void QQuickItemRenderer::convertData(const QByteArray &data)
-{
-    DPTR_D(QQuickItemRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    d.data = data;
-    d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
-}
-
 bool QQuickItemRenderer::needUpdateBackground() const
 {
     DPTR_D(const QQuickItemRenderer);
@@ -115,6 +109,10 @@ void QQuickItemRenderer::drawFrame()
     DPTR_D(QQuickItemRenderer);
     if (!d.node)
         return;
+    if (d.image.isNull()) {
+        d.image = QImage(rendererSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black);
+    }
     if (d.fill_mode == Stretch) {
         static_cast<QSGSimpleTextureNode*>(d.node)->setRect(boundingRect());
     } else if (d.fill_mode == PreserveAspectFit || d.fill_mode == PreserveAspectCrop) {
@@ -128,10 +126,7 @@ void QQuickItemRenderer::drawFrame()
         //rect &= boundingRect(); //FIXME: why QtMultiMedia does not have it?
         static_cast<QSGSimpleTextureNode*>(d.node)->setRect(rect);
     }
-    if (d.image.isNull()) { //TODO: move to QPainterRenderer.convertData?
-        d.image = QImage(rendererSize(), QImage::Format_RGB32);
-        d.image.fill(Qt::black);
-    }
+
     if (d.texture)
         delete d.texture;
     d.texture = this->window()->createTextureFromImage(d.image);
@@ -150,12 +145,6 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
     handlePaintEvent();
     d.node = 0;
     return node;
-}
-
-bool QQuickItemRenderer::write()
-{
-    QMetaObject::invokeMethod(this, "update");
-    return true;
 }
 
 } // namespace QtAV

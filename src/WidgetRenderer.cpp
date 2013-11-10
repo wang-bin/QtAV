@@ -85,17 +85,6 @@ bool WidgetRenderer::receiveFrame(const VideoFrame &frame)
     return true;
 }
 
-bool WidgetRenderer::write()
-{
-    //update();
-    /*
-     * workaround for the widget not updated if has parent. don't know why it works and why update() can't
-     * Thanks to Vito Covito and Carlo Scarpato
-     */
-    emit imageReady();
-    return true;
-}
-
 bool WidgetRenderer::needUpdateBackground() const
 {
     DPTR_D(const WidgetRenderer);

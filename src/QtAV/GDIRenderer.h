@@ -48,7 +48,6 @@ public:
      * false: GetDC(winId()), no double buffer, should reimplement paintEngine()
      */
 protected:
-    virtual void convertData(const QByteArray &data);
     virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
@@ -60,7 +59,6 @@ protected:
     virtual void resizeEvent(QResizeEvent *);
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void showEvent(QShowEvent *);
-    virtual bool write();
 };
 typedef GDIRenderer VideoRendererGDI;
 

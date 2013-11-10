@@ -213,7 +213,7 @@ void AudioThread::run()
                             }
                         }
                     }
-                    ao->writeData(decodedChunk);
+                    ao->receiveData(decodedChunk);
                 } else {
                 /*
                  * why need this even if we add delay? and usleep sounds weird

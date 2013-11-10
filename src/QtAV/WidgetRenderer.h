@@ -49,7 +49,6 @@ protected:
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
      *things yourself totally*/
     virtual void paintEvent(QPaintEvent *);
-    virtual bool write();
 protected:
     WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent, Qt::WindowFlags f);
 };

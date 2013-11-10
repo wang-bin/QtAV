@@ -50,33 +50,9 @@ int QPainterRenderer::filterContextType() const
     return FilterContext::QtPainter;
 }
 
-/*
-QImage QPainterRenderer::currentFrameImage() const
-{
-    return d_func().image;
-}
-*/
-
 bool QPainterRenderer::prepareFrame(const VideoFrame &frame)
 {
     DPTR_D(QPainterRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    d.video_frame = frame;
-    // DO NOT use frameData().data() because it's temp ptr while QImage does not deep copy the data
-    d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.imageFormat());
-    return true;
-}
-
-//FIXME: why crash if QImage use widget size?
-void QPainterRenderer::convertData(const QByteArray &data)
-{
-    DPTR_D(QPainterRenderer);
-    //int ss = 4*d.src_width*d.src_height*sizeof(char);
-    //if (ss != data.size())
-    //    qDebug("src size=%d, data size=%d", ss, data.size());
-    //if (d.src_width != d.renderer_width || d.src_height != d.renderer_height)
-    //    return;
     /*
      * QImage constructed from memory do not deep copy the data, data should be available throughout
      * image's lifetime and not be modified. painting image happens in main thread, we must ensure the
@@ -91,22 +67,12 @@ void QPainterRenderer::convertData(const QByteArray &data)
         /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
-        d.data = data; //TODO: why need this line? Then use data.data() is OK? If use d.data.data() it will eat more cpu, why?
-        //qDebug("data address = %p, %p", data.data(), d.data.data());
-    #if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-        d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
-    #else
-        d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
-    #endif
-    //} else {
-        //qDebug("data address = %p", data.data());
-        //Format_RGB32 is fast. see document
-#if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-        //d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, QImage::Format_RGB32);
-#else
-    d.image = QImage((uchar*)data.data(), d.src_width, d.src_height, 16, NULL, 0, QImage::IgnoreEndian);
-#endif
-    //}
+    //If use d.data.data() it will eat more cpu, deep copy?
+    d.video_frame = frame;
+    // DO NOT use frameData().data() because it's temp ptr while QImage does not deep copy the data
+    d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.imageFormat());
+    //Format_RGB32 is fast. see document
+    return true;
 }
 
 } //namespace QtAV

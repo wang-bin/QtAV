@@ -55,24 +55,6 @@ AVOutput::~AVOutput()
     detach();
 }
 
-bool AVOutput::writeData(const QByteArray &data)
-{
-    Q_UNUSED(data);
-    //DPTR_D(AVOutput);
-    //locker(&mutex)
-    //TODO: make sure d.data thread safe. lock around here? for audio and video(main thread problem)?
-    /* you can use d.data directly in AVThread. In other thread, it's not safe, you must do something
-     * to make sure the data is not be modified in AVThread when using it*/
-    //d_func().data = data;
-    if (d_func().paused)
-        return false;
-    convertData(data); //TODO: only once for all outputs
-	bool result = write();
-	//write then pause: if capture when pausing, the displayed picture is captured
-    //tryPause(); ///DO NOT pause the thread so that other outputs can still run
-	return result;
-}
-
 bool AVOutput::isAvailable() const
 {
     return d_func().available;
@@ -128,13 +110,6 @@ void AVOutput::detach(OutputSet *set)
     foreach(OutputSet *set, d.output_sets) {
         set->removeOutput(this);
     }
-}
-
-void AVOutput::convertData(const QByteArray &data)
-{
-    //TODO: make sure d.data thread safe. lock here?
-    DPTR_D(AVOutput);
-    d.data = data;
 }
 
 int AVOutput::filterContextType() const

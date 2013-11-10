@@ -44,6 +44,7 @@ public:
     qreal speed;
     int max_channels;
     AudioFormat format;
+    QByteArray data;
 };
 
 } //namespace QtAV

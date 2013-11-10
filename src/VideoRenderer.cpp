@@ -364,9 +364,9 @@ void VideoRenderer::handlePaintEvent()
             drawBackground();
         }
         /* DO NOT return if no data. we should draw other things
-         * NOTE: if data is not copyed in convertData, you should always call drawFrame()
+         * NOTE: if data is not copyed in receiveFrame(), you should always call drawFrame()
          */
-        /* d2d: d.data is always empty because we did not assign a vaule in convertData?
+        /*
          * why the background is white if return? the below code draw an empty bitmap?
          */
         //DO NOT return if no data. we should draw other things

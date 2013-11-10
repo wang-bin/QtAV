@@ -35,6 +35,8 @@ class Q_AV_EXPORT AudioOutput : public AVOutput
 public:
     AudioOutput();
     virtual ~AudioOutput() = 0;
+    /* store the data ref, then call convertData() and write(). tryPause() will be called*/
+    bool receiveData(const QByteArray& data);
 
     int maxChannels() const;
     //virtual bool isSupported(const AudioFormat& format);
@@ -65,6 +67,7 @@ public:
 
 protected:
     AudioOutput(AudioOutputPrivate& d);
+    virtual bool write() = 0;
 };
 
 } //namespace QtAV

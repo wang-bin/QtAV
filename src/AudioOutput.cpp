@@ -37,6 +37,20 @@ AudioOutput::~AudioOutput()
 {
 }
 
+bool AudioOutput::receiveData(const QByteArray &data)
+{
+    DPTR_D(AudioOutput);
+    //DPTR_D(AVOutput);
+    //locker(&mutex)
+    //TODO: make sure d.data thread safe. lock around here? for audio and video(main thread problem)?
+    /* you can use d.data directly in AVThread. In other thread, it's not safe, you must do something
+     * to make sure the data is not be modified in AVThread when using it*/
+    if (d.paused)
+        return false;
+    d.data = data;
+    return write();
+}
+
 int AudioOutput::maxChannels() const
 {
     return d_func().max_channels;

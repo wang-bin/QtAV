@@ -56,17 +56,6 @@ QList<AVOutput *> OutputSet::outputs()
     return mOutputs;
 }
 
-void OutputSet::sendData(const QByteArray &data)
-{
-    QMutexLocker lock(&mMutex);
-    Q_UNUSED(lock);
-    foreach(AVOutput *output, mOutputs) {
-        if (!output->isAvailable())
-            continue;
-        output->writeData(data);
-    }
-}
-
 void OutputSet::sendVideoFrame(const VideoFrame &frame)
 {
     QMutexLocker lock(&mMutex);

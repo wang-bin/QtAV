@@ -50,7 +50,6 @@ public:
     bool available;
     QMutex mutex; //pause
     QWaitCondition cond; //pause
-    QByteArray data;
 
     //paintEvent is in main thread, copy it(only dynamic information) is better.
     //the static data are copied from AVPlayer when open
