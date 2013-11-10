@@ -27,6 +27,11 @@
 #include <QtGui/QImage>
 #include <QtAV/QtAV_Global.h>
 
+// FF_API_PIX_FMT
+#ifdef PixelFormat
+#undef PixelFormat
+#endif
+
 namespace QtAV {
 
 class VideoFormatPrivate;
@@ -95,6 +100,7 @@ public:
 
     PixelFormat pixelFormat() const;
     int pixelFormatFFmpeg() const;
+    QImage::Format imageFormat() const;
     QString name() const;
     /*!
      * \brief setPixelFormat set pixel format to format. other information like bpp will be updated

@@ -36,16 +36,27 @@ namespace QtAV {
 class VideoFramePrivate : public FramePrivate
 {
 public:
+    VideoFramePrivate()
+        : FramePrivate()
+        , width(0)
+        , height(0)
+        , format(VideoFormat::Format_Invalid)
+        , textures(4, 0)
+        , conv(0)
+    {}
     VideoFramePrivate(int w, int h, const VideoFormat& fmt)
         : FramePrivate()
         , width(w)
         , height(h)
         , format(fmt)
+        , textures(4, 0)
         , conv(0)
     {
+        /*
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
         textures.resize(format.planeCount());
+        */
     }
     ~VideoFramePrivate() {}
     bool convertTo(const VideoFormat& fmt) {
@@ -54,14 +65,18 @@ public:
         conv->setInFormat(format.pixelFormatFFmpeg());
         conv->setOutFormat(fmt.pixelFormatFFmpeg());
         conv->setInSize(width, height);
-        bool ok = conv->convert(planes.data(), line_sizes.data());
+        if (!conv->convert(planes.data(), line_sizes.data()))
+            return false;
+        format = fmt;
         data = conv->outData();
         planes = conv->outPlanes();
         line_sizes = conv->outLineSizes();
+        /*
         planes.resize(fmt.planeCount());
         line_sizes.resize(fmt.planeCount());
         textures.resize(fmt.planeCount());
-        return ok;
+        */
+        return true;
     }
     bool convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi) {
         if (!conv)
@@ -69,9 +84,11 @@ public:
         data = conv->outData();
         planes = conv->outPlanes();
         line_sizes = conv->outLineSizes();
+        /*
         planes.resize(fmt.planeCount());
         line_sizes.resize(fmt.planeCount());
         textures.resize(fmt.planeCount());
+        */
         return false;
     }
 
@@ -82,6 +99,10 @@ public:
     ImageConverter *conv;
 };
 
+VideoFrame::VideoFrame()
+    : Frame(*new VideoFramePrivate())
+{
+}
 
 VideoFrame::VideoFrame(int width, int height, const VideoFormat &format)
     : Frame(*new VideoFramePrivate(width, height, format))
@@ -137,6 +158,27 @@ VideoFormat VideoFrame::format() const
     return d_func()->format;
 }
 
+VideoFormat::PixelFormat VideoFrame::pixelFormat() const
+{
+    return d_func()->format.pixelFormat();
+}
+
+QImage::Format VideoFrame::imageFormat() const
+{
+    return d_func()->format.imageFormat();
+}
+
+int VideoFrame::pixelFormatFFmpeg() const
+{
+    return d_func()->format.pixelFormatFFmpeg();
+}
+
+bool VideoFrame::isValid() const
+{
+    Q_D(const VideoFrame);
+    return d->width > 0 && d->height > 0 && d->format.isValid(); //data not empty?
+}
+
 void VideoFrame::init()
 {
     Q_D(VideoFrame);
@@ -182,6 +224,9 @@ void VideoFrame::setImageConverter(ImageConverter *conv)
 
 bool VideoFrame::convertTo(const VideoFormat& fmt)
 {
+    Q_D(VideoFrame);
+    if (fmt == d->format) //TODO: check whether own the data
+        return true;
     return d_func()->convertTo(fmt);
 }
 

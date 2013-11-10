@@ -61,12 +61,14 @@ public:
      */
     void setBits(uchar* b, int plane = 0);
     void setBits(const QVector<uchar*>& b);
+    void setBits(quint8 *slice[]);
     /*
      * It's used now until I complete all pixel formats in QtAV.
      * set strides from FFmpeg. 4 channels at most for video
      */
     void setBytesPerLine(int lineSize, int plane = 0);
     void setBytesPerLine(const QVector<int>& lineSize);
+    void setBytesPerLine(int stride[]);
 
     QVariantMap availableMetaData() const;
     QVariant metaData(const QString& key) const;

@@ -35,6 +35,7 @@ class Q_AV_EXPORT VideoFrame : public Frame
 {
     Q_DECLARE_PRIVATE(VideoFrame)
 public:
+    VideoFrame();
     //must set planes and linesize manually
     VideoFrame(int width, int height, const VideoFormat& format);
     //set planes and linesize manually or call init
@@ -47,6 +48,11 @@ public:
     VideoFrame &operator =(const VideoFrame &other);
 
     VideoFormat format() const;
+    VideoFormat::PixelFormat pixelFormat() const;
+    QImage::Format imageFormat() const;
+    int pixelFormatFFmpeg() const;
+
+    bool isValid() const;
     /*
      * call this only when setBytesPerLine() and setBits() will not be called
      */
@@ -61,6 +67,8 @@ public:
     int width() const;
     int height() const;
 
+    //use ptr instead of ImageConverterId to avoid allocating memory
+    // Id can be used in VideoThread
     void setImageConverter(ImageConverter *conv);
     // if use gpu to convert, mapToDevice() first
     bool convertTo(const VideoFormat& fmt);

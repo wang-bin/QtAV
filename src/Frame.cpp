@@ -97,6 +97,13 @@ void Frame::setBits(const QVector<uchar *> &b)
     d->planes = b;
 }
 
+void Frame::setBits(quint8 *slice[])
+{
+    for (int i = 0; i < planeCount(); ++i ) {
+        setBits(slice[i], i);
+    }
+}
+
 void Frame::setBytesPerLine(int lineSize, int plane)
 {
     Q_D(Frame);
@@ -107,6 +114,13 @@ void Frame::setBytesPerLine(const QVector<int> &lineSize)
 {
     Q_D(Frame);
     d->line_sizes = lineSize;
+}
+
+void Frame::setBytesPerLine(int stride[])
+{
+    for (int i = 0; i < planeCount(); ++i ) {
+        setBytesPerLine(stride[i], i);
+    }
 }
 
 int Frame::planeCount() const

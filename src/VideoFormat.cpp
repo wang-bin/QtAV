@@ -15,14 +15,34 @@ class VideoFormatPrivate : public QSharedData
 public:
     VideoFormatPrivate(VideoFormat::PixelFormat fmt)
         : pixfmt(fmt)
+        , pixfmt_ff(AV_PIX_FMT_NONE)
+        , qpixfmt(QImage::Format_Invalid)
+        , planes(0)
+        , bpps(4)
+        , bpps_pad(4)
+        , pixdesc(0)
+    {
+        if (fmt == VideoFormat::Format_Invalid) {
+            pixfmt_ff = AV_PIX_FMT_NONE;
+            qpixfmt = QImage::Format_Invalid;
+            return;
+        }
+        init();
+    }
+    VideoFormatPrivate(AVPixelFormat fmt)
+        : pixfmt(VideoFormat::Format_Invalid)
+        , pixfmt_ff(fmt)
+        , qpixfmt(QImage::Format_Invalid)
         , bpps(4)
         , bpps_pad(4)
         , pixdesc(0)
     {
         init();
     }
-    VideoFormatPrivate(AVPixelFormat fmt)
-        : pixfmt_ff(fmt)
+    VideoFormatPrivate(QImage::Format fmt)
+        : pixfmt(VideoFormat::Format_Invalid)
+        , pixfmt_ff(AV_PIX_FMT_NONE)
+        , qpixfmt(fmt)
         , bpps(4)
         , bpps_pad(4)
         , pixdesc(0)
@@ -30,23 +50,26 @@ public:
         init();
     }
     void init() {
-        if (pixfmt != VideoFormat::Format_Invalid) {
+        if (pixfmt_ff != AV_PIX_FMT_NONE) {
+            pixfmt = VideoFormat::pixelFormatFromFFmpeg(pixfmt_ff);
+            qpixfmt = VideoFormat::imageFormatFromPixelFormat(pixfmt);
+        } else if (qpixfmt != QImage::Format_Invalid){
+            pixfmt = VideoFormat::pixelFormatFromImageFormat(qpixfmt);
             pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
         } else {
-            pixfmt = VideoFormat::pixelFormatFromFFmpeg(pixfmt_ff);
+            pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
+            qpixfmt = VideoFormat::imageFormatFromPixelFormat(pixfmt);
         }
+        planes = qMax(av_pix_fmt_count_planes(pixfmt_ff), 0);
+        bpps.resize(planes);
+        bpps_pad.resize(planes);
         if (pixfmt == VideoFormat::Format_Invalid) {
-            planes = 0;
-            bpps.fill(0);
-            bpps_pad.fill(0);
+            return;
         }
         pixdesc = const_cast<AVPixFmtDescriptor*>(av_pix_fmt_desc_get(pixfmt_ff));
         if (!pixdesc)
             return;
         initBpp();
-        planes = qMax(av_pix_fmt_count_planes(pixfmt_ff), 0);
-        bpps.resize(planes);
-        bpps_pad.resize(planes);
     }
     QString name() const {
         return av_get_pix_fmt_name(pixfmt_ff);
@@ -59,6 +82,7 @@ public:
 
     VideoFormat::PixelFormat pixfmt;
     AVPixelFormat pixfmt_ff;
+    QImage::Format qpixfmt;
     int planes;
     int bpp;
     int bpp_pad;
@@ -75,7 +99,7 @@ private:
 
         for (c = 0; c < pixdesc->nb_components; c++) {
             int s = c == 1 || c == 2 ? 0 : log2_pixels;
-            bpps[c] = pixdesc->comp[c].depth_minus1 + 1;
+            //bpps[c] = pixdesc->comp[c].depth_minus1 + 1;
             bpp += (pixdesc->comp[c].depth_minus1 + 1) << s;
         }
         bpp >>= log2_pixels;
@@ -87,9 +111,9 @@ private:
         for (c = 0; c < pixdesc->nb_components; c++) {
             const AVComponentDescriptor *comp = &pixdesc->comp[c];
             int s = c == 1 || c == 2 ? 0 : log2_pixels;
-            bpps_pad[c] = comp->step_minus1 + 1;
-            if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
-                bpps_pad[c] *= 8;
+            //bpps_pad[c] = comp->step_minus1 + 1;
+            //if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
+            //    bpps_pad[c] *= 8;
             steps[comp->plane] = (comp->step_minus1 + 1) << s;
         }
         for (c = 0; c < 4; c++)
@@ -103,7 +127,7 @@ private:
 
 };
 
-// TODO: use script
+// TODO: use FFmpeg macros to get right endian
 static const struct {
     VideoFormat::PixelFormat fmt;
     AVPixelFormat ff; //int
@@ -135,8 +159,8 @@ static const struct {
     //AV_PIX_FMT_RGB4_BYTE, ///< packed RGB 1:2:1,  8bpp, (msb)1R 2G 1B(lsb)
     { VideoFormat::Format_NV12, AV_PIX_FMT_NV12 },      ///< planar YUV 4:2:0, 12bpp, 1 plane for Y and 1 plane for the UV components, which are interleaved (first byte U and the following byte V)
     { VideoFormat::Format_NV21, AV_PIX_FMT_NV21 },      ///< as above, but U and V bytes are swapped
-
     { VideoFormat::Format_ARGB32, AV_PIX_FMT_ARGB },      ///< packed ARGB 8:8:8:8, 32bpp, ARGBARGB...
+    { VideoFormat::Format_RGB32, AV_PIX_FMT_RGB32 }, //auto endian
     { VideoFormat::Format_RGB32, AV_PIX_FMT_RGBA },      ///< packed RGBA 8:8:8:8, 32bpp, RGBARGBA...
     //AV_PIX_FMT_ABGR,      ///< packed ABGR 8:8:8:8, 32bpp, ABGRABGR...
     { VideoFormat::Format_BGRA32, AV_PIX_FMT_BGRA },      ///< packed BGRA 8:8:8:8, 32bpp, BGRABGRA...
@@ -351,7 +375,7 @@ VideoFormat::VideoFormat(int formatFF)
 }
 
 VideoFormat::VideoFormat(QImage::Format fmt)
-    :d(new VideoFormatPrivate(VideoFormat::pixelFormatFromImageFormat(fmt)))
+    :d(new VideoFormatPrivate(fmt))
 {
 }
 
@@ -393,7 +417,7 @@ bool VideoFormat::operator!=(const VideoFormat& other) const
 
 bool VideoFormat::isValid() const
 {
-    return d->pixfmt_ff == AV_PIX_FMT_NONE && d->pixfmt == Format_Invalid;
+    return d->pixfmt_ff != AV_PIX_FMT_NONE || d->pixfmt != Format_Invalid;
 }
 
 VideoFormat::PixelFormat VideoFormat::pixelFormat() const
@@ -404,6 +428,11 @@ VideoFormat::PixelFormat VideoFormat::pixelFormat() const
 int VideoFormat::pixelFormatFFmpeg() const
 {
     return d->pixfmt_ff;
+}
+
+QImage::Format VideoFormat::imageFormat() const
+{
+    return d->qpixfmt;
 }
 
 QString VideoFormat::name() const
