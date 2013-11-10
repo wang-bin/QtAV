@@ -96,9 +96,7 @@ void VideoThread::run()
         //used to initialize the decoder's frame size
         dec->resizeVideoFrame(0, 0);
     }
-    bool need_update_vo_parameters = true;
     Packet pkt;
-    QSize dec_size_last;
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -155,22 +153,6 @@ void VideoThread::run()
             }
         }
         d.clock->updateVideoPts(pkt.pts); //here?
-        if (need_update_vo_parameters || !d.update_outputs.isEmpty()) {
-            //lock is important when iterating
-            d.outputSet->lock();
-            if (need_update_vo_parameters) {
-                d.update_outputs = d.outputSet->outputs();
-                need_update_vo_parameters = false;
-            }
-            foreach(AVOutput *out, d.update_outputs) {
-                VideoRenderer *vo = static_cast<VideoRenderer*>(out);
-                vo->setInSize(dec->width(), dec->height()); //setLastSize(). optimize: set only when changed
-            }
-            d.outputSet->unlock();
-            d.update_outputs.clear();
-        }
-        need_update_vo_parameters = dec_size_last.width() != dec->width() || dec_size_last.height() != dec->height();
-        dec_size_last = QSize(dec->width(), dec->height());
         if (d.stop) {
             qDebug("video thread stop before decode()");
             break;

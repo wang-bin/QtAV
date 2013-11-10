@@ -63,7 +63,7 @@ void OutputSet::sendVideoFrame(const VideoFrame &frame)
     foreach(AVOutput *output, mOutputs) {
         if (!output->isAvailable())
             continue;
-        ((VideoRenderer*)output)->receiveFrame(frame);
+        ((VideoRenderer*)output)->receive(frame);
     }
 }
 
@@ -83,7 +83,6 @@ void OutputSet::addOutput(AVOutput *output)
     Q_UNUSED(lock);
     mOutputs.append(output);
     output->addOutputSet(this);
-    emit updateParametersRequired(output);
 }
 
 void OutputSet::removeOutput(AVOutput *output)

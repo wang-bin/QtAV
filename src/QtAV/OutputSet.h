@@ -66,9 +66,6 @@ public:
      */
     void resumeThread();
 
-signals:
-    void updateParametersRequired(AVOutput* output);
-
 public slots:
     //connect to renderer->aboutToClose(). test whether delete on close
     void removeOutput(AVOutput *output);

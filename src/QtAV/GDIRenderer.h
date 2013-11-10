@@ -36,7 +36,6 @@ public:
     GDIRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0); //offscreen?
     virtual ~GDIRenderer();
     virtual VideoRendererId id() const;
-    virtual bool receiveFrame(const VideoFrame& frame);
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
      * return 0 and set this flag
@@ -48,6 +47,7 @@ public:
      * false: GetDC(winId()), no double buffer, should reimplement paintEngine()
      */
 protected:
+    virtual bool receiveFrame(const VideoFrame& frame);
     virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();

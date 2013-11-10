@@ -76,7 +76,6 @@ public:
     FilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
     QList<Filter*> filters;
     Statistics *statistics; //not obj. Statistics is unique for the player, which is in AVPlayer
-    QList<AVOutput*> update_outputs;
     QList<QRunnable*> tasks;
     QWaitCondition ready_cond;
     QMutex ready_mutex;

@@ -43,6 +43,13 @@ VideoRenderer::~VideoRenderer()
 {
 }
 
+bool VideoRenderer::receive(const VideoFrame &frame)
+{
+    DPTR_D(VideoRenderer);
+    setInSize(d.video_frame.width(), d.video_frame.height());
+    return receiveFrame(frame);
+}
+
 void VideoRenderer::scaleInRenderer(bool q)
 {
     d_func().scale_in_renderer = q;
@@ -203,16 +210,6 @@ QSize VideoRenderer::frameSize() const
     return QSize(d.src_width, d.src_height);
 }
 
-int VideoRenderer::frameWidth() const
-{
-    return d_func().src_width;
-}
-
-int VideoRenderer::frameHeight() const
-{
-    return d_func().src_height;
-}
-
 QRect VideoRenderer::videoRect() const
 {
     return d_func().out_rect;
@@ -238,18 +235,18 @@ QRect VideoRenderer::realROI() const
 {
     DPTR_D(const VideoRenderer);
     if (!d.roi.isValid()) {
-        return QRect(0, 0, d.src_width, d.src_height);
+        return QRect(QPoint(), d.video_frame.size());
     }
     QRect r = d.roi.toRect();
     if (qAbs(d.roi.x()) <= 1)
-        r.setX(d.roi.x()*qreal(frameWidth()));
+        r.setX(d.roi.x()*qreal(d.src_width)); //TODO: why not video_frame.size()? roi not correct
     if (qAbs(d.roi.y()) <= 1)
-        r.setY(d.roi.y()*qreal(frameHeight()));
+        r.setY(d.roi.y()*qreal(d.src_height));
     // whole size use width or height = 0, i.e. null size
     if (qAbs(d.roi.width()) < 1)
-        r.setWidth(d.roi.width()*qreal(frameWidth()));
+        r.setWidth(d.roi.width()*qreal(d.src_width));
     if (qAbs(d.roi.height() < 1))
-        r.setHeight(d.roi.height()*qreal(frameHeight()));
+        r.setHeight(d.roi.height()*qreal(d.src_height));
     //TODO: insect with source rect?
     return r;
 }

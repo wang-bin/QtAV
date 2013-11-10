@@ -36,9 +36,9 @@ public:
     GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     virtual ~GLWidgetRenderer();
     virtual VideoRendererId id() const;
-    virtual bool receiveFrame(const VideoFrame& frame);
 
 protected:
+    virtual bool receiveFrame(const VideoFrame& frame);
     virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();

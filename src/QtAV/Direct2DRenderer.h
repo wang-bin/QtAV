@@ -40,7 +40,6 @@ public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual ~Direct2DRenderer();
     virtual VideoRendererId id() const;
-    virtual bool receiveFrame(const VideoFrame& frame);
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
@@ -48,6 +47,7 @@ public:
      */
     virtual QPaintEngine* paintEngine() const;
 protected:
+    virtual bool receiveFrame(const VideoFrame& frame);
     virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();

@@ -43,7 +43,6 @@ public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
     virtual ~GraphicsItemRenderer();
     virtual VideoRendererId id() const;
-    virtual bool receiveFrame(const VideoFrame& frame);
 
     QRectF boundingRect() const;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
@@ -51,6 +50,7 @@ public:
 protected:
     GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
 
+    virtual bool receiveFrame(const VideoFrame& frame);
     virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
