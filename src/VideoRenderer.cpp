@@ -331,7 +331,7 @@ void VideoRenderer::drawBackground()
 
 bool VideoRenderer::needDrawFrame() const
 {
-    return !d_func().data.isEmpty();
+    return d_func().video_frame.isValid();
 }
 
 void VideoRenderer::resizeFrame(int width, int height)

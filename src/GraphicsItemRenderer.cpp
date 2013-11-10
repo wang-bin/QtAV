@@ -56,6 +56,11 @@ GraphicsItemRenderer::~GraphicsItemRenderer()
 {
 }
 
+bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
+{
+    return false;
+}
+
 bool GraphicsItemRenderer::write()
 {
     scene()->update(sceneBoundingRect());

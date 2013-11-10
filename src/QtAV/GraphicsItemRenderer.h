@@ -43,6 +43,7 @@ public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
     virtual ~GraphicsItemRenderer();
     virtual VideoRendererId id() const;
+    virtual bool receiveFrame(const VideoFrame& frame);
 
     QRectF boundingRect() const;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);

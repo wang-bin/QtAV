@@ -50,6 +50,21 @@ XVRenderer::~XVRenderer()
 {
 }
 
+bool XVRenderer::receiveFrame(const VideoFrame& frame)
+{
+    DPTR_D(XVRenderer);
+    if (!d.prepareImage(d.src_width, d.src_height))
+        return false;
+    //TODO: if date is deep copied, mutex can be avoided
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+    d.video_frame = frame;
+    d.video_frame.convertTo(VideoFormat(VideoFormat::Format_YUV420P));
+    d.xv_image->data = (char*)d.video_frame.bits();
+
+    update();
+    return true;
+}
 
 QPaintEngine* XVRenderer::paintEngine() const
 {

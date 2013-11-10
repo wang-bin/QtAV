@@ -36,6 +36,7 @@ public:
     GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     virtual ~GLWidgetRenderer();
     virtual VideoRendererId id() const;
+    virtual bool receiveFrame(const VideoFrame& frame);
 
 protected:
     virtual void convertData(const QByteArray &data);

@@ -128,8 +128,8 @@ int main(int argc, char *argv[])
     qDebug("vo: %s", vo.toUtf8().constData());
     bool opt_has_file = argc > idx + 2;
     vo = vo.toLower();
-    if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv")
-        vo = "qpainter";
+    if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv" && vo != "qt")
+        vo = "gl";
     QString title = "QtAV " /*+ vo + " "*/ + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
     VideoRenderer *renderer = 0;
     if (vo == "gl") {
@@ -140,6 +140,8 @@ int main(int argc, char *argv[])
         renderer = VideoRendererFactory::create(VideoRendererId_GDI);
     } else if (vo == "xv") {
         renderer = VideoRendererFactory::create(VideoRendererId_XV);
+    } else if (vo == "qt") {
+        renderer = VideoRendererFactory::create(VideoRendererId_Widget);
     } else {
 #ifndef QT_NO_OPENGL
         renderer = VideoRendererFactory::create(VideoRendererId_GLWidget);

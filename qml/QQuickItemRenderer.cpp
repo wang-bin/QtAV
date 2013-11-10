@@ -49,6 +49,16 @@ VideoRendererId QQuickItemRenderer::id() const
     return VideoRendererId_QQuickItem;
 }
 
+bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
+{
+    DPTR_D(QQuickItemRenderer);
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+    d.video_frame = frame;
+    d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.imageFormat());
+    return true;
+}
+
 QObject* QQuickItemRenderer::source() const
 {
     return d_func().source;
@@ -131,6 +141,7 @@ void QQuickItemRenderer::drawFrame()
 
 QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePaintNodeData *data)
 {
+    Q_UNUSED(data);
     DPTR_D(QQuickItemRenderer);
     if (!node) {
         node = new QSGSimpleTextureNode();

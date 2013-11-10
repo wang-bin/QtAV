@@ -27,6 +27,7 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtCore/QMutex>
 #include <QtCore/QRect>
+#include <QtAV/VideoFrame.h>
 
 /*TODO:
  * Region of Interest(ROI)
@@ -116,6 +117,7 @@ public:
 
     Filter *osd_filter, *subtitle_filter; //should be at the end of list and draw top level
     bool default_event_filter;
+    VideoFrame video_frame;
 };
 
 } //namespace QtAV

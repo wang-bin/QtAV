@@ -77,6 +77,7 @@ protected:
      * Reimplement this. You should convert and save the decoded data, e.g. QImage,
      * which will be used in write() or some other functions. Do nothing by default.
      */
+    // TODO: rename prepareData();
     virtual void convertData(const QByteArray& data);
     virtual bool write() = 0; //TODO: why pure may case "pure virtual method called"
     /*

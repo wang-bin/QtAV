@@ -22,6 +22,7 @@
 #include <QWidget>
 #include "QtAV/AVPlayer.h"
 #include "QtAV/OutputSet.h"
+#include "QtAV/VideoRenderer.h"
 
 namespace QtAV {
 
@@ -63,6 +64,17 @@ void OutputSet::sendData(const QByteArray &data)
         if (!output->isAvailable())
             continue;
         output->writeData(data);
+    }
+}
+
+void OutputSet::sendVideoFrame(const VideoFrame &frame)
+{
+    QMutexLocker lock(&mMutex);
+    Q_UNUSED(lock);
+    foreach(AVOutput *output, mOutputs) {
+        if (!output->isAvailable())
+            continue;
+        ((VideoRenderer*)output)->receiveFrame(frame);
     }
 }
 

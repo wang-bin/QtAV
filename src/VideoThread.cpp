@@ -32,6 +32,10 @@
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
 #include <QtAV/OutputSet.h>
+#include <QtAV/ImageConverterTypes.h>
+#include <QtAV/QtAV_Compat.h>
+
+#define PIX_FMT PIX_FMT_RGB32 //PIX_FMT_YUV420P
 
 namespace QtAV {
 
@@ -41,7 +45,17 @@ public:
     VideoThreadPrivate():
         conv(0)
       , capture(0)
-    {}
+    {
+        conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
+        conv->setOutFormat(PIX_FMT); //vo->defaultFormat
+    }
+    ~VideoThreadPrivate() {
+        if (conv) {
+            delete conv;
+            conv = 0;
+        }
+    }
+
     ImageConverter *conv;
     double pts; //current decoded pts. for capture. TODO: remove
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
@@ -51,19 +65,6 @@ public:
 VideoThread::VideoThread(QObject *parent) :
     AVThread(*new VideoThreadPrivate(), parent)
 {
-}
-
-ImageConverter* VideoThread::setImageConverter(ImageConverter *converter)
-{
-    DPTR_D(VideoThread);
-    QtAV::ImageConverter* old = d.conv;
-    d.conv = converter;
-    return old;
-}
-
-ImageConverter* VideoThread::imageConverter() const
-{
-    return d_func().conv;
 }
 
 double VideoThread::currentPts() const
@@ -182,21 +183,21 @@ void VideoThread::run()
             if (d.capture) {
                 d.capture->setRawImage(dec->data(), dec->width(), dec->height());
             }
-            //TODO: Add filters here. Capture is also a filter
-            /*if (d.image.width() != d.renderer_width || d.image.height() != d.renderer_height)
-                d.image = QImage(d.renderer_width, d.renderer_height, QImage::Format_RGB32);
-            d.conv->setInSize(d.renderer_width, d.renderer_height);
-            if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
-            }*/
-            QByteArray data = dec->data();
+            VideoFrame frame = dec->frame();
+            if (!frame.isValid())
+                continue;
+            d.conv->setInFormat(frame.pixelFormatFFmpeg());
+            d.conv->setInSize(frame.width(), frame.height());
+            frame.setImageConverter(d.conv);
             if (d.statistics) {
                 d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
                 if (!d.filters.isEmpty()) {
+                    //sort filters by format. vo->defaultFormat() is the last
                     foreach (Filter *filter, d.filters) {
                         if (d.stop) {
                             break;
                         }
-                        filter->process(d.filter_context, d.statistics, &data);
+                        filter->process(d.filter_context, d.statistics, &frame);
                     }
                 }
             }
@@ -214,7 +215,9 @@ void VideoThread::run()
                 qDebug("video thread stop before send decoded data");
                 break;
             }
-            d.outputSet->sendData(data);
+            frame.convertTo(VideoFormat(VideoFormat::Format_RGB32));
+            d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
+            //d.outputSet->sendData(data);
         }
     }
     qDebug("Video thread stops running...");

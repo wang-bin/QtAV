@@ -56,6 +56,18 @@ QImage QPainterRenderer::currentFrameImage() const
     return d_func().image;
 }
 */
+
+bool QPainterRenderer::prepareFrame(const VideoFrame &frame)
+{
+    DPTR_D(QPainterRenderer);
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+    d.video_frame = frame;
+    // DO NOT use frameData().data() because it's temp ptr while QImage does not deep copy the data
+    d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.imageFormat());
+    return true;
+}
+
 //FIXME: why crash if QImage use widget size?
 void QPainterRenderer::convertData(const QByteArray &data)
 {

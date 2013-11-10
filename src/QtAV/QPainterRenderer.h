@@ -38,6 +38,7 @@ public:
     virtual int filterContextType() const;
     //virtual QImage currentFrameImage() const;
 protected:
+    bool prepareFrame(const VideoFrame& frame);
     virtual void convertData(const QByteArray &data);
     QPainterRenderer(QPainterRendererPrivate& d);
 };

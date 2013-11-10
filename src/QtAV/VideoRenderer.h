@@ -26,7 +26,7 @@
 #include <QtCore/QSize>
 #include <QtCore/QRectF>
 #include <QtAV/AVOutput.h>
-
+#include <QtAV/VideoFrame.h>
 /*TODO:
  *  broadcast to network
  *  background color for original aspect ratio
@@ -55,6 +55,7 @@ typedef int VideoRendererId;
 
 class Filter;
 class OSDFilter;
+class VideoFormat;
 class VideoRendererPrivate;
 class Q_AV_EXPORT VideoRenderer : public AVOutput
 {
@@ -77,6 +78,13 @@ public:
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
     virtual VideoRendererId id() const = 0;
+
+    virtual bool receiveFrame(const VideoFrame& frame) = 0;
+    void setVideoFormat(const VideoFormat& format);
+    VideoFormat& videoFormat();
+    const VideoFormat& videoFormat() const;
+    const VideoFormat& defaultVideoFormat() const;
+
     //for testing performance
     void scaleInRenderer(bool q);
     bool scaleInRenderer() const;

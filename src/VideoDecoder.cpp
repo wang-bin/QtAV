@@ -38,7 +38,6 @@ void VideoDecoder_RegisterAll()
 }
 
 
-
 VideoDecoder::VideoDecoder()
     :AVDecoder(*new VideoDecoderPrivate())
 {
@@ -89,4 +88,10 @@ int VideoDecoder::height() const
 {
     return d_func().height;
 }
+
+VideoFrame VideoDecoder::frame()
+{
+    return d_func().video_frame;
+}
+
 } //namespace QtAV

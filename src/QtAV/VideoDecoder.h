@@ -24,6 +24,7 @@
 
 #include <QtAV/AVDecoder.h>
 #include <QtAV/FactoryDefine.h>
+#include <VideoFrame.h>
 
 class QSize;
 struct SwsContext;
@@ -44,6 +45,7 @@ public:
     //virtual bool prepare();
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
+    VideoFrame frame();
     //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
     //size: the decoded(actually then resized in ImageConverter) frame size
     void resizeVideoFrame(const QSize& size);

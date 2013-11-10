@@ -175,6 +175,17 @@ GLWidgetRenderer::~GLWidgetRenderer()
 {
 }
 
+bool GLWidgetRenderer::receiveFrame(const VideoFrame& frame)
+{
+    DPTR_D(GLWidgetRenderer);
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
+    d.video_frame = frame;
+
+    update(); //can not call updateGL() directly because no event and paintGL() will in video thread
+    return true;
+}
+
 void GLWidgetRenderer::convertData(const QByteArray &data)
 {
     DPTR_D(GLWidgetRenderer);
@@ -221,7 +232,7 @@ void GLWidgetRenderer::drawFrame()
                      , 0                //border, ES not support
                      , FMT          //format, must the same as internal format?
                      , GL_UNSIGNED_BYTE
-                     , d.data.constData());
+                     , d.video_frame.bits());
     } else {
 #ifdef GL_UNPACK_ROW_LENGTH
 // http://stackoverflow.com/questions/205522/opengl-subtexturing
@@ -229,7 +240,7 @@ void GLWidgetRenderer::drawFrame()
         //glPixelStorei or compute pointer
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, roi.x());
         glPixelStorei(GL_UNPACK_SKIP_ROWS, roi.y());
-        glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, roi.width(), roi.height(), 0, FMT, GL_UNSIGNED_BYTE, d.data.constData());
+        glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, roi.width(), roi.height(), 0, FMT, GL_UNSIGNED_BYTE, d.video_frame.bits());
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
@@ -239,7 +250,7 @@ void GLWidgetRenderer::drawFrame()
         // how to use only 1 call?
         //glTexSubImage2D(GL_TEXTURE_2D, 0, roi.x(), roi.y(), roi.width(), roi.height(), FMT, GL_UNSIGNED_BYTE, d.data.constData());
         for(int y = 0; y < roi.height(); y++) {
-            char *row = d.data.data() + ((y + roi.y())*d.src_width + roi.x()) * 4;
+            char *row = (char*)d.video_frame.bits() + ((y + roi.y())*d.src_width + roi.x()) * 4;
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, roi.width(), 1, FMT, GL_UNSIGNED_BYTE, row);
         }
 #endif //GL_UNPACK_ROW_LENGTH

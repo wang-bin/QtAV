@@ -23,6 +23,7 @@
 #define QTAV_VIDEODECODER_P_H
 
 #include <private/AVDecoder_p.h>
+#include <QtAV/VideoFrame.h>
 
 namespace QtAV {
 
@@ -34,11 +35,13 @@ public:
         AVDecoderPrivate()
       , width(0)
       , height(0)
+      , video_frame(0, 0, VideoFormat::Format_Invalid)
     {}
     virtual ~VideoDecoderPrivate()
     {}
 
     int width, height;
+    VideoFrame video_frame;
 };
 
 } //namespace QtAV

@@ -55,6 +55,7 @@ class AVOutput;
 class AVPlayer;
 class FilterPrivate;
 class Statistics;
+class Frame;
 // TODO: QObject?
 class Q_AV_EXPORT Filter
 {
@@ -89,7 +90,7 @@ public:
      * check context and apply the filter
      * if context is null, or contextType() != context->type(), then create a right one and assign it to context.
      */
-    void process(FilterContext *&context, Statistics* statistics, QByteArray* data = 0);
+    void process(FilterContext *&context, Statistics* statistics, Frame* frame = 0);
 
 protected:
     /*

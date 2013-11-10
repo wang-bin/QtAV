@@ -21,14 +21,12 @@
 
 #include "QtAV/VideoDecoderFFmpeg.h"
 #include "private/VideoDecoder_p.h"
-#include <QtAV/ImageConverterTypes.h>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
 
 namespace QtAV {
 
-#define PIX_FMT PIX_FMT_RGB32 //PIX_FMT_YUV420P
 
 extern VideoDecoderId VideoDecoderId_FFmpeg;
 FACTORY_REGISTER_ID_AUTO(VideoDecoder, FFmpeg, "FFmpeg")
@@ -45,16 +43,9 @@ public:
     VideoDecoderFFmpegPrivate():
         VideoDecoderPrivate()
     {
-        conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
-        conv->setOutFormat(PIX_FMT);
     }
     virtual ~VideoDecoderFFmpegPrivate() {
-        if (conv) {
-            delete conv;
-            conv = 0;
-        }
     }
-    ImageConverter* conv;
 };
 
 VideoDecoderFFmpeg::VideoDecoderFFmpeg():
@@ -89,8 +80,7 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
         qWarning("no frame could be decompressed: %s", av_err2str(ret));
         return true;
     }
-    d.conv->setInFormat(d.codec_ctx->pix_fmt);
-    d.conv->setInSize(d.codec_ctx->width, d.codec_ctx->height);
+
     if (d.width <= 0 || d.height <= 0) {
         qDebug("decoded video size not seted. use original size [%d x %d]"
             , d.codec_ctx->width, d.codec_ctx->height);
@@ -98,12 +88,10 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
             return false;
         resizeVideoFrame(d.codec_ctx->width, d.codec_ctx->height);
     }
-    //If not YUV420P or ImageConverter supported format pair, convert to YUV420P first. or directly convert to RGB?(no hwa)
-    //TODO: move convertion out. decoder only do some decoding
-    //if not yuv420p or conv supported convertion pair(in/out), convert to yuv420p first using ff, then use other yuv2rgb converter
-    if (!d.conv->convert(d.frame->data, d.frame->linesize))
-        return false;
-    d.decoded = d.conv->outData();
+
+    d.video_frame = VideoFrame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat((int)d.codec_ctx->pix_fmt));
+    d.video_frame.setBits(d.frame->data);
+    d.video_frame.setBytesPerLine(d.frame->linesize);
     return true;
 
 }
@@ -111,7 +99,6 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
 void VideoDecoderFFmpeg::resizeVideoFrame(int width, int height)
 {
     DPTR_D(VideoDecoderFFmpeg);
-    d.conv->setOutSize(width, height);
     d.width = width;
     d.height = height;
 }
