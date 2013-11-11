@@ -35,8 +35,6 @@ public:
     virtual ~VideoDecoderFFmpeg();
     //virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
-    virtual void resizeVideoFrame(int width, int height);
-
 };
 
 } //namespace QtAV

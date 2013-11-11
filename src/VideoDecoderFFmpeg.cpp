@@ -80,27 +80,11 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
         qWarning("no frame could be decompressed: %s", av_err2str(ret));
         return true;
     }
-
-    if (d.width <= 0 || d.height <= 0) {
-        qDebug("decoded video size not seted. use original size [%d x %d]"
-            , d.codec_ctx->width, d.codec_ctx->height);
-        if (!d.codec_ctx->width || !d.codec_ctx->height)
-            return false;
-        resizeVideoFrame(d.codec_ctx->width, d.codec_ctx->height);
-    }
-
-    d.video_frame = VideoFrame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat((int)d.codec_ctx->pix_fmt));
-    d.video_frame.setBits(d.frame->data);
-    d.video_frame.setBytesPerLine(d.frame->linesize);
+    if (!d.codec_ctx->width || !d.codec_ctx->height)
+        return false;
+    d.width = d.codec_ctx->width;
+    d.height = d.codec_ctx->height;
     return true;
-
-}
-
-void VideoDecoderFFmpeg::resizeVideoFrame(int width, int height)
-{
-    DPTR_D(VideoDecoderFFmpeg);
-    d.width = width;
-    d.height = height;
 }
 
 } //namespace QtAV

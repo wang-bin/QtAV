@@ -91,7 +91,14 @@ int VideoDecoder::height() const
 
 VideoFrame VideoDecoder::frame()
 {
-    return d_func().video_frame;
+    DPTR_D(VideoDecoder);
+    if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
+        return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+    //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
+    VideoFrame frame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat((int)d.codec_ctx->pix_fmt));
+    frame.setBits(d.frame->data);
+    frame.setBytesPerLine(d.frame->linesize);
+    return frame;
 }
 
 } //namespace QtAV
