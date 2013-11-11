@@ -59,7 +59,7 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
     d.video_frame = frame;
-    d.video_frame.convertTo(VideoFormat(VideoFormat::Format_YUV420P));
+    d.video_frame.convertTo(VideoFormat::Format_YUV420P);
     d.xv_image->data = (char*)d.video_frame.bits();
 
     update();

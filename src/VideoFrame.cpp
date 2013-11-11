@@ -60,14 +60,23 @@ public:
     }
     ~VideoFramePrivate() {}
     bool convertTo(const VideoFormat& fmt) {
+        return convertTo(fmt.pixelFormatFFmpeg());
+    }
+    bool convertTo(VideoFormat::PixelFormat fmt) {
+        return convertTo(VideoFormat::pixelFormatToFFmpeg(fmt));
+    }
+    bool convertTo(QImage::Format fmt) {
+        return convertTo(VideoFormat::pixelFormatFromImageFormat(fmt));
+    }
+    bool convertTo(int fffmt) {
         if (!conv)
             return false;
         conv->setInFormat(format.pixelFormatFFmpeg());
-        conv->setOutFormat(fmt.pixelFormatFFmpeg());
+        conv->setOutFormat(fffmt);
         conv->setInSize(width, height);
         if (!conv->convert(planes.data(), line_sizes.data()))
             return false;
-        format = fmt;
+        format.setPixelFormatFFmpeg(fffmt);
         data = conv->outData();
         planes = conv->outPlanes();
         line_sizes = conv->outLineSizes();
@@ -228,6 +237,21 @@ bool VideoFrame::convertTo(const VideoFormat& fmt)
     if (fmt == d->format) //TODO: check whether own the data
         return true;
     return d_func()->convertTo(fmt);
+}
+
+bool VideoFrame::convertTo(VideoFormat::PixelFormat fmt)
+{
+    return d_func()->convertTo(fmt);
+}
+
+bool VideoFrame::convertTo(QImage::Format fmt)
+{
+    return d_func()->convertTo(fmt);
+}
+
+bool VideoFrame::convertTo(int fffmt)
+{
+    return d_func()->convertTo(fffmt);
 }
 
 bool VideoFrame::convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi)

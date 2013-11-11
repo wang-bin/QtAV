@@ -72,6 +72,9 @@ public:
     void setImageConverter(ImageConverter *conv);
     // if use gpu to convert, mapToDevice() first
     bool convertTo(const VideoFormat& fmt);
+    bool convertTo(VideoFormat::PixelFormat fmt);
+    bool convertTo(QImage::Format fmt);
+    bool convertTo(int fffmt);
     bool convertTo(const VideoFormat& fmt, const QSizeF& dstSize, const QRectF& roi);
 
     //upload to GPU. return false if gl(or other, e.g. cl) not supported

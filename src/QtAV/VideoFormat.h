@@ -93,8 +93,17 @@ public:
     ~VideoFormat();
 
     VideoFormat& operator=(const VideoFormat &other);
+    VideoFormat& operator=(VideoFormat::PixelFormat pixfmt);
+    VideoFormat& operator=(QImage::Format qpixfmt);
+    VideoFormat& operator=(int ffpixfmt);
     bool operator==(const VideoFormat &other) const;
+    bool operator==(VideoFormat::PixelFormat pixfmt) const;
+    bool operator==(QImage::Format qpixfmt) const;
+    bool operator==(int ffpixfmt) const;
     bool operator!=(const VideoFormat &other) const;
+    bool operator!=(VideoFormat::PixelFormat pixfmt) const;
+    bool operator!=(QImage::Format qpixfmt) const;
+    bool operator!=(int ffpixfmt) const;
 
     bool isValid() const;
 

@@ -390,9 +390,45 @@ VideoFormat& VideoFormat::operator=(const VideoFormat &other)
     return *this;
 }
 
+VideoFormat& VideoFormat::operator =(VideoFormat::PixelFormat fmt)
+{
+    d->pixfmt = fmt;
+    d->init();
+    return *this;
+}
+
+VideoFormat& VideoFormat::operator =(QImage::Format qpixfmt)
+{
+    d->qpixfmt = qpixfmt;
+    d->init();
+    return *this;
+}
+
+VideoFormat& VideoFormat::operator =(int fffmt)
+{
+    d->pixfmt_ff = (AVPixelFormat)fffmt;
+    d->init();
+    return *this;
+}
+
 bool VideoFormat::operator==(const VideoFormat &other) const
 {
     return d->pixfmt_ff == other.d->pixfmt_ff;
+}
+
+bool VideoFormat::operator==(VideoFormat::PixelFormat fmt) const
+{
+    return d->pixfmt == fmt;
+}
+
+bool VideoFormat::operator==(QImage::Format qpixfmt) const
+{
+    return d->qpixfmt == qpixfmt;
+}
+
+bool VideoFormat::operator==(int fffmt) const
+{
+    return d->pixfmt_ff == fffmt;
 }
 
 bool VideoFormat::operator!=(const VideoFormat& other) const
@@ -400,6 +436,20 @@ bool VideoFormat::operator!=(const VideoFormat& other) const
     return !(*this == other);
 }
 
+bool VideoFormat::operator!=(VideoFormat::PixelFormat fmt) const
+{
+    return d->pixfmt != fmt;
+}
+
+bool VideoFormat::operator!=(QImage::Format qpixfmt) const
+{
+    return d->qpixfmt != qpixfmt;
+}
+
+bool VideoFormat::operator!=(int fffmt) const
+{
+    return d->pixfmt_ff != fffmt;
+}
 
 bool VideoFormat::isValid() const
 {

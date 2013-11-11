@@ -25,6 +25,7 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/FactoryDefine.h>
+#include <QtAV/VideoFormat.h>
 #include <QtCore/QVector>
 
 namespace QtAV {
@@ -44,8 +45,11 @@ public:
     QByteArray outData() const;
     void setInSize(int width, int height);
     void setOutSize(int width, int height);
-    //TODO: new enum. Now using FFmpeg's enum
+    void setInFormat(const VideoFormat& format);
+    void setInFormat(VideoFormat::PixelFormat format);
     void setInFormat(int format);
+    void setOutFormat(const VideoFormat& format);
+    void setOutFormat(VideoFormat::PixelFormat format);
     void setOutFormat(int format);
     void setInterlaced(bool interlaced);
     bool isInterlaced() const;

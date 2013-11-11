@@ -20,10 +20,10 @@
 ******************************************************************************/
 
 
-#include "ImageConverter.h"
 #include <private/ImageConverter_p.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtAV/factory.h>
+#include "ImageConverter.h"
 
 namespace QtAV {
 
@@ -43,7 +43,8 @@ ImageConverter::ImageConverter()
 {
 }
 
-ImageConverter::ImageConverter(ImageConverterPrivate& d):DPTR_INIT(&d)
+ImageConverter::ImageConverter(ImageConverterPrivate& d)
+    : DPTR_INIT(&d)
 {
 }
 
@@ -76,9 +77,29 @@ void ImageConverter::setOutSize(int width, int height)
     prepareData();
 }
 
+void ImageConverter::setInFormat(const VideoFormat& format)
+{
+    d_func().fmt_in = format.pixelFormatFFmpeg();
+}
+
+void ImageConverter::setInFormat(VideoFormat::PixelFormat format)
+{
+    d_func().fmt_in = VideoFormat::pixelFormatToFFmpeg(format);
+}
+
 void ImageConverter::setInFormat(int format)
 {
     d_func().fmt_in = format;
+}
+
+void ImageConverter::setOutFormat(const VideoFormat& format)
+{
+    setOutFormat(format.pixelFormatFFmpeg());
+}
+
+void ImageConverter::setOutFormat(VideoFormat::PixelFormat format)
+{
+    setOutFormat(VideoFormat::pixelFormatToFFmpeg(format));
 }
 
 void ImageConverter::setOutFormat(int format)
@@ -128,7 +149,7 @@ bool ImageConverter::prepareData()
     if (d.fmt_out == AV_PIX_FMT_NONE || d.w_out <=0 || d.h_out <= 0)
         return false;
     //TODO: AVPixelFormat. move define to compat.h
-    int bytes = avpicture_get_size((PixelFormat)d.fmt_out, d.w_out, d.h_out);
+    int bytes = avpicture_get_size((AVPixelFormat)d.fmt_out, d.w_out, d.h_out);
     //if (d.data_out.size() < bytes) {
         d.data_out.resize(bytes);
     //}
@@ -136,7 +157,7 @@ bool ImageConverter::prepareData()
     avpicture_fill(
             &d.picture,
             reinterpret_cast<uint8_t*>(d.data_out.data()),
-            (PixelFormat)d.fmt_out,
+            (AVPixelFormat)d.fmt_out,
             d.w_out,
             d.h_out
             );
