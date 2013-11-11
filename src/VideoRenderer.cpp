@@ -144,23 +144,6 @@ void VideoRenderer::setInSize(int width, int height)
     d.aspect_ratio_changed = false; //TODO: why graphicsitemrenderer need this? otherwise aspect_ratio_changed is always true?
 }
 
-QSize VideoRenderer::lastSize() const
-{
-    DPTR_D(const VideoRenderer);
-    return QSize(d.src_width, d.src_height);
-}
-
-int VideoRenderer::lastWidth() const
-{
-    DPTR_D(const VideoRenderer);
-    return d.src_width;
-}
-int VideoRenderer::lastHeight() const
-{
-    DPTR_D(const VideoRenderer);
-    return  d.src_height;
-}
-
 bool VideoRenderer::open()
 {
     return true;

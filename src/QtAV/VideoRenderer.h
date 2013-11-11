@@ -170,12 +170,6 @@ private:
     void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
     //qreal sourceAspectRatio() const;//TODO: from AVCodecContext
     //we don't need api like QSize sourceSize() const. you should get them from player or avinfo(not implemented)
-
-    //private?  for internal use only, called by VideoThread.
-    QSize lastSize() const;
-    int lastWidth() const;
-    int lastHeight() const;
-
 };
 
 } //namespace QtAV
