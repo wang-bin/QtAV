@@ -89,7 +89,7 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 bool GraphicsItemRenderer::needUpdateBackground() const
 {
     DPTR_D(const GraphicsItemRenderer);
-    return d.out_rect != boundingRect() || d.video_frame.isValid();
+    return d.out_rect != boundingRect() || !d.video_frame.isValid();
 }
 
 void GraphicsItemRenderer::drawBackground()
