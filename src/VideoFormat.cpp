@@ -93,38 +93,24 @@ private:
     AVPixFmtDescriptor *pixdesc;
     // from libavutil/pixdesc.c
     void initBpp() {
-        int c = 0;
         bpp = 0;
+        bpp_pad = 0;
         int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
-
-        for (c = 0; c < pixdesc->nb_components; c++) {
-            int s = c == 1 || c == 2 ? 0 : log2_pixels;
-            //bpps[c] = pixdesc->comp[c].depth_minus1 + 1;
-            bpp += (pixdesc->comp[c].depth_minus1 + 1) << s;
+        for (int c = 0; c < pixdesc->nb_components; c++) {
+            const AVComponentDescriptor *comp = &pixdesc->comp[c];
+            int s = c == 1 || c == 2 ? 0 : log2_pixels; //?
+            bpps[comp->plane] = (comp->depth_minus1 + 1) << s;
+            bpps_pad[comp->plane] = (comp->step_minus1 + 1) << s;
+            if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
+                bpps_pad[comp->plane] *= 8;
+            bpp += bpps[comp->plane];
+            bpp_pad += bpps_pad[comp->plane];
+            bpps[comp->plane] >>= s;
+            bpps_pad[comp->plane] >>= s;
         }
         bpp >>= log2_pixels;
-
-        c = 0;
-        bpp_pad = 0;
-        int steps[4] = {0};
-
-        for (c = 0; c < pixdesc->nb_components; c++) {
-            const AVComponentDescriptor *comp = &pixdesc->comp[c];
-            int s = c == 1 || c == 2 ? 0 : log2_pixels;
-            //bpps_pad[c] = comp->step_minus1 + 1;
-            //if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
-            //    bpps_pad[c] *= 8;
-            steps[comp->plane] = (comp->step_minus1 + 1) << s;
-        }
-        for (c = 0; c < 4; c++)
-            bpp_pad += steps[c];
-
-        if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
-            bpp_pad *= 8;
-
         bpp_pad >>= log2_pixels;
     }
-
 };
 
 // TODO: use FFmpeg macros to get right endian
