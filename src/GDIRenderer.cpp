@@ -91,8 +91,8 @@ void GDIRenderer::drawFrame()
      * TODO: How about QPainter?
      */
     //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
-    Bitmap bitmap(d.video_frame.width(), d.video_frame.height(), d.video_frame.width()*4*sizeof(char)
-                  , PixelFormat32bppRGB, (BYTE*)d.video_frame.bits());
+    Bitmap bitmap(d.video_frame.width(), d.video_frame.height(), d.video_frame.bytesPerLine(0)
+                  , PixelFormat32bppRGB, (BYTE*)d.video_frame.bits(0));
 #if USE_GRAPHICS
     if (d.graphics)
         d.graphics->DrawImage(&bitmap, d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
