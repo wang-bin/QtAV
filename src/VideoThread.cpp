@@ -27,6 +27,7 @@
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/ImageConverter.h>
+#include <QtCore/QFileInfo>
 #include <QtGui/QImage>
 #include <QtAV/Statistics.h>
 #include <QtAV/Filter.h>
@@ -67,10 +68,6 @@ VideoThread::VideoThread(QObject *parent) :
 {
 }
 
-double VideoThread::currentPts() const
-{
-    return d_func().pts;
-}
 //it is called in main thread usually, but is being used in video thread,
 VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
 {
@@ -159,12 +156,7 @@ void VideoThread::run()
         }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
-        //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
         if (dec->decode(pkt.data)) {
-            d.pts = pkt.pts;
-            if (d.capture) {
-                d.capture->setRawImage(dec->data(), dec->width(), dec->height());
-            }
             VideoFrame frame = dec->frame();
             if (!frame.isValid())
                 continue;
@@ -198,9 +190,28 @@ void VideoThread::run()
                 break;
             }
             frame.convertTo(VideoFormat::Format_RGB32);
+            if (d.capture) {
+                d.capture->setPosition(pkt.pts);
+                if (d.capture->isRequested()) {
+                    bool auto_name = d.capture->name.isEmpty() && d.capture->autoSave();
+                    if (auto_name) {
+                        QString cap_name;
+                        if (d.statistics)
+                            cap_name = QFileInfo(d.statistics->url).completeBaseName();
+                        d.capture->setCaptureName(cap_name + "_" + QString::number(pkt.pts, 'f', 3));
+                    }
+                    //TODO: what if not rgb32 now? detach the frame
+                    //FIXME: why frame.data() may crash?
+                    d.capture->setRawImage(frame.frameData(), frame.width(), frame.height(), frame.imageFormat());
+                    d.capture->start();
+                    if (auto_name)
+                        d.capture->setCaptureName("");
+                }
+            }
             d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
         }
     }
+    d.capture->cancel();
     qDebug("Video thread stops running...");
 }
 

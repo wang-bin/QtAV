@@ -40,6 +40,7 @@ class CaptureTask : public QRunnable
 public:
     CaptureTask(VideoCapture* c):cap(c){
         format = "PNG";
+        qfmt = QImage::Format_RGB32;
         setAutoDelete(true);
     }
     virtual void run() {
@@ -53,11 +54,7 @@ public:
                 return;
             }
         }
-#if QT_VERSION >= QT_VERSION_CHECK(4, 0, 0)
-        QImage image((uchar*)data.data(), width, height, QImage::Format_RGB32);
-#else
-        QImage image((uchar*)data.data(), width, height, 16, NULL, 0, QImage::IgnoreEndian);
-#endif
+        QImage image((const uchar*)data.constData(), width, height, qfmt);
         QString path(dir + "/" + name + "." + format.toLower());
         qDebug("Saving capture to %s", qPrintable(path));
         bool ok = image.save(path, format.toLatin1().constData(), quality);
@@ -72,11 +69,18 @@ public:
     VideoCapture *cap;
     int width, height, quality;
     QString format, dir, name;
+    QImage::Format qfmt;
     QByteArray data;
 };
 
 VideoCapture::VideoCapture(QObject *parent) :
-    QObject(parent),async(true),error(NoError)
+    QObject(parent)
+  , async(true)
+  , is_requested(false)
+  , auto_save(true)
+  , error(NoError)
+  , qfmt(QImage::Format_RGB32)
+  , pts(0)
 {
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     dir = QDesktopServices::storageLocation(QDesktopServices::PicturesLocation);
@@ -104,12 +108,44 @@ bool VideoCapture::isAsync() const
     return async;
 }
 
+void VideoCapture::setAutoSave(bool a)
+{
+    auto_save = a;
+}
+
+bool VideoCapture::autoSave() const
+{
+    return auto_save;
+}
+
 void VideoCapture::request()
 {
-    QReadLocker locker(&lock);
-    Q_UNUSED(locker);
+    qDebug("%s", __PRETTY_FUNCTION__);
+    is_requested = true;
+}
+
+void VideoCapture::cancel()
+{
+    is_requested = false;
+}
+
+bool VideoCapture::isRequested() const
+{
+    return is_requested;
+}
+
+void VideoCapture::start()
+{
+    qDebug("%s", __PRETTY_FUNCTION__);
+    //QReadLocker locker(&lock);
+    //Q_UNUSED(locker);
+    is_requested = false;
     error = NoError;
     emit ready();
+    if (!auto_save) {
+        emit finished();
+        return;
+    }
     CaptureTask *task = new CaptureTask(this);
     task->width = width;
     task->height = height;
@@ -117,12 +153,23 @@ void VideoCapture::request()
     task->dir = dir;
     task->name = name;
     task->format = fmt;
+    task->qfmt = qfmt;
     task->data = data;
     if (isAsync()) {
         QThreadPool::globalInstance()->start(task);
     } else {
         task->run();
     }
+}
+
+qreal VideoCapture::position() const
+{
+    return pts;
+}
+
+void VideoCapture::setPosition(qreal pts)
+{
+    this->pts = pts;
 }
 
 void VideoCapture::setFormat(const QString &format)
@@ -165,27 +212,30 @@ QString VideoCapture::captureDir() const
     return dir;
 }
 
-void VideoCapture::setRawImage(const QByteArray &raw, const QSize &size)
+void VideoCapture::setRawImage(const QByteArray &raw, const QSize &size, QImage::Format fmt)
 {
-    setRawImage(raw, size.width(), size.height());
+    setRawImage(raw, size.width(), size.height(), fmt);
 }
 
-void VideoCapture::setRawImage(const QByteArray &raw, int w, int h)
+void VideoCapture::setRawImage(const QByteArray &raw, int w, int h, QImage::Format fmt)
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     width = w;
     height = h;
+    qfmt = fmt;
     data = raw;
 }
 
-void VideoCapture::getRawImage(QByteArray *raw, int *w, int *h)
+void VideoCapture::getRawImage(QByteArray *raw, int *w, int *h, QImage::Format *fmt)
 {
     QReadLocker locker(&lock);
     Q_UNUSED(locker);
     *raw = data;
     *w = width;
     *h = height;
+    if (fmt)
+        *fmt = qfmt;
 }
 
 } //namespace QtAV

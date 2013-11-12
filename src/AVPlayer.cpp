@@ -400,16 +400,7 @@ bool AVPlayer::captureVideo()
 {
     if (!video_capture || !video_thread)
         return false;
-    bool pause_old = isPaused();
-    if (!video_capture->isAsync())
-        pause(true);
-    QString cap_name = QFileInfo(path).completeBaseName();
-    //FIXME: pts is not correct because of multi-thread
-    double pts = video_thread->currentPts();
-    video_capture->setCaptureName(cap_name + "_" + QString::number(pts, 'f', 3));
     video_capture->request();
-    if (!video_capture->isAsync())
-        pause(pause_old);
     return true;
 }
 
