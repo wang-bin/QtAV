@@ -120,7 +120,6 @@ bool VideoCapture::autoSave() const
 
 void VideoCapture::request()
 {
-    qDebug("%s", __PRETTY_FUNCTION__);
     is_requested = true;
 }
 
@@ -136,7 +135,6 @@ bool VideoCapture::isRequested() const
 
 void VideoCapture::start()
 {
-    qDebug("%s", __PRETTY_FUNCTION__);
     //QReadLocker locker(&lock);
     //Q_UNUSED(locker);
     is_requested = false;
