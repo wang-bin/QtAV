@@ -162,6 +162,7 @@ void VideoThread::run()
                 continue;
             d.conv->setInFormat(frame.pixelFormatFFmpeg());
             d.conv->setInSize(frame.width(), frame.height());
+            d.conv->setOutSize(frame.width(), frame.height());
             frame.setImageConverter(d.conv);
             if (d.statistics) {
                 d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
