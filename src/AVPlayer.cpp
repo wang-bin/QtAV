@@ -703,6 +703,7 @@ void AVPlayer::stop()
         qDebug("stopping %s...", threads[i].name);
         thread->stop();
         while (thread->isRunning()) {
+            thread->wait(5);
             qDebug("stopping %s...", threads[i].name);
         }
     }
@@ -712,7 +713,8 @@ void AVPlayer::stop()
     demuxer_thread->blockSignals(true);
     qDebug("avplayer stopping demux thread...");
     demuxer_thread->stop();
-    if (demuxer_thread->isRunning()) {
+    while (demuxer_thread->isRunning()) {
+        demuxer_thread->wait(5);
         qDebug("avplayer stopping demux thread...");
     }
     demuxer_thread->blockSignals(false);
