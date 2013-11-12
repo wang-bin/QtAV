@@ -47,35 +47,38 @@ Direct2DRenderer::~Direct2DRenderer()
 {
 }
 
+bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
+{
+    DPTR_D(Direct2DRenderer);
+    if (!d.prepareBitmap(frame.width(), frame.height()))
+        return false;
+    HRESULT hr = S_OK;
+    //if d2d factory is D2D1_FACTORY_TYPE_SINGLE_THREADED, we need to lock
+    //QMutexLocker locker(&d.img_mutex);
+    //Q_UNUSED(locker);
+    d.video_frame = frame;
+    //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
+    /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
+    //TODO: d2d often crash, should we always lock? How about other renderer?
+    hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
+                                  , frame.bits(0) //data.constData() //msdn: const void*
+                                  , frame.bytesPerLine(0));
+    if (hr != S_OK) {
+        qWarning("Failed to copy from memory to bitmap (%ld)", hr);
+    }
+    update();
+    return true;
+}
+
 QPaintEngine* Direct2DRenderer::paintEngine() const
 {
     return 0; //use native engine
 }
 
-void Direct2DRenderer::convertData(const QByteArray &data)
-{
-    DPTR_D(Direct2DRenderer);
-    if (!d.prepareBitmap(d.src_width, d.src_height))
-        return;
-    HRESULT hr = S_OK;
-    //if d2d factory is D2D1_FACTORY_TYPE_SINGLE_THREADED, we need to lock
-    //QMutexLocker locker(&d.img_mutex);
-    //ttQ_UNUSED(locker);
-    //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
-    /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
-    //TODO: d2d often crash, should we always lock? How about other renderer?
-    hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
-                                  , data.constData() //data.constData() //msdn: const void*
-                                  , d.src_width*4*sizeof(char));
-    if (hr != S_OK) {
-        qWarning("Failed to copy from memory to bitmap (%ld)", hr);
-    }
-}
-
 bool Direct2DRenderer::needUpdateBackground() const
 {
     DPTR_D(const Direct2DRenderer);
-    return (d.update_background && d.out_rect != rect()) || d.data.isEmpty();
+    return (d.update_background && d.out_rect != rect()) || !d.video_frame.isValid();
 }
 
 void Direct2DRenderer::drawBackground()
@@ -162,12 +165,6 @@ void Direct2DRenderer::showEvent(QShowEvent *)
 {
     DPTR_D(Direct2DRenderer);
     d.recreateDeviceResource();
-}
-
-bool Direct2DRenderer::write()
-{
-    update();
-    return true;
 }
 
 } //namespace QtAV

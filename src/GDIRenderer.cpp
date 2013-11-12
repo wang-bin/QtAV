@@ -57,18 +57,21 @@ QPaintEngine* GDIRenderer::paintEngine() const
     return 0;
 }
 
-void GDIRenderer::convertData(const QByteArray &data)
+bool GDIRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GDIRenderer);
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
-    d.data = data;
+    d.video_frame = frame;
+
+    update();
+    return true;
 }
 
 bool GDIRenderer::needUpdateBackground() const
 {
     DPTR_D(const GDIRenderer);
-    return (d.update_background && d.out_rect != rect()) || d.data.isEmpty();
+    return (d.update_background && d.out_rect != rect()) || !d.video_frame.isValid();
 }
 
 void GDIRenderer::drawBackground()
@@ -88,8 +91,8 @@ void GDIRenderer::drawFrame()
      * TODO: How about QPainter?
      */
     //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
-    Bitmap bitmap(d.src_width, d.src_height, d.src_width*4*sizeof(char)
-                  , PixelFormat32bppRGB, (BYTE*)d.data.data());
+    Bitmap bitmap(d.video_frame.width(), d.video_frame.height(), d.video_frame.bytesPerLine(0)
+                  , PixelFormat32bppRGB, (BYTE*)d.video_frame.bits(0));
 #if USE_GRAPHICS
     if (d.graphics)
         d.graphics->DrawImage(&bitmap, d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
@@ -142,12 +145,6 @@ void GDIRenderer::showEvent(QShowEvent *)
     DPTR_D(GDIRenderer);
     d.update_background = true;
     d_func().prepare();
-}
-
-bool GDIRenderer::write()
-{
-    update();
-    return true;
 }
 
 } //namespace QtAV

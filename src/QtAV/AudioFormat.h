@@ -56,6 +56,8 @@ public:
     };
     //typedef qint64 ChannelLayout; //currently use latest FFmpeg's
 
+    static ChannelLayout channelLayoutFromFFmpeg(qint64 clff);
+    static qint64 channelLayoutToFFmpeg(ChannelLayout cl);
     static bool isPlanar(SampleFormat format);
 
     AudioFormat();

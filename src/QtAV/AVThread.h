@@ -83,9 +83,6 @@ public slots:
     void pause(bool p); //processEvents when waiting?
     void nextAndPause(); //process 1 frame and pause
 
-private slots:
-    void addOutputToBeUpdated(AVOutput *output);
-
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
     void resetState();

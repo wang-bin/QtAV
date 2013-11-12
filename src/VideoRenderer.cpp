@@ -43,6 +43,13 @@ VideoRenderer::~VideoRenderer()
 {
 }
 
+bool VideoRenderer::receive(const VideoFrame &frame)
+{
+    DPTR_D(VideoRenderer);
+    setInSize(frame.width(), frame.height());
+    return receiveFrame(frame);
+}
+
 void VideoRenderer::scaleInRenderer(bool q)
 {
     d_func().scale_in_renderer = q;
@@ -137,23 +144,6 @@ void VideoRenderer::setInSize(int width, int height)
     d.aspect_ratio_changed = false; //TODO: why graphicsitemrenderer need this? otherwise aspect_ratio_changed is always true?
 }
 
-QSize VideoRenderer::lastSize() const
-{
-    DPTR_D(const VideoRenderer);
-    return QSize(d.src_width, d.src_height);
-}
-
-int VideoRenderer::lastWidth() const
-{
-    DPTR_D(const VideoRenderer);
-    return d.src_width;
-}
-int VideoRenderer::lastHeight() const
-{
-    DPTR_D(const VideoRenderer);
-    return  d.src_height;
-}
-
 bool VideoRenderer::open()
 {
     return true;
@@ -203,16 +193,6 @@ QSize VideoRenderer::frameSize() const
     return QSize(d.src_width, d.src_height);
 }
 
-int VideoRenderer::frameWidth() const
-{
-    return d_func().src_width;
-}
-
-int VideoRenderer::frameHeight() const
-{
-    return d_func().src_height;
-}
-
 QRect VideoRenderer::videoRect() const
 {
     return d_func().out_rect;
@@ -238,18 +218,18 @@ QRect VideoRenderer::realROI() const
 {
     DPTR_D(const VideoRenderer);
     if (!d.roi.isValid()) {
-        return QRect(0, 0, d.src_width, d.src_height);
+        return QRect(QPoint(), d.video_frame.size());
     }
     QRect r = d.roi.toRect();
     if (qAbs(d.roi.x()) <= 1)
-        r.setX(d.roi.x()*qreal(frameWidth()));
+        r.setX(d.roi.x()*qreal(d.src_width)); //TODO: why not video_frame.size()? roi not correct
     if (qAbs(d.roi.y()) <= 1)
-        r.setY(d.roi.y()*qreal(frameHeight()));
+        r.setY(d.roi.y()*qreal(d.src_height));
     // whole size use width or height = 0, i.e. null size
     if (qAbs(d.roi.width()) < 1)
-        r.setWidth(d.roi.width()*qreal(frameWidth()));
+        r.setWidth(d.roi.width()*qreal(d.src_width));
     if (qAbs(d.roi.height() < 1))
-        r.setHeight(d.roi.height()*qreal(frameHeight()));
+        r.setHeight(d.roi.height()*qreal(d.src_height));
     //TODO: insect with source rect?
     return r;
 }
@@ -331,7 +311,7 @@ void VideoRenderer::drawBackground()
 
 bool VideoRenderer::needDrawFrame() const
 {
-    return !d_func().data.isEmpty();
+    return d_func().video_frame.isValid();
 }
 
 void VideoRenderer::resizeFrame(int width, int height)
@@ -364,9 +344,9 @@ void VideoRenderer::handlePaintEvent()
             drawBackground();
         }
         /* DO NOT return if no data. we should draw other things
-         * NOTE: if data is not copyed in convertData, you should always call drawFrame()
+         * NOTE: if data is not copyed in receiveFrame(), you should always call drawFrame()
          */
-        /* d2d: d.data is always empty because we did not assign a vaule in convertData?
+        /*
          * why the background is white if return? the below code draw an empty bitmap?
          */
         //DO NOT return if no data. we should draw other things

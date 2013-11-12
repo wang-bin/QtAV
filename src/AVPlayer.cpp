@@ -400,16 +400,13 @@ bool AVPlayer::captureVideo()
 {
     if (!video_capture || !video_thread)
         return false;
-    bool pause_old = isPaused();
-    if (!video_capture->isAsync())
-        pause(true);
-    QString cap_name = QFileInfo(path).completeBaseName();
-    //FIXME: pts is not correct because of multi-thread
-    double pts = video_thread->currentPts();
-    video_capture->setCaptureName(cap_name + "_" + QString::number(pts, 'f', 3));
+    if (isPaused()) {
+        QString cap_name = QFileInfo(file()).completeBaseName();
+        video_capture->setCaptureName(cap_name + "_" + QString::number(masterClock()->value(), 'f', 3));
+        video_capture->start();
+        return true;
+    }
     video_capture->request();
-    if (!video_capture->isAsync())
-        pause(pause_old);
     return true;
 }
 
@@ -472,10 +469,12 @@ bool AVPlayer::load(bool reload)
     qDebug("loading: %s ...", path.toUtf8().constData());
     if (reload || !demuxer.isLoaded(path)) {
         //close decoders here to make sure open and close in the same thread
-        if (audio_dec && audio_dec->isOpen())
+        if (audio_dec && audio_dec->isOpen()) {
             audio_dec->close();
-        if (video_dec && video_dec->isOpen())
+        }
+        if (video_dec && video_dec->isOpen()) {
             video_dec->close();
+        }
         if (!demuxer.loadFile(path)) {
             return loaded;
         }
@@ -497,6 +496,7 @@ bool AVPlayer::load(bool reload)
             masterClock()->setClockType(AVClock::AudioClock);
         }
     }
+
     if (start_pos <= 0)
         start_pos = duration() > 0 ? startPosition()/duration() : 0;
     if (start_pos > 0)

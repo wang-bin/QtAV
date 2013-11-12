@@ -56,11 +56,12 @@ GraphicsItemRenderer::~GraphicsItemRenderer()
 {
 }
 
-bool GraphicsItemRenderer::write()
+bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
 {
+    prepareFrame(frame);
     scene()->update(sceneBoundingRect());
     //update(); //does not cause an immediate paint. my not redraw.
-	return true;
+    return true;
 }
 
 QRectF GraphicsItemRenderer::boundingRect() const
@@ -88,7 +89,7 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
 bool GraphicsItemRenderer::needUpdateBackground() const
 {
     DPTR_D(const GraphicsItemRenderer);
-    return d.out_rect != boundingRect() || d.data.isEmpty();
+    return d.out_rect != boundingRect() || !d.video_frame.isValid();
 }
 
 void GraphicsItemRenderer::drawBackground()

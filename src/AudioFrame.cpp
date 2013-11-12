@@ -19,24 +19,48 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEODECODERFFMPEG_H
-#define QTAV_VIDEODECODERFFMPEG_H
-
-#include <QtAV/VideoDecoder.h>
+#include "QtAV/AudioFrame.h"
+#include "private/Frame_p.h"
 
 namespace QtAV {
 
-class VideoDecoderFFmpegPrivate;
-class Q_AV_EXPORT VideoDecoderFFmpeg : public VideoDecoder
+class AudioFramePrivate : public FramePrivate
 {
-    DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
 public:
-    VideoDecoderFFmpeg();
-    virtual ~VideoDecoderFFmpeg();
-    //virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
+    AudioFramePrivate()
+        : FramePrivate()
+    {}
+    ~AudioFramePrivate() {}
 };
 
-} //namespace QtAV
+AudioFrame::AudioFrame():
+    Frame(*new AudioFramePrivate())
+{
+}
 
-#endif // QTAV_VIDEODECODERFFMPEG_H
+/*!
+    Constructs a shallow copy of \a other.  Since AudioFrame is
+    explicitly shared, these two instances will reflect the same frame.
+
+*/
+AudioFrame::AudioFrame(const AudioFrame &other)
+    : Frame(other)
+{
+}
+
+/*!
+    Assigns the contents of \a other to this video frame.  Since AudioFrame is
+    explicitly shared, these two instances will reflect the same frame.
+
+*/
+AudioFrame &AudioFrame::operator =(const AudioFrame &other)
+{
+    d_ptr = other.d_ptr;
+    return *this;
+}
+
+AudioFrame::~AudioFrame()
+{
+}
+
+} //namespace QtAV

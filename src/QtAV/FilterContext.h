@@ -34,6 +34,7 @@ class QPainter;
 class QPaintDevice;
 namespace QtAV {
 
+class Frame;
 class FilterContext;
 class Q_AV_EXPORT FilterContext
 {
@@ -55,7 +56,7 @@ public:
     int video_width, video_height; //original size
     //QPainter, paintdevice, surface etc. contains all of them here?
 protected:
-    virtual void initializeOnData(QByteArray *data); //private?
+    virtual void initializeOnFrame(Frame *frame); //private?
     // share qpainter etc.
     virtual void shareFrom(FilterContext *ctx);
     friend class Filter;
@@ -123,7 +124,7 @@ public:
 protected:
     virtual bool isReady() const;
     virtual bool prepare();
-    virtual void initializeOnData(QByteArray* data);
+    virtual void initializeOnFrame(Frame* frame);
 };
 
 class Q_AV_EXPORT GLFilterContext : public VideoFilterContext

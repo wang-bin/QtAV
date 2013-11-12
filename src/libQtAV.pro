@@ -117,6 +117,7 @@ SOURCES += \
     AVThread.cpp \
     AudioDecoder.cpp \
     AudioFormat.cpp \
+    AudioFrame.cpp \
     AudioOutput.cpp \
     AudioResampler.cpp \
     AudioResamplerTypes.cpp \
@@ -124,6 +125,7 @@ SOURCES += \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
     EventFilter.cpp \
+    Frame.cpp \
     Filter.cpp \
     FilterContext.cpp \
     FilterManager.cpp \
@@ -137,6 +139,8 @@ SOURCES += \
     Packet.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
+    VideoFormat.cpp \
+    VideoFrame.cpp \
     VideoRenderer.cpp \
     VideoRendererTypes.cpp \
     VideoOutputEventFilter.cpp \
@@ -158,12 +162,14 @@ SDK_HEADERS *= \
     QtAV/AudioResamplerTypes.h \
     QtAV/AudioDecoder.h \
     QtAV/AudioFormat.h \
+    QtAV/AudioFrame.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
     QtAV/BlockingQueue.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
+    QtAV/Frame.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/ImageConverterTypes.h \
@@ -181,6 +187,8 @@ SDK_HEADERS *= \
     QtAV/VideoDecoder.h \
     QtAV/VideoDecoderTypes.h \
     QtAV/VideoDecoderFFmpeg.h \
+    QtAV/VideoFormat.h \
+    QtAV/VideoFrame.h \
     QtAV/FactoryDefine.h \
     QtAV/Statistics.h \
     QtAV/version.h
@@ -206,6 +214,7 @@ HEADERS *= \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
+    QtAV/private/Frame_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/VideoDecoder_p.h \

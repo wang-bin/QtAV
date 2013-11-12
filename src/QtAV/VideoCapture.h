@@ -25,6 +25,7 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QReadWriteLock>
+#include <QtGui/QImage>
 #include <QtAV/QtAV_Global.h>
 
 class QSize;
@@ -43,39 +44,53 @@ public:
     ~VideoCapture();
     void setAsync(bool async);
     bool isAsync() const;
+    void setAutoSave(bool a);
+    bool autoSave() const;
     void request();
+    void cancel();
+    bool isRequested() const;
+    void start();
+    qreal position() const;
     ErrorCode errorCode() const;
     void setFormat(const QString& format);
     QString format() const;
     void setQuality(int quality);
     int quality() const;
+    //empty name: filename_timestamp.format
     void setCaptureName(const QString& name);
     QString captureName() const;
     void setCaptureDir(const QString& dir);
     QString captureDir() const;
-    //get/set: ensure thread safe because they are not in the same thread
-    void setRawImage(const QByteArray& raw, const QSize& size);
-    void setRawImage(const QByteArray& raw, int w, int h);
     //used to get current playing statistics.
-    void getRawImage(QByteArray* raw, int *w, int *h);
+    void getRawImage(QByteArray* raw, int *w, int *h, QImage::Format *fmt = 0);
 signals:
     /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/
     void ready();
     void failed();
     void finished();
 private:
+    void setPosition(qreal pts);
+    //get/set: ensure thread safe because they are not in the same thread
+    void setRawImage(const QByteArray& raw, const QSize& size, QImage::Format format = QImage::Format_RGB32);
+    void setRawImage(const QByteArray& raw, int w, int h, QImage::Format format = QImage::Format_RGB32);
+
     friend class CaptureTask;
+    friend class VideoThread;
     bool async;
+    bool is_requested;
+    bool auto_save;
     ErrorCode error;
     //TODO: use blocking queue? If not, the parameters will change when thre previous is not finished
     //or use a capture event that wrapper all these parameters
     int width, height;
     int qual;
+    QImage::Format qfmt;
     QString fmt;
     QString name, dir;
     QByteArray data;
     //QImage image;
     mutable QReadWriteLock lock;
+    qreal pts;
 };
 
 } //namespace QtAV

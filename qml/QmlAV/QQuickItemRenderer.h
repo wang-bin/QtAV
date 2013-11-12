@@ -50,6 +50,7 @@ public:
     explicit QQuickItemRenderer(QQuickItem *parent = 0);
     ~QQuickItemRenderer() {}
     virtual VideoRendererId id() const;
+    virtual bool receiveFrame(const VideoFrame &frame);
 
     QObject *source() const;
     void setSource(QObject *source);
@@ -62,17 +63,12 @@ Q_SIGNALS:
     void fillModeChanged(QQuickItemRenderer::FillMode);
 
 protected:
-    virtual void convertData(const QByteArray &data);
     virtual bool needUpdateBackground() const;
     virtual bool needDrawFrame() const;
     virtual void drawFrame();
 
     // QQuickItem interface
     virtual QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data);
-
-    // AVOutput interface
-    virtual bool write();
-
 private:
 
 };

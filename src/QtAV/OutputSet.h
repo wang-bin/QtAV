@@ -31,6 +31,7 @@
 namespace QtAV {
 
 class AVPlayer;
+class VideoFrame;
 class Q_AV_EXPORT OutputSet : public QObject
 {
     Q_OBJECT
@@ -49,6 +50,7 @@ public:
     //each(OutputOperation(data))
     //
     void sendData(const QByteArray& data);
+    void sendVideoFrame(const VideoFrame& frame);
 
     void clearOutputs();
     void addOutput(AVOutput* output);
@@ -63,9 +65,6 @@ public:
      * 2. shortcut for AVOutput.pause(false)
      */
     void resumeThread();
-
-signals:
-    void updateParametersRequired(AVOutput* output);
 
 public slots:
     //connect to renderer->aboutToClose(). test whether delete on close

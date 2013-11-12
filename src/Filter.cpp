@@ -52,7 +52,7 @@ Filter::~Filter()
 }
 
 //copy qpainter if context nut null
-void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray* data)
+void Filter::process(FilterContext *&context, Statistics *statistics, Frame* frame)
 {
     DPTR_D(Filter);    
     if (!d.context) {
@@ -71,7 +71,7 @@ void Filter::process(FilterContext *&context, Statistics *statistics, QByteArray
     }
     // share common data
     d.context->shareFrom(context);
-    d.context->initializeOnData(data);
+    d.context->initializeOnFrame(frame);
     context->shareFrom(d.context);
     d.statistics = statistics;
     process();

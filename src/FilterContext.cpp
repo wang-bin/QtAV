@@ -22,6 +22,7 @@
 #include "QtAV/FilterContext.h"
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
+#include "QtAV/VideoFrame.h"
 
 namespace QtAV {
 
@@ -51,9 +52,9 @@ FilterContext::~FilterContext()
 {
 }
 
-void FilterContext::initializeOnData(QByteArray *data)
+void FilterContext::initializeOnFrame(Frame *frame)
 {
-    Q_UNUSED(data);
+    Q_UNUSED(frame);
 }
 
 void FilterContext::shareFrom(FilterContext *ctx)
@@ -222,9 +223,9 @@ bool QPainterFilterContext::prepare()
     return true;
 }
 
-void QPainterFilterContext::initializeOnData(QByteArray *data)
+void QPainterFilterContext::initializeOnFrame(Frame *frame)
 {
-    if (!data) {
+    if (!frame) {
         if (!painter) {
             painter = new QPainter(); //warning: more than 1 painter on 1 device
         }
@@ -239,8 +240,14 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
             painter->begin(paint_device);
         return;
     }
-    if (data->isEmpty())
+    VideoFrame *vframe = static_cast<VideoFrame*>(frame);
+    if (vframe->frameData().isEmpty())
         return;
+    VideoFormat format = vframe->format();
+    if (format.imageFormat() == QImage::Format_Invalid && format.isValid()) {
+        format = VideoFormat(VideoFormat::Format_BGR32);
+        vframe->convertTo(format);
+    }
     if (paint_device) {
         if (painter && painter->isActive()) {
             painter->end(); //destroy a paint device that is being painted is not allowed!
@@ -249,7 +256,7 @@ void QPainterFilterContext::initializeOnData(QByteArray *data)
         paint_device = 0;
     }
     Q_ASSERT(video_width > 0 && video_height > 0);
-    paint_device = new QImage((uchar*)data->data(), video_width, video_height, QImage::Format_RGB32);
+    paint_device = new QImage((uchar*)vframe->frameData().data(), video_width, video_height, format.imageFormat());
     if (!painter)
         painter = new QPainter();
     own_painter = true;

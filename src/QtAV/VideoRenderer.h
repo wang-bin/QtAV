@@ -26,7 +26,7 @@
 #include <QtCore/QSize>
 #include <QtCore/QRectF>
 #include <QtAV/AVOutput.h>
-
+#include <QtAV/VideoFrame.h>
 /*TODO:
  *  broadcast to network
  *  background color for original aspect ratio
@@ -55,6 +55,7 @@ typedef int VideoRendererId;
 
 class Filter;
 class OSDFilter;
+class VideoFormat;
 class VideoRendererPrivate;
 class Q_AV_EXPORT VideoRenderer : public AVOutput
 {
@@ -77,6 +78,13 @@ public:
     VideoRenderer();
     virtual ~VideoRenderer() = 0;
     virtual VideoRendererId id() const = 0;
+
+    bool receive(const VideoFrame& frame);
+    void setVideoFormat(const VideoFormat& format);
+    VideoFormat& videoFormat();
+    const VideoFormat& videoFormat() const;
+    const VideoFormat& defaultVideoFormat() const;
+
     //for testing performance
     void scaleInRenderer(bool q);
     bool scaleInRenderer() const;
@@ -102,8 +110,6 @@ public:
     int rendererHeight() const;
     //geometry size of current video frame
     QSize frameSize() const;
-    int frameWidth() const;
-    int frameHeight() const;
     //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
     QRect videoRect() const;
     /*
@@ -136,6 +142,7 @@ public:
     bool isDefaultEventFilterEnabled() const;
 protected:
     VideoRenderer(VideoRendererPrivate &d);
+    virtual bool receiveFrame(const VideoFrame& frame) = 0;
     virtual bool needUpdateBackground() const;
     //TODO: drawXXX() is pure virtual
     //called in paintEvent before drawFrame() when required
@@ -163,12 +170,6 @@ private:
     void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
     //qreal sourceAspectRatio() const;//TODO: from AVCodecContext
     //we don't need api like QSize sourceSize() const. you should get them from player or avinfo(not implemented)
-
-    //private?  for internal use only, called by VideoThread.
-    QSize lastSize() const;
-    int lastWidth() const;
-    int lastHeight() const;
-
 };
 
 } //namespace QtAV

@@ -22,6 +22,7 @@
 #include <QWidget>
 #include "QtAV/AVPlayer.h"
 #include "QtAV/OutputSet.h"
+#include "QtAV/VideoRenderer.h"
 
 namespace QtAV {
 
@@ -55,14 +56,14 @@ QList<AVOutput *> OutputSet::outputs()
     return mOutputs;
 }
 
-void OutputSet::sendData(const QByteArray &data)
+void OutputSet::sendVideoFrame(const VideoFrame &frame)
 {
     QMutexLocker lock(&mMutex);
     Q_UNUSED(lock);
     foreach(AVOutput *output, mOutputs) {
         if (!output->isAvailable())
             continue;
-        output->writeData(data);
+        ((VideoRenderer*)output)->receive(frame);
     }
 }
 
@@ -82,7 +83,6 @@ void OutputSet::addOutput(AVOutput *output)
     Q_UNUSED(lock);
     mOutputs.append(output);
     output->addOutputSet(this);
-    emit updateParametersRequired(output);
 }
 
 void OutputSet::removeOutput(AVOutput *output)

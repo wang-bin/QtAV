@@ -46,7 +46,7 @@ static const ChannelLayoutMap kChannelLayoutMap[] = {
     { 0, AudioFormat::ChannelLayout_Unsupported}
 };
 
-static AudioFormat::ChannelLayout channelLayoutFromFFmpeg(qint64 clff)
+AudioFormat::ChannelLayout AudioFormat::channelLayoutFromFFmpeg(qint64 clff)
 {
     for (unsigned int i = 0; i < sizeof(kChannelLayoutMap)/sizeof(ChannelLayoutMap); ++i) {
         if (kChannelLayoutMap[i].ff == clff)
@@ -55,7 +55,7 @@ static AudioFormat::ChannelLayout channelLayoutFromFFmpeg(qint64 clff)
     return AudioFormat::ChannelLayout_Unsupported;
 }
 
-static qint64 channelLayoutToFFmpeg(AudioFormat::ChannelLayout cl)
+qint64 AudioFormat::channelLayoutToFFmpeg(AudioFormat::ChannelLayout cl)
 {
     for (unsigned int i = 0; i < sizeof(kChannelLayoutMap)/sizeof(ChannelLayoutMap); ++i) {
         if (kChannelLayoutMap[i].cl == cl)
@@ -79,7 +79,7 @@ public:
         channels = cs;
         if (av_get_channel_layout_nb_channels(channel_layout_ff) != channels) {
             channel_layout_ff = av_get_default_channel_layout(channels);
-            channel_layout = channelLayoutFromFFmpeg(channel_layout_ff);
+            channel_layout = AudioFormat::channelLayoutFromFFmpeg(channel_layout_ff);
         }
     }
     void setChannelLayoutFF(qint64 clff) {
@@ -123,7 +123,7 @@ AudioFormat::~AudioFormat()
 }
 
 /*!
-    Assigns \a other to this QAudioFormat implementation.
+    Assigns \a other to this AudioFormat implementation.
 */
 AudioFormat& AudioFormat::operator=(const AudioFormat &other)
 {

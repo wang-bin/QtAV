@@ -27,11 +27,16 @@
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/ImageConverter.h>
+#include <QtCore/QFileInfo>
 #include <QtGui/QImage>
 #include <QtAV/Statistics.h>
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
 #include <QtAV/OutputSet.h>
+#include <QtAV/ImageConverterTypes.h>
+#include <QtAV/QtAV_Compat.h>
+
+#define PIX_FMT PIX_FMT_RGB32 //PIX_FMT_YUV420P
 
 namespace QtAV {
 
@@ -41,7 +46,17 @@ public:
     VideoThreadPrivate():
         conv(0)
       , capture(0)
-    {}
+    {
+        conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
+        conv->setOutFormat(PIX_FMT); //vo->defaultFormat
+    }
+    ~VideoThreadPrivate() {
+        if (conv) {
+            delete conv;
+            conv = 0;
+        }
+    }
+
     ImageConverter *conv;
     double pts; //current decoded pts. for capture. TODO: remove
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
@@ -53,23 +68,6 @@ VideoThread::VideoThread(QObject *parent) :
 {
 }
 
-ImageConverter* VideoThread::setImageConverter(ImageConverter *converter)
-{
-    DPTR_D(VideoThread);
-    QtAV::ImageConverter* old = d.conv;
-    d.conv = converter;
-    return old;
-}
-
-ImageConverter* VideoThread::imageConverter() const
-{
-    return d_func().conv;
-}
-
-double VideoThread::currentPts() const
-{
-    return d_func().pts;
-}
 //it is called in main thread usually, but is being used in video thread,
 VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
 {
@@ -95,9 +93,7 @@ void VideoThread::run()
         //used to initialize the decoder's frame size
         dec->resizeVideoFrame(0, 0);
     }
-    bool need_update_vo_parameters = true;
     Packet pkt;
-    QSize dec_size_last;
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -154,49 +150,29 @@ void VideoThread::run()
             }
         }
         d.clock->updateVideoPts(pkt.pts); //here?
-        if (need_update_vo_parameters || !d.update_outputs.isEmpty()) {
-            //lock is important when iterating
-            d.outputSet->lock();
-            if (need_update_vo_parameters) {
-                d.update_outputs = d.outputSet->outputs();
-                need_update_vo_parameters = false;
-            }
-            foreach(AVOutput *out, d.update_outputs) {
-                VideoRenderer *vo = static_cast<VideoRenderer*>(out);
-                vo->setInSize(dec->width(), dec->height()); //setLastSize(). optimize: set only when changed
-            }
-            d.outputSet->unlock();
-            d.update_outputs.clear();
-        }
-        need_update_vo_parameters = dec_size_last.width() != dec->width() || dec_size_last.height() != dec->height();
-        dec_size_last = QSize(dec->width(), dec->height());
         if (d.stop) {
             qDebug("video thread stop before decode()");
             break;
         }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
-        //still decode, we may need capture. TODO: decode only if existing a capture request if no vo
         if (dec->decode(pkt.data)) {
-            d.pts = pkt.pts;
-            if (d.capture) {
-                d.capture->setRawImage(dec->data(), dec->width(), dec->height());
-            }
-            //TODO: Add filters here. Capture is also a filter
-            /*if (d.image.width() != d.renderer_width || d.image.height() != d.renderer_height)
-                d.image = QImage(d.renderer_width, d.renderer_height, QImage::Format_RGB32);
-            d.conv->setInSize(d.renderer_width, d.renderer_height);
-            if (!d.conv->convert(d.decoded_data.constData(), d.image.bits())) {
-            }*/
-            QByteArray data = dec->data();
+            VideoFrame frame = dec->frame();
+            if (!frame.isValid())
+                continue;
+            d.conv->setInFormat(frame.pixelFormatFFmpeg());
+            d.conv->setInSize(frame.width(), frame.height());
+            d.conv->setOutSize(frame.width(), frame.height());
+            frame.setImageConverter(d.conv);
             if (d.statistics) {
                 d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
                 if (!d.filters.isEmpty()) {
+                    //sort filters by format. vo->defaultFormat() is the last
                     foreach (Filter *filter, d.filters) {
                         if (d.stop) {
                             break;
                         }
-                        filter->process(d.filter_context, d.statistics, &data);
+                        filter->process(d.filter_context, d.statistics, &frame);
                     }
                 }
             }
@@ -214,9 +190,29 @@ void VideoThread::run()
                 qDebug("video thread stop before send decoded data");
                 break;
             }
-            d.outputSet->sendData(data);
+            frame.convertTo(VideoFormat::Format_RGB32);
+            if (d.capture) {
+                d.capture->setPosition(pkt.pts);
+                if (d.capture->isRequested()) {
+                    bool auto_name = d.capture->name.isEmpty() && d.capture->autoSave();
+                    if (auto_name) {
+                        QString cap_name;
+                        if (d.statistics)
+                            cap_name = QFileInfo(d.statistics->url).completeBaseName();
+                        d.capture->setCaptureName(cap_name + "_" + QString::number(pkt.pts, 'f', 3));
+                    }
+                    //TODO: what if not rgb32 now? detach the frame
+                    //FIXME: why frame.data() may crash?
+                    d.capture->setRawImage(frame.frameData(), frame.width(), frame.height(), frame.imageFormat());
+                    d.capture->start();
+                    if (auto_name)
+                        d.capture->setCaptureName("");
+                }
+            }
+            d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
         }
     }
+    d.capture->cancel();
     qDebug("Video thread stops running...");
 }
 

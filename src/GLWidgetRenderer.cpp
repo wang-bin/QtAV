@@ -175,12 +175,15 @@ GLWidgetRenderer::~GLWidgetRenderer()
 {
 }
 
-void GLWidgetRenderer::convertData(const QByteArray &data)
+bool GLWidgetRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GLWidgetRenderer);
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
-    d.data = data;
+    d.video_frame = frame;
+
+    update(); //can not call updateGL() directly because no event and paintGL() will in video thread
+    return true;
 }
 
 bool GLWidgetRenderer::needUpdateBackground() const
@@ -213,23 +216,23 @@ void GLWidgetRenderer::drawFrame()
     //uploading part of image eats less gpu memory, but may be more cpu(gles)
     //FIXME: more cpu usage then qpainter. FBO, VBO?
 #define ROI_TEXCOORDS 1
-    if (ROI_TEXCOORDS || roi.size() == QSize(d.src_width, d.src_height)) {
+    if (ROI_TEXCOORDS || roi.size() == d.video_frame.size()) {
         glTexImage2D(GL_TEXTURE_2D
                      , 0                //level
                      , FMT_INTERNAL               //internal format. 4? why GL_RGBA? GL_RGB?
-                     , d.src_width, d.src_height
+                     , d.video_frame.width(), d.video_frame.height()
                      , 0                //border, ES not support
                      , FMT          //format, must the same as internal format?
                      , GL_UNSIGNED_BYTE
-                     , d.data.constData());
+                     , d.video_frame.bits());
     } else {
 #ifdef GL_UNPACK_ROW_LENGTH
 // http://stackoverflow.com/questions/205522/opengl-subtexturing
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, d.src_width);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, d.video_frame.width());
         //glPixelStorei or compute pointer
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, roi.x());
         glPixelStorei(GL_UNPACK_SKIP_ROWS, roi.y());
-        glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, roi.width(), roi.height(), 0, FMT, GL_UNSIGNED_BYTE, d.data.constData());
+        glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, roi.width(), roi.height(), 0, FMT, GL_UNSIGNED_BYTE, d.video_frame.bits());
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
@@ -239,7 +242,7 @@ void GLWidgetRenderer::drawFrame()
         // how to use only 1 call?
         //glTexSubImage2D(GL_TEXTURE_2D, 0, roi.x(), roi.y(), roi.width(), roi.height(), FMT, GL_UNSIGNED_BYTE, d.data.constData());
         for(int y = 0; y < roi.height(); y++) {
-            char *row = d.data.data() + ((y + roi.y())*d.src_width + roi.x()) * 4;
+            char *row = (char*)d.video_frame.bits() + ((y + roi.y())*d.video_frame.width() + roi.x()) * 4;
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, roi.width(), 1, FMT, GL_UNSIGNED_BYTE, row);
         }
 #endif //GL_UNPACK_ROW_LENGTH
@@ -247,10 +250,10 @@ void GLWidgetRenderer::drawFrame()
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
         const GLfloat kTexCoords[] = {
-            (GLfloat)roi.x()/(GLfloat)d.src_width, (GLfloat)roi.y()/(GLfloat)d.src_height,
-            (GLfloat)(roi.x() + roi.width())/(GLfloat)d.src_width, (GLfloat)roi.y()/(GLfloat)d.src_height,
-            (GLfloat)(roi.x() + roi.width())/(GLfloat)d.src_width, (GLfloat)(roi.y()+roi.height())/(GLfloat)d.src_height,
-            (GLfloat)roi.x()/(GLfloat)d.src_width, (GLfloat)(roi.y()+roi.height())/(GLfloat)d.src_height,
+            (GLfloat)roi.x()/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+            (GLfloat)(roi.x() + roi.width())/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+            (GLfloat)(roi.x() + roi.width())/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+            (GLfloat)roi.x()/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
         };
 ///        glVertexAttribPointer(d.tex_coords_location, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
 ///        glEnableVertexAttribArray(d.tex_coords_location);
@@ -293,12 +296,6 @@ void GLWidgetRenderer::drawFrame()
     glDisableVertexAttribArray(d.tex_coords_location);
     glDisableVertexAttribArray(d.position_location);
 #endif //QT_OPENGL_ES_2
-}
-
-bool GLWidgetRenderer::write()
-{
-    update(); //can not call updateGL() directly because no event and paintGL() will in video thread
-    return true;
 }
 
 void GLWidgetRenderer::initializeGL()

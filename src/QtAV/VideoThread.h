@@ -38,10 +38,6 @@ class VideoThread : public AVThread
     DPTR_DECLARE_PRIVATE(VideoThread)
 public:
     explicit VideoThread(QObject *parent = 0);
-    //return the old
-    ImageConverter* setImageConverter(ImageConverter *converter);
-    ImageConverter* imageConverter() const;
-    double currentPts() const;
     VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
 protected:
     virtual void run();

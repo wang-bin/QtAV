@@ -33,8 +33,6 @@ class ImageConverterFF : public ImageConverter //Q_AV_EXPORT is not needed
 public:
     ImageConverterFF();
     virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
-protected:
-    virtual bool prepareData(); //Allocate memory for out data
 };
 
 
@@ -58,7 +56,6 @@ public:
     }
 
     SwsContext *sws_ctx;
-    AVPicture picture;
 };
 
 ImageConverterFF::ImageConverterFF()
@@ -136,24 +133,6 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     }
 #endif //0
     Q_UNUSED(result_h);
-    return true;
-}
-
-bool ImageConverterFF::prepareData()
-{
-    DPTR_D(ImageConverterFF);
-    int bytes = avpicture_get_size((PixelFormat)d.fmt_out, d.w_out, d.h_out);
-    //if (d.data_out.size() < bytes) {
-        d.data_out.resize(bytes);
-    //}
-    //picture的数据按PIX_FMT格式自动"关联"到 data
-    avpicture_fill(
-            &d.picture,
-            reinterpret_cast<uint8_t*>(d.data_out.data()),
-            (PixelFormat)d.fmt_out,
-            d.w_out,
-            d.h_out
-            );
     return true;
 }
 

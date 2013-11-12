@@ -19,24 +19,32 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEODECODERFFMPEG_H
-#define QTAV_VIDEODECODERFFMPEG_H
+#ifndef QTAV_FRAME_P_H
+#define QTAV_FRAME_P_H
 
-#include <QtAV/VideoDecoder.h>
+#include <QtAV/QtAV_Global.h>
+#include <QtCore/QVector>
+#include <QtCore/QVariant>
+#include <QtCore/QSharedData>
 
 namespace QtAV {
 
-class VideoDecoderFFmpegPrivate;
-class Q_AV_EXPORT VideoDecoderFFmpeg : public VideoDecoder
+class Frame;
+class Q_AV_EXPORT FramePrivate : public QSharedData
 {
-    DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
 public:
-    VideoDecoderFFmpeg();
-    virtual ~VideoDecoderFFmpeg();
-    //virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
+    FramePrivate()
+        : planes(4, 0)
+        , line_sizes(4, 0)
+    {}
+    virtual ~FramePrivate() {}
+
+    QVector<uchar*> planes; //slice
+    QVector<int> line_sizes; //stride
+    QVariantMap metadata;
+    QByteArray data;
 };
 
 } //namespace QtAV
 
-#endif // QTAV_VIDEODECODERFFMPEG_H
+#endif // QTAV_Frame_P_H
