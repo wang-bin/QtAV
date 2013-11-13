@@ -191,3 +191,48 @@ struct SwrContext *swr_alloc_set_opts(struct SwrContext *s, int64_t out_ch_layou
 #define swresample_configuration() avresample_configuration()
 #define swresample_license() avresample_license()
 #endif //MAP_SWR_AVR
+
+
+// For FFmpeg < 2.0
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
+
+typedef ::PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelFormat
+
+// AV_PIX_FMT_FLAG_XXX was PIX_FMT_XXX before FFmpeg 2.0
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100) //1.1. libav-9.x (52, 3, 0) has all defined
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 73, 101) //1.0.7
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 32, 0)
+#define PIX_FMT_PLANAR   16 ///< At least one pixel component is not in the first data plane
+#define PIX_FMT_RGB      32 ///< The pixel format contains RGB-like data (as opposed to YUV/grayscale)
+#endif //AV_VERSION_INT(51, 32, 0)
+#define PIX_FMT_PSEUDOPAL 64
+#endif //AV_VERSION_INT(51, 73, 101)
+#define PIX_FMT_ALPHA   128 ///< The pixel format has an alpha channel
+#endif //AV_VERSION_INT(52, 13, 100)
+
+#define AV_PIX_FMT_FLAG_BE           PIX_FMT_BE
+#define AV_PIX_FMT_FLAG_PAL          PIX_FMT_PAL
+#define AV_PIX_FMT_FLAG_BITSTREAM    PIX_FMT_BITSTREAM
+#define AV_PIX_FMT_FLAG_HWACCEL      PIX_FMT_HWACCEL
+
+// FFmpeg >=  0.9, libav >= 0.8.8(51,22,1)
+#define AV_PIX_FMT_FLAG_PLANAR       PIX_FMT_PLANAR
+#define AV_PIX_FMT_FLAG_RGB          PIX_FMT_RGB
+
+// FFmpeg >= 1.0, libav >= 9.7
+#define AV_PIX_FMT_FLAG_PSEUDOPAL    PIX_FMT_PSEUDOPAL
+// FFmpeg >= 1.1, libav >= 9.7
+#define AV_PIX_FMT_FLAG_ALPHA        PIX_FMT_ALPHA
+
+// FFmpeg >= 1.1, but use internal av_pix_fmt_descriptors
+// used by av_pix_fmt_count_planes
+// const AVPixFmtDescriptor *av_pix_fmt_desc_get(enum AVPixelFormat pix_fmt);
+
+// FFmpeg >= 2.0
+/**
+ * @return number of planes in pix_fmt, a negative AVERROR if pix_fmt is not a
+ * valid pixel format.
+ */
+int av_pix_fmt_count_planes(AVPixelFormat pix_fmt);
+
+#endif //LIBAVUTIL_VERSION_INT

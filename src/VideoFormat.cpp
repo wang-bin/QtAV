@@ -87,7 +87,7 @@ public:
     int bpp;
     int bpp_pad;
     QVector<int> bpps;
-    QVector<int> bpps_pad;
+    QVector<int> bpps_pad; //TODO: is it needed?
 
 private:
     AVPixFmtDescriptor *pixdesc;
