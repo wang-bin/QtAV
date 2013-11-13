@@ -146,7 +146,7 @@ QVector<int> ImageConverter::outLineSizes() const
 bool ImageConverter::prepareData()
 {
     DPTR_D(ImageConverter);
-    if (d.fmt_out == AV_PIX_FMT_NONE || d.w_out <=0 || d.h_out <= 0)
+    if (d.fmt_out == QTAV_PIX_FMT_C(NONE) || d.w_out <=0 || d.h_out <= 0)
         return false;
     //TODO: AVPixelFormat. move define to compat.h
     int bytes = avpicture_get_size((AVPixelFormat)d.fmt_out, d.w_out, d.h_out);

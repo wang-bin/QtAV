@@ -193,10 +193,14 @@ struct SwrContext *swr_alloc_set_opts(struct SwrContext *s, int64_t out_ch_layou
 #endif //MAP_SWR_AVR
 
 
-// For FFmpeg < 2.0
+/* For FFmpeg < 2.0
+ * enum PixelFormat is availible for LIBAVUTIL_VERSION_MAJOR < 53, see FF_API_PIX_FMT
+ * so I introduce QTAV_PIX_FMT_C(X) for internal use
+ */
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
 
-typedef ::PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelFormat
+typedef enum PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelFormat
+#define QTAV_PIX_FMT_C(X) PIX_FMT_##X
 
 // AV_PIX_FMT_FLAG_XXX was PIX_FMT_XXX before FFmpeg 2.0
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100) //1.1. libav-9.x (52, 3, 0) has all defined
@@ -224,9 +228,11 @@ typedef ::PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelForm
 // FFmpeg >= 1.1, libav >= 9.7
 #define AV_PIX_FMT_FLAG_ALPHA        PIX_FMT_ALPHA
 
-// FFmpeg >= 1.1, but use internal av_pix_fmt_descriptors
+// FFmpeg >= 1.1, but use internal av_pix_fmt_descriptors. FFmpeg < 1.1 has extern av_pix_fmt_descriptors
 // used by av_pix_fmt_count_planes
-// const AVPixFmtDescriptor *av_pix_fmt_desc_get(enum AVPixelFormat pix_fmt);
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100)
+const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt);
+#endif //AV_VERSION_INT(52, 13, 100)
 
 // FFmpeg >= 2.0
 /**
@@ -235,4 +241,6 @@ typedef ::PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelForm
  */
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt);
 
+#else //FFmpeg >= 2.0
+#define QTAV_PIX_FMT_C(X) AV_PIX_FMT_##X
 #endif //LIBAVUTIL_VERSION_INT

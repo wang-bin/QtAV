@@ -130,6 +130,16 @@ AVAudioResampleContext *swr_alloc_set_opts(AVAudioResampleContext *s
 }
 #endif
 
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100)
+extern const AVPixFmtDescriptor av_pix_fmt_descriptors[];
+const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
+{
+    if (pix_fmt < 0 || pix_fmt >= PIX_FMT_NB)
+        return NULL;
+    return &av_pix_fmt_descriptors[pix_fmt];
+}
+
+#endif //AV_VERSION_INT(52, 13, 100)
 
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
 {
