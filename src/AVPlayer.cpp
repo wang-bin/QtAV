@@ -668,6 +668,7 @@ void AVPlayer::play()
         video_thread->start();
         video_thread->waitForReady();
     }
+    demuxer_thread->blockSignals(false);
     demuxer_thread->start();
     //blockSignals(false);
     Q_ASSERT(clock != 0);
@@ -707,6 +708,11 @@ void AVPlayer::stop()
             qDebug("stopping %s...", threads[i].name);
         }
     }
+    if (QThread::currentThread() != qApp->thread()) {
+        qDebug("all threads [a|v|d] stopped...");
+        emit stopped();
+        return;
+    }
     // can not close decoders here since close and open may be in different threads
     // stop feeding packet queue
     // scoped signal blocker
@@ -717,7 +723,6 @@ void AVPlayer::stop()
         demuxer_thread->wait(5);
         qDebug("avplayer stopping demux thread...");
     }
-    demuxer_thread->blockSignals(false);
     qDebug("all threads [a|v|d] stopped...");
     emit stopped();
 }
