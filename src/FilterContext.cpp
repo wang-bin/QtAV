@@ -241,11 +241,13 @@ void QPainterFilterContext::initializeOnFrame(Frame *frame)
         return;
     }
     VideoFrame *vframe = static_cast<VideoFrame*>(frame);
-    if (vframe->frameData().isEmpty())
-        return;
     VideoFormat format = vframe->format();
-    if (format.imageFormat() == QImage::Format_Invalid && format.isValid()) {
-        format = VideoFormat(VideoFormat::Format_BGR32);
+    if (!format.isValid()) {
+        qWarning("Not a valid format");
+        return;
+    }
+    if (format.imageFormat() == QImage::Format_Invalid) {
+        format.setPixelFormat(VideoFormat::Format_RGB32);
         vframe->convertTo(format);
     }
     if (paint_device) {
@@ -256,7 +258,8 @@ void QPainterFilterContext::initializeOnFrame(Frame *frame)
         paint_device = 0;
     }
     Q_ASSERT(video_width > 0 && video_height > 0);
-    paint_device = new QImage((uchar*)vframe->frameData().data(), video_width, video_height, format.imageFormat());
+    // direct draw on frame data, so use VideoFrame::bits()
+    paint_device = new QImage((uchar*)vframe->bits(0), video_width, video_height, format.imageFormat());
     if (!painter)
         painter = new QPainter();
     own_painter = true;

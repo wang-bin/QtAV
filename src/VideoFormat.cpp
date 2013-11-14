@@ -27,7 +27,7 @@ public:
             qpixfmt = QImage::Format_Invalid;
             return;
         }
-        init();
+        init(fmt);
     }
     VideoFormatPrivate(AVPixelFormat fmt)
         : pixfmt(VideoFormat::Format_Invalid)
@@ -37,7 +37,7 @@ public:
         , bpps_pad(4)
         , pixdesc(0)
     {
-        init();
+        init(fmt);
     }
     VideoFormatPrivate(QImage::Format fmt)
         : pixfmt(VideoFormat::Format_Invalid)
@@ -47,18 +47,31 @@ public:
         , bpps_pad(4)
         , pixdesc(0)
     {
+        init(fmt);
+    }
+    void init(VideoFormat::PixelFormat fmt) {
+        pixfmt = fmt;
+        pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
+        qpixfmt = VideoFormat::imageFormatFromPixelFormat(pixfmt);
         init();
     }
+    void init(QImage::Format fmt) {
+        qpixfmt = fmt;
+        pixfmt = VideoFormat::pixelFormatFromImageFormat(fmt);
+        pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
+        init();
+    }
+    void init(AVPixelFormat fffmt) {
+        pixfmt_ff = fffmt;
+        pixfmt = VideoFormat::pixelFormatFromFFmpeg(pixfmt_ff);
+        qpixfmt = VideoFormat::imageFormatFromPixelFormat(pixfmt);
+        init();
+    }
+
     void init() {
-        if (pixfmt_ff != QTAV_PIX_FMT_C(NONE)) {
-            pixfmt = VideoFormat::pixelFormatFromFFmpeg(pixfmt_ff);
-            qpixfmt = VideoFormat::imageFormatFromPixelFormat(pixfmt);
-        } else if (qpixfmt != QImage::Format_Invalid){
-            pixfmt = VideoFormat::pixelFormatFromImageFormat(qpixfmt);
-            pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
-        } else {
-            pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
-            qpixfmt = VideoFormat::imageFormatFromPixelFormat(pixfmt);
+        if (pixfmt_ff == QTAV_PIX_FMT_C(NONE)) {
+            qWarning("Invalid pixel format");
+            return;
         }
         planes = qMax(av_pix_fmt_count_planes(pixfmt_ff), 0);
         bpps.resize(planes);
@@ -479,13 +492,13 @@ QString VideoFormat::name() const
 void VideoFormat::setPixelFormat(PixelFormat format)
 {
     d->pixfmt = format;
-    d->init();
+    d->init(format);
 }
 
 void VideoFormat::setPixelFormatFFmpeg(int format)
 {
     d->pixfmt_ff = (AVPixelFormat)format;
-    d->init();
+    d->init((AVPixelFormat)format);
 }
 
 int VideoFormat::planeCount() const

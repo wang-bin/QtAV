@@ -69,6 +69,8 @@ public:
         return convertTo(VideoFormat::pixelFormatFromImageFormat(fmt));
     }
     bool convertTo(int fffmt) {
+        if (fffmt == format.pixelFormatFFmpeg())
+            return true;
         if (!conv)
             return false;
         conv->setInFormat(format.pixelFormatFFmpeg());
@@ -88,6 +90,8 @@ public:
         return true;
     }
     bool convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi) {
+        if (fmt == format.pixelFormatFFmpeg())
+            return true;
         if (!conv)
             return false;
         data = conv->outData();
