@@ -45,7 +45,7 @@ public:
         Direct2D,
         GdiPlus,
         XV,
-        None
+        None //user defined filters, no context can be used
     };
     static FilterContext* create(Type t);
 

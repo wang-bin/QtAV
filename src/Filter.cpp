@@ -54,7 +54,11 @@ Filter::~Filter()
 //copy qpainter if context nut null
 void Filter::process(FilterContext *&context, Statistics *statistics, Frame* frame)
 {
-    DPTR_D(Filter);    
+    if (contextType() == FilterContext::None) {
+        process(statistics, frame);
+        return;
+    }
+    DPTR_D(Filter);
     if (!d.context) {
         d.context = FilterContext::create(contextType());
         d.context->video_width = statistics->video_only.width;
@@ -75,6 +79,16 @@ void Filter::process(FilterContext *&context, Statistics *statistics, Frame* fra
     context->shareFrom(d.context);
     d.statistics = statistics;
     process();
+}
+
+void Filter::process()
+{
+}
+
+void Filter::process(Statistics *statistics, Frame *frame)
+{
+    Q_UNUSED(statistics);
+    Q_UNUSED(frame);
 }
 
 void Filter::setEnabled(bool enabled)

@@ -69,7 +69,7 @@ public:
     bool isEnabled() const;
 
     FilterContext* context();
-    virtual FilterContext::Type contextType() const = 0;
+    virtual FilterContext::Type contextType() const;
 
     /*
      * filter.installTo(target,...) calls target.installFilter(filter)
@@ -97,7 +97,8 @@ protected:
      * If the filter is in AVThread, it's safe to operate on ref.
      */
     Filter(FilterPrivate& d);
-    virtual void process() = 0;
+    virtual void process();
+    virtual void process(Statistics* statistics, Frame* frame);
 
     DPTR_DECLARE(Filter)
 };
