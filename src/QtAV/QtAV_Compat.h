@@ -44,12 +44,19 @@ extern "C"
 #include <libswresample/swresample.h>
 #ifndef LIBSWRESAMPLE_VERSION_INT //ffmpeg 0.9, swr 0.5
 #define LIBSWRESAMPLE_VERSION_INT AV_VERSION_INT(LIBSWRESAMPLE_VERSION_MAJOR, LIBSWRESAMPLE_VERSION_MINOR, LIBSWRESAMPLE_VERSION_MICRO)
-#endif
+#endif //LIBSWRESAMPLE_VERSION_INT
 #define HAVE_SWR_GET_DELAY (LIBSWRESAMPLE_VERSION_INT > AV_VERSION_INT(0, 5, 0))
 #endif //QTAV_HAVE(SWRESAMPLE)
 #if QTAV_HAVE(AVRESAMPLE)
 #include <libavresample/avresample.h>
 #endif //QTAV_HAVE(AVRESAMPLE)
+
+#if QTAV_HAVE(AVFILTER)
+#include <libavfilter/avfilter.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#endif //QTAV_HAVE(AVFILTER)
+
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/
@@ -113,9 +120,9 @@ static av_always_inline char *av_make_error_string(char *errbuf, size_t errbuf_s
 #define AV_ERROR_MAX_STRING_SIZE 64
 av_always_inline char* av_err2str(int errnum)
 {
-	static char str[AV_ERROR_MAX_STRING_SIZE];
-	memset(str, 0, sizeof(str));
-	return av_make_error_string(str, AV_ERROR_MAX_STRING_SIZE, errnum);
+    static char str[AV_ERROR_MAX_STRING_SIZE];
+    memset(str, 0, sizeof(str));
+    return av_make_error_string(str, AV_ERROR_MAX_STRING_SIZE, errnum);
 }
 
 /**
@@ -133,19 +140,17 @@ av_always_inline char* av_err2str(int errnum)
 #define avcodec_decode_audio3(avctx, samples, frame_size_ptr, avpkt) \
     avcodec_decode_audio2(avctx, samples, frame_size_ptr, (*avpkt).data, (*avpkt).size);
 
-#endif
+#endif /*AV_VERSION_INT(52,23,0)*/
 
 #if (LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52,101,0))
 #define av_dump_format(...) dump_format(__VA_ARGS__)
-#endif
+#endif /*AV_VERSION_INT(52,101,0)*/
 
 #if QTAV_HAVE(SWRESAMPLE) && (LIBSWRESAMPLE_VERSION_INT <= AV_VERSION_INT(0, 5, 0))
 #define swresample_version() LIBSWRESAMPLE_VERSION_INT //we can not know the runtime version, so just use build time version
 #define swresample_configuration() "Not available."
 #define swresample_license() "Not available."
 #endif
-#endif
-
 
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 32, 0)
 int64_t av_get_default_channel_layout(int nb_channels);
@@ -194,26 +199,31 @@ struct SwrContext *swr_alloc_set_opts(struct SwrContext *s, int64_t out_ch_layou
 
 
 /* For FFmpeg < 2.0
- * enum PixelFormat is availible for LIBAVUTIL_VERSION_MAJOR < 53, see FF_API_PIX_FMT
+ * FF_API_PIX_FMT macro?
+ * 51.42.0: PIX_FMT_* -> AV_PIX_FMT_*, PixelFormat -> AVPixelFormat
  * so I introduce QTAV_PIX_FMT_C(X) for internal use
  */
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
-
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 42, 0)
 typedef enum PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelFormat
 #define QTAV_PIX_FMT_C(X) PIX_FMT_##X
+#else //FFmpeg >= 2.0
+#define QTAV_PIX_FMT_C(X) AV_PIX_FMT_##X
+#endif //AV_VERSION_INT(51, 42, 0)
 
 // AV_PIX_FMT_FLAG_XXX was PIX_FMT_XXX before FFmpeg 2.0
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100) //1.1. libav-9.x (52, 3, 0) has all defined
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 73, 101) //1.0.7
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 32, 0)
+// AV_PIX_FMT_FLAG_ALPHA was added at 52.2.0. but version.h not changed
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 2, 1) //git cbe5a60c9d495df0fb4775b064f06719b70b9952
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 22, 1) //git 38d553322891c8e47182f05199d19888422167dc
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 19, 0) //git 6b0768e2021b90215a2ab55ed427bce91d148148
 #define PIX_FMT_PLANAR   16 ///< At least one pixel component is not in the first data plane
 #define PIX_FMT_RGB      32 ///< The pixel format contains RGB-like data (as opposed to YUV/grayscale)
-#endif //AV_VERSION_INT(51, 32, 0)
+#endif //AV_VERSION_INT(51, 19, 0)
 #define PIX_FMT_PSEUDOPAL 64
-#endif //AV_VERSION_INT(51, 73, 101)
+#endif //AV_VERSION_INT(51, 22, 1)
 #define PIX_FMT_ALPHA   128 ///< The pixel format has an alpha channel
-#endif //AV_VERSION_INT(52, 13, 100)
+#endif //AV_VERSION_INT(52, 2, 1)
 
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 1, 0) //git e6c4ac7b5f038be56dfbb0171f5dd0cb850d9b28
 #define AV_PIX_FMT_FLAG_BE           PIX_FMT_BE
 #define AV_PIX_FMT_FLAG_PAL          PIX_FMT_PAL
 #define AV_PIX_FMT_FLAG_BITSTREAM    PIX_FMT_BITSTREAM
@@ -227,20 +237,16 @@ typedef enum PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelF
 #define AV_PIX_FMT_FLAG_PSEUDOPAL    PIX_FMT_PSEUDOPAL
 // FFmpeg >= 1.1, libav >= 9.7
 #define AV_PIX_FMT_FLAG_ALPHA        PIX_FMT_ALPHA
-
+#endif //AV_VERSION_INT(52, 1, 0)
 // FFmpeg >= 1.1, but use internal av_pix_fmt_descriptors. FFmpeg < 1.1 has extern av_pix_fmt_descriptors
 // used by av_pix_fmt_count_planes
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100)
 const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt);
 #endif //AV_VERSION_INT(52, 13, 100)
 
-// FFmpeg >= 2.0
-/**
- * @return number of planes in pix_fmt, a negative AVERROR if pix_fmt is not a
- * valid pixel format.
- */
+// FFmpeg >= 2.0. git 2c328a907978b61949fd20f7c991803174337855
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 9, 0)
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt);
+#endif //AV_VERSION_INT(52, 9, 0)
 
-#else //FFmpeg >= 2.0
-#define QTAV_PIX_FMT_C(X) AV_PIX_FMT_##X
-#endif //LIBAVUTIL_VERSION_INT
+#endif //QTAV_COMPAT_H
