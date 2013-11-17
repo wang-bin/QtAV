@@ -118,8 +118,6 @@ void AVThread::stop()
     d.packets.setBlocking(false); //stop blocking take()
     d.packets.clear();
     pause(false);
-    if (d.writer)
-        d.writer->pause(false); //stop waiting
     QMutexLocker lock(&d.ready_mutex);
     d.ready = false;
     //terminate();
@@ -184,14 +182,21 @@ AVDecoder* AVThread::decoder() const
 
 void AVThread::setOutput(AVOutput *out)
 {
-    d_func().writer = out;
+    DPTR_D(AVThread);
+    if (!d.outputSet)
+        return;
+    d_func().outputSet->addOutput(out);
 }
 
 AVOutput* AVThread::output() const
 {
-    return d_func().writer;
+    DPTR_D(const AVThread);
+    if (!d.outputSet || d.outputSet->outputs().isEmpty())
+        return 0;
+    return d.outputSet->outputs().first();
 }
 
+// TODO: remove?
 void AVThread::setOutputSet(OutputSet *set)
 {
     d_func().outputSet = set;
@@ -211,8 +216,6 @@ void AVThread::resetState()
 {
     DPTR_D(AVThread);
     pause(false);
-    if (d.writer)
-        d.writer->pause(false); //stop waiting. Important when replay
     d.stop = false;
     d.demux_end = false;
     d.packets.setBlocking(true);

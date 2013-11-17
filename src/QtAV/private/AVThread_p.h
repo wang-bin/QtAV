@@ -52,14 +52,12 @@ public:
       , clock(0)
       , dec(0)
       , outputSet(0)
-      , writer(0)
       , delay(0)
       , filter_context(0)
       , statistics(0)
       , ready(false)
     {
     }
-    //DO NOT delete dec and writer. We do not own them
     virtual ~AVThreadPrivate();
 
     bool paused, next_pause;
@@ -69,7 +67,6 @@ public:
     PacketQueue packets;
     AVDecoder *dec;
     OutputSet *outputSet;
-    AVOutput *writer;
     QMutex mutex;
     QWaitCondition cond; //pause
     qreal delay;

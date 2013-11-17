@@ -170,7 +170,7 @@ VideoRenderer *AVPlayer::renderer()
 {
     //QList assert empty in debug mode
     if (mpVOSet->outputs().isEmpty())
-	return 0;
+        return 0;
     return static_cast<VideoRenderer*>(mpVOSet->outputs().last());
 }
 
@@ -216,15 +216,15 @@ void AVPlayer::setAVOutput(Out *&pOut, Out *pNew, AVThread *thread)
         return;
     }
     //FIXME: what if isPaused()==false but pause(true) in another thread?
-    bool need_lock = isPlaying() && !thread->isPaused();
-    if (need_lock)
-        thread->lock();
+    //bool need_lock = isPlaying() && !thread->isPaused();
+    //if (need_lock)
+    //    thread->lock();
     qDebug("set AVThread output");
     thread->setOutput(pOut);
     if (pOut) {
         pOut->setStatistics(&mStatistics);
-        if (need_lock)
-            thread->unlock(); //??why here?
+        //if (need_lock)
+        //    thread->unlock(); //??why here?
     }
     //now the old avoutput is not used by avthread, we can delete it safely
     //AVOutput must be allocated in heap. Just like QObject's children.
@@ -886,6 +886,7 @@ bool AVPlayer::setupAudioThread()
         audio_thread->setClock(clock);
         audio_thread->setDecoder(audio_dec);
         audio_thread->setStatistics(&mStatistics);
+        audio_thread->setOutputSet(mpAOSet);
         qDebug("demux thread setAudioThread");
         demuxer_thread->setAudioThread(audio_thread);
         //reconnect if disconnected

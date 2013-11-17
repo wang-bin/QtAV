@@ -27,6 +27,7 @@
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AudioResampler.h>
 #include <QtAV/AVClock.h>
+#include <QtAV/OutputSet.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QCoreApplication>
 
@@ -57,12 +58,12 @@ void AudioThread::run()
 {
     DPTR_D(AudioThread);
     //No decoder or output. No audio output is ok, just display picture
-    if (!d.dec || !d.dec->isAvailable())
+    if (!d.dec || !d.dec->isAvailable() || !d.outputSet)
         return;
     resetState();
     Q_ASSERT(d.clock != 0);
     AudioDecoder *dec = static_cast<AudioDecoder*>(d.dec);
-    AudioOutput *ao = static_cast<AudioOutput*>(d.writer);
+    AudioOutput *ao = static_cast<AudioOutput*>(d.outputSet->outputs().first()); //TODO: not here
     static const double max_len = 0.02; //TODO: how to choose?
     d.init();
     //TODO: bool need_sync in private class
@@ -131,6 +132,7 @@ void AudioThread::run()
         //DO NOT decode and convert if ao is not available or mute!
         bool has_ao = ao && ao->isAvailable();
         //if (!has_ao) {//do not decode?
+        // TODO: move resampler to AudioFrame, like VideoFrame does
         if (has_ao && dec->resampler()) {
             if (dec->resampler()->speed() != ao->speed()
                     || dec->resampler()->outAudioFormat() != ao->audioFormat()) {

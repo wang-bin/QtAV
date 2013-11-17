@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QAV_WRITER_H
-#define QAV_WRITER_H
+#ifndef QAV_AVOUTPUT_H
+#define QAV_AVOUTPUT_H
 
 #include <QtCore/QByteArray>
 #include <QtAV/QtAV_Global.h>
@@ -93,4 +93,4 @@ private:
 };
 
 } //namespace QtAV
-#endif //QAV_WRITER_H
+#endif //QAV_AVOUTPUT_H
