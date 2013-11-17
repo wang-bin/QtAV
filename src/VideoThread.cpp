@@ -87,6 +87,7 @@ void VideoThread::run()
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)// || !d.conv)
         return;
     resetState();
+    Q_ASSERT(d.capture);
     Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     if (dec) {
@@ -154,64 +155,68 @@ void VideoThread::run()
             qDebug("video thread stop before decode()");
             break;
         }
-        QMutexLocker locker(&d.mutex);
-        Q_UNUSED(locker);
-        if (dec->decode(pkt.data)) {
-            VideoFrame frame = dec->frame();
-            if (!frame.isValid())
-                continue;
-            d.conv->setInFormat(frame.pixelFormatFFmpeg());
-            d.conv->setInSize(frame.width(), frame.height());
-            d.conv->setOutSize(frame.width(), frame.height());
-            frame.setImageConverter(d.conv);
-            if (d.statistics) {
-                d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
-                if (!d.filters.isEmpty()) {
-                    //sort filters by format. vo->defaultFormat() is the last
-                    foreach (Filter *filter, d.filters) {
-                        if (d.stop) {
-                            break;
-                        }
-                        if (!filter->isEnabled())
-                            continue;
-                        filter->process(d.filter_context, d.statistics, &frame);
-                    }
-                }
-            }
-            //while can pause, processNextTask, not call outset.puase which is deperecated
-            while (d.outputSet->canPauseThread()) {
-                if (d.stop) {
-                    break;
-                }
-                d.outputSet->pauseThread(100);
-                //tryPause(100);
-                processNextTask();
-            }
 
+        if (!dec->decode(pkt.data)) {
+            continue;
+        }
+
+        VideoFrame frame = dec->frame();
+        if (!frame.isValid())
+            continue;
+        d.conv->setInFormat(frame.pixelFormatFFmpeg());
+        d.conv->setInSize(frame.width(), frame.height());
+        d.conv->setOutSize(frame.width(), frame.height());
+        frame.setImageConverter(d.conv);
+        Q_ASSERT(d.statistics);
+        d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
+
+        {
+            QMutexLocker locker(&d.mutex);
+            Q_UNUSED(locker);
+            if (!d.filters.isEmpty()) {
+                //sort filters by format. vo->defaultFormat() is the last
+                foreach (Filter *filter, d.filters) {
+                    if (d.stop) {
+                        break;
+                    }
+                    if (!filter->isEnabled())
+                        continue;
+                    filter->process(d.filter_context, d.statistics, &frame);
+                }
+            }
+        }
+
+        //while can pause, processNextTask, not call outset.puase which is deperecated
+        while (d.outputSet->canPauseThread()) {
             if (d.stop) {
-                qDebug("video thread stop before send decoded data");
                 break;
             }
-            frame.convertTo(VideoFormat::Format_RGB32);
-            if (d.capture) {
-                d.capture->setPosition(pkt.pts);
-                if (d.capture->isRequested()) {
-                    bool auto_name = d.capture->name.isEmpty() && d.capture->autoSave();
-                    if (auto_name) {
-                        QString cap_name;
-                        if (d.statistics)
-                            cap_name = QFileInfo(d.statistics->url).completeBaseName();
-                        d.capture->setCaptureName(cap_name + "_" + QString::number(pkt.pts, 'f', 3));
-                    }
-                    //TODO: what if not rgb32 now? detach the frame
-                    //FIXME: why frame.data() may crash?
-                    d.capture->setRawImage(frame.frameData(), frame.width(), frame.height(), frame.imageFormat());
-                    d.capture->start();
-                    if (auto_name)
-                        d.capture->setCaptureName("");
-                }
+            d.outputSet->pauseThread(100);
+            //tryPause(100);
+            processNextTask();
+        }
+
+        if (d.stop) {
+            qDebug("video thread stop before send decoded data");
+            break;
+        }
+        frame.convertTo(VideoFormat::Format_RGB32);
+        d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
+        d.capture->setPosition(pkt.pts);
+        if (d.capture->isRequested()) {
+            bool auto_name = d.capture->name.isEmpty() && d.capture->autoSave();
+            if (auto_name) {
+                QString cap_name;
+                if (d.statistics)
+                    cap_name = QFileInfo(d.statistics->url).completeBaseName();
+                d.capture->setCaptureName(cap_name + "_" + QString::number(pkt.pts, 'f', 3));
             }
-            d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
+            //TODO: what if not rgb32 now? detach the frame
+            //FIXME: why frame.data() may crash?
+            d.capture->setRawImage(frame.frameData(), frame.width(), frame.height(), frame.imageFormat());
+            d.capture->start();
+            if (auto_name)
+                d.capture->setCaptureName("");
         }
     }
     d.capture->cancel();

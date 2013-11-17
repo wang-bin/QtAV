@@ -154,92 +154,7 @@ void AudioThread::run()
         }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
-        if (dec->decode(pkt.data)) {
-            QByteArray decoded(dec->data());
-            int decodedSize = decoded.size();
-            int decodedPos = 0;
-            qreal delay =0;
-            //AudioFormat.durationForBytes() calculates int type internally. not accurate
-            AudioFormat &af = dec->resampler()->inAudioFormat();
-            qreal byte_rate = af.bytesPerSecond();
-            while (decodedSize > 0) {
-                if (d.stop) {
-                    qDebug("audio thread stop after decode()");
-                    break;
-                }
-                int chunk = qMin(decodedSize, int(max_len*byte_rate));
-                qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
-                pkt.pts += chunk_delay;
-                d.clock->updateDelay(delay += chunk_delay);
-                QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
-                if (has_ao) {
-                    //TODO: volume filter and other filters!!!
-                    if (!ao->isMute()) {
-                        decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
-                        qreal vol = ao->volume();
-                        if (vol != 1.0) {
-                            int len = decodedChunk.size()/ao->audioFormat().bytesPerSample();
-                            switch (ao->audioFormat().sampleFormat()) {
-                            case AudioFormat::SampleFormat_Unsigned8:
-                            case AudioFormat::SampleFormat_Unsigned8Planar: {
-                                quint8 *data = (quint8*)decodedChunk.data(); //TODO: other format?
-                                for (int i = 0; i < len; data[i++] *= vol) {}
-                            }
-                                break;
-                            case AudioFormat::SampleFormat_Signed16:
-                            case AudioFormat::SampleFormat_Signed16Planar: {
-                                qint16 *data = (qint16*)decodedChunk.data(); //TODO: other format?
-                                for (int i = 0; i < len; data[i++] *= vol) {}
-                            }
-                                break;
-                            case AudioFormat::SampleFormat_Signed32:
-                            case AudioFormat::SampleFormat_Signed32Planar: {
-                                qint32 *data = (qint32*)decodedChunk.data(); //TODO: other format?
-                                for (int i = 0; i < len; data[i++] *= vol) {}
-                            }
-                                break;
-                            case AudioFormat::SampleFormat_Float:
-                            case AudioFormat::SampleFormat_FloatPlanar: {
-                                float *data = (float*)decodedChunk.data(); //TODO: other format?
-                                for (int i = 0; i < len; data[i++] *= vol) {}
-                            }
-                                break;
-                            case AudioFormat::SampleFormat_Double:
-                            case AudioFormat::SampleFormat_DoublePlanar: {
-                                double *data = (double*)decodedChunk.data(); //TODO: other format?
-                                for (int i = 0; i < len; data[i++] *= vol) {}
-                            }
-                                break;
-                            default:
-                                break;
-                            }
-                        }
-                    }
-                    ao->receiveData(decodedChunk);
-                } else {
-                /*
-                 * why need this even if we add delay? and usleep sounds weird
-                 * the advantage is if no audio device, the play speed is ok too
-                 * So is portaudio blocking the thread when playing?
-                 */
-                    static bool sWarn_no_ao = true; //FIXME: no warning when replay. warn only once
-                    if (sWarn_no_ao) {
-                        qDebug("Audio output not available! msleep(%lu)", (unsigned long)((qreal)chunk/(qreal)byte_rate * 1000));
-                        sWarn_no_ao = false;
-                    }
-                    //TODO: avoid acummulative error. External clock?
-                    msleep((unsigned long)(chunk_delay * 1000.0));
-                }
-                decodedPos += chunk;
-                decodedSize -= chunk;
-            }
-            int undecoded = dec->undecodedSize();
-            if (undecoded > 0) {
-                pkt.data.remove(0, pkt.data.size() - undecoded);
-            } else {
-                pkt = Packet();
-            }
-        } else { //???
+        if (!dec->decode(pkt.data)) {
             qWarning("Decode audio failed");
             qreal dt = pkt.pts - d.last_pts;
             if (dt > 0.618 || dt < 0) {
@@ -249,7 +164,94 @@ void AudioThread::run()
             //TODO: avoid acummulative error. External clock?
             msleep((unsigned long)(dt*1000.0));
             pkt = Packet();
+            d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
+            continue;
         }
+        QByteArray decoded(dec->data());
+        int decodedSize = decoded.size();
+        int decodedPos = 0;
+        qreal delay =0;
+        //AudioFormat.durationForBytes() calculates int type internally. not accurate
+        AudioFormat &af = dec->resampler()->inAudioFormat();
+        qreal byte_rate = af.bytesPerSecond();
+        while (decodedSize > 0) {
+            if (d.stop) {
+                qDebug("audio thread stop after decode()");
+                break;
+            }
+            int chunk = qMin(decodedSize, int(max_len*byte_rate));
+            qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
+            pkt.pts += chunk_delay;
+            d.clock->updateDelay(delay += chunk_delay);
+            QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
+            if (has_ao) {
+                //TODO: volume filter and other filters!!!
+                if (!ao->isMute()) {
+                    decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
+                    qreal vol = ao->volume();
+                    if (vol != 1.0) {
+                        int len = decodedChunk.size()/ao->audioFormat().bytesPerSample();
+                        switch (ao->audioFormat().sampleFormat()) {
+                        case AudioFormat::SampleFormat_Unsigned8:
+                        case AudioFormat::SampleFormat_Unsigned8Planar: {
+                            quint8 *data = (quint8*)decodedChunk.data(); //TODO: other format?
+                            for (int i = 0; i < len; data[i++] *= vol) {}
+                        }
+                            break;
+                        case AudioFormat::SampleFormat_Signed16:
+                        case AudioFormat::SampleFormat_Signed16Planar: {
+                            qint16 *data = (qint16*)decodedChunk.data(); //TODO: other format?
+                            for (int i = 0; i < len; data[i++] *= vol) {}
+                        }
+                            break;
+                        case AudioFormat::SampleFormat_Signed32:
+                        case AudioFormat::SampleFormat_Signed32Planar: {
+                            qint32 *data = (qint32*)decodedChunk.data(); //TODO: other format?
+                            for (int i = 0; i < len; data[i++] *= vol) {}
+                        }
+                            break;
+                        case AudioFormat::SampleFormat_Float:
+                        case AudioFormat::SampleFormat_FloatPlanar: {
+                            float *data = (float*)decodedChunk.data(); //TODO: other format?
+                            for (int i = 0; i < len; data[i++] *= vol) {}
+                        }
+                            break;
+                        case AudioFormat::SampleFormat_Double:
+                        case AudioFormat::SampleFormat_DoublePlanar: {
+                            double *data = (double*)decodedChunk.data(); //TODO: other format?
+                            for (int i = 0; i < len; data[i++] *= vol) {}
+                        }
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+                ao->receiveData(decodedChunk);
+            } else {
+            /*
+             * why need this even if we add delay? and usleep sounds weird
+             * the advantage is if no audio device, the play speed is ok too
+             * So is portaudio blocking the thread when playing?
+             */
+                static bool sWarn_no_ao = true; //FIXME: no warning when replay. warn only once
+                if (sWarn_no_ao) {
+                    qDebug("Audio output not available! msleep(%lu)", (unsigned long)((qreal)chunk/(qreal)byte_rate * 1000));
+                    sWarn_no_ao = false;
+                }
+                //TODO: avoid acummulative error. External clock?
+                msleep((unsigned long)(chunk_delay * 1000.0));
+            }
+            decodedPos += chunk;
+            decodedSize -= chunk;
+        }
+        int undecoded = dec->undecodedSize();
+        if (undecoded > 0) {
+            pkt.data.remove(0, pkt.data.size() - undecoded);
+        } else {
+            pkt = Packet();
+        }
+
         d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
     }
     qDebug("Audio thread stops running...");
