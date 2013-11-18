@@ -65,6 +65,7 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
 AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
     QThread(parent),paused(false),seeking(false),end(true)
     ,audio_thread(0),video_thread(0)
+  , running_threads(0)
 {
     setDemuxer(dmx);
 }
@@ -81,6 +82,9 @@ void AVDemuxThread::setAVThread(AVThread*& pOld, AVThread *pNew)
     if (pOld) {
         if (pOld->isRunning())
             pOld->stop();
+        if (running_threads > 0)
+            --running_threads; //need it?
+        qDebug("AVDemuxThread::setAVThread running_threads=%d", running_threads);
 #if CORRECT_END
         disconnect(pOld, SIGNAL(terminated()), this, SLOT(notifyEnd()));
         disconnect(pOld, SIGNAL(finished()), this, SLOT(notifyEnd()));
@@ -90,8 +94,8 @@ void AVDemuxThread::setAVThread(AVThread*& pOld, AVThread *pNew)
     if (!pNew)
         return;
 #if CORRECT_END
-    connect(pOld, SIGNAL(terminated()), this, SLOT(notifyEnd()), Qt::DirectConnection);
-    connect(pOld, SIGNAL(finished()), this, SLOT(notifyEnd()), Qt::DirectConnection);
+    connect(pOld, SIGNAL(terminated()), this, SLOT(notifyEnd()));
+    connect(pOld, SIGNAL(finished()), this, SLOT(notifyEnd()));
 #endif //CORRECT_END
     pOld->packetQueue()->setEmptyCallback(new QueueEmptyCall(this));
 }
@@ -196,8 +200,25 @@ void AVDemuxThread::pause(bool p)
 
 void AVDemuxThread::notifyEnd()
 {
-    qDebug("avthread end. notify demux thread<<<<<<");
+    // not direct connect, in receiver's thread. change running_threads is ok
+    --running_threads;
+    if (running_threads > 0) {
+        qDebug("%d avthread not finished....", running_threads);
+        return;
+    }
+    qDebug("all avthread finished. notify demux thread<<<<<<");
     end = true;
+    if (audio_thread) {
+        audio_thread->setDemuxEnded(true);
+        audio_thread->packetQueue()->clear();
+        audio_thread->packetQueue()->blockFull(false); //??
+    }
+    if (video_thread) {
+        video_thread->setDemuxEnded(true);
+        video_thread->packetQueue()->clear();
+        video_thread->packetQueue()->blockFull(false); //?
+    }
+    pause(false);
     seek_cond.wakeAll();
     cond.wakeAll();
 }
@@ -210,6 +231,11 @@ void AVDemuxThread::run()
         audio_thread->start(QThread::HighPriority);
     if (video_thread && !video_thread->isRunning())
         video_thread->start();
+
+    if (audio_thread)
+       ++running_threads;
+    if (video_thread)
+        ++running_threads;
 
     audio_stream = demuxer->audioStream();
     video_stream = demuxer->videoStream();

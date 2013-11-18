@@ -161,6 +161,10 @@ public slots:
     void seekBackward();
     void updateClock(qint64 msecs); //update AVClock's external clock
 
+private slots:
+    void stopFromDemuxerThread();
+    void aboutToQuitApp();
+
 private:
     void initStatistics();
     bool setupAudioThread();

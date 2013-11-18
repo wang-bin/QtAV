@@ -82,7 +82,7 @@ AVPlayer::AVPlayer(QObject *parent) :
      * call stop() before the window(_renderer) closed to stop the waitcondition
      * If close the _renderer widget, the the _renderer may destroy before waking up.
      */
-    connect(qApp, SIGNAL(aboutToQuit()), SLOT(stop()));
+    connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(aboutToQuitApp()));
     clock = new AVClock(AVClock::AudioClock);
     //clock->setClockType(AVClock::ExternalClock);
     connect(&demuxer, SIGNAL(started()), clock, SLOT(start()));
@@ -90,7 +90,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     demuxer_thread = new AVDemuxThread(this);
     demuxer_thread->setDemuxer(&demuxer);
     //use direct connection otherwise replay may stop immediatly because slot stop() is called after play()
-    connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stop()), Qt::DirectConnection);
+    connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()), Qt::DirectConnection);
 
     setPlayerEventFilter(new EventFilter(this));
     video_capture = new VideoCapture(this);
@@ -628,6 +628,11 @@ void AVPlayer::play()
         stop();
         if (last_pos < 0)
             start_pos = -last_pos;
+
+        // wait here to ensure stopped() and startted() is in correct order
+        QEventLoop loop;
+        connect(demuxer_thread, SIGNAL(finished()), &loop, SLOT(quit())); //queued connection. so later than stopped() emitted
+        loop.exec();
     }
     /*
      * avoid load mutiple times when replaying the same seekable file
@@ -668,17 +673,30 @@ void AVPlayer::play()
         video_thread->start();
         video_thread->waitForReady();
     }
-    demuxer_thread->blockSignals(false);
     demuxer_thread->start();
-    //blockSignals(false);
     Q_ASSERT(clock != 0);
     if (start_last) {
         clock->pause(false); //external clock
     } else {
         clock->reset();
     }
-
     emit started(); //we called stop(), so must emit started()
+}
+
+void AVPlayer::stopFromDemuxerThread()
+{
+    qDebug("demuxer thread emit finished. avplayer emit stopped()");
+    emit stopped();
+}
+
+void AVPlayer::aboutToQuitApp()
+{
+    stop();
+    while (isPlaying()) {
+        qApp->processEvents();
+        qDebug("about to quit.....");
+        stop();
+    }
 }
 
 void AVPlayer::stop()
@@ -708,23 +726,8 @@ void AVPlayer::stop()
             qDebug("stopping %s...", threads[i].name);
         }
     }
-    if (QThread::currentThread() != qApp->thread()) {
-        qDebug("all threads [a|v|d] stopped...");
-        emit stopped();
-        return;
-    }
     // can not close decoders here since close and open may be in different threads
-    // stop feeding packet queue
-    // scoped signal blocker
-    demuxer_thread->blockSignals(true);
-    qDebug("avplayer stopping demux thread...");
-    demuxer_thread->stop();
-    while (demuxer_thread->isRunning()) {
-        demuxer_thread->wait(5);
-        qDebug("avplayer stopping demux thread...");
-    }
-    qDebug("all threads [a|v|d] stopped...");
-    emit stopped();
+    qDebug("all audio/video threads  stopped...");
 }
 //FIXME: If not playing, it will just play but not play one frame.
 void AVPlayer::playNextFrame()

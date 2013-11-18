@@ -47,7 +47,7 @@ public:
     bool isPaused() const;
     bool isEnd() const;
 public slots:
-    void stop();
+    void stop(); //TODO: remove it?
     void pause(bool p);
 private slots:
     void notifyEnd();
@@ -69,6 +69,8 @@ private:
     int audio_stream, video_stream;
     QMutex buffer_mutex;
     QWaitCondition cond, seek_cond;
+
+    int running_threads;
 };
 
 } //namespace QtAV
