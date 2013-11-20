@@ -231,58 +231,60 @@ AVDemuxer::SeekTarget AVDemuxer::seekTarget() const
 }
 
 //TODO: seek by byte
-void AVDemuxer::seek(qreal q)
+bool AVDemuxer::seek(qint64 pos)
 {
     if ((!a_codec_context && !v_codec_context) || !format_context) {
         qWarning("can not seek. context not ready: %p %p %p", a_codec_context, v_codec_context, format_context);
-        return;
+        return false;
+    }
+    //duration: unit is us (10^-6 s, AV_TIME_BASE)
+    qint64 upos = pos*1000LL;
+    if (upos > duration() || pos < 0LL) {
+        qWarning("Invalid seek position %lld %.2f. valid range [0, %lld]", upos, double(upos)/double(duration()), duration());
+        return false;
     }
     if (seek_timer.isValid()) {
         //why sometimes seek_timer.elapsed() < 0
         if (!seek_timer.hasExpired(kSeekInterval)) {
             qDebug("seek too frequent. ignore");
-            return;
+            return false;
         }
         seek_timer.restart();
     } else {
         seek_timer.start();
     }
+
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
-    q = qMax<qreal>(0.0, q);
-    if (q >= 1.0) {
-        qWarning("Invalid seek position %f/1.0", q);
-        return;
-    }
 #if 0
     //t: unit is s
     qreal t = q;// * (double)format_context->duration; //
     int ret = av_seek_frame(format_context, -1, (int64_t)(t*AV_TIME_BASE), t > pkt->pts ? 0 : AVSEEK_FLAG_BACKWARD);
     qDebug("[AVDemuxer] seek to %f %f %lld / %lld", q, pkt->pts, (int64_t)(t*AV_TIME_BASE), duration());
 #else
-    //t: unit is us (10^-6 s, AV_TIME_BASE)
-    int64_t t = int64_t(q*duration());///AV_TIME_BASE;
-    //TODO: pkt->pts may be 0, compute manually. Check wether exceed the length
-    if (t >= duration()) {
-        qWarning("Invailid seek position: %lld/%lld", t, duration());
-        return;
-    }
-    bool backward = t <= (int64_t)(pkt->pts*AV_TIME_BASE);
-    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%lld", q, pkt->pts, t, duration(), backward);
+    //TODO: pkt->pts may be 0, compute manually.
+
+    bool backward = upos <= (int64_t)(pkt->pts*AV_TIME_BASE);
+    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", double(upos)/double(duration()), pkt->pts, upos, duration(), backward);
     //AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
     // FIXME: back flag is opposite? otherwise seek is bad and may crash?
+    /* If stream_index is (-1), a default
+     * stream is selected, and timestamp is automatically converted
+     * from AV_TIME_BASE units to the stream specific time_base.
+     */
     int seek_flag = (backward ? 0 : AVSEEK_FLAG_BACKWARD); //AVSEEK_FLAG_ANY
     //bool seek_bytes = !!(format_context->iformat->flags & AVFMT_TS_DISCONT) && strcmp("ogg", format_context->iformat->name);
-    int ret = av_seek_frame(format_context, -1, t, seek_flag);
+    int ret = av_seek_frame(format_context, -1, upos, seek_flag);
     //avformat_seek_file()
 #endif
     if (ret < 0) {
         qWarning("[AVDemuxer] seek error: %s", av_err2str(ret));
-        return;
+        return false;
     }
     //replay
-    if (q == 0) {
-        qDebug("************seek to 0. started = false");
+    qDebug("startTime: %lld", startTime());
+    if (upos <= startTime()) {
+        qDebug("************seek to beginning. started = false");
         started_ = false;
         if (a_codec_context)
             a_codec_context->frame_number = 0;
@@ -291,6 +293,12 @@ void AVDemuxer::seek(qreal q)
         if (s_codec_contex)
             s_codec_contex->frame_number = 0;
     }
+    return true;
+}
+
+void AVDemuxer::seek(qreal q)
+{
+    seek(qint64(q*(double)duration()/1000.0));
 }
 
 /*
@@ -498,7 +506,7 @@ qint64 AVDemuxer::startTime() const
     return format_context->start_time;
 }
 
-//AVFrameContext use AV_TIME_BASE as time base.
+//AVFrameContext use AV_TIME_BASE as time base. AVStream use their own timebase
 qint64 AVDemuxer::duration() const
 {
     return format_context->duration; //time base: AV_TIME_BASE

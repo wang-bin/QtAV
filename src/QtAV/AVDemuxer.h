@@ -84,6 +84,7 @@ public:
     SeekUnit seekUnit() const;
     void setSeekTarget(SeekTarget target);
     SeekTarget seekTarget() const;
+    bool seek(qint64 pos); //pos: ms
     void seek(qreal q); //q: [0,1]. TODO: what if duration() is not valid?
 
     //format
@@ -93,7 +94,8 @@ public:
     QString audioFormatLongName() const;
     QString videoFormatName() const; //AVFormatContext::iformat->name
     QString videoFormatLongName() const; //AVFormatContext::iformat->long_name
-    qint64 startTime() const; //AVFormatContext::start_time
+    // TODO: ms and add durationUs() etc.
+    qint64 startTime() const; //us, AVFormatContext::start_time
     qint64 duration() const; //us, AVFormatContext::duration
 
     //total bit rate
