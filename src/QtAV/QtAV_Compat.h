@@ -202,8 +202,9 @@ struct SwrContext *swr_alloc_set_opts(struct SwrContext *s, int64_t out_ch_layou
  * FF_API_PIX_FMT macro?
  * 51.42.0: PIX_FMT_* -> AV_PIX_FMT_*, PixelFormat -> AVPixelFormat
  * so I introduce QTAV_PIX_FMT_C(X) for internal use
+ * FFmpeg n1.1 AVPixelFormat
  */
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 42, 0)
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100) //(51, 42, 0)
 typedef enum PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelFormat
 #define QTAV_PIX_FMT_C(X) PIX_FMT_##X
 #else //FFmpeg >= 2.0
@@ -218,12 +219,29 @@ typedef enum PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelF
 #define PIX_FMT_PLANAR   16 ///< At least one pixel component is not in the first data plane
 #define PIX_FMT_RGB      32 ///< The pixel format contains RGB-like data (as opposed to YUV/grayscale)
 #endif //AV_VERSION_INT(51, 19, 0)
-#define PIX_FMT_PSEUDOPAL 64
+#define PIX_FMT_PSEUDOPAL 64  //why not defined in FFmpeg 0.9 lavu51.32.0 but git log says 51.22.1 defined it?
 #endif //AV_VERSION_INT(51, 22, 1)
 #define PIX_FMT_ALPHA   128 ///< The pixel format has an alpha channel
 #endif //AV_VERSION_INT(52, 2, 1)
 
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 1, 0) //git e6c4ac7b5f038be56dfbb0171f5dd0cb850d9b28
+#ifndef PIX_FMT_PLANAR
+#define PIX_FMT_PLANAR 16
+#endif //PIX_FMT_PLANAR
+#ifndef PIX_FMT_RGB
+#define PIX_FMT_RGB 32
+#endif //PIX_FMT_RGB
+#ifndef PIX_FMT_PSEUDOPAL
+#define PIX_FMT_PSEUDOPAL 64
+#endif //PIX_FMT_PSEUDOPAL
+#ifndef PIX_FMT_ALPHA
+#define PIX_FMT_ALPHA 128
+#endif //PIX_FMT_ALPHA
+
+/*
+ * rename PIX_FMT_* flags to AV_PIX_FMT_FLAG_*. git e6c4ac7b5f038be56dfbb0171f5dd0cb850d9b28
+ */
+//#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 11, 0)
+#ifndef AV_PIX_FMT_FLAG_BE
 #define AV_PIX_FMT_FLAG_BE           PIX_FMT_BE
 #define AV_PIX_FMT_FLAG_PAL          PIX_FMT_PAL
 #define AV_PIX_FMT_FLAG_BITSTREAM    PIX_FMT_BITSTREAM
@@ -237,16 +255,20 @@ typedef enum PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelF
 #define AV_PIX_FMT_FLAG_PSEUDOPAL    PIX_FMT_PSEUDOPAL
 // FFmpeg >= 1.1, libav >= 9.7
 #define AV_PIX_FMT_FLAG_ALPHA        PIX_FMT_ALPHA
-#endif //AV_VERSION_INT(52, 1, 0)
+#endif //AV_PIX_FMT_FLAG_BE
+//#endif //AV_VERSION_INT(52, 11, 0)
 // FFmpeg >= 1.1, but use internal av_pix_fmt_descriptors. FFmpeg < 1.1 has extern av_pix_fmt_descriptors
 // used by av_pix_fmt_count_planes
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100)
 const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt);
 #endif //AV_VERSION_INT(52, 13, 100)
 
-// FFmpeg >= 2.0. git 2c328a907978b61949fd20f7c991803174337855
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 9, 0)
+/*
+ * lavu 52.9.0 git 2c328a907978b61949fd20f7c991803174337855
+ * FFmpeg >= 2.0.
+ */
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt);
-#endif //AV_VERSION_INT(52, 9, 0)
+#endif //AV_VERSION_INT(52, 38, 100)
 
 #endif //QTAV_COMPAT_H
