@@ -42,7 +42,7 @@ public:
     AVThread* audioThread();
     void setVideoThread(AVThread *thread);
     AVThread* videoThread();
-    void seek(qreal pos);
+    void seek(qint64 pos); //ms
     //AVDemuxer* demuxer
     bool isPaused() const;
     bool isEnd() const;

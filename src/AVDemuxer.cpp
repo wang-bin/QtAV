@@ -210,6 +210,11 @@ bool AVDemuxer::close()
     return true;
 }
 
+bool AVDemuxer::isSeekable() const
+{
+    return true;
+}
+
 void AVDemuxer::setSeekUnit(SeekUnit unit)
 {
     mSeekUnit = unit;
@@ -239,8 +244,8 @@ bool AVDemuxer::seek(qint64 pos)
     }
     //duration: unit is us (10^-6 s, AV_TIME_BASE)
     qint64 upos = pos*1000LL;
-    if (upos > duration() || pos < 0LL) {
-        qWarning("Invalid seek position %lld %.2f. valid range [0, %lld]", upos, double(upos)/double(duration()), duration());
+    if (upos > durationUs() || pos < 0LL) {
+        qWarning("Invalid seek position %lld %.2f. valid range [0, %lld]", upos, double(upos)/double(durationUs()), durationUs());
         return false;
     }
     if (seek_timer.isValid()) {
@@ -260,12 +265,12 @@ bool AVDemuxer::seek(qint64 pos)
     //t: unit is s
     qreal t = q;// * (double)format_context->duration; //
     int ret = av_seek_frame(format_context, -1, (int64_t)(t*AV_TIME_BASE), t > pkt->pts ? 0 : AVSEEK_FLAG_BACKWARD);
-    qDebug("[AVDemuxer] seek to %f %f %lld / %lld", q, pkt->pts, (int64_t)(t*AV_TIME_BASE), duration());
+    qDebug("[AVDemuxer] seek to %f %f %lld / %lld", q, pkt->pts, (int64_t)(t*AV_TIME_BASE), durationUs());
 #else
     //TODO: pkt->pts may be 0, compute manually.
 
     bool backward = upos <= (int64_t)(pkt->pts*AV_TIME_BASE);
-    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", double(upos)/double(duration()), pkt->pts, upos, duration(), backward);
+    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", double(upos)/double(durationUs()), pkt->pts, upos, durationUs(), backward);
     //AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
     // FIXME: back flag is opposite? otherwise seek is bad and may crash?
     /* If stream_index is (-1), a default
@@ -298,7 +303,7 @@ bool AVDemuxer::seek(qint64 pos)
 
 void AVDemuxer::seek(qreal q)
 {
-    seek(qint64(q*(double)duration()/1000.0));
+    seek(qint64(q*(double)duration()));
 }
 
 /*
@@ -501,14 +506,29 @@ QString AVDemuxer::videoFormatLongName() const
     return formatName(format_context, true);
 }
 
+// convert to s using AV_TIME_BASE then *1000?
 qint64 AVDemuxer::startTime() const
 {
-    return format_context->start_time;
+    return startTimeUs()/1000LL;
+}
+
+qint64 AVDemuxer::duration() const
+{
+    return durationUs()/1000LL; //time base: AV_TIME_BASE
 }
 
 //AVFrameContext use AV_TIME_BASE as time base. AVStream use their own timebase
-qint64 AVDemuxer::duration() const
+qint64 AVDemuxer::startTimeUs() const
 {
+    if (!format_context)
+        return 0;
+    return format_context->start_time;
+}
+
+qint64 AVDemuxer::durationUs() const
+{
+    if (!format_context || format_context->duration == AV_NOPTS_VALUE)
+        return 0;
     return format_context->duration; //time base: AV_TIME_BASE
 }
 

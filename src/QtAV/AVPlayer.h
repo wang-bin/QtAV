@@ -44,6 +44,11 @@ class OutputSet;
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
+    Q_PROPERTY(qint64 startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
+    Q_PROPERTY(qint64 stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
+    Q_PROPERTY(qint64 repeat READ repeat WRITE setRepeat NOTIFY repeatChanged)
+    Q_PROPERTY(int currentRepeat READ currentRepeat NOTIFY currentRepeatChanged)
 public:
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
@@ -56,10 +61,20 @@ public:
     bool load(const QString& path, bool reload = true);
     bool load(bool reload = true);
     bool isLoaded() const;
-    qreal duration() const; //unit: s, This function may be removed in the future.
-    qreal startPosition() const; //unit: s. used by loop
-    qreal position() const; //unit: s.
-
+    qreal durationF() const; //unit: s, This function may be removed in the future.
+    qint64 duration() const; //unit: ms. media duration
+    // the media's property.
+    qint64 mediaStartPosition() const;
+    //qint64 mediaStopPosition() const;
+    Q_DECL_DEPRECATED qreal startPositionF() const; //unit: s. used by loop
+    Q_DECL_DEPRECATED qreal stopPositionF() const; //unit: s
+    // can set by user. may be not the real media start position.
+    qint64 startPosition() const;
+    qint64 stopPosition() const; //unit: ms
+    Q_DECL_DEPRECATED qreal positionF() const; //unit: s.
+    qint64 position() const; //unit: ms
+    int repeat() const; //or repeatMax()?
+    int currentRepeat() const;
     /*
      * set audio/video/subtitle stream to n. n=0, 1, 2..., means the 1st, 2nd, 3rd audio/video/subtitle stream
      * if now==true, player will change to new stream immediatly. otherwise, you should call
@@ -148,6 +163,11 @@ signals:
     void started();
     void stopped();
     void speedChanged(qreal speed);
+    void repeatChanged(int r);
+    void currentRepeatChanged(int r);
+    void startPositionChanged(qint64 position);
+    void stopPositionChanged(qint64 position);
+    void positionChanged(qint64 position);
 
 public slots:
     void togglePause();
@@ -155,8 +175,37 @@ public slots:
     void play(); //replay
     void stop();
     void playNextFrame();
-    // pos: [0, 1]
-    void seek(qreal pos);
+
+    /*!
+     * \brief setRepeat
+     *  repeat max times between startPosition() and endPosition()
+     *  max==0: no repeat
+     *  max<0: infinity
+     * \param max
+     */
+    void setRepeat(int max);
+    /*!
+     * \brief startPosition
+     *  Used to repeat from startPosition() to endPosition()
+     *  startPosition() < 0 equals duration()+startPosition()
+     *  startPosition() == 0 means start at the beginning of media stream
+     *  (may be not exactly equals 0, seek to demuxer.startPosition()/startTime())
+     * \return
+     */
+    void setStartPosition(qint64 pos);
+    /*!
+     * \brief endPosition
+     *  endPosition() < 0: equals duration()
+     * \return
+     */
+    void setStopPosition(qint64 pos);
+    /*!
+     * \brief setPosition equals to seek(qreal)
+     * \param position in ms
+     */
+    void setPosition(qint64 position);
+    void seek(qreal r); // r: [0, 1]
+    void seek(qint64 pos); //ms. same as setPosition(pos)
     void seekForward();
     void seekBackward();
     void updateClock(qint64 msecs); //update AVClock's external clock
@@ -164,6 +213,10 @@ public slots:
 private slots:
     void stopFromDemuxerThread();
     void aboutToQuitApp();
+
+protected:
+    // TODO: set position check timer interval
+    virtual void timerEvent(QTimerEvent *);
 
 private:
     void initStatistics();
@@ -174,6 +227,8 @@ private:
     void setAVOutput(Out*& pOut, Out* pNew, AVThread* thread);
     //TODO: addAVOutput()
 
+
+    // TODO: dptr
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
     AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
@@ -185,7 +240,12 @@ private:
      *
      * -1: used by play() to get current playing position
      */
-    qreal start_pos;
+    qint64 last_position; //last_pos
+    bool reset_state;
+    qint64 start_position, stop_position;
+    int repeat_max, repeat_current;
+    int timer_id; //notify position change and check AB repeat range. active when playing
+
     //the following things are required and must be set not null
     AVDemuxer demuxer;
     AVDemuxThread *demuxer_thread;

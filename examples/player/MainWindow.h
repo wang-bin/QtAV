@@ -42,7 +42,7 @@ private slots:
     void openUrl();
     void initAudioTrackMenu();
     void switchAspectRatio(QAction* action);
-    void setRepeat(QAction* action);
+    void toggleRepeat(bool);
     void setRepeateMax(int);
     void changeVO(QAction* action);
     void changeChannel(QAction* action);
@@ -66,10 +66,10 @@ private slots:
     void tryHideControlBar();
     void tryShowControlBar();
     void showInfo();
+    void onPositionChange(qint64 pos);
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
-    virtual void timerEvent(QTimerEvent *);
     void mouseMoveEvent(QMouseEvent *e);
 #ifdef Q_OS_WIN
     //Qt5
@@ -83,8 +83,7 @@ private:
     bool mNullAO;
     bool mScreensaver;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
-    int mTimerId;
-    int mRepeateCount, mRepeateMax;
+    int mRepeateMax;
     QVBoxLayout *mpPlayerLayout;
 
     QWidget *mpControl;
@@ -98,6 +97,7 @@ private:
     Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
     QMenu *mpMenu;
     QAction *mpVOAction, *mpARAction; //remove mpVOAction if vo.id() is supported
+    QAction *mpRepeatEnableAction;
     QWidgetAction *mpRepeatAction;
     QAction *mpAudioTrackAction;
     QMenu *mpAudioTrackMenu;

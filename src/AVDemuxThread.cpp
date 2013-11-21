@@ -120,7 +120,7 @@ AVThread* AVDemuxThread::audioThread()
     return audio_thread;
 }
 
-void AVDemuxThread::seek(qreal pos)
+void AVDemuxThread::seek(qint64 pos)
 {
     qDebug("demux thread start to seek...");
     seeking = true;
@@ -200,6 +200,9 @@ void AVDemuxThread::pause(bool p)
 
 void AVDemuxThread::notifyEnd()
 {
+    pause(false);
+    seek_cond.wakeAll();
+    cond.wakeAll();
     // not direct connect, in receiver's thread. change running_threads is ok
     --running_threads;
     if (running_threads > 0) {
@@ -218,24 +221,22 @@ void AVDemuxThread::notifyEnd()
         video_thread->packetQueue()->clear();
         video_thread->packetQueue()->blockFull(false); //?
     }
-    pause(false);
-    seek_cond.wakeAll();
-    cond.wakeAll();
 }
 
 void AVDemuxThread::run()
 {
-    qDebug("demux thread start running...");
     end = false;
     if (audio_thread && !audio_thread->isRunning())
         audio_thread->start(QThread::HighPriority);
     if (video_thread && !video_thread->isRunning())
         video_thread->start();
 
+    running_threads = 0;
     if (audio_thread)
-       ++running_threads;
+        ++running_threads;
     if (video_thread)
         ++running_threads;
+    qDebug("demux thread start running...%d avthreads", running_threads);
 
     audio_stream = demuxer->audioStream();
     video_stream = demuxer->videoStream();
@@ -294,6 +295,10 @@ void AVDemuxThread::run()
                 video_thread->setDemuxEnded(true);
                 all_end &= !video_thread->isRunning();
             }
+            if (aqueue)
+                aqueue->put(Packet());
+            if (vqueue)
+                vqueue->put(Packet());
             if (!all_end) {
                 cond.wait(&buffer_mutex);
             }
@@ -335,6 +340,7 @@ void AVDemuxThread::run()
         aqueue->put(Packet());
     if (vqueue)
         vqueue->put(Packet());
+    running_threads = 0;
     qDebug("Demux thread stops running....");
 }
 

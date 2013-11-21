@@ -34,7 +34,6 @@
 #define AVDEBUG() \
     qDebug("%s %s @%d", __FILE__, __FUNCTION__, __LINE__);
 
-const int kSliderUpdateInterval = 500;
 using namespace QtAV;
 const qreal kVolumeInterval = 0.05;
 
@@ -59,8 +58,6 @@ MainWindow::MainWindow(QWidget *parent) :
   , mNullAO(false)
   , mScreensaver(true)
   , mShowControl(2)
-  , mTimerId(0)
-  , mRepeateCount(0)
   , mRepeateMax(0)
   , mpPlayer(0)
   , mpRenderer(0)
@@ -100,6 +97,7 @@ void MainWindow::initPlayer()
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
     connect(mpPlayer, SIGNAL(speedChanged(qreal)), this, SLOT(onSpeedChange(qreal)));
+    connect(mpPlayer, SIGNAL(positionChanged(qint64)), this, SLOT(onPositionChange(qint64)));
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
 }
 
@@ -235,8 +233,9 @@ void MainWindow::setupUi()
     subMenu = new ClickableMenu(tr("Repeat"));
     mpMenu->addMenu(subMenu);
     //subMenu->setEnabled(false);
-    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(setRepeat(QAction*)));
-    subMenu->addAction(tr("Enable"))->setCheckable(true);
+    mpRepeatEnableAction = subMenu->addAction(tr("Enable"));
+    mpRepeatEnableAction->setCheckable(true);
+    connect(mpRepeatEnableAction, SIGNAL(toggled(bool)), SLOT(toggleRepeat(bool)));
     QSpinBox *pRepeatBox = new QSpinBox(0);
     pRepeatBox->setMinimum(-1);
     pRepeatBox->setValue(-1);
@@ -500,6 +499,9 @@ void MainWindow::play(const QString &name)
     }
     setWindowTitle(mTitle);
     mpPlayer->enableAudio(!mNullAO);
+    if (!mpRepeatEnableAction->isChecked())
+        mRepeateMax = 0;
+    mpPlayer->setRepeat(mRepeateMax);
     mpPlayer->play(name);
 }
 
@@ -508,7 +510,6 @@ void MainWindow::openFile()
     QString file = QFileDialog::getOpenFileName(0, tr("Open a media file"));
     if (file.isEmpty())
         return;
-    mRepeateCount = 0;
     play(file);
 }
 
@@ -536,12 +537,9 @@ void MainWindow::onPaused(bool p)
 {
     if (p) {
         qDebug("start pausing...");
-        if (mTimerId)
-            killTimer(mTimerId);
         mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     } else {
         qDebug("stop pausing...");
-        mTimerId = startTimer(kSliderUpdateInterval);
         mpPlayPauseBtn->setIconWithSates(mPausePixmap);
     }
 }
@@ -552,13 +550,12 @@ void MainWindow::onStartPlay()
     setWindowTitle(mTitle);
 
     mpPlayPauseBtn->setIconWithSates(mPausePixmap);
-    mpTimeSlider->setMaximum(mpPlayer->duration()*1000);
+    mpTimeSlider->setMaximum(mpPlayer->duration());
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>enable slider");
     mpTimeSlider->setEnabled(true);
-    mpDuration->setText(QTime(0, 0, 0).addSecs(mpPlayer->duration()).toString("HH:mm:ss"));
+    mpDuration->setText(QTime(0, 0, 0).addMSecs(mpPlayer->duration()).toString("HH:mm:ss"));
     setVolume();
-    mTimerId = startTimer(kSliderUpdateInterval);
     mShowControl = 0;
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
     mScreensaver = false;
@@ -567,22 +564,18 @@ void MainWindow::onStartPlay()
 
 void MainWindow::onStopPlay()
 {
-    killTimer(mTimerId);
+    if (mpPlayer->currentRepeat() < mpPlayer->repeat())
+        return;
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);
     mpCurrent->setText("00:00:00");
     mpDuration->setText("00:00:00");
-    if (mRepeateMax == -1 || mRepeateCount < mRepeateMax) {
-        mRepeateCount++;
-        play(mFile);
-    } else {
-        mRepeateCount = 0;
-        mShowControl = 2;
-        tryShowControlBar();
-    }
+    tryShowControlBar();
     mScreensaver = true;
+    toggleRepeat(false);
+    //mRepeateMax = 0;
 }
 
 void MainWindow::onSpeedChange(qreal speed)
@@ -592,12 +585,12 @@ void MainWindow::onSpeedChange(qreal speed)
 
 void MainWindow::seekToMSec(int msec)
 {
-    mpPlayer->seek(qreal(msec)/qreal(mpTimeSlider->maximum()));
+    mpPlayer->seek(qint64(msec));
 }
 
 void MainWindow::seek()
 {
-    mpPlayer->seek(qreal(mpTimeSlider->value())/qreal(mpTimeSlider->maximum()));
+    mpPlayer->seek((qint64)mpTimeSlider->value());
 }
 
 void MainWindow::capture()
@@ -654,11 +647,10 @@ void MainWindow::resizeEvent(QResizeEvent *e)
 #endif //SLIDER_ON_VO
 }
 
-void MainWindow::timerEvent(QTimerEvent *)
+void MainWindow::onPositionChange(qint64 pos)
 {
-    int ms = mpPlayer->masterClock()->value()*1000.0;
-    mpTimeSlider->setValue(ms);
-    mpCurrent->setText(QTime(0, 0, 0).addMSecs(ms).toString("HH:mm:ss"));
+    mpTimeSlider->setValue(pos);
+    mpCurrent->setText(QTime(0, 0, 0).addMSecs(pos).toString("HH:mm:ss"));
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *e)
@@ -690,7 +682,6 @@ void MainWindow::openUrl()
     QString url = QInputDialog::getText(0, tr("Open an url"), tr("Url"));
     if (url.isEmpty())
         return;
-    mRepeateCount = 0;
     play(url);
 }
 
@@ -751,20 +742,26 @@ void MainWindow::switchAspectRatio(QAction *action)
     mpARAction->setChecked(true);
 }
 
-void MainWindow::setRepeat(QAction *action)
+void MainWindow::toggleRepeat(bool r)
 {
-    if (action->isChecked()) {
-        mpRepeatAction->defaultWidget()->setEnabled(true);
+    mpRepeatEnableAction->setChecked(r);
+    mpRepeatAction->defaultWidget()->setEnabled(r); //why need defaultWidget?
+    if (r) {
         mRepeateMax = ((QSpinBox*)mpRepeatAction->defaultWidget())->value();
     } else {
-        mpRepeatAction->defaultWidget()->setEnabled(false);
         mRepeateMax = 0;
+    }
+    if (mpPlayer) {
+        mpPlayer->setRepeat(mRepeateMax);
     }
 }
 
 void MainWindow::setRepeateMax(int m)
 {
     mRepeateMax = m;
+    if (mpPlayer) {
+        mpPlayer->setRepeat(m);
+    }
 }
 
 void MainWindow::playOnlineVideo(QAction *action)

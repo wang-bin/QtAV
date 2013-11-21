@@ -94,9 +94,11 @@ public:
     QString audioFormatLongName() const;
     QString videoFormatName() const; //AVFormatContext::iformat->name
     QString videoFormatLongName() const; //AVFormatContext::iformat->long_name
-    // TODO: ms and add durationUs() etc.
-    qint64 startTime() const; //us, AVFormatContext::start_time
-    qint64 duration() const; //us, AVFormatContext::duration
+    // TODO: rename startPosition()
+    qint64 startTime() const; //ms, AVFormatContext::start_time/1000
+    qint64 duration() const; //ms, AVFormatContext::duration/1000
+    qint64 startTimeUs() const; //us, AVFormatContext::start_time
+    qint64 durationUs() const; //us, AVFormatContext::duration
 
     //total bit rate
     int bitRate() const; //AVFormatContext::bit_rate
