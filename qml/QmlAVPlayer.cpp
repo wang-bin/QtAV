@@ -32,6 +32,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
+    connect(mpPlayer, SIGNAL(positionChanged(qint64)), SLOT(positionChanged()));
 }
 
 QUrl QmlAVPlayer::source() const
@@ -87,7 +88,12 @@ int QmlAVPlayer::duration() const
 
 int QmlAVPlayer::position() const
 {
-    return mpPlayer->masterClock()->value();
+    return mpPlayer->position();
+}
+
+bool QmlAVPlayer::isSeekable() const
+{
+    return true;
 }
 
 QmlAVPlayer::PlaybackState QmlAVPlayer::playbackState() const
@@ -173,9 +179,9 @@ void QmlAVPlayer::nextFrame()
     mpPlayer->playNextFrame();
 }
 
-void QmlAVPlayer::seek(qreal position)
+void QmlAVPlayer::seek(int offset)
 {
-    mpPlayer->seek(position);
+    mpPlayer->seek(qint64(offset));
 }
 
 void QmlAVPlayer::seekForward()

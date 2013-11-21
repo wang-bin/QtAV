@@ -40,6 +40,7 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject
     Q_PROPERTY(PlaybackState playbackState READ playbackState NOTIFY playbackStateChanged)
     Q_PROPERTY(qreal speed READ speed WRITE setSpeed NOTIFY speedChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_ENUMS(PlaybackState)
 public:
     enum PlaybackState {
@@ -59,6 +60,7 @@ public:
     void setMuted(bool m);
     int duration() const;
     int position() const;
+    bool isSeekable() const;
     PlaybackState playbackState() const;
     void setPlaybackState(PlaybackState playbackState);
     qreal speed() const;
@@ -73,7 +75,7 @@ public Q_SLOTS:
     void togglePause();
     void stop();
     void nextFrame();
-    void seek(qreal position);
+    void seek(int offset);
     void seekForward();
     void seekBackward();
 
@@ -89,6 +91,8 @@ Q_SIGNALS:
     void paused();
     void stopped();
     void playing();
+    void seekableChanged();
+
 private Q_SLOTS:
     void _q_started();
     void _q_stopped();
