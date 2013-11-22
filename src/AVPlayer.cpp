@@ -281,9 +281,8 @@ void AVPlayer::setSpeed(qreal speed)
     if (_audio && _audio->isAvailable()) {
         qDebug("set speed %.2f", mSpeed);
         _audio->setSpeed(mSpeed);
-    } else {
-        masterClock()->setSpeed(mSpeed);
     }
+    masterClock()->setSpeed(mSpeed);
     emit speedChanged(mSpeed);
 }
 
@@ -478,6 +477,13 @@ bool AVPlayer::load(bool reload)
     if (path.isEmpty()) {
         qDebug("No file to play...");
         return loaded;
+    }
+    // release codec ctx
+    if (audio_dec) {
+        audio_dec->setCodecContext(0);
+    }
+    if (video_dec) {
+        video_dec->setCodecContext(0);
     }
     qDebug("loading: %s ...", path.toUtf8().constData());
     if (reload || !demuxer.isLoaded(path)) {
@@ -1095,12 +1101,6 @@ bool AVPlayer::setupVideoThread()
     video_thread->packetQueue()->setThreshold(queue_min);
     video_thread->packetQueue()->setCapacity(queue_max);
     return true;
-}
-
-void AVPlayer::setupAVThread(AVThread *&thread, AVCodecContext *ctx)
-{
-    Q_UNUSED(thread);
-    Q_UNUSED(ctx);
 }
 
 } //namespace QtAV
