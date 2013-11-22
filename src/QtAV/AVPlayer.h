@@ -181,7 +181,7 @@ public slots:
      * \brief setRepeat
      *  repeat max times between startPosition() and endPosition()
      *  max==0: no repeat
-     *  max<0: infinity
+     *  max<0: infinity. std::numeric_limits<int>::max();
      * \param max
      */
     void setRepeat(int max);

@@ -21,6 +21,8 @@
 
 #include <QtAV/AVPlayer.h>
 
+#include <limits>
+
 #include <qevent.h>
 #include <qpainter.h>
 #include <QApplication>
@@ -619,7 +621,7 @@ void AVPlayer::setRepeat(int max)
 {
     repeat_max = max;
     if (repeat_max < 0)
-        repeat_max = -1;
+        repeat_max = std::numeric_limits<int>::max();
     emit repeatChanged(repeat_max);
 }
 
@@ -853,11 +855,13 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             return;
         if (stop_position == 0) { //stop() by user in other thread, state is already reset
             reset_state = false;
+            qDebug("stop_position == 0, stop");
             stop();
         }
         // t < start_position is ok. repeat_max<0 means repeat forever
         if (repeat_current >= repeat_max && repeat_max >= 0) {
             reset_state = true; // true is default, can remove here
+            qDebug("stop_position reached and no repeat: %d", repeat_max);
             stop();
         } else {
             repeat_current++;
