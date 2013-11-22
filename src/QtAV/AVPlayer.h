@@ -73,6 +73,7 @@ public:
     qint64 stopPosition() const; //unit: ms
     Q_DECL_DEPRECATED qreal positionF() const; //unit: s.
     qint64 position() const; //unit: ms
+    //0: play once. N: play N+1 times. <0: infinity
     int repeat() const; //or repeatMax()?
     int currentRepeat() const;
     /*
