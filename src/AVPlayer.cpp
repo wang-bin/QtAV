@@ -77,8 +77,6 @@ AVPlayer::AVPlayer(QObject *parent) :
   , ao_enable(true)
 {
     formatCtx = 0;
-    aCodecCtx = 0;
-    vCodecCtx = 0;
     last_position = 0;
     /*
      * must be the same value at the end of stop(), and must be different from value in
@@ -498,12 +496,10 @@ bool AVPlayer::load(bool reload)
     }
     loaded = true;
     formatCtx = demuxer.formatContext();
-    aCodecCtx = demuxer.audioCodecContext();
-    vCodecCtx = demuxer.videoCodecContext();
 
     if (masterClock()->isClockAuto()) {
         qDebug("auto select clock: audio > external");
-        if (!aCodecCtx) {
+        if (!demuxer.audioCodecContext()) {
             qWarning("No audio found or audio not supported. Using ExternalClock");
             masterClock()->setClockType(AVClock::ExternalClock);
         } else {
@@ -744,12 +740,12 @@ void AVPlayer::play()
     }
 #endif //EOF_ISSUE_SOLVED
 
-    if (aCodecCtx && audio_thread) {
+    if (demuxer.audioCodecContext() && audio_thread) {
         qDebug("Starting audio thread...");
         audio_thread->start();
         audio_thread->waitForReady();
     }
-    if (vCodecCtx && video_thread) {
+    if (demuxer.videoCodecContext() && video_thread) {
         qDebug("Starting video thread...");
         video_thread->start();
         video_thread->waitForReady();
@@ -938,8 +934,8 @@ void AVPlayer::initStatistics()
         Statistics::Common *st;
         const char *name;
     } common_statistics[] = {
-        { demuxer.videoStream(), vCodecCtx, &mStatistics.video, "video"},
-        { demuxer.audioStream(), aCodecCtx, &mStatistics.audio, "audio"},
+        { demuxer.videoStream(), demuxer.videoCodecContext(), &mStatistics.video, "video"},
+        { demuxer.audioStream(), demuxer.audioCodecContext(), &mStatistics.audio, "audio"},
         { 0, 0, 0, 0}
     };
     for (int i = 0; common_statistics[i].name; ++i) {
@@ -970,6 +966,7 @@ void AVPlayer::initStatistics()
         qDebug("%s fps: r_frame_rate=%f avg_frame_rate=%f", cs.name, av_q2d(stream->r_frame_rate), av_q2d(stream->avg_frame_rate));
     }
     if (demuxer.audioStream() >= 0) {
+        AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
         mStatistics.audio_only.block_align = aCodecCtx->block_align;
         mStatistics.audio_only.channels = aCodecCtx->channels;
         char cl[128]; //
@@ -981,6 +978,7 @@ void AVPlayer::initStatistics()
         mStatistics.audio_only.sample_rate = aCodecCtx->sample_rate;
     }
     if (demuxer.videoStream() >= 0) {
+        AVCodecContext *vCodecCtx = demuxer.videoCodecContext();
         mStatistics.video.frames = formatCtx->streams[demuxer.videoStream()]->nb_frames;
         mStatistics.video_only.coded_height = vCodecCtx->coded_height;
         mStatistics.video_only.coded_width = vCodecCtx->coded_width;
@@ -993,6 +991,7 @@ void AVPlayer::initStatistics()
 
 bool AVPlayer::setupAudioThread()
 {
+    AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
     if (!aCodecCtx) {
         return false;
     }
@@ -1063,6 +1062,7 @@ bool AVPlayer::setupAudioThread()
 
 bool AVPlayer::setupVideoThread()
 {
+    AVCodecContext *vCodecCtx = demuxer.videoCodecContext();
     if (!vCodecCtx) {
         return false;
     }

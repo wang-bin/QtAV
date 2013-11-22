@@ -232,7 +232,6 @@ private:
     // TODO: dptr
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
-    AVCodecContext *aCodecCtx, *vCodecCtx; //set once and not change
     QString path;
 
     /*
