@@ -16,6 +16,8 @@ class QTimeEdit;
 class QVBoxLayout;
 class QLabel;
 class QPushButton;
+class QSpinBox;
+class QTimeEdit;
 class Button;
 class Slider;
 class MainWindow : public QWidget
@@ -67,6 +69,8 @@ private slots:
     void tryShowControlBar();
     void showInfo();
     void onPositionChange(qint64 pos);
+    void repeatAChanged(const QTime& t);
+    void repeatBChanged(const QTime& t);
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
@@ -99,6 +103,8 @@ private:
     QAction *mpVOAction, *mpARAction; //remove mpVOAction if vo.id() is supported
     QAction *mpRepeatEnableAction;
     QWidgetAction *mpRepeatAction;
+    QSpinBox *mpRepeatBox;
+    QTimeEdit *mpRepeatA, *mpRepeatB;
     QAction *mpAudioTrackAction;
     QMenu *mpAudioTrackMenu;
     QAction *mpChannelAction;

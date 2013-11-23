@@ -230,19 +230,46 @@ void MainWindow::setupUi()
     pWA->setDefaultWidget(pSpeedBox);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
     mpMenu->addSeparator();
+
+
     subMenu = new ClickableMenu(tr("Repeat"));
     mpMenu->addMenu(subMenu);
     //subMenu->setEnabled(false);
     mpRepeatEnableAction = subMenu->addAction(tr("Enable"));
     mpRepeatEnableAction->setCheckable(true);
     connect(mpRepeatEnableAction, SIGNAL(toggled(bool)), SLOT(toggleRepeat(bool)));
-    QSpinBox *pRepeatBox = new QSpinBox(0);
-    pRepeatBox->setMinimum(-1);
-    pRepeatBox->setValue(-1);
-    pRepeatBox->setToolTip("-1: " + tr("infinity"));
-    connect(pRepeatBox, SIGNAL(valueChanged(int)), SLOT(setRepeateMax(int)));
+    mpRepeatBox = new QSpinBox(0);
+    mpRepeatBox->setMinimum(-1);
+    mpRepeatBox->setValue(-1);
+    mpRepeatBox->setToolTip("-1: " + tr("infinity"));
+    connect(mpRepeatBox, SIGNAL(valueChanged(int)), SLOT(setRepeateMax(int)));
+    QLabel *pRepeatLabel = new QLabel(tr("Times"));
+    QHBoxLayout *hb = new QHBoxLayout;
+    hb->addWidget(pRepeatLabel);
+    hb->addWidget(mpRepeatBox);
+    QVBoxLayout *vb = new QVBoxLayout;
+    vb->addLayout(hb);
+    pRepeatLabel = new QLabel(tr("From"));
+    mpRepeatA = new QTimeEdit();
+    mpRepeatA->setToolTip(tr("negative value means from the end"));
+    connect(mpRepeatA, SIGNAL(timeChanged(QTime)), SLOT(repeatAChanged(QTime)));
+    hb = new QHBoxLayout;
+    hb->addWidget(pRepeatLabel);
+    hb->addWidget(mpRepeatA);
+    vb->addLayout(hb);
+    pRepeatLabel = new QLabel(tr("To"));
+    mpRepeatB = new QTimeEdit();
+    mpRepeatB->setToolTip(tr("negative value means from the end"));
+    connect(mpRepeatB, SIGNAL(timeChanged(QTime)), SLOT(repeatBChanged(QTime)));
+    hb = new QHBoxLayout;
+    hb->addWidget(pRepeatLabel);
+    hb->addWidget(mpRepeatB);
+    vb->addLayout(hb);
+    QWidget *pRepeatWidget = new QWidget;
+    pRepeatWidget->setLayout(vb);
+
     pWA = new QWidgetAction(0);
-    pWA->setDefaultWidget(pRepeatBox);
+    pWA->setDefaultWidget(pRepeatWidget);
     pWA->defaultWidget()->setEnabled(false);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
     mpRepeatAction = pWA;
@@ -560,6 +587,10 @@ void MainWindow::onStartPlay()
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
     mScreensaver = false;
     initAudioTrackMenu();
+    mpRepeatA->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
+    mpRepeatB->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
+    mpRepeatA->setTime(QTime(0, 0, 0).addMSecs(mpPlayer->startPosition()));
+    mpRepeatB->setTime(QTime(0, 0, 0).addMSecs(mpPlayer->stopPosition()));
 }
 
 void MainWindow::onStopPlay()
@@ -651,6 +682,20 @@ void MainWindow::onPositionChange(qint64 pos)
 {
     mpTimeSlider->setValue(pos);
     mpCurrent->setText(QTime(0, 0, 0).addMSecs(pos).toString("HH:mm:ss"));
+}
+
+void MainWindow::repeatAChanged(const QTime& t)
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setStartPosition(QTime(0, 0, 0).msecsTo(t));
+}
+
+void MainWindow::repeatBChanged(const QTime& t)
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setStopPosition(QTime(0, 0, 0).msecsTo(t));
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *e)
@@ -747,7 +792,7 @@ void MainWindow::toggleRepeat(bool r)
     mpRepeatEnableAction->setChecked(r);
     mpRepeatAction->defaultWidget()->setEnabled(r); //why need defaultWidget?
     if (r) {
-        mRepeateMax = ((QSpinBox*)mpRepeatAction->defaultWidget())->value();
+        mRepeateMax = mpRepeatBox->value();
     } else {
         mRepeateMax = 0;
     }
