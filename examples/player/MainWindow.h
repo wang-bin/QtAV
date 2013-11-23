@@ -74,6 +74,7 @@ private slots:
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
+    virtual void timerEvent(QTimerEvent *);
     void mouseMoveEvent(QMouseEvent *e);
 #ifdef Q_OS_WIN
     //Qt5
@@ -86,6 +87,7 @@ private:
     bool mIsReady, mHasPendingPlay;
     bool mNullAO;
     bool mScreensaver;
+    int mCursorTimer;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
     int mRepeateMax;
     QVBoxLayout *mpPlayerLayout;

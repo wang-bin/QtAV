@@ -591,6 +591,7 @@ void MainWindow::onStartPlay()
     mpRepeatB->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
     mpRepeatA->setTime(QTime(0, 0, 0).addMSecs(mpPlayer->startPosition()));
     mpRepeatB->setTime(QTime(0, 0, 0).addMSecs(mpPlayer->stopPosition()));
+    mCursorTimer = startTimer(3000);
 }
 
 void MainWindow::onStopPlay()
@@ -607,6 +608,8 @@ void MainWindow::onStopPlay()
     mScreensaver = true;
     toggleRepeat(false);
     //mRepeateMax = 0;
+    killTimer(mCursorTimer);
+    unsetCursor();
 }
 
 void MainWindow::onSpeedChange(qreal speed)
@@ -678,6 +681,15 @@ void MainWindow::resizeEvent(QResizeEvent *e)
 #endif //SLIDER_ON_VO
 }
 
+void MainWindow::timerEvent(QTimerEvent *e)
+{
+    if (e->timerId() == mCursorTimer) {
+        if (mpControl->isVisible())
+            return;
+        setCursor(Qt::BlankCursor);
+    }
+}
+
 void MainWindow::onPositionChange(qint64 pos)
 {
     mpTimeSlider->setValue(pos);
@@ -700,6 +712,7 @@ void MainWindow::repeatBChanged(const QTime& t)
 
 void MainWindow::mouseMoveEvent(QMouseEvent *e)
 {
+    unsetCursor();
     if (e->pos().y() > height() - mpTimeSlider->height() - mpControl->height()) {
         if (mShowControl == 0) {
             mShowControl = 1;
@@ -843,6 +856,7 @@ void MainWindow::tryHideControlBar()
 
 void MainWindow::tryShowControlBar()
 {
+    unsetCursor();
     if (mpTimeSlider->isHidden())
         mpTimeSlider->show();
     if (mpControl->isHidden())
