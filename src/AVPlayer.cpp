@@ -519,9 +519,12 @@ bool AVPlayer::load(bool reload)
         last_position = duration() > 0 ? startPosition() : 0;
     if (last_position > 0)
         demuxer.seek(last_position); //just use demuxer.startTime()/duration()?
-    if (stop_position <= 0) {
+
+    // TODO: what about other proctols? some vob duration() == 0
+    if (path.startsWith("file:") || QFile(path).exists() && duration() > 0)
         stop_position = duration();
-    }
+    else
+        stop_position = std::numeric_limits<qint64>::max();
     if (!setupAudioThread()) {
         demuxer_thread->setAudioThread(0); //set 0 before delete. ptr is used in demux thread when set 0
         if (audio_thread) {
@@ -560,7 +563,7 @@ qint64 AVPlayer::mediaStartPosition() const
     return demuxer.startTime();
 }
 
-qreal AVPlayer::startPositionF() const
+qreal AVPlayer::mediaStartPositionF() const
 {
     return double(demuxer.startTimeUs())/double(AV_TIME_BASE);
 }
@@ -573,7 +576,9 @@ qint64 AVPlayer::startPosition() const
 void AVPlayer::setStartPosition(qint64 pos)
 {
     start_position = pos;
-    emit startPositionChanged(pos);
+    if (start_position < 0)
+        start_position += duration();
+    emit startPositionChanged(start_position);
 }
 
 qint64 AVPlayer::stopPosition() const
@@ -584,7 +589,9 @@ qint64 AVPlayer::stopPosition() const
 void AVPlayer::setStopPosition(qint64 pos)
 {
     stop_position = pos;
-    emit stopPositionChanged(pos);
+    if (stop_position < 0)
+        stop_position += duration();
+    emit stopPositionChanged(stop_position);
 }
 
 qreal AVPlayer::positionF() const
@@ -601,6 +608,8 @@ void AVPlayer::setPosition(qint64 position)
 {
     if (!isPlaying())
         return;
+    if (position < 0)
+        position += duration();
     qDebug("seek to %lld ms (%f%%)", position, double(position)/double(duration())*100.0);
     masterClock()->updateValue(double(position)/1000.0); //what is duration == 0
     masterClock()->updateExternalClock(double(position)/1000.0); //in msec. ignore usec part using t/1000
@@ -807,6 +816,8 @@ void AVPlayer::stop()
             if (QThread::currentThread() == thread()) { //called by user in the same thread as player
                 killTimer(timer_id);
                 timer_id = -1;
+            } else {
+                //TODO: post event
             }
         }
         start_position = stop_position = 0;
@@ -852,6 +863,10 @@ void AVPlayer::stop()
 void AVPlayer::timerEvent(QTimerEvent *te)
 {
     if (te->timerId() == timer_id) {
+        if (stop_position == std::numeric_limits<qint64>::max()) {
+            // not seekable. network stream
+            return;
+        }
         // active only when playing
         qint64 t = clock->value()*1000.0;
         if (t <= stop_position) {
@@ -859,6 +874,7 @@ void AVPlayer::timerEvent(QTimerEvent *te)
         }
         if (t < stop_position)
             return;
+        // TODO: remove. kill timer in an event;
         if (stop_position == 0) { //stop() by user in other thread, state is already reset
             reset_state = false;
             qDebug("stop_position == 0, stop");

@@ -63,14 +63,19 @@ public:
     bool load(bool reload = true);
     bool isLoaded() const;
     qreal durationF() const; //unit: s, This function may be removed in the future.
-    qint64 duration() const; //unit: ms. media duration
+    qint64 duration() const; //unit: ms. media duration. network stream may be very small, why?
     // the media's property.
     qint64 mediaStartPosition() const;
     //qint64 mediaStopPosition() const;
-    Q_DECL_DEPRECATED qreal startPositionF() const; //unit: s. used by loop
-    Q_DECL_DEPRECATED qreal stopPositionF() const; //unit: s
+    qreal mediaStartPositionF() const; //unit: s
+
     // can set by user. may be not the real media start position.
     qint64 startPosition() const;
+    /*!
+     * \brief stopPosition: the position at which player should stop playing
+     * \return
+     * If media stream is not a local file, stopPosition()==max value of qint64
+     */
     qint64 stopPosition() const; //unit: ms
     Q_DECL_DEPRECATED qreal positionF() const; //unit: s.
     qint64 position() const; //unit: ms
@@ -191,21 +196,23 @@ public slots:
     /*!
      * \brief startPosition
      *  Used to repeat from startPosition() to endPosition()
-     *  startPosition() < 0 equals duration()+startPosition()
-     *  startPosition() == 0 means start at the beginning of media stream
+     *  pos < 0, equals duration()+pos
+     *  pos == 0, means start at the beginning of media stream
      *  (may be not exactly equals 0, seek to demuxer.startPosition()/startTime())
      * \return
      */
     void setStartPosition(qint64 pos);
     /*!
      * \brief endPosition
-     *  endPosition() < 0: equals duration()
+     *  pos < 0: duration() + pos
      * \return
      */
     void setStopPosition(qint64 pos);
     /*!
      * \brief setPosition equals to seek(qreal)
+     *  position < 0, position() equals duration()+position
      * \param position in ms
+     *
      */
     void setPosition(qint64 position);
     void seek(qreal r); // r: [0, 1]
