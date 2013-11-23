@@ -391,7 +391,8 @@ bool AVPlayer::uninstallFilter(Filter *filter)
  */
 void AVPlayer::setFile(const QString &path)
 {
-    demuxer.setAutoResetStream(!this->path.isEmpty() && this->path != path);
+    reset_state = !this->path.isEmpty() && this->path != path;
+    demuxer.setAutoResetStream(reset_state);
     this->path = path;
     loaded = false; //
     //qApp->activeWindow()->setWindowTitle(path); //crash on linux
@@ -475,8 +476,8 @@ bool AVPlayer::load(bool reload)
 {
     loaded = false;
     if (path.isEmpty()) {
-        qDebug("No file to play...");
-        return loaded;
+        qDebug("No file to load...");
+        return false;
     }
     // release codec ctx
     if (audio_dec) {
@@ -495,7 +496,7 @@ bool AVPlayer::load(bool reload)
             video_dec->close();
         }
         if (!demuxer.loadFile(path)) {
-            return loaded;
+            return false;
         }
     } else {
         demuxer.prepareStreams();
@@ -636,6 +637,7 @@ bool AVPlayer::setAudioStream(int n, bool now)
     }
     loaded = false;
     last_position = -1;
+    demuxer.setAutoResetStream(false);
     if (!now)
         return true;
     play();
@@ -650,6 +652,7 @@ bool AVPlayer::setVideoStream(int n, bool now)
     }
     loaded = false;
     last_position = -1;
+    demuxer.setAutoResetStream(false);
     if (!now)
         return true;
     play();
@@ -658,6 +661,7 @@ bool AVPlayer::setVideoStream(int n, bool now)
 
 bool AVPlayer::setSubtitleStream(int n, bool now)
 {
+    demuxer.setAutoResetStream(false);
     return false;
 }
 
@@ -695,18 +699,18 @@ int AVPlayer::subtitleStreamCount() const
 void AVPlayer::play()
 {
     //FIXME: bad delay after play from here
-    bool start_last =  last_position == -1;
+    bool start_last = last_position == -1;
     if (isPlaying()) {
         if (start_last) {
             clock->pause(true); //external clock
             last_position = duration() > 0 ? -position() : 0;
+            reset_state = false; //set a new stream number should not reset other states
             qDebug("start pos is current position: %f", last_position);
         } else {
             last_position = 0;
             qDebug("start pos is stream start time");
         }
         qint64 last_pos = last_position;
-        reset_state = true;
         stop();
         // wait here to ensure stopped() and startted() is in correct order
         if (demuxer_thread->isRunning()) {

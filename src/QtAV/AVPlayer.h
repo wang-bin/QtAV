@@ -55,6 +55,7 @@ public:
 
     //NOT const. This is the only way to access the clock.
     AVClock* masterClock();
+    // If path is different from previous one, the stream to play will be reset to default.
     void setFile(const QString& path);
     QString file() const;
     // force reload even if already loaded. otherwise only reopen codecs if necessary
@@ -86,6 +87,7 @@ public:
      */
     /*
      * steps to change stream:
+     *    player.setFile(file); //will reset wanted stream to default
      *    player.setAudioStream(N, true)
      * or player.setAudioStream(N) && player.play()
      * player then will play from previous position. call
@@ -110,8 +112,9 @@ public:
     bool captureVideo();
     VideoCapture *videoCapture();
     /*
-     * replay without parsing the stream if it's already loaded.
+     * replay without parsing the stream if it's already loaded. (not implemented)
      * to force reload the stream, close() then play()
+     * If path is different from previous one, the stream to play will be reset to default.
      */
     bool play(const QString& path);
     bool isPlaying() const;
