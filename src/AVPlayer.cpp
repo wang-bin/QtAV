@@ -83,7 +83,9 @@ AVPlayer::AVPlayer(QObject *parent) :
      * stopFromDemuxerThread()(which is false), so the initial value must be true
      */
     reset_state = true;
-    start_position = stop_position = 0;
+    media_end_pos = std::numeric_limits<qint64>::max();
+    start_position = 0;
+    stop_position = mediaStopPosition();
     repeat_current = repeat_max = 0;
     timer_id = -1;
 
@@ -515,16 +517,17 @@ bool AVPlayer::load(bool reload)
         }
     }
 
-    if (last_position <= 0)
-        last_position = duration() > 0 ? startPosition() : 0;
-    if (last_position > 0)
-        demuxer.seek(last_position); //just use demuxer.startTime()/duration()?
-
     // TODO: what about other proctols? some vob duration() == 0
-    if (path.startsWith("file:") || QFile(path).exists() && duration() > 0)
-        stop_position = duration();
-    else
-        stop_position = std::numeric_limits<qint64>::max();
+    if (path.startsWith("file:") || QFile(path).exists() && duration() > 0) {
+        media_end_pos = duration();
+    } else {
+        media_end_pos = std::numeric_limits<qint64>::max();
+    }
+    // if file changed or stop() called by user, stop_position changes.
+    if (stopPosition() > mediaStopPosition() || stopPosition() == 0) {
+        stop_position = mediaStopPosition();
+    }
+
     if (!setupAudioThread()) {
         demuxer_thread->setAudioThread(0); //set 0 before delete. ptr is used in demux thread when set 0
         if (audio_thread) {
@@ -563,6 +566,11 @@ qint64 AVPlayer::mediaStartPosition() const
     return demuxer.startTime();
 }
 
+qint64 AVPlayer::mediaStopPosition() const
+{
+    return media_end_pos;
+}
+
 qreal AVPlayer::mediaStartPositionF() const
 {
     return double(demuxer.startTimeUs())/double(AV_TIME_BASE);
@@ -575,9 +583,15 @@ qint64 AVPlayer::startPosition() const
 
 void AVPlayer::setStartPosition(qint64 pos)
 {
+    if (pos > stopPosition()) {
+        qWarning("start position too large (%lld > %lld). ignore", pos, stopPosition());
+        return;
+    }
     start_position = pos;
     if (start_position < 0)
-        start_position += duration();
+        start_position += mediaStopPosition();
+    if (start_position < 0)
+        start_position = 0;
     emit startPositionChanged(start_position);
 }
 
@@ -588,9 +602,25 @@ qint64 AVPlayer::stopPosition() const
 
 void AVPlayer::setStopPosition(qint64 pos)
 {
+    if (pos == -mediaStopPosition()) {
+        return;
+    }
+    if (pos == 0) {
+        pos = mediaStopPosition();
+    }
+    if (pos > mediaStopPosition()) {
+        qWarning("stop position too large (%lld > %lld). ignore", pos, mediaStopPosition());
+        return;
+    }
     stop_position = pos;
     if (stop_position < 0)
-        stop_position += duration();
+        stop_position += mediaStopPosition();
+    if (stop_position < 0)
+        stop_position = mediaStopPosition();
+    if (stop_position < startPosition()) {
+        qWarning("stop postion %lld < start position %lld. ignore", stop_position, startPosition());
+        return;
+    }
     emit stopPositionChanged(stop_position);
 }
 
@@ -609,7 +639,7 @@ void AVPlayer::setPosition(qint64 position)
     if (!isPlaying())
         return;
     if (position < 0)
-        position += duration();
+        position += mediaStopPosition();
     qDebug("seek to %lld ms (%f%%)", position, double(position)/double(duration())*100.0);
     masterClock()->updateValue(double(position)/1000.0); //what is duration == 0
     masterClock()->updateExternalClock(double(position)/1000.0); //in msec. ignore usec part using t/1000
@@ -712,7 +742,7 @@ void AVPlayer::play()
     if (isPlaying()) {
         if (start_last) {
             clock->pause(true); //external clock
-            last_position = duration() > 0 ? -position() : 0;
+            last_position = mediaStopPosition() != std::numeric_limits<qint64>::max() ? -position() : 0;
             reset_state = false; //set a new stream number should not reset other states
             qDebug("start pos is current position: %f", last_position);
         } else {
@@ -770,7 +800,6 @@ void AVPlayer::play()
         video_thread->waitForReady();
     }
     demuxer_thread->start();
-    Q_ASSERT(clock != 0);
     if (start_last) {
         clock->pause(false); //external clock
     } else {
@@ -778,6 +807,12 @@ void AVPlayer::play()
     }
     if (timer_id < 0)
         timer_id = startTimer(kPosistionCheckMS);
+
+    if (last_position <= 0)
+        last_position = mediaStartPosition();
+    if (last_position > 0)
+        seek(last_position); //just use demuxer.startTime()/duration()?
+
     emit started(); //we called stop(), so must emit started()
 }
 
@@ -817,10 +852,12 @@ void AVPlayer::stop()
                 killTimer(timer_id);
                 timer_id = -1;
             } else {
-                //TODO: post event
+                //TODO: post event.
             }
         }
-        start_position = stop_position = 0;
+        start_position = 0;
+        stop_position = 0; // 0 can stop play in timerEvent
+        media_end_pos = std::numeric_limits<qint64>::max();
         repeat_current = repeat_max = 0;
     } else { //called by player
         if (timer_id >= 0) {
@@ -830,7 +867,7 @@ void AVPlayer::stop()
     }
     reset_state = true;
 
-    last_position = duration() > 0 ? startPosition() : 0;
+    last_position = mediaStopPosition() != std::numeric_limits<qint64>::max() ? startPosition() : 0;
     if (!isPlaying()) {
         qDebug("Not playing~");
         return;
@@ -863,42 +900,41 @@ void AVPlayer::stop()
 void AVPlayer::timerEvent(QTimerEvent *te)
 {
     if (te->timerId() == timer_id) {
-        if (stop_position == std::numeric_limits<qint64>::max()) {
+        if (stopPosition() == std::numeric_limits<qint64>::max()) {
             // not seekable. network stream
             return;
         }
         // active only when playing
         qint64 t = clock->value()*1000.0;
-        if (t <= stop_position) {
+        if (t <= stopPosition()) {
             emit positionChanged(t);
-        }
-        if (t < stop_position)
             return;
+        }
         // TODO: remove. kill timer in an event;
-        if (stop_position == 0) { //stop() by user in other thread, state is already reset
+        if (stopPosition() == 0) { //stop() by user in other thread, state is already reset
             reset_state = false;
-            qDebug("stop_position == 0, stop");
+            qDebug("stopPosition() == 0, stop");
             stop();
         }
         // t < start_position is ok. repeat_max<0 means repeat forever
-        if (repeat_current >= repeat_max && repeat_max >= 0) {
+        if (currentRepeat() >= repeat() && repeat() >= 0) {
             reset_state = true; // true is default, can remove here
-            qDebug("stop_position reached and no repeat: %d", repeat_max);
+            qDebug("stopPosition() reached and no repeat: %d", repeat());
             stop();
+            return;
+        }
+        repeat_current++;
+        // FIXME: now stop instead of seek if reach media's end. otherwise will not get eof again
+        if (stopPosition() == mediaStopPosition() || !demuxer.isSeekable()) {
+            // if not seekable, how it can start to play at specified position?
+            qDebug("stopPosition() == mediaStopPosition() or !seekable. repeat_current=%d", repeat_current);
+            reset_state = false;
+            stop();
+            last_position = startPosition(); // for seeking to startPosition(). already set in stop()
+            play();
         } else {
-            repeat_current++;
-            // FIXME: now stop instead of seek if reach media's end. otherwise will not get eof again
-            if (stop_position == duration() || !demuxer.isSeekable()) {
-                // if not seekable, how it can start to play at specified position?
-                qDebug("stop_position == duration() or !seekable. repeat_current=%d", repeat_current);
-                reset_state = false;
-                stop();
-                last_position = start_position; // for seeking to start_position. already set in stop()
-                play();
-            } else {
-                qDebug("stop_position != duration() and seekable. repeat_current=%d", repeat_current);
-                demuxer.seek(start_position);
-            }
+            qDebug("stopPosition() != mediaStopPosition() and seekable. repeat_current=%d", repeat_current);
+            setPosition(startPosition());
         }
     }
 }

@@ -66,7 +66,7 @@ public:
     qint64 duration() const; //unit: ms. media duration. network stream may be very small, why?
     // the media's property.
     qint64 mediaStartPosition() const;
-    //qint64 mediaStopPosition() const;
+    qint64 mediaStopPosition() const;
     qreal mediaStartPositionF() const; //unit: s
 
     // can set by user. may be not the real media start position.
@@ -203,7 +203,8 @@ public slots:
      */
     void setStartPosition(qint64 pos);
     /*!
-     * \brief endPosition
+     * \brief stopPosition
+     *  pos = 0: mediaStopPosition()
      *  pos < 0: duration() + pos
      * \return
      */
@@ -242,7 +243,7 @@ private:
     bool loaded;
     AVFormatContext	*formatCtx; //changed when reading a packet
     QString path;
-
+    qint64 media_end_pos;
     /*
      * unit: s. 0~1. stream's start time/duration(). or last position/duration() if change to new stream
      * auto set to 0 if stop(). to stream start time if load()
