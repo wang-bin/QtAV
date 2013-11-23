@@ -28,6 +28,67 @@
 namespace QtAV {
 
 const qint64 kSeekInterval = 168; //ms
+
+class AVDemuxer::InterruptHandler : public AVIOInterruptCB
+{
+public:
+    //default network timeout: 30000
+    InterruptHandler(int timeout = 30000)
+      : mStatus(0)
+      , mTimeout(timeout)
+      //, mLastTime(0)
+    {
+        callback = handleTimeout;
+        opaque = this;
+    }
+    ~InterruptHandler() {
+        mTimer.invalidate();
+    }
+    void begin() { mTimer.start(); }
+    void end() { mTimer.invalidate(); }
+    qint64 getTimeout() const { return mTimeout; }
+    void setTimeout(qint64 timeout) { mTimeout = timeout; }
+    int getStatus() const { return mStatus; }
+    void setStatus(int status) { mStatus = status; }
+    /*
+     * metodo per interruzione loop ffmpeg
+     * @param void*obj: classe attuale
+      * @return
+     *  >0 Interruzione loop di ffmpeg!
+    */
+    //TODO: let demuxer emit a signal, and qApp processEvents
+    static int handleTimeout(void* obj) {
+        InterruptHandler* handler = static_cast<InterruptHandler*>(obj);
+        if (!handler) {
+            qWarning("InterruptHandler is null");
+            return -1;
+        }
+        //check manual interruption
+        if (handler->getStatus() > 0) {
+            qDebug("User Interrupt: -> quit!");
+            return 1;//interrupt
+        }
+        if (!handler->mTimer.isValid()) {
+            qDebug("timer is not valid, start it");
+            handler->mTimer.start();
+            //handler->mLastTime = handler->mTimer.elapsed();
+            return 0;
+        }
+        //use restart
+        if (!handler->mTimer.hasExpired(handler->mTimeout)) {
+            return 0;
+        }
+        qDebug("Timeout expired: %lld/%lld -> quit!", handler->mTimer.elapsed(), handler->mTimeout);
+        handler->mTimer.invalidate();
+        return 1;
+    }
+private:
+    int mStatus;
+    qint64 mTimeout;
+    //qint64 mLastTime;
+    QElapsedTimer mTimer;
+};
+
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     :QObject(parent)
     , started_(false)
@@ -50,13 +111,10 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , _file_name(fileName)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AnyFrame)
-    ,__interrupt_status(0)
 {
+    mpInterrup = new InterruptHandler();
     if (!_file_name.isEmpty())
         loadFile(_file_name);
-
-    //default network timeout
-    __interrupt_timeout = 30000;
 }
 
 AVDemuxer::~AVDemuxer()
@@ -66,52 +124,18 @@ AVDemuxer::~AVDemuxer()
         delete pkt;
         pkt = 0;
     }
+    delete mpInterrup;
 }
-
-/*
- * metodo per interruzione loop ffmpeg
- * @param void*obj: classe attuale
-  * @return
- *  >0 Interruzione loop di ffmpeg!
-*/
-int AVDemuxer::__interrupt_cb(void *obj){
-    int ret = 0;
-    AVDemuxer* demuxer;
-    //qApp->processEvents();
-    if (!obj){
-        qWarning("Passed Null object!");
-        return(-1);
-    }
-    demuxer = (AVDemuxer*)obj;
-    //qDebug("Timer:%lld, timeout:%lld",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
-
-    //check manual interruption
-    if (demuxer->__interrupt_status > 0) {
-        qDebug("User Interrupt: -> quit!");
-        ret = 1;//interrupt
-    } else if((demuxer->__interrupt_timer.isValid()) && (demuxer->__interrupt_timer.hasExpired(demuxer->__interrupt_timeout)) ) {
-        qDebug("Timeout expired: %lld/%lld -> quit!",demuxer->__interrupt_timer.elapsed(), demuxer->__interrupt_timeout);
-        //TODO: emit a signal
-        ret = 1;//interrupt
-    }
-
-    //qDebug(" END ret:%d\n",ret);
-    return(ret);
-}//AVDemuxer::__interrupt_cb()
-
 
 bool AVDemuxer::readFrame()
 {
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
     AVPacket packet;
-    //start timeout timer and timeout
-    __interrupt_timer.start();
 
+    mpInterrup->begin();
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
-
-    //invalidate the timer
-    __interrupt_timer.invalidate();
+    mpInterrup->end();
 
     if (ret != 0) {
         //ffplay: AVERROR_EOF || url_eof() || avsq.empty()
@@ -200,7 +224,7 @@ bool AVDemuxer::close()
     audio_streams.clear();
     video_streams.clear();
     subtitle_streams.clear();
-    __interrupt_status = 0;
+    mpInterrup->setStatus(0);
     //av_close_input_file(format_context); //deprecated
     if (format_context) {
         qDebug("closing format_context");
@@ -348,18 +372,13 @@ bool AVDemuxer::loadFile(const QString &fileName)
         format_context = avformat_alloc_context();
 
     //install interrupt callback
-    format_context->interrupt_callback.callback = __interrupt_cb;
-    format_context->interrupt_callback.opaque = this;
+    format_context->interrupt_callback = *mpInterrup;
 
     qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
 
-    //start timeout timer and timeout
-    __interrupt_timer.start();
-
+    mpInterrup->begin();
     int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, NULL);
-
-    //invalidate the timer
-    __interrupt_timer.invalidate();
+    mpInterrup->end();
 
     qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
 
@@ -372,9 +391,9 @@ bool AVDemuxer::loadFile(const QString &fileName)
     //deprecated
     //if(av_find_stream_info(format_context)<0) {
     //TODO: avformat_find_stream_info is too slow, only useful for some video format
-    __interrupt_timer.start();
+    mpInterrup->begin();
     ret = avformat_find_stream_info(format_context, NULL);
-    __interrupt_timer.invalidate();
+    mpInterrup->end();
     if (ret < 0) {
         qWarning("Can't find stream info: %s", av_err2str(ret));
         return false;
@@ -811,14 +830,13 @@ QString AVDemuxer::formatName(AVFormatContext *ctx, bool longName) const
         return longName ? ctx->oformat->long_name : ctx->oformat->name;
 }
 
-
 /**
  * @brief getInterruptTimeout return the interrupt timeout
  * @return
  */
 qint64 AVDemuxer::getInterruptTimeout() const
 {
-    return __interrupt_timeout;
+    return mpInterrup->getTimeout();
 }
 
 /**
@@ -828,7 +846,7 @@ qint64 AVDemuxer::getInterruptTimeout() const
  */
 void AVDemuxer::setInterruptTimeout(qint64 timeout)
 {
-    __interrupt_timeout = timeout;
+    mpInterrup->setTimeout(timeout);
 }
 
 /**
@@ -836,7 +854,7 @@ void AVDemuxer::setInterruptTimeout(qint64 timeout)
  * @return
  */
 int AVDemuxer::getInterruptStatus() const{
-    return(__interrupt_status);
+    return mpInterrup->getStatus();
 }
 
 /**
@@ -844,9 +862,8 @@ int AVDemuxer::getInterruptStatus() const{
  * @param interrupt
  * @return
  */
-int AVDemuxer::setInterruptStatus(int interrupt){
-    __interrupt_status = (interrupt>0) ? 1 : 0;
-    return(__interrupt_status);
+void AVDemuxer::setInterruptStatus(int interrupt){
+    mpInterrup->setStatus(interrupt);
 }
 
 } //namespace QtAV

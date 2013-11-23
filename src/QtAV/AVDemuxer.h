@@ -165,7 +165,7 @@ public:
      * @param interrupt
      * @return
      */
-    int setInterruptStatus(int interrupt);
+    void setInterruptStatus(int interrupt);
 
 signals:
     /*emit when the first frame is read*/
@@ -199,20 +199,9 @@ private:
 
     SeekUnit mSeekUnit;
     SeekTarget mSeekTarget;
-    /**
-     * interrupt callback for ffmpeg
-     * @param void*obj: actual object
-     * @return
-     *  >0 interrupt ffmpeg loop!
-     */
-    static int __interrupt_cb(void *obj);
-    // timer for interrupt timeout
-    QElapsedTimer __interrupt_timer;
-    //interrupt timeout
-    qint64 __interrupt_timeout;
 
-    //interrupt status
-    int __interrupt_status;
+    class InterruptHandler;
+    InterruptHandler *mpInterrup;
 
 };
 
