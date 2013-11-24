@@ -1,0 +1,1 @@
+start bin\player.exe -vo gl
