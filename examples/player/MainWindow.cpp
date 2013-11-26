@@ -251,6 +251,7 @@ void MainWindow::setupUi()
     vb->addLayout(hb);
     pRepeatLabel = new QLabel(tr("From"));
     mpRepeatA = new QTimeEdit();
+    mpRepeatA->setDisplayFormat("HH:mm:ss");
     mpRepeatA->setToolTip(tr("negative value means from the end"));
     connect(mpRepeatA, SIGNAL(timeChanged(QTime)), SLOT(repeatAChanged(QTime)));
     hb = new QHBoxLayout;
@@ -259,6 +260,7 @@ void MainWindow::setupUi()
     vb->addLayout(hb);
     pRepeatLabel = new QLabel(tr("To"));
     mpRepeatB = new QTimeEdit();
+    mpRepeatB->setDisplayFormat("HH:mm:ss");
     mpRepeatB->setToolTip(tr("negative value means from the end"));
     connect(mpRepeatB, SIGNAL(timeChanged(QTime)), SLOT(repeatBChanged(QTime)));
     hb = new QHBoxLayout;
