@@ -127,6 +127,7 @@ public:
     virtual bool open();
     virtual bool close();
     virtual bool decode(const QByteArray &encoded);
+    virtual VideoFrame frame();
 };
 
 extern VideoDecoderId VideoDecoderId_FFmpeg_DXVA;
@@ -142,35 +143,6 @@ typedef struct {
     int                refcount;
     unsigned int       order;
 } vlc_va_surface_t;
-/**
- * video format description
- */
-//TODO: compare with vlc
-struct video_format_t
-{
-    AVPixelFormat  i_chroma;                               /**< picture chroma */
-
-    unsigned int i_width;                                 /**< picture width */
-    unsigned int i_height;                               /**< picture height */
-    unsigned int i_x_offset;               /**< start offset of visible area */
-    unsigned int i_y_offset;               /**< start offset of visible area */
-    unsigned int i_visible_width;                 /**< width of visible area */
-    unsigned int i_visible_height;               /**< height of visible area */
-
-    unsigned int i_bits_per_pixel;             /**< number of bits per pixel */
-
-    unsigned int i_sar_num;                   /**< sample/pixel aspect ratio */
-    unsigned int i_sar_den;
-
-    unsigned int i_frame_rate;                     /**< frame rate numerator */
-    unsigned int i_frame_rate_base;              /**< frame rate denominator */
-
-    uint32_t i_rmask, i_gmask, i_bmask;          /**< color masks for RGB chroma */
-    int i_rrshift, i_lrshift;
-    int i_rgshift, i_lgshift;
-    int i_rbshift, i_lbshift;
-};
-
 /* */
 typedef struct {
     const char   *name;
@@ -302,8 +274,32 @@ public:
     VideoDecoderFFmpeg_DXVAPrivate():
         VideoDecoderPrivate()
     {
+        available = loadDll();
     }
-    virtual ~VideoDecoderFFmpeg_DXVAPrivate() {
+    virtual ~VideoDecoderFFmpeg_DXVAPrivate()
+    {
+        unloadDll();
+    }
+    bool loadDll() {
+        hd3d9_dll = LoadLibrary(TEXT("D3D9.DLL"));
+        if (!hd3d9_dll) {
+            qWarning("cannot load d3d9.dll");
+            return false;
+        }
+        hdxva2_dll = LoadLibrary(TEXT("DXVA2.DLL"));
+        if (!hdxva2_dll) {
+            qWarning("cannot load dxva2.dll");
+            FreeLibrary(hd3d9_dll);
+            return false;
+        }
+        return true;
+    }
+    bool unloadDll() {
+        if (hdxva2_dll)
+            FreeLibrary(hdxva2_dll);
+        if (hd3d9_dll)
+            FreeLibrary(hd3d9_dll);
+        return true;
     }
 
     bool D3dCreateDevice()
@@ -356,9 +352,9 @@ public:
     void D3dDestroyDevice()
     {
         if (d3ddev)
-            IDirect3DDevice9_Release(d3ddev);
+            d3ddev->Release();
         if (d3dobj)
-            IDirect3D9_Release(d3dobj);
+            d3dobj->Release();
     }
     /**
      * It creates a Direct3D device manager
@@ -459,9 +455,7 @@ public:
             qDebug("Trying to use '%s' as input", mode->name);
             UINT      output_count = 0;
             D3DFORMAT *output_list = NULL;
-            if (FAILED(vs->GetDecoderRenderTargets(mode->guid,
-                                                                           &output_count,
-                                                                           &output_list))) {
+            if (FAILED(vs->GetDecoderRenderTargets(mode->guid, &output_count, &output_list))) {
                 qWarning("IDirectXVideoDecoderService_GetDecoderRenderTargets failed");
                 continue;
             }
@@ -497,16 +491,21 @@ public:
         CoTaskMemFree(input_list);
         return false;
     }
-    int DxCreateVideoDecoder(int codec_id, const video_format_t *fmt)
+    bool DxCreateVideoDecoder(int codec_id, int w, int h)
     {
-        qDebug("DxCreateVideoDecoder id %d %dx%d",
-                codec_id, fmt->i_width, fmt->i_height);
-        pic_width  = fmt->i_width;
-        pic_height = fmt->i_height;
+        if (!codec_ctx) {
+            qWarning("AVCodecContext not ready!");
+            return false;
+        }
+        qDebug("DxCreateVideoDecoder id %d %dx%d", codec_id, w, h);
+        pic_width = w;
+        pic_height = h;
+        width = w;
+        height = h;
 qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, pic_height);
         /* Allocates all surfaces needed for the decoder */
-        surface_width = (fmt->i_width  + 15) & ~15;
-        surface_height = (fmt->i_height + 15) & ~15;
+        surface_width = FFALIGN(width, 16);
+        surface_height = FFALIGN(height, 16);
         switch (codec_id) {
         case AV_CODEC_ID_H264:
             surface_count = 16 + 1;
@@ -539,22 +538,21 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
             surface->refcount = 0;
             surface->order = 0;
         }
-        qDebug("IDirectXVideoAccelerationService_CreateSurface succeed with %d surfaces (%dx%d)",
-                surface_count, fmt->i_width, fmt->i_height);
+        qDebug("IDirectXVideoAccelerationService_CreateSurface succeed with %d surfaces (%dx%d)", surface_count, w, h);
 
         /* */
         DXVA2_VideoDesc dsc;
         ZeroMemory(&dsc, sizeof(dsc));
-        dsc.SampleWidth     = fmt->i_width;
-        dsc.SampleHeight    = fmt->i_height;
+        dsc.SampleWidth     = width;
+        dsc.SampleHeight    = height;
         dsc.Format          = render;
-        if (fmt->i_frame_rate > 0 && fmt->i_frame_rate_base > 0) {
+        /*if (fmt->i_frame_rate > 0 && fmt->i_frame_rate_base > 0) {
             dsc.InputSampleFreq.Numerator   = fmt->i_frame_rate;
             dsc.InputSampleFreq.Denominator = fmt->i_frame_rate_base;
-        } else {
+        } else {*/
             dsc.InputSampleFreq.Numerator   = 0;
             dsc.InputSampleFreq.Denominator = 0;
-        }
+        //}
         dsc.OutputFrameFreq = dsc.InputSampleFreq;
         dsc.UABProtectionLevel = FALSE;
         dsc.Reserved = 0;
@@ -624,9 +622,10 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
         if (decoder)
             decoder->Release();
         decoder = NULL;
-
-        for (unsigned i = 0; i < surface_count; i++)
-            IDirect3DSurface9_Release(surface[i].d3d);
+        for (unsigned i = 0; i < surface_count; i++) {
+            if (surface[i].d3d)
+                surface[i].d3d->Release();
+        }
         surface_count = 0;
     }
     bool DxResetVideoDecoder()
@@ -652,14 +651,12 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
         ///CopyCleanCache(&surface_cache); //FIXME:
     }
 
-
     // hwaccel_context
     bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h)
     {
-        qDebug("decoder=%p, ", decoder);
-        if (!decoder || //( //(pic_width != w || height != h) &&
+        if (!decoder || ((width != w || height != h) &&
                 (surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16))//)
-            ) {
+            )) {
             DxDestroyVideoConversion();
             DxDestroyVideoDecoder();
             *hwctx = NULL;
@@ -667,11 +664,7 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
             if (w <= 0 || h <= 0)
                 return false;
             /* FIXME transmit a video_format_t by VaSetup directly */
-            video_format_t fmt;
-            memset(&fmt, 0, sizeof(fmt));
-            fmt.i_width = w;
-            fmt.i_height = h;
-            if (!DxCreateVideoDecoder(codec_id, &fmt))
+            if (!DxCreateVideoDecoder(codec_id, w, h))
                 return false;
             hw.decoder = decoder;
             hw.cfg = &cfg;
@@ -683,81 +676,11 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
         }
         *hwctx = &hw;
         const d3d_format_t *outfmt = D3dFindFormat(output);
-        *chroma = outfmt ? outfmt->codec : QTAV_PIX_FMT_C(NONE);
+        //*chroma = outfmt ? outfmt->codec : QTAV_PIX_FMT_C(NONE);
         return true;
     }
-#if 0
-    bool Extract(picture_t *picture, AVFrame *ff)
-    {
-        LPDIRECT3DSURFACE9 d3d = (LPDIRECT3DSURFACE9)(uintptr_t)ff->data[3];
-        /*
-        if (!surface_cache.buffer)
-            return false;
-        */
-        assert(output == MAKEFOURCC('Y','V','1','2'));
-        D3DLOCKED_RECT lock;
-        if (FAILED(d3d.LockRect(&lock, NULL, D3DLOCK_READONLY))) {
-            qWarning("Failed to lock surface");
-            return false;
-        }
-        /*
-        if (render == MAKEFOURCC('Y','V','1','2') ||
-            render == MAKEFOURCC('I','M','C','3')) {
-            bool imc3 = render == MAKEFOURCC('I','M','C','3');
-            size_t chroma_pitch = imc3 ? lock.Pitch : (lock.Pitch / 2);
-            size_t pitch[3] = {
-                lock.Pitch,
-                chroma_pitch,
-                chroma_pitch,
-            };
-            uint8_t *plane[3] = {
-                (uint8_t*)lock.pBits,
-                (uint8_t*)lock.pBits + pitch[0] * surface_height,
-                (uint8_t*)lock.pBits + pitch[0] * surface_height
-                                     + pitch[1] * surface_height / 2,
-            };
-            if (imc3) {
-                uint8_t *V = plane[1];
-                plane[1] = plane[2];
-                plane[2] = V;
-            }
-            CopyFromYv12(picture, plane, pitch,
-                         pic_width, pic_height,
-                         &surface_cache);
-        } else {*/
-            assert(render == MAKEFOURCC('N','V','1','2'));
-            uint8_t *plane[2] = {
-                lock.pBits,
-                (uint8_t*)lock.pBits + lock.Pitch * surface_height
-            };
-            size_t  pitch[2] = {
-                lock.Pitch,
-                lock.Pitch,
-            };
 
-            CopyFromNv12(picture, plane, pitch,
-                         pic_width, pic_height,
-                         &surface_cache);
-        //}
-
-        /* */
-        IDirect3DSurface9_UnlockRect(d3d);
-        return VLC_SUCCESS;
-    }
-#endif
     bool open() {
-        /* Load dll*/
-        hd3d9_dll = LoadLibrary(TEXT("D3D9.DLL"));
-        if (!hd3d9_dll) {
-            qWarning("cannot load d3d9.dll");
-            goto error;
-        }
-        hdxva2_dll = LoadLibrary(TEXT("DXVA2.DLL"));
-        if (!hdxva2_dll) {
-            qWarning("cannot load dxva2.dll");
-            goto error;
-        }
-        qDebug("DLLs loaded");
         if (!D3dCreateDevice()) {
             qWarning("Failed to create Direct3D device");
             goto error;
@@ -788,10 +711,6 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
         DxDestroyVideoService();
         D3dDestroyDeviceManager();
         D3dDestroyDevice();
-        if (hdxva2_dll)
-            FreeLibrary(hdxva2_dll);
-        if (hd3d9_dll)
-            FreeLibrary(hd3d9_dll);
         return true;
     }
     void setCodec(int c) {
@@ -1018,10 +937,12 @@ bool VideoDecoderFFmpeg_DXVA::open()
         qWarning("Open DXVA2 decoder failed!");
         return false;
     }
+    /*
     if (!d.setup(&d.codec_ctx->hwaccel_context, &d.codec_ctx->pix_fmt, d.codec_ctx->width, d.codec_ctx->height)) {
         qWarning("Setup DXVA2 failed.");
         return false;
     }
+    */
     d.codec_ctx->opaque = &d; //is it ok?
     d.codec_ctx->get_format = ffmpeg_get_dxva2_format;
     d.codec_ctx->get_buffer = ffmpeg_get_dxva2_buffer;
@@ -1071,14 +992,73 @@ bool VideoDecoderFFmpeg_DXVA::decode(const QByteArray &encoded)
     }
     if (!d.got_frame_ptr) {
         qWarning("no frame could be decompressed: %s", av_err2str(ret));
-        return false; ////TODO: return true if done!!!!!!
+        return false;
     }
     // TODO: wait key frame?
     if (!d.codec_ctx->width || !d.codec_ctx->height)
         return false;
     d.width = d.codec_ctx->width;
     d.height = d.codec_ctx->height;
-    return false; ////TODO: return true if done!!!!!!
+    return true;
+}
+
+VideoFrame VideoDecoderFFmpeg_DXVA::frame()
+{
+    DPTR_D(VideoDecoderFFmpeg_DXVA);
+    if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
+        return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+    //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
+    VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_NV12));//VideoFormat((int)d.codec_ctx->pix_fmt));
+    LPDIRECT3DSURFACE9 d3d = (LPDIRECT3DSURFACE9)(uintptr_t)d.frame->data[3];
+/*
+    if (!va->surface_cache.buffer)
+        return VLC_EGENERIC;
+*/
+    Q_ASSERT(d.output == MAKEFOURCC('Y','V','1','2'));
+//    qDebug("...........output: %d yv12=%d, size=%dx%d", d.output, MAKEFOURCC('Y','V','1','2'), d.pic_width, d.pic_height);
+    D3DLOCKED_RECT lock;
+    if (FAILED(d3d->LockRect(&lock, NULL, D3DLOCK_READONLY))) {
+        qWarning("Failed to lock surface");
+        return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+    }
+
+    if (d.render == MAKEFOURCC('Y','V','1','2') ||
+        d.render == MAKEFOURCC('I','M','C','3')) {
+        bool imc3 = d.render == MAKEFOURCC('I','M','C','3');
+        int chroma_pitch = imc3 ? lock.Pitch : (lock.Pitch / 2);
+        int pitch[3] = { //size_t
+            lock.Pitch,
+            chroma_pitch,
+            chroma_pitch,
+        };
+        uint8_t *plane[3] = {
+            (uint8_t*)lock.pBits,
+            (uint8_t*)lock.pBits + pitch[0] * d.surface_height,
+            (uint8_t*)lock.pBits + pitch[0] * d.surface_height
+                                 + pitch[1] * d.surface_height / 2,
+        };
+        if (imc3) {
+            uint8_t *V = plane[1];
+            plane[1] = plane[2];
+            plane[2] = V;
+        }
+        frame.setBits(plane);
+        frame.setBytesPerLine(pitch);
+    } else {
+        Q_ASSERT(d.render == MAKEFOURCC('N','V','1','2'));
+        uint8_t *plane[2] = {
+            (uint8_t *)lock.pBits,
+            (uint8_t*)lock.pBits + lock.Pitch * d.surface_height
+        };
+        int pitch[2] = {
+            lock.Pitch,
+            lock.Pitch
+        };
+        frame.setBits(plane);
+        frame.setBytesPerLine(pitch);
+    }
+    IDirect3DSurface9_UnlockRect(d3d);
+    return frame;
 }
 
 } //namespace QtAV
