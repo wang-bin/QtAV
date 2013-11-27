@@ -29,7 +29,7 @@
  *      ImageConverter* c = ImageConverter::create(ImageConverterId_FF);
  */
 
-#include "ImageConverter.h"
+#include <QtAV/ImageConverter.h>
 
 namespace QtAV {
 

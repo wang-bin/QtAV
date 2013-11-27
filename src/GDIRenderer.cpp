@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "GDIRenderer.h"
+#include "QtAV/GDIRenderer.h"
 #include "private/GDIRenderer_p.h"
 #include <QResizeEvent>
 

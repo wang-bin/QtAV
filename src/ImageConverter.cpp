@@ -23,7 +23,7 @@
 #include <private/ImageConverter_p.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtAV/factory.h>
-#include "ImageConverter.h"
+#include <QtAV/ImageConverter.h>
 
 namespace QtAV {
 

@@ -24,7 +24,7 @@
 #define QTAV_GLOBAL_H
 
 #include <qglobal.h>
-#include <dptr.h>
+#include "dptr.h"
 
 #if defined(Q_DLL_LIBRARY)
 #  undef Q_AV_EXPORT

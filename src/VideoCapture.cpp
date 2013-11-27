@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 
-#include "VideoCapture.h"
+#include <QtAV/VideoCapture.h>
 #include <QtCore/QThread>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
