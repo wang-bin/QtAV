@@ -208,6 +208,7 @@ struct SwrContext *swr_alloc_set_opts(struct SwrContext *s, int64_t out_ch_layou
 typedef enum PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelFormat
 #define QTAV_PIX_FMT_C(X) PIX_FMT_##X
 #else //FFmpeg >= 2.0
+typedef enum AVPixelFormat AVPixelFormat;
 #define QTAV_PIX_FMT_C(X) AV_PIX_FMT_##X
 #endif //AV_VERSION_INT(51, 42, 0)
 
