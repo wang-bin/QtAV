@@ -25,6 +25,7 @@
 #include <QtAV/AVClock.h>
 #include <QtAV/AVDemuxer.h> //TODO: remove AVDemuxer dependency. it's not a public class
 #include <QtAV/Statistics.h>
+#include <QtAV/VideoDecoderTypes.h>
 
 namespace QtAV {
 
@@ -167,6 +168,8 @@ public:
     bool installVideoFilter(Filter *filter);
     bool uninstallFilter(Filter *filter);
 
+    void setPriority(const QVector<VideoDecoderId>& ids);
+
 signals:
     void paused(bool p);
     void started();
@@ -274,6 +277,7 @@ private:
     qreal mSpeed;
     bool ao_enable;
     OutputSet *mpVOSet, *mpAOSet;
+    QVector<VideoDecoderId> vcodec_ids;
 };
 
 } //namespace QtAV

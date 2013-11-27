@@ -108,6 +108,12 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     setPlayerEventFilter(new EventFilter(this));
     video_capture = new VideoCapture(this);
+
+    vcodec_ids
+#if QTAV_HAVE(DXVA)
+            << VideoDecoderId_DXVA
+#endif //QTAV_HAVE(DXVA)
+            << VideoDecoderId_FFmpeg;
 }
 
 AVPlayer::~AVPlayer()
@@ -385,6 +391,10 @@ bool AVPlayer::uninstallFilter(Filter *filter)
     return true;
 }
 
+void AVPlayer::setPriority(const QVector<VideoDecoderId> &ids)
+{
+    vcodec_ids = ids;
+}
 
 /*
  * loaded state is the state of current setted file.
@@ -1128,18 +1138,39 @@ bool AVPlayer::setupVideoThread()
     if (!vCodecCtx) {
         return false;
     }
+    /*
     if (!video_dec) {
         video_dec = VideoDecoderFactory::create(VideoDecoderId_FFmpeg);
     }
-    video_dec->setCodecContext(vCodecCtx);
-    video_dec->prepare();
-    if (!video_dec->open()) {
+    */
+    if (video_dec) {
+        delete video_dec;
+        video_dec = 0;
+    }
+    foreach(VideoDecoderId vid, vcodec_ids) {
+        qDebug("**********trying video decoder: %s...", VideoDecoderFactory::name(vid).c_str());
+        VideoDecoder *vd = VideoDecoderFactory::create(vid);
+        if (!vd) {
+            continue;
+        }
+        //vd->isAvailable() //TODO: the value is wrong now
+        vd->setCodecContext(vCodecCtx);
+        vd->prepare();
+        if (vd->open()) {
+            video_dec = vd;
+            qDebug("**************Video decoder found");
+            break;
+        }
+        delete vd;
+    }
+    if (!video_dec) {
+        qWarning("No video decoder can be used.");
         return false;
     }
+
     if (!video_thread) {
         video_thread = new VideoThread(this);
         video_thread->setClock(clock);
-        video_thread->setDecoder(video_dec);
         video_thread->setStatistics(&mStatistics);
         video_thread->setVideoCapture(video_capture);
         video_thread->setOutputSet(mpVOSet);
@@ -1152,6 +1183,7 @@ bool AVPlayer::setupVideoThread()
             }
         }
     }
+    video_thread->setDecoder(video_dec);
     int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     video_thread->packetQueue()->setThreshold(queue_min);
