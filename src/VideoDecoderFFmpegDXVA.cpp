@@ -34,10 +34,15 @@
     ( (LIBAVCODEC_VERSION_MICRO <  100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, b, c ) ) || \
       (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, d, e ) ) )
 
+template <class T> void SafeRelease(T **ppT)
+{
+  if (*ppT) {
+    (*ppT)->Release();
+    *ppT = NULL;
+  }
+}
 
-//TODO: use c++ api instead of c api
-#define COBJMACROS //IDirect3DDeviceManager9_ResetDevice, IDirect3DDeviceManager9_Release
-//#define CINTERFACE //IDirect3DDeviceManager9_ResetDevice, IDirect3DDeviceManager9_Release
+// to use c api, add define COBJMACROS and CINTERFACE
 #define DXVA2API_USE_BITFIELDS
 extern "C" {
 #include <libavcodec/dxva2.h> //will include d3d9.h, dxva2api.h
@@ -146,68 +151,68 @@ typedef struct {
 /* */
 typedef struct {
     const char   *name;
-    const GUID   &guid;
+    const GUID   *guid;
     int          codec;
 } dxva2_mode_t;
 /* XXX Prefered modes must come first */
 static const dxva2_mode_t dxva2_modes[] = {
     /* MPEG-1/2 */
-    { "MPEG-2 variable-length decoder",                                               DXVA2_ModeMPEG2_VLD,                   CODEC_ID_MPEG2VIDEO },
-    { "MPEG-2 & MPEG-1 variable-length decoder",                                      DXVA2_ModeMPEG2and1_VLD,               CODEC_ID_MPEG2VIDEO },
-    { "MPEG-2 motion compensation",                                                   DXVA2_ModeMPEG2_MoComp,                0 },
-    { "MPEG-2 inverse discrete cosine transform",                                     DXVA2_ModeMPEG2_IDCT,                  0 },
+    { "MPEG-2 variable-length decoder",                                               &DXVA2_ModeMPEG2_VLD,                   CODEC_ID_MPEG2VIDEO },
+    { "MPEG-2 & MPEG-1 variable-length decoder",                                      &DXVA2_ModeMPEG2and1_VLD,               CODEC_ID_MPEG2VIDEO },
+    { "MPEG-2 motion compensation",                                                   &DXVA2_ModeMPEG2_MoComp,                0 },
+    { "MPEG-2 inverse discrete cosine transform",                                     &DXVA2_ModeMPEG2_IDCT,                  0 },
 
-    { "MPEG-1 variable-length decoder",                                               DXVA2_ModeMPEG1_VLD,                   0 },
+    { "MPEG-1 variable-length decoder",                                               &DXVA2_ModeMPEG1_VLD,                   0 },
 
     /* H.264 */
-    { "H.264 variable-length decoder, film grain technology",                         DXVA2_ModeH264_F,                      CODEC_ID_H264 },
-    { "H.264 variable-length decoder, no film grain technology",                      DXVA2_ModeH264_E,                      CODEC_ID_H264 },
-    { "H.264 variable-length decoder, no film grain technology (Intel ClearVideo)",   DXVADDI_Intel_ModeH264_E,              CODEC_ID_H264 },
-    { "H.264 variable-length decoder, no film grain technology, FMO/ASO",             DXVA_ModeH264_VLD_WithFMOASO_NoFGT,    CODEC_ID_H264 },
-    { "H.264 variable-length decoder, no film grain technology, Flash",               DXVA_ModeH264_VLD_NoFGT_Flash,         CODEC_ID_H264 },
+    { "H.264 variable-length decoder, film grain technology",                         &DXVA2_ModeH264_F,                      CODEC_ID_H264 },
+    { "H.264 variable-length decoder, no film grain technology",                      &DXVA2_ModeH264_E,                      CODEC_ID_H264 },
+    { "H.264 variable-length decoder, no film grain technology (Intel ClearVideo)",   &DXVADDI_Intel_ModeH264_E,              CODEC_ID_H264 },
+    { "H.264 variable-length decoder, no film grain technology, FMO/ASO",             &DXVA_ModeH264_VLD_WithFMOASO_NoFGT,    CODEC_ID_H264 },
+    { "H.264 variable-length decoder, no film grain technology, Flash",               &DXVA_ModeH264_VLD_NoFGT_Flash,         CODEC_ID_H264 },
 
-    { "H.264 inverse discrete cosine transform, film grain technology",               DXVA2_ModeH264_D,                      0 },
-    { "H.264 inverse discrete cosine transform, no film grain technology",            DXVA2_ModeH264_C,                      0 },
-    { "H.264 inverse discrete cosine transform, no film grain technology (Intel)",    DXVADDI_Intel_ModeH264_C,              0 },
+    { "H.264 inverse discrete cosine transform, film grain technology",               &DXVA2_ModeH264_D,                      0 },
+    { "H.264 inverse discrete cosine transform, no film grain technology",            &DXVA2_ModeH264_C,                      0 },
+    { "H.264 inverse discrete cosine transform, no film grain technology (Intel)",    &DXVADDI_Intel_ModeH264_C,              0 },
 
-    { "H.264 motion compensation, film grain technology",                             DXVA2_ModeH264_B,                      0 },
-    { "H.264 motion compensation, no film grain technology",                          DXVA2_ModeH264_A,                      0 },
-    { "H.264 motion compensation, no film grain technology (Intel)",                  DXVADDI_Intel_ModeH264_A,              0 },
+    { "H.264 motion compensation, film grain technology",                             &DXVA2_ModeH264_B,                      0 },
+    { "H.264 motion compensation, no film grain technology",                          &DXVA2_ModeH264_A,                      0 },
+    { "H.264 motion compensation, no film grain technology (Intel)",                  &DXVADDI_Intel_ModeH264_A,              0 },
 
     /* WMV */
-    { "Windows Media Video 8 motion compensation",                                    DXVA2_ModeWMV8_B,                      0 },
-    { "Windows Media Video 8 post processing",                                        DXVA2_ModeWMV8_A,                      0 },
+    { "Windows Media Video 8 motion compensation",                                    &DXVA2_ModeWMV8_B,                      0 },
+    { "Windows Media Video 8 post processing",                                        &DXVA2_ModeWMV8_A,                      0 },
 
-    { "Windows Media Video 9 IDCT",                                                   DXVA2_ModeWMV9_C,                      0 },
-    { "Windows Media Video 9 motion compensation",                                    DXVA2_ModeWMV9_B,                      0 },
-    { "Windows Media Video 9 post processing",                                        DXVA2_ModeWMV9_A,                      0 },
+    { "Windows Media Video 9 IDCT",                                                   &DXVA2_ModeWMV9_C,                      0 },
+    { "Windows Media Video 9 motion compensation",                                    &DXVA2_ModeWMV9_B,                      0 },
+    { "Windows Media Video 9 post processing",                                        &DXVA2_ModeWMV9_A,                      0 },
 
     /* VC-1 */
-    { "VC-1 variable-length decoder",                                                 DXVA2_ModeVC1_D,                       CODEC_ID_VC1 },
-    { "VC-1 variable-length decoder",                                                 DXVA2_ModeVC1_D,                       CODEC_ID_WMV3 },
-    { "VC-1 variable-length decoder",                                                 DXVA2_ModeVC1_D2010,                   CODEC_ID_VC1 },
-    { "VC-1 variable-length decoder",                                                 DXVA2_ModeVC1_D2010,                   CODEC_ID_WMV3 },
-    { "VC-1 variable-length decoder 2 (Intel)",                                       DXVA_Intel_VC1_ClearVideo_2,           0 },
-    { "VC-1 variable-length decoder (Intel)",                                         DXVA_Intel_VC1_ClearVideo,             0 },
+    { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D,                       CODEC_ID_VC1 },
+    { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D,                       CODEC_ID_WMV3 },
+    { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D2010,                   CODEC_ID_VC1 },
+    { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D2010,                   CODEC_ID_WMV3 },
+    { "VC-1 variable-length decoder 2 (Intel)",                                       &DXVA_Intel_VC1_ClearVideo_2,           0 },
+    { "VC-1 variable-length decoder (Intel)",                                         &DXVA_Intel_VC1_ClearVideo,             0 },
 
-    { "VC-1 inverse discrete cosine transform",                                       DXVA2_ModeVC1_C,                       0 },
-    { "VC-1 motion compensation",                                                     DXVA2_ModeVC1_B,                       0 },
-    { "VC-1 post processing",                                                         DXVA2_ModeVC1_A,                       0 },
+    { "VC-1 inverse discrete cosine transform",                                       &DXVA2_ModeVC1_C,                       0 },
+    { "VC-1 motion compensation",                                                     &DXVA2_ModeVC1_B,                       0 },
+    { "VC-1 post processing",                                                         &DXVA2_ModeVC1_A,                       0 },
 
     /* Xvid/Divx: TODO */
-    { "MPEG-4 Part 2 nVidia bitstream decoder",                                       DXVA_nVidia_MPEG4_ASP,                 0 },
-    { "MPEG-4 Part 2 variable-length decoder, Simple Profile",                        DXVA_ModeMPEG4pt2_VLD_Simple,          0 },
-    { "MPEG-4 Part 2 variable-length decoder, Simple&Advanced Profile, no GMC",       DXVA_ModeMPEG4pt2_VLD_AdvSimple_NoGMC, 0 },
-    { "MPEG-4 Part 2 variable-length decoder, Simple&Advanced Profile, GMC",          DXVA_ModeMPEG4pt2_VLD_AdvSimple_GMC,   0 },
-    { "MPEG-4 Part 2 variable-length decoder, Simple&Advanced Profile, Avivo",        DXVA_ModeMPEG4pt2_VLD_AdvSimple_Avivo, 0 },
+    { "MPEG-4 Part 2 nVidia bitstream decoder",                                       &DXVA_nVidia_MPEG4_ASP,                 0 },
+    { "MPEG-4 Part 2 variable-length decoder, Simple Profile",                        &DXVA_ModeMPEG4pt2_VLD_Simple,          0 },
+    { "MPEG-4 Part 2 variable-length decoder, Simple&Advanced Profile, no GMC",       &DXVA_ModeMPEG4pt2_VLD_AdvSimple_NoGMC, 0 },
+    { "MPEG-4 Part 2 variable-length decoder, Simple&Advanced Profile, GMC",          &DXVA_ModeMPEG4pt2_VLD_AdvSimple_GMC,   0 },
+    { "MPEG-4 Part 2 variable-length decoder, Simple&Advanced Profile, Avivo",        &DXVA_ModeMPEG4pt2_VLD_AdvSimple_Avivo, 0 },
 
-    { NULL, GUID_NULL, 0 }
+    { NULL, 0, 0 }
 };
 
-static const dxva2_mode_t *Dxva2FindMode(const GUID &guid)
+static const dxva2_mode_t *Dxva2FindMode(const GUID *guid)
 {
     for (unsigned i = 0; dxva2_modes[i].name; i++) {
-        if (IsEqualGUID(dxva2_modes[i].guid, guid))
+        if (IsEqualGUID(*dxva2_modes[i].guid, *guid))
             return &dxva2_modes[i];
     }
     return NULL;
@@ -237,9 +242,6 @@ static const d3d_format_t *D3dFindFormat(D3DFORMAT format)
     return NULL;
 }
 
-/**
- * It describes our Direct3D object
- */
 static QString DxDescribe(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
 {
     static const struct {
@@ -252,8 +254,6 @@ static QString DxDescribe(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
         { 0x5333, "S3 Graphics" },
         { 0, "" }
     };
-    //D3DADAPTER_IDENTIFIER9 *id = &d3dai;
-
     const char *vendor = "Unknown";
     for (int i = 0; vendors[i].id != 0; i++) {
         if (vendors[i].id == id->VendorId) {
@@ -261,7 +261,6 @@ static QString DxDescribe(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
             break;
         }
     }
-
     return QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
                  sizeof(id->Description), id->Description,
                  id->VendorId, vendor, id->DeviceId, id->Revision);
@@ -318,6 +317,9 @@ public:
         if (FAILED(IDirect3D9_GetAdapterIdentifier(d3dobj, D3DADAPTER_DEFAULT, 0, &d3dai))) {
             qWarning("IDirect3D9_GetAdapterIdentifier failed");
             ZeroMemory(&d3dai, sizeof(d3dai));
+        } else {
+            description = DxDescribe(&d3dai);
+            qDebug("DXVA2 description:  %s", description.toUtf8().constData());
         }
         ZeroMemory(&d3dpp, sizeof(d3dpp));
         d3dpp.Flags                  = D3DPRESENTFLAG_VIDEO;
@@ -351,10 +353,8 @@ public:
      */
     void D3dDestroyDevice()
     {
-        if (d3ddev)
-            d3ddev->Release();
-        if (d3dobj)
-            d3dobj->Release();
+        SafeRelease(&d3ddev);
+        SafeRelease(&d3dobj);
     }
     /**
      * It creates a Direct3D device manager
@@ -383,8 +383,7 @@ public:
     }
     void D3dDestroyDeviceManager()
     {
-        if (devmng)
-            devmng->Release();
+        SafeRelease(&devmng);
     }
     bool DxCreateVideoService()
     {
@@ -399,6 +398,7 @@ public:
 
         HRESULT hr = devmng->OpenDeviceHandle(&device);
         if (FAILED(hr)) {
+            device = 0;
             qWarning("OpenDeviceHandle failed");
             return false;
         }
@@ -412,10 +412,11 @@ public:
     }
     void DxDestroyVideoService()
     {
-        if (device)
+        if (devmng && device && device != INVALID_HANDLE_VALUE) {
             devmng->CloseDeviceHandle(device);
-        if (vs)
-            vs->Release();
+            device = 0;
+        }
+        SafeRelease(&vs);
     }
     /**
      * Find the best suited decoder mode GUID and render format.
@@ -431,7 +432,7 @@ public:
         }
         for (unsigned i = 0; i < input_count; i++) {
             const GUID &g = input_list[i];
-            const dxva2_mode_t *mode = Dxva2FindMode(g);
+            const dxva2_mode_t *mode = Dxva2FindMode(&g);
             if (mode) {
                 qDebug("- '%s' is supported by hardware", mode->name);
             } else {
@@ -447,7 +448,7 @@ public:
             bool is_suported = false;
             for (unsigned count = 0; !is_suported && count < input_count; count++) {
                 const GUID &g = input_list[count];
-                is_suported = IsEqualGUID(mode->guid, g); ///
+                is_suported = IsEqualGUID(*mode->guid, g); ///
             }
             if (!is_suported)
                 continue;
@@ -455,7 +456,7 @@ public:
             qDebug("Trying to use '%s' as input", mode->name);
             UINT      output_count = 0;
             D3DFORMAT *output_list = NULL;
-            if (FAILED(vs->GetDecoderRenderTargets(mode->guid, &output_count, &output_list))) {
+            if (FAILED(vs->GetDecoderRenderTargets(*mode->guid, &output_count, &output_list))) {
                 qWarning("IDirectXVideoDecoderService_GetDecoderRenderTargets failed");
                 continue;
             }
@@ -480,7 +481,7 @@ public:
 
                 /* We have our solution */
                 qDebug("Using '%s' to decode to '%s'", mode->name, format->name);
-                *input  = mode->guid;
+                *input  = *mode->guid;
                 *output = format->format;
                 CoTaskMemFree(output_list);
                 CoTaskMemFree(input_list);
@@ -498,11 +499,8 @@ public:
             return false;
         }
         qDebug("DxCreateVideoDecoder id %d %dx%d", codec_id, w, h);
-        pic_width = w;
-        pic_height = h;
         width = w;
         height = h;
-qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, pic_height);
         /* Allocates all surfaces needed for the decoder */
         surface_width = FFALIGN(width, 16);
         surface_height = FFALIGN(height, 16);
@@ -530,9 +528,7 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
             surface_count = 0;
             return false;
         }
-        qDebug("%s @%d surface_count=%d", __FUNCTION__, __LINE__, surface_count);
         for (unsigned i = 0; i < surface_count; i++) {
-            qDebug("%s @%d surface.d3d: %d/%d", __FUNCTION__, __LINE__, i, surface_count);
             vlc_va_surface_t *surface = &this->surface[i];
             surface->d3d = surface_list[i];
             surface->refcount = 0;
@@ -619,12 +615,9 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
     }
     void DxDestroyVideoDecoder()
     {
-        if (decoder)
-            decoder->Release();
-        decoder = NULL;
+        SafeRelease(&decoder);
         for (unsigned i = 0; i < surface_count; i++) {
-            if (surface[i].d3d)
-                surface[i].d3d->Release();
+            SafeRelease(&surface[i].d3d);
         }
         surface_count = 0;
     }
@@ -676,7 +669,7 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
         }
         *hwctx = &hw;
         const d3d_format_t *outfmt = D3dFindFormat(output);
-        //*chroma = outfmt ? outfmt->codec : QTAV_PIX_FMT_C(NONE);
+        *chroma = outfmt ? outfmt->codec : QTAV_PIX_FMT_C(NONE);
         return true;
     }
 
@@ -705,7 +698,6 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
         return false;
     }
     bool close() {
-        qDebug("XXXXXXXXX---------close");
         DxDestroyVideoConversion();
         DxDestroyVideoDecoder();
         DxDestroyVideoService();
@@ -718,8 +710,6 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
     }
 
     int          codec_id;
-    int          pic_width;
-    int          pic_height;
 
     /* DLL */
     HINSTANCE             hd3d9_dll;
@@ -749,10 +739,8 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
     D3DFORMAT                    output;
     //copy_cache_t                 surface_cache;
 
-    /* */
     struct dxva_context hw;
 
-    /* */
     unsigned     surface_count;
     unsigned     surface_order;
     int          surface_width;
@@ -761,6 +749,8 @@ qDebug(">>>>>>>>>>>>>>>>>>%s @%d =======%dx%d", __FUNCTION__, __LINE__, width, p
 
     vlc_va_surface_t surface[VA_DXVA2_MAX_SURFACE_COUNT];
     LPDIRECT3DSURFACE9 hw_surface[VA_DXVA2_MAX_SURFACE_COUNT];
+
+    QString description;
 };
 
 
@@ -842,10 +832,6 @@ static AVPixelFormat ffmpeg_get_dxva2_format(struct AVCodecContext *p_context, c
     return fmt[0];
 */
     VideoDecoderFFmpeg_DXVAPrivate *p_va = (VideoDecoderFFmpeg_DXVAPrivate*)p_context->opaque;
-    if(p_va) {
-        qDebug("ooooooooooooooooo close dxva decoder!!!!!!");
-        //p_va->close(); // setup will try close
-    }
     p_va->setCodec(p_context->codec_id);
     /* Profile and level informations are needed now.
      * TODO: avoid code duplication with avcodec.c */
@@ -855,9 +841,6 @@ static AVPixelFormat ffmpeg_get_dxva2_format(struct AVCodecContext *p_context, c
     if( p_context->level != FF_LEVEL_UNKNOWN)
         p_dec->fmt_in.i_level = p_context->level;
 #endif //KNOW_WHY
-    //p_va always not null
-    //p_va = vlc_va_New( VLC_OBJECT(p_dec), p_sys->i_codec_id, &p_dec->fmt_in );
-
     /* Try too look for a supported hw acceleration */
     //AV_PIX_FMT_NB? read avctx.get_format
     for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
@@ -937,22 +920,23 @@ bool VideoDecoderFFmpeg_DXVA::open()
         qWarning("Open DXVA2 decoder failed!");
         return false;
     }
-    /*
+    //TODO: neccesary?
+#if 0
     if (!d.setup(&d.codec_ctx->hwaccel_context, &d.codec_ctx->pix_fmt, d.codec_ctx->width, d.codec_ctx->height)) {
         qWarning("Setup DXVA2 failed.");
         return false;
     }
-    */
+#endif
     d.codec_ctx->opaque = &d; //is it ok?
     d.codec_ctx->get_format = ffmpeg_get_dxva2_format;
     d.codec_ctx->get_buffer = ffmpeg_get_dxva2_buffer;
     //d.codec_ctx->get_buffer2 = //lavfilter
     d.codec_ctx->release_buffer = ffmpeg_release_buffer;
     d.codec_ctx->thread_count = 1;
-/* lavfilter
+// lavfilter
     d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
     d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
-*/
+
 
     int ret = avcodec_open2(d.codec_ctx, codec, NULL);
     if (ret < 0) {
@@ -966,7 +950,6 @@ bool VideoDecoderFFmpeg_DXVA::open()
 bool VideoDecoderFFmpeg_DXVA::close()
 {
     DPTR_D(VideoDecoderFFmpeg_DXVA);
-    qDebug("ooooooooooooooooo VideoDecoderFFmpeg_DXVA::close close dxva decoder!!!!!!");
     d.close();
     return VideoDecoder::close();
 }
@@ -992,7 +975,7 @@ bool VideoDecoderFFmpeg_DXVA::decode(const QByteArray &encoded)
     }
     if (!d.got_frame_ptr) {
         qWarning("no frame could be decompressed: %s", av_err2str(ret));
-        return false;
+        return false; //FIXME
     }
     // TODO: wait key frame?
     if (!d.codec_ctx->width || !d.codec_ctx->height)
@@ -1007,26 +990,42 @@ VideoFrame VideoDecoderFFmpeg_DXVA::frame()
     DPTR_D(VideoDecoderFFmpeg_DXVA);
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
-    //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
-    VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_NV12));//VideoFormat((int)d.codec_ctx->pix_fmt));
-    LPDIRECT3DSURFACE9 d3d = (LPDIRECT3DSURFACE9)(uintptr_t)d.frame->data[3];
 /*
     if (!va->surface_cache.buffer)
         return VLC_EGENERIC;
 */
     Q_ASSERT(d.output == MAKEFOURCC('Y','V','1','2'));
-//    qDebug("...........output: %d yv12=%d, size=%dx%d", d.output, MAKEFOURCC('Y','V','1','2'), d.pic_width, d.pic_height);
+//    qDebug("...........output: %d yv12=%d, size=%dx%d", d.output, MAKEFOURCC('Y','V','1','2'), d.width, d.height);
+
+    class ScopedD3DLock {
+    public:
+        ScopedD3DLock(IDirect3DSurface9* d3d, D3DLOCKED_RECT *rect)
+            : mpD3D(d3d)
+        {
+            if (FAILED(mpD3D->LockRect(rect, NULL, D3DLOCK_READONLY))) {
+                qWarning("Failed to lock surface");
+                mpD3D = 0;
+            }
+        }
+        ~ScopedD3DLock() {
+            if (mpD3D)
+                mpD3D->UnlockRect();
+        }
+    private:
+        IDirect3DSurface9 *mpD3D;
+    };
+
+    IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
     D3DLOCKED_RECT lock;
-    if (FAILED(d3d->LockRect(&lock, NULL, D3DLOCK_READONLY))) {
-        qWarning("Failed to lock surface");
+    ScopedD3DLock(d3d, &lock);
+    if (lock.Pitch == 0) {
         return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
     }
-
     if (d.render == MAKEFOURCC('Y','V','1','2') ||
         d.render == MAKEFOURCC('I','M','C','3')) {
         bool imc3 = d.render == MAKEFOURCC('I','M','C','3');
         int chroma_pitch = imc3 ? lock.Pitch : (lock.Pitch / 2);
-        int pitch[3] = { //size_t
+        int pitch[3] = {
             lock.Pitch,
             chroma_pitch,
             chroma_pitch,
@@ -1042,23 +1041,32 @@ VideoFrame VideoDecoderFFmpeg_DXVA::frame()
             plane[1] = plane[2];
             plane[2] = V;
         }
+        //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
+        //FIXME: FFmpeg has no YV12. YUV420P is ok?
+        VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_YUV420P));//VideoFormat((int)d.codec_ctx->pix_fmt));
         frame.setBits(plane);
         frame.setBytesPerLine(pitch);
+        return frame;
     } else {
         Q_ASSERT(d.render == MAKEFOURCC('N','V','1','2'));
-        uint8_t *plane[2] = {
+        uint8_t *plane[4] = {
             (uint8_t *)lock.pBits,
-            (uint8_t*)lock.pBits + lock.Pitch * d.surface_height
+            (uint8_t*)lock.pBits + lock.Pitch * d.surface_height,
+            0,
+            0
         };
-        int pitch[2] = {
+        int pitch[4] = {
             lock.Pitch,
-            lock.Pitch
+            lock.Pitch,
+            0,
+            0
         };
+        VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_NV12));//VideoFormat((int)d.codec_ctx->pix_fmt));
         frame.setBits(plane);
         frame.setBytesPerLine(pitch);
+        return frame;
     }
-    IDirect3DSurface9_UnlockRect(d3d);
-    return frame;
+    return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
 }
 
 } //namespace QtAV
