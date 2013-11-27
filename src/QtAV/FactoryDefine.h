@@ -21,6 +21,7 @@
 #define FACTORYDEFINE_H
 
 #include <string>
+#include <vector>
 
 /*!
  * A: Suppose we need a factory for class MyClass. We can query a derived class
@@ -115,6 +116,8 @@
         static bool unregisterCreator(const ID& id); \
         static ID id(const std::string& name); \
         static std::string name(const ID &id); \
+        static std::vector<ID> registeredIds(); \
+        static std::vector<std::string> registeredNames(); \
         static size_t count(); \
         static T* getRandom(); \
     };
@@ -131,6 +134,8 @@
     bool T##Factory::unregisterCreator(const ID& id) { return T##FactoryBridge::Instance().unregisterCreator(id); } \
     ID T##Factory::id(const std::string& name) { return T##FactoryBridge::Instance().id(name); } \
     std::string T##Factory::name(const ID &id) { return T##FactoryBridge::Instance().name(id); } \
+    std::vector<ID> T##Factory::registeredIds() { return T##FactoryBridge::Instance().registeredIds(); } \
+    std::vector<std::string> T##Factory::registeredNames() { return T##FactoryBridge::Instance().registeredNames(); } \
     size_t T##Factory::count() { return T##FactoryBridge::Instance().count(); } \
     T* T##Factory::getRandom() { fflush(0);return T##FactoryBridge::Instance().getRandom(); }
 

@@ -72,6 +72,8 @@ public:
     ID id(const std::string& name) const;
     std::string name(const ID &id) const;
     size_t count() const;
+    std::vector<ID> registeredIds() const;
+    std::vector<std::string> registeredNames() const;
     Type* getRandom(); //remove
 //    Type* at(int index);
 //    ID idAt(int index);
@@ -141,6 +143,22 @@ template<typename Id, typename T, class Class>
 std::string Factory<Id, T, Class>::name(const ID &id) const
 {
     return name_map.find(id)->second;
+}
+
+template<typename Id, typename T, class Class>
+std::vector<typename Factory<Id, T, Class>::ID> Factory<Id, T, Class>::registeredIds() const
+{
+    return ids;
+}
+
+template<typename Id, typename T, class Class>
+std::vector<std::string> Factory<Id, T, Class>::registeredNames() const
+{
+    std::vector<std::string> names;
+    for (NameMap::const_iterator it = name_map.cbegin(); it != name_map.cend(); ++it) {
+        names.push_back((*it).second);
+    }
+    return names;
 }
 
 template<typename Id, typename T, class Class>
