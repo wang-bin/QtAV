@@ -26,6 +26,9 @@ OTHER_FILES += \
 EssentialDepends = avutil avcodec avformat swscale
 OptionalDepends = portaudio direct2d gdiplus gl \
     swresample avresample
+win32 {
+    OptionalDepends += dxva
+}
 unix {
     OptionalDepends += xv
 }

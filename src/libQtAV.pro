@@ -3,7 +3,8 @@ TARGET = QtAV
 
 QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += widgets gui-private
+  QT += widgets
+*linux*: gui-private
 }
 
 CONFIG *= qtav-buildlib
@@ -53,7 +54,6 @@ config_avresample {
     SOURCES += AudioResamplerLibav.cpp
     LIBS += -lavresample
 }
-
 ipp-link {
     DEFINES += IPP_LINK
     ICCROOT = $$(IPPROOT)/../compiler
@@ -62,7 +62,6 @@ ipp-link {
             -L$$(IPPROOT)/../compiler/lib/ia32 -L$$(IPPROOT)/../compiler/lib/intel64 -lsvml -limf
     #omp for static link. _t is multi-thread static link
 }
-
 config_portaudio {
     SOURCES += AOPortAudio.cpp
     SDK_HEADERS += QtAV/AOPortAudio.h
@@ -78,7 +77,6 @@ config_openal {
     win32:LIBS *= -lOpenAL32
     else: LIBS *= -lopenal
 }
-
 config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
     SOURCES += GDIRenderer.cpp
@@ -86,7 +84,6 @@ config_gdiplus {
     SDK_HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus -lGdi32
 }
-
 config_direct2d {
     DEFINES *= QTAV_HAVE_DIRECT2D=1
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
@@ -109,7 +106,10 @@ config_gl {
     HEADERS += QtAV/private/GLWidgetRenderer_p.h
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
 }
-
+config_dxva {
+    DEFINES *= QTAV_HAVE_DXVA=1
+    SOURCES += VideoDecoderDXVA.cpp
+}
 SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \

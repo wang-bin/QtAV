@@ -121,13 +121,13 @@ DEFINE_GUID(DXVA_ModeMPEG4pt2_VLD_AdvSimple_Avivo,  0x7C74ADC6, 0xe2ba, 0x4ade, 
 
 namespace QtAV {
 
-class VideoDecoderFFmpeg_DXVAPrivate;
-class VideoDecoderFFmpeg_DXVA : public VideoDecoder
+class VideoDecoderDXVAPrivate;
+class VideoDecoderDXVA : public VideoDecoder
 {
-    DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg_DXVA)
+    DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
 public:
-    VideoDecoderFFmpeg_DXVA();
-    virtual ~VideoDecoderFFmpeg_DXVA();
+    VideoDecoderDXVA();
+    virtual ~VideoDecoderDXVA();
     virtual bool prepare();
     virtual bool open();
     virtual bool close();
@@ -135,12 +135,12 @@ public:
     virtual VideoFrame frame();
 };
 
-extern VideoDecoderId VideoDecoderId_FFmpeg_DXVA;
-FACTORY_REGISTER_ID_AUTO(VideoDecoder, FFmpeg_DXVA, "DXVA(FFmpeg)")
+extern VideoDecoderId VideoDecoderId_DXVA;
+FACTORY_REGISTER_ID_AUTO(VideoDecoder, DXVA, "DXVA(FFmpeg)")
 
-void RegisterVideoDecoderFFmpeg_DXVA_Man()
+void RegisterVideoDecoderDXVA_Man()
 {
-    FACTORY_REGISTER_ID_MAN(VideoDecoder, FFmpeg_DXVA, "DXVA(FFmpeg)")
+    FACTORY_REGISTER_ID_MAN(VideoDecoder, DXVA, "DXVA(FFmpeg)")
 }
 
 typedef struct {
@@ -267,15 +267,15 @@ static QString DxDescribe(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
 }
 
 
-class VideoDecoderFFmpeg_DXVAPrivate : public VideoDecoderPrivate
+class VideoDecoderDXVAPrivate : public VideoDecoderPrivate
 {
 public:
-    VideoDecoderFFmpeg_DXVAPrivate():
+    VideoDecoderDXVAPrivate():
         VideoDecoderPrivate()
     {
         available = loadDll();
     }
-    virtual ~VideoDecoderFFmpeg_DXVAPrivate()
+    virtual ~VideoDecoderDXVAPrivate()
     {
         unloadDll();
     }
@@ -758,7 +758,7 @@ public:
 /* FIXME it is nearly common with VAAPI */
 static int ffmpeg_get_dxva2_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
 {
-    VideoDecoderFFmpeg_DXVAPrivate* va = (VideoDecoderFFmpeg_DXVAPrivate*)c->opaque;
+    VideoDecoderDXVAPrivate* va = (VideoDecoderDXVAPrivate*)c->opaque;
     /* */
     ff->opaque = NULL;
 #if ! LIBAVCODEC_VERSION_CHECK(54, 34, 0, 79, 101)
@@ -811,7 +811,7 @@ static int ffmpeg_get_dxva2_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_v
 
 static void ffmpeg_release_buffer(struct AVCodecContext *p_context, AVFrame *ff)
 {
-    VideoDecoderFFmpeg_DXVAPrivate *va = (VideoDecoderFFmpeg_DXVAPrivate*)p_context->opaque;
+    VideoDecoderDXVAPrivate *va = (VideoDecoderDXVAPrivate*)p_context->opaque;
     LPDIRECT3DSURFACE9 d3d = (LPDIRECT3DSURFACE9)(uintptr_t)ff->data[3];
     for (unsigned i = 0; i < va->surface_count; i++) {
         vlc_va_surface_t *surface = &va->surface[i];
@@ -831,7 +831,7 @@ static AVPixelFormat ffmpeg_get_dxva2_format(struct AVCodecContext *p_context, c
     }
     return fmt[0];
 */
-    VideoDecoderFFmpeg_DXVAPrivate *p_va = (VideoDecoderFFmpeg_DXVAPrivate*)p_context->opaque;
+    VideoDecoderDXVAPrivate *p_va = (VideoDecoderDXVAPrivate*)p_context->opaque;
     p_va->setCodec(p_context->codec_id);
     /* Profile and level informations are needed now.
      * TODO: avoid code duplication with avcodec.c */
@@ -879,24 +879,24 @@ static AVPixelFormat ffmpeg_get_dxva2_format(struct AVCodecContext *p_context, c
 
 
 
-VideoDecoderFFmpeg_DXVA::VideoDecoderFFmpeg_DXVA()
-    : VideoDecoder(*new VideoDecoderFFmpeg_DXVAPrivate())
+VideoDecoderDXVA::VideoDecoderDXVA()
+    : VideoDecoder(*new VideoDecoderDXVAPrivate())
 {
 }
 
-VideoDecoderFFmpeg_DXVA::~VideoDecoderFFmpeg_DXVA()
+VideoDecoderDXVA::~VideoDecoderDXVA()
 {
     setCodecContext(0);
 }
 
-bool VideoDecoderFFmpeg_DXVA::prepare()
+bool VideoDecoderDXVA::prepare()
 {
     return VideoDecoder::prepare();
 }
 
-bool VideoDecoderFFmpeg_DXVA::open()
+bool VideoDecoderDXVA::open()
 {
-    DPTR_D(VideoDecoderFFmpeg_DXVA);
+    DPTR_D(VideoDecoderDXVA);
     if (!d.codec_ctx) {
         qWarning("FFmpeg codec context not ready");
         return false;
@@ -947,14 +947,14 @@ bool VideoDecoderFFmpeg_DXVA::open()
     return true;
 }
 
-bool VideoDecoderFFmpeg_DXVA::close()
+bool VideoDecoderDXVA::close()
 {
-    DPTR_D(VideoDecoderFFmpeg_DXVA);
+    DPTR_D(VideoDecoderDXVA);
     d.close();
     return VideoDecoder::close();
 }
 
-bool VideoDecoderFFmpeg_DXVA::decode(const QByteArray &encoded)
+bool VideoDecoderDXVA::decode(const QByteArray &encoded)
 {
     if (!isAvailable())
         return false;
@@ -985,9 +985,9 @@ bool VideoDecoderFFmpeg_DXVA::decode(const QByteArray &encoded)
     return true;
 }
 
-VideoFrame VideoDecoderFFmpeg_DXVA::frame()
+VideoFrame VideoDecoderDXVA::frame()
 {
-    DPTR_D(VideoDecoderFFmpeg_DXVA);
+    DPTR_D(VideoDecoderDXVA);
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
 /*

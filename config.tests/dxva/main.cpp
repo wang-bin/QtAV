@@ -1,5 +1,5 @@
 /******************************************************************************
-    VideoRendererTypes: type id and manually id register function
+    QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -19,29 +19,24 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEODECODERTYPES_H
-#define QTAV_VIDEODECODERTYPES_H
+extern "C" {
+#include <libavcodec/dxva2.h> //will include d3d9.h, dxva2api.h
+}
+#define VA_DXVA2_MAX_SURFACE_COUNT (64)
 
-#include <QtAV/VideoDecoder.h>
+#include <d3d9.h>
+#include <dxva2api.h>
 
-namespace QtAV {
+#define MS_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+    static const GUID name = { l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
+#ifdef __MINGW32__
+# include <_mingw.h>
+# if defined(__MINGW64_VERSION_MAJOR)
+#  include <dxva.h>
+# endif
+#endif /* __MINGW32__ */
 
-/*!
- * \brief GetRegisted
- * \return count of available id
- *  if pass a null ids, only return the count. otherwise regitered ids will be stored in ids
- */
-int GetRegisted(VideoDecoderId** ids = 0, int inSize = -1);
-
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_CUDA;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_DXVA;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VAAPI;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDPAU;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDA;
-
-
-Q_AV_EXPORT void VideoDecoder_RegisterAll();
-
-} //namespace QtAV
-#endif // QTAV_VIDEODECODERTYPES_H
+int main()
+{
+	return 0;
+}

@@ -29,12 +29,14 @@ namespace QtAV {
 FACTORY_DEFINE(VideoDecoder)
 
 extern void RegisterVideoDecoderFFmpeg_Man();
-extern void RegisterVideoDecoderFFmpeg_DXVA_Man();
+extern void RegisterVideoDecoderDXVA_Man();
 
 void VideoDecoder_RegisterAll()
 {
     RegisterVideoDecoderFFmpeg_Man();
-    //RegisterVideoDecoderFFmpeg_DXVA_Man();
+#if QTAV_HAVE(DXVA)
+    RegisterVideoDecoderDXVA_Man();
+#endif //QTAV_HAVE(DXVA)
 }
 
 
