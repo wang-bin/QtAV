@@ -273,6 +273,20 @@ public:
     VideoDecoderDXVAPrivate():
         VideoDecoderPrivate()
     {
+        hd3d9_dll = 0;
+        hdxva2_dll = 0;
+        d3dobj = 0;
+        d3ddev = 0;
+        token = 0;
+        devmng = 0;
+        device = 0;
+        vs = 0;
+        render = D3DFMT_UNKNOWN;
+        decoder = 0;
+        output = D3DFMT_UNKNOWN;
+        surface_count = 0;
+        surface_order = 0;
+        surface_width = surface_height = 0;
         available = loadDll();
     }
     virtual ~VideoDecoderDXVAPrivate()
@@ -949,7 +963,11 @@ bool VideoDecoderDXVA::open()
 
 bool VideoDecoderDXVA::close()
 {
+    if (!isOpen()) {
+        return true;
+    }
     DPTR_D(VideoDecoderDXVA);
+    d.is_open = false;
     d.close();
     return VideoDecoder::close();
 }
