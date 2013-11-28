@@ -155,7 +155,7 @@ template<typename Id, typename T, class Class>
 std::vector<std::string> Factory<Id, T, Class>::registeredNames() const
 {
     std::vector<std::string> names;
-    for (NameMap::const_iterator it = name_map.cbegin(); it != name_map.cend(); ++it) {
+    for (typename NameMap::const_iterator it = name_map.begin(); it != name_map.end(); ++it) {
         names.push_back((*it).second);
     }
     return names;
