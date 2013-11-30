@@ -36,7 +36,7 @@ public:
 };
 
 
-ImageConverterId ImageConverterId_FF = 0;
+ImageConverterId ImageConverterId_FF = 1;
 FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
 
 void RegisterImageConverterFF_Man()

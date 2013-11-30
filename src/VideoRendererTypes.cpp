@@ -43,13 +43,13 @@ namespace QtAV {
 
 FACTORY_DEFINE(VideoRenderer)
 
-VideoRendererId VideoRendererId_QPainter = 0;
-VideoRendererId VideoRendererId_Widget = 1;
-VideoRendererId VideoRendererId_GraphicsItem = 2;
-VideoRendererId VideoRendererId_GLWidget = 3;
-VideoRendererId VideoRendererId_GDI = 4;
-VideoRendererId VideoRendererId_Direct2D = 5;
-VideoRendererId VideoRendererId_XV = 6;
+VideoRendererId VideoRendererId_QPainter = 1;
+VideoRendererId VideoRendererId_Widget = 2;
+VideoRendererId VideoRendererId_GraphicsItem = 3;
+VideoRendererId VideoRendererId_GLWidget = 4;
+VideoRendererId VideoRendererId_GDI = 5;
+VideoRendererId VideoRendererId_Direct2D = 6;
+VideoRendererId VideoRendererId_XV = 7;
 
 //QPainterRenderer is abstract. So can not register(operator new will needed)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")

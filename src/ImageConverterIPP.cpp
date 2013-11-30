@@ -43,7 +43,7 @@ protected:
     virtual bool prepareData(); //Allocate memory for out data
 };
 
-ImageConverterId ImageConverterId_IPP = 1;
+ImageConverterId ImageConverterId_IPP = 2;
 FACTORY_REGISTER_ID_AUTO(ImageConverter, IPP, "IPP")
 
 void RegisterImageConverterIPP_Man()

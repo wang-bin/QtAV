@@ -31,7 +31,7 @@ namespace QtAV {
  * \return count of available id
  *  if pass a null ids, only return the count. otherwise regitered ids will be stored in ids
  */
-QVector<VideoDecoderId> GetRegistedVideoDecoderIds();
+Q_AV_EXPORT QVector<VideoDecoderId> GetRegistedVideoDecoderIds();
 
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_CUDA;

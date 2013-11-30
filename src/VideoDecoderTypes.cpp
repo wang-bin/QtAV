@@ -3,9 +3,9 @@
 
 namespace QtAV {
 
-VideoDecoderId VideoDecoderId_FFmpeg = 0;
-VideoDecoderId VideoDecoderId_CUDA = 1;
-VideoDecoderId VideoDecoderId_DXVA = 2;
+VideoDecoderId VideoDecoderId_FFmpeg = 1;
+VideoDecoderId VideoDecoderId_CUDA = 2;
+VideoDecoderId VideoDecoderId_DXVA = 3;
 
 QVector<VideoDecoderId> GetRegistedVideoDecoderIds()
 {
