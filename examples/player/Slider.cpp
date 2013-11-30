@@ -41,6 +41,7 @@ Slider::Slider(QWidget *parent):
     QSlider(parent)
 {
     setOrientation(Qt::Horizontal);
+    setMouseTracking(true); //mouseMoveEvent without press.
 }
 
 Slider::~Slider()
@@ -101,12 +102,31 @@ int Slider::pixelPosToRangeValue(int pos) const
                                            sliderMax - sliderMin, opt.upsideDown);
 }
 
+void Slider::enterEvent(QEvent *event)
+{
+    emit onEnter();
+    QSlider::enterEvent(event);
+}
+
+void Slider::leaveEvent(QEvent *e)
+{
+    emit onLeave();
+    QSlider::leaveEvent(e);
+}
+
+void Slider::mouseMoveEvent(QMouseEvent *e)
+{
+    const int o = style()->pixelMetric(QStyle::PM_SliderLength ) - 1;
+    int v = QStyle::sliderValueFromPosition(minimum(), maximum(), e->pos().x()-o/2, width()-o, false);
+    emit onHover(e->x(), v);
+    QSlider::mouseMoveEvent(e);
+}
+
 // Based on code from qslider.cpp
 void Slider::mousePressEvent(QMouseEvent *e)
 {
     qDebug("pressed (%d, %d)", e->pos().x(), e->pos().y());
 	if (e->button() == Qt::LeftButton) {
-        qDebug("Left button");
         QStyleOptionSlider opt;
         initStyleOption(&opt);
         const QRect sliderRect = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this);

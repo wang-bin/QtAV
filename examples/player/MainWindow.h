@@ -72,6 +72,9 @@ private slots:
     void repeatAChanged(const QTime& t);
     void repeatBChanged(const QTime& t);
 
+    void onTimeSliderHover(int pos, int value);
+    void onTimeSliderLeave();
+
 protected:
     virtual void resizeEvent(QResizeEvent *);
     virtual void timerEvent(QTimerEvent *);
@@ -119,6 +122,8 @@ private:
     QString mTitle;
     QPixmap mPlayPixmap;
     QPixmap mPausePixmap;
+
+    QLabel *mpPreview;
 };
 
 #endif // MAINWINDOW_H

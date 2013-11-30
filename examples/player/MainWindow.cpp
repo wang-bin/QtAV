@@ -16,6 +16,7 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
+#include <QToolTip>
 #include <QtAV/QtAV.h>
 #include "Button.h"
 #include "ClickableMenu.h"
@@ -68,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
     //QTimer::singleShot(10, this, SLOT(setupUi()));
     setupUi();
-    setToolTip(tr("Click black area to use shortcut(see right click menu)"));
+    //setToolTip(tr("Click black area to use shortcut(see right click menu)"));
 }
 
 MainWindow::~MainWindow()
@@ -111,6 +112,8 @@ void MainWindow::setupUi()
     mpPlayerLayout = new QVBoxLayout();
     mpControl = new QWidget(this);
     mpControl->setMaximumHeight(25);
+
+    //mpPreview = new QLable(this);
 
     mpTimeSlider = new Slider(mpControl);
     mpTimeSlider->setDisabled(true);
@@ -361,7 +364,7 @@ void MainWindow::setupUi()
     //connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
     connect(mpTimeSlider, SIGNAL(sliderPressed()), SLOT(seek()));
     connect(mpTimeSlider, SIGNAL(sliderReleased()), SLOT(seek()));
-
+    connect(mpTimeSlider, SIGNAL(onHover(int,int)), SLOT(onTimeSliderHover(int,int)));
     QTimer::singleShot(0, this, SLOT(initPlayer()));
 }
 
@@ -897,4 +900,14 @@ void MainWindow::showInfo()
     if (mpPlayer)
         sv->setStatistics(mpPlayer->statistics());
     sv->show();
+}
+
+void MainWindow::onTimeSliderHover(int pos, int value)
+{
+    QToolTip::showText(mapToGlobal(mpTimeSlider->pos() + QPoint(pos, 0)), QTime(0, 0, 0).addMSecs(value).toString("HH:mm:ss"));
+}
+
+void MainWindow::onTimeSliderLeave()
+{
+
 }
