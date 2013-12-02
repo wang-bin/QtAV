@@ -23,6 +23,8 @@
 #include "Slider.h"
 #include "StatisticsView.h"
 #include "TVView.h"
+#include "config/DecoderConfigPage.h"
+#include "config/Config.h"
 
 /*
  *TODO:
@@ -66,6 +68,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     mpAudioTrackAction = 0;
     setMouseTracking(true); //mouseMoveEvent without press.
+    mpConfig = new Config(this);
     connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
     //QTimer::singleShot(10, this, SLOT(setupUi()));
     setupUi();
@@ -311,6 +314,13 @@ void MainWindow::setupUi()
     }
     mpChannelAction->setChecked(true);
 
+    subMenu = new ClickableMenu(tr("Decoder"));
+    mpMenu->addMenu(subMenu);
+    mpDecoderConfigPage = new DecoderConfigPage(mpConfig);
+    pWA = new QWidgetAction(0);
+    pWA->setDefaultWidget(mpDecoderConfigPage);
+    subMenu->addAction(pWA);
+
     subMenu = new ClickableMenu(tr("Renderer"));
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeVO(QAction*)));
@@ -534,6 +544,7 @@ void MainWindow::play(const QString &name)
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
     mpPlayer->setRepeat(mRepeateMax);
+    mpPlayer->setPriority(mpConfig->decoderPriority());
     mpPlayer->play(name);
 }
 

@@ -10,7 +10,7 @@ class AVPlayer;
 class AVClock;
 class VideoRenderer;
 }
-
+class Config;
 class QMenu;
 class QTimeEdit;
 class QVBoxLayout;
@@ -20,6 +20,7 @@ class QSpinBox;
 class QTimeEdit;
 class Button;
 class Slider;
+class DecoderConfigPage;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -124,6 +125,9 @@ private:
     QPixmap mPausePixmap;
 
     QLabel *mpPreview;
+
+    Config *mpConfig;
+    DecoderConfigPage *mpDecoderConfigPage;
 };
 
 #endif // MAINWINDOW_H

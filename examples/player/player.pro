@@ -17,7 +17,9 @@ SOURCES += main.cpp \
     ScreenSaver.cpp \
     StatisticsView.cpp \
     Slider.cpp \
-    TVView.cpp
+    TVView.cpp \
+    config/Config.cpp \
+    config/DecoderConfigPage.cpp
 
 HEADERS += \
     MainWindow.h \
@@ -26,7 +28,9 @@ HEADERS += \
     ScreenSaver.h \
     StatisticsView.h \
     Slider.h \
-    TVView.h
+    TVView.h \
+    config/Config.h \
+    config/DecoderConfigPage.h
 
 tv.files = res/tv.ini
 BIN_INSTALLS += tv

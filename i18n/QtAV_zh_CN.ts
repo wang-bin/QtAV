@@ -111,7 +111,7 @@
     </message>
     <message>
         <location filename="../src/EventFilter.cpp" line="104"/>
-        <location filename="../src/EventFilter.cpp" line="358"/>
+        <location filename="../src/EventFilter.cpp" line="302"/>
         <source>Help</source>
         <translation>帮助</translation>
     </message>
@@ -226,22 +226,22 @@
 </translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="354"/>
+        <location filename="../src/EventFilter.cpp" line="298"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="355"/>
+        <location filename="../src/EventFilter.cpp" line="299"/>
         <source>Open Url</source>
         <translation>打开 Url</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="357"/>
+        <location filename="../src/EventFilter.cpp" line="301"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../src/EventFilter.cpp" line="360"/>
+        <location filename="../src/EventFilter.cpp" line="304"/>
         <source>About Qt</source>
         <translation>关于 Qt</translation>
     </message>
