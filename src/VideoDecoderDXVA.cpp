@@ -136,18 +136,18 @@ public:
 };
 
 extern VideoDecoderId VideoDecoderId_DXVA;
-FACTORY_REGISTER_ID_AUTO(VideoDecoder, DXVA, "DXVA(FFmpeg)")
+FACTORY_REGISTER_ID_AUTO(VideoDecoder, DXVA, "DXVA")
 
 void RegisterVideoDecoderDXVA_Man()
 {
-    FACTORY_REGISTER_ID_MAN(VideoDecoder, DXVA, "DXVA(FFmpeg)")
+    FACTORY_REGISTER_ID_MAN(VideoDecoder, DXVA, "DXVA")
 }
 
 typedef struct {
-    LPDIRECT3DSURFACE9 d3d;
-    int                refcount;
-    unsigned int       order;
-} vlc_va_surface_t;
+    IDirect3DSurface9 *d3d;
+    int refcount;
+    unsigned int order;
+} va_surface_t;
 /* */
 typedef struct {
     const char   *name;
@@ -293,447 +293,39 @@ public:
     {
         unloadDll();
     }
-    bool loadDll() {
-        hd3d9_dll = LoadLibrary(TEXT("D3D9.DLL"));
-        if (!hd3d9_dll) {
-            qWarning("cannot load d3d9.dll");
-            return false;
-        }
-        hdxva2_dll = LoadLibrary(TEXT("DXVA2.DLL"));
-        if (!hdxva2_dll) {
-            qWarning("cannot load dxva2.dll");
-            FreeLibrary(hd3d9_dll);
-            return false;
-        }
-        return true;
-    }
-    bool unloadDll() {
-        if (hdxva2_dll)
-            FreeLibrary(hdxva2_dll);
-        if (hd3d9_dll)
-            FreeLibrary(hd3d9_dll);
-        return true;
-    }
 
-    bool D3dCreateDevice()
-    {
-        typedef LPDIRECT3D9 (WINAPI *Create9Func)(UINT SDKVersion);
-        Create9Func Create9 = (Create9Func)GetProcAddress(hd3d9_dll, "Direct3DCreate9");
-        if (!Create9) {
-            qWarning("Cannot locate reference to Direct3DCreate9 ABI in DLL");
-            return false;
-        }
-        d3dobj = Create9(D3D_SDK_VERSION);
-        if (!d3dobj) {
-            qWarning("Direct3DCreate9 failed");
-            return false;
-        }
-        if (FAILED(IDirect3D9_GetAdapterIdentifier(d3dobj, D3DADAPTER_DEFAULT, 0, &d3dai))) {
-            qWarning("IDirect3D9_GetAdapterIdentifier failed");
-            ZeroMemory(&d3dai, sizeof(d3dai));
-        } else {
-            description = DxDescribe(&d3dai);
-            qDebug("DXVA2 description:  %s", description.toUtf8().constData());
-        }
-        ZeroMemory(&d3dpp, sizeof(d3dpp));
-        d3dpp.Flags                  = D3DPRESENTFLAG_VIDEO;
-        d3dpp.Windowed               = TRUE;
-        d3dpp.hDeviceWindow          = NULL;
-        d3dpp.SwapEffect             = D3DSWAPEFFECT_DISCARD;
-        d3dpp.MultiSampleType        = D3DMULTISAMPLE_NONE;
-        d3dpp.PresentationInterval   = D3DPRESENT_INTERVAL_DEFAULT;
-        d3dpp.BackBufferCount        = 0;                  /* FIXME what to put here */
-        d3dpp.BackBufferFormat       = D3DFMT_X8R8G8B8;    /* FIXME what to put here */
-        d3dpp.BackBufferWidth        = 0;
-        d3dpp.BackBufferHeight       = 0;
-        d3dpp.EnableAutoDepthStencil = FALSE;
+    bool loadDll();
+    bool unloadDll();
+    bool D3dCreateDevice();
+    void D3dDestroyDevice();
+    bool D3dCreateDeviceManager();
+    void D3dDestroyDeviceManager();
+    bool DxCreateVideoService();
+    void DxDestroyVideoService();
+    bool DxFindVideoServiceConversion(GUID *input, D3DFORMAT *output);
+    bool DxCreateVideoDecoder(int codec_id, int w, int h);
+    void DxDestroyVideoDecoder();
+    bool DxResetVideoDecoder();
+    void DxCreateVideoConversion();
+    void DxDestroyVideoConversion();
 
-        /* Direct3D needs a HWND to create a device, even without using ::Present
-        this HWND is used to alert Direct3D when there's a change of focus window.
-        For now, use GetDesktopWindow, as it looks harmless */
-        if (FAILED(IDirect3D9_CreateDevice(d3dobj, D3DADAPTER_DEFAULT,
-                                           D3DDEVTYPE_HAL, GetDesktopWindow(), //GetShellWindow()?
-                                           D3DCREATE_SOFTWARE_VERTEXPROCESSING |
-                                           D3DCREATE_MULTITHREADED,
-                                           &d3dpp, &d3ddev))) {
-            qWarning("IDirect3D9_CreateDevice failed");
-            return false;
-        }
+    bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h);
+    bool open();
+    bool close();
 
-        return true;
-    }
-    /**
-     * It releases a Direct3D device and its resources.
-     */
-    void D3dDestroyDevice()
-    {
-        SafeRelease(&d3ddev);
-        SafeRelease(&d3dobj);
-    }
-    /**
-     * It creates a Direct3D device manager
-     */
-    bool D3dCreateDeviceManager()
-    {
-        typedef HRESULT (WINAPI *CreateDeviceManager9Func)(UINT *pResetToken, IDirect3DDeviceManager9 **);
-        CreateDeviceManager9Func CreateDeviceManager9 = (CreateDeviceManager9Func)GetProcAddress(hdxva2_dll, "DXVA2CreateDirect3DDeviceManager9");
-        if (!CreateDeviceManager9) {
-            qWarning("cannot load function DXVA2CreateDirect3DDeviceManager9");
-            return false;
-        }
-        qDebug("OurDirect3DCreateDeviceManager9 Success!");
-        if (FAILED(CreateDeviceManager9(&token, &devmng))) {
-            qWarning(" OurDirect3DCreateDeviceManager9 failed");
-            return false;
-        }
-        qDebug("obtained IDirect3DDeviceManager9");
-        //http://msdn.microsoft.com/en-us/library/windows/desktop/ms693525%28v=vs.85%29.aspx
-        HRESULT hr = devmng->ResetDevice(d3ddev, token);
-        if (FAILED(hr)) {
-            qWarning("IDirect3DDeviceManager9_ResetDevice failed: %08x", (unsigned)hr);
-            return false;
-        }
-        return true;
-    }
-    void D3dDestroyDeviceManager()
-    {
-        SafeRelease(&devmng);
-    }
-    bool DxCreateVideoService()
-    {
-        typedef HRESULT (WINAPI *CreateVideoServiceFunc)(IDirect3DDevice9 *, REFIID riid, void **ppService);
-        CreateVideoServiceFunc CreateVideoService = (CreateVideoServiceFunc)GetProcAddress(hdxva2_dll, "DXVA2CreateVideoService");
-
-        if (!CreateVideoService) {
-            qWarning("cannot load function");
-            return false;
-        }
-        qDebug("DXVA2CreateVideoService Success!");
-
-        HRESULT hr = devmng->OpenDeviceHandle(&device);
-        if (FAILED(hr)) {
-            device = 0;
-            qWarning("OpenDeviceHandle failed");
-            return false;
-        }
-        //c++: devmng->GetVideoService
-        hr = devmng->GetVideoService(device, IID_IDirectXVideoDecoderService, (void**)&vs);
-        if (FAILED(hr)) {
-            qWarning("GetVideoService failed");
-            return false;
-        }
-        return true;
-    }
-    void DxDestroyVideoService()
-    {
-        if (devmng && device && device != INVALID_HANDLE_VALUE) {
-            devmng->CloseDeviceHandle(device);
-            device = 0;
-        }
-        SafeRelease(&vs);
-    }
-    /**
-     * Find the best suited decoder mode GUID and render format.
-     */
-    bool DxFindVideoServiceConversion(GUID *input, D3DFORMAT *output)
-    {
-        /* Retreive supported modes from the decoder service */
-        UINT input_count = 0;
-        GUID *input_list = NULL;
-        if (FAILED(vs->GetDecoderDeviceGuids(&input_count, &input_list))) {
-            qWarning("IDirectXVideoDecoderService_GetDecoderDeviceGuids failed");
-            return false;
-        }
-        for (unsigned i = 0; i < input_count; i++) {
-            const GUID &g = input_list[i];
-            const dxva2_mode_t *mode = Dxva2FindMode(&g);
-            if (mode) {
-                qDebug("- '%s' is supported by hardware", mode->name);
-            } else {
-                qWarning("- Unknown GUID = %08X-%04x-%04x-XXXX",
-                         (unsigned)g.Data1, g.Data2, g.Data3);
-            }
-        }
-        /* Try all supported mode by our priority */
-        for (unsigned i = 0; dxva2_modes[i].name; i++) {
-            const dxva2_mode_t *mode = &dxva2_modes[i];
-            if (!mode->codec || mode->codec != codec_id)
-                continue;
-            bool is_suported = false;
-            for (unsigned count = 0; !is_suported && count < input_count; count++) {
-                const GUID &g = input_list[count];
-                is_suported = IsEqualGUID(*mode->guid, g); ///
-            }
-            if (!is_suported)
-                continue;
-
-            qDebug("Trying to use '%s' as input", mode->name);
-            UINT      output_count = 0;
-            D3DFORMAT *output_list = NULL;
-            if (FAILED(vs->GetDecoderRenderTargets(*mode->guid, &output_count, &output_list))) {
-                qWarning("IDirectXVideoDecoderService_GetDecoderRenderTargets failed");
-                continue;
-            }
-            for (unsigned j = 0; j < output_count; j++) {
-                const D3DFORMAT f = output_list[j];
-                const d3d_format_t *format = D3dFindFormat(f);
-                if (format) {
-                    qDebug("%s is supported for output", format->name);
-                } else {
-                    qDebug("%d is supported for output (%4.4s)", f, (const char*)&f);
-                }
-            }
-
-            for (unsigned j = 0; d3d_formats[j].name; j++) {
-                const d3d_format_t *format = &d3d_formats[j];
-                bool is_suported = false;
-                for (unsigned k = 0; !is_suported && k < output_count; k++) {
-                    is_suported = format->format == output_list[k];
-                }
-                if (!is_suported)
-                    continue;
-
-                /* We have our solution */
-                qDebug("Using '%s' to decode to '%s'", mode->name, format->name);
-                *input  = *mode->guid;
-                *output = format->format;
-                CoTaskMemFree(output_list);
-                CoTaskMemFree(input_list);
-                return true;
-            }
-            CoTaskMemFree(output_list);
-        }
-        CoTaskMemFree(input_list);
-        return false;
-    }
-    bool DxCreateVideoDecoder(int codec_id, int w, int h)
-    {
-        if (!codec_ctx) {
-            qWarning("AVCodecContext not ready!");
-            return false;
-        }
-        qDebug("DxCreateVideoDecoder id %d %dx%d", codec_id, w, h);
-        width = w;
-        height = h;
-        /* Allocates all surfaces needed for the decoder */
-        surface_width = FFALIGN(width, 16);
-        surface_height = FFALIGN(height, 16);
-        switch (codec_id) {
-        case AV_CODEC_ID_H264:
-            surface_count = 16 + 1;
-            break;
-        default:
-            surface_count = 2 + 1;
-            break;
-        }
-        LPDIRECT3DSURFACE9 surface_list[VA_DXVA2_MAX_SURFACE_COUNT];
-        qDebug("%s @%d vs=%p surface_count=%d surface_width=%d surface_height=%d"
-               , __FUNCTION__, __LINE__, vs, surface_count, surface_width, surface_height);
-        if (FAILED(vs->CreateSurface(surface_width,
-                                     surface_height,
-                                     surface_count - 1,
-                                     render,
-                                     D3DPOOL_DEFAULT,
-                                     0,
-                                     DXVA2_VideoDecoderRenderTarget,
-                                     surface_list,
-                                     NULL))) {
-            qWarning("IDirectXVideoAccelerationService_CreateSurface failed");
-            surface_count = 0;
-            return false;
-        }
-        for (unsigned i = 0; i < surface_count; i++) {
-            vlc_va_surface_t *surface = &this->surface[i];
-            surface->d3d = surface_list[i];
-            surface->refcount = 0;
-            surface->order = 0;
-        }
-        qDebug("IDirectXVideoAccelerationService_CreateSurface succeed with %d surfaces (%dx%d)", surface_count, w, h);
-
-        /* */
-        DXVA2_VideoDesc dsc;
-        ZeroMemory(&dsc, sizeof(dsc));
-        dsc.SampleWidth     = width;
-        dsc.SampleHeight    = height;
-        dsc.Format          = render;
-        /*if (fmt->i_frame_rate > 0 && fmt->i_frame_rate_base > 0) {
-            dsc.InputSampleFreq.Numerator   = fmt->i_frame_rate;
-            dsc.InputSampleFreq.Denominator = fmt->i_frame_rate_base;
-        } else {*/
-            dsc.InputSampleFreq.Numerator   = 0;
-            dsc.InputSampleFreq.Denominator = 0;
-        //}
-        dsc.OutputFrameFreq = dsc.InputSampleFreq;
-        dsc.UABProtectionLevel = FALSE;
-        dsc.Reserved = 0;
-
-        /* FIXME I am unsure we can let unknown everywhere */
-        DXVA2_ExtendedFormat *ext = &dsc.SampleFormat;
-        ext->SampleFormat = 0;//DXVA2_SampleUnknown;
-        ext->VideoChromaSubsampling = 0;//DXVA2_VideoChromaSubsampling_Unknown;
-        ext->NominalRange = 0;//DXVA2_NominalRange_Unknown;
-        ext->VideoTransferMatrix = 0;//DXVA2_VideoTransferMatrix_Unknown;
-        ext->VideoLighting = 0;//DXVA2_VideoLighting_Unknown;
-        ext->VideoPrimaries = 0;//DXVA2_VideoPrimaries_Unknown;
-        ext->VideoTransferFunction = 0;//DXVA2_VideoTransFunc_Unknown;
-
-        /* List all configurations available for the decoder */
-        UINT                      cfg_count = 0;
-        DXVA2_ConfigPictureDecode *cfg_list = NULL;
-        if (FAILED(vs->GetDecoderConfigurations(input,
-                                                &dsc,
-                                                NULL,
-                                                &cfg_count,
-                                                &cfg_list))) {
-            qWarning("IDirectXVideoDecoderService_GetDecoderConfigurations failed");
-            return false;
-        }
-        qDebug("we got %d decoder configurations", cfg_count);
-        /* Select the best decoder configuration */
-        int cfg_score = 0;
-        for (unsigned i = 0; i < cfg_count; i++) {
-            const DXVA2_ConfigPictureDecode *cfg = &cfg_list[i];
-            qDebug("configuration[%d] ConfigBitstreamRaw %d", i, cfg->ConfigBitstreamRaw);
-            int score;
-            if (cfg->ConfigBitstreamRaw == 1)
-                score = 1;
-            else if (codec_id == AV_CODEC_ID_H264 && cfg->ConfigBitstreamRaw == 2)
-                score = 2;
-            else
-                continue;
-            if (IsEqualGUID(cfg->guidConfigBitstreamEncryption, DXVA_NoEncrypt))
-                score += 16;
-
-            if (cfg_score < score) {
-                this->cfg = *cfg;
-                cfg_score = score;
-            }
-        }
-        CoTaskMemFree(cfg_list);
-        if (cfg_score <= 0) {
-            qWarning("Failed to find a supported decoder configuration");
-            return false;
-        }
-        /* Create the decoder */
-        if (FAILED(vs->CreateVideoDecoder(input,
-                                          &dsc,
-                                          &cfg,
-                                          surface_list,
-                                          surface_count,
-                                          &decoder))) {
-            qWarning("IDirectXVideoDecoderService_CreateVideoDecoder failed");
-            return false;
-        }
-        qDebug("IDirectXVideoDecoderService_CreateVideoDecoder succeed. decoder=%p", decoder);
-        return true;
-    }
-    void DxDestroyVideoDecoder()
-    {
-        SafeRelease(&decoder);
-        for (unsigned i = 0; i < surface_count; i++) {
-            SafeRelease(&surface[i].d3d);
-        }
-        surface_count = 0;
-    }
-    bool DxResetVideoDecoder()
-    {
-        qWarning("DxResetVideoDecoder unimplemented");
-        return true;
-    }
-    void DxCreateVideoConversion()
-    {
-        switch (render) {
-        case MAKEFOURCC('N','V','1','2'):
-        case MAKEFOURCC('I','M','C','3'):
-            output = (D3DFORMAT)MAKEFOURCC('Y','V','1','2');
-            break;
-        default:
-            output = render;
-            break;
-        }
-        ///CopyInitCache(&surface_cache, surface_width); //FIXME:
-    }
-    void DxDestroyVideoConversion()
-    {
-        ///CopyCleanCache(&surface_cache); //FIXME:
-    }
-
-    // hwaccel_context
-    bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h)
-    {
-        if (!decoder || ((width != w || height != h) &&
-                (surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16))//)
-            )) {
-            DxDestroyVideoConversion();
-            DxDestroyVideoDecoder();
-            *hwctx = NULL;
-            *chroma = QTAV_PIX_FMT_C(NONE);
-            if (w <= 0 || h <= 0)
-                return false;
-            /* FIXME transmit a video_format_t by VaSetup directly */
-            if (!DxCreateVideoDecoder(codec_id, w, h))
-                return false;
-            hw.decoder = decoder;
-            hw.cfg = &cfg;
-            hw.surface_count = surface_count;
-            hw.surface = hw_surface;
-            for (unsigned i = 0; i < surface_count; i++)
-                hw.surface[i] = surface[i].d3d;
-            DxCreateVideoConversion();
-        }
-        *hwctx = &hw;
-        const d3d_format_t *outfmt = D3dFindFormat(output);
-        *chroma = outfmt ? outfmt->codec : QTAV_PIX_FMT_C(NONE);
-        return true;
-    }
-
-    bool open() {
-        if (!D3dCreateDevice()) {
-            qWarning("Failed to create Direct3D device");
-            goto error;
-        }
-        qDebug("D3dCreateDevice succeed");
-        if (!D3dCreateDeviceManager()) {
-            qWarning("D3dCreateDeviceManager failed");
-            goto error;
-        }
-        if (!DxCreateVideoService()) {
-            qWarning("DxCreateVideoService failed");
-            goto error;
-        }
-        if (!DxFindVideoServiceConversion(&input, &render)) {
-            qWarning("DxFindVideoServiceConversion failed");
-            goto error;
-        }
-        /* TODO print the hardware name/vendor for debugging purposes */
-        return true;
-    error:
-        close();
-        return false;
-    }
-    bool close() {
-        DxDestroyVideoConversion();
-        DxDestroyVideoDecoder();
-        DxDestroyVideoService();
-        D3dDestroyDeviceManager();
-        D3dDestroyDevice();
-        return true;
-    }
-    void setCodec(int c) {
-        codec_id = c;
-    }
-
-    int          codec_id;
+    AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat * pi_fmt);
+    int getBuffer(struct AVCodecContext *c, AVFrame *ff);
+    void releaseBuffer(struct AVCodecContext *c, AVFrame *ff);
 
     /* DLL */
-    HINSTANCE             hd3d9_dll;
-    HINSTANCE             hdxva2_dll;
+    HINSTANCE hd3d9_dll;
+    HINSTANCE hdxva2_dll;
 
     /* Direct3D */
-    D3DPRESENT_PARAMETERS  d3dpp;
-    LPDIRECT3D9            d3dobj;
+    D3DPRESENT_PARAMETERS d3dpp;
+    IDirect3D9 *d3dobj;
     D3DADAPTER_IDENTIFIER9 d3dai;
-    LPDIRECT3DDEVICE9      d3ddev;
+    IDirect3DDevice9 *d3ddev;
 
     /* Device manager */
     UINT                     token;
@@ -761,136 +353,29 @@ public:
     int          surface_height;
     //AVPixelFormat surface_chroma;
 
-    vlc_va_surface_t surface[VA_DXVA2_MAX_SURFACE_COUNT];
-    LPDIRECT3DSURFACE9 hw_surface[VA_DXVA2_MAX_SURFACE_COUNT];
+    va_surface_t surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
+    IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
     QString description;
 };
 
+static AVPixelFormat ffmpeg_get_dxva2_format(struct AVCodecContext *c, const AVPixelFormat * ff)
+{
+    VideoDecoderDXVAPrivate *va = (VideoDecoderDXVAPrivate*)c->opaque;
+    return va->getFormat(c, ff);
+}
 
-
-/* FIXME it is nearly common with VAAPI */
 static int ffmpeg_get_dxva2_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
 {
-    VideoDecoderDXVAPrivate* va = (VideoDecoderDXVAPrivate*)c->opaque;
-    /* */
-    ff->opaque = NULL;
-#if ! LIBAVCODEC_VERSION_CHECK(54, 34, 0, 79, 101)
-    ff->pkt_pts = c->pkt ? c->pkt->pts : AV_NOPTS_VALUE;
-#endif
-#if LIBAVCODEC_VERSION_MAJOR < 54
-    ff->age = 256*256*256*64;
-#endif
-    /* hwaccel_context is not present in old ffmpeg version */
-    if (!va->setup(&c->hwaccel_context, &c->pix_fmt,// &p_dec->fmt_out.video.i_chroma,
-                c->width, c->height)) {
-        qWarning("vlc_va_Setup failed" );
-        return -1;
-    }
-    /* Check the device */
-    HRESULT hr = va->devmng->TestDevice(va->device);
-    if (hr == DXVA2_E_NEW_VIDEO_DEVICE) {
-        if (!va->DxResetVideoDecoder())
-            return -1;
-    } else if (FAILED(hr)) {
-        qWarning("IDirect3DDeviceManager9_TestDevice %u", (unsigned)hr);
-        return -1;
-    }
-    /* Grab an unused surface, in case none are, try the oldest
-     * XXX using the oldest is a workaround in case a problem happens with libavcodec */
-    unsigned i, old;
-    for (i = 0, old = 0; i < va->surface_count; i++) {
-        vlc_va_surface_t *surface = &va->surface[i];
-        if (!surface->refcount)
-            break;
-        if (surface->order < va->surface[old].order)
-            old = i;
-    }
-    if (i >= va->surface_count)
-        i = old;
-    vlc_va_surface_t *surface = &va->surface[i];
-    surface->refcount = 1;
-    surface->order = va->surface_order++;
-    /* */
-    for (int i = 0; i < 4; i++) {
-        ff->data[i] = NULL;
-        ff->linesize[i] = 0;
-        if (i == 0 || i == 3)
-            ff->data[i] = (uint8_t*)surface->d3d;/* Yummie */
-    }
-    ff->type = FF_BUFFER_TYPE_USER;
-    return 0;
+    VideoDecoderDXVAPrivate *va = (VideoDecoderDXVAPrivate*)c->opaque;
+    return va->getBuffer(c, ff);
 }
 
-
-static void ffmpeg_release_buffer(struct AVCodecContext *p_context, AVFrame *ff)
+static void ffmpeg_release_buffer(struct AVCodecContext *c, AVFrame *ff)
 {
-    VideoDecoderDXVAPrivate *va = (VideoDecoderDXVAPrivate*)p_context->opaque;
-    LPDIRECT3DSURFACE9 d3d = (LPDIRECT3DSURFACE9)(uintptr_t)ff->data[3];
-    for (unsigned i = 0; i < va->surface_count; i++) {
-        vlc_va_surface_t *surface = &va->surface[i];
-        if (surface->d3d == d3d)
-            surface->refcount--;
-    }
-    for( int i = 0; i < 4; i++ )
-        ff->data[i] = NULL;
+    VideoDecoderDXVAPrivate *va = (VideoDecoderDXVAPrivate*)c->opaque;
+    va->releaseBuffer(c, ff);
 }
-
-static AVPixelFormat ffmpeg_get_dxva2_format(struct AVCodecContext *p_context, const AVPixelFormat * pi_fmt)
-{
-    //lavfilter
-/*
-    while (*pi_fmt != AV_PIX_FMT_NONE && *pi_fmt != AV_PIX_FMT_DXVA2_VLD) {
-        ++pi_fmt;
-    }
-    return fmt[0];
-*/
-    VideoDecoderDXVAPrivate *p_va = (VideoDecoderDXVAPrivate*)p_context->opaque;
-    p_va->setCodec(p_context->codec_id);
-    /* Profile and level informations are needed now.
-     * TODO: avoid code duplication with avcodec.c */
-#if KNOW_WHY
-    if( p_context->profile != FF_PROFILE_UNKNOWN)
-        p_dec->fmt_in.i_profile = p_context->profile;
-    if( p_context->level != FF_LEVEL_UNKNOWN)
-        p_dec->fmt_in.i_level = p_context->level;
-#endif //KNOW_WHY
-    /* Try too look for a supported hw acceleration */
-    //AV_PIX_FMT_NB? read avctx.get_format
-    for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
-        const char *name = av_get_pix_fmt_name(pi_fmt[i]);
-        qDebug("Available decoder output format %d (%s)", pi_fmt[i], name ? name : "unknown" );
-        if (QTAV_PIX_FMT_C(DXVA2_VLD) != pi_fmt[i])
-            continue;
-        /* We try to call vlc_va_Setup when possible to detect errors when
-         * possible (later is too late) */
-        if( p_context->width > 0 && p_context->height > 0
-         && !p_va->setup(&p_context->hwaccel_context,
-                        ///FIXME: fmt_out is required?
-                          &p_context->pix_fmt,  ///&p_dec->fmt_out.video.i_chroma,
-                          p_context->width, p_context->height ) )
-        {
-            qWarning("acceleration setup failure");
-            break;
-        }
-/*
-        if( p_va->description )
-            msg_Info( p_dec, "Using %s for hardware decoding.",
-                      p_va->description );
-*/
-        /* FIXME this will disable direct rendering
-         * even if a new pixel format is renegotiated
-         */
-        //p_sys->b_direct_rendering = false;
-        //p_sys->p_va = p_va;
-        p_context->draw_horiz_band = NULL;
-        return pi_fmt[i];
-    }
-    qWarning("acceleration not available" );
-    p_va->close();
-    return avcodec_default_get_format( p_context, pi_fmt );
-}
-
 
 
 VideoDecoderDXVA::VideoDecoderDXVA()
@@ -929,7 +414,6 @@ bool VideoDecoderDXVA::open()
         }
         return false;
     }
-    d.setCodec(d.codec_ctx->codec_id);
     if (!d.open()) {
         qWarning("Open DXVA2 decoder failed!");
         return false;
@@ -943,14 +427,18 @@ bool VideoDecoderDXVA::open()
 #endif
     d.codec_ctx->opaque = &d; //is it ok?
     d.codec_ctx->get_format = ffmpeg_get_dxva2_format;
-    d.codec_ctx->get_buffer = ffmpeg_get_dxva2_buffer;
+    d.codec_ctx->get_buffer = ffmpeg_get_dxva2_buffer; //deprecated
+    d.codec_ctx->reget_buffer = avcodec_default_reget_buffer; //deprecated
     //d.codec_ctx->get_buffer2 = //lavfilter
-    d.codec_ctx->release_buffer = ffmpeg_release_buffer;
+    d.codec_ctx->release_buffer = ffmpeg_release_buffer; //deprecated
     d.codec_ctx->thread_count = 1;
+    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
+    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD;
 // lavfilter
-    d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
-    d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
+    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
+    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
 
+    //d.codec_ctx->pix_fmt = QTAV_PIX_FMT_C(DXVA2_VLD);
 
     int ret = avcodec_open2(d.codec_ctx, codec, NULL);
     if (ret < 0) {
@@ -1007,7 +495,7 @@ VideoFrame VideoDecoderDXVA::frame()
 {
     DPTR_D(VideoDecoderDXVA);
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
-        return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+        return VideoFrame();
 /*
     if (!va->surface_cache.buffer)
         return VLC_EGENERIC;
@@ -1034,10 +522,13 @@ VideoFrame VideoDecoderDXVA::frame()
     };
 
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
+    //picth >= desc.Width
+    //D3DSURFACE_DESC desc;
+    //d3d->GetDesc(&desc);
     D3DLOCKED_RECT lock;
     ScopedD3DLock(d3d, &lock);
     if (lock.Pitch == 0) {
-        return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+        return VideoFrame();
     }
     if (d.render == MAKEFOURCC('Y','V','1','2') ||
         d.render == MAKEFOURCC('I','M','C','3')) {
@@ -1067,24 +558,556 @@ VideoFrame VideoDecoderDXVA::frame()
         return frame;
     } else {
         Q_ASSERT(d.render == MAKEFOURCC('N','V','1','2'));
-        uint8_t *plane[4] = {
+        uint8_t *plane[2] = {
             (uint8_t *)lock.pBits,
-            (uint8_t*)lock.pBits + lock.Pitch * d.surface_height,
-            0,
-            0
+            (uint8_t*)lock.pBits + lock.Pitch * d.surface_height
         };
-        int pitch[4] = {
+        int pitch[2] = {
             lock.Pitch,
-            lock.Pitch,
-            0,
-            0
+            lock.Pitch
         };
         VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_NV12));//VideoFormat((int)d.codec_ctx->pix_fmt));
         frame.setBits(plane);
         frame.setBytesPerLine(pitch);
         return frame;
     }
-    return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+    return VideoFrame();
+}
+
+
+/* FIXME it is nearly common with VAAPI */
+int VideoDecoderDXVAPrivate::getBuffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
+{
+    ff->reordered_opaque = c->reordered_opaque;
+    ff->opaque = NULL;
+#if ! LIBAVCODEC_VERSION_CHECK(54, 34, 0, 79, 101)
+    ff->pkt_pts = c->pkt ? c->pkt->pts : AV_NOPTS_VALUE;
+#endif
+#if LIBAVCODEC_VERSION_MAJOR < 54
+    ff->age = 256*256*256*64;
+#endif
+    // check pix fmt DXVA2_VLD and h264 profile?
+    /* hwaccel_context is not present in old ffmpeg version */
+    if (!setup(&c->hwaccel_context, &c->pix_fmt,// &p_dec->fmt_out.video.i_chroma,
+                c->width, c->height)) {
+        qWarning("setup failed" );
+        return -1;
+    }
+    /* Check the device */
+    HRESULT hr = devmng->TestDevice(device);
+    if (hr == DXVA2_E_NEW_VIDEO_DEVICE) {
+        if (!DxResetVideoDecoder())
+            return -1;
+    } else if (FAILED(hr)) {
+        qWarning("IDirect3DDeviceManager9_TestDevice %u", (unsigned)hr);
+        return -1;
+    }
+    /* Grab an unused surface, in case none are, try the oldest
+     * XXX using the oldest is a workaround in case a problem happens with libavcodec */
+    unsigned i, old;
+    for (i = 0, old = 0; i < surface_count; i++) {
+        va_surface_t *surface = &surfaces[i];
+        if (!surface->refcount)
+            break;
+        if (surface->order < surfaces[old].order)
+            old = i;
+    }
+    if (i >= surface_count)
+        i = old;
+    va_surface_t *surface = &surfaces[i];
+    surface->refcount = 1;
+    surface->order = surface_order++;
+    /* */
+    memset(ff->data, 0, sizeof(ff->data));
+    memset(ff->linesize, 0, sizeof(ff->linesize));
+    //memset(ff->buf, 0, sizeof(ff->buf));
+    ff->data[0] = ff->data[3] = (uint8_t*)surface->d3d;/* Yummie */
+    // ff->type = FF_BUFFER_TYPE_USER; //type: deprecated
+    return 0;
+}
+
+void VideoDecoderDXVAPrivate::releaseBuffer(struct AVCodecContext *c, AVFrame *ff)
+{
+    Q_UNUSED(c);
+    IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)ff->data[3];
+    for (unsigned i = 0; i < surface_count; i++) {
+        va_surface_t *surface = &surfaces[i];
+        if (surface->d3d == d3d)
+            surface->refcount--;
+    }
+    memset(ff->data, 0, sizeof(ff->data));
+}
+
+AVPixelFormat VideoDecoderDXVAPrivate::getFormat(struct AVCodecContext *p_context, const AVPixelFormat * pi_fmt)
+{
+    //lavfilter
+/*
+    while (*pi_fmt != AV_PIX_FMT_NONE && *pi_fmt != AV_PIX_FMT_DXVA2_VLD) {
+        ++pi_fmt;
+    }
+    return fmt[0];
+*/
+    /* Try too look for a supported hw acceleration */
+    //AV_PIX_FMT_NB? read avctx.get_format
+    for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
+        const char *name = av_get_pix_fmt_name(pi_fmt[i]);
+        qDebug("Available decoder output format %d (%s)", pi_fmt[i], name ? name : "unknown" );
+        if (QTAV_PIX_FMT_C(DXVA2_VLD) != pi_fmt[i])
+            continue;
+        /* We try to call vlc_va_Setup when possible to detect errors when
+         * possible (later is too late) */
+        if( p_context->width > 0 && p_context->height > 0
+         && !setup(&p_context->hwaccel_context,
+                   ///FIXME: fmt_out is required?
+                   &p_context->pix_fmt,  ///&p_dec->fmt_out.video.i_chroma,
+                   p_context->width, p_context->height ) )
+        {
+            qWarning("acceleration setup failure");
+            break;
+        }
+        p_context->draw_horiz_band = NULL;
+        return pi_fmt[i];
+    }
+    qWarning("acceleration not available" );
+    close();
+    return avcodec_default_get_format(p_context, pi_fmt);
+}
+
+
+bool VideoDecoderDXVAPrivate::loadDll() {
+    hd3d9_dll = LoadLibrary(TEXT("D3D9.DLL"));
+    if (!hd3d9_dll) {
+        qWarning("cannot load d3d9.dll");
+        return false;
+    }
+    hdxva2_dll = LoadLibrary(TEXT("DXVA2.DLL"));
+    if (!hdxva2_dll) {
+        qWarning("cannot load dxva2.dll");
+        FreeLibrary(hd3d9_dll);
+        return false;
+    }
+    return true;
+}
+
+bool VideoDecoderDXVAPrivate::unloadDll() {
+    if (hdxva2_dll)
+        FreeLibrary(hdxva2_dll);
+    if (hd3d9_dll)
+        FreeLibrary(hd3d9_dll);
+    return true;
+}
+
+bool VideoDecoderDXVAPrivate::D3dCreateDevice()
+{
+    typedef IDirect3D9* (WINAPI *Create9Func)(UINT SDKVersion);
+    Create9Func Create9 = (Create9Func)GetProcAddress(hd3d9_dll, "Direct3DCreate9");
+    if (!Create9) {
+        qWarning("Cannot locate reference to Direct3DCreate9 ABI in DLL");
+        return false;
+    }
+    d3dobj = Create9(D3D_SDK_VERSION);
+    if (!d3dobj) {
+        qWarning("Direct3DCreate9 failed");
+        return false;
+    }
+    if (FAILED(d3dobj->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &d3dai))) {
+        qWarning("IDirect3D9_GetAdapterIdentifier failed");
+        ZeroMemory(&d3dai, sizeof(d3dai));
+    } else {
+        description = DxDescribe(&d3dai);
+        qDebug("DXVA2 description:  %s", description.toUtf8().constData());
+    }
+    ZeroMemory(&d3dpp, sizeof(d3dpp));
+    d3dpp.Flags                  = D3DPRESENTFLAG_VIDEO;
+    d3dpp.Windowed               = TRUE;
+    d3dpp.hDeviceWindow          = NULL;
+    d3dpp.SwapEffect             = D3DSWAPEFFECT_DISCARD;
+    d3dpp.MultiSampleType        = D3DMULTISAMPLE_NONE;
+    d3dpp.PresentationInterval   = D3DPRESENT_INTERVAL_DEFAULT;
+    d3dpp.BackBufferCount        = 0;                  /* FIXME what to put here */
+    d3dpp.BackBufferFormat       = D3DFMT_X8R8G8B8;    /* FIXME what to put here */
+    d3dpp.BackBufferWidth        = 0;
+    d3dpp.BackBufferHeight       = 0;
+    d3dpp.EnableAutoDepthStencil = FALSE;
+
+    /* Direct3D needs a HWND to create a device, even without using ::Present
+    this HWND is used to alert Direct3D when there's a change of focus window.
+    For now, use GetDesktopWindow, as it looks harmless */
+    if (FAILED(d3dobj->CreateDevice(D3DADAPTER_DEFAULT,
+                                   D3DDEVTYPE_HAL, GetDesktopWindow(), //GetShellWindow()?
+                                   D3DCREATE_SOFTWARE_VERTEXPROCESSING |
+                                   D3DCREATE_MULTITHREADED,
+                                   &d3dpp, &d3ddev))) {
+        qWarning("IDirect3D9_CreateDevice failed");
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * It releases a Direct3D device and its resources.
+ */
+void VideoDecoderDXVAPrivate::D3dDestroyDevice()
+{
+    SafeRelease(&d3ddev);
+    SafeRelease(&d3dobj);
+}
+/**
+ * It creates a Direct3D device manager
+ */
+bool VideoDecoderDXVAPrivate::D3dCreateDeviceManager()
+{
+    typedef HRESULT (WINAPI *CreateDeviceManager9Func)(UINT *pResetToken, IDirect3DDeviceManager9 **);
+    CreateDeviceManager9Func CreateDeviceManager9 = (CreateDeviceManager9Func)GetProcAddress(hdxva2_dll, "DXVA2CreateDirect3DDeviceManager9");
+    if (!CreateDeviceManager9) {
+        qWarning("cannot load function DXVA2CreateDirect3DDeviceManager9");
+        return false;
+    }
+    qDebug("OurDirect3DCreateDeviceManager9 Success!");
+    if (FAILED(CreateDeviceManager9(&token, &devmng))) {
+        qWarning(" OurDirect3DCreateDeviceManager9 failed");
+        return false;
+    }
+    qDebug("obtained IDirect3DDeviceManager9");
+    //http://msdn.microsoft.com/en-us/library/windows/desktop/ms693525%28v=vs.85%29.aspx
+    HRESULT hr = devmng->ResetDevice(d3ddev, token);
+    if (FAILED(hr)) {
+        qWarning("IDirect3DDeviceManager9_ResetDevice failed: %08x", (unsigned)hr);
+        return false;
+    }
+    return true;
+}
+void VideoDecoderDXVAPrivate::D3dDestroyDeviceManager()
+{
+    SafeRelease(&devmng);
+}
+
+bool VideoDecoderDXVAPrivate::DxCreateVideoService()
+{
+    typedef HRESULT (WINAPI *CreateVideoServiceFunc)(IDirect3DDevice9 *, REFIID riid, void **ppService);
+    CreateVideoServiceFunc CreateVideoService = (CreateVideoServiceFunc)GetProcAddress(hdxva2_dll, "DXVA2CreateVideoService");
+
+    if (!CreateVideoService) {
+        qWarning("cannot load function");
+        return false;
+    }
+    qDebug("DXVA2CreateVideoService Success!");
+
+    HRESULT hr = devmng->OpenDeviceHandle(&device);
+    if (FAILED(hr)) {
+        device = 0;
+        qWarning("OpenDeviceHandle failed");
+        return false;
+    }
+    //c++: devmng->GetVideoService
+    hr = devmng->GetVideoService(device, IID_IDirectXVideoDecoderService, (void**)&vs);
+    if (FAILED(hr)) {
+        qWarning("GetVideoService failed");
+        return false;
+    }
+    return true;
+}
+void VideoDecoderDXVAPrivate::DxDestroyVideoService()
+{
+    if (devmng && device && device != INVALID_HANDLE_VALUE) {
+        devmng->CloseDeviceHandle(device);
+        device = 0;
+    }
+    SafeRelease(&vs);
+}
+/**
+ * Find the best suited decoder mode GUID and render format.
+ */
+bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMAT *output)
+{
+    /* Retreive supported modes from the decoder service */
+    UINT input_count = 0;
+    GUID *input_list = NULL;
+    if (FAILED(vs->GetDecoderDeviceGuids(&input_count, &input_list))) {
+        qWarning("IDirectXVideoDecoderService_GetDecoderDeviceGuids failed");
+        return false;
+    }
+    for (unsigned i = 0; i < input_count; i++) {
+        const GUID &g = input_list[i];
+        const dxva2_mode_t *mode = Dxva2FindMode(&g);
+        if (mode) {
+            qDebug("- '%s' is supported by hardware", mode->name);
+        } else {
+            qWarning("- Unknown GUID = %08X-%04x-%04x-XXXX",
+                     (unsigned)g.Data1, g.Data2, g.Data3);
+        }
+    }
+    /* Try all supported mode by our priority */
+    for (unsigned i = 0; dxva2_modes[i].name; i++) {
+        const dxva2_mode_t *mode = &dxva2_modes[i];
+        if (!mode->codec || mode->codec != codec_ctx->codec_id)
+            continue;
+        bool is_suported = false;
+        for (unsigned count = 0; !is_suported && count < input_count; count++) {
+            const GUID &g = input_list[count];
+            is_suported = IsEqualGUID(*mode->guid, g); ///
+        }
+        if (!is_suported)
+            continue;
+
+        qDebug("Trying to use '%s' as input", mode->name);
+        UINT      output_count = 0;
+        D3DFORMAT *output_list = NULL;
+        if (FAILED(vs->GetDecoderRenderTargets(*mode->guid, &output_count, &output_list))) {
+            qWarning("IDirectXVideoDecoderService_GetDecoderRenderTargets failed");
+            continue;
+        }
+        for (unsigned j = 0; j < output_count; j++) {
+            const D3DFORMAT f = output_list[j];
+            const d3d_format_t *format = D3dFindFormat(f);
+            if (format) {
+                qDebug("%s is supported for output", format->name);
+            } else {
+                qDebug("%d is supported for output (%4.4s)", f, (const char*)&f);
+            }
+        }
+
+        for (unsigned j = 0; d3d_formats[j].name; j++) {
+            const d3d_format_t *format = &d3d_formats[j];
+            bool is_suported = false;
+            for (unsigned k = 0; !is_suported && k < output_count; k++) {
+                is_suported = format->format == output_list[k];
+            }
+            if (!is_suported)
+                continue;
+
+            /* We have our solution */
+            qDebug("Using '%s' to decode to '%s'", mode->name, format->name);
+            *input  = *mode->guid;
+            *output = format->format;
+            CoTaskMemFree(output_list);
+            CoTaskMemFree(input_list);
+            return true;
+        }
+        CoTaskMemFree(output_list);
+    }
+    CoTaskMemFree(input_list);
+    return false;
+}
+
+bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
+{
+    if (!codec_ctx) {
+        qWarning("AVCodecContext not ready!");
+        return false;
+    }
+    qDebug("DxCreateVideoDecoder id %d %dx%d", codec_id, w, h);
+    width = w;
+    height = h;
+    /* Allocates all surfaces needed for the decoder */
+    surface_width = FFALIGN(width, 16);
+    surface_height = FFALIGN(height, 16);
+    switch (codec_id) {
+    case AV_CODEC_ID_H264:
+        surface_count = 16 + 1;
+        break;
+    default:
+        surface_count = 2 + 1;
+        break;
+    }
+    IDirect3DSurface9* surface_list[VA_DXVA2_MAX_SURFACE_COUNT];
+    qDebug("%s @%d vs=%p surface_count=%d surface_width=%d surface_height=%d"
+           , __FUNCTION__, __LINE__, vs, surface_count, surface_width, surface_height);
+    if (FAILED(vs->CreateSurface(surface_width,
+                                 surface_height,
+                                 surface_count - 1,
+                                 render,
+                                 D3DPOOL_DEFAULT,
+                                 0,
+                                 DXVA2_VideoDecoderRenderTarget,
+                                 surface_list,
+                                 NULL))) {
+        qWarning("IDirectXVideoAccelerationService_CreateSurface failed");
+        surface_count = 0;
+        return false;
+    }
+    for (unsigned i = 0; i < surface_count; i++) {
+        va_surface_t *surface = &this->surfaces[i];
+        surface->d3d = surface_list[i];
+        surface->refcount = 0;
+        surface->order = 0;
+    }
+    qDebug("IDirectXVideoAccelerationService_CreateSurface succeed with %d surfaces (%dx%d)", surface_count, w, h);
+
+    /* */
+    DXVA2_VideoDesc dsc;
+    ZeroMemory(&dsc, sizeof(dsc));
+    dsc.SampleWidth     = width;
+    dsc.SampleHeight    = height;
+    dsc.Format          = render;
+    /*if (fmt->i_frame_rate > 0 && fmt->i_frame_rate_base > 0) {
+        dsc.InputSampleFreq.Numerator   = fmt->i_frame_rate;
+        dsc.InputSampleFreq.Denominator = fmt->i_frame_rate_base;
+    } else {*/
+        dsc.InputSampleFreq.Numerator   = 0;
+        dsc.InputSampleFreq.Denominator = 0;
+    //}
+    dsc.OutputFrameFreq = dsc.InputSampleFreq;
+    dsc.UABProtectionLevel = FALSE;
+    dsc.Reserved = 0;
+
+    /* FIXME I am unsure we can let unknown everywhere */
+    DXVA2_ExtendedFormat *ext = &dsc.SampleFormat;
+    ext->SampleFormat = 0;//DXVA2_SampleUnknown;
+    ext->VideoChromaSubsampling = 0;//DXVA2_VideoChromaSubsampling_Unknown;
+    ext->NominalRange = 0;//DXVA2_NominalRange_Unknown;
+    ext->VideoTransferMatrix = 0;//DXVA2_VideoTransferMatrix_Unknown;
+    ext->VideoLighting = 0;//DXVA2_VideoLighting_Unknown;
+    ext->VideoPrimaries = 0;//DXVA2_VideoPrimaries_Unknown;
+    ext->VideoTransferFunction = 0;//DXVA2_VideoTransFunc_Unknown;
+
+    /* List all configurations available for the decoder */
+    UINT                      cfg_count = 0;
+    DXVA2_ConfigPictureDecode *cfg_list = NULL;
+    if (FAILED(vs->GetDecoderConfigurations(input,
+                                            &dsc,
+                                            NULL,
+                                            &cfg_count,
+                                            &cfg_list))) {
+        qWarning("IDirectXVideoDecoderService_GetDecoderConfigurations failed");
+        return false;
+    }
+    qDebug("we got %d decoder configurations", cfg_count);
+    /* Select the best decoder configuration */
+    int cfg_score = 0;
+    for (unsigned i = 0; i < cfg_count; i++) {
+        const DXVA2_ConfigPictureDecode *cfg = &cfg_list[i];
+        qDebug("configuration[%d] ConfigBitstreamRaw %d", i, cfg->ConfigBitstreamRaw);
+        int score;
+        if (cfg->ConfigBitstreamRaw == 1)
+            score = 1;
+        else if (codec_id == AV_CODEC_ID_H264 && cfg->ConfigBitstreamRaw == 2)
+            score = 2;
+        else
+            continue;
+        if (IsEqualGUID(cfg->guidConfigBitstreamEncryption, DXVA_NoEncrypt))
+            score += 16;
+
+        if (cfg_score < score) {
+            this->cfg = *cfg;
+            cfg_score = score;
+        }
+    }
+    CoTaskMemFree(cfg_list);
+    if (cfg_score <= 0) {
+        qWarning("Failed to find a supported decoder configuration");
+        return false;
+    }
+    /* Create the decoder */
+    if (FAILED(vs->CreateVideoDecoder(input,
+                                      &dsc,
+                                      &cfg,
+                                      surface_list,
+                                      surface_count,
+                                      &decoder))) {
+        qWarning("IDirectXVideoDecoderService_CreateVideoDecoder failed");
+        return false;
+    }
+    qDebug("IDirectXVideoDecoderService_CreateVideoDecoder succeed. decoder=%p", decoder);
+    return true;
+}
+
+void VideoDecoderDXVAPrivate::DxDestroyVideoDecoder()
+{
+    SafeRelease(&decoder);
+    for (unsigned i = 0; i < surface_count; i++) {
+        SafeRelease(&surfaces[i].d3d);
+    }
+    surface_count = 0;
+}
+
+bool VideoDecoderDXVAPrivate::DxResetVideoDecoder()
+{
+    qWarning("DxResetVideoDecoder unimplemented");
+    return false;
+}
+
+void VideoDecoderDXVAPrivate::DxCreateVideoConversion()
+{
+    switch (render) {
+    case MAKEFOURCC('N','V','1','2'):
+    case MAKEFOURCC('I','M','C','3'):
+        output = (D3DFORMAT)MAKEFOURCC('Y','V','1','2');
+        break;
+    default:
+        output = render;
+        break;
+    }
+    ///CopyInitCache(&surface_cache, surface_width); //FIXME:
+}
+
+void VideoDecoderDXVAPrivate::DxDestroyVideoConversion()
+{
+    ///CopyCleanCache(&surface_cache); //FIXME:
+}
+
+// hwaccel_context
+bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, int h)
+{
+    if (w <= 0 || h <= 0)
+        return false;
+    if (!decoder || ((width != w || height != h)/* &&
+            (surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16))//)
+        */)) {
+        DxDestroyVideoConversion();
+        DxDestroyVideoDecoder();
+        *hwctx = NULL;
+        *chroma = QTAV_PIX_FMT_C(NONE);
+        /* FIXME transmit a video_format_t by VaSetup directly */
+        if (!DxCreateVideoDecoder(codec_ctx->codec_id, w, h))
+            return false;
+        hw.decoder = decoder;
+        hw.cfg = &cfg;
+        hw.surface_count = surface_count;
+        hw.surface = hw_surfaces;
+        for (unsigned i = 0; i < surface_count; i++)
+            hw.surface[i] = surfaces[i].d3d;
+        DxCreateVideoConversion();
+    }
+    *hwctx = &hw;
+    const d3d_format_t *outfmt = D3dFindFormat(output);
+    *chroma = outfmt ? outfmt->codec : QTAV_PIX_FMT_C(NONE);
+    return true;
+}
+
+bool VideoDecoderDXVAPrivate::open() {
+    if (!D3dCreateDevice()) {
+        qWarning("Failed to create Direct3D device");
+        goto error;
+    }
+    qDebug("D3dCreateDevice succeed");
+    if (!D3dCreateDeviceManager()) {
+        qWarning("D3dCreateDeviceManager failed");
+        goto error;
+    }
+    if (!DxCreateVideoService()) {
+        qWarning("DxCreateVideoService failed");
+        goto error;
+    }
+    if (!DxFindVideoServiceConversion(&input, &render)) {
+        qWarning("DxFindVideoServiceConversion failed");
+        goto error;
+    }
+    /* TODO print the hardware name/vendor for debugging purposes */
+    return true;
+error:
+    close();
+    return false;
+}
+
+bool VideoDecoderDXVAPrivate::close() {
+    DxDestroyVideoConversion();
+    DxDestroyVideoDecoder();
+    DxDestroyVideoService();
+    D3dDestroyDeviceManager();
+    D3dDestroyDevice();
+    return true;
 }
 
 } //namespace QtAV
