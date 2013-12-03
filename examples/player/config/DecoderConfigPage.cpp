@@ -120,7 +120,7 @@ DecoderConfigPage::DecoderConfigPage(Config* config, QWidget *parent) :
     QFrame *frame = new QFrame();
     frame->setFrameShape(QFrame::HLine);
     vb->addWidget(frame);
-    vb->addWidget(new QLabel(tr("Decoders")));
+    vb->addWidget(new QLabel(tr("Decoder") + " " + tr("Priorities")));
 
     QStringList vds = mpConfig->decoderPriorityNames();
     QStringList vds_all = mpConfig->registeredDecoderNames();
