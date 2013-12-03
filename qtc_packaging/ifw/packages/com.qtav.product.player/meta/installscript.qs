@@ -66,6 +66,6 @@ Component.prototype.createOperations = function()
 
         //component.addOperation("Settings", "formate=native", //"path=HKEY_CURRENT_USER/SOFTWARE/Classes/*/shell/OpenWithQtAV/command", "method=set", "key=Default", "value=@TargetDir@/bin/player.exe -vo  gl %%1");
 
-        component.addOperation("GlobalConfig", "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\Open With QtAV\\command", "Default", "@TargetDir@/bin/player.exe -vo gl %1");
+        component.addOperation("GlobalConfig", "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\Open With QtAV\\command", "Default", "\"@TargetDir@/bin/player.exe\" -vo gl \"%1\"");
     }
 }
