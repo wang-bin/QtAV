@@ -250,6 +250,7 @@ static QString DxDescribe(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
     } vendors [] = {
         { 0x1002, "ATI" },
         { 0x10DE, "NVIDIA" },
+        { 0x1106, "VIA" },
         { 0x8086, "Intel" },
         { 0x5333, "S3 Graphics" },
         { 0, "" }
@@ -438,7 +439,7 @@ bool VideoDecoderDXVA::open()
     //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
     //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
 
-    //d.codec_ctx->pix_fmt = QTAV_PIX_FMT_C(DXVA2_VLD);
+    d.codec_ctx->pix_fmt = QTAV_PIX_FMT_C(DXVA2_VLD);
 
     int ret = avcodec_open2(d.codec_ctx, codec, NULL);
     if (ret < 0) {
@@ -622,20 +623,22 @@ int VideoDecoderDXVAPrivate::getBuffer(struct AVCodecContext *c, AVFrame *ff)//v
     memset(ff->linesize, 0, sizeof(ff->linesize));
     //memset(ff->buf, 0, sizeof(ff->buf));
     ff->data[0] = ff->data[3] = (uint8_t*)surface->d3d;/* Yummie */
-    // ff->type = FF_BUFFER_TYPE_USER; //type: deprecated
+    ff->type = FF_BUFFER_TYPE_USER; //type: deprecated
+
+    /*
+     * 515959913922fc234d0d814e0d0b115f9c293ee5
+     * use AVFrame.opaque to store internal per-picture state directly
+     */
+    ff->opaque = surface;
     return 0;
 }
 
+//(void *opaque, uint8_t *data)
 void VideoDecoderDXVAPrivate::releaseBuffer(struct AVCodecContext *c, AVFrame *ff)
 {
     Q_UNUSED(c);
-    IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)ff->data[3];
-    for (unsigned i = 0; i < surface_count; i++) {
-        va_surface_t *surface = &surfaces[i];
-        if (surface->d3d == d3d)
-            surface->refcount--;
-    }
-    memset(ff->data, 0, sizeof(ff->data));
+    va_surface_t *surface = (va_surface_t*)ff->opaque;
+    surface->refcount--;
 }
 
 AVPixelFormat VideoDecoderDXVAPrivate::getFormat(struct AVCodecContext *p_context, const AVPixelFormat * pi_fmt)
@@ -647,11 +650,31 @@ AVPixelFormat VideoDecoderDXVAPrivate::getFormat(struct AVCodecContext *p_contex
     }
     return fmt[0];
 */
+    /* Enumerate available formats */
+    bool can_hwaccel = false;
+    for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
+        const AVPixFmtDescriptor *dsc = av_pix_fmt_desc_get(pi_fmt[i]);
+        if (dsc == NULL)
+            continue;
+        bool hwaccel = (dsc->flags & AV_PIX_FMT_FLAG_HWACCEL) != 0;
+
+        qDebug("available %sware decoder output format %d (%s)",
+                 hwaccel ? "hard" : "soft", pi_fmt[i], dsc->name);
+        if (hwaccel)
+            can_hwaccel = true;
+    }
+
+    if (!can_hwaccel)
+        goto end;
     /* Try too look for a supported hw acceleration */
     //AV_PIX_FMT_NB? read avctx.get_format
     for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
         const char *name = av_get_pix_fmt_name(pi_fmt[i]);
         qDebug("Available decoder output format %d (%s)", pi_fmt[i], name ? name : "unknown" );
+        /*
+         * TODO: check pix_fmt (set on open) to uniform all va. i.e. getFormat can be used for other va
+         * such as vaapi, only setup() changes
+         */
         if (QTAV_PIX_FMT_C(DXVA2_VLD) != pi_fmt[i])
             continue;
         /* We try to call vlc_va_Setup when possible to detect errors when
@@ -668,6 +691,7 @@ AVPixelFormat VideoDecoderDXVAPrivate::getFormat(struct AVCodecContext *p_contex
         p_context->draw_horiz_band = NULL;
         return pi_fmt[i];
     }
+end:
     qWarning("acceleration not available" );
     close();
     return avcodec_default_get_format(p_context, pi_fmt);
