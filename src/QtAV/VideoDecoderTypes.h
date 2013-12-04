@@ -36,7 +36,7 @@ Q_AV_EXPORT QVector<VideoDecoderId> GetRegistedVideoDecoderIds();
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_CUDA;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_DXVA;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VAAPI;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VAAPI;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDPAU;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDA;
 
