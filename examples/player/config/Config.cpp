@@ -77,6 +77,8 @@ public:
         QVector<QtAV::VideoDecoderId> all_decs_id = GetRegistedVideoDecoderIds();
         if (all_decs_id.contains(VideoDecoderId_DXVA))
             decs_default.prepend("DXVA ");
+        if (all_decs_id.contains(VideoDecoderId_VAAPI))
+            decs_default.prepend("VAAPI");
         QString all_default = decs_default;
         QStringList all_names = idsToNames(all_decs_id);
         foreach (QString name, all_names) {
