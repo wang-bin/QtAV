@@ -30,7 +30,7 @@ win32 {
     OptionalDepends += dxva
 }
 unix {
-    OptionalDepends += xv
+    OptionalDepends += xv vaapi
 }
 
 include(root.pri)

@@ -113,6 +113,9 @@ AVPlayer::AVPlayer(QObject *parent) :
 #if QTAV_HAVE(DXVA)
             << VideoDecoderId_DXVA
 #endif //QTAV_HAVE(DXVA)
+#if QTAV_HAVE(VAAPI)
+            << VideoDecoderId_VAAPI
+#endif //QTAV_HAVE(VAAPI)
             << VideoDecoderId_FFmpeg;
 }
 

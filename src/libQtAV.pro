@@ -110,6 +110,11 @@ config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
     SOURCES += VideoDecoderDXVA.cpp
 }
+config_vaapi {
+    DEFINES *= QTAV_HAVE_VAAPI=1
+    SOURCES += VideoDecoderVAAPI.cpp
+    LIBS += -lva -lva-x11 #TODO: dynamic load
+}
 SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \
