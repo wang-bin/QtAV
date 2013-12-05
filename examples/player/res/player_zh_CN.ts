@@ -4,14 +4,23 @@
 <context>
     <name>DecoderConfigPage</name>
     <message>
-        <location filename="../config/DecoderConfigPage.cpp" line="81"/>
+        <location filename="../config/DecoderConfigPage.cpp" line="109"/>
         <source>Threads</source>
         <translation>线程数</translation>
     </message>
     <message>
-        <location filename="../config/DecoderConfigPage.cpp" line="92"/>
-        <source>Decoders</source>
+        <location filename="../config/DecoderConfigPage.cpp" line="123"/>
+        <source>Decoder</source>
         <translation>解码器</translation>
+    </message>
+    <message>
+        <location filename="../config/DecoderConfigPage.cpp" line="123"/>
+        <source>Priorities</source>
+        <translation>优先级</translation>
+    </message>
+    <message>
+        <source>Decoders</source>
+        <translation type="obsolete">解码器</translation>
     </message>
 </context>
 <context>

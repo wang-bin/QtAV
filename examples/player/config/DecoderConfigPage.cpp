@@ -39,6 +39,23 @@
 #include <QtAV/VideoDecoderTypes.h>
 #include <QPainter>
 
+QString GetDecoderDescription(const QString& name) {
+    struct {
+        const char *name;
+        const char *desc;
+    } dec_desc[] = {
+        { "FFmpeg", "FFmpeg. (Software)" },
+        { "DXVA", "DirectX Video Acceleration (DXVA) 2.0" },
+        { "VAAPI", "Video Acceleration (VA) API" },
+        { 0, 0 }
+    };
+    for (int i = 0; dec_desc[i].name; ++i) {
+        if (name == dec_desc[i].name)
+            return dec_desc[i].desc;
+    }
+    return "";
+}
+
 using namespace QtAV;
 class DecoderConfigPage::DecoderItemWidget : public QWidget
 {
@@ -130,7 +147,7 @@ DecoderConfigPage::DecoderConfigPage(Config* config, QWidget *parent) :
         DecoderItemWidget *iw = new DecoderItemWidget();
         mDecItems.append(iw);
         iw->setName(name);
-        iw->setDescription(name);
+        iw->setDescription(GetDecoderDescription(name));
         iw->setChecked(vds.contains(name));
         connect(iw, SIGNAL(enableChanged()), SLOT(videoDecoderEnableChanged()));
         connect(iw, SIGNAL(selected(DecoderItemWidget*)), SLOT(onDecSelected(DecoderItemWidget*)));
