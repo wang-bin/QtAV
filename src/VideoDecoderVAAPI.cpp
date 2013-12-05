@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoDecoderFFmpeg.h"
-#include "private/VideoDecoder_p.h"
+#include "QtAV/VideoDecoderFFmpegHW.h"
+#include "private/VideoDecoderFFmpegHW_p.h"
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
@@ -64,16 +64,12 @@
 namespace QtAV {
 
 class VideoDecoderVAAPIPrivate;
-class VideoDecoderVAAPI : public VideoDecoder
+class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
 {
     DPTR_DECLARE_PRIVATE(VideoDecoderVAAPI)
 public:
     VideoDecoderVAAPI();
     virtual ~VideoDecoderVAAPI();
-    virtual bool prepare();
-    virtual bool open();
-    virtual bool close();
-    virtual bool decode(const QByteArray &encoded);
     virtual VideoFrame frame();
 
 };
@@ -96,7 +92,7 @@ typedef struct
 } va_surface_t;
 
 
-class VideoDecoderVAAPIPrivate : public VideoDecoderPrivate
+class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderVAAPIPrivate() {
@@ -120,17 +116,14 @@ public:
     ~VideoDecoderVAAPIPrivate() {
         //TODO:
     }
-
+    virtual bool open();
+    virtual void close();
     bool createSurfaces(void **hwctx, AVPixelFormat *chroma, int w, int h);
     void destroySurfaces();
 
-    bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h);
-    bool open();
-    void close();
-
-    AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt);
-    bool getBuffer(void **opaque, uint8_t **data);
-    void releaseBuffer(void *opaque, uint8_t *data);
+    virtual bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h);
+    virtual bool getBuffer(void **opaque, uint8_t **data);
+    virtual void releaseBuffer(void *opaque, uint8_t *data);
 
     Display      *display_x11;
     VADisplay     display;
@@ -159,194 +152,17 @@ public:
     //copy_cache_t image_cache;
 
     bool supports_derive;
-
-    AVPixelFormat va_pixfmt;
-    QString description;
 };
-
-static AVPixelFormat ffmpeg_get_vaapi_format(struct AVCodecContext *c, const AVPixelFormat * ff)
-{
-    VideoDecoderVAAPIPrivate *va = (VideoDecoderVAAPIPrivate*)c->opaque;
-    return va->getFormat(c, ff);
-}
-
-static int ffmpeg_get_vaapi_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
-{
-    VideoDecoderVAAPIPrivate *va = (VideoDecoderVAAPIPrivate*)c->opaque;
-    ff->opaque = 0;
-    /* hwaccel_context is not present in old ffmpeg version */
-    if (!va->setup(&c->hwaccel_context, &c->pix_fmt, c->coded_width, c->coded_height)) {
-        qWarning("va Setup failed");
-        return -1;
-    }
-    if (!va->getBuffer(&ff->opaque, &ff->data[0]))
-        return -1;
-
-    //ffmpeg_va_GetFrameBuf
-    ff->data[3] = ff->data[0];
-    ff->type = FF_BUFFER_TYPE_USER;
-    return 0;
-}
-
-static void ffmpeg_release_buffer(struct AVCodecContext *c, AVFrame *ff)
-{
-    VideoDecoderVAAPIPrivate *va = (VideoDecoderVAAPIPrivate*)c->opaque;
-    va->releaseBuffer(ff->opaque, ff->data[0]);
-    memset(ff->data, 0, sizeof(ff->data));
-}
 
 
 VideoDecoderVAAPI::VideoDecoderVAAPI()
-    : VideoDecoder(*new VideoDecoderVAAPIPrivate())
+    : VideoDecoderFFmpegHW(*new VideoDecoderVAAPIPrivate())
 {
 }
 
 VideoDecoderVAAPI::~VideoDecoderVAAPI()
 {
     setCodecContext(0);
-}
-
-bool VideoDecoderVAAPI::prepare()
-{
-    /* Only VLD supported */
-    DPTR_D(VideoDecoderVAAPI);
-    d.va_pixfmt = QTAV_PIX_FMT_C(VAAPI_VLD); //in prepare()?
-
-    //vlc_xlib_init: XInitThreads();
-    return VideoDecoder::prepare();
-}
-
-//prepareHW
-bool VideoDecoderVAAPI::open()
-{
-    DPTR_D(VideoDecoderVAAPI);
-    if (!d.codec_ctx) {
-        qWarning("FFmpeg codec context not ready");
-        return false;
-    }
-    AVCodec *codec = 0;
-    if (!d.name.isEmpty()) {
-        codec = avcodec_find_decoder_by_name(d.name.toUtf8().constData());
-    } else {
-        codec = avcodec_find_decoder(d.codec_ctx->codec_id);
-    }
-    if (!codec) {
-        if (d.name.isEmpty()) {
-            qWarning("No codec could be found with id %d", d.codec_ctx->codec_id);
-        } else {
-            qWarning("No codec could be found with name %s", d.name.toUtf8().constData());
-        }
-        return false;
-    }
-    if (!d.open()) {
-        qWarning("Open vaapi decoder failed!");
-        return false;
-    }
-    //TODO: neccesary?
-#if 0
-    if (!d.setup(&d.codec_ctx->hwaccel_context, &d.codec_ctx->pix_fmt, d.codec_ctx->width, d.codec_ctx->height)) {
-        qWarning("Setup vaapi failed.");
-        return false;
-    }
-#endif
-    d.codec_ctx->opaque = &d; //is it ok?
-    d.codec_ctx->get_format = ffmpeg_get_vaapi_format;
-//#if LIBAVCODEC_VERSION_MAJOR >= 55
-    //d.codec_ctx->get_buffer2 = lavc_GetFrame;
-//#else
-    d.codec_ctx->get_buffer = ffmpeg_get_vaapi_buffer;//ffmpeg_GetFrameBuf;
-    d.codec_ctx->reget_buffer = avcodec_default_reget_buffer;
-    d.codec_ctx->release_buffer = ffmpeg_release_buffer;//ffmpeg_ReleaseFrameBuf;
-//#endif
-
-    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
-    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD;
-// lavfilter
-    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
-    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
-
-
-    //HAVE_AVCODEC_MT
-    if (d.threads == -1)
-        d.threads = qMax(0, QThread::idealThreadCount());
-    if (d.threads > 0)
-        d.codec_ctx->thread_count = d.threads;
-    if (d.threads > 1)
-        d.codec_ctx->thread_type = d.thread_slice ? FF_THREAD_SLICE : FF_THREAD_FRAME;
-    d.codec_ctx->thread_safe_callbacks = true;
-    switch (d.codec_ctx->codec_id) {
-        case AV_CODEC_ID_MPEG4:
-        case AV_CODEC_ID_H263:
-            d.codec_ctx->thread_type = 0;
-            break;
-        case AV_CODEC_ID_MPEG1VIDEO:
-        case AV_CODEC_ID_MPEG2VIDEO:
-            d.codec_ctx->thread_type &= ~FF_THREAD_SLICE;
-            /* fall through */
-# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
-        case AV_CODEC_ID_H264:
-        case AV_CODEC_ID_VC1:
-        case AV_CODEC_ID_WMV3:
-            d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
-# endif
-    }
-/*
-    if (d.codec_ctx->thread_type & FF_THREAD_FRAME)
-        p_dec->i_extra_picture_buffers = 2 * p_sys->p_context->thread_count;
-*/
-
-
-    d.codec_ctx->pix_fmt = QTAV_PIX_FMT_C(VAAPI_VLD); ///TODO: move
-
-    int ret = avcodec_open2(d.codec_ctx, codec, NULL);
-    if (ret < 0) {
-        qWarning("open video codec failed: %s", av_err2str(ret));
-        return false;
-    }
-    d.is_open = true;
-    return true;
-}
-
-bool VideoDecoderVAAPI::close()
-{
-    if (!isOpen()) {
-        return true;
-    }
-    DPTR_D(VideoDecoderVAAPI);
-    d.is_open = false;
-    d.close();
-    return VideoDecoder::close();
-}
-
-bool VideoDecoderVAAPI::decode(const QByteArray &encoded)
-{
-    if (!isAvailable())
-        return false;
-    DPTR_D(VideoDecoder);
-    AVPacket packet;
-    av_new_packet(&packet, encoded.size());
-    memcpy(packet.data, encoded.data(), encoded.size());
-//TODO: use AVPacket directly instead of Packet?
-    //AVStream *stream = format_context->streams[stream_idx];
-
-    //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
-    int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
-    //TODO: decoded format is YUV420P, YUV422P?
-    av_free_packet(&packet);
-    if (ret < 0) {
-        qWarning("[VideoDecoder] %s", av_err2str(ret));
-        return false;
-    }
-    if (!d.got_frame_ptr) {
-        qWarning("no frame could be decompressed: %s", av_err2str(ret));
-        return false; //FIXME
-    }
-    // TODO: wait key frame?
-    if (!d.codec_ctx->width || !d.codec_ctx->height)
-        return false;
-    d.width = d.codec_ctx->width;
-    d.height = d.codec_ctx->height;
-    return true;
 }
 
 VideoFrame VideoDecoderVAAPI::frame()
@@ -413,9 +229,10 @@ VideoFrame VideoDecoderVAAPI::frame()
 }
 
 
-///////
 bool VideoDecoderVAAPIPrivate::open()
 {
+    codec_ctx->pix_fmt = QTAV_PIX_FMT_C(VAAPI_VLD);
+
     XInitThreads();
     VAProfile i_profile, *p_profiles_list;
     bool b_supported_profile = false;
@@ -659,64 +476,6 @@ bool VideoDecoderVAAPIPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w,
     if (w > 0 && h > 0)
         return createSurfaces(hwctx, chroma, w, h);
     return false;
-}
-
-AVPixelFormat VideoDecoderVAAPIPrivate::getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt)
-{
-    bool can_hwaccel = false;
-    for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
-        const AVPixFmtDescriptor *dsc = av_pix_fmt_desc_get(pi_fmt[i]);
-        if (dsc == NULL)
-            continue;
-        bool hwaccel = (dsc->flags & AV_PIX_FMT_FLAG_HWACCEL) != 0;
-
-        qDebug("available %sware decoder output format %d (%s)",
-                 hwaccel ? "hard" : "soft", pi_fmt[i], dsc->name);
-        if (hwaccel)
-            can_hwaccel = true;
-    }
-
-    if (!can_hwaccel)
-        goto end;
-
-    /* Profile and level information is needed now.
-     * TODO: avoid code duplication with avcodec.c */
-#if 0
-    if (p_context->profile != FF_PROFILE_UNKNOWN)
-        p_dec->fmt_in.i_profile = p_context->profile;
-    if (p_context->level != FF_LEVEL_UNKNOWN)
-        p_dec->fmt_in.i_level = p_context->level;
-#endif
-    for (size_t i = 0; pi_fmt[i] != PIX_FMT_NONE; i++) {
-        if (va_pixfmt != pi_fmt[i])
-            continue;
-
-        /* We try to call vlc_va_Setup when possible to detect errors when
-         * possible (later is too late) */
-        if (p_context->width > 0 && p_context->height > 0
-         && !setup(&p_context->hwaccel_context, &p_context->pix_fmt, p_context->width, p_context->height)) {
-            qWarning("acceleration setup failure");
-            break;
-        }
-
-        qDebug("Using %s for hardware decoding.", qPrintable(description));
-
-        /* FIXME this will disable direct rendering
-         * even if a new pixel format is renegotiated
-         */
-        //p_sys->b_direct_rendering = false;
-        //p_sys->p_va = p_va;
-        p_context->draw_horiz_band = NULL;
-        return pi_fmt[i];
-    }
-
-    close();
-    //vlc_va_Delete(p_va);
-
-end:
-    /* Fallback to default behaviour */
-    //p_sys->p_va = NULL;
-    return avcodec_default_get_format(p_context, pi_fmt);
 }
 
 void VideoDecoderVAAPIPrivate::close()

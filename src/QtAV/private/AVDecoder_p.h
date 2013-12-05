@@ -51,6 +51,8 @@ public:
             frame = 0;
         }
     }
+    virtual bool open() {return true;}
+    virtual void close() {}
 
     AVCodecContext *codec_ctx; //set once and not change
     bool available;

@@ -19,26 +19,34 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEODECODERFFMPEG_H
-#define QTAV_VIDEODECODERFFMPEG_H
+#ifndef QTAV_VIDEODECODERFFMPEGHW_P_H
+#define QTAV_VIDEODECODERFFMPEGHW_P_H
 
-#include <QtAV/VideoDecoder.h>
+#include "private/VideoDecoderFFmpeg_p.h"
 
 namespace QtAV {
 
-class VideoDecoderFFmpegPrivate;
-class Q_AV_EXPORT VideoDecoderFFmpeg : public VideoDecoder
+class Q_AV_EXPORT VideoDecoderFFmpegHWPrivate : public VideoDecoderFFmpegPrivate
 {
-    DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
 public:
-    VideoDecoderFFmpeg();
-    virtual ~VideoDecoderFFmpeg();
-    //virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
-protected:
-    VideoDecoderFFmpeg(VideoDecoderFFmpegPrivate &d);
+    VideoDecoderFFmpegHWPrivate()
+        : VideoDecoderFFmpegPrivate()
+        , va_pixfmt(QTAV_PIX_FMT_C(NONE))
+    {
+        // subclass setup va_pixfmt here
+    }
+
+    virtual ~VideoDecoderFFmpegHWPrivate() {}
+    virtual bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h) = 0;
+
+    AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt);
+    virtual bool getBuffer(void **opaque, uint8_t **data) = 0;
+    virtual void releaseBuffer(void *opaque, uint8_t *data) = 0;
+
+    AVPixelFormat va_pixfmt;
+    QString description;
 };
 
 } //namespace QtAV
 
-#endif // QTAV_VIDEODECODERFFMPEG_H
+#endif // QTAV_VideoDecoderFFmpegHW_P_H

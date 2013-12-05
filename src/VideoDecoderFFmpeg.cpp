@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoderFFmpeg.h"
-#include "private/VideoDecoder_p.h"
+#include "private/VideoDecoderFFmpeg_p.h"
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
@@ -37,19 +37,14 @@ void RegisterVideoDecoderFFmpeg_Man()
 }
 
 
-class VideoDecoderFFmpegPrivate : public VideoDecoderPrivate
-{
-public:
-    VideoDecoderFFmpegPrivate():
-        VideoDecoderPrivate()
-    {
-    }
-    virtual ~VideoDecoderFFmpegPrivate() {
-    }
-};
 
 VideoDecoderFFmpeg::VideoDecoderFFmpeg():
     VideoDecoder(*new VideoDecoderFFmpegPrivate())
+{
+}
+
+VideoDecoderFFmpeg::VideoDecoderFFmpeg(VideoDecoderFFmpegPrivate &d):
+    VideoDecoder(d)
 {
 }
 

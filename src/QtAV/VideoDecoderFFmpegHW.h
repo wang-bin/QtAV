@@ -19,26 +19,27 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEODECODERFFMPEG_H
-#define QTAV_VIDEODECODERFFMPEG_H
+#ifndef QTAV_VIDEODECODERFFMPEGHW_H
+#define QTAV_VIDEODECODERFFMPEGHW_H
 
-#include <QtAV/VideoDecoder.h>
+#include <QtAV/VideoDecoderFFmpeg.h>
 
 namespace QtAV {
 
-class VideoDecoderFFmpegPrivate;
-class Q_AV_EXPORT VideoDecoderFFmpeg : public VideoDecoder
+class VideoDecoderFFmpegHWPrivate;
+class Q_AV_EXPORT VideoDecoderFFmpegHW : public VideoDecoderFFmpeg
 {
-    DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
+    DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegHW)
 public:
-    VideoDecoderFFmpeg();
-    virtual ~VideoDecoderFFmpeg();
-    //virtual bool prepare();
+    VideoDecoderFFmpegHW();
+    virtual ~VideoDecoderFFmpegHW();
+    virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
+
 protected:
-    VideoDecoderFFmpeg(VideoDecoderFFmpegPrivate &d);
+    VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d);
 };
 
 } //namespace QtAV
 
-#endif // QTAV_VIDEODECODERFFMPEG_H
+#endif // QTAV_VIDEODECODERFFMPEGHW_H

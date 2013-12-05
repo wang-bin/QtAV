@@ -77,14 +77,47 @@ bool AVDecoder::open()
         d.codec_ctx->flags |= CODEC_FLAG_EMU_EDGE;
     }
     //AVDISCARD_NONREF, AVDISCARD_ALL
+
     //set thread
+
+    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
+    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD;
+// lavfilter
+    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
+    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
+
+//from vlc
+    //HAVE_AVCODEC_MT macro?
     if (d.threads == -1)
         d.threads = qMax(0, QThread::idealThreadCount());
     if (d.threads > 0)
         d.codec_ctx->thread_count = d.threads;
     if (d.threads > 1)
         d.codec_ctx->thread_type = d.thread_slice ? FF_THREAD_SLICE : FF_THREAD_FRAME;
-
+    d.codec_ctx->thread_safe_callbacks = true;
+    switch (d.codec_ctx->codec_id) {
+        case AV_CODEC_ID_MPEG4:
+        case AV_CODEC_ID_H263:
+            d.codec_ctx->thread_type = 0;
+            break;
+        case AV_CODEC_ID_MPEG1VIDEO:
+        case AV_CODEC_ID_MPEG2VIDEO:
+            d.codec_ctx->thread_type &= ~FF_THREAD_SLICE;
+            /* fall through */
+# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
+        case AV_CODEC_ID_H264:
+        case AV_CODEC_ID_VC1:
+        case AV_CODEC_ID_WMV3:
+            d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
+# endif
+    }
+/*
+    if (d.codec_ctx->thread_type & FF_THREAD_FRAME)
+        p_dec->i_extra_picture_buffers = 2 * p_sys->p_context->thread_count;
+*/
+    // hwa extra init can be here
+    if (!d.open())
+        return false;
     //set dict used by avcodec_open2(). see ffplay
     // AVDictionary *opts;
     int ret = avcodec_open2(d.codec_ctx, codec, NULL);
@@ -103,6 +136,8 @@ bool AVDecoder::close()
     }
     DPTR_D(AVDecoder);
     d.is_open = false;
+    // hwa extra finalize can be here
+    d.close();
     // TODO: reset config?
     if (!d.codec_ctx) {
         qWarning("FFmpeg codec context not ready");

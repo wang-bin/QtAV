@@ -157,6 +157,7 @@ SOURCES += \
     VideoDecoder.cpp \
     VideoDecoderTypes.cpp \
     VideoDecoderFFmpeg.cpp \
+    VideoDecoderFFmpegHW.cpp \
     VideoThread.cpp
 
 SDK_HEADERS *= \
@@ -192,6 +193,7 @@ SDK_HEADERS *= \
     QtAV/VideoDecoder.h \
     QtAV/VideoDecoderTypes.h \
     QtAV/VideoDecoderFFmpeg.h \
+    QtAV/VideoDecoderFFmpegHW.h \
     QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
     QtAV/FactoryDefine.h \
@@ -223,6 +225,8 @@ HEADERS *= \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/VideoDecoder_p.h \
+    QtAV/private/VideoDecoderFFmpeg_p.h \
+    QtAV/private/VideoDecoderFFmpegHW_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h
