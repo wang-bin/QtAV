@@ -24,7 +24,12 @@
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
-
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QX11Info>
+#else
+#include <qpa/qplatformnativeinterface.h>
+#include <QGuiApplication>
+#endif //QT_VERSION_CHECK(5, 0, 0)
 #include <va/va.h>
 
 #if HAVE_VAAPI_DRM
@@ -88,14 +93,28 @@ typedef struct
     int          i_refcount;
     unsigned int i_order;
     //vlc_mutex_t *p_lock;
-} vlc_va_surface_t;
+} va_surface_t;
 
 
 class VideoDecoderVAAPIPrivate : public VideoDecoderPrivate
 {
 public:
     VideoDecoderVAAPIPrivate() {
-        //TODO:
+        display_x11 = 0;
+        display = 0;
+        config_id = VA_INVALID_ID;
+        context_id = VA_INVALID_ID;
+        version_major = 0;
+        version_minor = 0;
+        nb_surfaces = 0;
+        surface_order = 0;
+        surface_width = 0;
+        surface_height = 0;
+        surface_chroma = QTAV_PIX_FMT_C(NONE);
+        surfaces = 0;
+        image.image_id = VA_INVALID_ID;
+        supports_derive = 0;
+        va_pixfmt = QTAV_PIX_FMT_C(VAAPI_VLD);
     }
 
     ~VideoDecoderVAAPIPrivate() {
@@ -110,7 +129,7 @@ public:
     void close();
 
     AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt);
-    int getBuffer(void **opaque, uint8_t **data);
+    bool getBuffer(void **opaque, uint8_t **data);
     void releaseBuffer(void *opaque, uint8_t *data);
 
     Display      *display_x11;
@@ -133,8 +152,8 @@ public:
     int          surface_height;
     AVPixelFormat surface_chroma;
 
-    //QVector<vlc_va_surface_t*> surfaces;
-    vlc_va_surface_t *surfaces;
+    //QVector<va_surface_t*> surfaces;
+    va_surface_t *surfaces;
 
     VAImage      image;
     //copy_cache_t image_cache;
@@ -154,12 +173,13 @@ static AVPixelFormat ffmpeg_get_vaapi_format(struct AVCodecContext *c, const AVP
 static int ffmpeg_get_vaapi_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
 {
     VideoDecoderVAAPIPrivate *va = (VideoDecoderVAAPIPrivate*)c->opaque;
+    ff->opaque = 0;
     /* hwaccel_context is not present in old ffmpeg version */
-    if (va->setup(&c->hwaccel_context, &c->pix_fmt, c->coded_width, c->coded_height)) {
+    if (!va->setup(&c->hwaccel_context, &c->pix_fmt, c->coded_width, c->coded_height)) {
         qWarning("va Setup failed");
         return -1;
     }
-    if (va->getBuffer(&c->opaque, &ff->data[0]) != 0)
+    if (!va->getBuffer(&ff->opaque, &ff->data[0]))
         return -1;
 
     //ffmpeg_va_GetFrameBuf
@@ -171,7 +191,7 @@ static int ffmpeg_get_vaapi_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_v
 static void ffmpeg_release_buffer(struct AVCodecContext *c, AVFrame *ff)
 {
     VideoDecoderVAAPIPrivate *va = (VideoDecoderVAAPIPrivate*)c->opaque;
-    va->releaseBuffer(c->opaque, ff->data[0]);
+    va->releaseBuffer(ff->opaque, ff->data[0]);
     memset(ff->data, 0, sizeof(ff->data));
 }
 
@@ -341,7 +361,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         return VideoFrame();
 
     if (d.supports_derive) {
-        if (vaDeriveImage(d.display, surface_id, &(d.image)) != VA_STATUS_SUCCESS)
+        if (vaDeriveImage(d.display, surface_id, &d.image) != VA_STATUS_SUCCESS)
             return VideoFrame();
     } else {
         if (vaGetImage(d.display, surface_id, 0, 0, d.surface_width, d.surface_height, d.image.image_id))
@@ -396,6 +416,7 @@ VideoFrame VideoDecoderVAAPI::frame()
 ///////
 bool VideoDecoderVAAPIPrivate::open()
 {
+    XInitThreads();
     VAProfile i_profile, *p_profiles_list;
     bool b_supported_profile = false;
     int i_profiles_nb = 0;
@@ -430,13 +451,19 @@ bool VideoDecoderVAAPIPrivate::open()
     context_id = VA_INVALID_ID;
     image.image_id = VA_INVALID_ID;
     /* Create a VA display */
-    display_x11 = XOpenDisplay(NULL);
+    //display_x11 = QX11Info::display();// XOpenDisplay(NULL);;
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    display_x11 = QX11Info::display();
+#else
+    display_x11 = (Display*)qApp->platformNativeInterface()->nativeResourceForScreen("display", QGuiApplication::primaryScreen());
+#endif
     if (!display_x11) {
         qWarning("Could not connect to X server");
         return false;
     }
     display = vaGetDisplay(display_x11);
-    if (!display) {
+
+    if (!display/* || vaDisplayIsValid(display) != 0*/) {
         qWarning("Could not get a VAAPI device");
         return false;
     }
@@ -489,7 +516,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
 {
     Q_ASSERT(w > 0 && h > 0);
     /* */
-    surfaces = (vlc_va_surface_t*)calloc(nb_surfaces, sizeof(vlc_va_surface_t));
+    surfaces = (va_surface_t*)calloc(nb_surfaces, sizeof(va_surface_t));
     if (!surfaces)
         return false;
     image.image_id = VA_INVALID_ID;
@@ -504,7 +531,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         return false;
     }
     for (int i = 0; i < nb_surfaces; i++) {
-        vlc_va_surface_t *surface = &surfaces[i];
+        va_surface_t *surface = &surfaces[i];
         surface->i_id = pi_surface_id[i];
         surface->i_refcount = 0;
         surface->i_order = 0;
@@ -560,7 +587,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         }
     }
     free(p_fmt);
-    if (!i_chroma) {
+    if (i_chroma == QTAV_PIX_FMT_C(NONE)) {
         destroySurfaces();
         return false;
     }
@@ -602,7 +629,7 @@ void VideoDecoderVAAPIPrivate::destroySurfaces()
         vaDestroyContext(display, context_id);
 
     for (int i = 0; i < nb_surfaces && surfaces; i++) {
-        vlc_va_surface_t *surface = &surfaces[i];
+        va_surface_t *surface = &surfaces[i];
         if (surface->i_id != VA_INVALID_SURFACE)
             vaDestroySurfaces(display, &surface->i_id, 1);
     }
@@ -626,7 +653,7 @@ bool VideoDecoderVAAPIPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w,
         return true;
     }
     *hwctx = NULL;
-    *chroma = QTAV_PIX_FMT_C(NONE);
+    //*chroma = QTAV_PIX_FMT_C(NONE);
     if (surface_width || surface_height)
         destroySurfaces();
     if (w > 0 && h > 0)
@@ -705,16 +732,17 @@ void VideoDecoderVAAPIPrivate::close()
         XCloseDisplay(display_x11);
 }
 
-int VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
+bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
 {
     int i_old;
     int i;
 
-    //vlc_mutex_lock(&sys->lock);
+    QMutexLocker lock(&mutex);
+    Q_UNUSED(lock);
     /* Grab an unused surface, in case none are, try the oldest
      * XXX using the oldest is a workaround in case a problem happens with ffmpeg */
     for (i = 0, i_old = 0; i < nb_surfaces; i++) {
-        vlc_va_surface_t *p_surface = &surfaces[i];
+        va_surface_t *p_surface = &surfaces[i];
 
         if (!p_surface->i_refcount)
             break;
@@ -726,7 +754,7 @@ int VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
         i = i_old;
     //vlc_mutex_unlock(&sys->lock);
 
-    vlc_va_surface_t *p_surface = &surfaces[i];
+    va_surface_t *p_surface = &surfaces[i];
 
     p_surface->i_refcount = 1;
     p_surface->i_order = surface_order++;
@@ -739,11 +767,11 @@ int VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
 void VideoDecoderVAAPIPrivate::releaseBuffer(void *opaque, uint8_t *data)
 {
     Q_UNUSED(data);
-    vlc_va_surface_t *p_surface = (vlc_va_surface_t*)opaque;
+    va_surface_t *p_surface = (va_surface_t*)opaque;
 
-    //vlc_mutex_lock(p_surface->p_lock);
+    QMutexLocker lock(&mutex);
+    Q_UNUSED(lock);
     p_surface->i_refcount--;
-    //vlc_mutex_unlock(p_surface->p_lock);
 }
 
 } // namespace QtAV
