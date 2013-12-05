@@ -48,14 +48,6 @@
 #include <va/va_x11.h>
 #endif
 
-/* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
- * a is the major version
- * b and c the minor and micro versions of libav
- * d and e the minor and micro versions of FFmpeg */
-#define LIBAVCODEC_VERSION_CHECK(a, b, c, d, e) \
-    ((LIBAVCODEC_VERSION_MICRO <  100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(a, b, c)) || \
-      (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(a, d, e)))
-
 #ifndef VA_SURFACE_ATTRIB_SETTABLE
 #define vaCreateSurfaces(d, f, w, h, s, ns, a, na) \
     vaCreateSurfaces(d, w, h, f, ns, s)
@@ -231,7 +223,8 @@ VideoFrame VideoDecoderVAAPI::frame()
 
 bool VideoDecoderVAAPIPrivate::open()
 {
-    codec_ctx->pix_fmt = QTAV_PIX_FMT_C(VAAPI_VLD);
+    if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
+        codec_ctx->pix_fmt = va_pixfmt;
 
     XInitThreads();
     VAProfile i_profile, *p_profiles_list;

@@ -22,8 +22,15 @@
 #include "QtAV/VideoDecoderFFmpegHW.h"
 #include "private/VideoDecoderFFmpegHW_p.h"
 
-namespace QtAV {
+/* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
+ * a is the major version
+ * b and c the minor and micro versions of libav
+ * d and e the minor and micro versions of FFmpeg */
+#define LIBAVCODEC_VERSION_CHECK( a, b, c, d, e ) \
+    ( (LIBAVCODEC_VERSION_MICRO <  100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, b, c ) ) || \
+      (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, d, e ) ) )
 
+namespace QtAV {
 
 static AVPixelFormat ffmpeg_get_va_format(struct AVCodecContext *c, const AVPixelFormat * ff)
 {
@@ -34,7 +41,14 @@ static AVPixelFormat ffmpeg_get_va_format(struct AVCodecContext *c, const AVPixe
 static int ffmpeg_get_va_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
 {
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)c->opaque;
+    //ff->reordered_opaque = c->reordered_opaque; //TODO: dxva?
     ff->opaque = 0;
+#if ! LIBAVCODEC_VERSION_CHECK(54, 34, 0, 79, 101)
+    ff->pkt_pts = c->pkt ? c->pkt->pts : AV_NOPTS_VALUE;
+#endif
+#if LIBAVCODEC_VERSION_MAJOR < 54
+    ff->age = 256*256*256*64;
+#endif
     /* hwaccel_context is not present in old ffmpeg version */
     if (!va->setup(&c->hwaccel_context, &c->pix_fmt, c->coded_width, c->coded_height)) {
         qWarning("va Setup failed");
@@ -54,6 +68,7 @@ static void ffmpeg_release_va_buffer(struct AVCodecContext *c, AVFrame *ff)
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)c->opaque;
     va->releaseBuffer(ff->opaque, ff->data[0]);
     memset(ff->data, 0, sizeof(ff->data));
+    memset(ff->linesize, 0, sizeof(ff->linesize));
 }
 
 AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt)
@@ -100,7 +115,6 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
          * even if a new pixel format is renegotiated
          */
         //p_sys->b_direct_rendering = false;
-        //p_sys->p_va = p_va;
         p_context->draw_horiz_band = NULL;
         return pi_fmt[i];
     }
@@ -109,8 +123,8 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
     //vlc_va_Delete(p_va);
 
 end:
+    qWarning("acceleration not available" );
     /* Fallback to default behaviour */
-    //p_sys->p_va = NULL;
     return avcodec_default_get_format(p_context, pi_fmt);
 }
 
@@ -142,6 +156,7 @@ bool VideoDecoderFFmpegHW::prepare()
 //#if LIBAVCODEC_VERSION_MAJOR >= 55
     //d.codec_ctx->get_buffer2 = ffmpeg_get_va_frame;
 //#else
+    // TODO: FF_API_GET_BUFFER
     d.codec_ctx->get_buffer = ffmpeg_get_va_buffer;//ffmpeg_GetFrameBuf;
     d.codec_ctx->reget_buffer = avcodec_default_reget_buffer;
     d.codec_ctx->release_buffer = ffmpeg_release_va_buffer;//ffmpeg_ReleaseFrameBuf;

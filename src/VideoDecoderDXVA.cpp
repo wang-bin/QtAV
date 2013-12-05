@@ -20,19 +20,11 @@
 ******************************************************************************/
 
 #pragma comment(lib, "Ole32.lib") //CoTaskMemFree. why link failed?
-#include "QtAV/VideoDecoderFFmpeg.h"
-#include "private/VideoDecoder_p.h"
+#include "QtAV/VideoDecoderFFmpegHW.h"
+#include "private/VideoDecoderFFmpegHW_p.h"
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
-
-/* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
- * a is the major version
- * b and c the minor and micro versions of libav
- * d and e the minor and micro versions of FFmpeg */
-#define LIBAVCODEC_VERSION_CHECK( a, b, c, d, e ) \
-    ( (LIBAVCODEC_VERSION_MICRO <  100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, b, c ) ) || \
-      (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, d, e ) ) )
 
 template <class T> void SafeRelease(T **ppT)
 {
@@ -127,16 +119,12 @@ DEFINE_GUID(DXVA_ModeHEVC_VLD_Main10,               0x107af0e0, 0xef1a, 0x4d19, 
 namespace QtAV {
 
 class VideoDecoderDXVAPrivate;
-class VideoDecoderDXVA : public VideoDecoder
+class VideoDecoderDXVA : public VideoDecoderFFmpegHW
 {
     DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
 public:
     VideoDecoderDXVA();
     virtual ~VideoDecoderDXVA();
-    virtual bool prepare();
-    virtual bool open();
-    virtual bool close();
-    virtual bool decode(const QByteArray &encoded);
     virtual VideoFrame frame();
 };
 
@@ -227,7 +215,6 @@ static const dxva2_mode_t *Dxva2FindMode(const GUID *guid)
     return NULL;
 }
 
-/* */
 typedef struct {
     const char    *name;
     D3DFORMAT     format;
@@ -237,7 +224,7 @@ typedef struct {
 static const d3d_format_t d3d_formats[] = {
     { "YV12",   (D3DFORMAT)MAKEFOURCC('Y','V','1','2'),    QTAV_PIX_FMT_C(YUV420P) },
     { "NV12",   (D3DFORMAT)MAKEFOURCC('N','V','1','2'),    QTAV_PIX_FMT_C(NV12) },
-//    { "IMC3",   (D3DFORMAT)MAKEFOURCC('I','M','C','3'),    QTAV_PIX_FMT_C(YV12) },
+    { "IMC3",   (D3DFORMAT)MAKEFOURCC('I','M','C','3'),    QTAV_PIX_FMT_C(YUV420P) },
 
     { NULL, D3DFMT_UNKNOWN, QTAV_PIX_FMT_C(NONE) }
 };
@@ -277,12 +264,14 @@ static QString DxDescribe(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
 }
 
 
-class VideoDecoderDXVAPrivate : public VideoDecoderPrivate
+class VideoDecoderDXVAPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderDXVAPrivate():
-        VideoDecoderPrivate()
+        VideoDecoderFFmpegHWPrivate()
     {
+        va_pixfmt = QTAV_PIX_FMT_C(DXVA2_VLD);
+
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
@@ -321,11 +310,10 @@ public:
 
     bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h);
     bool open();
-    bool close();
+    void close();
 
-    AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat * pi_fmt);
-    int getBuffer(struct AVCodecContext *c, AVFrame *ff);
-    void releaseBuffer(struct AVCodecContext *c, AVFrame *ff);
+    bool getBuffer(void **opaque, uint8_t **data);
+    void releaseBuffer(void *opaque, uint8_t *data);
 
     /* DLL */
     HINSTANCE hd3d9_dll;
@@ -366,30 +354,11 @@ public:
     va_surface_t surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
     IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
-    QString description;
+    // static const QString kDefaultDescription; //set on open or prepare
 };
 
-static AVPixelFormat ffmpeg_get_dxva2_format(struct AVCodecContext *c, const AVPixelFormat * ff)
-{
-    VideoDecoderDXVAPrivate *va = (VideoDecoderDXVAPrivate*)c->opaque;
-    return va->getFormat(c, ff);
-}
-
-static int ffmpeg_get_dxva2_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
-{
-    VideoDecoderDXVAPrivate *va = (VideoDecoderDXVAPrivate*)c->opaque;
-    return va->getBuffer(c, ff);
-}
-
-static void ffmpeg_release_buffer(struct AVCodecContext *c, AVFrame *ff)
-{
-    VideoDecoderDXVAPrivate *va = (VideoDecoderDXVAPrivate*)c->opaque;
-    va->releaseBuffer(c, ff);
-}
-
-
 VideoDecoderDXVA::VideoDecoderDXVA()
-    : VideoDecoder(*new VideoDecoderDXVAPrivate())
+    : VideoDecoderFFmpegHW(*new VideoDecoderDXVAPrivate())
 {
 }
 
@@ -398,118 +367,11 @@ VideoDecoderDXVA::~VideoDecoderDXVA()
     setCodecContext(0);
 }
 
-bool VideoDecoderDXVA::prepare()
-{
-    return VideoDecoder::prepare();
-}
-
-bool VideoDecoderDXVA::open()
-{
-    DPTR_D(VideoDecoderDXVA);
-    if (!d.codec_ctx) {
-        qWarning("FFmpeg codec context not ready");
-        return false;
-    }
-    AVCodec *codec = 0;
-    if (!d.name.isEmpty()) {
-        codec = avcodec_find_decoder_by_name(d.name.toUtf8().constData());
-    } else {
-        codec = avcodec_find_decoder(d.codec_ctx->codec_id);
-    }
-    if (!codec) {
-        if (d.name.isEmpty()) {
-            qWarning("No codec could be found with id %d", d.codec_ctx->codec_id);
-        } else {
-            qWarning("No codec could be found with name %s", d.name.toUtf8().constData());
-        }
-        return false;
-    }
-    if (!d.open()) {
-        qWarning("Open DXVA2 decoder failed!");
-        return false;
-    }
-    //TODO: neccesary?
-#if 0
-    if (!d.setup(&d.codec_ctx->hwaccel_context, &d.codec_ctx->pix_fmt, d.codec_ctx->width, d.codec_ctx->height)) {
-        qWarning("Setup DXVA2 failed.");
-        return false;
-    }
-#endif
-    d.codec_ctx->opaque = &d; //is it ok?
-    d.codec_ctx->get_format = ffmpeg_get_dxva2_format;
-    d.codec_ctx->get_buffer = ffmpeg_get_dxva2_buffer; //deprecated
-    d.codec_ctx->reget_buffer = avcodec_default_reget_buffer; //deprecated
-    //d.codec_ctx->get_buffer2 = //lavfilter
-    d.codec_ctx->release_buffer = ffmpeg_release_buffer; //deprecated
-    d.codec_ctx->thread_count = 1;
-    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
-    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD;
-// lavfilter
-    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
-    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
-
-    d.codec_ctx->pix_fmt = QTAV_PIX_FMT_C(DXVA2_VLD);
-
-    int ret = avcodec_open2(d.codec_ctx, codec, NULL);
-    if (ret < 0) {
-        qWarning("open video codec failed: %s", av_err2str(ret));
-        return false;
-    }
-    d.is_open = true;
-    return true;
-}
-
-bool VideoDecoderDXVA::close()
-{
-    if (!isOpen()) {
-        return true;
-    }
-    DPTR_D(VideoDecoderDXVA);
-    d.is_open = false;
-    d.close();
-    return VideoDecoder::close();
-}
-
-bool VideoDecoderDXVA::decode(const QByteArray &encoded)
-{
-    if (!isAvailable())
-        return false;
-    DPTR_D(VideoDecoder);
-    AVPacket packet;
-    av_new_packet(&packet, encoded.size());
-    memcpy(packet.data, encoded.data(), encoded.size());
-//TODO: use AVPacket directly instead of Packet?
-    //AVStream *stream = format_context->streams[stream_idx];
-
-    //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
-    int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
-    //TODO: decoded format is YUV420P, YUV422P?
-    av_free_packet(&packet);
-    if (ret < 0) {
-        qWarning("[VideoDecoder] %s", av_err2str(ret));
-        return false;
-    }
-    if (!d.got_frame_ptr) {
-        qWarning("no frame could be decompressed: %s", av_err2str(ret));
-        return false; //FIXME
-    }
-    // TODO: wait key frame?
-    if (!d.codec_ctx->width || !d.codec_ctx->height)
-        return false;
-    d.width = d.codec_ctx->width;
-    d.height = d.codec_ctx->height;
-    return true;
-}
-
 VideoFrame VideoDecoderDXVA::frame()
 {
     DPTR_D(VideoDecoderDXVA);
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame();
-/*
-    if (!va->surface_cache.buffer)
-        return VLC_EGENERIC;
-*/
     Q_ASSERT(d.output == MAKEFOURCC('Y','V','1','2'));
 //    qDebug("...........output: %d yv12=%d, size=%dx%d", d.output, MAKEFOURCC('Y','V','1','2'), d.width, d.height);
 
@@ -561,8 +423,7 @@ VideoFrame VideoDecoderDXVA::frame()
             plane[2] = V;
         }
         //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
-        //FIXME: FFmpeg has no YV12. YUV420P is ok?
-        VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_YUV420P));//VideoFormat((int)d.codec_ctx->pix_fmt));
+        VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_YUV420P));
         frame.setBits(plane);
         frame.setBytesPerLine(pitch);
         return frame;
@@ -586,31 +447,16 @@ VideoFrame VideoDecoderDXVA::frame()
 
 
 /* FIXME it is nearly common with VAAPI */
-int VideoDecoderDXVAPrivate::getBuffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
+bool VideoDecoderDXVAPrivate::getBuffer(void **opaque, uint8_t **data)//vlc_va_t *external, AVFrame *ff)
 {
-    ff->reordered_opaque = c->reordered_opaque;
-    ff->opaque = NULL;
-#if ! LIBAVCODEC_VERSION_CHECK(54, 34, 0, 79, 101)
-    ff->pkt_pts = c->pkt ? c->pkt->pts : AV_NOPTS_VALUE;
-#endif
-#if LIBAVCODEC_VERSION_MAJOR < 54
-    ff->age = 256*256*256*64;
-#endif
     // check pix fmt DXVA2_VLD and h264 profile?
-    /* hwaccel_context is not present in old ffmpeg version */
-    if (!setup(&c->hwaccel_context, &c->pix_fmt,// &p_dec->fmt_out.video.i_chroma,
-                c->width, c->height)) {
-        qWarning("setup failed" );
-        return -1;
-    }
-    /* Check the device */
     HRESULT hr = devmng->TestDevice(device);
     if (hr == DXVA2_E_NEW_VIDEO_DEVICE) {
         if (!DxResetVideoDecoder())
-            return -1;
+            return false;
     } else if (FAILED(hr)) {
         qWarning("IDirect3DDeviceManager9_TestDevice %u", (unsigned)hr);
-        return -1;
+        return false;
     }
     /* Grab an unused surface, in case none are, try the oldest
      * XXX using the oldest is a workaround in case a problem happens with libavcodec */
@@ -627,85 +473,18 @@ int VideoDecoderDXVAPrivate::getBuffer(struct AVCodecContext *c, AVFrame *ff)//v
     va_surface_t *surface = &surfaces[i];
     surface->refcount = 1;
     surface->order = surface_order++;
-    /* */
-    memset(ff->data, 0, sizeof(ff->data));
-    memset(ff->linesize, 0, sizeof(ff->linesize));
-    //memset(ff->buf, 0, sizeof(ff->buf));
-    ff->data[0] = ff->data[3] = (uint8_t*)surface->d3d;/* Yummie */
-    ff->type = FF_BUFFER_TYPE_USER; //type: deprecated
-
-    /*
-     * 515959913922fc234d0d814e0d0b115f9c293ee5
-     * use AVFrame.opaque to store internal per-picture state directly
-     */
-    ff->opaque = surface;
-    return 0;
+    *data = (uint8_t*)surface->d3d;/* Yummie */
+    *opaque = surface;
+    return true;
 }
 
 //(void *opaque, uint8_t *data)
-void VideoDecoderDXVAPrivate::releaseBuffer(struct AVCodecContext *c, AVFrame *ff)
+void VideoDecoderDXVAPrivate::releaseBuffer(void *opaque, uint8_t *data)
 {
-    Q_UNUSED(c);
-    va_surface_t *surface = (va_surface_t*)ff->opaque;
+    Q_UNUSED(data);
+    va_surface_t *surface = (va_surface_t*)opaque;
     surface->refcount--;
 }
-
-AVPixelFormat VideoDecoderDXVAPrivate::getFormat(struct AVCodecContext *p_context, const AVPixelFormat * pi_fmt)
-{
-    //lavfilter
-/*
-    while (*pi_fmt != AV_PIX_FMT_NONE && *pi_fmt != AV_PIX_FMT_DXVA2_VLD) {
-        ++pi_fmt;
-    }
-    return fmt[0];
-*/
-    /* Enumerate available formats */
-    bool can_hwaccel = false;
-    for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
-        const AVPixFmtDescriptor *dsc = av_pix_fmt_desc_get(pi_fmt[i]);
-        if (dsc == NULL)
-            continue;
-        bool hwaccel = (dsc->flags & AV_PIX_FMT_FLAG_HWACCEL) != 0;
-
-        qDebug("available %sware decoder output format %d (%s)",
-                 hwaccel ? "hard" : "soft", pi_fmt[i], dsc->name);
-        if (hwaccel)
-            can_hwaccel = true;
-    }
-
-    if (!can_hwaccel)
-        goto end;
-    /* Try too look for a supported hw acceleration */
-    //AV_PIX_FMT_NB? read avctx.get_format
-    for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
-        const char *name = av_get_pix_fmt_name(pi_fmt[i]);
-        qDebug("Available decoder output format %d (%s)", pi_fmt[i], name ? name : "unknown" );
-        /*
-         * TODO: check pix_fmt (set on open) to uniform all va. i.e. getFormat can be used for other va
-         * such as vaapi, only setup() changes
-         */
-        if (QTAV_PIX_FMT_C(DXVA2_VLD) != pi_fmt[i])
-            continue;
-        /* We try to call vlc_va_Setup when possible to detect errors when
-         * possible (later is too late) */
-        if( p_context->width > 0 && p_context->height > 0
-         && !setup(&p_context->hwaccel_context,
-                   ///FIXME: fmt_out is required?
-                   &p_context->pix_fmt,  ///&p_dec->fmt_out.video.i_chroma,
-                   p_context->width, p_context->height ) )
-        {
-            qWarning("acceleration setup failure");
-            break;
-        }
-        p_context->draw_horiz_band = NULL;
-        return pi_fmt[i];
-    }
-end:
-    qWarning("acceleration not available" );
-    close();
-    return avcodec_default_get_format(p_context, pi_fmt);
-}
-
 
 bool VideoDecoderDXVAPrivate::loadDll() {
     hd3d9_dll = LoadLibrary(TEXT("D3D9.DLL"));
@@ -833,7 +612,6 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoService()
         qWarning("OpenDeviceHandle failed");
         return false;
     }
-    //c++: devmng->GetVideoService
     hr = devmng->GetVideoService(device, IID_IDirectXVideoDecoderService, (void**)&vs);
     if (FAILED(hr)) {
         qWarning("GetVideoService failed");
@@ -960,6 +738,7 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
         surface_count = 0;
         return false;
     }
+    memset(surfaces, 0, sizeof(surfaces));
     for (unsigned i = 0; i < surface_count; i++) {
         va_surface_t *surface = &this->surfaces[i];
         surface->d3d = surface_list[i];
@@ -974,13 +753,8 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     dsc.SampleWidth     = width;
     dsc.SampleHeight    = height;
     dsc.Format          = render;
-    /*if (fmt->i_frame_rate > 0 && fmt->i_frame_rate_base > 0) {
-        dsc.InputSampleFreq.Numerator   = fmt->i_frame_rate;
-        dsc.InputSampleFreq.Denominator = fmt->i_frame_rate_base;
-    } else {*/
-        dsc.InputSampleFreq.Numerator   = 0;
-        dsc.InputSampleFreq.Denominator = 0;
-    //}
+    dsc.InputSampleFreq.Numerator   = 0;
+    dsc.InputSampleFreq.Denominator = 0;
     dsc.OutputFrameFreq = dsc.InputSampleFreq;
     dsc.UABProtectionLevel = FALSE;
     dsc.Reserved = 0;
@@ -1085,9 +859,9 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, 
 {
     if (w <= 0 || h <= 0)
         return false;
-    if (!decoder || ((width != w || height != h)/* &&
+    if (!decoder || ((width != w || height != h) &&
             (surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16))//)
-        */)) {
+        )) {
         DxDestroyVideoConversion();
         DxDestroyVideoDecoder();
         *hwctx = NULL;
@@ -1099,6 +873,7 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, 
         hw.cfg = &cfg;
         hw.surface_count = surface_count;
         hw.surface = hw_surfaces;
+        memset(hw_surfaces, 0, sizeof(hw_surfaces));
         for (unsigned i = 0; i < surface_count; i++)
             hw.surface[i] = surfaces[i].d3d;
         DxCreateVideoConversion();
@@ -1109,7 +884,11 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, 
     return true;
 }
 
-bool VideoDecoderDXVAPrivate::open() {
+bool VideoDecoderDXVAPrivate::open()
+{
+    if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
+        codec_ctx->pix_fmt = va_pixfmt;
+
     if (!D3dCreateDevice()) {
         qWarning("Failed to create Direct3D device");
         goto error;
@@ -1134,13 +913,12 @@ error:
     return false;
 }
 
-bool VideoDecoderDXVAPrivate::close() {
+void VideoDecoderDXVAPrivate::close() {
     DxDestroyVideoConversion();
     DxDestroyVideoDecoder();
     DxDestroyVideoService();
     D3dDestroyDeviceManager();
     D3dDestroyDevice();
-    return true;
 }
 
 } //namespace QtAV
