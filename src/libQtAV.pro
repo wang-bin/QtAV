@@ -109,6 +109,7 @@ config_gl {
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
     SOURCES += VideoDecoderDXVA.cpp
+    LIBS += -lOle32
 }
 config_vaapi {
     DEFINES *= QTAV_HAVE_VAAPI=1

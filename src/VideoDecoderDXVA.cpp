@@ -65,6 +65,9 @@ extern "C" {
 
 #endif /* __MINGW32__ */
 
+namespace QtAV {
+
+// some MS_GUID are defined in mingw but some are not. move to namespace and define all is ok
 MS_GUID(IID_IDirectXVideoDecoderService, 0xfc51a551, 0xd5e7, 0x11d9, 0xaf,0x55,0x00,0x05,0x4e,0x43,0xff,0x02);
 MS_GUID(IID_IDirectXVideoAccelerationService, 0xfc51a550, 0xd5e7, 0x11d9, 0xaf,0x55,0x00,0x05,0x4e,0x43,0xff,0x02);
 
@@ -116,7 +119,6 @@ DEFINE_GUID(DXVA_ModeHEVC_VLD_Main,                 0x5b11d51b, 0x2f4c, 0x4452, 
 DEFINE_GUID(DXVA_ModeHEVC_VLD_Main10,               0x107af0e0, 0xef1a, 0x4d19, 0xab, 0xa8, 0x67, 0xa1, 0x63, 0x7, 0x3d, 0x13);
 
 
-namespace QtAV {
 
 class VideoDecoderDXVAPrivate;
 class VideoDecoderDXVA : public VideoDecoderFFmpegHW
