@@ -121,7 +121,6 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
 
     close();
     //vlc_va_Delete(p_va);
-
 end:
     qWarning("acceleration not available" );
     /* Fallback to default behaviour */
@@ -152,6 +151,14 @@ bool VideoDecoderFFmpegHW::prepare()
     }
 #endif
     d.codec_ctx->opaque = &d; //is it ok?
+
+    d.pixfmt = d.codec_ctx->pix_fmt;
+    //d.get_buffer2 = d.codec_ctx->get_buffer2;
+    d.get_buffer = d.codec_ctx->get_buffer;
+    d.reget_buffer = d.codec_ctx->reget_buffer;
+    d.release_buffer = d.codec_ctx->release_buffer;
+    d.get_format = d.codec_ctx->get_format;
+
     d.codec_ctx->get_format = ffmpeg_get_va_format;
 //#if LIBAVCODEC_VERSION_MAJOR >= 55
     //d.codec_ctx->get_buffer2 = ffmpeg_get_va_frame;
@@ -169,7 +176,7 @@ bool VideoDecoderFFmpegHW::decode(const QByteArray &encoded)
 {
     if (!isAvailable())
         return false;
-    DPTR_D(VideoDecoder);
+    DPTR_D(VideoDecoderFFmpegHW);
     AVPacket packet;
     av_new_packet(&packet, encoded.size());
     memcpy(packet.data, encoded.data(), encoded.size());
@@ -191,8 +198,10 @@ bool VideoDecoderFFmpegHW::decode(const QByteArray &encoded)
     // TODO: wait key frame?
     if (!d.codec_ctx->width || !d.codec_ctx->height)
         return false;
+    // avcodec_align_dimensions2
     d.width = d.codec_ctx->width;
     d.height = d.codec_ctx->height;
+    //avcodec_align_dimensions2(d.codec_ctx, &d.width_align, &d.height_align, aligns);
     return true;
 }
 

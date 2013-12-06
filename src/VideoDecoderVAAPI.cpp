@@ -154,12 +154,13 @@ VideoDecoderVAAPI::VideoDecoderVAAPI()
 
 VideoDecoderVAAPI::~VideoDecoderVAAPI()
 {
-    setCodecContext(0);
 }
 
 VideoFrame VideoDecoderVAAPI::frame()
 {
     DPTR_D(VideoDecoderVAAPI);
+    if (!d.frame->opaque || !d.frame->data[0])
+        return VideoFrame();
     VASurfaceID surface_id = (VASurfaceID)(uintptr_t)d.frame->data[3];
 #if VA_CHECK_VERSION(0,31,0)
     if (vaSyncSurface(d.display, surface_id))

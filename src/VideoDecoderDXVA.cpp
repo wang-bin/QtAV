@@ -366,12 +366,13 @@ VideoDecoderDXVA::VideoDecoderDXVA()
 
 VideoDecoderDXVA::~VideoDecoderDXVA()
 {
-    setCodecContext(0);
 }
 
 VideoFrame VideoDecoderDXVA::frame()
 {
     DPTR_D(VideoDecoderDXVA);
+    if (!d.frame->opaque || !d.frame->data[0])
+        return VideoFrame();
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame();
     Q_ASSERT(d.output == MAKEFOURCC('Y','V','1','2'));

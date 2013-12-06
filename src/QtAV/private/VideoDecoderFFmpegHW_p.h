@@ -33,10 +33,27 @@ public:
         : VideoDecoderFFmpegPrivate()
         , va_pixfmt(QTAV_PIX_FMT_C(NONE))
     {
+        get_format = 0;
+        get_buffer = 0;
+        release_buffer = 0;
+        reget_buffer = 0;
+        //get_buffer2 = 0;
         // subclass setup va_pixfmt here
     }
 
-    virtual ~VideoDecoderFFmpegHWPrivate() {}
+    virtual ~VideoDecoderFFmpegHWPrivate() {
+        restore();
+    }
+    void restore() {
+        codec_ctx->pix_fmt = pixfmt;
+        codec_ctx->opaque = 0;
+        codec_ctx->get_format = get_format;
+        codec_ctx->get_buffer = get_buffer;
+        codec_ctx->release_buffer = release_buffer;
+        codec_ctx->reget_buffer = reget_buffer;
+        //codec_ctx->get_buffer2 = get_buffer2;
+    }
+
     virtual bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h) = 0;
 
     AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt);
@@ -44,6 +61,14 @@ public:
     virtual void releaseBuffer(void *opaque, uint8_t *data) = 0;
 
     AVPixelFormat va_pixfmt;
+    AVPixelFormat pixfmt; //store old one
+    //store old values because it does not own AVCodecContext
+    AVPixelFormat (*get_format)(struct AVCodecContext *s, const enum AVPixelFormat * fmt);
+    int (*get_buffer)(struct AVCodecContext *c, AVFrame *pic);
+    void (*release_buffer)(struct AVCodecContext *c, AVFrame *pic);
+    int (*reget_buffer)(struct AVCodecContext *c, AVFrame *pic);
+    //int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
+
     QString description;
 };
 
