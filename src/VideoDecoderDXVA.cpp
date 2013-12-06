@@ -126,7 +126,6 @@ class VideoDecoderDXVA : public VideoDecoderFFmpegHW
     DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
 public:
     VideoDecoderDXVA();
-    virtual ~VideoDecoderDXVA();
     virtual VideoFrame frame();
 };
 
@@ -361,10 +360,6 @@ public:
 
 VideoDecoderDXVA::VideoDecoderDXVA()
     : VideoDecoderFFmpegHW(*new VideoDecoderDXVAPrivate())
-{
-}
-
-VideoDecoderDXVA::~VideoDecoderDXVA()
 {
 }
 
@@ -917,6 +912,7 @@ error:
 }
 
 void VideoDecoderDXVAPrivate::close() {
+    restore();
     DxDestroyVideoConversion();
     DxDestroyVideoDecoder();
     DxDestroyVideoService();

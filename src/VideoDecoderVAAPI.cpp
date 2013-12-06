@@ -61,9 +61,7 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
     DPTR_DECLARE_PRIVATE(VideoDecoderVAAPI)
 public:
     VideoDecoderVAAPI();
-    virtual ~VideoDecoderVAAPI();
     virtual VideoFrame frame();
-
 };
 
 extern VideoDecoderId VideoDecoderId_VAAPI;
@@ -149,10 +147,6 @@ public:
 
 VideoDecoderVAAPI::VideoDecoderVAAPI()
     : VideoDecoderFFmpegHW(*new VideoDecoderVAAPIPrivate())
-{
-}
-
-VideoDecoderVAAPI::~VideoDecoderVAAPI()
 {
 }
 
@@ -474,6 +468,7 @@ bool VideoDecoderVAAPIPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w,
 
 void VideoDecoderVAAPIPrivate::close()
 {
+    restore();
     if (surface_width || surface_height)
         destroySurfaces();
 

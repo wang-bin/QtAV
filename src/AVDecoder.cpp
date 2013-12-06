@@ -30,11 +30,11 @@ AVDecoder::AVDecoder()
 AVDecoder::AVDecoder(AVDecoderPrivate &d)
     :DPTR_INIT(&d)
 {
-
 }
 
 AVDecoder::~AVDecoder()
 {
+    setCodecContext(0);
 }
 
 bool AVDecoder::open()

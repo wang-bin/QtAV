@@ -132,10 +132,6 @@ VideoDecoderFFmpegHW::VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d):
 {
 }
 
-VideoDecoderFFmpegHW::~VideoDecoderFFmpegHW()
-{
-}
-
 bool VideoDecoderFFmpegHW::prepare()
 {
     DPTR_D(VideoDecoderFFmpegHW);

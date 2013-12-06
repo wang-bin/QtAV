@@ -32,7 +32,6 @@ class Q_AV_EXPORT VideoDecoderFFmpegHW : public VideoDecoderFFmpeg
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegHW)
 public:
     VideoDecoderFFmpegHW();
-    virtual ~VideoDecoderFFmpegHW();
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
 
