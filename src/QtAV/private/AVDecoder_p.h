@@ -39,6 +39,7 @@ public:
       , is_open(false)
       , frame(0)
       , got_frame_ptr(0)
+      , undecoded_size(0)
       , thread_slice(1)
       , low_resolution(0)
     {
@@ -61,6 +62,7 @@ public:
     AVFrame *frame; //set once and not change
     QByteArray decoded;
     int got_frame_ptr;
+    int undecoded_size;
     QMutex mutex;
     int threads;
     bool thread_slice;

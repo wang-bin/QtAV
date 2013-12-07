@@ -33,7 +33,6 @@ public:
     AudioDecoderPrivate()
         : AVDecoderPrivate()
       , resampler(0)
-      , undecoded_size(0)
     {
         resampler = AudioResamplerFactory::create(AudioResamplerId_FF);
         if (!resampler)
@@ -49,7 +48,6 @@ public:
     }
 
     AudioResampler *resampler;
-    int undecoded_size;
 };
 
 AudioDecoder::AudioDecoder()
@@ -93,7 +91,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         return false;
     }
     if (!d.got_frame_ptr) {
-        qWarning("[AudioDecoder] got_frame_ptr=false");
+        qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d", ret, d.undecoded_size);
         return true;
     }
 #if !QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE)
@@ -219,11 +217,6 @@ bool AudioDecoder::decode(const QByteArray &encoded)
 AudioResampler* AudioDecoder::resampler()
 {
     return d_func().resampler;
-}
-
-int AudioDecoder::undecodedSize() const
-{
-    return d_func().undecoded_size;
 }
 
 } //namespace QtAV

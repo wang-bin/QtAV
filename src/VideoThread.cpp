@@ -110,7 +110,9 @@ void VideoThread::run()
             qDebug("video thread stop before take packet");
             break;
         }
-        pkt = d.packets.take(); //wait to dequeue
+        if(!pkt.isValid()) {
+            pkt = d.packets.take(); //wait to dequeue
+        }
         //Compare to the clock
         if (!pkt.isValid()) {
             qDebug("Invalid packet! flush video codec context!!!!!!!!!!");
@@ -125,7 +127,7 @@ void VideoThread::run()
          * 2. use last delay when seeking
         */
         bool skip_render = false;
-        if (qAbs(d.delay) < 1.0) {
+        if (qAbs(d.delay) < 1) {
             if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
             }
@@ -158,7 +160,15 @@ void VideoThread::run()
         }
 
         if (!dec->decode(pkt.data)) {
+            pkt = Packet();
             continue;
+        } else {
+            int undecoded = dec->undecodedSize();
+            if (undecoded > 0) {
+                pkt.data.remove(0, pkt.data.size() - undecoded);
+            } else {
+                pkt = Packet();
+            }
         }
 
         if (skip_render)

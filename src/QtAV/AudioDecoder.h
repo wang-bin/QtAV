@@ -37,7 +37,6 @@ public:
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
     AudioResampler *resampler();
-    int undecodedSize() const;
 };
 
 } //namespace QtAV

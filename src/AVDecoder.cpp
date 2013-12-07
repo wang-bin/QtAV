@@ -59,7 +59,7 @@ bool AVDecoder::open()
         return false;
     }
 
-    //setup codec context
+    //setup video codec context
     if (d.low_resolution > codec->max_lowres) {
         qWarning("Use the max value for lowres supported by the decoder (%d)", codec->max_lowres);
         d.low_resolution = codec->max_lowres;
@@ -76,8 +76,6 @@ bool AVDecoder::open()
     if (codec->capabilities & CODEC_CAP_DR1) {
         d.codec_ctx->flags |= CODEC_FLAG_EMU_EDGE;
     }
-    //AVDISCARD_NONREF, AVDISCARD_ALL
-
     //set thread
 
     //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
@@ -259,6 +257,11 @@ bool AVDecoder::decode(const QByteArray &encoded)
 QByteArray AVDecoder::data() const
 {
     return d_func().decoded;
+}
+
+int AVDecoder::undecodedSize() const
+{
+    return d_func().undecoded_size;
 }
 
 } //namespace QtAV

@@ -167,38 +167,4 @@ bool VideoDecoderFFmpegHW::prepare()
     return true;
 }
 
-
-bool VideoDecoderFFmpegHW::decode(const QByteArray &encoded)
-{
-    if (!isAvailable())
-        return false;
-    DPTR_D(VideoDecoderFFmpegHW);
-    AVPacket packet;
-    av_new_packet(&packet, encoded.size());
-    memcpy(packet.data, encoded.data(), encoded.size());
-//TODO: use AVPacket directly instead of Packet?
-    //AVStream *stream = format_context->streams[stream_idx];
-
-    //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
-    int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
-    //TODO: decoded format is YUV420P, YUV422P?
-    av_free_packet(&packet);
-    if (ret < 0) {
-        qWarning("[VideoDecoder] %s", av_err2str(ret));
-        return false;
-    }
-    if (!d.got_frame_ptr) {
-        qWarning("no frame could be decompressed: %s", av_err2str(ret));
-        return false; //FIXME
-    }
-    // TODO: wait key frame?
-    if (!d.codec_ctx->width || !d.codec_ctx->height)
-        return false;
-    // avcodec_align_dimensions2
-    d.width = d.codec_ctx->width;
-    d.height = d.codec_ctx->height;
-    //avcodec_align_dimensions2(d.codec_ctx, &d.width_align, &d.height_align, aligns);
-    return true;
-}
-
 } //namespace QtAV

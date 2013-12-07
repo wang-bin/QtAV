@@ -61,6 +61,8 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
 
     //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
     int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
+    //qDebug("pic_type=%c", av_get_picture_type_char(d.frame->pict_type));
+    d.undecoded_size = qMin(encoded.size() - ret, encoded.size());
     //TODO: decoded format is YUV420P, YUV422P?
     av_free_packet(&packet);
     if (ret < 0) {
@@ -75,6 +77,7 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
         return false;
     d.width = d.codec_ctx->width;
     d.height = d.codec_ctx->height;
+    //avcodec_align_dimensions2(d.codec_ctx, &d.width_align, &d.height_align, aligns);
     return true;
 }
 
