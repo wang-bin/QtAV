@@ -24,12 +24,6 @@
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-#include <QX11Info>
-#else
-#include <qpa/qplatformnativeinterface.h>
-#include <QGuiApplication>
-#endif //QT_VERSION_CHECK(5, 0, 0)
 #include <va/va.h>
 
 #if HAVE_VAAPI_DRM
@@ -256,12 +250,7 @@ bool VideoDecoderVAAPIPrivate::open()
     context_id = VA_INVALID_ID;
     image.image_id = VA_INVALID_ID;
     /* Create a VA display */
-    //display_x11 = QX11Info::display();// XOpenDisplay(NULL);;
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-    display_x11 = QX11Info::display();
-#else
-    display_x11 = (Display*)qApp->platformNativeInterface()->nativeResourceForScreen("display", QGuiApplication::primaryScreen());
-#endif
+    display_x11 = XOpenDisplay(NULL);;
     if (!display_x11) {
         qWarning("Could not connect to X server");
         return false;
