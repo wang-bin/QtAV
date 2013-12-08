@@ -87,8 +87,6 @@ void VideoThread::run()
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)// || !d.conv)
         return;
     resetState();
-    Q_ASSERT(d.capture);
-    Q_ASSERT(d.clock != 0);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     if (dec) {
         //used to initialize the decoder's frame size
@@ -126,7 +124,8 @@ void VideoThread::run()
          *TODO: 1. how to choose the value
          * 2. use last delay when seeking
         */
-        if (qAbs(d.delay) < 2.718) {
+        bool skip_render = false;
+        if (qAbs(d.delay) < 1.0) {
             if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
             }
@@ -146,8 +145,10 @@ void VideoThread::run()
             if (d.delay > 0) {
                 msleep(64);
             } else {
+                // FIXME: if continue without decoding, hw decoding may crash, why?
                 //audio packet not cleaned up?
-                continue;
+                //continue;
+                skip_render = true;
             }
         }
         d.clock->updateVideoPts(pkt.pts); //here?
@@ -160,6 +161,8 @@ void VideoThread::run()
             continue;
         }
 
+        if (skip_render)
+            continue;
         VideoFrame frame = dec->frame();
         if (!frame.isValid())
             continue;
