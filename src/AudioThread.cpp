@@ -102,7 +102,7 @@ void AudioThread::run()
              *TODO: 1. how to choose the value
              * 2. use last delay when seeking
             */
-            if (qAbs(d.delay) < 1) {
+            if (qAbs(d.delay) < 2.718) {
                 if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                     //continue;
                 }

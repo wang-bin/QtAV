@@ -28,7 +28,6 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/ImageConverter.h>
 #include <QtCore/QFileInfo>
-#include <QtGui/QImage>
 #include <QtAV/Statistics.h>
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
@@ -127,7 +126,7 @@ void VideoThread::run()
          * 2. use last delay when seeking
         */
         bool skip_render = false;
-        if (qAbs(d.delay) < 1) {
+        if (qAbs(d.delay) < 2.718) {
             if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
             }
