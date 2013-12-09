@@ -15,6 +15,7 @@ you must adhere to the terms of the license in question.**
 
 QtAV can meet your most demands
 
+- Hardware decoding suppprt(not stable): DXVA2, VAAPI
 - Seek, pause/resume
 - Video capture
 - OSD and custom filters
@@ -130,6 +131,13 @@ QtAV can also be used in **Qml**
 - [Fork](https://github.com/wang-bin/QtAV/fork) QtAV project on github and make a branch. Commit in that branch, and push, then create a pull request to be reviewed and merged.
 - [Create an issue](https://github.com/wang-bin/QtAV/issues/new) if you have any problem when using QtAV or you find a bug, etc.
 
+#### Contributors
+
+- Wang Bin(Lucas Wang) <wbsecg1@gmail.com>: creator, maintainer
+- Dimitri E. Prado <dprado@e3c.com.br>: issue 70
+- theoribeiro <theo@fictix.com.br>: initial QML support
+- Vito Covito <vito.covito@selcomsrl.eu>: interrupt callback
+
 For End Users
 -------------
 
@@ -181,7 +189,7 @@ The default behavior can be replaced by subclassing QObject and call `void AVPla
 4. Stylish GUI based on Qt Graphics View Framework
 5. Document and SDK
 6. Other: better sync method and seeking, tests, playing statistics, etc.
-7. More platform support. Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
+7. More platform support. Pi, Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
 8. ppa, debian package etc.
 
 Screenshots
@@ -220,12 +228,14 @@ Thanks
 
 [PayPal ![Paypal](http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0)
 
+[![Gittip](https://www.gittip.com/assets/10.1.48/logo.png)](https://www.gittip.com/wang-bin)
+
 - - -
 
 
 
 > Copyright &copy; Wang Bin wbsecg1@gmail.com
 
-> Shanghai University, Shanghai, China
+> Shanghai University->S3 Graphics, Shanghai, China
 
 > 2013-01-21

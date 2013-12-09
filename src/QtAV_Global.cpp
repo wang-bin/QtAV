@@ -148,7 +148,7 @@ QString aboutQtAV_HTML()
             "<p>" + QObject::tr("A media playing library base on Qt and FFmpeg.\n") + "</p>"
             "<p>" + QObject::tr("Distributed under the terms of LGPLv2.1 or later.\n") + "</p>"
             "<p>Copyright (C) 2012-2013 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
-            "<p>" + QObject::tr("Shanghai University, Shanghai, China\n") + "</p>"
+            "<p>" + QObject::tr("Shanghai University->S3 Graphics, Shanghai, China\n") + "</p>"
             "<p>" + QObject::tr("Source") + ": <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
             "<p>" + QObject::tr("Downloads") + ": <a href='https://sourceforge.net/projects/qtav'>https://sourceforge.net/projects/qtav</a></p>";
     return about;
