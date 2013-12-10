@@ -60,6 +60,8 @@ void OutputSet::sendVideoFrame(const VideoFrame &frame)
 {
     QMutexLocker lock(&mMutex);
     Q_UNUSED(lock);
+    if (mOutputs.isEmpty())
+        return;
     foreach(AVOutput *output, mOutputs) {
         if (!output->isAvailable())
             continue;
@@ -71,6 +73,8 @@ void OutputSet::clearOutputs()
 {
     QMutexLocker lock(&mMutex);
     Q_UNUSED(lock);
+    if (mOutputs.isEmpty())
+        return;
     foreach(AVOutput *output, mOutputs) {
         output->removeOutputSet(this);
     }

@@ -134,6 +134,29 @@ AVPlayer::~AVPlayer()
         delete video_dec;
         video_dec = 0;
     }
+    if (mpVOSet) {
+        mpVOSet->clearOutputs();
+        delete mpVOSet;
+        mpVOSet = 0;
+    }
+    if (mpAOSet) {
+        mpAOSet->clearOutputs();
+        delete mpAOSet;
+        mpAOSet = 0;
+    }
+    if (video_capture) {
+        delete video_capture;
+        video_capture = 0;
+    }
+    if (clock) {
+        delete clock;
+        clock = 0;
+    }
+    if (demuxer_thread) {
+        delete demuxer_thread;
+        demuxer_thread = 0;
+    }
+    setPlayerEventFilter(0);
 }
 
 AVClock* AVPlayer::masterClock()
@@ -192,13 +215,15 @@ void AVPlayer::setRenderer(VideoRenderer *r)
 VideoRenderer *AVPlayer::renderer()
 {
     //QList assert empty in debug mode
-    if (mpVOSet->outputs().isEmpty())
+    if (!mpVOSet || mpVOSet->outputs().isEmpty())
         return 0;
     return static_cast<VideoRenderer*>(mpVOSet->outputs().last());
 }
 
 QList<VideoRenderer*> AVPlayer::videoOutputs()
 {
+    if (!mpVOSet)
+        return QList<VideoRenderer*>();
     QList<VideoRenderer*> vos;
     vos.reserve(mpVOSet->outputs().size());
     foreach (AVOutput *out, mpVOSet->outputs()) {
