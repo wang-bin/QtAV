@@ -41,7 +41,6 @@ class Q_AV_EXPORT VideoDecoder : public AVDecoder
     DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:
     VideoDecoder();
-    virtual ~VideoDecoder();
     //virtual bool prepare();
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);

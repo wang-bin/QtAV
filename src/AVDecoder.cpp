@@ -114,8 +114,10 @@ bool AVDecoder::open()
         p_dec->i_extra_picture_buffers = 2 * p_sys->p_context->thread_count;
 */
     // hwa extra init can be here
-    if (!d.open())
+    if (!d.open()) {
+        d.close();
         return false;
+    }
     //set dict used by avcodec_open2(). see ffplay
     // AVDictionary *opts;
     int ret = avcodec_open2(d.codec_ctx, codec, NULL);

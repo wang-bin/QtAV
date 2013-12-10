@@ -461,12 +461,18 @@ void VideoDecoderVAAPIPrivate::close()
     if (surface_width || surface_height)
         destroySurfaces();
 
-    if (config_id != VA_INVALID_ID)
+    if (config_id != VA_INVALID_ID) {
         vaDestroyConfig(display, config_id);
-    if (display)
+        config_id = VA_INVALID_ID;
+    }
+    if (display) {
         vaTerminate(display);
-    if (display_x11)
+        display = 0;
+    }
+    if (display_x11) {
         XCloseDisplay(display_x11);
+        display_x11 = 0;
+    }
 }
 
 bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
@@ -474,8 +480,8 @@ bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
     int i_old;
     int i;
 
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+//    QMutexLocker lock(&mutex);
+//    Q_UNUSED(lock);
     /* Grab an unused surface, in case none are, try the oldest
      * XXX using the oldest is a workaround in case a problem happens with ffmpeg */
     for (i = 0, i_old = 0; i < nb_surfaces; i++) {
@@ -506,8 +512,8 @@ void VideoDecoderVAAPIPrivate::releaseBuffer(void *opaque, uint8_t *data)
     Q_UNUSED(data);
     va_surface_t *p_surface = (va_surface_t*)opaque;
 
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+//    QMutexLocker lock(&mutex);
+//    Q_UNUSED(lock);
     p_surface->i_refcount--;
 }
 

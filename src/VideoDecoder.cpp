@@ -50,10 +50,6 @@ VideoDecoder::VideoDecoder(VideoDecoderPrivate &d):
 {
 }
 
-VideoDecoder::~VideoDecoder()
-{
-}
-
 bool VideoDecoder::prepare()
 {
     return AVDecoder::prepare();
