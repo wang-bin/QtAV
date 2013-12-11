@@ -47,6 +47,16 @@ public:
 
     VideoFrame &operator =(const VideoFrame &other);
 
+    /*!
+     * Deep copy. If you want to copy data from somewhere, knowing the format, width and height,
+     * then you can allocate() and clone().
+     */
+    VideoFrame clone();
+    /*!
+     * Allocate memory with given format, width and height. planes and bytesPerLine will be set.
+     * The memory can be initialized by user
+     */
+    virtual int allocate();
     VideoFormat format() const;
     VideoFormat::PixelFormat pixelFormat() const;
     QImage::Format imageFormat() const;

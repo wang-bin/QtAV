@@ -90,7 +90,9 @@ public:
         return true;
     }
     bool convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi) {
-        if (fmt == format.pixelFormatFFmpeg())
+        if (fmt == format.pixelFormatFFmpeg()
+                && roi == QRectF(0, 0, width, height)
+                && dstSize == roi.size())
             return true;
         if (!conv)
             return false;
@@ -164,6 +166,63 @@ VideoFrame &VideoFrame::operator =(const VideoFrame &other)
 
 VideoFrame::~VideoFrame()
 {
+}
+
+VideoFrame VideoFrame::clone()
+{
+    Q_D(VideoFrame);
+    if (!d->format.isValid())
+        return VideoFrame();
+    VideoFrame f(width(), height(), d->format);
+    f.allocate();
+    for (int i = 0; i < d->format.planeCount(); ++i) {
+        int dst_bpl = f.bytesPerLine(i);
+        uchar *dst = f.bits(i);
+        int src_bpl = bytesPerLine(i);
+        uchar *src = bits(i);
+        // TODO: is plane 0 always luma? packed YUV?
+        int h = i == 0 ? height() : d->format.chromaHeight(height());
+        for (int y = 0; y < h; ++y) {
+            memcpy(dst, src, src_bpl);
+            src += src_bpl;
+            dst += dst_bpl;
+        }
+    }
+    return f;
+}
+
+int VideoFrame::allocate()
+{
+    Q_D(VideoFrame);
+    if (pixelFormatFFmpeg() == QTAV_PIX_FMT_C(NONE) || width() <=0 || height() <= 0) {
+        qWarning("Not valid format(%s) or size(%dx%d)", qPrintable(format().name()), width(), height());
+        return 0;
+    }
+#if 0
+    const int align = 16;
+    int bytes = av_image_get_buffer_size((AVPixelFormat)d->format.pixelFormatFFmpeg(), width(), height(), align);
+    d->data.resize(bytes);
+    av_image_fill_arrays(d->planes.data(), d->line_sizes.data()
+                         , (const uint8_t*)d->data.constData()
+                         , (AVPixelFormat)d->format.pixelFormatFFmpeg()
+                         , width(), height(), align);
+    return bytes;
+#endif
+    int bytes = avpicture_get_size((AVPixelFormat)pixelFormatFFmpeg(), width(), height());
+    //if (d->data_out.size() < bytes) {
+        d->data.resize(bytes);
+    //}
+    AVPicture pic;
+    avpicture_fill(
+            &pic,
+            reinterpret_cast<uint8_t*>(d->data.data()),
+            (AVPixelFormat)pixelFormatFFmpeg(),
+            width(),
+            height()
+            );
+    setBits(pic.data);
+    setBytesPerLine(pic.linesize);
+    return bytes;
 }
 
 VideoFormat VideoFrame::format() const

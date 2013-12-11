@@ -2,6 +2,9 @@
 #include <QtCore/QVector>
 
 #include "QtAV/QtAV_Compat.h"
+extern "C" {
+#include <libavutil/imgutils.h>
+}
 
 // FF_API_PIX_FMT
 #ifdef PixelFormat
@@ -92,6 +95,9 @@ public:
             return 0;
         return pixdesc->flags;
     }
+    int bytesPerLine(int width, int plane) {
+        return av_image_get_linesize(pixfmt_ff, width, plane);
+    }
 
     VideoFormat::PixelFormat pixfmt;
     AVPixelFormat pixfmt_ff;
@@ -102,8 +108,8 @@ public:
     QVector<int> bpps;
     QVector<int> bpps_pad; //TODO: is it needed?
 
-private:
     AVPixFmtDescriptor *pixdesc;
+private:
     // from libavutil/pixdesc.c
     void initBpp() {
         bpp = 0;
@@ -132,6 +138,7 @@ static const struct {
     AVPixelFormat ff; //int
 } pixfmt_map[] = {
     { VideoFormat::Format_YUV420P, QTAV_PIX_FMT_C(YUV420P) },   ///< planar YUV 4:2:0, 12bpp, (1 Cr & Cb sample per 2x2 Y samples)
+    { VideoFormat::Format_YV12, QTAV_PIX_FMT_C(YUV420P) },   ///< planar YUV 4:2:0, 12bpp, (1 Cr & Cb sample per 2x2 Y samples)
     { VideoFormat::Format_YUYV, QTAV_PIX_FMT_C(YUYV422) }, //??   ///< packed YUV 4:2:2, 16bpp, Y0 Cb Y1 Cr
     { VideoFormat::Format_RGB24, QTAV_PIX_FMT_C(RGB24) },     ///< packed RGB 8:8:8, 24bpp, RGBRGB...
     { VideoFormat::Format_BGR24, QTAV_PIX_FMT_C(BGR24) },     ///< packed RGB 8:8:8, 24bpp, BGRBGR...
@@ -532,6 +539,21 @@ int VideoFormat::bytesPerPixel() const
 int VideoFormat::bytesPerPixel(int plane) const
 {
     return (bitsPerPixel(plane) + 7) >> 3;
+}
+
+int VideoFormat::bytesPerLine(int width, int plane)
+{
+    return d->bytesPerLine(width, plane);
+}
+
+int VideoFormat::chromaWidth(int lumaWidth)
+{
+    return -((-lumaWidth) >> d->pixdesc->log2_chroma_w);
+}
+
+int VideoFormat::chromaHeight(int lumaHeight)
+{
+    return -((-lumaHeight) >> d->pixdesc->log2_chroma_h);
 }
 
 // test AV_PIX_FMT_FLAG_XXX

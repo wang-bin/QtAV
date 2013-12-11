@@ -38,6 +38,8 @@ public:
     virtual ~Frame() = 0;
     Frame& operator =(const Frame &other);
 
+    // allocate memory with given format and other information
+    virtual int allocate();
     /*!
      * \brief bytesPerLine
      *  a decoded frame can be packed and planar. packed format has only 1 plane, while planar
