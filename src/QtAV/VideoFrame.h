@@ -49,7 +49,7 @@ public:
 
     /*!
      * Deep copy. If you want to copy data from somewhere, knowing the format, width and height,
-     * then you can allocate() and clone().
+     * then you can use clone().
      */
     VideoFrame clone();
     /*!

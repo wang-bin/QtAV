@@ -176,17 +176,9 @@ VideoFrame VideoFrame::clone()
     VideoFrame f(width(), height(), d->format);
     f.allocate();
     for (int i = 0; i < d->format.planeCount(); ++i) {
-        int dst_bpl = f.bytesPerLine(i);
-        uchar *dst = f.bits(i);
-        int src_bpl = bytesPerLine(i);
-        uchar *src = bits(i);
-        // TODO: is plane 0 always luma? packed YUV?
+        // TODO: is plane 0 always luma?
         int h = i == 0 ? height() : d->format.chromaHeight(height());
-        for (int y = 0; y < h; ++y) {
-            memcpy(dst, src, src_bpl);
-            src += src_bpl;
-            dst += dst_bpl;
-        }
+        memcpy(f.bits(i), bits(i), bytesPerLine(i)*h);
     }
     return f;
 }
