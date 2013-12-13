@@ -32,7 +32,10 @@ class ImageConverterFF : public ImageConverter //Q_AV_EXPORT is not needed
     DPTR_DECLARE_PRIVATE(ImageConverterFF)
 public:
     ImageConverterFF();
+    virtual bool check() const;
     virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
+protected:
+    virtual bool setupColorspaceDetails();
 };
 
 
@@ -47,7 +50,10 @@ void RegisterImageConverterFF_Man()
 class ImageConverterFFPrivate : public ImageConverterPrivate
 {
 public:
-    ImageConverterFFPrivate():sws_ctx(0){}
+    ImageConverterFFPrivate()
+        : sws_ctx(0)
+        , update_eq(true)
+    {}
     ~ImageConverterFFPrivate() {
         if (sws_ctx) {
             sws_freeContext(sws_ctx);
@@ -56,11 +62,28 @@ public:
     }
 
     SwsContext *sws_ctx;
+    bool update_eq;
 };
 
 ImageConverterFF::ImageConverterFF()
     :ImageConverter(*new ImageConverterFFPrivate())
 {
+}
+
+bool ImageConverterFF::check() const
+{
+    if (!ImageConverter::check())
+        return false;
+    DPTR_D(const ImageConverterFF);
+    if (sws_isSupportedInput((AVPixelFormat)d.fmt_in) <= 0) {
+        qWarning("Input pixel format not supported (%s)", av_get_pix_fmt_name((AVPixelFormat)d.fmt_in));
+        return false;
+    }
+    if (sws_isSupportedOutput((AVPixelFormat)d.fmt_out) <= 0) {
+        qWarning("Output pixel format not supported (%s)", av_get_pix_fmt_name((AVPixelFormat)d.fmt_out));
+        return false;
+    }
+    return true;
 }
 
 bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStride[])
@@ -74,8 +97,8 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     }
 //TODO: move those code to prepare()
     d.sws_ctx = sws_getCachedContext(d.sws_ctx
-            , d.w_in, d.h_in, (PixelFormat)d.fmt_in
-            , d.w_out, d.h_out, (PixelFormat)d.fmt_out
+            , d.w_in, d.h_in, (AVPixelFormat)d.fmt_in
+            , d.w_out, d.h_out, (AVPixelFormat)d.fmt_out
             , (d.w_in == d.w_out && d.h_in == d.h_out) ? SWS_POINT : SWS_FAST_BILINEAR //SWS_BICUBIC
             , NULL, NULL, NULL
             );
@@ -83,6 +106,7 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     //av_opt_set_int(d.sws_ctx, "sws_flags", flags, 0);
     if (!d.sws_ctx)
         return false;
+    setupColorspaceDetails();
 #if PREPAREDATA_NO_PICTURE //for YUV420 <=> RGB
 #if 0
     struct
@@ -95,7 +119,7 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
 #endif
             pic_in, pic_out;
 
-    if ((PixelFormat)fmt_in == PIX_FMT_YUV420P) {
+    if ((AVPixelFormat)fmt_in == PIX_FMT_YUV420P) {
         pic_in.data[0] = (uint8_t*)in;
         pic_in.data[2] = (uint8_t*)pic_in.data[0] + (w_in * h_in);
         pic_in.data[1] = (uint8_t*)pic_in.data[2] + (w_in * h_in) / 4;
@@ -107,7 +131,7 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
         pic_in.data[0] = (uint8_t*)in;
         pic_in.linesize[0] = w_in * 4; //TODO: not 0
     }
-    if ((PixelFormat)fmt_out == PIX_FMT_YUV420P) {
+    if ((AVPixelFormat)fmt_out == PIX_FMT_YUV420P) {
         pic_out.data[0] = (uint8_t*)out;
         pic_out.data[2] = (uint8_t*)pic_out.data[0] + (w_out * h_in);
         pic_out.data[1] = (uint8_t*)pic_out.data[2] + (w_out * h_in) / 4;
@@ -129,10 +153,36 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
 #if 0
     if (isInterlaced()) {
         //deprecated
-        avpicture_deinterlace(&d.picture, &d.picture, (PixelFormat)d.fmt_out, d.w_out, d.h_out);
+        avpicture_deinterlace(&d.picture, &d.picture, (AVPixelFormat)d.fmt_out, d.w_out, d.h_out);
     }
 #endif //0
     Q_UNUSED(result_h);
+    return true;
+}
+
+bool ImageConverterFF::setupColorspaceDetails()
+{
+    DPTR_D(ImageConverterFF);
+    if (!d.sws_ctx) {
+        d.update_eq = true;
+        return false;
+    }
+    //if (!d.update_eq)
+    //    return true;
+    // FIXME: how to fill the ranges?
+    const int srcRange = 1;
+    const int dstRange = 0;
+    // TODO: SWS_CS_DEFAULT?
+    sws_setColorspaceDetails(d.sws_ctx, sws_getCoefficients(SWS_CS_DEFAULT)
+                             , srcRange, sws_getCoefficients(SWS_CS_DEFAULT)
+                             , dstRange
+                             , ((d.brightness << 16) + 50)/100
+                             , (((d.contrast + 100) << 16) + 50)/100
+                             , (((d.saturation + 100) << 16) + 50)/100
+                             );
+    // TODO: b, c, s map function?
+    //sws_init_context(d.sws_ctx, NULL, NULL);
+    d.update_eq = false;
     return true;
 }
 

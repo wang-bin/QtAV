@@ -75,6 +75,9 @@ AVPlayer::AVPlayer(QObject *parent) :
   , video_capture(0)
   , mSpeed(1.0)
   , ao_enable(true)
+  , mBrightness(0)
+  , mContrast(0)
+  , mSaturation(0)
 {
     formatCtx = 0;
     last_position = 0;
@@ -1018,6 +1021,54 @@ void AVPlayer::updateClock(qint64 msecs)
     clock->updateExternalClock(msecs);
 }
 
+int AVPlayer::brightness() const
+{
+    return mBrightness;
+}
+
+void AVPlayer::setBrightness(int val)
+{
+    if (mBrightness == val)
+        return;
+    mBrightness = val;
+    emit brightnessChanged(mBrightness);
+    if (video_thread) {
+        video_thread->setBrightness(val);
+    }
+}
+
+int AVPlayer::contrast() const
+{
+    return mContrast;
+}
+
+void AVPlayer::setContrast(int val)
+{
+    if (mContrast == val)
+        return;
+    mContrast = val;
+    emit contrastChanged(mContrast);
+    if (video_thread) {
+        video_thread->setContrast(val);
+    }
+}
+
+int AVPlayer::saturation() const
+{
+    return mSaturation;
+}
+
+void AVPlayer::setSaturation(int val)
+{
+    if (mSaturation == val)
+        return;
+    mSaturation = val;
+    emit saturationChanged(mSaturation);
+    if (video_thread) {
+        video_thread->setSaturation(val);
+    }
+}
+
 //TODO: av_guess_frame_rate in latest ffmpeg
 void AVPlayer::initStatistics()
 {
@@ -1213,6 +1264,9 @@ bool AVPlayer::setupVideoThread()
         }
     }
     video_thread->setDecoder(video_dec);
+    video_thread->setBrightness(mBrightness);
+    video_thread->setContrast(mContrast);
+    video_thread->setSaturation(mSaturation);
     int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     video_thread->packetQueue()->setThreshold(queue_min);

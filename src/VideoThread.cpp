@@ -78,6 +78,67 @@ VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
     return old;
 }
 
+void VideoThread::setBrightness(int val)
+{
+    DPTR_D(VideoThread);
+    setEQ(val, 101, 101);
+}
+
+void VideoThread::setContrast(int val)
+{
+    DPTR_D(VideoThread);
+    setEQ(101, val, 101);
+}
+
+void VideoThread::setSaturation(int val)
+{
+    DPTR_D(VideoThread);
+    setEQ(101, 101, val);
+}
+
+void VideoThread::setEQ(int b, int c, int s)
+{
+    class EQTask : public QRunnable {
+    public:
+        EQTask(ImageConverter *c)
+            : conv(c)
+            , brightness(0)
+            , contrast(0)
+            , saturation(0)
+        {
+            qDebug("EQTask tid=%p", QThread::currentThread());
+        }
+        void run() {
+            // check here not in ctor because it may called later in video thread
+            if (brightness < -100 || brightness > 100)
+                brightness = conv->brightness();
+            if (contrast < -100 || contrast > 100)
+                contrast = conv->contrast();
+            if (saturation < -100 || saturation > 100)
+                saturation = conv->saturation();
+            qDebug("EQTask::run() tid=%p (b: %d, c: %d, s: %d)"
+                   , QThread::currentThread(), brightness, contrast, saturation);
+            conv->setBrightness(brightness);
+            conv->setContrast(contrast);
+            conv->setSaturation(saturation);
+        }
+        int brightness, contrast, saturation;
+    private:
+        ImageConverter *conv;
+    };
+    DPTR_D(VideoThread);
+    EQTask *task = new EQTask(d.conv);
+    task->brightness = b;
+    task->contrast = c;
+    task->saturation = s;
+    if (isRunning()) {
+        scheduleTask(task);
+    } else {
+        task->run();
+        delete task;
+    }
+}
+
 //TODO: if output is null or dummy, the use duration to wait
 void VideoThread::run()
 {

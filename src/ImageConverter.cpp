@@ -57,6 +57,13 @@ QByteArray ImageConverter::outData() const
     return d_func().data_out;
 }
 
+bool ImageConverter::check() const
+{
+    DPTR_D(const ImageConverter);
+    return d.w_in > 0 && d.w_out > 0 && d.h_in > 0 && d.h_out > 0
+            && d.fmt_in != QTAV_PIX_FMT_C(NONE) && d.fmt_out != QTAV_PIX_FMT_C(NONE);
+}
+
 void ImageConverter::setInSize(int width, int height)
 {
     DPTR_D(ImageConverter);
@@ -121,6 +128,48 @@ bool ImageConverter::isInterlaced() const
     return d_func().interlaced;
 }
 
+void ImageConverter::setBrightness(int value)
+{
+    DPTR_D(ImageConverter);
+    if (d.brightness == value)
+        return;
+    d.brightness = value;
+    setupColorspaceDetails();
+}
+
+int ImageConverter::brightness() const
+{
+    return d_func().brightness;
+}
+
+void ImageConverter::setContrast(int value)
+{
+    DPTR_D(ImageConverter);
+    if (d.contrast == value)
+        return;
+    d.contrast = value;
+    setupColorspaceDetails();
+}
+
+int ImageConverter::contrast() const
+{
+    return d_func().contrast;
+}
+
+void ImageConverter::setSaturation(int value)
+{
+    DPTR_D(ImageConverter);
+    if (d.saturation == value)
+        return;
+    d.saturation = value;
+    setupColorspaceDetails();
+}
+
+int ImageConverter::saturation() const
+{
+    return d_func().saturation;
+}
+
 QVector<quint8*> ImageConverter::outPlanes() const
 {
     DPTR_D(const ImageConverter);
@@ -143,12 +192,16 @@ QVector<int> ImageConverter::outLineSizes() const
     return lineSizes;
 }
 
+bool ImageConverter::setupColorspaceDetails()
+{
+    return true;
+}
+
 bool ImageConverter::prepareData()
 {
     DPTR_D(ImageConverter);
     if (d.fmt_out == QTAV_PIX_FMT_C(NONE) || d.w_out <=0 || d.h_out <= 0)
         return false;
-    //TODO: AVPixelFormat. move define to compat.h
     int bytes = avpicture_get_size((AVPixelFormat)d.fmt_out, d.w_out, d.h_out);
     //if (d.data_out.size() < bytes) {
         d.data_out.resize(bytes);

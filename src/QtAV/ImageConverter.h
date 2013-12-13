@@ -43,6 +43,9 @@ public:
     virtual ~ImageConverter();
 
     QByteArray outData() const;
+
+    // return false if i/o format not supported, or size is not valid.
+    virtual bool check() const;
     void setInSize(int width, int height);
     void setOutSize(int width, int height);
     void setInFormat(const VideoFormat& format);
@@ -50,9 +53,19 @@ public:
     void setInFormat(int format);
     void setOutFormat(const VideoFormat& format);
     void setOutFormat(VideoFormat::PixelFormat format);
-    void setOutFormat(int format);
+    void setOutFormat(int formate);
     void setInterlaced(bool interlaced);
     bool isInterlaced() const;
+    /*!
+     * brightness, contrast, saturation: -100~100
+     * If value changes, setup sws
+     */
+    void setBrightness(int value);
+    int brightness() const;
+    void setContrast(int value);
+    int contrast() const;
+    void setSaturation(int value);
+    int saturation() const;
     QVector<quint8*> outPlanes() const;
     QVector<int> outLineSizes() const;
     virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]) = 0;
@@ -61,6 +74,7 @@ public:
 protected:
     ImageConverter(ImageConverterPrivate& d);
     //Allocate memory for out data. Called in setOutFormat()
+    virtual bool setupColorspaceDetails();
     virtual bool prepareData(); //Allocate memory for out data
     DPTR_DECLARE(ImageConverter)
 };

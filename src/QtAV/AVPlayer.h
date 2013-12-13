@@ -50,6 +50,9 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(qint64 stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
     Q_PROPERTY(qint64 repeat READ repeat WRITE setRepeat NOTIFY repeatChanged)
     Q_PROPERTY(int currentRepeat READ currentRepeat NOTIFY currentRepeatChanged)
+    Q_PROPERTY(int brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
+    Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
+    Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
 public:
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
@@ -170,6 +173,10 @@ public:
 
     void setPriority(const QVector<VideoDecoderId>& ids);
 
+    int brightness() const;
+    int contrast() const;
+    int saturation() const;
+
 signals:
     void paused(bool p);
     void started();
@@ -180,6 +187,9 @@ signals:
     void startPositionChanged(qint64 position);
     void stopPositionChanged(qint64 position);
     void positionChanged(qint64 position);
+    void brightnessChanged(int val);
+    void contrastChanged(int val);
+    void saturationChanged(int val);
 
 public slots:
     void togglePause();
@@ -224,6 +234,11 @@ public slots:
     void seekForward();
     void seekBackward();
     void updateClock(qint64 msecs); //update AVClock's external clock
+
+    // for all renderers. val: [-100, 100]. other value changes nothing
+    void setBrightness(int val);
+    void setContrast(int val);
+    void setSaturation(int val);
 
 private slots:
     void stopFromDemuxerThread();
@@ -278,6 +293,8 @@ private:
     bool ao_enable;
     OutputSet *mpVOSet, *mpAOSet;
     QVector<VideoDecoderId> vcodec_ids;
+
+    int mBrightness, mContrast, mSaturation;
 };
 
 } //namespace QtAV
