@@ -118,7 +118,8 @@ void VideoThread::run()
             dec->flush();
             continue;
         }
-        d.delay = pkt.pts  - d.clock->value();
+        qreal pts = pkt.pts;
+        d.delay = pts - d.clock->value();
         /*
          *after seeking forward, a packet may be the old, v packet may be
          *the new packet, then the d.delay is very large, omit it.
@@ -152,7 +153,7 @@ void VideoThread::run()
                 skip_render = true;
             }
         }
-        d.clock->updateVideoPts(pkt.pts); //here?
+        d.clock->updateVideoPts(pts); //here?
         if (d.stop) {
             qDebug("video thread stop before decode()");
             break;
@@ -180,8 +181,7 @@ void VideoThread::run()
         d.conv->setOutSize(frame.width(), frame.height());
         frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
-        d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pkt.pts * 1000.0)); //TODO: is it expensive?
-
+        d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
         {
             QMutexLocker locker(&d.mutex);
             Q_UNUSED(locker);
@@ -214,14 +214,14 @@ void VideoThread::run()
         }
         frame.convertTo(VideoFormat::Format_RGB32);
         d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
-        d.capture->setPosition(pkt.pts);
+        d.capture->setPosition(pts);
         if (d.capture->isRequested()) {
             bool auto_name = d.capture->name.isEmpty() && d.capture->autoSave();
             if (auto_name) {
                 QString cap_name;
                 if (d.statistics)
                     cap_name = QFileInfo(d.statistics->url).completeBaseName();
-                d.capture->setCaptureName(cap_name + "_" + QString::number(pkt.pts, 'f', 3));
+                d.capture->setCaptureName(cap_name + "_" + QString::number(pts, 'f', 3));
             }
             //TODO: what if not rgb32 now? detach the frame
             //FIXME: why frame.data() may crash?
