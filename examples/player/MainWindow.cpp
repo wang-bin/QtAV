@@ -25,6 +25,7 @@
 #include "TVView.h"
 #include "config/DecoderConfigPage.h"
 #include "config/Config.h"
+#include "config/VideoEQConfigPage.h"
 
 /*
  *TODO:
@@ -102,6 +103,10 @@ void MainWindow::initPlayer()
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
     connect(mpPlayer, SIGNAL(speedChanged(qreal)), this, SLOT(onSpeedChange(qreal)));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), this, SLOT(onPositionChange(qint64)));
+    connect(mpVideoEQ, SIGNAL(brightnessChanged(int)), mpPlayer, SLOT(setBrightness(int)));
+    connect(mpVideoEQ, SIGNAL(contrastChanged(int)), mpPlayer, SLOT(setContrast(int)));
+    connect(mpVideoEQ, SIGNAL(saturationChanged(int)), mpPlayer, SLOT(setSaturation(int)));
+
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
 }
 
@@ -244,6 +249,7 @@ void MainWindow::setupUi()
     mpRepeatEnableAction = subMenu->addAction(tr("Enable"));
     mpRepeatEnableAction->setCheckable(true);
     connect(mpRepeatEnableAction, SIGNAL(toggled(bool)), SLOT(toggleRepeat(bool)));
+    // TODO: move to a func or class
     mpRepeatBox = new QSpinBox(0);
     mpRepeatBox->setMinimum(-1);
     mpRepeatBox->setValue(-1);
@@ -282,20 +288,6 @@ void MainWindow::setupUi()
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
     mpRepeatAction = pWA;
 
-    subMenu = new QMenu(tr("Aspect ratio"), mpMenu);
-    mpMenu->addMenu(subMenu);
-    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(switchAspectRatio(QAction*)));
-    mpARAction = subMenu->addAction(tr("Video"));
-    mpARAction->setData(0);
-    subMenu->addAction(tr("Window"))->setData(-1);
-    subMenu->addAction("4:3")->setData(4.0/3.0);
-    subMenu->addAction("16:9")->setData(16.0/9.0);
-    subMenu->addAction(tr("Custom"))->setData(-2);
-    foreach(QAction* action, subMenu->actions()) {
-        action->setCheckable(true);
-    }
-    mpARAction->setChecked(true);
-
     subMenu = new ClickableMenu(tr("Audio track"));
     mpMenu->addMenu(subMenu);
     mpAudioTrackMenu = subMenu;
@@ -313,6 +305,27 @@ void MainWindow::setupUi()
         action->setCheckable(true);
     }
     mpChannelAction->setChecked(true);
+
+    subMenu = new QMenu(tr("Aspect ratio"), mpMenu);
+    mpMenu->addMenu(subMenu);
+    connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(switchAspectRatio(QAction*)));
+    mpARAction = subMenu->addAction(tr("Video"));
+    mpARAction->setData(0);
+    subMenu->addAction(tr("Window"))->setData(-1);
+    subMenu->addAction("4:3")->setData(4.0/3.0);
+    subMenu->addAction("16:9")->setData(16.0/9.0);
+    subMenu->addAction(tr("Custom"))->setData(-2);
+    foreach(QAction* action, subMenu->actions()) {
+        action->setCheckable(true);
+    }
+    mpARAction->setChecked(true);
+
+    subMenu = new ClickableMenu(tr("Color space"));
+    mpMenu->addMenu(subMenu);
+    mpVideoEQ = new VideoEQConfigPage();
+    pWA = new QWidgetAction(0);
+    pWA->setDefaultWidget(mpVideoEQ);
+    subMenu->addAction(pWA);
 
     subMenu = new ClickableMenu(tr("Decoder"));
     mpMenu->addMenu(subMenu);

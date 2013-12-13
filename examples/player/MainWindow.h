@@ -21,6 +21,7 @@ class QTimeEdit;
 class Button;
 class Slider;
 class DecoderConfigPage;
+class VideoEQConfigPage;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -128,6 +129,7 @@ private:
 
     Config *mpConfig;
     DecoderConfigPage *mpDecoderConfigPage;
+    VideoEQConfigPage *mpVideoEQ;
 };
 
 #endif // MAINWINDOW_H

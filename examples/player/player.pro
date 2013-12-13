@@ -9,6 +9,7 @@ preparePaths($$OUT_PWD/../../out)
 
 #SystemParametersInfo
 *msvc*: LIBS += -lUser32
+INCLUDEPATH += $$PWD
 
 SOURCES += main.cpp \
     MainWindow.cpp \
@@ -19,6 +20,7 @@ SOURCES += main.cpp \
     Slider.cpp \
     TVView.cpp \
     config/Config.cpp \
+    config/VideoEQConfigPage.cpp \
     config/DecoderConfigPage.cpp
 
 HEADERS += \
@@ -30,6 +32,7 @@ HEADERS += \
     Slider.h \
     TVView.h \
     config/Config.h \
+    config/VideoEQConfigPage.h \
     config/DecoderConfigPage.h
 
 tv.files = res/tv.ini
