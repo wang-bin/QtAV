@@ -108,6 +108,8 @@ bool AVDecoder::open()
         case AV_CODEC_ID_WMV3:
             d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
 # endif
+        default:
+            break;
     }
 /*
     if (d.codec_ctx->thread_type & FF_THREAD_FRAME)
