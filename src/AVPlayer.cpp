@@ -1113,7 +1113,8 @@ bool AVPlayer::setupAudioThread()
 #endif
     }
     if (!_audio) {
-        masterClock()->setClockType(AVClock::ExternalClock);
+        // TODO: only when no audio stream or user disable audio stream. running an audio thread without sound is waste resource?
+        //masterClock()->setClockType(AVClock::ExternalClock);
         //return;
     } else {
         _audio->audioFormat().setSampleFormat(AudioFormat::SampleFormat_Float);

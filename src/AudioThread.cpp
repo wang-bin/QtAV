@@ -63,7 +63,10 @@ void AudioThread::run()
     resetState();
     Q_ASSERT(d.clock != 0);
     AudioDecoder *dec = static_cast<AudioDecoder*>(d.dec);
-    AudioOutput *ao = static_cast<AudioOutput*>(d.outputSet->outputs().first()); //TODO: not here
+    AudioOutput *ao = 0;
+    // first() is not null even if list empty
+    if (!d.outputSet->outputs().isEmpty())
+        ao = static_cast<AudioOutput*>(d.outputSet->outputs().first()); //TODO: not here
     static const double max_len = 0.02; //TODO: how to choose?
     d.init();
     //TODO: bool need_sync in private class
@@ -147,6 +150,17 @@ void AudioThread::run()
                     d.resample = true;
                 }
             }
+        } else {
+            if (dec->resampler() && dec->resampler()->speed() != d.clock->speed()) {
+                if (d.resample) {
+                    qDebug("decoder set speed: %.2f", d.clock->speed());
+                    dec->resampler()->setSpeed(d.clock->speed());
+                    dec->resampler()->prepare();
+                    d.resample = false;
+                } else {
+                    d.resample = true;
+                }
+            }
         }
         if (d.stop) {
             qDebug("audio thread stop before decode()");
@@ -180,6 +194,7 @@ void AudioThread::run()
                 break;
             }
             int chunk = qMin(decodedSize, int(max_len*byte_rate));
+            //AudioFormat.bytesForDuration
             qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
             pkt.pts += chunk_delay;
             d.clock->updateDelay(delay += chunk_delay);
