@@ -835,7 +835,7 @@ bool VideoDecoderDXVAPrivate::DxResetVideoDecoder()
 
 void VideoDecoderDXVAPrivate::DxCreateVideoConversion()
 {
-    switch (render) {
+    switch ((int)render) {
     case MAKEFOURCC('N','V','1','2'):
     case MAKEFOURCC('I','M','C','3'):
         output = (D3DFORMAT)MAKEFOURCC('Y','V','1','2');
