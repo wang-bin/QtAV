@@ -172,6 +172,16 @@ int main(int argc, char *argv[])
     ao = ao.toLower();
     qDebug("AO>>>>>>>>>>> %s", qPrintable(ao));
     window.enableAudio(ao != "null" && ao != "0");
+
+    QStringList vd;
+    idx = a.arguments().indexOf("-vd");
+    if (idx > 0) {
+        vd = a.arguments().at(idx+1).split(";", QString::SkipEmptyParts);
+    }
+    if (!vd.isEmpty())
+        window.setVideoDecoderNames(vd);
+
+
     opt_has_file &= argc > idx + 2;
     if (opt_has_file) {
         window.play(a.arguments().last());

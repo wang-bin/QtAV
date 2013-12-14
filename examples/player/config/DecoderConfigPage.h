@@ -51,6 +51,7 @@ private slots:
     void priorityUp();
     void priorityDown();
     void onDecSelected(DecoderItemWidget* iw);
+    void updateDecodersUi();
 
 private:
 

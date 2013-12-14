@@ -32,6 +32,7 @@ public:
     void setAudioOutput(QtAV::AudioOutput* ao);
     void setRenderer(QtAV::VideoRenderer* renderer);
     void play(const QString& name);
+    void setVideoDecoderNames(const QStringList& vd);
 
 public slots:
     void openFile();

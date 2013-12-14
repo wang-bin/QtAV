@@ -558,7 +558,25 @@ void MainWindow::play(const QString &name)
         mRepeateMax = 0;
     mpPlayer->setRepeat(mRepeateMax);
     mpPlayer->setPriority(mpConfig->decoderPriority());
+
     mpPlayer->play(name);
+}
+
+void MainWindow::setVideoDecoderNames(const QStringList &vd)
+{
+    QStringList vdnames;
+    foreach (QString v, vd) {
+        vdnames << v.toLower();
+    }
+    QVector<VideoDecoderId> vidp;
+    QVector<VideoDecoderId> vids = GetRegistedVideoDecoderIds();
+    foreach (VideoDecoderId vid, vids) {
+        QString v(VideoDecoderFactory::name(vid).c_str());
+        if (vdnames.contains(v.toLower())) {
+            vidp.append(vid);
+        }
+    }
+    mpConfig->decoderPriority(vidp);
 }
 
 void MainWindow::openFile()

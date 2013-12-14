@@ -153,58 +153,58 @@
         <translation>到</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="291"/>
-        <location filename="../MainWindow.cpp" line="824"/>
+        <location filename="../MainWindow.cpp" line="309"/>
+        <location filename="../MainWindow.cpp" line="823"/>
         <source>Aspect ratio</source>
         <translation>比例</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="294"/>
+        <location filename="../MainWindow.cpp" line="312"/>
         <source>Video</source>
         <translation>视频</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="296"/>
+        <location filename="../MainWindow.cpp" line="314"/>
         <source>Window</source>
         <translation>窗口</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="299"/>
+        <location filename="../MainWindow.cpp" line="317"/>
         <source>Custom</source>
         <translation>自定义</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="305"/>
+        <location filename="../MainWindow.cpp" line="291"/>
         <source>Audio track</source>
         <translation>音轨</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="309"/>
+        <location filename="../MainWindow.cpp" line="295"/>
         <source>Channel</source>
         <translation>声道</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="312"/>
+        <location filename="../MainWindow.cpp" line="298"/>
         <source>As input</source>
         <translation>同输入</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="314"/>
+        <location filename="../MainWindow.cpp" line="300"/>
         <source>Stero</source>
         <translation>立体声</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="315"/>
+        <location filename="../MainWindow.cpp" line="301"/>
         <source>Mono (center)</source>
         <translation>单声道 (中央)</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="316"/>
+        <location filename="../MainWindow.cpp" line="302"/>
         <source>Left</source>
         <translation>左声道</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="317"/>
+        <location filename="../MainWindow.cpp" line="303"/>
         <source>Right</source>
         <translation>右声道</translation>
     </message>
@@ -214,32 +214,32 @@
         <translation>色彩空间</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="331"/>
+        <location filename="../MainWindow.cpp" line="330"/>
         <source>Decoder</source>
         <translation>解码器</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="338"/>
+        <location filename="../MainWindow.cpp" line="337"/>
         <source>Renderer</source>
         <translation>渲染引擎</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="457"/>
+        <location filename="../MainWindow.cpp" line="456"/>
         <source>not availabe on your platform!</source>
         <translation>你的平台上不可使用!</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="567"/>
+        <location filename="../MainWindow.cpp" line="566"/>
         <source>Open a media file</source>
         <translation>打开媒体文件</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="770"/>
+        <location filename="../MainWindow.cpp" line="769"/>
         <source>Open an url</source>
         <translation>打开 url</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="770"/>
+        <location filename="../MainWindow.cpp" line="769"/>
         <source>Url</source>
         <translation></translation>
     </message>
@@ -363,6 +363,17 @@
         <source>Audio</source>
         <translation>音频</translation>
     </message>
+    <message>
+        <location filename="../config/DecoderConfigPage.cpp" line="47"/>
+        <source>Software</source>
+        <translation>软解</translation>
+    </message>
+    <message>
+        <location filename="../config/DecoderConfigPage.cpp" line="48"/>
+        <location filename="../config/DecoderConfigPage.cpp" line="49"/>
+        <source>Hardware</source>
+        <translation>硬解</translation>
+    </message>
 </context>
 <context>
     <name>StatisticsView</name>
@@ -383,32 +394,32 @@
 <context>
     <name>VideoEQConfigPage</name>
     <message>
-        <location filename="../config/VideoEQConfigPage.cpp" line="42"/>
+        <location filename="../config/VideoEQConfigPage.cpp" line="43"/>
         <source>Engine</source>
         <translation>引擎</translation>
     </message>
     <message>
-        <location filename="../config/VideoEQConfigPage.cpp" line="56"/>
+        <location filename="../config/VideoEQConfigPage.cpp" line="57"/>
         <source>Brightness</source>
         <translation>亮度</translation>
     </message>
     <message>
-        <location filename="../config/VideoEQConfigPage.cpp" line="57"/>
+        <location filename="../config/VideoEQConfigPage.cpp" line="58"/>
         <source>Constrast</source>
         <translation>对比度</translation>
     </message>
     <message>
-        <location filename="../config/VideoEQConfigPage.cpp" line="58"/>
+        <location filename="../config/VideoEQConfigPage.cpp" line="59"/>
         <source>Saturation</source>
         <translation>饱和度</translation>
     </message>
     <message>
-        <location filename="../config/VideoEQConfigPage.cpp" line="74"/>
+        <location filename="../config/VideoEQConfigPage.cpp" line="75"/>
         <source>Global</source>
         <translation>全局</translation>
     </message>
     <message>
-        <location filename="../config/VideoEQConfigPage.cpp" line="77"/>
+        <location filename="../config/VideoEQConfigPage.cpp" line="78"/>
         <source>Reset</source>
         <translation>重置</translation>
     </message>

@@ -42,11 +42,11 @@
 QString GetDecoderDescription(const QString& name) {
     struct {
         const char *name;
-        const char *desc;
+        QString desc;
     } dec_desc[] = {
-        { "FFmpeg", "FFmpeg. (Software)" },
-        { "DXVA", "DirectX Video Acceleration (DXVA) 2.0" },
-        { "VAAPI", "Video Acceleration (VA) API" },
+        { "FFmpeg", "FFmpeg (" + QObject::tr("Software") + ")" },
+        { "DXVA", "DirectX Video Acceleration 2.0 (" + QObject::tr("Hardware") + ")" },
+        { "VAAPI", "Video Acceleration API (" + QObject::tr("Hardware") + ")" },
         { 0, 0 }
     };
     for (int i = 0; dec_desc[i].name; ++i) {
@@ -168,6 +168,7 @@ DecoderConfigPage::DecoderConfigPage(Config* config, QWidget *parent) :
     vb->addLayout(hb);
 
     //vb->addSpacerItem(new QSpacerItem(width(), height(), QSizePolicy::Maximum, QSizePolicy::Maximum));
+    connect(mpConfig, SIGNAL(decoderPriorityChanged(QVector<QtAV::VideoDecoderId>)), SLOT(updateDecodersUi()));
 }
 
 void DecoderConfigPage::videoDecoderEnableChanged()
@@ -236,6 +237,14 @@ void DecoderConfigPage::onDecSelected(DecoderItemWidget *iw)
         mpSelectedDec->select(false);
     }
     mpSelectedDec = iw;
+}
+
+void DecoderConfigPage::updateDecodersUi()
+{
+    QStringList names = mpConfig->decoderPriorityNames();
+    foreach (DecoderItemWidget *w, mDecItems) {
+        w->setChecked(names.contains(w->name()));
+    }
 }
 
 

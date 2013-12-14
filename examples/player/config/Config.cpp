@@ -152,8 +152,8 @@ Config& Config::decoderPriority(const QVector<QtAV::VideoDecoderId> &p)
         return *this;
     }
     mpData->video_decoder_priority = p;
-    emit decoderPriorityChanged(p);
     mpData->save();
+    emit decoderPriorityChanged(p);
     return *this;
 }
 
