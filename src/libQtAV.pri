@@ -139,7 +139,7 @@ unix {
 # Working dir search: "."
 # TODO: for macx. see qtcreator/src/rpath.pri. (-rpath define rpath, @rpath exapand to that path?)
     macx {
-        QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/PlugIns/
+        QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/Frameworks/
         QMAKE_LFLAGS += -Wl,-rpath,@loader_path/../,-rpath,@executable_path/../
     } else {
         RPATHDIR = \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib
