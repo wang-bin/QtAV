@@ -61,7 +61,7 @@ public:
     AVPixelFormat va_pixfmt;
     AVPixelFormat pixfmt; //store old one
     //store old values because it does not own AVCodecContext
-    AVPixelFormat (*get_format)(struct AVCodecContext *s, const enum AVPixelFormat * fmt);
+    AVPixelFormat (*get_format)(struct AVCodecContext *s, const AVPixelFormat * fmt);
     int (*get_buffer)(struct AVCodecContext *c, AVFrame *pic);
     void (*release_buffer)(struct AVCodecContext *c, AVFrame *pic);
     int (*reget_buffer)(struct AVCodecContext *c, AVFrame *pic);
