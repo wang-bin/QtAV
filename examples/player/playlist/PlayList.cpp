@@ -147,6 +147,8 @@ void PlayList::insert(const QString &url, int row)
 {
     PlayListItem item;
     item.setUrl(url);
+    item.setDuration(0);
+    item.setLastTime(0);
     QString title = url;
     if (!url.contains("://") || url.startsWith("file://")) {
         title = QFileInfo(url).fileName();

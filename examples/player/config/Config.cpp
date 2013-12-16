@@ -58,9 +58,11 @@ class Config::Data
 {
 public:
     Data() {
-        dir = qApp->applicationDirPath();
-        if (!QDir(file).exists()) {
-            dir = QDir::homePath() + "/QtAV";
+        dir = qApp->applicationDirPath() + "/data";
+        if (!QDir(dir).exists()) {
+            dir = QDir::homePath() + "/.QtAV";
+            if (!QDir(dir).exists())
+                QDir().mkpath(dir);
         }
         file = dir + "/config.ini";
         load();
@@ -95,7 +97,7 @@ public:
         settings.endGroup();
     }
     void save() {
-        qDebug("************save config************");
+        qDebug("************save config %s************", qPrintable(dir));
         QSettings settings(file, QSettings::IniFormat);
         settings.beginGroup("decoder");
         settings.beginGroup("video");
