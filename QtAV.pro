@@ -30,7 +30,7 @@ win32 {
     OptionalDepends += dxva
 }
 unix {
-    OptionalDepends += xv vaapi
+    OptionalDepends += xv vaapi libcedarv
 }
 
 include(root.pri)
