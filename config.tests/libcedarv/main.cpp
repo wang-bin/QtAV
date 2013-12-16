@@ -1,5 +1,5 @@
 /******************************************************************************
-    VideoRendererTypes: type id and manually id register function
+    QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -18,31 +18,9 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#include <libcedarv/libcedarv.h>
 
-#ifndef QTAV_VIDEODECODERTYPES_H
-#define QTAV_VIDEODECODERTYPES_H
-
-#include <QtAV/VideoDecoder.h>
-
-namespace QtAV {
-
-/*!
- * \brief GetRegisted
- * \return count of available id
- *  if pass a null ids, only return the count. otherwise regitered ids will be stored in ids
- */
-Q_AV_EXPORT QVector<VideoDecoderId> GetRegistedVideoDecoderIds();
-
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_CUDA;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_DXVA;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VAAPI;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_Cedarv;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDPAU;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDA;
-
-
-Q_AV_EXPORT void VideoDecoder_RegisterAll();
-
-} //namespace QtAV
-#endif // QTAV_VIDEODECODERTYPES_H
+int main()
+{
+	return 0;
+}
