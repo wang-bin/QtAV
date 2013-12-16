@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QtCore/QFileInfo>
+#include <QtCore/QTextStream>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QWindowStateChangeEvent>
@@ -249,12 +250,12 @@ void MainWindow::setupUi()
 
     mpMenu->addSeparator();
 
-    mpMenu->addAction(tr("Setup"), this, SLOT(setup()))->setEnabled(false);
-    mpMenu->addAction(tr("Report"))->setEnabled(false); //report bug, suggestions etc. using maillist?
+    //mpMenu->addAction(tr("Setup"), this, SLOT(setup()))->setEnabled(false);
+    //mpMenu->addAction(tr("Report"))->setEnabled(false); //report bug, suggestions etc. using maillist?
     mpMenu->addAction(tr("About"), this, SLOT(about()));
-    mpMenu->addAction(tr("Help"), this, SLOT(help()))->setEnabled(false);
-    mpMenu->addSeparator();
+    mpMenu->addAction(tr("Help"), this, SLOT(help()));
     mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
+    mpMenu->addSeparator();
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
 
@@ -268,8 +269,6 @@ void MainWindow::setupUi()
     pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(pSpeedBox);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
-    mpMenu->addSeparator();
-
 
     subMenu = new ClickableMenu(tr("Repeat"));
     mpMenu->addMenu(subMenu);
@@ -315,6 +314,8 @@ void MainWindow::setupUi()
     pWA->defaultWidget()->setEnabled(false);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
     mpRepeatAction = pWA;
+
+    mpMenu->addSeparator();
 
     subMenu = new ClickableMenu(tr("Audio track"));
     mpMenu->addMenu(subMenu);
@@ -818,6 +819,17 @@ void MainWindow::about()
 
 void MainWindow::help()
 {
+    QFile f(qApp->applicationDirPath() + "/help.html");
+    if (!f.exists()) {
+        f.setFileName(":/help.html");
+    }
+    if (!f.open(QIODevice::ReadOnly)) {
+        qWarning("Failed to open help.html: %s", qPrintable(f.errorString()));
+        return;
+    }
+    QTextStream ts(&f);
+    QString text = ts.readAll();
+    QMessageBox::information(0, "Help", text);
 }
 
 void MainWindow::openUrl()

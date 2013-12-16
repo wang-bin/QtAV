@@ -4,5 +4,6 @@
     </qresource>
     <qresource prefix="/">
         <file>tv.ini</file>
+        <file>help.html</file>
     </qresource>
 </RCC>
