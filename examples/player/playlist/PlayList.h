@@ -1,5 +1,5 @@
 /******************************************************************************
-    Config.h: description
+    PlayList.h: description
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
@@ -25,46 +25,55 @@
 ******************************************************************************/
 
 
-#ifndef PLAYER_CONFIG_H
-#define PLAYER_CONFIG_H
+#ifndef PLAYLIST_H
+#define PLAYLIST_H
 
-#include <QtAV/VideoDecoderTypes.h>
-#include <QtCore/QObject>
+#include <QWidget>
+#include "PlayListItem.h"
+class QListView;
+class QToolButton;
+class PlayListDelegate;
 
-class Config : public QObject
+class PlayListModel;
+class PlayList : public QWidget
 {
     Q_OBJECT
 public:
-    static Config& instance();
+    explicit PlayList(QWidget *parent = 0);
+    ~PlayList();
 
-    QString defaultDir() const;
-    //void loadFromFile(const QString& file);
+    void setSaveFile(const QString& file);
+    QString saveFile() const;
+    void load();
+    void save();
 
-    int decodingThreads() const;
-    Config& decodingThreads(int n);
-
-    QVector<QtAV::VideoDecoderId> decoderPriority() const;
-    Config& decoderPriority(const QVector<QtAV::VideoDecoderId>& p);
-    QStringList decoderPriorityNames() const;
-    Config& decoderPriorityNames(const QStringList& names);
-
-    // in priority order. the same order as displayed in ui
-    QVector<QtAV::VideoDecoderId> registeredDecoders() const;
-    Config& registeredDecoders(const QVector<QtAV::VideoDecoderId>& all);
-    QStringList registeredDecoderNames() const;
-    Config& registeredDecoderNames(const QStringList& names);
+    PlayListItem itemAt(int row);
+    void insertItemAt(const PlayListItem& item, int row = 0);
+    void setItemAt(const PlayListItem& item, int row = 0);
+    void remove(const QString& url);
+    void insert(const QString& url, int row = 0);
+    void setMaxRows(int r);
+    int maxRows() const;
 
 signals:
-    void decodingThreadsChanged(int n);
-    void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
+    void aboutToPlay(const QString& url);
 
-protected:
-    explicit Config(QObject *parent = 0);
-    ~Config();
+private slots:
+    void removeSelectedItems();
+    void clearItems();
+    //
+    void addItems();
 
+    void onAboutToPlay(const QModelIndex& index);
+    //void highlight(const QModelIndex& index);
 private:
-    class Data;
-    Data *mpData;
+    QListView *mpListView;
+    QToolButton *mpClear, *mpRemove, *mpAdd;
+    PlayListDelegate *mpDelegate;
+    PlayListModel *mpModel;
+    int mMaxRows;
+    QString mFile;
+    bool mFirstShow;
 };
 
-#endif // PLAYER_CONFIG_H
+#endif // PLAYLIST_H

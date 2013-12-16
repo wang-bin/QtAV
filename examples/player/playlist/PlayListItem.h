@@ -1,5 +1,5 @@
 /******************************************************************************
-    Config.h: description
+    PlayListItem.h: description
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
@@ -25,46 +25,40 @@
 ******************************************************************************/
 
 
-#ifndef PLAYER_CONFIG_H
-#define PLAYER_CONFIG_H
+#ifndef PLAYLISTITEM_H
+#define PLAYLISTITEM_H
 
-#include <QtAV/VideoDecoderTypes.h>
-#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QVariant>
 
-class Config : public QObject
+class PlayListItem
 {
-    Q_OBJECT
 public:
-    static Config& instance();
-
-    QString defaultDir() const;
-    //void loadFromFile(const QString& file);
-
-    int decodingThreads() const;
-    Config& decodingThreads(int n);
-
-    QVector<QtAV::VideoDecoderId> decoderPriority() const;
-    Config& decoderPriority(const QVector<QtAV::VideoDecoderId>& p);
-    QStringList decoderPriorityNames() const;
-    Config& decoderPriorityNames(const QStringList& names);
-
-    // in priority order. the same order as displayed in ui
-    QVector<QtAV::VideoDecoderId> registeredDecoders() const;
-    Config& registeredDecoders(const QVector<QtAV::VideoDecoderId>& all);
-    QStringList registeredDecoderNames() const;
-    Config& registeredDecoderNames(const QStringList& names);
-
-signals:
-    void decodingThreadsChanged(int n);
-    void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
-
-protected:
-    explicit Config(QObject *parent = 0);
-    ~Config();
-
+    PlayListItem();
+    void setTitle(const QString& title);
+    QString title() const;
+    void setUrl(const QString& url);
+    QString url() const;
+    void setStars(int s);
+    int stars() const;
+    void setLastTime(qint64 ms);
+    qint64 lastTime() const;
+    QString lastTimeString() const;
+    void setDuration(qint64 ms);
+    qint64 duration() const;
+    QString durationString() const;
+    //icon
 private:
-    class Data;
-    Data *mpData;
+    QString mTitle;
+    QString mUrl;
+    int mStars;
+    qint64 mLastTime, mDuration;
+    QString mLastTimeS, mDurationS;
 };
 
-#endif // PLAYER_CONFIG_H
+Q_DECLARE_METATYPE(PlayListItem);
+
+QDataStream& operator>> (QDataStream& s, PlayListItem& p);
+QDataStream& operator<< (QDataStream& s, const PlayListItem& p);
+
+#endif // PLAYLISTITEM_H

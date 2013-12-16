@@ -26,6 +26,7 @@
 #include "config/DecoderConfigPage.h"
 #include "config/Config.h"
 #include "config/VideoEQConfigPage.h"
+#include "playlist/PlayList.h"
 
 /*
  *TODO:
@@ -69,7 +70,6 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     mpAudioTrackAction = 0;
     setMouseTracking(true); //mouseMoveEvent without press.
-    mpConfig = new Config(this);
     connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
     //QTimer::singleShot(10, this, SLOT(setupUi()));
     setupUi();
@@ -78,6 +78,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    mpHistory->save();
+    mpPlayList->save();
     if (mpVolumeSlider && !mpVolumeSlider->parentWidget()) {
         mpVolumeSlider->close();
         delete mpVolumeSlider;
@@ -217,10 +219,36 @@ void MainWindow::setupUi()
     mpMenuBtn->setIconSize(QSize(a, a));
     mpMenuBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
 */
+    QMenu *subMenu = 0;
+    QWidgetAction *pWA = 0;
     mpMenu = new QMenu(mpMenuBtn);
     mpMenu->addAction(tr("Open Url"), this, SLOT(openUrl()));
     mpMenu->addAction(tr("Online channels"), this, SLOT(onTVMenuClick()));
     mpMenu->addSeparator();
+
+    subMenu = new QMenu(tr("Play list"));
+    mpMenu->addMenu(subMenu);
+    mpPlayList = new PlayList(this);
+    mpPlayList->setSaveFile(Config::instance().defaultDir() + "/playlist.qds");
+    mpPlayList->load();
+    connect(mpPlayList, SIGNAL(aboutToPlay(QString)), SLOT(play(QString)));
+    pWA = new QWidgetAction(0);
+    pWA->setDefaultWidget(mpPlayList);
+    subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
+
+    subMenu = new QMenu(tr("History"));
+    mpMenu->addMenu(subMenu);
+    mpHistory = new PlayList(this);
+    mpHistory->setMaxRows(20);
+    mpHistory->setSaveFile(Config::instance().defaultDir() + "/history.qds");
+    mpHistory->load();
+    connect(mpHistory, SIGNAL(aboutToPlay(QString)), SLOT(play(QString)));
+    pWA = new QWidgetAction(0);
+    pWA->setDefaultWidget(mpHistory);
+    subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
+
+    mpMenu->addSeparator();
+
     mpMenu->addAction(tr("Setup"), this, SLOT(setup()))->setEnabled(false);
     mpMenu->addAction(tr("Report"))->setEnabled(false); //report bug, suggestions etc. using maillist?
     mpMenu->addAction(tr("About"), this, SLOT(about()));
@@ -230,14 +258,14 @@ void MainWindow::setupUi()
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
 
-    QMenu *subMenu = new QMenu(tr("Speed"));
+    subMenu = new QMenu(tr("Speed"));
     mpMenu->addMenu(subMenu);
     QDoubleSpinBox *pSpeedBox = new QDoubleSpinBox(0);
     pSpeedBox->setRange(0.01, 20);
     pSpeedBox->setValue(1.0);
     pSpeedBox->setSingleStep(0.01);
     pSpeedBox->setCorrectionMode(QAbstractSpinBox::CorrectToPreviousValue);
-    QWidgetAction *pWA = new QWidgetAction(0);
+    pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(pSpeedBox);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
     mpMenu->addSeparator();
@@ -329,7 +357,7 @@ void MainWindow::setupUi()
 
     subMenu = new ClickableMenu(tr("Decoder"));
     mpMenu->addMenu(subMenu);
-    mpDecoderConfigPage = new DecoderConfigPage(mpConfig);
+    mpDecoderConfigPage = new DecoderConfigPage(&Config::instance());
     pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(mpDecoderConfigPage);
     subMenu->addAction(pWA);
@@ -557,8 +585,13 @@ void MainWindow::play(const QString &name)
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
     mpPlayer->setRepeat(mRepeateMax);
-    mpPlayer->setPriority(mpConfig->decoderPriority());
-
+    mpPlayer->setPriority(Config::instance().decoderPriority());
+    PlayListItem item;
+    item.setUrl(mFile);
+    item.setTitle(mTitle);
+    item.setLastTime(0);
+    mpHistory->remove(mFile);
+    mpHistory->insertItemAt(item, 0);
     mpPlayer->play(name);
 }
 
@@ -576,7 +609,7 @@ void MainWindow::setVideoDecoderNames(const QStringList &vd)
             vidp.append(vid);
         }
     }
-    mpConfig->decoderPriority(vidp);
+    Config::instance().decoderPriority(vidp);
 }
 
 void MainWindow::openFile()
@@ -639,6 +672,11 @@ void MainWindow::onStartPlay()
     mpRepeatA->setTime(QTime(0, 0, 0).addMSecs(mpPlayer->startPosition()));
     mpRepeatB->setTime(QTime(0, 0, 0).addMSecs(mpPlayer->stopPosition()));
     mCursorTimer = startTimer(3000);
+    PlayListItem item = mpHistory->itemAt(0);
+    item.setUrl(mFile);
+    item.setTitle(mTitle);
+    item.setDuration(mpPlayer->duration());
+    mpHistory->setItemAt(item, 0);
 }
 
 void MainWindow::onStopPlay()

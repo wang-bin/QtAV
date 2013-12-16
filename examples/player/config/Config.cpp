@@ -58,10 +58,11 @@ class Config::Data
 {
 public:
     Data() {
-        file = qApp->applicationDirPath() + "/QtAV.ini";
-        if (!QFile(file).exists()) {
-            file = QDir::homePath() + "/QtAV.ini";
+        dir = qApp->applicationDirPath();
+        if (!QDir(file).exists()) {
+            dir = QDir::homePath() + "/QtAV";
         }
+        file = dir + "/config.ini";
         load();
     }
     ~Data() {
@@ -105,12 +106,19 @@ public:
         settings.endGroup();
     }
 
+    QString dir;
     QString file;
 
     int decode_threads;
     QVector<QtAV::VideoDecoderId> video_decoder_priority;
     QVector<QtAV::VideoDecoderId> video_decoder_all;
 };
+
+Config& Config::instance()
+{
+    static Config cfg;
+    return cfg;
+}
 
 Config::Config(QObject *parent)
     : QObject(parent)
@@ -121,6 +129,11 @@ Config::Config(QObject *parent)
 Config::~Config()
 {
     delete mpData;
+}
+
+QString Config::defaultDir() const
+{
+    return mpData->dir;
 }
 
 int Config::decodingThreads() const

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Config.h: description
+    PlayListDelegate.h: description
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
@@ -25,46 +25,23 @@
 ******************************************************************************/
 
 
-#ifndef PLAYER_CONFIG_H
-#define PLAYER_CONFIG_H
+#ifndef PLAYLISTDELEGATE_H
+#define PLAYLISTDELEGATE_H
 
-#include <QtAV/VideoDecoderTypes.h>
-#include <QtCore/QObject>
+#include <QStyledItemDelegate>
 
-class Config : public QObject
+class PlayListDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 public:
-    static Config& instance();
+    explicit PlayListDelegate(QObject *parent = 0);
 
-    QString defaultDir() const;
-    //void loadFromFile(const QString& file);
-
-    int decodingThreads() const;
-    Config& decodingThreads(int n);
-
-    QVector<QtAV::VideoDecoderId> decoderPriority() const;
-    Config& decoderPriority(const QVector<QtAV::VideoDecoderId>& p);
-    QStringList decoderPriorityNames() const;
-    Config& decoderPriorityNames(const QStringList& names);
-
-    // in priority order. the same order as displayed in ui
-    QVector<QtAV::VideoDecoderId> registeredDecoders() const;
-    Config& registeredDecoders(const QVector<QtAV::VideoDecoderId>& all);
-    QStringList registeredDecoderNames() const;
-    Config& registeredDecoderNames(const QStringList& names);
-
-signals:
-    void decodingThreadsChanged(int n);
-    void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
-
-protected:
-    explicit Config(QObject *parent = 0);
-    ~Config();
+    virtual void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex & index) const;
+    virtual QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const;
 
 private:
-    class Data;
-    Data *mpData;
+    mutable int mHighlightRow;
+    mutable QList<int> mSelectedRows;
 };
 
-#endif // PLAYER_CONFIG_H
+#endif // PLAYLISTDELEGATE_H

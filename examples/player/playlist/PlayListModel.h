@@ -1,5 +1,5 @@
 /******************************************************************************
-    Config.h: description
+    PlayListModel.h: description
     Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
@@ -25,46 +25,32 @@
 ******************************************************************************/
 
 
-#ifndef PLAYER_CONFIG_H
-#define PLAYER_CONFIG_H
+#ifndef PLAYLISTMODEL_H
+#define PLAYLISTMODEL_H
 
-#include <QtAV/VideoDecoderTypes.h>
-#include <QtCore/QObject>
+#include <QAbstractListModel>
+#include "PlayListItem.h"
 
-class Config : public QObject
+class PlayListModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_DISABLE_COPY(PlayListModel)
 public:
-    static Config& instance();
+    explicit PlayListModel(QObject *parent = 0);
 
-    QString defaultDir() const;
-    //void loadFromFile(const QString& file);
+    QList<PlayListItem> items() const;
 
-    int decodingThreads() const;
-    Config& decodingThreads(int n);
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    QVariant data(const QModelIndex &index, int role) const;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
 
-    QVector<QtAV::VideoDecoderId> decoderPriority() const;
-    Config& decoderPriority(const QVector<QtAV::VideoDecoderId>& p);
-    QStringList decoderPriorityNames() const;
-    Config& decoderPriorityNames(const QStringList& names);
+    bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());
+    bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex());
 
-    // in priority order. the same order as displayed in ui
-    QVector<QtAV::VideoDecoderId> registeredDecoders() const;
-    Config& registeredDecoders(const QVector<QtAV::VideoDecoderId>& all);
-    QStringList registeredDecoderNames() const;
-    Config& registeredDecoderNames(const QStringList& names);
-
-signals:
-    void decodingThreadsChanged(int n);
-    void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
-
-protected:
-    explicit Config(QObject *parent = 0);
-    ~Config();
-
+    void updateLayout();
 private:
-    class Data;
-    Data *mpData;
+    QList<PlayListItem> mItems;
 };
 
-#endif // PLAYER_CONFIG_H
+#endif // PLAYLISTMODEL_H

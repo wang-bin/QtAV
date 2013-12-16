@@ -21,7 +21,11 @@ SOURCES += main.cpp \
     TVView.cpp \
     config/Config.cpp \
     config/VideoEQConfigPage.cpp \
-    config/DecoderConfigPage.cpp
+    config/DecoderConfigPage.cpp \
+    playlist/PlayListModel.cpp \
+    playlist/PlayListItem.cpp \
+    playlist/PlayListDelegate.cpp \
+    playlist/PlayList.cpp
 
 HEADERS += \
     MainWindow.h \
@@ -33,7 +37,11 @@ HEADERS += \
     TVView.h \
     config/Config.h \
     config/VideoEQConfigPage.h \
-    config/DecoderConfigPage.h
+    config/DecoderConfigPage.h \
+    playlist/PlayListModel.h \
+    playlist/PlayListItem.h \
+    playlist/PlayListDelegate.h \
+    playlist/PlayList.h
 
 tv.files = res/tv.ini
 BIN_INSTALLS += tv
