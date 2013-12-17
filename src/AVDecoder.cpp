@@ -94,18 +94,18 @@ bool AVDecoder::open()
         d.codec_ctx->thread_type = d.thread_slice ? FF_THREAD_SLICE : FF_THREAD_FRAME;
     d.codec_ctx->thread_safe_callbacks = true;
     switch (d.codec_ctx->codec_id) {
-        case AV_CODEC_ID_MPEG4:
-        case AV_CODEC_ID_H263:
+        case CODEC_ID_MPEG4:
+        case CODEC_ID_H263:
             d.codec_ctx->thread_type = 0;
             break;
-        case AV_CODEC_ID_MPEG1VIDEO:
-        case AV_CODEC_ID_MPEG2VIDEO:
+        case CODEC_ID_MPEG1VIDEO:
+        case CODEC_ID_MPEG2VIDEO:
             d.codec_ctx->thread_type &= ~FF_THREAD_SLICE;
             /* fall through */
 # if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
-        case AV_CODEC_ID_H264:
-        case AV_CODEC_ID_VC1:
-        case AV_CODEC_ID_WMV3:
+        case CODEC_ID_H264:
+        case CODEC_ID_VC1:
+        case CODEC_ID_WMV3:
             d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
 # endif
         default:
