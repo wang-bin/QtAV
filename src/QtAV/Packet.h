@@ -39,6 +39,7 @@ public:
     inline bool isEnd() const;
     void markEnd();
 
+    bool hasKeyFrame;
     QByteArray data;
     qreal pts, duration;
 private:

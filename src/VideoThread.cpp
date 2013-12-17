@@ -186,9 +186,10 @@ void VideoThread::run()
          *the new packet, then the d.delay is very large, omit it.
          *TODO: 1. how to choose the value
          * 2. use last delay when seeking
+         * 3. compute average decode time
         */
         bool skip_render = false;
-        if (qAbs(d.delay) < 2.718) {
+        if (qAbs(d.delay) < 0.5) {
             if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
             }
@@ -206,12 +207,16 @@ void VideoThread::run()
         } else { //when to drop off?
             qDebug("delay %f/%f", d.delay, d.clock->value());
             if (d.delay > 0) {
-                msleep(64);
+                msleep(40);
             } else {
                 // FIXME: if continue without decoding, hw decoding may crash, why?
                 //audio packet not cleaned up?
-                //continue;
-                skip_render = true;
+                if (!pkt.hasKeyFrame) {
+                    qDebug("No key frame. Skip decoding");
+                    //pkt = Packet();
+                    //continue; //may crash if hw
+                }
+                skip_render = !pkt.hasKeyFrame;
             }
         }
         d.clock->updateVideoPts(pts); //here?

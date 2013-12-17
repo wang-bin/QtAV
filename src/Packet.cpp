@@ -26,7 +26,9 @@ namespace QtAV {
 const qreal Packet::kEndPts = -0.618;
 
 Packet::Packet()
-    :pts(0),duration(0)
+    : hasKeyFrame(false)
+    , pts(0)
+    , duration(0)
 {
 }
 
