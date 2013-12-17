@@ -5,8 +5,9 @@ player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[;vaapi[;ffmpeg]]"] [url|path
 <p>To disable audio output, add <code>-ao null<code></p>
 <p>Choose a render engine with <em>-vo</em> option(default is OpenGL). For example, in windows that support Direct2D, you can run</p>
 <pre><code>player -vo d2d filename</code></pre>
-<p>To select decoder, use <code>-vd<code> option. Value can be <em>dxva</em>, <em>vaapi</em> and <code>ffmpeg</code>, or a list separated by <em>;</em> in priority order. For example:
+<p>To select decoder, use <code>-vd</code> option. Value can be <em>dxva</em>, <em>vaapi</em> and <code>ffmpeg</code>, or a list separated by <em>;</em> in priority order. For example:
 <pre><code>player -vd "dxva;ffmpeg" filename</code></pre>
+</p>
 <p>
 will use dxva if dxva can decode, otherwise ffmpeg will be used.
 </p>
