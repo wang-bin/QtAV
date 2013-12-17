@@ -25,10 +25,7 @@ namespace QtAV {
 
 Statistics::Common::Common():
     available(false)
-  , fps_guess(0)
-  , fps(0)
   , bit_rate(0)
-  , avg_frame_rate(0)
   , frames(0)
   , size(0)
 {
@@ -43,13 +40,33 @@ Statistics::AudioOnly::AudioOnly():
 {
 }
 
-Statistics::VideoOnly::VideoOnly():
-    width(0)
+Statistics::VideoOnly::VideoOnly()
+    : fps_guess(0)
+    , fps(0)
+    , avg_frame_rate(0)
+  , width(0)
   , height(0)
   , coded_width(0)
   , coded_height(0)
   , gop_size(0)
 {
+}
+
+void Statistics::VideoOnly::putPts(qreal pts)
+{
+    ptsHistory.push_back(pts);
+    if (ptsHistory.size() < 2)
+        return;
+    if (pts - ptsHistory.at(0) > 1) {
+        ptsHistory.pop_front();
+    }
+}
+
+qreal Statistics::VideoOnly::currentDisplayFPS() const
+{
+    if (ptsHistory.size() < 2)
+        return 0;
+    return (qreal)ptsHistory.size()/(ptsHistory.last() - ptsHistory.first());
 }
 
 Statistics::Statistics()

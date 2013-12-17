@@ -24,12 +24,16 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QTime>
+#include <QtCore/QQueue>
 
 /*
  * time unit is s
  * TODO: frame counter, frame droped. see VLC
  */
 
+/*!
+ * values from functions are dynamically calculated
+ */
 namespace QtAV {
 
 class StatisticsPrivate;
@@ -48,16 +52,13 @@ public:
     class Common {
     public:
         Common();
+        //TODO: dynamic bit rate compute
+
         bool available;
         QString codec, codec_long;
         //common audio/video info that may be used(visualize) by filters
         QTime current_time, total_time, start_time; //TODO: in AVFormatContext and AVStream, what's the difference?
-        //AVStream.avg_frame_rate may be 0, then use AVStream.r_frame_rate
-        //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
-        qreal fps_guess;
-        qreal fps; //playing fps
         qreal bit_rate;
-        qreal avg_frame_rate; //AVStream.avg_frame_rate Kps
         qint64 frames; //AVStream.nb_frames. AVCodecContext.frame_number?
         qint64 size; //audio/video stream size. AVCodecContext.frame_size?
 
@@ -69,7 +70,7 @@ public:
     } audio, video; //init them
 
     //from AVCodecContext
-    class AudioOnly {
+    class Q_AV_EXPORT AudioOnly {
     public:
         AudioOnly();
         int sample_rate; ///< samples per second
@@ -94,10 +95,21 @@ public:
         //int cutoff; //Audio cutoff bandwidth (0 means "automatic")
     } audio_only;
     //from AVCodecContext
-    class VideoOnly {
+    class Q_AV_EXPORT VideoOnly {
     public:
         //union member with ctor, dtor, copy ctor only works in c++11
         VideoOnly();
+        // put frame to be renderer pts after decoded
+        void putPts(qreal pts);
+        // compute from pts history
+        qreal currentDisplayFPS() const;
+        //AVStream.avg_frame_rate may be 0, then use AVStream.r_frame_rate
+        //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
+        qreal fps_guess;
+        qreal fps;
+        // average fps frame AVStream
+        qreal avg_frame_rate; //AVStream.avg_frame_rate Kps
+
         int width, height;
         /**
          * Bitstream width / height, may be different from width/height if lowres enabled.
@@ -116,6 +128,8 @@ public:
          * 8 (umh), 9 (iter), 10 (tesa) [7, 8, 10 are x264 specific, 9 is snow specific]
          */
         //int me_method;
+    private:
+        QQueue<qreal> ptsHistory; //compute fps
     } video_only;
 };
 

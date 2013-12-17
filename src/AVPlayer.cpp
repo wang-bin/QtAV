@@ -1103,18 +1103,10 @@ void AVPlayer::initStatistics()
         }
         cs.st->total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
         cs.st->start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
-        //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
         qDebug("codec: %s(%s)", qPrintable(cs.st->codec), qPrintable(cs.st->codec_long));
-        if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
-            cs.st->fps_guess = av_q2d(stream->avg_frame_rate);
-        else
-            cs.st->fps_guess = av_q2d(stream->r_frame_rate);
-        cs.st->fps = cs.st->fps_guess;
         cs.st->bit_rate = cs.ctx->bit_rate; //formatCtx
-        cs.st->avg_frame_rate = av_q2d(stream->avg_frame_rate);
         cs.st->frames = stream->nb_frames;
         //qDebug("time: %f~%f, nb_frames=%lld", cs.st->start_time, cs.st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
-        qDebug("%s fps: r_frame_rate=%f avg_frame_rate=%f", cs.name, av_q2d(stream->r_frame_rate), av_q2d(stream->avg_frame_rate));
     }
     if (demuxer.audioStream() >= 0) {
         AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
@@ -1130,7 +1122,16 @@ void AVPlayer::initStatistics()
     }
     if (demuxer.videoStream() >= 0) {
         AVCodecContext *vCodecCtx = demuxer.videoCodecContext();
-        mStatistics.video.frames = formatCtx->streams[demuxer.videoStream()]->nb_frames;
+        AVStream *stream = formatCtx->streams[demuxer.videoStream()];
+        mStatistics.video.frames = stream->nb_frames;
+        //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
+        // TODO: seems that r_frame_rate will be removed libav > 9.10. Use macro to check version?
+        //if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
+            mStatistics.video_only.fps_guess = av_q2d(stream->avg_frame_rate);
+        //else
+        //    mStatistics.video_only.fps_guess = av_q2d(stream->r_frame_rate);
+        mStatistics.video_only.fps = mStatistics.video_only.fps_guess;
+        mStatistics.video_only.avg_frame_rate = av_q2d(stream->avg_frame_rate);
         mStatistics.video_only.coded_height = vCodecCtx->coded_height;
         mStatistics.video_only.coded_width = vCodecCtx->coded_width;
         mStatistics.video_only.gop_size = vCodecCtx->gop_size;
@@ -1205,7 +1206,7 @@ bool AVPlayer::setupAudioThread()
         }
     }
     setAudioOutput(_audio);
-    int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
+    int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video_only.fps_guess);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     audio_thread->packetQueue()->setThreshold(queue_min);
     audio_thread->packetQueue()->setCapacity(queue_max);
@@ -1267,7 +1268,7 @@ bool AVPlayer::setupVideoThread()
     video_thread->setBrightness(mBrightness);
     video_thread->setContrast(mContrast);
     video_thread->setSaturation(mSaturation);
-    int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video.fps);
+    int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video_only.fps_guess);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     video_thread->packetQueue()->setThreshold(queue_min);
     video_thread->packetQueue()->setCapacity(queue_max);
