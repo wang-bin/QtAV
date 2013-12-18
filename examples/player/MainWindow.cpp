@@ -738,6 +738,13 @@ void MainWindow::setVolume()
     mpVolumeBtn->setToolTip(QString::number(v));
 }
 
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+    if (mpPlayer)
+        mpPlayer->stop();
+    QWidget::closeEvent(e);
+}
+
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e);

@@ -79,6 +79,7 @@ private slots:
     void onTimeSliderLeave();
 
 protected:
+    virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
     virtual void timerEvent(QTimerEvent *);
     void mouseMoveEvent(QMouseEvent *e);
