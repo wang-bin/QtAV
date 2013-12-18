@@ -194,6 +194,20 @@ void VideoThread::run()
             if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
             }
+
+        } else { //when to drop off?
+            //qDebug("delay %f/%f", d.delay, d.clock->value());
+            if (d.delay < 0) {
+                // FIXME: if continue without decoding, hw decoding may crash, why?
+                if (!pkt.hasKeyFrame) {
+                    //pkt = Packet();
+                    //continue; //may crash if hw
+                }
+                skip_render = !pkt.hasKeyFrame;
+            }
+        }
+        //audio packet not cleaned up?
+        if (d.delay < 3) {
             while (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
                 //qDebug("~~~~~wating for %f msecs", d.delay*1000);
@@ -205,25 +219,14 @@ void VideoThread::run()
             }
             if (d.delay > 0)
                 usleep(d.delay * 1000000UL);
-        } else { //when to drop off?
-            qDebug("delay %f/%f", d.delay, d.clock->value());
-            if (d.delay > 0) {
-                msleep(40);
-            } else {
-                // FIXME: if continue without decoding, hw decoding may crash, why?
-                //audio packet not cleaned up?
-                if (!pkt.hasKeyFrame) {
-                    qDebug("No key frame. Skip decoding");
-                    //pkt = Packet();
-                    //continue; //may crash if hw
-                }
-                skip_render = !pkt.hasKeyFrame;
+            d.clock->updateVideoPts(pts); //here?
+            if (d.stop) {
+                qDebug("video thread stop before decode()");
+                break;
             }
-        }
-        d.clock->updateVideoPts(pts); //here?
-        if (d.stop) {
-            qDebug("video thread stop before decode()");
-            break;
+        } else {
+            if (d.delay > 0)
+                msleep(40);
         }
 
         if (!dec->decode(pkt.data)) {
