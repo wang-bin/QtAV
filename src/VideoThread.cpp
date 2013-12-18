@@ -180,6 +180,7 @@ void VideoThread::run()
             continue;
         }
         qreal pts = pkt.pts;
+        // TODO: delta ref time
         d.delay = pts - d.clock->value();
         /*
          *after seeking forward, a packet may be the old, v packet may be

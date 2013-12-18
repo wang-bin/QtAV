@@ -54,6 +54,11 @@ Statistics::VideoOnly::VideoOnly()
 
 void Statistics::VideoOnly::putPts(qreal pts)
 {
+    // may be seeking
+    if (pts < 0 || (!ptsHistory.isEmpty() && ptsHistory.first() >= pts)) {
+        ptsHistory.clear();
+        return;
+    }
     ptsHistory.push_back(pts);
     if (ptsHistory.size() < 2)
         return;
