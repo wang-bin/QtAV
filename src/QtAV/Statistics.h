@@ -25,6 +25,7 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QTime>
 #include <QtCore/QQueue>
+#include <QtCore/QSharedData>
 
 /*
  * time unit is s
@@ -36,7 +37,6 @@
  */
 namespace QtAV {
 
-class StatisticsPrivate;
 class Q_AV_EXPORT Statistics
 {
 public:
@@ -67,6 +67,10 @@ public:
             audio_only audio;
             video_only video;
         } only;*/
+    private:
+        class Private : public QSharedData {
+        };
+        QExplicitlySharedDataPointer<Private> d;
     } audio, video; //init them
 
     //from AVCodecContext
@@ -93,6 +97,10 @@ public:
          */
         int block_align;
         //int cutoff; //Audio cutoff bandwidth (0 means "automatic")
+    private:
+        class Private : public QSharedData {
+        };
+        QExplicitlySharedDataPointer<Private> d;
     } audio_only;
     //from AVCodecContext
     class Q_AV_EXPORT VideoOnly {
@@ -129,7 +137,11 @@ public:
          */
         //int me_method;
     private:
-        QQueue<qreal> ptsHistory; //compute fps
+        class Private : public QSharedData {
+        public:
+            QQueue<qreal> ptsHistory; //compute fps
+        };
+        QExplicitlySharedDataPointer<Private> d;
     } video_only;
 };
 

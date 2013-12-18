@@ -13,7 +13,7 @@ class StatisticsView : public QDialog
     Q_OBJECT
 public:
     explicit StatisticsView(QWidget *parent = 0);
-    void setStatistics(Statistics* s);
+    void setStatistics(const Statistics &s);
 
 protected:
     virtual void hideEvent(QHideEvent* e);
@@ -33,7 +33,7 @@ private:
     QList<QTreeWidgetItem*> mVideoItems;
     //TODO: multiple streams
     QList<QTreeWidgetItem*> mAudioItems;
-    Statistics *mpStatistics;
+    Statistics mStatistics;
     int mTimer;
 
     QTreeWidgetItem *mpFPS, *mpAudioBitRate, *mpVideoBitRate;

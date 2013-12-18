@@ -990,7 +990,7 @@ void MainWindow::showInfo()
     // why crash if on stack
     static StatisticsView *sv = new StatisticsView;
     if (mpPlayer)
-        sv->setStatistics(&mpPlayer->statistics());
+        sv->setStatistics(mpPlayer->statistics());
     sv->show();
 }
 

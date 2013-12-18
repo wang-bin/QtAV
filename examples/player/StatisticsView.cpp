@@ -126,10 +126,10 @@ StatisticsView::StatisticsView(QWidget *parent) :
     setLayout(vl);
 }
 
-void StatisticsView::setStatistics(Statistics *s)
+void StatisticsView::setStatistics(const Statistics& s)
 {
-    mpStatistics = s;
-    QVariantList v = getBaseInfoValues(*s);
+    mStatistics = s;
+    QVariantList v = getBaseInfoValues(s);
     int i = 0;
     foreach(QTreeWidgetItem* item, mBaseItems) {
         if (item->data(1, Qt::DisplayRole) != v.at(i)) {
@@ -137,7 +137,7 @@ void StatisticsView::setStatistics(Statistics *s)
         }
         ++i;
     }
-    v = getVideoInfoValues(*s);
+    v = getVideoInfoValues(s);
     i = 0;
     foreach(QTreeWidgetItem* item, mVideoItems) {
         if (item->data(1, Qt::DisplayRole) != v.at(i)) {
@@ -145,7 +145,7 @@ void StatisticsView::setStatistics(Statistics *s)
         }
         ++i;
     }
-    v = getAudioInfoValues(*s);
+    v = getAudioInfoValues(s);
     i = 0;
     foreach(QTreeWidgetItem* item, mAudioItems) {
         if (item->data(1, Qt::DisplayRole) != v.at(i)) {
@@ -172,7 +172,7 @@ void StatisticsView::timerEvent(QTimerEvent *e)
     if (e->timerId() != mTimer)
         return;
     if (mpFPS) {
-        mpFPS->setData(1, Qt::DisplayRole, QString::number(mpStatistics->video_only.currentDisplayFPS(), 'f', 2));
+        mpFPS->setData(1, Qt::DisplayRole, QString::number(mStatistics.video_only.currentDisplayFPS(), 'f', 2));
     }
 }
 
