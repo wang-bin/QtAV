@@ -59,7 +59,7 @@
 
 namespace QtAV {
 
-static const int kPosistionCheckMS = 800;
+static const int kPosistionCheckMS = 500;
 static const qint64 kSeekMS = 10000;
 
 AVPlayer::AVPlayer(QObject *parent) :
@@ -604,6 +604,9 @@ qint64 AVPlayer::duration() const
 
 qint64 AVPlayer::mediaStartPosition() const
 {
+    // check stopposition?
+    if (demuxer.startTime() >= mediaStopPosition())
+        return 0;
     return demuxer.startTime();
 }
 
@@ -683,7 +686,7 @@ void AVPlayer::setPosition(qint64 position)
         position += mediaStopPosition();
     qDebug("seek to %lld ms (%f%%)", position, double(position)/double(duration())*100.0);
     masterClock()->updateValue(double(position)/1000.0); //what is duration == 0
-    masterClock()->updateExternalClock(double(position)/1000.0); //in msec. ignore usec part using t/1000
+    masterClock()->updateExternalClock(position); //in msec. ignore usec part using t/1000
     demuxer_thread->seek(position);
 
     emit positionChanged(position);
