@@ -33,6 +33,7 @@ QtAV can meet your most demands
 - Dynamically change render engine when playing.
 - Multiple video outputs for 1 player
 - Region of interest(ROI), i.e. video cropping
+- Video eq: brightness, contrast, saturation
 - QML support as a plugin
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
   both FFmpeg(>=0.9) and [Libav](http://libav.org).
@@ -59,7 +60,7 @@ or [Libav](libav.org) (>=0.8) Latest version is recommanded.
 [![Libav](http://libav.org/libav-logo-text.png)](http://libav.org)
 
 2. [Qt 4 or 5](http://qt-project.org/downloads)  
-[![Qt](http://blog.qt.digia.com/wp-content/themes/qt_blog/images/Qt_master_logo_CMYK_noback.gif)](http://qt-project.org)
+[![Qt](http://qt-project.org/images/qt13a/Qt-logo.png)](http://qt-project.org)
 3. [PortAudio v19](http://www.portaudio.com/download.html)  
 [![PortAudio Logo](http://www.portaudio.com/images/portaudio_logo.png)](http://www.portaudio.com)[![PortAudio](http://www.portaudio.com/images/portaudio_logotext.png)](http://www.portaudio.com)
 
@@ -145,13 +146,20 @@ For End Users
 
 An simple player can be found in examples. The command line options is
 
-    player [-vo qt|gl|d2d|gdi|xv] [url/path]
+    player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[;vaapi[;ffmpeg]]"] [url|path|pipe:]
 
-You can choose a paint engine with _-vo_ option. For example, in windows that support Direct2D, you can run
+To disable audio output, add `-ao null`
+
+Choose a render engine with _-vo_ option(default is OpenGL). For example, in windows that support Direct2D, you can run
 
     player -vo d2d filename
 
-The default is Qt's paint engine.
+To select decoder, use `-vd` option. Value can be _dxva_, _vaapi_ and _ffmpeg_, or a list separated by `;` in priority order. For example:
+
+    player -vd "dxva;ffmpeg" filename
+
+will use dxva if dxva can decode, otherwise ffmpeg will be used.
+
 
 #### Default Shortcuts
 
@@ -228,7 +236,10 @@ Thanks
 
 [PayPal ![Paypal](http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0)
 
-[![Gittip](https://www.gittip.com/assets/10.1.48/logo.png)](https://www.gittip.com/wang-bin)
+[![Support via Gittip](https://rawgithub.com/twolfson/gittip-badge/0.1.0/dist/gittip.png)](https://www.gittip.com/wang-bin)
+
+
+[Gittip ![Gittip](https://www.gittip.com/assets/10.1.51/logo.png)](https://www.gittip.com/wang-bin)
 
 - - -
 
