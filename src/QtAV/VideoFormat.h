@@ -134,9 +134,9 @@ public:
     int bytesPerPixel(int plane) const;
 
     // return line size with given width
-    int bytesPerLine(int width, int plane);
-    int chromaWidth(int lumaWidth);
-    int chromaHeight(int lumaHeight);
+    int bytesPerLine(int width, int plane) const;
+    int chromaWidth(int lumaWidth) const;
+    int chromaHeight(int lumaHeight) const;
     // test AV_PIX_FMT_FLAG_XXX
     bool isBigEndian() const;
     bool hasPalette() const;

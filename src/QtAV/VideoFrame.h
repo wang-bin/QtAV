@@ -51,7 +51,7 @@ public:
      * Deep copy. If you want to copy data from somewhere, knowing the format, width and height,
      * then you can use clone().
      */
-    VideoFrame clone();
+    VideoFrame clone() const;
     /*!
      * Allocate memory with given format, width and height. planes and bytesPerLine will be set.
      * The memory can be initialized by user
