@@ -29,7 +29,9 @@
 #define PLAYLIST_H
 
 #include <QWidget>
+#include <QtCore/QModelIndex>
 #include "PlayListItem.h"
+
 class QListView;
 class QToolButton;
 class PlayListDelegate;

@@ -27,6 +27,7 @@
 
 #include "PlayListModel.h"
 #include "PlayListItem.h"
+#include <QtCore/QVector>
 
 PlayListModel::PlayListModel(QObject *parent) :
     QAbstractListModel(parent)
@@ -71,7 +72,11 @@ bool PlayListModel::setData(const QModelIndex &index, const QVariant &value, int
             && (role == Qt::EditRole || role == Qt::DisplayRole)) {
         // TODO: compare value?
         mItems.replace(index.row(), value.value<PlayListItem>());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
         emit dataChanged(index, index, QVector<int>() << role);
+#else
+        emit dataChanged(index, index);
+#endif
         return true;
     }
     return false;
