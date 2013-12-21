@@ -170,6 +170,7 @@ bool AVDemuxer::readFrame()
         //qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
         return false;
     }
+    pkt->hasKeyFrame = !!(packet.flags & AV_PKT_FLAG_KEY);
     pkt->data = QByteArray((const char*)packet.data, packet.size);
     pkt->duration = packet.duration;
     //if (packet.dts == AV_NOPTS_VALUE && )
@@ -179,7 +180,6 @@ bool AVDemuxer::readFrame()
         pkt->pts = packet.pts;
     else
         pkt->pts = 0;
-
     AVStream *stream = format_context->streams[stream_idx];
     pkt->pts *= av_q2d(stream->time_base);
     //TODO: pts must >= 0? look at ffplay

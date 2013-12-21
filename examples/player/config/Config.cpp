@@ -58,10 +58,13 @@ class Config::Data
 {
 public:
     Data() {
-        file = qApp->applicationDirPath() + "/QtAV.ini";
-        if (!QFile(file).exists()) {
-            file = QDir::homePath() + "/QtAV.ini";
+        dir = qApp->applicationDirPath() + "/data";
+        if (!QDir(dir).exists()) {
+            dir = QDir::homePath() + "/.QtAV";
+            if (!QDir(dir).exists())
+                QDir().mkpath(dir);
         }
+        file = dir + "/config.ini";
         load();
     }
     ~Data() {
@@ -76,9 +79,9 @@ public:
         QString decs_default("FFmpeg");
         QVector<QtAV::VideoDecoderId> all_decs_id = GetRegistedVideoDecoderIds();
         if (all_decs_id.contains(VideoDecoderId_DXVA))
-            decs_default.prepend("DXVA ");
+            decs_default.append(" DXVA ");
         if (all_decs_id.contains(VideoDecoderId_VAAPI))
-            decs_default.prepend("VAAPI");
+            decs_default.append(" VAAPI ");
         QString all_default = decs_default;
         QStringList all_names = idsToNames(all_decs_id);
         foreach (QString name, all_names) {
@@ -87,14 +90,18 @@ public:
         }
 
         QStringList decs = settings.value("priority", decs_default).toString().split(" ", QString::SkipEmptyParts);
+        if (decs.isEmpty())
+            decs = decs_default.split(" ", QString::SkipEmptyParts);
         all_names = settings.value("all", all_default).toString().split(" ", QString::SkipEmptyParts);
+        if (all_names.isEmpty())
+            all_names = all_default.split(" ", QString::SkipEmptyParts);
         video_decoder_priority = idsFromNames(decs);
         video_decoder_all = idsFromNames(all_names);
         settings.endGroup();
         settings.endGroup();
     }
     void save() {
-        qDebug("************save config************");
+        qDebug("************save config %s************", qPrintable(dir));
         QSettings settings(file, QSettings::IniFormat);
         settings.beginGroup("decoder");
         settings.beginGroup("video");
@@ -105,12 +112,19 @@ public:
         settings.endGroup();
     }
 
+    QString dir;
     QString file;
 
     int decode_threads;
     QVector<QtAV::VideoDecoderId> video_decoder_priority;
     QVector<QtAV::VideoDecoderId> video_decoder_all;
 };
+
+Config& Config::instance()
+{
+    static Config cfg;
+    return cfg;
+}
 
 Config::Config(QObject *parent)
     : QObject(parent)
@@ -121,6 +135,11 @@ Config::Config(QObject *parent)
 Config::~Config()
 {
     delete mpData;
+}
+
+QString Config::defaultDir() const
+{
+    return mpData->dir;
 }
 
 int Config::decodingThreads() const

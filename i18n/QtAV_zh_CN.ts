@@ -1,6 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="zh_CN">
+<TS version="2.1" language="zh_CN">
+<context>
+    <name>DefaultColorDialog</name>
+    <message>
+        <location filename="../qtc_packaging/QtAV1.2.4_msvc2010x86-Qt5GLES2+QML/bin/qml/QtQuick/Dialogs/DefaultColorDialog.qml" line="208"/>
+        <source>Hue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qtc_packaging/QtAV1.2.4_msvc2010x86-Qt5GLES2+QML/bin/qml/QtQuick/Dialogs/DefaultColorDialog.qml" line="229"/>
+        <source>Saturation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qtc_packaging/QtAV1.2.4_msvc2010x86-Qt5GLES2+QML/bin/qml/QtQuick/Dialogs/DefaultColorDialog.qml" line="245"/>
+        <source>Luminosity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qtc_packaging/QtAV1.2.4_msvc2010x86-Qt5GLES2+QML/bin/qml/QtQuick/Dialogs/DefaultColorDialog.qml" line="263"/>
+        <source>Alpha</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
 <context>
     <name>QObject</name>
     <message>
@@ -48,9 +71,14 @@
     </message>
     <message>
         <location filename="../src/QtAV_Global.cpp" line="151"/>
+        <source>Shanghai University-&gt;S3 Graphics, Shanghai, China
+</source>
+        <translation>上海大学-&gt;S3 Graphics, 中国, 上海</translation>
+    </message>
+    <message>
         <source>Shanghai University, Shanghai, China
 </source>
-        <translation>上海大学，中国上海
+        <translation type="obsolete">上海大学，中国上海
 </translation>
     </message>
     <message>

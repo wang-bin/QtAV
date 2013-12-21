@@ -1,0 +1,35 @@
+<h4>Command Line</h4>
+<pre><code>
+player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[;vaapi[;ffmpeg]]"] [url|path|pipe:]
+</code></pre>
+<p>To disable audio output, add <code>-ao null<code></p>
+<p>Choose a render engine with <em>-vo</em> option(default is OpenGL). For example, in windows that support Direct2D, you can run</p>
+<pre><code>player -vo d2d filename</code></pre>
+<p>To select decoder, use <code>-vd</code> option. Value can be <em>dxva</em>, <em>vaapi</em> and <code>ffmpeg</code>, or a list separated by <em>;</em> in priority order. For example:
+<pre><code>player -vd "dxva;ffmpeg" filename</code></pre>
+</p>
+<p>
+will use dxva if dxva can decode, otherwise ffmpeg will be used.
+</p>
+<h4>Shortcuts</h4>
+<ul>
+<li>Double click: fullscreen switch</li>
+<li>Ctrl+O: open a file</li>
+<li>Space: pause/continue</li>
+<li>F: fullscreen on/off</li>
+<li>I: switch display quality</li>
+<li>T: stays on top on/off</li>
+<li>N: show next frame. Continue the playing by pressing "Space"</li>
+<li>O: OSD</li>
+<li>P: replay</li>
+<li>Q/ESC: quit</li>
+<li>S: stop</li>
+<li>R: switch aspect ratio</li>
+<li>M: mute on/off</li>
+<li>Up / Down: volume + / -</li>
+<li>Ctrl+Up/Down: speed + / -</li>
+<li>-&gt; / &lt;-: seek forward / backward</li>
+<li>Drag and drop a media file to player</li>
+</ul>
+
+<p>read wiki for more information: <a>https://github.com/wang-bin/QtAV/wiki/_pages</a><p>

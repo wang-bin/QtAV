@@ -10,7 +10,6 @@ class AVPlayer;
 class AVClock;
 class VideoRenderer;
 }
-class Config;
 class QMenu;
 class QTimeEdit;
 class QVBoxLayout;
@@ -20,6 +19,7 @@ class QSpinBox;
 class QTimeEdit;
 class Button;
 class Slider;
+class PlayList;
 class DecoderConfigPage;
 class VideoEQConfigPage;
 class MainWindow : public QWidget
@@ -31,10 +31,10 @@ public:
     void enableAudio(bool yes = true);
     void setAudioOutput(QtAV::AudioOutput* ao);
     void setRenderer(QtAV::VideoRenderer* renderer);
-    void play(const QString& name);
     void setVideoDecoderNames(const QStringList& vd);
 
 public slots:
+    void play(const QString& name);
     void openFile();
     void togglePlayPause();
 
@@ -79,6 +79,7 @@ private slots:
     void onTimeSliderLeave();
 
 protected:
+    virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
     virtual void timerEvent(QTimerEvent *);
     void mouseMoveEvent(QMouseEvent *e);
@@ -128,9 +129,10 @@ private:
 
     QLabel *mpPreview;
 
-    Config *mpConfig;
     DecoderConfigPage *mpDecoderConfigPage;
     VideoEQConfigPage *mpVideoEQ;
+
+    PlayList *mpPlayList, *mpHistory;
 };
 
 #endif // MAINWINDOW_H

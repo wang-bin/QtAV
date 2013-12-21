@@ -180,16 +180,14 @@ bool AudioResamplerLibav::prepare()
     double *matrix = 0;
     if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Left) {
         remix = true;
-        matrix = new double[in_c*out_c];
-        memset(matrix, 0, sizeof(matrix));
+        matrix = (double*)calloc(in_c*out_c, sizeof(double));
         for (int o = 0; o < out_c; ++o) {
             matrix[0 + in_c * o] = 1;
         }
     }
     if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Right) {
         remix = true;
-        matrix = new double[in_c*out_c];
-        memset(matrix, 0, sizeof(matrix));
+        matrix = (double*)calloc(in_c*out_c, sizeof(double));
         for (int o = 0; o < out_c; ++o) {
             matrix[1 + in_c * o] = 1;
         }
@@ -197,8 +195,7 @@ bool AudioResamplerLibav::prepare()
     if (!remix && in_c < out_c) {
         remix = true;
         //double matrix[in_c*out_c]; //C99, VLA
-        matrix = new double[in_c*out_c];
-        memset(matrix, 0, sizeof(matrix));
+        matrix = (double*)calloc(in_c*out_c, sizeof(double));
         for (int i = 0, o = 0; o < out_c; ++o) {
             matrix[i + in_c * o] = 1;
             i = (i + i)%in_c;
@@ -206,9 +203,8 @@ bool AudioResamplerLibav::prepare()
     }
     if (remix && matrix) {
         avresample_set_matrix(d.context, matrix, in_c);
-        delete [] matrix;
+        free(matrix);
     }
-
 #else
     bool use_channel_map = false;
     if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Left) {

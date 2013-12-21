@@ -168,9 +168,9 @@ VideoFrame::~VideoFrame()
 {
 }
 
-VideoFrame VideoFrame::clone()
+VideoFrame VideoFrame::clone() const
 {
-    Q_D(VideoFrame);
+    Q_D(const VideoFrame);
     if (!d->format.isValid())
         return VideoFrame();
     VideoFrame f(width(), height(), d->format);

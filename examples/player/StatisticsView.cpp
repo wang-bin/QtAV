@@ -1,4 +1,5 @@
 #include "StatisticsView.h"
+#include <QtCore/QTimerEvent>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QLayout>
@@ -21,8 +22,6 @@ QStringList getCommonInfoKeys() {
             << QObject::tr("Codec")
             << QObject::tr("Total time")
             << QObject::tr("Start time")
-            << QObject::tr("FPS")
-            << QObject::tr("Average frame rate")
             << QObject::tr("Bit rate")
             << QObject::tr("Frames")
                ;
@@ -30,10 +29,11 @@ QStringList getCommonInfoKeys() {
 
 QStringList getVideoInfoKeys() {
     return getCommonInfoKeys()
+            << QObject::tr("FPS Now") //current display fps
+            << QObject::tr("FPS") // avg_frame_rate. guessed by FFmpeg
             << QObject::tr("Pixel format")
             << QObject::tr("Size") //w x h
             << QObject::tr("Coded size") // w x h
-            //<< QObject::tr("Pixel format")
             << QObject::tr("GOP size")
                ;
 }
@@ -63,10 +63,10 @@ QList<QVariant> getVideoInfoValues(const Statistics& s) {
             << s.video.codec + " (" + s.video.codec_long + ")"
             << s.video.total_time.toString("HH:mm:ss")
             << s.video.start_time.toString("HH:mm:ss")
-            << s.video.fps_guess
-            << s.video.avg_frame_rate
             << QString::number(s.video.bit_rate/1000) + " Kb/s"
             << s.video.frames
+            << s.video_only.avg_frame_rate //TODO: dynamic compute
+            << s.video_only.avg_frame_rate
             << s.video_only.pix_fmt
             << QString::number(s.video_only.width) + "x" + QString::number(s.video_only.height)
             << QString::number(s.video_only.coded_width) + "x" + QString::number(s.video_only.coded_height)
@@ -79,8 +79,6 @@ QList<QVariant> getAudioInfoValues(const Statistics& s) {
             << s.audio.codec + " (" + s.audio.codec_long + ")"
             << s.audio.total_time.toString("HH:mm:ss")
             << s.audio.start_time.toString("HH:mm:ss")
-            << s.audio.fps_guess
-            << s.audio.avg_frame_rate
             << QString::number(s.audio.bit_rate/1000) + " Kb/s"
             << s.audio.frames
             << s.audio_only.sample_fmt
@@ -94,6 +92,10 @@ QList<QVariant> getAudioInfoValues(const Statistics& s) {
 
 StatisticsView::StatisticsView(QWidget *parent) :
     QDialog(parent)
+  , mTimer(0)
+  , mpFPS(0)
+  , mpAudioBitRate(0)
+  , mpVideoBitRate(0)
 {
     setWindowTitle(tr("Media info"));
     setModal(false);
@@ -103,8 +105,13 @@ StatisticsView::StatisticsView(QWidget *parent) :
     mpView->setColumnCount(2);
     initBaseItems(&mBaseItems);
     mpView->addTopLevelItems(mBaseItems);
-    mpView->addTopLevelItem(createNodeWithItems(mpView, QObject::tr("Video"), getVideoInfoKeys(), &mVideoItems));
-    mpView->addTopLevelItem(createNodeWithItems(mpView, QObject::tr("Audio"), getAudioInfoKeys(), &mAudioItems));
+    QTreeWidgetItem *item = createNodeWithItems(mpView, QObject::tr("Video"), getVideoInfoKeys(), &mVideoItems);
+    mpFPS = item->child(6);
+    //mpVideoBitRate =
+    mpView->addTopLevelItem(item);
+    item = createNodeWithItems(mpView, QObject::tr("Audio"), getAudioInfoKeys(), &mAudioItems);
+    //mpAudioBitRate =
+    mpView->addTopLevelItem(item);
     mpView->resizeColumnToContents(0); //call this after content is done
 
     QPushButton *btn = new QPushButton(QObject::tr("Ok"));
@@ -119,8 +126,9 @@ StatisticsView::StatisticsView(QWidget *parent) :
     setLayout(vl);
 }
 
-void StatisticsView::setStatistics(const Statistics &s)
+void StatisticsView::setStatistics(const Statistics& s)
 {
+    mStatistics = s;
     QVariantList v = getBaseInfoValues(s);
     int i = 0;
     foreach(QTreeWidgetItem* item, mBaseItems) {
@@ -144,6 +152,27 @@ void StatisticsView::setStatistics(const Statistics &s)
             item->setData(1, Qt::DisplayRole, v.at(i));
         }
         ++i;
+    }
+}
+
+void StatisticsView::hideEvent(QHideEvent *e)
+{
+    QDialog::hideEvent(e);
+    killTimer(mTimer);
+}
+
+void StatisticsView::showEvent(QShowEvent *e)
+{
+    QDialog::showEvent(e);
+    mTimer = startTimer(1000);
+}
+
+void StatisticsView::timerEvent(QTimerEvent *e)
+{
+    if (e->timerId() != mTimer)
+        return;
+    if (mpFPS) {
+        mpFPS->setData(1, Qt::DisplayRole, QString::number(mStatistics.video_only.currentDisplayFPS(), 'f', 2));
     }
 }
 

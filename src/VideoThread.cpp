@@ -180,18 +180,34 @@ void VideoThread::run()
             continue;
         }
         qreal pts = pkt.pts;
+        // TODO: delta ref time
         d.delay = pts - d.clock->value();
         /*
          *after seeking forward, a packet may be the old, v packet may be
          *the new packet, then the d.delay is very large, omit it.
          *TODO: 1. how to choose the value
          * 2. use last delay when seeking
+         * 3. compute average decode time
         */
         bool skip_render = false;
-        if (qAbs(d.delay) < 2.718) {
+        if (qAbs(d.delay) < 0.5) {
             if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
             }
+
+        } else { //when to drop off?
+            //qDebug("delay %f/%f", d.delay, d.clock->value());
+            if (d.delay < 0) {
+                // FIXME: if continue without decoding, hw decoding may crash, why?
+                if (!pkt.hasKeyFrame) {
+                    //pkt = Packet();
+                    //continue; //may crash if hw
+                }
+                skip_render = !pkt.hasKeyFrame;
+            }
+        }
+        //audio packet not cleaned up?
+        if (d.delay < 3) {
             while (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
                 //qDebug("~~~~~wating for %f msecs", d.delay*1000);
@@ -203,21 +219,14 @@ void VideoThread::run()
             }
             if (d.delay > 0)
                 usleep(d.delay * 1000000UL);
-        } else { //when to drop off?
-            qDebug("delay %f/%f", d.delay, d.clock->value());
-            if (d.delay > 0) {
-                msleep(64);
-            } else {
-                // FIXME: if continue without decoding, hw decoding may crash, why?
-                //audio packet not cleaned up?
-                //continue;
-                skip_render = true;
+            d.clock->updateVideoPts(pts); //here?
+            if (d.stop) {
+                qDebug("video thread stop before decode()");
+                break;
             }
-        }
-        d.clock->updateVideoPts(pts); //here?
-        if (d.stop) {
-            qDebug("video thread stop before decode()");
-            break;
+        } else {
+            if (d.delay > 0)
+                msleep(40);
         }
 
         if (!dec->decode(pkt.data)) {
@@ -243,6 +252,8 @@ void VideoThread::run()
         frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
+        //TODO: add current time instead of pts
+        d.statistics->video_only.putPts(pts);
         {
             QMutexLocker locker(&d.mutex);
             Q_UNUSED(locker);

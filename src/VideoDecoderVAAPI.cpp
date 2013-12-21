@@ -194,6 +194,7 @@ VideoFrame VideoDecoderVAAPI::frame()
             pp_plane[i] = (uint8_t*)p_base + d.image.offsets[i];
             pi_pitch[i] = d.image.pitches[i];
         }
+
         frame = VideoFrame(d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
         frame.setBits(pp_plane);
         frame.setBytesPerLine(pi_pitch);
@@ -206,7 +207,9 @@ VideoFrame VideoDecoderVAAPI::frame()
         vaDestroyImage(d.display, d.image.image_id);
         d.image.image_id = VA_INVALID_ID;
     }
-    return frame;
+    // TODO: why clone is faster()?
+    // http://software.intel.com/en-us/articles/copying-accelerated-video-decode-frame-buffers
+    return frame.clone();
 }
 
 
@@ -222,24 +225,24 @@ bool VideoDecoderVAAPIPrivate::open()
     int i_nb_surfaces;
     /* */
     switch (codec_ctx->codec_id) {
-    case AV_CODEC_ID_MPEG1VIDEO:
-    case AV_CODEC_ID_MPEG2VIDEO:
+    case CODEC_ID_MPEG1VIDEO:
+    case CODEC_ID_MPEG2VIDEO:
         i_profile = VAProfileMPEG2Main;
         i_nb_surfaces = 2+1;
         break;
-    case AV_CODEC_ID_MPEG4:
+    case CODEC_ID_MPEG4:
         i_profile = VAProfileMPEG4AdvancedSimple;
         i_nb_surfaces = 2+1;
         break;
-    case AV_CODEC_ID_WMV3:
+    case CODEC_ID_WMV3:
         i_profile = VAProfileVC1Main;
         i_nb_surfaces = 2+1;
         break;
-    case AV_CODEC_ID_VC1:
+    case CODEC_ID_VC1:
         i_profile = VAProfileVC1Advanced;
         i_nb_surfaces = 2+1;
         break;
-    case AV_CODEC_ID_H264:
+    case CODEC_ID_H264:
         i_profile = VAProfileH264High;
         i_nb_surfaces = 16+1;
         break;
@@ -366,11 +369,13 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
             p_fmt[i].fourcc == VA_FOURCC('N', 'V', '1', '2')) {
             if (vaCreateImage(display, &p_fmt[i], w, h, &image)) {
                 image.image_id = VA_INVALID_ID;
+                qDebug("vaCreateImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 continue;
             }
             /* Validate that vaGetImage works with this format */
             if (vaGetImage(display, pi_surface_id[0], 0, 0, w, h, image.image_id)) {
                 vaDestroyImage(display, image.image_id);
+                qDebug("vaGetImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 image.image_id = VA_INVALID_ID;
                 continue;
             }
@@ -501,6 +506,7 @@ bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
 
     p_surface->i_refcount = 1;
     p_surface->i_order = surface_order++;
+    //FIXME: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
     *data = (uint8_t*)p_surface->i_id; ///??
     *opaque = p_surface;
 

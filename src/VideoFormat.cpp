@@ -95,7 +95,7 @@ public:
             return 0;
         return pixdesc->flags;
     }
-    int bytesPerLine(int width, int plane) {
+    int bytesPerLine(int width, int plane) const {
         return av_image_get_linesize(pixfmt_ff, width, plane);
     }
 
@@ -541,17 +541,17 @@ int VideoFormat::bytesPerPixel(int plane) const
     return (bitsPerPixel(plane) + 7) >> 3;
 }
 
-int VideoFormat::bytesPerLine(int width, int plane)
+int VideoFormat::bytesPerLine(int width, int plane) const
 {
     return d->bytesPerLine(width, plane);
 }
 
-int VideoFormat::chromaWidth(int lumaWidth)
+int VideoFormat::chromaWidth(int lumaWidth) const
 {
     return -((-lumaWidth) >> d->pixdesc->log2_chroma_w);
 }
 
-int VideoFormat::chromaHeight(int lumaHeight)
+int VideoFormat::chromaHeight(int lumaHeight) const
 {
     return -((-lumaHeight) >> d->pixdesc->log2_chroma_h);
 }
