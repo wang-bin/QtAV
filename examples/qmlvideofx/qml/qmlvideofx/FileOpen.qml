@@ -43,7 +43,7 @@ import QtQuick 2.0
 
 Rectangle {
     id: root
-    color: "white"
+    color: "#80101010"
     property int buttonHeight: 35
     property int topMargin: 0
 

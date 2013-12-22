@@ -41,15 +41,15 @@
 
 import QtQuick 2.0
 
-Rectangle {
+Item {
     id: root
-    color: textColor
-    radius: 0.25 * height
+    //color: textColor
+    //radius: 0.25 * height
 
     property string text
-    property color bgColor: "white"
-    property color bgColorSelected: "red"
-    property color textColor: "black"
+    property color bgColor: "#00000000"
+    property color bgColorSelected: "#2000ff00"
+    property color textColor: "white"
     property alias enabled: mouseArea.enabled
 
     signal clicked
@@ -57,14 +57,14 @@ Rectangle {
     Rectangle {
         anchors { fill: parent; margins: 1 }
         color: mouseArea.pressed ? bgColorSelected : bgColor
-        radius: 0.25 * height
+        //radius: 0.25 * height
 
         Text {
             id: text
             anchors.centerIn: parent
             text: root.text
             font.pixelSize: 0.5 * parent.height
-            color: mouseArea.pressed ? bgColor : textColor
+            color: textColor
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }
