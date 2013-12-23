@@ -134,13 +134,19 @@ void AVDemuxThread::seek(qint64 pos)
         video_thread->packetQueue()->clear();
     }
     demuxer->seek(pos);
-    if (audio_thread)
+    // TODO: why queue may not empty?
+    if (audio_thread) {
+        audio_thread->packetQueue()->clear();
         audio_thread->packetQueue()->put(Packet());
-    if (video_thread)
+    }
+    if (video_thread) {
+        video_thread->packetQueue()->clear();
         video_thread->packetQueue()->put(Packet());
-    //if (subtitle_thread)
+    }
+    //if (subtitle_thread) {
+    //     subtitle_thread->packetQueue()->clear();
     //    subtitle_thread->packetQueue()->put(Packet());
-
+    //}
     seeking = false;
     seek_cond.wakeAll();
     if (isPaused()) {

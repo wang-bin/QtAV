@@ -153,6 +153,11 @@ void VideoThread::run()
         dec->resizeVideoFrame(0, 0);
     }
     Packet pkt;
+    /*!
+     * if we skip some frames(e.g. seek, drop frames to speed up), then then first frame to decode must
+     * be a key frame for hardware decoding. otherwise may crash
+     */
+    bool wait_key_frame = false;
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -175,7 +180,9 @@ void VideoThread::run()
         }
         //Compare to the clock
         if (!pkt.isValid()) {
-            qDebug("Invalid packet! flush video codec context!!!!!!!!!!");
+            // may be we should check other information. invalid packet can come from
+            wait_key_frame = true;
+            qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());
             dec->flush();
             continue;
         }
@@ -198,10 +205,11 @@ void VideoThread::run()
         } else { //when to drop off?
             //qDebug("delay %f/%f", d.delay, d.clock->value());
             if (d.delay < 0) {
-                // FIXME: if continue without decoding, hw decoding may crash, why?
                 if (!pkt.hasKeyFrame) {
+                    // if continue without decoding, we must wait to the next key frame, then we may skip to many frames
+                    //wait_key_frame = true;
                     //pkt = Packet();
-                    //continue; //may crash if hw
+                    //continue;
                 }
                 skip_render = !pkt.hasKeyFrame;
             }
@@ -228,7 +236,15 @@ void VideoThread::run()
             if (d.delay > 0)
                 msleep(40);
         }
-
+        if (wait_key_frame) {
+            if (pkt.hasKeyFrame)
+                wait_key_frame = false;
+            else {
+                pkt = Packet();
+                //qDebug("waiting for key frame. queue size: %d. pkt.size: %d", d.packets.size(), pkt.data.size());
+                continue;
+            }
+        }
         if (!dec->decode(pkt.data)) {
             pkt = Packet();
             continue;
