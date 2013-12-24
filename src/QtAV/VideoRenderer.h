@@ -128,6 +128,18 @@ public:
     // compute the real ROI
     QRect realROI() const;
 
+    // TODO: map normalized
+    /*!
+     * \brief mapToFrame
+     *  map point in VideoRenderer coordinate to VideoFrame, with current ROI
+     */
+    QPointF mapToFrame(const QPointF& p) const;
+    /*!
+     * \brief mapFromFrame
+     *  map point in VideoFrame coordinate to VideoRenderer, with current ROI
+     */
+    QPointF mapFromFrame(const QPointF& p) const;
+
     QWidget* widget();
     QGraphicsItem* graphicsItem();
 
@@ -171,6 +183,7 @@ private:
     //qreal sourceAspectRatio() const;//TODO: from AVCodecContext
     //we don't need api like QSize sourceSize() const. you should get them from player or avinfo(not implemented)
 };
+typedef VideoRenderer VideoOutput;
 
 } //namespace QtAV
 #endif // QAV_VIDEORENDERER_H

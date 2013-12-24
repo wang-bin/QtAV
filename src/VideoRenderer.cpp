@@ -234,6 +234,25 @@ QRect VideoRenderer::realROI() const
     return r;
 }
 
+QPointF VideoRenderer::mapToFrame(const QPointF &p) const
+{
+    QRectF roi = realROI();
+    // zoom=roi.w/roi.h>vo.w/vo.h?roi.w/vo.w:roi.h/vo.h
+    qreal zoom = qMax(roi.width()/rendererWidth(), roi.height()/rendererHeight());
+    QPointF delta = p - QPointF(rendererWidth()/2, rendererHeight()/2);
+    return roi.center() + delta * zoom;
+}
+
+QPointF VideoRenderer::mapFromFrame(const QPointF &p) const
+{
+    QRectF roi = realROI();
+    // zoom=roi.w/roi.h>vo.w/vo.h?roi.w/vo.w:roi.h/vo.h
+    qreal zoom = qMax(roi.width()/rendererWidth(), roi.height()/rendererHeight());
+    // (p-roi.c)/zoom + c
+    QPointF delta = p - roi.center();
+    return QPointF(rendererWidth()/2, rendererHeight()/2) + delta / zoom;
+}
+
 QWidget* VideoRenderer::widget()
 {
     return d_func().widget_holder;
