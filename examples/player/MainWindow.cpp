@@ -63,6 +63,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mHasPendingPlay(false)
   , mNullAO(false)
   , mScreensaver(true)
+  , mControlOn(false)
   , mShowControl(2)
   , mRepeateMax(0)
   , mpPlayer(0)
@@ -803,6 +804,23 @@ void MainWindow::repeatBChanged(const QTime& t)
     mpPlayer->setStopPosition(QTime(0, 0, 0).msecsTo(t));
 }
 
+void MainWindow::keyPressEvent(QKeyEvent *e)
+{
+    mControlOn = e->key() == Qt::Key_Control;
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *e)
+{
+    mControlOn = false;
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *e)
+{
+    if (!mControlOn)
+        return;
+    mGlobalMouse = e->globalPos();
+}
+
 void MainWindow::mouseMoveEvent(QMouseEvent *e)
 {
     unsetCursor();
@@ -817,6 +835,47 @@ void MainWindow::mouseMoveEvent(QMouseEvent *e)
             QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
         }
     }
+    if (mControlOn && e->button() == Qt::LeftButton) {
+        if (!mpRenderer || !mpRenderer->widget())
+            return;
+        QRectF roi = mpRenderer->realROI();
+        QPointF delta = e->pos() - mGlobalMouse;
+        roi.moveLeft(-delta.x());
+        roi.moveTop(-delta.y());
+        mpRenderer->setRegionOfInterest(roi);
+    }
+}
+
+void MainWindow::wheelEvent(QWheelEvent *e)
+{
+    if (!mControlOn)
+        return;
+    if (!mpRenderer || !mpRenderer->widget()) {
+        return;
+    }
+    QPointF p = mpRenderer->widget()->mapFrom(this, e->pos());
+    QPointF fp = mpRenderer->mapToFrame(p);
+    if (fp.x() < 0)
+        fp.setX(0);
+    if (fp.y() < 0)
+        fp.setY(0);
+    if (fp.x() > mpRenderer->frameSize().width())
+        fp.setX(mpRenderer->frameSize().width());
+    if (fp.y() > mpRenderer->frameSize().height())
+        fp.setY(mpRenderer->frameSize().height());
+
+    QRectF viewport = QRectF(mpRenderer->mapToFrame(QPointF(0, 0)), mpRenderer->mapToFrame(QPointF(mpRenderer->rendererWidth(), mpRenderer->rendererHeight())));
+    //qDebug("vo: (%.1f, %.1f)=> frame: (%.1f, %.1f)", p.x(), p.y(), fp.x(), fp.y());
+
+    qreal deg = e->angleDelta().y()/8;
+    qreal zoom = 1.0 + deg*3.14/180.0;
+    //qDebug("deg: %d, %d zoom: %.2f", e->angleDelta().x(), e->angleDelta().y(), zoom);
+    QTransform m;
+    m.translate(fp.x(), fp.y());
+    m.scale(1.0/zoom, 1.0/zoom);
+    m.translate(-fp.x(), -fp.y());
+    QRectF r = m.mapRect(mpRenderer->realROI());
+    mpRenderer->setRegionOfInterest((r | m.mapRect(viewport))&QRectF(QPointF(0,0), mpRenderer->frameSize()));
 }
 
 void MainWindow::about()

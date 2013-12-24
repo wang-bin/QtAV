@@ -82,7 +82,11 @@ protected:
     virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
     virtual void timerEvent(QTimerEvent *);
+    virtual void keyPressEvent(QKeyEvent *e);
+    virtual void keyReleaseEvent(QKeyEvent *e);
+    void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
+    void wheelEvent(QWheelEvent *e);
 #ifdef Q_OS_WIN
     //Qt5
     virtual bool nativeEvent(const QByteArray & eventType, void * message, long * result);
@@ -94,6 +98,7 @@ private:
     bool mIsReady, mHasPendingPlay;
     bool mNullAO;
     bool mScreensaver;
+    bool mControlOn;
     int mCursorTimer;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
     int mRepeateMax;
@@ -133,6 +138,8 @@ private:
     VideoEQConfigPage *mpVideoEQ;
 
     PlayList *mpPlayList, *mpHistory;
+
+    QPointF mGlobalMouse;
 };
 
 #endif // MAINWINDOW_H
