@@ -18,6 +18,8 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QToolTip>
+#include <QKeyEvent>
+#include <QWheelEvent>
 #include <QtAV/QtAV.h>
 #include "Button.h"
 #include "ClickableMenu.h"
