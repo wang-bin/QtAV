@@ -61,7 +61,8 @@ public:
      * \param b slice
      * \param plane color/audio channel
      */
-    void setBits(uchar* b, int plane = 0);
+    // TODO: const?
+    void setBits(uchar *b, int plane = 0);
     void setBits(const QVector<uchar*>& b);
     void setBits(quint8 *slice[]);
     /*

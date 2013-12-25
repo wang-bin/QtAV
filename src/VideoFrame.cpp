@@ -141,6 +141,9 @@ VideoFrame::VideoFrame(const QVector<int>& textures, int width, int height, cons
 VideoFrame::VideoFrame(const QImage& image)
     : Frame(*new VideoFramePrivate(image.width(), image.height(), VideoFormat(image.format())))
 {
+    // TODO: call const image.bits()?
+    setBits((uchar*)image.bits(), 0);
+    setBytesPerLine(image.bytesPerLine(), 0);
 }
 
 /*!
