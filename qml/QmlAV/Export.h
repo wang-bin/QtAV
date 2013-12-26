@@ -24,7 +24,7 @@
 
 #include <qglobal.h>
 
-#if defined(BUILD_QMLAV)
+#if defined(BUILD_QMLAV_LIB)
 #  undef QMLAV_EXPORT
 #  define QMLAV_EXPORT Q_DECL_EXPORT
 #else
