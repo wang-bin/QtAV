@@ -38,7 +38,6 @@ class Q_AV_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
     DPTR_DECLARE_PRIVATE(Direct2DRenderer)
 public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual ~Direct2DRenderer();
     virtual VideoRendererId id() const;
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require

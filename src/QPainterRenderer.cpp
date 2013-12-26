@@ -41,10 +41,6 @@ QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
     setOSDFilter(new OSDFilterQPainter());
 }
 
-QPainterRenderer::~QPainterRenderer()
-{
-}
-
 int QPainterRenderer::filterContextType() const
 {
     return FilterContext::QtPainter;

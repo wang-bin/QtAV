@@ -46,10 +46,6 @@ XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
     setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
-XVRenderer::~XVRenderer()
-{
-}
-
 bool XVRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(XVRenderer);

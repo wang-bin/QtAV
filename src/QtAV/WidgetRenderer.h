@@ -34,7 +34,6 @@ class Q_AV_EXPORT WidgetRenderer : public QWidget, public QPainterRenderer
     DPTR_DECLARE_PRIVATE(WidgetRenderer)
 public:
     explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
-    virtual ~WidgetRenderer();
     virtual VideoRendererId id() const;
 signals:
     void imageReady();

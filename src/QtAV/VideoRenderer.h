@@ -76,7 +76,7 @@ public:
     };
 
     VideoRenderer();
-    virtual ~VideoRenderer() = 0;
+    virtual ~VideoRenderer();
     virtual VideoRendererId id() const = 0;
 
     bool receive(const VideoFrame& frame);

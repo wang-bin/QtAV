@@ -34,7 +34,6 @@ class Q_AV_EXPORT XVRenderer : public QWidget, public VideoRenderer
     DPTR_DECLARE_PRIVATE(XVRenderer)
 public:
     XVRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual ~XVRenderer();
     virtual VideoRendererId id() const;
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require

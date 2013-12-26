@@ -171,10 +171,6 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     setOSDFilter(new OSDFilterQPainter());
 }
 
-GLWidgetRenderer::~GLWidgetRenderer()
-{
-}
-
 bool GLWidgetRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GLWidgetRenderer);

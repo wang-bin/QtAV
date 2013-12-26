@@ -41,7 +41,6 @@ class Q_AV_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterR
     DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)
 public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
-    virtual ~GraphicsItemRenderer();
     virtual VideoRendererId id() const;
 
     QRectF boundingRect() const;

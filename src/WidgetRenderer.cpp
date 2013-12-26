@@ -69,10 +69,6 @@ WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::Wi
     connect(this, SIGNAL(imageReady()), SLOT(update()));
 }
 
-WidgetRenderer::~WidgetRenderer()
-{
-}
-
 bool WidgetRenderer::receiveFrame(const VideoFrame &frame)
 {
     prepareFrame(frame);

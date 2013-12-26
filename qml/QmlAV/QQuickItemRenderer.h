@@ -48,7 +48,6 @@ public:
     };
 
     explicit QQuickItemRenderer(QQuickItem *parent = 0);
-    ~QQuickItemRenderer() {}
     virtual VideoRendererId id() const;
     virtual bool receiveFrame(const VideoFrame &frame);
 

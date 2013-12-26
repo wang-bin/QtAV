@@ -52,10 +52,6 @@ GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGrap
 #endif //CONFIG_GRAPHICSWIDGET
 }
 
-GraphicsItemRenderer::~GraphicsItemRenderer()
-{
-}
-
 bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
 {
     prepareFrame(frame);

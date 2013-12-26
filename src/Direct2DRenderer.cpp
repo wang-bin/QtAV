@@ -43,10 +43,6 @@ Direct2DRenderer::Direct2DRenderer(QWidget *parent, Qt::WindowFlags f):
     setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
-Direct2DRenderer::~Direct2DRenderer()
-{
-}
-
 bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(Direct2DRenderer);

@@ -34,7 +34,6 @@ class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer)
 public:
     GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
-    virtual ~GLWidgetRenderer();
     virtual VideoRendererId id() const;
 
 protected:

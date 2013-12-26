@@ -48,10 +48,6 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
-GDIRenderer::~GDIRenderer()
-{
-}
-
 QPaintEngine* GDIRenderer::paintEngine() const
 {
     return 0;
