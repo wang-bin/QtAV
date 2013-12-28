@@ -154,4 +154,38 @@ QString aboutQtAV_HTML()
     return about;
 }
 
+void setFFmpegLogHandler(void (*callback)(void *, int, const char *, va_list))
+{
+    av_log_set_callback(callback);
+}
+
+static void qtav_ffmpeg_log_callback(void* , int level,const char* fmt, va_list vl)
+{
+    QString qmsg = "{FFmpeg} " + QString().vsprintf(fmt, vl);
+    qmsg = qmsg.trimmed();
+    QtMsgType mt = QtDebugMsg;
+    if (level == AV_LOG_WARNING || level == AV_LOG_ERROR)
+        mt = QtWarningMsg;
+    else if (level == AV_LOG_FATAL)
+        mt = QtCriticalMsg;
+    else if (level == AV_LOG_PANIC)
+        mt = QtFatalMsg;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    QMessageLogContext ctx;
+    qt_message_output(mt, ctx, qmsg);
+#else
+    qt_message_output(mt, qPrintable(qmsg));
+#endif //QT_VERSION
+}
+
+// TODO: static link. move all into 1
+namespace {
+class InitFFmpegLog {
+public:
+    InitFFmpegLog() {
+        setFFmpegLogHandler(qtav_ffmpeg_log_callback);
+    }
+};
+InitFFmpegLog fflog;
+}
 }

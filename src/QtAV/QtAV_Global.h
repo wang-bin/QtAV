@@ -23,6 +23,7 @@
 #ifndef QTAV_GLOBAL_H
 #define QTAV_GLOBAL_H
 
+#include <stdarg.h>
 #include <qglobal.h>
 #include "dptr.h"
 
@@ -46,6 +47,8 @@ Q_AV_EXPORT QString aboutFFmpeg_HTML();
 Q_AV_EXPORT void aboutQtAV();
 Q_AV_EXPORT QString aboutQtAV_PlainText();
 Q_AV_EXPORT QString aboutQtAV_HTML();
+
+Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
 }
 
 /*
