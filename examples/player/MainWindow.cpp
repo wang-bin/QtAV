@@ -869,7 +869,11 @@ void MainWindow::wheelEvent(QWheelEvent *e)
     QRectF viewport = QRectF(mpRenderer->mapToFrame(QPointF(0, 0)), mpRenderer->mapToFrame(QPointF(mpRenderer->rendererWidth(), mpRenderer->rendererHeight())));
     //qDebug("vo: (%.1f, %.1f)=> frame: (%.1f, %.1f)", p.x(), p.y(), fp.x(), fp.y());
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     qreal deg = e->angleDelta().y()/8;
+#else
+    qreal deg = e->delta()/8;
+#endif //QT_VERSION
     qreal zoom = 1.0 + deg*3.14/180.0;
     //qDebug("deg: %d, %d zoom: %.2f", e->angleDelta().x(), e->angleDelta().y(), zoom);
     QTransform m;
