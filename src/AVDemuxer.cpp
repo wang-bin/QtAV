@@ -368,8 +368,9 @@ bool AVDemuxer::loadFile(const QString &fileName)
     //if(av_open_input_file(&format_context, _file_name.toLocal8Bit().constData(), NULL, 0, NULL)) {
 
     //alloc av format context
-    if(!format_context)
+    if (!format_context)
         format_context = avformat_alloc_context();
+    format_context->flags |= AVFMT_FLAG_GENPTS;
 
     //install interrupt callback
     format_context->interrupt_callback = *mpInterrup;
@@ -387,7 +388,6 @@ bool AVDemuxer::loadFile(const QString &fileName)
         qWarning("Can't open media: %s", av_err2str(ret));
         return false;
     }
-    format_context->flags |= AVFMT_FLAG_GENPTS;
     //deprecated
     //if(av_find_stream_info(format_context)<0) {
     //TODO: avformat_find_stream_info is too slow, only useful for some video format

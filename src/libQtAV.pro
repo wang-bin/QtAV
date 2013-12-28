@@ -143,6 +143,7 @@ SOURCES += \
     OSD.cpp \
     OSDFilter.cpp \
     Packet.cpp \
+    AVError.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
     VideoFormat.cpp \
@@ -184,6 +185,7 @@ SDK_HEADERS *= \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
     QtAV/Packet.h \
+    QtAV/AVError.h \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
     QtAV/VideoRenderer.h \
