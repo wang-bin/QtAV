@@ -69,9 +69,9 @@ private:
     int mFFmpegError;
 };
 
-Q_DECLARE_METATYPE(AVError)
-
 } //namespace QtAV
+
+Q_DECLARE_METATYPE(QtAV::AVError)
 
 #ifndef QT_NO_DEBUG_STREAM
 class QDebug;
