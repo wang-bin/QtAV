@@ -25,6 +25,7 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/version.h>
 
+#include <QtAV/AVError.h>
 #include <QtAV/AVClock.h>
 #include <QtAV/AVDecoder.h>
 #include <QtAV/AVDemuxer.h>

@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/AVError.h>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include <QtCore/QThread>
@@ -32,11 +33,19 @@ const qint64 kSeekInterval = 168; //ms
 class AVDemuxer::InterruptHandler : public AVIOInterruptCB
 {
 public:
+    enum Action {
+        Open,
+        FindStreamInfo,
+        Read
+    };
+
     //default network timeout: 30000
-    InterruptHandler(int timeout = 30000)
+    InterruptHandler(AVDemuxer* demuxer, int timeout = 30000)
       : mStatus(0)
       , mTimeout(timeout)
       //, mLastTime(0)
+      , mAction(Open)
+      , mpDemuxer(demuxer)
     {
         callback = handleTimeout;
         opaque = this;
@@ -44,7 +53,10 @@ public:
     ~InterruptHandler() {
         mTimer.invalidate();
     }
-    void begin() { mTimer.start(); }
+    void begin(Action act) {
+        mAction = act;
+        mTimer.start();
+    }
     void end() { mTimer.invalidate(); }
     qint64 getTimeout() const { return mTimeout; }
     void setTimeout(qint64 timeout) { mTimeout = timeout; }
@@ -80,12 +92,23 @@ public:
         }
         qDebug("Timeout expired: %lld/%lld -> quit!", handler->mTimer.elapsed(), handler->mTimeout);
         handler->mTimer.invalidate();
+        AVError err;
+        if (handler->mAction == Open) {
+            err.setError(AVError::OpenTimedout);
+        } else if (handler->mAction == FindStreamInfo) {
+            err.setError(AVError::FindStreamInfoTimedout);
+        } else if (handler->mAction == Read) {
+            err.setError(AVError::ReadTimedout);
+        }
+        QMetaObject::invokeMethod(handler->mpDemuxer, "error", Qt::AutoConnection, Q_ARG(QtAV::AVError, err));
         return 1;
     }
 private:
     int mStatus;
     qint64 mTimeout;
     //qint64 mLastTime;
+    Action mAction;
+    AVDemuxer *mpDemuxer;
     QElapsedTimer mTimer;
 };
 
@@ -112,7 +135,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AnyFrame)
 {
-    mpInterrup = new InterruptHandler();
+    mpInterrup = new InterruptHandler(this);
     if (!_file_name.isEmpty())
         loadFile(_file_name);
 }
@@ -133,7 +156,7 @@ bool AVDemuxer::readFrame()
     Q_UNUSED(lock);
     AVPacket packet;
 
-    mpInterrup->begin();
+    mpInterrup->begin(InterruptHandler::Read);
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
     mpInterrup->end();
 
@@ -153,9 +176,12 @@ bool AVDemuxer::readFrame()
             //return true;
             return false; //frames after eof are eof frames
         } else if (ret == AVERROR_INVALIDDATA) {
+            emit error(AVError(AVError::ReadError, ret));
             qWarning("AVERROR_INVALIDDATA");
         } else if (ret == AVERROR(EAGAIN)) {
             return true;
+        } else {
+            emit error(AVError(AVError::ReadError, ret));
         }
         qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         return false;
@@ -377,7 +403,7 @@ bool AVDemuxer::loadFile(const QString &fileName)
 
     qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
 
-    mpInterrup->begin();
+    mpInterrup->begin(InterruptHandler::Open);
     int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, NULL);
     mpInterrup->end();
 
@@ -385,17 +411,21 @@ bool AVDemuxer::loadFile(const QString &fileName)
 
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
-        qWarning("Can't open media: %s", av_err2str(ret));
+        AVError err(AVError::OpenError, ret);
+        emit error(err);
+        qWarning("Can't open media: %s", qPrintable(err.string()));
         return false;
     }
     //deprecated
     //if(av_find_stream_info(format_context)<0) {
     //TODO: avformat_find_stream_info is too slow, only useful for some video format
-    mpInterrup->begin();
+    mpInterrup->begin(InterruptHandler::FindStreamInfo);
     ret = avformat_find_stream_info(format_context, NULL);
     mpInterrup->end();
     if (ret < 0) {
-        qWarning("Can't find stream info: %s", av_err2str(ret));
+        AVError err(AVError::FindStreamInfoError, ret);
+        emit error(err);
+        qWarning("Can't find stream info: %s", qPrintable(err.string()));
         return false;
     }
 

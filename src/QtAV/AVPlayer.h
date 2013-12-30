@@ -29,6 +29,7 @@
 
 namespace QtAV {
 
+class AVError;
 class AVOutput;
 class AudioOutput;
 class AVThread;
@@ -178,6 +179,7 @@ public:
     int saturation() const;
 
 signals:
+    void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void paused(bool p);
     void started();
     void stopped();

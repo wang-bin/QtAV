@@ -63,6 +63,11 @@ bool AVError::operator==(const AVError& other) const
     return (mError == other.mError && mFFmpegError == other.mFFmpegError);
 }
 
+void AVError::setError(ErrorCode ec)
+{
+    mError = ec;
+}
+
 AVError::ErrorCode AVError::error() const
 {
     return mError;

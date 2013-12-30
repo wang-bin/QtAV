@@ -44,6 +44,7 @@ struct AVStream;
 // TODO: force codec name. clean code
 namespace QtAV {
 
+class AVError;
 class Packet;
 class Q_AV_EXPORT AVDemuxer : public QObject //QIODevice?
 {
@@ -171,6 +172,7 @@ signals:
     /*emit when the first frame is read*/
     void started();
     void finished(); //end of file
+    void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
 
 private:
     bool started_;

@@ -34,12 +34,14 @@ class Q_AV_EXPORT AVError
 public:
     enum ErrorCode {
         NoError,
-        OpenError,
         OpenTimedout,
+        OpenError,
 
+        FindStreamInfoTimedout,
         FindStreamInfoError,
         StreamNotFound, //a,v,s?
         ReadTimedout,
+        ReadError,
         SeekError,
         OpenCodecError,
         CloseCodecError,
@@ -58,6 +60,7 @@ public:
     inline bool operator!=(const AVError &other) const
     { return !(*this == other); }
 
+    void setError(ErrorCode ec);
     ErrorCode error() const;
     QString string() const;
 

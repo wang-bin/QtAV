@@ -104,6 +104,7 @@ void MainWindow::initPlayer()
     connect(mpVolumeSlider, SIGNAL(sliderPressed()), SLOT(setVolume()));
     connect(mpVolumeSlider, SIGNAL(valueChanged(int)), SLOT(setVolume()));
 
+    connect(mpPlayer, SIGNAL(error(QtAV::AVError)), this, SLOT(handleError(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
@@ -1074,4 +1075,9 @@ void MainWindow::onTimeSliderHover(int pos, int value)
 void MainWindow::onTimeSliderLeave()
 {
 
+}
+
+void MainWindow::handleError(const AVError &e)
+{
+    QMessageBox::warning(0, "Player error", e.string());
 }

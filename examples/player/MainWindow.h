@@ -6,6 +6,7 @@
 class QWidgetAction;
 namespace QtAV {
 class AudioOutput;
+class AVError;
 class AVPlayer;
 class AVClock;
 class VideoRenderer;
@@ -77,6 +78,7 @@ private slots:
 
     void onTimeSliderHover(int pos, int value);
     void onTimeSliderLeave();
+    void handleError(const QtAV::AVError& e);
 
 protected:
     virtual void closeEvent(QCloseEvent *e);

@@ -103,6 +103,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     clock = new AVClock(AVClock::AudioClock);
     //clock->setClockType(AVClock::ExternalClock);
     connect(&demuxer, SIGNAL(started()), clock, SLOT(start()));
+    connect(&demuxer, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
 
     demuxer_thread = new AVDemuxThread(this);
     demuxer_thread->setDemuxer(&demuxer);
