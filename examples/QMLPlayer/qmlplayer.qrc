@@ -1,5 +1,8 @@
 <RCC>
     <qresource prefix="/">
         <file>qml/QMLPlayer/main.qml</file>
+        <file>qml/QMLPlayer/Button.qml</file>
+        <file>qml/QMLPlayer/ProgressBar.qml</file>
+        <file>qml/QMLPlayer/Slider.qml</file>
     </qresource>
 </RCC>

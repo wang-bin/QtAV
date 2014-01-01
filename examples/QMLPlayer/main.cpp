@@ -12,5 +12,6 @@ int main(int argc, char *argv[])
         qml.prepend("qrc:///");
     viewer.setMainQmlFile(qml);
     viewer.showExpanded();
+    viewer.setTitle("QMLPlayer based on QtAV. wbsecg1@gmail.com");
     return app.exec();
 }

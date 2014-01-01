@@ -25,77 +25,250 @@ import QtQuick.Dialogs 1.0
 import QtAV 1.3
 
 Rectangle {
+    id: root
     width: 240*3
     height: 240
     color: "black"
 
     VideoOutput {
-        id: vo1
-        fillMode: VideoOutput.Stretch
-        x: parent.x
-        y: parent.y
-        width: parent.width/3
-        height: parent.height
-        source: player
-
-        Text {
-            anchors.fill: parent
-            text: "Stretch"
-            font.pointSize: 24
-            color: "red"
-        }
-    }
-    VideoOutput {
-        id: vo2
-        fillMode: VideoOutput.PreserveAspectCrop
-        x: parent.x + parent.width/3
-        y: parent.y
-        width: parent.width/3
-        height: parent.height
-        source: player
-
-        Text {
-            anchors.fill: parent
-            text: "PreserveAspectCrop"
-            font.pointSize: 24
-            color: "red"
-        }
-    }
-    VideoOutput {
-        id: vo3
+        id: vo
         fillMode: VideoOutput.PreserveAspectFit
-        x: parent.x + parent.width*2/3
-        y: parent.y
-        width: parent.width/3
-        height: parent.height
+        anchors.fill: parent
         source: player
-
-        Text {
-            anchors.fill: parent
-            text: "PreserveAspectFit"
-            font.pointSize: 24
-            color: "red"
-        }
     }
     MediaPlayer {
         id: player
-    }
-    MouseArea {
-        anchors.fill: parent
-        onDoubleClicked: {
-            fileDialog.open()
+        onPositionChanged: {
+            progress.value = position/duration
+            now.text = msec2string(position)
+        }
+        onPlaying: {
+            playBtn.checked = true
+            life.text = msec2string(duration)
+            control.hideIfTimedout()
+            help.title = source
+        }
+        onStopped: {
+            control.visible = true
+            control.aniShow()
+            playBtn.checked = false
         }
     }
-    Text {
-        anchors.fill: parent
-        text: "Double click to select a file\n" +
-        "Left/Right: seek forward/backward\n" +
-        "Space: pause/resume\n" +
-        "Q: quit"
-        font.pointSize: 28
-        color: "white"
-    }
 
+    Rectangle {
+        id: control
+        color: "black"
+        opacity: 0.9
+        radius: 10
+        height: 80
+        anchors {
+            left: parent.left
+            bottom: parent.bottom
+            right: parent.right
+            margins: 12
+        }
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#aa445566" }
+            GradientStop { position: 0.618; color: "#bb1a2b3a" }
+            GradientStop { position: 1.0; color: "#ff000000" }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            // onEntered, onExited
+            onHoveredChanged: {
+                //var m = mapToItem(control, mouse.x, mouse.y)
+                // TODO: why control.contains(m) always true?
+                if (containsMouse) {
+                    if (timer.running) //timer may ran a few seconds(<3) ago
+                        timer.stop();
+                    control.aniShow()
+                } else {
+                    if (player.playbackState != MediaPlayer.StoppedState)
+                        timer.start()
+                }
+            }
+        }
+        ProgressBar {
+            id: progress
+            anchors {
+                top: parent.top
+                topMargin: 8
+                left: parent.left
+                leftMargin: 20
+                right: parent.right
+                rightMargin: 20
+            }
+            height: 10
+            onValueChangedByUi: {
+                if (player.playbackState != MediaPlayer.StoppedState) {
+                    player.seek(player.duration * value)
+                }
+            }
+        }
+        Text {
+            id: now
+            text: msec2string(0)
+            anchors {
+                top: progress.bottom
+                topMargin: 2
+                left: progress.left
+            }
+            color: "white"
+        }
+        Text {
+            id: life
+            text: msec2string(0)
+            anchors {
+                top: progress.bottom
+                topMargin: 2
+                right: progress.right
+            }
+            color: "white"
+        }
+
+        Item {
+            anchors {
+                top: progress.bottom
+                bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+                margins: 8
+            }
+            Button {
+                id: playBtn
+                anchors.centerIn: parent
+                checkable: true
+                bgColor: "transparent"
+                bgColorSelected: "transparent"
+                width: 50
+                height: 50
+                icon: "play.svg"
+                iconChecked: "pause.svg"
+                onClicked: {
+                    if (player.playbackState == MediaPlayer.StoppedState) {
+                        player.play()
+                    } else {
+                        player.togglePause()
+                    }
+                }
+            }
+            Row {
+                anchors.right: playBtn.left
+                anchors.verticalCenter: playBtn.verticalCenter
+                spacing: 4
+                Button {
+                    id: stopBtn
+                    bgColor: "transparent"
+                    bgColorSelected: "transparent"
+                    width: 35
+                    height: 35
+                    icon: "stop.svg"
+                    onClicked: {
+                        player.stop()
+                    }
+                }
+                Button {
+                    id: backwardBtn
+                    bgColor: "transparent"
+                    bgColorSelected: "transparent"
+                    width: 35
+                    height: 35
+                    icon: "backward.svg"
+                    onClicked: {
+                        player.seek(player.position-10000)
+                    }
+                }
+            }
+            Row {
+                anchors.left: playBtn.right
+                anchors.verticalCenter: playBtn.verticalCenter
+                spacing: 4
+                Button {
+                    id: forwardBtn
+                    bgColor: "transparent"
+                    bgColorSelected: "transparent"
+                    width: 35
+                    height: 35
+                    icon: "forward.svg"
+                    onClicked: {
+                        player.seek(player.position+10000)
+                    }
+                }
+            }
+            Row {
+                anchors.right: parent.right
+                anchors.rightMargin: 50
+                anchors.verticalCenter: parent.verticalCenter
+                Button {
+                    id: infoBtn
+                    bgColor: "transparent"
+                    bgColorSelected: "transparent"
+                    width: 25
+                    height: 25
+                    icon: "info.svg"
+                    visible: true
+                    onClicked: help.visible = !help.visible
+                }
+                Button {
+                    id: openFileBtn
+                    bgColor: "transparent"
+                    bgColorSelected: "transparent"
+                    width: 25
+                    height: 25
+                    icon: "open.svg"
+                    onClicked: fileDialog.open()
+                }
+                Button {
+                    id: helpBtn
+                    bgColor: "transparent"
+                    bgColorSelected: "transparent"
+                    width: 25
+                    height: 25
+                    icon: "help.svg"
+                    onClicked: help.visible = !help.visible
+                }
+            }
+
+        }
+        Timer {
+            id: timer
+            interval: 3000
+            onTriggered: {
+                control.aniHide()
+                //control.visible = false //no mouse event
+            }
+        }
+        function hideIfTimedout() {
+            timer.start()
+        }
+        PropertyAnimation {
+            id: anim
+            target: control
+            properties: "opacity"
+            function reverse() {
+                duration = 1500
+                to = 0
+                from = control.opacity
+            }
+            function reset() {
+                duration = 200
+                from = control.opacity
+                to = 0.9
+            }
+        }
+        function aniShow() {
+            anim.stop()
+            anim.reset()
+            anim.start()
+        }
+        function aniHide() {
+            anim.stop()
+            anim.reverse()
+            anim.start()
+        }
+    }
     Item {
         anchors.fill: parent
         focus: true
@@ -117,6 +290,29 @@ Rectangle {
             }
         }
     }
+    Rectangle {
+        id: help
+        property alias title: title.text
+        color: "#77222222"
+        anchors {
+            top: root.top
+            left: root.left
+            right: root.right
+        }
+        height: 40
+        opacity: 0.9
+        visible: false
+        Text {
+            id: title
+            color: "white"
+            anchors.fill: parent
+            //horizontalAlignment: Qt.AlignHCenter
+            font {
+                bold: true
+                pixelSize: 16
+            }
+        }
+    }
 
     FileDialog {
         id: fileDialog
@@ -125,6 +321,21 @@ Rectangle {
             player.source = fileDialog.fileUrl
             player.play()
         }
-        Component.onCompleted: visible = true
+        //Component.onCompleted: visible = true
+    }
+    function msec2string(t) {
+        t = Math.floor(t/1000)
+        var s = t%60
+        t /= 60
+        var m = Math.floor(t%60)
+        t /= 60
+        var h = Math.floor(t/24)
+        if (s < 10)
+            s = "0" + s
+        if (m < 10)
+            m = "0" + m
+        if (h < 10)
+            h = "0" + h
+        return h + ":" + m +":" + s
     }
 }
