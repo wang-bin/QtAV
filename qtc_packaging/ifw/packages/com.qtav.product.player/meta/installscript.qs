@@ -63,9 +63,13 @@ Component.prototype.createOperations = function()
         component.addOperation("CreateShortcut", "@TargetDir@/bin/player.exe", "@StartMenuDir@/QtAV.Player.lnk",
             "workingDirectory=@TargetDir@/bin", "iconPath=%SystemRoot%/system32/SHELL32.dll",
             "iconId=2");
+        component.addOperation("CreateShortcut", "@TargetDir@/bin/QMLPlayer.exe", "@StartMenuDir@/QtAV.Player.QML.lnk",
+            "workingDirectory=@TargetDir@/bin", "iconPath=%SystemRoot%/system32/SHELL32.dll",
+            "iconId=2");
 
         //component.addOperation("Settings", "formate=native", //"path=HKEY_CURRENT_USER/SOFTWARE/Classes/*/shell/OpenWithQtAV/command", "method=set", "key=Default", "value=@TargetDir@/bin/player.exe -vo  gl %%1");
 
         component.addOperation("GlobalConfig", "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\Open With QtAV\\command", "Default", "\"@TargetDir@/bin/player.exe\" -vo gl \"%1\"");
+        component.addOperation("GlobalConfig", "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\Open With QtAV QML\\command", "Default", "\"@TargetDir@/bin/QMLPlayer.exe\" \"%1\"");
     }
 }
