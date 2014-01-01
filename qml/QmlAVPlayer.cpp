@@ -32,7 +32,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
-    connect(mpPlayer, SIGNAL(positionChanged(qint64)), SLOT(positionChanged()));
+    connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
 }
 
 QUrl QmlAVPlayer::source() const
