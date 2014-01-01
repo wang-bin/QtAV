@@ -25,6 +25,7 @@
 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
+  , mPlaybackState(StoppedState)
   , mpPlayer(0)
 {
     mpPlayer = new AVPlayer(this);
