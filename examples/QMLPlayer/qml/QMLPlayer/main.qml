@@ -38,6 +38,7 @@ Rectangle {
     }
     MediaPlayer {
         id: player
+        objectName: "player"
         onPositionChanged: {
             progress.value = position/duration
             now.text = msec2string(position)
