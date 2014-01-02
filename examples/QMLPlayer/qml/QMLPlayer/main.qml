@@ -26,9 +26,18 @@ import QtAV 1.3
 
 Rectangle {
     id: root
+    objectName: "root"
     width: 240*3
     height: 240
     color: "black"
+
+    function init(argv) {
+        var a = JSON.parse(argv)
+        if (a.length > 1) {
+            player.source = a[a.length-1]
+            player.play()
+        }
+    }
 
     VideoOutput {
         id: vo
@@ -40,6 +49,7 @@ Rectangle {
         id: player
         objectName: "player"
         onPositionChanged: {
+            console.log("pos change")
             progress.value = position/duration
             now.text = msec2string(position)
         }

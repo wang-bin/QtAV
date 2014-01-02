@@ -15,6 +15,15 @@ int main(int argc, char *argv[])
     viewer.setMainQmlFile(qml);
     viewer.showExpanded();
     viewer.setTitle("QMLPlayer based on QtAV. wbsecg1@gmail.com");
+    /*
+     * find root item, then root.init(argv). so we can deal with argv in qml
+     */
+#if 1
+    QString json = app.arguments().join("\",\"");
+    json.prepend("[\"").append("\"]");
+    json.replace("\\", "/"); //FIXME
+    QMetaObject::invokeMethod(viewer.rootObject(), "init", Q_ARG(QVariant, json));
+#else
     if (app.arguments().size() > 1) {
         qDebug("arguments > 1");
         QObject *player = viewer.rootObject()->findChild<QObject*>("player");
@@ -25,5 +34,6 @@ int main(int argc, char *argv[])
             QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
         }
     }
+#endif
     return app.exec();
 }
