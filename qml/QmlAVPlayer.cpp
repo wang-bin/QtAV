@@ -25,6 +25,9 @@
 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
+  , mAutoPlay(false)
+  , mAutoLoad(false)
+  , mLoopCount(1)
   , mPlaybackState(StoppedState)
   , mpPlayer(0)
 {
@@ -43,12 +46,68 @@ QUrl QmlAVPlayer::source() const
 
 void QmlAVPlayer::setSource(const QUrl &url)
 {
+    if (mSource == url)
+        return;
     mSource = url;
     if (mSource.isLocalFile()) {
         mpPlayer->setFile(mSource.toLocalFile());
     } else {
         mpPlayer->setFile(mSource.toString());
     }
+    emit sourceChanged();
+    // TODO: in componentComplete()?
+    if (mAutoLoad || mAutoPlay) {
+        mpPlayer->load();
+    }
+    if (mAutoPlay) {
+        play();
+    }
+}
+
+bool QmlAVPlayer::isAutoLoad() const
+{
+    return mAutoLoad;
+}
+
+void QmlAVPlayer::setAutoLoad(bool autoLoad)
+{
+    if (mAutoLoad == autoLoad)
+        return;
+
+    mAutoLoad = autoLoad;
+    emit autoLoadChanged();
+}
+
+bool QmlAVPlayer::autoPlay() const
+{
+    return mAutoPlay;
+}
+
+void QmlAVPlayer::setAutoPlay(bool autoplay)
+{
+    if (mAutoPlay == autoplay)
+        return;
+
+    mAutoPlay = autoplay;
+    emit autoPlayChanged();
+}
+
+int QmlAVPlayer::loopCount() const
+{
+    return mLoopCount;
+}
+
+void QmlAVPlayer::setLoopCount(int c)
+{
+    if (c == 0)
+        c = 1;
+    else if (c < -1)
+        c = -1;
+    if (mLoopCount == c) {
+        return;
+    }
+    mLoopCount = c;
+    emit loopCountChanged();
 }
 
 qreal QmlAVPlayer::volume() const
@@ -147,11 +206,13 @@ AVPlayer* QmlAVPlayer::player()
 void QmlAVPlayer::play(const QUrl &url)
 {
     setSource(url);
-    play();
+    if (!mpPlayer->isPlaying())
+        play();
 }
 
 void QmlAVPlayer::play()
 {
+    mpPlayer->setRepeat(mLoopCount - 1);
     mpPlayer->play();
 }
 

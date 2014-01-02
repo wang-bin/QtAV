@@ -38,11 +38,20 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject
     Q_PROPERTY(int position READ position NOTIFY positionChanged)
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY mutedChanged)
     Q_PROPERTY(PlaybackState playbackState READ playbackState NOTIFY playbackStateChanged)
+    Q_PROPERTY(bool autoPlay READ autoPlay WRITE setAutoPlay NOTIFY autoPlayChanged)
+    Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(qreal speed READ speed WRITE setSpeed NOTIFY speedChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(int loops READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
+    Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
 public:
+    enum Loop
+    {
+        Infinite = -1
+    };
+
     enum PlaybackState {
         PlayingState,
         PausedState,
@@ -52,6 +61,10 @@ public:
     explicit QmlAVPlayer(QObject *parent = 0);
     QUrl source() const;
     void setSource(const QUrl& url);
+
+    int loopCount() const;
+    void setLoopCount(int c);
+
     QObject* videoOut();
     void setVideoOut(QObject* out);
     qreal volume() const;
@@ -67,6 +80,12 @@ public:
     void setSpeed(qreal s);
     Q_INVOKABLE void play(const QUrl& url);
     AVPlayer *player();
+
+    bool isAutoLoad() const;
+    void setAutoLoad(bool autoLoad);
+
+    bool autoPlay() const;
+    void setAutoPlay(bool autoplay);
 
 public Q_SLOTS:
     void play();
@@ -85,8 +104,11 @@ Q_SIGNALS:
     void durationChanged();
     void positionChanged();
     void sourceChanged();
+    void autoLoadChanged();
+    void loopCountChanged();
     void videoOutChanged();
     void playbackStateChanged();
+    void autoPlayChanged();
     void speedChanged();
     void paused();
     void stopped();
@@ -100,6 +122,10 @@ private Q_SLOTS:
 
 private:
     Q_DISABLE_COPY(QmlAVPlayer)
+
+    bool mAutoPlay;
+    bool mAutoLoad;
+    int mLoopCount;
     PlaybackState mPlaybackState;
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
