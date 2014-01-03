@@ -27,8 +27,8 @@ import QtAV 1.3
 Rectangle {
     id: root
     objectName: "root"
-    width: 240*3
-    height: 240
+    width: 800
+    height: 450
     color: "black"
 
     // "/xxx" will be resolved as qrc:///xxx. while "xxx" is "qrc:///QMLDIR/xxx
@@ -70,6 +70,8 @@ Rectangle {
             control.visible = true
             control.aniShow()
             playBtn.checked = false
+            progress.value = 0
+            now.text = msec2string(0)
         }
     }
 
@@ -125,6 +127,27 @@ Rectangle {
                     player.seek(player.duration * value)
                 }
             }
+            onEnter: {
+                if (player.playbackState == MediaPlayer.StoppedState)
+                    return
+                preview.visible = true
+                preview.state = dpos.y > 0 ? "out" : "out_"
+                preview.state = "in"
+                preview.anchors.leftMargin = pos.x - preview.width/2
+            }
+            onLeave: {
+                if (player.playbackState == MediaPlayer.StoppedState)
+                    return
+                preview.state = dpos.y > 0 ? "out" : "out_"
+            }
+            onHoverAt: {
+                if (player.playbackState == MediaPlayer.StoppedState)
+                    return
+                var v = value * progress.width
+                preview.anchors.leftMargin = v - preview.width/2
+                previewText.text = msec2string(value*player.duration)
+                console.log("hover: "+value + " duration: " + player.duration)
+            }
         }
         Text {
             id: now
@@ -146,7 +169,79 @@ Rectangle {
             }
             color: "white"
         }
-
+        Rectangle {
+            id: preview
+            opacity: 0.9
+            anchors.left: progress.left
+            anchors.bottom: progress.top
+            width: 50
+            height: 16
+            color: "black"
+            state: "out"
+            Text {
+                id: previewText
+                anchors.fill: parent
+                text: ""
+                color: "white"
+                font.bold: true
+                horizontalAlignment: Qt.AlignHCenter
+                verticalAlignment: Qt.AlignVCenter
+            }
+            states: [
+                State {
+                    name: "in"
+                    PropertyChanges {
+                        target: preview
+                        anchors.bottomMargin: 2
+                        opacity: 0.9
+                    }
+                },
+                State {
+                    name: "out"
+                    PropertyChanges {
+                        target: preview
+                        anchors.bottomMargin: preview.height/2
+                        opacity: 0
+                    }
+                },
+                State {
+                    name: "out_"
+                    PropertyChanges {
+                        target: preview
+                        anchors.bottomMargin: -preview.height
+                        opacity: 0
+                    }
+                }
+            ]
+            transitions: [
+                Transition {
+                    to: "in"
+                    NumberAnimation {
+                        properties: "opacity,anchors.bottomMargin"
+                        duration: 200
+                        easing.type: Easing.OutCubic
+                    }
+                },
+                Transition {
+                    to: "out"
+                    NumberAnimation {
+                        properties: "opacity,anchors.bottomMargin"
+                        duration: 200
+                        easing.type: Easing.InCubic
+                    }
+                },
+                Transition {
+                    to: "out_"
+                    NumberAnimation {
+                        properties: "opacity,anchors.bottomMargin"
+                        duration: 200
+                        easing.type: Easing.InCubic
+                    }
+                }//,
+                //Transition { from: "out"; to: "out_" },
+                //Transition { from: "out_"; to: "out" }
+            ]
+        }
         Item {
             anchors {
                 top: progress.bottom
@@ -345,17 +440,16 @@ Rectangle {
     }
     function msec2string(t) {
         t = Math.floor(t/1000)
-        var s = t%60
-        t /= 60
-        var m = Math.floor(t%60)
-        t /= 60
-        var h = Math.floor(t/24)
-        if (s < 10)
-            s = "0" + s
-        if (m < 10)
-            m = "0" + m
-        if (h < 10)
-            h = "0" + h
-        return h + ":" + m +":" + s
+        var ss = t%60
+        t = (t-ss)/60
+        var mm = t%60
+        var hh = (t-mm)/60
+        if (ss < 10)
+            ss = "0" + ss
+        if (mm < 10)
+            mm = "0" + mm
+        if (hh < 10)
+            hh = "0" + hh
+        return hh + ":" + mm +":" + ss
     }
 }

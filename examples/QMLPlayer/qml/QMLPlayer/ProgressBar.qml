@@ -33,6 +33,10 @@ Rectangle {
     property bool showGrip: true
     property bool tracking: true
     signal valueChangedByUi
+    signal hoverAt(real value)
+    // dx, dy: only the direction. dx>0 means enter from left or leave to left
+    signal enter(point pos, point dpos)
+    signal leave(point pos, point dpos)
 
     Rectangle {
         anchors {
@@ -48,11 +52,23 @@ Rectangle {
     MouseArea {
         anchors.fill: parent
         enabled: root.enabled
+        hoverEnabled: true
         onClicked: {
             if (parent.width) {
                 parent.value = mouse.x / parent.width
                 valueChangedByUi(parent.value)
             }
+        }
+        onMouseXChanged: {
+            hoverAt(mouseX/parent.width)
+//time and preview
+        }
+        onEntered: {
+            enter(Qt.point(mouseX, mouseY), Qt.point(0, mouseY > height/2 ? 1 : -1))
+            hoverAt(mouseX/parent.width)
+        }
+        onExited: {
+            leave(Qt.point(mouseX, mouseY), Qt.point(0, mouseY > height/2 ? 1 : -1))
         }
     }
 
