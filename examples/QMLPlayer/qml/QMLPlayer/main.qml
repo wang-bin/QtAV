@@ -31,12 +31,18 @@ Rectangle {
     height: 240
     color: "black"
 
+    // "/xxx" will be resolved as qrc:///xxx. while "xxx" is "qrc:///QMLDIR/xxx
+    property string resprefix: Qt.resolvedUrl(" ").substring(0, 4) == "qrc:" ? "/" : ""
     function init(argv) {
         var a = JSON.parse(argv)
         if (a.length > 1) {
-            player.source = a[a.length-1]
-            player.play()
+            // FIXME: source is relative to this qml
+            //player.source = a[a.length-1]
+            //player.play()
         }
+    }
+    function resurl(s) { //why called twice if in qrc?
+        return resprefix + s
     }
 
     VideoOutput {
@@ -48,6 +54,7 @@ Rectangle {
     MediaPlayer {
         id: player
         objectName: "player"
+        //loops: MediaPlayer.Infinite
         onPositionChanged: {
             console.log("pos change")
             progress.value = position/duration
@@ -66,6 +73,7 @@ Rectangle {
         }
     }
 
+    // TODO: Control.qml
     Rectangle {
         id: control
         color: "black"
@@ -155,8 +163,9 @@ Rectangle {
                 bgColorSelected: "transparent"
                 width: 50
                 height: 50
-                icon: "play.svg"
-                iconChecked: "pause.svg"
+                icon: resurl("theme/default/play.svg")
+                iconChecked: resurl("theme/default/pause.svg")
+
                 onClicked: {
                     if (player.playbackState == MediaPlayer.StoppedState) {
                         player.play()
@@ -175,7 +184,7 @@ Rectangle {
                     bgColorSelected: "transparent"
                     width: 35
                     height: 35
-                    icon: "stop.svg"
+                    icon: resurl("theme/default/stop.svg")
                     onClicked: {
                         player.stop()
                     }
@@ -186,7 +195,7 @@ Rectangle {
                     bgColorSelected: "transparent"
                     width: 35
                     height: 35
-                    icon: "backward.svg"
+                    icon: resurl("theme/default/backward.svg")
                     onClicked: {
                         player.seek(player.position-10000)
                     }
@@ -202,7 +211,7 @@ Rectangle {
                     bgColorSelected: "transparent"
                     width: 35
                     height: 35
-                    icon: "forward.svg"
+                    icon: resurl("theme/default/forward.svg")
                     onClicked: {
                         player.seek(player.position+10000)
                     }
@@ -218,7 +227,7 @@ Rectangle {
                     bgColorSelected: "transparent"
                     width: 25
                     height: 25
-                    icon: "info.svg"
+                    icon: resurl("theme/default/info.svg")
                     visible: true
                     onClicked: help.visible = !help.visible
                 }
@@ -228,7 +237,7 @@ Rectangle {
                     bgColorSelected: "transparent"
                     width: 25
                     height: 25
-                    icon: "open.svg"
+                    icon: resurl("theme/default/open.svg")
                     onClicked: fileDialog.open()
                 }
                 Button {
@@ -237,7 +246,7 @@ Rectangle {
                     bgColorSelected: "transparent"
                     width: 25
                     height: 25
-                    icon: "help.svg"
+                    icon: resurl("theme/default/help.svg")
                     onClicked: help.visible = !help.visible
                 }
             }

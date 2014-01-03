@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     json.prepend("[\"").append("\"]");
     json.replace("\\", "/"); //FIXME
     QMetaObject::invokeMethod(viewer.rootObject(), "init", Q_ARG(QVariant, json));
-#else
+//#else
     if (app.arguments().size() > 1) {
         qDebug("arguments > 1");
         QObject *player = viewer.rootObject()->findChild<QObject*>("player");

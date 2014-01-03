@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
+    common \
     sharedoutput \
     vo-qt \
     player \
