@@ -2,8 +2,11 @@
 #include <QQuickItem>
 #include "qtquick2applicationviewer.h"
 
+extern "C" void _link_hack();
+
 int main(int argc, char *argv[])
 {
+    _link_hack();
     QGuiApplication app(argc, argv);
 
     QtQuick2ApplicationViewer viewer;
@@ -21,7 +24,7 @@ int main(int argc, char *argv[])
 #if 1
     QString json = app.arguments().join("\",\"");
     json.prepend("[\"").append("\"]");
-    json.replace("\\", "/"); //FIXME
+    //json.replace("\\", "/"); //FIXME
     QMetaObject::invokeMethod(viewer.rootObject(), "init", Q_ARG(QVariant, json));
 //#else
     if (app.arguments().size() > 1) {
@@ -37,3 +40,4 @@ int main(int argc, char *argv[])
 #endif
     return app.exec();
 }
+
