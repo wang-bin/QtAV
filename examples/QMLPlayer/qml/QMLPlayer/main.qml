@@ -24,12 +24,16 @@ import QtQuick.Dialogs 1.0
 //import QtMultimedia 5.0
 import QtAV 1.3
 
+
+
 Rectangle {
     id: root
     objectName: "root"
     width: 800
     height: 450
     color: "black"
+    signal requestFullScreen
+    signal requestNormalSize
 
     // "/xxx" will be resolved as qrc:///xxx. while "xxx" is "qrc:///QMLDIR/xxx
     property string resprefix: Qt.resolvedUrl(" ").substring(0, 4) == "qrc:" ? "/" : ""
@@ -200,7 +204,7 @@ Rectangle {
                     name: "out"
                     PropertyChanges {
                         target: preview
-                        anchors.bottomMargin: preview.height/2
+                        anchors.bottomMargin: preview.height
                         opacity: 0
                     }
                 },
@@ -312,6 +316,30 @@ Rectangle {
                     }
                 }
             }
+            Row {
+                anchors.left: parent.left
+                anchors.leftMargin: 50
+                anchors.verticalCenter: parent.verticalCenter
+                Button {
+                    id: fullScreenBtn
+                    checkable: true
+                    checked: false
+                    bgColor: "transparent"
+                    bgColorSelected: "transparent"
+                    width: 25
+                    height: 25
+                    icon: resurl("theme/default/fullscreen.svg")
+                    iconChecked: resurl("theme/default/fullscreen.svg")
+                    visible: true
+                    onClicked: {
+                        if (checked)
+                            requestFullScreen()
+                        else
+                            requestNormalSize()
+                    }
+                }
+            }
+
             Row {
                 anchors.right: parent.right
                 anchors.rightMargin: 50

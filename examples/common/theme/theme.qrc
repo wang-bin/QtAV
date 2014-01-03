@@ -8,5 +8,6 @@
         <file>default/pause.svg</file>
         <file>default/play.svg</file>
         <file>default/stop.svg</file>
+        <file>default/fullscreen.svg</file>
     </qresource>
 </RCC>
