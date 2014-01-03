@@ -891,6 +891,7 @@ void AVPlayer::stop()
          * stop() is called again by player and reset state. but this call is later than demuxer stop.
          * so if user call play() immediatly, may be stopped by AVPlayer
          */
+        // TODO: singleShot(0, SLOT(killTimerSafe()));?
         if (timer_id >= 0) {
             qDebug("timer: %d, current thread: %p, player thread: %p", timer_id, QThread::currentThread(), thread());
             if (QThread::currentThread() == thread()) { //called by user in the same thread as player
@@ -947,6 +948,10 @@ void AVPlayer::timerEvent(QTimerEvent *te)
     if (te->timerId() == timer_id) {
         if (stopPosition() == std::numeric_limits<qint64>::max()) {
             // not seekable. network stream
+            return;
+        }
+        // killTimer() should be in the same thread as object. kill here?
+        if (isPaused()) {
             return;
         }
         // active only when playing
