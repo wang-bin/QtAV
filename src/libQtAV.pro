@@ -71,6 +71,12 @@ config_portaudio {
 }
 config_openal {
     SOURCES += AOOpenAL.cpp
+    SDK_HEADERS += QtAV/AOOpenAL.h
+    DEFINES *= QTAV_HAVE_OPENAL=1
+    LIBS *= -lopenal32
+}
+config_openal {
+    SOURCES += AOOpenAL.cpp
     HEADERS += QtAV/private/AOOpenAL_p.h
     SDK_HEADERS += QtAV/AOOpenAL.h
     DEFINES *= QTAV_HAVE_OPENAL=1

@@ -120,21 +120,6 @@ bool AOPortAudio::write()
         Pa_WriteStream(d.stream, a, diff);
     }
 #endif
-#ifdef Q_OS_LINUX
-    int chn = d.channels;
-    if (chn == 6 || chn == 8) {
-        float *audio_buffer = (float *)d.data.data();
-        int size_per_chn = d.data.size() >> 2;
-        for (int i = 0 ; i < size_per_chn; i += chn) {
-            float tmp = audio_buffer[i+2];
-            audio_buffer[i+2] = audio_buffer[i+4];
-            audio_buffer[i+4] = tmp;
-            tmp = audio_buffer[i+3];
-            audio_buffer[i+3] = audio_buffer[i+5];
-            audio_buffer[i+5] = tmp;
-        }
-    }
-#endif
 #endif //KNOW_WHY
     PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
     if (err == paUnanticipatedHostError) {
