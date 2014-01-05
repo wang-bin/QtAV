@@ -23,6 +23,7 @@
 #define QTAV_AUDIOFORMAT_H
 
 #include <QtCore/QSharedDataPointer>
+#include <QtCore/QString>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -82,6 +83,7 @@ public:
     //currently a limitted set of channel layout is supported. call setChannelLayoutFFmpeg is recommended
     void setChannelLayout(ChannelLayout layout);
     ChannelLayout channelLayout() const;
+    QString channelLayoutName() const;
     /*!
      * setChannels also sets the default layout for this channels if channels does not match.
      */
@@ -92,6 +94,7 @@ public:
     SampleFormat sampleFormat() const;
     void setSampleFormatFFmpeg(int ffSampleFormat);
     int sampleFormatFFmpeg() const;
+    QString sampleFormatName() const;
 
     // Helper functions
     qint32 bytesForDuration(qint64 duration) const;

@@ -221,6 +221,13 @@ AudioFormat::ChannelLayout AudioFormat::channelLayout() const
     return d->channel_layout;
 }
 
+QString AudioFormat::channelLayoutName() const
+{
+    char cl[128];
+    av_get_channel_layout_string(cl, sizeof(cl), -1, channelLayoutFFmpeg()); //TODO: ff version
+    return cl;
+}
+
 /*!
    Sets the channel count to \a channels.
 
@@ -288,6 +295,11 @@ void AudioFormat::setSampleFormatFFmpeg(int ffSampleFormat)
 int AudioFormat::sampleFormatFFmpeg() const
 {
     return d->sample_format;
+}
+
+QString AudioFormat::sampleFormatName() const
+{
+    return av_get_sample_fmt_name((AVSampleFormat)sampleFormatFFmpeg());
 }
 
 
