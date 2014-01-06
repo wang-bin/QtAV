@@ -19,7 +19,8 @@
 
 #include "QtAV/AOOpenAL.h"
 #include "private/AudioOutput_p.h"
-#include <QVector>
+#include <QtCore/QVector>
+#include <QtCore/QElapsedTimer>
 #include <string>
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -114,6 +115,7 @@ public:
         , source(0)
         , device(0)
         , state(0)
+        , last_duration(0)
     {
     }
     ~AOOpenALPrivate() {
@@ -125,6 +127,10 @@ public:
     ALCdevice *device;
     ALCcontext *context;
     ALint state;
+    QElapsedTimer time;
+    qint64 last_duration;
+    QMutex mutex;
+    QWaitCondition cond;
 };
 
 AOOpenAL::AOOpenAL()
@@ -152,7 +158,7 @@ bool AOOpenAL::open()
         p += _devices.last().size() + 1;
     }
     qDebug("%d OpenAL devices available: %d", _devices.size());
-    for (size_t i = 0; i < _devices.size(); i++) {
+    for (int i = 0; i < _devices.size(); i++) {
         qDebug("device %d: %s", i, _devices[i].c_str());
     }
     const ALCchar *default_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
@@ -245,11 +251,14 @@ bool AOOpenAL::write()
     DPTR_D(AOOpenAL);
     if (d.data.isEmpty())
         return false;
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
     if (d.state == 0) {
         //// Initial buffering
         alSourcef(d.source, AL_GAIN, d.vol);
         const char* b = d.data.constData();
         int remain = d.data.size();
+        d.time.start();
         for (int i = 0; i < kBufferCount; ++i) {
             ALERROR_RETURN_F(alBufferData(d.buffer[i], d.format, d.data, d.data.size(), audioFormat().sampleRate()));
             alSourceQueueBuffers(d.source, 1, &d.buffer[i]);
@@ -265,19 +274,26 @@ bool AOOpenAL::write()
         //alSourceQueueBuffers(d.source, 3, d.buffer);
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
         ALERROR_RETURN_F(alSourcePlay(d.source));
+        d.last_duration = audioFormat().durationForBytes(d.data.size());
         return true;
     }
-    ALint processed = 2;
+    qint64 dt = d.last_duration - d.time.elapsed();
+    d.last_duration = audioFormat().durationForBytes(d.data.size());
+    if (dt > 8LL)
+        d.cond.wait(&d.mutex, (ulong)(dt-2LL));
+
+    ALint processed = 0;
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
     if (processed <= 0) {
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
         if (d.state != AL_PLAYING) {
             ALERROR_RETURN_F(alSourcePlay(d.source));
         }
-        return false;
+        //return false;
     }
     const char* b = d.data.constData();
     int remain = d.data.size();
+    d.time.restart();
     while (processed--) {
         if (remain <= 0)
             break;
