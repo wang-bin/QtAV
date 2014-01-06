@@ -30,7 +30,7 @@
 
 namespace QtAV {
 
-const qint64 kHz = 1000000LL;
+const qint64 kHz = 1000LL;
 
 typedef struct {
     qint64 ff;
