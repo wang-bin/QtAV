@@ -20,17 +20,26 @@
 ******************************************************************************/
 
 
-#include <QtAV/AOPortAudio.h>
+#include <QtAV/AudioOutputPortAudio.h>
 #include <private/AudioOutput_p.h>
+#include "prepost.h"
 #include <portaudio.h>
 #include <QtCore/QString>
 
 namespace QtAV {
 
-class AOPortAudioPrivate : public AudioOutputPrivate
+extern AudioOutputId AudioOutputId_PortAudio;
+FACTORY_REGISTER_ID_AUTO(AudioOutput, PortAudio, "PortAudio")
+
+void RegisterAudioOutputPortAudio_Man()
+{
+    FACTORY_REGISTER_ID_MAN(AudioOutput, PortAudio, "PortAudio")
+}
+
+class AudioOutputPortAudioPrivate : public AudioOutputPrivate
 {
 public:
-    AOPortAudioPrivate():
+    AudioOutputPortAudioPrivate():
         initialized(false)
       ,outputParameters(new PaStreamParameters)
       ,stream(0)
@@ -63,17 +72,11 @@ public:
         const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(outputParameters->device);
         max_channels = deviceInfo->maxOutputChannels;
         qDebug("DEFAULT max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
-/*
-#ifdef Q_OS_LINUX
-        if ( getOutputDeviceNames().contains( "ALSA: default" ) )
-        outputParameters->device = getDeviceIndexForOutput( "ALSA: default" );
-#endif
-*/
         qDebug("audio device: %s", QString::fromLocal8Bit(Pa_GetDeviceInfo(outputParameters->device)->name).toUtf8().constData());
         outputParameters->hostApiSpecificStreamInfo = NULL;
         outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
     }
-    ~AOPortAudioPrivate() {
+    ~AudioOutputPortAudioPrivate() {
         if (initialized)
             Pa_Terminate(); //Do NOT call this if init failed. See document
         if (outputParameters) {
@@ -85,25 +88,22 @@ public:
     bool initialized;
     PaStreamParameters *outputParameters;
     PaStream *stream;
-#ifdef Q_OS_LINUX
-    bool autoFindMultichannelDevice;
-#endif
     double outputLatency;
 };
 
-AOPortAudio::AOPortAudio()
-    :AudioOutput(*new AOPortAudioPrivate())
+AudioOutputPortAudio::AudioOutputPortAudio()
+    :AudioOutput(*new AudioOutputPortAudioPrivate())
 {
 }
 
-AOPortAudio::~AOPortAudio()
+AudioOutputPortAudio::~AudioOutputPortAudio()
 {
     close();
 }
 
-bool AOPortAudio::write()
+bool AudioOutputPortAudio::write()
 {
-    DPTR_D(AOPortAudio);
+    DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     if (!d.available)
@@ -146,9 +146,9 @@ static int toPaSampleFormat(AudioFormat::SampleFormat format)
 }
 
 //TODO: call open after audio format changed?
-bool AOPortAudio::open()
+bool AudioOutputPortAudio::open()
 {
-    DPTR_D(AOPortAudio);
+    DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     d.outputParameters->sampleFormat = toPaSampleFormat(audioFormat().sampleFormat());
@@ -164,9 +164,9 @@ bool AOPortAudio::open()
     return err == paNoError;
 }
 
-bool AOPortAudio::close()
+bool AudioOutputPortAudio::close()
 {
-    DPTR_D(AOPortAudio);
+    DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     bool available_old = d.available;

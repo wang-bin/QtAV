@@ -1,5 +1,5 @@
 /******************************************************************************
-    AOOpenAL.h: description
+    AudioOutputOpenAL.h: description
     Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
@@ -24,13 +24,13 @@
 
 namespace QtAV {
 
-class AOOpenALPrivate;
-class Q_AV_EXPORT AOOpenAL : public AudioOutput
+class AudioOutputOpenALPrivate;
+class Q_AV_EXPORT AudioOutputOpenAL : public AudioOutput
 {
-    DPTR_DECLARE_PRIVATE(AOOpenAL)
+    DPTR_DECLARE_PRIVATE(AudioOutputOpenAL)
 public:
-    AOOpenAL();
-    ~AOOpenAL();
+    AudioOutputOpenAL();
+    ~AudioOutputOpenAL();
 
     virtual bool open();
     virtual bool close();

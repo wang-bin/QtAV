@@ -1,6 +1,6 @@
 /******************************************************************************
 	QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -20,20 +20,20 @@
 ******************************************************************************/
 
 
-#ifndef QTAV_AOPORTAUDIO_H
-#define QTAV_AOPORTAUDIO_H
+#ifndef QTAV_AUDIOOUTPUTPORTAUDIO_H
+#define QTAV_AUDIOOUTPUTPORTAUDIO_H
 
 #include <QtAV/AudioOutput.h>
 
 namespace QtAV {
 
-class AOPortAudioPrivate;
-class Q_AV_EXPORT AOPortAudio : public AudioOutput
+class AudioOutputPortAudioPrivate;
+class Q_AV_EXPORT AudioOutputPortAudio : public AudioOutput
 {
-    DPTR_DECLARE_PRIVATE(AOPortAudio)
+    DPTR_DECLARE_PRIVATE(AudioOutputPortAudio)
 public:
-    AOPortAudio();
-    ~AOPortAudio();
+    AudioOutputPortAudio();
+    ~AudioOutputPortAudio();
 
     bool open();
     bool close();
@@ -43,4 +43,4 @@ protected:
 };
 
 } //namespace QtAV
-#endif // QTAV_AOPORTAUDIO_H
+#endif // QTAV_AUDIOOUTPUTPORTAUDIO_H

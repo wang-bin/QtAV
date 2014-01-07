@@ -48,13 +48,7 @@
 #include <QtAV/EventFilter.h>
 #include <QtAV/VideoOutputEventFilter.h>
 #include <QtAV/VideoCapture.h>
-#include <QtAV/AudioOutput.h>
-#if QTAV_HAVE(OPENAL)
-#include <QtAV/AOOpenAL.h>
-#endif //QTAV_HAVE(OPENAL)
-#if QTAV_HAVE(PORTAUDIO)
-#include <QtAV/AOPortAudio.h>
-#endif //QTAV_HAVE(PORTAUDIO)
+#include <QtAV/AudioOutputTypes.h>
 #include <QtAV/FilterManager.h>
 
 namespace QtAV {
@@ -1167,11 +1161,7 @@ bool AVPlayer::setupAudioThread()
     //TODO: setAudioOutput() like vo
     if (!_audio && ao_enable) {
         qDebug("new audio output");
-#if QTAV_HAVE(OPENAL)
-        _audio = new AOOpenAL();
-#elif QTAV_HAVE(PORTAUDIO)
-        _audio = new AOPortAudio();
-#endif
+        _audio = AudioOutputFactory::create(AudioOutputId_PortAudio);
     }
     if (!_audio) {
         // TODO: only when no audio stream or user disable audio stream. running an audio thread without sound is waste resource?
@@ -1185,6 +1175,7 @@ bool AVPlayer::setupAudioThread()
             _audio->audioFormat().setChannelLayoutFFmpeg(AV_CH_LAYOUT_STEREO);
         else
             _audio->audioFormat().setChannels(aCodecCtx->channels);
+        //_audio->audioFormat().setChannels(aCodecCtx->channels);
         if (!_audio->open()) {
             //return; //audio not ready
         }

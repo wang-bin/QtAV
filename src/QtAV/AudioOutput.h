@@ -23,9 +23,14 @@
 #define QAV_AUDIOOUTPUT_H
 
 #include <QtAV/AVOutput.h>
+#include <QtAV/FactoryDefine.h>
 //TODO: audio device class
 
 namespace QtAV {
+
+typedef int AudioOutputId;
+class AudioOutput;
+FACTORY_DECLARE(AudioOutput)
 
 class AudioFormat;
 class AudioOutputPrivate;

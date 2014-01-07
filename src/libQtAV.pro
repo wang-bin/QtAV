@@ -63,21 +63,15 @@ ipp-link {
     #omp for static link. _t is multi-thread static link
 }
 config_portaudio {
-    SOURCES += AOPortAudio.cpp
-    SDK_HEADERS += QtAV/AOPortAudio.h
+    SOURCES += AudioOutputPortAudio.cpp
+    SDK_HEADERS += QtAV/AudioOutputPortAudio.h
     DEFINES *= QTAV_HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
     #win32: LIBS *= -lwinmm #-lksguid #-luuid
 }
 config_openal {
-    SOURCES += AOOpenAL.cpp
-    SDK_HEADERS += QtAV/AOOpenAL.h
-    DEFINES *= QTAV_HAVE_OPENAL=1
-    LIBS *= -lopenal32
-}
-config_openal {
-    SOURCES += AOOpenAL.cpp
-    SDK_HEADERS += QtAV/AOOpenAL.h
+    SOURCES += AudioOutputOpenAL.cpp
+    SDK_HEADERS += QtAV/AudioOutputOpenAL.h
     DEFINES *= QTAV_HAVE_OPENAL=1
     win32: LIBS += -lOpenAL32
     unix:!mac:!blackberry: LIBS += -lopenal
@@ -133,6 +127,7 @@ SOURCES += \
     AudioFormat.cpp \
     AudioFrame.cpp \
     AudioOutput.cpp \
+    AudioOutputTypes.cpp \
     AudioResampler.cpp \
     AudioResamplerTypes.cpp \
     AVDecoder.cpp \
@@ -180,6 +175,7 @@ SDK_HEADERS *= \
     QtAV/AudioFormat.h \
     QtAV/AudioFrame.h \
     QtAV/AudioOutput.h \
+    QtAV/AudioOutputTypes.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
     QtAV/BlockingQueue.h \
