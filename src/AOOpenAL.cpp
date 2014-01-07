@@ -1,6 +1,6 @@
 /******************************************************************************
     AOOpenAL.cpp: description
-    Copyright (C) 2012 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,10 +21,14 @@
 #include "private/AudioOutput_p.h"
 #include <QtCore/QVector>
 #include <QtCore/QElapsedTimer>
-#include <string>
+
+#if defined(HEADER_OPENAL_PREFIX)
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#else
 #include <AL/al.h>
 #include <AL/alc.h>
-#include <AL/alext.h>
+#endif
 
 namespace QtAV {
 
@@ -144,7 +148,7 @@ bool AOOpenAL::open()
 {
     DPTR_D(AOOpenAL);
     d.available = false; // TODO: d.reset()
-    QVector<std::string> _devices;
+    QVector<QByteArray> _devices;
     const char *p = NULL;
     if (alcIsExtensionPresent(NULL, "ALC_ENUMERATE_ALL_EXT"))
         p = alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER);
@@ -156,7 +160,7 @@ bool AOOpenAL::open()
     }
     qDebug("OpenAL devices available: %d", _devices.size());
     for (int i = 0; i < _devices.size(); i++) {
-        qDebug("device %d: %s", i, _devices[i].c_str());
+        qDebug("device %d: %s", i, _devices[i].constData());
     }
     const ALCchar *default_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
     qDebug("AOOpenAL Opening default device: %s", default_device);

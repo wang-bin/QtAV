@@ -77,11 +77,13 @@ config_openal {
 }
 config_openal {
     SOURCES += AOOpenAL.cpp
-    HEADERS += QtAV/private/AOOpenAL_p.h
     SDK_HEADERS += QtAV/AOOpenAL.h
     DEFINES *= QTAV_HAVE_OPENAL=1
-    win32:LIBS *= -lOpenAL32
-    else: LIBS *= -lopenal
+    win32: LIBS += -lOpenAL32
+    unix:!mac:!blackberry: LIBS += -lopenal
+    blackberry: LIBS += -lOpenAL
+    mac: LIBS += -framework OpenAL
+    mac: DEFINES += HEADER_OPENAL_PREFIX
 }
 config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
