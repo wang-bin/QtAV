@@ -65,6 +65,7 @@ Rectangle {
             now.text = msec2string(position)
         }
         onPlaying: {
+            control.aniShow()
             playBtn.checked = true
             life.text = msec2string(duration)
             control.hideIfTimedout()
@@ -76,6 +77,11 @@ Rectangle {
             playBtn.checked = false
             progress.value = 0
             now.text = msec2string(0)
+        }
+        onPaused: {
+            control.aniShow()
+            control.visible = true
+            playBtn.checked = false
         }
     }
 
@@ -178,7 +184,7 @@ Rectangle {
             opacity: 0.9
             anchors.left: progress.left
             anchors.bottom: progress.top
-            width: 50
+            width: 60
             height: 16
             color: "black"
             state: "out"
@@ -187,6 +193,7 @@ Rectangle {
                 anchors.fill: parent
                 text: ""
                 color: "white"
+                font.pixelSize: 12
                 font.bold: true
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
