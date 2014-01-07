@@ -92,6 +92,7 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
                  , qPrintable(fmt.sampleFormatName())
                  , qPrintable(fmt.channelLayoutName()));
     }
+    qDebug("OpenAL audio format: %#x ch:%d, sample format: %s", format, fmt.channels(), qPrintable(fmt.sampleFormatName()));
     return format;
 }
 
@@ -112,8 +113,6 @@ public:
     AOOpenALPrivate()
         : AudioOutputPrivate()
         , format(AL_FORMAT_STEREO16)
-        , source(0)
-        , device(0)
         , state(0)
         , last_duration(0)
     {
@@ -124,8 +123,6 @@ public:
     ALenum format;
     ALuint buffer[kBufferCount];
     ALuint source;
-    ALCdevice *device;
-    ALCcontext *context;
     ALint state;
     QElapsedTimer time;
     qint64 last_duration;
@@ -157,42 +154,46 @@ bool AOOpenAL::open()
         _devices.push_back(p);
         p += _devices.last().size() + 1;
     }
-    qDebug("%d OpenAL devices available: %d", _devices.size());
+    qDebug("OpenAL devices available: %d", _devices.size());
     for (int i = 0; i < _devices.size(); i++) {
         qDebug("device %d: %s", i, _devices[i].c_str());
     }
     const ALCchar *default_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
     qDebug("AOOpenAL Opening default device: %s", default_device);
-    if ((d.device = alcOpenDevice(NULL)) == NULL) { //or NULL to open default
+    ALCdevice *dev = alcOpenDevice(NULL); //parameter: NULL or default_device
+    if (!dev) {
         qWarning("AOOpenAL Failed to open sound device: %s", alcGetString(0, alcGetError(0)));
         return false;
     }
     qDebug("AOOpenAL creating context...");
-    d.context = alcCreateContext(d.device, NULL);
-    alcMakeContextCurrent(d.context);
-    //alcProcessContext(d.context); //??
-    ALCenum err = alcGetError(d.device);
+    ALCcontext *ctx = alcCreateContext(dev, NULL);
+    alcMakeContextCurrent(ctx);
+    //alcProcessContext(ctx); //used when dealing witg multiple contexts
+    ALCenum err = alcGetError(dev);
     if (err != ALC_NO_ERROR) {
-        qWarning("AOOpenAL Error: %s", alcGetString(d.device, err));
+        qWarning("AOOpenAL Error: %s", alcGetString(dev, err));
         return false;
     }
     //init params. move to another func?
     d.format = audioFormatToAL(audioFormat());
+
     alGenBuffers(kBufferCount, d.buffer);
     err = alGetError();
     if (err != AL_NO_ERROR) {
+        qWarning("Failed to generate OpenAL buffers: %s", alGetString(err));
         alcMakeContextCurrent(NULL);
-        alcDestroyContext(d.context);
-        alcCloseDevice(d.device);
+        alcDestroyContext(ctx);
+        alcCloseDevice(dev);
         return false;
     }
     alGenSources(1, &d.source);
     err = alGetError();
     if (err != AL_NO_ERROR) {
+        qWarning("Failed to generate OpenAL source: %s", alGetString(err));
         alDeleteBuffers(kBufferCount, d.buffer);
         alcMakeContextCurrent(NULL);
-        alcDestroyContext(d.context);
-        alcCloseDevice(d.device);
+        alcDestroyContext(ctx);
+        alcCloseDevice(dev);
         return false;
     }
 
@@ -219,20 +220,23 @@ bool AOOpenAL::close()
     } while (alGetError() == AL_NO_ERROR && d.state == AL_PLAYING);
     alDeleteSources(1, &d.source);
     alDeleteBuffers(kBufferCount, d.buffer);
+
+    ALCcontext *ctx = alcGetCurrentContext();
+    ALCdevice *dev = alcGetContextsDevice(ctx);
     alcMakeContextCurrent(NULL);
-    if (d.context) {
-        alcDestroyContext(d.context);
-        ALCenum err = alcGetError(d.device);
+    if (ctx) {
+        alcDestroyContext(ctx);
+        ALCenum err = alcGetError(dev);
         if (err != ALC_NO_ERROR) { //ALC_INVALID_CONTEXT
-            qWarning("AOOpenAL Failed to destroy context: %s", alcGetString(d.device, err));
+            qWarning("AOOpenAL Failed to destroy context: %s", alcGetString(dev, err));
             return false;
         }
     }
-    if (d.device) {
-        alcCloseDevice(d.device);
-        ALCenum err = alcGetError(d.device);
+    if (dev) {
+        alcCloseDevice(dev);
+        ALCenum err = alcGetError(dev);
         if (err != ALC_NO_ERROR) { //ALC_INVALID_DEVICE
-            qWarning("AOOpenAL Failed to close device: %s", alcGetString(d.device, err));
+            qWarning("AOOpenAL Failed to close device: %s", alcGetString(dev, err));
             return false;
         }
     }
@@ -241,7 +245,9 @@ bool AOOpenAL::close()
 
 QString AOOpenAL::name() const
 {
-    const ALCchar *name = alcGetString(d_func().device, ALC_DEVICE_SPECIFIER);
+    ALCcontext *ctx = alcGetCurrentContext();
+    ALCdevice *dev = alcGetContextsDevice(ctx);
+    const ALCchar *name = alcGetString(dev, ALC_DEVICE_SPECIFIER);
     return name;
 }
 
@@ -254,57 +260,46 @@ bool AOOpenAL::write()
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     if (d.state == 0) {
-        //// Initial buffering
+        //// Initial all buffers
         alSourcef(d.source, AL_GAIN, d.vol);
-        const char* b = d.data.constData();
-        int remain = d.data.size();
-        d.time.start();
         for (int i = 0; i < kBufferCount; ++i) {
             ALERROR_RETURN_F(alBufferData(d.buffer[i], d.format, d.data, d.data.size(), audioFormat().sampleRate()));
             alSourceQueueBuffers(d.source, 1, &d.buffer[i]);
-            continue;
-            if (remain <= 0)
-                break;
-            // TODO: buffer the whole data and kBufferCount times with the same data?
-            alBufferData(d.buffer[i], d.format, b, qMin(remain, kBufferSize), audioFormat().sampleRate());
-            alSourceQueueBuffers(d.source, 1, &d.buffer[i]);
-            b += kBufferSize;
-            remain -= kBufferSize;
         }
         //alSourceQueueBuffers(d.source, 3, d.buffer);
-        alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
-        ALERROR_RETURN_F(alSourcePlay(d.source));
-        d.last_duration = audioFormat().durationForBytes(d.data.size());
+        alGetSourcei(d.source, AL_SOURCE_STATE, &d.state); //update d.state
+        alSourcePlay(d.source);
+        d.last_duration = audioFormat().durationForBytes(d.data.size())*kBufferCount;
+        d.time.start();
         return true;
     }
     qint64 dt = d.last_duration - d.time.elapsed();
     d.last_duration = audioFormat().durationForBytes(d.data.size());
-    if (dt > 8LL)
-        d.cond.wait(&d.mutex, (ulong)(dt-2LL));
+    // TODO: how to control the error?
+    if (dt > 0LL)
+        d.cond.wait(&d.mutex, (ulong)dt);
 
     ALint processed = 0;
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
     if (processed <= 0) {
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
         if (d.state != AL_PLAYING) {
-            ALERROR_RETURN_F(alSourcePlay(d.source));
+            alSourcePlay(d.source);
         }
         //return false;
     }
     const char* b = d.data.constData();
     int remain = d.data.size();
-    d.time.restart();
     while (processed--) {
         if (remain <= 0)
             break;
         ALuint buf;
         //unqueues a set of buffers attached to a source
         alSourceUnqueueBuffers(d.source, 1, &buf);
-        ALERROR_RETURN_F(alBufferData(buf, d.format, b, qMin(remain, kBufferSize), audioFormat().sampleRate()));
+        alBufferData(buf, d.format, b, qMin(remain, kBufferSize), audioFormat().sampleRate());
         alSourceQueueBuffers(d.source, 1, &buf);
         b += kBufferSize;
         remain -= kBufferSize;
-
 //        qDebug("remain: %d", remain);
         ALenum err = alGetError();
         if (err != AL_NO_ERROR) { //return ?
@@ -312,10 +307,12 @@ bool AOOpenAL::write()
             return false;
         }
     }
+    d.time.restart();
     alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
     if (d.state != AL_PLAYING) {
-        qDebug("AOOpenAL: !AL_PLAYING alSourcePlay");
-        ALERROR_RETURN_F(alSourcePlay(d.source));
+        //qDebug("AOOpenAL: !AL_PLAYING alSourcePlay");
+        alSourcePlay(d.source);
+        d.time.restart();
     }
     return true;
 }
