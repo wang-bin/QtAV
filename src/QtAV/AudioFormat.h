@@ -97,12 +97,14 @@ public:
     QString sampleFormatName() const;
 
     // Helper functions
+    // in microseconds
     qint32 bytesForDuration(qint64 duration) const;
     qint64 durationForBytes(qint32 byteCount) const;
 
     qint32 bytesForFrames(qint32 frameCount) const;
     qint32 framesForBytes(qint32 byteCount) const;
 
+    // in microseconds
     qint32 framesForDuration(qint64 duration) const;
     qint64 durationForFrames(qint32 frameCount) const;
 

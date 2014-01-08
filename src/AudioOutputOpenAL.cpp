@@ -292,12 +292,12 @@ bool AudioOutputOpenAL::write()
         //alSourceQueueBuffers(d.source, 3, d.buffer);
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state); //update d.state
         alSourcePlay(d.source);
-        d.last_duration = audioFormat().durationForBytes(d.data.size())*kBufferCount;
+        d.last_duration = audioFormat().durationForBytes(d.data.size())/1000LL*kBufferCount;
         d.time.start();
         return true;
     }
     qint64 dt = d.last_duration - d.time.elapsed();
-    d.last_duration = audioFormat().durationForBytes(d.data.size());
+    d.last_duration = audioFormat().durationForBytes(d.data.size())/1000LL;
     // TODO: how to control the error?
     if (dt > 0LL)
         d.cond.wait(&d.mutex, (ulong)dt);
