@@ -26,6 +26,7 @@
 #include <QtAV/AVDemuxer.h> //TODO: remove AVDemuxer dependency. it's not a public class
 #include <QtAV/Statistics.h>
 #include <QtAV/VideoDecoderTypes.h>
+#include <QtCore/QHash>
 
 namespace QtAV {
 
@@ -177,6 +178,21 @@ public:
     int brightness() const;
     int contrast() const;
     int saturation() const;
+    /*
+     * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
+     * In addition, av_dict is slow.
+     */
+    // avformat_open_input
+    void setOptionsForFormat(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> optionsForFormat() const;
+    // avcodec_open2. TODO: the same for audio/video codec?
+    void setOptionsForAudioCodec(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> optionsForAudioCodec() const;
+    void setOptionsForVideoCodec(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> optionsForVideoCodec() const;
+    // avfilter_init_dict
+    //void setOptionsForFilter(const QHash<QByteArray, QByteArray>& dict);
+    //QHash<QByteArray, QByteArray> optionsForFilter() const;
 
 signals:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
@@ -297,6 +313,8 @@ private:
     QVector<VideoDecoderId> vcodec_ids;
 
     int mBrightness, mContrast, mSaturation;
+
+    QHash<QByteArray, QByteArray> audio_codec_opt, video_codec_opt;
 };
 
 } //namespace QtAV

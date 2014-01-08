@@ -23,6 +23,7 @@
 #define QAV_DEMUXER_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtCore/QHash>
 #include <QtCore/QObject>
 #include <QtCore/QSize>
 #include <QtCore/QMutex>
@@ -39,7 +40,7 @@ struct AVCodecContext;
 struct AVCodec;
 struct AVFrame;
 struct AVStream;
-
+struct AVDictionary;
 
 // TODO: force codec name. clean code
 namespace QtAV {
@@ -168,6 +169,15 @@ public:
      */
     void setInterruptStatus(int interrupt);
 
+    /*
+     * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
+     * In addition, av_dict is slow.
+     * empty means default options in ffmpeg
+     */
+    // avformat_open_input
+    void setOptions(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> options() const;
+
 signals:
     /*emit when the first frame is read*/
     void started();
@@ -205,6 +215,8 @@ private:
     class InterruptHandler;
     InterruptHandler *mpInterrup;
 
+    AVDictionary *mpDict;
+    QHash<QByteArray, QByteArray> mOptions;
 };
 
 } //namespace QtAV

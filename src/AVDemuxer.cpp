@@ -134,6 +134,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , _file_name(fileName)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AnyFrame)
+    , mpDict(0)
 {
     mpInterrup = new InterruptHandler(this);
     if (!_file_name.isEmpty())
@@ -146,6 +147,9 @@ AVDemuxer::~AVDemuxer()
     if (pkt) {
         delete pkt;
         pkt = 0;
+    }
+    if (mpDict) {
+        av_dict_free(&mpDict);
     }
     delete mpInterrup;
 }
@@ -404,7 +408,7 @@ bool AVDemuxer::loadFile(const QString &fileName)
     qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
 
     mpInterrup->begin(InterruptHandler::Open);
-    int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, NULL);
+    int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, mOptions.isEmpty() ? NULL : &mpDict);
     mpInterrup->end();
 
     qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
@@ -894,6 +898,28 @@ int AVDemuxer::getInterruptStatus() const{
  */
 void AVDemuxer::setInterruptStatus(int interrupt){
     mpInterrup->setStatus(interrupt);
+}
+
+void AVDemuxer::setOptions(const QHash<QByteArray, QByteArray> &dict)
+{
+    mOptions = dict;
+    if (mpDict) {
+        av_dict_free(&mpDict);
+        mpDict = 0; //aready 0 in av_free
+    }
+    if (dict.isEmpty())
+        return;
+    QHashIterator<QByteArray, QByteArray> i(dict);
+    while (i.hasNext()) {
+        i.next();
+        av_dict_set(&mpDict, i.key().constData(), i.value().constData(), 0);
+        qDebug("avformat option: %s=>%s", i.key().constData(), i.value().constData());
+    }
+}
+
+QHash<QByteArray, QByteArray> AVDemuxer::options() const
+{
+    return mOptions;
 }
 
 } //namespace QtAV

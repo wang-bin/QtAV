@@ -422,6 +422,36 @@ void AVPlayer::setPriority(const QVector<VideoDecoderId> &ids)
     vcodec_ids = ids;
 }
 
+void AVPlayer::setOptionsForFormat(const QHash<QByteArray, QByteArray> &dict)
+{
+    demuxer.setOptions(dict);
+}
+
+QHash<QByteArray, QByteArray> AVPlayer::optionsForFormat() const
+{
+    return demuxer.options();
+}
+
+void AVPlayer::setOptionsForAudioCodec(const QHash<QByteArray, QByteArray> &dict)
+{
+    audio_codec_opt = dict;
+}
+
+QHash<QByteArray, QByteArray> AVPlayer::optionsForAudioCodec() const
+{
+    return audio_codec_opt;
+}
+
+void AVPlayer::setOptionsForVideoCodec(const QHash<QByteArray, QByteArray> &dict)
+{
+    video_codec_opt = dict;
+}
+
+QHash<QByteArray, QByteArray> AVPlayer::optionsForVideoCodec() const
+{
+    return video_codec_opt;
+}
+
 /*
  * loaded state is the state of current setted file.
  * For replaying, we can avoid load a seekable file again.
@@ -1155,6 +1185,7 @@ bool AVPlayer::setupAudioThread()
         audio_dec = new AudioDecoder();
     }
     audio_dec->setCodecContext(aCodecCtx);
+    audio_dec->setOptions(audio_codec_opt);
     if (!audio_dec->open()) {
         return false;
     }
@@ -1236,6 +1267,7 @@ bool AVPlayer::setupVideoThread()
         }
         //vd->isAvailable() //TODO: the value is wrong now
         vd->setCodecContext(vCodecCtx);
+        vd->setOptions(video_codec_opt);
         vd->prepare();
         if (vd->open()) {
             video_dec = vd;
