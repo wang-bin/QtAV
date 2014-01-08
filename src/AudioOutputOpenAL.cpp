@@ -159,10 +159,20 @@ bool AudioOutputOpenAL::open()
     d.available = false; // TODO: d.reset()
     QVector<QByteArray> _devices;
     const char *p = NULL;
-    if (alcIsExtensionPresent(NULL, "ALC_ENUMERATE_ALL_EXT"))
-        p = alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER);
-    else if (alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT"))
+    // maybe defined in alext.h
+#ifdef ALC_ALL_DEVICES_SPECIFIER
+    p = alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER);
+#else
+    if (alcIsExtensionPresent(NULL, "ALC_ENUMERATE_ALL_EXT")) {
+        // avoid using enum ALC_ALL_DEVICES_SPECIFIER directly
+        ALenum param = alcGetEnumValue(NULL, "ALC_ALL_DEVICES_SPECIFIER");
+        p = alcGetString(NULL, param);
+    } else {
+        //alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT")
+        //ALenum param = alcGetEnumValue(NULL, "ALC_DEVICE_SPECIFIER");
         p = alcGetString(NULL, ALC_DEVICE_SPECIFIER);
+    }
+#endif
     while (p && *p) {
         _devices.push_back(p);
         p += _devices.last().size() + 1;
