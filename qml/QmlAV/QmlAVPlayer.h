@@ -46,6 +46,9 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
+    // not supported by QtMultimedia
+    Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
+    Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
 public:
     enum Loop
     {
@@ -87,6 +90,11 @@ public:
     bool autoPlay() const;
     void setAutoPlay(bool autoplay);
 
+    // "FFmpeg", "DXVA", "VAAPI" etc
+    QStringList videoCodecs() const;
+    QStringList videoCodecPriority() const;
+    void setVideoCodecPriority(const QStringList& p);
+
 public Q_SLOTS:
     void play();
     void pause();
@@ -114,6 +122,7 @@ Q_SIGNALS:
     void stopped();
     void playing();
     void seekableChanged();
+    void videoCodecPriorityChanged();
 
 private Q_SLOTS:
     void _q_started();
@@ -129,6 +138,7 @@ private:
     PlaybackState mPlaybackState;
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
+    QStringList mVideoCodecs;
 };
 
 #endif // QTAV_QML_AVPLAYER_H

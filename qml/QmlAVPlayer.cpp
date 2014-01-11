@@ -23,6 +23,37 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
 
+template<typename ID, typename Factory>
+static QStringList idsToNames(QVector<ID> ids) {
+    QStringList decs;
+    foreach (ID id, ids) {
+        decs.append(Factory::name(id).c_str());
+    }
+    return decs;
+}
+
+template<typename ID, typename Factory>
+static QVector<ID> idsFromNames(const QStringList& names) {
+    QVector<ID> decs;
+    foreach (QString name, names) {
+        if (name.isEmpty())
+            continue;
+        ID id = Factory::id(name.toStdString());
+        if (id == 0)
+            continue;
+        decs.append(id);
+    }
+    return decs;
+}
+
+static inline QStringList VideoDecodersToNames(QVector<QtAV::VideoDecoderId> ids) {
+    return idsToNames<QtAV::VideoDecoderId, VideoDecoderFactory>(ids);
+}
+
+static inline QVector<VideoDecoderId> VideoDecodersFromNames(const QStringList& names) {
+    return idsFromNames<QtAV::VideoDecoderId, VideoDecoderFactory>(names);
+}
+
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
   , mAutoPlay(false)
@@ -37,6 +68,8 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
+
+    mVideoCodecs << "FFmpeg";
 }
 
 QUrl QmlAVPlayer::source() const
@@ -90,6 +123,26 @@ void QmlAVPlayer::setAutoPlay(bool autoplay)
 
     mAutoPlay = autoplay;
     emit autoPlayChanged();
+}
+
+QStringList QmlAVPlayer::videoCodecs() const
+{
+    return VideoDecodersToNames(QtAV::GetRegistedVideoDecoderIds());
+}
+
+void QmlAVPlayer::setVideoCodecPriority(const QStringList &p)
+{
+    if (!mpPlayer) {
+        qWarning("player not ready");
+        return;
+    }
+    mpPlayer->setPriority(VideoDecodersFromNames(p));
+    emit videoCodecPriorityChanged();
+}
+
+QStringList QmlAVPlayer::videoCodecPriority() const
+{
+    return mVideoCodecs;
 }
 
 int QmlAVPlayer::loopCount() const
@@ -212,7 +265,8 @@ void QmlAVPlayer::play(const QUrl &url)
 
 void QmlAVPlayer::play()
 {
-    mpPlayer->setRepeat(mLoopCount - 1);
+    mpPlayer->stop();
+    mpPlayer->setRepeat(mLoopCount - 1); //reset
     mpPlayer->play();
 }
 
