@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>QtAV by wang-bin</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/wang-bin/QtAV">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/wang-bin/QtAV/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/wang-bin/QtAV/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>QtAV</h1>
+          <p>A media playing framework based on Qt and FFmpeg. It helps you to write a player easily. 基于Qt和FFmpeg的音视频播放框架</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/wang-bin">wang-bin</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <p>QtAV is a media playing library based on Qt and FFmpeg. It can help you to write a player
+with less effort than ever before.</p>
+
+<h4>
+<a name="download-binaries-from-sourceforge" class="anchor" href="#download-binaries-from-sourceforge"><span class="octicon octicon-link"></span></a><a href="https://sourceforge.net/projects/qtav">Download binaries from sourceforge</a>
+</h4>
+
+<h1>
+<a name="for-developers" class="anchor" href="#for-developers"><span class="octicon octicon-link"></span></a>For Developers</h1>
+
+<h4>
+<a name="how-to-write-a-player" class="anchor" href="#how-to-write-a-player"><span class="octicon octicon-link"></span></a>How To Write a Player</h4>
+
+<p>Wrtie a media player using QtAV is quite easy.</p>
+
+<pre><code>WidgetRenderer renderer;
+renderer.show();
+AVPlayer player;
+player.setRenderer(&amp;renderer);
+player.play("test.avi");
+</code></pre>
+
+<p>For more detail to using QtAV, see the wiki <a href="https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Projects">Use QtAV In Your Project</a> or examples.</p>
+
+<p>QtAV can also be used in <strong>Qml</strong></p>
+
+<pre><code>import QtQuick 2.0
+import QtAV 1.3
+Item {
+    VideoOut {
+        anchors.fill: parent
+        source: player
+    }
+    AVPlayer { //or MediaPlayer
+        id: player
+        source: "test.mp4"
+    }
+    MouseArea {
+        anchors.fill: parent
+        onClicked: player.play()
+    }
+}
+</code></pre>
+
+<h2>
+<a name="screenshots" class="anchor" href="#screenshots"><span class="octicon octicon-link"></span></a>Screenshots</h2>
+
+<p>QtAV on Mac OS X</p>
+
+<p><img src="https://sourceforge.net/p/qtav/screenshot/mac.jpg" alt="Alt text" title="simple player on Mac"></p>
+
+<hr><h3>
+<a name="donate-%E8%B5%84%E5%8A%A9" class="anchor" href="#donate-%E8%B5%84%E5%8A%A9"><span class="octicon octicon-link"></span></a><a href="https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0">Donate 资助</a>
+</h3>
+
+<h5>
+<a name="what-are-the-financial-needs-of-qtav" class="anchor" href="#what-are-the-financial-needs-of-qtav"><span class="octicon octicon-link"></span></a>What are the financial needs of QtAV?</h5>
+
+<ul>
+<li>Buy hardware for developing and testing purpose. (lack of AMD card now)</li>
+</ul><p><a href="https://me.alipay.com/lucaswang"><img src="https://img.alipay.com/sys/personalprod/style/mc/top-logo.png" alt="Alipay"></a></p>
+
+<p><a href="https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0">PayPal <img src="http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" alt="Paypal"></a></p>
+
+<p><a href="https://www.gittip.com/wang-bin"><img src="https://rawgithub.com/twolfson/gittip-badge/0.1.0/dist/gittip.png" alt="Support via Gittip"></a></p>
+
+<hr><blockquote>
+<p>Copyright © Wang Bin <a href="mailto:wbsecg1@gmail.com">wbsecg1@gmail.com</a></p>
+
+<p>Shanghai University-&gt;S3 Graphics, Shanghai, China</p>
+
+<p>2013-01-21</p>
+</blockquote>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
