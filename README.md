@@ -42,9 +42,7 @@ QtAV can meet your most demands
 ### Extensible Framework (work in progress)
 
   QtAV currently uses FFmpeg to decode video, convert image and audio data, and uses PortAudio to play
-  sound. Every part in QtAV is designed to be extensible. For example, you can write your audio output
-  class using OpenAL, image converting class using cuda to get better performance etc. These features
-  will be added in the feature by default.
+  sound. Every part in QtAV is designed to be extensible. For example, you can write your decoder, audio output for particular platform. [Here is a very good example to add cedar hardware accelerated decoder for A13-OLinuXino   ](https://github.com/mireq/QtAV/commit/d7b428c1dae66b2a85b7a6bfa7b253980b5b963c)
 
 
 # For Developers
@@ -104,33 +102,26 @@ QtAV can also be used in **Qml**
 
     import QtQuick 2.0
     import QtAV 1.3
-    Rectangle {
-        width: 640
-        height: 360
-        color: "black"
+    Item {
         VideoOut {
-            id: vo
             anchors.fill: parent
+            source: player
         }
-        AVPlayer {
+        AVPlayer { //or MediaPlayer
             id: player
-            videoOut: vo
+            source: "test.mp4"
         }
         MouseArea {
             anchors.fill: parent
-            onClicked: {
-                player.source = "test.mp4"
-                player.play()
-            }
+            onClicked: player.play()
         }
     }
-
-
 
 ### How To Contribute
 
 - [Fork](https://github.com/wang-bin/QtAV/fork) QtAV project on github and make a branch. Commit in that branch, and push, then create a pull request to be reviewed and merged.
 - [Create an issue](https://github.com/wang-bin/QtAV/issues/new) if you have any problem when using QtAV or you find a bug, etc.
+- What you can do: translation, writing document, find or fix bugs, give your idea for this project etc.
 
 #### Contributors
 
@@ -215,9 +206,9 @@ IP camera using QtAV. OS: Fedora 18 (some developers from Italy http://www.selco
 
 ![Alt text](https://sourceforge.net/projects/qtav/screenshots/ip_camera.jpg "ip camera")
 
-Rotate a video item
+QMLPlayer on ubuntu
 
-![Alt text](https://sourceforge.net/p/qtav/screenshot/QtAV_videoitem.jpg "rotated video")
+![QMLPlayer](https://a.fsdn.com/con/app/proj/qtav/screenshots/Player-QtAV+QML.png "QMLPlayer")
 
 Video Wall
 
@@ -229,6 +220,9 @@ Video Wall
 ### [Donate 资助](https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0)
 
 软件由我一人利用空余学习和工作时间开发。如果您觉得不错，可以考虑资助一下
+
+#####What are the financial needs of QtAV?
+- Buy hardware for developing and testing purpose. (lack of AMD card now)
 
 Thanks
 
