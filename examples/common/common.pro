@@ -22,6 +22,9 @@ RESOURCES += \
 
 #QMAKE_LFLAGS += -u _link_hack
 
+#SystemParametersInfo
+*msvc*: LIBS += -lUser32
+
 HEADERS = common.h \
     ScreenSaver.h
 SOURCES = common.cpp \

@@ -8,8 +8,6 @@ include($$PROJECTROOT/src/libQtAV.pri)
 include($$PWD/../common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
 
-#SystemParametersInfo
-*msvc*: LIBS += -lUser32
 INCLUDEPATH += $$PWD
 
 SOURCES += main.cpp \
