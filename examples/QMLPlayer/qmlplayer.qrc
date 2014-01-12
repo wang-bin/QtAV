@@ -4,5 +4,6 @@
         <file>qml/QMLPlayer/Button.qml</file>
         <file>qml/QMLPlayer/ProgressBar.qml</file>
         <file>qml/QMLPlayer/Slider.qml</file>
+        <file>qml/QMLPlayer/utils.js</file>
     </qresource>
 </RCC>

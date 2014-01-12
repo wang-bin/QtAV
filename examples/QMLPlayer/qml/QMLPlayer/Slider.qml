@@ -62,8 +62,8 @@ Rectangle {
 
     Rectangle {
         id: grip
-        property real value: 1
-        x: (value * parent.width)
+        property real value: 0.5
+        x: (value * parent.width - width/2)
         anchors.verticalCenter: parent.verticalCenter
         width: root.gripTolerance * root.gripSize
         height: width

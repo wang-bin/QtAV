@@ -89,8 +89,8 @@ Rectangle {
             drag {
                 target: grip
                 axis: Drag.XAxis
-                minimumX: 0
-                maximumX: root.width
+                minimumX: -parent.width/2
+                maximumX: root.width - parent.width/2
             }
             onPositionChanged:  {
                 if (drag.active)

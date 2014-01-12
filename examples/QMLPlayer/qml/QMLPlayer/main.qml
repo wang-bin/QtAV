@@ -23,7 +23,7 @@ import QtQuick 2.1
 import QtQuick.Dialogs 1.0
 //import QtMultimedia 5.0
 import QtAV 1.3
-
+import "utils.js" as Utils
 
 
 Rectangle {
@@ -50,7 +50,6 @@ Rectangle {
     }
 
     VideoOutput {
-        id: vo
         fillMode: VideoOutput.PreserveAspectFit
         anchors.fill: parent
         source: player
@@ -62,21 +61,20 @@ Rectangle {
         onPositionChanged: {
             console.log("pos change")
             progress.value = position/duration
-            now.text = msec2string(position)
+            now.text = Utils.msec2string(position)
         }
         onPlaying: {
             control.aniShow()
             playBtn.checked = true
-            life.text = msec2string(duration)
+            life.text = Utils.msec2string(duration)
             control.hideIfTimedout()
-            help.title = source
         }
         onStopped: {
             control.visible = true
             control.aniShow()
             playBtn.checked = false
             progress.value = 0
-            now.text = msec2string(0)
+            now.text = Utils.msec2string(0)
         }
         onPaused: {
             control.aniShow()
@@ -116,7 +114,7 @@ Rectangle {
                         timer.stop();
                     control.aniShow()
                 } else {
-                    if (player.playbackState != MediaPlayer.StoppedState)
+                    if (player.playbackState !== MediaPlayer.StoppedState)
                         timer.start()
                 }
             }
@@ -155,13 +153,13 @@ Rectangle {
                     return
                 var v = value * progress.width
                 preview.anchors.leftMargin = v - preview.width/2
-                previewText.text = msec2string(value*player.duration)
+                previewText.text = Utils.msec2string(value*player.duration)
                 console.log("hover: "+value + " duration: " + player.duration)
             }
         }
         Text {
             id: now
-            text: msec2string(0)
+            text: Utils.msec2string(0)
             anchors {
                 top: progress.bottom
                 topMargin: 2
@@ -171,7 +169,7 @@ Rectangle {
         }
         Text {
             id: life
-            text: msec2string(0)
+            text: Utils.msec2string(0)
             anchors {
                 top: progress.bottom
                 topMargin: 2
@@ -338,11 +336,26 @@ Rectangle {
                     icon: resurl("theme/default/fullscreen.svg")
                     iconChecked: resurl("theme/default/fullscreen.svg")
                     visible: true
-                    onClicked: {
+                    onCheckedChanged: {
                         if (checked)
                             requestFullScreen()
                         else
                             requestNormalSize()
+                    }
+                }
+                Slider {
+                    id: vol
+                    width: 80
+                    height: 30
+                    opacity: 0.9
+                    onValueChanged: {
+                        player.volume = 2*value
+                        voltext.text = vol.value*2
+                    }
+                    Text {
+                        color: "white"
+                        id: voltext
+                        text: vol.value*2
                     }
                 }
             }
@@ -359,7 +372,10 @@ Rectangle {
                     height: 25
                     icon: resurl("theme/default/info.svg")
                     visible: true
-                    onClicked: help.visible = !help.visible
+                    onClicked: {
+                        help.text = player.source
+                        help.visible = true
+                    }
                 }
                 Button {
                     id: openFileBtn
@@ -377,7 +393,10 @@ Rectangle {
                     width: 25
                     height: 25
                     icon: resurl("theme/default/help.svg")
-                    onClicked: help.visible = !help.visible
+                    onClicked: {
+                        help.text = help.helpText()
+                        help.visible = true
+                    }
                 }
             }
 
@@ -432,8 +451,19 @@ Rectangle {
                 break
             case Qt.Key_Left:
                 player.seekBackward()
+                break
+            case Qt.Key_Up:
+                vol.value = Math.min(1, vol.value+0.05)
+                break
+            case Qt.Key_Down:
+                vol.value = Math.max(0, vol.value-0.05)
+                break
             case Qt.Key_Space:
                 player.togglePause()
+                break
+            case Qt.Key_F:
+                console.log("F pressed " + fullScreenBtn.checked)
+                fullScreenBtn.checked = !fullScreenBtn.checked
                 break
             case Qt.Key_Q:
                 Qt.quit()
@@ -442,24 +472,46 @@ Rectangle {
     }
     Rectangle {
         id: help
-        property alias title: title.text
+        property alias text: title.text
         color: "#77222222"
         anchors {
-            top: root.top
+            //top: root.top
             left: root.left
             right: root.right
+            bottom: control.top
         }
-        height: 40
-        opacity: 0.9
+        height: 60
         visible: false
         Text {
             id: title
             color: "white"
             anchors.fill: parent
+            anchors.bottom: parent.bottom
             //horizontalAlignment: Qt.AlignHCenter
             font {
                 bold: true
                 pixelSize: 16
+            }
+            onContentHeightChanged: {
+                parent.height = contentHeight
+            }
+        }
+        function helpText() {
+            return "<h3>QMLPlayer based on QtAV  1.3.0 </h3>"
+             + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
+             + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
+             + "<p>Shanghai University->S3 Graphics, Shanghai, China</p>"
+             + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
+             + "<p>Downloads: <a href='https://sourceforge.net/projects/qtav'>https://sourceforge.net/projects/qtav</a></p>"
+             + "\n<h3>Shortcut:</h3>"
+             + "<p>M: mute</p><p>F: fullscreen</p><p>Up: volume+</p><p>Down: volume-
+                </p><p>Space: pause/play</p><p>Q: quite</p>"
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                console.log("click on help<<<<<<<")
+                parent.visible = false
             }
         }
     }
@@ -472,19 +524,5 @@ Rectangle {
             player.play()
         }
         //Component.onCompleted: visible = true
-    }
-    function msec2string(t) {
-        t = Math.floor(t/1000)
-        var ss = t%60
-        t = (t-ss)/60
-        var mm = t%60
-        var hh = (t-mm)/60
-        if (ss < 10)
-            ss = "0" + ss
-        if (mm < 10)
-            mm = "0" + mm
-        if (hh < 10)
-            hh = "0" + hh
-        return hh + ":" + mm +":" + ss
     }
 }
