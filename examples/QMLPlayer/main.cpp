@@ -1,6 +1,7 @@
 #include <QtGui/QGuiApplication>
 #include <QQuickItem>
 #include "qtquick2applicationviewer.h"
+#include "common/ScreenSaver.h"
 
 extern "C" void _link_hack();
 
@@ -40,5 +41,6 @@ int main(int argc, char *argv[])
 #endif
     QObject::connect(viewer.rootObject(), SIGNAL(requestFullScreen()), &viewer, SLOT(showFullScreen()));
     QObject::connect(viewer.rootObject(), SIGNAL(requestNormalSize()), &viewer, SLOT(showNormal()));
+    ScreenSaver::instance().enable(); //restore in dtor
     return app.exec();
 }

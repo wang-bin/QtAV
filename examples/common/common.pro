@@ -22,5 +22,7 @@ RESOURCES += \
 
 #QMAKE_LFLAGS += -u _link_hack
 
-HEADERS = common.h
-SOURCES = common.cpp
+HEADERS = common.h \
+    ScreenSaver.h
+SOURCES = common.cpp \
+    ScreenSaver.cpp
