@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -77,8 +77,9 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         return false;
     DPTR_D(AudioDecoder);
     AVPacket packet;
-    av_new_packet(&packet, encoded.size());
-    memcpy(packet.data, encoded.data(), encoded.size());
+    av_init_packet(&packet);
+    packet.size = encoded.size();
+    packet.data = (uint8_t*)encoded.constData();
 //TODO: use AVPacket directly instead of Packet?
     int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
     d.undecoded_size = qMin(encoded.size() - ret, encoded.size());
