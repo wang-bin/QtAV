@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -959,7 +959,7 @@ void AVPlayer::stop()
         thread->stop();
         // use if instead of while? eventloop in play()
         while (thread->isRunning()) {
-            thread->wait(5);
+            thread->wait(500);
             qDebug("stopping %s...", threads[i].name);
         }
     }
