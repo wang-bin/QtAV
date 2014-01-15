@@ -58,8 +58,14 @@ ipp-link {
     DEFINES += IPP_LINK
     ICCROOT = $$(IPPROOT)/../compiler
     INCLUDEPATH += $$(IPPROOT)/include
-    LIBS *= -L$$(IPPROOT)/lib/intel64 -L$$(IPPROOT)/lib/ia32 -lippcc -lippcore -lippi \
-            -L$$(IPPROOT)/../compiler/lib/ia32 -L$$(IPPROOT)/../compiler/lib/intel64 -lsvml -limf
+    message("QMAKE_TARGET.arch" $$QMAKE_TARGET.arch)
+    *64|contains(QMAKE_TARGET.arch, x86_64)|contains(TARGET_ARCH, x86_64) {
+        IPPARCH=intel64
+    } else {
+        IPPARCH=ia32
+    }
+    LIBS *= -L$$(IPPROOT)/lib/$$IPPARCH -lippcc -lippcore -lippi \
+            -L$$(IPPROOT)/../compiler/lib/$$IPPARCH -lsvml -limf
     #omp for static link. _t is multi-thread static link
 }
 config_portaudio {
