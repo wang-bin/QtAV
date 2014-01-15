@@ -136,6 +136,7 @@ void QmlAVPlayer::setVideoCodecPriority(const QStringList &p)
         qWarning("player not ready");
         return;
     }
+    mVideoCodecs = p;
     mpPlayer->setPriority(VideoDecodersFromNames(p));
     emit videoCodecPriorityChanged();
 }

@@ -40,6 +40,10 @@ Rectangle {
     function init(argv) {
         var a = JSON.parse(argv)
         if (a.length > 1) {
+            var i = a.indexOf("-vd")
+            if (i >= 0) {
+                player.videoCodecPriority = a[i+1].split(";")
+            }
             // FIXME: source is relative to this qml
             //player.source = a[a.length-1]
             //player.play()
