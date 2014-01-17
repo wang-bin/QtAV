@@ -1,5 +1,8 @@
 #Designed by Wang Bin(Lucas Wang). 2013 <wbsecg1@gmail.com>
 
+## TODO: put in .qmake.conf for Qt5?
+exists(user.conf): include(user.conf)
+
 ##TODO: BUILD_DIR=>BUILD_ROOT
 #if not empty, it means the parent project may already set it
 isEmpty(out_dir):out_dir = $$OUT_PWD
@@ -91,30 +94,32 @@ cache(BUILD_DIR, set, BUILD_DIR)
 cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
-!CONFIG(no_config_tests) {
+defineTest(runConfigTests) {
+  no_config_tests:return(false)
 #config.tests
-!isEmpty(EssentialDepends) {
+  !isEmpty(EssentialDepends) {
     for(d, EssentialDepends) {
-       !config_$$d {
-            CONFIG *= recheck
-       }
-       qtCompileTest($$d)|error("$$d is required, but compiler can not find it")
-    #   CONFIG -= recheck
+     !config_$$d {
+       CONFIG *= recheck
+     }
+     qtCompileTest($$d)|error("$$d is required, but compiler can not find it")
+  #   CONFIG -= recheck
     }
-}
-!isEmpty(OptionalDepends) {
+  }
+  !isEmpty(OptionalDepends) {
     message("checking for optional features...")
     for(d, OptionalDepends) {
-        qtCompileTest($$d)
+      qtCompileTest($$d)
     }
-}
-
-!isEmpty(EssentialDepends)|!isEmpty(OptionalDepends) {
+  }
+  !isEmpty(EssentialDepends)|!isEmpty(OptionalDepends) {
     message("To recheck the dependencies, delete '.qmake.cache' in the root of build dir, run qmake with argument 'CONFIG+=recheck' or '-config recheck'")
-}
+  }
+  return(true)
 }
 
-message("To disable config tests, create '.qmake.conf' in the root source dir, add 'CONFIG += no_config_tests'(Qt5)")
-message("Or pass 'CONFIG += no_config_tests' or '-config no_config_tests' to qmake")
-message("To manually set a config test result to true, disable config tests and pass 'CONFIG += config_name' to qmake")
-message("Or add 'CONFIG += config_name' in '.qmake.config'(Qt5):")
+message("To disable config tests, you can use 1 of the following methods")
+message("1. create '.qmake.conf' in the root source dir, add 'CONFIG += no_config_tests'(Qt5)")
+message("2. pass 'CONFIG += no_config_tests' or '-config no_config_tests' to qmake")
+message("3. add 'CONFIG += no_config_tests' in $$PWD/user.conf")
+message("To manually set a config test result to true, disable config tests and enable config_name like above")

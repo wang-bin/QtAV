@@ -1,3 +1,5 @@
+include(root.pri)
+
 TEMPLATE = subdirs
 CONFIG -= ordered
 SUBDIRS = libqtav examples tests
@@ -27,19 +29,21 @@ EssentialDepends = avutil avcodec avformat swscale
 OptionalDepends = \
     swresample \
     avresample \
-    gl \
-    openal \
-    portaudio \
-    direct2d \
-    gdiplus
+    gl
+# no-xxx can set in $$PWD/user.conf
+!no-openal: OptionalDepends *= openal
+!no-portaudio: OptionalDepends *= portaudio
+!no-direct2d: OptionalDepends *= direct2d
+!no-gdiplus: OptionalDepends *= gdiplus
 win32 {
-    OptionalDepends += dxva
+    !no-dxva: OptionalDepends *= dxva
 }
 unix {
-    OptionalDepends += xv vaapi
+    !no-xv: OptionalDepends *= xv
+    !no-vaapi: OptionalDepends *= vaapi
 }
 
-include(root.pri)
+runConfigTests()
 
 PACKAGE_VERSION = 1.3.0
 PACKAGE_NAME= QtAV
