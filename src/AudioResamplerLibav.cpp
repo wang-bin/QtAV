@@ -55,11 +55,7 @@ bool AudioResamplerLibav::convert(const quint8 **data)
      * the delay, similarly  upsampling and the input sample rate.
      */
     d.out_samples_per_channel = av_rescale_rnd(
-#if HAVE_SWR_GET_DELAY
-                swr_get_delay(d.context, qMax(d.in_format.sampleRate(), d.out_format.sampleRate())) +
-#else
-                128 + //TODO: QtAV_Compat
-#endif //HAVE_SWR_GET_DELAY
+                avresample_get_delay(d.context) +
                 d.in_samples_per_channel //TODO: wanted_samples(ffplay mplayer2)
                 , d.out_format.sampleRate(), d.in_format.sampleRate(), AV_ROUND_UP);
     //TODO: why crash for swr 0.5?
