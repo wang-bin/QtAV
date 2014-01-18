@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 #if 1
     QString json = app.arguments().join("\",\"");
     json.prepend("[\"").append("\"]");
-    //json.replace("\\", "/"); //FIXME
+    json.replace("\\", "/"); //FIXME
     QMetaObject::invokeMethod(viewer.rootObject(), "init", Q_ARG(QVariant, json));
 //#else
     if (app.arguments().size() > 1) {
