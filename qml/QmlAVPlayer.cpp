@@ -87,9 +87,10 @@ void QmlAVPlayer::setSource(const QUrl &url)
     } else {
         mpPlayer->setFile(mSource.toString());
     }
-    emit sourceChanged();
+    emit sourceChanged(); //TODO: emit only when player loaded a new source
     // TODO: in componentComplete()?
     if (mAutoLoad || mAutoPlay) {
+        mpPlayer->stop();
         mpPlayer->load();
     }
     if (mAutoPlay) {
@@ -223,10 +224,12 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
     mPlaybackState = playbackState;
     switch (mPlaybackState) {
     case PlayingState:
-        if (mpPlayer->isPaused())
+        if (mpPlayer->isPaused()) {
             mpPlayer->pause(false);
-        else
+        } else {
+            mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->play();
+        }
         break;
     case PausedState:
         mpPlayer->pause(true);
@@ -259,36 +262,26 @@ AVPlayer* QmlAVPlayer::player()
 
 void QmlAVPlayer::play(const QUrl &url)
 {
+    if (mSource == url)
+        return;
     setSource(url);
-    if (!mpPlayer->isPlaying())
-        play();
+    setPlaybackState(StoppedState);
+    play();
 }
 
 void QmlAVPlayer::play()
 {
-    mpPlayer->stop();
-    mpPlayer->setRepeat(mLoopCount - 1); //reset
-    mpPlayer->play();
+    setPlaybackState(PlayingState);
 }
 
 void QmlAVPlayer::pause()
 {
-    mpPlayer->pause(true);
-}
-
-void QmlAVPlayer::resume()
-{
-    mpPlayer->pause(false);
-}
-
-void QmlAVPlayer::togglePause()
-{
-    mpPlayer->togglePause();
+    setPlaybackState(PausedState);
 }
 
 void QmlAVPlayer::stop()
 {
-    mpPlayer->stop();
+    setPlaybackState(StoppedState);
 }
 
 void QmlAVPlayer::nextFrame()

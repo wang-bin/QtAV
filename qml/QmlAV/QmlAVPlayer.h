@@ -26,6 +26,9 @@
 #include <QtCore/QObject>
 #include <QmlAV/QQuickItemRenderer.h>
 
+/*!
+ *  Not work: autoPlay, autoLoad
+ */
 namespace QtAV {
 class AVPlayer;
 }
@@ -98,8 +101,6 @@ public:
 public Q_SLOTS:
     void play();
     void pause();
-    void resume();
-    void togglePause();
     void stop();
     void nextFrame();
     void seek(int offset);
@@ -125,6 +126,7 @@ Q_SIGNALS:
     void videoCodecPriorityChanged();
 
 private Q_SLOTS:
+    // connect to signals from player
     void _q_started();
     void _q_stopped();
     void _q_paused(bool);
