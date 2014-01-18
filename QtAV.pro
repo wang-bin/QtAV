@@ -2,8 +2,8 @@ include(root.pri)
 
 TEMPLATE = subdirs
 CONFIG -= ordered
-SUBDIRS = libqtav examples tests
-
+SUBDIRS = libqtav
+libqtav.file = src/libQtAV.pro
 greaterThan(QT_MAJOR_VERSION, 4) {
   qtHaveModule(quick) {
     SUBDIRS += libqmlav
@@ -12,10 +12,14 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     examples.depends += libqmlav
   }
 }
-libqtav.file = src/libQtAV.pro
-examples.depends += libqtav
-tests.depends += libqtav
-
+!no-examples {
+  SUBDIRS += examples
+  examples.depends += libqtav
+}
+!no-tests {
+  SUBDIRS += tests
+  tests.depends += libqtav
+}
 OTHER_FILES += README.md TODO.txt Changelog
 OTHER_FILES += templates/vo.h templates/vo.cpp templates/COPYRIGHT.h templates/mkclass.sh
 OTHER_FILES += \
