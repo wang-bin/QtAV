@@ -95,6 +95,9 @@ void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
+    //QHash<QByteArray, QByteArray> dict;
+    //dict.insert("rtsp_transport", "tcp");
+    //mpPlayer->setOptionsForFormat(dict);
     qDebug("player created");
     mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": " + mpPlayer->videoCapture()->captureDir());
     connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
@@ -686,6 +689,7 @@ void MainWindow::onStartPlay()
 
 void MainWindow::onStopPlay()
 {
+    mpPlayer->setPriority(Config::instance().decoderPriority());
     if (mpPlayer->currentRepeat() < mpPlayer->repeat())
         return;
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
