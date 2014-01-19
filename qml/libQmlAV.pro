@@ -12,15 +12,41 @@ PROJECTROOT = $$PWD/..
 !include(libQmlAV.pri): error("could not find libQmlAV.pri")
 preparePaths($$OUT_PWD/../out)
 
-DESTDIR = $$BUILD_DIR/bin/QtAV
+#DESTDIR = $$BUILD_DIR/bin/QtAV
 RESOURCES += 
 message($$BUILD_DIR)
-plugin.files = $$PWD/qmldir
-plugin.path = $$BUILD_DIR/bin/QtAV/ #TODO: Qt install dir
-plugin.commands = -\$\(COPY_FILE\) $$shell_path($$plugin.files) $$shell_path($$plugin.path)
-OTHER_FILES += $$plugin.files
+# add a make command
+defineReplace(mcmd) {
+    return($$escape_expand(\\n\\t)$$1)
+}
+QML_FILES = $$PWD/Video.qml
+plugin.files = $$PWD/qmldir $$PWD/Video.qml $$DESTDIR/$$qtSharedLib($$NAME)
+plugin.path = $$BUILD_DIR/bin/qml/QtAV/ #TODO: Qt install dir
+#plugin.depends = #makefile target
+#windows: copy /y file1+file2+... dir. need '+'
+for(f, plugin.files) {
+  plugin.commands += $$mcmd(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$plugin.path))
+}
+OTHER_FILES += $$PWD/qmldir $$PWD/Video.qml
+QMAKE_POST_LINK += $$plugin.commands #just append as a string to $$QMAKE_POST_LINK
+QMAKE_EXTRA_TARGETS = plugin
+#POST_TARGETDEPS = plugin #vs, xcode does not support
+mkpath($$plugin.path)
 
-QMAKE_POST_LINK += $$plugin.commands
+#http://stackoverflow.com/questions/14260542/qmake-extra-compilers-processing-steps
+#http://danny-pope.com/?p=86
+#custom compiler: auto update if source is newer
+#TODO: QMAKE_FIlE_EXT does not work
+plugin_maker.output = ${QMAKE_FILE_BASE}${QMAKE_FIlE_EXT}
+#plugin_maker.targetdir = $$plugin.path #not exist
+plugin_maker.commands = -\$\(COPY_FILE\) ${QMAKE_FILE_NAME} $$shell_path($$plugin.path)${QMAKE_FILE_OUT}
+plugin_maker.depends = $$PLUGIN_FILES
+plugin_maker.input = PLUGIN_FILES
+plugin_maker.CONFIG += no_link
+plugin_maker.variable_out = POST_TARGETDEPS
+#QMAKE_EXTRA_COMPILERS += plugin_maker
+
+PLUGIN_FILES = $$PWD/qmldir $$PWD/Video.qml $$DESTDIR/$$qtSharedLib($$NAME)
 
 win32 {
     RC_FILE = #$${PROJECTROOT}/res/QtAV.rc
