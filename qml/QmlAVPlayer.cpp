@@ -72,6 +72,16 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     mVideoCodecs << "FFmpeg";
 }
 
+bool QmlAVPlayer::hasAudio() const
+{
+    return mpPlayer->audioStreamCount() > 0;
+}
+
+bool QmlAVPlayer::hasVideo() const
+{
+    return mpPlayer->videoStreamCount() > 0;
+}
+
 QUrl QmlAVPlayer::source() const
 {
     return mSource;

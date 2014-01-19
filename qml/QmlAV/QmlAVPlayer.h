@@ -40,6 +40,8 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject
     Q_PROPERTY(int duration READ duration NOTIFY durationChanged)
     Q_PROPERTY(int position READ position NOTIFY positionChanged)
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY mutedChanged)
+    Q_PROPERTY(bool hasAudio READ hasAudio NOTIFY hasAudioChanged)
+    Q_PROPERTY(bool hasVideo READ hasVideo NOTIFY hasVideoChanged)
     Q_PROPERTY(PlaybackState playbackState READ playbackState NOTIFY playbackStateChanged)
     Q_PROPERTY(bool autoPlay READ autoPlay WRITE setAutoPlay NOTIFY autoPlayChanged)
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
@@ -65,6 +67,11 @@ public:
     };
 
     explicit QmlAVPlayer(QObject *parent = 0);
+
+    // add QtAV::AVPlayer::isAudioAvailable()?
+    bool hasAudio() const;
+    bool hasVideo() const;
+
     QUrl source() const;
     void setSource(const QUrl& url);
 
@@ -110,6 +117,9 @@ public Q_SLOTS:
 Q_SIGNALS:
     void volumeChanged();
     void mutedChanged();
+    // TODO: signal from QtAV::AVPlayer
+    void hasAudioChanged();
+    void hasVideoChanged();
     void durationChanged();
     void positionChanged();
     void sourceChanged();
