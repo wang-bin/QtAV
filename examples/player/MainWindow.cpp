@@ -750,7 +750,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 {
     if (mpPlayer)
         mpPlayer->stop();
-    QWidget::closeEvent(e);
+    qApp->quit();
 }
 
 void MainWindow::resizeEvent(QResizeEvent *e)
