@@ -27,5 +27,9 @@ RESOURCES += \
 
 HEADERS = common.h \
     ScreenSaver.h
-SOURCES = common.cpp \
-    ScreenSaver.cpp
+SOURCES = common.cpp
+!macx: SOURCES += ScreenSaver.cpp
+macx:!simulator {
+    OBJECTIVE_SOURCES += ScreenSaver.cpp
+    #LIBS += -framework ScreenSaver -framework IOBluetooth -framework CoreServices
+}

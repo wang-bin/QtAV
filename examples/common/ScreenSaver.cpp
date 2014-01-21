@@ -1,5 +1,29 @@
 #include "ScreenSaver.h"
-
+#include <QtCore/QTimerEvent>
+#include <QtCore/QLibrary>
+#ifdef Q_OS_LINUX
+//#include <X11/Xlib.h>
+#ifndef Success
+#define Success 0
+#endif
+struct _XDisplay;
+typedef struct _XDisplay Display;
+typedef Display* (*fXOpenDisplay)(const char*/* display_name */);
+typedef int (*fXCloseDisplay)(Display*/* display */);
+typedef int (*fXSetScreenSaver)(Display*, int /* timeout */, int /* interval */,int /* prefer_blanking */, int /* allow_exposures */);
+typedef int (*fXGetScreenSaver)(Display*, int* /* timeout_return */, int* /* interval_return */, int* /* prefer_blanking_return */, int* /* allow_exposures_return */);
+typedef int (*fXResetScreenSaver)(Display*/* display */);
+static fXOpenDisplay XOpenDisplay = 0;
+static fXCloseDisplay XCloseDisplay = 0;
+static fXSetScreenSaver XSetScreenSaver = 0;
+static fXGetScreenSaver XGetScreenSaver = 0;
+static fXResetScreenSaver XResetScreenSaver = 0;
+static QLibrary xlib;
+#endif //Q_OS_LINUX
+#ifdef Q_OS_MAC
+//http://www.cocoachina.com/macdev/cocoa/2010/0201/453.html
+//#include <CoreServices/CoreServices.h>
+#endif //Q_OS_MAC
 #include <QAbstractEventDispatcher>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QAbstractNativeEventFilter>
@@ -20,7 +44,7 @@ public:
         return sSSEF;
     }
     void enable(bool yes = true) {
-        if (yes) {
+        if (!yes) {
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
             mLastEventFilter = QAbstractEventDispatcher::instance()->setEventFilter(eventFilter);
 #else
@@ -91,18 +115,41 @@ ScreenSaver& ScreenSaver::instance()
 
 ScreenSaver::ScreenSaver()
 {
+    state_saved = false;
+    modified = false;
 #ifdef Q_OS_WIN
     ScreenSaverEventFilter::instance().enable();
     lowpower = poweroff = screensaver = 0;
-    state_saved = false;
-    modified = false;
 #endif
+#ifdef Q_OS_LINUX
+    timeout = 0;
+    interval = 0;
+    preferBlanking = 0;
+    allowExposures = 0;
+    xlib.setFileName("libX11.so");
+    isX11 = xlib.load();
+    if (!isX11) {
+        qDebug("open X11 so failed: %s", xlib.errorString().toUtf8().constData());
+    } else {
+        XOpenDisplay = (fXOpenDisplay)xlib.resolve("XOpenDisplay");
+        XCloseDisplay = (fXCloseDisplay)xlib.resolve("XCloseDisplay");
+        XSetScreenSaver = (fXSetScreenSaver)xlib.resolve("XSetScreenSaver");
+        XGetScreenSaver = (fXGetScreenSaver)xlib.resolve("XGetScreenSaver");
+        XResetScreenSaver = (fXResetScreenSaver)xlib.resolve("XResetScreenSaver");
+    }
+    isX11 = XOpenDisplay && XCloseDisplay && XSetScreenSaver && XGetScreenSaver && XResetScreenSaver;
+#endif //Q_OS_LINUX
+    ssTimerId = 0;
     retrieveState();
 }
 
 ScreenSaver::~ScreenSaver()
 {
     restoreState();
+#ifdef Q_OS_LINUX
+    if (xlib.isLoaded())
+        xlib.unload();
+#endif
 }
 
 //http://msdn.microsoft.com/en-us/library/windows/desktop/ms724947%28v=vs.85%29.aspx
@@ -147,8 +194,46 @@ bool ScreenSaver::enable(bool yes)
         modified = true;
     }
 #endif
-#else
-#endif
+#endif //Q_OS_WIN
+#ifdef Q_OS_LINUX
+    if (isX11) {
+        Display *display = XOpenDisplay(0);
+        // -1: restore default. 0: disable
+        int ret = 0;
+        if (yes)
+            ret = XSetScreenSaver(display, -1, interval, preferBlanking, allowExposures);
+        else
+            ret = XSetScreenSaver(display, 0, interval, preferBlanking/*DontPreferBlanking*/, allowExposures);
+        //TODO: why XSetScreenSaver return 1? now use XResetScreenSaver to workaround
+        ret = XResetScreenSaver(display);
+        XCloseDisplay(display);
+        rv = ret==Success;
+        qDebug("ScreenSaver::enable %d, ret %d timeout origin: %d", yes, ret, timeout);
+    }
+    modified = true;
+    if (!yes) {
+        if (ssTimerId <= 0) {
+            ssTimerId = startTimer(1000 * 60);
+        }
+    } else {
+        if (ssTimerId)
+            killTimer(ssTimerId);
+    }
+    rv = true;
+    modified = true;
+#endif //Q_OS_LINUX
+#ifdef Q_OS_MAC
+    if (!yes) {
+        if (ssTimerId <= 0) {
+            ssTimerId = startTimer(1000 * 60);
+        }
+    } else {
+        if (ssTimerId)
+            killTimer(ssTimerId);
+    }
+    rv = true;
+    modified = true;
+#endif //Q_OS_MAC
     if (!rv) {
         qWarning("Failed to enable screen saver (%d)", yes);
     } else {
@@ -169,33 +254,41 @@ void ScreenSaver::disable()
 
 bool ScreenSaver::retrieveState() {
     bool rv = false;
-#ifdef Q_OS_WIN
-    qDebug("WinScreenSaver::retrieveState");
+    qDebug("ScreenSaver::retrieveState");
     if (!state_saved) {
+#ifdef Q_OS_WIN
         //if (QSysInfo::WindowsVersion < QSysInfo::WV_VISTA) {
             // Not supported on Windows Vista
             SystemParametersInfo(SPI_GETLOWPOWERTIMEOUT, 0, &lowpower, 0);
             SystemParametersInfo(SPI_GETPOWEROFFTIMEOUT, 0, &poweroff, 0);
         //}
         rv = SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &screensaver, 0);
-        state_saved = true;
-        qDebug("WinScreenSaver::retrieveState: lowpower: %d, poweroff: %d, screensaver: %d", lowpower, poweroff, screensaver);
+        qDebug("ScreenSaver::retrieveState: lowpower: %d, poweroff: %d, screensaver: %d", lowpower, poweroff, screensaver);
+#endif //Q_OS_WIN
+#ifdef Q_OS_LINUX
+        if (isX11) {
+            Display *display = XOpenDisplay(0);
+            XGetScreenSaver(display, &timeout, &interval, &preferBlanking, &allowExposures);
+            XCloseDisplay(display);
+            qDebug("ScreenSaver::retrieveState timeout: %d, interval: %d, preferBlanking:%d, allowExposures:%d", timeout, interval, preferBlanking, allowExposures);
+            state_saved = true;
+            rv = true;
+        }
+#endif //Q_OS_LINUX
     } else {
-        rv = true;
-        qDebug("WinScreenSaver::retrieveState: state already saved previously, doing nothing");
+        qDebug("ScreenSaver::retrieveState: state already saved previously, doing nothing");
     }
-#endif
     return rv;
 }
 
 bool ScreenSaver::restoreState() {
     bool rv = false;
-#ifdef Q_OS_WIN
     if (!modified) {
-        qDebug("WinScreenSaver::restoreState: state did not change, doing nothing");
+        qDebug("ScreenSaver::restoreState: state did not change, doing nothing");
         return true;
     }
     if (state_saved) {
+#ifdef Q_OS_WIN
         //if (QSysInfo::WindowsVersion < QSysInfo::WV_VISTA) {
             // Not supported on Windows Vista
             SystemParametersInfo(SPI_SETLOWPOWERTIMEOUT, lowpower, NULL, 0);
@@ -203,9 +296,35 @@ bool ScreenSaver::restoreState() {
         //}
         rv = SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, screensaver, NULL, 0);
         qDebug("WinScreenSaver::restoreState: lowpower: %d, poweroff: %d, screensaver: %d", lowpower, poweroff, screensaver);
+#endif //Q_OS_WIN
+#ifdef Q_OS_LINUX
+        if (isX11) {
+            Display *display = XOpenDisplay(0);
+            // -1: restore default. 0: disable
+            XSetScreenSaver(display, timeout, interval, preferBlanking, allowExposures);
+            XCloseDisplay(display);
+            rv = true;
+        }
+#endif //Q_OS_LINUX
     } else {
-        qWarning("WinScreenSaver::restoreState: no data, doing nothing");
+        qWarning("ScreenSaver::restoreState: no data, doing nothing");
     }
-#endif
     return rv;
+}
+
+void ScreenSaver::timerEvent(QTimerEvent *e)
+{
+    if (e->timerId() != ssTimerId)
+        return;
+#ifdef Q_OS_MAC
+    //UpdateSystemActivity(OverallAct);
+    return;
+#endif //Q_OS_MAC
+#ifdef Q_OS_LINUX
+    if (!isX11)
+        return;
+    Display *display = XOpenDisplay(0);
+    XResetScreenSaver(display);
+    XCloseDisplay(display);
+#endif //Q_OS_LINUX
 }

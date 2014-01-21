@@ -41,6 +41,6 @@ int main(int argc, char *argv[])
 #endif
     QObject::connect(viewer.rootObject(), SIGNAL(requestFullScreen()), &viewer, SLOT(showFullScreen()));
     QObject::connect(viewer.rootObject(), SIGNAL(requestNormalSize()), &viewer, SLOT(showNormal()));
-    ScreenSaver::instance().enable(); //restore in dtor
+    ScreenSaver::instance().disable(); //restore in dtor
     return app.exec();
 }
