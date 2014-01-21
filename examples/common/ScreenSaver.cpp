@@ -22,7 +22,7 @@ static QLibrary xlib;
 #endif //Q_OS_LINUX
 #ifdef Q_OS_MAC
 //http://www.cocoachina.com/macdev/cocoa/2010/0201/453.html
-//#include <CoreServices/CoreServices.h>
+#include <CoreServices/CoreServices.h>
 #endif //Q_OS_MAC
 #include <QAbstractEventDispatcher>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
@@ -88,12 +88,8 @@ public:
         return false;
     }
 private:
-    ScreenSaverEventFilter() {
-        enable();
-    }
-    ~ScreenSaverEventFilter() {
-        enable(false);
-    }
+    ScreenSaverEventFilter() {}
+    ~ScreenSaverEventFilter() {}
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     static QAbstractEventDispatcher::EventFilter mLastEventFilter;
     static bool eventFilter(void* message) {
@@ -118,7 +114,6 @@ ScreenSaver::ScreenSaver()
     state_saved = false;
     modified = false;
 #ifdef Q_OS_WIN
-    ScreenSaverEventFilter::instance().enable();
     lowpower = poweroff = screensaver = 0;
 #endif
 #ifdef Q_OS_LINUX
@@ -164,6 +159,8 @@ bool ScreenSaver::enable(bool yes)
     bool rv = false;
 #ifdef Q_OS_WIN
     ScreenSaverEventFilter::instance().enable(yes);
+    modified = true;
+    rv = true;
     return true;
 #if 0
     //TODO: ERROR_OPERATION_IN_PROGRESS
@@ -263,6 +260,7 @@ bool ScreenSaver::retrieveState() {
             SystemParametersInfo(SPI_GETPOWEROFFTIMEOUT, 0, &poweroff, 0);
         //}
         rv = SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &screensaver, 0);
+        state_saved = true;
         qDebug("ScreenSaver::retrieveState: lowpower: %d, poweroff: %d, screensaver: %d", lowpower, poweroff, screensaver);
 #endif //Q_OS_WIN
 #ifdef Q_OS_LINUX
@@ -289,6 +287,7 @@ bool ScreenSaver::restoreState() {
     }
     if (state_saved) {
 #ifdef Q_OS_WIN
+#if 0
         //if (QSysInfo::WindowsVersion < QSysInfo::WV_VISTA) {
             // Not supported on Windows Vista
             SystemParametersInfo(SPI_SETLOWPOWERTIMEOUT, lowpower, NULL, 0);
@@ -296,6 +295,10 @@ bool ScreenSaver::restoreState() {
         //}
         rv = SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, screensaver, NULL, 0);
         qDebug("WinScreenSaver::restoreState: lowpower: %d, poweroff: %d, screensaver: %d", lowpower, poweroff, screensaver);
+#else
+        ScreenSaverEventFilter::instance().enable();
+        rv = true;
+#endif //0
 #endif //Q_OS_WIN
 #ifdef Q_OS_LINUX
         if (isX11) {
@@ -317,7 +320,7 @@ void ScreenSaver::timerEvent(QTimerEvent *e)
     if (e->timerId() != ssTimerId)
         return;
 #ifdef Q_OS_MAC
-    //UpdateSystemActivity(OverallAct);
+    UpdateSystemActivity(OverallAct);
     return;
 #endif //Q_OS_MAC
 #ifdef Q_OS_LINUX
