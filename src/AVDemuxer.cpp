@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -201,6 +201,8 @@ bool AVDemuxer::readFrame()
         return false;
     }
     pkt->hasKeyFrame = !!(packet.flags & AV_PKT_FLAG_KEY);
+    // what about marking packet as invalid and do not use isCorrupt?
+    pkt->isCorrupt = !!(packet.flags & AV_PKT_FLAG_CORRUPT);
     pkt->data = QByteArray((const char*)packet.data, packet.size);
     pkt->duration = packet.duration;
     //if (packet.dts == AV_NOPTS_VALUE && )
@@ -223,6 +225,8 @@ bool AVDemuxer::readFrame()
     else
         pkt->duration = 0;
     //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", pkt->pts, pkt->duration, packet.dts);
+    if (pkt->isCorrupt)
+        qDebug("currupt packet. pts: %f", pkt->pts);
 
     av_free_packet(&packet); //important!
     return true;
