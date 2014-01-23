@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,11 +29,6 @@
 
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h>
-#include <QtAV/WidgetRenderer.h>
-#include <QtAV/GLWidgetRenderer.h>
-#include <QtAV/Direct2DRenderer.h>
-#include <QtAV/GDIRenderer.h>
-#include <QtAV/XVRenderer.h>
 #include <QtAV/OSDFilter.h>
 
 #include "MainWindow.h"

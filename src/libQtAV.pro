@@ -32,7 +32,6 @@ win32 {
     QMAKE_EXTRA_TARGETS += rc
 }
 OTHER_FILES += $$RC_FILE
-
 TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 
 *msvc* {
@@ -43,7 +42,7 @@ TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
 
-LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
+LIBS += -lavcodec -lavformat -lavutil -lswscale
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
     SOURCES += AudioResamplerFF.cpp
@@ -139,7 +138,6 @@ SOURCES += \
     AVDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
-    EventFilter.cpp \
     Frame.cpp \
     Filter.cpp \
     FilterContext.cpp \
@@ -224,7 +222,6 @@ HEADERS *= \
     QtAV/VideoOutputEventFilter.h \
     QtAV/OutputSet.h \
     QtAV/QtAV_Compat.h \
-    QtAV/EventFilter.h \
     QtAV/singleton.h \
     QtAV/factory.h \
     QtAV/FilterManager.h \

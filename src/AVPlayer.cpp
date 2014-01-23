@@ -45,7 +45,6 @@
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/VideoThread.h>
 #include <QtAV/AVDemuxThread.h>
-#include <QtAV/EventFilter.h>
 #include <QtAV/VideoOutputEventFilter.h>
 #include <QtAV/VideoCapture.h>
 #include <QtAV/AudioOutputTypes.h>
@@ -65,7 +64,6 @@ AVPlayer::AVPlayer(QObject *parent) :
   , video_dec(0)
   , audio_thread(0)
   , video_thread(0)
-  , event_filter(0)
   , video_capture(0)
   , mSpeed(1.0)
   , ao_enable(true)
@@ -104,7 +102,6 @@ AVPlayer::AVPlayer(QObject *parent) :
     //use direct connection otherwise replay may stop immediatly because slot stop() is called after play()
     connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()), Qt::DirectConnection);
 
-    setPlayerEventFilter(new EventFilter(this));
     video_capture = new VideoCapture(this);
 
     vcodec_ids
@@ -154,7 +151,6 @@ AVPlayer::~AVPlayer()
         delete demuxer_thread;
         demuxer_thread = 0;
     }
-    setPlayerEventFilter(0);
 }
 
 AVClock* AVPlayer::masterClock()
@@ -323,27 +319,6 @@ void AVPlayer::setSpeed(qreal speed)
 qreal AVPlayer::speed() const
 {
     return mSpeed;
-}
-
-//setPlayerEventFilter(0) will remove the previous event filter
-void AVPlayer::setPlayerEventFilter(QObject *obj)
-{
-    if (event_filter) {
-        qApp->removeEventFilter(event_filter);
-        delete event_filter;
-    }
-    event_filter = obj; //the default event filter's parent is this, so AVPlayer will try to delete event_filter
-    if (obj) {
-        qApp->installEventFilter(event_filter);
-    } else {
-        //new created renderers keep the event filter
-        QList<VideoRenderer*> vos = videoOutputs();
-        if (!vos.isEmpty()) {
-            foreach (VideoRenderer *vo, vos) {
-                vo->enableDefaultEventFilter(false);
-            }
-        }
-    }
 }
 
 Statistics& AVPlayer::statistics()
@@ -1192,7 +1167,12 @@ bool AVPlayer::setupAudioThread()
     //TODO: setAudioOutput() like vo
     if (!_audio && ao_enable) {
         qDebug("new audio output");
+        //TODO: use priority?
+#if QTAV_HAVE(PORTAUDIO)
         _audio = AudioOutputFactory::create(AudioOutputId_PortAudio);
+#elif QTAV_HAVE(OPENAL)
+        _audio = AudioOutputFactory::create(AudioOutputId_OpenAL);
+#endif
     }
     if (!_audio) {
         // TODO: only when no audio stream or user disable audio stream. running an audio thread without sound is waste resource?

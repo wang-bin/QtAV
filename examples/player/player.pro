@@ -17,6 +17,7 @@ SOURCES += main.cpp \
     StatisticsView.cpp \
     Slider.cpp \
     TVView.cpp \
+    EventFilter.cpp \
     config/Config.cpp \
     config/VideoEQConfigPage.cpp \
     config/DecoderConfigPage.cpp \
@@ -32,6 +33,7 @@ HEADERS += \
     StatisticsView.h \
     Slider.h \
     TVView.h \
+    EventFilter.h \
     config/Config.h \
     config/VideoEQConfigPage.h \
     config/DecoderConfigPage.h \

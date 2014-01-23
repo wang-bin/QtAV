@@ -173,9 +173,6 @@ will use dxva if dxva can decode, otherwise ffmpeg will be used.
 - Drag and drop a media file to player
 
 
-The default behavior can be replaced by subclassing QObject and call `void AVPlayer::setPlayerEventFilter(QObject *obj)` (use null to disable).
-
-
 # TODO
 
 0. Component framework

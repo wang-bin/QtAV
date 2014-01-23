@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,6 +26,7 @@
 #include <QtAV/AVDemuxer.h> //TODO: remove AVDemuxer dependency. it's not a public class
 #include <QtAV/Statistics.h>
 #include <QtAV/VideoDecoderTypes.h>
+#include <QtAV/AudioOutputTypes.h>
 #include <QtCore/QHash>
 
 namespace QtAV {
@@ -130,7 +131,7 @@ public:
     bool play(const QString& path);
     bool isPlaying() const;
     bool isPaused() const;
-    //this will install the default EventFilter. To use customized filter, register after this
+    // TODO: use id as parameter and return ptr?
     void addVideoRenderer(VideoRenderer *renderer);
     void removeVideoRenderer(VideoRenderer *renderer);
     void clearVideoRenderers();
@@ -138,7 +139,10 @@ public:
     VideoRenderer* renderer();
     QList<VideoRenderer*> videoOutputs();
     void setAudioOutput(AudioOutput* ao);
-
+    //default has 1 audiooutput
+    //void addAudioOutput(AudioOutput* ao);
+    //void removeAudioOutput(AudioOutput* ao);
+    //QList<AudioOutput*> audioOutputs();
     /*!
      * To change audio format, you should set both AudioOutput's format and AudioResampler's format
      * So signals/slots is a better solution.
@@ -155,12 +159,6 @@ public:
      */
     void setSpeed(qreal speed);
     qreal speed() const;
-    /*
-     * only 1 event filter is available. the previous one will be removed.
-     * setPlayerEventFilter(0) will remove the event filter.
-     * qApp->installEventFilter will be called
-     */
-    void setPlayerEventFilter(QObject *obj);
 
     Statistics& statistics();
     const Statistics& statistics() const;
@@ -174,6 +172,7 @@ public:
     bool uninstallFilter(Filter *filter);
 
     void setPriority(const QVector<VideoDecoderId>& ids);
+    //void setPriority(const QVector<AudioOutputId>& ids);
 
     int brightness() const;
     int contrast() const;
@@ -303,8 +302,6 @@ private:
     AudioThread *audio_thread;
     VideoThread *video_thread;
 
-    //tODO: (un)register api
-    QObject *event_filter;
     VideoCapture *video_capture;
     Statistics mStatistics;
     qreal mSpeed;
