@@ -107,10 +107,11 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 	}
 
 	shared {
-        !CONFIG(plugin) {
+        !plugin {
             !isEqual(DESTDIR, $$BUILD_DIR/bin): DLLDESTDIR = $$BUILD_DIR/bin #copy shared lib there
         }
-		CONFIG(release, debug|release): !isEmpty(QMAKE_STRIP): QMAKE_POST_LINK = -$$QMAKE_STRIP $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
+#QMAKE_POST_LINK+=: just append as a string to previous QMAKE_POST_LINK
+                CONFIG(release, debug|release): !isEmpty(QMAKE_STRIP): QMAKE_POST_LINK = $$quote(-$$QMAKE_STRIP $$shell_path($$DESTDIR/$$qtSharedLib($$NAME)))
 		#copy from the pro creator creates.
 		symbian {
 			MMP_RULES += EXPORTUNFROZEN
