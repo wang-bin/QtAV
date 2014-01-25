@@ -1,15 +1,42 @@
 #/bin/bash
 
-IS_MINGW=`uname -a |grep -i mingw`
-IS_MINGW=`test -n "$IS_MINGW"`
-IS_MSYS=`uname -a |grep -i msys`
-IS_MSYS=`test -n "$IS_MSYS"`
+# wbsecg1@gmail.com
 
-type -a yasm &>/dev/null || echo "You'd better to install yasm!"
+function platform_is() {
+  local name=$1
+#TODO: osx=>darwin  
+  local line=`uname -a |grep -i $name`
+  test -n "$line" && return 0 || return 1
+}
+function is_libav() {
+  test "${PWD/libav*/}" = "$PWD" && return 1 || return 0
+}
 
-DXVA="--enable-dxva2  --enable-hwaccel=h264_dxva2 --enable-hwaccel=mpeg2_dxva2 --enable-hwaccel=vc1_dxva2 --enable-hwaccel=wmv3_dxva2"
+#CPU_FLAGS=-mmmx -msse -mfpmath=sse
+#ffmpeg 2.x autodetect dxva, vaapi, vdpau. manually enable vda
+DXVA="--enable-dxva2" #  --enable-hwaccel=h264_dxva2 --enable-hwaccel=mpeg2_dxva2 --enable-hwaccel=vc1_dxva2 --enable-hwaccel=wmv3_dxva2"
+VAAPI="--enable-vaapi" # --enable-hwaccel=h263_vaapi --enable-hwaccel=h264_vaapi --enable-hwaccel=mpeg2_vaapi --enable-hwaccel=mpeg4_vaapi --enable-hwaccel=vc1_vaapi --enable-hwaccel=wmv3_vaapi"
+VDPAU="--enable-vdpau" # --enable-hwaccel=h263_vdpau --enable-hwaccel=h264_vdpau --enable-hwaccel=mpeg1_vdpau --enable-hwaccel=mpeg2_vdpau --enable-hwaccel=mpeg4_vdpau --enable-hwaccel=vc1_vdpau --enable-hwaccel=wmv3_vdpau"
+VDA="--enable-vda" # --enable-hwaccel=h264_vda"
 
-CONFIGURE="./configure --disable-static --enable-shared --enable-runtime-cpudetect --enable-memalign-hack --disable-avdevice --enable-avfilter --enable-avresample --disable-postproc --disable-ffplay --disable-ffserver --enable-ffprobe --disable-muxers --disable-encoders --enable-pthreads --disable-iconv --disable-bzlib  --enable-hwaccels  $DXVA --extra-cflags=\"-O3  -ftree-vectorize -Wundef -Wdisabled-optimization -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -foptimize-sibling-calls -fstrength-reduce -frerun-loop-opt -frename-registers -ffast-math -fomit-frame-pointer\""
+platform_is Darwin && PLATFORM_OPT="$VDA --cc=clang --cxx=clang++"
+platform_is Linux && PLATFORM_OPT="$VAAPI $VDPAU"
+platform_is MinGW && PLATFORM_OPT="$DXVA"
+platform_is MSYS && PLATFORM_OPT="$DXVA"
+#SYS_ROOT=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim
+#--arch=armv7l --cpu=armv7l 
+#CLANG=clang
+if [ -n "$CLANG" ]; then
+  CLANG_CFLAGS="-target arm-none-linux-gnueabi"
+  CLANG_LFLAGS="-target arm-none-linux-gnueabi"
+  HOSTCC=clang
+  MAEMO5OPT="--host-cc=$HOSTCC --cc=$HOSTCC --enable-gpl --enable-version3 --enable-nonfree --enable-cross-compile  --target-os=linux --arch=armv7-a --sysroot=$SYS_ROOT"
+else
+  HOSTCC=gcc
+  MAEMO5OPT="--host-cc=$HOSTCC --enable-gpl --enable-version3 --enable-nonfree --enable-cross-compile --cross-prefix=arm-none-linux-gnueabi- --target-os=linux --arch=armv7-a --sysroot=$SYS_ROOT"
+fi
+
+CONFIGURE="./configure --disable-static --enable-shared --enable-runtime-cpudetect --enable-memalign-hack --disable-avdevice --enable-avfilter --enable-avresample --disable-postproc --disable-muxers --disable-encoders --enable-pthreads --disable-iconv --disable-bzlib --enable-hwaccels $PLATFORM_OPT --extra-cflags=\"-O3 -ftree-vectorize -ffast-math $CLANG_CFLAGS\""
 
 echo $CONFIGURE
 
