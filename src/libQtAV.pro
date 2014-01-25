@@ -123,6 +123,11 @@ config_vaapi {
     SOURCES += VideoDecoderVAAPI.cpp
     LIBS += -lva -lva-x11 #TODO: dynamic load
 }
+config_libcedarv {
+    DEFINES *= QTAV_HAVE_CEDARV=1
+    SOURCES += VideoDecoderCedarv.cpp
+    LIBS += -lvecore -lcedarv
+}
 SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \

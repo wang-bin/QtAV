@@ -45,6 +45,7 @@ win32 {
 unix {
     !no-xv: OptionalDepends *= xv
     !no-vaapi: OptionalDepends *= vaapi
+    !no-cedarv: OptionalDepends *= libcedarv
 }
 
 runConfigTests()
