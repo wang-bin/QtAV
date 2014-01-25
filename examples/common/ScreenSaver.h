@@ -25,9 +25,6 @@ private:
     bool retrieveState();
     bool restoreState();
     bool state_saved, modified;
-#ifdef Q_OS_WIN
-    int lowpower, poweroff, screensaver;
-#endif
 #ifdef Q_OS_LINUX
     bool isX11;
     int timeout;

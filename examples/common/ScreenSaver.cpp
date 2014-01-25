@@ -24,14 +24,15 @@ static QLibrary xlib;
 //http://www.cocoachina.com/macdev/cocoa/2010/0201/453.html
 #include <CoreServices/CoreServices.h>
 #endif //Q_OS_MAC
+#ifdef Q_OS_WIN
 #include <QAbstractEventDispatcher>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QAbstractNativeEventFilter>
 #endif
-
-#ifdef Q_OS_WIN
 #include <windows.h>
+#define USE_NATIVE_EVENT 0
 
+#if USE_NATIVE_EVENT
 class ScreenSaverEventFilter
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
         : public QAbstractNativeEventFilter
@@ -100,6 +101,7 @@ private:
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 QAbstractEventDispatcher::EventFilter ScreenSaverEventFilter::mLastEventFilter = 0;
 #endif
+#endif //USE_NATIVE_EVENT
 #endif //Q_OS_WIN
 
 
@@ -113,9 +115,6 @@ ScreenSaver::ScreenSaver()
 {
     state_saved = false;
     modified = false;
-#ifdef Q_OS_WIN
-    lowpower = poweroff = screensaver = 0;
-#endif
 #ifdef Q_OS_LINUX
     timeout = 0;
     interval = 0;
@@ -158,39 +157,31 @@ bool ScreenSaver::enable(bool yes)
 {
     bool rv = false;
 #ifdef Q_OS_WIN
+#if USE_NATIVE_EVENT
     ScreenSaverEventFilter::instance().enable(yes);
     modified = true;
     rv = true;
     return true;
-#if 0
-    //TODO: ERROR_OPERATION_IN_PROGRESS
-    if (yes)
-        rv = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, 1, NULL, 0);
-    else
-        rv = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, 0, NULL, 0);
 #else
     /*
+        int val; //SPI_SETLOWPOWERTIMEOUT, SPI_SETPOWEROFFTIMEOUT. SPI_SETSCREENSAVETIMEOUT
+        if ( SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &val, 0)) {
+            SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, val, NULL, 0);
+        }
+     */
+    //http://msdn.microsoft.com/en-us/library/aa373208%28VS.85%29.aspx
     static EXECUTION_STATE sLastState = 0;
-    if (yes) {
-        sLastState = SetThreadExecutionState(ES_DISPLAY_REQUIRED);
+    if (!yes) {
+        //Calling SetThreadExecutionState without ES_CONTINUOUS simply resets the idle timer; to keep the display or system in the working state, the thread must call SetThreadExecutionState periodically
+        //ES_CONTINUOUS: Informs the system that the state being set should remain in effect until the next call that uses ES_CONTINUOUS and one of the other state flags is cleared.
+        sLastState = SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_CONTINUOUS);
     } else {
         if (sLastState)
-            sLastState = SetThreadExecutionState(sLastState);
+            sLastState = SetThreadExecutionState(sLastState|ES_CONTINUOUS);
     }
     rv = sLastState != 0;
-    */
-    if (yes) {
-        rv = restoreState();
-    } else {
-        //if (QSysInfo::WindowsVersion < QSysInfo::WV_VISTA) {
-            // Not supported on Windows Vista
-            SystemParametersInfo(SPI_SETLOWPOWERTIMEOUT, 0, NULL, 0);
-            SystemParametersInfo(SPI_SETPOWEROFFTIMEOUT, 0, NULL, 0);
-        //}
-        rv = SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, 0, NULL, 0);
-        modified = true;
-    }
-#endif
+    modified = true;
+#endif //USE_NATIVE_EVENT
 #endif //Q_OS_WIN
 #ifdef Q_OS_LINUX
     if (isX11) {
@@ -253,16 +244,6 @@ bool ScreenSaver::retrieveState() {
     bool rv = false;
     qDebug("ScreenSaver::retrieveState");
     if (!state_saved) {
-#ifdef Q_OS_WIN
-        //if (QSysInfo::WindowsVersion < QSysInfo::WV_VISTA) {
-            // Not supported on Windows Vista
-            SystemParametersInfo(SPI_GETLOWPOWERTIMEOUT, 0, &lowpower, 0);
-            SystemParametersInfo(SPI_GETPOWEROFFTIMEOUT, 0, &poweroff, 0);
-        //}
-        rv = SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &screensaver, 0);
-        state_saved = true;
-        qDebug("ScreenSaver::retrieveState: lowpower: %d, poweroff: %d, screensaver: %d", lowpower, poweroff, screensaver);
-#endif //Q_OS_WIN
 #ifdef Q_OS_LINUX
         if (isX11) {
             Display *display = XOpenDisplay(0);
@@ -287,18 +268,12 @@ bool ScreenSaver::restoreState() {
     }
     if (state_saved) {
 #ifdef Q_OS_WIN
-#if 0
-        //if (QSysInfo::WindowsVersion < QSysInfo::WV_VISTA) {
-            // Not supported on Windows Vista
-            SystemParametersInfo(SPI_SETLOWPOWERTIMEOUT, lowpower, NULL, 0);
-            SystemParametersInfo(SPI_SETPOWEROFFTIMEOUT, poweroff, NULL, 0);
-        //}
-        rv = SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, screensaver, NULL, 0);
-        qDebug("WinScreenSaver::restoreState: lowpower: %d, poweroff: %d, screensaver: %d", lowpower, poweroff, screensaver);
-#else
+#if USE_NATIVE_EVENT
         ScreenSaverEventFilter::instance().enable();
         rv = true;
-#endif //0
+#else
+        SetThreadExecutionState(ES_CONTINUOUS);
+#endif //USE_NATIVE_EVENT
 #endif //Q_OS_WIN
 #ifdef Q_OS_LINUX
         if (isX11) {

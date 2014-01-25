@@ -50,6 +50,7 @@
 #include "config/Config.h"
 #include "config/VideoEQConfigPage.h"
 #include "playlist/PlayList.h"
+#include "common/ScreenSaver.h"
 
 /*
  *TODO:
@@ -84,7 +85,6 @@ MainWindow::MainWindow(QWidget *parent) :
   , mIsReady(false)
   , mHasPendingPlay(false)
   , mNullAO(false)
-  , mScreensaver(true)
   , mControlOn(false)
   , mShowControl(2)
   , mRepeateMax(0)
@@ -695,7 +695,7 @@ void MainWindow::onStartPlay()
     setVolume();
     mShowControl = 0;
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
-    mScreensaver = false;
+    ScreenSaver::instance().disable();
     initAudioTrackMenu();
     mpRepeatA->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
     mpRepeatB->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
@@ -721,7 +721,7 @@ void MainWindow::onStopPlay()
     mpCurrent->setText("00:00:00");
     mpDuration->setText("00:00:00");
     tryShowControlBar();
-    mScreensaver = true;
+    ScreenSaver::instance().enable();
     toggleRepeat(false);
     //mRepeateMax = 0;
     killTimer(mCursorTimer);
@@ -1058,31 +1058,6 @@ void MainWindow::tryShowControlBar()
     if (mpControl->isHidden())
         mpControl->show();
 }
-
-#ifdef Q_OS_WIN
-
-bool MainWindow::nativeEvent(const QByteArray & eventType, void * message, long * result)
-{
-    Q_UNUSED(eventType);
-    MSG* msg = static_cast<MSG*>(message);
-    if (!mScreensaver && msg->message == WM_SYSCOMMAND
-            && ((msg->wParam & 0xFFF0) == SC_SCREENSAVE
-                || (msg->wParam & 0xFFF0) == SC_MONITORPOWER)
-    ) {
-        if (result) {
-            *result = 0;
-        }
-        return true;
-    }
-    return false;
-}
-
-bool MainWindow::winEvent(MSG *message, long *result)
-{
-    return nativeEvent("windows_MSG", message, result);
-}
-#endif //Q_OS_WIN
-
 
 void MainWindow::showInfo()
 {

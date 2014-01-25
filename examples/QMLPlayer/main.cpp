@@ -3,11 +3,8 @@
 #include "qtquick2applicationviewer.h"
 #include "common/ScreenSaver.h"
 
-extern "C" void _link_hack();
-
 int main(int argc, char *argv[])
 {
-    _link_hack();
     QGuiApplication app(argc, argv);
 
     QtQuick2ApplicationViewer viewer;

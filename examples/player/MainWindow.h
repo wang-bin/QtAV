@@ -89,17 +89,10 @@ protected:
     void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void wheelEvent(QWheelEvent *e);
-#ifdef Q_OS_WIN
-    //Qt5
-    virtual bool nativeEvent(const QByteArray & eventType, void * message, long * result);
-    //Qt4
-    virtual bool winEvent(MSG *message, long *result);
-#endif //Q_OS_WIN
 
 private:
     bool mIsReady, mHasPendingPlay;
     bool mNullAO;
-    bool mScreensaver;
     bool mControlOn;
     int mCursorTimer;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
