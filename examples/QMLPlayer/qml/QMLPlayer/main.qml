@@ -53,6 +53,7 @@ Rectangle {
     }
 
     VideoOutput {
+        id: videoOut
         fillMode: VideoOutput.PreserveAspectFit
         anchors.fill: parent
         source: player
@@ -85,7 +86,6 @@ Rectangle {
             right: parent.right
             margins: 12
         }
-
         mediaSource: player.source
         duration: player.duration
 
@@ -105,10 +105,12 @@ Rectangle {
         onOpenFile: fileDialog.open()
         onShowInfo: {
             help.text = player.source
+            donateBtn.visible = false
             help.visible = true
         }
         onShowHelp: {
             help.text = help.helpText()
+            donateBtn.visible = true
             help.visible = true
         }
     }
@@ -143,6 +145,15 @@ Rectangle {
             case Qt.Key_F:
                 control.toggleFullScreen()
                 break
+            case Qt.Key_R:
+                if (videoOut.fillMode === VideoOutput.Stretch) {
+                    videoOut.fillMode = VideoOutput.PreserveAspectFit
+                } else if (videoOut.fillMode === VideoOutput.PreserveAspectFit) {
+                    videoOut.fillMode = VideoOutput.PreserveAspectCrop
+                } else {
+                    videoOut.fillMode = VideoOutput.Stretch
+                }
+                break
             case Qt.Key_Q:
                 Qt.quit()
             }
@@ -165,13 +176,15 @@ Rectangle {
             color: "white"
             anchors.fill: parent
             anchors.bottom: parent.bottom
+            anchors.margins: 8
             //horizontalAlignment: Qt.AlignHCenter
             font {
                 pixelSize: 16
             }
             onContentHeightChanged: {
-                parent.height = contentHeight
+                parent.height = contentHeight + 2*anchors.margins
             }
+            onLinkActivated: Qt.openUrlExternally(link)
         }
         function helpText() {
             return "<h3>QMLPlayer based on QtAV  1.3.1 </h3>"
@@ -183,13 +196,27 @@ Rectangle {
              + "\n<h3>Shortcut:</h3>"
              + "<p>M: mute</p><p>F: fullscreen</p><p>Up: volume+</p><p>Down: volume-
                 </p><p>Space: pause/play</p><p>Q: quite</p>"
+             + "<p>R: fill mode(aspect ratio)</p>"
         }
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                console.log("click on help<<<<<<<")
-                parent.visible = false
-            }
+        Button {
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 0
+            width: 20
+            height: 20
+            icon: resurl("theme/default/close.svg")
+            onClicked: parent.visible = false
+        }
+        Button {
+            id: donateBtn
+            text: qsTr("Donate")
+            bgColor: "#990000ff"
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: 8
+            width: 80
+            height: 40
+            onClicked: Qt.openUrlExternally("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0")
         }
     }
 
@@ -201,6 +228,5 @@ Rectangle {
             player.stop() //remove this if autoLoad works
             player.play()
         }
-        //Component.onCompleted: visible = true
     }
 }
