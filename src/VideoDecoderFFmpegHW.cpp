@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -138,6 +138,24 @@ bool VideoDecoderFFmpegHW::prepare()
     if (!d.codec_ctx) {
         qWarning("call this after AVCodecContext is set!");
         return false;
+    }
+    //TODO: setup profile in open. vlc/modules/hw/vdpau/avcodec.c, xbmc/xbmc/cores/dvdplayer/DVDCodecs/Video/VDPAU.cpp
+    if (d.codec_ctx->codec_id == CODEC_ID_H264) {
+        // check Hi10p. NO HW support now
+        switch (d.codec_ctx->profile) {
+        //case FF_PROFILE_H264_HIGH: //VDP_DECODER_PROFILE_H264_HIGH
+        case FF_PROFILE_H264_HIGH_10:
+        case FF_PROFILE_H264_HIGH_10_INTRA:
+        case FF_PROFILE_H264_HIGH_422:
+        case FF_PROFILE_H264_HIGH_422_INTRA:
+        //case FF_PROFILE_H264_HIGH_444: //ignored by xbmc
+        case FF_PROFILE_H264_HIGH_444_PREDICTIVE:
+        case FF_PROFILE_H264_HIGH_444_INTRA:
+        case FF_PROFILE_H264_CAVLC_444:
+            return false;
+        default:
+            break;
+        }
     }
     //TODO: neccesary?
 #if 0

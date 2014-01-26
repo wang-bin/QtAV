@@ -1251,8 +1251,7 @@ bool AVPlayer::setupVideoThread()
         //vd->isAvailable() //TODO: the value is wrong now
         vd->setCodecContext(vCodecCtx);
         vd->setOptions(video_codec_opt);
-        vd->prepare();
-        if (vd->open()) {
+        if (vd->prepare() && vd->open()) {
             video_dec = vd;
             qDebug("**************Video decoder found");
             break;
