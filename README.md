@@ -15,7 +15,7 @@ you must adhere to the terms of the license in question.**
 
 QtAV can meet your most demands
 
-- Hardware decoding suppprt(not stable): DXVA2, VAAPI
+- Hardware decoding suppprt(not stable): DXVA2, VAAPI(buggy now)
 - Seek, pause/resume
 - Video capture
 - OSD and custom filters
@@ -34,7 +34,7 @@ QtAV can meet your most demands
 - Multiple video outputs for 1 player
 - Region of interest(ROI), i.e. video cropping
 - Video eq: brightness, contrast, saturation
-- QML support as a plugin
+- QML support as a plugin. Most playback APIs are compatible with QtMultiMedia module
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
   both FFmpeg(>=0.9) and [Libav](http://libav.org).
 
@@ -42,7 +42,7 @@ QtAV can meet your most demands
 ### Extensible Framework (work in progress)
 
   QtAV currently uses FFmpeg to decode video, convert image and audio data, and uses PortAudio to play
-  sound. Every part in QtAV is designed to be extensible. For example, you can write your decoder, audio output for particular platform. [Here is a very good example to add cedar hardware accelerated decoder for A13-OLinuXino   ](https://github.com/mireq/QtAV/commit/d7b428c1dae66b2a85b7a6bfa7b253980b5b963c)
+  sound. Every part in QtAV is designed to be extensible. For example, you can write your decoder, audio output for particular platform. [Here is a very good example to add cedar hardware accelerated decoder for A13-OLinuXino	](https://github.com/mireq/QtAV/commit/d7b428c1dae66b2a85b7a6bfa7b253980b5b963c)
 
 
 # For Developers
@@ -62,13 +62,15 @@ or [Libav](libav.org) (>=0.8) Latest version is recommanded.
 3. [PortAudio v19](http://www.portaudio.com/download.html)  
 [![PortAudio Logo](http://www.portaudio.com/images/portaudio_logo.png)](http://www.portaudio.com)[![PortAudio](http://www.portaudio.com/images/portaudio_logotext.png)](http://www.portaudio.com)
 
-The required development files for MinGW can be found in sourceforge
-page: [depends](https://sourceforge.net/projects/qtav/files/depends)
+or OpenAL ![OpenAL](http://upload.wikimedia.org/wikipedia/zh/2/28/OpenAL_logo.png "OpenAL")
+
+**The required development files for MinGW can be found in sourceforge
+page: [depends](https://sourceforge.net/projects/qtav/files/depends)**
 
 #### Build
 
 You can build QtAV with many compilers and on many platforms. You can use gcc, clang, vc to compile it.  
-See the wiki [Build QtAV](https://github.com/wang-bin/QtAV/wiki/Build-QtAV)
+See the wiki [Build QtAV](https://github.com/wang-bin/QtAV/wiki/Build-QtAV) and [QtAV Build Configurations](https://github.com/wang-bin/QtAV/wiki/QtAV-Build-Configurations)
 
 Here is a brief guide:
 
@@ -81,7 +83,7 @@ It's recommend not to build in source dir.
 qmake will run check the required libraries at the first time, so you must make sure those libraries can be found by compiler.
 Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, run `qmake QtAV_project_dir/QtAV.pro -config recheck`
 
-_WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice.
+_WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice.(ISSUE #18)
 
 
 
@@ -126,6 +128,7 @@ QtAV can also be used in **Qml**
 #### Contributors
 
 - Wang Bin(Lucas Wang) <wbsecg1@gmail.com>: creator, maintainer
+- mireq: Cedarv support. Better qmlvideofx appearance
 - Dimitri E. Prado <dprado@e3c.com.br>: issue 70
 - theoribeiro <theo@fictix.com.br>: initial QML support
 - Vito Covito <vito.covito@selcomsrl.eu>: interrupt callback
@@ -151,6 +154,10 @@ To select decoder, use `-vd` option. Value can be _dxva_, _vaapi_ and _ffmpeg_, 
 
 will use dxva if dxva can decode, otherwise ffmpeg will be used.
 
+QMLPlayer has less options now. To use DXVA decoder:
+
+    QMLPlayer-vd "DXVA;FFmpeg" filename
+
 
 #### Default Shortcuts
 
@@ -171,22 +178,14 @@ will use dxva if dxva can decode, otherwise ffmpeg will be used.
 - Ctrl+Up/Down: speed + / -
 - -> / <-: seek forward / backward
 - Drag and drop a media file to player
+- Wheel: zoom in/out
+
+Before QtAV 1.3.1, the default behavior can be replaced by subclassing QObject and call `void AVPlayer::setPlayerEventFilter(QObject *obj)` (use null to disable).
 
 
 # TODO
 
-0. Component framework
-1. Subtitle
-2. Filters: filter api. integrate all filters in libavfilter.
-3. Hardware acceleration using DirectX, NVIDIA Cuda, ATI UVD, Intel IPP, OpenCL and OpenGL:
-  * decoding: DXVA, XvBA, cuvid, VAAPI
-  * image, audio and text filters
-  * rendering: DirectX
-4. Stylish GUI based on Qt Graphics View Framework
-5. Document and SDK
-6. Other: better sync method and seeking, tests, playing statistics, etc.
-7. More platform support. Pi, Maemo, Android, iOS, BB10 etc. Depends on Qt and FFmpeg for those platforms.  
-8. ppa, debian package etc.
+Read https://github.com/wang-bin/QtAV/wiki/TODO for detail.
 
 Screenshots
 ----------
@@ -197,7 +196,7 @@ Use QtAV in QML with OpenGL shaders(example is from qtmultimedia. But qtmultimed
 
 QtAV on Mac OS X
 
-![Alt text](https://sourceforge.net/p/qtav/screenshot/mac.jpg "simple player on Mac")
+![Alt text](https://sourceforge.net/p/qtav/screenshot/mac.jpg "player on OSX")
 
 IP camera using QtAV. OS: Fedora 18 (some developers from Italy http://www.selcomsrl.eu/)
 
@@ -205,7 +204,7 @@ IP camera using QtAV. OS: Fedora 18 (some developers from Italy http://www.selco
 
 QMLPlayer on ubuntu
 
-![QMLPlayer](https://a.fsdn.com/con/app/proj/qtav/screenshots/Player-QtAV+QML.png "QMLPlayer")
+![QMLPlayer](https://sourceforge.net/p/qtav/screenshot/QMLPlayer%2BQtAV.jpg "QMLPlayer")
 
 Video Wall
 
@@ -222,6 +221,8 @@ Video Wall
 - Buy hardware for developing and testing purpose. (lack of AMD card now)
 
 Thanks
+
+Now I have received 1000 RMB(about 160$)
 
 [![Alipay](https://img.alipay.com/sys/personalprod/style/mc/top-logo.png)](https://me.alipay.com/lucaswang)
 
