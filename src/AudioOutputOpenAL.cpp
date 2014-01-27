@@ -101,7 +101,7 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
         }
     }
     if (format == 0) {
-        qWarning("AudioOutputOpenAL Error: No OpenAL format available for audio data format %s."
+        qWarning("AudioOutputOpenAL Error: No OpenAL format available for audio data format %s %s."
                  , qPrintable(fmt.sampleFormatName())
                  , qPrintable(fmt.channelLayoutName()));
     }
@@ -297,6 +297,7 @@ bool AudioOutputOpenAL::write()
         return true;
     }
     qint64 dt = d.last_duration - d.time.elapsed();
+    //qDebug("duration: %lld, dt: %lld", d.last_duration, dt);
     d.last_duration = audioFormat().durationForBytes(d.data.size())/1000LL;
     // TODO: how to control the error?
     if (dt > 0LL)

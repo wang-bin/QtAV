@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -193,8 +193,10 @@ Rectangle {
              + "<p>Shanghai University->S3 Graphics, Shanghai, China</p>"
              + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
              + "<p>Downloads: <a href='https://sourceforge.net/projects/qtav'>https://sourceforge.net/projects/qtav</a></p>"
+             + "\n<h3>Command line:</h3>"
+             + "<p>QMLPlayer [-vd \"DXVA[;FFmpeg]\"] fileName</p>"
              + "\n<h3>Shortcut:</h3>"
-             + "<p>M: mute</p><p>F: fullscreen</p><p>Up: volume+</p><p>Down: volume-
+             + "<p>M: mute</p><p>F: fullscreen</p><p>Up/Down: volume +/-</p><p>Left/Right: Seek backward/forward
                 </p><p>Space: pause/play</p><p>Q: quite</p>"
              + "<p>R: fill mode(aspect ratio)</p>"
         }

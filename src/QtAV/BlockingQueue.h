@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -129,7 +129,7 @@ T BlockingQueue<T, Container>::take()
     if (queue.size() < thres)
         cond_full.wakeAll();
     if (queue.isEmpty()) {//TODO:always block?
-        qDebug("queue empty!!");
+        //qDebug("queue empty!!");
         if (empty_callback) {
             empty_callback->call();
         }

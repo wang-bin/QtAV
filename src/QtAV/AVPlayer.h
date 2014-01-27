@@ -116,7 +116,7 @@ public:
     int videoStreamCount() const;
     int subtitleStreamCount() const;
     /*!
-     * \brief capture and save current frame to "appdir/filename_pts.png".
+     * \brief capture and save current frame to "$HOME/.QtAV/filename_pts.png".
      * To capture with custom configurations, such as name and dir, use
      * VideoCapture api through AVPlayer::videoCapture()
      * \return
