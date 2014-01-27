@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -31,10 +31,14 @@
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/AVOutput.h>
 #include <QtAV/AVPlayer.h>
+#include <QtAV/OutputSet.h>
+#include <QtAV/Packet.h>
+#include <QtAV/Statistics.h>
 
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/AudioFormat.h>
 #include <QtAV/AudioOutput.h>
+#include <QtAV/AudioOutputTypes.h>
 #include <QtAV/AudioResampler.h>
 #include <QtAV/AudioResamplerTypes.h>
 
@@ -48,7 +52,9 @@
 
 #include <QtAV/VideoCapture.h>
 #include <QtAV/VideoDecoder.h>
-
+#include <QtAV/VideoDecoderTypes.h>
+#include <QtAV/VideoFormat.h>
+#include <QtAV/VideoFrame.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/VideoRendererTypes.h>
 //The following renderer headers can be removed
