@@ -852,9 +852,10 @@ void AVPlayer::play()
     } else {
         clock->reset();
     }
-    if (timer_id < 0)
-        timer_id = startTimer(kPosistionCheckMS);
-
+    if (timer_id < 0) {
+        //timer_id = startTimer(kPosistionCheckMS); //may fail if not in this thread
+        QMetaObject::invokeMethod(this, "startNotifyTimer", Qt::AutoConnection);
+    }
     if (last_position <= 0)
         last_position = mediaStartPosition();
     if (last_position > 0)
@@ -882,6 +883,16 @@ void AVPlayer::aboutToQuitApp()
     }
 }
 
+void AVPlayer::startNotifyTimer()
+{
+    timer_id = startTimer(kPosistionCheckMS);
+}
+
+void AVPlayer::stopNotifyTimer()
+{
+    killTimer(timer_id);
+}
+
 void AVPlayer::stop()
 {
     // check timer_id, <0 return?
@@ -893,7 +904,7 @@ void AVPlayer::stop()
          * stop() is called again by player and reset state. but this call is later than demuxer stop.
          * so if user call play() immediatly, may be stopped by AVPlayer
          */
-        // TODO: singleShot(0, SLOT(killTimerSafe()));?
+        // TODO: invokeMethod "stopNotifyTimer"
         if (timer_id >= 0) {
             qDebug("timer: %d, current thread: %p, player thread: %p", timer_id, QThread::currentThread(), thread());
             if (QThread::currentThread() == thread()) { //called by user in the same thread as player

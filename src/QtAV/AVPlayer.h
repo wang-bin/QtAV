@@ -260,6 +260,9 @@ public slots:
 private slots:
     void stopFromDemuxerThread();
     void aboutToQuitApp();
+    // start/stop notify timer in this thread. use QMetaObject::invokeMethod
+    void startNotifyTimer();
+    void stopNotifyTimer();
 
 protected:
     // TODO: set position check timer interval
