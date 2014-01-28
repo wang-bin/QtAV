@@ -49,6 +49,10 @@ unix {
 }
 
 runConfigTests()
+!config_avresample:!config_swresampe {
+  error("libavresample or libswresample is required. Setup your environment correctly then delete $$BUILD_DIR/.qmake.conf and run qmake again")
+}
+
 
 PACKAGE_VERSION = 1.3.0
 PACKAGE_NAME= QtAV
