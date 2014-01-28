@@ -19,7 +19,7 @@ message($$BUILD_DIR)
 QML_FILES = $$PWD/Video.qml
 # TODO: why add more files e.g. qmldir cause make error?
 plugin.files = $$DESTDIR/$$qtSharedLib($$NAME)
-plugin.path = $$BUILD_DIR/bin/qml/QtAV/ #TODO: Qt install dir
+plugin.path = $$BUILD_DIR/bin/QtAV/ #TODO: Qt install dir
 #plugin.depends = #makefile target
 #windows: copy /y file1+file2+... dir. need '+'
 for(f, plugin.files) {

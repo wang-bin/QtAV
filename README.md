@@ -15,7 +15,7 @@ you must adhere to the terms of the license in question.**
 
 QtAV can meet your most demands
 
-- Hardware decoding suppprt(not stable): DXVA2, VAAPI(buggy now)
+- Hardware decoding suppprt: DXVA2, VAAPI(buggy now), CedarX(e.g. pcDuino)
 - Seek, pause/resume
 - Video capture
 - OSD and custom filters
