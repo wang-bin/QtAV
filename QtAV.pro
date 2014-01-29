@@ -49,7 +49,7 @@ unix {
 }
 
 runConfigTests()
-!config_avresample:!config_swresampe {
+!config_avresample:!config_swresample {
   error("libavresample or libswresample is required. Setup your environment correctly then delete $$BUILD_DIR/.qmake.conf and run qmake again")
 }
 
