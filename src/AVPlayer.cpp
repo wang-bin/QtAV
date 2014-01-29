@@ -50,6 +50,8 @@
 #include <QtAV/AudioOutputTypes.h>
 #include <QtAV/FilterManager.h>
 
+#include <QtAV/QAVIOContext.h>
+
 namespace QtAV {
 
 static const int kPosistionCheckMS = 500;
@@ -73,6 +75,8 @@ AVPlayer::AVPlayer(QObject *parent) :
 {
     formatCtx = 0;
     last_position = 0;
+
+    m_pQAVIO = 0;
     /*
      * must be the same value at the end of stop(), and must be different from value in
      * stopFromDemuxerThread()(which is false), so the initial value must be true
@@ -154,6 +158,8 @@ AVPlayer::~AVPlayer()
         delete demuxer_thread;
         demuxer_thread = 0;
     }
+    if (m_pQAVIO)
+        delete m_pQAVIO;
 }
 
 AVClock* AVPlayer::masterClock()
@@ -449,6 +455,13 @@ QString AVPlayer::file() const
     return path;
 }
 
+void AVPlayer::setIODevice(QIODevice* device)
+{
+    if (isLoaded())
+        return;
+    m_pQAVIO = new QAVIOContext(device);
+}
+
 VideoCapture* AVPlayer::videoCapture()
 {
     return video_capture;
@@ -521,8 +534,8 @@ bool AVPlayer::load(const QString &path, bool reload)
 bool AVPlayer::load(bool reload)
 {
     loaded = false;
-    if (path.isEmpty()) {
-        qDebug("No file to load...");
+    if (path.isEmpty() && !m_pQAVIO) {
+        qDebug("No file or IODevice was set.");
         return false;
     }
     // release codec ctx
@@ -532,7 +545,10 @@ bool AVPlayer::load(bool reload)
     if (video_dec) {
         video_dec->setCodecContext(0);
     }
-    qDebug("loading: %s ...", path.toUtf8().constData());
+    if (!m_pQAVIO)
+        qDebug("Loading from IODevice...");
+    else
+        qDebug("loading: %s ...", path.toUtf8().constData());
     if (reload || !demuxer.isLoaded(path)) {
         //close decoders here to make sure open and close in the same thread
         if (audio_dec && audio_dec->isOpen()) {
@@ -541,8 +557,15 @@ bool AVPlayer::load(bool reload)
         if (video_dec && video_dec->isOpen()) {
             video_dec->close();
         }
-        if (!demuxer.loadFile(path)) {
-            return false;
+        if (!m_pQAVIO)
+        {
+            if (!demuxer.loadFile(path))
+                return false;
+        }
+        else
+        {
+            if (!demuxer.load(m_pQAVIO))
+                return false;
         }
     } else {
         demuxer.prepareStreams();

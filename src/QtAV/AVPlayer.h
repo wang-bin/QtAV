@@ -45,6 +45,7 @@ class AVDemuxThread;
 class Filter;
 class VideoCapture;
 class OutputSet;
+class QAVIOContext;
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -65,6 +66,10 @@ public:
     // If path is different from previous one, the stream to play will be reset to default.
     void setFile(const QString& path);
     QString file() const;
+
+    //QIODevice support
+    void setIODevice(QIODevice* device);
+
     // force reload even if already loaded. otherwise only reopen codecs if necessary
     bool load(const QString& path, bool reload = true);
     bool load(bool reload = true);
@@ -293,6 +298,8 @@ private:
     qint64 start_position, stop_position;
     int repeat_max, repeat_current;
     int timer_id; //notify position change and check AB repeat range. active when playing
+
+    QAVIOContext *m_pQAVIO;
 
     //the following things are required and must be set not null
     AVDemuxer demuxer;

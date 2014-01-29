@@ -23,6 +23,7 @@
 #include <QtAV/AVError.h>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
+#include <QtAV/QAVIOContext.h>
 #include <QtCore/QThread>
 #include <QtCore/QCoreApplication>
 
@@ -135,6 +136,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AnyFrame)
     , mpDict(0)
+    , m_pQAVIO(0)
 {
     mpInterrup = new InterruptHandler(this);
     if (!_file_name.isEmpty())
@@ -371,7 +373,7 @@ void AVDemuxer::seek(qreal q)
 */
 bool AVDemuxer::isLoaded(const QString &fileName) const
 {
-    return fileName == _file_name && (a_codec_context || v_codec_context || s_codec_contex);
+    return (fileName == _file_name || m_pQAVIO) && (a_codec_context || v_codec_context || s_codec_contex);
 }
 
 bool AVDemuxer::loadFile(const QString &fileName)
@@ -416,6 +418,72 @@ bool AVDemuxer::loadFile(const QString &fileName)
     mpInterrup->end();
 
     qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
+
+    if (ret < 0) {
+    //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
+        AVError err(AVError::OpenError, ret);
+        emit error(err);
+        qWarning("Can't open media: %s", qPrintable(err.string()));
+        return false;
+    }
+    //deprecated
+    //if(av_find_stream_info(format_context)<0) {
+    //TODO: avformat_find_stream_info is too slow, only useful for some video format
+    mpInterrup->begin(InterruptHandler::FindStreamInfo);
+    ret = avformat_find_stream_info(format_context, NULL);
+    mpInterrup->end();
+    if (ret < 0) {
+        AVError err(AVError::FindStreamInfoError, ret);
+        emit error(err);
+        qWarning("Can't find stream info: %s", qPrintable(err.string()));
+        return false;
+    }
+
+    if (!prepareStreams()) {
+        return false;
+    }
+
+    started_ = false;
+    return true;
+}
+
+bool AVDemuxer::load(QAVIOContext* iocon)
+{
+    class AVInitializer {
+    public:
+        AVInitializer() {
+            qDebug("av_register_all and avformat_network_init");
+            av_register_all();
+            avformat_network_init();
+        }
+        ~AVInitializer() {
+            qDebug("avformat_network_deinit");
+            avformat_network_deinit();
+        }
+    };
+    static AVInitializer sAVInit;
+    Q_UNUSED(sAVInit);
+    close();
+    qDebug("all closed and reseted");
+
+    //alloc av format context
+    if (!format_context)
+        format_context = avformat_alloc_context();
+    format_context->pb = iocon->context();
+    //format_context->pb = avio_alloc_context(iocon->m_ucDataBuffer,IODATA_BUFFER_SIZE,0,iocon,&iocon->read,0,&iocon->seek);
+    //format_context->flags |= AVFMT_FLAG_GENPTS | AVFMT_FLAG_CUSTOM_IO;
+    format_context->flags = AVFMT_FLAG_CUSTOM_IO;
+
+    //install interrupt callback
+    format_context->interrupt_callback = *mpInterrup;
+
+    qDebug("avformat_open_input: format_context:'%p'...",format_context);
+
+    mpInterrup->begin(InterruptHandler::Open);
+    int ret = avformat_open_input(&format_context, "iodevice", NULL, mOptions.isEmpty() ? NULL : &mpDict);
+    mpInterrup->end();
+
+    qDebug("avformat_open_input: (with io device) ret:%d", ret);
 
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
