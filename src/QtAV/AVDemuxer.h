@@ -199,6 +199,8 @@ private:
     mutable int audio_stream, video_stream, subtitle_stream;
     mutable QList<int> audio_streams, video_streams, subtitle_streams;
 
+    bool load();
+
     // set wanted_xx_stream. call openCodecs() to read new stream frames
     bool setStream(StreamType st, int stream);
     bool findStreams();

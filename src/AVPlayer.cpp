@@ -457,9 +457,27 @@ QString AVPlayer::file() const
 
 void AVPlayer::setIODevice(QIODevice* device)
 {
-    if (isLoaded())
+    if (!device)
         return;
-    m_pQAVIO = new QAVIOContext(device);
+
+    if (device->isSequential())
+    {
+        qDebug("No support for sequential devices.");
+        return;
+    }
+
+    demuxer.setAutoResetStream(reset_state);
+    if (!m_pQAVIO)
+    {
+        m_pQAVIO = new QAVIOContext(device);
+        reset_state = true;
+    }
+    else
+    {
+        m_pQAVIO->setDevice(device);
+        reset_state = m_pQAVIO->device() != device;
+    }
+    loaded = false;
 }
 
 VideoCapture* AVPlayer::videoCapture()

@@ -378,76 +378,22 @@ bool AVDemuxer::isLoaded(const QString &fileName) const
 
 bool AVDemuxer::loadFile(const QString &fileName)
 {
-    class AVInitializer {
-    public:
-        AVInitializer() {
-            qDebug("av_register_all and avformat_network_init");
-            av_register_all();
-            avformat_network_init();
-        }
-        ~AVInitializer() {
-            qDebug("avformat_network_deinit");
-            avformat_network_deinit();
-        }
-    };
-    static AVInitializer sAVInit;
-    Q_UNUSED(sAVInit);
-    close();
-    qDebug("all closed and reseted");
     _file_name = fileName.trimmed();
     if (_file_name.startsWith("mms:"))
         _file_name.insert(3, 'h');
     else if (_file_name.startsWith("file://"))
         _file_name.remove("file://");
-    //deprecated
-    // Open an input stream and read the header. The codecs are not opened.
-    //if(av_open_input_file(&format_context, _file_name.toLocal8Bit().constData(), NULL, 0, NULL)) {
-
-    //alloc av format context
-    if (!format_context)
-        format_context = avformat_alloc_context();
-    format_context->flags |= AVFMT_FLAG_GENPTS;
-
-    //install interrupt callback
-    format_context->interrupt_callback = *mpInterrup;
-
-    qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
-
-    mpInterrup->begin(InterruptHandler::Open);
-    int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, mOptions.isEmpty() ? NULL : &mpDict);
-    mpInterrup->end();
-
-    qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
-
-    if (ret < 0) {
-    //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
-        AVError err(AVError::OpenError, ret);
-        emit error(err);
-        qWarning("Can't open media: %s", qPrintable(err.string()));
-        return false;
-    }
-    //deprecated
-    //if(av_find_stream_info(format_context)<0) {
-    //TODO: avformat_find_stream_info is too slow, only useful for some video format
-    mpInterrup->begin(InterruptHandler::FindStreamInfo);
-    ret = avformat_find_stream_info(format_context, NULL);
-    mpInterrup->end();
-    if (ret < 0) {
-        AVError err(AVError::FindStreamInfoError, ret);
-        emit error(err);
-        qWarning("Can't find stream info: %s", qPrintable(err.string()));
-        return false;
-    }
-
-    if (!prepareStreams()) {
-        return false;
-    }
-
-    started_ = false;
-    return true;
+    m_pQAVIO = 0;
+    return load();
 }
 
 bool AVDemuxer::load(QAVIOContext* iocon)
+{
+    m_pQAVIO = iocon;
+    return load();
+}
+
+bool AVDemuxer::load()
 {
     class AVInitializer {
     public:
@@ -466,24 +412,45 @@ bool AVDemuxer::load(QAVIOContext* iocon)
     close();
     qDebug("all closed and reseted");
 
-    //alloc av format context
-    if (!format_context)
-        format_context = avformat_alloc_context();
-    format_context->pb = iocon->context();
-    //format_context->pb = avio_alloc_context(iocon->m_ucDataBuffer,IODATA_BUFFER_SIZE,0,iocon,&iocon->read,0,&iocon->seek);
-    //format_context->flags |= AVFMT_FLAG_GENPTS | AVFMT_FLAG_CUSTOM_IO;
-    format_context->flags = AVFMT_FLAG_CUSTOM_IO;
+    int ret;
 
-    //install interrupt callback
-    format_context->interrupt_callback = *mpInterrup;
+    if (m_pQAVIO)
+    {
+        //alloc av format context
+        if (!format_context)
+            format_context = avformat_alloc_context();
+        format_context->pb = m_pQAVIO->context();
+        format_context->flags |= AVFMT_FLAG_GENPTS | AVFMT_FLAG_CUSTOM_IO;
 
-    qDebug("avformat_open_input: format_context:'%p'...",format_context);
+        //install interrupt callback
+        format_context->interrupt_callback = *mpInterrup;
 
-    mpInterrup->begin(InterruptHandler::Open);
-    int ret = avformat_open_input(&format_context, "iodevice", NULL, mOptions.isEmpty() ? NULL : &mpDict);
-    mpInterrup->end();
+        qDebug("avformat_open_input: format_context:'%p'...",format_context);
 
-    qDebug("avformat_open_input: (with io device) ret:%d", ret);
+        mpInterrup->begin(InterruptHandler::Open);
+        ret = avformat_open_input(&format_context, "iodevice", NULL, mOptions.isEmpty() ? NULL : &mpDict);
+        mpInterrup->end();
+
+        qDebug("avformat_open_input: (with io device) ret:%d", ret);
+    }
+    else
+    {
+        //alloc av format context
+        if (!format_context)
+            format_context = avformat_alloc_context();
+        format_context->flags |= AVFMT_FLAG_GENPTS;
+
+        //install interrupt callback
+        format_context->interrupt_callback = *mpInterrup;
+
+        qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
+
+        mpInterrup->begin(InterruptHandler::Open);
+        ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, mOptions.isEmpty() ? NULL : &mpDict);
+        mpInterrup->end();
+
+        qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
+    }
 
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {

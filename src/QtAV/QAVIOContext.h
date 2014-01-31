@@ -22,10 +22,12 @@ public:
 
     AVIOContext* context();
 
-    QIODevice* m_pIO;
+    QIODevice* device() const;
+    void setDevice(QIODevice* device);
 
-//private:
+private:
     unsigned char* m_ucDataBuffer;
+    QIODevice* m_pIO;
 };
 
 }

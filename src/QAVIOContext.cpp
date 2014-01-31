@@ -60,4 +60,14 @@ AVIOContext* QAVIOContext::context()
     return avio_alloc_context(m_ucDataBuffer,IODATA_BUFFER_SIZE,0,this,&read,0,&seek);
 }
 
+QIODevice* QAVIOContext::device() const
+{
+    return m_pIO;
+}
+
+void QAVIOContext::setDevice(QIODevice *device)
+{
+    m_pIO = device;
+}
+
 }
