@@ -414,8 +414,7 @@ bool AVDemuxer::load()
 
     int ret;
 
-    if (m_pQAVIO)
-    {
+    if (m_pQAVIO) {
         //alloc av format context
         if (!format_context)
             format_context = avformat_alloc_context();
@@ -432,9 +431,7 @@ bool AVDemuxer::load()
         mpInterrup->end();
 
         qDebug("avformat_open_input: (with io device) ret:%d", ret);
-    }
-    else
-    {
+    } else {
         //alloc av format context
         if (!format_context)
             format_context = avformat_alloc_context();

@@ -467,13 +467,10 @@ void AVPlayer::setIODevice(QIODevice* device)
     }
 
     demuxer.setAutoResetStream(reset_state);
-    if (!m_pQAVIO)
-    {
+    if (!m_pQAVIO) {
         m_pQAVIO = new QAVIOContext(device);
         reset_state = true;
-    }
-    else
-    {
+    } else {
         m_pQAVIO->setDevice(device);
         reset_state = m_pQAVIO->device() != device;
     }
@@ -575,13 +572,10 @@ bool AVPlayer::load(bool reload)
         if (video_dec && video_dec->isOpen()) {
             video_dec->close();
         }
-        if (!m_pQAVIO)
-        {
+        if (!m_pQAVIO) {
             if (!demuxer.loadFile(path))
                 return false;
-        }
-        else
-        {
+        } else {
             if (!demuxer.load(m_pQAVIO))
                 return false;
         }
