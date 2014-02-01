@@ -47,6 +47,8 @@ namespace QtAV {
 
 class AVError;
 class Packet;
+class QAVIOContext;
+
 class Q_AV_EXPORT AVDemuxer : public QObject //QIODevice?
 {
     Q_OBJECT
@@ -74,6 +76,7 @@ public:
     bool close();
     bool loadFile(const QString& fileName);
     bool isLoaded(const QString& fileName) const;
+    bool load(QAVIOContext* iocontext);
     bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
 
     void putFlushPacket();
@@ -196,6 +199,8 @@ private:
     mutable int audio_stream, video_stream, subtitle_stream;
     mutable QList<int> audio_streams, video_streams, subtitle_streams;
 
+    bool load();
+
     // set wanted_xx_stream. call openCodecs() to read new stream frames
     bool setStream(StreamType st, int stream);
     bool findStreams();
@@ -206,6 +211,7 @@ private:
     AVCodecContext *a_codec_context, *v_codec_context, *s_codec_contex;
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
+    QAVIOContext* m_pQAVIO;
     QMutex mutex; //for seek and readFrame
     QElapsedTimer seek_timer;
 

@@ -23,6 +23,7 @@
 #include <QtAV/AVError.h>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
+#include <QtAV/QAVIOContext.h>
 #include <QtCore/QThread>
 #include <QtCore/QCoreApplication>
 
@@ -135,6 +136,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AnyFrame)
     , mpDict(0)
+    , m_pQAVIO(0)
 {
     mpInterrup = new InterruptHandler(this);
     if (!_file_name.isEmpty())
@@ -371,10 +373,27 @@ void AVDemuxer::seek(qreal q)
 */
 bool AVDemuxer::isLoaded(const QString &fileName) const
 {
-    return fileName == _file_name && (a_codec_context || v_codec_context || s_codec_contex);
+    return (fileName == _file_name || m_pQAVIO) && (a_codec_context || v_codec_context || s_codec_contex);
 }
 
 bool AVDemuxer::loadFile(const QString &fileName)
+{
+    _file_name = fileName.trimmed();
+    if (_file_name.startsWith("mms:"))
+        _file_name.insert(3, 'h');
+    else if (_file_name.startsWith("file://"))
+        _file_name.remove("file://");
+    m_pQAVIO = 0;
+    return load();
+}
+
+bool AVDemuxer::load(QAVIOContext* iocon)
+{
+    m_pQAVIO = iocon;
+    return load();
+}
+
+bool AVDemuxer::load()
 {
     class AVInitializer {
     public:
@@ -392,30 +411,43 @@ bool AVDemuxer::loadFile(const QString &fileName)
     Q_UNUSED(sAVInit);
     close();
     qDebug("all closed and reseted");
-    _file_name = fileName.trimmed();
-    if (_file_name.startsWith("mms:"))
-        _file_name.insert(3, 'h');
-    else if (_file_name.startsWith("file://"))
-        _file_name.remove("file://");
-    //deprecated
-    // Open an input stream and read the header. The codecs are not opened.
-    //if(av_open_input_file(&format_context, _file_name.toLocal8Bit().constData(), NULL, 0, NULL)) {
 
-    //alloc av format context
-    if (!format_context)
-        format_context = avformat_alloc_context();
-    format_context->flags |= AVFMT_FLAG_GENPTS;
+    int ret;
 
-    //install interrupt callback
-    format_context->interrupt_callback = *mpInterrup;
+    if (m_pQAVIO) {
+        //alloc av format context
+        if (!format_context)
+            format_context = avformat_alloc_context();
+        format_context->pb = m_pQAVIO->context();
+        format_context->flags |= AVFMT_FLAG_GENPTS | AVFMT_FLAG_CUSTOM_IO;
 
-    qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
+        //install interrupt callback
+        format_context->interrupt_callback = *mpInterrup;
 
-    mpInterrup->begin(InterruptHandler::Open);
-    int ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, mOptions.isEmpty() ? NULL : &mpDict);
-    mpInterrup->end();
+        qDebug("avformat_open_input: format_context:'%p'...",format_context);
 
-    qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
+        mpInterrup->begin(InterruptHandler::Open);
+        ret = avformat_open_input(&format_context, "iodevice", NULL, mOptions.isEmpty() ? NULL : &mpDict);
+        mpInterrup->end();
+
+        qDebug("avformat_open_input: (with io device) ret:%d", ret);
+    } else {
+        //alloc av format context
+        if (!format_context)
+            format_context = avformat_alloc_context();
+        format_context->flags |= AVFMT_FLAG_GENPTS;
+
+        //install interrupt callback
+        format_context->interrupt_callback = *mpInterrup;
+
+        qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
+
+        mpInterrup->begin(InterruptHandler::Open);
+        ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, mOptions.isEmpty() ? NULL : &mpDict);
+        mpInterrup->end();
+
+        qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
+    }
 
     if (ret < 0) {
     //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
