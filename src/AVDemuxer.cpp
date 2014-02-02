@@ -412,45 +412,33 @@ bool AVDemuxer::load()
     close();
     qDebug("all closed and reseted");
 
+
+    //alloc av format context
+    if (!format_context)
+        format_context = avformat_alloc_context();
+    format_context->flags |= AVFMT_FLAG_GENPTS;
+    //install interrupt callback
+    format_context->interrupt_callback = *mpInterrup;
+
     int ret;
-
     if (m_pQAVIO) {
-        //alloc av format context
-        if (!format_context)
-            format_context = avformat_alloc_context();
         format_context->pb = m_pQAVIO->context();
-        format_context->flags |= AVFMT_FLAG_GENPTS | AVFMT_FLAG_CUSTOM_IO;
-
-        //install interrupt callback
-        format_context->interrupt_callback = *mpInterrup;
+        format_context->flags |= AVFMT_FLAG_CUSTOM_IO;
 
         qDebug("avformat_open_input: format_context:'%p'...",format_context);
-
         mpInterrup->begin(InterruptHandler::Open);
         ret = avformat_open_input(&format_context, "iodevice", NULL, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
-
         qDebug("avformat_open_input: (with io device) ret:%d", ret);
     } else {
-        //alloc av format context
-        if (!format_context)
-            format_context = avformat_alloc_context();
-        format_context->flags |= AVFMT_FLAG_GENPTS;
-
-        //install interrupt callback
-        format_context->interrupt_callback = *mpInterrup;
-
         qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
-
         mpInterrup->begin(InterruptHandler::Open);
         ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
-
         qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
     }
 
     if (ret < 0) {
-    //if (avformat_open_input(&format_context, qPrintable(filename), NULL, NULL)) {
         AVError err(AVError::OpenError, ret);
         emit error(err);
         qWarning("Can't open media: %s", qPrintable(err.string()));

@@ -20,8 +20,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef AVIOCONTEXT_H
-#define AVIOCONTEXT_H
+#ifndef QTAV_AVIOCONTEXT_H
+#define QTAV_AVIOCONTEXT_H
 
 
 class QIODevice;
@@ -48,4 +48,4 @@ private:
 };
 
 }
-#endif // AVIOCONTEXT_H
+#endif // QTAV_AVIOCONTEXT_H
