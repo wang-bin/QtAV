@@ -23,7 +23,7 @@
 #ifndef QTAV_COMMONTYPES_H
 #define QTAV_COMMONTYPES_H
 
-#include <QtCore/QObject>
+#include <QtCore/QMetaType>
 
 namespace QtAV {
 
