@@ -79,6 +79,7 @@ private slots:
     void onTimeSliderHover(int pos, int value);
     void onTimeSliderLeave();
     void handleError(const QtAV::AVError& e);
+    void onMediaStatusChanged();
 
 protected:
     virtual void closeEvent(QCloseEvent *e);

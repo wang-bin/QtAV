@@ -129,6 +129,7 @@ void MainWindow::initPlayer()
     connect(mpVolumeSlider, SIGNAL(sliderPressed()), SLOT(setVolume()));
     connect(mpVolumeSlider, SIGNAL(valueChanged(int)), SLOT(setVolume()));
 
+    connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(onMediaStatusChanged()));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), this, SLOT(handleError(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
@@ -1081,4 +1082,34 @@ void MainWindow::onTimeSliderLeave()
 void MainWindow::handleError(const AVError &e)
 {
     QMessageBox::warning(0, "Player error", e.string());
+}
+
+void MainWindow::onMediaStatusChanged()
+{
+    QString status;
+    AVPlayer *player = qobject_cast<AVPlayer*>(sender());
+    switch (player->mediaStatus()) {
+    case NoMedia:
+        status = "No media";
+        break;
+    case InvalidMedia:
+        status = "Invalid meida";
+        break;
+    case BufferingMedia:
+        status = "Buffering...";
+        break;
+    case BufferedMedia:
+        status = "Buffered";
+        break;
+    case LoadingMedia:
+        status = "Loading...";
+        break;
+    case LoadedMedia:
+        status = "Loaded";
+        break;
+    default:
+        break;
+    }
+    if (!status.isEmpty())
+        setWindowTitle(status);
 }
