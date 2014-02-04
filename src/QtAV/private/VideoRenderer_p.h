@@ -22,7 +22,7 @@
 #ifndef QAV_VIDEORENDERER_P_H
 #define QAV_VIDEORENDERER_P_H
 
-#include <private/AVOutput_p.h>
+#include <QtAV/private/AVOutput_p.h>
 //#include <QtAV/ImageConverter.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtCore/QMutex>

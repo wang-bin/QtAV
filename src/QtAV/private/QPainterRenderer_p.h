@@ -25,7 +25,7 @@
 
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
-#include <private/VideoRenderer_p.h>
+#include <QtAV/private/VideoRenderer_p.h>
 
 namespace QtAV {
 
