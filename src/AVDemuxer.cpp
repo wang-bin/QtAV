@@ -58,7 +58,16 @@ public:
         mAction = act;
         mTimer.start();
     }
-    void end() { mTimer.invalidate(); }
+    void end() {
+        mTimer.invalidate();
+        switch (mAction) {
+        case Read:
+            //mpDemuxer->setMediaStatus(BufferedMedia);
+            break;
+        default:
+            break;
+        }
+    }
     qint64 getTimeout() const { return mTimeout; }
     void setTimeout(qint64 timeout) { mTimeout = timeout; }
     int getStatus() const { return mStatus; }
@@ -80,6 +89,17 @@ public:
         if (handler->getStatus() > 0) {
             qDebug("User Interrupt: -> quit!");
             return 1;//interrupt
+        }
+        qApp->processEvents();
+        switch (handler->mAction) {
+        case Open:
+        case FindStreamInfo:
+            handler->mpDemuxer->setMediaStatus(LoadingMedia);
+            break;
+        case Read:
+            //handler->mpDemuxer->setMediaStatus(BufferingMedia);
+        default:
+            break;
         }
         if (!handler->mTimer.isValid()) {
             qDebug("timer is not valid, start it");
@@ -115,6 +135,7 @@ private:
 
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     :QObject(parent)
+    , mCurrentMediaStatus(NoMedia)
     , started_(false)
     , eof(false)
     , auto_reset_stream(true)
@@ -132,11 +153,11 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , a_codec_context(0)
     , v_codec_context(0)
     , s_codec_contex(0)
+    , m_pQAVIO(0)
     , _file_name(fileName)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AnyFrame)
     , mpDict(0)
-    , m_pQAVIO(0)
 {
     mpInterrup = new InterruptHandler(this);
     if (!_file_name.isEmpty())
@@ -154,6 +175,11 @@ AVDemuxer::~AVDemuxer()
         av_dict_free(&mpDict);
     }
     delete mpInterrup;
+}
+
+MediaStatus AVDemuxer::mediaStatus() const
+{
+    return mCurrentMediaStatus;
 }
 
 bool AVDemuxer::readFrame()
@@ -174,6 +200,7 @@ bool AVDemuxer::readFrame()
                 started_ = false;
                 pkt->data = QByteArray(); //flush
                 pkt->markEnd();
+                setMediaStatus(EndOfMedia);
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
                 return true;
@@ -412,6 +439,10 @@ bool AVDemuxer::load()
     close();
     qDebug("all closed and reseted");
 
+    if (_file_name.isEmpty()) {
+        setMediaStatus(NoMedia);
+        return false;
+    }
 
     //alloc av format context
     if (!format_context)
@@ -420,6 +451,7 @@ bool AVDemuxer::load()
     //install interrupt callback
     format_context->interrupt_callback = *mpInterrup;
 
+    setMediaStatus(LoadingMedia);
     int ret;
     if (m_pQAVIO) {
         format_context->pb = m_pQAVIO->context();
@@ -439,6 +471,7 @@ bool AVDemuxer::load()
     }
 
     if (ret < 0) {
+        setMediaStatus(InvalidMedia);
         AVError err(AVError::OpenError, ret);
         emit error(err);
         qWarning("Can't open media: %s", qPrintable(err.string()));
@@ -451,6 +484,7 @@ bool AVDemuxer::load()
     ret = avformat_find_stream_info(format_context, NULL);
     mpInterrup->end();
     if (ret < 0) {
+        setMediaStatus(InvalidMedia);
         AVError err(AVError::FindStreamInfoError, ret);
         emit error(err);
         qWarning("Can't find stream info: %s", qPrintable(err.string()));
@@ -462,6 +496,7 @@ bool AVDemuxer::load()
     }
 
     started_ = false;
+    setMediaStatus(LoadedMedia);
     return true;
 }
 
@@ -944,6 +979,19 @@ void AVDemuxer::setOptions(const QHash<QByteArray, QByteArray> &dict)
 QHash<QByteArray, QByteArray> AVDemuxer::options() const
 {
     return mOptions;
+}
+
+void AVDemuxer::setMediaStatus(MediaStatus status)
+{
+    if (mCurrentMediaStatus == status)
+        return;
+
+    //if (status == NoMedia || status == InvalidMedia)
+    //    Q_EMIT durationChanged(0);
+
+    mCurrentMediaStatus = status;
+
+    emit mediaStatusChanged(mCurrentMediaStatus);
 }
 
 } //namespace QtAV

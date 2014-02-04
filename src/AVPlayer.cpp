@@ -100,7 +100,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     //clock->setClockType(AVClock::ExternalClock);
     connect(&demuxer, SIGNAL(started()), clock, SLOT(start()));
     connect(&demuxer, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
-
+    connect(&demuxer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
     demuxer_thread = new AVDemuxThread(this);
     demuxer_thread->setDemuxer(&demuxer);
     //use direct connection otherwise replay may stop immediatly because slot stop() is called after play()
@@ -538,6 +538,11 @@ bool AVPlayer::isPaused() const
 bool AVPlayer::isLoaded() const
 {
     return loaded;
+}
+
+MediaStatus AVPlayer::mediaStatus() const
+{
+    return demuxer.mediaStatus();
 }
 
 bool AVPlayer::load(const QString &path, bool reload)
