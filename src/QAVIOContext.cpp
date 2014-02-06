@@ -64,12 +64,12 @@ static int64_t seek(void *opaque, int64_t offset, int whence)
 
 QAVIOContext::QAVIOContext(QIODevice *io) : m_pIO(io)
 {
-    m_ucDataBuffer = new unsigned char[IODATA_BUFFER_SIZE];
+    //m_ucDataBuffer = new unsigned char[IODATA_BUFFER_SIZE];
+    m_ucDataBuffer = (unsigned char*)av_malloc(IODATA_BUFFER_SIZE);
 }
 
 QAVIOContext::~QAVIOContext()
 {
-    delete [] m_ucDataBuffer;
 }
 
 AVIOContext* QAVIOContext::context()

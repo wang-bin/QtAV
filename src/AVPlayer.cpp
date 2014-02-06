@@ -565,7 +565,7 @@ bool AVPlayer::load(bool reload)
     if (video_dec) {
         video_dec->setCodecContext(0);
     }
-    if (!m_pQAVIO)
+    if (m_pQAVIO)
         qDebug("Loading from IODevice...");
     else
         qDebug("loading: %s ...", path.toUtf8().constData());
