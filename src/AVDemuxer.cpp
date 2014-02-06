@@ -439,7 +439,7 @@ bool AVDemuxer::load()
     close();
     qDebug("all closed and reseted");
 
-    if (_file_name.isEmpty()) {
+    if (_file_name.isEmpty() && !m_pQAVIO) {
         setMediaStatus(NoMedia);
         return false;
     }
