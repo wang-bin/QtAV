@@ -33,6 +33,18 @@
 
 namespace QtAV {
 
+namespace
+{
+class RegisterMetaTypes
+{
+public:
+    RegisterMetaTypes()
+    {
+        qRegisterMetaType<QtAV::AVError>("QtAV::AVError");
+    }
+} _registerMetaTypes;
+}
+
 AVError::AVError()
     : mError(NoError)
     , mFFmpegError(0)

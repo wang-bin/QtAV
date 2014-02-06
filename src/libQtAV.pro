@@ -173,7 +173,8 @@ SOURCES += \
     VideoDecoderFFmpeg.cpp \
     VideoDecoderFFmpegHW.cpp \
     VideoThread.cpp \
-    QAVIOContext.cpp
+    QAVIOContext.cpp \
+    CommonTypes.cpp
 
 SDK_HEADERS *= \
     QtAV/QtAV.h \
@@ -246,7 +247,8 @@ HEADERS *= \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \
-    QtAV/QAVIOContext.h
+    QtAV/QAVIOContext.h \
+    QtAV/CommonTypes.h
 
 
 SDK_INCLUDE_FOLDER = QtAV

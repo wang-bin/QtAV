@@ -27,6 +27,7 @@
 #include <QtAV/Statistics.h>
 #include <QtAV/VideoDecoderTypes.h>
 #include <QtAV/AudioOutputTypes.h>
+#include <QtAV/CommonTypes.h>
 #include <QtCore/QHash>
 
 namespace QtAV {
@@ -74,6 +75,9 @@ public:
     bool load(const QString& path, bool reload = true);
     bool load(bool reload = true);
     bool isLoaded() const;
+
+    MediaStatus mediaStatus() const;
+
     qreal durationF() const; //unit: s, This function may be removed in the future.
     qint64 duration() const; //unit: ms. media duration. network stream may be very small, why?
     // the media's property.
@@ -199,6 +203,7 @@ public:
     //QHash<QByteArray, QByteArray> optionsForFilter() const;
 
 signals:
+    void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void paused(bool p);
     void started();
