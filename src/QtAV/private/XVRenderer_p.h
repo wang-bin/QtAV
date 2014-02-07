@@ -23,12 +23,6 @@
 #define QTAV_XVRENDERER_P_H
 
 #include "private/VideoRenderer_p.h"
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-#include <QX11Info>
-#else
-#include <qpa/qplatformnativeinterface.h>
-#include <QGuiApplication>
-#endif
 #include <sys/shm.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xvlib.h>
@@ -43,7 +37,7 @@ public:
     DPTR_DECLARE_PUBLIC(XVRenderer)
 
     XVRendererPrivate():
-        use_shm(true)
+        use_shm(false)
       , num_adaptors(0)
       , xv_image(0)
       , format_id(0x32315659) /*YV12*/
@@ -55,11 +49,7 @@ public:
         use_shm = false;
 #endif //_XSHM_H_
        //XvQueryExtension()
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-       display = QX11Info::display();
-#else
-       display = (Display*)qApp->platformNativeInterface()->nativeResourceForScreen("display", QGuiApplication::primaryScreen());
-#endif
+        display = XOpenDisplay(NULL);
         if (XvQueryAdaptors(display, DefaultRootWindow(display), &num_adaptors, &xv_adaptor_info) != Success) {
             available = false;
             qCritical("Query adaptors failed!");
@@ -119,6 +109,7 @@ public:
             XvUngrabPort(display, xv_port, 0);
             xv_port = 0;
         }
+        XCloseDisplay(display);
     }
     bool findYV12Port(XvPortID port) {
         int count = 0;
