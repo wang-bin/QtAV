@@ -43,6 +43,7 @@ struct AVFrame;
 struct AVStream;
 struct AVDictionary;
 
+class QIODevice;
 // TODO: force codec name. clean code
 namespace QtAV {
 
@@ -78,7 +79,7 @@ public:
     bool close();
     bool loadFile(const QString& fileName);
     bool isLoaded(const QString& fileName) const;
-    bool load(QAVIOContext* iocontext);
+    bool load(QIODevice* iocontext);
     bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
 
     void putFlushPacket();

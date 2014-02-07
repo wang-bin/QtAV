@@ -50,7 +50,7 @@
 #include <QtAV/AudioOutputTypes.h>
 #include <QtAV/FilterManager.h>
 
-#include <QtAV/QAVIOContext.h>
+#include <QIODevice>
 
 namespace QtAV {
 
@@ -76,7 +76,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     formatCtx = 0;
     last_position = 0;
 
-    m_pQAVIO = 0;
+    m_pIODevice = 0;
     /*
      * must be the same value at the end of stop(), and must be different from value in
      * stopFromDemuxerThread()(which is false), so the initial value must be true
@@ -158,8 +158,6 @@ AVPlayer::~AVPlayer()
         delete demuxer_thread;
         demuxer_thread = 0;
     }
-    if (m_pQAVIO)
-        delete m_pQAVIO;
 }
 
 AVClock* AVPlayer::masterClock()
@@ -446,6 +444,7 @@ void AVPlayer::setFile(const QString &path)
     reset_state = !this->path.isEmpty() && this->path != path;
     demuxer.setAutoResetStream(reset_state);
     this->path = path;
+    m_pIODevice = 0;
     loaded = false; //
     //qApp->activeWindow()->setWindowTitle(path); //crash on linux
 }
@@ -460,20 +459,15 @@ void AVPlayer::setIODevice(QIODevice* device)
     if (!device)
         return;
 
-    if (device->isSequential())
-    {
+    if (device->isSequential()) {
         qDebug("No support for sequential devices.");
         return;
     }
 
     demuxer.setAutoResetStream(reset_state);
-    if (!m_pQAVIO) {
-        m_pQAVIO = new QAVIOContext(device);
-        reset_state = true;
-    } else {
-        m_pQAVIO->setDevice(device);
-        reset_state = m_pQAVIO->device() != device;
-    }
+    reset_state = m_pIODevice != device;
+    m_pIODevice = device;
+    path = QString();
     loaded = false;
 }
 
@@ -554,7 +548,7 @@ bool AVPlayer::load(const QString &path, bool reload)
 bool AVPlayer::load(bool reload)
 {
     loaded = false;
-    if (path.isEmpty() && !m_pQAVIO) {
+    if (path.isEmpty() && !m_pIODevice) {
         qDebug("No file or IODevice was set.");
         return false;
     }
@@ -565,7 +559,7 @@ bool AVPlayer::load(bool reload)
     if (video_dec) {
         video_dec->setCodecContext(0);
     }
-    if (m_pQAVIO)
+    if (m_pIODevice)
         qDebug("Loading from IODevice...");
     else
         qDebug("loading: %s ...", path.toUtf8().constData());
@@ -577,11 +571,11 @@ bool AVPlayer::load(bool reload)
         if (video_dec && video_dec->isOpen()) {
             video_dec->close();
         }
-        if (!m_pQAVIO) {
+        if (!m_pIODevice) {
             if (!demuxer.loadFile(path))
                 return false;
         } else {
-            if (!demuxer.load(m_pQAVIO))
+            if (!demuxer.load(m_pIODevice))
                 return false;
         }
     } else {

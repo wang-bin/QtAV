@@ -175,6 +175,8 @@ AVDemuxer::~AVDemuxer()
         av_dict_free(&mpDict);
     }
     delete mpInterrup;
+    if (m_pQAVIO)
+        delete m_pQAVIO;
 }
 
 MediaStatus AVDemuxer::mediaStatus() const
@@ -410,13 +412,18 @@ bool AVDemuxer::loadFile(const QString &fileName)
         _file_name.insert(3, 'h');
     else if (_file_name.startsWith("file://"))
         _file_name.remove("file://");
-    m_pQAVIO = 0;
+    if (m_pQAVIO)
+        m_pQAVIO->setDevice(0);
     return load();
 }
 
-bool AVDemuxer::load(QAVIOContext* iocon)
+bool AVDemuxer::load(QIODevice* device)
 {
-    m_pQAVIO = iocon;
+    if (!m_pQAVIO)
+        m_pQAVIO = new QAVIOContext(device);
+    else
+        m_pQAVIO->setDevice(device);
+    _file_name = QString();
     return load();
 }
 
@@ -439,7 +446,7 @@ bool AVDemuxer::load()
     close();
     qDebug("all closed and reseted");
 
-    if (_file_name.isEmpty() && !m_pQAVIO) {
+    if (_file_name.isEmpty() && ((m_pQAVIO && !m_pQAVIO->device()) || !m_pQAVIO) ) {
         setMediaStatus(NoMedia);
         return false;
     }
@@ -453,7 +460,7 @@ bool AVDemuxer::load()
 
     setMediaStatus(LoadingMedia);
     int ret;
-    if (m_pQAVIO) {
+    if (m_pQAVIO && m_pQAVIO->device()) {
         format_context->pb = m_pQAVIO->context();
         format_context->flags |= AVFMT_FLAG_CUSTOM_IO;
 
