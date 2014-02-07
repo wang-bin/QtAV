@@ -22,8 +22,11 @@
 #include "QtAV/GLWidgetRenderer.h"
 #include "private/GLWidgetRenderer_p.h"
 #include <QResizeEvent>
+#include <QtOpenGL/QGLShaderProgram>
+#include <QtOpenGL/QGLShader>
 //TODO: vsync http://stackoverflow.com/questions/589064/how-to-enable-vertical-sync-in-opengl
 //TODO: check gl errors
+/*
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
 #ifndef GL_BGRA_EXT
@@ -41,7 +44,7 @@
 #define GL_BGR GL_BGR_EXT
 #endif //GL_BGRA
 #endif //GL_BGRA
-
+*/
 #include <QtAV/FilterContext.h>
 #include <QtAV/OSDFilter.h>
 
@@ -63,26 +66,31 @@ static inline void checkGlError(const char* op = 0) {
     qWarning("GL error %s (%#x): %s", op, error, glGetString(error));
 }
 
-#ifdef QT_OPENGL_ES_2
+
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
-    "attribute vec2 a_TexCoords; \n"
-    "uniform highp mat4 u_MVP_matrix;\n"
-    "varying vec2 v_TexCoords; \n"
+    "attribute vec2 a_TexCoords;\n"
+    "uniform mat4 u_MVP_matrix;\n"
+    "varying vec2 v_TexCoords;\n"
     "void main() {\n"
     "  gl_Position = u_MVP_matrix * a_Position;\n"
     "  v_TexCoords = a_TexCoords; \n"
     "}\n";
 
 static const char kFragmentShader[] =
+#ifdef QT_OPENGL_ES_2
     "precision mediump float;\n"
-    "uniform sampler2D u_Texture; \n"
-    "varying vec2 v_TexCoords; \n"
+#endif
+    "uniform sampler2D u_Texture;\n"
+    "varying vec2 v_TexCoords;\n"
     "void main() {\n"
     "  gl_FragColor = texture2D(u_Texture, v_TexCoords);\n"
     "}\n";
 
-GLuint loadShader(GLenum shaderType, const char* pSource) {
+// TODO: use QGLShaderProgram for better compatiblity
+GLuint GLWidgetRendererPrivate::loadShader(GLenum shaderType, const char* pSource) {
+    if (!hasGLSL)
+        return 0;
     GLuint shader = glCreateShader(shaderType);
     if (shader) {
         glShaderSource(shader, 1, &pSource, NULL);
@@ -107,7 +115,9 @@ GLuint loadShader(GLenum shaderType, const char* pSource) {
     return shader;
 }
 
-GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
+GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const char* pFragmentSource) {
+    if (!hasGLSL)
+        return 0;
     GLuint vertexShader = loadShader(GL_VERTEX_SHADER, pVertexSource);
     if (!vertexShader) {
         return 0;
@@ -142,7 +152,6 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     }
     return program;
 }
-#endif
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
     QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRendererPrivate())
@@ -199,13 +208,15 @@ void GLWidgetRenderer::drawFrame()
 #ifdef QT_OPENGL_ES_2
 #define FMT_INTERNAL GL_BGRA //why BGRA?
 #define FMT GL_BGRA
-    glUseProgram(d.program); //qpainter need
-    glActiveTexture(GL_TEXTURE0); //TODO: can remove??
-    glUniform1i(d.tex_location, 0);
 #else //QT_OPENGL_ES_2
 #define FMT_INTERNAL GL_RGBA //why? why 3 works?
 #define FMT GL_BGRA
 #endif //QT_OPENGL_ES_2
+    if (d.hasGLSL) {
+        glUseProgram(d.program); //qpainter need
+        glActiveTexture(GL_TEXTURE0); //TODO: can remove??
+        glUniform1i(d.tex_location, 0);
+    }
     glBindTexture(GL_TEXTURE_2D, d.texture);
     d.setupQuality();
     QRect roi = realROI();
@@ -262,74 +273,91 @@ void GLWidgetRenderer::drawFrame()
         };
 #endif //ROI_TEXCOORDS
 #ifndef QT_OPENGL_ES_2
-    //qpainter will reset gl state, so need glMatrixMode and clear color(in drawBackground())
-    //TODO: study what state will be reset
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    //GL_XXX may not defined in ES2. so macro is required
+    if (!d.hasGLSL) {
+        //qpainter will reset gl state, so need glMatrixMode and clear color(in drawBackground())
+        //TODO: study what state will be reset
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
 
-    glPushMatrix();
-    d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
-    glVertexPointer(2, GL_FLOAT, 0, kVertices);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glTexCoordPointer(2, GL_FLOAT, 0, kTexCoords);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glPopMatrix();
-#else //QT_OPENGL_ES_2
-    d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
-    //qpainter need. TODO: VBO?
-    glVertexAttribPointer(d.position_location, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
-    glEnableVertexAttribArray(d.position_location);
-    glVertexAttribPointer(d.tex_coords_location, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
-    glEnableVertexAttribArray(d.tex_coords_location);
-
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-    glDisableVertexAttribArray(d.tex_coords_location);
-    glDisableVertexAttribArray(d.position_location);
+        glPushMatrix();
+        d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+        glVertexPointer(2, GL_FLOAT, 0, kVertices);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glTexCoordPointer(2, GL_FLOAT, 0, kTexCoords);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glPopMatrix();
+    }
 #endif //QT_OPENGL_ES_2
+    if (d.hasGLSL) {
+        d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+        //qpainter need. TODO: VBO?
+        glVertexAttribPointer(d.position_location, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
+        glEnableVertexAttribArray(d.position_location);
+        glVertexAttribPointer(d.tex_coords_location, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
+        glEnableVertexAttribArray(d.tex_coords_location);
+
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        glDisableVertexAttribArray(d.tex_coords_location);
+        glDisableVertexAttribArray(d.position_location);
+    }
 }
 
 void GLWidgetRenderer::initializeGL()
 {
     DPTR_D(GLWidgetRenderer);
+    makeCurrent();
+    //qDebug("OpenGL version: %d.%d", d)
+    const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
+    d.hasGLSL = QGLShaderProgram::hasOpenGLShaderPrograms()
+#ifndef QT_OPENGL_ES_2
+                    && extensions.contains("ARB_shader_objects")
+#endif
+            ;
+    initializeGLFunctions();
+    d.initializeGLFunctions();
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &d.texture);
-    qDebug("initializeGL~~~~~~~");
-#ifdef QT_OPENGL_ES_2
-    if (d.program)
-        return;
-    d.program = createProgram(kVertexShader, kFragmentShader);
-    if (!d.program) {
-        qWarning("Could not create program.");
-        return;
-    }
-    d.position_location = glGetAttribLocation(d.program, "a_Position");
-    checkGlError("glGetAttribLocation");
-    qDebug("glGetAttribLocation(\"a_Position\") = %d\n", d.position_location);
-    d.tex_coords_location = glGetAttribLocation(d.program, "a_TexCoords");
-    checkGlError("glGetAttribLocation");
-    qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", d.tex_coords_location);
-    d.tex_location = glGetUniformLocation(d.program, "u_Texture");
-    checkGlError("glGetUniformLocation");
-    qDebug("glGetUniformLocation(\"u_Texture\") = %d\n", d.tex_location);
-    d.u_matrix = glGetUniformLocation(d.program, "u_MVP_matrix");
-    checkGlError("glGetUniformLocation");
-    qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", d.u_matrix);
+    qDebug("initializeGL~~~~~~~ has GLSL: %d", d.hasGLSL);
+    if (d.hasGLSL) {
+        if (d.program)
+            return;
+        d.program = d.createProgram(kVertexShader, kFragmentShader);
+        if (!d.program) {
+            qWarning("Could not create program.");
+            return;
+        }
+        d.position_location = glGetAttribLocation(d.program, "a_Position");
+        checkGlError("glGetAttribLocation");
+        qDebug("glGetAttribLocation(\"a_Position\") = %d\n", d.position_location);
+        d.tex_coords_location = glGetAttribLocation(d.program, "a_TexCoords");
+        checkGlError("glGetAttribLocation");
+        qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", d.tex_coords_location);
+        d.tex_location = glGetUniformLocation(d.program, "u_Texture");
+        checkGlError("glGetUniformLocation");
+        qDebug("glGetUniformLocation(\"u_Texture\") = %d\n", d.tex_location);
+        d.u_matrix = glGetUniformLocation(d.program, "u_MVP_matrix");
+        checkGlError("glGetUniformLocation");
+        qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", d.u_matrix);
 
-    glUseProgram(d.program);
-    checkGlError("glUseProgram");
-    glVertexAttribPointer(d.position_location, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
-    checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(d.position_location);
-    checkGlError("glEnableVertexAttribArray");
-#else
-    glShadeModel(GL_SMOOTH); //setupQuality?
-    glClearDepth(1.0f);
+        glUseProgram(d.program);
+        checkGlError("glUseProgram");
+        glVertexAttribPointer(d.position_location, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
+        checkGlError("glVertexAttribPointer");
+        glEnableVertexAttribArray(d.position_location);
+        checkGlError("glEnableVertexAttribArray");
+    }
+#ifndef QT_OPENGL_ES_2
+    if (!d.hasGLSL) {
+        glShadeModel(GL_SMOOTH); //setupQuality?
+        glClearDepth(1.0f);
+    }
 #endif //QT_OPENGL_ES_2
     glClearColor(0.0, 0.0, 0.0, 0.0);
     d.setupQuality();
@@ -359,10 +387,12 @@ void GLWidgetRenderer::resizeGL(int w, int h)
     d.setupAspectRatio();
 #ifndef QT_OPENGL_ES_2
     //??
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    if (!d.hasGLSL) {
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+    }
 #endif //QT_OPENGL_ES_2
 }
 

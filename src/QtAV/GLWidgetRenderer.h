@@ -24,11 +24,12 @@
 
 #include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
+#include <QtOpenGL/QGLFunctions>
 
 namespace QtAV {
 
 class GLWidgetRendererPrivate;
-class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
+class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer, public QGLFunctions
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer)
