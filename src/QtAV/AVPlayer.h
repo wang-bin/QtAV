@@ -30,6 +30,8 @@
 #include <QtAV/CommonTypes.h>
 #include <QtCore/QHash>
 
+class QIODevice;
+
 namespace QtAV {
 
 class AVError;
@@ -46,7 +48,7 @@ class AVDemuxThread;
 class Filter;
 class VideoCapture;
 class OutputSet;
-class QAVIOContext;
+
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -304,7 +306,7 @@ private:
     int repeat_max, repeat_current;
     int timer_id; //notify position change and check AB repeat range. active when playing
 
-    QAVIOContext *m_pQAVIO;
+    QIODevice* m_pIODevice;
 
     //the following things are required and must be set not null
     AVDemuxer demuxer;
