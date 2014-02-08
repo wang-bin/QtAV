@@ -27,6 +27,7 @@ public:
      * true: paintEngine is QPainter. Painting with QPainter support double buffer
      * false: no double buffer, should reimplement paintEngine() to return 0 to avoid flicker
      */
+    virtual QWidget* widget() { return this; }
 protected:
     virtual void convertData(const QByteArray &data);
     virtual bool needUpdateBackground() const;

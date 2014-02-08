@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -32,7 +32,6 @@ XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
   , VideoRenderer(*new XVRendererPrivate())
 {
     DPTR_INIT_PRIVATE(XVRenderer);
-    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     /* To rapidly update custom widgets that constantly paint over their entire areas with

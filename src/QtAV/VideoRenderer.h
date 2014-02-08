@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -140,8 +140,16 @@ public:
      */
     QPointF mapFromFrame(const QPointF& p) const;
 
-    QWidget* widget();
-    QGraphicsItem* graphicsItem();
+    /*!
+     * \brief widget
+     * \return default is 0. A QWidget subclass can return \a this
+     */
+    virtual QWidget* widget() { return 0; }
+    /*!
+     * \brief graphicsItem
+     * \return default is 0. A QGraphicsItem subclass can return \a this
+     */
+    virtual QGraphicsItem* graphicsItem() { return 0; }
 
     //TODO: enable/disable = new a default for this vo engine or push back/remove from list
     //filter: null means disable

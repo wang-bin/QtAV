@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -36,6 +36,7 @@ class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer, pub
 public:
     GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     virtual VideoRendererId id() const;
+    virtual QWidget* widget() { return this; }
 
 protected:
     virtual bool receiveFrame(const VideoFrame& frame);

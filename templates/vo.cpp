@@ -23,7 +23,6 @@ public:
   , VideoRenderer(*new %CLASS%Private())
 {
     DPTR_INIT_PRIVATE(%CLASS%);
-    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     //setAttribute(Qt::WA_OpaquePaintEvent);

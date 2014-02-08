@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -32,7 +32,6 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     QWidget(parent, f),QPainterRenderer(*new WidgetRendererPrivate())
 {
     DPTR_D(WidgetRenderer);
-    d.widget_holder = this;
     d.painter = new QPainter();
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
@@ -55,7 +54,6 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
     :QWidget(parent, f),QPainterRenderer(d)
 {
-    d.widget_holder = this;
     d.painter = new QPainter();
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
