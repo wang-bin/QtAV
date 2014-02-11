@@ -596,7 +596,7 @@ bool AVPlayer::load(bool reload)
     }
 
     // TODO: what about other proctols? some vob duration() == 0
-    if (path.startsWith("file:") || QFile(path).exists() && duration() > 0) {
+    if ((path.startsWith("file:") || QFile(path).exists()) && duration() > 0) {
         media_end_pos = duration();
     } else {
         media_end_pos = std::numeric_limits<qint64>::max();
@@ -1150,7 +1150,7 @@ void AVPlayer::initStatistics()
         if (cs.stream_idx < 0)
             continue;
         AVStream *stream = formatCtx->streams[cs.stream_idx];
-        qDebug("stream: %d, duration=%lld (%lld ms==%f), time_base=%f", cs.stream_idx, stream->duration, qint64(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
+        qDebug("stream: %d, duration=%lld (%lld ms==%lld), time_base=%f", cs.stream_idx, stream->duration, qint64(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
                , duration(), av_q2d(stream->time_base));
         cs.st->available = true;
         if (cs.ctx->codec) {
