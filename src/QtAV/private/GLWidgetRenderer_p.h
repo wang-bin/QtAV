@@ -35,12 +35,11 @@ public:
         VideoRendererPrivate()
       , hasGLSL(true)
       , update_texcoords(true)
-      //, texture(0)
       , program(0)
       , vert(0)
       , frag(0)
-      , position_location(0)
-      , tex_coords_location(0)
+      , a_Position(0)
+      , a_TexCoords(0)
       , u_matrix(0)
       , painter(0)
       , pixel_fmt(VideoFormat::Format_Invalid)
@@ -130,13 +129,12 @@ public:
 
     bool hasGLSL;
     bool update_texcoords;
-    QVector<GLuint> texture;
-    //TODO: u_tex, a_position
+    QVector<GLuint> textures;
     GLuint program;
     GLuint vert, frag;
-    GLuint position_location;
-    GLuint tex_coords_location;
-    QVector<GLuint> tex_location;
+    GLuint a_Position;
+    GLuint a_TexCoords;
+    QVector<GLuint> u_Texture; //u_TextureN
     GLuint u_matrix;
 
     QPainter *painter;
