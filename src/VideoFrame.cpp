@@ -52,11 +52,9 @@ public:
         , textures(4, 0)
         , conv(0)
     {
-        /*
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
         textures.resize(format.planeCount());
-        */
     }
     ~VideoFramePrivate() {}
     bool convertTo(const VideoFormat& fmt) {
@@ -82,11 +80,11 @@ public:
         data = conv->outData();
         planes = conv->outPlanes();
         line_sizes = conv->outLineSizes();
-        /*
-        planes.resize(fmt.planeCount());
-        line_sizes.resize(fmt.planeCount());
-        textures.resize(fmt.planeCount());
-        */
+
+        planes.resize(format.planeCount());
+        line_sizes.resize(format.planeCount());
+        textures.resize(format.planeCount());
+
         return true;
     }
     bool convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi) {
@@ -99,11 +97,11 @@ public:
         data = conv->outData();
         planes = conv->outPlanes();
         line_sizes = conv->outLineSizes();
-        /*
+
         planes.resize(fmt.planeCount());
         line_sizes.resize(fmt.planeCount());
         textures.resize(fmt.planeCount());
-        */
+
         return false;
     }
 
@@ -284,6 +282,22 @@ int VideoFrame::height() const
     return d_func()->height;
 }
 
+int VideoFrame::planeWidth(int plane) const
+{
+    Q_D(const VideoFrame);
+    if (plane == 0)
+        return d->width;
+    return d->format.chromaWidth(d->width);
+}
+
+int VideoFrame::planeHeight(int plane) const
+{
+    Q_D(const VideoFrame);
+    if (plane == 0)
+        return d->height;
+    return d->format.chromaHeight(d->height);
+}
+
 void VideoFrame::setImageConverter(ImageConverter *conv)
 {
     d_func()->conv = conv;
@@ -294,7 +308,7 @@ bool VideoFrame::convertTo(const VideoFormat& fmt)
     Q_D(VideoFrame);
     if (fmt == d->format) //TODO: check whether own the data
         return true;
-    return d_func()->convertTo(fmt);
+    return d->convertTo(fmt);
 }
 
 bool VideoFrame::convertTo(VideoFormat::PixelFormat fmt)

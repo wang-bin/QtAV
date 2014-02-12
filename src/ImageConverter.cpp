@@ -173,7 +173,7 @@ int ImageConverter::saturation() const
 QVector<quint8*> ImageConverter::outPlanes() const
 {
     DPTR_D(const ImageConverter);
-    QVector<quint8*> planes(4, 0);
+    QVector<quint8*> planes(4, 0); //TODO: only real plane count?
     planes[0] = d.picture.data[0];
     planes[1] = d.picture.data[1];
     planes[2] = d.picture.data[2];

@@ -74,8 +74,11 @@ public:
     virtual int bytesPerLine(int plane) const;
 
     QSize size() const;
+    //int width(int plane = 0) const?
     int width() const;
     int height() const;
+    int planeWidth(int plane) const;
+    int planeHeight(int plane) const;
 
     //use ptr instead of ImageConverterId to avoid allocating memory
     // Id can be used in VideoThread
