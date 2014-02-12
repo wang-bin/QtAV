@@ -22,7 +22,10 @@
 #ifndef QTAV_GLWIDGETRENDERER_P_H
 #define QTAV_GLWIDGETRENDERER_P_H
 #include <QtOpenGL/qgl.h>
+#include <QtCore/QVector>
 #include "private/VideoRenderer_p.h"
+#include <QtAV/VideoFormat.h>
+
 namespace QtAV {
 
 class Q_AV_EXPORT GLWidgetRendererPrivate : public VideoRendererPrivate, public QGLFunctions
@@ -34,23 +37,28 @@ public:
       , update_texcoords(true)
       //, texture(0)
       , program(0)
+      , vert(0)
+      , frag(0)
       , position_location(0)
       , tex_coords_location(0)
-      , tex_location(0)
       , u_matrix(0)
       , painter(0)
+      , pixel_fmt(VideoFormat::Format_Invalid)
     {
-        memset(texture, 0, sizeof(texture));
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
             available = false;
             return;
         }
     }
     ~GLWidgetRendererPrivate() {
-        glDeleteTextures(sizeof(texture)/sizeof(GLuint), texture);
+        releaseShaderProgram();
     }
     GLuint loadShader(GLenum shaderType, const char* pSource);
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
+    bool releaseShaderProgram();
+    bool prepareShaderProgram(const VideoFormat& fmt);
+    void upload(const QRect& roi);
+    void uploadPlane(int p, GLint internalFormat, GLenum format, const QRect& roi);
     //GL 4.x: GL_FRAGMENT_SHADER_DERIVATIVE_HINT,GL_TEXTURE_COMPRESSION_HINT
     //GL_DONT_CARE(default), GL_FASTEST, GL_NICEST
     /*
@@ -119,20 +127,21 @@ public:
         }
 #endif //QT_OPENGL_ES_2
     }
-    void upload(const QRect& roi);
-    void uploadPlane(int p, GLint internalFormat, GLenum format, const QRect& roi);
 
     bool hasGLSL;
     bool update_texcoords;
-    GLuint texture[4];
+    QVector<GLuint> texture;
     //TODO: u_tex, a_position
     GLuint program;
+    GLuint vert, frag;
     GLuint position_location;
     GLuint tex_coords_location;
-    GLuint tex_location;
+    QVector<GLuint> tex_location;
     GLuint u_matrix;
 
     QPainter *painter;
+
+    VideoFormat::PixelFormat pixel_fmt;
 };
 
 } //namespace QtAV
