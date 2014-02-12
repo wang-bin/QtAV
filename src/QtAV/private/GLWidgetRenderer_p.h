@@ -32,7 +32,7 @@ public:
         VideoRendererPrivate()
       , hasGLSL(true)
       , update_texcoords(true)
-      , texture(0)
+      //, texture(0)
       , program(0)
       , position_location(0)
       , tex_coords_location(0)
@@ -40,13 +40,14 @@ public:
       , u_matrix(0)
       , painter(0)
     {
+        memset(texture, 0, sizeof(texture));
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
             available = false;
             return;
         }
     }
     ~GLWidgetRendererPrivate() {
-        glDeleteTextures(1, &texture);
+        glDeleteTextures(sizeof(texture)/sizeof(GLuint), texture);
     }
     GLuint loadShader(GLenum shaderType, const char* pSource);
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
@@ -118,10 +119,12 @@ public:
         }
 #endif //QT_OPENGL_ES_2
     }
+    void upload(const QRect& roi);
+    void uploadPlane(int p, GLint internalFormat, GLenum format, const QRect& roi);
 
     bool hasGLSL;
     bool update_texcoords;
-    GLuint texture;
+    GLuint texture[4];
     //TODO: u_tex, a_position
     GLuint program;
     GLuint position_location;

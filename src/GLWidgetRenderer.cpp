@@ -45,6 +45,14 @@
 #endif //GL_BGRA
 #endif //GL_BGRA
 */
+#ifdef QT_OPENGL_ES_2
+#define FMT_INTERNAL GL_BGRA //why BGRA?
+#define FMT GL_BGRA
+#else //QT_OPENGL_ES_2
+#define FMT_INTERNAL GL_RGBA //why? why 3 works?
+#define FMT GL_BGRA
+#endif //QT_OPENGL_ES_2
+
 #include <QtAV/FilterContext.h>
 #include <QtAV/OSDFilter.h>
 
@@ -201,24 +209,87 @@ void GLWidgetRenderer::drawBackground()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void GLWidgetRendererPrivate::upload(const QRect &roi)
+{
+    GLint internalFormat = GL_LUMINANCE;
+    GLenum format = GL_LUMINANCE;
+    if (video_frame.format().isRGB()) {
+        internalFormat = FMT_INTERNAL;
+        format = FMT;
+    }
+    for (int i = 0; i < video_frame.planeCount(); ++i) {
+        uploadPlane(i, internalFormat, format, roi);
+    }
+}
+
+void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum format, const QRect& roi)
+{
+    if (hasGLSL) {
+        glActiveTexture(GL_TEXTURE0 + p); //TODO: can remove??
+    }
+    glBindTexture(GL_TEXTURE_2D, texture[p]);
+    setupQuality();
+    // This is necessary for non-power-of-two textures
+    glTexParameteri(texture[p], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(texture[p], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    //uploading part of image eats less gpu memory, but may be more cpu(gles)
+    //FIXME: more cpu usage then qpainter. FBO, VBO?
+#define ROI_TEXCOORDS 1
+    //roi for planes?
+    if (ROI_TEXCOORDS || roi.size() == video_frame.size()) {
+        glTexImage2D(GL_TEXTURE_2D
+                     , 0                //level
+                     , internalFormat               //internal format. 4? why GL_RGBA? GL_RGB?
+                     , video_frame.planeWidth(p)
+                     , video_frame.planeHeight(p)
+                     , 0                //border, ES not support
+                     , format          //format, must the same as internal format?
+                     , GL_UNSIGNED_BYTE
+                     , video_frame.bits(p));
+    } else {
+        VideoFormat fmt = video_frame.format();
+#ifdef GL_UNPACK_ROW_LENGTH
+// http://stackoverflow.com/questions/205522/opengl-subtexturing
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.planeWidth(p));
+        //glPixelStorei or compute pointer
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, fmt.chromaWidth(roi.x()));
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, fmt.chromaHeight(roi.y()));
+        glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, fmt.chromaWidth(roi.width()), fmt.chromaHeight(roi.height()), 0, FMT, GL_UNSIGNED_BYTE, video_frame.bits(p));
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+#else // GL ES
+//define it? or any efficient way?
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, fmt.chromaWidth(roi.width()), fmt.chromaHeight(roi.height()), 0, format, GL_UNSIGNED_BYTE, NULL);
+        // how to use only 1 call?
+        //glTexSubImage2D(GL_TEXTURE_2D, 0, roi.x(), roi.y(), roi.width(), roi.height(), FMT, GL_UNSIGNED_BYTE, d.data.constData());
+        //qDebug("plane=%d %d", p, fmt.chromaHeight(roi.height()));
+        for (int y = 0; y < fmt.chromaHeight(roi.height()); y++) {
+            char *row = (char*)video_frame.bits(p) + ((y+fmt.chromaHeight(roi.y()))*video_frame.planeWidth(p) + fmt.chromaWidth(roi.x())) * fmt.bytesPerPixel();
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, fmt.chromaWidth(roi.width()), 1, FMT, GL_UNSIGNED_BYTE, row);
+        }
+#endif //GL_UNPACK_ROW_LENGTH
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+}
+
 void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
-#ifdef QT_OPENGL_ES_2
-#define FMT_INTERNAL GL_BGRA //why BGRA?
-#define FMT GL_BGRA
-#else //QT_OPENGL_ES_2
-#define FMT_INTERNAL GL_RGBA //why? why 3 works?
-#define FMT GL_BGRA
-#endif //QT_OPENGL_ES_2
+    if (d.hasGLSL) {
+        glUseProgram(d.program); //qpainter need
+    }
+    QRect roi = realROI();
+#if 1
+    d.upload(roi);
+#else
     if (d.hasGLSL) {
         glUseProgram(d.program); //qpainter need
         glActiveTexture(GL_TEXTURE0); //TODO: can remove??
-        glUniform1i(d.tex_location, 0);
     }
-    glBindTexture(GL_TEXTURE_2D, d.texture);
+    glBindTexture(GL_TEXTURE_2D, d.texture[0]);
     d.setupQuality();
-    QRect roi = realROI();
     //uploading part of image eats less gpu memory, but may be more cpu(gles)
     //FIXME: more cpu usage then qpainter. FBO, VBO?
 #define ROI_TEXCOORDS 1
@@ -244,15 +315,17 @@ void GLWidgetRenderer::drawFrame()
         glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 #else // GL ES
 //define it? or any efficient way?
+        //TODO: copy to temp buff
         glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, roi.width(), roi.height(), 0, FMT, GL_UNSIGNED_BYTE, NULL);
         // how to use only 1 call?
         //glTexSubImage2D(GL_TEXTURE_2D, 0, roi.x(), roi.y(), roi.width(), roi.height(), FMT, GL_UNSIGNED_BYTE, d.data.constData());
-        for(int y = 0; y < roi.height(); y++) {
+        for (int y = 0; y < roi.height(); y++) {
             char *row = (char*)d.video_frame.bits() + ((y + roi.y())*d.video_frame.width() + roi.x()) * 4;
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, roi.width(), 1, FMT, GL_UNSIGNED_BYTE, row);
         }
 #endif //GL_UNPACK_ROW_LENGTH
     }
+#endif //1
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
         const GLfloat kTexCoords[] = {
@@ -295,6 +368,7 @@ void GLWidgetRenderer::drawFrame()
 #endif //QT_OPENGL_ES_2
     if (d.hasGLSL) {
         d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+        glUniform1i(d.tex_location, 0);
         //qpainter need. TODO: VBO?
         glVertexAttribPointer(d.position_location, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
         glEnableVertexAttribArray(d.position_location);
@@ -312,18 +386,18 @@ void GLWidgetRenderer::initializeGL()
 {
     DPTR_D(GLWidgetRenderer);
     makeCurrent();
-    //qDebug("OpenGL version: %d.%d", d)
+    qDebug("OpenGL version: %d.%d", format().majorVersion(), format().minorVersion());
     const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
-    d.hasGLSL = QGLShaderProgram::hasOpenGLShaderPrograms()
-#ifndef QT_OPENGL_ES_2
-                    && extensions.contains("ARB_shader_objects")
-#endif
-            ;
+    d.hasGLSL = QGLShaderProgram::hasOpenGLShaderPrograms();
     initializeGLFunctions();
     d.initializeGLFunctions();
+    checkGlError("initializeGLFunctions");
+
     glEnable(GL_TEXTURE_2D);
-    glGenTextures(1, &d.texture);
-    qDebug("initializeGL~~~~~~~ has GLSL: %d", d.hasGLSL);
+    checkGlError("glEnable");
+    glGenTextures(sizeof(d.texture)/sizeof(GLuint), d.texture);
+    checkGlError("glGenTextures");
+    qDebug("initializeGL textures: %d~~~~~~~ has GLSL: %d", sizeof(d.texture), d.hasGLSL);
     if (d.hasGLSL) {
         if (d.program)
             return;
