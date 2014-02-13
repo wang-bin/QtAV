@@ -50,12 +50,13 @@ public:
         }
     }
     ~GLWidgetRendererPrivate() {
-        releaseShaderProgram();
+        releaseResource();
     }
     GLuint loadShader(GLenum shaderType, const char* pSource);
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
-    bool releaseShaderProgram();
-    bool prepareShaderProgram(const VideoFormat& fmt);
+    bool releaseResource();
+    bool initTexture(GLuint tex, GLint internalFormat, GLenum format, int width, int height);
+    bool prepareShaderProgram(const VideoFormat& fmt, int width, int height);
     void upload(const QRect& roi);
     void uploadPlane(int p, GLint internalFormat, GLenum format, const QRect& roi);
     //GL 4.x: GL_FRAGMENT_SHADER_DERIVATIVE_HINT,GL_TEXTURE_COMPRESSION_HINT
@@ -140,6 +141,7 @@ public:
     QPainter *painter;
 
     VideoFormat::PixelFormat pixel_fmt;
+    QSize texture0Size;
 };
 
 } //namespace QtAV

@@ -175,9 +175,12 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
     return program;
 }
 
-bool GLWidgetRendererPrivate::releaseShaderProgram()
+bool GLWidgetRendererPrivate::releaseResource()
 {
+    pixel_fmt = VideoFormat::Format_Invalid;
+    texture0Size = QSize();
     glDeleteTextures(textures.size(), textures.data());
+    qDebug("delete %d textures", textures.size());
     textures.clear();
     if (vert) {
         if (program)
@@ -196,16 +199,51 @@ bool GLWidgetRendererPrivate::releaseShaderProgram()
     return true;
 }
 
-bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
+bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLenum format, int width, int height)
 {
-    if (!hasGLSL) {
-        qWarning("Does not support GLSL!");
-        return false;
-    }
+    glBindTexture(GL_TEXTURE_2D, tex);
+    //glUniform1i(u_Texture[i], i);
+    setupQuality();
+    // This is necessary for non-power-of-two textures
+    glTexParameteri(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D
+                 , 0                //level
+                 , internalFormat               //internal format. 4? why GL_RGBA? GL_RGB?
+                 , width
+                 , height
+                 , 0                //border, ES not support
+                 , format          //format, must the same as internal format?
+                 , GL_UNSIGNED_BYTE
+                 , NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+}
+
+bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int width, int height)
+{
     // isSupported(pixfmt)
     if (!fmt.isValid())
         return false;
-    releaseShaderProgram();
+    releaseResource();
+    pixel_fmt = fmt.pixelFormat();
+    texture0Size = QSize(width, height);
+
+    textures.resize(fmt.planeCount());
+    glGenTextures(textures.size(), textures.data());
+
+    GLint internalFormat = GL_LUMINANCE;
+    GLenum format = GL_LUMINANCE;
+    if (fmt.isRGB()) {
+        internalFormat = FMT_INTERNAL;
+        format = FMT;
+    }
+
+    if (!hasGLSL) {
+        initTexture(textures[0], internalFormat, format, width, height);
+        qWarning("Does not support GLSL!");
+        return false;
+    }
     // FIXME
     if (fmt.isRGB()) {
         program = createProgram(kVertexShader, kFragmentShader);
@@ -243,14 +281,17 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
 
     // fragment shader
-    textures.resize(fmt.planeCount());
     u_Texture.resize(fmt.planeCount());
-    glGenTextures(textures.size(), textures.data());
     for (int i = 0; i < textures.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
         u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
         checkGlError("glGetUniformLocation");
         qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
+        if (i == 0) {
+            width = fmt.chromaWidth(width);
+            height = fmt.chromaHeight(height);
+        }
+        initTexture(textures[i], internalFormat, format, width, height);
     }
 
     glUseProgram(program);
@@ -267,9 +308,17 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
 {
     GLint internalFormat = GL_LUMINANCE;
     GLenum format = GL_LUMINANCE;
-    if (video_frame.format().isRGB()) {
+    const VideoFormat fmt = video_frame.format();
+    if (fmt.isRGB()) {
         internalFormat = FMT_INTERNAL;
         format = FMT;
+    }
+    if (fmt != pixel_fmt || video_frame.size() != texture0Size) {
+        qDebug("pixel format changed: %s", video_frame.format().name().toUtf8().constData());
+        if (!prepareShaderProgram(fmt, video_frame.width(), video_frame.height())) {
+            qWarning("shader program create error...");
+            return;
+        }
     }
     for (int i = 0; i < video_frame.planeCount(); ++i) {
         uploadPlane(i, internalFormat, format, roi);
@@ -282,7 +331,7 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
         glActiveTexture(GL_TEXTURE0 + p); //TODO: can remove??
     }
     glBindTexture(GL_TEXTURE_2D, textures[p]);
-    glUniform1i(u_Texture[p], p);
+    glUniform1i(u_Texture[p], p); // for GLSL
     setupQuality();
     // This is necessary for non-power-of-two textures
     glTexParameteri(textures[p], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -297,12 +346,12 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
          *  TODO: glTexSubImage to update data.
          * glEGLImageTargetTexture2DOES:http://software.intel.com/en-us/articles/using-opengl-es-to-accelerate-apps-with-legacy-2d-guis
          */
-        glTexImage2D(GL_TEXTURE_2D
+        glTexSubImage2D(GL_TEXTURE_2D
                      , 0                //level
-                     , internalFormat               //internal format. 4? why GL_RGBA? GL_RGB?
+                     , 0                // xoffset
+                     , 0                // yoffset
                      , video_frame.planeWidth(p)
                      , video_frame.planeHeight(p)
-                     , 0                //border, ES not support
                      , format          //format, must the same as internal format?
                      , GL_UNSIGNED_BYTE
                      , video_frame.bits(p));
@@ -385,11 +434,13 @@ void GLWidgetRenderer::drawBackground()
 void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
+    QRect roi = realROI();
+    d.upload(roi);
+
+    // shader program may not ready before upload
     if (d.hasGLSL) {
         glUseProgram(d.program); //qpainter need
     }
-    QRect roi = realROI();
-    d.upload(roi);
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
         const GLfloat kTexCoords[] = {
@@ -458,12 +509,7 @@ void GLWidgetRenderer::initializeGL()
 
     glEnable(GL_TEXTURE_2D);
     checkGlError("glEnable");
-    qDebug("initializeGL textures");
-    if (d.hasGLSL) {
-        if (!d.prepareShaderProgram(VideoFormat(VideoFormat::Format_RGB32))) {
-            return;
-        }
-    }
+
 #ifndef QT_OPENGL_ES_2
     if (!d.hasGLSL) {
         glShadeModel(GL_SMOOTH); //setupQuality?
