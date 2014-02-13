@@ -97,6 +97,7 @@ static const char kFragmentShader[] =
     "  gl_FragColor = texture2D(u_Texture0, v_TexCoords);\n"
     "}\n";
 
+//http://www.opengl.org/wiki/GLSL#Error_Checking
 // TODO: use QGLShaderProgram for better compatiblity
 GLuint GLWidgetRendererPrivate::loadShader(GLenum shaderType, const char* pSource) {
     if (!hasGLSL)
@@ -105,9 +106,9 @@ GLuint GLWidgetRendererPrivate::loadShader(GLenum shaderType, const char* pSourc
     if (shader) {
         glShaderSource(shader, 1, &pSource, NULL);
         glCompileShader(shader);
-        GLint compiled = 0;
+        GLint compiled = GL_FALSE;
         glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-        if (!compiled) {
+        if (compiled == GL_FALSE) {
             GLint infoLen = 0;
             glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
             if (infoLen) {
@@ -117,9 +118,9 @@ GLuint GLWidgetRendererPrivate::loadShader(GLenum shaderType, const char* pSourc
                     qWarning("Could not compile shader %d:\n%s\n", shaderType, buf);
                     free(buf);
                 }
-                glDeleteShader(shader);
-                shader = 0;
             }
+            glDeleteShader(shader);
+            shader = 0;
         }
     }
     return shader;
@@ -166,6 +167,9 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
         program = 0;
         return 0;
     }
+    //Always detach shaders after a successful link.
+    glDetachShader(program, vertexShader);
+    glDetachShader(program, pixelShader);
     vert = vertexShader;
     frag = pixelShader;
     return program;
@@ -289,6 +293,10 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 #define ROI_TEXCOORDS 1
     //roi for planes?
     if (ROI_TEXCOORDS || roi.size() == video_frame.size()) {
+        /*
+         *  TODO: glTexSubImage to update data.
+         * glEGLImageTargetTexture2DOES:http://software.intel.com/en-us/articles/using-opengl-es-to-accelerate-apps-with-legacy-2d-guis
+         */
         glTexImage2D(GL_TEXTURE_2D
                      , 0                //level
                      , internalFormat               //internal format. 4? why GL_RGBA? GL_RGB?
