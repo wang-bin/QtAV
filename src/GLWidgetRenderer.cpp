@@ -28,6 +28,7 @@
 #include <QtOpenGL/QGLShader>
 //TODO: vsync http://stackoverflow.com/questions/589064/how-to-enable-vertical-sync-in-opengl
 //TODO: check gl errors
+//glEGLImageTargetTexture2DOES:http://software.intel.com/en-us/articles/using-opengl-es-to-accelerate-apps-with-legacy-2d-guis
 /*
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
@@ -57,6 +58,9 @@
 
 #include <QtAV/FilterContext.h>
 #include <QtAV/OSDFilter.h>
+
+#define UPLOAD_ROI 0
+#define ROI_TEXCOORDS 1
 
 //TODO: QGLfunctions?
 namespace QtAV {
@@ -217,7 +221,7 @@ bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLen
                  , GL_UNSIGNED_BYTE
                  , NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
-
+    return true;
 }
 
 bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int width, int height)
@@ -313,9 +317,15 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
         internalFormat = FMT_INTERNAL;
         format = FMT;
     }
+#if UPLOAD_ROI
+    if (fmt != pixel_fmt || roi.size() != texture0Size) {
+        qDebug("update texture: %dx%d, %s", roi.width(), roi.height(), video_frame.format().name().toUtf8().constData());
+        if (!prepareShaderProgram(fmt, roi.width(), roi.height())) {
+#else
     if (fmt != pixel_fmt || video_frame.size() != texture0Size) {
-        qDebug("pixel format changed: %s", video_frame.format().name().toUtf8().constData());
+        qDebug("update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
         if (!prepareShaderProgram(fmt, video_frame.width(), video_frame.height())) {
+#endif //UPLOAD_ROI
             qWarning("shader program create error...");
             return;
         }
@@ -339,13 +349,8 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 
     //uploading part of image eats less gpu memory, but may be more cpu(gles)
     //FIXME: more cpu usage then qpainter. FBO, VBO?
-#define ROI_TEXCOORDS 1
     //roi for planes?
     if (ROI_TEXCOORDS || roi.size() == video_frame.size()) {
-        /*
-         *  TODO: glTexSubImage to update data.
-         * glEGLImageTargetTexture2DOES:http://software.intel.com/en-us/articles/using-opengl-es-to-accelerate-apps-with-legacy-2d-guis
-         */
         glTexSubImage2D(GL_TEXTURE_2D
                      , 0                //level
                      , 0                // xoffset
@@ -356,27 +361,55 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
                      , GL_UNSIGNED_BYTE
                      , video_frame.bits(p));
     } else {
+        int roi_x = roi.x();
+        int roi_y = roi.y();
+        int roi_w = roi.width();
+        int roi_h = roi.height();
+        int plane_w = video_frame.planeWidth(p);
         VideoFormat fmt = video_frame.format();
-#ifdef GL_UNPACK_ROW_LENGTH
+        if (p == 0) {
+            texture0Size = QSize(roi_w, roi_h);
+        } else {
+            roi_x = fmt.chromaWidth(roi_x);
+            roi_y = fmt.chromaHeight(roi_y);
+            roi_w = fmt.chromaWidth(roi_w);
+            roi_h = fmt.chromaHeight(roi_h);
+        }
+        qDebug("roi: %d, %d %dx%d", roi_x, roi_y, roi_w, roi_h);
+#if 0// defined(GL_UNPACK_ROW_LENGTH) && defined(GL_UNPACK_SKIP_PIXELS)
 // http://stackoverflow.com/questions/205522/opengl-subtexturing
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.planeWidth(p));
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, plane_w);
         //glPixelStorei or compute pointer
-        glPixelStorei(GL_UNPACK_SKIP_PIXELS, fmt.chromaWidth(roi.x()));
-        glPixelStorei(GL_UNPACK_SKIP_ROWS, fmt.chromaHeight(roi.y()));
-        glTexImage2D(GL_TEXTURE_2D, 0, FMT_INTERNAL, fmt.chromaWidth(roi.width()), fmt.chromaHeight(roi.height()), 0, FMT, GL_UNSIGNED_BYTE, video_frame.bits(p));
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, roi_x);
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, roi_y);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, roi_w, roi_h, 0, format, GL_UNSIGNED_BYTE, video_frame.bits(p));
+        //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, roi_w, roi_h, format, GL_UNSIGNED_BYTE, video_frame.bits(p));
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 #else // GL ES
 //define it? or any efficient way?
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, fmt.chromaWidth(roi.width()), fmt.chromaHeight(roi.height()), 0, format, GL_UNSIGNED_BYTE, NULL);
-        // how to use only 1 call?
-        //glTexSubImage2D(GL_TEXTURE_2D, 0, roi.x(), roi.y(), roi.width(), roi.height(), FMT, GL_UNSIGNED_BYTE, d.data.constData());
-        //qDebug("plane=%d %d", p, fmt.chromaHeight(roi.height()));
-        for (int y = 0; y < fmt.chromaHeight(roi.height()); y++) {
-            char *row = (char*)video_frame.bits(p) + ((y+fmt.chromaHeight(roi.y()))*video_frame.planeWidth(p) + fmt.chromaWidth(roi.x())) * fmt.bytesPerPixel();
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, fmt.chromaWidth(roi.width()), 1, FMT, GL_UNSIGNED_BYTE, row);
+        //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, roi_w, roi_h, 0, format, GL_UNSIGNED_BYTE, NULL);
+        const char *src = (char*)video_frame.bits(p) + roi_y*plane_w + roi_x*fmt.bytesPerPixel(p);
+#define UPLOAD_LINE 1
+#if UPLOAD_LINE
+        for (int y = 0; y < roi_h; y++) {
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, roi_w, 1, format, GL_UNSIGNED_BYTE, src);
         }
+#else
+        int line_size = roi_w*fmt.bytesPerPixel(p);
+        char *sub = (char*)malloc(roi_h*line_size);
+        char *dst = sub;
+        for (int y = 0; y < roi_h; y++) {
+            memcpy(dst, src, line_size);
+            src += video_frame.bytesPerLine(p);
+            dst += line_size;
+        }
+        // FIXME: crash
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, roi_w, roi_h, format, GL_UNSIGNED_BYTE, sub);
+        free(sub);
+#endif //UPLOAD_LINE
 #endif //GL_UNPACK_ROW_LENGTH
         glBindTexture(GL_TEXTURE_2D, 0);
     }
