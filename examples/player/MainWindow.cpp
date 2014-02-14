@@ -684,6 +684,7 @@ void MainWindow::onPaused(bool p)
 
 void MainWindow::onStartPlay()
 {
+    mpRenderer->setRegionOfInterest(QRectF());
     mFile = mpPlayer->file(); //open from EventFilter's menu
     setWindowTitle(mTitle);
 
