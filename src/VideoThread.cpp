@@ -300,7 +300,14 @@ void VideoThread::run()
             qDebug("video thread stop before send decoded data");
             break;
         }
-        frame.convertTo(VideoFormat::Format_RGB32);
+        if (!frame.convertTo(VideoFormat::Format_RGB32)) {
+            /*
+             * TODO: send andway and let renderer deal with it?
+             * renderer may update background but no frame to graw, so flickers
+             * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
+             */
+            continue;
+        }
         d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
         d.capture->setPosition(pts);
         if (d.capture->isRequested()) {
