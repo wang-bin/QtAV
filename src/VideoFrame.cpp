@@ -74,8 +74,10 @@ public:
         conv->setInFormat(format.pixelFormatFFmpeg());
         conv->setOutFormat(fffmt);
         conv->setInSize(width, height);
-        if (!conv->convert(planes.data(), line_sizes.data()))
+        if (!conv->convert(planes.data(), line_sizes.data())) {
+            format.setPixelFormat(VideoFormat::Format_Invalid);
             return false;
+        }
         format.setPixelFormatFFmpeg(fffmt);
         data = conv->outData();
         planes = conv->outPlanes();
@@ -92,8 +94,11 @@ public:
                 && roi == QRectF(0, 0, width, height)
                 && dstSize == roi.size())
             return true;
-        if (!conv)
+        if (!conv) {
+            format.setPixelFormat(VideoFormat::Format_Invalid);
             return false;
+        }
+        format = fmt;
         data = conv->outData();
         planes = conv->outPlanes();
         line_sizes = conv->outLineSizes();
