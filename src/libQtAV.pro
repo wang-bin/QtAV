@@ -15,7 +15,8 @@ PROJECTROOT = $$PWD/..
 preparePaths($$OUT_PWD/../out)
 
 
-RESOURCES += ../i18n/QtAV.qrc
+RESOURCES += ../i18n/QtAV.qrc \
+    shaders/shaders.qrc
 
 win32 {
     RC_FILE = $${PROJECTROOT}/res/QtAV.rc
@@ -111,6 +112,7 @@ config_gl {
     SOURCES += GLWidgetRenderer.cpp
     HEADERS += QtAV/private/GLWidgetRenderer_p.h
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
+    OTHER_FILES += shaders/yuv_rgb.f.glsl
 }
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
