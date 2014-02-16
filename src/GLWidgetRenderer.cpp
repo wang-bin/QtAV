@@ -80,6 +80,10 @@ static inline void checkGlError(const char* op = 0) {
     qWarning("GL error %s (%#x): %s", op, error, glGetString(error));
 }
 
+#define CHECK_GL_ERROR(FUNC) \
+    FUNC; \
+    checkGlError(#FUNC);
+
 
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
@@ -100,6 +104,7 @@ static const char kFragmentShader[] =
     "void main() {\n"
     "  gl_FragColor = texture2D(u_Texture0, v_TexCoords);\n"
     "}\n";
+
 
 //http://www.opengl.org/wiki/GLSL#Error_Checking
 // TODO: use QGLShaderProgram for better compatiblity
@@ -146,9 +151,7 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
         return 0;
     }
     glAttachShader(program, vertexShader);
-    checkGlError("glAttachShader v");
     glAttachShader(program, pixelShader);
-    checkGlError("glAttachShader f");
     glLinkProgram(program);
     GLint linkStatus = GL_FALSE;
     glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
@@ -206,7 +209,6 @@ bool GLWidgetRendererPrivate::releaseResource()
 bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLenum format, int width, int height)
 {
     glBindTexture(GL_TEXTURE_2D, tex);
-    //glUniform1i(u_Texture[i], i);
     setupQuality();
     // This is necessary for non-power-of-two textures
     glTexParameteri(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -244,6 +246,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
     }
 
     if (!hasGLSL) {
+        // more than 1?
         initTexture(textures[0], internalFormat, format, width, height);
         qWarning("Does not support GLSL!");
         return false;
@@ -262,7 +265,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
             f.setFileName(":" + shader_file);
         }
         if (!f.open(QIODevice::ReadOnly)) {
-            qWarning("Can not load shader: %s", f.errorString().toUtf8().constData());
+            qWarning("Can not load shader %s: %s", f.fileName().toUtf8().constData(), f.errorString().toUtf8().constData());
             return false;
         }
         program = createProgram(kVertexShader, f.readAll().constData());
@@ -274,14 +277,10 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
         return false;
     }
     // vertex shader
-    a_Position = glGetAttribLocation(program, "a_Position");
-    checkGlError("glGetAttribLocation");
-    qDebug("glGetAttribLocation(\"a_Position\") = %d\n", a_Position);
+    CHECK_GL_ERROR(a_Position = glGetAttribLocation(program, "a_Position"));
     a_TexCoords = glGetAttribLocation(program, "a_TexCoords");
-    checkGlError("glGetAttribLocation");
     qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", a_TexCoords);
     u_matrix = glGetUniformLocation(program, "u_MVP_matrix");
-    checkGlError("glGetUniformLocation");
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
 
     // fragment shader
@@ -289,7 +288,6 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
     for (int i = 0; i < textures.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
         u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
-        checkGlError("glGetUniformLocation");
         qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
         if (i == 0) {
             width = fmt.chromaWidth(width);
@@ -297,14 +295,6 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
         }
         initTexture(textures[i], internalFormat, format, width, height);
     }
-
-    glUseProgram(program);
-    checkGlError("glUseProgram");
-    glVertexAttribPointer(a_Position, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
-    checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(a_Position);
-    checkGlError("glEnableVertexAttribArray");
-
     return true;
 }
 
@@ -328,6 +318,8 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
 #endif //UPLOAD_ROI
             qWarning("shader program create error...");
             return;
+        } else {
+            qDebug("shader program created!!!");
         }
     }
     for (int i = 0; i < video_frame.planeCount(); ++i) {
@@ -341,7 +333,6 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
         glActiveTexture(GL_TEXTURE0 + p); //TODO: can remove??
     }
     glBindTexture(GL_TEXTURE_2D, textures[p]);
-    glUniform1i(u_Texture[p], p); // for GLSL
     setupQuality();
     // This is necessary for non-power-of-two textures
     glTexParameteri(textures[p], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -411,8 +402,8 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
         free(sub);
 #endif //UPLOAD_LINE
 #endif //GL_UNPACK_ROW_LENGTH
-        glBindTexture(GL_TEXTURE_2D, 0);
     }
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
@@ -474,23 +465,32 @@ void GLWidgetRenderer::drawFrame()
     if (d.hasGLSL) {
         glUseProgram(d.program); //qpainter need
     }
+    glDisable(GL_DEPTH_TEST);
+    for (int i = 0; i < d.textures.size(); ++i) {
+        glEnable(GL_TEXTURE_2D);
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
+        // use glUniform1i to swap planes. swap uv: i => (3-i)%3
+        glUniform1i(d.u_Texture[i], i);
+    }
+    //glActiveTexture(GL_TEXTURE0); //? vlc
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
-        const GLfloat kTexCoords[] = {
+    const GLfloat kTexCoords[] = {
             (GLfloat)roi.x()/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
             (GLfloat)(roi.x() + roi.width())/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
             (GLfloat)(roi.x() + roi.width())/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
             (GLfloat)roi.x()/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
-        };
+    };
 ///        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
 ///        glEnableVertexAttribArray(d.a_TexCoords);
 #else
-        const GLfloat kTexCoords[] = {
+    const GLfloat kTexCoords[] = {
             0, 0,
             1, 0,
             1, 1,
             0, 1,
-        };
+    };
 #endif //ROI_TEXCOORDS
 #ifndef QT_OPENGL_ES_2
     //GL_XXX may not defined in ES2. so macro is required
@@ -527,6 +527,11 @@ void GLWidgetRenderer::drawFrame()
         glDisableVertexAttribArray(d.a_TexCoords);
         glDisableVertexAttribArray(d.a_Position);
     }
+
+    for (int i = 0; i < d.textures.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0 + i); //??
+        glDisable(GL_TEXTURE_2D); //??
+    }
 }
 
 void GLWidgetRenderer::initializeGL()
@@ -538,18 +543,14 @@ void GLWidgetRenderer::initializeGL()
     qDebug("OpenGL version: %d.%d  hasGLSL: %d", format().majorVersion(), format().minorVersion(), d.hasGLSL);
     initializeGLFunctions();
     d.initializeGLFunctions();
-    checkGlError("initializeGLFunctions");
 
     glEnable(GL_TEXTURE_2D);
-    checkGlError("glEnable");
-
 #ifndef QT_OPENGL_ES_2
     if (!d.hasGLSL) {
         glShadeModel(GL_SMOOTH); //setupQuality?
         glClearDepth(1.0f);
-        d.textures.resize(1);
-        glGenTextures(d.textures.size(), d.textures.data());
-        checkGlError("glGenTextures");
+        //d.textures.resize(1);
+        //glGenTextures(d.textures.size(), d.textures.data());
     }
 #endif //QT_OPENGL_ES_2
     glClearColor(0.0, 0.0, 0.0, 0.0);
