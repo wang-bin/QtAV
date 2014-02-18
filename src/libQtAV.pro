@@ -114,6 +114,17 @@ config_gl {
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
     OTHER_FILES += shaders/yuv_rgb.f.glsl
 }
+config_cuda {
+    DEFINES += QTAV_HAVE_CUDA=1
+    HEADERS += cuda/helper_cuda.h
+    SOURCES += VideoDecoderCUDA.cpp
+    INCLUDEPATH += $$(CUDA_PATH)/include $$PWD/cuda
+    win32 {
+        isEqual(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
+        else: LIBS += -L$$(CUDA_PATH)/lib/x64
+    }
+    LIBS += -lnvcuvid -lcuda
+}
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
     SOURCES += VideoDecoderDXVA.cpp
