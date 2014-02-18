@@ -128,7 +128,8 @@ QtAV can also be used in **Qml**
 #### Contributors
 
 - Wang Bin(Lucas Wang) <wbsecg1@gmail.com>: creator, maintainer
-- mireq: Cedarv support. Better qmlvideofx appearance
+- Stefan Ladage <sladage@gmail.com>: QIODevice support. Wiki about build QtAV for iOS.
+- Miroslav Bendik <miroslav.bendik@gmail.com>: Cedarv support. Better qmlvideofx appearance
 - Dimitri E. Prado <dprado@e3c.com.br>: issue 70
 - theoribeiro <theo@fictix.com.br>: initial QML support
 - Vito Covito <vito.covito@selcomsrl.eu>: interrupt callback
@@ -222,7 +223,7 @@ Video Wall
 
 Thanks
 
-Now I have received 1000 RMB(about 160$)
+Now I have received 1050 RMB(about 160$)
 
 [![Alipay](https://img.alipay.com/sys/personalprod/style/mc/top-logo.png)](https://me.alipay.com/lucaswang)
 
