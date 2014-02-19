@@ -22,7 +22,6 @@
 
 #include <assert.h>
 
-#define CUDA_FORCE_API_VERSION 3010
 #ifdef __cplusplus
 extern "C" {
 #endif //__cplusplus
@@ -147,5 +146,84 @@ inline int _ConvertSMVer2Cores(int major, int minor)
     printf("MapSMtoCores for SM %d.%d is undefined.  Default to use %d Cores/SM\n", major, minor, nGpuArchCoresPerSM[7].Cores);
     return nGpuArchCoresPerSM[7].Cores;
 }
+
 // end of GPU Architecture definitions
 
+
+int GetMaxGflopsGraphicsDeviceId() {
+    CUdevice current_device = 0, max_perf_device = 0;
+    int device_count     = 0, sm_per_multiproc = 0;
+    int max_compute_perf = 0, best_SM_arch     = 0;
+    int major = 0, minor = 0, multiProcessorCount, clockRate;
+    int bTCC = 0, version;
+    char deviceName[256];
+
+    cuDeviceGetCount(&device_count);
+    if (device_count <= 0)
+        return -1;
+
+    cuDriverGetVersion(&version);
+    // Find the best major SM Architecture GPU device that are graphics devices
+    while (current_device < device_count) {
+        cuDeviceGetName(deviceName, 256, current_device);
+        cuDeviceComputeCapability(&major, &minor, current_device);
+        if (version >= 3020) {
+            cuDeviceGetAttribute(&bTCC, CU_DEVICE_ATTRIBUTE_TCC_DRIVER, current_device);
+        } else {
+            // Assume a Tesla GPU is running in TCC if we are running CUDA 3.1
+            if (deviceName[0] == 'T')
+                bTCC = 1;
+        }
+        if (!bTCC) {
+            if (major > 0 && major < 9999) {
+                best_SM_arch = std::max(best_SM_arch, major);
+            }
+        }
+        current_device++;
+    }
+    // Find the best CUDA capable GPU device
+    current_device = 0;
+    while (current_device < device_count) {
+        cuDeviceGetAttribute(&multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, current_device);
+        cuDeviceGetAttribute(&clockRate, CU_DEVICE_ATTRIBUTE_CLOCK_RATE, current_device);
+        cuDeviceComputeCapability(&major, &minor, current_device);
+        if (version >= 3020) {
+            cuDeviceGetAttribute(&bTCC, CU_DEVICE_ATTRIBUTE_TCC_DRIVER, current_device);
+        } else {
+            // Assume a Tesla GPU is running in TCC if we are running CUDA 3.1
+            if (deviceName[0] == 'T')
+                bTCC = 1;
+        }
+        if (major == 9999 && minor == 9999) {
+            sm_per_multiproc = 1;
+        } else {
+            sm_per_multiproc = _ConvertSMVer2Cores(major, minor);
+        }
+        // If this is a Tesla based GPU and SM 2.0, and TCC is disabled, this is a contendor
+        if (!bTCC) {// Is this GPU running the TCC driver?  If so we pass on this
+            int compute_perf = multiProcessorCount * sm_per_multiproc * clockRate;
+            printf("%s @%d compute_perf=%d max_compute_perf=%d\n", __FUNCTION__, __LINE__, compute_perf, max_compute_perf);
+            if (compute_perf > max_compute_perf) {
+                printf("%s @%d", __FUNCTION__, __LINE__);
+                // If we find GPU with SM major > 2, search only these
+                if (best_SM_arch > 2) {
+                    printf("%s @%d best_SM_arch=%d\n", __FUNCTION__, __LINE__, best_SM_arch);
+                    // If our device = dest_SM_arch, then we pick this one
+                    if (major == best_SM_arch) {
+                        printf("%s @%d", __FUNCTION__, __LINE__);
+                        max_compute_perf = compute_perf;
+                        max_perf_device = current_device;
+                    }
+                } else {
+                    printf("%s @%d\n", __FUNCTION__, __LINE__);
+                    max_compute_perf = compute_perf;
+                    max_perf_device = current_device;
+                }
+            }
+            cuDeviceGetName(deviceName, 256, current_device);
+            printf("CUDA Device: %s, Compute: %d.%d, CUDA Cores: %d, Clock: %d MHz\n", deviceName, major, minor, multiProcessorCount * sm_per_multiproc, clockRate / 1000);
+        }
+        ++current_device;
+    }
+    return max_perf_device;
+}

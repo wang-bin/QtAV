@@ -24,9 +24,13 @@
 #include <QtAV/QtAV_Compat.h>
 #include <QtAV/BlockingQueue.h>
 #include "prepost.h"
+#include <QtCore/QQueue>
 
+//TODO: update helper_cuda with 5.5
+//#define CUDA_FORCE_API_VERSION 3010
 #include "cuda/helper_cuda.h"
 
+//decode error if not floating context
 #define USE_FLOATING_CONTEXTS 1
 
 static inline cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
@@ -93,8 +97,9 @@ class VideoDecoderCUDAPrivate : public VideoDecoderPrivate
 public:
     VideoDecoderCUDAPrivate():
         VideoDecoderPrivate()
+      , host_data(0)
+      , host_data_size(0)
     {
-        qDebug("%s @%d tid=%p", __FUNCTION__, __LINE__, QThread::currentThread());
         available = false;
         cuctx = 0;
         cudev = 0;
@@ -102,111 +107,35 @@ public:
         vid_ctx_lock = 0;
         parser = 0;
         force_sequence_update = false;
-        CUresult result = cuInit(0);
-        if (result != CUDA_SUCCESS) {
-            available = false;
-            qWarning("cuInit(0) faile (%d)", result);
-            return;
-        }
-        cudev = GetMaxGflopsGraphicsDeviceId();
-        qDebug("%s @%d dev=%d", __FUNCTION__, __LINE__, cudev);
-
-        initCuda();
         frame_queue.setCapacity(20);
-        frame_queue.setThreshold(8);
+        frame_queue.setThreshold(4);
+        initCuda();
     }
     ~VideoDecoderCUDAPrivate() {
         releaseCuda();
     }
-
-    int GetMaxGflopsGraphicsDeviceId() {
-        CUdevice current_device = 0, max_perf_device = 0;
-        int device_count     = 0, sm_per_multiproc = 0;
-        int max_compute_perf = 0, best_SM_arch     = 0;
-        int major = 0, minor = 0, multiProcessorCount, clockRate;
-        int bTCC = 0, version;
-        char deviceName[256];
-
-        cuDeviceGetCount(&device_count);
-        if (device_count <= 0)
-            return -1;
-
-        cuDriverGetVersion(&version);
-        // Find the best major SM Architecture GPU device that are graphics devices
-        while (current_device < device_count) {
-            cuDeviceGetName(deviceName, 256, current_device);
-            cuDeviceComputeCapability(&major, &minor, current_device);
-            if (version >= 3020) {
-                cuDeviceGetAttribute(&bTCC, CU_DEVICE_ATTRIBUTE_TCC_DRIVER, current_device);
-            } else {
-                // Assume a Tesla GPU is running in TCC if we are running CUDA 3.1
-                if (deviceName[0] == 'T')
-                    bTCC = 1;
-            }
-            if (!bTCC) {
-                if (major > 0 && major < 9999) {
-                    best_SM_arch = std::max(best_SM_arch, major);
-                }
-            }
-            current_device++;
-        }
-        // Find the best CUDA capable GPU device
-        current_device = 0;
-        while (current_device < device_count) {
-            cuDeviceGetAttribute(&multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, current_device);
-            cuDeviceGetAttribute(&clockRate, CU_DEVICE_ATTRIBUTE_CLOCK_RATE, current_device);
-            cuDeviceComputeCapability(&major, &minor, current_device);
-            if (version >= 3020) {
-                cuDeviceGetAttribute(&bTCC, CU_DEVICE_ATTRIBUTE_TCC_DRIVER, current_device);
-            } else {
-                // Assume a Tesla GPU is running in TCC if we are running CUDA 3.1
-                if (deviceName[0] == 'T')
-                    bTCC = 1;
-            }
-            if (major == 9999 && minor == 9999) {
-                sm_per_multiproc = 1;
-            } else {
-                sm_per_multiproc = _ConvertSMVer2Cores(major, minor);
-            }
-            // If this is a Tesla based GPU and SM 2.0, and TCC is disabled, this is a contendor
-            if (!bTCC) {// Is this GPU running the TCC driver?  If so we pass on this
-                qDebug("%s @%d", __FUNCTION__, __LINE__);
-                int compute_perf = multiProcessorCount * sm_per_multiproc * clockRate;
-                qDebug("%s @%d compute_perf=%d max_compute_perf=%d", __FUNCTION__, __LINE__, compute_perf, max_compute_perf);
-                if (compute_perf > max_compute_perf) {
-                    qDebug("%s @%d", __FUNCTION__, __LINE__);
-                    // If we find GPU with SM major > 2, search only these
-                    if (best_SM_arch > 2) {
-                        qDebug("%s @%d best_SM_arch=%d", __FUNCTION__, __LINE__, best_SM_arch);
-                        // If our device = dest_SM_arch, then we pick this one
-                        if (major == best_SM_arch) {
-                            qDebug("%s @%d", __FUNCTION__, __LINE__);
-                            max_compute_perf = compute_perf;
-                            max_perf_device = current_device;
-                        }
-                    } else {
-                        qDebug("%s @%d", __FUNCTION__, __LINE__);
-                        max_compute_perf = compute_perf;
-                        max_perf_device = current_device;
-                    }
-                }
-                cuDeviceGetName(deviceName, 256, current_device);
-                qDebug("CUDA Device: %s, Compute: %d.%d, CUDA Cores: %d, Clock: %d MHz", deviceName, major, minor, multiProcessorCount * sm_per_multiproc, clockRate / 1000);
-            }
-            ++current_device;
-        }
-        return max_perf_device;
-    }
-
     bool initCuda() {
-        qDebug("%s @%d dev=%#x", __FUNCTION__, __LINE__, cudev);
-        checkCudaErrors(cuCtxCreate(&cuctx, CU_CTX_SCHED_AUTO, cudev)); //CU_CTX_SCHED_AUTO?
+        CUresult result = cuInit(0);
+        if (result != CUDA_SUCCESS) {
+            available = false;
+            qWarning("cuInit(0) faile (%d)", result);
+            return false;
+        }
+        cudev = GetMaxGflopsGraphicsDeviceId();
+
+        int clockRate;
+        cuDeviceGetAttribute(&clockRate, CU_DEVICE_ATTRIBUTE_CLOCK_RATE, cudev);
         int major, minor;
         cuDeviceComputeCapability(&major, &minor, cudev);
-        qDebug("%s @%d %d %d", __FUNCTION__, __LINE__, major, minor);
+        char devname[256];
+        cuDeviceGetName(devname, 256, cudev);
+        description = QString("CUDA device: %1 %2.%3 %4 MHz").arg(devname).arg(major).arg(minor).arg(clockRate/1000);
+
+        //TODO: cuD3DCtxCreate > cuGLCtxCreate > cuCtxCreate
+        checkCudaErrors(cuCtxCreate(&cuctx, CU_CTX_SCHED_AUTO, cudev)); //CU_CTX_SCHED_AUTO?
 #if USE_FLOATING_CONTEXTS
         CUcontext cuCurrent = NULL;
-        CUresult result = cuCtxPopCurrent(&cuCurrent);
+        result = cuCtxPopCurrent(&cuCurrent);
         if (result != CUDA_SUCCESS) {
             qWarning("cuCtxPopCurrent: %d\n", result);
             return false;
@@ -224,13 +153,12 @@ public:
         return true;
     }
     bool createCUVIDDecoder(cudaVideoCodec cudaCodec, int w, int h) {
-        qDebug("CUDA codec: %d.  %dx%d", cudaCodec, w, h);
         if (cudaCodec == -1) {
             return false;
         }
         AutoCtxLock lock(vid_ctx_lock);
+        Q_UNUSED(lock);
         if (dec) {
-            qDebug("%s @%d", __FUNCTION__, __LINE__);
             checkCudaErrors(cuvidDestroyDecoder(dec));
         }
         memset(&dec_create_info, 0, sizeof(CUVIDDECODECREATEINFO));
@@ -239,7 +167,8 @@ public:
         dec_create_info.ulNumDecodeSurfaces = cnMaximumSize; //?
         dec_create_info.CodecType = cudaCodec;
         dec_create_info.ChromaFormat = cudaVideoChromaFormat_420;  // cudaVideoChromaFormat_XXX (only 4:2:0 is currently supported)
-        dec_create_info.ulCreationFlags = cudaVideoCreate_PreferCUDA; //cudaVideoCreate_Default, cudaVideoCreate_PreferCUDA, cudaVideoCreate_PreferCUVID, cudaVideoCreate_PreferDXVA
+        dec_create_info.ulCreationFlags = cudaVideoCreate_Default; //cudaVideoCreate_Default, cudaVideoCreate_PreferCUDA, cudaVideoCreate_PreferCUVID, cudaVideoCreate_PreferDXVA
+        // TODO: lav yv12
         dec_create_info.OutputFormat = cudaVideoSurfaceFormat_NV12; // NV12 (currently the only supported output format)
         dec_create_info.DeinterlaceMode = cudaVideoDeinterlaceMode_Adaptive;// Weave: No deinterlacing
         //cudaVideoDeinterlaceMode_Adaptive;
@@ -256,18 +185,12 @@ public:
         qDebug("ulNumDecodeSurfaces: %d", dec_create_info.ulNumDecodeSurfaces);
 
         // create the decoder
-        CUresult oResult = cuvidCreateDecoder(&dec, &dec_create_info);
-        assert(oResult == CUDA_SUCCESS);
-        available = CUDA_SUCCESS == oResult;
-        checkCudaErrors(oResult);
-        if (!available) {
-            qDebug("%s @%d", __FUNCTION__, __LINE__);
-            return false;
-        }
+        available = false;
+        checkCudaErrors(cuvidCreateDecoder(&dec, &dec_create_info));
+        available = true;
         return true;
     }
     bool createCUVIDParser() {
-        qDebug("%s @%d", __FUNCTION__, __LINE__);
         cudaVideoCodec cudaCodec = mapCodecFromFFmpeg(codec_ctx->codec_id);
         if (cudaCodec == -1) {
             qWarning("CUVID does not support the codec");
@@ -291,15 +214,16 @@ public:
         //lavfilter: cuStreamCreate
         force_sequence_update = true;
         //DecodeSequenceData()
-        qDebug("%s @%d tid=%p", __FUNCTION__, __LINE__, QThread::currentThread());
         return true;
     }
     bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp) {
+        /*
         qDebug("%s @%d index=%d progressive=%d, repeat_first_field=%p tid=%p"
                , __FUNCTION__, __LINE__, cuviddisp->picture_index
                , cuviddisp->progressive_frame
                , cuviddisp->repeat_first_field
                , QThread::currentThread());
+        */
         // TODO: lock context
         CUdeviceptr devptr;
         unsigned int pitch;
@@ -309,18 +233,54 @@ public:
         proc_params.top_field_first = cuviddisp->top_field_first;
         proc_params.unpaired_field = cuviddisp->progressive_frame == 1;
 
-        checkCudaErrors(cuvidMapVideoFrame(dec, cuviddisp->picture_index, &devptr, &pitch, &proc_params));
+        cuvidCtxLock(vid_ctx_lock, 0);
+        CUresult cuStatus = cuvidMapVideoFrame(dec, cuviddisp->picture_index, &devptr, &pitch, &proc_params);
+        if (cuStatus != CUDA_SUCCESS) {
+            qWarning("cuvidMapVideoFrame failed on index %d (%p, %s)", cuviddisp->picture_index, cuStatus, _cudaGetErrorEnum(cuStatus));
+            cuvidUnmapVideoFrame(dec, devptr);
+            cuvidCtxUnlock(vid_ctx_lock, 0);
+            return false;
+        }
 #define PAD_ALIGN(x,mask) ( (x + mask) & ~mask )
         uint w  = PAD_ALIGN(dec_create_info.ulWidth , 0x3F);
         uint h = PAD_ALIGN(dec_create_info.ulHeight, 0x0F); //?
 #undef PAD_ALIGN
-        //check size
-        uchar *frame_data = 0;
-        checkCudaErrors(cuMemAllocHost((void**)&frame_data, pitch*h*3/2));
-        checkCudaErrors(cuMemcpyDtoH(frame_data, devptr, pitch*h*3/2));
+        int size = pitch*h*3/2;
+        if (size > host_data_size && host_data) {
+            cuMemFreeHost(host_data);
+            host_data = 0;
+            host_data_size = 0;
+        }
+        if (!host_data) {
+            cuStatus = cuMemAllocHost((void**)&host_data, size);
+            if (cuStatus != CUDA_SUCCESS) {
+                qWarning("cuMemAllocHost failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+                cuvidUnmapVideoFrame(dec, devptr);
+                cuvidCtxUnlock(vid_ctx_lock, 0);
+                return false;
+            }
+            host_data_size = size;
+        }
+        if (!host_data) {
+            qWarning("No valid staging memory!");
+            cuvidUnmapVideoFrame(dec, devptr);
+            cuvidCtxUnlock(vid_ctx_lock, 0);
+            return false;
+        }
+        // TODO: check async
+        cuStatus = cuMemcpyDtoH(host_data, devptr, size);
+        if (cuStatus != CUDA_SUCCESS) {
+            qWarning("cuMemcpyDtoH failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+            cuvidUnmapVideoFrame(dec, devptr);
+            cuvidCtxUnlock(vid_ctx_lock, 0);
+            return false;
+        }
+        cuvidUnmapVideoFrame(dec, devptr);
+        cuvidCtxUnlock(vid_ctx_lock, 0);
+
         uchar *planes[] = {
-            frame_data,
-            frame_data + pitch * h
+            host_data,
+            host_data + pitch * h
         };
         int pitches[] = { pitch, pitch };
         VideoFrame frame(w, h, VideoFormat::Format_NV12);
@@ -333,7 +293,6 @@ public:
 
     // cuvid parser callbacks
     static int CUDAAPI HandleVideoSequence(void *obj, CUVIDEOFORMAT *cuvidfmt) {
-        qDebug("%s @%d tid=%p", __FUNCTION__, __LINE__, QThread::currentThread());
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
         CUVIDDECODECREATEINFO *dci = &p->dec_create_info;
         if ((cuvidfmt->codec != dci->CodecType)
@@ -352,16 +311,19 @@ public:
     static int CUDAAPI HandlePictureDecode(void *obj, CUVIDPICPARAMS *cuvidpic) {
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
         qDebug("%s @%d tid=%p dec=%p", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec);
-        //TODO: lavfilter lock ctx
+        AutoCtxLock lock(p->vid_ctx_lock);
+        Q_UNUSED(lock);
         checkCudaErrors(cuvidDecodePicture(p->dec, cuvidpic));
         return true;
     }
     static int CUDAAPI HandlePictureDisplay(void *obj, CUVIDPARSERDISPINFO *cuviddisp) {
-        qDebug("%s @%d tid=%p", __FUNCTION__, __LINE__, QThread::currentThread());
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
+        qDebug("%s @%d tid=%p dec=%p", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec);
         return p->processDecodedData(cuviddisp);
     }
 
+    uchar *host_data;
+    int host_data_size;
     CUcontext cuctx;
     CUdevice cudev;
 
@@ -375,6 +337,7 @@ public:
     CUvideoparser parser;
     bool force_sequence_update;
     BlockingQueue<VideoFrame> frame_queue;
+    QString description;
 };
 
 VideoDecoderCUDA::VideoDecoderCUDA():
@@ -438,7 +401,6 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
     cuvid_pkt.payload_size = encoded.size();
     cuvid_pkt.flags = CUVID_PKT_TIMESTAMP;
     cuvid_pkt.timestamp = 0;// ?
-    qDebug("%s @%d tid=%p datalen=%d", __FUNCTION__, __LINE__, QThread::currentThread(), encoded.size());
     //TODO: fill NALU header for h264? https://devtalk.nvidia.com/default/topic/515571/what-the-data-format-34-cuvidparsevideodata-34-can-accept-/
     cuvidParseVideoData(d.parser, &cuvid_pkt);
     // callbacks are in the same thread as this. so no queue is required?
