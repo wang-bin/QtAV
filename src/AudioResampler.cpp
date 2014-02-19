@@ -75,7 +75,11 @@ bool AudioResampler::convert(const quint8 **data)
 
 void AudioResampler::setSpeed(qreal speed)
 {
-    d_func().speed = speed;
+    DPTR_D(AudioResampler);
+    if (d.speed == speed)
+        return;
+    d.speed = speed;
+    prepare();
 }
 
 qreal AudioResampler::speed() const
@@ -86,7 +90,11 @@ qreal AudioResampler::speed() const
 
 void AudioResampler::setInAudioFormat(const AudioFormat& format)
 {
-    d_func().in_format = format;
+    DPTR_D(AudioResampler);
+    if (d.in_format == format)
+        return;
+    d.in_format = format;
+    prepare();
 }
 
 AudioFormat& AudioResampler::inAudioFormat()
@@ -122,42 +130,58 @@ void AudioResampler::setInSampesPerChannel(int samples)
 //channel count can be computed by av_get_channel_layout_nb_channels(chl)
 void AudioResampler::setInSampleRate(int isr)
 {
-    d_func().in_format.setSampleRate(isr);
+    DPTR_D(AudioResampler);
+    d.in_format.setSampleRate(isr);
+    setInAudioFormat(d.in_format);
 }
 
 void AudioResampler::setOutSampleRate(int osr)
 {
-    d_func().out_format.setSampleRate(osr);
+    DPTR_D(AudioResampler);
+    d.out_format.setSampleRate(osr);
+    setOutAudioFormat(d.out_format);
 }
 
 void AudioResampler::setInSampleFormat(int isf)
 {
-    d_func().in_format.setSampleFormatFFmpeg(isf);
+    DPTR_D(AudioResampler);
+    d.in_format.setSampleFormatFFmpeg(isf);
+    setInAudioFormat(d.in_format);
 }
 
 void AudioResampler::setOutSampleFormat(int osf)
 {
-    d_func().out_format.setSampleFormatFFmpeg(osf);
+    DPTR_D(AudioResampler);
+    d.out_format.setSampleFormatFFmpeg(osf);
+    setOutAudioFormat(d.out_format);
 }
 
 void AudioResampler::setInChannelLayout(qint64 icl)
 {
-    d_func().in_format.setChannelLayoutFFmpeg(icl);
+    DPTR_D(AudioResampler);
+    d.in_format.setChannelLayoutFFmpeg(icl);
+    setInAudioFormat(d.in_format);
 }
 
 void AudioResampler::setOutChannelLayout(qint64 ocl)
 {
-    d_func().out_format.setChannelLayoutFFmpeg(ocl);
+    DPTR_D(AudioResampler);
+    d.out_format.setChannelLayoutFFmpeg(ocl);
+    setOutAudioFormat(d.out_format);
 }
 
 void AudioResampler::setInChannels(int channels)
 {
-    d_func().in_format.setChannels(channels);
+    DPTR_D(AudioResampler);
+    d.in_format.setChannels(channels);
+    setInAudioFormat(d.in_format);
 }
 
 void AudioResampler::setOutChannels(int channels)
 {
-    d_func().out_format.setChannels(channels);
+    DPTR_D(AudioResampler);
+    d.out_format.setChannels(channels);
+    setOutAudioFormat(d.out_format);
 }
 
 } //namespace QtAV
