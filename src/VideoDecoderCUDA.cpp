@@ -26,12 +26,17 @@
 #include "prepost.h"
 #include <QtCore/QQueue>
 
-//TODO: update helper_cuda with 5.5
+/*
+ * TODO: update helper_cuda with 5.5
+ * avc1, ccv1 => h264 + sps, pps, nal. use filter or lavcudiv
+ * flush api
+ * CUDA_ERROR_INVALID_VALUE "cuvidDecodePicture(p->dec, cuvidpic)"
+ */
+
 //#define CUDA_FORCE_API_VERSION 3010
 #include "cuda/helper_cuda.h"
 
 //decode error if not floating context
-#define USE_FLOATING_CONTEXTS 1
 
 static inline cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
 {
@@ -82,16 +87,10 @@ class AutoCtxLock
 private:
     CUvideoctxlock m_lock;
 public:
-#if USE_FLOATING_CONTEXTS
     AutoCtxLock(CUvideoctxlock lck) { m_lock=lck; cuvidCtxLock(m_lock, 0); }
     ~AutoCtxLock() { cuvidCtxUnlock(m_lock, 0); }
-#else
-    AutoCtxLock(CUvideoctxlock lck) { m_lock=lck; }
-#endif
 };
 
-static const unsigned int cnMaximumSize = 20; // MAX_FRM_CNT;
-#define MAX_FRAME_COUNT 2
 class VideoDecoderCUDAPrivate : public VideoDecoderPrivate
 {
 public:
@@ -108,7 +107,7 @@ public:
         parser = 0;
         force_sequence_update = false;
         frame_queue.setCapacity(20);
-        frame_queue.setThreshold(4);
+        frame_queue.setThreshold(10);
         initCuda();
     }
     ~VideoDecoderCUDAPrivate() {
@@ -132,8 +131,7 @@ public:
         description = QString("CUDA device: %1 %2.%3 %4 MHz").arg(devname).arg(major).arg(minor).arg(clockRate/1000);
 
         //TODO: cuD3DCtxCreate > cuGLCtxCreate > cuCtxCreate
-        checkCudaErrors(cuCtxCreate(&cuctx, CU_CTX_SCHED_AUTO, cudev)); //CU_CTX_SCHED_AUTO?
-#if USE_FLOATING_CONTEXTS
+        checkCudaErrors(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev)); //CU_CTX_SCHED_AUTO?
         CUcontext cuCurrent = NULL;
         result = cuCtxPopCurrent(&cuCurrent);
         if (result != CUDA_SUCCESS) {
@@ -141,11 +139,22 @@ public:
             return false;
         }
         checkCudaErrors(cuvidCtxLockCreate(&vid_ctx_lock, cuctx));
-#endif //USE_FLOATING_CONTEXTS
+        {
+            AutoCtxLock lock(vid_ctx_lock);
+            Q_UNUSED(lock);
+            checkCudaErrors(cuStreamCreate(&stream, CU_STREAM_NON_BLOCKING)); //CU_STREAM_DEFAULT
+            //require compute capability >= 1.1
+            //flag: Reserved for future use, must be 0
+            //cuStreamAddCallback(stream, CUstreamCallback, this, 0);
+        }
         return true;
     }
     bool releaseCuda() {
         cuvidDestroyDecoder(dec);
+        if (stream) {
+            cuStreamDestroy(stream);
+            stream = 0;
+        }
         cuvidCtxLockDestroy(vid_ctx_lock);
         if (cuctx) {
             checkCudaErrors(cuCtxDestroy(cuctx));
@@ -164,10 +173,12 @@ public:
         memset(&dec_create_info, 0, sizeof(CUVIDDECODECREATEINFO));
         dec_create_info.ulWidth = w;
         dec_create_info.ulHeight = h;
-        dec_create_info.ulNumDecodeSurfaces = cnMaximumSize; //?
+        dec_create_info.ulNumDecodeSurfaces = frame_queue.capacity(); //? it's 20 in example
         dec_create_info.CodecType = cudaCodec;
         dec_create_info.ChromaFormat = cudaVideoChromaFormat_420;  // cudaVideoChromaFormat_XXX (only 4:2:0 is currently supported)
-        dec_create_info.ulCreationFlags = cudaVideoCreate_Default; //cudaVideoCreate_Default, cudaVideoCreate_PreferCUDA, cudaVideoCreate_PreferCUVID, cudaVideoCreate_PreferDXVA
+        //cudaVideoCreate_PreferCUVID is slow in example. DXVA may failed to create (CUDA_ERROR_NO_DEVICE)
+        // what's the difference between CUDA and CUVID?
+        dec_create_info.ulCreationFlags = cudaVideoCreate_PreferCUVID; //cudaVideoCreate_Default, cudaVideoCreate_PreferCUDA, cudaVideoCreate_PreferCUVID, cudaVideoCreate_PreferDXVA
         // TODO: lav yv12
         dec_create_info.OutputFormat = cudaVideoSurfaceFormat_NV12; // NV12 (currently the only supported output format)
         dec_create_info.DeinterlaceMode = cudaVideoDeinterlaceMode_Adaptive;// Weave: No deinterlacing
@@ -175,7 +186,7 @@ public:
         // No scaling
         dec_create_info.ulTargetWidth = dec_create_info.ulWidth;
         dec_create_info.ulTargetHeight = dec_create_info.ulHeight;
-        dec_create_info.ulNumOutputSurfaces = MAX_FRAME_COUNT;  // We won't simultaneously map more than 8 surfaces
+        dec_create_info.ulNumOutputSurfaces = 2;  // We won't simultaneously map more than 8 surfaces
         dec_create_info.vidLock = vid_ctx_lock;//vidCtxLock; //FIXME
 
         // Limit decode memory to 24MB (16M pixels at 4:2:0 = 24M bytes)
@@ -217,81 +228,82 @@ public:
         return true;
     }
     bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp) {
-        /*
-        qDebug("%s @%d index=%d progressive=%d, repeat_first_field=%p tid=%p"
-               , __FUNCTION__, __LINE__, cuviddisp->picture_index
-               , cuviddisp->progressive_frame
-               , cuviddisp->repeat_first_field
-               , QThread::currentThread());
-        */
-        // TODO: lock context
-        CUdeviceptr devptr;
-        unsigned int pitch;
-        memset(&proc_params, 0, sizeof(CUVIDPROCPARAMS));
-        proc_params.progressive_frame = cuviddisp->progressive_frame; //?
-        proc_params.second_field = 0; //?
-        proc_params.top_field_first = cuviddisp->top_field_first;
-        proc_params.unpaired_field = cuviddisp->progressive_frame == 1;
+        int num_fields = cuviddisp->progressive_frame ? 1 : 2+cuviddisp->repeat_first_field;
 
-        cuvidCtxLock(vid_ctx_lock, 0);
-        CUresult cuStatus = cuvidMapVideoFrame(dec, cuviddisp->picture_index, &devptr, &pitch, &proc_params);
-        if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuvidMapVideoFrame failed on index %d (%p, %s)", cuviddisp->picture_index, cuStatus, _cudaGetErrorEnum(cuStatus));
-            cuvidUnmapVideoFrame(dec, devptr);
-            cuvidCtxUnlock(vid_ctx_lock, 0);
-            return false;
-        }
-#define PAD_ALIGN(x,mask) ( (x + mask) & ~mask )
-        uint w  = PAD_ALIGN(dec_create_info.ulWidth , 0x3F);
-        uint h = PAD_ALIGN(dec_create_info.ulHeight, 0x0F); //?
-#undef PAD_ALIGN
-        int size = pitch*h*3/2;
-        if (size > host_data_size && host_data) {
-            cuMemFreeHost(host_data);
-            host_data = 0;
-            host_data_size = 0;
-        }
-        if (!host_data) {
-            cuStatus = cuMemAllocHost((void**)&host_data, size);
+        for (int active_field = 0; active_field < num_fields; ++active_field) {
+            CUVIDPROCPARAMS proc_params;
+            memset(&proc_params, 0, sizeof(CUVIDPROCPARAMS));
+            proc_params.progressive_frame = cuviddisp->progressive_frame; //check user config
+            proc_params.second_field = active_field == 1; //check user config
+            proc_params.top_field_first = cuviddisp->top_field_first;
+            proc_params.unpaired_field = cuviddisp->progressive_frame == 1;
+
+            CUdeviceptr devptr;
+            unsigned int pitch;
+            cuvidCtxLock(vid_ctx_lock, 0);
+            CUresult cuStatus = cuvidMapVideoFrame(dec, cuviddisp->picture_index, &devptr, &pitch, &proc_params);
             if (cuStatus != CUDA_SUCCESS) {
-                qWarning("cuMemAllocHost failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+                qWarning("cuvidMapVideoFrame failed on index %d (%p, %s)", cuviddisp->picture_index, cuStatus, _cudaGetErrorEnum(cuStatus));
                 cuvidUnmapVideoFrame(dec, devptr);
                 cuvidCtxUnlock(vid_ctx_lock, 0);
                 return false;
             }
-            host_data_size = size;
-        }
-        if (!host_data) {
-            qWarning("No valid staging memory!");
+    #define PAD_ALIGN(x,mask) ( (x + mask) & ~mask )
+            uint w = dec_create_info.ulWidth;//PAD_ALIGN(dec_create_info.ulWidth, 0x3F);
+            uint h = dec_create_info.ulHeight;//PAD_ALIGN(dec_create_info.ulHeight, 0x0F); //?
+    #undef PAD_ALIGN
+            int size = pitch*h*3/2;
+            if (size > host_data_size && host_data) {
+                cuMemFreeHost(host_data);
+                host_data = 0;
+                host_data_size = 0;
+            }
+            if (!host_data) {
+                cuStatus = cuMemAllocHost((void**)&host_data, size);
+                if (cuStatus != CUDA_SUCCESS) {
+                    qWarning("cuMemAllocHost failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+                    cuvidUnmapVideoFrame(dec, devptr);
+                    cuvidCtxUnlock(vid_ctx_lock, 0);
+                    return false;
+                }
+                host_data_size = size;
+            }
+            if (!host_data) {
+                qWarning("No valid staging memory!");
+                cuvidUnmapVideoFrame(dec, devptr);
+                cuvidCtxUnlock(vid_ctx_lock, 0);
+                return false;
+            }
+            cuStatus = cuMemcpyDtoHAsync(host_data, devptr, size, stream);
+            if (cuStatus != CUDA_SUCCESS) {
+                qWarning("cuMemcpyDtoH failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+                cuvidUnmapVideoFrame(dec, devptr);
+                cuvidCtxUnlock(vid_ctx_lock, 0);
+                return false;
+            }
+            cuStatus = cuCtxSynchronize();
+            if (cuStatus != CUDA_SUCCESS) {
+                qWarning("cuMemcpyDtoH failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+            }
             cuvidUnmapVideoFrame(dec, devptr);
             cuvidCtxUnlock(vid_ctx_lock, 0);
-            return false;
-        }
-        // TODO: check async
-        cuStatus = cuMemcpyDtoH(host_data, devptr, size);
-        if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuMemcpyDtoH failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
-            cuvidUnmapVideoFrame(dec, devptr);
-            cuvidCtxUnlock(vid_ctx_lock, 0);
-            return false;
-        }
-        cuvidUnmapVideoFrame(dec, devptr);
-        cuvidCtxUnlock(vid_ctx_lock, 0);
 
-        uchar *planes[] = {
-            host_data,
-            host_data + pitch * h
-        };
-        int pitches[] = { pitch, pitch };
-        VideoFrame frame(w, h, VideoFormat::Format_NV12);
-        frame.setBits(planes);
-        frame.setBytesPerLine(pitches);
-        frame = frame.clone();
-        frame_queue.put(frame);
+            uchar *planes[] = {
+                host_data,
+                host_data + pitch * h
+            };
+            int pitches[] = { pitch, pitch };
+            VideoFrame frame(w, h, VideoFormat::Format_NV12);
+            frame.setBits(planes);
+            frame.setBytesPerLine(pitches);
+            //TODO: is clone required? may crash on clone, I should review clone()
+            //frame = frame.clone();
+            frame_queue.put(frame);
+            qDebug("frame queue size: %d", frame_queue.size());
+        }
         return true;
     }
 
-    // cuvid parser callbacks
     static int CUDAAPI HandleVideoSequence(void *obj, CUVIDEOFORMAT *cuvidfmt) {
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
         CUVIDDECODECREATEINFO *dci = &p->dec_create_info;
@@ -332,10 +344,13 @@ public:
     CUVIDDECODECREATEINFO dec_create_info;
     CUvideoctxlock vid_ctx_lock; //NULL
     CUVIDPICPARAMS pic_params;
-    CUVIDPROCPARAMS proc_params;
-
     CUvideoparser parser;
+    CUstream stream;
     bool force_sequence_update;
+    /*
+     * callbacks are in the same thread as cuvidParseVideoData. so video thread may be blocked
+     * so create another thread?
+     */
     BlockingQueue<VideoFrame> frame_queue;
     QString description;
 };
@@ -365,32 +380,6 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
     if (!isAvailable())
         return false;
     DPTR_D(VideoDecoderCUDA);
-#if 0
-    // fill parameter: https://devtalk.nvidia.com/default/topic/524154/?comment=3713188
-    memset(&d.pic_params, 0, sizeof(CUVIDPICPARAMS));
-    d.pic_params.nBitstreamDataLen = encoded.size();
-    d.pic_params.pBitstreamData = (const unsigned char*)(encoded.data());
-    //d.pic_params.intra_pic_flag = 1; //key frame
-    //d.pic_params.PicWidthInMbs = (d.codec_ctx->width + 15)/16;
-    //d.pic_params.FrameHeightInMbs = (d.codec_ctx->height + 15)/16;
-    //d.pic_params.ref_pic_flag = 1;
-    checkCudaErrors(cuvidDecodePicture(d.dec, &d.pic_params));
-
-
-    CUdeviceptr dev;
-    unsigned int pitch;
-    //cuvidMapVideoFrame64
-    memset(&d.proc_params, 0, sizeof(CUVIDPROCPARAMS));
-    checkCudaErrors(cuvidMapVideoFrame(d.dec, d.pic_params.CurrPicIdx, &dev, &pitch, &d.proc_params));
-
-#define PAD_ALIGN(x,mask) ( (x + mask) & ~mask )
-    //uint w  = PAD_ALIGN(d.dec_create_info.ulWidth , 0x3F);
-    uint h = PAD_ALIGN(d.dec_create_info.ulHeight, 0x0F); //?
-#undef PAD_ALIGN
-    void *dst = d.decoded.data();
-    checkCudaErrors(cuMemAllocHost(&dst, pitch*h*3/2));
-    checkCudaErrors(cuMemcpyDtoH(d.decoded.data(), dev, pitch*h*3/2));
-#else
     if (!d.parser) {
         qWarning("CUVID parser not ready");
         return false;
@@ -402,9 +391,15 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
     cuvid_pkt.flags = CUVID_PKT_TIMESTAMP;
     cuvid_pkt.timestamp = 0;// ?
     //TODO: fill NALU header for h264? https://devtalk.nvidia.com/default/topic/515571/what-the-data-format-34-cuvidparsevideodata-34-can-accept-/
-    cuvidParseVideoData(d.parser, &cuvid_pkt);
+    {
+        //cuvidCtxUnlock(d.vid_ctx_lock, 0); //TODO: why wrong context?
+        CUresult cuStatus = cuvidParseVideoData(d.parser, &cuvid_pkt);
+        if (cuStatus != CUDA_SUCCESS) {
+            qWarning("cuMemcpyDtoH failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+        }
+    }
     // callbacks are in the same thread as this. so no queue is required?
-#endif //0
+    qDebug("frame queue size on decode: %d", d.frame_queue.size());
     return !d.frame_queue.isEmpty();
 
 }
