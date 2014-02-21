@@ -55,10 +55,10 @@ public:
     GLuint loadShader(GLenum shaderType, const char* pSource);
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
     bool releaseResource();
-    bool initTexture(GLuint tex, GLint internalFormat, GLenum format, int width, int height);
+    bool initTexture(GLuint tex, GLint internal_format, GLenum format, int width, int height);
     bool prepareShaderProgram(const VideoFormat& fmt, int width, int height);
     void upload(const QRect& roi);
-    void uploadPlane(int p, GLint internalFormat, GLenum format, const QRect& roi);
+    void uploadPlane(int p, GLint internal_format, GLenum format, const QRect& roi);
     //GL 4.x: GL_FRAGMENT_SHADER_DERIVATIVE_HINT,GL_TEXTURE_COMPRESSION_HINT
     //GL_DONT_CARE(default), GL_FASTEST, GL_NICEST
     /*
@@ -131,6 +131,8 @@ public:
     bool hasGLSL;
     bool update_texcoords;
     QVector<GLuint> textures;
+    QVector<GLint> internal_format;
+    QVector<GLenum> data_format;
     GLuint program;
     GLuint vert, frag;
     GLuint a_Position;

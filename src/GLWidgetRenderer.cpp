@@ -211,8 +211,8 @@ bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLen
     glBindTexture(GL_TEXTURE_2D, tex);
     setupQuality();
     // This is necessary for non-power-of-two textures
-    glTexParameteri(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D
                  , 0                //level
                  , internalFormat               //internal format. 4? why GL_RGBA? GL_RGB?
@@ -238,16 +238,43 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
     textures.resize(fmt.planeCount());
     glGenTextures(textures.size(), textures.data());
 
-    GLint internalFormat = GL_LUMINANCE;
-    GLenum format = GL_LUMINANCE;
+    //http://www.berkelium.com/OpenGL/GDC99/internalformat.html
+    //TODO: check channels
+    //NV12: UV is 1 plane. 16 bits as a unit. GL_LUMINANCE4, 8, 16, ... 32?
+    //GL_LUMINANCE, GL_LUMINANCE_ALPHA are deprecated in GL3, removed in GL3.1
+    //replaced by GL_RED, GL_RG, GL_RGB, GL_RGBA? for 1, 2, 3, 4 channel image
+    //http://www.gamedev.net/topic/634850-do-luminance-textures-still-exist-to-opengl/
+    //https://github.com/kivy/kivy/issues/1738: GL_LUMINANCE does work on a Galaxy Tab 2. LUMINANCE_ALPHA very slow on Linux
+     //ALPHA: vec4(0,0,0,A), LUMINANCE: (L,L,L,1), LUMINANCE_ALPHA: (L,L,L,A)
+    /*
+     * To support both planar and packed use GL_ALPHA and in shader use r,g,a like xbmc does.
+     * or use Swizzle_mask to layout the channels: http://www.opengl.org/wiki/Texture#Swizzle_mask
+     * GL ES2 support: GL_RGB, GL_RGBA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA
+     * http://stackoverflow.com/questions/18688057/which-opengl-es-2-0-texture-formats-are-color-depth-or-stencil-renderable
+     */
+    internal_format = QVector<GLint>(fmt.planeCount(), FMT_INTERNAL);
+    data_format = QVector<GLenum>(fmt.planeCount(), FMT);
     if (fmt.isRGB()) {
-        internalFormat = FMT_INTERNAL;
-        format = FMT;
+        if (fmt.isPlanar()) {
+
+        }
+    } else {
+        //uyvy, nv12, yv12
+        if (fmt.isPlanar()) {
+            //why luminance?
+            internal_format[0] = internal_format[1] = GL_LUMINANCE; //vec4(L,L,L,0)
+            data_format[0] = data_format[1] = GL_LUMINANCE; //or GL_RED
+            internal_format[2] = GL_ALPHA;
+            data_format[2] = GL_ALPHA;
+            //channels == 2: GL_RG, GL_LUMINANCE_ALPHA
+        } else {
+            //check channles
+        }
     }
 
     if (!hasGLSL) {
         // more than 1?
-        initTexture(textures[0], internalFormat, format, width, height);
+        initTexture(textures[0], internal_format[0], data_format[0], width, height);
         qWarning("Does not support GLSL!");
         return false;
     }
@@ -269,6 +296,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
             return false;
         }
         program = createProgram(kVertexShader, f.readAll().constData());
+        f.close();
         if (!program) {
             qWarning("Could not create shader program.");
             return false;
@@ -293,20 +321,14 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
             width = fmt.chromaWidth(width);
             height = fmt.chromaHeight(height);
         }
-        initTexture(textures[i], internalFormat, format, width, height);
+        initTexture(textures[i], internal_format[i], data_format[i], width, height);
     }
     return true;
 }
 
 void GLWidgetRendererPrivate::upload(const QRect &roi)
 {
-    GLint internalFormat = GL_LUMINANCE;
-    GLenum format = GL_LUMINANCE;
     const VideoFormat fmt = video_frame.format();
-    if (fmt.isRGB()) {
-        internalFormat = FMT_INTERNAL;
-        format = FMT;
-    }
 #if UPLOAD_ROI
     if (fmt != pixel_fmt || roi.size() != texture0Size) {
         qDebug("update texture: %dx%d, %s", roi.width(), roi.height(), video_frame.format().name().toUtf8().constData());
@@ -322,8 +344,9 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
             qDebug("shader program created!!!");
         }
     }
+    //glPixelStorei(GL_UNPACK_ALIGNMENT,1); //xbmc: nv12 use bpp
     for (int i = 0; i < video_frame.planeCount(); ++i) {
-        uploadPlane(i, internalFormat, format, roi);
+        uploadPlane(i, internal_format[i], data_format[i], roi);
     }
 }
 
@@ -334,9 +357,10 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
     }
     glBindTexture(GL_TEXTURE_2D, textures[p]);
     setupQuality();
+    //qDebug("bpl[%d]=%d", p, video_frame.bytesPerLine(p));
     // This is necessary for non-power-of-two textures
-    glTexParameteri(textures[p], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(textures[p], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     //uploading part of image eats less gpu memory, but may be more cpu(gles)
     //FIXME: more cpu usage then qpainter. FBO, VBO?

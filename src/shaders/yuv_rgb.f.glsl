@@ -28,9 +28,10 @@ const mat4 colorMatrix = mat4(1, 1, 1, 0,
                                0, -0.5, -0.5, 1);
 void main()
 {
+    // use r, g, a to work for both yv12 and nv12
     gl_FragColor = clamp(colorMatrix* vec4(texture2D(u_Texture0, v_TexCoords).r,
-                                           texture2D(u_Texture1, v_TexCoords).r,
-                                           texture2D(u_Texture2, v_TexCoords).r,
+                                           texture2D(u_Texture1, v_TexCoords).g,
+                                           texture2D(u_Texture2, v_TexCoords).a,
                                            1)
                       , 0.0, 1.0);
 }
