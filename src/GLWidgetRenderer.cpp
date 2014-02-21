@@ -235,9 +235,25 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
     pixel_fmt = fmt.pixelFormat();
     texture0Size = QSize(width, height);
 
-    textures.resize(fmt.planeCount());
-    glGenTextures(textures.size(), textures.data());
-
+    /*
+     * there are 2 fragment shaders: rgb and yuv.
+     * only 1 texture for packed rgb. planar rgb likes yuv
+     * To support both planar and packed yuv, and mixed yuv(NV12), we give a texture id
+     * for each channel. For packed, each (channel) texture id is the same. For planar,
+     * packed channels has the same texture id.
+     * But the number of actural textures we upload is plane count.
+     */
+    if (fmt.isRGB() && !fmt.isPlanar()) {
+        textures.resize(1);
+    } else {
+        textures.resize(fmt.channels());
+    }
+    glGenTextures(fmt.planeCount(), textures.data());
+    if (fmt.planeCount() < textures.size()) {
+        GLint packed_tex = textures[fmt.planeCount() - 1];
+        for (int i = fmt.planeCount(); i < textures.size(); ++i)
+            textures[i] = packed_tex;
+    }
     //http://www.berkelium.com/OpenGL/GDC99/internalformat.html
     //TODO: check channels
     //NV12: UV is 1 plane. 16 bits as a unit. GL_LUMINANCE4, 8, 16, ... 32?
@@ -255,10 +271,13 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
     internal_format = QVector<GLint>(fmt.planeCount(), FMT_INTERNAL);
     data_format = QVector<GLenum>(fmt.planeCount(), FMT);
     if (fmt.isRGB()) {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
+        // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
         if (fmt.isPlanar()) {
 
         }
     } else {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
         //uyvy, nv12, yv12
         if (fmt.isPlanar()) {
             //why luminance?
@@ -313,7 +332,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
 
     // fragment shader
     u_Texture.resize(fmt.planeCount());
-    for (int i = 0; i < textures.size(); ++i) {
+    for (int i = 0; i < fmt.planeCount(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
         u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
         qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
@@ -344,7 +363,6 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
             qDebug("shader program created!!!");
         }
     }
-    //glPixelStorei(GL_UNPACK_ALIGNMENT,1); //xbmc: nv12 use bpp
     for (int i = 0; i < video_frame.planeCount(); ++i) {
         uploadPlane(i, internal_format[i], data_format[i], roi);
     }
@@ -355,9 +373,13 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
     if (hasGLSL) {
         glActiveTexture(GL_TEXTURE0 + p); //TODO: can remove??
     }
+#ifdef GL_UNPACK_ROW_LENGTH
+    //glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.width());
+#endif
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
     glBindTexture(GL_TEXTURE_2D, textures[p]);
     setupQuality();
-    //qDebug("bpl[%d]=%d", p, video_frame.bytesPerLine(p));
+    //qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
     // This is necessary for non-power-of-two textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -428,6 +450,10 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 #endif //GL_UNPACK_ROW_LENGTH
     }
     glBindTexture(GL_TEXTURE_2D, 0);
+
+#ifdef GL_UNPACK_ROW_LENGTH
+    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
 }
 
 
@@ -490,6 +516,7 @@ void GLWidgetRenderer::drawFrame()
         glUseProgram(d.program); //qpainter need
     }
     glDisable(GL_DEPTH_TEST);
+    // all texture ids should be binded when renderering even for packed plane!
     for (int i = 0; i < d.textures.size(); ++i) {
         glEnable(GL_TEXTURE_2D);
         glActiveTexture(GL_TEXTURE0 + i);
