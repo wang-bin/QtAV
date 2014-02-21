@@ -119,6 +119,11 @@ public:
     void setPixelFormatFFmpeg(int format);
 
     /*!
+     * \brief channels
+     * \return number of channels(components). e.g. RGBA has 4 channels, NV12 is 3
+     */
+    int channels() const;
+    /*!
      * \brief planeCount
      * \return -1 if not a valid format
      */

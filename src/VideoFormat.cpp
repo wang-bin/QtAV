@@ -508,6 +508,11 @@ void VideoFormat::setPixelFormatFFmpeg(int format)
     d->init((AVPixelFormat)format);
 }
 
+int VideoFormat::channels() const
+{
+    return d->pixdesc->nb_components;
+}
+
 int VideoFormat::planeCount() const
 {
     return d->planes;
