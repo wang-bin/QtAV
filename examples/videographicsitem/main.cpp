@@ -17,6 +17,8 @@ int main(int argc, char *argv[])
 
     VideoPlayer w;
     w.show();
+    if (a.arguments().size() > 1)
+        w.play(a.arguments().last());
     
     return a.exec();
 }
