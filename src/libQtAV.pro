@@ -112,7 +112,7 @@ config_gl {
     SOURCES += GLWidgetRenderer.cpp
     HEADERS += QtAV/private/GLWidgetRenderer_p.h
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
-    OTHER_FILES += shaders/yuv_rgb.f.glsl
+    OTHER_FILES += shaders/yuv_rgb.f.glsl shaders/rgb.f.glsl
 }
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
@@ -222,8 +222,6 @@ SDK_HEADERS *= \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoDecoderTypes.h \
-    QtAV/VideoDecoderFFmpeg.h \
-    QtAV/VideoDecoderFFmpegHW.h \
     QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
     QtAV/FactoryDefine.h \
@@ -256,6 +254,8 @@ HEADERS *= \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpeg_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
+    QtAV/VideoDecoderFFmpeg.h \
+    QtAV/VideoDecoderFFmpegHW.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \

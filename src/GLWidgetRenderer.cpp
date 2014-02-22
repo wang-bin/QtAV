@@ -84,7 +84,6 @@ static inline void checkGlError(const char* op = 0) {
     FUNC; \
     checkGlError(#FUNC);
 
-
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
     "attribute vec2 a_TexCoords;\n"
@@ -94,17 +93,6 @@ static const char kVertexShader[] =
     "  gl_Position = u_MVP_matrix * a_Position;\n"
     "  v_TexCoords = a_TexCoords; \n"
     "}\n";
-
-static const char kFragmentShader[] =
-#ifdef QT_OPENGL_ES_2
-    "precision mediump float;\n"
-#endif
-    "uniform sampler2D u_Texture0;\n"
-    "varying vec2 v_TexCoords;\n"
-    "void main() {\n"
-    "  gl_FragColor = texture2D(u_Texture0, v_TexCoords);\n"
-    "}\n";
-
 
 //http://www.opengl.org/wiki/GLSL#Error_Checking
 // TODO: use QGLShaderProgram for better compatiblity
@@ -226,6 +214,21 @@ bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLen
     return true;
 }
 
+QString GLWidgetRendererPrivate::getShaderFromFile(const QString &fileName)
+{
+    QFile f(qApp->applicationDirPath() + "/" + fileName);
+    if (!f.exists()) {
+        f.setFileName(":/" + fileName);
+    }
+    if (!f.open(QIODevice::ReadOnly)) {
+        qWarning("Can not load shader %s: %s", f.fileName().toUtf8().constData(), f.errorString().toUtf8().constData());
+        return QString();
+    }
+    QString src = f.readAll();
+    f.close();
+    return src;
+}
+
 bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int width, int height)
 {
     // isSupported(pixfmt)
@@ -297,32 +300,22 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
         qWarning("Does not support GLSL!");
         return false;
     }
-    // FIXME
+
+    // TODO: only to kinds, packed.glsl, planar.glsl
+    QString frag;
     if (fmt.isRGB()) {
-        program = createProgram(kVertexShader, kFragmentShader);
-        if (!program) {
-            qWarning("Could not create shader program.");
-            return false;
-        }
-    } else if (fmt == VideoFormat::Format_YUV420P) {
-        QString shader_file = "/shaders/yuv_rgb.f.glsl";
-        QFile f(qApp->applicationDirPath() + shader_file);
-        if (!f.exists()) {
-            f.setFileName(":" + shader_file);
-        }
-        if (!f.open(QIODevice::ReadOnly)) {
-            qWarning("Can not load shader %s: %s", f.fileName().toUtf8().constData(), f.errorString().toUtf8().constData());
-            return false;
-        }
-        program = createProgram(kVertexShader, f.readAll().constData());
-        f.close();
-        if (!program) {
-            qWarning("Could not create shader program.");
-            return false;
-        }
+        frag = getShaderFromFile("shaders/rgb.f.glsl");
     } else {
+        frag = getShaderFromFile("shaders/yuv_rgb.f.glsl");
+    }
+    if (frag.isEmpty())
+        return false;
+    program = createProgram(kVertexShader, frag.toUtf8().constData());
+    if (!program) {
+        qWarning("Could not create shader program.");
         return false;
     }
+
     // vertex shader
     CHECK_GL_ERROR(a_Position = glGetAttribLocation(program, "a_Position"));
     a_TexCoords = glGetAttribLocation(program, "a_TexCoords");
@@ -363,23 +356,26 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
             qDebug("shader program created!!!");
         }
     }
+    glEnable(GL_TEXTURE_2D);
+    // set alignment
     for (int i = 0; i < video_frame.planeCount(); ++i) {
         uploadPlane(i, internal_format[i], data_format[i], roi);
     }
+    glDisable(GL_TEXTURE_2D);
 }
 
 void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum format, const QRect& roi)
 {
-    if (hasGLSL) {
-        glActiveTexture(GL_TEXTURE0 + p); //TODO: can remove??
-    }
+    // FIXME: why happens on win?
+    if (video_frame.bytesPerLine(p) <= 0)
+        return;
 #ifdef GL_UNPACK_ROW_LENGTH
     //glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.width());
 #endif
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
     glBindTexture(GL_TEXTURE_2D, textures[p]);
     setupQuality();
-    //qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
+    qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
     // This is necessary for non-power-of-two textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -513,18 +509,18 @@ void GLWidgetRenderer::drawFrame()
 
     // shader program may not ready before upload
     if (d.hasGLSL) {
-        glUseProgram(d.program); //qpainter need
+        glUseProgram(d.program); //for glUniform
     }
     glDisable(GL_DEPTH_TEST);
     // all texture ids should be binded when renderering even for packed plane!
     for (int i = 0; i < d.textures.size(); ++i) {
-        glEnable(GL_TEXTURE_2D);
         glActiveTexture(GL_TEXTURE0 + i);
+        glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
         // use glUniform1i to swap planes. swap uv: i => (3-i)%3
+        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
         glUniform1i(d.u_Texture[i], i);
     }
-    //glActiveTexture(GL_TEXTURE0); //? vlc
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
     const GLfloat kTexCoords[] = {
@@ -574,6 +570,8 @@ void GLWidgetRenderer::drawFrame()
         glEnableVertexAttribArray(d.a_TexCoords);
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        glUseProgram(0);
 
         glDisableVertexAttribArray(d.a_TexCoords);
         glDisableVertexAttribArray(d.a_Position);

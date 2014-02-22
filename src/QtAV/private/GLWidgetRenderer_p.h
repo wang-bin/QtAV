@@ -56,6 +56,7 @@ public:
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
     bool releaseResource();
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, int width, int height);
+    QString getShaderFromFile(const QString& fileName);
     bool prepareShaderProgram(const VideoFormat& fmt, int width, int height);
     void upload(const QRect& roi);
     void uploadPlane(int p, GLint internal_format, GLenum format, const QRect& roi);
