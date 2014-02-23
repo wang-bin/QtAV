@@ -67,6 +67,7 @@ bool AudioResamplerLibav::convert(const quint8 **data)
     uint8_t *out[] = {(uint8_t*)d.data_out.data()};
     //number of input/output samples available in one channel
     int converted_samplers_per_channel = swr_convert(d.context, out, d.out_samples_per_channel, const_cast<quint8**>(data), d.in_samples_per_channel);
+    d.out_samples_per_channel = converted_samplers_per_channel;
     if (converted_samplers_per_channel < 0) {
         qWarning("[AudioResamplerLibav] %s", av_err2str(converted_samplers_per_channel));
         return false;

@@ -127,6 +127,11 @@ void AudioResampler::setInSampesPerChannel(int samples)
     d_func().in_samples_per_channel = samples;
 }
 
+int AudioResampler::outSamplesPerChannel() const
+{
+    return d_func().out_samples_per_channel;
+}
+
 //channel count can be computed by av_get_channel_layout_nb_channels(chl)
 void AudioResampler::setInSampleRate(int isr)
 {
