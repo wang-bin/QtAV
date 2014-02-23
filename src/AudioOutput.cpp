@@ -128,4 +128,21 @@ qreal AudioOutput::speed() const
     return d_func().speed;
 }
 
+bool AudioOutput::isSuppported(const AudioFormat &format) const
+{
+    Q_UNUSED(format);
+    return true;
+}
+
+bool AudioOutput::isSuppported(AudioFormat::SampleFormat sampleFormat) const
+{
+    Q_UNUSED(sampleFormat);
+    return true;
+}
+
+AudioFormat::SampleFormat AudioOutput::preferredSampleFormat() const
+{
+    return AudioFormat::SampleFormat_Float;
+}
+
 } //namespace QtAV
