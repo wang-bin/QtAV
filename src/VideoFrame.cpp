@@ -132,6 +132,7 @@ VideoFrame::VideoFrame(const QByteArray& data, int width, int height, const Vide
 {
     Q_D(VideoFrame);
     d->data = data;
+    init();
 }
 
 VideoFrame::VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat &format)
@@ -174,6 +175,7 @@ VideoFrame::~VideoFrame()
 {
 }
 
+//TODO: use av_picture_copy(AVPicture*, const AVPicture*, AVPixelFormat, width, height)
 VideoFrame VideoFrame::clone() const
 {
     Q_D(const VideoFrame);
@@ -210,16 +212,7 @@ int VideoFrame::allocate()
     //if (d->data_out.size() < bytes) {
         d->data.resize(bytes);
     //}
-    AVPicture pic;
-    avpicture_fill(
-            &pic,
-            reinterpret_cast<uint8_t*>(d->data.data()),
-            (AVPixelFormat)pixelFormatFFmpeg(),
-            width(),
-            height()
-            );
-    setBits(pic.data);
-    setBytesPerLine(pic.linesize);
+    init();
     return bytes;
 }
 
@@ -254,21 +247,11 @@ void VideoFrame::init()
     Q_D(VideoFrame);
     AVPicture picture;
     AVPixelFormat fff = (AVPixelFormat)d->format.pixelFormatFFmpeg();
-    int bytes = avpicture_get_size(fff, width(), height());
-    d->data.resize(bytes);
+    //int bytes = avpicture_get_size(fff, width(), height());
+    //d->data.resize(bytes);
     avpicture_fill(&picture, reinterpret_cast<uint8_t*>(d->data.data()), fff, width(), height());
-    for (int i = 0; i < d->format.planeCount(); ++i) {
-        setBits(picture.data[i], i);
-        setBytesPerLine(picture.linesize[i], i);
-    }
-}
-
-int VideoFrame::bytesPerLine(int plane) const
-{
-    Q_D(const VideoFrame);
-    if (plane >= planeCount())
-        return 0;
-    return  d->line_sizes[plane];// (d->width * d->format.bitsPerPixel(plane) + 7) >> 3;
+    setBits(picture.data);
+    setBytesPerLine(picture.linesize);
 }
 
 QSize VideoFrame::size() const

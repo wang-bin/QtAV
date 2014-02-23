@@ -34,8 +34,6 @@ class Q_AV_EXPORT FramePrivate : public QSharedData
 {
 public:
     FramePrivate()
-        : planes(4, 0)
-        , line_sizes(4, 0)
     {}
     virtual ~FramePrivate() {}
 

@@ -67,11 +67,6 @@ public:
      * call this only when setBytesPerLine() and setBits() will not be called
      */
     void init();
-    /*!
-     * \brief bytesPerLine bytes/line for the given pixel format and size
-     * \return
-     */
-    virtual int bytesPerLine(int plane) const;
 
     QSize size() const;
     //int width(int plane = 0) const?
