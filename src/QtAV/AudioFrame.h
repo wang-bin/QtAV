@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,20 +23,54 @@
 #define QTAV_AUDIOFRAME_H
 
 #include <QtAV/Frame.h>
+#include <QtAV/AudioFormat.h>
 
 namespace QtAV {
 
+class AudioResampler;
 class AudioFramePrivate;
 class Q_AV_EXPORT AudioFrame : public Frame
 {
     Q_DECLARE_PRIVATE(AudioFrame)
 public:
-    AudioFrame();
+    AudioFrame(); //invalid frame
+    //data must be complete
+    AudioFrame(const QByteArray& data, const AudioFormat& format);
     AudioFrame(const AudioFrame &other);
     virtual ~AudioFrame();
 
     AudioFrame &operator =(const AudioFrame &other);
 
+    /*!
+     * Deep copy. If you want to copy data from somewhere, knowing the format, width and height,
+     * then you can use clone().
+     */
+    AudioFrame clone() const;
+    /*!
+     * Allocate memory with given format, width and height. planes and bytesPerLine will be set.
+     * The memory can be initialized by user
+     */
+    virtual int allocate();
+    AudioFormat format() const;
+    void setSamplesPerChannel(int samples);
+    // may change after resampling
+    int samplesPerChannel() const;
+    //AudioResamplerId
+    void setAudioResampler(AudioResampler *conv);
+    /*!
+     * \brief convertTo
+     * \code
+     *   AudioFrame af(data, fmt1);
+     *   af.convertTo(fmt2);
+     * \param fmt
+     * \return
+     */
+    bool convertTo(const AudioFormat& fmt);
+private:
+    /*
+     * call this only when setBytesPerLine() and setBits() will not be called
+     */
+    void init();
 };
 
 } //namespace QtAV

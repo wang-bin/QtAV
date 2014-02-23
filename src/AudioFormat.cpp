@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -171,6 +171,11 @@ bool AudioFormat::isValid() const
 bool AudioFormat::isPlanar() const
 {
     return d->planar;
+}
+
+int AudioFormat::planeCount() const
+{
+    return isPlanar() ? 1 : channels();
 }
 
 /*!

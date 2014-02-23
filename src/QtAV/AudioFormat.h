@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -71,6 +71,7 @@ public:
 
     bool isValid() const;
     bool isPlanar() const;
+    int planeCount() const;
 
     void setSampleRate(int sampleRate);
     int sampleRate() const;
@@ -88,6 +89,11 @@ public:
      * setChannels also sets the default layout for this channels if channels does not match.
      */
     void setChannels(int channels);
+    /*!
+     * \brief channels
+     *   For planar format, channel count == plane count. For packed format, plane count is 1
+     * \return
+     */
     int channels() const;
 
     void setSampleFormat(SampleFormat sampleFormat);
