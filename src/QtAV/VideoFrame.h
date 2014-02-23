@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -63,10 +63,6 @@ public:
     int pixelFormatFFmpeg() const;
 
     bool isValid() const;
-    /*
-     * call this only when setBytesPerLine() and setBits() will not be called
-     */
-    void init();
 
     QSize size() const;
     //int width(int plane = 0) const?
@@ -94,6 +90,11 @@ public:
        return -1 if no texture, not uploaded
      */
     int texture(int plane = 0) const;
+private:
+    /*
+     * call this only when setBytesPerLine() and setBits() will not be called
+     */
+    void init();
 };
 
 } //namespace QtAV

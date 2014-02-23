@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -242,18 +242,6 @@ bool VideoFrame::isValid() const
     return d->width > 0 && d->height > 0 && d->format.isValid(); //data not empty?
 }
 
-void VideoFrame::init()
-{
-    Q_D(VideoFrame);
-    AVPicture picture;
-    AVPixelFormat fff = (AVPixelFormat)d->format.pixelFormatFFmpeg();
-    //int bytes = avpicture_get_size(fff, width(), height());
-    //d->data.resize(bytes);
-    avpicture_fill(&picture, reinterpret_cast<uint8_t*>(d->data.data()), fff, width(), height());
-    setBits(picture.data);
-    setBytesPerLine(picture.linesize);
-}
-
 QSize VideoFrame::size() const
 {
     Q_D(const VideoFrame);
@@ -335,6 +323,18 @@ int VideoFrame::texture(int plane) const
     if (d->textures.size() <= plane)
         return -1;
     return d->textures[plane];
+}
+
+void VideoFrame::init()
+{
+    Q_D(VideoFrame);
+    AVPicture picture;
+    AVPixelFormat fff = (AVPixelFormat)d->format.pixelFormatFFmpeg();
+    //int bytes = avpicture_get_size(fff, width(), height());
+    //d->data.resize(bytes);
+    avpicture_fill(&picture, reinterpret_cast<uint8_t*>(d->data.data()), fff, width(), height());
+    setBits(picture.data);
+    setBytesPerLine(picture.linesize);
 }
 
 } //namespace QtAV
