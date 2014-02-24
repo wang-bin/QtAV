@@ -258,7 +258,6 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
             textures[i] = packed_tex;
     }
     //http://www.berkelium.com/OpenGL/GDC99/internalformat.html
-    //TODO: check channels
     //NV12: UV is 1 plane. 16 bits as a unit. GL_LUMINANCE4, 8, 16, ... 32?
     //GL_LUMINANCE, GL_LUMINANCE_ALPHA are deprecated in GL3, removed in GL3.1
     //replaced by GL_RED, GL_RG, GL_RGB, GL_RGBA? for 1, 2, 3, 4 channel image
@@ -273,25 +272,25 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
      */
     internal_format = QVector<GLint>(fmt.planeCount(), FMT_INTERNAL);
     data_format = QVector<GLenum>(fmt.planeCount(), FMT);
-    if (fmt.isRGB()) {
-        glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
-        // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
-        if (fmt.isPlanar()) {
-
-        }
-    } else {
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
-        //uyvy, nv12, yv12
-        if (fmt.isPlanar()) {
-            //why luminance?
-            internal_format[0] = internal_format[1] = GL_LUMINANCE; //vec4(L,L,L,0)
-            data_format[0] = data_format[1] = GL_LUMINANCE; //or GL_RED
-            internal_format[2] = GL_ALPHA;
-            data_format[2] = GL_ALPHA;
+    if (fmt.isPlanar()) {
+        /*!
+         * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
+         * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
+         */
+        internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED
+        if (fmt.planeCount() == 2) {
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
+            internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
             //channels == 2: GL_RG, GL_LUMINANCE_ALPHA
         } else {
-            //check channles
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,0)
+            internal_format[2] = data_format[2] = GL_ALPHA;
         }
+    } else {
+        //use yuv shader(planar shader)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
+        // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
 
     if (!hasGLSL) {
@@ -303,10 +302,10 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
 
     // TODO: only to kinds, packed.glsl, planar.glsl
     QString frag;
-    if (fmt.isRGB()) {
-        frag = getShaderFromFile("shaders/rgb.f.glsl");
-    } else {
+    if (fmt.isPlanar()) {
         frag = getShaderFromFile("shaders/yuv_rgb.f.glsl");
+    } else {
+        frag = getShaderFromFile("shaders/rgb.f.glsl");
     }
     if (frag.isEmpty())
         return false;
@@ -375,7 +374,7 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
     glBindTexture(GL_TEXTURE_2D, textures[p]);
     setupQuality();
-    qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
+    //qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
     // This is necessary for non-power-of-two textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -451,7 +450,6 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
     //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
 }
-
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
     QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRendererPrivate())
@@ -625,7 +623,7 @@ void GLWidgetRenderer::paintGL()
 void GLWidgetRenderer::resizeGL(int w, int h)
 {
     DPTR_D(GLWidgetRenderer);
-    qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
+    //qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
     glViewport(0, 0, w, h);
     d.setupAspectRatio();
 #ifndef QT_OPENGL_ES_2
