@@ -241,22 +241,15 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
     /*
      * there are 2 fragment shaders: rgb and yuv.
      * only 1 texture for packed rgb. planar rgb likes yuv
-     * To support both planar and packed yuv, and mixed yuv(NV12), we give a texture id
-     * for each channel. For packed, each (channel) texture id is the same. For planar,
-     * packed channels has the same texture id.
+     * To support both planar and packed yuv, and mixed yuv(NV12), we give a texture sample
+     * for each channel. For packed, each (channel) texture sample is the same. For planar,
+     * packed channels has the same texture sample.
      * But the number of actural textures we upload is plane count.
+     * Which means the number of texture id equals to plane count
      */
-    if (fmt.isRGB() && !fmt.isPlanar()) {
-        textures.resize(1);
-    } else {
-        textures.resize(fmt.channels());
-    }
-    glGenTextures(fmt.planeCount(), textures.data());
-    if (fmt.planeCount() < textures.size()) {
-        GLint packed_tex = textures[fmt.planeCount() - 1];
-        for (int i = fmt.planeCount(); i < textures.size(); ++i)
-            textures[i] = packed_tex;
-    }
+    textures.resize(fmt.planeCount());
+    glGenTextures(textures.size(), textures.data());
+
     //http://www.berkelium.com/OpenGL/GDC99/internalformat.html
     //NV12: UV is 1 plane. 16 bits as a unit. GL_LUMINANCE4, 8, 16, ... 32?
     //GL_LUMINANCE, GL_LUMINANCE_ALPHA are deprecated in GL3, removed in GL3.1
@@ -281,14 +274,12 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
         if (fmt.planeCount() == 2) {
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
             internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
-            //channels == 2: GL_RG, GL_LUMINANCE_ALPHA
         } else {
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,0)
             internal_format[2] = data_format[2] = GL_ALPHA;
         }
     } else {
-        //use yuv shader(planar shader)
         glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
         // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
@@ -323,11 +314,13 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
 
     // fragment shader
-    u_Texture.resize(fmt.planeCount());
-    for (int i = 0; i < fmt.planeCount(); ++i) {
+    u_Texture.resize(fmt.channels());
+    for (int i = 0; i < u_Texture.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
         u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
         qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
+    }
+    for (int i = 0; i < textures.size(); ++i) {
         if (i == 0) {
             width = fmt.chromaWidth(width);
             height = fmt.chromaHeight(height);
@@ -510,14 +503,19 @@ void GLWidgetRenderer::drawFrame()
         glUseProgram(d.program); //for glUniform
     }
     glDisable(GL_DEPTH_TEST);
+    const int nb_planes = d.video_frame.planeCount(); //number of texture id
     // all texture ids should be binded when renderering even for packed plane!
-    for (int i = 0; i < d.textures.size(); ++i) {
+    for (int i = 0; i < nb_planes; ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
         // use glUniform1i to swap planes. swap uv: i => (3-i)%3
         // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
         glUniform1i(d.u_Texture[i], i);
+    }
+    if (nb_planes < d.u_Texture.size()) {
+        for (int i = nb_planes; i < d.u_Texture.size(); ++i)
+            glUniform1i(d.u_Texture[i], nb_planes - 1);
     }
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
@@ -596,8 +594,6 @@ void GLWidgetRenderer::initializeGL()
     if (!d.hasGLSL) {
         glShadeModel(GL_SMOOTH); //setupQuality?
         glClearDepth(1.0f);
-        //d.textures.resize(1);
-        //glGenTextures(d.textures.size(), d.textures.data());
     }
 #endif //QT_OPENGL_ES_2
     glClearColor(0.0, 0.0, 0.0, 0.0);
