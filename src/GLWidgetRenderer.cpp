@@ -56,6 +56,13 @@
 #define FMT GL_BGRA
 #endif //QT_OPENGL_ES_2
 
+//#ifdef GL_EXT_unpack_subimage
+#ifndef GL_UNPACK_ROW_LENGTH
+#ifdef GL_UNPACK_ROW_LENGTH_EXT
+#define GL_UNPACK_ROW_LENGTH GL_UNPACK_ROW_LENGTH_EXT
+#endif //GL_UNPACK_ROW_LENGTH_EXT
+#endif //GL_UNPACK_ROW_LENGTH
+
 #include <QtAV/FilterContext.h>
 #include <QtAV/OSDFilter.h>
 
@@ -270,23 +277,21 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
          * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
          * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
          */
-        internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED
+        internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED for GL
         if (fmt.planeCount() == 2) {
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
             internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
         } else {
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,0)
-            internal_format[2] = data_format[2] = GL_ALPHA;
+            internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
         }
     } else {
-        glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
+        //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
         // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
 
+    initTexture(textures[0], internal_format[0], data_format[0], width, height);
     if (!hasGLSL) {
         // more than 1?
-        initTexture(textures[0], internal_format[0], data_format[0], width, height);
         qWarning("Does not support GLSL!");
         return false;
     }
@@ -320,12 +325,8 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
         u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
         qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
     }
-    for (int i = 0; i < textures.size(); ++i) {
-        if (i == 0) {
-            width = fmt.chromaWidth(width);
-            height = fmt.chromaHeight(height);
-        }
-        initTexture(textures[i], internal_format[i], data_format[i], width, height);
+    for (int i = 1; i < textures.size(); ++i) {
+        initTexture(textures[i], internal_format[i], data_format[i], fmt.chromaWidth(width), fmt.chromaHeight(height));
     }
     return true;
 }
@@ -348,12 +349,10 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
             qDebug("shader program created!!!");
         }
     }
-    glEnable(GL_TEXTURE_2D);
     // set alignment
     for (int i = 0; i < video_frame.planeCount(); ++i) {
         uploadPlane(i, internal_format[i], data_format[i], roi);
     }
-    glDisable(GL_TEXTURE_2D);
 }
 
 void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum format, const QRect& roi)
@@ -361,11 +360,13 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
     // FIXME: why happens on win?
     if (video_frame.bytesPerLine(p) <= 0)
         return;
-#ifdef GL_UNPACK_ROW_LENGTH
-    //glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.width());
-#endif
-    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //xbmc: nv12 is bpp
+    glActiveTexture(GL_TEXTURE0 + p);
     glBindTexture(GL_TEXTURE_2D, textures[p]);
+    ////nv12: 2
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, GetAlign(video_frame.bytesPerLine(p)));
+#if defined(GL_UNPACK_ROW_LENGTH)
+    //glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.bytesPerLine(p));
+#endif
     setupQuality();
     //qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
     // This is necessary for non-power-of-two textures
@@ -437,11 +438,12 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 #endif //UPLOAD_LINE
 #endif //GL_UNPACK_ROW_LENGTH
     }
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-#ifdef GL_UNPACK_ROW_LENGTH
+#if defined(GL_UNPACK_ROW_LENGTH)
     //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
@@ -574,8 +576,8 @@ void GLWidgetRenderer::drawFrame()
     }
 
     for (int i = 0; i < d.textures.size(); ++i) {
-        glActiveTexture(GL_TEXTURE0 + i); //??
-        glDisable(GL_TEXTURE_2D); //??
+        glActiveTexture(GL_TEXTURE0 + i); //gl functions apply on texture i
+        glDisable(GL_TEXTURE_2D);
     }
 }
 
