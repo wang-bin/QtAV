@@ -78,7 +78,6 @@ public:
       * @return
      *  >0 Interruzione loop di ffmpeg!
     */
-    //TODO: let demuxer emit a signal, and qApp processEvents
     static int handleTimeout(void* obj) {
         InterruptHandler* handler = static_cast<InterruptHandler*>(obj);
         if (!handler) {
@@ -366,7 +365,7 @@ bool AVDemuxer::seek(qint64 pos)
      * stream is selected, and timestamp is automatically converted
      * from AV_TIME_BASE units to the stream specific time_base.
      */
-    int seek_flag = (backward ? 0 : AVSEEK_FLAG_BACKWARD); //AVSEEK_FLAG_ANY
+    int seek_flag = (backward ? AVSEEK_FLAG_BACKWARD : 0); //AVSEEK_FLAG_ANY
     //bool seek_bytes = !!(format_context->iformat->flags & AVFMT_TS_DISCONT) && strcmp("ogg", format_context->iformat->name);
     int ret = av_seek_frame(format_context, -1, upos, seek_flag);
     //avformat_seek_file()
