@@ -57,7 +57,7 @@ public:
     bool releaseResource();
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, int width, int height);
     QString getShaderFromFile(const QString& fileName);
-    bool prepareShaderProgram(const VideoFormat& fmt, int width, int height);
+    bool prepareShaderProgram(const VideoFormat& fmt);
     void upload(const QRect& roi);
     void uploadPlane(int p, GLint internal_format, GLenum format, const QRect& roi);
     //GL 4.x: GL_FRAGMENT_SHADER_DERIVATIVE_HINT,GL_TEXTURE_COMPRESSION_HINT
@@ -131,14 +131,15 @@ public:
 
     bool hasGLSL;
     bool update_texcoords;
-    QVector<GLuint> textures;
+    QVector<GLuint> textures; //texture ids. size is plane count
+    QVector<QSize> texture_size;
     QVector<GLint> internal_format;
     QVector<GLenum> data_format;
     GLuint program;
     GLuint vert, frag;
     GLuint a_Position;
     GLuint a_TexCoords;
-    QVector<GLuint> u_Texture; //u_TextureN
+    QVector<GLuint> u_Texture; //u_TextureN uniform. size is channel count
     GLuint u_matrix;
 
     QPainter *painter;

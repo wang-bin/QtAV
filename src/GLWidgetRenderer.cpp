@@ -69,6 +69,9 @@
 #define UPLOAD_ROI 0
 #define ROI_TEXCOORDS 1
 
+#define AVALIGN(x, a) (((x)+(a)-1)&~((a)-1))
+
+
 //TODO: QGLfunctions?
 namespace QtAV {
 
@@ -90,6 +93,31 @@ static inline void checkGlError(const char* op = 0) {
 #define CHECK_GL_ERROR(FUNC) \
     FUNC; \
     checkGlError(#FUNC);
+
+int bytesOfGLFormat(GLenum format)
+{
+    switch (format)
+      {
+#ifdef GL_BGRA //ifndef GL_ES
+      case GL_BGRA:
+#endif
+      case GL_RGBA:
+        return 4;
+#ifdef GL_BGR //ifndef GL_ES
+      case GL_BGR:
+#endif
+      case GL_RGB:
+        return 3;
+      case GL_LUMINANCE_ALPHA:
+        return 2;
+      case GL_LUMINANCE:
+      case GL_ALPHA:
+        return 1;
+      default:
+        qWarning("bytesOfGLFormat - Unknown format %u", format);
+        return 1;
+      }
+}
 
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
@@ -236,14 +264,13 @@ QString GLWidgetRendererPrivate::getShaderFromFile(const QString &fileName)
     return src;
 }
 
-bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int width, int height)
+bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
 {
     // isSupported(pixfmt)
     if (!fmt.isValid())
         return false;
     releaseResource();
     pixel_fmt = fmt.pixelFormat();
-    texture0Size = QSize(width, height);
 
     /*
      * there are 2 fragment shaders: rgb and yuv.
@@ -288,9 +315,12 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
         //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
         // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
+    for (int i = 0; i < fmt.planeCount(); ++i) {
+        texture_size[i].setWidth(AVALIGN(texture_size[i].width()/bytesOfGLFormat(data_format[i]), 4));
+    }
 
-    initTexture(textures[0], internal_format[0], data_format[0], width, height);
     if (!hasGLSL) {
+        initTexture(textures[0], internal_format[0], data_format[0], texture_size[0].width(), texture_size[0].height());
         // more than 1?
         qWarning("Does not support GLSL!");
         return false;
@@ -325,29 +355,41 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, int w
         u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
         qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
     }
+    initTexture(textures[0], internal_format[0], data_format[0], texture_size[0].width(), texture_size[0].height());
     for (int i = 1; i < textures.size(); ++i) {
-        initTexture(textures[i], internal_format[i], data_format[i], fmt.chromaWidth(width), fmt.chromaHeight(height));
+        initTexture(textures[i], internal_format[i], data_format[i], texture_size[i].width(), texture_size[i].height());
     }
     return true;
 }
 
 void GLWidgetRendererPrivate::upload(const QRect &roi)
 {
+    //qDebug("==========upload======");
     const VideoFormat fmt = video_frame.format();
 #if UPLOAD_ROI
     if (fmt != pixel_fmt || roi.size() != texture0Size) {
         qDebug("update texture: %dx%d, %s", roi.width(), roi.height(), video_frame.format().name().toUtf8().constData());
         if (!prepareShaderProgram(fmt, roi.width(), roi.height())) {
 #else
-    if (fmt != pixel_fmt || video_frame.size() != texture0Size) {
-        qDebug("update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
-        if (!prepareShaderProgram(fmt, video_frame.width(), video_frame.height())) {
+    if (fmt != pixel_fmt || video_frame.size() != texture0Size) { //
+        //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
+
+        texture_size.resize(fmt.planeCount());
+        for (int i = 0; i < fmt.planeCount(); ++i) {
+            // nv12 2nd plane
+            qDebug("bytesPerLine %d = %d", i, video_frame.planeWidth(i));
+            qDebug("planeHeight %d = %d", i, video_frame.planeHeight(i));
+            // we have to consider size of opengl format
+            texture_size[i] = QSize(video_frame.bytesPerLine(i), video_frame.planeHeight(i));
+        }
+        if (!prepareShaderProgram(fmt)) {
 #endif //UPLOAD_ROI
             qWarning("shader program create error...");
             return;
         } else {
             qDebug("shader program created!!!");
         }
+        texture0Size = video_frame.size();
     }
     // set alignment
     for (int i = 0; i < video_frame.planeCount(); ++i) {
@@ -363,9 +405,9 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
     glActiveTexture(GL_TEXTURE0 + p);
     glBindTexture(GL_TEXTURE_2D, textures[p]);
     ////nv12: 2
-    //glPixelStorei(GL_UNPACK_ALIGNMENT, GetAlign(video_frame.bytesPerLine(p)));
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);//GetAlign(video_frame.bytesPerLine(p)));
 #if defined(GL_UNPACK_ROW_LENGTH)
-    //glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.bytesPerLine(p));
+//    glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.bytesPerLine(p));
 #endif
     setupQuality();
     //qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
@@ -381,8 +423,8 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
                      , 0                //level
                      , 0                // xoffset
                      , 0                // yoffset
-                     , video_frame.planeWidth(p)
-                     , video_frame.planeHeight(p)
+                     , texture_size[p].width()
+                     , texture_size[p].height()
                      , format          //format, must the same as internal format?
                      , GL_UNSIGNED_BYTE
                      , video_frame.bits(p));
@@ -439,7 +481,7 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 #endif //GL_UNPACK_ROW_LENGTH
     }
 #if defined(GL_UNPACK_ROW_LENGTH)
-    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+//    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
