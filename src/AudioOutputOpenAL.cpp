@@ -125,7 +125,7 @@ class  AudioOutputOpenALPrivate : public AudioOutputPrivate
 public:
     AudioOutputOpenALPrivate()
         : AudioOutputPrivate()
-        , format(AL_FORMAT_STEREO16)
+        , format_al(AL_FORMAT_STEREO16)
         , state(0)
         , last_duration(0)
     {
@@ -133,12 +133,13 @@ public:
     ~AudioOutputOpenALPrivate() {
     }
 
-    ALenum format;
+    ALenum format_al;
     ALuint buffer[kBufferCount];
     ALuint source;
     ALint state;
     QElapsedTimer time;
-    qint64 last_duration;
+    qint64 last_duration; //us, micro second
+    qint64 err;
     QMutex mutex;
     QWaitCondition cond;
 };
@@ -198,7 +199,7 @@ bool AudioOutputOpenAL::open()
         return false;
     }
     //init params. move to another func?
-    d.format = audioFormatToAL(audioFormat());
+    d.format_al = audioFormatToAL(audioFormat());
 
     alGenBuffers(kBufferCount, d.buffer);
     err = alGetError();
@@ -286,7 +287,7 @@ bool AudioOutputOpenAL::write()
         //// Initial all buffers
         alSourcef(d.source, AL_GAIN, d.vol);
         for (int i = 0; i < kBufferCount; ++i) {
-            ALERROR_RETURN_F(alBufferData(d.buffer[i], d.format, d.data, d.data.size(), audioFormat().sampleRate()));
+            ALERROR_RETURN_F(alBufferData(d.buffer[i], d.format_al, d.data, d.data.size(), audioFormat().sampleRate()));
             alSourceQueueBuffers(d.source, 1, &d.buffer[i]);
         }
         //alSourceQueueBuffers(d.source, 3, d.buffer);
@@ -296,12 +297,18 @@ bool AudioOutputOpenAL::write()
         d.time.start();
         return true;
     }
-    qint64 dt = d.last_duration - d.time.elapsed();
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+    qint64 dt = d.last_duration - d.time.nsecsElapsed()/1000LL;
     //qDebug("duration: %lld, dt: %lld", d.last_duration, dt);
-    d.last_duration = audioFormat().durationForBytes(d.data.size())/1000LL;
+    d.last_duration = audioFormat().durationForBytes(d.data.size());
     // TODO: how to control the error?
+#else
+    qint64 dt = d.last_duration - d.time.elapsed()*1000;
+    //qDebug("duration: %lld, dt: %lld", d.last_duration, dt);
+    d.last_duration = audioFormat().durationForBytes(d.data.size());
+#endif //QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
     if (dt > 0LL)
-        d.cond.wait(&d.mutex, (ulong)dt);
+        d.cond.wait(&d.mutex, (ulong)(dt/1000LL));
 
     ALint processed = 0;
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
@@ -320,7 +327,7 @@ bool AudioOutputOpenAL::write()
         ALuint buf;
         //unqueues a set of buffers attached to a source
         alSourceUnqueueBuffers(d.source, 1, &buf);
-        alBufferData(buf, d.format, b, qMin(remain, kBufferSize), audioFormat().sampleRate());
+        alBufferData(buf, d.format_al, b, qMin(remain, kBufferSize), audioFormat().sampleRate());
         alSourceQueueBuffers(d.source, 1, &buf);
         b += kBufferSize;
         remain -= kBufferSize;
