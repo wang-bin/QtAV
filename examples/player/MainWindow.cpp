@@ -560,7 +560,9 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         mpTimeSlider->hide();
     } else {
     }
-#endif //SLIDER_ON_VO
+#endif //SLIDER_ON_VO    
+    renderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
+    mpPlayer->setRenderer(renderer);
     QWidget *r = 0;
     if (mpRenderer)
         r = mpRenderer->widget();
@@ -579,9 +581,6 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     //setInSize?
     mpPlayerLayout->addWidget(renderer->widget());
     resize(renderer->widget()->size());
-
-    renderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
-    mpPlayer->setRenderer(renderer);
 #if SLIDER_ON_VO
     if (mpTimeSlider) {
         mpTimeSlider->setParent(mpRenderer->widget());
@@ -879,11 +878,21 @@ void MainWindow::mouseMoveEvent(QMouseEvent *e)
 
 void MainWindow::wheelEvent(QWheelEvent *e)
 {
-    if (!mControlOn)
-        return;
     if (!mpRenderer || !mpRenderer->widget()) {
         return;
     }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    qreal deg = e->angleDelta().y()/8;
+#else
+    qreal deg = e->delta()/8;
+#endif //QT_VERSION
+#if WHEEL_SPEED
+    if (!mControlOn) {
+        qreal speed = mpPlayer->speed();
+        mpPlayer->setSpeed(qMax(0.01, speed + deg/15.0*0.02));
+        return;
+    }
+#endif //WHEEL_SPEED
     QPointF p = mpRenderer->widget()->mapFrom(this, e->pos());
     QPointF fp = mpRenderer->mapToFrame(p);
     if (fp.x() < 0)
@@ -898,11 +907,6 @@ void MainWindow::wheelEvent(QWheelEvent *e)
     QRectF viewport = QRectF(mpRenderer->mapToFrame(QPointF(0, 0)), mpRenderer->mapToFrame(QPointF(mpRenderer->rendererWidth(), mpRenderer->rendererHeight())));
     //qDebug("vo: (%.1f, %.1f)=> frame: (%.1f, %.1f)", p.x(), p.y(), fp.x(), fp.y());
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    qreal deg = e->angleDelta().y()/8;
-#else
-    qreal deg = e->delta()/8;
-#endif //QT_VERSION
     qreal zoom = 1.0 + deg*3.14/180.0;
     //qDebug("deg: %d, %d zoom: %.2f", e->angleDelta().x(), e->angleDelta().y(), zoom);
     QTransform m;
