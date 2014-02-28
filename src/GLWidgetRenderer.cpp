@@ -23,6 +23,7 @@
 #include "private/GLWidgetRenderer_p.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
+#include <QtCore/QtMath>
 #include <QResizeEvent>
 #include <QtOpenGL/QGLShaderProgram>
 #include <QtOpenGL/QGLShader>
@@ -316,7 +317,9 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
         // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
     for (int i = 0; i < fmt.planeCount(); ++i) {
-        texture_size[i].setWidth(AVALIGN(texture_size[i].width()/bytesOfGLFormat(data_format[i]), 4));
+        pad_width[i] = AVALIGN(qCeil((qreal)(texture_size[i].width() - pad_width[i])/(qreal)bytesOfGLFormat(data_format[i])), 4);
+        texture_size[i].setWidth(AVALIGN(qCeil((qreal)texture_size[i].width()/(qreal)bytesOfGLFormat(data_format[i])), 4));
+        qDebug("tex: %d, pad: %d", texture_size[i].width(), pad_width[i]);
     }
 
     if (!hasGLSL) {
@@ -375,12 +378,15 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
         //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
 
         texture_size.resize(fmt.planeCount());
+        pad_width.resize(fmt.planeCount());
         for (int i = 0; i < fmt.planeCount(); ++i) {
             // nv12 2nd plane
             qDebug("bytesPerLine %d = %d", i, video_frame.planeWidth(i));
             qDebug("planeHeight %d = %d", i, video_frame.planeHeight(i));
             // we have to consider size of opengl format
             texture_size[i] = QSize(video_frame.bytesPerLine(i), video_frame.planeHeight(i));
+            // FIXME: planeWidth now is wrong for nv12 like format
+            pad_width[i] = video_frame.planeWidth(i); //store width, modify later
         }
         if (!prepareShaderProgram(fmt)) {
 #endif //UPLOAD_ROI
@@ -565,8 +571,8 @@ void GLWidgetRenderer::drawFrame()
 #if ROI_TEXCOORDS
     const GLfloat kTexCoords[] = {
             (GLfloat)roi.x()/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width())/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width())/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+            (GLfloat)(roi.x() + roi.width() - d.pad_width[0])/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+            (GLfloat)(roi.x() + roi.width() - d.pad_width[0])/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
             (GLfloat)roi.x()/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
     };
 ///        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);

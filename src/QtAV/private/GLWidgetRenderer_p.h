@@ -133,6 +133,7 @@ public:
     bool update_texcoords;
     QVector<GLuint> textures; //texture ids. size is plane count
     QVector<QSize> texture_size;
+    QVector<int> pad_width; //the additional width for alignment
     QVector<GLint> internal_format;
     QVector<GLenum> data_format;
     GLuint program;
