@@ -39,6 +39,7 @@ class Q_AV_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
 public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
     virtual VideoRendererId id() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to

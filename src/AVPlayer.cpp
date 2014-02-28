@@ -39,7 +39,6 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/OutputSet.h>
 #include <QtAV/AVClock.h>
-#include <QtAV/QtAV_Compat.h>
 #include <QtAV/VideoCapture.h>
 #include <QtAV/VideoDecoderTypes.h>
 #include <QtAV/WidgetRenderer.h>
@@ -52,10 +51,12 @@
 
 #include <QIODevice>
 
+#include <QtAV/QtAV_Compat.h>
+
 namespace QtAV {
 
 static const int kPosistionCheckMS = 500;
-static const qint64 kSeekMS = 10000;
+static const qint64 kSeekMS = 4000;
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent)

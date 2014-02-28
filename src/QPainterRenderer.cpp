@@ -41,6 +41,11 @@ QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
     setOSDFilter(new OSDFilterQPainter());
 }
 
+bool QPainterRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
+{
+    return VideoFormat::isRGB(pixfmt);
+}
+
 int QPainterRenderer::filterContextType() const
 {
     return FilterContext::QtPainter;

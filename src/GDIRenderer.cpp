@@ -47,6 +47,11 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
+bool GDIRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
+{
+    return VideoFormat::isRGB(pixfmt);
+}
+
 QPaintEngine* GDIRenderer::paintEngine() const
 {
     return 0;

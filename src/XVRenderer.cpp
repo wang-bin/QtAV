@@ -45,6 +45,12 @@ XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
     setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
+// TODO: add yuv support
+bool XVRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
+{
+    return VideoFormat::isRGB(pixfmt);
+}
+
 bool XVRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(XVRenderer);

@@ -49,6 +49,12 @@ VideoRendererId QQuickItemRenderer::id() const
     return VideoRendererId_QQuickItem;
 }
 
+// TODO: yuv
+bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
+{
+    return VideoFormat::isRGB(pixfmt);
+}
+
 bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
 {
     DPTR_D(QQuickItemRenderer);

@@ -57,6 +57,7 @@ public:
       , osd_filter(0)
       , subtitle_filter(0)
       , default_event_filter(true)
+      , preferred_format(VideoFormat::Format_RGB32)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -110,6 +111,7 @@ public:
     Filter *osd_filter, *subtitle_filter; //should be at the end of list and draw top level
     bool default_event_filter;
     VideoFrame video_frame;
+    VideoFormat::PixelFormat preferred_format;
 };
 
 } //namespace QtAV

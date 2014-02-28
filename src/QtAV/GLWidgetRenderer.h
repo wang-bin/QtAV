@@ -36,6 +36,7 @@ class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer, pub
 public:
     GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     virtual VideoRendererId id() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
     virtual QWidget* widget() { return this; }
 
 protected:

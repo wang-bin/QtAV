@@ -35,6 +35,7 @@ class Q_AV_EXPORT GDIRenderer : public QWidget, public VideoRenderer
 public:
     GDIRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0); //offscreen?
     virtual VideoRendererId id() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
      * return 0 and set this flag

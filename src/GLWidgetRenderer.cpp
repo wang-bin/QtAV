@@ -499,6 +499,7 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
 {
     DPTR_INIT_PRIVATE(GLWidgetRenderer);
     DPTR_D(GLWidgetRenderer);
+    setPreferredPixelFormat(VideoFormat::Format_YUV420P);
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     /* To rapidly update custom widgets that constantly paint over their entire areas with
@@ -518,6 +519,11 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     ctx->paint_device = this;
     ctx->painter = d.painter;
     setOSDFilter(new OSDFilterQPainter());
+}
+
+bool GLWidgetRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
+{
+    return true; //TODO
 }
 
 bool GLWidgetRenderer::receiveFrame(const VideoFrame& frame)

@@ -81,9 +81,21 @@ public:
 
     bool receive(const VideoFrame& frame);
     void setVideoFormat(const VideoFormat& format);
-    VideoFormat& videoFormat();
-    const VideoFormat& videoFormat() const;
-    const VideoFormat& defaultVideoFormat() const;
+    //VideoFormat& videoFormat();
+    //const VideoFormat& videoFormat() const;
+    /*!
+     * \brief setPreferredPixelFormat
+     * \param pixfmt
+     *  pixfmt will be used if decoded format is not supported by this renderer. otherwise, use decoded format.
+     *  return false if \a pixfmt is not supported and not changed.
+     */
+    bool setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
+    /*!
+     * \brief preferredPixelFormat
+     * \return preferred pixel format. e.g. WidgetRenderer is rgb formats.
+     */
+    VideoFormat::PixelFormat preferredPixelFormat() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const = 0;
 
     //for testing performance
     void scaleInRenderer(bool q);

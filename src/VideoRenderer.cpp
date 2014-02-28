@@ -50,6 +50,21 @@ bool VideoRenderer::receive(const VideoFrame &frame)
     return receiveFrame(frame);
 }
 
+bool VideoRenderer::setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
+{
+    if (!isSupported(pixfmt)) {
+        qWarning("pixel format '%s' is not supported", VideoFormat(pixfmt).name().toUtf8().constData());
+        return false;
+    }
+    d_func().preferred_format = pixfmt;
+    return true;
+}
+
+VideoFormat::PixelFormat VideoRenderer::preferredPixelFormat() const
+{
+    return d_func().preferred_format;
+}
+
 void VideoRenderer::scaleInRenderer(bool q)
 {
     d_func().scale_in_renderer = q;
