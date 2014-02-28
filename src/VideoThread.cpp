@@ -80,19 +80,16 @@ VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
 
 void VideoThread::setBrightness(int val)
 {
-    DPTR_D(VideoThread);
     setEQ(val, 101, 101);
 }
 
 void VideoThread::setContrast(int val)
 {
-    DPTR_D(VideoThread);
     setEQ(101, val, 101);
 }
 
 void VideoThread::setSaturation(int val)
 {
-    DPTR_D(VideoThread);
     setEQ(101, 101, val);
 }
 
@@ -256,11 +253,12 @@ void VideoThread::run()
                 pkt = Packet();
             }
         }
-
-        if (skip_render)
-            continue;
         VideoFrame frame = dec->frame();
-        if (!frame.isValid())
+        if (!frame.isValid()) {
+            qWarning("invalid video frame");
+            continue;
+        }
+        if (skip_render)
             continue;
         d.conv->setInFormat(frame.pixelFormatFFmpeg());
         d.conv->setInSize(frame.width(), frame.height());
@@ -300,16 +298,41 @@ void VideoThread::run()
             qDebug("video thread stop before send decoded data");
             break;
         }
-        if (!frame.convertTo(VideoFormat::Format_RGB32)) {
-            /*
-             * TODO: send andway and let renderer deal with it?
-             * renderer may update background but no frame to graw, so flickers
-             * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
-             */
-            continue;
+
+        /*
+         * TODO: video renderers sorted by preferredPixelFormat() and convert in AVOutputSet.
+         * Convert only once for the renderers has the same preferredPixelFormat().
+         */
+        d.outputSet->lock();
+        QList<AVOutput *> outputs = d.outputSet->outputs();
+        if (outputs.size() > 1) {
+            if (!frame.convertTo(VideoFormat::Format_RGB32)) {
+                /*
+                 * use VideoFormat::Format_User to deliver user defined frame
+                 * renderer may update background but no frame to graw, so flickers
+                 * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
+                 */
+                d.outputSet->unlock();
+                continue;
+            }
+        } else {
+            VideoRenderer *vo = static_cast<VideoRenderer*>(outputs.first());
+            if (!vo->isSupported(frame.pixelFormat())) {
+                if (!frame.convertTo(vo->preferredPixelFormat())) {
+                    /*
+                     * use VideoFormat::Format_User to deliver user defined frame
+                     * renderer may update background but no frame to graw, so flickers
+                     * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
+                     */
+                    d.outputSet->unlock();
+                    continue;
+                }
+            }
         }
         d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
+        d.outputSet->unlock();
         d.capture->setPosition(pts);
+        // TODO: capture yuv frames
         if (d.capture->isRequested()) {
             bool auto_name = d.capture->name.isEmpty() && d.capture->autoSave();
             if (auto_name) {
