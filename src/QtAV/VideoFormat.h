@@ -67,10 +67,10 @@ public:
         Format_NV21,
         Format_IMC1,
         Format_IMC2,
-        Format_IMC3,
-        Format_IMC4,
-        Format_Y8,
-        Format_Y16,
+        Format_IMC3, //same as IMC1, swap U V
+        Format_IMC4, //same as IMC2, swap U V
+        Format_Y8, //GREY. single 8 bit Y plane
+        Format_Y16, //single 16 bit Y plane. LE
 
         Format_Jpeg,
 
@@ -157,6 +157,10 @@ public:
     bool isPlanar() const;
     bool isRGB() const;
     bool hasAlpha() const;
+
+    static bool isPlanar(PixelFormat pixfmt);
+    static bool isRGB(PixelFormat pixfmt);
+    static bool hasAlpha(PixelFormat pixfmt);
 
 private:
     QSharedDataPointer<VideoFormatPrivate> d;

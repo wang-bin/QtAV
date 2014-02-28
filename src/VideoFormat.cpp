@@ -602,4 +602,31 @@ bool VideoFormat::hasAlpha() const
     return (d->flags() & AV_PIX_FMT_FLAG_ALPHA) == AV_PIX_FMT_FLAG_ALPHA;
 }
 
+bool VideoFormat::isPlanar(PixelFormat pixfmt)
+{
+    return pixfmt == Format_YUV420P || pixfmt == Format_NV12 || pixfmt == Format_NV21 || pixfmt == Format_YV12
+        || pixfmt == Format_IMC1 || pixfmt == Format_IMC2 || pixfmt == Format_IMC3 || pixfmt == Format_IMC4
+        || pixfmt == Format_YUV444 || pixfmt == Format_AYUV444 || pixfmt == Format_AYUV444_Premultiplied
+            ;
+}
+
+bool VideoFormat::isRGB(PixelFormat pixfmt)
+{
+    return pixfmt == Format_RGB32 || pixfmt == Format_ARGB32 || pixfmt == Format_ARGB32_Premultiplied
+        || pixfmt == Format_BGR24 || pixfmt == Format_BGRA32 || pixfmt == Format_ARGB8565_Premultiplied
+        || pixfmt == Format_BGR565 || pixfmt == Format_RGB555 || pixfmt == Format_RGB565
+        || pixfmt == Format_BGR24 || pixfmt == Format_BGR32 || pixfmt == Format_BGR555
+        || pixfmt == Format_BGRA32_Premultiplied || pixfmt == Format_BGRA5658_Premultiplied
+            ;
+}
+
+bool VideoFormat::hasAlpha(PixelFormat pixfmt)
+{
+    return pixfmt == Format_ARGB32 || pixfmt == Format_BGRA32
+        || pixfmt == Format_ARGB32_Premultiplied || pixfmt == Format_BGRA32_Premultiplied
+        || pixfmt == Format_ARGB8565_Premultiplied || pixfmt == Format_BGRA5658_Premultiplied
+        || pixfmt == Format_AYUV444 || pixfmt == Format_AYUV444_Premultiplied
+            ;
+}
+
 } //namespace QtAV
