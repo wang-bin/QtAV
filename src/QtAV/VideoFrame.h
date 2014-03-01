@@ -68,8 +68,14 @@ public:
     //int width(int plane = 0) const?
     int width() const;
     int height() const;
+    // plane width without padded bytes.
+    int effectivePlaneWidth(int plane) const;
+    // plane width with padded bytes for alignment.
     int planeWidth(int plane) const;
     int planeHeight(int plane) const;
+
+    // no padded bytes
+    int effectiveBytesPerLine(int plane) const;
 
     //use ptr instead of ImageConverterId to avoid allocating memory
     // Id can be used in VideoThread

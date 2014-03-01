@@ -258,12 +258,16 @@ int VideoFrame::height() const
     return d_func()->height;
 }
 
+int VideoFrame::effectivePlaneWidth(int plane) const
+{
+    Q_D(const VideoFrame);
+    return effectiveBytesPerLine(plane)/d->format.bytesPerPixel(plane);
+}
+
 int VideoFrame::planeWidth(int plane) const
 {
     Q_D(const VideoFrame);
-    if (plane == 0)
-        return d->width;
-    return d->format.chromaWidth(d->width);
+    return bytesPerLine(plane)/d->format.bytesPerPixel(plane);
 }
 
 int VideoFrame::planeHeight(int plane) const
@@ -272,6 +276,12 @@ int VideoFrame::planeHeight(int plane) const
     if (plane == 0)
         return d->height;
     return d->format.chromaHeight(d->height);
+}
+
+int VideoFrame::effectiveBytesPerLine(int plane) const
+{
+    Q_D(const VideoFrame);
+    return d->format.bytesPerLine(width(), plane);
 }
 
 void VideoFrame::setImageConverter(ImageConverter *conv)
