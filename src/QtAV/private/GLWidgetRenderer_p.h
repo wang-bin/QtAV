@@ -35,6 +35,7 @@ public:
         VideoRendererPrivate()
       , hasGLSL(true)
       , update_texcoords(true)
+      , effective_tex_width_ratio(1)
       , program(0)
       , vert(0)
       , frag(0)
@@ -133,7 +134,8 @@ public:
     bool update_texcoords;
     QVector<GLuint> textures; //texture ids. size is plane count
     QVector<QSize> texture_size;
-    QVector<int> pad_width; //the additional width for alignment
+    QVector<int> effective_tex_width; //without additional width for alignment
+    qreal effective_tex_width_ratio;
     QVector<GLint> internal_format;
     QVector<GLenum> data_format;
     GLuint program;

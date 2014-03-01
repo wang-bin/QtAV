@@ -317,9 +317,9 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
         // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
     for (int i = 0; i < fmt.planeCount(); ++i) {
-        pad_width[i] = AVALIGN(qCeil((qreal)(texture_size[i].width() - pad_width[i])/(qreal)bytesOfGLFormat(data_format[i])), 4);
+        effective_tex_width[i] = AVALIGN(qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bytesOfGLFormat(data_format[i])), 4);
         texture_size[i].setWidth(AVALIGN(qCeil((qreal)texture_size[i].width()/(qreal)bytesOfGLFormat(data_format[i])), 4));
-        qDebug("tex: %d, pad: %d", texture_size[i].width(), pad_width[i]);
+        qDebug("tex: %d, pad: %d", texture_size[i].width(), effective_tex_width[i]);
     }
 
     if (!hasGLSL) {
@@ -378,16 +378,17 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
         //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
 
         texture_size.resize(fmt.planeCount());
-        pad_width.resize(fmt.planeCount());
+        effective_tex_width.resize(fmt.planeCount());
         for (int i = 0; i < fmt.planeCount(); ++i) {
-            // nv12 2nd plane
-            qDebug("bytesPerLine %d = %d", i, video_frame.planeWidth(i));
+            qDebug("bpl %d: pad = %d, effective = %d", i, video_frame.bytesPerLine(i), video_frame.effectiveBytesPerLine(i));
+            qDebug("plane width %d: pad = %d, effective = %d", i, video_frame.planeWidth(i), video_frame.effectivePlaneWidth(i));
             qDebug("planeHeight %d = %d", i, video_frame.planeHeight(i));
-            // we have to consider size of opengl format
+            // we have to consider size of opengl format. set bytesPerLine here and change to width later
             texture_size[i] = QSize(video_frame.bytesPerLine(i), video_frame.planeHeight(i));
-            // FIXME: planeWidth now is wrong for nv12 like format
-            pad_width[i] = video_frame.planeWidth(i); //store width, modify later
+            effective_tex_width[i] = video_frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
+            effective_tex_width_ratio = qMin(1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
         }
+        qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
         if (!prepareShaderProgram(fmt)) {
 #endif //UPLOAD_ROI
             qWarning("shader program create error...");
@@ -575,11 +576,14 @@ void GLWidgetRenderer::drawFrame()
     }
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
+/*!
+  tex coords: ROI/frameRect()*effective_tex_width_ratio
+*/
     const GLfloat kTexCoords[] = {
-            (GLfloat)roi.x()/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width() - d.pad_width[0])/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width() - d.pad_width[0])/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
-            (GLfloat)roi.x()/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+            (GLfloat)roi.x()*d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+            (GLfloat)(roi.x() + roi.width())*d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+            (GLfloat)(roi.x() + roi.width())*d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+            (GLfloat)roi.x()*d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
     };
 ///        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
 ///        glEnableVertexAttribArray(d.a_TexCoords);
