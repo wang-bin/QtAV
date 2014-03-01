@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,16 +23,62 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
 
+template<typename ID, typename Factory>
+static QStringList idsToNames(QVector<ID> ids) {
+    QStringList decs;
+    foreach (ID id, ids) {
+        decs.append(Factory::name(id).c_str());
+    }
+    return decs;
+}
+
+template<typename ID, typename Factory>
+static QVector<ID> idsFromNames(const QStringList& names) {
+    QVector<ID> decs;
+    foreach (QString name, names) {
+        if (name.isEmpty())
+            continue;
+        ID id = Factory::id(name.toStdString());
+        if (id == 0)
+            continue;
+        decs.append(id);
+    }
+    return decs;
+}
+
+static inline QStringList VideoDecodersToNames(QVector<QtAV::VideoDecoderId> ids) {
+    return idsToNames<QtAV::VideoDecoderId, VideoDecoderFactory>(ids);
+}
+
+static inline QVector<VideoDecoderId> VideoDecodersFromNames(const QStringList& names) {
+    return idsFromNames<QtAV::VideoDecoderId, VideoDecoderFactory>(names);
+}
+
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
+  , mAutoPlay(false)
+  , mAutoLoad(false)
+  , mLoopCount(1)
+  , mPlaybackState(StoppedState)
   , mpPlayer(0)
 {
     mpPlayer = new AVPlayer(this);
-    mpPlayer->setPlayerEventFilter(0);
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
-    connect(mpPlayer, SIGNAL(positionChanged(qint64)), SLOT(positionChanged()));
+    connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
+
+    mVideoCodecs << "FFmpeg";
+}
+
+bool QmlAVPlayer::hasAudio() const
+{
+    return mpPlayer->audioStreamCount() > 0;
+}
+
+bool QmlAVPlayer::hasVideo() const
+{
+    return mpPlayer->videoStreamCount() > 0;
 }
 
 QUrl QmlAVPlayer::source() const
@@ -42,12 +88,90 @@ QUrl QmlAVPlayer::source() const
 
 void QmlAVPlayer::setSource(const QUrl &url)
 {
+    if (mSource == url)
+        return;
     mSource = url;
     if (mSource.isLocalFile()) {
         mpPlayer->setFile(mSource.toLocalFile());
     } else {
         mpPlayer->setFile(mSource.toString());
     }
+    emit sourceChanged(); //TODO: emit only when player loaded a new source
+    // TODO: in componentComplete()?
+    if (mAutoLoad || mAutoPlay) {
+        mpPlayer->stop();
+        mpPlayer->load();
+    }
+    if (mAutoPlay) {
+        play();
+    }
+}
+
+bool QmlAVPlayer::isAutoLoad() const
+{
+    return mAutoLoad;
+}
+
+void QmlAVPlayer::setAutoLoad(bool autoLoad)
+{
+    if (mAutoLoad == autoLoad)
+        return;
+
+    mAutoLoad = autoLoad;
+    emit autoLoadChanged();
+}
+
+bool QmlAVPlayer::autoPlay() const
+{
+    return mAutoPlay;
+}
+
+void QmlAVPlayer::setAutoPlay(bool autoplay)
+{
+    if (mAutoPlay == autoplay)
+        return;
+
+    mAutoPlay = autoplay;
+    emit autoPlayChanged();
+}
+
+QStringList QmlAVPlayer::videoCodecs() const
+{
+    return VideoDecodersToNames(QtAV::GetRegistedVideoDecoderIds());
+}
+
+void QmlAVPlayer::setVideoCodecPriority(const QStringList &p)
+{
+    if (!mpPlayer) {
+        qWarning("player not ready");
+        return;
+    }
+    mVideoCodecs = p;
+    mpPlayer->setPriority(VideoDecodersFromNames(p));
+    emit videoCodecPriorityChanged();
+}
+
+QStringList QmlAVPlayer::videoCodecPriority() const
+{
+    return mVideoCodecs;
+}
+
+int QmlAVPlayer::loopCount() const
+{
+    return mLoopCount;
+}
+
+void QmlAVPlayer::setLoopCount(int c)
+{
+    if (c == 0)
+        c = 1;
+    else if (c < -1)
+        c = -1;
+    if (mLoopCount == c) {
+        return;
+    }
+    mLoopCount = c;
+    emit loopCountChanged();
 }
 
 qreal QmlAVPlayer::volume() const
@@ -109,10 +233,12 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
     mPlaybackState = playbackState;
     switch (mPlaybackState) {
     case PlayingState:
-        if (mpPlayer->isPaused())
+        if (mpPlayer->isPaused()) {
             mpPlayer->pause(false);
-        else
+        } else {
+            mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->play();
+        }
         break;
     case PausedState:
         mpPlayer->pause(true);
@@ -145,33 +271,26 @@ AVPlayer* QmlAVPlayer::player()
 
 void QmlAVPlayer::play(const QUrl &url)
 {
+    if (mSource == url)
+        return;
     setSource(url);
+    setPlaybackState(StoppedState);
     play();
 }
 
 void QmlAVPlayer::play()
 {
-    mpPlayer->play();
+    setPlaybackState(PlayingState);
 }
 
 void QmlAVPlayer::pause()
 {
-    mpPlayer->pause(true);
-}
-
-void QmlAVPlayer::resume()
-{
-    mpPlayer->pause(false);
-}
-
-void QmlAVPlayer::togglePause()
-{
-    mpPlayer->togglePause();
+    setPlaybackState(PausedState);
 }
 
 void QmlAVPlayer::stop()
 {
-    mpPlayer->stop();
+    setPlaybackState(StoppedState);
 }
 
 void QmlAVPlayer::nextFrame()

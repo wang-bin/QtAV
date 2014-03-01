@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,6 +23,7 @@
 #define QTAV_AUDIOFORMAT_H
 
 #include <QtCore/QSharedDataPointer>
+#include <QtCore/QString>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -70,6 +71,7 @@ public:
 
     bool isValid() const;
     bool isPlanar() const;
+    int planeCount() const;
 
     void setSampleRate(int sampleRate);
     int sampleRate() const;
@@ -82,24 +84,33 @@ public:
     //currently a limitted set of channel layout is supported. call setChannelLayoutFFmpeg is recommended
     void setChannelLayout(ChannelLayout layout);
     ChannelLayout channelLayout() const;
+    QString channelLayoutName() const;
     /*!
      * setChannels also sets the default layout for this channels if channels does not match.
      */
     void setChannels(int channels);
+    /*!
+     * \brief channels
+     *   For planar format, channel count == plane count. For packed format, plane count is 1
+     * \return
+     */
     int channels() const;
 
     void setSampleFormat(SampleFormat sampleFormat);
     SampleFormat sampleFormat() const;
     void setSampleFormatFFmpeg(int ffSampleFormat);
     int sampleFormatFFmpeg() const;
+    QString sampleFormatName() const;
 
     // Helper functions
+    // in microseconds
     qint32 bytesForDuration(qint64 duration) const;
     qint64 durationForBytes(qint32 byteCount) const;
 
     qint32 bytesForFrames(qint32 frameCount) const;
     qint32 framesForBytes(qint32 byteCount) const;
 
+    // in microseconds
     qint32 framesForDuration(qint64 duration) const;
     qint64 durationForFrames(qint32 frameCount) const;
 

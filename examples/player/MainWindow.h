@@ -6,6 +6,7 @@
 class QWidgetAction;
 namespace QtAV {
 class AudioOutput;
+class AVError;
 class AVPlayer;
 class AVClock;
 class VideoRenderer;
@@ -77,23 +78,23 @@ private slots:
 
     void onTimeSliderHover(int pos, int value);
     void onTimeSliderLeave();
+    void handleError(const QtAV::AVError& e);
+    void onMediaStatusChanged();
 
 protected:
     virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
     virtual void timerEvent(QTimerEvent *);
+    virtual void keyPressEvent(QKeyEvent *e);
+    virtual void keyReleaseEvent(QKeyEvent *e);
+    void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
-#ifdef Q_OS_WIN
-    //Qt5
-    virtual bool nativeEvent(const QByteArray & eventType, void * message, long * result);
-    //Qt4
-    virtual bool winEvent(MSG *message, long *result);
-#endif //Q_OS_WIN
+    void wheelEvent(QWheelEvent *e);
 
 private:
     bool mIsReady, mHasPendingPlay;
     bool mNullAO;
-    bool mScreensaver;
+    bool mControlOn;
     int mCursorTimer;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
     int mRepeateMax;
@@ -133,6 +134,8 @@ private:
     VideoEQConfigPage *mpVideoEQ;
 
     PlayList *mpPlayList, *mpHistory;
+
+    QPointF mGlobalMouse;
 };
 
 #endif // MAINWINDOW_H

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -147,11 +147,45 @@ QString aboutQtAV_HTML()
     static QString about = "<h3>QtAV " QTAV_VERSION_STR_LONG "</h3>\n"
             "<p>" + QObject::tr("A media playing library base on Qt and FFmpeg.\n") + "</p>"
             "<p>" + QObject::tr("Distributed under the terms of LGPLv2.1 or later.\n") + "</p>"
-            "<p>Copyright (C) 2012-2013 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
+            "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
             "<p>" + QObject::tr("Shanghai University->S3 Graphics, Shanghai, China\n") + "</p>"
             "<p>" + QObject::tr("Source") + ": <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
             "<p>" + QObject::tr("Downloads") + ": <a href='https://sourceforge.net/projects/qtav'>https://sourceforge.net/projects/qtav</a></p>";
     return about;
 }
 
+void setFFmpegLogHandler(void (*callback)(void *, int, const char *, va_list))
+{
+    av_log_set_callback(callback);
+}
+
+static void qtav_ffmpeg_log_callback(void* , int level,const char* fmt, va_list vl)
+{
+    QString qmsg = "{FFmpeg} " + QString().vsprintf(fmt, vl);
+    qmsg = qmsg.trimmed();
+    QtMsgType mt = QtDebugMsg;
+    if (level == AV_LOG_WARNING || level == AV_LOG_ERROR)
+        mt = QtWarningMsg;
+    else if (level == AV_LOG_FATAL)
+        mt = QtCriticalMsg;
+    else if (level == AV_LOG_PANIC)
+        mt = QtFatalMsg;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    QMessageLogContext ctx;
+    qt_message_output(mt, ctx, qmsg);
+#else
+    qt_message_output(mt, qPrintable(qmsg));
+#endif //QT_VERSION
+}
+
+// TODO: static link. move all into 1
+namespace {
+class InitFFmpegLog {
+public:
+    InitFFmpegLog() {
+        setFFmpegLogHandler(qtav_ffmpeg_log_callback);
+    }
+};
+InitFFmpegLog fflog;
+}
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -173,6 +173,11 @@ bool AudioFormat::isPlanar() const
     return d->planar;
 }
 
+int AudioFormat::planeCount() const
+{
+    return isPlanar() ? 1 : channels();
+}
+
 /*!
    Sets the sample rate to \a samplerate Hertz.
 
@@ -219,6 +224,13 @@ void AudioFormat::setChannelLayout(ChannelLayout layout)
 AudioFormat::ChannelLayout AudioFormat::channelLayout() const
 {
     return d->channel_layout;
+}
+
+QString AudioFormat::channelLayoutName() const
+{
+    char cl[128];
+    av_get_channel_layout_string(cl, sizeof(cl), -1, channelLayoutFFmpeg()); //TODO: ff version
+    return cl;
 }
 
 /*!
@@ -288,6 +300,11 @@ void AudioFormat::setSampleFormatFFmpeg(int ffSampleFormat)
 int AudioFormat::sampleFormatFFmpeg() const
 {
     return d->sample_format;
+}
+
+QString AudioFormat::sampleFormatName() const
+{
+    return av_get_sample_fmt_name((AVSampleFormat)sampleFormatFFmpeg());
 }
 
 

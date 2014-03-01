@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,7 +22,7 @@
 #ifndef QAV_VIDEORENDERER_P_H
 #define QAV_VIDEORENDERER_P_H
 
-#include <private/AVOutput_p.h>
+#include <QtAV/private/AVOutput_p.h>
 //#include <QtAV/ImageConverter.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtCore/QMutex>
@@ -54,17 +54,15 @@ public:
       , out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
       , quality(VideoRenderer::QualityBest)
-      , widget_holder(0)
-      , item_holder(0)
       , osd_filter(0)
       , subtitle_filter(0)
       , default_event_filter(true)
+      , preferred_format(VideoFormat::Format_RGB32)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
     }
     virtual ~VideoRendererPrivate(){
-        widget_holder = 0;
     }
     void computeOutParameters(qreal outAspectRatio) {
         qreal rendererAspectRatio = qreal(renderer_width)/qreal(renderer_height);
@@ -109,15 +107,11 @@ public:
     //out_rect: the displayed video frame out_rect in the renderer
     QRect out_rect; //TODO: out_out_rect
     QRectF roi;
-    /* Stores but not own the ptr if renderer is a subclass of QWidget.
-     * Some operations are based on QWidget
-     */
-    QWidget *widget_holder;
-    QGraphicsItem *item_holder;
 
     Filter *osd_filter, *subtitle_filter; //should be at the end of list and draw top level
     bool default_event_filter;
     VideoFrame video_frame;
+    VideoFormat::PixelFormat preferred_format;
 };
 
 } //namespace QtAV

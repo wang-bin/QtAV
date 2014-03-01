@@ -20,6 +20,7 @@
 #ifndef FACTORYDEFINE_H
 #define FACTORYDEFINE_H
 
+#include <stdio.h>
 #include <string>
 #include <vector>
 

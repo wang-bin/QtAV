@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -52,11 +52,9 @@ public:
         , textures(4, 0)
         , conv(0)
     {
-        /*
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
         textures.resize(format.planeCount());
-        */
     }
     ~VideoFramePrivate() {}
     bool convertTo(const VideoFormat& fmt) {
@@ -76,17 +74,19 @@ public:
         conv->setInFormat(format.pixelFormatFFmpeg());
         conv->setOutFormat(fffmt);
         conv->setInSize(width, height);
-        if (!conv->convert(planes.data(), line_sizes.data()))
+        if (!conv->convert(planes.data(), line_sizes.data())) {
+            format.setPixelFormat(VideoFormat::Format_Invalid);
             return false;
+        }
         format.setPixelFormatFFmpeg(fffmt);
         data = conv->outData();
         planes = conv->outPlanes();
         line_sizes = conv->outLineSizes();
-        /*
-        planes.resize(fmt.planeCount());
-        line_sizes.resize(fmt.planeCount());
-        textures.resize(fmt.planeCount());
-        */
+
+        planes.resize(format.planeCount());
+        line_sizes.resize(format.planeCount());
+        textures.resize(format.planeCount());
+
         return true;
     }
     bool convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi) {
@@ -94,16 +94,19 @@ public:
                 && roi == QRectF(0, 0, width, height)
                 && dstSize == roi.size())
             return true;
-        if (!conv)
+        if (!conv) {
+            format.setPixelFormat(VideoFormat::Format_Invalid);
             return false;
+        }
+        format = fmt;
         data = conv->outData();
         planes = conv->outPlanes();
         line_sizes = conv->outLineSizes();
-        /*
+
         planes.resize(fmt.planeCount());
         line_sizes.resize(fmt.planeCount());
         textures.resize(fmt.planeCount());
-        */
+
         return false;
     }
 
@@ -129,6 +132,7 @@ VideoFrame::VideoFrame(const QByteArray& data, int width, int height, const Vide
 {
     Q_D(VideoFrame);
     d->data = data;
+    init();
 }
 
 VideoFrame::VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat &format)
@@ -141,6 +145,9 @@ VideoFrame::VideoFrame(const QVector<int>& textures, int width, int height, cons
 VideoFrame::VideoFrame(const QImage& image)
     : Frame(*new VideoFramePrivate(image.width(), image.height(), VideoFormat(image.format())))
 {
+    // TODO: call const image.bits()?
+    setBits((uchar*)image.bits(), 0);
+    setBytesPerLine(image.bytesPerLine(), 0);
 }
 
 /*!
@@ -168,6 +175,7 @@ VideoFrame::~VideoFrame()
 {
 }
 
+//TODO: use av_picture_copy(AVPicture*, const AVPicture*, AVPixelFormat, width, height)
 VideoFrame VideoFrame::clone() const
 {
     Q_D(const VideoFrame);
@@ -204,16 +212,7 @@ int VideoFrame::allocate()
     //if (d->data_out.size() < bytes) {
         d->data.resize(bytes);
     //}
-    AVPicture pic;
-    avpicture_fill(
-            &pic,
-            reinterpret_cast<uint8_t*>(d->data.data()),
-            (AVPixelFormat)pixelFormatFFmpeg(),
-            width(),
-            height()
-            );
-    setBits(pic.data);
-    setBytesPerLine(pic.linesize);
+    init();
     return bytes;
 }
 
@@ -243,28 +242,6 @@ bool VideoFrame::isValid() const
     return d->width > 0 && d->height > 0 && d->format.isValid(); //data not empty?
 }
 
-void VideoFrame::init()
-{
-    Q_D(VideoFrame);
-    AVPicture picture;
-    AVPixelFormat fff = (AVPixelFormat)d->format.pixelFormatFFmpeg();
-    int bytes = avpicture_get_size(fff, width(), height());
-    d->data.resize(bytes);
-    avpicture_fill(&picture, reinterpret_cast<uint8_t*>(d->data.data()), fff, width(), height());
-    for (int i = 0; i < d->format.planeCount(); ++i) {
-        setBits(picture.data[i], i);
-        setBytesPerLine(picture.linesize[i], i);
-    }
-}
-
-int VideoFrame::bytesPerLine(int plane) const
-{
-    Q_D(const VideoFrame);
-    if (plane >= planeCount())
-        return 0;
-    return  d->line_sizes[plane];// (d->width * d->format.bitsPerPixel(plane) + 7) >> 3;
-}
-
 QSize VideoFrame::size() const
 {
     Q_D(const VideoFrame);
@@ -281,6 +258,32 @@ int VideoFrame::height() const
     return d_func()->height;
 }
 
+int VideoFrame::effectivePlaneWidth(int plane) const
+{
+    Q_D(const VideoFrame);
+    return effectiveBytesPerLine(plane)/d->format.bytesPerPixel(plane);
+}
+
+int VideoFrame::planeWidth(int plane) const
+{
+    Q_D(const VideoFrame);
+    return bytesPerLine(plane)/d->format.bytesPerPixel(plane);
+}
+
+int VideoFrame::planeHeight(int plane) const
+{
+    Q_D(const VideoFrame);
+    if (plane == 0)
+        return d->height;
+    return d->format.chromaHeight(d->height);
+}
+
+int VideoFrame::effectiveBytesPerLine(int plane) const
+{
+    Q_D(const VideoFrame);
+    return d->format.bytesPerLine(width(), plane);
+}
+
 void VideoFrame::setImageConverter(ImageConverter *conv)
 {
     d_func()->conv = conv;
@@ -291,7 +294,7 @@ bool VideoFrame::convertTo(const VideoFormat& fmt)
     Q_D(VideoFrame);
     if (fmt == d->format) //TODO: check whether own the data
         return true;
-    return d_func()->convertTo(fmt);
+    return d->convertTo(fmt);
 }
 
 bool VideoFrame::convertTo(VideoFormat::PixelFormat fmt)
@@ -330,6 +333,18 @@ int VideoFrame::texture(int plane) const
     if (d->textures.size() <= plane)
         return -1;
     return d->textures[plane];
+}
+
+void VideoFrame::init()
+{
+    Q_D(VideoFrame);
+    AVPicture picture;
+    AVPixelFormat fff = (AVPixelFormat)d->format.pixelFormatFFmpeg();
+    //int bytes = avpicture_get_size(fff, width(), height());
+    //d->data.resize(bytes);
+    avpicture_fill(&picture, reinterpret_cast<uint8_t*>(d->data.data()), fff, width(), height());
+    setBits(picture.data);
+    setBytesPerLine(picture.linesize);
 }
 
 } //namespace QtAV

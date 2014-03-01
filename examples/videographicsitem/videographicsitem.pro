@@ -1,4 +1,4 @@
-#QT       += opengl
+QT       += opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = videographicsitem

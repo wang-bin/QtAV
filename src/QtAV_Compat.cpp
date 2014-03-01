@@ -141,6 +141,7 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
 
 #endif //AV_VERSION_INT(52, 13, 100)
 
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
 {
     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(pix_fmt);
@@ -155,4 +156,4 @@ int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
         ret += planes[i];
     return ret;
 }
-
+#endif //AV_VERSION_INT(52, 38, 100)

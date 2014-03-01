@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,7 +29,6 @@ Direct2DRenderer::Direct2DRenderer(QWidget *parent, Qt::WindowFlags f):
     QWidget(parent, f),VideoRenderer(*new Direct2DRendererPrivate())
 {
     DPTR_INIT_PRIVATE(Direct2DRenderer);
-    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     /* To rapidly update custom widgets that constantly paint over their entire areas with
@@ -43,9 +42,11 @@ Direct2DRenderer::Direct2DRenderer(QWidget *parent, Qt::WindowFlags f):
     setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
-Direct2DRenderer::~Direct2DRenderer()
+bool Direct2DRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
+    return VideoFormat::isRGB(pixfmt);
 }
+
 
 bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
 {

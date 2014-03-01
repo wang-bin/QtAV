@@ -12,7 +12,7 @@ TVView::TVView(QWidget *parent) :
     QWidget(parent)
 {
     setWindowTitle(tr("Online TV channels"));
-    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+    //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
     mpView = new QTreeWidget();
     mpView->setHeaderHidden(true);
     mpView->setColumnCount(1);

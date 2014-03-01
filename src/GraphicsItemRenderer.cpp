@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -33,7 +33,6 @@ namespace QtAV {
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
     :GraphicsWidget(parent),QPainterRenderer(*new GraphicsItemRendererPrivate())
 {
-    d_func().item_holder = this;
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
 #if CONFIG_GRAPHICSWIDGET
@@ -44,16 +43,11 @@ GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
 GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGraphicsItem *parent)
     :GraphicsWidget(parent),QPainterRenderer(d)
 {
-    d_func().item_holder = this;
     setFlag(ItemIsFocusable); //receive key events
     //setAcceptHoverEvents(true);
 #if CONFIG_GRAPHICSWIDGET
     setFocusPolicy(Qt::ClickFocus); //for widget
 #endif //CONFIG_GRAPHICSWIDGET
-}
-
-GraphicsItemRenderer::~GraphicsItemRenderer()
-{
 }
 
 bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)

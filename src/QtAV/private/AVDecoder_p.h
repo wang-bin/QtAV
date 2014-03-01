@@ -23,6 +23,7 @@
 #define QTAV_AVDECODER_P_H
 
 #include <QtCore/QByteArray>
+#include <QtCore/QHash>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
 #include <QtAV/QtAV_Compat.h>
@@ -42,6 +43,7 @@ public:
       , undecoded_size(0)
       , thread_slice(1)
       , low_resolution(0)
+      , dict(0)
     {
         frame = avcodec_alloc_frame();
         threads = qMax(0, QThread::idealThreadCount()); //av_cpu_count is not available for old ffmpeg. c++11 thread::hardware_concurrency()
@@ -50,6 +52,9 @@ public:
         if (frame) {
             av_free(frame);
             frame = 0;
+        }
+        if (dict) {
+            av_dict_free(&dict);
         }
     }
     virtual bool open() {return true;}
@@ -68,6 +73,8 @@ public:
     bool thread_slice;
     int low_resolution;
     QString name;
+    QHash<QByteArray, QByteArray> options;
+    AVDictionary *dict;
 };
 
 } //namespace QtAV

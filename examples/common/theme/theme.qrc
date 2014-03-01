@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/theme">
+        <file>default/backward.svg</file>
+        <file>default/forward.svg</file>
+        <file>default/help.svg</file>
+        <file>default/info.svg</file>
+        <file>default/open.svg</file>
+        <file>default/pause.svg</file>
+        <file>default/play.svg</file>
+        <file>default/stop.svg</file>
+        <file>default/fullscreen.svg</file>
+        <file>default/close.svg</file>
+    </qresource>
+</RCC>

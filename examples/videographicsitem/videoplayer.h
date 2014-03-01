@@ -1,6 +1,6 @@
 /******************************************************************************
     this file is part of QtAV examples
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -34,9 +34,11 @@ public:
     ~VideoPlayer();
 
     QSize sizeHint() const { return QSize(720, 640); }
+    void play(const QString& file);
 
 private slots:
     void rotateVideo(int angle);
+    void open();
 
 private:
     QtAV::AVPlayer mediaPlayer;

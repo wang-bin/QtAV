@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -48,6 +48,21 @@ bool VideoRenderer::receive(const VideoFrame &frame)
     DPTR_D(VideoRenderer);
     setInSize(frame.width(), frame.height());
     return receiveFrame(frame);
+}
+
+bool VideoRenderer::setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
+{
+    if (!isSupported(pixfmt)) {
+        qWarning("pixel format '%s' is not supported", VideoFormat(pixfmt).name().toUtf8().constData());
+        return false;
+    }
+    d_func().preferred_format = pixfmt;
+    return true;
+}
+
+VideoFormat::PixelFormat VideoRenderer::preferredPixelFormat() const
+{
+    return d_func().preferred_format;
 }
 
 void VideoRenderer::scaleInRenderer(bool q)
@@ -234,14 +249,23 @@ QRect VideoRenderer::realROI() const
     return r;
 }
 
-QWidget* VideoRenderer::widget()
+QPointF VideoRenderer::mapToFrame(const QPointF &p) const
 {
-    return d_func().widget_holder;
+    QRectF roi = realROI();
+    // zoom=roi.w/roi.h>vo.w/vo.h?roi.w/vo.w:roi.h/vo.h
+    qreal zoom = qMax(roi.width()/rendererWidth(), roi.height()/rendererHeight());
+    QPointF delta = p - QPointF(rendererWidth()/2, rendererHeight()/2);
+    return roi.center() + delta * zoom;
 }
 
-QGraphicsItem* VideoRenderer::graphicsItem()
+QPointF VideoRenderer::mapFromFrame(const QPointF &p) const
 {
-    return d_func().item_holder;
+    QRectF roi = realROI();
+    // zoom=roi.w/roi.h>vo.w/vo.h?roi.w/vo.w:roi.h/vo.h
+    qreal zoom = qMax(roi.width()/rendererWidth(), roi.height()/rendererHeight());
+    // (p-roi.c)/zoom + c
+    QPointF delta = p - roi.center();
+    return QPointF(rendererWidth()/2, rendererHeight()/2) + delta / zoom;
 }
 
 OSDFilter *VideoRenderer::setOSDFilter(OSDFilter *filter)

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -54,8 +54,10 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
         return false;
     DPTR_D(VideoDecoderFFmpeg);
     AVPacket packet;
-    av_new_packet(&packet, encoded.size());
-    memcpy(packet.data, encoded.data(), encoded.size());
+    av_init_packet(&packet);
+    packet.size = encoded.size();
+    packet.data = (uint8_t*)encoded.constData();
+
 //TODO: use AVPacket directly instead of Packet?
     //AVStream *stream = format_context->streams[stream_idx];
 

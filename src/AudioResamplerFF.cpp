@@ -71,6 +71,7 @@ bool AudioResamplerFF::convert(const quint8 **data)
     uint8_t *out[] = {(uint8_t*)d.data_out.data()};
     //number of input/output samples available in one channel
     int converted_samplers_per_channel = swr_convert(d.context, out, d.out_samples_per_channel, data, d.in_samples_per_channel);
+    d.out_samples_per_channel = converted_samplers_per_channel;
     if (converted_samplers_per_channel < 0) {
         qWarning("[AudioResamplerFF] %s", av_err2str(converted_samplers_per_channel));
         return false;
@@ -94,7 +95,6 @@ bool AudioResamplerFF::prepare()
         return false;
     }
     //TODO: also in do this statistics
-    qDebug("in cs: %d, cl: %lld", d.in_format.channels(), d.in_format.channelLayoutFFmpeg());
     if (!d.in_format.channels()) {
         if (!d.in_format.channelLayoutFFmpeg()) { //FIXME: already return
             d.in_format.setChannels(2);
@@ -110,7 +110,6 @@ bool AudioResamplerFF::prepare()
         qWarning("channel layout not available, use default layout");
         d.in_format.setChannelLayoutFFmpeg(av_get_default_channel_layout(d.in_format.channels()));
     }
-    qDebug("in cs: %d, cl: %lld", d.in_format.channels(), d.in_format.channelLayoutFFmpeg());
     if (!d.out_format.channels()) {
         if (d.out_format.channelLayoutFFmpeg()) {
             d.out_format.setChannels(av_get_channel_layout_nb_channels(d.out_format.channelLayoutFFmpeg()));
@@ -128,7 +127,6 @@ bool AudioResamplerFF::prepare()
         d.out_format.setChannelLayoutFFmpeg(av_get_default_channel_layout(d.out_format.channels()));
     if (!d.out_format.sampleRate())
         d.out_format.setSampleRate(inAudioFormat().sampleRate());
-    qDebug("out cs: %d, cl: %lld", d.out_format.channels(), d.out_format.channelLayoutFFmpeg());
     if (d.speed <= 0)
         d.speed = 1.0;
     //DO NOT set sample rate here, we should keep the original and multiply 1/speed when needed
@@ -156,12 +154,14 @@ bool AudioResamplerFF::prepare()
     av_opt_set_int(d.context, "out_sample_rate",       d.out_format.sampleRate(), 0);
     av_opt_set_sample_fmt(d.context, "out_sample_fmt", (enum AVSampleFormat)out_format.sampleFormatFFmpeg(), 0);
     */
-    av_log(NULL, AV_LOG_INFO, "out cl: %lld\n", d.out_format.channelLayoutFFmpeg());
-    av_log(NULL, AV_LOG_INFO, "out fmt: %d\n", d.out_format.sampleFormat());
-    av_log(NULL, AV_LOG_INFO, "out freq: %d\n", d.out_format.sampleRate());
-    av_log(NULL, AV_LOG_INFO, "in cl: %lld\n", d.in_format.channelLayoutFFmpeg());
-    av_log(NULL, AV_LOG_INFO, "in fmt: %d\n", d.in_format.sampleFormat());
-    av_log(NULL, AV_LOG_INFO, "in freq: %d\n",  d.in_format.sampleRate());
+    qDebug("out: {cl: %lld, fmt: %s, freq: %d}"
+           , d.out_format.channelLayoutFFmpeg()
+           , qPrintable(d.out_format.sampleFormat())
+           , d.out_format.sampleRate());
+    qDebug("in {cl: %lld, fmt: %s, freq: %d}"
+           , d.in_format.channelLayoutFFmpeg()
+           , qPrintable(d.in_format.sampleFormatName())
+           , d.in_format.sampleRate());
 
     if (!d.context) {
         qWarning("Allocat swr context failed!");

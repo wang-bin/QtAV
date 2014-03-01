@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -33,7 +33,6 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     QWidget(parent, f),VideoRenderer(*new GDIRendererPrivate())
 {
     DPTR_INIT_PRIVATE(GDIRenderer);
-    d_func().widget_holder = this;
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     /* To rapidly update custom widgets that constantly paint over their entire areas with
@@ -48,8 +47,9 @@ GDIRenderer::GDIRenderer(QWidget *parent, Qt::WindowFlags f):
     setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
-GDIRenderer::~GDIRenderer()
+bool GDIRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
+    return VideoFormat::isRGB(pixfmt);
 }
 
 QPaintEngine* GDIRenderer::paintEngine() const

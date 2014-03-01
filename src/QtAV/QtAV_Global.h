@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,10 +23,11 @@
 #ifndef QTAV_GLOBAL_H
 #define QTAV_GLOBAL_H
 
+#include <stdarg.h>
 #include <qglobal.h>
 #include "dptr.h"
 
-#if defined(Q_DLL_LIBRARY)
+#if defined(BUILD_QTAV_LIB)
 #  undef Q_AV_EXPORT
 #  define Q_AV_EXPORT Q_DECL_EXPORT
 #else
@@ -46,6 +47,8 @@ Q_AV_EXPORT QString aboutFFmpeg_HTML();
 Q_AV_EXPORT void aboutQtAV();
 Q_AV_EXPORT QString aboutQtAV_PlainText();
 Q_AV_EXPORT QString aboutQtAV_HTML();
+
+Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
 }
 
 /*

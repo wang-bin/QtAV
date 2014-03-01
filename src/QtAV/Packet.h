@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -30,6 +30,7 @@
 //#include <QtAV/BlockingRing.h>
 #include <QtAV/QtAV_Global.h>
 
+//TODO: init from AVPacket and store ptr?
 namespace QtAV {
 class Q_AV_EXPORT Packet
 {
@@ -40,6 +41,7 @@ public:
     void markEnd();
 
     bool hasKeyFrame;
+    bool isCorrupt;
     QByteArray data;
     qreal pts, duration;
 private:
@@ -48,7 +50,7 @@ private:
 
 bool Packet::isValid() const
 {
-    return !data.isNull() && pts >= 0 && duration >= 0; //!data.isEmpty()?
+    return !isCorrupt && !data.isNull() && pts >= 0 && duration >= 0; //!data.isEmpty()?
 }
 
 bool Packet::isEnd() const

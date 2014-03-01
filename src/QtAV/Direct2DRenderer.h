@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -38,14 +38,15 @@ class Q_AV_EXPORT Direct2DRenderer : public QWidget, public VideoRenderer
     DPTR_DECLARE_PRIVATE(Direct2DRenderer)
 public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual ~Direct2DRenderer();
     virtual VideoRendererId id() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
      * return 0 and set this flag
      */
     virtual QPaintEngine* paintEngine() const;
+    virtual QWidget* widget() { return this; }
 protected:
     virtual bool receiveFrame(const VideoFrame& frame);
     virtual bool needUpdateBackground() const;

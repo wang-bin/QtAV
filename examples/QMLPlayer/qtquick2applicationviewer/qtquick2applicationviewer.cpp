@@ -23,6 +23,8 @@ class QtQuick2ApplicationViewerPrivate
 
 QString QtQuick2ApplicationViewerPrivate::adjustPath(const QString &path)
 {
+    if (path.startsWith("qrc:"))
+        return path;
 #if defined(Q_OS_IOS)
     if (!QDir::isAbsolutePath(path))
         return QString::fromLatin1("%1/%2")
@@ -64,6 +66,11 @@ QtQuick2ApplicationViewer::~QtQuick2ApplicationViewer()
 
 void QtQuick2ApplicationViewer::setMainQmlFile(const QString &file)
 {
+    if (file.startsWith("qrc:")) {
+        d->mainQmlFile = file;
+        setSource(d->mainQmlFile);
+        return;
+    }
     d->mainQmlFile = QtQuick2ApplicationViewerPrivate::adjustPath(file);
 #if defined(Q_OS_ANDROID) && !defined(Q_OS_ANDROID_NO_SDK)
     QUrl qmlUrl(QUrl(QLatin1String("assets:/")+d->mainQmlFile));

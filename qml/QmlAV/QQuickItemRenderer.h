@@ -48,9 +48,8 @@ public:
     };
 
     explicit QQuickItemRenderer(QQuickItem *parent = 0);
-    ~QQuickItemRenderer() {}
     virtual VideoRendererId id() const;
-    virtual bool receiveFrame(const VideoFrame &frame);
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
 
     QObject *source() const;
     void setSource(QObject *source);
@@ -63,6 +62,7 @@ Q_SIGNALS:
     void fillModeChanged(QQuickItemRenderer::FillMode);
 
 protected:
+    virtual bool receiveFrame(const VideoFrame &frame);
     virtual bool needUpdateBackground() const;
     virtual bool needDrawFrame() const;
     virtual void drawFrame();

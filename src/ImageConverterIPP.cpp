@@ -69,7 +69,15 @@ bool ImageConverterIPP::convert(const quint8 *const srcSlice[], const int srcStr
     DPTR_D(ImageConverterIPP);
     //color convertion, no scale
 #ifdef IPP_LINK
-    ippiYUV420ToRGB_8u_P3AC4R(const_cast<const quint8 **>(srcSlice), const_cast<int*>(srcStride), (Ipp8u*)(d.orig_ori_rgb.data())
+    struct {
+        const quint8 *data[3];
+        int linesize[3];
+    } yuv = {
+        { srcSlice[0], srcSlice[2], srcSlice[1] },
+        { srcStride[0], srcStride[2], srcStride[1] }
+    };
+    //ippiSwapChannels
+    ippiYUV420ToRGB_8u_P3AC4R(const_cast<const quint8 **>(yuv.data), const_cast<int*>(yuv.linesize), (Ipp8u*)(d.orig_ori_rgb.data())
                            , 4*sizeof(quint8)*d.w_in, (IppiSize){d.w_in, d.h_in});
     d.data_out = d.orig_ori_rgb;
     return true;

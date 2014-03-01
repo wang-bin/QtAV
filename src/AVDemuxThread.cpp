@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -43,10 +43,10 @@ public:
         if (mDemuxThread->isEnd())
             return;
         AVThread *thread = mDemuxThread->videoThread();
-        qDebug("try wake up video queue");
+        //qDebug("try wake up video queue");
         if (thread)
             thread->packetQueue()->blockFull(false);
-        qDebug("try wake up audio queue");
+        //qDebug("try wake up audio queue");
         thread = mDemuxThread->audioThread();
         if (thread)
             thread->packetQueue()->blockFull(false);
@@ -134,13 +134,19 @@ void AVDemuxThread::seek(qint64 pos)
         video_thread->packetQueue()->clear();
     }
     demuxer->seek(pos);
-    if (audio_thread)
+    // TODO: why queue may not empty?
+    if (audio_thread) {
+        audio_thread->packetQueue()->clear();
         audio_thread->packetQueue()->put(Packet());
-    if (video_thread)
+    }
+    if (video_thread) {
+        video_thread->packetQueue()->clear();
         video_thread->packetQueue()->put(Packet());
-    //if (subtitle_thread)
+    }
+    //if (subtitle_thread) {
+    //     subtitle_thread->packetQueue()->clear();
     //    subtitle_thread->packetQueue()->put(Packet());
-
+    //}
     seeking = false;
     seek_cond.wakeAll();
     if (isPaused()) {

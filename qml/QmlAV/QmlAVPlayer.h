@@ -26,6 +26,9 @@
 #include <QtCore/QObject>
 #include <QmlAV/QQuickItemRenderer.h>
 
+/*!
+ *  Not work: autoPlay, autoLoad
+ */
 namespace QtAV {
 class AVPlayer;
 }
@@ -37,12 +40,26 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject
     Q_PROPERTY(int duration READ duration NOTIFY durationChanged)
     Q_PROPERTY(int position READ position NOTIFY positionChanged)
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY mutedChanged)
+    Q_PROPERTY(bool hasAudio READ hasAudio NOTIFY hasAudioChanged)
+    Q_PROPERTY(bool hasVideo READ hasVideo NOTIFY hasVideoChanged)
     Q_PROPERTY(PlaybackState playbackState READ playbackState NOTIFY playbackStateChanged)
+    Q_PROPERTY(bool autoPlay READ autoPlay WRITE setAutoPlay NOTIFY autoPlayChanged)
+    Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(qreal speed READ speed WRITE setSpeed NOTIFY speedChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(int loops READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
+    Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
+    // not supported by QtMultimedia
+    Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
+    Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
 public:
+    enum Loop
+    {
+        Infinite = -1
+    };
+
     enum PlaybackState {
         PlayingState,
         PausedState,
@@ -50,8 +67,17 @@ public:
     };
 
     explicit QmlAVPlayer(QObject *parent = 0);
+
+    // add QtAV::AVPlayer::isAudioAvailable()?
+    bool hasAudio() const;
+    bool hasVideo() const;
+
     QUrl source() const;
     void setSource(const QUrl& url);
+
+    int loopCount() const;
+    void setLoopCount(int c);
+
     QObject* videoOut();
     void setVideoOut(QObject* out);
     qreal volume() const;
@@ -68,11 +94,20 @@ public:
     Q_INVOKABLE void play(const QUrl& url);
     AVPlayer *player();
 
+    bool isAutoLoad() const;
+    void setAutoLoad(bool autoLoad);
+
+    bool autoPlay() const;
+    void setAutoPlay(bool autoplay);
+
+    // "FFmpeg", "DXVA", "VAAPI" etc
+    QStringList videoCodecs() const;
+    QStringList videoCodecPriority() const;
+    void setVideoCodecPriority(const QStringList& p);
+
 public Q_SLOTS:
     void play();
     void pause();
-    void resume();
-    void togglePause();
     void stop();
     void nextFrame();
     void seek(int offset);
@@ -82,27 +117,40 @@ public Q_SLOTS:
 Q_SIGNALS:
     void volumeChanged();
     void mutedChanged();
+    // TODO: signal from QtAV::AVPlayer
+    void hasAudioChanged();
+    void hasVideoChanged();
     void durationChanged();
     void positionChanged();
     void sourceChanged();
+    void autoLoadChanged();
+    void loopCountChanged();
     void videoOutChanged();
     void playbackStateChanged();
+    void autoPlayChanged();
     void speedChanged();
     void paused();
     void stopped();
     void playing();
     void seekableChanged();
+    void videoCodecPriorityChanged();
 
 private Q_SLOTS:
+    // connect to signals from player
     void _q_started();
     void _q_stopped();
     void _q_paused(bool);
 
 private:
     Q_DISABLE_COPY(QmlAVPlayer)
+
+    bool mAutoPlay;
+    bool mAutoLoad;
+    int mLoopCount;
     PlaybackState mPlaybackState;
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
+    QStringList mVideoCodecs;
 };
 
 #endif // QTAV_QML_AVPLAYER_H

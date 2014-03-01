@@ -49,7 +49,13 @@ public:
      * \return
      */
     int planeCount() const;
-    virtual int bytesPerLine(int plane = 0) const;
+    /*!
+     * \brief bytesPerLine
+     *   For video, it's size of each picture line. For audio, it's the whole size of plane
+     * \param plane
+     * \return line size of plane
+     */
+    int bytesPerLine(int plane = 0) const;
     // the whole frame data
     QByteArray frameData() const;
     // deep copy 1 plane data
@@ -61,7 +67,8 @@ public:
      * \param b slice
      * \param plane color/audio channel
      */
-    void setBits(uchar* b, int plane = 0);
+    // TODO: const?
+    void setBits(uchar *b, int plane = 0);
     void setBits(const QVector<uchar*>& b);
     void setBits(quint8 *slice[]);
     /*

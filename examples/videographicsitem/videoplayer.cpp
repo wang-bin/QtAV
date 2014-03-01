@@ -1,6 +1,6 @@
 /******************************************************************************
     this file is part of QtAV examples
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -27,6 +27,8 @@
 
 #include <QSlider>
 #include <QLayout>
+#include <QPushButton>
+#include <QFileDialog>
 
 using namespace QtAV;
 
@@ -56,10 +58,14 @@ VideoPlayer::VideoPlayer(QWidget *parent)
 
     connect(rotateSlider, SIGNAL(valueChanged(int)),
             this, SLOT(rotateVideo(int)));
+    QPushButton *openBtn = new QPushButton;
+    openBtn->setText("Open");
+    connect(openBtn, SIGNAL(clicked()), SLOT(open()));
+
     QBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(graphicsView);
     layout->addWidget(rotateSlider);
-
+    layout->addWidget(openBtn);
     setLayout(layout);
 
     mediaPlayer.setRenderer(videoItem);
@@ -69,10 +75,23 @@ VideoPlayer::~VideoPlayer()
 {
 }
 
+void VideoPlayer::play(const QString &file)
+{
+    mediaPlayer.play(file);
+}
+
 void VideoPlayer::rotateVideo(int angle)
 {
     //rotate around the center of video element
     qreal x = videoItem->boundingRect().width() / 2.0;
     qreal y = videoItem->boundingRect().height() / 2.0;
     videoItem->setTransform(QTransform().translate(x, y).rotate(angle).translate(-x, -y));
+}
+
+void VideoPlayer::open()
+{
+    QString f = QFileDialog::getOpenFileName(0, "Open a video");
+    if (f.isEmpty())
+        return;
+    play(f);
 }

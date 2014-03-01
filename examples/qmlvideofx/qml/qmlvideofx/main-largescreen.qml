@@ -43,9 +43,10 @@ import QtQuick 2.0
 
 Rectangle {
     id: root
-    width: 900
-    height: 600
-    color: "grey"
+    width: 800
+    height: 480
+    color: "black"
+
     property string fileName
     property alias volume: content.volume
     property bool perfMonitorsLogging: false
@@ -56,82 +57,68 @@ Rectangle {
         property real gripSize: 20
     }
 
-    Rectangle {
-        id: inner
+    Content {
+        id: content
         anchors.fill: parent
-        color: "grey"
+        gripSize: d.gripSize
+    }
 
-        Content {
-            id: content
-            anchors {
-                top: parent.top
-                bottom: parent.bottom
-                left: parent.left
-                right: effectSelectionPanel.left
-                margins: 5
-            }
-            gripSize: d.gripSize
-            width: 600
-            height: 600
+    Loader {
+        id: performanceLoader
+        function init() {
+            console.log("[qmlvideofx] performanceLoader.init logging " + root.perfMonitorsLogging + " visible " + root.perfMonitorsVisible)
+            var enabled = root.perfMonitorsLogging || root.perfMonitorsVisible
+            source = enabled ? "../performancemonitor/PerformanceItem.qml" : ""
         }
+        onLoaded: {
+            item.parent = content
+            item.anchors.top = content.top
+            item.anchors.left = content.left
+            item.anchors.right = content.right
+            item.logging = root.perfMonitorsLogging
+            item.displayed = root.perfMonitorsVisible
+            item.init()
+        }
+    }
 
-        Loader {
-            id: performanceLoader
-            function init() {
-                console.log("[qmlvideofx] performanceLoader.init logging " + root.perfMonitorsLogging + " visible " + root.perfMonitorsVisible)
-                var enabled = root.perfMonitorsLogging || root.perfMonitorsVisible
-                source = enabled ? "../performancemonitor/PerformanceItem.qml" : ""
-            }
-            onLoaded: {
-                item.parent = content
-                item.anchors.top = content.top
-                item.anchors.left = content.left
-                item.anchors.right = content.right
-                item.logging = root.perfMonitorsLogging
-                item.displayed = root.perfMonitorsVisible
-                item.init()
-            }
+    ParameterPanel {
+        id: parameterPanel
+        anchors {
+            left: parent.left
+            bottom: parent.bottom
+            right: effectSelectionPanel.left
+            margins: 20
         }
+        gripSize: d.gripSize
+    }
 
-        ParameterPanel {
-            id: parameterPanel
-            anchors {
-                left: parent.left
-                bottom: parent.bottom
-                right: effectSelectionPanel.left
-                margins: 20
-            }
-            gripSize: d.gripSize
+    EffectSelectionPanel {
+        id: effectSelectionPanel
+        anchors {
+            top: parent.top
+            bottom: fileOpen.top
+            right: parent.right
+            margins: 5
         }
+        width: 200
+        itemHeight: 40
+         onEffectSourceChanged: {
+            content.effectSource = effectSource
+            parameterPanel.model = content.effect.parameters
+        }
+    }
 
-        EffectSelectionPanel {
-            id: effectSelectionPanel
-            anchors {
-                top: parent.top
-                bottom: fileOpen.top
-                right: parent.right
-                margins: 5
-            }
-            width: 300
-            itemHeight: 40
-             onEffectSourceChanged: {
-                content.effectSource = effectSource
-                parameterPanel.model = content.effect.parameters
-            }
+    FileOpen {
+        id: fileOpen
+        anchors {
+            right: parent.right
+            bottom: parent.bottom
+            margins: 5
         }
-
-        FileOpen {
-            id: fileOpen
-            anchors {
-                right: parent.right
-                bottom: parent.bottom
-                margins: 5
-            }
-            width: effectSelectionPanel.width
-            height: 165
-            buttonHeight: 32
-            topMargin: 10
-        }
+        width: effectSelectionPanel.width
+        height: 165
+        buttonHeight: 32
+        topMargin: 10
     }
 
     FileBrowser {

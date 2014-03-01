@@ -1,3 +1,5 @@
 TEMPLATE = subdirs
 
-SUBDIRS +=
+SUBDIRS += \
+    qiodevice \
+    playerthread

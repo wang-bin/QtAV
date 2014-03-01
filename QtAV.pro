@@ -1,7 +1,9 @@
+include(root.pri)
+
 TEMPLATE = subdirs
 CONFIG -= ordered
-SUBDIRS = libqtav examples tests
-
+SUBDIRS = libqtav
+libqtav.file = src/libQtAV.pro
 greaterThan(QT_MAJOR_VERSION, 4) {
   qtHaveModule(quick) {
     SUBDIRS += libqmlav
@@ -10,10 +12,14 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     examples.depends += libqmlav
   }
 }
-libqtav.file = src/libQtAV.pro
-examples.depends += libqtav
-tests.depends += libqtav
-
+!no-examples {
+  SUBDIRS += examples
+  examples.depends += libqtav
+}
+!no-tests {
+  SUBDIRS += tests
+  tests.depends += libqtav
+}
 OTHER_FILES += README.md TODO.txt Changelog
 OTHER_FILES += templates/vo.h templates/vo.cpp templates/COPYRIGHT.h templates/mkclass.sh
 OTHER_FILES += \
@@ -24,19 +30,32 @@ OTHER_FILES += \
 
 
 EssentialDepends = avutil avcodec avformat swscale
-OptionalDepends = portaudio direct2d gdiplus gl \
-    swresample avresample
+OptionalDepends = \
+    swresample \
+    avresample \
+    gl
+# no-xxx can set in $$PWD/user.conf
+!no-openal: OptionalDepends *= openal
+!no-portaudio: OptionalDepends *= portaudio
+!no-direct2d: OptionalDepends *= direct2d
+!no-gdiplus: OptionalDepends *= gdiplus
 win32 {
-    OptionalDepends += dxva
+    !no-dxva: OptionalDepends *= dxva
 }
 unix {
-    OptionalDepends += xv vaapi libcedarv
+    !no-xv: OptionalDepends *= xv
+    !no-vaapi: OptionalDepends *= vaapi
+    !no-cedarv: OptionalDepends *= libcedarv
 }
 
-include(root.pri)
+runConfigTests()
+!config_avresample:!config_swresample {
+  error("libavresample or libswresample is required. Setup your environment correctly then delete $$BUILD_DIR/.qmake.conf and run qmake again")
+}
 
-PACKAGE_VERSION = 1.3.0
+
+PACKAGE_VERSION = 1.3.1
 PACKAGE_NAME= QtAV
 
 include(pack.pri)
-#packageSet(1.3.0, QtAV)
+#packageSet(1.3.1, QtAV)

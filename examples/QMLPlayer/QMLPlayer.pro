@@ -24,6 +24,8 @@ SOURCES += main.cpp
 include(qtquick2applicationviewer/qtquick2applicationviewer.pri)
 qtcAddDeployment()
 
+!*msvc*: QMAKE_LFLAGS += -u __link_hack
 isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
-include($${PROJECTROOT}/common.pri)
+STATICLINK = 0
+include($${PROJECTROOT}/examples/common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)

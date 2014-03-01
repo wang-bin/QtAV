@@ -1,4 +1,24 @@
+/******************************************************************************
+    Simple Player:  this file is part of QtAV examples
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
 #include "MainWindow.h"
+#include "EventFilter.h"
 #include <QtCore/QTimer>
 #include <QTimeEdit>
 #include <QLabel>
@@ -18,6 +38,8 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QToolTip>
+#include <QKeyEvent>
+#include <QWheelEvent>
 #include <QtAV/QtAV.h>
 #include "Button.h"
 #include "ClickableMenu.h"
@@ -28,6 +50,7 @@
 #include "config/Config.h"
 #include "config/VideoEQConfigPage.h"
 #include "playlist/PlayList.h"
+#include "common/ScreenSaver.h"
 
 /*
  *TODO:
@@ -62,7 +85,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mIsReady(false)
   , mHasPendingPlay(false)
   , mNullAO(false)
-  , mScreensaver(true)
+  , mControlOn(false)
   , mShowControl(2)
   , mRepeateMax(0)
   , mpPlayer(0)
@@ -92,6 +115,11 @@ void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
+    //mpPlayer->setAudioOutput(AudioOutputFactory::create(AudioOutputId_PortAudio));
+    qApp->installEventFilter(new EventFilter(mpPlayer));
+    //QHash<QByteArray, QByteArray> dict;
+    //dict.insert("rtsp_transport", "tcp");
+    //mpPlayer->setOptionsForFormat(dict);
     qDebug("player created");
     mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": " + mpPlayer->videoCapture()->captureDir());
     connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
@@ -101,6 +129,8 @@ void MainWindow::initPlayer()
     connect(mpVolumeSlider, SIGNAL(sliderPressed()), SLOT(setVolume()));
     connect(mpVolumeSlider, SIGNAL(valueChanged(int)), SLOT(setVolume()));
 
+    connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(onMediaStatusChanged()));
+    connect(mpPlayer, SIGNAL(error(QtAV::AVError)), this, SLOT(handleError(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
@@ -530,7 +560,9 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         mpTimeSlider->hide();
     } else {
     }
-#endif //SLIDER_ON_VO
+#endif //SLIDER_ON_VO    
+    renderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
+    mpPlayer->setRenderer(renderer);
     QWidget *r = 0;
     if (mpRenderer)
         r = mpRenderer->widget();
@@ -549,9 +581,6 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     //setInSize?
     mpPlayerLayout->addWidget(renderer->widget());
     resize(renderer->widget()->size());
-
-    renderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
-    mpPlayer->setRenderer(renderer);
 #if SLIDER_ON_VO
     if (mpTimeSlider) {
         mpTimeSlider->setParent(mpRenderer->widget());
@@ -654,6 +683,7 @@ void MainWindow::onPaused(bool p)
 
 void MainWindow::onStartPlay()
 {
+    mpRenderer->setRegionOfInterest(QRectF());
     mFile = mpPlayer->file(); //open from EventFilter's menu
     setWindowTitle(mTitle);
 
@@ -666,7 +696,7 @@ void MainWindow::onStartPlay()
     setVolume();
     mShowControl = 0;
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
-    mScreensaver = false;
+    ScreenSaver::instance().disable();
     initAudioTrackMenu();
     mpRepeatA->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
     mpRepeatB->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
@@ -682,6 +712,7 @@ void MainWindow::onStartPlay()
 
 void MainWindow::onStopPlay()
 {
+    mpPlayer->setPriority(Config::instance().decoderPriority());
     if (mpPlayer->currentRepeat() < mpPlayer->repeat())
         return;
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
@@ -691,7 +722,7 @@ void MainWindow::onStopPlay()
     mpCurrent->setText("00:00:00");
     mpDuration->setText("00:00:00");
     tryShowControlBar();
-    mScreensaver = true;
+    ScreenSaver::instance().enable();
     toggleRepeat(false);
     //mRepeateMax = 0;
     killTimer(mCursorTimer);
@@ -742,7 +773,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 {
     if (mpPlayer)
         mpPlayer->stop();
-    QWidget::closeEvent(e);
+    qApp->quit();
 }
 
 void MainWindow::resizeEvent(QResizeEvent *e)
@@ -803,6 +834,23 @@ void MainWindow::repeatBChanged(const QTime& t)
     mpPlayer->setStopPosition(QTime(0, 0, 0).msecsTo(t));
 }
 
+void MainWindow::keyPressEvent(QKeyEvent *e)
+{
+    mControlOn = e->key() == Qt::Key_Control;
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *e)
+{
+    mControlOn = false;
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *e)
+{
+    if (!mControlOn)
+        return;
+    mGlobalMouse = e->globalPos();
+}
+
 void MainWindow::mouseMoveEvent(QMouseEvent *e)
 {
     unsetCursor();
@@ -817,6 +865,56 @@ void MainWindow::mouseMoveEvent(QMouseEvent *e)
             QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
         }
     }
+    if (mControlOn && e->button() == Qt::LeftButton) {
+        if (!mpRenderer || !mpRenderer->widget())
+            return;
+        QRectF roi = mpRenderer->realROI();
+        QPointF delta = e->pos() - mGlobalMouse;
+        roi.moveLeft(-delta.x());
+        roi.moveTop(-delta.y());
+        mpRenderer->setRegionOfInterest(roi);
+    }
+}
+
+void MainWindow::wheelEvent(QWheelEvent *e)
+{
+    if (!mpRenderer || !mpRenderer->widget()) {
+        return;
+    }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    qreal deg = e->angleDelta().y()/8;
+#else
+    qreal deg = e->delta()/8;
+#endif //QT_VERSION
+#if WHEEL_SPEED
+    if (!mControlOn) {
+        qreal speed = mpPlayer->speed();
+        mpPlayer->setSpeed(qMax(0.01, speed + deg/15.0*0.02));
+        return;
+    }
+#endif //WHEEL_SPEED
+    QPointF p = mpRenderer->widget()->mapFrom(this, e->pos());
+    QPointF fp = mpRenderer->mapToFrame(p);
+    if (fp.x() < 0)
+        fp.setX(0);
+    if (fp.y() < 0)
+        fp.setY(0);
+    if (fp.x() > mpRenderer->frameSize().width())
+        fp.setX(mpRenderer->frameSize().width());
+    if (fp.y() > mpRenderer->frameSize().height())
+        fp.setY(mpRenderer->frameSize().height());
+
+    QRectF viewport = QRectF(mpRenderer->mapToFrame(QPointF(0, 0)), mpRenderer->mapToFrame(QPointF(mpRenderer->rendererWidth(), mpRenderer->rendererHeight())));
+    //qDebug("vo: (%.1f, %.1f)=> frame: (%.1f, %.1f)", p.x(), p.y(), fp.x(), fp.y());
+
+    qreal zoom = 1.0 + deg*3.14/180.0;
+    //qDebug("deg: %d, %d zoom: %.2f", e->angleDelta().x(), e->angleDelta().y(), zoom);
+    QTransform m;
+    m.translate(fp.x(), fp.y());
+    m.scale(1.0/zoom, 1.0/zoom);
+    m.translate(-fp.x(), -fp.y());
+    QRectF r = m.mapRect(mpRenderer->realROI());
+    mpRenderer->setRegionOfInterest((r | m.mapRect(viewport))&QRectF(QPointF(0,0), mpRenderer->frameSize()));
 }
 
 void MainWindow::about()
@@ -967,31 +1065,6 @@ void MainWindow::tryShowControlBar()
         mpControl->show();
 }
 
-#ifdef Q_OS_WIN
-
-bool MainWindow::nativeEvent(const QByteArray & eventType, void * message, long * result)
-{
-    Q_UNUSED(eventType);
-    MSG* msg = static_cast<MSG*>(message);
-    if (!mScreensaver && msg->message == WM_SYSCOMMAND
-            && ((msg->wParam & 0xFFF0) == SC_SCREENSAVE
-                || (msg->wParam & 0xFFF0) == SC_MONITORPOWER)
-    ) {
-        if (result) {
-            *result = 0;
-        }
-        return true;
-    }
-    return false;
-}
-
-bool MainWindow::winEvent(MSG *message, long *result)
-{
-    return nativeEvent("windows_MSG", message, result);
-}
-#endif //Q_OS_WIN
-
-
 void MainWindow::showInfo()
 {
     // why crash if on stack
@@ -1009,4 +1082,39 @@ void MainWindow::onTimeSliderHover(int pos, int value)
 void MainWindow::onTimeSliderLeave()
 {
 
+}
+
+void MainWindow::handleError(const AVError &e)
+{
+    QMessageBox::warning(0, "Player error", e.string());
+}
+
+void MainWindow::onMediaStatusChanged()
+{
+    QString status;
+    AVPlayer *player = qobject_cast<AVPlayer*>(sender());
+    switch (player->mediaStatus()) {
+    case NoMedia:
+        status = "No media";
+        break;
+    case InvalidMedia:
+        status = "Invalid meida";
+        break;
+    case BufferingMedia:
+        status = "Buffering...";
+        break;
+    case BufferedMedia:
+        status = "Buffered";
+        break;
+    case LoadingMedia:
+        status = "Loading...";
+        break;
+    case LoadedMedia:
+        status = "Loaded";
+        break;
+    default:
+        break;
+    }
+    if (!status.isEmpty())
+        setWindowTitle(status);
 }

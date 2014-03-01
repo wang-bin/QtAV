@@ -23,6 +23,7 @@
 #define QAV_DECODER_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtCore/QHash>
 
 class QByteArray;
 struct AVCodecContext;
@@ -64,6 +65,15 @@ public:
     virtual bool decode(const QByteArray& encoded) = 0; //decode AVPacket?
     QByteArray data() const; //decoded data
     int undecodedSize() const;
+
+    /*
+     * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
+     * In addition, av_dict is slow.
+     * empty means default options in ffmpeg
+     */
+    // avcodec_open2
+    void setOptions(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> options() const;
 
 protected:
     AVDecoder(AVDecoderPrivate& d);

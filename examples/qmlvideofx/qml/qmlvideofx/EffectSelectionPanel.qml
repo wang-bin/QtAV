@@ -44,6 +44,7 @@ Rectangle {
     id: root
     property int itemHeight: 25
     property string effectSource: ""
+    color: "#80101010"
 
     signal clicked
 
@@ -106,7 +107,7 @@ Rectangle {
                     name: "selected"
                     PropertyChanges {
                         target: sourceSelectorItem
-                        bgColor: "#ff8888"
+                        bgColor: "#20ffffff"
                     }
                 }
             ]

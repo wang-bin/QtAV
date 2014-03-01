@@ -48,7 +48,7 @@ NAME = QtAV
 }
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
-LIB_VERSION = 1.3.0 #0.x.y may be wrong for dll
+LIB_VERSION = 1.3.1 #0.x.y may be wrong for dll
 isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
 
 TEMPLATE += fakelib
@@ -73,9 +73,9 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 
 #eval() ?
 !contains(CONFIG, $$lower($$NAME)-buildlib) {
-	#The following may not need to change
-	CONFIG *= link_prl
-        LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
+    #The following may not need to change
+    CONFIG *= link_prl
+    LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
 	isEqual(STATICLINK, 1) {
 		PRE_TARGETDEPS += $$PROJECT_LIBDIR/$$qtStaticLib($$NAME)
 	} else {
@@ -91,25 +91,26 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 
 #	win32: LIBS += -lUser32
 # The following may not need to change
-
-	#TEMPLATE = lib
-	VERSION = $$LIB_VERSION
+    !CONFIG(plugin) {
+        #TEMPLATE = lib
+        VERSION = $$LIB_VERSION
+        DESTDIR= $$PROJECT_LIBDIR
+    }
         TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
-	DESTDIR= $$PROJECT_LIBDIR
-
-	CONFIG *= create_prl #
+        CONFIG *= create_prl #
 	isEqual(STATICLINK, 1) {
 		CONFIG -= shared dll ##otherwise the following shared is true, why?
 		CONFIG *= staticlib
 	} else {
-		DEFINES += Q_DLL_LIBRARY #win32-msvc*
+                DEFINES += BUILD_$$upper($$NAME)_LIB #win32-msvc*
 		CONFIG *= shared #shared includes dll
 	}
 
 	shared {
-		!isEqual(DESTDIR, $$BUILD_DIR/bin): DLLDESTDIR = $$BUILD_DIR/bin #copy shared lib there
+        !CONFIG(plugin) {
+            !isEqual(DESTDIR, $$BUILD_DIR/bin): DLLDESTDIR = $$BUILD_DIR/bin #copy shared lib there
+        }
 		CONFIG(release, debug|release): !isEmpty(QMAKE_STRIP): QMAKE_POST_LINK = -$$QMAKE_STRIP $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
-
 		#copy from the pro creator creates.
 		symbian {
 			MMP_RULES += EXPORTUNFROZEN

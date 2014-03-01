@@ -23,6 +23,8 @@
 #define QAV_DEMUXER_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtAV/CommonTypes.h>
+#include <QtCore/QHash>
 #include <QtCore/QObject>
 #include <QtCore/QSize>
 #include <QtCore/QMutex>
@@ -39,12 +41,16 @@ struct AVCodecContext;
 struct AVCodec;
 struct AVFrame;
 struct AVStream;
+struct AVDictionary;
 
-
+class QIODevice;
 // TODO: force codec name. clean code
 namespace QtAV {
 
+class AVError;
 class Packet;
+class QAVIOContext;
+
 class Q_AV_EXPORT AVDemuxer : public QObject //QIODevice?
 {
     Q_OBJECT
@@ -68,10 +74,12 @@ public:
     AVDemuxer(const QString& fileName = QString(), QObject *parent = 0);
     ~AVDemuxer();
 
+    MediaStatus mediaStatus() const;
     bool atEnd() const;
     bool close();
     bool loadFile(const QString& fileName);
     bool isLoaded(const QString& fileName) const;
+    bool load(QIODevice* iocontext);
     bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
 
     void putFlushPacket();
@@ -167,12 +175,26 @@ public:
      */
     void setInterruptStatus(int interrupt);
 
+    /*
+     * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
+     * In addition, av_dict is slow.
+     * empty means default options in ffmpeg
+     */
+    // avformat_open_input
+    void setOptions(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> options() const;
+
 signals:
     /*emit when the first frame is read*/
     void started();
-    void finished(); //end of file
+    Q_DECL_DEPRECATED void finished(); //end of file
+    void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
+    void mediaStatusChanged(QtAV::MediaStatus status);
 
 private:
+    void setMediaStatus(MediaStatus status);
+
+    MediaStatus mCurrentMediaStatus;
     bool started_;
     bool eof;
     bool auto_reset_stream;
@@ -184,6 +206,8 @@ private:
     mutable int audio_stream, video_stream, subtitle_stream;
     mutable QList<int> audio_streams, video_streams, subtitle_streams;
 
+    bool load();
+
     // set wanted_xx_stream. call openCodecs() to read new stream frames
     bool setStream(StreamType st, int stream);
     bool findStreams();
@@ -194,6 +218,7 @@ private:
     AVCodecContext *a_codec_context, *v_codec_context, *s_codec_contex;
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
+    QAVIOContext* m_pQAVIO;
     QMutex mutex; //for seek and readFrame
     QElapsedTimer seek_timer;
 
@@ -203,6 +228,8 @@ private:
     class InterruptHandler;
     InterruptHandler *mpInterrup;
 
+    AVDictionary *mpDict;
+    QHash<QByteArray, QByteArray> mOptions;
 };
 
 } //namespace QtAV

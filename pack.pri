@@ -1,11 +1,6 @@
 #Designed by Wang Bin(Lucas Wang). 2013 <wbsecg1@gmail.com>
 
 ##TODO: Why use function to add makefile target failed
-# add a make command
-defineReplace(mcmd) {
-	return($$escape_expand(\\n\\t)$$1)
-}
-
 #defineTest(packageSet) {
 #	isEmpty(1): warning("packageSet(version [, name]")
 #	PACKAGE_VERSION = $$1
@@ -62,17 +57,18 @@ ARCH = `dpkg --print-architecture`
 fakeroot.target = fakeroot
 fakeroot.depends = FORCE
 fakeroot.commands = rm -rf fakeroot && mkdir -p fakeroot/usr/share/doc/$$PACKAGE_NAME && mkdir -p fakeroot/DEBIAN
-fakeroot.commands += $$mcmd(chmod -R 755 fakeroot)  ##control dir must be 755
+fakeroot.commands += $$quote(chmod -R 755 fakeroot)  ##control dir must be 755
 
 deb.target = deb
 deb.depends += fakeroot
-deb.commands += $$mcmd(make install INSTALL_ROOT=\$\$PWD/fakeroot)
-deb.commands += $$mcmd(cd fakeroot; md5sum `find usr -type f |grep -v DEBIAN` > DEBIAN/md5sums; cd -)
-deb.commands += $$mcmd(cp $$PWD/qtc_packaging/debian_$${PLATFORM}/control fakeroot/DEBIAN)
-deb.commands += $$mcmd(sed -i \"s/%arch%/$${ARCH}/\" fakeroot/DEBIAN/control)
-deb.commands += $$mcmd(sed -i \"s/%version%/$${PACKAGE_VERSION}/\" fakeroot/DEBIAN/control)
-deb.commands += $$mcmd(gzip -9 fakeroot/usr/share/doc/$$PACKAGE_NAME/changelog)
-deb.commands += $$mcmd(dpkg -b fakeroot $${PACKAGE_NAME}_$${PACKAGE_VERSION}_$${PLATFORM}_$${ARCH}.deb)
+deb.commands += $$quote(make install INSTALL_ROOT=\$\$PWD/fakeroot)
+deb.commands += $$quote(cd fakeroot; md5sum `find usr -type f |grep -v DEBIAN` > DEBIAN/md5sums; cd -)
+deb.commands += $$quote(cp $$PWD/qtc_packaging/debian_$${PLATFORM}/control fakeroot/DEBIAN)
+deb.commands += $$quote(sed -i \"s/%arch%/$${ARCH}/\" fakeroot/DEBIAN/control)
+deb.commands += $$quote(sed -i \"s/%version%/$${PACKAGE_VERSION}/\" fakeroot/DEBIAN/control)
+deb.commands += $$quote(gzip -9 fakeroot/usr/share/doc/$$PACKAGE_NAME/changelog)
+deb.commands += $$quote(dpkg -b fakeroot $${PACKAGE_NAME}_$${PACKAGE_VERSION}_$${PLATFORM}_$${ARCH}.deb)
+deb.commands = $$join(deb.commands,$$escape_expand(\\n\\t))
 
 #message("deb.commands: $$deb.commands")
 QMAKE_EXTRA_TARGETS += fakeroot deb

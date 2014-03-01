@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,9 +26,15 @@
 #include <QtAV/AVDemuxer.h> //TODO: remove AVDemuxer dependency. it's not a public class
 #include <QtAV/Statistics.h>
 #include <QtAV/VideoDecoderTypes.h>
+#include <QtAV/AudioOutputTypes.h>
+#include <QtAV/CommonTypes.h>
+#include <QtCore/QHash>
+
+class QIODevice;
 
 namespace QtAV {
 
+class AVError;
 class AVOutput;
 class AudioOutput;
 class AVThread;
@@ -42,6 +48,7 @@ class AVDemuxThread;
 class Filter;
 class VideoCapture;
 class OutputSet;
+
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -62,10 +69,17 @@ public:
     // If path is different from previous one, the stream to play will be reset to default.
     void setFile(const QString& path);
     QString file() const;
+
+    //QIODevice support
+    void setIODevice(QIODevice* device);
+
     // force reload even if already loaded. otherwise only reopen codecs if necessary
     bool load(const QString& path, bool reload = true);
     bool load(bool reload = true);
     bool isLoaded() const;
+
+    MediaStatus mediaStatus() const;
+
     qreal durationF() const; //unit: s, This function may be removed in the future.
     qint64 duration() const; //unit: ms. media duration. network stream may be very small, why?
     // the media's property.
@@ -113,7 +127,7 @@ public:
     int videoStreamCount() const;
     int subtitleStreamCount() const;
     /*!
-     * \brief capture and save current frame to "appdir/filename_pts.png".
+     * \brief capture and save current frame to "$HOME/.QtAV/filename_pts.png".
      * To capture with custom configurations, such as name and dir, use
      * VideoCapture api through AVPlayer::videoCapture()
      * \return
@@ -128,7 +142,7 @@ public:
     bool play(const QString& path);
     bool isPlaying() const;
     bool isPaused() const;
-    //this will install the default EventFilter. To use customized filter, register after this
+    // TODO: use id as parameter and return ptr?
     void addVideoRenderer(VideoRenderer *renderer);
     void removeVideoRenderer(VideoRenderer *renderer);
     void clearVideoRenderers();
@@ -136,7 +150,10 @@ public:
     VideoRenderer* renderer();
     QList<VideoRenderer*> videoOutputs();
     void setAudioOutput(AudioOutput* ao);
-
+    //default has 1 audiooutput
+    //void addAudioOutput(AudioOutput* ao);
+    //void removeAudioOutput(AudioOutput* ao);
+    //QList<AudioOutput*> audioOutputs();
     /*!
      * To change audio format, you should set both AudioOutput's format and AudioResampler's format
      * So signals/slots is a better solution.
@@ -153,12 +170,6 @@ public:
      */
     void setSpeed(qreal speed);
     qreal speed() const;
-    /*
-     * only 1 event filter is available. the previous one will be removed.
-     * setPlayerEventFilter(0) will remove the event filter.
-     * qApp->installEventFilter will be called
-     */
-    void setPlayerEventFilter(QObject *obj);
 
     Statistics& statistics();
     const Statistics& statistics() const;
@@ -172,12 +183,30 @@ public:
     bool uninstallFilter(Filter *filter);
 
     void setPriority(const QVector<VideoDecoderId>& ids);
+    //void setPriority(const QVector<AudioOutputId>& ids);
 
     int brightness() const;
     int contrast() const;
     int saturation() const;
+    /*
+     * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
+     * In addition, av_dict is slow.
+     */
+    // avformat_open_input
+    void setOptionsForFormat(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> optionsForFormat() const;
+    // avcodec_open2. TODO: the same for audio/video codec?
+    void setOptionsForAudioCodec(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> optionsForAudioCodec() const;
+    void setOptionsForVideoCodec(const QHash<QByteArray, QByteArray>& dict);
+    QHash<QByteArray, QByteArray> optionsForVideoCodec() const;
+    // avfilter_init_dict
+    //void setOptionsForFilter(const QHash<QByteArray, QByteArray>& dict);
+    //QHash<QByteArray, QByteArray> optionsForFilter() const;
 
 signals:
+    void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
+    void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void paused(bool p);
     void started();
     void stopped();
@@ -243,6 +272,9 @@ public slots:
 private slots:
     void stopFromDemuxerThread();
     void aboutToQuitApp();
+    // start/stop notify timer in this thread. use QMetaObject::invokeMethod
+    void startNotifyTimer();
+    void stopNotifyTimer();
 
 protected:
     // TODO: set position check timer interval
@@ -274,6 +306,8 @@ private:
     int repeat_max, repeat_current;
     int timer_id; //notify position change and check AB repeat range. active when playing
 
+    QIODevice* m_pIODevice;
+
     //the following things are required and must be set not null
     AVDemuxer demuxer;
     AVDemuxThread *demuxer_thread;
@@ -285,8 +319,6 @@ private:
     AudioThread *audio_thread;
     VideoThread *video_thread;
 
-    //tODO: (un)register api
-    QObject *event_filter;
     VideoCapture *video_capture;
     Statistics mStatistics;
     qreal mSpeed;
@@ -295,6 +327,8 @@ private:
     QVector<VideoDecoderId> vcodec_ids;
 
     int mBrightness, mContrast, mSaturation;
+
+    QHash<QByteArray, QByteArray> audio_codec_opt, video_codec_opt;
 };
 
 } //namespace QtAV

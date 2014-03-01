@@ -58,6 +58,8 @@ public:
 
     //decoded frame's samples/channel
     void setInSampesPerChannel(int samples);
+    // > 0 valid after resample done
+    int outSamplesPerChannel() const;
     //channel count can be computed by av_get_channel_layout_nb_channels(chl)
     void setInSampleRate(int isr);
     void setOutSampleRate(int osr); //default is in

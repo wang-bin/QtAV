@@ -22,36 +22,45 @@
 #ifndef QTAV_GLWIDGETRENDERER_P_H
 #define QTAV_GLWIDGETRENDERER_P_H
 #include <QtOpenGL/qgl.h>
+#include <QtCore/QVector>
 #include "private/VideoRenderer_p.h"
+#include <QtAV/VideoFormat.h>
+
 namespace QtAV {
 
-class Q_AV_EXPORT GLWidgetRendererPrivate : public VideoRendererPrivate
+class Q_AV_EXPORT GLWidgetRendererPrivate : public VideoRendererPrivate, public QGLFunctions
 {
 public:
     GLWidgetRendererPrivate():
         VideoRendererPrivate()
+      , hasGLSL(true)
       , update_texcoords(true)
-      , texture(0)
-#ifdef QT_OPENGL_ES_2
+      , effective_tex_width_ratio(1)
       , program(0)
-      , position_location(0)
-      , tex_coords_location(0)
-      , tex_location(0)
+      , vert(0)
+      , frag(0)
+      , a_Position(0)
+      , a_TexCoords(0)
       , u_matrix(0)
-#endif //QT_OPENGL_ES_2
       , painter(0)
+      , pixel_fmt(VideoFormat::Format_Invalid)
     {
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
             available = false;
             return;
-            glGenTextures(1, &texture);
-            glBindTexture(GL_TEXTURE_2D, texture);
         }
     }
     ~GLWidgetRendererPrivate() {
-        glDeleteTextures(1, &texture);
+        releaseResource();
     }
-
+    GLuint loadShader(GLenum shaderType, const char* pSource);
+    GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
+    bool releaseResource();
+    bool initTexture(GLuint tex, GLint internal_format, GLenum format, int width, int height);
+    QString getShaderFromFile(const QString& fileName);
+    bool prepareShaderProgram(const VideoFormat& fmt);
+    void upload(const QRect& roi);
+    void uploadPlane(int p, GLint internal_format, GLenum format, const QRect& roi);
     //GL 4.x: GL_FRAGMENT_SHADER_DERIVATIVE_HINT,GL_TEXTURE_COMPRESSION_HINT
     //GL_DONT_CARE(default), GL_FASTEST, GL_NICEST
     /*
@@ -69,60 +78,77 @@ public:
             //texture zoom in
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 #ifndef QT_OPENGL_ES_2
-            glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-            glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-            //glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-            glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+            if (!hasGLSL) {
+                glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+                glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+                //glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+                glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+            }
 #endif //QT_OPENGL_ES_2
             break;
         case VideoRenderer::QualityFastest:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 #ifndef QT_OPENGL_ES_2
-            glHint(GL_POINT_SMOOTH_HINT, GL_FASTEST);
-            glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
-            //glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
-            glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+            if (!hasGLSL) {
+                glHint(GL_POINT_SMOOTH_HINT, GL_FASTEST);
+                glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
+                //glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+                glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+            }
 #endif //QT_OPENGL_ES_2
             break;
         default:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //GL_NEAREST
 #ifndef QT_OPENGL_ES_2
-            glHint(GL_POINT_SMOOTH_HINT, GL_DONT_CARE);
-            glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
-            //glHint(GL_POLYGON_SMOOTH_HINT, GL_DONT_CARE);
-            glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+            if (!hasGLSL) {
+                glHint(GL_POINT_SMOOTH_HINT, GL_DONT_CARE);
+                glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
+                //glHint(GL_POLYGON_SMOOTH_HINT, GL_DONT_CARE);
+                glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+            }
 #endif //QT_OPENGL_ES_2
             break;
         }
     }
 
     void setupAspectRatio() {
-#ifdef QT_OPENGL_ES_2
-        const GLfloat matrix[] = {
-            (float)out_rect.width()/(float)renderer_width, 0, 0, 0,
-            0, (float)out_rect.height()/(float)renderer_height, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        };
-        glUniformMatrix4fv(u_matrix, 1, GL_FALSE/*transpose or not*/, matrix);
-#else
-        glScalef((float)out_rect.width()/(float)renderer_width, (float)out_rect.height()/(float)renderer_height, 0);
-#endif
+        if (hasGLSL) {
+            const GLfloat matrix[] = {
+                (float)out_rect.width()/(float)renderer_width, 0, 0, 0,
+                0, (float)out_rect.height()/(float)renderer_height, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            };
+            glUniformMatrix4fv(u_matrix, 1, GL_FALSE/*transpose or not*/, matrix);
+        }
+#ifndef QT_OPENGL_ES_2
+        if (!hasGLSL) {
+            glScalef((float)out_rect.width()/(float)renderer_width, (float)out_rect.height()/(float)renderer_height, 0);
+        }
+#endif //QT_OPENGL_ES_2
     }
 
+    bool hasGLSL;
     bool update_texcoords;
-    GLuint texture;
-#ifdef QT_OPENGL_ES_2
-    //TODO: u_tex, a_position
+    QVector<GLuint> textures; //texture ids. size is plane count
+    QVector<QSize> texture_size;
+    QVector<int> effective_tex_width; //without additional width for alignment
+    qreal effective_tex_width_ratio;
+    QVector<GLint> internal_format;
+    QVector<GLenum> data_format;
     GLuint program;
-    GLuint position_location;
-    GLuint tex_coords_location;
-    GLuint tex_location;
+    GLuint vert, frag;
+    GLuint a_Position;
+    GLuint a_TexCoords;
+    QVector<GLuint> u_Texture; //u_TextureN uniform. size is channel count
     GLuint u_matrix;
-#endif
+
     QPainter *painter;
+
+    VideoFormat::PixelFormat pixel_fmt;
+    QSize texture0Size;
 };
 
 } //namespace QtAV

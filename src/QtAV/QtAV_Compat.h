@@ -32,6 +32,8 @@ extern "C"
 #include <libswscale/swscale.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#include <libavutil/dict.h>
+#include <libavutil/log.h>
 #include <libavutil/mathematics.h> //AV_ROUND_UP, av_rescale_rnd for libav
 #include <libavutil/cpu.h>
 #include <libavutil/error.h>
@@ -45,7 +47,8 @@ extern "C"
 #ifndef LIBSWRESAMPLE_VERSION_INT //ffmpeg 0.9, swr 0.5
 #define LIBSWRESAMPLE_VERSION_INT AV_VERSION_INT(LIBSWRESAMPLE_VERSION_MAJOR, LIBSWRESAMPLE_VERSION_MINOR, LIBSWRESAMPLE_VERSION_MICRO)
 #endif //LIBSWRESAMPLE_VERSION_INT
-#define HAVE_SWR_GET_DELAY (LIBSWRESAMPLE_VERSION_INT > AV_VERSION_INT(0, 5, 0))
+//ffmpeg >= 0.11.x. swr0.6.100: ffmpeg-0.10.x
+#define HAVE_SWR_GET_DELAY (LIBSWRESAMPLE_VERSION_INT > AV_VERSION_INT(0, 6, 100))
 #endif //QTAV_HAVE(SWRESAMPLE)
 #if QTAV_HAVE(AVRESAMPLE)
 #include <libavresample/avresample.h>

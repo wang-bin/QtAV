@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -76,14 +76,26 @@ public:
     };
 
     VideoRenderer();
-    virtual ~VideoRenderer() = 0;
+    virtual ~VideoRenderer();
     virtual VideoRendererId id() const = 0;
 
     bool receive(const VideoFrame& frame);
     void setVideoFormat(const VideoFormat& format);
-    VideoFormat& videoFormat();
-    const VideoFormat& videoFormat() const;
-    const VideoFormat& defaultVideoFormat() const;
+    //VideoFormat& videoFormat();
+    //const VideoFormat& videoFormat() const;
+    /*!
+     * \brief setPreferredPixelFormat
+     * \param pixfmt
+     *  pixfmt will be used if decoded format is not supported by this renderer. otherwise, use decoded format.
+     *  return false if \a pixfmt is not supported and not changed.
+     */
+    bool setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
+    /*!
+     * \brief preferredPixelFormat
+     * \return preferred pixel format. e.g. WidgetRenderer is rgb formats.
+     */
+    VideoFormat::PixelFormat preferredPixelFormat() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const = 0;
 
     //for testing performance
     void scaleInRenderer(bool q);
@@ -128,8 +140,28 @@ public:
     // compute the real ROI
     QRect realROI() const;
 
-    QWidget* widget();
-    QGraphicsItem* graphicsItem();
+    // TODO: map normalized
+    /*!
+     * \brief mapToFrame
+     *  map point in VideoRenderer coordinate to VideoFrame, with current ROI
+     */
+    QPointF mapToFrame(const QPointF& p) const;
+    /*!
+     * \brief mapFromFrame
+     *  map point in VideoFrame coordinate to VideoRenderer, with current ROI
+     */
+    QPointF mapFromFrame(const QPointF& p) const;
+
+    /*!
+     * \brief widget
+     * \return default is 0. A QWidget subclass can return \a this
+     */
+    virtual QWidget* widget() { return 0; }
+    /*!
+     * \brief graphicsItem
+     * \return default is 0. A QGraphicsItem subclass can return \a this
+     */
+    virtual QGraphicsItem* graphicsItem() { return 0; }
 
     //TODO: enable/disable = new a default for this vo engine or push back/remove from list
     //filter: null means disable
@@ -171,6 +203,7 @@ private:
     //qreal sourceAspectRatio() const;//TODO: from AVCodecContext
     //we don't need api like QSize sourceSize() const. you should get them from player or avinfo(not implemented)
 };
+typedef VideoRenderer VideoOutput;
 
 } //namespace QtAV
 #endif // QAV_VIDEORENDERER_H

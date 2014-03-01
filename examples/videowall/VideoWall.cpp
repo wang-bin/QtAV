@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoWall:  this file is part of QtAV examples
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -149,7 +149,6 @@ void VideoWall::show()
             }
             AVPlayer *player = new AVPlayer;
             player->setRenderer(renderer);
-            player->setPlayerEventFilter(this);
             player->masterClock()->setClockAuto(false);
             player->masterClock()->setClockType(AVClock::ExternalClock);
             players.append(player);

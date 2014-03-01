@@ -4,7 +4,6 @@ TARGET = QtAV
 QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4) {
   QT += widgets
-*linux*: QT += gui-private
 }
 
 CONFIG *= qtav-buildlib
@@ -16,7 +15,8 @@ PROJECTROOT = $$PWD/..
 preparePaths($$OUT_PWD/../out)
 
 
-RESOURCES += ../i18n/QtAV.qrc
+RESOURCES += ../i18n/QtAV.qrc \
+    shaders/shaders.qrc
 
 win32 {
     RC_FILE = $${PROJECTROOT}/res/QtAV.rc
@@ -32,7 +32,6 @@ win32 {
     QMAKE_EXTRA_TARGETS += rc
 }
 OTHER_FILES += $$RC_FILE
-
 TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 
 *msvc* {
@@ -43,7 +42,7 @@ TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
 
-LIBS += -Lextra -lavcodec -lavformat -lavutil -lswscale
+LIBS += -lavcodec -lavformat -lavutil -lswscale
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
     SOURCES += AudioResamplerFF.cpp
@@ -58,24 +57,32 @@ ipp-link {
     DEFINES += IPP_LINK
     ICCROOT = $$(IPPROOT)/../compiler
     INCLUDEPATH += $$(IPPROOT)/include
-    LIBS *= -L$$(IPPROOT)/lib/intel64 -L$$(IPPROOT)/lib/ia32 -lippcc -lippcore -lippi \
-            -L$$(IPPROOT)/../compiler/lib/ia32 -L$$(IPPROOT)/../compiler/lib/intel64 -lsvml -limf
+    message("QMAKE_TARGET.arch" $$QMAKE_TARGET.arch)
+    *64|contains(QMAKE_TARGET.arch, x86_64)|contains(TARGET_ARCH, x86_64) {
+        IPPARCH=intel64
+    } else {
+        IPPARCH=ia32
+    }
+    LIBS *= -L$$(IPPROOT)/lib/$$IPPARCH -lippcc -lippcore -lippi \
+            -L$$(IPPROOT)/../compiler/lib/$$IPPARCH -lsvml -limf
     #omp for static link. _t is multi-thread static link
 }
 config_portaudio {
-    SOURCES += AOPortAudio.cpp
-    SDK_HEADERS += QtAV/AOPortAudio.h
+    SOURCES += AudioOutputPortAudio.cpp
+    SDK_HEADERS += QtAV/AudioOutputPortAudio.h
     DEFINES *= QTAV_HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
     #win32: LIBS *= -lwinmm #-lksguid #-luuid
 }
 config_openal {
-    SOURCES += AOOpenAL.cpp
-    HEADERS += QtAV/private/AOOpenAL_p.h
-    SDK_HEADERS += QtAV/AOOpenAL.h
+    SOURCES += AudioOutputOpenAL.cpp
+    SDK_HEADERS += QtAV/AudioOutputOpenAL.h
     DEFINES *= QTAV_HAVE_OPENAL=1
-    win32:LIBS *= -lOpenAL32
-    else: LIBS *= -lopenal
+    win32: LIBS += -lOpenAL32
+    unix:!mac:!blackberry: LIBS += -lopenal
+    blackberry: LIBS += -lOpenAL
+    mac: LIBS += -framework OpenAL
+    mac: DEFINES += HEADER_OPENAL_PREFIX
 }
 config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
@@ -105,6 +112,18 @@ config_gl {
     SOURCES += GLWidgetRenderer.cpp
     HEADERS += QtAV/private/GLWidgetRenderer_p.h
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
+    OTHER_FILES += shaders/yuv_rgb.f.glsl shaders/rgb.f.glsl
+}
+config_cuda {
+    DEFINES += QTAV_HAVE_CUDA=1
+    HEADERS += cuda/helper_cuda.h
+    SOURCES += VideoDecoderCUDA.cpp
+    INCLUDEPATH += $$(CUDA_PATH)/include $$PWD/cuda
+    win32 {
+        isEqual(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
+        else: LIBS += -L$$(CUDA_PATH)/lib/x64
+    }
+    LIBS += -lnvcuvid -lcuda
 }
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
@@ -130,12 +149,12 @@ SOURCES += \
     AudioFormat.cpp \
     AudioFrame.cpp \
     AudioOutput.cpp \
+    AudioOutputTypes.cpp \
     AudioResampler.cpp \
     AudioResamplerTypes.cpp \
     AVDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
-    EventFilter.cpp \
     Frame.cpp \
     Filter.cpp \
     FilterContext.cpp \
@@ -148,6 +167,7 @@ SOURCES += \
     OSD.cpp \
     OSDFilter.cpp \
     Packet.cpp \
+    AVError.cpp \
     AVPlayer.cpp \
     VideoCapture.cpp \
     VideoFormat.cpp \
@@ -164,7 +184,9 @@ SOURCES += \
     VideoDecoderTypes.cpp \
     VideoDecoderFFmpeg.cpp \
     VideoDecoderFFmpegHW.cpp \
-    VideoThread.cpp
+    VideoThread.cpp \
+    QAVIOContext.cpp \
+    CommonTypes.cpp
 
 SDK_HEADERS *= \
     QtAV/QtAV.h \
@@ -176,6 +198,7 @@ SDK_HEADERS *= \
     QtAV/AudioFormat.h \
     QtAV/AudioFrame.h \
     QtAV/AudioOutput.h \
+    QtAV/AudioOutputTypes.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
     QtAV/BlockingQueue.h \
@@ -189,6 +212,7 @@ SDK_HEADERS *= \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
     QtAV/Packet.h \
+    QtAV/AVError.h \
     QtAV/AVPlayer.h \
     QtAV/VideoCapture.h \
     QtAV/VideoRenderer.h \
@@ -198,8 +222,6 @@ SDK_HEADERS *= \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoDecoderTypes.h \
-    QtAV/VideoDecoderFFmpeg.h \
-    QtAV/VideoDecoderFFmpegHW.h \
     QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
     QtAV/FactoryDefine.h \
@@ -217,7 +239,6 @@ HEADERS *= \
     QtAV/VideoOutputEventFilter.h \
     QtAV/OutputSet.h \
     QtAV/QtAV_Compat.h \
-    QtAV/EventFilter.h \
     QtAV/singleton.h \
     QtAV/factory.h \
     QtAV/FilterManager.h \
@@ -233,9 +254,13 @@ HEADERS *= \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpeg_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
+    QtAV/VideoDecoderFFmpeg.h \
+    QtAV/VideoDecoderFFmpegHW.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
-    QtAV/private/WidgetRenderer_p.h
+    QtAV/private/WidgetRenderer_p.h \
+    QtAV/QAVIOContext.h \
+    QtAV/CommonTypes.h
 
 
 SDK_INCLUDE_FOLDER = QtAV

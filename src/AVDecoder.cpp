@@ -122,7 +122,7 @@ bool AVDecoder::open()
     }
     //set dict used by avcodec_open2(). see ffplay
     // AVDictionary *opts;
-    int ret = avcodec_open2(d.codec_ctx, codec, NULL);
+    int ret = avcodec_open2(d.codec_ctx, codec, d.options.isEmpty() ? NULL : &d.dict);
     if (ret < 0) {
         qWarning("open video codec failed: %s", av_err2str(ret));
         return false;
@@ -266,6 +266,29 @@ QByteArray AVDecoder::data() const
 int AVDecoder::undecodedSize() const
 {
     return d_func().undecoded_size;
+}
+
+void AVDecoder::setOptions(const QHash<QByteArray, QByteArray> &dict)
+{
+    DPTR_D(AVDecoder);
+    d.options = dict;
+    if (d.dict) {
+        av_dict_free(&d.dict);
+        d.dict = 0; //aready 0 in av_free
+    }
+    if (dict.isEmpty())
+        return;
+    QHashIterator<QByteArray, QByteArray> i(dict);
+    while (i.hasNext()) {
+        i.next();
+        av_dict_set(&d.dict, i.key().constData(), i.value().constData(), 0);
+        qDebug("avcodec option: %s=>%s", i.key().constData(), i.value().constData());
+    }
+}
+
+QHash<QByteArray, QByteArray> AVDecoder::options() const
+{
+    return d_func().options;
 }
 
 } //namespace QtAV
