@@ -350,6 +350,7 @@ void VideoThread::run()
         }
     }
     d.capture->cancel();
+    d.outputSet->sendVideoFrame(VideoFrame());
     qDebug("Video thread stops running...");
 }
 
