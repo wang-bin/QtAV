@@ -114,10 +114,36 @@ int bytesOfGLFormat(GLenum format)
       case GL_LUMINANCE:
       case GL_ALPHA:
         return 1;
+#ifdef GL_LUMINANCE16
+    case GL_LUMINANCE16:
+        return 2;
+#endif //GL_LUMINANCE16
+#ifdef GL_ALPHA16
+    case GL_ALPHA16:
+        return 2;
+#endif //GL_ALPHA16
       default:
         qWarning("bytesOfGLFormat - Unknown format %u", format);
         return 1;
       }
+}
+
+static GLint GetGLInternalFormat(GLint data_format, int bpp)
+{
+    if (bpp != 2)
+        return data_format;
+    switch (data_format) {
+#ifdef GL_ALPHA16
+    case GL_ALPHA:
+        return GL_ALPHA16;
+#endif //GL_ALPHA16
+#ifdef GL_LUMINANCE16
+    case GL_LUMINANCE:
+        return GL_LUMINANCE16;
+#endif //GL_LUMINANCE16
+    default:
+        return data_format;
+    }
 }
 
 static const char kVertexShader[] =
@@ -230,7 +256,7 @@ bool GLWidgetRendererPrivate::releaseResource()
     return true;
 }
 
-bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLenum format, int width, int height)
+bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLenum format, GLenum dataType, int width, int height)
 {
     glBindTexture(GL_TEXTURE_2D, tex);
     setupQuality();
@@ -244,7 +270,7 @@ bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLen
                  , height
                  , 0                //border, ES not support
                  , format          //format, must the same as internal format?
-                 , GL_UNSIGNED_BYTE
+                 , dataType
                  , NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
     return true;
@@ -300,17 +326,25 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
      */
     internal_format = QVector<GLint>(fmt.planeCount(), FMT_INTERNAL);
     data_format = QVector<GLenum>(fmt.planeCount(), FMT);
+    data_type = QVector<GLenum>(fmt.planeCount(), GL_UNSIGNED_BYTE);
     if (fmt.isPlanar()) {
         /*!
          * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
          * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
          */
+        qDebug("///////////bpp %d", fmt.bytesPerPixel());
+
         internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED for GL
         if (fmt.planeCount() == 2) {
             internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
         } else {
             internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,0)
             internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
+        }
+        for (int i = 0; i < internal_format.size(); ++i) {
+            // xbmc use bpp not bpp(plane)
+            internal_format[i] = GetGLInternalFormat(data_format[i], fmt.bytesPerPixel(i));
+            //data_format[i] = internal_format[i];
         }
     } else {
         //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
@@ -319,11 +353,17 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     for (int i = 0; i < fmt.planeCount(); ++i) {
         effective_tex_width[i] = AVALIGN(qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bytesOfGLFormat(data_format[i])), 4);
         texture_size[i].setWidth(AVALIGN(qCeil((qreal)texture_size[i].width()/(qreal)bytesOfGLFormat(data_format[i])), 4));
+        // bytesOfGLFormat()*bytesOfGLDataType()?
+        effective_tex_width[i] /= fmt.bytesPerPixel(i);
+        texture_size[i].setWidth(texture_size[i].width()/fmt.bytesPerPixel(i));
         qDebug("tex: %d, pad: %d", texture_size[i].width(), effective_tex_width[i]);
+        if (fmt.bytesPerPixel(i) == 2 && fmt.planeCount() == 3) {
+            data_type[i] = GL_UNSIGNED_SHORT;
+        }
     }
 
     if (!hasGLSL) {
-        initTexture(textures[0], internal_format[0], data_format[0], texture_size[0].width(), texture_size[0].height());
+        initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
         // more than 1?
         qWarning("Does not support GLSL!");
         return false;
@@ -358,9 +398,9 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
         u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
         qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
     }
-    initTexture(textures[0], internal_format[0], data_format[0], texture_size[0].width(), texture_size[0].height());
+    initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
     for (int i = 1; i < textures.size(); ++i) {
-        initTexture(textures[i], internal_format[i], data_format[i], texture_size[i].width(), texture_size[i].height());
+        initTexture(textures[i], internal_format[i], data_format[i], data_type[0], texture_size[i].width(), texture_size[i].height());
     }
     return true;
 }
@@ -433,7 +473,7 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
                      , texture_size[p].width()
                      , texture_size[p].height()
                      , format          //format, must the same as internal format?
-                     , GL_UNSIGNED_BYTE
+                     , data_type[p]
                      , video_frame.bits(p));
     } else {
         int roi_x = roi.x();
@@ -580,10 +620,10 @@ void GLWidgetRenderer::drawFrame()
   tex coords: ROI/frameRect()*effective_tex_width_ratio
 */
     const GLfloat kTexCoords[] = {
-            (GLfloat)roi.x()*d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width())*d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width())*d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
-            (GLfloat)roi.x()*d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
     };
 ///        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
 ///        glEnableVertexAttribArray(d.a_TexCoords);

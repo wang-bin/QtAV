@@ -56,7 +56,7 @@ public:
     GLuint loadShader(GLenum shaderType, const char* pSource);
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
     bool releaseResource();
-    bool initTexture(GLuint tex, GLint internal_format, GLenum format, int width, int height);
+    bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     QString getShaderFromFile(const QString& fileName);
     bool prepareShaderProgram(const VideoFormat& fmt);
     void upload(const QRect& roi);
@@ -138,6 +138,7 @@ public:
     qreal effective_tex_width_ratio;
     QVector<GLint> internal_format;
     QVector<GLenum> data_format;
+    QVector<GLenum> data_type;
     GLuint program;
     GLuint vert, frag;
     GLuint a_Position;
