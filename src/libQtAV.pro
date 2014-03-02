@@ -1,6 +1,5 @@
 TEMPLATE = lib
 TARGET = QtAV
-
 QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4) {
   QT += widgets
@@ -155,6 +154,7 @@ SOURCES += \
     AVDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
+    ColorTransform.cpp \
     Frame.cpp \
     Filter.cpp \
     FilterContext.cpp \
@@ -260,6 +260,7 @@ HEADERS *= \
     QtAV/private/QPainterRenderer_p.h \
     QtAV/private/WidgetRenderer_p.h \
     QtAV/QAVIOContext.h \
+    QtAV/ColorTransform.h \
     QtAV/CommonTypes.h
 
 
