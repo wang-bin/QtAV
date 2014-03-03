@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoEQConfigPage.h: description
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -38,9 +38,17 @@ class VideoEQConfigPage : public QWidget
 {
     Q_OBJECT
 public:
+    enum Engine {
+        SWScale,
+        GLSL
+    };
     explicit VideoEQConfigPage(QWidget *parent = 0);
+    void setEngines(const QVector<Engine>& engines);
+    void setEngine(Engine engine);
+    Engine engine() const;
 
 signals:
+    void engineChanged();
     void brightnessChanged(int);
     void contrastChanged(int);
     void saturationChanged(int);
@@ -48,12 +56,14 @@ signals:
 private slots:
     void onGlobalSet(bool);
     void onReset();
+    void onEngineChangedByUI();
 
 private:
     QCheckBox *mpGlobal;
     QComboBox *mpEngine;
     QSlider *mpBSlider, *mpCSlider, *mpSSlider;
     QPushButton *mpResetButton;
+    Engine mEngine;
 };
 
 #endif // VIDEOEQCONFIGPAGE_H

@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoEQConfigPage.cpp: description
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -36,13 +36,15 @@
 VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
     QWidget(parent)
 {
+    mEngine = SWScale;
     QGridLayout *gl = new QGridLayout();
     setLayout(gl);
 
     QLabel *label = new QLabel();
     label->setText(tr("Engine"));
     mpEngine = new QComboBox();
-    mpEngine->addItem("libswscale");
+    setEngines(QVector<Engine>(1, SWScale));
+    connect(mpEngine, SIGNAL(currentIndexChanged(int)), SLOT(onEngineChangedByUI()));
 
     int r = 0, c = 0;
     gl->addWidget(label, r, c);
@@ -93,9 +95,43 @@ void VideoEQConfigPage::onGlobalSet(bool g)
 
 }
 
+void VideoEQConfigPage::setEngines(const QVector<Engine> &engines)
+{
+    mpEngine->clear();
+    QVector<Engine> es(engines);
+    if (!es.contains(SWScale))
+        es.prepend(SWScale);
+    qSort(es);
+    foreach (Engine e, es) {
+        if (e == SWScale) {
+            mpEngine->addItem("libswscale");
+        } else if (e == GLSL) {
+            mpEngine->addItem("GLSL");
+        }
+    }
+}
+
+void VideoEQConfigPage::setEngine(Engine engine)
+{
+    if ((int)engine == mpEngine->currentIndex())
+        return;
+    mpEngine->setCurrentIndex((int)engine);
+    emit engineChanged();
+}
+
+VideoEQConfigPage::Engine VideoEQConfigPage::engine() const
+{
+    return (Engine)mpEngine->currentIndex();
+}
+
 void VideoEQConfigPage::onReset()
 {
     mpBSlider->setValue(0);
     mpCSlider->setValue(0);
     mpSSlider->setValue(0);
+}
+
+void VideoEQConfigPage::onEngineChangedByUI()
+{
+    emit engineChanged();
 }

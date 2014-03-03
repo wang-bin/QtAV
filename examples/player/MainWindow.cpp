@@ -382,6 +382,7 @@ void MainWindow::setupUi()
     subMenu = new ClickableMenu(tr("Color space"));
     mpMenu->addMenu(subMenu);
     mpVideoEQ = new VideoEQConfigPage();
+    connect(mpVideoEQ, SIGNAL(engineChanged()), SLOT(onVideoEQEngineChanged()));
     pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(mpVideoEQ);
     subMenu->addAction(pWA);
@@ -598,6 +599,15 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     }
     mpVOAction->setChecked(true);
     mpTitle->setText(mpVOAction->text());
+    if (mpPlayer->renderer()->id() == VideoRendererId_GLWidget) {
+        mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale << VideoEQConfigPage::GLSL);
+        mpVideoEQ->setEngine(VideoEQConfigPage::GLSL);
+    } else {
+        mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale);
+        mpVideoEQ->setEngine(VideoEQConfigPage::SWScale);
+    }
+    mpPlayer->renderer()->forcePreferredPixelFormat(false);
+    onVideoEQEngineChanged();
 }
 
 void MainWindow::play(const QString &name)
@@ -1117,4 +1127,15 @@ void MainWindow::onMediaStatusChanged()
     }
     if (!status.isEmpty())
         setWindowTitle(status);
+}
+
+void MainWindow::onVideoEQEngineChanged()
+{
+    VideoEQConfigPage::Engine e = mpVideoEQ->engine();
+    if (e == VideoEQConfigPage::SWScale) {
+        mpPlayer->renderer()->forcePreferredPixelFormat(true);
+        mpPlayer->renderer()->setPreferredPixelFormat(VideoFormat::Format_RGB32);
+    } else {
+        mpPlayer->renderer()->forcePreferredPixelFormat(false);
+    }
 }
