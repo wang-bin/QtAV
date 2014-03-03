@@ -58,6 +58,7 @@ public:
       , subtitle_filter(0)
       , default_event_filter(true)
       , preferred_format(VideoFormat::Format_RGB32)
+      , force_preferred(false)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -112,6 +113,7 @@ public:
     bool default_event_filter;
     VideoFrame video_frame;
     VideoFormat::PixelFormat preferred_format;
+    bool force_preferred;
 };
 
 } //namespace QtAV
