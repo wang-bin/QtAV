@@ -22,6 +22,10 @@
 #ifndef QTAV_COMPAT_H
 #define QTAV_COMPAT_H
 
+/*!
+  NOTE: include this at last
+  TODO: runtime symble check use dllapi project? how ffmpeg version defined?
+ */
 #include "QtAV_Global.h"
 #ifdef __cplusplus
 extern "C"
@@ -274,5 +278,23 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt);
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt);
 #endif //AV_VERSION_INT(52, 38, 100)
+
+// FFmpeg < 1.0 has no av_samples_copy
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 73, 101)
+/**
+ * Copy samples from src to dst.
+ *
+ * @param dst destination array of pointers to data planes
+ * @param src source array of pointers to data planes
+ * @param dst_offset offset in samples at which the data will be written to dst
+ * @param src_offset offset in samples at which the data will be read from src
+ * @param nb_samples number of samples to be copied
+ * @param nb_channels number of audio channels
+ * @param sample_fmt audio sample format
+ */
+int av_samples_copy(uint8_t **dst, uint8_t * const *src, int dst_offset,
+                    int src_offset, int nb_samples, int nb_channels,
+                    enum AVSampleFormat sample_fmt);
+#endif //AV_VERSION_INT(51, 73, 101)
 
 #endif //QTAV_COMPAT_H
