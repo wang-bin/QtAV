@@ -23,9 +23,9 @@
 #ifndef QTAV_AVIOCONTEXT_H
 #define QTAV_AVIOCONTEXT_H
 
-
+#include "QtAV/QtAV_Compat.h"
+//struct AVIOContext; //anonymous struct in FFmpeg1.0.x
 class QIODevice;
-struct AVIOContext;
 
 #define IODATA_BUFFER_SIZE 32768
 
