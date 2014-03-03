@@ -95,6 +95,13 @@ public:
      * \return preferred pixel format. e.g. WidgetRenderer is rgb formats.
      */
     VideoFormat::PixelFormat preferredPixelFormat() const;
+    /*!
+     * \brief forcePreferredPixelFormat
+     *  force to use preferredPixelFormat() even if incoming format is supported
+     * \param force
+     */
+    void forcePreferredPixelFormat(bool force = true);
+    bool isPreferredPixelFormatForced() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const = 0;
 
     //for testing performance

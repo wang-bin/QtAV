@@ -65,6 +65,16 @@ VideoFormat::PixelFormat VideoRenderer::preferredPixelFormat() const
     return d_func().preferred_format;
 }
 
+void VideoRenderer::forcePreferredPixelFormat(bool force)
+{
+    d_func().force_preferred = force;
+}
+
+bool VideoRenderer::isPreferredPixelFormatForced() const
+{
+    return d_func().force_preferred;
+}
+
 void VideoRenderer::scaleInRenderer(bool q)
 {
     d_func().scale_in_renderer = q;

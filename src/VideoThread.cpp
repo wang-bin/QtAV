@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -317,7 +317,9 @@ void VideoThread::run()
             }
         } else {
             VideoRenderer *vo = static_cast<VideoRenderer*>(outputs.first());
-            if (!vo->isSupported(frame.pixelFormat())) {
+            if (!vo->isSupported(frame.pixelFormat())
+                    || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
+                    ) {
                 if (!frame.convertTo(vo->preferredPixelFormat())) {
                     /*
                      * use VideoFormat::Format_User to deliver user defined frame
