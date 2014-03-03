@@ -23,7 +23,7 @@
 #include "private/GLWidgetRenderer_p.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
-#include <QtCore/QtMath>
+#include <QtCore/qmath.h>
 #include <QResizeEvent>
 #include <QtOpenGL/QGLShaderProgram>
 #include <QtOpenGL/QGLShader>

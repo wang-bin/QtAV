@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/ColorTransform.h"
-#include <QtCore/QtMath>
+#include <QtCore/qmath.h>
 
 namespace QtAV {
 
