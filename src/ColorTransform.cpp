@@ -83,7 +83,7 @@ public:
         // Contrast (offset) R,G,B
         QMatrix4x4 C(1, 0, 0, 0,
                      0, 1, 0, 0,
-                     0, 0, 0, 1,
+                     0, 0, 1, 0,
                      c, c, c, 1);
 
         // Saturation
