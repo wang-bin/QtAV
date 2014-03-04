@@ -260,9 +260,6 @@ void VideoThread::run()
         }
         if (skip_render)
             continue;
-        d.conv->setInFormat(frame.pixelFormatFFmpeg());
-        d.conv->setInSize(frame.width(), frame.height());
-        d.conv->setOutSize(frame.width(), frame.height());
         frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
@@ -344,8 +341,7 @@ void VideoThread::run()
                 d.capture->setCaptureName(cap_name + "_" + QString::number(pts, 'f', 3));
             }
             //TODO: what if not rgb32 now? detach the frame
-            //FIXME: why frame.data() may crash?
-            d.capture->setRawImage(frame.frameData(), frame.width(), frame.height(), frame.imageFormat());
+            d.capture->setVideoFrame(frame);
             d.capture->start();
             if (auto_name)
                 d.capture->setCaptureName("");

@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoCapture.cpp: description
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -21,6 +21,7 @@
 
 
 #include <QtAV/VideoCapture.h>
+#include <QtAV/ImageConverterTypes.h>
 #include <QtCore/QThread>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
@@ -39,6 +40,7 @@ class CaptureTask : public QRunnable
 {
 public:
     CaptureTask(VideoCapture* c):cap(c){
+        raw = false;
         format = "PNG";
         qfmt = QImage::Format_RGB32;
         setAutoDelete(true);
@@ -54,8 +56,54 @@ public:
                 return;
             }
         }
-        QImage image((const uchar*)data.constData(), width, height, qfmt);
-        QString path(dir + "/" + name + "." + format.toLower());
+        QString path(dir + "/" + name + ".");
+#define FRAME_CLONE_OK 0
+#if FRAME_CLONE_OK
+        // if no clone, frameData() is empty
+        frame = frame.clone();
+        //frame.setImageConverter();
+#endif //FRAME_CLONE_OK
+        if (raw) {
+            path.append(frame.format().name());
+            QFile file(path);
+            if (!file.open(QIODevice::WriteOnly)) {
+                qWarning("Failed to open file %s", qPrintable(path));
+                QMetaObject::invokeMethod(cap, "failed");
+                return;
+            }
+#if FRAME_CLONE_OK
+            if (file.write(frame.frameData()) <= 0) {
+                qWarning("Failed to write captured raw frame");
+                QMetaObject::invokeMethod(cap, "failed");
+                file.close();
+                return;
+            }
+
+#else
+            int len = 0;
+            for (int i = 0; i < frame.planeCount(); ++i) {
+                qDebug("writing %d %d %d", i, frame.bytesPerLine(i), frame.planeWidth(i));
+                len = file.write((const char*)frame.bits(i), frame.bytesPerLine(i)*frame.planeHeight(i));
+                if (len < 0) {
+                    qWarning("Failed to write caputred frame at plane %d. %d bytes written.", i, len);
+                    QMetaObject::invokeMethod(cap, "failed");
+                    file.close();
+                    return;
+                }
+            }
+#endif //FRAME_CLONE_OK
+            file.close();
+            qDebug("Saving capture to %s", qPrintable(path));
+            QMetaObject::invokeMethod(cap, "finished");
+            return;
+        }
+        path.append(format.toLower());
+        if (!frame.convertTo(qfmt)) {
+            qWarning("Failed to convert captured frame");
+            return;
+        }
+
+        QImage image((const uchar*)frame.frameData().constData(), frame.width(), frame.height(), qfmt);
         qDebug("Saving capture to %s", qPrintable(path));
         bool ok = image.save(path, format.toLatin1().constData(), quality);
         if (!ok) {
@@ -67,10 +115,11 @@ public:
     }
 
     VideoCapture *cap;
-    int width, height, quality;
+    bool raw;
+    int quality;
     QString format, dir, name;
     QImage::Format qfmt;
-    QByteArray data;
+    VideoFrame frame;
 };
 
 VideoCapture::VideoCapture(QObject *parent) :
@@ -78,6 +127,7 @@ VideoCapture::VideoCapture(QObject *parent) :
   , async(true)
   , is_requested(false)
   , auto_save(true)
+  , raw(false)
   , error(NoError)
   , qfmt(QImage::Format_RGB32)
   , pts(0)
@@ -91,6 +141,7 @@ VideoCapture::VideoCapture(QObject *parent) :
         dir = qApp->applicationDirPath() + "/capture";
     fmt = "PNG";
     qual = -1;
+    conv = ImageConverterFactory::create(ImageConverterId_FF);
 }
 
 VideoCapture::~VideoCapture()
@@ -116,6 +167,16 @@ void VideoCapture::setAutoSave(bool a)
 bool VideoCapture::autoSave() const
 {
     return auto_save;
+}
+
+void VideoCapture::setRaw(bool raw)
+{
+    this->raw = raw;
+}
+
+bool VideoCapture::isRaw() const
+{
+    return raw;
 }
 
 void VideoCapture::request()
@@ -145,14 +206,13 @@ void VideoCapture::start()
         return;
     }
     CaptureTask *task = new CaptureTask(this);
-    task->width = width;
-    task->height = height;
+    task->raw = raw;
     task->quality = qual;
     task->dir = dir;
     task->name = name;
     task->format = fmt;
     task->qfmt = qfmt;
-    task->data = data;
+    task->frame = frame;
     if (isAsync()) {
         QThreadPool::globalInstance()->start(task);
     } else {
@@ -210,30 +270,41 @@ QString VideoCapture::captureDir() const
     return dir;
 }
 
-void VideoCapture::setRawImage(const QByteArray &raw, const QSize &size, QImage::Format fmt)
-{
-    setRawImage(raw, size.width(), size.height(), fmt);
-}
-
-void VideoCapture::setRawImage(const QByteArray &raw, int w, int h, QImage::Format fmt)
-{
-    QWriteLocker locker(&lock);
-    Q_UNUSED(locker);
-    width = w;
-    height = h;
-    qfmt = fmt;
-    data = raw;
-}
-
 void VideoCapture::getRawImage(QByteArray *raw, int *w, int *h, QImage::Format *fmt)
 {
     QReadLocker locker(&lock);
     Q_UNUSED(locker);
-    *raw = data;
-    *w = width;
-    *h = height;
+    if (!frame.isValid()) {
+        *raw = 0;
+        return;
+    }
+    VideoFrame tmp = frame.clone();
+    tmp.setImageConverter(conv);
+    if (!tmp.convertTo(qfmt)) {
+        *raw = 0;
+        return;
+    }
+    *raw = frame.frameData();
+    *w = frame.width();
+    *h = frame.height();
     if (fmt)
         *fmt = qfmt;
+}
+
+void VideoCapture::getVideoFrame(VideoFrame &frame)
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    frame = this->frame.clone();
+}
+
+void VideoCapture::setVideoFrame(const VideoFrame &frame)
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    //clone here may block VideoThread
+    this->frame = frame;//.clone();
+    this->frame.setImageConverter(conv);
 }
 
 } //namespace QtAV

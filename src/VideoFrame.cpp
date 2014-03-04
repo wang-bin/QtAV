@@ -74,6 +74,7 @@ public:
         conv->setInFormat(format.pixelFormatFFmpeg());
         conv->setOutFormat(fffmt);
         conv->setInSize(width, height);
+        conv->setOutSize(width, height);
         if (!conv->convert(planes.data(), line_sizes.data())) {
             format.setPixelFormat(VideoFormat::Format_Invalid);
             return false;
@@ -184,10 +185,9 @@ VideoFrame VideoFrame::clone() const
     VideoFrame f(width(), height(), d->format);
     f.allocate();
     for (int i = 0; i < d->format.planeCount(); ++i) {
-        // TODO: is plane 0 always luma?
-        int h = i == 0 ? height() : d->format.chromaHeight(height());
-        memcpy(f.bits(i), bits(i), bytesPerLine(i)*h);
+        memcpy(f.bits(i), bits(i), bytesPerLine(i)*planeHeight(i));
     }
+    //f.setImageConverter(d->conv);
     return f;
 }
 
@@ -261,7 +261,7 @@ int VideoFrame::height() const
 int VideoFrame::effectivePlaneWidth(int plane) const
 {
     Q_D(const VideoFrame);
-    return effectiveBytesPerLine(plane)/d->format.bytesPerPixel(plane);
+    return effectiveBytesPerLine(plane)/d->format.bytesPerPixel(plane); //padded bpl?
 }
 
 int VideoFrame::planeWidth(int plane) const
