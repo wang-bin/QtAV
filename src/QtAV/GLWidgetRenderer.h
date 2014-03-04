@@ -51,6 +51,17 @@ protected:
     virtual void resizeGL(int w, int h);
     virtual void resizeEvent(QResizeEvent *);
     virtual void showEvent(QShowEvent *);
+
+    /*!
+     * \brief onChangingBrightness
+     *  only works for GLSL. otherwise return false, means that do nothing, brightness() does not change.
+     * \return
+     */
+    virtual bool onChangingBrightness(qreal b);
+    virtual bool onChangingContrast(qreal c);
+    virtual bool onChangingHue(qreal h);
+    virtual bool onChangingSaturation(qreal s);
+
 };
 typedef GLWidgetRenderer VideoRendererGLWidget;
 

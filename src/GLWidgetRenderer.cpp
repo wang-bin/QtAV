@@ -66,7 +66,6 @@
 
 #include <QtAV/FilterContext.h>
 #include <QtAV/OSDFilter.h>
-#include <QtAV/ColorTransform.h>
 
 #define UPLOAD_ROI 0
 #define ROI_TEXCOORDS 1
@@ -671,7 +670,7 @@ void GLWidgetRenderer::drawFrame()
         glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
         glEnableVertexAttribArray(d.a_TexCoords);
 
-        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, (GLfloat*)d.colorMatrix.data());
+        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, (GLfloat*)d.colorTransform.matrix().data());
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
@@ -760,4 +759,41 @@ void GLWidgetRenderer::showEvent(QShowEvent *)
      * don't do anything here, the widget content will never be updated.
      */
 }
+
+bool GLWidgetRenderer::onChangingBrightness(qreal b)
+{
+    DPTR_D(GLWidgetRenderer);
+    if (!d.hasGLSL)
+        return false;
+    d.colorTransform.setBrightness(b);
+    return true;
+}
+
+bool GLWidgetRenderer::onChangingContrast(qreal c)
+{
+    DPTR_D(GLWidgetRenderer);
+    if (!d.hasGLSL)
+        return false;
+    d.colorTransform.setContrast(c);
+    return true;
+}
+
+bool GLWidgetRenderer::onChangingHue(qreal h)
+{
+    DPTR_D(GLWidgetRenderer);
+    if (!d.hasGLSL)
+        return false;
+    d.colorTransform.setHue(h);
+    return true;
+}
+
+bool GLWidgetRenderer::onChangingSaturation(qreal s)
+{
+    DPTR_D(GLWidgetRenderer);
+    if (!d.hasGLSL)
+        return false;
+    d.colorTransform.setSaturation(s);
+    return true;
+}
+
 } //namespace QtAV

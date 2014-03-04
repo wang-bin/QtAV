@@ -25,7 +25,7 @@
 #include <QtCore/QVector>
 #include "private/VideoRenderer_p.h"
 #include <QtAV/VideoFormat.h>
-#include <QMatrix4x4>
+#include <QtAV/ColorTransform.h>
 
 namespace QtAV {
 
@@ -152,7 +152,7 @@ public:
 
     VideoFormat::PixelFormat pixel_fmt;
     QSize plane0Size;
-    QMatrix4x4 colorMatrix;
+    ColorTransform colorTransform;
 };
 
 } //namespace QtAV
