@@ -25,6 +25,7 @@
 #include <QtCore/QVector>
 #include "private/VideoRenderer_p.h"
 #include <QtAV/VideoFormat.h>
+#include <QMatrix4x4>
 
 namespace QtAV {
 
@@ -145,11 +146,13 @@ public:
     GLuint a_TexCoords;
     QVector<GLuint> u_Texture; //u_TextureN uniform. size is channel count
     GLuint u_matrix;
+    GLuint u_colorMatrix;
 
     QPainter *painter;
 
     VideoFormat::PixelFormat pixel_fmt;
-    QSize texture0Size;
+    QSize plane0Size;
+    QMatrix4x4 colorMatrix;
 };
 
 } //namespace QtAV

@@ -66,6 +66,7 @@
 
 #include <QtAV/FilterContext.h>
 #include <QtAV/OSDFilter.h>
+#include <QtAV/ColorTransform.h>
 
 #define UPLOAD_ROI 0
 #define ROI_TEXCOORDS 1
@@ -235,7 +236,7 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
 bool GLWidgetRendererPrivate::releaseResource()
 {
     pixel_fmt = VideoFormat::Format_Invalid;
-    texture0Size = QSize();
+    plane0Size = QSize();
     glDeleteTextures(textures.size(), textures.data());
     qDebug("delete %d textures", textures.size());
     textures.clear();
@@ -392,6 +393,8 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
 
     // fragment shader
+    u_colorMatrix = glGetUniformLocation(program, "u_colorMatrix");
+    qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d\n", u_colorMatrix);
     if (fmt.isRGB())
         u_Texture.resize(1);
     else
@@ -413,11 +416,11 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
     //qDebug("==========upload======");
     const VideoFormat fmt = video_frame.format();
 #if UPLOAD_ROI
-    if (fmt != pixel_fmt || roi.size() != texture0Size) {
+    if (fmt != pixel_fmt || roi.size() != plane0Size) {
         qDebug("update texture: %dx%d, %s", roi.width(), roi.height(), video_frame.format().name().toUtf8().constData());
         if (!prepareShaderProgram(fmt, roi.width(), roi.height())) {
 #else
-    if (fmt != pixel_fmt || video_frame.size() != texture0Size) { //
+    if (fmt != pixel_fmt || video_frame.size() != plane0Size) { //
         //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
 
         texture_size.resize(fmt.planeCount());
@@ -439,7 +442,7 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
         } else {
             qDebug("shader program created!!!");
         }
-        texture0Size = video_frame.size();
+        plane0Size = video_frame.size();
     }
     // set alignment
     for (int i = 0; i < video_frame.planeCount(); ++i) {
@@ -486,7 +489,7 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
         int plane_w = video_frame.planeWidth(p);
         VideoFormat fmt = video_frame.format();
         if (p == 0) {
-            texture0Size = QSize(roi_w, roi_h);
+            plane0Size = QSize(roi_w, roi_h);
         } else {
             roi_x = fmt.chromaWidth(roi_x);
             roi_y = fmt.chromaHeight(roi_y);
@@ -667,6 +670,8 @@ void GLWidgetRenderer::drawFrame()
         glEnableVertexAttribArray(d.a_Position);
         glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
         glEnableVertexAttribArray(d.a_TexCoords);
+
+        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, (GLfloat*)d.colorMatrix.data());
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 

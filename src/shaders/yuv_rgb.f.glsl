@@ -13,12 +13,13 @@ uniform sampler2D u_Texture0;
 uniform sampler2D u_Texture1;
 uniform sampler2D u_Texture2;
 varying lowp vec2 v_TexCoords;
+uniform mat4 u_colorMatrix;
 
 //http://en.wikipedia.org/wiki/YUV calculation used
 //http://www.fourcc.org/fccyvrgb.php
 //GLSL: col first
 // use bt601
-const mat4 colorMatrix = mat4(1, 1, 1, 0,
+const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
                               0, -0.344, 1.773, 0,
                               1.403, -0.714, 0, 0,
                               0, 0, 0, 1)
@@ -29,7 +30,7 @@ const mat4 colorMatrix = mat4(1, 1, 1, 0,
 void main()
 {
     // use r, g, a to work for both yv12 and nv12
-    gl_FragColor = clamp(colorMatrix* vec4(texture2D(u_Texture0, v_TexCoords).r,
+    gl_FragColor = clamp(u_colorMatrix*yuv2rgbMatrix* vec4(texture2D(u_Texture0, v_TexCoords).r,
                                            texture2D(u_Texture1, v_TexCoords).g,
                                            texture2D(u_Texture2, v_TexCoords).a,
                                            1)
