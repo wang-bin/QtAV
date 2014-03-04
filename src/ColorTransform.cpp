@@ -122,6 +122,10 @@ ColorTransform::ColorTransform()
 {
 }
 
+ColorTransform::~ColorTransform()
+{
+}
+
 QMatrix4x4 ColorTransform::matrix() const
 {
     if (d->recompute)

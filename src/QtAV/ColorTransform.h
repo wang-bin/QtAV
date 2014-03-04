@@ -40,7 +40,7 @@ class ColorTransform
 {
 public:
     ColorTransform();
-
+    ~ColorTransform(); //required by QSharedDataPointer if Private is forward declared
     // TODO: type bt601 etc
     static QMatrix4x4 YUV2RGB();
 
