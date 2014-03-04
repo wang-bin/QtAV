@@ -392,7 +392,10 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
 
     // fragment shader
-    u_Texture.resize(fmt.channels());
+    if (fmt.isRGB())
+        u_Texture.resize(1);
+    else
+        u_Texture.resize(fmt.channels());
     for (int i = 0; i < u_Texture.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
         u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
