@@ -30,7 +30,7 @@
 //TODO: vsync http://stackoverflow.com/questions/589064/how-to-enable-vertical-sync-in-opengl
 //TODO: check gl errors
 //glEGLImageTargetTexture2DOES:http://software.intel.com/en-us/articles/using-opengl-es-to-accelerate-apps-with-legacy-2d-guis
-/*
+
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
 #ifndef GL_BGRA_EXT
@@ -48,7 +48,7 @@
 #define GL_BGR GL_BGR_EXT
 #endif //GL_BGRA
 #endif //GL_BGRA
-*/
+
 #ifdef QT_OPENGL_ES_2
 #define FMT_INTERNAL GL_BGRA //why BGRA?
 #define FMT GL_BGRA
