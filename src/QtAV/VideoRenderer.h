@@ -179,6 +179,22 @@ public:
     Filter* subtitleFilter();
     void enableDefaultEventFilter(bool e);
     bool isDefaultEventFilterEnabled() const;
+
+    /*!
+     * \brief brightness, contrast, hue, saturation
+     *  values range between -1.0 and 1.0, the default is 0.
+     *  value is not changed if does not implementd and onChangingXXX() returns false.
+     * \return \a false if failed (may be onChangingXXX not implemented or return false)
+     */
+    qreal brightness() const;
+    bool setBrightness(qreal brightness);
+    qreal contrast() const;
+    bool setContrast(qreal contrast);
+    qreal hue() const;
+    bool setHue(qreal hue);
+    qreal saturation() const;
+    bool setSaturation(qreal saturation);
+
 protected:
     VideoRenderer(VideoRendererPrivate &d);
     virtual bool receiveFrame(const VideoFrame& frame) = 0;
@@ -200,6 +216,17 @@ protected:
     virtual void resizeFrame(int width, int height);
     //TODO: parameter QRect?
     void handlePaintEvent();
+    /*!
+     * \brief onBrightness
+     *  It's called when user call setBrightness(). You should implement how to actually change the brightness.
+     * \return
+     *  false: It's default. means not implemented. \a brightness() does not change.
+     *  true: Implement this and return true. \a brightness() will change to new value
+     */
+    virtual bool onChangingBrightness(qreal b);
+    virtual bool onChangingContrast(qreal c);
+    virtual bool onChangingHue(qreal h);
+    virtual bool onChangingSaturation(qreal s);
 
 private:
     friend class VideoThread;

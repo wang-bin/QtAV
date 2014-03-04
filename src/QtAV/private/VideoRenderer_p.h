@@ -59,6 +59,10 @@ public:
       , default_event_filter(true)
       , preferred_format(VideoFormat::Format_RGB32)
       , force_preferred(false)
+      , brightness(0)
+      , contrast(0)
+      , hue(0)
+      , saturation(0)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -114,6 +118,8 @@ public:
     VideoFrame video_frame;
     VideoFormat::PixelFormat preferred_format;
     bool force_preferred;
+
+    qreal brightness, contrast, hue, saturation;
 };
 
 } //namespace QtAV

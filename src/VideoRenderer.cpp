@@ -415,4 +415,81 @@ bool VideoRenderer::isDefaultEventFilterEnabled() const
     return d_func().default_event_filter;
 }
 
+qreal VideoRenderer::brightness() const
+{
+    return d_func().brightness;
+}
+
+bool VideoRenderer::setBrightness(qreal brightness)
+{
+    if (!onChangingBrightness(brightness))
+        return false;
+    d_func().brightness = brightness;
+    return true;
+}
+
+qreal VideoRenderer::contrast() const
+{
+    return d_func().contrast;
+}
+
+bool VideoRenderer::setContrast(qreal contrast)
+{
+    if (!onChangingContrast(contrast))
+        return false;
+    d_func().contrast = contrast;
+    return true;
+}
+
+qreal VideoRenderer::hue() const
+{
+    return d_func().hue;
+}
+
+bool VideoRenderer::setHue(qreal hue)
+{
+    if (!onChangingHue(hue))
+        return false;
+    d_func().hue = hue;
+    return true;
+}
+
+qreal VideoRenderer::saturation() const
+{
+    return d_func().saturation;
+}
+
+bool VideoRenderer::setSaturation(qreal saturation)
+{
+    if (!onChangingSaturation(saturation))
+        return false;
+    d_func().saturation = saturation;
+    return true;
+}
+
+bool VideoRenderer::onChangingBrightness(qreal b)
+{
+    Q_UNUSED(b);
+    return false;
+}
+
+bool VideoRenderer::onChangingContrast(qreal c)
+{
+    Q_UNUSED(c);
+    return false;
+}
+
+bool VideoRenderer::onChangingHue(qreal h)
+{
+    Q_UNUSED(h);
+    return false;
+}
+
+bool VideoRenderer::onChangingSaturation(qreal s)
+{
+    Q_UNUSED(s);
+    return false;
+}
+
+
 } //namespace QtAV
