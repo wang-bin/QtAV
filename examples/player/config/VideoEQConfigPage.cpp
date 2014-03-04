@@ -58,6 +58,7 @@ VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
     } sliders[] = {
         { &mpBSlider, tr("Brightness") },
         { &mpCSlider, tr("Constrast") },
+        { &mpHSlider, tr("Hue") },
         { &mpSSlider, tr("Saturation") },
         { 0, "" }
     };
@@ -85,6 +86,7 @@ VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
 
     connect(mpBSlider, SIGNAL(valueChanged(int)), SIGNAL(brightnessChanged(int)));
     connect(mpCSlider, SIGNAL(valueChanged(int)), SIGNAL(contrastChanged(int)));
+    connect(mpHSlider, SIGNAL(valueChanged(int)), SIGNAL(hueChanegd(int)));
     connect(mpSSlider, SIGNAL(valueChanged(int)), SIGNAL(saturationChanged(int)));
     connect(mpGlobal, SIGNAL(toggled(bool)), SLOT(onGlobalSet(bool)));
     connect(mpResetButton, SIGNAL(clicked()), SLOT(onReset()));
@@ -124,10 +126,31 @@ VideoEQConfigPage::Engine VideoEQConfigPage::engine() const
     return (Engine)mpEngine->currentIndex();
 }
 
+qreal VideoEQConfigPage::brightness() const
+{
+    return (qreal)mpBSlider->value()/100.0;
+}
+
+qreal VideoEQConfigPage::contrast() const
+{
+    return (qreal)mpCSlider->value()/100.0;
+}
+
+qreal VideoEQConfigPage::hue() const
+{
+    return (qreal)mpHSlider->value()/100.0;
+}
+
+qreal VideoEQConfigPage::saturation() const
+{
+    return (qreal)mpSSlider->value()/100.0;
+}
+
 void VideoEQConfigPage::onReset()
 {
     mpBSlider->setValue(0);
     mpCSlider->setValue(0);
+    mpHSlider->setValue(0);
     mpSSlider->setValue(0);
 }
 

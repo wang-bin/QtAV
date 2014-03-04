@@ -47,10 +47,16 @@ public:
     void setEngine(Engine engine);
     Engine engine() const;
 
+    qreal brightness() const;
+    qreal contrast() const;
+    qreal hue() const;
+    qreal saturation() const;
+
 signals:
     void engineChanged();
     void brightnessChanged(int);
     void contrastChanged(int);
+    void hueChanegd(int);
     void saturationChanged(int);
 
 private slots:
@@ -62,6 +68,7 @@ private:
     QCheckBox *mpGlobal;
     QComboBox *mpEngine;
     QSlider *mpBSlider, *mpCSlider, *mpSSlider;
+    QSlider *mpHSlider;
     QPushButton *mpResetButton;
     Engine mEngine;
 };

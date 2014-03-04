@@ -102,6 +102,10 @@ private slots:
     void onMediaStatusChanged();
 
     void onVideoEQEngineChanged();
+    void onBrightnessChanged(int b);
+    void onContrastChanged(int c);
+    void onHueChanged(int h);
+    void onSaturationChanged(int s);
 
 protected:
     virtual void closeEvent(QCloseEvent *e);

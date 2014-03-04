@@ -136,9 +136,10 @@ void MainWindow::initPlayer()
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
     connect(mpPlayer, SIGNAL(speedChanged(qreal)), this, SLOT(onSpeedChange(qreal)));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), this, SLOT(onPositionChange(qint64)));
-    connect(mpVideoEQ, SIGNAL(brightnessChanged(int)), mpPlayer, SLOT(setBrightness(int)));
-    connect(mpVideoEQ, SIGNAL(contrastChanged(int)), mpPlayer, SLOT(setContrast(int)));
-    connect(mpVideoEQ, SIGNAL(saturationChanged(int)), mpPlayer, SLOT(setSaturation(int)));
+    connect(mpVideoEQ, SIGNAL(brightnessChanged(int)), this, SLOT(onBrightnessChanged(int)));
+    connect(mpVideoEQ, SIGNAL(contrastChanged(int)), this, SLOT(onContrastChanged(int)));
+    connect(mpVideoEQ, SIGNAL(hueChanegd(int)), this, SLOT(onHueChanged(int)));
+    connect(mpVideoEQ, SIGNAL(saturationChanged(int)), this, SLOT(onSaturationChanged(int)));
 
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
 }
@@ -1131,11 +1132,61 @@ void MainWindow::onMediaStatusChanged()
 
 void MainWindow::onVideoEQEngineChanged()
 {
+    VideoRenderer *vo = mpPlayer->renderer();
     VideoEQConfigPage::Engine e = mpVideoEQ->engine();
     if (e == VideoEQConfigPage::SWScale) {
-        mpPlayer->renderer()->forcePreferredPixelFormat(true);
-        mpPlayer->renderer()->setPreferredPixelFormat(VideoFormat::Format_RGB32);
+        vo->forcePreferredPixelFormat(true);
+        vo->setPreferredPixelFormat(VideoFormat::Format_RGB32);
     } else {
-        mpPlayer->renderer()->forcePreferredPixelFormat(false);
+        vo->forcePreferredPixelFormat(false);
+    }
+    onBrightnessChanged(mpVideoEQ->brightness()*100.0);
+    onContrastChanged(mpVideoEQ->contrast()*100.0);
+    onHueChanged(mpVideoEQ->hue()*100.0);
+    onSaturationChanged(mpVideoEQ->saturation()*100.0);
+}
+
+void MainWindow::onBrightnessChanged(int b)
+{
+    VideoRenderer *vo = mpPlayer->renderer();
+    if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
+            && vo->setBrightness(mpVideoEQ->brightness())) {
+        mpPlayer->setBrightness(0);
+    } else {
+        mpPlayer->setBrightness(b);
+    }
+}
+
+void MainWindow::onContrastChanged(int c)
+{
+    qDebug("contrast changed");
+    VideoRenderer *vo = mpPlayer->renderer();
+    if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
+            && vo->setContrast(mpVideoEQ->contrast())) {
+        mpPlayer->setContrast(0);
+    } else {
+        mpPlayer->setContrast(c);
+    }
+}
+
+void MainWindow::onHueChanged(int h)
+{
+    VideoRenderer *vo = mpPlayer->renderer();
+    if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
+            && vo->setHue(mpVideoEQ->hue())) {
+        //mpPlayer->setHue(0);
+    } else {
+        //mpPlayer->setHue(h);
+    }
+}
+
+void MainWindow::onSaturationChanged(int s)
+{
+    VideoRenderer *vo = mpPlayer->renderer();
+    if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
+            && vo->setSaturation(mpVideoEQ->saturation())) {
+        mpPlayer->setSaturation(0);
+    } else {
+        mpPlayer->setSaturation(s);
     }
 }
