@@ -71,21 +71,22 @@ public:
     }
     void compute() const {
         recompute = false;
+        //http://docs.rainmeter.net/tips/colormatrix-guide
+        //http://www.graficaobscura.com/matrix/index.html
+        //http://beesbuzz.biz/code/hsv_color_transforms.php
         // ??
-        float b = (brightness < 0.0f ? brightness : 4.0f * brightness) + 1.0f;
+        float b = brightness;
         // brightness R,G,B
-        QMatrix4x4 B(b, 0, 0, 0,
-                     0, b, 0, 0,
-                     0, 0, b, 0,
+        QMatrix4x4 B(1, 0, 0, b,
+                     0, 1, 0, b,
+                     0, 0, 1, b,
                      0, 0, 0, 1);
-        // ??
-        float c = -contrast;
+        float c = contrast+1.0;
         // Contrast (offset) R,G,B
-        QMatrix4x4 C(1, 0, 0, 0,
-                     0, 1, 0, 0,
-                     0, 0, 1, 0,
-                     c, c, c, 1);
-
+        QMatrix4x4 C(c, 0, 0, 0,
+                     0, c, 0, 0,
+                     0, 0, c, 0,
+                     0, 0, 0, 1);
         // Saturation
         const float wr = 0.3086f;
         const float wg = 0.6094f;
@@ -95,7 +96,7 @@ public:
             (1.0f - s)*wr + s, (1.0f - s)*wg    , (1.0f - s)*wb    , 0.0f,
             (1.0f - s)*wr    , (1.0f - s)*wg + s, (1.0f - s)*wb    , 0.0f,
             (1.0f - s)*wr    , (1.0f - s)*wg    , (1.0f - s)*wb + s, 0.0f,
-                           0.0f,                0.0f,                0.0f, 1.0f
+                         0.0f,              0.0f,              0.0f, 1.0f
         );
         // Hue
         const float n = 1.0f / sqrtf(3.0f);       // normalized hue rotation axis: sqrt(3)*(1 1 1)
