@@ -46,17 +46,25 @@ public:
     ~VideoCapture();
     void setAsync(bool async);
     bool isAsync() const;
+    /*!
+     * \brief setAutoSave
+     *  If auto save is true, then the captured video frame will be saved as a file when frame is available.
+     *  Otherwise, signal ready() and finished() will be emitted without doing other things.
+     * \param a
+     */
     void setAutoSave(bool a);
     bool autoSave() const;
     /*!
      * \brief setRaw
-     *  no format converting. default is false
+     *  Save the original frame, can be YUV, NV12 etc. No format converting. default is false
+     *  The file name suffix is video frame's format name in lower case, e.g. yuv420p, nv12.
      */
     void setRaw(bool raw);
     bool isRaw() const;
     void request();
     void cancel();
-    bool isRequested() const;
+    bool isRequested() const;   
+    // you may not call this. It's called by VideoThread and AVPlayer. Will emit ready()
     void start();
     qreal position() const;
     ErrorCode errorCode() const;
@@ -83,14 +91,25 @@ public:
     QString captureName() const;
     void setCaptureDir(const QString& dir);
     QString captureDir() const;
-    // use getVideoFrame() instead
     Q_DECL_DEPRECATED void getRawImage(QByteArray* raw, int *w, int *h, QImage::Format *fmt = 0);
+    /*!
+     * \brief getImage, getVideoFrame
+     * The result image is not the frame playing when you call getImage(). It's the last requested frame.
+     * You may call request() first, and connect ready() signal to your slot. call getImage/VideoFrame()
+     * You may also want to disable save as file by calling setAutoSave(false).
+     * in the slot
+     */
+    QImage getImage(QImage::Format format = QImage::Format_RGB32);
     /*!
      * a cloned frame
      */
     void getVideoFrame(VideoFrame& frame);
 signals:
     /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/
+    /*!
+     * \brief ready
+     *  emitted when requested frame is available.
+     */
     void ready();
     void failed();
     void finished();

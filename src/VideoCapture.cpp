@@ -278,17 +278,43 @@ void VideoCapture::getRawImage(QByteArray *raw, int *w, int *h, QImage::Format *
         *raw = 0;
         return;
     }
-    VideoFrame tmp = frame.clone();
-    tmp.setImageConverter(conv);
-    if (!tmp.convertTo(qfmt)) {
+    /*
+     * no clone required because the lock ensure the \a frame will not change now.
+     * And the result QByteArray is implicitly shared so it's safe if frame changes later
+     */
+    frame.setImageConverter(conv);
+    if (!frame.convertTo(qfmt)) {
         *raw = 0;
         return;
     }
+    // frame is a cloned frame in setVideoFrame(), so frameData() is availabe
     *raw = frame.frameData();
     *w = frame.width();
     *h = frame.height();
     if (fmt)
         *fmt = qfmt;
+}
+
+QImage VideoCapture::getImage(QImage::Format format)
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    if (!frame.isValid()) {
+        qWarning("getImage Invalid frame");
+        return QImage();
+    }
+    /*
+     * no clone required because the lock ensure the \a frame will not change now.
+     * And the result QByteArray is implicitly shared so it's safe if frame changes later
+     */
+    frame.setImageConverter(conv);
+    if (!frame.convertTo(format)) {
+        qWarning("Failed to convert to QImage");
+        return QImage();
+    }
+    // frame is a cloned frame in setVideoFrame(), so frameData() is availabe
+    // return a copy of image. because QImage from memory does not own the memory
+    return QImage((const uchar*)frame.frameData().constData(), frame.width(), frame.height(), format).copy();
 }
 
 void VideoCapture::getVideoFrame(VideoFrame &frame)
@@ -302,8 +328,11 @@ void VideoCapture::setVideoFrame(const VideoFrame &frame)
 {
     QReadLocker locker(&lock);
     Q_UNUSED(locker);
-    //clone here may block VideoThread
-    this->frame = frame;//.clone();
+    /*
+     * clone here may block VideoThread. But if not clone here, the frame may be
+     * modified outside and is not safe.
+     */
+    this->frame = frame.clone();
     this->frame.setImageConverter(conv);
 }
 

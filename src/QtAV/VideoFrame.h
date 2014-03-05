@@ -81,6 +81,10 @@ public:
     // Id can be used in VideoThread
     void setImageConverter(ImageConverter *conv);
     // if use gpu to convert, mapToDevice() first
+    /*!
+     * \brief convertTo
+     * You may clone the frame first because VideoFrame is explicitly shared
+     */
     bool convertTo(const VideoFormat& fmt);
     bool convertTo(VideoFormat::PixelFormat fmt);
     bool convertTo(QImage::Format fmt);
