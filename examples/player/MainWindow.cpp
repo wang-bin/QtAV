@@ -1153,18 +1153,19 @@ void MainWindow::onBrightnessChanged(int b)
             && vo->setBrightness(mpVideoEQ->brightness())) {
         mpPlayer->setBrightness(0);
     } else {
+        vo->setBrightness(0);
         mpPlayer->setBrightness(b);
     }
 }
 
 void MainWindow::onContrastChanged(int c)
 {
-    qDebug("contrast changed");
     VideoRenderer *vo = mpPlayer->renderer();
     if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
             && vo->setContrast(mpVideoEQ->contrast())) {
         mpPlayer->setContrast(0);
     } else {
+        vo->setContrast(0);
         mpPlayer->setContrast(c);
     }
 }
@@ -1176,6 +1177,7 @@ void MainWindow::onHueChanged(int h)
             && vo->setHue(mpVideoEQ->hue())) {
         //mpPlayer->setHue(0);
     } else {
+        vo->setHue(0);
         //mpPlayer->setHue(h);
     }
 }
@@ -1187,6 +1189,7 @@ void MainWindow::onSaturationChanged(int s)
             && vo->setSaturation(mpVideoEQ->saturation())) {
         mpPlayer->setSaturation(0);
     } else {
+        vo->setSaturation(0);
         mpPlayer->setSaturation(s);
     }
 }
