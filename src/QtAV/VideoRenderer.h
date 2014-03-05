@@ -184,6 +184,7 @@ public:
      * \brief brightness, contrast, hue, saturation
      *  values range between -1.0 and 1.0, the default is 0.
      *  value is not changed if does not implementd and onChangingXXX() returns false.
+     *  video widget/item will update after if onChangingXXX/setXXX returns true
      * \return \a false if failed (may be onChangingXXX not implemented or return false)
      */
     qreal brightness() const;

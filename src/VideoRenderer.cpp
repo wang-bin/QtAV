@@ -425,6 +425,12 @@ bool VideoRenderer::setBrightness(qreal brightness)
     if (!onChangingBrightness(brightness))
         return false;
     d_func().brightness = brightness;
+    if (widget()) {
+        widget()->update();
+    }
+    if (graphicsItem()) {
+        graphicsItem()->update();
+    }
     return true;
 }
 
@@ -438,6 +444,12 @@ bool VideoRenderer::setContrast(qreal contrast)
     if (!onChangingContrast(contrast))
         return false;
     d_func().contrast = contrast;
+    if (widget()) {
+        widget()->update();
+    }
+    if (graphicsItem()) {
+        graphicsItem()->update();
+    }
     return true;
 }
 
@@ -451,6 +463,12 @@ bool VideoRenderer::setHue(qreal hue)
     if (!onChangingHue(hue))
         return false;
     d_func().hue = hue;
+    if (widget()) {
+        widget()->update();
+    }
+    if (graphicsItem()) {
+        graphicsItem()->update();
+    }
     return true;
 }
 
@@ -464,6 +482,12 @@ bool VideoRenderer::setSaturation(qreal saturation)
     if (!onChangingSaturation(saturation))
         return false;
     d_func().saturation = saturation;
+    if (widget()) {
+        widget()->update();
+    }
+    if (graphicsItem()) {
+        graphicsItem()->update();
+    }
     return true;
 }
 
