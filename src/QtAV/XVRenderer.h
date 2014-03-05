@@ -61,6 +61,11 @@ protected:
     virtual void resizeEvent(QResizeEvent *);
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void showEvent(QShowEvent *);
+
+    virtual bool onChangingBrightness(qreal b);
+    virtual bool onChangingContrast(qreal c);
+    virtual bool onChangingHue(qreal h);
+    virtual bool onChangingSaturation(qreal s);
 };
 typedef XVRenderer VideoRendererXV;
 } //namespace QtAV

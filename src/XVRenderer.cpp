@@ -24,8 +24,27 @@
 */
 #include "QtAV/XVRenderer.h"
 #include <QResizeEvent>
+#include <QtCore/qmath.h>
 #include "private/XVRenderer_p.h"
 namespace QtAV {
+
+inline int scaleEQValue(int val, int min, int max)
+{
+    // max-min?
+    return (val + 100)*((qAbs(min) + qAbs(max)))/200 - qAbs(min);
+}
+
+bool XVRendererPrivate::XvSetPortAttributeIfExists(void *attributes, int attrib_count, const char *k, int v)
+{
+    for (int i = 0; i < attrib_count; ++i) {
+        const XvAttribute &attribute = ((XvAttribute*)attributes)[i];
+        if (!qstrcmp(attribute.name, k) && (attribute.flags & XvSettable)) {
+            XvSetPortAttribute(display, xv_port, XInternAtom(display, k, false), scaleEQValue(v, attribute.min_value, attribute.max_value));
+            return true;
+        }
+    }
+    return false;
+}
 
 XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
     QWidget(parent, f)
@@ -60,10 +79,9 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
     d.video_frame = frame.clone();
-    //d.video_frame.convertTo(VideoFormat::Format_YUV420P);
-    //d.xv_image->data = (char*)d.video_frame.bits();
-    qDebug("frame size: %d, imgsize: %d", d.video_frame.frameData().size(), d.xv_image->data_size);
-#if 1
+    //d.video_frame.convertTo(VideoFormat::Format_YUV420P); //for rgb
+    d.xv_image->data = (char*)d.video_frame.bits();
+#if COPY_XVIMAGE
     for (int i = 0; i < d.video_frame.planeCount(); ++i) {
         char *dst = d.xv_image->data + d.xv_image->offsets[i];
         int dst_linesize = d.xv_image->pitches[i];
@@ -71,8 +89,6 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
         const uchar *src = d.video_frame.bits(i);
         int src_linesize = d.video_frame.bytesPerLine(i);
         int src_offset = 0;
-        qDebug("offset%d %d", i, d.xv_image->offsets[i]);
-        qDebug("i=%d src_linesize:%d dst_linesize %d", i, src_linesize, dst_linesize);
         int h = d.video_frame.height();
         for (int j = 0; j < h; ++j) {
             memcpy(dst + dst_offset, src + src_offset, dst_linesize);
@@ -149,6 +165,54 @@ void XVRenderer::showEvent(QShowEvent *event)
      * don't do anything here, the widget content will never be updated.
      */
     d.prepareDeviceResource();
+}
+
+bool XVRenderer::onChangingBrightness(qreal b)
+{
+    DPTR_D(XVRenderer);
+    int nb_attributes;
+    XvAttribute *attributes = XvQueryPortAttributes(d.display, d.xv_port, &nb_attributes);
+    if (!attributes) {
+        qWarning("XvQueryPortAttributes error");
+        return false;
+    }
+    return d.XvSetPortAttributeIfExists(attributes, nb_attributes, "XV_BRIGHTNESS", b*100);
+}
+
+bool XVRenderer::onChangingContrast(qreal c)
+{
+    DPTR_D(XVRenderer);
+    int nb_attributes;
+    XvAttribute *attributes = XvQueryPortAttributes(d.display, d.xv_port, &nb_attributes);
+    if (!attributes) {
+        qWarning("XvQueryPortAttributes error");
+        return false;
+    }
+    return d.XvSetPortAttributeIfExists(attributes, nb_attributes, "XV_CONTRAST",c*100);
+}
+
+bool XVRenderer::onChangingHue(qreal h)
+{
+    DPTR_D(XVRenderer);
+    int nb_attributes;
+    XvAttribute *attributes = XvQueryPortAttributes(d.display, d.xv_port, &nb_attributes);
+    if (!attributes) {
+        qWarning("XvQueryPortAttributes error");
+        return false;
+    }
+    return d.XvSetPortAttributeIfExists(attributes, nb_attributes, "XV_HUE", h*100);
+}
+
+bool XVRenderer::onChangingSaturation(qreal s)
+{
+    DPTR_D(XVRenderer);
+    int nb_attributes;
+    XvAttribute *attributes = XvQueryPortAttributes(d.display, d.xv_port, &nb_attributes);
+    if (!attributes) {
+        qWarning("XvQueryPortAttributes error");
+        return false;
+    }
+    return d.XvSetPortAttributeIfExists(attributes, nb_attributes, "XV_SATURATION", s*100);
 }
 
 } //namespace QtAV
