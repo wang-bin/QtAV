@@ -48,7 +48,7 @@ XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
 // TODO: add yuv support
 bool XVRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    return VideoFormat::isRGB(pixfmt);
+    return true;
 }
 
 bool XVRenderer::receiveFrame(const VideoFrame& frame)
@@ -59,10 +59,28 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     //TODO: if date is deep copied, mutex can be avoided
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
-    d.video_frame = frame;
-    d.video_frame.convertTo(VideoFormat::Format_YUV420P);
-    d.xv_image->data = (char*)d.video_frame.bits();
-
+    d.video_frame = frame.clone();
+    //d.video_frame.convertTo(VideoFormat::Format_YUV420P);
+    //d.xv_image->data = (char*)d.video_frame.bits();
+    qDebug("frame size: %d, imgsize: %d", d.video_frame.frameData().size(), d.xv_image->data_size);
+#if 1
+    for (int i = 0; i < d.video_frame.planeCount(); ++i) {
+        char *dst = d.xv_image->data + d.xv_image->offsets[i];
+        int dst_linesize = d.xv_image->pitches[i];
+        int dst_offset = 0;
+        const uchar *src = d.video_frame.bits(i);
+        int src_linesize = d.video_frame.bytesPerLine(i);
+        int src_offset = 0;
+        qDebug("offset%d %d", i, d.xv_image->offsets[i]);
+        qDebug("i=%d src_linesize:%d dst_linesize %d", i, src_linesize, dst_linesize);
+        int h = d.video_frame.height();
+        for (int j = 0; j < h; ++j) {
+            memcpy(dst + dst_offset, src + src_offset, dst_linesize);
+            src_offset += src_linesize;
+            dst_offset += dst_linesize;
+        }
+    }
+#endif
     update();
     return true;
 }

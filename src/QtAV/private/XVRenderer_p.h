@@ -92,13 +92,12 @@ public:
                     shmctl(shm.shmid, IPC_RMID, 0);
                     shmdt(shm.shmaddr);
                 }
-            } else {
-#else //_XSHM_H_
-                delete [] xv_image->data;
-#endif //_XSHM_H_
-#ifdef _XSHM_H_
             }
 #endif //_XSHM_H_
+            if (!use_shm) {
+                // free if use copy (e.g. shm)
+                //free(xv_image->data);
+            }
             XFree(xv_image);
         }
         if (gc) {
@@ -166,7 +165,8 @@ public:
 #endif //_XSHM_H_
         if (!use_shm) {
             xv_image = XvCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height);
-            xv_image->data = new char[xv_image->data_size];
+            // malloc if use copy (e.g. shm)
+            //xv_image->data = (char*)malloc(xv_image->data_size);
         }
         return true;
     }
