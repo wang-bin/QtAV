@@ -40,7 +40,8 @@ class VideoEQConfigPage : public QWidget
 public:
     enum Engine {
         SWScale,
-        GLSL
+        GLSL,
+        XV,
     };
     explicit VideoEQConfigPage(QWidget *parent = 0);
     void setEngines(const QVector<Engine>& engines);
@@ -71,6 +72,7 @@ private:
     QSlider *mpHSlider;
     QPushButton *mpResetButton;
     Engine mEngine;
+    QVector<Engine> mEngines;
 };
 
 #endif // VIDEOEQCONFIGPAGE_H

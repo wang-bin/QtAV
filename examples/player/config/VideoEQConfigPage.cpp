@@ -104,26 +104,32 @@ void VideoEQConfigPage::setEngines(const QVector<Engine> &engines)
     if (!es.contains(SWScale))
         es.prepend(SWScale);
     qSort(es);
+    mEngines = es;
     foreach (Engine e, es) {
         if (e == SWScale) {
             mpEngine->addItem("libswscale");
         } else if (e == GLSL) {
             mpEngine->addItem("GLSL");
+        } else if (e == XV) {
+            mpEngine->addItem("XV");
         }
     }
 }
 
 void VideoEQConfigPage::setEngine(Engine engine)
 {
-    if ((int)engine == mpEngine->currentIndex())
+    if (engine == mEngine)
         return;
-    mpEngine->setCurrentIndex((int)engine);
+    mEngine = engine;
+    if (!mEngines.isEmpty()) {
+        mpEngine->setCurrentIndex(mEngines.indexOf(engine));
+    }
     emit engineChanged();
 }
 
 VideoEQConfigPage::Engine VideoEQConfigPage::engine() const
 {
-    return (Engine)mpEngine->currentIndex();
+    return mEngine;
 }
 
 qreal VideoEQConfigPage::brightness() const
@@ -156,5 +162,8 @@ void VideoEQConfigPage::onReset()
 
 void VideoEQConfigPage::onEngineChangedByUI()
 {
+    if (mpEngine->currentIndex() >= mEngines.size() || mpEngine->currentIndex() < 0)
+        return;
+    mEngine = mEngines.at(mpEngine->currentIndex());
     emit engineChanged();
 }

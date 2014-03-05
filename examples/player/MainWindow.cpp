@@ -603,6 +603,9 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     if (mpPlayer->renderer()->id() == VideoRendererId_GLWidget) {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale << VideoEQConfigPage::GLSL);
         mpVideoEQ->setEngine(VideoEQConfigPage::GLSL);
+    } else if (mpPlayer->renderer()->id() == VideoRendererId_XV) {
+        mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale << VideoEQConfigPage::XV);
+        mpVideoEQ->setEngine(VideoEQConfigPage::XV);
     } else {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale);
         mpVideoEQ->setEngine(VideoEQConfigPage::SWScale);
