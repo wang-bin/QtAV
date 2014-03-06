@@ -96,7 +96,7 @@ public:
 #endif //_XSHM_H_
             if (!use_shm) {
                 // free if use copy (e.g. shm)
-                //free(xv_image->data);
+                free(xv_image->data);
             }
             XFree(xv_image);
         }
@@ -166,7 +166,7 @@ public:
         if (!use_shm) {
             xv_image = XvCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height);
             // malloc if use copy (e.g. shm)
-            //xv_image->data = (char*)malloc(xv_image->data_size);
+            xv_image->data = (char*)malloc(xv_image->data_size);
         }
         return true;
     }

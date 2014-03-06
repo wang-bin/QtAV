@@ -67,7 +67,39 @@ XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
 // TODO: add yuv support
 bool XVRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    return true;
+    // TODO: NV12
+    return pixfmt == VideoFormat::Format_YUV420P || pixfmt == VideoFormat::Format_YV12;
+}
+
+static void CopyPlane(void *dest, const uchar* src, unsigned dst_linesize, unsigned src_linesize, unsigned height )
+{
+    unsigned offset = 0;
+    unsigned char *dest_data = (unsigned char*)dest;
+    for (unsigned i = 0; i < height; ++i) {
+        memcpy(dest_data, src + offset, dst_linesize);
+        offset += src_linesize;
+        dest_data += dst_linesize;
+    }
+}
+
+static void CopyYV12(void *dest, const uchar* src[], unsigned luma_width, unsigned chroma_width, unsigned src_linesize[], unsigned height )
+{
+    unsigned offset = 0;
+    unsigned char *dest_data = (unsigned char*)dest;
+    for (unsigned i = 0; i < height; ++i) {
+        memcpy(dest_data, src[0] + offset, luma_width);
+        offset += src_linesize[0];
+        dest_data += luma_width;
+    }
+    offset = 0;
+    height >>= 1;
+    const unsigned wh = chroma_width * height;
+    for (unsigned i = 0; i < height; ++i) {
+        memcpy(dest_data, src[2] + offset, chroma_width);
+        memcpy(dest_data + wh, src[1] + offset, chroma_width);
+        offset += src_linesize[1];
+        dest_data += chroma_width;
+    }
 }
 
 bool XVRenderer::receiveFrame(const VideoFrame& frame)
@@ -80,22 +112,24 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     Q_UNUSED(locker);
     d.video_frame = frame.clone();
     //d.video_frame.convertTo(VideoFormat::Format_YUV420P); //for rgb
-    d.xv_image->data = (char*)d.video_frame.bits();
-#if COPY_XVIMAGE
-    for (int i = 0; i < d.video_frame.planeCount(); ++i) {
-        char *dst = d.xv_image->data + d.xv_image->offsets[i];
-        int dst_linesize = d.xv_image->pitches[i];
-        int dst_offset = 0;
-        const uchar *src = d.video_frame.bits(i);
-        int src_linesize = d.video_frame.bytesPerLine(i);
-        int src_offset = 0;
-        int h = d.video_frame.height();
-        for (int j = 0; j < h; ++j) {
-            memcpy(dst + dst_offset, src + src_offset, dst_linesize);
-            src_offset += src_linesize;
-            dst_offset += dst_linesize;
-        }
-    }
+    //d.xv_image->data = (char*)d.video_frame.bits();
+    const uchar *src[] = {
+        d.video_frame.bits(0),
+        d.video_frame.bits(1),
+        d.video_frame.bits(2)
+    };
+    unsigned src_linesize[] = {
+        (unsigned)d.video_frame.bytesPerLine(0),
+        (unsigned)d.video_frame.bytesPerLine(1),
+        (unsigned)d.video_frame.bytesPerLine(2)
+    };
+#define COPY_YV12 0
+#if COPY_YV12
+    CopyYV12(d.xv_image->data, src, d.xv_image->pitches[0],d.xv_image->pitches[1], src_linesize, d.xv_image->height);
+#else
+    CopyPlane(d.xv_image->data + d.xv_image->offsets[0], src[0], d.xv_image->pitches[0], src_linesize[0], d.xv_image->height);
+    CopyPlane(d.xv_image->data + d.xv_image->offsets[2], src[1], d.xv_image->pitches[2], src_linesize[1], d.xv_image->height/2);
+    CopyPlane(d.xv_image->data + d.xv_image->offsets[1], src[2], d.xv_image->pitches[1], src_linesize[2], d.xv_image->height/2);
 #endif
     update();
     return true;
