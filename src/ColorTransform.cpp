@@ -134,6 +134,12 @@ QMatrix4x4 ColorTransform::matrix() const
     return d->M;
 }
 
+const QMatrix4x4& ColorTransform::matrixRef() const
+{
+    if (d->recompute)
+        d->compute();
+    return d->M;
+}
 
 /*!
  * \brief reset

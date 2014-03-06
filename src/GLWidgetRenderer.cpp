@@ -670,7 +670,18 @@ void GLWidgetRenderer::drawFrame()
         glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
         glEnableVertexAttribArray(d.a_TexCoords);
 
-        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, (GLfloat*)d.colorTransform.matrix().data());
+        /*
+         * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
+         * Use glm?
+         */
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+        GLfloat glm[16];
+        d.colorTransform.matrixData(glm);
+        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_TRUE, glm);
+#else
+        //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
+        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, (GLfloat*)d.colorTransform.matrix().constData());
+#endif
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
