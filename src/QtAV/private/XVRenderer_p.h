@@ -171,7 +171,7 @@ public:
         return true;
     }
 
-    bool XvSetPortAttributeIfExists(void *attributes, int attrib_count, const char *k, int v);
+    bool XvSetPortAttributeIfExists(const char *key, int value);
 
     bool use_shm; //TODO: set by user
     unsigned int num_adaptors;

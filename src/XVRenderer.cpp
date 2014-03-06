@@ -34,15 +34,22 @@ inline int scaleEQValue(int val, int min, int max)
     return (val + 100)*((qAbs(min) + qAbs(max)))/200 - qAbs(min);
 }
 
-bool XVRendererPrivate::XvSetPortAttributeIfExists(void *attributes, int attrib_count, const char *k, int v)
+bool XVRendererPrivate::XvSetPortAttributeIfExists(const char *key, int value)
 {
-    for (int i = 0; i < attrib_count; ++i) {
+    int nb_attributes;
+    XvAttribute *attributes = XvQueryPortAttributes(display, xv_port, &nb_attributes);
+    if (!attributes) {
+        qWarning("XvQueryPortAttributes error");
+        return false;
+    }
+    for (int i = 0; i < nb_attributes; ++i) {
         const XvAttribute &attribute = ((XvAttribute*)attributes)[i];
-        if (!qstrcmp(attribute.name, k) && (attribute.flags & XvSettable)) {
-            XvSetPortAttribute(display, xv_port, XInternAtom(display, k, false), scaleEQValue(v, attribute.min_value, attribute.max_value));
+        if (!qstrcmp(attribute.name, key) && (attribute.flags & XvSettable)) {
+            XvSetPortAttribute(display, xv_port, XInternAtom(display, key, false), scaleEQValue(value, attribute.min_value, attribute.max_value));
             return true;
         }
     }
+    qWarning("Can not set Xv attribute at key '%s'", key);
     return false;
 }
 
@@ -204,49 +211,25 @@ void XVRenderer::showEvent(QShowEvent *event)
 bool XVRenderer::onChangingBrightness(qreal b)
 {
     DPTR_D(XVRenderer);
-    int nb_attributes;
-    XvAttribute *attributes = XvQueryPortAttributes(d.display, d.xv_port, &nb_attributes);
-    if (!attributes) {
-        qWarning("XvQueryPortAttributes error");
-        return false;
-    }
-    return d.XvSetPortAttributeIfExists(attributes, nb_attributes, "XV_BRIGHTNESS", b*100);
+    return d.XvSetPortAttributeIfExists("XV_BRIGHTNESS", b*100);
 }
 
 bool XVRenderer::onChangingContrast(qreal c)
 {
     DPTR_D(XVRenderer);
-    int nb_attributes;
-    XvAttribute *attributes = XvQueryPortAttributes(d.display, d.xv_port, &nb_attributes);
-    if (!attributes) {
-        qWarning("XvQueryPortAttributes error");
-        return false;
-    }
-    return d.XvSetPortAttributeIfExists(attributes, nb_attributes, "XV_CONTRAST",c*100);
+    return d.XvSetPortAttributeIfExists("XV_CONTRAST",c*100);
 }
 
 bool XVRenderer::onChangingHue(qreal h)
 {
     DPTR_D(XVRenderer);
-    int nb_attributes;
-    XvAttribute *attributes = XvQueryPortAttributes(d.display, d.xv_port, &nb_attributes);
-    if (!attributes) {
-        qWarning("XvQueryPortAttributes error");
-        return false;
-    }
-    return d.XvSetPortAttributeIfExists(attributes, nb_attributes, "XV_HUE", h*100);
+    return d.XvSetPortAttributeIfExists( "XV_HUE", h*100);
 }
 
 bool XVRenderer::onChangingSaturation(qreal s)
 {
     DPTR_D(XVRenderer);
-    int nb_attributes;
-    XvAttribute *attributes = XvQueryPortAttributes(d.display, d.xv_port, &nb_attributes);
-    if (!attributes) {
-        qWarning("XvQueryPortAttributes error");
-        return false;
-    }
-    return d.XvSetPortAttributeIfExists(attributes, nb_attributes, "XV_SATURATION", s*100);
+    return d.XvSetPortAttributeIfExists("XV_SATURATION", s*100);
 }
 
 } //namespace QtAV
