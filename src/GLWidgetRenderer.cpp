@@ -672,16 +672,21 @@ void GLWidgetRenderer::drawFrame()
 
         /*
          * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
-         * Use glm?
+         * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
+         * which seems not correct because QMatrix4x4 has a flag var
          */
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+        GLfloat *mat = (GLfloat*)d.colorTransform.matrixRef().data();
         GLfloat glm[16];
-        d.colorTransform.matrixData(glm);
-        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_TRUE, glm);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+        if (sizeof(qreal) != sizeof(GLfloat)) {
 #else
-        //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
-        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, (GLfloat*)d.colorTransform.matrix().constData());
+        if (sizeof(float) != sizeof(GLfloat)) {
 #endif
+            d.colorTransform.matrixData(glm);
+            mat = glm;
+        }
+        //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
+        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, mat);
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
