@@ -156,8 +156,19 @@ bool XVRenderer::needUpdateBackground() const
 void XVRenderer::drawBackground()
 {
     DPTR_D(XVRenderer);
-    XFillRectangle(d.display, winId(), d.gc, 0, 0, width(), height());
-    //FIXME: xv should always draw the background. so shall we only paint the border rectangles, but not the whole widget
+    if (d.video_frame.isValid()) {
+        if (d.out_rect.width() < width()) {
+            XFillRectangle(d.display, winId(), d.gc, 0, 0, (width() - d.out_rect.width())/2, height());
+            XFillRectangle(d.display, winId(), d.gc, d.out_rect.right(), 0, (width() - d.out_rect.width())/2, height());
+        }
+        if (d.out_rect.height() < height()) {
+            XFillRectangle(d.display, winId(), d.gc, 0, 0,  width(), (height() - d.out_rect.height())/2);
+            XFillRectangle(d.display, winId(), d.gc, 0, d.out_rect.bottom(), width(), (height() - d.out_rect.height())/2);
+        }
+    } else {
+        XFillRectangle(d.display, winId(), d.gc, 0, 0, width(), height());
+    }
+    //FIXME: xv should always draw the background.
     d.update_background = true;
 }
 
@@ -223,7 +234,7 @@ bool XVRenderer::onChangingContrast(qreal c)
 bool XVRenderer::onChangingHue(qreal h)
 {
     DPTR_D(XVRenderer);
-    return d.XvSetPortAttributeIfExists( "XV_HUE", h*100);
+    return d.XvSetPortAttributeIfExists("XV_HUE", h*100);
 }
 
 bool XVRenderer::onChangingSaturation(qreal s)
