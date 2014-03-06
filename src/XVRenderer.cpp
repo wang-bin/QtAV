@@ -75,7 +75,8 @@ XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
 bool XVRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     // TODO: NV12
-    return pixfmt == VideoFormat::Format_YUV420P || pixfmt == VideoFormat::Format_YV12;
+    return pixfmt == VideoFormat::Format_YUV420P || pixfmt == VideoFormat::Format_YV12
+            || pixfmt == VideoFormat::Format_NV12|| pixfmt == VideoFormat::Format_NV21;
 }
 
 static void CopyPlane(void *dest, const uchar* src, unsigned dst_linesize, unsigned src_linesize, unsigned height )
@@ -109,6 +110,50 @@ static void CopyYV12(void *dest, const uchar* src[], unsigned luma_width, unsign
     }
 }
 
+static void CopyPlane(quint8 *dst, size_t dst_pitch,
+                      const quint8 *src, size_t src_pitch,
+                      unsigned width, unsigned height)
+{
+    for (unsigned y = 0; y < height; y++) {
+        memcpy(dst, src, width);
+        src += src_pitch;
+        dst += dst_pitch;
+    }
+}
+
+static void SplitPlanes(quint8 *dstu, size_t dstu_pitch,
+                        quint8 *dstv, size_t dstv_pitch,
+                        const quint8 *src, size_t src_pitch,
+                        unsigned width, unsigned height)
+{
+    for (unsigned y = 0; y < height; y++) {
+        for (unsigned x = 0; x < width; x++) {
+            dstu[x] = src[2*x+0];
+            dstv[x] = src[2*x+1];
+        }
+        src  += src_pitch;
+        dstu += dstu_pitch;
+        dstv += dstv_pitch;
+    }
+}
+
+void CopyFromNv12(quint8 *dst[], size_t dst_pitch[],
+                  const quint8 *src[2], size_t src_pitch[2],
+                  unsigned width, unsigned height)
+{
+    CopyPlane(dst[0], dst_pitch[0], src[0], src_pitch[0], width, height);
+    SplitPlanes(dst[2], dst_pitch[2], dst[1], dst_pitch[1], src[1], src_pitch[1], width/2, height/2);
+}
+
+void CopyFromYv12(quint8 *dst[], size_t dst_pitch[],
+                  const quint8 *src[3], size_t src_pitch[3],
+                  unsigned width, unsigned height)
+{
+     CopyPlane(dst[0], dst_pitch[0], src[0], src_pitch[0], width, height);
+     CopyPlane(dst[1], dst_pitch[1], src[1], src_pitch[1], width/2, height/2);
+     CopyPlane(dst[2], dst_pitch[2], src[2], src_pitch[2], width/2, height/2);
+}
+
 bool XVRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(XVRenderer);
@@ -117,27 +162,67 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     //TODO: if date is deep copied, mutex can be avoided
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
-    d.video_frame = frame.clone();
+    d.video_frame = frame.clone(); //TODO: why need copy?
     //d.video_frame.convertTo(VideoFormat::Format_YUV420P); //for rgb
     //d.xv_image->data = (char*)d.video_frame.bits();
-    const uchar *src[] = {
-        d.video_frame.bits(0),
-        d.video_frame.bits(1),
-        d.video_frame.bits(2)
-    };
-    unsigned src_linesize[] = {
-        (unsigned)d.video_frame.bytesPerLine(0),
-        (unsigned)d.video_frame.bytesPerLine(1),
-        (unsigned)d.video_frame.bytesPerLine(2)
-    };
-#define COPY_YV12 0
-#if COPY_YV12
-    CopyYV12(d.xv_image->data, src, d.xv_image->pitches[0],d.xv_image->pitches[1], src_linesize, d.xv_image->height);
-#else
-    CopyPlane(d.xv_image->data + d.xv_image->offsets[0], src[0], d.xv_image->pitches[0], src_linesize[0], d.xv_image->height);
-    CopyPlane(d.xv_image->data + d.xv_image->offsets[2], src[1], d.xv_image->pitches[2], src_linesize[1], d.xv_image->height/2);
-    CopyPlane(d.xv_image->data + d.xv_image->offsets[1], src[2], d.xv_image->pitches[1], src_linesize[2], d.xv_image->height/2);
+#if 1
+    int nb_planes = d.video_frame.planeCount();
+    QVector<size_t> src_linesize(nb_planes);
+    QVector<const quint8*> src(nb_planes);
+    for (int i = 0; i < nb_planes; ++i) {
+        src[i] = d.video_frame.bits(i);
+        src_linesize[i] = d.video_frame.bytesPerLine(i);
+    }
 #endif
+    //swap UV
+    quint8* dst[] = {
+        (quint8*)(d.xv_image->data + d.xv_image->offsets[0]),
+        (quint8*)(d.xv_image->data + d.xv_image->offsets[2]),
+        (quint8*)(d.xv_image->data + d.xv_image->offsets[1])
+    };
+    size_t dst_linesize[] = {
+        (size_t)d.xv_image->pitches[0],
+        (size_t)d.xv_image->pitches[2],
+        (size_t)d.xv_image->pitches[1]
+    };
+    switch (d.video_frame.pixelFormat()) {
+    case VideoFormat::Format_YUV420P:
+    case VideoFormat::Format_YV12: {
+#if 1
+        CopyFromYv12(dst, dst_linesize, src.data(), src_linesize.data(), dst_linesize[0], d.xv_image->height);
+#else
+        const uchar *src[] = {
+            d.video_frame.bits(0),
+            d.video_frame.bits(1),
+            d.video_frame.bits(2)
+        };
+        unsigned src_linesize[] = {
+            (unsigned)d.video_frame.bytesPerLine(0),
+            (unsigned)d.video_frame.bytesPerLine(1),
+            (unsigned)d.video_frame.bytesPerLine(2)
+        };
+#define COPY_YV12 1
+#if COPY_YV12
+        CopyYV12(d.xv_image->data, src, d.xv_image->pitches[0],d.xv_image->pitches[1], src_linesize, d.xv_image->height);
+#else
+        CopyPlane(d.xv_image->data + d.xv_image->offsets[0], src[0], d.xv_image->pitches[0], src_linesize[0], d.xv_image->height);
+        CopyPlane(d.xv_image->data + d.xv_image->offsets[2], src[1], d.xv_image->pitches[2], src_linesize[1], d.xv_image->height/2);
+        CopyPlane(d.xv_image->data + d.xv_image->offsets[1], src[2], d.xv_image->pitches[1], src_linesize[2], d.xv_image->height/2);
+#endif
+#endif
+    }
+        break;
+    case VideoFormat::Format_NV12:
+        std::swap(dst[1], dst[2]);
+        std::swap(dst_linesize[1], dst_linesize[2]);
+        CopyFromNv12(dst, dst_linesize, src.data(), src_linesize.data(), dst_linesize[0], d.xv_image->height);
+        break;
+    case VideoFormat::Format_NV21:
+        CopyFromNv12(dst, dst_linesize, src.data(), src_linesize.data(), dst_linesize[0], d.xv_image->height);
+        break;
+    default:
+        break;
+    }
     update();
     return true;
 }
