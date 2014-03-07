@@ -50,6 +50,8 @@ bool Direct2DRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 
 bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
 {
+    if (!frame.isValid())
+        return false;
     DPTR_D(Direct2DRenderer);
     if (!d.prepareBitmap(frame.width(), frame.height()))
         return false;
