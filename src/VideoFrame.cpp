@@ -133,7 +133,6 @@ VideoFrame::VideoFrame(const QByteArray& data, int width, int height, const Vide
 {
     Q_D(VideoFrame);
     d->data = data;
-    init();
 }
 
 VideoFrame::VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat &format)
@@ -176,16 +175,24 @@ VideoFrame::~VideoFrame()
 {
 }
 
-//TODO: use av_picture_copy(AVPicture*, const AVPicture*, AVPixelFormat, width, height)
 VideoFrame VideoFrame::clone() const
 {
     Q_D(const VideoFrame);
     if (!d->format.isValid())
         return VideoFrame();
-    VideoFrame f(width(), height(), d->format);
-    f.allocate();
+    int bytes = 0;
     for (int i = 0; i < d->format.planeCount(); ++i) {
-        memcpy(f.bits(i), bits(i), bytesPerLine(i)*planeHeight(i));
+        bytes += bytesPerLine(i)*planeHeight(i);
+    }
+    QByteArray buf(bytes, 0);
+    VideoFrame f(buf, width(), height(), d->format);
+    char *dst = buf.data();
+    for (int i = 0; i < d->format.planeCount(); ++i) {
+        f.setBits((quint8*)dst, i);
+        f.setBytesPerLine(bytesPerLine(i), i);
+        int plane_size = bytesPerLine(i)*planeHeight(i);
+        memcpy(dst, bits(i), plane_size);
+        dst += plane_size;
     }
     //f.setImageConverter(d->conv);
     return f;
@@ -209,9 +216,9 @@ int VideoFrame::allocate()
     return bytes;
 #endif
     int bytes = avpicture_get_size((AVPixelFormat)pixelFormatFFmpeg(), width(), height());
-    //if (d->data_out.size() < bytes) {
-        d->data.resize(bytes);
-    //}
+    if (d->data.size() < bytes) {
+        d->data = QByteArray(bytes, 0);
+    }
     init();
     return bytes;
 }

@@ -48,12 +48,11 @@ public:
     VideoFrame &operator =(const VideoFrame &other);
 
     /*!
-     * Deep copy. If you want to copy data from somewhere, knowing the format, width and height,
-     * then you can use clone().
+     * Deep copy. Given the format, width and height, plane addresses and line sizes.
      */
     VideoFrame clone() const;
     /*!
-     * Allocate memory with given format, width and height. planes and bytesPerLine will be set.
+     * Allocate memory with given format, width and height. planes and bytesPerLine will be set internally.
      * The memory can be initialized by user
      */
     virtual int allocate();
