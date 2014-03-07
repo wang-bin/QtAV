@@ -185,8 +185,8 @@ VideoFrame VideoFrame::clone() const
         bytes += bytesPerLine(i)*planeHeight(i);
     }
     QByteArray buf(bytes, 0);
+    char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
     VideoFrame f(buf, width(), height(), d->format);
-    char *dst = buf.data();
     for (int i = 0; i < d->format.planeCount(); ++i) {
         f.setBits((quint8*)dst, i);
         f.setBytesPerLine(bytesPerLine(i), i);
