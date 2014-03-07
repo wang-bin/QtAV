@@ -159,12 +159,9 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     DPTR_D(XVRenderer);
     if (!d.prepareImage(d.src_width, d.src_height))
         return false;
-    //TODO: if date is deep copied, mutex can be avoided
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
-    d.video_frame = frame.clone(); //TODO: why need copy?
-    //d.video_frame.convertTo(VideoFormat::Format_YUV420P); //for rgb
-    //d.xv_image->data = (char*)d.video_frame.bits();
+    d.video_frame = frame;//.clone();
 #if 1
     int nb_planes = d.video_frame.planeCount();
     QVector<size_t> src_linesize(nb_planes);
