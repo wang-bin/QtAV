@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -93,7 +93,7 @@ VideoFrame VideoDecoder::frame()
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
     //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
-    VideoFrame frame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat((int)d.codec_ctx->pix_fmt));
+    VideoFrame frame(d.frame->width, d.frame->height, VideoFormat((int)d.codec_ctx->pix_fmt));
     frame.setBits(d.frame->data);
     frame.setBytesPerLine(d.frame->linesize);
     return frame;

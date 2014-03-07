@@ -77,8 +77,9 @@ bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
     }
     if (!d.codec_ctx->width || !d.codec_ctx->height)
         return false;
-    d.width = d.codec_ctx->width;
-    d.height = d.codec_ctx->height;
+    //qDebug("codec %dx%d, frame %dx%d", d.codec_ctx->width, d.codec_ctx->height, d.frame->width, d.frame->height);
+    d.width = d.frame->width;
+    d.height = d.frame->height;
     //avcodec_align_dimensions2(d.codec_ctx, &d.width_align, &d.height_align, aligns);
     return true;
 }
