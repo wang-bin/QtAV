@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -56,7 +56,7 @@ public:
      * \return line size of plane
      */
     int bytesPerLine(int plane = 0) const;
-    // the whole frame data
+    // the whole frame data. may be empty unless clone() or allocate is called
     QByteArray frameData() const;
     // deep copy 1 plane data
     QByteArray data(int plane = 0) const;

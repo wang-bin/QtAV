@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -133,8 +133,9 @@ public:
      *  YUV420P: 1pix = 4Y+U+V
      */
     int bitsPerPixel() const;
-    int bitsPerPixelPadded() const;
     int bitsPerPixel(int plane) const;
+    int bitsPerPixelPadded() const;
+    int bitsPerPixelPadded(int plane) const;
     int bytesPerPixel() const;
     int bytesPerPixel(int plane) const;
 

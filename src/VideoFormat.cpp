@@ -1,3 +1,24 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
 #include "VideoFormat.h"
 #include <QtCore/QVector>
 
@@ -13,6 +34,7 @@ extern "C" {
 
 namespace QtAV {
 
+// TODO: default ctor, dtor, copy ctor required by implicit sharing?
 class VideoFormatPrivate : public QSharedData
 {
 public:
@@ -79,9 +101,6 @@ public:
         planes = qMax(av_pix_fmt_count_planes(pixfmt_ff), 0);
         bpps.resize(planes);
         bpps_pad.resize(planes);
-        if (pixfmt == VideoFormat::Format_Invalid) {
-            return;
-        }
         pixdesc = const_cast<AVPixFmtDescriptor*>(av_pix_fmt_desc_get(pixfmt_ff));
         if (!pixdesc)
             return;
@@ -112,6 +131,7 @@ public:
 private:
     // from libavutil/pixdesc.c
     void initBpp() {
+        //TODO: call later when bpp need
         bpp = 0;
         bpp_pad = 0;
         int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
@@ -314,7 +334,7 @@ static const struct {
 
 VideoFormat::PixelFormat VideoFormat::pixelFormatFromFFmpeg(int ff)
 {
-    for (int i = 0; i < sizeof(pixfmt_map)/sizeof(pixfmt_map[0]); ++i) {
+    for (unsigned int i = 0; i < sizeof(pixfmt_map)/sizeof(pixfmt_map[0]); ++i) {
         if (pixfmt_map[i].ff == ff)
             return pixfmt_map[i].fmt;
     }
@@ -323,7 +343,7 @@ VideoFormat::PixelFormat VideoFormat::pixelFormatFromFFmpeg(int ff)
 
 int VideoFormat::pixelFormatToFFmpeg(VideoFormat::PixelFormat fmt)
 {
-    for (int i = 0; i < sizeof(pixfmt_map)/sizeof(pixfmt_map[0]); ++i) {
+    for (unsigned int i = 0; i < sizeof(pixfmt_map)/sizeof(pixfmt_map[0]); ++i) {
         if (pixfmt_map[i].fmt == fmt)
             return pixfmt_map[i].ff;
     }
@@ -526,6 +546,13 @@ int VideoFormat::bitsPerPixel() const
 int VideoFormat::bitsPerPixelPadded() const
 {
     return d->bpp_pad;
+}
+
+int VideoFormat::bitsPerPixelPadded(int plane) const
+{
+    if (plane >= d->bpps.size())
+        return 0;
+    return d->bpps_pad[plane];
 }
 
 int VideoFormat::bitsPerPixel(int plane) const
