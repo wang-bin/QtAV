@@ -1,5 +1,5 @@
 /******************************************************************************
-    Simple Player:  this file is part of QtAV examples
+    QtAV Player Demo:  this file is part of QtAV examples
     Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -604,7 +604,7 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale << VideoEQConfigPage::GLSL);
         mpVideoEQ->setEngine(VideoEQConfigPage::GLSL);
     } else if (mpPlayer->renderer()->id() == VideoRendererId_XV) {
-        mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale << VideoEQConfigPage::XV);
+        mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::XV);
         mpVideoEQ->setEngine(VideoEQConfigPage::XV);
     } else {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale);

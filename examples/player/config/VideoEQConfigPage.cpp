@@ -61,7 +61,7 @@ VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
         *sliders[i].slider = new Slider();
         QSlider *slider = *sliders[i].slider;
         slider->setOrientation(Qt::Horizontal);
-        slider->setTickInterval(10);
+        slider->setTickInterval(2);
         slider->setRange(-100, 100);
         slider->setValue(0);
 
@@ -95,8 +95,6 @@ void VideoEQConfigPage::setEngines(const QVector<Engine> &engines)
 {
     mpEngine->clear();
     QVector<Engine> es(engines);
-    if (!es.contains(SWScale))
-        es.prepend(SWScale);
     qSort(es);
     mEngines = es;
     foreach (Engine e, es) {
