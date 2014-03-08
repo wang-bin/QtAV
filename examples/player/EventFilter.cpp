@@ -1,7 +1,7 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV Player Demo:  this file is part of QtAV examples
     Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
-    
+
 *   This file is part of QtAV
 
     This program is free software: you can redistribute it and/or modify
@@ -108,11 +108,14 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
 {
     Q_UNUSED(watched);
     AVPlayer *player = static_cast<AVPlayer*>(parent());
-    if (!player)
+    if (!player || !player->renderer() || !player->renderer()->widget())
         return false;
+    if (qobject_cast<QWidget*>(watched) != player->renderer()->widget()) {
+        return false;
+    }
 #ifndef QT_NO_DYNAMIC_CAST //dynamic_cast is defined as a macro to force a compile error
     if (player->renderer() != dynamic_cast<VideoRenderer*>(watched)) {
-        return false;
+       // return false;
     }
 #endif
     QEvent::Type type = event->type();
