@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverter: Base class for image resizing & color model convertion
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -35,7 +35,9 @@ extern void RegisterImageConverterIPP_Man();
 void ImageConverter_RegisterAll()
 {
     RegisterImageConverterFF_Man();
+#if QTAV_HAVE(IPP)
     RegisterImageConverterIPP_Man();
+#endif //QTAV_HAVE(IPP)
 }
 
 

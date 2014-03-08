@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverterIPP: Image resizing & color model convertion using Intel IPP
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -24,7 +24,7 @@
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
 
-#ifdef IPP_LINK
+#if QTAV_HAVE(IPP)
 #include <ipp.h>
 #else
 
@@ -68,7 +68,7 @@ bool ImageConverterIPP::convert(const quint8 *const srcSlice[], const int srcStr
 {
     DPTR_D(ImageConverterIPP);
     //color convertion, no scale
-#ifdef IPP_LINK
+#if QTAV_HAVE(IPP)
     struct {
         const quint8 *data[3];
         int linesize[3];

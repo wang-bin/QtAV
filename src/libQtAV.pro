@@ -52,10 +52,11 @@ config_avresample {
     SOURCES += AudioResamplerLibav.cpp
     LIBS += -lavresample
 }
-ipp-link {
-    DEFINES += IPP_LINK
+config_ipp {
+    DEFINES += QTAV_HAVE_IPP=1
     ICCROOT = $$(IPPROOT)/../compiler
     INCLUDEPATH += $$(IPPROOT)/include
+    SOURCES += ImageConverterIPP.cpp
     message("QMAKE_TARGET.arch" $$QMAKE_TARGET.arch)
     *64|contains(QMAKE_TARGET.arch, x86_64)|contains(TARGET_ARCH, x86_64) {
         IPPARCH=intel64
@@ -162,7 +163,6 @@ SOURCES += \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
-    ImageConverterIPP.cpp \
     QPainterRenderer.cpp \
     OSD.cpp \
     OSDFilter.cpp \
