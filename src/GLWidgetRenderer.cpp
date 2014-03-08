@@ -569,6 +569,7 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
 
 bool GLWidgetRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
+    Q_UNUSED(pixfmt);
     return true; //TODO
 }
 

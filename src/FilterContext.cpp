@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -67,10 +67,10 @@ void FilterContext::shareFrom(FilterContext *ctx)
 VideoFilterContext::VideoFilterContext():
     FilterContext()
   , painter(0)
+  , opacity(1)
   , paint_device(0)
   , own_painter(false)
   , own_paint_device(false)
-  , opacity(1)
 {
     font.setBold(true);
     font.setPixelSize(26);

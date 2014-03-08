@@ -45,7 +45,6 @@ VideoRenderer::~VideoRenderer()
 
 bool VideoRenderer::receive(const VideoFrame &frame)
 {
-    DPTR_D(VideoRenderer);
     setInSize(frame.width(), frame.height());
     return receiveFrame(frame);
 }

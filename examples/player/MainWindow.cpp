@@ -541,7 +541,7 @@ void MainWindow::enableAudio(bool yes)
 
 void MainWindow::setAudioOutput(AudioOutput *ao)
 {
-
+    Q_UNUSED(ao);
 }
 
 void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
@@ -785,6 +785,7 @@ void MainWindow::setVolume()
 
 void MainWindow::closeEvent(QCloseEvent *e)
 {
+    Q_UNUSED(e);
     if (mpPlayer)
         mpPlayer->stop();
     qApp->quit();
@@ -855,6 +856,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
 
 void MainWindow::keyReleaseEvent(QKeyEvent *e)
 {
+    Q_UNUSED(e);
     mControlOn = false;
 }
 
@@ -1178,10 +1180,10 @@ void MainWindow::onHueChanged(int h)
     VideoRenderer *vo = mpPlayer->renderer();
     if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
             && vo->setHue(mpVideoEQ->hue())) {
-        //mpPlayer->setHue(0);
+        mpPlayer->setHue(0);
     } else {
         vo->setHue(0);
-        //mpPlayer->setHue(h);
+        mpPlayer->setHue(h);
     }
 }
 

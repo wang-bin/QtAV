@@ -88,7 +88,7 @@ VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
 
 void VideoEQConfigPage::onGlobalSet(bool g)
 {
-
+    Q_UNUSED(g);
 }
 
 void VideoEQConfigPage::setEngines(const QVector<Engine> &engines)

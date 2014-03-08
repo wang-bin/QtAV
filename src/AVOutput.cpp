@@ -50,7 +50,6 @@ AVOutput::AVOutput(AVOutputPrivate &d)
 
 AVOutput::~AVOutput()
 {
-    DPTR_D(AVOutput);
     pause(false); //Does not work. cond may still waiting when destroyed
     detach();
 }

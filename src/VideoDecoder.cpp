@@ -58,6 +58,7 @@ bool VideoDecoder::prepare()
 //TODO: use ipp, cuda decode and yuv functions. is sws_scale necessary?
 bool VideoDecoder::decode(const QByteArray &encoded)
 {
+    Q_UNUSED(encoded);
     return false;
 }
 

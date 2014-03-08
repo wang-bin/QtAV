@@ -40,8 +40,7 @@ QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent) :
     VideoRenderer(*new QQuickItemRendererPrivate)
 {
     Q_UNUSED(parent);
-    DPTR_D(QQuickItemRenderer);
-    this->setFlag(QQuickItem::ItemHasContents, true);
+    setFlag(QQuickItem::ItemHasContents, true);
 }
 
 VideoRendererId QQuickItemRenderer::id() const
