@@ -187,6 +187,7 @@ public:
 
     int brightness() const;
     int contrast() const;
+    int hue() const; //not implemented
     int saturation() const;
     /*
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
@@ -218,6 +219,7 @@ signals:
     void positionChanged(qint64 position);
     void brightnessChanged(int val);
     void contrastChanged(int val);
+    void hueChanged(int val);
     void saturationChanged(int val);
 
 public slots:
@@ -267,6 +269,7 @@ public slots:
     // for all renderers. val: [-100, 100]. other value changes nothing
     void setBrightness(int val);
     void setContrast(int val);
+    void setHue(int val);  //not implemented
     void setSaturation(int val);
 
 private slots:

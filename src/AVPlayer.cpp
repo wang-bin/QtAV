@@ -782,6 +782,8 @@ bool AVPlayer::setVideoStream(int n, bool now)
 
 bool AVPlayer::setSubtitleStream(int n, bool now)
 {
+    Q_UNUSED(n);
+    Q_UNUSED(now);
     demuxer.setAutoResetStream(false);
     return false;
 }
@@ -826,7 +828,7 @@ void AVPlayer::play()
             clock->pause(true); //external clock
             last_position = mediaStopPosition() != std::numeric_limits<qint64>::max() ? -position() : 0;
             reset_state = false; //set a new stream number should not reset other states
-            qDebug("start pos is current position: %f", last_position);
+            qDebug("start pos is current position: %lld", last_position);
         } else {
             last_position = 0;
             qDebug("start pos is stream start time");
@@ -1108,6 +1110,17 @@ void AVPlayer::setContrast(int val)
     if (video_thread) {
         video_thread->setContrast(val);
     }
+}
+
+int AVPlayer::hue() const
+{
+    return 0;
+}
+
+void AVPlayer::setHue(int val)
+{
+    Q_UNUSED(val);
+    qWarning("Not implemented");
 }
 
 int AVPlayer::saturation() const
