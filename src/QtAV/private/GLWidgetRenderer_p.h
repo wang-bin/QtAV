@@ -40,9 +40,9 @@ public:
       , program(0)
       , vert(0)
       , frag(0)
-      , a_Position(0)
-      , a_TexCoords(0)
-      , u_matrix(0)
+      , a_Position(-1)
+      , a_TexCoords(-1)
+      , u_matrix(-1)
       , painter(0)
       , pixel_fmt(VideoFormat::Format_Invalid)
     {
@@ -116,6 +116,10 @@ public:
 
     void setupAspectRatio() {
         if (hasGLSL) {
+            if (u_matrix < 0) {
+                qDebug("%s @%d mat=%d", __FUNCTION__, __LINE__, u_matrix);
+                return;
+            }
             const GLfloat matrix[] = {
                 (float)out_rect.width()/(float)renderer_width, 0, 0, 0,
                 0, (float)out_rect.height()/(float)renderer_height, 0, 0,
@@ -142,11 +146,11 @@ public:
     QVector<GLenum> data_type;
     GLuint program;
     GLuint vert, frag;
-    GLuint a_Position;
-    GLuint a_TexCoords;
-    QVector<GLuint> u_Texture; //u_TextureN uniform. size is channel count
-    GLuint u_matrix;
-    GLuint u_colorMatrix;
+    GLint a_Position;
+    GLint a_TexCoords;
+    QVector<GLint> u_Texture; //u_TextureN uniform. size is channel count
+    GLint u_matrix;
+    GLint u_colorMatrix;
 
     QPainter *painter;
 
