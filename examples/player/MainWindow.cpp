@@ -24,8 +24,10 @@
 #include <QLabel>
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QDesktopServices>
 #include <QtCore/QFileInfo>
 #include <QtCore/QTextStream>
+#include <QtCore/QUrl>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
 #include <QWindowStateChangeEvent>
@@ -116,7 +118,9 @@ void MainWindow::initPlayer()
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
     //mpPlayer->setAudioOutput(AudioOutputFactory::create(AudioOutputId_PortAudio));
-    qApp->installEventFilter(new EventFilter(mpPlayer));
+    EventFilter *ef = new EventFilter(mpPlayer);
+    qApp->installEventFilter(ef);
+    connect(ef, SIGNAL(helpRequested()), SLOT(help()));
     //QHash<QByteArray, QByteArray> dict;
     //dict.insert("rtsp_transport", "tcp");
     //mpPlayer->setOptionsForFormat(dict);
@@ -286,6 +290,7 @@ void MainWindow::setupUi()
     mpMenu->addAction(tr("About"), this, SLOT(about()));
     mpMenu->addAction(tr("Help"), this, SLOT(help()));
     mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
+    mpMenu->addAction(tr("Donate"), this, SLOT(donate()));
     mpMenu->addSeparator();
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
@@ -1197,4 +1202,10 @@ void MainWindow::onSaturationChanged(int s)
         vo->setSaturation(0);
         mpPlayer->setSaturation(s);
     }
+}
+
+void MainWindow::donate()
+{
+    //QDesktopServices::openUrl(QUrl("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0/"));
+    QDesktopServices::openUrl(QUrl("http://wang-bin.github.io/QtAV/#donate"));
 }

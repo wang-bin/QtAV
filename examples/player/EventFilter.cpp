@@ -82,6 +82,8 @@ void EventFilter::aboutFFmpeg()
 
 void EventFilter::help()
 {
+    emit helpRequested();
+    return;
     static QString help = "<h4>" +tr("Drag and drop a file to player\n") + "</h4>"
                        "<p>" + tr("Double click to switch fullscreen") + "</p>"
                        "<p>" + tr("Shortcut:\n") + "</p>"

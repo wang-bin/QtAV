@@ -41,6 +41,9 @@ public:
     explicit EventFilter(QtAV::AVPlayer *player);
     virtual ~EventFilter();
 
+signals:
+    void helpRequested();
+
 public slots:
     void openLocalFile();
     void openUrl();

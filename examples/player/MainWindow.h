@@ -107,6 +107,8 @@ private slots:
     void onHueChanged(int h);
     void onSaturationChanged(int s);
 
+    void donate();
+
 protected:
     virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
