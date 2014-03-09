@@ -232,13 +232,10 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
     return program;
 }
 
-bool GLWidgetRendererPrivate::releaseResource()
+bool GLWidgetRendererPrivate::releaseShaderProgram()
 {
     pixel_fmt = VideoFormat::Format_Invalid;
     plane0Size = QSize();
-    glDeleteTextures(textures.size(), textures.data());
-    qDebug("delete %d textures", textures.size());
-    textures.clear();
     if (vert) {
         if (program)
             glDetachShader(program, vert);
@@ -252,6 +249,68 @@ bool GLWidgetRendererPrivate::releaseResource()
     if (program) {
         glDeleteProgram(program);
         program = 0;
+    }
+    return true;
+}
+
+QString GLWidgetRendererPrivate::getShaderFromFile(const QString &fileName)
+{
+    QFile f(qApp->applicationDirPath() + "/" + fileName);
+    if (!f.exists()) {
+        f.setFileName(":/" + fileName);
+    }
+    if (!f.open(QIODevice::ReadOnly)) {
+        qWarning("Can not load shader %s: %s", f.fileName().toUtf8().constData(), f.errorString().toUtf8().constData());
+        return QString();
+    }
+    QString src = f.readAll();
+    f.close();
+    return src;
+}
+
+bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
+{
+    // isSupported(pixfmt)
+    if (!fmt.isValid())
+        return false;
+    releaseShaderProgram();
+    pixel_fmt = fmt.pixelFormat();
+
+    // TODO: only to kinds, packed.glsl, planar.glsl
+    QString frag;
+    if (fmt.isPlanar()) {
+        frag = getShaderFromFile("shaders/yuv_rgb.f.glsl");
+    } else {
+        frag = getShaderFromFile("shaders/rgb.f.glsl");
+    }
+    if (frag.isEmpty())
+        return false;
+    program = createProgram(kVertexShader, frag.toUtf8().constData());
+    if (!program) {
+        qWarning("Could not create shader program.");
+        return false;
+    }
+
+    // vertex shader
+    CHECK_GL_ERROR(a_Position = glGetAttribLocation(program, "a_Position"));
+    a_TexCoords = glGetAttribLocation(program, "a_TexCoords");
+    qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", a_TexCoords);
+    u_matrix = glGetUniformLocation(program, "u_MVP_matrix");
+    qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
+
+    // fragment shader
+    u_colorMatrix = glGetUniformLocation(program, "u_colorMatrix");
+    qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d\n", u_colorMatrix);
+
+
+    if (fmt.isRGB())
+        u_Texture.resize(1);
+    else
+        u_Texture.resize(fmt.channels());
+    for (int i = 0; i < u_Texture.size(); ++i) {
+        QString tex_var = QString("u_Texture%1").arg(i);
+        u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
+        qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
     }
     return true;
 }
@@ -276,40 +335,12 @@ bool GLWidgetRendererPrivate::initTexture(GLuint tex, GLint internalFormat, GLen
     return true;
 }
 
-QString GLWidgetRendererPrivate::getShaderFromFile(const QString &fileName)
-{
-    QFile f(qApp->applicationDirPath() + "/" + fileName);
-    if (!f.exists()) {
-        f.setFileName(":/" + fileName);
-    }
-    if (!f.open(QIODevice::ReadOnly)) {
-        qWarning("Can not load shader %s: %s", f.fileName().toUtf8().constData(), f.errorString().toUtf8().constData());
-        return QString();
-    }
-    QString src = f.readAll();
-    f.close();
-    return src;
-}
-
-bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
+bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
 {
     // isSupported(pixfmt)
     if (!fmt.isValid())
         return false;
-    releaseResource();
     pixel_fmt = fmt.pixelFormat();
-
-    /*
-     * there are 2 fragment shaders: rgb and yuv.
-     * only 1 texture for packed rgb. planar rgb likes yuv
-     * To support both planar and packed yuv, and mixed yuv(NV12), we give a texture sample
-     * for each channel. For packed, each (channel) texture sample is the same. For planar,
-     * packed channels has the same texture sample.
-     * But the number of actural textures we upload is plane count.
-     * Which means the number of texture id equals to plane count
-     */
-    textures.resize(fmt.planeCount());
-    glGenTextures(textures.size(), textures.data());
 
     //http://www.berkelium.com/OpenGL/GDC99/internalformat.html
     //NV12: UV is 1 plane. 16 bits as a unit. GL_LUMINANCE4, 8, 16, ... 32?
@@ -317,7 +348,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     //replaced by GL_RED, GL_RG, GL_RGB, GL_RGBA? for 1, 2, 3, 4 channel image
     //http://www.gamedev.net/topic/634850-do-luminance-textures-still-exist-to-opengl/
     //https://github.com/kivy/kivy/issues/1738: GL_LUMINANCE does work on a Galaxy Tab 2. LUMINANCE_ALPHA very slow on Linux
-     //ALPHA: vec4(0,0,0,A), LUMINANCE: (L,L,L,1), LUMINANCE_ALPHA: (L,L,L,A)
+     //ALPHA: vec4(1,1,1,A), LUMINANCE: (L,L,L,1), LUMINANCE_ALPHA: (L,L,L,A)
     /*
      * To support both planar and packed use GL_ALPHA and in shader use r,g,a like xbmc does.
      * or use Swizzle_mask to layout the channels: http://www.opengl.org/wiki/Texture#Swizzle_mask
@@ -362,6 +393,23 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
         }
     }
 
+    /*
+     * there are 2 fragment shaders: rgb and yuv.
+     * only 1 texture for packed rgb. planar rgb likes yuv
+     * To support both planar and packed yuv, and mixed yuv(NV12), we give a texture sample
+     * for each channel. For packed, each (channel) texture sample is the same. For planar,
+     * packed channels has the same texture sample.
+     * But the number of actural textures we upload is plane count.
+     * Which means the number of texture id equals to plane count
+     */
+    if (textures.size() != fmt.planeCount()) {
+        glDeleteTextures(textures.size(), textures.data());
+        qDebug("delete %d textures", textures.size());
+        textures.clear();
+        textures.resize(fmt.planeCount());
+        glGenTextures(textures.size(), textures.data());
+    }
+
     if (!hasGLSL) {
         initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
         // more than 1?
@@ -369,40 +417,6 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
         return false;
     }
 
-    // TODO: only to kinds, packed.glsl, planar.glsl
-    QString frag;
-    if (fmt.isPlanar()) {
-        frag = getShaderFromFile("shaders/yuv_rgb.f.glsl");
-    } else {
-        frag = getShaderFromFile("shaders/rgb.f.glsl");
-    }
-    if (frag.isEmpty())
-        return false;
-    program = createProgram(kVertexShader, frag.toUtf8().constData());
-    if (!program) {
-        qWarning("Could not create shader program.");
-        return false;
-    }
-
-    // vertex shader
-    CHECK_GL_ERROR(a_Position = glGetAttribLocation(program, "a_Position"));
-    a_TexCoords = glGetAttribLocation(program, "a_TexCoords");
-    qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", a_TexCoords);
-    u_matrix = glGetUniformLocation(program, "u_MVP_matrix");
-    qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
-
-    // fragment shader
-    u_colorMatrix = glGetUniformLocation(program, "u_colorMatrix");
-    qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d\n", u_colorMatrix);
-    if (fmt.isRGB())
-        u_Texture.resize(1);
-    else
-        u_Texture.resize(fmt.channels());
-    for (int i = 0; i < u_Texture.size(); ++i) {
-        QString tex_var = QString("u_Texture%1").arg(i);
-        u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
-        qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
-    }
     initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
     for (int i = 1; i < textures.size(); ++i) {
         initTexture(textures[i], internal_format[i], data_format[i], data_type[0], texture_size[i].width(), texture_size[i].height());
@@ -412,16 +426,29 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
 
 void GLWidgetRendererPrivate::upload(const QRect &roi)
 {
-    //qDebug("==========upload======");
-    const VideoFormat fmt = video_frame.format();
+    const VideoFormat &fmt = video_frame.format();
 #if UPLOAD_ROI
     if (fmt != pixel_fmt || roi.size() != plane0Size) {
         qDebug("update texture: %dx%d, %s", roi.width(), roi.height(), video_frame.format().name().toUtf8().constData());
         if (!prepareShaderProgram(fmt, roi.width(), roi.height())) {
 #else
-    if (fmt != pixel_fmt || video_frame.size() != plane0Size) { //
-        //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
+#endif //UPLOAD_ROI
+    bool update_textures = false;
+    if (fmt != pixel_fmt) {
+        update_textures = true;
+        qDebug("pixel format changed: %s => %s", qPrintable(VideoFormat(pixel_fmt).name()), qPrintable(fmt.name()));
+        if (!prepareShaderProgram(fmt)) {
+            qWarning("shader program create error...");
+            return;
+        } else {
+            qDebug("shader program created!!!");
+        }
+    }
 
+    // effective size may change even if plane size not changed
+    if (update_textures || video_frame.size() != plane0Size) { //
+        update_textures = true;
+        //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
         texture_size.resize(fmt.planeCount());
         effective_tex_width.resize(fmt.planeCount());
         for (int i = 0; i < fmt.planeCount(); ++i) {
@@ -434,16 +461,12 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
             effective_tex_width_ratio = qMin(1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
         }
         qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
-        if (!prepareShaderProgram(fmt)) {
-#endif //UPLOAD_ROI
-            qWarning("shader program create error...");
-            return;
-        } else {
-            qDebug("shader program created!!!");
-        }
         plane0Size = video_frame.size();
     }
-    // set alignment
+    if (update_textures) {
+        initTextures(fmt);
+    }
+
     for (int i = 0; i < video_frame.planeCount(); ++i) {
         uploadPlane(i, internal_format[i], data_format[i], roi);
     }

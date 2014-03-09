@@ -52,14 +52,19 @@ public:
         }
     }
     ~GLWidgetRendererPrivate() {
-        releaseResource();
+        releaseShaderProgram();
+        if (!textures.isEmpty()) {
+            glDeleteTextures(textures.size(), textures.data());
+            textures.clear();
+        }
     }
     GLuint loadShader(GLenum shaderType, const char* pSource);
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
-    bool releaseResource();
-    bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
+    bool releaseShaderProgram();
     QString getShaderFromFile(const QString& fileName);
     bool prepareShaderProgram(const VideoFormat& fmt);
+    bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
+    bool initTextures(const VideoFormat& fmt);
     void upload(const QRect& roi);
     void uploadPlane(int p, GLint internal_format, GLenum format, const QRect& roi);
     //GL 4.x: GL_FRAGMENT_SHADER_DERIVATIVE_HINT,GL_TEXTURE_COMPRESSION_HINT
