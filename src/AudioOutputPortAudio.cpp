@@ -121,7 +121,7 @@ bool AudioOutputPortAudio::write()
     }
 #endif
 #endif //KNOW_WHY
-    PaError err = Pa_WriteStream(d.stream, d.data.data(), d.data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
+    PaError err = Pa_WriteStream(d.stream, d.data.constData(), d.data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
         return   false;

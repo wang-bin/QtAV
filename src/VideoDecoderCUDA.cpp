@@ -386,7 +386,7 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
     }
     CUVIDSOURCEDATAPACKET cuvid_pkt;
     memset(&cuvid_pkt, 0, sizeof(CUVIDSOURCEDATAPACKET));
-    cuvid_pkt.payload = (unsigned char *)encoded.data();
+    cuvid_pkt.payload = (unsigned char *)encoded.constData();
     cuvid_pkt.payload_size = encoded.size();
     cuvid_pkt.flags = CUVID_PKT_TIMESTAMP;
     cuvid_pkt.timestamp = 0;// ?

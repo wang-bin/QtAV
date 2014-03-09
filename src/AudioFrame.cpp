@@ -48,7 +48,7 @@ public:
         conv->setInAudioFormat(format);
         conv->setOutAudioFormat(other);
         conv->setInSampesPerChannel(samples_per_ch); //TODO
-        if (!conv->convert((const quint8**)planes.data())) {
+        if (!conv->convert((const quint8**)planes.constData())) {
             format = AudioFormat(); //invalid format
             return false;
         }
@@ -119,7 +119,7 @@ AudioFrame AudioFrame::clone() const
     for (int i = 0; i < nb_planes; ++i) {
         dst[i] = f.bits(i);
     }
-    av_samples_copy(dst.data(), d->planes.data(), 0, 0, samplesPerChannel(), d->format.channels(), (AVSampleFormat)d->format.sampleFormatFFmpeg());
+    av_samples_copy(dst.data(), d->planes.constData(), 0, 0, samplesPerChannel(), d->format.channels(), (AVSampleFormat)d->format.sampleFormatFFmpeg());
     return f;
 }
 

@@ -75,7 +75,7 @@ public:
         conv->setOutFormat(fffmt);
         conv->setInSize(width, height);
         conv->setOutSize(width, height);
-        if (!conv->convert(planes.data(), line_sizes.data())) {
+        if (!conv->convert(planes.constData(), line_sizes.constData())) {
             format.setPixelFormat(VideoFormat::Format_Invalid);
             return false;
         }
@@ -349,7 +349,7 @@ void VideoFrame::init()
     AVPixelFormat fff = (AVPixelFormat)d->format.pixelFormatFFmpeg();
     //int bytes = avpicture_get_size(fff, width(), height());
     //d->data.resize(bytes);
-    avpicture_fill(&picture, reinterpret_cast<uint8_t*>(d->data.data()), fff, width(), height());
+    avpicture_fill(&picture, (const uint8_t*)d->data.constData(), fff, width(), height());
     setBits(picture.data);
     setBytesPerLine(picture.linesize);
 }

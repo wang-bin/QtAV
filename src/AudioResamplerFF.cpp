@@ -68,7 +68,7 @@ bool AudioResamplerFF::convert(const quint8 **data)
     int out_size = d.out_samples_per_channel*size_per_sample_with_channels;
     if (out_size > d.data_out.size())
         d.data_out.resize(out_size);
-    uint8_t *out[] = {(uint8_t*)d.data_out.data()};
+    uint8_t *out[] = {(uint8_t*)d.data_out.constData()};
     //number of input/output samples available in one channel
     int converted_samplers_per_channel = swr_convert(d.context, out, d.out_samples_per_channel, data, d.in_samples_per_channel);
     d.out_samples_per_channel = converted_samplers_per_channel;
