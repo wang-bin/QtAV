@@ -44,7 +44,7 @@ public:
       , a_TexCoords(-1)
       , u_matrix(-1)
       , painter(0)
-      , pixel_fmt(VideoFormat::Format_Invalid)
+      , video_format(VideoFormat::Format_Invalid)
     {
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
             available = false;
@@ -159,7 +159,7 @@ public:
 
     QPainter *painter;
 
-    VideoFormat::PixelFormat pixel_fmt;
+    VideoFormat video_format;
     QSize plane0Size;
     ColorTransform colorTransform;
 };

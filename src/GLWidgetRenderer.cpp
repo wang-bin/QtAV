@@ -234,7 +234,7 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
 
 bool GLWidgetRendererPrivate::releaseShaderProgram()
 {
-    pixel_fmt = VideoFormat::Format_Invalid;
+    video_format.setPixelFormat(VideoFormat::Format_Invalid);
     plane0Size = QSize();
     if (vert) {
         if (program)
@@ -274,7 +274,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     if (!fmt.isValid())
         return false;
     releaseShaderProgram();
-    pixel_fmt = fmt.pixelFormat();
+    video_format.setPixelFormatFFmpeg(fmt.pixelFormatFFmpeg());
 
     // TODO: only to kinds, packed.glsl, planar.glsl
     QString frag;
@@ -340,7 +340,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
     // isSupported(pixfmt)
     if (!fmt.isValid())
         return false;
-    pixel_fmt = fmt.pixelFormat();
+    video_format.setPixelFormatFFmpeg(fmt.pixelFormatFFmpeg());
 
     //http://www.berkelium.com/OpenGL/GDC99/internalformat.html
     //NV12: UV is 1 plane. 16 bits as a unit. GL_LUMINANCE4, 8, 16, ... 32?
@@ -427,16 +427,10 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
 void GLWidgetRendererPrivate::upload(const QRect &roi)
 {
     const VideoFormat &fmt = video_frame.format();
-#if UPLOAD_ROI
-    if (fmt != pixel_fmt || roi.size() != plane0Size) {
-        qDebug("update texture: %dx%d, %s", roi.width(), roi.height(), video_frame.format().name().toUtf8().constData());
-        if (!prepareShaderProgram(fmt, roi.width(), roi.height())) {
-#else
-#endif //UPLOAD_ROI
     bool update_textures = false;
-    if (fmt != pixel_fmt) {
+    if (fmt != video_format) {
         update_textures = true;
-        qDebug("pixel format changed: %s => %s", qPrintable(VideoFormat(pixel_fmt).name()), qPrintable(fmt.name()));
+        qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
         if (!prepareShaderProgram(fmt)) {
             qWarning("shader program create error...");
             return;
