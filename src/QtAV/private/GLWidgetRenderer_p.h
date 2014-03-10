@@ -22,10 +22,14 @@
 #ifndef QTAV_GLWIDGETRENDERER_P_H
 #define QTAV_GLWIDGETRENDERER_P_H
 #include <QtOpenGL/qgl.h>
+#include <QtOpenGL/QGLShaderProgram>
+
 #include <QtCore/QVector>
 #include "private/VideoRenderer_p.h"
 #include <QtAV/VideoFormat.h>
 #include <QtAV/ColorTransform.h>
+
+#define NO_QGL_SHADER (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 
 namespace QtAV {
 
@@ -37,6 +41,7 @@ public:
       , hasGLSL(true)
       , update_texcoords(true)
       , effective_tex_width_ratio(1)
+      , shader_program(0)
       , program(0)
       , vert(0)
       , frag(0)
@@ -57,7 +62,21 @@ public:
             glDeleteTextures(textures.size(), textures.data());
             textures.clear();
         }
+        if (shader_program) {
+            delete shader_program;
+            shader_program = 0;
+        }
     }
+    bool initWithContext(const QGLContext *ctx) {
+#ifndef QT_OPENGL_ES
+    glActiveTexture = (_glActiveTexture)ctx->getProcAddress(QLatin1String("glActiveTexture"));
+#endif
+#if !NO_QGL_SHADER
+        shader_program = new QGLShaderProgram(ctx, 0);
+#endif
+        return true;
+    }
+
     GLuint loadShader(GLenum shaderType, const char* pSource);
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
     bool releaseShaderProgram();
@@ -125,13 +144,21 @@ public:
                 qDebug("%s @%d mat=%d", __FUNCTION__, __LINE__, u_matrix);
                 return;
             }
+#if !NO_QGL_SHADER && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+            const qreal matrix[] = {
+#else
             const GLfloat matrix[] = {
+#endif
                 (float)out_rect.width()/(float)renderer_width, 0, 0, 0,
                 0, (float)out_rect.height()/(float)renderer_height, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1
             };
+#if NO_QGL_SHADER
             glUniformMatrix4fv(u_matrix, 1, GL_FALSE/*transpose or not*/, matrix);
+#else
+            shader_program->setUniformValue(u_matrix, QMatrix4x4(matrix));
+#endif
         }
 #ifndef QT_OPENGL_ES_2
         if (!hasGLSL) {
@@ -139,6 +166,11 @@ public:
         }
 #endif //QT_OPENGL_ES_2
     }
+
+#ifndef QT_OPENGL_ES
+    typedef void (APIENTRY *_glActiveTexture) (GLenum);
+    _glActiveTexture glActiveTexture;
+#endif
 
     bool hasGLSL;
     bool update_texcoords;
@@ -149,6 +181,7 @@ public:
     QVector<GLint> internal_format;
     QVector<GLenum> data_format;
     QVector<GLenum> data_type;
+    QGLShaderProgram *shader_program;
     GLuint program;
     GLuint vert, frag;
     GLint a_Position;
