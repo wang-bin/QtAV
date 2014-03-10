@@ -211,7 +211,7 @@ bool ImageConverter::prepareData()
     //picture的数据按PIX_FMT格式自动"关联"到 data
     avpicture_fill(
             &d.picture,
-            (const uint8_t*)d.data_out.constData(),
+            (uint8_t*)d.data_out.constData(),
             (AVPixelFormat)d.fmt_out,
             d.w_out,
             d.h_out

@@ -349,7 +349,7 @@ void VideoFrame::init()
     AVPixelFormat fff = (AVPixelFormat)d->format.pixelFormatFFmpeg();
     //int bytes = avpicture_get_size(fff, width(), height());
     //d->data.resize(bytes);
-    avpicture_fill(&picture, (const uint8_t*)d->data.constData(), fff, width(), height());
+    avpicture_fill(&picture, (uint8_t*)d->data.constData(), fff, width(), height());
     setBits(picture.data);
     setBytesPerLine(picture.linesize);
 }

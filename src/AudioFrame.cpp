@@ -22,10 +22,8 @@
 #include "QtAV/AudioFrame.h"
 #include "private/Frame_p.h"
 #include "QtAV/AudioResampler.h"
+#include "QtAV/QtAV_Compat.h"
 
-extern "C" {
-#include <libavutil/samplefmt.h>
-}
 
 namespace QtAV {
 
