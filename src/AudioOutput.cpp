@@ -26,11 +26,16 @@ namespace QtAV {
 AudioOutput::AudioOutput()
     :AVOutput(*new AudioOutputPrivate())
 {
+    DPTR_D(AudioOutput);
+    d_func().format.setSampleFormat(preferredSampleFormat());
+    d_func().format.setChannelLayout(preferredChannelLayout());
 }
 
 AudioOutput::AudioOutput(AudioOutputPrivate &d)
     :AVOutput(d)
 {
+    d_func().format.setSampleFormat(preferredSampleFormat());
+    d_func().format.setChannelLayout(preferredChannelLayout());
 }
 
 AudioOutput::~AudioOutput()
@@ -58,7 +63,12 @@ int AudioOutput::maxChannels() const
 
 void AudioOutput::setAudioFormat(const AudioFormat& format)
 {
-    d_func().format = format;
+    DPTR_D(AudioOutput);
+    d.format.setSampleRate(format.sampleRate());
+    if (isSupported(format.sampleFormat()))
+        d.format.setSampleFormat(format.sampleFormat());
+    if (isSupported(format.channelLayout()))
+        d.format.setChannelLayout(format.channelLayout());
 }
 
 AudioFormat& AudioOutput::audioFormat()
@@ -81,6 +91,7 @@ int AudioOutput::sampleRate() const
     return d_func().format.sampleRate();
 }
 
+// TODO: check isSupported
 void AudioOutput::setChannels(int channels)
 {
     DPTR_D(AudioOutput);
@@ -128,21 +139,32 @@ qreal AudioOutput::speed() const
     return d_func().speed;
 }
 
-bool AudioOutput::isSuppported(const AudioFormat &format) const
+bool AudioOutput::isSupported(const AudioFormat &format) const
 {
     Q_UNUSED(format);
+    return isSupported(format.sampleFormat()) && isSupported(format.channelLayout());
+}
+
+bool AudioOutput::isSupported(AudioFormat::SampleFormat sampleFormat) const
+{
+    Q_UNUSED(sampleFormat);
     return true;
 }
 
-bool AudioOutput::isSuppported(AudioFormat::SampleFormat sampleFormat) const
+bool AudioOutput::isSupported(AudioFormat::ChannelLayout channelLayout) const
 {
-    Q_UNUSED(sampleFormat);
+    Q_UNUSED(channelLayout);
     return true;
 }
 
 AudioFormat::SampleFormat AudioOutput::preferredSampleFormat() const
 {
     return AudioFormat::SampleFormat_Float;
+}
+
+AudioFormat::ChannelLayout AudioOutput::preferredChannelLayout() const
+{
+    return AudioFormat::ChannelLayout_Stero;
 }
 
 } //namespace QtAV

@@ -26,6 +26,7 @@
 #include <QtAV/FactoryDefine.h>
 #include <QtAV/AudioFormat.h>
 //TODO: audio device class
+//bool setXXX(); false if not supported
 
 namespace QtAV {
 
@@ -39,13 +40,21 @@ class Q_AV_EXPORT AudioOutput : public AVOutput
 {
     DPTR_DECLARE_PRIVATE(AudioOutput)
 public:
+    /*!
+     * \brief AudioOutput
+     * Audio format set to preferred sample format and channel layout
+     */
     AudioOutput();
     virtual ~AudioOutput() = 0;
     /* store the data ref, then call convertData() and write(). tryPause() will be called*/
     bool receiveData(const QByteArray& data);
 
     int maxChannels() const;
-    //virtual bool isSupported(const AudioFormat& format);
+    /*!
+     * \brief setAudioFormat
+     * Sample format or channel layout will be set if supported. remain the old value if not supported
+     * \param format
+     */
     void setAudioFormat(const AudioFormat& format);
     AudioFormat& audioFormat();
     const AudioFormat& audioFormat() const;
@@ -72,19 +81,25 @@ public:
     qreal speed() const;
 
     /*!
-     * \brief isSuppported
+     * \brief isSupported
+     *  check \a isSupported(format.sampleFormat()) and \a isSupported(format.channelLayout())
      * \param format
-     * \return true if format is supported. default is true
+     * \return true if \a format is supported. default is true
      */
-    virtual bool isSuppported(const AudioFormat& format) const;
-    virtual bool isSuppported(AudioFormat::SampleFormat) const;
+    bool isSupported(const AudioFormat& format) const;
+    virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
+    virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
     /*!
      * \brief preferredSampleFormat
-     * \return the preferred sample format
+     * \return the preferred sample format. default is float32 packed
      *  If the specified format is not supported, resample to preffered format
      */
     virtual AudioFormat::SampleFormat preferredSampleFormat() const;
-    //virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
+    /*!
+     * \brief preferredChannelLayout
+     * \return the preferred channel layout. default is stero
+     */
+    virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
 
 protected:
     AudioOutput(AudioOutputPrivate& d);
