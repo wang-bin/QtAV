@@ -76,6 +76,28 @@
 //TODO: QGLfunctions?
 namespace QtAV {
 
+// glActiveTexture in Qt4 on windows release mode crash for me
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#ifndef QT_OPENGL_ES
+#define RESOLVE_GLACTIVETEXTURE
+#undef glActiveTexture
+#define glActiveTexture qtav_glActiveTexture
+#endif //QT_OPENGL_ES
+#endif //QT_VERSION
+typedef void (APIENTRY *type_glActiveTexture) (GLenum);
+static type_glActiveTexture qtav_glActiveTexture = 0;
+
+static void qtavResolveActiveTexture()
+{
+    const QGLContext *context = QGLContext::currentContext();
+    qtav_glActiveTexture = (type_glActiveTexture)context->getProcAddress(QLatin1String("glActiveTexture"));
+    if (!qtav_glActiveTexture) {
+        qDebug("resolve glActiveTextureARB");
+        qtav_glActiveTexture = (type_glActiveTexture)context->getProcAddress(QLatin1String("glActiveTextureARB"));
+    }
+    //Q_ASSERT(qtav_glActiveTexture);
+}
+
 
 const GLfloat kVertices[] = {
     -1, 1,
@@ -655,11 +677,7 @@ void GLWidgetRenderer::drawFrame()
     const int nb_planes = d.video_frame.planeCount(); //number of texture id
     // all texture ids should be binded when renderering even for packed plane!
     for (int i = 0; i < nb_planes; ++i) {
-#if NO_QGL_SHADER
-        glActiveTexture(GL_TEXTURE0 + i); // //xbmc: only for es, not for desktop?
-#else
-        d.glActiveTexture(GL_TEXTURE0 + i);
-#endif
+        glActiveTexture(GL_TEXTURE0 + i);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
         // use glUniform1i to swap planes. swap uv: i => (3-i)%3
@@ -773,11 +791,7 @@ void GLWidgetRenderer::drawFrame()
 
     for (int i = 0; i < d.textures.size(); ++i) {
         //glActiveTexture: gl functions apply on texture i
-#if NO_QGL_SHADER
-        glActiveTexture(GL_TEXTURE0 + i); // //xbmc: only for es, not for desktop?
-#else
-        d.glActiveTexture(GL_TEXTURE0 + i);
-#endif
+        glActiveTexture(GL_TEXTURE0 + i);
         glDisable(GL_TEXTURE_2D);
     }
 }
@@ -791,7 +805,7 @@ void GLWidgetRenderer::initializeGL()
     qDebug("OpenGL version: %d.%d  hasGLSL: %d", format().majorVersion(), format().minorVersion(), d.hasGLSL);
     initializeGLFunctions();
     d.initializeGLFunctions();
-
+    qtavResolveActiveTexture();
     glEnable(GL_TEXTURE_2D);
     if (!d.hasGLSL) {
 #ifndef QT_OPENGL_ES_2
@@ -800,7 +814,7 @@ void GLWidgetRenderer::initializeGL()
 #endif //QT_OPENGL_ES_2
     }
     else {
-        d.initWithContext(this->context());
+        d.initWithContext(context());
     }
     glClearColor(0.0, 0.0, 0.0, 0.0);
     d.setupQuality();

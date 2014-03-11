@@ -68,9 +68,6 @@ public:
         }
     }
     bool initWithContext(const QGLContext *ctx) {
-#ifndef QT_OPENGL_ES
-    glActiveTexture = (_glActiveTexture)ctx->getProcAddress(QLatin1String("glActiveTexture"));
-#endif
 #if !NO_QGL_SHADER
         shader_program = new QGLShaderProgram(ctx, 0);
 #endif
@@ -166,11 +163,6 @@ public:
         }
 #endif //QT_OPENGL_ES_2
     }
-
-#ifndef QT_OPENGL_ES
-    typedef void (APIENTRY *_glActiveTexture) (GLenum);
-    _glActiveTexture glActiveTexture;
-#endif
 
     bool hasGLSL;
     bool update_texcoords;
