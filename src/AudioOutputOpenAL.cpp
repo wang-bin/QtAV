@@ -267,6 +267,40 @@ bool AudioOutputOpenAL::close()
     return true;
 }
 
+bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) const
+{
+    Q_UNUSED(sampleFormat);
+#ifdef Q_OS_IOS
+    return sampleFormat == AudioFormat::SampleFormat_Unsigned8 || sampleFormat == AudioFormat::SampleFormat_Signed16;
+#endif //Q_OS_IOS
+    return true;
+}
+
+bool AudioOutputOpenAL::isSupported(AudioFormat::ChannelLayout channelLayout) const
+{
+    Q_UNUSED(channelLayout);
+#ifdef Q_OS_IOS
+    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stero;
+#endif //Q_OS_IOS
+    return true;
+}
+
+AudioFormat::SampleFormat AudioOutputOpenAL::preferredSampleFormat() const
+{
+#ifdef Q_OS_IOS
+    return AudioFormat::SampleFormat_Signed16;
+#endif //Q_OS_IOS
+    return AudioOutput::preferredSampleFormat();
+}
+
+AudioFormat::ChannelLayout AudioOutputOpenAL::preferredChannelLayout() const
+{
+#ifdef Q_OS_IOS
+    return AudioFormat::ChannelLayout_Stero;
+#endif //Q_OS_IOS
+    return AudioOutput::preferredChannelLayout();
+}
+
 QString AudioOutputOpenAL::name() const
 {
     ALCcontext *ctx = alcGetCurrentContext();

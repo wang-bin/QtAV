@@ -34,6 +34,11 @@ public:
 
     virtual bool open();
     virtual bool close();
+    virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
+    virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
+    virtual AudioFormat::SampleFormat preferredSampleFormat() const;
+    virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
+
 
     QString name() const;
 
