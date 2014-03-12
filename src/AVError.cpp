@@ -107,6 +107,9 @@ QString AVError::string() const
     case ReadTimedout:
         errStr = "Read packet timed out";
         break;
+    case ReadError:
+        errStr = "Read error";
+        break;
     case SeekError:
         errStr = "Seek error";
         break;
