@@ -78,14 +78,24 @@ QString OSD::text(Statistics *statistics)
         mSecsTotal = QTime(0, 0, 0).secsTo(statistics->duration); //why video.total_time may be wrong(mkv)
     }
     if (hasShowType(ShowCurrentAndTotalTime)) {
-        text += "/" + statistics->duration.toString("HH:mm:ss");
+        if (mSecsTotal > 0)
+            text += "/" + statistics->duration.toString("HH:mm:ss");
+        else
+            text += "/--:--:--";
     }
     if (hasShowType(ShowRemainTime)) {
-        text += "-" + QTime(0, 0, 0).addSecs(av->current_time.secsTo(statistics->duration)).toString("HH:mm:ss");
+        if (mSecsTotal > 0)
+            text += "-" + QTime(0, 0, 0).addSecs(av->current_time.secsTo(statistics->duration)).toString("HH:mm:ss");
+        else
+            text += "--:--:--";
     }
-    if (hasShowType(ShowPercent))
-        text += QString::number(qreal(QTime(0, 0, 0).secsTo(av->current_time))
+    if (hasShowType(ShowPercent)) {
+        if (mSecsTotal > 0)
+            text += QString::number(qreal(QTime(0, 0, 0).secsTo(av->current_time))
                                 /qreal(mSecsTotal)*100.0, 'f', 1) + "%";
+        else
+            text += "--.-%";
+    }
     return text;
 }
 
