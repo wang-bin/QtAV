@@ -34,7 +34,9 @@
       <section>
         <div id="title">
           <h1>QtAV</h1>
-          <p>A media playing framework based on Qt and FFmpeg. It helps you to write a player easily. 基于Qt和FFmpeg的音视频播放框架</p>
+          <p>A media playing framework based on Qt and FFmpeg. It helps you to write a player easily</p>
+          <p>基于Qt和FFmpeg的音视频播放框架</p>
+          <p id="license">Library license: LGPL v2.1 or later. Examples license: GPL v3</p>
           <hr>
           <span class="credits left">Project maintained by <a href="https://github.com/wang-bin">wang-bin</a></span>
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
@@ -68,13 +70,12 @@ $(function() {
 </div>
 
 <hr>
-<div id="ytplayer">
-<h3>Video: QtAV based qmlvideofx with CedarV hardware decoding</h3>
-</div>
 <script>
+
 //https://developers.google.com/youtube/player_parameters#IFrame_Player_API
   // Load the IFrame Player API code asynchronously.
   var tag = document.createElement('script');
+  tag.id = "ytjs";
   tag.src = "https://www.youtube.com/player_api";
   var firstScriptTag = document.getElementsByTagName('script')[0];
   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -88,14 +89,26 @@ $(function() {
       width: '640',
       videoId: 'u3mvDe3GBPI'
     });
-  } 
-</script>
+  }
 
+
+</script>
 
 <h1>
 <a name="for-developers" class="anchor" href="#for-developers"><span class="octicon octicon-link"></span></a>For Developers</h1>
 
-<p>Wrtie a media player using QtAV is quite easy.</p>
+<p>Wrtie a media player using QtAV is quite easy. QtAV provide both Qt C++ and QML api. <strong>QML</strong> playback API is designed to compatible with QtMultiMedia</p>
+<p>For more detail to using QtAV, see the wiki  <a href="https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Projects">Use QtAV In Your Project</a> and <a href="https://github.com/wang-bin/QtAV/tree/master/examples">examples</a></p>
+<p>Minimal player example</p>
+
+<table style="width:100%">
+<tr>
+  <td>C++</td>
+  <td>QML</td>
+</tr>
+<tr>
+  <td>
+
 <pre><code>WidgetRenderer renderer;
 renderer.show();
 AVPlayer player;
@@ -103,10 +116,8 @@ player.setRenderer(&amp;renderer);
 player.play("test.avi");
 </code></pre>
 
-<p>For more detail to using QtAV, see the wiki  <a href="https://github.com/wang-bin/QtAV/wiki/Use-QtAV-In-Your-Projects">Use QtAV In Your Project</a> and <a href="https://github.com/wang-bin/QtAV/tree/master/examples">examples</a></p>
-
-<p>QtAV can also be used in <strong>QML</strong>. QML playback API is designed to compatible with QtMultiMedia</p>
-
+  </td>
+  <td>
 <pre><code>import QtQuick 2.0
 import QtAV 1.3
 Item {
@@ -124,6 +135,48 @@ Item {
     }
 }
 </code></pre>
+
+  </td>
+</tr>
+</table> 
+
+
+<div id="features">
+<h1>Features</h1>
+
+  <style type="text/css">
+#features img {
+  max-width: 280px;
+  max-height: 120px;
+
+}
+  </style>
+<a href="http://qt-project.org/downloads"><img src="http://qt-project.org/images/qt13a/Qt-logo.png" alt="Qt" title="Qt4, 5"></a>
+<a href="http://ffmpeg.org"><img src="http://ffmpeg.org/ffmpeg-logo.png" alt="FFmpeg" title="FFmpeg >= 0.9"></a>
+<a href="http://libav.org"><img src="http://libav.org/libav-logo-text.png" alt="Libav"></a>
+<img src="http://upload.wikimedia.org/wikipedia/en/8/8a/OpenGL_logo.jpg" alt="OpenGL" title="OpenGL/ES">
+<img src="http://upload.wikimedia.org/wikipedia/en/9/9f/OpenGL_ES_logo.png" alt="OpenGL ES">
+<img src="http://upload.wikimedia.org/wikipedia/zh/2/28/OpenAL_logo.png" alt="OpenAL">
+<a href="http://www.portaudio.com/download.html"><img src="http://www.portaudio.com/images/portaudio_logotext.png" alt="PortAudio" title="PortAudio v19"></a>
+<img src="http://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Microsoft-DirectX-Logo-wordmark.svg/220px-Microsoft-DirectX-Logo-wordmark.svg.png" alt="DirectX">
+</div>
+
+<hr>
+<div id="platforms">
+  <h1>Platforms</h1>
+  Windows, Linux, Mac OSX, Android, iOS, MeeGo, COS
+
+  <div id="ytplayer">
+  <h3>Video: QtAV based qmlvideofx with CedarV hardware decoding</h3>
+  </div>
+
+
+</div>
+
+
+<div id="todo">
+<h1><a href="https://github.com/wang-bin/QtAV/wiki/TODO">TODO</a></h>
+</div>
 
 <div id="donate">
 <hr><h1>
@@ -179,9 +232,9 @@ Donations are used solely for purchasing hardware to improve and extend QtAV.
 </div>
 
 <hr>
-<div id="license">
-  QtAV is free software licensed under the term of LGPL v2.1. The player example is licensed under GPL v3.
-</div>
+
+<div id="clustrmaps-widget"></div><script type="text/javascript">var _clustrmaps = {'url' : 'http://wang-bin.github.io/QtAV', 'user' : 1135716, 'server' : '2', 'id' : 'clustrmaps-widget', 'version' : 1, 'date' : '2014-03-12', 'lang' : 'zh', 'corners' : 'square' };(function (){ var s = document.createElement('script'); s.type = 'text/javascript'; s.async = true; s.src = 'http://www2.clustrmaps.com/counter/map.js'; var x = document.getElementsByTagName('script')[0]; x.parentNode.insertBefore(s, x);})();</script><noscript><a href="http://www2.clustrmaps.com/user/116115464"><img src="http://www2.clustrmaps.com/stats/maps-no_clusters/wang-bin.github.io-QtAV-thumb.jpg" alt="Locations of visitors to this page" /></a></noscript>
+
 
 <hr><blockquote>
 <p>Copyright © Wang Bin <a href="mailto:wbsecg1@gmail.com">wbsecg1@gmail.com</a></p>
@@ -194,6 +247,6 @@ Donations are used solely for purchasing hardware to improve and extend QtAV.
 
     </div>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-    
+
   </body>
 </html>
