@@ -64,11 +64,10 @@ int AudioOutput::maxChannels() const
 void AudioOutput::setAudioFormat(const AudioFormat& format)
 {
     DPTR_D(AudioOutput);
-    d.format.setSampleRate(format.sampleRate());
-    if (isSupported(format.sampleFormat()))
-        d.format.setSampleFormat(format.sampleFormat());
-    if (isSupported(format.channelLayout()))
-        d.format.setChannelLayout(format.channelLayout());
+    if (!isSupported(format)) {
+        return;
+    }
+    d.format = format;
 }
 
 AudioFormat& AudioOutput::audioFormat()

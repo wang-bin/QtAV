@@ -52,8 +52,9 @@ public:
     int maxChannels() const;
     /*!
      * \brief setAudioFormat
-     * Sample format or channel layout will be set if supported. remain the old value if not supported
+     * Remain the old value if not supported
      * \param format
+     * TODO: return bool
      */
     void setAudioFormat(const AudioFormat& format);
     AudioFormat& audioFormat();
@@ -86,7 +87,7 @@ public:
      * \param format
      * \return true if \a format is supported. default is true
      */
-    bool isSupported(const AudioFormat& format) const;
+    virtual bool isSupported(const AudioFormat& format) const;
     virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
     virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
     /*!

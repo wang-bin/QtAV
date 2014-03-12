@@ -34,6 +34,7 @@ public:
 
     virtual bool open();
     virtual bool close();
+    virtual bool isSupported(const AudioFormat& format) const;
     virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
     virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
     virtual AudioFormat::SampleFormat preferredSampleFormat() const;

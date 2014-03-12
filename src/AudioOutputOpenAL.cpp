@@ -267,6 +267,11 @@ bool AudioOutputOpenAL::close()
     return true;
 }
 
+bool AudioOutputOpenAL::isSupported(const AudioFormat& format) const
+{
+    return !!audioFormatToAL(format);
+}
+
 bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
     Q_UNUSED(sampleFormat);
