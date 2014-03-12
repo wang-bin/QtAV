@@ -1250,6 +1250,10 @@ bool AVPlayer::setupAudioThread()
         else
             af.setChannelLayoutFFmpeg(aCodecCtx->channel_layout);
         //af.setChannels(aCodecCtx->channels);
+        // FIXME: workaround. planar convertion crash now!
+        if (af.isPlanar()) {
+            af.setSampleFormat(_audio->preferredSampleFormat());
+        }
         if (!_audio->isSupported(af)) {
             if (!_audio->isSupported(af.sampleFormat())) {
                 af.setSampleFormat(_audio->preferredSampleFormat());
