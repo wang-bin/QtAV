@@ -1147,8 +1147,9 @@ void AVPlayer::initStatistics()
     mStatistics.bit_rate = formatCtx->bit_rate;
     mStatistics.format = formatCtx->iformat->name;
     //AV_TIME_BASE_Q: msvc error C2143
-    mStatistics.start_time = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->start_time/(qreal)AV_TIME_BASE*1000.0));
-    mStatistics.duration = QTime(0, 0, 0).addMSecs(int((qreal)formatCtx->duration/(qreal)AV_TIME_BASE*1000.0));
+    //formatCtx->duration may be AV_NOPTS_VALUE. AVDemuxer.duration deals with this case
+    mStatistics.start_time = QTime(0, 0, 0).addMSecs(int(mediaStartPosition()));
+    mStatistics.duration = QTime(0, 0, 0).addMSecs((int)duration());
     struct common_statistics_t {
         int stream_idx;
         AVCodecContext *ctx;
