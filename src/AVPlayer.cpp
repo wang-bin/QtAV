@@ -1243,13 +1243,21 @@ bool AVPlayer::setupAudioThread()
     } else {
         AudioFormat af;
         af.setSampleRate(aCodecCtx->sample_rate);
-        af.setSampleFormat(_audio->preferredSampleFormat());
+        af.setSampleFormatFFmpeg(aCodecCtx->sample_fmt);
         // 5, 6, 7 channels may not play
         if (aCodecCtx->channels > 2)
             af.setChannelLayout(_audio->preferredChannelLayout());
         else
             af.setChannelLayoutFFmpeg(aCodecCtx->channel_layout);
         //af.setChannels(aCodecCtx->channels);
+        if (!_audio->isSupported(af)) {
+            if (!_audio->isSupported(af.sampleFormat())) {
+                af.setSampleFormat(_audio->preferredSampleFormat());
+            }
+            if (!_audio->isSupported(af.channelLayout())) {
+                af.setChannelLayout(_audio->preferredChannelLayout());
+            }
+        }
         _audio->setAudioFormat(af);
         if (!_audio->open()) {
             //return; //audio not ready
