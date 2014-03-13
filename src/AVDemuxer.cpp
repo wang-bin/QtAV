@@ -638,7 +638,8 @@ qint64 AVDemuxer::duration() const
 //AVFrameContext use AV_TIME_BASE as time base. AVStream use their own timebase
 qint64 AVDemuxer::startTimeUs() const
 {
-    if (!format_context || format_context->duration == AV_NOPTS_VALUE)
+    // start time may be not null for network stream
+    if (!format_context)
         return 0;
     return format_context->start_time;
 }
