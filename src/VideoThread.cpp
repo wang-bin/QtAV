@@ -156,6 +156,7 @@ void VideoThread::run()
      * be a key frame for hardware decoding. otherwise may crash
      */
     bool wait_key_frame = false;
+    int nb_dec_slow = 0;
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -186,7 +187,22 @@ void VideoThread::run()
         }
         qreal pts = pkt.pts;
         // TODO: delta ref time
-        d.delay = pts - d.clock->value();
+        qreal new_delay = pts - d.clock->value();
+        if (d.delay < 0 && d.delay > new_delay) {
+            qDebug("video becomes slower. force reduce video delay");
+            // skip decoding
+            // TODO: force fit min fps
+            if (nb_dec_slow > 10) {
+                nb_dec_slow = 0;
+                wait_key_frame = true;
+                pkt = Packet();
+                continue;
+            } else {
+                nb_dec_slow++;
+            }
+        } else {
+            d.delay = new_delay;
+        }
         /*
          *after seeking forward, a packet may be the old, v packet may be
          *the new packet, then the d.delay is very large, omit it.
