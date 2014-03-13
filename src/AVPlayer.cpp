@@ -722,6 +722,14 @@ void AVPlayer::setPosition(qint64 position)
         return;
     if (position < 0)
         position += mediaStopPosition();
+    qreal s = (qreal)position/1000.0;
+    // TODO: check flag accurate seek
+    if (audio_thread) {
+        audio_thread->skipRenderUntil(s);
+    }
+    if (video_thread) {
+        video_thread->skipRenderUntil(s);
+    }
     qDebug("seek to %lld ms (%f%%)", position, double(position)/double(duration())*100.0);
     masterClock()->updateValue(double(position)/1000.0); //what is duration == 0
     masterClock()->updateExternalClock(position); //in msec. ignore usec part using t/1000
@@ -896,7 +904,7 @@ void AVPlayer::play()
     if (last_position <= 0)
         last_position = mediaStartPosition();
     if (last_position > 0)
-        seek(last_position); //just use demuxer.startTime()/duration()?
+        setPosition(last_position); //just use demuxer.startTime()/duration()?
 
     emit started(); //we called stop(), so must emit started()
 }
