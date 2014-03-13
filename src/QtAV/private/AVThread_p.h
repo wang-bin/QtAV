@@ -56,6 +56,7 @@ public:
       , filter_context(0)
       , statistics(0)
       , ready(false)
+      , render_pts0(0)
     {
     }
     virtual ~AVThreadPrivate();
@@ -77,6 +78,8 @@ public:
     QWaitCondition ready_cond;
     QMutex ready_mutex;
     bool ready;
+    //only decode video without display or skip decode audio until pts reaches
+    qreal render_pts0;
 };
 
 } //namespace QtAV

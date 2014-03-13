@@ -77,6 +77,9 @@ public:
     // TODO: resample, resize task etc.
     void scheduleTask(QRunnable *task);
 
+    //only decode video without display or skip decode audio until pts reaches
+    void skipRenderUntil(qreal pts);
+
 public slots:
     virtual void stop();
     /*change pause state. the pause/continue action will do in the next loop*/
