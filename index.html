@@ -21,8 +21,9 @@
                 return !this.indexOf(str);
             }
         }
-        if (location.href.startsWith("http://wang-bin.github.io/QtAV")) {
-          window.location.replace("http://wang-bin.github.io/qtav.org");
+        var old = "http://wang-bin.github.io/QtAV";
+        if (location.href.startsWith(old)) {
+          window.location.replace(old, "http://wang-bin.github.io/qtav.org");
         }
     </script>
   </head>
