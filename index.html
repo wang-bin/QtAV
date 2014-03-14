@@ -24,7 +24,7 @@
         var old = "http://wang-bin.github.io/QtAV";
         if (location.href.startsWith(old)) {
             var loc = location.href;
-            var suf = loc.substring(old.length, loc.length-1);
+            var suf = loc.substring(old.length, loc.length);
             loc = "http://wang-bin.github.io/qtav.org" + suf;
             window.location.replace(loc);
         }
