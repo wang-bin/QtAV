@@ -192,7 +192,7 @@ void VideoThread::run()
             qDebug("video becomes slower. force reduce video delay");
             // skip decoding
             // TODO: force fit min fps
-            if (nb_dec_slow > 10) {
+            if (nb_dec_slow > 10 && !pkt.hasKeyFrame) {
                 nb_dec_slow = 0;
                 wait_key_frame = true;
                 pkt = Packet();
