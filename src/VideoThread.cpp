@@ -188,7 +188,7 @@ void VideoThread::run()
         qreal pts = pkt.pts;
         // TODO: delta ref time
         qreal new_delay = pts - d.clock->value();
-        if (d.delay < 0 && d.delay > new_delay) {
+        if (d.delay < -0.5 && d.delay > new_delay) {
             qDebug("video becomes slower. force reduce video delay");
             // skip decoding
             // TODO: force fit min fps
@@ -211,6 +211,7 @@ void VideoThread::run()
          * 3. compute average decode time
         */
         bool skip_render = pts < d.render_pts0;
+        // TODO: check frame type(after decode) and skip decoding some frames to speed up
         if (skip_render) {
             d.clock->updateVideoPts(pts); //here?
             //qDebug("skip video render at %f/%f", pkt.pts, d.render_pts0);
