@@ -33,10 +33,10 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
     mpContent->setTabPosition(QTabWidget::West);
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-    mpButtonBox->addButton(QDialogButtonBox::Reset);
-    mpButtonBox->addButton(QDialogButtonBox::Ok);
-    mpButtonBox->addButton(QDialogButtonBox::Cancel);
-    mpButtonBox->addButton(QDialogButtonBox::Apply);
+    mpButtonBox->addButton(tr("Reset"), QDialogButtonBox::ResetRole);// (QDialogButtonBox::Reset);
+    mpButtonBox->addButton(tr("Ok"), QDialogButtonBox::AcceptRole); //QDialogButtonBox::Ok
+    mpButtonBox->addButton(tr("Cancel"), QDialogButtonBox::RejectRole);
+    mpButtonBox->addButton(tr("Apply"), QDialogButtonBox::ApplyRole);
 
     connect(mpButtonBox, SIGNAL(accepted()), SLOT(accept()));
     connect(mpButtonBox, SIGNAL(rejected()), SLOT(reject()));
