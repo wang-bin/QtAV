@@ -25,6 +25,13 @@
 #include <QtAV/VideoDecoderTypes.h>
 #include <QtCore/QObject>
 
+//TODO: use hash to simplify api
+/*
+ * MVC model. signals from Config notify ui update. signals from ui does not change Config unless ui changes applyed by XXXPage.apply()
+ * signals from ui will emit Config::xxxChanged() with the value in ui. ui cancel the change also emit it with the value stores in Config.
+ * apply() will change the value in Config
+ */
+
 class Config : public QObject
 {
     Q_OBJECT
@@ -48,9 +55,31 @@ public:
     QStringList registeredDecoderNames() const;
     Config& registeredDecoderNames(const QStringList& names);
 
+    QString captureDir() const;
+    Config& captureDir(const QString& dir);
+
+    /*!
+     * \brief captureFormat
+     *  can be "yuv" to capture yuv image without convertion. the suffix is the yuv format, e.g. "yuv420p", "nv12"
+     *  or can be "jpg", "png"
+     * \return
+     */
+    QByteArray captureFormat() const;
+    Config& captureFormat(const QByteArray& format);
+    // only works for non-yuv capture. value: -1~100, -1: default
+    int captureQuality() const;
+    Config& captureQuality(int quality);
+
+    QVariant operator ()(const QString& key) const;
+    Config& operator ()(const QString& key, const QVariant& value);
+
 signals:
     void decodingThreadsChanged(int n);
     void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
+    void captureDirChanged(const QString& dir);
+    void captureFormatChanged(const QByteArray& fmt);
+    void captureQualityChanged(int quality);
+
 
 protected:
     explicit Config(QObject *parent = 0);

@@ -20,6 +20,7 @@ SOURCES += main.cpp \
     TVView.cpp \
     EventFilter.cpp \
     config/Config.cpp \
+    config/CaptureConfigPage.cpp \
     config/VideoEQConfigPage.cpp \
     config/DecoderConfigPage.cpp \
     playlist/PlayListModel.cpp \
@@ -36,6 +37,7 @@ HEADERS += \
     TVView.h \
     EventFilter.h \
     config/Config.h \
+    config/CaptureConfigPage.h \
     config/VideoEQConfigPage.h \
     config/DecoderConfigPage.h \
     playlist/PlayListModel.h \

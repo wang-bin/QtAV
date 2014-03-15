@@ -26,6 +26,12 @@
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QDesktopServices>
+#else
+#include <QtCore/QStandardPaths>
+#endif
+
 using namespace QtAV;
 
 static QStringList idsToNames(QVector<QtAV::VideoDecoderId> ids) {
@@ -86,6 +92,19 @@ public:
 
         settings.endGroup();
         settings.endGroup();
+
+        settings.beginGroup("capture");
+        capture_dir = settings.value("dir", QString()).toString();
+        if (capture_dir.isEmpty()) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+            capture_dir = QDesktopServices::storageLocation(QDesktopServices::PicturesLocation);
+#else
+            capture_dir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+#endif
+        }
+        capture_fmt = settings.value("format", "png").toByteArray();
+        capture_quality = settings.value("quality", -1).toInt();
+        settings.endGroup();
     }
     void save() {
         qDebug("************save config %s************", qPrintable(dir));
@@ -97,6 +116,11 @@ public:
         settings.setValue("all", idsToNames(video_decoder_all).join(" "));
         settings.endGroup();
         settings.endGroup();
+        settings.beginGroup("capture");
+        settings.setValue("dir", capture_dir);
+        settings.setValue("format", capture_fmt);
+        settings.setValue("quality", capture_quality);
+        settings.endGroup();
     }
 
     QString dir;
@@ -105,6 +129,11 @@ public:
     int decode_threads;
     QVector<QtAV::VideoDecoderId> video_decoder_priority;
     QVector<QtAV::VideoDecoderId> video_decoder_all;
+
+    QString capture_dir;
+    QByteArray capture_fmt;
+    int capture_quality;
+
 };
 
 Config& Config::instance()
@@ -197,4 +226,48 @@ QStringList Config::registeredDecoderNames() const
 Config& Config::registeredDecoderNames(const QStringList &names)
 {
     return registeredDecoders(idsFromNames(names));
+}
+
+
+QString Config::captureDir() const
+{
+    return mpData->capture_dir;
+}
+
+Config& Config::captureDir(const QString& dir)
+{
+    if (mpData->capture_dir == dir)
+        return *this;
+    mpData->capture_dir = dir;
+    emit captureDirChanged(dir);
+    return *this;
+}
+
+QByteArray Config::captureFormat() const
+{
+    return mpData->capture_fmt;
+}
+
+Config& Config::captureFormat(const QByteArray& format)
+{
+    if (mpData->capture_fmt == format)
+        return *this;
+    mpData->capture_fmt = format;
+    emit captureFormatChanged(format);
+    return *this;
+}
+
+// only works for non-yuv capture
+int Config::captureQuality() const
+{
+    return mpData->capture_quality;
+}
+
+Config& Config::captureQuality(int quality)
+{
+    if (mpData->capture_quality == quality)
+        return *this;
+    mpData->capture_quality = quality;
+    emit captureQualityChanged(quality);
+    return *this;
 }
