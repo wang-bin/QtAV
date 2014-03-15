@@ -126,7 +126,10 @@ void MainWindow::initPlayer()
     //dict.insert("rtsp_transport", "tcp");
     //mpPlayer->setOptionsForFormat(dict);
     qDebug("player created");
-    mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": " + mpPlayer->videoCapture()->captureDir());
+    onCaptureConfigChanged();
+    connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), SLOT(onCaptureConfigChanged()));
+    connect(&Config::instance(), SIGNAL(captureFormatChanged(QByteArray)), SLOT(onCaptureConfigChanged()));
+    connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), SLOT(onCaptureConfigChanged()));
     connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
@@ -1203,6 +1206,21 @@ void MainWindow::onSaturationChanged(int s)
         vo->setSaturation(0);
         mpPlayer->setSaturation(s);
     }
+}
+
+void MainWindow::onCaptureConfigChanged()
+{
+    mpPlayer->videoCapture()->setCaptureDir(Config::instance().captureDir());
+    mpPlayer->videoCapture()->setQuality(Config::instance().captureQuality());
+    if (Config::instance().captureFormat().toLower() == "yuv") {
+        mpPlayer->videoCapture()->setRaw(true);
+    } else {
+        mpPlayer->videoCapture()->setRaw(false);
+        mpPlayer->videoCapture()->setFormat(Config::instance().captureFormat());
+    }
+    mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": " + mpPlayer->videoCapture()->captureDir()
+                             + "\n" + tr("Format") + ": " + Config::instance().captureFormat());
+
 }
 
 void MainWindow::donate()

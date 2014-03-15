@@ -76,15 +76,14 @@ public:
 
     QVariant operator ()(const QString& key) const;
     Config& operator ()(const QString& key, const QVariant& value);
-
-signals:
-    void decodingThreadsChanged(int n);
-    void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
-    void registeredDecodersChanged(const QVector<QtAV::VideoDecoderId>& r);
-    void captureDirChanged(const QString& dir);
-    void captureFormatChanged(const QByteArray& fmt);
-    void captureQualityChanged(int quality);
-
+public:
+    //keyword 'signals' maybe protected. we need call the signals in other classes. Q_SIGNAL is empty
+    Q_SIGNAL void decodingThreadsChanged(int n);
+    Q_SIGNAL void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
+    Q_SIGNAL void registeredDecodersChanged(const QVector<QtAV::VideoDecoderId>& r);
+    Q_SIGNAL void captureDirChanged(const QString& dir);
+    Q_SIGNAL void captureFormatChanged(const QByteArray& fmt);
+    Q_SIGNAL void captureQualityChanged(int quality);
 
 protected:
     explicit Config(QObject *parent = 0);

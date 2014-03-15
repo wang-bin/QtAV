@@ -26,6 +26,7 @@
 #include <QToolButton>
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QtCore/QUrl>
 
 CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     ConfigPageBase(parent)
@@ -53,16 +54,19 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     foreach (QByteArray fmt, formats) {
         mpFormat->addItem(fmt);
     }
+    int idx = mpFormat->findText(Config::instance().captureFormat());
+    mpFormat->setCurrentIndex(idx);
     mpQuality = new QSlider();
     formLayout->addRow(tr("Quality"), mpQuality);
     mpQuality->setRange(-1, 100);
     mpQuality->setOrientation(Qt::Horizontal);
+    mpQuality->setValue(Config::instance().captureQuality());
 
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), mpDir, SLOT(setText(QString)));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), mpQuality, SLOT(setValue(int)));
     connect(&Config::instance(), SIGNAL(captureFormatChanged(QByteArray)), SLOT(formatChanged(QByteArray)));
     connect(mpDir, SIGNAL(textChanged(QString)), SLOT(changeDirByUi(QString)));
-    connect(mpFormat, SIGNAL(currentTextChanged(QString)), SLOT(changeFormatByUi(QString)));
+    connect(mpFormat, SIGNAL(currentIndexChanged(QString)), SLOT(changeFormatByUi(QString)));
     connect(mpQuality, SIGNAL(valueChanged(int)), SLOT(changeQualityByUi(int)));
 }
 

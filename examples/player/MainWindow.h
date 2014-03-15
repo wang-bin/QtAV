@@ -107,6 +107,8 @@ private slots:
     void onHueChanged(int h);
     void onSaturationChanged(int s);
 
+    void onCaptureConfigChanged();
+
     void donate();
     void setup();
 
