@@ -108,6 +108,7 @@ private slots:
     void onSaturationChanged(int s);
 
     void donate();
+    void setup();
 
 protected:
     virtual void closeEvent(QCloseEvent *e);

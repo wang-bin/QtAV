@@ -31,6 +31,7 @@
 
 #include <QtAV/VideoDecoderTypes.h>
 #include <QPainter>
+#include <QtDebug>
 
 QString GetDecoderDescription(const QString& name) {
     struct {
@@ -48,6 +49,10 @@ QString GetDecoderDescription(const QString& name) {
     }
     return "";
 }
+
+// shared
+static QVector<QtAV::VideoDecoderId> sDecodersUi;
+static QVector<QtAV::VideoDecoderId> sPriorityUi;
 
 using namespace QtAV;
 class DecoderConfigPage::DecoderItemWidget : public QWidget
@@ -107,9 +112,8 @@ private:
     QLabel *mpDesc;
 };
 
-DecoderConfigPage::DecoderConfigPage(Config* config, QWidget *parent) :
-    QWidget(parent)
-  , mpConfig(config)
+DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
+    ConfigPageBase(parent)
 {
     mpSelectedDec = 0;
     setWindowTitle("Video decoder config page");
@@ -121,7 +125,7 @@ DecoderConfigPage::DecoderConfigPage(Config* config, QWidget *parent) :
     sb->setEnabled(false);
     sb->setMinimum(0);
     sb->setMaximum(16);
-    sb->setValue(mpConfig->decodingThreads());
+    sb->setValue(Config::instance().decodingThreads());
     QHBoxLayout *hb = new QHBoxLayout;
     hb->addWidget(label);
     hb->addWidget(sb);
@@ -132,8 +136,10 @@ DecoderConfigPage::DecoderConfigPage(Config* config, QWidget *parent) :
     vb->addWidget(frame);
     vb->addWidget(new QLabel(tr("Decoder") + " " + tr("Priorities")));
 
-    QStringList vds = mpConfig->decoderPriorityNames();
-    QStringList vds_all = mpConfig->registeredDecoderNames();
+    sPriorityUi = Config::instance().decoderPriority();
+    sDecodersUi = Config::instance().registeredDecoders();
+    QStringList vds = Config::instance().decoderPriorityNames();
+    QStringList vds_all = Config::instance().registeredDecoderNames();
     mpDecLayout = new QVBoxLayout;
     for (int i = 0; i < vds_all.size(); ++i) {
         QString name = vds_all.at(i);
@@ -147,6 +153,7 @@ DecoderConfigPage::DecoderConfigPage(Config* config, QWidget *parent) :
         mpDecLayout->addWidget(iw);
     }
     vb->addLayout(mpDecLayout);
+    vb->addSpacerItem(new QSpacerItem(width(), 10, QSizePolicy::Ignored, QSizePolicy::Expanding));
 
     mpUp = new QToolButton;
     mpUp->setText("Up");
@@ -159,9 +166,38 @@ DecoderConfigPage::DecoderConfigPage(Config* config, QWidget *parent) :
     hb->addWidget(mpUp);
     hb->addWidget(mpDown);
     vb->addLayout(hb);
+    connect(&Config::instance(), SIGNAL(decoderPriorityChanged(QVector<QtAV::VideoDecoderId>)), SLOT(updateDecodersUi()));
+    connect(&Config::instance(), SIGNAL(registeredDecodersChanged(QVector<QtAV::VideoDecoderId>)), SLOT(updateDecodersUi()));
+    updateDecodersUi();
+}
 
-    //vb->addSpacerItem(new QSpacerItem(width(), height(), QSizePolicy::Maximum, QSizePolicy::Maximum));
-    connect(mpConfig, SIGNAL(decoderPriorityChanged(QVector<QtAV::VideoDecoderId>)), SLOT(updateDecodersUi()));
+QString DecoderConfigPage::name() const
+{
+    return tr("Decoder");
+}
+
+void DecoderConfigPage::apply()
+{
+    QStringList decs_all;
+    QStringList decs;
+    foreach (DecoderItemWidget *w, mDecItems) {
+        decs_all.append(w->name());
+        if (w->isChecked())
+            decs.append(w->name());
+    }
+    sDecodersUi = idsFromNames(decs_all);
+    sPriorityUi = idsFromNames(decs);
+    Config::instance().registeredDecoders(sDecodersUi);
+    Config::instance().decoderPriority(sPriorityUi);
+}
+
+void DecoderConfigPage::cancel()
+{
+    updateDecodersUi();
+}
+
+void DecoderConfigPage::reset()
+{
 }
 
 void DecoderConfigPage::videoDecoderEnableChanged()
@@ -171,8 +207,12 @@ void DecoderConfigPage::videoDecoderEnableChanged()
         if (iw->isChecked())
             names.append(iw->name());
     }
-    qDebug("*******dec change*******");
-    mpConfig->decoderPriorityNames(names);
+    sPriorityUi = idsFromNames(names);
+    if (applyOnUiChange()) {
+        Config::instance().decoderPriorityNames(names);
+    } else {
+//        emit Config::instance().decoderPriorityChanged(sPriorityUi);
+    }
 }
 
 void DecoderConfigPage::priorityUp()
@@ -187,15 +227,22 @@ void DecoderConfigPage::priorityUp()
     mpDecLayout->removeWidget(iw);
     mpDecLayout->insertWidget(i, iw);
     QStringList decs_all;
-    QStringList decs_p = mpConfig->decoderPriorityNames();
+    QStringList decs_p = Config::instance().decoderPriorityNames();
     QStringList decs;
     foreach (DecoderItemWidget *w, mDecItems) {
         decs_all.append(w->name());
         if (decs_p.contains(w->name()))
             decs.append(w->name());
     }
-    mpConfig->decoderPriorityNames(decs);
-    mpConfig->registeredDecoderNames(decs);
+    sDecodersUi = idsFromNames(decs_all);
+    sPriorityUi = idsFromNames(decs);
+    if (applyOnUiChange()) {
+        Config::instance().decoderPriorityNames(decs);
+        Config::instance().registeredDecoderNames(decs);
+    } else {
+        //emit Config::instance().decoderPriorityChanged(idsFromNames(decs));
+        //emit Config::instance().registeredDecodersChanged(idsFromNames(decs));
+    }
 }
 
 void DecoderConfigPage::priorityDown()
@@ -210,16 +257,24 @@ void DecoderConfigPage::priorityDown()
     // why takeItemAt then insertItem does not work?
     mpDecLayout->removeWidget(iw);
     mpDecLayout->insertWidget(i, iw);
+
     QStringList decs_all;
-    QStringList decs_p = mpConfig->decoderPriorityNames();
+    QStringList decs_p = Config::instance().decoderPriorityNames();
     QStringList decs;
     foreach (DecoderItemWidget *w, mDecItems) {
         decs_all.append(w->name());
         if (decs_p.contains(w->name()))
             decs.append(w->name());
     }
-    mpConfig->decoderPriorityNames(decs);
-    mpConfig->registeredDecoderNames(decs_all);
+    sDecodersUi = idsFromNames(decs_all);
+    sPriorityUi = idsFromNames(decs);
+    if (applyOnUiChange()) {
+        Config::instance().decoderPriorityNames(decs);
+        Config::instance().registeredDecoderNames(decs_all);
+    } else {
+        //emit Config::instance().decoderPriorityChanged(idsFromNames(decs));
+        //emit Config::instance().registeredDecodersChanged(idsFromNames(decs));
+    }
 }
 
 void DecoderConfigPage::onDecSelected(DecoderItemWidget *iw)
@@ -234,9 +289,32 @@ void DecoderConfigPage::onDecSelected(DecoderItemWidget *iw)
 
 void DecoderConfigPage::updateDecodersUi()
 {
-    QStringList names = mpConfig->decoderPriorityNames();
-    foreach (DecoderItemWidget *w, mDecItems) {
-        w->setChecked(names.contains(w->name()));
+    QStringList names = idsToNames(sPriorityUi);
+    QStringList all_names = idsToNames(sDecodersUi);
+    //qDebug() << "updateDecodersUi " << this << " " << names << " all: " << all_names;
+    int idx = 0;
+    foreach (QString name, all_names) {
+        DecoderItemWidget * iw = 0;
+        for (int i = idx; i < mDecItems.size(); ++i) {
+           if (mDecItems.at(i)->name() != name)
+               continue;
+           iw = mDecItems.at(i);
+           break;
+        }
+        if (!iw)
+            break;
+        iw->setChecked(names.contains(iw->name()));
+        int i = mDecItems.indexOf(iw);
+        if (i != idx) {
+            mDecItems.removeAll(iw);
+            mDecItems.insert(idx, iw);
+        }
+        // why takeItemAt then insertItem does not work?
+        if (mpDecLayout->indexOf(iw) != idx) {
+            mpDecLayout->removeWidget(iw);
+            mpDecLayout->insertWidget(idx, iw);
+        }
+        ++idx;
     }
 }
 

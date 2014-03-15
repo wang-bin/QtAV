@@ -51,6 +51,7 @@
 #include "config/DecoderConfigPage.h"
 #include "config/Config.h"
 #include "config/VideoEQConfigPage.h"
+#include "config/ConfigDialog.h"
 #include "playlist/PlayList.h"
 #include "common/ScreenSaver.h"
 
@@ -285,12 +286,12 @@ void MainWindow::setupUi()
 
     mpMenu->addSeparator();
 
-    //mpMenu->addAction(tr("Setup"), this, SLOT(setup()))->setEnabled(false);
     //mpMenu->addAction(tr("Report"))->setEnabled(false); //report bug, suggestions etc. using maillist?
     mpMenu->addAction(tr("About"), this, SLOT(about()));
     mpMenu->addAction(tr("Help"), this, SLOT(help()));
     mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     mpMenu->addAction(tr("Donate"), this, SLOT(donate()));
+    mpMenu->addAction(tr("Setup"), this, SLOT(setup()));
     mpMenu->addSeparator();
     mpMenuBtn->setMenu(mpMenu);
     mpMenu->addSeparator();
@@ -395,7 +396,7 @@ void MainWindow::setupUi()
 
     subMenu = new ClickableMenu(tr("Decoder"));
     mpMenu->addMenu(subMenu);
-    mpDecoderConfigPage = new DecoderConfigPage(&Config::instance());
+    mpDecoderConfigPage = new DecoderConfigPage();
     pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(mpDecoderConfigPage);
     subMenu->addAction(pWA);
@@ -1208,4 +1209,10 @@ void MainWindow::donate()
 {
     //QDesktopServices::openUrl(QUrl("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0/"));
     QDesktopServices::openUrl(QUrl("http://wang-bin.github.io/QtAV/#donate"));
+}
+
+void MainWindow::setup()
+{
+    ConfigDialog dialog;
+    dialog.exec();
 }

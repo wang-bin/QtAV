@@ -23,22 +23,24 @@
 #define DECODERCONFIGPAGE_H
 
 #include <QWidget>
+#include "ConfigPageBase.h"
 
-class Config;
 class QListWidget;
 class QToolButton;
 class QSpinBox;
 class QVBoxLayout;
-class DecoderConfigPage : public QWidget
+class DecoderConfigPage : public ConfigPageBase
 {
     Q_OBJECT
     class DecoderItemWidget;
 public:
-    explicit DecoderConfigPage(Config *config, QWidget *parent = 0);
-
-signals:
+    explicit DecoderConfigPage(QWidget *parent = 0);
+    virtual QString name() const;
 
 public slots:
+    virtual void apply();
+    virtual void cancel();
+    virtual void reset();
 
 private slots:
     void videoDecoderEnableChanged();
@@ -48,9 +50,6 @@ private slots:
     void updateDecodersUi();
 
 private:
-
-    Config *mpConfig;
-
     QSpinBox *mpThreads;
     QToolButton *mpUp, *mpDown;
     QList<DecoderItemWidget*> mDecItems;

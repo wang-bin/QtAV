@@ -18,45 +18,33 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef CAPTURECONFIGPAGE_H
-#define CAPTURECONFIGPAGE_H
+#ifndef CONFIGDIALOG_H
+#define CONFIGDIALOG_H
 
-#include "ConfigPageBase.h"
-#include <QLineEdit>
-#include <QComboBox>
-#include <QSlider>
-#include <QCheckBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QTabWidget>
+#include <QtCore/QList>
 
-/*
- * TODO: ConfigPageBase: auto save(true for menu ui, false for dialog ui)
- * virtual public slot: apply()
- */
-
-class CaptureConfigPage : public ConfigPageBase
+class ConfigPageBase;
+class ConfigDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CaptureConfigPage(QWidget *parent = 0);
-    virtual QString name() const;
+    explicit ConfigDialog(QWidget *parent = 0);
 
-public slots:
-    virtual void apply(); //store the values on ui. call Config::xxx
-    virtual void cancel(); //cancel the values on ui. values are from Config
-    virtual void reset(); //reset to default
+signals:
 
 private slots:
-    // only emit signals. no value stores.
-    void changeDirByUi(const QString& dir);
-    void changeFormatByUi(const QString& fmt);
-    void changeQualityByUi(int q);
-    void formatChanged(const QByteArray& fmt);
-    void selectSaveDir();
-    void browseCaptureDir();
+    void onButtonClicked(QAbstractButton* btn);
+    void onApply();
+    void onCancel();
+    void onReset();
 
 private:
-    QLineEdit *mpDir;
-    QComboBox *mpFormat;
-    QSlider *mpQuality;
+    QTabWidget *mpContent;
+    QDialogButtonBox *mpButtonBox;
+    QList<ConfigPageBase*> mPages;
 };
 
-#endif // CAPTURECONFIGPAGE_H
+#endif // CONFIGDIALOG_H

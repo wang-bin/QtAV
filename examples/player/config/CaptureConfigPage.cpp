@@ -28,7 +28,7 @@
 #include <QFileDialog>
 
 CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
-    QWidget(parent)
+    ConfigPageBase(parent)
 {
     QFormLayout *formLayout = new QFormLayout();
     setLayout(formLayout);
@@ -73,6 +73,11 @@ void CaptureConfigPage::apply()
             .captureQuality(mpQuality->value());
 }
 
+QString CaptureConfigPage::name() const
+{
+    return tr("Capture");
+}
+
 void CaptureConfigPage::cancel()
 {
     mpDir->setText(Config::instance().captureDir());
@@ -87,17 +92,29 @@ void CaptureConfigPage::reset()
 
 void CaptureConfigPage::changeDirByUi(const QString& dir)
 {
-    emit Config::instance().captureDirChanged(dir);
+    if (applyOnUiChange()) {
+        Config::instance().captureDir(dir);
+    } else {
+        emit Config::instance().captureDirChanged(dir);
+    }
 }
 
 void CaptureConfigPage::changeFormatByUi(const QString& fmt)
 {
-    emit Config::instance().captureFormatChanged(fmt.toUtf8());
+    if (applyOnUiChange()) {
+        Config::instance().captureFormat(mpFormat->currentText().toUtf8());
+    } else{
+        emit Config::instance().captureFormatChanged(fmt.toUtf8());
+    }
 }
 
 void CaptureConfigPage::changeQualityByUi(int q)
 {
-    emit Config::instance().captureQualityChanged(q);
+    if (applyOnUiChange()) {
+        Config::instance().captureQuality(mpQuality->value());
+    } else {
+        emit Config::instance().captureQualityChanged(q);
+    }
 }
 
 void CaptureConfigPage::formatChanged(const QByteArray& fmt)

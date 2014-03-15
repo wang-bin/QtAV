@@ -32,6 +32,10 @@
  * apply() will change the value in Config
  */
 
+
+QStringList idsToNames(QVector<QtAV::VideoDecoderId> ids);
+QVector<QtAV::VideoDecoderId> idsFromNames(const QStringList& names);
+
 class Config : public QObject
 {
     Q_OBJECT
@@ -76,6 +80,7 @@ public:
 signals:
     void decodingThreadsChanged(int n);
     void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
+    void registeredDecodersChanged(const QVector<QtAV::VideoDecoderId>& r);
     void captureDirChanged(const QString& dir);
     void captureFormatChanged(const QByteArray& fmt);
     void captureQualityChanged(int quality);

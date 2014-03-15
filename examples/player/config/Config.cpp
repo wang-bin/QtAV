@@ -31,10 +31,12 @@
 #else
 #include <QtCore/QStandardPaths>
 #endif
+#include <QtDebug>
 
 using namespace QtAV;
 
-static QStringList idsToNames(QVector<QtAV::VideoDecoderId> ids) {
+
+QStringList idsToNames(QVector<QtAV::VideoDecoderId> ids) {
     QStringList decs;
     foreach (VideoDecoderId id, ids) {
         decs.append(VideoDecoderFactory::name(id).c_str());
@@ -42,7 +44,7 @@ static QStringList idsToNames(QVector<QtAV::VideoDecoderId> ids) {
     return decs;
 }
 
-static QVector<VideoDecoderId> idsFromNames(const QStringList& names) {
+QVector<VideoDecoderId> idsFromNames(const QStringList& names) {
     QVector<VideoDecoderId> decs;
     foreach (QString name, names) {
         if (name.isEmpty())
@@ -54,6 +56,7 @@ static QVector<VideoDecoderId> idsFromNames(const QStringList& names) {
     }
     return decs;
 }
+
 class Config::Data
 {
 public:
@@ -83,6 +86,10 @@ public:
         if (all_decs_id.contains(VideoDecoderId_VAAPI))
             decs_default.append(" VAAPI ");
         QStringList all_names = idsToNames(all_decs_id);
+        QString all_names_string = settings.value("all", QString()).toString();
+        if (!all_names_string.isEmpty()) {
+            all_names = all_names_string.split(" ", QString::SkipEmptyParts);
+        }
 
         QStringList decs = settings.value("priority", decs_default).toString().split(" ", QString::SkipEmptyParts);
         if (decs.isEmpty())
@@ -183,7 +190,7 @@ Config& Config::decoderPriority(const QVector<QtAV::VideoDecoderId> &p)
     qDebug("=================new decoders: %d", p.size());
     qDebug("video_decoder_priority.size: %d", mpData->video_decoder_priority.size());
     if (mpData->video_decoder_priority == p) {
-        qDebug("not changed");
+        qDebug("decoderPriority not changed");
         return *this;
     }
     mpData->video_decoder_priority = p;
@@ -204,17 +211,18 @@ Config& Config::decoderPriorityNames(const QStringList &names)
 
 QVector<QtAV::VideoDecoderId> Config::registeredDecoders() const
 {
-    return mpData->video_decoder_priority;
+    return mpData->video_decoder_all;
 }
 
 Config& Config::registeredDecoders(const QVector<QtAV::VideoDecoderId> &all)
 {
     if (mpData->video_decoder_all == all) {
-        qDebug("not changed");
+        qDebug("registeredDecoders not changed");
         return *this;
     }
     mpData->video_decoder_all = all;
     mpData->save();
+    emit registeredDecodersChanged(all);
     return *this;
 }
 
