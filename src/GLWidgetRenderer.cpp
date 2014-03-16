@@ -84,6 +84,12 @@ namespace QtAV {
 #define glActiveTexture qtav_glActiveTexture
 #endif //QT_OPENGL_ES
 #endif //QT_VERSION
+
+// APIENTRY may be not defined(why? linux es2). or use QOPENGLF_APIENTRY
+// use QGLF_APIENTRY for Qt4 crash, why? APIENTRY is defined in windows header
+#ifndef APIENTRY
+#define APIENTRY QGLF_APIENTRY
+#endif
 typedef void (APIENTRY *type_glActiveTexture) (GLenum);
 static type_glActiveTexture qtav_glActiveTexture = 0;
 
