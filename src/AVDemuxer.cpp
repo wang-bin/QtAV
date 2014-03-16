@@ -155,7 +155,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , _file_name(fileName)
     , m_pQAVIO(0)
     , mSeekUnit(SeekByTime)
-    , mSeekTarget(SeekTarget_AnyFrame)
+    , mSeekTarget(SeekTarget_AccurateFrame)
     , mpDict(0)
 {
     mpInterrup = new InterruptHandler(this);
@@ -357,7 +357,7 @@ bool AVDemuxer::seek(qint64 pos)
 #else
     //TODO: pkt->pts may be 0, compute manually.
 
-    bool backward = upos <= (int64_t)(pkt->pts*AV_TIME_BASE);
+    bool backward = mSeekTarget == SeekTarget_AccurateFrame || upos <= (int64_t)(pkt->pts*AV_TIME_BASE);
     qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", double(upos)/double(durationUs()), pkt->pts, upos, durationUs(), backward);
     //AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
     // FIXME: back flag is opposite? otherwise seek is bad and may crash?
@@ -638,7 +638,8 @@ qint64 AVDemuxer::duration() const
 //AVFrameContext use AV_TIME_BASE as time base. AVStream use their own timebase
 qint64 AVDemuxer::startTimeUs() const
 {
-    if (!format_context || format_context->duration == AV_NOPTS_VALUE)
+    // start time may be not null for network stream
+    if (!format_context)
         return 0;
     return format_context->start_time;
 }

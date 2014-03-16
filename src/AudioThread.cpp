@@ -97,6 +97,25 @@ void AudioThread::run()
             dec->flush();
             continue;
         }
+        bool skip_render = pkt.pts < d.render_pts0;
+        // audio has no key frame, skip rendering equals to skip decoding
+        if (skip_render) {
+            d.clock->updateValue(pkt.pts);
+            /*
+             * audio may be too fast than video if skip without sleep
+             * a frame is about 20ms. sleep time must be << frame time
+             */
+            qreal a_v = pkt.pts - d.clock->videoPts();
+
+            //qDebug("skip audio decode at %f/%f v=%f a-v=%f", pkt.pts, d.render_pts0, d.clock->videoPts(), a_v);
+            if (a_v > 0)
+                msleep(qMin((ulong)300, ulong(a_v*1000.0)));
+            else
+                msleep(2);
+            pkt = Packet(); //mark invalid to take next
+            continue;
+        }
+        d.render_pts0 = 0;
         if (is_external_clock) {
             d.delay = pkt.pts - d.clock->value();
             /*
@@ -121,7 +140,6 @@ void AudioThread::run()
                 if (d.delay > 0)
                     usleep(d.delay * 1000000UL);
             } else { //when to drop off?
-                qDebug("delay %f/%f", d.delay, d.clock->value());
                 if (d.delay > 0) {
                     msleep(64);
                 } else {

@@ -332,6 +332,9 @@ private:
     int mBrightness, mContrast, mSaturation;
 
     QHash<QByteArray, QByteArray> audio_codec_opt, video_codec_opt;
+
+    bool mSeeking;
+    qint64 mSeekTarget;
 };
 
 } //namespace QtAV

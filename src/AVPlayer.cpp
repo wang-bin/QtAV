@@ -56,7 +56,7 @@
 namespace QtAV {
 
 static const int kPosistionCheckMS = 500;
-static const qint64 kSeekMS = 4000;
+static const qint64 kSeekMS = 10000;
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent)
@@ -73,6 +73,8 @@ AVPlayer::AVPlayer(QObject *parent) :
   , mBrightness(0)
   , mContrast(0)
   , mSaturation(0)
+  , mSeeking(false)
+  , mSeekTarget(0)
 {
     formatCtx = 0;
     last_position = 0;
@@ -722,6 +724,16 @@ void AVPlayer::setPosition(qint64 position)
         return;
     if (position < 0)
         position += mediaStopPosition();
+    mSeeking = true;
+    mSeekTarget = position;
+    qreal s = (qreal)position/1000.0;
+    // TODO: check flag accurate seek
+    if (audio_thread) {
+        audio_thread->skipRenderUntil(s);
+    }
+    if (video_thread) {
+        video_thread->skipRenderUntil(s);
+    }
     qDebug("seek to %lld ms (%f%%)", position, double(position)/double(duration())*100.0);
     masterClock()->updateValue(double(position)/1000.0); //what is duration == 0
     masterClock()->updateExternalClock(position); //in msec. ignore usec part using t/1000
@@ -896,7 +908,7 @@ void AVPlayer::play()
     if (last_position <= 0)
         last_position = mediaStartPosition();
     if (last_position > 0)
-        seek(last_position); //just use demuxer.startTime()/duration()?
+        setPosition(last_position); //just use demuxer.startTime()/duration()?
 
     emit started(); //we called stop(), so must emit started()
 }
@@ -1006,8 +1018,14 @@ void AVPlayer::timerEvent(QTimerEvent *te)
         }
         // active only when playing
         qint64 t = clock->value()*1000.0;
+        if (mSeeking && t >= mSeekTarget + 1000) {
+            mSeeking = false;
+            mSeekTarget = 0;
+        }
         if (t <= stopPosition()) {
-            emit positionChanged(t);
+            if (!mSeeking) {
+                emit positionChanged(t);
+            }
             return;
         }
         // TODO: remove. kill timer in an event;

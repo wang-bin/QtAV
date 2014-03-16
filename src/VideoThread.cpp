@@ -43,7 +43,8 @@ class VideoThreadPrivate : public AVThreadPrivate
 {
 public:
     VideoThreadPrivate():
-        conv(0)
+        AVThreadPrivate()
+      , conv(0)
       , capture(0)
     {
         conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
@@ -155,6 +156,7 @@ void VideoThread::run()
      * be a key frame for hardware decoding. otherwise may crash
      */
     bool wait_key_frame = false;
+    int nb_dec_slow = 0;
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -185,7 +187,22 @@ void VideoThread::run()
         }
         qreal pts = pkt.pts;
         // TODO: delta ref time
-        d.delay = pts - d.clock->value();
+        qreal new_delay = pts - d.clock->value();
+        if (d.delay < -0.5 && d.delay > new_delay) {
+            qDebug("video becomes slower. force reduce video delay");
+            // skip decoding
+            // TODO: force fit min fps
+            if (nb_dec_slow > 10 && !pkt.hasKeyFrame) {
+                nb_dec_slow = 0;
+                wait_key_frame = true;
+                pkt = Packet();
+                continue;
+            } else {
+                nb_dec_slow++;
+            }
+        } else {
+            d.delay = new_delay;
+        }
         /*
          *after seeking forward, a packet may be the old, v packet may be
          *the new packet, then the d.delay is very large, omit it.
@@ -193,14 +210,18 @@ void VideoThread::run()
          * 2. use last delay when seeking
          * 3. compute average decode time
         */
-        bool skip_render = false;
+        bool skip_render = pts < d.render_pts0;
+        // TODO: check frame type(after decode) and skip decoding some frames to speed up
+        if (skip_render) {
+            d.clock->updateVideoPts(pts); //here?
+            //qDebug("skip video render at %f/%f", pkt.pts, d.render_pts0);
+        }
         if (qAbs(d.delay) < 0.5) {
             if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
             }
-
-        } else { //when to drop off?
-            //qDebug("delay %f/%f", d.delay, d.clock->value());
+        } else if (qFuzzyIsNull(d.render_pts0)){ //when to drop off?
+            qDebug("delay %f/%f", d.delay, d.clock->value());
             if (d.delay < 0) {
                 if (!pkt.hasKeyFrame) {
                     // if continue without decoding, we must wait to the next key frame, then we may skip to many frames
@@ -212,7 +233,7 @@ void VideoThread::run()
             }
         }
         //audio packet not cleaned up?
-        if (d.delay < 3) {
+        if (d.delay < 3 && qFuzzyIsNull(d.render_pts0)) {
             while (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
                 //qDebug("~~~~~wating for %f msecs", d.delay*1000);
@@ -229,7 +250,7 @@ void VideoThread::run()
                 qDebug("video thread stop before decode()");
                 break;
             }
-        } else {
+        } else if (qFuzzyIsNull(d.render_pts0)) {
             if (d.delay > 0)
                 msleep(40);
         }
@@ -238,7 +259,7 @@ void VideoThread::run()
                 wait_key_frame = false;
             else {
                 pkt = Packet();
-                //qDebug("waiting for key frame. queue size: %d. pkt.size: %d", d.packets.size(), pkt.data.size());
+                qDebug("waiting for key frame. queue size: %d. pkt.size: %d", d.packets.size(), pkt.data.size());
                 continue;
             }
         }
@@ -255,11 +276,15 @@ void VideoThread::run()
         }
         VideoFrame frame = dec->frame();
         if (!frame.isValid()) {
+            pkt = Packet(); //mark invalid to take next
             qWarning("invalid video frame");
             continue;
         }
-        if (skip_render)
+        if (skip_render) {
+            pkt = Packet(); //mark invalid to take next
             continue;
+        }
+        d.render_pts0 = 0;
         frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?

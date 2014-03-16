@@ -68,7 +68,8 @@ public:
     };
     enum SeekTarget {
         SeekTarget_KeyFrame,
-        SeekTarget_AnyFrame
+        SeekTarget_AnyFrame,
+        SeekTarget_AccurateFrame
     };
 
     AVDemuxer(const QString& fileName = QString(), QObject *parent = 0);
