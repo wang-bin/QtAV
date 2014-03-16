@@ -27,6 +27,7 @@
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QtCore/QUrl>
+#include "Slider.h"
 
 CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     ConfigPageBase(parent)
@@ -56,11 +57,14 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     }
     int idx = mpFormat->findText(Config::instance().captureFormat());
     mpFormat->setCurrentIndex(idx);
-    mpQuality = new QSlider();
+    mpQuality = new Slider();
     formLayout->addRow(tr("Quality"), mpQuality);
-    mpQuality->setRange(-1, 100);
+    mpQuality->setRange(0, 100);
     mpQuality->setOrientation(Qt::Horizontal);
     mpQuality->setValue(Config::instance().captureQuality());
+    mpQuality->setSingleStep(1);
+    mpQuality->setTickInterval(10);
+    mpQuality->setTickPosition(QSlider::TicksBelow);
 
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), mpDir, SLOT(setText(QString)));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), mpQuality, SLOT(setValue(int)));

@@ -20,8 +20,15 @@
 
 #include "ConfigDialog.h"
 #include <QLayout>
+#include <QPushButton>
 #include "CaptureConfigPage.h"
 #include "DecoderConfigPage.h"
+
+void ConfigDialog::display()
+{
+    static ConfigDialog *dialog = new ConfigDialog();
+    dialog->show();
+}
 
 ConfigDialog::ConfigDialog(QWidget *parent) :
     QDialog(parent)
@@ -33,7 +40,7 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
     mpContent->setTabPosition(QTabWidget::West);
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-    mpButtonBox->addButton(tr("Reset"), QDialogButtonBox::ResetRole);// (QDialogButtonBox::Reset);
+    mpButtonBox->addButton(tr("Reset"), QDialogButtonBox::ResetRole)->setEnabled(false);// (QDialogButtonBox::Reset);
     mpButtonBox->addButton(tr("Ok"), QDialogButtonBox::AcceptRole); //QDialogButtonBox::Ok
     mpButtonBox->addButton(tr("Cancel"), QDialogButtonBox::RejectRole);
     mpButtonBox->addButton(tr("Apply"), QDialogButtonBox::ApplyRole);

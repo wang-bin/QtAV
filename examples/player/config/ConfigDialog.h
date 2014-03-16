@@ -31,7 +31,7 @@ class ConfigDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ConfigDialog(QWidget *parent = 0);
+    static void display();
 
 signals:
 
@@ -42,6 +42,7 @@ private slots:
     void onReset();
 
 private:
+    explicit ConfigDialog(QWidget *parent = 0);
     QTabWidget *mpContent;
     QDialogButtonBox *mpButtonBox;
     QList<ConfigPageBase*> mPages;

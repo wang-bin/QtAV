@@ -24,7 +24,6 @@
 #include "ConfigPageBase.h"
 #include <QLineEdit>
 #include <QComboBox>
-#include <QSlider>
 #include <QCheckBox>
 
 /*
@@ -32,6 +31,7 @@
  * virtual public slot: apply()
  */
 
+class Slider;
 class CaptureConfigPage : public ConfigPageBase
 {
     Q_OBJECT
@@ -56,7 +56,7 @@ private slots:
 private:
     QLineEdit *mpDir;
     QComboBox *mpFormat;
-    QSlider *mpQuality;
+    Slider *mpQuality;
 };
 
 #endif // CAPTURECONFIGPAGE_H

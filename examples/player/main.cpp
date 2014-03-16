@@ -111,6 +111,7 @@ int main(int argc, char *argv[])
 
     QString vo;
     int idx = a.arguments().indexOf("-vo");
+    int idxmax = idx+1;
     if (idx > 0) {
         vo = a.arguments().at(idx+1);
     } else {
@@ -122,7 +123,6 @@ int main(int argc, char *argv[])
         }
     }
     qDebug("vo: %s", vo.toUtf8().constData());
-    bool opt_has_file = argc > idx + 2;
     vo = vo.toLower();
     if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv" && vo != "qt")
         vo = "gl";
@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
     renderer->widget()->resize(renderer->widget()->width(), renderer->widget()->width()*9/16);
     QString ao = "portaudio";
     idx = a.arguments().indexOf("-ao");
+    idxmax = qMax(idx+1, idxmax);
     if (idx > 0) {
         ao = a.arguments().at(idx+1);
     }
@@ -171,6 +172,7 @@ int main(int argc, char *argv[])
 
     QStringList vd;
     idx = a.arguments().indexOf("-vd");
+    idxmax = qMax(idx+1, idxmax);
     if (idx > 0) {
         vd = a.arguments().at(idx+1).split(";", QString::SkipEmptyParts);
     }
@@ -178,7 +180,11 @@ int main(int argc, char *argv[])
         window.setVideoDecoderNames(vd);
 
 
-    opt_has_file &= argc > idx + 2;
+    idx = a.arguments().indexOf("--ffmpeg-log");
+    idxmax = qMax(idx, idxmax);
+    if (idx < 0)
+        setFFmpegLogHandler(0);
+    bool opt_has_file = argc > idxmax+1;
     if (opt_has_file) {
         window.play(a.arguments().last());
     }

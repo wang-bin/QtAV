@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="zh_CN">
+<TS version="2.0" language="zh_CN">
 <context>
     <name>CaptureConfigPage</name>
     <message>
-        <location filename="../config/CaptureConfigPage.cpp" line="44"/>
+        <location filename="../config/CaptureConfigPage.cpp" line="45"/>
         <source>Browse</source>
         <translation>浏览</translation>
     </message>
     <message>
-        <location filename="../config/CaptureConfigPage.cpp" line="47"/>
-        <location filename="../config/CaptureConfigPage.cpp" line="133"/>
+        <location filename="../config/CaptureConfigPage.cpp" line="48"/>
+        <location filename="../config/CaptureConfigPage.cpp" line="137"/>
         <source>Save dir</source>
         <translation>保存目录</translation>
     </message>
     <message>
-        <location filename="../config/CaptureConfigPage.cpp" line="51"/>
+        <location filename="../config/CaptureConfigPage.cpp" line="52"/>
         <source>Save format</source>
         <translation>保存格式</translation>
     </message>
     <message>
-        <location filename="../config/CaptureConfigPage.cpp" line="60"/>
+        <location filename="../config/CaptureConfigPage.cpp" line="61"/>
         <source>Quality</source>
         <translation>质量</translation>
     </message>
     <message>
-        <location filename="../config/CaptureConfigPage.cpp" line="82"/>
+        <location filename="../config/CaptureConfigPage.cpp" line="86"/>
         <source>Capture</source>
         <translation>截图</translation>
     </message>
@@ -33,22 +33,22 @@
 <context>
     <name>ConfigDialog</name>
     <message>
-        <location filename="../config/ConfigDialog.cpp" line="36"/>
+        <location filename="../config/ConfigDialog.cpp" line="43"/>
         <source>Reset</source>
         <translation>重置</translation>
     </message>
     <message>
-        <location filename="../config/ConfigDialog.cpp" line="37"/>
+        <location filename="../config/ConfigDialog.cpp" line="44"/>
         <source>Ok</source>
         <translation>确定</translation>
     </message>
     <message>
-        <location filename="../config/ConfigDialog.cpp" line="38"/>
+        <location filename="../config/ConfigDialog.cpp" line="45"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../config/ConfigDialog.cpp" line="39"/>
+        <location filename="../config/ConfigDialog.cpp" line="46"/>
         <source>Apply</source>
         <translation>应用</translation>
     </message>

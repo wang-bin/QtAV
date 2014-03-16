@@ -110,7 +110,7 @@ public:
 #endif
         }
         capture_fmt = settings.value("format", "png").toByteArray();
-        capture_quality = settings.value("quality", -1).toInt();
+        capture_quality = settings.value("quality", 100).toInt();
         settings.endGroup();
     }
     void save() {

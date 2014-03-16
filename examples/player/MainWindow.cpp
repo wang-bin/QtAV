@@ -118,7 +118,7 @@ void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
-    //mpPlayer->setAudioOutput(AudioOutputFactory::create(AudioOutputId_PortAudio));
+    //mpPlayer->setAudioOutput(AudioOutputFactory::create(AudioOutputId_OpenAL));
     EventFilter *ef = new EventFilter(mpPlayer);
     qApp->installEventFilter(ef);
     connect(ef, SIGNAL(helpRequested()), SLOT(help()));
@@ -1231,6 +1231,5 @@ void MainWindow::donate()
 
 void MainWindow::setup()
 {
-    ConfigDialog dialog;
-    dialog.exec();
+    ConfigDialog::display();
 }

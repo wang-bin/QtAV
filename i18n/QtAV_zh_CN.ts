@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="zh_CN">
+<TS version="2.1" language="zh_CN">
 <context>
     <name>QObject</name>
     <message>
@@ -53,18 +53,23 @@
         <translation>上海大学-&gt;S3 Graphics, 中国, 上海</translation>
     </message>
     <message>
+        <location filename="../src/QtAV_Global.cpp" line="152"/>
+        <source>Donate</source>
+        <translation>捐助</translation>
+    </message>
+    <message>
         <source>Shanghai University, Shanghai, China
 </source>
         <translation type="obsolete">上海大学，中国上海
 </translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="152"/>
+        <location filename="../src/QtAV_Global.cpp" line="153"/>
         <source>Source</source>
         <translation>源码</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="153"/>
+        <location filename="../src/QtAV_Global.cpp" line="154"/>
         <source>Downloads</source>
         <translation>下载</translation>
     </message>
