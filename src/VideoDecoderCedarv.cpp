@@ -400,8 +400,10 @@ bool VideoDecoderCedarv::decode(const QByteArray &encoded)
 	//d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_JUMP, 0);
 
 	AVPacket packet;
-	av_new_packet(&packet, encoded.size());
-	memcpy(packet.data, encoded.data(), encoded.size());
+	av_init_packet(&packet);
+	packet.size = encoded.size();
+	packet.data = (uint8_t*)encoded.constData();
+
 
 	if (packet.size == 0) {
 		return true;
