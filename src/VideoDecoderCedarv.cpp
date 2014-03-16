@@ -33,6 +33,7 @@ extern "C"
 	#include <libcedarv/libcedarv.h>
 }
 
+#ifdef NO_NEON_OPT //Don't HAVE_NEON
 static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned int coded_width, unsigned int coded_height)
 {
 	unsigned int i,j,l,m,n;
@@ -81,18 +82,6 @@ static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned
 
 static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
 {
-	/*
-	unsigned int i,j,k;
-
-	for (i = 0; i < coded_width; ++i) {
-		k = i * coded_width;
-		for (j = 0; j < coded_height; ++j) {
-			*(tarCb + k) = srcC[2*k];
-			*(tarCr + k) = srcC[2*k+1];
-			k++;
-		}
-	}
-	*/
 	unsigned int i,j,l,m,n,k;
 	unsigned int mb_width,mb_height,fourmb_line,recon_width;
 	unsigned char line[16];
@@ -147,6 +136,159 @@ static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned 
 		}
 	}
 }
+
+#else
+
+static void map32x32_to_yuv_Y(unsigned char* srcY,unsigned char* tarY,unsigned int coded_width,unsigned int coded_height)
+{
+	unsigned int i,j,l,m,n;
+	unsigned int mb_width,mb_height,twomb_line;
+	unsigned long offset;
+	unsigned char *ptr;
+	unsigned char *dst_asm,*src_asm;
+
+	ptr = srcY;
+	mb_width = (coded_width+15)>>4;
+	mb_height = (coded_height+15)>>4;
+	twomb_line = (mb_height+1)>>1;
+
+	for(i=0;i<twomb_line;i++)
+	{
+		for(j=0;j<mb_width/2;j++)
+		{
+			for(l=0;l<32;l++)
+			{
+				//first mb
+				m=i*32 + l;
+				n= j*32;
+				offset = m*coded_width + n;
+				//memcpy(tarY+offset,ptr,32);
+				dst_asm = tarY+offset;
+				src_asm = ptr;
+				asm volatile (
+				        "vld1.8         {d0 - d3}, [%[src_asm]]              \n\t"
+				        "vst1.8         {d0 - d3}, [%[dst_asm]]              \n\t"
+				        : [dst_asm] "+r" (dst_asm), [src_asm] "+r" (src_asm)
+				        :  //[srcY] "r" (srcY)
+				        : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
+				        );
+
+				ptr += 32;
+			}
+		}
+
+		//LOGV("mb_width:%d",mb_width);
+		if(mb_width & 1)
+		{
+			j = mb_width-1;
+			for(l=0;l<32;l++)
+			{
+				//first mb
+				m=i*32 + l;
+				n= j*16;
+				if(m<coded_height && n<coded_width)
+				{
+					offset = m*coded_width + n;
+					//memcpy(tarY+offset,ptr,16);
+					dst_asm = tarY+offset;
+					src_asm = ptr;
+					asm volatile (
+					        "vld1.8         {d0 - d1}, [%[src_asm]]              \n\t"
+					        "vst1.8         {d0 - d1}, [%[dst_asm]]              \n\t"
+					        : [dst_asm] "+r" (dst_asm), [src_asm] "+r" (src_asm)
+					        :  //[srcY] "r" (srcY)
+					        : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
+					        );
+				}
+
+				ptr += 16;
+				ptr += 16;
+			}
+		}
+	}
+}
+
+static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
+{
+	unsigned int i,j,l,m,n,k;
+	unsigned int mb_width,mb_height,fourmb_line;
+	unsigned long offset;
+	unsigned char *ptr;
+	unsigned char *dst0_asm,*dst1_asm,*src_asm;
+	unsigned char line[16];
+	int dst_stride = (coded_width + 15) & (~15);
+
+	ptr = srcC;
+	mb_width = (coded_width+7)>>3;
+	mb_height = (coded_height+7)>>3;
+	fourmb_line = (mb_height+3)>>2;
+
+	for(i=0;i<fourmb_line;i++)
+	{
+		for(j=0;j<mb_width/2;j++)
+		{
+			for(l=0;l<32;l++)
+			{
+				//first mb
+				m=i*32 + l;
+				n= j*16;
+				if(m<coded_height && n<coded_width)
+				{
+					offset = m*dst_stride + n;
+
+					dst0_asm = tarCb + offset;
+					dst1_asm = tarCr+offset;
+					src_asm = ptr;
+//					for(k=0;k<16;k++)
+//					{
+//						dst0_asm[k] = src_asm[2*k];
+//						dst1_asm[k] = src_asm[2*k+1];
+//					}
+					asm volatile (
+					        "vld1.8         {d0 - d3}, [%[src_asm]]              \n\t"
+							"vuzp.8         d0, d1              \n\t"
+							"vuzp.8         d2, d3              \n\t"
+							"vst1.8         {d0}, [%[dst0_asm]]!              \n\t"
+							"vst1.8         {d2}, [%[dst0_asm]]!              \n\t"
+							"vst1.8         {d1}, [%[dst1_asm]]!              \n\t"
+							"vst1.8         {d3}, [%[dst1_asm]]!              \n\t"
+					         : [dst0_asm] "+r" (dst0_asm), [dst1_asm] "+r" (dst1_asm), [src_asm] "+r" (src_asm)
+					         :  //[srcY] "r" (srcY)
+					         : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
+					         );
+				}
+
+				ptr += 32;
+			}
+		}
+
+		if(mb_width & 1)
+		{
+			j= mb_width-1;
+			for(l=0;l<32;l++)
+			{
+				m=i*32 + l;
+				n= j*8;
+
+				if(m<coded_height && n<coded_width)
+				{
+					offset = m*dst_stride + n;
+					memcpy(line,ptr,16);
+					for(k=0;k<8;k++)
+					{
+						*(tarCb + offset + k) = line[2*k];
+						*(tarCr + offset + k) = line[2*k+1];
+					}
+				}
+
+				ptr += 16;
+				ptr += 16;
+			}
+		}
+	}
+}
+
+#endif
 
 namespace QtAV {
 
