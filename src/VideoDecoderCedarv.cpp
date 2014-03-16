@@ -324,9 +324,6 @@ public:
 
 	CEDARV_DECODER *cedarv;
 	cedarv_picture_t cedarPicture;
-	QByteArray y;
-	QByteArray u;
-	QByteArray v;
 };
 
 VideoDecoderCedarv::VideoDecoderCedarv()
@@ -442,30 +439,39 @@ VideoFrame VideoDecoderCedarv::frame()
 	if (!d.cedarPicture.id) {
 		return VideoFrame();
 	}
-	VideoFrame frame = VideoFrame(d.cedarPicture.width, d.cedarPicture.height, VideoFormat(VideoFormat::Format_YUV420P));
-	if ((unsigned int)d.y.size() != d.cedarPicture.size_y) {
-		d.y.resize(d.cedarPicture.size_y);
-	}
-	if ((unsigned int)d.u.size() != d.cedarPicture.size_u / 2) {
-		d.u.resize(d.cedarPicture.size_u / 2);
-	}
-	if ((unsigned int)d.v.size() != d.cedarPicture.size_u / 2) {
-		d.v.resize(d.cedarPicture.size_u / 2);
-	}
+	unsigned int size_y = d.cedarPicture.size_y;
+	unsigned int size_u = d.cedarPicture.size_u / 2;
+	unsigned int size_v = d.cedarPicture.size_u / 2;
+	unsigned int offset_y = 0;
+	unsigned int offset_u = offset_y + size_y;
+	unsigned int offset_v = offset_u + size_u;
+	QByteArray buf(size_y + size_u + size_v, '\0');
+	buf.resize(size_y + size_u + size_v);
+	unsigned char *dst = reinterpret_cast<unsigned char *>(buf.data());
+
 	int bitsPerLine_Y = d.cedarPicture.size_y / d.cedarPicture.height;
 	int bitsPerRow_Y = d.cedarPicture.size_y / bitsPerLine_Y;
-	map32x32_to_yuv_Y(d.cedarPicture.y, (uchar *)d.y.data(), bitsPerLine_Y, bitsPerRow_Y);
-	map32x32_to_yuv_C(d.cedarPicture.u, (uchar *)d.u.data(), (uchar *)d.v.data(), bitsPerLine_Y / 2, bitsPerRow_Y / 2);
-	frame.setBits((uchar *)d.y.data(), 0);
-	frame.setBytesPerLine(d.cedarPicture.size_y / d.cedarPicture.height, 0);
-	frame.setBits((uchar *)d.u.data(), 1);
-	frame.setBytesPerLine(bitsPerLine_Y / 2, 1);
-	frame.setBits((uchar *)d.v.data(), 2);
-	frame.setBytesPerLine(bitsPerLine_Y / 2, 2);
+
+	map32x32_to_yuv_Y(d.cedarPicture.y, dst + offset_y, bitsPerLine_Y, bitsPerRow_Y);
+	map32x32_to_yuv_C(d.cedarPicture.u, dst + offset_u, dst + offset_v, bitsPerLine_Y / 2, bitsPerRow_Y / 2);
+
+	uint8_t *pp_plane[3];
+	pp_plane[0] = dst + offset_y;
+	pp_plane[1] = dst + offset_u;
+	pp_plane[2] = dst + offset_v;
+
+	int pi_pitch[3];
+	pi_pitch[0] = d.cedarPicture.size_y / d.cedarPicture.height;
+	pi_pitch[1] = bitsPerLine_Y / 2;
+	pi_pitch[2] = bitsPerLine_Y / 2;
+	VideoFrame frame = VideoFrame(buf, d.cedarPicture.width, d.cedarPicture.height, VideoFormat(VideoFormat::Format_YUV420P));
+
+	frame.setBits(pp_plane);
+	frame.setBytesPerLine(pi_pitch);
 
 	d.cedarv->display_release(d.cedarv, d.cedarPicture.id);
 	d.cedarPicture.id = 0;
-	return frame;
+	return frame.clone();
 }
 
 
