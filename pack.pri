@@ -56,8 +56,9 @@ ARCH = `dpkg --print-architecture`
 
 fakeroot.target = fakeroot
 fakeroot.depends = FORCE
-fakeroot.commands = rm -rf fakeroot && mkdir -p fakeroot/usr/share/doc/$$PACKAGE_NAME && mkdir -p fakeroot/DEBIAN
+fakeroot.commands = $$quote(rm -rf fakeroot && mkdir -p fakeroot/usr/share/doc/$$PACKAGE_NAME && mkdir -p fakeroot/DEBIAN)
 fakeroot.commands += $$quote(chmod -R 755 fakeroot)  ##control dir must be 755
+fakeroot.commands = $$join(fakeroot.commands,$$escape_expand(\\n\\t))
 
 deb.target = deb
 deb.depends += fakeroot
