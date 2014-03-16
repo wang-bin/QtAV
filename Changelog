@@ -1,3 +1,22 @@
+version 1.3.2    2014-03-16
+
+- OpenGL improvement and better performance(works on iOS and Android):
+  * enable GLSL if supported
+  * use GLSL to render YUV frames
+  * GLSL based video equalizer
+- XV bug fix and improvement. Supports NV12. Supports video equalizer.
+- Play from QIODevice support
+- Capture YUV frames support.
+- Fix wrong duration in OSD
+- CUDA decoder working in progress
+- player:
+  * no gui blocking while opening a stream
+  * add config dialog
+- Regressions:
+  * OpenGL can not display H10p
+
+
+
 version 1.3.1    2014-01-27
 
 - Initial OpenAL support.

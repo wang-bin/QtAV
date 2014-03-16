@@ -187,7 +187,7 @@ Rectangle {
             onLinkActivated: Qt.openUrlExternally(link)
         }
         function helpText() {
-            return "<h3>QMLPlayer based on QtAV  1.3.1 </h3>"
+            return "<h3>QMLPlayer based on QtAV  1.3.2 </h3>"
              + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
              + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
              + "<p>Shanghai University->S3 Graphics, Shanghai, China</p>"
@@ -218,7 +218,7 @@ Rectangle {
             anchors.margins: 8
             width: 80
             height: 40
-            onClicked: Qt.openUrlExternally("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0")
+            onClicked: Qt.openUrlExternally("http://wang-bin.github.io/QtAV#donate")
         }
     }
 

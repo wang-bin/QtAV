@@ -5,8 +5,9 @@ with less effort than ever before.
 
 QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](http://ffmpeg.org/projects.html)
 
-**QtAV is free software licensed under the term of LGPL v2.1. If you use QtAV or its constituent libraries,
+**QtAV is free software licensed under the term of LGPL v2.1. The player example is licensed under GPL v3.  If you use QtAV or its constituent libraries,
 you must adhere to the terms of the license in question.**
+
 
 #### [Download binaries from sourceforge](https://sourceforge.net/projects/qtav)
 #### [Source code on github](https://github.com/wang-bin/QtAV)
@@ -17,7 +18,7 @@ QtAV can meet your most demands
 
 - Hardware decoding suppprt: DXVA2, VAAPI(buggy now), CedarX(e.g. pcDuino)
 - Seek, pause/resume
-- Video capture
+- Video capture in rgb and yuv format
 - OSD and custom filters
 - Aspect ratio
 - Transform video using GraphicsItemRenderer. (rotate, shear, etc)
@@ -28,12 +29,11 @@ QtAV can meet your most demands
 - Choose audio channel
 - Choose media stream, e.g. play a desired audio track
 - Volume control
-- Fullscreen, stay on top
 - Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
 - Dynamically change render engine when playing.
 - Multiple video outputs for 1 player
 - Region of interest(ROI), i.e. video cropping
-- Video eq: brightness, contrast, saturation
+- Video eq: brightness, contrast, saturation, hue
 - QML support as a plugin. Most playback APIs are compatible with QtMultiMedia module
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
   both FFmpeg(>=0.9) and [Libav](http://libav.org).
@@ -42,7 +42,7 @@ QtAV can meet your most demands
 ### Extensible Framework (work in progress)
 
   QtAV currently uses FFmpeg to decode video, convert image and audio data, and uses PortAudio to play
-  sound. Every part in QtAV is designed to be extensible. For example, you can write your decoder, audio output for particular platform. [Here is a very good example to add cedar hardware accelerated decoder for A13-OLinuXino	](https://github.com/mireq/QtAV/commit/d7b428c1dae66b2a85b7a6bfa7b253980b5b963c)
+  sound. Every part in QtAV is designed to be extensible. For example, you can write your decoder, audio output for particular platform. [Here is a very good example to add cedar hardware accelerated decoder for A13-OLinuXino](https://github.com/mireq/QtAV/commit/d7b428c1dae66b2a85b7a6bfa7b253980b5b963c)
 
 
 # For Developers
@@ -53,7 +53,7 @@ QtAV can meet your most demands
  
 [![FFmpeg](http://ffmpeg.org/ffmpeg-logo.png)](http://ffmpeg.org)
 
-or [Libav](libav.org) (>=0.8) Latest version is recommanded.
+or [Libav](libav.org) (>=0.9) Latest version is recommanded.
 
 [![Libav](http://libav.org/libav-logo-text.png)](http://libav.org)
 
@@ -141,7 +141,7 @@ For End Users
 
 An simple player can be found in examples. The command line options is
 
-    player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[;vaapi[;ffmpeg]]"] [url|path|pipe:]
+    player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[;vaapi[;ffmpeg]]"] [--ffmpeg-log] [url|path|pipe:]
 
 To disable audio output, add `-ao null`
 
@@ -179,9 +179,7 @@ QMLPlayer has less options now. To use DXVA decoder:
 - Ctrl+Up/Down: speed + / -
 - -> / <-: seek forward / backward
 - Drag and drop a media file to player
-- Wheel: zoom in/out
-
-Before QtAV 1.3.1, the default behavior can be replaced by subclassing QObject and call `void AVPlayer::setPlayerEventFilter(QObject *obj)` (use null to disable).
+- Crtl+Wheel: zoom in/out
 
 
 # TODO
@@ -223,11 +221,11 @@ Video Wall
 
 Thanks
 
-Now I have received 1050 RMB(about 160$)
+Now I have received 1050 RMB(about 160$) and 100$
 
 [![Alipay](https://img.alipay.com/sys/personalprod/style/mc/top-logo.png)](https://me.alipay.com/lucaswang)
 
-[PayPal ![Paypal](http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0)
+[PayPal ![Paypal](http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](http://wang-bin.github.io/qtav.org#donate)
 
 [![Support via Gittip](https://rawgithub.com/twolfson/gittip-badge/0.1.0/dist/gittip.png)](https://www.gittip.com/wang-bin)
 

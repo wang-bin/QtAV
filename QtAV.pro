@@ -39,9 +39,8 @@ OptionalDepends = \
 !no-portaudio: OptionalDepends *= portaudio
 !no-direct2d: OptionalDepends *= direct2d
 !no-gdiplus: OptionalDepends *= gdiplus
-win32 {
-    !no-dxva: OptionalDepends *= dxva
-}
+# why win32 is false?
+!no-dxva: OptionalDepends *= dxva
 unix {
     !no-xv: OptionalDepends *= xv
     !no-vaapi: OptionalDepends *= vaapi
@@ -54,8 +53,8 @@ runConfigTests()
 }
 
 
-PACKAGE_VERSION = 1.3.1
+PACKAGE_VERSION = 1.3.2
 PACKAGE_NAME= QtAV
 
 include(pack.pri)
-#packageSet(1.3.1, QtAV)
+#packageSet(1.3.2, QtAV)
