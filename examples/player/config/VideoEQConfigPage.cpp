@@ -25,7 +25,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QLayout>
-#include "Slider.h"
+#include "../Slider.h"
 
 VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
     QWidget(parent)

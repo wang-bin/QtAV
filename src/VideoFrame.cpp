@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/VideoFrame.h"
-#include "private/Frame_p.h"
+#include "QtAV/private/Frame_p.h"
 #include "QtAV/ImageConverter.h"
 #include "QtAV/ImageConverterTypes.h"
 #include "QtAV/QtAV_Compat.h"

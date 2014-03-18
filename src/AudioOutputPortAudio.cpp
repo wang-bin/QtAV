@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -21,8 +21,8 @@
 
 
 #include <QtAV/AudioOutputPortAudio.h>
-#include <private/AudioOutput_p.h>
-#include "prepost.h"
+#include <QtAV/private/AudioOutput_p.h>
+#include "QtAV/prepost.h"
 #include <portaudio.h>
 #include <QtCore/QString>
 

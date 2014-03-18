@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/Frame.h"
-#include "private/Frame_p.h"
+#include "QtAV/private/Frame_p.h"
 
 namespace QtAV {
 

@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "VideoFormat.h"
+#include "QtAV/VideoFormat.h"
 #include <QtCore/QVector>
 
 #include "QtAV/QtAV_Compat.h"

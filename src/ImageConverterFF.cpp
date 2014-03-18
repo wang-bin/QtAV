@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverterFF: Image resizing & color model convertion using FFmpeg swscale
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,9 +20,9 @@
 ******************************************************************************/
 
 #include <QtAV/ImageConverter.h>
-#include <private/ImageConverter_p.h>
+#include <QtAV/private/ImageConverter_p.h>
 #include <QtAV/QtAV_Compat.h>
-#include "prepost.h"
+#include "QtAV/prepost.h"
 
 namespace QtAV {
 

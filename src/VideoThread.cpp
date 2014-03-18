@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include <QtAV/VideoThread.h>
-#include <private/AVThread_p.h>
+#include <QtAV/private/AVThread_p.h>
 #include <QtAV/Packet.h>
 #include <QtAV/AVClock.h>
 #include <QtAV/VideoCapture.h>
