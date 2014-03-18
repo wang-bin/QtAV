@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,7 +22,7 @@
 #ifndef QTAV_VIDEODECODER_P_H
 #define QTAV_VIDEODECODER_P_H
 
-#include <private/AVDecoder_p.h>
+#include <QtAV/private/AVDecoder_p.h>
 
 namespace QtAV {
 

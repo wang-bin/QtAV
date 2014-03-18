@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -21,7 +21,7 @@
 
 #include "QtAV/OSDFilter.h"
 #include "QtAV/Statistics.h"
-#include <private/Filter_p.h>
+#include <QtAV/private/Filter_p.h>
 #include <QtGui/QPainter>
 #if QTAV_HAVE(GL)
 #include <QtOpenGL/QGLWidget>

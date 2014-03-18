@@ -20,10 +20,10 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoderFFmpeg.h"
-#include "private/VideoDecoderFFmpeg_p.h"
+#include "QtAV/private/VideoDecoderFFmpeg_p.h"
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
-#include "prepost.h"
+#include "QtAV/prepost.h"
 
 namespace QtAV {
 

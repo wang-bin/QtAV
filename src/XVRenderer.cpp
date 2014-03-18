@@ -25,7 +25,7 @@
 #include "QtAV/XVRenderer.h"
 #include <QResizeEvent>
 #include <QtCore/qmath.h>
-#include "private/XVRenderer_p.h"
+#include "QtAV/private/XVRenderer_p.h"
 namespace QtAV {
 
 inline int scaleEQValue(int val, int min, int max)

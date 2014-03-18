@@ -20,10 +20,10 @@
 ******************************************************************************/
 
 #include <QtAV/WidgetRenderer.h>
-#include <private/WidgetRenderer_p.h>
-#include <qfont.h>
+#include <QtAV/private/WidgetRenderer_p.h>
+#include <QtGui/QFont>
 #include <qevent.h>
-#include <qpainter.h>
+#include <QtGui/QPainter>
 #include <QApplication>
 #include <QtAV/Filter.h>
 

@@ -27,7 +27,7 @@
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QtCore/QUrl>
-#include "Slider.h"
+#include "../Slider.h"
 
 CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     ConfigPageBase(parent)

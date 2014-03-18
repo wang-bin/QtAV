@@ -20,9 +20,9 @@
 ******************************************************************************/
 
 #include <QtAV/VideoDecoder.h>
-#include <private/VideoDecoder_p.h>
+#include <QtAV/private/VideoDecoder_p.h>
 #include <QtCore/QSize>
-#include "factory.h"
+#include "QtAV/factory.h"
 
 namespace QtAV {
 

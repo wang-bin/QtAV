@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include <QtAV/GraphicsItemRenderer.h>
-#include <private/GraphicsItemRenderer_p.h>
+#include <QtAV/private/GraphicsItemRenderer_p.h>
 #include <QtAV/FilterContext.h>
 #include <QGraphicsScene>
 #include <QtGui/QPainter>

@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoRendererTypes: type id and manually id register function
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,7 +22,7 @@
 #include "QtAV/VideoRendererTypes.h"
 #include <cstdio>
 #include <cstdlib>
-#include "prepost.h"
+#include "QtAV/prepost.h"
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/GraphicsItemRenderer.h>
 #if QTAV_HAVE(GL)

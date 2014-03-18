@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoderFFmpegHW.h"
-#include "private/VideoDecoderFFmpegHW_p.h"
+#include "QtAV/private/VideoDecoderFFmpegHW_p.h"
 
 /* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
  * a is the major version

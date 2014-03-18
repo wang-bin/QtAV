@@ -22,7 +22,7 @@
 #ifndef QTAV_XVRENDERER_P_H
 #define QTAV_XVRENDERER_P_H
 
-#include "private/VideoRenderer_p.h"
+#include "QtAV/private/VideoRenderer_p.h"
 #include <sys/shm.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xvlib.h>

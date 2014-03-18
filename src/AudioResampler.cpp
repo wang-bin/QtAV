@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -21,8 +21,8 @@
 
 #include "QtAV/AudioResampler.h"
 #include "QtAV/AudioFormat.h"
-#include "private/AudioResampler_p.h"
-#include "factory.h"
+#include "QtAV/private/AudioResampler_p.h"
+#include "QtAV/factory.h"
 
 namespace QtAV {
 

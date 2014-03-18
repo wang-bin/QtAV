@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include <QtAV/VideoRenderer.h>
-#include <private/VideoRenderer_p.h>
+#include <QtAV/private/VideoRenderer_p.h>
 #include <QtAV/Filter.h>
 #include <QtAV/OSDFilter.h>
 #include <QtCore/QCoreApplication>
