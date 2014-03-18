@@ -56,6 +56,8 @@ Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list)
  */
 #define QTAV_HAVE(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
 
+#define QTAV_HAVE_QGLFUNCTIONS QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+
 //TODO: always inline
 /* --gnu option of the RVCT compiler also defines __GNUC__ */
 #if defined(Q_CC_GNU) && !defined(Q_CC_RVCT)

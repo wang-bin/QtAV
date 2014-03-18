@@ -24,12 +24,18 @@
 
 #include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
+// TODO: QGLFunctions is in Qt4.8+. meego is 4.7
+#if QTAV_HAVE(QGLFUNCTIONS)
 #include <QtOpenGL/QGLFunctions>
+#endif //QT_VERSION
 
 namespace QtAV {
 
 class GLWidgetRendererPrivate;
-class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer, public QGLFunctions
+class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
+#if QTAV_HAVE(QGLFUNCTIONS) //TODO: why use QT_VERSION will result in moc error?
+        , public QGLFunctions
+#endif //QTAV_HAVE(QGLFUNCTIONS)
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer)

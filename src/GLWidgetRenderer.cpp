@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/GLWidgetRenderer.h"
-#include "private/GLWidgetRenderer_p.h"
+#include "QtAV/private/GLWidgetRenderer_p.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
 #include <QtCore/qmath.h>
@@ -88,7 +88,12 @@ namespace QtAV {
 // APIENTRY may be not defined(why? linux es2). or use QOPENGLF_APIENTRY
 // use QGLF_APIENTRY for Qt4 crash, why? APIENTRY is defined in windows header
 #ifndef APIENTRY
+// QGLF_APIENTRY is in Qt4,8+
+#if defined(QGLF_APIENTRY)
 #define APIENTRY QGLF_APIENTRY
+#elif defined(GL_APIENTRY)
+#define APIENTRY GL_APIENTRY
+#endif
 #endif
 typedef void (APIENTRY *type_glActiveTexture) (GLenum);
 static type_glActiveTexture qtav_glActiveTexture = 0;
@@ -505,7 +510,7 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
             // we have to consider size of opengl format. set bytesPerLine here and change to width later
             texture_size[i] = QSize(video_frame.bytesPerLine(i), video_frame.planeHeight(i));
             effective_tex_width[i] = video_frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
-            effective_tex_width_ratio = qMin(1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
+            effective_tex_width_ratio = qMin((qreal)1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
         }
         qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
         plane0Size = video_frame.size();
@@ -809,8 +814,10 @@ void GLWidgetRenderer::initializeGL()
     //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
     d.hasGLSL = QGLShaderProgram::hasOpenGLShaderPrograms();
     qDebug("OpenGL version: %d.%d  hasGLSL: %d", format().majorVersion(), format().minorVersion(), d.hasGLSL);
+#if QTAV_HAVE(QGLFUNCTIONS)
     initializeGLFunctions();
     d.initializeGLFunctions();
+#endif //QTAV_HAVE(QGLFUNCTIONS)
     qtavResolveActiveTexture();
     glEnable(GL_TEXTURE_2D);
     if (!d.hasGLSL) {
