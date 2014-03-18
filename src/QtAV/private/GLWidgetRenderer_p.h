@@ -25,7 +25,7 @@
 #include <QtOpenGL/QGLShaderProgram>
 
 #include <QtCore/QVector>
-#include "private/VideoRenderer_p.h"
+#include "QtAV/private/VideoRenderer_p.h"
 #include <QtAV/VideoFormat.h>
 #include <QtAV/ColorTransform.h>
 
@@ -33,7 +33,10 @@
 
 namespace QtAV {
 
-class Q_AV_EXPORT GLWidgetRendererPrivate : public VideoRendererPrivate, public QGLFunctions
+class Q_AV_EXPORT GLWidgetRendererPrivate : public VideoRendererPrivate
+#if QTAV_HAVE(QGLFUNCTIONS)
+        , public QGLFunctions
+#endif //QTAV_HAVE(QGLFUNCTIONS)
 {
 public:
     GLWidgetRendererPrivate():
