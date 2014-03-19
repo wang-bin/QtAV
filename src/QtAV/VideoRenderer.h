@@ -40,6 +40,12 @@
  *
  *  or videoXXX is out(display) XXX, the original XXX is videoOriginalXXX
  */
+
+/*!
+ * A bridge for VideoOutput(QObject based) and video renderer backend classes
+ * All setters are virtual, with default behavior used by backend.
+ * While VideoOutput simply calls backend one and set the value from it.
+ */
 struct AVCodecContext;
 struct AVFrame;
 class QImage;
@@ -79,8 +85,8 @@ public:
     virtual ~VideoRenderer();
     virtual VideoRendererId id() const = 0;
 
-    bool receive(const VideoFrame& frame);
-    void setVideoFormat(const VideoFormat& format);
+    virtual bool receive(const VideoFrame& frame); //has default
+    //virtual void setVideoFormat(const VideoFormat& format); //has default
     //VideoFormat& videoFormat();
     //const VideoFormat& videoFormat() const;
     /*!
@@ -89,32 +95,32 @@ public:
      *  pixfmt will be used if decoded format is not supported by this renderer. otherwise, use decoded format.
      *  return false if \a pixfmt is not supported and not changed.
      */
-    bool setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
+    virtual bool setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);  //has default
     /*!
      * \brief preferredPixelFormat
      * \return preferred pixel format. e.g. WidgetRenderer is rgb formats.
      */
-    VideoFormat::PixelFormat preferredPixelFormat() const;
+    virtual VideoFormat::PixelFormat preferredPixelFormat() const;
     /*!
      * \brief forcePreferredPixelFormat
      *  force to use preferredPixelFormat() even if incoming format is supported
      * \param force
      */
-    void forcePreferredPixelFormat(bool force = true);
+    virtual void forcePreferredPixelFormat(bool force = true); //has default
     bool isPreferredPixelFormatForced() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const = 0;
 
     //for testing performance
-    void scaleInRenderer(bool q);
+    virtual void scaleInRenderer(bool q); //has default
     bool scaleInRenderer() const;
 
-    void setOutAspectRatioMode(OutAspectRatioMode mode);
+    virtual void setOutAspectRatioMode(OutAspectRatioMode mode); //has default
     OutAspectRatioMode outAspectRatioMode() const;
     //If setOutAspectRatio(qreal) is used, then OutAspectRatioMode is CustomAspectRation
-    void setOutAspectRatio(qreal ratio);
+    virtual void setOutAspectRatio(qreal ratio); //has default
     qreal outAspectRatio() const;//
 
-    void setQuality(Quality q);
+    virtual void setQuality(Quality q); //has default
     Quality quality() const;
 
     //TODO: unregister
@@ -123,7 +129,7 @@ public:
     //virtual QImage currentFrameImage() const = 0; //const QImage& const?
     //TODO: resizeRenderer
     void resizeRenderer(const QSize& size);
-    void resizeRenderer(int width, int height);
+    virtual void resizeRenderer(int width, int height); //has default
     QSize rendererSize() const;
     int rendererWidth() const;
     int rendererHeight() const;
@@ -143,7 +149,7 @@ public:
     QRectF regionOfInterest() const;
     // TODO: reset aspect ratio to roi.width/roi/heghit
     void setRegionOfInterest(qreal x, qreal y, qreal width, qreal height);
-    void setRegionOfInterest(const QRectF& roi);
+    virtual void setRegionOfInterest(const QRectF& roi); //has default
     // compute the real ROI
     QRect realROI() const;
 
@@ -152,12 +158,12 @@ public:
      * \brief mapToFrame
      *  map point in VideoRenderer coordinate to VideoFrame, with current ROI
      */
-    QPointF mapToFrame(const QPointF& p) const;
+    virtual QPointF mapToFrame(const QPointF& p) const; //has default
     /*!
      * \brief mapFromFrame
      *  map point in VideoFrame coordinate to VideoRenderer, with current ROI
      */
-    QPointF mapFromFrame(const QPointF& p) const;
+    virtual QPointF mapFromFrame(const QPointF& p) const; //has default
 
     /*!
      * \brief widget
@@ -173,11 +179,11 @@ public:
     //TODO: enable/disable = new a default for this vo engine or push back/remove from list
     //filter: null means disable
     //return the old filter. you may release the ptr manually
-    OSDFilter* setOSDFilter(OSDFilter *filter);
+    virtual OSDFilter* setOSDFilter(OSDFilter *filter); //has default
     OSDFilter *osdFilter();
-    Filter* setSubtitleFilter(Filter *filter);
+    virtual Filter* setSubtitleFilter(Filter *filter); //has default
     Filter* subtitleFilter();
-    void enableDefaultEventFilter(bool e);
+    virtual void enableDefaultEventFilter(bool e); //has default
     bool isDefaultEventFilterEnabled() const;
 
     /*!
@@ -188,13 +194,13 @@ public:
      * \return \a false if failed (may be onChangingXXX not implemented or return false)
      */
     qreal brightness() const;
-    bool setBrightness(qreal brightness);
+    virtual bool setBrightness(qreal brightness); //has default
     qreal contrast() const;
-    bool setContrast(qreal contrast);
+    virtual bool setContrast(qreal contrast); //has default
     qreal hue() const;
-    bool setHue(qreal hue);
+    virtual bool setHue(qreal hue); //has default
     qreal saturation() const;
-    bool setSaturation(qreal saturation);
+    virtual bool setSaturation(qreal saturation); //has default
 
 protected:
     VideoRenderer(VideoRendererPrivate &d);
@@ -216,7 +222,7 @@ protected:
      */
     virtual void resizeFrame(int width, int height);
     //TODO: parameter QRect?
-    void handlePaintEvent();
+    virtual void handlePaintEvent(); //has default
     /*!
      * \brief onBrightness
      *  It's called when user call setBrightness(). You should implement how to actually change the brightness.
@@ -231,14 +237,14 @@ protected:
 
 private:
     friend class VideoThread;
-
+    friend class VideoOutput;
     //the size of image (QByteArray) that decoded
+     //has default
     void setInSize(const QSize& s); //private? for internal use only, called by VideoThread.
-    void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
+    virtual void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
     //qreal sourceAspectRatio() const;//TODO: from AVCodecContext
     //we don't need api like QSize sourceSize() const. you should get them from player or avinfo(not implemented)
 };
-typedef VideoRenderer VideoOutput;
 
 } //namespace QtAV
 #endif // QAV_VIDEORENDERER_H

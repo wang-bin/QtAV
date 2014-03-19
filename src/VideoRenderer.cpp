@@ -229,8 +229,7 @@ QRectF VideoRenderer::regionOfInterest() const
 
 void VideoRenderer::setRegionOfInterest(qreal x, qreal y, qreal width, qreal height)
 {
-    DPTR_D(VideoRenderer);
-    d.roi = QRectF(x, y, width, height);
+    setRegionOfInterest(QRectF(x, y, width, height));
 }
 
 void VideoRenderer::setRegionOfInterest(const QRectF &roi)
