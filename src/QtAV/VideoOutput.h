@@ -42,41 +42,40 @@ public:
     ~VideoOutput();
     VideoRendererId id() const;
 
-    bool receive(const VideoFrame& frame); //has default
+    virtual bool receive(const VideoFrame& frame); //has default
     //void setVideoFormat(const VideoFormat& format); //has default
+
+    VideoFormat::PixelFormat preferredPixelFormat() const;
+    bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    bool open();
+    bool close();
+    QWidget* widget();
+    QGraphicsItem* graphicsItem();
+
+private:
     /*!
      * \brief setPreferredPixelFormat
      * \param pixfmt
      *  pixfmt will be used if decoded format is not supported by this renderer. otherwise, use decoded format.
      *  return false if \a pixfmt is not supported and not changed.
      */
-    bool setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);  //has default
-    VideoFormat::PixelFormat preferredPixelFormat() const;
-    void forcePreferredPixelFormat(bool force = true); //has default
-    bool isSupported(VideoFormat::PixelFormat pixfmt) const;
-    void scaleInRenderer(bool q); //has default
-    void setOutAspectRatioMode(OutAspectRatioMode mode); //has default
-    void setOutAspectRatio(qreal ratio); //has default
-    void setQuality(Quality q); //has default
-    bool open();
-    bool close();
-    void resizeRenderer(int width, int height); //has default
-    void setRegionOfInterest(const QRectF& roi); //has default
-    QPointF mapToFrame(const QPointF& p) const; //has default
-    QPointF mapFromFrame(const QPointF& p) const; //has default
-    QWidget* widget();
-    QGraphicsItem* graphicsItem();
+    virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
+    virtual void onForcePreferredPixelFormat(bool force = true);
+    virtual void onScaleInRenderer(bool q);
+    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
+    virtual void onSetOutAspectRatio(qreal ratio);
+    virtual void onSetQuality(Quality q);
+    virtual void onResizeRenderer(int width, int height);
+    virtual void onSetRegionOfInterest(const QRectF& roi);
+    virtual QPointF onMapToFrame(const QPointF& p) const;
+    virtual QPointF onMapFromFrame(const QPointF& p) const;
+    virtual OSDFilter* onSetOSDFilter(OSDFilter *filter);
+    virtual Filter* onSetSubtitleFilter(Filter *filter);
 
-    //TODO: enable/disable = new a default for this vo engine or push back/remove from list
-    //filter: null means disable
-    //return the old filter. you may release the ptr manually
-    OSDFilter* setOSDFilter(OSDFilter *filter); //has default
-    Filter* setSubtitleFilter(Filter *filter); //has default
-    void enableDefaultEventFilter(bool e); //has default
-    bool setBrightness(qreal brightness); //has default
-    bool setContrast(qreal contrast); //has default
-    bool setHue(qreal hue); //has default
-    bool setSaturation(qreal saturation); //has default
+    virtual bool onSetBrightness(qreal brightness);
+    virtual bool onSetContrast(qreal contrast);
+    virtual bool onSetHue(qreal hue);
+    virtual bool onSetSaturation(qreal saturation);
 
 signals:
     void brightnessChanged(qreal value);

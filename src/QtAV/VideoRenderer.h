@@ -43,8 +43,8 @@
 
 /*!
  * A bridge for VideoOutput(QObject based) and video renderer backend classes
- * All setters are virtual, with default behavior used by backend.
- * While VideoOutput simply calls backend one and set the value from it.
+ * Every public setter call it's virtual onSetXXX(...) which has default behavior.
+ * While VideoOutput simply calls backend onSetXXX(...) and set the value from it.
  */
 struct AVCodecContext;
 struct AVFrame;
@@ -95,32 +95,32 @@ public:
      *  pixfmt will be used if decoded format is not supported by this renderer. otherwise, use decoded format.
      *  return false if \a pixfmt is not supported and not changed.
      */
-    virtual bool setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);  //has default
+    bool setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
     /*!
      * \brief preferredPixelFormat
      * \return preferred pixel format. e.g. WidgetRenderer is rgb formats.
      */
-    virtual VideoFormat::PixelFormat preferredPixelFormat() const;
+    virtual VideoFormat::PixelFormat preferredPixelFormat() const; //virtual?
     /*!
      * \brief forcePreferredPixelFormat
      *  force to use preferredPixelFormat() even if incoming format is supported
      * \param force
      */
-    virtual void forcePreferredPixelFormat(bool force = true); //has default
+    void forcePreferredPixelFormat(bool force = true);
     bool isPreferredPixelFormatForced() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const = 0;
 
     //for testing performance
-    virtual void scaleInRenderer(bool q); //has default
+    void scaleInRenderer(bool q);
     bool scaleInRenderer() const;
 
-    virtual void setOutAspectRatioMode(OutAspectRatioMode mode); //has default
+    void setOutAspectRatioMode(OutAspectRatioMode mode);
     OutAspectRatioMode outAspectRatioMode() const;
     //If setOutAspectRatio(qreal) is used, then OutAspectRatioMode is CustomAspectRation
-    virtual void setOutAspectRatio(qreal ratio); //has default
+    void setOutAspectRatio(qreal ratio);
     qreal outAspectRatio() const;//
 
-    virtual void setQuality(Quality q); //has default
+    void setQuality(Quality q);
     Quality quality() const;
 
     //TODO: unregister
@@ -129,7 +129,7 @@ public:
     //virtual QImage currentFrameImage() const = 0; //const QImage& const?
     //TODO: resizeRenderer
     void resizeRenderer(const QSize& size);
-    virtual void resizeRenderer(int width, int height); //has default
+    void resizeRenderer(int width, int height);
     QSize rendererSize() const;
     int rendererWidth() const;
     int rendererHeight() const;
@@ -149,7 +149,7 @@ public:
     QRectF regionOfInterest() const;
     // TODO: reset aspect ratio to roi.width/roi/heghit
     void setRegionOfInterest(qreal x, qreal y, qreal width, qreal height);
-    virtual void setRegionOfInterest(const QRectF& roi); //has default
+    void setRegionOfInterest(const QRectF& roi);
     // compute the real ROI
     QRect realROI() const;
 
@@ -158,12 +158,12 @@ public:
      * \brief mapToFrame
      *  map point in VideoRenderer coordinate to VideoFrame, with current ROI
      */
-    virtual QPointF mapToFrame(const QPointF& p) const; //has default
+    QPointF mapToFrame(const QPointF& p) const;
     /*!
      * \brief mapFromFrame
      *  map point in VideoFrame coordinate to VideoRenderer, with current ROI
      */
-    virtual QPointF mapFromFrame(const QPointF& p) const; //has default
+    QPointF mapFromFrame(const QPointF& p) const;
 
     /*!
      * \brief widget
@@ -179,11 +179,11 @@ public:
     //TODO: enable/disable = new a default for this vo engine or push back/remove from list
     //filter: null means disable
     //return the old filter. you may release the ptr manually
-    virtual OSDFilter* setOSDFilter(OSDFilter *filter); //has default
+    OSDFilter* setOSDFilter(OSDFilter *filter);
     OSDFilter *osdFilter();
-    virtual Filter* setSubtitleFilter(Filter *filter); //has default
+    Filter* setSubtitleFilter(Filter *filter);
     Filter* subtitleFilter();
-    virtual void enableDefaultEventFilter(bool e); //has default
+    void enableDefaultEventFilter(bool e);
     bool isDefaultEventFilterEnabled() const;
 
     /*!
@@ -194,13 +194,13 @@ public:
      * \return \a false if failed (may be onChangingXXX not implemented or return false)
      */
     qreal brightness() const;
-    virtual bool setBrightness(qreal brightness); //has default
+    bool setBrightness(qreal brightness);
     qreal contrast() const;
-    virtual bool setContrast(qreal contrast); //has default
+    bool setContrast(qreal contrast);
     qreal hue() const;
-    virtual bool setHue(qreal hue); //has default
+    bool setHue(qreal hue);
     qreal saturation() const;
-    virtual bool setSaturation(qreal saturation); //has default
+    bool setSaturation(qreal saturation);
 
 protected:
     VideoRenderer(VideoRendererPrivate &d);
@@ -222,7 +222,7 @@ protected:
      */
     virtual void resizeFrame(int width, int height);
     //TODO: parameter QRect?
-    virtual void handlePaintEvent(); //has default
+    virtual void handlePaintEvent(); //has default. User don't have to implement it
     /*!
      * \brief onBrightness
      *  It's called when user call setBrightness(). You should implement how to actually change the brightness.
@@ -235,6 +235,24 @@ protected:
     virtual bool onChangingHue(qreal h);
     virtual bool onChangingSaturation(qreal s);
 
+private: //used by VideoOutput class
+    virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
+    virtual void onForcePreferredPixelFormat(bool force = true);
+    virtual void onScaleInRenderer(bool q);
+    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
+    virtual void onSetOutAspectRatio(qreal ratio);
+    virtual void onSetQuality(Quality q);
+    virtual void onResizeRenderer(int width, int height);
+    virtual void onSetRegionOfInterest(const QRectF& roi);
+    virtual QPointF onMapToFrame(const QPointF& p) const;
+    virtual QPointF onMapFromFrame(const QPointF& p) const;
+    virtual OSDFilter* onSetOSDFilter(OSDFilter *filter);
+    virtual Filter* onSetSubtitleFilter(Filter *filter);
+
+    virtual bool onSetBrightness(qreal brightness);
+    virtual bool onSetContrast(qreal contrast);
+    virtual bool onSetHue(qreal hue);
+    virtual bool onSetSaturation(qreal saturation);
 private:
     friend class VideoThread;
     friend class VideoOutput;

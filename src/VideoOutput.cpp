@@ -70,7 +70,7 @@ void VideoOutput::setVideoFormat(const VideoFormat& format)
     d_func().impl->setVideoFormat(format);
 }
 */
-bool VideoOutput::setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
+bool VideoOutput::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
     DPTR_D(VideoOutput);
     bool ret = d.impl->setPreferredPixelFormat(pixfmt);
@@ -83,47 +83,9 @@ VideoFormat::PixelFormat VideoOutput::preferredPixelFormat() const
     return d_func().impl->preferredPixelFormat();
 }
 
-void VideoOutput::forcePreferredPixelFormat(bool force)
-{
-    DPTR_D(VideoOutput);
-    d.impl->forcePreferredPixelFormat(force);
-    d.force_preferred = d.impl->isPreferredPixelFormatForced();
-}
-
 bool VideoOutput::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     return d_func().impl->isSupported(pixfmt);
-}
-
-void VideoOutput::scaleInRenderer(bool q)
-{
-    DPTR_D(VideoOutput);
-
-}
-
-void VideoOutput::setOutAspectRatioMode(OutAspectRatioMode mode)
-{
-    DPTR_D(VideoOutput);
-    d.impl->setOutAspectRatioMode(mode);
-    d.out_rect = d.impl->videoRect();
-    d.out_aspect_ratio = d.impl->outAspectRatio();
-    d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
-}
-
-void VideoOutput::setOutAspectRatio(qreal ratio)
-{
-    DPTR_D(VideoOutput);
-    d.impl->setOutAspectRatio(ratio);
-    d.out_rect = d.impl->videoRect();
-    d.out_aspect_ratio = d.impl->outAspectRatio();
-    d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
-}
-
-void VideoOutput::setQuality(Quality q)
-{
-    DPTR_D(VideoOutput);
-    d.impl->setQuality(q);
-    d.quality = d.impl->quality();
 }
 
 bool VideoOutput::open()
@@ -138,37 +100,6 @@ bool VideoOutput::close()
     return d.impl->close();
 }
 
-void VideoOutput::resizeRenderer(int width, int height)
-{
-    DPTR_D(VideoOutput);
-    if (width == 0 || height == 0)
-        return;
-    d.impl->resizeRenderer(width, height);
-    d.renderer_width = width;
-    d.renderer_height = height;
-    d.out_aspect_ratio = d.impl->outAspectRatio();
-    d.out_rect = d.impl->videoRect();
-}
-
-void VideoOutput::setRegionOfInterest(const QRectF& roi)
-{
-    DPTR_D(VideoOutput);
-    d.impl->setRegionOfInterest(roi);
-    d.roi = d.impl->regionOfInterest();
-}
-
-QPointF VideoOutput::mapToFrame(const QPointF& p) const
-{
-    DPTR_D(const VideoOutput);
-    return d.impl->mapToFrame(p);
-}
-
-QPointF VideoOutput::mapFromFrame(const QPointF& p) const
-{
-    DPTR_D(const VideoOutput);
-    return d.impl->mapFromFrame(p);
-}
-
 QWidget* VideoOutput::widget()
 {
     return d_func().impl->widget();
@@ -177,61 +108,6 @@ QWidget* VideoOutput::widget()
 QGraphicsItem* VideoOutput::graphicsItem()
 {
     return d_func().impl->graphicsItem();
-}
-
-OSDFilter* VideoOutput::setOSDFilter(OSDFilter *filter)
-{
-    DPTR_D(VideoOutput);
-    return d.impl->setOSDFilter(filter);
-}
-
-Filter* VideoOutput::setSubtitleFilter(Filter *filter)
-{
-    DPTR_D(VideoOutput);
-    return d.impl->setSubtitleFilter(filter);
-}
-
-void VideoOutput::enableDefaultEventFilter(bool e)
-{
-    DPTR_D(VideoOutput);
-    d.impl->enableDefaultEventFilter(e);
-    d.default_event_filter = d.impl->isDefaultEventFilterEnabled();
-}
-
-bool VideoOutput::setBrightness(qreal brightness)
-{
-    DPTR_D(VideoOutput);
-    if (!d.impl->setBrightness(brightness))
-        return false;
-    d.brightness = brightness;
-    return false;
-}
-
-bool VideoOutput::setContrast(qreal contrast)
-{
-    DPTR_D(VideoOutput);
-    if (!d.impl->setContrast(contrast))
-        return false;
-    d.contrast = d.impl->contrast();
-    return true;
-}
-
-bool VideoOutput::setHue(qreal hue)
-{
-    DPTR_D(VideoOutput);
-    if (!d.impl->setHue(hue))
-        return false;
-    d.hue = d.impl->hue();
-    return true;
-}
-
-bool VideoOutput::setSaturation(qreal saturation)
-{
-    DPTR_D(VideoOutput);
-    if (!d.impl->setSaturation(saturation))
-        return false;
-    d.saturation = d.impl->saturation();
-    return true;
 }
 
 bool VideoOutput::receiveFrame(const VideoFrame& frame)
@@ -307,6 +183,125 @@ bool VideoOutput::onChangingSaturation(qreal s)
 {
     DPTR_D(VideoOutput);
     if (!d.impl->onChangingSaturation(s))
+        return false;
+    d.saturation = d.impl->saturation();
+    return true;
+}
+
+
+
+void VideoOutput::onForcePreferredPixelFormat(bool force)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onForcePreferredPixelFormat(force);
+    d.force_preferred = d.impl->isPreferredPixelFormatForced();
+}
+
+void VideoOutput::onScaleInRenderer(bool q)
+{
+    DPTR_D(VideoOutput);
+
+}
+
+void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onSetOutAspectRatioMode(mode);
+    d.out_rect = d.impl->videoRect();
+    d.out_aspect_ratio = d.impl->outAspectRatio();
+    d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
+}
+
+void VideoOutput::onSetOutAspectRatio(qreal ratio)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onSetOutAspectRatio(ratio);
+    d.out_rect = d.impl->videoRect();
+    d.out_aspect_ratio = d.impl->outAspectRatio();
+    d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
+}
+
+void VideoOutput::onSetQuality(Quality q)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onSetQuality(q);
+    d.quality = d.impl->quality();
+}
+
+void VideoOutput::onResizeRenderer(int width, int height)
+{
+    DPTR_D(VideoOutput);
+    if (width == 0 || height == 0)
+        return;
+    d.impl->onResizeRenderer(width, height);
+    d.renderer_width = width;
+    d.renderer_height = height;
+    d.out_aspect_ratio = d.impl->outAspectRatio();
+    d.out_rect = d.impl->videoRect();
+}
+
+void VideoOutput::onSetRegionOfInterest(const QRectF& roi)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onSetRegionOfInterest(roi);
+    d.roi = d.impl->regionOfInterest();
+}
+
+QPointF VideoOutput::onMapToFrame(const QPointF& p) const
+{
+    DPTR_D(const VideoOutput);
+    return d.impl->onMapToFrame(p);
+}
+
+QPointF VideoOutput::onMapFromFrame(const QPointF& p) const
+{
+    DPTR_D(const VideoOutput);
+    return d.impl->onMapFromFrame(p);
+}
+
+OSDFilter* VideoOutput::onSetOSDFilter(OSDFilter *filter)
+{
+    DPTR_D(VideoOutput);
+    return d.impl->onSetOSDFilter(filter);
+}
+
+Filter* VideoOutput::onSetSubtitleFilter(Filter *filter)
+{
+    DPTR_D(VideoOutput);
+    return d.impl->onSetSubtitleFilter(filter);
+}
+
+bool VideoOutput::onSetBrightness(qreal brightness)
+{
+    DPTR_D(VideoOutput);
+    if (!d.impl->onSetBrightness(brightness))
+        return false;
+    d.brightness = brightness;
+    return true;
+}
+
+bool VideoOutput::onSetContrast(qreal contrast)
+{
+    DPTR_D(VideoOutput);
+    if (!d.impl->onSetContrast(contrast))
+        return false;
+    d.contrast = d.impl->contrast();
+    return true;
+}
+
+bool VideoOutput::onSetHue(qreal hue)
+{
+    DPTR_D(VideoOutput);
+    if (!d.impl->onSetHue(hue))
+        return false;
+    d.hue = d.impl->hue();
+    return true;
+}
+
+bool VideoOutput::onSetSaturation(qreal saturation)
+{
+    DPTR_D(VideoOutput);
+    if (!d.impl->onSetSaturation(saturation))
         return false;
     d.saturation = d.impl->saturation();
     return true;

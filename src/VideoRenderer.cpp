@@ -51,6 +51,11 @@ bool VideoRenderer::receive(const VideoFrame &frame)
 
 bool VideoRenderer::setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
+    return onSetPreferredPixelFormat(pixfmt);
+}
+
+bool VideoRenderer::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
+{
     if (!isSupported(pixfmt)) {
         qWarning("pixel format '%s' is not supported", VideoFormat(pixfmt).name().toUtf8().constData());
         return false;
@@ -66,6 +71,11 @@ VideoFormat::PixelFormat VideoRenderer::preferredPixelFormat() const
 
 void VideoRenderer::forcePreferredPixelFormat(bool force)
 {
+    onForcePreferredPixelFormat(force);
+}
+
+void VideoRenderer::onForcePreferredPixelFormat(bool force)
+{
     d_func().force_preferred = force;
 }
 
@@ -76,6 +86,11 @@ bool VideoRenderer::isPreferredPixelFormatForced() const
 
 void VideoRenderer::scaleInRenderer(bool q)
 {
+    onScaleInRenderer(q);
+}
+
+void VideoRenderer::onScaleInRenderer(bool q)
+{
     d_func().scale_in_renderer = q;
 }
 
@@ -85,6 +100,11 @@ bool VideoRenderer::scaleInRenderer() const
 }
 
 void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
+{
+    onSetOutAspectRatioMode(mode);
+}
+
+void VideoRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 {
     DPTR_D(VideoRenderer);
     if (mode == d.out_aspect_ratio_mode)
@@ -107,6 +127,11 @@ VideoRenderer::OutAspectRatioMode VideoRenderer::outAspectRatioMode() const
 }
 
 void VideoRenderer::setOutAspectRatio(qreal ratio)
+{
+    onSetOutAspectRatio(ratio);
+}
+
+void VideoRenderer::onSetOutAspectRatio(qreal ratio)
 {
     DPTR_D(VideoRenderer);
     bool ratio_changed = d.out_aspect_ratio != ratio;
@@ -132,6 +157,11 @@ qreal VideoRenderer::outAspectRatio() const
 }
 
 void VideoRenderer::setQuality(Quality q)
+{
+    onSetQuality(q);
+}
+
+void VideoRenderer::onSetQuality(Quality q)
 {
     DPTR_D(VideoRenderer);
     d.quality = q;
@@ -185,6 +215,11 @@ void VideoRenderer::resizeRenderer(const QSize &size)
 
 void VideoRenderer::resizeRenderer(int width, int height)
 {
+    onResizeRenderer(width, height);
+}
+
+void VideoRenderer::onResizeRenderer(int width, int height)
+{
     DPTR_D(VideoRenderer);
     if (width == 0 || height == 0)
         return;
@@ -234,6 +269,11 @@ void VideoRenderer::setRegionOfInterest(qreal x, qreal y, qreal width, qreal hei
 
 void VideoRenderer::setRegionOfInterest(const QRectF &roi)
 {
+    onSetRegionOfInterest(roi);
+}
+
+void VideoRenderer::onSetRegionOfInterest(const QRectF &roi)
+{
     d_func().roi = roi;
 }
 
@@ -259,6 +299,11 @@ QRect VideoRenderer::realROI() const
 
 QPointF VideoRenderer::mapToFrame(const QPointF &p) const
 {
+    return onMapToFrame(p);
+}
+
+QPointF VideoRenderer::onMapToFrame(const QPointF &p) const
+{
     QRectF roi = realROI();
     // zoom=roi.w/roi.h>vo.w/vo.h?roi.w/vo.w:roi.h/vo.h
     qreal zoom = qMax(roi.width()/rendererWidth(), roi.height()/rendererHeight());
@@ -267,6 +312,11 @@ QPointF VideoRenderer::mapToFrame(const QPointF &p) const
 }
 
 QPointF VideoRenderer::mapFromFrame(const QPointF &p) const
+{
+    return onMapFromFrame(p);
+}
+
+QPointF VideoRenderer::onMapFromFrame(const QPointF &p) const
 {
     QRectF roi = realROI();
     // zoom=roi.w/roi.h>vo.w/vo.h?roi.w/vo.w:roi.h/vo.h
@@ -277,6 +327,11 @@ QPointF VideoRenderer::mapFromFrame(const QPointF &p) const
 }
 
 OSDFilter *VideoRenderer::setOSDFilter(OSDFilter *filter)
+{
+    return onSetOSDFilter(filter);
+}
+
+OSDFilter *VideoRenderer::onSetOSDFilter(OSDFilter *filter)
 {
     DPTR_D(VideoRenderer);
     Filter *old = d.osd_filter;
@@ -305,6 +360,11 @@ OSDFilter* VideoRenderer::osdFilter()
 }
 //TODO: setSubtitleFilter and setOSDFilter are almost the same. refine code
 Filter* VideoRenderer::setSubtitleFilter(Filter *filter)
+{
+    return onSetSubtitleFilter(filter);
+}
+
+Filter* VideoRenderer::onSetSubtitleFilter(Filter *filter)
 {
     DPTR_D(VideoRenderer);
     Filter *old = d.subtitle_filter;
@@ -420,6 +480,11 @@ qreal VideoRenderer::brightness() const
 
 bool VideoRenderer::setBrightness(qreal brightness)
 {
+    return onSetBrightness(brightness);
+}
+
+bool VideoRenderer::onSetBrightness(qreal brightness)
+{
     if (!onChangingBrightness(brightness))
         return false;
     d_func().brightness = brightness;
@@ -438,6 +503,11 @@ qreal VideoRenderer::contrast() const
 }
 
 bool VideoRenderer::setContrast(qreal contrast)
+{
+    return onSetContrast(contrast);
+}
+
+bool VideoRenderer::onSetContrast(qreal contrast)
 {
     if (!onChangingContrast(contrast))
         return false;
@@ -458,6 +528,11 @@ qreal VideoRenderer::hue() const
 
 bool VideoRenderer::setHue(qreal hue)
 {
+    return onSetHue(hue);
+}
+
+bool VideoRenderer::onSetHue(qreal hue)
+{
     if (!onChangingHue(hue))
         return false;
     d_func().hue = hue;
@@ -476,6 +551,11 @@ qreal VideoRenderer::saturation() const
 }
 
 bool VideoRenderer::setSaturation(qreal saturation)
+{
+    return onSetSaturation(saturation);
+}
+
+bool VideoRenderer::onSetSaturation(qreal saturation)
 {
     if (!onChangingSaturation(saturation))
         return false;
