@@ -86,20 +86,40 @@ bool AVOutput::tryPause()
 
 void AVOutput::addOutputSet(OutputSet *set)
 {
+    onAddOutputSet(set);
+}
+
+void AVOutput::onAddOutputSet(OutputSet *set)
+{
     d_func().output_sets.append(set);
 }
 
 void AVOutput::removeOutputSet(OutputSet *set)
+{
+    onRemoveOutputSet(set);
+}
+
+void AVOutput::onRemoveOutputSet(OutputSet *set)
 {
     d_func().output_sets.removeAll(set);
 }
 
 void AVOutput::attach(OutputSet *set)
 {
+    onAttach(set);
+}
+
+void AVOutput::onAttach(OutputSet *set)
+{
     set->addOutput(this);
 }
 
 void AVOutput::detach(OutputSet *set)
+{
+    onDetach(set);
+}
+
+void AVOutput::onDetach(OutputSet *set)
 {
     DPTR_D(AVOutput);
     if (set) {
@@ -129,6 +149,11 @@ void AVOutput::setStatistics(Statistics *statistics)
 
 bool AVOutput::installFilter(Filter *filter)
 {
+    onInstallFilter(filter);
+}
+
+bool AVOutput::onInstallFilter(Filter *filter)
+{
     if (!FilterManager::instance().registerFilter(filter, this)) {
         return false;
     }
@@ -143,6 +168,11 @@ bool AVOutput::installFilter(Filter *filter)
  */
 bool AVOutput::uninstallFilter(Filter *filter)
 {
+    onUninstallFilter(filter);
+}
+
+bool AVOutput::onUninstallFilter(Filter *filter)
+{
     if (!FilterManager::instance().unregisterFilter(filter)) {
         qWarning("unregister filter %p failed", filter);
         return false;
@@ -154,15 +184,21 @@ bool AVOutput::uninstallFilter(Filter *filter)
 
 void AVOutput::hanlePendingTasks()
 {
+    onHanlePendingTasks();
+}
+
+bool AVOutput::onHanlePendingTasks()
+{
     DPTR_D(AVOutput);
     if (d.pending_uninstall_filters.isEmpty())
-        return;
+        return false;
     foreach (Filter *filter, d.pending_uninstall_filters) {
         d.filters.removeAll(filter);
         //QMetaObject::invokeMethod(FilterManager::instance(), "onUninstallInTargetDone", Qt::AutoConnection, Q_ARG(Filter*, filter));
         FilterManager::instance().emitOnUninstallInTargetDone(filter);
     }
     d.pending_uninstall_filters.clear();
+    return true;
 }
 
 } //namespace QtAV

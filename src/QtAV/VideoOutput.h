@@ -52,7 +52,27 @@ public:
     QWidget* widget();
     QGraphicsItem* graphicsItem();
 
-private:
+signals:
+    void brightnessChanged(qreal value);
+    void contrastChanged(qreal value);
+    void hueChanged(qreal value);
+    void saturationChanged(qreal value);
+
+protected:
+    bool receiveFrame(const VideoFrame& frame);
+    bool needUpdateBackground() const;
+    void drawBackground();
+    bool needDrawFrame() const; //not important.
+    void drawFrame();
+    void resizeFrame(int width, int height);
+    void handlePaintEvent();
+    bool onChangingBrightness(qreal b);
+    bool onChangingContrast(qreal c);
+    bool onChangingHue(qreal h);
+    bool onChangingSaturation(qreal s);
+
+
+private: //for proxy
     /*!
      * \brief setPreferredPixelFormat
      * \param pixfmt
@@ -77,27 +97,18 @@ private:
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
 
-signals:
-    void brightnessChanged(qreal value);
-    void contrastChanged(qreal value);
-    void hueChanged(qreal value);
-    void saturationChanged(qreal value);
-
-protected:
-    bool receiveFrame(const VideoFrame& frame);
-    bool needUpdateBackground() const;
-    void drawBackground();
-    bool needDrawFrame() const; //not important.
-    void drawFrame();
-    void resizeFrame(int width, int height);
-    void handlePaintEvent();
-    bool onChangingBrightness(qreal b);
-    bool onChangingContrast(qreal c);
-    bool onChangingHue(qreal h);
-    bool onChangingSaturation(qreal s);
-
-private:
     void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
+
+    // from AVOutput
+    virtual void setStatistics(Statistics* statistics); //called by friend AVPlayer
+    virtual bool onInstallFilter(Filter *filter);
+    virtual bool onUninstallFilter(Filter *filter);
+    virtual void onAddOutputSet(OutputSet *set);
+    virtual void onRemoveOutputSet(OutputSet *set);
+    virtual void onAttach(OutputSet *set); //add this to set
+    virtual void onDetach(OutputSet *set = 0); //detatch from (all, if 0) output set(s)
+    virtual bool onHanlePendingTasks();
+
 };
 
 } //namespace QtAV

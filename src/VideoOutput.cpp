@@ -22,6 +22,11 @@
 #include "QtAV/VideoOutput.h"
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/VideoRendererTypes.h"
+#include "QtAV/OSDFilter.h"
+
+/*!
+ * onSetXXX(...): impl->onSetXXX(...); set value as impl; return ;
+ */
 
 namespace QtAV {
 
@@ -32,6 +37,12 @@ public:
         impl = VideoRendererFactory::create(rendererId);
         // assert not null?
         available = !!impl;
+        if (!available)
+            return;
+        // set members as impl's that may be already set in ctor
+        osd_filter = impl->osdFilter();
+        subtitle_filter = impl->subtitleFilter();
+        filters = impl->filters();
     }
     ~VideoOutputPrivate() {
         if (impl) {
@@ -262,13 +273,19 @@ QPointF VideoOutput::onMapFromFrame(const QPointF& p) const
 OSDFilter* VideoOutput::onSetOSDFilter(OSDFilter *filter)
 {
     DPTR_D(VideoOutput);
-    return d.impl->onSetOSDFilter(filter);
+    OSDFilter* old = d.impl->onSetOSDFilter(filter);
+    d.osd_filter = d.impl->osdFilter();
+    d.filters = d.impl->filters();
+    return old;
 }
 
 Filter* VideoOutput::onSetSubtitleFilter(Filter *filter)
 {
     DPTR_D(VideoOutput);
-    return d.impl->onSetSubtitleFilter(filter);
+    Filter* old = d.impl->onSetSubtitleFilter(filter);
+    d.subtitle_filter = d.impl->subtitleFilter();
+    d.filters = d.impl->filters();
+    return old;
 }
 
 bool VideoOutput::onSetBrightness(qreal brightness)
@@ -318,6 +335,62 @@ void VideoOutput::setInSize(int width, int height)
     d.out_aspect_ratio = d.impl->outAspectRatio();
     d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
     //d.update_background = d.impl->
+}
+
+void VideoOutput::setStatistics(Statistics* statistics)
+{
+    DPTR_D(VideoOutput);
+    d.impl->setStatistics(statistics);
+    // only used internally for AVOutput
+    //d.statistics =
+}
+
+bool VideoOutput::onInstallFilter(Filter *filter)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onInstallFilter(filter);
+    d.filters = d.impl->filters();
+}
+
+bool VideoOutput::onUninstallFilter(Filter *filter)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onUninstallFilter(filter);
+    // only used internally for AVOutput
+    //d.pending_uninstall_filters =
+}
+
+void VideoOutput::onAddOutputSet(OutputSet *set)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onAddOutputSet(set);
+}
+
+void VideoOutput::onRemoveOutputSet(OutputSet *set)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onRemoveOutputSet(set);
+}
+
+void VideoOutput::onAttach(OutputSet *set)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onAttach(set);
+}
+
+void VideoOutput::onDetach(OutputSet *set)
+{
+    DPTR_D(VideoOutput);
+    d.impl->onDetach(set);
+    //d.output_sets = d.impl->
+}
+
+bool VideoOutput::onHanlePendingTasks()
+{
+    DPTR_D(VideoOutput);
+    if (!d.impl->onHanlePendingTasks())
+        return false;
+    d.filters = d.impl->filters();
 }
 
 } //namespace QtAV
