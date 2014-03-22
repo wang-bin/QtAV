@@ -4,7 +4,6 @@ QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4) {
   QT += widgets
 }
-INCLUDEPATH += C:/dev/QtAV/include
 CONFIG *= qtav-buildlib
 
 #var with '_' can not pass to pri?
