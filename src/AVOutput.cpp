@@ -149,7 +149,7 @@ void AVOutput::setStatistics(Statistics *statistics)
 
 bool AVOutput::installFilter(Filter *filter)
 {
-    onInstallFilter(filter);
+    return onInstallFilter(filter);
 }
 
 bool AVOutput::onInstallFilter(Filter *filter)
@@ -168,7 +168,7 @@ bool AVOutput::onInstallFilter(Filter *filter)
  */
 bool AVOutput::uninstallFilter(Filter *filter)
 {
-    onUninstallFilter(filter);
+    return onUninstallFilter(filter);
 }
 
 bool AVOutput::onUninstallFilter(Filter *filter)

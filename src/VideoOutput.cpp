@@ -348,16 +348,18 @@ void VideoOutput::setStatistics(Statistics* statistics)
 bool VideoOutput::onInstallFilter(Filter *filter)
 {
     DPTR_D(VideoOutput);
-    d.impl->onInstallFilter(filter);
+    bool ret = d.impl->onInstallFilter(filter);
     d.filters = d.impl->filters();
+    return ret;
 }
 
 bool VideoOutput::onUninstallFilter(Filter *filter)
 {
     DPTR_D(VideoOutput);
-    d.impl->onUninstallFilter(filter);
+    bool ret = d.impl->onUninstallFilter(filter);
     // only used internally for AVOutput
     //d.pending_uninstall_filters =
+    return ret;
 }
 
 void VideoOutput::onAddOutputSet(OutputSet *set)
@@ -391,6 +393,7 @@ bool VideoOutput::onHanlePendingTasks()
     if (!d.impl->onHanlePendingTasks())
         return false;
     d.filters = d.impl->filters();
+    return true;
 }
 
 } //namespace QtAV
