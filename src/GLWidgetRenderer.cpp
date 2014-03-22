@@ -441,8 +441,8 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
     for (int i = 0; i < fmt.planeCount(); ++i) {
-        effective_tex_width[i] = AVALIGN(qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bytesOfGLFormat(data_format[i])), 4);
-        texture_size[i].setWidth(AVALIGN(qCeil((qreal)texture_size[i].width()/(qreal)bytesOfGLFormat(data_format[i])), 4));
+        effective_tex_width[i] = qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bytesOfGLFormat(data_format[i]));
+        texture_size[i].setWidth(qCeil((qreal)texture_size[i].width()/(qreal)bytesOfGLFormat(data_format[i])));
         // bytesOfGLFormat()*bytesOfGLDataType()?
         effective_tex_width[i] /= fmt.bytesPerPixel(i);
         texture_size[i].setWidth(texture_size[i].width()/fmt.bytesPerPixel(i));
@@ -504,7 +504,7 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
         texture_size.resize(fmt.planeCount());
         effective_tex_width.resize(fmt.planeCount());
         for (int i = 0; i < fmt.planeCount(); ++i) {
-            qDebug("bpl %d: pad = %d, effective = %d", i, video_frame.bytesPerLine(i), video_frame.effectiveBytesPerLine(i));
+            qDebug("plane %d: pad = %d, effective = %d", i, video_frame.bytesPerLine(i), video_frame.effectiveBytesPerLine(i));
             qDebug("plane width %d: pad = %d, effective = %d", i, video_frame.planeWidth(i), video_frame.effectivePlaneWidth(i));
             qDebug("planeHeight %d = %d", i, video_frame.planeHeight(i));
             // we have to consider size of opengl format. set bytesPerLine here and change to width later
