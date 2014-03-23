@@ -42,6 +42,7 @@ class Config : public QObject
 public:
     static Config& instance();
 
+    void reload();
     QString defaultDir() const;
     //void loadFromFile(const QString& file);
 
