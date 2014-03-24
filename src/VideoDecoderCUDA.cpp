@@ -26,7 +26,7 @@
 #include "prepost.h"
 #include <QtCore/QQueue>
 
-#define COPY_ON_DECODE 1
+#define COPY_ON_DECODE 0
 /*
  * TODO: update helper_cuda with 5.5
  * avc1, ccv1 => h264 + sps, pps, nal. use filter or lavcudiv
@@ -252,6 +252,7 @@ public:
         VideoFrame vf;
         CUVIDPARSERDISPINFO *cuviddisp = frame_queue.take();
         processDecodedData(cuviddisp, vf);
+
         return vf;
 #endif //COPY_ON_DECODE
     }
@@ -305,14 +306,14 @@ public:
             }
             cuStatus = cuMemcpyDtoHAsync(host_data, devptr, size, stream);
             if (cuStatus != CUDA_SUCCESS) {
-                qWarning("cuMemcpyDtoH failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+                qWarning("cuMemcpyDtoHAsync failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
                 cuvidUnmapVideoFrame(dec, devptr);
                 cuvidCtxUnlock(vid_ctx_lock, 0);
                 return false;
             }
             cuStatus = cuCtxSynchronize();
             if (cuStatus != CUDA_SUCCESS) {
-                qWarning("cuMemcpyDtoH failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+                qWarning("cuCtxSynchronize failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
             }
             cuvidUnmapVideoFrame(dec, devptr);
             cuvidCtxUnlock(vid_ctx_lock, 0);
@@ -326,6 +327,8 @@ public:
             int pitches[] = { pitch, pitch };
 #if COPY_ON_DECODE
             VideoFrame frame(w, h, VideoFormat::Format_NV12);
+#else
+            frame = VideoFrame(w, h, VideoFormat::Format_NV12);
 #endif
             frame.setBits(planes);
             frame.setBytesPerLine(pitches);
@@ -447,7 +450,7 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
         //cuvidCtxUnlock(d.vid_ctx_lock, 0); //TODO: why wrong context?
         CUresult cuStatus = cuvidParseVideoData(d.parser, &cuvid_pkt);
         if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuMemcpyDtoH failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+            qWarning("cuvidParseVideoData failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
         }
     }
     // callbacks are in the same thread as this. so no queue is required?
