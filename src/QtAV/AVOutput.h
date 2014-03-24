@@ -87,9 +87,19 @@ protected:
     DPTR_DECLARE(AVOutput)
 
 private:
-    void setStatistics(Statistics* statistics);
+    // for proxy VideoOutput
+    virtual void setStatistics(Statistics* statistics); //called by friend AVPlayer
+    virtual bool onInstallFilter(Filter *filter);
+    virtual bool onUninstallFilter(Filter *filter);
+    virtual void onAddOutputSet(OutputSet *set);
+    virtual void onRemoveOutputSet(OutputSet *set);
+    virtual void onAttach(OutputSet *set); //add this to set
+    virtual void onDetach(OutputSet *set = 0); //detatch from (all, if 0) output set(s)
+    // only called in handlePaintEvent. But filters may change. so required by proxy to update it's filters
+    virtual bool onHanlePendingTasks(); //return true: proxy update filters
     friend class AVPlayer;
     friend class OutputSet;
+    friend class VideoOutput;
 };
 
 } //namespace QtAV

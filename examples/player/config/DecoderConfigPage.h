@@ -48,6 +48,7 @@ private slots:
     void priorityDown();
     void onDecSelected(DecoderItemWidget* iw);
     void updateDecodersUi();
+    void onConfigChanged();
 
 private:
     QSpinBox *mpThreads;

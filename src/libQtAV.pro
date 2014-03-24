@@ -4,7 +4,6 @@ QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4) {
   QT += widgets
 }
-
 CONFIG *= qtav-buildlib
 
 #var with '_' can not pass to pri?
@@ -174,6 +173,7 @@ SOURCES += \
     VideoFrame.cpp \
     VideoRenderer.cpp \
     VideoRendererTypes.cpp \
+    VideoOutput.cpp \
     VideoOutputEventFilter.cpp \
     WidgetRenderer.cpp \
     AVOutput.cpp \
@@ -217,6 +217,7 @@ SDK_HEADERS *= \
     QtAV/VideoCapture.h \
     QtAV/VideoRenderer.h \
     QtAV/VideoRendererTypes.h \
+    QtAV/VideoOutput.h \
     QtAV/WidgetRenderer.h \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \

@@ -165,6 +165,17 @@ QString Config::defaultDir() const
     return mpData->dir;
 }
 
+void Config::reload()
+{
+    mpData->load();
+    emit decodingThreadsChanged(mpData->decode_threads);
+    emit decoderPriorityChanged(mpData->video_decoder_priority);
+    emit registeredDecodersChanged(mpData->video_decoder_all);
+    emit captureDirChanged(mpData->capture_dir);
+    emit captureFormatChanged(mpData->capture_fmt);
+    emit captureQualityChanged(mpData->capture_quality);
+}
+
 int Config::decodingThreads() const
 {
     return mpData->decode_threads;

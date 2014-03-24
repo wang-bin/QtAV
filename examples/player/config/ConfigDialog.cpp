@@ -19,11 +19,12 @@
 ******************************************************************************/
 
 #include "ConfigDialog.h"
+#include <QtCore/QFile>
 #include <QLayout>
 #include <QPushButton>
 #include "CaptureConfigPage.h"
 #include "DecoderConfigPage.h"
-
+#include "Config.h"
 void ConfigDialog::display()
 {
     static ConfigDialog *dialog = new ConfigDialog();
@@ -40,7 +41,7 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
     mpContent->setTabPosition(QTabWidget::West);
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-    mpButtonBox->addButton(tr("Reset"), QDialogButtonBox::ResetRole)->setEnabled(false);// (QDialogButtonBox::Reset);
+    mpButtonBox->addButton(tr("Reset"), QDialogButtonBox::ResetRole);// (QDialogButtonBox::Reset);
     mpButtonBox->addButton(tr("Ok"), QDialogButtonBox::AcceptRole); //QDialogButtonBox::Ok
     mpButtonBox->addButton(tr("Cancel"), QDialogButtonBox::RejectRole);
     mpButtonBox->addButton(tr("Apply"), QDialogButtonBox::ApplyRole);
@@ -89,6 +90,11 @@ void ConfigDialog::onReset()
     foreach (ConfigPageBase* page, mPages) {
         page->reset();
     }
+    QFile cf(Config::instance().defaultDir() + "/config.ini");
+    if (!cf.remove()) {
+
+    }
+    Config::instance().reload();
 }
 
 void ConfigDialog::onApply()

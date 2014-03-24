@@ -26,6 +26,7 @@
 #include "prepost.h"
 #include <QtCore/QQueue>
 
+#define COPY_ON_DECODE 1
 /*
  * TODO: update helper_cuda with 5.5
  * avc1, ccv1 => h264 + sps, pps, nal. use filter or lavcudiv
@@ -61,6 +62,7 @@ static inline cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
 
 namespace QtAV {
 
+static const unsigned int kMaxDecodeSurfaces = 20;
 class VideoDecoderCUDAPrivate;
 class VideoDecoderCUDA : public VideoDecoder
 {
@@ -108,6 +110,9 @@ public:
         force_sequence_update = false;
         frame_queue.setCapacity(20);
         frame_queue.setThreshold(10);
+        surface_in_use.resize(kMaxDecodeSurfaces);
+        surface_in_use.fill(false);
+        nb_dec_surface = 20;
         initCuda();
     }
     ~VideoDecoderCUDAPrivate() {
@@ -173,7 +178,7 @@ public:
         memset(&dec_create_info, 0, sizeof(CUVIDDECODECREATEINFO));
         dec_create_info.ulWidth = w;
         dec_create_info.ulHeight = h;
-        dec_create_info.ulNumDecodeSurfaces = frame_queue.capacity(); //? it's 20 in example
+        dec_create_info.ulNumDecodeSurfaces = kMaxDecodeSurfaces; //same as ulMaxNumDecodeSurfaces
         dec_create_info.CodecType = cudaCodec;
         dec_create_info.ChromaFormat = cudaVideoChromaFormat_420;  // cudaVideoChromaFormat_XXX (only 4:2:0 is currently supported)
         //cudaVideoCreate_PreferCUVID is slow in example. DXVA may failed to create (CUDA_ERROR_NO_DEVICE)
@@ -190,9 +195,14 @@ public:
         dec_create_info.vidLock = vid_ctx_lock;//vidCtxLock; //FIXME
 
         // Limit decode memory to 24MB (16M pixels at 4:2:0 = 24M bytes)
+        // otherwise CUDA_ERROR_OUT_OF_MEMORY on cuMemcpyDtoH
+        // if ulNumDecodeSurfaces < ulMaxNumDecodeSurfaces, CurrPicIdx may be > ulNumDecodeSurfaces
+
         while (dec_create_info.ulNumDecodeSurfaces * codec_ctx->coded_width * codec_ctx->coded_height > 16*1024*1024) {
             dec_create_info.ulNumDecodeSurfaces--;
         }
+        nb_dec_surface = dec_create_info.ulNumDecodeSurfaces;
+
         qDebug("ulNumDecodeSurfaces: %d", dec_create_info.ulNumDecodeSurfaces);
 
         // create the decoder
@@ -212,7 +222,15 @@ public:
         CUVIDPARSERPARAMS parser_params;
         memset(&parser_params, 0, sizeof(CUVIDPARSERPARAMS));
         parser_params.CodecType = cudaCodec;
-        parser_params.ulMaxNumDecodeSurfaces = 20; //?
+        /*!
+         * CUVIDPICPARAMS.CurrPicIdx <= kMaxDecodeSurfaces.
+         * CUVIDPARSERDISPINFO.picture_index <= kMaxDecodeSurfaces
+         * HandlePictureDecode must check whether CUVIDPICPARAMS.CurrPicIdx is in use
+         * HandlePictureDisplay must mark CUVIDPARSERDISPINFO.picture_index is in use
+         * If a frame is unmapped, mark the index not in use
+         *
+         */
+        parser_params.ulMaxNumDecodeSurfaces = nb_dec_surface;
         //parser_params.ulMaxDisplayDelay = 4; //?
         parser_params.pUserData = this;
         parser_params.pfnSequenceCallback = VideoDecoderCUDAPrivate::HandleVideoSequence;
@@ -227,7 +245,18 @@ public:
         //DecodeSequenceData()
         return true;
     }
-    bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp) {
+    VideoFrame getNextFrame() {
+#if COPY_ON_DECODE
+        return frame_queue.take();
+#else
+        VideoFrame vf;
+        CUVIDPARSERDISPINFO *cuviddisp = frame_queue.take();
+        processDecodedData(cuviddisp, vf);
+        return vf;
+#endif //COPY_ON_DECODE
+    }
+
+    bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp, VideoFrame& frame) {
         int num_fields = cuviddisp->progressive_frame ? 1 : 2+cuviddisp->repeat_first_field;
 
         for (int active_field = 0; active_field < num_fields; ++active_field) {
@@ -287,19 +316,25 @@ public:
             }
             cuvidUnmapVideoFrame(dec, devptr);
             cuvidCtxUnlock(vid_ctx_lock, 0);
+            //qDebug("mark not in use pic_index: %d", cuviddisp->picture_index);
+            surface_in_use[cuviddisp->picture_index] = true;
 
             uchar *planes[] = {
                 host_data,
                 host_data + pitch * h
             };
             int pitches[] = { pitch, pitch };
+#if COPY_ON_DECODE
             VideoFrame frame(w, h, VideoFormat::Format_NV12);
+#endif
             frame.setBits(planes);
             frame.setBytesPerLine(pitches);
             //TODO: is clone required? may crash on clone, I should review clone()
             //frame = frame.clone();
+#if COPY_ON_DECODE
             frame_queue.put(frame);
-            qDebug("frame queue size: %d", frame_queue.size());
+#endif
+            //qDebug("frame queue size: %d", frame_queue.size());
         }
         return true;
     }
@@ -316,13 +351,14 @@ public:
             p->force_sequence_update = false;
             //coded_width or width?
             p->createCUVIDDecoder(cuvidfmt->codec, cuvidfmt->coded_width, cuvidfmt->coded_height);
+            // how about parser.ulMaxNumDecodeSurfaces? recreate?
         }
         //TODO: lavfilter
         return 1;
     }
     static int CUDAAPI HandlePictureDecode(void *obj, CUVIDPICPARAMS *cuvidpic) {
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
-        qDebug("%s @%d tid=%p dec=%p", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec);
+        //qDebug("%s @%d tid=%p dec=%p idx=%d inUse=%d", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec, cuvidpic->CurrPicIdx, p->surface_in_use[cuvidpic->CurrPicIdx]);
         AutoCtxLock lock(p->vid_ctx_lock);
         Q_UNUSED(lock);
         checkCudaErrors(cuvidDecodePicture(p->dec, cuvidpic));
@@ -330,8 +366,16 @@ public:
     }
     static int CUDAAPI HandlePictureDisplay(void *obj, CUVIDPARSERDISPINFO *cuviddisp) {
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
-        qDebug("%s @%d tid=%p dec=%p", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec);
-        return p->processDecodedData(cuviddisp);
+        p->surface_in_use[cuviddisp->picture_index] = true;
+        //qDebug("mark in use pic_index: %d", cuviddisp->picture_index);
+        //qDebug("%s @%d tid=%p dec=%p", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec);
+#if COPY_ON_DECODE
+        VideoFrame vf;
+        return p->processDecodedData(cuviddisp, vf);
+#else
+        p->frame_queue.put(cuviddisp);
+        return 1;
+#endif
     }
 
     uchar *host_data;
@@ -351,7 +395,13 @@ public:
      * callbacks are in the same thread as cuvidParseVideoData. so video thread may be blocked
      * so create another thread?
      */
+#if COPY_ON_DECODE
     BlockingQueue<VideoFrame> frame_queue;
+#else
+    BlockingQueue<CUVIDPARSERDISPINFO*> frame_queue;
+#endif
+    QVector<bool> surface_in_use;
+    int nb_dec_surface;
     QString description;
 };
 
@@ -372,7 +422,9 @@ bool VideoDecoderCUDA::prepare()
         qWarning("AVCodecContext not ready");
         return false;
     }
-    return d.createCUVIDParser() && d.createCUVIDDecoder(mapCodecFromFFmpeg(d.codec_ctx->codec_id), d.codec_ctx->coded_width, d.codec_ctx->coded_height);
+    // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
+    return d.createCUVIDDecoder(mapCodecFromFFmpeg(d.codec_ctx->codec_id), d.codec_ctx->coded_width, d.codec_ctx->coded_height)
+            && d.createCUVIDParser();
 }
 
 bool VideoDecoderCUDA::decode(const QByteArray &encoded)
@@ -399,14 +451,19 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
         }
     }
     // callbacks are in the same thread as this. so no queue is required?
-    qDebug("frame queue size on decode: %d", d.frame_queue.size());
+    //qDebug("frame queue size on decode: %d", d.frame_queue.size());
     return !d.frame_queue.isEmpty();
-
+    // video thread: if dec.hasFrame() keep pkt for the next loop and not decode, direct display the frame
 }
 
 VideoFrame VideoDecoderCUDA::frame()
 {
-    return d_func().frame_queue.take();
+    DPTR_D(VideoDecoderCUDA);
+#if COPY_ON_DECODE
+    return d.frame_queue.take();
+#else
+    return d.getNextFrame();
+#endif
 }
 
 } //namespace QtAV
