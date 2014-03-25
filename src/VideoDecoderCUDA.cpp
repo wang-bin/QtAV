@@ -264,13 +264,13 @@ public:
 #else
         VideoFrame vf;
         CUVIDPARSERDISPINFO *cuviddisp = frame_queue.take();
-        processDecodedData(cuviddisp, vf);
+        processDecodedData(cuviddisp, &vf);
 
         return vf;
 #endif //COPY_ON_DECODE
     }
 
-    bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp, VideoFrame& frame) {
+    bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp, VideoFrame* outFrame = 0) {
         int num_fields = cuviddisp->progressive_frame ? 1 : 2+cuviddisp->repeat_first_field;
 
         for (int active_field = 0; active_field < num_fields; ++active_field) {
@@ -338,17 +338,16 @@ public:
                 host_data + pitch * h
             };
             int pitches[] = { pitch, pitch };
-#if COPY_ON_DECODE
             VideoFrame frame(w, h, VideoFormat::Format_NV12);
-#else
-            frame = VideoFrame(w, h, VideoFormat::Format_NV12);
-#endif
             frame.setBits(planes);
             frame.setBytesPerLine(pitches);
             //TODO: is clone required? may crash on clone, I should review clone()
             //frame = frame.clone();
+            if (outFrame) {
+                *outFrame = frame.clone();
+            }
 #if COPY_ON_DECODE
-            frame_queue.put(frame);
+            frame_queue.put(frame.clone());
 #endif
             //qDebug("frame queue size: %d", frame_queue.size());
         }
