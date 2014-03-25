@@ -152,6 +152,7 @@ public:
     void setRegionOfInterest(const QRectF& roi);
     // compute the real ROI
     QRect realROI() const;
+    //QRectF normalizedROI() const;
 
     // TODO: map normalized
     /*!
@@ -237,13 +238,13 @@ protected:
 
 private: //used by VideoOutput class
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
-    virtual void onForcePreferredPixelFormat(bool force = true);
-    virtual void onScaleInRenderer(bool q);
-    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
-    virtual void onSetOutAspectRatio(qreal ratio);
-    virtual void onSetQuality(Quality q);
-    virtual void onResizeRenderer(int width, int height);
-    virtual void onSetRegionOfInterest(const QRectF& roi);
+    virtual bool onForcePreferredPixelFormat(bool force = true);
+    virtual bool onScaleInRenderer(bool q);
+    virtual bool onSetOutAspectRatioMode(OutAspectRatioMode mode);
+    virtual bool onSetOutAspectRatio(qreal ratio);
+    virtual bool onSetQuality(Quality q);
+    virtual bool onResizeRenderer(int width, int height);
+    virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual QPointF onMapToFrame(const QPointF& p) const;
     virtual QPointF onMapFromFrame(const QPointF& p) const;
     virtual OSDFilter* onSetOSDFilter(OSDFilter *filter);

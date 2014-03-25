@@ -201,61 +201,92 @@ bool VideoOutput::onChangingSaturation(qreal s)
 
 
 
-void VideoOutput::onForcePreferredPixelFormat(bool force)
+bool VideoOutput::onForcePreferredPixelFormat(bool force)
 {
     DPTR_D(VideoOutput);
+    bool f = isPreferredPixelFormatForced();
     d.impl->onForcePreferredPixelFormat(force);
     d.force_preferred = d.impl->isPreferredPixelFormatForced();
+    return f != force;
 }
 
-void VideoOutput::onScaleInRenderer(bool q)
+bool VideoOutput::onScaleInRenderer(bool q)
 {
     DPTR_D(VideoOutput);
-
+    return true;
 }
 
-void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+bool VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 {
     DPTR_D(VideoOutput);
+    qreal a = outAspectRatio();
+    OutAspectRatioMode am = outAspectRatioMode();
     d.impl->onSetOutAspectRatioMode(mode);
     d.out_rect = d.impl->videoRect();
     d.out_aspect_ratio = d.impl->outAspectRatio();
     d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
+    bool changed = false;
+    if (a != outAspectRatio()) {
+        changed = true;
+        emit outAspectRatioChanged(outAspectRatio());
+    }
+    if (am != outAspectRatioMode()) {
+        changed = true;
+        emit outAspectRatioModeChanged(mode);
+    }
+    return changed;
 }
 
-void VideoOutput::onSetOutAspectRatio(qreal ratio)
+bool VideoOutput::onSetOutAspectRatio(qreal ratio)
 {
     DPTR_D(VideoOutput);
+    qreal a = outAspectRatio();
+    OutAspectRatioMode am = outAspectRatioMode();
     d.impl->onSetOutAspectRatio(ratio);
     d.out_rect = d.impl->videoRect();
     d.out_aspect_ratio = d.impl->outAspectRatio();
     d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
+    bool changed = false;
+    if (a != outAspectRatio()) {
+        changed = true;
+        emit outAspectRatioChanged(ratio);
+    }
+    if (am != outAspectRatioMode()) {
+        changed = true;
+        emit outAspectRatioModeChanged(outAspectRatioMode());
+    }
+    return changed;
 }
 
-void VideoOutput::onSetQuality(Quality q)
+bool VideoOutput::onSetQuality(Quality q)
 {
     DPTR_D(VideoOutput);
+    Quality _q = quality();
     d.impl->onSetQuality(q);
     d.quality = d.impl->quality();
+    return _q != q;
 }
 
-void VideoOutput::onResizeRenderer(int width, int height)
+bool VideoOutput::onResizeRenderer(int width, int height)
 {
     DPTR_D(VideoOutput);
     if (width == 0 || height == 0)
-        return;
+        return false;
     d.impl->onResizeRenderer(width, height);
     d.renderer_width = width;
     d.renderer_height = height;
     d.out_aspect_ratio = d.impl->outAspectRatio();
     d.out_rect = d.impl->videoRect();
+    return true;
 }
 
-void VideoOutput::onSetRegionOfInterest(const QRectF& roi)
+bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
 {
     DPTR_D(VideoOutput);
+    QRectF r = regionOfInterest();
     d.impl->onSetRegionOfInterest(roi);
     d.roi = d.impl->regionOfInterest();
+    return r != roi;
 }
 
 QPointF VideoOutput::onMapToFrame(const QPointF& p) const

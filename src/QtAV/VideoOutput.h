@@ -37,6 +37,18 @@ class VideoOutputPrivate;
 class Q_AV_EXPORT VideoOutput : public QObject, public VideoRenderer
 {
     DPTR_DECLARE_PRIVATE(VideoOutput)
+    Q_OBJECT
+    Q_PROPERTY(qreal brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
+    Q_PROPERTY(qreal contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
+    Q_PROPERTY(qreal hue READ hue WRITE setHue NOTIFY hueChanged)
+    Q_PROPERTY(qreal saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
+    Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
+    Q_PROPERTY(qreal outAspectRatio READ outAspectRatio WRITE setOutAspectRatio NOTIFY outAspectRatioChanged)
+    //fillMode
+    // TODO: how to use enums in base class as property or Q_ENUM
+    Q_PROPERTY(OutAspectRatioMode outAspectRatioMode READ outAspectRatioMode WRITE setOutAspectRatioMode NOTIFY outAspectRatioModeChanged)
+    Q_ENUMS(OutAspectRatioMode)
+    Q_ENUMS(Quality)
 public:
     VideoOutput(VideoRendererId rendererId, QObject *parent = 0);
     ~VideoOutput();
@@ -53,6 +65,9 @@ public:
     QGraphicsItem* graphicsItem();
 
 signals:
+    void regionOfInterestChanged(const QRectF&);
+    void outAspectRatioChanged(qreal);
+    void outAspectRatioModeChanged(OutAspectRatioMode);
     void brightnessChanged(qreal value);
     void contrastChanged(qreal value);
     void hueChanged(qreal value);
@@ -80,13 +95,13 @@ private: //for proxy
      *  return false if \a pixfmt is not supported and not changed.
      */
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
-    virtual void onForcePreferredPixelFormat(bool force = true);
-    virtual void onScaleInRenderer(bool q);
-    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
-    virtual void onSetOutAspectRatio(qreal ratio);
-    virtual void onSetQuality(Quality q);
-    virtual void onResizeRenderer(int width, int height);
-    virtual void onSetRegionOfInterest(const QRectF& roi);
+    virtual bool onForcePreferredPixelFormat(bool force = true);
+    virtual bool onScaleInRenderer(bool q);
+    virtual bool onSetOutAspectRatioMode(OutAspectRatioMode mode);
+    virtual bool onSetOutAspectRatio(qreal ratio);
+    virtual bool onSetQuality(Quality q);
+    virtual bool onResizeRenderer(int width, int height);
+    virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual QPointF onMapToFrame(const QPointF& p) const;
     virtual QPointF onMapFromFrame(const QPointF& p) const;
     virtual OSDFilter* onSetOSDFilter(OSDFilter *filter);

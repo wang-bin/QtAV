@@ -56,11 +56,14 @@ bool VideoRenderer::setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 
 bool VideoRenderer::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
+    DPTR_D(VideoRenderer);
+    if (d.preferred_format == pixfmt)
+        return false;
     if (!isSupported(pixfmt)) {
         qWarning("pixel format '%s' is not supported", VideoFormat(pixfmt).name().toUtf8().constData());
         return false;
     }
-    d_func().preferred_format = pixfmt;
+    d.preferred_format = pixfmt;
     return true;
 }
 
@@ -74,9 +77,13 @@ void VideoRenderer::forcePreferredPixelFormat(bool force)
     onForcePreferredPixelFormat(force);
 }
 
-void VideoRenderer::onForcePreferredPixelFormat(bool force)
+bool VideoRenderer::onForcePreferredPixelFormat(bool force)
 {
-    d_func().force_preferred = force;
+    DPTR_D(VideoRenderer);
+    if (d.force_preferred == force)
+        return false;
+    d.force_preferred = force;
+    return true;
 }
 
 bool VideoRenderer::isPreferredPixelFormatForced() const
@@ -89,9 +96,13 @@ void VideoRenderer::scaleInRenderer(bool q)
     onScaleInRenderer(q);
 }
 
-void VideoRenderer::onScaleInRenderer(bool q)
+bool VideoRenderer::onScaleInRenderer(bool q)
 {
-    d_func().scale_in_renderer = q;
+    DPTR_D(VideoRenderer);
+    if (d.scale_in_renderer == q)
+        return false;
+    d.scale_in_renderer = q;
+    return true;
 }
 
 bool VideoRenderer::scaleInRenderer() const
@@ -104,11 +115,11 @@ void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
     onSetOutAspectRatioMode(mode);
 }
 
-void VideoRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+bool VideoRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 {
     DPTR_D(VideoRenderer);
     if (mode == d.out_aspect_ratio_mode)
-        return;
+        return false;
     d.aspect_ratio_changed = true;
     d.out_aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
@@ -119,6 +130,7 @@ void VideoRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     } else if (mode == VideoAspectRatio) {
         setOutAspectRatio(d.source_aspect_ratio);
     }
+    return true;
 }
 
 VideoRenderer::OutAspectRatioMode VideoRenderer::outAspectRatioMode() const
@@ -131,7 +143,7 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
     onSetOutAspectRatio(ratio);
 }
 
-void VideoRenderer::onSetOutAspectRatio(qreal ratio)
+bool VideoRenderer::onSetOutAspectRatio(qreal ratio)
 {
     DPTR_D(VideoRenderer);
     bool ratio_changed = d.out_aspect_ratio != ratio;
@@ -149,6 +161,7 @@ void VideoRenderer::onSetOutAspectRatio(qreal ratio)
     if (ratio_changed) {
         resizeFrame(d.out_rect.width(), d.out_rect.height());
     }
+    return ratio_changed;
 }
 
 qreal VideoRenderer::outAspectRatio() const
@@ -161,11 +174,13 @@ void VideoRenderer::setQuality(Quality q)
     onSetQuality(q);
 }
 
-void VideoRenderer::onSetQuality(Quality q)
+bool VideoRenderer::onSetQuality(Quality q)
 {
     DPTR_D(VideoRenderer);
+    if (d.quality == q)
+        return false;
     d.quality = q;
-    qDebug("Quality: %d", q);
+    return true;
 }
 
 VideoRenderer::Quality VideoRenderer::quality() const
@@ -218,16 +233,17 @@ void VideoRenderer::resizeRenderer(int width, int height)
     onResizeRenderer(width, height);
 }
 
-void VideoRenderer::onResizeRenderer(int width, int height)
+bool VideoRenderer::onResizeRenderer(int width, int height)
 {
     DPTR_D(VideoRenderer);
     if (width == 0 || height == 0)
-        return;
+        return false;
 
     d.renderer_width = width;
     d.renderer_height = height;
     d.computeOutParameters(d.out_aspect_ratio);
     resizeFrame(d.out_rect.width(), d.out_rect.height());
+    return true;
 }
 
 QSize VideoRenderer::rendererSize() const
@@ -272,9 +288,13 @@ void VideoRenderer::setRegionOfInterest(const QRectF &roi)
     onSetRegionOfInterest(roi);
 }
 
-void VideoRenderer::onSetRegionOfInterest(const QRectF &roi)
+bool VideoRenderer::onSetRegionOfInterest(const QRectF &roi)
 {
-    d_func().roi = roi;
+    DPTR_D(VideoRenderer);
+    if (d.roi == roi)
+        return false;
+    d.roi = roi;
+    return true;
 }
 
 QRect VideoRenderer::realROI() const
