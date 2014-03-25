@@ -27,11 +27,13 @@
 #include <QtCore/QQueue>
 
 #define COPY_ON_DECODE 0
+#define FILTER_ANNEXB_CUVID 0
 /*
  * TODO: update helper_cuda with 5.5
  * avc1, ccv1 => h264 + sps, pps, nal. use filter or lavcudiv
  * http://blog.csdn.net/gavinr/article/details/7183499
  * https://www.ffmpeg.org/ffmpeg-bitstream-filters.html
+ * http://hi.baidu.com/freenaut/item/49ca125112587314aaf6d733
  * flush api
  * CUDA_ERROR_INVALID_VALUE "cuvidDecodePicture(p->dec, cuvidpic)"
  */
@@ -86,6 +88,7 @@ void RegisterVideoDecoderCUDA_Man()
     FACTORY_REGISTER_ID_MAN(VideoDecoder, CUDA, "CUDA")
 }
 
+
 class AutoCtxLock
 {
 private:
@@ -115,9 +118,12 @@ public:
         surface_in_use.resize(kMaxDecodeSurfaces);
         surface_in_use.fill(false);
         nb_dec_surface = 20;
+        bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
+        Q_ASSERT_X(bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
         initCuda();
     }
     ~VideoDecoderCUDAPrivate() {
+        av_bitstream_filter_close(bitstream_filter_ctx);
         releaseCuda();
     }
     bool initCuda() {
@@ -149,7 +155,8 @@ public:
         {
             AutoCtxLock lock(vid_ctx_lock);
             Q_UNUSED(lock);
-            checkCudaErrors(cuStreamCreate(&stream, CU_STREAM_NON_BLOCKING)); //CU_STREAM_DEFAULT
+            //Flags- Parameters for stream creation (must be 0 (CU_STREAM_DEFAULT=0 in cuda5) in cuda 4.2, no CU_STREAM_NON_BLOCKING)
+            checkCudaErrors(cuStreamCreate(&stream, 0));//CU_STREAM_NON_BLOCKING)); //CU_STREAM_DEFAULT
             //require compute capability >= 1.1
             //flag: Reserved for future use, must be 0
             //cuStreamAddCallback(stream, CUstreamCallback, this, 0);
@@ -252,6 +259,27 @@ public:
         parser_params.ulErrorThreshold = 0;//!wait for key frame
         //parser_params.pExtVideoInfo
 
+        qDebug("~~~~~~~~~~~~~~~~extradata: %p %d", codec_ctx->extradata, codec_ctx->extradata_size);
+        /*!
+         * NOTE: DO NOT call h264_extradata_to_annexb here if use av_bitstream_filter_filter
+         * because av_bitstream_filter_filter will call h264_extradata_to_annexb and marks H264BSFContext has parsed
+         * h264_extradata_to_annexb will not mark it
+         * LAVFilter's
+         */
+#if FILTER_ANNEXB_CUVID
+        memset(&extra_parser_info, 0, sizeof(CUVIDEOFORMATEX));
+        // nalu
+        // TODO: check mpeg, avc1, ccv1? (lavf)
+        if (codec_ctx->extradata && codec_ctx->extradata_size >= 6) {
+            int ret = h264_extradata_to_annexb(codec_ctx, FF_INPUT_BUFFER_PADDING_SIZE);
+            if (ret >= 0) {
+                qDebug("%s @%d ret %d, size %d", __FUNCTION__, __LINE__, ret, codec_ctx->extradata_size);
+                memcpy(extra_parser_info.raw_seqhdr_data, codec_ctx->extradata, codec_ctx->extradata_size);
+                extra_parser_info.format.seqhdr_data_length = codec_ctx->extradata_size;
+            }
+        }
+        parser_params.pExtVideoInfo = &extra_parser_info;
+#endif
         checkCudaErrors(cuvidCreateVideoParser(&parser, &parser_params));
         //lavfilter: cuStreamCreate
         force_sequence_update = true;
@@ -403,6 +431,7 @@ public:
     CUVIDDECODECREATEINFO dec_create_info;
     CUvideoctxlock vid_ctx_lock; //NULL
     CUVIDPICPARAMS pic_params;
+    CUVIDEOFORMATEX extra_parser_info;
     CUvideoparser parser;
     CUstream stream;
     bool force_sequence_update;
@@ -418,6 +447,8 @@ public:
     QVector<bool> surface_in_use;
     int nb_dec_surface;
     QString description;
+
+    AVBitStreamFilterContext *bitstream_filter_ctx;
 };
 
 VideoDecoderCUDA::VideoDecoderCUDA():
@@ -451,10 +482,33 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
         qWarning("CUVID parser not ready");
         return false;
     }
+    uint8_t *outBuf = 0;
+    int outBufSize = 0;
+    // h264_mp4toannexb_filter does not use last parameter 'keyFrame', so just set 0
+    //return: 0: not changed, no outBuf allocated. >0: ok. <0: fail
+    int filtered = av_bitstream_filter_filter(d.bitstream_filter_ctx, d.codec_ctx, NULL, &outBuf, &outBufSize
+                                              , (const uint8_t*)encoded.constData(), encoded.size()
+                                              , 0);//d.is_keyframe);
+    //qDebug("%s @%d filtered=%d outBuf=%p, outBufSize=%d", __FUNCTION__, __LINE__, filtered, outBuf, outBufSize);
+    if (filtered < 0) {
+        qDebug("failed to filter: %s", av_err2str(filtered));
+    }
+    unsigned char *payload = outBuf;
+    unsigned long payload_size = outBufSize;
+#if 0 // see ffmpeg.c. FF_INPUT_BUFFER_PADDING_SIZE for alignment issue
+    QByteArray data_with_pad;
+    if (filtered > 0) {
+        data_with_pad.resize(outBufSize + FF_INPUT_BUFFER_PADDING_SIZE);
+        data_with_pad.fill(0);
+        memcpy(data_with_pad.data(), outBuf, outBufSize);
+        payload = (unsigned char*)data_with_pad.constData();
+        payload_size = data_with_pad.size();
+    }
+#endif
     CUVIDSOURCEDATAPACKET cuvid_pkt;
     memset(&cuvid_pkt, 0, sizeof(CUVIDSOURCEDATAPACKET));
-    cuvid_pkt.payload = (unsigned char *)encoded.constData();
-    cuvid_pkt.payload_size = encoded.size();
+    cuvid_pkt.payload = payload;// (unsigned char *)encoded.constData();
+    cuvid_pkt.payload_size = payload_size; //encoded.size();
     cuvid_pkt.flags = CUVID_PKT_TIMESTAMP;
     cuvid_pkt.timestamp = 0;// ?
     //TODO: fill NALU header for h264? https://devtalk.nvidia.com/default/topic/515571/what-the-data-format-34-cuvidparsevideodata-34-can-accept-/
@@ -464,6 +518,10 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
         if (cuStatus != CUDA_SUCCESS) {
             qWarning("cuvidParseVideoData failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
         }
+    }
+    if (filtered > 0) {
+        // TODO: why av_freep crash?
+        av_free(outBuf);
     }
     // callbacks are in the same thread as this. so no queue is required?
     //qDebug("frame queue size on decode: %d", d.frame_queue.size());

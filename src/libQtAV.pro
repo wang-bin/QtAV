@@ -118,10 +118,9 @@ config_cuda {
     HEADERS += cuda/helper_cuda.h
     SOURCES += VideoDecoderCUDA.cpp
     INCLUDEPATH += $$(CUDA_PATH)/include $$PWD/cuda
-    win32 {
-        isEqual(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
-        else: LIBS += -L$$(CUDA_PATH)/lib/x64
-    }
+    LIBS += -L$$(CUDA_PATH)/lib
+    isEqual(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
+    else: LIBS += -L$$(CUDA_PATH)/lib/x64
     LIBS += -lnvcuvid -lcuda
 }
 config_dxva {
