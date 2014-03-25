@@ -30,6 +30,8 @@
 /*
  * TODO: update helper_cuda with 5.5
  * avc1, ccv1 => h264 + sps, pps, nal. use filter or lavcudiv
+ * http://blog.csdn.net/gavinr/article/details/7183499
+ * https://www.ffmpeg.org/ffmpeg-bitstream-filters.html
  * flush api
  * CUDA_ERROR_INVALID_VALUE "cuvidDecodePicture(p->dec, cuvidpic)"
  */
@@ -155,7 +157,14 @@ public:
         return true;
     }
     bool releaseCuda() {
-        cuvidDestroyDecoder(dec);
+        if (dec) {
+            cuvidDestroyDecoder(dec);
+            dec = 0;
+        }
+        if (parser) {
+            cuvidDestroyVideoParser(parser);
+            parser = 0;
+        }
         if (stream) {
             cuStreamDestroy(stream);
             stream = 0;
@@ -217,6 +226,10 @@ public:
             qWarning("CUVID does not support the codec");
             available = false;
             return false;
+        }
+        if (parser) {
+            cuvidDestroyVideoParser(parser);
+            parser = 0;
         }
         //lavfilter check level C
         CUVIDPARSERPARAMS parser_params;
