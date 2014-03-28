@@ -45,7 +45,7 @@ public:
     virtual bool open();
     virtual bool close();
     bool isOpen() const;
-    void flush();
+    virtual void flush();
     void setCodecContext(AVCodecContext* codecCtx); //protected
     AVCodecContext* codecContext() const;
     // force a codec

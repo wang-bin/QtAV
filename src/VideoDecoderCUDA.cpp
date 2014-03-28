@@ -74,6 +74,7 @@ class VideoDecoderCUDA : public VideoDecoder
 public:
     VideoDecoderCUDA();
     virtual ~VideoDecoderCUDA();
+    virtual void flush();
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
     virtual VideoFrame frame();
@@ -458,6 +459,12 @@ VideoDecoderCUDA::VideoDecoderCUDA():
 
 VideoDecoderCUDA::~VideoDecoderCUDA()
 {
+}
+
+void VideoDecoderCUDA::flush()
+{
+    DPTR_D(VideoDecoderCUDA);
+    d.frame_queue.clear();
 }
 
 bool VideoDecoderCUDA::prepare()
