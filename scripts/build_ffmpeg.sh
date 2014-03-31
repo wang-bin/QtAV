@@ -66,21 +66,37 @@ function setup_android_env() {
   INSTALL_DIR=sdk-android
 }
 
-function setup_meamo_env() {
-  MAEMO_SYSROOT=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim
+function setup_maemo5_env() {
+  MAEMO5_SYSROOT=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim
 #--arch=armv7l --cpu=armv7l
 #CLANG=clang
   if [ -n "$CLANG" ]; then
     CLANG_CFLAGS="-target arm-none-linux-gnueabi"
     CLANG_LFLAGS="-target arm-none-linux-gnueabi"
     HOSTCC=clang
-    MAEMO5OPT="--host-cc=$HOSTCC --cc=$HOSTCC --enable-gpl --enable-version3 --enable-nonfree --enable-cross-compile  --target-os=linux --arch=armv7-a --sysroot=$MAEMO_SYSROOT"
+    MAEMO_OPT="--host-cc=$HOSTCC --cc=$HOSTCC --enable-cross-compile  --target-os=linux --arch=armv7-a --sysroot=$MAEMO5_SYSROOT"
   else
     HOSTCC=gcc
-    MAEMO5OPT="--host-cc=$HOSTCC --enable-gpl --enable-version3 --enable-nonfree --enable-cross-compile --cross-prefix=arm-none-linux-gnueabi- --target-os=linux --arch=armv7-a --sysroot=$MAEMO_SYSROOT"
+    MAEMO_OPT="--host-cc=$HOSTCC --cross-prefix=arm-none-linux-gnueabi- --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO5_SYSROOT"
   fi
-  PLATFORM_OPT="$MAEMO5OPT"
-  INSTALL_DIR=sdk-maemo
+  PLATFORM_OPT="$MAEMO_OPT"
+  INSTALL_DIR=sdk-maemo5
+}
+function setup_maemo6_env() {
+  MAEMO6_SYSROOT=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim
+#--arch=armv7l --cpu=armv7l
+#CLANG=clang
+  if [ -n "$CLANG" ]; then
+    CLANG_CFLAGS="-target arm-none-linux-gnueabi"
+    CLANG_LFLAGS="-target arm-none-linux-gnueabi"
+    HOSTCC=clang
+    MAEMO_OPT="--host-cc=$HOSTCC --cc=$HOSTCC --enable-cross-compile  --target-os=linux --arch=armv7-a --sysroot=$MAEMO6_SYSROOT"
+  else
+    HOSTCC=gcc
+    MAEMO_OPT="--host-cc=$HOSTCC --cross-prefix=arm-none-linux-gnueabi- --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO6_SYSROOT"
+  fi
+  PLATFORM_OPT="$MAEMO_OPT"
+  INSTALL_DIR=sdk-maemo6
 }
 
 platform_is Darwin && PLATFORM_OPT="$VDA --cc=clang --cxx=clang++"
@@ -89,9 +105,10 @@ platform_is MinGW && PLATFORM_OPT="$DXVA"
 platform_is MSYS && PLATFORM_OPT="$DXVA"
 
 target_is android && setup_android_env
-target_is maemo && setup_maemo_env
+target_is maemo5 && setup_maemo5_env
+target_is maemo6 && setup_maemo6_env
 
-CONFIGURE="./configure --disable-static --enable-shared --enable-runtime-cpudetect --enable-memalign-hack --disable-avdevice --enable-avfilter --enable-avresample --disable-postproc --disable-muxers --disable-encoders --enable-pthreads --disable-iconv --disable-bzlib --enable-hwaccels $PLATFORM_OPT --extra-cflags=\"-O3 -ftree-vectorize -ffast-math $CLANG_CFLAGS $EXTRA_CFLAGS\""
+CONFIGURE="./configure --disable-static --enable-shared --enable-runtime-cpudetect --enable-memalign-hack --enable-avfilter --enable-avresample --disable-muxers --disable-encoders --enable-pthreads --disable-iconv --disable-bzlib --enable-hwaccels $PLATFORM_OPT --extra-cflags=\"-O3 -ftree-vectorize -ffast-math $CLANG_CFLAGS $EXTRA_CFLAGS\""
 
 echo $CONFIGURE
 

@@ -1,6 +1,6 @@
 QTAV=$PWD/../QtAV
 FFROOT=$PWD/..
-FFVER=(0.8.14 0.9.2 1.0.7 1.1.5 1.2.1 2.0.1)
+FFVER=(0.8.14 0.9.2 1.0.7 1.1.5 1.2.1 2.0.1 2.1.4)
 LIBAVVER=(0.8.8 9.7)
 BUILDROOT=$PWD
 buildqtav() {
