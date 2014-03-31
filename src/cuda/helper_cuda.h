@@ -31,6 +31,9 @@ extern "C" {
 }
 #endif //__cplusplus
 
+//using namespace dllapi::cuda;
+//using namespace dllapi::cuvid;
+
 #ifdef __cuda_cuda_h__
 // CUDA Driver API errors
 static const char *_cudaGetErrorEnum(CUresult error)

@@ -113,15 +113,27 @@ config_gl {
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
     OTHER_FILES += shaders/yuv_rgb.f.glsl shaders/rgb.f.glsl
 }
+#CONFIG += config_cuda config_dllapi config_dllapi_cuda
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
     HEADERS += cuda/helper_cuda.h
     SOURCES += VideoDecoderCUDA.cpp
-    INCLUDEPATH += $$(CUDA_PATH)/include $$PWD/cuda
-    LIBS += -L$$(CUDA_PATH)/lib
-    isEqual(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
-    else: LIBS += -L$$(CUDA_PATH)/lib/x64
-    LIBS += -lnvcuvid -lcuda
+    INCLUDEPATH += $$PWD/cuda
+    config_dllapi:config_dllapi_cuda {
+        DEFINES += QTAV_HAVE_DLLAPI_CUDA=1
+        INCLUDEPATH += cuda/dllapi
+        INCLUDEPATH += ../depends/dllapi/src
+include(../depends/dllapi/src/libDllAPI.pri)
+        LIBS += -lDllAPI
+        HEADERS += cuda/dllapi/cuda.h cuda/dllapi/nvcuvid.h cuda/dllapi/cuviddec.h
+        SOURCES += cuda/dllapi/cuda.cpp cuda/dllapi/nvcuvid.cpp cuda/dllapi/cuviddec.cpp
+    } else {
+        INCLUDEPATH += $$(CUDA_PATH)/include
+        LIBS += -L$$(CUDA_PATH)/lib
+        isEqual(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
+        else: LIBS += -L$$(CUDA_PATH)/lib/x64
+        LIBS += -lnvcuvid -lcuda
+    }
 }
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
