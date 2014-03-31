@@ -1,5 +1,4 @@
 #define __CUDA_API_VERSION_INTERNAL
-
 #include "cuda.h"
 
 #include "dllapi_p.h"
@@ -9,7 +8,7 @@ using namespace DllAPI;
 //namespace dllapi {
 //namespace cuda {
 
-DEFINE_DLL_INSTANCE("cuda")
+DEFINE_DLL_INSTANCE_N("cuda", "nvcuda", NULL)
 
 DEFINE_DLLAPI_ARG(1, CUresult, cuInit, unsigned int)
 DEFINE_DLLAPI_ARG(1, CUresult, cuDriverGetVersion, int *)
@@ -63,9 +62,7 @@ DEFINE_DLLAPI_ARG(1, CUresult, cuMemFree_v2, CUdeviceptr)
 DEFINE_DLLAPI_ARG(3, CUresult, cuMemGetAddressRange, CUdeviceptr *, int *, CUdeviceptr)
 DEFINE_DLLAPI_ARG(3, CUresult, cuMemGetAddressRange_v2, CUdeviceptr *, int *, CUdeviceptr)
 DEFINE_DLLAPI_ARG(2, CUresult, cuMemAllocHost, void **, size_t)
-DEFINE_DLLAPI_ARG(2, CUresult, cuMemAllocHost, void **, unsigned int)
 DEFINE_DLLAPI_ARG(2, CUresult, cuMemAllocHost_v2, void **, size_t)
-DEFINE_DLLAPI_ARG(2, CUresult, cuMemAllocHost_v2, void **, unsigned int)
 DEFINE_DLLAPI_ARG(1, CUresult, cuMemFreeHost, void *)
 DEFINE_DLLAPI_ARG(3, CUresult, cuMemHostAlloc, void **, int, unsigned int)
 DEFINE_DLLAPI_ARG(3, CUresult, cuMemHostGetDevicePointer, CUdeviceptr *, void *, unsigned int)
@@ -110,9 +107,7 @@ DEFINE_DLLAPI_ARG(6, CUresult, cuMemcpyPeerAsync, CUdeviceptr, CUcontext, CUdevi
 DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyHtoDAsync, CUdeviceptr, const void *, int, CUstream)
 DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyHtoDAsync_v2, CUdeviceptr, const void *, int, CUstream)
 DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyDtoHAsync, void *, CUdeviceptr, size_t, CUstream)
-DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyDtoHAsync, void *, CUdeviceptr, unsigned int, CUstream)
 DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyDtoHAsync_v2, void *, CUdeviceptr, size_t, CUstream)
-DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyDtoHAsync_v2, void *, CUdeviceptr, unsigned int, CUstream)
 DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyDtoDAsync, CUdeviceptr, CUdeviceptr, int, CUstream)
 DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyDtoDAsync_v2, CUdeviceptr, CUdeviceptr, int, CUstream)
 DEFINE_DLLAPI_ARG(5, CUresult, cuMemcpyHtoAAsync, CUarray, int, const void *, int, CUstream)
@@ -211,6 +206,12 @@ DEFINE_DLLAPI_ARG(3, CUresult, cuGraphicsMapResources, unsigned int, CUgraphicsR
 DEFINE_DLLAPI_ARG(3, CUresult, cuGraphicsUnmapResources, unsigned int, CUgraphicsResource *, CUstream)
 DEFINE_DLLAPI_ARG(2, CUresult, cuGetExportTable, const void **, const CUuuid *)
 
+#if defined(__x86_64) || defined(AMD64) || defined(_M_AMD64)
+DEFINE_DLLAPI_ARG(2, CUresult, cuMemAllocHost, void **, unsigned int)
+DEFINE_DLLAPI_ARG(2, CUresult, cuMemAllocHost_v2, void **, unsigned int)
+DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyDtoHAsync, void *, CUdeviceptr, unsigned int, CUstream)
+DEFINE_DLLAPI_ARG(4, CUresult, cuMemcpyDtoHAsync_v2, void *, CUdeviceptr, unsigned int, CUstream)
+#endif
 
 //} //namespace cuda
 //} //namespace dllapi
