@@ -25,6 +25,9 @@
 #include <QtAV/BlockingQueue.h>
 #include "prepost.h"
 #include <QtCore/QQueue>
+#if QTAV_HAVE(DLLAPI_CUDA)
+#include "dllapi.h"
+#endif //QTAV_HAVE(DLLAPI_CUDA)
 
 #define COPY_ON_DECODE 0
 #define FILTER_ANNEXB_CUVID 0
@@ -38,6 +41,7 @@
  * CUDA_ERROR_INVALID_VALUE "cuvidDecodePicture(p->dec, cuvidpic)"
  */
 
+// use high version need define cuxxx_v2 in dllapi. cuMemcpyDtoHAsync link error with dllapi and 3010
 //#define CUDA_FORCE_API_VERSION 3010
 #include "cuda/helper_cuda.h"
 
@@ -104,9 +108,13 @@ class VideoDecoderCUDAPrivate : public VideoDecoderPrivate
 public:
     VideoDecoderCUDAPrivate():
         VideoDecoderPrivate()
+      , can_load(true)
       , host_data(0)
       , host_data_size(0)
     {
+#if QTAV_HAVE(DLLAPI_CUDA)
+        can_load = DllAPI::testLoad("nvcuvid");
+#endif //QTAV_HAVE(DLLAPI_CUDA)
         available = false;
         cuctx = 0;
         cudev = 0;
@@ -119,6 +127,8 @@ public:
         surface_in_use.resize(kMaxDecodeSurfaces);
         surface_in_use.fill(false);
         nb_dec_surface = 20;
+        if (!can_load)
+            return;
         bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
         Q_ASSERT_X(bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
         initCuda();
@@ -181,6 +191,7 @@ public:
 #endif
     }
 
+    bool can_load; //if linked to cuvid, it's true. otherwise(use dllapi) equals to whether cuvid can be loaded
     uchar *host_data;
     int host_data_size;
     CUcontext cuctx;
@@ -232,6 +243,11 @@ bool VideoDecoderCUDA::prepare()
     DPTR_D(VideoDecoderCUDA);
     if (!d.codec_ctx) {
         qWarning("AVCodecContext not ready");
+        return false;
+    }
+    // d.available is true if cuda decoder is ready
+    if (!d.can_load) {
+        qWarning("VideoDecoderCUDA::prepare(): CUVID library not available");
         return false;
     }
     // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
@@ -346,6 +362,8 @@ bool VideoDecoderCUDAPrivate::initCuda()
 
 bool VideoDecoderCUDAPrivate::releaseCuda()
 {
+    if (!can_load)
+        return true;
     if (dec) {
         cuvidDestroyDecoder(dec);
         dec = 0;

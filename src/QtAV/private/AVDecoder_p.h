@@ -61,7 +61,7 @@ public:
     virtual void close() {}
 
     AVCodecContext *codec_ctx; //set once and not change
-    bool available;
+    bool available; //TODO: true only when context(and hw ctx) is ready
     bool fast;
     bool is_open;
     AVFrame *frame; //set once and not change
