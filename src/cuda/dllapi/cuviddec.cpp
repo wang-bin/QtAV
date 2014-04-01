@@ -11,18 +11,18 @@ using namespace DllAPI;
 
 DEFINE_DLL_INSTANCE_N("cuviddec", "nvcuvid", NULL)
 
-DEFINE_DLLAPI_ARG(2, CUresult, cuvidCreateDecoder, CUvideodecoder *, CUVIDDECODECREATEINFO *)
-DEFINE_DLLAPI_ARG(1, CUresult, cuvidDestroyDecoder, CUvideodecoder)
-DEFINE_DLLAPI_ARG(2, CUresult, cuvidDecodePicture, CUvideodecoder, CUVIDPICPARAMS *)
-DEFINE_DLLAPI_ARG(5, CUresult, cuvidMapVideoFrame, CUvideodecoder, int, unsigned int *, unsigned int *, CUVIDPROCPARAMS *)
-DEFINE_DLLAPI_ARG(5, CUresult, cuvidMapVideoFrame64, CUvideodecoder, int, unsigned long long *, unsigned int *, CUVIDPROCPARAMS *)
-DEFINE_DLLAPI_ARG(2, CUresult, cuvidUnmapVideoFrame, CUvideodecoder, unsigned int)
-DEFINE_DLLAPI_ARG(2, CUresult, cuvidUnmapVideoFrame64, CUvideodecoder, unsigned long long)
-DEFINE_DLLAPI_ARG(3, CUresult, cuvidGetVideoFrameSurface, CUvideodecoder, int, void **)
-DEFINE_DLLAPI_ARG(2, CUresult, cuvidCtxLockCreate, CUvideoctxlock *, CUcontext)
-DEFINE_DLLAPI_ARG(1, CUresult, cuvidCtxLockDestroy, CUvideoctxlock)
-DEFINE_DLLAPI_ARG(2, CUresult, cuvidCtxLock, CUvideoctxlock, unsigned int)
-DEFINE_DLLAPI_ARG(2, CUresult, cuvidCtxUnlock, CUvideoctxlock, unsigned int)
+DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidCreateDecoder, CUvideodecoder *, CUVIDDECODECREATEINFO *)
+DEFINE_DLLAPI_M_ARG(1, CUresult, CUDAAPI, cuvidDestroyDecoder, CUvideodecoder)
+DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidDecodePicture, CUvideodecoder, CUVIDPICPARAMS *)
+DEFINE_DLLAPI_M_ARG(5, CUresult, CUDAAPI, cuvidMapVideoFrame, CUvideodecoder, int, unsigned int *, unsigned int *, CUVIDPROCPARAMS *)
+DEFINE_DLLAPI_M_ARG(5, CUresult, CUDAAPI, cuvidMapVideoFrame64, CUvideodecoder, int, unsigned long long *, unsigned int *, CUVIDPROCPARAMS *)
+DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidUnmapVideoFrame, CUvideodecoder, unsigned int)
+DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidUnmapVideoFrame64, CUvideodecoder, unsigned long long)
+DEFINE_DLLAPI_M_ARG(3, CUresult, CUDAAPI, cuvidGetVideoFrameSurface, CUvideodecoder, int, void **)
+DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidCtxLockCreate, CUvideoctxlock *, CUcontext)
+DEFINE_DLLAPI_M_ARG(1, CUresult, CUDAAPI, cuvidCtxLockDestroy, CUvideoctxlock)
+DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidCtxLock, CUvideoctxlock, unsigned int)
+DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidCtxUnlock, CUvideoctxlock, unsigned int)
 
 //} //namespace cuvid
 //} //namespace dllapi
