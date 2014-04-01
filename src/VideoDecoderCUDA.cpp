@@ -113,7 +113,7 @@ public:
       , host_data_size(0)
     {
 #if QTAV_HAVE(DLLAPI_CUDA)
-        can_load = DllAPI::testLoad("nvcuvid");
+        can_load = dllapi::testLoad("nvcuvid");
 #endif //QTAV_HAVE(DLLAPI_CUDA)
         available = false;
         cuctx = 0;

@@ -5,7 +5,7 @@
 #include "dllapi_p.h"
 #include "dllapi.h"
 
-using namespace DllAPI;
+using namespace dllapi;
 //namespace dllapi {
 //namespace cuvid {
 
