@@ -3,10 +3,12 @@
 #include "dllapi.h"
 
 using namespace dllapi;
-//namespace dllapi {
-//namespace cuvid {
+namespace dllapi {
+namespace cuvid {
 
-DEFINE_DLL_INSTANCE_N("nvcuvid", "nvcuvid", NULL)
+//DEFINE_DLL_INSTANCE_N("nvcuvid", "nvcuvid", NULL)
+static char* cuvid_names[] = { "nvcuvid", NULL };
+DEFINE_DLL_INSTANCE_V("nvcuvid", cuvid_names)
 
 DEFINE_DLLAPI_M_ARG(3, CUresult, CUDAAPI, cuvidCreateVideoSource, CUvideosource *, const char *, CUVIDSOURCEPARAMS *)
 DEFINE_DLLAPI_M_ARG(3, CUresult, CUDAAPI, cuvidCreateVideoSourceW, CUvideosource *, const int *, CUVIDSOURCEPARAMS *)
@@ -19,5 +21,5 @@ DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidCreateVideoParser, CUvideoparser 
 DEFINE_DLLAPI_M_ARG(2, CUresult, CUDAAPI, cuvidParseVideoData, CUvideoparser, CUVIDSOURCEDATAPACKET *)
 DEFINE_DLLAPI_M_ARG(1, CUresult, CUDAAPI, cuvidDestroyVideoParser, CUvideoparser)
 
-//} //namespace cuvid
-//} //namespace dllapi
+} //namespace cuvid
+} //namespace dllapi

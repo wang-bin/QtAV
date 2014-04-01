@@ -38,14 +38,16 @@
 
 #include "cuviddec.h"
 
-//namespace dllapi {
-//namespace cuvid {
+namespace dllapi {
+namespace cuvid {
+using namespace dllapi::cuda;
+using namespace dllapi::cuviddec;
 
 #if defined(__cplusplus)
 extern "C" {
 #endif /* __cplusplus */
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // High-level helper APIs for video sources
 //
@@ -54,7 +56,7 @@ typedef void *CUvideosource;
 typedef void *CUvideoparser;
 typedef long long CUvideotimestamp;
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // video data structures
 //
@@ -129,7 +131,7 @@ typedef struct
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // video source
 //
@@ -177,7 +179,7 @@ CUresult CUDAAPI cuvidGetSourceVideoFormat(CUvideosource obj, CUVIDEOFORMAT *pvi
 CUresult CUDAAPI cuvidGetSourceAudioFormat(CUvideosource obj, CUAUDIOFORMAT *paudfmt, unsigned int flags);
 #endif
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // Video parser
 //
@@ -222,14 +224,14 @@ CUresult CUDAAPI cuvidParseVideoData(CUvideoparser obj, CUVIDSOURCEDATAPACKET *p
 CUresult CUDAAPI cuvidDestroyVideoParser(CUvideoparser obj);
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
 
 
-//} //namespace cuvid
-//} //namespace dllapi
+} //namespace cuvid
+} //namespace dllapi
 
 #endif // __NVCUVID_H__

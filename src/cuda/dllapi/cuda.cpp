@@ -5,10 +5,12 @@
 #include "dllapi.h"
 
 using namespace dllapi;
-//namespace dllapi {
-//namespace cuda {
+namespace dllapi {
+namespace cuda {
 
-DEFINE_DLL_INSTANCE_N("cuda", "nvcuda", NULL)
+//DEFINE_DLL_INSTANCE_N("cuda", "nvcuda", NULL)
+static char* cuda_names[] = { "nvcuda", NULL };
+DEFINE_DLL_INSTANCE_V("cuda", cuda_names)
 
 DEFINE_DLLAPI_M_ARG(1, CUresult, CUDAAPI, cuInit, unsigned int)
 DEFINE_DLLAPI_M_ARG(1, CUresult, CUDAAPI, cuDriverGetVersion, int *)
@@ -213,5 +215,5 @@ DEFINE_DLLAPI_M_ARG(4, CUresult, CUDAAPI, cuMemcpyDtoHAsync, void *, CUdeviceptr
 DEFINE_DLLAPI_M_ARG(4, CUresult, CUDAAPI, cuMemcpyDtoHAsync_v2, void *, CUdeviceptr, unsigned int, CUstream)
 #endif
 
-//} //namespace cuda
-//} //namespace dllapi
+} //namespace cuda
+} //namespace dllapi

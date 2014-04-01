@@ -23,16 +23,17 @@
 #include <assert.h>
 
 #ifdef __cplusplus
-extern "C" {
+//extern "C" {
 #endif //__cplusplus
 #include "cuda.h"
 #include "nvcuvid.h"
 #ifdef __cplusplus
-}
+//}
 #endif //__cplusplus
 
-//using namespace dllapi::cuda;
-//using namespace dllapi::cuvid;
+using namespace dllapi::cuda;
+using namespace dllapi::cuvid;
+using namespace dllapi::cuviddec;
 
 #ifdef __cuda_cuda_h__
 // CUDA Driver API errors

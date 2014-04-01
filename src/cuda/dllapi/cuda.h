@@ -52,8 +52,8 @@
 
 #include <stdlib.h>
 
-//namespace dllapi {
-//namespace cuda {
+namespace dllapi {
+namespace cuda {
 
 /**
  * CUDA API versioning support
@@ -8128,7 +8128,7 @@ CUresult CUDAAPI cuEventDestroy(CUevent hEvent);
 #undef __CUDA_API_VERSION
 
 
-//} //namespace cuda
-//} //namespace dllapi
+} //namespace cuda
+} //namespace dllapi
 
 #endif /* __cuda_cuda_h__ */

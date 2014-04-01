@@ -40,8 +40,9 @@
 #include "cuda.h"
 #endif // __cuda_cuda_h__
 
-//namespace dllapi {
-//namespace cuvid {
+namespace dllapi {
+namespace cuviddec {
+using namespace dllapi::cuda;
 
 #if defined(__x86_64) || defined(AMD64) || defined(_M_AMD64)
 #if (CUDA_VERSION >= 3020) && (!defined(CUDA_FORCE_API_VERSION) || (CUDA_FORCE_API_VERSION >= 3020))
@@ -132,7 +133,7 @@ typedef struct _CUVIDDECODECREATEINFO
 } CUVIDDECODECREATEINFO;
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // H.264 Picture Parameters
 //
@@ -254,7 +255,7 @@ typedef struct _CUVIDH264PICPARAMS
 } CUVIDH264PICPARAMS;
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // MPEG-2 Picture Parameters
 //
@@ -279,7 +280,7 @@ typedef struct _CUVIDMPEG2PICPARAMS
     unsigned char QuantMatrixInter[64];
 } CUVIDMPEG2PICPARAMS;
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // MPEG-4 Picture Parameters
 //
@@ -320,7 +321,7 @@ typedef struct _CUVIDMPEG4PICPARAMS
     int gmc_enabled;
 } CUVIDMPEG4PICPARAMS;
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // VC1 Picture Parameters
 //
@@ -365,7 +366,7 @@ typedef struct _CUVIDVC1PICPARAMS
     int rangeredfrm;    // range reduction state
 } CUVIDVC1PICPARAMS;
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // JPEG Picture Parameters
 //
@@ -375,7 +376,7 @@ typedef struct _CUVIDJPEGPICPARAMS
     int Reserved;
 } CUVIDJPEGPICPARAMS;
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // Picture Parameters for Decoding
 //
@@ -408,7 +409,7 @@ typedef struct _CUVIDPICPARAMS
 } CUVIDPICPARAMS;
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // Post-processing
 //
@@ -431,7 +432,7 @@ typedef struct _CUVIDPROCPARAMS
     void *Reserved3[3];
 } CUVIDPROCPARAMS;
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // In order to maximize decode latencies, there should be always at least 2 pictures in the decode
 // queue at any time, in order to make sure that all decode engines are always busy.
@@ -455,7 +456,7 @@ typedef struct _CUVIDPROCPARAMS
 // - cuVidDecodePicture may block the calling thread if there are too many pictures pending
 //   in the decode queue
 //
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 // Create/Destroy the decoder object
 extern CUresult CUDAAPI cuvidCreateDecoder(CUvideodecoder *phDecoder, CUVIDDECODECREATEINFO *pdci);
@@ -486,7 +487,7 @@ extern CUresult CUDAAPI cuvidUnmapVideoFrame64(CUvideodecoder hDecoder, unsigned
 // Get the pointer to the d3d9 surface that is the decode RT
 extern CUresult CUDAAPI cuvidGetVideoFrameSurface(CUvideodecoder hDecoder, int nPicIdx, void **pSrcSurface);
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 // Context-locking: to facilitate multi-threaded implementations, the following 4 functions
 // provide a simple mutex-style host synchronization. If a non-NULL context is specified
@@ -506,7 +507,7 @@ extern CUresult CUDAAPI cuvidCtxLockDestroy(CUvideoctxlock lck);
 extern CUresult CUDAAPI cuvidCtxLock(CUvideoctxlock lck, unsigned int reserved_flags);
 extern CUresult CUDAAPI cuvidCtxUnlock(CUvideoctxlock lck, unsigned int reserved_flags);
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 #if defined(__cplusplus)
 }
@@ -524,7 +525,7 @@ public:
 #endif /* __cplusplus */
 
 
-//} //namespace cuvid
-//} //namespace dllapi
+} //namespace cuviddec
+} //namespace dllapi
 
 #endif // __CUDA_VIDEO_H__
