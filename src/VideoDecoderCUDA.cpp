@@ -134,6 +134,8 @@ public:
         initCuda();
     }
     ~VideoDecoderCUDAPrivate() {
+        if (!can_load)
+            return;
         av_bitstream_filter_close(bitstream_filter_ctx);
         releaseCuda();
     }
@@ -558,7 +560,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
             host_data,
             host_data + pitch * h
         };
-        int pitches[] = { pitch, pitch };
+        int pitches[] = { (int)pitch, (int)pitch };
         VideoFrame frame(w, h, VideoFormat::Format_NV12);
         frame.setBits(planes);
         frame.setBytesPerLine(pitches);
