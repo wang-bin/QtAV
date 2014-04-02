@@ -41,9 +41,8 @@
  * CUDA_ERROR_INVALID_VALUE "cuvidDecodePicture(p->dec, cuvidpic)"
  */
 
-// use high version need define cuxxx_v2 in dllapi. cuMemcpyDtoHAsync link error with dllapi and 3010
-//#define CUDA_FORCE_API_VERSION 3010
 #include "cuda/helper_cuda.h"
+#include "cuda/cuda_api.h"
 
 //decode error if not floating context
 
@@ -94,16 +93,20 @@ static cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
     return (cudaVideoCodec)-1;
 }
 
+#ifdef CUDA_LINK
 class AutoCtxLock
 {
 private:
     CUvideoctxlock m_lock;
 public:
-    AutoCtxLock(CUvideoctxlock lck) { m_lock=lck; cuvidCtxLock(m_lock, 0); }
+    AutoCtxLock(cuda_api*, CUvideoctxlock lck) { m_lock=lck; cuvidCtxLock(m_lock, 0); }
     ~AutoCtxLock() { cuvidCtxUnlock(m_lock, 0); }
 };
-
+#endif
 class VideoDecoderCUDAPrivate : public VideoDecoderPrivate
+#ifndef CUDA_LINK
+                , public cuda_api
+#endif
 {
 public:
     VideoDecoderCUDAPrivate():
@@ -175,9 +178,15 @@ public:
     static int CUDAAPI HandlePictureDecode(void *obj, CUVIDPICPARAMS *cuvidpic) {
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
         //qDebug("%s @%d tid=%p dec=%p idx=%d inUse=%d", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec, cuvidpic->CurrPicIdx, p->surface_in_use[cuvidpic->CurrPicIdx]);
-        AutoCtxLock lock(p->vid_ctx_lock);
+#if CUDA_LINK
+        AutoCtxLock lock(p, p->vid_ctx_lock);
         Q_UNUSED(lock);
         checkCudaErrors(cuvidDecodePicture(p->dec, cuvidpic));
+#else
+        p->cuvidCtxLock(p->vid_ctx_lock, 0);
+        p->cuvidDecodePicture(p->dec, cuvidpic);
+        p->cuvidCtxUnlock(p->vid_ctx_lock, 0);
+#endif
         return true;
     }
     static int CUDAAPI HandlePictureDisplay(void *obj, CUVIDPARSERDISPINFO *cuviddisp) {
@@ -298,7 +307,11 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
     //TODO: fill NALU header for h264? https://devtalk.nvidia.com/default/topic/515571/what-the-data-format-34-cuvidparsevideodata-34-can-accept-/
     {
         //cuvidCtxUnlock(d.vid_ctx_lock, 0); //TODO: why wrong context?
+#ifdef CUDA_LINK
         CUresult cuStatus = cuvidParseVideoData(d.parser, &cuvid_pkt);
+#else
+        CUresult cuStatus = d.cuvidParseVideoData(d.parser, &cuvid_pkt);
+#endif
         if (cuStatus != CUDA_SUCCESS) {
             qWarning("cuvidParseVideoData failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
         }
@@ -351,7 +364,7 @@ bool VideoDecoderCUDAPrivate::initCuda()
     }
     checkCudaErrors(cuvidCtxLockCreate(&vid_ctx_lock, cuctx));
     {
-        AutoCtxLock lock(vid_ctx_lock);
+        AutoCtxLock lock(this, vid_ctx_lock);
         Q_UNUSED(lock);
         //Flags- Parameters for stream creation (must be 0 (CU_STREAM_DEFAULT=0 in cuda5) in cuda 4.2, no CU_STREAM_NON_BLOCKING)
         checkCudaErrors(cuStreamCreate(&stream, 0));//CU_STREAM_NON_BLOCKING)); //CU_STREAM_DEFAULT
@@ -390,7 +403,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w
     if (cudaCodec == -1) {
         return false;
     }
-    AutoCtxLock lock(vid_ctx_lock);
+    AutoCtxLock lock(this, vid_ctx_lock);
     Q_UNUSED(lock);
     if (dec) {
         checkCudaErrors(cuvidDestroyDecoder(dec));
