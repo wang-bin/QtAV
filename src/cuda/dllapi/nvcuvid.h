@@ -38,10 +38,10 @@
 
 #include "cuviddec.h"
 
-namespace dllapi {
-namespace cuvid {
-using namespace dllapi::cuda;
-using namespace dllapi::cuviddec;
+//namespace dllapi {
+//namespace cuvid {
+//using namespace dllapi::cuda;
+//using namespace dllapi::cuviddec;
 
 #if defined(__cplusplus)
 extern "C" {
@@ -231,7 +231,7 @@ CUresult CUDAAPI cuvidDestroyVideoParser(CUvideoparser obj);
 #endif /* __cplusplus */
 
 
-} //namespace cuvid
-} //namespace dllapi
+//} //namespace cuvid
+//} //namespace dllapi
 
 #endif // __NVCUVID_H__

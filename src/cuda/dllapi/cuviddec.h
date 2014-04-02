@@ -40,9 +40,9 @@
 #include "cuda.h"
 #endif // __cuda_cuda_h__
 
-namespace dllapi {
-namespace cuviddec {
-using namespace dllapi::cuda;
+//namespace dllapi {
+//namespace cuviddec {
+//using namespace dllapi::cuda;
 
 #if defined(__x86_64) || defined(AMD64) || defined(_M_AMD64)
 #if (CUDA_VERSION >= 3020) && (!defined(CUDA_FORCE_API_VERSION) || (CUDA_FORCE_API_VERSION >= 3020))
@@ -525,7 +525,7 @@ public:
 #endif /* __cplusplus */
 
 
-} //namespace cuviddec
-} //namespace dllapi
+//} //namespace cuviddec
+//} //namespace dllapi
 
 #endif // __CUDA_VIDEO_H__

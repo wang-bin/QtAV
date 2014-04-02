@@ -116,7 +116,7 @@ config_gl {
 CONFIG += config_cuda config_dllapi config_dllapi_cuda
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
-    HEADERS += cuda/helper_cuda.h
+    HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h
     SOURCES += VideoDecoderCUDA.cpp
     INCLUDEPATH += $$PWD/cuda
     config_dllapi:config_dllapi_cuda {

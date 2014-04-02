@@ -22,18 +22,14 @@
 
 #include <assert.h>
 
-#ifdef __cplusplus
-//extern "C" {
-#endif //__cplusplus
-#include "cuda.h"
-#include "nvcuvid.h"
-#ifdef __cplusplus
-//}
-#endif //__cplusplus
+// high version will define cuXXX macro, so functions here will be not they look like
+#if !QTAV_HAVE(DLLAPI_CUDA) && !defined(CUDA_LINK)
+#define CUDA_FORCE_API_VERSION 3010
+#endif
+
+#include "dllapi/nv_inc.h"
 
 using namespace dllapi::cuda;
-using namespace dllapi::cuvid;
-using namespace dllapi::cuviddec;
 
 #ifdef __cuda_cuda_h__
 // CUDA Driver API errors

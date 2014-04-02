@@ -1,16 +1,21 @@
-#define __CUDA_API_VERSION_INTERNAL
-#include "cuda.h"
 
 #include "dllapi_p.h"
 #include "dllapi.h"
+
+// include nv_inc.h headers later to avoid build error. have not find out why it happens
+#define __CUVID_INTERNAL //avoid replaced bt 64 api
+#define __CUDA_API_VERSION_INTERNAL
+#include "nv_inc.h"
 
 using namespace dllapi;
 namespace dllapi {
 namespace cuda {
 
-//DEFINE_DLL_INSTANCE_N("cuda", "nvcuda", NULL)
+namespace { //the macro define class dll. so a namespace wrapper is required
+//DEFINE_DLL_INSTANCE_N("cuda", "nvcuda", NULL) //now may crash for vc
 static char* cuda_names[] = { "nvcuda", NULL };
 DEFINE_DLL_INSTANCE_V("cuda", cuda_names)
+}
 
 DEFINE_DLLAPI_M_ARG(1, CUresult, CUDAAPI, cuInit, unsigned int)
 DEFINE_DLLAPI_M_ARG(1, CUresult, CUDAAPI, cuDriverGetVersion, int *)
