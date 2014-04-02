@@ -114,6 +114,7 @@ config_gl {
     OTHER_FILES += shaders/yuv_rgb.f.glsl shaders/rgb.f.glsl
 }
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda
+#CONFIG += config_cuda_link
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
     HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h
@@ -131,10 +132,9 @@ include(../depends/dllapi/src/libdllapi.pri)
         isEqual(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
         else: LIBS += -L$$(CUDA_PATH)/lib/x64
         LIBS += -lnvcuvid -lcuda
-    } else {
-        SOURCES += cuda/cuda_api.cpp
-        HEADERS += cuda/cuda_api.h
     }
+    SOURCES += cuda/cuda_api.cpp
+    HEADERS += cuda/cuda_api.h
 }
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1

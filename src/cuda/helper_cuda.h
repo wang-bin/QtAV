@@ -20,18 +20,20 @@
 ******************************************************************************/
 ///from nv's helper_cuda.h
 
-#include <assert.h>
+#include <stdio.h>
+
+#undef NV_CONFIG
+#define NV_CONFIG(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
 
 // high version will define cuXXX macro, so functions here will be not they look like
-#if !QTAV_HAVE(DLLAPI_CUDA) && !defined(CUDA_LINK)
+#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 #define CUDA_FORCE_API_VERSION 3010
 #endif
 
-#include <stdio.h>
 #include "dllapi/nv_inc.h"
-#if QTAV_HAVE(DLLAPI_CUDA)
+#if NV_CONFIG(DLLAPI_CUDA)
 using namespace dllapi::cuda;
-#endif /* QTAV_HAVE(DLLAPI_CUDA)*/
+#endif /* NV_CONFIG(DLLAPI_CUDA)*/
 
 
 #ifdef __cuda_cuda_h__

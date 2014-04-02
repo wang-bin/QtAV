@@ -93,7 +93,7 @@ static cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
     return (cudaVideoCodec)-1;
 }
 
-#ifdef CUDA_LINK
+#if NV_CONFIG(DLLAPI_CUDA) || defined(CUDA_LINK)
 class AutoCtxLock
 {
 private:
@@ -102,11 +102,9 @@ public:
     AutoCtxLock(cuda_api*, CUvideoctxlock lck) { m_lock=lck; cuvidCtxLock(m_lock, 0); }
     ~AutoCtxLock() { cuvidCtxUnlock(m_lock, 0); }
 };
-#endif
+#endif //NV_CONFIG(DLLAPI_CUDA) || defined(CUDA_LINK)
 class VideoDecoderCUDAPrivate : public VideoDecoderPrivate
-#ifndef CUDA_LINK
                 , public cuda_api
-#endif
 {
 public:
     VideoDecoderCUDAPrivate():
@@ -147,6 +145,22 @@ public:
     bool createCUVIDDecoder(cudaVideoCodec cudaCodec, int w, int h);
     bool createCUVIDParser();
     bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp, VideoFrame* outFrame = 0);
+    bool doParseVideoData(CUVIDSOURCEDATAPACKET* pPkt) {
+        //cuvidCtxUnlock(vid_ctx_lock, 0); //TODO: why wrong context?
+        CUresult cuStatus = cuvidParseVideoData(parser, pPkt);
+        if (cuStatus != CUDA_SUCCESS) {
+            qWarning("cuvidParseVideoData failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+            return false;
+        }
+        return true;
+    }
+
+    bool doDecodePicture(CUVIDPICPARAMS *cuvidpic) {
+        AutoCtxLock lock(this, vid_ctx_lock);
+        Q_UNUSED(lock);
+        checkCudaErrors(cuvidDecodePicture(dec, cuvidpic));
+    }
+
     VideoFrame getNextFrame() {
 #if COPY_ON_DECODE
         return frame_queue.take();
@@ -178,15 +192,7 @@ public:
     static int CUDAAPI HandlePictureDecode(void *obj, CUVIDPICPARAMS *cuvidpic) {
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
         //qDebug("%s @%d tid=%p dec=%p idx=%d inUse=%d", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec, cuvidpic->CurrPicIdx, p->surface_in_use[cuvidpic->CurrPicIdx]);
-#if CUDA_LINK
-        AutoCtxLock lock(p, p->vid_ctx_lock);
-        Q_UNUSED(lock);
-        checkCudaErrors(cuvidDecodePicture(p->dec, cuvidpic));
-#else
-        p->cuvidCtxLock(p->vid_ctx_lock, 0);
-        p->cuvidDecodePicture(p->dec, cuvidpic);
-        p->cuvidCtxUnlock(p->vid_ctx_lock, 0);
-#endif
+        p->doDecodePicture(cuvidpic);
         return true;
     }
     static int CUDAAPI HandlePictureDisplay(void *obj, CUVIDPARSERDISPINFO *cuviddisp) {
@@ -305,20 +311,9 @@ bool VideoDecoderCUDA::decode(const QByteArray &encoded)
     cuvid_pkt.flags = CUVID_PKT_TIMESTAMP;
     cuvid_pkt.timestamp = 0;// ?
     //TODO: fill NALU header for h264? https://devtalk.nvidia.com/default/topic/515571/what-the-data-format-34-cuvidparsevideodata-34-can-accept-/
-    {
-        //cuvidCtxUnlock(d.vid_ctx_lock, 0); //TODO: why wrong context?
-#ifdef CUDA_LINK
-        CUresult cuStatus = cuvidParseVideoData(d.parser, &cuvid_pkt);
-#else
-        CUresult cuStatus = d.cuvidParseVideoData(d.parser, &cuvid_pkt);
-#endif
-        if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuvidParseVideoData failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
-        }
-    }
+    d.doParseVideoData(&cuvid_pkt);
     if (filtered > 0) {
-        // TODO: why av_freep crash?
-        av_free(outBuf);
+        av_freep(&outBuf);
     }
     // callbacks are in the same thread as this. so no queue is required?
     //qDebug("frame queue size on decode: %d", d.frame_queue.size());

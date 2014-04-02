@@ -1,10 +1,12 @@
-#include "cuda_api.h"
-#include "helper_cuda.h"
 #include <assert.h>
 #include <QtCore/QLibrary>
 
+#include "helper_cuda.h"
+#include "cuda_api.h"
+
 class cuda_api::context {
 public:
+#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
     context() {
         cuda_dll.setFileName("cuda");
         if (!cuda_dll.isLoaded())
@@ -23,6 +25,7 @@ public:
 
     QLibrary cuda_dll;
     QLibrary cuvid_dll;
+#endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 };
 
 cuda_api::cuda_api()
@@ -35,7 +38,7 @@ cuda_api::~cuda_api()
     delete ctx;
 }
 
-
+#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 ////////////////////////////////////////////////////
 /// CUDA functions
 ////////////////////////////////////////////////////
@@ -292,6 +295,7 @@ CUresult cuda_api::cuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int De
     return fp_tcuvidUnmapVideoFrame(hDecoder, DevPtr);
 }
 
+#endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 int cuda_api::GetMaxGflopsGraphicsDeviceId() {
     CUdevice current_device = 0, max_perf_device = 0;
     int device_count     = 0, sm_per_multiproc = 0;

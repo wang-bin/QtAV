@@ -1,14 +1,14 @@
 #ifndef CUDA_API_H
 #define CUDA_API_H
 
+#undef NV_CONFIG
+#define NV_CONFIG(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
+
 // high version will define cuXXX macro, so functions here will be not they look like
-#if !QTAV_HAVE(DLLAPI_CUDA) && !defined(CUDA_LINK)
+#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 #define CUDA_FORCE_API_VERSION 3010
 #endif
 #include "dllapi/nv_inc.h"
-#if QTAV_HAVE(DLLAPI_CUDA)
-using namespace dllapi::cuda;
-#endif /* QTAV_HAVE(DLLAPI_CUDA)*/
 
 #ifdef __DRIVER_TYPES_H__
 #ifndef DEVICE_RESET
@@ -28,6 +28,7 @@ class cuda_api {
 public:
     cuda_api();
     ~cuda_api();
+#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
     ////////////////////////////////////////////////////
     /// CUDA functions
     ////////////////////////////////////////////////////
@@ -80,21 +81,6 @@ public:
     CUresult cuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int DevPtr);
 
 
-    int GetMaxGflopsGraphicsDeviceId();
-
-    template< typename T >
-    bool check(T result, char const *const func, const char *const file, int const line)
-    {
-        if (result != CUDA_SUCCESS) {
-            qWarning("CUDA error at %s:%d code=%d(%s) \"%s\"",
-                    file, line, static_cast<unsigned int>(result), _cudaGetErrorEnum(result), func);
-            DEVICE_RESET
-            // Make sure we call CUDA Device Reset before exiting
-            //exit(EXIT_FAILURE);
-        }
-        return result == CUDA_SUCCESS;
-    }
-
     class AutoCtxLock
     {
     private:
@@ -109,6 +95,22 @@ public:
         ~AutoCtxLock() { m_api->cuvidCtxUnlock(m_lock, 0); }
     };
 
+#endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
+
+    int GetMaxGflopsGraphicsDeviceId();
+
+    template< typename T >
+    bool check(T result, char const *const func, const char *const file, int const line)
+    {
+        if (result != CUDA_SUCCESS) {
+            qWarning("CUDA error at %s:%d code=%d(%s) \"%s\"",
+                    file, line, static_cast<unsigned int>(result), _cudaGetErrorEnum(result), func);
+            DEVICE_RESET
+            // Make sure we call CUDA Device Reset before exiting
+            //exit(EXIT_FAILURE);
+        }
+        return result == CUDA_SUCCESS;
+    }
 
 private:
     class context;

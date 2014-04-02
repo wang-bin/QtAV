@@ -22,10 +22,13 @@
 #ifndef NV_INC_H
 #define NV_INC_H
 
-#ifdef QTAV_HAVE_DLLAPI_CUDA
+#undef NV_CONFIG
+#define NV_CONFIG(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
+
+#if NV_CONFIG(DLLAPI_CUDA)
 namespace dllapi {
 namespace cuda {
-#endif /*QTAV_HAVE_DLLAPI_CUDA*/
+#endif /*NV_CONFIG(DLLAPI_CUDA)*/
 #if defined(__cplusplus)
 //extern "C" {
 #endif /* __cplusplus */
@@ -36,9 +39,9 @@ namespace cuda {
 #if defined(__cplusplus)
 //}
 #endif /* __cplusplus */
-#ifdef QTAV_HAVE_DLLAPI_CUDA
+#if NV_CONFIG(DLLAPI_CUDA)
 } //namespace cuda
 } //namespace dllapi
-#endif /*QTAV_HAVE_DLLAPI_CUDA*/
+#endif /*NV_CONFIG(DLLAPI_CUDA)*/
 
 #endif /* NV_INC_H*/
