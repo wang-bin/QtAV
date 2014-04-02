@@ -6,8 +6,10 @@
 
 class cuda_api::context {
 public:
+    context()
+        : loaded(true) {
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
-    context() {
+        loaded = false;
         cuda_dll.setFileName("cuda");
         if (!cuda_dll.isLoaded())
             cuda_dll.load();
@@ -15,10 +17,22 @@ public:
             cuda_dll.setFileName("nvcuda");
             cuda_dll.load();
         }
+        if (!cuda_dll.isLoaded()) {
+            qWarning("can not load cuda!");
+            return;
+        }
         cuvid_dll.setFileName("nvcuvid");
         cuvid_dll.load();
+        if (!cuvid_dll.isLoaded()) {
+            qWarning("can not load nvcuvid!");
+            return;
+        }
+        loaded = true;
+#endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
     }
+#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
     ~context() {
+        loaded = false;
         cuvid_dll.unload();
         cuda_dll.unload();
     }
@@ -26,6 +40,7 @@ public:
     QLibrary cuda_dll;
     QLibrary cuvid_dll;
 #endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
+    bool loaded;
 };
 
 cuda_api::cuda_api()
@@ -36,6 +51,11 @@ cuda_api::cuda_api()
 cuda_api::~cuda_api()
 {
     delete ctx;
+}
+
+bool cuda_api::isLoaded() const
+{
+    return ctx->loaded;
 }
 
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)

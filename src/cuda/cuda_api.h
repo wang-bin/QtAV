@@ -28,6 +28,7 @@ class cuda_api {
 public:
     cuda_api();
     ~cuda_api();
+    bool isLoaded() const;
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
     ////////////////////////////////////////////////////
     /// CUDA functions

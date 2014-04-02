@@ -130,12 +130,16 @@ public:
         nb_dec_surface = 20;
         if (!can_load)
             return;
+        if (!isLoaded()) //cuda_api
+            return;
         bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
         Q_ASSERT_X(bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
         initCuda();
     }
     ~VideoDecoderCUDAPrivate() {
         if (!can_load)
+            return;
+        if (!isLoaded()) //cuda_api
             return;
         av_bitstream_filter_close(bitstream_filter_ctx);
         releaseCuda();
@@ -267,6 +271,8 @@ bool VideoDecoderCUDA::prepare()
         qWarning("VideoDecoderCUDA::prepare(): CUVID library not available");
         return false;
     }
+    if (!d.isLoaded()) //cuda_api
+        return false;
     // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
     return d.createCUVIDDecoder(mapCodecFromFFmpeg(d.codec_ctx->codec_id), d.codec_ctx->coded_width, d.codec_ctx->coded_height)
             && d.createCUVIDParser();
