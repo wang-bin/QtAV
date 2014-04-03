@@ -163,6 +163,7 @@ public:
         AutoCtxLock lock(this, vid_ctx_lock);
         Q_UNUSED(lock);
         checkCudaErrors(cuvidDecodePicture(dec, cuvidpic));
+        return true;
     }
 
     VideoFrame getNextFrame() {
