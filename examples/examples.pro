@@ -8,7 +8,8 @@ SUBDIRS += \
     filters \
     videographicsitem \
     videogroup \
-    videowall
+    videowall \
+    qmlmultiwindow
 
 player.depends += common
 
