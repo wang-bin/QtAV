@@ -81,16 +81,19 @@ public:
         decode_threads = settings.value("threads", 0).toInt();
         QString decs_default("FFmpeg");
         QVector<QtAV::VideoDecoderId> all_decs_id = GetRegistedVideoDecoderIds();
+        if (all_decs_id.contains(VideoDecoderId_CUDA))
+            decs_default.append(" CUDA ");
         if (all_decs_id.contains(VideoDecoderId_DXVA))
             decs_default.append(" DXVA ");
         if (all_decs_id.contains(VideoDecoderId_VAAPI))
             decs_default.append(" VAAPI ");
         QStringList all_names = idsToNames(all_decs_id);
+#if 0
         QString all_names_string = settings.value("all", QString()).toString();
         if (!all_names_string.isEmpty()) {
             all_names = all_names_string.split(" ", QString::SkipEmptyParts);
         }
-
+#endif
         QStringList decs = settings.value("priority", decs_default).toString().split(" ", QString::SkipEmptyParts);
         if (decs.isEmpty())
             decs = decs_default.split(" ", QString::SkipEmptyParts);

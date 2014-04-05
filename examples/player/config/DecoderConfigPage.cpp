@@ -39,6 +39,7 @@ QString GetDecoderDescription(const QString& name) {
         QString desc;
     } dec_desc[] = {
         { "FFmpeg", "FFmpeg (" + QObject::tr("Software") + ")" },
+        { "CUDA", "NVIDIA CUVID (" + QObject::tr("Hardware") + ")" },
         { "DXVA", "DirectX Video Acceleration 2.0 (" + QObject::tr("Hardware") + ")" },
         { "VAAPI", "Video Acceleration API (" + QObject::tr("Hardware") + ")" },
         { 0, 0 }
