@@ -61,6 +61,9 @@ bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
     Q_UNUSED(locker);
     d.video_frame = frame;
     d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.imageFormat());
+    QRect r = realROI();
+    if (r != QRect(0, 0, frame.width(), frame.height()))
+        d.image = d.image.copy(r);
 
     //update(); //why not this?
     QMetaObject::invokeMethod(this, "update");
@@ -150,6 +153,16 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
     handlePaintEvent();
     d.node = 0;
     return node;
+}
+
+bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)
+{
+    DPTR_D(QQuickItemRenderer);
+    if (d.roi == roi)
+        return false;
+    d.roi = roi;
+    emit regionOfInterestChanged();
+    return true;
 }
 
 } // namespace QtAV

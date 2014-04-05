@@ -38,6 +38,7 @@ class QMLAV_EXPORT QQuickItemRenderer : public QQuickItem, public VideoRenderer
     DPTR_DECLARE_PRIVATE(QQuickItemRenderer)
     Q_PROPERTY(QObject* source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
+    Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_ENUMS(FillMode)
 public:
     enum FillMode
@@ -60,6 +61,7 @@ public:
 Q_SIGNALS:
     void sourceChanged();
     void fillModeChanged(QQuickItemRenderer::FillMode);
+    void regionOfInterestChanged();
 
 protected:
     virtual bool receiveFrame(const VideoFrame &frame);
@@ -70,6 +72,7 @@ protected:
     // QQuickItem interface
     virtual QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data);
 private:
+    virtual bool onSetRegionOfInterest(const QRectF& roi);
 
 };
 typedef QQuickItemRenderer VideoRendererQQuickItem;
