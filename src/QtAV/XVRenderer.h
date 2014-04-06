@@ -62,10 +62,11 @@ protected:
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void showEvent(QShowEvent *);
 
-    virtual bool onChangingBrightness(qreal b);
-    virtual bool onChangingContrast(qreal c);
-    virtual bool onChangingHue(qreal h);
-    virtual bool onChangingSaturation(qreal s);
+private:
+    virtual bool onSetBrightness(qreal b);
+    virtual bool onSetContrast(qreal c);
+    virtual bool onSetHue(qreal h);
+    virtual bool onSetSaturation(qreal s);
 };
 typedef XVRenderer VideoRendererXV;
 } //namespace QtAV

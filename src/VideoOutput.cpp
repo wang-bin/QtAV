@@ -163,47 +163,6 @@ void VideoOutput::handlePaintEvent()
     d.impl->handlePaintEvent();
 }
 
-bool VideoOutput::onChangingBrightness(qreal b)
-{
-    DPTR_D(VideoOutput);
-    if (!d.impl->onChangingBrightness(b))
-        return false;
-    d.brightness = d.impl->brightness();
-    emit brightnessChanged(b);
-    return true;
-}
-
-bool VideoOutput::onChangingContrast(qreal c)
-{
-    DPTR_D(VideoOutput);
-    if (!d.impl->onChangingContrast(c))
-        return false;
-    d.contrast = d.impl->contrast();
-    emit contrastChanged(c);
-    return true;
-}
-
-bool VideoOutput::onChangingHue(qreal h)
-{
-    DPTR_D(VideoOutput);
-    if (!d.impl->onChangingHue(h))
-        return false;
-    d.hue = d.impl->hue();
-    emit hueChanged(h);
-    return true;
-}
-
-bool VideoOutput::onChangingSaturation(qreal s)
-{
-    DPTR_D(VideoOutput);
-    if (!d.impl->onChangingSaturation(s))
-        return false;
-    d.saturation = d.impl->saturation();
-    emit saturationChanged(s);
-    return true;
-}
-
-
 
 bool VideoOutput::onForcePreferredPixelFormat(bool force)
 {
@@ -329,36 +288,48 @@ Filter* VideoOutput::onSetSubtitleFilter(Filter *filter)
 bool VideoOutput::onSetBrightness(qreal brightness)
 {
     DPTR_D(VideoOutput);
-    if (!d.impl->onSetBrightness(brightness))
+    // not call onSetXXX here, otherwise states in impl will not change
+    d.impl->setBrightness(brightness);
+    if (brightness != d.impl->brightness()) {
         return false;
-    d.brightness = brightness;
+    }
+    emit brightnessChanged(brightness);
     return true;
 }
 
 bool VideoOutput::onSetContrast(qreal contrast)
 {
     DPTR_D(VideoOutput);
-    if (!d.impl->onSetContrast(contrast))
+    // not call onSetXXX here, otherwise states in impl will not change
+    d.impl->setContrast(contrast);
+    if (contrast != d.impl->contrast()) {
         return false;
-    d.contrast = d.impl->contrast();
+    }
+    emit contrastChanged(contrast);
     return true;
 }
 
 bool VideoOutput::onSetHue(qreal hue)
 {
     DPTR_D(VideoOutput);
-    if (!d.impl->onSetHue(hue))
+    // not call onSetXXX here, otherwise states in impl will not change
+    d.impl->setHue(hue);
+    if (hue != d.impl->hue()) {
         return false;
-    d.hue = d.impl->hue();
+    }
+    emit hueChanged(hue);
     return true;
 }
 
 bool VideoOutput::onSetSaturation(qreal saturation)
 {
     DPTR_D(VideoOutput);
-    if (!d.impl->onSetSaturation(saturation))
+    // not call onSetXXX here, otherwise states in impl will not change
+    d.impl->setSaturation(saturation);
+    if (saturation != d.impl->saturation()) {
         return false;
-    d.saturation = d.impl->saturation();
+    }
+    emit saturationChanged(saturation);
     return true;
 }
 

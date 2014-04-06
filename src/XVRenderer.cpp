@@ -301,25 +301,25 @@ void XVRenderer::showEvent(QShowEvent *event)
     d.prepareDeviceResource();
 }
 
-bool XVRenderer::onChangingBrightness(qreal b)
+bool XVRenderer::onSetBrightness(qreal b)
 {
     DPTR_D(XVRenderer);
     return d.XvSetPortAttributeIfExists("XV_BRIGHTNESS", b*100);
 }
 
-bool XVRenderer::onChangingContrast(qreal c)
+bool XVRenderer::onSetContrast(qreal c)
 {
     DPTR_D(XVRenderer);
     return d.XvSetPortAttributeIfExists("XV_CONTRAST",c*100);
 }
 
-bool XVRenderer::onChangingHue(qreal h)
+bool XVRenderer::onSetHue(qreal h)
 {
     DPTR_D(XVRenderer);
     return d.XvSetPortAttributeIfExists("XV_HUE", h*100);
 }
 
-bool XVRenderer::onChangingSaturation(qreal s)
+bool XVRenderer::onSetSaturation(qreal s)
 {
     DPTR_D(XVRenderer);
     return d.XvSetPortAttributeIfExists("XV_SATURATION", s*100);

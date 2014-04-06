@@ -226,17 +226,6 @@ protected:
     virtual void resizeFrame(int width, int height);
     //TODO: parameter QRect?
     virtual void handlePaintEvent(); //has default. User don't have to implement it
-    /*!
-     * \brief onBrightness
-     *  It's called when user call setBrightness(). You should implement how to actually change the brightness.
-     * \return
-     *  false: It's default. means not implemented. \a brightness() does not change.
-     *  true: Implement this and return true. \a brightness() will change to new value
-     */
-    virtual bool onChangingBrightness(qreal b);
-    virtual bool onChangingContrast(qreal c);
-    virtual bool onChangingHue(qreal h);
-    virtual bool onChangingSaturation(qreal s);
 
 private: //used by VideoOutput class
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
@@ -251,7 +240,13 @@ private: //used by VideoOutput class
     virtual QPointF onMapFromFrame(const QPointF& p) const;
     virtual OSDFilter* onSetOSDFilter(OSDFilter *filter);
     virtual Filter* onSetSubtitleFilter(Filter *filter);
-
+    /*!
+     * \brief onSetXX
+     *  It's called when user call setXXX() with a new value. You should implement how to actually change the value, e.g. change brightness with shader.
+     * \return
+     *  false: It's default. means not implemented. \a brightness() does not change.
+     *  true: Implement this and return true. \a brightness() will change to new value
+     */
     virtual bool onSetBrightness(qreal brightness);
     virtual bool onSetContrast(qreal contrast);
     virtual bool onSetHue(qreal hue);

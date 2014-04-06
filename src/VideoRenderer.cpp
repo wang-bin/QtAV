@@ -534,14 +534,16 @@ qreal VideoRenderer::brightness() const
 
 bool VideoRenderer::setBrightness(qreal brightness)
 {
-    return onSetBrightness(brightness);
-}
-
-bool VideoRenderer::onSetBrightness(qreal brightness)
-{
-    if (!onChangingBrightness(brightness))
+    DPTR_D(VideoRenderer);
+    if (d.brightness == brightness)
         return false;
-    d_func().brightness = brightness;
+    // may emit signal in onSetXXX. ensure get the new value in slot
+    qreal old = d.brightness;
+    d.brightness = brightness;
+    if (!onSetBrightness(brightness)) {
+        d.brightness = old;
+        return false;
+    }
     if (widget()) {
         widget()->update();
     }
@@ -558,14 +560,16 @@ qreal VideoRenderer::contrast() const
 
 bool VideoRenderer::setContrast(qreal contrast)
 {
-    return onSetContrast(contrast);
-}
-
-bool VideoRenderer::onSetContrast(qreal contrast)
-{
-    if (!onChangingContrast(contrast))
+    DPTR_D(VideoRenderer);
+    if (d.contrast == contrast)
         return false;
-    d_func().contrast = contrast;
+    // may emit signal in onSetXXX. ensure get the new value in slot
+    qreal old = d.contrast;
+    d.contrast = contrast;
+    if (!onSetContrast(contrast)) {
+        d.contrast = old;
+        return false;
+    }
     if (widget()) {
         widget()->update();
     }
@@ -582,14 +586,16 @@ qreal VideoRenderer::hue() const
 
 bool VideoRenderer::setHue(qreal hue)
 {
-    return onSetHue(hue);
-}
-
-bool VideoRenderer::onSetHue(qreal hue)
-{
-    if (!onChangingHue(hue))
+    DPTR_D(VideoRenderer);
+    if (d.hue == hue)
         return false;
-    d_func().hue = hue;
+    // may emit signal in onSetXXX. ensure get the new value in slot
+    qreal old = d.hue;
+    d.hue = hue;
+    if (!onSetHue(hue)) {
+        d.hue = old;
+        return false;
+    }
     if (widget()) {
         widget()->update();
     }
@@ -606,14 +612,16 @@ qreal VideoRenderer::saturation() const
 
 bool VideoRenderer::setSaturation(qreal saturation)
 {
-    return onSetSaturation(saturation);
-}
-
-bool VideoRenderer::onSetSaturation(qreal saturation)
-{
-    if (!onChangingSaturation(saturation))
+    DPTR_D(VideoRenderer);
+    if (d.saturation == saturation)
         return false;
-    d_func().saturation = saturation;
+    // may emit signal in onSetXXX. ensure get the new value in slot
+    qreal old = d.saturation;
+    d.saturation = saturation;
+    if (!onSetSaturation(saturation)) {
+        d.saturation = old;
+        return false;
+    }
     if (widget()) {
         widget()->update();
     }
@@ -623,25 +631,25 @@ bool VideoRenderer::onSetSaturation(qreal saturation)
     return true;
 }
 
-bool VideoRenderer::onChangingBrightness(qreal b)
+bool VideoRenderer::onSetBrightness(qreal b)
 {
     Q_UNUSED(b);
     return false;
 }
 
-bool VideoRenderer::onChangingContrast(qreal c)
+bool VideoRenderer::onSetContrast(qreal c)
 {
     Q_UNUSED(c);
     return false;
 }
 
-bool VideoRenderer::onChangingHue(qreal h)
+bool VideoRenderer::onSetHue(qreal h)
 {
     Q_UNUSED(h);
     return false;
 }
 
-bool VideoRenderer::onChangingSaturation(qreal s)
+bool VideoRenderer::onSetSaturation(qreal s)
 {
     Q_UNUSED(s);
     return false;

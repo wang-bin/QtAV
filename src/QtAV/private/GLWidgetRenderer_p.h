@@ -141,7 +141,7 @@ public:
     void setupAspectRatio() {
         if (hasGLSL) {
             if (u_matrix < 0) {
-                qDebug("%s @%d mat=%d", __FUNCTION__, __LINE__, u_matrix);
+                //qDebug("%s @%d mat=%d", __FUNCTION__, __LINE__, u_matrix);
                 return;
             }
 #if !NO_QGL_SHADER && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)

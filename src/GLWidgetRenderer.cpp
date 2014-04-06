@@ -899,7 +899,7 @@ void GLWidgetRenderer::showEvent(QShowEvent *)
      */
 }
 
-bool GLWidgetRenderer::onChangingBrightness(qreal b)
+bool GLWidgetRenderer::onSetBrightness(qreal b)
 {
     DPTR_D(GLWidgetRenderer);
     if (!d.hasGLSL)
@@ -908,7 +908,7 @@ bool GLWidgetRenderer::onChangingBrightness(qreal b)
     return true;
 }
 
-bool GLWidgetRenderer::onChangingContrast(qreal c)
+bool GLWidgetRenderer::onSetContrast(qreal c)
 {
     DPTR_D(GLWidgetRenderer);
     if (!d.hasGLSL)
@@ -917,7 +917,7 @@ bool GLWidgetRenderer::onChangingContrast(qreal c)
     return true;
 }
 
-bool GLWidgetRenderer::onChangingHue(qreal h)
+bool GLWidgetRenderer::onSetHue(qreal h)
 {
     DPTR_D(GLWidgetRenderer);
     if (!d.hasGLSL)
@@ -926,7 +926,7 @@ bool GLWidgetRenderer::onChangingHue(qreal h)
     return true;
 }
 
-bool GLWidgetRenderer::onChangingSaturation(qreal s)
+bool GLWidgetRenderer::onSetSaturation(qreal s)
 {
     DPTR_D(GLWidgetRenderer);
     if (!d.hasGLSL)
