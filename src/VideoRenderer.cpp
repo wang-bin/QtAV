@@ -304,16 +304,50 @@ QRect VideoRenderer::realROI() const
         return QRect(QPoint(), d.video_frame.size());
     }
     QRect r = d.roi.toRect();
-    if (qAbs(d.roi.x()) <= 1)
+    // nomalized x, y < 1
+    bool normalized = false;
+    if (qAbs(d.roi.x()) < 1) {
+        normalized = true;
         r.setX(d.roi.x()*qreal(d.src_width)); //TODO: why not video_frame.size()? roi not correct
-    if (qAbs(d.roi.y()) <= 1)
+    }
+    if (qAbs(d.roi.y()) < 1) {
+        normalized = true;
         r.setY(d.roi.y()*qreal(d.src_height));
+    }
     // whole size use width or height = 0, i.e. null size
+    // nomalized width, height <= 1. If 1 is normalized value iff |x|<1 || |y| < 1
     if (qAbs(d.roi.width()) < 1)
         r.setWidth(d.roi.width()*qreal(d.src_width));
     if (qAbs(d.roi.height() < 1))
         r.setHeight(d.roi.height()*qreal(d.src_height));
+    if (d.roi.width() == 1.0 && normalized) {
+        r.setWidth(d.src_width);
+    }
+    if (d.roi.height() == 1.0 && normalized) {
+        r.setHeight(d.src_height);
+    }
     //TODO: insect with source rect?
+    return r;
+}
+
+QRectF VideoRenderer::normalizedROI() const
+{
+    DPTR_D(const VideoRenderer);
+    QRectF r = d.roi;
+    bool normalized = false;
+    if (qAbs(r.x()) >= 1)
+        r.setX(r.x()/qreal(d.src_width));
+    else
+        normalized = true;
+    if (qAbs(r.y() >= 1))
+        r.setY(r.y()/qreal(d.src_height));
+    else
+        normalized = true;
+    if (r.width() > 1 || (!normalized && r.width() == 1))
+        r.setWidth(r.width()/qreal(d.src_width));
+    if (r.height() > 1 || (!normalized && r.width() == 1)) {
+        r.setHeight(r.height()/qreal(d.src_height));
+    }
     return r;
 }
 

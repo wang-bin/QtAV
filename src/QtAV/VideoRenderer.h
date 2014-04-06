@@ -142,7 +142,8 @@ public:
      * invalid rect means the whole source rect
      * null rect is the whole available source rect. e.g. (0, 0, 0, 0) equals whole source rect
      * (20, 30, 0, 0) equals (20, 30, sourceWidth - 20, sourceHeight - 30)
-     * if |x|<=1, |y|<=1, |width|<1, |height|<1 means the ratio of source rect
+     * if |x|<1, |y|<1, |width|<1, |height|<1 means the ratio of source rect(normalized value)
+     * |width| == 1 or |height| == 1 is a normalized value iff x or y is normalized
      * call realROI() to get the frame rect actually to be render
      * TODO: nagtive width or height means invert direction. is nagtive necessary?
      */
@@ -152,7 +153,8 @@ public:
     void setRegionOfInterest(const QRectF& roi);
     // compute the real ROI
     QRect realROI() const;
-    //QRectF normalizedROI() const;
+    // |w| <= 1, |x| < 1
+    QRectF normalizedROI() const;
 
     // TODO: map normalized
     /*!
