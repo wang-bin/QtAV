@@ -169,6 +169,7 @@ bool VideoOutput::onChangingBrightness(qreal b)
     if (!d.impl->onChangingBrightness(b))
         return false;
     d.brightness = d.impl->brightness();
+    emit brightnessChanged(b);
     return true;
 }
 
@@ -178,6 +179,7 @@ bool VideoOutput::onChangingContrast(qreal c)
     if (!d.impl->onChangingContrast(c))
         return false;
     d.contrast = d.impl->contrast();
+    emit contrastChanged(c);
     return true;
 }
 
@@ -187,6 +189,7 @@ bool VideoOutput::onChangingHue(qreal h)
     if (!d.impl->onChangingHue(h))
         return false;
     d.hue = d.impl->hue();
+    emit hueChanged(h);
     return true;
 }
 
@@ -196,6 +199,7 @@ bool VideoOutput::onChangingSaturation(qreal s)
     if (!d.impl->onChangingSaturation(s))
         return false;
     d.saturation = d.impl->saturation();
+    emit saturationChanged(s);
     return true;
 }
 
@@ -286,7 +290,10 @@ bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
     QRectF r = regionOfInterest();
     d.impl->onSetRegionOfInterest(roi);
     d.roi = d.impl->regionOfInterest();
-    return r != roi;
+    if (r == roi)
+        return false;
+    regionOfInterestChanged(roi);
+    return true;
 }
 
 QPointF VideoOutput::onMapToFrame(const QPointF& p) const
