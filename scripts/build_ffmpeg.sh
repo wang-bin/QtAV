@@ -1,15 +1,19 @@
 #/bin/bash
 
-# wbsecg1@gmail.com
+# Author: wbsecg1@gmail.com 2013-2014
 
 # Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
 # To build ffmpeg for android, run "./build_ffmpeg android". default is armv7.
-INSTALL_DIR=sdk
+: ${INSTALL_DIR:=sdk}
 # set NDK_ROOT if compile for android
-NDK_ROOT="/devel/android/android-ndk-r8e"
+: ${NDK_ROOT:="/devel/android/android-ndk-r8e"}
 
 
 TAGET_FLAG=$1
+
+
+echo "usage: ./build_ffmpeg.sh [android|maemo5|maemo6|vc]"
+# TODO: PLATFORM=xxx TARGET=ooo TOOLCHAIN=ttt ./build_ffmpeg.sh
 
 #host_is
 function platform_is() {
@@ -31,6 +35,34 @@ DXVA="--enable-dxva2" #  --enable-hwaccel=h264_dxva2 --enable-hwaccel=mpeg2_dxva
 VAAPI="--enable-vaapi" # --enable-hwaccel=h263_vaapi --enable-hwaccel=h264_vaapi --enable-hwaccel=mpeg2_vaapi --enable-hwaccel=mpeg4_vaapi --enable-hwaccel=vc1_vaapi --enable-hwaccel=wmv3_vaapi"
 VDPAU="--enable-vdpau" # --enable-hwaccel=h263_vdpau --enable-hwaccel=h264_vdpau --enable-hwaccel=mpeg1_vdpau --enable-hwaccel=mpeg2_vdpau --enable-hwaccel=mpeg4_vdpau --enable-hwaccel=vc1_vdpau --enable-hwaccel=wmv3_vdpau"
 VDA="--enable-vda" # --enable-hwaccel=h264_vda"
+
+
+function setup_vc_env() {
+# http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
+  TOOLCHAIN_OPT=
+  PLATFORM_OPT="--toolchain=msvc"
+  CL_INFO=`cl 2>&1 |grep -i Microsoft`
+  CL_VER=`echo $CL_INFO |sed 's,.* \([0-9]*\)\.[0-9]*\..*,\1,g'`
+  echo "cl version: $CL_VER"
+  if [ -n "`echo $CL_INFO |grep -i x86`" ]; then
+    echo "vc x86"
+    test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.01\""
+  elif [ -n "`echo $CL_INFO |grep -i x64`" ]; then
+    echo "vc x64"
+    test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.02\""
+  elif [ -n "`echo $CL_INFO |grep -i arm`" ]; then
+    echo "vc arm"
+    # http://www.cnblogs.com/zjjcy/p/3384517.html  http://www.cnblogs.com/zjjcy/p/3499848.html
+    # armasm: http://www.cnblogs.com/zcmmwbd/p/windows-phone-8-armasm-guide.html#2842650
+    # TODO: use a wrapper function to deal with the parameters passed to armasm
+    PLATFORM_OPT="--extra-cflags=\"-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE -D_M_ARM -DWINAPI_FAMILY=WINAPI_FAMILY_APP\" --extra-ldflags=\"-MACHINE:ARM\" $PLATFORM_OPT --enable-cross-compile --arch=arm --cpu=armv7 --target-os=win32 --as=armasm --disable-yasm --disable-inline-asm"
+  fi
+}
+
+function setup_icc_env() {
+  TOOLCHAIN_OPT=
+  PLATFORM_OPT="--toolchain=icl"
+}
 
 function setup_wince_env() {
   WINCEOPT="--enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
@@ -108,7 +140,12 @@ target_is android && setup_android_env
 target_is maemo5 && setup_maemo5_env
 target_is maemo6 && setup_maemo6_env
 
-CONFIGURE="./configure --disable-static --enable-shared --enable-runtime-cpudetect --enable-memalign-hack --enable-avfilter --enable-avresample --disable-muxers --disable-encoders --enable-pthreads --disable-iconv --disable-bzlib --enable-hwaccels $PLATFORM_OPT --extra-cflags=\"-O3 -ftree-vectorize -ffast-math $CLANG_CFLAGS $EXTRA_CFLAGS\""
+TOOLCHAIN_OPT="--disable-iconv --extra-cflags=\"-O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
+
+target_is vc && setup_vc_env
+
+CONFIGURE="./configure --disable-static --enable-shared --enable-runtime-cpudetect --enable-avresample --disable-muxers --disable-encoders --enable-hwaccels $PLATFORM_OPT $TOOLCHAIN_OPT"
+
 
 echo $CONFIGURE
 
