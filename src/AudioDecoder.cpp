@@ -77,9 +77,19 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         return false;
     DPTR_D(AudioDecoder);
     AVPacket packet;
+#if NO_PADDING_DATA
+    /*!
+      larger than the actual read bytes because some optimized bitstream readers read 32 or 64 bits at once and could read over the end.
+      The end of the input buffer avpkt->data should be set to 0 to ensure that no overreading happens for damaged MPEG streams
+     */
+    // auto released by av_buffer_default_free
+    av_new_packet(&packet, encoded.size());
+    memcpy(packet.data, encoded.data(), encoded.size());
+#else
     av_init_packet(&packet);
     packet.size = encoded.size();
     packet.data = (uint8_t*)encoded.constData();
+#endif //NO_PADDING_DATA
 //TODO: use AVPacket directly instead of Packet?
     int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
     d.undecoded_size = qMin(encoded.size() - ret, encoded.size());
