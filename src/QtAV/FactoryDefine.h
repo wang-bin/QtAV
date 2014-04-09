@@ -1,6 +1,6 @@
 /******************************************************************************
     Some macros to create a factory and register functions
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -115,7 +115,7 @@
         static bool registerCreator(const ID&, const T##Creator&); \
         static bool registerIdName(const ID& id, const std::string& name); \
         static bool unregisterCreator(const ID& id); \
-        static ID id(const std::string& name); \
+        static ID id(const std::string& name, bool caseSensitive = true); \
         static std::string name(const ID &id); \
         static std::vector<ID> registeredIds(); \
         static std::vector<std::string> registeredNames(); \
@@ -133,7 +133,7 @@
     bool T##Factory::registerCreator(const ID& id, const T##Creator& callback) { return T##FactoryBridge::Instance().registerCreator(id, callback); } \
     bool T##Factory::registerIdName(const ID& id, const std::string& name) { return T##FactoryBridge::Instance().registerIdName(id, name); } \
     bool T##Factory::unregisterCreator(const ID& id) { return T##FactoryBridge::Instance().unregisterCreator(id); } \
-    ID T##Factory::id(const std::string& name) { return T##FactoryBridge::Instance().id(name); } \
+    ID T##Factory::id(const std::string& name, bool caseSensitive) { return T##FactoryBridge::Instance().id(name, caseSensitive); } \
     std::string T##Factory::name(const ID &id) { return T##FactoryBridge::Instance().name(id); } \
     std::vector<ID> T##Factory::registeredIds() { return T##FactoryBridge::Instance().registeredIds(); } \
     std::vector<std::string> T##Factory::registeredNames() { return T##FactoryBridge::Instance().registeredNames(); } \

@@ -1,6 +1,6 @@
 /******************************************************************************
     singleton.h: singleton template
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
     
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -70,7 +70,7 @@ bool Singleton<T>::destroyed_ = false;
 template<typename T>
 T &Singleton<T>::Instance()
 {
-    DBG("instance = %p\n", pInstance_);
+    //DBG("instance = %p\n", pInstance_);
     if (!pInstance_) {
         MakeInstance();
     }

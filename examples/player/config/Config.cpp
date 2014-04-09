@@ -49,7 +49,7 @@ QVector<VideoDecoderId> idsFromNames(const QStringList& names) {
     foreach (QString name, names) {
         if (name.isEmpty())
             continue;
-        VideoDecoderId id = VideoDecoderFactory::id(name.toStdString());
+        VideoDecoderId id = VideoDecoderFactory::id(name.toStdString(), false);
         if (id == 0)
             continue;
         decs.append(id);

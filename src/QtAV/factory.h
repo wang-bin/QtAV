@@ -1,6 +1,6 @@
 /******************************************************************************
     Factory: factory template
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,7 @@
  * Using it outside results in initializing static singleton member twice.
  */
 
+#include <ctype.h> //tolower
 #include <time.h>
 #include <iostream>
 #include <map>
@@ -69,7 +70,7 @@ public:
     bool registerIdName(const ID& id, const std::string& name);
     bool unregisterCreator(const ID& id);
     //bool unregisterAll();
-    ID id(const std::string& name) const;
+    ID id(const std::string& name, bool caseSensitive = true) const;
     std::string name(const ID &id) const;
     size_t count() const;
     std::vector<ID> registeredIds() const;
@@ -127,13 +128,25 @@ bool Factory<Id, T, Class>::unregisterCreator(const ID& id)
 }
 
 template<typename Id, typename T, class Class>
-typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::id(const std::string &name) const
+typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::id(const std::string &name, bool caseSensitive) const
 {
     DBG("get id of '%s'", name.c_str());
     //need 'typename'  because 'Factory<Id, T, Class>::NameMap' is a dependent scope
     for (typename NameMap::const_iterator it = name_map.begin(); it!=name_map.end(); ++it) {
-        if (it->second == name)
-            return it->first;
+        if (caseSensitive) {
+            if (it->second == name)
+                return it->first;
+        } else {
+            class lower_equal {
+            public:
+                bool operator()(char c1, char c2) {
+                    return ::tolower(c1) == ::tolower(c2);
+                }
+            };
+            if (std::equal(name.begin(), name.end(), it->second.begin(), lower_equal())) {
+                return it->first;
+            }
+        }
     }
     DBG("Not found");
     return ID(); //can not return ref. TODO: Use a ID wrapper class
