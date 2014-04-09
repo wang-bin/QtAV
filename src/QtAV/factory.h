@@ -127,6 +127,12 @@ bool Factory<Id, T, Class>::unregisterCreator(const ID& id)
     return creators.erase(id) == 1;
 }
 
+// TODO: why gcc error if nested?
+struct lower_equal { //: public std::binary_function<char, char, bool> {
+    bool operator()(char c1, char c2) const {
+        return ::tolower(c1) == ::tolower(c2);
+    }
+};
 template<typename Id, typename T, class Class>
 typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::id(const std::string &name, bool caseSensitive) const
 {
@@ -137,12 +143,6 @@ typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::id(const std::string &
             if (it->second == name)
                 return it->first;
         } else {
-            class lower_equal {
-            public:
-                bool operator()(char c1, char c2) {
-                    return ::tolower(c1) == ::tolower(c2);
-                }
-            };
             if (std::equal(name.begin(), name.end(), it->second.begin(), lower_equal())) {
                 return it->first;
             }
