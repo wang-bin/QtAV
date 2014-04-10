@@ -33,6 +33,7 @@ extern "C"
 	#include <libcedarv/libcedarv.h>
 }
 
+#ifdef NO_NEON_OPT //Don't HAVE_NEON
 static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned int coded_width, unsigned int coded_height)
 {
 	unsigned int i,j,l,m,n;
@@ -81,18 +82,6 @@ static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned
 
 static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
 {
-	/*
-	unsigned int i,j,k;
-
-	for (i = 0; i < coded_width; ++i) {
-		k = i * coded_width;
-		for (j = 0; j < coded_height; ++j) {
-			*(tarCb + k) = srcC[2*k];
-			*(tarCr + k) = srcC[2*k+1];
-			k++;
-		}
-	}
-	*/
 	unsigned int i,j,l,m,n,k;
 	unsigned int mb_width,mb_height,fourmb_line,recon_width;
 	unsigned char line[16];
@@ -148,6 +137,159 @@ static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned 
 	}
 }
 
+#else
+
+static void map32x32_to_yuv_Y(unsigned char* srcY,unsigned char* tarY,unsigned int coded_width,unsigned int coded_height)
+{
+	unsigned int i,j,l,m,n;
+	unsigned int mb_width,mb_height,twomb_line;
+	unsigned long offset;
+	unsigned char *ptr;
+	unsigned char *dst_asm,*src_asm;
+
+	ptr = srcY;
+	mb_width = (coded_width+15)>>4;
+	mb_height = (coded_height+15)>>4;
+	twomb_line = (mb_height+1)>>1;
+
+	for(i=0;i<twomb_line;i++)
+	{
+		for(j=0;j<mb_width/2;j++)
+		{
+			for(l=0;l<32;l++)
+			{
+				//first mb
+				m=i*32 + l;
+				n= j*32;
+				offset = m*coded_width + n;
+				//memcpy(tarY+offset,ptr,32);
+				dst_asm = tarY+offset;
+				src_asm = ptr;
+				asm volatile (
+				        "vld1.8         {d0 - d3}, [%[src_asm]]              \n\t"
+				        "vst1.8         {d0 - d3}, [%[dst_asm]]              \n\t"
+				        : [dst_asm] "+r" (dst_asm), [src_asm] "+r" (src_asm)
+				        :  //[srcY] "r" (srcY)
+				        : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
+				        );
+
+				ptr += 32;
+			}
+		}
+
+		//LOGV("mb_width:%d",mb_width);
+		if(mb_width & 1)
+		{
+			j = mb_width-1;
+			for(l=0;l<32;l++)
+			{
+				//first mb
+				m=i*32 + l;
+				n= j*16;
+				if(m<coded_height && n<coded_width)
+				{
+					offset = m*coded_width + n;
+					//memcpy(tarY+offset,ptr,16);
+					dst_asm = tarY+offset;
+					src_asm = ptr;
+					asm volatile (
+					        "vld1.8         {d0 - d1}, [%[src_asm]]              \n\t"
+					        "vst1.8         {d0 - d1}, [%[dst_asm]]              \n\t"
+					        : [dst_asm] "+r" (dst_asm), [src_asm] "+r" (src_asm)
+					        :  //[srcY] "r" (srcY)
+					        : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
+					        );
+				}
+
+				ptr += 16;
+				ptr += 16;
+			}
+		}
+	}
+}
+
+static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
+{
+	unsigned int i,j,l,m,n,k;
+	unsigned int mb_width,mb_height,fourmb_line;
+	unsigned long offset;
+	unsigned char *ptr;
+	unsigned char *dst0_asm,*dst1_asm,*src_asm;
+	unsigned char line[16];
+	int dst_stride = (coded_width + 15) & (~15);
+
+	ptr = srcC;
+	mb_width = (coded_width+7)>>3;
+	mb_height = (coded_height+7)>>3;
+	fourmb_line = (mb_height+3)>>2;
+
+	for(i=0;i<fourmb_line;i++)
+	{
+		for(j=0;j<mb_width/2;j++)
+		{
+			for(l=0;l<32;l++)
+			{
+				//first mb
+				m=i*32 + l;
+				n= j*16;
+				if(m<coded_height && n<coded_width)
+				{
+					offset = m*dst_stride + n;
+
+					dst0_asm = tarCb + offset;
+					dst1_asm = tarCr+offset;
+					src_asm = ptr;
+//					for(k=0;k<16;k++)
+//					{
+//						dst0_asm[k] = src_asm[2*k];
+//						dst1_asm[k] = src_asm[2*k+1];
+//					}
+					asm volatile (
+					        "vld1.8         {d0 - d3}, [%[src_asm]]              \n\t"
+							"vuzp.8         d0, d1              \n\t"
+							"vuzp.8         d2, d3              \n\t"
+							"vst1.8         {d0}, [%[dst0_asm]]!              \n\t"
+							"vst1.8         {d2}, [%[dst0_asm]]!              \n\t"
+							"vst1.8         {d1}, [%[dst1_asm]]!              \n\t"
+							"vst1.8         {d3}, [%[dst1_asm]]!              \n\t"
+					         : [dst0_asm] "+r" (dst0_asm), [dst1_asm] "+r" (dst1_asm), [src_asm] "+r" (src_asm)
+					         :  //[srcY] "r" (srcY)
+					         : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
+					         );
+				}
+
+				ptr += 32;
+			}
+		}
+
+		if(mb_width & 1)
+		{
+			j= mb_width-1;
+			for(l=0;l<32;l++)
+			{
+				m=i*32 + l;
+				n= j*8;
+
+				if(m<coded_height && n<coded_width)
+				{
+					offset = m*dst_stride + n;
+					memcpy(line,ptr,16);
+					for(k=0;k<8;k++)
+					{
+						*(tarCb + offset + k) = line[2*k];
+						*(tarCr + offset + k) = line[2*k+1];
+					}
+				}
+
+				ptr += 16;
+				ptr += 16;
+			}
+		}
+	}
+}
+
+#endif
+
 namespace QtAV {
 
 class VideoDecoderCedarvPrivate;
@@ -182,9 +324,6 @@ public:
 
 	CEDARV_DECODER *cedarv;
 	cedarv_picture_t cedarPicture;
-	QByteArray y;
-	QByteArray u;
-	QByteArray v;
 };
 
 VideoDecoderCedarv::VideoDecoderCedarv()
@@ -258,8 +397,10 @@ bool VideoDecoderCedarv::decode(const QByteArray &encoded)
 	//d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_JUMP, 0);
 
 	AVPacket packet;
-	av_new_packet(&packet, encoded.size());
-	memcpy(packet.data, encoded.data(), encoded.size());
+	av_init_packet(&packet);
+	packet.size = encoded.size();
+	packet.data = (uint8_t*)encoded.constData();
+
 
 	if (packet.size == 0) {
 		return true;
@@ -298,30 +439,39 @@ VideoFrame VideoDecoderCedarv::frame()
 	if (!d.cedarPicture.id) {
 		return VideoFrame();
 	}
-	VideoFrame frame = VideoFrame(d.cedarPicture.width, d.cedarPicture.height, VideoFormat(VideoFormat::Format_YUV420P));
-	if ((unsigned int)d.y.size() != d.cedarPicture.size_y) {
-		d.y.resize(d.cedarPicture.size_y);
-	}
-	if ((unsigned int)d.u.size() != d.cedarPicture.size_u / 2) {
-		d.u.resize(d.cedarPicture.size_u / 2);
-	}
-	if ((unsigned int)d.v.size() != d.cedarPicture.size_u / 2) {
-		d.v.resize(d.cedarPicture.size_u / 2);
-	}
+	unsigned int size_y = d.cedarPicture.size_y;
+	unsigned int size_u = d.cedarPicture.size_u / 2;
+	unsigned int size_v = d.cedarPicture.size_u / 2;
+	unsigned int offset_y = 0;
+	unsigned int offset_u = offset_y + size_y;
+	unsigned int offset_v = offset_u + size_u;
+	QByteArray buf(size_y + size_u + size_v, '\0');
+	buf.resize(size_y + size_u + size_v);
+	unsigned char *dst = reinterpret_cast<unsigned char *>(buf.data());
+
 	int bitsPerLine_Y = d.cedarPicture.size_y / d.cedarPicture.height;
 	int bitsPerRow_Y = d.cedarPicture.size_y / bitsPerLine_Y;
-	map32x32_to_yuv_Y(d.cedarPicture.y, (uchar *)d.y.data(), bitsPerLine_Y, bitsPerRow_Y);
-	map32x32_to_yuv_C(d.cedarPicture.u, (uchar *)d.u.data(), (uchar *)d.v.data(), bitsPerLine_Y / 2, bitsPerRow_Y / 2);
-	frame.setBits((uchar *)d.y.data(), 0);
-	frame.setBytesPerLine(d.cedarPicture.size_y / d.cedarPicture.height, 0);
-	frame.setBits((uchar *)d.u.data(), 1);
-	frame.setBytesPerLine(bitsPerLine_Y / 2, 1);
-	frame.setBits((uchar *)d.v.data(), 2);
-	frame.setBytesPerLine(bitsPerLine_Y / 2, 2);
+
+	map32x32_to_yuv_Y(d.cedarPicture.y, dst + offset_y, bitsPerLine_Y, bitsPerRow_Y);
+	map32x32_to_yuv_C(d.cedarPicture.u, dst + offset_u, dst + offset_v, bitsPerLine_Y / 2, bitsPerRow_Y / 2);
+
+	uint8_t *pp_plane[3];
+	pp_plane[0] = dst + offset_y;
+	pp_plane[1] = dst + offset_u;
+	pp_plane[2] = dst + offset_v;
+
+	int pi_pitch[3];
+	pi_pitch[0] = d.cedarPicture.size_y / d.cedarPicture.height;
+	pi_pitch[1] = bitsPerLine_Y / 2;
+	pi_pitch[2] = bitsPerLine_Y / 2;
+	VideoFrame frame = VideoFrame(buf, d.cedarPicture.width, d.cedarPicture.height, VideoFormat(VideoFormat::Format_YUV420P));
+
+	frame.setBits(pp_plane);
+	frame.setBytesPerLine(pi_pitch);
 
 	d.cedarv->display_release(d.cedarv, d.cedarPicture.id);
 	d.cedarPicture.id = 0;
-	return frame;
+	return frame.clone();
 }
 
 
