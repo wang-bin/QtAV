@@ -1,34 +1,34 @@
 /*
  * Copyright 1993-2008 NVIDIA Corporation.  All rights reserved.
  *
- * NOTICE TO USER:
+ * NOTICE TO USER:   
  *
- * This source code is subject to NVIDIA ownership rights under U.S. and
- * international Copyright laws.  Users and possessors of this source code
- * are hereby granted a nonexclusive, royalty-free license to use this code
+ * This source code is subject to NVIDIA ownership rights under U.S. and 
+ * international Copyright laws.  Users and possessors of this source code 
+ * are hereby granted a nonexclusive, royalty-free license to use this code 
  * in individual and commercial software.
  *
- * NVIDIA MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOURCE
- * CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT EXPRESS OR
- * IMPLIED WARRANTY OF ANY KIND.  NVIDIA DISCLAIMS ALL WARRANTIES WITH
- * REGARD TO THIS SOURCE CODE, INCLUDING ALL IMPLIED WARRANTIES OF
+ * NVIDIA MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOURCE 
+ * CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT EXPRESS OR 
+ * IMPLIED WARRANTY OF ANY KIND.  NVIDIA DISCLAIMS ALL WARRANTIES WITH 
+ * REGARD TO THIS SOURCE CODE, INCLUDING ALL IMPLIED WARRANTIES OF 
  * MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE.
- * IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL,
- * OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
- * OF USE, DATA OR PROFITS,  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
- * OR OTHER TORTIOUS ACTION,  ARISING OUT OF OR IN CONNECTION WITH THE USE
- * OR PERFORMANCE OF THIS SOURCE CODE.
+ * IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL, 
+ * OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS 
+ * OF USE, DATA OR PROFITS,  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE 
+ * OR OTHER TORTIOUS ACTION,  ARISING OUT OF OR IN CONNECTION WITH THE USE 
+ * OR PERFORMANCE OF THIS SOURCE CODE.  
  *
- * U.S. Government End Users.   This source code is a "commercial item" as
- * that term is defined at  48 C.F.R. 2.101 (OCT 1995), consisting  of
- * "commercial computer  software"  and "commercial computer software
- * documentation" as such terms are  used in 48 C.F.R. 12.212 (SEPT 1995)
- * and is provided to the U.S. Government only as a commercial end item.
- * Consistent with 48 C.F.R.12.212 and 48 C.F.R. 227.7202-1 through
- * 227.7202-4 (JUNE 1995), all U.S. Government End Users acquire the
- * source code with only those rights set forth herein.
+ * U.S. Government End Users.   This source code is a "commercial item" as 
+ * that term is defined at  48 C.F.R. 2.101 (OCT 1995), consisting  of 
+ * "commercial computer  software"  and "commercial computer software 
+ * documentation" as such terms are  used in 48 C.F.R. 12.212 (SEPT 1995) 
+ * and is provided to the U.S. Government only as a commercial end item.  
+ * Consistent with 48 C.F.R.12.212 and 48 C.F.R. 227.7202-1 through 
+ * 227.7202-4 (JUNE 1995), all U.S. Government End Users acquire the 
+ * source code with only those rights set forth herein. 
  *
- * Any use of this source code in individual and commercial software must
+ * Any use of this source code in individual and commercial software must 
  * include, in the user documentation and internal comments to the code,
  * the above Disclaimer and U.S. Government End Users Notice.
  */
@@ -38,16 +38,11 @@
 
 #include "cuviddec.h"
 
-//namespace dllapi {
-//namespace cuvid {
-//using namespace dllapi::cuda;
-//using namespace dllapi::cuviddec;
-
 #if defined(__cplusplus)
 extern "C" {
 #endif /* __cplusplus */
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // High-level helper APIs for video sources
 //
@@ -56,7 +51,7 @@ typedef void *CUvideosource;
 typedef void *CUvideoparser;
 typedef long long CUvideotimestamp;
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // video data structures
 //
@@ -65,7 +60,7 @@ typedef long long CUvideotimestamp;
 typedef enum {
     cudaVideoState_Error   = -1,    // Error state (invalid source)
     cudaVideoState_Stopped = 0,     // Source is stopped (or reached end-of-stream)
-    cudaVideoState_Started = 1,     // Source is running and delivering data
+    cudaVideoState_Started = 1      // Source is running and delivering data
 } cudaVideoState;
 
 // Audio compression
@@ -74,7 +69,7 @@ typedef enum {
     cudaAudioCodec_MPEG2,           // MPEG-2 Audio
     cudaAudioCodec_MP3,             // MPEG-1 Layer III Audio
     cudaAudioCodec_AC3,             // Dolby Digital (AC3) Audio
-    cudaAudioCodec_LPCM,            // PCM Audio
+    cudaAudioCodec_LPCM             // PCM Audio
 } cudaAudioCodec;
 
 
@@ -88,7 +83,7 @@ typedef struct
     } frame_rate;                   // frame rate = numerator / denominator (for example: 30000/1001)
     int progressive_sequence;       // 0=interlaced, 1=progressive
     unsigned int coded_width;       // coded frame width
-    unsigned int coded_height;      // coded frame height
+    unsigned int coded_height;      // coded frame height 
     struct {                        // area of the frame that should be displayed
         int left;                   // typical example:
         int top;                    //   coded_width = 1920, coded_height = 1088
@@ -131,7 +126,7 @@ typedef struct
 
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // video source
 //
@@ -140,7 +135,7 @@ typedef struct
 typedef enum {
     CUVID_PKT_ENDOFSTREAM   = 0x01,   // Set when this is the last packet for this stream
     CUVID_PKT_TIMESTAMP     = 0x02,   // Timestamp is valid
-    CUVID_PKT_DISCONTINUITY = 0x04,   // Set when a discontinuity has to be signalled
+    CUVID_PKT_DISCONTINUITY = 0x04    // Set when a discontinuity has to be signalled
 } CUvideopacketflags;
 
 typedef struct _CUVIDSOURCEDATAPACKET
@@ -165,7 +160,7 @@ typedef struct _CUVIDSOURCEPARAMS
 } CUVIDSOURCEPARAMS;
 
 typedef enum {
-    CUVID_FMT_EXTFORMATINFO = 0x100,    // Return extended format structure (CUVIDEOFORMATEX)
+    CUVID_FMT_EXTFORMATINFO = 0x100     // Return extended format structure (CUVIDEOFORMATEX)
 } CUvideosourceformat_flags;
 
 #if !defined(__APPLE__)
@@ -179,7 +174,7 @@ CUresult CUDAAPI cuvidGetSourceVideoFormat(CUvideosource obj, CUVIDEOFORMAT *pvi
 CUresult CUDAAPI cuvidGetSourceAudioFormat(CUvideosource obj, CUAUDIOFORMAT *paudfmt, unsigned int flags);
 #endif
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Video parser
 //
@@ -224,14 +219,11 @@ CUresult CUDAAPI cuvidParseVideoData(CUvideoparser obj, CUVIDSOURCEDATAPACKET *p
 CUresult CUDAAPI cuvidDestroyVideoParser(CUvideoparser obj);
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
 
-
-//} //namespace cuvid
-//} //namespace dllapi
-
 #endif // __NVCUVID_H__
+

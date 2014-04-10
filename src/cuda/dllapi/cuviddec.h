@@ -1,48 +1,44 @@
 /*
  * Copyright 1993-2008 NVIDIA Corporation.  All rights reserved.
  *
- * NOTICE TO USER:
+ * NOTICE TO USER:   
  *
- * This source code is subject to NVIDIA ownership rights under U.S. and
- * international Copyright laws.  Users and possessors of this source code
- * are hereby granted a nonexclusive, royalty-free license to use this code
+ * This source code is subject to NVIDIA ownership rights under U.S. and 
+ * international Copyright laws.  Users and possessors of this source code 
+ * are hereby granted a nonexclusive, royalty-free license to use this code 
  * in individual and commercial software.
  *
- * NVIDIA MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOURCE
- * CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT EXPRESS OR
- * IMPLIED WARRANTY OF ANY KIND.  NVIDIA DISCLAIMS ALL WARRANTIES WITH
- * REGARD TO THIS SOURCE CODE, INCLUDING ALL IMPLIED WARRANTIES OF
+ * NVIDIA MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOURCE 
+ * CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT EXPRESS OR 
+ * IMPLIED WARRANTY OF ANY KIND.  NVIDIA DISCLAIMS ALL WARRANTIES WITH 
+ * REGARD TO THIS SOURCE CODE, INCLUDING ALL IMPLIED WARRANTIES OF 
  * MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE.
- * IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL,
- * OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
- * OF USE, DATA OR PROFITS,  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
- * OR OTHER TORTIOUS ACTION,  ARISING OUT OF OR IN CONNECTION WITH THE USE
- * OR PERFORMANCE OF THIS SOURCE CODE.
+ * IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL, 
+ * OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS 
+ * OF USE, DATA OR PROFITS,  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE 
+ * OR OTHER TORTIOUS ACTION,  ARISING OUT OF OR IN CONNECTION WITH THE USE 
+ * OR PERFORMANCE OF THIS SOURCE CODE.  
  *
- * U.S. Government End Users.   This source code is a "commercial item" as
- * that term is defined at  48 C.F.R. 2.101 (OCT 1995), consisting  of
- * "commercial computer  software"  and "commercial computer software
- * documentation" as such terms are  used in 48 C.F.R. 12.212 (SEPT 1995)
- * and is provided to the U.S. Government only as a commercial end item.
- * Consistent with 48 C.F.R.12.212 and 48 C.F.R. 227.7202-1 through
- * 227.7202-4 (JUNE 1995), all U.S. Government End Users acquire the
- * source code with only those rights set forth herein.
+ * U.S. Government End Users.   This source code is a "commercial item" as 
+ * that term is defined at  48 C.F.R. 2.101 (OCT 1995), consisting  of 
+ * "commercial computer  software"  and "commercial computer software 
+ * documentation" as such terms are  used in 48 C.F.R. 12.212 (SEPT 1995) 
+ * and is provided to the U.S. Government only as a commercial end item.  
+ * Consistent with 48 C.F.R.12.212 and 48 C.F.R. 227.7202-1 through 
+ * 227.7202-4 (JUNE 1995), all U.S. Government End Users acquire the 
+ * source code with only those rights set forth herein. 
  *
- * Any use of this source code in individual and commercial software must
+ * Any use of this source code in individual and commercial software must 
  * include, in the user documentation and internal comments to the code,
  * the above Disclaimer and U.S. Government End Users Notice.
  */
-
+ 
 #if !defined(__CUDA_VIDEO_H__)
 #define __CUDA_VIDEO_H__
 
 #ifndef __cuda_cuda_h__
-#include "cuda.h"
+#include <cuda.h>
 #endif // __cuda_cuda_h__
-
-//namespace dllapi {
-//namespace cuviddec {
-//using namespace dllapi::cuda;
 
 #if defined(__x86_64) || defined(AMD64) || defined(_M_AMD64)
 #if (CUDA_VERSION >= 3020) && (!defined(CUDA_FORCE_API_VERSION) || (CUDA_FORCE_API_VERSION >= 3020))
@@ -72,31 +68,31 @@ typedef enum cudaVideoCodec_enum {
     cudaVideoCodec_YV12   = (('Y'<<24)|('V'<<16)|('1'<<8)|('2')),   // Y,V,U (4:2:0)
     cudaVideoCodec_NV12   = (('N'<<24)|('V'<<16)|('1'<<8)|('2')),   // Y,UV  (4:2:0)
     cudaVideoCodec_YUYV   = (('Y'<<24)|('U'<<16)|('Y'<<8)|('V')),   // YUYV/YUY2 (4:2:2)
-    cudaVideoCodec_UYVY   = (('U'<<24)|('Y'<<16)|('V'<<8)|('Y')),   // UYVY (4:2:2)
+    cudaVideoCodec_UYVY   = (('U'<<24)|('Y'<<16)|('V'<<8)|('Y'))    // UYVY (4:2:2)
 } cudaVideoCodec;
 
 typedef enum cudaVideoSurfaceFormat_enum {
-    cudaVideoSurfaceFormat_NV12=0,  // NV12 (currently the only supported output format)
+    cudaVideoSurfaceFormat_NV12=0   // NV12 (currently the only supported output format)
 } cudaVideoSurfaceFormat;
 
 typedef enum cudaVideoDeinterlaceMode_enum {
     cudaVideoDeinterlaceMode_Weave=0,   // Weave both fields (no deinterlacing)
     cudaVideoDeinterlaceMode_Bob,       // Drop one field
-    cudaVideoDeinterlaceMode_Adaptive,  // Adaptive deinterlacing
+    cudaVideoDeinterlaceMode_Adaptive   // Adaptive deinterlacing
 } cudaVideoDeinterlaceMode;
 
 typedef enum cudaVideoChromaFormat_enum {
     cudaVideoChromaFormat_Monochrome=0,
     cudaVideoChromaFormat_420,
     cudaVideoChromaFormat_422,
-    cudaVideoChromaFormat_444,
+    cudaVideoChromaFormat_444
 } cudaVideoChromaFormat;
 
 typedef enum cudaVideoCreateFlags_enum {
     cudaVideoCreate_Default = 0x00,     // Default operation mode: use dedicated video engines
     cudaVideoCreate_PreferCUDA = 0x01,  // Use a CUDA-based decoder if faster than dedicated engines (requires a valid vidLock object for multi-threading)
     cudaVideoCreate_PreferDXVA = 0x02,  // Go through DXVA internally if possible (requires D3D9 interop)
-    cudaVideoCreate_PreferCUVID = 0x04, // Use dedicated video engines directly
+    cudaVideoCreate_PreferCUVID = 0x04  // Use dedicated video engines directly
 } cudaVideoCreateFlags;
 
 
@@ -119,7 +115,7 @@ typedef struct _CUVIDDECODECREATEINFO
     // Output format
     cudaVideoSurfaceFormat OutputFormat;       // cudaVideoSurfaceFormat_XXX
     cudaVideoDeinterlaceMode DeinterlaceMode;  // cudaVideoDeinterlaceMode_XXX
-    unsigned long ulTargetWidth;    // Post-processed Output Width
+    unsigned long ulTargetWidth;    // Post-processed Output Width 
     unsigned long ulTargetHeight;   // Post-processed Output Height
     unsigned long ulNumOutputSurfaces; // Maximum number of output surfaces simultaneously mapped
     CUvideoctxlock vidLock;         // If non-NULL, context lock used for synchronizing ownership of the cuda context
@@ -133,7 +129,7 @@ typedef struct _CUVIDDECODECREATEINFO
 } CUVIDDECODECREATEINFO;
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // H.264 Picture Parameters
 //
@@ -170,7 +166,7 @@ typedef struct _CUVIDH264SVCEXT
     unsigned char ref_layer_chroma_phase_y_plus1;
     signed char   inter_layer_slice_alpha_c0_offset_div2;
     signed char   inter_layer_slice_beta_offset_div2;
-
+    
     unsigned short DPBEntryValidFlag;
     unsigned char inter_layer_deblocking_filter_control_present_flag;
     unsigned char extended_spatial_scalability_idc;
@@ -178,16 +174,16 @@ typedef struct _CUVIDH264SVCEXT
     unsigned char slice_header_restriction_flag;
     unsigned char chroma_phase_x_plus1_flag;
     unsigned char chroma_phase_y_plus1;
-
+    
     unsigned char tcoeff_level_prediction_flag;
     unsigned char constrained_intra_resampling_flag;
     unsigned char ref_layer_chroma_phase_x_plus1_flag;
     unsigned char store_ref_base_pic_flag;
-    unsigned char Reserved8BitsA;
-    unsigned char Reserved8BitsB;
+    unsigned char Reserved8BitsA; 
+    unsigned char Reserved8BitsB; 
     // For the 4 scaled_ref_layer_XX fields below,
     // if (extended_spatial_scalability_idc == 1), SPS field, G.7.3.2.1.4, add prefix "seq_"
-    // if (extended_spatial_scalability_idc == 2), SLH field, G.7.3.3.4,
+    // if (extended_spatial_scalability_idc == 2), SLH field, G.7.3.3.4, 
     short scaled_ref_layer_left_offset;
     short scaled_ref_layer_top_offset;
     short scaled_ref_layer_right_offset;
@@ -255,7 +251,7 @@ typedef struct _CUVIDH264PICPARAMS
 } CUVIDH264PICPARAMS;
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // MPEG-2 Picture Parameters
 //
@@ -280,7 +276,7 @@ typedef struct _CUVIDMPEG2PICPARAMS
     unsigned char QuantMatrixInter[64];
 } CUVIDMPEG2PICPARAMS;
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // MPEG-4 Picture Parameters
 //
@@ -321,7 +317,7 @@ typedef struct _CUVIDMPEG4PICPARAMS
     int gmc_enabled;
 } CUVIDMPEG4PICPARAMS;
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // VC1 Picture Parameters
 //
@@ -366,7 +362,7 @@ typedef struct _CUVIDVC1PICPARAMS
     int rangeredfrm;    // range reduction state
 } CUVIDVC1PICPARAMS;
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // JPEG Picture Parameters
 //
@@ -376,9 +372,9 @@ typedef struct _CUVIDJPEGPICPARAMS
     int Reserved;
 } CUVIDJPEGPICPARAMS;
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Picture Parameters for Decoding
+// Picture Parameters for Decoding 
 //
 
 typedef struct _CUVIDPICPARAMS
@@ -409,7 +405,7 @@ typedef struct _CUVIDPICPARAMS
 } CUVIDPICPARAMS;
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Post-processing
 //
@@ -432,7 +428,7 @@ typedef struct _CUVIDPROCPARAMS
     void *Reserved3[3];
 } CUVIDPROCPARAMS;
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // In order to maximize decode latencies, there should be always at least 2 pictures in the decode
 // queue at any time, in order to make sure that all decode engines are always busy.
@@ -453,10 +449,10 @@ typedef struct _CUVIDPROCPARAMS
 // - In the current version, the cuda context MUST be created from a D3D device, using cuD3D9CtxCreate function.
 //   For multi-threaded operation, the D3D device must also be created with the D3DCREATE_MULTITHREADED flag.
 // - There is a limit to how many pictures can be mapped simultaneously (ulNumOutputSurfaces)
-// - cuVidDecodePicture may block the calling thread if there are too many pictures pending
+// - cuVidDecodePicture may block the calling thread if there are too many pictures pending 
 //   in the decode queue
 //
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Create/Destroy the decoder object
 extern CUresult CUDAAPI cuvidCreateDecoder(CUvideodecoder *phDecoder, CUVIDDECODECREATEINFO *pdci);
@@ -487,11 +483,11 @@ extern CUresult CUDAAPI cuvidUnmapVideoFrame64(CUvideodecoder hDecoder, unsigned
 // Get the pointer to the d3d9 surface that is the decode RT
 extern CUresult CUDAAPI cuvidGetVideoFrameSurface(CUvideodecoder hDecoder, int nPicIdx, void **pSrcSurface);
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Context-locking: to facilitate multi-threaded implementations, the following 4 functions
 // provide a simple mutex-style host synchronization. If a non-NULL context is specified
-// in CUVIDDECODECREATEINFO, the codec library will acquire the mutex associated with the given
+// in CUVIDDECODECREATEINFO, the codec library will acquire the mutex associated with the given 
 // context before making any cuda calls.
 // A multi-threaded application could create a lock associated with a context handle so that
 // multiple threads can safely share the same cuda context:
@@ -507,7 +503,7 @@ extern CUresult CUDAAPI cuvidCtxLockDestroy(CUvideoctxlock lck);
 extern CUresult CUDAAPI cuvidCtxLock(CUvideoctxlock lck, unsigned int reserved_flags);
 extern CUresult CUDAAPI cuvidCtxUnlock(CUvideoctxlock lck, unsigned int reserved_flags);
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if defined(__cplusplus)
 }
@@ -524,8 +520,5 @@ public:
 
 #endif /* __cplusplus */
 
-
-//} //namespace cuviddec
-//} //namespace dllapi
-
 #endif // __CUDA_VIDEO_H__
+
