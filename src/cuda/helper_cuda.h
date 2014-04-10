@@ -88,7 +88,10 @@ static const char *_cudaGetErrorEnum(CUresult error)
         case CUDA_ERROR_TOO_MANY_PEERS: return "CUDA_ERROR_TOO_MANY_PEERS";
         case CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED: return "CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED";
         case CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED: return "CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED";
-        case CUDA_ERROR_UNKNOWN: return "CUDA_ERROR_UNKNOWN";
+        case CUDA_ERROR_UNKNOWN:
+        //TODO: 6.0 enum support
+        default:
+            return "CUDA_ERROR_UNKNOWN";
     }
     return "<unknown>";
 }

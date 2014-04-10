@@ -32,12 +32,10 @@
 #define COPY_ON_DECODE 0
 #define FILTER_ANNEXB_CUVID 0
 /*
- * TODO: update helper_cuda with 5.5
  * avc1, ccv1 => h264 + sps, pps, nal. use filter or lavcudiv
  * http://blog.csdn.net/gavinr/article/details/7183499
  * https://www.ffmpeg.org/ffmpeg-bitstream-filters.html
  * http://hi.baidu.com/freenaut/item/49ca125112587314aaf6d733
- * flush api
  * CUDA_ERROR_INVALID_VALUE "cuvidDecodePicture(p->dec, cuvidpic)"
  */
 
@@ -110,6 +108,7 @@ public:
     VideoDecoderCUDAPrivate():
         VideoDecoderPrivate()
       , can_load(true)
+      , flushing(false)
       , host_data(0)
       , host_data_size(0)
     {
@@ -148,12 +147,14 @@ public:
     bool releaseCuda();
     bool createCUVIDDecoder(cudaVideoCodec cudaCodec, int w, int h);
     bool createCUVIDParser();
+    bool flushParser();
     bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp, VideoFrame* outFrame = 0);
     bool doParseVideoData(CUVIDSOURCEDATAPACKET* pPkt) {
-        //cuvidCtxUnlock(vid_ctx_lock, 0); //TODO: why wrong context?
+        AutoCtxLock lock(this, vid_ctx_lock);
+        Q_UNUSED(lock);
         CUresult cuStatus = cuvidParseVideoData(parser, pPkt);
         if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuvidParseVideoData failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+            qWarning("cuvidParseVideoData failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
             return false;
         }
         return true;
@@ -196,12 +197,16 @@ public:
     }
     static int CUDAAPI HandlePictureDecode(void *obj, CUVIDPICPARAMS *cuvidpic) {
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
+        if (p->flushing)
+            return 0;
         //qDebug("%s @%d tid=%p dec=%p idx=%d inUse=%d", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec, cuvidpic->CurrPicIdx, p->surface_in_use[cuvidpic->CurrPicIdx]);
         p->doDecodePicture(cuvidpic);
-        return true;
+        return 1;
     }
     static int CUDAAPI HandlePictureDisplay(void *obj, CUVIDPARSERDISPINFO *cuviddisp) {
         VideoDecoderCUDAPrivate *p = reinterpret_cast<VideoDecoderCUDAPrivate*>(obj);
+        if (p->flushing)
+            return 0;
         p->surface_in_use[cuviddisp->picture_index] = true;
         //qDebug("mark in use pic_index: %d", cuviddisp->picture_index);
         //qDebug("%s @%d tid=%p dec=%p", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec);
@@ -214,6 +219,7 @@ public:
     }
 
     bool can_load; //if linked to cuvid, it's true. otherwise(use dllapi) equals to whether cuvid can be loaded
+    bool flushing;
     uchar *host_data;
     int host_data_size;
     CUcontext cuctx;
@@ -438,7 +444,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w
     }
     nb_dec_surface = dec_create_info.ulNumDecodeSurfaces;
 
-    qDebug("ulNumDecodeSurfaces: %d", dec_create_info.ulNumDecodeSurfaces);
+    qDebug("ulNumDecodeSurfaces: %lu", dec_create_info.ulNumDecodeSurfaces);
 
     // create the decoder
     available = false;
@@ -508,6 +514,15 @@ bool VideoDecoderCUDAPrivate::createCUVIDParser()
     return true;
 }
 
+bool VideoDecoderCUDAPrivate::flushParser()
+{
+    flushing = true;
+    CUVIDSOURCEDATAPACKET flush_packet;
+    memset(&flush_packet, 0, sizeof(CUVIDSOURCEDATAPACKET));
+    flush_packet.flags |= CUVID_PKT_ENDOFSTREAM;
+    return doParseVideoData(&flush_packet);
+}
+
 bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp, VideoFrame* outFrame) {
     int num_fields = cuviddisp->progressive_frame ? 1 : 2+cuviddisp->repeat_first_field;
 
@@ -524,7 +539,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         cuvidCtxLock(vid_ctx_lock, 0);
         CUresult cuStatus = cuvidMapVideoFrame(dec, cuviddisp->picture_index, &devptr, &pitch, &proc_params);
         if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuvidMapVideoFrame failed on index %d (%p, %s)", cuviddisp->picture_index, cuStatus, _cudaGetErrorEnum(cuStatus));
+            qWarning("cuvidMapVideoFrame failed on index %d (%#x, %s)", cuviddisp->picture_index, cuStatus, _cudaGetErrorEnum(cuStatus));
             cuvidUnmapVideoFrame(dec, devptr);
             cuvidCtxUnlock(vid_ctx_lock, 0);
             return false;
@@ -542,7 +557,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         if (!host_data) {
             cuStatus = cuMemAllocHost((void**)&host_data, size);
             if (cuStatus != CUDA_SUCCESS) {
-                qWarning("cuMemAllocHost failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+                qWarning("cuMemAllocHost failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
                 cuvidUnmapVideoFrame(dec, devptr);
                 cuvidCtxUnlock(vid_ctx_lock, 0);
                 return false;
@@ -557,14 +572,14 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         }
         cuStatus = cuMemcpyDtoHAsync(host_data, devptr, size, stream);
         if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuMemcpyDtoHAsync failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+            qWarning("cuMemcpyDtoHAsync failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
             cuvidUnmapVideoFrame(dec, devptr);
             cuvidCtxUnlock(vid_ctx_lock, 0);
             return false;
         }
         cuStatus = cuCtxSynchronize();
         if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuCtxSynchronize failed (%p, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
+            qWarning("cuCtxSynchronize failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
         }
         cuvidUnmapVideoFrame(dec, devptr);
         cuvidCtxUnlock(vid_ctx_lock, 0);
