@@ -3,17 +3,31 @@
 # Author: wbsecg1@gmail.com 2013-2014
 
 # Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
-# To build ffmpeg for android, run "./build_ffmpeg android". default is armv7.
-: ${INSTALL_DIR:=sdk}
-# set NDK_ROOT if compile for android
-: ${NDK_ROOT:="/devel/android/android-ndk-r8e"}
+# To build ffmpeg for android, run "./build_ffmpeg android". default is armv7-a.
 
+PLATFORMS="android|maemo5|maemo6|vc"
+echo "Put this script in ffmpeg source dir. Make sure your build environment is correct."
+echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
+echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//|/, }"
+echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
+echo "Author: wbsecg1@gmail.com 2013-2014"
+# TODO: PLATFORM=xxx TARGET=ooo TOOLCHAIN=ttt ./build_ffmpeg.sh
 
 TAGET_FLAG=$1
 
+if [ -n "$TAGET_FLAG" ]; then
+  USER_CONFIG=config-${TAGET_FLAG}.sh
+  test -f $USER_CONFIG &&  . $USER_CONFIG
+fi
 
-echo "usage: ./build_ffmpeg.sh [android|maemo5|maemo6|vc]"
-# TODO: PLATFORM=xxx TARGET=ooo TOOLCHAIN=ttt ./build_ffmpeg.sh
+: ${INSTALL_DIR:=sdk}
+# set NDK_ROOT if compile for android
+: ${NDK_ROOT:="/devel/android/android-ndk-r8e"}
+: ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
+: ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
+
+
+
 
 #host_is
 function platform_is() {
@@ -99,7 +113,6 @@ function setup_android_env() {
 }
 
 function setup_maemo5_env() {
-  MAEMO5_SYSROOT=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim
 #--arch=armv7l --cpu=armv7l
 #CLANG=clang
   if [ -n "$CLANG" ]; then
@@ -115,7 +128,6 @@ function setup_maemo5_env() {
   INSTALL_DIR=sdk-maemo5
 }
 function setup_maemo6_env() {
-  MAEMO6_SYSROOT=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim
 #--arch=armv7l --cpu=armv7l
 #CLANG=clang
   if [ -n "$CLANG" ]; then
