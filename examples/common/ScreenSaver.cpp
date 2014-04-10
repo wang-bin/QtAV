@@ -122,6 +122,11 @@ ScreenSaver::ScreenSaver()
     allowExposures = 0;
     xlib.setFileName("libX11.so");
     isX11 = xlib.load();
+    // meego only has libX11.so.6, libX11.so.6.x.x
+    if (!isX11) {
+        xlib.setFileName("libX11.so.6");
+        isX11 = xlib.load();
+    }
     if (!isX11) {
         qDebug("open X11 so failed: %s", xlib.errorString().toUtf8().constData());
     } else {
