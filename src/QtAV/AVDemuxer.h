@@ -188,7 +188,7 @@ public:
 signals:
     /*emit when the first frame is read*/
     void started();
-    Q_DECL_DEPRECATED void finished(); //end of file
+    void finished(); //end of file
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void mediaStatusChanged(QtAV::MediaStatus status);
 

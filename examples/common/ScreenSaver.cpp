@@ -29,6 +29,12 @@ static QLibrary xlib;
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QAbstractNativeEventFilter>
 #endif
+//mingw gcc4.4 EXECUTION_STATE
+#ifdef __MINGW32__
+#ifndef _WIN32_WINDOWS
+#define _WIN32_WINDOWS 0x0410
+#endif //_WIN32_WINDOWS
+#endif //__MINGW32__
 #include <windows.h>
 #define USE_NATIVE_EVENT 0
 

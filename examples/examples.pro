@@ -8,13 +8,16 @@ SUBDIRS += \
     filters \
     videographicsitem \
     videogroup \
-    videowall \
-    qmlmultiwindow
+    videowall
 
 player.depends += common
 
-greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(quick) {
-  SUBDIRS += QMLPlayer \
-            qmlvideofx
-  QMLPlayer.depends += common
+greaterThan(QT_MAJOR_VERSION, 4) {
+  # qtHaveModule does not exist in Qt5.0
+  isEqual(QT_MINOR_VERSION, 0)|qtHaveModule(quick) {
+    SUBDIRS += QMLPlayer \
+              qmlvideofx \
+              qmlmultiwindow
+    QMLPlayer.depends += common
+  }
 }
