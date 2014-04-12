@@ -175,11 +175,11 @@ bool AudioOutputPortAudio::close()
     if (!d.stream) {
         return true;
     }
-    err = Pa_StopStream(d.stream);
+    err = Pa_StopStream(d.stream); //may be already stopped: paStreamIsStopped
     if (err != paNoError) {
         d.available = available_old;
         qWarning("Stop portaudio stream error: %s", Pa_GetErrorText(err));
-        return false;
+        //return err == paStreamIsStopped;
     }
     err = Pa_CloseStream(d.stream);
     if (err != paNoError) {
