@@ -61,6 +61,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mLoopCount(1)
   , mPlaybackState(StoppedState)
   , mpPlayer(0)
+  , mChannelLayout(ChannelLayoutAuto)
 {
     mpPlayer = new AVPlayer(this);
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
@@ -151,6 +152,55 @@ void QmlAVPlayer::setVideoCodecPriority(const QStringList &p)
     emit videoCodecPriorityChanged();
 }
 
+static AudioFormat::ChannelLayout toAudioFormatChannelLayout(QmlAVPlayer::ChannelLayout ch)
+{
+    struct {
+        QmlAVPlayer::ChannelLayout ch;
+        AudioFormat::ChannelLayout a;
+    } map[] = {
+    { QmlAVPlayer::Left, AudioFormat::ChannelLayout_Left },
+    { QmlAVPlayer::Right, AudioFormat::ChannelLayout_Right },
+    { QmlAVPlayer::Mono, AudioFormat::ChannelLayout_Mono },
+    { QmlAVPlayer::Stero, AudioFormat::ChannelLayout_Stero },
+    };
+    for (int i = 0; i < sizeof(map)/sizeof(map[0]); ++i) {
+        if (map[i].ch == ch)
+            return map[i].a;
+    }
+    return AudioFormat::ChannelLayout_Unsupported;
+}
+
+
+void QmlAVPlayer::setChannelLayout(ChannelLayout channel)
+{
+    AudioOutput *ao = mpPlayer->audio();
+    if (ao && ao->isAvailable()) {
+        AudioFormat af = ao->audioFormat();
+        AudioFormat::ChannelLayout ch = toAudioFormatChannelLayout(channel);
+        if (channel == ChannelLayoutAuto || ch == af.channelLayout()) {
+            return;
+        }
+        af.setChannelLayout(ch);
+        if (!ao->close()) {
+            qWarning("close audio failed");
+            return;
+        }
+        ao->setAudioFormat(af);
+        if (!ao->open()) {
+            qWarning("open audio failed");
+            return;
+        }
+    }
+    mChannelLayout = channel;
+    if (channel != ChannelLayout())
+        emit channelLayoutChanged();
+}
+
+QmlAVPlayer::ChannelLayout QmlAVPlayer::channelLayout() const
+{
+    return mChannelLayout;
+}
+
 QStringList QmlAVPlayer::videoCodecPriority() const
 {
     return mVideoCodecs;
@@ -238,6 +288,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
         } else {
             mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->play();
+            setChannelLayout(channelLayout());
         }
         break;
     case PausedState:

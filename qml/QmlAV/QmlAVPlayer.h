@@ -49,8 +49,12 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(int loops READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
+
+    Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
+
     Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
+    Q_ENUMS(ChannelLayout)
     // not supported by QtMultimedia
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
@@ -64,6 +68,15 @@ public:
         PlayingState,
         PausedState,
         StoppedState
+    };
+
+    // currently supported channels<3.
+    enum ChannelLayout {
+        ChannelLayoutAuto, //the same as source if channels<=2. otherwise resamples to stero
+        Left,
+        Right,
+        Mono,
+        Stero
     };
 
     explicit QmlAVPlayer(QObject *parent = 0);
@@ -105,6 +118,11 @@ public:
     QStringList videoCodecPriority() const;
     void setVideoCodecPriority(const QStringList& p);
 
+    void setAudioChannels(int channels);
+    int audioChannels() const;
+    void setChannelLayout(ChannelLayout channel);
+    ChannelLayout channelLayout() const;
+
 public Q_SLOTS:
     void play();
     void pause();
@@ -134,6 +152,7 @@ Q_SIGNALS:
     void playing();
     void seekableChanged();
     void videoCodecPriorityChanged();
+    void channelLayoutChanged();
 
 private Q_SLOTS:
     // connect to signals from player
@@ -151,6 +170,7 @@ private:
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
     QStringList mVideoCodecs;
+    ChannelLayout mChannelLayout;
 };
 
 #endif // QTAV_QML_AVPLAYER_H
