@@ -157,10 +157,6 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
 
 bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)
 {
-    DPTR_D(QQuickItemRenderer);
-    if (d.roi == roi)
-        return false;
-    d.roi = roi;
     emit regionOfInterestChanged();
     return true;
 }

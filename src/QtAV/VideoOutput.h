@@ -26,11 +26,6 @@
 #include <QtAV/VideoRenderer.h>
 
 
-/*!
- * setter(for private data): call d.impl->setXYZ, d.xyz = d.impl->xyz()
- * other virtual: simply call d.impl's.
- * check isAvailable may be needed because the backend may be null (and now call it's member directly, even nu;;)
- */
 namespace QtAV {
 
 class VideoOutputPrivate;
@@ -88,12 +83,6 @@ protected:
 
 
 private: //for proxy
-    /*!
-     * \brief setPreferredPixelFormat
-     * \param pixfmt
-     *  pixfmt will be used if decoded format is not supported by this renderer. otherwise, use decoded format.
-     *  return false if \a pixfmt is not supported and not changed.
-     */
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
     virtual bool onForcePreferredPixelFormat(bool force = true);
     virtual bool onScaleInRenderer(bool q);

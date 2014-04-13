@@ -43,6 +43,24 @@ public:
         osd_filter = impl->osdFilter();
         subtitle_filter = impl->subtitleFilter();
         filters = impl->filters();
+        renderer_width = impl->rendererWidth();
+        renderer_height = impl->rendererHeight();
+        src_width = impl->frameSize().width();
+        src_height = impl->frameSize().height();
+        source_aspect_ratio = qreal(src_width)/qreal(src_height);
+        out_aspect_ratio_mode = impl->outAspectRatioMode();
+        out_aspect_ratio = impl->outAspectRatio();
+        scale_in_renderer = impl->scaleInRenderer();
+        quality = impl->quality();
+        out_rect = impl->videoRect();
+        roi = impl->regionOfInterest();
+        default_event_filter = impl->isDefaultEventFilterEnabled();
+        preferred_format = impl->preferredPixelFormat();
+        force_preferred = impl->isPreferredPixelFormatForced();
+        brightness = impl->brightness();
+        contrast = impl->contrast();
+        hue = impl->hue();
+        saturation = impl->saturation();
     }
     ~VideoOutputPrivate() {
         if (impl) {
@@ -84,9 +102,9 @@ void VideoOutput::setVideoFormat(const VideoFormat& format)
 bool VideoOutput::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
     DPTR_D(VideoOutput);
-    bool ret = d.impl->setPreferredPixelFormat(pixfmt);
-    d.preferred_format = d.impl->preferredPixelFormat();
-    return ret;
+    d.impl->setPreferredPixelFormat(pixfmt);
+    return pixfmt == d.impl->preferredPixelFormat();
+
 }
 
 VideoFormat::PixelFormat VideoOutput::preferredPixelFormat() const
@@ -167,15 +185,14 @@ void VideoOutput::handlePaintEvent()
 bool VideoOutput::onForcePreferredPixelFormat(bool force)
 {
     DPTR_D(VideoOutput);
-    bool f = isPreferredPixelFormatForced();
-    d.impl->onForcePreferredPixelFormat(force);
-    d.force_preferred = d.impl->isPreferredPixelFormatForced();
-    return f != force;
+    qDebug("%s @%d", __FUNCTION__, __LINE__);
+    d.impl->forcePreferredPixelFormat(force);
+    return d.impl->isPreferredPixelFormatForced() == force;
 }
 
 bool VideoOutput::onScaleInRenderer(bool q)
 {
-    DPTR_D(VideoOutput);
+    Q_UNUSED(q);
     return true;
 }
 
@@ -224,10 +241,8 @@ bool VideoOutput::onSetOutAspectRatio(qreal ratio)
 bool VideoOutput::onSetQuality(Quality q)
 {
     DPTR_D(VideoOutput);
-    Quality _q = quality();
-    d.impl->onSetQuality(q);
-    d.quality = d.impl->quality();
-    return _q != q;
+    d.impl->setQuality(q);
+    return d.impl->quality() == q;
 }
 
 bool VideoOutput::onResizeRenderer(int width, int height)
@@ -246,12 +261,8 @@ bool VideoOutput::onResizeRenderer(int width, int height)
 bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
 {
     DPTR_D(VideoOutput);
-    QRectF r = regionOfInterest();
-    d.impl->onSetRegionOfInterest(roi);
-    d.roi = d.impl->regionOfInterest();
-    if (r == roi)
-        return false;
-    regionOfInterestChanged(roi);
+    d.impl->setRegionOfInterest(roi);
+    emit regionOfInterestChanged(roi);
     return true;
 }
 

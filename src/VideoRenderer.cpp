@@ -51,11 +51,6 @@ bool VideoRenderer::receive(const VideoFrame &frame)
 
 bool VideoRenderer::setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
-    return onSetPreferredPixelFormat(pixfmt);
-}
-
-bool VideoRenderer::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
-{
     DPTR_D(VideoRenderer);
     if (d.preferred_format == pixfmt)
         return false;
@@ -63,7 +58,18 @@ bool VideoRenderer::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
         qWarning("pixel format '%s' is not supported", VideoFormat(pixfmt).name().toUtf8().constData());
         return false;
     }
+    VideoFormat::PixelFormat old = d.preferred_format;
     d.preferred_format = pixfmt;
+    if (!onSetPreferredPixelFormat(pixfmt)) {
+        qWarning("onSetPreferredPixelFormat failed");
+        d.preferred_format = old;
+        return false;
+    }
+    return true;
+}
+
+bool VideoRenderer::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
+{
     return true;
 }
 
@@ -74,15 +80,19 @@ VideoFormat::PixelFormat VideoRenderer::preferredPixelFormat() const
 
 void VideoRenderer::forcePreferredPixelFormat(bool force)
 {
-    onForcePreferredPixelFormat(force);
+    DPTR_D(VideoRenderer);
+    if (d.force_preferred == force)
+        return;
+    bool old = d.force_preferred;
+    d.force_preferred = force;
+    if (!onForcePreferredPixelFormat(force)) {
+        qWarning("onForcePreferredPixelFormat failed");
+        d.force_preferred = old;
+    }
 }
 
 bool VideoRenderer::onForcePreferredPixelFormat(bool force)
 {
-    DPTR_D(VideoRenderer);
-    if (d.force_preferred == force)
-        return false;
-    d.force_preferred = force;
     return true;
 }
 
@@ -93,15 +103,18 @@ bool VideoRenderer::isPreferredPixelFormatForced() const
 
 void VideoRenderer::scaleInRenderer(bool q)
 {
-    onScaleInRenderer(q);
+    DPTR_D(VideoRenderer);
+    if (d.scale_in_renderer == q)
+        return;
+    bool old = d.scale_in_renderer;
+    d.scale_in_renderer = q;
+    if (!onScaleInRenderer(q)) {
+        d.scale_in_renderer = old;
+    }
 }
 
 bool VideoRenderer::onScaleInRenderer(bool q)
 {
-    DPTR_D(VideoRenderer);
-    if (d.scale_in_renderer == q)
-        return false;
-    d.scale_in_renderer = q;
     return true;
 }
 
@@ -171,15 +184,19 @@ qreal VideoRenderer::outAspectRatio() const
 
 void VideoRenderer::setQuality(Quality q)
 {
-    onSetQuality(q);
+    DPTR_D(VideoRenderer);
+    if (d.quality == q)
+        return;
+    Quality old = quality();
+    d.quality = q;
+    if (!onSetQuality(q)) {
+        d.quality = old;
+    }
 }
 
 bool VideoRenderer::onSetQuality(Quality q)
 {
-    DPTR_D(VideoRenderer);
-    if (d.quality == q)
-        return false;
-    d.quality = q;
+    Q_UNUSED(q);
     return true;
 }
 
@@ -285,15 +302,18 @@ void VideoRenderer::setRegionOfInterest(qreal x, qreal y, qreal width, qreal hei
 
 void VideoRenderer::setRegionOfInterest(const QRectF &roi)
 {
-    onSetRegionOfInterest(roi);
+    DPTR_D(VideoRenderer);
+    if (d.roi == roi)
+        return;
+    QRectF old = regionOfInterest();
+    d.roi = roi;
+    if (!onSetRegionOfInterest(roi)) {
+        d.roi = old;
+    }
 }
 
 bool VideoRenderer::onSetRegionOfInterest(const QRectF &roi)
 {
-    DPTR_D(VideoRenderer);
-    if (d.roi == roi)
-        return false;
-    d.roi = roi;
     return true;
 }
 
@@ -593,6 +613,7 @@ bool VideoRenderer::setHue(qreal hue)
     qreal old = d.hue;
     d.hue = hue;
     if (!onSetHue(hue)) {
+        qWarning("onSetHue failed");
         d.hue = old;
         return false;
     }

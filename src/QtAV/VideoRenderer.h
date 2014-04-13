@@ -44,7 +44,7 @@
 /*!
  * A bridge for VideoOutput(QObject based) and video renderer backend classes
  * Every public setter call it's virtual onSetXXX(...) which has default behavior.
- * While VideoOutput simply calls backend onSetXXX(...) and set the value from it.
+ * While VideoOutput.onSetXXX(...) simply calls backend's setXXX(...) and return whether the result is desired.
  */
 struct AVCodecContext;
 struct AVFrame;
@@ -228,6 +228,9 @@ protected:
     virtual void handlePaintEvent(); //has default. User don't have to implement it
 
 private: //used by VideoOutput class
+    /*!
+     * return false if value not changed. default is true
+     */
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
     virtual bool onForcePreferredPixelFormat(bool force = true);
     virtual bool onScaleInRenderer(bool q);
