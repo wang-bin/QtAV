@@ -258,8 +258,8 @@ void VideoThread::run()
             if (pkt.hasKeyFrame)
                 wait_key_frame = false;
             else {
-                pkt = Packet();
                 qDebug("waiting for key frame. queue size: %d. pkt.size: %d", d.packets.size(), pkt.data.size());
+                pkt = Packet();
                 continue;
             }
         }
