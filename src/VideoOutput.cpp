@@ -196,46 +196,28 @@ bool VideoOutput::onScaleInRenderer(bool q)
     return true;
 }
 
-bool VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 {
     DPTR_D(VideoOutput);
-    qreal a = outAspectRatio();
-    OutAspectRatioMode am = outAspectRatioMode();
-    d.impl->onSetOutAspectRatioMode(mode);
-    d.out_rect = d.impl->videoRect();
-    d.out_aspect_ratio = d.impl->outAspectRatio();
-    d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
-    bool changed = false;
-    if (a != outAspectRatio()) {
-        changed = true;
+    qreal a = d.impl->outAspectRatio();
+    OutAspectRatioMode am = d.impl->outAspectRatioMode();
+    d.impl->setOutAspectRatioMode(mode);
+    if (a != outAspectRatio())
         emit outAspectRatioChanged(outAspectRatio());
-    }
-    if (am != outAspectRatioMode()) {
-        changed = true;
+    if (am != outAspectRatioMode())
         emit outAspectRatioModeChanged(mode);
-    }
-    return changed;
 }
 
-bool VideoOutput::onSetOutAspectRatio(qreal ratio)
+void VideoOutput::onSetOutAspectRatio(qreal ratio)
 {
     DPTR_D(VideoOutput);
-    qreal a = outAspectRatio();
-    OutAspectRatioMode am = outAspectRatioMode();
-    d.impl->onSetOutAspectRatio(ratio);
-    d.out_rect = d.impl->videoRect();
-    d.out_aspect_ratio = d.impl->outAspectRatio();
-    d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
-    bool changed = false;
-    if (a != outAspectRatio()) {
-        changed = true;
+    qreal a = d.impl->outAspectRatio();
+    OutAspectRatioMode am = d.impl->outAspectRatioMode();
+    d.impl->setOutAspectRatio(ratio);
+    if (a != outAspectRatio())
         emit outAspectRatioChanged(ratio);
-    }
-    if (am != outAspectRatioMode()) {
-        changed = true;
+    if (am != outAspectRatioMode())
         emit outAspectRatioModeChanged(outAspectRatioMode());
-    }
-    return changed;
 }
 
 bool VideoOutput::onSetQuality(Quality q)
@@ -245,17 +227,10 @@ bool VideoOutput::onSetQuality(Quality q)
     return d.impl->quality() == q;
 }
 
-bool VideoOutput::onResizeRenderer(int width, int height)
+void VideoOutput::onResizeRenderer(int width, int height)
 {
     DPTR_D(VideoOutput);
-    if (width == 0 || height == 0)
-        return false;
-    d.impl->onResizeRenderer(width, height);
-    d.renderer_width = width;
-    d.renderer_height = height;
-    d.out_aspect_ratio = d.impl->outAspectRatio();
-    d.out_rect = d.impl->videoRect();
-    return true;
+    d.impl->resizeRenderer(width, height);
 }
 
 bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
@@ -278,22 +253,16 @@ QPointF VideoOutput::onMapFromFrame(const QPointF& p) const
     return d.impl->onMapFromFrame(p);
 }
 
-OSDFilter* VideoOutput::onSetOSDFilter(OSDFilter *filter)
+void VideoOutput::onSetOSDFilter(OSDFilter *filter)
 {
     DPTR_D(VideoOutput);
-    OSDFilter* old = d.impl->onSetOSDFilter(filter);
-    d.osd_filter = d.impl->osdFilter();
-    d.filters = d.impl->filters();
-    return old;
+    d.impl->setOSDFilter(filter);
 }
 
-Filter* VideoOutput::onSetSubtitleFilter(Filter *filter)
+void VideoOutput::onSetSubtitleFilter(Filter *filter)
 {
     DPTR_D(VideoOutput);
-    Filter* old = d.impl->onSetSubtitleFilter(filter);
-    d.subtitle_filter = d.impl->subtitleFilter();
-    d.filters = d.impl->filters();
-    return old;
+    d.impl->setSubtitleFilter(filter);
 }
 
 bool VideoOutput::onSetBrightness(qreal brightness)
@@ -344,17 +313,10 @@ bool VideoOutput::onSetSaturation(qreal saturation)
     return true;
 }
 
-void VideoOutput::setInSize(int width, int height)
+void VideoOutput::onSetInSize(int width, int height)
 {
     DPTR_D(VideoOutput);
     d.impl->setInSize(width, height);
-    d.src_width = d.impl->frameSize().width();
-    d.src_height = d.impl->frameSize().height();
-    //d.source_aspect_ratio = ;
-    d.out_rect = d.impl->videoRect();
-    d.out_aspect_ratio = d.impl->outAspectRatio();
-    d.out_aspect_ratio_mode = d.impl->outAspectRatioMode();
-    //d.update_background = d.impl->
 }
 
 void VideoOutput::setStatistics(Statistics* statistics)

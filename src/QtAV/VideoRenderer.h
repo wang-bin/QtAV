@@ -234,15 +234,15 @@ private: //used by VideoOutput class
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
     virtual bool onForcePreferredPixelFormat(bool force = true);
     virtual bool onScaleInRenderer(bool q);
-    virtual bool onSetOutAspectRatioMode(OutAspectRatioMode mode);
-    virtual bool onSetOutAspectRatio(qreal ratio);
+    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
+    virtual void onSetOutAspectRatio(qreal ratio);
     virtual bool onSetQuality(Quality q);
-    virtual bool onResizeRenderer(int width, int height);
+    virtual void onResizeRenderer(int width, int height);
     virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual QPointF onMapToFrame(const QPointF& p) const;
     virtual QPointF onMapFromFrame(const QPointF& p) const;
-    virtual OSDFilter* onSetOSDFilter(OSDFilter *filter);
-    virtual Filter* onSetSubtitleFilter(Filter *filter);
+    virtual void onSetOSDFilter(OSDFilter *filter);
+    virtual void onSetSubtitleFilter(Filter *filter);
     /*!
      * \brief onSetXX
      *  It's called when user call setXXX() with a new value. You should implement how to actually change the value, e.g. change brightness with shader.
@@ -260,7 +260,8 @@ private:
     //the size of image (QByteArray) that decoded
      //has default
     void setInSize(const QSize& s); //private? for internal use only, called by VideoThread.
-    virtual void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
+    void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
+    virtual void onSetInSize(int width, int height);
     //qreal sourceAspectRatio() const;//TODO: from AVCodecContext
     //we don't need api like QSize sourceSize() const. you should get them from player or avinfo(not implemented)
 };

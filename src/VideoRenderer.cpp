@@ -125,14 +125,9 @@ bool VideoRenderer::scaleInRenderer() const
 
 void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
 {
-    onSetOutAspectRatioMode(mode);
-}
-
-bool VideoRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
-{
     DPTR_D(VideoRenderer);
     if (mode == d.out_aspect_ratio_mode)
-        return false;
+        return;
     d.aspect_ratio_changed = true;
     d.out_aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
@@ -143,7 +138,12 @@ bool VideoRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     } else if (mode == VideoAspectRatio) {
         setOutAspectRatio(d.source_aspect_ratio);
     }
-    return true;
+    onSetOutAspectRatioMode(mode);
+}
+
+void VideoRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+{
+    Q_UNUSED(mode);
 }
 
 VideoRenderer::OutAspectRatioMode VideoRenderer::outAspectRatioMode() const
@@ -152,11 +152,6 @@ VideoRenderer::OutAspectRatioMode VideoRenderer::outAspectRatioMode() const
 }
 
 void VideoRenderer::setOutAspectRatio(qreal ratio)
-{
-    onSetOutAspectRatio(ratio);
-}
-
-bool VideoRenderer::onSetOutAspectRatio(qreal ratio)
 {
     DPTR_D(VideoRenderer);
     bool ratio_changed = d.out_aspect_ratio != ratio;
@@ -174,7 +169,12 @@ bool VideoRenderer::onSetOutAspectRatio(qreal ratio)
     if (ratio_changed) {
         resizeFrame(d.out_rect.width(), d.out_rect.height());
     }
-    return ratio_changed;
+    onSetOutAspectRatio(ratio);
+}
+
+void VideoRenderer::onSetOutAspectRatio(qreal ratio)
+{
+    Q_UNUSED(ratio);
 }
 
 qreal VideoRenderer::outAspectRatio() const
@@ -228,6 +228,13 @@ void VideoRenderer::setInSize(int width, int height)
         setOutAspectRatio(d.source_aspect_ratio);
     }
     d.aspect_ratio_changed = false; //TODO: why graphicsitemrenderer need this? otherwise aspect_ratio_changed is always true?
+    onSetInSize(width, height);
+}
+
+void VideoRenderer::onSetInSize(int width, int height)
+{
+    Q_UNUSED(width);
+    Q_UNUSED(height);
 }
 
 bool VideoRenderer::open()
@@ -247,20 +254,21 @@ void VideoRenderer::resizeRenderer(const QSize &size)
 
 void VideoRenderer::resizeRenderer(int width, int height)
 {
-    onResizeRenderer(width, height);
-}
-
-bool VideoRenderer::onResizeRenderer(int width, int height)
-{
     DPTR_D(VideoRenderer);
     if (width == 0 || height == 0)
-        return false;
+        return;
 
     d.renderer_width = width;
     d.renderer_height = height;
     d.computeOutParameters(d.out_aspect_ratio);
     resizeFrame(d.out_rect.width(), d.out_rect.height());
-    return true;
+    onResizeRenderer(width, height);
+}
+
+void VideoRenderer::onResizeRenderer(int width, int height)
+{
+    Q_UNUSED(width);
+    Q_UNUSED(height);
 }
 
 QSize VideoRenderer::rendererSize() const
@@ -402,17 +410,12 @@ QPointF VideoRenderer::onMapFromFrame(const QPointF &p) const
 
 OSDFilter *VideoRenderer::setOSDFilter(OSDFilter *filter)
 {
-    return onSetOSDFilter(filter);
-}
-
-OSDFilter *VideoRenderer::onSetOSDFilter(OSDFilter *filter)
-{
     DPTR_D(VideoRenderer);
-    Filter *old = d.osd_filter;
     //may be both null
-    if (old == filter) {
-        return static_cast<OSDFilter*>(old);
+    if (d.osd_filter == filter) {
+        return static_cast<OSDFilter*>(filter);
     }
+    Filter *old = d.osd_filter;
     d.osd_filter = filter;
     //subtitle and osd is at the end
     int idx = d.filters.lastIndexOf(old);
@@ -425,7 +428,13 @@ OSDFilter *VideoRenderer::onSetOSDFilter(OSDFilter *filter)
         if (filter)
             d.filters.push_back(filter);
     }
+    onSetOSDFilter(filter);
     return static_cast<OSDFilter*>(old);
+}
+
+void VideoRenderer::onSetOSDFilter(OSDFilter *filter)
+{
+    Q_UNUSED(filter);
 }
 
 OSDFilter* VideoRenderer::osdFilter()
@@ -435,17 +444,12 @@ OSDFilter* VideoRenderer::osdFilter()
 //TODO: setSubtitleFilter and setOSDFilter are almost the same. refine code
 Filter* VideoRenderer::setSubtitleFilter(Filter *filter)
 {
-    return onSetSubtitleFilter(filter);
-}
-
-Filter* VideoRenderer::onSetSubtitleFilter(Filter *filter)
-{
     DPTR_D(VideoRenderer);
-    Filter *old = d.subtitle_filter;
     //may be both null
-    if (old == filter) {
-        return old;
+    if (d.subtitle_filter == filter) {
+        return filter;
     }
+    Filter *old = d.subtitle_filter;
     d.subtitle_filter = filter;
     //subtitle and osd is at the end
     int idx = d.filters.lastIndexOf(old);
@@ -458,7 +462,13 @@ Filter* VideoRenderer::onSetSubtitleFilter(Filter *filter)
         if (filter)
             d.filters.push_back(filter);
     }
+    onSetSubtitleFilter(filter);
     return old;
+}
+
+void VideoRenderer::onSetSubtitleFilter(Filter *filter)
+{
+    Q_UNUSED(filter);
 }
 
 Filter* VideoRenderer::subtitleFilter()

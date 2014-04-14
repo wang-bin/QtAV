@@ -86,22 +86,22 @@ private: //for proxy
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
     virtual bool onForcePreferredPixelFormat(bool force = true);
     virtual bool onScaleInRenderer(bool q);
-    virtual bool onSetOutAspectRatioMode(OutAspectRatioMode mode);
-    virtual bool onSetOutAspectRatio(qreal ratio);
+    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
+    virtual void onSetOutAspectRatio(qreal ratio);
     virtual bool onSetQuality(Quality q);
-    virtual bool onResizeRenderer(int width, int height);
+    virtual void onResizeRenderer(int width, int height);
     virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual QPointF onMapToFrame(const QPointF& p) const;
     virtual QPointF onMapFromFrame(const QPointF& p) const;
-    virtual OSDFilter* onSetOSDFilter(OSDFilter *filter);
-    virtual Filter* onSetSubtitleFilter(Filter *filter);
+    virtual void onSetOSDFilter(OSDFilter *filter);
+    virtual void onSetSubtitleFilter(Filter *filter);
 
     virtual bool onSetBrightness(qreal brightness);
     virtual bool onSetContrast(qreal contrast);
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
 
-    void setInSize(int width, int height); //private? for internal use only, called by VideoThread.
+    void onSetInSize(int width, int height); //private? for internal use only, called by VideoThread.
 
     // from AVOutput
     virtual void setStatistics(Statistics* statistics); //called by friend AVPlayer
