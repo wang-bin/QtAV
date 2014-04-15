@@ -338,8 +338,10 @@ void VideoThread::run()
                 continue;
             }
         } else {
-            VideoRenderer *vo = static_cast<VideoRenderer*>(outputs.first());
-            if (!vo->isSupported(frame.pixelFormat())
+            VideoRenderer *vo = 0;
+            if (!outputs.isEmpty())
+                vo = static_cast<VideoRenderer*>(outputs.first());
+            if (vo && !vo->isSupported(frame.pixelFormat())
                     || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
                     ) {
                 if (!frame.convertTo(vo->preferredPixelFormat())) {
