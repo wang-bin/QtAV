@@ -141,7 +141,9 @@ static inline void checkGlError(const char* op = 0) {
     FUNC; \
     checkGlError(#FUNC);
 
-int bytesOfGLFormat(GLenum format)
+// TODO: format + datatype? internal format == format?
+//https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_format_BGRA8888.txt
+int bytesOfGLFormat(GLenum format, GLenum dataType = GL_UNSIGNED_BYTE)
 {
     switch (format)
       {
@@ -154,6 +156,12 @@ int bytesOfGLFormat(GLenum format)
       case GL_BGR:
 #endif
       case GL_RGB:
+        switch (dataType) {
+        case GL_UNSIGNED_SHORT_5_6_5:
+            return 2;
+        default:
+            return 3;
+        }
         return 3;
       case GL_LUMINANCE_ALPHA:
         return 2;
@@ -163,7 +171,7 @@ int bytesOfGLFormat(GLenum format)
 #ifdef GL_LUMINANCE16
     case GL_LUMINANCE16:
         return 2;
-#endif //GL_LUMINANCE16
+#endif //GL_LUMINANCE16        
 #ifdef GL_ALPHA16
     case GL_ALPHA16:
         return 2;
@@ -454,15 +462,15 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
     for (int i = 0; i < fmt.planeCount(); ++i) {
-        effective_tex_width[i] = qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bytesOfGLFormat(data_format[i]));
-        texture_size[i].setWidth(qCeil((qreal)texture_size[i].width()/(qreal)bytesOfGLFormat(data_format[i])));
-        // bytesOfGLFormat()*bytesOfGLDataType()?
-        effective_tex_width[i] /= fmt.bytesPerPixel(i);
-        texture_size[i].setWidth(texture_size[i].width()/fmt.bytesPerPixel(i));
-        qDebug("tex: %d, pad: %d", texture_size[i].width(), effective_tex_width[i]);
         if (fmt.bytesPerPixel(i) == 2 && fmt.planeCount() == 3) {
             data_type[i] = GL_UNSIGNED_SHORT;
         }
+        int bpp_gl = bytesOfGLFormat(data_format[i], data_type[i]);
+        int pad = qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
+        texture_size[i].setWidth(qCeil((qreal)texture_size[i].width()/(qreal)bpp_gl));
+        effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
+        //effective_tex_width_ratio =
+        qDebug("texture width: %d - %d = pad: %d. bpp(gl): %d", texture_size[i].width(), effective_tex_width[i], pad, bpp_gl);
     }
 
     /*
@@ -491,7 +499,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
     qDebug("init textures...");
     initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
     for (int i = 1; i < textures.size(); ++i) {
-        initTexture(textures[i], internal_format[i], data_format[i], data_type[0], texture_size[i].width(), texture_size[i].height());
+        initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
     }
     return true;
 }
@@ -517,12 +525,13 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
         texture_size.resize(fmt.planeCount());
         effective_tex_width.resize(fmt.planeCount());
         for (int i = 0; i < fmt.planeCount(); ++i) {
-            qDebug("plane %d: pad = %d, effective = %d", i, video_frame.bytesPerLine(i), video_frame.effectiveBytesPerLine(i));
-            qDebug("plane width %d: pad = %d, effective = %d", i, video_frame.planeWidth(i), video_frame.effectivePlaneWidth(i));
+            qDebug("plane linesize %d: padded = %d, effective = %d", i, video_frame.bytesPerLine(i), video_frame.effectiveBytesPerLine(i));
+            qDebug("plane width %d: effective = %d", video_frame.planeWidth(i), video_frame.effectivePlaneWidth(i));
             qDebug("planeHeight %d = %d", i, video_frame.planeHeight(i));
             // we have to consider size of opengl format. set bytesPerLine here and change to width later
             texture_size[i] = QSize(video_frame.bytesPerLine(i), video_frame.planeHeight(i));
             effective_tex_width[i] = video_frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
+            // TODO: ratio count the GL_UNPACK_ALIGN?
             effective_tex_width_ratio = qMin((qreal)1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
         }
         qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
