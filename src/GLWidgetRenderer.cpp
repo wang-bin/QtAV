@@ -342,6 +342,9 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     }
     if (frag.isEmpty())
         return false;
+    if (!fmt.isRGB() && fmt.isPlanar() && fmt.bitsPerPixel(0) == 10) {
+        frag.prepend("#define P010 1\n");
+    }
 #if NO_QGL_SHADER
     program = createProgram(kVertexShader, frag.toUtf8().constData());
     if (!program) {
@@ -449,12 +452,19 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         if (fmt.planeCount() == 2) {
             internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
         } else {
-            internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,0)
-            internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
+            if (fmt.bytesPerPixel(1) == 2) {
+                // read 16 bits and compute in shader
+                internal_format[0] = data_format[0] = GL_LUMINANCE_ALPHA; //or GL_RED for GL
+                internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA; //vec4(L,L,L,A)
+                internal_format[2] = data_format[2] = GL_LUMINANCE_ALPHA;
+            } else {
+                internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
+                internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
+            }
         }
         for (int i = 0; i < internal_format.size(); ++i) {
             // xbmc use bpp not bpp(plane)
-            internal_format[i] = GetGLInternalFormat(data_format[i], fmt.bytesPerPixel(i));
+            //internal_format[i] = GetGLInternalFormat(data_format[i], fmt.bytesPerPixel(i));
             //data_format[i] = internal_format[i];
         }
     } else {
@@ -462,8 +472,9 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
     for (int i = 0; i < fmt.planeCount(); ++i) {
+        //qDebug("format: %#x GL_LUMINANCE_ALPHA=%#x", data_format[i], GL_LUMINANCE_ALPHA);
         if (fmt.bytesPerPixel(i) == 2 && fmt.planeCount() == 3) {
-            data_type[i] = GL_UNSIGNED_SHORT;
+            //data_type[i] = GL_UNSIGNED_SHORT;
         }
         int bpp_gl = bytesOfGLFormat(data_format[i], data_type[i]);
         int pad = qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
