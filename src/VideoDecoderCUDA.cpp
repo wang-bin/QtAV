@@ -20,10 +20,10 @@
 ******************************************************************************/
 
 #include <QtAV/VideoDecoder.h>
-#include "private/VideoDecoder_p.h"
+#include "QtAV/private/VideoDecoder_p.h"
 #include <QtAV/QtAV_Compat.h>
 #include <QtAV/BlockingQueue.h>
-#include "prepost.h"
+#include "QtAV/prepost.h"
 #include <QtCore/QQueue>
 #if QTAV_HAVE(DLLAPI_CUDA)
 #include "dllapi.h"

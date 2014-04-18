@@ -1,9 +1,6 @@
-QT       += core
-QT       -= gui
-
-CONFIG   += console
-CONFIG   -= app_bundle
-
+QT += opengl
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+CONFIG -= app_bundle
 TEMPLATE = app
 TARGET = decoder
 

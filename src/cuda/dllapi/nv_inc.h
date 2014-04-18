@@ -33,8 +33,8 @@ namespace cuda {
 //extern "C" {
 #endif /* __cplusplus */
 
-#include <cuda.h>
-#include <nvcuvid.h>
+#include "cuda.h"
+#include "nvcuvid.h"
 
 #if defined(__cplusplus)
 //}

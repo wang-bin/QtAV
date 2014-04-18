@@ -151,6 +151,8 @@ unix {
     }
 }
 
+*maemo*: QMAKE_LFLAGS += -lasound
+
 unset(LIB_VERSION)
 unset(PROJECT_SRCPATH)
 unset(PROJECT_LIBDIR)

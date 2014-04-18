@@ -1,5 +1,6 @@
 #include <QCoreApplication>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QStringList>
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/Packet.h>
