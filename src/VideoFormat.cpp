@@ -219,13 +219,14 @@ static const struct {
     QTAV_PIX_FMT_C(VAAPI_MOCO, ///< HW acceleration through VA API at motion compensation entry-point, Picture.data[3] contains a vaapi_render_state struct which contains macroblocks as well as various fields extracted from headers
     QTAV_PIX_FMT_C(VAAPI_IDCT, ///< HW acceleration through VA API at IDCT entry-point, Picture.data[3] contains a vaapi_render_state struct which contains fields extracted from headers
     QTAV_PIX_FMT_C(VAAPI_VLD,  ///< HW decoding through VA API, Picture.data[3] contains a vaapi_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
-
-    QTAV_PIX_FMT_C(YUV420P16LE,  ///< planar YUV 4:2:0, 24bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV420P16BE,  ///< planar YUV 4:2:0, 24bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV422P16LE,  ///< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV422P16BE,  ///< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV444P16LE,  ///< planar YUV 4:4:4, 48bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV444P16BE,  ///< planar YUV 4:4:4, 48bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
+*/
+    { VideoFormat::Format_YUV420P16LE, QTAV_PIX_FMT_C(YUV420P16LE) },  ///< planar YUV 4:2:0, 24bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
+    { VideoFormat::Format_YUV420P16BE, QTAV_PIX_FMT_C(YUV420P16BE) },  ///< planar YUV 4:2:0, 24bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
+    { VideoFormat::Format_YUV422P16LE, QTAV_PIX_FMT_C(YUV422P16LE) },  ///< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
+    { VideoFormat::Format_YUV422P16BE, QTAV_PIX_FMT_C(YUV422P16BE) },  ///< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
+    { VideoFormat::Format_YUV444P16LE, QTAV_PIX_FMT_C(YUV444P16LE) },  ///< planar YUV 4:4:4, 48bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
+    { VideoFormat::Format_YUV444P16BE, QTAV_PIX_FMT_C(YUV444P16BE) },  ///< planar YUV 4:4:4, 48bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
+/*
     QTAV_PIX_FMT_C(VDPAU_MPEG4,  ///< MPEG4 HW decoding with VDPAU, data[0] contains a vdpau_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
     QTAV_PIX_FMT_C(DXVA2_VLD,    ///< HW decoding through DXVA2, Picture.data[3] contains a LPDIRECT3DSURFACE9 pointer
 
@@ -236,24 +237,24 @@ static const struct {
     QTAV_PIX_FMT_C(GRAY8A,    ///< 8bit gray, 8bit alpha
     QTAV_PIX_FMT_C(BGR48BE,   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as big-endian
     QTAV_PIX_FMT_C(BGR48LE,   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as little-endian
-
+*/
     //the following 10 formats have the disadvantage of needing 1 format for each bit depth, thus
     //If you want to support multiple bit depths, then using QTAV_PIX_FMT_C(YUV420P16* with the bpp stored separately
     //is better
-    QTAV_PIX_FMT_C(YUV420P9BE, ///< planar YUV 4:2:0, 13.5bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV420P9LE, ///< planar YUV 4:2:0, 13.5bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV420P10BE,///< planar YUV 4:2:0, 15bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV420P10LE,///< planar YUV 4:2:0, 15bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV422P10BE,///< planar YUV 4:2:2, 20bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV422P10LE,///< planar YUV 4:2:2, 20bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV444P9BE, ///< planar YUV 4:4:4, 27bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV444P9LE, ///< planar YUV 4:4:4, 27bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV444P10BE,///< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV444P10LE,///< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV422P9BE, ///< planar YUV 4:2:2, 18bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV422P9LE, ///< planar YUV 4:2:2, 18bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(VDA_VLD,    ///< hardware decoding through VDA
-
+    { VideoFormat::Format_YUV420P9BE, QTAV_PIX_FMT_C(YUV420P9BE) }, ///< planar YUV 4:2:0, 13.5bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
+    { VideoFormat::Format_YUV420P9LE, QTAV_PIX_FMT_C(YUV420P9LE) }, ///< planar YUV 4:2:0, 13.5bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
+    { VideoFormat::Format_YUV420P10BE, QTAV_PIX_FMT_C(YUV420P10BE) },///< planar YUV 4:2:0, 15bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
+    { VideoFormat::Format_YUV420P10LE, QTAV_PIX_FMT_C(YUV420P10LE) },///< planar YUV 4:2:0, 15bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
+    { VideoFormat::Format_YUV422P10BE, QTAV_PIX_FMT_C(YUV422P10BE) },///< planar YUV 4:2:2, 20bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
+    { VideoFormat::Format_YUV422P10LE, QTAV_PIX_FMT_C(YUV422P10LE) },///< planar YUV 4:2:2, 20bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
+    { VideoFormat::Format_YUV444P9BE, QTAV_PIX_FMT_C(YUV444P9BE) }, ///< planar YUV 4:4:4, 27bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
+    { VideoFormat::Format_YUV444P9LE, QTAV_PIX_FMT_C(YUV444P9LE) }, ///< planar YUV 4:4:4, 27bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
+    { VideoFormat::Format_YUV444P10BE, QTAV_PIX_FMT_C(YUV444P10BE) },///< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
+    { VideoFormat::Format_YUV444P10LE, QTAV_PIX_FMT_C(YUV444P10LE) },///< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
+    { VideoFormat::Format_YUV422P9BE, QTAV_PIX_FMT_C(YUV422P9BE) }, ///< planar YUV 4:2:2, 18bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
+    { VideoFormat::Format_YUV422P9LE, QTAV_PIX_FMT_C(YUV422P9LE) }, ///< planar YUV 4:2:2, 18bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
+    //QTAV_PIX_FMT_C(VDA_VLD,    ///< hardware decoding through VDA
+/*
 #ifdef QTAV_PIX_FMT_C(ABI_GIT_MASTER
     QTAV_PIX_FMT_C(RGBA64BE,  ///< packed RGBA 16:16:16:16, 64bpp, 16R, 16G, 16B, 16A, the 2-byte value for each R/G/B/A component is stored as big-endian
     QTAV_PIX_FMT_C(RGBA64LE,  ///< packed RGBA 16:16:16:16, 64bpp, 16R, 16G, 16B, 16A, the 2-byte value for each R/G/B/A component is stored as little-endian
@@ -311,19 +312,20 @@ static const struct {
     QTAV_PIX_FMT_C(BGR0,      ///< packed BGR 8:8:8, 32bpp, BGR0BGR0...
     QTAV_PIX_FMT_C(YUVA444P,  ///< planar YUV 4:4:4 32bpp, (1 Cr & Cb sample per 1x1 Y & A samples)
     QTAV_PIX_FMT_C(YUVA422P,  ///< planar YUV 4:2:2 24bpp, (1 Cr & Cb sample per 2x1 Y & A samples)
-
-    QTAV_PIX_FMT_C(YUV420P12BE, ///< planar YUV 4:2:0,18bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV420P12LE, ///< planar YUV 4:2:0,18bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV420P14BE, ///< planar YUV 4:2:0,21bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV420P14LE, ///< planar YUV 4:2:0,21bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV422P12BE, ///< planar YUV 4:2:2,24bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV422P12LE, ///< planar YUV 4:2:2,24bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV422P14BE, ///< planar YUV 4:2:2,28bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV422P14LE, ///< planar YUV 4:2:2,28bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV444P12BE, ///< planar YUV 4:4:4,36bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV444P12LE, ///< planar YUV 4:4:4,36bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
-    QTAV_PIX_FMT_C(YUV444P14BE, ///< planar YUV 4:4:4,42bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
-    QTAV_PIX_FMT_C(YUV444P14LE, ///< planar YUV 4:4:4,42bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
+*/
+    { VideoFormat::Format_YUV420P12BE, QTAV_PIX_FMT_C(YUV420P12BE) }, ///< planar YUV 4:2:0,18bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
+    { VideoFormat::Format_YUV420P12LE, QTAV_PIX_FMT_C(YUV420P12LE) }, ///< planar YUV 4:2:0,18bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
+    { VideoFormat::Format_YUV420P14BE, QTAV_PIX_FMT_C(YUV420P14BE) }, ///< planar YUV 4:2:0,21bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
+    { VideoFormat::Format_YUV420P14LE, QTAV_PIX_FMT_C(YUV420P14LE) }, ///< planar YUV 4:2:0,21bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
+    { VideoFormat::Format_YUV422P12BE, QTAV_PIX_FMT_C(YUV422P12BE) }, ///< planar YUV 4:2:2,24bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
+    { VideoFormat::Format_YUV422P12LE, QTAV_PIX_FMT_C(YUV422P12LE) }, ///< planar YUV 4:2:2,24bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
+    { VideoFormat::Format_YUV422P14BE, QTAV_PIX_FMT_C(YUV422P14BE) }, ///< planar YUV 4:2:2,28bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
+    { VideoFormat::Format_YUV422P14LE, QTAV_PIX_FMT_C(YUV422P14LE) }, ///< planar YUV 4:2:2,28bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
+    { VideoFormat::Format_YUV444P12BE, QTAV_PIX_FMT_C(YUV444P12BE) }, ///< planar YUV 4:4:4,36bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
+    { VideoFormat::Format_YUV444P12LE, QTAV_PIX_FMT_C(YUV444P12LE) }, ///< planar YUV 4:4:4,36bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
+    { VideoFormat::Format_YUV444P14BE, QTAV_PIX_FMT_C(YUV444P14BE) }, ///< planar YUV 4:4:4,42bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
+    { VideoFormat::Format_YUV444P14LE, QTAV_PIX_FMT_C(YUV444P14LE) }, ///< planar YUV 4:4:4,42bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
+/*
     QTAV_PIX_FMT_C(GBRP12BE,    ///< planar GBR 4:4:4 36bpp, big-endian
     QTAV_PIX_FMT_C(GBRP12LE,    ///< planar GBR 4:4:4 36bpp, little-endian
     QTAV_PIX_FMT_C(GBRP14BE,    ///< planar GBR 4:4:4 42bpp, big-endian
