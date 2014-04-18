@@ -3846,9 +3846,16 @@ CUresult CUDAAPI cuMemHostGetFlags(unsigned int *pFlags, void *p);
  * storage is created in 'zero-copy' or system memory. All GPUs will reference
  * the data at reduced bandwidth over the PCIe bus. In these circumstances,
  * use of the environment variable, CUDA_VISIBLE_DEVICES, is recommended to
- * restrict CUDA to only use those GPUs that have peer-to-peer support. This
- * environment variable is described in the CUDA programming guide under the
- * "CUDA environment variables" section.
+ * restrict CUDA to only use those GPUs that have peer-to-peer support.
+ * Alternatively, users can also set CUDA_MANAGED_FORCE_DEVICE_ALLOC to a
+ * non-zero value to force the driver to always use device memory for physical storage.
+ * When this environment variable is set to a non-zero value, all contexts created in
+ * that process on devices that support managed memory have to be peer-to-peer compatible
+ * with each other. Context creation will fail if a context is created on a device that
+ * supports managed memory and is not peer-to-peer compatible with any of the other
+ * managed memory supporting devices on which contexts were previously created, even if
+ * those contexts have been destroyed. These environment variables are described
+ * in the CUDA programming guide under the "CUDA environment variables" section.
  *
  * \param dptr     - Returned device pointer
  * \param bytesize - Requested allocation size in bytes
