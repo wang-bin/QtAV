@@ -343,7 +343,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     if (frag.isEmpty())
         return false;
     if (!fmt.isRGB() && fmt.isPlanar() && fmt.bitsPerPixel(0) == 10) {
-        frag.prepend("#define P010 1\n");
+        frag.prepend("#define YUV10P 1\n");
     }
 #if NO_QGL_SHADER
     program = createProgram(kVertexShader, frag.toUtf8().constData());
@@ -453,8 +453,8 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
             internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
         } else {
             if (fmt.bytesPerPixel(1) == 2) {
-                // read 16 bits and compute in shader
-                internal_format[0] = data_format[0] = GL_LUMINANCE_ALPHA; //or GL_RED for GL
+                // read 16 bits and compute the real luminance in shader
+                internal_format[0] = data_format[0] = GL_LUMINANCE_ALPHA;
                 internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA; //vec4(L,L,L,A)
                 internal_format[2] = data_format[2] = GL_LUMINANCE_ALPHA;
             } else {
