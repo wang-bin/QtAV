@@ -343,7 +343,11 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
     if (frag.isEmpty())
         return false;
     if (!fmt.isRGB() && fmt.isPlanar() && fmt.bytesPerPixel(0) == 2) {
-        frag.prepend(QString("#define YUV16BITS_LE_LUMINANCE_ALPHA\n#define YUV%1PLE\n").arg(fmt.bitsPerPixel(0)));
+        if (fmt.isBigEndian())
+            frag.prepend("#define YUV16BITS_BE_LUMINANCE_ALPHA\n");
+        else
+            frag.prepend("#define YUV16BITS_LE_LUMINANCE_ALPHA\n");
+        frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
     }
 #if NO_QGL_SHADER
     program = createProgram(kVertexShader, frag.toUtf8().constData());
