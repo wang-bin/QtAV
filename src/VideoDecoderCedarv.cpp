@@ -298,7 +298,8 @@ class VideoDecoderCedarv : public VideoDecoderFFmpeg
 	DPTR_DECLARE_PRIVATE(VideoDecoderCedarv)
 public:
 	VideoDecoderCedarv();
-	bool prepare();
+    virtual VideoDecoderId id() const;
+    bool prepare();
 	bool decode(const QByteArray &encoded);
 	VideoFrame frame();
 };
@@ -331,6 +332,10 @@ VideoDecoderCedarv::VideoDecoderCedarv()
 {
 }
 
+VideoDecoderId VideoDecoderCedarv::id() const
+{
+    return VideoDecoderId_Cedarv;
+}
 
 bool VideoDecoderCedarv::prepare()
 {

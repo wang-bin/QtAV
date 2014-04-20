@@ -48,6 +48,11 @@ VideoDecoderFFmpeg::VideoDecoderFFmpeg(VideoDecoderFFmpegPrivate &d):
 {
 }
 
+VideoDecoderId VideoDecoderFFmpeg::id() const
+{
+    return VideoDecoderId_FFmpeg;
+}
+
 bool VideoDecoderFFmpeg::decode(const QByteArray &encoded)
 {
     if (!isAvailable())

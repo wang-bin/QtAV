@@ -55,6 +55,7 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
     DPTR_DECLARE_PRIVATE(VideoDecoderVAAPI)
 public:
     VideoDecoderVAAPI();
+    virtual VideoDecoderId id() const;
     virtual VideoFrame frame();
 };
 
@@ -142,6 +143,11 @@ public:
 VideoDecoderVAAPI::VideoDecoderVAAPI()
     : VideoDecoderFFmpegHW(*new VideoDecoderVAAPIPrivate())
 {
+}
+
+VideoDecoderId VideoDecoderVAAPI::id() const
+{
+    return VideoDecoderId_VAAPI;
 }
 
 VideoFrame VideoDecoderVAAPI::frame()

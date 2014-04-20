@@ -1168,6 +1168,8 @@ void AVPlayer::initStatistics()
     //formatCtx->duration may be AV_NOPTS_VALUE. AVDemuxer.duration deals with this case
     mStatistics.start_time = QTime(0, 0, 0).addMSecs(int(mediaStartPosition()));
     mStatistics.duration = QTime(0, 0, 0).addMSecs((int)duration());
+    if (video_dec)
+        mStatistics.video.decoder = VideoDecoderFactory::name(video_dec->id()).c_str();
     struct common_statistics_t {
         int stream_idx;
         AVCodecContext *ctx;

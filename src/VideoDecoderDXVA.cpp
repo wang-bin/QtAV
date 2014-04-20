@@ -126,6 +126,7 @@ class VideoDecoderDXVA : public VideoDecoderFFmpegHW
     DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
 public:
     VideoDecoderDXVA();
+    virtual VideoDecoderId id() const;
     virtual VideoFrame frame();
 };
 
@@ -361,6 +362,11 @@ public:
 VideoDecoderDXVA::VideoDecoderDXVA()
     : VideoDecoderFFmpegHW(*new VideoDecoderDXVAPrivate())
 {
+}
+
+VideoDecoderId VideoDecoderDXVA::id() const
+{
+    return VideoDecoderId_DXVA;
 }
 
 VideoFrame VideoDecoderDXVA::frame()

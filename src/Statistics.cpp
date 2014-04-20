@@ -25,6 +25,7 @@ namespace QtAV {
 
 Statistics::Common::Common():
     available(false)
+  , decoder("FFmpeg")
   , bit_rate(0)
   , frames(0)
   , size(0)

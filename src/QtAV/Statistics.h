@@ -56,6 +56,7 @@ public:
 
         bool available;
         QString codec, codec_long;
+        QString decoder;
         //common audio/video info that may be used(visualize) by filters
         QTime current_time, total_time, start_time; //TODO: in AVFormatContext and AVStream, what's the difference?
         qreal bit_rate;

@@ -54,6 +54,7 @@ class VideoDecoderCUDA : public VideoDecoder
 public:
     VideoDecoderCUDA();
     virtual ~VideoDecoderCUDA();
+    virtual VideoDecoderId id() const;
     virtual void flush();
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
@@ -257,6 +258,11 @@ VideoDecoderCUDA::VideoDecoderCUDA():
 
 VideoDecoderCUDA::~VideoDecoderCUDA()
 {
+}
+
+VideoDecoderId VideoDecoderCUDA::id() const
+{
+    return VideoDecoderId_CUDA;
 }
 
 void VideoDecoderCUDA::flush()
