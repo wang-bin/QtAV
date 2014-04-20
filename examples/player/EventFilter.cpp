@@ -327,7 +327,7 @@ bool WindowEventFilter::eventFilter(QObject *watched, QEvent *event)
     if (event->type() == QEvent::WindowStateChange) {
         QWindowStateChangeEvent *e = static_cast<QWindowStateChangeEvent*>(event);
         mpWindow->updateGeometry();
-        if (mpWindow->windowState() == Qt::WindowFullScreen || e->oldState() == Qt::WindowFullScreen) {
+        if (mpWindow->windowState().testFlag(Qt::WindowFullScreen) || e->oldState().testFlag(Qt::WindowFullScreen)) {
             emit fullscreenChanged();
         }
         return false;

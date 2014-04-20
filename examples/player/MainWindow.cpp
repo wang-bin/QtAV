@@ -1254,6 +1254,10 @@ void MainWindow::setup()
 void MainWindow::handleFullscreenChange()
 {
     workaroundRendererSize();
+
+    // workaround renderer display size for ubuntu
+    tryShowControlBar();
+    QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
 }
 
 void MainWindow::workaroundRendererSize()
