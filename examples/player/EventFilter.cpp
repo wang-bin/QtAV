@@ -31,6 +31,7 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QMouseEvent>
+#include <QtGui/QWindowStateChangeEvent>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/VideoRenderer.h>
@@ -290,6 +291,11 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         showMenu(e->globalPos());
     }
         break;
+    case QEvent::WindowStateChange: {
+        qDebug("WindowStateChange: %d", player->renderer()->widget()->windowState());
+        //player->renderer()->widget()->update();
+    }
+        break;
     default:
         return false;
     }
@@ -309,4 +315,27 @@ void EventFilter::showMenu(const QPoint &p)
         menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     }
     menu->exec(p);
+}
+
+
+WindowEventFilter::WindowEventFilter(QWidget *window)
+    : QObject(window)
+    , mpWindow(window)
+{
+
+}
+
+bool WindowEventFilter::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched != mpWindow)
+        return false;
+    if (event->type() == QEvent::WindowStateChange) {
+        QWindowStateChangeEvent *e = static_cast<QWindowStateChangeEvent*>(event);
+        mpWindow->updateGeometry();
+        if (mpWindow->windowState() == Qt::WindowFullScreen || e->oldState() == Qt::WindowFullScreen) {
+            emit fullscreenChanged();
+        }
+        return false;
+    }
+    return false;
 }

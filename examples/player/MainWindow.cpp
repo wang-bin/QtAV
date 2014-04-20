@@ -30,7 +30,6 @@
 #include <QtCore/QUrl>
 #include <QGraphicsOpacityEffect>
 #include <QResizeEvent>
-#include <QWindowStateChangeEvent>
 #include <QWidgetAction>
 #include <QLayout>
 #include <QPushButton>
@@ -101,6 +100,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //QTimer::singleShot(10, this, SLOT(setupUi()));
     setupUi();
     //setToolTip(tr("Click black area to use shortcut(see right click menu)"));
+    WindowEventFilter *we = new WindowEventFilter(this);
+    installEventFilter(we);
+    connect(we, SIGNAL(fullscreenChanged()), SLOT(handleFullscreenChange()));
 }
 
 MainWindow::~MainWindow()
@@ -612,14 +614,16 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     if (mpPlayer->renderer()->id() == VideoRendererId_GLWidget) {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale << VideoEQConfigPage::GLSL);
         mpVideoEQ->setEngine(VideoEQConfigPage::GLSL);
+        mpPlayer->renderer()->forcePreferredPixelFormat(true);
     } else if (mpPlayer->renderer()->id() == VideoRendererId_XV) {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::XV);
         mpVideoEQ->setEngine(VideoEQConfigPage::XV);
+        mpPlayer->renderer()->forcePreferredPixelFormat(true);
     } else {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale);
         mpVideoEQ->setEngine(VideoEQConfigPage::SWScale);
+        mpPlayer->renderer()->forcePreferredPixelFormat(false);
     }
-    mpPlayer->renderer()->forcePreferredPixelFormat(false);
     onVideoEQEngineChanged();
 }
 
@@ -1079,6 +1083,7 @@ void MainWindow::tryHideControlBar()
         return;
     mpControl->hide();
     mpTimeSlider->hide();
+    workaroundRendererSize();
 }
 
 void MainWindow::tryShowControlBar()
@@ -1146,12 +1151,15 @@ void MainWindow::onMediaStatusChanged()
 
 void MainWindow::onVideoEQEngineChanged()
 {
+    qDebug("%s @%d", __FUNCTION__, __LINE__);
     VideoRenderer *vo = mpPlayer->renderer();
     VideoEQConfigPage::Engine e = mpVideoEQ->engine();
     if (e == VideoEQConfigPage::SWScale) {
+        qDebug("%s @%d", __FUNCTION__, __LINE__);
         vo->forcePreferredPixelFormat(true);
         vo->setPreferredPixelFormat(VideoFormat::Format_RGB32);
     } else {
+        qDebug("%s @%d", __FUNCTION__, __LINE__);
         vo->forcePreferredPixelFormat(false);
     }
     onBrightnessChanged(mpVideoEQ->brightness()*100.0);
@@ -1232,4 +1240,18 @@ void MainWindow::donate()
 void MainWindow::setup()
 {
     ConfigDialog::display();
+}
+
+void MainWindow::handleFullscreenChange()
+{
+    workaroundRendererSize();
+}
+
+void MainWindow::workaroundRendererSize()
+{
+    QSize s = rect().size();
+    //resize(QSize(s.width()-1, s.height()-1));
+    //resize(s); //window resize to fullscreen size will create another fullScreenChange event
+    mpRenderer->widget()->resize(QSize(s.width()+1, s.height()+1));
+    mpRenderer->widget()->resize(s);
 }

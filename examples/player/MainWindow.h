@@ -112,6 +112,8 @@ private slots:
     void donate();
     void setup();
 
+    void handleFullscreenChange();
+
 protected:
     virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
@@ -121,6 +123,9 @@ protected:
     void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void wheelEvent(QWheelEvent *e);
+
+private:
+    void workaroundRendererSize();
 
 private:
     bool mIsReady, mHasPendingPlay;
@@ -168,5 +173,6 @@ private:
 
     QPointF mGlobalMouse;
 };
+
 
 #endif // MAINWINDOW_H

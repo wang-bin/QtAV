@@ -59,4 +59,21 @@ private:
     QMenu *menu;
 };
 
+
+class WindowEventFilter : public QObject
+{
+    Q_OBJECT
+public:
+    WindowEventFilter(QWidget *window);
+
+signals:
+    void fullscreenChanged();
+
+protected:
+    virtual bool eventFilter(QObject *watched, QEvent *event);
+
+private:
+    QWidget *mpWindow;
+};
+
 #endif // QTAV_EVENTFILTER_H
