@@ -291,11 +291,6 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         showMenu(e->globalPos());
     }
         break;
-    case QEvent::WindowStateChange: {
-        qDebug("WindowStateChange: %d", player->renderer()->widget()->windowState());
-        //player->renderer()->widget()->update();
-    }
-        break;
     default:
         return false;
     }

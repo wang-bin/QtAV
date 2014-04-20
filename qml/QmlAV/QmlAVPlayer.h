@@ -113,7 +113,7 @@ public:
     bool autoPlay() const;
     void setAutoPlay(bool autoplay);
 
-    // "FFmpeg", "DXVA", "VAAPI" etc
+    // "FFmpeg", "CUDA", "DXVA", "VAAPI" etc
     QStringList videoCodecs() const;
     QStringList videoCodecPriority() const;
     void setVideoCodecPriority(const QStringList& p);

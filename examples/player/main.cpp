@@ -30,6 +30,7 @@
 
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h>
+#include <QtAV/VideoOutput.h>
 #include <QtAV/OSDFilter.h>
 
 #include "MainWindow.h"
@@ -127,24 +128,30 @@ int main(int argc, char *argv[])
     if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv" && vo != "qt")
         vo = "gl";
     QString title = "QtAV " /*+ vo + " "*/ + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
-    VideoRenderer *renderer = 0;
-    if (vo == "gl") {
-        renderer = VideoRendererFactory::create(VideoRendererId_GLWidget);
-    } else if (vo == "d2d") {
-        renderer = VideoRendererFactory::create(VideoRendererId_Direct2D);
-    } else if (vo == "gdi") {
-        renderer = VideoRendererFactory::create(VideoRendererId_GDI);
-    } else if (vo == "xv") {
-        renderer = VideoRendererFactory::create(VideoRendererId_XV);
-    } else if (vo == "qt") {
-        renderer = VideoRendererFactory::create(VideoRendererId_Widget);
-    } else {
 #ifndef QT_NO_OPENGL
-        renderer = VideoRendererFactory::create(VideoRendererId_GLWidget);
+    VideoRendererId vid = VideoRendererId_GLWidget;
 #else
-        renderer = VideoRendererFactory::create(VideoRendererId_Widget);
-#endif //QT_NO_OPENGL
+    VideoRendererId vid = VideoRendererId_Widget;
+#endif
+    // TODO: move to VideoRendererTypes or factory to query name
+    struct {
+        const char* name;
+        VideoRendererId id;
+    } vid_map[] = {
+    { "gl", VideoRendererId_GLWidget },
+    { "d2d", VideoRendererId_Direct2D },
+    { "gdi", VideoRendererId_GDI },
+    { "xv", VideoRendererId_XV },
+    { "qt", VideoRendererId_Widget },
+    { 0, 0 }
+    };
+    for (int i = 0; vid_map[i].name; ++i) {
+        if (vo == vid_map[i].name) {
+            vid = vid_map[i].id;
+            break;
+        }
     }
+    VideoOutput *renderer = new VideoOutput(vid); //or VideoRenderer
     if (!renderer) {
         QMessageBox::critical(0, "QtAV", "vo '" + vo + "' not supported");
         return 1;
