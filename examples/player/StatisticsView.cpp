@@ -40,6 +40,7 @@ QStringList getCommonInfoKeys() {
     return QStringList()
             << QObject::tr("Available")
             << QObject::tr("Codec")
+            << QObject::tr("Decoder")
             << QObject::tr("Total time")
             << QObject::tr("Start time")
             << QObject::tr("Bit rate")
@@ -81,6 +82,7 @@ QList<QVariant> getVideoInfoValues(const Statistics& s) {
     return QList<QVariant>()
             << s.video.available
             << s.video.codec + " (" + s.video.codec_long + ")"
+            << s.video.decoder
             << s.video.total_time.toString("HH:mm:ss")
             << s.video.start_time.toString("HH:mm:ss")
             << QString::number(s.video.bit_rate/1000) + " Kb/s"
@@ -97,6 +99,7 @@ QList<QVariant> getAudioInfoValues(const Statistics& s) {
     return QList<QVariant>()
             << s.audio.available
             << s.audio.codec + " (" + s.audio.codec_long + ")"
+            << s.audio.decoder
             << s.audio.total_time.toString("HH:mm:ss")
             << s.audio.start_time.toString("HH:mm:ss")
             << QString::number(s.audio.bit_rate/1000) + " Kb/s"
