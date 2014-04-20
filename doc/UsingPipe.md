@@ -8,4 +8,11 @@ It also supports streams from file number
 
 'number' can be 0, 1, 2, .... 0 is stdin, 1 is stdout and 2 is stderr. If 'number' is empty, it means stdin.
 
+Using pipe in AVPlayer class is almost the same. Just use "pipe:N" as file name.
+
+#### Named Pipe
+
+    player \\.\pipe\name
+
+
 FFmpeg is powerful, do you think so?

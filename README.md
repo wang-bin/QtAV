@@ -1,4 +1,4 @@
-# [QtAV](https://sourceforge.net/projects/qtav)
+# [QtAV](http://wang-bin.github.io/QtAV)
 
 QtAV is a media playing library based on Qt and FFmpeg. It can help you to write a player
 with less effort than ever before.
@@ -9,6 +9,7 @@ QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](ht
 you must adhere to the terms of the license in question.**
 
 
+#### [Web site](http://wang-bin.github.io/QtAV)
 #### [Download binaries from sourceforge](https://sourceforge.net/projects/qtav)
 #### [Source code on github](https://github.com/wang-bin/QtAV)
 
@@ -16,7 +17,7 @@ you must adhere to the terms of the license in question.**
 
 QtAV can meet your most demands
 
-- Hardware decoding suppprt: DXVA2, VAAPI(buggy now), CedarX(e.g. pcDuino)
+- Hardware decoding suppprt: DXVA2, VAAPI(buggy now), CedarX(e.g. pcDuino), CUDA(the 1st player support CUDA on linux?)
 - Seek, pause/resume
 - Video capture in rgb and yuv format
 - OSD and custom filters
@@ -34,6 +35,7 @@ QtAV can meet your most demands
 - Multiple video outputs for 1 player
 - Region of interest(ROI), i.e. video cropping
 - Video eq: brightness, contrast, saturation, hue
+- Support renderering 16-bit YUV (e.g. Hi10P) using OpenGL and OpenGL ES2. (The 1st player/library support in ES2? VLC, XBMC, mplayer does not support now)
 - QML support as a plugin. Most playback APIs are compatible with QtMultiMedia module
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
   both FFmpeg(>=0.9) and [Libav](http://libav.org).
@@ -91,7 +93,7 @@ _WARNING_: If you are in windows mingw with sh.exe environment, you may need run
 
 Wrtie a media player using QtAV is quite easy.
 
-    WidgetRenderer renderer;
+    GLWidgetRenderer renderer;
     renderer.show();
     AVPlayer player;
     player.setRenderer(&renderer);
@@ -105,7 +107,7 @@ QtAV can also be used in **Qml**
     import QtQuick 2.0
     import QtAV 1.3
     Item {
-        VideoOut {
+        VideoOutput {
             anchors.fill: parent
             source: player
         }
@@ -141,7 +143,7 @@ For End Users
 
 An simple player can be found in examples. The command line options is
 
-    player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[;vaapi[;ffmpeg]]"] [--ffmpeg-log] [url|path|pipe:]
+    player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[cuda[;vaapi[;ffmpeg]]]"] [--ffmpeg-log] [url|path|pipe:]
 
 To disable audio output, add `-ao null`
 
@@ -178,8 +180,8 @@ QMLPlayer has less options now. To use DXVA decoder:
 - Up / Down: volume + / -
 - Ctrl+Up/Down: speed + / -
 - -> / <-: seek forward / backward
-- Drag and drop a media file to player
 - Crtl+Wheel: zoom in/out
+- Drag and drop a media file to player
 
 
 # TODO
