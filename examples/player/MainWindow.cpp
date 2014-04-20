@@ -19,6 +19,7 @@
 ******************************************************************************/
 #include "MainWindow.h"
 #include "EventFilter.h"
+#include <QtCore/QLocale>
 #include <QtCore/QTimer>
 #include <QTimeEdit>
 #include <QLabel>
@@ -953,15 +954,23 @@ void MainWindow::about()
 
 void MainWindow::help()
 {
-    QFile f(qApp->applicationDirPath() + "/help.html");
+    QString name = QString("help-%1.html").arg(QLocale::system().name());
+    QFile f(qApp->applicationDirPath() + "/" + name);
+    if (!f.exists()) {
+        f.setFileName(":/" + name);
+    }
+    if (!f.exists()) {
+        f.setFileName(qApp->applicationDirPath() + "/help.html");
+    }
     if (!f.exists()) {
         f.setFileName(":/help.html");
     }
     if (!f.open(QIODevice::ReadOnly)) {
-        qWarning("Failed to open help.html: %s", qPrintable(f.errorString()));
+        qWarning("Failed to open help-%1.html and help.html: %s", qPrintable(QLocale::system().name()), qPrintable(f.errorString()));
         return;
     }
     QTextStream ts(&f);
+    ts.setCodec("UTF-8");
     QString text = ts.readAll();
     QMessageBox::information(0, "Help", text);
 }

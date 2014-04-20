@@ -5,5 +5,6 @@
     <qresource prefix="/">
         <file>tv.ini</file>
         <file>help.html</file>
+        <file>help-zh_CN.html</file>
     </qresource>
 </RCC>
