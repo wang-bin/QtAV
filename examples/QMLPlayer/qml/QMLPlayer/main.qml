@@ -63,6 +63,7 @@ Rectangle {
         objectName: "player"
         //loops: MediaPlayer.Infinite
         //autoLoad: true
+        channelLayout: MediaPlayer.ChannelLayoutAuto
         onPositionChanged: {
             control.setPlayingProgress(position/duration)
         }
@@ -187,14 +188,14 @@ Rectangle {
             onLinkActivated: Qt.openUrlExternally(link)
         }
         function helpText() {
-            return "<h3>QMLPlayer based on QtAV  1.3.2 </h3>"
+            return "<h3>QMLPlayer based on QtAV  1.3.3 </h3>"
              + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
              + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
              + "<p>Shanghai University->S3 Graphics, Shanghai, China</p>"
              + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
-             + "<p>Downloads: <a href='https://sourceforge.net/projects/qtav'>https://sourceforge.net/projects/qtav</a></p>"
+             + "<p>Web Site: <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>"
              + "\n<h3>Command line:</h3>"
-             + "<p>QMLPlayer [-vd \"DXVA[;FFmpeg]\"] fileName</p>"
+             + "<p>QMLPlayer [-vd \"DXVA[;FFmpeg[;CUDA]]\"] fileName</p>"
              + "\n<h3>Shortcut:</h3>"
              + "<p>M: mute</p><p>F: fullscreen</p><p>Up/Down: volume +/-</p><p>Left/Right: Seek backward/forward
                 </p><p>Space: pause/play</p><p>Q: quite</p>"

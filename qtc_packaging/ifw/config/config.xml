@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
  <Installer>
      <Name>QtAV</Name>
-     <Version>1.3.2</Version>
+     <Version>1.3.3</Version>
      <Title>QtAV Installer</Title>
      <Publisher>wbsecg1@gmail.com</Publisher>
-     <ProductUrl>https://github.com/wang-bin/QtAV</ProductUrl>
+     <ProductUrl>http://wang-bin.github.io/QtAV</ProductUrl>
      <Logo></Logo>
      <Watermark></Watermark>
      <RunProgram></RunProgram>
