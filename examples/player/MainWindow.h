@@ -67,6 +67,7 @@ private slots:
     void help();
     void openUrl();
     void initAudioTrackMenu();
+    void updateChannelMenu();
     void switchAspectRatio(QAction* action);
     void toggleRepeat(bool);
     void setRepeateMax(int);
@@ -153,6 +154,7 @@ private:
     QTimeEdit *mpRepeatA, *mpRepeatB;
     QAction *mpAudioTrackAction;
     QMenu *mpAudioTrackMenu;
+    QMenu *mpChannelMenu;
     QAction *mpChannelAction;
     QList<QAction*> mVOActions;
 

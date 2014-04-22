@@ -19,6 +19,7 @@
 ******************************************************************************/
 #include "MainWindow.h"
 #include "EventFilter.h"
+#include <QtCore/QtDebug>
 #include <QtCore/QLocale>
 #include <QtCore/QTimer>
 #include <QTimeEdit>
@@ -95,6 +96,8 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpRenderer(0)
   , mpTempRenderer(0)
 {
+    mpChannelAction = 0;
+    mpChannelMenu = 0;
     mpAudioTrackAction = 0;
     setMouseTracking(true); //mouseMoveEvent without press.
     connect(this, SIGNAL(ready()), SLOT(processPendingActions()));
@@ -366,9 +369,9 @@ void MainWindow::setupUi()
     connect(mpAudioTrackMenu, SIGNAL(triggered(QAction*)), SLOT(changeAudioTrack(QAction*)));
     subMenu = new ClickableMenu(tr("Channel"));
     mpMenu->addMenu(subMenu);
+    mpChannelMenu = subMenu;
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeChannel(QAction*)));
-    mpChannelAction = subMenu->addAction(tr("As input"));
-    mpChannelAction->setData(AudioFormat::ChannelLayout_Unsupported); //will set to input in resampler if not supported.
+    subMenu->addAction(tr("As input"))->setData(AudioFormat::ChannelLayout_Unsupported); //will set to input in resampler if not supported.
     subMenu->addAction(tr("Stero"))->setData(AudioFormat::ChannelLayout_Stero);
     subMenu->addAction(tr("Mono (center)"))->setData(AudioFormat::ChannelLayout_Center);
     subMenu->addAction(tr("Left"))->setData(AudioFormat::ChannelLayout_Left);
@@ -376,7 +379,6 @@ void MainWindow::setupUi()
     foreach(QAction* action, subMenu->actions()) {
         action->setCheckable(true);
     }
-    mpChannelAction->setChecked(true);
 
     subMenu = new QMenu(tr("Aspect ratio"), mpMenu);
     mpMenu->addMenu(subMenu);
@@ -736,6 +738,7 @@ void MainWindow::onStartPlay()
     item.setTitle(mTitle);
     item.setDuration(mpPlayer->duration());
     mpHistory->setItemAt(item, 0);
+    updateChannelMenu();
 }
 
 void MainWindow::onStopPlay()
@@ -981,6 +984,25 @@ void MainWindow::openUrl()
     if (url.isEmpty())
         return;
     play(url);
+}
+
+void MainWindow::updateChannelMenu()
+{
+    if (mpChannelAction)
+        mpChannelAction->setChecked(false);
+    AudioOutput *ao = mpPlayer ? mpPlayer->audio() : 0; //getAO()?
+    if (!ao) {
+        return;
+    }
+    AudioFormat::ChannelLayout cl = ao->audioFormat().channelLayout();
+    QList<QAction*> as = mpChannelMenu->actions();
+    foreach (QAction *action, as) {
+        if (action->data().toInt() != (int)cl)
+            continue;
+        action->setChecked(true);
+        mpChannelAction = action;
+        break;
+    }
 }
 
 void MainWindow::initAudioTrackMenu()
