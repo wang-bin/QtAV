@@ -22,6 +22,7 @@
 #ifndef QTAV_VIDEOFORMAT_H
 #define QTAV_VIDEOFORMAT_H
 
+#include <QtCore/QMetaType>
 #include <QtCore/QSharedDataPointer>
 #include <QtCore/QString>
 #include <QtGui/QImage>
@@ -32,6 +33,7 @@
 #undef PixelFormat
 #endif
 
+class QDebug;
 namespace QtAV {
 
 class VideoFormatPrivate;
@@ -197,5 +199,14 @@ private:
     QSharedDataPointer<VideoFormatPrivate> d;
 };
 
+#ifndef QT_NO_DEBUG_STREAM
+Q_AV_EXPORT QDebug operator<<(QDebug debug, const VideoFormat &fmt);
+Q_AV_EXPORT QDebug operator<<(QDebug debug, VideoFormat::PixelFormat pixFmt);
+#endif
+
 } //namespace QtAV
+
+Q_DECLARE_METATYPE(QtAV::VideoFormat)
+Q_DECLARE_METATYPE(QtAV::VideoFormat::PixelFormat)
+
 #endif // QTAV_VIDEOFORMAT_H

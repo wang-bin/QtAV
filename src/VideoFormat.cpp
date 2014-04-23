@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/VideoFormat.h"
+#include <QtCore/QtDebug>
 #include <QtCore/QVector>
 
 #include "QtAV/QtAV_Compat.h"
@@ -656,6 +657,38 @@ bool VideoFormat::hasAlpha(PixelFormat pixfmt)
         || pixfmt == Format_ARGB8565_Premultiplied || pixfmt == Format_BGRA5658_Premultiplied
         || pixfmt == Format_AYUV444 || pixfmt == Format_AYUV444_Premultiplied
             ;
+}
+
+
+#ifndef QT_NO_DEBUG_STREAM
+QDebug operator<<(QDebug dbg, const VideoFormat &fmt)
+{
+    dbg.nospace() << "QtAV::VideoFormat(pixelFormat: " << fmt.name();
+    dbg.nospace() << ", channels: " << fmt.channels();
+    dbg.nospace() << ", planes: " << fmt.planeCount();
+    dbg.nospace() << ", bitsPerPixel: " << fmt.bitsPerPixel();
+    dbg.nospace() << ")";
+    return dbg.space();
+}
+
+QDebug operator<<(QDebug dbg, VideoFormat::PixelFormat pixFmt)
+{
+    dbg.nospace() << av_get_pix_fmt_name((AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(pixFmt));
+    return dbg.space();
+}
+#endif
+
+
+namespace {
+    class VideoFormatPrivateRegisterMetaTypes
+    {
+    public:
+        VideoFormatPrivateRegisterMetaTypes()
+        {
+            qRegisterMetaType<QtAV::VideoFormat>();
+            qRegisterMetaType<QtAV::VideoFormat::PixelFormat>();
+        }
+    } _registerMetaTypes;
 }
 
 } //namespace QtAV

@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/AudioFormat.h"
+#include <QtCore/QtDebug>
 #include "QtAV/QtAV_Compat.h"
 
 //FF_API_OLD_SAMPLE_FMT. e.g. FFmpeg 0.9
@@ -418,6 +419,48 @@ int AudioFormat::bitRate() const
 int AudioFormat::bytesPerSecond() const
 {
     return channels() * bytesPerSample() * sampleRate();
+}
+
+#ifndef QT_NO_DEBUG_STREAM
+QDebug operator<<(QDebug dbg, const QtAV::AudioFormat &fmt)
+{
+    dbg.nospace() << "QtAV::AudioFormat(" << fmt.sampleRate();
+    dbg.nospace() << "Hz, " << fmt.bytesPerSample();
+    dbg.nospace() << "Bytes, channelCount:" << fmt.channels();
+    dbg.nospace() << ", channelLayout: " << fmt.channelLayoutName();
+    dbg.nospace() << ", sampleFormat: " << fmt.sampleFormatName();
+    dbg.nospace() << ")";
+
+    return dbg.space();
+}
+
+QDebug operator<<(QDebug dbg, QtAV::AudioFormat::SampleFormat sampleFormat)
+{
+    dbg.nospace() << av_get_sample_fmt_name((AVSampleFormat)sampleFormat);
+    return dbg.space();
+}
+
+QDebug operator<<(QDebug dbg, QtAV::AudioFormat::ChannelLayout channelLayout)
+{
+    char cl[128];
+    av_get_channel_layout_string(cl, sizeof(cl), -1, AudioFormat::channelLayoutToFFmpeg(channelLayout)); //TODO: ff version
+    dbg.nospace() << cl;
+    return dbg.space();
+}
+#endif
+
+
+namespace {
+    class AudioFormatPrivateRegisterMetaTypes
+    {
+    public:
+        AudioFormatPrivateRegisterMetaTypes()
+        {
+            qRegisterMetaType<QtAV::AudioFormat>();
+            qRegisterMetaType<QtAV::AudioFormat::SampleFormat>();
+            qRegisterMetaType<QtAV::AudioFormat::ChannelLayout>();
+        }
+    } _registerMetaTypes;
 }
 
 } //namespace QtAV

@@ -22,10 +22,12 @@
 #ifndef QTAV_AUDIOFORMAT_H
 #define QTAV_AUDIOFORMAT_H
 
+#include <QtCore/QMetaType>
 #include <QtCore/QSharedDataPointer>
 #include <QtCore/QString>
 #include <QtAV/QtAV_Global.h>
 
+class QDebug;
 namespace QtAV {
 
 class AudioFormatPrivate;
@@ -131,8 +133,16 @@ private:
     QSharedDataPointer<AudioFormatPrivate> d;
 };
 
-//operator<<
+#ifndef QT_NO_DEBUG_STREAM
+Q_AV_EXPORT QDebug operator<<(QDebug debug, const AudioFormat &fmt);
+Q_AV_EXPORT QDebug operator<<(QDebug debug, AudioFormat::SampleFormat sampleFormat);
+Q_AV_EXPORT QDebug operator<<(QDebug debug, AudioFormat::ChannelLayout channelLayout);
+#endif
 
 } //namespace QtAV
+
+Q_DECLARE_METATYPE(QtAV::AudioFormat)
+Q_DECLARE_METATYPE(QtAV::AudioFormat::SampleFormat)
+Q_DECLARE_METATYPE(QtAV::AudioFormat::ChannelLayout)
 
 #endif // QTAV_AUDIOFORMAT_H
