@@ -77,7 +77,7 @@ public:
             return;
         }
         qDebug("out rect: %f %dx%d ==>", out_aspect_ratio, out_rect.width(), out_rect.height());
-        if (rendererAspectRatio > outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
+        if (rendererAspectRatio >= outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
             //renderer is too wide, use renderer's height, horizonal align center
             int h = renderer_height;
             int w = outAspectRatio * qreal(h);
