@@ -54,6 +54,19 @@ bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
     return VideoFormat::isRGB(pixfmt);
 }
 
+void QQuickItemRenderer::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+    Q_UNUSED(oldGeometry);
+    DPTR_D(QQuickItemRenderer);
+    resizeRenderer(newGeometry.size().toSize());
+    if (d.fill_mode == PreserveAspectCrop) {
+        QSizeF scaled = d.out_rect.size();
+        scaled.scale(boundingRect().size(), Qt::KeepAspectRatioByExpanding);
+        d.out_rect = QRect(QPoint(), scaled.toSize());
+        d.out_rect.moveCenter(boundingRect().center().toPoint());
+    }
+}
+
 bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
 {
     DPTR_D(QQuickItemRenderer);
@@ -96,6 +109,11 @@ void QQuickItemRenderer::setFillMode(FillMode mode)
     if (d.fill_mode == mode)
         return;
     d_func().fill_mode = mode;
+    if (d.fill_mode == Stretch) {
+        setOutAspectRatioMode(RendererAspectRatio);
+    } else {//compute out_rect fits video aspect ratio then compute again if crop
+        setOutAspectRatioMode(VideoAspectRatio);
+    }
     //m_geometryDirty = true;
     //update();
     emit fillModeChanged(mode);
@@ -121,19 +139,7 @@ void QQuickItemRenderer::drawFrame()
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black);
     }
-    if (d.fill_mode == Stretch) {
-        static_cast<QSGSimpleTextureNode*>(d.node)->setRect(boundingRect());
-    } else if (d.fill_mode == PreserveAspectFit || d.fill_mode == PreserveAspectCrop) {
-        //TODO: optimize by updating content rect only when fill mode changed
-        QSizeF scaled = d.out_rect.size();
-        scaled.scale(boundingRect().size(), d.fill_mode == PreserveAspectFit ?
-                         Qt::KeepAspectRatio : Qt::KeepAspectRatioByExpanding);
-        QRectF rect(QPointF(), scaled);
-        rect.moveCenter(boundingRect().center());
-        //d.out_rect = rect;
-        //rect &= boundingRect(); //FIXME: why QtMultiMedia does not have it?
-        static_cast<QSGSimpleTextureNode*>(d.node)->setRect(rect);
-    }
+    static_cast<QSGSimpleTextureNode*>(d.node)->setRect(d.out_rect);
 
     if (d.texture)
         delete d.texture;

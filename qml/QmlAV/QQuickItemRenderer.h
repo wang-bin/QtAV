@@ -64,6 +64,8 @@ Q_SIGNALS:
     void regionOfInterestChanged();
 
 protected:
+    virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);
+
     virtual bool receiveFrame(const VideoFrame &frame);
     virtual bool needUpdateBackground() const;
     virtual bool needDrawFrame() const;
