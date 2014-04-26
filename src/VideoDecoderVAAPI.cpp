@@ -21,6 +21,9 @@
 
 #include "QtAV/VideoDecoderFFmpegHW.h"
 #include "private/VideoDecoderFFmpegHW_p.h"
+
+#include <algorithm>
+
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
@@ -94,7 +97,8 @@ public:
         surface_chroma = QTAV_PIX_FMT_C(NONE);
         surfaces = 0;
         image.image_id = VA_INVALID_ID;
-        supports_derive = 0;
+        disable_derive = true;
+        supports_derive = false;
         va_pixfmt = QTAV_PIX_FMT_C(VAAPI_VLD);
     }
 
@@ -134,8 +138,8 @@ public:
     va_surface_t *surfaces;
 
     VAImage      image;
-    //copy_cache_t image_cache;
 
+    bool disable_derive;
     bool supports_derive;
 };
 
@@ -163,12 +167,24 @@ VideoFrame VideoDecoderVAAPI::frame()
 #endif
         return VideoFrame();
 
-    if (d.supports_derive) {
-        if (vaDeriveImage(d.display, surface_id, &d.image) != VA_STATUS_SUCCESS)
+    VAStatus status = VA_STATUS_SUCCESS;
+    if (!d.disable_derive && d.supports_derive) {
+        /*
+         * http://web.archiveorange.com/archive/v/OAywENyq88L319OcRnHI
+         * vaDeriveImage is faster than vaGetImage. But VAImage is uncached memory and copying from it would be terribly slow
+         * TODO: copy from USWC, see vlc and https://github.com/OpenELEC/OpenELEC.tv/pull/2937.diff
+         * https://software.intel.com/en-us/articles/increasing-memory-throughput-with-intel-streaming-simd-extensions-4-intel-sse4-streaming-load
+         */
+        status = vaDeriveImage(d.display, surface_id, &d.image);
+        if (status != VA_STATUS_SUCCESS) {
             return VideoFrame();
+        }
     } else {
-        if (vaGetImage(d.display, surface_id, 0, 0, d.surface_width, d.surface_height, d.image.image_id))
+        status = vaGetImage(d.display, surface_id, 0, 0, d.surface_width, d.surface_height, d.image.image_id);
+        if (status != VA_STATUS_SUCCESS) {
+            qWarning("vaGetImage failed. status=%#x. surface: %dx%d id: %d/%d", status, d.surface_width, d.surface_height, d.image.image_id, VA_INVALID_ID);
             return VideoFrame();
+        }
     }
 
     void *p_base;
@@ -187,6 +203,11 @@ VideoFrame VideoDecoderVAAPI::frame()
             const int i_src_plane = (b_swap_uv && i != 0) ?  (3 - i) : i;
             pp_plane[i] = (uint8_t*)p_base + d.image.offsets[i_src_plane];
             pi_pitch[i] = d.image.pitches[i_src_plane];
+        }
+        //swap U V if use vaGetImage. have not confirmed why
+        if (d.disable_derive || !d.supports_derive) {
+            std::swap(pp_plane[1], pp_plane[2]);
+            std::swap(pi_pitch[1], pi_pitch[2]);
         }
         frame = VideoFrame(d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_YUV420P));
         frame.setBits(pp_plane);
@@ -209,7 +230,7 @@ VideoFrame VideoDecoderVAAPI::frame()
     if (vaUnmapBuffer(d.display, d.image.buf))
         return VideoFrame();
 
-    if (d.supports_derive) {
+    if (!d.disable_derive && d.supports_derive) {
         vaDestroyImage(d.display, d.image.image_id);
         d.image.image_id = VA_INVALID_ID;
     }
@@ -224,7 +245,11 @@ bool VideoDecoderVAAPIPrivate::open()
     if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
         codec_ctx->pix_fmt = va_pixfmt;
 
-    XInitThreads();
+    // TODO: lock
+    if (!XInitThreads()) {
+        qWarning("XInitThreads failed!");
+        return false;
+    }
     VAProfile i_profile, *p_profiles_list;
     bool b_supported_profile = false;
     int i_profiles_nb = 0;
@@ -362,9 +387,13 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
     }
 
     VAImage test_image;
-    if (vaDeriveImage(display, pi_surface_id[0], &test_image) == VA_STATUS_SUCCESS) {
-        supports_derive = true;
-        vaDestroyImage(display, test_image.image_id);
+
+    if (!disable_derive) {
+        if (vaDeriveImage(display, pi_surface_id[0], &test_image) == VA_STATUS_SUCCESS) {
+            qDebug("vaDeriveImage supported");
+            supports_derive = true;
+            vaDestroyImage(display, test_image.image_id);
+        }
     }
 
     AVPixelFormat i_chroma = QTAV_PIX_FMT_C(NONE);
@@ -373,6 +402,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         if (p_fmt[i].fourcc == VA_FOURCC('Y', 'V', '1', '2') ||
             p_fmt[i].fourcc == VA_FOURCC('I', '4', '2', '0') ||
             p_fmt[i].fourcc == VA_FOURCC('N', 'V', '1', '2')) {
+            qDebug("vaCreateImage: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
             if (vaCreateImage(display, &p_fmt[i], w, h, &image)) {
                 image.image_id = VA_INVALID_ID;
                 qDebug("vaCreateImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
@@ -398,14 +428,11 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
     }
     *chroma = i_chroma;
 
-    if (supports_derive) {
+    if (!disable_derive && supports_derive) {
         vaDestroyImage(display, image.image_id);
         image.image_id = VA_INVALID_ID;
     }
-/*
-    if (unlikely(CopyInitCache(&sys->image_cache, i_width)))
-        goto error;
-*/
+
     /* Setup the ffmpeg hardware context */
     *pp_hw_ctx = &hw_ctx;
 
@@ -424,12 +451,8 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
 void VideoDecoderVAAPIPrivate::destroySurfaces()
 {
     if (image.image_id != VA_INVALID_ID) {
-        //CopyCleanCache(&sys->image_cache);
         vaDestroyImage(display, image.image_id);
-    } else if (supports_derive) {
-        //CopyCleanCache(&sys->image_cache);
     }
-
     if (context_id != VA_INVALID_ID)
         vaDestroyContext(display, context_id);
 
