@@ -99,12 +99,12 @@ void VideoThread::setEQ(int b, int c, int s)
     class EQTask : public QRunnable {
     public:
         EQTask(ImageConverter *c)
-            : conv(c)
-            , brightness(0)
+            : brightness(0)
             , contrast(0)
             , saturation(0)
+            , conv(c)
         {
-            qDebug("EQTask tid=%p", QThread::currentThread());
+            //qDebug("EQTask tid=%p", QThread::currentThread());
         }
         void run() {
             // check here not in ctor because it may called later in video thread
@@ -114,8 +114,8 @@ void VideoThread::setEQ(int b, int c, int s)
                 contrast = conv->contrast();
             if (saturation < -100 || saturation > 100)
                 saturation = conv->saturation();
-            qDebug("EQTask::run() tid=%p (b: %d, c: %d, s: %d)"
-                   , QThread::currentThread(), brightness, contrast, saturation);
+            //qDebug("EQTask::run() tid=%p (b: %d, c: %d, s: %d)"
+               //    , QThread::currentThread(), brightness, contrast, saturation);
             conv->setBrightness(brightness);
             conv->setContrast(contrast);
             conv->setSaturation(saturation);

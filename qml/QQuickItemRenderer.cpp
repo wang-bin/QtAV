@@ -163,6 +163,7 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
 
 bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)
 {
+    Q_UNUSED(roi);
     emit regionOfInterestChanged();
     return true;
 }

@@ -185,7 +185,6 @@ void VideoOutput::handlePaintEvent()
 bool VideoOutput::onForcePreferredPixelFormat(bool force)
 {
     DPTR_D(VideoOutput);
-    qDebug("%s @%d", __FUNCTION__, __LINE__);
     d.impl->forcePreferredPixelFormat(force);
     return d.impl->isPreferredPixelFormatForced() == force;
 }

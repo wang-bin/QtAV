@@ -198,7 +198,6 @@ void AVPlayer::clearVideoRenderers()
 //TODO: check components compatiblity(also when change the filter chain)
 void AVPlayer::setRenderer(VideoRenderer *r)
 {
-    qDebug(">>>>>>>>>>%s", __FUNCTION__);
     VideoRenderer *vo = renderer();
     if (vo && r) {
         VideoRenderer::OutAspectRatioMode oar = vo->outAspectRatioMode();
@@ -238,7 +237,6 @@ QList<VideoRenderer*> AVPlayer::videoOutputs()
 
 void AVPlayer::setAudioOutput(AudioOutput* ao)
 {
-    qDebug(">>>>>>>>>>%s", __FUNCTION__);
     setAVOutput(_audio, ao, audio_thread);
 }
 

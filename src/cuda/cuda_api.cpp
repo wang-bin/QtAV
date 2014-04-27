@@ -391,18 +391,15 @@ int cuda_api::GetMaxGflopsGraphicsDeviceId() {
             int compute_perf = multiProcessorCount * sm_per_multiproc * clockRate;
             printf("%s @%d compute_perf=%d max_compute_perf=%d\n", __FUNCTION__, __LINE__, compute_perf, max_compute_perf);
             if (compute_perf > max_compute_perf) {
-                printf("%s @%d", __FUNCTION__, __LINE__);
                 // If we find GPU with SM major > 2, search only these
                 if (best_SM_arch > 2) {
                     printf("%s @%d best_SM_arch=%d\n", __FUNCTION__, __LINE__, best_SM_arch);
                     // If our device = dest_SM_arch, then we pick this one
                     if (major == best_SM_arch) {
-                        printf("%s @%d", __FUNCTION__, __LINE__);
                         max_compute_perf = compute_perf;
                         max_perf_device = current_device;
                     }
                 } else {
-                    printf("%s @%d\n", __FUNCTION__, __LINE__);
                     max_compute_perf = compute_perf;
                     max_perf_device = current_device;
                 }

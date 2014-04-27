@@ -76,7 +76,7 @@ public:
             out_rect = QRect(0, 0, renderer_width, renderer_height);
             return;
         }
-        qDebug("out rect: %f %dx%d ==>", out_aspect_ratio, out_rect.width(), out_rect.height());
+        //qDebug("out rect: %f %dx%d ==>", out_aspect_ratio, out_rect.width(), out_rect.height());
         if (rendererAspectRatio >= outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
             //renderer is too wide, use renderer's height, horizonal align center
             int h = renderer_height;
@@ -89,7 +89,7 @@ public:
             out_rect = QRect(0, (renderer_height - h)/2, w, h);
         }
         out_aspect_ratio = outAspectRatio;
-        qDebug("%f %dx%d <<<<<<<<", out_aspect_ratio, out_rect.width(), out_rect.height());
+        //qDebug("%f %dx%d <<<<<<<<", out_aspect_ratio, out_rect.width(), out_rect.height());
     }
     virtual void setupQuality() {}
 

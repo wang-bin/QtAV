@@ -1182,15 +1182,12 @@ void MainWindow::onMediaStatusChanged()
 
 void MainWindow::onVideoEQEngineChanged()
 {
-    qDebug("%s @%d", __FUNCTION__, __LINE__);
     VideoRenderer *vo = mpPlayer->renderer();
     VideoEQConfigPage::Engine e = mpVideoEQ->engine();
     if (e == VideoEQConfigPage::SWScale) {
-        qDebug("%s @%d", __FUNCTION__, __LINE__);
         vo->forcePreferredPixelFormat(true);
         vo->setPreferredPixelFormat(VideoFormat::Format_RGB32);
     } else {
-        qDebug("%s @%d", __FUNCTION__, __LINE__);
         vo->forcePreferredPixelFormat(false);
     }
     onBrightnessChanged(mpVideoEQ->brightness()*100.0);
