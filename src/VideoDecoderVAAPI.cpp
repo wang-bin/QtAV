@@ -160,14 +160,17 @@ VideoFrame VideoDecoderVAAPI::frame()
     if (!d.frame->opaque || !d.frame->data[0])
         return VideoFrame();
     VASurfaceID surface_id = (VASurfaceID)(uintptr_t)d.frame->data[3];
+    VAStatus status = VA_STATUS_SUCCESS;
 #if VA_CHECK_VERSION(0,31,0)
-    if (vaSyncSurface(d.display, surface_id))
+    if ((status = vaSyncSurface(d.display, surface_id)) != VA_STATUS_SUCCESS) {
+        qWarning("vaSyncSurface(VADisplay:%p, VASurfaceID:%#x) == %#x", d.display, surface_id, status);
 #else
-    if (vaSyncSurface(d.display, d.context_id, surface_id))
+    if (vaSyncSurface(d.display, d.context_id, surface_id)) {
+        qWarning("vaSyncSurface(VADisplay:%#x, VAContextID:%#x, VASurfaceID:%#x) == %#x", d.display, d.context_id, surface_id, status);
 #endif
         return VideoFrame();
+    }
 
-    VAStatus status = VA_STATUS_SUCCESS;
     if (!d.disable_derive && d.supports_derive) {
         /*
          * http://web.archiveorange.com/archive/v/OAywENyq88L319OcRnHI
@@ -177,19 +180,22 @@ VideoFrame VideoDecoderVAAPI::frame()
          */
         status = vaDeriveImage(d.display, surface_id, &d.image);
         if (status != VA_STATUS_SUCCESS) {
+            qWarning("vaDeriveImage(VADisplay:%p, VASurfaceID:%#x, VAImage*:%p) == %#x", d.display, surface_id, &d.image, status);
             return VideoFrame();
         }
     } else {
         status = vaGetImage(d.display, surface_id, 0, 0, d.surface_width, d.surface_height, d.image.image_id);
         if (status != VA_STATUS_SUCCESS) {
-            qWarning("vaGetImage failed. status=%#x. surface: %dx%d id: %d/%d", status, d.surface_width, d.surface_height, d.image.image_id, VA_INVALID_ID);
+            qWarning("vaGetImage(VADisplay:%p, VASurfaceID:%#x, 0,0, %d, %d, VAImageID:%#x) == %#x", d.display, surface_id, d.surface_width, d.surface_height, d.image.image_id, status);
             return VideoFrame();
         }
     }
 
     void *p_base;
-    if (vaMapBuffer(d.display, d.image.buf, &p_base))
+    if ((status = vaMapBuffer(d.display, d.image.buf, &p_base)) != VA_STATUS_SUCCESS) {
+        qWarning("vaMapBuffer(VADisplay:%p, VABufferID:%#x, pBuf:%p) == %#x", d.display, d.image.buf, &p_base, status);
         return VideoFrame();
+    }
 
     VideoFrame frame;
     const uint32_t i_fourcc = d.image.format.fourcc;
@@ -227,8 +233,10 @@ VideoFrame VideoDecoderVAAPI::frame()
         frame.setBytesPerLine(pi_pitch);
     }
 
-    if (vaUnmapBuffer(d.display, d.image.buf))
+    if ((status = vaUnmapBuffer(d.display, d.image.buf)) != VA_STATUS_SUCCESS) {
+        qWarning("vaUnmapBuffer(VADisplay:%p, VABufferID:%#x) == %#x", d.display, d.image.buf, status);
         return VideoFrame();
+    }
 
     if (!d.disable_derive && d.supports_derive) {
         vaDestroyImage(d.display, d.image.image_id);
@@ -305,8 +313,8 @@ bool VideoDecoderVAAPIPrivate::open()
     if (!p_profiles_list)
         return false;
 
-    VAStatus i_status = vaQueryConfigProfiles(display, p_profiles_list, &i_profiles_nb);
-    if (i_status == VA_STATUS_SUCCESS) {
+    VAStatus status = vaQueryConfigProfiles(display, p_profiles_list, &i_profiles_nb);
+    if (status == VA_STATUS_SUCCESS) {
         for (int i = 0; i < i_profiles_nb; i++) {
             if (p_profiles_list[i] == i_profile) {
                 b_supported_profile = true;
@@ -323,20 +331,23 @@ bool VideoDecoderVAAPIPrivate::open()
     VAConfigAttrib attrib;
     memset(&attrib, 0, sizeof(attrib));
     attrib.type = VAConfigAttribRTFormat;
-    if (vaGetConfigAttributes(display, i_profile, VAEntrypointVLD, &attrib, 1))
+    if ((status = vaGetConfigAttributes(display, i_profile, VAEntrypointVLD, &attrib, 1)) != VA_STATUS_SUCCESS) {
+        qWarning("vaGetConfigAttributes(VADisplay:%p, VAProfile:%d, VAEntrypointVLD, VAConfigAttrib*:%p, num_attrib:1) == %#x", display, i_profile, &attrib, status);
         return false;
+    }
     /* Not sure what to do if not, I don't have a way to test */
     if ((attrib.value & VA_RT_FORMAT_YUV420) == 0)
         return false;
     //vaCreateConfig(display, i_profile, VAEntrypointVLD, NULL, 0, &config_id)
-    if (vaCreateConfig(display, i_profile, VAEntrypointVLD, &attrib, 1, &config_id)) {
+    if ((status = vaCreateConfig(display, i_profile, VAEntrypointVLD, &attrib, 1, &config_id)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateConfig(VADisplay:%p, VAProfile:%d, VAEntrypointVLD, VAConfigAttrib*:%p, num_attrib:1, VAConfigID*:%p) == %#x", display, i_profile, &attrib, &config_id, status);
         config_id = VA_INVALID_ID;
         return false;
     }
     nb_surfaces = i_nb_surfaces;
     supports_derive = false;
 
-    description = QString("VA API version %1.%2").arg(version_major).arg(version_minor);
+    description = QString("VA API version %1.%2; Vendor: %3").arg(version_major).arg(version_minor).arg(vaQueryVendorString(display));
     return true;
 }
 
@@ -352,7 +363,9 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
 
     /* Create surfaces */
     VASurfaceID pi_surface_id[nb_surfaces];
-    if (vaCreateSurfaces(display, VA_RT_FORMAT_YUV420, w, h, pi_surface_id, nb_surfaces, NULL, 0)) {
+    VAStatus status = VA_STATUS_SUCCESS;
+    if ((status = vaCreateSurfaces(display, VA_RT_FORMAT_YUV420, w, h, pi_surface_id, nb_surfaces, NULL, 0)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateSurfaces(VADisplay:%p, VA_RT_FORMAT_YUV420, %d, %d, VASurfaceID*:%p, surfaces:%d, VASurfaceAttrib:NULL, num_attrib:0) == %#x", display, w, h, pi_surface_id, nb_surfaces, status);
         for (int i = 0; i < nb_surfaces; i++)
             surfaces[i].i_id = VA_INVALID_SURFACE;
         destroySurfaces();
@@ -366,7 +379,8 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         ////surface->p_lock = &sys->lock;
     }
     /* Create a context */
-    if (vaCreateContext(display, config_id, w, h, VA_PROGRESSIVE, pi_surface_id, nb_surfaces, &context_id)) {
+    if ((status = vaCreateContext(display, config_id, w, h, VA_PROGRESSIVE, pi_surface_id, nb_surfaces, &context_id)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display, config_id, w, h, pi_surface_id, nb_surfaces, &context_id, status);
         context_id = VA_INVALID_ID;
         destroySurfaces();
         return false;
