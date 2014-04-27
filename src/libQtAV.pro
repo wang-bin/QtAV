@@ -141,10 +141,18 @@ config_dxva {
     SOURCES += VideoDecoderDXVA.cpp
     LIBS += -lOle32
 }
-config_vaapi {
+config_vaapi* {
     DEFINES *= QTAV_HAVE_VAAPI=1
     SOURCES += VideoDecoderVAAPI.cpp
-    LIBS += -lva -lva-x11 #TODO: dynamic load
+    LIBS += -lva #TODO: dynamic load using dllapi
+    config_vaapi-x11 {
+        DEFINES *= QTAV_HAVE_VAAPI_X11=1
+        LIBS += -lva-x11
+    }
+    config_vaapi-x11 {
+        DEFINES *= QTAV_HAVE_VAAPI_DRM=1
+        LIBS += -lva-drm
+    }
 }
 config_libcedarv {
     DEFINES *= QTAV_HAVE_CEDARV=1

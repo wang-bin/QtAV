@@ -3,4 +3,4 @@ CONFIG += console
 
 SOURCES += main.cpp
 
-LIBS += -lva
+LIBS += -lva -lva-drm

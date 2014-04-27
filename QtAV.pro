@@ -44,7 +44,8 @@ OptionalDepends = \
 !no-dxva: OptionalDepends *= dxva
 unix {
     !no-xv: OptionalDepends *= xv
-    !no-vaapi: OptionalDepends *= vaapi
+    !no-vaapi-x11: OptionalDepends *= vaapi-x11
+    !no-vaapi-drm: OptionalDepends *= vaapi-drm
     !no-cedarv: OptionalDepends *= libcedarv
 }
 

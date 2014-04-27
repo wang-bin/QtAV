@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -28,19 +28,17 @@
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
 #include <va/va.h>
-
-#if HAVE_VAAPI_DRM
-#include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <xf86drm.h>
-#include <sys/stat.h>
-#include <va/va_drm.h>
-#endif
-
 #include <libavcodec/avcodec.h>
 #include <libavcodec/vaapi.h>
-#if 1//HAVE_VAAPI_X11
+
+//TODO: use dllapi
+#if QTAV_HAVE(VAAPI_DRM)
+#include <fcntl.h> //open()
+#include <unistd.h> //close()
+//#include <xf86drm.h>
+#include <va/va_drm.h>
+#endif
+#if QTAV_HAVE(VAAPI_X11)
 #include <X11/Xlib.h>
 #include <va/va_x11.h>
 #endif
@@ -57,9 +55,18 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
 {
     DPTR_DECLARE_PRIVATE(VideoDecoderVAAPI)
 public:
+    enum DisplayType {
+        Display_X11,
+        Display_GLX,
+        Display_DRM
+    };
     VideoDecoderVAAPI();
     virtual VideoDecoderId id() const;
     virtual VideoFrame frame();
+
+    // TODO: QObject property
+    void setDisplayTypePriority(const QStringList& priority);
+    DisplayType displayType() const;
 };
 
 extern VideoDecoderId VideoDecoderId_VAAPI;
@@ -84,7 +91,13 @@ class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderVAAPIPrivate() {
+        display_type = VideoDecoderVAAPI::Display_X11;
+#if QTAV_HAVE(VAAPI_X11)
         display_x11 = 0;
+#endif
+#if QTAV_HAVE(VAAPI_DRM)
+        drm_fd = -1;
+#endif
         display = 0;
         config_id = VA_INVALID_ID;
         context_id = VA_INVALID_ID;
@@ -114,7 +127,15 @@ public:
     virtual bool getBuffer(void **opaque, uint8_t **data);
     virtual void releaseBuffer(void *opaque, uint8_t *data);
 
-    Display      *display_x11;
+    VideoDecoderVAAPI::DisplayType display_type;
+    QVector<VideoDecoderVAAPI::DisplayType> display_priority;
+#if QTAV_HAVE(VAAPI_X11)
+    Display *display_x11;
+#endif
+#if QTAV_HAVE(VAAPI_DRM)
+    int drm_fd;
+#endif
+
     VADisplay     display;
 
     VAConfigID    config_id;
@@ -147,6 +168,7 @@ public:
 VideoDecoderVAAPI::VideoDecoderVAAPI()
     : VideoDecoderFFmpegHW(*new VideoDecoderVAAPIPrivate())
 {
+    setDisplayTypePriority(QStringList() << "glx" << "x11" << "drm");
 }
 
 VideoDecoderId VideoDecoderVAAPI::id() const
@@ -247,17 +269,25 @@ VideoFrame VideoDecoderVAAPI::frame()
     return frame.clone();
 }
 
+void VideoDecoderVAAPI::setDisplayTypePriority(const QStringList &priority)
+{
+    DPTR_D(VideoDecoderVAAPI);
+    d.display_priority.clear();
+    foreach (QString disp, priority) {
+        if (disp.toLower() == "drm")
+            d.display_priority.push_back(Display_DRM);
+        else if (disp.toLower() == "glx")
+            d.display_priority.push_back(Display_GLX);
+        else
+            d.display_priority.push_back(Display_X11);
+    }
+}
+
 
 bool VideoDecoderVAAPIPrivate::open()
 {
     if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
         codec_ctx->pix_fmt = va_pixfmt;
-
-    // TODO: lock
-    if (!XInitThreads()) {
-        qWarning("XInitThreads failed!");
-        return false;
-    }
     VAProfile i_profile, *p_profiles_list;
     bool b_supported_profile = false;
     int i_profiles_nb = 0;
@@ -292,12 +322,41 @@ bool VideoDecoderVAAPIPrivate::open()
     context_id = VA_INVALID_ID;
     image.image_id = VA_INVALID_ID;
     /* Create a VA display */
-    display_x11 = XOpenDisplay(NULL);;
-    if (!display_x11) {
-        qWarning("Could not connect to X server");
-        return false;
+    foreach (VideoDecoderVAAPI::DisplayType dt, display_priority) {
+        if (dt == VideoDecoderVAAPI::Display_DRM) {
+            qDebug("vaGetDisplay DRM...............");
+// get drm use udev: https://gitorious.org/hwdecode-demos/hwdecode-demos/commit/d591cf14b83bedc8a5fa9f2fcb53d279e2f76d7f?diffmode=sidebyside
+#if QTAV_HAVE(VAAPI_DRM)
+            drm_fd = ::open("/dev/dri/card0", O_RDWR);
+            if(drm_fd == -1) {
+                qWarning("Could not access rendering device");
+                continue;
+            }
+            display = vaGetDisplayDRM(drm_fd);
+#endif //QTAV_HAVE(VAAPI_DRM)
+            display_type = VideoDecoderVAAPI::Display_DRM;
+        } else if (dt == VideoDecoderVAAPI::Display_X11) {
+            qDebug("vaGetDisplay X11...............");
+#if QTAV_HAVE(VAAPI_X11)
+            // TODO: lock
+            if (!XInitThreads()) {
+                qWarning("XInitThreads failed!");
+                continue;
+            }
+            display_x11 = XOpenDisplay(NULL);;
+            if (!display_x11) {
+                qWarning("Could not connect to X server");
+                continue;
+            }
+            display = vaGetDisplay(display_x11);
+#endif //QTAV_HAVE(VAAPI_X11)
+            display_type = VideoDecoderVAAPI::Display_X11;
+        } else if (dt == VideoDecoderVAAPI::Display_GLX) {
+            qDebug("vaGetDisplay GLX...............");
+        }
+        if (display)
+            break;
     }
-    display = vaGetDisplay(display_x11);
 
     if (!display/* || vaDisplayIsValid(display) != 0*/) {
         qWarning("Could not get a VAAPI device");
@@ -347,7 +406,20 @@ bool VideoDecoderVAAPIPrivate::open()
     nb_surfaces = i_nb_surfaces;
     supports_derive = false;
 
-    description = QString("VA API version %1.%2; Vendor: %3").arg(version_major).arg(version_minor).arg(vaQueryVendorString(display));
+    description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vaQueryVendorString(display));
+    switch (display_type) {
+    case VideoDecoderVAAPI::Display_X11:
+        description += " Display: X11";
+        break;
+    case VideoDecoderVAAPI::Display_DRM:
+        description += " Display: DRM";
+        break;
+    case VideoDecoderVAAPI::Display_GLX:
+        description += " Display: GLX";
+        break;
+    default:
+        break;
+    }
     return true;
 }
 
@@ -517,10 +589,18 @@ void VideoDecoderVAAPIPrivate::close()
         vaTerminate(display);
         display = 0;
     }
+#if QTAV_HAVE(VAAPI_X11)
     if (display_x11) {
         XCloseDisplay(display_x11);
         display_x11 = 0;
     }
+#endif
+#if QTAV_HAVE(VAAPI_DRM)
+    if (drm_fd >= 0) {
+        ::close(drm_fd);
+        drm_fd = -1;
+    }
+#endif
 }
 
 bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
