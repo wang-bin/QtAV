@@ -42,6 +42,10 @@
 #include <X11/Xlib.h>
 #include <va/va_x11.h>
 #endif
+#if QTAV_HAVE(VAAPI_GLX)
+#include <va/va_glx.h>
+#include <GL/gl.h>
+#endif
 
 #ifndef VA_SURFACE_ATTRIB_SETTABLE
 #define vaCreateSurfaces(d, f, w, h, s, ns, a, na) \
@@ -98,6 +102,10 @@ public:
 #if QTAV_HAVE(VAAPI_DRM)
         drm_fd = -1;
 #endif
+#if QTAV_HAVE(VAAPI_GLX)
+        glxSurface = 0;
+        texture = 0;
+#endif
         display = 0;
         config_id = VA_INVALID_ID;
         context_id = VA_INVALID_ID;
@@ -134,6 +142,10 @@ public:
 #endif
 #if QTAV_HAVE(VAAPI_DRM)
     int drm_fd;
+#endif
+#if QTAV_HAVE(VAAPI_GLX)
+    void* glxSurface;
+    GLuint texture;
 #endif
 
     VADisplay     display;
@@ -183,6 +195,37 @@ VideoFrame VideoDecoderVAAPI::frame()
         return VideoFrame();
     VASurfaceID surface_id = (VASurfaceID)(uintptr_t)d.frame->data[3];
     VAStatus status = VA_STATUS_SUCCESS;
+#if QTAV_HAVE(VAAPI_GLX)
+    if (displayType() == Display_GLX) {
+        if (!d.glxSurface) {
+            // FIXME: wrong gl context
+            glGenTextures(1, &d.texture);
+            qDebug("==============glGenTextures(1, %d)", d.texture);
+
+            glBindTexture(GL_TEXTURE_2D, d.texture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, d.surface_width, d.surface_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+            status = vaCreateSurfaceGLX(d.display, GL_TEXTURE_2D, d.texture, &d.glxSurface);
+            if (status != VA_STATUS_SUCCESS) {
+                qWarning("vaCreateSurfaceGLX(%p, GL_TEXTURE_2D, %u, %p) == %#x", d.display, d.texture, &d.glxSurface, status);
+                return VideoFrame();
+            }
+        }
+        int flags = VA_FRAME_PICTURE | VA_SRC_BT601;
+        status = vaCopySurfaceGLX(d.display, d.glxSurface, surface_id, flags);
+        if (status != VA_STATUS_SUCCESS) {
+            qWarning("vaCopySurfaceGLX(VADisplay:%p, glSurface:%p, VASurfaceID:%#x, flags:%d) == %d", d.display, d.glxSurface, surface_id, flags, status);
+            return VideoFrame();
+        }
+        if ((status = vaSyncSurface(d.display, surface_id)) != VA_STATUS_SUCCESS) {
+            qWarning("vaCopySurfaceGLX: %#x", status);
+        }
+        return VideoFrame(QVector<int>() << d.texture, d.surface_width, d.surface_height, VideoFormat::Format_ARGB32);
+    }
+#endif
 #if VA_CHECK_VERSION(0,31,0)
     if ((status = vaSyncSurface(d.display, surface_id)) != VA_STATUS_SUCCESS) {
         qWarning("vaSyncSurface(VADisplay:%p, VASurfaceID:%#x) == %#x", d.display, surface_id, status);
@@ -283,6 +326,11 @@ void VideoDecoderVAAPI::setDisplayTypePriority(const QStringList &priority)
     }
 }
 
+VideoDecoderVAAPI::DisplayType VideoDecoderVAAPI::displayType() const
+{
+    return d_func().display_type;
+}
+
 
 bool VideoDecoderVAAPIPrivate::open()
 {
@@ -353,6 +401,15 @@ bool VideoDecoderVAAPIPrivate::open()
             display_type = VideoDecoderVAAPI::Display_X11;
         } else if (dt == VideoDecoderVAAPI::Display_GLX) {
             qDebug("vaGetDisplay GLX...............");
+#if QTAV_HAVE(VAAPI_GLX)
+            display_x11 = XOpenDisplay(NULL);;
+            if (!display_x11) {
+                qWarning("Could not connect to X server");
+                continue;
+            }
+            display = vaGetDisplayGLX(display_x11);
+#endif
+            display_type = VideoDecoderVAAPI::Display_GLX;
         }
         if (display)
             break;
@@ -585,6 +642,12 @@ void VideoDecoderVAAPIPrivate::close()
         vaDestroyConfig(display, config_id);
         config_id = VA_INVALID_ID;
     }
+#if QTAV_HAVE(VAAPI_GLX)
+    if (glxSurface) {
+        vaDestroySurfaceGLX(display, glxSurface);
+        glxSurface = 0;
+    }
+#endif
     if (display) {
         vaTerminate(display);
         display = 0;
