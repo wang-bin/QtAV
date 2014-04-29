@@ -42,6 +42,7 @@
 #include <X11/Xlib.h>
 #include <va/va_x11.h>
 #endif
+#define QTAV_HAVE_VAAPI_GLX 1
 #if QTAV_HAVE(VAAPI_GLX)
 #include <va/va_glx.h>
 #include <GL/gl.h>
@@ -91,6 +92,92 @@ typedef struct
 } va_surface_t;
 
 
+class VAAPISurfaceInterop : public VideoSurfaceInterop
+{
+public:
+    VAAPISurfaceInterop(VADisplay display)
+        : mDisplay(display)
+        , mSurfaceId(0)
+        , mWidth(0)
+        , mHeight(0)
+#if QTAV_HAVE(VAAPI_GLX)
+        , glxSurface(0)
+#endif
+    {
+    }
+    ~VAAPISurfaceInterop() {
+#if QTAV_HAVE(VAAPI_GLX)
+        if (glxSurface) {
+            vaDestroySurfaceGLX(mDisplay, glxSurface);
+            glxSurface = 0;
+        }
+#endif
+    }
+    SurfaceType surfaceType() const { return VAAPISurface;}
+    void setSurface(VASubpictureID surfaceId, int width, int height) {
+        mSurfaceId = surfaceId;
+        mWidth = width;
+        mHeight = height;
+    }
+    virtual bool map(SurfaceType type) {
+        if (type == GLTextureSurface) {
+        } else if (type == HostMemorySurface) {
+        } else {
+            return false;
+        }
+        return true;
+    }
+    virtual void unmap() {}
+    virtual QVariant copyAs(SurfaceType type, const VideoFormat& fmt, QVariant *handle, int plane) {
+        VAStatus status = VA_STATUS_SUCCESS;
+        if (type == GLTextureSurface) {
+            if (!glxSurface) {
+                // FIXME: wrong gl context
+                status = vaCreateSurfaceGLX(mDisplay, GL_TEXTURE_2D, handle->toUInt(), &glxSurface);
+                if (status != VA_STATUS_SUCCESS) {
+                    qWarning("vaCreateSurfaceGLX(%p, GL_TEXTURE_2D, %u, %p) == %#x", mDisplay, handle->toUInt(), &glxSurface, status);
+                    return QVariant();
+                }
+            }
+            int flags = VA_FRAME_PICTURE | VA_SRC_BT601;
+            status = vaCopySurfaceGLX(mDisplay, glxSurface, mSurfaceId, flags);
+            if (status != VA_STATUS_SUCCESS) {
+                qWarning("vaCopySurfaceGLX(VADisplay:%p, glSurface:%p, VASurfaceID:%#x, flags:%d) == %d", mDisplay, glxSurface, mSurfaceId, flags, status);
+                return QVariant();
+            }
+            if ((status = vaSyncSurface(mDisplay, mSurfaceId)) != VA_STATUS_SUCCESS) {
+                qWarning("vaCopySurfaceGLX: %#x", status);
+            }
+        } else if (type == HostMemorySurface) {
+
+        } else {
+            return QVariant();
+        }
+        return *handle;
+    }
+    virtual QVariant* createHandle() {
+        GLuint tex;
+        glGenTextures(1, &tex);
+        qDebug("==============glGenTextures(1, %d)", tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+        return new QVariant(tex);
+    }
+
+private:
+    VADisplay mDisplay;
+    VASurfaceID mSurfaceId; //TODO: shared_ptr
+    int mWidth, mHeight;
+#if QTAV_HAVE(VAAPI_GLX)
+    void* glxSurface;
+#endif
+
+};
+
 class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
@@ -103,8 +190,7 @@ public:
         drm_fd = -1;
 #endif
 #if QTAV_HAVE(VAAPI_GLX)
-        glxSurface = 0;
-        texture = 0;
+        surface_interop = 0;
 #endif
         display = 0;
         config_id = VA_INVALID_ID;
@@ -144,8 +230,7 @@ public:
     int drm_fd;
 #endif
 #if QTAV_HAVE(VAAPI_GLX)
-    void* glxSurface;
-    GLuint texture;
+    VAAPISurfaceInterop *surface_interop;
 #endif
 
     VADisplay     display;
@@ -197,33 +282,11 @@ VideoFrame VideoDecoderVAAPI::frame()
     VAStatus status = VA_STATUS_SUCCESS;
 #if QTAV_HAVE(VAAPI_GLX)
     if (displayType() == Display_GLX) {
-        if (!d.glxSurface) {
-            // FIXME: wrong gl context
-            glGenTextures(1, &d.texture);
-            qDebug("==============glGenTextures(1, %d)", d.texture);
-
-            glBindTexture(GL_TEXTURE_2D, d.texture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, d.surface_width, d.surface_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-            status = vaCreateSurfaceGLX(d.display, GL_TEXTURE_2D, d.texture, &d.glxSurface);
-            if (status != VA_STATUS_SUCCESS) {
-                qWarning("vaCreateSurfaceGLX(%p, GL_TEXTURE_2D, %u, %p) == %#x", d.display, d.texture, &d.glxSurface, status);
-                return VideoFrame();
-            }
-        }
-        int flags = VA_FRAME_PICTURE | VA_SRC_BT601;
-        status = vaCopySurfaceGLX(d.display, d.glxSurface, surface_id, flags);
-        if (status != VA_STATUS_SUCCESS) {
-            qWarning("vaCopySurfaceGLX(VADisplay:%p, glSurface:%p, VASurfaceID:%#x, flags:%d) == %d", d.display, d.glxSurface, surface_id, flags, status);
-            return VideoFrame();
-        }
-        if ((status = vaSyncSurface(d.display, surface_id)) != VA_STATUS_SUCCESS) {
-            qWarning("vaCopySurfaceGLX: %#x", status);
-        }
-        return VideoFrame(QVector<int>() << d.texture, d.surface_width, d.surface_height, VideoFormat::Format_ARGB32);
+        d.surface_interop->setSurface(surface_id, d.surface_width, d.surface_height);
+        VideoFrame f(d.surface_width, d.surface_height, VideoFormat::Format_ARGB32);
+        f.setBytesPerLine(d.surface_width*4); //used by gl to compute texture size
+        f.setSurfaceInterop(d.surface_interop);
+        return f;
     }
 #endif
 #if VA_CHECK_VERSION(0,31,0)
@@ -419,6 +482,13 @@ bool VideoDecoderVAAPIPrivate::open()
         qWarning("Could not get a VAAPI device");
         return false;
     }
+
+    if (surface_interop) {
+        delete surface_interop;
+        surface_interop = 0;
+    }
+    surface_interop = new VAAPISurfaceInterop(display);
+
     if (vaInitialize(display, &version_major, &version_minor)) {
         qWarning("Failed to initialize the VAAPI device");
         return false;
@@ -642,12 +712,10 @@ void VideoDecoderVAAPIPrivate::close()
         vaDestroyConfig(display, config_id);
         config_id = VA_INVALID_ID;
     }
-#if QTAV_HAVE(VAAPI_GLX)
-    if (glxSurface) {
-        vaDestroySurfaceGLX(display, glxSurface);
-        glxSurface = 0;
+    if (surface_interop) {
+        delete surface_interop;
+        surface_interop = 0;
     }
-#endif
     if (display) {
         vaTerminate(display);
         display = 0;
