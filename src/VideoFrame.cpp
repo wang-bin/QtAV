@@ -43,6 +43,7 @@ public:
         , format(VideoFormat::Format_Invalid)
         , textures(4, 0)
         , conv(0)
+        , surface_interop(0)
     {}
     VideoFramePrivate(int w, int h, const VideoFormat& fmt)
         : FramePrivate()
@@ -51,6 +52,7 @@ public:
         , format(fmt)
         , textures(4, 0)
         , conv(0)
+        , surface_interop(0)
     {
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
@@ -116,6 +118,7 @@ public:
     QVector<int> textures;
 
     ImageConverter *conv;
+    VideoSurfaceInterop *surface_interop;
 };
 
 VideoFrame::VideoFrame()
@@ -340,6 +343,22 @@ int VideoFrame::texture(int plane) const
     if (d->textures.size() <= plane)
         return -1;
     return d->textures[plane];
+}
+
+bool VideoFrame::asTexture(quint8 texId, int plane)
+{
+    Q_D(VideoFrame);
+    if (!d->surface_interop)
+        return false;
+    if (plane > planeCount())
+        return false;
+    QVariant handle(texId);
+    return d->surface_interop->copyAs(VideoSurfaceInterop::GLTextureSurface, format(), &handle, plane).isValid();
+}
+
+void VideoFrame::setSurfaceInterop(VideoSurfaceInterop *si)
+{
+    d_func()->surface_interop = si;
 }
 
 void VideoFrame::init()

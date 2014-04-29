@@ -29,6 +29,35 @@
 
 namespace QtAV {
 
+class VideoSurfaceInterop
+{
+public:
+    enum SurfaceType {
+        HostMemorySurface,
+        GLTextureSurface,
+        VAAPISurface,
+        DXVASurface,
+        CUDASurface,
+        UnknownSurface
+    };
+    virtual ~VideoSurfaceInterop() {}
+    virtual SurfaceType surfaceType() const = 0;
+    // return false if not supported. dxva: to host mem or gl texture
+    virtual bool map(SurfaceType type) { return true;}
+    //virtual quint8* map(int plane = 0, qint64* size = 0) = 0;
+    //virtual bool map(QVector<uchar*>& plane, QVector<quint8>& bytesPerLine, const VideoFormat& fmt) = 0;
+    virtual void unmap() {}
+
+    // e.g. bind to a given texture.
+    // return 0 if not supported. new handle of type
+    // handle: can be address of texture. 0: generate new
+    virtual QVariant copyAs(SurfaceType type, const VideoFormat& fmt, QVariant* handle, int plane = 0) = 0;
+    QVariant createAs(SurfaceType type, const VideoFormat& fmt, int plane) {
+        return copyAs(type, fmt, createHandle(), plane);
+    }
+    virtual QVariant* createHandle() { return 0;}
+};
+
 class ImageConverter;
 class VideoFramePrivate;
 class Q_AV_EXPORT VideoFrame : public Frame
@@ -99,6 +128,8 @@ public:
        return -1 if no texture, not uploaded
      */
     int texture(int plane = 0) const;
+    bool asTexture(quint8 texId, int plane = 0);
+    void setSurfaceInterop(VideoSurfaceInterop *si);
 private:
     /*
      * call this only when setBytesPerLine() and setBits() will not be called
