@@ -43,6 +43,7 @@ public:
         , format(VideoFormat::Format_Invalid)
         , textures(4, 0)
         , conv(0)
+        , aspectRatio(0)
     {}
     VideoFramePrivate(int w, int h, const VideoFormat& fmt)
         : FramePrivate()
@@ -51,6 +52,7 @@ public:
         , format(fmt)
         , textures(4, 0)
         , conv(0)
+        , aspectRatio(0)
     {
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
@@ -112,6 +114,7 @@ public:
     }
 
     int width, height;
+    float aspectRatio;
     VideoFormat format;
     QVector<int> textures;
 
@@ -194,6 +197,7 @@ VideoFrame VideoFrame::clone() const
         memcpy(dst, bits(i), plane_size);
         dst += plane_size;
     }
+    f.setAspectRatio(d->aspectRatio);
     //f.setImageConverter(d->conv);
     return f;
 }
@@ -283,6 +287,23 @@ int VideoFrame::planeHeight(int plane) const
     if (plane == 0)
         return d->height;
     return d->format.chromaHeight(d->height);
+}
+
+float VideoFrame::aspectRatio() const
+{
+    Q_D(const VideoFrame);
+    if (d->aspectRatio != 0)
+        return d->aspectRatio;
+
+    if (d->width > 0 && d->height > 0)
+        return (float)d->width / (float)d->height;
+
+    return 0;
+}
+
+void VideoFrame::setAspectRatio(float aspectRatio)
+{
+    d_func()->aspectRatio = aspectRatio;
 }
 
 int VideoFrame::effectiveBytesPerLine(int plane) const
