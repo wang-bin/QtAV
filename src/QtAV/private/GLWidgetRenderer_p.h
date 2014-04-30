@@ -84,6 +84,7 @@ public:
     bool prepareShaderProgram(const VideoFormat& fmt);
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool initTextures(const VideoFormat& fmt);
+    void updateTexturesIfNeeded();
     void upload(const QRect& roi);
     void uploadPlane(int p, GLint internal_format, GLenum format, const QRect& roi);
     //GL 4.x: GL_FRAGMENT_SHADER_DERIVATIVE_HINT,GL_TEXTURE_COMPRESSION_HINT

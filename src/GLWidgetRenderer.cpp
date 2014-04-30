@@ -519,7 +519,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
     return true;
 }
 
-void GLWidgetRendererPrivate::upload(const QRect &roi)
+void GLWidgetRendererPrivate::updateTexturesIfNeeded()
 {
     const VideoFormat &fmt = video_frame.format();
     bool update_textures = false;
@@ -555,7 +555,11 @@ void GLWidgetRendererPrivate::upload(const QRect &roi)
     if (update_textures) {
         initTextures(fmt);
     }
+}
 
+void GLWidgetRendererPrivate::upload(const QRect &roi)
+{
+    updateTexturesIfNeeded();
     for (int i = 0; i < video_frame.planeCount(); ++i) {
         uploadPlane(i, internal_format[i], data_format[i], roi);
     }
@@ -712,7 +716,6 @@ void GLWidgetRenderer::drawFrame()
     DPTR_D(GLWidgetRenderer);
     QRect roi = realROI();
     d.upload(roi);
-
     // shader program may not ready before upload
     if (d.hasGLSL) {
 #if NO_QGL_SHADER
