@@ -29,33 +29,27 @@
 
 namespace QtAV {
 
+enum SurfaceType {
+    HostMemorySurface,
+    GLTextureSurface,
+    VAAPISurface,
+    DXVASurface,
+    CUDASurface,
+    UnknownSurface
+};
+
 class VideoSurfaceInterop
 {
 public:
-    enum SurfaceType {
-        HostMemorySurface,
-        GLTextureSurface,
-        VAAPISurface,
-        DXVASurface,
-        CUDASurface,
-        UnknownSurface
-    };
     virtual ~VideoSurfaceInterop() {}
     virtual SurfaceType surfaceType() const = 0;
     // return false if not supported. dxva: to host mem or gl texture
-    virtual bool map(SurfaceType type) { return true;}
+    // handle: can be address of a given texture. generate a new one and assign to handle if it's not invalid
+    virtual QVariant map(SurfaceType type, const VideoFormat& fmt, QVariant& handle, int plane = 0) { return QVariant();}
     //virtual quint8* map(int plane = 0, qint64* size = 0) = 0;
     //virtual bool map(QVector<uchar*>& plane, QVector<quint8>& bytesPerLine, const VideoFormat& fmt) = 0;
     virtual void unmap() {}
-
-    // e.g. bind to a given texture.
-    // return 0 if not supported. new handle of type
-    // handle: can be address of texture. 0: generate new
-    virtual QVariant copyAs(SurfaceType type, const VideoFormat& fmt, QVariant* handle, int plane = 0) = 0;
-    QVariant createAs(SurfaceType type, const VideoFormat& fmt, int plane) {
-        return copyAs(type, fmt, createHandle(), plane);
-    }
-    virtual QVariant* createHandle() { return 0;}
+    virtual QVariant createHandle() { return QVariant();}
 };
 
 class ImageConverter;
@@ -120,16 +114,17 @@ public:
     bool convertTo(const VideoFormat& fmt, const QSizeF& dstSize, const QRectF& roi);
 
     //upload to GPU. return false if gl(or other, e.g. cl) not supported
-    bool mapToDevice();
+    bool mapToDevice(); //TODO: remove
     //copy to host. Used if gpu filter not supported. To avoid copy too frequent, sort the filters first?
-    bool mapToHost();
+    bool mapToHost(); //TODO: remove
     /*!
        texture in FBO. we can use texture in FBO through filter pipeline then switch to window context to display
        return -1 if no texture, not uploaded
      */
-    int texture(int plane = 0) const;
-    bool asTexture(quint8 texId, int plane = 0);
+    int texture(int plane = 0) const; //TODO: remove
     void setSurfaceInterop(VideoSurfaceInterop *si);
+    QVariant map(SurfaceType type, QVariant &handle, int plane = 0);
+    void unmap();
 private:
     /*
      * call this only when setBytesPerLine() and setBits() will not be called

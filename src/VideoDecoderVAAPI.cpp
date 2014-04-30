@@ -97,7 +97,7 @@ class VAAPISurfaceInterop : public VideoSurfaceInterop
 public:
     VAAPISurfaceInterop(VADisplay display)
         : mDisplay(display)
-        , mSurfaceId(0)
+        , mpSurface(0)
         , mWidth(0)
         , mHeight(0)
 #if QTAV_HAVE(VAAPI_GLX)
@@ -114,68 +114,65 @@ public:
 #endif
     }
     SurfaceType surfaceType() const { return VAAPISurface;}
-    void setSurface(VASubpictureID surfaceId, int width, int height) {
-        mSurfaceId = surfaceId;
+    void setSurface(va_surface_t* surface, int width, int height) {
+        mpSurface = surface;
         mWidth = width;
         mHeight = height;
     }
-    virtual bool map(SurfaceType type) {
-        if (type == GLTextureSurface) {
-        } else if (type == HostMemorySurface) {
-        } else {
+    bool createGLXSurface(quint8 tex) {
+        qDebug("vaCreateSurfaceGLX");
+        VAStatus status = vaCreateSurfaceGLX(mDisplay, GL_TEXTURE_2D, tex, &glxSurface);
+        if (status != VA_STATUS_SUCCESS) {
+            qWarning("vaCreateSurfaceGLX(%p, GL_TEXTURE_2D, %u, %p) == %#x", mDisplay, tex, &glxSurface, status);
             return false;
         }
-        return true;
     }
-    virtual void unmap() {}
-    virtual QVariant copyAs(SurfaceType type, const VideoFormat& fmt, QVariant *handle, int plane) {
+    virtual QVariant map(SurfaceType type, const VideoFormat& fmt, QVariant& handle, int plane) {
+        if (!fmt.isRGB() || fmt.isPlanar())
+            return QVariant();
+        if (!handle.isValid())
+            handle = createHandle();
         VAStatus status = VA_STATUS_SUCCESS;
         if (type == GLTextureSurface) {
-            if (!glxSurface) {
-                // FIXME: wrong gl context
-                status = vaCreateSurfaceGLX(mDisplay, GL_TEXTURE_2D, handle->toUInt(), &glxSurface);
-                if (status != VA_STATUS_SUCCESS) {
-                    qWarning("vaCreateSurfaceGLX(%p, GL_TEXTURE_2D, %u, %p) == %#x", mDisplay, handle->toUInt(), &glxSurface, status);
-                    return QVariant();
-                }
-            }
-            int flags = VA_FRAME_PICTURE | VA_SRC_BT601;
-            status = vaCopySurfaceGLX(mDisplay, glxSurface, mSurfaceId, flags);
+            if (!glxSurface && !createGLXSurface(handle.toUInt()))
+                return QVariant();
+            int flags = VA_FRAME_PICTURE | VA_SRC_BT709;
+            qDebug("vaCopySurfaceGLX(glSurface:%p, VASurfaceID:%#x) ref: %d", glxSurface, mpSurface->i_id, mpSurface->i_refcount);
+            status = vaCopySurfaceGLX(mDisplay, glxSurface, mpSurface->i_id, flags);
             if (status != VA_STATUS_SUCCESS) {
-                qWarning("vaCopySurfaceGLX(VADisplay:%p, glSurface:%p, VASurfaceID:%#x, flags:%d) == %d", mDisplay, glxSurface, mSurfaceId, flags, status);
+                qWarning("vaCopySurfaceGLX(VADisplay:%p, glSurface:%p, VASurfaceID:%#x, flags:%d) == %d", mDisplay, glxSurface, mpSurface->i_id, flags, status);
                 return QVariant();
             }
-            if ((status = vaSyncSurface(mDisplay, mSurfaceId)) != VA_STATUS_SUCCESS) {
+            qDebug("vaSyncSurface");
+            if ((status = vaSyncSurface(mDisplay, mpSurface->i_id)) != VA_STATUS_SUCCESS) {
                 qWarning("vaCopySurfaceGLX: %#x", status);
             }
+            return handle;
         } else if (type == HostMemorySurface) {
-
         } else {
             return QVariant();
         }
-        return *handle;
+        return handle;
     }
-    virtual QVariant* createHandle() {
+    virtual void unmap() {}
+    virtual QVariant createHandle() {
         GLuint tex;
         glGenTextures(1, &tex);
-        qDebug("==============glGenTextures(1, %d)", tex);
         glBindTexture(GL_TEXTURE_2D, tex);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-        return new QVariant(tex);
+        return QVariant(tex);
     }
-
 private:
     VADisplay mDisplay;
-    VASurfaceID mSurfaceId; //TODO: shared_ptr
+    va_surface_t* mpSurface; //TODO: shared_ptr
     int mWidth, mHeight;
 #if QTAV_HAVE(VAAPI_GLX)
     void* glxSurface;
 #endif
-
 };
 
 class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate
@@ -223,7 +220,7 @@ public:
 
     VideoDecoderVAAPI::DisplayType display_type;
     QVector<VideoDecoderVAAPI::DisplayType> display_priority;
-#if QTAV_HAVE(VAAPI_X11)
+#if QTAV_HAVE(VAAPI_X11) || QTAV_HAVE(VAAPI_GLX)
     Display *display_x11;
 #endif
 #if QTAV_HAVE(VAAPI_DRM)
@@ -282,7 +279,7 @@ VideoFrame VideoDecoderVAAPI::frame()
     VAStatus status = VA_STATUS_SUCCESS;
 #if QTAV_HAVE(VAAPI_GLX)
     if (displayType() == Display_GLX) {
-        d.surface_interop->setSurface(surface_id, d.surface_width, d.surface_height);
+        d.surface_interop->setSurface((va_surface_t*)d.frame->opaque, d.surface_width, d.surface_height);
         VideoFrame f(d.surface_width, d.surface_height, VideoFormat::Format_ARGB32);
         f.setBytesPerLine(d.surface_width*4); //used by gl to compute texture size
         f.setSurfaceInterop(d.surface_interop);
@@ -465,6 +462,11 @@ bool VideoDecoderVAAPIPrivate::open()
         } else if (dt == VideoDecoderVAAPI::Display_GLX) {
             qDebug("vaGetDisplay GLX...............");
 #if QTAV_HAVE(VAAPI_GLX)
+            // TODO: lock
+            if (!XInitThreads()) {
+                qWarning("XInitThreads failed!");
+                continue;
+            }
             display_x11 = XOpenDisplay(NULL);;
             if (!display_x11) {
                 qWarning("Could not connect to X server");
@@ -763,7 +765,6 @@ bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
     //FIXME: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
     *data = (uint8_t*)p_surface->i_id; ///??
     *opaque = p_surface;
-
     return true;
 }
 

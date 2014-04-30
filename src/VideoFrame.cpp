@@ -345,15 +345,22 @@ int VideoFrame::texture(int plane) const
     return d->textures[plane];
 }
 
-bool VideoFrame::asTexture(quint8 texId, int plane)
+QVariant VideoFrame::map(SurfaceType type, QVariant& handle, int plane)
 {
     Q_D(VideoFrame);
     if (!d->surface_interop)
         return false;
     if (plane > planeCount())
         return false;
-    QVariant handle(texId);
-    return d->surface_interop->copyAs(VideoSurfaceInterop::GLTextureSurface, format(), &handle, plane).isValid();
+    return d->surface_interop->map(type, format(), handle, plane);
+}
+
+void VideoFrame::unmap()
+{
+    Q_D(VideoFrame);
+    if (!d->surface_interop)
+        return;
+    d->surface_interop->unmap();
 }
 
 void VideoFrame::setSurfaceInterop(VideoSurfaceInterop *si)
