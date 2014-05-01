@@ -90,6 +90,8 @@ VideoRendererId VideoOutput::id() const
 bool VideoOutput::receive(const VideoFrame& frame)
 {
     DPTR_D(VideoOutput);
+    d.source_aspect_ratio = frame.displayAspectRatio();
+    d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
     setInSize(frame.width(), frame.height());
     return d.impl->receiveFrame(frame);
 }
