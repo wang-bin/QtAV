@@ -292,13 +292,13 @@ int VideoFrame::planeHeight(int plane) const
 float VideoFrame::displayAspectRatio() const
 {
     Q_D(const VideoFrame);
-    if (d->displayAspectRatio != 0)
+    if (d->displayAspectRatio > 0)
         return d->displayAspectRatio;
 
     if (d->width > 0 && d->height > 0)
         return (float)d->width / (float)d->height;
 
-    return 0;
+    return 1;
 }
 
 void VideoFrame::setDisplayAspectRatio(float displayAspectRatio)
