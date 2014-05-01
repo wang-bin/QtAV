@@ -46,7 +46,7 @@ VideoRenderer::~VideoRenderer()
 bool VideoRenderer::receive(const VideoFrame &frame)
 {
     DPTR_D(VideoRenderer);
-    d.source_aspect_ratio = frame.aspectRatio();
+    d.source_aspect_ratio = frame.displayAspectRatio();
     setInSize(frame.width(), frame.height());
     return receiveFrame(frame);
 }

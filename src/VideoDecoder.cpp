@@ -94,11 +94,11 @@ VideoFrame VideoDecoder::frame()
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
     //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
-    float aspectRatio = ((float)d.frame->width / (float)d.frame->height) *
+    float displayAspectRatio = ((float)d.frame->width / (float)d.frame->height) *
             ((float)d.codec_ctx->sample_aspect_ratio.num / (float)d.codec_ctx->sample_aspect_ratio.den);
 
     VideoFrame frame(d.frame->width, d.frame->height, VideoFormat((int)d.codec_ctx->pix_fmt));
-    frame.setAspectRatio(aspectRatio);
+    frame.setDisplayAspectRatio(displayAspectRatio);
     frame.setBits(d.frame->data);
     frame.setBytesPerLine(d.frame->linesize);
     return frame;
