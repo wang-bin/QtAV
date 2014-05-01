@@ -73,6 +73,9 @@ public:
     int planeWidth(int plane) const;
     int planeHeight(int plane) const;
 
+    float displayAspectRatio() const;
+    void setDisplayAspectRatio(float displayAspectRatio);
+
     // no padded bytes
     int effectiveBytesPerLine(int plane) const;
 

@@ -40,6 +40,7 @@ public:
         : FramePrivate()
         , width(0)
         , height(0)
+        , displayAspectRatio(0)
         , format(VideoFormat::Format_Invalid)
         , textures(4, 0)
         , conv(0)
@@ -48,6 +49,7 @@ public:
         : FramePrivate()
         , width(w)
         , height(h)
+        , displayAspectRatio(0)
         , format(fmt)
         , textures(4, 0)
         , conv(0)
@@ -112,6 +114,7 @@ public:
     }
 
     int width, height;
+    float displayAspectRatio;
     VideoFormat format;
     QVector<int> textures;
 
@@ -194,6 +197,7 @@ VideoFrame VideoFrame::clone() const
         memcpy(dst, bits(i), plane_size);
         dst += plane_size;
     }
+    f.setDisplayAspectRatio(d->displayAspectRatio);
     //f.setImageConverter(d->conv);
     return f;
 }
@@ -283,6 +287,23 @@ int VideoFrame::planeHeight(int plane) const
     if (plane == 0)
         return d->height;
     return d->format.chromaHeight(d->height);
+}
+
+float VideoFrame::displayAspectRatio() const
+{
+    Q_D(const VideoFrame);
+    if (d->displayAspectRatio > 0)
+        return d->displayAspectRatio;
+
+    if (d->width > 0 && d->height > 0)
+        return (float)d->width / (float)d->height;
+
+    return 1;
+}
+
+void VideoFrame::setDisplayAspectRatio(float displayAspectRatio)
+{
+    d_func()->displayAspectRatio = displayAspectRatio;
 }
 
 int VideoFrame::effectiveBytesPerLine(int plane) const

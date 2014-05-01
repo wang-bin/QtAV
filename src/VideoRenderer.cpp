@@ -45,6 +45,8 @@ VideoRenderer::~VideoRenderer()
 
 bool VideoRenderer::receive(const VideoFrame &frame)
 {
+    DPTR_D(VideoRenderer);
+    d.source_aspect_ratio = frame.displayAspectRatio();
     setInSize(frame.width(), frame.height());
     return receiveFrame(frame);
 }
@@ -220,7 +222,7 @@ void VideoRenderer::setInSize(int width, int height)
         return;
     d.src_width = width;
     d.src_height = height;
-    d.source_aspect_ratio = qreal(d.src_width)/qreal(d.src_height);
+    //d.source_aspect_ratio = qreal(d.src_width)/qreal(d.src_height);
     qDebug("%s => calculating aspect ratio from converted input data(%f)", __FUNCTION__, d.source_aspect_ratio);
     //see setOutAspectRatioMode
     if (d.out_aspect_ratio_mode == VideoAspectRatio) {
