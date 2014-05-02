@@ -32,6 +32,8 @@ OTHER_FILES += \
 
 EssentialDepends = avutil avcodec avformat swscale
 OptionalDepends = \
+    sse2 \
+    sse4_1 \
     swresample \
     avresample \
     gl
