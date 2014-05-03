@@ -423,6 +423,10 @@ VideoFrame VideoDecoderDXVA::frame()
             (uint8_t*)lock.pBits + pitch[0] * d.surface_height
                                  + pitch[1] * d.surface_height / 2,
         };
+        if (imc3) {
+            std::swap(plane[1], plane[2]);
+            std::swap(pitch[1], pitch[2]);
+        }
         if (d.copy_uswc && GPUMemCopy::isAvailable()) {
             QByteArray buf(pitch[0]*d.surface_height + pitch[1]*d.surface_height + pitch[2]*d.surface_height, 0);
             uchar *dst[] = {
@@ -433,15 +437,11 @@ VideoFrame VideoDecoderDXVA::frame()
             d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
             d.gpu_mem.copyFrame(plane[1], dst[1], chroma_width, d.surface_height/2, pitch[1]);
             d.gpu_mem.copyFrame(plane[2], dst[2], chroma_width, d.surface_height/2, pitch[2]);
-            if (imc3)
-                std::swap(plane[1], plane[2]);
             VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
             f.setBits(dst);
             f.setBytesPerLine(pitch);
             return f;
         }
-        if (imc3)
-            std::swap(plane[1], plane[2]);
         //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
         VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_YUV420P));
         frame.setBits(plane);
