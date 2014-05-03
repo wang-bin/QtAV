@@ -25,6 +25,7 @@
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
+#include "utils/GPUMemCopy.h"
 
 template <class T> void SafeRelease(T **ppT)
 {
@@ -240,7 +241,7 @@ static const d3d_format_t *D3dFindFormat(D3DFORMAT format)
     return NULL;
 }
 
-static QString DxDescribe(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
+static const char* getVendorName(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
 {
     static const struct {
         unsigned id;
@@ -260,9 +261,7 @@ static QString DxDescribe(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
             break;
         }
     }
-    return QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
-                 sizeof(id->Description), id->Description,
-                 id->VendorId, vendor, id->DeviceId, id->Revision);
+    return vendor;
 }
 
 
@@ -289,6 +288,7 @@ public:
         surface_order = 0;
         surface_width = surface_height = 0;
         available = loadDll();
+        copy_uswc = false;
     }
     virtual ~VideoDecoderDXVAPrivate()
     {
@@ -343,8 +343,6 @@ public:
 
     /* Option conversion */
     D3DFORMAT                    output;
-    //copy_cache_t                 surface_cache;
-
     struct dxva_context hw;
 
     unsigned     surface_count;
@@ -356,7 +354,10 @@ public:
     va_surface_t surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
     IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
-    // static const QString kDefaultDescription; //set on open or prepare
+    QString vendor;
+    // true for intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
+    bool copy_uswc;
+    GPUMemCopy gpu_mem;
 };
 
 VideoDecoderDXVA::VideoDecoderDXVA()
@@ -410,6 +411,7 @@ VideoFrame VideoDecoderDXVA::frame()
         d.render == MAKEFOURCC('I','M','C','3')) {
         bool imc3 = d.render == MAKEFOURCC('I','M','C','3');
         int chroma_pitch = imc3 ? lock.Pitch : (lock.Pitch / 2);
+        int chroma_width = imc3 ? d.surface_width : d.surface_width/2;
         int pitch[3] = {
             lock.Pitch,
             chroma_pitch,
@@ -421,16 +423,30 @@ VideoFrame VideoDecoderDXVA::frame()
             (uint8_t*)lock.pBits + pitch[0] * d.surface_height
                                  + pitch[1] * d.surface_height / 2,
         };
-        if (imc3) {
-            uint8_t *V = plane[1];
-            plane[1] = plane[2];
-            plane[2] = V;
+        if (d.copy_uswc && GPUMemCopy::isAvailable()) {
+            QByteArray buf(pitch[0]*d.surface_height + pitch[1]*d.surface_height + pitch[2]*d.surface_height, 0);
+            uchar *dst[] = {
+                (uchar*)buf.data(),
+                (uchar*)buf.data() + pitch[0] * d.surface_height,
+                (uchar*)buf.data() + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2
+            };
+            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
+            d.gpu_mem.copyFrame(plane[1], dst[1], chroma_width, d.surface_height/2, pitch[1]);
+            d.gpu_mem.copyFrame(plane[2], dst[2], chroma_width, d.surface_height/2, pitch[2]);
+            if (imc3)
+                std::swap(plane[1], plane[2]);
+            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
+            f.setBits(dst);
+            f.setBytesPerLine(pitch);
+            return f;
         }
+        if (imc3)
+            std::swap(plane[1], plane[2]);
         //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
         VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_YUV420P));
         frame.setBits(plane);
         frame.setBytesPerLine(pitch);
-        return frame;
+        return frame; //why no copy is ok?
     } else {
         Q_ASSERT(d.render == MAKEFOURCC('N','V','1','2'));
         uint8_t *plane[2] = {
@@ -441,10 +457,22 @@ VideoFrame VideoDecoderDXVA::frame()
             lock.Pitch,
             lock.Pitch
         };
+        if (d.copy_uswc && GPUMemCopy::isAvailable()) {
+            QByteArray buf(lock.Pitch*d.surface_height*3/2, 0);
+            uint8_t *dst[] = {
+                (uint8_t *)buf.data(),
+                (uint8_t*)buf.data() + lock.Pitch * d.surface_height
+            };
+            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height*3/2, pitch[0]);
+            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
+            f.setBits(dst);
+            f.setBytesPerLine(pitch);
+            return f;
+        }
         VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_NV12));//VideoFormat((int)d.codec_ctx->pix_fmt));
         frame.setBits(plane);
         frame.setBytesPerLine(pitch);
-        return frame;
+        return frame; //why no copy is ok?
     }
     return VideoFrame();
 }
@@ -530,7 +558,11 @@ bool VideoDecoderDXVAPrivate::D3dCreateDevice()
         qWarning("IDirect3D9_GetAdapterIdentifier failed");
         ZeroMemory(&d3dai, sizeof(d3dai));
     } else {
-        description = DxDescribe(&d3dai);
+        vendor = getVendorName(&d3dai);
+        description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
+                                        sizeof(d3dai.Description), d3dai.Description,
+                                        d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
+        copy_uswc = vendor.toLower() == "intel";
         qDebug("DXVA2 description:  %s", description.toUtf8().constData());
     }
     ZeroMemory(&d3dpp, sizeof(d3dpp));
@@ -850,12 +882,12 @@ void VideoDecoderDXVAPrivate::DxCreateVideoConversion()
         output = render;
         break;
     }
-    ///CopyInitCache(&surface_cache, surface_width); //FIXME:
+    gpu_mem.initCache(surface_width);
 }
 
 void VideoDecoderDXVAPrivate::DxDestroyVideoConversion()
 {
-    ///CopyCleanCache(&surface_cache); //FIXME:
+    gpu_mem.cleanCache();
 }
 
 // hwaccel_context
