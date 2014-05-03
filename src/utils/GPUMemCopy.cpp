@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-
+#include <stdint.h>
 #include <algorithm>
 
 #include "QtAV/QtAV_Compat.h"
@@ -78,7 +78,7 @@ static inline void *Memalign(size_t align, size_t size)
  *  using the same pitch (which is assumed to be a multiple of 64 bytes), and expecting 64 byte alignment of every row of the source, cached 4K buffer and destination buffers.
  * The MOVNTDQA streaming load instruction and the MOVNTDQ streaming store instruction require at least 16 byte alignment in their memory addresses.
  */
-//  CopyFrame( )
+//  CopyFrame()
 //
 //  COPIES VIDEO FRAMES FROM USWC MEMORY TO WB SYSTEM MEMORY VIA CACHED BUFFER
 //    ASSUMES PITCH IS A MULTIPLE OF 64B CACHE LINE SIZE, WIDTH MAY NOT BE
@@ -156,7 +156,8 @@ void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width,
 
     pLoad  = (__m128i *)pSrc;
     pStore = (__m128i *)pDest;
-
+    bool unaligned = ((intptr_t)pDest & 0x0f) != 0;
+ //qDebug("===========unaligned: %d  extraPitch: %d", unaligned, extraPitch);
     //  COPY THROUGH 4KB CACHED BUFFER
     for (y = 0; y < height; y += rowsPerBlock) {
         //  ROWS LEFT TO COPY AT END
@@ -171,16 +172,25 @@ void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width,
         for (yLoad = 0; yLoad < rowsPerBlock; yLoad++) {
             // COPY A ROW, CACHE LINE AT A TIME
             for (x = 0; x < pitch; x +=64) {
-                x0 = _mm_stream_load_si128( pLoad +0 );
-                x1 = _mm_stream_load_si128( pLoad +1 );
-                x2 = _mm_stream_load_si128( pLoad +2 );
-                x3 = _mm_stream_load_si128( pLoad +3 );
+                // movntdqa
+                x0 = _mm_stream_load_si128(pLoad + 0);
+                x1 = _mm_stream_load_si128(pLoad + 1);
+                x2 = _mm_stream_load_si128(pLoad + 2);
+                x3 = _mm_stream_load_si128(pLoad + 3);
 
-                _mm_store_si128( pCache +0,	x0 );
-                _mm_store_si128( pCache +1, x1 );
-                _mm_store_si128( pCache +2, x2 );
-                _mm_store_si128( pCache +3, x3 );
-
+                if (unaligned) {
+                    // movdqu
+                    _mm_storeu_si128(pCache +0, x0);
+                    _mm_storeu_si128(pCache +1, x1);
+                    _mm_storeu_si128(pCache +2, x2);
+                    _mm_storeu_si128(pCache +3, x3);
+                } else {
+                    // movdqa
+                    _mm_store_si128(pCache +0, x0);
+                    _mm_store_si128(pCache +1, x1);
+                    _mm_store_si128(pCache +2, x2);
+                    _mm_store_si128(pCache +3, x3);
+                }
                 pCache += 4;
                 pLoad += 4;
             }
@@ -189,21 +199,29 @@ void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width,
         _mm_mfence();
 
         pCache = (__m128i *)pCacheBlock;
-
         // STORE ROWS OF FRAME WIDTH FROM CACHED BLOCK
         for (yStore = 0; yStore < rowsPerBlock; yStore++) {
             // copy a row, cache line at a time
-            for (x = 0; x < width64; x +=64) {
-                x0 = _mm_load_si128( pCache );
-                x1 = _mm_load_si128( pCache +1 );
-                x2 = _mm_load_si128( pCache +2 );
-                x3 = _mm_load_si128( pCache +3 );
+            for (x = 0; x < width64; x += 64) {
+                // movdqa
+                x0 = _mm_load_si128(pCache);
+                x1 = _mm_load_si128(pCache + 1);
+                x2 = _mm_load_si128(pCache + 2);
+                x3 = _mm_load_si128(pCache + 3);
 
-                _mm_stream_si128( pStore,	x0 );
-                _mm_stream_si128( pStore +1, x1 );
-                _mm_stream_si128( pStore +2, x2 );
-                _mm_stream_si128( pStore +3, x3 );
-
+                if (unaligned) {
+                    // movdqu
+                    _mm_storeu_si128(pStore,	x0);
+                    _mm_storeu_si128(pStore + 1, x1);
+                    _mm_storeu_si128(pStore + 2, x2);
+                    _mm_storeu_si128(pStore + 3, x3);
+                } else {
+                    // movntdq
+                    _mm_stream_si128(pStore,	x0);
+                    _mm_stream_si128(pStore + 1, x1);
+                    _mm_stream_si128(pStore + 2, x2);
+                    _mm_stream_si128(pStore + 3, x3);
+                }
                 pCache += 4;
                 pStore += 4;
             }
