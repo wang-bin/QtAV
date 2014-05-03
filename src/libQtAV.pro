@@ -32,11 +32,13 @@ win32 {
 OTHER_FILES += $$RC_FILE
 TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 
-config_sse4_1|contains(TARGET_ARCH_SUB, sse4.1) {
+## sse2 sse4_1 may be defined in Qt5 qmodule.pri. Qt4 only defines sse and sse2
+sse4_1|config_sse4_1|contains(TARGET_ARCH_SUB, sse4.1) {
   DEFINES += QTAV_HAVE_SSE4_1=1
+## TODO: use SSE4_1_SOURCES
   QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE4_1 #gcc -msse4.1
 }
-config_sse2|contains(TARGET_ARCH_SUB, sse2) {
+sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2) {
   DEFINES += QTAV_HAVE_SSE2=1
   QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE2 #gcc -msse2
 }
@@ -172,6 +174,7 @@ config_libcedarv {
     SOURCES += VideoDecoderCedarv.cpp
     LIBS += -lvecore -lcedarv
 }
+
 SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \
