@@ -26,6 +26,7 @@
 
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
+#include "utils/GPUMemCopy.h"
 #include "prepost.h"
 #include <va/va.h>
 #include <libavcodec/avcodec.h>
@@ -120,6 +121,7 @@ public:
         image.image_id = VA_INVALID_ID;
         disable_derive = true;
         supports_derive = false;
+        copy_uswc = false;
         va_pixfmt = QTAV_PIX_FMT_C(VAAPI_VLD);
     }
 
@@ -174,6 +176,11 @@ public:
 
     bool disable_derive;
     bool supports_derive;
+
+    QString vendor;
+    // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
+    bool copy_uswc;
+    GPUMemCopy gpu_mem;
 };
 
 
@@ -267,35 +274,60 @@ VideoFrame VideoDecoderVAAPI::frame()
     if (i_fourcc == VA_FOURCC('Y','V','1','2') ||
         i_fourcc == VA_FOURCC('I','4','2','0')) {
         bool b_swap_uv = i_fourcc == VA_FOURCC('I','4','2','0');
-        uint8_t *pp_plane[3];
-        int pi_pitch[3];
-
-        for (int i = 0; i < 3; i++) {
-            const int i_src_plane = (b_swap_uv && i != 0) ?  (3 - i) : i;
-            pp_plane[i] = (uint8_t*)p_base + d.image.offsets[i_src_plane];
-            pi_pitch[i] = d.image.pitches[i_src_plane];
-        }
         //swap U V if use vaGetImage. have not confirmed why
-        if (d.disable_derive || !d.supports_derive) {
-            std::swap(pp_plane[1], pp_plane[2]);
-            std::swap(pi_pitch[1], pi_pitch[2]);
+        b_swap_uv |= d.disable_derive || !d.supports_derive;
+        uint8_t *plane[3];
+        int pitch[3];
+        for (int i = 0; i < 3; i++) {
+            plane[i] = (uint8_t*)p_base + d.image.offsets[i];
+            pitch[i] = d.image.pitches[i];
+        }
+        if (b_swap_uv) {
+            std::swap(plane[1], plane[2]);
+            std::swap(pitch[1], pitch[2]);
+        }
+        if (d.copy_uswc && GPUMemCopy::isAvailable()) {
+            QByteArray buf(pitch[0]*d.surface_height + pitch[1]*d.surface_height + pitch[2]*d.surface_height, 0);
+            uchar *dst[] = {
+                (uchar*)buf.data(),
+                (uchar*)buf.data() + pitch[0] * d.surface_height,
+                (uchar*)buf.data() + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2
+            };
+            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
+            d.gpu_mem.copyFrame(plane[1], dst[1], d.surface_width/2, d.surface_height/2, pitch[1]);
+            d.gpu_mem.copyFrame(plane[2], dst[2], d.surface_width/2, d.surface_height/2, pitch[2]);
+            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
+            f.setBits(dst);
+            f.setBytesPerLine(pitch);
+            return f;
         }
         frame = VideoFrame(d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_YUV420P));
-        frame.setBits(pp_plane);
-        frame.setBytesPerLine(pi_pitch);
+        frame.setBits(plane);
+        frame.setBytesPerLine(pitch);
     } else {
         Q_ASSERT(i_fourcc == VA_FOURCC('N','V','1','2'));
-        uint8_t *pp_plane[2];
-        int pi_pitch[2];
-
+        uint8_t *plane[2];
+        int pitch[2];
         for (int i = 0; i < 2; i++) {
-            pp_plane[i] = (uint8_t*)p_base + d.image.offsets[i];
-            pi_pitch[i] = d.image.pitches[i];
+            plane[i] = (uint8_t*)p_base + d.image.offsets[i];
+            pitch[i] = d.image.pitches[i];
         }
-
+        if (d.copy_uswc && GPUMemCopy::isAvailable()) {
+            qDebug("copy uswc");
+            QByteArray buf(pitch[0]*d.surface_height*3/2, 0);
+            uint8_t *dst[] = {
+                (uint8_t *)buf.data(),
+                (uint8_t*)buf.data() + pitch[0] * d.surface_height
+            };
+            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height*3/2, pitch[0]);
+            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
+            f.setBits(dst);
+            f.setBytesPerLine(pitch);
+            return f;
+        }
         frame = VideoFrame(d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
-        frame.setBits(pp_plane);
-        frame.setBytesPerLine(pi_pitch);
+        frame.setBits(plane);
+        frame.setBytesPerLine(pitch);
     }
 
     if ((status = vaUnmapBuffer(d.display, d.image.buf)) != VA_STATUS_SUCCESS) {
@@ -463,7 +495,13 @@ bool VideoDecoderVAAPIPrivate::open()
     nb_surfaces = i_nb_surfaces;
     supports_derive = false;
 
-    description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vaQueryVendorString(display));
+    vendor = vaQueryVendorString(display);
+    if (!vendor.toLower().contains("intel"))
+        copy_uswc = false;
+
+    //disable_derive = !copy_uswc;
+
+    description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vendor);
     switch (display_type) {
     case VideoDecoderVAAPI::Display_X11:
         description += " Display: X11";
@@ -576,6 +614,13 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         image.image_id = VA_INVALID_ID;
     }
 
+    if (copy_uswc) {
+        if (!gpu_mem.initCache(w)) {
+            copy_uswc = false;
+            disable_derive = true;
+        }
+    }
+
     /* Setup the ffmpeg hardware context */
     *pp_hw_ctx = &hw_ctx;
 
@@ -595,6 +640,9 @@ void VideoDecoderVAAPIPrivate::destroySurfaces()
 {
     if (image.image_id != VA_INVALID_ID) {
         vaDestroyImage(display, image.image_id);
+    }
+    if (copy_uswc) {
+        gpu_mem.cleanCache();
     }
     if (context_id != VA_INVALID_ID)
         vaDestroyContext(display, context_id);
