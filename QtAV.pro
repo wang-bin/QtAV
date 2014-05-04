@@ -35,8 +35,8 @@ OptionalDepends = \
     swresample \
     avresample \
     gl
-## sse2 sse4_1 may be defined in Qt5 qmodule.pri. Qt4 only defines sse and sse2
-lessThan(QT_MAJOR_VERSION, 5): OptionalDepends *= sse4_1
+## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
+!no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
 # no-xxx can set in $$PWD/user.conf
 !no-openal: OptionalDepends *= openal
 !no-portaudio: OptionalDepends *= portaudio

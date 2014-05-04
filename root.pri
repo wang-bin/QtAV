@@ -76,6 +76,9 @@ defineTest(testArch) {
   export(ARCH_SUB)
   cache(TARGET_ARCH, set, ARCH)
   cache(TARGET_ARCH_SUB, set, ARCH_SUB)
+  cache(CONFIG, add, ARCH)
+  cache(CONFIG, add, ARCH_SUB)
+#cached values will not affect current pro. subdir pro will be affected
   message("target arch: $$ARCH")
   message("target arch features: $$ARCH_SUB")
 }
