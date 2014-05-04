@@ -37,12 +37,20 @@ sse4_1|config_sse4_1|contains(TARGET_ARCH_SUB, sse4.1) {
   DEFINES += QTAV_HAVE_SSE4_1=1
 ## TODO: use SSE4_1_SOURCES
 # all x64 processers supports sse2. unknown option for vc
-  *msvc*:!isEqual(QT_ARCH, x86_64)|!x86_64: QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE4_1 #gcc -msse4.1
+  *msvc* {
+    !isEqual(QT_ARCH, x86_64)|!x86_64: QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE4_1
+  } else {
+    QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE4_1 #gcc -msse4.1
+  }
 }
 sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2) {
   DEFINES += QTAV_HAVE_SSE2=1
 # all x64 processers supports sse2. unknown option for vc
-  *msvc*:!isEqual(QT_ARCH, x86_64)|!x86_64: QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE2 #gcc -msse2
+  *msvc* {
+    !isEqual(QT_ARCH, x86_64)|!x86_64: QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE2
+  } else {
+    QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE2 #gcc -msse2
+  }
 }
 
 *msvc* {
