@@ -23,7 +23,7 @@
 #include "private/VideoDecoderFFmpegHW_p.h"
 
 #include <algorithm>
-
+#include <QtCore/QStringList>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "utils/GPUMemCopy.h"
@@ -287,7 +287,7 @@ VideoFrame VideoDecoderVAAPI::frame()
             std::swap(pitch[1], pitch[2]);
         }
         if (d.copy_uswc && GPUMemCopy::isAvailable()) {
-            QByteArray buf(pitch[0]*d.surface_height + pitch[1]*d.surface_height + pitch[2]*d.surface_height, 0);
+            QByteArray buf(pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2, 0);
             uchar *dst[] = {
                 (uchar*)buf.data(),
                 (uchar*)buf.data() + pitch[0] * d.surface_height,
@@ -296,7 +296,7 @@ VideoFrame VideoDecoderVAAPI::frame()
             d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
             d.gpu_mem.copyFrame(plane[1], dst[1], d.surface_width/2, d.surface_height/2, pitch[1]);
             d.gpu_mem.copyFrame(plane[2], dst[2], d.surface_width/2, d.surface_height/2, pitch[2]);
-            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
+            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_YUV420P));
             f.setBits(dst);
             f.setBytesPerLine(pitch);
             return f;
