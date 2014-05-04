@@ -287,11 +287,15 @@ VideoFrame VideoDecoderVAAPI::frame()
             std::swap(pitch[1], pitch[2]);
         }
         if (d.copy_uswc && GPUMemCopy::isAvailable()) {
-            QByteArray buf(pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2, 0);
+            // additional 15 bytes to ensure 16 bytes aligned
+            QByteArray buf(15 + pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2, 0);
+            int offset_16 = (uintptr_t)buf.data() & 0x0f;
+            if (offset_16)
+                offset_16 = 16 - offset_16;
             uchar *dst[] = {
-                (uchar*)buf.data(),
-                (uchar*)buf.data() + pitch[0] * d.surface_height,
-                (uchar*)buf.data() + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2
+                (uchar*)buf.data() + offset_16,
+                (uchar*)buf.data() + offset_16 + pitch[0] * d.surface_height,
+                (uchar*)buf.data() + offset_16 + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2
             };
             d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
             d.gpu_mem.copyFrame(plane[1], dst[1], d.surface_width/2, d.surface_height/2, pitch[1]);
@@ -313,13 +317,18 @@ VideoFrame VideoDecoderVAAPI::frame()
             pitch[i] = d.image.pitches[i];
         }
         if (d.copy_uswc && GPUMemCopy::isAvailable()) {
-            qDebug("copy uswc");
-            QByteArray buf(pitch[0]*d.surface_height*3/2, 0);
+            QByteArray buf(15 + pitch[0]*d.surface_height*3/2, 0);
+            int offset_16 = (uintptr_t)buf.data() & 0x0f;
+            if (offset_16)
+                offset_16 = 16 - offset_16;
             uint8_t *dst[] = {
-                (uint8_t *)buf.data(),
-                (uint8_t*)buf.data() + pitch[0] * d.surface_height
+                (uint8_t*)buf.data() + offset_16,
+                (uint8_t*)buf.data() + offset_16 + pitch[0] * d.surface_height
             };
-            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height*3/2, pitch[0]);
+            // TODO: why wrong result if copy the whole frame? green line on top
+            //d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height*3/2, pitch[0]);
+            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
+            d.gpu_mem.copyFrame(plane[1], dst[1], d.surface_width, d.surface_height/2, pitch[1]);
             VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
             f.setBits(dst);
             f.setBytesPerLine(pitch);
