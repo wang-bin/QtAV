@@ -161,6 +161,7 @@ void GPUMemCopy::copyFrame(void *pSrc, void *pDest, unsigned width, unsigned hei
 void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT height, UINT pitch)
 {
 #if QTAV_HAVE(SSE4_1)
+    //assert(((intptr_t)pCacheBlock & 0x0f) == 0 && (dst_pitch & 0x0f) == 0);
     __m128i		x0, x1, x2, x3;
     __m128i		*pLoad;
     __m128i		*pStore;
@@ -176,8 +177,11 @@ void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width,
 
     pLoad  = (__m128i *)pSrc;
     pStore = (__m128i *)pDest;
-    bool unaligned = ((intptr_t)pDest & 0x0f) != 0;
- //qDebug("===========unaligned: %d  extraPitch: %d", unaligned, extraPitch);
+
+    const bool src_unaligned = (-(uintptr_t)pSrc) & 0x0f;
+    const bool dst_unaligned = ((intptr_t)pDest & 0x0f) != 0;
+    //if (src_unaligned || dst_unaligned)
+      //  qDebug("===========unaligned: src %d, dst: %d,  extraPitch: %d", src_unaligned, dst_unaligned, extraPitch);
     //  COPY THROUGH 4KB CACHED BUFFER
     for (y = 0; y < height; y += rowsPerBlock) {
         //  ROWS LEFT TO COPY AT END
@@ -198,7 +202,7 @@ void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width,
                 x2 = _mm_stream_load_si128(pLoad + 2);
                 x3 = _mm_stream_load_si128(pLoad + 3);
 
-                if (unaligned) {
+                if (src_unaligned) {
                     // movdqu
                     _mm_storeu_si128(pCache +0, x0);
                     _mm_storeu_si128(pCache +1, x1);
@@ -229,7 +233,7 @@ void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width,
                 x2 = _mm_load_si128(pCache + 2);
                 x3 = _mm_load_si128(pCache + 3);
 
-                if (unaligned) {
+                if (dst_unaligned) {
                     // movdqu
                     _mm_storeu_si128(pStore,	x0);
                     _mm_storeu_si128(pStore + 1, x1);
