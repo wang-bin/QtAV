@@ -289,9 +289,8 @@ VideoFrame VideoDecoderVAAPI::frame()
         if (d.copy_uswc && GPUMemCopy::isAvailable()) {
             // additional 15 bytes to ensure 16 bytes aligned
             QByteArray buf(15 + pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2, 0);
-            int offset_16 = (uintptr_t)buf.data() & 0x0f;
-            if (offset_16)
-                offset_16 = 16 - offset_16;
+            int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
+            // plane 1, 2... is aligned?
             uchar *dst[] = {
                 (uchar*)buf.data() + offset_16,
                 (uchar*)buf.data() + offset_16 + pitch[0] * d.surface_height,
@@ -312,20 +311,19 @@ VideoFrame VideoDecoderVAAPI::frame()
         Q_ASSERT(i_fourcc == VA_FOURCC('N','V','1','2'));
         uint8_t *plane[2];
         int pitch[2];
+        // plane 1, 2... is aligned?
         for (int i = 0; i < 2; i++) {
             plane[i] = (uint8_t*)p_base + d.image.offsets[i];
             pitch[i] = d.image.pitches[i];
         }
         if (d.copy_uswc && GPUMemCopy::isAvailable()) {
             QByteArray buf(15 + pitch[0]*d.surface_height*3/2, 0);
-            int offset_16 = (uintptr_t)buf.data() & 0x0f;
-            if (offset_16)
-                offset_16 = 16 - offset_16;
+            int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
             uint8_t *dst[] = {
                 (uint8_t*)buf.data() + offset_16,
                 (uint8_t*)buf.data() + offset_16 + pitch[0] * d.surface_height
             };
-            // TODO: why wrong result if copy the whole frame? green line on top
+            // TODO: why vaapi wrong result if copy the whole frame? green line on top.
             //d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height*3/2, pitch[0]);
             d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
             d.gpu_mem.copyFrame(plane[1], dst[1], d.surface_width, d.surface_height/2, pitch[1]);
