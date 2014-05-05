@@ -119,9 +119,9 @@ public:
         surface_chroma = QTAV_PIX_FMT_C(NONE);
         surfaces = 0;
         image.image_id = VA_INVALID_ID;
-        disable_derive = true;
+        disable_derive = false;
         supports_derive = false;
-        copy_uswc = false;
+        copy_uswc = true;
         va_pixfmt = QTAV_PIX_FMT_C(VAAPI_VLD);
     }
 
