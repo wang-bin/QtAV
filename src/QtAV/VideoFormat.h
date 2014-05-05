@@ -173,8 +173,14 @@ public:
 
     // return line size with given width
     int bytesPerLine(int width, int plane) const;
+    /*!
+     * \brief chromaWidth
+     * \param lumaWidth
+     * \return U, V component (or channel) width for the given luma width.
+     */
     int chromaWidth(int lumaWidth) const;
     int chromaHeight(int lumaHeight) const;
+    //TODO: add planeWidth()/planeHeight()
     // test AV_PIX_FMT_FLAG_XXX
     bool isBigEndian() const;
     bool hasPalette() const;
@@ -187,6 +193,15 @@ public:
      * Pixel format is an HW accelerated format.
      */
     bool isHWAccelerated() const;
+    /*!
+     * \brief isPlanar
+     * \return true if is planar or semi planar
+     *
+     * Semi-planar: 2 planes instead of 3, one plane for luminance, and one plane for both chrominance components.
+     * They are also sometimes referred to as biplanar formats also
+     * Packed: 1 plane
+     * Planar: 1 plane for each component (channel)
+     */
     bool isPlanar() const;
     bool isRGB() const;
     bool hasAlpha() const;
