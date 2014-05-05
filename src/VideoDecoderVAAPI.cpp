@@ -29,7 +29,6 @@
 #include "utils/GPUMemCopy.h"
 #include "prepost.h"
 #include <va/va.h>
-#include <libavcodec/avcodec.h>
 #include <libavcodec/vaapi.h>
 
 //TODO: use dllapi
@@ -52,6 +51,14 @@
 #define vaCreateSurfaces(d, f, w, h, s, ns, a, na) \
     vaCreateSurfaces(d, w, h, f, ns, s)
 #endif
+
+// TODO: add to QtAV_Compat.h?
+// FF_API_PIX_FMT
+#ifdef PixelFormat
+#undef PixelFormat
+#endif
+
+//ffmpeg_vaapi patch: http://lists.libav.org/pipermail/libav-devel/2013-November/053515.html
 
 namespace QtAV {
 
@@ -269,72 +276,66 @@ VideoFrame VideoDecoderVAAPI::frame()
         return VideoFrame();
     }
 
+    VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
+    bool swap_uv = false;
+    switch (d.image.format.fourcc) {
+    case VA_FOURCC('I','4','2','0'):
+        swap_uv = true;
+    case VA_FOURCC('Y','V','1','2'):
+        swap_uv |= d.disable_derive || !d.supports_derive;
+        pixfmt = VideoFormat::Format_YUV420P;
+        break;
+    case VA_FOURCC('N','V','1','2'):
+        pixfmt = VideoFormat::Format_NV12;
+        break;
+    default:
+        break;
+    }
+    if (pixfmt == VideoFormat::Format_Invalid) {
+        qWarning("unsupported vaapi pixel format: %#x", d.image.format.fourcc);
+        return VideoFrame();
+    }
+    const VideoFormat fmt(pixfmt);
+    uint8_t *plane[3];
+    int pitch[3];
+    for (int i = 0; i < fmt.planeCount(); ++i) {
+        plane[i] = (uint8_t*)p_base + d.image.offsets[i];
+        pitch[i] = d.image.pitches[i];
+    }
+    if (swap_uv) {
+        std::swap(plane[1], plane[2]);
+        std::swap(pitch[1], pitch[2]);
+    }
     VideoFrame frame;
-    const uint32_t i_fourcc = d.image.format.fourcc;
-    if (i_fourcc == VA_FOURCC('Y','V','1','2') ||
-        i_fourcc == VA_FOURCC('I','4','2','0')) {
-        bool b_swap_uv = i_fourcc == VA_FOURCC('I','4','2','0');
-        //swap U V if use vaGetImage. have not confirmed why
-        b_swap_uv |= d.disable_derive || !d.supports_derive;
-        uint8_t *plane[3];
-        int pitch[3];
-        for (int i = 0; i < 3; i++) {
-            plane[i] = (uint8_t*)p_base + d.image.offsets[i];
-            pitch[i] = d.image.pitches[i];
+    if (d.copy_uswc && GPUMemCopy::isAvailable()) {
+        int yuv_size = 0;
+        if (pixfmt == VideoFormat::Format_NV12)
+            yuv_size = pitch[0]*d.surface_height*3/2;
+        else
+            yuv_size = pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2;
+        // additional 15 bytes to ensure 16 bytes aligned
+        QByteArray buf(15 + yuv_size, 0);
+        const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
+        // plane 1, 2... is aligned?
+        uchar* plane_ptr = (uchar*)buf.data() + offset_16;
+        QVector<uchar*> dst(fmt.planeCount(), 0);
+        for (int i = 0; i < dst.size(); ++i) {
+            dst[i] = plane_ptr;
+            // TODO: add VideoFormat::planeWidth/Height() ?
+            const int plane_w = (i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
+            const int plane_h = i == 0 ? d.surface_height : fmt.chromaHeight(d.surface_height);
+            plane_ptr += pitch[i] * plane_h;
+            d.gpu_mem.copyFrame(plane[i], dst[i], plane_w, plane_h, pitch[i]);
         }
-        if (b_swap_uv) {
-            std::swap(plane[1], plane[2]);
-            std::swap(pitch[1], pitch[2]);
-        }
-        if (d.copy_uswc && GPUMemCopy::isAvailable()) {
-            // additional 15 bytes to ensure 16 bytes aligned
-            QByteArray buf(15 + pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2, 0);
-            int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
-            // plane 1, 2... is aligned?
-            uchar *dst[] = {
-                (uchar*)buf.data() + offset_16,
-                (uchar*)buf.data() + offset_16 + pitch[0] * d.surface_height,
-                (uchar*)buf.data() + offset_16 + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2
-            };
-            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
-            d.gpu_mem.copyFrame(plane[1], dst[1], d.surface_width/2, d.surface_height/2, pitch[1]);
-            d.gpu_mem.copyFrame(plane[2], dst[2], d.surface_width/2, d.surface_height/2, pitch[2]);
-            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_YUV420P));
-            f.setBits(dst);
-            f.setBytesPerLine(pitch);
-            return f;
-        }
-        frame = VideoFrame(d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_YUV420P));
-        frame.setBits(plane);
+        frame = VideoFrame(buf, d.surface_width, d.surface_height, fmt);
+        frame.setBits(dst);
         frame.setBytesPerLine(pitch);
     } else {
-        Q_ASSERT(i_fourcc == VA_FOURCC('N','V','1','2'));
-        uint8_t *plane[2];
-        int pitch[2];
-        // plane 1, 2... is aligned?
-        for (int i = 0; i < 2; i++) {
-            plane[i] = (uint8_t*)p_base + d.image.offsets[i];
-            pitch[i] = d.image.pitches[i];
-        }
-        if (d.copy_uswc && GPUMemCopy::isAvailable()) {
-            QByteArray buf(15 + pitch[0]*d.surface_height*3/2, 0);
-            int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
-            uint8_t *dst[] = {
-                (uint8_t*)buf.data() + offset_16,
-                (uint8_t*)buf.data() + offset_16 + pitch[0] * d.surface_height
-            };
-            // TODO: why vaapi wrong result if copy the whole frame? green line on top.
-            //d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height*3/2, pitch[0]);
-            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
-            d.gpu_mem.copyFrame(plane[1], dst[1], d.surface_width, d.surface_height/2, pitch[1]);
-            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
-            f.setBits(dst);
-            f.setBytesPerLine(pitch);
-            return f;
-        }
-        frame = VideoFrame(d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
+        frame = VideoFrame(d.surface_width, d.surface_height, fmt);
         frame.setBits(plane);
         frame.setBytesPerLine(pitch);
+        // TODO: why clone is faster()?
+        frame = frame.clone();
     }
 
     if ((status = vaUnmapBuffer(d.display, d.image.buf)) != VA_STATUS_SUCCESS) {
@@ -346,9 +347,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         vaDestroyImage(d.display, d.image.image_id);
         d.image.image_id = VA_INVALID_ID;
     }
-    // TODO: why clone is faster()?
-    // http://software.intel.com/en-us/articles/copying-accelerated-video-decode-frame-buffers
-    return frame.clone();
+    return frame;
 }
 
 void VideoDecoderVAAPI::setDisplayTypePriority(const QStringList &priority)
@@ -414,6 +413,7 @@ bool VideoDecoderVAAPIPrivate::open()
             qDebug("vaGetDisplay DRM...............");
 // get drm use udev: https://gitorious.org/hwdecode-demos/hwdecode-demos/commit/d591cf14b83bedc8a5fa9f2fcb53d279e2f76d7f?diffmode=sidebyside
 #if QTAV_HAVE(VAAPI_DRM)
+            // try drmOpen()?
             drm_fd = ::open("/dev/dri/card0", O_RDWR);
             if(drm_fd == -1) {
                 qWarning("Could not access rendering device");
