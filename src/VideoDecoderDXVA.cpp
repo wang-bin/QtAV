@@ -27,6 +27,12 @@
 #include "prepost.h"
 #include "utils/GPUMemCopy.h"
 
+// TODO: add to QtAV_Compat.h?
+// FF_API_PIX_FMT
+#ifdef PixelFormat
+#undef PixelFormat
+#endif
+
 template <class T> void SafeRelease(T **ppT)
 {
   if (*ppT) {
@@ -407,81 +413,77 @@ VideoFrame VideoDecoderDXVA::frame()
     if (lock.Pitch == 0) {
         return VideoFrame();
     }
-    if (d.render == MAKEFOURCC('Y','V','1','2') ||
-        d.render == MAKEFOURCC('I','M','C','3')) {
-        bool imc3 = d.render == MAKEFOURCC('I','M','C','3');
-        int chroma_pitch = imc3 ? lock.Pitch : (lock.Pitch / 2);
-        int chroma_width = imc3 ? d.surface_width : d.surface_width/2;
-        int pitch[3] = {
-            lock.Pitch,
-            chroma_pitch,
-            chroma_pitch,
-        };
-        uint8_t *plane[3] = {
-            (uint8_t*)lock.pBits,
-            (uint8_t*)lock.pBits + pitch[0] * d.surface_height,
-            (uint8_t*)lock.pBits + pitch[0] * d.surface_height
-                                 + pitch[1] * d.surface_height / 2,
-        };
-        if (imc3) {
-            std::swap(plane[1], plane[2]);
-            std::swap(pitch[1], pitch[2]);
-        }
-        if (d.copy_uswc && GPUMemCopy::isAvailable()) {
-            QByteArray buf(15 + pitch[0]*d.surface_height + pitch[1]*d.surface_height + pitch[2]*d.surface_height, 0);
-            int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
-            // plane 1, 2... is aligned?
-            uchar *dst[] = {
-                (uchar*)buf.data() + offset_16,
-                (uchar*)buf.data() + offset_16 + pitch[0] * d.surface_height,
-                (uchar*)buf.data() + offset_16 + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2
-            };
-            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
-            d.gpu_mem.copyFrame(plane[1], dst[1], chroma_width, d.surface_height/2, pitch[1]);
-            d.gpu_mem.copyFrame(plane[2], dst[2], chroma_width, d.surface_height/2, pitch[2]);
-            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
-            f.setBits(dst);
-            f.setBytesPerLine(pitch);
-            return f;
-        }
-        //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
-        VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_YUV420P));
-        frame.setBits(plane);
-        frame.setBytesPerLine(pitch);
-        return frame; //why no copy is ok?
-    } else {
-        Q_ASSERT(d.render == MAKEFOURCC('N','V','1','2'));
-        uint8_t *plane[2] = {
-            (uint8_t *)lock.pBits,
-            (uint8_t*)lock.pBits + lock.Pitch * d.surface_height
-        };
-        int pitch[2] = {
-            lock.Pitch,
-            lock.Pitch
-        };
-        if (d.copy_uswc && GPUMemCopy::isAvailable()) {
-            QByteArray buf(15 + lock.Pitch*d.surface_height*3/2, 0);
-            int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
-            // plane 1, 2... is aligned?
-            uint8_t *dst[] = {
-                (uint8_t*)buf.data() + offset_16,
-                (uint8_t*)buf.data() + offset_16 + lock.Pitch * d.surface_height
-            };
-            // TODO: why vaapi wrong result if copy the whole frame? green line on top.
-            //d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height*3/2, pitch[0]);
-            d.gpu_mem.copyFrame(plane[0], dst[0], d.surface_width, d.surface_height, pitch[0]);
-            d.gpu_mem.copyFrame(plane[1], dst[1], d.surface_width, d.surface_height/2, pitch[1]);
-            VideoFrame f(buf, d.surface_width, d.surface_height, VideoFormat(VideoFormat::Format_NV12));
-            f.setBits(dst);
-            f.setBytesPerLine(pitch);
-            return f;
-        }
-        VideoFrame frame(d.width, d.height, VideoFormat(VideoFormat::Format_NV12));//VideoFormat((int)d.codec_ctx->pix_fmt));
-        frame.setBits(plane);
-        frame.setBytesPerLine(pitch);
-        return frame; //why no copy is ok?
+
+    int chroma_pitch = lock.Pitch;
+    VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
+    bool swap_uv = false;
+    switch ((int)d.render) {
+    case MAKEFOURCC('I','M','C','3'):
+        swap_uv = true; //YV12 need swap, not imc3?
+        // imc3 U V pitch == Y pitch, but half of the U/V plane is space. we convert to yuv420p here
+    case MAKEFOURCC('Y','V','1','2'):
+        pixfmt = VideoFormat::Format_YUV420P;
+        chroma_pitch /= 2;
+        break;
+    case MAKEFOURCC('N','V','1','2'):
+        pixfmt = VideoFormat::Format_NV12;
+        break;
+    default:
+        break;
     }
-    return VideoFrame();
+    if (pixfmt == VideoFormat::Format_Invalid) {
+        qWarning("unsupported vaapi pixel format: %#x", d.render);
+        return VideoFrame();
+    }
+    // 3rd plane is not used for nv12
+    int pitch[3] = {
+        lock.Pitch,
+        chroma_pitch,
+        chroma_pitch,
+    };
+    uint8_t *src[3] = {
+        (uint8_t*)lock.pBits,
+        (uint8_t*)lock.pBits + pitch[0] * d.surface_height,
+        (uint8_t*)lock.pBits + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2,
+    };
+    if (swap_uv) {
+        std::swap(src[1], src[2]);
+        std::swap(pitch[1], pitch[2]);
+    }
+    const VideoFormat fmt(pixfmt);
+    VideoFrame frame;
+    if (d.copy_uswc && GPUMemCopy::isAvailable()) {
+        int yuv_size = 0;
+        if (pixfmt == VideoFormat::Format_NV12)
+            yuv_size = pitch[0]*d.surface_height*3/2;
+        else
+            yuv_size = pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2;
+        // additional 15 bytes to ensure 16 bytes aligned
+        QByteArray buf(15 + yuv_size, 0);
+        const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
+        // plane 1, 2... is aligned?
+        uchar* plane_ptr = (uchar*)buf.data() + offset_16;
+        QVector<uchar*> dst(fmt.planeCount(), 0);
+        for (int i = 0; i < dst.size(); ++i) {
+            dst[i] = plane_ptr;
+            // TODO: add VideoFormat::planeWidth/Height() ?
+            // pitch instead of surface_width?
+            const int plane_w = (i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
+            const int plane_h = i == 0 ? d.surface_height : fmt.chromaHeight(d.surface_height);
+            plane_ptr += pitch[i] * plane_h;
+            d.gpu_mem.copyFrame(src[i], dst[i], plane_w, plane_h, pitch[i]);
+        }
+        frame = VideoFrame(buf, d.surface_width, d.surface_height, fmt);
+        frame.setBits(dst);
+        frame.setBytesPerLine(pitch);
+    } else {
+        frame = VideoFrame(d.surface_width, d.surface_height, fmt);
+        frame.setBits(src);
+        frame.setBytesPerLine(pitch);
+        // TODO: why clone is faster()?
+        frame = frame.clone();
+    }
+    return frame;
 }
 
 
