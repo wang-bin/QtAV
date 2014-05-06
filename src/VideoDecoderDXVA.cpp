@@ -468,16 +468,16 @@ VideoFrame VideoDecoderDXVA::frame()
             dst[i] = plane_ptr;
             // TODO: add VideoFormat::planeWidth/Height() ?
             // pitch instead of surface_width?
-            const int plane_w = (i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
+            const int plane_w = pitch[i];//(i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
             const int plane_h = i == 0 ? d.surface_height : fmt.chromaHeight(d.surface_height);
             plane_ptr += pitch[i] * plane_h;
             d.gpu_mem.copyFrame(src[i], dst[i], plane_w, plane_h, pitch[i]);
         }
-        frame = VideoFrame(buf, d.surface_width, d.surface_height, fmt);
+        frame = VideoFrame(buf, d.width, d.height, fmt);
         frame.setBits(dst);
         frame.setBytesPerLine(pitch);
     } else {
-        frame = VideoFrame(d.surface_width, d.surface_height, fmt);
+        frame = VideoFrame(d.width, d.height, fmt);
         frame.setBits(src);
         frame.setBytesPerLine(pitch);
         // TODO: why clone is faster()?
@@ -904,9 +904,7 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, 
 {
     if (w <= 0 || h <= 0)
         return false;
-    if (!decoder || ((width != w || height != h) &&
-            (surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16))//)
-        )) {
+    if (!decoder || surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16)) {
         DxDestroyVideoConversion();
         DxDestroyVideoDecoder();
         *hwctx = NULL;
@@ -923,6 +921,8 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, 
             hw.surface[i] = surfaces[i].d3d;
         DxCreateVideoConversion();
     }
+    width = w;
+    height = h;
     *hwctx = &hw;
     const d3d_format_t *outfmt = D3dFindFormat(output);
     *chroma = outfmt ? outfmt->codec : QTAV_PIX_FMT_C(NONE);

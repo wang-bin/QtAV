@@ -296,14 +296,14 @@ VideoFrame VideoDecoderVAAPI::frame()
         return VideoFrame();
     }
     const VideoFormat fmt(pixfmt);
-    uint8_t *plane[3];
+    uint8_t *src[3];
     int pitch[3];
     for (int i = 0; i < fmt.planeCount(); ++i) {
-        plane[i] = (uint8_t*)p_base + d.image.offsets[i];
+        src[i] = (uint8_t*)p_base + d.image.offsets[i];
         pitch[i] = d.image.pitches[i];
     }
     if (swap_uv) {
-        std::swap(plane[1], plane[2]);
+        std::swap(src[1], src[2]);
         std::swap(pitch[1], pitch[2]);
     }
     VideoFrame frame;
@@ -322,16 +322,16 @@ VideoFrame VideoDecoderVAAPI::frame()
         for (int i = 0; i < dst.size(); ++i) {
             dst[i] = plane_ptr;
             // TODO: add VideoFormat::planeWidth/Height() ?
-            const int plane_w = (i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
+            const int plane_w = pitch[i];//(i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
             const int plane_h = i == 0 ? d.surface_height : fmt.chromaHeight(d.surface_height);
             plane_ptr += pitch[i] * plane_h;
-            d.gpu_mem.copyFrame(plane[i], dst[i], plane_w, plane_h, pitch[i]);
+            d.gpu_mem.copyFrame(src[i], dst[i], plane_w, plane_h, pitch[i]);
         }
-        frame = VideoFrame(buf, d.surface_width, d.surface_height, fmt);
+        frame = VideoFrame(buf, d.width, d.height, fmt);
         frame.setBits(dst);
         frame.setBytesPerLine(pitch);
     } else {
-        frame = VideoFrame(d.surface_width, d.surface_height, fmt);
+        frame = VideoFrame(d.width, d.height, fmt);
         frame.setBits(plane);
         frame.setBytesPerLine(pitch);
         // TODO: why clone is faster()?
@@ -534,12 +534,15 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         return false;
     image.image_id = VA_INVALID_ID;
     context_id = VA_INVALID_ID;
-
+    width = w;
+    height = h;
+    surface_width = FFALIGN(w, 16);
+    surface_height = FFALIGN(h, 16);
     /* Create surfaces */
     VASurfaceID pi_surface_id[nb_surfaces];
     VAStatus status = VA_STATUS_SUCCESS;
-    if ((status = vaCreateSurfaces(display, VA_RT_FORMAT_YUV420, w, h, pi_surface_id, nb_surfaces, NULL, 0)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateSurfaces(VADisplay:%p, VA_RT_FORMAT_YUV420, %d, %d, VASurfaceID*:%p, surfaces:%d, VASurfaceAttrib:NULL, num_attrib:0) == %#x", display, w, h, pi_surface_id, nb_surfaces, status);
+    if ((status = vaCreateSurfaces(display, VA_RT_FORMAT_YUV420, surface_width, surface_height, pi_surface_id, nb_surfaces, NULL, 0)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateSurfaces(VADisplay:%p, VA_RT_FORMAT_YUV420, %d, %d, VASurfaceID*:%p, surfaces:%d, VASurfaceAttrib:NULL, num_attrib:0) == %#x", display, surface_width, surface_height, pi_surface_id, nb_surfaces, status);
         for (int i = 0; i < nb_surfaces; i++)
             surfaces[i].i_id = VA_INVALID_SURFACE;
         destroySurfaces();
@@ -553,8 +556,8 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         ////surface->p_lock = &sys->lock;
     }
     /* Create a context */
-    if ((status = vaCreateContext(display, config_id, w, h, VA_PROGRESSIVE, pi_surface_id, nb_surfaces, &context_id)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display, config_id, w, h, pi_surface_id, nb_surfaces, &context_id, status);
+    if ((status = vaCreateContext(display, config_id, surface_width, surface_height, VA_PROGRESSIVE, pi_surface_id, nb_surfaces, &context_id)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display, config_id, surface_width, surface_height, pi_surface_id, nb_surfaces, &context_id, status);
         context_id = VA_INVALID_ID;
         destroySurfaces();
         return false;
@@ -591,13 +594,13 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
             p_fmt[i].fourcc == VA_FOURCC('I', '4', '2', '0') ||
             p_fmt[i].fourcc == VA_FOURCC('N', 'V', '1', '2')) {
             qDebug("vaCreateImage: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
-            if (vaCreateImage(display, &p_fmt[i], w, h, &image)) {
+            if (vaCreateImage(display, &p_fmt[i], surface_width, surface_height, &image)) {
                 image.image_id = VA_INVALID_ID;
                 qDebug("vaCreateImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 continue;
             }
             /* Validate that vaGetImage works with this format */
-            if (vaGetImage(display, pi_surface_id[0], 0, 0, w, h, image.image_id)) {
+            if (vaGetImage(display, pi_surface_id[0], 0, 0, surface_width, surface_height, image.image_id)) {
                 vaDestroyImage(display, image.image_id);
                 qDebug("vaGetImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 image.image_id = VA_INVALID_ID;
@@ -622,7 +625,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
     }
 
     if (copy_uswc) {
-        if (!gpu_mem.initCache(w)) {
+        if (!gpu_mem.initCache(surface_width)) {
             copy_uswc = false;
             disable_derive = true;
         }
@@ -638,8 +641,6 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
 
     /* */
     surface_chroma = i_chroma;
-    surface_width = w;
-    surface_height = h;
     return true;
 }
 
@@ -673,7 +674,9 @@ void VideoDecoderVAAPIPrivate::destroySurfaces()
 
 bool VideoDecoderVAAPIPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, int h)
 {
-    if (surface_width == w && surface_height == h) {
+    if (surface_width == FFALIGN(w, 16) && surface_height == FFALIGN(h, 16)) {
+        width = w;
+        height = h;
         *hwctx = &hw_ctx;
         *chroma = surface_chroma;
         return true;

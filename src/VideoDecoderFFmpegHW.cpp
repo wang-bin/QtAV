@@ -50,7 +50,8 @@ static int ffmpeg_get_va_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t
     ff->age = 256*256*256*64;
 #endif
     /* hwaccel_context is not present in old ffmpeg version */
-    if (!va->setup(&c->hwaccel_context, &c->pix_fmt, c->coded_width, c->coded_height)) {
+    // not coded_width. assume coded_width is 6 aligned of width
+    if (!va->setup(&c->hwaccel_context, &c->pix_fmt, c->width, c->height)) {
         qWarning("va Setup failed");
         return -1;
     }
