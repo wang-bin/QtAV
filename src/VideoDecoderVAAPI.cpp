@@ -332,7 +332,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         frame.setBytesPerLine(pitch);
     } else {
         frame = VideoFrame(d.width, d.height, fmt);
-        frame.setBits(plane);
+        frame.setBits(src);
         frame.setBytesPerLine(pitch);
         // TODO: why clone is faster()?
         frame = frame.clone();
