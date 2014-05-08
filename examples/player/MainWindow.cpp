@@ -969,7 +969,7 @@ void MainWindow::help()
         f.setFileName(":/help.html");
     }
     if (!f.open(QIODevice::ReadOnly)) {
-        qWarning("Failed to open help-%1.html and help.html: %s", qPrintable(QLocale::system().name()), qPrintable(f.errorString()));
+        qWarning("Failed to open help-%s.html and help.html: %s", qPrintable(QLocale::system().name()), qPrintable(f.errorString()));
         return;
     }
     QTextStream ts(&f);

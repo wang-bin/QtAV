@@ -86,5 +86,6 @@ void TVView::load()
 
 void TVView::onItemDoubleClick(QTreeWidgetItem *item, int column)
 {
+    Q_UNUSED(column);
     emit clicked(item->data(0, Qt::DisplayRole).toString(), item->data(1, Qt::EditRole).toString());
 }

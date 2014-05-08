@@ -87,7 +87,7 @@ QList<QVariant> getVideoInfoValues(const Statistics& s) {
             << s.video.start_time.toString("HH:mm:ss")
             << QString::number(s.video.bit_rate/1000) + " Kb/s"
             << s.video.frames
-            << s.video_only.avg_frame_rate //TODO: dynamic compute
+            << s.video_only.fps
             << s.video_only.avg_frame_rate
             << s.video_only.pix_fmt
             << QString::number(s.video_only.width) + "x" + QString::number(s.video_only.height)
@@ -129,7 +129,7 @@ StatisticsView::StatisticsView(QWidget *parent) :
     initBaseItems(&mBaseItems);
     mpView->addTopLevelItems(mBaseItems);
     QTreeWidgetItem *item = createNodeWithItems(mpView, QObject::tr("Video"), getVideoInfoKeys(), &mVideoItems);
-    mpFPS = item->child(6);
+    mpFPS = item->child(7);
     //mpVideoBitRate =
     mpView->addTopLevelItem(item);
     item = createNodeWithItems(mpView, QObject::tr("Audio"), getAudioInfoKeys(), &mAudioItems);

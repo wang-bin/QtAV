@@ -30,6 +30,7 @@ Button::Button(const QString& text, QWidget *parent) :
     QToolButton(parent)
   , mState(NotFocused)
 {
+    Q_UNUSED(text);
 }
 
 Button::~Button()
