@@ -63,7 +63,7 @@ VideoWall::~VideoWall()
             player->stop();
             VideoRenderer* renderer = player->renderer();
             if (renderer->widget()) {
-                renderer->widget()->QWidget::close(); //TODO: rename
+                renderer->widget()->close(); //TODO: rename
                 if (!renderer->widget()->testAttribute(Qt::WA_DeleteOnClose) && !renderer->widget()->parent())
                     delete renderer;
                 delete player;
@@ -106,7 +106,7 @@ void VideoWall::show()
             player->stop();
             VideoRenderer* renderer = player->renderer();
             if (renderer->widget()) {
-                renderer->widget()->QWidget::close(); //TODO: rename
+                renderer->widget()->close();
                 if (!renderer->widget()->testAttribute(Qt::WA_DeleteOnClose) && !renderer->widget()->parent())
                     delete renderer;
                 delete player;
@@ -141,6 +141,7 @@ void VideoWall::show()
             VideoRenderer* renderer = VideoRendererFactory::create(v);
             //renderer->widget()->setParent(view);
             renderer->widget()->setWindowFlags(Qt::FramelessWindowHint);
+            renderer->widget()->setAttribute(Qt::WA_DeleteOnClose);
             renderer->widget()->resize(w, h);
             renderer->widget()->move(j*w, i*h);
             renderer->widget()->show();
