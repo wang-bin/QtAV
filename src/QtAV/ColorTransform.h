@@ -39,6 +39,12 @@ namespace QtAV {
 class ColorTransform
 {
 public:
+    //http://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-5-200204-I!!PDF-E.pdf
+    enum ColorSpace {
+        Auto,
+        BT601,
+        BT709
+    };
     ColorTransform();
     ~ColorTransform(); //required by QSharedDataPointer if Private is forward declared
     // TODO: type bt601 etc

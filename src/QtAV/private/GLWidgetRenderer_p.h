@@ -81,7 +81,7 @@ public:
     GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
     bool releaseShaderProgram();
     QString getShaderFromFile(const QString& fileName);
-    bool prepareShaderProgram(const VideoFormat& fmt);
+    bool prepareShaderProgram(const VideoFormat& fmt, ColorTransform::ColorSpace cs);
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool initTextures(const VideoFormat& fmt);
     void updateTexturesIfNeeded();

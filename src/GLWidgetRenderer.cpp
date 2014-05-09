@@ -326,7 +326,7 @@ QString GLWidgetRendererPrivate::getShaderFromFile(const QString &fileName)
     return src;
 }
 
-bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
+bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, ColorTransform::ColorSpace cs)
 {
     // isSupported(pixfmt)
     if (!fmt.isValid())
@@ -348,6 +348,11 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt)
         else
             frag.prepend("#define YUV16BITS_LE_LUMINANCE_ALPHA\n");
         frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
+    }
+    if (cs == ColorTransform::BT601) {
+        frag.prepend("#define CS_BT601");
+    } else if (cs == ColorTransform::BT709) {
+        frag.prepend("#define CS_BT709");
     }
 #if NO_QGL_SHADER
     program = createProgram(kVertexShader, frag.toUtf8().constData());
@@ -526,7 +531,11 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
     if (fmt != video_format) {
         update_textures = true;
         qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
-        if (!prepareShaderProgram(fmt)) {
+        // http://forum.doom9.org/archive/index.php/t-160211.html
+        ColorTransform::ColorSpace cs = ColorTransform::BT601;
+        if (video_frame.width() >= 1280 || video_frame.height() > 576) //values from mpv
+            cs = ColorTransform::BT709;
+        if (!prepareShaderProgram(fmt, cs)) {
             qWarning("shader program create error...");
             return;
         } else {
