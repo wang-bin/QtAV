@@ -568,7 +568,6 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
 
 void GLWidgetRendererPrivate::upload(const QRect &roi)
 {
-    updateTexturesIfNeeded();
     for (int i = 0; i < video_frame.planeCount(); ++i) {
         uploadPlane(i, internal_format[i], data_format[i], roi);
     }
@@ -723,6 +722,7 @@ void GLWidgetRenderer::drawBackground()
 void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
+    updateTexturesIfNeeded();
     QRect roi = realROI();
     d.upload(roi);
     // shader program may not ready before upload
