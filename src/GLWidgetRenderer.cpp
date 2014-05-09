@@ -722,7 +722,7 @@ void GLWidgetRenderer::drawBackground()
 void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
-    updateTexturesIfNeeded();
+    d.updateTexturesIfNeeded();
     QRect roi = realROI();
     d.upload(roi);
     // shader program may not ready before upload
