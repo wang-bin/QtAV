@@ -597,7 +597,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
             host_data + pitch * h
         };
         int pitches[] = { (int)pitch, (int)pitch };
-        VideoFrame frame(w, h, VideoFormat::Format_NV12);
+        VideoFrame frame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
         frame.setBits(planes);
         frame.setBytesPerLine(pitches);
         //TODO: is clone required? may crash on clone, I should review clone()
