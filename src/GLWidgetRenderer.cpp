@@ -350,9 +350,9 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
         frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
     }
     if (cs == ColorTransform::BT601) {
-        frag.prepend("#define CS_BT601");
+        frag.prepend("#define CS_BT601\n");
     } else if (cs == ColorTransform::BT709) {
-        frag.prepend("#define CS_BT709");
+        frag.prepend("#define CS_BT709\n");
     }
 #if NO_QGL_SHADER
     program = createProgram(kVertexShader, frag.toUtf8().constData());
