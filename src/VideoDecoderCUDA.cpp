@@ -29,7 +29,7 @@
 #include "dllapi.h"
 #endif //QTAV_HAVE(DLLAPI_CUDA)
 
-#define COPY_ON_DECODE 0
+#define COPY_ON_DECODE 1
 #define FILTER_ANNEXB_CUVID 0
 /*
  * avc1, ccv1 => h264 + sps, pps, nal. use filter or lavcudiv
@@ -590,7 +590,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         cuvidUnmapVideoFrame(dec, devptr);
         cuvidCtxUnlock(vid_ctx_lock, 0);
         //qDebug("mark not in use pic_index: %d", cuviddisp->picture_index);
-        surface_in_use[cuviddisp->picture_index] = true;
+        surface_in_use[cuviddisp->picture_index] = false;
 
         uchar *planes[] = {
             host_data,
