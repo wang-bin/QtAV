@@ -38,6 +38,54 @@ static AVPixelFormat ffmpeg_get_va_format(struct AVCodecContext *c, const AVPixe
     return va->getFormat(c, ff);
 }
 
+#if QTAV_VA_REF
+
+typedef struct ffmpeg_va_ref_t {
+    VideoDecoderFFmpegHWPrivate *va;
+    void *opaque; //va surface from AVFrame.opaque
+} ffmpeg_va_ref_t;
+
+static void ffmpeg_release_va_buffer2(void *opaque, uint8_t *data)
+{
+    ffmpeg_va_ref_t *ref = (ffmpeg_va_ref_t*)opaque;
+    ref->va->releaseBuffer(ref->opaque, data);
+    delete ref;
+}
+
+static int ffmpeg_get_va_buffer2(struct AVCodecContext *ctx, AVFrame *frame, int flags)
+{
+    Q_UNUSED(flags);
+    for (unsigned i = 0; i < AV_NUM_DATA_POINTERS; i++) {
+        frame->data[i] = NULL;
+        frame->linesize[i] = 0;
+        frame->buf[i] = NULL;
+    }
+    VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)ctx->opaque;
+    /* hwaccel_context is not present in old ffmpeg version */
+    // not coded_width. assume coded_width is 6 aligned of width
+    if (!va->setup(&ctx->hwaccel_context, &ctx->pix_fmt, ctx->width, ctx->height)) {
+        qWarning("va Setup failed");
+        return -1;
+    }
+    if (!va->getBuffer(&frame->opaque, &frame->data[0])) {
+        qWarning("va->getBuffer failed");
+        return -1;
+    }
+    ffmpeg_va_ref_t *ref = new ffmpeg_va_ref_t;
+    ref->va = va;
+    ref->opaque = frame->opaque;
+    /* data[0] must be non-NULL for libavcodec internal checks. data[3] actually contains the format-specific surface handle. */
+    frame->data[3] = frame->data[0];
+    frame->buf[0] = av_buffer_create(frame->data[0], 0, ffmpeg_release_va_buffer2, ref, 0);
+    if (Q_UNLIKELY(!frame->buf[0])) {
+        ffmpeg_release_va_buffer2(ref, frame->data[0]);
+        return -1;
+    }
+    Q_ASSERT(frame->data[0] != NULL);
+    return 0;
+}
+#else
+
 static int ffmpeg_get_va_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t *external, AVFrame *ff)
 {
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)c->opaque;
@@ -71,6 +119,7 @@ static void ffmpeg_release_va_buffer(struct AVCodecContext *c, AVFrame *ff)
     memset(ff->data, 0, sizeof(ff->data));
     memset(ff->linesize, 0, sizeof(ff->linesize));
 }
+#endif //QTAV_VA_REF
 
 AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt)
 {
@@ -168,21 +217,23 @@ bool VideoDecoderFFmpegHW::prepare()
     d.codec_ctx->opaque = &d; //is it ok?
 
     d.pixfmt = d.codec_ctx->pix_fmt;
-    //d.get_buffer2 = d.codec_ctx->get_buffer2;
+    d.get_format = d.codec_ctx->get_format;
+#if QTAV_VA_REF
+    d.get_buffer2 = d.codec_ctx->get_buffer2;
+#else
     d.get_buffer = d.codec_ctx->get_buffer;
     d.reget_buffer = d.codec_ctx->reget_buffer;
     d.release_buffer = d.codec_ctx->release_buffer;
-    d.get_format = d.codec_ctx->get_format;
-
+#endif //QTAV_VA_REF
     d.codec_ctx->get_format = ffmpeg_get_va_format;
-//#if LIBAVCODEC_VERSION_MAJOR >= 55
-    //d.codec_ctx->get_buffer2 = ffmpeg_get_va_frame;
-//#else
+#if QTAV_VA_REF
+    d.codec_ctx->get_buffer2 = ffmpeg_get_va_buffer2;
+#else
     // TODO: FF_API_GET_BUFFER
     d.codec_ctx->get_buffer = ffmpeg_get_va_buffer;//ffmpeg_GetFrameBuf;
     d.codec_ctx->reget_buffer = avcodec_default_reget_buffer;
     d.codec_ctx->release_buffer = ffmpeg_release_va_buffer;//ffmpeg_ReleaseFrameBuf;
-//#endif
+#endif //QTAV_VA_REF
     return true;
 }
 

@@ -24,6 +24,12 @@
 
 #include "QtAV/private/VideoDecoderFFmpeg_p.h"
 
+/*!
+   QTAV_VA_REF: use AVCodecContext.get_buffer2 instead of old callbacks. In order to avoid compile warnings, now disable old
+   callbacks if possible. maybe we can also do a runtime check and enable old callbacks
+ */
+#define QTAV_VA_REF (LIBAVCODEC_VERSION_MAJOR >= 55)
+
 namespace QtAV {
 
 class Q_AV_EXPORT VideoDecoderFFmpegHWPrivate : public VideoDecoderFFmpegPrivate
@@ -37,7 +43,7 @@ public:
         get_buffer = 0;
         release_buffer = 0;
         reget_buffer = 0;
-        //get_buffer2 = 0;
+        get_buffer2 = 0;
         // subclass setup va_pixfmt here
     }
 
@@ -46,10 +52,13 @@ public:
         codec_ctx->pix_fmt = pixfmt;
         codec_ctx->opaque = 0;
         codec_ctx->get_format = get_format;
+#if QTAV_VA_REF
+        codec_ctx->get_buffer2 = get_buffer2;
+#else
         codec_ctx->get_buffer = get_buffer;
         codec_ctx->release_buffer = release_buffer;
         codec_ctx->reget_buffer = reget_buffer;
-        //codec_ctx->get_buffer2 = get_buffer2;
+#endif //QTAV_VA_REF
     }
 
     virtual bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h) = 0;
@@ -65,7 +74,7 @@ public:
     int (*get_buffer)(struct AVCodecContext *c, AVFrame *pic);
     void (*release_buffer)(struct AVCodecContext *c, AVFrame *pic);
     int (*reget_buffer)(struct AVCodecContext *c, AVFrame *pic);
-    //int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
+    int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
 
     QString description;
 };
