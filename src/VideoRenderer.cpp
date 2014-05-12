@@ -72,6 +72,7 @@ bool VideoRenderer::setPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 
 bool VideoRenderer::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
+    Q_UNUSED(pixfmt);
     return true;
 }
 
@@ -95,6 +96,7 @@ void VideoRenderer::forcePreferredPixelFormat(bool force)
 
 bool VideoRenderer::onForcePreferredPixelFormat(bool force)
 {
+    Q_UNUSED(force);
     return true;
 }
 
@@ -117,6 +119,7 @@ void VideoRenderer::scaleInRenderer(bool q)
 
 bool VideoRenderer::onScaleInRenderer(bool q)
 {
+    Q_UNUSED(q);
     return true;
 }
 
@@ -324,6 +327,7 @@ void VideoRenderer::setRegionOfInterest(const QRectF &roi)
 
 bool VideoRenderer::onSetRegionOfInterest(const QRectF &roi)
 {
+    Q_UNUSED(roi);
     return true;
 }
 
