@@ -444,10 +444,15 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w
     // Limit decode memory to 24MB (16M pixels at 4:2:0 = 24M bytes)
     // otherwise CUDA_ERROR_OUT_OF_MEMORY on cuMemcpyDtoH
     // if ulNumDecodeSurfaces < ulMaxNumDecodeSurfaces, CurrPicIdx may be > ulNumDecodeSurfaces
-
+    /*
+     * TODO: check video memory, e.g. runtime apu extern __host__ cudaError_t CUDARTAPI cudaMemGetInfo(size_t *free, size_t *total);
+     * 24MB is too small for 4k video, only n2 surfaces can be use so decoding will be too slow
+     */
+#if 0
     while (dec_create_info.ulNumDecodeSurfaces * codec_ctx->coded_width * codec_ctx->coded_height > 16*1024*1024) {
         dec_create_info.ulNumDecodeSurfaces--;
     }
+#endif
     nb_dec_surface = dec_create_info.ulNumDecodeSurfaces;
 
     qDebug("ulNumDecodeSurfaces: %lu", dec_create_info.ulNumDecodeSurfaces);
