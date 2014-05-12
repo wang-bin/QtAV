@@ -42,10 +42,15 @@ Rectangle {
             var i = a.indexOf("-vd")
             if (i >= 0) {
                 player.videoCodecPriority = a[i+1].split(";")
+            } else {
+                player.videoCodecPriority = ["VAAPI", "DXVA", "CUDA", "FFmpeg"];
             }
+
             // FIXME: source is relative to this qml
             //player.source = a[a.length-1]
             //player.play()
+        } else {
+            player.videoCodecPriority = ["VAAPI", "DXVA", "CUDA", "FFmpeg"];
         }
     }
     function resurl(s) { //why called twice if in qrc?
