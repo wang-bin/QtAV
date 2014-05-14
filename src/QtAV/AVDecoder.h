@@ -24,6 +24,7 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QHash>
+#include <QtCore/QObject>
 
 class QByteArray;
 struct AVCodecContext;
@@ -32,12 +33,15 @@ struct AVFrame;
 namespace QtAV {
 
 class AVDecoderPrivate;
-class Q_AV_EXPORT AVDecoder
+class Q_AV_EXPORT AVDecoder : public QObject
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVDecoder)
+    Q_PROPERTY(QString codecName READ codecName WRITE setCodecName)
 public:
     AVDecoder();
     virtual ~AVDecoder();
+    virtual QString description() const;
     /*
      * default is open FFmpeg codec context
      * codec config must be done before open

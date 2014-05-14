@@ -21,6 +21,7 @@
 
 #include <QtAV/AVDecoder.h>
 #include <QtAV/private/AVDecoder_p.h>
+#include <QtAV/version.h>
 
 namespace QtAV {
 AVDecoder::AVDecoder()
@@ -35,6 +36,11 @@ AVDecoder::AVDecoder(AVDecoderPrivate &d)
 AVDecoder::~AVDecoder()
 {
     setCodecContext(0);
+}
+
+QString AVDecoder::description() const
+{
+    return QString("FFmpeg/Libav avcodec %1.%2.%3").arg(QTAV_VERSION_MAJOR(avcodec_version())).arg(QTAV_VERSION_MINOR(avcodec_version())).arg(QTAV_VERSION_PATCH(avcodec_version()));
 }
 
 bool AVDecoder::open()

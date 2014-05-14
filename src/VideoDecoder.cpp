@@ -50,6 +50,11 @@ VideoDecoder::VideoDecoder(VideoDecoderPrivate &d):
 {
 }
 
+QString VideoDecoder::name() const
+{
+    return QString(VideoDecoderFactory::name(id()).c_str());
+}
+
 bool VideoDecoder::prepare()
 {
     return AVDecoder::prepare();
