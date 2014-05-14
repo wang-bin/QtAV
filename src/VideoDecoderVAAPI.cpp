@@ -65,21 +65,34 @@ namespace QtAV {
 class VideoDecoderVAAPIPrivate;
 class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderVAAPI)
+    Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
+    Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
+    Q_PROPERTY(QStringList displayPriority READ displayPriority WRITE setDisplayPriority)
+    Q_PROPERTY(DisplayType displayType READ displayType)
+    Q_ENUMS(DisplayType)
 public:
     enum DisplayType {
-        Display_X11,
-        Display_GLX,
-        Display_DRM
+        X11,
+        GLX,
+        DRM
     };
     VideoDecoderVAAPI();
     virtual VideoDecoderId id() const;
+    virtual QString description() const;
     virtual VideoFrame frame();
 
     // TODO: QObject property
-    void setDisplayTypePriority(const QStringList& priority);
+    void setSSE4(bool y);
+    bool SSE4() const;
+    void setSurfaces(int num);
+    int surfaces() const;
+    void setDisplayPriority(const QStringList& priority);
+    QStringList displayPriority() const;
     DisplayType displayType() const;
 };
+
 
 extern VideoDecoderId VideoDecoderId_VAAPI;
 FACTORY_REGISTER_ID_AUTO(VideoDecoder, VAAPI, "VAAPI")
@@ -103,7 +116,7 @@ class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderVAAPIPrivate() {
-        display_type = VideoDecoderVAAPI::Display_X11;
+        display_type = VideoDecoderVAAPI::X11;
 #if QTAV_HAVE(VAAPI_X11)
         display_x11 = 0;
 #endif
@@ -145,7 +158,7 @@ public:
     virtual void releaseBuffer(void *opaque, uint8_t *data);
 
     VideoDecoderVAAPI::DisplayType display_type;
-    QVector<VideoDecoderVAAPI::DisplayType> display_priority;
+    QList<VideoDecoderVAAPI::DisplayType> display_priority;
 #if QTAV_HAVE(VAAPI_X11)
     Display *display_x11;
 #endif
@@ -194,12 +207,44 @@ public:
 VideoDecoderVAAPI::VideoDecoderVAAPI()
     : VideoDecoderFFmpegHW(*new VideoDecoderVAAPIPrivate())
 {
-    setDisplayTypePriority(QStringList() << "glx" << "x11" << "drm");
+    setDisplayPriority(QStringList() << "GLX" << "X11" << "DRM");
 }
 
 VideoDecoderId VideoDecoderVAAPI::id() const
 {
     return VideoDecoderId_VAAPI;
+}
+
+QString VideoDecoderVAAPI::description() const
+{
+    if (!d_func().description.isEmpty())
+        return d_func().description;
+    return "Video Acceleration API";
+}
+
+void VideoDecoderVAAPI::setSSE4(bool y)
+{
+    d_func().copy_uswc = y;
+}
+
+bool VideoDecoderVAAPI::SSE4() const
+{
+    return d_func().copy_uswc;
+}
+
+void VideoDecoderVAAPI::setSurfaces(int num)
+{
+    d_func().nb_surfaces = num;
+}
+
+int VideoDecoderVAAPI::surfaces() const
+{
+    return d_func().nb_surfaces;
+}
+
+VideoDecoderVAAPI::DisplayType VideoDecoderVAAPI::displayType() const
+{
+    return d_func().display_type;
 }
 
 VideoFrame VideoDecoderVAAPI::frame()
@@ -210,7 +255,7 @@ VideoFrame VideoDecoderVAAPI::frame()
     VASurfaceID surface_id = (VASurfaceID)(uintptr_t)d.frame->data[3];
     VAStatus status = VA_STATUS_SUCCESS;
 #if QTAV_HAVE(VAAPI_GLX)
-    if (displayType() == Display_GLX) {
+    if (displayType() == GLX) {
         if (!d.glxSurface) {
             // FIXME: wrong gl context
             glGenTextures(1, &d.texture);
@@ -350,25 +395,51 @@ VideoFrame VideoDecoderVAAPI::frame()
     return frame;
 }
 
-void VideoDecoderVAAPI::setDisplayTypePriority(const QStringList &priority)
+struct display_names_t {
+    VideoDecoderVAAPI::DisplayType display;
+    QString name;
+};
+static const display_names_t display_names[] = {
+    { VideoDecoderVAAPI::GLX, "GLX" },
+    { VideoDecoderVAAPI::X11, "X11" },
+    { VideoDecoderVAAPI::DRM, "DRM" }
+};
+
+static VideoDecoderVAAPI::DisplayType displayFromName(QString name) {
+    for (unsigned int i = 0; i < sizeof(display_names)/sizeof(display_names[0]); ++i) {
+        if (name.toUpper().contains(display_names[i].name.toUpper())) {
+            return display_names[i].display;
+        }
+    }
+    return VideoDecoderVAAPI::X11;
+}
+
+static QString displayToName(VideoDecoderVAAPI::DisplayType t) {
+    for (unsigned int i = 0; i < sizeof(display_names)/sizeof(display_names[0]); ++i) {
+        if (t == display_names[i].display) {
+            return display_names[i].name;
+        }
+    }
+    return QString();
+}
+
+void VideoDecoderVAAPI::setDisplayPriority(const QStringList &priority)
 {
     DPTR_D(VideoDecoderVAAPI);
     d.display_priority.clear();
     foreach (QString disp, priority) {
-        if (disp.toLower() == "drm")
-            d.display_priority.push_back(Display_DRM);
-        else if (disp.toLower() == "glx")
-            d.display_priority.push_back(Display_GLX);
-        else
-            d.display_priority.push_back(Display_X11);
+        d.display_priority.push_back(displayFromName(disp));
     }
 }
 
-VideoDecoderVAAPI::DisplayType VideoDecoderVAAPI::displayType() const
+QStringList VideoDecoderVAAPI::displayPriority() const
 {
-    return d_func().display_type;
+    QStringList names;
+    foreach (DisplayType disp, d_func().display_priority) {
+        names.append(displayToName(disp));
+    }
+    return names;
 }
-
 
 bool VideoDecoderVAAPIPrivate::open()
 {
@@ -409,7 +480,7 @@ bool VideoDecoderVAAPIPrivate::open()
     image.image_id = VA_INVALID_ID;
     /* Create a VA display */
     foreach (VideoDecoderVAAPI::DisplayType dt, display_priority) {
-        if (dt == VideoDecoderVAAPI::Display_DRM) {
+        if (dt == VideoDecoderVAAPI::DRM) {
             qDebug("vaGetDisplay DRM...............");
 // get drm use udev: https://gitorious.org/hwdecode-demos/hwdecode-demos/commit/d591cf14b83bedc8a5fa9f2fcb53d279e2f76d7f?diffmode=sidebyside
 #if QTAV_HAVE(VAAPI_DRM)
@@ -421,8 +492,8 @@ bool VideoDecoderVAAPIPrivate::open()
             }
             display = vaGetDisplayDRM(drm_fd);
 #endif //QTAV_HAVE(VAAPI_DRM)
-            display_type = VideoDecoderVAAPI::Display_DRM;
-        } else if (dt == VideoDecoderVAAPI::Display_X11) {
+            display_type = VideoDecoderVAAPI::DRM;
+        } else if (dt == VideoDecoderVAAPI::X11) {
             qDebug("vaGetDisplay X11...............");
 #if QTAV_HAVE(VAAPI_X11)
             // TODO: lock
@@ -437,8 +508,8 @@ bool VideoDecoderVAAPIPrivate::open()
             }
             display = vaGetDisplay(display_x11);
 #endif //QTAV_HAVE(VAAPI_X11)
-            display_type = VideoDecoderVAAPI::Display_X11;
-        } else if (dt == VideoDecoderVAAPI::Display_GLX) {
+            display_type = VideoDecoderVAAPI::X11;
+        } else if (dt == VideoDecoderVAAPI::GLX) {
             qDebug("vaGetDisplay GLX...............");
 #if QTAV_HAVE(VAAPI_GLX)
             display_x11 = XOpenDisplay(NULL);;
@@ -448,7 +519,7 @@ bool VideoDecoderVAAPIPrivate::open()
             }
             display = vaGetDisplayGLX(display_x11);
 #endif
-            display_type = VideoDecoderVAAPI::Display_GLX;
+            display_type = VideoDecoderVAAPI::GLX;
         }
         if (display)
             break;
@@ -499,7 +570,8 @@ bool VideoDecoderVAAPIPrivate::open()
         config_id = VA_INVALID_ID;
         return false;
     }
-    nb_surfaces = i_nb_surfaces;
+    if (nb_surfaces <= 0)
+        nb_surfaces = i_nb_surfaces;
     supports_derive = false;
 
     vendor = vaQueryVendorString(display);
@@ -509,19 +581,7 @@ bool VideoDecoderVAAPIPrivate::open()
     //disable_derive = !copy_uswc;
 
     description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vendor);
-    switch (display_type) {
-    case VideoDecoderVAAPI::Display_X11:
-        description += " Display: X11";
-        break;
-    case VideoDecoderVAAPI::Display_DRM:
-        description += " Display: DRM";
-        break;
-    case VideoDecoderVAAPI::Display_GLX:
-        description += " Display: GLX";
-        break;
-    default:
-        break;
-    }
+    description += " Display: " + displayToName(display_type);
     return true;
 }
 
@@ -768,3 +828,10 @@ void VideoDecoderVAAPIPrivate::releaseBuffer(void *opaque, uint8_t *data)
 }
 
 } // namespace QtAV
+
+
+// used by .moc QMetaType::Bool
+#ifdef Bool
+#undef Bool
+#endif
+#include "VideoDecoderVAAPI.moc"
