@@ -206,7 +206,11 @@ void AVDecoder::setCodecName(const QString &name)
 QString AVDecoder::codecName() const
 {
     DPTR_D(const AVDecoder);
-    return d.name.isEmpty() ? d.codec_ctx->codec->name : d.name;
+    if (!d.name.isEmpty())
+        return d.name;
+    if (d.codec_ctx)
+        return d.codec_ctx->codec->name;
+    return "";
 }
 
 int AVDecoder::lowResolution() const
