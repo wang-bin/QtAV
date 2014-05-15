@@ -50,8 +50,27 @@ static const unsigned int kMaxDecodeSurfaces = 20;
 class VideoDecoderCUDAPrivate;
 class VideoDecoderCUDA : public VideoDecoder
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderCUDA)
+    Q_PROPERTY(quint8 surfaces READ surfaces WRITE setSurfaces)
+    Q_PROPERTY(Flags flags READ flags WRITE setFlags)
+    Q_PROPERTY(Deinterlace deinterlace READ deinterlace WRITE setDeinterlace)
+    Q_FLAGS(Flags)
+    Q_ENUMS(Flags)
+    Q_ENUMS(Deinterlace)
 public:
+    enum Flags {
+        Default = cudaVideoCreate_Default,   // Default operation mode: use dedicated video engines
+        CUDA = cudaVideoCreate_PreferCUDA,   // Use a CUDA-based decoder if faster than dedicated engines (requires a valid vidLock object for multi-threading)
+        DXVA = cudaVideoCreate_PreferDXVA,   // Go through DXVA internally if possible (requires D3D9 interop)
+        CUVID = cudaVideoCreate_PreferCUVID  // Use dedicated video engines directly
+    };
+    enum Deinterlace {
+        Bob = cudaVideoDeinterlaceMode_Bob,           // Drop one field
+        Weave = cudaVideoDeinterlaceMode_Weave,       // Weave both fields (no deinterlacing)
+        Adaptive = cudaVideoDeinterlaceMode_Adaptive  // Adaptive deinterlacing
+    };
+
     VideoDecoderCUDA();
     virtual ~VideoDecoderCUDA();
     virtual VideoDecoderId id() const;
@@ -59,6 +78,14 @@ public:
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
     virtual VideoFrame frame();
+
+    // properties
+    quint8 surfaces() const;
+    void setSurfaces(quint8 n);
+    Flags flags() const;
+    void setFlags(Flags f);
+    Deinterlace deinterlace() const;
+    void setDeinterlace(Deinterlace di);
 };
 
 
@@ -112,6 +139,9 @@ public:
       , flushing(false)
       , host_data(0)
       , host_data_size(0)
+      , create_flags(cudaVideoCreate_Default)
+      , deinterlace(cudaVideoDeinterlaceMode_Adaptive)
+      , nb_dec_surface(kMaxDecodeSurfaces)
     {
 #if QTAV_HAVE(DLLAPI_CUDA)
         can_load = dllapi::testLoad("nvcuvid");
@@ -125,9 +155,8 @@ public:
         force_sequence_update = false;
         frame_queue.setCapacity(20);
         frame_queue.setThreshold(10);
-        surface_in_use.resize(kMaxDecodeSurfaces);
+        surface_in_use.resize(nb_dec_surface);
         surface_in_use.fill(false);
-        nb_dec_surface = 20;
         if (!can_load)
             return;
         if (!isLoaded()) //cuda_api
@@ -227,6 +256,7 @@ public:
     CUdevice cudev;
 
     cudaVideoCreateFlags create_flags;
+    cudaVideoDeinterlaceMode deinterlace;
     CUvideodecoder dec;
     CUVIDDECODECREATEINFO dec_create_info;
     CUvideoctxlock vid_ctx_lock; //NULL
@@ -245,7 +275,7 @@ public:
     BlockingQueue<CUVIDPARSERDISPINFO*> frame_queue;
 #endif
     QVector<bool> surface_in_use;
-    int nb_dec_surface;
+    quint8 nb_dec_surface;
     QString description;
 
     AVBitStreamFilterContext *bitstream_filter_ctx;
@@ -389,6 +419,39 @@ bool VideoDecoderCUDAPrivate::initCuda()
     return true;
 }
 
+quint8 VideoDecoderCUDA::surfaces() const
+{
+    return d_func().nb_dec_surface;
+}
+
+void VideoDecoderCUDA::setSurfaces(quint8 n)
+{
+    DPTR_D(VideoDecoderCUDA);
+    d.nb_dec_surface = n;
+    d.surface_in_use.resize(n);
+    d.surface_in_use.fill(false);
+}
+
+VideoDecoderCUDA::Flags VideoDecoderCUDA::flags() const
+{
+    return (Flags)d_func().create_flags;
+}
+
+void VideoDecoderCUDA::setFlags(Flags f)
+{
+    d_func().create_flags = (cudaVideoCreateFlags)f;
+}
+
+VideoDecoderCUDA::Deinterlace VideoDecoderCUDA::deinterlace() const
+{
+    return (Deinterlace)d_func().deinterlace;
+}
+
+void VideoDecoderCUDA::setDeinterlace(Deinterlace di)
+{
+    d_func().deinterlace = (cudaVideoDeinterlaceMode)di;
+}
+
 bool VideoDecoderCUDAPrivate::releaseCuda()
 {
     if (!can_load)
@@ -425,16 +488,14 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w
     memset(&dec_create_info, 0, sizeof(CUVIDDECODECREATEINFO));
     dec_create_info.ulWidth = w;
     dec_create_info.ulHeight = h;
-    dec_create_info.ulNumDecodeSurfaces = kMaxDecodeSurfaces; //same as ulMaxNumDecodeSurfaces
+    dec_create_info.ulNumDecodeSurfaces = nb_dec_surface; //same as ulMaxNumDecodeSurfaces
     dec_create_info.CodecType = cudaCodec;
     dec_create_info.ChromaFormat = cudaVideoChromaFormat_420;  // cudaVideoChromaFormat_XXX (only 4:2:0 is currently supported)
     //cudaVideoCreate_PreferCUVID is slow in example. DXVA may failed to create (CUDA_ERROR_NO_DEVICE)
-    // what's the difference between CUDA and CUVID?
-    dec_create_info.ulCreationFlags = cudaVideoCreate_PreferCUVID; //cudaVideoCreate_Default, cudaVideoCreate_PreferCUDA, cudaVideoCreate_PreferCUVID, cudaVideoCreate_PreferDXVA
+    dec_create_info.ulCreationFlags = create_flags;
     // TODO: lav yv12
     dec_create_info.OutputFormat = cudaVideoSurfaceFormat_NV12; // NV12 (currently the only supported output format)
-    dec_create_info.DeinterlaceMode = cudaVideoDeinterlaceMode_Adaptive;// Weave: No deinterlacing
-    //cudaVideoDeinterlaceMode_Adaptive;
+    dec_create_info.DeinterlaceMode = deinterlace;
     // No scaling
     dec_create_info.ulTargetWidth = dec_create_info.ulWidth;
     dec_create_info.ulTargetHeight = dec_create_info.ulHeight;
@@ -453,10 +514,6 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w
         dec_create_info.ulNumDecodeSurfaces--;
     }
 #endif
-    nb_dec_surface = dec_create_info.ulNumDecodeSurfaces;
-
-    qDebug("ulNumDecodeSurfaces: %lu", dec_create_info.ulNumDecodeSurfaces);
-
     // create the decoder
     available = false;
     checkCudaErrors(cuvidCreateDecoder(&dec, &dec_create_info));
@@ -556,7 +613,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
             return false;
         }
 #define PAD_ALIGN(x,mask) ( (x + mask) & ~mask )
-        uint w = dec_create_info.ulWidth;//PAD_ALIGN(dec_create_info.ulWidth, 0x3F);
+        //uint w = dec_create_info.ulWidth;//PAD_ALIGN(dec_create_info.ulWidth, 0x3F);
         uint h = dec_create_info.ulHeight;//PAD_ALIGN(dec_create_info.ulHeight, 0x0F); //?
 #undef PAD_ALIGN
         int size = pitch*h*3/2;
@@ -619,3 +676,5 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
 }
 
 } //namespace QtAV
+
+#include "VideoDecoderCUDA.moc"

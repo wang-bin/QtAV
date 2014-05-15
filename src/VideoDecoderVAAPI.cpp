@@ -70,7 +70,7 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
     Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
     Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
     Q_PROPERTY(QStringList displayPriority READ displayPriority WRITE setDisplayPriority)
-    Q_PROPERTY(DisplayType displayType READ displayType)
+    Q_PROPERTY(DisplayType display READ display WRITE setDisplay)
     Q_ENUMS(DisplayType)
 public:
     enum DisplayType {
@@ -90,7 +90,8 @@ public:
     int surfaces() const;
     void setDisplayPriority(const QStringList& priority);
     QStringList displayPriority() const;
-    DisplayType displayType() const;
+    DisplayType display() const;
+    void setDisplay(DisplayType disp);
 };
 
 
@@ -242,9 +243,17 @@ int VideoDecoderVAAPI::surfaces() const
     return d_func().nb_surfaces;
 }
 
-VideoDecoderVAAPI::DisplayType VideoDecoderVAAPI::displayType() const
+VideoDecoderVAAPI::DisplayType VideoDecoderVAAPI::display() const
 {
     return d_func().display_type;
+}
+
+void VideoDecoderVAAPI::setDisplay(DisplayType disp)
+{
+    DPTR_D(VideoDecoderVAAPI);
+    d.display_priority.clear();
+    d.display_priority.append(disp);
+    d.display_type = disp;
 }
 
 VideoFrame VideoDecoderVAAPI::frame()
