@@ -52,7 +52,7 @@ class VideoDecoderCUDA : public VideoDecoder
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderCUDA)
-    Q_PROPERTY(quint8 surfaces READ surfaces WRITE setSurfaces)
+    Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
     Q_PROPERTY(Flags flags READ flags WRITE setFlags)
     Q_PROPERTY(Deinterlace deinterlace READ deinterlace WRITE setDeinterlace)
     Q_FLAGS(Flags)
@@ -81,8 +81,8 @@ public:
     virtual VideoFrame frame();
 
     // properties
-    quint8 surfaces() const;
-    void setSurfaces(quint8 n);
+    int surfaces() const;
+    void setSurfaces(int n);
     Flags flags() const;
     void setFlags(Flags f);
     Deinterlace deinterlace() const;
@@ -275,7 +275,7 @@ public:
     BlockingQueue<CUVIDPARSERDISPINFO*> frame_queue;
 #endif
     QVector<bool> surface_in_use;
-    quint8 nb_dec_surface;
+    int nb_dec_surface;
     QString description;
 
     AVBitStreamFilterContext *bitstream_filter_ctx;
@@ -431,13 +431,15 @@ bool VideoDecoderCUDAPrivate::initCuda()
     return true;
 }
 
-quint8 VideoDecoderCUDA::surfaces() const
+int VideoDecoderCUDA::surfaces() const
 {
     return d_func().nb_dec_surface;
 }
 
-void VideoDecoderCUDA::setSurfaces(quint8 n)
+void VideoDecoderCUDA::setSurfaces(int n)
 {
+    if (n <= 0)
+        n = kMaxDecodeSurfaces;
     DPTR_D(VideoDecoderCUDA);
     d.nb_dec_surface = n;
     d.surface_in_use.resize(n);
