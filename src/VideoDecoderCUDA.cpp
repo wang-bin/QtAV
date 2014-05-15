@@ -74,6 +74,7 @@ public:
     VideoDecoderCUDA();
     virtual ~VideoDecoderCUDA();
     virtual VideoDecoderId id() const;
+    virtual QString description() const;
     virtual void flush();
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);
@@ -147,6 +148,7 @@ public:
         can_load = dllapi::testLoad("nvcuvid");
 #endif //QTAV_HAVE(DLLAPI_CUDA)
         available = false;
+        bitstream_filter_ctx = 0;
         cuctx = 0;
         cudev = 0;
         dec = 0;
@@ -161,16 +163,14 @@ public:
             return;
         if (!isLoaded()) //cuda_api
             return;
-        bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
-        Q_ASSERT_X(bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
-        initCuda();
     }
     ~VideoDecoderCUDAPrivate() {
+        if (bitstream_filter_ctx)
+            av_bitstream_filter_close(bitstream_filter_ctx);
         if (!can_load)
             return;
         if (!isLoaded()) //cuda_api
             return;
-        av_bitstream_filter_close(bitstream_filter_ctx);
         releaseCuda();
     }
     bool initCuda();
@@ -295,6 +295,14 @@ VideoDecoderId VideoDecoderCUDA::id() const
     return VideoDecoderId_CUDA;
 }
 
+QString VideoDecoderCUDA::description() const
+{
+    DPTR_D(const VideoDecoderCUDA);
+    if (!d.description.isEmpty())
+        return d.description;
+    return "NVIDIA CUVID";
+}
+
 void VideoDecoderCUDA::flush()
 {
     DPTR_D(VideoDecoderCUDA);
@@ -316,6 +324,10 @@ bool VideoDecoderCUDA::prepare()
     }
     if (!d.isLoaded()) //cuda_api
         return false;
+    if (!d.cuctx)
+        d.initCuda();
+    d.bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
+    Q_ASSERT_X(d.bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
     // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
     return d.createCUVIDDecoder(mapCodecFromFFmpeg(d.codec_ctx->codec_id), d.codec_ctx->coded_width, d.codec_ctx->coded_height)
             && d.createCUVIDParser();
@@ -454,6 +466,7 @@ void VideoDecoderCUDA::setDeinterlace(Deinterlace di)
 
 bool VideoDecoderCUDAPrivate::releaseCuda()
 {
+    available = false;
     if (!can_load)
         return true;
     if (dec) {
@@ -468,10 +481,19 @@ bool VideoDecoderCUDAPrivate::releaseCuda()
         cuStreamDestroy(stream);
         stream = 0;
     }
-    cuvidCtxLockDestroy(vid_ctx_lock);
+    if (host_data) {
+        cuMemFreeHost(host_data);
+        host_data = 0;
+        host_data_size = 0;
+    }
+    if (vid_ctx_lock) {
+        cuvidCtxLockDestroy(vid_ctx_lock);
+        vid_ctx_lock = 0;
+    }
     if (cuctx) {
         checkCudaErrors(cuCtxDestroy(cuctx));
     }
+    // TODO: dllapi unload
     return true;
 }
 
