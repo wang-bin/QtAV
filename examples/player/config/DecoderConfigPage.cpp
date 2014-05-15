@@ -20,6 +20,7 @@
 
 #include "DecoderConfigPage.h"
 #include "Config.h"
+#include "PropertyEditor.h"
 
 #include <QListView>
 #include <QSpinBox>
@@ -33,46 +34,54 @@
 #include <QPainter>
 #include <QtDebug>
 
-QString GetDecoderDescription(const QString& name) {
-    struct {
-        const char *name;
-        QString desc;
-    } dec_desc[] = {
-        { "FFmpeg", "FFmpeg (" + QObject::tr("Software") + ")" },
-        { "CUDA", "NVIDIA CUVID (" + QObject::tr("Hardware") + ")" },
-        { "DXVA", "DirectX Video Acceleration 2.0 (" + QObject::tr("Hardware") + ")" },
-        { "VAAPI", "Video Acceleration API (" + QObject::tr("Hardware") + ")" },
-        { 0, 0 }
-    };
-    for (int i = 0; dec_desc[i].name; ++i) {
-        if (name == dec_desc[i].name)
-            return dec_desc[i].desc;
-    }
-    return "";
-}
-
 // shared
 static QVector<QtAV::VideoDecoderId> sDecodersUi;
 static QVector<QtAV::VideoDecoderId> sPriorityUi;
 
 using namespace QtAV;
-class DecoderConfigPage::DecoderItemWidget : public QWidget
+class DecoderConfigPage::DecoderItemWidget : public QFrame
 {
     Q_OBJECT
 public:
     DecoderItemWidget(QWidget* parent = 0)
-        : QWidget(parent) {
+        : QFrame(parent) {
+        mpEditorWidget = 0;
+        // why no frame?
+        setFrameStyle(QFrame::Panel|QFrame::Raised);
+        setLineWidth(2);
+
+        mpEditor = new PropertyEditor(this);
         mSelected = false;
         QVBoxLayout *vb = new QVBoxLayout;
         setLayout(vb);
-
+        QFrame *frame = new QFrame();
+        frame->setFrameShape(QFrame::HLine);
+        vb->addWidget(frame);
         mpCheck = new QCheckBox();
+
+        QHBoxLayout *hb = new QHBoxLayout();
+        hb->addWidget(mpCheck);
+        QToolButton *expandBtn = new QToolButton();
+        expandBtn->setText("+");
+        hb->addWidget(expandBtn);
+        connect(expandBtn, SIGNAL(clicked()), SLOT(toggleEditorVisible()));
         mpDesc = new QLabel();
-        vb->addWidget(mpCheck);
+        vb->addLayout(hb);
         vb->addWidget(mpDesc);
         connect(mpCheck, SIGNAL(pressed()), SLOT(checkPressed())); // no this->mousePressEvent
         connect(mpCheck, SIGNAL(toggled(bool)), this, SIGNAL(enableChanged()));
     }
+    void buildUiFor(QObject *obj) {
+        mpEditor->getProperties(obj);
+        //mpEditor->set()
+        QWidget *w = mpEditor->buildUi();
+        if (!w)
+            return;
+        mpEditorWidget = w;
+        w->setEnabled(true);
+        layout()->addWidget(w);
+    }
+
     void select(bool s) {
         mSelected = s;
         update();
@@ -93,6 +102,12 @@ private slots:
         select(true);
         emit selected(this);
     }
+    void toggleEditorVisible() {
+        if (!mpEditorWidget)
+            return;
+        mpEditorWidget->setVisible(!mpEditorWidget->isVisible());
+        parentWidget()->adjustSize();
+    }
 
 protected:
     virtual void mousePressEvent(QMouseEvent *) {
@@ -111,6 +126,8 @@ private:
     bool mSelected;
     QCheckBox *mpCheck;
     QLabel *mpDesc;
+    PropertyEditor *mpEditor;
+    QWidget *mpEditorWidget;
 };
 
 DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
@@ -140,15 +157,16 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     sPriorityUi = Config::instance().decoderPriority();
     sDecodersUi = Config::instance().registeredDecoders();
     QStringList vds = Config::instance().decoderPriorityNames();
-    QStringList vds_all = Config::instance().registeredDecoderNames();
+    QVector<QtAV::VideoDecoderId> vds_all = Config::instance().registeredDecoders();
     mpDecLayout = new QVBoxLayout;
     for (int i = 0; i < vds_all.size(); ++i) {
-        QString name = vds_all.at(i);
+        VideoDecoder *vd = VideoDecoderFactory::create(vds_all.at(i));
         DecoderItemWidget *iw = new DecoderItemWidget();
+        iw->buildUiFor(vd);
         mDecItems.append(iw);
-        iw->setName(name);
-        iw->setDescription(GetDecoderDescription(name));
-        iw->setChecked(vds.contains(name));
+        iw->setName(vd->name());
+        iw->setDescription(vd->description());
+        iw->setChecked(vds.contains(vd->name()));
         connect(iw, SIGNAL(enableChanged()), SLOT(videoDecoderEnableChanged()));
         connect(iw, SIGNAL(selected(DecoderItemWidget*)), SLOT(onDecSelected(DecoderItemWidget*)));
         mpDecLayout->addWidget(iw);

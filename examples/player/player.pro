@@ -28,7 +28,8 @@ SOURCES += main.cpp \
     playlist/PlayListModel.cpp \
     playlist/PlayListItem.cpp \
     playlist/PlayListDelegate.cpp \
-    playlist/PlayList.cpp
+    playlist/PlayList.cpp \
+    config/PropertyEditor.cpp
 
 HEADERS += \
     MainWindow.h \
@@ -47,7 +48,8 @@ HEADERS += \
     playlist/PlayListModel.h \
     playlist/PlayListItem.h \
     playlist/PlayListDelegate.h \
-    playlist/PlayList.h
+    playlist/PlayList.h \
+    config/PropertyEditor.h
 
 tv.files = res/tv.ini
 BIN_INSTALLS += tv
