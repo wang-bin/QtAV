@@ -117,14 +117,16 @@ class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderVAAPIPrivate() {
-        display_type = VideoDecoderVAAPI::X11;
-#if QTAV_HAVE(VAAPI_X11)
-        display_x11 = 0;
-#endif
 #if QTAV_HAVE(VAAPI_DRM)
+        display_type = VideoDecoderVAAPI::DRM;
         drm_fd = -1;
 #endif
+#if QTAV_HAVE(VAAPI_X11)
+        display_type = VideoDecoderVAAPI::X11;
+        display_x11 = 0;
+#endif
 #if QTAV_HAVE(VAAPI_GLX)
+        display_type = VideoDecoderVAAPI::GLX;
         glxSurface = 0;
         texture = 0;
 #endif
