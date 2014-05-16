@@ -38,6 +38,11 @@ AVDecoder::~AVDecoder()
     setCodecContext(0);
 }
 
+QString AVDecoder::name() const
+{
+    return "avcodec";
+}
+
 QString AVDecoder::description() const
 {
     return QString("FFmpeg/Libav avcodec %1.%2.%3").arg(QTAV_VERSION_MAJOR(avcodec_version())).arg(QTAV_VERSION_MINOR(avcodec_version())).arg(QTAV_VERSION_PATCH(avcodec_version()));
@@ -278,7 +283,7 @@ int AVDecoder::undecodedSize() const
     return d_func().undecoded_size;
 }
 
-void AVDecoder::setOptions(const QHash<QByteArray, QByteArray> &dict)
+void AVDecoder::setOptions(const QVariantHash &dict)
 {
     DPTR_D(AVDecoder);
     d.options = dict;
@@ -288,15 +293,35 @@ void AVDecoder::setOptions(const QHash<QByteArray, QByteArray> &dict)
     }
     if (dict.isEmpty())
         return;
-    QHashIterator<QByteArray, QByteArray> i(dict);
+    QVariantHash avcodec_dict(dict);
+    if (dict.contains("avcodec"))
+        avcodec_dict = dict.value("avcodec").toHash();
+    QHashIterator<QString, QVariant> i(avcodec_dict);
     while (i.hasNext()) {
         i.next();
-        av_dict_set(&d.dict, i.key().constData(), i.value().constData(), 0);
-        qDebug("avcodec option: %s=>%s", i.key().constData(), i.value().constData());
+        if (i.value().type() == QVariant::Hash) // for example "vaapi": {...}
+            continue;
+        av_dict_set(&d.dict, i.key().toUtf8().constData(), i.value().toByteArray().constData(), 0);
+        qDebug("avcodec option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+    }
+    if (name() == "avcodec")
+        return;
+    QVariantHash property_dict(dict.value(name()).toHash());
+    if (property_dict.isEmpty())
+        property_dict = dict.value(name().toLower()).toHash();
+    if (property_dict.isEmpty())
+        return;
+    i = QHashIterator<QString, QVariant>(property_dict);
+    while (i.hasNext()) {
+        i.next();
+        if (i.value().type() == QVariant::Hash) // for example "vaapi": {...}
+            continue;
+        setProperty(i.key().toUtf8().constData(), i.value());
+        qDebug("decoder property: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
     }
 }
 
-QHash<QByteArray, QByteArray> AVDecoder::options() const
+QVariantHash AVDecoder::options() const
 {
     return d_func().options;
 }

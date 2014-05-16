@@ -73,7 +73,7 @@ public:
     bool thread_slice;
     int low_resolution;
     QString name;
-    QHash<QByteArray, QByteArray> options;
+    QVariantHash options;
     AVDictionary *dict;
 };
 

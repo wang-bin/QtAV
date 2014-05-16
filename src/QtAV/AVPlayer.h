@@ -69,7 +69,6 @@ public:
     // If path is different from previous one, the stream to play will be reset to default.
     void setFile(const QString& path);
     QString file() const;
-
     //QIODevice support
     void setIODevice(QIODevice* device);
 
@@ -194,13 +193,20 @@ public:
      * In addition, av_dict is slow.
      */
     // avformat_open_input
-    void setOptionsForFormat(const QHash<QByteArray, QByteArray>& dict);
-    QHash<QByteArray, QByteArray> optionsForFormat() const;
+    void setOptionsForFormat(const QVariantHash &dict);
+    QVariantHash optionsForFormat() const;
     // avcodec_open2. TODO: the same for audio/video codec?
-    void setOptionsForAudioCodec(const QHash<QByteArray, QByteArray>& dict);
-    QHash<QByteArray, QByteArray> optionsForAudioCodec() const;
-    void setOptionsForVideoCodec(const QHash<QByteArray, QByteArray>& dict);
-    QHash<QByteArray, QByteArray> optionsForVideoCodec() const;
+    /*!
+     * \sa AVDecoder::setOptions()
+     * example:
+     *  "avcodec": {"vismv":"pf"}, "vaapi":{"display":"DRM"}
+     * equals
+     *  "vismv":"pf", "vaapi":{"display":"DRM"}
+     */
+    void setOptionsForAudioCodec(const QVariantHash &dict);
+    QVariantHash optionsForAudioCodec() const;
+    void setOptionsForVideoCodec(const QVariantHash& dict);
+    QVariantHash optionsForVideoCodec() const;
     // avfilter_init_dict
     //void setOptionsForFilter(const QHash<QByteArray, QByteArray>& dict);
     //QHash<QByteArray, QByteArray> optionsForFilter() const;
@@ -331,7 +337,7 @@ private:
 
     int mBrightness, mContrast, mSaturation;
 
-    QHash<QByteArray, QByteArray> audio_codec_opt, video_codec_opt;
+    QVariantHash audio_codec_opt, video_codec_opt;
 
     bool mSeeking;
     qint64 mSeekTarget;

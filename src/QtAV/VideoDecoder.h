@@ -42,7 +42,7 @@ class Q_AV_EXPORT VideoDecoder : public AVDecoder
 public:
     VideoDecoder();
     virtual VideoDecoderId id() const = 0;
-    QString name() const; //name from factory
+    virtual QString name() const; //name from factory
     //virtual bool prepare();
     virtual bool prepare();
     virtual bool decode(const QByteArray &encoded);

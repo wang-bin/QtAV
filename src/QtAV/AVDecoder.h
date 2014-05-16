@@ -23,7 +23,7 @@
 #define QAV_DECODER_H
 
 #include <QtAV/QtAV_Global.h>
-#include <QtCore/QHash>
+#include <QtCore/QVariant>
 #include <QtCore/QObject>
 
 class QByteArray;
@@ -40,6 +40,7 @@ class Q_AV_EXPORT AVDecoder : public QObject
 public:
     AVDecoder();
     virtual ~AVDecoder();
+    virtual QString name() const;
     virtual QString description() const;
     /*
      * default is open FFmpeg codec context
@@ -69,14 +70,22 @@ public:
     QByteArray data() const; //decoded data
     int undecodedSize() const;
 
-    /*
+    // avcodec_open2
+    /*!
+     * \brief setOptions
+     * 1. set options for AVCodecContext. if contains key "avcodec", use it's value as a hash to set. a value of hash type is ignored.
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
      * In addition, av_dict is slow.
      * empty means default options in ffmpeg
+     * 2. set properties for AVDecoder. use the value of key AVDecoder::name() or it's lower case as a hash to set properties.
+     * \param dict
+     * example:
+     *  "avcodec": {"vismv":"pf"}, "vaapi":{"display":"DRM"}
+     * equals
+     *  "vismv":"pf", "vaapi":{"display":"DRM"}
      */
-    // avcodec_open2
-    void setOptions(const QHash<QByteArray, QByteArray>& dict);
-    QHash<QByteArray, QByteArray> options() const;
+    void setOptions(const QVariantHash &dict);
+    QVariantHash options() const;
 
 protected:
     AVDecoder(AVDecoderPrivate& d);

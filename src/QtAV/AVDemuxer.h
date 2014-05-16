@@ -24,7 +24,7 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/CommonTypes.h>
-#include <QtCore/QHash>
+#include <QtCore/QVariant>
 #include <QtCore/QObject>
 #include <QtCore/QSize>
 #include <QtCore/QMutex>
@@ -182,8 +182,8 @@ public:
      * empty means default options in ffmpeg
      */
     // avformat_open_input
-    void setOptions(const QHash<QByteArray, QByteArray>& dict);
-    QHash<QByteArray, QByteArray> options() const;
+    void setOptions(const QVariantHash &dict);
+    QVariantHash options() const;
 
 signals:
     /*emit when the first frame is read*/
@@ -230,7 +230,7 @@ private:
     InterruptHandler *mpInterrup;
 
     AVDictionary *mpDict;
-    QHash<QByteArray, QByteArray> mOptions;
+    QVariantHash mOptions;
 };
 
 } //namespace QtAV

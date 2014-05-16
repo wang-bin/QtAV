@@ -405,32 +405,32 @@ void AVPlayer::setPriority(const QVector<VideoDecoderId> &ids)
     vcodec_ids = ids;
 }
 
-void AVPlayer::setOptionsForFormat(const QHash<QByteArray, QByteArray> &dict)
+void AVPlayer::setOptionsForFormat(const QVariantHash &dict)
 {
     demuxer.setOptions(dict);
 }
 
-QHash<QByteArray, QByteArray> AVPlayer::optionsForFormat() const
+QVariantHash AVPlayer::optionsForFormat() const
 {
     return demuxer.options();
 }
 
-void AVPlayer::setOptionsForAudioCodec(const QHash<QByteArray, QByteArray> &dict)
+void AVPlayer::setOptionsForAudioCodec(const QVariantHash &dict)
 {
     audio_codec_opt = dict;
 }
 
-QHash<QByteArray, QByteArray> AVPlayer::optionsForAudioCodec() const
+QVariantHash AVPlayer::optionsForAudioCodec() const
 {
     return audio_codec_opt;
 }
 
-void AVPlayer::setOptionsForVideoCodec(const QHash<QByteArray, QByteArray> &dict)
+void AVPlayer::setOptionsForVideoCodec(const QVariantHash &dict)
 {
     video_codec_opt = dict;
 }
 
-QHash<QByteArray, QByteArray> AVPlayer::optionsForVideoCodec() const
+QVariantHash AVPlayer::optionsForVideoCodec() const
 {
     return video_codec_opt;
 }

@@ -985,7 +985,7 @@ void AVDemuxer::setInterruptStatus(int interrupt){
     mpInterrup->setStatus(interrupt);
 }
 
-void AVDemuxer::setOptions(const QHash<QByteArray, QByteArray> &dict)
+void AVDemuxer::setOptions(const QVariantHash &dict)
 {
     mOptions = dict;
     if (mpDict) {
@@ -994,15 +994,20 @@ void AVDemuxer::setOptions(const QHash<QByteArray, QByteArray> &dict)
     }
     if (dict.isEmpty())
         return;
-    QHashIterator<QByteArray, QByteArray> i(dict);
+    QVariantHash avformat_dict(dict);
+    if (dict.contains("avformat"))
+        avformat_dict = dict.value("avformat").toHash();
+    QHashIterator<QString, QVariant> i(avformat_dict);
     while (i.hasNext()) {
         i.next();
-        av_dict_set(&mpDict, i.key().constData(), i.value().constData(), 0);
-        qDebug("avformat option: %s=>%s", i.key().constData(), i.value().constData());
+        if (i.value().type() == QVariant::Hash)
+            continue;
+        av_dict_set(&mpDict, i.key().toUtf8().constData(), i.value().toByteArray().constData(), 0);
+        qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
     }
 }
 
-QHash<QByteArray, QByteArray> AVDemuxer::options() const
+QVariantHash AVDemuxer::options() const
 {
     return mOptions;
 }
