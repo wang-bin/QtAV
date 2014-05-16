@@ -43,8 +43,14 @@ void PropertyEditor::getProperties(QObject *obj)
     for (int i = 0; i < mo->propertyCount(); ++i) {
         QMetaProperty mp = mo->property(i);
         mMetaProperties.append(mp);
-        mProperties.insert(mp.name(), mp.read(obj));
+        QVariant v(mp.read(obj));
+        if (mp.isEnumType()) {
+            mProperties.insert(mp.name(), mp.enumerator().valueToKey(v.toInt())); //always use string
+        } else {
+            mProperties.insert(mp.name(), v);
+        }
     }
+    mProperties.remove("objectName");
 }
 
 void PropertyEditor::set(const QVariantHash &hash)
