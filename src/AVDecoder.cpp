@@ -56,16 +56,16 @@ bool AVDecoder::open()
         return false;
     }
     AVCodec *codec = 0;
-    if (!d.name.isEmpty()) {
-        codec = avcodec_find_decoder_by_name(d.name.toUtf8().constData());
+    if (!d.codec_name.isEmpty()) {
+        codec = avcodec_find_decoder_by_name(d.codec_name.toUtf8().constData());
     } else {
         codec = avcodec_find_decoder(d.codec_ctx->codec_id);
     }
     if (!codec) {
-        if (d.name.isEmpty()) {
+        if (d.codec_name.isEmpty()) {
             qWarning("No codec could be found with id %d", d.codec_ctx->codec_id);
         } else {
-            qWarning("No codec could be found with name %s", d.name.toUtf8().constData());
+            qWarning("No codec could be found with name %s", d.codec_name.toUtf8().constData());
         }
         return false;
     }
@@ -205,14 +205,14 @@ void AVDecoder::setLowResolution(int lowres)
 
 void AVDecoder::setCodecName(const QString &name)
 {
-    d_func().name = name;
+    d_func().codec_name = name;
 }
 
 QString AVDecoder::codecName() const
 {
     DPTR_D(const AVDecoder);
-    if (!d.name.isEmpty())
-        return d.name;
+    if (!d.codec_name.isEmpty())
+        return d.codec_name;
     if (d.codec_ctx)
         return d.codec_ctx->codec->name;
     return "";

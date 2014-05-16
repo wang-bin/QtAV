@@ -72,7 +72,7 @@ public:
     int threads;
     bool thread_slice;
     int low_resolution;
-    QString name;
+    QString codec_name;
     QVariantHash options;
     AVDictionary *dict;
 };
