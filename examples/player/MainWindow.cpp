@@ -70,7 +70,7 @@
 using namespace QtAV;
 const qreal kVolumeInterval = 0.05;
 
-static void QLabelSetElideText(QLabel *label, QString text, int W = 0)
+void QLabelSetElideText(QLabel *label, QString text, int W = 0)
 {
     QFontMetrics metrix(label->font());
     int width = label->width() - label->indent() - label->margin();
@@ -128,10 +128,6 @@ void MainWindow::initPlayer()
     EventFilter *ef = new EventFilter(mpPlayer);
     qApp->installEventFilter(ef);
     connect(ef, SIGNAL(helpRequested()), SLOT(help()));
-    //QHash<QByteArray, QByteArray> dict;
-    //dict.insert("rtsp_transport", "tcp");
-    //mpPlayer->setOptionsForFormat(dict);
-    qDebug("player created");
     onCaptureConfigChanged();
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureFormatChanged(QByteArray)), SLOT(onCaptureConfigChanged()));
@@ -646,6 +642,8 @@ void MainWindow::play(const QString &name)
         mRepeateMax = 0;
     mpPlayer->setRepeat(mRepeateMax);
     mpPlayer->setPriority(Config::instance().decoderPriority());
+    mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
+    mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
     PlayListItem item;
     item.setUrl(mFile);
     item.setTitle(mTitle);
@@ -746,6 +744,11 @@ void MainWindow::onStopPlay()
     mpPlayer->setPriority(Config::instance().decoderPriority());
     if (mpPlayer->currentRepeat() < mpPlayer->repeat())
         return;
+    // use shortcut to replay in EventFilter, the options will not be set, so set here
+    mpPlayer->setPriority(Config::instance().decoderPriority());
+    mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
+    mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
+
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");

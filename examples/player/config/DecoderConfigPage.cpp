@@ -81,6 +81,9 @@ public:
         w->setEnabled(true);
         layout()->addWidget(w);
     }
+    QVariantHash getOptions() const {
+        return mpEditor->exportAsHash();
+    }
 
     void select(bool s) {
         mSelected = s;
@@ -193,6 +196,20 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
 QString DecoderConfigPage::name() const
 {
     return tr("Decoder");
+}
+
+QVariantHash DecoderConfigPage::audioDecoderOptions() const
+{
+    return QVariantHash();
+}
+
+QVariantHash DecoderConfigPage::videoDecoderOptions() const
+{
+    QVariantHash options;
+    foreach (DecoderItemWidget* diw, mDecItems) {
+        options[diw->name()] = diw->getOptions();
+    }
+    return options;
 }
 
 void DecoderConfigPage::apply()

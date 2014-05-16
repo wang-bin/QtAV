@@ -36,6 +36,8 @@ class DecoderConfigPage : public ConfigPageBase
 public:
     explicit DecoderConfigPage(QWidget *parent = 0);
     virtual QString name() const;
+    QVariantHash audioDecoderOptions() const;
+    QVariantHash videoDecoderOptions() const;
 
 public slots:
     virtual void apply();
