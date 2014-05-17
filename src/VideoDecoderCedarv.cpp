@@ -299,6 +299,9 @@ class VideoDecoderCedarv : public VideoDecoderFFmpeg
 public:
 	VideoDecoderCedarv();
     virtual VideoDecoderId id() const;
+    virtual QString description() const{
+        return "Allwinner CedarX video hardware acceleration";
+    }
     bool prepare();
 	bool decode(const QByteArray &encoded);
 	VideoFrame frame();
