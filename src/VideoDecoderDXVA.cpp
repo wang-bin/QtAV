@@ -130,11 +130,20 @@ DEFINE_GUID(DXVA_ModeHEVC_VLD_Main10,               0x107af0e0, 0xef1a, 0x4d19, 
 class VideoDecoderDXVAPrivate;
 class VideoDecoderDXVA : public VideoDecoderFFmpegHW
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
+    Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
+    Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
 public:
     VideoDecoderDXVA();
     virtual VideoDecoderId id() const;
+    virtual QString description() const;
     virtual VideoFrame frame();
+    // properties
+    void setSSE4(bool y);
+    bool SSE4() const;
+    void setSurfaces(int num);
+    int surfaces() const;
 };
 
 extern VideoDecoderId VideoDecoderId_DXVA;
@@ -290,11 +299,13 @@ public:
         render = D3DFMT_UNKNOWN;
         decoder = 0;
         output = D3DFMT_UNKNOWN;
-        surface_count = 0;
         surface_order = 0;
         surface_width = surface_height = 0;
         available = loadDll();
-        copy_uswc = false;
+        // set by user. don't reset in when call destroy
+        surface_auto = true;
+        surface_count = 17;
+        copy_uswc = true;
     }
     virtual ~VideoDecoderDXVAPrivate()
     {
@@ -351,6 +362,7 @@ public:
     D3DFORMAT                    output;
     struct dxva_context hw;
 
+    bool surface_auto;
     unsigned     surface_count;
     unsigned     surface_order;
     int          surface_width;
@@ -374,6 +386,14 @@ VideoDecoderDXVA::VideoDecoderDXVA()
 VideoDecoderId VideoDecoderDXVA::id() const
 {
     return VideoDecoderId_DXVA;
+}
+
+QString VideoDecoderDXVA::description() const
+{
+    DPTR_D(const VideoDecoderDXVA);
+    if (!d.description.isEmpty())
+        return d.description;
+    return "DirectX Video Acceleration";
 }
 
 VideoFrame VideoDecoderDXVA::frame()
@@ -486,6 +506,27 @@ VideoFrame VideoDecoderDXVA::frame()
     return frame;
 }
 
+void VideoDecoderDXVA::setSSE4(bool y)
+{
+    d_func().copy_uswc = y;
+}
+
+bool VideoDecoderDXVA::SSE4() const
+{
+    return d_func().copy_uswc;
+}
+
+void VideoDecoderDXVA::setSurfaces(int num)
+{
+    DPTR_D(VideoDecoderDXVA);
+    d.surface_count = num;
+    d.surface_auto = num <= 0;
+}
+
+int VideoDecoderDXVA::surfaces() const
+{
+    return d_func().surface_count;
+}
 
 /* FIXME it is nearly common with VAAPI */
 bool VideoDecoderDXVAPrivate::getBuffer(void **opaque, uint8_t **data)//vlc_va_t *external, AVFrame *ff)
@@ -571,7 +612,8 @@ bool VideoDecoderDXVAPrivate::D3dCreateDevice()
         description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
                                         sizeof(d3dai.Description), d3dai.Description,
                                         d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
-        copy_uswc = vendor.toLower() == "intel";
+        if (copy_uswc)
+            copy_uswc = vendor.toLower() == "intel";
         qDebug("DXVA2 description:  %s", description.toUtf8().constData());
     }
     ZeroMemory(&d3dpp, sizeof(d3dpp));
@@ -753,20 +795,27 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
         qWarning("AVCodecContext not ready!");
         return false;
     }
-    qDebug("DxCreateVideoDecoder id %d %dx%d", codec_id, w, h);
+    qDebug("DxCreateVideoDecoder id %d %dx%d, surfaces: %u", codec_id, w, h, surface_count);
     width = w;
     height = h;
     /* Allocates all surfaces needed for the decoder */
     surface_width = FFALIGN(width, 16);
-    surface_height = FFALIGN(height, 16);
-    switch (codec_id) {
-    case AV_CODEC_ID_H264:
-        surface_count = 16 + 1;
-        break;
-    default:
-        surface_count = 2 + 1;
-        break;
+    surface_height = FFALIGN(height, 16);    
+    if (surface_auto) {
+        switch (codec_id) {
+        case AV_CODEC_ID_H264:
+            surface_count = 16 + 1;
+            break;
+        default:
+            surface_count = 2 + 1;
+            break;
+        }
     }
+    if (surface_count == 0) {
+        qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
+        surface_count = 17;
+    }
+
     IDirect3DSurface9* surface_list[VA_DXVA2_MAX_SURFACE_COUNT];
     qDebug("%s @%d vs=%p surface_count=%d surface_width=%d surface_height=%d"
            , __FUNCTION__, __LINE__, vs, surface_count, surface_width, surface_height);
@@ -780,7 +829,6 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
                                  surface_list,
                                  NULL))) {
         qWarning("IDirectXVideoAccelerationService_CreateSurface failed");
-        surface_count = 0;
         return false;
     }
     memset(surfaces, 0, sizeof(surfaces));
@@ -852,12 +900,7 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
         return false;
     }
     /* Create the decoder */
-    if (FAILED(vs->CreateVideoDecoder(input,
-                                      &dsc,
-                                      &cfg,
-                                      surface_list,
-                                      surface_count,
-                                      &decoder))) {
+    if (FAILED(vs->CreateVideoDecoder(input, &dsc, &cfg, surface_list, surface_count, &decoder))) {
         qWarning("IDirectXVideoDecoderService_CreateVideoDecoder failed");
         return false;
     }
@@ -871,7 +914,6 @@ void VideoDecoderDXVAPrivate::DxDestroyVideoDecoder()
     for (unsigned i = 0; i < surface_count; i++) {
         SafeRelease(&surfaces[i].d3d);
     }
-    surface_count = 0;
 }
 
 bool VideoDecoderDXVAPrivate::DxResetVideoDecoder()
@@ -891,12 +933,14 @@ void VideoDecoderDXVAPrivate::DxCreateVideoConversion()
         output = render;
         break;
     }
-    gpu_mem.initCache(surface_width);
+    if (copy_uswc)
+        gpu_mem.initCache(surface_width);
 }
 
 void VideoDecoderDXVAPrivate::DxDestroyVideoConversion()
 {
-    gpu_mem.cleanCache();
+    if (copy_uswc)
+        gpu_mem.cleanCache();
 }
 
 // hwaccel_context
@@ -968,3 +1012,5 @@ void VideoDecoderDXVAPrivate::close() {
 }
 
 } //namespace QtAV
+
+#include "VideoDecoderDXVA.moc"
