@@ -68,6 +68,7 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderVAAPI)
     Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
+    Q_PROPERTY(bool derive READ derive WRITE setDerive)
     Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
     Q_PROPERTY(QStringList displayPriority READ displayPriority WRITE setDisplayPriority)
     Q_PROPERTY(DisplayType display READ display WRITE setDisplay)
@@ -86,6 +87,8 @@ public:
     // TODO: QObject property
     void setSSE4(bool y);
     bool SSE4() const;
+    void setDerive(bool y);
+    bool derive() const;
     void setSurfaces(int num);
     int surfaces() const;
     void setDisplayPriority(const QStringList& priority);
@@ -135,17 +138,19 @@ public:
         context_id = VA_INVALID_ID;
         version_major = 0;
         version_minor = 0;
-        nb_surfaces = 0;
+        surfaces = 0;
         surface_order = 0;
         surface_width = 0;
         surface_height = 0;
         surface_chroma = QTAV_PIX_FMT_C(NONE);
-        surfaces = 0;
         image.image_id = VA_INVALID_ID;
-        disable_derive = false;
         supports_derive = false;
-        copy_uswc = true;
         va_pixfmt = QTAV_PIX_FMT_C(VAAPI_VLD);
+        // set by user. don't reset in when call destroy
+        surface_auto = true;
+        nb_surfaces = 0;
+        disable_derive = false;
+        copy_uswc = true;
     }
 
     ~VideoDecoderVAAPIPrivate() {
@@ -186,6 +191,7 @@ public:
 
     /* */
     QMutex  mutex;
+    bool surface_auto;
     int          nb_surfaces;
     unsigned int surface_order;
     int          surface_width;
@@ -235,9 +241,21 @@ bool VideoDecoderVAAPI::SSE4() const
     return d_func().copy_uswc;
 }
 
+void VideoDecoderVAAPI::setDerive(bool y)
+{
+    d_func().disable_derive = !y;
+}
+
+bool VideoDecoderVAAPI::derive() const
+{
+    return !d_func().disable_derive;
+}
+
 void VideoDecoderVAAPI::setSurfaces(int num)
 {
-    d_func().nb_surfaces = num;
+    DPTR_D(VideoDecoderVAAPI);
+    d.nb_surfaces = num;
+    d.surface_auto = num <= 0;
 }
 
 int VideoDecoderVAAPI::surfaces() const
@@ -459,32 +477,36 @@ bool VideoDecoderVAAPIPrivate::open()
     VAProfile i_profile, *p_profiles_list;
     bool b_supported_profile = false;
     int i_profiles_nb = 0;
-    int i_nb_surfaces;
-    /* */
-    switch (codec_ctx->codec_id) {
-    case CODEC_ID_MPEG1VIDEO:
-    case CODEC_ID_MPEG2VIDEO:
-        i_profile = VAProfileMPEG2Main;
-        i_nb_surfaces = 2+1;
-        break;
-    case CODEC_ID_MPEG4:
-        i_profile = VAProfileMPEG4AdvancedSimple;
-        i_nb_surfaces = 2+1;
-        break;
-    case CODEC_ID_WMV3:
-        i_profile = VAProfileVC1Main;
-        i_nb_surfaces = 2+1;
-        break;
-    case CODEC_ID_VC1:
-        i_profile = VAProfileVC1Advanced;
-        i_nb_surfaces = 2+1;
-        break;
-    case CODEC_ID_H264:
-        i_profile = VAProfileH264High;
-        i_nb_surfaces = 16+1;
-        break;
-    default:
-        return false;
+    if (surface_auto) {
+        switch (codec_ctx->codec_id) {
+        case CODEC_ID_MPEG1VIDEO:
+        case CODEC_ID_MPEG2VIDEO:
+            i_profile = VAProfileMPEG2Main;
+            nb_surfaces = 2+1;
+            break;
+        case CODEC_ID_MPEG4:
+            i_profile = VAProfileMPEG4AdvancedSimple;
+            nb_surfaces = 2+1;
+            break;
+        case CODEC_ID_WMV3:
+            i_profile = VAProfileVC1Main;
+            nb_surfaces = 2+1;
+            break;
+        case CODEC_ID_VC1:
+            i_profile = VAProfileVC1Advanced;
+            nb_surfaces = 2+1;
+            break;
+        case CODEC_ID_H264:
+            i_profile = VAProfileH264High;
+            nb_surfaces = 16+1;
+            break;
+        default:
+            return false;
+        }
+    }
+    if (nb_surfaces <= 0) {
+        qWarning("internal error: wrong surface count.  %u auto=%d", nb_surfaces, surface_auto);
+        nb_surfaces = 17;
     }
     config_id  = VA_INVALID_ID;
     context_id = VA_INVALID_ID;
@@ -581,10 +603,7 @@ bool VideoDecoderVAAPIPrivate::open()
         config_id = VA_INVALID_ID;
         return false;
     }
-    if (nb_surfaces <= 0)
-        nb_surfaces = i_nb_surfaces;
     supports_derive = false;
-
     vendor = vaQueryVendorString(display);
     if (!vendor.toLower().contains("intel"))
         copy_uswc = false;
@@ -698,7 +717,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
     if (copy_uswc) {
         if (!gpu_mem.initCache(surface_width)) {
             copy_uswc = false;
-            disable_derive = true;
+            //disable_derive = true;
         }
     }
 
