@@ -153,7 +153,11 @@ QWidget* PropertyEditor::createWidgetForEnum(const QString& name, const QVariant
     if (value.type() == QVariant::Int) {
         box->setCurrentIndex(box->findData(value));
     } else {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
         box->setCurrentText(value.toString());
+#else
+        box->setCurrentIndex(box->findText(value.toString()));
+#endif
     }
     connect(box, SIGNAL(currentIndexChanged(QString)), SLOT(onEnumChange(QString)));
     return box;

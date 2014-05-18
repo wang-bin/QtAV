@@ -22,6 +22,7 @@
 #ifndef DECODERCONFIGPAGE_H
 #define DECODERCONFIGPAGE_H
 
+#include <QtCore/QVariant>
 #include <QWidget>
 #include "ConfigPageBase.h"
 
