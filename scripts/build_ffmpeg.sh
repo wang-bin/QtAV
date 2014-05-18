@@ -1,6 +1,7 @@
 #/bin/bash
 
 # Author: wbsecg1@gmail.com 2013-2014
+echo "This is part of QtAV project. Get the latest script from https://github.com/wang-bin/QtAV/tree/master/scripts"
 
 # Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
 # To build ffmpeg for android, run "./build_ffmpeg android". default is armv7-a.
@@ -53,8 +54,8 @@ VDA="--enable-vda" # --enable-hwaccel=h264_vda"
 
 function setup_vc_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
-  TOOLCHAIN_OPT=
-  PLATFORM_OPT="--toolchain=msvc"
+  #TOOLCHAIN_OPT=
+  PLATFORM_OPT="$DXVA --toolchain=msvc"
   CL_INFO=`cl 2>&1 |grep -i Microsoft`
   CL_VER=`echo $CL_INFO |sed 's,.* \([0-9]*\)\.[0-9]*\..*,\1,g'`
   echo "cl version: $CL_VER"
@@ -74,7 +75,7 @@ function setup_vc_env() {
 }
 
 function setup_icc_env() {
-  TOOLCHAIN_OPT=
+  #TOOLCHAIN_OPT=
   PLATFORM_OPT="--toolchain=icl"
 }
 
@@ -89,8 +90,8 @@ function setup_android_env() {
   ANDROID_TOOLCHAIN="/tmp/ndk-toolchain" #$NDK_ROOT/toolchains/arm-linux-androideabi-4.7/prebuilt/linux-x86_64/bin
   ANDROID_SYSROOT="$ANDROID_TOOLCHAIN/sysroot" #"$NDK_ROOT/platforms/android-14/arch-arm"
 
-  ANDROID_CFLAGS="-O3 -Wall -mthumb -pipe -fpic -fasm \
-  -fstrict-aliasing -Werror=strict-aliasing \
+  ANDROID_CFLAGS="-Wall -mthumb -pipe -fpic -fasm \
+  -fstrict-aliasing \
   -fmodulo-sched -fmodulo-sched-allow-regmoves \
   -Wno-psabi -Wa,--noexecstack \
   -D__ARM_ARCH_5__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5TE__ \
@@ -143,18 +144,29 @@ function setup_maemo6_env() {
   INSTALL_DIR=sdk-maemo6
 }
 
-platform_is Darwin && PLATFORM_OPT="$VDA --cc=clang --cxx=clang++"
-platform_is Linux && PLATFORM_OPT="$VAAPI $VDPAU"
-platform_is MinGW && PLATFORM_OPT="$DXVA"
-platform_is MSYS && PLATFORM_OPT="$DXVA"
+if target_is android; then
+  setup_android_env
+elif target_is maemo5; then
+  setup_maemo5_env
+elif target_is maemo6; then
+  setup_maemo6_env
+else
+  if platform_is Sailfish; then
+    echo "Build in Sailfish SDK"
+    INSTALL_DIR=sdk-sailfish
+  elif platform_is Linux; then
+    PLATFORM_OPT="$VAAPI $VDPAU"
+  elif platform_is Darwin; then
+    PLATFORM_OPT="$VDA --cc=clang --cxx=clang++"
+  fi
+fi
 
-target_is android && setup_android_env
-target_is maemo5 && setup_maemo5_env
-target_is maemo6 && setup_maemo6_env
-
-TOOLCHAIN_OPT="--disable-iconv --extra-cflags=\"-O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
-
-target_is vc && setup_vc_env
+if target_is vc; then
+  setup_vc_env
+else
+  TOOLCHAIN_OPT="--extra-cflags=\"-O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
+  platform_is MinGW || platform_is MSYS && TOOLCHAIN_OPT="$DXVA --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
+fi
 
 CONFIGURE="./configure --disable-static --enable-shared --enable-runtime-cpudetect --enable-avresample --disable-muxers --disable-encoders --enable-hwaccels $PLATFORM_OPT $TOOLCHAIN_OPT"
 
