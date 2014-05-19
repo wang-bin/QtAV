@@ -22,7 +22,9 @@
 #include "QtAV/VideoDecoderFFmpegHW.h"
 #include "private/VideoDecoderFFmpegHW_p.h"
 
+#include <assert.h>
 #include <algorithm>
+#include <QtCore/QLibrary>
 #include <QtCore/QStringList>
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
@@ -32,12 +34,10 @@
 #include <libavcodec/vaapi.h>
 
 //TODO: use dllapi
-#if QTAV_HAVE(VAAPI_DRM)
 #include <fcntl.h> //open()
 #include <unistd.h> //close()
 //#include <xf86drm.h>
-#include <va/va_drm.h>
-#endif
+//#include <va/va_drm.h>
 #if QTAV_HAVE(VAAPI_X11)
 #include <X11/Xlib.h>
 #include <va/va_x11.h>
@@ -115,15 +115,42 @@ typedef struct
     //vlc_mutex_t *p_lock;
 } va_surface_t;
 
+class VAAPI_DRM
+{
+public:
+    VAAPI_DRM() {
+        m_lib.setFileName("va-drm");
+        if (m_lib.load()) {
+            qDebug("libva-drm loaded");
+        }
+    }
+    ~VAAPI_DRM() {
+        if (m_lib.isLoaded()){
+            m_lib.unload();
+        }
+    }
 
-class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate
+    bool isLoaded() const {
+        return m_lib.isLoaded();
+    }
+    VADisplay vaGetDisplayDRM(int fd) {
+        typedef VADisplay vaGetDisplayDRM_t(int fd);
+        static vaGetDisplayDRM_t* fp_vaGetDisplayDRM = (vaGetDisplayDRM_t*)m_lib.resolve("vaGetDisplayDRM");
+        assert(fp_vaGetDisplayDRM);
+        return fp_vaGetDisplayDRM(fd);
+    }
+private:
+    QLibrary m_lib;
+};
+
+class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate, public VAAPI_DRM
 {
 public:
     VideoDecoderVAAPIPrivate() {
-#if QTAV_HAVE(VAAPI_DRM)
-        display_type = VideoDecoderVAAPI::DRM;
+        if (VAAPI_DRM::isLoaded()) {
+            display_type = VideoDecoderVAAPI::DRM;
+        }
         drm_fd = -1;
-#endif
 #if QTAV_HAVE(VAAPI_X11)
         display_type = VideoDecoderVAAPI::X11;
         display_x11 = 0;
@@ -170,9 +197,7 @@ public:
 #if QTAV_HAVE(VAAPI_X11)
     Display *display_x11;
 #endif
-#if QTAV_HAVE(VAAPI_DRM)
     int drm_fd;
-#endif
 #if QTAV_HAVE(VAAPI_GLX)
     void* glxSurface;
     GLuint texture;
@@ -474,9 +499,8 @@ bool VideoDecoderVAAPIPrivate::open()
 {
     if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
         codec_ctx->pix_fmt = va_pixfmt;
-    VAProfile i_profile, *p_profiles_list;
+    VAProfile i_profile = VAProfileNone;
     bool b_supported_profile = false;
-    int i_profiles_nb = 0;
     if (surface_auto) {
         switch (codec_ctx->codec_id) {
         case CODEC_ID_MPEG1VIDEO:
@@ -512,20 +536,21 @@ bool VideoDecoderVAAPIPrivate::open()
     context_id = VA_INVALID_ID;
     image.image_id = VA_INVALID_ID;
     /* Create a VA display */
+    display = 0;
     foreach (VideoDecoderVAAPI::DisplayType dt, display_priority) {
         if (dt == VideoDecoderVAAPI::DRM) {
-            qDebug("vaGetDisplay DRM...............");
-// get drm use udev: https://gitorious.org/hwdecode-demos/hwdecode-demos/commit/d591cf14b83bedc8a5fa9f2fcb53d279e2f76d7f?diffmode=sidebyside
-#if QTAV_HAVE(VAAPI_DRM)
-            // try drmOpen()?
-            drm_fd = ::open("/dev/dri/card0", O_RDWR);
-            if(drm_fd == -1) {
-                qWarning("Could not access rendering device");
-                continue;
+            if (VAAPI_DRM::isLoaded()) {
+                qDebug("vaGetDisplay DRM...............");
+    // get drm use udev: https://gitorious.org/hwdecode-demos/hwdecode-demos/commit/d591cf14b83bedc8a5fa9f2fcb53d279e2f76d7f?diffmode=sidebyside
+                // try drmOpen()?
+                drm_fd = ::open("/dev/dri/card0", O_RDWR);
+                if(drm_fd == -1) {
+                    qWarning("Could not access rendering device");
+                    continue;
+                }
+                display = vaGetDisplayDRM(drm_fd);
+                display_type = VideoDecoderVAAPI::DRM;
             }
-            display = vaGetDisplayDRM(drm_fd);
-#endif //QTAV_HAVE(VAAPI_DRM)
-            display_type = VideoDecoderVAAPI::DRM;
         } else if (dt == VideoDecoderVAAPI::X11) {
             qDebug("vaGetDisplay X11...............");
 #if QTAV_HAVE(VAAPI_X11)
@@ -567,8 +592,8 @@ bool VideoDecoderVAAPIPrivate::open()
         return false;
     }
     /* Check if the selected profile is supported */
-    i_profiles_nb = vaMaxNumProfiles(display);
-    p_profiles_list = (VAProfile*)calloc(i_profiles_nb, sizeof(VAProfile));
+    int i_profiles_nb = vaMaxNumProfiles(display);
+    VAProfile *p_profiles_list = (VAProfile*)calloc(i_profiles_nb, sizeof(VAProfile));
     if (!p_profiles_list)
         return false;
 
@@ -806,12 +831,10 @@ void VideoDecoderVAAPIPrivate::close()
         display_x11 = 0;
     }
 #endif
-#if QTAV_HAVE(VAAPI_DRM)
     if (drm_fd >= 0) {
         ::close(drm_fd);
         drm_fd = -1;
     }
-#endif
 }
 
 bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)

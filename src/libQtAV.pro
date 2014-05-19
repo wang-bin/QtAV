@@ -170,10 +170,10 @@ config_vaapi* {
         DEFINES *= QTAV_HAVE_VAAPI_X11=1
         LIBS += -lva-x11
     }
-    config_vaapi-drm {
-        DEFINES *= QTAV_HAVE_VAAPI_DRM=1
-        LIBS += -lva-drm
-    }
+    #config_vaapi-drm {
+    #   DEFINES *= QTAV_HAVE_VAAPI_DRM=1
+    #   LIBS += -lva-drm
+    #}
     config_vaapi-glx {
         DEFINES *= QTAV_HAVE_VAAPI_GLX=1
         LIBS *= -lva-glx
