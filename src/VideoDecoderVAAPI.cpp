@@ -500,33 +500,34 @@ bool VideoDecoderVAAPIPrivate::open()
     if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
         codec_ctx->pix_fmt = va_pixfmt;
     VAProfile i_profile = VAProfileNone;
-    bool b_supported_profile = false;
+    int i_surfaces = 0;
+    switch (codec_ctx->codec_id) {
+    case CODEC_ID_MPEG1VIDEO:
+    case CODEC_ID_MPEG2VIDEO:
+        i_profile = VAProfileMPEG2Main;
+        i_surfaces = 2+1;
+        break;
+    case CODEC_ID_MPEG4:
+        i_profile = VAProfileMPEG4AdvancedSimple;
+        i_surfaces = 2+1;
+        break;
+    case CODEC_ID_WMV3:
+        i_profile = VAProfileVC1Main;
+        i_surfaces = 2+1;
+        break;
+    case CODEC_ID_VC1:
+        i_profile = VAProfileVC1Advanced;
+        i_surfaces = 2+1;
+        break;
+    case CODEC_ID_H264:
+        i_profile = VAProfileH264High;
+        i_surfaces = 16+1;
+        break;
+    default:
+        return false;
+    }
     if (surface_auto) {
-        switch (codec_ctx->codec_id) {
-        case CODEC_ID_MPEG1VIDEO:
-        case CODEC_ID_MPEG2VIDEO:
-            i_profile = VAProfileMPEG2Main;
-            nb_surfaces = 2+1;
-            break;
-        case CODEC_ID_MPEG4:
-            i_profile = VAProfileMPEG4AdvancedSimple;
-            nb_surfaces = 2+1;
-            break;
-        case CODEC_ID_WMV3:
-            i_profile = VAProfileVC1Main;
-            nb_surfaces = 2+1;
-            break;
-        case CODEC_ID_VC1:
-            i_profile = VAProfileVC1Advanced;
-            nb_surfaces = 2+1;
-            break;
-        case CODEC_ID_H264:
-            i_profile = VAProfileH264High;
-            nb_surfaces = 16+1;
-            break;
-        default:
-            return false;
-        }
+        nb_surfaces = i_surfaces;
     }
     if (nb_surfaces <= 0) {
         qWarning("internal error: wrong surface count.  %u auto=%d", nb_surfaces, surface_auto);
@@ -597,6 +598,7 @@ bool VideoDecoderVAAPIPrivate::open()
     if (!p_profiles_list)
         return false;
 
+    bool b_supported_profile = false;
     VAStatus status = vaQueryConfigProfiles(display, p_profiles_list, &i_profiles_nb);
     if (status == VA_STATUS_SUCCESS) {
         for (int i = 0; i < i_profiles_nb; i++) {
