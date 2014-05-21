@@ -499,6 +499,7 @@ bool VideoDecoderVAAPIPrivate::open()
 {
     if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
         codec_ctx->pix_fmt = va_pixfmt;
+#define VAProfileNone ((VAProfile)-1) //maybe not defined for old va
     VAProfile i_profile = VAProfileNone;
     int i_surfaces = 0;
     switch (codec_ctx->codec_id) {
