@@ -71,6 +71,7 @@ public:
         }
     }
     bool initWithContext(const QGLContext *ctx) {
+        Q_UNUSED(ctx);
 #if !NO_QGL_SHADER
         shader_program = new QGLShaderProgram(ctx, 0);
 #endif

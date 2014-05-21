@@ -182,7 +182,7 @@ int bytesOfGLFormat(GLenum format, GLenum dataType = GL_UNSIGNED_BYTE)
       }
 }
 
-static GLint GetGLInternalFormat(GLint data_format, int bpp)
+GLint GetGLInternalFormat(GLint data_format, int bpp)
 {
     if (bpp != 2)
         return data_format;
@@ -543,7 +543,7 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
         }
     }
     // effective size may change even if plane size not changed
-    if (update_textures || video_frame.size() != plane0Size) { //
+    if (update_textures || video_frame.bytesPerLine(0) != plane0Size.width() || video_frame.height() != plane0Size.height()) { //
         update_textures = true;
         //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
         texture_size.resize(fmt.planeCount());
@@ -559,7 +559,8 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
             effective_tex_width_ratio = qMin((qreal)1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
         }
         qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
-        plane0Size = video_frame.size();
+        plane0Size.setWidth(video_frame.bytesPerLine(0));
+        plane0Size.setHeight(video_frame.height());
     }
     if (update_textures) {
         initTextures(fmt);
