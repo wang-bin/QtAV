@@ -304,7 +304,7 @@ public:
         available = loadDll();
         // set by user. don't reset in when call destroy
         surface_auto = true;
-        surface_count = 17;
+        surface_count = 0;
         copy_uswc = true;
     }
     virtual ~VideoDecoderDXVAPrivate()
@@ -472,7 +472,7 @@ VideoFrame VideoDecoderDXVA::frame()
     }
     const VideoFormat fmt(pixfmt);
     VideoFrame frame;
-    if (d.copy_uswc && GPUMemCopy::isAvailable()) {
+    if (d.copy_uswc && d.gpu_mem.isReady()) {
         int yuv_size = 0;
         if (pixfmt == VideoFormat::Format_NV12)
             yuv_size = pitch[0]*d.surface_height*3/2;

@@ -406,7 +406,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         std::swap(pitch[1], pitch[2]);
     }
     VideoFrame frame;
-    if (d.copy_uswc && GPUMemCopy::isAvailable()) {
+    if (d.copy_uswc && d.gpu_mem.isReady()) {
         int yuv_size = 0;
         if (pixfmt == VideoFormat::Format_NV12)
             yuv_size = pitch[0]*d.surface_height*3/2;
@@ -744,7 +744,8 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
 
     if (copy_uswc) {
         if (!gpu_mem.initCache(surface_width)) {
-            copy_uswc = false;
+            // only set by user (except disabling copy_uswc for non-intel gpu)
+            //copy_uswc = false;
             //disable_derive = true;
         }
     }

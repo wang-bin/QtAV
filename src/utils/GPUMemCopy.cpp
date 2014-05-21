@@ -121,6 +121,7 @@ bool GPUMemCopy::isAvailable()
 }
 
 GPUMemCopy::GPUMemCopy()
+    : mInitialized(false)
 {
 #if QTAV_HAVE(SSE2)
     mCache.buffer = 0;
@@ -133,18 +134,26 @@ GPUMemCopy::~GPUMemCopy()
     cleanCache();
 }
 
+bool GPUMemCopy::isReady() const
+{
+    return mInitialized && GPUMemCopy::isAvailable();
+}
+
 bool GPUMemCopy::initCache(unsigned width)
 {
+    mInitialized = false;
 #if QTAV_HAVE(SSE2)
     mCache.size = std::max<size_t>((width + 0x0f) & ~ 0x0f, CACHED_BUFFER_SIZE);
     mCache.buffer = (unsigned char*)Memalign(16, mCache.size);
-    return !!mCache.buffer;
+    mInitialized = !!mCache.buffer;
+    return mInitialized;
 #endif
     return false;
 }
 
 void GPUMemCopy::cleanCache()
 {
+    mInitialized = false;
 #if QTAV_HAVE(SSE2)
     if (mCache.buffer) {
         Free(mCache.buffer);
@@ -179,8 +188,8 @@ void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width,
     pLoad  = (__m128i *)pSrc;
     pStore = (__m128i *)pDest;
 
-    const bool src_unaligned = (-(uintptr_t)pSrc) & 0x0f;
-    const bool dst_unaligned = ((intptr_t)pDest & 0x0f) != 0;
+    const bool src_unaligned = ((intptr_t)pSrc) & 0x0f;
+    const bool dst_unaligned = ((intptr_t)pDest & 0x0f);
     //if (src_unaligned || dst_unaligned)
       //  qDebug("===========unaligned: src %d, dst: %d,  extraPitch: %d", src_unaligned, dst_unaligned, extraPitch);
     //  COPY THROUGH 4KB CACHED BUFFER

@@ -32,12 +32,14 @@ public:
     static bool isAvailable();
     GPUMemCopy();
     ~GPUMemCopy();
-
+    // available and initialized
+    bool isReady() const;
     bool initCache(unsigned int width);
     void cleanCache();
     void copyFrame(void *pSrc, void *pDest, unsigned int width, unsigned int height, unsigned int pitch);
     //memcpy
 private:
+    bool mInitialized;
     typedef struct {
         unsigned char* buffer;
         size_t size;
