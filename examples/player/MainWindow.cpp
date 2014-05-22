@@ -95,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpPlayer(0)
   , mpRenderer(0)
   , mpTempRenderer(0)
+  , mpStatisticsView(0)
 {
     mpChannelAction = 0;
     mpChannelMenu = 0;
@@ -117,6 +118,10 @@ MainWindow::~MainWindow()
         mpVolumeSlider->close();
         delete mpVolumeSlider;
         mpVolumeSlider = 0;
+    }
+    if (mpStatisticsView) {
+        delete mpStatisticsView;
+        mpStatisticsView = 0;
     }
 }
 
@@ -737,6 +742,9 @@ void MainWindow::onStartPlay()
     item.setDuration(mpPlayer->duration());
     mpHistory->setItemAt(item, 0);
     updateChannelMenu();
+
+    if (mpStatisticsView && mpStatisticsView->isVisible())
+        mpStatisticsView->setStatistics(mpPlayer->statistics());
 }
 
 void MainWindow::onStopPlay()
@@ -1131,11 +1139,11 @@ void MainWindow::tryShowControlBar()
 
 void MainWindow::showInfo()
 {
-    // why crash if on stack
-    static StatisticsView *sv = new StatisticsView;
+    if (!mpStatisticsView)
+        mpStatisticsView = new StatisticsView();
     if (mpPlayer)
-        sv->setStatistics(mpPlayer->statistics());
-    sv->show();
+        mpStatisticsView->setStatistics(mpPlayer->statistics());
+    mpStatisticsView->show();
 }
 
 void MainWindow::onTimeSliderHover(int pos, int value)

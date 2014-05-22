@@ -124,16 +124,26 @@ StatisticsView::StatisticsView(QWidget *parent) :
     setModal(false);
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
     mpView = new QTreeWidget();
-    mpView->setHeaderHidden(true);
+    mpView->setAnimated(true);
+    mpView->setHeaderHidden(false);
     mpView->setColumnCount(2);
+    mpView->headerItem()->setText(0, tr("Key"));
+    mpView->headerItem()->setText(1, tr("Value"));
     initBaseItems(&mBaseItems);
     mpView->addTopLevelItems(mBaseItems);
+    mpMetadata = new QTreeWidgetItem();
+    mpMetadata->setText(0, QObject::tr("Metadata"));
+    mpView->addTopLevelItem(mpMetadata);
     QTreeWidgetItem *item = createNodeWithItems(mpView, QObject::tr("Video"), getVideoInfoKeys(), &mVideoItems);
     mpFPS = item->child(7);
     //mpVideoBitRate =
+    mpVideoMetadata = new QTreeWidgetItem(item);
+    mpVideoMetadata->setText(0, QObject::tr("Metadata"));
     mpView->addTopLevelItem(item);
     item = createNodeWithItems(mpView, QObject::tr("Audio"), getAudioInfoKeys(), &mAudioItems);
     //mpAudioBitRate =
+    mpAudioMetadata = new QTreeWidgetItem(item);
+    mpAudioMetadata->setText(0, QObject::tr("Metadata"));
     mpView->addTopLevelItem(item);
     mpView->resizeColumnToContents(0); //call this after content is done
 
@@ -176,6 +186,9 @@ void StatisticsView::setStatistics(const Statistics& s)
         }
         ++i;
     }
+    setMetadataItem(mpMetadata, s.metadata);
+    setMetadataItem(mpVideoMetadata, s.video.metadata);
+    setMetadataItem(mpAudioMetadata, s.audio.metadata);
 }
 
 void StatisticsView::hideEvent(QHideEvent *e)
@@ -223,4 +236,18 @@ QTreeWidgetItem* StatisticsView::createNodeWithItems(QTreeWidget *view, const QS
     }
     nodeItem->setExpanded(true);
     return nodeItem;
+}
+
+void StatisticsView::setMetadataItem(QTreeWidgetItem *parent, const QHash<QString, QString> &metadata)
+{
+    if (parent->childCount() > 0) {
+        QList<QTreeWidgetItem *> children(parent->takeChildren());
+        qDeleteAll(children);
+    }
+    QHash<QString, QString>::const_iterator it = metadata.constBegin();
+    for (;it != metadata.constEnd(); ++it) {
+        QTreeWidgetItem *item = new QTreeWidgetItem(parent);
+        item->setText(0, it.key());
+        item->setText(1, it.value());
+    }
 }

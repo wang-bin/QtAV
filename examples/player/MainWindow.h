@@ -43,6 +43,7 @@ class Slider;
 class PlayList;
 class DecoderConfigPage;
 class VideoEQConfigPage;
+class StatisticsView;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -174,6 +175,7 @@ private:
     PlayList *mpPlayList, *mpHistory;
 
     QPointF mGlobalMouse;
+    StatisticsView *mpStatisticsView;
 };
 
 
