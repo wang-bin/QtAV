@@ -23,6 +23,7 @@
 #define QTAV_STATISTICS_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtCore/QHash>
 #include <QtCore/QTime>
 #include <QtCore/QQueue>
 #include <QtCore/QSharedData>
@@ -48,6 +49,7 @@ public:
     int bit_rate;
     QString format;
     QTime start_time, duration;
+    QHash<QString, QString> metadata;
     //TODO: filter, decoder, resampler info etc.
     class Common {
     public:
@@ -68,6 +70,7 @@ public:
             audio_only audio;
             video_only video;
         } only;*/
+        QHash<QString, QString> metadata;
     private:
         class Private : public QSharedData {
         };

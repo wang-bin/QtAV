@@ -1181,6 +1181,11 @@ void AVPlayer::initStatistics()
     mStatistics.duration = QTime(0, 0, 0).addMSecs((int)duration());
     if (video_dec)
         mStatistics.video.decoder = VideoDecoderFactory::name(video_dec->id()).c_str();
+    mStatistics.metadata.clear();
+    AVDictionaryEntry *tag = NULL;
+    while ((tag = av_dict_get(formatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+        mStatistics.metadata.insert(tag->key, tag->value);
+    }
     struct common_statistics_t {
         int stream_idx;
         AVCodecContext *ctx;
@@ -1209,6 +1214,10 @@ void AVPlayer::initStatistics()
         cs.st->bit_rate = cs.ctx->bit_rate; //formatCtx
         cs.st->frames = stream->nb_frames;
         //qDebug("time: %f~%f, nb_frames=%lld", cs.st->start_time, cs.st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
+        tag = NULL;
+        while ((tag = av_dict_get(stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+            cs.st->metadata.insert(tag->key, tag->value);
+        }
     }
     if (demuxer.audioStream() >= 0) {
         AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
