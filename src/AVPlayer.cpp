@@ -58,6 +58,19 @@ namespace QtAV {
 static const int kPosistionCheckMS = 500;
 static const qint64 kSeekMS = 10000;
 
+static bool correct_audio_channels(AVCodecContext *ctx) {
+    if (ctx->channels <= 0) {
+        if (ctx->channel_layout) {
+            ctx->channels = av_get_channel_layout_nb_channels(ctx->channel_layout);
+        }
+    } else {
+        if (!ctx->channel_layout) {
+            ctx->channel_layout = av_get_default_channel_layout(ctx->channels);
+        }
+    }
+    return ctx->channel_layout > 0 && ctx->channels > 0;
+}
+
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent)
   , loaded(false)
@@ -1199,10 +1212,12 @@ void AVPlayer::initStatistics()
     }
     if (demuxer.audioStream() >= 0) {
         AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
+        correct_audio_channels(aCodecCtx);
         mStatistics.audio_only.block_align = aCodecCtx->block_align;
         mStatistics.audio_only.channels = aCodecCtx->channels;
         char cl[128]; //
-        av_get_channel_layout_string(cl, sizeof(cl), -1, aCodecCtx->channel_layout); //TODO: ff version
+        // nb_channels -1: will use av_get_channel_layout_nb_channels
+        av_get_channel_layout_string(cl, sizeof(cl), aCodecCtx->channels, aCodecCtx->channel_layout); //TODO: ff version
         mStatistics.audio_only.channel_layout = cl;
         mStatistics.audio_only.sample_fmt = av_get_sample_fmt_name(aCodecCtx->sample_fmt);
         mStatistics.audio_only.frame_number = aCodecCtx->frame_number;
@@ -1260,6 +1275,7 @@ bool AVPlayer::setupAudioThread()
         //masterClock()->setClockType(AVClock::ExternalClock);
         //return;
     } else {
+        correct_audio_channels(aCodecCtx);
         AudioFormat af;
         af.setSampleRate(aCodecCtx->sample_rate);
         af.setSampleFormatFFmpeg(aCodecCtx->sample_fmt);
