@@ -141,17 +141,6 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     QVBoxLayout *vb = new QVBoxLayout;
     setLayout(vb);
 
-    QLabel *label = new QLabel(tr("Threads"));
-    QSpinBox *sb = new QSpinBox;
-    sb->setEnabled(false);
-    sb->setMinimum(0);
-    sb->setMaximum(16);
-    sb->setValue(Config::instance().decodingThreads());
-    QHBoxLayout *hb = new QHBoxLayout;
-    hb->addWidget(label);
-    hb->addWidget(sb);
-    vb->addLayout(hb);
-
     QFrame *frame = new QFrame();
     frame->setFrameShape(QFrame::HLine);
     vb->addWidget(frame);
@@ -184,7 +173,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     mpDown->setText("Down");
     connect(mpDown, SIGNAL(clicked()), SLOT(priorityDown()));
 
-    hb = new QHBoxLayout;
+    QHBoxLayout *hb = new QHBoxLayout;
     hb->addWidget(mpUp);
     hb->addWidget(mpDown);
     vb->addLayout(hb);

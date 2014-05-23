@@ -25,6 +25,7 @@
 #include <QtCore/QMetaProperty>
 #include <QtCore/QMetaEnum>
 
+class QAction;
 class QWidget;
 class PropertyEditor : public QObject
 {
@@ -46,10 +47,6 @@ public:
     QVariantHash exportAsHash();
     QString exportAsConfig(); //json like
 
-signals:
-
-public slots:
-
 private:
     /*!
      * name is property name.
@@ -57,6 +54,7 @@ private:
      * 2. add a widget and set value
      * 3. connect widget value change signal to a slot
      */
+    QWidget* createWidgetForFlags(const QString& name, const QVariant& value, QMetaEnum me, QWidget* parent = 0);
     QWidget* createWidgetForEnum(const QString& name, const QVariant& value, QMetaEnum me, QWidget* parent = 0);
     QWidget* createWidgetForInt(const QString& name, int value, QWidget* parent = 0);
     QWidget* createWidgetForReal(const QString& name, qreal value, QWidget* parent = 0);
@@ -67,6 +65,7 @@ private:
     void updatePropertyValue(const QString& name, const QVariant& value);
 private slots:
     // updatePropertyValue
+    void onFlagChange(QAction *action);
     void onEnumChange(int value);
     void onIntChange(int value);
     void onRealChange(qreal value);

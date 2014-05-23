@@ -26,7 +26,10 @@
 #include <QCheckBox>
 #include <QLayout>
 #include <QScrollArea>
+#include <QToolButton>
 #include <QtDebug>
+
+#include "../ClickableMenu.h"
 
 PropertyEditor::PropertyEditor(QObject *parent) :
     QObject(parent)
@@ -112,8 +115,12 @@ QWidget* PropertyEditor::buildUi()
             continue;
         value = mProperties[mp.name()];
         if (mp.isEnumType()) {
-            gl->addWidget(new QLabel(tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
-            gl->addWidget(createWidgetForEnum(mp.name(), value, mp.enumerator()), row, 1, Qt::AlignLeft | Qt::AlignVCenter);
+            if (mp.isFlagType()) {
+                gl->addWidget(createWidgetForFlags(mp.name(), value, mp.enumerator()), row, 0, Qt::AlignLeft | Qt::AlignVCenter);
+            } else {
+                gl->addWidget(new QLabel(tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
+                gl->addWidget(createWidgetForEnum(mp.name(), value, mp.enumerator()), row, 1, Qt::AlignLeft | Qt::AlignVCenter);
+            }
         } else if (mp.type() == QVariant::Int || mp.type() == QVariant::UInt || mp.type() == QVariant::LongLong || mp.type() == QVariant::ULongLong){
             gl->addWidget(new QLabel(tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
             gl->addWidget(createWidgetForInt(mp.name(), value.toInt()), row, 1, Qt::AlignLeft | Qt::AlignVCenter);
@@ -139,6 +146,26 @@ QVariantHash PropertyEditor::exportAsHash()
 QString PropertyEditor::exportAsConfig()
 {
     return "";
+}
+
+QWidget* PropertyEditor::createWidgetForFlags(const QString& name, const QVariant& value, QMetaEnum me, QWidget* parent)
+{
+    mProperties[name] = value;
+    QToolButton *btn = new QToolButton(parent);
+    btn->setObjectName(name);
+    btn->setText(name);
+    btn->setPopupMode(QToolButton::InstantPopup);
+    ClickableMenu *menu = new ClickableMenu(btn);
+    menu->setObjectName(name);
+    btn->setMenu(menu);
+    for (int i = 0; i < me.keyCount(); ++i) {
+        QAction * a = menu->addAction(me.key(i));
+        a->setCheckable(true);
+        a->setData(me.value(i));
+        a->setChecked(value.toInt() & me.value(i));
+    }
+    connect(menu, SIGNAL(triggered(QAction*)), SLOT(onFlagChange(QAction*)));
+    return btn;
 }
 
 QWidget* PropertyEditor::createWidgetForEnum(const QString& name, const QVariant& value, QMetaEnum me, QWidget* parent)
@@ -211,6 +238,18 @@ void PropertyEditor::updatePropertyValue(const QString &name, const QVariant &va
         return;
     qDebug() << name << " >>> " << value;
     mProperties[name] = value;
+}
+
+void PropertyEditor::onFlagChange(QAction *action)
+{
+    int value = mProperties[sender()->objectName()].toInt();
+    int flag = action->data().toInt();
+    if (action->isChecked()) {
+        value |= flag;
+    } else {
+        value &= ~flag;
+    }
+    updatePropertyValue(sender()->objectName(), value);
 }
 
 void PropertyEditor::onEnumChange(int value)

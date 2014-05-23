@@ -78,7 +78,6 @@ public:
         QSettings settings(file, QSettings::IniFormat);
         settings.beginGroup("decoder");
         settings.beginGroup("video");
-        decode_threads = settings.value("threads", 0).toInt();
         QString decs_default("FFmpeg");
         QVector<QtAV::VideoDecoderId> all_decs_id = GetRegistedVideoDecoderIds();
         if (all_decs_id.contains(VideoDecoderId_CUDA))
@@ -121,7 +120,6 @@ public:
         QSettings settings(file, QSettings::IniFormat);
         settings.beginGroup("decoder");
         settings.beginGroup("video");
-        settings.setValue("threads", decode_threads);
         settings.setValue("priority", idsToNames(video_decoder_priority).join(" "));
         settings.setValue("all", idsToNames(video_decoder_all).join(" "));
         settings.endGroup();
@@ -136,7 +134,6 @@ public:
     QString dir;
     QString file;
 
-    int decode_threads;
     QVector<QtAV::VideoDecoderId> video_decoder_priority;
     QVector<QtAV::VideoDecoderId> video_decoder_all;
 
@@ -171,27 +168,11 @@ QString Config::defaultDir() const
 void Config::reload()
 {
     mpData->load();
-    emit decodingThreadsChanged(mpData->decode_threads);
     emit decoderPriorityChanged(mpData->video_decoder_priority);
     emit registeredDecodersChanged(mpData->video_decoder_all);
     emit captureDirChanged(mpData->capture_dir);
     emit captureFormatChanged(mpData->capture_fmt);
     emit captureQualityChanged(mpData->capture_quality);
-}
-
-int Config::decodingThreads() const
-{
-    return mpData->decode_threads;
-}
-
-Config& Config::decodingThreads(int n)
-{
-    if (mpData->decode_threads == n)
-        return *this;
-    mpData->decode_threads = n;
-    emit decodingThreadsChanged(n);
-    mpData->save();
-    return *this;
 }
 
 QVector<QtAV::VideoDecoderId> Config::decoderPriority() const

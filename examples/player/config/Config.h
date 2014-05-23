@@ -46,9 +46,6 @@ public:
     QString defaultDir() const;
     //void loadFromFile(const QString& file);
 
-    int decodingThreads() const;
-    Config& decodingThreads(int n);
-
     QVector<QtAV::VideoDecoderId> decoderPriority() const;
     Config& decoderPriority(const QVector<QtAV::VideoDecoderId>& p);
     QStringList decoderPriorityNames() const;
