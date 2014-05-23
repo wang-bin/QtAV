@@ -45,7 +45,7 @@ void PropertyEditor::getProperties(QObject *obj)
         mMetaProperties.append(mp);
         QVariant v(mp.read(obj));
         if (mp.isEnumType()) {
-            mProperties.insert(mp.name(), mp.enumerator().valueToKey(v.toInt())); //always use string
+            mProperties.insert(mp.name(), v.toInt());//mp.enumerator().valueToKey(v.toInt())); //always use string
         } else {
             mProperties.insert(mp.name(), v);
         }
@@ -159,7 +159,7 @@ QWidget* PropertyEditor::createWidgetForEnum(const QString& name, const QVariant
         box->setCurrentIndex(box->findText(value.toString()));
 #endif
     }
-    connect(box, SIGNAL(currentIndexChanged(QString)), SLOT(onEnumChange(QString)));
+    connect(box, SIGNAL(currentIndexChanged(int)), SLOT(onEnumChange(int)));
     return box;
 }
 
@@ -209,37 +209,32 @@ void PropertyEditor::updatePropertyValue(const QString &name, const QVariant &va
         return;
     if (!mProperties.contains(name))
         return;
-    qDebug("%s @%d", __FUNCTION__, __LINE__);
     qDebug() << name << " >>> " << value;
     mProperties[name] = value;
 }
 
-void PropertyEditor::onEnumChange(const QString& value)
+void PropertyEditor::onEnumChange(int value)
 {
-    qDebug("%s @%d", __FUNCTION__, __LINE__);
-    updatePropertyValue(sender()->objectName(), value);
+    QComboBox *box =  qobject_cast<QComboBox*>(sender());
+    updatePropertyValue(sender()->objectName(), box->itemData(value));
 }
 
 void PropertyEditor::onIntChange(int value)
 {
-    qDebug("%s @%d", __FUNCTION__, __LINE__);
     updatePropertyValue(sender()->objectName(), value);
 }
 
 void PropertyEditor::onRealChange(qreal value)
 {
-    qDebug("%s @%d", __FUNCTION__, __LINE__);
     updatePropertyValue(sender()->objectName(), value);
 }
 
 void PropertyEditor::onTextChange(const QString& value)
 {
-    qDebug("%s @%d", __FUNCTION__, __LINE__);
     updatePropertyValue(sender()->objectName(), value);
 }
 
 void PropertyEditor::onBoolChange(bool value)
 {
-    qDebug("%s @%d", __FUNCTION__, __LINE__);
     updatePropertyValue(sender()->objectName(), value);
 }

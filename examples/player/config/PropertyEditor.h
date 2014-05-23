@@ -67,7 +67,7 @@ private:
     void updatePropertyValue(const QString& name, const QVariant& value);
 private slots:
     // updatePropertyValue
-    void onEnumChange(const QString& value);
+    void onEnumChange(int value);
     void onIntChange(int value);
     void onRealChange(qreal value);
     void onTextChange(const QString& value);
