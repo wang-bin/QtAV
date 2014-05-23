@@ -41,7 +41,6 @@ public:
       , frame(0)
       , got_frame_ptr(0)
       , undecoded_size(0)
-      , thread_slice(1)
       , low_resolution(0)
       , dict(0)
     {

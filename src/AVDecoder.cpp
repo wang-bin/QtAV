@@ -101,8 +101,6 @@ bool AVDecoder::open()
         d.threads = qMax(0, QThread::idealThreadCount());
     if (d.threads > 0)
         d.codec_ctx->thread_count = d.threads;
-    if (d.threads > 1)
-        d.codec_ctx->thread_type = d.thread_slice ? FF_THREAD_SLICE : FF_THREAD_FRAME;
     d.codec_ctx->thread_safe_callbacks = true;
     switch (d.codec_ctx->codec_id) {
         case CODEC_ID_MPEG4:
@@ -235,11 +233,6 @@ int AVDecoder::decodeThreads() const
     return d_func().threads;
 }
 
-void AVDecoder::setThreadSlice(bool s)
-{
-    d_func().thread_slice = s;
-}
-
 bool AVDecoder::isAvailable() const
 {
     return d_func().codec_ctx != 0;
@@ -253,17 +246,6 @@ bool AVDecoder::prepare()
         return false;
     }
     qDebug("Decoding threads count: %d", d.threads);
-#if DECODER_DONE //currently codec context is opened in demuxer, we must setup context before open
-    if (d.threads > 0)
-        d.codec_ctx->thread_count = d.threads;
-    if (d.threads > 1)
-        d.codec_ctx->thread_type = d.thread_slice ? FF_THREAD_SLICE : FF_THREAD_FRAME;
-    //else
-      //  d.codec_ctx->thread_type = 0; //FF_THREAD_FRAME:1, FF_THREAD_SLICE:2
-
-    //? !CODEC_ID_H264 && !CODEC_ID_VP8
-    d.codec_ctx->lowres = d.low_resolution;
-#endif //DECODER_DONE
     return true;
 }
 
@@ -296,12 +278,24 @@ void AVDecoder::setOptions(const QVariantHash &dict)
     QVariantHash avcodec_dict(dict);
     if (dict.contains("avcodec"))
         avcodec_dict = dict.value("avcodec").toHash();
+    // workaround for VideoDecoderFFmpeg. now it does not call av_opt_set_xxx, so set here in dict
+    if (dict.contains("FFmpeg"))
+        avcodec_dict.unite(dict.value("FFmpeg").toHash());
     QHashIterator<QString, QVariant> i(avcodec_dict);
     while (i.hasNext()) {
         i.next();
-        if (i.value().type() == QVariant::Hash) // for example "vaapi": {...}
+        switch (i.value().type()) {
+        case QVariant::Hash: // for example "vaapi": {...}
             continue;
-        av_dict_set(&d.dict, i.key().toUtf8().constData(), i.value().toByteArray().constData(), 0);
+        case QVariant::Bool:
+            // QVariant.toByteArray(): "true" or "false", can not recognized by avcodec
+            av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), QByteArray::number(i.value().toBool()), 0);
+            break;
+        default:
+            // avcodec key and value are in lower case
+            av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), i.value().toByteArray().toLower().constData(), 0);
+            break;
+        }
         qDebug("avcodec option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
     }
     if (name() == "avcodec")
