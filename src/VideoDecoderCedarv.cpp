@@ -19,8 +19,8 @@
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoDecoderFFmpeg.h"
-#include "private/VideoDecoderFFmpeg_p.h"
+#include "QtAV/VideoDecoder.h"
+#include "private/VideoDecoder_p.h"
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Compat.h>
 #include "prepost.h"
@@ -293,7 +293,7 @@ static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned 
 namespace QtAV {
 
 class VideoDecoderCedarvPrivate;
-class VideoDecoderCedarv : public VideoDecoderFFmpeg
+class VideoDecoderCedarv : public VideoDecoder
 {
 	DPTR_DECLARE_PRIVATE(VideoDecoderCedarv)
 public:
@@ -315,10 +315,12 @@ void RegisterVideoDecoderCedarv_Man()
 	FACTORY_REGISTER_ID_MAN(VideoDecoder, Cedarv, "Cedarv")
 }
 
-class VideoDecoderCedarvPrivate : public VideoDecoderFFmpegPrivate
+class VideoDecoderCedarvPrivate : public VideoDecoderPrivate
 {
 public:
-	VideoDecoderCedarvPrivate() {
+    VideoDecoderCedarvPrivate()
+        : VideoDecoderPrivate()
+    {
 	   cedarv = 0;
 	}
 
@@ -331,7 +333,7 @@ public:
 };
 
 VideoDecoderCedarv::VideoDecoderCedarv()
-	: VideoDecoderFFmpeg(*new VideoDecoderCedarvPrivate())
+    : VideoDecoder(*new VideoDecoderCedarvPrivate())
 {
 }
 

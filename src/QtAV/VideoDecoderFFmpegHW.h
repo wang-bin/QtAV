@@ -22,12 +22,12 @@
 #ifndef QTAV_VIDEODECODERFFMPEGHW_H
 #define QTAV_VIDEODECODERFFMPEGHW_H
 
-#include <QtAV/VideoDecoderFFmpeg.h>
+#include <QtAV/VideoDecoder.h>
 
 namespace QtAV {
 
 class VideoDecoderFFmpegHWPrivate;
-class Q_AV_EXPORT VideoDecoderFFmpegHW : public VideoDecoderFFmpeg
+class Q_AV_EXPORT VideoDecoderFFmpegHW : public VideoDecoder
 {
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegHW)
 public:

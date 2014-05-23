@@ -301,9 +301,7 @@ HEADERS *= \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/VideoDecoder_p.h \
-    QtAV/private/VideoDecoderFFmpeg_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
-    QtAV/VideoDecoderFFmpeg.h \
     QtAV/VideoDecoderFFmpegHW.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \

@@ -22,7 +22,7 @@
 #ifndef QTAV_VIDEODECODERFFMPEGHW_P_H
 #define QTAV_VIDEODECODERFFMPEGHW_P_H
 
-#include "QtAV/private/VideoDecoderFFmpeg_p.h"
+#include "QtAV/private/VideoDecoder_p.h"
 
 /*!
    QTAV_VA_REF: use AVCodecContext.get_buffer2 instead of old callbacks. In order to avoid compile warnings, now disable old
@@ -32,11 +32,11 @@
 
 namespace QtAV {
 
-class Q_AV_EXPORT VideoDecoderFFmpegHWPrivate : public VideoDecoderFFmpegPrivate
+class Q_AV_EXPORT VideoDecoderFFmpegHWPrivate : public VideoDecoderPrivate
 {
 public:
     VideoDecoderFFmpegHWPrivate()
-        : VideoDecoderFFmpegPrivate()
+        : VideoDecoderPrivate()
         , va_pixfmt(QTAV_PIX_FMT_C(NONE))
     {
         get_format = 0;
