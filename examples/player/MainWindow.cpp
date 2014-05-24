@@ -649,6 +649,7 @@ void MainWindow::play(const QString &name)
     mpPlayer->setPriority(Config::instance().decoderPriority());
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
+    mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
     PlayListItem item;
     item.setUrl(mFile);
     item.setTitle(mTitle);
@@ -756,6 +757,7 @@ void MainWindow::onStopPlay()
     mpPlayer->setPriority(Config::instance().decoderPriority());
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
+    mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
 
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     mpTimeSlider->setValue(0);

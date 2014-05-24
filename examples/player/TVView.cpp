@@ -34,6 +34,7 @@ TVView::TVView(QWidget *parent) :
     setWindowTitle(tr("Online TV channels"));
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
     mpView = new QTreeWidget();
+    mpView->setAnimated(true);
     mpView->setHeaderHidden(true);
     mpView->setColumnCount(1);
     connect(mpView, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(onItemDoubleClick (QTreeWidgetItem*,int)));

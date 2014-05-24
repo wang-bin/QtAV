@@ -114,6 +114,12 @@ public:
         capture_fmt = settings.value("format", "png").toByteArray();
         capture_quality = settings.value("quality", 100).toInt();
         settings.endGroup();
+        settings.beginGroup("avformat");
+        direct = settings.value("avioflags", 0).toString() == "direct";
+        probe_size = settings.value("probesize", 5000000).toUInt();
+        analyze_duration = settings.value("analyzeduration", 5000000).toInt();
+        avformat_extra = settings.value("extra", "").toString();
+        settings.endGroup();
     }
     void save() {
         qDebug("************save config %s************", qPrintable(dir));
@@ -129,6 +135,12 @@ public:
         settings.setValue("format", capture_fmt);
         settings.setValue("quality", capture_quality);
         settings.endGroup();
+        settings.beginGroup("avformat");
+        settings.setValue("avioflags", direct ? "direct" : 0);
+        settings.setValue("probesize", probe_size);
+        settings.setValue("analyzeduration", analyze_duration);
+        settings.setValue("extra", avformat_extra);
+        settings.endGroup();
     }
 
     QString dir;
@@ -141,6 +153,10 @@ public:
     QByteArray capture_fmt;
     int capture_quality;
 
+    bool direct;
+    unsigned int probe_size;
+    int analyze_duration;
+    QString avformat_extra;
 };
 
 Config& Config::instance()
@@ -272,5 +288,75 @@ Config& Config::captureQuality(int quality)
         return *this;
     mpData->capture_quality = quality;
     emit captureQualityChanged(quality);
+    return *this;
+}
+
+QVariantHash Config::avformatOptions() const
+{
+    QVariantHash vh;
+    if (!mpData->avformat_extra.isEmpty()) {
+        QStringList s(mpData->avformat_extra.split(" "));
+        for (int i = 0; i < s.size(); ++i) {
+            int eq = s[i].indexOf("=");
+            if (eq < 0) {
+                continue;
+            } else {
+                vh[s[i].mid(0, eq)] = s[i].mid(eq+1);
+            }
+        }
+    }
+    if (mpData->probe_size > 0) {
+        vh["probesize"] = mpData->probe_size;
+    }
+    if (mpData->analyze_duration) {
+        vh["analyzeduration"] = mpData->analyze_duration;
+    }
+    if (mpData->direct) {
+        vh["avioflags"] = "direct";
+    };
+    return vh;
+}
+
+unsigned int Config::probeSize() const
+{
+    return mpData->probe_size;
+}
+
+Config& Config::probeSize(unsigned int ps)
+{
+    mpData->probe_size = ps;
+    return *this;
+}
+
+int Config::analyzeDuration() const
+{
+    return mpData->analyze_duration;
+}
+
+Config& Config::analyzeDuration(int ad)
+{
+    mpData->analyze_duration = ad;
+    return *this;
+}
+
+bool Config::reduceBuffering() const
+{
+    return mpData->direct;
+}
+
+Config& Config::reduceBuffering(bool y)
+{
+    mpData->direct = y;
+    return *this;
+}
+
+QString Config::avformatExtra() const
+{
+    return mpData->avformat_extra;
+}
+
+Config& Config::avformatExtra(const QString &text)
+{
+    mpData->avformat_extra = text;
     return *this;
 }

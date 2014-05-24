@@ -24,6 +24,7 @@
 #include <QPushButton>
 #include "CaptureConfigPage.h"
 #include "DecoderConfigPage.h"
+#include "AVFormatConfigPage.h"
 #include "Config.h"
 void ConfigDialog::display()
 {
@@ -36,6 +37,7 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
 {
     QVBoxLayout *vbl = new QVBoxLayout();
     setLayout(vbl);
+    vbl->setSizeConstraint(QLayout::SetFixedSize);
 
     mpContent = new QTabWidget();
     mpContent->setTabPosition(QTabWidget::West);
@@ -54,7 +56,9 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
     vbl->addWidget(mpButtonBox);
 
     mPages << new CaptureConfigPage()
-           << new DecoderConfigPage();
+           << new DecoderConfigPage()
+           << new AVFormatConfigPage()
+              ;
 
     foreach (ConfigPageBase* page, mPages) {
         page->applyOnUiChange(false);

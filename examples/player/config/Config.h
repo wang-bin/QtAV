@@ -24,6 +24,7 @@
 
 #include <QtAV/VideoDecoderTypes.h>
 #include <QtCore/QObject>
+#include <QtCore/QVariant>
 
 //TODO: use hash to simplify api
 /*
@@ -71,6 +72,17 @@ public:
     // only works for non-yuv capture. value: -1~100, -1: default
     int captureQuality() const;
     Config& captureQuality(int quality);
+
+
+    QVariantHash avformatOptions() const;
+    int analyzeDuration() const;
+    Config& analyzeDuration(int ad);
+    unsigned int probeSize() const;
+    Config& probeSize(unsigned int ps);
+    bool reduceBuffering() const;
+    Config& reduceBuffering(bool y);
+    QString avformatExtra() const;
+    Config& avformatExtra(const QString& text);
 
     QVariant operator ()(const QString& key) const;
     Config& operator ()(const QString& key, const QVariant& value);
