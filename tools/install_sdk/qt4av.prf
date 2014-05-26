@@ -1,0 +1,2 @@
+load(qt_functions.prf)
+qtAddLibrary(QtAV)

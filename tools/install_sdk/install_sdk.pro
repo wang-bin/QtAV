@@ -3,8 +3,7 @@ TEMPLATE = subdirs
 TARGET = QtAV
 MODULE_DEPENDS = core widgets opengl gui
 MODULE = av
-VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
-#MODULE_VERSION = $$VERSION
+#MODULE_VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 #load(qt_module)
 
 STATICLINK = 0
@@ -17,6 +16,8 @@ PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
 
 LIBPREFIX = lib
 win32 {
+  COPY = copy /y
+  COPY_DIR = xcopy /s /q /y /i
   RM_DIR = rd /s /q
   *g++* {
     LIBSUFFIX = a
@@ -25,31 +26,39 @@ win32 {
     LIBPREFIX =
   }
 } else {
+  COPY = cp -f
+  COPY_DIR = $$COPY -R
   RM_DIR = rm -rf
   macx: LIBSUFFIX = dylib
   else: LIBSUFFIX = so
 }
 
-ORIG_LIB = $${LIBPREFIX}$$qtLibName(QtAV).$${LIBSUFFIX}
+ORIG_LIB = $${LIBPREFIX}$$qtLibName(QtAV, 1).$${LIBSUFFIX}
 greaterThan(QT_MAJOR_VERSION, 4) {
   NEW_LIB = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}AV.$${LIBSUFFIX}
+  MKSPECS_DIR = $$[QT_INSTALL_BINS]/../mkspecs
 } else {
   NEW_LIB = $${ORIG_LIB}
+  MKSPECS_DIR=$$[QMAKE_MKSPECS]
 }
 
-sdk_install.commands = $$quote($$QMAKE_COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]))
-sdk_install.commands += $$quote($$QMAKE_COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
-sdk_install.commands += $$quote($$QMAKE_COPY_DIR $$system_path($$PROJECTROOT/src/QtAV) $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
-sdk_install.commands += $$quote($$QMAKE_COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV) $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
-sdk_install.commands += $$quote($$QMAKE_COPY $$system_path($$OUT_PWD/mkspecs/features/av.prf) $$system_path($$[QT_INSTALL_BINS]/../mkspecs/features))
-sdk_install.commands += $$quote($$QMAKE_COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_*av*.pri) $$system_path($$[QT_INSTALL_BINS]/../mkspecs/modules))
+sdk_install.commands = $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]))
+sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
+sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV) $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
+sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV) $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
+greaterThan(QT_MAJOR_VERSION, 4) {
+  sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/features/av.prf) $$system_path($$MKSPECS_DIR/features))
+  sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_lib_av*.pri) $$system_path($$MKSPECS_DIR/modules))
+} else {
+  sdk_install.commands += $$quote($$COPY $$system_path($$PWD/qt4av.prf) $$system_path($$MKSPECS_DIR/features/av.prf))
+}
 
 sdk_uninstall.commands = $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/*QtAV*))
 sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
 sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
 sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
-sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_BINS]/../mkspecs/features/av.prf))
-sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_BINS]/../mkspecs/modules/qt_*av*.pri))
+sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$MKSPECS_DIR/features/av.prf))
+sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$MKSPECS_DIR/modules/qt_lib_av*.pri))
 
 
 SCRIPT_SUFFIX=sh
@@ -60,22 +69,17 @@ write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX, sdk_uninstall.commands)
 
 message(run $$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX to install QtAV as a Qt module)
 
+greaterThan(QT_MAJOR_VERSION, 4) {
+
 AV_PRF_CONT = "android: QMAKE_LFLAGS += -lOpenSLES"
-lessThan(QT_MAJOR_VERSION, 5) {
-  AV_PRF_CONT += "load(qt_functions.prf)" \
-                 "qtAddLibrary(QtAV)"
-}
 #AV_PRF_CONT += "QMAKE_LFLAGS += -lavutil -lavcodec -lavformat -lswscale"
 #config_avresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lavresample"
 #config_swresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lswresample"
+AV_PRF_CONT += "!contains(QT, av): QT *= av"
 write_file($$OUT_PWD/mkspecs/features/av.prf, AV_PRF_CONT)
 
 
-lessThan(QT_MAJOR_VERSION, 5) {
-  MODULE_CONT = "QT_CONFIG *= av" \
-                "CONFIG *= av"
-  write_file($$OUT_PWD/mkspecs/features/qt_av.pri, MODULE_CONT)
-} else {
+VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 MODULE_QMAKE_OUTDIR = $$OUT_PWD
 MODULE_CONFIG = av
 
