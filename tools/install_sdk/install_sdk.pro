@@ -30,29 +30,32 @@ win32 {
   else: LIBSUFFIX = so
 }
 
-ORIG_LIB = $${LIBPREFIX}QtAV1.$${LIBSUFFIX}
+ORIG_LIB = $${LIBPREFIX}$$qtLibName(QtAV).$${LIBSUFFIX}
 greaterThan(QT_MAJOR_VERSION, 4) {
   NEW_LIB = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}AV.$${LIBSUFFIX}
 } else {
   NEW_LIB = $${ORIG_LIB}
 }
 
-sdk.commands = $$quote($$QMAKE_COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]))
-sdk.commands += $$quote($$QMAKE_COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
-sdk.commands += $$quote($$QMAKE_COPY_DIR $$system_path($$PROJECTROOT/src/QtAV) $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
-sdk.commands += $$quote($$QMAKE_COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV) $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
+sdk_install.commands = $$quote($$QMAKE_COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]))
+sdk_install.commands += $$quote($$QMAKE_COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
+sdk_install.commands += $$quote($$QMAKE_COPY_DIR $$system_path($$PROJECTROOT/src/QtAV) $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
+sdk_install.commands += $$quote($$QMAKE_COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV) $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
+sdk_install.commands += $$quote($$QMAKE_COPY $$system_path($$OUT_PWD/mkspecs/features/av.prf) $$system_path($$[QT_INSTALL_BINS]/../mkspecs/features))
+sdk_install.commands += $$quote($$QMAKE_COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_*av*.pri) $$system_path($$[QT_INSTALL_BINS]/../mkspecs/modules))
 
 sdk_uninstall.commands = $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/*QtAV*))
 sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
 sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
 sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
-
+sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_BINS]/../mkspecs/features/av.prf))
+sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_BINS]/../mkspecs/modules/qt_*av*.pri))
 
 
 SCRIPT_SUFFIX=sh
 win32: SCRIPT_SUFFIX=bat
 
-write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX, sdk.commands)
+write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX, sdk_install.commands)
 write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX, sdk_uninstall.commands)
 
 message(run $$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX to install QtAV as a Qt module)
@@ -65,17 +68,16 @@ lessThan(QT_MAJOR_VERSION, 5) {
 #AV_PRF_CONT += "QMAKE_LFLAGS += -lavutil -lavcodec -lavformat -lswscale"
 #config_avresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lavresample"
 #config_swresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lswresample"
-write_file($$[QT_INSTALL_BINS]/../mkspecs/features/av.prf, AV_PRF_CONT)
+write_file($$OUT_PWD/mkspecs/features/av.prf, AV_PRF_CONT)
 
 
 lessThan(QT_MAJOR_VERSION, 5) {
   MODULE_CONT = "QT_CONFIG *= av" \
-              "CONFIG *= av"
-  write_file($$[QT_INSTALL_BINS]/../mkspecs/modules/qt_av.pri, MODULE_CONT)
+                "CONFIG *= av"
+  write_file($$OUT_PWD/mkspecs/features/qt_av.pri, MODULE_CONT)
 } else {
-MODULE_QMAKE_OUTDIR = $$[QT_INSTALL_BINS]/..
+MODULE_QMAKE_OUTDIR = $$OUT_PWD
 MODULE_CONFIG = av
-
 
 ## the following is from mkspecs/features/qt_module_pris.prf
 mod_work_pfx = $$MODULE_QMAKE_OUTDIR/mkspecs/modules
