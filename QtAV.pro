@@ -5,6 +5,9 @@ CONFIG -= ordered
 SUBDIRS = libqtav
 libqtav.file = src/libQtAV.pro
 greaterThan(QT_MAJOR_VERSION, 4) {
+  SUBDIRS += install_sdk
+  install_sdk.file = tools/installsdk/qt5/install_sdk.pro
+  install_sdk.depends = libqtav
   # qtHaveModule does not exist in Qt5.0
   isEqual(QT_MINOR_VERSION, 0)|qtHaveModule(quick) {
     SUBDIRS += libqmlav
