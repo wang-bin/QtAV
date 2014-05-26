@@ -8,15 +8,16 @@ VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 #load(qt_module)
 
 STATICLINK = 0
-PROJECTROOT = $$PWD/../../..
+PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/common.pri)
-preparePaths($$OUT_PWD/../../../out)
+preparePaths($$OUT_PWD/../../out)
 
 
 PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
 
 LIBPREFIX = lib
 win32 {
+  RM_DIR = rd /s /q
   *g++* {
     LIBSUFFIX = a
   } else {
@@ -24,29 +25,28 @@ win32 {
     LIBPREFIX =
   }
 } else {
+  RM_DIR = rm -rf
   macx: LIBSUFFIX = dylib
   else: LIBSUFFIX = so
 }
 
 ORIG_LIB = $${LIBPREFIX}QtAV1.$${LIBSUFFIX}
-NEW_LIB = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}AV.$${LIBSUFFIX}
+greaterThan(QT_MAJOR_VERSION, 4) {
+  NEW_LIB = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}AV.$${LIBSUFFIX}
+} else {
+  NEW_LIB = $${ORIG_LIB}
+}
 
-
-sdk.target = sdk
 sdk.commands = $$quote($$QMAKE_COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]))
 sdk.commands += $$quote($$QMAKE_COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
 sdk.commands += $$quote($$QMAKE_COPY_DIR $$system_path($$PROJECTROOT/src/QtAV) $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
 sdk.commands += $$quote($$QMAKE_COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV) $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
-sdk.commands = $$join(sdk.commands, $$escape_expand(\\n\\t))
-QMAKE_EXTRA_TARGETS += sdk
 
-sdk_uninstall.target = sdk_uninstall
 sdk_uninstall.commands = $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/*QtAV*))
 sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
-sdk_uninstall.commands += $$quote($$QMAKE_DEL_DIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
-sdk_uninstall.commands += $$quote($$QMAKE_DEL_DIR $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
-sdk_uninstall.commands = $$join(sdk_uninstall.commands, $$escape_expand(\\n\\t))
-QMAKE_EXTRA_TARGETS += sdk_uninstall
+sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
+sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
+
 
 
 SCRIPT_SUFFIX=sh
@@ -55,13 +55,24 @@ win32: SCRIPT_SUFFIX=bat
 write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX, sdk.commands)
 write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX, sdk_uninstall.commands)
 
+message(run $$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX to install QtAV as a Qt module)
 
 AV_PRF_CONT = "android: QMAKE_LFLAGS += -lOpenSLES"
+lessThan(QT_MAJOR_VERSION, 5) {
+  AV_PRF_CONT += "load(qt_functions.prf)" \
+                 "qtAddLibrary(QtAV)"
+}
 #AV_PRF_CONT += "QMAKE_LFLAGS += -lavutil -lavcodec -lavformat -lswscale"
 #config_avresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lavresample"
 #config_swresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lswresample"
 write_file($$[QT_INSTALL_BINS]/../mkspecs/features/av.prf, AV_PRF_CONT)
 
+
+lessThan(QT_MAJOR_VERSION, 5) {
+  MODULE_CONT = "QT_CONFIG *= av" \
+              "CONFIG *= av"
+  write_file($$[QT_INSTALL_BINS]/../mkspecs/modules/qt_av.pri, MODULE_CONT)
+} else {
 MODULE_QMAKE_OUTDIR = $$[QT_INSTALL_BINS]/..
 MODULE_CONFIG = av
 
@@ -236,3 +247,4 @@ MODULE_FWD_PRI = $$mod_work_pfx/qt_lib_$${MODULE_ID}.pri
 
 # Schedule the regular .pri file for installation
 CONFIG += qt_install_module
+}
