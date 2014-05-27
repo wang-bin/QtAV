@@ -490,7 +490,7 @@ bool AVDemuxer::load()
     } else {
         qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
         mpInterrup->begin(InterruptHandler::Open);
-        ret = avformat_open_input(&format_context, qPrintable(_file_name), NULL, mOptions.isEmpty() ? NULL : &mpDict);
+        ret = avformat_open_input(&format_context, _file_name.toUtf8().constData(), NULL, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
         qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
     }
