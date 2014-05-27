@@ -301,10 +301,7 @@ void AVDemuxThread::run()
                 video_thread->setDemuxEnded(true);
                 all_end &= !video_thread->isRunning();
             }
-            if (aqueue)
-                aqueue->put(Packet());
-            if (vqueue)
-                vqueue->put(Packet());
+            // flush packet will send when out the loop. now it's still playing. too early to flush, e.g. video stream has 1 frame and flush now
             if (!all_end) {
                 cond.wait(&buffer_mutex);
             }
