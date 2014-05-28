@@ -297,7 +297,8 @@ int av_samples_copy(uint8_t **dst, uint8_t * const *src, int dst_offset,
                     enum AVSampleFormat sample_fmt);
 #endif //AV_VERSION_INT(51, 73, 101)
 
-#if LIBAVCODEC_VERSION_MAJOR < 54
+// < 1.0
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 59, 100)
 typedef enum CodecID AVCodecID;
 #endif
 

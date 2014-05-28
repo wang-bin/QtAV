@@ -33,6 +33,8 @@ extern "C" {
 #undef PixelFormat
 #endif
 
+#define FF_HAS_YUV12BITS (LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(51, 73, 101))
+
 namespace QtAV {
 
 // TODO: default ctor, dtor, copy ctor required by implicit sharing?
@@ -221,12 +223,14 @@ static const struct {
     QTAV_PIX_FMT_C(VAAPI_IDCT, ///< HW acceleration through VA API at IDCT entry-point, Picture.data[3] contains a vaapi_render_state struct which contains fields extracted from headers
     QTAV_PIX_FMT_C(VAAPI_VLD,  ///< HW decoding through VA API, Picture.data[3] contains a vaapi_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
 */
+#if FF_HAS_YUV12BITS
     { VideoFormat::Format_YUV420P16LE, QTAV_PIX_FMT_C(YUV420P16LE) },  ///< planar YUV 4:2:0, 24bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
     { VideoFormat::Format_YUV420P16BE, QTAV_PIX_FMT_C(YUV420P16BE) },  ///< planar YUV 4:2:0, 24bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
     { VideoFormat::Format_YUV422P16LE, QTAV_PIX_FMT_C(YUV422P16LE) },  ///< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian
     { VideoFormat::Format_YUV422P16BE, QTAV_PIX_FMT_C(YUV422P16BE) },  ///< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), big-endian
     { VideoFormat::Format_YUV444P16LE, QTAV_PIX_FMT_C(YUV444P16LE) },  ///< planar YUV 4:4:4, 48bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
     { VideoFormat::Format_YUV444P16BE, QTAV_PIX_FMT_C(YUV444P16BE) },  ///< planar YUV 4:4:4, 48bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
+#endif //FF_HAS_YUV12BITS
 /*
     QTAV_PIX_FMT_C(VDPAU_MPEG4,  ///< MPEG4 HW decoding with VDPAU, data[0] contains a vdpau_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
     QTAV_PIX_FMT_C(DXVA2_VLD,    ///< HW decoding through DXVA2, Picture.data[3] contains a LPDIRECT3DSURFACE9 pointer
@@ -242,6 +246,7 @@ static const struct {
     //the following 10 formats have the disadvantage of needing 1 format for each bit depth, thus
     //If you want to support multiple bit depths, then using QTAV_PIX_FMT_C(YUV420P16* with the bpp stored separately
     //is better
+// the ffmpeg QtAV can build against( >= 0.9) supports 9,10 bits
     { VideoFormat::Format_YUV420P9BE, QTAV_PIX_FMT_C(YUV420P9BE) }, ///< planar YUV 4:2:0, 13.5bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
     { VideoFormat::Format_YUV420P9LE, QTAV_PIX_FMT_C(YUV420P9LE) }, ///< planar YUV 4:2:0, 13.5bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
     { VideoFormat::Format_YUV420P10BE, QTAV_PIX_FMT_C(YUV420P10BE) },///< planar YUV 4:2:0, 15bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
@@ -314,6 +319,7 @@ static const struct {
     QTAV_PIX_FMT_C(YUVA444P,  ///< planar YUV 4:4:4 32bpp, (1 Cr & Cb sample per 1x1 Y & A samples)
     QTAV_PIX_FMT_C(YUVA422P,  ///< planar YUV 4:2:2 24bpp, (1 Cr & Cb sample per 2x1 Y & A samples)
 */
+#if FF_HAS_YUV12BITS
     { VideoFormat::Format_YUV420P12BE, QTAV_PIX_FMT_C(YUV420P12BE) }, ///< planar YUV 4:2:0,18bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
     { VideoFormat::Format_YUV420P12LE, QTAV_PIX_FMT_C(YUV420P12LE) }, ///< planar YUV 4:2:0,18bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian
     { VideoFormat::Format_YUV420P14BE, QTAV_PIX_FMT_C(YUV420P14BE) }, ///< planar YUV 4:2:0,21bpp, (1 Cr & Cb sample per 2x2 Y samples), big-endian
@@ -326,6 +332,7 @@ static const struct {
     { VideoFormat::Format_YUV444P12LE, QTAV_PIX_FMT_C(YUV444P12LE) }, ///< planar YUV 4:4:4,36bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
     { VideoFormat::Format_YUV444P14BE, QTAV_PIX_FMT_C(YUV444P14BE) }, ///< planar YUV 4:4:4,42bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
     { VideoFormat::Format_YUV444P14LE, QTAV_PIX_FMT_C(YUV444P14LE) }, ///< planar YUV 4:4:4,42bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
+#endif //FF_HAS_YUV12BITS
 /*
     QTAV_PIX_FMT_C(GBRP12BE,    ///< planar GBR 4:4:4 36bpp, big-endian
     QTAV_PIX_FMT_C(GBRP12LE,    ///< planar GBR 4:4:4 36bpp, little-endian

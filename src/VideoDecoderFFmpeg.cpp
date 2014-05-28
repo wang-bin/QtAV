@@ -89,14 +89,14 @@ public:
     enum BugFlag {
         autodetect = FF_BUG_AUTODETECT, //default
 #if FF_API_OLD_MSMPEG4
-        old_msmpeg4 = FF_BUG_OLD_MSMPEG4,
+        //old_msmpeg4 = FF_BUG_OLD_MSMPEG4, //moc does not support PP?
 #endif
         xvid_ilace = FF_BUG_XVID_ILACE,
         ump4 = FF_BUG_UMP4,
         no_padding = FF_BUG_NO_PADDING,
         amv = FF_BUG_AMV,
 #if FF_API_AC_VLC
-        ac_vlc = FF_BUG_AC_VLC,
+        //ac_vlc = FF_BUG_AC_VLC, //moc does not support PP?
 #endif
         qpel_chroma = FF_BUG_QPEL_CHROMA,
         std_qpel = FF_BUG_QPEL_CHROMA2,
