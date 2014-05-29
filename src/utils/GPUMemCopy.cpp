@@ -25,7 +25,9 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>
+#ifdef __MINGW32__
 #include <malloc.h> //__mingw_aligned_malloc
+#endif
 #include <algorithm>
 
 #include "QtAV/QtAV_Compat.h"
