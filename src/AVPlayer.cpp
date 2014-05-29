@@ -916,8 +916,9 @@ void AVPlayer::play()
         //timer_id = startTimer(kPosistionCheckMS); //may fail if not in this thread
         QMetaObject::invokeMethod(this, "startNotifyTimer", Qt::AutoConnection);
     }
-    if (last_position <= 0)
-        last_position = mediaStartPosition();
+// ffplay does not seek to stream's start position. usually it's 0, maybe < 1. seeking will result in a non-key frame position and it's bad.
+    //if (last_position <= 0)
+    //    last_position = mediaStartPosition();
     if (last_position > 0)
         setPosition(last_position); //just use demuxer.startTime()/duration()?
 
