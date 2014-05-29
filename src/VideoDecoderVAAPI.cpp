@@ -503,24 +503,24 @@ bool VideoDecoderVAAPIPrivate::open()
     VAProfile i_profile = VAProfileNone;
     int i_surfaces = 0;
     switch (codec_ctx->codec_id) {
-    case CODEC_ID_MPEG1VIDEO:
-    case CODEC_ID_MPEG2VIDEO:
+    case QTAV_CODEC_ID(MPEG1VIDEO):
+    case QTAV_CODEC_ID(MPEG2VIDEO):
         i_profile = VAProfileMPEG2Main;
         i_surfaces = 2+1;
         break;
-    case CODEC_ID_MPEG4:
+    case QTAV_CODEC_ID(MPEG4):
         i_profile = VAProfileMPEG4AdvancedSimple;
         i_surfaces = 2+1;
         break;
-    case CODEC_ID_WMV3:
+    case QTAV_CODEC_ID(WMV3):
         i_profile = VAProfileVC1Main;
         i_surfaces = 2+1;
         break;
-    case CODEC_ID_VC1:
+    case QTAV_CODEC_ID(VC1):
         i_profile = VAProfileVC1Advanced;
         i_surfaces = 2+1;
         break;
-    case CODEC_ID_H264:
+    case QTAV_CODEC_ID(H264):
         i_profile = VAProfileH264High;
         i_surfaces = 16+1;
         break;

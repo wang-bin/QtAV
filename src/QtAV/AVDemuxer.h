@@ -114,7 +114,7 @@ public:
     int audioBitRate(int stream = -1) const;
     int videoBitRate(int stream = -1) const;
 
-    qreal frameRate() const; //AVFormatContext::r_frame_rate
+    qreal frameRate() const; //AVStream::avg_frame_rate
     // if stream is -1, return the current video(or audio if no video) stream.
     // TODO: audio/videoFrames?
     qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames

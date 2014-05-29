@@ -68,6 +68,26 @@ extern "C"
 }
 #endif /*__cplusplus*/
 
+/* LIBAVUTIL_VERSION_CHECK checks for the right version of libav and FFmpeg
+ * a is the major version
+ * b and c the minor and micro versions of libav
+ * d and e the minor and micro versions of FFmpeg */
+#define LIBAVUTIL_VERSION_CHECK( a, b, c, d, e ) \
+    ( (LIBAVUTIL_VERSION_MICRO <  100 && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT( a, b, c ) ) || \
+      (LIBAVUTIL_VERSION_MICRO >= 100 && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT( a, d, e ) ) )
+
+/* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
+ * a is the major version
+ * b and c the minor and micro versions of libav
+ * d and e the minor and micro versions of FFmpeg */
+#define LIBAVCODEC_VERSION_CHECK( a, b, c, d, e ) \
+    ( (LIBAVCODEC_VERSION_MICRO <  100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, b, c ) ) || \
+      (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, d, e ) ) )
+
+#define FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) \
+    ( (MODULE##_VERSION_MICRO >= 100) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO) )
+// TODO: confirm vlc's version check code
+
 /*!
  * Guide to uniform the api for different FFmpeg version(or other libraries)
  * We use the existing old api to simulater .
@@ -297,9 +317,13 @@ int av_samples_copy(uint8_t **dst, uint8_t * const *src, int dst_offset,
                     enum AVSampleFormat sample_fmt);
 #endif //AV_VERSION_INT(51, 73, 101)
 
-// < 1.0
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 59, 100)
+// < ffmpeg 1.0
+//#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 59, 100)
+#if LIBAVCODEC_VERSION_CHECK(54, 25, 0, 51, 100)
+#define QTAV_CODEC_ID(X) AV_CODEC_ID_##X
+#else
 typedef enum CodecID AVCodecID;
+#define QTAV_CODEC_ID(X) CODEC_ID_##X
 #endif
 
 #endif //QTAV_COMPAT_H

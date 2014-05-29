@@ -22,14 +22,6 @@
 #include "QtAV/VideoDecoderFFmpegHW.h"
 #include "QtAV/private/VideoDecoderFFmpegHW_p.h"
 
-/* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
- * a is the major version
- * b and c the minor and micro versions of libav
- * d and e the minor and micro versions of FFmpeg */
-#define LIBAVCODEC_VERSION_CHECK( a, b, c, d, e ) \
-    ( (LIBAVCODEC_VERSION_MICRO <  100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, b, c ) ) || \
-      (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, d, e ) ) )
-
 namespace QtAV {
 
 static AVPixelFormat ffmpeg_get_va_format(struct AVCodecContext *c, const AVPixelFormat * ff)
@@ -190,7 +182,7 @@ bool VideoDecoderFFmpegHW::prepare()
         return false;
     }
     //TODO: setup profile in open. vlc/modules/hw/vdpau/avcodec.c, xbmc/xbmc/cores/dvdplayer/DVDCodecs/Video/VDPAU.cpp
-    if (d.codec_ctx->codec_id == CODEC_ID_H264) {
+    if (d.codec_ctx->codec_id == QTAV_CODEC_ID(H264)) {
         // check Hi10p. NO HW support now
         switch (d.codec_ctx->profile) {
         //case FF_PROFILE_H264_HIGH: //VDP_DECODER_PROFILE_H264_HIGH

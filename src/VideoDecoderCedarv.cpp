@@ -358,23 +358,23 @@ bool VideoDecoderCedarv::prepare()
 	memset(&cedarStreamInfo, 0, sizeof cedarStreamInfo);
 
 	switch (d.codec_ctx->codec_id) {
-		case AV_CODEC_ID_H264:
+        case QTAV_CODEC_ID(H264):
 			cedarStreamInfo.format = CEDARV_STREAM_FORMAT_H264;
 			break;
-		case AV_CODEC_ID_VP8:
+        case QTAV_CODEC_ID(VP8):
 			cedarStreamInfo.format = CEDARV_STREAM_FORMAT_VP8;
 			break;
-		case AV_CODEC_ID_VC1:
+        case QTAV_CODEC_ID(VC1):
 			cedarStreamInfo.format = CEDARV_STREAM_FORMAT_VC1;
 			break;
-		case AV_CODEC_ID_MPEG4:
+        case QTAV_CODEC_ID(MPEG4):
 			cedarStreamInfo.format = CEDARV_STREAM_FORMAT_MPEG4;
 			cedarStreamInfo.sub_format = CEDARV_MPEG4_SUB_FORMAT_XVID;
 			break;
-		case AV_CODEC_ID_MPEG2VIDEO:
+        case QTAV_CODEC_ID(MPEG2VIDEO):
 			cedarStreamInfo.format = CEDARV_STREAM_FORMAT_MPEG2;
 			break;
-		case AV_CODEC_ID_RV40:
+        case QTAV_CODEC_ID(RV40):
 			cedarStreamInfo.format = CEDARV_STREAM_FORMAT_REALVIDEO;
 			break;
 		default:

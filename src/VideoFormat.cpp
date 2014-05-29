@@ -33,7 +33,7 @@ extern "C" {
 #undef PixelFormat
 #endif
 
-#define FF_HAS_YUV12BITS (LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(51, 73, 101))
+#define FF_HAS_YUV12BITS FFMPEG_MODULE_CHECK(LIBAVUTIL, 51, 73, 101)
 
 namespace QtAV {
 

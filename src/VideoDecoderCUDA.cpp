@@ -105,11 +105,11 @@ static cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
         AVCodecID ffcodec;
         cudaVideoCodec cudaCodec;
     } ff_cuda_codecs[] = {
-        { CODEC_ID_MPEG1VIDEO, cudaVideoCodec_MPEG1 },
-        { CODEC_ID_MPEG2VIDEO, cudaVideoCodec_MPEG2 },
-        { CODEC_ID_VC1,        cudaVideoCodec_VC1   },
-        { CODEC_ID_H264,       cudaVideoCodec_H264  },
-        { CODEC_ID_MPEG4,      cudaVideoCodec_MPEG4 },
+        { QTAV_CODEC_ID(MPEG1VIDEO), cudaVideoCodec_MPEG1 },
+        { QTAV_CODEC_ID(MPEG2VIDEO), cudaVideoCodec_MPEG2 },
+        { QTAV_CODEC_ID(VC1),        cudaVideoCodec_VC1   },
+        { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264  },
+        { QTAV_CODEC_ID(MPEG4),      cudaVideoCodec_MPEG4 },
         { (AVCodecID)-1, (cudaVideoCodec)-1}
     };
     for (int i = 0; ff_cuda_codecs[i].cudaCodec != -1; ++i) {
