@@ -47,7 +47,6 @@ OptionalDepends = \
 unix {
     !no-xv: OptionalDepends *= xv
     !no-vaapi-x11: OptionalDepends *= vaapi-x11
-    !no-vaapi-drm: OptionalDepends *= vaapi-drm
     !no-cedarv: OptionalDepends *= libcedarv
 }
 

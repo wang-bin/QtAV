@@ -49,6 +49,7 @@ sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV
 greaterThan(QT_MAJOR_VERSION, 4) {
   sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/features/av.prf) $$system_path($$MKSPECS_DIR/features))
   sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_lib_av*.pri) $$system_path($$MKSPECS_DIR/modules))
+  sdk_install.commands += $$quote($$COPY_DIR $$system_path($$BUILD_DIR/bin/QtAV) $$system_path($$[QT_INSTALL_QML]/QtAV))
 } else {
   sdk_install.commands += $$quote($$COPY $$system_path($$PWD/qt4av.prf) $$system_path($$MKSPECS_DIR/features/av.prf))
 }
@@ -59,7 +60,9 @@ sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/
 sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
 sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$MKSPECS_DIR/features/av.prf))
 sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$MKSPECS_DIR/modules/qt_lib_av*.pri))
-
+greaterThan(QT_MAJOR_VERSION, 4) {
+  sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_QML]/QtAV))
+}
 
 SCRIPT_SUFFIX=sh
 win32: SCRIPT_SUFFIX=bat
