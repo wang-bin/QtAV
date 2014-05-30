@@ -101,11 +101,7 @@ const QList<Filter*>& AVThread::filters() const
 
 void AVThread::scheduleTask(QRunnable *task)
 {
-    DPTR_D(AVThread);
-    // FIXME: shall we lock?
-    QMutexLocker locker(&d.mutex);
-    Q_UNUSED(locker);
-    d.tasks.push_back(task);
+    d_func().tasks.put(task);
 }
 
 void AVThread::skipRenderUntil(qreal pts)
@@ -269,7 +265,7 @@ bool AVThread::processNextTask()
     DPTR_D(AVThread);
     if (d.tasks.isEmpty())
         return true;
-    QRunnable *task = d.tasks.takeFirst();
+    QRunnable *task = d.tasks.take();
     task->run();
     if (task->autoDelete()) {
         delete task;

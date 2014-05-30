@@ -26,6 +26,7 @@
 #include <QtCore/QMutexLocker>
 #include <QtCore/QWaitCondition>
 
+#include "QtAV/BlockingQueue.h"
 #include <QtAV/Packet.h>
 #include <QtAV/QtAV_Global.h>
 
@@ -58,6 +59,7 @@ public:
       , ready(false)
       , render_pts0(0)
     {
+        tasks.blockFull(false);
     }
     virtual ~AVThreadPrivate();
 
@@ -74,7 +76,7 @@ public:
     FilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
     QList<Filter*> filters;
     Statistics *statistics; //not obj. Statistics is unique for the player, which is in AVPlayer
-    QList<QRunnable*> tasks;
+    BlockingQueue<QRunnable*> tasks;
     QWaitCondition ready_cond;
     QMutex ready_mutex;
     bool ready;
