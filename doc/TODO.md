@@ -42,6 +42,7 @@
 ref: qtmmwidgets
 - OpenVG or GL text renderering, dwrite text renderering
 - D3D and DDraw: not that important.
+- D3D surface=>gl texture: http://stackoverflow.com/questions/7686619/mixing-directx-and-opengl  http://developer.download.nvidia.com/opengl/specs/WGL_NV_DX_interop.txt   https://github.com/tliron/opengl-3d-vision-bridge/blob/master/opengl_3dv.c
 
 #### Filters
 - Integrate libavfilter
@@ -64,6 +65,7 @@ ref: qtmmwidgets
 #### Hardware decoding
 - Better CUDA support. No CPU copy, all done in gpu from decoding to filtering to renderering.
 - DXVA HD
+- DXVA2 + d3d11: https://bugzilla.mozilla.org/show_bug.cgi?id=875247
 - SSE4 optimized copy. Ref: VLC
 - OMX
 - Cedarv enhancement if I have a device to test

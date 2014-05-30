@@ -56,8 +56,8 @@ runConfigTests()
 }
 
 
-PACKAGE_VERSION = 1.3.2
+PACKAGE_VERSION = 1.3.4
 PACKAGE_NAME= QtAV
 
 include(pack.pri)
-#packageSet(1.3.2, QtAV)
+#packageSet(1.3.4, QtAV)

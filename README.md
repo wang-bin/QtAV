@@ -1,6 +1,6 @@
 # [QtAV](http://wang-bin.github.io/QtAV)
 
-QtAV is a media playing library based on Qt and FFmpeg. It can help you to write a player
+QtAV is a multimedia playback library based on Qt and FFmpeg. It can help you to write a player
 with less effort than ever before.
 
 QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](http://ffmpeg.org/projects.html)
@@ -17,28 +17,25 @@ you must adhere to the terms of the license in question.**
 
 QtAV can meet your most demands
 
-- Hardware decoding suppprt: DXVA2, VAAPI(buggy now), CedarX(e.g. pcDuino), CUDA(the 1st player support CUDA on linux?)
+- Hardware decoding suppprt: DXVA2, VAAPI, CedarX, CUDA(the 1st player support CUDA on linux?)
+- OpenGL and ES2 support for Hi10P and other 16-bit YUV videos (The 1st player/library support in ES2? VLC, XBMC, mplayer does not support now)
 - Seek, pause/resume
 - Video capture in rgb and yuv format
 - OSD and custom filters
-- Aspect ratio
 - Transform video using GraphicsItemRenderer. (rotate, shear, etc)
 - Playing frame by frame (currently support forward playing)
 - Playing speed control. At any speed.
 - Variant streams: locale file, http, rtsp, etc.
-- Playing music
 - Choose audio channel
 - Choose media stream, e.g. play a desired audio track
-- Volume control
 - Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
 - Dynamically change render engine when playing.
 - Multiple video outputs for 1 player
 - Region of interest(ROI), i.e. video cropping
 - Video eq: brightness, contrast, saturation, hue
-- Support renderering 16-bit YUV (e.g. Hi10P) using OpenGL and OpenGL ES2. (The 1st player/library support in ES2? VLC, XBMC, mplayer does not support now)
 - QML support as a plugin. Most playback APIs are compatible with QtMultiMedia module
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
-  both FFmpeg(>=0.9) and [Libav](http://libav.org).
+  both FFmpeg(>=0.9) and [Libav >= 9.0](http://libav.org).
 
 
 ### Extensible Framework (work in progress)
@@ -71,21 +68,7 @@ page: [depends](https://sourceforge.net/projects/qtav/files/depends)**
 
 #### Build
 
-You can build QtAV with many compilers and on many platforms. You can use gcc, clang, vc to compile it.  
 See the wiki [Build QtAV](https://github.com/wang-bin/QtAV/wiki/Build-QtAV) and [QtAV Build Configurations](https://github.com/wang-bin/QtAV/wiki/QtAV-Build-Configurations)
-
-Here is a brief guide:
-
-It's recommend not to build in source dir.  
-
-    cd your_build_dir
-    qmake QtAV_project_dir/QtAV.pro
-    make
-
-qmake will run check the required libraries at the first time, so you must make sure those libraries can be found by compiler.
-Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, run `qmake QtAV_project_dir/QtAV.pro -config recheck`
-
-_WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice.(ISSUE #18)
 
 
 
@@ -125,11 +108,12 @@ QtAV can also be used in **Qml**
 
 - [Fork](https://github.com/wang-bin/QtAV/fork) QtAV project on github and make a branch. Commit in that branch, and push, then create a pull request to be reviewed and merged.
 - [Create an issue](https://github.com/wang-bin/QtAV/issues/new) if you have any problem when using QtAV or you find a bug, etc.
-- What you can do: translation, writing document, find or fix bugs, give your idea for this project etc.
+- What you can do: translation, write document, wiki, find or fix bugs, give your idea for this project etc.
 
 #### Contributors
 
 - Wang Bin(Lucas Wang) <wbsecg1@gmail.com>: creator, maintainer
+- skaman: aspect ratio from stream
 - Stefan Ladage <sladage@gmail.com>: QIODevice support. Wiki about build QtAV for iOS.
 - Miroslav Bendik <miroslav.bendik@gmail.com>: Cedarv support. Better qmlvideofx appearance
 - Dimitri E. Prado <dprado@e3c.com.br>: issue 70
@@ -199,10 +183,6 @@ QtAV on Mac OS X
 
 ![Alt text](https://sourceforge.net/p/qtav/screenshot/mac.jpg "player on OSX")
 
-IP camera using QtAV. OS: Fedora 18 (some developers from Italy http://www.selcomsrl.eu/)
-
-![Alt text](https://sourceforge.net/projects/qtav/screenshots/ip_camera.jpg "ip camera")
-
 QMLPlayer on ubuntu
 
 ![QMLPlayer](https://sourceforge.net/p/qtav/screenshot/QMLPlayer%2BQtAV.jpg "QMLPlayer")
@@ -223,9 +203,8 @@ Video Wall
 
 Thanks
 
-Now I have received 1050 RMB(about 160$) and 100$
+Now I have received 1150 RMB and 100$
 
-[![Alipay](https://img.alipay.com/sys/personalprod/style/mc/top-logo.png)](https://me.alipay.com/lucaswang)
 
 [PayPal ![Paypal](http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](http://wang-bin.github.io/qtav.org#donate)
 

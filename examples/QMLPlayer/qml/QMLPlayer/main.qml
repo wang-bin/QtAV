@@ -193,7 +193,7 @@ Rectangle {
             onLinkActivated: Qt.openUrlExternally(link)
         }
         function helpText() {
-            return "<h3>QMLPlayer based on QtAV  1.3.3 </h3>"
+            return "<h3>QMLPlayer based on QtAV  1.3.4 </h3>"
              + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
              + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
              + "<p>Shanghai University->S3 Graphics, Shanghai, China</p>"
