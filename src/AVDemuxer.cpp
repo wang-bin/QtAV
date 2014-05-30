@@ -135,6 +135,7 @@ private:
 AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     :QObject(parent)
     , mCurrentMediaStatus(NoMedia)
+    , has_attached_pic(false)
     , started_(false)
     , eof(false)
     , auto_reset_stream(true)
@@ -292,6 +293,7 @@ bool AVDemuxer::atEnd() const
 
 bool AVDemuxer::close()
 {
+    has_attached_pic = false;
     eof = false;
     stream_idx = -1;
     if (auto_reset_stream) {
@@ -527,6 +529,7 @@ bool AVDemuxer::load()
 
 bool AVDemuxer::prepareStreams()
 {
+    has_attached_pic = false;
     if (!findStreams())
         return false;
     // wanted_xx_stream < nb_streams and +valied is always true because setStream() and setStreamIndex() ensure it correct
@@ -539,6 +542,7 @@ bool AVDemuxer::prepareStreams()
     if (stream >= 0) {
         v_codec_context = format_context->streams[stream]->codec;
         video_stream = stream; //video_stream is the currently opened stream
+        has_attached_pic = !!(format_context->streams[stream]->disposition & AV_DISPOSITION_ATTACHED_PIC);
     }
     stream = wanted_subtitle_stream < 0 ? subtitleStream() : wanted_subtitle_stream;
     if (stream >= 0) {
@@ -546,6 +550,11 @@ bool AVDemuxer::prepareStreams()
         subtitle_stream = stream; //subtitle_stream is the currently opened stream
     }
     return true;
+}
+
+bool AVDemuxer::hasAttacedPicture() const
+{
+    return has_attached_pic;
 }
 
 void AVDemuxer::setAutoResetStream(bool reset)

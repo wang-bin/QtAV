@@ -120,6 +120,7 @@ public:
     qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames
     bool isInput() const;
 
+    bool hasAttacedPicture() const;
     // true: next load with use the best stream instead of specified stream
     void setAutoResetStream(bool reset);
     bool autoResetStream() const;
@@ -196,6 +197,7 @@ private:
     void setMediaStatus(MediaStatus status);
 
     MediaStatus mCurrentMediaStatus;
+    bool has_attached_pic;
     bool started_;
     bool eof;
     bool auto_reset_stream;

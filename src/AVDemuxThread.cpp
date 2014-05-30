@@ -325,7 +325,7 @@ void AVDemuxThread::run()
              */
             if (aqueue) {
                 if (vqueue)
-                    aqueue->blockFull(vqueue->isEnough());
+                    aqueue->blockFull(vqueue->isEnough() || demuxer->hasAttacedPicture());
                 aqueue->put(pkt); //affect video_thread
             }
         } else if (index == video_stream) {
