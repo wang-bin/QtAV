@@ -71,6 +71,11 @@ void Statistics::VideoOnly::putPts(qreal pts)
     }
 }
 
+qreal Statistics::VideoOnly::pts() const
+{
+    return d->ptsHistory.last();
+}
+
 qreal Statistics::VideoOnly::currentDisplayFPS() const
 {
     if (d->ptsHistory.size() < 2)

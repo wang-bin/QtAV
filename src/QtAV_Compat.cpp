@@ -40,6 +40,9 @@ void ffmpeg_version_print()
 #if QTAV_HAVE(AVRESAMPLE)
         { "avresample", LIBAVRESAMPLE_VERSION_INT, avresample_version()},
 #endif //QTAV_HAVE(AVRESAMPLE)
+#if QTAV_HAVE(AVFILTER)
+        { "avfilter", LIBAVFILTER_VERSION_INT, avfilter_version() },
+#endif //QTAV_HAVE(AVFILTER)
         { 0, 0, 0}
     };
     for (int i = 0; components[i].lib != 0; ++i) {

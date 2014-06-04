@@ -21,6 +21,7 @@
 
 #include "QtAV/LibAVFilter.h"
 #include "QtAV/private/Filter_p.h"
+#include "QtAV/Statistics.h"
 #include "QtAV/VideoFrame.h"
 #include "QtAV/QtAV_Compat.h"
 
@@ -61,7 +62,7 @@ public:
         return true;
     }
 
-    bool push(Frame *frame) {
+    bool push(Frame *frame, qreal pts) {
         VideoFrame *vf = static_cast<VideoFrame*>(frame);
         if (width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg() || options_changed) {
             width = vf->width();
@@ -75,6 +76,7 @@ public:
             }
         }
         Q_ASSERT(avframe);
+        avframe->pts = pts * 1000000.0; // time_base is 1/1000000
         avframe->width = vf->width();
         avframe->height = vf->height();
         avframe->format = pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
@@ -197,7 +199,7 @@ void LibAVFilter::process(Statistics *statistics, Frame *frame)
 {
     Q_UNUSED(statistics);
     DPTR_D(LibAVFilter);
-    if (!d.push(frame))
+    if (!d.push(frame, statistics->video_only.pts()))
         return;
     d.pull(frame);
 }

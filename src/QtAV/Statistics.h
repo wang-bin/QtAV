@@ -113,6 +113,7 @@ public:
         VideoOnly();
         // put frame to be renderer pts after decoded
         void putPts(qreal pts);
+        qreal pts() const; // last pts
         // compute from pts history
         qreal currentDisplayFPS() const;
         //AVStream.avg_frame_rate may be 0, then use AVStream.r_frame_rate
