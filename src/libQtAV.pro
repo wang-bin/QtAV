@@ -62,6 +62,12 @@ sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2) {
 DEFINES += __STDC_CONSTANT_MACROS
 
 LIBS += -lavcodec -lavformat -lavutil -lswscale
+config_avfilter {
+    DEFINES += QTAV_HAVE_AVFILTER=1
+    SOURCES += LibAVFilter.cpp
+    HEADERS += QtAV/LibAVFilter.h
+    LIBS += -lavfilter
+}
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
     SOURCES += AudioResamplerFF.cpp

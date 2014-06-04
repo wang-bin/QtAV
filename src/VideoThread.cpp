@@ -302,6 +302,7 @@ void VideoThread::run()
                     if (!filter->isEnabled())
                         continue;
                     filter->process(d.filter_context, d.statistics, &frame);
+                    frame.setImageConverter(d.conv); //frame may be changed
                 }
             }
         }
