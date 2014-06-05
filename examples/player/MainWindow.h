@@ -30,6 +30,7 @@ class AVError;
 class AVPlayer;
 class AVClock;
 class VideoRenderer;
+class LibAVFilter;
 }
 class QMenu;
 class QTimeEdit;
@@ -110,6 +111,7 @@ private slots:
     void onSaturationChanged(int s);
 
     void onCaptureConfigChanged();
+    void onAVFilterConfigChanged();
 
     void donate();
     void setup();
@@ -162,6 +164,7 @@ private:
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;
     QtAV::VideoRenderer *mpRenderer, *mpTempRenderer;
+    QtAV::LibAVFilter *mpAVFilter;
     QString mFile;
     QString mTitle;
     QPixmap mPlayPixmap;

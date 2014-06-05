@@ -84,6 +84,11 @@ public:
     QString avformatExtra() const;
     Config& avformatExtra(const QString& text);
 
+    QString avfilterOptions() const;
+    Config& avfilterOptions(const QString& options);
+    bool avfilterEnable() const;
+    Config& avfilterEnable(bool e);
+
     QVariant operator ()(const QString& key) const;
     Config& operator ()(const QString& key, const QVariant& value);
 public:
@@ -94,7 +99,7 @@ public:
     Q_SIGNAL void captureDirChanged(const QString& dir);
     Q_SIGNAL void captureFormatChanged(const QByteArray& fmt);
     Q_SIGNAL void captureQualityChanged(int quality);
-
+    Q_SIGNAL void avfilterChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();

@@ -120,6 +120,10 @@ public:
         analyze_duration = settings.value("analyzeduration", 5000000).toInt();
         avformat_extra = settings.value("extra", "").toString();
         settings.endGroup();
+        settings.beginGroup("avfilter");
+        avfilter_on = settings.value("enable", true).toBool();
+        avfilter = settings.value("options", "").toString();
+        settings.endGroup();
     }
     void save() {
         qDebug("************save config %s************", qPrintable(dir));
@@ -141,6 +145,10 @@ public:
         settings.setValue("analyzeduration", analyze_duration);
         settings.setValue("extra", avformat_extra);
         settings.endGroup();
+        settings.beginGroup("avfilter");
+        settings.setValue("enable", avfilter_on);
+        settings.setValue("options", avfilter);
+        settings.endGroup();
     }
 
     QString dir;
@@ -157,6 +165,8 @@ public:
     unsigned int probe_size;
     int analyze_duration;
     QString avformat_extra;
+    bool avfilter_on;
+    QString avfilter;
 };
 
 Config& Config::instance()
@@ -358,5 +368,33 @@ QString Config::avformatExtra() const
 Config& Config::avformatExtra(const QString &text)
 {
     mpData->avformat_extra = text;
+    return *this;
+}
+
+QString Config::avfilterOptions() const
+{
+    return mpData->avfilter;
+}
+
+Config& Config::avfilterOptions(const QString& options)
+{
+    if (mpData->avfilter == options)
+        return *this;
+    mpData->avfilter = options;
+    emit avfilterChanged();
+    return *this;
+}
+
+bool Config::avfilterEnable() const
+{
+    return mpData->avfilter_on;
+}
+
+Config& Config::avfilterEnable(bool e)
+{
+    if (mpData->avfilter_on == e)
+        return *this;
+    mpData->avfilter_on = e;
+    emit avfilterChanged();
     return *this;
 }

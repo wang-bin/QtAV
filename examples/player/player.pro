@@ -30,7 +30,8 @@ SOURCES += main.cpp \
     playlist/PlayListDelegate.cpp \
     playlist/PlayList.cpp \
     config/PropertyEditor.cpp \
-    config/AVFormatConfigPage.cpp
+    config/AVFormatConfigPage.cpp \
+    config/AVFilterConfigPage.cpp
 
 HEADERS += \
     MainWindow.h \
@@ -51,7 +52,8 @@ HEADERS += \
     playlist/PlayListDelegate.h \
     playlist/PlayList.h \
     config/PropertyEditor.h \
-    config/AVFormatConfigPage.h
+    config/AVFormatConfigPage.h \
+    config/AVFilterConfigPage.h
 
 tv.files = res/tv.ini
 BIN_INSTALLS += tv
@@ -60,3 +62,5 @@ include($$PROJECTROOT/deploy.pri)
 RESOURCES += \
     res/player.qrc \
     theme.qrc
+
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android

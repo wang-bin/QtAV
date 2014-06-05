@@ -44,6 +44,7 @@
 #include <QKeyEvent>
 #include <QWheelEvent>
 #include <QtAV/QtAV.h>
+#include <QtAV/LibAVFilter.h>
 #include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"
@@ -95,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpPlayer(0)
   , mpRenderer(0)
   , mpTempRenderer(0)
+  , mpAVFilter(0)
   , mpStatisticsView(0)
 {
     mpChannelAction = 0;
@@ -123,6 +125,10 @@ MainWindow::~MainWindow()
         delete mpStatisticsView;
         mpStatisticsView = 0;
     }
+    if (mpAVFilter) {
+        delete mpAVFilter;
+        mpAVFilter = 0;
+    }
 }
 
 void MainWindow::initPlayer()
@@ -134,9 +140,11 @@ void MainWindow::initPlayer()
     qApp->installEventFilter(ef);
     connect(ef, SIGNAL(helpRequested()), SLOT(help()));
     onCaptureConfigChanged();
+    onAVFilterConfigChanged();
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureFormatChanged(QByteArray)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), SLOT(onCaptureConfigChanged()));
+    connect(&Config::instance(), SIGNAL(avfilterChanged()), SLOT(onAVFilterConfigChanged()));
     connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
@@ -1270,6 +1278,23 @@ void MainWindow::onCaptureConfigChanged()
     mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": " + mpPlayer->videoCapture()->captureDir()
                              + "\n" + tr("Format") + ": " + Config::instance().captureFormat());
 
+}
+
+void MainWindow::onAVFilterConfigChanged()
+{
+    if (Config::instance().avfilterEnable()) {
+        if (!mpAVFilter) {
+            mpAVFilter = new LibAVFilter();
+        }
+        mpAVFilter->setEnabled(true);
+        mpPlayer->installVideoFilter(mpAVFilter);
+        mpAVFilter->setOptions(Config::instance().avfilterOptions());
+    } else {
+        if (mpAVFilter) {
+            mpAVFilter->setEnabled(false);
+        }
+        mpPlayer->uninstallFilter(mpAVFilter);
+    }
 }
 
 void MainWindow::donate()

@@ -25,6 +25,7 @@
 #include "CaptureConfigPage.h"
 #include "DecoderConfigPage.h"
 #include "AVFormatConfigPage.h"
+#include "AVFilterConfigPage.h"
 #include "Config.h"
 void ConfigDialog::display()
 {
@@ -58,6 +59,7 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
     mPages << new CaptureConfigPage()
            << new DecoderConfigPage()
            << new AVFormatConfigPage()
+           << new AVFilterConfigPage()
               ;
 
     foreach (ConfigPageBase* page, mPages) {
