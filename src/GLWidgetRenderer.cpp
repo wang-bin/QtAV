@@ -141,6 +141,48 @@ static inline void checkGlError(const char* op = 0) {
     FUNC; \
     checkGlError(#FUNC);
 
+bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type)
+{
+    struct fmt_entry {
+        VideoFormat::PixelFormat pixfmt;
+        GLint internal_format;
+        GLenum format;
+        GLenum type;
+    };
+    // Very special formats, for which OpenGL happens to have direct support
+    static const struct fmt_entry pixfmt_to_gl_formats[] = {
+#ifdef QT_OPENGL_ES_2
+        {VideoFormat::Format_ARGB32, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
+        {VideoFormat::Format_RGB32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
+#else
+        {VideoFormat::Format_RGB32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
+        {VideoFormat::Format_ARGB32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
+#endif
+        {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
+    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
+        {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
+    #endif
+        {VideoFormat::Format_RGB565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, //GL_UNSIGNED_SHORT_5_6_5_REV?
+        //{VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
+        //{VideoFormat::Format_BGR32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
+        {VideoFormat::Format_BGR24,  GL_RGB,  GL_BGR,  GL_UNSIGNED_BYTE },
+    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
+        {VideoFormat::Format_BGR555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
+    #endif
+        {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, // need swap r b?
+    };
+
+    for (unsigned int i = 0; i < sizeof(pixfmt_to_gl_formats)/sizeof(pixfmt_to_gl_formats[0]); ++i) {
+        if (pixfmt_to_gl_formats[i].pixfmt == fmt.pixelFormat()) {
+            *internal_format = pixfmt_to_gl_formats[i].internal_format;
+            *data_format = pixfmt_to_gl_formats[i].format;
+            *data_type = pixfmt_to_gl_formats[i].type;
+            return true;
+        }
+    }
+    return false;
+}
+
 // TODO: format + datatype? internal format == format?
 //https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_format_BGRA8888.txt
 int bytesOfGLFormat(GLenum format, GLenum dataType = GL_UNSIGNED_BYTE)
@@ -447,38 +489,50 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
      * GL ES2 support: GL_RGB, GL_RGBA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA
      * http://stackoverflow.com/questions/18688057/which-opengl-es-2-0-texture-formats-are-color-depth-or-stencil-renderable
      */
-    internal_format = QVector<GLint>(fmt.planeCount(), FMT_INTERNAL);
-    data_format = QVector<GLenum>(fmt.planeCount(), FMT);
-    data_type = QVector<GLenum>(fmt.planeCount(), GL_UNSIGNED_BYTE);
-    if (fmt.isPlanar()) {
+    if (fmt.isRGB()) {
+        GLint internal_fmt;
+        GLenum data_fmt;
+        GLenum data_t;
+        if (!videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t)) {
+            qWarning("no opengl format found");
+            return false;
+        }
+        internal_format = QVector<GLint>(fmt.planeCount(), internal_fmt);
+        data_format = QVector<GLenum>(fmt.planeCount(), data_fmt);
+        data_type = QVector<GLenum>(fmt.planeCount(), data_t);
+    } else {
+        internal_format.resize(fmt.planeCount());
+        data_format.resize(fmt.planeCount());
+        data_type = QVector<GLenum>(fmt.planeCount(), GL_UNSIGNED_BYTE);
+        if (fmt.isPlanar()) {
         /*!
          * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
          * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
          */
-        qDebug("///////////bpp %d", fmt.bytesPerPixel());
-
-        internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED for GL
-        if (fmt.planeCount() == 2) {
-            internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
-        } else {
-            if (fmt.bytesPerPixel(1) == 2) {
-                // read 16 bits and compute the real luminance in shader
-                internal_format[0] = data_format[0] = GL_LUMINANCE_ALPHA;
-                internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA; //vec4(L,L,L,A)
-                internal_format[2] = data_format[2] = GL_LUMINANCE_ALPHA;
+            qDebug("///////////bpp %d", fmt.bytesPerPixel());
+            internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED for GL
+            if (fmt.planeCount() == 2) {
+                internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
             } else {
-                internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
-                internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
+                if (fmt.bytesPerPixel(1) == 2) {
+                    // read 16 bits and compute the real luminance in shader
+                    internal_format[0] = data_format[0] = GL_LUMINANCE_ALPHA;
+                    internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA; //vec4(L,L,L,A)
+                    internal_format[2] = data_format[2] = GL_LUMINANCE_ALPHA;
+                } else {
+                    internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
+                    internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
+                }
             }
+            for (int i = 0; i < internal_format.size(); ++i) {
+                // xbmc use bpp not bpp(plane)
+                //internal_format[i] = GetGLInternalFormat(data_format[i], fmt.bytesPerPixel(i));
+                //data_format[i] = internal_format[i];
+            }
+        } else {
+            //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
+            // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
         }
-        for (int i = 0; i < internal_format.size(); ++i) {
-            // xbmc use bpp not bpp(plane)
-            //internal_format[i] = GetGLInternalFormat(data_format[i], fmt.bytesPerPixel(i));
-            //data_format[i] = internal_format[i];
-        }
-    } else {
-        //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
-        // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     }
     for (int i = 0; i < fmt.planeCount(); ++i) {
         //qDebug("format: %#x GL_LUMINANCE_ALPHA=%#x", data_format[i], GL_LUMINANCE_ALPHA);

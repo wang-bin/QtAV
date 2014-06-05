@@ -209,15 +209,10 @@ static const struct {
     //QTAV_PIX_FMT_C(RGB48BE),   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as big-endian
     //QTAV_PIX_FMT_C(RGB48LE),   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as little-endian
 
-    { VideoFormat::Format_RGB565, QTAV_PIX_FMT_C(RGB565BE) },  ///< packed RGB 5:6:5, 16bpp, (msb)   5R 6G 5B(lsb), big-endian
-    { VideoFormat::Format_RGB565, QTAV_PIX_FMT_C(RGB565LE) },  ///< packed RGB 5:6:5, 16bpp, (msb)   5R 6G 5B(lsb), little-endian
-    { VideoFormat::Format_RGB555, QTAV_PIX_FMT_C(RGB555BE) },  ///< packed RGB 5:5:5, 16bpp, (msb)1A 5R 5G 5B(lsb), big-endian, most significant bit to 0
-    { VideoFormat::Format_RGB555, QTAV_PIX_FMT_C(RGB555LE) },  ///< packed RGB 5:5:5, 16bpp, (msb)1A 5R 5G 5B(lsb), little-endian, most significant bit to 0
-
-    { VideoFormat::Format_BGR565, QTAV_PIX_FMT_C(BGR565BE) },  ///< packed BGR 5:6:5, 16bpp, (msb)   5B 6G 5R(lsb), big-endian
-    { VideoFormat::Format_BGR565, QTAV_PIX_FMT_C(BGR565LE) },  ///< packed BGR 5:6:5, 16bpp, (msb)   5B 6G 5R(lsb), little-endian
-    { VideoFormat::Format_BGR555, QTAV_PIX_FMT_C(BGR555BE) },  ///< packed BGR 5:5:5, 16bpp, (msb)1A 5B 5G 5R(lsb), big-endian, most significant bit to 1
-    { VideoFormat::Format_BGR555, QTAV_PIX_FMT_C(BGR555LE) },  ///< packed BGR 5:5:5, 16bpp, (msb)1A 5B 5G 5R(lsb), little-endian, most significant bit to 1
+    { VideoFormat::Format_RGB565, QTAV_PIX_FMT_C(RGB565) },  ///< packed RGB 5:6:5, 16bpp, (msb)   5R 6G 5B(lsb), native-endian
+    { VideoFormat::Format_RGB555, QTAV_PIX_FMT_C(RGB555) },  ///< packed RGB 5:5:5, 16bpp, (msb)1A 5R 5G 5B(lsb), native-endian, be: most significant bit to 1
+    { VideoFormat::Format_BGR565, QTAV_PIX_FMT_C(BGR565) },  ///< packed BGR 5:6:5, 16bpp, (msb)   5B 6G 5R(lsb), native-endian
+    { VideoFormat::Format_BGR555, QTAV_PIX_FMT_C(BGR555) },  ///< packed BGR 5:5:5, 16bpp, (msb)1A 5B 5G 5R(lsb), native-endian, be: most significant bit to 1
 /*
     QTAV_PIX_FMT_C(VAAPI_MOCO, ///< HW acceleration through VA API at motion compensation entry-point, Picture.data[3] contains a vaapi_render_state struct which contains macroblocks as well as various fields extracted from headers
     QTAV_PIX_FMT_C(VAAPI_IDCT, ///< HW acceleration through VA API at IDCT entry-point, Picture.data[3] contains a vaapi_render_state struct which contains fields extracted from headers
