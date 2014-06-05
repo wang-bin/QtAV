@@ -165,10 +165,10 @@ static const struct {
     { VideoFormat::Format_YUYV, QTAV_PIX_FMT_C(YUYV422) }, //??   ///< packed YUV 4:2:2, 16bpp, Y0 Cb Y1 Cr
     { VideoFormat::Format_RGB24, QTAV_PIX_FMT_C(RGB24) },     ///< packed RGB 8:8:8, 24bpp, RGBRGB...
     { VideoFormat::Format_BGR24, QTAV_PIX_FMT_C(BGR24) },     ///< packed RGB 8:8:8, 24bpp, BGRBGR...
-    //{ VideoFormat::Format_YUV422P, QTAV_PIX_FMT_C(YUV422P)},   ///< planar YUV 4:2:2, 16bpp, (1 Cr & Cb sample per 2x1 Y samples)
-    //{ VideoFormat::Format_YUV444, QTAV_PIX_FMT_C(YUV444P) },   ///< planar YUV 4:4:4, 24bpp, (1 Cr & Cb sample per 1x1 Y samples)
-    //QTAV_PIX_FMT_C(YUV410P),   ///< planar YUV 4:1:0,  9bpp, (1 Cr & Cb sample per 4x4 Y samples)
-    //QTAV_PIX_FMT_C(YUV411P),   ///< planar YUV 4:1:1, 12bpp, (1 Cr & Cb sample per 4x1 Y samples)
+    { VideoFormat::Format_YUV422P, QTAV_PIX_FMT_C(YUV422P)},   ///< planar YUV 4:2:2, 16bpp, (1 Cr & Cb sample per 2x1 Y samples)
+    { VideoFormat::Format_YUV444P, QTAV_PIX_FMT_C(YUV444P) },   ///< planar YUV 4:4:4, 24bpp, (1 Cr & Cb sample per 1x1 Y samples)
+    { VideoFormat::Format_YUV410P, QTAV_PIX_FMT_C(YUV410P) },   ///< planar YUV 4:1:0,  9bpp, (1 Cr & Cb sample per 4x4 Y samples)
+    { VideoFormat::Format_YUV411P, QTAV_PIX_FMT_C(YUV411P) },   ///< planar YUV 4:1:1, 12bpp, (1 Cr & Cb sample per 4x1 Y samples)
     //QTAV_PIX_FMT_C(GRAY8),     ///<        Y        ,  8bpp
     //QTAV_PIX_FMT_C(MONOWHITE), ///<        Y        ,  1bpp, 0 is white, 1 is black, in each byte pixels are ordered from the msb to the lsb
     //QTAV_PIX_FMT_C(MONOBLACK), ///<        Y        ,  1bpp, 0 is black, 1 is white, in each byte pixels are ordered from the msb to the lsb
@@ -368,9 +368,7 @@ static const struct {
 } qpixfmt_map[] = {
     { VideoFormat::Format_RGB32,QImage::Format_RGB32 },
     { VideoFormat::Format_ARGB32, QImage::Format_ARGB32 },
-    { VideoFormat::Format_ARGB32_Premultiplied, QImage::Format_ARGB32_Premultiplied },
     { VideoFormat::Format_RGB565, QImage::Format_RGB16 },
-    { VideoFormat::Format_ARGB8565_Premultiplied, QImage::Format_ARGB8565_Premultiplied },
     { VideoFormat::Format_RGB555, QImage::Format_RGB555 },
     { VideoFormat::Format_RGB24, QImage::Format_RGB888 },
     { VideoFormat::Format_Invalid, QImage::Format_Invalid }
@@ -637,27 +635,25 @@ bool VideoFormat::hasAlpha() const
 bool VideoFormat::isPlanar(PixelFormat pixfmt)
 {
     return pixfmt == Format_YUV420P || pixfmt == Format_NV12 || pixfmt == Format_NV21 || pixfmt == Format_YV12
+            || pixfmt == Format_YUV410P || pixfmt == Format_YUV411P || pixfmt == Format_YUV422P
+            || pixfmt == Format_YUV444P || pixfmt == Format_AYUV444
         || pixfmt == Format_IMC1 || pixfmt == Format_IMC2 || pixfmt == Format_IMC3 || pixfmt == Format_IMC4
-        || pixfmt == Format_YUV444 || pixfmt == Format_AYUV444 || pixfmt == Format_AYUV444_Premultiplied
             ;
 }
 
 bool VideoFormat::isRGB(PixelFormat pixfmt)
 {
-    return pixfmt == Format_RGB32 || pixfmt == Format_ARGB32 || pixfmt == Format_ARGB32_Premultiplied
-        || pixfmt == Format_BGR24 || pixfmt == Format_BGRA32 || pixfmt == Format_ARGB8565_Premultiplied
+    return pixfmt == Format_RGB32 || pixfmt == Format_ARGB32
+        || pixfmt == Format_BGR24 || pixfmt == Format_BGRA32
         || pixfmt == Format_BGR565 || pixfmt == Format_RGB555 || pixfmt == Format_RGB565
         || pixfmt == Format_BGR24 || pixfmt == Format_BGR32 || pixfmt == Format_BGR555
-        || pixfmt == Format_BGRA32_Premultiplied || pixfmt == Format_BGRA5658_Premultiplied
             ;
 }
 
 bool VideoFormat::hasAlpha(PixelFormat pixfmt)
 {
     return pixfmt == Format_ARGB32 || pixfmt == Format_BGRA32
-        || pixfmt == Format_ARGB32_Premultiplied || pixfmt == Format_BGRA32_Premultiplied
-        || pixfmt == Format_ARGB8565_Premultiplied || pixfmt == Format_BGRA5658_Premultiplied
-        || pixfmt == Format_AYUV444 || pixfmt == Format_AYUV444_Premultiplied
+        || pixfmt == Format_AYUV444// || pixfmt == Format_RGB555 || pixfmt == Format_BGR555
             ;
 }
 
