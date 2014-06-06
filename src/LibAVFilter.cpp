@@ -145,14 +145,19 @@ public:
         inputs->pad_idx    = 0;
         inputs->next       = NULL;
 
+
         //avfilter_graph_parse, avfilter_graph_parse2?
         if ((ret = avfilter_graph_parse_ptr(filter_graph, options.toUtf8().constData(),
                                         &inputs, &outputs, NULL)) < 0) {
             qWarning("avfilter_graph_parse_ptr fail: %s", av_err2str(ret));
+            avfilter_inout_free(&outputs);
+            avfilter_inout_free(&inputs);
             return false;
         }
         if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
             qWarning("avfilter_graph_config fail: %s", av_err2str(ret));
+            avfilter_inout_free(&outputs);
+            avfilter_inout_free(&inputs);
             return false;
         }
         avfilter_inout_free(&outputs);

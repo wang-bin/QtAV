@@ -125,10 +125,6 @@ MainWindow::~MainWindow()
         delete mpStatisticsView;
         mpStatisticsView = 0;
     }
-    if (mpAVFilter) {
-        delete mpAVFilter;
-        mpAVFilter = 0;
-    }
 }
 
 void MainWindow::initPlayer()
