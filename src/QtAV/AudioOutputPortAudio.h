@@ -38,6 +38,7 @@ public:
     bool open();
     bool close();
 
+    virtual void waitForNextBuffer();
 protected:
     bool write();
 };

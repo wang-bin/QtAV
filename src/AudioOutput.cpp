@@ -42,7 +42,7 @@ AudioOutput::~AudioOutput()
 {
 }
 
-bool AudioOutput::receiveData(const QByteArray &data)
+bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
 {
     DPTR_D(AudioOutput);
     //DPTR_D(AVOutput);
@@ -53,6 +53,10 @@ bool AudioOutput::receiveData(const QByteArray &data)
     if (d.paused)
         return false;
     d.data = data;
+    AudioOutputPrivate::FrameInfo fi;
+    fi.timestamp = pts;
+    fi.data_size = data.size();
+    d.queued_frame_info.enqueue(fi);
     return write();
 }
 
@@ -164,6 +168,17 @@ AudioFormat::SampleFormat AudioOutput::preferredSampleFormat() const
 AudioFormat::ChannelLayout AudioOutput::preferredChannelLayout() const
 {
     return AudioFormat::ChannelLayout_Stero;
+}
+
+void AudioOutput::waitForNextBuffer()
+{
+}
+
+qreal AudioOutput::timestamp() const
+{
+    DPTR_D(const AudioOutput);
+    // FIXME: empty shouldn't happen if called by AudioThread.
+    return d.queued_frame_info.isEmpty() ? 0 : d.queued_frame_info.head().timestamp;
 }
 
 } //namespace QtAV

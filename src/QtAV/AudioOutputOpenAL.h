@@ -40,8 +40,8 @@ public:
     virtual AudioFormat::SampleFormat preferredSampleFormat() const;
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
 
-
     QString name() const;
+    virtual void waitForNextBuffer();
 
 protected:
     virtual bool write();

@@ -24,9 +24,19 @@
 
 #include <QtAV/AVOutput.h>
 #include <QtAV/FactoryDefine.h>
-#include <QtAV/AudioFormat.h>
-//TODO: audio device class
+#include <QtAV/AudioFrame.h>
+//TODO: audio device class. isAsync()
 //bool setXXX(); false if not supported
+
+/*!
+ * How to work with different audio APIs?
+ * AudioOutputPrivate::queued_frame_info stores the timestamps and buffer sizes for pending audio buffers.
+ * 1. Blocking API: for example, portaudio(also supports async api).
+ *    In waitForNextBuffer(), usually queued_frame_info.dequeue() is enough.
+ * 2. Async API: for example, OpenAL and OpenSL.
+ *    In waitForNextBuffer() you must wait until you can put a new audio buffer to the queue. You can use callback or
+ *    state querying api supplied by the audio library.
+ */
 
 namespace QtAV {
 
@@ -47,7 +57,7 @@ public:
     AudioOutput();
     virtual ~AudioOutput() = 0;
     /* store the data ref, then call convertData() and write(). tryPause() will be called*/
-    bool receiveData(const QByteArray& data);
+    bool receiveData(const QByteArray &data, qreal pts);
 
     int maxChannels() const;
     /*!
@@ -101,6 +111,9 @@ public:
      * \return the preferred channel layout. default is stero
      */
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
+
+    virtual void waitForNextBuffer();
+    qreal timestamp() const;
 
 protected:
     AudioOutput(AudioOutputPrivate& d);

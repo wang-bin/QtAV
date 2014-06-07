@@ -31,7 +31,32 @@
 #include <AL/alc.h>
 #endif
 
+#define UNQUEUE_QUICK 0
+
 namespace QtAV {
+
+
+#define AL_CHECK_RETURN_VALUE(RET) \
+    do { \
+        ALenum err = alGetError(); \
+        if (err != AL_NO_ERROR) { \
+            qWarning("AudioOutputOpenAL Error @%d  (%d) : %s", __LINE__, err, alGetString(err)); \
+            return RET; \
+        } \
+    } while(0)
+
+#define AL_CHECK_RETURN() AL_CHECK_RETURN_VALUE()
+#define AL_CHECK() AL_CHECK_RETURN_VALUE(false)
+
+#define AL_RUN_CHECK(FUNC) \
+    do { \
+        FUNC; \
+        ALenum err = alGetError(); \
+        if (err != AL_NO_ERROR) { \
+            qWarning("AudioOutputOpenAL Error>>> " #FUNC " (%d) : %s", err, alGetString(err)); \
+            return false; \
+        } \
+    } while(0)
 
 extern AudioOutputId AudioOutputId_OpenAL;
 FACTORY_REGISTER_ID_AUTO(AudioOutput, OpenAL, "OpenAL")
@@ -109,16 +134,8 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
     return format;
 }
 
-#define ALERROR_RETURN_F(alf) { \
-    alf; \
-    ALenum err = alGetError(); \
-    if (err != AL_NO_ERROR) { \
-        qWarning("AudioOutputOpenAL Error (%d/%d) %s : %s", err, AL_NO_ERROR, #alf, alGetString(err)); \
-        return false; \
-    }}
-
-const int kBufferSize = 4096*2;
-const int kBufferCount = 3;
+const int kBufferSize = 1024*4;
+const int kBufferCount = 8;
 
 class  AudioOutputOpenALPrivate : public AudioOutputPrivate
 {
@@ -142,6 +159,7 @@ public:
     qint64 err;
     QMutex mutex;
     QWaitCondition cond;
+    QQueue<ALuint> unqueued_buffers;
 };
 
 AudioOutputOpenAL::AudioOutputOpenAL()
@@ -221,6 +239,7 @@ bool AudioOutputOpenAL::open()
         return false;
     }
 
+    alSourcei(d.source, AL_LOOPING, AL_FALSE);
     alSourcei(d.source, AL_SOURCE_RELATIVE, AL_TRUE);
     alSourcei(d.source, AL_ROLLOFF_FACTOR, 0);
     alSource3f(d.source, AL_POSITION, 0.0, 0.0, 0.0);
@@ -229,6 +248,7 @@ bool AudioOutputOpenAL::open()
     qDebug("AudioOutputOpenAL open ok...");
     d.state = 0;
     d.available = true;
+    AL_CHECK();
     return true;
 }
 
@@ -239,9 +259,15 @@ bool AudioOutputOpenAL::close()
     DPTR_D(AudioOutputOpenAL);
     d.state = 0;
     d.available = false;
+    d.queued_frame_info.clear();
+    alSourceStop(d.source);
     do {
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
     } while (alGetError() == AL_NO_ERROR && d.state == AL_PLAYING);
+    ALint processed;
+    alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
+    ALuint buf;
+    while (processed--) { alSourceUnqueueBuffers(d.source, 1, &buf); }
     alDeleteSources(1, &d.source);
     alDeleteBuffers(kBufferCount, d.buffer);
 
@@ -249,6 +275,7 @@ bool AudioOutputOpenAL::close()
     ALCdevice *dev = alcGetContextsDevice(ctx);
     alcMakeContextCurrent(NULL);
     if (ctx) {
+        qDebug("alcDestroyContext(%p)", ctx);
         alcDestroyContext(ctx);
         ALCenum err = alcGetError(dev);
         if (err != ALC_NO_ERROR) { //ALC_INVALID_CONTEXT
@@ -257,6 +284,7 @@ bool AudioOutputOpenAL::close()
         }
     }
     if (dev) {
+        qDebug("alcCloseDevice(%p)", dev);
         alcCloseDevice(dev);
         ALCenum err = alcGetError(dev);
         if (err != ALC_NO_ERROR) { //ALC_INVALID_DEVICE
@@ -275,35 +303,24 @@ bool AudioOutputOpenAL::isSupported(const AudioFormat& format) const
 bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
     Q_UNUSED(sampleFormat);
-#ifdef Q_OS_IOS
     return sampleFormat == AudioFormat::SampleFormat_Unsigned8 || sampleFormat == AudioFormat::SampleFormat_Signed16;
-#endif //Q_OS_IOS
-    return true;
+
 }
 
 bool AudioOutputOpenAL::isSupported(AudioFormat::ChannelLayout channelLayout) const
 {
     Q_UNUSED(channelLayout);
-#ifdef Q_OS_IOS
     return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stero;
-#endif //Q_OS_IOS
-    return true;
 }
 
 AudioFormat::SampleFormat AudioOutputOpenAL::preferredSampleFormat() const
 {
-#ifdef Q_OS_IOS
     return AudioFormat::SampleFormat_Signed16;
-#endif //Q_OS_IOS
-    return AudioOutput::preferredSampleFormat();
 }
 
 AudioFormat::ChannelLayout AudioOutputOpenAL::preferredChannelLayout() const
 {
-#ifdef Q_OS_IOS
     return AudioFormat::ChannelLayout_Stero;
-#endif //Q_OS_IOS
-    return AudioOutput::preferredChannelLayout();
 }
 
 QString AudioOutputOpenAL::name() const
@@ -314,77 +331,98 @@ QString AudioOutputOpenAL::name() const
     return name;
 }
 
+void AudioOutputOpenAL::waitForNextBuffer()
+{
+    DPTR_D(AudioOutputOpenAL);
+    if (d.queued_frame_info.isEmpty())
+        return;
+    ALint queued = 0;
+    alGetSourcei(d.source, AL_BUFFERS_QUEUED, &queued);
+    if (queued == 0) { //TODO: why can be 0?
+        qDebug("no queued buffer");
+        return;
+    }
+    ALint processed = 0;
+#if UNQUEUE_QUICK
+    if (d.queued_frame_info.size() < kBufferCount && !d.unqueued_buffers.isEmpty() && d.state != 0) {
+        alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
+        while (processed--) {
+            ALuint buf;
+            alSourceUnqueueBuffers(d.source, 1, &buf);
+            d.unqueued_buffers.enqueue(buf);
+            d.queued_frame_info.dequeue();
+        }
+        return;
+    }
+#endif
+    alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
+    while (processed <= 0) {
+        // FIXME: queued_frame_info shouldn't be empty but it happens!
+        unsigned long duration = d.format.durationForBytes(d.queued_frame_info.isEmpty() ? kBufferSize : d.queued_frame_info.head().data_size)/1000LL;
+        //qDebug("%s @%d. queue,size: %d. buffer size: %d. wait %ul",__FUNCTION__, __LINE__, queued, d.queued_frame_info.head().data_size, duration);
+        QMutexLocker lock(&d.mutex);
+        Q_UNUSED(lock);
+        d.cond.wait(&d.mutex, duration);
+        alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
+    }
+    while (processed--) {
+#if UNQUEUE_QUICK
+        qDebug("processed=%d", processed);
+        ALuint buf;
+        alSourceUnqueueBuffers(d.source, 1, &buf);
+        d.unqueued_buffers.enqueue(buf);
+#endif
+        if (!d.queued_frame_info.isEmpty())
+            d.queued_frame_info.dequeue();
+    }
+    //qDebug("d.queued_frame_info.size: %d, d.unqueued_buffers: %d", d.queued_frame_info.size(), d.unqueued_buffers.size());
+}
+
 // http://kcat.strangesoft.net/openal-tutorial.html
 bool AudioOutputOpenAL::write()
 {
     DPTR_D(AudioOutputOpenAL);
     if (d.data.isEmpty())
         return false;
-    QMutexLocker lock(&d.mutex);
-    Q_UNUSED(lock);
     if (d.state == 0) {
         //// Initial all buffers
-        alSourcef(d.source, AL_GAIN, d.vol);
+        //alSourcef(d.source, AL_GAIN, d.vol);
         for (int i = 0; i < kBufferCount; ++i) {
-            ALERROR_RETURN_F(alBufferData(d.buffer[i], d.format_al, d.data, d.data.size(), audioFormat().sampleRate()));
-            alSourceQueueBuffers(d.source, 1, &d.buffer[i]);
+            AL_RUN_CHECK(alBufferData(d.buffer[i], d.format_al, d.data, d.data.size(), audioFormat().sampleRate()));
+            AudioOutputPrivate::FrameInfo fi;
+            fi.data_size = d.data.size();
+            fi.timestamp = d.queued_frame_info.head().timestamp;
+            d.queued_frame_info.enqueue(fi);
         }
-        //alSourceQueueBuffers(d.source, 3, d.buffer);
-        alGetSourcei(d.source, AL_SOURCE_STATE, &d.state); //update d.state
+        d.queued_frame_info.dequeue();
+        AL_RUN_CHECK(alSourceQueueBuffers(d.source, sizeof(d.buffer)/sizeof(d.buffer[0]), d.buffer));
+        AL_RUN_CHECK(alGetSourcei(d.source, AL_SOURCE_STATE, &d.state)); //update d.state
         alSourcePlay(d.source);
-        d.last_duration = audioFormat().durationForBytes(d.data.size())/1000LL*kBufferCount;
-        d.time.start();
         return true;
     }
-#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
-    qint64 dt = d.last_duration - d.time.nsecsElapsed()/1000LL;
-    //qDebug("duration: %lld, dt: %lld", d.last_duration, dt);
-    d.last_duration = audioFormat().durationForBytes(d.data.size());
-    // TODO: how to control the error?
-#else
-    qint64 dt = d.last_duration - d.time.elapsed()*1000;
-    //qDebug("duration: %lld, dt: %lld", d.last_duration, dt);
-    d.last_duration = audioFormat().durationForBytes(d.data.size());
-#endif //QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
-    if (dt > 0LL)
-        d.cond.wait(&d.mutex, (ulong)(dt/1000LL));
-
-    ALint processed = 0;
+#if 0
+    ALint processed, queued;
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
-    if (processed <= 0) {
-        alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
-        if (d.state != AL_PLAYING) {
-            alSourcePlay(d.source);
-        }
-        //return false;
-    }
-    const char* b = d.data.constData();
-    int remain = d.data.size();
-    while (processed--) {
-        if (remain <= 0)
-            break;
-        ALuint buf;
-        //unqueues a set of buffers attached to a source
-        alSourceUnqueueBuffers(d.source, 1, &buf);
-        alBufferData(buf, d.format_al, b, qMin(remain, kBufferSize), audioFormat().sampleRate());
-        alSourceQueueBuffers(d.source, 1, &buf);
-        b += kBufferSize;
-        remain -= kBufferSize;
-//        qDebug("remain: %d", remain);
-        ALenum err = alGetError();
-        if (err != AL_NO_ERROR) { //return ?
-            qWarning("AudioOutputOpenAL Error: %s ---remain=%d", alGetString(err), remain);
-            return false;
-        }
-    }
-    d.time.restart();
+    alGetSourcei(d.source, AL_BUFFERS_QUEUED, &queued);
+    qDebug("processed: %d, queued: %d, queued_frame_info=%d", processed, queued, d.queued_frame_info.size());
+#endif
+    ALuint buf;
+    //unqueues a set of buffers attached to a source
+#if UNQUEUE_QUICK
+    buf = d.unqueued_buffers.dequeue();
+#else
+    AL_RUN_CHECK(alSourceUnqueueBuffers(d.source, 1, &buf));
+#endif
+    AL_RUN_CHECK(alBufferData(buf, d.format_al, d.data.constData(), d.data.size(), audioFormat().sampleRate()));
+    AL_RUN_CHECK(alSourceQueueBuffers(d.source, 1, &buf));
     alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
     if (d.state != AL_PLAYING) {
-        //qDebug("AudioOutputOpenAL: !AL_PLAYING alSourcePlay");
+        qDebug("AudioOutputOpenAL: !AL_PLAYING alSourcePlay");
         alSourcePlay(d.source);
-        d.time.restart();
     }
     return true;
 }
+
+
 
 } //namespace QtAV

@@ -24,7 +24,8 @@
 #define QTAV_AUDIOOUTPUT_P_H
 
 #include <QtAV/private/AVOutput_p.h>
-#include <QtAV/AudioFormat.h>
+#include <QtAV/AudioFrame.h>
+#include <QtCore/QQueue>
 
 namespace QtAV {
 
@@ -45,6 +46,13 @@ public:
     int max_channels;
     AudioFormat format;
     QByteArray data;
+    AudioFrame audio_frame;
+
+    typedef struct {
+        qreal timestamp;
+        int data_size;
+    } FrameInfo;
+    QQueue<FrameInfo> queued_frame_info;
 };
 
 } //namespace QtAV

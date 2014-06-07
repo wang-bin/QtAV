@@ -191,4 +191,12 @@ bool AudioOutputPortAudio::close()
     return true;
 }
 
+void AudioOutputPortAudio::waitForNextBuffer()
+{
+    DPTR_D(AudioOutputPortAudio);
+    if (d.queued_frame_info.isEmpty())
+        return;
+    d.queued_frame_info.dequeue();
+}
+
 } //namespace QtAV

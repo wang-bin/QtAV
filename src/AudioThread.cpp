@@ -211,11 +211,10 @@ void AudioThread::run()
                 qDebug("audio thread stop after decode()");
                 break;
             }
-            int chunk = qMin(decodedSize, int(max_len*byte_rate));
+            int chunk = qMin(decodedSize, 1024*4);//int(max_len*byte_rate));
             //AudioFormat.bytesForDuration
             qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
             pkt.pts += chunk_delay;
-            d.clock->updateDelay(delay += chunk_delay);
             QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
             if (has_ao) {
                 //TODO: volume filter and other filters!!!
@@ -260,8 +259,12 @@ void AudioThread::run()
                         }
                     }
                 }
-                ao->receiveData(decodedChunk);
+                ao->waitForNextBuffer();
+                ao->receiveData(decodedChunk, pkt.pts);
+                d.clock->updateValue(ao->timestamp());
             } else {
+                d.clock->updateDelay(delay += chunk_delay);
+
             /*
              * why need this even if we add delay? and usleep sounds weird
              * the advantage is if no audio device, the play speed is ok too
