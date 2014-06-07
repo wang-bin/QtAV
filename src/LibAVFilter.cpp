@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/LibAVFilter.h"
+#include <QtCore/QSharedPointer>
 #include "QtAV/private/Filter_p.h"
 #include "QtAV/Statistics.h"
 #include "QtAV/VideoFrame.h"
@@ -38,7 +39,6 @@ public:
         , width(0)
         , height(0)
         , avframe(0)
-        , filter_frame(0)
         , options_changed(false)
     {
         avfilter_register_all();
@@ -49,10 +49,6 @@ public:
             av_frame_free(&avframe);
             avframe = 0;
         }
-        if (filter_frame) {
-            av_frame_free(&filter_frame);
-            filter_frame = 0;
-        }
     }
 
     bool setOptions(const QString& opt) {
@@ -62,49 +58,8 @@ public:
         return true;
     }
 
-    bool push(Frame *frame, qreal pts) {
-        VideoFrame *vf = static_cast<VideoFrame*>(frame);
-        if (width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg() || options_changed) {
-            width = vf->width();
-            height = vf->height();
-            pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
-            options_changed = false;
-            if (!setup()) {
-                qWarning("setup filter graph error");
-                enabled = false; // skip this filter and avoid crash
-                return false;
-            }
-        }
-        Q_ASSERT(avframe);
-        avframe->pts = pts * 1000000.0; // time_base is 1/1000000
-        avframe->width = vf->width();
-        avframe->height = vf->height();
-        avframe->format = pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
-        for (int i = 0; i < vf->planeCount(); ++i) {
-            avframe->data[i] =vf->bits(i);
-            avframe->linesize[i] = vf->bytesPerLine(i);
-        }
-        int ret = av_buffersrc_add_frame_flags(in_filter_ctx, avframe, AV_BUFFERSRC_FLAG_KEEP_REF);
-        if (ret != 0) {
-            qWarning("av_buffersrc_add_frame error: %s", av_err2str(ret));
-            return false;
-        }
-        return true;
-    }
-
-    bool pull(Frame *f) {
-        int ret = av_buffersink_get_frame(out_filter_ctx, filter_frame);
-        if (ret < 0) {
-            qWarning("av_buffersink_get_frame error: %s", av_err2str(ret));
-            return false;
-        }
-        VideoFrame vf(filter_frame->width, filter_frame->height, VideoFormat(filter_frame->format));
-        vf.setBits(filter_frame->data);
-        vf.setBytesPerLine(filter_frame->linesize);
-        *f = vf.clone();
-        av_frame_unref(filter_frame);
-        return true;
-    }
+    bool push(Frame *frame, qreal pts);
+    bool pull(Frame *f);
 
     bool setup() {
         avfilter_graph_free(&filter_graph);
@@ -163,10 +118,8 @@ public:
         avfilter_inout_free(&outputs);
         avfilter_inout_free(&inputs);
         avframe = av_frame_alloc();
-        filter_frame = av_frame_alloc();
         return true;
     }
-
 
     AVFilterGraph *filter_graph;
     AVFilterContext *in_filter_ctx;
@@ -175,7 +128,6 @@ public:
     AVPixelFormat pixfmt;
     int width, height;
     AVFrame *avframe;
-    AVFrame *filter_frame;
 
     QString options;
     bool options_changed;
@@ -209,4 +161,69 @@ void LibAVFilter::process(Statistics *statistics, Frame *frame)
     d.pull(frame);
 }
 
+
+bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
+{
+    VideoFrame *vf = static_cast<VideoFrame*>(frame);
+    if (width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg() || options_changed) {
+        width = vf->width();
+        height = vf->height();
+        pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
+        options_changed = false;
+        if (!setup()) {
+            qWarning("setup filter graph error");
+            enabled = false; // skip this filter and avoid crash
+            return false;
+        }
+    }
+    Q_ASSERT(avframe);
+    avframe->pts = pts * 1000000.0; // time_base is 1/1000000
+    avframe->width = vf->width();
+    avframe->height = vf->height();
+    avframe->format = pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
+    for (int i = 0; i < vf->planeCount(); ++i) {
+        avframe->data[i] =vf->bits(i);
+        avframe->linesize[i] = vf->bytesPerLine(i);
+    }
+    int ret = av_buffersrc_add_frame_flags(in_filter_ctx, avframe, AV_BUFFERSRC_FLAG_KEEP_REF);
+    if (ret != 0) {
+        qWarning("av_buffersrc_add_frame error: %s", av_err2str(ret));
+        return false;
+    }
+    return true;
+}
+
+// local types can not be used as template parameters
+class AVFrameHolder {
+public:
+    AVFrameHolder() {
+        m_frame = av_frame_alloc();
+    }
+    ~AVFrameHolder() {
+        av_frame_free(&m_frame);
+    }
+    AVFrame* frame() { return m_frame;}
+private:
+    AVFrame *m_frame;
+};
+typedef QSharedPointer<AVFrameHolder> AVFrameHolderRef;
+
+bool LibAVFilterPrivate::pull(Frame *f)
+{
+    AVFrameHolderRef frame_ref(new AVFrameHolder());
+    int ret = av_buffersink_get_frame(out_filter_ctx, frame_ref->frame());
+    if (ret < 0) {
+        qWarning("av_buffersink_get_frame error: %s", av_err2str(ret));
+        return false;
+    }
+    VideoFrame vf(frame_ref->frame()->width, frame_ref->frame()->height, VideoFormat(frame_ref->frame()->format));
+    vf.setBits(frame_ref->frame()->data);
+    vf.setBytesPerLine(frame_ref->frame()->linesize);
+    vf.setMetaData("avframe_hoder_ref", QVariant::fromValue(frame_ref));
+    *f = vf;
+    return true;
+}
+
 } //namespace QtAV
+
+Q_DECLARE_METATYPE(QtAV::AVFrameHolderRef)
