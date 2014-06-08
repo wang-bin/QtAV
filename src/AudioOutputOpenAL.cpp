@@ -35,7 +35,6 @@
 
 namespace QtAV {
 
-
 #define AL_CHECK_RETURN_VALUE(RET) \
     do { \
         ALenum err = alGetError(); \
@@ -70,59 +69,66 @@ void RegisterAudioOutputOpenAL_Man()
 static ALenum audioFormatToAL(const AudioFormat& fmt)
 {
     ALenum format = 0;
+    ALCcontext *ctx = alcGetCurrentContext(); //a context is required for al functions!
     if (fmt.sampleFormat() == AudioFormat::SampleFormat_Unsigned8) {
         if (fmt.channels() == 1)
-                format = AL_FORMAT_MONO8;
+            format = AL_FORMAT_MONO8;
         else if (fmt.channels() == 2)
             format = AL_FORMAT_STEREO8;
-        else if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
-            if (fmt.channels() == 4)
-                format = alGetEnumValue("AL_FORMAT_QUAD8");
-            else if (fmt.channels() == 6)
-                format = alGetEnumValue("AL_FORMAT_51CHN8");
-            else if (fmt.channels() == 7)
-                format = alGetEnumValue("AL_FORMAT_71CHN8");
-            else if (fmt.channels() == 8)
-                format = alGetEnumValue("AL_FORMAT_81CHN8");
+        else if (ctx) {
+            if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
+                if (fmt.channels() == 4)
+                    format = alGetEnumValue("AL_FORMAT_QUAD8");
+                else if (fmt.channels() == 6)
+                    format = alGetEnumValue("AL_FORMAT_51CHN8");
+                else if (fmt.channels() == 7)
+                    format = alGetEnumValue("AL_FORMAT_71CHN8");
+                else if (fmt.channels() == 8)
+                    format = alGetEnumValue("AL_FORMAT_81CHN8");
+            }
         }
     } else if (fmt.sampleFormat() == AudioFormat::SampleFormat_Signed16) {
         if (fmt.channels() == 1)
             format = AL_FORMAT_MONO16;
         else if (fmt.channels() == 2)
             format = AL_FORMAT_STEREO16;
-        else if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
-            if (fmt.channels() == 4)
-                format = alGetEnumValue("AL_FORMAT_QUAD16");
-            else if (fmt.channels() == 6)
-                format = alGetEnumValue("AL_FORMAT_51CHN16");
-            else if (fmt.channels() == 7)
-                format = alGetEnumValue("AL_FORMAT_61CHN16");
-            else if (fmt.channels() == 8)
-                format = alGetEnumValue("AL_FORMAT_71CHN16");
-        }
-    } else if (fmt.sampleFormat() == AudioFormat::SampleFormat_Float) {
-        if (alIsExtensionPresent("AL_EXT_float32")) {
-            if (fmt.channels() == 1)
-                format = alGetEnumValue("AL_FORMAT_MONO_FLOAT32");
-            else if (fmt.channels() == 2)
-                format = alGetEnumValue("AL_FORMAT_STEREO_FLOAT32");
-            else if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
+        else if (ctx) {
+            if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
                 if (fmt.channels() == 4)
-                    format = alGetEnumValue("AL_FORMAT_QUAD32");
+                    format = alGetEnumValue("AL_FORMAT_QUAD16");
                 else if (fmt.channels() == 6)
-                    format = alGetEnumValue("AL_FORMAT_51CHN32");
+                    format = alGetEnumValue("AL_FORMAT_51CHN16");
                 else if (fmt.channels() == 7)
-                    format = alGetEnumValue("AL_FORMAT_61CHN32");
+                    format = alGetEnumValue("AL_FORMAT_61CHN16");
                 else if (fmt.channels() == 8)
-                    format = alGetEnumValue("AL_FORMAT_71CHN32");
+                    format = alGetEnumValue("AL_FORMAT_71CHN16");
             }
         }
-    } else if (fmt.sampleFormat() == AudioFormat::SampleFormat_Double) {
-        if (alIsExtensionPresent("AL_EXT_double")) {
-            if (fmt.channels() == 1)
-                format = alGetEnumValue("AL_FORMAT_MONO_DOUBLE_EXT");
-            else if (fmt.channels() == 2)
-                format = alGetEnumValue("AL_FORMAT_STEREO_DOUBLE_EXT");
+    } else if (ctx) {
+        if (fmt.sampleFormat() == AudioFormat::SampleFormat_Float) {
+            if (alIsExtensionPresent("AL_EXT_float32")) {
+                if (fmt.channels() == 1)
+                    format = alGetEnumValue("AL_FORMAT_MONO_FLOAT32");
+                else if (fmt.channels() == 2)
+                    format = alGetEnumValue("AL_FORMAT_STEREO_FLOAT32");
+                else if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
+                    if (fmt.channels() == 4)
+                        format = alGetEnumValue("AL_FORMAT_QUAD32");
+                    else if (fmt.channels() == 6)
+                        format = alGetEnumValue("AL_FORMAT_51CHN32");
+                    else if (fmt.channels() == 7)
+                        format = alGetEnumValue("AL_FORMAT_61CHN32");
+                    else if (fmt.channels() == 8)
+                        format = alGetEnumValue("AL_FORMAT_71CHN32");
+                }
+            }
+        } else if (fmt.sampleFormat() == AudioFormat::SampleFormat_Double) {
+            if (alIsExtensionPresent("AL_EXT_double")) {
+                if (fmt.channels() == 1)
+                    format = alGetEnumValue("AL_FORMAT_MONO_DOUBLE_EXT");
+                else if (fmt.channels() == 2)
+                    format = alGetEnumValue("AL_FORMAT_STEREO_DOUBLE_EXT");
+            }
         }
     }
     if (format == 0) {
@@ -422,7 +428,5 @@ bool AudioOutputOpenAL::write()
     }
     return true;
 }
-
-
 
 } //namespace QtAV
