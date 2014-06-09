@@ -20,13 +20,27 @@
 ******************************************************************************/
 
 
-#include <QtAV/AudioOutputPortAudio.h>
-#include <QtAV/private/AudioOutput_p.h>
+#include "QtAV/AudioOutput.h"
+#include "QtAV/private/AudioOutput_p.h"
 #include "QtAV/prepost.h"
 #include <portaudio.h>
 #include <QtCore/QString>
 
 namespace QtAV {
+
+class AudioOutputPortAudioPrivate;
+class AudioOutputPortAudio : public AudioOutput
+{
+    DPTR_DECLARE_PRIVATE(AudioOutputPortAudio)
+public:
+    AudioOutputPortAudio();
+    ~AudioOutputPortAudio();
+    bool open();
+    bool close();
+    virtual void waitForNextBuffer();
+protected:
+    bool write();
+};
 
 extern AudioOutputId AudioOutputId_PortAudio;
 FACTORY_REGISTER_ID_AUTO(AudioOutput, PortAudio, "PortAudio")

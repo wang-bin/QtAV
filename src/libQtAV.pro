@@ -95,7 +95,6 @@ config_ipp {
 }
 config_portaudio {
     SOURCES += AudioOutputPortAudio.cpp
-    SDK_HEADERS += QtAV/AudioOutputPortAudio.h
     DEFINES *= QTAV_HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
     #win32: LIBS *= -lwinmm #-lksguid #-luuid
