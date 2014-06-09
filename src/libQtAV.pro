@@ -102,7 +102,6 @@ config_portaudio {
 }
 config_openal {
     SOURCES += AudioOutputOpenAL.cpp
-    SDK_HEADERS += QtAV/AudioOutputOpenAL.h
     DEFINES *= QTAV_HAVE_OPENAL=1
     win32: LIBS += -lOpenAL32
     unix:!mac:!blackberry: LIBS += -lopenal

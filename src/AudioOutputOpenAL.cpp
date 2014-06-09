@@ -17,11 +17,10 @@
 ******************************************************************************/
 
 
-#include "QtAV/AudioOutputOpenAL.h"
+#include "QtAV/AudioOutput.h"
 #include "private/AudioOutput_p.h"
 #include "prepost.h"
 #include <QtCore/QVector>
-#include <QtCore/QElapsedTimer>
 
 #if defined(HEADER_OPENAL_PREFIX)
 #include <OpenAL/al.h>
@@ -34,6 +33,37 @@
 #define UNQUEUE_QUICK 0
 
 namespace QtAV {
+
+class AudioOutputOpenALPrivate;
+class AudioOutputOpenAL : public AudioOutput
+{
+    DPTR_DECLARE_PRIVATE(AudioOutputOpenAL)
+public:
+    AudioOutputOpenAL();
+    ~AudioOutputOpenAL();
+
+    virtual bool open();
+    virtual bool close();
+    virtual bool isSupported(const AudioFormat& format) const;
+    virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
+    virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
+    virtual AudioFormat::SampleFormat preferredSampleFormat() const;
+    virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
+
+    QString name() const;
+    virtual void waitForNextBuffer();
+protected:
+    virtual bool write();
+};
+
+extern AudioOutputId AudioOutputId_OpenAL;
+FACTORY_REGISTER_ID_AUTO(AudioOutput, OpenAL, "OpenAL")
+
+void RegisterAudioOutputOpenAL_Man()
+{
+    FACTORY_REGISTER_ID_MAN(AudioOutput, OpenAL, "OpenAL")
+}
+
 
 #define AL_CHECK_RETURN_VALUE(RET) \
     do { \
@@ -56,14 +86,6 @@ namespace QtAV {
             return false; \
         } \
     } while(0)
-
-extern AudioOutputId AudioOutputId_OpenAL;
-FACTORY_REGISTER_ID_AUTO(AudioOutput, OpenAL, "OpenAL")
-
-void RegisterAudioOutputOpenAL_Man()
-{
-    FACTORY_REGISTER_ID_MAN(AudioOutput, OpenAL, "OpenAL")
-}
 
 // TODO: planar
 static ALenum audioFormatToAL(const AudioFormat& fmt)
@@ -150,7 +172,6 @@ public:
         : AudioOutputPrivate()
         , format_al(AL_FORMAT_STEREO16)
         , state(0)
-        , last_duration(0)
     {
     }
     ~AudioOutputOpenALPrivate() {
@@ -160,9 +181,6 @@ public:
     ALuint buffer[kBufferCount];
     ALuint source;
     ALint state;
-    QElapsedTimer time;
-    qint64 last_duration; //us, micro second
-    qint64 err;
     QMutex mutex;
     QWaitCondition cond;
     QQueue<ALuint> unqueued_buffers;
@@ -229,20 +247,14 @@ bool AudioOutputOpenAL::open()
     err = alGetError();
     if (err != AL_NO_ERROR) {
         qWarning("Failed to generate OpenAL buffers: %s", alGetString(err));
-        alcMakeContextCurrent(NULL);
-        alcDestroyContext(ctx);
-        alcCloseDevice(dev);
-        return false;
+        goto fail;
     }
     alGenSources(1, &d.source);
     err = alGetError();
     if (err != AL_NO_ERROR) {
         qWarning("Failed to generate OpenAL source: %s", alGetString(err));
         alDeleteBuffers(kBufferCount, d.buffer);
-        alcMakeContextCurrent(NULL);
-        alcDestroyContext(ctx);
-        alcCloseDevice(dev);
-        return false;
+        goto fail;
     }
 
     alSourcei(d.source, AL_LOOPING, AL_FALSE);
@@ -251,11 +263,15 @@ bool AudioOutputOpenAL::open()
     alSource3f(d.source, AL_POSITION, 0.0, 0.0, 0.0);
     alSource3f(d.source, AL_VELOCITY, 0.0, 0.0, 0.0);
     alListener3f(AL_POSITION, 0.0, 0.0, 0.0);
-    qDebug("AudioOutputOpenAL open ok...");
     d.state = 0;
     d.available = true;
-    AL_CHECK();
+    qDebug("AudioOutputOpenAL open ok...");
     return true;
+fail:
+    alcMakeContextCurrent(NULL);
+    alcDestroyContext(ctx);
+    alcCloseDevice(dev);
+    return false;
 }
 
 bool AudioOutputOpenAL::close()
@@ -308,14 +324,11 @@ bool AudioOutputOpenAL::isSupported(const AudioFormat& format) const
 
 bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
-    Q_UNUSED(sampleFormat);
     return sampleFormat == AudioFormat::SampleFormat_Unsigned8 || sampleFormat == AudioFormat::SampleFormat_Signed16;
-
 }
 
 bool AudioOutputOpenAL::isSupported(AudioFormat::ChannelLayout channelLayout) const
 {
-    Q_UNUSED(channelLayout);
     return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stero;
 }
 
