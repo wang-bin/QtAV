@@ -82,6 +82,8 @@ public:
     QVariantMap availableMetaData() const;
     QVariant metaData(const QString& key) const;
     void setMetaData(const QString &key, const QVariant &value);
+    void setTimestamp(qreal ts);
+    qreal timestamp() const;
 
 protected:
     Frame(FramePrivate &d);

@@ -177,4 +177,14 @@ void Frame::setMetaData(const QString &key, const QVariant &value)
         d->metadata.remove(key);
 }
 
+qreal Frame::timestamp() const
+{
+    return d_func()->timestamp;
+}
+
+void Frame::setTimestamp(qreal ts)
+{
+    d_func()->timestamp = ts;
+}
+
 } //namespace QtAV

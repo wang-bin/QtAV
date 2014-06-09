@@ -34,6 +34,7 @@ class Q_AV_EXPORT FramePrivate : public QSharedData
 {
 public:
     FramePrivate()
+        : timestamp(0)
     {}
     virtual ~FramePrivate() {}
 
@@ -41,6 +42,7 @@ public:
     QVector<int> line_sizes; //stride
     QVariantMap metadata;
     QByteArray data;
+    qreal timestamp;
 };
 
 } //namespace QtAV
