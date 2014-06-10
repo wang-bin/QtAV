@@ -84,7 +84,7 @@ AudioFrame::AudioFrame(const QByteArray &data, const AudioFormat &format)
     Q_D(AudioFrame);
     d->format = format;
     d->data = data;
-    d->samples_per_ch = data.size() / d->format.channels();
+    d->samples_per_ch = data.size() / d->format.channels() / d->format.bytesPerSample();
     init();
 }
 
