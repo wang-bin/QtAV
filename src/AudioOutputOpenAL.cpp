@@ -153,6 +153,10 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
             }
         }
     }
+    ALCenum err = alGetError();
+    if (err != AL_NO_ERROR) {
+        qWarning("OpenAL audioFormatToAL error: %s", alGetString(err));
+    }
     if (format == 0) {
         qWarning("AudioOutputOpenAL Error: No OpenAL format available for audio data format %s %s."
                  , qPrintable(fmt.sampleFormatName())
