@@ -60,23 +60,26 @@ sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2) {
 }
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
-
-LIBS += -lavcodec -lavformat -lavutil -lswscale
+android: LIBS += -lOpenSLES -lopenal -lavcodec-55 -lavformat-55 -lavutil-52 -lswscale-2
+else: LIBS += -lavcodec -lavformat -lavutil -lswscale
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
     SOURCES += LibAVFilter.cpp
     HEADERS += QtAV/LibAVFilter.h
-    LIBS += -lavfilter
+    android: LIBS += -lavfilter-4
+    else: LIBS += -lavfilter
 }
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
     SOURCES += AudioResamplerFF.cpp
-    LIBS += -lswresample
+    android: LIBS += -lswresample-0
+    else: LIBS += -lswresample
 }
 config_avresample {
     DEFINES += QTAV_HAVE_AVRESAMPLE=1
     SOURCES += AudioResamplerLibav.cpp
-    LIBS += -lavresample
+    android: LIBS += -lavresample-1
+    else: LIBS += -lavresample
 }
 config_ipp {
     DEFINES += QTAV_HAVE_IPP=1

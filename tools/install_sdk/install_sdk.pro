@@ -57,6 +57,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   sdk_install.commands += $$quote($$COPY $$system_path($$PWD/qt4av.prf) $$system_path($$MKSPECS_DIR/features/av.prf))
 }
 win32: sdk_install.commands += $$quote($$MOVE $$system_path($$[QT_INSTALL_LIBS]/QtAV*.dll) $$system_path($$[QT_INSTALL_BINS]))
+## copy libcommon.so requred by QMLPlayer and player
+android: sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/libcommon.so) $$system_path($$[QT_INSTALL_LIBS]))
 
 sdk_uninstall.commands = $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/*QtAV*))
 sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
@@ -68,6 +70,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_QML]/QtAV))
 }
 win32: sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_BINS]/QtAV*.dll))
+android: sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/libcommon.so))
 
 SCRIPT_SUFFIX=sh
 win32: SCRIPT_SUFFIX=bat

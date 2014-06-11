@@ -6,6 +6,11 @@
 
 QT       -= gui
 
+# android apk hack
+android {
+  QT += svg
+  LIBS += -lQtAV #QML app does not link to libQtAV but we need it. why no QmlAV plugin if remove this?
+}
 TARGET = common
 TEMPLATE = lib
 
