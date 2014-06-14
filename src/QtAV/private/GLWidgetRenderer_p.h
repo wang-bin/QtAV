@@ -173,6 +173,15 @@ public:
     bool update_texcoords;
     QVector<GLuint> textures; //texture ids. size is plane count
     QVector<QSize> texture_size;
+    /*
+     * actually if render a full frame, only plane 0 is enough. other planes are the same as texture size.
+     * because linesize[0]>=linesize[1]
+     * uploade size is required when
+     * 1. y/u is not an integer because of alignment. then padding size of y < padding size of u, and effective size y/u != texture size y/u
+     * 2. odd size. enlarge y
+     */
+    QVector<QSize> texture_upload_size;
+
     QVector<int> effective_tex_width; //without additional width for alignment
     qreal effective_tex_width_ratio;
     QVector<GLint> internal_format;
@@ -191,6 +200,8 @@ public:
 
     VideoFormat video_format;
     QSize plane0Size;
+    // width is in bytes. different alignments may result in different plane 1 linesize even if plane 0 are the same
+    int plane1_linesize;
     ColorTransform colorTransform;
 };
 

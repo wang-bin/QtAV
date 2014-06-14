@@ -53,15 +53,6 @@
 #endif //GL_BGR_EXT
 #endif //GL_BGRA
 #endif //GL_BGRA
-
-#ifdef QT_OPENGL_ES_2
-#define FMT_INTERNAL GL_BGRA //why BGRA?
-#define FMT GL_BGRA
-#else //QT_OPENGL_ES_2
-#define FMT_INTERNAL GL_RGBA //why? why 3 works?
-#define FMT GL_BGRA
-#endif //QT_OPENGL_ES_2
-
 #ifndef GL_BGRA
 #define GL_BGRA 0x80E1
 #endif
@@ -331,6 +322,7 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
 bool GLWidgetRendererPrivate::releaseShaderProgram()
 {
     video_format.setPixelFormat(VideoFormat::Format_Invalid);
+    plane1_linesize = 0;
     plane0Size = QSize();
 #if NO_QGL_SHADER
     if (vert) {
@@ -542,6 +534,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         int bpp_gl = bytesOfGLFormat(data_format[i], data_type[i]);
         int pad = qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
         texture_size[i].setWidth(qCeil((qreal)texture_size[i].width()/(qreal)bpp_gl));
+        texture_upload_size[i].setWidth(qCeil((qreal)texture_upload_size[i].width()/(qreal)bpp_gl));
         effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
         //effective_tex_width_ratio =
         qDebug("texture width: %d - %d = pad: %d. bpp(gl): %d", texture_size[i].width(), effective_tex_width[i], pad, bpp_gl);
@@ -597,10 +590,13 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
         }
     }
     // effective size may change even if plane size not changed
-    if (update_textures || video_frame.bytesPerLine(0) != plane0Size.width() || video_frame.height() != plane0Size.height()) { //
+    if (update_textures
+            || video_frame.bytesPerLine(0) != plane0Size.width() || video_frame.height() != plane0Size.height()
+            || (plane1_linesize > 0 && video_frame.bytesPerLine(1) != plane1_linesize)) { // no need to check hieght if plane 0 sizes are equal?
         update_textures = true;
         //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
         texture_size.resize(fmt.planeCount());
+        texture_upload_size.resize(fmt.planeCount());
         effective_tex_width.resize(fmt.planeCount());
         for (int i = 0; i < fmt.planeCount(); ++i) {
             qDebug("plane linesize %d: padded = %d, effective = %d", i, video_frame.bytesPerLine(i), video_frame.effectiveBytesPerLine(i));
@@ -608,9 +604,16 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
             qDebug("planeHeight %d = %d", i, video_frame.planeHeight(i));
             // we have to consider size of opengl format. set bytesPerLine here and change to width later
             texture_size[i] = QSize(video_frame.bytesPerLine(i), video_frame.planeHeight(i));
+            texture_upload_size[i] = texture_size[i];
             effective_tex_width[i] = video_frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
             // TODO: ratio count the GL_UNPACK_ALIGN?
             effective_tex_width_ratio = qMin((qreal)1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
+        }
+        plane1_linesize = 0;
+        if (fmt.planeCount() > 1) {
+            texture_size[0].setWidth(texture_size[1].width() * effective_tex_width[0]/effective_tex_width[1]);
+            // height? how about odd?
+            plane1_linesize = video_frame.bytesPerLine(1);
         }
         qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
         plane0Size.setWidth(video_frame.bytesPerLine(0));
@@ -654,8 +657,8 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
                      , 0                //level
                      , 0                // xoffset
                      , 0                // yoffset
-                     , texture_size[p].width()
-                     , texture_size[p].height()
+                     , texture_upload_size[p].width()
+                     , texture_upload_size[p].height()
                      , format          //format, must the same as internal format?
                      , data_type[p]
                      , video_frame.bits(p));
@@ -667,7 +670,7 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
         int plane_w = video_frame.planeWidth(p);
         VideoFormat fmt = video_frame.format();
         if (p == 0) {
-            plane0Size = QSize(roi_w, roi_h);
+            plane0Size = QSize(roi_w, roi_h); //
         } else {
             roi_x = fmt.chromaWidth(roi_x);
             roi_y = fmt.chromaHeight(roi_y);
