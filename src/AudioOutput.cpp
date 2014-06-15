@@ -53,10 +53,9 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
     if (d.paused)
         return false;
     d.data = data;
-    AudioOutputPrivate::FrameInfo fi;
-    fi.timestamp = pts;
-    fi.data_size = data.size();
-    d.queued_frame_info.enqueue(fi);
+    d.nextEnqueueInfo().data_size = data.size();
+    d.nextEnqueueInfo().timestamp = pts;
+    d.bufferAdded();
     return write();
 }
 
@@ -177,8 +176,7 @@ void AudioOutput::waitForNextBuffer()
 qreal AudioOutput::timestamp() const
 {
     DPTR_D(const AudioOutput);
-    // FIXME: empty shouldn't happen if called by AudioThread.
-    return d.queued_frame_info.isEmpty() ? 0 : d.queued_frame_info.head().timestamp;
+    return d.nextDequeueInfo().timestamp;
 }
 
 } //namespace QtAV

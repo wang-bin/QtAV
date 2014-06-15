@@ -187,7 +187,6 @@ public:
     ALint state;
     QMutex mutex;
     QWaitCondition cond;
-    QQueue<ALuint> unqueued_buffers;
 };
 
 AudioOutputOpenAL::AudioOutputOpenAL()
@@ -204,6 +203,7 @@ bool AudioOutputOpenAL::open()
 {
     DPTR_D(AudioOutputOpenAL);
     d.available = false; // TODO: d.reset()
+    d.resetBuffers();
     QVector<QByteArray> _devices;
     const char *p = NULL;
     // maybe defined in alext.h
@@ -285,7 +285,7 @@ bool AudioOutputOpenAL::close()
     DPTR_D(AudioOutputOpenAL);
     d.state = 0;
     d.available = false;
-    d.queued_frame_info.clear();
+    d.resetBuffers();
     alSourceStop(d.source);
     do {
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
@@ -357,8 +357,7 @@ QString AudioOutputOpenAL::name() const
 void AudioOutputOpenAL::waitForNextBuffer()
 {
     DPTR_D(AudioOutputOpenAL);
-    if (d.queued_frame_info.isEmpty())
-        return;
+    //don't return even if we can add buffer because we have to update dequeue index
     ALint queued = 0;
     alGetSourcei(d.source, AL_BUFFERS_QUEUED, &queued);
     if (queued == 0) { //TODO: why can be 0?
@@ -366,39 +365,19 @@ void AudioOutputOpenAL::waitForNextBuffer()
         return;
     }
     ALint processed = 0;
-#if UNQUEUE_QUICK
-    if (d.queued_frame_info.size() < kBufferCount && !d.unqueued_buffers.isEmpty() && d.state != 0) {
-        alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
-        while (processed--) {
-            ALuint buf;
-            alSourceUnqueueBuffers(d.source, 1, &buf);
-            d.unqueued_buffers.enqueue(buf);
-            d.queued_frame_info.dequeue();
-        }
-        return;
-    }
-#endif
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
+    //if (processed <= 0 && d.canAddBuffer())
+    //    return;
     while (processed <= 0) {
-        // FIXME: queued_frame_info shouldn't be empty but it happens!
-        unsigned long duration = d.format.durationForBytes(d.queued_frame_info.isEmpty() ? kBufferSize : d.queued_frame_info.head().data_size)/1000LL;
-        //qDebug("%s @%d. queue,size: %d. buffer size: %d. wait %ul",__FUNCTION__, __LINE__, queued, d.queued_frame_info.head().data_size, duration);
+        unsigned long duration = d.format.durationForBytes(d.nextDequeueInfo().data_size)/1000LL;
         QMutexLocker lock(&d.mutex);
         Q_UNUSED(lock);
         d.cond.wait(&d.mutex, duration);
         alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
     }
     while (processed--) {
-#if UNQUEUE_QUICK
-        qDebug("processed=%d", processed);
-        ALuint buf;
-        alSourceUnqueueBuffers(d.source, 1, &buf);
-        d.unqueued_buffers.enqueue(buf);
-#endif
-        if (!d.queued_frame_info.isEmpty())
-            d.queued_frame_info.dequeue();
+        d.bufferRemoved();
     }
-    //qDebug("d.queued_frame_info.size: %d, d.unqueued_buffers: %d", d.queued_frame_info.size(), d.unqueued_buffers.size());
 }
 
 // http://kcat.strangesoft.net/openal-tutorial.html
@@ -408,34 +387,23 @@ bool AudioOutputOpenAL::write()
     if (d.data.isEmpty())
         return false;
     if (d.state == 0) {
-        //// Initial all buffers
+        //// Initial all buffers. TODO: move to open?
         //alSourcef(d.source, AL_GAIN, d.vol);
-        for (int i = 0; i < kBufferCount; ++i) {
+        AL_RUN_CHECK(alBufferData(d.buffer[0], d.format_al, d.data, d.data.size(), audioFormat().sampleRate()));
+        for (int i = 1; i < kBufferCount; ++i) {
             AL_RUN_CHECK(alBufferData(d.buffer[i], d.format_al, d.data, d.data.size(), audioFormat().sampleRate()));
-            AudioOutputPrivate::FrameInfo fi;
-            fi.data_size = d.data.size();
-            fi.timestamp = d.queued_frame_info.head().timestamp;
-            d.queued_frame_info.enqueue(fi);
+            d.nextEnqueueInfo().data_size = d.data.size();
+            d.nextEnqueueInfo().timestamp = d.currentEnqueueInfo().timestamp;
+            d.bufferAdded();
         }
-        d.queued_frame_info.dequeue();
         AL_RUN_CHECK(alSourceQueueBuffers(d.source, sizeof(d.buffer)/sizeof(d.buffer[0]), d.buffer));
         AL_RUN_CHECK(alGetSourcei(d.source, AL_SOURCE_STATE, &d.state)); //update d.state
         alSourcePlay(d.source);
         return true;
     }
-#if 0
-    ALint processed, queued;
-    alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
-    alGetSourcei(d.source, AL_BUFFERS_QUEUED, &queued);
-    qDebug("processed: %d, queued: %d, queued_frame_info=%d", processed, queued, d.queued_frame_info.size());
-#endif
     ALuint buf;
     //unqueues a set of buffers attached to a source
-#if UNQUEUE_QUICK
-    buf = d.unqueued_buffers.dequeue();
-#else
     AL_RUN_CHECK(alSourceUnqueueBuffers(d.source, 1, &buf));
-#endif
     AL_RUN_CHECK(alBufferData(buf, d.format_al, d.data.constData(), d.data.size(), audioFormat().sampleRate()));
     AL_RUN_CHECK(alSourceQueueBuffers(d.source, 1, &buf));
     alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);

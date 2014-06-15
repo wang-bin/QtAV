@@ -30,12 +30,14 @@
 
 /*!
  * How to work with different audio APIs?
- * AudioOutputPrivate::queued_frame_info stores the timestamps and buffer sizes for pending audio buffers.
+ * AudioOutputPrivate::frame_infos stores the timestamps and buffer sizes for pending audio buffers.
  * 1. Blocking API: for example, portaudio(also supports async api).
- *    In waitForNextBuffer(), usually queued_frame_info.dequeue() is enough.
+ *    In waitForNextBuffer(), usually AudioOutputPrivate::bufferRemoved() is enough.
  * 2. Async API: for example, OpenAL and OpenSL.
- *    In waitForNextBuffer() you must wait until you can put a new audio buffer to the queue. You can use callback or
- *    state querying api supplied by the audio library.
+ *    In waitForNextBuffer() you must wait until you can put a new audio buffer to the queue.
+ *    a) callback (OpenSL, SDL): return if AudioutputPrivate::canAddBuffer() is true;
+ *    b) state querying api (OpenAL): always query the number of processed buffers even if AudioutputPrivate::canAddBuffer() is true
+ *       because we don't know when a buffer is processed. so must query the state every time.
  */
 
 namespace QtAV {

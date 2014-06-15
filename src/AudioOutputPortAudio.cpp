@@ -208,9 +208,7 @@ bool AudioOutputPortAudio::close()
 void AudioOutputPortAudio::waitForNextBuffer()
 {
     DPTR_D(AudioOutputPortAudio);
-    if (d.queued_frame_info.isEmpty())
-        return;
-    d.queued_frame_info.dequeue();
+    d.bufferRemoved();
 }
 
 } //namespace QtAV
