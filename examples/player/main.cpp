@@ -46,7 +46,8 @@ void Logger(QtMsgType type, const char *msg)
 #else
 void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 {
-	const char* msg = qPrintable(qmsg);
+    const QByteArray msgArray = qmsg.toLocal8Bit();
+    const char* msg = msgArray.constData();
 #endif
 	 switch (type) {
      case QtDebugMsg:
