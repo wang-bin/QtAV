@@ -81,6 +81,9 @@ public:
         return;
         index_enqueue = (index_enqueue + 1) % frame_infos.size();
     }
+    bool canRemoveBuffer() {
+        return index_enqueue > index_deuqueue;
+    }
     void bufferRemoved() {
         if (index_deuqueue == index_enqueue)
             return;

@@ -60,7 +60,8 @@ sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2) {
 }
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
-android: LIBS += -lOpenSLES -lopenal -lavcodec-55 -lavformat-55 -lavutil-52 -lswscale-2
+android: CONFIG += config_opensl
+android: LIBS += -lavcodec-55 -lavformat-55 -lavutil-52 -lswscale-2
 else: LIBS += -lavcodec -lavformat -lavutil -lswscale
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
@@ -110,6 +111,11 @@ config_openal {
     blackberry: LIBS += -lOpenAL
     mac: LIBS += -framework OpenAL
     mac: DEFINES += HEADER_OPENAL_PREFIX
+}
+config_opensl {
+    SOURCES += AudioOutputOpenSL.cpp
+    DEFINES *= QTAV_HAVE_OPENSL=1
+    LIBS += -lOpenSLES
 }
 config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
