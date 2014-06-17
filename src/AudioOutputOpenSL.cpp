@@ -20,14 +20,8 @@
 #include "QtAV/private/AudioOutput_p.h"
 #include <QtCore/QThread>
 #include <SLES/OpenSLES.h>
-#ifdef ANDROID
-#include <SLES/OpenSLES_Android.h>
-#include <SLES/OpenSLES_AndroidConfiguration.h>
-#endif // ANDROID
-
 #include "prepost.h"
 
-#define BUFFER_COUNT 8
 namespace QtAV {
 
 class AudioOutputOpenSLPrivate;
@@ -105,8 +99,8 @@ public:
         , m_volumeItf(0)
         , m_bufferQueueItf(0)
         , m_notifyInterval(1000)
-        , m_streamType(-1)
-
+        , buffers_queued(0)
+        , init_buffers(true)
     {
         SLresult result = slCreateEngine(&engineObject, 0, 0, 0, 0, 0);
         CheckError("Failed to create engine");
@@ -115,9 +109,6 @@ public:
         CheckError("Failed to realize engine");
         result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engine);
         CheckError("Failed to get engine interface");
-#ifdef ANDROID
-      m_streamType = SL_ANDROID_STREAM_MEDIA;
-#endif // ANDROID
         available = true;
     }
     ~AudioOutputOpenSLPrivate() {
@@ -125,16 +116,14 @@ public:
 
     SLObjectItf engineObject;
     SLEngineItf engine;
-    QList<int> m_supportedInputChannelCounts;
-    QList<int> m_supportedInputSampleRates;
-
     SLObjectItf m_outputMixObject;
     SLObjectItf m_playerObject;
     SLPlayItf m_playItf;
     SLVolumeItf m_volumeItf;
     SLBufferQueueItf m_bufferQueueItf;
     int m_notifyInterval;
-    qint32 m_streamType;
+    int buffers_queued;
+    bool init_buffers;
 };
 
 AudioOutputOpenSL::AudioOutputOpenSL()
@@ -174,7 +163,8 @@ AudioFormat::ChannelLayout AudioOutputOpenSL::preferredChannelLayout() const
 bool AudioOutputOpenSL::open()
 {
     DPTR_D(AudioOutputOpenSL);
-    SLDataLocator_BufferQueue bufferQueueLocator = { SL_DATALOCATOR_BUFFERQUEUE, BUFFER_COUNT };
+    d.init_buffers = true;
+    SLDataLocator_BufferQueue bufferQueueLocator = { SL_DATALOCATOR_BUFFERQUEUE, d.nb_buffers };
     SLDataFormat_PCM pcmFormat = audioFormatToSL(audioFormat());
     SLDataSource audioSrc = { &bufferQueueLocator, &pcmFormat };
     // OutputMix
@@ -192,15 +182,9 @@ bool AudioOutputOpenSL::open()
     SLDataLocator_OutputMix outputMixLocator = { SL_DATALOCATOR_OUTPUTMIX, d.m_outputMixObject };
     SLDataSink audioSink = { &outputMixLocator, Q_NULLPTR };
 
-#ifndef ANDROID
-    const int iids = 2;
-    const SLInterfaceID ids[iids] = { SL_IID_BUFFERQUEUE, SL_IID_VOLUME };
-    const SLboolean req[iids] = { SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE };
-#else
-    const int iids = 3;
-    const SLInterfaceID ids[iids] = { SL_IID_BUFFERQUEUE, SL_IID_VOLUME, SL_IID_ANDROIDCONFIGURATION };
-    const SLboolean req[iids] = { SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE };
-#endif // ANDROID
+    const int iids = 1;//2;
+    const SLInterfaceID ids[iids] = { SL_IID_BUFFERQUEUE};//, SL_IID_VOLUME };
+    const SLboolean req[iids] = { SL_BOOLEAN_TRUE};//, SL_BOOLEAN_TRUE };
 
     // AudioPlayer
     if (SL_RESULT_SUCCESS != (*d.engine)->CreateAudioPlayer(d.engine, &d.m_playerObject, &audioSrc, &audioSink, iids, ids, req)) {
@@ -208,24 +192,11 @@ bool AudioOutputOpenSL::open()
         //setError(QAudio::OpenError);
         return false;
     }
-
-#ifdef ANDROID
-    // Set profile/category
-    SLAndroidConfigurationItf playerConfig;
-    if (SL_RESULT_SUCCESS == (*d.m_playerObject)->GetInterface(d.m_playerObject, SL_IID_ANDROIDCONFIGURATION, &playerConfig)) {
-        (*playerConfig)->SetConfiguration(playerConfig,
-                                          SL_ANDROID_KEY_STREAM_TYPE,
-                                          &d.m_streamType,
-                                          sizeof(SLint32));
-    }
-#endif // ANDROID
-
     if (SL_RESULT_SUCCESS != (*d.m_playerObject)->Realize(d.m_playerObject, SL_BOOLEAN_FALSE)) {
         qWarning("Unable to initialize AudioPlayer");
         //setError(QAudio::OpenError);
         return false;
     }
-
     // Buffer interface
     if (SL_RESULT_SUCCESS != (*d.m_playerObject)->GetInterface(d.m_playerObject, SL_IID_BUFFERQUEUE, &d.m_bufferQueueItf)) {
         //setError(QAudio::FatalError);
@@ -271,7 +242,8 @@ bool AudioOutputOpenSL::open()
 bool AudioOutputOpenSL::close()
 {
     DPTR_D(AudioOutputOpenSL);
-    d.available = true;
+    d.available = false;
+    d.init_buffers = true;
     if (d.m_playItf)
         (*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_STOPPED);
 
@@ -295,13 +267,25 @@ bool AudioOutputOpenSL::close()
 bool AudioOutputOpenSL::write()
 {
     DPTR_D(AudioOutputOpenSL);
+    if (d.init_buffers) {
+        d.init_buffers = false;
+        for (int i = 0; i < d.nb_buffers; ++i) {
+            if (SL_RESULT_SUCCESS != (*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, d.data.constData(), d.data.size())) {
+                qWarning("failed to enqueue");
+                return false;
+            }
+            d.buffers_queued++;
+        }
+        if (SL_RESULT_SUCCESS != (*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_PLAYING)) {
+            //destroyPlayer();
+        }
+        return true;
+    }
     if (SL_RESULT_SUCCESS != (*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, d.data.constData(), d.data.size())) {
         qWarning("failed to enqueue");
         return false;
     }
-    if (SL_RESULT_SUCCESS != (*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_PLAYING)) {
-        //destroyPlayer();
-    }
+    d.buffers_queued++;
     return true;
 }
 
@@ -318,14 +302,15 @@ void AudioOutputOpenSL::waitForNextBuffer()
     if (state.count <= 0) {
         return;
     }
-    int processed = state.count;
-    while (state.count >= 8) {
+    int processed = d.buffers_queued;
+    while (state.count >= d.buffers_queued) {
         unsigned long duration = d.format.durationForBytes(d.nextDequeueInfo().data_size)/1000LL;
         QMutexLocker lock(&d.mutex);
         Q_UNUSED(lock);
         d.cond.wait(&d.mutex, duration);
         (*d.m_bufferQueueItf)->GetState(d.m_bufferQueueItf, &state);
     }
+    d.buffers_queued = state.count;
     processed -= state.count;
     while (processed--) {
         d.bufferRemoved();

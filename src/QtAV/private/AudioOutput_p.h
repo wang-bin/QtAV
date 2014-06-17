@@ -42,8 +42,9 @@ public:
       , buffers_reseted(true)
       , index_enqueue(-1)
       , index_deuqueue(-1)
+      , nb_buffers(8)
     {
-        frame_infos.resize(8);
+        frame_infos.resize(nb_buffers);
     }
     virtual ~AudioOutputPrivate(){}
 
@@ -102,6 +103,7 @@ public:
     AudioFormat format;
     QByteArray data;
     AudioFrame audio_frame;
+    int nb_buffers;
 
 private:
     bool buffers_reseted;
