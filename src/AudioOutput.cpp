@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AudioOutput.h>
-#include <QtAV/private/AudioOutput_p.h>
+#include "QtAV/AudioOutput.h"
+#include "QtAV/private/AudioOutput_p.h"
 
 namespace QtAV {
 AudioOutput::AudioOutput()
