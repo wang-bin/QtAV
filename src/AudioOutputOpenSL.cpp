@@ -37,13 +37,9 @@ public:
     virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
     virtual AudioFormat::SampleFormat preferredSampleFormat() const;
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
-
     virtual bool open();
     virtual bool close();
-
-    QString name() const;
     void waitForNextBuffer();
-
 protected:
     virtual bool write();
 };
@@ -74,11 +70,16 @@ static SLDataFormat_PCM audioFormatToSL(const AudioFormat &format)
     format_pcm.numChannels = format.channels();
     format_pcm.samplesPerSec = format.sampleRate() * 1000;
     format_pcm.bitsPerSample = format.bytesPerSample()*8;
-    format_pcm.containerSize = format.bytesPerSample()*8;
-    format_pcm.channelMask = (format.channels() == 1 ?
-                                  SL_SPEAKER_FRONT_CENTER :
-                                  SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT);
-    format_pcm.endianness = SL_BYTEORDER_LITTLEENDIAN; //FIXME
+    format_pcm.containerSize = format_pcm.bitsPerSample;
+    // TODO: more layouts
+    format_pcm.channelMask = format.channels() == 1 ? SL_SPEAKER_FRONT_CENTER : SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT;
+#ifdef SL_BYTEORDER_NATIVE
+    format_pcm.endianness = SL_BYTEORDER_NATIVE;
+#else
+    union { unsigned short num; char buf[sizeof(unsigned short)]; } endianness;
+    endianness.num = 1;
+    format_pcm.endianness = endianness.buf[0] ? SL_BYTEORDER_LITTLEENDIAN : SL_BYTEORDER_BIGENDIAN;
+#endif
     return format_pcm;
 }
 
@@ -95,7 +96,6 @@ public:
         , m_bufferQueueItf(0)
         , m_notifyInterval(1000)
         , buffers_queued(0)
-        , init_buffers(true)
         , callback_mode(true)
     {
         SL_RUN_CHECK(slCreateEngine(&engineObject, 0, 0, 0, 0, 0));
@@ -104,12 +104,14 @@ public:
         available = false;
     }
     ~AudioOutputOpenSLPrivate() {
+        if (engineObject)
+            (*engineObject)->Destroy(engineObject);
     }
     static void bufferQueueCallback(SLBufferQueueItf bufferQueue, void *context)
     {
         SLBufferQueueState state;
         (*bufferQueue)->GetState(bufferQueue, &state);
-        qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
+        //qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
         AudioOutputOpenSLPrivate *priv = reinterpret_cast<AudioOutputOpenSLPrivate*>(context);
         if (priv->callback_mode) {
             priv->cond.wakeAll();
@@ -119,7 +121,7 @@ public:
     {
         Q_UNUSED(player);
         Q_UNUSED(ctx);
-        qDebug("---------%s  event=%lu", __FUNCTION__, event);
+        //qDebug("---------%s  event=%lu", __FUNCTION__, event);
     }
 
     SLObjectItf engineObject;
@@ -131,7 +133,6 @@ public:
     SLBufferQueueItf m_bufferQueueItf;
     int m_notifyInterval;
     quint32 buffers_queued;
-    bool init_buffers;
     bool callback_mode;
 };
 
@@ -172,7 +173,6 @@ AudioFormat::ChannelLayout AudioOutputOpenSL::preferredChannelLayout() const
 bool AudioOutputOpenSL::open()
 {
     DPTR_D(AudioOutputOpenSL);
-    d.init_buffers = true;
     d.available = false;
     SLDataLocator_BufferQueue bufferQueueLocator = { SL_DATALOCATOR_BUFFERQUEUE, (SLuint32)d.nb_buffers };
     SLDataFormat_PCM pcmFormat = audioFormatToSL(audioFormat());
@@ -183,11 +183,10 @@ bool AudioOutputOpenSL::open()
     SLDataLocator_OutputMix outputMixLocator = { SL_DATALOCATOR_OUTPUTMIX, d.m_outputMixObject };
     SLDataSink audioSink = { &outputMixLocator, NULL };
 
-    const int iids = 1;//2;
-    const SLInterfaceID ids[iids] = { SL_IID_BUFFERQUEUE};//, SL_IID_VOLUME };
-    const SLboolean req[iids] = { SL_BOOLEAN_TRUE};//, SL_BOOLEAN_TRUE };
+    const SLInterfaceID ids[] = { SL_IID_BUFFERQUEUE};//, SL_IID_VOLUME };
+    const SLboolean req[] = { SL_BOOLEAN_TRUE};//, SL_BOOLEAN_TRUE };
     // AudioPlayer
-    SL_RUN_CHECK_FALSE((*d.engine)->CreateAudioPlayer(d.engine, &d.m_playerObject, &audioSrc, &audioSink, iids, ids, req));
+    SL_RUN_CHECK_FALSE((*d.engine)->CreateAudioPlayer(d.engine, &d.m_playerObject, &audioSrc, &audioSink, sizeof(ids)/sizeof(ids[0]), ids, req));
     SL_RUN_CHECK_FALSE((*d.m_playerObject)->Realize(d.m_playerObject, SL_BOOLEAN_FALSE));
     // Buffer interface
     SL_RUN_CHECK_FALSE((*d.m_playerObject)->GetInterface(d.m_playerObject, SL_IID_BUFFERQUEUE, &d.m_bufferQueueItf));
@@ -197,13 +196,26 @@ bool AudioOutputOpenSL::open()
     // call when SL_PLAYSTATE_STOPPED
     SL_RUN_CHECK_FALSE((*d.m_playItf)->RegisterCallback(d.m_playItf, AudioOutputOpenSLPrivate::playCallback, this));
 
+#if 0
     SLuint32 mask = SL_PLAYEVENT_HEADATEND;
     // TODO: what does this do?
     SL_RUN_CHECK_FALSE((*d.m_playItf)->SetPositionUpdatePeriod(d.m_playItf, 100));
     SL_RUN_CHECK_FALSE((*d.m_playItf)->SetCallbackEventsMask(d.m_playItf, mask));
+#endif
     // Volume interface
     //SL_RUN_CHECK_FALSE((*d.m_playerObject)->GetInterface(d.m_playerObject, SL_IID_VOLUME, &d.m_volumeItf));
 
+    const int kBufferSize = 1024*4;
+    static char init_data[kBufferSize];
+    memset(init_data, 0, sizeof(init_data));
+    for (quint32 i = 0; i < d.nb_buffers; ++i) {
+        SL_RUN_CHECK_FALSE((*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, init_data, sizeof(init_data)));
+        d.nextEnqueueInfo().data_size = sizeof(init_data);
+        d.nextEnqueueInfo().timestamp = 0;
+        d.bufferAdded();
+        d.buffers_queued++;
+    }
+    SL_RUN_CHECK_FALSE((*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_PLAYING));
     d.available = true;
     return true;
 }
@@ -212,7 +224,6 @@ bool AudioOutputOpenSL::close()
 {
     DPTR_D(AudioOutputOpenSL);
     d.available = false;
-    d.init_buffers = true;
     if (d.m_playItf)
         (*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_STOPPED);
 
@@ -237,21 +248,7 @@ bool AudioOutputOpenSL::close()
 bool AudioOutputOpenSL::write()
 {
     DPTR_D(AudioOutputOpenSL);
-    if (d.init_buffers) {
-        d.init_buffers = false;
-        for (quint32 i = 0; i < d.nb_buffers; ++i) {
-            SL_RUN_CHECK_FALSE((*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, d.data.constData(), d.data.size()));
-            d.buffers_queued++;
-        }
-        if (SL_RESULT_SUCCESS != (*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_PLAYING)) {
-            //destroyPlayer();
-        }
-        return true;
-    }
-    if (SL_RESULT_SUCCESS != (*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, d.data.constData(), d.data.size())) {
-        qWarning("failed to enqueue");
-        return false;
-    }
+    SL_RUN_CHECK_FALSE((*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, d.data.constData(), d.data.size()));
     d.buffers_queued++;
     return true;
 }
@@ -264,7 +261,7 @@ void AudioOutputOpenSL::waitForNextBuffer()
     }
     SLBufferQueueState state;
     (*d.m_bufferQueueItf)->GetState(d.m_bufferQueueItf, &state);
-    qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
+    //qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
     // number of buffers in queue
     if (state.count <= 0) {
         return;
@@ -274,6 +271,7 @@ void AudioOutputOpenSL::waitForNextBuffer()
         Q_UNUSED(lock);
         d.cond.wait(&d.mutex);
         d.bufferRemoved();
+        --d.buffers_queued;
         return;
     }
     int processed = d.buffers_queued;

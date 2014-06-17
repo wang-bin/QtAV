@@ -267,6 +267,23 @@ bool AudioOutputOpenAL::open()
     alSource3f(d.source, AL_POSITION, 0.0, 0.0, 0.0);
     alSource3f(d.source, AL_VELOCITY, 0.0, 0.0, 0.0);
     alListener3f(AL_POSITION, 0.0, 0.0, 0.0);
+
+    //// Initial all buffers. TODO: move to open?
+    //alSourcef(d.source, AL_GAIN, d.vol);
+
+    static char init_data[kBufferSize];
+    memset(init_data, 0, sizeof(init_data));
+    for (int i = 1; i < kBufferCount; ++i) {
+        AL_RUN_CHECK(alBufferData(d.buffer[i], d.format_al, init_data, sizeof(init_data), audioFormat().sampleRate()));
+        AL_RUN_CHECK(alSourceQueueBuffers(d.source, 1, &d.buffer[i]));
+        d.nextEnqueueInfo().data_size = sizeof(init_data);
+        d.nextEnqueueInfo().timestamp = 0;
+        d.bufferAdded();
+    }
+    // FIXME: Invalid Operation
+    //AL_RUN_CHECK(alSourceQueueBuffers(d.source, sizeof(d.buffer)/sizeof(d.buffer[0]), d.buffer));
+    alSourcePlay(d.source);
+
     d.state = 0;
     d.available = true;
     qDebug("AudioOutputOpenAL open ok...");
@@ -386,21 +403,6 @@ bool AudioOutputOpenAL::write()
     DPTR_D(AudioOutputOpenAL);
     if (d.data.isEmpty())
         return false;
-    if (d.state == 0) {
-        //// Initial all buffers. TODO: move to open?
-        //alSourcef(d.source, AL_GAIN, d.vol);
-        AL_RUN_CHECK(alBufferData(d.buffer[0], d.format_al, d.data, d.data.size(), audioFormat().sampleRate()));
-        for (int i = 1; i < kBufferCount; ++i) {
-            AL_RUN_CHECK(alBufferData(d.buffer[i], d.format_al, d.data, d.data.size(), audioFormat().sampleRate()));
-            d.nextEnqueueInfo().data_size = d.data.size();
-            d.nextEnqueueInfo().timestamp = d.currentEnqueueInfo().timestamp;
-            d.bufferAdded();
-        }
-        AL_RUN_CHECK(alSourceQueueBuffers(d.source, sizeof(d.buffer)/sizeof(d.buffer[0]), d.buffer));
-        AL_RUN_CHECK(alGetSourcei(d.source, AL_SOURCE_STATE, &d.state)); //update d.state
-        alSourcePlay(d.source);
-        return true;
-    }
     ALuint buf;
     //unqueues a set of buffers attached to a source
     AL_RUN_CHECK(alSourceUnqueueBuffers(d.source, 1, &buf));
