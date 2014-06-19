@@ -49,6 +49,7 @@ NAME = QmlAV
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
 LIB_VERSION = 1.3.4 #0.x.y may be wrong for dll
+ios: STATICLINK=1
 isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
 
 TEMPLATE += fakelib
@@ -140,7 +141,7 @@ unix {
 # Executable dir search: ld -z origin, g++ -Wl,-R,'$ORIGIN', in makefile -Wl,-R,'$$ORIGIN'
 # Working dir search: "."
 # TODO: for macx. see qtcreator/src/rpath.pri. (-rpath define rpath, @rpath exapand to that path?)
-    macx {
+    macx|ios {
         QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/Frameworks/
         QMAKE_LFLAGS += -Wl,-rpath,@loader_path/../,-rpath,@executable_path/../
     } else {
