@@ -9,3 +9,4 @@ DEFINES += __STDC_CONSTANT_MACROS
 SOURCES += main.cpp
 
 LIBS += -lswscale
+include(../paths.pri)
