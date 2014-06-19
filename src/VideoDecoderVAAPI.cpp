@@ -58,6 +58,9 @@
 #undef PixelFormat
 #endif
 
+#define VERSION_CHK(major, minor, patch) \
+    (((major&0xff)<<16) | ((minor&0xff)<<8) | (patch&0xff))
+
 //ffmpeg_vaapi patch: http://lists.libav.org/pipermail/libav-devel/2013-November/053515.html
 
 namespace QtAV {
@@ -146,7 +149,9 @@ private:
 class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate, public VAAPI_DRM
 {
 public:
-    VideoDecoderVAAPIPrivate() {
+    VideoDecoderVAAPIPrivate()
+        : support_4k(true)
+    {
         if (VAAPI_DRM::isLoaded()) {
             display_type = VideoDecoderVAAPI::DRM;
         }
@@ -192,6 +197,7 @@ public:
     virtual bool getBuffer(void **opaque, uint8_t **data);
     virtual void releaseBuffer(void *opaque, uint8_t *data);
 
+    bool support_4k;
     VideoDecoderVAAPI::DisplayType display_type;
     QList<VideoDecoderVAAPI::DisplayType> display_priority;
 #if QTAV_HAVE(VAAPI_X11)
@@ -595,6 +601,33 @@ bool VideoDecoderVAAPIPrivate::open()
         qWarning("Failed to initialize the VAAPI device");
         return false;
     }
+    vendor = vaQueryVendorString(display);
+    if (!vendor.toLower().contains("intel"))
+        copy_uswc = false;
+
+    //disable_derive = !copy_uswc;
+
+    description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vendor);
+    description += " Display: " + displayToName(display_type);
+
+    // check 4k support. from xbmc
+    int major, minor, micro;
+    if (sscanf(vendor.toUtf8().constData(), "Intel i965 driver - %d.%d.%d", &major, &minor, &micro) == 3) {
+        /* older version will crash and burn */
+        if (VERSION_CHK(major, minor, micro) < VERSION_CHK(1, 0, 17)) {
+            qDebug("VAAPI - deinterlace not support on this intel driver version");
+        }
+        // do the same check for 4K decoding: version < 1.2.0 (stable) and 1.0.21 (staging)
+        // cannot decode 4K and will crash the GPU
+        if (VERSION_CHK(major, minor, micro) < VERSION_CHK(1, 2, 0) && VERSION_CHK(major, minor, micro) < VERSION_CHK(1, 0, 21)) {
+            support_4k = false;
+        }
+    }
+    if (!support_4k && (codec_ctx->width > 1920 || codec_ctx->height > 1088)) {
+        qWarning("VAAPI: frame size (%dx%d) is too large", codec_ctx->width, codec_ctx->height);
+        return false;
+    }
+
     /* Check if the selected profile is supported */
     int i_profiles_nb = vaMaxNumProfiles(display);
     VAProfile *p_profiles_list = (VAProfile*)calloc(i_profiles_nb, sizeof(VAProfile));
@@ -634,14 +667,6 @@ bool VideoDecoderVAAPIPrivate::open()
         return false;
     }
     supports_derive = false;
-    vendor = vaQueryVendorString(display);
-    if (!vendor.toLower().contains("intel"))
-        copy_uswc = false;
-
-    //disable_derive = !copy_uswc;
-
-    description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vendor);
-    description += " Display: " + displayToName(display_type);
     return true;
 }
 
