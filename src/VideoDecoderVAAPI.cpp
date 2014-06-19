@@ -378,13 +378,15 @@ VideoFrame VideoDecoderVAAPI::frame()
     VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
     bool swap_uv = false;
     switch (d.image.format.fourcc) {
-    case VA_FOURCC('I','4','2','0'):
-        swap_uv = true;
-    case VA_FOURCC('Y','V','1','2'):
+    case VA_FOURCC_YV12:
         swap_uv |= d.disable_derive || !d.supports_derive;
         pixfmt = VideoFormat::Format_YUV420P;
         break;
-    case VA_FOURCC('N','V','1','2'):
+    case VA_FOURCC_IYUV:
+        swap_uv = true;
+        pixfmt = VideoFormat::Format_YUV420P;
+        break;
+    case VA_FOURCC_NV12:
         pixfmt = VideoFormat::Format_NV12;
         break;
     default:
@@ -706,11 +708,10 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
     }
 
     AVPixelFormat i_chroma = QTAV_PIX_FMT_C(NONE);
-    VAImageFormat fmt;
     for (int i = 0; i < i_fmt_count; i++) {
-        if (p_fmt[i].fourcc == VA_FOURCC('Y', 'V', '1', '2') ||
-            p_fmt[i].fourcc == VA_FOURCC('I', '4', '2', '0') ||
-            p_fmt[i].fourcc == VA_FOURCC('N', 'V', '1', '2')) {
+        if (p_fmt[i].fourcc == VA_FOURCC_YV12 ||
+            p_fmt[i].fourcc == VA_FOURCC_IYUV ||
+            p_fmt[i].fourcc == VA_FOURCC_NV12) {
             qDebug("vaCreateImage: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
             if (vaCreateImage(display, &p_fmt[i], surface_width, surface_height, &image)) {
                 image.image_id = VA_INVALID_ID;
@@ -726,7 +727,6 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
             }
             //see vlc chroma.c map to AVPixelFormat. Can used by VideoFormat::PixelFormat
             i_chroma = QTAV_PIX_FMT_C(YUV420P);// VLC_CODEC_YV12; //VideoFormat::PixelFormat
-            fmt = p_fmt[i];
             break;
         }
     }
