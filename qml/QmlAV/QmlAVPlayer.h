@@ -33,7 +33,7 @@ namespace QtAV {
 class AVPlayer;
 }
 using namespace QtAV;
-class QMLAV_EXPORT QmlAVPlayer : public QObject
+class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
 {
     Q_OBJECT
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
@@ -80,6 +80,9 @@ public:
     };
 
     explicit QmlAVPlayer(QObject *parent = 0);
+    //derived
+    virtual void classBegin();
+    virtual void componentComplete();
 
     // add QtAV::AVPlayer::isAudioAvailable()?
     bool hasAudio() const;
@@ -163,6 +166,7 @@ private Q_SLOTS:
 private:
     Q_DISABLE_COPY(QmlAVPlayer)
 
+    bool m_complete;
     bool mAutoPlay;
     bool mAutoLoad;
     int mLoopCount;

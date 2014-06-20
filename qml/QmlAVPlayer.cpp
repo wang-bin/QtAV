@@ -56,6 +56,7 @@ static inline QVector<VideoDecoderId> VideoDecodersFromNames(const QStringList& 
 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
+  , m_complete(false)
   , mAutoPlay(false)
   , mAutoLoad(false)
   , mLoopCount(1)
@@ -63,13 +64,39 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mpPlayer(0)
   , mChannelLayout(ChannelLayoutAuto)
 {
-    mpPlayer = new AVPlayer(this);
+    mpPlayer = new AVPlayer(this); //in componentComplete()?
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
 
     mVideoCodecs << "FFmpeg";
+}
+
+void QmlAVPlayer::classBegin()
+{
+}
+
+void QmlAVPlayer::componentComplete()
+{
+    // TODO: set player parameters
+    if (mSource.isValid() && (mAutoLoad || mAutoPlay)) {
+        if (mSource.isLocalFile()) {
+            mpPlayer->setFile(mSource.toLocalFile());
+        } else {
+            mpPlayer->setFile(mSource.toString());
+        }
+    }
+
+    m_complete = true;
+
+    if (mAutoPlay) {
+        if (!mSource.isValid()) {
+            stop();
+        } else {
+            play();
+        }
+    }
 }
 
 bool QmlAVPlayer::hasAudio() const
@@ -99,12 +126,12 @@ void QmlAVPlayer::setSource(const QUrl &url)
     }
     emit sourceChanged(); //TODO: emit only when player loaded a new source
     // TODO: in componentComplete()?
-    if (mAutoLoad || mAutoPlay) {
+    if (m_complete && (mAutoLoad || mAutoPlay)) {
         mpPlayer->stop();
         mpPlayer->load();
-    }
-    if (mAutoPlay) {
-        play();
+        if (mAutoPlay) {
+            play();
+        }
     }
 }
 
@@ -163,7 +190,7 @@ static AudioFormat::ChannelLayout toAudioFormatChannelLayout(QmlAVPlayer::Channe
     { QmlAVPlayer::Mono, AudioFormat::ChannelLayout_Mono },
     { QmlAVPlayer::Stero, AudioFormat::ChannelLayout_Stero },
     };
-    for (int i = 0; i < sizeof(map)/sizeof(map[0]); ++i) {
+    for (uint i = 0; i < sizeof(map)/sizeof(map[0]); ++i) {
         if (map[i].ch == ch)
             return map[i].a;
     }
@@ -280,6 +307,8 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
     if (mPlaybackState == playbackState) {
         return;
     }
+    if (!m_complete)
+        return;
     mPlaybackState = playbackState;
     switch (mPlaybackState) {
     case PlayingState:
