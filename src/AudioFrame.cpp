@@ -108,16 +108,15 @@ AudioFrame AudioFrame::clone() const
     Q_D(const AudioFrame);
     if (!d->format.isValid())
         return AudioFrame();
-    AudioFrame f(QByteArray(), d->format);
+    QByteArray buf(bytesPerLine()*planeCount(), 0);
+    AudioFrame f(buf, d->format);
     f.setSamplesPerChannel(samplesPerChannel());
-    f.allocate();
-    // TODO: Frame.planes(), bytesPerLines()
-    int nb_planes = f.planeCount();
-    QVector<uchar*> dst(nb_planes);
-    for (int i = 0; i < nb_planes; ++i) {
-        dst[i] = f.bits(i);
+    char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
+    for (int i = 0; i < f.planeCount(); ++i) {
+        const int plane_size = f.bytesPerLine(i);
+        memcpy(dst, f.bits(i), plane_size);
+        dst += plane_size;
     }
-    av_samples_copy(dst.data(), d->planes.constData(), 0, 0, samplesPerChannel(), d->format.channels(), (AVSampleFormat)d->format.sampleFormatFFmpeg());
     return f;
 }
 
@@ -138,7 +137,12 @@ AudioFormat AudioFrame::format() const
 
 void AudioFrame::setSamplesPerChannel(int samples)
 {
-    d_func()->samples_per_ch = samples;
+    Q_D(AudioFrame);
+    d->samples_per_ch = samples;
+    const int nb_planes = d->format.planeCount();
+    for (int i = 0; i < nb_planes; ++i) {
+        setBytesPerLine(d->samples_per_ch*d->format.bytesPerSample());
+    }
 }
 
 int AudioFrame::samplesPerChannel() const
@@ -158,12 +162,10 @@ void AudioFrame::init()
     const int nb_planes = d->format.planeCount();
     d->line_sizes.resize(nb_planes);
     d->planes.resize(nb_planes);
-    for (int i = 0; i < nb_planes; ++i) {
-        setBytesPerLine(d->data.size()/nb_planes, i);
-    }
     if (d->data.isEmpty())
         return;
     for (int i = 0; i < nb_planes; ++i) {
+        setBytesPerLine(d->data.size()/nb_planes, i);
         setBits((uchar*)d->data.constData() + i*bytesPerLine(i), i);
     }
 }

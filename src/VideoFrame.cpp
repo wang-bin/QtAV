@@ -193,7 +193,7 @@ VideoFrame VideoFrame::clone() const
     for (int i = 0; i < d->format.planeCount(); ++i) {
         f.setBits((quint8*)dst, i);
         f.setBytesPerLine(bytesPerLine(i), i);
-        int plane_size = bytesPerLine(i)*planeHeight(i);
+        const int plane_size = bytesPerLine(i)*planeHeight(i);
         memcpy(dst, bits(i), plane_size);
         dst += plane_size;
     }
