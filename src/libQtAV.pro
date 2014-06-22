@@ -5,6 +5,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   QT += widgets
 }
 CONFIG *= qtav-buildlib
+INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 
 #var with '_' can not pass to pri?
 STATICLINK = 0
@@ -28,6 +29,20 @@ win32 {
     }
     QMAKE_EXTRA_TARGETS += rc
 }
+# copy runtime libs to qt sdk
+!ios: copy_sdk_libs = $$DESTDIR/$$qtSharedLib($$NAME)
+#plugin.depends = #makefile target
+#windows: copy /y file1+file2+... dir. need '+'
+for(f, copy_sdk_libs) {
+  win32: copy_sdk_libs_cmd += $$quote(-\$\(COPY_FILE\) \"$$shell_path($$f)\" \"$$shell_path($$[QT_INSTALL_BINS])\")
+  else: copy_sdk_libs_cmd += $$quote(-\$\(COPY_FILE\) \"$$shell_path($$f)\" \"$$shell_path($$[QT_INSTALL_LIBS])\")
+}
+#join values seperated by space. so quote is needed
+copy_sdk_libs_cmd = $$join(copy_sdk_libs_cmd,$$escape_expand(\\n\\t))
+#just append as a string to $$QMAKE_POST_LINK
+isEmpty(QMAKE_POST_LINK): QMAKE_POST_LINK = $$copy_sdk_libs_cmd
+else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$copy_sdk_libs_cmd
+
 OTHER_FILES += $$RC_FILE
 TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
 
@@ -197,7 +212,12 @@ config_libcedarv {
     SOURCES += VideoDecoderCedarv.cpp
     LIBS += -lvecore -lcedarv
 }
-
+#macx:!ios: CONFIG += config_vda
+config_vda {
+    DEFINES *= QTAV_HAVE_VDA=1
+    SOURCES += VideoDecoderVDA.cpp
+    LIBS += -framework VideoDecodeAcceleration -framework CoreVideo
+}
 SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \
