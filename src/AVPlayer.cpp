@@ -611,7 +611,7 @@ bool AVPlayer::load(bool reload)
 
     // TODO: what about other proctols? some vob duration() == 0
     if ((path.startsWith("file:") || QFile(path).exists()) && duration() > 0) {
-        media_end_pos = duration();
+        media_end_pos = mediaStartPosition() + duration();
     } else {
         media_end_pos = std::numeric_limits<qint64>::max();
     }
