@@ -307,6 +307,7 @@ SDK_HEADERS *= \
     QtAV/VideoFrame.h \
     QtAV/FactoryDefine.h \
     QtAV/Statistics.h \
+    QtAV/SurfaceInterop.h \
     QtAV/version.h
 
 
