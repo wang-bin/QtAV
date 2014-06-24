@@ -595,10 +595,11 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
             || (plane1_linesize > 0 && video_frame.bytesPerLine(1) != plane1_linesize)) { // no need to check hieght if plane 0 sizes are equal?
         update_textures = true;
         //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
-        texture_size.resize(fmt.planeCount());
-        texture_upload_size.resize(fmt.planeCount());
-        effective_tex_width.resize(fmt.planeCount());
-        for (int i = 0; i < fmt.planeCount(); ++i) {
+        const int nb_planes = fmt.planeCount();
+        texture_size.resize(nb_planes);
+        texture_upload_size.resize(nb_planes);
+        effective_tex_width.resize(nb_planes);
+        for (int i = 0; i < nb_planes; ++i) {
             qDebug("plane linesize %d: padded = %d, effective = %d", i, video_frame.bytesPerLine(i), video_frame.effectiveBytesPerLine(i));
             qDebug("plane width %d: effective = %d", video_frame.planeWidth(i), video_frame.effectivePlaneWidth(i));
             qDebug("planeHeight %d = %d", i, video_frame.planeHeight(i));
@@ -607,14 +608,15 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
             texture_upload_size[i] = texture_size[i];
             effective_tex_width[i] = video_frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
             // TODO: ratio count the GL_UNPACK_ALIGN?
-            effective_tex_width_ratio = qMin((qreal)1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
+            //effective_tex_width_ratio = qMin((qreal)1.0, (qreal)video_frame.effectiveBytesPerLine(i)/(qreal)video_frame.bytesPerLine(i));
         }
         plane1_linesize = 0;
-        if (fmt.planeCount() > 1) {
+        if (nb_planes > 1) {
             texture_size[0].setWidth(texture_size[1].width() * effective_tex_width[0]/effective_tex_width[1]);
             // height? how about odd?
             plane1_linesize = video_frame.bytesPerLine(1);
         }
+        effective_tex_width_ratio = (qreal)video_frame.effectiveBytesPerLine(nb_planes-1)/(qreal)video_frame.bytesPerLine(nb_planes-1);
         qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
         plane0Size.setWidth(video_frame.bytesPerLine(0));
         plane0Size.setHeight(video_frame.height());
@@ -782,7 +784,15 @@ void GLWidgetRenderer::drawFrame()
     DPTR_D(GLWidgetRenderer);
     d.updateTexturesIfNeeded();
     QRect roi = realROI();
-    d.upload(roi);
+    const int nb_planes = d.video_frame.planeCount(); //number of texture id
+    int mapped = 0;
+    for (int i = 0; i < nb_planes; ++i) {
+        if (d.video_frame.map(GLTextureSurface, &d.textures[i]))
+            mapped++;
+    }
+    if (mapped < nb_planes) {
+        d.upload(roi);
+    }
     // shader program may not ready before upload
     if (d.hasGLSL) {
 #if NO_QGL_SHADER
@@ -792,7 +802,6 @@ void GLWidgetRenderer::drawFrame()
 #endif //NO_QGL_SHADER
     }
     glDisable(GL_DEPTH_TEST);
-    const int nb_planes = d.video_frame.planeCount(); //number of texture id
     // all texture ids should be binded when renderering even for packed plane!
     for (int i = 0; i < nb_planes; ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
@@ -908,6 +917,7 @@ void GLWidgetRenderer::drawFrame()
     }
 
     for (int i = 0; i < d.textures.size(); ++i) {
+        d.video_frame.unmap(&d.textures[i]);
         //glActiveTexture: gl functions apply on texture i
         glActiveTexture(GL_TEXTURE0 + i);
         glDisable(GL_TEXTURE_2D);

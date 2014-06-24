@@ -100,8 +100,8 @@ public:
      * handle: given handle. can be gl texture (& GLuint), d3d texture, or 0 if create a new handle
      * return the result handle or 0 if not supported
      */
-    void* map(SurfaceType type,void* handle, int plane = 0);
-    void unmap();
+    void* map(SurfaceType type, void* handle, int plane = 0);
+    void unmap(void* handle);
     //copy to host. Used if gpu filter not supported. To avoid copy too frequent, sort the filters first?
     //bool mapToHost();
     /*!

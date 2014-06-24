@@ -364,8 +364,12 @@ void *VideoFrame::map(SurfaceType type, void *handle, int plane)
     return d->surface_interop->map(type, format(), handle, plane);
 }
 
-void VideoFrame::unmap()
+void VideoFrame::unmap(void *handle)
 {
+    Q_D(VideoFrame);
+    if (!d->surface_interop)
+        return;
+    d->surface_interop->unmap(handle);
 }
 
 int VideoFrame::texture(int plane) const
