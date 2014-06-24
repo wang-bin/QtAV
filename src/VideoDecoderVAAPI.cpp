@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <QtCore/QLibrary>
+#include <QtCore/QMap>
 #include <QtCore/QStringList>
 #include <QtAV/Packet.h>
 #include "QtAV/SurfaceInterop.h"
@@ -155,17 +156,28 @@ public:
         , mpSurface(0)
         , mWidth(0)
         , mHeight(0)
-#if QTAV_HAVE(VAAPI_GLX)
-        , m_tex(0)
-        , glxSurface(0)
-#endif
     {
     }
     ~VAAPISurfaceInterop() {
 #if QTAV_HAVE(VAAPI_GLX)
-        if (glxSurface) {
-            vaDestroySurfaceGLX(mDisplay, glxSurface);
-            glxSurface = 0;
+        if (tmp_surfaces.isEmpty())
+            return;
+        QMap<GLuint*,void*>::iterator it(tmp_surfaces.begin());
+        while (it != tmp_surfaces.end()) {
+            delete it.key();
+            void *glxSurface = it.value();
+            if (glxSurface) {
+                vaDestroySurfaceGLX(mDisplay, glxSurface);
+            }
+            it = tmp_surfaces.erase(it);
+        }
+        it = glx_surfaces.begin();
+        while (it != glx_surfaces.end()) {
+            void *glxSurface = it.value();
+            if (glxSurface) {
+                vaDestroySurfaceGLX(mDisplay, glxSurface);
+            }
+            it = tmp_surfaces.erase(it);
         }
 #endif
     }
@@ -174,37 +186,44 @@ public:
         mWidth = width;
         mHeight = height;
     }
-    bool createGLXSurface(quint8 tex) {
-        qDebug("vaCreateSurfaceGLX");
+    // return glx surface
+    void* createGLXSurface(void* handle) {
 #if QTAV_HAVE(VAAPI_GLX)
+        GLuint tex = *((GLuint*)handle);
+        void *glxSurface = 0;
         VAStatus status = vaCreateSurfaceGLX(mDisplay, GL_TEXTURE_2D, tex, &glxSurface);
         if (status != VA_STATUS_SUCCESS) {
             qWarning("vaCreateSurfaceGLX(%p, GL_TEXTURE_2D, %u, %p) == %#x", mDisplay, tex, &glxSurface, status);
-            return false;
+            return 0;
         }
-        return true;
+        glx_surfaces[(GLuint*)handle] = glxSurface;
+        return glxSurface;
 #endif
-        return false;
+        return 0;
     }
     virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) {
-        if (!fmt.isRGB() || fmt.isPlanar())
+        if (!fmt.isRGB())
             return 0;
         if (!handle)
             handle = createHandle(type, fmt, plane);
 #if QTAV_HAVE(VAAPI_GLX)
-        GLuint tex = *((GLuint*)handle);
         VAStatus status = VA_STATUS_SUCCESS;
         if (type == GLTextureSurface) {
-            if (!glxSurface && !createGLXSurface(tex))
-                return 0;
+            void *glxSurface = glx_surfaces[(GLuint*)handle];
+            if (!glxSurface) {
+                glxSurface = createGLXSurface(handle);
+                if (!glxSurface) {
+                    qWarning("Fail to create vaapi glx surface");
+                    return 0;
+                }
+            }
             int flags = VA_FRAME_PICTURE | VA_SRC_BT709;
-            qDebug("vaCopySurfaceGLX(glSurface:%p, VASurfaceID:%#x) ref: %d", glxSurface, mpSurface->i_id, mpSurface->i_refcount);
+            //qDebug("vaCopySurfaceGLX(glSurface:%p, VASurfaceID:%#x) ref: %d", glxSurface, mpSurface->i_id, mpSurface->i_refcount);
             status = vaCopySurfaceGLX(mDisplay, glxSurface, mpSurface->i_id, flags);
             if (status != VA_STATUS_SUCCESS) {
                 qWarning("vaCopySurfaceGLX(VADisplay:%p, glSurface:%p, VASurfaceID:%#x, flags:%d) == %d", mDisplay, glxSurface, mpSurface->i_id, flags, status);
                 return 0;
             }
-            qDebug("vaSyncSurface");
             if ((status = vaSyncSurface(mDisplay, mpSurface->i_id)) != VA_STATUS_SUCCESS) {
                 qWarning("vaCopySurfaceGLX: %#x", status);
             }
@@ -217,6 +236,19 @@ public:
         }
         return handle;
     }
+    virtual void unmap(void *handle) {
+#if QTAV_HAVE(VAAPI_GLX)
+        QMap<GLuint*,void*>::iterator it(tmp_surfaces.find((GLuint*)handle));
+        if (it == tmp_surfaces.end())
+            return;
+        delete it.key();
+        void *glxSurface = it.value();
+        if (glxSurface) {
+            vaDestroySurfaceGLX(mDisplay, glxSurface);
+        }
+        tmp_surfaces.erase(it);
+#endif
+    }
     virtual void* createHandle(SurfaceType type, const VideoFormat& fmt, int plane = 0) {
         Q_UNUSED(plane);
         if (type == GLTextureSurface) {
@@ -224,14 +256,16 @@ public:
                 return 0;
             }
 #if QTAV_HAVE(VAAPI_GLX) //TODO: remove the macro if we use qtopengl not glx
-            glGenTextures(1, &m_tex);
-            glBindTexture(GL_TEXTURE_2D, m_tex);
+            GLuint *tex = new GLuint;
+            glGenTextures(1, tex);
+            glBindTexture(GL_TEXTURE_2D, *tex);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-            return &m_tex;
+            tmp_surfaces[tex] = 0;
+            return tex;
 #endif
         }
         return 0;
@@ -241,11 +275,9 @@ private:
     va_surface_t* mpSurface; //TODO: shared_ptr
     int mWidth, mHeight;
 #if QTAV_HAVE(VAAPI_GLX)
-    GLuint m_tex;
-    void* glxSurface;
+    QMap<GLuint*,void*> glx_surfaces, tmp_surfaces;
 #endif
 };
-
 
 
 class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate, public VAAPI_DRM
