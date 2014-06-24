@@ -25,6 +25,7 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/Frame.h>
 #include <QtAV/VideoFormat.h>
+#include <QtAV/SurfaceInterop.h>
 #include <QtCore/QSize>
 
 namespace QtAV {
@@ -93,15 +94,21 @@ public:
     bool convertTo(int fffmt);
     bool convertTo(const VideoFormat& fmt, const QSizeF& dstSize, const QRectF& roi);
 
-    //upload to GPU. return false if gl(or other, e.g. cl) not supported
-    bool mapToDevice();
+    void setSurfaceInterop(VideoSurfaceInterop *si);
+    /*!
+     * map a gpu frame to opengl texture or d3d texture or other handle.
+     * handle: given handle. can be gl texture (& GLuint), d3d texture, or 0 if create a new handle
+     * return the result handle or 0 if not supported
+     */
+    void* map(SurfaceType type, void* handle, int plane = 0);
+    void unmap(void* handle);
     //copy to host. Used if gpu filter not supported. To avoid copy too frequent, sort the filters first?
-    bool mapToHost();
+    //bool mapToHost();
     /*!
        texture in FBO. we can use texture in FBO through filter pipeline then switch to window context to display
        return -1 if no texture, not uploaded
      */
-    int texture(int plane = 0) const;
+    int texture(int plane = 0) const; //TODO: remove
 private:
     /*
      * call this only when setBytesPerLine() and setBits() will not be called

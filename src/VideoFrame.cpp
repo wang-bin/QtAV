@@ -23,6 +23,7 @@
 #include "QtAV/private/Frame_p.h"
 #include "QtAV/ImageConverter.h"
 #include "QtAV/ImageConverterTypes.h"
+#include "QtAV/SurfaceInterop.h"
 #include "QtAV/QtAV_Compat.h"
 #include <QtGui/QImage>
 
@@ -44,6 +45,7 @@ public:
         , format(VideoFormat::Format_Invalid)
         , textures(4, 0)
         , conv(0)
+        , surface_interop(0)
     {}
     VideoFramePrivate(int w, int h, const VideoFormat& fmt)
         : FramePrivate()
@@ -53,6 +55,7 @@ public:
         , format(fmt)
         , textures(4, 0)
         , conv(0)
+        , surface_interop(0)
     {
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
@@ -119,6 +122,7 @@ public:
     QVector<int> textures;
 
     ImageConverter *conv;
+    VideoSurfaceInterop *surface_interop;
 };
 
 VideoFrame::VideoFrame()
@@ -345,14 +349,27 @@ bool VideoFrame::convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const 
     return d_func()->convertTo(fmt, dstSize, roi);
 }
 
-bool VideoFrame::mapToDevice()
+void VideoFrame::setSurfaceInterop(VideoSurfaceInterop *si)
 {
-    return false;
+    d_func()->surface_interop = si;
 }
 
-bool VideoFrame::mapToHost()
+void *VideoFrame::map(SurfaceType type, void *handle, int plane)
 {
-    return false;
+    Q_D(VideoFrame);
+    if (!d->surface_interop)
+        return 0;
+    if (plane > planeCount())
+        return 0;
+    return d->surface_interop->map(type, format(), handle, plane);
+}
+
+void VideoFrame::unmap(void *handle)
+{
+    Q_D(VideoFrame);
+    if (!d->surface_interop)
+        return;
+    d->surface_interop->unmap(handle);
 }
 
 int VideoFrame::texture(int plane) const
