@@ -282,6 +282,7 @@ SDK_HEADERS *= \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
     QtAV/BlockingQueue.h \
+    QtAV/CommonTypes.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
     QtAV/Frame.h \
@@ -318,9 +319,11 @@ HEADERS *= \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
     QtAV/VideoThread.h \
+    QtAV/ColorTransform.h \
     QtAV/VideoOutputEventFilter.h \
     QtAV/OutputSet.h \
     QtAV/QtAV_Compat.h \
+    QtAV/QAVIOContext.h \
     QtAV/singleton.h \
     QtAV/factory.h \
     QtAV/FilterManager.h \
@@ -338,10 +341,7 @@ HEADERS *= \
     QtAV/VideoDecoderFFmpegHW.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h \
-    QtAV/private/WidgetRenderer_p.h \
-    QtAV/QAVIOContext.h \
-    QtAV/ColorTransform.h \
-    QtAV/CommonTypes.h
+    QtAV/private/WidgetRenderer_p.h
 
 SDK_INCLUDE_FOLDER = QtAV
 include($$PROJECTROOT/deploy.pri)
