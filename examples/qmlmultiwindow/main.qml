@@ -6,6 +6,7 @@ Item {
     MediaPlayer { //or AVPlayer
         id: player
         source: "test.mov"
+        autoPlay: true
     }
     MouseArea {
         anchors.fill: parent
