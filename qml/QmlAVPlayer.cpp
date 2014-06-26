@@ -38,7 +38,7 @@ static QVector<ID> idsFromNames(const QStringList& names) {
     foreach (QString name, names) {
         if (name.isEmpty())
             continue;
-        ID id = Factory::id(name.toStdString());
+        ID id = Factory::id(name.toStdString(), false);
         if (id == 0)
             continue;
         decs.append(id);
@@ -315,6 +315,12 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
         if (mpPlayer->isPaused()) {
             mpPlayer->pause(false);
         } else {
+            QVariantHash vaapi_opt;
+            // GLX in QML is not supported now
+            vaapi_opt["displayPriority"] = QStringList() << "X11" << "DRM";
+            QVariantHash opt;
+            opt["VAAPI"] = vaapi_opt;
+            mpPlayer->setOptionsForVideoCodec(opt);
             mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->play();
             setChannelLayout(channelLayout());
