@@ -1,13 +1,19 @@
 import QtQuick 2.0
 import "utils.js" as Utils
+import QtQuick.Window 2.1
 
 // TODO: Control.qml
 Rectangle {
     id: control
+    function scaled(x) {
+        console.log("Screen " + screenPixelDensity + "; r: " + Screen.pixelDensity/Screen.logicalPixelDensity + "; size: " + Screen.width + "x" + Screen.height);
+        console.log("screen density logical: " + Screen.logicalPixelDensity + " pixel: " + Screen.pixelDensity + "; " + x + ">>>" +x*Screen.pixelDensity/Screen.logicalPixelDensity);
+        return x*Screen.pixelDensity/Screen.logicalPixelDensity;
+    }
     color: "black"
     opacity: 0.9
-    radius: 10
-    height: 80
+    radius: Utils.scaled(10)
+    height: Utils.scaled(80)
 
     property string playState: "stop"
     property string mediaSource
@@ -80,13 +86,13 @@ Rectangle {
         id: progress
         anchors {
             top: parent.top
-            topMargin: 8
+            topMargin: Utils.scaled(8)
             left: parent.left
-            leftMargin: 20
+            leftMargin: Utils.scaled(20)
             right: parent.right
-            rightMargin: 20
+            rightMargin: Utils.scaled(20)
         }
-        height: 10
+        height: Utils.scaled(10)
         onValueChangedByUi: {
             /*if (player.playbackState != MediaPlayer.StoppedState) {
                 player.seek(player.duration * value)
@@ -128,28 +134,34 @@ Rectangle {
         text: Utils.msec2string(progress.value*duration)
         anchors {
             top: progress.bottom
-            topMargin: 2
+            topMargin: Utils.scaled(2)
             left: progress.left
         }
         color: "white"
+        font {
+            pixelSize: Utils.scaled(12) //or point size?
+        }
     }
     Text {
         id: life
         text: Utils.msec2string(duration)
         anchors {
             top: progress.bottom
-            topMargin: 2
+            topMargin: Utils.scaled(2)
             right: progress.right
         }
         color: "white"
+        font {
+            pixelSize: Utils.scaled(12)
+        }
     }
     Rectangle {
         id: preview
         opacity: 0.9
         anchors.left: progress.left
         anchors.bottom: progress.top
-        width: 60
-        height: 16
+        width: Utils.scaled(60)
+        height: Utils.scaled(16)
         color: "black"
         state: "out"
         Text {
@@ -157,7 +169,7 @@ Rectangle {
             anchors.fill: parent
             text: ""
             color: "white"
-            font.pixelSize: 12
+            font.pixelSize: Utils.scaled(12)
             font.bold: true
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
@@ -223,7 +235,7 @@ Rectangle {
             bottom: parent.bottom
             left: parent.left
             right: parent.right
-            margins: 8
+            margins: Utils.scaled(8)
         }
         Button {
             id: playBtn
@@ -231,8 +243,8 @@ Rectangle {
             checkable: true
             bgColor: "transparent"
             bgColorSelected: "transparent"
-            width: 50
-            height: 50
+            width: Utils.scaled(50)
+            height: Utils.scaled(50)
             icon: resurl("theme/default/play.svg")
             iconChecked: resurl("theme/default/pause.svg")
 
@@ -256,13 +268,13 @@ Rectangle {
         Row {
             anchors.right: playBtn.left
             anchors.verticalCenter: playBtn.verticalCenter
-            spacing: 4
+            spacing: Utils.scaled(4)
             Button {
                 id: stopBtn
                 bgColor: "transparent"
                 bgColorSelected: "transparent"
-                width: 35
-                height: 35
+                width: Utils.scaled(35)
+                height: Utils.scaled(35)
                 icon: resurl("theme/default/stop.svg")
                 onClicked: {
                     //player.stop()
@@ -273,8 +285,8 @@ Rectangle {
                 id: backwardBtn
                 bgColor: "transparent"
                 bgColorSelected: "transparent"
-                width: 35
-                height: 35
+                width: Utils.scaled(35)
+                height: Utils.scaled(35)
                 icon: resurl("theme/default/backward.svg")
                 onClicked: {
                     //player.seek(player.position-10000)
@@ -285,13 +297,13 @@ Rectangle {
         Row {
             anchors.left: playBtn.right
             anchors.verticalCenter: playBtn.verticalCenter
-            spacing: 4
+            spacing: Utils.scaled(4)
             Button {
                 id: forwardBtn
                 bgColor: "transparent"
                 bgColorSelected: "transparent"
-                width: 35
-                height: 35
+                width: Utils.scaled(35)
+                height: Utils.scaled(35)
                 icon: resurl("theme/default/forward.svg")
                 onClicked: {
                     //player.seek(player.position+10000)
@@ -301,7 +313,7 @@ Rectangle {
         }
         Row {
             anchors.left: parent.left
-            anchors.leftMargin: 50
+            anchors.leftMargin: Utils.scaled(50)
             anchors.verticalCenter: parent.verticalCenter
             Button {
                 id: fullScreenBtn
@@ -309,8 +321,8 @@ Rectangle {
                 checked: false
                 bgColor: "transparent"
                 bgColorSelected: "transparent"
-                width: 25
-                height: 25
+                width: Utils.scaled(25)
+                height: Utils.scaled(25)
                 icon: resurl("theme/default/fullscreen.svg")
                 iconChecked: resurl("theme/default/fullscreen.svg")
                 visible: true
@@ -322,8 +334,8 @@ Rectangle {
                 }
             }
             Slider { //volume
-                width: 80
-                height: 30
+                width: Utils.scaled(80)
+                height: Utils.scaled(30)
                 opacity: 0.9
                 value: volume/2
                 onValueChanged: {
@@ -340,14 +352,14 @@ Rectangle {
 
         Row {
             anchors.right: parent.right
-            anchors.rightMargin: 50
+            anchors.rightMargin: Utils.scaled(50)
             anchors.verticalCenter: parent.verticalCenter
             Button {
                 id: infoBtn
                 bgColor: "transparent"
                 bgColorSelected: "transparent"
-                width: 25
-                height: 25
+                width: Utils.scaled(25)
+                height: Utils.scaled(25)
                 icon: resurl("theme/default/info.svg")
                 visible: true
                 onClicked: showInfo()
@@ -356,8 +368,8 @@ Rectangle {
                 id: openFileBtn
                 bgColor: "transparent"
                 bgColorSelected: "transparent"
-                width: 25
-                height: 25
+                width: Utils.scaled(25)
+                height: Utils.scaled(25)
                 icon: resurl("theme/default/open.svg")
                 onClicked: openFile()
             }
@@ -365,8 +377,8 @@ Rectangle {
                 id: helpBtn
                 bgColor: "transparent"
                 bgColorSelected: "transparent"
-                width: 25
-                height: 25
+                width: Utils.scaled(25)
+                height: Utils.scaled(25)
                 icon: resurl("theme/default/help.svg")
                 onClicked: showHelp()
             }

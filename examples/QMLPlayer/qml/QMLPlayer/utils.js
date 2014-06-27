@@ -1,3 +1,4 @@
+
 function msec2string(t) {
     t = Math.floor(t/1000)
     var ss = t%60
@@ -12,3 +13,9 @@ function msec2string(t) {
         hh = "0" + hh
     return hh + ":" + mm +":" + ss
 }
+
+function scaled(x) {
+    //console.log("scaleRatio: " + scaleRatio + "; " + x + ">>>" + x*scaleRatio);
+    return x * scaleRatio;
+}
+
