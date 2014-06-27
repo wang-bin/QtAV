@@ -23,13 +23,14 @@ import QtQuick 2.1
 import QtQuick.Dialogs 1.0
 //import QtMultimedia 5.0
 import QtAV 1.3
-
+import QtQuick.Window 2.1
+import "utils.js" as Utils
 
 Rectangle {
     id: root
     objectName: "root"
-    width: 800
-    height: 450
+    width: Utils.scaled(800)
+    height: Utils.scaled(450)
     color: "black"
     signal requestFullScreen
     signal requestNormalSize
@@ -37,6 +38,7 @@ Rectangle {
     // "/xxx" will be resolved as qrc:///xxx. while "xxx" is "qrc:///QMLDIR/xxx
     property string resprefix: Qt.resolvedUrl(" ").substring(0, 4) == "qrc:" ? "/" : ""
     function init(argv) {
+        console.log("init>>>>>screen density logical: " + Screen.logicalPixelDensity + " pixel: " + Screen.pixelDensity);
         var a = JSON.parse(argv)
         if (a.length > 1) {
             var i = a.indexOf("-vd")
@@ -68,6 +70,7 @@ Rectangle {
         objectName: "player"
         //loops: MediaPlayer.Infinite
         //autoLoad: true
+        autoPlay: true
         channelLayout: MediaPlayer.ChannelLayoutAuto
         onPositionChanged: {
             control.setPlayingProgress(position/duration)
@@ -90,7 +93,7 @@ Rectangle {
             left: parent.left
             bottom: parent.bottom
             right: parent.right
-            margins: 12
+            margins: Utils.scaled(12)
         }
         mediaSource: player.source
         duration: player.duration
@@ -175,17 +178,17 @@ Rectangle {
             right: root.right
             bottom: control.top
         }
-        height: 60
+        height: Utils.scaled(60)
         visible: false
         Text {
             id: title
             color: "white"
             anchors.fill: parent
             anchors.bottom: parent.bottom
-            anchors.margins: 8
+            anchors.margins: Utils.scaled(8)
             //horizontalAlignment: Qt.AlignHCenter
             font {
-                pixelSize: 16
+                pixelSize: Utils.scaled(12)
             }
             onContentHeightChanged: {
                 parent.height = contentHeight + 2*anchors.margins
@@ -209,9 +212,9 @@ Rectangle {
         Button {
             anchors.top: parent.top
             anchors.right: parent.right
-            anchors.margins: 0
-            width: 20
-            height: 20
+            anchors.margins: Utils.scaled(0)
+            width: Utils.scaled(20)
+            height: Utils.scaled(20)
             icon: resurl("theme/default/close.svg")
             onClicked: parent.visible = false
         }
@@ -221,9 +224,9 @@ Rectangle {
             bgColor: "#990000ff"
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.margins: 8
-            width: 80
-            height: 40
+            anchors.margins: Utils.scaled(8)
+            width: Utils.scaled(80)
+            height: Utils.scaled(40)
             onClicked: Qt.openUrlExternally("http://wang-bin.github.io/QtAV#donate")
         }
     }
@@ -233,8 +236,8 @@ Rectangle {
         title: "Please choose a media file"
         onAccepted: {
             player.source = fileDialog.fileUrl
-            player.stop() //remove this if autoLoad works
-            player.play()
+            //player.stop() //remove this if autoLoad works
+            //player.play()
         }
     }
 }

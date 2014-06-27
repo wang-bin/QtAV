@@ -90,7 +90,7 @@ void QtQuick2ApplicationViewer::addImportPath(const QString &path)
 
 void QtQuick2ApplicationViewer::showExpanded()
 {
-#if defined(Q_WS_SIMULATOR) || defined(Q_OS_QNX)
+#if defined(Q_OS_QNX) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS) || defined(Q_OS_MAEMO)
     showFullScreen();
 #else
     show();

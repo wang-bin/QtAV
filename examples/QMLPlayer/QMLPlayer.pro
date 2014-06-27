@@ -1,3 +1,4 @@
+*maemo*: DEFINES += Q_OS_MAEMO
 # Add more folders to ship with the application, here
 folder_01.source = qml/QMLPlayer
 folder_01.target = qml
@@ -29,3 +30,4 @@ isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
 STATICLINK = 0
 include($${PROJECTROOT}/examples/common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
+

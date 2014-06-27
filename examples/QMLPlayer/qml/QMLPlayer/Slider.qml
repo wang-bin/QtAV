@@ -17,17 +17,18 @@
 ******************************************************************************/
 
 import QtQuick 2.0
+import "utils.js" as Utils
 
 Rectangle {
     id: root
     color: "transparent"
-    radius: 5
+    radius: Utils.scaled(5)
     property alias value: grip.value
     property color fillColor: "white"
     property color lineColor: "blue"
     property color gripColor: "white"
-    property real gripSize: 10
-    property real gripTolerance: 3.0
+    property real gripSize: Utils.scaled(10)
+    property real gripTolerance: Utils.scaled(3.0)
     property real increment: 0.1
     property bool enabled: true
 
@@ -35,7 +36,7 @@ Rectangle {
         anchors { left: parent.left; right: parent.right
             verticalCenter: parent.verticalCenter
         }
-        height: 3
+        height: Utils.scaled(3)
         color: displayedColor(root.lineColor)
 
         Rectangle {
