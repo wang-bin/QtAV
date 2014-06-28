@@ -258,6 +258,7 @@ SOURCES += \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     OutputSet.cpp \
+    OpenGLVideo.cpp \
     AVClock.cpp \
     Statistics.cpp \
     VideoDecoder.cpp \
@@ -292,6 +293,7 @@ SDK_HEADERS *= \
     QtAV/QPainterRenderer.h \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
+    QtAV/OpenGLVideo.h \
     QtAV/Packet.h \
     QtAV/AVError.h \
     QtAV/AVPlayer.h \
