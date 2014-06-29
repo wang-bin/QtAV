@@ -34,6 +34,7 @@ uniform sampler2D u_Texture0;
 uniform sampler2D u_Texture1;
 uniform sampler2D u_Texture2;
 varying lowp vec2 v_TexCoords;
+uniform float u_bpp;
 uniform mat4 u_colorMatrix;
 
 //http://en.wikipedia.org/wiki/YUV calculation used
@@ -60,7 +61,7 @@ const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
 // 10, 16bit: http://msdn.microsoft.com/en-us/library/windows/desktop/bb970578%28v=vs.85%29.aspx
 void main()
 {
-#if defined(YUV16BITS_LE_LUMINANCE_ALPHA) || defined(YUV16BITS_BE_LUMINANCE_ALPHA)
+#if 0 //defined(YUV16BITS_LE_LUMINANCE_ALPHA) || defined(YUV16BITS_BE_LUMINANCE_ALPHA)
     // FFmpeg supports 9, 10, 12, 14, 16 bits
 #if defined(YUV9P)
     const float range = 511.0;
@@ -73,6 +74,9 @@ void main()
 #elif defined(YUV16P)
     const float range = 65535.0;
 #endif
+#else
+    //http://stackoverflow.com/questions/22693169/opengl-es-2-0-glsl-compiling-fails-on-osx-when-using-const
+    float range = exp2(u_bpp) - 1.0; // why can not be const?
 #endif //defined(YUV16BITS_LE_LUMINANCE_ALPHA)
     // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)
     gl_FragColor = clamp(u_colorMatrix*yuv2rgbMatrix* vec4(

@@ -51,6 +51,7 @@ public:
       , a_Position(-1)
       , a_TexCoords(-1)
       , u_matrix(-1)
+      , u_bpp(-1)
       , painter(0)
       , video_format(VideoFormat::Format_Invalid)
     {
@@ -195,6 +196,7 @@ public:
     QVector<GLint> u_Texture; //u_TextureN uniform. size is channel count
     GLint u_matrix;
     GLint u_colorMatrix;
+    GLuint u_bpp;
 
     QPainter *painter;
 
