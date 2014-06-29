@@ -40,18 +40,39 @@ class ColorTransform
 {
 public:
     //http://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-5-200204-I!!PDF-E.pdf
+    // TODO: other color spaces (yuv itu.xxxx, XYZ, ...)
     enum ColorSpace {
-        Auto,
+        RGB,
         BT601,
         BT709
     };
+    // cs: BT601 or BT709
+    static const QMatrix4x4& YUV2RGB(ColorSpace cs);
+
     ColorTransform();
     ~ColorTransform(); //required by QSharedDataPointer if Private is forward declared
-    // TODO: type bt601 etc
-    static QMatrix4x4 YUV2RGB();
-
+    /*!
+     * \brief inputColorSpace
+     * if inputColorSpace is different from outputColorSpace, then the result matrix(), matrixRef() and
+     * matrixData() will count the transformation between in/out color space.
+     * default in/output color space is rgb
+     * \param cs
+     */
+    ColorSpace inputColorSpace() const;
+    void setInputColorSpace(ColorSpace cs);
+    ColorSpace outputColorSpace() const;
+    void setOutputColorSpace(ColorSpace cs);
+    /*!
+     * \brief matrix
+     * \return result matrix to transform from inputColorSpace to outputColorSpace with given brightness,
+     * contrast, saturation and hue
+     */
     QMatrix4x4 matrix() const;
     const QMatrix4x4& matrixRef() const;
+
+    /*!
+     * Get the matrix in column-major order. Used by OpenGL
+     */
     template<typename T> void matrixData(T* M) {
         const QMatrix4x4 &m = matrixRef();
         M[0] = m(0,0), M[4] = m(0,1), M[8] = m(0,2), M[12] = m(0,3),
@@ -62,7 +83,7 @@ public:
 
     /*!
      * \brief reset
-     *   set to identity
+     *   only set in-space transform to identity. other parameters such as in/out color space does not change
      */
     void reset();
     // -1~1
