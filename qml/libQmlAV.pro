@@ -23,6 +23,7 @@ plugin.path = $$BUILD_DIR/bin/QtAV/ #TODO: Qt install dir
 #windows: copy /y file1+file2+... dir. need '+'
 for(f, plugin.files) {
   plugin.commands += $$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$plugin.path))
+  plugin.commands += $$quote(-\$\(MKDIR\) $$shell_path($$[QT_INSTALL_QML]/QtAV))
   plugin.commands += $$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$[QT_INSTALL_QML]/QtAV))
 }
 #join values seperated by space. so quote is needed
@@ -79,13 +80,17 @@ OTHER_FILES += $$RC_FILE
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
 
-SOURCES += QQuickItemRenderer.cpp \
+SOURCES += \
     plugin.cpp \
+    QQuickItemRenderer.cpp \
+    SGVideoNode.cpp \
     QmlAVPlayer.cpp
 
 HEADERS += QmlAV/private/QQuickItemRenderer_p.h
+
 SDK_HEADERS += \
     QmlAV/Export.h \
+    QmlAV/SGVideoNode.h \
     QmlAV/QQuickItemRenderer.h \
     QmlAV/QmlAVPlayer.h
 
