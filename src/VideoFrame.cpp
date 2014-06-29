@@ -182,6 +182,14 @@ VideoFrame::~VideoFrame()
 {
 }
 
+int VideoFrame::channelCount() const
+{
+    Q_D(const VideoFrame);
+    if (!d->format.isValid())
+        return 0;
+    return d->format.channels();
+}
+
 VideoFrame VideoFrame::clone() const
 {
     Q_D(const VideoFrame);

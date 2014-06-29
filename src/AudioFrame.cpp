@@ -103,6 +103,14 @@ AudioFrame::~AudioFrame()
 {
 }
 
+int AudioFrame::channelCount() const
+{
+    Q_D(const AudioFrame);
+    if (!d->format.isValid())
+        return 0;
+    return d->format.channels();
+}
+
 AudioFrame AudioFrame::clone() const
 {
     Q_D(const AudioFrame);

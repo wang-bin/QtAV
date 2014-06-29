@@ -398,6 +398,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
     a_Position = glGetAttribLocation(program, "a_Position");
     a_TexCoords = glGetAttribLocation(program, "a_TexCoords");
     u_matrix = glGetUniformLocation(program, "u_MVP_matrix");
+    u_bpp = glGetUniformLocation(program, "u_bpp");
     // fragment shader
     u_colorMatrix = glGetUniformLocation(program, "u_colorMatrix");
 #else
@@ -417,12 +418,14 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
     a_Position = shader_program->attributeLocation("a_Position");
     a_TexCoords = shader_program->attributeLocation("a_TexCoords");
     u_matrix = shader_program->uniformLocation("u_MVP_matrix");
+    u_bpp = shader_program->uniformLocation("u_bpp");
     // fragment shader
     u_colorMatrix = shader_program->uniformLocation("u_colorMatrix");
 #endif //NO_QGL_SHADER
     qDebug("glGetAttribLocation(\"a_Position\") = %d\n", a_Position);
     qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", a_TexCoords);
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
+    qDebug("glGetUniformLocation(\"u_bpp\") = %d\n", u_bpp);
     qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d\n", u_colorMatrix);
 
     if (fmt.isRGB())
@@ -900,8 +903,10 @@ void GLWidgetRenderer::drawFrame()
 
 #if NO_QGL_SHADER
         glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, mat);
+        glUniform1f(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
 #else
        d.shader_program->setUniformValue(d.u_colorMatrix, d.colorTransform.matrixRef());
+       d.shader_program->setUniformValue(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
 #endif
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
