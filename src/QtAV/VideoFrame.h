@@ -48,6 +48,7 @@ public:
 
     VideoFrame &operator =(const VideoFrame &other);
 
+    virtual int channelCount() const;
     /*!
      * Deep copy. Given the format, width and height, plane addresses and line sizes.
      */

@@ -134,6 +134,10 @@ int Frame::planeCount() const
     return d->planes.size();
 }
 
+int Frame::channelCount() const
+{
+    return planeCount();
+}
 
 /*!
     Returns any extra metadata associated with this frame.

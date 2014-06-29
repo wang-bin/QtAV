@@ -41,7 +41,7 @@ public:
     // allocate memory with given format and other information
     virtual int allocate();
     /*!
-     * \brief bytesPerLine
+     * \brief planeCount
      *  a decoded frame can be packed and planar. packed format has only 1 plane, while planar
      *  format has more than 1 plane. For audio, the number plane equals channel count. For
      *  video, rgb is 1 plane, yuv420p is 3 plane, p means planar
@@ -49,6 +49,13 @@ public:
      * \return
      */
     int planeCount() const;
+    /*!
+     * \brief channelCount
+     * for audio, channel count equals plane count
+     * for video, channels >= planes
+     * \return
+     */
+    virtual int channelCount() const;
     /*!
      * \brief bytesPerLine
      *   For video, it's size of each picture line. For audio, it's the whole size of plane

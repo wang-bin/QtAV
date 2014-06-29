@@ -41,6 +41,7 @@ public:
 
     AudioFrame &operator =(const AudioFrame &other);
 
+    virtual int channelCount() const;
     /*!
      * Deep copy. If you want to copy data from somewhere, knowing the format, width and height,
      * then you can use clone().
