@@ -1,4 +1,5 @@
 # [QtAV](http://wang-bin.github.io/QtAV)
+[![Build Status](https://travis-ci.org/wang-bin/QtAV.svg)](https://travis-ci.org/wang-bin/QtAV)
 
 QtAV is a multimedia playback library based on Qt and FFmpeg. It can help you to write a player
 with less effort than ever before.

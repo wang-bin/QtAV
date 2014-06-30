@@ -1,6 +1,7 @@
 language: cpp
 compiler:
   - clang
+cache: apt
 install: true
 before_script:
   - sudo apt-get update -qq
@@ -8,9 +9,12 @@ before_script:
 script:
   - ./tools/ci/travis_build.sh
 notifications:
-  recipients:
-    - wbsecg1@gmail.com
+  irc:
+    channels:
+      - "chat.freenode.net#qtav"
   email:
+    recipients:
+      - wbsecg1@gmail.com
     on_success: change
     on_failure: always
 env:
