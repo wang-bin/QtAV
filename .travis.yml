@@ -1,0 +1,19 @@
+language: cpp
+compiler:
+  - clang
+install: true
+before_script:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq -y portaudio19-dev libopenal-dev libva-dev
+script:
+  - ./tools/ci/travis_build.sh
+notifications:
+  recipients:
+    - wbsecg1@gmail.com
+  email:
+    on_success: change
+    on_failure: always
+env:
+  - LANG="en_US.UTF-8"
+os:
+  - linux
