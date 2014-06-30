@@ -6,7 +6,7 @@
 #   - sudo add-apt-repository ppa:wsnipex/vaapi
 set -ev
 
-cat /proc/cpuinfo
+tail -n 27 /proc/cpuinfo
 uname -a
 
 echo "QtAV build script for travis-ci"
@@ -22,12 +22,12 @@ FFMPEG_PKG=ffmpeg-2.2.2-linux-x86+x64
 
 test -d ${QT_PKG} || {
   test -f ${QT_PKG}.tar.xz || wget http://sourceforge.net/projects/buildqt/files/release/5.3.0/${QT_PKG}.tar.xz/download -O ${QT_PKG}.tar.xz
-  tar Jxvf ${QT_PKG}.tar.xz
+  tar Jxf ${QT_PKG}.tar.xz
 }
 
 test -d ${FFMPEG_PKG} || {
   test -f ${FFMPEG_PKG}.tar.xz || wget http://sourceforge.net/projects/qtav/files/depends/FFmpeg/linux/${FFMPEG_PKG}.tar.xz/download -O ${FFMPEG_PKG}.tar.xz
-  tar Jxvf ${FFMPEG_PKG}.tar.xz
+  tar Jxf ${FFMPEG_PKG}.tar.xz
 }
 
 export PATH=$PWD/${QT_PKG}/bin:$PATH
@@ -46,9 +46,10 @@ function build_spec() {
     echo "building with qmake spec $spec ..."
     local cpu_cores=`cat /proc/cpuinfo |grep 'cpu cores' |wc -l`
     local jobs=$(($cpu_cores * 2))
+    echo "jobs=$jobs"
     mkdir -p $spec
     cd $spec
-    
+
     qmake -r $WORK_DIR -spec $spec
     time make -j${jobs}
     cd $WORK_DIR/build
