@@ -139,12 +139,10 @@ public:
                               0.0f,                   0.0f,                   0.0f, 1.0f
         );
 
-        M_InSpace = B*C*S*H;
+        M = B*C*S*H;
         // TODO: transform to output color space other than RGB
-        if (in == ColorTransform::RGB) {
-            M = M_InSpace;
-        } else {
-            M = YUV2RGB(in) * M_InSpace;
+        if (in != ColorTransform::RGB) {
+            M = YUV2RGB(in) * M;
         }
         if (out != ColorTransform::RGB) {
             M *= YUV2RGB(in).inverted();
@@ -154,7 +152,6 @@ public:
     mutable bool recompute;
     ColorTransform::ColorSpace in, out;
     qreal hue, saturation, contrast, brightness;
-    mutable QMatrix4x4 M_InSpace;
     mutable QMatrix4x4 M; // count the transformations between spaces
 };
 
@@ -174,7 +171,10 @@ ColorTransform::ColorSpace ColorTransform::inputColorSpace() const
 
 void ColorTransform::setInputColorSpace(ColorSpace cs)
 {
+    if (d->in == cs)
+        return;
     d->in = cs;
+    d->recompute = true; //TODO: only recompute color space transform
 }
 
 ColorTransform::ColorSpace ColorTransform::outputColorSpace() const
@@ -184,7 +184,10 @@ ColorTransform::ColorSpace ColorTransform::outputColorSpace() const
 
 void ColorTransform::setOutputColorSpace(ColorSpace cs)
 {
+    if (d->out == cs)
+        return;
     d->out = cs;
+    d->recompute = true; //TODO: only recompute color space transform
 }
 
 QMatrix4x4 ColorTransform::matrix() const
