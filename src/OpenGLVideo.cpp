@@ -28,7 +28,6 @@
 #include <QtOpenGL/QGLShaderProgram>
 typedef QGLShaderProgram QOpenGLShaderProgram;
 #endif
-#define NO_QGL_SHADER (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 
 namespace QtAV {
 
@@ -110,23 +109,12 @@ const char* VideoShader::fragmentShader() const
 void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
 {
     u_Texture.resize(textureCount());
-#if NO_QGL_SHADER
-    const GLuint program = shaderProgram->programId();
-    u_MVP_matrix = glGetUniformLocation(program, "u_MVP_matrix");
-    // fragment shader
-    u_colorMatrix = glGetUniformLocation(program, "u_colorMatrix");
-#else
     u_MVP_matrix = shaderProgram->uniformLocation("u_MVP_matrix");
     // fragment shader
     u_colorMatrix = shaderProgram->uniformLocation("u_colorMatrix");
-#endif
     for (int i = 0; i < u_Texture.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
-#if NO_QGL_SHADER
-        u_Texture[i] = glGetUniformLocation(program, tex_var.toUtf8().constData());
-#else
         u_Texture[i] = shaderProgram->uniformLocation(tex_var);
-#endif
         qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), u_Texture[i]);
     }
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_MVP_matrix);
