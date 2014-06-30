@@ -142,10 +142,10 @@ public:
         M = B*C*S*H;
         // TODO: transform to output color space other than RGB
         if (in != ColorTransform::RGB) {
-            M = YUV2RGB(in) * M;
+            M *= YUV2RGB(in);
         }
         if (out != ColorTransform::RGB) {
-            M *= YUV2RGB(in).inverted();
+            M = YUV2RGB(in).inverted() * M;
         }
     }
 

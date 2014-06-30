@@ -367,6 +367,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
         return false;
     releaseShaderProgram();
     video_format.setPixelFormatFFmpeg(fmt.pixelFormatFFmpeg());
+    colorTransform.setInputColorSpace(cs);
     // TODO: only to kinds, packed.glsl, planar.glsl
     QString frag;
     if (fmt.isPlanar()) {
@@ -582,9 +583,13 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
         update_textures = true;
         qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
         // http://forum.doom9.org/archive/index.php/t-160211.html
-        ColorTransform::ColorSpace cs = ColorTransform::BT601;
-        if (video_frame.width() >= 1280 || video_frame.height() > 576) //values from mpv
-            cs = ColorTransform::BT709;
+        ColorTransform::ColorSpace cs = ColorTransform::RGB;
+        if (!fmt.isRGB()) {
+            if (video_frame.width() >= 1280 || video_frame.height() > 576) //values from mpv
+                cs = ColorTransform::BT709;
+            else
+                cs = ColorTransform::BT601;
+        }
         if (!prepareShaderProgram(fmt, cs)) {
             qWarning("shader program create error...");
             return;
