@@ -81,9 +81,12 @@ void main()
 #endif //defined(YUV16BITS_LE_LUMINANCE_ALPHA)
     // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)
     gl_FragColor = clamp(u_colorMatrix
+#if defined(INPUT_RGB) //planar rgb. TODO: 16bit support
+                        * texture2D(u_Texture0, v_TexCoords)
+#else
 #if defined(YUV_MAT_GLSL)
                          * yuv2rgbMatrix
-#endif
+#endif //YUV_MAT_GLSL
                          * vec4(
 #if defined(YUV16BITS_LE_LUMINANCE_ALPHA)
                              (texture2D(u_Texture0, v_TexCoords).r + texture2D(u_Texture0, v_TexCoords).a*256.0)*255.0/range,
@@ -100,5 +103,6 @@ void main()
                              texture2D(u_Texture2, v_TexCoords).a,
 #endif //defined(YUV16BITS_LE_LUMINANCE_ALPHA)
                              1)
+#endif //INPUT_RGB
                          , 0.0, 1.0);
 }

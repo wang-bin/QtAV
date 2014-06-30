@@ -32,11 +32,11 @@ typedef QGLShaderProgram QOpenGLShaderProgram;
 namespace QtAV {
 
 VideoShader::VideoShader()
-    : m_color_space(ColorTransform::BT601)
+    : m_color_space(ColorTransform::RGB)
     , u_MVP_matrix(-1)
     , u_colorMatrix(-1)
 {
-    //m_planar_frag = shaderSourceFromFile("shaders/yuv_rgb.f.glsl");
+    //m_planar_frag = shaderSourceFromFile("shaders/planar.f.glsl");
     //m_packed_frag = shaderSourceFromFile("shaders/rgb.f.glsl");
 }
 
@@ -76,7 +76,7 @@ const char* VideoShader::fragmentShader() const
 {
     // because we have to modify the shader, and shader source must be kept, so read the origin
     if (m_video_format.isPlanar()) {
-        m_planar_frag = shaderSourceFromFile("shaders/yuv_rgb.f.glsl");
+        m_planar_frag = shaderSourceFromFile("shaders/planar.f.glsl");
     } else {
         m_packed_frag = shaderSourceFromFile("shaders/rgb.f.glsl");
     }
@@ -85,7 +85,9 @@ const char* VideoShader::fragmentShader() const
         qWarning("Empty fragment shader!");
         return 0;
     }
-    if (!m_video_format.isRGB()) {
+    if (m_video_format.isRGB()) {
+        frag.prepend("#define INPUT_RGB\n");
+    } else {
         switch (m_color_space) {
         case ColorTransform::BT601:
             frag.prepend("#define CS_BT601\n");

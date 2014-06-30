@@ -160,7 +160,7 @@ config_gl {
     SOURCES += GLWidgetRenderer.cpp
     HEADERS += QtAV/private/GLWidgetRenderer_p.h
     SDK_HEADERS += QtAV/GLWidgetRenderer.h
-    OTHER_FILES += shaders/yuv_rgb.f.glsl shaders/rgb.f.glsl
+    OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
 }
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link

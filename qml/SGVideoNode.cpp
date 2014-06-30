@@ -24,6 +24,7 @@
 #include "QmlAV/SGVideoNode.h"
 #include "QtAV/OpenGLVideo.h"
 #include "QtAV/VideoFrame.h"
+#include <QtCore/QMutexLocker>
 #include <QtGui/QOpenGLFunctions>
 #include <QtQuick/QSGMaterialShader>
 

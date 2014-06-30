@@ -371,18 +371,22 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
     // TODO: only to kinds, packed.glsl, planar.glsl
     QString frag;
     if (fmt.isPlanar()) {
-        frag = getShaderFromFile("shaders/yuv_rgb.f.glsl");
+        frag = getShaderFromFile("shaders/planar.f.glsl");
     } else {
         frag = getShaderFromFile("shaders/rgb.f.glsl");
     }
     if (frag.isEmpty())
         return false;
-    if (!fmt.isRGB() && fmt.isPlanar() && fmt.bytesPerPixel(0) == 2) {
-        if (fmt.isBigEndian())
-            frag.prepend("#define YUV16BITS_BE_LUMINANCE_ALPHA\n");
-        else
-            frag.prepend("#define YUV16BITS_LE_LUMINANCE_ALPHA\n");
-        frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
+    if (fmt.isRGB()) {
+        frag.prepend("#define INPUT_RGB\n");
+    } else {
+        if (fmt.isPlanar() && fmt.bytesPerPixel(0) == 2) {
+            if (fmt.isBigEndian())
+                frag.prepend("#define YUV16BITS_BE_LUMINANCE_ALPHA\n");
+            else
+                frag.prepend("#define YUV16BITS_LE_LUMINANCE_ALPHA\n");
+            frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
+        }
     }
     if (cs == ColorTransform::BT601) {
         frag.prepend("#define CS_BT601\n");
