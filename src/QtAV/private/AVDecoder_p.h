@@ -44,12 +44,12 @@ public:
       , low_resolution(0)
       , dict(0)
     {
-        frame = avcodec_alloc_frame();
+        frame = av_frame_alloc();
         threads = qMax(0, QThread::idealThreadCount()); //av_cpu_count is not available for old ffmpeg. c++11 thread::hardware_concurrency()
     }
     virtual ~AVDecoderPrivate() {
         if (frame) {
-            av_free(frame);
+            av_frame_free(&frame);
             frame = 0;
         }
         if (dict) {

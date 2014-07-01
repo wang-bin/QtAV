@@ -326,4 +326,13 @@ typedef enum CodecID AVCodecID;
 #define QTAV_CODEC_ID(X) CODEC_ID_##X
 #endif
 
+/* av_frame_alloc
+ * since FFmpeg2.0: 2.0.4 avcodec-55.18.102, avutil-52.38.100 (1.2.7 avcodec-54.92.100,avutil-52.18.100)
+ * since libav10.0: 10.2 avcodec55.34.1, avutil-53.3.0
+ * the same as avcodec_alloc_frame() (deprecated since 2.2). AVFrame was in avcodec.h, now in avutil/frame.h
+ */
+#if !LIBAVCODEC_VERSION_CHECK(55, 34, 0, 18, 100)
+#define av_frame_alloc() avcodec_alloc_frame()
+#define av_frame_free(f) avcodec_free_frame(f)
+#endif
 #endif //QTAV_COMPAT_H
