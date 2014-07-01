@@ -26,6 +26,13 @@
 #include "QtAV/VideoFrame.h"
 #include "QtAV/QtAV_Compat.h"
 
+/*
+ * libav10.x, ffmpeg2.x: av_buffersink_read deprecated
+ * libav9.x: only av_buffersink_read can be used
+ * ffmpeg<2.0: av_buffersink_get_buffer_ref and av_buffersink_read
+ */
+#define QTAV_HAVE_av_buffersink_get_frame (LIBAV_MODULE_CHECK(LIBAVFILTER, 4, 2, 0) || FFMPEG_MODULE_CHECK(LIBAVFILTER, 3, 79, 100)) //3.79.101: ff2.0.4
+
 namespace QtAV {
 
 class LibAVFilterPrivate : public FilterPrivate
@@ -65,7 +72,8 @@ public:
         avfilter_graph_free(&filter_graph);
         filter_graph = avfilter_graph_alloc();
         //QString sws_flags_str;
-        QString buffersrc_args = QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:sar=1")
+        // pixel_aspect==sar, pixel_aspect is more compatible
+        QString buffersrc_args = QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=1")
                 .arg(width).arg(height).arg(pixfmt).arg(1).arg(AV_TIME_BASE);
         qDebug("buffersrc_args=%s", buffersrc_args.toUtf8().constData());
         AVFilter *buffersrc  = avfilter_get_by_name("buffer");
@@ -86,7 +94,6 @@ public:
             qWarning("Can not create buffer sink: %s", av_err2str(ret));
             return false;
         }
-
         /* Endpoints for the filter graph. */
         AVFilterInOut *outputs = avfilter_inout_alloc();
         AVFilterInOut *inputs  = avfilter_inout_alloc();
@@ -185,7 +192,14 @@ bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
         avframe->data[i] =vf->bits(i);
         avframe->linesize[i] = vf->bytesPerLine(i);
     }
-    int ret = av_buffersrc_add_frame_flags(in_filter_ctx, avframe, AV_BUFFERSRC_FLAG_KEEP_REF);
+    //int ret = av_buffersrc_add_frame_flags(in_filter_ctx, avframe, AV_BUFFERSRC_FLAG_KEEP_REF);
+    /*
+     * av_buffersrc_write_frame equals to av_buffersrc_add_frame_flags with AV_BUFFERSRC_FLAG_KEEP_REF.
+     * av_buffersrc_write_frame is more compatible, while av_buffersrc_add_frame_flags only exists in ffmpeg >=2.0
+     * add a ref if frame is ref counted
+     * TODO: libav < 10.0 will copy the frame, prefer to use av_buffersrc_buffer
+     */
+    int ret = av_buffersrc_write_frame(in_filter_ctx, avframe);
     if (ret != 0) {
         qWarning("av_buffersrc_add_frame error: %s", av_err2str(ret));
         return false;
@@ -198,24 +212,44 @@ class AVFrameHolder {
 public:
     AVFrameHolder() {
         m_frame = av_frame_alloc();
+#if !QTAV_HAVE_av_buffersink_get_frame
+        picref = 0;
+#endif
     }
     ~AVFrameHolder() {
         av_frame_free(&m_frame);
+#if !QTAV_HAVE_av_buffersink_get_frame
+        avfilter_unref_bufferp(&picref);
+#endif
     }
     AVFrame* frame() { return m_frame;}
+#if !QTAV_HAVE_av_buffersink_get_frame
+    AVFilterBufferRef** bufferRef() { qDebug("picref:%p, %p", picref, &picref); return &picref;}
+    void copyBufferToFrame() { qDebug("picref:%p", picref);avfilter_copy_buf_props(m_frame, picref);}
+#endif
 private:
     AVFrame *m_frame;
+#if !QTAV_HAVE_av_buffersink_get_frame
+    AVFilterBufferRef *picref;
+#endif
 };
 typedef QSharedPointer<AVFrameHolder> AVFrameHolderRef;
 
 bool LibAVFilterPrivate::pull(Frame *f)
 {
     AVFrameHolderRef frame_ref(new AVFrameHolder());
+#if QTAV_HAVE_av_buffersink_get_frame
     int ret = av_buffersink_get_frame(out_filter_ctx, frame_ref->frame());
+#else
+    int ret = av_buffersink_read(out_filter_ctx, frame_ref->bufferRef());
+#endif //QTAV_HAVE_av_buffersink_get_frame
     if (ret < 0) {
         qWarning("av_buffersink_get_frame error: %s", av_err2str(ret));
         return false;
     }
+#if !QTAV_HAVE_av_buffersink_get_frame
+    frame_ref->copyBufferToFrame();
+#endif
     VideoFrame vf(frame_ref->frame()->width, frame_ref->frame()->height, VideoFormat(frame_ref->frame()->format));
     vf.setBits(frame_ref->frame()->data);
     vf.setBytesPerLine(frame_ref->frame()->linesize);

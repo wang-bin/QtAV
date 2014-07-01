@@ -59,9 +59,12 @@ extern "C"
 #endif //QTAV_HAVE(AVRESAMPLE)
 
 #if QTAV_HAVE(AVFILTER)
+#include <libavfilter/avfiltergraph.h> /*code is here for old version*/
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
+/* used by avfilter_copy_buf_props (now in avfilter.h). all deprecated in new versions*/
+#include <libavfilter/avcodec.h>
 #endif //QTAV_HAVE(AVFILTER)
 
 #ifdef __cplusplus
@@ -86,6 +89,10 @@ extern "C"
 
 #define FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) \
     ( (MODULE##_VERSION_MICRO >= 100) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO) )
+#define LIBAV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) \
+    ( (MODULE##_VERSION_MICRO < 100) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO) )
+#define AV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO, MINOR2, MICRO2) \
+    ( LIBAV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) || FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR2, MICRO2))
 // TODO: confirm vlc's version check code
 
 /*!
@@ -335,4 +342,9 @@ typedef enum CodecID AVCodecID;
 #define av_frame_alloc() avcodec_alloc_frame()
 #define av_frame_free(f) avcodec_free_frame(f)
 #endif
+
+#ifndef FF_API_OLD_GRAPH_PARSE
+#define avfilter_graph_parse_ptr(...) avfilter_graph_parse(__VA_ARGS__)
+#endif //FF_API_OLD_GRAPH_PARSE
+
 #endif //QTAV_COMPAT_H
