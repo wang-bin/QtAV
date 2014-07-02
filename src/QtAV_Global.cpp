@@ -157,6 +157,9 @@ QString aboutQtAV_HTML()
 
 void setFFmpegLogHandler(void (*callback)(void *, int, const char *, va_list))
 {
+    // libav does not check null callback
+    if (!callback)
+        callback = av_log_default_callback;
     av_log_set_callback(callback);
 }
 
