@@ -109,8 +109,11 @@ public:
 
 
         //avfilter_graph_parse, avfilter_graph_parse2?
-        if ((ret = avfilter_graph_parse_ptr(filter_graph, options.toUtf8().constData(),
-                                        &inputs, &outputs, NULL)) < 0) {
+#if QTAV_USE_FFMPEG(LIBAVFILTER)
+        if ((ret = avfilter_graph_parse_ptr(filter_graph, options.toUtf8().constData(), &inputs, &outputs, NULL)) < 0) {
+#else
+        if ((ret = avfilter_graph_parse(filter_graph, options.toUtf8().constData(), inputs, outputs, NULL))) {
+#endif
             qWarning("avfilter_graph_parse_ptr fail: %s", av_err2str(ret));
             avfilter_inout_free(&outputs);
             avfilter_inout_free(&inputs);
@@ -224,8 +227,8 @@ public:
     }
     AVFrame* frame() { return m_frame;}
 #if !QTAV_HAVE_av_buffersink_get_frame
-    AVFilterBufferRef** bufferRef() { qDebug("picref:%p, %p", picref, &picref); return &picref;}
-    void copyBufferToFrame() { qDebug("picref:%p", picref);avfilter_copy_buf_props(m_frame, picref);}
+    AVFilterBufferRef** bufferRef() { return &picref;}
+    void copyBufferToFrame() { avfilter_copy_buf_props(m_frame, picref);}
 #endif
 private:
     AVFrame *m_frame;

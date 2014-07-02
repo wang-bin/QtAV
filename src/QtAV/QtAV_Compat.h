@@ -26,6 +26,8 @@
   NOTE: include this at last
   TODO: runtime symble check use dllapi project? how ffmpeg version defined?
  */
+#define QTAV_USE_FFMPEG(MODULE) (MODULE##_VERSION_MICRO >= 100)
+#define QTAV_USE_LIBAV(MODULE)  !QTAV_USE_FFMPEG(MODULE)
 #include "QtAV_Global.h"
 #ifdef __cplusplus
 extern "C"
@@ -63,21 +65,15 @@ extern "C"
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
-/* used by avfilter_copy_buf_props (now in avfilter.h). all deprecated in new versions*/
+#if QTAV_USE_FFMPEG(LIBAVFILTER)
+/* used ffmpeg's by avfilter_copy_buf_props (now in avfilter.h). all deprecated in new versions*/
 #include <libavfilter/avcodec.h>
+#endif
 #endif //QTAV_HAVE(AVFILTER)
 
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/
-
-/* LIBAVUTIL_VERSION_CHECK checks for the right version of libav and FFmpeg
- * a is the major version
- * b and c the minor and micro versions of libav
- * d and e the minor and micro versions of FFmpeg */
-#define LIBAVUTIL_VERSION_CHECK( a, b, c, d, e ) \
-    ( (LIBAVUTIL_VERSION_MICRO <  100 && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT( a, b, c ) ) || \
-      (LIBAVUTIL_VERSION_MICRO >= 100 && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT( a, d, e ) ) )
 
 /* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
  * a is the major version
@@ -340,7 +336,11 @@ typedef enum CodecID AVCodecID;
  */
 #if !LIBAVCODEC_VERSION_CHECK(55, 34, 0, 18, 100)
 #define av_frame_alloc() avcodec_alloc_frame()
+#if QTAV_USE_LIBAV(LIBAVCODEC) || FFMPEG_MODULE_CHECK(LIBAVCODEC, 54, 59, 100)
 #define av_frame_free(f) avcodec_free_frame(f)
+#else
+#define av_frame_free(f) av_free(f)
+#endif
 #endif
 
 #ifndef FF_API_OLD_GRAPH_PARSE
