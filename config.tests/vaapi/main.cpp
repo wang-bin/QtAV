@@ -20,11 +20,9 @@
 ******************************************************************************/
 #include <va/va.h>
 #include <libavcodec/vaapi.h>
-#include <X11/Xlib.h>
-#include <va/va_x11.h>
 
 int main()
 {
-    vaGetDisplay(0);
+    vaErrorStr(0);
     return 0;
 }
