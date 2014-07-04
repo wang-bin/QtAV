@@ -3,4 +3,4 @@ CONFIG += console
 
 SOURCES += main.cpp
 
-LIBS += -lva -lva-x11
+LIBS += -lva

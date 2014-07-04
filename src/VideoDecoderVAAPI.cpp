@@ -36,17 +36,22 @@
 #include <libavcodec/vaapi.h>
 
 //TODO: use dllapi
+//TODO: check glx or gles used by Qt. then use va-gl or va-egl
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <qopengl.h>
+#else
+#include <qgl.h>
+#endif
 #include <fcntl.h> //open()
 #include <unistd.h> //close()
-//#include <xf86drm.h>
 //#include <va/va_drm.h>
 #if QTAV_HAVE(VAAPI_X11)
-#include <X11/Xlib.h>
-#include <va/va_x11.h>
+//#include <X11/Xlib.h>
+//#include <va/va_x11.h>
 #endif
 #if QTAV_HAVE(VAAPI_GLX)
-#include <va/va_glx.h>
-#include <GL/gl.h>
+//#include <va/va_glx.h>
+//#include <GL/gl.h>
 #endif
 
 #ifndef VA_SURFACE_ATTRIB_SETTABLE
@@ -120,35 +125,114 @@ typedef struct
     //vlc_mutex_t *p_lock;
 } va_surface_t;
 
-class VAAPI_DRM
-{
+class dll_helper {
 public:
-    VAAPI_DRM() {
-        m_lib.setFileName("va-drm");
-        if (m_lib.load()) {
-            qDebug("libva-drm loaded");
-        }
+    dll_helper(const QString& soname) {
+        m_lib.setFileName(soname);
+        if (m_lib.load())
+            qDebug("%s loaded", m_lib.fileName().toUtf8().constData());
+        else
+            qDebug("can not load %s: %s", m_lib.fileName().toUtf8().constData(), m_lib.errorString().toUtf8().constData());
     }
-    ~VAAPI_DRM() {
-        if (m_lib.isLoaded()){
-            m_lib.unload();
-        }
-    }
-
-    bool isLoaded() const {
-        return m_lib.isLoaded();
-    }
-    VADisplay vaGetDisplayDRM(int fd) {
-        typedef VADisplay vaGetDisplayDRM_t(int fd);
-        static vaGetDisplayDRM_t* fp_vaGetDisplayDRM = (vaGetDisplayDRM_t*)m_lib.resolve("vaGetDisplayDRM");
-        assert(fp_vaGetDisplayDRM);
-        return fp_vaGetDisplayDRM(fd);
-    }
+    virtual ~dll_helper() { m_lib.unload();}
+    bool isLoaded() const { return m_lib.isLoaded(); }
+    void* resolve(const char *symbol) { return (void*)m_lib.resolve(symbol);}
 private:
     QLibrary m_lib;
 };
+struct _XDisplay;
+typedef struct _XDisplay Display;
+//TODO: use macro template. DEFINE_DL_SYMB(R, NAME, ARG....);
+class X11_API : public dll_helper {
+public:
+    X11_API(): dll_helper("X11") {}
+    Display* XOpenDisplay(const char* name) {
+        typedef Display* XOpenDisplay_t(const char* name);
+        static XOpenDisplay_t* fp_XOpenDisplay = (XOpenDisplay_t*)resolve("XOpenDisplay");
+        assert(fp_XOpenDisplay);
+        return fp_XOpenDisplay(name);
+    }
+    int XCloseDisplay(Display* dpy) {
+        typedef int XCloseDisplay_t(Display* dpy);
+        static XCloseDisplay_t* fp_XCloseDisplay = (XCloseDisplay_t*)resolve("XCloseDisplay");
+        assert(fp_XCloseDisplay);
+        return fp_XCloseDisplay(dpy);
+    }
+    int XInitThreads() {
+        typedef int XInitThreads_t();
+        static XInitThreads_t* fp_XInitThreads = (XInitThreads_t*)resolve("XInitThreads");
+        assert(fp_XInitThreads);
+        return fp_XInitThreads();
+    }
+};
 
-class VAAPISurfaceInterop : public VideoSurfaceInterop//, public VAAPI_GLX
+class VAAPI_DRM : public dll_helper {
+public:
+    VAAPI_DRM(): dll_helper("va-drm") {}
+    VADisplay vaGetDisplayDRM(int fd) {
+        typedef VADisplay vaGetDisplayDRM_t(int fd);
+        static vaGetDisplayDRM_t* fp_vaGetDisplayDRM = (vaGetDisplayDRM_t*)resolve("vaGetDisplayDRM");
+        assert(fp_vaGetDisplayDRM);
+        return fp_vaGetDisplayDRM(fd);
+    }
+};
+class VAAPI_X11 : public dll_helper {
+public:
+    VAAPI_X11(): dll_helper("va-x11") {}
+    VADisplay vaGetDisplay(Display *dpy) {
+        typedef VADisplay vaGetDisplay_t(Display *);
+        static vaGetDisplay_t* fp_vaGetDisplay = (vaGetDisplay_t*)resolve("vaGetDisplay");
+        assert(fp_vaGetDisplay);
+        return fp_vaGetDisplay(dpy);
+    }
+};
+class VAAPI_GLX : public dll_helper {
+public:
+    VAAPI_GLX(): dll_helper("va-glx") {}
+    VADisplay vaGetDisplayGLX(Display *dpy) {
+        typedef VADisplay vaGetDisplayGLX_t(Display *);
+        static vaGetDisplayGLX_t* fp_vaGetDisplayGLX = (vaGetDisplayGLX_t*)resolve("vaGetDisplayGLX");
+        assert(fp_vaGetDisplayGLX);
+        return fp_vaGetDisplayGLX(dpy);
+    }
+    VAStatus vaCreateSurfaceGLX(VADisplay dpy, GLenum target, GLuint texture, void **gl_surface) {
+        typedef VAStatus vaCreateSurfaceGLX_t(VADisplay, GLenum, GLuint, void **);
+        static vaCreateSurfaceGLX_t* fp_vaCreateSurfaceGLX = (vaCreateSurfaceGLX_t*)resolve("vaCreateSurfaceGLX");
+        assert(fp_vaCreateSurfaceGLX);
+        return fp_vaCreateSurfaceGLX(dpy, target, texture, gl_surface);
+    }
+    VAStatus vaDestroySurfaceGLX(VADisplay dpy, void *gl_surface) {
+        typedef VAStatus vaDestroySurfaceGLX_t(VADisplay, void *);
+        static vaDestroySurfaceGLX_t* fp_vaDestroySurfaceGLX = (vaDestroySurfaceGLX_t*)resolve("vaDestroySurfaceGLX");
+        assert(fp_vaDestroySurfaceGLX);
+        return fp_vaDestroySurfaceGLX(dpy, gl_surface);
+    }
+    /**
+     * Copy a VA surface to a VA/GLX surface
+     *
+     * This function will not return until the copy is completed. At this
+     * point, the underlying GL texture will contain the surface pixels
+     * in an RGB format defined by the user.
+     *
+     * The application shall maintain the live GLX context itself.
+     * Implementations are free to use glXGetCurrentContext() and
+     * glXGetCurrentDrawable() functions for internal purposes.
+     *
+     * @param[in]  dpy        the VA display
+     * @param[in]  gl_surface the VA/GLX destination surface
+     * @param[in]  surface    the VA source surface
+     * @param[in]  flags      the PutSurface flags
+     * @return VA_STATUS_SUCCESS if successful
+     */
+    VAStatus vaCopySurfaceGLX(VADisplay dpy, void *gl_surface, VASurfaceID surface, unsigned int flags) {
+        typedef VAStatus vaCopySurfaceGLX_t(VADisplay, void *, VASurfaceID, unsigned int);
+        static vaCopySurfaceGLX_t* fp_vaCopySurfaceGLX = (vaCopySurfaceGLX_t*)resolve("vaCopySurfaceGLX");
+        assert(fp_vaCopySurfaceGLX);
+        return fp_vaCopySurfaceGLX(dpy, gl_surface, surface, flags);
+    }
+};
+
+class VAAPISurfaceInterop : public VideoSurfaceInterop, public VAAPI_GLX
 {
 public:
     VAAPISurfaceInterop(VADisplay display)
@@ -159,7 +243,6 @@ public:
     {
     }
     ~VAAPISurfaceInterop() {
-#if QTAV_HAVE(VAAPI_GLX)
         if (tmp_surfaces.isEmpty())
             return;
         QMap<GLuint*,void*>::iterator it(tmp_surfaces.begin());
@@ -179,7 +262,6 @@ public:
             }
             it = tmp_surfaces.erase(it);
         }
-#endif
     }
     void setSurface(va_surface_t* surface, int width, int height) {
         mpSurface = surface;
@@ -188,7 +270,6 @@ public:
     }
     // return glx surface
     void* createGLXSurface(void* handle) {
-#if QTAV_HAVE(VAAPI_GLX)
         GLuint tex = *((GLuint*)handle);
         void *glxSurface = 0;
         VAStatus status = vaCreateSurfaceGLX(mDisplay, GL_TEXTURE_2D, tex, &glxSurface);
@@ -198,7 +279,6 @@ public:
         }
         glx_surfaces[(GLuint*)handle] = glxSurface;
         return glxSurface;
-#endif
         return 0;
     }
     virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) {
@@ -206,7 +286,6 @@ public:
             return 0;
         if (!handle)
             handle = createHandle(type, fmt, plane);
-#if QTAV_HAVE(VAAPI_GLX)
         VAStatus status = VA_STATUS_SUCCESS;
         if (type == GLTextureSurface) {
             void *glxSurface = glx_surfaces[(GLuint*)handle];
@@ -229,7 +308,6 @@ public:
             }
             return handle;
         } else
-#endif
         if (type == HostMemorySurface) {
         } else {
             return 0;
@@ -237,7 +315,6 @@ public:
         return handle;
     }
     virtual void unmap(void *handle) {
-#if QTAV_HAVE(VAAPI_GLX)
         QMap<GLuint*,void*>::iterator it(tmp_surfaces.find((GLuint*)handle));
         if (it == tmp_surfaces.end())
             return;
@@ -247,7 +324,6 @@ public:
             vaDestroySurfaceGLX(mDisplay, glxSurface);
         }
         tmp_surfaces.erase(it);
-#endif
     }
     virtual void* createHandle(SurfaceType type, const VideoFormat& fmt, int plane = 0) {
         Q_UNUSED(plane);
@@ -255,7 +331,6 @@ public:
             if (!fmt.isRGB()) {
                 return 0;
             }
-#if QTAV_HAVE(VAAPI_GLX) //TODO: remove the macro if we use qtopengl not glx
             GLuint *tex = new GLuint;
             glGenTextures(1, tex);
             glBindTexture(GL_TEXTURE_2D, *tex);
@@ -266,7 +341,6 @@ public:
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
             tmp_surfaces[tex] = 0;
             return tex;
-#endif
         }
         return 0;
     }
@@ -274,30 +348,26 @@ private:
     VADisplay mDisplay;
     va_surface_t* mpSurface; //TODO: shared_ptr
     int mWidth, mHeight;
-#if QTAV_HAVE(VAAPI_GLX)
     QMap<GLuint*,void*> glx_surfaces, tmp_surfaces;
-#endif
 };
 
 
-class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate, public VAAPI_DRM
+class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate, public VAAPI_DRM, public VAAPI_X11, public VAAPI_GLX
+        , public X11_API
 {
 public:
     VideoDecoderVAAPIPrivate()
         : support_4k(true)
         , surface_interop(0)
     {
-        if (VAAPI_DRM::isLoaded()) {
+        if (VAAPI_X11::isLoaded())
+            display_type = VideoDecoderVAAPI::X11;
+        if (VAAPI_DRM::isLoaded())
             display_type = VideoDecoderVAAPI::DRM;
-        }
+        if (VAAPI_GLX::isLoaded())
+            display_type = VideoDecoderVAAPI::GLX;
         drm_fd = -1;
-#if QTAV_HAVE(VAAPI_X11)
-        display_type = VideoDecoderVAAPI::X11;
         display_x11 = 0;
-#endif
-#if QTAV_HAVE(VAAPI_GLX)
-        display_type = VideoDecoderVAAPI::GLX;
-#endif
         display = 0;
         config_id = VA_INVALID_ID;
         context_id = VA_INVALID_ID;
@@ -333,9 +403,7 @@ public:
     bool support_4k;
     VideoDecoderVAAPI::DisplayType display_type;
     QList<VideoDecoderVAAPI::DisplayType> display_priority;
-#if QTAV_HAVE(VAAPI_X11) || QTAV_HAVE(VAAPI_GLX)
     Display *display_x11;
-#endif
     int drm_fd;
     VADisplay     display;
 
@@ -654,21 +722,22 @@ bool VideoDecoderVAAPIPrivate::open()
     display = 0;
     foreach (VideoDecoderVAAPI::DisplayType dt, display_priority) {
         if (dt == VideoDecoderVAAPI::DRM) {
-            if (VAAPI_DRM::isLoaded()) {
-                qDebug("vaGetDisplay DRM...............");
-    // get drm use udev: https://gitorious.org/hwdecode-demos/hwdecode-demos/commit/d591cf14b83bedc8a5fa9f2fcb53d279e2f76d7f?diffmode=sidebyside
-                // try drmOpen()?
-                drm_fd = ::open("/dev/dri/card0", O_RDWR);
-                if(drm_fd == -1) {
-                    qWarning("Could not access rendering device");
-                    continue;
-                }
-                display = vaGetDisplayDRM(drm_fd);
-                display_type = VideoDecoderVAAPI::DRM;
+            if (!VAAPI_DRM::isLoaded())
+                continue;
+            qDebug("vaGetDisplay DRM...............");
+// get drm use udev: https://gitorious.org/hwdecode-demos/hwdecode-demos/commit/d591cf14b83bedc8a5fa9f2fcb53d279e2f76d7f?diffmode=sidebyside
+            // try drmOpen()?
+            drm_fd = ::open("/dev/dri/card0", O_RDWR);
+            if(drm_fd == -1) {
+                qWarning("Could not access rendering device");
+                continue;
             }
+            display = vaGetDisplayDRM(drm_fd);
+            display_type = VideoDecoderVAAPI::DRM;
         } else if (dt == VideoDecoderVAAPI::X11) {
             qDebug("vaGetDisplay X11...............");
-#if QTAV_HAVE(VAAPI_X11)
+            if (!VAAPI_X11::isLoaded())
+                continue;
             // TODO: lock
             if (!XInitThreads()) {
                 qWarning("XInitThreads failed!");
@@ -680,11 +749,11 @@ bool VideoDecoderVAAPIPrivate::open()
                 continue;
             }
             display = vaGetDisplay(display_x11);
-#endif //QTAV_HAVE(VAAPI_X11)
             display_type = VideoDecoderVAAPI::X11;
         } else if (dt == VideoDecoderVAAPI::GLX) {
             qDebug("vaGetDisplay GLX...............");
-#if QTAV_HAVE(VAAPI_GLX)
+            if (!VAAPI_GLX::isLoaded())
+                continue;
             // TODO: lock
             if (!XInitThreads()) {
                 qWarning("XInitThreads failed!");
@@ -696,7 +765,6 @@ bool VideoDecoderVAAPIPrivate::open()
                 continue;
             }
             display = vaGetDisplayGLX(display_x11);
-#endif
             display_type = VideoDecoderVAAPI::GLX;
         }
         if (display)
@@ -967,12 +1035,10 @@ void VideoDecoderVAAPIPrivate::close()
         vaTerminate(display);
         display = 0;
     }
-#if QTAV_HAVE(VAAPI_X11)
     if (display_x11) {
         XCloseDisplay(display_x11);
         display_x11 = 0;
     }
-#endif
     if (drm_fd >= 0) {
         ::close(drm_fd);
         drm_fd = -1;
