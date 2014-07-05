@@ -27,6 +27,7 @@
 #else
 #include <QtOpenGL/QGLShaderProgram>
 typedef QGLShaderProgram QOpenGLShaderProgram;
+typedef QGLShader QOpenGLShader;
 #endif
 
 namespace QtAV {
@@ -42,6 +43,11 @@ VideoShader::VideoShader()
 
 VideoShader::~VideoShader()
 {
+    if (m_program) {
+        m_program->removeAllShaders();
+        delete m_program;
+        m_program = 0;
+    }
 }
 
 /*
@@ -111,6 +117,12 @@ const char* VideoShader::fragmentShader() const
 void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
 {
     u_Texture.resize(textureCount());
+    if (!shaderProgram) {
+        shaderProgram = program();
+    }
+    if (!shaderProgram->isLinked()) {
+        compile(shaderProgram);
+    }
     u_MVP_matrix = shaderProgram->uniformLocation("u_MVP_matrix");
     // fragment shader
     u_colorMatrix = shaderProgram->uniformLocation("u_colorMatrix");
@@ -166,6 +178,13 @@ void VideoShader::setColorSpace(ColorTransform::ColorSpace cs)
     m_color_space = cs;
 }
 
+QOpenGLShaderProgram* VideoShader::program()
+{
+    if (!m_program)
+        m_program = new QOpenGLShaderProgram();
+    return m_program;
+}
+
 QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
 {
     QFile f(qApp->applicationDirPath() + "/" + fileName);
@@ -179,6 +198,32 @@ QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
     QByteArray src = f.readAll();
     f.close();
     return src;
+}
+
+void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
+{
+    Q_ASSERT_X(!shaderProgram.isLinked(), "QSGSMaterialShader::compile()", "Compile called multiple times!");
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader());
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader());
+    char const *const *attr = attributeNames();
+    int maxVertexAttribs = 0;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
+    for (int i = 0; attr[i]; ++i) {
+        if (i >= maxVertexAttribs) {
+            qFatal("List of attribute names is either too long or not null-terminated.\n"
+                   "Maximum number of attributes on this hardware is %i.\n"
+                   "Vertex shader:\n%s\n"
+                   "Fragment shader:\n%s\n",
+                   maxVertexAttribs, vertexShader(), fragmentShader());
+        }
+        if (*attr[i])
+            shaderProgram->bindAttributeLocation(attr[i], i);
+    }
+
+    if (!shaderProgram->link()) {
+        qWarning("QSGMaterialShader: Shader compilation failed:");
+        qWarning() << shaderProgram->log();
+    }
 }
 
 } //namespace QtAV

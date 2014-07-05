@@ -37,7 +37,12 @@ public:
     virtual char const *const *attributeNames() const; // Array must end with null.
     virtual const char *vertexShader() const;
     virtual const char *fragmentShader() const;
-    virtual void initialize(QOpenGLShaderProgram* shaderProgram);
+
+    /*!
+     * \brief initialize
+     * \param shaderProgram: 0 means create a shader program internally. if not linked, vertex/fragment shader will be added and linked
+     */
+    virtual void initialize(QOpenGLShaderProgram* shaderProgram = 0);
 
     /*!
      * \brief textureCount
@@ -59,15 +64,32 @@ public:
     void setColorSpace(ColorTransform::ColorSpace cs);
 
 protected:
+    QOpenGLShaderProgram* program();
     QByteArray shaderSourceFromFile(const QString& fileName) const;
+    virtual void compile(QOpenGLShaderProgram* shaderProgram);
 
     ColorTransform::ColorSpace m_color_space;
+    QOpenGLShaderProgram *m_program;
     // TODO: compare with texture width uniform used in qtmm
     int u_MVP_matrix;
     int u_colorMatrix;
     QVector<int> u_Texture;
     VideoFormat m_video_format;
     mutable QByteArray m_planar_frag, m_packed_frag;
+};
+
+class VideoFrame;
+class OpenGLVideoPrivate;
+class Q_AV_EXPORT OpenGLVideo
+{
+    DPTR_DECLARE_PRIVATE(OpenGLVideo)
+public:
+    void setCurrentFrame(const VideoFrame& frame);
+    void bind();
+    void bindPlane(int plane);
+    int compare(const OpenGLVideo* other) const;
+protected:
+    DPTR_DECLARE(OpenGLVideo)
 };
 
 } //namespace QtAV
