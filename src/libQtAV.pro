@@ -200,7 +200,7 @@ config_libcedarv {
     SOURCES += VideoDecoderCedarv.cpp
     LIBS += -lvecore -lcedarv
 }
-#macx:!ios: CONFIG += config_vda
+macx:!ios: CONFIG += config_vda
 config_vda {
     DEFINES *= QTAV_HAVE_VDA=1
     SOURCES += VideoDecoderVDA.cpp
