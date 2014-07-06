@@ -84,7 +84,7 @@ public:
     virtual bool open();
     virtual void close();
 
-    virtual bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h);
+    virtual bool setup(void **hwctx, int w, int h);
     virtual bool getBuffer(void **opaque, uint8_t **data);
     virtual void releaseBuffer(void *opaque, uint8_t *data);
 
@@ -221,13 +221,12 @@ VideoFrame VideoDecoderVDA::frame()
     return frame;
 }
 
-bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, AVPixelFormat *pi_chroma, int w, int h)
+bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
 {
     if (hw_ctx.width == w && hw_ctx.height == h && hw_ctx.decoder) {
         width = w;
         height = h;
         *pp_hw_ctx = &hw_ctx;
-        *pi_chroma = va_pixfmt;
         return true;
     }
     if (hw_ctx.decoder) {
@@ -243,7 +242,6 @@ bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, AVPixelFormat *pi_chroma, i
     }
     /* Setup the libavcodec hardware context */
     *pp_hw_ctx = &hw_ctx;
-    *pi_chroma = va_pixfmt;
     hw_ctx.width = w;
     hw_ctx.height = h;
     width = w;
@@ -292,7 +290,9 @@ bool VideoDecoderVDAPrivate::open()
     if (codec_ctx->codec_id != AV_CODEC_ID_H264) {
         qWarning("input codec (%s) isn't H264, canceling VDA decoding", codec_ctx->codec_name);
         return false;
-    }
+    }    
+    if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
+        codec_ctx->pix_fmt = va_pixfmt;
 #if 0
     if (!codec_ctx->extradata || codec_ctx->extradata_size < 7) {
         qWarning("VDA requires extradata.");

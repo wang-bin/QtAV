@@ -94,7 +94,7 @@ public:
     virtual QString description() const;
     virtual VideoFrame frame();
 
-    // TODO: QObject property
+    // QObject properties
     void setSSE4(bool y);
     bool SSE4() const;
     void setDerive(bool y);
@@ -393,10 +393,10 @@ public:
     }
     virtual bool open();
     virtual void close();
-    bool createSurfaces(void **hwctx, AVPixelFormat *chroma, int w, int h);
+    bool createSurfaces(void **hwctx, int w, int h);
     void destroySurfaces();
 
-    virtual bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h);
+    virtual bool setup(void **hwctx, int w, int h);
     virtual bool getBuffer(void **opaque, uint8_t **data);
     virtual void releaseBuffer(void *opaque, uint8_t *data);
 
@@ -853,7 +853,7 @@ bool VideoDecoderVAAPIPrivate::open()
     return true;
 }
 
-bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *chroma, int w, int h)
+bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, int w, int h)
 {
     Q_ASSERT(w > 0 && h > 0);
     /* */
@@ -898,15 +898,12 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         destroySurfaces();
         return false;
     }
-
     if (vaQueryImageFormats(display, p_fmt, &i_fmt_count)) {
         free(p_fmt);
         destroySurfaces();
         return false;
     }
-
     VAImage test_image;
-
     if (!disable_derive) {
         if (vaDeriveImage(display, pi_surface_id[0], &test_image) == VA_STATUS_SUCCESS) {
             qDebug("vaDeriveImage supported");
@@ -914,7 +911,6 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
             vaDestroyImage(display, test_image.image_id);
         }
     }
-
     AVPixelFormat i_chroma = QTAV_PIX_FMT_C(NONE);
     for (int i = 0; i < i_fmt_count; i++) {
         if (p_fmt[i].fourcc == VA_FOURCC_YV12 ||
@@ -943,13 +939,10 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
         destroySurfaces();
         return false;
     }
-    *chroma = i_chroma;
-
     if (!disable_derive && supports_derive) {
         vaDestroyImage(display, image.image_id);
         image.image_id = VA_INVALID_ID;
     }
-
     if (copy_uswc) {
         if (!gpu_mem.initCache(surface_width)) {
             // only set by user (except disabling copy_uswc for non-intel gpu)
@@ -957,7 +950,6 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, AVPixelFormat *c
             //disable_derive = true;
         }
     }
-
     /* Setup the ffmpeg hardware context */
     *pp_hw_ctx = &hw_ctx;
 
@@ -999,13 +991,12 @@ void VideoDecoderVAAPIPrivate::destroySurfaces()
     //vlc_mutex_destroy(&sys->lock);
 }
 
-bool VideoDecoderVAAPIPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, int h)
+bool VideoDecoderVAAPIPrivate::setup(void **hwctx, int w, int h)
 {
     if (surface_width == FFALIGN(w, 16) && surface_height == FFALIGN(h, 16)) {
         width = w;
         height = h;
         *hwctx = &hw_ctx;
-        *chroma = surface_chroma;
         return true;
     }
     *hwctx = NULL;
@@ -1013,7 +1004,7 @@ bool VideoDecoderVAAPIPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w,
     if (surface_width || surface_height)
         destroySurfaces();
     if (w > 0 && h > 0)
-        return createSurfaces(hwctx, chroma, w, h);
+        return createSurfaces(hwctx, w, h);
     return false;
 }
 

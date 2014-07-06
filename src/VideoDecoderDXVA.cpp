@@ -327,7 +327,7 @@ public:
     void DxCreateVideoConversion();
     void DxDestroyVideoConversion();
 
-    bool setup(void **hwctx, AVPixelFormat *chroma, int w, int h);
+    bool setup(void **hwctx, int w, int h);
     bool open();
     void close();
 
@@ -944,7 +944,7 @@ void VideoDecoderDXVAPrivate::DxDestroyVideoConversion()
 }
 
 // hwaccel_context
-bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, int h)
+bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
 {
     if (w <= 0 || h <= 0)
         return false;
@@ -952,7 +952,6 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, 
         DxDestroyVideoConversion();
         DxDestroyVideoDecoder();
         *hwctx = NULL;
-        *chroma = QTAV_PIX_FMT_C(NONE);
         /* FIXME transmit a video_format_t by VaSetup directly */
         if (!DxCreateVideoDecoder(codec_ctx->codec_id, w, h))
             return false;
@@ -968,8 +967,6 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, AVPixelFormat *chroma, int w, 
     width = w;
     height = h;
     *hwctx = &hw;
-    const d3d_format_t *outfmt = D3dFindFormat(output);
-    *chroma = outfmt ? outfmt->codec : QTAV_PIX_FMT_C(NONE);
     return true;
 }
 

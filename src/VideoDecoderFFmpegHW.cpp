@@ -55,7 +55,7 @@ static int ffmpeg_get_va_buffer2(struct AVCodecContext *ctx, AVFrame *frame, int
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)ctx->opaque;
     /* hwaccel_context is not present in old ffmpeg version */
     // not coded_width. assume coded_width is 6 aligned of width
-    if (!va->setup(&ctx->hwaccel_context, &ctx->pix_fmt, ctx->width, ctx->height)) {
+    if (!va->setup(&ctx->hwaccel_context, ctx->width, ctx->height)) {
         qWarning("va Setup failed");
         return -1;
     }
@@ -91,7 +91,7 @@ static int ffmpeg_get_va_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t
 #endif
     /* hwaccel_context is not present in old ffmpeg version */
     // not coded_width. assume coded_width is 6 aligned of width
-    if (!va->setup(&c->hwaccel_context, &c->pix_fmt, c->width, c->height)) {
+    if (!va->setup(&c->hwaccel_context, c->width, c->height)) {
         qWarning("va Setup failed");
         return -1;
     }
@@ -146,7 +146,7 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
         /* We try to call vlc_va_Setup when possible to detect errors when
          * possible (later is too late) */
         if (p_context->width > 0 && p_context->height > 0
-         && !setup(&p_context->hwaccel_context, &p_context->pix_fmt, p_context->width, p_context->height)) {
+         && !setup(&p_context->hwaccel_context, p_context->width, p_context->height)) {
             qWarning("acceleration setup failure");
             break;
         }
@@ -201,7 +201,7 @@ bool VideoDecoderFFmpegHW::prepare()
     }
     //TODO: neccesary?
 #if 0
-    if (!d.setup(&d.codec_ctx->hwaccel_context, &d.codec_ctx->pix_fmt, d.codec_ctx->width, d.codec_ctx->height)) {
+    if (!d.setup(&d.codec_ctx->hwaccel_context, d.codec_ctx->width, d.codec_ctx->height)) {
         qWarning("Setup vaapi failed.");
         return false;
     }
