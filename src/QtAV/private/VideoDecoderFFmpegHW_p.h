@@ -47,7 +47,7 @@ public:
         // subclass setup va_pixfmt here
     }
 
-    virtual ~VideoDecoderFFmpegHWPrivate() {}
+    virtual ~VideoDecoderFFmpegHWPrivate() {} //ctx is 0 now
     void restore() {
         codec_ctx->pix_fmt = pixfmt;
         codec_ctx->opaque = 0;
