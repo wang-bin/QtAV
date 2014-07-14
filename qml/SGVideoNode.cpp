@@ -43,12 +43,14 @@ public:
 
     virtual void updateState(const RenderState &state, QSGMaterial *newMaterial, QSGMaterial *oldMaterial);
     virtual char const *const *attributeNames() const { return m_shader->attributeNames();}
+    void setVideoFormat(const VideoFormat& format) { m_shader->setVideoFormat(format);}
+    void setColorSpace(ColorTransform::ColorSpace cs) { m_shader->setColorSpace(cs);}
 protected:
     virtual const char *vertexShader() const { return m_shader->vertexShader();}
     virtual const char *fragmentShader() const { return m_shader->fragmentShader();}
     virtual void initialize() { m_shader->initialize(program());}
 
-    int textureCount() const { return m_shader->textureCount();}
+    int textureLocationCount() const { return m_shader->textureLocationCount();}
     int textureLocation(int index) const { return m_shader->textureLocation(index);}
     int matrixLocation() const { return m_shader->matrixLocation();}
     int colorMatrixLocation() const { return m_shader->colorMatrixLocation();}
@@ -82,7 +84,10 @@ public:
     }
 
     virtual QSGMaterialShader *createShader() const {
-        return new SGVideoMaterialShader();
+        //TODO: setVideoFormat?
+        SGVideoMaterialShader *s = new SGVideoMaterialShader();
+        s->setVideoFormat(m_frame.format());
+        return s;
     }
 
     //TODO: compare video format?
@@ -108,10 +113,6 @@ public:
 
     void bind();
     void bindTexture(int id, int w, int h, const uchar *bits);
-
-    VideoFormat m_format;
-    QSize m_textureSize;
-
 
     int m_bpp;
     //qreal m_opacity;
@@ -153,7 +154,7 @@ void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *n
 {
     Q_UNUSED(oldMaterial);
     SGVideoMaterial *mat = static_cast<SGVideoMaterial *>(newMaterial);
-    for (int i = 0; i < textureCount(); ++i) {
+    for (int i = 0; i < textureLocationCount(); ++i) {
         program()->setUniformValue(textureLocation(i), i);
     }
     mat->bind();

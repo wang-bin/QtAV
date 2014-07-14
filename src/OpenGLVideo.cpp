@@ -24,11 +24,16 @@
 #include <QtCore/QFile>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLShaderProgram>
+#include <QtGui/QOpenGLFunctions>
 #else
 #include <QtOpenGL/QGLShaderProgram>
+#include <QtOpenGL/QGLFunctions>
 typedef QGLShaderProgram QOpenGLShaderProgram;
 typedef QGLShader QOpenGLShader;
+typedef QGLFunctions QOpenGLFunctions;
 #endif
+#include "QtAV/SurfaceInterop.h"
+#include "QtAV/VideoFrame.h"
 
 namespace QtAV {
 
@@ -36,6 +41,7 @@ VideoShader::VideoShader()
     : m_color_space(ColorTransform::RGB)
     , u_MVP_matrix(-1)
     , u_colorMatrix(-1)
+    , u_bpp(-1)
 {
     //m_planar_frag = shaderSourceFromFile("shaders/planar.f.glsl");
     //m_packed_frag = shaderSourceFromFile("shaders/rgb.f.glsl");
@@ -116,7 +122,7 @@ const char* VideoShader::fragmentShader() const
 
 void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
 {
-    u_Texture.resize(textureCount());
+    u_Texture.resize(textureLocationCount());
     if (!shaderProgram) {
         shaderProgram = program();
     }
@@ -135,7 +141,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d\n", u_colorMatrix);
 }
 
-int VideoShader::textureCount() const
+int VideoShader::textureLocationCount() const
 {
     if (m_video_format.isRGB() && !m_video_format.isPlanar())
         return 1;
@@ -156,6 +162,11 @@ int VideoShader::matrixLocation() const
 int VideoShader::colorMatrixLocation() const
 {
     return u_colorMatrix;
+}
+
+int VideoShader::bppLocation() const
+{
+    return u_bpp;
 }
 
 VideoFormat VideoShader::videoFormat() const
@@ -202,7 +213,7 @@ QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
 
 void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
 {
-    Q_ASSERT_X(!shaderProgram.isLinked(), "QSGSMaterialShader::compile()", "Compile called multiple times!");
+    Q_ASSERT_X(!shaderProgram.isLinked(), "VideoShader::compile()", "Compile called multiple times!");
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader());
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader());
     char const *const *attr = attributeNames();
@@ -216,6 +227,7 @@ void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
                    "Fragment shader:\n%s\n",
                    maxVertexAttribs, vertexShader(), fragmentShader());
         }
+        // why must min location == 0?
         if (*attr[i])
             shaderProgram->bindAttributeLocation(attr[i], i);
     }
@@ -224,6 +236,217 @@ void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
         qWarning("QSGMaterialShader: Shader compilation failed:");
         qWarning() << shaderProgram->log();
     }
+}
+
+
+class OpenGLVideoPrivate : public DPtrPrivate<OpenGLVideo>
+{
+public:
+    OpenGLVideoPrivate()
+        : supports_glsl(true)
+        , update_texure(true)
+        , shader(0)
+    {}
+
+    bool supports_glsl;
+    bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
+    VideoShader *shader;
+    QRect viewport;
+    QRect out_rect;
+    VideoFrame frame;
+
+    QVector<GLuint> textures; //texture ids. size is plane count
+    QVector<QSize> texture_size;
+    /*
+     * actually if render a full frame, only plane 0 is enough. other planes are the same as texture size.
+     * because linesize[0]>=linesize[1]
+     * uploade size is required when
+     * 1. y/u is not an integer because of alignment. then padding size of y < padding size of u, and effective size y/u != texture size y/u
+     * 2. odd size. enlarge y
+     */
+    QVector<QSize> texture_upload_size;
+
+    QVector<int> effective_tex_width; //without additional width for alignment
+    qreal effective_tex_width_ratio;
+    QVector<GLint> internal_format;
+    QVector<GLenum> data_format;
+    QVector<GLenum> data_type;
+
+    ColorTransform colorTransform;
+};
+
+void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
+{
+    DPTR_D(OpenGLVideo);
+    // TODO: lock?
+    d.frame = frame;
+    d.update_texure = true;
+}
+
+void OpenGLVideo::bind()
+{
+    DPTR_D(OpenGLVideo);
+    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
+    if (!d.update_texure) {
+        if (d.textures.isEmpty())
+            return;
+        for (int i = 0; i < d.textures.size(); ++i) {
+            functions->glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, d.textures[i]);
+        }
+    }
+    const int nb_planes = d.frame.planeCount(); //number of texture id
+    for (int i = 0; i < nb_planes; ++i) {
+        bindPlane(i);
+    }
+    d.update_texure = false;
+}
+
+void OpenGLVideo::bindPlane(int p)
+{
+    DPTR_D(OpenGLVideo);
+    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
+    //setupQuality?
+    if (d.frame.map(GLTextureSurface, &d.textures[p])) {
+        functions->glActiveTexture(GL_TEXTURE0 + p);
+        glBindTexture(GL_TEXTURE_2D, d.textures[p]);
+        return;
+    }
+    // FIXME: why happens on win?
+    if (d.frame.bytesPerLine(p) <= 0)
+        return;
+    functions->glActiveTexture(GL_TEXTURE0 + p);
+    glBindTexture(GL_TEXTURE_2D, d.textures[p]);
+    //setupQuality();
+    //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
+    // This is necessary for non-power-of-two textures
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexSubImage2D(GL_TEXTURE_2D
+                 , 0                //level
+                 , 0                // xoffset
+                 , 0                // yoffset
+                 , d.texture_upload_size[p].width()
+                 , d.texture_upload_size[p].height()
+                 , d.data_format[p]          //format, must the same as internal format?
+                 , d.data_type[p]
+                 , d.frame.bits(p));
+}
+
+void OpenGLVideo::unbind()
+{
+    DPTR_D(OpenGLVideo);
+    for (int i = 0; i < d.textures.size(); ++i) {
+        d.frame.unmap(&d.textures[i]);
+    }
+}
+
+void OpenGLVideo::render(const QRect &roi)
+{
+    DPTR_D(OpenGLVideo);
+    // TODO: shader->updateState
+    bind();
+
+    //for glUniform
+    d.shader->program()->bind(); //glUseProgram(id)
+    glDisable(GL_DEPTH_TEST);
+    // all texture ids should be binded when renderering even for packed plane!
+    const int nb_planes = d.frame.planeCount(); //number of texture id
+    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
+    for (int i = 0; i < nb_planes; ++i) {
+        // use glUniform1i to swap planes. swap uv: i => (3-i)%3
+        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
+        d.shader->program()->setUniformValue(d.shader->textureLocation(i), (GLint)i);
+    }
+    if (nb_planes < d.shader->textureLocationCount()) {
+        for (int i = nb_planes; i < d.shader->textureLocationCount(); ++i) {
+            d.shader->program()->setUniformValue(d.shader->textureLocation(i), (GLint)(nb_planes - 1));
+        }
+    }
+
+    /*!
+      tex coords: ROI/frameRect()*effective_tex_width_ratio
+    */
+    const GLfloat kTexCoords[] = {
+            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)roi.y()/(GLfloat)d.frame.height(),
+            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)roi.y()/(GLfloat)d.frame.height(),
+            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height(),
+            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height(),
+    };
+///        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
+///        glEnableVertexAttribArray(d.a_TexCoords);
+///
+    setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+
+    const GLfloat kVertices[] = {
+        -1, 1,
+        1, 1,
+        1, -1,
+        -1, -1,
+    };
+
+    d.shader->program()->setAttributeArray(0, GL_FLOAT, kVertices, 2);
+    d.shader->program()->enableAttributeArray(0); //TODO: in setActiveShader
+    d.shader->program()->setAttributeArray(1, GL_FLOAT, kTexCoords, 2);
+    d.shader->program()->enableAttributeArray(1); //TODO: in setActiveShader
+    /*
+     * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
+     * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
+     * which seems not correct because QMatrix4x4 has a flag var
+     */
+    GLfloat *mat = (GLfloat*)d.colorTransform.matrixRef().data();
+    GLfloat glm[16];
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    if (sizeof(qreal) != sizeof(GLfloat)) {
+#else
+    if (sizeof(float) != sizeof(GLfloat)) {
+#endif
+        d.colorTransform.matrixData(glm);
+        mat = glm;
+    }
+    //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
+
+   d.shader->program()->setUniformValue(d.shader->colorMatrixLocation(), d.colorTransform.matrixRef());
+   d.shader->program()->setUniformValue(d.shader->bppLocation(), (GLfloat)d.shader->videoFormat().bitsPerPixel(0));
+
+   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+   // d.shader->program()->release(); //glUseProgram(0)
+   d.shader->program()->disableAttributeArray(1); //TODO: in setActiveShader
+   d.shader->program()->disableAttributeArray(0); //TODO: in setActiveShader
+
+   unbind();
+}
+
+void OpenGLVideo::setViewport(const QRect& rect)
+{
+    glViewport(rect.x(), rect.y(), rect.width(), rect.height());
+    setupAspectRatio();
+}
+
+void OpenGLVideo::setupQuality()
+{
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+}
+
+void OpenGLVideo::setupAspectRatio()
+{
+    DPTR_D(OpenGLVideo);
+    if (!d.supports_glsl)
+        return;
+    if (!d.shader) {
+        qDebug("%s @%d no shader", __FUNCTION__, __LINE__);
+        return;
+    }
+    const GLfloat matrix[] = {
+        (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width(), 0, 0, 0,
+        0, (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height(), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    };
+    d.shader->program()->setUniformValue(d.shader->matrixLocation(), QMatrix4x4(matrix));
 }
 
 } //namespace QtAV

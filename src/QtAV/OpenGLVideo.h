@@ -34,7 +34,12 @@ class Q_AV_EXPORT VideoShader
 public:
     VideoShader();
     virtual ~VideoShader();
-    virtual char const *const *attributeNames() const; // Array must end with null.
+    /*!
+     * \brief attributeNames
+     * Array must end with null. { position, texcoord, ..., 0}, location is bound to 0, 1, ...
+     * \return
+     */
+    virtual char const *const *attributeNames() const;
     virtual const char *vertexShader() const;
     virtual const char *fragmentShader() const;
 
@@ -45,7 +50,7 @@ public:
     virtual void initialize(QOpenGLShaderProgram* shaderProgram = 0);
 
     /*!
-     * \brief textureCount
+     * \brief textureLocationCount
      * number of texture locations is
      * 1: packed RGB
      * number of channels: yuv or plannar RGB
@@ -53,18 +58,19 @@ public:
      * \param index
      * \return texture location in shader
      */
-    int textureCount() const;
+    int textureLocationCount() const;
     int textureLocation(int index) const;
     int matrixLocation() const;
     int colorMatrixLocation() const;
+    int bppLocation() const;
     VideoFormat videoFormat() const;
     void setVideoFormat(const VideoFormat& format);
     // TODO: setColorTransform() ?
     ColorTransform::ColorSpace colorSpace() const;
     void setColorSpace(ColorTransform::ColorSpace cs);
 
-protected:
     QOpenGLShaderProgram* program();
+protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
     virtual void compile(QOpenGLShaderProgram* shaderProgram);
 
@@ -73,6 +79,7 @@ protected:
     // TODO: compare with texture width uniform used in qtmm
     int u_MVP_matrix;
     int u_colorMatrix;
+    int u_bpp;
     QVector<int> u_Texture;
     VideoFormat m_video_format;
     mutable QByteArray m_planar_frag, m_packed_frag;
@@ -85,10 +92,20 @@ class Q_AV_EXPORT OpenGLVideo
     DPTR_DECLARE_PRIVATE(OpenGLVideo)
 public:
     void setCurrentFrame(const VideoFrame& frame);
+    VideoShader* createShader();
+
     void bind();
-    void bindPlane(int plane);
+    void unbind();
+    void bindPlane(int p);
     int compare(const OpenGLVideo* other) const;
+
+    void render(const QRect& roi);
+    void setViewport(const QRect& rect);
+    void setVideoRect(const QRect& rect);
 protected:
+    void setupAspectRatio();
+    void setupQuality();
+
     DPTR_DECLARE(OpenGLVideo)
 };
 
