@@ -8,3 +8,4 @@ CONFIG += console
 SOURCES += main.cpp
 
 LIBS += -lportaudio
+nclude(../paths.pri)
