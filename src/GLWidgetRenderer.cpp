@@ -399,7 +399,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
         qWarning("Could not create shader program.");
         return false;
     }
-    // vertex shader
+    // vertex shader. we can set attribute locations calling glBindAttribLocation
     a_Position = glGetAttribLocation(program, "a_Position");
     a_TexCoords = glGetAttribLocation(program, "a_TexCoords");
     u_matrix = glGetUniformLocation(program, "u_MVP_matrix");
@@ -657,7 +657,6 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 #if defined(GL_UNPACK_ROW_LENGTH)
 //    glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.bytesPerLine(p));
 #endif
-    setupQuality();
     //qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
     // This is necessary for non-power-of-two textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -732,8 +731,6 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 //    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
@@ -799,8 +796,12 @@ void GLWidgetRenderer::drawFrame()
     const int nb_planes = d.video_frame.planeCount(); //number of texture id
     int mapped = 0;
     for (int i = 0; i < nb_planes; ++i) {
-        if (d.video_frame.map(GLTextureSurface, &d.textures[i]))
+        if (d.video_frame.map(GLTextureSurface, &d.textures[i])) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            // if mapped by SurfaceInterop, the texture may be not bound
+            glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
             mapped++;
+        }
     }
     if (mapped < nb_planes) {
         d.upload(roi);
@@ -816,9 +817,6 @@ void GLWidgetRenderer::drawFrame()
     glDisable(GL_DEPTH_TEST);
     // all texture ids should be binded when renderering even for packed plane!
     for (int i = 0; i < nb_planes; ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
         // use glUniform1i to swap planes. swap uv: i => (3-i)%3
         // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
 #if NO_QGL_SHADER
@@ -932,9 +930,6 @@ void GLWidgetRenderer::drawFrame()
 
     for (int i = 0; i < d.textures.size(); ++i) {
         d.video_frame.unmap(&d.textures[i]);
-        //glActiveTexture: gl functions apply on texture i
-        glActiveTexture(GL_TEXTURE0 + i);
-        glDisable(GL_TEXTURE_2D);
     }
 }
 
