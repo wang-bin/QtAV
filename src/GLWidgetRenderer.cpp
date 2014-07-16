@@ -806,47 +806,17 @@ void GLWidgetRenderer::drawFrame()
     if (mapped < nb_planes) {
         d.upload(roi);
     }
-    // shader program may not ready before upload
-    if (d.hasGLSL) {
-#if NO_QGL_SHADER
-        glUseProgram(d.program); //for glUniform
-#else
-        d.shader_program->bind();
-#endif //NO_QGL_SHADER
-    }
-    glDisable(GL_DEPTH_TEST);
-    // all texture ids should be binded when renderering even for packed plane!
-    for (int i = 0; i < nb_planes; ++i) {
-        // use glUniform1i to swap planes. swap uv: i => (3-i)%3
-        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
-#if NO_QGL_SHADER
-        glUniform1i(d.u_Texture[i], i);
-#else
-        d.shader_program->setUniformValue(d.u_Texture[i], (GLint)i);
-#endif
-    }
-    if (nb_planes < d.u_Texture.size()) {
-        for (int i = nb_planes; i < d.u_Texture.size(); ++i) {
-#if NO_QGL_SHADER
-            glUniform1i(d.u_Texture[i], nb_planes - 1);
-#else
-            d.shader_program->setUniformValue(d.u_Texture[i], (GLint)(nb_planes - 1));
-#endif
-        }
-    }
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
 /*!
   tex coords: ROI/frameRect()*effective_tex_width_ratio
 */
     const GLfloat kTexCoords[] = {
-            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
-            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+        (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+        (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+        (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+        (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
     };
-///        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
-///        glEnableVertexAttribArray(d.a_TexCoords);
 #else
     const GLfloat kTexCoords[] = {
             0, 0,
@@ -875,58 +845,85 @@ void GLWidgetRenderer::drawFrame()
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
         glPopMatrix();
+        for (int i = 0; i < d.textures.size(); ++i) {
+            d.video_frame.unmap(&d.textures[i]);
+        }
+        return;
     }
 #endif //QT_OPENGL_ES_2
-    if (d.hasGLSL) {
-        d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
-        //qpainter need. TODO: VBO?
+    // uniforms begin
+    // shader program may not ready before upload
 #if NO_QGL_SHADER
-        glVertexAttribPointer(d.a_Position, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
-        glEnableVertexAttribArray(d.a_Position);
-        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
-        glEnableVertexAttribArray(d.a_TexCoords);
+    glUseProgram(d.program); //for glUniform
 #else
-        d.shader_program->setAttributeArray(d.a_Position, GL_FLOAT, kVertices, 2);
-        d.shader_program->enableAttributeArray(d.a_Position);
-        d.shader_program->setAttributeArray(d.a_TexCoords, GL_FLOAT, kTexCoords, 2);
-        d.shader_program->enableAttributeArray(d.a_TexCoords);
-#endif
-        /*
-         * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
-         * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
-         * which seems not correct because QMatrix4x4 has a flag var
-         */
-        GLfloat *mat = (GLfloat*)d.colorTransform.matrixRef().data();
-        GLfloat glm[16];
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-        if (sizeof(qreal) != sizeof(GLfloat)) {
-#else
-        if (sizeof(float) != sizeof(GLfloat)) {
-#endif
-            d.colorTransform.matrixData(glm);
-            mat = glm;
-        }
-        //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
-
+    d.shader_program->bind();
+#endif //NO_QGL_SHADER
+    // all texture ids should be binded when renderering even for packed plane!
+    for (int i = 0; i < nb_planes; ++i) {
+        // use glUniform1i to swap planes. swap uv: i => (3-i)%3
+        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
 #if NO_QGL_SHADER
-        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, mat);
-        glUniform1f(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
+        glUniform1i(d.u_Texture[i], i);
 #else
-       d.shader_program->setUniformValue(d.u_colorMatrix, d.colorTransform.matrixRef());
-       d.shader_program->setUniformValue(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
-#endif
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-#if NO_QGL_SHADER
-        glUseProgram(0);
-        glDisableVertexAttribArray(d.a_TexCoords);
-        glDisableVertexAttribArray(d.a_Position);
-#else
-        d.shader_program->release();
-        d.shader_program->disableAttributeArray(d.a_TexCoords);
-        d.shader_program->disableAttributeArray(d.a_Position);
+        d.shader_program->setUniformValue(d.u_Texture[i], (GLint)i);
 #endif
     }
+    if (nb_planes < d.u_Texture.size()) {
+        for (int i = nb_planes; i < d.u_Texture.size(); ++i) {
+#if NO_QGL_SHADER
+            glUniform1i(d.u_Texture[i], nb_planes - 1);
+#else
+            d.shader_program->setUniformValue(d.u_Texture[i], (GLint)(nb_planes - 1));
+#endif
+        }
+    }
+    d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+    /*
+     * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
+     * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
+     * which seems not correct because QMatrix4x4 has a flag var
+     */
+    GLfloat *mat = (GLfloat*)d.colorTransform.matrixRef().data();
+    GLfloat glm[16];
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    if (sizeof(qreal) != sizeof(GLfloat)) {
+#else
+    if (sizeof(float) != sizeof(GLfloat)) {
+#endif
+        d.colorTransform.matrixData(glm);
+        mat = glm;
+    }
+    //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
+#if NO_QGL_SHADER
+    glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, mat);
+    glUniform1f(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
+#else
+   d.shader_program->setUniformValue(d.u_colorMatrix, d.colorTransform.matrixRef());
+   d.shader_program->setUniformValue(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
+#endif
+   // uniforms done. attributes begin
+   //qpainter need. TODO: VBO?
+#if NO_QGL_SHADER
+   glVertexAttribPointer(d.a_Position, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
+   glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
+   glEnableVertexAttribArray(d.a_Position);
+   glEnableVertexAttribArray(d.a_TexCoords);
+#else
+   d.shader_program->setAttributeArray(d.a_Position, GL_FLOAT, kVertices, 2);
+   d.shader_program->setAttributeArray(d.a_TexCoords, GL_FLOAT, kTexCoords, 2);
+   d.shader_program->enableAttributeArray(d.a_Position);
+   d.shader_program->enableAttributeArray(d.a_TexCoords);
+#endif
+   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+#if NO_QGL_SHADER
+   //glUseProgram(0);
+   glDisableVertexAttribArray(d.a_TexCoords);
+   glDisableVertexAttribArray(d.a_Position);
+#else
+   d.shader_program->release();
+   d.shader_program->disableAttributeArray(d.a_TexCoords);
+   d.shader_program->disableAttributeArray(d.a_Position);
+#endif
 
     for (int i = 0; i < d.textures.size(); ++i) {
         d.video_frame.unmap(&d.textures[i]);
@@ -946,6 +943,7 @@ void GLWidgetRenderer::initializeGL()
 #endif //QTAV_HAVE(QGLFUNCTIONS)
     qtavResolveActiveTexture();
     glEnable(GL_TEXTURE_2D);
+    glDisable(GL_DEPTH_TEST);
     if (!d.hasGLSL) {
 #ifndef QT_OPENGL_ES_2
         glShadeModel(GL_SMOOTH); //setupQuality?

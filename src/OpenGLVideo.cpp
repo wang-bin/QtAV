@@ -216,9 +216,9 @@ void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
     Q_ASSERT_X(!shaderProgram.isLinked(), "VideoShader::compile()", "Compile called multiple times!");
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader());
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader());
-    char const *const *attr = attributeNames();
     int maxVertexAttribs = 0;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
+    char const *const *attr = attributeNames();
     for (int i = 0; attr[i]; ++i) {
         if (i >= maxVertexAttribs) {
             qFatal("List of attribute names is either too long or not null-terminated.\n"
@@ -348,12 +348,10 @@ void OpenGLVideo::render(const QRect &roi)
     // TODO: shader->updateState
     bind();
 
-    //for glUniform
-    d.shader->program()->bind(); //glUseProgram(id)
-    glDisable(GL_DEPTH_TEST);
+    // uniforms begin
+    d.shader->program()->bind(); //glUseProgram(id). for glUniform
     // all texture ids should be binded when renderering even for packed plane!
     const int nb_planes = d.frame.planeCount(); //number of texture id
-    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
     for (int i = 0; i < nb_planes; ++i) {
         // use glUniform1i to swap planes. swap uv: i => (3-i)%3
         // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
@@ -364,32 +362,6 @@ void OpenGLVideo::render(const QRect &roi)
             d.shader->program()->setUniformValue(d.shader->textureLocation(i), (GLint)(nb_planes - 1));
         }
     }
-
-    /*!
-      tex coords: ROI/frameRect()*effective_tex_width_ratio
-    */
-    const GLfloat kTexCoords[] = {
-            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)roi.y()/(GLfloat)d.frame.height(),
-            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)roi.y()/(GLfloat)d.frame.height(),
-            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height(),
-            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height(),
-    };
-///        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
-///        glEnableVertexAttribArray(d.a_TexCoords);
-///
-    setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
-
-    const GLfloat kVertices[] = {
-        -1, 1,
-        1, 1,
-        1, -1,
-        -1, -1,
-    };
-
-    d.shader->program()->setAttributeArray(0, GL_FLOAT, kVertices, 2);
-    d.shader->program()->enableAttributeArray(0); //TODO: in setActiveShader
-    d.shader->program()->setAttributeArray(1, GL_FLOAT, kTexCoords, 2);
-    d.shader->program()->enableAttributeArray(1); //TODO: in setActiveShader
     /*
      * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
      * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
@@ -409,12 +381,38 @@ void OpenGLVideo::render(const QRect &roi)
 
    d.shader->program()->setUniformValue(d.shader->colorMatrixLocation(), d.colorTransform.matrixRef());
    d.shader->program()->setUniformValue(d.shader->bppLocation(), (GLfloat)d.shader->videoFormat().bitsPerPixel(0));
+   setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+   // uniform end. attribute begins
+
+    /*!
+      tex coords: ROI/frameRect()*effective_tex_width_ratio
+    */
+    const GLfloat kTexCoords[] = {
+        (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)roi.y()/(GLfloat)d.frame.height(),
+        (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)roi.y()/(GLfloat)d.frame.height(),
+        (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height(),
+        (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height(),
+    };
+    const GLfloat kVertices[] = {
+        -1, 1,
+        1, 1,
+        1, -1,
+        -1, -1,
+    };
+    d.shader->program()->setAttributeArray(0, GL_FLOAT, kVertices, 2);
+    d.shader->program()->setAttributeArray(1, GL_FLOAT, kTexCoords, 2);
+
+    char const *const *attr = d.shader->attributeNames();
+    for (int i = 0; attr[i]; ++i) {
+        d.shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
+    }
 
    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
    // d.shader->program()->release(); //glUseProgram(0)
-   d.shader->program()->disableAttributeArray(1); //TODO: in setActiveShader
-   d.shader->program()->disableAttributeArray(0); //TODO: in setActiveShader
+   for (int i = 0; attr[i]; ++i) {
+       d.shader->program()->disableAttributeArray(i); //TODO: in setActiveShader
+   }
 
    unbind();
 }
