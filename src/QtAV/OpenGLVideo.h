@@ -29,6 +29,32 @@
 class QOpenGLShaderProgram;
 namespace QtAV {
 
+
+class VideoFrame;
+class OpenGLVideoPrivate;
+/*!
+ * \brief The OpenGLVideo class
+ * high level api for renderering a video frame. use VideoShader, VideoMaterial and ShaderManager internally
+ */
+class Q_AV_EXPORT OpenGLVideo
+{
+    DPTR_DECLARE_PRIVATE(OpenGLVideo)
+public:
+    void setCurrentFrame(const VideoFrame& frame);
+    void render(const QRect& roi);
+    void setViewport(const QRect& rect);
+    void setVideoRect(const QRect& rect);
+protected:
+    DPTR_DECLARE(OpenGLVideo)
+};
+
+
+class VideoMaterial;
+/*!
+ * \brief The VideoShader class
+ * Represents a shader for rendering a video frame.
+ * Low-level api. Used by OpenGLVideo and Scene Graph.
+ */
 class Q_AV_EXPORT VideoShader
 {
 public:
@@ -70,6 +96,8 @@ public:
     void setColorSpace(ColorTransform::ColorSpace cs);
 
     QOpenGLShaderProgram* program();
+    void update(VideoMaterial* material);
+
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
     virtual void compile(QOpenGLShaderProgram* shaderProgram);
@@ -85,28 +113,36 @@ protected:
     mutable QByteArray m_planar_frag, m_packed_frag;
 };
 
-class VideoFrame;
-class OpenGLVideoPrivate;
-class Q_AV_EXPORT OpenGLVideo
+class ColorTransform;
+class VideoMaterialPrivate;
+/*!
+ * \brief The VideoMaterial class
+ * Encapsulates rendering state for a video shader program.
+ * Low-level api. Used by OpenGLVideo and Scene Graph
+ */
+class Q_AV_EXPORT VideoMaterial
 {
-    DPTR_DECLARE_PRIVATE(OpenGLVideo)
+    DPTR_DECLARE_PRIVATE(VideoMaterial)
 public:
+    ~VideoMaterial() {}
     void setCurrentFrame(const VideoFrame& frame);
     VideoShader* createShader();
 
     void bind();
     void unbind();
     void bindPlane(int p);
-    int compare(const OpenGLVideo* other) const;
+    int compare(const VideoMaterial* other) const;
 
     void render(const QRect& roi);
     void setViewport(const QRect& rect);
     void setVideoRect(const QRect& rect);
-protected:
+
+    const ColorTransform &colorTransform() const;
     void setupAspectRatio();
     void setupQuality();
 
-    DPTR_DECLARE(OpenGLVideo)
+protected:
+    DPTR_DECLARE(VideoMaterial)
 };
 
 } //namespace QtAV

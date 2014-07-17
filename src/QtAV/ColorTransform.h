@@ -73,7 +73,7 @@ public:
     /*!
      * Get the matrix in column-major order. Used by OpenGL
      */
-    template<typename T> void matrixData(T* M) {
+    template<typename T> void matrixData(T* M) const {
         const QMatrix4x4 &m = matrixRef();
         M[0] = m(0,0), M[4] = m(0,1), M[8] = m(0,2), M[12] = m(0,3),
         M[1] = m(1,0), M[5] = m(1,1), M[9] = m(1,2), M[13] = m(1,3),

@@ -34,8 +34,45 @@ typedef QGLFunctions QOpenGLFunctions;
 #endif
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoFrame.h"
+//#include "QtAV/private/ShaderManager.h"
 
 namespace QtAV {
+
+
+class OpenGLVideoPrivate : public DPtrPrivate<OpenGLVideo>
+{
+public:
+    OpenGLVideoPrivate()
+        : material(new VideoMaterial())
+    {}
+    ~OpenGLVideoPrivate() {
+        if (material) {
+            delete material;
+            material = 0;
+        }
+    }
+
+    //ShaderManager manager;
+    VideoMaterial *material;
+    QRect viewport;
+    QRect out_rect;
+};
+
+void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
+{
+    d_func().material->setCurrentFrame(frame);
+}
+
+void OpenGLVideo::setViewport(const QRect& rect)
+{
+    d_func().viewport = rect;
+}
+
+void OpenGLVideo::setVideoRect(const QRect &rect)
+{
+    d_func().out_rect = rect;
+}
+
 
 VideoShader::VideoShader()
     : m_color_space(ColorTransform::RGB)
@@ -196,6 +233,48 @@ QOpenGLShaderProgram* VideoShader::program()
     return m_program;
 }
 
+void VideoShader::update(VideoMaterial *material)
+{
+    material->bind();
+
+    // uniforms begin
+    program()->bind(); //glUseProgram(id). for glUniform
+    // all texture ids should be binded when renderering even for packed plane!
+    const int nb_planes = videoFormat().planeCount(); //number of texture id
+    for (int i = 0; i < nb_planes; ++i) {
+        // use glUniform1i to swap planes. swap uv: i => (3-i)%3
+        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
+        program()->setUniformValue(textureLocation(i), (GLint)i);
+    }
+    if (nb_planes < textureLocationCount()) {
+        for (int i = nb_planes; i < textureLocationCount(); ++i) {
+            program()->setUniformValue(textureLocation(i), (GLint)(nb_planes - 1));
+        }
+    }
+    /*
+     * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
+     * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
+     * which seems not correct because QMatrix4x4 has a flag var
+     */
+    GLfloat *mat = (GLfloat*)material->colorTransform().matrixRef().data();
+    GLfloat glm[16];
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    if (sizeof(qreal) != sizeof(GLfloat)) {
+#else
+    if (sizeof(float) != sizeof(GLfloat)) {
+#endif
+        material->colorTransform().matrixData(glm);
+        mat = glm;
+    }
+    //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
+
+   program()->setUniformValue(colorMatrixLocation(), material->colorTransform().matrixRef());
+   program()->setUniformValue(bppLocation(), (GLfloat)videoFormat().bitsPerPixel(0));
+   material->setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+   // uniform end. attribute begins
+
+}
+
 QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
 {
     QFile f(qApp->applicationDirPath() + "/" + fileName);
@@ -239,10 +318,10 @@ void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
 }
 
 
-class OpenGLVideoPrivate : public DPtrPrivate<OpenGLVideo>
+class VideoMaterialPrivate : public DPtrPrivate<VideoMaterial>
 {
 public:
-    OpenGLVideoPrivate()
+    VideoMaterialPrivate()
         : supports_glsl(true)
         , update_texure(true)
         , shader(0)
@@ -275,17 +354,17 @@ public:
     ColorTransform colorTransform;
 };
 
-void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
+void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
 {
-    DPTR_D(OpenGLVideo);
+    DPTR_D(VideoMaterial);
     // TODO: lock?
     d.frame = frame;
     d.update_texure = true;
 }
 
-void OpenGLVideo::bind()
+void VideoMaterial::bind()
 {
-    DPTR_D(OpenGLVideo);
+    DPTR_D(VideoMaterial);
     QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
     if (!d.update_texure) {
         if (d.textures.isEmpty())
@@ -302,9 +381,9 @@ void OpenGLVideo::bind()
     d.update_texure = false;
 }
 
-void OpenGLVideo::bindPlane(int p)
+void VideoMaterial::bindPlane(int p)
 {
-    DPTR_D(OpenGLVideo);
+    DPTR_D(VideoMaterial);
     QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
     //setupQuality?
     if (d.frame.map(GLTextureSurface, &d.textures[p])) {
@@ -334,17 +413,17 @@ void OpenGLVideo::bindPlane(int p)
                  , d.frame.bits(p));
 }
 
-void OpenGLVideo::unbind()
+void VideoMaterial::unbind()
 {
-    DPTR_D(OpenGLVideo);
+    DPTR_D(VideoMaterial);
     for (int i = 0; i < d.textures.size(); ++i) {
         d.frame.unmap(&d.textures[i]);
     }
 }
 
-void OpenGLVideo::render(const QRect &roi)
+void VideoMaterial::render(const QRect &roi)
 {
-    DPTR_D(OpenGLVideo);
+    DPTR_D(VideoMaterial);
     // TODO: shader->updateState
     bind();
 
@@ -417,21 +496,27 @@ void OpenGLVideo::render(const QRect &roi)
    unbind();
 }
 
-void OpenGLVideo::setViewport(const QRect& rect)
+void VideoMaterial::setViewport(const QRect& rect)
 {
     glViewport(rect.x(), rect.y(), rect.width(), rect.height());
     setupAspectRatio();
 }
 
-void OpenGLVideo::setupQuality()
+const ColorTransform &VideoMaterial::colorTransform() const
+{
+    DPTR_D(const VideoMaterial);
+    return d.colorTransform;
+}
+
+void VideoMaterial::setupQuality()
 {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
-void OpenGLVideo::setupAspectRatio()
+void VideoMaterial::setupAspectRatio()
 {
-    DPTR_D(OpenGLVideo);
+    DPTR_D(VideoMaterial);
     if (!d.supports_glsl)
         return;
     if (!d.shader) {
