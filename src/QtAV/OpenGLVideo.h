@@ -41,8 +41,19 @@ class Q_AV_EXPORT OpenGLVideo
     DPTR_DECLARE_PRIVATE(OpenGLVideo)
 public:
     void setCurrentFrame(const VideoFrame& frame);
+    /*!
+     * \brief render
+     * \param roi
+     * region of interest of video frame
+     * TODO: QRectF
+     */
     void render(const QRect& roi);
     void setViewport(const QRect& rect);
+    /*!
+     * \brief setVideoRect
+     * call this if video display area change or aspect ratio change
+     * \param rect
+     */
     void setVideoRect(const QRect& rect);
 protected:
     DPTR_DECLARE(OpenGLVideo)
@@ -113,6 +124,7 @@ protected:
     mutable QByteArray m_planar_frag, m_packed_frag;
 };
 
+class MaterialType {};
 class ColorTransform;
 class VideoMaterialPrivate;
 /*!
@@ -124,21 +136,23 @@ class Q_AV_EXPORT VideoMaterial
 {
     DPTR_DECLARE_PRIVATE(VideoMaterial)
 public:
-    ~VideoMaterial() {}
+    virtual ~VideoMaterial() {}
     void setCurrentFrame(const VideoFrame& frame);
-    VideoShader* createShader();
-
+    VideoShader* createShader() const;
+    virtual MaterialType* type() const;
+    // TODO: roi
     void bind();
     void unbind();
+    // TODO: roi
     void bindPlane(int p);
     int compare(const VideoMaterial* other) const;
 
-    void render(const QRect& roi);
-
     const ColorTransform &colorTransform() const;
     const QMatrix4x4& matrix() const;
+    int bpp() const; //1st plane
+    int planeCount() const;
+    void getTextureCoordinates(const QRect& roi, float* t);
     void setupQuality();
-
 protected:
     DPTR_DECLARE(VideoMaterial)
 };

@@ -248,6 +248,7 @@ SOURCES += \
     Packet.cpp \
     AVError.cpp \
     AVPlayer.cpp \
+    AVClock.cpp \
     VideoCapture.cpp \
     VideoFormat.cpp \
     VideoFrame.cpp \
@@ -259,7 +260,7 @@ SOURCES += \
     AVOutput.cpp \
     OutputSet.cpp \
     OpenGLVideo.cpp \
-    AVClock.cpp \
+    ShaderManager.cpp \
     Statistics.cpp \
     VideoDecoder.cpp \
     VideoDecoderTypes.cpp \
@@ -330,6 +331,7 @@ HEADERS *= \
     QtAV/singleton.h \
     QtAV/factory.h \
     QtAV/FilterManager.h \
+    QtAV/private/ShaderManager.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AudioResampler_p.h \
     QtAV/private/AVThread_p.h \

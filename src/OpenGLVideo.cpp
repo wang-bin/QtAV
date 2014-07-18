@@ -34,7 +34,7 @@ typedef QGLFunctions QOpenGLFunctions;
 #endif
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoFrame.h"
-//#include "QtAV/private/ShaderManager.h"
+#include "QtAV/private/ShaderManager.h"
 
 namespace QtAV {
 
@@ -52,10 +52,11 @@ public:
         }
     }
 
-    //ShaderManager manager;
+    ShaderManager manager;
     VideoMaterial *material;
     QRect viewport;
     QRect out_rect;
+    QMatrix4x4 matrix;
 };
 
 void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
@@ -65,19 +66,55 @@ void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
 
 void OpenGLVideo::setViewport(const QRect& rect)
 {
-    d_func().viewport = rect;
+    DPTR_D(OpenGLVideo);
+    d.viewport = rect;
+    d.matrix(0, 0) = (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width();
+    d.matrix(1, 1) = (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height();
 }
 
 void OpenGLVideo::setVideoRect(const QRect &rect)
 {
-    d_func().out_rect = rect;
+    DPTR_D(OpenGLVideo);
+    d.out_rect = rect;
+    if (!d.viewport.isValid())
+        return;
+    d.matrix(0, 0) = (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width();
+    d.matrix(1, 1) = (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height();
 }
 
 void OpenGLVideo::render(const QRect &roi)
 {
     DPTR_D(OpenGLVideo);
-    d.matrix(0, 0) = (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width();
-    d.matrix(1, 1) = (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height();
+    glViewport(d.viewport.x(), d.viewport.y(), d.viewport.width(), d.viewport.height());
+    VideoShader *shader = d.manager.prepareMaterial(d.material);
+    shader->update(d.material);
+    shader->program()->setUniformValue(shader->matrixLocation(), d.matrix);
+    // uniform end. attribute begin
+    const int kTupleSize = 2;
+    GLfloat texCoords[kTupleSize*4];
+    d.material->getTextureCoordinates(roi, texCoords);
+    const GLfloat kVertices[] = {
+        -1, 1,
+        1, 1,
+        1, -1,
+        -1, -1,
+    };
+    shader->program()->setAttributeArray(0, GL_FLOAT, kVertices, kTupleSize);
+    shader->program()->setAttributeArray(1, GL_FLOAT, texCoords, kTupleSize);
+
+    char const *const *attr = shader->attributeNames();
+    for (int i = 0; attr[i]; ++i) {
+        shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
+    }
+
+   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+   // d.shader->program()->release(); //glUseProgram(0)
+   for (int i = 0; attr[i]; ++i) {
+       shader->program()->disableAttributeArray(i); //TODO: in setActiveShader
+   }
+
+   d.material->unbind();
 }
 
 
@@ -276,7 +313,7 @@ void VideoShader::update(VideoMaterial *material)
     //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
 
    program()->setUniformValue(colorMatrixLocation(), material->colorTransform().matrixRef());
-   program()->setUniformValue(bppLocation(), (GLfloat)videoFormat().bitsPerPixel(0));
+   program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
    //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
    // uniform end. attribute begins
 }
@@ -330,12 +367,15 @@ public:
     VideoMaterialPrivate()
         : supports_glsl(true)
         , update_texure(true)
-        , shader(0)
+        , bpp(1)
     {}
+    ~VideoMaterialPrivate() {
+        if (!textures.isEmpty())
+            glDeleteTextures(textures.size(), textures.data());
+    }
 
     bool supports_glsl;
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
-    VideoShader *shader;
     QRect viewport;
     QRect out_rect;
     VideoFrame frame;
@@ -357,8 +397,10 @@ public:
     QVector<GLenum> data_format;
     QVector<GLenum> data_type;
 
+    QVector<GLfloat> texture_coords;
     ColorTransform colorTransform;
     QMatrix4x4 matrix;
+    int bpp;
 };
 
 void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
@@ -366,26 +408,55 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     DPTR_D(VideoMaterial);
     // TODO: lock?
     d.frame = frame;
+    d.bpp = frame.format().bitsPerPixel(0);
     d.update_texure = true;
+}
+
+VideoShader* VideoMaterial::createShader() const
+{
+    VideoShader *shader = new VideoShader();
+    shader->setVideoFormat(d_func().frame.format());
+    //
+    return shader;
+}
+
+MaterialType* VideoMaterial::type() const
+{
+    static MaterialType rgbType;
+    static MaterialType yuv16leType;
+    static MaterialType yuv16beType;
+    static MaterialType yuv8Type;
+    static MaterialType invalidType;
+    const VideoFormat &fmt = d_func().frame.format();
+    if (fmt.isRGB() && !fmt.isPlanar())
+        return &rgbType;
+    if (fmt.bytesPerPixel(0) == 1)
+        return &yuv8Type;
+    if (fmt.isBigEndian())
+        return &yuv16beType;
+    else
+        return &yuv16leType;
+    return &invalidType;
 }
 
 void VideoMaterial::bind()
 {
     DPTR_D(VideoMaterial);
-    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
-    if (!d.update_texure) {
-        if (d.textures.isEmpty())
-            return;
-        for (int i = 0; i < d.textures.size(); ++i) {
-            functions->glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, d.textures[i]);
+    const int nb_planes = d.textures.size(); //number of texture id
+    if (d.update_texure) {
+        for (int i = 0; i < nb_planes; ++i) {
+            bindPlane(i);
         }
+        d.update_texure = false;
+        return;
     }
-    const int nb_planes = d.frame.planeCount(); //number of texture id
+    if (d.textures.isEmpty())
+        return;
+    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
     for (int i = 0; i < nb_planes; ++i) {
-        bindPlane(i);
+        functions->glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, d.textures[i]);
     }
-    d.update_texure = false;
 }
 
 void VideoMaterial::bindPlane(int p)
@@ -420,87 +491,23 @@ void VideoMaterial::bindPlane(int p)
                  , d.frame.bits(p));
 }
 
+int VideoMaterial::compare(const VideoMaterial *other) const
+{
+    DPTR_D(const VideoMaterial);
+    for (int i = 0; i < d.textures.size(); ++i) {
+        const int diff = d.textures[i] - other->d_func().textures[i];
+        if (diff)
+            return diff;
+    }
+    return d.bpp - other->bpp();
+}
+
 void VideoMaterial::unbind()
 {
     DPTR_D(VideoMaterial);
     for (int i = 0; i < d.textures.size(); ++i) {
         d.frame.unmap(&d.textures[i]);
     }
-}
-
-void VideoMaterial::render(const QRect &roi)
-{
-    DPTR_D(VideoMaterial);
-    // TODO: shader->updateState
-    bind();
-
-    // uniforms begin
-    d.shader->program()->bind(); //glUseProgram(id). for glUniform
-    // all texture ids should be binded when renderering even for packed plane!
-    const int nb_planes = d.frame.planeCount(); //number of texture id
-    for (int i = 0; i < nb_planes; ++i) {
-        // use glUniform1i to swap planes. swap uv: i => (3-i)%3
-        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
-        d.shader->program()->setUniformValue(d.shader->textureLocation(i), (GLint)i);
-    }
-    if (nb_planes < d.shader->textureLocationCount()) {
-        for (int i = nb_planes; i < d.shader->textureLocationCount(); ++i) {
-            d.shader->program()->setUniformValue(d.shader->textureLocation(i), (GLint)(nb_planes - 1));
-        }
-    }
-    /*
-     * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
-     * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
-     * which seems not correct because QMatrix4x4 has a flag var
-     */
-    GLfloat *mat = (GLfloat*)d.colorTransform.matrixRef().data();
-    GLfloat glm[16];
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-    if (sizeof(qreal) != sizeof(GLfloat)) {
-#else
-    if (sizeof(float) != sizeof(GLfloat)) {
-#endif
-        d.colorTransform.matrixData(glm);
-        mat = glm;
-    }
-    //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
-
-   d.shader->program()->setUniformValue(d.shader->colorMatrixLocation(), d.colorTransform.matrixRef());
-   d.shader->program()->setUniformValue(d.shader->bppLocation(), (GLfloat)d.shader->videoFormat().bitsPerPixel(0));
-   //d.shader->program()->setUniformValue(d.shader->matrixLocation(), d.matrix); //what about sgnode? state.combindMatrix()?
-   // uniform end. attribute begins
-
-    /*!
-      tex coords: ROI/frameRect()*effective_tex_width_ratio
-    */
-    const GLfloat kTexCoords[] = {
-        (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)roi.y()/(GLfloat)d.frame.height(),
-        (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)roi.y()/(GLfloat)d.frame.height(),
-        (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height(),
-        (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height(),
-    };
-    const GLfloat kVertices[] = {
-        -1, 1,
-        1, 1,
-        1, -1,
-        -1, -1,
-    };
-    d.shader->program()->setAttributeArray(0, GL_FLOAT, kVertices, 2);
-    d.shader->program()->setAttributeArray(1, GL_FLOAT, kTexCoords, 2);
-
-    char const *const *attr = d.shader->attributeNames();
-    for (int i = 0; attr[i]; ++i) {
-        d.shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
-    }
-
-   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-   // d.shader->program()->release(); //glUseProgram(0)
-   for (int i = 0; attr[i]; ++i) {
-       d.shader->program()->disableAttributeArray(i); //TODO: in setActiveShader
-   }
-
-   unbind();
 }
 
 const ColorTransform &VideoMaterial::colorTransform() const
@@ -511,6 +518,32 @@ const ColorTransform &VideoMaterial::colorTransform() const
 const QMatrix4x4& VideoMaterial::matrix() const
 {
     return d_func().matrix;
+}
+
+int VideoMaterial::bpp() const
+{
+    return d_func().bpp;
+}
+
+int VideoMaterial::planeCount() const
+{
+    return d_func().frame.planeCount();
+}
+
+void VideoMaterial::getTextureCoordinates(const QRect& roi, float* t)
+{
+    DPTR_D(VideoMaterial);
+    /*!
+      tex coords: ROI/frameRect()*effective_tex_width_ratio
+    */
+    t[0] = (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width();
+    t[1] = (GLfloat)roi.y()/(GLfloat)d.frame.height();
+    t[2] = (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width();
+    t[3] = (GLfloat)roi.y()/(GLfloat)d.frame.height();
+    t[4] = (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width();
+    t[5] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height();
+    t[6] = (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width();
+    t[7] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height();
 }
 
 void VideoMaterial::setupQuality()
