@@ -836,7 +836,7 @@ void GLWidgetRenderer::drawFrame()
         glLoadIdentity();
 
         glPushMatrix();
-        d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+        glScalef((float)d.out_rect.width()/(float)d.renderer_width, (float)d.out_rect.height()/(float)d.renderer_height, 0);
         glVertexPointer(2, GL_FLOAT, 0, kVertices);
         glEnableClientState(GL_VERTEX_ARRAY);
         glTexCoordPointer(2, GL_FLOAT, 0, kTexCoords);
@@ -877,7 +877,6 @@ void GLWidgetRenderer::drawFrame()
 #endif
         }
     }
-    d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
     /*
      * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
      * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
@@ -896,9 +895,11 @@ void GLWidgetRenderer::drawFrame()
     //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
 #if NO_QGL_SHADER
     glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, mat);
+    glUniformMatrix4fv(d.u_matrix, 1, GL_FALSE/*transpose or not*/, d.mpv_matrix.constData());
     glUniform1f(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
 #else
    d.shader_program->setUniformValue(d.u_colorMatrix, d.colorTransform.matrixRef());
+   shader_program->setUniformValue(d.u_matrix, d.mpv_matrix);
    d.shader_program->setUniformValue(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
 #endif
    // uniforms done. attributes begin
@@ -1008,6 +1009,18 @@ void GLWidgetRenderer::showEvent(QShowEvent *)
      * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you
      * don't do anything here, the widget content will never be updated.
      */
+}
+
+void GLWidgetRenderer::onSetOutAspectRatio(qreal ratio)
+{
+    Q_UNUSED(ratio);
+    d_func().setupAspectRatio();
+}
+
+void GLWidgetRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+{
+    Q_UNUSED(mode);
+    d_func().setupAspectRatio();
 }
 
 bool GLWidgetRenderer::onSetBrightness(qreal b)

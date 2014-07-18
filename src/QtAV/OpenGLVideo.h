@@ -134,11 +134,9 @@ public:
     int compare(const VideoMaterial* other) const;
 
     void render(const QRect& roi);
-    void setViewport(const QRect& rect);
-    void setVideoRect(const QRect& rect);
 
     const ColorTransform &colorTransform() const;
-    void setupAspectRatio();
+    const QMatrix4x4& matrix() const;
     void setupQuality();
 
 protected:

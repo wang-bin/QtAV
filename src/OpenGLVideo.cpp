@@ -73,6 +73,13 @@ void OpenGLVideo::setVideoRect(const QRect &rect)
     d_func().out_rect = rect;
 }
 
+void OpenGLVideo::render(const QRect &roi)
+{
+    DPTR_D(OpenGLVideo);
+    d.matrix(0, 0) = (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width();
+    d.matrix(1, 1) = (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height();
+}
+
 
 VideoShader::VideoShader()
     : m_color_space(ColorTransform::RGB)
@@ -270,9 +277,8 @@ void VideoShader::update(VideoMaterial *material)
 
    program()->setUniformValue(colorMatrixLocation(), material->colorTransform().matrixRef());
    program()->setUniformValue(bppLocation(), (GLfloat)videoFormat().bitsPerPixel(0));
-   material->setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+   //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
    // uniform end. attribute begins
-
 }
 
 QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
@@ -352,6 +358,7 @@ public:
     QVector<GLenum> data_type;
 
     ColorTransform colorTransform;
+    QMatrix4x4 matrix;
 };
 
 void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
@@ -460,7 +467,7 @@ void VideoMaterial::render(const QRect &roi)
 
    d.shader->program()->setUniformValue(d.shader->colorMatrixLocation(), d.colorTransform.matrixRef());
    d.shader->program()->setUniformValue(d.shader->bppLocation(), (GLfloat)d.shader->videoFormat().bitsPerPixel(0));
-   setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+   //d.shader->program()->setUniformValue(d.shader->matrixLocation(), d.matrix); //what about sgnode? state.combindMatrix()?
    // uniform end. attribute begins
 
     /*!
@@ -496,40 +503,20 @@ void VideoMaterial::render(const QRect &roi)
    unbind();
 }
 
-void VideoMaterial::setViewport(const QRect& rect)
-{
-    glViewport(rect.x(), rect.y(), rect.width(), rect.height());
-    setupAspectRatio();
-}
-
 const ColorTransform &VideoMaterial::colorTransform() const
 {
-    DPTR_D(const VideoMaterial);
-    return d.colorTransform;
+    return d_func().colorTransform;
+}
+
+const QMatrix4x4& VideoMaterial::matrix() const
+{
+    return d_func().matrix;
 }
 
 void VideoMaterial::setupQuality()
 {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-}
-
-void VideoMaterial::setupAspectRatio()
-{
-    DPTR_D(VideoMaterial);
-    if (!d.supports_glsl)
-        return;
-    if (!d.shader) {
-        qDebug("%s @%d no shader", __FUNCTION__, __LINE__);
-        return;
-    }
-    const GLfloat matrix[] = {
-        (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width(), 0, 0, 0,
-        0, (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height(), 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    };
-    d.shader->program()->setUniformValue(d.shader->matrixLocation(), QMatrix4x4(matrix));
 }
 
 } //namespace QtAV

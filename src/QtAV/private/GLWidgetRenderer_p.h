@@ -142,31 +142,8 @@ public:
     }
 
     void setupAspectRatio() {
-#ifndef QT_OPENGL_ES_2
-        if (!hasGLSL) {
-            glScalef((float)out_rect.width()/(float)renderer_width, (float)out_rect.height()/(float)renderer_height, 0);
-            return;
-        }
-#endif //QT_OPENGL_ES_2
-        if (u_matrix < 0) {
-            //qDebug("%s @%d mat=%d", __FUNCTION__, __LINE__, u_matrix);
-            return;
-        }
-#if !NO_QGL_SHADER && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-        const qreal matrix[] = {
-#else
-        const GLfloat matrix[] = {
-#endif
-            (float)out_rect.width()/(float)renderer_width, 0, 0, 0,
-            0, (float)out_rect.height()/(float)renderer_height, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        };
-#if NO_QGL_SHADER
-        glUniformMatrix4fv(u_matrix, 1, GL_FALSE/*transpose or not*/, matrix);
-#else
-        shader_program->setUniformValue(u_matrix, QMatrix4x4(matrix));
-#endif
+        mpv_matrix(0, 0) = (float)out_rect.width()/(float)renderer_width;
+        mpv_matrix(1, 1) = (float)out_rect.height()/(float)renderer_height;
     }
 
     bool hasGLSL;
@@ -204,6 +181,7 @@ public:
     // width is in bytes. different alignments may result in different plane 1 linesize even if plane 0 are the same
     int plane1_linesize;
     ColorTransform colorTransform;
+    QMatrix4x4 mpv_matrix;
 };
 
 } //namespace QtAV
