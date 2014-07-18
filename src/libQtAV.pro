@@ -260,6 +260,7 @@ SOURCES += \
     AVOutput.cpp \
     OutputSet.cpp \
     OpenGLVideo.cpp \
+    VideoShader.cpp \
     ShaderManager.cpp \
     Statistics.cpp \
     VideoDecoder.cpp \
@@ -295,6 +296,7 @@ SDK_HEADERS *= \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
     QtAV/OpenGLVideo.h \
+    QtAV/VideoShader.h \
     QtAV/Packet.h \
     QtAV/AVError.h \
     QtAV/AVPlayer.h \
@@ -341,6 +343,7 @@ HEADERS *= \
     QtAV/private/Frame_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
+    QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
     QtAV/VideoDecoderFFmpegHW.h \

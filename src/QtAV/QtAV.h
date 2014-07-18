@@ -50,6 +50,9 @@
 #include <QtAV/ImageConverter.h>
 #include <QtAV/ImageConverterTypes.h>
 
+#include <QtAV/VideoShader.h>
+#include <QtAV/OpenGLVideo.h>
+
 #include <QtAV/VideoCapture.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/VideoDecoderTypes.h>

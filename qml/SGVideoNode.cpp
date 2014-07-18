@@ -22,7 +22,7 @@
 
 
 #include "QmlAV/SGVideoNode.h"
-#include "QtAV/OpenGLVideo.h"
+#include "QtAV/VideoShader.h"
 #include "QtAV/VideoFrame.h"
 #include <QtCore/QMutexLocker>
 #include <QtGui/QOpenGLFunctions>
@@ -33,9 +33,11 @@ namespace QtAV {
 class SGVideoMaterialShader : public QSGMaterialShader
 {
 public:
-    SGVideoMaterialShader() :
-        m_shader(new VideoShader())
+    SGVideoMaterialShader(VideoShader* s) :
+        m_shader(s)
     {
+        setVideoFormat(s->videoFormat());
+        //setColorSpace(s->colorSpace());
     }
     ~SGVideoMaterialShader() {
         delete m_shader;
@@ -44,7 +46,7 @@ public:
     virtual void updateState(const RenderState &state, QSGMaterial *newMaterial, QSGMaterial *oldMaterial);
     virtual char const *const *attributeNames() const { return m_shader->attributeNames();}
     void setVideoFormat(const VideoFormat& format) { m_shader->setVideoFormat(format);}
-    void setColorSpace(ColorTransform::ColorSpace cs) { m_shader->setColorSpace(cs);}
+    //void setColorSpace(ColorTransform::ColorSpace cs) { m_shader->setColorSpace(cs);}
 protected:
     virtual const char *vertexShader() const { return m_shader->vertexShader();}
     virtual const char *fragmentShader() const { return m_shader->fragmentShader();}
@@ -63,43 +65,22 @@ class SGVideoMaterial : public QSGMaterial
 {
 public:
     SGVideoMaterial(const VideoFormat &format);
-    ~SGVideoMaterial() {
-        if (!m_textureIds.isEmpty())
-            glDeleteTextures(m_textureIds.size(), m_textureIds.data());
-    }
+    ~SGVideoMaterial() {}
 
     virtual QSGMaterialType *type() const {
-        static QSGMaterialType rgbType;
-        static QSGMaterialType yuv16leType;
-        static QSGMaterialType yuv16beType;
-        static QSGMaterialType yuv8Type;
-        const VideoFormat &fmt = m_frame.format();
-        if (fmt.isRGB() && !fmt.isPlanar())
-            return &rgbType;
-        if (fmt.bytesPerPixel(0) == 1)
-            return &yuv8Type;
-        if (fmt.isBigEndian())
-            return &yuv16beType;
-        return &yuv16leType;
+        return reinterpret_cast<QSGMaterialType*>(m_material.type());
     }
 
     virtual QSGMaterialShader *createShader() const {
         //TODO: setVideoFormat?
-        SGVideoMaterialShader *s = new SGVideoMaterialShader();
-        s->setVideoFormat(m_frame.format());
-        return s;
+        return new SGVideoMaterialShader(m_material.createShader());
     }
 
     //TODO: compare video format?
     virtual int compare(const QSGMaterial *other) const {
         Q_ASSERT(other && type() == other->type());
         const SGVideoMaterial *m = static_cast<const SGVideoMaterial*>(other);
-        for (int i = 0; i < m_textureIds.size(); ++i) {
-            const int diff = m_textureIds[i] - m->m_textureIds[i];
-            if (diff)
-                return diff;
-        }
-        return m_bpp - m->m_bpp;
+        return m_material.compare(&m->m_material);
     }
 /*
     void updateBlending() {
@@ -108,40 +89,18 @@ public:
 */
     void setCurrentFrame(const VideoFrame &frame) {
         QMutexLocker lock(&m_frameMutex);
-        m_frame = frame;
+        m_material.setCurrentFrame(frame);
     }
 
     void bind();
-    void bindTexture(int id, int w, int h, const uchar *bits);
-
-    int m_bpp;
     //qreal m_opacity;
-    //GLfloat m_yWidth;
-    //GLfloat m_uvWidth;
-    QVector<GLuint> m_textureIds;
-    QMatrix4x4 m_colorMatrix;
-
-    VideoFrame m_frame;
     QMutex m_frameMutex;
+    VideoMaterial m_material;
 };
 
 void SGVideoMaterial::bind()
 {
-    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
-    QMutexLocker lock(&m_frameMutex);
-    if (!m_frame.isValid()) {
-        if (m_textureIds.isEmpty())
-            return;
-        for (int i = 0; i < m_textureIds.size(); ++i) {
-            functions->glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, m_textureIds[i]);
-        }
-    }
-}
-
-void SGVideoMaterial::bindTexture(int id, int w, int h, const uchar *bits)
-{
-
+    m_material.bind();
 }
 
 
@@ -154,13 +113,7 @@ void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *n
 {
     Q_UNUSED(oldMaterial);
     SGVideoMaterial *mat = static_cast<SGVideoMaterial *>(newMaterial);
-    for (int i = 0; i < textureLocationCount(); ++i) {
-        program()->setUniformValue(textureLocation(i), i);
-    }
-    mat->bind();
-    program()->setUniformValue(colorMatrixLocation(), mat->m_colorMatrix);
-    //program()->setUniformValue(m_id_yWidth, mat->m_yWidth);
-    //program()->setUniformValue(m_id_uvWidth, mat->m_uvWidth);
+    m_shader->update(&mat->m_material);
 #if 0
     if (state.isOpacityDirty()) {
         mat->m_opacity = state.opacity();

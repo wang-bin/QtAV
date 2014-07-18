@@ -1,5 +1,5 @@
 #include "QtAV/private/ShaderManager.h"
-#include "QtAV/OpenGLVideo.h"
+#include "QtAV/VideoShader.h"
 
 namespace QtAV {
 
