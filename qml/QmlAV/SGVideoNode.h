@@ -1,6 +1,7 @@
 /******************************************************************************
-    VideoRendererTypes: type id and manually id register function
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV
 
@@ -19,30 +20,18 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEORENDERERTYPES_H
-#define QTAV_VIDEORENDERERTYPES_H
+#ifndef QTAV_SGVIDEONODE_H
+#define QTAV_SGVIDEONODE_H
 
-#include <QtAV/VideoRenderer.h>
-#include <QtAV/FactoryDefine.h>
+#include <QtQuick/QSGGeometryNode>
 
 namespace QtAV {
 
-class VideoRenderer;
-FACTORY_DECLARE(VideoRenderer)
-
-//Q_AV_EXPORT(dllexport/import) is needed if used out of the library
-//TODO graphics item?
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_QPainter;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_Widget;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GraphicsItem;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GLWidget;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GDI;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_Direct2D;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_XV;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGL;
-
-Q_AV_EXPORT void VideoRenderer_RegisterAll();
+class SGVideoNode : public QSGGeometryNode
+{
+public:
+    SGVideoNode();
+};
 
 } //namespace QtAV
-
-#endif // QTAV_VIDEORENDERERTYPES_H
+#endif // QTAV_SGVIDEONODE_H

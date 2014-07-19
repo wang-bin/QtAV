@@ -1,6 +1,6 @@
 /******************************************************************************
-    VideoRendererTypes: type id and manually id register function
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,30 +19,36 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEORENDERERTYPES_H
-#define QTAV_VIDEORENDERERTYPES_H
+#ifndef QTAV_SHADERMANAGER_H
+#define QTAV_SHADERMANAGER_H
 
-#include <QtAV/VideoRenderer.h>
-#include <QtAV/FactoryDefine.h>
+#include <QtCore/QObject>
+#include <QtCore/QHash>
 
 namespace QtAV {
 
-class VideoRenderer;
-FACTORY_DECLARE(VideoRenderer)
 
-//Q_AV_EXPORT(dllexport/import) is needed if used out of the library
-//TODO graphics item?
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_QPainter;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_Widget;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GraphicsItem;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GLWidget;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GDI;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_Direct2D;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_XV;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGL;
+class MaterialType;
+class VideoShader;
+class VideoMaterial;
+/*!
+ * \brief The ShaderManager class
+ * cache VideoShader for different video formats etc.
+ */
+class ShaderManager : public QObject
+{
+    Q_OBJECT
+public:
+    explicit ShaderManager(QObject *parent = 0);
+    ~ShaderManager();
+    VideoShader* prepareMaterial(VideoMaterial *material);
 
-Q_AV_EXPORT void VideoRenderer_RegisterAll();
+public Q_SLOTS:
+    void invalidated();
 
+private:
+    // TODO: thread safe required?
+    static QHash<MaterialType*, VideoShader*> shader_cache;
+};
 } //namespace QtAV
-
-#endif // QTAV_VIDEORENDERERTYPES_H
+#endif // QTAV_SHADERMANAGER_H

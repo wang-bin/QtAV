@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,28 +19,25 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_GLWIDGETRENDERER_H
-#define QTAV_GLWIDGETRENDERER_H
+#ifndef QTAV_VIDEORENDEREROPENGL_H
+#define QTAV_VIDEORENDEREROPENGL_H
 
 #include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
-// TODO: QGLFunctions is in Qt4.8+. meego is 4.7
-#if QTAV_HAVE(QGLFUNCTIONS)
-#include <QtOpenGL/QGLFunctions>
-#endif //QT_VERSION
 
 namespace QtAV {
 
-class GLWidgetRendererPrivate;
-class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
-#if QTAV_HAVE(QGLFUNCTIONS) //TODO: why use QT_VERSION will result in moc error?
-        , public QGLFunctions
-#endif //QTAV_HAVE(QGLFUNCTIONS)
+class VideoRendererOpenGLPrivate;
+/*!
+ * \brief The VideoRendererOpenGL class
+ * Renderering video frames using GLSL. A more generic high level class OpenGLVideo is used internally.
+ * TODO: for Qt5, no QtOpenGL, use QWindow instead.
+ */
+class Q_AV_EXPORT VideoRendererOpenGL : public QGLWidget, public VideoRenderer
 {
-    Q_OBJECT
-    DPTR_DECLARE_PRIVATE(GLWidgetRenderer)
+    DPTR_DECLARE_PRIVATE(VideoRendererOpenGL)
 public:
-    GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
+    VideoRendererOpenGL(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     virtual VideoRendererId id() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
     virtual QWidget* widget() { return this; }
@@ -60,19 +57,12 @@ protected:
 private:
     virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
     virtual void onSetOutAspectRatio(qreal ratio);
-    /*!
-     * \brief onSetBrightness
-     *  only works for GLSL. otherwise return false, means that do nothing, brightness() does not change.
-     * \return
-     */
     virtual bool onSetBrightness(qreal b);
     virtual bool onSetContrast(qreal c);
     virtual bool onSetHue(qreal h);
     virtual bool onSetSaturation(qreal s);
-
 };
-typedef GLWidgetRenderer VideoRendererGLWidget;
 
 } //namespace QtAV
 
-#endif // QTAV_GLWidgetRenderer_H
+#endif // QTAV_VIDEORENDEREROPENGL_H

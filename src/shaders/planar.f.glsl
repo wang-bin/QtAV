@@ -37,6 +37,7 @@ varying lowp vec2 v_TexCoords;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
 
+#if defined(YUV_MAT_GLSL)
 //http://en.wikipedia.org/wiki/YUV calculation used
 //http://www.fourcc.org/fccyvrgb.php
 //GLSL: col first
@@ -56,7 +57,7 @@ const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
                                0, 1, 0, 0,
                                0, 0, 1, 0,
                                0, -0.5, -0.5, 1);
-
+#endif
 
 // 10, 16bit: http://msdn.microsoft.com/en-us/library/windows/desktop/bb970578%28v=vs.85%29.aspx
 void main()
@@ -79,7 +80,14 @@ void main()
     float range = exp2(u_bpp) - 1.0; // why can not be const?
 #endif //defined(YUV16BITS_LE_LUMINANCE_ALPHA)
     // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)
-    gl_FragColor = clamp(u_colorMatrix*yuv2rgbMatrix* vec4(
+    gl_FragColor = clamp(u_colorMatrix
+#if defined(INPUT_RGB) //planar rgb. TODO: 16bit support
+                        * texture2D(u_Texture0, v_TexCoords)
+#else
+#if defined(YUV_MAT_GLSL)
+                         * yuv2rgbMatrix
+#endif //YUV_MAT_GLSL
+                         * vec4(
 #if defined(YUV16BITS_LE_LUMINANCE_ALPHA)
                              (texture2D(u_Texture0, v_TexCoords).r + texture2D(u_Texture0, v_TexCoords).a*256.0)*255.0/range,
                              (texture2D(u_Texture1, v_TexCoords).r + texture2D(u_Texture1, v_TexCoords).a*256.0)*255.0/range,
@@ -95,5 +103,6 @@ void main()
                              texture2D(u_Texture2, v_TexCoords).a,
 #endif //defined(YUV16BITS_LE_LUMINANCE_ALPHA)
                              1)
+#endif //INPUT_RGB
                          , 0.0, 1.0);
 }

@@ -157,10 +157,10 @@ config_xv {
 config_gl {
     QT *= opengl
     DEFINES *= QTAV_HAVE_GL=1
-    SOURCES += GLWidgetRenderer.cpp
+    SOURCES += GLWidgetRenderer.cpp VideoRendererOpenGL.cpp
     HEADERS += QtAV/private/GLWidgetRenderer_p.h
-    SDK_HEADERS += QtAV/GLWidgetRenderer.h
-    OTHER_FILES += shaders/yuv_rgb.f.glsl shaders/rgb.f.glsl
+    SDK_HEADERS += QtAV/GLWidgetRenderer.h QtAV/VideoRendererOpenGL.h
+    OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
 }
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link
@@ -210,6 +210,7 @@ SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \
     utils/GPUMemCopy.cpp \
+    utils/OpenGLHelper.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \
@@ -236,6 +237,7 @@ SOURCES += \
     Packet.cpp \
     AVError.cpp \
     AVPlayer.cpp \
+    AVClock.cpp \
     VideoCapture.cpp \
     VideoFormat.cpp \
     VideoFrame.cpp \
@@ -246,7 +248,9 @@ SOURCES += \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     OutputSet.cpp \
-    AVClock.cpp \
+    OpenGLVideo.cpp \
+    VideoShader.cpp \
+    ShaderManager.cpp \
     Statistics.cpp \
     VideoDecoder.cpp \
     VideoDecoderTypes.cpp \
@@ -280,6 +284,8 @@ SDK_HEADERS *= \
     QtAV/QPainterRenderer.h \
     QtAV/OSD.h \
     QtAV/OSDFilter.h \
+    QtAV/OpenGLVideo.h \
+    QtAV/VideoShader.h \
     QtAV/Packet.h \
     QtAV/AVError.h \
     QtAV/AVPlayer.h \
@@ -303,6 +309,7 @@ SDK_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     utils/GPUMemCopy.h \
+    utils/OpenGLHelper.h \
     QtAV/prepost.h \
     QtAV/AVDemuxThread.h \
     QtAV/AVThread.h \
@@ -316,6 +323,7 @@ HEADERS *= \
     QtAV/singleton.h \
     QtAV/factory.h \
     QtAV/FilterManager.h \
+    QtAV/private/ShaderManager.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AudioResampler_p.h \
     QtAV/private/AVThread_p.h \
@@ -325,6 +333,7 @@ HEADERS *= \
     QtAV/private/Frame_p.h \
     QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
+    QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
     QtAV/VideoDecoderFFmpegHW.h \

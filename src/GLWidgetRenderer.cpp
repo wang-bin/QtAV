@@ -21,6 +21,7 @@
 
 #include "QtAV/GLWidgetRenderer.h"
 #include "QtAV/private/GLWidgetRenderer_p.h"
+#include "utils/OpenGLHelper.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
 #include <QtCore/qmath.h>
@@ -132,107 +133,6 @@ static inline void checkGlError(const char* op = 0) {
     FUNC; \
     checkGlError(#FUNC);
 
-bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type)
-{
-    struct fmt_entry {
-        VideoFormat::PixelFormat pixfmt;
-        GLint internal_format;
-        GLenum format;
-        GLenum type;
-    };
-    // Very special formats, for which OpenGL happens to have direct support
-    static const struct fmt_entry pixfmt_to_gl_formats[] = {
-#ifdef QT_OPENGL_ES_2
-        {VideoFormat::Format_ARGB32, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_RGB32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-#else
-        {VideoFormat::Format_RGB32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_ARGB32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-#endif
-        {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
-    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
-        {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
-    #endif
-        {VideoFormat::Format_RGB565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, //GL_UNSIGNED_SHORT_5_6_5_REV?
-        //{VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        //{VideoFormat::Format_BGR32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_BGR24,  GL_RGB,  GL_BGR,  GL_UNSIGNED_BYTE },
-    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
-        {VideoFormat::Format_BGR555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
-    #endif
-        {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, // need swap r b?
-    };
-
-    for (unsigned int i = 0; i < sizeof(pixfmt_to_gl_formats)/sizeof(pixfmt_to_gl_formats[0]); ++i) {
-        if (pixfmt_to_gl_formats[i].pixfmt == fmt.pixelFormat()) {
-            *internal_format = pixfmt_to_gl_formats[i].internal_format;
-            *data_format = pixfmt_to_gl_formats[i].format;
-            *data_type = pixfmt_to_gl_formats[i].type;
-            return true;
-        }
-    }
-    return false;
-}
-
-// TODO: format + datatype? internal format == format?
-//https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_format_BGRA8888.txt
-int bytesOfGLFormat(GLenum format, GLenum dataType = GL_UNSIGNED_BYTE)
-{
-    switch (format)
-      {
-#ifdef GL_BGRA //ifndef GL_ES
-      case GL_BGRA:
-#endif
-      case GL_RGBA:
-        return 4;
-#ifdef GL_BGR //ifndef GL_ES
-      case GL_BGR:
-#endif
-      case GL_RGB:
-        switch (dataType) {
-        case GL_UNSIGNED_SHORT_5_6_5:
-            return 2;
-        default:
-            return 3;
-        }
-        return 3;
-      case GL_LUMINANCE_ALPHA:
-        return 2;
-      case GL_LUMINANCE:
-      case GL_ALPHA:
-        return 1;
-#ifdef GL_LUMINANCE16
-    case GL_LUMINANCE16:
-        return 2;
-#endif //GL_LUMINANCE16        
-#ifdef GL_ALPHA16
-    case GL_ALPHA16:
-        return 2;
-#endif //GL_ALPHA16
-      default:
-        qWarning("bytesOfGLFormat - Unknown format %u", format);
-        return 1;
-      }
-}
-
-GLint GetGLInternalFormat(GLint data_format, int bpp)
-{
-    if (bpp != 2)
-        return data_format;
-    switch (data_format) {
-#ifdef GL_ALPHA16
-    case GL_ALPHA:
-        return GL_ALPHA16;
-#endif //GL_ALPHA16
-#ifdef GL_LUMINANCE16
-    case GL_LUMINANCE:
-        return GL_LUMINANCE16;
-#endif //GL_LUMINANCE16
-    default:
-        return data_format;
-    }
-}
-
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
     "attribute vec2 a_TexCoords;\n"
@@ -322,8 +222,6 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
 bool GLWidgetRendererPrivate::releaseShaderProgram()
 {
     video_format.setPixelFormat(VideoFormat::Format_Invalid);
-    plane1_linesize = 0;
-    plane0Size = QSize();
 #if NO_QGL_SHADER
     if (vert) {
         if (program)
@@ -367,21 +265,26 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
         return false;
     releaseShaderProgram();
     video_format.setPixelFormatFFmpeg(fmt.pixelFormatFFmpeg());
+    colorTransform.setInputColorSpace(cs);
     // TODO: only to kinds, packed.glsl, planar.glsl
     QString frag;
     if (fmt.isPlanar()) {
-        frag = getShaderFromFile("shaders/yuv_rgb.f.glsl");
+        frag = getShaderFromFile("shaders/planar.f.glsl");
     } else {
         frag = getShaderFromFile("shaders/rgb.f.glsl");
     }
     if (frag.isEmpty())
         return false;
-    if (!fmt.isRGB() && fmt.isPlanar() && fmt.bytesPerPixel(0) == 2) {
-        if (fmt.isBigEndian())
-            frag.prepend("#define YUV16BITS_BE_LUMINANCE_ALPHA\n");
-        else
-            frag.prepend("#define YUV16BITS_LE_LUMINANCE_ALPHA\n");
-        frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
+    if (fmt.isRGB()) {
+        frag.prepend("#define INPUT_RGB\n");
+    } else {
+        if (fmt.isPlanar() && fmt.bytesPerPixel(0) == 2) {
+            if (fmt.isBigEndian())
+                frag.prepend("#define YUV16BITS_BE_LUMINANCE_ALPHA\n");
+            else
+                frag.prepend("#define YUV16BITS_LE_LUMINANCE_ALPHA\n");
+            frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
+        }
     }
     if (cs == ColorTransform::BT601) {
         frag.prepend("#define CS_BT601\n");
@@ -394,7 +297,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
         qWarning("Could not create shader program.");
         return false;
     }
-    // vertex shader
+    // vertex shader. we can set attribute locations calling glBindAttribLocation
     a_Position = glGetAttribLocation(program, "a_Position");
     a_TexCoords = glGetAttribLocation(program, "a_TexCoords");
     u_matrix = glGetUniformLocation(program, "u_MVP_matrix");
@@ -488,7 +391,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         GLint internal_fmt;
         GLenum data_fmt;
         GLenum data_t;
-        if (!videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t)) {
+        if (!OpenGLHelper::videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t)) {
             qWarning("no opengl format found");
             return false;
         }
@@ -534,7 +437,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         if (fmt.bytesPerPixel(i) == 2 && fmt.planeCount() == 3) {
             //data_type[i] = GL_UNSIGNED_SHORT;
         }
-        int bpp_gl = bytesOfGLFormat(data_format[i], data_type[i]);
+        int bpp_gl = OpenGLHelper::bytesOfGLFormat(data_format[i], data_type[i]);
         int pad = qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
         texture_size[i].setWidth(qCeil((qreal)texture_size[i].width()/(qreal)bpp_gl));
         texture_upload_size[i].setWidth(qCeil((qreal)texture_upload_size[i].width()/(qreal)bpp_gl));
@@ -567,8 +470,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         return false;
     }
     qDebug("init textures...");
-    initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
-    for (int i = 1; i < textures.size(); ++i) {
+    for (int i = 0; i < textures.size(); ++i) {
         initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
     }
     return true;
@@ -579,25 +481,15 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
     const VideoFormat &fmt = video_frame.format();
     bool update_textures = false;
     if (fmt != video_format) {
-        update_textures = true;
-        qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
-        // http://forum.doom9.org/archive/index.php/t-160211.html
-        ColorTransform::ColorSpace cs = ColorTransform::BT601;
-        if (video_frame.width() >= 1280 || video_frame.height() > 576) //values from mpv
-            cs = ColorTransform::BT709;
-        if (!prepareShaderProgram(fmt, cs)) {
-            qWarning("shader program create error...");
-            return;
-        } else {
-            qDebug("shader program created!!!");
-        }
+        update_textures = true; //FIXME
+        qDebug("updateTexturesIfNeeded pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
     }
     // effective size may change even if plane size not changed
     if (update_textures
             || video_frame.bytesPerLine(0) != plane0Size.width() || video_frame.height() != plane0Size.height()
-            || (plane1_linesize > 0 && video_frame.bytesPerLine(1) != plane1_linesize)) { // no need to check hieght if plane 0 sizes are equal?
+            || (plane1_linesize > 0 && video_frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
-        //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
+        qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
         const int nb_planes = fmt.planeCount();
         texture_size.resize(nb_planes);
         texture_upload_size.resize(nb_planes);
@@ -629,6 +521,32 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
     }
 }
 
+void GLWidgetRendererPrivate::updateShaderIfNeeded()
+{
+    const VideoFormat& fmt(video_frame.format());
+    if (fmt != video_format) {
+        qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
+    }
+    VideoMaterialType *newType = materialType(fmt);
+    if (material_type == newType)
+        return;
+    material_type = newType;
+    // http://forum.doom9.org/archive/index.php/t-160211.html
+    ColorTransform::ColorSpace cs = ColorTransform::RGB;
+    if (!fmt.isRGB()) {
+        if (video_frame.width() >= 1280 || video_frame.height() > 576) //values from mpv
+            cs = ColorTransform::BT709;
+        else
+            cs = ColorTransform::BT601;
+    }
+    if (!prepareShaderProgram(fmt, cs)) {
+        qWarning("shader program create error...");
+        return;
+    } else {
+        qDebug("shader program created!!!");
+    }
+}
+
 void GLWidgetRendererPrivate::upload(const QRect &roi)
 {
     for (int i = 0; i < video_frame.planeCount(); ++i) {
@@ -648,7 +566,6 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 #if defined(GL_UNPACK_ROW_LENGTH)
 //    glPixelStorei(GL_UNPACK_ROW_LENGTH, video_frame.bytesPerLine(p));
 #endif
-    setupQuality();
     //qDebug("bpl[%d]=%d width=%d", p, video_frame.bytesPerLine(p), video_frame.planeWidth(p));
     // This is necessary for non-power-of-two textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -723,8 +640,6 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
 //    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
@@ -786,46 +701,20 @@ void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
     d.updateTexturesIfNeeded();
+    d.updateShaderIfNeeded();
     QRect roi = realROI();
     const int nb_planes = d.video_frame.planeCount(); //number of texture id
     int mapped = 0;
     for (int i = 0; i < nb_planes; ++i) {
-        if (d.video_frame.map(GLTextureSurface, &d.textures[i]))
+        if (d.video_frame.map(GLTextureSurface, &d.textures[i])) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            // if mapped by SurfaceInterop, the texture may be not bound
+            glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
             mapped++;
+        }
     }
     if (mapped < nb_planes) {
         d.upload(roi);
-    }
-    // shader program may not ready before upload
-    if (d.hasGLSL) {
-#if NO_QGL_SHADER
-        glUseProgram(d.program); //for glUniform
-#else
-        d.shader_program->bind();
-#endif //NO_QGL_SHADER
-    }
-    glDisable(GL_DEPTH_TEST);
-    // all texture ids should be binded when renderering even for packed plane!
-    for (int i = 0; i < nb_planes; ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
-        // use glUniform1i to swap planes. swap uv: i => (3-i)%3
-        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
-#if NO_QGL_SHADER
-        glUniform1i(d.u_Texture[i], i);
-#else
-        d.shader_program->setUniformValue(d.u_Texture[i], (GLint)i);
-#endif
-    }
-    if (nb_planes < d.u_Texture.size()) {
-        for (int i = nb_planes; i < d.u_Texture.size(); ++i) {
-#if NO_QGL_SHADER
-            glUniform1i(d.u_Texture[i], nb_planes - 1);
-#else
-            d.shader_program->setUniformValue(d.u_Texture[i], (GLint)(nb_planes - 1));
-#endif
-        }
     }
     //TODO: compute kTexCoords only if roi changed
 #if ROI_TEXCOORDS
@@ -833,13 +722,11 @@ void GLWidgetRenderer::drawFrame()
   tex coords: ROI/frameRect()*effective_tex_width_ratio
 */
     const GLfloat kTexCoords[] = {
-            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
-            (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
-            (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+        (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+        (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)roi.y()/(GLfloat)d.video_frame.height(),
+        (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
+        (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.video_frame.width(), (GLfloat)(roi.y()+roi.height())/(GLfloat)d.video_frame.height(),
     };
-///        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
-///        glEnableVertexAttribArray(d.a_TexCoords);
 #else
     const GLfloat kTexCoords[] = {
             0, 0,
@@ -859,7 +746,7 @@ void GLWidgetRenderer::drawFrame()
         glLoadIdentity();
 
         glPushMatrix();
-        d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
+        glScalef((float)d.out_rect.width()/(float)d.renderer_width, (float)d.out_rect.height()/(float)d.renderer_height, 0);
         glVertexPointer(2, GL_FLOAT, 0, kVertices);
         glEnableClientState(GL_VERTEX_ARRAY);
         glTexCoordPointer(2, GL_FLOAT, 0, kTexCoords);
@@ -868,64 +755,89 @@ void GLWidgetRenderer::drawFrame()
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
         glPopMatrix();
+        for (int i = 0; i < d.textures.size(); ++i) {
+            d.video_frame.unmap(&d.textures[i]);
+        }
+        return;
     }
 #endif //QT_OPENGL_ES_2
-    if (d.hasGLSL) {
-        d.setupAspectRatio(); //TODO: can we avoid calling this every time but only in resize event?
-        //qpainter need. TODO: VBO?
+    // uniforms begin
+    // shader program may not ready before upload
 #if NO_QGL_SHADER
-        glVertexAttribPointer(d.a_Position, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
-        glEnableVertexAttribArray(d.a_Position);
-        glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
-        glEnableVertexAttribArray(d.a_TexCoords);
+    glUseProgram(d.program); //for glUniform
 #else
-        d.shader_program->setAttributeArray(d.a_Position, GL_FLOAT, kVertices, 2);
-        d.shader_program->enableAttributeArray(d.a_Position);
-        d.shader_program->setAttributeArray(d.a_TexCoords, GL_FLOAT, kTexCoords, 2);
-        d.shader_program->enableAttributeArray(d.a_TexCoords);
-#endif
-        /*
-         * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
-         * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
-         * which seems not correct because QMatrix4x4 has a flag var
-         */
-        GLfloat *mat = (GLfloat*)d.colorTransform.matrixRef().data();
-        GLfloat glm[16];
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-        if (sizeof(qreal) != sizeof(GLfloat)) {
-#else
-        if (sizeof(float) != sizeof(GLfloat)) {
-#endif
-            d.colorTransform.matrixData(glm);
-            mat = glm;
-        }
-        //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
-
+    d.shader_program->bind();
+#endif //NO_QGL_SHADER
+    // all texture ids should be binded when renderering even for packed plane!
+    for (int i = 0; i < nb_planes; ++i) {
+        // use glUniform1i to swap planes. swap uv: i => (3-i)%3
+        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
 #if NO_QGL_SHADER
-        glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, mat);
-        glUniform1f(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
+        glUniform1i(d.u_Texture[i], i);
 #else
-       d.shader_program->setUniformValue(d.u_colorMatrix, d.colorTransform.matrixRef());
-       d.shader_program->setUniformValue(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
-#endif
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-#if NO_QGL_SHADER
-        glUseProgram(0);
-        glDisableVertexAttribArray(d.a_TexCoords);
-        glDisableVertexAttribArray(d.a_Position);
-#else
-        d.shader_program->release();
-        d.shader_program->disableAttributeArray(d.a_TexCoords);
-        d.shader_program->disableAttributeArray(d.a_Position);
+        d.shader_program->setUniformValue(d.u_Texture[i], (GLint)i);
 #endif
     }
+    if (nb_planes < d.u_Texture.size()) {
+        for (int i = nb_planes; i < d.u_Texture.size(); ++i) {
+#if NO_QGL_SHADER
+            glUniform1i(d.u_Texture[i], nb_planes - 1);
+#else
+            d.shader_program->setUniformValue(d.u_Texture[i], (GLint)(nb_planes - 1));
+#endif
+        }
+    }
+    /*
+     * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
+     * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
+     * which seems not correct because QMatrix4x4 has a flag var
+     */
+    GLfloat *mat = (GLfloat*)d.colorTransform.matrixRef().data();
+    GLfloat glm[16];
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    if (sizeof(qreal) != sizeof(GLfloat)) {
+#else
+    if (sizeof(float) != sizeof(GLfloat)) {
+#endif
+        d.colorTransform.matrixData(glm);
+        mat = glm;
+    }
+    //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
+#if NO_QGL_SHADER
+    glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, mat);
+    glUniformMatrix4fv(d.u_matrix, 1, GL_FALSE/*transpose or not*/, d.mpv_matrix.constData());
+    glUniform1f(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
+#else
+   d.shader_program->setUniformValue(d.u_colorMatrix, d.colorTransform.matrixRef());
+   shader_program->setUniformValue(d.u_matrix, d.mpv_matrix);
+   d.shader_program->setUniformValue(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
+#endif
+   // uniforms done. attributes begin
+   //qpainter need. TODO: VBO?
+#if NO_QGL_SHADER
+   glVertexAttribPointer(d.a_Position, 2, GL_FLOAT, GL_FALSE, 0, kVertices);
+   glVertexAttribPointer(d.a_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, kTexCoords);
+   glEnableVertexAttribArray(d.a_Position);
+   glEnableVertexAttribArray(d.a_TexCoords);
+#else
+   d.shader_program->setAttributeArray(d.a_Position, GL_FLOAT, kVertices, 2);
+   d.shader_program->setAttributeArray(d.a_TexCoords, GL_FLOAT, kTexCoords, 2);
+   d.shader_program->enableAttributeArray(d.a_Position);
+   d.shader_program->enableAttributeArray(d.a_TexCoords);
+#endif
+   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+#if NO_QGL_SHADER
+   //glUseProgram(0);
+   glDisableVertexAttribArray(d.a_TexCoords);
+   glDisableVertexAttribArray(d.a_Position);
+#else
+   d.shader_program->release();
+   d.shader_program->disableAttributeArray(d.a_TexCoords);
+   d.shader_program->disableAttributeArray(d.a_Position);
+#endif
 
     for (int i = 0; i < d.textures.size(); ++i) {
         d.video_frame.unmap(&d.textures[i]);
-        //glActiveTexture: gl functions apply on texture i
-        glActiveTexture(GL_TEXTURE0 + i);
-        glDisable(GL_TEXTURE_2D);
     }
 }
 
@@ -942,6 +854,7 @@ void GLWidgetRenderer::initializeGL()
 #endif //QTAV_HAVE(QGLFUNCTIONS)
     qtavResolveActiveTexture();
     glEnable(GL_TEXTURE_2D);
+    glDisable(GL_DEPTH_TEST);
     if (!d.hasGLSL) {
 #ifndef QT_OPENGL_ES_2
         glShadeModel(GL_SMOOTH); //setupQuality?
@@ -952,7 +865,6 @@ void GLWidgetRenderer::initializeGL()
         d.initWithContext(context());
     }
     glClearColor(0.0, 0.0, 0.0, 0.0);
-    d.setupQuality();
 }
 
 void GLWidgetRenderer::paintGL()
@@ -1006,6 +918,18 @@ void GLWidgetRenderer::showEvent(QShowEvent *)
      * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you
      * don't do anything here, the widget content will never be updated.
      */
+}
+
+void GLWidgetRenderer::onSetOutAspectRatio(qreal ratio)
+{
+    Q_UNUSED(ratio);
+    d_func().setupAspectRatio();
+}
+
+void GLWidgetRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+{
+    Q_UNUSED(mode);
+    d_func().setupAspectRatio();
 }
 
 bool GLWidgetRenderer::onSetBrightness(qreal b)
