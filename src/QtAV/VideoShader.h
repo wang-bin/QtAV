@@ -70,13 +70,8 @@ public:
     int bppLocation() const;
     VideoFormat videoFormat() const;
     void setVideoFormat(const VideoFormat& format);
-    // TODO: setColorTransform() ?
-    // TODO: ColorTransform is private now
-    //ColorTransform::ColorSpace colorSpace() const;
-    //void setColorSpace(ColorTransform::ColorSpace cs);
     QOpenGLShaderProgram* program();
     void update(VideoMaterial* material);
-
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
     virtual void compile(QOpenGLShaderProgram* shaderProgram);
@@ -112,6 +107,10 @@ public:
     int bpp() const; //1st plane
     int planeCount() const;
     void getTextureCoordinates(const QRect& roi, float* t);
+    void setBrightness(qreal value);
+    void setContrast(qreal value);
+    void setHue(qreal value);
+    void setSaturation(qreal value);
 protected:
     VideoMaterial(VideoMaterialPrivate &d);
     DPTR_DECLARE(VideoMaterial)

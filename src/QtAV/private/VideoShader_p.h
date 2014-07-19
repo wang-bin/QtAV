@@ -46,7 +46,6 @@ public:
         , u_MVP_matrix(-1)
         , u_colorMatrix(-1)
         , u_bpp(-1)
-        , color_space(ColorTransform::RGB)
     {}
     virtual ~VideoShaderPrivate() {
         if (program) {
@@ -64,7 +63,6 @@ public:
     QVector<int> u_Texture;
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;
-    ColorTransform::ColorSpace color_space;
 };
 
 class VideoMaterial;
@@ -77,7 +75,9 @@ public:
         , video_format(VideoFormat::Format_Invalid)
         , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
-    {}
+    {
+        colorTransform.setOutputColorSpace(ColorTransform::RGB);
+    }
     ~VideoMaterialPrivate() {
         if (!textures.isEmpty())
             glDeleteTextures(textures.size(), textures.data());
@@ -92,6 +92,10 @@ public:
     QRect viewport;
     QRect out_rect;
     VideoFrame frame;
+    /*
+     *  old format. used to check whether we have to update textures. set to current frame's format after textures are updated.
+     * TODO: only VideoMaterial.type() is enough to check and update shader. so remove it
+     */
     VideoFormat video_format;
     QSize plane0Size;
     // width is in bytes. different alignments may result in different plane 1 linesize even if plane 0 are the same

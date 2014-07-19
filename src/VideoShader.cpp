@@ -27,7 +27,10 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
 
-//TODO: glActiveTexture for Qt4
+/*
+ * TODO: glActiveTexture for Qt4
+ * texture target (rectangle for VDA)
+ */
 
 namespace QtAV {
 
@@ -91,6 +94,8 @@ const char* VideoShader::fragmentShader() const
     if (d.video_format.isRGB()) {
         frag.prepend("#define INPUT_RGB\n");
     } else {
+        // color space in glsl does not work unless we define 'YUV_MAT_GLSL'. we compute it in color matrix by cpu
+#if 0
         switch (d.color_space) {
         case ColorTransform::BT601:
             frag.prepend("#define CS_BT601\n");
@@ -100,6 +105,7 @@ const char* VideoShader::fragmentShader() const
         default:
             break;
         }
+#endif
         if (d.video_format.isPlanar() && d.video_format.bytesPerPixel(0) == 2) {
             if (d.video_format.isBigEndian())
                 frag.prepend("#define YUV16BITS_BE_LUMINANCE_ALPHA\n");
@@ -172,17 +178,7 @@ void VideoShader::setVideoFormat(const VideoFormat &format)
 {
     d_func().video_format = format;
 }
-#if 0
-ColorTransform::ColorSpace VideoShader::colorSpace() const
-{
-    return d.color_space;
-}
 
-void VideoShader::setColorSpace(ColorTransform::ColorSpace cs)
-{
-    d.color_space = cs;
-}
-#endif
 QOpenGLShaderProgram* VideoShader::program()
 {
     DPTR_D(VideoShader);
@@ -267,14 +263,24 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     // TODO: lock?
     d.frame = frame;
     d.bpp = frame.format().bitsPerPixel(0);
+    // http://forum.doom9.org/archive/index.php/t-160211.html
+    ColorTransform::ColorSpace cs = ColorTransform::RGB;
+    if (!frame.format().isRGB()) {
+        if (d.frame.width() >= 1280 || d.frame.height() > 576) //values from mpv
+            cs = ColorTransform::BT709;
+        else
+            cs = ColorTransform::BT601;
+    }
+    d.colorTransform.setInputColorSpace(cs);
     d.update_texure = true;
 }
 
 VideoShader* VideoMaterial::createShader() const
 {
+    DPTR_D(const VideoMaterial);
     VideoShader *shader = new VideoShader();
-    shader->setVideoFormat(d_func().frame.format());
-    //
+    const VideoFormat fmt(d.frame.format());
+    shader->setVideoFormat(fmt);
     return shader;
 }
 
@@ -387,6 +393,26 @@ int VideoMaterial::bpp() const
 int VideoMaterial::planeCount() const
 {
     return d_func().frame.planeCount();
+}
+
+void VideoMaterial::setBrightness(qreal value)
+{
+    d_func().colorTransform.setBrightness(value);
+}
+
+void VideoMaterial::setContrast(qreal value)
+{
+    d_func().colorTransform.setContrast(value);
+}
+
+void VideoMaterial::setHue(qreal value)
+{
+    d_func().colorTransform.setHue(value);
+}
+
+void VideoMaterial::setSaturation(qreal value)
+{
+    d_func().colorTransform.setSaturation(value);
 }
 
 void VideoMaterial::getTextureCoordinates(const QRect& roi, float* t)
@@ -522,8 +548,7 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
         glGenTextures(textures.size(), textures.data());
     }
     qDebug("init textures...");
-    initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
-    for (int i = 1; i < textures.size(); ++i) {
+    for (int i = 0; i < textures.size(); ++i) {
         initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
     }
     return true;
@@ -534,29 +559,13 @@ void VideoMaterialPrivate::updateTexturesIfNeeded()
     const VideoFormat &fmt = frame.format();
     bool update_textures = false;
     if (fmt != video_format) {
-        update_textures = true;
+        //update_textures = true;
         qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
-        // http://forum.doom9.org/archive/index.php/t-160211.html
-        ColorTransform::ColorSpace cs = ColorTransform::RGB;
-        if (!fmt.isRGB()) {
-            if (frame.width() >= 1280 || frame.height() > 576) //values from mpv
-                cs = ColorTransform::BT709;
-            else
-                cs = ColorTransform::BT601;
-        }
-#if 0
-        if (!prepareShaderProgram(fmt, cs)) {
-            qWarning("shader program create error...");
-            return;
-        } else {
-            qDebug("shader program created!!!");
-        }
-#endif
     }
     // effective size may change even if plane size not changed
     if (update_textures
             || frame.bytesPerLine(0) != plane0Size.width() || frame.height() != plane0Size.height()
-            || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check hieght if plane 0 sizes are equal?
+            || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
         //qDebug("---------------------update texture: %dx%d, %s", frame.width(), frame.height(), frame.format().name().toUtf8().constData());
         const int nb_planes = fmt.planeCount();
