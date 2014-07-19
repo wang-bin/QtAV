@@ -69,5 +69,6 @@
 #include <QtAV/GraphicsItemRenderer.h>
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/XVRenderer.h>
+#include <QtAV/VideoRendererOpenGL.h>
 
 #endif // QTAV_H

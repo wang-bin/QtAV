@@ -470,8 +470,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         return false;
     }
     qDebug("init textures...");
-    initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
-    for (int i = 1; i < textures.size(); ++i) {
+    for (int i = 0; i < textures.size(); ++i) {
         initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
     }
     return true;
@@ -866,7 +865,6 @@ void GLWidgetRenderer::initializeGL()
         d.initWithContext(context());
     }
     glClearColor(0.0, 0.0, 0.0, 0.0);
-    d.setupQuality();
 }
 
 void GLWidgetRenderer::paintGL()

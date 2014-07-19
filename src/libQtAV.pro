@@ -157,9 +157,9 @@ config_xv {
 config_gl {
     QT *= opengl
     DEFINES *= QTAV_HAVE_GL=1
-    SOURCES += GLWidgetRenderer.cpp
+    SOURCES += GLWidgetRenderer.cpp VideoRendererOpenGL.cpp
     HEADERS += QtAV/private/GLWidgetRenderer_p.h
-    SDK_HEADERS += QtAV/GLWidgetRenderer.h
+    SDK_HEADERS += QtAV/GLWidgetRenderer.h QtAV/VideoRendererOpenGL.h
     OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
 }
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda

@@ -38,6 +38,7 @@ class Q_AV_EXPORT OpenGLVideo
 {
     DPTR_DECLARE_PRIVATE(OpenGLVideo)
 public:
+    OpenGLVideo();
     void setCurrentFrame(const VideoFrame& frame);
     /*!
      * \brief render
@@ -53,6 +54,11 @@ public:
      * \param rect
      */
     void setVideoRect(const QRect& rect);
+
+    void setBrightness(qreal value);
+    void setContrast(qreal value);
+    void setHue(qreal value);
+    void setSaturation(qreal value);
 protected:
     DPTR_DECLARE(OpenGLVideo)
 };

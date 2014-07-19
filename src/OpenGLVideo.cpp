@@ -56,6 +56,8 @@ public:
     QMatrix4x4 matrix;
 };
 
+OpenGLVideo::OpenGLVideo() {}
+
 void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
 {
     d_func().material->setCurrentFrame(frame);
@@ -65,6 +67,7 @@ void OpenGLVideo::setViewport(const QRect& rect)
 {
     DPTR_D(OpenGLVideo);
     d.viewport = rect;
+    //qDebug() << "out_rect: " << d.out_rect << " viewport: " << d.viewport;
     d.matrix(0, 0) = (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width();
     d.matrix(1, 1) = (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height();
 }
@@ -73,10 +76,31 @@ void OpenGLVideo::setVideoRect(const QRect &rect)
 {
     DPTR_D(OpenGLVideo);
     d.out_rect = rect;
+    //qDebug() << "out_rect: " << d.out_rect << " viewport: " << d.viewport;
     if (!d.viewport.isValid())
         return;
     d.matrix(0, 0) = (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width();
     d.matrix(1, 1) = (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height();
+}
+
+void OpenGLVideo::setBrightness(qreal value)
+{
+    d_func().material->setBrightness(value);
+}
+
+void OpenGLVideo::setContrast(qreal value)
+{
+    d_func().material->setContrast(value);
+}
+
+void OpenGLVideo::setHue(qreal value)
+{
+    d_func().material->setHue(value);
+}
+
+void OpenGLVideo::setSaturation(qreal value)
+{
+    d_func().material->setSaturation(value);
 }
 
 void OpenGLVideo::render(const QRect &roi)

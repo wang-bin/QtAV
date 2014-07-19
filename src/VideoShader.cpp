@@ -129,14 +129,16 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     d.u_MVP_matrix = shaderProgram->uniformLocation("u_MVP_matrix");
     // fragment shader
     d.u_colorMatrix = shaderProgram->uniformLocation("u_colorMatrix");
+    d.u_bpp = shaderProgram->uniformLocation("u_bpp");
     d.u_Texture.resize(textureLocationCount());
     for (int i = 0; i < d.u_Texture.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
         d.u_Texture[i] = shaderProgram->uniformLocation(tex_var);
-        qDebug("glGetUniformLocation(\"%s\") = %d\n", tex_var.toUtf8().constData(), d.u_Texture[i]);
+        qDebug("glGetUniformLocation(\"%s\") = %d", tex_var.toUtf8().constData(), d.u_Texture[i]);
     }
-    qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", d.u_MVP_matrix);
-    qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d\n", d.u_colorMatrix);
+    qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d", d.u_MVP_matrix);
+    qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d", d.u_colorMatrix);
+    qDebug("glGetUniformLocation(\"u_bpp\") = %d", d.u_bpp);
 }
 
 int VideoShader::textureLocationCount() const

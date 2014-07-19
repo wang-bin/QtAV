@@ -26,6 +26,7 @@
 #include <QtAV/WidgetRenderer.h>
 #include <QtAV/GraphicsItemRenderer.h>
 #if QTAV_HAVE(GL)
+#include <QtAV/VideoRendererOpenGL.h> //TODO: use QWindow for Qt5?
 #include <QtAV/GLWidgetRenderer.h>
 #endif //QTAV_HAVE(GL)
 #if QTAV_HAVE(GDIPLUS)
@@ -50,6 +51,7 @@ VideoRendererId VideoRendererId_GLWidget = 4;
 VideoRendererId VideoRendererId_GDI = 5;
 VideoRendererId VideoRendererId_Direct2D = 6;
 VideoRendererId VideoRendererId_XV = 7;
+VideoRendererId VideoRendererId_OpenGL = 8;
 
 //QPainterRenderer is abstract. So can not register(operator new will needed)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")
@@ -92,6 +94,18 @@ void RegisterVideoRendererGLWidget_Man()
 VideoRendererId GLWidgetRenderer::id() const
 {
     return VideoRendererId_GLWidget;
+}
+
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, OpenGL, "OpenGL")
+
+void RegisterVideoRendererOpenGL_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, OpenGL, "OpenGL")
+}
+
+VideoRendererId VideoRendererOpenGL::id() const
+{
+    return VideoRendererId_OpenGL;
 }
 #endif //QTAV_HAVE(GL)
 #if QTAV_HAVE(GDIPLUS)
