@@ -205,27 +205,10 @@ void VideoShader::update(VideoMaterial *material)
             program()->setUniformValue(textureLocation(i), (GLint)(nb_planes - 1));
         }
     }
-    /*
-     * in Qt4 QMatrix4x4 stores qreal (double), while GLfloat may be float
-     * QShaderProgram deal with this case. But compares sizeof(QMatrix4x4) and (GLfloat)*16
-     * which seems not correct because QMatrix4x4 has a flag var
-     */
-    GLfloat *mat = (GLfloat*)material->colorTransform().matrixRef().data();
-    GLfloat glm[16];
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-    if (sizeof(qreal) != sizeof(GLfloat)) {
-#else
-    if (sizeof(float) != sizeof(GLfloat)) {
-#endif
-        material->colorTransform().matrixData(glm);
-        mat = glm;
-    }
-    //QMatrix4x4 stores value in Column-major order to match OpenGL. so transpose is not required in glUniformMatrix4fv
-
-   program()->setUniformValue(colorMatrixLocation(), material->colorTransform().matrixRef());
-   program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
-   //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
-   // uniform end. attribute begins
+    program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
+    program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
+    //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
+    // uniform end. attribute begins
 }
 
 QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
@@ -381,9 +364,9 @@ void VideoMaterial::unbind()
     }
 }
 
-const ColorTransform &VideoMaterial::colorTransform() const
+const QMatrix4x4& VideoMaterial::colorMatrix() const
 {
-    return d_func().colorTransform;
+    return d_func().colorTransform.matrixRef();
 }
 
 const QMatrix4x4& VideoMaterial::matrix() const

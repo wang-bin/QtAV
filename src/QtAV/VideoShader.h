@@ -86,7 +86,6 @@ protected:
 };
 
 class MaterialType {};
-class ColorTransform;
 class VideoMaterialPrivate;
 /*!
  * \brief The VideoMaterial class
@@ -108,7 +107,7 @@ public:
     void bindPlane(int p); // TODO: roi
     int compare(const VideoMaterial* other) const;
 
-    const ColorTransform &colorTransform() const; //TODO: private class
+    const QMatrix4x4 &colorMatrix() const;
     const QMatrix4x4& matrix() const;
     int bpp() const; //1st plane
     int planeCount() const;
