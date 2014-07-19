@@ -22,8 +22,12 @@
 #include "QtAV/VideoShader.h"
 #include "QtAV/private/VideoShader_p.h"
 #include "QtAV/ColorTransform.h"
+#include "utils/OpenGLHelper.h"
+#include <cmath>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
+
+//TODO: glActiveTexture for Qt4
 
 namespace QtAV {
 
@@ -110,7 +114,6 @@ const char* VideoShader::fragmentShader() const
 void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
 {
     DPTR_D(VideoShader);
-    d.u_Texture.resize(textureLocationCount());
     if (!shaderProgram) {
         shaderProgram = program();
     }
@@ -120,6 +123,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     d.u_MVP_matrix = shaderProgram->uniformLocation("u_MVP_matrix");
     // fragment shader
     d.u_colorMatrix = shaderProgram->uniformLocation("u_colorMatrix");
+    d.u_Texture.resize(textureLocationCount());
     for (int i = 0; i < d.u_Texture.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
         d.u_Texture[i] = shaderProgram->uniformLocation(tex_var);
@@ -296,6 +300,7 @@ MaterialType* VideoMaterial::type() const
 void VideoMaterial::bind()
 {
     DPTR_D(VideoMaterial);
+    d.updateTexturesIfNeeded();
     const int nb_planes = d.textures.size(); //number of texture id
     if (d.update_texure) {
         for (int i = 0; i < nb_planes; ++i) {
@@ -328,7 +333,7 @@ void VideoMaterial::bindPlane(int p)
         return;
     functions->glActiveTexture(GL_TEXTURE0 + p);
     glBindTexture(GL_TEXTURE_2D, d.textures[p]);
-    //setupQuality();
+    //d.setupQuality();
     //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
     // This is necessary for non-power-of-two textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -400,7 +405,192 @@ void VideoMaterial::getTextureCoordinates(const QRect& roi, float* t)
     t[7] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height();
 }
 
-void VideoMaterial::setupQuality()
+
+bool VideoMaterialPrivate::initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height)
+{
+    glBindTexture(GL_TEXTURE_2D, tex);
+    setupQuality();
+    // This is necessary for non-power-of-two textures
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D
+                 , 0                //level
+                 , internal_format               //internal format. 4? why GL_RGBA? GL_RGB?
+                 , width
+                 , height
+                 , 0                //border, ES not support
+                 , format          //format, must the same as internal format?
+                 , dataType
+                 , NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return true;
+}
+
+bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
+{
+    // isSupported(pixfmt)
+    if (!fmt.isValid())
+        return false;
+    video_format.setPixelFormatFFmpeg(fmt.pixelFormatFFmpeg());
+
+    //http://www.berkelium.com/OpenGL/GDC99/internalformat.html
+    //NV12: UV is 1 plane. 16 bits as a unit. GL_LUMINANCE4, 8, 16, ... 32?
+    //GL_LUMINANCE, GL_LUMINANCE_ALPHA are deprecated in GL3, removed in GL3.1
+    //replaced by GL_RED, GL_RG, GL_RGB, GL_RGBA? for 1, 2, 3, 4 channel image
+    //http://www.gamedev.net/topic/634850-do-luminance-textures-still-exist-to-opengl/
+    //https://github.com/kivy/kivy/issues/1738: GL_LUMINANCE does work on a Galaxy Tab 2. LUMINANCE_ALPHA very slow on Linux
+     //ALPHA: vec4(1,1,1,A), LUMINANCE: (L,L,L,1), LUMINANCE_ALPHA: (L,L,L,A)
+    /*
+     * To support both planar and packed use GL_ALPHA and in shader use r,g,a like xbmc does.
+     * or use Swizzle_mask to layout the channels: http://www.opengl.org/wiki/Texture#Swizzle_mask
+     * GL ES2 support: GL_RGB, GL_RGBA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA
+     * http://stackoverflow.com/questions/18688057/which-opengl-es-2-0-texture-formats-are-color-depth-or-stencil-renderable
+     */
+    if (fmt.isRGB()) {
+        GLint internal_fmt;
+        GLenum data_fmt;
+        GLenum data_t;
+        if (!OpenGLHelper::videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t)) {
+            qWarning("no opengl format found");
+            return false;
+        }
+        internal_format = QVector<GLint>(fmt.planeCount(), internal_fmt);
+        data_format = QVector<GLenum>(fmt.planeCount(), data_fmt);
+        data_type = QVector<GLenum>(fmt.planeCount(), data_t);
+    } else {
+        internal_format.resize(fmt.planeCount());
+        data_format.resize(fmt.planeCount());
+        data_type = QVector<GLenum>(fmt.planeCount(), GL_UNSIGNED_BYTE);
+        if (fmt.isPlanar()) {
+        /*!
+         * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
+         * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
+         */
+            qDebug("///////////bpp %d", fmt.bytesPerPixel());
+            internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED for GL
+            if (fmt.planeCount() == 2) {
+                internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
+            } else {
+                if (fmt.bytesPerPixel(1) == 2) {
+                    // read 16 bits and compute the real luminance in shader
+                    internal_format[0] = data_format[0] = GL_LUMINANCE_ALPHA;
+                    internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA; //vec4(L,L,L,A)
+                    internal_format[2] = data_format[2] = GL_LUMINANCE_ALPHA;
+                } else {
+                    internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
+                    internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
+                }
+            }
+            for (int i = 0; i < internal_format.size(); ++i) {
+                // xbmc use bpp not bpp(plane)
+                //internal_format[i] = GetGLInternalFormat(data_format[i], fmt.bytesPerPixel(i));
+                //data_format[i] = internal_format[i];
+            }
+        } else {
+            //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
+            // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
+        }
+    }
+    for (int i = 0; i < fmt.planeCount(); ++i) {
+        //qDebug("format: %#x GL_LUMINANCE_ALPHA=%#x", data_format[i], GL_LUMINANCE_ALPHA);
+        if (fmt.bytesPerPixel(i) == 2 && fmt.planeCount() == 3) {
+            //data_type[i] = GL_UNSIGNED_SHORT;
+        }
+        int bpp_gl = OpenGLHelper::bytesOfGLFormat(data_format[i], data_type[i]);
+        int pad = std::ceil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
+        texture_size[i].setWidth(std::ceil((qreal)texture_size[i].width()/(qreal)bpp_gl));
+        texture_upload_size[i].setWidth(std::ceil((qreal)texture_upload_size[i].width()/(qreal)bpp_gl));
+        effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
+        //effective_tex_width_ratio =
+        qDebug("texture width: %d - %d = pad: %d. bpp(gl): %d", texture_size[i].width(), effective_tex_width[i], pad, bpp_gl);
+    }
+
+    /*
+     * there are 2 fragment shaders: rgb and yuv.
+     * only 1 texture for packed rgb. planar rgb likes yuv
+     * To support both planar and packed yuv, and mixed yuv(NV12), we give a texture sample
+     * for each channel. For packed, each (channel) texture sample is the same. For planar,
+     * packed channels has the same texture sample.
+     * But the number of actural textures we upload is plane count.
+     * Which means the number of texture id equals to plane count
+     */
+    if (textures.size() != fmt.planeCount()) {
+        glDeleteTextures(textures.size(), textures.data());
+        qDebug("delete %d textures", textures.size());
+        textures.clear();
+        textures.resize(fmt.planeCount());
+        glGenTextures(textures.size(), textures.data());
+    }
+    qDebug("init textures...");
+    initTexture(textures[0], internal_format[0], data_format[0], data_type[0], texture_size[0].width(), texture_size[0].height());
+    for (int i = 1; i < textures.size(); ++i) {
+        initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
+    }
+    return true;
+}
+
+void VideoMaterialPrivate::updateTexturesIfNeeded()
+{
+    const VideoFormat &fmt = frame.format();
+    bool update_textures = false;
+    if (fmt != video_format) {
+        update_textures = true;
+        qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
+        // http://forum.doom9.org/archive/index.php/t-160211.html
+        ColorTransform::ColorSpace cs = ColorTransform::RGB;
+        if (!fmt.isRGB()) {
+            if (frame.width() >= 1280 || frame.height() > 576) //values from mpv
+                cs = ColorTransform::BT709;
+            else
+                cs = ColorTransform::BT601;
+        }
+#if 0
+        if (!prepareShaderProgram(fmt, cs)) {
+            qWarning("shader program create error...");
+            return;
+        } else {
+            qDebug("shader program created!!!");
+        }
+#endif
+    }
+    // effective size may change even if plane size not changed
+    if (update_textures
+            || frame.bytesPerLine(0) != plane0Size.width() || frame.height() != plane0Size.height()
+            || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check hieght if plane 0 sizes are equal?
+        update_textures = true;
+        //qDebug("---------------------update texture: %dx%d, %s", frame.width(), frame.height(), frame.format().name().toUtf8().constData());
+        const int nb_planes = fmt.planeCount();
+        texture_size.resize(nb_planes);
+        texture_upload_size.resize(nb_planes);
+        effective_tex_width.resize(nb_planes);
+        for (int i = 0; i < nb_planes; ++i) {
+            qDebug("plane linesize %d: padded = %d, effective = %d", i, frame.bytesPerLine(i), frame.effectiveBytesPerLine(i));
+            qDebug("plane width %d: effective = %d", frame.planeWidth(i), frame.effectivePlaneWidth(i));
+            qDebug("planeHeight %d = %d", i, frame.planeHeight(i));
+            // we have to consider size of opengl format. set bytesPerLine here and change to width later
+            texture_size[i] = QSize(frame.bytesPerLine(i), frame.planeHeight(i));
+            texture_upload_size[i] = texture_size[i];
+            effective_tex_width[i] = frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
+            // TODO: ratio count the GL_UNPACK_ALIGN?
+            //effective_tex_width_ratio = qMin((qreal)1.0, (qreal)frame.effectiveBytesPerLine(i)/(qreal)frame.bytesPerLine(i));
+        }
+        plane1_linesize = 0;
+        if (nb_planes > 1) {
+            texture_size[0].setWidth(texture_size[1].width() * effective_tex_width[0]/effective_tex_width[1]);
+            // height? how about odd?
+            plane1_linesize = frame.bytesPerLine(1);
+        }
+        effective_tex_width_ratio = (qreal)frame.effectiveBytesPerLine(nb_planes-1)/(qreal)frame.bytesPerLine(nb_planes-1);
+        qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
+        plane0Size.setWidth(frame.bytesPerLine(0));
+        plane0Size.setHeight(frame.height());
+    }
+    if (update_textures) {
+        initTextures(fmt);
+    }
+}
+
+void VideoMaterialPrivate::setupQuality()
 {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

@@ -112,7 +112,6 @@ public:
     int bpp() const; //1st plane
     int planeCount() const;
     void getTextureCoordinates(const QRect& roi, float* t);
-    void setupQuality();
 protected:
     VideoMaterial(VideoMaterialPrivate &d);
     DPTR_DECLARE(VideoMaterial)

@@ -74,18 +74,28 @@ public:
     VideoMaterialPrivate()
         : update_texure(true)
         , bpp(1)
+        , video_format(VideoFormat::Format_Invalid)
+        , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
     {}
     ~VideoMaterialPrivate() {
         if (!textures.isEmpty())
             glDeleteTextures(textures.size(), textures.data());
     }
+    bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
+    bool initTextures(const VideoFormat& fmt);
+    void updateTexturesIfNeeded();
+    void setupQuality();
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
     int bpp;
     QRect viewport;
     QRect out_rect;
     VideoFrame frame;
+    VideoFormat video_format;
+    QSize plane0Size;
+    // width is in bytes. different alignments may result in different plane 1 linesize even if plane 0 are the same
+    int plane1_linesize;
 
     QVector<GLuint> textures; //texture ids. size is plane count
     QVector<QSize> texture_size;
