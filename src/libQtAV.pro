@@ -222,6 +222,7 @@ SOURCES += \
     QtAV_Compat.cpp \
     QtAV_Global.cpp \
     utils/GPUMemCopy.cpp \
+    utils/OpenGLHelper.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \
@@ -320,6 +321,7 @@ SDK_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     utils/GPUMemCopy.h \
+    utils/OpenGLHelper.h \
     QtAV/prepost.h \
     QtAV/AVDemuxThread.h \
     QtAV/AVThread.h \

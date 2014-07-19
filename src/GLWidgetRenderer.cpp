@@ -21,6 +21,7 @@
 
 #include "QtAV/GLWidgetRenderer.h"
 #include "QtAV/private/GLWidgetRenderer_p.h"
+#include "utils/OpenGLHelper.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
 #include <QtCore/qmath.h>
@@ -131,107 +132,6 @@ static inline void checkGlError(const char* op = 0) {
 #define CHECK_GL_ERROR(FUNC) \
     FUNC; \
     checkGlError(#FUNC);
-
-bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type)
-{
-    struct fmt_entry {
-        VideoFormat::PixelFormat pixfmt;
-        GLint internal_format;
-        GLenum format;
-        GLenum type;
-    };
-    // Very special formats, for which OpenGL happens to have direct support
-    static const struct fmt_entry pixfmt_to_gl_formats[] = {
-#ifdef QT_OPENGL_ES_2
-        {VideoFormat::Format_ARGB32, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_RGB32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-#else
-        {VideoFormat::Format_RGB32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_ARGB32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-#endif
-        {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
-    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
-        {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
-    #endif
-        {VideoFormat::Format_RGB565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, //GL_UNSIGNED_SHORT_5_6_5_REV?
-        //{VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        //{VideoFormat::Format_BGR32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_BGR24,  GL_RGB,  GL_BGR,  GL_UNSIGNED_BYTE },
-    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
-        {VideoFormat::Format_BGR555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
-    #endif
-        {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, // need swap r b?
-    };
-
-    for (unsigned int i = 0; i < sizeof(pixfmt_to_gl_formats)/sizeof(pixfmt_to_gl_formats[0]); ++i) {
-        if (pixfmt_to_gl_formats[i].pixfmt == fmt.pixelFormat()) {
-            *internal_format = pixfmt_to_gl_formats[i].internal_format;
-            *data_format = pixfmt_to_gl_formats[i].format;
-            *data_type = pixfmt_to_gl_formats[i].type;
-            return true;
-        }
-    }
-    return false;
-}
-
-// TODO: format + datatype? internal format == format?
-//https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_format_BGRA8888.txt
-int bytesOfGLFormat(GLenum format, GLenum dataType = GL_UNSIGNED_BYTE)
-{
-    switch (format)
-      {
-#ifdef GL_BGRA //ifndef GL_ES
-      case GL_BGRA:
-#endif
-      case GL_RGBA:
-        return 4;
-#ifdef GL_BGR //ifndef GL_ES
-      case GL_BGR:
-#endif
-      case GL_RGB:
-        switch (dataType) {
-        case GL_UNSIGNED_SHORT_5_6_5:
-            return 2;
-        default:
-            return 3;
-        }
-        return 3;
-      case GL_LUMINANCE_ALPHA:
-        return 2;
-      case GL_LUMINANCE:
-      case GL_ALPHA:
-        return 1;
-#ifdef GL_LUMINANCE16
-    case GL_LUMINANCE16:
-        return 2;
-#endif //GL_LUMINANCE16        
-#ifdef GL_ALPHA16
-    case GL_ALPHA16:
-        return 2;
-#endif //GL_ALPHA16
-      default:
-        qWarning("bytesOfGLFormat - Unknown format %u", format);
-        return 1;
-      }
-}
-
-GLint GetGLInternalFormat(GLint data_format, int bpp)
-{
-    if (bpp != 2)
-        return data_format;
-    switch (data_format) {
-#ifdef GL_ALPHA16
-    case GL_ALPHA:
-        return GL_ALPHA16;
-#endif //GL_ALPHA16
-#ifdef GL_LUMINANCE16
-    case GL_LUMINANCE:
-        return GL_LUMINANCE16;
-#endif //GL_LUMINANCE16
-    default:
-        return data_format;
-    }
-}
 
 static const char kVertexShader[] =
     "attribute vec4 a_Position;\n"
@@ -493,7 +393,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         GLint internal_fmt;
         GLenum data_fmt;
         GLenum data_t;
-        if (!videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t)) {
+        if (!OpenGLHelper::videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t)) {
             qWarning("no opengl format found");
             return false;
         }
@@ -539,7 +439,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
         if (fmt.bytesPerPixel(i) == 2 && fmt.planeCount() == 3) {
             //data_type[i] = GL_UNSIGNED_SHORT;
         }
-        int bpp_gl = bytesOfGLFormat(data_format[i], data_type[i]);
+        int bpp_gl = OpenGLHelper::bytesOfGLFormat(data_format[i], data_type[i]);
         int pad = qCeil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
         texture_size[i].setWidth(qCeil((qreal)texture_size[i].width()/(qreal)bpp_gl));
         texture_upload_size[i].setWidth(qCeil((qreal)texture_upload_size[i].width()/(qreal)bpp_gl));
