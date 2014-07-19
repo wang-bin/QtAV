@@ -222,8 +222,6 @@ GLuint GLWidgetRendererPrivate::createProgram(const char* pVertexSource, const c
 bool GLWidgetRendererPrivate::releaseShaderProgram()
 {
     video_format.setPixelFormat(VideoFormat::Format_Invalid);
-    plane1_linesize = 0;
-    plane0Size = QSize();
 #if NO_QGL_SHADER
     if (vert) {
         if (program)
@@ -484,29 +482,15 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
     const VideoFormat &fmt = video_frame.format();
     bool update_textures = false;
     if (fmt != video_format) {
-        update_textures = true;
-        qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
-        // http://forum.doom9.org/archive/index.php/t-160211.html
-        ColorTransform::ColorSpace cs = ColorTransform::RGB;
-        if (!fmt.isRGB()) {
-            if (video_frame.width() >= 1280 || video_frame.height() > 576) //values from mpv
-                cs = ColorTransform::BT709;
-            else
-                cs = ColorTransform::BT601;
-        }
-        if (!prepareShaderProgram(fmt, cs)) {
-            qWarning("shader program create error...");
-            return;
-        } else {
-            qDebug("shader program created!!!");
-        }
+        update_textures = true; //FIXME
+        qDebug("updateTexturesIfNeeded pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
     }
     // effective size may change even if plane size not changed
     if (update_textures
             || video_frame.bytesPerLine(0) != plane0Size.width() || video_frame.height() != plane0Size.height()
-            || (plane1_linesize > 0 && video_frame.bytesPerLine(1) != plane1_linesize)) { // no need to check hieght if plane 0 sizes are equal?
+            || (plane1_linesize > 0 && video_frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
-        //qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
+        qDebug("---------------------update texture: %dx%d, %s", video_frame.width(), video_frame.height(), video_frame.format().name().toUtf8().constData());
         const int nb_planes = fmt.planeCount();
         texture_size.resize(nb_planes);
         texture_upload_size.resize(nb_planes);
@@ -535,6 +519,32 @@ void GLWidgetRendererPrivate::updateTexturesIfNeeded()
     }
     if (update_textures) {
         initTextures(fmt);
+    }
+}
+
+void GLWidgetRendererPrivate::updateShaderIfNeeded()
+{
+    const VideoFormat& fmt(video_frame.format());
+    if (fmt != video_format) {
+        qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
+    }
+    VideoMaterialType *newType = materialType(fmt);
+    if (material_type == newType)
+        return;
+    material_type = newType;
+    // http://forum.doom9.org/archive/index.php/t-160211.html
+    ColorTransform::ColorSpace cs = ColorTransform::RGB;
+    if (!fmt.isRGB()) {
+        if (video_frame.width() >= 1280 || video_frame.height() > 576) //values from mpv
+            cs = ColorTransform::BT709;
+        else
+            cs = ColorTransform::BT601;
+    }
+    if (!prepareShaderProgram(fmt, cs)) {
+        qWarning("shader program create error...");
+        return;
+    } else {
+        qDebug("shader program created!!!");
     }
 }
 
@@ -692,6 +702,7 @@ void GLWidgetRenderer::drawFrame()
 {
     DPTR_D(GLWidgetRenderer);
     d.updateTexturesIfNeeded();
+    d.updateShaderIfNeeded();
     QRect roi = realROI();
     const int nb_planes = d.video_frame.planeCount(); //number of texture id
     int mapped = 0;

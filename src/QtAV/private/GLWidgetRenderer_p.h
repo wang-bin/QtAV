@@ -54,11 +54,13 @@ public:
       , u_bpp(-1)
       , painter(0)
       , video_format(VideoFormat::Format_Invalid)
+      , material_type(0)
     {
         if (QGLFormat::openGLVersionFlags() == QGLFormat::OpenGL_Version_None) {
             available = false;
             return;
         }
+        colorTransform.setOutputColorSpace(ColorTransform::RGB);
     }
     ~GLWidgetRendererPrivate() {
         releaseShaderProgram();
@@ -146,6 +148,25 @@ public:
         mpv_matrix(1, 1) = (float)out_rect.height()/(float)renderer_height;
     }
 
+    class VideoMaterialType {};
+    VideoMaterialType* materialType(const VideoFormat& fmt) const {
+        static VideoMaterialType rgbType;
+        static VideoMaterialType yuv16leType;
+        static VideoMaterialType yuv16beType;
+        static VideoMaterialType yuv8Type;
+        static VideoMaterialType invalidType;
+        if (fmt.isRGB() && !fmt.isPlanar())
+            return &rgbType;
+        if (fmt.bytesPerPixel(0) == 1)
+            return &yuv8Type;
+        if (fmt.isBigEndian())
+            return &yuv16beType;
+        else
+            return &yuv16leType;
+        return &invalidType;
+    }
+    void updateShaderIfNeeded();
+
     bool hasGLSL;
     bool update_texcoords;
     QVector<GLuint> textures; //texture ids. size is plane count
@@ -182,6 +203,7 @@ public:
     int plane1_linesize;
     ColorTransform colorTransform;
     QMatrix4x4 mpv_matrix;
+    VideoMaterialType *material_type;
 };
 
 } //namespace QtAV
