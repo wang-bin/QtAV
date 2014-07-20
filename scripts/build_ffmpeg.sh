@@ -1,12 +1,12 @@
 #/bin/bash
-
+#TODO: test both x86 x64. cc test then build with gcc -m32 -m64 or --enable-cross-compile --target-os=linux --arch=x86
 # Author: wbsecg1@gmail.com 2013-2014
 echo "This is part of QtAV project. Get the latest script from https://github.com/wang-bin/QtAV/tree/master/scripts"
 
 # Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
 # To build ffmpeg for android, run "./build_ffmpeg android". default is armv7-a.
 
-PLATFORMS="android|maemo5|maemo6|vc"
+PLATFORMS="android|maemo5|maemo6|vc|x86"
 echo "Put this script in ffmpeg source dir. Make sure your build environment is correct."
 echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
 echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//|/, }"
@@ -27,8 +27,16 @@ fi
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 
+CONFIGURE=configure
 
 
+toupper(){ 
+    echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 
+} 
+ 
+tolower(){ 
+    echo "$@" | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 
+}
 
 #host_is
 function platform_is() {
@@ -90,24 +98,31 @@ function setup_android_env() {
   ANDROID_TOOLCHAIN="/tmp/ndk-toolchain" #$NDK_ROOT/toolchains/arm-linux-androideabi-4.7/prebuilt/linux-x86_64/bin
   ANDROID_SYSROOT="$ANDROID_TOOLCHAIN/sysroot" #"$NDK_ROOT/platforms/android-14/arch-arm"
 
+:<<EOC
   ANDROID_CFLAGS="-Wall -mthumb -pipe -fpic -fasm \
   -fstrict-aliasing \
   -fmodulo-sched -fmodulo-sched-allow-regmoves \
   -Wno-psabi -Wa,--noexecstack \
   -D__ARM_ARCH_5__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5TE__ \
   -DANDROID -DNDEBUG"
+
   ANDROID_CLFAGS_NEON="-march=armv7-a -mfpu=neon -mfloat-abi=softfp -mvectorize-with-neon-quad"
   ANDROID_CFLAGS_ARMV7="-march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp"
   ANDROID_CFLAGS_VFP="-march=armv6 -mfpu=vfp -mfloat-abi=softfp"
   ANDROID_CFLAGS_ARMV6="-march=armv6"
   ANDROID_LDFLAGS_ARMV7="-Wl,--fix-cortex-a8"
-  ANDROIDOPT="--enable-cross-compile --cross-prefix=arm-linux-androideabi- --target-os=linux --arch=arm --sysroot=$ANDROID_SYSROOT --extra-ldflags=\"$ANDROID_LDFLAGS_ARMV7\""
+EOC
+# --enable-libstagefright-h264
+  ANDROIDOPT="--disable-symver --enable-cross-compile --cross-prefix=arm-linux-androideabi- --target-os=linux --arch=arm --sysroot=$ANDROID_SYSROOT --extra-ldflags=\"$ANDROID_LDFLAGS_ARMV7\""
 
-  $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-14 --install-dir=$ANDROID_TOOLCHAIN --system=linux-x86_64
+   test -d $ANDROID_TOOLCHAIN || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --toolchain=arm-linux-androideabi-4.8 --install-dir=$ANDROID_TOOLCHAIN --system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN/bin:$PATH
-  rm -r $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
-  rm -r $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
+  rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
+  rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
 
+  CONFIGURE=configure-android
+  cat configure |sed s,SLIBNAME_WITH_MAJOR=\'$\(SLIBNAME\)\.$\(LIBMAJOR\)\',SLIBNAME_WITH_MAJOR=\'$\(SLIBPREF\)$\(FULLNAME\)\-$\(LIBMAJOR\)$\(SLIBSUF\)\', |sed s,SLIB_INSTALL_NAME=\'\$\(SLIBNAME_WITH_VERSION\)\',SLIB_INSTALL_NAME=\'\$\(SLIBNAME_WITH_MAJOR\)\', |sed s,SLIB_INSTALL_LINKS=\'\$\(SLIBNAME_WITH_MAJOR\)\ \$\(SLIBNAME\)\',SLIB_INSTALL_LINKS=\'\$\(SLIBNAME\)\', >$CONFIGURE
+  chmod +x $CONFIGURE
   PLATFORM_OPT="$ANDROIDOPT"
   EXTRA_CFLAGS="$ANDROID_CFLAGS $ANDROID_CLFAGS_ARMV7"
   INSTALL_DIR=sdk-android
@@ -150,6 +165,12 @@ elif target_is maemo5; then
   setup_maemo5_env
 elif target_is maemo6; then
   setup_maemo6_env
+elif target_is x86; then
+  if [ "`uname -m`" = "x86_64" ]; then
+    #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
+    ARCH_FLAGS=-m32
+    INSTALL_DIR=sdk-x86
+  fi
 else
   if platform_is Sailfish; then
     echo "Build in Sailfish SDK"
@@ -164,18 +185,25 @@ fi
 if target_is vc; then
   setup_vc_env
 else
-  TOOLCHAIN_OPT="--extra-cflags=\"-O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$ARCH_FLAGS -O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
   platform_is MinGW || platform_is MSYS && TOOLCHAIN_OPT="$DXVA --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
+  test -n "$ARCH_FLAGS" && platform_is Linux && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"-m32\""
 fi
 
-CONFIGURE="./configure --disable-static --enable-shared --enable-runtime-cpudetect --enable-avresample --disable-muxers --disable-encoders --enable-hwaccels $PLATFORM_OPT $TOOLCHAIN_OPT"
+AVR_OPT=--enable-avresample
+
+FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
+FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
+[ $FFMAJOR -eq 0 -a $FFMINOR -lt 11 ] && AVR_OPT=
+
+CONFIGURE="./$CONFIGURE --disable-static --enable-shared --enable-gpl --enable-version3 --enable-runtime-cpudetect $AVR_OPT --disable-muxers --disable-encoders --enable-hwaccels $PLATFORM_OPT $TOOLCHAIN_OPT"
 
 
 echo $CONFIGURE
 
 time eval $CONFIGURE
 if [ $? -eq 0 ]; then
-  time (make -j4 install prefix="$INSTALL_DIR")
+  time (make -j8 install prefix="$PWD/$INSTALL_DIR")
 fi
   
   
