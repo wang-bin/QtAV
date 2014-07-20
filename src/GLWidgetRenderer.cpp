@@ -32,35 +32,6 @@
 //TODO: check gl errors
 //glEGLImageTargetTexture2DOES:http://software.intel.com/en-us/articles/using-opengl-es-to-accelerate-apps-with-legacy-2d-guis
 
-//GL_BGRA is available in OpenGL >= 1.2
-#ifndef GL_BGRA
-#ifndef GL_BGRA_EXT
-#if defined QT_OPENGL_ES_2
-#include <GLES2/gl2ext.h>
-//#include <GLES/glext.h> //maemo 5 define there
-#elif defined QT_OPENGL_ES
-#include <GLES/glext.h>
-#else
-#include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1 //TODO Apple include <OpenGL/xxx>
-#endif
-#endif //GL_BGRA_EXT
-//TODO: glPixelStorei(GL_PACK_SWAP_BYTES, ) to swap rgba?
-#ifndef GL_BGRA //it may be defined in glext.h
-#ifdef GL_BGRA_EXT
-#define GL_BGRA GL_BGRA_EXT
-#endif //GL_BGRA_EXT
-#ifdef GL_BGR_EXT
-#define GL_BGR GL_BGR_EXT
-#endif //GL_BGR_EXT
-#endif //GL_BGRA
-#endif //GL_BGRA
-#ifndef GL_BGRA
-#define GL_BGRA 0x80E1
-#endif
-#ifndef GL_BGR
-#define GL_BGR 0x80E0
-#endif
-
 
 //#ifdef GL_EXT_unpack_subimage
 #ifndef GL_UNPACK_ROW_LENGTH
@@ -80,40 +51,6 @@
 
 //TODO: QGLfunctions?
 namespace QtAV {
-
-// glActiveTexture in Qt4 on windows release mode crash for me
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-#ifndef QT_OPENGL_ES
-#define RESOLVE_GLACTIVETEXTURE
-#undef glActiveTexture
-#define glActiveTexture qtav_glActiveTexture
-#endif //QT_OPENGL_ES
-#endif //QT_VERSION
-
-// APIENTRY may be not defined(why? linux es2). or use QOPENGLF_APIENTRY
-// use QGLF_APIENTRY for Qt4 crash, why? APIENTRY is defined in windows header
-#ifndef APIENTRY
-// QGLF_APIENTRY is in Qt4,8+
-#if defined(QGLF_APIENTRY)
-#define APIENTRY QGLF_APIENTRY
-#elif defined(GL_APIENTRY)
-#define APIENTRY GL_APIENTRY
-#endif
-#endif
-typedef void (APIENTRY *type_glActiveTexture) (GLenum);
-static type_glActiveTexture qtav_glActiveTexture = 0;
-
-static void qtavResolveActiveTexture()
-{
-    const QGLContext *context = QGLContext::currentContext();
-    qtav_glActiveTexture = (type_glActiveTexture)context->getProcAddress(QLatin1String("glActiveTexture"));
-    if (!qtav_glActiveTexture) {
-        qDebug("resolve glActiveTextureARB");
-        qtav_glActiveTexture = (type_glActiveTexture)context->getProcAddress(QLatin1String("glActiveTextureARB"));
-    }
-    //Q_ASSERT(qtav_glActiveTexture);
-}
-
 
 const GLfloat kVertices[] = {
     -1, 1,
@@ -559,7 +496,7 @@ void GLWidgetRendererPrivate::uploadPlane(int p, GLint internalFormat, GLenum fo
     // FIXME: why happens on win?
     if (video_frame.bytesPerLine(p) <= 0)
         return;
-    glActiveTexture(GL_TEXTURE0 + p); //xbmc: only for es, not for desktop?
+    OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //xbmc: only for es, not for desktop?
     glBindTexture(GL_TEXTURE_2D, textures[p]);
     ////nv12: 2
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);//GetAlign(video_frame.bytesPerLine(p)));
@@ -707,7 +644,7 @@ void GLWidgetRenderer::drawFrame()
     int mapped = 0;
     for (int i = 0; i < nb_planes; ++i) {
         if (d.video_frame.map(GLTextureSurface, &d.textures[i])) {
-            glActiveTexture(GL_TEXTURE0 + i);
+            OpenGLHelper::glActiveTexture(GL_TEXTURE0 + i);
             // if mapped by SurfaceInterop, the texture may be not bound
             glBindTexture(GL_TEXTURE_2D, d.textures[i]); //we've bind 0 after upload()
             mapped++;
@@ -809,7 +746,7 @@ void GLWidgetRenderer::drawFrame()
     glUniform1f(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
 #else
    d.shader_program->setUniformValue(d.u_colorMatrix, d.colorTransform.matrixRef());
-   shader_program->setUniformValue(d.u_matrix, d.mpv_matrix);
+   d.shader_program->setUniformValue(d.u_matrix, d.mpv_matrix);
    d.shader_program->setUniformValue(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
 #endif
    // uniforms done. attributes begin
@@ -852,7 +789,6 @@ void GLWidgetRenderer::initializeGL()
     initializeGLFunctions();
     d.initializeGLFunctions();
 #endif //QTAV_HAVE(QGLFUNCTIONS)
-    qtavResolveActiveTexture();
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
     if (!d.hasGLSL) {

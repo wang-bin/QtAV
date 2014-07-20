@@ -29,7 +29,7 @@
 #include <QtGui/QOpenGLShaderProgram>
 #else
 #include <QtOpenGL/QGLShaderProgram>
-typedef QGLShaderProgram QOpenGLShaderProgram;
+#define QOpenGLShaderProgram QGLShaderProgram
 #endif
 
 namespace QtAV {

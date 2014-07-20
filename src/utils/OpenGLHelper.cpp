@@ -25,6 +25,52 @@ namespace QtAV {
 namespace OpenGLHelper {
 
 
+// glActiveTexture in Qt4 on windows release mode crash for me
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#ifndef QT_OPENGL_ES
+// APIENTRY may be not defined(why? linux es2). or use QOPENGLF_APIENTRY
+// use QGLF_APIENTRY for Qt4 crash, why? APIENTRY is defined in windows header
+#ifndef APIENTRY
+// QGLF_APIENTRY is in Qt4,8+
+#if defined(QGLF_APIENTRY)
+#define APIENTRY QGLF_APIENTRY
+#elif defined(GL_APIENTRY)
+#define APIENTRY GL_APIENTRY
+#endif //QGLF_APIENTRY
+#endif //APIENTRY
+typedef void (APIENTRY *type_glActiveTexture) (GLenum);
+static type_glActiveTexture qtav_glActiveTexture = 0;
+
+static void qtavResolveActiveTexture()
+{
+    const QGLContext *context = QGLContext::currentContext();
+    qtav_glActiveTexture = (type_glActiveTexture)context->getProcAddress(QLatin1String("glActiveTexture"));
+    if (!qtav_glActiveTexture) {
+        qDebug("resolve glActiveTextureARB");
+        qtav_glActiveTexture = (type_glActiveTexture)context->getProcAddress(QLatin1String("glActiveTextureARB"));
+    }
+    //Q_ASSERT(qtav_glActiveTexture);
+}
+#endif //QT_OPENGL_ES
+#endif //QT_VERSION
+
+void glActiveTexture(GLenum texture)
+{
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#ifndef QT_OPENGL_ES
+    if (!qtav_glActiveTexture)
+        qtavResolveActiveTexture();
+    if (!qtav_glActiveTexture)
+        return;
+    qtav_glActiveTexture(texture);
+#else
+    ::glActiveTexture(texture);
+#endif //QT_OPENGL_ES
+#else
+    QOpenGLContext::currentContext()->functions()->glActiveTexture(texture);
+#endif
+}
+
 bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type)
 {
     struct fmt_entry {

@@ -23,6 +23,12 @@
 #define QTAV_VIDEOSHADER_H
 
 #include <QtAV/VideoFrame.h>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QOpenGLShaderProgram>
+#else
+#include <QtOpenGL/QGLShaderProgram>
+#define QOpenGLShaderProgram QGLShaderProgram
+#endif
 
 class QOpenGLShaderProgram;
 namespace QtAV {

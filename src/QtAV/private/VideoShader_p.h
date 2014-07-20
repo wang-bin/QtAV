@@ -30,9 +30,10 @@
 #else
 #include <QtOpenGL/QGLShaderProgram>
 #include <QtOpenGL/QGLFunctions>
-typedef QGLShaderProgram QOpenGLShaderProgram;
-typedef QGLShader QOpenGLShader;
-typedef QGLFunctions QOpenGLFunctions;
+#define QOpenGLShaderProgram QGLShaderProgram
+#define QOpenGLShader QGLShader
+#define QOpenGLFunctions QGLFunctions
+#define QOpenGLContext QGLContext
 #endif
 
 namespace QtAV {

@@ -319,9 +319,8 @@ void VideoMaterial::bind()
     }
     if (d.textures.isEmpty())
         return;
-    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
     for (int i = 0; i < nb_planes; ++i) {
-        functions->glActiveTexture(GL_TEXTURE0 + i);
+        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, d.textures[i]);
     }
 }
@@ -329,17 +328,16 @@ void VideoMaterial::bind()
 void VideoMaterial::bindPlane(int p)
 {
     DPTR_D(VideoMaterial);
-    QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
     //setupQuality?
     if (d.frame.map(GLTextureSurface, &d.textures[p])) {
-        functions->glActiveTexture(GL_TEXTURE0 + p);
+        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
         glBindTexture(GL_TEXTURE_2D, d.textures[p]);
         return;
     }
     // FIXME: why happens on win?
     if (d.frame.bytesPerLine(p) <= 0)
         return;
-    functions->glActiveTexture(GL_TEXTURE0 + p);
+    OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
     glBindTexture(GL_TEXTURE_2D, d.textures[p]);
     //d.setupQuality();
     //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
