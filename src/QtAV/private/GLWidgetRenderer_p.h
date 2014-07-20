@@ -33,7 +33,7 @@
 
 namespace QtAV {
 
-class Q_AV_EXPORT GLWidgetRendererPrivate : public VideoRendererPrivate
+class GLWidgetRendererPrivate : public VideoRendererPrivate
 #if QTAV_HAVE(QGLFUNCTIONS)
         , public QGLFunctions
 #endif //QTAV_HAVE(QGLFUNCTIONS)
