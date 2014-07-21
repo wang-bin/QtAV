@@ -24,13 +24,24 @@
 #define QTAV_SGVIDEONODE_H
 
 #include <QtQuick/QSGGeometryNode>
+#include <QtAV/VideoFrame.h>
 
 namespace QtAV {
 
+class SGVideoMaterial;
 class SGVideoNode : public QSGGeometryNode
 {
 public:
     SGVideoNode();
+    ~SGVideoNode();
+    virtual void setCurrentFrame(const VideoFrame &frame);
+    /* Update the vertices and texture coordinates.  Orientation must be in {0,90,180,270} */
+    void setTexturedRectGeometry(const QRectF &boundingRect, const QRectF &textureRect, int orientation);
+private:
+    SGVideoMaterial *m_material;
+    QRectF m_rect;
+    QRectF m_textureRect;
+    int m_orientation;
 };
 
 } //namespace QtAV

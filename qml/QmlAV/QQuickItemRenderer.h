@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV
@@ -35,14 +35,15 @@ class QQuickItemRendererPrivate;
 class QMLAV_EXPORT QQuickItemRenderer : public QQuickItem, public VideoRenderer
 {
     Q_OBJECT
+    Q_DISABLE_COPY(QQuickItemRenderer)
     DPTR_DECLARE_PRIVATE(QQuickItemRenderer)
+    Q_PROPERTY(bool opengl READ isOpenGL WRITE setOpenGL NOTIFY openGLChanged)
     Q_PROPERTY(QObject* source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_ENUMS(FillMode)
 public:
-    enum FillMode
-    {
+    enum FillMode {
         Stretch            = Qt::IgnoreAspectRatio,
         PreserveAspectFit  = Qt::KeepAspectRatio,
         PreserveAspectCrop = Qt::KeepAspectRatioByExpanding
@@ -58,10 +59,14 @@ public:
     FillMode fillMode() const;
     void setFillMode(FillMode mode);
 
+    bool isOpenGL() const;
+    void setOpenGL(bool o);
+
 Q_SIGNALS:
     void sourceChanged();
     void fillModeChanged(QQuickItemRenderer::FillMode);
     void regionOfInterestChanged();
+    void openGLChanged();
 
 protected:
     virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);

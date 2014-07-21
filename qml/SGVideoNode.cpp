@@ -64,7 +64,7 @@ private:
 class SGVideoMaterial : public QSGMaterial
 {
 public:
-    SGVideoMaterial(const VideoFormat &format);
+    SGVideoMaterial() {}
     ~SGVideoMaterial() {}
 
     virtual QSGMaterialType *type() const {
@@ -76,7 +76,6 @@ public:
         return new SGVideoMaterialShader(m_material.createShader());
     }
 
-    //TODO: compare video format?
     virtual int compare(const QSGMaterial *other) const {
         Q_ASSERT(other && type() == other->type());
         const SGVideoMaterial *m = static_cast<const SGVideoMaterial*>(other);
@@ -103,12 +102,6 @@ void SGVideoMaterial::bind()
     m_material.bind();
 }
 
-
-SGVideoNode::SGVideoNode()
-{
-}
-
-
 void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *newMaterial, QSGMaterial *oldMaterial)
 {
     Q_UNUSED(oldMaterial);
@@ -122,6 +115,99 @@ void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *n
 #endif
     if (state.isMatrixDirty())
         program()->setUniformValue(matrixLocation(), state.combinedMatrix());
+}
+
+
+SGVideoNode::SGVideoNode()
+    : m_material(new SGVideoMaterial())
+{
+    setFlag(QSGNode::OwnsGeometry);
+    setFlag(QSGNode::OwnsMaterial);
+    setMaterial(m_material);
+}
+
+SGVideoNode::~SGVideoNode() {}
+
+void SGVideoNode::setCurrentFrame(const VideoFrame &frame)
+{
+    m_material->setCurrentFrame(frame);
+    markDirty(DirtyMaterial);
+}
+
+/* Helpers */
+static inline void qSetGeom(QSGGeometry::TexturedPoint2D *v, const QPointF &p)
+{
+    v->x = p.x();
+    v->y = p.y();
+}
+
+static inline void qSetTex(QSGGeometry::TexturedPoint2D *v, const QPointF &p)
+{
+    v->tx = p.x();
+    v->ty = p.y();
+}
+
+void SGVideoNode::setTexturedRectGeometry(const QRectF &rect, const QRectF &textureRect, int orientation)
+{
+    if (rect == m_rect && textureRect == m_textureRect && orientation == m_orientation)
+        return;
+
+    m_rect = rect;
+    m_textureRect = textureRect;
+    m_orientation = orientation;
+
+    QSGGeometry *g = geometry();
+
+    if (g == 0)
+        g = new QSGGeometry(QSGGeometry::defaultAttributes_TexturedPoint2D(), 4);
+
+    QSGGeometry::TexturedPoint2D *v = g->vertexDataAsTexturedPoint2D();
+
+    // Set geometry first
+    qSetGeom(v + 0, rect.topLeft());
+    qSetGeom(v + 1, rect.bottomLeft());
+    qSetGeom(v + 2, rect.topRight());
+    qSetGeom(v + 3, rect.bottomRight());
+
+    // and then texture coordinates
+    switch (orientation) {
+        default:
+            // tl, bl, tr, br
+            qSetTex(v + 0, textureRect.topLeft());
+            qSetTex(v + 1, textureRect.bottomLeft());
+            qSetTex(v + 2, textureRect.topRight());
+            qSetTex(v + 3, textureRect.bottomRight());
+            break;
+
+        case 90:
+            // tr, tl, br, bl
+            qSetTex(v + 0, textureRect.topRight());
+            qSetTex(v + 1, textureRect.topLeft());
+            qSetTex(v + 2, textureRect.bottomRight());
+            qSetTex(v + 3, textureRect.bottomLeft());
+            break;
+
+        case 180:
+            // br, tr, bl, tl
+            qSetTex(v + 0, textureRect.bottomRight());
+            qSetTex(v + 1, textureRect.topRight());
+            qSetTex(v + 2, textureRect.bottomLeft());
+            qSetTex(v + 3, textureRect.topLeft());
+            break;
+
+        case 270:
+            // bl, br, tl, tr
+            qSetTex(v + 0, textureRect.bottomLeft());
+            qSetTex(v + 1, textureRect.bottomRight());
+            qSetTex(v + 2, textureRect.topLeft());
+            qSetTex(v + 3, textureRect.topRight());
+            break;
+    }
+
+    if (!geometry())
+        setGeometry(g);
+
+    markDirty(DirtyGeometry);
 }
 
 } //namespace QtAV

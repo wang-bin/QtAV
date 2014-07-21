@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV
@@ -27,6 +27,7 @@
 #include <QtAV/FactoryDefine.h>
 #include <QtAV/AVPlayer.h>
 #include <QmlAV/QmlAVPlayer.h>
+#include "QmlAV/SGVideoNode.h"
 #include <QtAV/VideoRendererTypes.h> //it declares a factory we need
 #include "prepost.h"
 
@@ -51,7 +52,8 @@ VideoRendererId QQuickItemRenderer::id() const
 // TODO: yuv
 bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    return VideoFormat::isRGB(pixfmt);
+    Q_UNUSED(pixfmt);
+    return true;
 }
 
 void QQuickItemRenderer::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
@@ -119,6 +121,20 @@ void QQuickItemRenderer::setFillMode(FillMode mode)
     emit fillModeChanged(mode);
 }
 
+bool QQuickItemRenderer::isOpenGL() const
+{
+    return d_func().opengl;
+}
+
+void QQuickItemRenderer::setOpenGL(bool o)
+{
+    DPTR_D(QQuickItemRenderer);
+    if (d.opengl == o)
+        return;
+    d.opengl = o;
+    emit openGLChanged();
+}
+
 bool QQuickItemRenderer::needUpdateBackground() const
 {
     DPTR_D(const QQuickItemRenderer);
@@ -133,6 +149,7 @@ bool QQuickItemRenderer::needDrawFrame() const
 void QQuickItemRenderer::drawFrame()
 {
     DPTR_D(QQuickItemRenderer);
+    Q_ASSERT(!d.opengl);
     if (!d.node)
         return;
     if (d.image.isNull()) {
@@ -153,12 +170,23 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
     Q_UNUSED(data);
     DPTR_D(QQuickItemRenderer);
     if (!node) {
-        node = new QSGSimpleTextureNode();
+        if (d.opengl) {
+            node = new SGVideoNode();
+        } else {
+            node = new QSGSimpleTextureNode();
+        }
     }
-    d.node = node;
-    handlePaintEvent();
-    d.node = 0;
-    return node;
+    if (!d.opengl) {
+        d.node = node;
+        handlePaintEvent();
+        d.node = 0;
+        return node;
+    }
+    //d.updateGeometry();
+    SGVideoNode *sgvn = static_cast<SGVideoNode*>(node);
+    sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), 0);
+    sgvn->setCurrentFrame(d.video_frame);
+    return sgvn;
 }
 
 bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)
