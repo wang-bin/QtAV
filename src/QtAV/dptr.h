@@ -47,6 +47,8 @@
 #define DPTR_H
 
 /*!
+  requrement: Base class must have default ctor.
+
  example:
     //Base.h
     class BasePrivate
@@ -139,7 +141,7 @@ class DPtrInterface
     friend class DPtrPrivate<PUB>;
 public:
     DPtrInterface(PVT* d):pvt(d) {}
-    DPtrInterface():pvt(new PVT) {}
+    DPtrInterface():pvt(new PVT()) {}
     ~DPtrInterface() {
         if (pvt) {
             delete pvt;
