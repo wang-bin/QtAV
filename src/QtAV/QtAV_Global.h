@@ -51,12 +51,13 @@ Q_AV_EXPORT QString aboutQtAV_HTML();
 Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#define QStringLiteral(X) QString::fromUtf8(X)
+#endif //QT_VERSION
 /*
  * msvc sucks! can not deal with (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
  */
 #define QTAV_HAVE(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
-
-#define QTAV_HAVE_QGLFUNCTIONS QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
 
 //TODO: always inline
 /* --gnu option of the RVCT compiler also defines __GNUC__ */

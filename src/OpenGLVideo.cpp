@@ -36,11 +36,18 @@
 
 namespace QtAV {
 
+// QOpenGLContext in Qt5 is QObject. we can simply ctx->findChild to get the shader manager.
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// TODO: thread safe?
+static QHash<QOpenGLContext*,ShaderManager*> sShaderMgrs;
+#endif
 class OpenGLVideoPrivate : public DPtrPrivate<OpenGLVideo>
 {
 public:
     OpenGLVideoPrivate()
-        : material(new VideoMaterial())
+        : ctx(0)
+        , manager(0)
+        , material(new VideoMaterial())
     {}
     ~OpenGLVideoPrivate() {
         if (material) {
@@ -49,7 +56,8 @@ public:
         }
     }
 
-    ShaderManager manager;
+    QOpenGLContext *ctx;
+    ShaderManager *manager;
     VideoMaterial *material;
     QRect viewport;
     QRect out_rect;
@@ -57,6 +65,35 @@ public:
 };
 
 OpenGLVideo::OpenGLVideo() {}
+
+void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
+{
+    DPTR_D(OpenGLVideo);
+    if (!ctx) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+        sShaderMgrs.remove(d.ctx);
+#endif
+        d.manager->setParent(0);
+        delete d.manager;
+        d.manager = 0;
+        d.ctx = 0;
+        return;
+    }
+    d.ctx = ctx;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    d.manager = ctx->findChild<ShaderManager*>(QStringLiteral("__qtav_shader_manager"));
+#else
+    d.manager = sShaderMgrs.value(ctx, 0);
+#endif
+    if (d.manager)
+        return;
+    // TODO: what if ctx is delete?
+    d.manager = new ShaderManager(ctx);
+    d.manager->setObjectName(QStringLiteral("__qtav_shader_manager"));
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    sShaderMgrs[ctx] = d.manager;
+#endif
+}
 
 void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
 {
@@ -106,8 +143,9 @@ void OpenGLVideo::setSaturation(qreal value)
 void OpenGLVideo::render(const QRect &roi)
 {
     DPTR_D(OpenGLVideo);
+    Q_ASSERT(d.manager);
     glViewport(d.viewport.x(), d.viewport.y(), d.viewport.width(), d.viewport.height());
-    VideoShader *shader = d.manager.prepareMaterial(d.material);
+    VideoShader *shader = d.manager->prepareMaterial(d.material);
     shader->update(d.material);
     shader->program()->setUniformValue(shader->matrixLocation(), d.matrix);
     // uniform end. attribute begin

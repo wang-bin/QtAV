@@ -3,16 +3,19 @@
 
 namespace QtAV {
 
-QHash<MaterialType*, VideoShader*> ShaderManager::shader_cache;
-
-ShaderManager::ShaderManager(QObject *parent) :
-    QObject(parent)
+ShaderManager::ShaderManager(QOpenGLContext *ctx) :
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    QObject(ctx)
+#else
+    QObject(0)
+#endif
+  , m_ctx(ctx)
 {
 }
 
 ShaderManager::~ShaderManager()
 {
-    qDeleteAll(shader_cache);
+    invalidated();
 }
 
 VideoShader* ShaderManager::prepareMaterial(VideoMaterial *material)

@@ -25,6 +25,15 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/ColorTransform.h>
 #include <QtAV/VideoFormat.h>
+#include <QtCore/QHash>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QOpenGLContext>
+#else
+#if !defined(QT_NO_OPENGL)
+#include <QtOpenGL/QGLContext>
+#define QOpenGLContext QGLContext
+#endif //!defined(QT_NO_OPENGL)
+#endif
 
 namespace QtAV {
 
@@ -39,6 +48,13 @@ class Q_AV_EXPORT OpenGLVideo
     DPTR_DECLARE_PRIVATE(OpenGLVideo)
 public:
     OpenGLVideo();
+    /*!
+     * \brief setOpenGLContext
+     * a context must be set before renderering.
+     * \param ctx
+     * 0: current context in OpenGL is done. shaders all will be released
+     */
+    void setOpenGLContext(QOpenGLContext *ctx);
     void setCurrentFrame(const VideoFrame& frame);
     /*!
      * \brief render

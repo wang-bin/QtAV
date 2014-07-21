@@ -24,6 +24,14 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QHash>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QOpenGLContext>
+#else
+#if !defined(QT_NO_OPENGL)
+#include <QtOpenGL/QGLContext>
+#define QOpenGLContext QGLContext
+#endif //!defined(QT_NO_OPENGL)
+#endif
 
 namespace QtAV {
 
@@ -39,7 +47,7 @@ class ShaderManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit ShaderManager(QObject *parent = 0);
+    explicit ShaderManager(QOpenGLContext *ctx);
     ~ShaderManager();
     VideoShader* prepareMaterial(VideoMaterial *material);
 
@@ -47,8 +55,8 @@ public Q_SLOTS:
     void invalidated();
 
 private:
-    // TODO: thread safe required?
-    static QHash<MaterialType*, VideoShader*> shader_cache;
+    QOpenGLContext *m_ctx;
+    QHash<MaterialType*, VideoShader*> shader_cache;
 };
 } //namespace QtAV
 #endif // QTAV_SHADERMANAGER_H

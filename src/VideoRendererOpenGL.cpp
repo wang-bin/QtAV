@@ -116,6 +116,7 @@ void VideoRendererOpenGL::initializeGL()
 {
     DPTR_D(VideoRendererOpenGL);
     makeCurrent();
+    d.glv.setOpenGLContext(QOpenGLContext::currentContext());
     //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
     bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
     qDebug("OpenGL version: %d.%d  hasGLSL: %d", format().majorVersion(), format().minorVersion(), hasGLSL);
