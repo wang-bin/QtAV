@@ -52,7 +52,8 @@ VideoRendererId QQuickItemRenderer::id() const
 // TODO: yuv
 bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    Q_UNUSED(pixfmt);
+    if (!isOpenGL())
+        return VideoFormat::isRGB(pixfmt);
     return true;
 }
 
@@ -149,7 +150,7 @@ bool QQuickItemRenderer::needDrawFrame() const
 void QQuickItemRenderer::drawFrame()
 {
     DPTR_D(QQuickItemRenderer);
-    Q_ASSERT(!d.opengl);
+    Q_ASSERT(!isOpenGL());
     if (!d.node)
         return;
     if (d.image.isNull()) {
@@ -170,13 +171,13 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
     Q_UNUSED(data);
     DPTR_D(QQuickItemRenderer);
     if (!node) {
-        if (d.opengl) {
+        if (isOpenGL()) {
             node = new SGVideoNode();
         } else {
             node = new QSGSimpleTextureNode();
         }
     }
-    if (!d.opengl) {
+    if (!isOpenGL()) {
         d.node = node;
         handlePaintEvent();
         d.node = 0;
