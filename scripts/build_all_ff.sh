@@ -1,7 +1,7 @@
 QTAV=$PWD/../QtAV
 FFROOT=$PWD/..
-FFVER=(0.8.14 0.9.2 1.0.7 1.1.5 1.2.1 2.0.1 2.1.4)
-LIBAVVER=(0.8.8 9.7)
+FFVER=(0.11.5 1.0.9 1.1.12 1.2.7 2.0.5 2.1.5 2.2.5 2.3)
+#LIBAVVER=(0.8.8 9.7)
 BUILDROOT=$PWD
 buildqtav() {
     FF=$1
@@ -16,11 +16,13 @@ buildqtav() {
     mkdir -p $OUT
     cd $OUT
     rm -f build.log
-    qmake -r $QTAV 
+    qmake -r $QTAV -config silent
     time make -j4 2>&1 |tee build.log
     ln -sf $FFSDK/lib/* bin
     cd $BUILDROOT
 }
+
+time (
 for V in ${LIBAVVER[@]}
 do
     buildqtav libav $V
@@ -29,4 +31,4 @@ for V in ${FFVER[@]}
 do
     buildqtav ffmpeg $V
 done
-
+)

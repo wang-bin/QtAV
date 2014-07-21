@@ -3,11 +3,13 @@ compiler:
   - clang
 cache: apt
 install: true
+env:
+  - FFMPEG=ffmpeg-2.2.5
 before_script:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq -y portaudio19-dev libopenal-dev libva-dev
+  - sudo apt-get install -qq -y portaudio19-dev libopenal-dev libva-dev libass-dev libxv-dev parallel
 script:
-  - ./tools/ci/travis_build.sh
+  - ./tools/ci/travis_build.sh $FFMPEG
 notifications:
   irc:
     channels:
