@@ -20,7 +20,9 @@
 ******************************************************************************/
 
 #include "OpenGLHelper.h"
-
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtOpenGL/QGLFunctions>
+#endif
 namespace QtAV {
 namespace OpenGLHelper {
 
