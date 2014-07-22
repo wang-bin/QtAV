@@ -367,6 +367,9 @@ QRect VideoRenderer::realROI() const
 QRectF VideoRenderer::normalizedROI() const
 {
     DPTR_D(const VideoRenderer);
+    if (!d.roi.isValid()) {
+        return QRectF(0, 0, 1, 1);
+    }
     QRectF r = d.roi;
     bool normalized = false;
     if (qAbs(r.x()) >= 1)
