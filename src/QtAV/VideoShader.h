@@ -59,7 +59,6 @@ public:
      * \param shaderProgram: 0 means create a shader program internally. if not linked, vertex/fragment shader will be added and linked
      */
     virtual void initialize(QOpenGLShaderProgram* shaderProgram = 0);
-
     /*!
      * \brief textureLocationCount
      * number of texture locations is
@@ -103,7 +102,7 @@ public:
     VideoShader* createShader() const;
     virtual MaterialType* type() const;
 
-    void bind(); // TODO: roi
+    bool bind(); // TODO: roi
     void unbind();
     void bindPlane(int p); // TODO: roi
     int compare(const VideoMaterial* other) const;

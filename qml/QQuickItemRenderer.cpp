@@ -49,7 +49,6 @@ VideoRendererId QQuickItemRenderer::id() const
     return VideoRendererId_QQuickItem;
 }
 
-// TODO: yuv
 bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     if (!isOpenGL())
@@ -80,7 +79,7 @@ bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
     QRect r = realROI();
     if (r != QRect(0, 0, frame.width(), frame.height()))
         d.image = d.image.copy(r);
-
+    d.frame_changed = true;
     //update(); //why not this?
     QMetaObject::invokeMethod(this, "update");
     return true;
@@ -170,12 +169,18 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
 {
     Q_UNUSED(data);
     DPTR_D(QQuickItemRenderer);
-    if (!node) {
-        if (isOpenGL()) {
-            node = new SGVideoNode();
-        } else {
-            node = new QSGSimpleTextureNode();
+    if (d.frame_changed) {
+        if (!node) {
+            if (isOpenGL()) {
+                node = new SGVideoNode();
+            } else {
+                node = new QSGSimpleTextureNode();
+            }
         }
+    }
+    if (!node) {
+        d.frame_changed = false;
+        return 0;
     }
     if (!isOpenGL()) {
         d.node = node;
@@ -183,10 +188,11 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
         d.node = 0;
         return node;
     }
-    //d.updateGeometry();
     SGVideoNode *sgvn = static_cast<SGVideoNode*>(node);
     sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), 0);
-    sgvn->setCurrentFrame(d.video_frame);
+    if (d.frame_changed)
+        sgvn->setCurrentFrame(d.video_frame);
+    d.frame_changed = false;
     return sgvn;
 }
 

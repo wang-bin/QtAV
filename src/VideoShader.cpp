@@ -120,9 +120,12 @@ const char* VideoShader::fragmentShader() const
 void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
 {
     DPTR_D(VideoShader);
-    if (!shaderProgram) {
-        shaderProgram = program();
+    if (!textureLocationCount())
+        return;
+    if (shaderProgram) {
+        d.program = shaderProgram;
     }
+    shaderProgram = program();
     if (!shaderProgram->isLinked()) {
         compile(shaderProgram);
     }
@@ -191,7 +194,8 @@ QOpenGLShaderProgram* VideoShader::program()
 
 void VideoShader::update(VideoMaterial *material)
 {
-    material->bind();
+    if (!material->bind())
+        return;
 
     // uniforms begin
     program()->bind(); //glUseProgram(id). for glUniform
@@ -230,7 +234,7 @@ QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
 
 void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
 {
-    Q_ASSERT_X(!shaderProgram.isLinked(), "VideoShader::compile()", "Compile called multiple times!");
+    Q_ASSERT_X(!shaderProgram->isLinked(), "VideoShader::compile()", "Compile called multiple times!");
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader());
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader());
     int maxVertexAttribs = 0;
@@ -305,24 +309,26 @@ MaterialType* VideoMaterial::type() const
     return &invalidType;
 }
 
-void VideoMaterial::bind()
+bool VideoMaterial::bind()
 {
     DPTR_D(VideoMaterial);
-    d.updateTexturesIfNeeded();
+    if (!d.updateTexturesIfNeeded())
+        return false;
     const int nb_planes = d.textures.size(); //number of texture id
+    if (nb_planes <= 0)
+        return false;
     if (d.update_texure) {
         for (int i = 0; i < nb_planes; ++i) {
             bindPlane(i);
         }
         d.update_texure = false;
-        return;
+        return true;
     }
-    if (d.textures.isEmpty())
-        return;
     for (int i = 0; i < nb_planes; ++i) {
         OpenGLHelper::glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, d.textures[i]);
     }
+    return true;
 }
 
 void VideoMaterial::bindPlane(int p)
@@ -554,9 +560,11 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
     return true;
 }
 
-void VideoMaterialPrivate::updateTexturesIfNeeded()
+bool VideoMaterialPrivate::updateTexturesIfNeeded()
 {
     const VideoFormat &fmt = frame.format();
+    if (!fmt.isValid())
+        return false;
     bool update_textures = false;
     if (fmt != video_format) {
         //update_textures = true;
@@ -597,6 +605,7 @@ void VideoMaterialPrivate::updateTexturesIfNeeded()
     if (update_textures) {
         initTextures(fmt);
     }
+    return true;
 }
 
 void VideoMaterialPrivate::setupQuality()

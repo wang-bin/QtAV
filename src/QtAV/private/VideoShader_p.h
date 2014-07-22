@@ -85,7 +85,7 @@ public:
     }
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool initTextures(const VideoFormat& fmt);
-    void updateTexturesIfNeeded();
+    bool updateTexturesIfNeeded();
     void setupQuality();
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
