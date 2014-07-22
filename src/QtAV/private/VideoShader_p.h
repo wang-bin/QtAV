@@ -43,19 +43,21 @@ class Q_AV_EXPORT VideoShaderPrivate : public DPtrPrivate<VideoShader>
 {
 public:
     VideoShaderPrivate()
-        : program(0)
+        : owns_program(false)
+        , program(0)
         , u_MVP_matrix(-1)
         , u_colorMatrix(-1)
         , u_bpp(-1)
     {}
     virtual ~VideoShaderPrivate() {
-        if (program) {
+        if (owns_program && program) {
             program->removeAllShaders();
             delete program;
-            program = 0;
         }
+        program = 0;
     }
 
+    bool owns_program; // shader program is not created by this. e.g. scene graph create it's own program and we store it here
     QOpenGLShaderProgram *program;
     // TODO: compare with texture width uniform used in qtmm
     int u_MVP_matrix;

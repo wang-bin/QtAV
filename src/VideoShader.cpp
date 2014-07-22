@@ -122,6 +122,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     DPTR_D(VideoShader);
     if (!textureLocationCount())
         return;
+    d.owns_program = !shaderProgram;
     if (shaderProgram) {
         d.program = shaderProgram;
     }
@@ -187,8 +188,10 @@ void VideoShader::setVideoFormat(const VideoFormat &format)
 QOpenGLShaderProgram* VideoShader::program()
 {
     DPTR_D(VideoShader);
-    if (!d.program)
+    if (!d.program) {
+        d.owns_program = true;
         d.program = new QOpenGLShaderProgram();
+    }
     return d.program;
 }
 
