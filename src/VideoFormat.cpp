@@ -533,6 +533,8 @@ void VideoFormat::setPixelFormatFFmpeg(int format)
 
 int VideoFormat::channels() const
 {
+    if (!d->pixdesc)
+        return 0;
     return d->pixdesc->nb_components;
 }
 
