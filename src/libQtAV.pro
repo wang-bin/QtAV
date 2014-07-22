@@ -34,8 +34,8 @@ win32 {
 #plugin.depends = #makefile target
 #windows: copy /y file1+file2+... dir. need '+'
 for(f, copy_sdk_libs) {
-  win32: copy_sdk_libs_cmd += $$quote(-\$\(COPY_FILE\) \"$$shell_path($$f)\" \"$$shell_path($$[QT_INSTALL_BINS])\")
-  else: copy_sdk_libs_cmd += $$quote(-\$\(COPY_FILE\) \"$$shell_path($$f)\" \"$$shell_path($$[QT_INSTALL_LIBS])\")
+  win32: copy_sdk_libs_cmd += $$quote(-\$\(COPY_FILE\) \"$$system_path($$f)\" \"$$system_path($$[QT_INSTALL_BINS])\")
+  else: copy_sdk_libs_cmd += $$quote(-\$\(COPY_FILE\) \"$$system_path($$f)\" \"$$system_path($$[QT_INSTALL_LIBS])\")
 }
 #join values seperated by space. so quote is needed
 copy_sdk_libs_cmd = $$join(copy_sdk_libs_cmd,$$escape_expand(\\n\\t))

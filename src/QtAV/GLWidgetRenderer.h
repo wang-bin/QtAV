@@ -25,10 +25,10 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
 // TODO: QGLFunctions is in Qt4.8+. meego is 4.7
+#define QTAV_HAVE_QGLFUNCTIONS QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
 #if QTAV_HAVE(QGLFUNCTIONS)
 #include <QtOpenGL/QGLFunctions>
-#endif //QT_VERSION
-
+#endif
 namespace QtAV {
 
 class GLWidgetRendererPrivate;

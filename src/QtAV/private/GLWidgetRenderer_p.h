@@ -30,7 +30,10 @@
 #include <QtAV/ColorTransform.h>
 
 #define NO_QGL_SHADER (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-
+#define QTAV_HAVE_QGLFUNCTIONS QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+#if QTAV_HAVE(QGLFUNCTIONS)
+#include <QtOpenGL/QGLFunctions>
+#endif
 namespace QtAV {
 
 class GLWidgetRendererPrivate : public VideoRendererPrivate

@@ -1,4 +1,4 @@
-TEMPLATE = lib
+ TEMPLATE = lib
 CONFIG += qt plugin
 TARGET = QmlAV
 QT += quick qml
@@ -22,12 +22,12 @@ plugin.path = $$BUILD_DIR/bin/QtAV/ #TODO: Qt install dir
 #plugin.depends = #makefile target
 #windows: copy /y file1+file2+... dir. need '+'
 for(f, plugin.files) {
-  plugin.commands += $$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$plugin.path))
-  plugin.commands += $$quote(-\$\(MKDIR\) $$shell_path($$[QT_INSTALL_QML]/QtAV))
-  plugin.commands += $$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$[QT_INSTALL_QML]/QtAV))
+  plugin.commands = $$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$plugin.path))
+  plugin.commands += $$escape_expand(\\n\\t)$$quote(-\$\(MKDIR\) $$shell_path($$[QT_INSTALL_QML]/QtAV))
+  plugin.commands += $$escape_expand(\\n\\t)$$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$[QT_INSTALL_QML]/QtAV))
 }
 #join values seperated by space. so quote is needed
-plugin.commands = $$join(plugin.commands,$$escape_expand(\\n\\t))
+#plugin.commands = $$join(plugin.commands,$$escape_expand(\\n\\t))
 OTHER_FILES += qmldir Video.qml plugins.qmltypes
 #just append as a string to $$QMAKE_POST_LINK
 isEmpty(QMAKE_POST_LINK): QMAKE_POST_LINK = $$plugin.commands
