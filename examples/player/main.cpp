@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
         vo = "gl";
     QString title = "QtAV " /*+ vo + " "*/ + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
 #ifndef QT_NO_OPENGL
-    VideoRendererId vid = VideoRendererId_GLWidget;
+    VideoRendererId vid = VideoRendererId_GLWidget2;
 #else
     VideoRendererId vid = VideoRendererId_Widget;
 #endif
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
         const char* name;
         VideoRendererId id;
     } vid_map[] = {
-    { "gl", VideoRendererId_GLWidget },
+    { "gl", VideoRendererId_GLWidget2 },
     { "d2d", VideoRendererId_Direct2D },
     { "gdi", VideoRendererId_GDI },
     { "xv", VideoRendererId_XV },
