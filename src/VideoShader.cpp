@@ -148,6 +148,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
 int VideoShader::textureLocationCount() const
 {
     DPTR_D(const VideoShader);
+    // TODO: avoid accessing video_format.
     if (d.video_format.isRGB() && !d.video_format.isPlanar())
         return 1;
     return d.video_format.channels();
@@ -200,10 +201,13 @@ void VideoShader::update(VideoMaterial *material)
     if (!material->bind())
         return;
 
+    const VideoFormat fmt(material->currentFormat());
+    //format is out of date because we may use the same shader for different formats
+    setVideoFormat(fmt);
     // uniforms begin
     program()->bind(); //glUseProgram(id). for glUniform
     // all texture ids should be binded when renderering even for packed plane!
-    const int nb_planes = videoFormat().planeCount(); //number of texture id
+    const int nb_planes = fmt.planeCount(); //number of texture id
     for (int i = 0; i < nb_planes; ++i) {
         // use glUniform1i to swap planes. swap uv: i => (3-i)%3
         // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
@@ -269,19 +273,30 @@ VideoMaterial::VideoMaterial()
 void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
 {
     DPTR_D(VideoMaterial);
-    // TODO: lock?
-    d.frame = frame;
+    d.update_texure = true;
     d.bpp = frame.format().bitsPerPixel(0);
+    d.width = frame.width();
+    d.height = frame.height();
     // http://forum.doom9.org/archive/index.php/t-160211.html
     ColorTransform::ColorSpace cs = ColorTransform::RGB;
     if (!frame.format().isRGB()) {
-        if (d.frame.width() >= 1280 || d.frame.height() > 576) //values from mpv
+        if (frame.width() >= 1280 || frame.height() > 576) //values from mpv
             cs = ColorTransform::BT709;
         else
             cs = ColorTransform::BT601;
     }
     d.colorTransform.setInputColorSpace(cs);
-    d.update_texure = true;
+    d.frame = frame;
+    if (frame.format() != d.video_format) {
+        qDebug("pixel format changed: %s => %s", qPrintable(d.video_format.name()), qPrintable(frame.format().name()));
+        d.video_format = frame.format();
+    }
+}
+
+VideoFormat VideoMaterial::currentFormat() const
+{
+    DPTR_D(const VideoMaterial);
+    return d.video_format;
 }
 
 VideoShader* VideoMaterial::createShader() const
@@ -290,6 +305,7 @@ VideoShader* VideoMaterial::createShader() const
     VideoShader *shader = new VideoShader();
     const VideoFormat fmt(d.frame.format());
     shader->setVideoFormat(fmt);
+    //resize texture locations to avoid access format later
     return shader;
 }
 
@@ -430,14 +446,14 @@ void VideoMaterial::getTextureCoordinates(const QRect& roi, float* t)
     /*!
       tex coords: ROI/frameRect()*effective_tex_width_ratio
     */
-    t[0] = (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width();
-    t[1] = (GLfloat)roi.y()/(GLfloat)d.frame.height();
-    t[2] = (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width();
-    t[3] = (GLfloat)roi.y()/(GLfloat)d.frame.height();
-    t[4] = (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width();
-    t[5] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height();
-    t[6] = (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.frame.width();
-    t[7] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.frame.height();
+    t[0] = (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.width;
+    t[1] = (GLfloat)roi.y()/(GLfloat)d.height;
+    t[2] = (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.width;
+    t[3] = (GLfloat)roi.y()/(GLfloat)d.height;
+    t[4] = (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.width;
+    t[5] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.height;
+    t[6] = (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.width;
+    t[7] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.height;
 }
 
 
@@ -466,8 +482,6 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
     // isSupported(pixfmt)
     if (!fmt.isValid())
         return false;
-    video_format.setPixelFormatFFmpeg(fmt.pixelFormatFFmpeg());
-
     //http://www.berkelium.com/OpenGL/GDC99/internalformat.html
     //NV12: UV is 1 plane. 16 bits as a unit. GL_LUMINANCE4, 8, 16, ... 32?
     //GL_LUMINANCE, GL_LUMINANCE_ALPHA are deprecated in GL3, removed in GL3.1
@@ -569,16 +583,12 @@ bool VideoMaterialPrivate::updateTexturesIfNeeded()
     if (!fmt.isValid())
         return false;
     bool update_textures = false;
-    if (fmt != video_format) {
-        //update_textures = true;
-        qDebug("pixel format changed: %s => %s", qPrintable(video_format.name()), qPrintable(fmt.name()));
-    }
     // effective size may change even if plane size not changed
     if (update_textures
             || frame.bytesPerLine(0) != plane0Size.width() || frame.height() != plane0Size.height()
             || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
-        //qDebug("---------------------update texture: %dx%d, %s", frame.width(), frame.height(), frame.format().name().toUtf8().constData());
+        //qDebug("---------------------update texture: %dx%d, %s", width, frame.height(), frame.format().name().toUtf8().constData());
         const int nb_planes = fmt.planeCount();
         texture_size.resize(nb_planes);
         texture_upload_size.resize(nb_planes);

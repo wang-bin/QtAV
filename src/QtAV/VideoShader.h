@@ -99,6 +99,7 @@ public:
     VideoMaterial();
     virtual ~VideoMaterial() {}
     void setCurrentFrame(const VideoFrame& frame);
+    VideoFormat currentFormat() const;
     VideoShader* createShader() const;
     virtual MaterialType* type() const;
 

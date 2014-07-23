@@ -75,6 +75,8 @@ public:
     VideoMaterialPrivate()
         : update_texure(true)
         , bpp(1)
+        , width(0)
+        , height(0)
         , video_format(VideoFormat::Format_Invalid)
         , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
@@ -92,6 +94,7 @@ public:
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
     int bpp;
+    int width, height; //avoid accessing frame(need lock)
     QRect viewport;
     QRect out_rect;
     VideoFrame frame;
