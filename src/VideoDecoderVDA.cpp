@@ -94,12 +94,12 @@ public:
     GPUMemCopy gpu_mem;
 };
 
-struct vda_error {
+typedef struct {
     int  code;
     const char *str;
-};
+} vda_error;
 
-static const struct vda_error vda_errors[] = {
+static const vda_error vda_errors[] = {
     { kVDADecoderHardwareNotSupportedErr,
         "Hardware doesn't support accelerated decoding" },
     { kVDADecoderFormatNotSupportedErr,
@@ -122,6 +122,28 @@ static const char* vda_err_str(int err)
         return vda_errors[i].str;
     }
     return 0;
+}
+
+typedef struct {
+    int cv_pixfmt;
+    VideoFormat::PixelFormat pixfmt;
+} cv_format;
+
+static const cv_format cv_formats[] = {
+    { kCVPixelFormatType_420YpCbCr8Planar, VideoFormat::Format_YUV420P },
+    { kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, VideoFormat::Format_NV12 },
+    { kCVPixelFormatType_422YpCbCr8, VideoFormat::Format_UYVY },
+    { kCVPixelFormatType_422YpCbCr8_yuvs, VideoFormat::Format_YUYV },
+    { 0, VideoFormat::Format_Invalid }
+};
+
+static VideoFormat::PixelFormat format_from_cv(int cv)
+{
+    for (int i = 0; cv_formats[i].pixfmt != VideoFormat::Format_Invalid; ++i) {
+        if (cv_formats[i].cv_pixfmt == cv)
+            return cv_formats[i].pixfmt;
+    }
+    return VideoFormat::Format_Invalid;
 }
 
 VideoDecoderVDA::VideoDecoderVDA()
@@ -165,17 +187,7 @@ VideoFrame VideoDecoderVDA::frame()
         qDebug("Empty frame buffer");
         return VideoFrame();
     }
-    VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
-    switch (d.hw_ctx.cv_pix_fmt_type) {
-    case kCVPixelFormatType_420YpCbCr8Planar:
-        pixfmt = VideoFormat::Format_YUV420P;
-        break;
-    case kCVPixelFormatType_422YpCbCr8:
-        pixfmt = VideoFormat::Format_UYVY;
-        break;
-    default:
-        break;
-    }
+    VideoFormat::PixelFormat pixfmt = format_from_cv(d.hw_ctx.cv_pix_fmt_type);
     if (pixfmt == VideoFormat::Format_Invalid) {
         qWarning("unsupported vda pixel format: %#x", d.hw_ctx.cv_pix_fmt_type);
         return VideoFrame();
@@ -216,7 +228,8 @@ VideoFrame VideoDecoderVDA::frame()
         frame = VideoFrame(d.width, d.height, fmt); //d.hw_ctx.width
         frame.setBits(src);
         frame.setBytesPerLine(pitch);
-        //frame = frame.clone();
+        // TODO: buffer pool and create VideoFrame when needed to avoid copy? also for other va
+        frame = frame.clone();
     }
     return frame;
 }
@@ -237,8 +250,7 @@ bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
     } else {
         memset(&hw_ctx, 0, sizeof(hw_ctx));
         hw_ctx.format = 'avc1';
-        // TODO: other formats, such as kCVPixelFormatType_422YpCbCr8
-        hw_ctx.cv_pix_fmt_type = kCVPixelFormatType_420YpCbCr8Planar;
+        hw_ctx.cv_pix_fmt_type = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;//kCVPixelFormatType_422YpCbCr8;
     }
     /* Setup the libavcodec hardware context */
     *pp_hw_ctx = &hw_ctx;
