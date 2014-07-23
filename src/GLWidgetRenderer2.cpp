@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoRendererOpenGL.h"
+#include "QtAV/GLWidgetRenderer2.h"
 #include "private/VideoRenderer_p.h"
 #include "QtAV/OpenGLVideo.h"
 #include "QtAV/FilterContext.h"
@@ -34,24 +34,24 @@
 
 namespace QtAV {
 
-class VideoRendererOpenGLPrivate : public VideoRendererPrivate
+class GLWidgetRenderer2Private : public VideoRendererPrivate
 {
 public:
-    VideoRendererOpenGLPrivate()
+    GLWidgetRenderer2Private()
         : painter(0)
     {}
-    virtual ~VideoRendererOpenGLPrivate() {}
+    virtual ~GLWidgetRenderer2Private() {}
 
     QPainter *painter;
     OpenGLVideo glv;
 };
 
 
-VideoRendererOpenGL::VideoRendererOpenGL(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
-    QGLWidget(parent, shareWidget, f),VideoRenderer(*new VideoRendererOpenGLPrivate())
+GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
+    QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRenderer2Private())
 {
-    DPTR_INIT_PRIVATE(VideoRendererOpenGL);
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_INIT_PRIVATE(GLWidgetRenderer2);
+    DPTR_D(GLWidgetRenderer2);
     setPreferredPixelFormat(VideoFormat::Format_YUV420P);
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
@@ -75,15 +75,15 @@ VideoRendererOpenGL::VideoRendererOpenGL(QWidget *parent, const QGLWidget* share
 }
 
 
-bool VideoRendererOpenGL::isSupported(VideoFormat::PixelFormat pixfmt) const
+bool GLWidgetRenderer2::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     Q_UNUSED(pixfmt);
     return true;
 }
 
-bool VideoRendererOpenGL::receiveFrame(const VideoFrame& frame)
+bool GLWidgetRenderer2::receiveFrame(const VideoFrame& frame)
 {
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
     d.video_frame = frame;
@@ -94,27 +94,27 @@ bool VideoRendererOpenGL::receiveFrame(const VideoFrame& frame)
     return true;
 }
 
-bool VideoRendererOpenGL::needUpdateBackground() const
+bool GLWidgetRenderer2::needUpdateBackground() const
 {
     return true;
 }
 
-void VideoRendererOpenGL::drawBackground()
+void GLWidgetRenderer2::drawBackground()
 {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void VideoRendererOpenGL::drawFrame()
+void GLWidgetRenderer2::drawFrame()
 {
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     QRect roi = realROI();
     d.glv.render(roi);
 }
 
-void VideoRendererOpenGL::initializeGL()
+void GLWidgetRenderer2::initializeGL()
 {
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     makeCurrent();
     QOpenGLContext *ctx = const_cast<QOpenGLContext*>(QOpenGLContext::currentContext()); //qt4 returns const
     d.glv.setOpenGLContext(ctx);
@@ -126,9 +126,9 @@ void VideoRendererOpenGL::initializeGL()
     glClearColor(0.0, 0.0, 0.0, 0.0);
 }
 
-void VideoRendererOpenGL::paintGL()
+void GLWidgetRenderer2::paintGL()
 {
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     /* we can mix gl and qpainter.
      * QPainter painter(this);
      * painter.beginNativePainting();
@@ -142,17 +142,17 @@ void VideoRendererOpenGL::paintGL()
         d.painter->end();
 }
 
-void VideoRendererOpenGL::resizeGL(int w, int h)
+void GLWidgetRenderer2::resizeGL(int w, int h)
 {
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     //qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
     d.glv.setViewport(QRect(0, 0, w, h));
     d.glv.setVideoRect(d.out_rect);
 }
 
-void VideoRendererOpenGL::resizeEvent(QResizeEvent *e)
+void GLWidgetRenderer2::resizeEvent(QResizeEvent *e)
 {
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     d.update_background = true;
     resizeRenderer(e->size());
     d.glv.setVideoRect(d.out_rect);
@@ -160,9 +160,9 @@ void VideoRendererOpenGL::resizeEvent(QResizeEvent *e)
 }
 
 //TODO: out_rect not correct when top level changed
-void VideoRendererOpenGL::showEvent(QShowEvent *)
+void GLWidgetRenderer2::showEvent(QShowEvent *)
 {
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     d.update_background = true;
     /*
      * Do something that depends on widget below! e.g. recreate render target for direct2d.
@@ -171,39 +171,39 @@ void VideoRendererOpenGL::showEvent(QShowEvent *)
      */
 }
 
-void VideoRendererOpenGL::onSetOutAspectRatio(qreal ratio)
+void GLWidgetRenderer2::onSetOutAspectRatio(qreal ratio)
 {
     Q_UNUSED(ratio);
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     d.glv.setVideoRect(d.out_rect);
 }
 
-void VideoRendererOpenGL::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+void GLWidgetRenderer2::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 {
     Q_UNUSED(mode);
-    DPTR_D(VideoRendererOpenGL);
+    DPTR_D(GLWidgetRenderer2);
     d.glv.setVideoRect(d.out_rect);
 }
 
-bool VideoRendererOpenGL::onSetBrightness(qreal b)
+bool GLWidgetRenderer2::onSetBrightness(qreal b)
 {
     d_func().glv.setBrightness(b);
     return true;
 }
 
-bool VideoRendererOpenGL::onSetContrast(qreal c)
+bool GLWidgetRenderer2::onSetContrast(qreal c)
 {
     d_func().glv.setContrast(c);
     return true;
 }
 
-bool VideoRendererOpenGL::onSetHue(qreal h)
+bool GLWidgetRenderer2::onSetHue(qreal h)
 {
     d_func().glv.setHue(h);
     return true;
 }
 
-bool VideoRendererOpenGL::onSetSaturation(qreal s)
+bool GLWidgetRenderer2::onSetSaturation(qreal s)
 {
     d_func().glv.setSaturation(s);
     return true;

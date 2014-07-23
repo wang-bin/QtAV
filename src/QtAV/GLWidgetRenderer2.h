@@ -19,25 +19,25 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEORENDEREROPENGL_H
-#define QTAV_VIDEORENDEREROPENGL_H
+#ifndef QTAV_GLWIDGETRENDERER2_H
+#define QTAV_GLWIDGETRENDERER2_H
 
 #include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
 
 namespace QtAV {
 
-class VideoRendererOpenGLPrivate;
+class GLWidgetRenderer2Private;
 /*!
- * \brief The VideoRendererOpenGL class
+ * \brief The GLWidgetRenderer2 class
  * Renderering video frames using GLSL. A more generic high level class OpenGLVideo is used internally.
  * TODO: for Qt5, no QtOpenGL, use QWindow instead.
  */
-class Q_AV_EXPORT VideoRendererOpenGL : public QGLWidget, public VideoRenderer
+class Q_AV_EXPORT GLWidgetRenderer2 : public QGLWidget, public VideoRenderer
 {
-    DPTR_DECLARE_PRIVATE(VideoRendererOpenGL)
+    DPTR_DECLARE_PRIVATE(GLWidgetRenderer2)
 public:
-    VideoRendererOpenGL(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
+    GLWidgetRenderer2(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     virtual VideoRendererId id() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
     virtual QWidget* widget() { return this; }
@@ -62,7 +62,8 @@ private:
     virtual bool onSetHue(qreal h);
     virtual bool onSetSaturation(qreal s);
 };
+typedef GLWidgetRenderer2 VideoRendererGLWidget2;
 
 } //namespace QtAV
 
-#endif // QTAV_VIDEORENDEREROPENGL_H
+#endif // QTAV_GLWIDGETRENDERER2_H
