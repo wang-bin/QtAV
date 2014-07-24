@@ -34,6 +34,41 @@
 
 namespace QtAV {
 
+
+TexturedGeometry::TexturedGeometry(int count, Triangle t)
+    : tri(t)
+{
+    v.resize(count);
+}
+
+int TexturedGeometry::mode() const
+{
+    if (tri == Strip)
+        return GL_TRIANGLE_STRIP;
+    return GL_TRIANGLE_FAN;
+}
+
+void TexturedGeometry::setPoint(int index, const QPointF &p, const QPointF &tp)
+{
+    v[index].x = p.x();
+    v[index].y = p.y();
+    v[index].tx = tp.x();
+    v[index].ty = tp.y();
+}
+
+void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr)
+{
+    setPoint(0, r.topLeft(), tr.topLeft());
+    setPoint(1, r.bottomLeft(), tr.bottomLeft());
+    if (tri == Strip) {
+        setPoint(2, r.topRight(), tr.topRight());
+        setPoint(3, r.bottomRight(), tr.bottomRight());
+    } else {
+        setPoint(3, r.topRight(), tr.topRight());
+        setPoint(2, r.bottomRight(), tr.bottomRight());
+    }
+}
+
 VideoShader::VideoShader(VideoShaderPrivate &d):
     DPTR_INIT(&d)
 {
@@ -149,7 +184,7 @@ int VideoShader::textureLocationCount() const
 {
     DPTR_D(const VideoShader);
     // TODO: avoid accessing video_format.
-    if (d.video_format.isRGB() && !d.video_format.isPlanar())
+    if (!d.video_format.isPlanar())
         return 1;
     return d.video_format.channels();
 }
@@ -218,6 +253,7 @@ void VideoShader::update(VideoMaterial *material)
             program()->setUniformValue(textureLocation(i), (GLint)(nb_planes - 1));
         }
     }
+    //qDebug() << material->colorMatrix();
     program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
     program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
@@ -312,6 +348,7 @@ VideoShader* VideoMaterial::createShader() const
 MaterialType* VideoMaterial::type() const
 {
     static MaterialType rgbType;
+    static MaterialType packedType;
     static MaterialType yuv16leType;
     static MaterialType yuv16beType;
     static MaterialType yuv8Type;
@@ -319,6 +356,8 @@ MaterialType* VideoMaterial::type() const
     const VideoFormat &fmt = d_func().frame.format();
     if (fmt.isRGB() && !fmt.isPlanar())
         return &rgbType;
+    if (!fmt.isPlanar())
+        return &packedType;
     if (fmt.bytesPerPixel(0) == 1)
         return &yuv8Type;
     if (fmt.isBigEndian())
@@ -440,22 +479,25 @@ void VideoMaterial::setSaturation(qreal value)
     d_func().colorTransform.setSaturation(value);
 }
 
-void VideoMaterial::getTextureCoordinates(const QRect& roi, float* t)
+QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
 {
-    DPTR_D(VideoMaterial);
-    /*!
-      tex coords: ROI/frameRect()*effective_tex_width_ratio
-    */
-    t[0] = (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.width;
-    t[1] = (GLfloat)roi.y()/(GLfloat)d.height;
-    t[2] = (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.width;
-    t[3] = (GLfloat)roi.y()/(GLfloat)d.height;
-    t[4] = (GLfloat)(roi.x() + roi.width())*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.width;
-    t[5] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.height;
-    t[6] = (GLfloat)roi.x()*(GLfloat)d.effective_tex_width_ratio/(GLfloat)d.width;
-    t[7] = (GLfloat)(roi.y()+roi.height())/(GLfloat)d.height;
+    DPTR_D(const VideoMaterial);
+    if (!roi.isValid())
+        return QRectF(0, 0, 1, 1);
+    float x = roi.x();
+    if (qAbs(x) > 1)
+        x = x * (float)d.effective_tex_width_ratio/(float)d.width;
+    float y = roi.y();
+    if (qAbs(y) > 1)
+        y /= (float)d.height;
+    float w = roi.width();
+    if (qAbs(w) > 1)
+        w = w * (float)d.effective_tex_width_ratio/(float)d.width;
+    float h = roi.height();
+    if (qAbs(h) > 1)
+        h /= (float)d.height;
+    return QRectF(x, y, w, h);
 }
-
 
 bool VideoMaterialPrivate::initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height)
 {
@@ -495,7 +537,7 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
      * GL ES2 support: GL_RGB, GL_RGBA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA
      * http://stackoverflow.com/questions/18688057/which-opengl-es-2-0-texture-formats-are-color-depth-or-stencil-renderable
      */
-    if (fmt.isRGB()) {
+    if (fmt.isRGB() || !fmt.isPlanar()) {
         GLint internal_fmt;
         GLenum data_fmt;
         GLenum data_t;
