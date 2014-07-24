@@ -23,9 +23,9 @@
 #define QTAV_OPENGLVIDEO_H
 
 #include <QtAV/QtAV_Global.h>
-#include <QtAV/ColorTransform.h>
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QHash>
+#include <QMatrix4x4>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLContext>
 #else
@@ -58,19 +58,14 @@ public:
     void setCurrentFrame(const VideoFrame& frame);
     /*!
      * \brief render
-     * \param roi
-     * region of interest of video frame
-     * TODO: QRectF
+     * all are in Qt's coordinate
+     * \param target: the rect renderering to. in Qt's coordinate. not normalized here but in shader. // TODO: normalized check?
+     * invalid value (default) means renderering to the whole viewport
+     * \param roi: normalized rect of texture to renderer.
+     * \param transform: additinal transformation.
      */
-    void render(const QRect& roi);
-    void setViewport(const QRect& rect);
-    /*!
-     * \brief setVideoRect
-     * call this if video display area change or aspect ratio change
-     * \param rect
-     */
-    void setVideoRect(const QRect& rect);
-
+    void render(const QRectF& target = QRectF(), const QRectF& roi = QRectF(), const QMatrix4x4& transform = QMatrix4x4());
+    void setViewport(const QRectF& v);
     void setBrightness(qreal value);
     void setContrast(qreal value);
     void setHue(qreal value);

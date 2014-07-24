@@ -59,8 +59,8 @@ public:
     QOpenGLContext *ctx;
     ShaderManager *manager;
     VideoMaterial *material;
-    QRect viewport;
-    QRect out_rect;
+    TexturedGeometry geometry;
+    QRectF viewport;
     QMatrix4x4 matrix;
 };
 
@@ -100,24 +100,15 @@ void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
     d_func().material->setCurrentFrame(frame);
 }
 
-void OpenGLVideo::setViewport(const QRect& rect)
+void OpenGLVideo::setViewport(const QRectF &v)
 {
     DPTR_D(OpenGLVideo);
-    d.viewport = rect;
-    //qDebug() << "out_rect: " << d.out_rect << " viewport: " << d.viewport;
-    d.matrix(0, 0) = (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width();
-    d.matrix(1, 1) = (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height();
-}
-
-void OpenGLVideo::setVideoRect(const QRect &rect)
-{
-    DPTR_D(OpenGLVideo);
-    d.out_rect = rect;
-    //qDebug() << "out_rect: " << d.out_rect << " viewport: " << d.viewport;
-    if (!d.viewport.isValid())
-        return;
-    d.matrix(0, 0) = (GLfloat)d.out_rect.width()/(GLfloat)d.viewport.width();
-    d.matrix(1, 1) = (GLfloat)d.out_rect.height()/(GLfloat)d.viewport.height();
+    d.viewport = v;
+    QMatrix4x4 mat;
+    mat.ortho(v);
+    d.matrix = mat;
+    // Mirrored relative to the usual Qt coordinate system with origin in the top left corner.
+    //mirrored = mat(0, 0) * mat(1, 1) - mat(0, 1) * mat(1, 0) > 0;
 }
 
 void OpenGLVideo::setBrightness(qreal value)
@@ -140,33 +131,29 @@ void OpenGLVideo::setSaturation(qreal value)
     d_func().material->setSaturation(value);
 }
 
-void OpenGLVideo::render(const QRect &roi)
+void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4x4& transform)
 {
     DPTR_D(OpenGLVideo);
     Q_ASSERT(d.manager);
-    glViewport(d.viewport.x(), d.viewport.y(), d.viewport.width(), d.viewport.height());
     VideoShader *shader = d.manager->prepareMaterial(d.material);
     shader->update(d.material);
-    shader->program()->setUniformValue(shader->matrixLocation(), d.matrix);
+    shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
     // uniform end. attribute begin
-    const int kTupleSize = 2;
-    GLfloat texCoords[kTupleSize*4];
-    d.material->getTextureCoordinates(roi, texCoords);
-    const GLfloat kVertices[] = {
-        -1, 1,
-        1, 1,
-        1, -1,
-        -1, -1,
-    };
-    shader->program()->setAttributeArray(0, GL_FLOAT, kVertices, kTupleSize);
-    shader->program()->setAttributeArray(1, GL_FLOAT, texCoords, kTupleSize);
+    if (target.isValid())
+        d.geometry.setRect(target, d.material->normalizedROI(roi));
+    else
+        d.geometry.setRect(d.viewport, d.material->normalizedROI(roi));
+
+    //qDebug() << target << d.material->normalizedROI(roi);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, d.geometry.stride(), d.geometry.data(0));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, d.geometry.stride(), d.geometry.data(1));
 
     char const *const *attr = shader->attributeNames();
     for (int i = 0; attr[i]; ++i) {
         shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
     }
 
-   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+   glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
 
    // d.shader->program()->release(); //glUseProgram(0)
    for (int i = 0; attr[i]; ++i) {

@@ -112,7 +112,7 @@ public:
     const QMatrix4x4& matrix() const;
     int bpp() const; //1st plane
     int planeCount() const;
-    void getTextureCoordinates(const QRect& roi, float* t);
+    QRectF normalizedROI(const QRectF& roi) const;
     void setBrightness(qreal value);
     void setContrast(qreal value);
     void setHue(qreal value);
@@ -120,6 +120,27 @@ public:
 protected:
     VideoMaterial(VideoMaterialPrivate &d);
     DPTR_DECLARE(VideoMaterial)
+};
+
+class TexturedGeometry {
+public:
+    typedef struct {
+        float x, y;
+        float tx, ty;
+    } Point;
+    enum Triangle { Strip, Fan };
+    TexturedGeometry(int count = 4, Triangle t = Strip);
+    Triangle triangle() const { return tri;}
+    int mode() const;
+    int stride() const { return sizeof(Point); }
+    int vertexCount() const { return v.size(); }
+    void setPoint(int index, const QPointF& p, const QPointF& tp);
+    void setRect(const QRectF& r, const QRectF& tr);
+    void* data(int idx = 0) { return (char*)v.data() + idx*2*sizeof(float); } //convert to char* float*?
+    const void* data(int idx = 0) const { return (char*)v.constData() + idx*2*sizeof(float); }
+private:
+    Triangle tri;
+    QVector<Point> v;
 };
 
 } //namespace QtAV

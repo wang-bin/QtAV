@@ -41,9 +41,14 @@ public:
         : painter(0)
     {}
     virtual ~GLWidgetRenderer2Private() {}
+    void setupAspectRatio() {
+        matrix(0, 0) = (GLfloat)out_rect.width()/(GLfloat)renderer_width;
+        matrix(1, 1) = (GLfloat)out_rect.height()/(GLfloat)renderer_height;
+    }
 
     QPainter *painter;
     OpenGLVideo glv;
+    QMatrix4x4 matrix;
 };
 
 
@@ -109,7 +114,9 @@ void GLWidgetRenderer2::drawFrame()
 {
     DPTR_D(GLWidgetRenderer2);
     QRect roi = realROI();
-    d.glv.render(roi);
+    //d.glv.render(QRectF(-1, 1, 2, -2), roi, d.matrix);
+    // QRectF() means the whole viewport
+    d.glv.render(QRectF(), roi, d.matrix);
 }
 
 void GLWidgetRenderer2::initializeGL()
@@ -145,9 +152,10 @@ void GLWidgetRenderer2::paintGL()
 void GLWidgetRenderer2::resizeGL(int w, int h)
 {
     DPTR_D(GLWidgetRenderer2);
-    //qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
+    glViewport(0, 0, w, h);
     d.glv.setViewport(QRect(0, 0, w, h));
-    d.glv.setVideoRect(d.out_rect);
+    //qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
+    d.setupAspectRatio();
 }
 
 void GLWidgetRenderer2::resizeEvent(QResizeEvent *e)
@@ -155,7 +163,7 @@ void GLWidgetRenderer2::resizeEvent(QResizeEvent *e)
     DPTR_D(GLWidgetRenderer2);
     d.update_background = true;
     resizeRenderer(e->size());
-    d.glv.setVideoRect(d.out_rect);
+    d.setupAspectRatio();
     QGLWidget::resizeEvent(e); //will call resizeGL(). TODO:will call paintEvent()?
 }
 
@@ -175,14 +183,14 @@ void GLWidgetRenderer2::onSetOutAspectRatio(qreal ratio)
 {
     Q_UNUSED(ratio);
     DPTR_D(GLWidgetRenderer2);
-    d.glv.setVideoRect(d.out_rect);
+    d.setupAspectRatio();
 }
 
 void GLWidgetRenderer2::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 {
     Q_UNUSED(mode);
     DPTR_D(GLWidgetRenderer2);
-    d.glv.setVideoRect(d.out_rect);
+    d.setupAspectRatio();
 }
 
 bool GLWidgetRenderer2::onSetBrightness(qreal b)
