@@ -279,7 +279,6 @@ public:
         }
         glx_surfaces[(GLuint*)handle] = glxSurface;
         return glxSurface;
-        return 0;
     }
     virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) {
         if (!fmt.isRGB())

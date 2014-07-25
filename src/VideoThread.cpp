@@ -35,8 +35,6 @@
 #include <QtAV/ImageConverterTypes.h>
 #include <QtAV/QtAV_Compat.h>
 
-#define PIX_FMT PIX_FMT_RGB32 //PIX_FMT_YUV420P
-
 namespace QtAV {
 
 class VideoThreadPrivate : public AVThreadPrivate
@@ -48,7 +46,7 @@ public:
       , capture(0)
     {
         conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
-        conv->setOutFormat(PIX_FMT); //vo->defaultFormat
+        conv->setOutFormat(VideoFormat::Format_RGB32); //vo->defaultFormat
     }
     ~VideoThreadPrivate() {
         if (conv) {
@@ -328,7 +326,7 @@ void VideoThread::run()
          */
         d.outputSet->lock();
         QList<AVOutput *> outputs = d.outputSet->outputs();
-        if (outputs.size() > 1) {
+        if (outputs.size() > 1) { //FIXME!
             if (!frame.convertTo(VideoFormat::Format_RGB32)) {
                 /*
                  * use VideoFormat::Format_User to deliver user defined frame

@@ -210,7 +210,7 @@ void VideoGroup::addRenderer()
 {
     VideoRendererId v = VideoRendererId_Widget;
     if (vid == "gl")
-        v = VideoRendererId_GLWidget;
+        v = VideoRendererId_GLWidget2;
     else if (vid == "d2d")
         v = VideoRendererId_Direct2D;
     else if (vid == "gdi")

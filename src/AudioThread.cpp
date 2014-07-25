@@ -67,7 +67,6 @@ void AudioThread::run()
     // first() is not null even if list empty
     if (!d.outputSet->outputs().isEmpty())
         ao = static_cast<AudioOutput*>(d.outputSet->outputs().first()); //TODO: not here
-    static const double max_len = 0.02; //TODO: how to choose?
     d.init();
     //TODO: bool need_sync in private class
     bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
@@ -202,7 +201,7 @@ void AudioThread::run()
         QByteArray decoded(dec->data());
         int decodedSize = decoded.size();
         int decodedPos = 0;
-        qreal delay =0;
+        qreal delay = 0;
         //AudioFormat.durationForBytes() calculates int type internally. not accurate
         AudioFormat &af = dec->resampler()->inAudioFormat();
         qreal byte_rate = af.bytesPerSecond();
