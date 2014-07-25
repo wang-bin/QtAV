@@ -66,6 +66,7 @@ public:
 
 OpenGLVideo::OpenGLVideo() {}
 
+// TODO: set surface/device size here (viewport?)
 void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
 {
     DPTR_D(OpenGLVideo);

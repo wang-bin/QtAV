@@ -38,15 +38,22 @@ namespace QtAV {
 class GraphicsItemRendererPrivate;
 class Q_AV_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRenderer
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)
+    Q_PROPERTY(bool opengl READ isOpenGL WRITE setOpenGL NOTIFY openGLChanged)
 public:
     GraphicsItemRenderer(QGraphicsItem * parent = 0);
     virtual VideoRendererId id() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
 
     QRectF boundingRect() const;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     virtual QGraphicsItem* graphicsItem() { return this; }
 
+    bool isOpenGL() const;
+    void setOpenGL(bool o);
+signals:
+    void openGLChanged();
 protected:
     GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
 
@@ -61,6 +68,14 @@ protected:
 #else
     //virtual bool sceneEvent(QEvent *event);
 #endif //CONFIG_GRAPHICSWIDGET
+
+private:
+    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
+    virtual void onSetOutAspectRatio(qreal ratio);
+    virtual bool onSetBrightness(qreal b);
+    virtual bool onSetContrast(qreal c);
+    virtual bool onSetHue(qreal h);
+    virtual bool onSetSaturation(qreal s);
 };
 typedef GraphicsItemRenderer VideoRendererGraphicsItem;
 }

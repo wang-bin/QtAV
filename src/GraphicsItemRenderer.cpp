@@ -27,6 +27,9 @@
 #include <QEvent>
 #include <QKeyEvent>
 #include <QGraphicsSceneEvent>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QSurface>
+#endif
 
 namespace QtAV {
 
@@ -50,9 +53,24 @@ GraphicsItemRenderer::GraphicsItemRenderer(GraphicsItemRendererPrivate &d, QGrap
 #endif //CONFIG_GRAPHICSWIDGET
 }
 
+bool GraphicsItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
+{
+    if (isOpenGL())
+        return true;
+    return QPainterRenderer::isSupported(pixfmt);
+}
+
 bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
 {
-    prepareFrame(frame);
+    DPTR_D(GraphicsItemRenderer);
+    if (isOpenGL()) {
+        QMutexLocker locker(&d.img_mutex);
+        Q_UNUSED(locker);
+        d.video_frame = frame;
+        d.glv.setCurrentFrame(frame);
+    } else {
+        prepareFrame(frame);
+    }
     scene()->update(sceneBoundingRect());
     //update(); //does not cause an immediate paint. my not redraw.
     return true;
@@ -61,6 +79,20 @@ bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
 QRectF GraphicsItemRenderer::boundingRect() const
 {
     return QRectF(0, 0, rendererWidth(), rendererHeight());
+}
+
+bool GraphicsItemRenderer::isOpenGL() const
+{
+    return d_func().opengl;
+}
+
+void GraphicsItemRenderer::setOpenGL(bool o)
+{
+    DPTR_D(GraphicsItemRenderer);
+    if (d.opengl == o)
+        return;
+    d.opengl = o;
+    emit openGLChanged();
 }
 
 void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -99,13 +131,30 @@ void GraphicsItemRenderer::drawFrame()
     DPTR_D(GraphicsItemRenderer);
     if (!d.painter)
         return;
+    if (isOpenGL()) {
+        if (!d.glv.openGLContext()) {
+            d.glv.setOpenGLContext(const_cast<QOpenGLContext*>(QOpenGLContext::currentContext()));
+            if (!d.glv.openGLContext()) {
+                qWarning("no opengl context!");
+                return;
+            }
+            // TODO: surface size or viewport size? move to OpenGLVideo::setOpenGLContex
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+            d.glv.setViewport(QRectF(QPointF(), QOpenGLContext::currentContext()->surface()->size()));
+#else
+            d.glv.setViewport(QRectF(0, 0, QGLContext::currentContext()->device()->width(), QGLContext::currentContext()->device()->height()));
+#endif
+        }
+        d.glv.render(boundingRect(), realROI(), d.matrix*sceneTransform());
+        return;
+    }
     //fill background color only when the displayed frame rect not equas to renderer's
     if (d.image.isNull()) {
         //TODO: when setInSize()?
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
-    QRect roi = realROI();
+    const QRect roi = realROI();
     //assume that the image data is already scaled to out_size(NOT renderer size!)
     if (!d.scale_in_renderer || roi.size() == d.out_rect.size()) {
         d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
@@ -114,6 +163,52 @@ void GraphicsItemRenderer::drawFrame()
     }
 }
 
+
+void GraphicsItemRenderer::onSetOutAspectRatio(qreal ratio)
+{
+    Q_UNUSED(ratio);
+    DPTR_D(GraphicsItemRenderer);
+    d.setupAspectRatio();
+}
+
+void GraphicsItemRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+{
+    Q_UNUSED(mode);
+    DPTR_D(GraphicsItemRenderer);
+    d.setupAspectRatio();
+}
+
+bool GraphicsItemRenderer::onSetBrightness(qreal b)
+{
+    if (!isOpenGL())
+        return false;
+    d_func().glv.setBrightness(b);
+    return true;
+}
+
+bool GraphicsItemRenderer::onSetContrast(qreal c)
+{
+    if (!isOpenGL())
+        return false;
+    d_func().glv.setContrast(c);
+    return true;
+}
+
+bool GraphicsItemRenderer::onSetHue(qreal h)
+{
+    if (!isOpenGL())
+        return false;
+    d_func().glv.setHue(h);
+    return true;
+}
+
+bool GraphicsItemRenderer::onSetSaturation(qreal s)
+{
+    if (!isOpenGL())
+        return false;
+    d_func().glv.setSaturation(s);
+    return true;
+}
 //GraphicsWidget will lose focus forever if focus out. Why?
 
 #if CONFIG_GRAPHICSWIDGET

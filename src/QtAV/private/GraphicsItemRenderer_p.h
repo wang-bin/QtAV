@@ -24,13 +24,25 @@
 #define QTAV_GRAPHICSITEMRENDERER_P_H
 
 #include <QtAV/private/QPainterRenderer_p.h>
+#include <QtAV/OpenGLVideo.h>
 
 namespace QtAV {
 
 class Q_AV_EXPORT GraphicsItemRendererPrivate : public QPainterRendererPrivate
 {
 public:
+    GraphicsItemRendererPrivate()
+        : opengl(false)
+    {}
     virtual ~GraphicsItemRendererPrivate(){}
+    void setupAspectRatio() {
+        matrix(0, 0) = (GLfloat)out_rect.width()/(GLfloat)renderer_width;
+        matrix(1, 1) = (GLfloat)out_rect.height()/(GLfloat)renderer_height;
+    }
+
+    bool opengl;
+    OpenGLVideo glv;
+    QMatrix4x4 matrix;
 };
 
 } //namespace QtAV
