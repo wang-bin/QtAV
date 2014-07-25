@@ -149,9 +149,17 @@ bool QQuickItemRenderer::needDrawFrame() const
 void QQuickItemRenderer::drawFrame()
 {
     DPTR_D(QQuickItemRenderer);
-    Q_ASSERT(!isOpenGL());
     if (!d.node)
         return;
+    if (isOpenGL()) {
+        SGVideoNode *sgvn = static_cast<SGVideoNode*>(d.node);
+        Q_ASSERT(sgvn);
+        sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), 0);
+        if (d.frame_changed)
+            sgvn->setCurrentFrame(d.video_frame);
+        d.frame_changed = false;
+        return;
+    }
     if (d.image.isNull()) {
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black);
@@ -182,18 +190,10 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
         d.frame_changed = false;
         return 0;
     }
-    if (!isOpenGL()) {
-        d.node = node;
-        handlePaintEvent();
-        d.node = 0;
-        return node;
-    }
-    SGVideoNode *sgvn = static_cast<SGVideoNode*>(node);
-    sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), 0);
-    if (d.frame_changed)
-        sgvn->setCurrentFrame(d.video_frame);
-    d.frame_changed = false;
-    return sgvn;
+    d.node = node;
+    handlePaintEvent();
+    d.node = 0;
+    return node;
 }
 
 bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)

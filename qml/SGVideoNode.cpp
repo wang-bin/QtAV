@@ -37,7 +37,6 @@ public:
         m_shader(s)
     {
         setVideoFormat(s->videoFormat());
-        //setColorSpace(s->colorSpace());
     }
     ~SGVideoMaterialShader() {
         delete m_shader;
@@ -91,16 +90,10 @@ public:
         m_material.setCurrentFrame(frame);
     }
 
-    void bind();
     //qreal m_opacity;
     QMutex m_frameMutex;
     VideoMaterial m_material;
 };
-
-void SGVideoMaterial::bind()
-{
-    m_material.bind();
-}
 
 void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *newMaterial, QSGMaterial *oldMaterial)
 {
