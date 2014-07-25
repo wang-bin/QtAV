@@ -23,6 +23,7 @@
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLFunctions>
+#include <QtGui/QSurface>
 #else
 #include <QtOpenGL/QGLShaderProgram>
 #include <QtOpenGL/QGLFunctions>
@@ -60,7 +61,7 @@ public:
     ShaderManager *manager;
     VideoMaterial *material;
     TexturedGeometry geometry;
-    QRectF viewport;
+    QRectF rect;
     QMatrix4x4 matrix;
 };
 
@@ -80,12 +81,16 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
         d.ctx = 0;
         return;
     }
+
     d.ctx = ctx;
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     d.manager = ctx->findChild<ShaderManager*>(QStringLiteral("__qtav_shader_manager"));
+    QSizeF surfaceSize = QOpenGLContext::currentContext()->surface()->size();
 #else
     d.manager = sShaderMgrs.value(ctx, 0);
+    QSizeF surfaceSize = QSizeF(ctx->device()->width(), ctx->device()->height());
 #endif
+    setProjectionMatrixToRect(QRectF(QPointF(), surfaceSize));
     if (d.manager)
         return;
     // TODO: what if ctx is delete?
@@ -106,15 +111,19 @@ void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
     d_func().material->setCurrentFrame(frame);
 }
 
-void OpenGLVideo::setViewport(const QRectF &v)
+void OpenGLVideo::setProjectionMatrixToRect(const QRectF &v)
 {
     DPTR_D(OpenGLVideo);
-    d.viewport = v;
-    QMatrix4x4 mat;
-    mat.ortho(v);
-    d.matrix = mat;
+    d.rect = v;
+    d.matrix.setToIdentity();
+    d.matrix.ortho(v);
     // Mirrored relative to the usual Qt coordinate system with origin in the top left corner.
     //mirrored = mat(0, 0) * mat(1, 1) - mat(0, 1) * mat(1, 0) > 0;
+}
+
+void OpenGLVideo::setProjectionMatrix(const QMatrix4x4 &matrix)
+{
+    d_func().matrix = matrix;
 }
 
 void OpenGLVideo::setBrightness(qreal value)
@@ -148,7 +157,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     if (target.isValid())
         d.geometry.setRect(target, d.material->normalizedROI(roi));
     else
-        d.geometry.setRect(d.viewport, d.material->normalizedROI(roi));
+        d.geometry.setRect(d.rect, d.material->normalizedROI(roi));
 
     // normalize?
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_TRUE, d.geometry.stride(), d.geometry.data(0));

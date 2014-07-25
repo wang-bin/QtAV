@@ -153,7 +153,7 @@ void GLWidgetRenderer2::resizeGL(int w, int h)
 {
     DPTR_D(GLWidgetRenderer2);
     glViewport(0, 0, w, h);
-    d.glv.setViewport(QRect(0, 0, w, h));
+    d.glv.setProjectionMatrixToRect(QRectF(0, 0, w, h));
     //qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
     d.setupAspectRatio();
 }

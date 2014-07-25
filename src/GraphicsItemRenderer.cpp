@@ -138,12 +138,6 @@ void GraphicsItemRenderer::drawFrame()
                 qWarning("no opengl context!");
                 return;
             }
-            // TODO: surface size or viewport size? move to OpenGLVideo::setOpenGLContex
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-            d.glv.setViewport(QRectF(QPointF(), QOpenGLContext::currentContext()->surface()->size()));
-#else
-            d.glv.setViewport(QRectF(0, 0, QGLContext::currentContext()->device()->width(), QGLContext::currentContext()->device()->height()));
-#endif
         }
         d.glv.render(boundingRect(), realROI(), d.matrix*sceneTransform());
         return;

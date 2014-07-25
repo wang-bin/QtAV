@@ -66,7 +66,9 @@ public:
      * \param transform: additinal transformation.
      */
     void render(const QRectF& target = QRectF(), const QRectF& roi = QRectF(), const QMatrix4x4& transform = QMatrix4x4());
-    void setViewport(const QRectF& v);
+    void setProjectionMatrixToRect(const QRectF& v);
+    void setProjectionMatrix(const QMatrix4x4 &matrix);
+
     void setBrightness(qreal value);
     void setContrast(qreal value);
     void setHue(qreal value);
