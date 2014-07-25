@@ -25,6 +25,7 @@
 #include <QtOpenGL/QGLWidget>
 #endif
 
+#include <QCheckBox>
 #include <QSlider>
 #include <QLayout>
 #include <QPushButton>
@@ -44,28 +45,39 @@ VideoPlayer::VideoPlayer(QWidget *parent)
     scene->addItem(videoItem);
 
     QGraphicsView *graphicsView = new QGraphicsView(scene);
-#if 0
 #ifndef QT_NO_OPENGL
+    videoItem->setOpenGL(false);
     QGLWidget *glw = new QGLWidget(QGLFormat(QGL::SampleBuffers));
     glw->setAutoFillBackground(false);
     graphicsView->setCacheMode(QGraphicsView::CacheNone);
     graphicsView->setViewport(glw);
 #endif
-#endif //0
     QSlider *rotateSlider = new QSlider(Qt::Horizontal);
     rotateSlider->setRange(-180,  180);
     rotateSlider->setValue(0);
 
-    connect(rotateSlider, SIGNAL(valueChanged(int)),
-            this, SLOT(rotateVideo(int)));
+    QSlider *scaleSlider = new QSlider(Qt::Horizontal);
+    scaleSlider->setRange(0, 200);
+    scaleSlider->setValue(100);
+
+    connect(rotateSlider, SIGNAL(valueChanged(int)), SLOT(rotateVideo(int)));
+    connect(scaleSlider, SIGNAL(valueChanged(int)), SLOT(scaleVideo(int)));
     QPushButton *openBtn = new QPushButton;
     openBtn->setText("Open");
     connect(openBtn, SIGNAL(clicked()), SLOT(open()));
+    QCheckBox *glBox = new QCheckBox();
+    glBox->setText("OpenGL");
+    glBox->setChecked(false);
+    connect(glBox, SIGNAL(toggled(bool)), SLOT(setOpenGL(bool)));
 
+    QHBoxLayout *hb = new QHBoxLayout;
+    hb->addWidget(glBox);
+    hb->addWidget(openBtn);
     QBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(graphicsView);
     layout->addWidget(rotateSlider);
-    layout->addWidget(openBtn);
+    layout->addWidget(scaleSlider);
+    layout->addLayout(hb);
     setLayout(layout);
 
     mediaPlayer.setRenderer(videoItem);
@@ -80,12 +92,23 @@ void VideoPlayer::play(const QString &file)
     mediaPlayer.play(file);
 }
 
+void VideoPlayer::setOpenGL(bool o)
+{
+    videoItem->setOpenGL(o);
+}
+
 void VideoPlayer::rotateVideo(int angle)
 {
     //rotate around the center of video element
     qreal x = videoItem->boundingRect().width() / 2.0;
     qreal y = videoItem->boundingRect().height() / 2.0;
     videoItem->setTransform(QTransform().translate(x, y).rotate(angle).translate(-x, -y));
+}
+
+void VideoPlayer::scaleVideo(int value)
+{
+    qreal v = (qreal)value/100.0;
+    videoItem->setTransform(QTransform().scale(v, v));
 }
 
 void VideoPlayer::open()

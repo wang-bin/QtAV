@@ -48,7 +48,7 @@ HEADERS = common.h \
 SOURCES = common.cpp
 !macx: SOURCES += ScreenSaver.cpp
 macx:!ios {
-+#SOURCE is ok
+#SOURCE is ok
     OBJECTIVE_SOURCES += ScreenSaver.cpp
     LIBS += -framework CoreServices #-framework ScreenSaver
 }

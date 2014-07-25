@@ -36,8 +36,12 @@ public:
     QSize sizeHint() const { return QSize(720, 640); }
     void play(const QString& file);
 
+public slots:
+    void setOpenGL(bool o = true);
+
 private slots:
     void rotateVideo(int angle);
+    void scaleVideo(int value);
     void open();
 
 private:
