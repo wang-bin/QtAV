@@ -30,7 +30,7 @@
 namespace QtAV {
 
 class Frame;
-class Q_AV_EXPORT FramePrivate : public QSharedData
+class FramePrivate : public QSharedData
 {
 public:
     FramePrivate()

@@ -29,7 +29,7 @@
 
 namespace QtAV {
 
-class Q_AV_EXPORT QPainterRendererPrivate : public VideoRendererPrivate
+class Q_AV_PRIVATE_EXPORT QPainterRendererPrivate : public VideoRendererPrivate
 {
 public:
     QPainterRendererPrivate():

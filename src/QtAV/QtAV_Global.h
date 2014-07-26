@@ -34,6 +34,7 @@
 #  undef Q_AV_EXPORT
 #  define Q_AV_EXPORT Q_DECL_IMPORT //only for vc?
 #endif
+#define Q_AV_PRIVATE_EXPORT Q_AV_EXPORT
 
 /* runtime version. used to compare with compile time version */
 Q_AV_EXPORT unsigned QtAV_Version();

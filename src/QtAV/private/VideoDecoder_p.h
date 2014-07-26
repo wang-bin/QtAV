@@ -27,7 +27,7 @@
 namespace QtAV {
 
 
-class Q_AV_EXPORT VideoDecoderPrivate : public AVDecoderPrivate
+class Q_AV_PRIVATE_EXPORT VideoDecoderPrivate : public AVDecoderPrivate
 {
 public:
     VideoDecoderPrivate():

@@ -36,7 +36,7 @@ class QObject;
 class QWidget;
 namespace QtAV {
 class Filter;
-class Q_AV_EXPORT VideoRendererPrivate : public AVOutputPrivate
+class Q_AV_PRIVATE_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
     VideoRendererPrivate():

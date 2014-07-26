@@ -32,7 +32,7 @@
 
 namespace QtAV {
 
-class Q_AV_EXPORT VideoDecoderFFmpegHWPrivate : public VideoDecoderPrivate
+class Q_AV_PRIVATE_EXPORT VideoDecoderFFmpegHWPrivate : public VideoDecoderPrivate
 {
 public:
     VideoDecoderFFmpegHWPrivate()

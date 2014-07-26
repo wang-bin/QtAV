@@ -313,7 +313,6 @@ HEADERS *= \
     QtAV/AudioThread.h \
     QtAV/VideoThread.h \
     QtAV/ColorTransform.h \
-    QtAV/VideoOutputEventFilter.h \
     QtAV/VideoDecoderFFmpegHW.h \
     QtAV/private/factory.h \
     QtAV/private/singleton.h \
@@ -333,6 +332,7 @@ HEADERS *= \
     QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
+    QtAV/private/VideoOutputEventFilter.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h
 

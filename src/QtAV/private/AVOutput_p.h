@@ -35,7 +35,7 @@ class Filter;
 class FilterContext;
 class Statistics;
 class OutputSet;
-class Q_AV_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
+class Q_AV_PRIVATE_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
 {
 public:
     AVOutputPrivate():

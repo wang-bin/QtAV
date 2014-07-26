@@ -122,7 +122,7 @@ protected:
     DPTR_DECLARE(VideoMaterial)
 };
 
-class TexturedGeometry {
+class Q_AV_EXPORT TexturedGeometry {
 public:
     typedef struct {
         float x, y;

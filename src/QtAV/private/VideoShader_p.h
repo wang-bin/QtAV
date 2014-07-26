@@ -39,7 +39,7 @@
 namespace QtAV {
 
 class VideoShader;
-class Q_AV_EXPORT VideoShaderPrivate : public DPtrPrivate<VideoShader>
+class Q_AV_PRIVATE_EXPORT VideoShaderPrivate : public DPtrPrivate<VideoShader>
 {
 public:
     VideoShaderPrivate()
