@@ -32,7 +32,7 @@
  *      #include "FactoryDefine.h"
  *      FACTORY_DECLARE(MyClass)
  * 2. In MyClass.cpp:
- *      #include "factory.h"
+ *      #include "QtAV/private/factory.h"
  *      FACTORY_DEFINE(MyClass)
  *
  * To create and register a new subclass MyClassSubA with it's id

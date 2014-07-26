@@ -19,9 +19,10 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/GraphicsItemRenderer.h>
-#include <QtAV/private/GraphicsItemRenderer_p.h>
-#include <QtAV/FilterContext.h>
+#include "QtAV/GraphicsItemRenderer.h"
+#include "QtAV/private/QPainterRenderer_p.h"
+#include "QtAV/FilterContext.h"
+#include "QtAV/OpenGLVideo.h"
 #include <QGraphicsScene>
 #include <QtGui/QPainter>
 #include <QEvent>
@@ -32,6 +33,23 @@
 #endif
 
 namespace QtAV {
+
+class GraphicsItemRendererPrivate : public QPainterRendererPrivate
+{
+public:
+    GraphicsItemRendererPrivate()
+        : opengl(false)
+    {}
+    virtual ~GraphicsItemRendererPrivate(){}
+    void setupAspectRatio() {
+        matrix(0, 0) = (GLfloat)out_rect.width()/(GLfloat)renderer_width;
+        matrix(1, 1) = (GLfloat)out_rect.height()/(GLfloat)renderer_height;
+    }
+
+    bool opengl;
+    OpenGLVideo glv;
+    QMatrix4x4 matrix;
+};
 
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
     :GraphicsWidget(parent),QPainterRenderer(*new GraphicsItemRendererPrivate())

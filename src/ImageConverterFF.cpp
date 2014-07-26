@@ -19,9 +19,9 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/ImageConverter.h>
-#include <QtAV/private/ImageConverter_p.h>
-#include <QtAV/QtAV_Compat.h>
+#include "QtAV/ImageConverter.h"
+#include "QtAV/private/ImageConverter_p.h"
+#include "QtAV/private/AVCompat.h"
 #include "QtAV/prepost.h"
 
 namespace QtAV {

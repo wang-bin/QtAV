@@ -26,7 +26,7 @@
 #include <QtCore/QHash>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
-#include <QtAV/QtAV_Compat.h>
+#include "QtAV/private/AVCompat.h"
 
 namespace QtAV {
 

@@ -24,7 +24,7 @@
 #include "QtAV/private/Filter_p.h"
 #include "QtAV/Statistics.h"
 #include "QtAV/VideoFrame.h"
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 
 /*
  * libav10.x, ffmpeg2.x: av_buffersink_read deprecated

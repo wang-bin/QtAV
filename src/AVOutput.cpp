@@ -19,13 +19,12 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AVOutput.h>
-#include <QtAV/private/AVOutput_p.h>
-#include <QtAV/Filter.h>
-#include <QtAV/FilterContext.h>
-#include <QtAV/FilterManager.h>
-#include <QtAV/OutputSet.h>
-//#include <QtCore/QMetaObject>
+#include "QtAV/AVOutput.h"
+#include "QtAV/private/AVOutput_p.h"
+#include "QtAV/Filter.h"
+#include "QtAV/FilterContext.h"
+#include "QtAV/private/FilterManager.h"
+#include "QtAV/private/OutputSet.h"
 
 namespace QtAV {
 

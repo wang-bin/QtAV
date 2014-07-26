@@ -19,16 +19,16 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AudioThread.h>
-#include <QtAV/private/AVThread_p.h>
-#include <QtAV/AudioDecoder.h>
-#include <QtAV/Packet.h>
-#include <QtAV/AudioFormat.h>
-#include <QtAV/AudioOutput.h>
-#include <QtAV/AudioResampler.h>
-#include <QtAV/AVClock.h>
-#include <QtAV/OutputSet.h>
-#include <QtAV/QtAV_Compat.h>
+#include "QtAV/AudioThread.h"
+#include "QtAV/private/AVThread_p.h"
+#include "QtAV/AudioDecoder.h"
+#include "QtAV/Packet.h"
+#include "QtAV/AudioFormat.h"
+#include "QtAV/AudioOutput.h"
+#include "QtAV/AudioResampler.h"
+#include "QtAV/AVClock.h"
+#include "QtAV/private/OutputSet.h"
+#include "QtAV/private/AVCompat.h"
 #include <QtCore/QCoreApplication>
 
 namespace QtAV {

@@ -19,11 +19,11 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AudioDecoder.h>
-#include <QtAV/private/AVDecoder_p.h>
-#include <QtAV/QtAV_Compat.h>
-#include <QtAV/AudioResampler.h>
-#include <QtAV/AudioResamplerTypes.h>
+#include "QtAV/AudioDecoder.h"
+#include "QtAV/private/AVDecoder_p.h"
+#include "QtAV/private/AVCompat.h"
+#include "QtAV/AudioResampler.h"
+#include "QtAV/AudioResamplerTypes.h"
 
 namespace QtAV {
 

@@ -19,21 +19,21 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/VideoThread.h>
-#include <QtAV/private/AVThread_p.h>
-#include <QtAV/Packet.h>
-#include <QtAV/AVClock.h>
-#include <QtAV/VideoCapture.h>
-#include <QtAV/VideoDecoder.h>
-#include <QtAV/VideoRenderer.h>
-#include <QtAV/ImageConverter.h>
+#include "QtAV/VideoThread.h"
+#include "QtAV/private/AVThread_p.h"
+#include "QtAV/Packet.h"
+#include "QtAV/AVClock.h"
+#include "QtAV/VideoCapture.h"
+#include "QtAV/VideoDecoder.h"
+#include "QtAV/VideoRenderer.h"
+#include "QtAV/ImageConverter.h"
+#include "QtAV/Statistics.h"
+#include "QtAV/Filter.h"
+#include "QtAV/FilterContext.h"
+#include "QtAV/ImageConverterTypes.h"
+#include "QtAV/private/OutputSet.h"
+#include "QtAV/private/AVCompat.h"
 #include <QtCore/QFileInfo>
-#include <QtAV/Statistics.h>
-#include <QtAV/Filter.h>
-#include <QtAV/FilterContext.h>
-#include <QtAV/OutputSet.h>
-#include <QtAV/ImageConverterTypes.h>
-#include <QtAV/QtAV_Compat.h>
 
 namespace QtAV {
 

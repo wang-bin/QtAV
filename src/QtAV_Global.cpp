@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/QtAV_Global.h>
+#include "QtAV/QtAV_Global.h"
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
 #include <QBoxLayout>
@@ -28,7 +28,7 @@
 #include <QTableWidget>
 #include <QTextBrowser>
 #include "QtAV/version.h"
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 
 unsigned QtAV_Version()
 {

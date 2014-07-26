@@ -25,14 +25,14 @@
 #include <QtCore/QObject>
 #include <QtCore/QMutex>
 #include <QtCore/QWaitCondition>
-#include <QtAV/QtAV_Global.h>
-#include <QtAV/AVOutput.h>
+#include "QtAV/QtAV_Global.h"
+#include "QtAV/AVOutput.h"
 
 namespace QtAV {
 
 class AVPlayer;
 class VideoFrame;
-class Q_AV_EXPORT OutputSet : public QObject
+class OutputSet : public QObject
 {
     Q_OBJECT
 public:

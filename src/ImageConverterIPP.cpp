@@ -21,7 +21,7 @@
 
 #include "QtAV/ImageConverter.h"
 #include "QtAV/private/ImageConverter_p.h"
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 #include "prepost.h"
 
 #if QTAV_HAVE(IPP)

@@ -19,12 +19,12 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/FilterManager.h"
+#include "QtAV/private/FilterManager.h"
 #include <QtCore/QList>
 #include <QtCore/QMap>
-#include <QtAV/AVPlayer.h>
-#include <QtAV/Filter.h>
-#include <QtAV/AVOutput.h>
+#include "QtAV/AVPlayer.h"
+#include "QtAV/Filter.h"
+#include "QtAV/AVOutput.h"
 
 namespace QtAV {
 

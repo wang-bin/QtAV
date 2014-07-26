@@ -203,10 +203,12 @@ config_vda {
     LIBS += -framework VideoDecodeAcceleration -framework CoreVideo
 }
 SOURCES += \
-    QtAV_Compat.cpp \
+    AVCompat.cpp \
     QtAV_Global.cpp \
     utils/GPUMemCopy.cpp \
     utils/OpenGLHelper.cpp \
+    QAVIOContext.cpp \
+    ShaderManager.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \
@@ -246,14 +248,12 @@ SOURCES += \
     OutputSet.cpp \
     OpenGLVideo.cpp \
     VideoShader.cpp \
-    ShaderManager.cpp \
     Statistics.cpp \
     VideoDecoder.cpp \
     VideoDecoderTypes.cpp \
     VideoDecoderFFmpeg.cpp \
     VideoDecoderFFmpegHW.cpp \
     VideoThread.cpp \
-    QAVIOContext.cpp \
     CommonTypes.cpp
 
 SDK_HEADERS *= \
@@ -269,7 +269,6 @@ SDK_HEADERS *= \
     QtAV/AudioOutputTypes.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
-    QtAV/BlockingQueue.h \
     QtAV/CommonTypes.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
@@ -301,9 +300,11 @@ SDK_HEADERS *= \
     QtAV/SurfaceInterop.h \
     QtAV/version.h
 
-
+# QtAV/private/* may be used by developers to extend QtAV features without changing QtAV library
+# headers not in QtAV/ and it's subdirs are used only by QtAV internally
 HEADERS *= \
     $$SDK_HEADERS \
+    utils/BlockingQueue.h \
     utils/GPUMemCopy.h \
     utils/OpenGLHelper.h \
     QtAV/prepost.h \
@@ -313,29 +314,27 @@ HEADERS *= \
     QtAV/VideoThread.h \
     QtAV/ColorTransform.h \
     QtAV/VideoOutputEventFilter.h \
-    QtAV/OutputSet.h \
-    QtAV/QtAV_Compat.h \
-    QtAV/QAVIOContext.h \
-    QtAV/singleton.h \
-    QtAV/factory.h \
-    QtAV/FilterManager.h \
-    QtAV/private/ShaderManager.h \
+    QtAV/VideoDecoderFFmpegHW.h \
+    QtAV/private/factory.h \
+    QtAV/private/singleton.h \
+    QtAV/private/AVCompat.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AudioResampler_p.h \
     QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
+    QtAV/private/FilterManager.h \
     QtAV/private/Frame_p.h \
-    QtAV/private/GraphicsItemRenderer_p.h \
     QtAV/private/ImageConverter_p.h \
+    QtAV/private/OutputSet.h \
+    QtAV/private/QAVIOContext.h \
+    QtAV/private/ShaderManager.h \
     QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
-    QtAV/VideoDecoderFFmpegHW.h \
     QtAV/private/VideoRenderer_p.h \
-    QtAV/private/QPainterRenderer_p.h \
-    QtAV/private/WidgetRenderer_p.h
+    QtAV/private/QPainterRenderer_p.h
 
 SDK_INCLUDE_FOLDER = QtAV
 include($$PROJECTROOT/deploy.pri)

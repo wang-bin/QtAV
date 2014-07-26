@@ -19,15 +19,15 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/VideoDecoder.h>
+#include "QtAV/VideoDecoder.h"
 #include "QtAV/private/VideoDecoder_p.h"
-#include <QtAV/QtAV_Compat.h>
-#include <QtAV/BlockingQueue.h>
 #include "QtAV/prepost.h"
 #include <QtCore/QQueue>
 #if QTAV_HAVE(DLLAPI_CUDA)
 #include "dllapi.h"
 #endif //QTAV_HAVE(DLLAPI_CUDA)
+#include "QtAV/private/AVCompat.h"
+#include "utils/BlockingQueue.h"
 
 #define COPY_ON_DECODE 1
 #define FILTER_ANNEXB_CUVID 0

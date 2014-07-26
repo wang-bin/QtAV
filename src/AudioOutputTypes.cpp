@@ -21,7 +21,7 @@
 
 #include "QtAV/AudioOutputTypes.h"
 #include "QtAV/FactoryDefine.h"
-#include "QtAV/factory.h"
+#include "QtAV/private/factory.h"
 
 namespace QtAV {
 

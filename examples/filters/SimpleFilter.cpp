@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "SimpleFilter.h"
-#include "private/Filter_p.h"
+#include "QtAV/private/Filter_p.h"
 #include <math.h>
 
 namespace QtAV {

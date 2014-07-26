@@ -19,13 +19,13 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AVDemuxer.h>
-#include <QtAV/AVError.h>
-#include <QtAV/Packet.h>
-#include <QtAV/QtAV_Compat.h>
-#include <QtAV/QAVIOContext.h>
+#include "QtAV/AVDemuxer.h"
 #include <QtCore/QThread>
 #include <QtCore/QCoreApplication>
+#include "QtAV/AVError.h"
+#include "QtAV/Packet.h"
+#include "QtAV/private/QAVIOContext.h"
+#include "QtAV/private/AVCompat.h"
 
 namespace QtAV {
 

@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/QtAV_Compat.h>
+#include <QtAV/private/AVCompat.h>
 #include "QtAV/version.h"
 #include "QtAV/prepost.h"
 

@@ -25,10 +25,7 @@
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
 #include <QtCore/QWaitCondition>
-
-#include "QtAV/BlockingQueue.h"
-#include <QtAV/Packet.h>
-#include <QtAV/QtAV_Global.h>
+#include "QtAV/AVThread.h" //PacketQueue
 
 class QRunnable;
 namespace QtAV {
@@ -42,7 +39,7 @@ class Filter;
 class FilterContext;
 class Statistics;
 class OutputSet;
-class Q_AV_EXPORT AVThreadPrivate : public DPtrPrivate<AVThread>
+class AVThreadPrivate : public DPtrPrivate<AVThread>
 {
 public:
     AVThreadPrivate():

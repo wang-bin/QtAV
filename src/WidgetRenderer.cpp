@@ -19,15 +19,22 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/WidgetRenderer.h>
-#include <QtAV/private/WidgetRenderer_p.h>
+#include "QtAV/WidgetRenderer.h"
+#include "QtAV/private/QPainterRenderer_p.h"
 #include <QtGui/QFont>
-#include <qevent.h>
 #include <QtGui/QPainter>
 #include <QApplication>
-#include <QtAV/Filter.h>
+#include <QResizeEvent>
+#include "QtAV/Filter.h"
 
 namespace QtAV {
+
+class WidgetRendererPrivate : public QPainterRendererPrivate
+{
+public:
+    virtual ~WidgetRendererPrivate(){}
+};
+
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     QWidget(parent, f),QPainterRenderer(*new WidgetRendererPrivate())
 {

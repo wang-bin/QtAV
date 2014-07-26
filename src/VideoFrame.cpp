@@ -24,7 +24,7 @@
 #include "QtAV/ImageConverter.h"
 #include "QtAV/ImageConverterTypes.h"
 #include "QtAV/SurfaceInterop.h"
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 #include <QtGui/QImage>
 
 // FF_API_PIX_FMT

@@ -22,7 +22,7 @@
 
 #include "QtAV/AudioResampler.h"
 #include "QtAV/private/AudioResampler_p.h"
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 #include "QtAV/prepost.h"
 
 namespace QtAV {

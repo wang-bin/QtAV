@@ -23,22 +23,22 @@
 #include <cstdio>
 #include <cstdlib>
 #include "QtAV/prepost.h"
-#include <QtAV/WidgetRenderer.h>
-#include <QtAV/GraphicsItemRenderer.h>
+#include "QtAV/WidgetRenderer.h"
+#include "QtAV/GraphicsItemRenderer.h"
 #if QTAV_HAVE(GL)
-#include <QtAV/GLWidgetRenderer2.h>
-#include <QtAV/GLWidgetRenderer.h>
+#include "QtAV/GLWidgetRenderer2.h"
+#include "QtAV/GLWidgetRenderer.h"
 #endif //QTAV_HAVE(GL)
 #if QTAV_HAVE(GDIPLUS)
-#include <QtAV/GDIRenderer.h>
+#include "QtAV/GDIRenderer.h"
 #endif //QTAV_HAVE(GDIPLUS)
 #if QTAV_HAVE(DIRECT2D)
-#include <QtAV/Direct2DRenderer.h>
+#include "QtAV/Direct2DRenderer.h"
 #endif //QTAV_HAVE(DIRECT2D)
 #if QTAV_HAVE(XV)
-#include <QtAV/XVRenderer.h>
+#include "QtAV/XVRenderer.h"
 #endif //QTAV_HAVE(XV)
-#include <QtAV/factory.h>
+#include "QtAV/private/factory.h"
 
 namespace QtAV {
 

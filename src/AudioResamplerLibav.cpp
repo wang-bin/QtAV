@@ -23,7 +23,7 @@
 #define QTAV_HAVE_SWR_AVR_MAP 1
 #include "QtAV/AudioResampler.h"
 #include "QtAV/private/AudioResampler_p.h"
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 #include "QtAV/prepost.h"
 
 namespace QtAV {

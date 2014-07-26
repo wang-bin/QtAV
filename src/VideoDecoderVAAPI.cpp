@@ -29,7 +29,7 @@
 #include <QtCore/QStringList>
 #include "QtAV/Packet.h"
 #include "QtAV/SurfaceInterop.h"
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 #include "utils/GPUMemCopy.h"
 #include "prepost.h"
 #include <va/va.h>

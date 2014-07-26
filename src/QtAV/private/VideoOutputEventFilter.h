@@ -1,7 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
-    Copyright (C) 2014 Stefan Ladage <sladage@gmail.com>
+    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,32 +19,32 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_AVIOCONTEXT_H
-#define QTAV_AVIOCONTEXT_H
+#ifndef QTAV_VIDEOOUTPUTEVENTFILTER_H
+#define QTAV_VIDEOOUTPUTEVENTFILTER_H
 
-#include "QtAV/QtAV_Compat.h"
-//struct AVIOContext; //anonymous struct in FFmpeg1.0.x
-class QIODevice;
-
-#define IODATA_BUFFER_SIZE 32768
+#include <QtCore/QObject>
+#include <QtCore/QPoint>
+#include "QtAV/QtAV_Global.h"
 
 namespace QtAV {
 
-class QAVIOContext
+class VideoRenderer;
+class VideoOutputEventFilter : public QObject
 {
+    Q_OBJECT
 public:
-    QAVIOContext(QIODevice* io);
-    ~QAVIOContext();
+    VideoOutputEventFilter(VideoRenderer *renderer = 0);
+    virtual bool eventFilter(QObject *watched, QEvent *event);
 
-    AVIOContext* context();
-
-    QIODevice* device() const;
-    void setDevice(QIODevice* device);
-
+private slots:
+    void stopFiltering();
 private:
-    unsigned char* m_ucDataBuffer;
-    QIODevice* m_pIO;
+    void switchFullScreen();
+    bool mRendererIsQObj;
+    VideoRenderer *mpRenderer;
+    QPoint gMousePos, iMousePos;
 };
 
-}
-#endif // QTAV_AVIOCONTEXT_H
+} //namespace QtAV
+
+#endif // QTAV_VIDEOOUTPUTEVENTFILTER_H

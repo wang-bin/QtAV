@@ -19,9 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QWidget>
+#include "QtAV/private/OutputSet.h"
 #include "QtAV/AVPlayer.h"
-#include "QtAV/OutputSet.h"
 #include "QtAV/VideoRenderer.h"
 
 namespace QtAV {

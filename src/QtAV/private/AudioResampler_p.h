@@ -22,8 +22,8 @@
 #ifndef QTAV_AUDIORESAMPLER_P_H
 #define QTAV_AUDIORESAMPLER_P_H
 
-#include <QtAV/AudioFormat.h>
-#include <QtAV/QtAV_Compat.h>
+#include "QtAV/AudioFormat.h"
+#include "QtAV/private/AVCompat.h"
 #include <QtCore/QByteArray>
 
 namespace QtAV {

@@ -30,7 +30,7 @@
 #endif
 #include <algorithm>
 
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 
 // for mingw gcc
 #if QTAV_HAVE(SSE4_1)

@@ -31,7 +31,6 @@
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/AVOutput.h>
 #include <QtAV/AVPlayer.h>
-#include <QtAV/OutputSet.h>
 #include <QtAV/Packet.h>
 #include <QtAV/Statistics.h>
 

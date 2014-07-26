@@ -25,10 +25,13 @@
 #include <QtCore/QRunnable>
 #include <QtCore/QScopedPointer>
 #include <QtCore/QThread>
-#include <QtAV/Packet.h>
+#include "QtAV/Packet.h"
+#include "utils/BlockingQueue.h"
 //TODO: pause functions. AVOutput may be null, use AVThread's pause state
 
 namespace QtAV {
+
+typedef BlockingQueue<Packet, QQueue> PacketQueue;
 
 class AVDecoder;
 class AVThreadPrivate;
@@ -37,7 +40,7 @@ class AVClock;
 class Filter;
 class Statistics;
 class OutputSet;
-class Q_AV_EXPORT AVThread : public QThread
+class AVThread : public QThread
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVThread)

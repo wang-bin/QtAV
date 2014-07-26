@@ -20,10 +20,9 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/QAVIOContext.h>
+#include "QtAV/private/QAVIOContext.h"
+#include "QtAV/private/AVCompat.h"
 #include <QtCore/QIODevice>
-#include <QtAV/QtAV_Compat.h>
-#include <QDebug>
 
 namespace QtAV {
 

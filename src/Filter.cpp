@@ -22,9 +22,9 @@
 #include "QtAV/Filter.h"
 #include "QtAV/private/Filter_p.h"
 #include "QtAV/Statistics.h"
-#include "QtAV/FilterManager.h"
 #include "QtAV/AVOutput.h"
 #include "QtAV/AVPlayer.h"
+#include "QtAV/private/FilterManager.h"
 
 namespace QtAV {
 

@@ -21,7 +21,7 @@
 
 #include "QtAV/AudioFormat.h"
 #include <QtCore/QtDebug>
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 
 //FF_API_OLD_SAMPLE_FMT. e.g. FFmpeg 0.9
 #ifdef SampleFormat

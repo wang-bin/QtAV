@@ -23,7 +23,7 @@
 #define QTAV_FILTERMANAGER_H
 
 #include <QtCore/QObject>
-#include <QtAV/QtAV_Global.h>
+#include "QtAV/QtAV_Global.h"
 
 namespace QtAV {
 
@@ -31,7 +31,7 @@ class AVOutput;
 class AVPlayer;
 class Filter;
 class FilterManagerPrivate;
-class Q_AV_EXPORT FilterManager : public QObject
+class FilterManager : public QObject
 {
     DPTR_DECLARE_PRIVATE(FilterManager)
     Q_OBJECT

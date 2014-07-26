@@ -1,7 +1,8 @@
 /******************************************************************************
-	QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
-    
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014 Stefan Ladage <sladage@gmail.com>
+
 *   This file is part of QtAV
 
     This library is free software; you can redistribute it and/or
@@ -19,20 +20,32 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
+#ifndef QTAV_AVIOCONTEXT_H
+#define QTAV_AVIOCONTEXT_H
 
-#ifndef QTAV_WIDGETRENDERER_P_H
-#define QTAV_WIDGETRENDERER_P_H
+#include "QtAV/private/AVCompat.h"
+//struct AVIOContext; //anonymous struct in FFmpeg1.0.x
+class QIODevice;
 
-#include <QtAV/private/QPainterRenderer_p.h>
-#include <QtAV/WidgetRenderer.h>
+#define IODATA_BUFFER_SIZE 32768
 
 namespace QtAV {
 
-class Q_AV_EXPORT WidgetRendererPrivate : public QPainterRendererPrivate
+class QAVIOContext
 {
 public:
-    virtual ~WidgetRendererPrivate(){}
+    QAVIOContext(QIODevice* io);
+    ~QAVIOContext();
+
+    AVIOContext* context();
+
+    QIODevice* device() const;
+    void setDevice(QIODevice* device);
+
+private:
+    unsigned char* m_ucDataBuffer;
+    QIODevice* m_pIO;
 };
 
-} //namespace QtAV
-#endif // QTAV_WIDGETRENDERER_P_H
+}
+#endif // QTAV_AVIOCONTEXT_H

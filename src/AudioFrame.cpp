@@ -22,7 +22,7 @@
 #include "QtAV/AudioFrame.h"
 #include "QtAV/private/Frame_p.h"
 #include "QtAV/AudioResampler.h"
-#include "QtAV/QtAV_Compat.h"
+#include "QtAV/private/AVCompat.h"
 
 
 namespace QtAV {

@@ -19,39 +19,34 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AVPlayer.h>
+#include "QtAV/AVPlayer.h"
 
 #include <limits>
 
-#include <qevent.h>
-#include <qpainter.h>
 #include <QApplication>
-#include <QEvent>
+#include <QtCore/QEvent>
 #include <QtCore/QDir>
-//#include <QtCore/QMetaObject>
+#include <QtCore/QIODevice>
 
-#include <QtAV/AVDemuxer.h>
-#include <QtAV/AudioFormat.h>
-#include <QtAV/AudioResampler.h>
-#include <QtAV/AudioThread.h>
-#include <QtAV/Packet.h>
-#include <QtAV/AudioDecoder.h>
-#include <QtAV/VideoRenderer.h>
-#include <QtAV/OutputSet.h>
-#include <QtAV/AVClock.h>
-#include <QtAV/VideoCapture.h>
-#include <QtAV/VideoDecoderTypes.h>
-#include <QtAV/WidgetRenderer.h>
-#include <QtAV/VideoThread.h>
-#include <QtAV/AVDemuxThread.h>
-#include <QtAV/VideoOutputEventFilter.h>
-#include <QtAV/VideoCapture.h>
-#include <QtAV/AudioOutputTypes.h>
-#include <QtAV/FilterManager.h>
-
-#include <QIODevice>
-
-#include <QtAV/QtAV_Compat.h>
+#include "QtAV/AVDemuxer.h"
+#include "QtAV/AudioFormat.h"
+#include "QtAV/AudioResampler.h"
+#include "QtAV/AudioThread.h"
+#include "QtAV/Packet.h"
+#include "QtAV/AudioDecoder.h"
+#include "QtAV/VideoRenderer.h"
+#include "QtAV/AVClock.h"
+#include "QtAV/VideoCapture.h"
+#include "QtAV/VideoDecoderTypes.h"
+#include "QtAV/WidgetRenderer.h"
+#include "QtAV/VideoThread.h"
+#include "QtAV/AVDemuxThread.h"
+#include "QtAV/VideoCapture.h"
+#include "QtAV/AudioOutputTypes.h"
+#include "QtAV/private/FilterManager.h"
+#include "QtAV/private/OutputSet.h"
+#include "QtAV/private/VideoOutputEventFilter.h"
+#include "QtAV/private/AVCompat.h"
 
 namespace QtAV {
 
