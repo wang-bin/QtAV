@@ -71,15 +71,14 @@ void SimpleFilter::prepare()
         ctx->font.setBold(true);
         if (!mCanRot)
             return;
-        QFontMetrics fm(ctx->font);
-        mMat.translate(ctx->rect.x() + fm.width(mText)/2, 0, 0);
+        mMat.translate(ctx->rect.center().x(), 0, 0);
     } else if (!mImage.isNull()) {
         if (!mCanRot)
             return;
         mMat.translate(ctx->rect.x() + mImage.width()/2, 0, 0);
     }
     if (mCanRot) {
-        mMat.rotate(mStartValue*360, 0, 1, 0);
+        mMat.rotate(mStartValue*360, 0, 1, -0.1);
     }
 }
 
@@ -99,7 +98,7 @@ void SimpleFilter::process()
     int t = mTime.elapsed()/100;
 
     if (mCanRot) {
-        mMat.rotate(2, 0, 1, 0);
+        mMat.rotate(2, 0, 1, -0.1);
         ctx->transform = mMat.toTransform();
     }
     if (mText.isEmpty()) {
@@ -138,6 +137,8 @@ void SimpleFilter::process()
         g.setColorAt(0, QColor::fromHsvF(c, 1, 1, 1));
         g.setColorAt(1, QColor::fromHsvF(c > 0.5?c-0.5:c+0.5, 1, 1, 1));
         ctx->pen.setBrush(QBrush(g));
+        ctx->drawRichText(ctx->rect, mText);
+return;
         if (mCanRot) {
             QFontMetrics fm(ctx->font);
             ctx->drawPlainText(QRectF(-fm.width(mText)/2, ctx->rect.y(), ctx->rect.width(), ctx->rect.height()), Qt::TextWordWrap, mText);

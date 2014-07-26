@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
         renderer->installFilter(filter);
 
         filter = new SimpleFilter();
-        filter->setText("Filter on Frame");
+        filter->setText("<h1 style='color:#ffff00'>HTML Filter on<span style='color:#ff0000'>Video Frame</span></h2>");
         filter->enableWaveEffect(false);
         filter->enableRotate(true);
         ctx = static_cast<VideoFilterContext*>(filter->context());

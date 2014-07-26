@@ -22,6 +22,7 @@
 #include "QtAV/FilterContext.h"
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
+#include <QtGui/QTextDocument>
 #include "QtAV/VideoFrame.h"
 
 namespace QtAV {
@@ -128,10 +129,11 @@ void VideoFilterContext::drawPlainText(const QRectF &rect, int flags, const QStr
     Q_UNUSED(text);
 }
 
-void VideoFilterContext::drawRichText(const QRectF &rect, const QString &text)
+void VideoFilterContext::drawRichText(const QRectF &rect, const QString &text, bool wordWrap)
 {
     Q_UNUSED(rect);
     Q_UNUSED(text);
+    Q_UNUSED(wordWrap);
 }
 
 void VideoFilterContext::shareFrom(FilterContext *ctx)
@@ -149,6 +151,17 @@ void VideoFilterContext::shareFrom(FilterContext *ctx)
     video_height = vctx->video_height;
 }
 
+QPainterFilterContext::QPainterFilterContext()
+    : doc(0)
+{}
+
+QPainterFilterContext::~QPainterFilterContext()
+{
+    if (doc) {
+        delete doc;
+        doc = 0;
+    }
+}
 
 FilterContext::Type QPainterFilterContext::type() const
 {
@@ -190,13 +203,19 @@ void QPainterFilterContext::drawPlainText(const QRectF &rect, int flags, const Q
     painter->restore();
 }
 
-void QPainterFilterContext::drawRichText(const QRectF &rect, const QString &text)
+void QPainterFilterContext::drawRichText(const QRectF &rect, const QString &text, bool wordWrap)
 {
     Q_UNUSED(rect);
     Q_UNUSED(text);
     if (!prepare())
         return;
-    //QTextDocument
+    if (!doc)
+        doc = new QTextDocument();
+    doc->setHtml(text);
+    painter->translate(rect.topLeft()); //drawContent() can not set target rect, so move here
+    if (wordWrap)
+        doc->setTextWidth(rect.width());
+    doc->drawContents(painter);
     painter->restore();
 }
 

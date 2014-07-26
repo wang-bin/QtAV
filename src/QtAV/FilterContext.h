@@ -32,6 +32,7 @@
 
 class QPainter;
 class QPaintDevice;
+class QTextDocument;
 namespace QtAV {
 
 class Frame;
@@ -78,7 +79,7 @@ public:
     virtual void drawPlainText(const QPointF& pos, const QString& text);
     // if rect is null, draw single line text at rect.topLeft(), ignoring flags
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
-    virtual void drawRichText(const QRectF& rect, const QString& text);
+    virtual void drawRichText(const QRectF& rect, const QString& text, bool wordWrap = true);
 
     /*
      * TODO: x, y, width, height: |?|>=1 is in pixel unit, otherwise is ratio of video context rect
@@ -113,18 +114,22 @@ protected:
 class Q_AV_EXPORT QPainterFilterContext : public VideoFilterContext
 {
 public:
+    QPainterFilterContext();
+    virtual ~QPainterFilterContext();
     virtual Type type() const; //QtPainter
     virtual void drawImage(const QPointF& pos, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
     virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
     virtual void drawPlainText(const QPointF& pos, const QString& text);
     // if rect is null, draw single line text at rect.topLeft(), ignoring flags
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
-    virtual void drawRichText(const QRectF& rect, const QString& text);
+    virtual void drawRichText(const QRectF& rect, const QString& text, bool wordWrap = true);
 
 protected:
     virtual bool isReady() const;
     virtual bool prepare();
     virtual void initializeOnFrame(Frame* frame);
+
+    QTextDocument *doc;
 };
 
 class Q_AV_EXPORT GLFilterContext : public VideoFilterContext
