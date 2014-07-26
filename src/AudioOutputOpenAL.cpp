@@ -18,7 +18,7 @@
 
 
 #include "QtAV/AudioOutput.h"
-#include "private/AudioOutput_p.h"
+#include "QtAV/private/AudioOutput_p.h"
 #include "prepost.h"
 #include <QtCore/QVector>
 

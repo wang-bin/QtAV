@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoderFFmpegHW.h"
-#include "private/VideoDecoderFFmpegHW_p.h"
+#include "QtAV/private/VideoDecoderFFmpegHW_p.h"
 #include "utils/GPUMemCopy.h"
 #include "QtAV/QtAV_Compat.h"
 #include "prepost.h"

@@ -21,9 +21,9 @@
 
 #pragma comment(lib, "Ole32.lib") //CoTaskMemFree. why link failed?
 #include "QtAV/VideoDecoderFFmpegHW.h"
-#include "private/VideoDecoderFFmpegHW_p.h"
-#include <QtAV/Packet.h>
-#include <QtAV/QtAV_Compat.h>
+#include "QtAV/private/VideoDecoderFFmpegHW_p.h"
+#include "QtAV/Packet.h"
+#include "QtAV/QtAV_Compat.h"
 #include "prepost.h"
 #include "utils/GPUMemCopy.h"
 

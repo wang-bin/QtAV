@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/GLWidgetRenderer2.h"
-#include "private/VideoRenderer_p.h"
+#include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/OpenGLVideo.h"
 #include "QtAV/FilterContext.h"
 #include "QtAV/OSDFilter.h"

@@ -20,16 +20,16 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoderFFmpegHW.h"
-#include "private/VideoDecoderFFmpegHW_p.h"
+#include "QtAV/private/VideoDecoderFFmpegHW_p.h"
 
 #include <assert.h>
 #include <algorithm>
 #include <QtCore/QLibrary>
 #include <QtCore/QMap>
 #include <QtCore/QStringList>
-#include <QtAV/Packet.h>
+#include "QtAV/Packet.h"
 #include "QtAV/SurfaceInterop.h"
-#include <QtAV/QtAV_Compat.h>
+#include "QtAV/QtAV_Compat.h"
 #include "utils/GPUMemCopy.h"
 #include "prepost.h"
 #include <va/va.h>

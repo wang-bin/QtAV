@@ -135,7 +135,6 @@ config_opensl {
 config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
     SOURCES += GDIRenderer.cpp
-    HEADERS += QtAV/private/GDIRenderer_p.h
     SDK_HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus -lGdi32
 }
@@ -143,14 +142,12 @@ config_direct2d {
     DEFINES *= QTAV_HAVE_DIRECT2D=1
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
-    HEADERS += QtAV/private/Direct2DRenderer_p.h
     SDK_HEADERS += QtAV/Direct2DRenderer.h
     #LIBS += -lD2d1
 }
 config_xv {
     DEFINES *= QTAV_HAVE_XV=1
     SOURCES += XVRenderer.cpp
-    HEADERS += QtAV/private/XVRenderer_p.h
     SDK_HEADERS += QtAV/XVRenderer.h
     LIBS += -lXv
 }
@@ -158,7 +155,6 @@ config_gl {
     QT *= opengl
     DEFINES *= QTAV_HAVE_GL=1
     SOURCES += GLWidgetRenderer.cpp GLWidgetRenderer2.cpp
-    HEADERS += QtAV/private/GLWidgetRenderer_p.h
     SDK_HEADERS += QtAV/GLWidgetRenderer.h QtAV/GLWidgetRenderer2.h
     OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
 }

@@ -20,9 +20,9 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoder.h"
-#include "private/VideoDecoder_p.h"
-#include <QtAV/Packet.h>
-#include <QtAV/QtAV_Compat.h>
+#include "QtAV/private/VideoDecoder_p.h"
+#include "QtAV/Packet.h"
+#include "QtAV/QtAV_Compat.h"
 #include "prepost.h"
 
 #include <QDebug>
