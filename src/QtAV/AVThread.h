@@ -61,8 +61,8 @@ public:
     void setDecoder(AVDecoder *decoder);
     AVDecoder *decoder() const;
 
-    Q_DECL_DEPRECATED void setOutput(AVOutput *out);
-    Q_DECL_DEPRECATED AVOutput* output() const;
+    void setOutput(AVOutput *out); //Q_DECL_DEPRECATED
+    AVOutput* output() const; //Q_DECL_DEPRECATED
 
     void setOutputSet(OutputSet *set);
     OutputSet* outputSet() const;

@@ -48,8 +48,8 @@ public:
     //void addSource(AVPlayer* player); //call player.addVideoRenderer(this)
     //void removeSource(AVPlayer* player);
 
-    Q_DECL_DEPRECATED virtual bool open() = 0;
-    Q_DECL_DEPRECATED virtual bool close() = 0;
+    virtual bool open() = 0; //Q_DECL_DEPRECATED
+    virtual bool close() = 0; //Q_DECL_DEPRECATED
 
 //    virtual bool prepare() {}
 //    virtual bool finish() {}
