@@ -127,7 +127,7 @@ void QmlAVPlayer::setSource(const QUrl &url)
     emit sourceChanged(); //TODO: emit only when player loaded a new source
     // TODO: in componentComplete()?
     if (m_complete && (mAutoLoad || mAutoPlay)) {
-        mpPlayer->stop();
+        stop();
         //mpPlayer->load(); //QtAV internal bug: load() or play() results in reload
         if (mAutoPlay) {
             play();
