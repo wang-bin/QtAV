@@ -24,6 +24,11 @@
 
 namespace QtAV {
 
+static const QMatrix4x4 kGBR2RGB = QMatrix4x4(0, 0, 1, 0,
+                                              1, 0, 0, 0,
+                                              0, 1, 0, 0,
+                                              0, 0, 0, 1);
+
 static const QMatrix4x4 yuv2rgb_bt601 =
            QMatrix4x4(
                 1.0f,  0.000f,  1.402f, 0.0f,
@@ -62,7 +67,6 @@ const QMatrix4x4& ColorTransform::YUV2RGB(ColorSpace cs)
     }
     return yuv2rgb_bt601;
 }
-
 
 class ColorTransform::Private : public QSharedData
 {
@@ -141,11 +145,25 @@ public:
 
         M = B*C*S*H;
         // TODO: transform to output color space other than RGB
-        if (in != ColorTransform::RGB) {
+        switch (in) {
+        case ColorTransform::RGB:
+            break;
+        case ColorTransform::GBR:
+            M *= kGBR2RGB;
+            break;
+        default:
             M *= YUV2RGB(in);
+            break;
         }
-        if (out != ColorTransform::RGB) {
-            M = YUV2RGB(in).inverted() * M;
+        switch (out) {
+        case ColorTransform::RGB:
+            break;
+        case ColorTransform::GBR:
+            M = kGBR2RGB.inverted() * M;
+            break;
+        default:
+            M = YUV2RGB(out).inverted() * M;
+            break;
         }
     }
 

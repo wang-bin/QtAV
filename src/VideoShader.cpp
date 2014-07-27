@@ -126,28 +126,11 @@ const char* VideoShader::fragmentShader() const
         qWarning("Empty fragment shader!");
         return 0;
     }
-    if (d.video_format.isRGB()) {
-        frag.prepend("#define INPUT_RGB\n");
-    } else {
-        // color space in glsl does not work unless we define 'YUV_MAT_GLSL'. we compute it in color matrix by cpu
-#if 0
-        switch (d.color_space) {
-        case ColorTransform::BT601:
-            frag.prepend("#define CS_BT601\n");
-            break;
-        case ColorTransform::BT709:
-            frag.prepend("#define CS_BT709\n");
-        default:
-            break;
-        }
-#endif
-        if (d.video_format.isPlanar() && d.video_format.bytesPerPixel(0) == 2) {
-            if (d.video_format.isBigEndian())
-                frag.prepend("#define YUV16BITS_BE_LUMINANCE_ALPHA\n");
-            else
-                frag.prepend("#define YUV16BITS_LE_LUMINANCE_ALPHA\n");
-        }
-        frag.prepend(QString("#define YUV%1P\n").arg(d.video_format.bitsPerPixel(0)).toUtf8());
+    if (d.video_format.isPlanar() && d.video_format.bytesPerPixel(0) == 2) {
+        if (d.video_format.isBigEndian())
+            frag.prepend("#define LA_16BITS_BE\n");
+        else
+            frag.prepend("#define LA_16BITS_LE\n");
     }
     return frag.constData();
 }
@@ -253,7 +236,7 @@ void VideoShader::update(VideoMaterial *material)
             program()->setUniformValue(textureLocation(i), (GLint)(nb_planes - 1));
         }
     }
-    //qDebug() << material->colorMatrix();
+    //qDebug() << "color mat " << material->colorMatrix();
     program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
     program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
@@ -313,9 +296,13 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     d.bpp = frame.format().bitsPerPixel(0);
     d.width = frame.width();
     d.height = frame.height();
+    const VideoFormat fmt(frame.format());
     // http://forum.doom9.org/archive/index.php/t-160211.html
     ColorTransform::ColorSpace cs = ColorTransform::RGB;
-    if (!frame.format().isRGB()) {
+    if (fmt.isRGB()) {
+        if (fmt.isPlanar())
+            cs = ColorTransform::GBR;
+    } else {
         if (frame.width() >= 1280 || frame.height() > 576) //values from mpv
             cs = ColorTransform::BT709;
         else
@@ -323,9 +310,9 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     }
     d.colorTransform.setInputColorSpace(cs);
     d.frame = frame;
-    if (frame.format() != d.video_format) {
-        qDebug("pixel format changed: %s => %s", qPrintable(d.video_format.name()), qPrintable(frame.format().name()));
-        d.video_format = frame.format();
+    if (fmt != d.video_format) {
+        qDebug("pixel format changed: %s => %s", qPrintable(d.video_format.name()), qPrintable(fmt.name()));
+        d.video_format = fmt;
     }
 }
 
@@ -348,9 +335,9 @@ VideoShader* VideoMaterial::createShader() const
 MaterialType* VideoMaterial::type() const
 {
     static MaterialType rgbType;
-    static MaterialType packedType;
-    static MaterialType yuv16leType;
-    static MaterialType yuv16beType;
+    static MaterialType packedType; // TODO: uyuy, yuy2
+    static MaterialType planar16leType;
+    static MaterialType planar16beType;
     static MaterialType yuv8Type;
     static MaterialType invalidType;
     const VideoFormat &fmt = d_func().frame.format();
@@ -361,9 +348,9 @@ MaterialType* VideoMaterial::type() const
     if (fmt.bytesPerPixel(0) == 1)
         return &yuv8Type;
     if (fmt.isBigEndian())
-        return &yuv16beType;
+        return &planar16beType;
     else
-        return &yuv16leType;
+        return &planar16leType;
     return &invalidType;
 }
 
@@ -537,7 +524,7 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
      * GL ES2 support: GL_RGB, GL_RGBA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA
      * http://stackoverflow.com/questions/18688057/which-opengl-es-2-0-texture-formats-are-color-depth-or-stencil-renderable
      */
-    if (fmt.isRGB() || !fmt.isPlanar()) {
+    if (!fmt.isPlanar()) {
         GLint internal_fmt;
         GLenum data_fmt;
         GLenum data_t;
@@ -548,38 +535,30 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
         internal_format = QVector<GLint>(fmt.planeCount(), internal_fmt);
         data_format = QVector<GLenum>(fmt.planeCount(), data_fmt);
         data_type = QVector<GLenum>(fmt.planeCount(), data_t);
+        //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
+        // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
     } else {
         internal_format.resize(fmt.planeCount());
         data_format.resize(fmt.planeCount());
         data_type = QVector<GLenum>(fmt.planeCount(), GL_UNSIGNED_BYTE);
-        if (fmt.isPlanar()) {
         /*!
          * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
          * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
          */
-            qDebug("///////////bpp %d", fmt.bytesPerPixel());
-            internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED for GL
-            if (fmt.planeCount() == 2) {
-                internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
-            } else {
-                if (fmt.bytesPerPixel(1) == 2) {
-                    // read 16 bits and compute the real luminance in shader
-                    internal_format[0] = data_format[0] = GL_LUMINANCE_ALPHA;
-                    internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA; //vec4(L,L,L,A)
-                    internal_format[2] = data_format[2] = GL_LUMINANCE_ALPHA;
-                } else {
-                    internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
-                    internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
-                }
-            }
-            for (int i = 0; i < internal_format.size(); ++i) {
-                // xbmc use bpp not bpp(plane)
-                //internal_format[i] = GetGLInternalFormat(data_format[i], fmt.bytesPerPixel(i));
-                //data_format[i] = internal_format[i];
-            }
+        qDebug("///////////bpp %d", fmt.bytesPerPixel());
+        internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED for GL
+        if (fmt.planeCount() == 2) {
+            // NV12/21 semi-planar
+            internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
         } else {
-            //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
-            // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
+            if (fmt.bytesPerPixel(1) == 2) {
+                // read 16 bits and compute the real luminance in shader
+                internal_format.fill(GL_LUMINANCE_ALPHA); //vec4(L,L,L,A)
+                data_format.fill(GL_LUMINANCE_ALPHA);
+            } else {
+                internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
+                internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
+            }
         }
     }
     for (int i = 0; i < fmt.planeCount(); ++i) {

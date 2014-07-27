@@ -43,9 +43,11 @@ public:
     // TODO: other color spaces (yuv itu.xxxx, XYZ, ...)
     enum ColorSpace {
         RGB,
+        GBR, // for planar gbr format in glsl
         BT601,
         BT709
     };
+    //http://msdn.microsoft.com/en-us/library/dd206750.aspx
     // cs: BT601 or BT709
     static const QMatrix4x4& YUV2RGB(ColorSpace cs);
 

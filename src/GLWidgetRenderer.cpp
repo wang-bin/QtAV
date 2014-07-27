@@ -202,18 +202,21 @@ public:
     class VideoMaterialType {};
     VideoMaterialType* materialType(const VideoFormat& fmt) const {
         static VideoMaterialType rgbType;
-        static VideoMaterialType yuv16leType;
-        static VideoMaterialType yuv16beType;
+        static VideoMaterialType packedType; // TODO: uyuy, yuy2
+        static VideoMaterialType planar16leType;
+        static VideoMaterialType planar16beType;
         static VideoMaterialType yuv8Type;
         static VideoMaterialType invalidType;
         if (fmt.isRGB() && !fmt.isPlanar())
             return &rgbType;
+        if (!fmt.isPlanar())
+            return &packedType;
         if (fmt.bytesPerPixel(0) == 1)
             return &yuv8Type;
         if (fmt.isBigEndian())
-            return &yuv16beType;
+            return &planar16beType;
         else
-            return &yuv16leType;
+            return &planar16leType;
         return &invalidType;
     }
     void updateShaderIfNeeded();
@@ -393,13 +396,13 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
     if (fmt.isRGB()) {
         frag.prepend("#define INPUT_RGB\n");
     } else {
-        if (fmt.isPlanar() && fmt.bytesPerPixel(0) == 2) {
-            if (fmt.isBigEndian())
-                frag.prepend("#define YUV16BITS_BE_LUMINANCE_ALPHA\n");
-            else
-                frag.prepend("#define YUV16BITS_LE_LUMINANCE_ALPHA\n");
-            frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
-        }
+        frag.prepend(QString("#define YUV%1P\n").arg(fmt.bitsPerPixel(0)));
+    }
+    if (fmt.isPlanar() && fmt.bytesPerPixel(0) == 2) {
+        if (fmt.isBigEndian())
+            frag.prepend("#define LA_16BITS_BE\n");
+        else
+            frag.prepend("#define LA_16BITS_LE\n");
     }
     if (cs == ColorTransform::BT601) {
         frag.prepend("#define CS_BT601\n");
@@ -502,7 +505,7 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
      * GL ES2 support: GL_RGB, GL_RGBA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA
      * http://stackoverflow.com/questions/18688057/which-opengl-es-2-0-texture-formats-are-color-depth-or-stencil-renderable
      */
-    if (fmt.isRGB()) {
+    if (!fmt.isPlanar()) {
         GLint internal_fmt;
         GLenum data_fmt;
         GLenum data_t;
@@ -529,9 +532,8 @@ bool GLWidgetRendererPrivate::initTextures(const VideoFormat &fmt)
             } else {
                 if (fmt.bytesPerPixel(1) == 2) {
                     // read 16 bits and compute the real luminance in shader
-                    internal_format[0] = data_format[0] = GL_LUMINANCE_ALPHA;
-                    internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA; //vec4(L,L,L,A)
-                    internal_format[2] = data_format[2] = GL_LUMINANCE_ALPHA;
+                    internal_format.fill(GL_LUMINANCE_ALPHA); //vec4(L,L,L,A)
+                    data_format.fill(GL_LUMINANCE_ALPHA);
                 } else {
                     internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
                     internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
@@ -648,7 +650,10 @@ void GLWidgetRendererPrivate::updateShaderIfNeeded()
     material_type = newType;
     // http://forum.doom9.org/archive/index.php/t-160211.html
     ColorTransform::ColorSpace cs = ColorTransform::RGB;
-    if (!fmt.isRGB()) {
+    if (fmt.isRGB()) {
+        if (fmt.isPlanar())
+            cs = ColorTransform::GBR;
+    } else {
         if (video_frame.width() >= 1280 || video_frame.height() > 576) //values from mpv
             cs = ColorTransform::BT709;
         else
