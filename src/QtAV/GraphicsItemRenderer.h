@@ -50,6 +50,11 @@ public:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     virtual QGraphicsItem* graphicsItem() { return this; }
 
+    /*!
+     * \brief isOpenGL
+     * true: user set to enabling opengl renderering. if viewport is not GLWidget, nothing will be rendered
+     * false: otherwise. opengl resources in QtAV (e.g. shader manager) will be released later
+     */
     bool isOpenGL() const;
     void setOpenGL(bool o);
 signals:

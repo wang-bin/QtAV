@@ -45,6 +45,22 @@ public:
         matrix(0, 0) = (GLfloat)out_rect.width()/(GLfloat)renderer_width;
         matrix(1, 1) = (GLfloat)out_rect.height()/(GLfloat)renderer_height;
     }
+    // return true if opengl is enabled and context is ready. may called by non-rendering thread
+    bool checkGL() {
+        if (!opengl) {
+            glv.setOpenGLContext(0); // it's for Qt4. may not in rendering thread
+            return false;
+        }
+        if (!glv.openGLContext()) {
+            //qWarning("no opengl context! set current");
+            // null if not called from renderering thread;
+            QOpenGLContext *ctx = const_cast<QOpenGLContext*>(QOpenGLContext::currentContext());
+            if (!ctx)
+                return false;
+            glv.setOpenGLContext(ctx);
+        }
+        return true;
+    }
 
     bool opengl;
     OpenGLVideo glv;
@@ -82,10 +98,13 @@ bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GraphicsItemRenderer);
     if (isOpenGL()) {
-        QMutexLocker locker(&d.img_mutex);
-        Q_UNUSED(locker);
-        d.video_frame = frame;
-        d.glv.setCurrentFrame(frame);
+        {
+            QMutexLocker locker(&d.img_mutex);
+            Q_UNUSED(locker);
+            d.video_frame = frame;
+        }
+        if (d.checkGL())
+            d.glv.setCurrentFrame(frame);
     } else {
         prepareFrame(frame);
     }
@@ -149,14 +168,7 @@ void GraphicsItemRenderer::drawFrame()
     DPTR_D(GraphicsItemRenderer);
     if (!d.painter)
         return;
-    if (isOpenGL()) {
-        if (!d.glv.openGLContext()) {
-            d.glv.setOpenGLContext(const_cast<QOpenGLContext*>(QOpenGLContext::currentContext()));
-            if (!d.glv.openGLContext()) {
-                qWarning("no opengl context!");
-                return;
-            }
-        }
+    if (d.checkGL()) {
         d.glv.render(boundingRect(), realROI(), d.matrix*sceneTransform());
         return;
     }

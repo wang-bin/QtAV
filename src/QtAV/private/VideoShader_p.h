@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
 
@@ -51,7 +51,10 @@ public:
     {}
     virtual ~VideoShaderPrivate() {
         if (owns_program && program) {
-            program->removeAllShaders();
+            if (QOpenGLContext::currentContext()) {
+                // FIXME: may be not called from renderering thread. so we still have to detach shaders
+                program->removeAllShaders();
+            }
             delete program;
         }
         program = 0;

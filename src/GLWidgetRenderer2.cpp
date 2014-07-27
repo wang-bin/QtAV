@@ -79,6 +79,13 @@ GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidg
     setOSDFilter(new OSDFilterQPainter());
 }
 
+GLWidgetRenderer2::~GLWidgetRenderer2()
+{
+    // why QOpenGLContext::aboutToBeDestroyed not emitted?
+//#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+   d_func().glv.setOpenGLContext(0);
+//#endif
+}
 
 bool GLWidgetRenderer2::isSupported(VideoFormat::PixelFormat pixfmt) const
 {

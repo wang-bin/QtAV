@@ -44,14 +44,8 @@ VideoPlayer::VideoPlayer(QWidget *parent)
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->addItem(videoItem);
 
-    QGraphicsView *graphicsView = new QGraphicsView(scene);
-#ifndef QT_NO_OPENGL
-    videoItem->setOpenGL(false);
-    QGLWidget *glw = new QGLWidget(QGLFormat(QGL::SampleBuffers));
-    glw->setAutoFillBackground(false);
-    graphicsView->setCacheMode(QGraphicsView::CacheNone);
-    graphicsView->setViewport(glw);
-#endif
+    view = new QGraphicsView(scene);
+
     QSlider *rotateSlider = new QSlider(Qt::Horizontal);
     rotateSlider->setRange(-180,  180);
     rotateSlider->setValue(0);
@@ -74,7 +68,7 @@ VideoPlayer::VideoPlayer(QWidget *parent)
     hb->addWidget(glBox);
     hb->addWidget(openBtn);
     QBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(graphicsView);
+    layout->addWidget(view);
     layout->addWidget(rotateSlider);
     layout->addWidget(scaleSlider);
     layout->addLayout(hb);
@@ -95,6 +89,16 @@ void VideoPlayer::play(const QString &file)
 void VideoPlayer::setOpenGL(bool o)
 {
     videoItem->setOpenGL(o);
+    if (!o) {
+        view->setViewport(0);
+        return;
+    }
+#ifndef QT_NO_OPENGL
+    QGLWidget *glw = new QGLWidget();//QGLFormat(QGL::SampleBuffers));
+    glw->setAutoFillBackground(false);
+    view->setViewport(glw);
+    view->setCacheMode(QGraphicsView::CacheNone);
+#endif
 }
 
 void VideoPlayer::rotateVideo(int angle)

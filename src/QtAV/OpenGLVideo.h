@@ -26,6 +26,7 @@
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QHash>
 #include <QMatrix4x4>
+#include <QtCore/QObject>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLContext>
 #else
@@ -43,8 +44,9 @@ class OpenGLVideoPrivate;
  * \brief The OpenGLVideo class
  * high level api for renderering a video frame. use VideoShader, VideoMaterial and ShaderManager internally
  */
-class Q_AV_EXPORT OpenGLVideo
+class Q_AV_EXPORT OpenGLVideo : public QObject
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(OpenGLVideo)
 public:
     OpenGLVideo();
@@ -52,7 +54,9 @@ public:
      * \brief setOpenGLContext
      * a context must be set before renderering.
      * \param ctx
-     * 0: current context in OpenGL is done. shaders all will be released
+     * 0: current context in OpenGL is done. shaders all will be released.
+     * QOpenGLContext is QObject in Qt5, and gl resources here will be released automatically if context is destroyed.
+     * But you have to call setOpenGLContext(0) for Qt4 explicitly.
      */
     void setOpenGLContext(QOpenGLContext *ctx);
     QOpenGLContext* openGLContext();
@@ -75,6 +79,12 @@ public:
     void setSaturation(qreal value);
 protected:
     DPTR_DECLARE(OpenGLVideo)
+
+private slots:
+    /* used by Qt5 whose QOpenGLContext is QObject and we can call this when context is about to destroy.
+     * shader manager and material will be reset
+     */
+    void resetGL();
 };
 
 

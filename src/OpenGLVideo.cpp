@@ -37,11 +37,7 @@
 
 namespace QtAV {
 
-// QOpenGLContext in Qt5 is QObject. we can simply ctx->findChild to get the shader manager.
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-// TODO: thread safe?
-static QHash<QOpenGLContext*,ShaderManager*> sShaderMgrs;
-#endif
+// FIXME: why crash if inherits both QObject and DPtrPrivate?
 class OpenGLVideoPrivate : public DPtrPrivate<OpenGLVideo>
 {
 public:
@@ -57,6 +53,20 @@ public:
         }
     }
 
+    void resetGL() {
+        ctx = 0;
+        if (!manager)
+            return;
+        manager->setParent(0);
+        delete manager;
+        manager = 0;
+        if (material) {
+            delete material;
+            material = new VideoMaterial();
+        }
+    }
+
+public:
     QOpenGLContext *ctx;
     ShaderManager *manager;
     VideoMaterial *material;
@@ -72,32 +82,25 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
 {
     DPTR_D(OpenGLVideo);
     if (!ctx) {
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-        sShaderMgrs.remove(d.ctx);
-#endif
-        d.manager->setParent(0);
-        delete d.manager;
-        d.manager = 0;
-        d.ctx = 0;
+        d.resetGL();
         return;
     }
-
-    d.ctx = ctx;
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     d.manager = ctx->findChild<ShaderManager*>(QStringLiteral("__qtav_shader_manager"));
     QSizeF surfaceSize = QOpenGLContext::currentContext()->surface()->size();
 #else
-    d.manager = sShaderMgrs.value(ctx, 0);
+    d.resetGL();
     QSizeF surfaceSize = QSizeF(ctx->device()->width(), ctx->device()->height());
 #endif
+    d.ctx = ctx; // Qt4: set to null in resetGL()
     setProjectionMatrixToRect(QRectF(QPointF(), surfaceSize));
     if (d.manager)
         return;
     // TODO: what if ctx is delete?
     d.manager = new ShaderManager(ctx);
     d.manager->setObjectName(QStringLiteral("__qtav_shader_manager"));
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-    sShaderMgrs[ctx] = d.manager;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    QObject::connect(ctx, SIGNAL(aboutToBeDestroyed()), this, SLOT(resetGL()), Qt::DirectConnection); //direct?
 #endif
 }
 
@@ -186,6 +189,12 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
    }
 
    d.material->unbind();
+}
+
+void OpenGLVideo::resetGL()
+{
+    qDebug("~~~~~~~~~resetGL %p. from sender %p", d_func().manager, sender());
+    d_func().resetGL();
 }
 
 } //namespace QtAV

@@ -35,9 +35,11 @@ class GLWidgetRenderer2Private;
  */
 class Q_AV_EXPORT GLWidgetRenderer2 : public QGLWidget, public VideoRenderer
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer2)
 public:
     GLWidgetRenderer2(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
+    virtual ~GLWidgetRenderer2();
     virtual VideoRendererId id() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
     virtual QWidget* widget() { return this; }

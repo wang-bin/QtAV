@@ -25,6 +25,7 @@
 #include <QtAV/GraphicsItemRenderer.h>
 #include <QWidget>
 
+class QGraphicsView;
 class VideoPlayer : public QWidget
 {
     Q_OBJECT
@@ -47,6 +48,7 @@ private slots:
 private:
     QtAV::AVPlayer mediaPlayer;
     QtAV::GraphicsItemRenderer *videoItem;
+    QGraphicsView *view;
 };
 
 #endif //QTAV_VIDEOPLAYER_H
