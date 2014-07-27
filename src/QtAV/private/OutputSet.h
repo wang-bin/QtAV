@@ -58,7 +58,7 @@ public:
     void notifyPauseChange(AVOutput *output);
     bool canPauseThread() const;
     //in AVThread
-    bool pauseThread(int timeout = ULONG_MAX); //There are 2 ways to pause AVThread: 1. pause thread directly. 2. pause all outputs
+    bool pauseThread(unsigned long timeout = ULONG_MAX); //There are 2 ways to pause AVThread: 1. pause thread directly. 2. pause all outputs
     /*
      * in user thread when pause count < set size.
      * 1. AVPlayer.pause(false) in player thread then call each output pause(false)
