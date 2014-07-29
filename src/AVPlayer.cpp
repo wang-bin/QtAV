@@ -52,7 +52,7 @@ namespace QtAV {
 
 static const int kPosistionCheckMS = 500;
 static const qint64 kSeekMS = 10000;
-static const qint64 kInvalidPosition = std::numeric_limits<qint64>::min();
+static const qint64 kInvalidPosition = std::numeric_limits<qint64>::max();
 
 static bool correct_audio_channels(AVCodecContext *ctx) {
     if (ctx->channels <= 0) {
