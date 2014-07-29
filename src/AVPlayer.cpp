@@ -52,6 +52,7 @@ namespace QtAV {
 
 static const int kPosistionCheckMS = 500;
 static const qint64 kSeekMS = 10000;
+static const qint64 kInvalidPosition = std::numeric_limits<qint64>::min();
 
 static bool correct_audio_channels(AVCodecContext *ctx) {
     if (ctx->channels <= 0) {
@@ -93,7 +94,7 @@ AVPlayer::AVPlayer(QObject *parent) :
      * stopFromDemuxerThread()(which is false), so the initial value must be true
      */
     reset_state = true;
-    media_end_pos = std::numeric_limits<qint64>::max();
+    media_end_pos = kInvalidPosition;
     start_position = 0;
     stop_position = mediaStopPosition();
     repeat_current = repeat_max = 0;
@@ -608,7 +609,7 @@ bool AVPlayer::load(bool reload)
     if ((path.startsWith("file:") || QFile(path).exists()) && duration() > 0) {
         media_end_pos = mediaStartPosition() + duration();
     } else {
-        media_end_pos = std::numeric_limits<qint64>::max();
+        media_end_pos = kInvalidPosition;
     }
     // if file changed or stop() called by user, stop_position changes.
     if (stopPosition() > mediaStopPosition() || stopPosition() == 0) {
@@ -673,7 +674,7 @@ qint64 AVPlayer::startPosition() const
 
 void AVPlayer::setStartPosition(qint64 pos)
 {
-    if (pos > stopPosition()) {
+    if (pos > stopPosition() && stopPosition() > 0) {
         qWarning("start position too large (%lld > %lld). ignore", pos, stopPosition());
         return;
     }
@@ -844,7 +845,7 @@ void AVPlayer::play()
     if (isPlaying()) {
         if (start_last) {
             clock->pause(true); //external clock
-            last_position = mediaStopPosition() != std::numeric_limits<qint64>::max() ? -position() : 0;
+            last_position = mediaStopPosition() != kInvalidPosition ? -position() : 0;
             reset_state = false; //set a new stream number should not reset other states
             qDebug("start pos is current position: %lld", last_position);
         } else {
@@ -901,6 +902,9 @@ void AVPlayer::play()
         video_thread->start();
         video_thread->waitForReady();
     }
+    if (startPosition() > 0 && startPosition() < mediaStopPosition() && last_position <= 0) {
+        demuxer.seek((qint64)startPosition());
+    }
     demuxer_thread->start();
     if (start_last) {
         clock->pause(false); //external clock
@@ -949,6 +953,7 @@ void AVPlayer::stopNotifyTimer()
     killTimer(timer_id);
 }
 
+// TODO: doc about when the state will be reset
 void AVPlayer::stop()
 {
     // check timer_id, <0 return?
@@ -972,7 +977,7 @@ void AVPlayer::stop()
         }
         start_position = 0;
         stop_position = 0; // 0 can stop play in timerEvent
-        media_end_pos = std::numeric_limits<qint64>::max();
+        media_end_pos = kInvalidPosition;
         repeat_current = repeat_max = 0;
     } else { //called by player
         if (timer_id >= 0) {
@@ -982,7 +987,7 @@ void AVPlayer::stop()
     }
     reset_state = true;
 
-    last_position = mediaStopPosition() != std::numeric_limits<qint64>::max() ? startPosition() : 0;
+    last_position = mediaStopPosition() != kInvalidPosition ? startPosition() : 0;
     if (!isPlaying()) {
         qDebug("Not playing~");
         return;
@@ -1015,7 +1020,7 @@ void AVPlayer::stop()
 void AVPlayer::timerEvent(QTimerEvent *te)
 {
     if (te->timerId() == timer_id) {
-        if (stopPosition() == std::numeric_limits<qint64>::max()) {
+        if (stopPosition() == kInvalidPosition) {
             // not seekable. network stream
             return;
         }

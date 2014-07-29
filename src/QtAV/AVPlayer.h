@@ -245,18 +245,22 @@ public slots:
     void setRepeat(int max);
     /*!
      * \brief startPosition
-     *  Used to repeat from startPosition() to endPosition()
+     *  Used to repeat from startPosition() to endPosition().
+     *  You can also start to play at a given position
+     * \code
+     *     player->setStartPosition();
+     *     player->play("some video");
+     * \endcode
      *  pos < 0, equals duration()+pos
      *  pos == 0, means start at the beginning of media stream
      *  (may be not exactly equals 0, seek to demuxer.startPosition()/startTime())
-     * \return
+     *  pos > media end position: no effect
      */
     void setStartPosition(qint64 pos);
     /*!
      * \brief stopPosition
      *  pos = 0: mediaStopPosition()
      *  pos < 0: duration() + pos
-     * \return
      */
     void setStopPosition(qint64 pos);
     /*!
