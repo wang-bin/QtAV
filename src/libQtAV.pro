@@ -68,9 +68,11 @@ sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2) {
   }
 }
 
+win32: CONFIG += config_dsound
+
 *msvc* {
 #link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
-    QMAKE_LFLAGS += /SAFESEH:NO
+    #QMAKE_LFLAGS += /SAFESEH:NO
     INCLUDEPATH += compat/msvc
 }
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
@@ -112,6 +114,10 @@ config_ipp {
             -L$$(IPPROOT)/../compiler/lib/$$IPPARCH -lsvml -limf
     #omp for static link. _t is multi-thread static link
 }
+config_dsound {
+    SOURCES += AudioOutputDSound.cpp
+    DEFINES *= QTAV_HAVE_DSOUND=1
+}
 config_portaudio {
     SOURCES += AudioOutputPortAudio.cpp
     DEFINES *= QTAV_HAVE_PORTAUDIO=1
@@ -136,7 +142,7 @@ config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
     SOURCES += GDIRenderer.cpp
     SDK_HEADERS += QtAV/GDIRenderer.h
-    LIBS += -lgdiplus -lGdi32
+    LIBS += -lgdiplus -lgdi32
 }
 config_direct2d {
     DEFINES *= QTAV_HAVE_DIRECT2D=1
@@ -184,7 +190,7 @@ include(../depends/dllapi/src/libdllapi.pri)
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
     SOURCES += VideoDecoderDXVA.cpp
-    LIBS += -lOle32
+    LIBS += -lole32
 }
 config_vaapi* {
     DEFINES *= QTAV_HAVE_VAAPI=1

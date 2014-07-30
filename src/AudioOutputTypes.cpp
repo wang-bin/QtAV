@@ -28,6 +28,7 @@ namespace QtAV {
 AudioOutputId AudioOutputId_PortAudio = 1;
 AudioOutputId AudioOutputId_OpenAL = 2;
 AudioOutputId AudioOutputId_OpenSL = 3;
+AudioOutputId AudioOutputId_DSound = 4;
 
 QVector<AudioOutputId> GetRegistedAudioOutputIds()
 {
@@ -40,6 +41,7 @@ FACTORY_DEFINE(AudioOutput)
 extern void RegisterAudioOutputPortAudio_Man();
 extern void RegisterAudioOutputOpenAL_Man();
 extern void RegisterAudioOutputOpenSL_Man();
+extern void RegisterAudioOutputDSound_Man();
 
 void AudioOutput_RegisterAll()
 {
@@ -52,6 +54,9 @@ void AudioOutput_RegisterAll()
 #if QTAV_HAVE(OPENSL)
     RegisterAudioOutputOpenSL_Man();
 #endif //QTAV_HAVE(OPENSL)
+#if QTAV_HAVE(DSOUND)
+    extern void RegisterAudioOutputDSound_Man();
+#endif
 }
 
 } //namespace QtAV
