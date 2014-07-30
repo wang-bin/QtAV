@@ -29,7 +29,12 @@
 #include <QtCore/QVector>
 #include <limits>
 
+// TODO:writeChunk(), write(QByteArray) { while writeChunk() }, users define writeChunk()
 namespace QtAV {
+
+// chunk
+const int kBufferSize = 1024*4;
+const int kBufferCount = 8;
 
 class Q_AV_PRIVATE_EXPORT AudioOutputPrivate : public AVOutputPrivate
 {
@@ -48,6 +53,7 @@ public:
     }
     virtual ~AudioOutputPrivate(){}
 
+    int bufferSizeTotal() { return nb_buffers * kBufferSize; }
     typedef struct {
         qreal timestamp;
         int data_size;

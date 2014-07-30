@@ -166,9 +166,6 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
     return format;
 }
 
-const int kBufferSize = 1024*4;
-const int kBufferCount = 8;
-
 class  AudioOutputOpenALPrivate : public AudioOutputPrivate
 {
 public:
