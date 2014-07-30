@@ -53,7 +53,7 @@ public:
     }
     virtual ~AudioOutputPrivate(){}
 
-    int bufferSizeTotal() { return nb_buffers * kBufferCount; }
+    int bufferSizeTotal() { return nb_buffers * kBufferSize; }
     typedef struct {
         qreal timestamp;
         int data_size;

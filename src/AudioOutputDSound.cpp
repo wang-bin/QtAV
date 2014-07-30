@@ -35,12 +35,12 @@ class AudioOutputDSound : public AudioOutput
     DPTR_DECLARE_PRIVATE(AudioOutputDSound)
 public:
     AudioOutputDSound();
-    ~AudioOutputDSound();
     //AudioOutputId id() const
     virtual bool open();
     virtual bool close();
-    virtual bool isSupported(const AudioFormat& format) const;
+    virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
     virtual void waitForNextBuffer();
+    bool write(const QByteArray& data);
 protected:
     virtual bool write();
 };
@@ -62,30 +62,18 @@ template <class T> void SafeRelease(T **ppT) {
 }
 
 // use the definitions from the win32 api headers when they define these
-#define WAVE_FORMAT_IEEE_FLOAT 0x0003
+#define WAVE_FORMAT_IEEE_FLOAT      0x0003
 #define WAVE_FORMAT_DOLBY_AC3_SPDIF 0x0092
 #define WAVE_FORMAT_EXTENSIBLE      0xFFFE
 /* GUID SubFormat IDs */
 /* We need both b/c const variables are not compile-time constants in C, giving
  * us an error if we use the const GUID in an enum */
-
-#ifndef _KSDATAFORMAT_SUBTYPE_PCM_
-#define _KSDATAFORMAT_SUBTYPE_PCM_ {0x00000001, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}}
-static const GUID VLC_KSDATAFORMAT_SUBTYPE_PCM = {0xE923AABF, 0xCB58, 0x4471, {0xA1, 0x19, 0xFF, 0xFA, 0x01, 0xE4, 0xCE, 0x62}};
-#define KSDATAFORMAT_SUBTYPE_PCM VLC_KSDATAFORMAT_SUBTYPE_PCM
-#endif
-
-#ifndef _KSDATAFORMAT_SUBTYPE_IEEE_FLOAT_
-#define _KSDATAFORMAT_SUBTYPE_IEEE_FLOAT_ {0x00000003, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}}
-static const GUID VLC_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT = {0x00000003, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
-#define KSDATAFORMAT_SUBTYPE_IEEE_FLOAT VLC_KSDATAFORMAT_SUBTYPE_PCM
-#endif
-
-#ifndef _KSDATAFORMAT_SUBTYPE_UNKNOWN_
-#define _KSDATAFORMAT_SUBTYPE_UNKNOWN_ {0x00000000, 0x0000, 0x0000, {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}}
-static const GUID VLC_KSDATAFORMAT_SUBTYPE_UNKNOWN = {0x00000000, 0x0000, 0x0000, {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
-#define KSDATAFORMAT_SUBTYPE_UNKNOWN VLC_KSDATAFORMAT_SUBTYPE_UNKNOWN
-#endif
+#undef DEFINE_GUID
+#define DEFINE_GUID(name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) EXTERN_C const GUID DECLSPEC_SELECTANY name = { l, w1, w2, { b1, b2, b3, b4, b5, b6, b7, b8 } }
+DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, WAVE_FORMAT_IEEE_FLOAT, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 );
+DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_DOLBY_AC3_SPDIF, WAVE_FORMAT_DOLBY_AC3_SPDIF, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 );
+DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_PCM, WAVE_FORMAT_PCM, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_UNKNOWN, 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 #ifndef _WAVEFORMATEXTENSIBLE_
 typedef struct {
@@ -169,14 +157,15 @@ public:
     {
     }
     ~AudioOutputDSoundPrivate() {
+        destroy();
     }
     bool loadDll();
     bool unloadDll();
     bool init();
     void destroy() {
-        SafeRelease(&dsound);
         SafeRelease(&prim_buf);
         SafeRelease(&stream_buf);
+        SafeRelease(&dsound);
         unloadDll();
     }
     bool createDSoundBuffers();
@@ -193,11 +182,6 @@ AudioOutputDSound::AudioOutputDSound()
 {
 }
 
-AudioOutputDSound::~AudioOutputDSound()
-{
-    close();
-}
-
 bool AudioOutputDSound::open()
 {
     DPTR_D(AudioOutputDSound);
@@ -205,6 +189,11 @@ bool AudioOutputDSound::open()
         return false;
     if (!d.createDSoundBuffers())
         return false;
+    QByteArray feed(d.bufferSizeTotal(), 0);
+    write(feed);
+    for (quint32 i = 0; i < d.nb_buffers; ++i) {
+        d.bufferAdded();
+    }
     return true;
 }
 
@@ -215,10 +204,10 @@ bool AudioOutputDSound::close()
     return true;
 }
 
-bool AudioOutputDSound::isSupported(const AudioFormat &format) const
+bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
-    Q_UNUSED(format);
-    return true;
+    return sampleFormat == AudioFormat::SampleFormat_Signed16
+            || sampleFormat == AudioFormat::SampleFormat_Float;
 }
 
 void AudioOutputDSound::waitForNextBuffer()
@@ -227,14 +216,16 @@ void AudioOutputDSound::waitForNextBuffer()
     if  (!d.dsound)
         return;
     DWORD read_offset;
-    d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/);
+    d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
     int remain = d.write_offset - read_offset;
     if (remain < 0LL) {
         remain += d.bufferSizeTotal();
     }
     if (remain > 0) {
         // don't need AudioOutputPrivate buffer queue
-        unsigned long duration = d.format.durationForBytes((qint64)remain)/1000LL;
+        // TODO: why too slow?
+        //unsigned long duration = d.format.durationForBytes((qint64)remain)/1000LL;
+        unsigned long duration = d.format.durationForBytes(d.nextDequeueInfo().data_size)/1000LL;
         QMutexLocker lock(&d.mutex);
         Q_UNUSED(lock);
         d.cond.wait(&d.mutex, duration);
@@ -242,27 +233,27 @@ void AudioOutputDSound::waitForNextBuffer()
     d.bufferRemoved(); //TODO: virtual void noWait();
 }
 
-bool AudioOutputDSound::write() //TODO: deprecated, use write(AudioFrame or QByteArray)
+bool AudioOutputDSound::write(const QByteArray &data)
 {
     DPTR_D(AudioOutputDSound);
-    LPVOID dst1, dst2;
-    DWORD size1, size2;
+    LPVOID dst1= NULL, dst2 = NULL;
+    DWORD size1 = 0, size2 = 0;
     if (d.write_offset > d.bufferSizeTotal())
         d.write_offset = 0;
-    HRESULT res = d.stream_buf->Lock(d.write_offset, d.data.size(), &dst1, &size1, &dst2, &size2, 0);
+    HRESULT res = d.stream_buf->Lock(d.write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0); //DSBLOCK_ENTIREBUFFER
     if (res == DSERR_BUFFERLOST) {
         d.stream_buf->Restore();
-        res = d.stream_buf->Lock(d.write_offset, d.data.size(), &dst1, &size1, &dst2, &size2, 0);
+        res = d.stream_buf->Lock(d.write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0);
     }
     if (res != DS_OK) {
         qWarning("Can not lock secondary buffer (%s)", dserr2str(res));
         return false;
     }
-    memcpy(dst1, d.data.constData(), size1);
+    memcpy(dst1, data.constData(), size1);
     if (dst2)
-        memcpy(dst2, d.data.constData() + size1, size2);
+        memcpy(dst2, data.constData() + size1, size2);
     d.write_offset += size1 + size2;
-    if (d.write_offset > d.bufferSizeTotal())
+    if (d.write_offset >= d.bufferSizeTotal())
         d.write_offset = size2;
     res = d.stream_buf->Unlock(dst1, size1, dst2, size2);
     if (res != DS_OK) {
@@ -272,9 +263,15 @@ bool AudioOutputDSound::write() //TODO: deprecated, use write(AudioFrame or QByt
     DWORD status;
     d.stream_buf->GetStatus(&status);
     if (!(status & DSBSTATUS_PLAYING)) {
-        d.stream_buf->Play(0, 0, DSBPLAY_LOOPING);
+        // we don't need looping here. otherwise sound is always playing repeatly if no data feeded
+        d.stream_buf->Play(0, 0, 0);// DSBPLAY_LOOPING);
     }
     return true;
+}
+
+bool AudioOutputDSound::write() //TODO: deprecated, use write(AudioFrame or QByteArray)
+{
+    return write(d_func().data);
 }
 
 bool AudioOutputDSoundPrivate::loadDll()
@@ -356,22 +353,34 @@ bool AudioOutputDSoundPrivate::createDSoundBuffers()
     wformat.Format.nSamplesPerSec = format.sampleRate();
     wformat.Format.wFormatTag = WAVE_FORMAT_PCM;
     wformat.Format.wBitsPerSample = format.bytesPerSample() * 8;
+    wformat.Samples.wValidBitsPerSample = wformat.Format.wBitsPerSample; //
     wformat.Format.nBlockAlign = wformat.Format.nChannels * format.bytesPerSample();
     wformat.Format.nAvgBytesPerSec = wformat.Format.nSamplesPerSec * wformat.Format.nBlockAlign;
     wformat.dwChannelMask = channelLayoutToMS(format.channelLayoutFFmpeg());
     if (format.channels() > 2) {
         wformat.Format.cbSize =  sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
         wformat.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
-        wformat.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
-        wformat.Samples.wValidBitsPerSample = wformat.Format.wBitsPerSample;
+        wformat.SubFormat = _KSDATAFORMAT_SUBTYPE_PCM;
+        //wformat.Samples.wValidBitsPerSample = wformat.Format.wBitsPerSample;
+    }
+    switch (format.sampleFormat()) {
+    case AudioFormat::SampleFormat_Float:
+        wformat.Format.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+        wformat.SubFormat = _KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
+        break;
+    case AudioFormat::SampleFormat_Signed16:
+        wformat.SubFormat = _KSDATAFORMAT_SUBTYPE_PCM;
+        break;
+    default:
+        break;
     }
     // fill in primary sound buffer descriptor
     DSBUFFERDESC dsbpridesc;
     memset(&dsbpridesc, 0, sizeof(DSBUFFERDESC));
     dsbpridesc.dwSize = sizeof(DSBUFFERDESC);
-    dsbpridesc.dwFlags  = DSBCAPS_PRIMARYBUFFER;
+    dsbpridesc.dwFlags = DSBCAPS_PRIMARYBUFFER;
     dsbpridesc.dwBufferBytes = 0;
-    dsbpridesc.lpwfxFormat   = NULL;
+    dsbpridesc.lpwfxFormat = NULL;
     // create primary buffer and set its format
     HRESULT res = dsound->CreateSoundBuffer(&dsbpridesc, &prim_buf, NULL);
     if (res != DS_OK) {
