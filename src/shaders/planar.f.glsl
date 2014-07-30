@@ -37,7 +37,12 @@ varying lowp vec2 v_TexCoords;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
 
-#define LA_16BITS (defined(LA_16BITS_BE) || defined(LA_16BITS_LE))
+#if defined(LA_16BITS_BE) || defined(LA_16BITS_LE)
+#define LA_16BITS 1
+#else
+#define LA_16BITS 0
+#endif
+//#define LA_16BITS  (defined(LA_16BITS_BE) || defined(LA_16BITS_LE)) // why may error?
 
 #if defined(YUV_MAT_GLSL)
 //http://en.wikipedia.org/wiki/YUV calculation used
