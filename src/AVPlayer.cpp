@@ -1285,6 +1285,7 @@ bool AVPlayer::setupAudioThread()
         //masterClock()->setClockType(AVClock::ExternalClock);
         //return;
     } else {
+        _audio->close();
         correct_audio_channels(aCodecCtx);
         AudioFormat af;
         af.setSampleRate(aCodecCtx->sample_rate);
