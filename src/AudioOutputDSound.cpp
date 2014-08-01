@@ -154,6 +154,8 @@ public:
         , prim_buf(NULL)
         , stream_buf(NULL)
         , write_offset(0)
+        , read_offset(0)
+        , read_size_queued(0)
     {
     }
     ~AudioOutputDSoundPrivate() {
@@ -175,6 +177,8 @@ public:
     LPDIRECTSOUNDBUFFER prim_buf;      ///primary direct sound buffer
     LPDIRECTSOUNDBUFFER stream_buf;    ///secondary direct sound buffer (stream buffer)
     int write_offset;               ///offset of the write cursor in the direct sound buffer
+    int read_offset;
+    int read_size_queued;
 };
 
 AudioOutputDSound::AudioOutputDSound()
@@ -185,21 +189,25 @@ AudioOutputDSound::AudioOutputDSound()
 bool AudioOutputDSound::open()
 {
     DPTR_D(AudioOutputDSound);
+    d.resetBuffers();
     if (!d.init())
         return false;
     if (!d.createDSoundBuffers())
         return false;
+    return true;
     QByteArray feed(d.bufferSizeTotal(), 0);
     write(feed);
     for (quint32 i = 0; i < d.nb_buffers; ++i) {
         d.bufferAdded();
     }
+    qDebug("==========d.write_offset=%d", d.write_offset);
     return true;
 }
 
 bool AudioOutputDSound::close()
 {
     DPTR_D(AudioOutputDSound);
+    d.resetBuffers();
     d.destroy();
     return true;
 }
@@ -215,6 +223,58 @@ void AudioOutputDSound::waitForNextBuffer()
     DPTR_D(AudioOutputDSound);
     if  (!d.dsound)
         return;
+#if 1
+    if (d.canAddBuffer()) {
+        qDebug("can add buffer");
+        return;
+    }
+    DWORD read_offset;
+    int read = 0;
+    int no = 0;
+    int next = d.nextDequeueInfo().data_size;
+    while (d.read_size_queued < next) {
+        unsigned long duration = d.format.durationForBytes(next - d.read_size_queued)/1000LL;
+        if (duration == 0)
+            duration = 5;
+        //qDebug("d.nextDequeueInfo().data_size=%d, next - d.read_size_queued=%d, duration=%d", next, next - d.read_size_queued, duration);
+        QMutexLocker lock(&d.mutex);
+        Q_UNUSED(lock);
+        d.cond.wait(&d.mutex, duration);
+        d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
+        read = read_offset - d.read_offset;
+        bool play_fast = read_offset > d.write_offset && d.write_offset > d.read_offset;
+        if (read < 0) {
+            if (read > d.write_offset) {
+                play_fast = true;
+                d.write_offset = read_offset;
+            }
+            read += d.bufferSizeTotal();
+        }
+        d.read_size_queued += read;
+        d.read_offset = read_offset;
+        if (play_fast) {
+            qDebug("!!!!!play too fast");
+            break;
+        }
+        //qDebug("read_queued: %d, read: %d, write: %d", d.read_size_queued, read_offset, d.write_offset);
+        if (read == 0) {
+            ++no;
+        }
+        if (no > 3) {
+            qDebug("play 0 bytes");
+            break;
+        }
+    }
+    int remove = 0;
+    while (d.read_size_queued >= next && next > 0) {
+        //qDebug("d.read_size_queued=%d d.nextDequeueInfo().data_size=%d",d.read_size_queued, d.nextDequeueInfo().data_size);
+        d.read_size_queued -= next;
+        d.bufferRemoved();
+        next = d.nextDequeueInfo().data_size;
+        remove++;
+    }
+    //qDebug("remove %d", remove);
+#else
     DWORD read_offset;
     d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
     int remain = d.write_offset - read_offset;
@@ -229,8 +289,12 @@ void AudioOutputDSound::waitForNextBuffer()
         QMutexLocker lock(&d.mutex);
         Q_UNUSED(lock);
         d.cond.wait(&d.mutex, duration);
+        d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
+        remain = d.write_offset - read_offset;
+
     }
     d.bufferRemoved(); //TODO: virtual void noWait();
+#endif
 }
 
 bool AudioOutputDSound::write(const QByteArray &data)
@@ -238,7 +302,7 @@ bool AudioOutputDSound::write(const QByteArray &data)
     DPTR_D(AudioOutputDSound);
     LPVOID dst1= NULL, dst2 = NULL;
     DWORD size1 = 0, size2 = 0;
-    if (d.write_offset > d.bufferSizeTotal())
+    if (d.write_offset >= d.bufferSizeTotal()) ///!!!>=
         d.write_offset = 0;
     HRESULT res = d.stream_buf->Lock(d.write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0); //DSBLOCK_ENTIREBUFFER
     if (res == DSERR_BUFFERLOST) {
@@ -328,6 +392,8 @@ bool AudioOutputDSoundPrivate::init()
         qDebug("DirectSound is emulated");
 
     write_offset = 0;
+    read_offset = 0;
+    read_size_queued = 0;
     return true;
 }
 
