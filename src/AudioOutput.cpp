@@ -287,7 +287,7 @@ void AudioOutput::waitForNextBuffer()
         return;
     }
     if (remove < 0) {
-        qDebug("remove bytes < %d", -remove);
+        //qDebug("remove bytes < %d", -remove);
         int next = d.nextDequeueInfo().data_size;
         while (d.processed_remain > next && next > 0) {
             d.processed_remain -= next;
@@ -296,7 +296,7 @@ void AudioOutput::waitForNextBuffer()
         }
         return;
     }
-    qDebug("remove count: %d", remove);
+    //qDebug("remove count: %d", remove);
     while (remove-- > 0) {
         d.bufferRemoved();
     }

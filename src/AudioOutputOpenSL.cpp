@@ -302,7 +302,7 @@ void AudioOutputOpenSL::waitForNextBuffer()
     }
     d.buffers_queued = state.count;
     processed -= state.count;
-    while (processed--) {
+    while (processed-- > 0) {
         d.bufferRemoved();
     }
 }

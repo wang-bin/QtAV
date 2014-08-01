@@ -314,7 +314,7 @@ bool AudioOutputOpenAL::close()
     ALint processed;
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
     ALuint buf;
-    while (processed--) { alSourceUnqueueBuffers(d.source, 1, &buf); }
+    while (processed-- > 0) { alSourceUnqueueBuffers(d.source, 1, &buf); }
     alDeleteSources(1, &d.source);
     alDeleteBuffers(kBufferCount, d.buffer);
 
@@ -402,7 +402,7 @@ void AudioOutputOpenAL::waitForNextBuffer()
         d.cond.wait(&d.mutex, duration);
         alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
     }
-    while (processed--) {
+    while (processed-- > 0) {
         d.bufferRemoved();
     }
 }
