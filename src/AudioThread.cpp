@@ -260,6 +260,7 @@ void AudioThread::run()
                 }
                 ao->waitForNextBuffer();
                 ao->receiveData(decodedChunk, pkt.pts);
+                ao->play();
                 d.clock->updateValue(ao->timestamp());
             } else {
                 d.clock->updateDelay(delay += chunk_delay);

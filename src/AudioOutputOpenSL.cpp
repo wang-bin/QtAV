@@ -39,9 +39,15 @@ public:
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
     virtual bool open();
     virtual bool close();
+    virtual Feature supportedFeatures() const;
+#if OLD_AO_API
     void waitForNextBuffer();
+#endif
+    virtual bool play() = 0; //MUST
 protected:
-    virtual bool write();
+    virtual bool write(const QByteArray& data) = 0; //MUST
+    //default return -1. means not the feature
+    virtual int getProcessed();
 };
 
 extern AudioOutputId AudioOutputId_OpenSL;
@@ -113,8 +119,8 @@ public:
         (*bufferQueue)->GetState(bufferQueue, &state);
         //qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
         AudioOutputOpenSLPrivate *priv = reinterpret_cast<AudioOutputOpenSLPrivate*>(context);
-        if (priv->callback_mode) {
-            priv->cond.wakeAll();
+        if (priv->callback_mode) { //feature & Callback
+            priv->onCallback();
         }
     }
     static void playCallback(SLPlayItf player, void *ctx, SLuint32 event)
@@ -139,6 +145,7 @@ public:
 AudioOutputOpenSL::AudioOutputOpenSL()
     :AudioOutput(*new AudioOutputOpenSLPrivate())
 {
+    setFeature(GetPlayedIndices);
 }
 
 AudioOutputOpenSL::~AudioOutputOpenSL()
@@ -168,6 +175,11 @@ AudioFormat::SampleFormat AudioOutputOpenSL::preferredSampleFormat() const
 AudioFormat::ChannelLayout AudioOutputOpenSL::preferredChannelLayout() const
 {
     return AudioFormat::ChannelLayout_Stero;
+}
+
+AudioOutput::Feature AudioOutputOpenSL::supportedFeatures() const
+{
+    return Callback | GetPlayedIndices;
 }
 
 bool AudioOutputOpenSL::open()
@@ -245,14 +257,20 @@ bool AudioOutputOpenSL::close()
     return true;
 }
 
-bool AudioOutputOpenSL::write()
+bool AudioOutputOpenSL::write(const QByteArray& data)
 {
     DPTR_D(AudioOutputOpenSL);
-    SL_RUN_CHECK_FALSE((*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, d.data.constData(), d.data.size()));
+    SL_RUN_CHECK_FALSE((*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, data.constData(), data.size()));
     d.buffers_queued++;
     return true;
 }
 
+bool AudioOutputOpenSL::play()
+{
+    DPTR_D(AudioOutputOpenSL);
+    SL_RUN_CHECK_FALSE((*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_PLAYING));
+}
+#if OLD_AO_API
 void AudioOutputOpenSL::waitForNextBuffer()
 {
     DPTR_D(AudioOutputOpenSL);
@@ -287,6 +305,14 @@ void AudioOutputOpenSL::waitForNextBuffer()
     while (processed--) {
         d.bufferRemoved();
     }
+}
+#endif
+int AudioOutputOpenSL::getProcessed()
+{
+    DPTR_D(AudioOutputOpenSL);
+    SLBufferQueueState state;
+    (*d.m_bufferQueueItf)->GetState(d.m_bufferQueueItf, &state);
+    return state.count;
 }
 
 } //namespace QtAV

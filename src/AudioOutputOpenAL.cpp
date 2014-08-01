@@ -31,6 +31,7 @@
 #endif
 
 #define UNQUEUE_QUICK 0
+#define OLD_AO_API 0
 
 namespace QtAV {
 
@@ -42,6 +43,7 @@ public:
     AudioOutputOpenAL();
     ~AudioOutputOpenAL();
 
+    QString name() const;
     virtual bool open();
     virtual bool close();
     virtual bool isSupported(const AudioFormat& format) const;
@@ -50,10 +52,14 @@ public:
     virtual AudioFormat::SampleFormat preferredSampleFormat() const;
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
 
-    QString name() const;
+    virtual Feature supportedFeatures() const;
+#if OLD_AO_API
     virtual void waitForNextBuffer();
+#endif
+    virtual bool play();
 protected:
-    virtual bool write();
+    virtual bool write(const QByteArray& data);
+    virtual int getProcessed();
 };
 
 extern AudioOutputId AudioOutputId_OpenAL;
@@ -189,6 +195,7 @@ public:
 AudioOutputOpenAL::AudioOutputOpenAL()
     :AudioOutput(*new AudioOutputOpenALPrivate())
 {
+    setFeature(GetPlayedIndices);
 }
 
 AudioOutputOpenAL::~AudioOutputOpenAL()
@@ -368,8 +375,14 @@ QString AudioOutputOpenAL::name() const
     return name;
 }
 
+AudioOutput::Feature AudioOutputOpenAL::supportedFeatures() const
+{
+    return GetPlayedIndices;
+}
+#if OLD_AO_API
 void AudioOutputOpenAL::waitForNextBuffer()
 {
+    qDebug("waitForNextBuffer");
     DPTR_D(AudioOutputOpenAL);
     //don't return even if we can add buffer because we have to update dequeue index
     ALint queued = 0;
@@ -393,24 +406,38 @@ void AudioOutputOpenAL::waitForNextBuffer()
         d.bufferRemoved();
     }
 }
-
+#endif
 // http://kcat.strangesoft.net/openal-tutorial.html
-bool AudioOutputOpenAL::write()
+bool AudioOutputOpenAL::write(const QByteArray& data)
 {
     DPTR_D(AudioOutputOpenAL);
-    if (d.data.isEmpty())
+    if (data.isEmpty())
         return false;
     ALuint buf;
     //unqueues a set of buffers attached to a source
     AL_RUN_CHECK(alSourceUnqueueBuffers(d.source, 1, &buf));
-    AL_RUN_CHECK(alBufferData(buf, d.format_al, d.data.constData(), d.data.size(), audioFormat().sampleRate()));
+    AL_RUN_CHECK(alBufferData(buf, d.format_al, data.constData(), data.size(), audioFormat().sampleRate()));
     AL_RUN_CHECK(alSourceQueueBuffers(d.source, 1, &buf));
+    return true;
+}
+
+bool AudioOutputOpenAL::play()
+{
+    DPTR_D(AudioOutputOpenAL);
     alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
     if (d.state != AL_PLAYING) {
         qDebug("AudioOutputOpenAL: !AL_PLAYING alSourcePlay");
         alSourcePlay(d.source);
     }
     return true;
+}
+
+int AudioOutputOpenAL::getProcessed()
+{
+    DPTR_D(AudioOutputOpenAL);
+    ALint processed = 0;
+    alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
+    return processed;
 }
 
 } //namespace QtAV

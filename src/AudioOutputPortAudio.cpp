@@ -37,9 +37,13 @@ public:
     ~AudioOutputPortAudio();
     bool open();
     bool close();
+    virtual Feature supportedFeatures() const;
+#if OLD_AO_API
     virtual void waitForNextBuffer();
+#endif //OLD_AO_API
+    virtual bool play() { return true;}
 protected:
-    bool write();
+    virtual bool write(const QByteArray& data);
 };
 
 extern AudioOutputId AudioOutputId_PortAudio;
@@ -108,6 +112,7 @@ public:
 AudioOutputPortAudio::AudioOutputPortAudio()
     :AudioOutput(*new AudioOutputPortAudioPrivate())
 {
+    setFeature(Blocking);
 }
 
 AudioOutputPortAudio::~AudioOutputPortAudio()
@@ -115,7 +120,12 @@ AudioOutputPortAudio::~AudioOutputPortAudio()
     close();
 }
 
-bool AudioOutputPortAudio::write()
+AudioOutput::Feature AudioOutputPortAudio::supportedFeatures() const
+{
+    return Blocking;
+}
+
+bool AudioOutputPortAudio::write(const QByteArray& data)
 {
     DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
@@ -135,13 +145,14 @@ bool AudioOutputPortAudio::write()
     }
 #endif
 #endif //KNOW_WHY
-    PaError err = Pa_WriteStream(d.stream, d.data.constData(), d.data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
+    PaError err = Pa_WriteStream(d.stream, data.constData(), data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
         return   false;
     }
     return true;
 }
+
 //TODO: what about planar, int8, int24 etc that FFmpeg or Pa not support?
 static int toPaSampleFormat(AudioFormat::SampleFormat format)
 {
@@ -205,10 +216,11 @@ bool AudioOutputPortAudio::close()
     return true;
 }
 
+#if OLD_AO_API
 void AudioOutputPortAudio::waitForNextBuffer()
 {
     DPTR_D(AudioOutputPortAudio);
     d.bufferRemoved();
 }
-
+#endif
 } //namespace QtAV

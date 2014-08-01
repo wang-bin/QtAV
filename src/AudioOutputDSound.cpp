@@ -39,10 +39,14 @@ public:
     virtual bool open();
     virtual bool close();
     virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
+    virtual Feature supportedFeatures() const;
+#if OLD_AO_API
     virtual void waitForNextBuffer();
-    bool write(const QByteArray& data);
+#endif
+    virtual bool play();
 protected:
-    virtual bool write();
+    virtual bool write(const QByteArray& data);
+    virtual int getPlayingBytes();
 };
 
 extern AudioOutputId AudioOutputId_DSound;
@@ -184,6 +188,7 @@ public:
 AudioOutputDSound::AudioOutputDSound()
     :AudioOutput(*new AudioOutputDSoundPrivate())
 {
+    setFeature(GetPlayingBytes);
 }
 
 bool AudioOutputDSound::open()
@@ -218,6 +223,12 @@ bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) cons
             || sampleFormat == AudioFormat::SampleFormat_Float;
 }
 
+AudioOutput::Feature AudioOutputDSound::supportedFeatures() const
+{
+    return GetPlayingBytes;
+}
+
+#if OLD_AO_API
 void AudioOutputDSound::waitForNextBuffer()
 {
     DPTR_D(AudioOutputDSound);
@@ -228,7 +239,7 @@ void AudioOutputDSound::waitForNextBuffer()
         qDebug("can add buffer");
         return;
     }
-    DWORD read_offset;
+    DWORD read_offset = 0;
     int read = 0;
     int no = 0;
     int next = d.nextDequeueInfo().data_size;
@@ -296,6 +307,7 @@ void AudioOutputDSound::waitForNextBuffer()
     d.bufferRemoved(); //TODO: virtual void noWait();
 #endif
 }
+#endif //OLD_AO_API
 
 bool AudioOutputDSound::write(const QByteArray &data)
 {
@@ -324,6 +336,12 @@ bool AudioOutputDSound::write(const QByteArray &data)
         qWarning("Unloack error (%s)",dserr2str(res));
         //return false;
     }
+    return true;
+}
+
+bool AudioOutputDSound::play()
+{
+    DPTR_D(AudioOutputDSound);
     DWORD status;
     d.stream_buf->GetStatus(&status);
     if (!(status & DSBSTATUS_PLAYING)) {
@@ -333,9 +351,12 @@ bool AudioOutputDSound::write(const QByteArray &data)
     return true;
 }
 
-bool AudioOutputDSound::write() //TODO: deprecated, use write(AudioFrame or QByteArray)
+int AudioOutputDSound::getPlayingBytes()
 {
-    return write(d_func().data);
+    DPTR_D(AudioOutputDSound);
+    DWORD read_offset = 0;
+    d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
+    return (int)read_offset;
 }
 
 bool AudioOutputDSoundPrivate::loadDll()

@@ -40,6 +40,15 @@
  *       because we don't know when a buffer is processed. so must query the state every time.
  */
 
+/*!
+ * while (has_data) {
+ *     data = read_data(ao->bufferSize());
+ *     ao->waitForNextBuffer();
+ *     ao->receiveData(data, pts);
+ *     ao->play();
+ * }
+ *
+ */
 namespace QtAV {
 
 typedef int AudioOutputId;
@@ -52,6 +61,18 @@ class Q_AV_EXPORT AudioOutput : public AVOutput
 {
     DPTR_DECLARE_PRIVATE(AudioOutput)
 public:
+    int a;
+
+    enum Feature {
+        User = 0,
+        Blocking = 1,
+        Callback = 1 << 1,
+        GetPlayedIndices = 1 << 2,
+        ProcessedBytes = 1 << 3,
+        GetPlayingIndex = 1 << 4,
+        GetPlayingBytes = 1 << 5,
+    };
+
     /*!
      * \brief AudioOutput
      * Audio format set to preferred sample format and channel layout
@@ -114,12 +135,38 @@ public:
      */
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
 
+    // thrunk size in buffer queue
+    int bufferSize() const;
+    void setBufferSize(int value);
+    int bufferCount() const;
+    void setBufferCount(int value);
+    int bufferSizeTotal() const { return bufferCount() * bufferSize();}
+
+    void setFeature(Feature value);
+    Feature feature() const;
+    /*!
+     * \brief supportedFeatures
+     * \return default is User
+     */
+    virtual Feature supportedFeatures() const;
+    /*!
+     * \brief waitForNextBuffer
+     */
     virtual void waitForNextBuffer();
     qreal timestamp() const;
 
+    virtual bool play() = 0; //MUST
 protected:
+    virtual bool write(const QByteArray& data) = 0; //MUST
+    // called by callback with Callback feature
+    void onCallback();
+    //default return -1. means not the feature
+    virtual int getProcessed();
+    virtual int getProcessedBytes();
+    virtual int getPlayingIndex();
+    virtual int getPlayingBytes();
+
     AudioOutput(AudioOutputPrivate& d);
-    virtual bool write() = 0;
 };
 
 } //namespace QtAV

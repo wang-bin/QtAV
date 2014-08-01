@@ -56,7 +56,7 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
     d.nextEnqueueInfo().data_size = data.size();
     d.nextEnqueueInfo().timestamp = pts;
     d.bufferAdded();
-    return write();
+    return write(d.data);
 }
 
 int AudioOutput::maxChannels() const
@@ -169,14 +169,170 @@ AudioFormat::ChannelLayout AudioOutput::preferredChannelLayout() const
     return AudioFormat::ChannelLayout_Stero;
 }
 
+int AudioOutput::bufferSize() const
+{
+    return d_func().buffer_size;
+}
+
+void AudioOutput::setBufferSize(int value)
+{
+    d_func().buffer_size = value;
+}
+
+int AudioOutput::bufferCount() const
+{
+    return d_func().nb_buffers;
+}
+
+void AudioOutput::setBufferCount(int value)
+{
+    d_func().nb_buffers = value;
+}
+
+void AudioOutput::setFeature(Feature value)
+{
+    //if (!(supportedFeatures() & value)) {
+      //  return;
+    //}
+    d_func().feature = value;
+}
+
+AudioOutput::Feature AudioOutput::feature() const
+{
+    return (AudioOutput::Feature)d_func().feature;
+}
+
+AudioOutput::Feature AudioOutput::supportedFeatures() const
+{
+    return AudioOutput::User;
+}
+
 void AudioOutput::waitForNextBuffer()
 {
+    DPTR_D(AudioOutput);
+    const Feature f = feature();
+    int remove = 0;
+    if (f & Blocking) {
+        remove = 1;
+    } else if (f & Callback) {
+        QMutexLocker lock(&d.mutex);
+        Q_UNUSED(lock);
+        d.cond.wait(&d.mutex);
+        remove = 1;
+    } else if (f & ProcessedBytes) {
+        int s = getProcessedBytes();
+        const int next = d.nextDequeueInfo().data_size;
+        // TODO: avoid always 0
+        while (s < next) {
+            const qint64 us = d.format.durationForBytes(next - s);
+            if (us < 1000LL)
+                d.uwait(1000LL);
+            else
+                d.uwait(us);
+            s = getProcessedBytes();
+            // what if s always 0?
+        }
+        remove = -1;
+    } else if (f & GetPlayedIndices) {
+        int c = getProcessed();
+        // TODO: avoid always 0
+        while (c < 1) {
+            d.uwait(d.format.durationForBytes(d.nextDequeueInfo().data_size));
+            c = getProcessed();
+        }
+        // what if c always 0?
+        remove = c;
+    } else if (f & GetPlayingBytes) {
+        int s = getPlayingBytes();
+        int processed = s - d.play_pos;
+        if (processed < 0)
+            processed += bufferSizeTotal();
+        d.play_pos = s;
+        d.processed_remain += processed;
+        const int next = d.nextDequeueInfo().data_size;
+        // TODO: avoid always 0
+        while (d.processed_remain < next) {
+            const qint64 us = d.format.durationForBytes(next - d.processed_remain);
+            if (us < 1000LL)
+                d.uwait(1000LL);
+            else
+                d.uwait(us);
+            s = getPlayingBytes();
+            processed += s - d.play_pos;
+            if (processed < 0)
+                processed += bufferSizeTotal();
+            d.play_pos = s;
+            d.processed_remain += processed;
+        }
+        remove = -d.processed_remain;
+    } else if (f & GetPlayingIndex) {
+        int n = getPlayingIndex();
+        int processed = n - d.play_pos;
+        if (processed < 0)
+            processed += bufferCount();
+        d.play_pos = n;
+        // TODO: timer
+        // TODO: avoid always 0
+        while (processed < 1) {
+            d.uwait(d.format.durationForBytes(d.nextDequeueInfo().data_size));
+            n = getPlayingIndex();
+            processed = n - d.play_pos;
+            if (processed < 0)
+                processed += bufferCount();
+            d.play_pos = n;
+        }
+        remove = n;
+    } else {
+        qFatal("User defined waitForNextBuffer() not implemented!");
+        return;
+    }
+    if (remove < 0) {
+        qDebug("remove bytes < %d", -remove);
+        int next = d.nextDequeueInfo().data_size;
+        while (d.processed_remain > next && next > 0) {
+            d.processed_remain -= next;
+            d.bufferRemoved();
+            next = d.nextDequeueInfo().data_size;
+        }
+        return;
+    }
+    qDebug("remove count: %d", remove);
+    while (remove-- > 0) {
+        d.bufferRemoved();
+    }
 }
+
 
 qreal AudioOutput::timestamp() const
 {
     DPTR_D(const AudioOutput);
     return d.nextDequeueInfo().timestamp;
+}
+
+void AudioOutput::onCallback()
+{
+    d_func().onCallback();
+}
+
+//default return -1. means not the feature
+int AudioOutput::getProcessed()
+{
+    return -1;
+}
+
+int AudioOutput::getProcessedBytes()
+{
+    return -1;
+}
+
+int AudioOutput::getPlayingIndex()
+{
+    return -1;
+}
+
+int AudioOutput::getPlayingBytes()
+{
+    return -1;
 }
 
 } //namespace QtAV

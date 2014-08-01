@@ -45,13 +45,24 @@ public:
       , speed(1.0)
       , max_channels(1)
       , nb_buffers(8)
+      , buffer_size(kBufferSize)
+      , feature(0)
       , buffers_reseted(true)
       , index_enqueue(-1)
       , index_deuqueue(-1)
+      , play_pos(0)
+      , processed_remain(0)
     {
         frame_infos.resize(nb_buffers);
     }
     virtual ~AudioOutputPrivate(){}
+
+    void onCallback() { cond.wakeAll();}
+    virtual void uwait(qint64 us) {
+        QMutexLocker lock(&mutex);
+        Q_UNUSED(lock);
+        cond.wait(&mutex, us/1000LL);
+    }
 
     int bufferSizeTotal() { return nb_buffers * kBufferSize; }
     typedef struct {
@@ -110,7 +121,10 @@ public:
     QByteArray data;
     AudioFrame audio_frame;
     quint32 nb_buffers;
-
+    qint32 buffer_size;
+    int feature;
+    int play_pos; // index or bytes
+    int processed_remain;
 private:
     bool buffers_reseted;
     // the index of current enqueue/dequeue
