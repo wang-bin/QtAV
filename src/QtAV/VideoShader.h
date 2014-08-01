@@ -112,6 +112,26 @@ public:
     const QMatrix4x4& matrix() const;
     int bpp() const; //1st plane
     int planeCount() const;
+    /*!
+     * \brief validTextureWidth
+     * Value is (0, 1]. Normalized valid width of a plane.
+     * A plane may has padding invalid data at the end for aligment.
+     * Use this value to reduce texture coordinate computation.
+     * ---------------------
+     * |                |   |
+     * | valid width    |   |
+     * |                |   |
+     * ----------------------
+     * | <- aligned width ->|
+     * \return valid width ratio
+     */
+    qreal validTextureWidth() const;
+    /*!
+     * \brief normalizedROI
+     * \param roi logical roi of a video frame
+     * \return
+     * valid and normalized roi. \sa validTextureWidth()
+     */
     QRectF normalizedROI(const QRectF& roi) const;
     void setBrightness(qreal value);
     void setContrast(qreal value);

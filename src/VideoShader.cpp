@@ -466,20 +466,27 @@ void VideoMaterial::setSaturation(qreal value)
     d_func().colorTransform.setSaturation(value);
 }
 
+qreal VideoMaterial::validTextureWidth() const
+{
+    return d_func().effective_tex_width_ratio;
+}
+
 QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
 {
     DPTR_D(const VideoMaterial);
     if (!roi.isValid())
         return QRectF(0, 0, 1, 1);
     float x = roi.x();
+    float w = roi.width();
+    x *= d.effective_tex_width_ratio;
+    w *= d.effective_tex_width_ratio;
     if (qAbs(x) > 1)
-        x = x * (float)d.effective_tex_width_ratio/(float)d.width;
+        x /= (float)d.width;
     float y = roi.y();
     if (qAbs(y) > 1)
         y /= (float)d.height;
-    float w = roi.width();
     if (qAbs(w) > 1)
-        w = w * (float)d.effective_tex_width_ratio/(float)d.width;
+        w /= (float)d.width;
     float h = roi.height();
     if (qAbs(h) > 1)
         h /= (float)d.height;
