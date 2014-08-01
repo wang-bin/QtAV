@@ -103,7 +103,7 @@ public:
             return;
         }
 
-        QImage image((const uchar*)frame.frameData().constData(), frame.width(), frame.height(), qfmt);
+        QImage image((const uchar*)frame.frameData().constData(), frame.width(), frame.height(), frame.bytesPerLine(), qfmt);
         qDebug("Saving capture to %s", qPrintable(path));
         bool ok = image.save(path, format.toLatin1().constData(), quality);
         if (!ok) {
@@ -314,7 +314,7 @@ QImage VideoCapture::getImage(QImage::Format format)
     }
     // frame is a cloned frame in setVideoFrame(), so frameData() is availabe
     // return a copy of image. because QImage from memory does not own the memory
-    return QImage((const uchar*)frame.frameData().constData(), frame.width(), frame.height(), format).copy();
+    return QImage((const uchar*)frame.frameData().constData(), frame.width(), frame.height(), frame.bytesPerLine(), format).copy();
 }
 
 void VideoCapture::getVideoFrame(VideoFrame &frame)

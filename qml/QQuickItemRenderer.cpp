@@ -75,7 +75,7 @@ bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
     d.video_frame = frame;
-    d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.imageFormat());
+    d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.bytesPerLine(), frame.imageFormat());
     QRect r = realROI();
     if (r != QRect(0, 0, frame.width(), frame.height()))
         d.image = d.image.copy(r);
