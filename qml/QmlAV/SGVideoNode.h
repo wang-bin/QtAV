@@ -42,6 +42,7 @@ private:
     QRectF m_rect;
     QRectF m_textureRect;
     int m_orientation;
+    qreal m_validWidth;
 };
 
 } //namespace QtAV

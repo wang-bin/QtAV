@@ -90,6 +90,8 @@ public:
         m_material.setCurrentFrame(frame);
     }
 
+    VideoMaterial* videoMaterial() { return &m_material;}
+
     //qreal m_opacity;
     QMutex m_frameMutex;
     VideoMaterial m_material;
@@ -113,6 +115,7 @@ void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *n
 
 SGVideoNode::SGVideoNode()
     : m_material(new SGVideoMaterial())
+    , m_validWidth(1.0)
 {
     setFlag(QSGNode::OwnsGeometry);
     setFlag(QSGNode::OwnsMaterial);
@@ -142,13 +145,16 @@ static inline void qSetTex(QSGGeometry::TexturedPoint2D *v, const QPointF &p)
 
 void SGVideoNode::setTexturedRectGeometry(const QRectF &rect, const QRectF &textureRect, int orientation)
 {
-    if (rect == m_rect && textureRect == m_textureRect && orientation == m_orientation)
+    if (m_validWidth == m_material->videoMaterial()->validTextureWidth()
+            && rect == m_rect && textureRect == m_textureRect && orientation == m_orientation)
         return;
 
+    m_validWidth = m_material->videoMaterial()->validTextureWidth();
     m_rect = rect;
     m_textureRect = textureRect;
     m_orientation = orientation;
-
+    QRectF validTexRect = m_material->videoMaterial()->normalizedROI(textureRect);
+    //qDebug() << ">>>>>>>valid: " << m_validWidth << "  roi: " << validTexRect;
     QSGGeometry *g = geometry();
 
     if (g == 0)
@@ -166,34 +172,34 @@ void SGVideoNode::setTexturedRectGeometry(const QRectF &rect, const QRectF &text
     switch (orientation) {
         default:
             // tl, bl, tr, br
-            qSetTex(v + 0, textureRect.topLeft());
-            qSetTex(v + 1, textureRect.bottomLeft());
-            qSetTex(v + 2, textureRect.topRight());
-            qSetTex(v + 3, textureRect.bottomRight());
+            qSetTex(v + 0, validTexRect.topLeft());
+            qSetTex(v + 1, validTexRect.bottomLeft());
+            qSetTex(v + 2, validTexRect.topRight());
+            qSetTex(v + 3, validTexRect.bottomRight());
             break;
 
         case 90:
             // tr, tl, br, bl
-            qSetTex(v + 0, textureRect.topRight());
-            qSetTex(v + 1, textureRect.topLeft());
-            qSetTex(v + 2, textureRect.bottomRight());
-            qSetTex(v + 3, textureRect.bottomLeft());
+            qSetTex(v + 0, validTexRect.topRight());
+            qSetTex(v + 1, validTexRect.topLeft());
+            qSetTex(v + 2, validTexRect.bottomRight());
+            qSetTex(v + 3, validTexRect.bottomLeft());
             break;
 
         case 180:
             // br, tr, bl, tl
-            qSetTex(v + 0, textureRect.bottomRight());
-            qSetTex(v + 1, textureRect.topRight());
-            qSetTex(v + 2, textureRect.bottomLeft());
-            qSetTex(v + 3, textureRect.topLeft());
+            qSetTex(v + 0, validTexRect.bottomRight());
+            qSetTex(v + 1, validTexRect.topRight());
+            qSetTex(v + 2, validTexRect.bottomLeft());
+            qSetTex(v + 3, validTexRect.topLeft());
             break;
 
         case 270:
             // bl, br, tl, tr
-            qSetTex(v + 0, textureRect.bottomLeft());
-            qSetTex(v + 1, textureRect.bottomRight());
-            qSetTex(v + 2, textureRect.topLeft());
-            qSetTex(v + 3, textureRect.topRight());
+            qSetTex(v + 0, validTexRect.bottomLeft());
+            qSetTex(v + 1, validTexRect.bottomRight());
+            qSetTex(v + 2, validTexRect.topLeft());
+            qSetTex(v + 3, validTexRect.topRight());
             break;
     }
 
