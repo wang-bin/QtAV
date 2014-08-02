@@ -52,7 +52,8 @@ public:
       , max_channels(1)
       , nb_buffers(8)
       , buffer_size(kBufferSize)
-      , feature(0)
+      , control(0)
+      , features(0)
       , play_pos(0)
       , processed_remain(0)
       , buffers_reseted(true)
@@ -128,7 +129,8 @@ public:
     AudioFrame audio_frame;
     quint32 nb_buffers;
     qint32 buffer_size;
-    int feature;
+    int control;
+    int features;
     int play_pos; // index or bytes
     int processed_remain;
 #if AO_USE_TIMER

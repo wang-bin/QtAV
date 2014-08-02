@@ -39,11 +39,11 @@ public:
     virtual bool open();
     virtual bool close();
     virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
-    virtual Feature supportedFeatures() const;
+    virtual BufferControl supportedBufferControl() const;
     virtual bool play();
 protected:
     virtual bool write(const QByteArray& data);
-    virtual int getPlayingBytes();
+    virtual int getOffsetByBytes();
 };
 
 extern AudioOutputId AudioOutputId_DSound;
@@ -155,8 +155,6 @@ public:
         , prim_buf(NULL)
         , stream_buf(NULL)
         , write_offset(0)
-        , read_offset(0)
-        , read_size_queued(0)
     {
     }
     ~AudioOutputDSoundPrivate() {
@@ -178,14 +176,12 @@ public:
     LPDIRECTSOUNDBUFFER prim_buf;      ///primary direct sound buffer
     LPDIRECTSOUNDBUFFER stream_buf;    ///secondary direct sound buffer (stream buffer)
     int write_offset;               ///offset of the write cursor in the direct sound buffer
-    int read_offset;
-    int read_size_queued;
 };
 
 AudioOutputDSound::AudioOutputDSound()
     :AudioOutput(*new AudioOutputDSoundPrivate())
 {
-    setFeature(GetPlayingBytes);
+    setBufferControl(OffsetBytes);
 }
 
 bool AudioOutputDSound::open()
@@ -220,9 +216,9 @@ bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) cons
             || sampleFormat == AudioFormat::SampleFormat_Float;
 }
 
-AudioOutput::Feature AudioOutputDSound::supportedFeatures() const
+AudioOutput::BufferControl AudioOutputDSound::supportedBufferControl() const
 {
-    return GetPlayingBytes;
+    return OffsetBytes;
 }
 
 bool AudioOutputDSound::write(const QByteArray &data)
@@ -267,7 +263,7 @@ bool AudioOutputDSound::play()
     return true;
 }
 
-int AudioOutputDSound::getPlayingBytes()
+int AudioOutputDSound::getOffsetByBytes()
 {
     DPTR_D(AudioOutputDSound);
     DWORD read_offset = 0;
@@ -329,8 +325,6 @@ bool AudioOutputDSoundPrivate::init()
         qDebug("DirectSound is emulated");
 
     write_offset = 0;
-    read_offset = 0;
-    read_size_queued = 0;
     return true;
 }
 

@@ -51,11 +51,11 @@ public:
     virtual AudioFormat::SampleFormat preferredSampleFormat() const;
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
 
-    virtual Feature supportedFeatures() const;
+    virtual BufferControl supportedBufferControl() const;
     virtual bool play();
 protected:
     virtual bool write(const QByteArray& data);
-    virtual int getProcessed();
+    virtual int getPlayedCount();
     int getQueued();
 };
 
@@ -192,7 +192,7 @@ public:
 AudioOutputOpenAL::AudioOutputOpenAL()
     :AudioOutput(*new AudioOutputOpenALPrivate())
 {
-    setFeature(GetPlayedIndices); //TODO: AL_BYTE_OFFSET
+    setBufferControl(PlayedCount); //TODO: AL_BYTE_OFFSET
 }
 
 AudioOutputOpenAL::~AudioOutputOpenAL()
@@ -372,9 +372,9 @@ QString AudioOutputOpenAL::name() const
     return name;
 }
 
-AudioOutput::Feature AudioOutputOpenAL::supportedFeatures() const
+AudioOutput::BufferControl AudioOutputOpenAL::supportedBufferControl() const
 {
-    return GetPlayedIndices;
+    return PlayedCount;
 }
 
 // http://kcat.strangesoft.net/openal-tutorial.html
@@ -402,7 +402,7 @@ bool AudioOutputOpenAL::play()
     return true;
 }
 
-int AudioOutputOpenAL::getProcessed()
+int AudioOutputOpenAL::getPlayedCount()
 {
     DPTR_D(AudioOutputOpenAL);
     ALint processed = 0;

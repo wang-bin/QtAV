@@ -39,12 +39,12 @@ public:
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
     virtual bool open();
     virtual bool close();
-    virtual Feature supportedFeatures() const;
+    virtual BufferControl supportedBufferControl() const;
     virtual bool play();
 protected:
     virtual bool write(const QByteArray& data);
-    //default return -1. means not the feature
-    virtual int getProcessed();
+    //default return -1. means not the control
+    virtual int getPlayedCount();
 };
 
 extern AudioOutputId AudioOutputId_OpenSL;
@@ -115,7 +115,7 @@ public:
         (*bufferQueue)->GetState(bufferQueue, &state);
         //qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
         AudioOutputOpenSLPrivate *priv = reinterpret_cast<AudioOutputOpenSLPrivate*>(context);
-        if (priv->feature & AudioOutput::Callback) {
+        if (priv->control & AudioOutput::Callback) {
             priv->onCallback();
         }
     }
@@ -141,7 +141,7 @@ public:
 AudioOutputOpenSL::AudioOutputOpenSL()
     :AudioOutput(*new AudioOutputOpenSLPrivate())
 {
-    setFeature(GetPlayedIndices);
+    setBufferControl(PlayedCount);
 }
 
 AudioOutputOpenSL::~AudioOutputOpenSL()
@@ -173,9 +173,9 @@ AudioFormat::ChannelLayout AudioOutputOpenSL::preferredChannelLayout() const
     return AudioFormat::ChannelLayout_Stero;
 }
 
-AudioOutput::Feature AudioOutputOpenSL::supportedFeatures() const
+AudioOutput::BufferControl AudioOutputOpenSL::supportedBufferControl() const
 {
-    return Feature(Callback | GetPlayedIndices);
+    return BufferControl(Callback | PlayedCount);
 }
 
 bool AudioOutputOpenSL::open()
@@ -268,7 +268,7 @@ bool AudioOutputOpenSL::play()
     return true;
 }
 
-int AudioOutputOpenSL::getProcessed()
+int AudioOutputOpenSL::getPlayedCount()
 {
     DPTR_D(AudioOutputOpenSL);
     int processed = d.buffers_queued;
