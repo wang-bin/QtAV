@@ -34,7 +34,7 @@
 #include <QtCore/QTime>
 typedef QTime QElapsedTimer;
 #endif
-#define AO_USE_TIMER 0
+#define AO_USE_TIMER 1
 // TODO:writeChunk(), write(QByteArray) { while writeChunk() }, users define writeChunk()
 namespace QtAV {
 

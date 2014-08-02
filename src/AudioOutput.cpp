@@ -191,9 +191,7 @@ void AudioOutput::setBufferCount(int value)
 
 void AudioOutput::setFeature(Feature value)
 {
-    //if (!(supportedFeatures() & value)) {
-      //  return;
-    //}
+    // check supported? it's virtual, but called in ctor
     d_func().feature = value;
 }
 
@@ -229,7 +227,7 @@ void AudioOutput::waitForNextBuffer()
         while (!no_wait && d.processed_remain < next) {
             const qint64 us = d.format.durationForBytes(next - d.processed_remain);
             if (us < 1000LL)
-                d.uwait(1000LL);
+                d.uwait(10000LL);
             else
                 d.uwait(us);
             d.processed_remain = getPlayedBytes();
@@ -253,8 +251,7 @@ void AudioOutput::waitForNextBuffer()
             if (elapsed > 0 && us > elapsed*1000LL)
                 us -= elapsed*1000LL;
             if (us < 1000LL)
-                us = 1000LL;
-            qDebug("uwait %lld,elapsed=%lld", us,elapsed);
+                us = 10000LL; //opensl crash if 1
 #endif //AO_USE_TIMER
             d.uwait(us);
             c = getProcessed();

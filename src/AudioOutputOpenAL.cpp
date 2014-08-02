@@ -308,7 +308,7 @@ bool AudioOutputOpenAL::close()
     do {
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
     } while (alGetError() == AL_NO_ERROR && d.state == AL_PLAYING);
-    ALint processed;
+    ALint processed = 0; //android need this!! otherwise the value may be undefined
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
     ALuint buf;
     while (processed-- > 0) { alSourceUnqueueBuffers(d.source, 1, &buf); }
