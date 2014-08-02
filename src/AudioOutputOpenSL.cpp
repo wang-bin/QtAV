@@ -40,12 +40,9 @@ public:
     virtual bool open();
     virtual bool close();
     virtual Feature supportedFeatures() const;
-#if OLD_AO_API
-    void waitForNextBuffer();
-#endif
-    virtual bool play() = 0; //MUST
+    virtual bool play();
 protected:
-    virtual bool write(const QByteArray& data) = 0; //MUST
+    virtual bool write(const QByteArray& data);
     //default return -1. means not the feature
     virtual int getProcessed();
 };
@@ -102,7 +99,6 @@ public:
         , m_bufferQueueItf(0)
         , m_notifyInterval(1000)
         , buffers_queued(0)
-        , callback_mode(true)
     {
         SL_RUN_CHECK(slCreateEngine(&engineObject, 0, 0, 0, 0, 0));
         SL_RUN_CHECK((*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE));
@@ -119,7 +115,7 @@ public:
         (*bufferQueue)->GetState(bufferQueue, &state);
         //qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
         AudioOutputOpenSLPrivate *priv = reinterpret_cast<AudioOutputOpenSLPrivate*>(context);
-        if (priv->callback_mode) { //feature & Callback
+        if (priv->feature & AudioOutput::Callback) {
             priv->onCallback();
         }
     }
@@ -127,6 +123,7 @@ public:
     {
         Q_UNUSED(player);
         Q_UNUSED(ctx);
+        Q_UNUSED(event);
         //qDebug("---------%s  event=%lu", __FUNCTION__, event);
     }
 
@@ -139,7 +136,6 @@ public:
     SLBufferQueueItf m_bufferQueueItf;
     int m_notifyInterval;
     quint32 buffers_queued;
-    bool callback_mode;
 };
 
 AudioOutputOpenSL::AudioOutputOpenSL()
@@ -179,7 +175,7 @@ AudioFormat::ChannelLayout AudioOutputOpenSL::preferredChannelLayout() const
 
 AudioOutput::Feature AudioOutputOpenSL::supportedFeatures() const
 {
-    return Callback | GetPlayedIndices;
+    return Feature(Callback | GetPlayedIndices);
 }
 
 bool AudioOutputOpenSL::open()
@@ -269,50 +265,18 @@ bool AudioOutputOpenSL::play()
 {
     DPTR_D(AudioOutputOpenSL);
     SL_RUN_CHECK_FALSE((*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_PLAYING));
+    return true;
 }
-#if OLD_AO_API
-void AudioOutputOpenSL::waitForNextBuffer()
-{
-    DPTR_D(AudioOutputOpenSL);
-    if (!d.canRemoveBuffer()) {
-        return;
-    }
-    SLBufferQueueState state;
-    (*d.m_bufferQueueItf)->GetState(d.m_bufferQueueItf, &state);
-    //qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
-    // number of buffers in queue
-    if (state.count <= 0) {
-        return;
-    }
-    if (d.callback_mode) {
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex);
-        d.bufferRemoved();
-        --d.buffers_queued;
-        return;
-    }
-    int processed = d.buffers_queued;
-    while (state.count >= d.buffers_queued) {
-        unsigned long duration = d.format.durationForBytes(d.nextDequeueInfo().data_size)/1000LL;
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex, duration);
-        (*d.m_bufferQueueItf)->GetState(d.m_bufferQueueItf, &state);
-    }
-    d.buffers_queued = state.count;
-    processed -= state.count;
-    while (processed-- > 0) {
-        d.bufferRemoved();
-    }
-}
-#endif
+
 int AudioOutputOpenSL::getProcessed()
 {
     DPTR_D(AudioOutputOpenSL);
+    int processed = d.buffers_queued;
     SLBufferQueueState state;
     (*d.m_bufferQueueItf)->GetState(d.m_bufferQueueItf, &state);
-    return state.count;
+    d.buffers_queued = state.count;
+    processed -= state.count;
+    return processed;
 }
 
 } //namespace QtAV
