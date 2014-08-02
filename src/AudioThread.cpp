@@ -210,9 +210,9 @@ void AudioThread::run()
                 qDebug("audio thread stop after decode()");
                 break;
             }
-            int chunk = qMin(decodedSize, 1024*4);//int(max_len*byte_rate));
+            const int chunk = qMin(decodedSize, has_ao ? ao->bufferSize() : 1024*4);//int(max_len*byte_rate));
             //AudioFormat.bytesForDuration
-            qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
+            const qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
             pkt.pts += chunk_delay;
             QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
             if (has_ao) {
