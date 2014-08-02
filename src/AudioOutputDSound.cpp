@@ -40,9 +40,6 @@ public:
     virtual bool close();
     virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
     virtual Feature supportedFeatures() const;
-#if OLD_AO_API
-    virtual void waitForNextBuffer();
-#endif
     virtual bool play();
 protected:
     virtual bool write(const QByteArray& data);
@@ -227,87 +224,6 @@ AudioOutput::Feature AudioOutputDSound::supportedFeatures() const
 {
     return GetPlayingBytes;
 }
-
-#if OLD_AO_API
-void AudioOutputDSound::waitForNextBuffer()
-{
-    DPTR_D(AudioOutputDSound);
-    if  (!d.dsound)
-        return;
-#if 1
-    if (d.canAddBuffer()) {
-        qDebug("can add buffer");
-        return;
-    }
-    DWORD read_offset = 0;
-    int read = 0;
-    int no = 0;
-    int next = d.nextDequeueInfo().data_size;
-    while (d.read_size_queued < next) {
-        unsigned long duration = d.format.durationForBytes(next - d.read_size_queued)/1000LL;
-        if (duration == 0)
-            duration = 5;
-        //qDebug("d.nextDequeueInfo().data_size=%d, next - d.read_size_queued=%d, duration=%d", next, next - d.read_size_queued, duration);
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex, duration);
-        d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
-        read = read_offset - d.read_offset;
-        bool play_fast = read_offset > d.write_offset && d.write_offset > d.read_offset;
-        if (read < 0) {
-            if (read > d.write_offset) {
-                play_fast = true;
-                d.write_offset = read_offset;
-            }
-            read += d.bufferSizeTotal();
-        }
-        d.read_size_queued += read;
-        d.read_offset = read_offset;
-        if (play_fast) {
-            qDebug("!!!!!play too fast");
-            break;
-        }
-        //qDebug("read_queued: %d, read: %d, write: %d", d.read_size_queued, read_offset, d.write_offset);
-        if (read == 0) {
-            ++no;
-        }
-        if (no > 3) {
-            qDebug("play 0 bytes");
-            break;
-        }
-    }
-    int remove = 0;
-    while (d.read_size_queued >= next && next > 0) {
-        //qDebug("d.read_size_queued=%d d.nextDequeueInfo().data_size=%d",d.read_size_queued, d.nextDequeueInfo().data_size);
-        d.read_size_queued -= next;
-        d.bufferRemoved();
-        next = d.nextDequeueInfo().data_size;
-        remove++;
-    }
-    //qDebug("remove %d", remove);
-#else
-    DWORD read_offset;
-    d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
-    int remain = d.write_offset - read_offset;
-    if (remain < 0LL) {
-        remain += d.bufferSizeTotal();
-    }
-    if (remain > 0) {
-        // don't need AudioOutputPrivate buffer queue
-        // TODO: why too slow?
-        //unsigned long duration = d.format.durationForBytes((qint64)remain)/1000LL;
-        unsigned long duration = d.format.durationForBytes(d.nextDequeueInfo().data_size)/1000LL;
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex, duration);
-        d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
-        remain = d.write_offset - read_offset;
-
-    }
-    d.bufferRemoved(); //TODO: virtual void noWait();
-#endif
-}
-#endif //OLD_AO_API
 
 bool AudioOutputDSound::write(const QByteArray &data)
 {

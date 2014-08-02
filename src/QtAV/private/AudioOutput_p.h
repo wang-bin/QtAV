@@ -28,7 +28,13 @@
 #include <QtCore/QQueue>
 #include <QtCore/QVector>
 #include <limits>
-
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+#include <QtCore/QElapsedTimer>
+#else
+#include <QtCore/QTime>
+typedef QTime QElapsedTimer;
+#endif
+#define AO_USE_TIMER 0
 // TODO:writeChunk(), write(QByteArray) { while writeChunk() }, users define writeChunk()
 namespace QtAV {
 
@@ -47,11 +53,11 @@ public:
       , nb_buffers(8)
       , buffer_size(kBufferSize)
       , feature(0)
+      , play_pos(0)
+      , processed_remain(0)
       , buffers_reseted(true)
       , index_enqueue(-1)
       , index_deuqueue(-1)
-      , play_pos(0)
-      , processed_remain(0)
     {
         frame_infos.resize(nb_buffers);
     }
@@ -125,6 +131,9 @@ public:
     int feature;
     int play_pos; // index or bytes
     int processed_remain;
+#if AO_USE_TIMER
+    QElapsedTimer timer;
+#endif
 private:
     bool buffers_reseted;
     // the index of current enqueue/dequeue

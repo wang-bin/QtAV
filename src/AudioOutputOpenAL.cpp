@@ -31,7 +31,6 @@
 #endif
 
 #define UNQUEUE_QUICK 0
-#define OLD_AO_API 0
 
 namespace QtAV {
 
@@ -53,13 +52,11 @@ public:
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
 
     virtual Feature supportedFeatures() const;
-#if OLD_AO_API
-    virtual void waitForNextBuffer();
-#endif
     virtual bool play();
 protected:
     virtual bool write(const QByteArray& data);
     virtual int getProcessed();
+    int getQueued();
 };
 
 extern AudioOutputId AudioOutputId_OpenAL;
@@ -195,7 +192,7 @@ public:
 AudioOutputOpenAL::AudioOutputOpenAL()
     :AudioOutput(*new AudioOutputOpenALPrivate())
 {
-    setFeature(GetPlayedIndices);
+    setFeature(GetPlayedIndices); //TODO: AL_BYTE_OFFSET
 }
 
 AudioOutputOpenAL::~AudioOutputOpenAL()
@@ -379,34 +376,7 @@ AudioOutput::Feature AudioOutputOpenAL::supportedFeatures() const
 {
     return GetPlayedIndices;
 }
-#if OLD_AO_API
-void AudioOutputOpenAL::waitForNextBuffer()
-{
-    qDebug("waitForNextBuffer");
-    DPTR_D(AudioOutputOpenAL);
-    //don't return even if we can add buffer because we have to update dequeue index
-    ALint queued = 0;
-    alGetSourcei(d.source, AL_BUFFERS_QUEUED, &queued);
-    if (queued == 0) { //TODO: why can be 0?
-        qDebug("no queued buffer");
-        return;
-    }
-    ALint processed = 0;
-    alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
-    //if (processed <= 0 && d.canAddBuffer())
-    //    return;
-    while (processed <= 0) {
-        unsigned long duration = d.format.durationForBytes(d.nextDequeueInfo().data_size)/1000LL;
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex, duration);
-        alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
-    }
-    while (processed-- > 0) {
-        d.bufferRemoved();
-    }
-}
-#endif
+
 // http://kcat.strangesoft.net/openal-tutorial.html
 bool AudioOutputOpenAL::write(const QByteArray& data)
 {
@@ -438,6 +408,13 @@ int AudioOutputOpenAL::getProcessed()
     ALint processed = 0;
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
     return processed;
+}
+
+int AudioOutputOpenAL::getQueued()
+{
+    ALint queued = 0;
+    alGetSourcei(d_func().source, AL_BUFFERS_QUEUED, &queued);
+    return queued;
 }
 
 } //namespace QtAV

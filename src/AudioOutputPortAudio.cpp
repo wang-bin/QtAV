@@ -38,9 +38,6 @@ public:
     bool open();
     bool close();
     virtual Feature supportedFeatures() const;
-#if OLD_AO_API
-    virtual void waitForNextBuffer();
-#endif //OLD_AO_API
     virtual bool play() { return true;}
 protected:
     virtual bool write(const QByteArray& data);
@@ -134,17 +131,6 @@ bool AudioOutputPortAudio::write(const QByteArray& data)
         return false;
     if (Pa_IsStreamStopped(d.stream))
         Pa_StartStream(d.stream);
-#if KNOW_WHY
-#ifndef Q_OS_MAC //?
-    int diff = Pa_GetStreamWriteAvailable(d.stream) - d.outputLatency * d.sample_rate;
-    if (diff > 0) {
-        int newsize = diff * d.channels * sizeof(float);
-        static char *a = new char[newsize];
-        memset(a, 0, newsize);
-        Pa_WriteStream(d.stream, a, diff);
-    }
-#endif
-#endif //KNOW_WHY
     PaError err = Pa_WriteStream(d.stream, data.constData(), data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
@@ -215,12 +201,4 @@ bool AudioOutputPortAudio::close()
     d.stream = NULL;
     return true;
 }
-
-#if OLD_AO_API
-void AudioOutputPortAudio::waitForNextBuffer()
-{
-    DPTR_D(AudioOutputPortAudio);
-    d.bufferRemoved();
-}
-#endif
 } //namespace QtAV

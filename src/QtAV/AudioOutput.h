@@ -68,7 +68,7 @@ public:
         Blocking = 1,
         Callback = 1 << 1,
         GetPlayedIndices = 1 << 2,
-        ProcessedBytes = 1 << 3,
+        PlayedBytes = 1 << 3,
         GetPlayingIndex = 1 << 4,
         GetPlayingBytes = 1 << 5,
     };
@@ -162,7 +162,12 @@ protected:
     void onCallback();
     //default return -1. means not the feature
     virtual int getProcessed();
-    virtual int getProcessedBytes();
+    /*!
+     * \brief getPlayedBytes
+     * reimplement this if feature() is PlayedBytes.
+     * \return the bytes played since last dequeue the buffer queue
+     */
+    virtual int getPlayedBytes();
     virtual int getPlayingIndex();
     virtual int getPlayingBytes();
 

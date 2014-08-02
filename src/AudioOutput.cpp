@@ -210,6 +210,9 @@ AudioOutput::Feature AudioOutput::supportedFeatures() const
 void AudioOutput::waitForNextBuffer()
 {
     DPTR_D(AudioOutput);
+    //don't return even if we can add buffer because we have /to update dequeue index
+    // openal need enqueue to a dequeued buffer! why sl crash
+    bool no_wait = false;//d.canAddBuffer();
     const Feature f = feature();
     int remove = 0;
     if (f & Blocking) {
@@ -219,25 +222,41 @@ void AudioOutput::waitForNextBuffer()
         Q_UNUSED(lock);
         d.cond.wait(&d.mutex);
         remove = 1;
-    } else if (f & ProcessedBytes) {
-        int s = getProcessedBytes();
+    } else if (f & PlayedBytes) {
+        d.processed_remain = getPlayedBytes();
         const int next = d.nextDequeueInfo().data_size;
         // TODO: avoid always 0
-        while (s < next) {
-            const qint64 us = d.format.durationForBytes(next - s);
+        while (!no_wait && d.processed_remain < next) {
+            const qint64 us = d.format.durationForBytes(next - d.processed_remain);
             if (us < 1000LL)
                 d.uwait(1000LL);
             else
                 d.uwait(us);
-            s = getProcessedBytes();
+            d.processed_remain = getPlayedBytes();
             // what if s always 0?
         }
-        remove = -1;
+        remove = -d.processed_remain;
     } else if (f & GetPlayedIndices) {
+#if AO_USE_TIMER
+        if (!d.timer.isValid())
+            d.timer.start();
+        qint64 elapsed = 0;
+#endif //AO_USE_TIMER
         int c = getProcessed();
         // TODO: avoid always 0
-        while (c < 1) {
-            d.uwait(d.format.durationForBytes(d.nextDequeueInfo().data_size));
+        qint64 us = 0;
+        while (!no_wait && c < 1) {
+            if (us <= 0)
+                us = d.format.durationForBytes(d.nextDequeueInfo().data_size);
+#if AO_USE_TIMER
+            elapsed = d.timer.restart();
+            if (elapsed > 0 && us > elapsed*1000LL)
+                us -= elapsed*1000LL;
+            if (us < 1000LL)
+                us = 1000LL;
+            qDebug("uwait %lld,elapsed=%lld", us,elapsed);
+#endif //AO_USE_TIMER
+            d.uwait(us);
             c = getProcessed();
         }
         // what if c always 0?
@@ -251,7 +270,7 @@ void AudioOutput::waitForNextBuffer()
         d.processed_remain += processed;
         const int next = d.nextDequeueInfo().data_size;
         // TODO: avoid always 0
-        while (d.processed_remain < next) {
+        while (!no_wait && d.processed_remain < next) {
             const qint64 us = d.format.durationForBytes(next - d.processed_remain);
             if (us < 1000LL)
                 d.uwait(1000LL);
@@ -273,7 +292,7 @@ void AudioOutput::waitForNextBuffer()
         d.play_pos = n;
         // TODO: timer
         // TODO: avoid always 0
-        while (processed < 1) {
+        while (!no_wait && processed < 1) {
             d.uwait(d.format.durationForBytes(d.nextDequeueInfo().data_size));
             n = getPlayingIndex();
             processed = n - d.play_pos;
@@ -281,7 +300,7 @@ void AudioOutput::waitForNextBuffer()
                 processed += bufferCount();
             d.play_pos = n;
         }
-        remove = n;
+        remove = processed;
     } else {
         qFatal("User defined waitForNextBuffer() not implemented!");
         return;
@@ -320,7 +339,7 @@ int AudioOutput::getProcessed()
     return -1;
 }
 
-int AudioOutput::getProcessedBytes()
+int AudioOutput::getPlayedBytes()
 {
     return -1;
 }
