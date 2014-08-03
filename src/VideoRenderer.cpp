@@ -26,6 +26,9 @@
 #include <QtCore/QCoreApplication>
 #include <QWidget>
 #include <QGraphicsItem>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QWindow>
+#endif
 
 namespace QtAV {
 
@@ -233,23 +236,6 @@ void VideoRenderer::setInSize(int width, int height)
         setOutAspectRatio(d.source_aspect_ratio);
     }
     d.aspect_ratio_changed = false; //TODO: why graphicsitemrenderer need this? otherwise aspect_ratio_changed is always true?
-    onSetInSize(width, height);
-}
-
-void VideoRenderer::onSetInSize(int width, int height)
-{
-    Q_UNUSED(width);
-    Q_UNUSED(height);
-}
-
-bool VideoRenderer::open()
-{
-    return true;
-}
-
-bool VideoRenderer::close()
-{
-    return true;
 }
 
 void VideoRenderer::resizeRenderer(const QSize &size)
@@ -583,10 +569,15 @@ bool VideoRenderer::setBrightness(qreal brightness)
         d.brightness = old;
         return false;
     }
+    // TODO: qwindow() and widget() can both use event?
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    if (qwindow()) {
+        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
+    }
+#endif
     if (widget()) {
         widget()->update();
-    }
-    if (graphicsItem()) {
+    } else if (graphicsItem()) {
         graphicsItem()->update();
     }
     return true;
@@ -609,10 +600,15 @@ bool VideoRenderer::setContrast(qreal contrast)
         d.contrast = old;
         return false;
     }
+    // TODO: qwindow() and widget() can both use event?
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    if (qwindow()) {
+        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
+    }
+#endif
     if (widget()) {
         widget()->update();
-    }
-    if (graphicsItem()) {
+    } else if (graphicsItem()) {
         graphicsItem()->update();
     }
     return true;
@@ -636,10 +632,15 @@ bool VideoRenderer::setHue(qreal hue)
         d.hue = old;
         return false;
     }
+    // TODO: qwindow() and widget() can both use event?
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    if (qwindow()) {
+        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
+    }
+#endif
     if (widget()) {
         widget()->update();
-    }
-    if (graphicsItem()) {
+    } else if (graphicsItem()) {
         graphicsItem()->update();
     }
     return true;
@@ -662,10 +663,15 @@ bool VideoRenderer::setSaturation(qreal saturation)
         d.saturation = old;
         return false;
     }
+    // TODO: qwindow() and widget() can both use event?
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    if (qwindow()) {
+        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
+    }
+#endif
     if (widget()) {
         widget()->update();
-    }
-    if (graphicsItem()) {
+    } else if (graphicsItem()) {
         graphicsItem()->update();
     }
     return true;

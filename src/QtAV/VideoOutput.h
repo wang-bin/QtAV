@@ -25,7 +25,6 @@
 #include <QtCore/QObject>
 #include <QtAV/VideoRenderer.h>
 
-
 namespace QtAV {
 
 class VideoOutputPrivate;
@@ -54,8 +53,7 @@ public:
 
     VideoFormat::PixelFormat preferredPixelFormat() const;
     bool isSupported(VideoFormat::PixelFormat pixfmt) const;
-    bool open();
-    bool close();
+    QWindow* qwindow();
     QWidget* widget();
     QGraphicsItem* graphicsItem();
 
@@ -101,8 +99,6 @@ private: //for proxy
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
 
-    void onSetInSize(int width, int height); //private? for internal use only, called by VideoThread.
-
     // from AVOutput
     virtual void setStatistics(Statistics* statistics); //called by friend AVPlayer
     virtual bool onInstallFilter(Filter *filter);
@@ -112,7 +108,6 @@ private: //for proxy
     virtual void onAttach(OutputSet *set); //add this to set
     virtual void onDetach(OutputSet *set = 0); //detatch from (all, if 0) output set(s)
     virtual bool onHanlePendingTasks();
-
 };
 
 } //namespace QtAV

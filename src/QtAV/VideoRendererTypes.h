@@ -23,12 +23,8 @@
 #define QTAV_VIDEORENDERERTYPES_H
 
 #include <QtAV/VideoRenderer.h>
-#include <QtAV/FactoryDefine.h>
 
 namespace QtAV {
-
-class VideoRenderer;
-FACTORY_DECLARE(VideoRenderer)
 
 //Q_AV_EXPORT(dllexport/import) is needed if used out of the library
 //TODO graphics item?

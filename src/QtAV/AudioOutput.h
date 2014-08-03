@@ -91,10 +91,11 @@ public:
      * Audio format set to preferred sample format and channel layout
      */
     AudioOutput();
-    virtual ~AudioOutput() = 0;
+    virtual ~AudioOutput();
+    virtual bool open() = 0;
+    virtual bool close() = 0;
     // store and fill data to audio buffers
     bool receiveData(const QByteArray &data, qreal pts = 0.0);
-
     /*!
      * \brief setAudioFormat
      * Remain the old value if not supported

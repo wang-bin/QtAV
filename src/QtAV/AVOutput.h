@@ -47,14 +47,9 @@ public:
 
     //void addSource(AVPlayer* player); //call player.addVideoRenderer(this)
     //void removeSource(AVPlayer* player);
-
-    virtual bool open() = 0; //Q_DECL_DEPRECATED
-    virtual bool close() = 0; //Q_DECL_DEPRECATED
-
-//    virtual bool prepare() {}
-//    virtual bool finish() {}
     //Demuxer thread automatically paused because packets will be full
     //only pause the renderering, the thread going on. If all outputs are paused, then pause the thread(OutputSet.tryPause)
+    //TODO: what about audio's pause api?
     void pause(bool p); //processEvents when waiting?
     bool isPaused() const;
 

@@ -119,16 +119,9 @@ bool VideoOutput::isSupported(VideoFormat::PixelFormat pixfmt) const
     return d_func().impl->isSupported(pixfmt);
 }
 
-bool VideoOutput::open()
+QWindow* VideoOutput::qwindow()
 {
-    DPTR_D(VideoOutput);
-    return d.impl->open();
-}
-
-bool VideoOutput::close()
-{
-    DPTR_D(VideoOutput);
-    return d.impl->close();
+    return d_func().impl->qwindow();
 }
 
 QWidget* VideoOutput::widget()
@@ -312,12 +305,6 @@ bool VideoOutput::onSetSaturation(qreal saturation)
     }
     emit saturationChanged(saturation);
     return true;
-}
-
-void VideoOutput::onSetInSize(int width, int height)
-{
-    DPTR_D(VideoOutput);
-    d.impl->setInSize(width, height);
 }
 
 void VideoOutput::setStatistics(Statistics* statistics)

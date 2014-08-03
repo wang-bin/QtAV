@@ -55,7 +55,6 @@ public:
       , features(0)
       , play_pos(0)
       , processed_remain(0)
-      , buffers_reseted(true)
       , index_enqueue(-1)
       , index_deuqueue(-1)
     {
@@ -145,7 +144,6 @@ public:
     QElapsedTimer timer;
 #endif
 private:
-    bool buffers_reseted;
     // the index of current enqueue/dequeue
     int index_enqueue, index_deuqueue;
     QVector<FrameInfo> frame_infos;
