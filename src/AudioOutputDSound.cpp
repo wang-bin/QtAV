@@ -39,10 +39,11 @@ public:
     virtual bool open();
     virtual bool close();
     virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
-    virtual void waitForNextBuffer();
-    bool write(const QByteArray& data);
+    virtual BufferControl supportedBufferControl() const;
+    virtual bool play();
 protected:
-    virtual bool write();
+    virtual bool write(const QByteArray& data);
+    virtual int getOffsetByBytes();
 };
 
 extern AudioOutputId AudioOutputId_DSound;
@@ -151,6 +152,7 @@ public:
     AudioOutputDSoundPrivate()
         : AudioOutputPrivate()
         , dll(NULL)
+        , dsound(NULL)
         , prim_buf(NULL)
         , stream_buf(NULL)
         , write_offset(0)
@@ -180,26 +182,24 @@ public:
 AudioOutputDSound::AudioOutputDSound()
     :AudioOutput(*new AudioOutputDSoundPrivate())
 {
+    setBufferControl(OffsetBytes);
 }
 
 bool AudioOutputDSound::open()
 {
     DPTR_D(AudioOutputDSound);
+    resetStatus();
     if (!d.init())
         return false;
     if (!d.createDSoundBuffers())
         return false;
-    QByteArray feed(d.bufferSizeTotal(), 0);
-    write(feed);
-    for (quint32 i = 0; i < d.nb_buffers; ++i) {
-        d.bufferAdded();
-    }
     return true;
 }
 
 bool AudioOutputDSound::close()
 {
     DPTR_D(AudioOutputDSound);
+    resetStatus();
     d.destroy();
     return true;
 }
@@ -210,27 +210,9 @@ bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) cons
             || sampleFormat == AudioFormat::SampleFormat_Float;
 }
 
-void AudioOutputDSound::waitForNextBuffer()
+AudioOutput::BufferControl AudioOutputDSound::supportedBufferControl() const
 {
-    DPTR_D(AudioOutputDSound);
-    if  (!d.dsound)
-        return;
-    DWORD read_offset;
-    d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
-    int remain = d.write_offset - read_offset;
-    if (remain < 0LL) {
-        remain += d.bufferSizeTotal();
-    }
-    if (remain > 0) {
-        // don't need AudioOutputPrivate buffer queue
-        // TODO: why too slow?
-        //unsigned long duration = d.format.durationForBytes((qint64)remain)/1000LL;
-        unsigned long duration = d.format.durationForBytes(d.nextDequeueInfo().data_size)/1000LL;
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex, duration);
-    }
-    d.bufferRemoved(); //TODO: virtual void noWait();
+    return OffsetBytes;
 }
 
 bool AudioOutputDSound::write(const QByteArray &data)
@@ -238,7 +220,7 @@ bool AudioOutputDSound::write(const QByteArray &data)
     DPTR_D(AudioOutputDSound);
     LPVOID dst1= NULL, dst2 = NULL;
     DWORD size1 = 0, size2 = 0;
-    if (d.write_offset > d.bufferSizeTotal())
+    if (d.write_offset >= d.bufferSizeTotal()) ///!!!>=
         d.write_offset = 0;
     HRESULT res = d.stream_buf->Lock(d.write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0); //DSBLOCK_ENTIREBUFFER
     if (res == DSERR_BUFFERLOST) {
@@ -260,6 +242,12 @@ bool AudioOutputDSound::write(const QByteArray &data)
         qWarning("Unloack error (%s)",dserr2str(res));
         //return false;
     }
+    return true;
+}
+
+bool AudioOutputDSound::play()
+{
+    DPTR_D(AudioOutputDSound);
     DWORD status;
     d.stream_buf->GetStatus(&status);
     if (!(status & DSBSTATUS_PLAYING)) {
@@ -269,9 +257,12 @@ bool AudioOutputDSound::write(const QByteArray &data)
     return true;
 }
 
-bool AudioOutputDSound::write() //TODO: deprecated, use write(AudioFrame or QByteArray)
+int AudioOutputDSound::getOffsetByBytes()
 {
-    return write(d_func().data);
+    DPTR_D(AudioOutputDSound);
+    DWORD read_offset = 0;
+    d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
+    return (int)read_offset;
 }
 
 bool AudioOutputDSoundPrivate::loadDll()

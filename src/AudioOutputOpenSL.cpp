@@ -39,9 +39,12 @@ public:
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
     virtual bool open();
     virtual bool close();
-    void waitForNextBuffer();
+    virtual BufferControl supportedBufferControl() const;
+    virtual bool play();
 protected:
-    virtual bool write();
+    virtual bool write(const QByteArray& data);
+    //default return -1. means not the control
+    virtual int getPlayedCount();
 };
 
 extern AudioOutputId AudioOutputId_OpenSL;
@@ -96,7 +99,6 @@ public:
         , m_bufferQueueItf(0)
         , m_notifyInterval(1000)
         , buffers_queued(0)
-        , callback_mode(true)
     {
         SL_RUN_CHECK(slCreateEngine(&engineObject, 0, 0, 0, 0, 0));
         SL_RUN_CHECK((*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE));
@@ -113,14 +115,15 @@ public:
         (*bufferQueue)->GetState(bufferQueue, &state);
         //qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
         AudioOutputOpenSLPrivate *priv = reinterpret_cast<AudioOutputOpenSLPrivate*>(context);
-        if (priv->callback_mode) {
-            priv->cond.wakeAll();
+        if (priv->control & AudioOutput::Callback) {
+            priv->onCallback();
         }
     }
     static void playCallback(SLPlayItf player, void *ctx, SLuint32 event)
     {
         Q_UNUSED(player);
         Q_UNUSED(ctx);
+        Q_UNUSED(event);
         //qDebug("---------%s  event=%lu", __FUNCTION__, event);
     }
 
@@ -133,12 +136,12 @@ public:
     SLBufferQueueItf m_bufferQueueItf;
     int m_notifyInterval;
     quint32 buffers_queued;
-    bool callback_mode;
 };
 
 AudioOutputOpenSL::AudioOutputOpenSL()
     :AudioOutput(*new AudioOutputOpenSLPrivate())
 {
+    setBufferControl(PlayedCount);
 }
 
 AudioOutputOpenSL::~AudioOutputOpenSL()
@@ -170,10 +173,16 @@ AudioFormat::ChannelLayout AudioOutputOpenSL::preferredChannelLayout() const
     return AudioFormat::ChannelLayout_Stero;
 }
 
+AudioOutput::BufferControl AudioOutputOpenSL::supportedBufferControl() const
+{
+    return BufferControl(Callback | PlayedCount);
+}
+
 bool AudioOutputOpenSL::open()
 {
     DPTR_D(AudioOutputOpenSL);
     d.available = false;
+    resetStatus();
     SLDataLocator_BufferQueue bufferQueueLocator = { SL_DATALOCATOR_BUFFERQUEUE, (SLuint32)d.nb_buffers };
     SLDataFormat_PCM pcmFormat = audioFormatToSL(audioFormat());
     SLDataSource audioSrc = { &bufferQueueLocator, &pcmFormat };
@@ -224,6 +233,7 @@ bool AudioOutputOpenSL::close()
 {
     DPTR_D(AudioOutputOpenSL);
     d.available = false;
+    resetStatus();
     if (d.m_playItf)
         (*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_STOPPED);
 
@@ -245,48 +255,30 @@ bool AudioOutputOpenSL::close()
     return true;
 }
 
-bool AudioOutputOpenSL::write()
+bool AudioOutputOpenSL::write(const QByteArray& data)
 {
     DPTR_D(AudioOutputOpenSL);
-    SL_RUN_CHECK_FALSE((*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, d.data.constData(), d.data.size()));
+    SL_RUN_CHECK_FALSE((*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, data.constData(), data.size()));
     d.buffers_queued++;
     return true;
 }
 
-void AudioOutputOpenSL::waitForNextBuffer()
+bool AudioOutputOpenSL::play()
 {
     DPTR_D(AudioOutputOpenSL);
-    if (!d.canRemoveBuffer()) {
-        return;
-    }
+    SL_RUN_CHECK_FALSE((*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_PLAYING));
+    return true;
+}
+
+int AudioOutputOpenSL::getPlayedCount()
+{
+    DPTR_D(AudioOutputOpenSL);
+    int processed = d.buffers_queued;
     SLBufferQueueState state;
     (*d.m_bufferQueueItf)->GetState(d.m_bufferQueueItf, &state);
-    //qDebug(">>>>>>>>>>>>>>bufferQueueCallback state.count=%lu .playIndex=%lu", state.count, state.playIndex);
-    // number of buffers in queue
-    if (state.count <= 0) {
-        return;
-    }
-    if (d.callback_mode) {
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex);
-        d.bufferRemoved();
-        --d.buffers_queued;
-        return;
-    }
-    int processed = d.buffers_queued;
-    while (state.count >= d.buffers_queued) {
-        unsigned long duration = d.format.durationForBytes(d.nextDequeueInfo().data_size)/1000LL;
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex, duration);
-        (*d.m_bufferQueueItf)->GetState(d.m_bufferQueueItf, &state);
-    }
     d.buffers_queued = state.count;
     processed -= state.count;
-    while (processed--) {
-        d.bufferRemoved();
-    }
+    return processed;
 }
 
 } //namespace QtAV

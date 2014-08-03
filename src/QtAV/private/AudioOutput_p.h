@@ -28,7 +28,13 @@
 #include <QtCore/QQueue>
 #include <QtCore/QVector>
 #include <limits>
-
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+#include <QtCore/QElapsedTimer>
+#else
+#include <QtCore/QTime>
+typedef QTime QElapsedTimer;
+#endif
+#define AO_USE_TIMER 1
 // TODO:writeChunk(), write(QByteArray) { while writeChunk() }, users define writeChunk()
 namespace QtAV {
 
@@ -43,8 +49,12 @@ public:
         mute(false)
       , vol(1)
       , speed(1.0)
-      , max_channels(1)
       , nb_buffers(8)
+      , buffer_size(kBufferSize)
+      , control(0)
+      , features(0)
+      , play_pos(0)
+      , processed_remain(0)
       , buffers_reseted(true)
       , index_enqueue(-1)
       , index_deuqueue(-1)
@@ -52,6 +62,13 @@ public:
         frame_infos.resize(nb_buffers);
     }
     virtual ~AudioOutputPrivate(){}
+
+    void onCallback() { cond.wakeAll();}
+    virtual void uwait(qint64 us) {
+        QMutexLocker lock(&mutex);
+        Q_UNUSED(lock);
+        cond.wait(&mutex, (us+500LL)/1000LL);
+    }
 
     int bufferSizeTotal() { return nb_buffers * kBufferSize; }
     typedef struct {
@@ -101,16 +118,32 @@ public:
         return;
         index_deuqueue = (index_deuqueue + 1) % frame_infos.size();
     }
+    void resetStatus() {
+        play_pos = 0;
+        processed_remain = 0;
+#if AO_USE_TIMER
+        timer.invalidate();
+#endif
+        resetBuffers();
+        frame_infos.clear();
+        frame_infos.resize(nb_buffers);
+    }
 
     bool mute;
     qreal vol;
     qreal speed;
-    int max_channels;
     AudioFormat format;
     QByteArray data;
     AudioFrame audio_frame;
     quint32 nb_buffers;
-
+    qint32 buffer_size;
+    int control;
+    int features;
+    int play_pos; // index or bytes
+    int processed_remain;
+#if AO_USE_TIMER
+    QElapsedTimer timer;
+#endif
 private:
     bool buffers_reseted;
     // the index of current enqueue/dequeue

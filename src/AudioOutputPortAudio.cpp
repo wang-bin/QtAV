@@ -37,9 +37,10 @@ public:
     ~AudioOutputPortAudio();
     bool open();
     bool close();
-    virtual void waitForNextBuffer();
+    virtual BufferControl supportedBufferControl() const;
+    virtual bool play() { return true;}
 protected:
-    bool write();
+    virtual bool write(const QByteArray& data);
 };
 
 extern AudioOutputId AudioOutputId_PortAudio;
@@ -84,7 +85,6 @@ public:
             return;
         }
         const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(outputParameters->device);
-        max_channels = deviceInfo->maxOutputChannels;
         qDebug("DEFAULT max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
         qDebug("audio device: %s", QString::fromLocal8Bit(Pa_GetDeviceInfo(outputParameters->device)->name).toUtf8().constData());
         outputParameters->hostApiSpecificStreamInfo = NULL;
@@ -108,6 +108,7 @@ public:
 AudioOutputPortAudio::AudioOutputPortAudio()
     :AudioOutput(*new AudioOutputPortAudioPrivate())
 {
+    setBufferControl(Blocking);
 }
 
 AudioOutputPortAudio::~AudioOutputPortAudio()
@@ -115,7 +116,12 @@ AudioOutputPortAudio::~AudioOutputPortAudio()
     close();
 }
 
-bool AudioOutputPortAudio::write()
+AudioOutput::BufferControl AudioOutputPortAudio::supportedBufferControl() const
+{
+    return Blocking;
+}
+
+bool AudioOutputPortAudio::write(const QByteArray& data)
 {
     DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
@@ -124,24 +130,14 @@ bool AudioOutputPortAudio::write()
         return false;
     if (Pa_IsStreamStopped(d.stream))
         Pa_StartStream(d.stream);
-#if KNOW_WHY
-#ifndef Q_OS_MAC //?
-    int diff = Pa_GetStreamWriteAvailable(d.stream) - d.outputLatency * d.sample_rate;
-    if (diff > 0) {
-        int newsize = diff * d.channels * sizeof(float);
-        static char *a = new char[newsize];
-        memset(a, 0, newsize);
-        Pa_WriteStream(d.stream, a, diff);
-    }
-#endif
-#endif //KNOW_WHY
-    PaError err = Pa_WriteStream(d.stream, d.data.constData(), d.data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
+    PaError err = Pa_WriteStream(d.stream, data.constData(), data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
         return   false;
     }
     return true;
 }
+
 //TODO: what about planar, int8, int24 etc that FFmpeg or Pa not support?
 static int toPaSampleFormat(AudioFormat::SampleFormat format)
 {
@@ -165,6 +161,7 @@ bool AudioOutputPortAudio::open()
     DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
+    resetStatus();
     d.outputParameters->sampleFormat = toPaSampleFormat(audioFormat().sampleFormat());
     d.outputParameters->channelCount = audioFormat().channels();
     PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, audioFormat().sampleRate(), 0, paNoFlag, NULL, NULL);
@@ -183,6 +180,7 @@ bool AudioOutputPortAudio::close()
     DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
+    resetStatus();
     bool available_old = d.available;
     d.available = false;
     PaError err = paNoError;
@@ -204,11 +202,4 @@ bool AudioOutputPortAudio::close()
     d.stream = NULL;
     return true;
 }
-
-void AudioOutputPortAudio::waitForNextBuffer()
-{
-    DPTR_D(AudioOutputPortAudio);
-    d.bufferRemoved();
-}
-
 } //namespace QtAV
