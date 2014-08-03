@@ -204,7 +204,7 @@ bool AudioOutputOpenAL::open()
 {
     DPTR_D(AudioOutputOpenAL);
     d.available = false; // TODO: d.reset()
-    d.resetBuffers();
+    resetStatus();
     QVector<QByteArray> _devices;
     const char *p = NULL;
     // maybe defined in alext.h
@@ -303,7 +303,7 @@ bool AudioOutputOpenAL::close()
     DPTR_D(AudioOutputOpenAL);
     d.state = 0;
     d.available = false;
-    d.resetBuffers();
+    resetStatus();
     alSourceStop(d.source);
     do {
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);

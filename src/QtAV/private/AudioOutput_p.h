@@ -68,7 +68,7 @@ public:
     virtual void uwait(qint64 us) {
         QMutexLocker lock(&mutex);
         Q_UNUSED(lock);
-        cond.wait(&mutex, us/1000LL);
+        cond.wait(&mutex, (us+500LL)/1000LL);
     }
 
     int bufferSizeTotal() { return nb_buffers * kBufferSize; }
@@ -118,6 +118,16 @@ public:
             ++index_deuqueue;
         return;
         index_deuqueue = (index_deuqueue + 1) % frame_infos.size();
+    }
+    void resetStatus() {
+        play_pos = 0;
+        processed_remain = 0;
+#if AO_USE_TIMER
+        timer.invalidate();
+#endif
+        resetBuffers();
+        frame_infos.clear();
+        frame_infos.resize(nb_buffers);
     }
 
     bool mute;

@@ -209,6 +209,8 @@ protected:
     virtual int getOffsetByBytes();
     // \return false by default
     virtual bool onSetFeatures(Feature value);
+    // reset internal status. MUST call this at the begining of open()
+    void resetStatus();
 
     AudioOutput(AudioOutputPrivate& d);
 };

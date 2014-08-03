@@ -152,6 +152,7 @@ public:
     AudioOutputDSoundPrivate()
         : AudioOutputPrivate()
         , dll(NULL)
+        , dsound(NULL)
         , prim_buf(NULL)
         , stream_buf(NULL)
         , write_offset(0)
@@ -187,25 +188,18 @@ AudioOutputDSound::AudioOutputDSound()
 bool AudioOutputDSound::open()
 {
     DPTR_D(AudioOutputDSound);
-    d.resetBuffers();
+    resetStatus();
     if (!d.init())
         return false;
     if (!d.createDSoundBuffers())
         return false;
-    return true;
-    QByteArray feed(d.bufferSizeTotal(), 0);
-    write(feed);
-    for (quint32 i = 0; i < d.nb_buffers; ++i) {
-        d.bufferAdded();
-    }
-    qDebug("==========d.write_offset=%d", d.write_offset);
     return true;
 }
 
 bool AudioOutputDSound::close()
 {
     DPTR_D(AudioOutputDSound);
-    d.resetBuffers();
+    resetStatus();
     d.destroy();
     return true;
 }

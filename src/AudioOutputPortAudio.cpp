@@ -162,6 +162,7 @@ bool AudioOutputPortAudio::open()
     DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
+    resetStatus();
     d.outputParameters->sampleFormat = toPaSampleFormat(audioFormat().sampleFormat());
     d.outputParameters->channelCount = audioFormat().channels();
     PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, audioFormat().sampleRate(), 0, paNoFlag, NULL, NULL);
@@ -180,6 +181,7 @@ bool AudioOutputPortAudio::close()
     DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
+    resetStatus();
     bool available_old = d.available;
     d.available = false;
     PaError err = paNoError;

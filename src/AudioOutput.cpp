@@ -26,16 +26,15 @@ namespace QtAV {
 AudioOutput::AudioOutput()
     :AVOutput(*new AudioOutputPrivate())
 {
-    DPTR_D(AudioOutput);
-    d_func().format.setSampleFormat(preferredSampleFormat());
-    d_func().format.setChannelLayout(preferredChannelLayout());
+    d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
+    d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
 }
 
 AudioOutput::AudioOutput(AudioOutputPrivate &d)
     :AVOutput(d)
 {
-    d_func().format.setSampleFormat(preferredSampleFormat());
-    d_func().format.setChannelLayout(preferredChannelLayout());
+    d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
+    d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
 }
 
 AudioOutput::~AudioOutput()
@@ -249,6 +248,11 @@ bool AudioOutput::onSetFeatures(Feature value)
     return false;
 }
 
+void AudioOutput::resetStatus()
+{
+    d_func().resetStatus();
+}
+
 void AudioOutput::waitForNextBuffer()
 {
     DPTR_D(AudioOutput);
@@ -311,10 +315,10 @@ void AudioOutput::waitForNextBuffer()
         d.processed_remain += processed;
         const int next = d.nextDequeueInfo().data_size;
         // TODO: avoid always 0
-        while (!no_wait && d.processed_remain < next) {
+        while (!no_wait && d.processed_remain < next && next > 0) {
             const qint64 us = d.format.durationForBytes(next - d.processed_remain);
             if (us < 1000LL)
-                d.uwait(1000LL);
+                d.uwait(10000LL);
             else
                 d.uwait(us);
             s = getOffsetByBytes();
