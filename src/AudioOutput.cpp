@@ -58,11 +58,6 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
     return write(d.data);
 }
 
-int AudioOutput::maxChannels() const
-{
-    return d_func().max_channels;
-}
-
 void AudioOutput::setAudioFormat(const AudioFormat& format)
 {
     DPTR_D(AudioOutput);
@@ -96,10 +91,6 @@ int AudioOutput::sampleRate() const
 void AudioOutput::setChannels(int channels)
 {
     DPTR_D(AudioOutput);
-    if (channels > d.max_channels) {
-        qWarning("not support. max channels is %d", d.max_channels);
-        return;
-    }
     d.format.setChannels(channels);
 }
 
@@ -168,7 +159,7 @@ bool AudioOutput::isSupported(AudioFormat::ChannelLayout channelLayout) const
 
 AudioFormat::SampleFormat AudioOutput::preferredSampleFormat() const
 {
-    return AudioFormat::SampleFormat_Float;
+    return AudioFormat::SampleFormat_Signed16;
 }
 
 AudioFormat::ChannelLayout AudioOutput::preferredChannelLayout() const
@@ -256,7 +247,7 @@ void AudioOutput::resetStatus()
 void AudioOutput::waitForNextBuffer()
 {
     DPTR_D(AudioOutput);
-    //don't return even if we can add buffer because we have /to update dequeue index
+    //don't return even if we can add buffer because we don't know when a buffer is processed and we have /to update dequeue index
     // openal need enqueue to a dequeued buffer! why sl crash
     bool no_wait = false;//d.canAddBuffer();
     const BufferControl f = bufferControl();

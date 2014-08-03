@@ -49,7 +49,6 @@ public:
         mute(false)
       , vol(1)
       , speed(1.0)
-      , max_channels(1)
       , nb_buffers(8)
       , buffer_size(kBufferSize)
       , control(0)
@@ -133,7 +132,6 @@ public:
     bool mute;
     qreal vol;
     qreal speed;
-    int max_channels;
     AudioFormat format;
     QByteArray data;
     AudioFrame audio_frame;

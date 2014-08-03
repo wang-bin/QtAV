@@ -85,7 +85,6 @@ public:
             return;
         }
         const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(outputParameters->device);
-        max_channels = deviceInfo->maxOutputChannels;
         qDebug("DEFAULT max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
         qDebug("audio device: %s", QString::fromLocal8Bit(Pa_GetDeviceInfo(outputParameters->device)->name).toUtf8().constData());
         outputParameters->hostApiSpecificStreamInfo = NULL;
