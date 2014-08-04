@@ -107,29 +107,6 @@ bool VideoRenderer::isPreferredPixelFormatForced() const
     return d_func().force_preferred;
 }
 
-void VideoRenderer::scaleInRenderer(bool q)
-{
-    DPTR_D(VideoRenderer);
-    if (d.scale_in_renderer == q)
-        return;
-    bool old = d.scale_in_renderer;
-    d.scale_in_renderer = q;
-    if (!onScaleInRenderer(q)) {
-        d.scale_in_renderer = old;
-    }
-}
-
-bool VideoRenderer::onScaleInRenderer(bool q)
-{
-    Q_UNUSED(q);
-    return true;
-}
-
-bool VideoRenderer::scaleInRenderer() const
-{
-    return d_func().scale_in_renderer;
-}
-
 void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
 {
     DPTR_D(VideoRenderer);

@@ -100,10 +100,6 @@ public:
     bool isPreferredPixelFormatForced() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const = 0;
 
-    //for testing performance
-    void scaleInRenderer(bool q);
-    bool scaleInRenderer() const;
-
     void setOutAspectRatioMode(OutAspectRatioMode mode);
     OutAspectRatioMode outAspectRatioMode() const;
     //If setOutAspectRatio(qreal) is used, then OutAspectRatioMode is CustomAspectRation
@@ -211,7 +207,6 @@ private: //used by VideoOutput class
      */
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
     virtual bool onForcePreferredPixelFormat(bool force = true);
-    virtual bool onScaleInRenderer(bool q);
     virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
     virtual void onSetOutAspectRatio(qreal ratio);
     virtual bool onSetQuality(Quality q);

@@ -102,18 +102,14 @@ void WidgetRenderer::drawFrame()
 {
     DPTR_D(WidgetRenderer);
     if (d.image.isNull()) {
-        //TODO: when setInSize()?
         d.image = QImage(rendererSize(), QImage::Format_RGB32);
         d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
     }
     QRect roi = realROI();
     //assume that the image data is already scaled to out_size(NOT renderer size!)
-    if (!d.scale_in_renderer || roi.size() == d.out_rect.size()) {
-        //d.preview = d.image;
+    if (roi.size() == d.out_rect.size()) {
         d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
     } else {
-        //qDebug("size not fit. may slow. %dx%d ==> %dx%d"
-        //       , d.image.size().width(), image.size().height(), d.renderer_width, d.renderer_height);
         d.painter->drawImage(d.out_rect, d.image, roi);
         //what's the difference?
         //d.painter->drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));

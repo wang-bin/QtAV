@@ -83,7 +83,6 @@ protected:
 private: //for proxy
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
     virtual bool onForcePreferredPixelFormat(bool force = true);
-    virtual bool onScaleInRenderer(bool q);
     virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
     virtual void onSetOutAspectRatio(qreal ratio);
     virtual bool onSetQuality(Quality q);

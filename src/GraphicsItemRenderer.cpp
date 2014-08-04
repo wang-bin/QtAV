@@ -180,7 +180,7 @@ void GraphicsItemRenderer::drawFrame()
     }
     const QRect roi = realROI();
     //assume that the image data is already scaled to out_size(NOT renderer size!)
-    if (!d.scale_in_renderer || roi.size() == d.out_rect.size()) {
+    if (roi.size() == d.out_rect.size()) {
         d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
     } else {
         d.painter->drawImage(d.out_rect, d.image, roi);

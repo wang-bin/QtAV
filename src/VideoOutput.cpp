@@ -47,7 +47,6 @@ public:
         source_aspect_ratio = qreal(src_width)/qreal(src_height);
         out_aspect_ratio_mode = impl->outAspectRatioMode();
         out_aspect_ratio = impl->outAspectRatio();
-        scale_in_renderer = impl->scaleInRenderer();
         quality = impl->quality();
         out_rect = impl->videoRect();
         roi = impl->regionOfInterest();
@@ -179,12 +178,6 @@ bool VideoOutput::onForcePreferredPixelFormat(bool force)
     DPTR_D(VideoOutput);
     d.impl->forcePreferredPixelFormat(force);
     return d.impl->isPreferredPixelFormatForced() == force;
-}
-
-bool VideoOutput::onScaleInRenderer(bool q)
-{
-    Q_UNUSED(q);
-    return true;
 }
 
 void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)

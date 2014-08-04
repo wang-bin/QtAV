@@ -266,14 +266,6 @@ void GDIRenderer::drawFrame()
     QRect roi = realROI();
     // && image.size() != size()
     //assume that the image data is already scaled to out_size(NOT renderer size!)
-    /*if (!d.scale_in_renderer || (roi.size() == d.out_rect.size())) {
-        BitBlt(hdc
-               , d.out_rect.left(), d.out_rect.top()
-               , d.out_rect.width(), d.out_rect.height()
-               , d.off_dc
-               , 0, 0
-               , SRCCOPY);
-    } else {*/
         StretchBlt(hdc
                    , d.out_rect.left(), d.out_rect.top()
                    , d.out_rect.width(), d.out_rect.height()
@@ -281,7 +273,6 @@ void GDIRenderer::drawFrame()
                    , roi.x(), roi.y()
                    , roi.width(), roi.height()
                    , SRCCOPY);
-    //}
     SelectObject(d.off_dc, hbmp_old);
     DeleteObject(d.off_bitmap); //avoid mem leak
 #endif

@@ -66,7 +66,7 @@ bool %CLASS%::needDrawFrame() const
 void %CLASS%::drawFrame()
 {
     //assume that the image data is already scaled to out_size(NOT renderer size!)
-    if (!d.scale_in_renderer || (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height())) {
+    if (d.src_width == d.out_rect.width() && d.src_height == d.out_rect.height()) {
         //you may copy data to video buffer directly
     } else {
         //paint with scale
