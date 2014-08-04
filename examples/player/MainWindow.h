@@ -45,6 +45,7 @@ class PlayList;
 class DecoderConfigPage;
 class VideoEQConfigPage;
 class StatisticsView;
+class OSDFilter;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -60,6 +61,7 @@ public slots:
     void play(const QString& name);
     void openFile();
     void togglePlayPause();
+    void showNextOSD();
 
 signals:
     void ready();
@@ -179,6 +181,8 @@ private:
 
     QPointF mGlobalMouse;
     StatisticsView *mpStatisticsView;
+
+    OSDFilter *mpOSD;
 };
 
 

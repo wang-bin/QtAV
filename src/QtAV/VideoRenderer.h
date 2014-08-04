@@ -51,7 +51,6 @@ class VideoRenderer;
 FACTORY_DECLARE(VideoRenderer)
 
 class Filter;
-class OSDFilter;
 class VideoFormat;
 class VideoRendererPrivate;
 class Q_AV_EXPORT VideoRenderer : public AVOutput
@@ -166,13 +165,6 @@ public:
      */
     virtual QGraphicsItem* graphicsItem() { return 0; }
 
-    //TODO: enable/disable = new a default for this vo engine or push back/remove from list
-    //filter: null means disable
-    //return the old filter. you may release the ptr manually
-    OSDFilter* setOSDFilter(OSDFilter *filter);
-    OSDFilter *osdFilter();
-    Filter* setSubtitleFilter(Filter *filter);
-    Filter* subtitleFilter();
     void enableDefaultEventFilter(bool e);
     bool isDefaultEventFilterEnabled() const;
 
@@ -227,8 +219,6 @@ private: //used by VideoOutput class
     virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual QPointF onMapToFrame(const QPointF& p) const;
     virtual QPointF onMapFromFrame(const QPointF& p) const;
-    virtual void onSetOSDFilter(OSDFilter *filter);
-    virtual void onSetSubtitleFilter(Filter *filter);
     /*!
      * \brief onSetXX
      *  It's called when user call setXXX() with a new value. You should implement how to actually change the value, e.g. change brightness with shader.

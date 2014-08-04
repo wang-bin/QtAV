@@ -42,9 +42,6 @@ public:
     VideoRendererPrivate():
         update_background(true)
       , scale_in_renderer(true)
-      , draw_osd(true)
-      , draw_subtitle(true)
-      , draw_custom(true)
       , renderer_width(480)
       , renderer_height(320)
       , source_aspect_ratio(0)
@@ -54,8 +51,6 @@ public:
       , out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
       , quality(VideoRenderer::QualityBest)
-      , osd_filter(0)
-      , subtitle_filter(0)
       , default_event_filter(true)
       , preferred_format(VideoFormat::Format_RGB32)
       , force_preferred(false)
@@ -96,7 +91,6 @@ public:
     //draw background when necessary, for example, renderer is resized. Then set to false
     bool update_background;
     bool scale_in_renderer;
-    bool draw_osd, draw_subtitle, draw_custom;
     // width, height: the renderer's size. i.e. size of video frame with the value with borders
     //TODO: rename to renderer_width/height
     int renderer_width, renderer_height;
@@ -113,7 +107,6 @@ public:
     QRect out_rect; //TODO: out_out_rect
     QRectF roi;
 
-    Filter *osd_filter, *subtitle_filter; //should be at the end of list and draw top level
     bool default_event_filter;
     VideoFrame video_frame;
     VideoFormat::PixelFormat preferred_format;

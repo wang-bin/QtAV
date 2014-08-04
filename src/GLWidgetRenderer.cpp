@@ -44,7 +44,6 @@
 
 #include "QtAV/ColorTransform.h"
 #include "QtAV/FilterContext.h"
-#include "QtAV/OSDFilter.h"
 
 #define UPLOAD_ROI 0
 #define ROI_TEXCOORDS 1
@@ -786,7 +785,6 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
     ctx->paint_device = this;
     ctx->painter = d.painter;
-    setOSDFilter(new OSDFilterQPainter());
 }
 
 bool GLWidgetRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const

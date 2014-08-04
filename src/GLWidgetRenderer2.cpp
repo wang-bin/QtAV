@@ -23,7 +23,6 @@
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/OpenGLVideo.h"
 #include "QtAV/FilterContext.h"
-#include "QtAV/OSDFilter.h"
 #include <QResizeEvent>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLShaderProgram>
@@ -76,7 +75,6 @@ GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidg
     QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
     ctx->paint_device = this;
     ctx->painter = d.painter;
-    setOSDFilter(new OSDFilterQPainter());
 }
 
 GLWidgetRenderer2::~GLWidgetRenderer2()

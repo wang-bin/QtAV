@@ -43,6 +43,7 @@ public:
 
 signals:
     void helpRequested();
+    void showNextOSD();
 
 public slots:
     void openLocalFile();

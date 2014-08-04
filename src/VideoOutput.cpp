@@ -22,7 +22,6 @@
 #include "QtAV/VideoOutput.h"
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/VideoRendererTypes.h"
-#include "QtAV/OSDFilter.h"
 
 /*!
  * onSetXXX(...): impl->onSetXXX(...); set value as impl; return ;
@@ -40,8 +39,6 @@ public:
         if (!available)
             return;
         // set members as impl's that may be already set in ctor
-        osd_filter = impl->osdFilter();
-        subtitle_filter = impl->subtitleFilter();
         filters = impl->filters();
         renderer_width = impl->rendererWidth();
         renderer_height = impl->rendererHeight();
@@ -245,18 +242,6 @@ QPointF VideoOutput::onMapFromFrame(const QPointF& p) const
 {
     DPTR_D(const VideoOutput);
     return d.impl->onMapFromFrame(p);
-}
-
-void VideoOutput::onSetOSDFilter(OSDFilter *filter)
-{
-    DPTR_D(VideoOutput);
-    d.impl->setOSDFilter(filter);
-}
-
-void VideoOutput::onSetSubtitleFilter(Filter *filter)
-{
-    DPTR_D(VideoOutput);
-    d.impl->setSubtitleFilter(filter);
 }
 
 bool VideoOutput::onSetBrightness(qreal brightness)

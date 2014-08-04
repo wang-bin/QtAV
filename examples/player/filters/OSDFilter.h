@@ -23,20 +23,19 @@
 #define QTAV_OSDFILTER_H
 
 #include <QtAV/Filter.h>
-#include <QtAV/OSD.h>
+#include "OSD.h"
 #include <QtAV/FilterContext.h>
-namespace QtAV {
-
+using namespace QtAV;
 class OSDFilterPrivate;
 //TODO: not template. OSDFilter : public Filter, public OSD
-class Q_AV_EXPORT OSDFilter : public Filter, public OSD
+class OSDFilter : public Filter, public OSD
 {
 protected:
     DPTR_DECLARE_PRIVATE(OSDFilter)
     OSDFilter(OSDFilterPrivate& d);
 };
 
-class Q_AV_EXPORT OSDFilterQPainter : public OSDFilter
+class OSDFilterQPainter : public OSDFilter
 {
 public:
     OSDFilterQPainter();
@@ -46,18 +45,5 @@ public:
 protected:
     void process();
 };
-
-class Q_AV_EXPORT OSDFilterGL : public OSDFilter
-{
-public:
-    OSDFilterGL();
-    FilterContext::Type contextType() const {
-        return FilterContext::OpenGL;
-    }
-protected:
-    void process();
-};
-
-} //namespace QtAV
 
 #endif // QTAV_OSDFILTER_H

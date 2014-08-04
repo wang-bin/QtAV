@@ -19,13 +19,13 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/OSD.h"
+#include "OSD.h"
 #include <QtAV/Statistics.h>
 
 namespace QtAV {
 
 OSD::OSD():
-    mShowType(ShowCurrentAndTotalTime)
+    mShowType(ShowNone)
   , mSecsTotal(-1)
 {
 }

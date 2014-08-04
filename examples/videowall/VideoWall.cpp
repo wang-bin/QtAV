@@ -31,7 +31,6 @@
 #include <QMimeData>
 #include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
-#include <QtAV/OSDFilter.h>
 #include <QtAV/VideoRendererTypes.h>
 
 using namespace QtAV;
@@ -145,9 +144,6 @@ void VideoWall::show()
             renderer->widget()->resize(w, h);
             renderer->widget()->move(j*w, i*h);
             renderer->widget()->show();
-            if (renderer->osdFilter()) {
-                renderer->osdFilter()->setShowType(OSD::ShowNone);
-            }
             AVPlayer *player = new AVPlayer;
             player->setRenderer(renderer);
             player->masterClock()->setClockAuto(false);

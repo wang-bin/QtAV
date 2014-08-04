@@ -29,7 +29,6 @@
 namespace QtAV {
 
 class ImageConverter;
-class OSDFilter;
 class VideoCapture;
 class VideoThreadPrivate;
 class VideoThread : public AVThread

@@ -22,7 +22,6 @@
 #include <QtAV/QPainterRenderer.h>
 #include <QtAV/private/QPainterRenderer_p.h>
 #include <QtAV/FilterContext.h>
-#include <QtAV/OSDFilter.h>
 
 namespace QtAV {
 
@@ -31,14 +30,12 @@ QPainterRenderer::QPainterRenderer()
 {
     DPTR_D(QPainterRenderer);
     d.filter_context = FilterContext::create(FilterContext::QtPainter);
-    setOSDFilter(new OSDFilterQPainter());
 }
 
 QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
     :VideoRenderer(d)
 {
     d.filter_context = FilterContext::create(FilterContext::QtPainter);
-    setOSDFilter(new OSDFilterQPainter());
 }
 
 bool QPainterRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const

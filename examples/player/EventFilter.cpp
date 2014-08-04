@@ -35,7 +35,7 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/VideoRenderer.h>
-#include <QtAV/OSDFilter.h>
+#include "filters/OSDFilter.h"
 
 using namespace QtAV;
 
@@ -216,10 +216,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
                 //TODO: emit a signal so we can use custome dialogs?
                 openLocalFile();
             } else/* if (m == Qt::NoModifier) */{
-                //foreach renderer, or just current widget? add shortcuts for all vo?
-                OSDFilter *osd = player->renderer()->osdFilter();
-                if (osd)
-                    osd->useNextShowType();
+                emit showNextOSD();
             }
         }
             break;

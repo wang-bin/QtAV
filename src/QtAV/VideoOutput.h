@@ -91,8 +91,6 @@ private: //for proxy
     virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual QPointF onMapToFrame(const QPointF& p) const;
     virtual QPointF onMapFromFrame(const QPointF& p) const;
-    virtual void onSetOSDFilter(OSDFilter *filter);
-    virtual void onSetSubtitleFilter(Filter *filter);
 
     virtual bool onSetBrightness(qreal brightness);
     virtual bool onSetContrast(qreal contrast);

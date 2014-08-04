@@ -31,7 +31,6 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h>
 #include <QtAV/VideoOutput.h>
-#include <QtAV/OSDFilter.h>
 
 #include "MainWindow.h"
 
@@ -158,8 +157,6 @@ int main(int argc, char *argv[])
         return 1;
     }
     renderer->widget()->setWindowTitle(title);
-    if (renderer->osdFilter())
-        renderer->osdFilter()->setShowType(OSD::ShowNone);
     //renderer->scaleInRenderer(false);
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
 

@@ -54,6 +54,7 @@
 #include "config/Config.h"
 #include "config/VideoEQConfigPage.h"
 #include "config/ConfigDialog.h"
+#include "filters/OSDFilter.h"
 #include "playlist/PlayList.h"
 #include "common/ScreenSaver.h"
 
@@ -98,6 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpTempRenderer(0)
   , mpAVFilter(0)
   , mpStatisticsView(0)
+  , mpOSD(0)
 {
     mpChannelAction = 0;
     mpChannelMenu = 0;
@@ -135,6 +137,7 @@ void MainWindow::initPlayer()
     EventFilter *ef = new EventFilter(mpPlayer);
     qApp->installEventFilter(ef);
     connect(ef, SIGNAL(helpRequested()), SLOT(help()));
+    connect(ef, SIGNAL(showNextOSD()), SLOT(showNextOSD()));
     onCaptureConfigChanged();
     onAVFilterConfigChanged();
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), SLOT(onCaptureConfigChanged()));
@@ -524,9 +527,6 @@ void MainWindow::changeVO(QAction *action)
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
     VideoRenderer *vo = VideoRendererFactory::create(vid);
     if (vo && vo->isAvailable()) {
-        if (vo->osdFilter()) {
-            vo->osdFilter()->setShowType(OSD::ShowNone);
-        }
         if (vo->widget()) {
             vo->widget()->resize(rect().size()); //TODO: why not mpPlayer->renderer()->rendererSize()?
             vo->resizeRenderer(mpPlayer->renderer()->rendererSize());
@@ -636,6 +636,8 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         mpPlayer->renderer()->forcePreferredPixelFormat(false);
     }
     onVideoEQEngineChanged();
+    mpOSD = new OSDFilterQPainter(); // vo will take the owner ship
+    mpOSD->installTo(mpRenderer);
 }
 
 void MainWindow::play(const QString &name)
@@ -702,6 +704,13 @@ void MainWindow::togglePlayPause()
         mpPlayer->play();
         mpPlayPauseBtn->setIconWithSates(mPausePixmap);
     }
+}
+
+void MainWindow::showNextOSD()
+{
+    if (!mpOSD)
+        return;
+    mpOSD->useNextShowType();
 }
 
 void MainWindow::onSpinBoxChanged(double v)

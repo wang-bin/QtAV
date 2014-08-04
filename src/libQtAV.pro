@@ -233,8 +233,6 @@ SOURCES += \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     QPainterRenderer.cpp \
-    OSD.cpp \
-    OSDFilter.cpp \
     Packet.cpp \
     AVError.cpp \
     AVPlayer.cpp \
@@ -280,8 +278,6 @@ SDK_HEADERS *= \
     QtAV/ImageConverter.h \
     QtAV/ImageConverterTypes.h \
     QtAV/QPainterRenderer.h \
-    QtAV/OSD.h \
-    QtAV/OSDFilter.h \
     QtAV/OpenGLVideo.h \
     QtAV/VideoShader.h \
     QtAV/Packet.h \

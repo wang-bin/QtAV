@@ -22,7 +22,6 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/private/VideoRenderer_p.h>
 #include <QtAV/Filter.h>
-#include <QtAV/OSDFilter.h>
 #include <QtCore/QCoreApplication>
 #include <QWidget>
 #include <QGraphicsItem>
@@ -401,74 +400,6 @@ QPointF VideoRenderer::onMapFromFrame(const QPointF &p) const
     // (p-roi.c)/zoom + c
     QPointF delta = p - roi.center();
     return QPointF(rendererWidth()/2, rendererHeight()/2) + delta / zoom;
-}
-
-OSDFilter *VideoRenderer::setOSDFilter(OSDFilter *filter)
-{
-    DPTR_D(VideoRenderer);
-    //may be both null
-    if (d.osd_filter == filter) {
-        return static_cast<OSDFilter*>(filter);
-    }
-    Filter *old = d.osd_filter;
-    d.osd_filter = filter;
-    //subtitle and osd is at the end
-    int idx = d.filters.lastIndexOf(old);
-    if (idx != -1) {
-        if (filter)
-            d.filters.replace(idx, filter);
-        else //null==disable
-            d.filters.takeAt(idx);
-    } else {
-        if (filter)
-            d.filters.push_back(filter);
-    }
-    onSetOSDFilter(filter);
-    return static_cast<OSDFilter*>(old);
-}
-
-void VideoRenderer::onSetOSDFilter(OSDFilter *filter)
-{
-    Q_UNUSED(filter);
-}
-
-OSDFilter* VideoRenderer::osdFilter()
-{
-    return static_cast<OSDFilter*>(d_func().osd_filter);
-}
-//TODO: setSubtitleFilter and setOSDFilter are almost the same. refine code
-Filter* VideoRenderer::setSubtitleFilter(Filter *filter)
-{
-    DPTR_D(VideoRenderer);
-    //may be both null
-    if (d.subtitle_filter == filter) {
-        return filter;
-    }
-    Filter *old = d.subtitle_filter;
-    d.subtitle_filter = filter;
-    //subtitle and osd is at the end
-    int idx = d.filters.lastIndexOf(old);
-    if (idx != -1) {
-        if (filter)
-            d.filters.replace(idx, filter);
-        else //null==disable
-            d.filters.takeAt(idx);
-    } else {
-        if (filter)
-            d.filters.push_back(filter);
-    }
-    onSetSubtitleFilter(filter);
-    return old;
-}
-
-void VideoRenderer::onSetSubtitleFilter(Filter *filter)
-{
-    Q_UNUSED(filter);
-}
-
-Filter* VideoRenderer::subtitleFilter()
-{
-    return d_func().subtitle_filter;
 }
 
 bool VideoRenderer::needUpdateBackground() const
