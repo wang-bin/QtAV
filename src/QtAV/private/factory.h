@@ -155,7 +155,10 @@ typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::id(const std::string &
 template<typename Id, typename T, class Class>
 std::string Factory<Id, T, Class>::name(const ID &id) const
 {
-    return name_map.find(id)->second;
+    typename NameMap::const_iterator it = name_map.find(id);
+    if (it == name_map.end())
+        return std::string();
+    return it->second;
 }
 
 template<typename Id, typename T, class Class>
