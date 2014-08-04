@@ -61,13 +61,10 @@
 #include <QtAV/VideoRendererTypes.h>
 #include <QtAV/VideoOutput.h>
 //The following renderer headers can be removed
-#include <QtAV/Direct2DRenderer.h>
-#include <QtAV/GDIRenderer.h>
-#include <QtAV/GLWidgetRenderer.h>
 #include <QtAV/QPainterRenderer.h>
 #include <QtAV/GraphicsItemRenderer.h>
 #include <QtAV/WidgetRenderer.h>
-#include <QtAV/XVRenderer.h>
+#include <QtAV/GLWidgetRenderer.h>
 #include <QtAV/GLWidgetRenderer2.h>
 
 #endif // QTAV_H

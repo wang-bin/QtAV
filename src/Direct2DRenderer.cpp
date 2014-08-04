@@ -19,10 +19,12 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/Direct2DRenderer.h"
+#include "QtAV/VideoRenderer.h"
+#include <QWidget>
 #include <QResizeEvent>
 #include <QtCore/QLibrary>
 #include "QtAV/private/VideoRenderer_p.h"
+#include "QtAV/prepost.h"
 
 //#define CINTERFACE //http://rxlib.ru/faqs/faqc_en/15596.html
 //#include <windows.h>
@@ -53,6 +55,49 @@ inline void SafeRelease(Interface **ppInterfaceToRelease)
     }
 }
 
+class Direct2DRendererPrivate;
+class Direct2DRenderer : public QWidget, public VideoRenderer
+{
+    Q_OBJECT
+    DPTR_DECLARE_PRIVATE(Direct2DRenderer)
+public:
+    Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    virtual VideoRendererId id() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+
+    /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
+     * native painting primitives, you need to reimplement QWidget::paintEngine() to
+     * return 0 and set this flag
+     */
+    virtual QPaintEngine* paintEngine() const;
+    virtual QWidget* widget() { return this; }
+protected:
+    virtual bool receiveFrame(const VideoFrame& frame);
+    virtual bool needUpdateBackground() const;
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    virtual bool needDrawFrame() const;
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
+    /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
+     *things yourself totally*/
+    virtual void paintEvent(QPaintEvent *);
+    virtual void resizeEvent(QResizeEvent *);
+    //stay on top will change parent, hide then show(windows). we need GetDC() again
+    virtual void showEvent(QShowEvent *);
+};
+extern VideoRendererId VideoRendererId_Direct2D;
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, Direct2D, "Direct2D")
+
+void RegisterVideoRendererDirect2D_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, Direct2D, "Direct2D")
+}
+
+VideoRendererId Direct2DRenderer::id() const
+{
+    return VideoRendererId_Direct2D;
+}
 class Direct2DRendererPrivate : public VideoRendererPrivate
 {
 public:

@@ -29,11 +29,6 @@
 
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h>
-#include <QtAV/WidgetRenderer.h>
-#include <QtAV/GLWidgetRenderer.h>
-#include <QtAV/Direct2DRenderer.h>
-#include <QtAV/GDIRenderer.h>
-#include <QtAV/XVRenderer.h>
 #include "SimpleFilter.h"
 
 using namespace QtAV;

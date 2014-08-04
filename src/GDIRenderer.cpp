@@ -19,11 +19,13 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/GDIRenderer.h"
+#include "QtAV/VideoRenderer.h"
 #include "QtAV/private/VideoRenderer_p.h"
+#include <QWidget>
 #include <windows.h> //GetDC()
 #include <gdiplus.h>
 #include <QResizeEvent>
+#include "QtAV/prepost.h"
 
 #define USE_GRAPHICS 0
 
@@ -32,6 +34,54 @@
 
 using namespace Gdiplus;
 namespace QtAV {
+
+class GDIRendererPrivate;
+class GDIRenderer : public QWidget, public VideoRenderer
+{
+    Q_OBJECT
+    DPTR_DECLARE_PRIVATE(GDIRenderer)
+public:
+    GDIRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0); //offscreen?
+    virtual VideoRendererId id() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
+     * native painting primitives, you need to reimplement QWidget::paintEngine() to
+     * return 0 and set this flag
+     */
+    virtual QPaintEngine* paintEngine() const;
+
+    /*http://lists.trolltech.com/qt4-preview-feedback/2005-04/thread00609-0.html
+     * true: paintEngine.getDC(), double buffer is enabled by defalut.
+     * false: GetDC(winId()), no double buffer, should reimplement paintEngine()
+     */
+    virtual QWidget* widget() { return this; }
+protected:
+    virtual bool receiveFrame(const VideoFrame& frame);
+    virtual bool needUpdateBackground() const;
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
+    /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
+     *things yourself totally*/
+    virtual void paintEvent(QPaintEvent *);
+    virtual void resizeEvent(QResizeEvent *);
+    //stay on top will change parent, hide then show(windows). we need GetDC() again
+    virtual void showEvent(QShowEvent *);
+};
+
+extern VideoRendererId VideoRendererId_GDI;
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, GDI, "GDI")
+
+void RegisterVideoRendererGDI_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, GDI, "GDI")
+}
+
+VideoRendererId GDIRenderer::id() const
+{
+    return VideoRendererId_GDI;
+}
 
 class GDIRendererPrivate : public VideoRendererPrivate
 {

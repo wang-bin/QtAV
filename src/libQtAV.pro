@@ -141,20 +141,17 @@ config_opensl {
 config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
     SOURCES += GDIRenderer.cpp
-    SDK_HEADERS += QtAV/GDIRenderer.h
     LIBS += -lgdiplus -lgdi32
 }
 config_direct2d {
     DEFINES *= QTAV_HAVE_DIRECT2D=1
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
-    SDK_HEADERS += QtAV/Direct2DRenderer.h
     #LIBS += -lD2d1
 }
 config_xv {
     DEFINES *= QTAV_HAVE_XV=1
     SOURCES += XVRenderer.cpp
-    SDK_HEADERS += QtAV/XVRenderer.h
     LIBS += -lXv
 }
 config_gl {

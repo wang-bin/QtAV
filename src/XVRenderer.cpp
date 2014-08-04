@@ -22,13 +22,15 @@
 /*
  * X11 headers define 'Bool' type which is used in qmetatype.h. we must include X11 files at last, i.e. XVRenderer_p.h. otherwise compile error
 */
-#include "QtAV/XVRenderer.h"
+#include "QtAV/VideoRenderer.h"
+#include "QtAV/private/VideoRenderer_p.h"
+#include <QWidget>
 #include <QResizeEvent>
 #include <QtCore/qmath.h>
-#include "QtAV/private/VideoRenderer_p.h"
 #include <sys/shm.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xvlib.h>
+#include "QtAV/prepost.h"
 
 //http://huangbster.i.sohu.com/blog/view/256490057.htm
 
@@ -40,6 +42,59 @@ inline int scaleEQValue(int val, int min, int max)
     return (val + 100)*((qAbs(min) + qAbs(max)))/200 - qAbs(min);
 }
 
+class XVRendererPrivate;
+class XVRenderer : public QWidget, public VideoRenderer
+{
+    Q_OBJECT
+    DPTR_DECLARE_PRIVATE(XVRenderer)
+public:
+    XVRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    virtual VideoRendererId id() const;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+
+    /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
+     * native painting primitives, you need to reimplement QWidget::paintEngine() to
+     * return 0 and set this flag
+     * If paintEngine != 0, the window will flicker when drawing without QPainter.
+     * Make sure that paintEngine returns 0 to avoid flicking.
+     */
+    virtual QPaintEngine* paintEngine() const;
+    /*http://lists.trolltech.com/qt4-preview-feedback/2005-04/thread00609-0.html
+     * true: paintEngine is QPainter. Painting with QPainter support double buffer
+     * false: no double buffer, should reimplement paintEngine() to return 0 to avoid flicker
+     */
+    virtual QWidget* widget() { return this; }
+protected:
+    virtual bool receiveFrame(const VideoFrame& frame);
+    virtual bool needUpdateBackground() const;
+    //called in paintEvent before drawFrame() when required
+    virtual void drawBackground();
+    virtual bool needDrawFrame() const;
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
+    virtual void paintEvent(QPaintEvent *);
+    virtual void resizeEvent(QResizeEvent *);
+    //stay on top will change parent, hide then show(windows). we need GetDC() again
+    virtual void showEvent(QShowEvent *);
+
+private:
+    virtual bool onSetBrightness(qreal b);
+    virtual bool onSetContrast(qreal c);
+    virtual bool onSetHue(qreal h);
+    virtual bool onSetSaturation(qreal s);
+};
+extern VideoRendererId VideoRendererId_XV;
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
+
+void RegisterVideoRendererXV_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, XV, "XVideo")
+}
+
+VideoRendererId XVRenderer::id() const
+{
+    return VideoRendererId_XV;
+}
 
 class XVRendererPrivate : public VideoRendererPrivate
 {

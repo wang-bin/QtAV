@@ -29,15 +29,6 @@
 #include "QtAV/GLWidgetRenderer2.h"
 #include "QtAV/GLWidgetRenderer.h"
 #endif //QTAV_HAVE(GL)
-#if QTAV_HAVE(GDIPLUS)
-#include "QtAV/GDIRenderer.h"
-#endif //QTAV_HAVE(GDIPLUS)
-#if QTAV_HAVE(DIRECT2D)
-#include "QtAV/Direct2DRenderer.h"
-#endif //QTAV_HAVE(DIRECT2D)
-#if QTAV_HAVE(XV)
-#include "QtAV/XVRenderer.h"
-#endif //QTAV_HAVE(XV)
 #include "QtAV/private/factory.h"
 
 namespace QtAV {
@@ -108,45 +99,10 @@ VideoRendererId GLWidgetRenderer2::id() const
     return VideoRendererId_GLWidget2;
 }
 #endif //QTAV_HAVE(GL)
-#if QTAV_HAVE(GDIPLUS)
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, GDI, "GDI")
 
-void RegisterVideoRendererGDI_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, GDI, "GDI")
-}
-
-VideoRendererId GDIRenderer::id() const
-{
-    return VideoRendererId_GDI;
-}
-#endif //QTAV_HAVE(GDIPLUS)
-#if QTAV_HAVE(DIRECT2D)
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, Direct2D, "Direct2D")
-
-void RegisterVideoRendererDirect2D_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, Direct2D, "Direct2D")
-}
-
-VideoRendererId Direct2DRenderer::id() const
-{
-    return VideoRendererId_Direct2D;
-}
-#endif //QTAV_HAVE(DIRECT2D)
-#if QTAV_HAVE(XV)
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
-
-void RegisterVideoRendererXV_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, XV, "XVideo")
-}
-
-VideoRendererId XVRenderer::id() const
-{
-    return VideoRendererId_XV;
-}
-#endif //QTAV_HAVE(XV)
+extern void RegisterVideoRendererGDI_Man();
+extern void RegisterVideoRendererDirect2D_Man();
+extern void RegisterVideoRendererXV_Man();
 
 void VideoRenderer_RegisterAll()
 {
