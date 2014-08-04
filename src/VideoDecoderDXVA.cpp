@@ -24,7 +24,7 @@
 #include "QtAV/private/VideoDecoderFFmpegHW_p.h"
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
-#include "prepost.h"
+#include "QtAV/prepost.h"
 #include "utils/GPUMemCopy.h"
 
 // TODO: add to QtAV_Compat.h?

@@ -23,6 +23,7 @@
 #include <limits>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QStringList>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AudioOutputTypes.h>
 #include <QtDebug>
@@ -38,7 +39,7 @@ void help() {
     for (int i = 0; i < (int)names.size(); ++i) {
         backends.append(names[i].c_str());
     }
-    qDebug() << "parameters: [-ao " << backends.join('|') << "]";
+    qDebug() << "parameters: [-ao " << backends.join("|") << "]";
 }
 
 int main(int argc, char** argv)

@@ -29,7 +29,7 @@
 #include <QmlAV/QmlAVPlayer.h>
 #include "QmlAV/SGVideoNode.h"
 #include <QtAV/VideoRendererTypes.h> //it declares a factory we need
-#include "prepost.h"
+#include "QtAV/prepost.h"
 
 namespace QtAV
 {

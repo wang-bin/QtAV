@@ -29,9 +29,14 @@
 #include <stdexcept>
 #endif
 
+#define DEBUG 0
+#if DEBUG
 #define DBG(fmt, ...) \
     printf(fmt, ##__VA_ARGS__); \
     fflush(0);
+#else
+#define DBG(...)
+#endif //DEBUG
 
 #define DISABLE_COPY(Class) \
     Class(const Class &); \

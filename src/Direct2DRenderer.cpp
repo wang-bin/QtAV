@@ -86,6 +86,7 @@ protected:
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void showEvent(QShowEvent *);
 };
+typedef Direct2DRenderer VideoRendererDirect2D;
 extern VideoRendererId VideoRendererId_Direct2D;
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Direct2D, "Direct2D")
 
@@ -423,3 +424,5 @@ void Direct2DRenderer::showEvent(QShowEvent *)
 }
 
 } //namespace QtAV
+
+#include "Direct2DRenderer.moc"

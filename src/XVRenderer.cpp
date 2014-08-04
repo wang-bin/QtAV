@@ -83,6 +83,7 @@ private:
     virtual bool onSetHue(qreal h);
     virtual bool onSetSaturation(qreal s);
 };
+typedef XVRenderer VideoRendererXV;
 extern VideoRendererId VideoRendererId_XV;
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
 
@@ -544,3 +545,5 @@ bool XVRenderer::onSetSaturation(qreal s)
 }
 
 } //namespace QtAV
+
+#include "XVRenderer.moc"

@@ -19,7 +19,7 @@
 
 #include "QtAV/AudioOutput.h"
 #include "QtAV/private/AudioOutput_p.h"
-#include "prepost.h"
+#include "QtAV/prepost.h"
 #include <QtCore/QVector>
 
 #if defined(HEADER_OPENAL_PREFIX)

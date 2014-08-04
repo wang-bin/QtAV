@@ -23,7 +23,7 @@
 #include "QtAV/private/VideoDecoder_p.h"
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
-#include "prepost.h"
+#include "QtAV/prepost.h"
 
 #include <QDebug>
 

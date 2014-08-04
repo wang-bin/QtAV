@@ -69,7 +69,7 @@ protected:
     //stay on top will change parent, hide then show(windows). we need GetDC() again
     virtual void showEvent(QShowEvent *);
 };
-
+typedef GDIRenderer VideoRendererGDI;
 extern VideoRendererId VideoRendererId_GDI;
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GDI, "GDI")
 
@@ -308,3 +308,5 @@ void GDIRenderer::showEvent(QShowEvent *)
 }
 
 } //namespace QtAV
+
+#include "GDIRenderer.moc"

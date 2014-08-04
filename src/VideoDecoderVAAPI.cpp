@@ -31,7 +31,7 @@
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
 #include "utils/GPUMemCopy.h"
-#include "prepost.h"
+#include "QtAV/prepost.h"
 #include <va/va.h>
 #include <libavcodec/vaapi.h>
 

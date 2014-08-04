@@ -30,6 +30,10 @@ FACTORY_DEFINE(VideoDecoder)
 
 extern void RegisterVideoDecoderFFmpeg_Man();
 extern void RegisterVideoDecoderDXVA_Man();
+extern void RegisterVideoDecoderCUDA_Man();
+extern void RegisterVideoDecoderVAAPI_Man();
+extern void RegisterVideoDecoderVDA_Man();
+extern void RegisterVideoDecoderCedarv_Man();
 
 void VideoDecoder_RegisterAll()
 {
@@ -37,6 +41,18 @@ void VideoDecoder_RegisterAll()
 #if QTAV_HAVE(DXVA)
     RegisterVideoDecoderDXVA_Man();
 #endif //QTAV_HAVE(DXVA)
+#if QTAV_HAVE(CUDA)
+    RegisterVideoDecoderCUDA_Man();
+#endif //QTAV_HAVE(CUDA)
+#if QTAV_HAVE(VAAPI)
+    RegisterVideoDecoderVAAPI_Man();
+#endif //QTAV_HAVE(VAAPI)
+#if QTAV_HAVE(VDA)
+    RegisterVideoDecoderVDA_Man();
+#endif //QTAV_HAVE(VDA)
+#if QTAV_HAVE(CEDARV)
+    RegisterVideoDecoderCedarv_Man();
+#endif //QTAV_HAVE(CEDARV)
 }
 
 
