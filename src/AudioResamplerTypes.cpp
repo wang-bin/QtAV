@@ -23,7 +23,7 @@
 
 namespace QtAV {
 
-AudioResamplerId AudioResamplerId_FF = 0;
-AudioResamplerId AudioResamplerId_Libav = 1;
+AudioResamplerId AudioResamplerId_FF = 1;
+AudioResamplerId AudioResamplerId_Libav = 2;
 
 }
