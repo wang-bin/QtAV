@@ -202,10 +202,10 @@ void MainWindow::setupUi()
     mpCurrent->setToolTip(tr("Current time"));
     mpCurrent->setMargin(2);
     mpCurrent->setText("00:00:00");
-    mpDuration = new QLabel(mpControl);
-    mpDuration->setToolTip(tr("Duration"));
-    mpDuration->setMargin(2);
-    mpDuration->setText("00:00:00");
+    mpEnd = new QLabel(mpControl);
+    mpEnd->setToolTip(tr("Duration"));
+    mpEnd->setMargin(2);
+    mpEnd->setText("00:00:00");
     mpTitle = new QLabel(mpControl);
     mpTitle->setToolTip(tr("Render engine"));
     mpTitle->setText("QPainter");
@@ -478,7 +478,7 @@ void MainWindow::setupUi()
     controlLayout->addWidget(mpSpeed);
     //controlLayout->addWidget(mpSetupBtn);
     controlLayout->addWidget(mpMenuBtn);
-    controlLayout->addWidget(mpDuration);
+    controlLayout->addWidget(mpEnd);
 
     connect(pSpeedBox, SIGNAL(valueChanged(double)), SLOT(onSpinBoxChanged(double)));
     connect(mpOpenBtn, SIGNAL(clicked()), SLOT(openFile()));
@@ -757,11 +757,11 @@ void MainWindow::onStartPlay()
     setWindowTitle(mTitle);
 
     mpPlayPauseBtn->setIconWithSates(mPausePixmap);
-    mpTimeSlider->setMaximum(mpPlayer->duration());
+    mpTimeSlider->setMinimum(mpPlayer->mediaStartPosition());
+    mpTimeSlider->setMaximum(mpPlayer->mediaStopPosition());
     mpTimeSlider->setValue(0);
-    qDebug(">>>>>>>>>>>>>>enable slider");
     mpTimeSlider->setEnabled(true);
-    mpDuration->setText(QTime(0, 0, 0).addMSecs(mpPlayer->duration()).toString("HH:mm:ss"));
+    mpEnd->setText(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()).toString("HH:mm:ss"));
     setVolume();
     mShowControl = 0;
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
@@ -799,7 +799,7 @@ void MainWindow::onStopPlay()
     qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);
     mpCurrent->setText("00:00:00");
-    mpDuration->setText("00:00:00");
+    mpEnd->setText("00:00:00");
     tryShowControlBar();
     ScreenSaver::instance().enable();
     toggleRepeat(false);

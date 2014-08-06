@@ -147,7 +147,7 @@ private:
     QVBoxLayout *mpPlayerLayout;
 
     QWidget *mpControl;
-    QLabel *mpCurrent, *mpDuration;
+    QLabel *mpCurrent, *mpEnd;
     QLabel *mpTitle;
     QLabel *mpSpeed;
     Slider *mpTimeSlider, *mpVolumeSlider;
