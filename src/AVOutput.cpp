@@ -34,6 +34,9 @@ AVOutputPrivate::~AVOutputPrivate() {
         delete filter_context;
         filter_context = 0;
     }
+    foreach (Filter *f, pending_uninstall_filters) {
+        filters.removeAll(f);
+    }
     qDeleteAll(filters);
     filters.clear();
 }
@@ -174,7 +177,7 @@ bool AVOutput::onUninstallFilter(Filter *filter)
 {
     if (!FilterManager::instance().unregisterFilter(filter)) {
         qWarning("unregister filter %p failed", filter);
-        return false;
+        //return false; //already removed in FilterManager::uninstallFilter()
     }
     DPTR_D(AVOutput);
     d.pending_uninstall_filters.push_back(filter);

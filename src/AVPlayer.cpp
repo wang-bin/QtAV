@@ -372,7 +372,7 @@ bool AVPlayer::uninstallFilter(Filter *filter)
 {
     if (!FilterManager::instance().unregisterFilter(filter)) {
         qWarning("unregister filter %p failed", filter);
-        return false;
+        //return false;
     }
     /*
      * TODO: send FilterUninstallTask(this, filter){this.mFilters.remove} to

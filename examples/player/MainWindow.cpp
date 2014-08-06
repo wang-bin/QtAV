@@ -101,6 +101,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpStatisticsView(0)
   , mpOSD(0)
 {
+    mpOSD = new OSDFilterQPainter();
     mpChannelAction = 0;
     mpChannelMenu = 0;
     mpAudioTrackAction = 0;
@@ -572,6 +573,7 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     }
     if (!renderer)
         return;
+    mpOSD->uninstall();
 #if SLIDER_ON_VO
     int old_pos = 0;
     int old_total = 0;
@@ -636,7 +638,6 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         mpPlayer->renderer()->forcePreferredPixelFormat(false);
     }
     onVideoEQEngineChanged();
-    mpOSD = new OSDFilterQPainter(); // vo will take the owner ship
     mpOSD->installTo(mpRenderer);
 }
 
