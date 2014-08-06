@@ -26,6 +26,15 @@
 namespace QtAV {
 AVDecoder::AVDecoder()
 {
+    class AVInitializer {
+    public:
+        AVInitializer() {
+            qDebug("avcodec_register_all");
+            avcodec_register_all();
+        }
+    };
+    static AVInitializer sAVInit;
+    Q_UNUSED(sAVInit);
 }
 
 AVDecoder::AVDecoder(AVDecoderPrivate &d)
