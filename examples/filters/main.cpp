@@ -81,7 +81,6 @@ int main(int argc, char *argv[])
     }
     renderer->widget()->setWindowTitle(title);
 
-    //renderer->scaleInRenderer(false);
     renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
     renderer->widget()->resize(renderer->widget()->width(), renderer->widget()->width()*9/16);
     renderer->widget()->show();

@@ -46,6 +46,7 @@ class DecoderConfigPage;
 class VideoEQConfigPage;
 class StatisticsView;
 class OSDFilter;
+class SubtitleFilter;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -119,6 +120,9 @@ private slots:
     void setup();
 
     void handleFullscreenChange();
+    void toggoleSubtitleEnabled(bool value);
+    void toggleSubtitleAutoLoad(bool value);
+    void openSubtitle();
 
 protected:
     virtual void closeEvent(QCloseEvent *e);
@@ -183,6 +187,7 @@ private:
     StatisticsView *mpStatisticsView;
 
     OSDFilter *mpOSD;
+    SubtitleFilter *mpSubtitle;
 };
 
 

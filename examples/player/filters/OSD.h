@@ -29,7 +29,7 @@
 namespace QtAV {
 
 class Statistics;
-class Q_AV_EXPORT OSD
+class OSD
 {
 public:
     enum ShowType {

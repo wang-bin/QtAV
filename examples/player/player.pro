@@ -33,7 +33,8 @@ SOURCES += main.cpp \
     playlist/PlayList.cpp \
     config/PropertyEditor.cpp \
     config/AVFormatConfigPage.cpp \
-    config/AVFilterConfigPage.cpp
+    config/AVFilterConfigPage.cpp \
+    filters/SubtitleFilter.cpp
 
 HEADERS += \
     MainWindow.h \
@@ -57,7 +58,8 @@ HEADERS += \
     playlist/PlayList.h \
     config/PropertyEditor.h \
     config/AVFormatConfigPage.h \
-    config/AVFilterConfigPage.h
+    config/AVFilterConfigPage.h \
+    filters/SubtitleFilter.h
 
 tv.files = res/tv.ini
 BIN_INSTALLS += tv

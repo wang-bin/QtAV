@@ -55,6 +55,7 @@
 #include "config/VideoEQConfigPage.h"
 #include "config/ConfigDialog.h"
 #include "filters/OSDFilter.h"
+#include "filters/SubtitleFilter.h"
 #include "playlist/PlayList.h"
 #include "common/ScreenSaver.h"
 
@@ -100,7 +101,9 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpAVFilter(0)
   , mpStatisticsView(0)
   , mpOSD(0)
+  , mpSubtitle(0)
 {
+    mpSubtitle = new SubtitleFilter();
     mpOSD = new OSDFilterQPainter();
     mpChannelAction = 0;
     mpChannelMenu = 0;
@@ -134,6 +137,8 @@ void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
+    mpSubtitle->setPlayer(mpPlayer);
+
     //mpPlayer->setAudioOutput(AudioOutputFactory::create(AudioOutputId_OpenAL));
     EventFilter *ef = new EventFilter(mpPlayer);
     qApp->installEventFilter(ef);
@@ -371,6 +376,19 @@ void MainWindow::setupUi()
     mpRepeatAction = pWA;
 
     mpMenu->addSeparator();
+
+    subMenu = new ClickableMenu(tr("Subtitle"));
+    mpMenu->addMenu(subMenu);
+    subMenu->setToolTip(tr("Depends on") + " libass, libavfilter");
+    QAction *act = subMenu->addAction(tr("Enable"));
+    act->setCheckable(true);
+    act->setChecked(mpSubtitle->isEnabled());
+    connect(act, SIGNAL(toggled(bool)), SLOT(toggoleSubtitleEnabled(bool)));
+    act = subMenu->addAction(tr("Auto load"));
+    act->setCheckable(true);
+    act->setChecked(mpSubtitle->autoLoad());
+    connect(act, SIGNAL(toggled(bool)), SLOT(toggleSubtitleAutoLoad(bool)));
+    subMenu->addAction(tr("Open"), this, SLOT(openSubtitle()));
 
     subMenu = new ClickableMenu(tr("Audio track"));
     mpMenu->addMenu(subMenu);
@@ -1324,6 +1342,24 @@ void MainWindow::handleFullscreenChange()
     // workaround renderer display size for ubuntu
     tryShowControlBar();
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
+}
+
+void MainWindow::toggoleSubtitleEnabled(bool value)
+{
+    mpSubtitle->setEnabled(value);
+}
+
+void MainWindow::toggleSubtitleAutoLoad(bool value)
+{
+    mpSubtitle->setAutoLoad(value);
+}
+
+void MainWindow::openSubtitle()
+{
+    QString file = QFileDialog::getOpenFileName(0, tr("Open a subtitle file"));
+    if (file.isEmpty())
+        return;
+    mpSubtitle->setFile(file);
 }
 
 void MainWindow::workaroundRendererSize()
