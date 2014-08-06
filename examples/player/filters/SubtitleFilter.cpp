@@ -96,12 +96,10 @@ void SubtitleFilter::findAndSetFile(const QString &path)
 {
     QFileInfo fi(path);
     QDir dir(fi.dir());
-    QStringList list = dir.entryList(QStringList() << "*.ass" << "*.ssa", QDir::Files);
-    list.append(dir.entryList(QStringList() << "*.srt", QDir::Files));
     QString name = fi.baseName();
+    QStringList list = dir.entryList(QStringList() << name + "*.ass" << name + "*.ssa", QDir::Files);
+    list.append(dir.entryList(QStringList() << "*.srt", QDir::Files));
     foreach (QString f, list) {
-        if (!f.startsWith(name))
-            continue;
         if (setFile(dir.absoluteFilePath(f)))
             break;
     }
@@ -109,6 +107,7 @@ void SubtitleFilter::findAndSetFile(const QString &path)
 
 void SubtitleFilter::onPlayerStart()
 {
+    setOptions("");
     if (!autoLoad())
         return;
     if (m_player->file() == m_file)
