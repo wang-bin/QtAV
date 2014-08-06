@@ -73,6 +73,10 @@ public:
     bool pull(Frame *f);
 
     bool setup() {
+        if (avframe) {
+            av_frame_free(&avframe);
+            avframe = 0;
+        }
 #if QTAV_HAVE(AVFILTER)
         avfilter_graph_free(&filter_graph);
         filter_graph = avfilter_graph_alloc();
@@ -111,7 +115,6 @@ public:
         inputs->filter_ctx = out_filter_ctx;
         inputs->pad_idx    = 0;
         inputs->next       = NULL;
-
 
         //avfilter_graph_parse, avfilter_graph_parse2?
 #if QTAV_USE_FFMPEG(LIBAVFILTER)
@@ -184,7 +187,7 @@ bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
 {
 #if QTAV_HAVE(AVFILTER)
     VideoFrame *vf = static_cast<VideoFrame*>(frame);
-    if (width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg() || options_changed) {
+    if (!avframe || width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg() || options_changed) {
         width = vf->width();
         height = vf->height();
         pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
@@ -195,7 +198,6 @@ bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
             return false;
         }
     }
-    Q_ASSERT(avframe);
     avframe->pts = pts * 1000000.0; // time_base is 1/1000000
     avframe->width = vf->width();
     avframe->height = vf->height();
