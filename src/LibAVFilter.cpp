@@ -39,19 +39,23 @@ class LibAVFilterPrivate : public FilterPrivate
 {
 public:
     LibAVFilterPrivate()
-        : filter_graph(0)
-        , in_filter_ctx(0)
-        , out_filter_ctx(0)
-        , pixfmt(QTAV_PIX_FMT_C(NONE))
+        : pixfmt(QTAV_PIX_FMT_C(NONE))
         , width(0)
         , height(0)
         , avframe(0)
         , options_changed(false)
     {
+#if QTAV_HAVE(AVFILTER)
+        filter_graph = 0;
+        in_filter_ctx = 0;
+        out_filter_ctx = 0;
         avfilter_register_all();
+#endif //QTAV_HAVE(AVFILTER)
     }
     virtual ~LibAVFilterPrivate() {
+#if QTAV_HAVE(AVFILTER)
         avfilter_graph_free(&filter_graph);
+#endif //QTAV_HAVE(AVFILTER)
         if (avframe) {
             av_frame_free(&avframe);
             avframe = 0;
@@ -69,6 +73,7 @@ public:
     bool pull(Frame *f);
 
     bool setup() {
+#if QTAV_HAVE(AVFILTER)
         avfilter_graph_free(&filter_graph);
         filter_graph = avfilter_graph_alloc();
         //QString sws_flags_str;
@@ -129,12 +134,15 @@ public:
         avfilter_inout_free(&inputs);
         avframe = av_frame_alloc();
         return true;
+#else
+        return false;
+#endif //QTAV_HAVE(AVFILTER)
     }
-
+#if QTAV_HAVE(AVFILTER)
     AVFilterGraph *filter_graph;
     AVFilterContext *in_filter_ctx;
     AVFilterContext *out_filter_ctx;
-
+#endif //QTAV_HAVE(AVFILTER)
     AVPixelFormat pixfmt;
     int width, height;
     AVFrame *avframe;
@@ -174,6 +182,7 @@ void LibAVFilter::process(Statistics *statistics, Frame *frame)
 
 bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
 {
+#if QTAV_HAVE(AVFILTER)
     VideoFrame *vf = static_cast<VideoFrame*>(frame);
     if (width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg() || options_changed) {
         width = vf->width();
@@ -208,8 +217,15 @@ bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
         return false;
     }
     return true;
+#else
+    Q_UNUSED(frame);
+    Q_UNUSED(pts);
+    enabled = false;
+    return false;
+#endif
 }
 
+#if QTAV_HAVE(AVFILTER)
 // local types can not be used as template parameters
 class AVFrameHolder {
 public:
@@ -237,9 +253,11 @@ private:
 #endif
 };
 typedef QSharedPointer<AVFrameHolder> AVFrameHolderRef;
+#endif //QTAV_HAVE(AVFILTER)
 
 bool LibAVFilterPrivate::pull(Frame *f)
 {
+#if QTAV_HAVE(AVFILTER)
     AVFrameHolderRef frame_ref(new AVFrameHolder());
 #if QTAV_HAVE_av_buffersink_get_frame
     int ret = av_buffersink_get_frame(out_filter_ctx, frame_ref->frame());
@@ -259,8 +277,14 @@ bool LibAVFilterPrivate::pull(Frame *f)
     vf.setMetaData("avframe_hoder_ref", QVariant::fromValue(frame_ref));
     *f = vf;
     return true;
+#else
+    Q_UNUSED(f);
+    return false;
+#endif //QTAV_HAVE(AVFILTER)
 }
 
 } //namespace QtAV
 
+#if QTAV_HAVE(AVFILTER)
 Q_DECLARE_METATYPE(QtAV::AVFrameHolderRef)
+#endif

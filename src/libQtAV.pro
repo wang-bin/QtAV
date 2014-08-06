@@ -82,8 +82,6 @@ android: LIBS += -lavcodec-55 -lavformat-55 -lavutil-52 -lswscale-2
 else: LIBS += -lavcodec -lavformat -lavutil -lswscale
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
-    SOURCES += LibAVFilter.cpp
-    HEADERS += QtAV/LibAVFilter.h
     android: LIBS += -lavfilter-4
     else: LIBS += -lavfilter
 }
@@ -229,6 +227,7 @@ SOURCES += \
     Filter.cpp \
     FilterContext.cpp \
     FilterManager.cpp \
+    LibAVFilter.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
@@ -273,6 +272,7 @@ SDK_HEADERS *= \
     QtAV/CommonTypes.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
+    QtAV/LibAVFilter.h \
     QtAV/Frame.h \
     QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
