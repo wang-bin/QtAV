@@ -146,10 +146,13 @@ public:
     //codec. stream < 0: the stream going to play
     AVCodecContext* audioCodecContext(int stream = -1) const;
     AVCodecContext* videoCodecContext(int stream = -1) const;
+    AVCodecContext* subtitleCodecContext(int stream = -1) const;
     QString audioCodecName(int stream = -1) const;
     QString audioCodecLongName(int stream = -1) const;
     QString videoCodecName(int stream = -1) const;
     QString videoCodecLongName(int stream = -1) const;
+    QString subtitleCodecName(int stream = -1) const;
+    QString subtitleCodecLongName(int stream = -1) const;
 
     /**
      * @brief getInterruptTimeout return the interrupt timeout

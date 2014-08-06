@@ -159,6 +159,21 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , mSeekTarget(SeekTarget_AccurateFrame)
     , mpDict(0)
 {
+    class AVInitializer {
+    public:
+        AVInitializer() {
+            qDebug("av_register_all, avcodec_register_all, avformat_network_init");
+            avcodec_register_all();
+            av_register_all();
+            avformat_network_init();
+        }
+        ~AVInitializer() {
+            qDebug("avformat_network_deinit");
+            avformat_network_deinit();
+        }
+    };
+    static AVInitializer sAVInit;
+    Q_UNUSED(sAVInit);
     mpInterrup = new InterruptHandler(this);
     if (!_file_name.isEmpty())
         loadFile(_file_name);
@@ -227,7 +242,7 @@ bool AVDemuxer::readFrame()
         started_ = true;
         emit started();
     }
-    if (stream_idx != videoStream() && stream_idx != audioStream()) {
+    if (stream_idx != videoStream() && stream_idx != audioStream() && stream_idx != subtitleStream()) {
         //qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
         return false;
     }
@@ -449,20 +464,6 @@ bool AVDemuxer::load(QIODevice* device)
 
 bool AVDemuxer::load()
 {
-    class AVInitializer {
-    public:
-        AVInitializer() {
-            qDebug("av_register_all and avformat_network_init");
-            av_register_all();
-            avformat_network_init();
-        }
-        ~AVInitializer() {
-            qDebug("avformat_network_deinit");
-            avformat_network_deinit();
-        }
-    };
-    static AVInitializer sAVInit;
-    Q_UNUSED(sAVInit);
     close();
     qDebug("all closed and reseted");
 
@@ -879,6 +880,18 @@ AVCodecContext* AVDemuxer::videoCodecContext(int stream) const
     return format_context->streams[stream]->codec;
 }
 
+AVCodecContext* AVDemuxer::subtitleCodecContext(int stream) const
+{
+    if (stream < 0)
+        stream = subtitleStream();
+    if (stream < 0) {
+        return 0;
+    }
+    if (stream > (int)format_context->nb_streams)
+        return 0;
+    return format_context->streams[stream]->codec;
+}
+
 /*!
     call avcodec_open2() first!
     check null ptr?
@@ -917,6 +930,22 @@ QString AVDemuxer::videoCodecLongName(int stream) const
     return avctx->codec->long_name;
 }
 
+QString AVDemuxer::subtitleCodecName(int stream) const
+{
+    AVCodecContext *avctx = subtitleCodecContext(stream);
+    if (!avctx)
+        return QString();
+    return avctx->codec->name;
+    //AVCodecContext.codec_name is empty? codec_id is correct
+}
+
+QString AVDemuxer::subtitleCodecLongName(int stream) const
+{
+    AVCodecContext *avctx = subtitleCodecContext(stream);
+    if (!avctx)
+        return QString();
+    return avctx->codec->long_name;
+}
 
 // TODO: use wanted_xx_stream?
 bool AVDemuxer::findStreams()
