@@ -56,7 +56,9 @@ bool SubtitleFilter::setFile(const QString &filePath)
     }
     if (u.isEmpty())
         u = filePath;
-    setOptions("subtitles=" + u);
+    // filter_name=argument. use ' to quote the argument, use \ to escaping chars within quoted text. on windows, path can be C:/a/b/c, ":" must be escaped
+    u.replace(":", "\\:");
+    setOptions("subtitles='" + u + "'");
     qDebug("subtitle loaded: %s", filePath.toUtf8().constData());
     return true;
 }
@@ -100,10 +102,13 @@ void SubtitleFilter::findAndSetFile(const QString &path)
 {
     QFileInfo fi(path);
     QDir dir(fi.dir());
-    QString name = fi.baseName();
+    QString name = fi.completeBaseName(); // video suffix has only 1 dot
     QStringList list = dir.entryList(QStringList() << name + "*.ass" << name + "*.ssa", QDir::Files);
     list.append(dir.entryList(QStringList() << "*.srt", QDir::Files));
     foreach (QString f, list) {
+        // why it happens?
+        if (!f.startsWith(name))
+            continue;
         if (setFile(dir.absoluteFilePath(f)))
             break;
     }
