@@ -34,9 +34,6 @@ FilterContext* FilterContext::create(Type t)
     case QtPainter:
         ctx = new QPainterFilterContext();
         break;
-    case OpenGL:
-        ctx = new GLFilterContext();
-        break;
     default:
         break;
     }
@@ -284,23 +281,6 @@ void QPainterFilterContext::initializeOnFrame(Frame *frame)
     own_painter = true;
     own_paint_device = true; //TODO: what about renderer is not a widget?
     painter->begin((QImage*)paint_device);
-}
-
-FilterContext::Type GLFilterContext::type() const
-{
-    return FilterContext::OpenGL;
-}
-
-bool GLFilterContext::isReady() const
-{
-    return false;
-}
-
-bool GLFilterContext::prepare()
-{
-    if (!isReady())
-        return false;
-    return true;
 }
 
 } //namespace QtAV

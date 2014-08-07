@@ -26,6 +26,15 @@
 #include "QtAV/AVPlayer.h"
 #include "QtAV/private/FilterManager.h"
 
+/*
+ * 1. parent == target (QObject):
+ * in ~target(), remove the filter but not delete it (parent not null now).
+ * in ~QObject, filter is deleted as a child
+ *-----------------------------------------------
+ * 2. parent != target.parent:
+ * if delete filter first, filter must notify FilterManager (uninstall in dtor here) to uninstall to avoid target to access it (in ~target())
+ * if delete target first, target remove the filter but not delete it (parent not null now).
+ */
 namespace QtAV {
 
 void safeReleaseFilter(Filter **ppFilter)
@@ -38,17 +47,24 @@ void safeReleaseFilter(Filter **ppFilter)
     *ppFilter = 0;
 }
 
-Filter::Filter()
-{}
-
-Filter::Filter(FilterPrivate &d)
-    :DPTR_INIT(&d)
+Filter::Filter(QObject *parent)
+    : QObject(parent)
 {
+    if (parent)
+        setOwnedByTarget(false);
+}
 
+Filter::Filter(FilterPrivate &d, QObject *parent)
+    : QObject(parent)
+    , DPTR_INIT(&d)
+{
+    if (parent)
+        setOwnedByTarget(false);
 }
 
 Filter::~Filter()
 {
+    uninstall();
 }
 
 //copy qpainter if context nut null
@@ -94,7 +110,10 @@ void Filter::process(Statistics *statistics, Frame *frame)
 void Filter::setEnabled(bool enabled)
 {
     DPTR_D(Filter);
+    if (d.enabled = enabled)
+        return;
     d.enabled = enabled;
+    emit enableChanged(enabled);
 }
 
 bool Filter::isEnabled() const
@@ -115,6 +134,16 @@ FilterContext* Filter::context()
 FilterContext::Type Filter::contextType() const
 {
     return FilterContext::None;
+}
+
+void Filter::setOwnedByTarget(bool value)
+{
+    d_func().owned_by_target = value;
+}
+
+bool Filter::isOwnedByTarget() const
+{
+    return d_func().owned_by_target;
 }
 
 /*TODO: move to AVOutput.cpp to reduce dependency?*/

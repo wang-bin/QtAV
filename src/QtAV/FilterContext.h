@@ -42,10 +42,10 @@ class Q_AV_EXPORT FilterContext
 public:
     enum Type { ////audio and video...
         QtPainter,
-        OpenGL,
-        Direct2D,
-        GdiPlus,
-        XV,
+        OpenGL, //Not implemented
+        Direct2D, //Not implemeted
+        GdiPlus, //Not implemented
+        XV, //Not implemented
         None //user defined filters, no context can be used
     };
     static FilterContext* create(Type t);
@@ -131,16 +131,6 @@ protected:
 
     QTextDocument *doc;
 };
-
-class Q_AV_EXPORT GLFilterContext : public VideoFilterContext
-{
-public:
-    virtual Type type() const; //OpenGL
-protected:
-    virtual bool isReady() const;
-    virtual bool prepare();
-};
-
 
 } //namespace QtAV
 

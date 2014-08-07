@@ -37,7 +37,14 @@ AVOutputPrivate::~AVOutputPrivate() {
     foreach (Filter *f, pending_uninstall_filters) {
         filters.removeAll(f);
     }
-    qDeleteAll(filters);
+    QList<Filter*>::iterator it = filters.begin();
+    while (it != filters.end()) {
+        // 1 filter has 1 target. so if has output filter in manager, the output is this output
+        /*FilterManager::instance().hasOutputFilter(*it) && */
+        if ((*it)->isOwnedByTarget() && !(*it)->parent())
+            delete *it;
+        ++it;
+    }
     filters.clear();
 }
 

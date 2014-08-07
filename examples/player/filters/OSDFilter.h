@@ -32,13 +32,13 @@ class OSDFilter : public Filter, public OSD
 {
 protected:
     DPTR_DECLARE_PRIVATE(OSDFilter)
-    OSDFilter(OSDFilterPrivate& d);
+    OSDFilter(OSDFilterPrivate& d, QObject *parent = 0);
 };
 
 class OSDFilterQPainter : public OSDFilter
 {
 public:
-    OSDFilterQPainter();
+    OSDFilterQPainter(QObject *parent = 0);
     FilterContext::Type contextType() const {
         return FilterContext::QtPainter;
     }

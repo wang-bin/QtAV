@@ -25,13 +25,15 @@
 #include <QtAV/Filter.h>
 #include <QtCore/QTime>
 #include <QtGui/QMatrix4x4>
+#include <QWidget>
 
 namespace QtAV {
 
 class SimpleFilter : public Filter
 {
+    Q_OBJECT
 public:
-    SimpleFilter();
+    SimpleFilter(QWidget *parent = 0);
     virtual ~SimpleFilter();
     void enableRotate(bool r);
     void enableWaveEffect(bool w);
@@ -43,16 +45,15 @@ public:
 
     void prepare();
 
-    void start();
-    void stop();
 protected:
     virtual void process();
+    virtual void timerEvent(QTimerEvent *);
 private:
     bool mCanRot;
     bool mWave;
+    QTime mTime;
     qreal mStartValue;
     QString mText;
-    QTime mTime;
     QMatrix4x4 mMat;
     QImage mImage;
 };

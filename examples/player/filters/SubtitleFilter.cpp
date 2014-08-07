@@ -5,8 +5,7 @@
 #include <QtCore/QTextStream>
 
 SubtitleFilter::SubtitleFilter(QObject *parent)
-    : QObject(parent)
-    , LibAVFilter()
+    :  LibAVFilter(parent)
     , m_auto(true)
     , m_player(0)
 {
@@ -33,6 +32,10 @@ void SubtitleFilter::setPlayer(AVPlayer *player)
 bool SubtitleFilter::setFile(const QString &filePath)
 {
     setOptions("");
+    if (m_file != filePath) {
+        emit fileChanged(filePath);
+        // DO NOT return here because option is null now
+    }
     m_file = filePath;
     QString u = m_u8_files[filePath];
     if (!u.isEmpty() && !QFile(u).exists())
@@ -89,6 +92,7 @@ void SubtitleFilter::setAutoLoad(bool value)
     if (m_auto == value)
         return;
     m_auto = value;
+    emit autoLoadChanged(value);
     if (!m_player || !m_auto)
         return;
     connect(m_player, SIGNAL(started()), SLOT(onPlayerStart()));

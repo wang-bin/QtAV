@@ -34,12 +34,14 @@ class FilterPrivate : public DPtrPrivate<Filter>
 public:
     FilterPrivate():
         enabled(true)
+      , owned_by_target(false)
       , context(0)
       , statistics(0)
     {}
     virtual ~FilterPrivate() {}
 
     bool enabled;
+    bool owned_by_target;
     FilterContext *context; //used only when is necessary
     Statistics *statistics;
 };

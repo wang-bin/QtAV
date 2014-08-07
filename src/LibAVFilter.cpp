@@ -62,11 +62,12 @@ public:
         }
     }
 
-    void setOptions(const QString& opt) {
+    bool setOptions(const QString& opt) {
         if (options == opt)
-            return;
+            return false;
         options = opt;
         status = LibAVFilter::NotConfigured;
+        return true;
     }
 
     bool push(Frame *frame, qreal pts);
@@ -159,8 +160,8 @@ public:
     LibAVFilter::Status status;
 };
 
-LibAVFilter::LibAVFilter():
-    Filter(*new LibAVFilterPrivate())
+LibAVFilter::LibAVFilter(QObject *parent):
+    Filter(*new LibAVFilterPrivate(), parent)
 {
 }
 
@@ -170,7 +171,10 @@ LibAVFilter::~LibAVFilter()
 
 void LibAVFilter::setOptions(const QString &options)
 {
-    d_func().setOptions(options);
+    if (!d_func().setOptions(options))
+        return;
+    emit optionsChanged();
+    emit statusChanged();
 }
 
 QString LibAVFilter::options() const
@@ -185,7 +189,11 @@ LibAVFilter::Status LibAVFilter::status() const
 
 void LibAVFilter::setStatus(Status value)
 {
-    d_func().status = value;
+    DPTR_D(LibAVFilter);
+    if (d.status == value)
+        return;
+    d.status = value;
+    emit statusChanged();
 }
 
 void LibAVFilter::process(Statistics *statistics, Frame *frame)
@@ -194,7 +202,11 @@ void LibAVFilter::process(Statistics *statistics, Frame *frame)
     if (status() == ConfigureFailed)
         return;
     DPTR_D(LibAVFilter);
-    if (!d.push(frame, statistics->video_only.pts()))
+    Status old = status();
+    bool ok = d.push(frame, statistics->video_only.pts());
+    if (old != status())
+        emit statusChanged();
+    if (!ok)
         return;
     d.pull(frame);
 }

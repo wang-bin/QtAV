@@ -103,8 +103,8 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpOSD(0)
   , mpSubtitle(0)
 {
-    mpSubtitle = new SubtitleFilter();
-    mpOSD = new OSDFilterQPainter();
+    mpSubtitle = new SubtitleFilter(this);
+    mpOSD = new OSDFilterQPainter(this);
     mpChannelAction = 0;
     mpChannelMenu = 0;
     mpAudioTrackAction = 0;

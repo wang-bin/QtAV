@@ -374,6 +374,15 @@ bool AVPlayer::uninstallFilter(Filter *filter)
         qWarning("unregister filter %p failed", filter);
         //return false;
     }
+    AVThread *avthread = video_thread;
+    if (!avthread || !avthread->filters().contains(filter)) {
+        avthread = audio_thread;
+    }
+    if (!avthread || !avthread->filters().contains(filter)) {
+        return false;
+    }
+    avthread->uninstallFilter(filter, true);
+    return true;
     /*
      * TODO: send FilterUninstallTask(this, filter){this.mFilters.remove} to
      * active player's AVThread
@@ -398,13 +407,6 @@ bool AVPlayer::uninstallFilter(Filter *filter)
         AVThread *mpThread;
         Filter *mpFilter;
     };
-    AVThread *avthread = video_thread;
-    if (!avthread || !avthread->filters().contains(filter)) {
-        avthread = audio_thread;
-    }
-    if (!avthread || !avthread->filters().contains(filter)) {
-        return false;
-    }
     avthread->scheduleTask(new UninstallFilterTask(avthread, filter));
     return true;
 }

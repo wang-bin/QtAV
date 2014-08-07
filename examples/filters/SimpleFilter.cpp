@@ -25,13 +25,15 @@
 
 namespace QtAV {
 
-SimpleFilter::SimpleFilter():
-    Filter()
+SimpleFilter::SimpleFilter(QWidget *parent):
+    Filter(parent)
   , mCanRot(true)
   , mWave(true)
 {
     srand(QTime::currentTime().msec());
     mStartValue = (qreal)(rand()%1000)/qreal(1000.0);
+    mTime.start();
+    startTimer(100);
 }
 
 SimpleFilter::~SimpleFilter()
@@ -82,9 +84,10 @@ void SimpleFilter::prepare()
     }
 }
 
-void SimpleFilter::start()
+void SimpleFilter::timerEvent(QTimerEvent *)
 {
-    mTime.restart();
+    if (parent())
+        ((QWidget*)parent())->update();
 }
 
 void SimpleFilter::process()

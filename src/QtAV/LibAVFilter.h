@@ -30,7 +30,10 @@ namespace QtAV {
 class LibAVFilterPrivate;
 class Q_AV_EXPORT LibAVFilter : public Filter
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(LibAVFilter)
+    Q_PROPERTY(Status status READ status WRITE setStatus NOTIFY statusChanged)
+    Q_PROPERTY(QString options READ options WRITE setOptions NOTIFY optionsChanged)
 public:
     /*!
      * \brief The Status enum
@@ -45,9 +48,8 @@ public:
         ConfigreOk
     };
 
-    LibAVFilter();
+    LibAVFilter(QObject *parent = 0);
     virtual ~LibAVFilter();
-
     /*!
      * */
     /*!
@@ -60,6 +62,10 @@ public:
 
     Status status() const;
     void setStatus(Status value);
+
+signals:
+    void statusChanged();
+    void optionsChanged();
 protected:
     virtual void process(Statistics *statistics, Frame *frame);
 };

@@ -29,13 +29,13 @@ class OSDFilterPrivate : public FilterPrivate
 public:
 };
 
-OSDFilter::OSDFilter(OSDFilterPrivate &d):
-    Filter(d)
+OSDFilter::OSDFilter(OSDFilterPrivate &d, QObject *parent):
+    Filter(d, parent)
 {
 }
 
-OSDFilterQPainter::OSDFilterQPainter():
-    OSDFilter(*new OSDFilterPrivate())
+OSDFilterQPainter::OSDFilterQPainter(QObject *parent):
+    OSDFilter(*new OSDFilterPrivate(), parent)
 {
 }
 

@@ -6,9 +6,11 @@
 #include <QtAV/LibAVFilter.h>
 #include <QtAV/AVPlayer.h>
 using namespace QtAV;
-class SubtitleFilter : public QObject, public LibAVFilter
+class SubtitleFilter : public LibAVFilter
 {
     Q_OBJECT
+    Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
+    Q_PROPERTY(QString file READ file WRITE setFile NOTIFY fileChanged)
 public:
     explicit SubtitleFilter(QObject *parent = 0);
     void setPlayer(AVPlayer* player);
@@ -17,6 +19,9 @@ public:
     QString file() const;
     bool autoLoad() const;
 
+signals:
+    void fileChanged(const QString& path);
+    void autoLoadChanged(bool value);
 public slots:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);

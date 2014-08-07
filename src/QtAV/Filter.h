@@ -22,6 +22,7 @@
 #ifndef QTAV_FILTER_H
 #define QTAV_FILTER_H
 
+#include <QtCore/QObject>
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/FilterContext.h>
 /*
@@ -57,34 +58,41 @@ class FilterPrivate;
 class Statistics;
 class Frame;
 // TODO: QObject?
-class Q_AV_EXPORT Filter
+class Q_AV_EXPORT Filter : public QObject
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(Filter)
+    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enableChanged)
 public:
-    Filter();
+    Filter(QObject* parent = 0);
     virtual ~Filter();
     //isEnabled() then setContext
     //TODO: parameter FrameContext
-    void setEnabled(bool enabled); //AVComponent.enabled
+    void setEnabled(bool enabled = true); //AVComponent.enabled
     bool isEnabled() const;
 
     FilterContext* context();
     virtual FilterContext::Type contextType() const;
-
+    /*!
+     * \brief setOwnedByTarget
+     * If a filter is owned by target, it's not safe to access the filter after it's installed to a target.
+     * QtAV will delete the filter internally if filter is owned by target AND it's parent (QObject) is null.
+     * \param value
+     */
+    void setOwnedByTarget(bool value = true);
+    // default is false
+    bool isOwnedByTarget() const;
     /*
      * filter.installTo(target,...) calls target.installFilter(filter)
      * If filter is already registered in FilterManager, then return false
      * Otherwise, call FilterManager.register(filter) and target.filters.push_back(filter), return true
-     * NOTE: the installed filter will be deleted by the target!
+     * NOTE: the installed filter will be deleted by the target if filter is owned by target AND it's parent (QObject) is null.
      */
     // filter on output. e.g. subtitle
     bool installTo(AVOutput *output);
     bool installToAudioThread(AVPlayer *player);
     bool installToVideoThread(AVPlayer *player);
-
-    /*
-     *
-     */
+    // called in destructor automatically
     bool uninstall();
     /*!
      * check context and apply the filter
@@ -92,11 +100,13 @@ public:
      */
     void process(FilterContext *&context, Statistics* statistics, Frame* frame = 0);
 
+signals:
+    void enableChanged(bool);
 protected:
     /*
      * If the filter is in AVThread, it's safe to operate on ref.
      */
-    Filter(FilterPrivate& d);
+    Filter(FilterPrivate& d, QObject *parent = 0);
     virtual void process();
     virtual void process(Statistics* statistics, Frame* frame);
 

@@ -41,7 +41,12 @@ AVThreadPrivate::~AVThreadPrivate() {
     packets.clear();
     //not neccesary context is managed by filters.
     filter_context = 0;
-    qDeleteAll(filters); //TODO: is it safe?
+    QList<Filter*>::iterator it = filters.begin();
+    while (it != filters.end()) {
+        if ((*it)->isOwnedByTarget() && !(*it)->parent())
+            delete *it;
+        ++it;
+    }
     filters.clear();
 }
 
