@@ -33,8 +33,10 @@ void SubtitleFilter::setPlayer(AVPlayer *player)
 bool SubtitleFilter::setFile(const QString &filePath)
 {
     m_file = filePath;
-    QString u = filePath;
-    if (!m_u8_files.contains(filePath)) {
+    QString u = m_u8_files[filePath];
+    if (!u.isEmpty() && !QFile(u).exists())
+        u = QString();
+    if (u.isEmpty()) {
         QFile f(filePath);
         if (!f.open(QIODevice::ReadOnly)) {
             qWarning("open '%s' error: %s", filePath.toUtf8().constData(), f.errorString().toUtf8().constData());
@@ -52,6 +54,8 @@ bool SubtitleFilter::setFile(const QString &filePath)
             qWarning("open cache file '%s' error, originanl subtitle file will be used", filePath.toUtf8().constData());
         }
     }
+    if (u.isEmpty())
+        u = filePath;
     setOptions("subtitles=" + u);
     qDebug("subtitle loaded: %s", filePath.toUtf8().constData());
     return true;
