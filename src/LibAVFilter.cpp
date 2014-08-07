@@ -43,7 +43,7 @@ public:
         , width(0)
         , height(0)
         , avframe(0)
-        , options_changed(false)
+        , status(LibAVFilter::NotConfigured)
     {
 #if QTAV_HAVE(AVFILTER)
         filter_graph = 0;
@@ -62,11 +62,11 @@ public:
         }
     }
 
-    bool setOptions(const QString& opt) {
-        options_changed = options != opt;
-        if (options_changed)
-            options = opt;
-        return true;
+    void setOptions(const QString& opt) {
+        if (options == opt)
+            return;
+        options = opt;
+        status = LibAVFilter::NotConfigured;
     }
 
     bool push(Frame *frame, qreal pts);
@@ -93,6 +93,7 @@ public:
                                                filter_graph);
         if (ret < 0) {
             qWarning("Can not create buffer source: %s", av_err2str(ret));
+            status = LibAVFilter::ConfigureFailed;
             return false;
         }
         /* buffer video sink: to terminate the filter chain. */
@@ -101,6 +102,7 @@ public:
         if ((ret = avfilter_graph_create_filter(&out_filter_ctx, buffersink, "out",
                                            NULL, NULL, filter_graph)) < 0) {
             qWarning("Can not create buffer sink: %s", av_err2str(ret));
+            status = LibAVFilter::ConfigureFailed;
             return false;
         }
         /* Endpoints for the filter graph. */
@@ -125,17 +127,20 @@ public:
             qWarning("avfilter_graph_parse_ptr fail: %s", av_err2str(ret));
             avfilter_inout_free(&outputs);
             avfilter_inout_free(&inputs);
+            status = LibAVFilter::ConfigureFailed;
             return false;
         }
         if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
             qWarning("avfilter_graph_config fail: %s", av_err2str(ret));
             avfilter_inout_free(&outputs);
             avfilter_inout_free(&inputs);
+            status = LibAVFilter::ConfigureFailed;
             return false;
         }
         avfilter_inout_free(&outputs);
         avfilter_inout_free(&inputs);
         avframe = av_frame_alloc();
+        status = LibAVFilter::ConfigreOk;
         return true;
 #else
         return false;
@@ -151,7 +156,7 @@ public:
     AVFrame *avframe;
 
     QString options;
-    bool options_changed;
+    LibAVFilter::Status status;
 };
 
 LibAVFilter::LibAVFilter():
@@ -163,9 +168,9 @@ LibAVFilter::~LibAVFilter()
 {
 }
 
-bool LibAVFilter::setOptions(const QString &options)
+void LibAVFilter::setOptions(const QString &options)
 {
-    return d_func().setOptions(options);
+    d_func().setOptions(options);
 }
 
 QString LibAVFilter::options() const
@@ -173,9 +178,21 @@ QString LibAVFilter::options() const
     return d_func().options;
 }
 
+LibAVFilter::Status LibAVFilter::status() const
+{
+    return d_func().status;
+}
+
+void LibAVFilter::setStatus(Status value)
+{
+    d_func().status = value;
+}
+
 void LibAVFilter::process(Statistics *statistics, Frame *frame)
 {
     Q_UNUSED(statistics);
+    if (status() == ConfigureFailed)
+        return;
     DPTR_D(LibAVFilter);
     if (!d.push(frame, statistics->video_only.pts()))
         return;
@@ -187,14 +204,13 @@ bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
 {
 #if QTAV_HAVE(AVFILTER)
     VideoFrame *vf = static_cast<VideoFrame*>(frame);
-    if (!avframe || width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg() || options_changed) {
+    if (status == LibAVFilter::NotConfigured || !avframe || width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg()) {
         width = vf->width();
         height = vf->height();
         pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
-        options_changed = false;
         if (!setup()) {
             qWarning("setup filter graph error");
-            enabled = false; // skip this filter and avoid crash
+            //enabled = false; // skip this filter and avoid crash
             return false;
         }
     }

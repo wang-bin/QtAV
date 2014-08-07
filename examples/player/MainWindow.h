@@ -187,7 +187,6 @@ private:
     StatisticsView *mpStatisticsView;
 
     OSDFilter *mpOSD;
-    bool subtitle_enabled;
     SubtitleFilter *mpSubtitle;
 };
 

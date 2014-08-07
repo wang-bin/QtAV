@@ -24,6 +24,7 @@
 
 #include <QtAV/Filter.h>
 
+// It works only if build against libavfilter. Currently not does not support libav's libavfilter.
 namespace QtAV {
 
 class LibAVFilterPrivate;
@@ -31,13 +32,34 @@ class Q_AV_EXPORT LibAVFilter : public Filter
 {
     DPTR_DECLARE_PRIVATE(LibAVFilter)
 public:
+    /*!
+     * \brief The Status enum
+     * Status of filter graph.
+     * If setOptions() is called, the status is NotConfigured, and will to configure when processing
+     * a new frame.
+     * Filter graph will be reconfigured if options, incoming video frame format or size changed
+     */
+    enum Status {
+        NotConfigured,
+        ConfigureFailed,
+        ConfigreOk
+    };
+
     LibAVFilter();
     virtual ~LibAVFilter();
 
-    //store last options. disable then config graph, then enable or restore last options
-    bool setOptions(const QString& options);
+    /*!
+     * */
+    /*!
+     * \brief setOptions
+     * Set new option. Filter graph will be setup if receives a frame if options changed.
+     * \param options option string for libavfilter. libav and ffmpeg are different
+     */
+    void setOptions(const QString& options);
     QString options() const;
 
+    Status status() const;
+    void setStatus(Status value);
 protected:
     virtual void process(Statistics *statistics, Frame *frame);
 };

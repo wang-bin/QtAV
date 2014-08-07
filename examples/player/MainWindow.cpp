@@ -101,7 +101,6 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpAVFilter(0)
   , mpStatisticsView(0)
   , mpOSD(0)
-  , subtitle_enabled(true)
   , mpSubtitle(0)
 {
     mpSubtitle = new SubtitleFilter();
@@ -753,7 +752,6 @@ void MainWindow::onPaused(bool p)
 
 void MainWindow::onStartPlay()
 {
-    mpSubtitle->setEnabled(subtitle_enabled);
     mpRenderer->setRegionOfInterest(QRectF());
     mFile = mpPlayer->file(); //open from EventFilter's menu
     setWindowTitle(mTitle);
@@ -1348,7 +1346,6 @@ void MainWindow::handleFullscreenChange()
 
 void MainWindow::toggoleSubtitleEnabled(bool value)
 {
-    subtitle_enabled = value;
     mpSubtitle->setEnabled(value);
 }
 

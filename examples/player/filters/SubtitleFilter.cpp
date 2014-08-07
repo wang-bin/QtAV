@@ -32,6 +32,7 @@ void SubtitleFilter::setPlayer(AVPlayer *player)
 
 bool SubtitleFilter::setFile(const QString &filePath)
 {
+    setOptions("");
     m_file = filePath;
     QString u = m_u8_files[filePath];
     if (!u.isEmpty() && !QFile(u).exists())
@@ -118,8 +119,6 @@ void SubtitleFilter::onPlayerStart()
 {
     setOptions("");
     if (!autoLoad())
-        return;
-    if (m_player->file() == m_file)
         return;
     findAndSetFile(m_player->file());
 }
