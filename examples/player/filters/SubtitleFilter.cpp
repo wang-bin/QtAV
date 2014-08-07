@@ -9,6 +9,7 @@ SubtitleFilter::SubtitleFilter(QObject *parent)
     , m_auto(true)
     , m_player(0)
 {
+    connect(this, SIGNAL(statusChanged()), SLOT(onStatusChanged()));
 }
 
 void SubtitleFilter::setPlayer(AVPlayer *player)
@@ -125,4 +126,15 @@ void SubtitleFilter::onPlayerStart()
     if (!autoLoad())
         return;
     findAndSetFile(m_player->file());
+}
+
+void SubtitleFilter::onStatusChanged()
+{
+    if (status() == ConfigreOk) {
+        emit loaded();
+    } else if (status() == ConfigureFailed) {
+        if (options().isEmpty())
+            return;
+        emit loadError();
+    }
 }

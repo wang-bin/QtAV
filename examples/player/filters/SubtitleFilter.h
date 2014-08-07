@@ -20,6 +20,8 @@ public:
     bool autoLoad() const;
 
 signals:
+    void loaded();
+    void loadError();
     void fileChanged(const QString& path);
     void autoLoadChanged(bool value);
 public slots:
@@ -27,7 +29,8 @@ public slots:
     void setAutoLoad(bool value);
     void findAndSetFile(const QString& path);
     void onPlayerStart();
-
+private slots:
+    void onStatusChanged();
 private:
     bool m_auto;
     AVPlayer *m_player;
