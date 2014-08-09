@@ -204,7 +204,7 @@ protected:
     virtual int getOffset();      // OffsetIndex
     virtual int getOffsetByBytes(); // OffsetBytes
     // \return false by default
-    virtual bool onSetFeatures(Feature value);
+    virtual bool onSetFeatures(Feature value, bool set = true);
     // reset internal status. MUST call this at the begining of open()
     void resetStatus();
 

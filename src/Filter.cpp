@@ -110,7 +110,7 @@ void Filter::process(Statistics *statistics, Frame *frame)
 void Filter::setEnabled(bool enabled)
 {
     DPTR_D(Filter);
-    if (d.enabled = enabled)
+    if (d.enabled == enabled)
         return;
     d.enabled = enabled;
     emit enableChanged(enabled);

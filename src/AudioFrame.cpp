@@ -56,6 +56,7 @@ public:
         // TODO: setBytesPerLine(), setBits() compute here or from resampler?
         line_sizes.resize(format.planeCount());
         planes.resize(format.planeCount());
+        return true;
     }
 
     AudioFormat format;

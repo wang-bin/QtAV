@@ -220,11 +220,17 @@ AudioOutput::Feature AudioOutput::features() const
 
 void AudioOutput::setFeature(Feature value, bool on)
 {
-    if (!onSetFeatures(value))
+    if (!onSetFeatures(value, on))
         return;
-    if (hasFeatures(value))
-        return;
-    d_func().features |= on;
+    if (on) {
+        if (hasFeatures(value))
+            return;
+        d_func().features |= value;
+    } else {
+        if (!hasFeatures(value))
+            return;
+        d_func().features &= ~value;
+    }
     emit featuresChanged();
 }
 
@@ -233,9 +239,10 @@ bool AudioOutput::hasFeatures(Feature value) const
     return ((Feature)d_func().features & value) == value;
 }
 
-bool AudioOutput::onSetFeatures(Feature value)
+bool AudioOutput::onSetFeatures(Feature value, bool set)
 {
     Q_UNUSED(value);
+    Q_UNUSED(set);
     return false;
 }
 
