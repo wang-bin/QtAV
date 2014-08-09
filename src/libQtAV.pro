@@ -1,4 +1,5 @@
 TEMPLATE = lib
+MODULE_INCNAME = QtAV # for mac framework. also used in install_sdk.pro
 TARGET = QtAV
 QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4) {
@@ -30,7 +31,7 @@ win32 {
     QMAKE_EXTRA_TARGETS += rc
 }
 # copy runtime libs to qt sdk
-!ios: copy_sdk_libs = $$DESTDIR/$$qtSharedLib($$NAME)
+!mac_framework: copy_sdk_libs = $$DESTDIR/$$qtSharedLib($$NAME)
 #plugin.depends = #makefile target
 #windows: copy /y file1+file2+... dir. need '+'
 for(f, copy_sdk_libs) {
@@ -259,6 +260,7 @@ SOURCES += \
 SDK_HEADERS *= \
     QtAV/QtAV.h \
     QtAV/dptr.h \
+    QtAV/prepost.h \
     QtAV/QtAV_Global.h \
     QtAV/AudioResampler.h \
     QtAV/AudioResamplerTypes.h \
@@ -299,20 +301,7 @@ SDK_HEADERS *= \
     QtAV/SurfaceInterop.h \
     QtAV/version.h
 
-# QtAV/private/* may be used by developers to extend QtAV features without changing QtAV library
-# headers not in QtAV/ and it's subdirs are used only by QtAV internally
-HEADERS *= \
-    $$SDK_HEADERS \
-    utils/BlockingQueue.h \
-    utils/GPUMemCopy.h \
-    utils/OpenGLHelper.h \
-    QtAV/prepost.h \
-    QtAV/AVDemuxThread.h \
-    QtAV/AVThread.h \
-    QtAV/AudioThread.h \
-    QtAV/VideoThread.h \
-    QtAV/ColorTransform.h \
-    QtAV/VideoDecoderFFmpegHW.h \
+SDK_PRIVATE_HEADERS *= \
     QtAV/private/factory.h \
     QtAV/private/singleton.h \
     QtAV/private/AVCompat.h \
@@ -334,6 +323,46 @@ HEADERS *= \
     QtAV/private/VideoOutputEventFilter.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h
+
+# QtAV/private/* may be used by developers to extend QtAV features without changing QtAV library
+# headers not in QtAV/ and it's subdirs are used only by QtAV internally
+HEADERS *= \
+    $$SDK_HEADERS \
+    $$SDK_PRIVATE_HEADERS \
+    utils/BlockingQueue.h \
+    utils/GPUMemCopy.h \
+    utils/OpenGLHelper.h \
+    QtAV/AVDemuxThread.h \
+    QtAV/AVThread.h \
+    QtAV/AudioThread.h \
+    QtAV/VideoThread.h \
+    QtAV/ColorTransform.h \
+    QtAV/VideoDecoderFFmpegHW.h
+
+
+# from mkspecs/features/qt_module.prf
+# OS X and iOS frameworks
+mac_framework { # from common.pri
+   #QMAKE_FRAMEWORK_VERSION = 4.0
+   CONFIG += lib_bundle sliced_bundle qt_framework
+   CONFIG -= qt_install_headers #no need to install these as well
+   !debug_and_release|!build_all|CONFIG(release, debug|release) {
+        FRAMEWORK_HEADERS.version = Versions
+        FRAMEWORK_HEADERS.files = $$SDK_HEADERS
+        FRAMEWORK_HEADERS.path = Headers
+        FRAMEWORK_PRIVATE_HEADERS.files = $$SDK_PRIVATE_HEADERS
+        FRAMEWORK_PRIVATE_HEADERS.path = Headers/$$VERSION/$$MODULE_INCNAME/private
+        QMAKE_BUNDLE_DATA += FRAMEWORK_HEADERS FRAMEWORK_PRIVATE_HEADERS
+   }
+}
+
+mac {
+   CONFIG += explicitlib
+   macx-g++ {
+       QMAKE_CFLAGS += -fconstant-cfstrings
+       QMAKE_CXXFLAGS += -fconstant-cfstrings
+   }
+}
 
 SDK_INCLUDE_FOLDER = QtAV
 include($$PROJECTROOT/deploy.pri)

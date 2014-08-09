@@ -19,6 +19,8 @@
 
 isEmpty(COMMON_PRI_INCLUDED): { #begin COMMON_PRI_INCLUDED
 
+mac:contains(QT_CONFIG, qt_framework):!mac_dylib: CONFIG += mac_framework
+
 CONFIG += profile
 #profiling, -pg is not supported for msvc
 debug:!*msvc*:profile {

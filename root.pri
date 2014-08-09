@@ -97,6 +97,14 @@ cache(BUILD_DIR, set, BUILD_DIR)
 cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
+# no-framework can be defined in user.conf. default is the same as QT_CONFIG
+  MAC_LIB = mac_dylib
+no-framework {
+  cache(CONFIG, add, MAC_LIB)
+} else {
+  cache(CONFIG, sub, MAC_LIB)
+}
+
 defineTest(runConfigTests) {
   no_config_tests:return(false)
 #config.tests

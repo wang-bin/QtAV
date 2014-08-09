@@ -19,6 +19,7 @@ win32 {
   MOVE = move /y
   COPY = copy /y
   COPY_DIR = xcopy /s /q /y /i
+  MKDIR = mkdir
   RM_DIR = rd /s /q
   *g++* {
     LIBSUFFIX = a
@@ -30,6 +31,7 @@ win32 {
   MOVE = mv
   COPY = cp -f
   COPY_DIR = $$COPY -R
+  MKDIR = mkdir -p
   RM_DIR = rm -rf
   macx: LIBSUFFIX = dylib
   else: LIBSUFFIX = so
@@ -44,9 +46,14 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   MKSPECS_DIR=$$[QMAKE_MKSPECS]
 }
 
-sdk_install.commands = $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]))
-sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
-sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV) $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
+mac_framework {
+  sdk_install.commands = $$quote($$COPY_DIR $$system_path($$PROJECT_LIBDIR/QtAV.framework) $$system_path($$[QT_INSTALL_LIBS]))
+} else {
+  sdk_install.commands = $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
+  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/src/QtAV/*.h) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
+  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]))
+  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
+}
 sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV) $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
 greaterThan(QT_MAJOR_VERSION, 4) {
   sdk_install.commands += $$quote($$COPY_DIR $$system_path($$BUILD_DIR/bin/QtAV) $$system_path($$[QT_INSTALL_QML]/QtAV))
@@ -60,7 +67,11 @@ win32: sdk_install.commands += $$quote($$MOVE $$system_path($$[QT_INSTALL_LIBS]/
 ## copy libcommon.so requred by QMLPlayer and player
 android: sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/libcommon.so) $$system_path($$[QT_INSTALL_LIBS]))
 
-sdk_uninstall.commands = $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/*QtAV*))
+mac_framework {
+  sdk_uninstall.commands = $$quote($$RM_DIR $$system_path($$[QT_INSTALL_LIBS]/QtAV.framework))
+} else {
+  sdk_uninstall.commands = $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/*QtAV*))
+}
 sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
 sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
 sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
@@ -90,9 +101,12 @@ AV_PRF_CONT += "!contains(QT, av): QT *= av"
 write_file($$OUT_PWD/mkspecs/features/av.prf, AV_PRF_CONT)
 
 
-VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
+VERSION = 1.3.4
+# windows: Qt5AV.dll, not Qt1AV.dll
+win32: VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 MODULE_QMAKE_OUTDIR = $$OUT_PWD
 MODULE_CONFIG = av
+MODULE_INCNAME = QtAV
 
 ## the following is from mkspecs/features/qt_module_pris.prf
 mod_work_pfx = $$MODULE_QMAKE_OUTDIR/mkspecs/modules
@@ -114,6 +128,7 @@ else: \
     pris_to_load = $$mods_to_load
 MODULE_PRI = $$mod_inst_pfx/qt_lib_$${MODULE_ID}.pri
 MODULE_FWD_PRI = $$mod_work_pfx/qt_lib_$${MODULE_ID}.pri
+
 
 !build_pass {
 
@@ -253,14 +268,14 @@ MODULE_FWD_PRI = $$mod_work_pfx/qt_lib_$${MODULE_ID}.pri
         include($$mod_work_pfx/qt_lib_$${pri}.pri)
     for(mod, mods_to_load) {
         for(var, $$list(VERSION MAJOR_VERSION MINOR_VERSION PATCH_VERSION \
-                        name depends module_config CONFIG DEFINES sources \
+                        name depends run_depends plugin_types module_config CONFIG DEFINES \
                         includes bins libs libexecs plugins imports qml \
-                        rpath_link \
                 )):defined(QT.$${mod}.$$var, var):cache(QT.$${mod}.$$var, transient)
     }
     cache(QT_MODULES, transient)
 
 } # !build_pass
+
 
 # Schedule the regular .pri file for installation
 CONFIG += qt_install_module
