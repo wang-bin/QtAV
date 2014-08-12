@@ -34,6 +34,7 @@ uniform sampler2D u_Texture0;
 uniform sampler2D u_Texture1;
 uniform sampler2D u_Texture2;
 varying lowp vec2 v_TexCoords;
+uniform float u_opacity;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
 
@@ -93,5 +94,5 @@ void main()
                              texture2D(u_Texture2, v_TexCoords).a,
 #endif //LA_16BITS
                              1)
-                         , 0.0, 1.0);
+                         , 0.0, 1.0) * u_opacity;
 }

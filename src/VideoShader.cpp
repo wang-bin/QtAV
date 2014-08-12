@@ -152,6 +152,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     // fragment shader
     d.u_colorMatrix = shaderProgram->uniformLocation("u_colorMatrix");
     d.u_bpp = shaderProgram->uniformLocation("u_bpp");
+    d.u_opacity = shaderProgram->uniformLocation("u_opacity");
     d.u_Texture.resize(textureLocationCount());
     for (int i = 0; i < d.u_Texture.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
@@ -161,6 +162,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d", d.u_MVP_matrix);
     qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d", d.u_colorMatrix);
     qDebug("glGetUniformLocation(\"u_bpp\") = %d", d.u_bpp);
+    qDebug("glGetUniformLocation(\"u_opacity\") = %d", d.u_opacity);
 }
 
 int VideoShader::textureLocationCount() const
@@ -192,6 +194,11 @@ int VideoShader::colorMatrixLocation() const
 int VideoShader::bppLocation() const
 {
     return d_func().u_bpp;
+}
+
+int VideoShader::opacityLocation() const
+{
+    return d_func().u_opacity;
 }
 
 VideoFormat VideoShader::videoFormat() const

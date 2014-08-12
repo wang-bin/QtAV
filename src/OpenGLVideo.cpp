@@ -155,6 +155,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     Q_ASSERT(d.manager);
     VideoShader *shader = d.manager->prepareMaterial(d.material);
     shader->update(d.material);
+    shader->program()->setUniformValue(shader->opacityLocation(), (GLfloat)1.0);
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
     // uniform end. attribute begin
     if (target.isValid())

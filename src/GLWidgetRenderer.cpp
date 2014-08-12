@@ -61,7 +61,7 @@ const GLfloat kVertices[] = {
     -1, -1,
 };
 
-static inline void checkGlError(const char* op = 0) {
+static void checkGlError(const char* op = 0) {
     GLenum error = glGetError();
     if (error == GL_NO_ERROR)
         return;

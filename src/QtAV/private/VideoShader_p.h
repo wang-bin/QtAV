@@ -48,6 +48,7 @@ public:
         , u_MVP_matrix(-1)
         , u_colorMatrix(-1)
         , u_bpp(-1)
+        , u_opacity(-1)
     {}
     virtual ~VideoShaderPrivate() {
         if (owns_program && program) {
@@ -66,6 +67,7 @@ public:
     int u_MVP_matrix;
     int u_colorMatrix;
     int u_bpp;
+    int u_opacity;
     QVector<int> u_Texture;
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;

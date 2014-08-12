@@ -55,7 +55,7 @@ protected:
     int textureLocation(int index) const { return m_shader->textureLocation(index);}
     int matrixLocation() const { return m_shader->matrixLocation();}
     int colorMatrixLocation() const { return m_shader->colorMatrixLocation();}
-
+    int opacityLocation() const { return m_shader->opacityLocation();}
 private:
     VideoShader *m_shader;
 };
@@ -63,7 +63,7 @@ private:
 class SGVideoMaterial : public QSGMaterial
 {
 public:
-    SGVideoMaterial() {}
+    SGVideoMaterial() : m_opacity(1.0) {}
     ~SGVideoMaterial() {}
 
     virtual QSGMaterialType *type() const {
@@ -92,7 +92,7 @@ public:
 
     VideoMaterial* videoMaterial() { return &m_material;}
 
-    //qreal m_opacity;
+    qreal m_opacity;
     QMutex m_frameMutex;
     VideoMaterial m_material;
 };
@@ -102,12 +102,10 @@ void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *n
     Q_UNUSED(oldMaterial);
     SGVideoMaterial *mat = static_cast<SGVideoMaterial *>(newMaterial);
     m_shader->update(&mat->m_material);
-#if 0
     if (state.isOpacityDirty()) {
         mat->m_opacity = state.opacity();
-        program()->setUniformValue(m_id_opacity, GLfloat(mat->m_opacity));
+        program()->setUniformValue(opacityLocation(), GLfloat(mat->m_opacity));
     }
-#endif
     if (state.isMatrixDirty())
         program()->setUniformValue(matrixLocation(), state.combinedMatrix());
 }
