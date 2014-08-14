@@ -190,7 +190,8 @@ config_dxva {
 }
 config_vaapi* {
     DEFINES *= QTAV_HAVE_VAAPI=1
-    SOURCES += VideoDecoderVAAPI.cpp
+    SOURCES += VideoDecoderVAAPI.cpp  vaapi/vaapi_helper.cpp vaapi/SurfaceInteropVAAPI.cpp
+    HEADERS += vaapi/vaapi_helper.h  vaapi/SurfaceInteropVAAPI.h
     LIBS += -lva #dynamic load va-glx va-x11 using dllapi
 }
 config_libcedarv {
@@ -256,6 +257,7 @@ SOURCES += \
     VideoDecoderFFmpegHW.cpp \
     VideoThread.cpp \
     CommonTypes.cpp
+
 
 SDK_HEADERS *= \
     QtAV/QtAV.h \
@@ -332,6 +334,7 @@ HEADERS *= \
     utils/BlockingQueue.h \
     utils/GPUMemCopy.h \
     utils/OpenGLHelper.h \
+    utils/SharedPtr.h \
     QtAV/AVDemuxThread.h \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \

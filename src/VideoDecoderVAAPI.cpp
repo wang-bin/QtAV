@@ -21,45 +21,26 @@
 
 #include "QtAV/VideoDecoderFFmpegHW.h"
 #include "QtAV/private/VideoDecoderFFmpegHW_p.h"
-
-#include <assert.h>
 #include <algorithm>
-#include <QtCore/QLibrary>
-#include <QtCore/QMap>
+#include <list>
+#include <QtCore/QList>
+#include <QtCore/QMetaEnum>
+#include <QtCore/QSharedPointer>
 #include <QtCore/QStringList>
+extern "C" {
+#include <libavcodec/vaapi.h>
+}
+#include <fcntl.h> //open()
+#include <unistd.h> //close()
 #include "QtAV/Packet.h"
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
 #include "utils/GPUMemCopy.h"
 #include "QtAV/prepost.h"
-#include <va/va.h>
-#include <libavcodec/vaapi.h>
+#include "vaapi/vaapi_helper.h"
+#include "vaapi/SurfaceInteropVAAPI.h"
 
-//TODO: use dllapi
-//TODO: check glx or gles used by Qt. then use va-gl or va-egl
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <qopengl.h>
-#else
-#include <qgl.h>
-#endif
-#include <fcntl.h> //open()
-#include <unistd.h> //close()
-//#include <va/va_drm.h>
-#if QTAV_HAVE(VAAPI_X11)
-//#include <X11/Xlib.h>
-//#include <va/va_x11.h>
-#endif
-#if QTAV_HAVE(VAAPI_GLX)
-//#include <va/va_glx.h>
-//#include <GL/gl.h>
-#endif
-
-#ifndef VA_SURFACE_ATTRIB_SETTABLE
-#define vaCreateSurfaces(d, f, w, h, s, ns, a, na) \
-    vaCreateSurfaces(d, w, h, f, ns, s)
-#endif
-
-// TODO: add to QtAV_Compat.h?
+// TODO: add to AVCompat.h?
 // FF_API_PIX_FMT
 #ifdef PixelFormat
 #undef PixelFormat
@@ -71,6 +52,7 @@
 //ffmpeg_vaapi patch: http://lists.libav.org/pipermail/libav-devel/2013-November/053515.html
 
 namespace QtAV {
+using namespace vaapi;
 
 class VideoDecoderVAAPIPrivate;
 class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
@@ -80,7 +62,7 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
     Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
     Q_PROPERTY(bool derive READ derive WRITE setDerive)
     Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
-    Q_PROPERTY(QStringList displayPriority READ displayPriority WRITE setDisplayPriority)
+    //Q_PROPERTY(QStringList displayPriority READ displayPriority WRITE setDisplayPriority)
     Q_PROPERTY(DisplayType display READ display WRITE setDisplay)
     Q_ENUMS(DisplayType)
 public:
@@ -106,8 +88,6 @@ public:
     DisplayType display() const;
     void setDisplay(DisplayType disp);
 };
-
-
 extern VideoDecoderId VideoDecoderId_VAAPI;
 FACTORY_REGISTER_ID_AUTO(VideoDecoder, VAAPI, "VAAPI")
 
@@ -116,244 +96,10 @@ void RegisterVideoDecoderVAAPI_Man()
     FACTORY_REGISTER_ID_MAN(VideoDecoder, VAAPI, "VAAPI")
 }
 
-
-typedef struct
-{
-    VASurfaceID  i_id;
-    int          i_refcount;
-    unsigned int i_order;
-    //vlc_mutex_t *p_lock;
-} va_surface_t;
-
-class dll_helper {
-public:
-    dll_helper(const QString& soname) {
-        m_lib.setFileName(soname);
-        if (m_lib.load())
-            qDebug("%s loaded", m_lib.fileName().toUtf8().constData());
-        else
-            qDebug("can not load %s: %s", m_lib.fileName().toUtf8().constData(), m_lib.errorString().toUtf8().constData());
-    }
-    virtual ~dll_helper() { m_lib.unload();}
-    bool isLoaded() const { return m_lib.isLoaded(); }
-    void* resolve(const char *symbol) { return (void*)m_lib.resolve(symbol);}
-private:
-    QLibrary m_lib;
-};
-struct _XDisplay;
-typedef struct _XDisplay Display;
-//TODO: use macro template. DEFINE_DL_SYMB(R, NAME, ARG....);
-class X11_API : public dll_helper {
-public:
-    X11_API(): dll_helper("X11") {}
-    Display* XOpenDisplay(const char* name) {
-        typedef Display* XOpenDisplay_t(const char* name);
-        static XOpenDisplay_t* fp_XOpenDisplay = (XOpenDisplay_t*)resolve("XOpenDisplay");
-        assert(fp_XOpenDisplay);
-        return fp_XOpenDisplay(name);
-    }
-    int XCloseDisplay(Display* dpy) {
-        typedef int XCloseDisplay_t(Display* dpy);
-        static XCloseDisplay_t* fp_XCloseDisplay = (XCloseDisplay_t*)resolve("XCloseDisplay");
-        assert(fp_XCloseDisplay);
-        return fp_XCloseDisplay(dpy);
-    }
-    int XInitThreads() {
-        typedef int XInitThreads_t();
-        static XInitThreads_t* fp_XInitThreads = (XInitThreads_t*)resolve("XInitThreads");
-        assert(fp_XInitThreads);
-        return fp_XInitThreads();
-    }
-};
-
-class VAAPI_DRM : public dll_helper {
-public:
-    VAAPI_DRM(): dll_helper("va-drm") {}
-    VADisplay vaGetDisplayDRM(int fd) {
-        typedef VADisplay vaGetDisplayDRM_t(int fd);
-        static vaGetDisplayDRM_t* fp_vaGetDisplayDRM = (vaGetDisplayDRM_t*)resolve("vaGetDisplayDRM");
-        assert(fp_vaGetDisplayDRM);
-        return fp_vaGetDisplayDRM(fd);
-    }
-};
-class VAAPI_X11 : public dll_helper {
-public:
-    VAAPI_X11(): dll_helper("va-x11") {}
-    VADisplay vaGetDisplay(Display *dpy) {
-        typedef VADisplay vaGetDisplay_t(Display *);
-        static vaGetDisplay_t* fp_vaGetDisplay = (vaGetDisplay_t*)resolve("vaGetDisplay");
-        assert(fp_vaGetDisplay);
-        return fp_vaGetDisplay(dpy);
-    }
-};
-class VAAPI_GLX : public dll_helper {
-public:
-    VAAPI_GLX(): dll_helper("va-glx") {}
-    VADisplay vaGetDisplayGLX(Display *dpy) {
-        typedef VADisplay vaGetDisplayGLX_t(Display *);
-        static vaGetDisplayGLX_t* fp_vaGetDisplayGLX = (vaGetDisplayGLX_t*)resolve("vaGetDisplayGLX");
-        assert(fp_vaGetDisplayGLX);
-        return fp_vaGetDisplayGLX(dpy);
-    }
-    VAStatus vaCreateSurfaceGLX(VADisplay dpy, GLenum target, GLuint texture, void **gl_surface) {
-        typedef VAStatus vaCreateSurfaceGLX_t(VADisplay, GLenum, GLuint, void **);
-        static vaCreateSurfaceGLX_t* fp_vaCreateSurfaceGLX = (vaCreateSurfaceGLX_t*)resolve("vaCreateSurfaceGLX");
-        assert(fp_vaCreateSurfaceGLX);
-        return fp_vaCreateSurfaceGLX(dpy, target, texture, gl_surface);
-    }
-    VAStatus vaDestroySurfaceGLX(VADisplay dpy, void *gl_surface) {
-        typedef VAStatus vaDestroySurfaceGLX_t(VADisplay, void *);
-        static vaDestroySurfaceGLX_t* fp_vaDestroySurfaceGLX = (vaDestroySurfaceGLX_t*)resolve("vaDestroySurfaceGLX");
-        assert(fp_vaDestroySurfaceGLX);
-        return fp_vaDestroySurfaceGLX(dpy, gl_surface);
-    }
-    /**
-     * Copy a VA surface to a VA/GLX surface
-     *
-     * This function will not return until the copy is completed. At this
-     * point, the underlying GL texture will contain the surface pixels
-     * in an RGB format defined by the user.
-     *
-     * The application shall maintain the live GLX context itself.
-     * Implementations are free to use glXGetCurrentContext() and
-     * glXGetCurrentDrawable() functions for internal purposes.
-     *
-     * @param[in]  dpy        the VA display
-     * @param[in]  gl_surface the VA/GLX destination surface
-     * @param[in]  surface    the VA source surface
-     * @param[in]  flags      the PutSurface flags
-     * @return VA_STATUS_SUCCESS if successful
-     */
-    VAStatus vaCopySurfaceGLX(VADisplay dpy, void *gl_surface, VASurfaceID surface, unsigned int flags) {
-        typedef VAStatus vaCopySurfaceGLX_t(VADisplay, void *, VASurfaceID, unsigned int);
-        static vaCopySurfaceGLX_t* fp_vaCopySurfaceGLX = (vaCopySurfaceGLX_t*)resolve("vaCopySurfaceGLX");
-        assert(fp_vaCopySurfaceGLX);
-        return fp_vaCopySurfaceGLX(dpy, gl_surface, surface, flags);
-    }
-};
-
-class VAAPISurfaceInterop : public VideoSurfaceInterop, public VAAPI_GLX
-{
-public:
-    VAAPISurfaceInterop(VADisplay display)
-        : mDisplay(display)
-        , mpSurface(0)
-        , mWidth(0)
-        , mHeight(0)
-    {
-    }
-    ~VAAPISurfaceInterop() {
-        if (tmp_surfaces.isEmpty())
-            return;
-        QMap<GLuint*,void*>::iterator it(tmp_surfaces.begin());
-        while (it != tmp_surfaces.end()) {
-            delete it.key();
-            void *glxSurface = it.value();
-            if (glxSurface) {
-                vaDestroySurfaceGLX(mDisplay, glxSurface);
-            }
-            it = tmp_surfaces.erase(it);
-        }
-        it = glx_surfaces.begin();
-        while (it != glx_surfaces.end()) {
-            void *glxSurface = it.value();
-            if (glxSurface) {
-                vaDestroySurfaceGLX(mDisplay, glxSurface);
-            }
-            it = tmp_surfaces.erase(it);
-        }
-    }
-    void setSurface(va_surface_t* surface, int width, int height) {
-        mpSurface = surface;
-        mWidth = width;
-        mHeight = height;
-    }
-    // return glx surface
-    void* createGLXSurface(void* handle) {
-        GLuint tex = *((GLuint*)handle);
-        void *glxSurface = 0;
-        VAStatus status = vaCreateSurfaceGLX(mDisplay, GL_TEXTURE_2D, tex, &glxSurface);
-        if (status != VA_STATUS_SUCCESS) {
-            qWarning("vaCreateSurfaceGLX(%p, GL_TEXTURE_2D, %u, %p) == %#x", mDisplay, tex, &glxSurface, status);
-            return 0;
-        }
-        glx_surfaces[(GLuint*)handle] = glxSurface;
-        return glxSurface;
-    }
-    virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) {
-        if (!fmt.isRGB())
-            return 0;
-        if (!handle)
-            handle = createHandle(type, fmt, plane);
-        VAStatus status = VA_STATUS_SUCCESS;
-        if (type == GLTextureSurface) {
-            void *glxSurface = glx_surfaces[(GLuint*)handle];
-            if (!glxSurface) {
-                glxSurface = createGLXSurface(handle);
-                if (!glxSurface) {
-                    qWarning("Fail to create vaapi glx surface");
-                    return 0;
-                }
-            }
-            int flags = VA_FRAME_PICTURE | VA_SRC_BT709;
-            //qDebug("vaCopySurfaceGLX(glSurface:%p, VASurfaceID:%#x) ref: %d", glxSurface, mpSurface->i_id, mpSurface->i_refcount);
-            status = vaCopySurfaceGLX(mDisplay, glxSurface, mpSurface->i_id, flags);
-            if (status != VA_STATUS_SUCCESS) {
-                qWarning("vaCopySurfaceGLX(VADisplay:%p, glSurface:%p, VASurfaceID:%#x, flags:%d) == %d", mDisplay, glxSurface, mpSurface->i_id, flags, status);
-                return 0;
-            }
-            if ((status = vaSyncSurface(mDisplay, mpSurface->i_id)) != VA_STATUS_SUCCESS) {
-                qWarning("vaCopySurfaceGLX: %#x", status);
-            }
-            return handle;
-        } else
-        if (type == HostMemorySurface) {
-        } else {
-            return 0;
-        }
-        return handle;
-    }
-    virtual void unmap(void *handle) {
-        QMap<GLuint*,void*>::iterator it(tmp_surfaces.find((GLuint*)handle));
-        if (it == tmp_surfaces.end())
-            return;
-        delete it.key();
-        void *glxSurface = it.value();
-        if (glxSurface) {
-            vaDestroySurfaceGLX(mDisplay, glxSurface);
-        }
-        tmp_surfaces.erase(it);
-    }
-    virtual void* createHandle(SurfaceType type, const VideoFormat& fmt, int plane = 0) {
-        Q_UNUSED(plane);
-        if (type == GLTextureSurface) {
-            if (!fmt.isRGB()) {
-                return 0;
-            }
-            GLuint *tex = new GLuint;
-            glGenTextures(1, tex);
-            glBindTexture(GL_TEXTURE_2D, *tex);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-            tmp_surfaces[tex] = 0;
-            return tex;
-        }
-        return 0;
-    }
-private:
-    VADisplay mDisplay;
-    va_surface_t* mpSurface; //TODO: shared_ptr
-    int mWidth, mHeight;
-    QMap<GLuint*,void*> glx_surfaces, tmp_surfaces;
-};
-
-
 class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate, public VAAPI_DRM, public VAAPI_X11, public VAAPI_GLX
         , public X11_API
 {
+    DPTR_DECLARE_PUBLIC(VideoDecoderVAAPI)
 public:
     VideoDecoderVAAPIPrivate()
         : support_4k(true)
@@ -367,16 +113,12 @@ public:
             display_type = VideoDecoderVAAPI::GLX;
         drm_fd = -1;
         display_x11 = 0;
-        display = 0;
         config_id = VA_INVALID_ID;
         context_id = VA_INVALID_ID;
         version_major = 0;
         version_minor = 0;
-        surfaces = 0;
-        surface_order = 0;
         surface_width = 0;
         surface_height = 0;
-        surface_chroma = QTAV_PIX_FMT_C(NONE);
         image.image_id = VA_INVALID_ID;
         supports_derive = false;
         va_pixfmt = QTAV_PIX_FMT_C(VAAPI_VLD);
@@ -386,13 +128,10 @@ public:
         disable_derive = false;
         copy_uswc = true;
     }
-
-    ~VideoDecoderVAAPIPrivate() {
-        //TODO:
-    }
+    ~VideoDecoderVAAPIPrivate() {}
     virtual bool open();
     virtual void close();
-    bool createSurfaces(void **hwctx, int w, int h);
+    bool createSurfaces(int count, void **hwctx, int w, int h);
     void destroySurfaces();
 
     virtual bool setup(void **hwctx, int w, int h);
@@ -404,31 +143,22 @@ public:
     QList<VideoDecoderVAAPI::DisplayType> display_priority;
     Display *display_x11;
     int drm_fd;
-    VADisplay     display;
+    display_ptr display;
 
     VAConfigID    config_id;
     VAContextID   context_id;
 
     struct vaapi_context hw_ctx;
-
-    /* */
     int version_major;
     int version_minor;
-
-    /* */
-    QMutex  mutex;
     bool surface_auto;
-    int          nb_surfaces;
-    unsigned int surface_order;
-    int          surface_width;
-    int          surface_height;
-    AVPixelFormat surface_chroma;
+    int surface_width;
+    int surface_height;
 
-    //QVector<va_surface_t*> surfaces;
-    va_surface_t *surfaces;
-
-    VAImage      image;
-
+    int nb_surfaces;
+    QVector<VASurfaceID> surfaces;
+    std::list<surface_ptr> surfaces_free, surfaces_used;
+    VAImage image;
     bool disable_derive;
     bool supports_derive;
 
@@ -436,7 +166,7 @@ public:
     // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
     bool copy_uswc;
     GPUMemCopy gpu_mem;
-    VAAPISurfaceInterop *surface_interop;
+    SurfaceInteropVAAPI *surface_interop;
 };
 
 
@@ -511,17 +241,37 @@ VideoFrame VideoDecoderVAAPI::frame()
     VASurfaceID surface_id = (VASurfaceID)(uintptr_t)d.frame->data[3];
     VAStatus status = VA_STATUS_SUCCESS;
     if (display() == GLX) {
-        d.surface_interop->setSurface((va_surface_t*)d.frame->opaque, d.surface_width, d.surface_height);
-        VideoFrame f(d.surface_width, d.surface_height, VideoFormat::Format_RGB32);
+        surface_ptr p;
+        std::list<surface_ptr>::iterator it = d.surfaces_used.begin();
+        for (; it != d.surfaces_used.end() && !p; ++it) {
+            if((*it)->get() == surface_id) {
+                p = *it;
+                break;
+            }
+        }
+        if (!p) {
+            for (it = d.surfaces_free.begin(); it != d.surfaces_free.end() && !p; ++it) {
+                if((*it)->get() == surface_id) {
+                    p = *it;
+                    break;
+                }
+            }
+        }
+        if (!p) {
+            qWarning("VAAPI - Unable to find surface");
+            return VideoFrame();
+        }
+        d.surface_interop->setSurface(p);
+        VideoFrame f(d.surface_width, d.surface_height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.surface_width*4); //used by gl to compute texture size
         f.setSurfaceInterop(d.surface_interop);
         return f;
     }
 #if VA_CHECK_VERSION(0,31,0)
-    if ((status = vaSyncSurface(d.display, surface_id)) != VA_STATUS_SUCCESS) {
-        qWarning("vaSyncSurface(VADisplay:%p, VASurfaceID:%#x) == %#x", d.display, surface_id, status);
+    if ((status = vaSyncSurface(d.display->get(), surface_id)) != VA_STATUS_SUCCESS) {
+        qWarning("vaSyncSurface(VADisplay:%p, VASurfaceID:%#x) == %#x", d.display->get(), surface_id, status);
 #else
-    if (vaSyncSurface(d.display, d.context_id, surface_id)) {
+    if (vaSyncSurface(d.display->get(), d.context_id, surface_id)) {
         qWarning("vaSyncSurface(VADisplay:%#x, VAContextID:%#x, VASurfaceID:%#x) == %#x", d.display, d.context_id, surface_id, status);
 #endif
         return VideoFrame();
@@ -534,22 +284,22 @@ VideoFrame VideoDecoderVAAPI::frame()
          * TODO: copy from USWC, see vlc and https://github.com/OpenELEC/OpenELEC.tv/pull/2937.diff
          * https://software.intel.com/en-us/articles/increasing-memory-throughput-with-intel-streaming-simd-extensions-4-intel-sse4-streaming-load
          */
-        status = vaDeriveImage(d.display, surface_id, &d.image);
+        status = vaDeriveImage(d.display->get(), surface_id, &d.image);
         if (status != VA_STATUS_SUCCESS) {
-            qWarning("vaDeriveImage(VADisplay:%p, VASurfaceID:%#x, VAImage*:%p) == %#x", d.display, surface_id, &d.image, status);
+            qWarning("vaDeriveImage(VADisplay:%p, VASurfaceID:%#x, VAImage*:%p) == %#x", d.display->get(), surface_id, &d.image, status);
             return VideoFrame();
         }
     } else {
-        status = vaGetImage(d.display, surface_id, 0, 0, d.surface_width, d.surface_height, d.image.image_id);
+        status = vaGetImage(d.display->get(), surface_id, 0, 0, d.surface_width, d.surface_height, d.image.image_id);
         if (status != VA_STATUS_SUCCESS) {
-            qWarning("vaGetImage(VADisplay:%p, VASurfaceID:%#x, 0,0, %d, %d, VAImageID:%#x) == %#x", d.display, surface_id, d.surface_width, d.surface_height, d.image.image_id, status);
+            qWarning("vaGetImage(VADisplay:%p, VASurfaceID:%#x, 0,0, %d, %d, VAImageID:%#x) == %#x", d.display->get(), surface_id, d.surface_width, d.surface_height, d.image.image_id, status);
             return VideoFrame();
         }
     }
 
     void *p_base;
-    if ((status = vaMapBuffer(d.display, d.image.buf, &p_base)) != VA_STATUS_SUCCESS) {
-        qWarning("vaMapBuffer(VADisplay:%p, VABufferID:%#x, pBuf:%p) == %#x", d.display, d.image.buf, &p_base, status);
+    if ((status = vaMapBuffer(d.display->get(), d.image.buf, &p_base)) != VA_STATUS_SUCCESS) {
+        qWarning("vaMapBuffer(VADisplay:%p, VABufferID:%#x, pBuf:%p) == %#x", d.display->get(), d.image.buf, &p_base, status);
         return VideoFrame();
     }
 
@@ -617,61 +367,37 @@ VideoFrame VideoDecoderVAAPI::frame()
         frame = frame.clone();
     }
 
-    if ((status = vaUnmapBuffer(d.display, d.image.buf)) != VA_STATUS_SUCCESS) {
-        qWarning("vaUnmapBuffer(VADisplay:%p, VABufferID:%#x) == %#x", d.display, d.image.buf, status);
+    if ((status = vaUnmapBuffer(d.display->get(), d.image.buf)) != VA_STATUS_SUCCESS) {
+        qWarning("vaUnmapBuffer(VADisplay:%p, VABufferID:%#x) == %#x", d.display->get(), d.image.buf, status);
         return VideoFrame();
     }
 
     if (!d.disable_derive && d.supports_derive) {
-        vaDestroyImage(d.display, d.image.image_id);
+        vaDestroyImage(d.display->get(), d.image.image_id);
         d.image.image_id = VA_INVALID_ID;
     }
     return frame;
-}
-
-struct display_names_t {
-    VideoDecoderVAAPI::DisplayType display;
-    QString name;
-};
-static const display_names_t display_names[] = {
-    { VideoDecoderVAAPI::GLX, "GLX" },
-    { VideoDecoderVAAPI::X11, "X11" },
-    { VideoDecoderVAAPI::DRM, "DRM" }
-};
-
-static VideoDecoderVAAPI::DisplayType displayFromName(QString name) {
-    for (unsigned int i = 0; i < sizeof(display_names)/sizeof(display_names[0]); ++i) {
-        if (name.toUpper().contains(display_names[i].name.toUpper())) {
-            return display_names[i].display;
-        }
-    }
-    return VideoDecoderVAAPI::X11;
-}
-
-static QString displayToName(VideoDecoderVAAPI::DisplayType t) {
-    for (unsigned int i = 0; i < sizeof(display_names)/sizeof(display_names[0]); ++i) {
-        if (t == display_names[i].display) {
-            return display_names[i].name;
-        }
-    }
-    return QString();
 }
 
 void VideoDecoderVAAPI::setDisplayPriority(const QStringList &priority)
 {
     DPTR_D(VideoDecoderVAAPI);
     d.display_priority.clear();
+    int idx = staticMetaObject.indexOfEnumerator("DisplayType");
+    const QMetaEnum me = staticMetaObject.enumerator(idx);
     foreach (QString disp, priority) {
-        d.display_priority.push_back(displayFromName(disp));
+        d.display_priority.push_back((DisplayType)me.keyToValue(disp.toUtf8().constData()));
     }
 }
 
 QStringList VideoDecoderVAAPI::displayPriority() const
 {
     QStringList names;
+    int idx = staticMetaObject.indexOfEnumerator("DisplayType");
+    const QMetaEnum me = staticMetaObject.enumerator(idx);
     foreach (DisplayType disp, d_func().display_priority) {
-        names.append(displayToName(disp));
-    }
+        names.append(me.valueToKey(disp));
+    }    
     return names;
 }
 
@@ -718,7 +444,7 @@ bool VideoDecoderVAAPIPrivate::open()
     context_id = VA_INVALID_ID;
     image.image_id = VA_INVALID_ID;
     /* Create a VA display */
-    display = 0;
+    VADisplay disp = 0;
     foreach (VideoDecoderVAAPI::DisplayType dt, display_priority) {
         if (dt == VideoDecoderVAAPI::DRM) {
             if (!VAAPI_DRM::isLoaded())
@@ -731,7 +457,7 @@ bool VideoDecoderVAAPIPrivate::open()
                 qWarning("Could not access rendering device");
                 continue;
             }
-            display = vaGetDisplayDRM(drm_fd);
+            disp = vaGetDisplayDRM(drm_fd);
             display_type = VideoDecoderVAAPI::DRM;
         } else if (dt == VideoDecoderVAAPI::X11) {
             qDebug("vaGetDisplay X11...............");
@@ -742,12 +468,13 @@ bool VideoDecoderVAAPIPrivate::open()
                 qWarning("XInitThreads failed!");
                 continue;
             }
-            display_x11 = XOpenDisplay(NULL);;
+            display_x11 =  XOpenDisplay(NULL);;
             if (!display_x11) {
                 qWarning("Could not connect to X server");
                 continue;
             }
-            display = vaGetDisplay(display_x11);
+            disp = vaGetDisplay(display_x11);
+            qDebug("%s @%d", __FUNCTION__, __LINE__);
             display_type = VideoDecoderVAAPI::X11;
         } else if (dt == VideoDecoderVAAPI::GLX) {
             qDebug("vaGetDisplay GLX...............");
@@ -763,35 +490,30 @@ bool VideoDecoderVAAPIPrivate::open()
                 qWarning("Could not connect to X server");
                 continue;
             }
-            display = vaGetDisplayGLX(display_x11);
+            disp = vaGetDisplayGLX(display_x11);
             display_type = VideoDecoderVAAPI::GLX;
         }
-        if (display)
+        if (disp)
             break;
     }
-
-    if (!display/* || vaDisplayIsValid(display) != 0*/) {
+    if (!disp/* || vaDisplayIsValid(display) != 0*/) {
         qWarning("Could not get a VAAPI device");
         return false;
     }
-    if (surface_interop) {
-        delete surface_interop;
-        surface_interop = 0;
-    }
-    surface_interop = new VAAPISurfaceInterop(display);
-    if (vaInitialize(display, &version_major, &version_minor)) {
+    if (vaInitialize(disp, &version_major, &version_minor)) {
         qWarning("Failed to initialize the VAAPI device");
         return false;
     }
-    vendor = vaQueryVendorString(display);
+    vendor = vaQueryVendorString(disp);
     if (!vendor.toLower().contains("intel"))
         copy_uswc = false;
 
     //disable_derive = !copy_uswc;
-
     description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vendor);
-    description += " Display: " + displayToName(display_type);
-
+    DPTR_P(VideoDecoderVAAPI);
+    int idx = p.staticMetaObject.indexOfEnumerator("DisplayType");
+    const QMetaEnum me = p.staticMetaObject.enumerator(idx);
+    description += " Display: " + QString(me.valueToKey(display_type));
     // check 4k support. from xbmc
     int major, minor, micro;
     if (sscanf(vendor.toUtf8().constData(), "Intel i965 driver - %d.%d.%d", &major, &minor, &micro) == 3) {
@@ -811,13 +533,13 @@ bool VideoDecoderVAAPIPrivate::open()
     }
 
     /* Check if the selected profile is supported */
-    int i_profiles_nb = vaMaxNumProfiles(display);
+    int i_profiles_nb = vaMaxNumProfiles(disp);
     VAProfile *p_profiles_list = (VAProfile*)calloc(i_profiles_nb, sizeof(VAProfile));
     if (!p_profiles_list)
         return false;
 
     bool b_supported_profile = false;
-    VAStatus status = vaQueryConfigProfiles(display, p_profiles_list, &i_profiles_nb);
+    VAStatus status = vaQueryConfigProfiles(disp, p_profiles_list, &i_profiles_nb);
     if (status == VA_STATUS_SUCCESS) {
         for (int i = 0; i < i_profiles_nb; i++) {
             if (p_profiles_list[i] == i_profile) {
@@ -835,79 +557,89 @@ bool VideoDecoderVAAPIPrivate::open()
     VAConfigAttrib attrib;
     memset(&attrib, 0, sizeof(attrib));
     attrib.type = VAConfigAttribRTFormat;
-    if ((status = vaGetConfigAttributes(display, i_profile, VAEntrypointVLD, &attrib, 1)) != VA_STATUS_SUCCESS) {
-        qWarning("vaGetConfigAttributes(VADisplay:%p, VAProfile:%d, VAEntrypointVLD, VAConfigAttrib*:%p, num_attrib:1) == %#x", display, i_profile, &attrib, status);
+    if ((status = vaGetConfigAttributes(disp, i_profile, VAEntrypointVLD, &attrib, 1)) != VA_STATUS_SUCCESS) {
+        qWarning("vaGetConfigAttributes(VADisplay:%p, VAProfile:%d, VAEntrypointVLD, VAConfigAttrib*:%p, num_attrib:1) == %#x", disp, i_profile, &attrib, status);
         return false;
     }
     /* Not sure what to do if not, I don't have a way to test */
     if ((attrib.value & VA_RT_FORMAT_YUV420) == 0)
         return false;
     //vaCreateConfig(display, i_profile, VAEntrypointVLD, NULL, 0, &config_id)
-    if ((status = vaCreateConfig(display, i_profile, VAEntrypointVLD, &attrib, 1, &config_id)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateConfig(VADisplay:%p, VAProfile:%d, VAEntrypointVLD, VAConfigAttrib*:%p, num_attrib:1, VAConfigID*:%p) == %#x", display, i_profile, &attrib, &config_id, status);
+    if ((status = vaCreateConfig(disp, i_profile, VAEntrypointVLD, &attrib, 1, &config_id)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateConfig(VADisplay:%p, VAProfile:%d, VAEntrypointVLD, VAConfigAttrib*:%p, num_attrib:1, VAConfigID*:%p) == %#x", disp, i_profile, &attrib, &config_id, status);
         config_id = VA_INVALID_ID;
         return false;
     }
     supports_derive = false;
+    display = display_ptr(new display_t(disp));
+    if (surface_interop) {
+        delete surface_interop;
+        surface_interop = 0;
+    }
+    surface_interop = new SurfaceInteropVAAPI();
     return true;
 }
 
-bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, int w, int h)
+bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w, int h)
 {
     Q_ASSERT(w > 0 && h > 0);
-    /* */
-    surfaces = (va_surface_t*)calloc(nb_surfaces, sizeof(va_surface_t));
-    if (!surfaces)
+    const int kMaxSurfaces = 32;
+    if (count > kMaxSurfaces) {
+        qWarning("VAAPI- Too many surfaces. requested: %d, maximun: %d", count, kMaxSurfaces);
         return false;
+    }
+    const int old_size = surfaces.size();
+    const bool size_changed = (surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16));
+    if (count <= old_size && !size_changed)
+        return true;
+    surfaces.resize(count);
     image.image_id = VA_INVALID_ID;
     context_id = VA_INVALID_ID;
     width = w;
     height = h;
     surface_width = FFALIGN(w, 16);
     surface_height = FFALIGN(h, 16);
-    /* Create surfaces */
-    VASurfaceID pi_surface_id[nb_surfaces];
     VAStatus status = VA_STATUS_SUCCESS;
-    if ((status = vaCreateSurfaces(display, VA_RT_FORMAT_YUV420, surface_width, surface_height, pi_surface_id, nb_surfaces, NULL, 0)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateSurfaces(VADisplay:%p, VA_RT_FORMAT_YUV420, %d, %d, VASurfaceID*:%p, surfaces:%d, VASurfaceAttrib:NULL, num_attrib:0) == %#x", display, surface_width, surface_height, pi_surface_id, nb_surfaces, status);
-        for (int i = 0; i < nb_surfaces; i++)
-            surfaces[i].i_id = VA_INVALID_SURFACE;
-        destroySurfaces();
+    if ((status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, surface_width, surface_height,  surfaces.data() + old_size, count - old_size, NULL, 0)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateSurfaces(VADisplay:%p, VA_RT_FORMAT_YUV420, %d, %d, VASurfaceID*:%p, surfaces:%d, VASurfaceAttrib:NULL, num_attrib:0) == %#x", display->get(), surface_width, surface_height, surfaces.constData(), surfaces.size(), status);
+        destroySurfaces(); //?
         return false;
     }
-    for (int i = 0; i < nb_surfaces; i++) {
-        va_surface_t *surface = &surfaces[i];
-        surface->i_id = pi_surface_id[i];
-        surface->i_refcount = 0;
-        surface->i_order = 0;
-        ////surface->p_lock = &sys->lock;
+    for (int i = old_size; i < surfaces.size(); ++i) {
+        surfaces_free.push_back(surface_ptr(new surface_t(surface_width, surface_height, surfaces[i], display)));
     }
     /* Create a context */
-    if ((status = vaCreateContext(display, config_id, surface_width, surface_height, VA_PROGRESSIVE, pi_surface_id, nb_surfaces, &context_id)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display, config_id, surface_width, surface_height, pi_surface_id, nb_surfaces, &context_id, status);
+    if (context_id && context_id != VA_INVALID_ID)
+        VAWARN(vaDestroyContext(display->get(), context_id));
+    context_id = VA_INVALID_ID;
+    if ((status = vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display->get(), config_id, surface_width, surface_height, surfaces.constData(), surfaces.size(), &context_id, status);
         context_id = VA_INVALID_ID;
         destroySurfaces();
         return false;
     }
+    if (!size_changed)
+        return true;
+    // TODO: move to other place?
     /* Find and create a supported image chroma */
-    int i_fmt_count = vaMaxNumImageFormats(display);
+    int i_fmt_count = vaMaxNumImageFormats(display->get());
     //av_mallocz_array
     VAImageFormat *p_fmt = (VAImageFormat*)calloc(i_fmt_count, sizeof(*p_fmt));
     if (!p_fmt) {
         destroySurfaces();
         return false;
     }
-    if (vaQueryImageFormats(display, p_fmt, &i_fmt_count)) {
+    if (vaQueryImageFormats(display->get(), p_fmt, &i_fmt_count)) {
         free(p_fmt);
         destroySurfaces();
         return false;
     }
     VAImage test_image;
     if (!disable_derive) {
-        if (vaDeriveImage(display, pi_surface_id[0], &test_image) == VA_STATUS_SUCCESS) {
+        if (vaDeriveImage(display->get(), surfaces[0], &test_image) == VA_STATUS_SUCCESS) {
             qDebug("vaDeriveImage supported");
             supports_derive = true;
-            vaDestroyImage(display, test_image.image_id);
+            vaDestroyImage(display->get(), test_image.image_id);
         }
     }
     AVPixelFormat i_chroma = QTAV_PIX_FMT_C(NONE);
@@ -916,14 +648,14 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, int w, int h)
             p_fmt[i].fourcc == VA_FOURCC_IYUV ||
             p_fmt[i].fourcc == VA_FOURCC_NV12) {
             qDebug("vaCreateImage: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
-            if (vaCreateImage(display, &p_fmt[i], surface_width, surface_height, &image)) {
+            if (vaCreateImage(display->get(), &p_fmt[i], surface_width, surface_height, &image)) {
                 image.image_id = VA_INVALID_ID;
                 qDebug("vaCreateImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 continue;
             }
             /* Validate that vaGetImage works with this format */
-            if (vaGetImage(display, pi_surface_id[0], 0, 0, surface_width, surface_height, image.image_id)) {
-                vaDestroyImage(display, image.image_id);
+            if (vaGetImage(display->get(), surfaces[0], 0, 0, surface_width, surface_height, image.image_id)) {
+                vaDestroyImage(display->get(), image.image_id);
                 qDebug("vaGetImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 image.image_id = VA_INVALID_ID;
                 continue;
@@ -939,7 +671,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, int w, int h)
         return false;
     }
     if (!disable_derive && supports_derive) {
-        vaDestroyImage(display, image.image_id);
+        vaDestroyImage(display->get(), image.image_id);
         image.image_id = VA_INVALID_ID;
     }
     if (copy_uswc) {
@@ -951,43 +683,31 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(void **pp_hw_ctx, int w, int h)
     }
     /* Setup the ffmpeg hardware context */
     *pp_hw_ctx = &hw_ctx;
-
     memset(&hw_ctx, 0, sizeof(hw_ctx));
-    hw_ctx.display    = display;
-    hw_ctx.config_id  = config_id;
+    hw_ctx.display = display->get();
+    hw_ctx.config_id = config_id;
     hw_ctx.context_id = context_id;
-
-    /* */
-    surface_chroma = i_chroma;
     return true;
 }
 
 void VideoDecoderVAAPIPrivate::destroySurfaces()
 {
     if (image.image_id != VA_INVALID_ID) {
-        vaDestroyImage(display, image.image_id);
+        VAWARN(vaDestroyImage(display->get(), image.image_id));
     }
     if (copy_uswc) {
         gpu_mem.cleanCache();
     }
     if (context_id != VA_INVALID_ID)
-        vaDestroyContext(display, context_id);
-
-    for (int i = 0; i < nb_surfaces && surfaces; i++) {
-        va_surface_t *surface = &surfaces[i];
-        if (surface->i_id != VA_INVALID_SURFACE)
-            vaDestroySurfaces(display, &surface->i_id, 1);
-    }
-    //qDeleteAll(surfaces);
-    //surfaces.clear();
-    free(surfaces);
-    surfaces = 0;
-    /* */
+        VAWARN(vaDestroyContext(display->get(), context_id));
+    nb_surfaces = 0;
+    surfaces.clear();
+    surfaces_free.clear();
+    surfaces_used.clear();
     image.image_id = VA_INVALID_ID;
     context_id = VA_INVALID_ID;
     surface_width = 0;
     surface_height = 0;
-    //vlc_mutex_destroy(&sys->lock);
 }
 
 bool VideoDecoderVAAPIPrivate::setup(void **hwctx, int w, int h)
@@ -1003,7 +723,7 @@ bool VideoDecoderVAAPIPrivate::setup(void **hwctx, int w, int h)
     if (surface_width || surface_height)
         destroySurfaces();
     if (w > 0 && h > 0)
-        return createSurfaces(hwctx, w, h);
+        return createSurfaces(nb_surfaces, hwctx, w, h);
     return false;
 }
 
@@ -1014,19 +734,16 @@ void VideoDecoderVAAPIPrivate::close()
         destroySurfaces();
 
     if (config_id != VA_INVALID_ID) {
-        vaDestroyConfig(display, config_id);
+        VAWARN(vaDestroyConfig(display->get(), config_id));
         config_id = VA_INVALID_ID;
     }
     if (surface_interop) {
         delete surface_interop;
         surface_interop = 0;
     }
-    if (display) {
-        vaTerminate(display);
-        display = 0;
-    }
+    display.clear();
     if (display_x11) {
-        XCloseDisplay(display_x11);
+        //XCloseDisplay(display_x11);
         display_x11 = 0;
     }
     if (drm_fd >= 0) {
@@ -1037,50 +754,57 @@ void VideoDecoderVAAPIPrivate::close()
 
 bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
 {
-    int i_old;
-    int i;
-
-//    QMutexLocker lock(&mutex);
-//    Q_UNUSED(lock);
-    /* Grab an unused surface, in case none are, try the oldest
-     * XXX using the oldest is a workaround in case a problem happens with ffmpeg */
-    for (i = 0, i_old = 0; i < nb_surfaces; i++) {
-        va_surface_t *p_surface = &surfaces[i];
-
-        if (!p_surface->i_refcount)
-            break;
-
-        if (p_surface->i_order < surfaces[i_old].i_order)
-            i_old = i;
+    VASurfaceID id = (VASurfaceID)(quintptr)*data;
+    std::list<surface_ptr>::iterator it = surfaces_free.begin();
+    if (id && id != VA_INVALID_ID) {
+        bool found = false;
+        for (; it != surfaces_free.end(); ++it) { //?
+            if ((*it)->get() == id) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            qWarning("surface not found!!!!!!!!!!!!!");
+            return false;
+        }
+    } else {
+        for (; it != surfaces_free.end() && it->count() > 1; ++it) {}
+        if (it == surfaces_free.end()) {
+            if (!surfaces_free.empty())
+                qWarning("VAAPI - renderer still using all freed up surfaces by decoder. unable to find free surface, trying to allocate a new one");
+            // Set itarator position to the newly allocated surface (end-1)
+            createSurfaces(surfaces.size() + 1, &codec_ctx->hwaccel_context, width, height);
+            it = surfaces_free.end();
+            --it;
+        }
     }
-    if (i >= nb_surfaces)
-        i = i_old;
-    //vlc_mutex_unlock(&sys->lock);
-
-    va_surface_t *p_surface = &surfaces[i];
-
-    p_surface->i_refcount = 1;
-    p_surface->i_order = surface_order++;
-    //FIXME: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
-    *data = (uint8_t*)p_surface->i_id; ///??
-    *opaque = p_surface;
-
+    id =(*it)->get();
+    surface_t *s = it->get();
+    // !erase later. otherwise it may be destroyed
+    surfaces_used.push_back(*it);
+    // TODO: why QList may erase an invalid iterator(first iterator)at the same position?
+    surfaces_free.erase(it); //ref not increased, but can not be used.
+//FIXME: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+    *data = (uint8_t*)(quintptr)id;
+    *opaque = s;
     return true;
 }
 
 void VideoDecoderVAAPIPrivate::releaseBuffer(void *opaque, uint8_t *data)
 {
-    Q_UNUSED(data);
-    va_surface_t *p_surface = (va_surface_t*)opaque;
-
-//    QMutexLocker lock(&mutex);
-//    Q_UNUSED(lock);
-    p_surface->i_refcount--;
+    Q_UNUSED(opaque);
+    VASurfaceID id = (VASurfaceID)(uintptr_t)data;
+    for (std::list<surface_ptr>::iterator it = surfaces_used.begin(); it != surfaces_used.end(); ++it) {
+        if((*it)->get() == id) {
+            surfaces_free.push_back(*it);
+            surfaces_used.erase(it);
+            break;
+        }
+    }
 }
 
 } // namespace QtAV
-
-
 // used by .moc QMetaType::Bool
 #ifdef Bool
 #undef Bool
