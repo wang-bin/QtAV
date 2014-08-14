@@ -45,6 +45,7 @@ public:
         : ctx(0)
         , manager(0)
         , material(new VideoMaterial())
+        , valiad_tex_width(1.0)
     {}
     ~OpenGLVideoPrivate() {
         if (material) {
@@ -70,6 +71,9 @@ public:
     QOpenGLContext *ctx;
     ShaderManager *manager;
     VideoMaterial *material;
+    qreal valiad_tex_width;
+    QRectF target;
+    QRectF roi; //including invalid padding width
     TexturedGeometry geometry;
     QRectF rect;
     QMatrix4x4 matrix;
@@ -158,10 +162,16 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     shader->program()->setUniformValue(shader->opacityLocation(), (GLfloat)1.0);
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
     // uniform end. attribute begin
-    if (target.isValid())
-        d.geometry.setRect(target, d.material->normalizedROI(roi));
-    else
+    if (d.target.isValid()) {
+        if (d.target != target || d.roi != roi || d.valiad_tex_width != d.material->validTextureWidth()) {
+            d.target = target;
+            d.roi = roi;
+            d.valiad_tex_width = d.material->validTextureWidth();
+            d.geometry.setRect(target, d.material->normalizedROI(roi));
+        }
+    } else {
         d.geometry.setRect(d.rect, d.material->normalizedROI(roi));
+    }
 
     // normalize?
 #if 1
