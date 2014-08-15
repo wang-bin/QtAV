@@ -2,6 +2,7 @@
 #define QTAV_SURFACEINTEROPVAAPI_H
 
 #include <QtCore/QMap>
+#include <QtCore/QSharedPointer>
 #include "vaapi_helper.h"
 #include "QtAV/SurfaceInterop.h"
 
@@ -23,7 +24,10 @@ private:
     surface_ptr m_surface;
     QMap<GLuint*,surface_glx_ptr> glx_surfaces, tmp_surfaces;
 };
+typedef QSharedPointer<SurfaceInteropVAAPI> SurfaceInteropVAAPIPtr;
 
 } //namespace QtAV
 } //namespace vaapi
+//Q_DECLARE_METATYPE(QtAV::vaapi::SurfaceInteropVAAPIPtr)
+
 #endif // QTAV_SURFACEINTEROPVAAPI_H

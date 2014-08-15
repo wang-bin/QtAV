@@ -40,6 +40,16 @@ enum MediaStatus
     InvalidMedia
 };
 
+enum SurfaceType {
+    HostMemorySurface,
+    GLTextureSurface,
+    DXTextureSurface,
+    VAAPISurface,
+    DXVASurface,
+    CUDASurface,
+    UnknownSurface
+};
+
 } //namespace QtAV
 Q_DECLARE_METATYPE(QtAV::MediaStatus)
 

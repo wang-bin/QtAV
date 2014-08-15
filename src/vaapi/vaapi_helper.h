@@ -168,7 +168,7 @@ public:
         if (!m_display)
             return;
         qDebug("vaapi: destroy display %p", m_display);
-        VAWARN(vaTerminate(m_display));
+        VAWARN(vaTerminate(m_display)); //FIXME: what about thread?
     }
     operator VADisplay() const { return m_display;}
     VADisplay get() const {return m_display;}

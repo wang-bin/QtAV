@@ -103,7 +103,6 @@ class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate, public VAAP
 public:
     VideoDecoderVAAPIPrivate()
         : support_4k(true)
-        , surface_interop(0)
     {
         if (VAAPI_X11::isLoaded())
             display_type = VideoDecoderVAAPI::X11;
@@ -166,7 +165,7 @@ public:
     // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
     bool copy_uswc;
     GPUMemCopy gpu_mem;
-    SurfaceInteropVAAPI *surface_interop;
+    VideoSurfaceInteropPtr surface_interop; //may be still used in video frames when decoder is destroyed
 };
 
 
@@ -261,10 +260,10 @@ VideoFrame VideoDecoderVAAPI::frame()
             qWarning("VAAPI - Unable to find surface");
             return VideoFrame();
         }
-        d.surface_interop->setSurface(p);
+        ((SurfaceInteropVAAPI*)d.surface_interop.data())->setSurface(p);
         VideoFrame f(d.surface_width, d.surface_height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.surface_width*4); //used by gl to compute texture size
-        f.setSurfaceInterop(d.surface_interop);
+        f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
         return f;
     }
 #if VA_CHECK_VERSION(0,31,0)
@@ -474,7 +473,6 @@ bool VideoDecoderVAAPIPrivate::open()
                 continue;
             }
             disp = vaGetDisplay(display_x11);
-            qDebug("%s @%d", __FUNCTION__, __LINE__);
             display_type = VideoDecoderVAAPI::X11;
         } else if (dt == VideoDecoderVAAPI::GLX) {
             qDebug("vaGetDisplay GLX...............");
@@ -500,6 +498,7 @@ bool VideoDecoderVAAPIPrivate::open()
         qWarning("Could not get a VAAPI device");
         return false;
     }
+    display = display_ptr(new display_t(disp));
     if (vaInitialize(disp, &version_major, &version_minor)) {
         qWarning("Failed to initialize the VAAPI device");
         return false;
@@ -571,12 +570,7 @@ bool VideoDecoderVAAPIPrivate::open()
         return false;
     }
     supports_derive = false;
-    display = display_ptr(new display_t(disp));
-    if (surface_interop) {
-        delete surface_interop;
-        surface_interop = 0;
-    }
-    surface_interop = new SurfaceInteropVAAPI();
+    surface_interop = VideoSurfaceInteropPtr(new SurfaceInteropVAAPI());
     return true;
 }
 
@@ -737,13 +731,9 @@ void VideoDecoderVAAPIPrivate::close()
         VAWARN(vaDestroyConfig(display->get(), config_id));
         config_id = VA_INVALID_ID;
     }
-    if (surface_interop) {
-        delete surface_interop;
-        surface_interop = 0;
-    }
     display.clear();
     if (display_x11) {
-        //XCloseDisplay(display_x11);
+        //XCloseDisplay(display_x11); //FIXME: why crash?
         display_x11 = 0;
     }
     if (drm_fd >= 0) {

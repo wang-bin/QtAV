@@ -96,3 +96,4 @@ void* SurfaceInteropVAAPI::createHandle(SurfaceType type, const VideoFormat &fmt
 
 } //namespace QtAV
 } //namespace vaapi
+

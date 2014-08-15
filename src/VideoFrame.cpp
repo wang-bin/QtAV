@@ -25,6 +25,7 @@
 #include "QtAV/ImageConverterTypes.h"
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
+#include <QtCore/QSharedPointer>
 #include <QtGui/QImage>
 
 // FF_API_PIX_FMT
@@ -45,7 +46,6 @@ public:
         , format(VideoFormat::Format_Invalid)
         , textures(4, 0)
         , conv(0)
-        , surface_interop(0)
     {}
     VideoFramePrivate(int w, int h, const VideoFormat& fmt)
         : FramePrivate()
@@ -55,7 +55,6 @@ public:
         , format(fmt)
         , textures(4, 0)
         , conv(0)
-        , surface_interop(0)
     {
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
@@ -122,7 +121,7 @@ public:
     QVector<int> textures;
 
     ImageConverter *conv;
-    VideoSurfaceInterop *surface_interop;
+    VideoSurfaceInteropPtr surface_interop;
 };
 
 VideoFrame::VideoFrame()
@@ -357,14 +356,13 @@ bool VideoFrame::convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const 
     return d_func()->convertTo(fmt, dstSize, roi);
 }
 
-void VideoFrame::setSurfaceInterop(VideoSurfaceInterop *si)
-{
-    d_func()->surface_interop = si;
-}
-
 void *VideoFrame::map(SurfaceType type, void *handle, int plane)
 {
     Q_D(VideoFrame);
+    const QVariant v = d->metadata.value("surface_interop");
+    if (!v.isValid())
+        return 0;
+    d->surface_interop = v.value<VideoSurfaceInteropPtr>();
     if (!d->surface_interop)
         return 0;
     if (plane > planeCount())

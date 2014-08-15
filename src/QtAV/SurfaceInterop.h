@@ -22,19 +22,12 @@
 #ifndef QTAV_SURFACEINTEROP_H
 #define QTAV_SURFACEINTEROP_H
 
+#include <QtCore/QMetaType>
+#include <QtCore/QSharedPointer>
+#include <QtAV/CommonTypes.h>
 #include <QtAV/VideoFormat.h>
 
 namespace QtAV {
-
-enum SurfaceType {
-    HostMemorySurface,
-    GLTextureSurface,
-    DXTextureSurface,
-    VAAPISurface,
-    DXVASurface,
-    CUDASurface,
-    UnknownSurface
-};
 
 class Q_AV_EXPORT VideoSurfaceInterop
 {
@@ -51,6 +44,10 @@ public:
     }
     virtual void unmap(void* handle) { Q_UNUSED(handle);}
 };
+
+typedef QSharedPointer<VideoSurfaceInterop> VideoSurfaceInteropPtr;
 } //namespace QtAV
+
+Q_DECLARE_METATYPE(QtAV::VideoSurfaceInteropPtr)
 
 #endif // QTAV_SURFACEINTEROP_H
