@@ -52,6 +52,7 @@ static int ffmpeg_get_va_buffer2(struct AVCodecContext *ctx, AVFrame *frame, int
         frame->linesize[i] = 0;
         frame->buf[i] = NULL;
     }
+    //frame->reordered_opaque = ctx->reordered_opaque; //?? xbmc
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)ctx->opaque;
     /* hwaccel_context is not present in old ffmpeg version */
     // not coded_width. assume coded_width is 6 aligned of width

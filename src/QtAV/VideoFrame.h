@@ -23,9 +23,9 @@
 #define QTAV_VIDEOFRAME_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtAV/CommonTypes.h>
 #include <QtAV/Frame.h>
 #include <QtAV/VideoFormat.h>
-#include <QtAV/SurfaceInterop.h>
 #include <QtCore/QSize>
 
 namespace QtAV {
@@ -94,8 +94,6 @@ public:
     bool convertTo(QImage::Format fmt);
     bool convertTo(int fffmt);
     bool convertTo(const VideoFormat& fmt, const QSizeF& dstSize, const QRectF& roi);
-
-    void setSurfaceInterop(VideoSurfaceInterop *si);
     /*!
      * map a gpu frame to opengl texture or d3d texture or other handle.
      * handle: given handle. can be gl texture (& GLuint), d3d texture, or 0 if create a new handle
