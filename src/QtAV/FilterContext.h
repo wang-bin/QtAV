@@ -35,9 +35,8 @@ class QPaintDevice;
 class QTextDocument;
 namespace QtAV {
 
-class Frame;
-class FilterContext;
-class Q_AV_EXPORT FilterContext
+class VideoFrame;
+class Q_AV_EXPORT VideoFilterContext
 {
 public:
     enum Type { ////audio and video...
@@ -48,28 +47,10 @@ public:
         XV, //Not implemented
         None //user defined filters, no context can be used
     };
-    static FilterContext* create(Type t);
-
-    FilterContext();
-    virtual ~FilterContext();
-    virtual Type type() const = 0;
-    //TODO: how to move them to VideoFilterContext?
-    int video_width, video_height; //original size
-    //QPainter, paintdevice, surface etc. contains all of them here?
-protected:
-    virtual void initializeOnFrame(Frame *frame); //private?
-    // share qpainter etc.
-    virtual void shareFrom(FilterContext *ctx);
-    friend class Filter;
-};
-
-
-//TODO: DrawTarget? New backend for QPaintEngine?
-class Q_AV_EXPORT VideoFilterContext : public FilterContext
-{
-public:
+    static VideoFilterContext* create(Type t);
     VideoFilterContext();
     virtual ~VideoFilterContext();
+    virtual Type type() const = 0;
 
     // map to Qt types
     //drawSurface?
@@ -80,7 +61,6 @@ public:
     // if rect is null, draw single line text at rect.topLeft(), ignoring flags
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
     virtual void drawRichText(const QRectF& rect, const QString& text, bool wordWrap = true);
-
     /*
      * TODO: x, y, width, height: |?|>=1 is in pixel unit, otherwise is ratio of video context rect
      * filter.x(a).y(b).width(c).height(d)
@@ -99,15 +79,20 @@ public:
      * can we allocate memory on stack?
      */
     QPaintDevice *paint_device;
+    int video_width, video_height; //original size
 
 protected:
     bool own_painter;
     bool own_paint_device;
 protected:
-    virtual void shareFrom(FilterContext *ctx);
     virtual bool isReady() const = 0;
     // save the state then setup new parameters
     virtual bool prepare() = 0;
+
+    virtual void initializeOnFrame(VideoFrame *frame); //private?
+    // share qpainter etc.
+    virtual void shareFrom(VideoFilterContext *vctx);
+    friend class VideoFilter;
 };
 
 //TODO: font, pen, brush etc?
@@ -127,7 +112,7 @@ public:
 protected:
     virtual bool isReady() const;
     virtual bool prepare();
-    virtual void initializeOnFrame(Frame* frame);
+    virtual void initializeOnFrame(VideoFrame *vframe);
 
     QTextDocument *doc;
 };

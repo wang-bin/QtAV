@@ -26,7 +26,7 @@
 namespace QtAV {
 
 SimpleFilter::SimpleFilter(QWidget *parent):
-    Filter(parent)
+    VideoFilter(parent)
   , mCanRot(true)
   , mWave(true)
 {
@@ -90,8 +90,10 @@ void SimpleFilter::timerEvent(QTimerEvent *)
         ((QWidget*)parent())->update();
 }
 
-void SimpleFilter::process()
+void SimpleFilter::process(Statistics *statistics, VideoFrame *frame)
 {
+    Q_UNUSED(statistics);
+    Q_UNUSED(frame);
     if (!isEnabled())
         return;
     VideoFilterContext *ctx = static_cast<VideoFilterContext*>(context());

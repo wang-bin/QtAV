@@ -34,7 +34,6 @@ namespace QtAV {
 class AVDecoder;
 class AVOutputPrivate;
 class Filter;
-class FilterContext;
 class Statistics;
 class OutputSet;
 class Q_AV_EXPORT AVOutput
@@ -52,14 +51,6 @@ public:
     //TODO: what about audio's pause api?
     void pause(bool p); //processEvents when waiting?
     bool isPaused() const;
-
-    /* check context.type, if not compatible(e.g. type is QtPainter but vo is d2d)
-     * but type is not same is also ok if we just use render engine in vo but not in context.
-     * TODO:
-     * what if multiple vo(different render engines) share 1 player?
-     * private?: set in AVThread, context is used by this class internally
-     */
-    virtual int filterContextType() const;
     //No filters() api, they are used internally?
     QList<Filter*>& filters();
     bool installFilter(Filter *filter);

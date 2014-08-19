@@ -437,12 +437,14 @@ void VideoRenderer::handlePaintEvent()
     //TODO: move to AVOutput::applyFilters() //protected?
     if (!d.filters.isEmpty() && d.filter_context && d.statistics) {
         foreach(Filter* filter, d.filters) {
-            if (!filter) {
+            VideoFilter *vf = static_cast<VideoFilter*>(filter);
+            if (!vf) {
                 qWarning("a null filter!");
                 //d.filters.removeOne(filter);
                 continue;
             }
-            filter->process(d.filter_context, d.statistics);
+            vf->prepareContext(d.filter_context, d.statistics, 0);
+            vf->apply(d.statistics, 0);
         }
     } else {
         //warn once

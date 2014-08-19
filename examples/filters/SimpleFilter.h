@@ -29,7 +29,7 @@
 
 namespace QtAV {
 
-class SimpleFilter : public Filter
+class SimpleFilter : public VideoFilter
 {
     Q_OBJECT
 public:
@@ -37,7 +37,7 @@ public:
     virtual ~SimpleFilter();
     void enableRotate(bool r);
     void enableWaveEffect(bool w);
-    virtual FilterContext::Type contextType() const { return FilterContext::QtPainter; }
+    virtual VideoFilterContext::Type contextType() const { return VideoFilterContext::QtPainter; }
     void setText(const QString& text);
     QString text() const;
     //show image if text is null
@@ -46,7 +46,7 @@ public:
     void prepare();
 
 protected:
-    virtual void process();
+    virtual void process(Statistics* statistics, VideoFrame* frame);
     virtual void timerEvent(QTimerEvent *);
 private:
     bool mCanRot;

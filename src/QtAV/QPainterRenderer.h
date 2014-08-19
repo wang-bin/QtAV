@@ -35,7 +35,6 @@ public:
     QPainterRenderer();
     virtual VideoRendererId id () const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
-    virtual int filterContextType() const;
     //virtual QImage currentFrameImage() const;
 protected:
     bool prepareFrame(const VideoFrame& frame);

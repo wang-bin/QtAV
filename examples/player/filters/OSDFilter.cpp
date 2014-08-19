@@ -24,13 +24,13 @@
 #include <QtAV/private/Filter_p.h>
 #include <QtGui/QPainter>
 
-class OSDFilterPrivate : public FilterPrivate
+class OSDFilterPrivate : public VideoFilterPrivate
 {
 public:
 };
 
 OSDFilter::OSDFilter(OSDFilterPrivate &d, QObject *parent):
-    Filter(d, parent)
+    VideoFilter(d, parent)
 {
 }
 
@@ -39,12 +39,15 @@ OSDFilterQPainter::OSDFilterQPainter(QObject *parent):
 {
 }
 
-void OSDFilterQPainter::process()
+void OSDFilterQPainter::process(Statistics *statistics, VideoFrame *frame)
 {
+    Q_UNUSED(frame);
     if (mShowType == ShowNone)
         return;
-    DPTR_D(Filter);
+    DPTR_D(VideoFilter);
     QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(d.context);
+    if (!ctx)
+        return;
     //qDebug("ctx=%p tid=%p main tid=%p", ctx, QThread::currentThread(), qApp->thread());
-    ctx->drawPlainText(ctx->rect, Qt::AlignCenter, text(d.statistics));
+    ctx->drawPlainText(ctx->rect, Qt::AlignCenter, text(statistics));
 }

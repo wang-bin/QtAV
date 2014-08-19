@@ -39,8 +39,6 @@ AVThreadPrivate::~AVThreadPrivate() {
     ready_cond.wakeAll();
     packets.setBlocking(true); //???
     packets.clear();
-    //not neccesary context is managed by filters.
-    filter_context = 0;
     QList<Filter*>::iterator it = filters.begin();
     while (it != filters.end()) {
         if ((*it)->isOwnedByTarget() && !(*it)->parent())
@@ -246,8 +244,6 @@ void AVThread::resetState()
     d.demux_end = false;
     d.packets.setBlocking(true);
     d.packets.clear();
-    //not neccesary context is managed by filters.
-    d.filter_context = 0;
     QMutexLocker lock(&d.ready_mutex);
     d.ready = true;
     d.ready_cond.wakeOne();

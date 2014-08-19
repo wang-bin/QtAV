@@ -71,10 +71,9 @@ GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidg
     setAutoBufferSwap(false);
     setAutoFillBackground(false);
     d.painter = new QPainter();
-    d.filter_context = FilterContext::create(FilterContext::QtPainter);
-    QPainterFilterContext *ctx = static_cast<QPainterFilterContext*>(d.filter_context);
-    ctx->paint_device = this;
-    ctx->painter = d.painter;
+    d.filter_context = VideoFilterContext::create(VideoFilterContext::QtPainter);
+    d.filter_context->paint_device = this;
+    d.filter_context->painter = d.painter;
 }
 
 GLWidgetRenderer2::~GLWidgetRenderer2()
