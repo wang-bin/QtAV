@@ -1015,6 +1015,18 @@ void AVPlayer::stop()
             qDebug("stopping %s...", threads[i].name);
         }
     }
+    
+	if(demuxer_thread)
+	{
+		demuxer_thread->stop();
+        qDebug("stopping demuxer thread...");
+        demuxer_thread->stop();
+        while (demuxer_thread->isRunning()) {
+            demuxer_thread->wait(500);
+	        qDebug("stopping demuxer thread...");
+        }
+	}
+    
     // can not close decoders here since close and open may be in different threads
     qDebug("all audio/video threads  stopped...");
 }
