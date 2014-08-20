@@ -340,9 +340,9 @@ void VideoThread::run()
             VideoRenderer *vo = 0;
             if (!outputs.isEmpty())
                 vo = static_cast<VideoRenderer*>(outputs.first());
-            if (vo && !vo->isSupported(frame.pixelFormat())
+            if (vo && (!vo->isSupported(frame.pixelFormat())
                     || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
-                    ) {
+                    )) {
                 if (!frame.convertTo(vo->preferredPixelFormat())) {
                     /*
                      * use VideoFormat::Format_User to deliver user defined frame
