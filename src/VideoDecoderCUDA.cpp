@@ -105,6 +105,10 @@ static cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
         AVCodecID ffcodec;
         cudaVideoCodec cudaCodec;
     } ff_cuda_codecs[] = {
+        // AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
+#if defined(AV_CODEC_ID_H265) && (CUDA_VERSION >= 6050) //TODO: check avcodec
+        { QTAV_CODEC_ID(HEVC),       cudaVideoCodec_HEVC },
+#endif //
         { QTAV_CODEC_ID(MPEG1VIDEO), cudaVideoCodec_MPEG1 },
         { QTAV_CODEC_ID(MPEG2VIDEO), cudaVideoCodec_MPEG2 },
         { QTAV_CODEC_ID(VC1),        cudaVideoCodec_VC1   },
