@@ -191,15 +191,19 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     for (int i = 0; attr[i]; ++i) {
         shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
     }
+// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
+#else
+    QOpenGLContext::currentContext()->functions()->glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
+#endif
 
-   glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
+    // d.shader->program()->release(); //glUseProgram(0)
+    for (int i = 0; attr[i]; ++i) {
+        shader->program()->disableAttributeArray(i); //TODO: in setActiveShader
+    }
 
-   // d.shader->program()->release(); //glUseProgram(0)
-   for (int i = 0; attr[i]; ++i) {
-       shader->program()->disableAttributeArray(i); //TODO: in setActiveShader
-   }
-
-   d.material->unbind();
+    d.material->unbind();
 }
 
 void OpenGLVideo::resetGL()

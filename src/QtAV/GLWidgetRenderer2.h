@@ -24,6 +24,12 @@
 
 #include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QOpenGLFunctions>
+#else
+#include <QtOpenGL/QGLFunctions>
+#define QOpenGLFunctions QGLFunctions
+#endif
 
 namespace QtAV {
 
@@ -33,7 +39,7 @@ class GLWidgetRenderer2Private;
  * Renderering video frames using GLSL. A more generic high level class OpenGLVideo is used internally.
  * TODO: for Qt5, no QtOpenGL, use QWindow instead.
  */
-class Q_AV_EXPORT GLWidgetRenderer2 : public QGLWidget, public VideoRenderer
+class Q_AV_EXPORT GLWidgetRenderer2 : public QGLWidget, public VideoRenderer, public QOpenGLFunctions
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer2)

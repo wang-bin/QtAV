@@ -89,8 +89,14 @@ public:
         colorTransform.setOutputColorSpace(ColorTransform::RGB);
     }
     ~VideoMaterialPrivate() {
-        if (!textures.isEmpty())
+        if (!textures.isEmpty()) {
+// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
             glDeleteTextures(textures.size(), textures.data());
+#else
+            QOpenGLContext::currentContext()->functions()->glDeleteTextures(textures.size(), textures.data());
+#endif
+        }
     }
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool initTextures(const VideoFormat& fmt);

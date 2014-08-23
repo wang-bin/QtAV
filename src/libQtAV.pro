@@ -69,7 +69,11 @@ sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2) {
   }
 }
 
-win32: CONFIG += config_dsound
+win32 {
+    CONFIG += config_dsound
+#dynamicgl: __impl__GetDC __impl_ReleaseDC __impl_GetDesktopWindow
+    LIBS += -luser32 -lgdi32
+}
 
 *msvc* {
 #link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
@@ -156,8 +160,13 @@ config_xv {
 config_gl {
     QT *= opengl
     DEFINES *= QTAV_HAVE_GL=1
-    SOURCES += GLWidgetRenderer.cpp GLWidgetRenderer2.cpp
-    SDK_HEADERS += QtAV/GLWidgetRenderer.h QtAV/GLWidgetRenderer2.h
+    SOURCES += GLWidgetRenderer2.cpp
+    SDK_HEADERS += QtAV/GLWidgetRenderer2.h
+    !contains(QT_CONFIG, dynamicgl) { #dynamicgl does not support old gl1 functions which used in GLWidgetRenderer
+        DEFINES *= QTAV_HAVE_GL1
+        SOURCES += GLWidgetRenderer.cpp
+        SDK_HEADERS += QtAV/GLWidgetRenderer.h
+    }
     OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
 }
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda

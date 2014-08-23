@@ -29,8 +29,8 @@
 #else
 #include <QtOpenGL/QGLShaderProgram>
 #define QOpenGLShaderProgram QGLShaderProgram
+#define initializeOpenGLFunctions() initializeGLFunctions()
 #endif
-
 namespace QtAV {
 
 class GLWidgetRenderer2Private : public VideoRendererPrivate
@@ -133,6 +133,7 @@ void GLWidgetRenderer2::initializeGL()
     //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
     bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
     qDebug("OpenGL version: %d.%d  hasGLSL: %d", format().majorVersion(), format().minorVersion(), hasGLSL);
+    initializeOpenGLFunctions();
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0, 0.0, 0.0, 0.0);

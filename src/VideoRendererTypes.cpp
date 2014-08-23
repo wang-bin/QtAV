@@ -27,8 +27,10 @@
 #include "QtAV/GraphicsItemRenderer.h"
 #if QTAV_HAVE(GL)
 #include "QtAV/GLWidgetRenderer2.h"
-#include "QtAV/GLWidgetRenderer.h"
 #endif //QTAV_HAVE(GL)
+#if QTAV_HAVE(GL1)
+#include "QtAV/GLWidgetRenderer.h"
+#endif //QTAV_HAVE(GL1)
 #include "QtAV/private/factory.h"
 
 namespace QtAV {
@@ -75,17 +77,18 @@ VideoRendererId QPainterRenderer::id() const
 }
 
 #if QTAV_HAVE(GL)
+#if QTAV_HAVE(GL1)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget, "QGLWidegt")
 
 void RegisterVideoRendererGLWidget_Man()
 {
     FACTORY_REGISTER_ID_MAN(VideoRenderer, GLWidget, "QGLWidegt")
 }
-
 VideoRendererId GLWidgetRenderer::id() const
 {
     return VideoRendererId_GLWidget;
 }
+#endif //QTAV_HAVE(GL1)
 
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget2, "QGLWidegt2")
 
@@ -108,8 +111,11 @@ void VideoRenderer_RegisterAll()
 {
     RegisterVideoRendererWidget_Man();
 #if QTAV_HAVE(GL)
-    RegisterVideoRendererGLWidget_Man();
+    RegisterVideoRendererGLWidget2_Man();
 #endif //QTAV_HAVE(GL)
+#if QTAV_HAVE(GL1)
+    RegisterVideoRendererGLWidget_Man();
+#endif //QTAV_HAVE(GL1)
 #if QTAV_HAVE(GDIPLUS)
     RegisterVideoRendererGDI_Man();
 #endif //QTAV_HAVE(GDIPLUS)
