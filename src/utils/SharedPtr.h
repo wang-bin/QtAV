@@ -40,7 +40,13 @@ public:
     void ref() { m_counter.ref(); }
     // return false if becomes 0
     bool deref() { return m_counter.deref();}
-    int count() const {return m_counter;}
+    int count() const {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+        return m_counter;
+#else
+        return m_counter.load();
+#endif
+    }
     bool isNull() const { return !m_ptr;}
 private:
     T *m_ptr;
