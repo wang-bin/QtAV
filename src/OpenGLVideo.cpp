@@ -191,8 +191,8 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     for (int i = 0; attr[i]; ++i) {
         shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
     }
-// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifndef QT_OPENGL_DYNAMIC
     glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
 #else
     QOpenGLContext::currentContext()->functions()->glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());

@@ -271,8 +271,8 @@ void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader());
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader());
     int maxVertexAttribs = 0;
-// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifndef QT_OPENGL_DYNAMIC
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
 #else
     QOpenGLContext::currentContext()->functions()->glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
@@ -383,8 +383,8 @@ bool VideoMaterial::bind()
     }
     for (int i = 0; i < nb_planes; ++i) {
         OpenGLHelper::glActiveTexture(GL_TEXTURE0 + i);
-// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifndef QT_OPENGL_DYNAMIC
         glBindTexture(GL_TEXTURE_2D, d.textures[i]);
 #else
         QOpenGLContext::currentContext()->functions()->glBindTexture(GL_TEXTURE_2D, d.textures[i]);
@@ -399,8 +399,8 @@ void VideoMaterial::bindPlane(int p)
     //setupQuality?
     if (d.frame.map(GLTextureSurface, &d.textures[p])) {
         OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
-// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifndef QT_OPENGL_DYNAMIC
         glBindTexture(GL_TEXTURE_2D, d.textures[p]);
 #else
         QOpenGLContext::currentContext()->functions()->glBindTexture(GL_TEXTURE_2D, d.textures[p]);
@@ -412,8 +412,8 @@ void VideoMaterial::bindPlane(int p)
         return;
     OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
     //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
-// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifndef QT_OPENGL_DYNAMIC
     glBindTexture(GL_TEXTURE_2D, d.textures[p]);
     //d.setupQuality();
     // This is necessary for non-power-of-two textures
@@ -519,8 +519,8 @@ QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
 
 bool VideoMaterialPrivate::initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height)
 {
-// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifndef QT_OPENGL_DYNAMIC
     glBindTexture(GL_TEXTURE_2D, tex);
     setupQuality();
     // This is necessary for non-power-of-two textures
@@ -622,15 +622,15 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
      */
     if (textures.size() != fmt.planeCount()) {
         qDebug("delete %d textures", textures.size());
-// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifndef QT_OPENGL_DYNAMIC
         glDeleteTextures(textures.size(), textures.data());
 #else
         QOpenGLContext::currentContext()->functions()->glDeleteTextures(textures.size(), textures.data());
 #endif
         textures.clear();
         textures.resize(fmt.planeCount());
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#ifndef QT_OPENGL_DYNAMIC
         glGenTextures(textures.size(), textures.data());
 #else
         QOpenGLContext::currentContext()->functions()->glGenTextures(textures.size(), textures.data());
@@ -689,7 +689,7 @@ bool VideoMaterialPrivate::updateTexturesIfNeeded()
 
 void VideoMaterialPrivate::setupQuality()
 {
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#ifndef QT_OPENGL_DYNAMIC
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 #else

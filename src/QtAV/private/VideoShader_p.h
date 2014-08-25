@@ -90,8 +90,8 @@ public:
     }
     ~VideoMaterialPrivate() {
         if (!textures.isEmpty()) {
-// for dynamicgl. qglfunctions in qt4 does not have portable gl functions
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifndef QT_OPENGL_DYNAMIC
             glDeleteTextures(textures.size(), textures.data());
 #else
             QOpenGLContext::currentContext()->functions()->glDeleteTextures(textures.size(), textures.data());
