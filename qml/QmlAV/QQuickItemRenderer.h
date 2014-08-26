@@ -69,6 +69,7 @@ Q_SIGNALS:
     void openGLChanged();
 
 protected:
+    virtual bool event(QEvent *e);
     virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);
 
     virtual bool receiveFrame(const VideoFrame &frame);

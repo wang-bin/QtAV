@@ -20,16 +20,17 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QmlAV/QQuickItemRenderer.h>
-#include <QmlAV/private/QQuickItemRenderer_p.h>
+#include "QmlAV/QQuickItemRenderer.h"
+#include "QmlAV/private/QQuickItemRenderer_p.h"
+#include "QtCore/QCoreApplication"
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QSGFlatColorMaterial>
 #include <QtAV/FactoryDefine.h>
 #include <QtAV/AVPlayer.h>
-#include <QmlAV/QmlAVPlayer.h>
-#include "QmlAV/SGVideoNode.h"
 #include <QtAV/VideoRendererTypes.h> //it declares a factory we need
-#include "QtAV/prepost.h"
+#include <QtAV/prepost.h>
+#include "QmlAV/QmlAVPlayer.h"
+#include "QmlAV/SGVideoNode.h"
 
 namespace QtAV
 {
@@ -53,6 +54,14 @@ bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     if (!isOpenGL())
         return VideoFormat::isRGB(pixfmt);
+    return true;
+}
+
+bool QQuickItemRenderer::event(QEvent *e)
+{
+    if (e->type() != QEvent::User)
+        return QQuickItem::event(e);
+    update();
     return true;
 }
 
@@ -82,7 +91,9 @@ bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
             d.image = d.image.copy(r);
     }
     d.frame_changed = true;
-    update();
+//    update();  // why update slow? because of calling in a different thread?
+    //QMetaObject::invokeMethod(this, "update"); // slower than directly postEvent
+    QCoreApplication::postEvent(this, new QEvent(QEvent::User));
     return true;
 }
 
