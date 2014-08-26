@@ -481,7 +481,7 @@ VideoFrame VideoDecoderCedarv::frame()
 
 	d.cedarv->display_release(d.cedarv, d.cedarPicture.id);
 	d.cedarPicture.id = 0;
-	return frame.clone();
+	return frame;
 }
 
 

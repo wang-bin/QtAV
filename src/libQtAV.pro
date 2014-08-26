@@ -205,6 +205,7 @@ config_vaapi* {
 }
 config_libcedarv {
     DEFINES *= QTAV_HAVE_CEDARV=1
+    QMAKE_CXXFLAGS *= -march=armv7-a -mfpu=neon 
     SOURCES += VideoDecoderCedarv.cpp
     LIBS += -lvecore -lcedarv
 }
