@@ -1,4 +1,5 @@
 #include "SurfaceInteropVAAPI.h"
+#include "utils/OpenGLHelper.h"
 
 namespace QtAV {
 namespace vaapi {
