@@ -36,7 +36,7 @@ class QQuickItemRendererPrivate : public VideoRendererPrivate
 public:
     QQuickItemRendererPrivate():
         VideoRendererPrivate()
-      , opengl(false)
+      , opengl(true)
       , frame_changed(false)
       , fill_mode(QQuickItemRenderer::PreserveAspectFit)
       , texture(0)
