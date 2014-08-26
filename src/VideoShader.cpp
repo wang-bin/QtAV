@@ -221,10 +221,12 @@ QOpenGLShaderProgram* VideoShader::program()
     return d.program;
 }
 
-void VideoShader::update(VideoMaterial *material)
+bool VideoShader::update(VideoMaterial *material)
 {
+    if (!material)
+        return false;
     if (!material->bind())
-        return;
+        return false;
 
     const VideoFormat fmt(material->currentFormat());
     //format is out of date because we may use the same shader for different formats
@@ -248,6 +250,7 @@ void VideoShader::update(VideoMaterial *material)
     program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     // uniform end. attribute begins
+    return true;
 }
 
 QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const

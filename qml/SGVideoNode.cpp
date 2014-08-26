@@ -101,7 +101,8 @@ void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *n
 {
     Q_UNUSED(oldMaterial);
     SGVideoMaterial *mat = static_cast<SGVideoMaterial *>(newMaterial);
-    m_shader->update(&mat->m_material);
+    if (!m_shader->update(&mat->m_material)) //material not ready. e.g. video item have not got a frame
+        return;
     if (state.isOpacityDirty()) {
         mat->m_opacity = state.opacity();
         program()->setUniformValue(opacityLocation(), GLfloat(mat->m_opacity));

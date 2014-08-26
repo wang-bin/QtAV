@@ -77,7 +77,7 @@ public:
     VideoFormat videoFormat() const;
     void setVideoFormat(const VideoFormat& format);
     QOpenGLShaderProgram* program();
-    void update(VideoMaterial* material);
+    bool update(VideoMaterial* material);
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
     virtual void compile(QOpenGLShaderProgram* shaderProgram);
