@@ -378,6 +378,8 @@ bool VideoMaterial::bind()
     const int nb_planes = d.textures.size(); //number of texture id
     if (nb_planes <= 0)
         return false;
+    if (nb_planes > 4) //why?
+        return false;
     if (d.update_texure) {
         for (int i = 0; i < nb_planes; ++i) {
             bindPlane((i + 1) % nb_planes); // why? i: quick items display wrong textures
@@ -627,13 +629,15 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
      */
     if (textures.size() != fmt.planeCount()) {
         qDebug("delete %d textures", textures.size());
+        if (!textures.isEmpty()) {
 // for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
 #ifndef QT_OPENGL_DYNAMIC
-        glDeleteTextures(textures.size(), textures.data());
+            glDeleteTextures(textures.size(), textures.data());
 #else
-        QOpenGLContext::currentContext()->functions()->glDeleteTextures(textures.size(), textures.data());
+            QOpenGLContext::currentContext()->functions()->glDeleteTextures(textures.size(), textures.data());
 #endif
-        textures.clear();
+            textures.clear();
+        }
         textures.resize(fmt.planeCount());
 #ifndef QT_OPENGL_DYNAMIC
         glGenTextures(textures.size(), textures.data());

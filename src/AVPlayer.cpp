@@ -858,9 +858,7 @@ void AVPlayer::play()
         stop();
         // wait here to ensure stopped() and startted() is in correct order
         if (demuxer_thread->isRunning()) {
-            QEventLoop loop;
-            connect(demuxer_thread, SIGNAL(finished()), &loop, SLOT(quit())); //queued connection. so later than stopped() emitted
-            loop.exec();
+            demuxer_thread->wait(500);
         }
         if (last_pos < 0)
             last_position = -last_pos;
