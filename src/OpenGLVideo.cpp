@@ -174,19 +174,8 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     }
 
     // normalize?
-#if 1
     shader->program()->setAttributeArray(0, GL_FLOAT, d.geometry.data(0), 2, d.geometry.stride());
     shader->program()->setAttributeArray(1, GL_FLOAT, d.geometry.data(1), 2, d.geometry.stride());
-#else
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-    static QGLFunctions *glf = new QGLFunctions();
-    glf->initializeGLFunctions();
-#else
-    QOpenGLFunctions *glf = QOpenGLContext::currentContext()->functions();
-#endif
-    glf->glVertexAttribPointer(0, 2, GL_FLOAT, GL_TRUE, d.geometry.stride(), d.geometry.data(0));
-    glf->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, d.geometry.stride(), d.geometry.data(1));
-#endif
     char const *const *attr = shader->attributeNames();
     for (int i = 0; attr[i]; ++i) {
         shader->program()->enableAttributeArray(i); //TODO: in setActiveShader

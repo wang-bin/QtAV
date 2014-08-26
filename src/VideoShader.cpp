@@ -305,6 +305,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
 {
     DPTR_D(VideoMaterial);
     d.update_texure = true;
+    // TODO: move to another function before rendering?
     d.bpp = frame.format().bitsPerPixel(0);
     d.width = frame.width();
     d.height = frame.height();
@@ -376,18 +377,19 @@ bool VideoMaterial::bind()
         return false;
     if (d.update_texure) {
         for (int i = 0; i < nb_planes; ++i) {
-            bindPlane(i);
+            bindPlane((i + 1) % nb_planes); // why? i: quick items display wrong textures
         }
         d.update_texure = false;
         return true;
     }
     for (int i = 0; i < nb_planes; ++i) {
-        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + i);
+        const int p = (i + 1) % nb_planes; // why? i: quick items display wrong textures
+        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
 // for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
 #ifndef QT_OPENGL_DYNAMIC
-        glBindTexture(GL_TEXTURE_2D, d.textures[i]);
+        glBindTexture(GL_TEXTURE_2D, d.textures[p]);
 #else
-        QOpenGLContext::currentContext()->functions()->glBindTexture(GL_TEXTURE_2D, d.textures[i]);
+        QOpenGLContext::currentContext()->functions()->glBindTexture(GL_TEXTURE_2D, d.textures[p]);
 #endif
     }
     return true;
