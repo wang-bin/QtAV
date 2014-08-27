@@ -803,14 +803,18 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     surface_height = FFALIGN(height, 16);    
     if (surface_auto) {
         switch (codec_id) {
-        case  QTAV_CODEC_ID(H264):
-            surface_count = 16 + 1;
+        case QTAV_CODEC_ID(H264):
+            surface_count = 16 + 2 + codec_ctx->thread_count;
             break;
+        case QTAV_CODEC_ID(MPEG1VIDEO):
+        case QTAV_CODEC_ID(MPEG2VIDEO):
+            surface_count = 2 + 2;
         default:
             surface_count = 2 + 1;
             break;
         }
     }
+    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces>>>>>>>>>>>>>>>%d", surface_count);
     if (surface_count == 0) {
         qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
         surface_count = 17;

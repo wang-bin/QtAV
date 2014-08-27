@@ -427,7 +427,7 @@ bool VideoDecoderVAAPIPrivate::open()
         break;
     case QTAV_CODEC_ID(H264):
         i_profile = VAProfileH264High;
-        i_surfaces = 16+1;
+        i_surfaces = 16+2 + codec_ctx->thread_count;
         break;
     default:
         return false;
