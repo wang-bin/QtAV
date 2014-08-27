@@ -2,13 +2,13 @@ TEMPLATE = app
 QT += opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TRANSLATIONS = res/player_zh_CN.ts
+VERSION = 1.4.0
 
 STATICLINK = 0
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
 include($$PWD/../common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
-
 INCLUDEPATH += $$PWD
 
 SOURCES += main.cpp \
@@ -70,3 +70,9 @@ RESOURCES += \
     theme.qrc
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+
+RC_ICONS = $$PROJECTROOT/src/QtAV.ico
+QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics | wbsecg1@gmail.com"
+QMAKE_TARGET_DESCRIPTION = "Multimedia playback framework based on Qt & FFmpeg. https://github.com/wang-bin/QtAV"
+QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2014 WangBin, wbsecg1@gmail.com"
+QMAKE_TARGET_PRODUCT = "QtAV player"

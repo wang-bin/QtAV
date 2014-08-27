@@ -14,11 +14,17 @@ PROJECTROOT = $$PWD/..
 !include(libQtAV.pri): error("could not find libQtAV.pri")
 preparePaths($$OUT_PWD/../out)
 
-RESOURCES += ../i18n/QtAV.qrc \
+RESOURCES += QtAV.qrc \
     shaders/shaders.qrc
 
-win32 {
-    RC_FILE = $${PROJECTROOT}/res/QtAV.rc
+!rc_file {
+    RC_ICONS = QtAV.ico
+    QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics | wbsecg1@gmail.com"
+    QMAKE_TARGET_DESCRIPTION = "Multimedia playback framework based on Qt & FFmpeg. https://github.com/wang-bin/QtAV"
+    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2014 WangBin, wbsecg1@gmail.com"
+    QMAKE_TARGET_PRODUCT = "QtAV"
+} else:win32 {
+    RC_FILE = QtAV.rc
 #no depends for rc file by default, even if rc includes a header. Makefile target use '/' as default, so not works iwth win cmd
     rc.target = $$clean_path($$RC_FILE) #rc obj depends on clean path target
     rc.depends = $$PWD/QtAV/version.h
@@ -44,8 +50,8 @@ copy_sdk_libs_cmd = $$join(copy_sdk_libs_cmd,$$escape_expand(\\n\\t))
 isEmpty(QMAKE_POST_LINK): QMAKE_POST_LINK = $$copy_sdk_libs_cmd
 else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$copy_sdk_libs_cmd
 
-OTHER_FILES += $$RC_FILE
-TRANSLATIONS = $${PROJECTROOT}/i18n/QtAV_zh_CN.ts
+OTHER_FILES += $$RC_FILE QtAV.svg
+TRANSLATIONS = i18n/QtAV_zh_CN.ts
 
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
 sse4_1|config_sse4_1|contains(TARGET_ARCH_SUB, sse4.1) {

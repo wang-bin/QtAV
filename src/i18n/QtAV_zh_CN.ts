@@ -4,58 +4,43 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="63"/>
         <source>Ok</source>
-        <translation>确定</translation>
+        <translation type="vanished">确定</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="68"/>
         <source>About</source>
-        <translation>关于</translation>
+        <translation type="vanished">关于</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="79"/>
         <source>About FFmpeg</source>
-        <translation>关于 FFmpeg</translation>
+        <translation type="vanished">关于 FFmpeg</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="113"/>
         <source>Build version</source>
-        <translation>编译时版本</translation>
+        <translation type="vanished">编译时版本</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="122"/>
         <source>Runtime version</source>
-        <translation>运行时版本</translation>
+        <translation type="vanished">运行时版本</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="137"/>
         <source>About QtAV</source>
-        <translation>关于 QtAV</translation>
+        <translation type="vanished">关于 QtAV</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="148"/>
         <source>A media playing library base on Qt and FFmpeg.
 </source>
-        <translation>基于 Qt 和 FFmpeg 的音视频播放库.
+        <translation type="vanished">基于 Qt 和 FFmpeg 的音视频播放库.
 </translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="149"/>
-        <source>Distributed under the terms of LGPLv2.1 or later.
-</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../src/QtAV_Global.cpp" line="151"/>
         <source>Shanghai University-&gt;S3 Graphics, Shanghai, China
 </source>
-        <translation>上海大学-&gt;S3 Graphics, 中国, 上海</translation>
+        <translation type="vanished">上海大学-&gt;S3 Graphics, 中国, 上海</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="152"/>
         <source>Donate</source>
-        <translation>捐助</translation>
+        <translation type="vanished">捐助</translation>
     </message>
     <message>
         <source>Shanghai University, Shanghai, China
@@ -64,14 +49,12 @@
 </translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="153"/>
         <source>Source</source>
-        <translation>源码</translation>
+        <translation type="vanished">源码</translation>
     </message>
     <message>
-        <location filename="../src/QtAV_Global.cpp" line="154"/>
         <source>Downloads</source>
-        <translation>下载</translation>
+        <translation type="vanished">下载</translation>
     </message>
 </context>
 <context>

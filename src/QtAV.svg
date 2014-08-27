@@ -1,0 +1,16 @@
+<?xml version="1.0" standalone="no"?>
+
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg width="75%" height="75%" version="1.1"
+xmlns="http://www.w3.org/2000/svg">
+
+<rect x="0" y="0" width="75" height="75" fill-opacity="0"/>
+<!--a=50, h=43.3, (75-43.3)/2=15.85-->
+<path d="M 0 59.15 L 50 59.15 L 25 15.85 L 0 59.15" fill="#7cc040" stroke="#7cc040"
+stroke-width="0" stroke-opacity="1" />
+<path d="M 50 58.28 L 74.13 16.72 L 25.87 16.72 L 50 58.28" fill="white" stroke="#7cc040"
+stroke-width="1" stroke-opacity="1"/>
+
+</svg>

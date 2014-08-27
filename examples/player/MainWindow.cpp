@@ -103,6 +103,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpOSD(0)
   , mpSubtitle(0)
 {
+    setWindowIcon(QIcon(":/QtAV.svg"));
     mpSubtitle = new SubtitleFilter(this);
     mpOSD = new OSDFilterQPainter(this);
     mpChannelAction = 0;

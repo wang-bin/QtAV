@@ -1,4 +1,4 @@
- TEMPLATE = lib
+TEMPLATE = lib
 CONFIG += qt plugin
 TARGET = QmlAV
 QT += quick qml
@@ -57,20 +57,11 @@ QMAKE_EXTRA_COMPILERS += extra_copy
 # update EXTRA_COPY_FILES will result in target relink
 EXTRA_COPY_FILES = qmldir Video.qml plugins.qmltypes
 
-win32 {
-    RC_FILE = #$${PROJECTROOT}/res/QtAV.rc
-#no depends for rc file by default, even if rc includes a header. Makefile target use '/' as default, so not works iwth win cmd
-    rc.target = $$clean_path($$RC_FILE) #rc obj depends on clean path target
-    rc.depends = ../src/QtAV/version.h
-#why use multiple rule failed? i.e. add a rule without command
-    isEmpty(QMAKE_SH) {
-        rc.commands = @copy /B $$system_path($$RC_FILE)+,, #change file time
-    } else {
-        rc.commands = @touch $$RC_FILE #change file time
-    }
-    QMAKE_EXTRA_TARGETS += rc
-}
-OTHER_FILES += $$RC_FILE
+QMAKE_WRITE_DEFAULT_RC = 1
+QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics | wbsecg1@gmail.com"
+QMAKE_TARGET_DESCRIPTION = "Multimedia playback framework based on Qt & FFmpeg. https://github.com/wang-bin/QtAV"
+QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2014 WangBin, wbsecg1@gmail.com"
+QMAKE_TARGET_PRODUCT = "QtAV player"
 
 *msvc* {
 #link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
