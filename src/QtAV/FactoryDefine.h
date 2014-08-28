@@ -96,11 +96,9 @@
 #define FACTORY_REGISTER_ID_TYPE_AUTO(BASE, ID, TYPE, NAME) \
     BASE* __create_##TYPE() { return new TYPE();} \
     static void __init_##TYPE() { \
-        printf("__init_"#TYPE" id=%d\n", ID); fflush(0); \
         FACTORY_REGISTER_ID_TYPE_MAN(BASE, ID, TYPE, NAME) \
     } \
     PRE_FUNC_ADD(__init_##TYPE)
-
 
 /*
  * This should be in header
