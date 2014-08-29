@@ -28,6 +28,7 @@
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
+#include "PlainText.h"
 
 namespace QtAV {
 
@@ -197,7 +198,7 @@ bool SubtitleProcesserFFmpeg::processSubtitle()
         for (unsigned i = 0; i < sub.num_rects; i++) {
             switch (sub.rects[i]->type) {
             case SUBTITLE_ASS:
-                frame.text.append(sub.rects[i]->ass).append('\n');
+                frame.text.append(PlainText::fromAss(sub.rects[i]->ass)).append('\n');
                 break;
             case SUBTITLE_TEXT:
                 frame.text.append(sub.rects[i]->text).append('\n');

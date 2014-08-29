@@ -224,6 +224,7 @@ config_vda {
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
+    subtitle/PlainText.cpp \
     subtitle/SubtitleProcesser.cpp \
     subtitle/SubtitleProcesserFFmpeg.cpp \
     utils/GPUMemCopy.cpp \
@@ -351,6 +352,7 @@ SDK_PRIVATE_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     $$SDK_PRIVATE_HEADERS \
+    subtitle/PlainText.h \
     utils/BlockingQueue.h \
     utils/GPUMemCopy.h \
     utils/OpenGLHelper.h \
