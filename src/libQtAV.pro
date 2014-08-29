@@ -225,6 +225,7 @@ SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
     subtitle/SubtitleProcesser.cpp \
+    subtitle/SubtitleProcesserFFmpeg.cpp \
     utils/GPUMemCopy.cpp \
     utils/OpenGLHelper.cpp \
     QAVIOContext.cpp \
