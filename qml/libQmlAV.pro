@@ -2,7 +2,6 @@ TEMPLATE = lib
 CONFIG += qt plugin
 TARGET = QmlAV
 QT += quick qml
-
 CONFIG *= qmlav-buildlib
 
 #var with '_' can not pass to pri?
@@ -75,9 +74,11 @@ SOURCES += \
     plugin.cpp \
     QQuickItemRenderer.cpp \
     SGVideoNode.cpp \
-    QmlAVPlayer.cpp
+    QmlAVPlayer.cpp \
+    QuickSubtitle.cpp
 
-HEADERS += QmlAV/private/QQuickItemRenderer_p.h
+HEADERS += QmlAV/private/QQuickItemRenderer_p.h \
+    QmlAV/QuickSubtitle.h
 
 SDK_HEADERS += \
     QmlAV/Export.h \
