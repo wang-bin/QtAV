@@ -85,8 +85,31 @@ Rectangle {
         onPaused: {
             control.setPauseState()
         }
-    }
 
+    }
+    Text {
+        id: subtitleLabel
+        horizontalAlignment: Text.AlignHCenter
+        font {
+            pixelSize: Utils.scaled(20)
+            bold: true
+        }
+        style: Text.Outline
+        styleColor: "blue"
+        color: "white"
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: control.top
+        }
+        height: Utils.scaled(30)
+    }
+    Subtitle {
+        player: player
+        onContentChanged: {
+            subtitleLabel.text = text
+        }
+    }
     ControlPanel {
         id: control
         anchors {
