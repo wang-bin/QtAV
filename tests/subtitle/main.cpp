@@ -7,6 +7,19 @@
 
 using namespace QtAV;
 
+class SubtitleObserver : public QObject
+{
+    Q_OBJECT
+public:
+    SubtitleObserver(QObject* parent = 0) : QObject(parent) {}
+    void observe(Subtitle* sub) { connect(sub, SIGNAL(contentChanged()), this, SLOT(onSubtitleChanged()));}
+private slots:
+    void onSubtitleChanged() {
+        Subtitle *sub = qobject_cast<Subtitle*>(sender());
+        qDebug() << "subtitle changed at " << sub->timestamp() << "s\n" << sub->getText();
+    }
+};
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
@@ -28,6 +41,8 @@ int main(int argc, char *argv[])
     Subtitle sub;
     sub.setFileName(file);
     sub.setFuzzyMatch(fuzzy);
+    SubtitleObserver sob;
+    sob.observe(&sub);
     QElapsedTimer timer;
     timer.start();
     if (!sub.start())
@@ -37,11 +52,11 @@ int main(int argc, char *argv[])
     if (t >= 0) {
         for (int n = 0; n < 4; ++n) {
             sub.setTimestamp(qreal(t+n*1000)/1000.0);
-            qDebug() << "sub at time " << sub.timestamp() << "s: " << sub.getText();
+            qDebug() << sub.timestamp() << "s: " << sub.getText();
         }
         for (int n = 0; n < 4; ++n) {
             sub.setTimestamp(qreal(t-n*1000)/1000.0);
-            qDebug() << "sub at time " << sub.timestamp() << ": " << sub.getText();
+            qDebug() << sub.timestamp() << "s: " << sub.getText();
         }
         //QImage img(sub.getImage(800, 600));
         //img.save("sub.png");
@@ -50,3 +65,5 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+#include "main.moc"

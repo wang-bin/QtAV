@@ -38,18 +38,20 @@ class Subtitle::Private {
 public:
     Private()
         : fuzzy_match(true)
+        , update_image(true)
         , processer(0)
         , t(0)
     {}
     void reset() {
+        update_image = true;
         t = 0;
         frame = SubtitleFrame();
-        image = QImage();
         frames.clear();
         itf = frames.begin();
     }
     // width/height == 0: do not create image
-    void prepareCurrentFrame(int width = 0, int height = 0);
+    // return true if both frame time and content(currently is text) changed
+    bool prepareCurrentFrame();
     QStringList find();
     /*!
      * \brief readFromFile
@@ -68,6 +70,7 @@ public:
     bool processRawData(SubtitleProcesser* sp, const QByteArray& data);
 
     bool fuzzy_match;
+    bool update_image;
     SubtitleProcesser *processer;
     QList<SubtitleProcesser*> processers;
     QStringList engine_names;
@@ -81,7 +84,6 @@ public:
     qreal t;
     SubtitleFrame frame;
     QLinkedList<SubtitleFrame>::iterator itf;
-    QImage image;
 };
 
 Subtitle::Subtitle(QObject *parent) :
@@ -206,6 +208,10 @@ QStringList Subtitle::nameFilters() const
 void Subtitle::setTimestamp(qreal t)
 {
     priv->t = t;
+    if (!priv->prepareCurrentFrame())
+        return;
+    priv->update_image = true;
+    emit contentChanged();
 }
 
 qreal Subtitle::timestamp() const
@@ -248,33 +254,40 @@ bool Subtitle::start()
 
 QString Subtitle::getText() const
 {
-    priv->prepareCurrentFrame();
     return priv->frame.text;
 }
 
 QImage Subtitle::getImage(int width, int height)
 {
-    priv->prepareCurrentFrame(width, height);
-    if (!priv->frame)
+    if (!priv->frame || width == 0 || height == 0)
         return QImage();
-    return priv->image;
+    if (!priv->update_image
+            && width == priv->frame.image.width() && height == priv->frame.image.height())
+        return priv->frame.image;
+    priv->update_image = false;
+    if (!priv->processer)
+        return QImage();
+    priv->frame.image = priv->processer->getImage(priv->t, width, height);
+    return priv->frame.image;
 }
 
 // DO NOT set frame's image to reduce memory usage
 // assume frame.text is already set
-void Subtitle::Private::prepareCurrentFrame(int width, int height)
+// check previous text if now no subtitle
+bool Subtitle::Private::prepareCurrentFrame()
 {
-    if (width == 0 || height == 0)
-        image = QImage();
     QLinkedList<SubtitleFrame>::iterator it = itf;
     bool found = false;
     if (t < it->begin) {
         while (it != frames.begin()) {
             --it;
             if (t > it->end) {
-                // no subtitle at that time
-                frame = SubtitleFrame();
-                return;
+                // no subtitle at that time. check previous text
+                if (frame.isValid()) {
+                    frame = SubtitleFrame();
+                    return true;
+                }
+                return false;
             }
             if (t >= (*it).begin) {
                 found = true;
@@ -282,36 +295,35 @@ void Subtitle::Private::prepareCurrentFrame(int width, int height)
                 break;
             }
         }
-        if (!found) {
-            // no subtitle at that time. it == begin()
-            frame = SubtitleFrame();
-            image = QImage();
-            return;
+        if (found) {
+            frame = *it;
+            return true;
         }
-        frame = *it;
-        if (processer && width > 0 && height > 0)
-            image = processer->getImage(t, width, height);
-        return;
+        // no subtitle at that time. it == begin(). check previous text
+        if (frame.isValid()) {
+            frame = SubtitleFrame();
+            return true;
+        }
+        return false;
     }
     // t >= (*it)->begin, time does not change, frame does not change
-    if (it == frames.end() || t <= (*it).end) {
+    if (t <= (*it).end) {
         found = true;
+        if (frame.isValid()) //previous has no subtitle, itf was not changed
+            return false;
         frame = *it;
-        if (!processer || width == 0 || height == 0)
-            return;
-        if (width != image.width() || height != image.height()) {
-            image = processer->getImage(t, width, height);
-        }
-        return;
+        return true;
     }
     // t >= (*it)->end, already t >= (*it)->begin
     while (it != frames.end()) {
         ++it;
         if (t < it->begin) {
-            // no subtitle at that time
-            qDebug("no subtitle at that time");
-            frame = SubtitleFrame();
-            return;
+            // no subtitle at that time. check previous text
+            if (frame.isValid()) {
+                frame = SubtitleFrame();
+                return true;
+            }
+            return false;
         }
         if (t <= (*it).end) {
             found = true;
@@ -319,15 +331,16 @@ void Subtitle::Private::prepareCurrentFrame(int width, int height)
             break;
         }
     }
-    if (!found) {
-        // no subtitle at that time, it == end()
-        frame = SubtitleFrame();
-        image = QImage();
-        return;
+    if (found) {
+        frame = *it;
+        return true;
     }
-    frame = *it;
-    if (processer && width > 0 && height > 0)
-        image = processer->getImage(t, width, height);
+    // no subtitle at that time, it == end(). check previous text
+    if (frame.isValid()) {
+        frame = SubtitleFrame();
+        return true;
+    }
+    return false;
 }
 
 QStringList Subtitle::Private::find()

@@ -60,8 +60,10 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
     Q_PROPERTY(QStringList nameFilters READ nameFilters WRITE setNameFilters NOTIFY nameFiltersChanged)
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
+    Q_PROPERTY(QString text READ getText)
 public:
     explicit Subtitle(QObject *parent = 0);
+    virtual ~Subtitle();
     /*!
      * \brief setEngines
      * set subtitle processer engine names.
@@ -79,10 +81,9 @@ public:
     QString fileName() const;
     void setDir(const QString& dir);
     QString dir() const;
-    // *.*: all
+    // *.*: all. for example [ "*.ass", "*.srt"]
     void setNameFilters(const QStringList& filters);
     QStringList nameFilters() const;
-
     /*!
      * \brief start
      * start to process the whole subtitle content in a thread
@@ -103,8 +104,7 @@ public slots:
 signals:
     void enginesChanged();
     void fuzzyMatchChanged();
-    //void contentChanged(); // move to player
-    // onEvent()
+    void contentChanged();
     void sourceChanged();
     void rawDataChanged();
     void fileNameChanged();
