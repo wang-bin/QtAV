@@ -4,4 +4,5 @@ SUBDIRS += \
     ao \
     decoder \
     qiodevice \
+    subtitle \
     playerthread
