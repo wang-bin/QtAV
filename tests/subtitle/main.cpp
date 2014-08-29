@@ -45,7 +45,8 @@ int main(int argc, char *argv[])
     sob.observe(&sub);
     QElapsedTimer timer;
     timer.start();
-    if (!sub.start())
+    sub.load();
+    if (!sub.isLoaded())
         return -1;
     qDebug() << "process subtitle file elapsed: " << timer.elapsed() << "ms";
     timer.restart();

@@ -28,6 +28,9 @@
 #include <QtGui/QImage>
 #include <QtAV/QtAV_Global.h>
 
+/*
+ * to avoid read error, subtitle size > 10*1024*1024 will be ignored.
+ */
 namespace QtAV {
 
 class Q_AV_EXPORT SubtitleFrame
@@ -61,9 +64,16 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(QStringList nameFilters READ nameFilters WRITE setNameFilters NOTIFY nameFiltersChanged)
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
     Q_PROPERTY(QString text READ getText)
+    Q_PROPERTY(bool loaded READ isLoaded)
 public:
     explicit Subtitle(QObject *parent = 0);
     virtual ~Subtitle();
+    /*!
+     * \brief isValid
+     * indicate whether the subtitle can be found and processed
+     * \return
+     */
+    bool isLoaded() const;
     /*!
      * \brief setEngines
      * set subtitle processer engine names.
@@ -81,14 +91,18 @@ public:
     QString fileName() const;
     void setDir(const QString& dir);
     QString dir() const;
-    // *.*: all. for example [ "*.ass", "*.srt"]
+    /*!
+     * \brief setNameFilters
+     * default is [ "*.ass", "*.ssa", "*.srt"]. empty equals default value.
+     * all: *.*
+     */
     void setNameFilters(const QStringList& filters);
     QStringList nameFilters() const;
     /*!
      * \brief start
      * start to process the whole subtitle content in a thread
      */
-    Q_INVOKABLE bool start();
+    Q_INVOKABLE bool load(); //TODO: slot?
 
     qreal timestamp() const;
     // call setTimestamp before getText/Image

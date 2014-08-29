@@ -34,21 +34,29 @@
 
 namespace QtAV {
 
+const int kMaxSubtitleSize = 10 * 1024 * 1024;
+
 class Subtitle::Private {
 public:
     Private()
-        : fuzzy_match(true)
+        : loaded(false)
+        , fuzzy_match(true)
         , update_image(true)
         , processer(0)
         , t(0)
     {}
     void reset() {
+        loaded = false;
         update_image = true;
         t = 0;
         frame = SubtitleFrame();
         frames.clear();
         itf = frames.begin();
     }
+    static QStringList defaultNameFilters() {
+        return QStringList() << "*.ass" << "*.ssa" << "*.srt";
+    }
+
     // width/height == 0: do not create image
     // return true if both frame time and content(currently is text) changed
     bool prepareCurrentFrame();
@@ -69,6 +77,7 @@ public:
     bool processRawData(const QByteArray& data);
     bool processRawData(SubtitleProcesser* sp, const QByteArray& data);
 
+    bool loaded;
     bool fuzzy_match;
     bool update_image;
     SubtitleProcesser *processer;
@@ -92,6 +101,14 @@ Subtitle::Subtitle(QObject *parent) :
 {
     // TODO: use factory.registedNames() and the order
     setEngines(QStringList() << "FFmpeg" << "LibAss");
+}
+
+Subtitle::~Subtitle()
+{}
+
+bool Subtitle::isLoaded() const
+{
+    return priv->loaded;
 }
 
 void Subtitle::setEngines(const QStringList &value)
@@ -208,6 +225,8 @@ QStringList Subtitle::nameFilters() const
 void Subtitle::setTimestamp(qreal t)
 {
     priv->t = t;
+    if (!isLoaded())
+        return;
     if (!priv->prepareCurrentFrame())
         return;
     priv->update_image = true;
@@ -219,7 +238,7 @@ qreal Subtitle::timestamp() const
     return priv->t;
 }
 
-bool Subtitle::start()
+bool Subtitle::load()
 {
     priv->reset();
     if (!priv->url.isEmpty()) {
@@ -229,7 +248,8 @@ bool Subtitle::start()
     // raw data is set, file name and url are empty
     QByteArray u8 = priv->raw_data;
     if (!u8.isEmpty()) {
-        return priv->processRawData(u8);
+        priv->loaded = priv->processRawData(u8);
+        return priv->loaded;
     }
     // read from a url
     QFile f(priv->url.toString());//QUrl::FullyDecoded));
@@ -237,7 +257,8 @@ bool Subtitle::start()
         u8 = priv->readFromFile(f.fileName());
         if (u8.isEmpty())
             return false;
-        return priv->processRawData(u8);
+        priv->loaded = priv->processRawData(u8);
+        return priv->loaded;
     }
     // read from a file
     QStringList paths = priv->find();
@@ -247,6 +268,7 @@ bool Subtitle::start()
             continue;
         if (!priv->processRawData(u8))
             continue;
+        priv->loaded = true;
         return true;
     }
     return false;
@@ -254,11 +276,15 @@ bool Subtitle::start()
 
 QString Subtitle::getText() const
 {
+    if (!isLoaded())
+        return QString();
     return priv->frame.text;
 }
 
 QImage Subtitle::getImage(int width, int height)
 {
+    if (!isLoaded())
+        return QImage();
     if (!priv->frame || width == 0 || height == 0)
         return QImage();
     if (!priv->update_image
@@ -354,6 +380,8 @@ QStringList Subtitle::Private::find()
     QStringList list = dir.entryList(name_filters, QDir::Files, QDir::Unsorted);
     // TODO: sort. get entryList from nameFilters 1 by 1 is slower?
     QStringList sorted;
+    if (name_filters.isEmpty())
+        name_filters = defaultNameFilters();
     if (name_filters.isEmpty()) {
         foreach (QString f, list) {
             if (!f.startsWith(name)) // why it happens?
@@ -378,7 +406,10 @@ QStringList Subtitle::Private::find()
 
 QByteArray Subtitle::Private::readFromFile(const QString &path)
 {
+    qDebug() << "read subtitle from: " << path;
     QFile f(path);
+    if (f.size() > kMaxSubtitleSize)
+        return QByteArray();
     if (!f.open(QIODevice::ReadOnly)) {
         qDebug() << "Failed to open subtitle [" << path << "]: " << f.errorString();
         return QByteArray();
@@ -392,6 +423,8 @@ bool Subtitle::Private::processRawData(const QByteArray &data)
 {
     processer = 0;
     frames.clear();
+    if (data.size() > kMaxSubtitleSize)
+        return false;
     foreach (SubtitleProcesser* sp, processers) {
         if (processRawData(sp, data)) {
             processer = sp;
