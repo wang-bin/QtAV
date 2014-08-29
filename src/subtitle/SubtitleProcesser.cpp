@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,29 +19,28 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtQml/QQmlExtensionPlugin>
-#include <QtQml/qqml.h>
-#include <QmlAV/QQuickItemRenderer.h>
-#include <QmlAV/QmlAVPlayer.h>
-#include <QmlAV/QuickSubtitle.h>
+#include "QtAV/private/SubtitleProcesser.h"
+#include "QtAV/FactoryDefine.h"
+#include "QtAV/private/factory.h"
+#include <QtCore/QFile>
+#include <QtDebug>
 
 namespace QtAV {
 
-class QtAVQmlPlugin : public QQmlExtensionPlugin
+FACTORY_DEFINE(SubtitleProcesser)
+
+bool SubtitleProcesser::process(const QString &path)
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
-
-public:
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("QtAV"));
-        qmlRegisterType<QQuickItemRenderer>(uri, 1, 3, "VideoOutput");
-        qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
-        qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
-        qmlRegisterType<QuickSubtitle>(uri, 1, 3, "Subtitle");
+    if (!isSupported(RawData))
+        return false;
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) {
+        qWarning() << "open subtitle file error: " << f.errorString();
+        return false;
     }
-};
-} //namespace QtAV
+    bool ok = process(&f);
+    f.close();
+    return ok;
+}
 
-#include "plugin.moc"
+} //namespace QtAV

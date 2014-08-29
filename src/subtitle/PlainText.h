@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,29 +19,17 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtQml/QQmlExtensionPlugin>
-#include <QtQml/qqml.h>
-#include <QmlAV/QQuickItemRenderer.h>
-#include <QmlAV/QmlAVPlayer.h>
-#include <QmlAV/QuickSubtitle.h>
+#ifndef QTAV_PLAINTEXT_H
+#define QTAV_PLAINTEXT_H
+
+#include <QtCore/QString>
 
 namespace QtAV {
+namespace PlainText {
 
-class QtAVQmlPlugin : public QQmlExtensionPlugin
-{
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
+QString fromAss(const char* ass);
 
-public:
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("QtAV"));
-        qmlRegisterType<QQuickItemRenderer>(uri, 1, 3, "VideoOutput");
-        qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
-        qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
-        qmlRegisterType<QuickSubtitle>(uri, 1, 3, "Subtitle");
-    }
-};
+} //namespace PlainText
+
 } //namespace QtAV
-
-#include "plugin.moc"
+#endif // QTAV_PLAINTEXT_H

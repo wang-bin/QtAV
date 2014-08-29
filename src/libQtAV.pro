@@ -224,6 +224,9 @@ config_vda {
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
+    subtitle/PlainText.cpp \
+    subtitle/SubtitleProcesser.cpp \
+    subtitle/SubtitleProcesserFFmpeg.cpp \
     utils/GPUMemCopy.cpp \
     utils/OpenGLHelper.cpp \
     QAVIOContext.cpp \
@@ -267,13 +270,13 @@ SOURCES += \
     OpenGLVideo.cpp \
     VideoShader.cpp \
     Statistics.cpp \
+    Subtitle.cpp \
     VideoDecoder.cpp \
     VideoDecoderTypes.cpp \
     VideoDecoderFFmpeg.cpp \
     VideoDecoderFFmpegHW.cpp \
     VideoThread.cpp \
     CommonTypes.cpp
-
 
 SDK_HEADERS *= \
     QtAV/QtAV.h \
@@ -316,12 +319,14 @@ SDK_HEADERS *= \
     QtAV/VideoFrame.h \
     QtAV/FactoryDefine.h \
     QtAV/Statistics.h \
+    QtAV/Subtitle.h \
     QtAV/SurfaceInterop.h \
     QtAV/version.h
 
 SDK_PRIVATE_HEADERS *= \
     QtAV/private/factory.h \
     QtAV/private/singleton.h \
+    QtAV/private/SubtitleProcesser.h \
     QtAV/private/AVCompat.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AudioResampler_p.h \
@@ -347,6 +352,7 @@ SDK_PRIVATE_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     $$SDK_PRIVATE_HEADERS \
+    subtitle/PlainText.h \
     utils/BlockingQueue.h \
     utils/GPUMemCopy.h \
     utils/OpenGLHelper.h \

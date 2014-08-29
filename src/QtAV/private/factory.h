@@ -96,7 +96,7 @@ typename Factory<Id, T, Class>::Type *Factory<Id, T, Class>::create(const ID& id
 {
     typename CreatorMap::const_iterator it = creators.find(id);
     if (it == creators.end()) {
-        std::cerr << "Unknown id: " << id << std::endl;
+        //std::cerr << "Unknown id: " << id << std::endl;
         return 0;
         //throw std::runtime_error(err_msg.arg(id).toStdString());
     }
@@ -190,7 +190,7 @@ typename Factory<Id, T, Class>::Type* Factory<Id, T, Class>::getRandom()
     srand(time(0));
     int index = rand() % ids.size();
     //DBG("random %d/%d", index, ids.size());
-    int new_eid = ids.at(index);
+    ID new_eid = ids.at(index);
     //DBG("id %d", new_eid);
     return create(new_eid);
 }
