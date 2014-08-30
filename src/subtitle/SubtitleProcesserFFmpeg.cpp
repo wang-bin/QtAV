@@ -95,23 +95,31 @@ bool SubtitleProcesserFFmpeg::process(QIODevice *dev)
         }
     }
     if (!m_reader.load(dev))
-        return false;
+            goto error;
     if (m_reader.subtitleStreams().isEmpty())
-        return false;
+        goto error;
     if (!processSubtitle())
-        return false;
+        goto error;
+    m_reader.close();
     return true;
+error:
+    m_reader.close();
+    return false;
 }
 
 bool SubtitleProcesserFFmpeg::process(const QString &path)
 {
     if (!m_reader.loadFile(path))
-        return false;
+        goto error;
     if (m_reader.subtitleStreams().isEmpty())
-        return false;
+        goto error;
     if (!processSubtitle())
-        return false;
+        goto error;
+    m_reader.close();
     return true;
+error:
+    m_reader.close();
+    return false;
 }
 
 QList<SubtitleFrame> SubtitleProcesserFFmpeg::frames() const
