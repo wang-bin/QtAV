@@ -38,13 +38,15 @@ public:
     ~QAVIOContext();
 
     AVIOContext* context();
+    // call this after AVFormatContext is closed
+    void release();
 
     QIODevice* device() const;
     void setDevice(QIODevice* device);
 
 private:
-    unsigned char* m_ucDataBuffer;
     QIODevice* m_pIO;
+    AVIOContext *m_avio;
 };
 
 }

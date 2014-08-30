@@ -324,6 +324,8 @@ bool AVDemuxer::close()
         qDebug("closing format_context");
         avformat_close_input(&format_context); //libavf > 53.10.0
         format_context = 0;
+        if (m_pQAVIO)
+            m_pQAVIO->release();
     }
     return true;
 }

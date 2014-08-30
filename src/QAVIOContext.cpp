@@ -62,9 +62,8 @@ static int64_t seek(void *opaque, int64_t offset, int whence)
 }
 
 QAVIOContext::QAVIOContext(QIODevice *io) : m_pIO(io)
+  , m_avio(0)
 {
-    //m_ucDataBuffer = new unsigned char[IODATA_BUFFER_SIZE];
-    m_ucDataBuffer = (unsigned char*)av_malloc(IODATA_BUFFER_SIZE);
 }
 
 QAVIOContext::~QAVIOContext()
@@ -73,7 +72,17 @@ QAVIOContext::~QAVIOContext()
 
 AVIOContext* QAVIOContext::context()
 {
-    return avio_alloc_context(m_ucDataBuffer, IODATA_BUFFER_SIZE, 0, this, &read, 0, &seek);
+    // buffer will be released in av_probe_input_buffer2=>ffio_rewind_with_probe_data. always is? may be another context
+    unsigned char* m_ucDataBuffer = (unsigned char*)av_malloc(IODATA_BUFFER_SIZE);
+    m_avio = avio_alloc_context(m_ucDataBuffer, IODATA_BUFFER_SIZE, 0, this, &read, 0, &seek);
+    return m_avio;
+}
+
+void QAVIOContext::release()
+{
+    m_avio->opaque = 0; //in avio_close() opaque is URLContext* and will call ffurl_close()
+    //m_avio->buffer = 0; //already released by ffio_rewind_with_probe_data; may be another context was freed
+    avio_closep(&m_avio);
 }
 
 QIODevice* QAVIOContext::device() const
