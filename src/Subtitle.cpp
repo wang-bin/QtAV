@@ -44,7 +44,9 @@ public:
         , update_image(true)
         , processer(0)
         , t(0)
-    {}
+    {
+        name_filters = defaultNameFilters();
+    }
     void reset() {
         loaded = false;
         update_image = true;
@@ -213,7 +215,10 @@ void Subtitle::setNameFilters(const QStringList &filters)
 {
     if (priv->name_filters == filters)
         return;
-    priv->name_filters = filters;
+    if (filters.isEmpty())
+        priv->name_filters = Subtitle::Private::defaultNameFilters();
+    else
+        priv->name_filters = filters;
     emit nameFiltersChanged();
 }
 
@@ -241,6 +246,7 @@ qreal Subtitle::timestamp() const
 bool Subtitle::load()
 {
     priv->reset();
+    emit contentChanged(); //notify user to update subtitle
     if (!priv->url.isEmpty()) {
         // need qt network module network
         return false;
@@ -371,17 +377,26 @@ bool Subtitle::Private::prepareCurrentFrame()
 
 QStringList Subtitle::Private::find()
 {
+    // move to setFileName
+    QString file(file_name);
+    if (file.startsWith("/") && file.contains(":")) {
+        int slash = file.indexOf(":");
+        slash = file.lastIndexOf("/", slash);
+        file = file.mid(slash+1);
+    }
     // !fuzzyMatch: return the file
     if (!fuzzy_match)
-        return QStringList() << file_name;
-    QFileInfo fi(file_name);
+        return QStringList() << file;
+    QFileInfo fi(file);
     QDir dir(fi.dir());
     QString name = fi.completeBaseName(); // video suffix has only 1 dot
-    QStringList list = dir.entryList(name_filters, QDir::Files, QDir::Unsorted);
+    QStringList filters;
+    foreach (QString suf, name_filters) {
+        filters.append(name + suf);
+    }
+    QStringList list = dir.entryList(filters, QDir::Files, QDir::Unsorted);
     // TODO: sort. get entryList from nameFilters 1 by 1 is slower?
     QStringList sorted;
-    if (name_filters.isEmpty())
-        name_filters = defaultNameFilters();
     if (name_filters.isEmpty()) {
         foreach (QString f, list) {
             if (!f.startsWith(name)) // why it happens?
