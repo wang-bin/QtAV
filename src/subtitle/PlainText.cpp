@@ -21,6 +21,7 @@
 
 #include "PlainText.h"
 #include <stdio.h>
+#include <string.h>
 
 namespace QtAV {
 namespace PlainText {
@@ -91,22 +92,28 @@ QString fromAss(const char* ass) {
     int hour1, min1, sec1, hunsec1,hour2, min2, sec2, hunsec2;
     char line[512], *ret;
     // fixme: "\0" maybe not allowed
-    if (sscanf(b.start, "Dialogue: Marked=%*d,%d:%d:%d.%d,%d:%d:%d.%d%[^\0]", //&nothing,
+    if (sscanf(b.start, "Dialogue: Marked=%*d,%d:%d:%d.%d,%d:%d:%d.%d%[^\r\n]", //&nothing,
                             &hour1, &min1, &sec1, &hunsec1,
                             &hour2, &min2, &sec2, &hunsec2,
                             line) < 9)
-        sscanf(b.start, "Dialogue: %*d,%d:%d:%d.%d,%d:%d:%d.%d%[^\0]", //&nothing,
+        sscanf(b.start, "Dialogue: %*d,%d:%d:%d.%d,%d:%d:%d.%d%[^\r\n]", //&nothing,
                 &hour1, &min1, &sec1, &hunsec1,
                 &hour2, &min2, &sec2, &hunsec2,
                 line);
     ret = strchr(line, ',');
     if (!ret)
-        return QString::fromUtf8(line).trimmed();
+        return QString::fromUtf8(line);
     for (int comma = 0; comma < 6; comma++)
         if (!(ret = strchr(++ret, ',')))
-            return QString::fromUtf8(line).trimmed();
+            return QString::fromUtf8(line);
     ret++;
-    return QString::fromUtf8(ret).trimmed();
+    int p = strcspn(b.start, "\r\n");
+    if (p == b.len) //not found
+        return QString::fromUtf8(ret);
+    QString line2 = QString::fromUtf8(b.start + p + 1).trimmed();
+    if (line2.isEmpty())
+        return QString::fromUtf8(ret);
+    return QString::fromUtf8(ret) + "\n" + line2;
 }
 
 } //namespace PlainText
