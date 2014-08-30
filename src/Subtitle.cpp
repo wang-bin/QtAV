@@ -44,9 +44,7 @@ public:
         , update_image(true)
         , processor(0)
         , t(0)
-    {
-        name_filters = defaultNameFilters();
-    }
+    {}
     void reset() {
         loaded = false;
         update_image = true;
@@ -55,10 +53,6 @@ public:
         frames.clear();
         itf = frames.begin();
     }
-    static QStringList defaultNameFilters() {
-        return QStringList() << "*.ass" << "*.ssa" << "*.srt";
-    }
-
     // width/height == 0: do not create image
     // return true if both frame time and content(currently is text) changed
     bool prepareCurrentFrame();
@@ -89,7 +83,8 @@ public:
     QUrl url;
     QByteArray raw_data;
     QString file_name;
-    QStringList name_filters;
+    QStringList suffixes;
+    QStringList supported_suffixes;
     QIODevice *dev;
     // last time image
     qreal t;
@@ -117,6 +112,7 @@ void Subtitle::setEngines(const QStringList &value)
 {
     if (priv->engine_names == value)
         return;
+    priv->supported_suffixes.clear();
     priv->engine_names = value;
     emit enginesChanged();
     QList<SubtitleProcessor*> sps;
@@ -125,16 +121,17 @@ void Subtitle::setEngines(const QStringList &value)
     }
     foreach (QString e, priv->engine_names) {
         QList<SubtitleProcessor*>::iterator it = priv->processors.begin();
-        for (; it != priv->processors.end(); ++it) {
+        while (it != priv->processors.end()) {
             if (!(*it)) {
-                priv->processors.erase(it);
+                it = priv->processors.erase(it);
                 continue;
             }
             if ((*it)->name() != e) {
+                ++it;
                 continue;
             }
             sps.append(*it);
-            priv->processors.erase(it);
+            it = priv->processors.erase(it);
             break;
         }
         if (it == priv->processors.end()) {
@@ -143,7 +140,15 @@ void Subtitle::setEngines(const QStringList &value)
                 sps.append(sp);
         }
     }
+    // release the processors not wanted
+    qDeleteAll(priv->processors);
     priv->processors = sps;
+    if (sps.isEmpty())
+        return;
+    foreach (SubtitleProcessor* sp, sps) {
+        priv->supported_suffixes.append(sp->supportedTypes());
+    }
+    // TODO: remove duplicates
 }
 
 QStringList Subtitle::engines() const
@@ -162,21 +167,6 @@ void Subtitle::setFuzzyMatch(bool value)
 bool Subtitle::fuzzyMatch() const
 {
     return priv->fuzzy_match;
-}
-
-void Subtitle::setSource(const QUrl &url)
-{
-    if (priv->url == url)
-        return;
-    priv->url = url;
-    emit sourceChanged();
-    priv->file_name.clear();
-    priv->raw_data.clear();
-}
-
-QUrl Subtitle::source() const
-{
-    return priv->url;
 }
 
 void Subtitle::setRawData(const QByteArray &data)
@@ -200,9 +190,15 @@ void Subtitle::setFileName(const QString &name)
 {
     if (priv->file_name == name)
         return;
-    priv->file_name = name;
     priv->url.clear();
     priv->raw_data.clear();
+    priv->file_name = name;
+    // FIXME: "/C:/movies/xxx" => "C:/movies/xxx"
+    if (priv->file_name.startsWith("/") && priv->file_name.contains(":")) {
+        int slash = priv->file_name.indexOf(":");
+        slash = priv->file_name.lastIndexOf("/", slash);
+        priv->file_name = priv->file_name.mid(slash+1);
+    }
     emit fileNameChanged();
 }
 
@@ -211,20 +207,17 @@ QString Subtitle::fileName() const
     return priv->file_name;
 }
 
-void Subtitle::setNameFilters(const QStringList &filters)
+void Subtitle::setSuffixes(const QStringList &value)
 {
-    if (priv->name_filters == filters)
+    if (priv->suffixes == value)
         return;
-    if (filters.isEmpty())
-        priv->name_filters = Subtitle::Private::defaultNameFilters();
-    else
-        priv->name_filters = filters;
-    emit nameFiltersChanged();
+    priv->suffixes = value;
+    emit suffixesChanged();
 }
 
-QStringList Subtitle::nameFilters() const
+QStringList Subtitle::suffixes() const
 {
-    return priv->name_filters;
+    return priv->suffixes;
 }
 
 void Subtitle::setTimestamp(qreal t)
@@ -377,45 +370,64 @@ bool Subtitle::Private::prepareCurrentFrame()
 
 QStringList Subtitle::Private::find()
 {
-    // move to setFileName
-    QString file(file_name);
-    if (file.startsWith("/") && file.contains(":")) {
-        int slash = file.indexOf(":");
-        slash = file.lastIndexOf("/", slash);
-        file = file.mid(slash+1);
-    }
     // !fuzzyMatch: return the file
     if (!fuzzy_match)
-        return QStringList() << file;
-    QFileInfo fi(file);
-    QDir dir(fi.dir());
-    QString name = fi.completeBaseName(); // video suffix has only 1 dot
+        return QStringList() << file_name;
+
+    // found files will be sorted by extensions in sfx order
+    QStringList sfx(suffixes);
+    if (sfx.isEmpty())
+        sfx = supported_suffixes;
+    if (sfx.isEmpty())
+        return QStringList() << file_name;
+
+    QFileInfo fi(file_name);
+    QString name = fi.fileName();
     QStringList filters;
-    foreach (QString suf, name_filters) {
-        filters.append(name + suf);
+    foreach (QString suf, sfx) {
+        filters.append(QString("%1*.%2").arg(name).arg(suf));
     }
+    QDir dir(fi.dir());
     QStringList list = dir.entryList(filters, QDir::Files, QDir::Unsorted);
+    if (list.isEmpty()) {
+        filters.clear();
+        // a.mp4 => a
+        name = fi.completeBaseName(); // video suffix has only 1 dot
+        foreach (QString suf, sfx) {
+            filters.append(QString("%1*.%2").arg(name).arg(suf));
+        }
+        list = dir.entryList(filters, QDir::Files, QDir::Unsorted);
+    }
+    if (list.isEmpty())
+        return QStringList();
     // TODO: sort. get entryList from nameFilters 1 by 1 is slower?
     QStringList sorted;
-    if (name_filters.isEmpty()) {
-        foreach (QString f, list) {
-            if (!f.startsWith(name)) // why it happens?
-                continue;
-            sorted.append(dir.absoluteFilePath(f));
-        }
-        return sorted;
-    }
-    foreach (QString filter, name_filters) {
-        QRegExp rx(filter);
+    // sfx is not empty, sort to the given order (sfx's order)
+    foreach (QString suf, sfx) {
+        if (list.isEmpty())
+            break;
+        QRegExp rx("*." + suf);
         rx.setPatternSyntax(QRegExp::Wildcard);
-        foreach (QString f, list) {
-            if (!f.startsWith(name)) // why it happens?
+        QStringList::iterator it = list.begin();
+        while (it != list.end()) {
+            if (!it->startsWith(name)) {// why it happens?
+                it = list.erase(it);
                 continue;
-            if (!rx.exactMatch(f))
+            }
+            if (!rx.exactMatch(*it)) {
+                ++it;
                 continue;
-            sorted.append(dir.absoluteFilePath(f));
+            }
+            sorted.append(dir.absoluteFilePath(*it));
+            it = list.erase(it);
         }
     }
+    // the given name is at the highest priority.
+    if (QFile(file_name).exists()) {
+        sorted.removeAll(file_name);
+        sorted.prepend(file_name);
+    }
+    qDebug() << "subtitles found: " << sorted;
     return sorted;
 }
 
@@ -460,39 +472,34 @@ bool Subtitle::Private::processRawData(const QByteArray &data)
 
 bool Subtitle::Private::processRawData(SubtitleProcessor *sp, const QByteArray &data)
 {
-    if (sp->isSupported(SubtitleProcessor::RawData)) {
-        qDebug("processing subtitle from raw data...");
-        QByteArray u8(data);
-        QBuffer buf(&u8);
-        if (buf.open(QIODevice::ReadOnly)) {
-            const bool ok = sp->process(&buf);
-            if (buf.isOpen())
-                buf.close();
-            if (ok)
-                return true;
-        } else {
-            qWarning() << "open subtitle qbuffer error: " << buf.errorString();
-        }
+    qDebug("processing subtitle from raw data...");
+    QByteArray u8(data);
+    QBuffer buf(&u8);
+    if (buf.open(QIODevice::ReadOnly)) {
+        const bool ok = sp->process(&buf);
+        if (buf.isOpen())
+            buf.close();
+        if (ok)
+            return true;
+    } else {
+        qWarning() << "open subtitle qbuffer error: " << buf.errorString();
     }
-    if (sp->isSupported(SubtitleProcessor::File)) {
-        qDebug("processing subtitle from a tmp file...");
-        QString name = url.toLocalFile().section('/', -1);
-        if (name.isEmpty())
-            name = QFileInfo(file_name).fileName(); //priv->name.section('/', -1); // if no seperator?
-        if (name.isEmpty())
-            name = "QtAV_u8_sub_cache";
-        name.append(QString("_%1").arg((quintptr)this));
-        QFile w(QDir::temp().absoluteFilePath(name));
-        if (w.open(QIODevice::WriteOnly)) {
-            w.write(data);
-            w.close();
-        } else {
-            if (!w.exists())
-                return false;
-        }
-        return sp->process(w.fileName());
+    qDebug("processing subtitle from a tmp utf8 file...");
+    QString name = url.toLocalFile().section('/', -1);
+    if (name.isEmpty())
+        name = QFileInfo(file_name).fileName(); //priv->name.section('/', -1); // if no seperator?
+    if (name.isEmpty())
+        name = "QtAV_u8_sub_cache";
+    name.append(QString("_%1").arg((quintptr)this));
+    QFile w(QDir::temp().absoluteFilePath(name));
+    if (w.open(QIODevice::WriteOnly)) {
+        w.write(data);
+        w.close();
+    } else {
+        if (!w.exists())
+            return false;
     }
-    return false;
+    return sp->process(w.fileName());
 }
 
 } //namespace QtAV

@@ -38,22 +38,28 @@ FACTORY_DECLARE(SubtitleProcessor)
 class Q_AV_PRIVATE_EXPORT SubtitleProcessor
 {
 public:
-    enum SourceType {
-        RawData,
-        File
-    };
-    //virtual ~SubtitleProcessor() = 0;
+    virtual ~SubtitleProcessor() {}
     virtual SubtitleProcessorId id() const = 0;
     virtual QString name() const = 0;
-    virtual bool isSupported(SourceType) const { return true;}
+    /*!
+     * \brief supportedTypes
+     * \return a list of supported suffixes. e.g. [ "ass", "ssa", "srt" ]
+     * used to find subtitle files with given suffixes
+     */
+    virtual QStringList supportedTypes() const = 0;
     /*!
      * \brief process
-     * process subtitle from QIODevice. SourceType RawData must be supported
+     * process subtitle from QIODevice.
      * \param dev dev is open and you don't have to close it
-     * \return false if failed, e.g. does not support sequential device
+     * \return false if failed or does not supports iodevice, e.g. does not support sequential device
      */
     virtual bool process(QIODevice* dev) = 0;
-    // isSupported(File) must be true. default behavior is calling process(QFile*)
+    /*!
+     * \brief process
+     * default behavior is calling process(QFile*)
+     * \param path
+     * \return false if failed or does not support file
+     */
     virtual bool process(const QString& path);
     /*!
      * \brief timestamps

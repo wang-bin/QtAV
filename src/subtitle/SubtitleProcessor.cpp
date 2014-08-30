@@ -31,8 +31,6 @@ FACTORY_DEFINE(SubtitleProcessor)
 
 bool SubtitleProcessor::process(const QString &path)
 {
-    if (!isSupported(RawData))
-        return false;
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly)) {
         qWarning() << "open subtitle file error: " << f.errorString();

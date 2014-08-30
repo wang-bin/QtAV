@@ -39,7 +39,7 @@ public:
     //virtual ~SubtitleProcessorFFmpeg() {}
     virtual SubtitleProcessorId id() const;
     virtual QString name() const;
-    bool isSupported(SourceType value) const;
+    virtual QStringList supportedTypes() const;
     virtual bool process(QIODevice* dev);
     // supportsFromFile must be true
     virtual bool process(const QString& path);
@@ -80,10 +80,12 @@ QString SubtitleProcessorFFmpeg::name() const
     return QString(kName.c_str());//SubtitleProcessorFactory::name(id());
 }
 
-bool SubtitleProcessorFFmpeg::isSupported(SourceType value) const
+QStringList SubtitleProcessorFFmpeg::supportedTypes() const
 {
-    Q_UNUSED(value);
-    return true;
+    // from ffmpeg/tests/fate/subtitles.mak
+    // TODO: mp4
+    static QStringList sSuffixes = QStringList() << "ass" << "ssa" << "sub" << "srt" << "txt" << "vtt" << "smi" << "pjs" << "jss" << "aqt";
+    return sSuffixes;
 }
 
 bool SubtitleProcessorFFmpeg::process(QIODevice *dev)

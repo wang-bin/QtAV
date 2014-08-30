@@ -55,13 +55,12 @@ public:
 class Q_AV_EXPORT Subtitle : public QObject
 {
     Q_OBJECT
-    // QList<SubtitleProcesserId>
+    // QList<SubtitleProcessorId>
     Q_PROPERTY(QStringList engines READ engines WRITE setEngines NOTIFY enginesChanged)
     Q_PROPERTY(bool fuzzyMatch READ fuzzyMatch WRITE setFuzzyMatch NOTIFY fuzzyMatchChanged)
-    Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(QByteArray rawData READ rawData WRITE setRawData NOTIFY rawDataChanged)
     Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
-    Q_PROPERTY(QStringList nameFilters READ nameFilters WRITE setNameFilters NOTIFY nameFiltersChanged)
+    Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
     Q_PROPERTY(QString text READ getText)
     Q_PROPERTY(bool loaded READ isLoaded)
@@ -76,28 +75,31 @@ public:
     bool isLoaded() const;
     /*!
      * \brief setEngines
-     * set subtitle processer engine names.
+     * set subtitle processor engine names.
      * \param value
      */
     void setEngines(const QStringList& value);
     QStringList engines() const;
     void setFuzzyMatch(bool value);
     bool fuzzyMatch() const;
-    void setSource(const QUrl& url);
-    QUrl source() const;
     void setRawData(const QByteArray& data);
     QByteArray rawData() const;
+    /*!
+     * \brief setFileName
+     * the given name will be in the 1st place to try to open(if using fuzzy match). then files in suffixes() order
+     * or in processor's supported suffixes order
+     * \param name
+     */
     void setFileName(const QString& name);
     QString fileName() const;
     void setDir(const QString& dir);
     QString dir() const;
     /*!
-     * \brief setNameFilters
-     * default is [ "*.ass", "*.ssa", "*.srt"]. empty equals default value.
-     * all: *.*
+     * \brief setSuffixes
+     * default is using SubtitleProcessor. empty equals default value.
      */
-    void setNameFilters(const QStringList& filters);
-    QStringList nameFilters() const;
+    void setSuffixes(const QStringList& value);
+    QStringList suffixes() const;
     /*!
      * \brief start
      * start to process the whole subtitle content in a thread
@@ -110,8 +112,8 @@ public:
     Q_INVOKABLE QImage getImage(int width, int height);
 
     // if
-    bool setHeader(const QByteArray& data);
-    bool process(const QByteArray& data, qreal pts = -1);
+    //bool setHeader(const QByteArray& data);
+    //bool process(const QByteArray& data, qreal pts = -1);
 
 public slots:
     void setTimestamp(qreal t);
@@ -119,10 +121,9 @@ signals:
     void enginesChanged();
     void fuzzyMatchChanged();
     void contentChanged();
-    void sourceChanged();
     void rawDataChanged();
     void fileNameChanged();
-    void nameFiltersChanged();
+    void suffixesChanged();
 private:
     class Private;
     Private *priv;
