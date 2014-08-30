@@ -146,6 +146,7 @@ QImage SubtitleProcesserFFmpeg::getImage(qreal pts, int width, int height)
 
 bool SubtitleProcesserFFmpeg::processSubtitle()
 {
+    m_frames.clear();
     int ss = m_reader.subtitleStream();
     if (ss < 0) {
         qWarning("no subtitle stream found");
