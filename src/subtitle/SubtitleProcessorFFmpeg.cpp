@@ -23,7 +23,7 @@
 #include <QtDebug>
 #include <QtCore/QTime>
 #include <QtGui/QPainter>
-#include "QtAV/private/SubtitleProcesser.h"
+#include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/prepost.h"
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
@@ -32,12 +32,12 @@
 
 namespace QtAV {
 
-class SubtitleProcesserFFmpeg : public SubtitleProcesser
+class SubtitleProcessorFFmpeg : public SubtitleProcessor
 {
 public:
-    SubtitleProcesserFFmpeg();
-    //virtual ~SubtitleProcesserFFmpeg() {}
-    virtual SubtitleProcesserId id() const;
+    SubtitleProcessorFFmpeg();
+    //virtual ~SubtitleProcessorFFmpeg() {}
+    virtual SubtitleProcessorId id() const;
     virtual QString name() const;
     bool isSupported(SourceType value) const;
     virtual bool process(QIODevice* dev);
@@ -53,40 +53,40 @@ private:
     QFont m_font;
 };
 
-static const SubtitleProcesserId SubtitleProcesserId_FFmpeg = "qtav.subtitle.processor.ffmpeg";
+static const SubtitleProcessorId SubtitleProcessorId_FFmpeg = "qtav.subtitle.processor.ffmpeg";
 namespace {
 static const std::string kName("FFmpeg");
 }
-FACTORY_REGISTER_ID_AUTO(SubtitleProcesser, FFmpeg, kName)
+FACTORY_REGISTER_ID_AUTO(SubtitleProcessor, FFmpeg, kName)
 
-void RegisterSubtitleProcesserFFmpeg_Man()
+void RegisterSubtitleProcessorFFmpeg_Man()
 {
-    FACTORY_REGISTER_ID_MAN(SubtitleProcesser, FFmpeg, kName)
+    FACTORY_REGISTER_ID_MAN(SubtitleProcessor, FFmpeg, kName)
 }
 
-SubtitleProcesserFFmpeg::SubtitleProcesserFFmpeg()
+SubtitleProcessorFFmpeg::SubtitleProcessorFFmpeg()
 {
     m_font.setBold(true);
     m_font.setPixelSize(24);
 }
 
-SubtitleProcesserId SubtitleProcesserFFmpeg::id() const
+SubtitleProcessorId SubtitleProcessorFFmpeg::id() const
 {
-    return SubtitleProcesserId_FFmpeg;
+    return SubtitleProcessorId_FFmpeg;
 }
 
-QString SubtitleProcesserFFmpeg::name() const
+QString SubtitleProcessorFFmpeg::name() const
 {
-    return QString(kName.c_str());//SubtitleProcesserFactory::name(id());
+    return QString(kName.c_str());//SubtitleProcessorFactory::name(id());
 }
 
-bool SubtitleProcesserFFmpeg::isSupported(SourceType value) const
+bool SubtitleProcessorFFmpeg::isSupported(SourceType value) const
 {
     Q_UNUSED(value);
     return true;
 }
 
-bool SubtitleProcesserFFmpeg::process(QIODevice *dev)
+bool SubtitleProcessorFFmpeg::process(QIODevice *dev)
 {
     if (!dev->isOpen()) {
         if (!dev->open(QIODevice::ReadOnly)) {
@@ -107,7 +107,7 @@ error:
     return false;
 }
 
-bool SubtitleProcesserFFmpeg::process(const QString &path)
+bool SubtitleProcessorFFmpeg::process(const QString &path)
 {
     if (!m_reader.loadFile(path))
         goto error;
@@ -122,12 +122,12 @@ error:
     return false;
 }
 
-QList<SubtitleFrame> SubtitleProcesserFFmpeg::frames() const
+QList<SubtitleFrame> SubtitleProcessorFFmpeg::frames() const
 {
     return m_frames;
 }
 
-QString SubtitleProcesserFFmpeg::getText(qreal pts) const
+QString SubtitleProcessorFFmpeg::getText(qreal pts) const
 {
     for (int i = 0; i < m_frames.size(); ++i) {
         if (m_frames[i].begin <= pts && m_frames[i].end >= pts)
@@ -136,7 +136,7 @@ QString SubtitleProcesserFFmpeg::getText(qreal pts) const
     return QString();
 }
 
-QImage SubtitleProcesserFFmpeg::getImage(qreal pts, int width, int height)
+QImage SubtitleProcessorFFmpeg::getImage(qreal pts, int width, int height)
 {
     QString text = getText(pts);
     if (text.isEmpty())
@@ -152,7 +152,7 @@ QImage SubtitleProcesserFFmpeg::getImage(qreal pts, int width, int height)
     return img;
 }
 
-bool SubtitleProcesserFFmpeg::processSubtitle()
+bool SubtitleProcessorFFmpeg::processSubtitle()
 {
     m_frames.clear();
     int ss = m_reader.subtitleStream();

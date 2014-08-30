@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/Subtitle.h"
-#include "QtAV/private/SubtitleProcesser.h"
+#include "QtAV/private/SubtitleProcessor.h"
 #include <algorithm>
 #include <QtDebug>
 #include <QtCore/QBuffer>
@@ -42,7 +42,7 @@ public:
         : loaded(false)
         , fuzzy_match(true)
         , update_image(true)
-        , processer(0)
+        , processor(0)
         , t(0)
     {
         name_filters = defaultNameFilters();
@@ -72,18 +72,18 @@ public:
     QByteArray readFromFile(const QString& path);
     /*!
      * \brief processRawData
-     * process utf8 encoded subtitle content. maybe a temp file is created if subtitle processer does not
+     * process utf8 encoded subtitle content. maybe a temp file is created if subtitle processor does not
      * support raw data
      * \param data utf8 subtitle content
      */
     bool processRawData(const QByteArray& data);
-    bool processRawData(SubtitleProcesser* sp, const QByteArray& data);
+    bool processRawData(SubtitleProcessor* sp, const QByteArray& data);
 
     bool loaded;
     bool fuzzy_match;
     bool update_image;
-    SubtitleProcesser *processer;
-    QList<SubtitleProcesser*> processers;
+    SubtitleProcessor *processor;
+    QList<SubtitleProcessor*> processors;
     QStringList engine_names;
     QLinkedList<SubtitleFrame> frames;
     QUrl url;
@@ -119,31 +119,31 @@ void Subtitle::setEngines(const QStringList &value)
         return;
     priv->engine_names = value;
     emit enginesChanged();
-    QList<SubtitleProcesser*> sps;
+    QList<SubtitleProcessor*> sps;
     if (priv->engine_names.isEmpty()) {
         return;
     }
     foreach (QString e, priv->engine_names) {
-        QList<SubtitleProcesser*>::iterator it = priv->processers.begin();
-        for (; it != priv->processers.end(); ++it) {
+        QList<SubtitleProcessor*>::iterator it = priv->processors.begin();
+        for (; it != priv->processors.end(); ++it) {
             if (!(*it)) {
-                priv->processers.erase(it);
+                priv->processors.erase(it);
                 continue;
             }
             if ((*it)->name() != e) {
                 continue;
             }
             sps.append(*it);
-            priv->processers.erase(it);
+            priv->processors.erase(it);
             break;
         }
-        if (it == priv->processers.end()) {
-            SubtitleProcesser* sp = SubtitleProcesserFactory::create(SubtitleProcesserFactory::id(e.toStdString(), false));
+        if (it == priv->processors.end()) {
+            SubtitleProcessor* sp = SubtitleProcessorFactory::create(SubtitleProcessorFactory::id(e.toStdString(), false));
             if (sp)
                 sps.append(sp);
         }
     }
-    priv->processers = sps;
+    priv->processors = sps;
 }
 
 QStringList Subtitle::engines() const
@@ -297,9 +297,9 @@ QImage Subtitle::getImage(int width, int height)
             && width == priv->frame.image.width() && height == priv->frame.image.height())
         return priv->frame.image;
     priv->update_image = false;
-    if (!priv->processer)
+    if (!priv->processor)
         return QImage();
-    priv->frame.image = priv->processer->getImage(priv->t, width, height);
+    priv->frame.image = priv->processor->getImage(priv->t, width, height);
     return priv->frame.image;
 }
 
@@ -436,19 +436,19 @@ QByteArray Subtitle::Private::readFromFile(const QString &path)
 
 bool Subtitle::Private::processRawData(const QByteArray &data)
 {
-    processer = 0;
+    processor = 0;
     frames.clear();
     if (data.size() > kMaxSubtitleSize)
         return false;
-    foreach (SubtitleProcesser* sp, processers) {
+    foreach (SubtitleProcessor* sp, processors) {
         if (processRawData(sp, data)) {
-            processer = sp;
+            processor = sp;
             break;
         }
     }
-    if (!processer)
+    if (!processor)
         return false;
-    QList<SubtitleFrame> fs(processer->frames());
+    QList<SubtitleFrame> fs(processor->frames());
     std::sort(fs.begin(), fs.end());
     foreach (SubtitleFrame f, fs) {
        frames.push_back(f);
@@ -458,9 +458,9 @@ bool Subtitle::Private::processRawData(const QByteArray &data)
     return true;
 }
 
-bool Subtitle::Private::processRawData(SubtitleProcesser *sp, const QByteArray &data)
+bool Subtitle::Private::processRawData(SubtitleProcessor *sp, const QByteArray &data)
 {
-    if (sp->isSupported(SubtitleProcesser::RawData)) {
+    if (sp->isSupported(SubtitleProcessor::RawData)) {
         qDebug("processing subtitle from raw data...");
         QByteArray u8(data);
         QBuffer buf(&u8);
@@ -474,7 +474,7 @@ bool Subtitle::Private::processRawData(SubtitleProcesser *sp, const QByteArray &
             qWarning() << "open subtitle qbuffer error: " << buf.errorString();
         }
     }
-    if (sp->isSupported(SubtitleProcesser::File)) {
+    if (sp->isSupported(SubtitleProcessor::File)) {
         qDebug("processing subtitle from a tmp file...");
         QString name = url.toLocalFile().section('/', -1);
         if (name.isEmpty())

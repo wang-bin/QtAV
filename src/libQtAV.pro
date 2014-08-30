@@ -58,7 +58,7 @@ sse4_1|config_sse4_1|contains(TARGET_ARCH_SUB, sse4.1) {
   CONFIG += sse2 #only sse4.1 is checked. sse2 now can be disabled if sse4.1 is disabled
   DEFINES += QTAV_HAVE_SSE4_1=1
 ## TODO: use SSE4_1_SOURCES
-# all x64 processers supports sse2. unknown option for vc
+# all x64 processors supports sse2. unknown option for vc
   *msvc* {
     !isEqual(QT_ARCH, x86_64)|!x86_64: QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE4_1
   } else {
@@ -67,7 +67,7 @@ sse4_1|config_sse4_1|contains(TARGET_ARCH_SUB, sse4.1) {
 }
 sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2) {
   DEFINES += QTAV_HAVE_SSE2=1
-# all x64 processers supports sse2. unknown option for vc
+# all x64 processors supports sse2. unknown option for vc
   *msvc* {
     !isEqual(QT_ARCH, x86_64)|!x86_64: QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_SSE2
   } else {
@@ -225,8 +225,8 @@ SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
     subtitle/PlainText.cpp \
-    subtitle/SubtitleProcesser.cpp \
-    subtitle/SubtitleProcesserFFmpeg.cpp \
+    subtitle/SubtitleProcessor.cpp \
+    subtitle/SubtitleProcessorFFmpeg.cpp \
     utils/GPUMemCopy.cpp \
     utils/OpenGLHelper.cpp \
     QAVIOContext.cpp \
@@ -326,7 +326,7 @@ SDK_HEADERS *= \
 SDK_PRIVATE_HEADERS *= \
     QtAV/private/factory.h \
     QtAV/private/singleton.h \
-    QtAV/private/SubtitleProcesser.h \
+    QtAV/private/SubtitleProcessor.h \
     QtAV/private/AVCompat.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AudioResampler_p.h \

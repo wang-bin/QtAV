@@ -84,7 +84,7 @@ defineReplace(qtLibName) {
 	LIBRARY_NAME = $$1
 	CONFIG(debug, debug|release) {
 		!debug_and_release|build_pass {
-			mac:RET = $$member(LIBRARY_NAME, 0)_debug
+                        mac:!mac_framework:RET = $$member(LIBRARY_NAME, 0)_debug
 			else:win32:RET = $$member(LIBRARY_NAME, 0)d
 		}
 	}
@@ -151,7 +151,7 @@ win32-icc {
   QMAKE_CFLAGS_SSE2 = -xSSE2
   QMAKE_CFLAGS_SSE4_1 = -xSSE4.1
 } else:*msvc* {
-# all x64 processers supports sse2. unknown option for vc
+# all x64 processors supports sse2. unknown option for vc
   #!isEqual(QT_ARCH, x86_64)|!x86_64 {
     QMAKE_CFLAGS_SSE2 = -arch:SSE2
     QMAKE_CFLAGS_SSE4_1 = -arch:SSE2

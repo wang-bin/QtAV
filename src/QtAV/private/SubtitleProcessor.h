@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_SUBTITLEPROCESSER_H
-#define QTAV_SUBTITLEPROCESSER_H
+#ifndef QTAV_SUBTITLEPROCESSOR_H
+#define QTAV_SUBTITLEPROCESSOR_H
 
 #include <QtCore/QList>
 #include <QtGui/QImage>
@@ -30,20 +30,20 @@
 
 namespace QtAV {
 
-typedef QString SubtitleProcesserId;
-class SubtitleProcesser;
-FACTORY_DECLARE(SubtitleProcesser)
+typedef QString SubtitleProcessorId;
+class SubtitleProcessor;
+FACTORY_DECLARE(SubtitleProcessor)
 
 
-class Q_AV_PRIVATE_EXPORT SubtitleProcesser
+class Q_AV_PRIVATE_EXPORT SubtitleProcessor
 {
 public:
     enum SourceType {
         RawData,
         File
     };
-    //virtual ~SubtitleProcesser() = 0;
-    virtual SubtitleProcesserId id() const = 0;
+    //virtual ~SubtitleProcessor() = 0;
+    virtual SubtitleProcessorId id() const = 0;
     virtual QString name() const = 0;
     virtual bool isSupported(SourceType) const { return true;}
     /*!
@@ -71,4 +71,4 @@ public:
 };
 
 } //namespace QtAV
-#endif // QTAV_SUBTITLEPROCESSER_H
+#endif // QTAV_SUBTITLEPROCESSOR_H

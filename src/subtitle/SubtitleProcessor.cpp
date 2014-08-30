@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/private/SubtitleProcesser.h"
+#include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/FactoryDefine.h"
 #include "QtAV/private/factory.h"
 #include <QtCore/QFile>
@@ -27,9 +27,9 @@
 
 namespace QtAV {
 
-FACTORY_DEFINE(SubtitleProcesser)
+FACTORY_DEFINE(SubtitleProcessor)
 
-bool SubtitleProcesser::process(const QString &path)
+bool SubtitleProcessor::process(const QString &path)
 {
     if (!isSupported(RawData))
         return false;
