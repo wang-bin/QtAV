@@ -275,11 +275,13 @@ bool AVDemuxer::readFrame()
     pkt->pts *= av_q2d(stream->time_base);
     //TODO: pts must >= 0? look at ffplay
     pkt->pts = qMax<qreal>(0, pkt->pts);
+    // TODO: convergence_duration
+    // subtitle is always key frame? convergence_duration may be 0
     if (stream->codec->codec_type == AVMEDIA_TYPE_SUBTITLE
             && (packet.flags & AV_PKT_FLAG_KEY)
-            &&  packet.convergence_duration != AV_NOPTS_VALUE)
+            &&  packet.convergence_duration > 0 && packet.convergence_duration != AV_NOPTS_VALUE) { //??
         pkt->duration = packet.convergence_duration * av_q2d(stream->time_base);
-    else if (packet.duration > 0)
+     } else if (packet.duration > 0)
         pkt->duration = packet.duration * av_q2d(stream->time_base);
     else
         pkt->duration = 0;
