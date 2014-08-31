@@ -100,6 +100,7 @@ bool SubtitleProcessorFFmpeg::process(QIODevice *dev)
             goto error;
     if (m_reader.subtitleStreams().isEmpty())
         goto error;
+    qDebug("subtitle format: %s", m_reader.formatContext()->iformat->name);
     if (!processSubtitle())
         goto error;
     m_reader.close();
@@ -115,6 +116,7 @@ bool SubtitleProcessorFFmpeg::process(const QString &path)
         goto error;
     if (m_reader.subtitleStreams().isEmpty())
         goto error;
+    qDebug("subtitle format: %s", m_reader.formatContext()->iformat->name);
     if (!processSubtitle())
         goto error;
     m_reader.close();
@@ -168,6 +170,7 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
         qWarning("Failed to find subtitle codec %s", avcodec_get_name(ctx->codec_id));
         return false;
     }
+    qDebug("found subtitle decoder '%s'", avcodec_get_name(ctx->codec_id));
     const AVCodecDescriptor *dec_desc = avcodec_descriptor_get(ctx->codec_id);
     if (dec_desc && !(dec_desc->props & AV_CODEC_PROP_TEXT_SUB)) {
         qWarning("Only text based subtitles are currently supported");
@@ -189,11 +192,15 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
             continue;
         AVPacket packet;
         av_init_packet(&packet);
-        packet.size = m_reader.packet()->data.size();
-        packet.data = (uint8_t*)m_reader.packet()->data.constData();
+        const Packet *pkt = m_reader.packet();
+        packet.size = pkt->data.size();
+        packet.data = (uint8_t*)pkt->data.constData();
+        packet.pts = pkt->pts * 1000.0;
+        packet.duration = pkt->duration * 1000.0;
         int got_subtitle = 0;
         AVSubtitle sub;
         memset(&sub, 0, sizeof(sub));
+        // TODO: AVPacket.data for srt contains plain text. but decoded text is ass format. skip decoding? what about other format?
         ret = avcodec_decode_subtitle2(ctx, &sub, &got_subtitle, &packet);
         if (ret < 0 || !got_subtitle) {
             av_free_packet(&packet);

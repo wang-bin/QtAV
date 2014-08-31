@@ -103,9 +103,16 @@ QString fromAss(const char* ass) {
     ret = strchr(line, ',');
     if (!ret)
         return QString::fromUtf8(line);
-    for (int comma = 0; comma < 6; comma++)
-        if (!(ret = strchr(++ret, ',')))
-            return QString::fromUtf8(line);
+    static const char kDefaultStyle[] = "Default,";
+    for (int comma = 0; comma < 6; comma++) {
+        if (!(ret = strchr(++ret, ','))) {
+            // workaround for ffmpeg decoded srt in ass format: "Dialogue: 0,0:42:29.20,0:42:31.08,Default,Chinese\NEnglish.
+            if (!(ret = strstr(line, kDefaultStyle)))
+                return QString::fromUtf8(line);
+            else
+                ret += sizeof(kDefaultStyle) - 1 - 1; // tail \0
+        }
+    }
     ret++;
     int p = strcspn(b.start, "\r\n");
     if (p == b.len) //not found
