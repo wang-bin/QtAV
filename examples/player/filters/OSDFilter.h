@@ -28,7 +28,7 @@
 using namespace QtAV;
 class OSDFilterPrivate;
 //TODO: not template. OSDFilter : public Filter, public OSD
-class OSDFilter : public Filter, public OSD
+class OSDFilter : public VideoFilter, public OSD
 {
 protected:
     DPTR_DECLARE_PRIVATE(OSDFilter)
@@ -39,11 +39,11 @@ class OSDFilterQPainter : public OSDFilter
 {
 public:
     OSDFilterQPainter(QObject *parent = 0);
-    FilterContext::Type contextType() const {
-        return FilterContext::QtPainter;
+    VideoFilterContext::Type contextType() const {
+        return VideoFilterContext::QtPainter;
     }
 protected:
-    void process();
+    void process(Statistics* statistics, VideoFrame* frame);
 };
 
 #endif // QTAV_OSDFILTER_H

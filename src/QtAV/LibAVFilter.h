@@ -28,7 +28,7 @@
 namespace QtAV {
 
 class LibAVFilterPrivate;
-class Q_AV_EXPORT LibAVFilter : public Filter
+class Q_AV_EXPORT LibAVFilter : public VideoFilter
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(LibAVFilter)
@@ -67,7 +67,7 @@ signals:
     void statusChanged();
     void optionsChanged();
 protected:
-    virtual void process(Statistics *statistics, Frame *frame);
+    virtual void process(Statistics *statistics, VideoFrame *frame);
 };
 
 } //namespace QtAV

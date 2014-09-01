@@ -140,11 +140,6 @@ void AVOutput::onDetach(OutputSet *set)
     }
 }
 
-int AVOutput::filterContextType() const
-{
-    return FilterContext::None;
-}
-
 QList<Filter*>& AVOutput::filters()
 {
     return d_func().filters;

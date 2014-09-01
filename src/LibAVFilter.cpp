@@ -35,7 +35,7 @@
 
 namespace QtAV {
 
-class LibAVFilterPrivate : public FilterPrivate
+class LibAVFilterPrivate : public VideoFilterPrivate
 {
 public:
     LibAVFilterPrivate()
@@ -161,7 +161,7 @@ public:
 };
 
 LibAVFilter::LibAVFilter(QObject *parent):
-    Filter(*new LibAVFilterPrivate(), parent)
+    VideoFilter(*new LibAVFilterPrivate(), parent)
 {
 }
 
@@ -196,7 +196,7 @@ void LibAVFilter::setStatus(Status value)
     emit statusChanged();
 }
 
-void LibAVFilter::process(Statistics *statistics, Frame *frame)
+void LibAVFilter::process(Statistics *statistics, VideoFrame *frame)
 {
     Q_UNUSED(statistics);
     if (status() == ConfigureFailed)

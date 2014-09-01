@@ -29,23 +29,18 @@ QPainterRenderer::QPainterRenderer()
     :VideoRenderer(*new QPainterRendererPrivate())
 {
     DPTR_D(QPainterRenderer);
-    d.filter_context = FilterContext::create(FilterContext::QtPainter);
+    d.filter_context = VideoFilterContext::create(VideoFilterContext::QtPainter);
 }
 
 QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
     :VideoRenderer(d)
 {
-    d.filter_context = FilterContext::create(FilterContext::QtPainter);
+    d.filter_context = VideoFilterContext::create(VideoFilterContext::QtPainter);
 }
 
 bool QPainterRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     return VideoFormat::isRGB(pixfmt);
-}
-
-int QPainterRenderer::filterContextType() const
-{
-    return FilterContext::QtPainter;
 }
 
 bool QPainterRenderer::prepareFrame(const VideoFrame &frame)

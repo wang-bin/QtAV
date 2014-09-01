@@ -27,9 +27,9 @@
 
 namespace QtAV {
 
-FilterContext* FilterContext::create(Type t)
+VideoFilterContext *VideoFilterContext::create(Type t)
 {
-    FilterContext *ctx = 0;
+    VideoFilterContext *ctx = 0;
     switch (t) {
     case QtPainter:
         ctx = new QPainterFilterContext();
@@ -40,33 +40,17 @@ FilterContext* FilterContext::create(Type t)
     return ctx;
 }
 
-FilterContext::FilterContext():
-    video_width(0)
-  , video_height(0)
-{
-}
-
-FilterContext::~FilterContext()
-{
-}
-
-void FilterContext::initializeOnFrame(Frame *frame)
+void VideoFilterContext::initializeOnFrame(VideoFrame *frame)
 {
     Q_UNUSED(frame);
 }
 
-void FilterContext::shareFrom(FilterContext *ctx)
-{
-    Q_UNUSED(ctx);
-    video_width = ctx->video_width;
-    video_height = ctx->video_height;
-}
-
 VideoFilterContext::VideoFilterContext():
-    FilterContext()
-  , painter(0)
+    painter(0)
   , opacity(1)
   , paint_device(0)
+  , video_width(0)
+  , video_height(0)
   , own_painter(false)
   , own_paint_device(false)
 {
@@ -133,13 +117,12 @@ void VideoFilterContext::drawRichText(const QRectF &rect, const QString &text, b
     Q_UNUSED(wordWrap);
 }
 
-void VideoFilterContext::shareFrom(FilterContext *ctx)
+void VideoFilterContext::shareFrom(VideoFilterContext *vctx)
 {
-    if (!ctx) {
+    if (!vctx) {
         qWarning("shared filter context is null!");
         return;
     }
-    VideoFilterContext *vctx = static_cast<VideoFilterContext*>(ctx);
     painter = vctx->painter;
     paint_device = vctx->paint_device;
     own_painter = false;
@@ -160,9 +143,9 @@ QPainterFilterContext::~QPainterFilterContext()
     }
 }
 
-FilterContext::Type QPainterFilterContext::type() const
+VideoFilterContext::Type QPainterFilterContext::type() const
 {
-    return FilterContext::QtPainter;
+    return VideoFilterContext::QtPainter;
 }
 
 void QPainterFilterContext::drawImage(const QPointF &pos, const QImage &image, const QRectF& source, Qt::ImageConversionFlags flags)
@@ -239,9 +222,9 @@ bool QPainterFilterContext::prepare()
     return true;
 }
 
-void QPainterFilterContext::initializeOnFrame(Frame *frame)
+void QPainterFilterContext::initializeOnFrame(VideoFrame *vframe)
 {
-    if (!frame) {
+    if (!vframe) {
         if (!painter) {
             painter = new QPainter(); //warning: more than 1 painter on 1 device
         }
@@ -256,7 +239,6 @@ void QPainterFilterContext::initializeOnFrame(Frame *frame)
             painter->begin(paint_device);
         return;
     }
-    VideoFrame *vframe = static_cast<VideoFrame*>(frame);
     VideoFormat format = vframe->format();
     if (!format.isValid()) {
         qWarning("Not a valid format");

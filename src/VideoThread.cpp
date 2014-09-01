@@ -44,6 +44,7 @@ public:
         AVThreadPrivate()
       , conv(0)
       , capture(0)
+      , filter_context(0)
     {
         conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
         conv->setOutFormat(VideoFormat::Format_RGB32); //vo->defaultFormat
@@ -53,12 +54,15 @@ public:
             delete conv;
             conv = 0;
         }
+        //not neccesary context is managed by filters.
+        filter_context = 0;
     }
 
     ImageConverter *conv;
     double pts; //current decoded pts. for capture. TODO: remove
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
+    VideoFilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
 };
 
 VideoThread::VideoThread(QObject *parent) :
@@ -143,6 +147,8 @@ void VideoThread::run()
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)// || !d.conv)
         return;
     resetState();
+    //not neccesary context is managed by filters.
+    d.filter_context = 0;
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     if (dec) {
         //used to initialize the decoder's frame size
@@ -297,9 +303,11 @@ void VideoThread::run()
                     if (d.stop) {
                         break;
                     }
-                    if (!filter->isEnabled())
+                    VideoFilter *vf = static_cast<VideoFilter*>(filter);
+                    if (!vf->isEnabled())
                         continue;
-                    filter->process(d.filter_context, d.statistics, &frame);
+                    vf->prepareContext(d.filter_context, d.statistics, &frame);
+                    vf->apply(d.statistics, &frame);
                     frame.setImageConverter(d.conv); //frame may be changed
                 }
             }

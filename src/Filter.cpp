@@ -67,46 +67,6 @@ Filter::~Filter()
     uninstall();
 }
 
-//copy qpainter if context nut null
-void Filter::process(FilterContext *&context, Statistics *statistics, Frame* frame)
-{
-    if (contextType() == FilterContext::None) {
-        process(statistics, frame);
-        return;
-    }
-    DPTR_D(Filter);
-    if (!d.context) {
-        d.context = FilterContext::create(contextType());
-        d.context->video_width = statistics->video_only.width;
-        d.context->video_height = statistics->video_only.height;
-    }
-    // TODO: reduce mem allocation
-    if (!context || context->type() != contextType()) {
-        if (context) {
-            delete context;
-        }
-        context = FilterContext::create(contextType());
-        context->video_width = statistics->video_only.width;
-        context->video_height = statistics->video_only.height;
-    }
-    // share common data
-    d.context->shareFrom(context);
-    d.context->initializeOnFrame(frame);
-    context->shareFrom(d.context);
-    d.statistics = statistics;
-    process();
-}
-
-void Filter::process()
-{
-}
-
-void Filter::process(Statistics *statistics, Frame *frame)
-{
-    Q_UNUSED(statistics);
-    Q_UNUSED(frame);
-}
-
 void Filter::setEnabled(bool enabled)
 {
     DPTR_D(Filter);
@@ -122,20 +82,6 @@ bool Filter::isEnabled() const
     return d.enabled;
 }
 
-FilterContext* Filter::context()
-{
-    DPTR_D(Filter);
-    if (!d.context) {
-        d.context = FilterContext::create(contextType());
-    }
-    return d.context;
-}
-
-FilterContext::Type Filter::contextType() const
-{
-    return FilterContext::None;
-}
-
 void Filter::setOwnedByTarget(bool value)
 {
     d_func().owned_by_target = value;
@@ -146,26 +92,93 @@ bool Filter::isOwnedByTarget() const
     return d_func().owned_by_target;
 }
 
-/*TODO: move to AVOutput.cpp to reduce dependency?*/
-bool Filter::installTo(AVOutput *output)
+bool Filter::uninstall()
 {
-    return output->installFilter(this);
+    return FilterManager::instance().uninstallFilter(this);
 }
 
+AudioFilter::AudioFilter(QObject *parent)
+    : Filter(*new AudioFilterPrivate(), parent)
+{}
+
+AudioFilter::AudioFilter(AudioFilterPrivate& d, QObject *parent)
+    : Filter(d, parent)
+{}
+
 /*TODO: move to AVPlayer.cpp to reduce dependency?*/
-bool Filter::installToAudioThread(AVPlayer *player)
+bool AudioFilter::installTo(AVPlayer *player)
 {
     return player->installAudioFilter(this);
 }
 
-bool Filter::installToVideoThread(AVPlayer *player)
+void AudioFilter::apply(Statistics *statistics, const QByteArray &data)
+{
+    Q_UNUSED(statistics);
+    Q_UNUSED(data);
+}
+
+VideoFilter::VideoFilter(QObject *parent)
+    : Filter(*new VideoFilterPrivate(), parent)
+{}
+
+VideoFilter::VideoFilter(VideoFilterPrivate &d, QObject *parent)
+    : Filter(d, parent)
+{}
+
+VideoFilterContext *VideoFilter::context()
+{
+    DPTR_D(VideoFilter);
+    if (!d.context) {
+        d.context = VideoFilterContext::create(contextType());
+    }
+    return d.context;
+}
+
+VideoFilterContext::Type VideoFilter::contextType() const
+{
+    return VideoFilterContext::None;
+}
+
+bool VideoFilter::installTo(AVPlayer *player)
 {
     return player->installVideoFilter(this);
 }
 
-bool Filter::uninstall()
+/*TODO: move to AVOutput.cpp to reduce dependency?*/
+bool VideoFilter::installTo(AVOutput *output)
 {
-    return FilterManager::instance().uninstallFilter(this);
+    return output->installFilter(this);
+}
+
+//copy qpainter if context nut null
+void VideoFilter::prepareContext(VideoFilterContext *&context, Statistics *statistics, VideoFrame* frame)
+{
+    if (contextType() == VideoFilterContext::None)
+        return;
+    DPTR_D(VideoFilter);
+    if (!d.context) {
+        d.context = VideoFilterContext::create(contextType());
+        d.context->video_width = statistics->video_only.width;
+        d.context->video_height = statistics->video_only.height;
+    }
+    // TODO: reduce mem allocation
+    if (!context || context->type() != contextType()) {
+        if (context) {
+            delete context;
+        }
+        context = VideoFilterContext::create(contextType());
+        context->video_width = statistics->video_only.width;
+        context->video_height = statistics->video_only.height;
+    }
+    // share common data
+    d.context->shareFrom(context);
+    d.context->initializeOnFrame(frame);
+    context->shareFrom(d.context);
+}
+
+void VideoFilter::apply(Statistics *statistics, VideoFrame *frame)
+{
+    process(statistics, frame);
 }
 
 } //namespace QtAV

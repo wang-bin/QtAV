@@ -32,7 +32,7 @@ namespace QtAV {
 class AVOutput;
 class AVDecoder;
 class Filter;
-class FilterContext;
+class VideoFilterContext;
 class Statistics;
 class OutputSet;
 class Q_AV_PRIVATE_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
@@ -54,7 +54,7 @@ public:
     //paintEvent is in main thread, copy it(only dynamic information) is better.
     //the static data are copied from AVPlayer when open
     Statistics *statistics; //do not own the ptr. just use AVPlayer's statistics ptr
-    FilterContext *filter_context; //create internally by the renderer with correct type
+    VideoFilterContext *filter_context; //create internally by the renderer with correct type
     QList<Filter*> filters;
     QList<Filter*> pending_uninstall_filters;
     QList<OutputSet*> output_sets;
