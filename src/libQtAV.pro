@@ -247,8 +247,8 @@ SOURCES += \
     Frame.cpp \
     Filter.cpp \
     FilterContext.cpp \
-    FilterManager.cpp \
-    LibAVFilter.cpp \
+    filter/FilterManager.cpp \
+    filter/LibAVFilter.cpp \
     filter/SubtitleFilter.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
@@ -336,7 +336,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
-    QtAV/private/FilterManager.h \
     QtAV/private/Frame_p.h \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/OutputSet.h \
@@ -354,6 +353,7 @@ SDK_PRIVATE_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     $$SDK_PRIVATE_HEADERS \
+    filter/FilterManager.h \
     subtitle/PlainText.h \
     utils/BlockingQueue.h \
     utils/GPUMemCopy.h \

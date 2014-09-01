@@ -43,7 +43,7 @@
 #include "QtAV/AVDemuxThread.h"
 #include "QtAV/VideoCapture.h"
 #include "QtAV/AudioOutputTypes.h"
-#include "QtAV/private/FilterManager.h"
+#include "filter/FilterManager.h"
 #include "QtAV/private/OutputSet.h"
 #include "QtAV/private/VideoOutputEventFilter.h"
 #include "QtAV/private/AVCompat.h"

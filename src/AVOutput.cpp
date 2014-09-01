@@ -23,7 +23,7 @@
 #include "QtAV/private/AVOutput_p.h"
 #include "QtAV/Filter.h"
 #include "QtAV/FilterContext.h"
-#include "QtAV/private/FilterManager.h"
+#include "filter/FilterManager.h"
 #include "QtAV/private/OutputSet.h"
 
 namespace QtAV {
