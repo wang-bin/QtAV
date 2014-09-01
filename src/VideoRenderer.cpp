@@ -443,6 +443,8 @@ void VideoRenderer::handlePaintEvent()
                 //d.filters.removeOne(filter);
                 continue;
             }
+            if (!vf->isEnabled())
+                continue;
             vf->prepareContext(d.filter_context, d.statistics, 0);
             vf->apply(d.statistics, 0);
         }
