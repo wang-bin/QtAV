@@ -31,6 +31,7 @@ class AVPlayer;
 class AVClock;
 class VideoRenderer;
 class LibAVFilter;
+class SubtitleFilter;
 }
 class QMenu;
 class QTimeEdit;
@@ -46,7 +47,7 @@ class DecoderConfigPage;
 class VideoEQConfigPage;
 class StatisticsView;
 class OSDFilter;
-class SubtitleFilter;
+class AVFilterSubtitle;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -187,7 +188,7 @@ private:
     StatisticsView *mpStatisticsView;
 
     OSDFilter *mpOSD;
-    SubtitleFilter *mpSubtitle;
+    QtAV::SubtitleFilter *mpSubtitle;
 };
 
 

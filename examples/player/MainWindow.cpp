@@ -45,6 +45,7 @@
 #include <QWheelEvent>
 #include <QtAV/QtAV.h>
 #include <QtAV/LibAVFilter.h>
+#include <QtAV/SubtitleFilter.h>
 #include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"
@@ -55,7 +56,7 @@
 #include "config/VideoEQConfigPage.h"
 #include "config/ConfigDialog.h"
 #include "filters/OSDFilter.h"
-#include "filters/SubtitleFilter.h"
+//#include "filters/AVFilterSubtitle.h"
 #include "playlist/PlayList.h"
 #include "common/ScreenSaver.h"
 
@@ -104,8 +105,8 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpSubtitle(0)
 {
     setWindowIcon(QIcon(":/QtAV.svg"));
-    mpSubtitle = new SubtitleFilter(this);
     mpOSD = new OSDFilterQPainter(this);
+    mpSubtitle = new SubtitleFilter(this);
     mpChannelAction = 0;
     mpChannelMenu = 0;
     mpAudioTrackAction = 0;
@@ -138,8 +139,8 @@ void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
+    //mpSubtitle->installTo(mpPlayer); //filter on frame
     mpSubtitle->setPlayer(mpPlayer);
-
     //mpPlayer->setAudioOutput(AudioOutputFactory::create(AudioOutputId_OpenAL));
     EventFilter *ef = new EventFilter(mpPlayer);
     qApp->installEventFilter(ef);
@@ -444,7 +445,7 @@ void MainWindow::setupUi()
     mpVOAction = subMenu->addAction("QPainter");
     mpVOAction->setData(VideoRendererId_Widget);
     subMenu->addAction("OpenGL Widget 2")->setData(VideoRendererId_GLWidget2);
-    subMenu->addAction("OpenGL Widget")->setData(VideoRendererId_GLWidget);
+    //subMenu->addAction("OpenGL Widget")->setData(VideoRendererId_GLWidget);
     subMenu->addAction("GDI+")->setData(VideoRendererId_GDI);
     subMenu->addAction("Direct2D")->setData(VideoRendererId_Direct2D);
     subMenu->addAction("XV")->setData(VideoRendererId_XV);
@@ -593,6 +594,7 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     if (!renderer)
         return;
     mpOSD->uninstall();
+    mpSubtitle->uninstall();
 #if SLIDER_ON_VO
     int old_pos = 0;
     int old_total = 0;
@@ -658,6 +660,7 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     }
     onVideoEQEngineChanged();
     mpOSD->installTo(mpRenderer);
+    mpSubtitle->installTo(mpRenderer);
 }
 
 void MainWindow::play(const QString &name)

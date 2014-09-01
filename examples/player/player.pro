@@ -34,7 +34,7 @@ SOURCES += main.cpp \
     config/PropertyEditor.cpp \
     config/AVFormatConfigPage.cpp \
     config/AVFilterConfigPage.cpp \
-    filters/SubtitleFilter.cpp
+    filters/AVFilterSubtitle.cpp
 
 HEADERS += \
     MainWindow.h \
@@ -59,7 +59,7 @@ HEADERS += \
     config/PropertyEditor.h \
     config/AVFormatConfigPage.h \
     config/AVFilterConfigPage.h \
-    filters/SubtitleFilter.h
+    filters/AVFilterSubtitle.h
 
 tv.files = res/tv.ini
 BIN_INSTALLS += tv

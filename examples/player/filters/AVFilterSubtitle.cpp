@@ -1,10 +1,10 @@
-#include "SubtitleFilter.h"
+#include "AVFilterSubtitle.h"
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
 #include <QtCore/QTextStream>
 
-SubtitleFilter::SubtitleFilter(QObject *parent)
+AVFilterSubtitle::AVFilterSubtitle(QObject *parent)
     :  LibAVFilter(parent)
     , m_auto(true)
     , m_player(0)
@@ -12,7 +12,7 @@ SubtitleFilter::SubtitleFilter(QObject *parent)
     connect(this, SIGNAL(statusChanged()), SLOT(onStatusChanged()));
 }
 
-void SubtitleFilter::setPlayer(AVPlayer *player)
+void AVFilterSubtitle::setPlayer(AVPlayer *player)
 {
     if (m_player == player)
         return;
@@ -30,7 +30,7 @@ void SubtitleFilter::setPlayer(AVPlayer *player)
     }
 }
 
-bool SubtitleFilter::setFile(const QString &filePath)
+bool AVFilterSubtitle::setFile(const QString &filePath)
 {
     setOptions("");
     if (m_file != filePath) {
@@ -68,12 +68,12 @@ bool SubtitleFilter::setFile(const QString &filePath)
     return true;
 }
 
-QString SubtitleFilter::file() const
+QString AVFilterSubtitle::file() const
 {
     return m_file;
 }
 
-QString SubtitleFilter::setContent(const QString &doc)
+QString AVFilterSubtitle::setContent(const QString &doc)
 {
     QString name = QFileInfo(m_file).fileName();
     if (name.isEmpty())
@@ -88,7 +88,7 @@ QString SubtitleFilter::setContent(const QString &doc)
     return w.fileName();
 }
 
-void SubtitleFilter::setAutoLoad(bool value)
+void AVFilterSubtitle::setAutoLoad(bool value)
 {
     if (m_auto == value)
         return;
@@ -99,12 +99,12 @@ void SubtitleFilter::setAutoLoad(bool value)
     connect(m_player, SIGNAL(started()), SLOT(onPlayerStart()));
 }
 
-bool SubtitleFilter::autoLoad() const
+bool AVFilterSubtitle::autoLoad() const
 {
     return m_auto;
 }
 
-void SubtitleFilter::findAndSetFile(const QString &path)
+void AVFilterSubtitle::findAndSetFile(const QString &path)
 {
     QFileInfo fi(path);
     QDir dir(fi.dir());
@@ -120,7 +120,7 @@ void SubtitleFilter::findAndSetFile(const QString &path)
     }
 }
 
-void SubtitleFilter::onPlayerStart()
+void AVFilterSubtitle::onPlayerStart()
 {
     setOptions("");
     if (!autoLoad())
@@ -128,7 +128,7 @@ void SubtitleFilter::onPlayerStart()
     findAndSetFile(m_player->file());
 }
 
-void SubtitleFilter::onStatusChanged()
+void AVFilterSubtitle::onStatusChanged()
 {
     if (status() == ConfigreOk) {
         emit loaded();

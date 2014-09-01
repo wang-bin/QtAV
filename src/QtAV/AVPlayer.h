@@ -212,6 +212,7 @@ public:
     //QHash<QByteArray, QByteArray> optionsForFilter() const;
 
 signals:
+    void sourceChanged();
     void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void paused(bool p);

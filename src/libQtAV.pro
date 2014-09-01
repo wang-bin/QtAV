@@ -249,6 +249,7 @@ SOURCES += \
     FilterContext.cpp \
     FilterManager.cpp \
     LibAVFilter.cpp \
+    filter/SubtitleFilter.cpp \
     GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
@@ -320,6 +321,7 @@ SDK_HEADERS *= \
     QtAV/FactoryDefine.h \
     QtAV/Statistics.h \
     QtAV/Subtitle.h \
+    QtAV/SubtitleFilter.h \
     QtAV/SurfaceInterop.h \
     QtAV/version.h
 

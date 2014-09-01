@@ -1,18 +1,18 @@
-#ifndef QTAV_SUBTITLEFILTER_H
-#define QTAV_SUBTITLEFILTER_H
+#ifndef QTAV_AVFilterSubtitle_H
+#define QTAV_AVFilterSubtitle_H
 
 #include <QtCore/QObject>
 #include <QtCore/QHash>
 #include <QtAV/LibAVFilter.h>
 #include <QtAV/AVPlayer.h>
 using namespace QtAV;
-class SubtitleFilter : public LibAVFilter
+class AVFilterSubtitle : public LibAVFilter
 {
     Q_OBJECT
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(QString file READ file WRITE setFile NOTIFY fileChanged)
 public:
-    explicit SubtitleFilter(QObject *parent = 0);
+    explicit AVFilterSubtitle(QObject *parent = 0);
     void setPlayer(AVPlayer* player);
     QString setContent(const QString& doc); // return utf8 subtitle path
     bool setFile(const QString& filePath);
@@ -39,4 +39,4 @@ private:
     QHash<QString,QString> m_u8_files;
 };
 
-#endif // QTAV_SUBTITLEFILTER_H
+#endif // QTAV_AVFilterSubtitle_H

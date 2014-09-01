@@ -453,9 +453,13 @@ QVariantHash AVPlayer::optionsForVideoCodec() const
  */
 void AVPlayer::setFile(const QString &path)
 {
-    reset_state = !this->path.isEmpty() && this->path != path;
-    demuxer.setAutoResetStream(reset_state);
+    reset_state = this->path != path;
     this->path = path;
+    if (reset_state)
+        emit sourceChanged();
+    reset_state = !this->path.isEmpty() && reset_state;
+    demuxer.setAutoResetStream(reset_state);
+    // TODO: use absoluteFilePath?
     m_pIODevice = 0;
     loaded = false; //
     //qApp->activeWindow()->setWindowTitle(path); //crash on linux
@@ -475,12 +479,13 @@ void AVPlayer::setIODevice(QIODevice* device)
         qDebug("No support for sequential devices.");
         return;
     }
-
     demuxer.setAutoResetStream(reset_state);
     reset_state = m_pIODevice != device;
     m_pIODevice = device;
-    path = QString();
     loaded = false;
+    if (!path.isEmpty())
+        emit sourceChanged();
+    path = QString();
 }
 
 VideoCapture* AVPlayer::videoCapture()
