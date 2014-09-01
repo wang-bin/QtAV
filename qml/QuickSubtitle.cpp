@@ -21,6 +21,7 @@ void QuickSubtitle::setPlayer(QObject *player)
         return;
     if (m_player) {
         disconnect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
+        disconnect(m_player, SIGNAL(positionChanged()), this, SLOT(onPlayerPositionChanged()));
     }
     m_player = p;
     connect(m_player, SIGNAL(sourceChanged()), SLOT(onPlayerSourceChanged()));

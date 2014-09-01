@@ -46,6 +46,7 @@ public:
         , t(0)
     {}
     void reset() {
+        processor = 0;
         loaded = false;
         update_image = true;
         t = 0;
@@ -112,6 +113,7 @@ void Subtitle::setEngines(const QStringList &value)
 {
     if (priv->engine_names == value)
         return;
+    priv->processor = 0;
     priv->supported_suffixes.clear();
     priv->engine_names = value;
     emit enginesChanged();
