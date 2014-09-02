@@ -65,4 +65,7 @@
 #include <QtAV/GLWidgetRenderer.h>
 #include <QtAV/GLWidgetRenderer2.h>
 
+#include <QtAV/Subtitle.h>
+#include <QtAV/SubtitleFilter.h>
+
 #endif // QTAV_H

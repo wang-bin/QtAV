@@ -29,7 +29,7 @@ namespace QtAV {
 
 class AVPlayer;
 class SubtitleFilterPrivate;
-class SubtitleFilter : public VideoFilter
+class Q_AV_EXPORT SubtitleFilter : public VideoFilter
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(SubtitleFilter)
