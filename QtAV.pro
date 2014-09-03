@@ -33,8 +33,9 @@ OTHER_FILES += \
 EssentialDepends = avutil avcodec avformat swscale
 OptionalDepends = \
     swresample \
-    avresample \
-    gl
+    avresample
+# QtOpenGL module. In Qt5 we can disable it and still have opengl support
+!no-gl: OptionalDepends *= gl
 !no-avfilter: OptionalDepends *= avfilter
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
 !no-sse4_1:!sse4_1: OptionalDepends *= sse4_1

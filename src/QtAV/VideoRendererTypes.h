@@ -36,6 +36,8 @@ extern Q_AV_EXPORT VideoRendererId VideoRendererId_GDI;
 extern Q_AV_EXPORT VideoRendererId VideoRendererId_Direct2D;
 extern Q_AV_EXPORT VideoRendererId VideoRendererId_XV;
 extern Q_AV_EXPORT VideoRendererId VideoRendererId_GLWidget2;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWindow;
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWidget;
 
 Q_AV_EXPORT void VideoRenderer_RegisterAll();
 

@@ -31,6 +31,12 @@
 #if QTAV_HAVE(GL1)
 #include "QtAV/GLWidgetRenderer.h"
 #endif //QTAV_HAVE(GL1)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#include "QtAV/OpenGLWindowRenderer.h"
+#ifdef QT_WIDGETS_LIB
+#include "QtAV/OpenGLWidgetRenderer.h"
+#endif
+#endif
 #include "QtAV/private/factory.h"
 
 namespace QtAV {
@@ -45,6 +51,8 @@ VideoRendererId VideoRendererId_GDI = 5;
 VideoRendererId VideoRendererId_Direct2D = 6;
 VideoRendererId VideoRendererId_XV = 7;
 VideoRendererId VideoRendererId_GLWidget2 = 8;
+VideoRendererId VideoRendererId_OpenGLWindow = 9;
+VideoRendererId VideoRendererId_OpenGLWidget = 10;
 
 //QPainterRenderer is abstract. So can not register(operator new will needed)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")
@@ -102,6 +110,32 @@ VideoRendererId GLWidgetRenderer2::id() const
     return VideoRendererId_GLWidget2;
 }
 #endif //QTAV_HAVE(GL)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, OpenGLWindow, "OpenGLWindow")
+
+void RegisterVideoRendererOpenGLWindow_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, OpenGLWindow, "OpenGLWindow")
+}
+
+VideoRendererId OpenGLWindowRenderer::id() const
+{
+    return VideoRendererId_OpenGLWindow;
+}
+#ifdef QT_WIDGETS_LIB
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, OpenGLWidget, "OpenGLWidget")
+
+void RegisterVideoRendererOpenGLWidget_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoRenderer, OpenGLWidget, "OpenGLWidget")
+}
+
+VideoRendererId OpenGLWidgetRenderer::id() const
+{
+    return VideoRendererId_OpenGLWidget;
+}
+#endif //QT_WIDGETS_LIB
+#endif
 
 extern void RegisterVideoRendererGDI_Man();
 extern void RegisterVideoRendererDirect2D_Man();
@@ -116,6 +150,12 @@ void VideoRenderer_RegisterAll()
 #if QTAV_HAVE(GL1)
     RegisterVideoRendererGLWidget_Man();
 #endif //QTAV_HAVE(GL1)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+    RegisterVideoRendererOpenGLWindow_Man();
+#ifdef QT_WIDGETS_LIB
+
+#endif //QT_WIDGETS_LIB
+#endif
 #if QTAV_HAVE(GDIPLUS)
     RegisterVideoRendererGDI_Man();
 #endif //QTAV_HAVE(GDIPLUS)

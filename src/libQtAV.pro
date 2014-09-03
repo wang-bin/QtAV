@@ -4,6 +4,10 @@ TARGET = QtAV
 QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4) {
   QT += widgets
+  CONFIG *= config_opengl
+  greaterThan(QT_MINOR_VERSION, 3) {
+    CONFIG *= config_openglwindow
+  }
 }
 CONFIG *= qtav-buildlib
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
@@ -163,18 +167,6 @@ config_xv {
     SOURCES += XVRenderer.cpp
     LIBS += -lXv
 }
-config_gl {
-    QT *= opengl
-    DEFINES *= QTAV_HAVE_GL=1
-    SOURCES += GLWidgetRenderer2.cpp
-    SDK_HEADERS += QtAV/GLWidgetRenderer2.h
-    !contains(QT_CONFIG, dynamicgl) { #dynamicgl does not support old gl1 functions which used in GLWidgetRenderer
-        DEFINES *= QTAV_HAVE_GL1
-        SOURCES += GLWidgetRenderer.cpp
-        SDK_HEADERS += QtAV/GLWidgetRenderer.h
-    }
-    OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
-}
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link
 config_cuda {
@@ -221,6 +213,40 @@ config_vda {
     SOURCES += VideoDecoderVDA.cpp
     LIBS += -framework VideoDecodeAcceleration -framework CoreVideo
 }
+
+config_gl {
+    QT *= opengl
+    DEFINES *= QTAV_HAVE_GL=1
+    SOURCES += GLWidgetRenderer2.cpp
+    SDK_HEADERS += QtAV/GLWidgetRenderer2.h
+    !contains(QT_CONFIG, dynamicgl) { #dynamicgl does not support old gl1 functions which used in GLWidgetRenderer
+        DEFINES *= QTAV_HAVE_GL1
+        SOURCES += GLWidgetRenderer.cpp
+        SDK_HEADERS += QtAV/GLWidgetRenderer.h
+    }
+}
+config_gl|config_opengl {
+  OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
+  SDK_HEADERS *= \
+    QtAV/OpenGLVideo.h \
+    QtAV/VideoShader.h
+  HEADERS *= \
+    utils/OpenGLHelper.h \
+    QtAV/private/ShaderManager.h
+  SOURCES *= \
+    OpenGLVideo.cpp \
+    VideoShader.cpp \
+    ShaderManager.cpp \
+    utils/OpenGLHelper.cpp
+}
+config_openglwindow {
+  SDK_HEADERS *= QtAV/OpenGLWindowRenderer.h
+  SOURCES *= OpenGLWindowRenderer.cpp
+  qtHaveModule(widgets) {
+    SDK_HEADERS *= QtAV/OpenGLWidgetRenderer.h
+    SOURCES *= OpenGLWidgetRenderer.cpp
+  }
+}
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
@@ -228,9 +254,7 @@ SOURCES += \
     subtitle/SubtitleProcessor.cpp \
     subtitle/SubtitleProcessorFFmpeg.cpp \
     utils/GPUMemCopy.cpp \
-    utils/OpenGLHelper.cpp \
     QAVIOContext.cpp \
-    ShaderManager.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioDecoder.cpp \
@@ -268,8 +292,6 @@ SOURCES += \
     WidgetRenderer.cpp \
     AVOutput.cpp \
     OutputSet.cpp \
-    OpenGLVideo.cpp \
-    VideoShader.cpp \
     Statistics.cpp \
     Subtitle.cpp \
     VideoDecoder.cpp \
@@ -302,8 +324,6 @@ SDK_HEADERS *= \
     QtAV/ImageConverter.h \
     QtAV/ImageConverterTypes.h \
     QtAV/QPainterRenderer.h \
-    QtAV/OpenGLVideo.h \
-    QtAV/VideoShader.h \
     QtAV/Packet.h \
     QtAV/AVError.h \
     QtAV/AVPlayer.h \
@@ -340,7 +360,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/OutputSet.h \
     QtAV/private/QAVIOContext.h \
-    QtAV/private/ShaderManager.h \
     QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
@@ -357,7 +376,6 @@ HEADERS *= \
     subtitle/PlainText.h \
     utils/BlockingQueue.h \
     utils/GPUMemCopy.h \
-    utils/OpenGLHelper.h \
     utils/SharedPtr.h \
     QtAV/AVDemuxThread.h \
     QtAV/AVThread.h \
