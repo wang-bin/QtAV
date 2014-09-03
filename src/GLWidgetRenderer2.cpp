@@ -20,43 +20,24 @@
 ******************************************************************************/
 
 #include "QtAV/GLWidgetRenderer2.h"
-#include "QtAV/private/VideoRenderer_p.h"
-#include "QtAV/OpenGLVideo.h"
-#include "QtAV/FilterContext.h"
+#include "QtAV/private/OpenGLRendererBase_p.h"
 #include <QResizeEvent>
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtGui/QOpenGLShaderProgram>
-#else
-#include <QtOpenGL/QGLShaderProgram>
-#define QOpenGLShaderProgram QGLShaderProgram
-#define initializeOpenGLFunctions() initializeGLFunctions()
-#endif
+
 namespace QtAV {
 
-class GLWidgetRenderer2Private : public VideoRendererPrivate
+class GLWidgetRenderer2Private : public OpenGLRendererBasePrivate
 {
 public:
-    GLWidgetRenderer2Private()
-        : painter(0)
+    GLWidgetRenderer2Private(QPaintDevice *pd)
+        : OpenGLRendererBasePrivate(pd)
     {}
-    virtual ~GLWidgetRenderer2Private() {}
-    void setupAspectRatio() {
-        matrix(0, 0) = (GLfloat)out_rect.width()/(GLfloat)renderer_width;
-        matrix(1, 1) = (GLfloat)out_rect.height()/(GLfloat)renderer_height;
-    }
-
-    QPainter *painter;
-    OpenGLVideo glv;
-    QMatrix4x4 matrix;
 };
 
 
 GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
-    QGLWidget(parent, shareWidget, f),VideoRenderer(*new GLWidgetRenderer2Private())
+    QGLWidget(parent, shareWidget, f)
+  , OpenGLRendererBase(*new GLWidgetRenderer2Private(this))
 {
-    DPTR_INIT_PRIVATE(GLWidgetRenderer2);
-    DPTR_D(GLWidgetRenderer2);
-    setPreferredPixelFormat(VideoFormat::Format_YUV420P);
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
     /* To rapidly update custom widgets that constantly paint over their entire areas with
@@ -70,72 +51,17 @@ GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidg
     //default: swap in qpainter dtor. we should swap before QPainter.endNativePainting()
     setAutoBufferSwap(false);
     setAutoFillBackground(false);
-    d.painter = new QPainter();
-    d.filter_context = VideoFilterContext::create(VideoFilterContext::QtPainter);
-    d.filter_context->paint_device = this;
-    d.filter_context->painter = d.painter;
 }
 
-GLWidgetRenderer2::~GLWidgetRenderer2()
+void GLWidgetRenderer2::onUpdate()
 {
-    // why QOpenGLContext::aboutToBeDestroyed not emitted?
-//#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-   d_func().glv.setOpenGLContext(0);
-//#endif
-}
-
-bool GLWidgetRenderer2::isSupported(VideoFormat::PixelFormat pixfmt) const
-{
-    Q_UNUSED(pixfmt);
-    return true;
-}
-
-bool GLWidgetRenderer2::receiveFrame(const VideoFrame& frame)
-{
-    DPTR_D(GLWidgetRenderer2);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
-    d.video_frame = frame;
-
-    d.glv.setCurrentFrame(frame);
-
-    update(); //can not call updateGL() directly because no event and paintGL() will in video thread
-    return true;
-}
-
-bool GLWidgetRenderer2::needUpdateBackground() const
-{
-    return true;
-}
-
-void GLWidgetRenderer2::drawBackground()
-{
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void GLWidgetRenderer2::drawFrame()
-{
-    DPTR_D(GLWidgetRenderer2);
-    QRect roi = realROI();
-    //d.glv.render(QRectF(-1, 1, 2, -2), roi, d.matrix);
-    // QRectF() means the whole viewport
-    d.glv.render(QRectF(), roi, d.matrix);
+    update();
 }
 
 void GLWidgetRenderer2::initializeGL()
 {
-    DPTR_D(GLWidgetRenderer2);
     makeCurrent();
-    QOpenGLContext *ctx = const_cast<QOpenGLContext*>(QOpenGLContext::currentContext()); //qt4 returns const
-    d.glv.setOpenGLContext(ctx);
-    //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
-    bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
-    qDebug("OpenGL version: %d.%d  hasGLSL: %d", format().majorVersion(), format().minorVersion(), hasGLSL);
-    initializeOpenGLFunctions();
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_DEPTH_TEST);
-    glClearColor(0.0, 0.0, 0.0, 0.0);
+    onInitializeGL();
 }
 
 void GLWidgetRenderer2::paintGL()
@@ -156,70 +82,18 @@ void GLWidgetRenderer2::paintGL()
 
 void GLWidgetRenderer2::resizeGL(int w, int h)
 {
-    DPTR_D(GLWidgetRenderer2);
-    glViewport(0, 0, w, h);
-    d.glv.setProjectionMatrixToRect(QRectF(0, 0, w, h));
-    //qDebug("%s @%d %dx%d", __FUNCTION__, __LINE__, d.out_rect.width(), d.out_rect.height());
-    d.setupAspectRatio();
+    onResizeGL(w, h);
 }
 
 void GLWidgetRenderer2::resizeEvent(QResizeEvent *e)
 {
-    DPTR_D(GLWidgetRenderer2);
-    d.update_background = true;
-    resizeRenderer(e->size());
-    d.setupAspectRatio();
+    onResizeEvent(e->size().width(), e->size().height());
     QGLWidget::resizeEvent(e); //will call resizeGL(). TODO:will call paintEvent()?
 }
 
-//TODO: out_rect not correct when top level changed
 void GLWidgetRenderer2::showEvent(QShowEvent *)
 {
-    DPTR_D(GLWidgetRenderer2);
-    d.update_background = true;
-    /*
-     * Do something that depends on widget below! e.g. recreate render target for direct2d.
-     * When Qt::WindowStaysOnTopHint changed, window will hide first then show. If you
-     * don't do anything here, the widget content will never be updated.
-     */
-}
-
-void GLWidgetRenderer2::onSetOutAspectRatio(qreal ratio)
-{
-    Q_UNUSED(ratio);
-    DPTR_D(GLWidgetRenderer2);
-    d.setupAspectRatio();
-}
-
-void GLWidgetRenderer2::onSetOutAspectRatioMode(OutAspectRatioMode mode)
-{
-    Q_UNUSED(mode);
-    DPTR_D(GLWidgetRenderer2);
-    d.setupAspectRatio();
-}
-
-bool GLWidgetRenderer2::onSetBrightness(qreal b)
-{
-    d_func().glv.setBrightness(b);
-    return true;
-}
-
-bool GLWidgetRenderer2::onSetContrast(qreal c)
-{
-    d_func().glv.setContrast(c);
-    return true;
-}
-
-bool GLWidgetRenderer2::onSetHue(qreal h)
-{
-    d_func().glv.setHue(h);
-    return true;
-}
-
-bool GLWidgetRenderer2::onSetSaturation(qreal s)
-{
-    d_func().glv.setSaturation(s);
-    return true;
+    onShowEvent();
 }
 
 } //namespace QtAV

@@ -122,6 +122,10 @@ public:
             delete shader_program;
             shader_program = 0;
         }
+        if (painter) {
+            delete painter;
+            painter= 0;
+        }
     }
     bool initWithContext(const QGLContext *ctx) {
         Q_UNUSED(ctx);

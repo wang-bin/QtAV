@@ -23,40 +23,26 @@
 #define QTAV_OPENGLWIDGETRENDERER_H
 
 #include <QtWidgets/QOpenGLWidget>
-#include <QtAV/VideoRenderer.h>
+#include <QtAV/OpenGLRendererBase.h>
 
 namespace QtAV {
 
 class OpenGLWidgetRendererPrivate;
-class Q_AV_EXPORT OpenGLWidgetRenderer : public QOpenGLWidget, public VideoRenderer
+class Q_AV_EXPORT OpenGLWidgetRenderer : public QOpenGLWidget, public OpenGLRendererBase
 {
     DPTR_DECLARE_PRIVATE(OpenGLWidgetRenderer)
 public:
     explicit OpenGLWidgetRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual ~OpenGLWidgetRenderer();
-    virtual VideoRendererId id() const Q_DECL_OVERRIDE;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
-    virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
+    virtual void onUpdate() Q_DECL_OVERRIDE;
 
+    virtual VideoRendererId id() const Q_DECL_OVERRIDE;
+    virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
 protected:
-    virtual bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
-    virtual bool needUpdateBackground() const Q_DECL_OVERRIDE;
-    //called in paintEvent before drawFrame() when required
-    virtual void drawBackground() Q_DECL_OVERRIDE;
-    //draw the current frame using the current paint engine. called by paintEvent()
-    virtual void drawFrame() Q_DECL_OVERRIDE;
     virtual void initializeGL() Q_DECL_OVERRIDE;
     virtual void paintGL() Q_DECL_OVERRIDE;
     virtual void resizeGL(int w, int h) Q_DECL_OVERRIDE;
-    virtual void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
-    virtual void showEvent(QShowEvent *);
-private:
-    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode) Q_DECL_OVERRIDE;
-    virtual void onSetOutAspectRatio(qreal ratio) Q_DECL_OVERRIDE;
-    virtual bool onSetBrightness(qreal b) Q_DECL_OVERRIDE;
-    virtual bool onSetContrast(qreal c) Q_DECL_OVERRIDE;
-    virtual bool onSetHue(qreal h) Q_DECL_OVERRIDE;
-    virtual bool onSetSaturation(qreal s) Q_DECL_OVERRIDE;
+    virtual void resizeEvent(QResizeEvent *e) Q_DECL_OVERRIDE;
+    virtual void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
 };
 typedef OpenGLWidgetRenderer VideoRendererOpenGLWidget;
 

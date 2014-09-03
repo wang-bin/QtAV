@@ -228,12 +228,16 @@ config_gl {
 config_gl|config_opengl {
   OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
   SDK_HEADERS *= \
+    QtAV/OpenGLRendererBase.h \
     QtAV/OpenGLVideo.h \
     QtAV/VideoShader.h
+  SDK_PRIVATE_HEADERS = \
+    QtAV/private/OpenGLRendererBase_p.h
   HEADERS *= \
     utils/OpenGLHelper.h \
     QtAV/private/ShaderManager.h
   SOURCES *= \
+    OpenGLRendererBase.cpp \
     OpenGLVideo.cpp \
     VideoShader.cpp \
     ShaderManager.cpp \
