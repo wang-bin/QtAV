@@ -23,8 +23,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include "QtAV/prepost.h"
+#if QTAV_HAVE(WIDGETS)
 #include "QtAV/WidgetRenderer.h"
 #include "QtAV/GraphicsItemRenderer.h"
+#endif
 #if QTAV_HAVE(GL)
 #include "QtAV/GLWidgetRenderer2.h"
 #endif //QTAV_HAVE(GL)
@@ -43,7 +45,6 @@ namespace QtAV {
 
 FACTORY_DEFINE(VideoRenderer)
 
-VideoRendererId VideoRendererId_QPainter = 1;
 VideoRendererId VideoRendererId_Widget = 2;
 VideoRendererId VideoRendererId_GraphicsItem = 3;
 VideoRendererId VideoRendererId_GLWidget = 4;
@@ -54,6 +55,7 @@ VideoRendererId VideoRendererId_GLWidget2 = 8;
 VideoRendererId VideoRendererId_OpenGLWindow = 9;
 VideoRendererId VideoRendererId_OpenGLWidget = 10;
 
+#if QTAV_HAVE(WIDGETS)
 //QPainterRenderer is abstract. So can not register(operator new will needed)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")
 
@@ -78,11 +80,7 @@ VideoRendererId GraphicsItemRenderer::id() const
 {
     return VideoRendererId_GraphicsItem;
 }
-
-VideoRendererId QPainterRenderer::id() const
-{
-    return VideoRendererId_QPainter;
-}
+#endif //QTAV_HAVE(WIDGETS)
 
 #if QTAV_HAVE(GL)
 #if QTAV_HAVE(GL1)
@@ -97,7 +95,7 @@ VideoRendererId GLWidgetRenderer::id() const
     return VideoRendererId_GLWidget;
 }
 #endif //QTAV_HAVE(GL1)
-
+#if QTAV_HAVE(WIDGETS)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget2, "QGLWidegt2")
 
 void RegisterVideoRendererGLWidget2_Man()
@@ -109,6 +107,7 @@ VideoRendererId GLWidgetRenderer2::id() const
 {
     return VideoRendererId_GLWidget2;
 }
+#endif
 #endif //QTAV_HAVE(GL)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, OpenGLWindow, "OpenGLWindow")
@@ -143,7 +142,10 @@ extern void RegisterVideoRendererXV_Man();
 
 void VideoRenderer_RegisterAll()
 {
+#if QTAV_HAVE(WIDGETS)
     RegisterVideoRendererWidget_Man();
+    RegisterVideoRendererGraphicsItem_Man();
+#endif //QTAV_HAVE(WIDGETS)
 #if QTAV_HAVE(GL)
     RegisterVideoRendererGLWidget2_Man();
 #endif //QTAV_HAVE(GL)

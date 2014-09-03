@@ -23,8 +23,10 @@
 #include <QtAV/private/VideoRenderer_p.h>
 #include <QtAV/Filter.h>
 #include <QtCore/QCoreApplication>
+#if QTAV_HAVE(WIDGETS)
 #include <QWidget>
 #include <QGraphicsItem>
+#endif //QTAV_HAVE(WIDGETS)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QWindow>
 #endif
@@ -481,17 +483,7 @@ bool VideoRenderer::setBrightness(qreal brightness)
         d.brightness = old;
         return false;
     }
-    // TODO: qwindow() and widget() can both use event?
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    if (qwindow()) {
-        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
-    }
-#endif
-    if (widget()) {
-        widget()->update();
-    } else if (graphicsItem()) {
-        graphicsItem()->update();
-    }
+    updateUi();
     return true;
 }
 
@@ -512,17 +504,7 @@ bool VideoRenderer::setContrast(qreal contrast)
         d.contrast = old;
         return false;
     }
-    // TODO: qwindow() and widget() can both use event?
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    if (qwindow()) {
-        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
-    }
-#endif
-    if (widget()) {
-        widget()->update();
-    } else if (graphicsItem()) {
-        graphicsItem()->update();
-    }
+    updateUi();
     return true;
 }
 
@@ -540,21 +522,10 @@ bool VideoRenderer::setHue(qreal hue)
     qreal old = d.hue;
     d.hue = hue;
     if (!onSetHue(hue)) {
-        qWarning("onSetHue failed");
         d.hue = old;
         return false;
     }
-    // TODO: qwindow() and widget() can both use event?
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    if (qwindow()) {
-        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
-    }
-#endif
-    if (widget()) {
-        widget()->update();
-    } else if (graphicsItem()) {
-        graphicsItem()->update();
-    }
+    updateUi();
     return true;
 }
 
@@ -575,17 +546,7 @@ bool VideoRenderer::setSaturation(qreal saturation)
         d.saturation = old;
         return false;
     }
-    // TODO: qwindow() and widget() can both use event?
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    if (qwindow()) {
-        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
-    }
-#endif
-    if (widget()) {
-        widget()->update();
-    } else if (graphicsItem()) {
-        graphicsItem()->update();
-    }
+    updateUi();
     return true;
 }
 
@@ -613,5 +574,21 @@ bool VideoRenderer::onSetSaturation(qreal s)
     return false;
 }
 
+void VideoRenderer::updateUi()
+{
+    // TODO: qwindow() and widget() can both use event?
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    if (qwindow()) {
+        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
+    }
+#endif
+#if QTAV_HAVE(WIDGETS)
+    if (widget()) {
+        widget()->update();
+    } else if (graphicsItem()) {
+        graphicsItem()->update();
+    }
+#endif //QTAV_HAVE(WIDGETS)
+}
 
 } //namespace QtAV

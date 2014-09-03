@@ -225,6 +225,7 @@ private: //used by VideoOutput class
     virtual bool onSetContrast(qreal contrast);
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
+    void updateUi();
 private:
     friend class VideoOutput;
     //the size of decoded frame. get called in receiveFrame(). internal use only

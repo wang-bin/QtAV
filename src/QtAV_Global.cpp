@@ -22,11 +22,14 @@
 #include "QtAV/QtAV_Global.h"
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
+#include <QtDebug>
+#if QTAV_HAVE(WIDGETS)
 #include <QBoxLayout>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTextBrowser>
+#endif //QTAV_HAVE(WIDGETS)
 #include "QtAV/version.h"
 #include "QtAV/private/AVCompat.h"
 
@@ -50,6 +53,7 @@ namespace QtAV {
 //TODO: auto add new depend libraries information
 void about()
 {
+#if QTAV_HAVE(WIDGETS)
     //we should use new because a qobject will delete it's children
     QTextBrowser *viewQtAV = new QTextBrowser;
     QTextBrowser *viewFFmpeg = new QTextBrowser;
@@ -72,11 +76,19 @@ void about()
     layout->addLayout(btnLayout);
     QObject::connect(btn, SIGNAL(clicked()), &dialog, SLOT(accept()));
     dialog.exec();
+#else
+    aboutQtAV();
+    aboutFFmpeg();
+#endif //QTAV_HAVE(WIDGETS)
 }
 
 void aboutFFmpeg()
 {
+#if QTAV_HAVE(WIDGETS)
     QMessageBox::about(0, QObject::tr("About FFmpeg"), aboutFFmpeg_HTML());
+#else
+    qDebug() << aboutFFmpeg_PlainText();
+#endif
 }
 
 QString aboutFFmpeg_PlainText()
@@ -134,7 +146,11 @@ QString aboutFFmpeg_HTML()
 
 void aboutQtAV()
 {
+#if QTAV_HAVE(WIDGETS)
     QMessageBox::about(0, QObject::tr("About QtAV"), aboutQtAV_HTML());
+#else
+    qDebug() << aboutQtAV_PlainText();
+#endif //QTAV_HAVE(WIDGETS)
 }
 
 QString aboutQtAV_PlainText()

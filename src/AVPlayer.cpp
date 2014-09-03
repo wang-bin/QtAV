@@ -23,11 +23,13 @@
 
 #include <limits>
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QtCore/QEvent>
 #include <QtCore/QDir>
 #include <QtCore/QIODevice>
-
+#if QTAV_HAVE(WIDGETS)
+#include <QWidget>
+#endif //QTAV_HAVE(WIDGETS)
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/AudioFormat.h"
 #include "QtAV/AudioResampler.h"
@@ -38,7 +40,6 @@
 #include "QtAV/AVClock.h"
 #include "QtAV/VideoCapture.h"
 #include "QtAV/VideoDecoderTypes.h"
-#include "QtAV/WidgetRenderer.h"
 #include "QtAV/VideoThread.h"
 #include "QtAV/AVDemuxThread.h"
 #include "QtAV/VideoCapture.h"
@@ -184,6 +185,7 @@ void AVPlayer::addVideoRenderer(VideoRenderer *renderer)
         return;
     }
     renderer->setStatistics(&mStatistics);
+#if QTAV_HAVE(WIDGETS)
     QObject *voo = renderer->widget();
     if (voo) {
         //TODO: how to delete filter if no parent?
@@ -191,6 +193,7 @@ void AVPlayer::addVideoRenderer(VideoRenderer *renderer)
         if (renderer->widget())
             voo->installEventFilter(new VideoOutputEventFilter(renderer));
     }
+#endif //QTAV_HAVE(WIDGETS)
     mpVOSet->addOutput(renderer);
 }
 

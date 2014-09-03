@@ -3,7 +3,12 @@ MODULE_INCNAME = QtAV # for mac framework. also used in install_sdk.pro
 TARGET = QtAV
 QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += widgets
+  qtHaveModule(widgets):!no_widgets {
+    QT += widgets
+    DEFINES *= QTAV_HAVE_WIDGETS=1
+  } else {
+    CONFIG *= gui_only
+  }
   CONFIG *= config_opengl
   greaterThan(QT_MINOR_VERSION, 3) {
     CONFIG *= config_openglwindow
@@ -151,22 +156,33 @@ config_opensl {
     DEFINES *= QTAV_HAVE_OPENSL=1
     LIBS += -lOpenSLES
 }
-config_gdiplus {
+!gui_only: {
+  SDK_HEADERS *= \
+    QtAV/GraphicsItemRenderer.h \
+    QtAV/WidgetRenderer.h
+  HEADERS *= QtAV/private/VideoOutputEventFilter.h
+  SOURCES *= \
+    VideoOutputEventFilter.cpp \
+    GraphicsItemRenderer.cpp \
+    WidgetRenderer.cpp
+  config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
     SOURCES += GDIRenderer.cpp
     LIBS += -lgdiplus -lgdi32
-}
-config_direct2d {
+  }
+  config_direct2d {
     DEFINES *= QTAV_HAVE_DIRECT2D=1
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
     SOURCES += Direct2DRenderer.cpp
     #LIBS += -lD2d1
-}
-config_xv {
+  }
+  config_xv {
     DEFINES *= QTAV_HAVE_XV=1
     SOURCES += XVRenderer.cpp
     LIBS += -lXv
+  }
 }
+
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link
 config_cuda {
@@ -246,7 +262,7 @@ config_gl|config_opengl {
 config_openglwindow {
   SDK_HEADERS *= QtAV/OpenGLWindowRenderer.h
   SOURCES *= OpenGLWindowRenderer.cpp
-  qtHaveModule(widgets) {
+  !gui_only {
     SDK_HEADERS *= QtAV/OpenGLWidgetRenderer.h
     SOURCES *= OpenGLWidgetRenderer.cpp
   }
@@ -278,7 +294,6 @@ SOURCES += \
     filter/FilterManager.cpp \
     filter/LibAVFilter.cpp \
     filter/SubtitleFilter.cpp \
-    GraphicsItemRenderer.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     QPainterRenderer.cpp \
@@ -292,8 +307,6 @@ SOURCES += \
     VideoRenderer.cpp \
     VideoRendererTypes.cpp \
     VideoOutput.cpp \
-    VideoOutputEventFilter.cpp \
-    WidgetRenderer.cpp \
     AVOutput.cpp \
     OutputSet.cpp \
     Statistics.cpp \
@@ -324,7 +337,6 @@ SDK_HEADERS *= \
     QtAV/FilterContext.h \
     QtAV/LibAVFilter.h \
     QtAV/Frame.h \
-    QtAV/GraphicsItemRenderer.h \
     QtAV/ImageConverter.h \
     QtAV/ImageConverterTypes.h \
     QtAV/QPainterRenderer.h \
@@ -335,7 +347,6 @@ SDK_HEADERS *= \
     QtAV/VideoRenderer.h \
     QtAV/VideoRendererTypes.h \
     QtAV/VideoOutput.h \
-    QtAV/WidgetRenderer.h \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
@@ -367,7 +378,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
-    QtAV/private/VideoOutputEventFilter.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h
 

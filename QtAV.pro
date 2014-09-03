@@ -35,19 +35,19 @@ OptionalDepends = \
     swresample \
     avresample
 # QtOpenGL module. In Qt5 we can disable it and still have opengl support
-!no-gl: OptionalDepends *= gl
+!no-gl:!no-widgets: OptionalDepends *= gl
 !no-avfilter: OptionalDepends *= avfilter
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
 !no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
 # no-xxx can set in $$PWD/user.conf
 !no-openal: OptionalDepends *= openal
 !no-portaudio: OptionalDepends *= portaudio
-!no-direct2d: OptionalDepends *= direct2d
-!no-gdiplus: OptionalDepends *= gdiplus
+!no-direct2d:!no-widgets: OptionalDepends *= direct2d
+!no-gdiplus:!no-widgets: OptionalDepends *= gdiplus
 # why win32 is false?
 !no-dxva: OptionalDepends *= dxva
 unix {
-    !no-xv: OptionalDepends *= xv
+    !no-xv:!no-widgets: OptionalDepends *= xv
     !no-vaapi: OptionalDepends *= vaapi
     !no-cedarv: OptionalDepends *= libcedarv
 }

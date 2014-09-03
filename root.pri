@@ -85,7 +85,7 @@ defineTest(testArch) {
 
 #cache mkspecs. compare mkspec with cached one. if not equal, remove old cache to run new compile tests
 #Qt5 does not have QMAKE_MKSPECS, use QMAKE_SPEC, QMAKE_XSPEC
-isEmpty(mkspecs_cached)|!isEmpty(mkspecs_cached):!isEqual(mkspecs_cached, $$mkspecs_build) {
+isEmpty(mkspecs_cached)|!isEqual(mkspecs_cached, $$mkspecs_build) {
     CONFIG += recheck
     testArch()
 } else {
@@ -98,13 +98,18 @@ cache(SOURCE_ROOT, set, SOURCE_ROOT)
 cache(mkspecs_cached, set, mkspecs_build)
 
 # no-framework can be defined in user.conf. default is the same as QT_CONFIG
-  MAC_LIB = mac_dylib
+MAC_LIB = mac_dylib
 no-framework {
   cache(CONFIG, add, MAC_LIB)
 } else {
   cache(CONFIG, sub, MAC_LIB)
 }
-
+NO_WIDGETS = no_widgets
+no-widgets {
+  cache(CONFIG, add, NO_WIDGETS)
+} else {
+  cache(CONFIG, sub, NO_WIDGETS)
+}
 defineTest(runConfigTests) {
   no_config_tests:return(false)
 #config.tests

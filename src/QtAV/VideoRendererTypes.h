@@ -28,7 +28,6 @@ namespace QtAV {
 
 //Q_AV_EXPORT(dllexport/import) is needed if used out of the library
 //TODO graphics item?
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_QPainter;
 extern Q_AV_EXPORT VideoRendererId VideoRendererId_Widget;
 extern Q_AV_EXPORT VideoRendererId VideoRendererId_GraphicsItem;
 extern Q_AV_EXPORT VideoRendererId VideoRendererId_GLWidget;

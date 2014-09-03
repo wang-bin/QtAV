@@ -71,5 +71,11 @@ Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list)
 #define GCC_VERSION_AT_LEAST(major, minor, patch) 0
 #endif
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || defined(QT_WIDGETS_LIB)
+#ifndef QTAV_HAVE_WIDGETS
+#define QTAV_HAVE_WIDGETS 1
+#endif //QTAV_HAVE_WIDGETS
+#endif
+
 #endif // QTAV_GLOBAL_H
 

@@ -33,7 +33,6 @@ class Q_AV_EXPORT QPainterRenderer : public VideoRenderer
     DPTR_DECLARE_PRIVATE(QPainterRenderer)
 public:
     QPainterRenderer();
-    virtual VideoRendererId id () const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
     //virtual QImage currentFrameImage() const;
 protected:
