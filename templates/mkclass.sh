@@ -12,11 +12,12 @@ while [ $# -gt 0 ]; do
   VAR=
   case "$1" in
   --*=*)
-    VAR=`echo $1 | sed "s,^--\(.*\)=.*,\1,"`
-    VAL=`echo $1 |cut -d= -f2` ##| sed "s,^--.*=\(.*\),\1,"`
+    PAIR=${1##--}
+    VAR=${PAIRE%=*}
+    VAL=${PAIR##*=}
     ;;
   -*)
-    VAR=`echo $1 | sed "s,^-\(.*\),\1,"`
+    VAR=${1##-}
     shift
     VAL=$1
     ;;
@@ -44,17 +45,16 @@ YEAR=`date +%Y`
 echo "generating ${CLASS}.h..."
 cat $COPY | sed "s/%YEAR%/$YEAR/g" > ${CLASS}.h
 cat ${TEMPLATE}.h |sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}.h
-[ -n "$BASE" ] && sed -i "s/%BASE%/$BASE/g" ${CLASS}.h
+[ -n "$BASE" ] && cat ${CLASS}.h |sed "s/%BASE%/$BASE/g" >${CLASS}_.h && mv ${CLASS}_.h ${CLASS}.h
 
 echo "generating ${CLASS}.cpp..."
 cat $COPY | sed "s/%YEAR%/$YEAR/g" > ${CLASS}.cpp
 cat ${TEMPLATE}.cpp | sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}.cpp
-[ -n "$BASE" ] && sed -i "s/%BASE%/$BASE/g" ${CLASS}.cpp
+[ -n "$BASE" ] && cat ${CLASS}.cpp |sed "s/%BASE%/$BASE/g" >${CLASS}_.cpp && mv ${CLASS}_.cpp ${CLASS}.cpp
 
 if [ -f ${TEMPLATE}_p.h ]; then
   echo "generating ${CLASS}_p.h..."
   cat $COPY | sed "s/%YEAR%/$YEAR/g" > ${CLASS}_p.h
   cat ${TEMPLATE}_p.h |sed "s/%CLASS%/$CLASS/g" | sed "s/%CLASS:u%/$CLASS_U/g" >>${CLASS}_p.h
-  [ -n "$BASE" ] && sed -i "s/%BASE%/$BASE/g" ${CLASS}_p.h
+  [ -n "$BASE" ] && cat ${CLASS}_p.h |sed "s/%BASE%/$BASE/g" >${CLASS}_p_.h && mv ${CLASS}_p_.h ${CLASS}_p.h
 fi
-
