@@ -132,6 +132,20 @@ AVPlayer::AVPlayer(QObject *parent) :
             << VideoDecoderId_Cedarv
 #endif //QTAV_HAVE(CEDARV)
             << VideoDecoderId_FFmpeg;
+    audioout_ids
+#if QTAV_HAVE(OPENAL)
+            << AudioOutputId_OpenAL
+#endif
+#if QTAV_HAVE(PORTAUDIO)
+            << AudioOutputId_PortAudio
+#endif
+#if QTAV_HAVE(OPENSL)
+            << AudioOutputId_OpenSL
+#endif
+#if QTAV_HAVE(DSound)
+            << AudioOutputId_DSound
+#endif
+              ;
 }
 
 AVPlayer::~AVPlayer()
@@ -1280,13 +1294,14 @@ bool AVPlayer::setupAudioThread()
     }
     //TODO: setAudioOutput() like vo
     if (!_audio && ao_enable) {
-        qDebug("new audio output");
-        //TODO: use priority?
-#if QTAV_HAVE(PORTAUDIO)
-        _audio = AudioOutputFactory::create(AudioOutputId_PortAudio);
-#elif QTAV_HAVE(OPENAL)
-        _audio = AudioOutputFactory::create(AudioOutputId_OpenAL);
-#endif
+        foreach (AudioOutputId aoid, audioout_ids) {
+            qDebug("trying audio output '%s'", AudioOutputFactory::name(aoid).c_str());
+            _audio = AudioOutputFactory::create(aoid);
+            if (_audio) {
+                qDebug("audio output found.");
+                break;
+            }
+        }
     }
     if (!_audio) {
         // TODO: only when no audio stream or user disable audio stream. running an audio thread without sound is waste resource?

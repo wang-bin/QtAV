@@ -339,7 +339,7 @@ private:
     bool ao_enable;
     OutputSet *mpVOSet, *mpAOSet;
     QVector<VideoDecoderId> vcodec_ids;
-
+    QVector<AudioOutputId> audioout_ids;
     int mBrightness, mContrast, mSaturation;
 
     QVariantHash audio_codec_opt, video_codec_opt;
