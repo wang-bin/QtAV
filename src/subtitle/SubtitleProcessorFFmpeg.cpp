@@ -166,16 +166,22 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
     }
     AVCodecContext *ctx = m_reader.subtitleCodecContext();
     AVCodec *dec = avcodec_find_decoder(ctx->codec_id);
+    const AVCodecDescriptor *dec_desc = avcodec_descriptor_get(ctx->codec_id);
     if (!dec) {
-        qWarning("Failed to find subtitle codec %s", avcodec_get_name(ctx->codec_id));
+        if (dec_desc)
+            qWarning("Failed to find subtitle codec %s", dec_desc->name);
+        else
+            qWarning("Failed to find subtitle codec %d", ctx->codec_id);
         return false;
     }
-    qDebug("found subtitle decoder '%s'", avcodec_get_name(ctx->codec_id));
-    const AVCodecDescriptor *dec_desc = avcodec_descriptor_get(ctx->codec_id);
+    qDebug("found subtitle decoder '%s'", dec_desc->name);
+    // AV_CODEC_PROP_TEXT_SUB: ffmpeg >= 2.0
+#if FFMPEG_MODULE_CHECK(AVCODEC, 55, 18, 100)
     if (dec_desc && !(dec_desc->props & AV_CODEC_PROP_TEXT_SUB)) {
         qWarning("Only text based subtitles are currently supported");
         return false;
     }
+#endif
     AVDictionary *codec_opts = NULL;
     int ret = avcodec_open2(ctx, dec, &codec_opts);
     if (ret < 0) {
@@ -184,8 +190,10 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
         return false;
     }
     while (!m_reader.atEnd()) {
-        if (!m_reader.readFrame())
-            continue;
+        if (!m_reader.readFrame()) {
+            avcodec_close(ctx);
+            return false;
+        }
         if (!m_reader.packet()->isValid())
             continue;
         if (m_reader.stream() != ss)
