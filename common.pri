@@ -67,7 +67,7 @@ win32-msvc* {
 #################################functions#########################################
 defineTest(qtRunQuitly) {
     #win32 always call windows command
-    win32 { #QMAKE_HOST.os?
+    contains(QMAKE_HOST.os,Windows) {
       system("$$1 2>&1 >nul")|return(false)  #system always call win32 cmd
     } else {
       system("$$1 2>&1 >/dev/null")|return(false)
@@ -267,19 +267,19 @@ defineReplace(shell_quote_unix) {
 }
 ##TODO: see qmake/library/ioutils.cpp
 defineReplace(shell_quote) {
-    win32:isEmpty(QMAKE_SH):return($$shell_quote_win($$1))
+    contains(QMAKE_HOST.os,Windows):isEmpty(QMAKE_SH):return($$shell_quote_win($$1))
     return($$shell_quote_unix($$1))
 }
 
 ##TODO: see qmake/library/ioutils.cpp
 defineReplace(system_quote) {
     isEmpty(1):error("system_quote(arg) requires one argument.")
-    unix:return($$shell_quote_unix($$1))
-    return($$shell_quote_win($$1))
+    contains(QMAKE_HOST.os,Windows): return($$shell_quote_win($$1))
+    return($$shell_quote_unix($$1))
 }
 
 defineReplace(system_path) {
-    win32 {
+    contains(QMAKE_HOST.os,Windows) {
         1 ~= s,/,\\,g #qmake \\=>put \\=>real \?
     } else {
         1 ~= s,\\\\,/,g  ##why is \\\\. real \=>we read \\=>qmake \\\\?

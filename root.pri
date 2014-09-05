@@ -53,7 +53,7 @@ defineTest(testArch) {
   test_dir = $$_PRO_FILE_PWD_/tests/arch
   test_out_dir = $$shadowed($$test_dir)
   qtRunCommandQuitly("$$QMAKE_MKDIR $$system_path($$test_out_dir)")  #mkpath. but common.pri may not included
-  win32:test_cmd_base = "cd /d $$system_quote($$system_path($$test_out_dir)) &&"
+  contains(QMAKE_HOST.os,Windows): test_cmd_base = "cd /d $$system_quote($$system_path($$test_out_dir)) &&"
   else:test_cmd_base = "cd $$system_quote($$system_path($$test_out_dir)) &&"
   # Disable qmake features which are typically counterproductive for tests
   qmake_configs = "\"CONFIG -= qt debug_and_release app_bundle lib_bundle\""
