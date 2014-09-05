@@ -80,9 +80,12 @@ AVIOContext* QAVIOContext::context()
 
 void QAVIOContext::release()
 {
+    if (!m_avio)
+        return;
     m_avio->opaque = 0; //in avio_close() opaque is URLContext* and will call ffurl_close()
     //m_avio->buffer = 0; //already released by ffio_rewind_with_probe_data; may be another context was freed
-    avio_closep(&m_avio);
+    avio_close(m_avio); //avio_closep defined since ffmpeg1.1
+    m_avio = 0;
 }
 
 QIODevice* QAVIOContext::device() const
