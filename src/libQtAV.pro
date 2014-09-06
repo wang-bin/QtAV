@@ -101,20 +101,17 @@ android: CONFIG += config_opensl
 LIBS += -lavcodec -lavformat -lavutil -lswscale
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
-    android: LIBS += -lavfilter-4
-    else: LIBS += -lavfilter
+    LIBS += -lavfilter
 }
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
     SOURCES += AudioResamplerFF.cpp
-    android: LIBS += -lswresample-0
-    else: LIBS += -lswresample
+    LIBS += -lswresample
 }
 config_avresample {
     DEFINES += QTAV_HAVE_AVRESAMPLE=1
     SOURCES += AudioResamplerLibav.cpp
-    android: LIBS += -lavresample-1
-    else: LIBS += -lavresample
+    LIBS += -lavresample
 }
 config_ipp {
     DEFINES += QTAV_HAVE_IPP=1
