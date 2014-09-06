@@ -98,8 +98,7 @@ win32 {
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
 android: CONFIG += config_opensl
-android: LIBS += -lavcodec-55 -lavformat-55 -lavutil-52 -lswscale-2
-else: LIBS += -lavcodec -lavformat -lavutil -lswscale
+LIBS += -lavcodec -lavformat -lavutil -lswscale
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
     android: LIBS += -lavfilter-4
