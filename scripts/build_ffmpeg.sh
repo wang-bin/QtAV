@@ -113,16 +113,17 @@ function setup_android_env() {
   ANDROID_LDFLAGS_ARMV7="-Wl,--fix-cortex-a8"
 EOC
 # --enable-libstagefright-h264
-  ANDROIDOPT="--disable-symver --enable-cross-compile --cross-prefix=arm-linux-androideabi- --target-os=linux --arch=arm --sysroot=$ANDROID_SYSROOT --extra-ldflags=\"$ANDROID_LDFLAGS_ARMV7\""
+  ANDROIDOPT="--enable-cross-compile --cross-prefix=arm-linux-androideabi- --target-os=android --arch=arm --sysroot=$ANDROID_SYSROOT --extra-ldflags=\"$ANDROID_LDFLAGS_ARMV7\""
 
-   test -d $ANDROID_TOOLCHAIN || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --toolchain=arm-linux-androideabi-4.8 --install-dir=$ANDROID_TOOLCHAIN --system=linux-x86_64
+   test -d $ANDROID_TOOLCHAIN || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --toolchain=arm-linux-androideabi-4.6 --install-dir=$ANDROID_TOOLCHAIN --system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN/bin:$PATH
   rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
   rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
-
+:<<RM
   CONFIGURE=configure-android
   cat configure |sed s,SLIBNAME_WITH_MAJOR=\'$\(SLIBNAME\)\.$\(LIBMAJOR\)\',SLIBNAME_WITH_MAJOR=\'$\(SLIBPREF\)$\(FULLNAME\)\-$\(LIBMAJOR\)$\(SLIBSUF\)\', |sed s,SLIB_INSTALL_NAME=\'\$\(SLIBNAME_WITH_VERSION\)\',SLIB_INSTALL_NAME=\'\$\(SLIBNAME_WITH_MAJOR\)\', |sed s,SLIB_INSTALL_LINKS=\'\$\(SLIBNAME_WITH_MAJOR\)\ \$\(SLIBNAME\)\',SLIB_INSTALL_LINKS=\'\$\(SLIBNAME\)\', >$CONFIGURE
   chmod +x $CONFIGURE
+RM
   PLATFORM_OPT="$ANDROIDOPT"
   EXTRA_CFLAGS="$ANDROID_CFLAGS $ANDROID_CLFAGS_ARMV7"
   INSTALL_DIR=sdk-android
