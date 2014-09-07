@@ -1,4 +1,5 @@
 TEMPLATE = app
+CONFIG -= app_bundle
 QT += opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

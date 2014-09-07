@@ -5,11 +5,11 @@
 #-------------------------------------------------
 
 QT       += core gui opengl
-
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = sharedoutput
 TEMPLATE = app
+CONFIG -= app_bundle
 
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)

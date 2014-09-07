@@ -1,5 +1,6 @@
 QT       += opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+CONFIG -= app_bundle
 
 TARGET = videographicsitem
 TEMPLATE = app

@@ -1,4 +1,5 @@
 QT += opengl
+CONFIG -= app_bundle
 
 STATICLINK = 0
 PROJECTROOT = $$PWD/../..
