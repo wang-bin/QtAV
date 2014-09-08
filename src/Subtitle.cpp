@@ -496,7 +496,10 @@ QByteArray Subtitle::Private::readFromFile(const QString &path)
     QTextStream ts(&f);
     ts.setAutoDetectUnicode(true);
     if (!codec.isEmpty()) {
-        ts.setCodec(QTextCodec::codecForName(codec));
+        if (codec.toLower() == "system")
+            ts.setCodec(QTextCodec::codecForLocale());
+        else
+            ts.setCodec(QTextCodec::codecForName(codec));
     }
     return ts.readAll().toUtf8();
 }

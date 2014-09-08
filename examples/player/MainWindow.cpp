@@ -28,9 +28,11 @@
 #include <QDesktopWidget>
 #include <QDesktopServices>
 #include <QtCore/QFileInfo>
+#include <QtCore/QTextCodec>
 #include <QtCore/QTextStream>
 #include <QtCore/QUrl>
 #include <QGraphicsOpacityEffect>
+#include <QComboBox>
 #include <QResizeEvent>
 #include <QWidgetAction>
 #include <QLayout>
@@ -381,7 +383,6 @@ void MainWindow::setupUi()
 
     subMenu = new ClickableMenu(tr("Subtitle"));
     mpMenu->addMenu(subMenu);
-    subMenu->setToolTip(tr("Depends on") + " libass, libavfilter");
     QAction *act = subMenu->addAction(tr("Enable"));
     act->setCheckable(true);
     act->setChecked(mpSubtitle->isEnabled());
@@ -391,6 +392,20 @@ void MainWindow::setupUi()
     act->setChecked(mpSubtitle->autoLoad());
     connect(act, SIGNAL(toggled(bool)), SLOT(toggleSubtitleAutoLoad(bool)));
     subMenu->addAction(tr("Open"), this, SLOT(openSubtitle()));
+    QWidget *csWidget = new QWidget();
+    hb = new QHBoxLayout();
+    csWidget->setLayout(hb);
+    hb->addWidget(new QLabel(tr("Charset")));
+    QComboBox *csBox = new QComboBox();
+    hb->addWidget(csBox);
+    pWA = new QWidgetAction(0);
+    pWA->setDefaultWidget(csWidget);
+    subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
+    csBox->addItem("System", "System");
+    foreach (QByteArray cs, QTextCodec::availableCodecs()) {
+        csBox->addItem(cs, cs);
+    }
+    connect(csBox, SIGNAL(activated(QString)), SLOT(setSubtitleCharset(QString)));
 
     subMenu = new ClickableMenu(tr("Audio track"));
     mpMenu->addMenu(subMenu);
@@ -445,7 +460,7 @@ void MainWindow::setupUi()
     mpVOAction = subMenu->addAction("QPainter");
     mpVOAction->setData(VideoRendererId_Widget);
     subMenu->addAction("OpenGL Widget 2")->setData(VideoRendererId_GLWidget2);
-    //subMenu->addAction("OpenGL Widget")->setData(VideoRendererId_GLWidget);
+    subMenu->addAction("OpenGL Widget")->setData(VideoRendererId_GLWidget);
     subMenu->addAction("GDI+")->setData(VideoRendererId_GDI);
     subMenu->addAction("Direct2D")->setData(VideoRendererId_Direct2D);
     subMenu->addAction("XV")->setData(VideoRendererId_XV);
@@ -1364,6 +1379,11 @@ void MainWindow::openSubtitle()
     if (file.isEmpty())
         return;
     mpSubtitle->setFile(file);
+}
+
+void MainWindow::setSubtitleCharset(const QString &charSet)
+{
+    mpSubtitle->setCodec(charSet.toUtf8());
 }
 
 void MainWindow::workaroundRendererSize()
