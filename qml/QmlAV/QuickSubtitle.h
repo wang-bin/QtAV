@@ -10,6 +10,11 @@ class QuickSubtitle : public QtAV::Subtitle
     Q_PROPERTY(QObject* player READ player WRITE setPlayer)
 public:
     explicit QuickSubtitle(QObject *parent = 0);
+    /*!
+     * \brief setPlayer
+     * if player is set, subtitle will automatically loaded if playing file changed.
+     * \param player
+     */
     void setPlayer(QObject* player);
     QObject* player();
 private slots:

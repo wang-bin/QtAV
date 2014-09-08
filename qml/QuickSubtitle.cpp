@@ -12,6 +12,7 @@ QuickSubtitle::QuickSubtitle(QObject *parent) :
     QmlAVPlayer *p = qobject_cast<QmlAVPlayer*>(parent);
     if (p)
         setPlayer(p);
+    connect(this, SIGNAL(codecChanged()), SLOT(load()));
 }
 
 void QuickSubtitle::setPlayer(QObject *player)

@@ -55,6 +55,7 @@ public:
 class Q_AV_EXPORT Subtitle : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QByteArray codec READ codec WRITE setCodec NOTIFY codecChanged)
     // QList<SubtitleProcessorId>
     Q_PROPERTY(QStringList engines READ engines WRITE setEngines NOTIFY enginesChanged)
     Q_PROPERTY(bool fuzzyMatch READ fuzzyMatch WRITE setFuzzyMatch NOTIFY fuzzyMatchChanged)
@@ -67,6 +68,13 @@ class Q_AV_EXPORT Subtitle : public QObject
 public:
     explicit Subtitle(QObject *parent = 0);
     virtual ~Subtitle();
+    /*!
+     * \brief setCodec
+     * set subtitle encoding that supported by QTextCodec. You have to call load() to manually reload the subtitle with given codec
+     * \param value codec name. see QTextCodec.availableCodecs(). Empty value means using the default codec in QTextCodec
+     */
+    void setCodec(const QByteArray& value);
+    QByteArray codec() const;
     /*!
      * \brief isValid
      * indicate whether the subtitle can be found and processed
@@ -100,11 +108,6 @@ public:
      */
     void setSuffixes(const QStringList& value);
     QStringList suffixes() const;
-    /*!
-     * \brief start
-     * start to process the whole subtitle content in a thread
-     */
-    Q_INVOKABLE bool load(); //TODO: slot?
 
     qreal timestamp() const;
     // call setTimestamp before getText/Image
@@ -116,8 +119,14 @@ public:
     //bool process(const QByteArray& data, qreal pts = -1);
 
 public slots:
+    /*!
+     * \brief start
+     * start to process the whole subtitle content in a thread
+     */
+    void load();
     void setTimestamp(qreal t);
 signals:
+    void codecChanged();
     void enginesChanged();
     void fuzzyMatchChanged();
     void contentChanged();

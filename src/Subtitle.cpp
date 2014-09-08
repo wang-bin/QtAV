@@ -30,6 +30,8 @@
 #include <QtCore/QIODevice>
 #include <QtCore/QLinkedList>
 #include <QtCore/QRegExp>
+#include <QtCore/QRunnable>
+#include <QtCore/QTextCodec>
 #include <QtCore/QTextStream>
 
 namespace QtAV {
@@ -47,7 +49,6 @@ public:
     {}
     void reset() {
         processor = 0;
-        loaded = false;
         update_image = true;
         t = 0;
         frame = SubtitleFrame();
@@ -79,6 +80,7 @@ public:
     bool update_image;
     SubtitleProcessor *processor;
     QList<SubtitleProcessor*> processors;
+    QByteArray codec;
     QStringList engine_names;
     QLinkedList<SubtitleFrame> frames;
     QUrl url;
@@ -107,6 +109,19 @@ Subtitle::~Subtitle()
 bool Subtitle::isLoaded() const
 {
     return priv->loaded;
+}
+
+void Subtitle::setCodec(const QByteArray &value)
+{
+    if (priv->codec == value)
+        return;
+    priv->codec = value;
+    emit codecChanged();
+}
+
+QByteArray Subtitle::codec() const
+{
+    return priv->codec;
 }
 
 void Subtitle::setEngines(const QStringList &value)
@@ -238,41 +253,44 @@ qreal Subtitle::timestamp() const
     return priv->t;
 }
 
-bool Subtitle::load()
+void Subtitle::load()
 {
     priv->reset();
     emit contentChanged(); //notify user to update subtitle
     if (!priv->url.isEmpty()) {
         // need qt network module network
-        return false;
+        return;
     }
     // raw data is set, file name and url are empty
     QByteArray u8 = priv->raw_data;
     if (!u8.isEmpty()) {
         priv->loaded = priv->processRawData(u8);
-        return priv->loaded;
+        return;
     }
     // read from a url
     QFile f(priv->url.toString());//QUrl::FullyDecoded));
     if (f.exists()) {
         u8 = priv->readFromFile(f.fileName());
         if (u8.isEmpty())
-            return false;
+            return;
         priv->loaded = priv->processRawData(u8);
-        return priv->loaded;
+        return;
     }
     // read from a file
     QStringList paths = priv->find();
+    if (paths.isEmpty())
+        return;
     foreach (QString path, paths) {
+        if (path.isEmpty())
+            continue;
         u8 = priv->readFromFile(path);
         if (u8.isEmpty())
             continue;
         if (!priv->processRawData(u8))
             continue;
         priv->loaded = true;
-        return true;
+        return;
     }
-    return false;
 }
 
 QString Subtitle::getText() const
@@ -373,8 +391,11 @@ bool Subtitle::Private::prepareCurrentFrame()
 QStringList Subtitle::Private::find()
 {
     // !fuzzyMatch: return the file
-    if (!fuzzy_match)
+    if (!fuzzy_match) {
+        if (file_name.isEmpty())
+            return QStringList();
         return QStringList() << file_name;
+    }
 
     // found files will be sorted by extensions in sfx order
     QStringList sfx(suffixes);
@@ -382,7 +403,6 @@ QStringList Subtitle::Private::find()
         sfx = supported_suffixes;
     if (sfx.isEmpty())
         return QStringList() << file_name;
-
     QFileInfo fi(file_name);
     QString name = fi.fileName();
     QStringList filters;
@@ -445,6 +465,9 @@ QByteArray Subtitle::Private::readFromFile(const QString &path)
     }
     QTextStream ts(&f);
     ts.setAutoDetectUnicode(true);
+    if (!codec.isEmpty()) {
+        ts.setCodec(QTextCodec::codecForName(codec));
+    }
     return ts.readAll().toUtf8();
 }
 

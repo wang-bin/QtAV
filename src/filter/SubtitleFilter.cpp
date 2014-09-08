@@ -86,6 +86,7 @@ SubtitleFilter::SubtitleFilter(QObject *parent) :
     if (player)
         setPlayer(player);
     connect(this, SIGNAL(enableChanged(bool)), SLOT(onEnableChanged(bool)));
+    connect(this, SIGNAL(codecChanged()), &d_func().sub, SLOT(load()));
 }
 
 void SubtitleFilter::setPlayer(AVPlayer *player)
@@ -117,6 +118,20 @@ void SubtitleFilter::setFile(const QString &file)
 QString SubtitleFilter::file() const
 {
     return d_func().file;
+}
+
+void SubtitleFilter::setCodec(const QByteArray &value)
+{
+    DPTR_D(SubtitleFilter);
+    if (d.sub.codec() == value)
+        return;
+    d.sub.setCodec(value);
+    emit codecChanged();
+}
+
+QByteArray SubtitleFilter::codec() const
+{
+    return d_func().sub.codec();
 }
 
 void SubtitleFilter::setAutoLoad(bool value)
@@ -234,6 +249,7 @@ void SubtitleFilter::onPlayerStart()
     }
     if (d.file != d.sub.fileName())
         return;
+    // autoLoad was false then reload then true then reload
     // previous loaded is user selected subtitle
     QString path = d.player->file();
     //path.remove(p->source().scheme() + "://");

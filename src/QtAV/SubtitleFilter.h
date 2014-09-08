@@ -33,6 +33,7 @@ class Q_AV_EXPORT SubtitleFilter : public VideoFilter
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(SubtitleFilter)
+    Q_PROPERTY(QByteArray codec READ codec WRITE setCodec NOTIFY codecChanged)
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(QString file READ file WRITE setFile)
     Q_PROPERTY(QRectF rect READ rect WRITE setRect NOTIFY rectChanged)
@@ -53,6 +54,13 @@ public:
     void setFile(const QString& file);
     QString file() const;
     /*!
+     * \brief setCodec
+     * set subtitle encoding that supported by QTextCodec. subtitle will be reloaded
+     * \param value codec name. see QTextCodec.availableCodecs(). Empty value means using the default codec in QTextCodec
+     */
+    void setCodec(const QByteArray& value);
+    QByteArray codec() const;
+    /*!
      * \brief autoLoad
      * auto find a suitable subtitle.
      * if false, load the user selected subtile in setFile() (empty if start a new video)
@@ -70,6 +78,7 @@ public slots:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
 signals:
+    void codecChanged();
     void rectChanged();
     void fontChanged();
     void colorChanged();
