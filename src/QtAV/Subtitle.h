@@ -124,6 +124,7 @@ public slots:
      * start to process the whole subtitle content in a thread
      */
     void load();
+    void loadAsync();
     void setTimestamp(qreal t);
 signals:
     void codecChanged();

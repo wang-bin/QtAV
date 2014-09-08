@@ -46,7 +46,7 @@ void QuickSubtitle::onPlayerSourceChanged()
     path = QFileInfo(path).dir().absoluteFilePath(name);
     qDebug() << "open subtitle:" << path;
     setFileName(path);
-    load();
+    loadAsync();
 }
 
 void QuickSubtitle::onPlayerPositionChanged()

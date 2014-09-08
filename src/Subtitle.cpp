@@ -31,8 +31,10 @@
 #include <QtCore/QLinkedList>
 #include <QtCore/QRegExp>
 #include <QtCore/QRunnable>
+#include <QtCore/QThreadPool>
 #include <QtCore/QTextCodec>
 #include <QtCore/QTextStream>
+#include <QtCore/QMutexLocker>
 
 namespace QtAV {
 
@@ -48,6 +50,9 @@ public:
         , t(0)
     {}
     void reset() {
+        QMutexLocker lock(&mutex);
+        Q_UNUSED(lock);
+        loaded = false;
         processor = 0;
         update_image = true;
         t = 0;
@@ -93,6 +98,7 @@ public:
     qreal t;
     SubtitleFrame frame;
     QLinkedList<SubtitleFrame>::iterator itf;
+    QMutex mutex;
 };
 
 Subtitle::Subtitle(QObject *parent) :
@@ -239,12 +245,16 @@ QStringList Subtitle::suffixes() const
 
 void Subtitle::setTimestamp(qreal t)
 {
-    priv->t = t;
-    if (!isLoaded())
-        return;
-    if (!priv->prepareCurrentFrame())
-        return;
-    priv->update_image = true;
+    {
+        QMutexLocker lock(&priv->mutex);
+        Q_UNUSED(lock);
+        priv->t = t;
+        if (!isLoaded())
+            return;
+        if (!priv->prepareCurrentFrame())
+            return;
+        priv->update_image = true;
+    }
     emit contentChanged();
 }
 
@@ -257,6 +267,7 @@ void Subtitle::load()
 {
     priv->reset();
     emit contentChanged(); //notify user to update subtitle
+    // lock is not needed because it's not loaded now
     if (!priv->url.isEmpty()) {
         // need qt network module network
         return;
@@ -293,8 +304,25 @@ void Subtitle::load()
     }
 }
 
+void Subtitle::loadAsync()
+{
+    class Loader : public QRunnable {
+    public:
+        Loader(Subtitle *sub) : m_sub(sub) {}
+        void run() {
+            if (m_sub)
+                m_sub->load();
+        }
+    private:
+        Subtitle *m_sub;
+    };
+    QThreadPool::globalInstance()->start(new Loader(this));
+}
+
 QString Subtitle::getText() const
 {
+    QMutexLocker lock(&priv->mutex);
+    Q_UNUSED(lock);
     if (!isLoaded())
         return QString();
     return priv->frame.text;
@@ -302,6 +330,8 @@ QString Subtitle::getText() const
 
 QImage Subtitle::getImage(int width, int height)
 {
+    QMutexLocker lock(&priv->mutex);
+    Q_UNUSED(lock);
     if (!isLoaded())
         return QImage();
     if (!priv->frame || width == 0 || height == 0)
