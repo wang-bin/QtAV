@@ -19,7 +19,7 @@ Rectangle {
     property string mediaSource
     property int duration: 0
     property real volume: 1
-
+    property bool hiding: false
     signal seek(int ms)
     signal seekForward(int ms)
     signal seekBackward(int ms)
@@ -80,6 +80,11 @@ Rectangle {
                 if (playState !== "stop")
                     timer.start()
             }
+        }
+        onPressed: {
+            if (timer.running) //timer may ran a few seconds(<3) ago
+                timer.stop();
+            control.aniShow()
         }
     }
     ProgressBar {
@@ -411,13 +416,21 @@ Rectangle {
         }
     }
     function aniShow() {
+        hiding = false
         anim.stop()
         anim.reset()
         anim.start()
     }
     function aniHide() {
+        hiding = true
         anim.stop()
         anim.reverse()
         anim.start()
+    }
+    function toggleVisible() {
+        if (hiding)
+            aniShow()
+        else
+            aniHide()
     }
 }

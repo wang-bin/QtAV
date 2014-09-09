@@ -103,11 +103,18 @@ Rectangle {
             bottom: control.top
         }
         height: Utils.scaled(30)
+
+        Subtitle {
+            player: player
+            onContentChanged: {
+                subtitleLabel.text = text
+            }
+        }
     }
-    Subtitle {
-        player: player
-        onContentChanged: {
-            subtitleLabel.text = text
+    MouseArea {
+        anchors.fill: parent
+        onPressed: {
+            control.toggleVisible()
         }
     }
     ControlPanel {
@@ -226,7 +233,7 @@ Rectangle {
              + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
              + "<p>Web Site: <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>"
              + "\n<h3>Command line:</h3>"
-             + "<p>QMLPlayer [-vd \"DXVA[;FFmpeg[;CUDA]]\"] fileName</p>"
+             + "<p>QMLPlayer [-vd \"DXVA[;VAAPI[;VDA[;FFmpeg[;CUDA]]]]\"] fileName</p>"
              + "\n<h3>Shortcut:</h3>"
              + "<p>M: mute</p><p>F: fullscreen</p><p>Up/Down: volume +/-</p><p>Left/Right: Seek backward/forward
                 </p><p>Space: pause/play</p><p>Q: quite</p>"
