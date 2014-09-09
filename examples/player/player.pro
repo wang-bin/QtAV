@@ -10,6 +10,7 @@ include($$PROJECTROOT/src/libQtAV.pri)
 include($$PWD/../common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
 INCLUDEPATH += $$PWD
+mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
 
 SOURCES += main.cpp \
     MainWindow.cpp \

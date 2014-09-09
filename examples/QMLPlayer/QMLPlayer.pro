@@ -30,6 +30,7 @@ isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
 STATICLINK = 0
 include($${PROJECTROOT}/examples/common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
+mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
 
 VERSION = 1.4.0
 RC_ICONS = $$PROJECTROOT/src/QtAV.ico
