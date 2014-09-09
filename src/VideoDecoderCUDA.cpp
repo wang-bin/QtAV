@@ -158,6 +158,7 @@ public:
         dec = 0;
         vid_ctx_lock = 0;
         parser = 0;
+        stream = 0;
         force_sequence_update = false;
         frame_queue.setCapacity(20);
         frame_queue.setThreshold(10);
