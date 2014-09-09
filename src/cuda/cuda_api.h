@@ -57,8 +57,8 @@ public:
     ////////////////////////////////////////////////////
     CUresult cuInit(unsigned int Flags);
     CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev );
-    CUresult cuCtxDestroy( CUcontext ctx );
-    CUresult cuCtxPushCurrent( CUcontext ctx );
+    CUresult cuCtxDestroy(CUcontext cuctx );
+    CUresult cuCtxPushCurrent(CUcontext cuctx );
     CUresult cuCtxPopCurrent( CUcontext *pctx );
     CUresult cuCtxSynchronize();
     CUresult cuMemAllocHost(void **pp, unsigned int bytesize);
@@ -82,7 +82,7 @@ public:
     ////////////////////////////////////////////////////
     /// CUVID functions
     ////////////////////////////////////////////////////
-    CUresult cuvidCtxLockCreate(CUvideoctxlock *pLock, CUcontext ctx);
+    CUresult cuvidCtxLockCreate(CUvideoctxlock *pLock, CUcontext cuctx);
     CUresult cuvidCtxLockDestroy(CUvideoctxlock lck);
     CUresult cuvidCtxLock(CUvideoctxlock lck, unsigned int reserved_flags);
     CUresult cuvidCtxUnlock(CUvideoctxlock lck, unsigned int reserved_flags);

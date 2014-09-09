@@ -25,12 +25,46 @@
 #include "helper_cuda.h"
 #include "cuda_api.h"
 
+#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
+typedef CUresult CUDAAPI tcuInit(unsigned int);
+typedef CUresult CUDAAPI tcuCtxCreate(CUcontext *, unsigned int, CUdevice);
+typedef CUresult CUDAAPI tcuCtxDestroy(CUcontext);
+typedef CUresult CUDAAPI tcuCtxPushCurrent(CUcontext);
+typedef CUresult CUDAAPI tcuCtxPopCurrent(CUcontext *);
+typedef CUresult CUDAAPI tcuMemAllocHost(void **pp, unsigned int bytesize);
+typedef CUresult CUDAAPI tcuMemFreeHost(void *p);
+typedef CUresult CUDAAPI tcuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );
+typedef CUresult CUDAAPI tcuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream);
+typedef CUresult CUDAAPI tcuStreamCreate(CUstream *phStream, unsigned int Flags);
+typedef CUresult CUDAAPI tcuStreamDestroy(CUstream hStream);
+typedef CUresult CUDAAPI tcuStreamQuery(CUstream hStream);
+typedef CUresult CUDAAPI tcuDeviceGetCount(int *count);
+typedef CUresult CUDAAPI tcuDriverGetVersion(int *driverVersion);
+typedef CUresult CUDAAPI tcuDeviceGetName(char *name, int len, CUdevice dev);
+typedef CUresult CUDAAPI tcuDeviceComputeCapability(int *major, int *minor, CUdevice dev);
+typedef CUresult CUDAAPI tcuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev);
+typedef CUresult CUDAAPI tcuvidCtxLockCreate(CUvideoctxlock *pLock, CUcontext ctx);
+typedef CUresult CUDAAPI tcuvidCtxLockDestroy(CUvideoctxlock lck);
+typedef CUresult CUDAAPI tcuvidCtxLock(CUvideoctxlock lck, unsigned int reserved_flags);
+typedef CUresult CUDAAPI tcuvidCtxUnlock(CUvideoctxlock lck, unsigned int reserved_flags);
+typedef CUresult CUDAAPI tcuCtxSynchronize();
+typedef CUresult CUDAAPI tcuvidCreateVideoParser(CUvideoparser *pObj, CUVIDPARSERPARAMS *pParams);
+typedef CUresult CUDAAPI tcuvidParseVideoData(CUvideoparser obj, CUVIDSOURCEDATAPACKET *pPacket);
+typedef CUresult CUDAAPI tcuvidDestroyVideoParser(CUvideoparser obj);
+typedef CUresult CUDAAPI tcuvidCreateDecoder(CUvideodecoder *phDecoder, CUVIDDECODECREATEINFO *pdci);
+typedef CUresult CUDAAPI tcuvidDestroyDecoder(CUvideodecoder hDecoder);
+typedef CUresult CUDAAPI tcuvidDecodePicture(CUvideodecoder hDecoder, CUVIDPICPARAMS *pPicParams);
+typedef CUresult CUDAAPI tcuvidMapVideoFrame(CUvideodecoder hDecoder, int nPicIdx, unsigned int *pDevPtr, unsigned int *pPitch, CUVIDPROCPARAMS *pVPP);
+typedef CUresult CUDAAPI tcuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int DevPtr);
+#endif //!NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
+
 class cuda_api::context {
 public:
     context()
         : loaded(true) {
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
         loaded = false;
+        memset(&api, 0, sizeof(api));
         cuda_dll.setFileName("cuda");
         if (!cuda_dll.isLoaded())
             cuda_dll.load();
@@ -60,6 +94,39 @@ public:
 
     QLibrary cuda_dll;
     QLibrary cuvid_dll;
+    typedef struct {
+        tcuInit* fp_tcuInit;
+        tcuCtxCreate* fp_tcuCtxCreate;
+        tcuCtxDestroy* fp_tcuCtxDestroy;
+        tcuCtxPushCurrent* fp_tcuCtxPushCurrent;
+        tcuCtxPopCurrent* fp_tcuCtxPopCurrent;
+        tcuMemAllocHost* fp_tcuMemAllocHost;
+        tcuMemFreeHost* fp_tcuMemFreeHost;
+        tcuMemcpyDtoH* fp_tcuMemcpyDtoH;
+        tcuMemcpyDtoHAsync* fp_tcuMemcpyDtoHAsync;
+        tcuStreamCreate* fp_cuStreamCreate;
+        tcuStreamDestroy* fp_tcuStreamDestroy;
+        tcuStreamQuery* fp_tcuStreamQuery;
+        tcuDeviceGetCount* fp_tcuDeviceGetCount;
+        tcuDriverGetVersion* fp_tcuDriverGetVersion;
+        tcuDeviceGetName* fp_tcuDeviceGetName;
+        tcuDeviceComputeCapability* fp_tcuDeviceComputeCapability;
+        tcuDeviceGetAttribute* fp_tcuDeviceGetAttribute;
+        tcuvidCtxLockCreate* fp_tcuvidCtxLockCreate;
+        tcuvidCtxLockDestroy* fp_tcuvidCtxLockDestroy;
+        tcuvidCtxLock* fp_tcuvidCtxLock;
+        tcuvidCtxUnlock* fp_tcuvidCtxUnlock;
+        tcuCtxSynchronize* fp_tcuCtxSynchronize;
+        tcuvidCreateVideoParser* fp_tcuvidCreateVideoParser;
+        tcuvidParseVideoData* fp_tcuvidParseVideoData;
+        tcuvidDestroyVideoParser* fp_tcuvidDestroyVideoParser;
+        tcuvidCreateDecoder* fp_tcuvidCreateDecoder;
+        tcuvidDestroyDecoder* fp_tcuvidDestroyDecoder;
+        tcuvidDecodePicture* fp_tcuvidDecodePicture;
+        tcuvidMapVideoFrame* fp_tcuvidMapVideoFrame;
+        tcuvidUnmapVideoFrame* fp_tcuvidUnmapVideoFrame;
+    } api_t;
+    api_t api;
 #endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
     bool loaded;
 };
@@ -85,138 +152,138 @@ bool cuda_api::isLoaded() const
 ////////////////////////////////////////////////////
 CUresult cuda_api::cuInit(unsigned int Flags)
 {
-    typedef CUresult CUDAAPI tcuInit(unsigned int);
-    static tcuInit* fp_tcuInit = (tcuInit*)ctx->cuda_dll.resolve("cuInit");
-    assert(fp_tcuInit);
-    return fp_tcuInit(Flags);
+    if (!ctx->api.fp_tcuInit)
+        ctx->api.fp_tcuInit = (tcuInit*)ctx->cuda_dll.resolve("cuInit");
+    assert(ctx->api.fp_tcuInit);
+    return ctx->api.fp_tcuInit(Flags);
 }
 
 CUresult cuda_api::cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev )
 {
-    typedef CUresult CUDAAPI tcuCtxCreate(CUcontext *, unsigned int, CUdevice);
-    static tcuCtxCreate* fp_tcuCtxCreate = (tcuCtxCreate*)ctx->cuda_dll.resolve("cuCtxCreate");
-    assert(fp_tcuCtxCreate);
-    return fp_tcuCtxCreate(pctx, flags, dev);
+    if (!ctx->api.fp_tcuCtxCreate)
+        ctx->api.fp_tcuCtxCreate = (tcuCtxCreate*)ctx->cuda_dll.resolve("cuCtxCreate");
+    assert(ctx->api.fp_tcuCtxCreate);
+    return ctx->api.fp_tcuCtxCreate(pctx, flags, dev);
 }
 
-CUresult cuda_api::cuCtxDestroy(CUcontext ctx)
+CUresult cuda_api::cuCtxDestroy(CUcontext cuctx)
 {
-    typedef CUresult CUDAAPI tcuCtxDestroy(CUcontext);
-    static tcuCtxDestroy* fp_tcuCtxDestroy = (tcuCtxDestroy*)this->ctx->cuda_dll.resolve("cuCtxDestroy");
-    assert(fp_tcuCtxDestroy);
-    return fp_tcuCtxDestroy(ctx);
+    if (!ctx->api.fp_tcuCtxDestroy)
+        ctx->api.fp_tcuCtxDestroy = (tcuCtxDestroy*)this->ctx->cuda_dll.resolve("cuCtxDestroy");
+    assert(ctx->api.fp_tcuCtxDestroy);
+    return ctx->api.fp_tcuCtxDestroy(cuctx);
 }
 
-CUresult cuda_api::cuCtxPushCurrent(CUcontext ctx)
+CUresult cuda_api::cuCtxPushCurrent(CUcontext cuctx)
 {
-    typedef CUresult CUDAAPI tcuCtxPushCurrent(CUcontext);
-    static tcuCtxPushCurrent* fp_tcuCtxPushCurrent = (tcuCtxPushCurrent*)this->ctx->cuda_dll.resolve("cuCtxPushCurrent");
-    assert(fp_tcuCtxPushCurrent);
-    return fp_tcuCtxPushCurrent(ctx);
+    if (!ctx->api.fp_tcuCtxPushCurrent)
+        ctx->api.fp_tcuCtxPushCurrent = (tcuCtxPushCurrent*)this->ctx->cuda_dll.resolve("cuCtxPushCurrent");
+    assert(ctx->api.fp_tcuCtxPushCurrent);
+    return ctx->api.fp_tcuCtxPushCurrent(cuctx);
 }
 
 CUresult cuda_api::cuCtxPopCurrent(CUcontext *pctx)
 {
-    typedef CUresult CUDAAPI tcuCtxPopCurrent(CUcontext *);
-    static tcuCtxPopCurrent* fp_tcuCtxPopCurrent = (tcuCtxPopCurrent*)this->ctx->cuda_dll.resolve("cuCtxPopCurrent");
-    assert(fp_tcuCtxPopCurrent);
-    return fp_tcuCtxPopCurrent(pctx);
+    if (!ctx->api.fp_tcuCtxPopCurrent)
+        ctx->api.fp_tcuCtxPopCurrent = (tcuCtxPopCurrent*)this->ctx->cuda_dll.resolve("cuCtxPopCurrent");
+    assert(ctx->api.fp_tcuCtxPopCurrent);
+    return ctx->api.fp_tcuCtxPopCurrent(pctx);
 }
 
 CUresult cuda_api::cuMemAllocHost(void **pp, unsigned int bytesize)
 {
-    typedef CUresult CUDAAPI tcuMemAllocHost(void **pp, unsigned int bytesize);
-    static tcuMemAllocHost* fp_tcuMemAllocHost = (tcuMemAllocHost*)ctx->cuda_dll.resolve("cuMemAllocHost");
-    assert(fp_tcuMemAllocHost);
-    return fp_tcuMemAllocHost(pp, bytesize);
+    if(!ctx->api.fp_tcuMemAllocHost)
+        ctx->api.fp_tcuMemAllocHost = (tcuMemAllocHost*)ctx->cuda_dll.resolve("cuMemAllocHost");
+    assert(ctx->api.fp_tcuMemAllocHost);
+    return ctx->api.fp_tcuMemAllocHost(pp, bytesize);
 }
 
 CUresult cuda_api::cuMemFreeHost(void *p)
 {
-    typedef CUresult CUDAAPI tcuMemFreeHost(void *p);
-    static tcuMemFreeHost* fp_tcuMemFreeHost = (tcuMemFreeHost*)ctx->cuda_dll.resolve("cuMemFreeHost");
-    assert(fp_tcuMemFreeHost);
-    return fp_tcuMemFreeHost(p);
+    if (!ctx->api.fp_tcuMemFreeHost)
+        ctx->api.fp_tcuMemFreeHost = (tcuMemFreeHost*)ctx->cuda_dll.resolve("cuMemFreeHost");
+    assert(ctx->api.fp_tcuMemFreeHost);
+    return ctx->api.fp_tcuMemFreeHost(p);
 }
 
 CUresult cuda_api::cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount )
 {
-    typedef CUresult CUDAAPI tcuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );
-    static tcuMemcpyDtoH* fp_tcuMemcpyDtoH = (tcuMemcpyDtoH*)ctx->cuda_dll.resolve("cuMemcpyDtoH");
-    assert(fp_tcuMemcpyDtoH);
-    return fp_tcuMemcpyDtoH(dstHost, srcDevice, ByteCount);
+    if (!ctx->api.fp_tcuMemcpyDtoH)
+        ctx->api.fp_tcuMemcpyDtoH = (tcuMemcpyDtoH*)ctx->cuda_dll.resolve("cuMemcpyDtoH");
+    assert(ctx->api.fp_tcuMemcpyDtoH);
+    return ctx->api.fp_tcuMemcpyDtoH(dstHost, srcDevice, ByteCount);
 }
 
 CUresult cuda_api::cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream)
 {
-    typedef CUresult CUDAAPI tcuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream);
-    static tcuMemcpyDtoHAsync* fp_tcuMemcpyDtoHAsync = (tcuMemcpyDtoHAsync*)ctx->cuda_dll.resolve("cuMemcpyDtoHAsync");
-    assert(fp_tcuMemcpyDtoHAsync);
-    return fp_tcuMemcpyDtoHAsync(dstHost, srcDevice, ByteCount, hStream);
+    if (!ctx->api.fp_tcuMemcpyDtoHAsync)
+        ctx->api.fp_tcuMemcpyDtoHAsync = (tcuMemcpyDtoHAsync*)ctx->cuda_dll.resolve("cuMemcpyDtoHAsync");
+    assert(ctx->api.fp_tcuMemcpyDtoHAsync);
+    return ctx->api.fp_tcuMemcpyDtoHAsync(dstHost, srcDevice, ByteCount, hStream);
 }
 
 CUresult cuda_api::cuStreamCreate(CUstream *phStream, unsigned int Flags)
 {
-    typedef CUresult CUDAAPI tcuStreamCreate(CUstream *phStream, unsigned int Flags);
-    static tcuStreamCreate* fp_cuStreamCreate = (tcuStreamCreate*)ctx->cuda_dll.resolve("cuStreamCreate");
-    assert(fp_cuStreamCreate);
-    return fp_cuStreamCreate(phStream, Flags);
+    if (!ctx->api.fp_cuStreamCreate)
+        ctx->api.fp_cuStreamCreate = (tcuStreamCreate*)ctx->cuda_dll.resolve("cuStreamCreate");
+    assert(ctx->api.fp_cuStreamCreate);
+    return ctx->api.fp_cuStreamCreate(phStream, Flags);
 }
 
 CUresult cuda_api::cuStreamDestroy(CUstream hStream)
 {
-    typedef CUresult CUDAAPI tcuStreamDestroy(CUstream hStream);
-    static tcuStreamDestroy* fp_tcuStreamDestroy = (tcuStreamDestroy*)ctx->cuda_dll.resolve("cuStreamDestroy");
-    assert(fp_tcuStreamDestroy);
-    return fp_tcuStreamDestroy(hStream);
+    if (!ctx->api.fp_tcuStreamDestroy)
+        ctx->api.fp_tcuStreamDestroy = (tcuStreamDestroy*)ctx->cuda_dll.resolve("cuStreamDestroy");
+    assert(ctx->api.fp_tcuStreamDestroy);
+    return ctx->api.fp_tcuStreamDestroy(hStream);
 }
 
 CUresult cuda_api::cuStreamQuery(CUstream hStream)
 {
-    typedef CUresult CUDAAPI tcuStreamQuery(CUstream hStream);
-    static tcuStreamQuery* fp_tcuStreamQuery = (tcuStreamQuery*)ctx->cuda_dll.resolve("cuStreamQuery");
-    assert(fp_tcuStreamQuery);
-    return fp_tcuStreamQuery(hStream);
+    if (!ctx->api.fp_tcuStreamQuery)
+        ctx->api.fp_tcuStreamQuery = (tcuStreamQuery*)ctx->cuda_dll.resolve("cuStreamQuery");
+    assert(ctx->api.fp_tcuStreamQuery);
+    return ctx->api.fp_tcuStreamQuery(hStream);
 }
 
 CUresult cuda_api::cuDeviceGetCount(int *count)
 {
-    typedef CUresult CUDAAPI tcuDeviceGetCount(int *count);
-    static tcuDeviceGetCount* fp_tcuDeviceGetCount = (tcuDeviceGetCount*)ctx->cuda_dll.resolve("cuDeviceGetCount");
-    assert(fp_tcuDeviceGetCount);
-    return fp_tcuDeviceGetCount(count);
+    if (!ctx->api.fp_tcuDeviceGetCount)
+        ctx->api.fp_tcuDeviceGetCount = (tcuDeviceGetCount*)ctx->cuda_dll.resolve("cuDeviceGetCount");
+    assert(ctx->api.fp_tcuDeviceGetCount);
+    return ctx->api.fp_tcuDeviceGetCount(count);
 }
 
 CUresult cuda_api::cuDriverGetVersion(int *driverVersion)
 {
-    typedef CUresult CUDAAPI tcuDriverGetVersion(int *driverVersion);
-    static tcuDriverGetVersion* fp_tcuDriverGetVersion = (tcuDriverGetVersion*)ctx->cuda_dll.resolve("cuDriverGetVersion");
-    assert(fp_tcuDriverGetVersion);
-    return fp_tcuDriverGetVersion(driverVersion);
+    if (!ctx->api.fp_tcuDriverGetVersion)
+        ctx->api.fp_tcuDriverGetVersion = (tcuDriverGetVersion*)ctx->cuda_dll.resolve("cuDriverGetVersion");
+    assert(ctx->api.fp_tcuDriverGetVersion);
+    return ctx->api.fp_tcuDriverGetVersion(driverVersion);
 }
 
 CUresult cuda_api::cuDeviceGetName(char *name, int len, CUdevice dev)
 {
-    typedef CUresult CUDAAPI tcuDeviceGetName(char *name, int len, CUdevice dev);
-    static tcuDeviceGetName* fp_tcuDeviceGetName = (tcuDeviceGetName*)ctx->cuda_dll.resolve("cuDeviceGetName");
-    assert(fp_tcuDeviceGetName);
-    return fp_tcuDeviceGetName(name, len, dev);
+    if (!ctx->api.fp_tcuDeviceGetName)
+        ctx->api.fp_tcuDeviceGetName = (tcuDeviceGetName*)ctx->cuda_dll.resolve("cuDeviceGetName");
+    assert(ctx->api.fp_tcuDeviceGetName);
+    return ctx->api.fp_tcuDeviceGetName(name, len, dev);
 }
 
 CUresult cuda_api::cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 {
-    typedef CUresult CUDAAPI tcuDeviceComputeCapability(int *major, int *minor, CUdevice dev);
-    static tcuDeviceComputeCapability* fp_tcuDeviceComputeCapability = (tcuDeviceComputeCapability*)ctx->cuda_dll.resolve("cuDeviceComputeCapability");
-    assert(fp_tcuDeviceComputeCapability);
-    return fp_tcuDeviceComputeCapability(major, minor, dev);
+    if (!ctx->api.fp_tcuDeviceComputeCapability)
+        ctx->api.fp_tcuDeviceComputeCapability = (tcuDeviceComputeCapability*)ctx->cuda_dll.resolve("cuDeviceComputeCapability");
+    assert(ctx->api.fp_tcuDeviceComputeCapability);
+    return ctx->api.fp_tcuDeviceComputeCapability(major, minor, dev);
 }
 
 CUresult cuda_api::cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 {
-    typedef CUresult CUDAAPI tcuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev);
-    static tcuDeviceGetAttribute* fp_tcuDeviceGetAttribute = (tcuDeviceGetAttribute*)ctx->cuda_dll.resolve("cuDeviceGetAttribute");
-    assert(fp_tcuDeviceGetAttribute);
-    return fp_tcuDeviceGetAttribute(pi, attrib, dev);
+    if (!ctx->api.fp_tcuDeviceGetAttribute)
+        ctx->api.fp_tcuDeviceGetAttribute = (tcuDeviceGetAttribute*)ctx->cuda_dll.resolve("cuDeviceGetAttribute");
+    assert(ctx->api.fp_tcuDeviceGetAttribute);
+    return ctx->api.fp_tcuDeviceGetAttribute(pi, attrib, dev);
 }
 
 
@@ -228,112 +295,112 @@ CUresult cuda_api::cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUde
 ////////////////////////////////////////////////////
 /// CUVID functions
 ////////////////////////////////////////////////////
-CUresult cuda_api::cuvidCtxLockCreate(CUvideoctxlock *pLock, CUcontext ctx)
+CUresult cuda_api::cuvidCtxLockCreate(CUvideoctxlock *pLock, CUcontext cuctx)
 {
-    typedef CUresult CUDAAPI tcuvidCtxLockCreate(CUvideoctxlock *pLock, CUcontext ctx);
-    static tcuvidCtxLockCreate* fp_tcuvidCtxLockCreate = (tcuvidCtxLockCreate*)this->ctx->cuvid_dll.resolve("cuvidCtxLockCreate");
-    assert(fp_tcuvidCtxLockCreate);
-    return fp_tcuvidCtxLockCreate(pLock, ctx);
+    if (!ctx->api.fp_tcuvidCtxLockCreate)
+        ctx->api.fp_tcuvidCtxLockCreate = (tcuvidCtxLockCreate*)this->ctx->cuvid_dll.resolve("cuvidCtxLockCreate");
+    assert(ctx->api.fp_tcuvidCtxLockCreate);
+    return ctx->api.fp_tcuvidCtxLockCreate(pLock, cuctx);
 }
 
 CUresult cuda_api::cuvidCtxLockDestroy(CUvideoctxlock lck)
 {
-    typedef CUresult CUDAAPI tcuvidCtxLockDestroy(CUvideoctxlock lck);
-    static tcuvidCtxLockDestroy* fp_tcuvidCtxLockDestroy = (tcuvidCtxLockDestroy*)ctx->cuvid_dll.resolve("cuvidCtxLockDestroy");
-    assert(fp_tcuvidCtxLockDestroy);
-    return fp_tcuvidCtxLockDestroy(lck);
+    if (!ctx->api.fp_tcuvidCtxLockDestroy)
+        ctx->api.fp_tcuvidCtxLockDestroy = (tcuvidCtxLockDestroy*)ctx->cuvid_dll.resolve("cuvidCtxLockDestroy");
+    assert(ctx->api.fp_tcuvidCtxLockDestroy);
+    return ctx->api.fp_tcuvidCtxLockDestroy(lck);
 }
 
 CUresult cuda_api::cuvidCtxLock(CUvideoctxlock lck, unsigned int reserved_flags)
 {
-    typedef CUresult CUDAAPI tcuvidCtxLock(CUvideoctxlock lck, unsigned int reserved_flags);
-    static tcuvidCtxLock* fp_tcuvidCtxLock = (tcuvidCtxLock*)ctx->cuvid_dll.resolve("cuvidCtxLock");
-    assert(fp_tcuvidCtxLock);
-    return fp_tcuvidCtxLock(lck, reserved_flags);
+    if (!ctx->api.fp_tcuvidCtxLock)
+        ctx->api.fp_tcuvidCtxLock = (tcuvidCtxLock*)ctx->cuvid_dll.resolve("cuvidCtxLock");
+    assert(ctx->api.fp_tcuvidCtxLock);
+    return ctx->api.fp_tcuvidCtxLock(lck, reserved_flags);
 }
 
 CUresult cuda_api::cuvidCtxUnlock(CUvideoctxlock lck, unsigned int reserved_flags)
 {
-    typedef CUresult CUDAAPI tcuvidCtxUnlock(CUvideoctxlock lck, unsigned int reserved_flags);
-    static tcuvidCtxUnlock* fp_tcuvidCtxUnlock = (tcuvidCtxUnlock*)ctx->cuvid_dll.resolve("cuvidCtxUnlock");
-    assert(fp_tcuvidCtxUnlock);
-    return fp_tcuvidCtxUnlock(lck, reserved_flags);
+    if (!ctx->api.fp_tcuvidCtxUnlock)
+        ctx->api.fp_tcuvidCtxUnlock = (tcuvidCtxUnlock*)ctx->cuvid_dll.resolve("cuvidCtxUnlock");
+    assert(ctx->api.fp_tcuvidCtxUnlock);
+    return ctx->api.fp_tcuvidCtxUnlock(lck, reserved_flags);
 }
 
 CUresult cuda_api::cuCtxSynchronize()
 {
-    typedef CUresult CUDAAPI tcuCtxSynchronize();
-    static tcuCtxSynchronize* fp_tcuCtxSynchronize = (tcuCtxSynchronize*)ctx->cuda_dll.resolve("cuCtxSynchronize");
-    assert(fp_tcuCtxSynchronize);
-    return fp_tcuCtxSynchronize();
+    if (!ctx->api.fp_tcuCtxSynchronize)
+        ctx->api.fp_tcuCtxSynchronize = (tcuCtxSynchronize*)ctx->cuda_dll.resolve("cuCtxSynchronize");
+    assert(ctx->api.fp_tcuCtxSynchronize);
+    return ctx->api.fp_tcuCtxSynchronize();
 }
 
 CUresult cuda_api::cuvidCreateVideoParser(CUvideoparser *pObj, CUVIDPARSERPARAMS *pParams)
 {
-    typedef CUresult CUDAAPI tcuvidCreateVideoParser(CUvideoparser *pObj, CUVIDPARSERPARAMS *pParams);
-    static tcuvidCreateVideoParser* fp_tcuvidCreateVideoParser = (tcuvidCreateVideoParser*)ctx->cuvid_dll.resolve("cuvidCreateVideoParser");
-    assert(fp_tcuvidCreateVideoParser);
-    return fp_tcuvidCreateVideoParser(pObj, pParams);
+    if (!ctx->api.fp_tcuvidCreateVideoParser)
+        ctx->api.fp_tcuvidCreateVideoParser = (tcuvidCreateVideoParser*)ctx->cuvid_dll.resolve("cuvidCreateVideoParser");
+    assert(ctx->api.fp_tcuvidCreateVideoParser);
+    return ctx->api.fp_tcuvidCreateVideoParser(pObj, pParams);
 }
 
 CUresult cuda_api::cuvidParseVideoData(CUvideoparser obj, CUVIDSOURCEDATAPACKET *pPacket)
 {
-    typedef CUresult CUDAAPI tcuvidParseVideoData(CUvideoparser obj, CUVIDSOURCEDATAPACKET *pPacket);
-    static tcuvidParseVideoData* fp_tcuvidParseVideoData = (tcuvidParseVideoData*)ctx->cuvid_dll.resolve("cuvidParseVideoData");
-    assert(fp_tcuvidParseVideoData);
-    return fp_tcuvidParseVideoData(obj, pPacket);
+    if (!ctx->api.fp_tcuvidParseVideoData)
+        ctx->api.fp_tcuvidParseVideoData = (tcuvidParseVideoData*)ctx->cuvid_dll.resolve("cuvidParseVideoData");
+    assert(ctx->api.fp_tcuvidParseVideoData);
+    return ctx->api.fp_tcuvidParseVideoData(obj, pPacket);
 }
 
 CUresult cuda_api::cuvidDestroyVideoParser(CUvideoparser obj)
 {
-    typedef CUresult CUDAAPI tcuvidDestroyVideoParser(CUvideoparser obj);
-    static tcuvidDestroyVideoParser* fp_tcuvidDestroyVideoParser = (tcuvidDestroyVideoParser*)ctx->cuvid_dll.resolve("cuvidDestroyVideoParser");
-    assert(fp_tcuvidDestroyVideoParser);
-    return fp_tcuvidDestroyVideoParser(obj);
+    if (!ctx->api.fp_tcuvidDestroyVideoParser)
+        ctx->api.fp_tcuvidDestroyVideoParser = (tcuvidDestroyVideoParser*)ctx->cuvid_dll.resolve("cuvidDestroyVideoParser");
+    assert(ctx->api.fp_tcuvidDestroyVideoParser);
+    return ctx->api.fp_tcuvidDestroyVideoParser(obj);
 }
 
 // Create/Destroy the decoder object
 CUresult cuda_api::cuvidCreateDecoder(CUvideodecoder *phDecoder, CUVIDDECODECREATEINFO *pdci)
 {
-    typedef CUresult CUDAAPI tcuvidCreateDecoder(CUvideodecoder *phDecoder, CUVIDDECODECREATEINFO *pdci);
-    static tcuvidCreateDecoder* fp_tcuvidCreateDecoder = (tcuvidCreateDecoder*)ctx->cuvid_dll.resolve("cuvidCreateDecoder");
-    assert(fp_tcuvidCreateDecoder);
-    return fp_tcuvidCreateDecoder(phDecoder, pdci);
+    if (!ctx->api.fp_tcuvidCreateDecoder)
+        ctx->api.fp_tcuvidCreateDecoder = (tcuvidCreateDecoder*)ctx->cuvid_dll.resolve("cuvidCreateDecoder");
+    assert(ctx->api.fp_tcuvidCreateDecoder);
+    return ctx->api.fp_tcuvidCreateDecoder(phDecoder, pdci);
 }
 
 CUresult cuda_api::cuvidDestroyDecoder(CUvideodecoder hDecoder)
 {
-    typedef CUresult CUDAAPI tcuvidDestroyDecoder(CUvideodecoder hDecoder);
-    static tcuvidDestroyDecoder* fp_tcuvidDestroyDecoder = (tcuvidDestroyDecoder*)ctx->cuvid_dll.resolve("cuvidDestroyDecoder");
-    assert(fp_tcuvidDestroyDecoder);
-    return fp_tcuvidDestroyDecoder(hDecoder);
+    if (!ctx->api.fp_tcuvidDestroyDecoder)
+        ctx->api.fp_tcuvidDestroyDecoder = (tcuvidDestroyDecoder*)ctx->cuvid_dll.resolve("cuvidDestroyDecoder");
+    assert(ctx->api.fp_tcuvidDestroyDecoder);
+    return ctx->api.fp_tcuvidDestroyDecoder(hDecoder);
 }
 
 // Decode a single picture (field or frame)
 CUresult cuda_api::cuvidDecodePicture(CUvideodecoder hDecoder, CUVIDPICPARAMS *pPicParams)
 {
-    typedef CUresult CUDAAPI tcuvidDecodePicture(CUvideodecoder hDecoder, CUVIDPICPARAMS *pPicParams);
-    static tcuvidDecodePicture* fp_tcuvidDecodePicture = (tcuvidDecodePicture*)   ctx->cuvid_dll.resolve("cuvidDecodePicture");
-    assert(fp_tcuvidDecodePicture);
-    return fp_tcuvidDecodePicture(hDecoder, pPicParams);
+    if (!ctx->api.fp_tcuvidDecodePicture)
+        ctx->api.fp_tcuvidDecodePicture = (tcuvidDecodePicture*)   ctx->cuvid_dll.resolve("cuvidDecodePicture");
+    assert(ctx->api.fp_tcuvidDecodePicture);
+    return ctx->api.fp_tcuvidDecodePicture(hDecoder, pPicParams);
 }
 
 // Post-process and map a video frame for use in cuda
 CUresult cuda_api::cuvidMapVideoFrame(CUvideodecoder hDecoder, int nPicIdx, unsigned int *pDevPtr, unsigned int *pPitch, CUVIDPROCPARAMS *pVPP)
 {
-    typedef CUresult CUDAAPI tcuvidMapVideoFrame(CUvideodecoder hDecoder, int nPicIdx, unsigned int *pDevPtr, unsigned int *pPitch, CUVIDPROCPARAMS *pVPP);
-    static tcuvidMapVideoFrame* fp_tcuvidMapVideoFrame = (tcuvidMapVideoFrame*)ctx->cuvid_dll.resolve("cuvidMapVideoFrame");
-    assert(fp_tcuvidMapVideoFrame);
-    return fp_tcuvidMapVideoFrame(hDecoder, nPicIdx, pDevPtr, pPitch, pVPP);
+    if (!ctx->api.fp_tcuvidMapVideoFrame)
+        ctx->api.fp_tcuvidMapVideoFrame = (tcuvidMapVideoFrame*)ctx->cuvid_dll.resolve("cuvidMapVideoFrame");
+    assert(ctx->api.fp_tcuvidMapVideoFrame);
+    return ctx->api.fp_tcuvidMapVideoFrame(hDecoder, nPicIdx, pDevPtr, pPitch, pVPP);
 }
 
 // Unmap a previously mapped video frame
 CUresult cuda_api::cuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int DevPtr)
 {
-    typedef CUresult CUDAAPI tcuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int DevPtr);
-    static tcuvidUnmapVideoFrame* fp_tcuvidUnmapVideoFrame = (tcuvidUnmapVideoFrame*)ctx->cuvid_dll.resolve("cuvidUnmapVideoFrame");
-    assert(fp_tcuvidUnmapVideoFrame);
-    return fp_tcuvidUnmapVideoFrame(hDecoder, DevPtr);
+    if (!ctx->api.fp_tcuvidUnmapVideoFrame)
+        ctx->api.fp_tcuvidUnmapVideoFrame = (tcuvidUnmapVideoFrame*)ctx->cuvid_dll.resolve("cuvidUnmapVideoFrame");
+    assert(ctx->api.fp_tcuvidUnmapVideoFrame);
+    return ctx->api.fp_tcuvidUnmapVideoFrame(hDecoder, DevPtr);
 }
 
 #endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)

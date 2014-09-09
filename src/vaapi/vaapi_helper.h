@@ -74,65 +74,79 @@ typedef struct _XDisplay Display;
 //TODO: use macro template. DEFINE_DL_SYMB(R, NAME, ARG....);
 class X11_API : public dll_helper {
 public:
-    X11_API(): dll_helper("X11") {}
+    typedef Display* XOpenDisplay_t(const char* name);
+    typedef int XCloseDisplay_t(Display* dpy);
+    typedef int XInitThreads_t();
+    X11_API(): dll_helper("X11") {
+        fp_XOpenDisplay = (XOpenDisplay_t*)resolve("XOpenDisplay");
+        fp_XCloseDisplay = (XCloseDisplay_t*)resolve("XCloseDisplay");
+        fp_XInitThreads = (XInitThreads_t*)resolve("XInitThreads");
+    }
     Display* XOpenDisplay(const char* name) {
-        typedef Display* XOpenDisplay_t(const char* name);
-        static XOpenDisplay_t* fp_XOpenDisplay = (XOpenDisplay_t*)resolve("XOpenDisplay");
         assert(fp_XOpenDisplay);
         return fp_XOpenDisplay(name);
     }
     int XCloseDisplay(Display* dpy) {
-        typedef int XCloseDisplay_t(Display* dpy);
-        static XCloseDisplay_t* fp_XCloseDisplay = (XCloseDisplay_t*)resolve("XCloseDisplay");
         assert(fp_XCloseDisplay);
         return fp_XCloseDisplay(dpy);
     }
     int XInitThreads() {
-        typedef int XInitThreads_t();
-        static XInitThreads_t* fp_XInitThreads = (XInitThreads_t*)resolve("XInitThreads");
         assert(fp_XInitThreads);
         return fp_XInitThreads();
     }
+private:
+    XOpenDisplay_t* fp_XOpenDisplay;
+    XCloseDisplay_t* fp_XCloseDisplay;
+    XInitThreads_t* fp_XInitThreads;
 };
 
 class VAAPI_DRM : public dll_helper {
 public:
-    VAAPI_DRM(): dll_helper("va-drm") {}
+    typedef VADisplay vaGetDisplayDRM_t(int fd);
+    VAAPI_DRM(): dll_helper("va-drm") {
+        fp_vaGetDisplayDRM = (vaGetDisplayDRM_t*)resolve("vaGetDisplayDRM");
+    }
     VADisplay vaGetDisplayDRM(int fd) {
-        typedef VADisplay vaGetDisplayDRM_t(int fd);
-        static vaGetDisplayDRM_t* fp_vaGetDisplayDRM = (vaGetDisplayDRM_t*)resolve("vaGetDisplayDRM");
         assert(fp_vaGetDisplayDRM);
         return fp_vaGetDisplayDRM(fd);
     }
+private:
+    vaGetDisplayDRM_t* fp_vaGetDisplayDRM;
 };
 class VAAPI_X11 : public dll_helper {
 public:
-    VAAPI_X11(): dll_helper("va-x11") {}
+    typedef VADisplay vaGetDisplay_t(Display *);
+    VAAPI_X11(): dll_helper("va-x11") {
+        fp_vaGetDisplay = (vaGetDisplay_t*)resolve("vaGetDisplay");
+    }
     VADisplay vaGetDisplay(Display *dpy) {
-        typedef VADisplay vaGetDisplay_t(Display *);
-        static vaGetDisplay_t* fp_vaGetDisplay = (vaGetDisplay_t*)resolve("vaGetDisplay");
         assert(fp_vaGetDisplay);
         return fp_vaGetDisplay(dpy);
     }
+private:
+    vaGetDisplay_t* fp_vaGetDisplay;
 };
 class VAAPI_GLX : public dll_helper {
 public:
-    VAAPI_GLX(): dll_helper("va-glx") {}
+    typedef VADisplay vaGetDisplayGLX_t(Display *);
+    typedef VAStatus vaCreateSurfaceGLX_t(VADisplay, GLenum, GLuint, void **);
+    typedef VAStatus vaDestroySurfaceGLX_t(VADisplay, void *);
+    typedef VAStatus vaCopySurfaceGLX_t(VADisplay, void *, VASurfaceID, unsigned int);
+    VAAPI_GLX(): dll_helper("va-glx") {
+        fp_vaGetDisplayGLX = (vaGetDisplayGLX_t*)resolve("vaGetDisplayGLX");
+        fp_vaCreateSurfaceGLX = (vaCreateSurfaceGLX_t*)resolve("vaCreateSurfaceGLX");
+        fp_vaDestroySurfaceGLX = (vaDestroySurfaceGLX_t*)resolve("vaDestroySurfaceGLX");
+        fp_vaCopySurfaceGLX = (vaCopySurfaceGLX_t*)resolve("vaCopySurfaceGLX");
+    }
     VADisplay vaGetDisplayGLX(Display *dpy) {
-        typedef VADisplay vaGetDisplayGLX_t(Display *);
-        static vaGetDisplayGLX_t* fp_vaGetDisplayGLX = (vaGetDisplayGLX_t*)resolve("vaGetDisplayGLX");
         assert(fp_vaGetDisplayGLX);
         return fp_vaGetDisplayGLX(dpy);
     }
     VAStatus vaCreateSurfaceGLX(VADisplay dpy, GLenum target, GLuint texture, void **gl_surface) {
-        typedef VAStatus vaCreateSurfaceGLX_t(VADisplay, GLenum, GLuint, void **);
-        static vaCreateSurfaceGLX_t* fp_vaCreateSurfaceGLX = (vaCreateSurfaceGLX_t*)resolve("vaCreateSurfaceGLX");
         assert(fp_vaCreateSurfaceGLX);
         return fp_vaCreateSurfaceGLX(dpy, target, texture, gl_surface);
     }
     VAStatus vaDestroySurfaceGLX(VADisplay dpy, void *gl_surface) {
-        typedef VAStatus vaDestroySurfaceGLX_t(VADisplay, void *);
-        static vaDestroySurfaceGLX_t* fp_vaDestroySurfaceGLX = (vaDestroySurfaceGLX_t*)resolve("vaDestroySurfaceGLX");
         assert(fp_vaDestroySurfaceGLX);
         return fp_vaDestroySurfaceGLX(dpy, gl_surface);
     }
@@ -154,11 +168,14 @@ public:
      * @return VA_STATUS_SUCCESS if successful
      */
     VAStatus vaCopySurfaceGLX(VADisplay dpy, void *gl_surface, VASurfaceID surface, unsigned int flags) {
-        typedef VAStatus vaCopySurfaceGLX_t(VADisplay, void *, VASurfaceID, unsigned int);
-        static vaCopySurfaceGLX_t* fp_vaCopySurfaceGLX = (vaCopySurfaceGLX_t*)resolve("vaCopySurfaceGLX");
         assert(fp_vaCopySurfaceGLX);
         return fp_vaCopySurfaceGLX(dpy, gl_surface, surface, flags);
     }
+private:
+    vaGetDisplayGLX_t* fp_vaGetDisplayGLX;
+    vaCreateSurfaceGLX_t* fp_vaCreateSurfaceGLX;
+    vaDestroySurfaceGLX_t* fp_vaDestroySurfaceGLX;
+    vaCopySurfaceGLX_t* fp_vaCopySurfaceGLX;
 };
 
 class display_t {

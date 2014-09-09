@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#pragma comment(lib, "Ole32.lib") //CoTaskMemFree. why link failed?
+#pragma comment(lib, "ole32.lib") //CoTaskMemFree. why link failed?
 #include "QtAV/VideoDecoderFFmpegHW.h"
 #include "QtAV/private/VideoDecoderFFmpegHW_p.h"
 #include "QtAV/Packet.h"
