@@ -401,7 +401,7 @@ void MainWindow::setupUi()
     pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(csWidget);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
-    csBox->addItem("System", "System");
+    csBox->addItem(tr("System"), "System");
     foreach (QByteArray cs, QTextCodec::availableCodecs()) {
         csBox->addItem(cs, cs);
     }
@@ -1383,7 +1383,11 @@ void MainWindow::openSubtitle()
 
 void MainWindow::setSubtitleCharset(const QString &charSet)
 {
-    mpSubtitle->setCodec(charSet.toUtf8());
+    Q_UNUSED(charSet);
+    QComboBox *box = qobject_cast<QComboBox*>(sender());
+    if (!box)
+        return;
+    mpSubtitle->setCodec(box->currentData().toByteArray());
 }
 
 void MainWindow::workaroundRendererSize()

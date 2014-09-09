@@ -5,32 +5,32 @@
     <name>QObject</name>
     <message>
         <source>Ok</source>
-        <translation type="vanished">确定</translation>
+        <translation>确定</translation>
     </message>
     <message>
         <source>About</source>
-        <translation type="vanished">关于</translation>
+        <translation>关于</translation>
     </message>
     <message>
         <source>About FFmpeg</source>
-        <translation type="vanished">关于 FFmpeg</translation>
+        <translation>关于 FFmpeg</translation>
     </message>
     <message>
         <source>Build version</source>
-        <translation type="vanished">编译时版本</translation>
+        <translation>编译时版本</translation>
     </message>
     <message>
         <source>Runtime version</source>
-        <translation type="vanished">运行时版本</translation>
+        <translation>运行时版本</translation>
     </message>
     <message>
         <source>About QtAV</source>
-        <translation type="vanished">关于 QtAV</translation>
+        <translation>关于 QtAV</translation>
     </message>
     <message>
         <source>A media playing library base on Qt and FFmpeg.
 </source>
-        <translation type="vanished">基于 Qt 和 FFmpeg 的音视频播放库.
+        <translation>基于 Qt 和 FFmpeg 的音视频播放库.
 </translation>
     </message>
     <message>
@@ -40,7 +40,7 @@
     </message>
     <message>
         <source>Donate</source>
-        <translation type="vanished">捐助</translation>
+        <translation>捐助</translation>
     </message>
     <message>
         <source>Shanghai University, Shanghai, China
@@ -50,11 +50,56 @@
     </message>
     <message>
         <source>Source</source>
-        <translation type="vanished">源码</translation>
+        <translation>源码</translation>
     </message>
     <message>
         <source>Downloads</source>
         <translation type="vanished">下载</translation>
+    </message>
+    <message>
+        <source>Distributed under the terms of LGPLv2.1 or later.
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shanghai University-&gt;S3 Graphics, Shanghai, China</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web Site</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>skip_frame</source>
+        <translation>跳帧</translation>
+    </message>
+    <message>
+        <source>skip_loop_filter</source>
+        <translation>跳过循环滤镜</translation>
+    </message>
+    <message>
+        <source>skip_idct</source>
+        <translation>跳过 idct</translation>
+    </message>
+    <message>
+        <source>strict</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>threads</source>
+        <translation>线程数</translation>
+    </message>
+    <message>
+        <source>thread_type</source>
+        <translation>多线程类型</translation>
+    </message>
+    <message>
+        <source>vismv</source>
+        <translation>可视化运动向量</translation>
+    </message>
+    <message>
+        <source>bug</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -273,6 +273,18 @@ VideoDecoderFFmpeg::BugFlags VideoDecoderFFmpeg::bugFlags() const
     return (BugFlags)d_func().bug;
 }
 
+namespace {
+void i18n() {
+    QObject::tr("skip_loop_filter");
+    QObject::tr("skip_idct");
+    QObject::tr("strict");
+    QObject::tr("skip_frame");
+    QObject::tr("threads");
+    QObject::tr("thread_type");
+    QObject::tr("vismv");
+    QObject::tr("bug");
+}
+}
 } //namespace QtAV
 
 #include "VideoDecoderFFmpeg.moc"

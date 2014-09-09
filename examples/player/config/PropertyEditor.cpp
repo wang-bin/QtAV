@@ -118,19 +118,19 @@ QWidget* PropertyEditor::buildUi()
             if (mp.isFlagType()) {
                 gl->addWidget(createWidgetForFlags(mp.name(), value, mp.enumerator()), row, 0, Qt::AlignLeft | Qt::AlignVCenter);
             } else {
-                gl->addWidget(new QLabel(tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
+                gl->addWidget(new QLabel(QObject::tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
                 gl->addWidget(createWidgetForEnum(mp.name(), value, mp.enumerator()), row, 1, Qt::AlignLeft | Qt::AlignVCenter);
             }
         } else if (mp.type() == QVariant::Int || mp.type() == QVariant::UInt || mp.type() == QVariant::LongLong || mp.type() == QVariant::ULongLong){
-            gl->addWidget(new QLabel(tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
+            gl->addWidget(new QLabel(QObject::tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
             gl->addWidget(createWidgetForInt(mp.name(), value.toInt()), row, 1, Qt::AlignLeft | Qt::AlignVCenter);
         } else if (mp.type() == QVariant::Double) {
-            gl->addWidget(new QLabel(tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
+            gl->addWidget(new QLabel(QObject::tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
             gl->addWidget(createWidgetForReal(mp.name(), value.toReal()), row, 1, Qt::AlignLeft | Qt::AlignVCenter);
         } else if (mp.type() == QVariant::Bool) {
             gl->addWidget(createWidgetForBool(mp.name(), value.toBool()), row, 0, 1, 2, Qt::AlignLeft);
         } else {
-            gl->addWidget(new QLabel(tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
+            gl->addWidget(new QLabel(QObject::tr(mp.name())), row, 0, Qt::AlignRight | Qt::AlignVCenter);
             gl->addWidget(createWidgetForText(mp.name(), value.toString()), row, 1, Qt::AlignLeft | Qt::AlignVCenter);
         }
         ++row;
@@ -153,7 +153,7 @@ QWidget* PropertyEditor::createWidgetForFlags(const QString& name, const QVarian
     mProperties[name] = value;
     QToolButton *btn = new QToolButton(parent);
     btn->setObjectName(name);
-    btn->setText(name);
+    btn->setText(QObject::tr(name.toUtf8().constData()));
     btn->setPopupMode(QToolButton::InstantPopup);
     ClickableMenu *menu = new ClickableMenu(btn);
     menu->setObjectName(name);
@@ -223,7 +223,7 @@ QWidget* PropertyEditor::createWidgetForText(const QString& name, const QString&
 QWidget* PropertyEditor::createWidgetForBool(const QString& name, bool value, QWidget* parent)
 {
     mProperties[name] = value;
-    QCheckBox *box = new QCheckBox(tr(qPrintable(name)), parent);
+    QCheckBox *box = new QCheckBox(QObject::tr(name.toUtf8().constData()), parent);
     box->setObjectName(name);
     box->setChecked(value);
     connect(box, SIGNAL(clicked(bool)), SLOT(onBoolChange(bool)));

@@ -80,6 +80,7 @@ public:
         mpEditorWidget = w;
         w->setEnabled(true);
         layout()->addWidget(w);
+        w->setVisible(false);
     }
     QVariantHash getOptions() const {
         return mpEditor->exportAsHash();
