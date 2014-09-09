@@ -163,6 +163,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
         connect(iw, SIGNAL(enableChanged()), SLOT(videoDecoderEnableChanged()));
         connect(iw, SIGNAL(selected(DecoderItemWidget*)), SLOT(onDecSelected(DecoderItemWidget*)));
         mpDecLayout->addWidget(iw);
+        delete vd;
     }
     vb->addLayout(mpDecLayout);
     vb->addSpacerItem(new QSpacerItem(width(), 10, QSizePolicy::Ignored, QSizePolicy::Expanding));
