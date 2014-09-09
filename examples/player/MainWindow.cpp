@@ -401,11 +401,14 @@ void MainWindow::setupUi()
     pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(csWidget);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
+    csBox->addItem(tr("Auto detect"), "AutoDetect");
     csBox->addItem(tr("System"), "System");
     foreach (QByteArray cs, QTextCodec::availableCodecs()) {
         csBox->addItem(cs, cs);
     }
     connect(csBox, SIGNAL(activated(QString)), SLOT(setSubtitleCharset(QString)));
+    mpSubtitle->setCodec(csBox->currentData().toByteArray());
+    csBox->setToolTip(tr("Auto detect requires libchardet"));
 
     subMenu = new ClickableMenu(tr("Audio track"));
     mpMenu->addMenu(subMenu);

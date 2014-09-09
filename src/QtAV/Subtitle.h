@@ -72,6 +72,8 @@ public:
      * \brief setCodec
      * set subtitle encoding that supported by QTextCodec. You have to call load() to manually reload the subtitle with given codec
      * \param value codec name. see QTextCodec.availableCodecs(). Empty value means using the default codec in QTextCodec
+     * If linked with libchardet(https://github.com/cnangel/libchardet) or can dynamically load it,
+     * set value of "AutoDetect" to detect the charset of subtitle
      */
     void setCodec(const QByteArray& value);
     QByteArray codec() const;

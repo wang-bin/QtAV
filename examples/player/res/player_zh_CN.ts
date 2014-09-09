@@ -304,12 +304,12 @@
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1328"/>
+        <location filename="../MainWindow.cpp" line="1327"/>
         <source>Capture video frame</source>
         <translation>视频截图</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1328"/>
+        <location filename="../MainWindow.cpp" line="1327"/>
         <source>Save to</source>
         <translation>保存至</translation>
     </message>
@@ -402,28 +402,33 @@
         <translation>到</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="427"/>
-        <location filename="../MainWindow.cpp" line="1127"/>
+        <location filename="../MainWindow.cpp" line="404"/>
+        <source>Auto detect</source>
+        <translation>自动检测</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="430"/>
+        <location filename="../MainWindow.cpp" line="1126"/>
         <source>Aspect ratio</source>
         <translation>比例</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="430"/>
+        <location filename="../MainWindow.cpp" line="433"/>
         <source>Video</source>
         <translation>视频</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="432"/>
+        <location filename="../MainWindow.cpp" line="435"/>
         <source>Window</source>
         <translation>窗口</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="435"/>
+        <location filename="../MainWindow.cpp" line="438"/>
         <source>Custom</source>
         <translation>自定义</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="410"/>
+        <location filename="../MainWindow.cpp" line="413"/>
         <source>Audio track</source>
         <translation>音轨</translation>
     </message>
@@ -462,82 +467,91 @@
         <translation>字符集</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="404"/>
+        <source>Auto Detect</source>
+        <translation type="vanished">自动检测</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="405"/>
         <source>System</source>
         <translation>系统</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="414"/>
+        <location filename="../MainWindow.cpp" line="411"/>
+        <source>Auto detect requires libchardet</source>
+        <translation type="unfinished">自动检测需要libchardet库</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="417"/>
         <source>Channel</source>
         <translation>声道</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="418"/>
+        <location filename="../MainWindow.cpp" line="421"/>
         <source>As input</source>
         <translation>同输入</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="419"/>
+        <location filename="../MainWindow.cpp" line="422"/>
         <source>Stero</source>
         <translation>立体声</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="420"/>
+        <location filename="../MainWindow.cpp" line="423"/>
         <source>Mono (center)</source>
         <translation>单声道 (中央)</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="421"/>
+        <location filename="../MainWindow.cpp" line="424"/>
         <source>Left</source>
         <translation>左声道</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="422"/>
+        <location filename="../MainWindow.cpp" line="425"/>
         <source>Right</source>
         <translation>右声道</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="441"/>
+        <location filename="../MainWindow.cpp" line="444"/>
         <source>Color space</source>
         <translation>色彩空间</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="449"/>
+        <location filename="../MainWindow.cpp" line="452"/>
         <source>Decoder</source>
         <translation>解码器</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="456"/>
+        <location filename="../MainWindow.cpp" line="459"/>
         <source>Renderer</source>
         <translation>渲染引擎</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="573"/>
+        <location filename="../MainWindow.cpp" line="576"/>
         <source>not availabe on your platform!</source>
         <translation>你的平台上不可使用!</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="732"/>
+        <location filename="../MainWindow.cpp" line="731"/>
         <source>Open a media file</source>
         <translation>打开媒体文件</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1054"/>
+        <location filename="../MainWindow.cpp" line="1053"/>
         <source>Open an url</source>
         <translation>打开 url</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1054"/>
+        <location filename="../MainWindow.cpp" line="1053"/>
         <source>Url</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1329"/>
+        <location filename="../MainWindow.cpp" line="1328"/>
         <source>Format</source>
         <translation>格式</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1382"/>
+        <location filename="../MainWindow.cpp" line="1381"/>
         <source>Open a subtitle file</source>
         <translation>打开字幕文件</translation>
     </message>

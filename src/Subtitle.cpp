@@ -35,6 +35,7 @@
 #include <QtCore/QTextCodec>
 #include <QtCore/QTextStream>
 #include <QtCore/QMutexLocker>
+#include "subtitle/CharsetDetector.h"
 
 namespace QtAV {
 
@@ -47,6 +48,7 @@ public:
         , fuzzy_match(true)
         , update_image(true)
         , processor(0)
+        , codec("AutoDetect")
         , t(0)
     {}
     void reset() {
@@ -110,7 +112,12 @@ Subtitle::Subtitle(QObject *parent) :
 }
 
 Subtitle::~Subtitle()
-{}
+{
+    if (priv) {
+        delete priv;
+        priv = 0;
+    }
+}
 
 bool Subtitle::isLoaded() const
 {
@@ -420,10 +427,10 @@ bool Subtitle::Private::prepareCurrentFrame()
 
 QStringList Subtitle::Private::find()
 {
+    if (file_name.isEmpty())
+        return QStringList();
     // !fuzzyMatch: return the file
     if (!fuzzy_match) {
-        if (file_name.isEmpty())
-            return QStringList();
         return QStringList() << file_name;
     }
 
@@ -496,10 +503,19 @@ QByteArray Subtitle::Private::readFromFile(const QString &path)
     QTextStream ts(&f);
     ts.setAutoDetectUnicode(true);
     if (!codec.isEmpty()) {
-        if (codec.toLower() == "system")
+        if (codec.toLower() == "system") {
             ts.setCodec(QTextCodec::codecForLocale());
-        else
+        } else if (codec.toLower() == "autodetect") {
+            CharsetDetector det;
+            if (det.isAvailable()) {
+                QByteArray charset = det.detect(f.readAll());
+                f.seek(0);
+                if (!charset.isEmpty())
+                    ts.setCodec(QTextCodec::codecForName(charset));
+            }
+        } else {
             ts.setCodec(QTextCodec::codecForName(codec));
+        }
     }
     return ts.readAll().toUtf8();
 }

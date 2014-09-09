@@ -99,6 +99,10 @@ win32 {
 DEFINES += __STDC_CONSTANT_MACROS
 android: CONFIG += config_opensl
 LIBS += -lavcodec -lavformat -lavutil -lswscale
+config_chardet {
+    DEFINES += QTAV_HAVE_CHARDET=1
+    LIBS += -lchardet
+}
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
     LIBS += -lavfilter
@@ -266,6 +270,7 @@ config_openglwindow {
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
+    subtitle/CharsetDetector.cpp \
     subtitle/PlainText.cpp \
     subtitle/SubtitleProcessor.cpp \
     subtitle/SubtitleProcessorFFmpeg.cpp \
@@ -383,6 +388,7 @@ HEADERS *= \
     $$SDK_HEADERS \
     $$SDK_PRIVATE_HEADERS \
     filter/FilterManager.h \
+    subtitle/CharsetDetector.h \
     subtitle/PlainText.h \
     utils/BlockingQueue.h \
     utils/GPUMemCopy.h \
