@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
         window.setVideoDecoderNames(vd);
 
 
-    idx = a.arguments().indexOf("--ffmpeg-log");
+    idx = a.arguments().indexOf("--no-ffmpeg-log");
     idxmax = qMax(idx, idxmax);
     if (idx < 0)
         setFFmpegLogHandler(0);

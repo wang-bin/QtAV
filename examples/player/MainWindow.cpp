@@ -287,7 +287,7 @@ void MainWindow::setupUi()
     QWidgetAction *pWA = 0;
     mpMenu = new QMenu(mpMenuBtn);
     mpMenu->addAction(tr("Open Url"), this, SLOT(openUrl()));
-    mpMenu->addAction(tr("Online channels"), this, SLOT(onTVMenuClick()));
+    //mpMenu->addAction(tr("Online channels"), this, SLOT(onTVMenuClick()));
     mpMenu->addSeparator();
 
     subMenu = new QMenu(tr("Play list"));
@@ -407,7 +407,7 @@ void MainWindow::setupUi()
         csBox->addItem(cs, cs);
     }
     connect(csBox, SIGNAL(activated(QString)), SLOT(setSubtitleCharset(QString)));
-    mpSubtitle->setCodec(csBox->currentData().toByteArray());
+    mpSubtitle->setCodec(csBox->itemData(csBox->currentIndex()).toByteArray());
     csBox->setToolTip(tr("Auto detect requires libchardet"));
 
     subMenu = new ClickableMenu(tr("Audio track"));
@@ -1390,7 +1390,7 @@ void MainWindow::setSubtitleCharset(const QString &charSet)
     QComboBox *box = qobject_cast<QComboBox*>(sender());
     if (!box)
         return;
-    mpSubtitle->setCodec(box->currentData().toByteArray());
+    mpSubtitle->setCodec(box->itemData(box->currentIndex()).toByteArray());
 }
 
 void MainWindow::workaroundRendererSize()
