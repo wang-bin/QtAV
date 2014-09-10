@@ -1,3 +1,21 @@
+version 1.4.0    2014-09-10
+
+Changelog:
+- Improve OpenGL: more pixel formats, supports QML(not stable),
+dynamic gl support etc.
+- VAAPI: GLX direct rendering support. check 4k.
+- DXVA: more decoding surfaces to improve performance
+- VDA (OSX hardware decoding) support
+- Android support. Easy to deploy
+- Subtitle support, including QML
+- Improve OpenAL. Works fine on most platforms including android
+- FFmpeg libavfilter support
+- Audio output api change
+- deploy script for ifw, OSX
+- Bug fix
+- WIP: dsound, opensl, audio engine, audio filters etc.
+
+
 version 1.3.3    2014-04-20
 
 - CUDA support for windows and linux. (The first player/library support CUDA decoding on linux?)

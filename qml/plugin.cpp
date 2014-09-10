@@ -39,7 +39,7 @@ public:
         qmlRegisterType<QQuickItemRenderer>(uri, 1, 3, "VideoOutput");
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
-        qmlRegisterType<QuickSubtitle>(uri, 1, 3, "Subtitle");
+        qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
     }
 };
 } //namespace QtAV
