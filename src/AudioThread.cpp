@@ -27,7 +27,7 @@
 #include "QtAV/AudioOutput.h"
 #include "QtAV/AudioResampler.h"
 #include "QtAV/AVClock.h"
-#include "QtAV/private/OutputSet.h"
+#include "output/OutputSet.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QCoreApplication>
 

@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/private/VideoOutputEventFilter.h"
+#include "output/video/VideoOutputEventFilter.h"
 #include "QtAV/VideoRenderer.h"
 #include <QtCore/QEvent>
 #include <QKeyEvent>

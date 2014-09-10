@@ -24,7 +24,7 @@
 #include <QtCore/QCoreApplication>
 #include "QtAV/AVError.h"
 #include "QtAV/Packet.h"
-#include "QtAV/private/QAVIOContext.h"
+#include "QAVIOContext.h"
 #include "QtAV/private/AVCompat.h"
 
 namespace QtAV {

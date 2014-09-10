@@ -33,7 +33,7 @@
 #endif
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoShader.h"
-#include "QtAV/private/ShaderManager.h"
+#include "ShaderManager.h"
 
 namespace QtAV {
 

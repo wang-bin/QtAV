@@ -1,4 +1,4 @@
-#include "QtAV/private/ShaderManager.h"
+#include "ShaderManager.h"
 #include "QtAV/VideoShader.h"
 
 namespace QtAV {

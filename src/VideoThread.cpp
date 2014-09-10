@@ -31,7 +31,7 @@
 #include "QtAV/Filter.h"
 #include "QtAV/FilterContext.h"
 #include "QtAV/ImageConverterTypes.h"
-#include "QtAV/private/OutputSet.h"
+#include "output/OutputSet.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QFileInfo>
 

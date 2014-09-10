@@ -133,17 +133,17 @@ config_ipp {
     #omp for static link. _t is multi-thread static link
 }
 config_dsound {
-    SOURCES += AudioOutputDSound.cpp
+    SOURCES += output/audio/AudioOutputDSound.cpp
     DEFINES *= QTAV_HAVE_DSOUND=1
 }
 config_portaudio {
-    SOURCES += AudioOutputPortAudio.cpp
+    SOURCES += output/audio/AudioOutputPortAudio.cpp
     DEFINES *= QTAV_HAVE_PORTAUDIO=1
     LIBS *= -lportaudio
     #win32: LIBS *= -lwinmm #-lksguid #-luuid
 }
 config_openal {
-    SOURCES += AudioOutputOpenAL.cpp
+    SOURCES += output/audio/AudioOutputOpenAL.cpp
     DEFINES *= QTAV_HAVE_OPENAL=1
     win32: LIBS += -lOpenAL32
     unix:!mac:!blackberry: LIBS += -lopenal
@@ -152,7 +152,7 @@ config_openal {
     mac: DEFINES += HEADER_OPENAL_PREFIX
 }
 config_opensl {
-    SOURCES += AudioOutputOpenSL.cpp
+    SOURCES += output/audio/AudioOutputOpenSL.cpp
     DEFINES *= QTAV_HAVE_OPENSL=1
     LIBS += -lOpenSLES
 }
@@ -160,25 +160,25 @@ config_opensl {
   SDK_HEADERS *= \
     QtAV/GraphicsItemRenderer.h \
     QtAV/WidgetRenderer.h
-  HEADERS *= QtAV/private/VideoOutputEventFilter.h
+  HEADERS *= output/video/VideoOutputEventFilter.h
   SOURCES *= \
-    VideoOutputEventFilter.cpp \
-    GraphicsItemRenderer.cpp \
-    WidgetRenderer.cpp
+    output/video/VideoOutputEventFilter.cpp \
+    output/video/GraphicsItemRenderer.cpp \
+    output/video/WidgetRenderer.cpp
   config_gdiplus {
     DEFINES *= QTAV_HAVE_GDIPLUS=1
-    SOURCES += GDIRenderer.cpp
+    SOURCES += output/video/GDIRenderer.cpp
     LIBS += -lgdiplus -lgdi32
   }
   config_direct2d {
     DEFINES *= QTAV_HAVE_DIRECT2D=1
     !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
-    SOURCES += Direct2DRenderer.cpp
+    SOURCES += output/video/Direct2DRenderer.cpp
     #LIBS += -lD2d1
   }
   config_xv {
     DEFINES *= QTAV_HAVE_XV=1
-    SOURCES += XVRenderer.cpp
+    SOURCES += output/video/XVRenderer.cpp
     LIBS += -lXv
   }
 }
@@ -188,7 +188,7 @@ CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
     HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h
-    SOURCES += VideoDecoderCUDA.cpp
+    SOURCES += codec/video/VideoDecoderCUDA.cpp
     INCLUDEPATH += $$PWD/cuda cuda/dllapi
     config_dllapi:config_dllapi_cuda {
         DEFINES += QTAV_HAVE_DLLAPI_CUDA=1
@@ -208,36 +208,36 @@ include(../depends/dllapi/src/libdllapi.pri)
 }
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
-    SOURCES += VideoDecoderDXVA.cpp
+    SOURCES += codec/video/VideoDecoderDXVA.cpp
     LIBS += -lole32
 }
 config_vaapi* {
     DEFINES *= QTAV_HAVE_VAAPI=1
-    SOURCES += VideoDecoderVAAPI.cpp  vaapi/vaapi_helper.cpp vaapi/SurfaceInteropVAAPI.cpp
+    SOURCES += codec/video/VideoDecoderVAAPI.cpp  vaapi/vaapi_helper.cpp vaapi/SurfaceInteropVAAPI.cpp
     HEADERS += vaapi/vaapi_helper.h  vaapi/SurfaceInteropVAAPI.h
     LIBS += -lva #dynamic load va-glx va-x11 using dllapi
 }
 config_libcedarv {
     DEFINES *= QTAV_HAVE_CEDARV=1
     QMAKE_CXXFLAGS *= -march=armv7-a -mfpu=neon 
-    SOURCES += VideoDecoderCedarv.cpp
+    SOURCES += codec/video/VideoDecoderCedarv.cpp
     LIBS += -lvecore -lcedarv
 }
 macx:!ios: CONFIG += config_vda
 config_vda {
     DEFINES *= QTAV_HAVE_VDA=1
-    SOURCES += VideoDecoderVDA.cpp
+    SOURCES += codec/video/VideoDecoderVDA.cpp
     LIBS += -framework VideoDecodeAcceleration -framework CoreVideo
 }
 
 config_gl {
     QT *= opengl
     DEFINES *= QTAV_HAVE_GL=1
-    SOURCES += GLWidgetRenderer2.cpp
+    SOURCES += output/video/GLWidgetRenderer2.cpp
     SDK_HEADERS += QtAV/GLWidgetRenderer2.h
     !contains(QT_CONFIG, dynamicgl) { #dynamicgl does not support old gl1 functions which used in GLWidgetRenderer
         DEFINES *= QTAV_HAVE_GL1
-        SOURCES += GLWidgetRenderer.cpp
+        SOURCES += output/video/GLWidgetRenderer.cpp
         SDK_HEADERS += QtAV/GLWidgetRenderer.h
     }
 }
@@ -251,9 +251,9 @@ config_gl|config_opengl {
     QtAV/private/OpenGLRendererBase_p.h
   HEADERS *= \
     utils/OpenGLHelper.h \
-    QtAV/private/ShaderManager.h
+    ShaderManager.h
   SOURCES *= \
-    OpenGLRendererBase.cpp \
+    output/video/OpenGLRendererBase.cpp \
     OpenGLVideo.cpp \
     VideoShader.cpp \
     ShaderManager.cpp \
@@ -261,10 +261,10 @@ config_gl|config_opengl {
 }
 config_openglwindow {
   SDK_HEADERS *= QtAV/OpenGLWindowRenderer.h
-  SOURCES *= OpenGLWindowRenderer.cpp
+  SOURCES *= output/video/OpenGLWindowRenderer.cpp
   !gui_only {
     SDK_HEADERS *= QtAV/OpenGLWidgetRenderer.h
-    SOURCES *= OpenGLWidgetRenderer.cpp
+    SOURCES *= output/video/OpenGLWidgetRenderer.cpp
   }
 }
 SOURCES += \
@@ -272,32 +272,30 @@ SOURCES += \
     QtAV_Global.cpp \
     subtitle/CharsetDetector.cpp \
     subtitle/PlainText.cpp \
+    subtitle/Subtitle.cpp \
     subtitle/SubtitleProcessor.cpp \
     subtitle/SubtitleProcessorFFmpeg.cpp \
     utils/GPUMemCopy.cpp \
     QAVIOContext.cpp \
     AudioThread.cpp \
     AVThread.cpp \
-    AudioDecoder.cpp \
     AudioFormat.cpp \
     AudioFrame.cpp \
-    AudioOutput.cpp \
-    AudioOutputTypes.cpp \
     AudioResampler.cpp \
     AudioResamplerTypes.cpp \
-    AVDecoder.cpp \
+    codec/AVDecoder.cpp \
+    codec/audio/AudioDecoder.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
     ColorTransform.cpp \
     Frame.cpp \
-    Filter.cpp \
-    FilterContext.cpp \
+    filter/Filter.cpp \
+    filter/FilterContext.cpp \
     filter/FilterManager.cpp \
     filter/LibAVFilter.cpp \
     filter/SubtitleFilter.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
-    QPainterRenderer.cpp \
     Packet.cpp \
     AVError.cpp \
     AVPlayer.cpp \
@@ -305,17 +303,19 @@ SOURCES += \
     VideoCapture.cpp \
     VideoFormat.cpp \
     VideoFrame.cpp \
-    VideoRenderer.cpp \
-    VideoRendererTypes.cpp \
-    VideoOutput.cpp \
-    AVOutput.cpp \
-    OutputSet.cpp \
+    output/audio/AudioOutput.cpp \
+    output/audio/AudioOutputTypes.cpp \
+    output/video/VideoRenderer.cpp \
+    output/video/VideoRendererTypes.cpp \
+    output/video/VideoOutput.cpp \
+    output/video/QPainterRenderer.cpp \
+    output/AVOutput.cpp \
+    output/OutputSet.cpp \
     Statistics.cpp \
-    Subtitle.cpp \
-    VideoDecoder.cpp \
-    VideoDecoderTypes.cpp \
-    VideoDecoderFFmpeg.cpp \
-    VideoDecoderFFmpegHW.cpp \
+    codec/video/VideoDecoder.cpp \
+    codec/video/VideoDecoderTypes.cpp \
+    codec/video/VideoDecoderFFmpeg.cpp \
+    codec/video/VideoDecoderFFmpegHW.cpp \
     VideoThread.cpp \
     CommonTypes.cpp
 
@@ -375,8 +375,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/Filter_p.h \
     QtAV/private/Frame_p.h \
     QtAV/private/ImageConverter_p.h \
-    QtAV/private/OutputSet.h \
-    QtAV/private/QAVIOContext.h \
     QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoDecoderFFmpegHW_p.h \
@@ -388,12 +386,14 @@ SDK_PRIVATE_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     $$SDK_PRIVATE_HEADERS \
+    QAVIOContext.h \
     filter/FilterManager.h \
     subtitle/CharsetDetector.h \
     subtitle/PlainText.h \
     utils/BlockingQueue.h \
     utils/GPUMemCopy.h \
     utils/SharedPtr.h \
+    output/OutputSet.h \
     QtAV/AVDemuxThread.h \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \

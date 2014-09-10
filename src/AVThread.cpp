@@ -23,7 +23,7 @@
 #include "QtAV/private/AVThread_p.h"
 #include "QtAV/AVOutput.h"
 #include "QtAV/Filter.h"
-#include "QtAV/private/OutputSet.h"
+#include "output/OutputSet.h"
 
 namespace QtAV {
 

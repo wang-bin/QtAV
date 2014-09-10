@@ -24,7 +24,7 @@
 #include "QtAV/Filter.h"
 #include "QtAV/FilterContext.h"
 #include "filter/FilterManager.h"
-#include "QtAV/private/OutputSet.h"
+#include "output/OutputSet.h"
 
 namespace QtAV {
 
