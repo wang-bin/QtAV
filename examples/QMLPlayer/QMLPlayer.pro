@@ -32,7 +32,7 @@ include($${PROJECTROOT}/examples/common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
 mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
 
-VERSION = 1.4.0
+VERSION = 1.3.4
 RC_ICONS = $$PROJECTROOT/src/QtAV.ico
 QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics | wbsecg1@gmail.com"
 QMAKE_TARGET_DESCRIPTION = "Multimedia playback framework based on Qt & FFmpeg. https://github.com/wang-bin/QtAV"

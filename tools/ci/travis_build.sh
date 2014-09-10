@@ -20,8 +20,7 @@ cd build
 #ffmpeg 2.3 libavutil clock_gettime need -lrt if glibc < 2.17
 FFMPEG=$1
 : ${FFMPEG:=ffmpeg-2.2.5}
-FFVER=(0.11.5 1.0.9 1.1.12 1.2.7 2.0.5 2.1.5 2.2.5)
-#FFVER=(0.11.5 1.0.9 2.0.5 2.2.5)
+FFVER=(1.0.9 1.1.12 1.2.7 2.0.5 2.1.5 2.2.5)
 MKSPEC=(linux-clang)
 
 export QT_PKG=Qt5.3.1-Linux64
@@ -72,7 +71,7 @@ all: \$(PKG)
 	echo \$^
 
 ffmpeg-%:
-	test -f \$@-linux-x86+x64.tar.xz || wget http://sourceforge.net/projects/qtav/files/depends/FFmpeg/linux/\$@-linux-x86+x64.tar.xz/download -O \$@-linux-x86+x64.tar.xz	
+	test -f \$@-linux-x86+x64.tar.xz || wget http://sourceforge.net/projects/qtav/files/depends/FFmpeg/linux/\$@-linux-x86+x64.tar.xz/download -O \$@-linux-x86+x64.tar.xz
 	tar Jxf \$@-linux-x86+x64.tar.xz
 
 Qt5%:
@@ -123,6 +122,3 @@ for V in ${FFVER[@]}; do
     buildqtav ffmpeg $V
 done
 )
-
-
-

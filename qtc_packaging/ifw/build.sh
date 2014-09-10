@@ -18,7 +18,7 @@ TARGET=${MKSPEC}-${ARCH}
 QTAV_VER=`grep PACKAGE_VERSION ../../QtAV.pro |cut -d "=" -f 2`
 QTAV_VER=`echo $QTAV_VER`
 
-function platform_is() {  
+function platform_is() {
   local name=$1
 #TODO: osx=>darwin
   local line=`uname -a |grep -i $name`
@@ -74,7 +74,8 @@ mkdir -p $TARGET/packages/com.qtav.product/data/
 
 # runtime
 echo "coping runtime files..."
-echo "[Paths]\nPrefix=." > $TARGET/packages/com.qtav.product.runtime/data/bin/qt.conf
+echo "[Paths]" > $TARGET/packages/com.qtav.product.runtime/data/bin/qt.conf
+echo "Prefix=." >> $TARGET/packages/com.qtav.product.runtime/data/bin/qt.conf
 QTMODULES=(Core Gui OpenGL Widgets Qml Quick Network Svg)
 platform_is Linux && QTMODULES+=(DBus)
 cp -af $BUILD/bin/* $TARGET/packages/com.qtav.product.runtime/data/bin
