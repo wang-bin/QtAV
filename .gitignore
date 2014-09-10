@@ -4,7 +4,6 @@ CVS
 .hg
 .hgignore
 
-bin
 obj
 TestResults
 *.pbxuser
