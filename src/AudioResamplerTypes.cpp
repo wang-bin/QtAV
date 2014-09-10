@@ -20,10 +20,11 @@
 ******************************************************************************/
 
 #include "QtAV/AudioResamplerTypes.h"
+#include "QtAV/private/mkid.h"
 
 namespace QtAV {
 
-AudioResamplerId AudioResamplerId_FF = 1;
-AudioResamplerId AudioResamplerId_Libav = 2;
+AudioResamplerId AudioResamplerId_FF = mkid32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
+AudioResamplerId AudioResamplerId_Libav = mkid32base36_5<'L', 'i', 'b', 'a', 'v'>::value;
 
 }

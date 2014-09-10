@@ -363,6 +363,7 @@ SDK_HEADERS *= \
 
 SDK_PRIVATE_HEADERS *= \
     QtAV/private/factory.h \
+    QtAV/private/mkid.h \
     QtAV/private/singleton.h \
     QtAV/private/SubtitleProcessor.h \
     QtAV/private/AVCompat.h \

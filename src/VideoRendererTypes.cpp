@@ -40,20 +40,21 @@
 #endif
 #endif
 #include "QtAV/private/factory.h"
+#include "QtAV/private/mkid.h"
 
 namespace QtAV {
 
 FACTORY_DEFINE(VideoRenderer)
 
-VideoRendererId VideoRendererId_Widget = 2;
-VideoRendererId VideoRendererId_GraphicsItem = 3;
-VideoRendererId VideoRendererId_GLWidget = 4;
-VideoRendererId VideoRendererId_GDI = 5;
-VideoRendererId VideoRendererId_Direct2D = 6;
-VideoRendererId VideoRendererId_XV = 7;
-VideoRendererId VideoRendererId_GLWidget2 = 8;
-VideoRendererId VideoRendererId_OpenGLWindow = 9;
-VideoRendererId VideoRendererId_OpenGLWidget = 10;
+VideoRendererId VideoRendererId_Widget = mkid32base36_6<'W', 'i', 'd', 'g', 'e', 't'>::value;
+VideoRendererId VideoRendererId_GraphicsItem = mkid32base36_6<'Q', 'G', 'r', 'a', 'p', 'h'>::value;
+VideoRendererId VideoRendererId_GLWidget = mkid32base36_6<'Q', 'G', 'L', 'W', 't', '1'>::value;
+VideoRendererId VideoRendererId_GDI = mkid32base36_3<'G', 'D', 'I'>::value;
+VideoRendererId VideoRendererId_Direct2D = mkid32base36_3<'D', '2', 'D'>::value;
+VideoRendererId VideoRendererId_XV = mkid32base36_6<'X', 'V', 'i', 'd', 'e', 'o'>::value;
+VideoRendererId VideoRendererId_GLWidget2 = mkid32base36_6<'Q', 'G', 'L', 'W', 't', '2'>::value;
+VideoRendererId VideoRendererId_OpenGLWindow = mkid32base36_6<'Q', 'O', 'G', 'L', 'W', 'w'>::value;
+VideoRendererId VideoRendererId_OpenGLWidget = mkid32base36_6<'Q', 'O', 'G', 'L', 'W', 't'>::value;
 
 #if QTAV_HAVE(WIDGETS)
 //QPainterRenderer is abstract. So can not register(operator new will needed)

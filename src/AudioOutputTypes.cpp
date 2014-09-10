@@ -22,13 +22,13 @@
 #include "QtAV/AudioOutputTypes.h"
 #include "QtAV/FactoryDefine.h"
 #include "QtAV/private/factory.h"
-
+#include "QtAV/private/mkid.h"
 namespace QtAV {
 
-AudioOutputId AudioOutputId_PortAudio = 1;
-AudioOutputId AudioOutputId_OpenAL = 2;
-AudioOutputId AudioOutputId_OpenSL = 3;
-AudioOutputId AudioOutputId_DSound = 4;
+AudioOutputId AudioOutputId_PortAudio = mkid32base36_5<'P', 'o', 'r', 't', 'A'>::value;
+AudioOutputId AudioOutputId_OpenAL = mkid32base36_6<'O', 'p', 'e', 'n', 'A', 'L'>::value;
+AudioOutputId AudioOutputId_OpenSL = mkid32base36_6<'O', 'p', 'e', 'n', 'S', 'L'>::value;
+AudioOutputId AudioOutputId_DSound = mkid32base36_6<'D', 'S', 'o', 'u', 'n', 'd'>::value;
 
 QVector<AudioOutputId> GetRegistedAudioOutputIds()
 {

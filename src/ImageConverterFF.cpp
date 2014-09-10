@@ -22,6 +22,7 @@
 #include "QtAV/ImageConverter.h"
 #include "QtAV/private/ImageConverter_p.h"
 #include "QtAV/private/AVCompat.h"
+#include "QtAV/private/mkid.h"
 #include "QtAV/prepost.h"
 
 namespace QtAV {
@@ -39,7 +40,7 @@ protected:
 };
 
 
-ImageConverterId ImageConverterId_FF = 1;
+ImageConverterId ImageConverterId_FF = mkid32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
 FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
 
 void RegisterImageConverterFF_Man()
