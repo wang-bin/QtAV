@@ -11,6 +11,9 @@ PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/common.pri)
 preparePaths($$OUT_PWD/../../out)
 
+VERSION = 1.4.0
+# windows: Qt5AV.dll, not Qt1AV.dll
+!mac_framework: VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 
 PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
 
@@ -46,27 +49,30 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   MKSPECS_DIR=$$[QMAKE_MKSPECS]
 }
 
+# copy files to a dir need '/' at the end
 mac_framework {
   sdk_install.commands = $$quote($$COPY_DIR $$system_path($$PROJECT_LIBDIR/QtAV.framework) $$system_path($$[QT_INSTALL_LIBS]))
 } else {
   sdk_install.commands = $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/src/QtAV/*.h) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
   sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/private))
-  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]))
+  sdk_install.commands += $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV/$$VERSION/QtAV/))
+  sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/$$VERSION/QtAV/private))
+  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*QtAV*) $$system_path($$[QT_INSTALL_LIBS]/))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
 }
 sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV) $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
 greaterThan(QT_MAJOR_VERSION, 4) {
   sdk_install.commands += $$quote($$COPY_DIR $$system_path($$BUILD_DIR/bin/QtAV) $$system_path($$[QT_INSTALL_QML]/QtAV))
-  sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/features/av.prf) $$system_path($$MKSPECS_DIR/features))
-  sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_lib_av*.pri) $$system_path($$MKSPECS_DIR/modules))
-  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/qml/plugins.qmltypes) $$system_path($$[QT_INSTALL_QML]/QtAV))
+  sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/features/av.prf) $$system_path($$MKSPECS_DIR/features/))
+  sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_lib_av*.pri) $$system_path($$MKSPECS_DIR/modules/))
+  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/qml/plugins.qmltypes) $$system_path($$[QT_INSTALL_QML]/QtAV/))
 } else {
   sdk_install.commands += $$quote($$COPY $$system_path($$PWD/qt4av.prf) $$system_path($$MKSPECS_DIR/features/av.prf))
 }
-win32: sdk_install.commands += $$quote($$MOVE $$system_path($$[QT_INSTALL_LIBS]/QtAV*.dll) $$system_path($$[QT_INSTALL_BINS]))
+win32: sdk_install.commands += $$quote($$MOVE $$system_path($$[QT_INSTALL_LIBS]/QtAV*.dll) $$system_path($$[QT_INSTALL_BINS]/))
 ## copy libcommon.so requred by QMLPlayer and player
-android: sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/libcommon.so) $$system_path($$[QT_INSTALL_LIBS]))
+android: sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/libcommon.so) $$system_path($$[QT_INSTALL_LIBS]/))
 
 mac_framework {
   sdk_uninstall.commands = $$quote($$RM_DIR $$system_path($$[QT_INSTALL_LIBS]/QtAV.framework))
@@ -102,9 +108,6 @@ AV_PRF_CONT += "!contains(QT, av): QT *= av"
 write_file($$OUT_PWD/mkspecs/features/av.prf, AV_PRF_CONT)
 
 
-VERSION = 1.3.4
-# windows: Qt5AV.dll, not Qt1AV.dll
-win32: VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 MODULE_QMAKE_OUTDIR = $$OUT_PWD
 MODULE_CONFIG = av
 MODULE_INCNAME = QtAV
