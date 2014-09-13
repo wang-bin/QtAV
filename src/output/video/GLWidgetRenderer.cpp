@@ -102,6 +102,7 @@ public:
       , a_TexCoords(-1)
       , u_matrix(-1)
       , u_bpp(-1)
+      , u_opacity(-1)
       , painter(0)
       , video_format(VideoFormat::Format_Invalid)
       , material_type(0)
@@ -250,7 +251,8 @@ public:
     QVector<GLint> u_Texture; //u_TextureN uniform. size is channel count
     GLint u_matrix;
     GLint u_colorMatrix;
-    GLuint u_bpp;
+    GLint u_bpp;
+    GLint u_opacity;
 
     QPainter *painter;
 
@@ -423,6 +425,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
     a_TexCoords = glGetAttribLocation(program, "a_TexCoords");
     u_matrix = glGetUniformLocation(program, "u_MVP_matrix");
     u_bpp = glGetUniformLocation(program, "u_bpp");
+    u_opacity = glGetUniformLocation(program, "u_opacity");
     // fragment shader
     u_colorMatrix = glGetUniformLocation(program, "u_colorMatrix");
 #else
@@ -443,6 +446,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
     a_TexCoords = shader_program->attributeLocation("a_TexCoords");
     u_matrix = shader_program->uniformLocation("u_MVP_matrix");
     u_bpp = shader_program->uniformLocation("u_bpp");
+    u_opacity = shader_program->uniformLocation("u_opacity");
     // fragment shader
     u_colorMatrix = shader_program->uniformLocation("u_colorMatrix");
 #endif //NO_QGL_SHADER
@@ -450,6 +454,7 @@ bool GLWidgetRendererPrivate::prepareShaderProgram(const VideoFormat &fmt, Color
     qDebug("glGetAttribLocation(\"a_TexCoords\") = %d\n", a_TexCoords);
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d\n", u_matrix);
     qDebug("glGetUniformLocation(\"u_bpp\") = %d\n", u_bpp);
+    qDebug("glGetUniformLocation(\"u_opacity\") = %d\n", u_opacity);
     qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d\n", u_colorMatrix);
 
     if (fmt.isRGB())
@@ -928,10 +933,12 @@ void GLWidgetRenderer::drawFrame()
     glUniformMatrix4fv(d.u_colorMatrix, 1, GL_FALSE, mat);
     glUniformMatrix4fv(d.u_matrix, 1, GL_FALSE/*transpose or not*/, d.mpv_matrix.constData());
     glUniform1f(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
+    glUniform1f(d.u_opacity, (GLfloat)1.0);
 #else
    d.shader_program->setUniformValue(d.u_colorMatrix, d.colorTransform.matrixRef());
    d.shader_program->setUniformValue(d.u_matrix, d.mpv_matrix);
    d.shader_program->setUniformValue(d.u_bpp, (GLfloat)d.video_format.bitsPerPixel(0));
+   d.shader_program->setUniformValue(d.u_opacity, (GLfloat)1.0);
 #endif
    // uniforms done. attributes begin
    //qpainter need. TODO: VBO?
