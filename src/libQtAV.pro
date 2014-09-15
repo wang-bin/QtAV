@@ -187,8 +187,11 @@ CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
-    HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h
-    SOURCES += codec/video/VideoDecoderCUDA.cpp
+    HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h \
+            cuda/SurfaceInterop_CUDA_GL.h
+    SOURCES += \
+            codec/video/VideoDecoderCUDA.cpp \
+            cuda/SurfaceInterop_CUDA_GL.cpp
     INCLUDEPATH += $$PWD/cuda cuda/dllapi
     config_dllapi:config_dllapi_cuda {
         DEFINES += QTAV_HAVE_DLLAPI_CUDA=1
@@ -400,7 +403,6 @@ HEADERS *= \
     QtAV/VideoThread.h \
     QtAV/ColorTransform.h \
     QtAV/VideoDecoderFFmpegHW.h
-
 
 # from mkspecs/features/qt_module.prf
 # OS X and iOS frameworks

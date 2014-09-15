@@ -28,6 +28,7 @@
 
 // high version will define cuXXX macro, so functions here will be not they look like
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
+// TODO: use driver version, here use internal version
 #define CUDA_FORCE_API_VERSION 3010
 #endif
 #include "dllapi/nv_inc.h"

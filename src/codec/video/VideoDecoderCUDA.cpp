@@ -420,6 +420,7 @@ bool VideoDecoderCUDAPrivate::initCuda()
     description = QString("CUDA device: %1 %2.%3 %4 MHz").arg(devname).arg(major).arg(minor).arg(clockRate/1000);
 
     //TODO: cuD3DCtxCreate > cuGLCtxCreate > cuCtxCreate
+    // check user option "readBack". if not "readBack" and ctx version < 5.0, check gl or angle and run cuGLCtxCreate or cuD3DCtxCreate
     checkCudaErrors(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev)); //CU_CTX_SCHED_AUTO?
 
     unsigned int ctx_ver = 0;

@@ -25,6 +25,15 @@
 #undef NV_CONFIG
 #define NV_CONFIG(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
 
+// use qt opengl to support dynamicgl
+// TODO: only define needed types not include?
+#include <QtGlobal>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/qopengl.h>
+#else
+#include <QtOpenGL/qgl.h>
+#endif
+
 #if NV_CONFIG(DLLAPI_CUDA)
 namespace dllapi {
 namespace cuda {
@@ -34,6 +43,7 @@ namespace cuda {
 #endif /* __cplusplus */
 
 #include "cuda.h"
+#include "cudaGL.h"
 #include "nvcuvid.h"
 
 #if defined(__cplusplus)
