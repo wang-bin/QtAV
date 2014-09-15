@@ -56,11 +56,14 @@ public:
     /// CUDA functions
     ////////////////////////////////////////////////////
     CUresult cuInit(unsigned int Flags);
+    CUresult cuCtxGetApiVersion(CUcontext ctx, unsigned int *version);
     CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev );
     CUresult cuCtxDestroy(CUcontext cuctx );
     CUresult cuCtxPushCurrent(CUcontext cuctx );
     CUresult cuCtxPopCurrent( CUcontext *pctx );
     CUresult cuCtxSynchronize();
+    CUresult cuMemGetInfo(unsigned int *free, unsigned int *total);
+    //CUresult cuMemGetInfo(size_t *free, size_t *total); //v2
     CUresult cuMemAllocHost(void **pp, unsigned int bytesize);
     CUresult cuMemFreeHost(void *p);
     CUresult cuMemcpyDtoH (void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );

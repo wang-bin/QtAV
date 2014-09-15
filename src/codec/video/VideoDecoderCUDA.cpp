@@ -146,6 +146,7 @@ public:
       , host_data_size(0)
       , create_flags(cudaVideoCreate_Default)
       , deinterlace(cudaVideoDeinterlaceMode_Adaptive)
+      , surface_auto(true)
       , nb_dec_surface(kMaxDecodeSurfaces)
     {
 #if QTAV_HAVE(DLLAPI_CUDA)
@@ -180,6 +181,7 @@ public:
     }
     bool initCuda();
     bool releaseCuda();
+    bool computeSurfaces();
     bool createCUVIDDecoder(cudaVideoCodec cudaCodec, int w, int h);
     bool createCUVIDParser();
     bool flushParser();
@@ -279,6 +281,7 @@ public:
 #else
     BlockingQueue<CUVIDPARSERDISPINFO*> frame_queue;
 #endif
+    bool surface_auto;
     QVector<bool> surface_in_use;
     int nb_dec_surface;
     QString description;
@@ -334,6 +337,7 @@ bool VideoDecoderCUDA::prepare()
     d.bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
     Q_ASSERT_X(d.bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
     // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
+    d.computeSurfaces();
     return d.createCUVIDDecoder(mapCodecFromFFmpeg(d.codec_ctx->codec_id), d.codec_ctx->coded_width, d.codec_ctx->coded_height)
             && d.createCUVIDParser();
 }
@@ -417,12 +421,10 @@ bool VideoDecoderCUDAPrivate::initCuda()
 
     //TODO: cuD3DCtxCreate > cuGLCtxCreate > cuCtxCreate
     checkCudaErrors(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev)); //CU_CTX_SCHED_AUTO?
-    CUcontext cuCurrent = NULL;
-    result = cuCtxPopCurrent(&cuCurrent);
-    if (result != CUDA_SUCCESS) {
-        qWarning("cuCtxPopCurrent: %d\n", result);
-        return false;
-    }
+
+    unsigned int ctx_ver = 0;
+    cuCtxGetApiVersion(NULL, &ctx_ver);
+    qDebug("CUDA Context API Version: %u", ctx_ver);
     checkCudaErrors(cuvidCtxLockCreate(&vid_ctx_lock, cuctx));
     {
         AutoCtxLock lock(this, vid_ctx_lock);
@@ -441,11 +443,13 @@ int VideoDecoderCUDA::surfaces() const
     return d_func().nb_dec_surface;
 }
 
+// not called internal
 void VideoDecoderCUDA::setSurfaces(int n)
 {
-    if (n <= 0)
-        n = kMaxDecodeSurfaces;
     DPTR_D(VideoDecoderCUDA);
+    d.surface_auto = n <= 0;
+    if (d.surface_auto)
+        return;
     d.nb_dec_surface = n;
     d.surface_in_use.resize(n);
     d.surface_in_use.fill(false);
@@ -502,6 +506,19 @@ bool VideoDecoderCUDAPrivate::releaseCuda()
     }
     // TODO: dllapi unload
     return true;
+}
+
+bool VideoDecoderCUDAPrivate::computeSurfaces()
+{
+    unsigned int mem_free = 0, mem_total = 0;
+    checkCudaErrors(cuMemGetInfo(&mem_free, &mem_total));
+    if (surface_auto)
+        nb_dec_surface = std::min(kMaxDecodeSurfaces, mem_free/(codec_ctx->coded_width*codec_ctx->coded_height)*2/3);
+    qDebug("Total amount of global memory: %.1f MB, free memory: %.1f MB, decoding surface: %d", (qreal)mem_total/(1024*1024), (qreal)mem_free/(1024*1024), nb_dec_surface);
+    surface_in_use.resize(nb_dec_surface);
+    surface_in_use.fill(false);
+    return true;
+
 }
 
 bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w, int h)

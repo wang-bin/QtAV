@@ -38,7 +38,7 @@ using namespace dllapi::cuda;
 
 #ifdef __cuda_cuda_h__
 
-// CUDA Driver API errors
+// CUDA Driver API errors, use cuGetErrorName, cuGetErrorString in higher version
 static const char *_cudaGetErrorEnum(CUresult error)
 {
     switch (error) {
@@ -118,7 +118,10 @@ inline int _ConvertSMVer2Cores(int major, int minor)
         { 0x20, 32 }, // Fermi Generation (SM 2.0) GF100 class
         { 0x21, 48 }, // Fermi Generation (SM 2.1) GF10x class
         { 0x30, 192}, // Kepler Generation (SM 3.0) GK10x class
+        { 0x32, 192}, // Kepler Generation (SM 3.2) GK10x class
         { 0x35, 192}, // Kepler Generation (SM 3.5) GK11x class
+        { 0x37, 192}, // Kepler Generation (SM 3.7) GK21x class
+        { 0x50, 128}, // Maxwell Generation (SM 5.0) GM10x class
         {   -1, -1 }
     };
     for (int index = 0; nGpuArchCoresPerSM[index].SM != -1; ++index) {
@@ -127,8 +130,8 @@ inline int _ConvertSMVer2Cores(int major, int minor)
         }
     }
     // If we don't find the values, we default use the previous one to run properly
-    printf("MapSMtoCores for SM %d.%d is undefined.  Default to use %d Cores/SM\n", major, minor, nGpuArchCoresPerSM[7].Cores);
-    return nGpuArchCoresPerSM[7].Cores;
+    printf("MapSMtoCores for SM %d.%d is undefined.  Default to use %d Cores/SM\n", major, minor, nGpuArchCoresPerSM[sizeof(nGpuArchCoresPerSM)/sizeof(sSMtoCores)-2].Cores);
+    return nGpuArchCoresPerSM[sizeof(nGpuArchCoresPerSM)/sizeof(sSMtoCores)-2].Cores;
 }
 
 // end of GPU Architecture definitions

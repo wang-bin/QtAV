@@ -27,10 +27,12 @@
 
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 typedef CUresult CUDAAPI tcuInit(unsigned int);
+typedef CUresult CUDAAPI tcuCtxGetApiVersion(CUcontext ctx, unsigned int *version);
 typedef CUresult CUDAAPI tcuCtxCreate(CUcontext *, unsigned int, CUdevice);
 typedef CUresult CUDAAPI tcuCtxDestroy(CUcontext);
 typedef CUresult CUDAAPI tcuCtxPushCurrent(CUcontext);
 typedef CUresult CUDAAPI tcuCtxPopCurrent(CUcontext *);
+typedef CUresult CUDAAPI tcuMemGetInfo(unsigned int *free, unsigned int *total);
 typedef CUresult CUDAAPI tcuMemAllocHost(void **pp, unsigned int bytesize);
 typedef CUresult CUDAAPI tcuMemFreeHost(void *p);
 typedef CUresult CUDAAPI tcuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );
@@ -96,10 +98,12 @@ public:
     QLibrary cuvid_dll;
     typedef struct {
         tcuInit* fp_tcuInit;
+        tcuCtxGetApiVersion* fp_tcuCtxGetApiVersion;
         tcuCtxCreate* fp_tcuCtxCreate;
         tcuCtxDestroy* fp_tcuCtxDestroy;
         tcuCtxPushCurrent* fp_tcuCtxPushCurrent;
         tcuCtxPopCurrent* fp_tcuCtxPopCurrent;
+        tcuMemGetInfo* fp_tcuMemGetInfo;
         tcuMemAllocHost* fp_tcuMemAllocHost;
         tcuMemFreeHost* fp_tcuMemFreeHost;
         tcuMemcpyDtoH* fp_tcuMemcpyDtoH;
@@ -158,6 +162,14 @@ CUresult cuda_api::cuInit(unsigned int Flags)
     return ctx->api.fp_tcuInit(Flags);
 }
 
+CUresult cuda_api::cuCtxGetApiVersion(CUcontext cuctx, unsigned int *version)
+{
+    if (!ctx->api.fp_tcuCtxGetApiVersion)
+        ctx->api.fp_tcuCtxGetApiVersion = (tcuCtxGetApiVersion*)ctx->cuda_dll.resolve("cuCtxGetApiVersion");
+    assert(ctx->api.fp_tcuCtxGetApiVersion);
+    return ctx->api.fp_tcuCtxGetApiVersion(cuctx, version);
+}
+
 CUresult cuda_api::cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev )
 {
     if (!ctx->api.fp_tcuCtxCreate)
@@ -188,6 +200,14 @@ CUresult cuda_api::cuCtxPopCurrent(CUcontext *pctx)
         ctx->api.fp_tcuCtxPopCurrent = (tcuCtxPopCurrent*)this->ctx->cuda_dll.resolve("cuCtxPopCurrent");
     assert(ctx->api.fp_tcuCtxPopCurrent);
     return ctx->api.fp_tcuCtxPopCurrent(pctx);
+}
+
+CUresult cuda_api::cuMemGetInfo(unsigned int *free, unsigned int *total)
+{
+    if (!ctx->api.fp_tcuMemGetInfo)
+        ctx->api.fp_tcuMemGetInfo = (tcuMemGetInfo*)ctx->cuda_dll.resolve("cuMemGetInfo");
+    assert(ctx->api.fp_tcuMemGetInfo);
+    return ctx->api.fp_tcuMemGetInfo(free, total);
 }
 
 CUresult cuda_api::cuMemAllocHost(void **pp, unsigned int bytesize)
@@ -472,7 +492,7 @@ int cuda_api::GetMaxGflopsGraphicsDeviceId() {
                 }
             }
             cuDeviceGetName(deviceName, 256, current_device);
-            printf("CUDA Device: %s, Compute: %d.%d, CUDA Cores: %d, Clock: %d MHz\n", deviceName, major, minor, multiProcessorCount * sm_per_multiproc, clockRate / 1000);
+            printf("CUDA Device: %s, Compute: %d.%d, CUDA Cores: %d, Clock: %d MHz, Driver Version: %d\n", deviceName, major, minor, multiProcessorCount * sm_per_multiproc, clockRate / 1000, version);
         }
         ++current_device;
     }
