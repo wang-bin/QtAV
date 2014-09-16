@@ -26,11 +26,16 @@
 #include <QtCore/QObject>
 #include <QtCore/QHash>
 #include <QtCore/QVariant>
+#include <QmlAV/Export.h>
 
 namespace QtAV {
 class Statistics;
 }
-class MediaMetaData : public QObject
+/*!
+ * \brief The MediaMetaData class
+ * TODO: Music, Movie
+ */
+class QMLAV_EXPORT MediaMetaData : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QVariant title READ title NOTIFY metaDataChanged)
@@ -81,7 +86,7 @@ class MediaMetaData : public QObject
     Q_PROPERTY(QVariant writer READ writer NOTIFY metaDataChanged)
     Q_ENUMS(Key)
 public:
-    // The same as Qt.Multimedia. Some are not implemented
+    // The same as Qt.Multimedia. Some are not implemented, marked as // X
     enum Key {
         Title,
         SubTitle, // X
@@ -101,8 +106,8 @@ public:
         RatingOrganization, // X
 
         // Media
-        Size,
-        MediaType,
+        Size, // X. Qt only implemented in dshow "FileSize"
+        MediaType, // ?
         Duration,
 
         // Audio
@@ -144,55 +149,8 @@ public:
         LeadPerformer,
         Writer,
 
-        // Photos // X
-        CameraManufacturer,
-        CameraModel,
-        Event,
-        Subject,
-        Orientation,
-        ExposureTime,
-        FNumber,
-        ExposureProgram,
-        ISOSpeedRatings,
-        ExposureBiasValue,
-        DateTimeOriginal,
-        DateTimeDigitized,
-        SubjectDistance,
-        MeteringMode,
-        LightSource,
-        Flash,
-        FocalLength,
-        ExposureMode,
-        WhiteBalance,
-        DigitalZoomRatio,
-        FocalLengthIn35mmFilm,
-        SceneCaptureType,
-        GainControl,
-        Contrast,
-        Saturation,
-        Sharpness,
-        DeviceSettingDescription,
-
-        // Location // X
-        GPSLatitude,
-        GPSLongitude,
-        GPSAltitude,
-        GPSTimeStamp,
-        GPSSatellites,
-        GPSStatus,
-        GPSDOP,
-        GPSSpeed,
-        GPSTrack,
-        GPSTrackRef,
-        GPSImgDirection,
-        GPSImgDirectionRef,
-        GPSMapDatum,
-        GPSProcessingMethod,
-        GPSAreaInformation,
-
-        PosterImage,
-        CoverArtImage,
-        ThumbnailImage,
+        PosterImage, // video
+        CoverArtImage, // music
     };
 
     explicit MediaMetaData(QObject *parent = 0);

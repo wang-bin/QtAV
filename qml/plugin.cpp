@@ -21,10 +21,10 @@
 
 #include <QtQml/QQmlExtensionPlugin>
 #include <QtQml/qqml.h>
-#include <QmlAV/QQuickItemRenderer.h>
-#include <QmlAV/QmlAVPlayer.h>
-#include <QmlAV/QuickSubtitle.h>
-
+#include "QmlAV/QQuickItemRenderer.h"
+#include "QmlAV/QmlAVPlayer.h"
+#include "QmlAV/QuickSubtitle.h"
+#include "QmlAV/MediaMetaData.h"
 namespace QtAV {
 
 class QtAVQmlPlugin : public QQmlExtensionPlugin
@@ -40,6 +40,7 @@ public:
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
         qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
+        qmlRegisterType<MediaMetaData>();
     }
 };
 } //namespace QtAV

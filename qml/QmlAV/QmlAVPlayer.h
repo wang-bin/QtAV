@@ -25,6 +25,7 @@
 #include <QmlAV/Export.h>
 #include <QtCore/QObject>
 #include <QmlAV/QQuickItemRenderer.h>
+#include <QmlAV/MediaMetaData.h>
 
 /*!
  *  Qt.Multimedia like api
@@ -54,6 +55,7 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(int loops READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
+    Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
 
     Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
 
@@ -123,6 +125,8 @@ public:
     bool autoPlay() const;
     void setAutoPlay(bool autoplay);
 
+    MediaMetaData *metaData() const;
+
     // "FFmpeg", "CUDA", "DXVA", "VAAPI" etc
     QStringList videoCodecs() const;
     QStringList videoCodecPriority() const;
@@ -182,6 +186,8 @@ private:
     QUrl mSource;
     QStringList mVideoCodecs;
     ChannelLayout mChannelLayout;
+
+    QScopedPointer<MediaMetaData> m_metaData;
 };
 
 #endif // QTAV_QML_AVPLAYER_H

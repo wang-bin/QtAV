@@ -90,6 +90,7 @@ Rectangle {
     Text {
         id: subtitleLabel
         horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignBottom
         font {
             pixelSize: Utils.scaled(20)
             bold: true
@@ -97,12 +98,7 @@ Rectangle {
         style: Text.Outline
         styleColor: "blue"
         color: "white"
-        anchors {
-            left: parent.left
-            right: parent.right
-            bottom: control.top
-        }
-        height: Utils.scaled(30)
+        anchors.fill: parent
 
         Subtitle {
             player: player
@@ -143,7 +139,22 @@ Rectangle {
         onVolumeChanged: player.volume = volume
         onOpenFile: fileDialog.open()
         onShowInfo: {
-            help.text = player.source
+            help.text = "<p>" + player.source + "</p>"
+                    + "<p>" + qsTr("Duration: ") + player.metaData.duration + "</p>"
+            if (player.hasVideo) {
+                help.text += "<h4>" + qsTr("Video") + "</h4>"
+                        + "<p>" + qsTr("Resolution") + ": " + player.metaData.resolution.width + "x" +  + player.metaData.resolution.height + "</p>"
+                        + "<p>" + qsTr("Codec") + ": " + player.metaData.videoCodec + "</p>"
+                        + "<p>" + qsTr("Frame rate") + ": " + player.metaData.videoFrameRate + "</p>"
+                        + "<p>" + qsTr("Bit rate") + ": " + player.metaData.videoBitRate + "</p>"
+            }
+            if (player.hasAudio) {
+                help.text += "<h4>" + qsTr("Audio") + "</h4>"
+                        + "<p>" + qsTr("Codec") + ": " + player.metaData.audioCodec + "</p>"
+                        + "<p>" + qsTr("Bit rate") + ": " + player.metaData.audioBitRate + "</p>"
+                        + "<p>" + qsTr("Sample rate") + ": " + player.metaData.sampleRate + "</p>"
+                        + "<p>" + qsTr("Channels") + ": " + player.metaData.channelCount + "</p>"
+            }
             donateBtn.visible = false
             help.visible = true
         }
@@ -181,6 +192,13 @@ Rectangle {
                     player.play()
                 }
                 break
+            case Qt.Key_Plus:
+                player.playbackRate += 0.1;
+                console.log("player.playbackRate: " + player.playbackRate);
+                break;
+            case Qt.Key_Minus:
+                player.playbackRate = Math.max(0.1, player.playbackRate - 0.1);
+                break;
             case Qt.Key_F:
                 control.toggleFullScreen()
                 break

@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QmlAVPlayer.h"
+#include "QmlAV/QmlAVPlayer.h"
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
 
@@ -35,7 +35,7 @@ static QStringList idsToNames(QVector<ID> ids) {
 template<typename ID, typename Factory>
 static QVector<ID> idsFromNames(const QStringList& names) {
     QVector<ID> decs;
-    foreach (QString name, names) {
+    foreach (const QString& name, names) {
         if (name.isEmpty())
             continue;
         ID id = Factory::id(name.toStdString(), false);
@@ -75,6 +75,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
 
 void QmlAVPlayer::classBegin()
 {
+    m_metaData.reset(new MediaMetaData());
 }
 
 void QmlAVPlayer::componentComplete()
@@ -161,6 +162,11 @@ void QmlAVPlayer::setAutoPlay(bool autoplay)
 
     mAutoPlay = autoplay;
     emit autoPlayChanged();
+}
+
+MediaMetaData* QmlAVPlayer::metaData() const
+{
+    return m_metaData.data();
 }
 
 QStringList QmlAVPlayer::videoCodecs() const
@@ -324,6 +330,8 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
             mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->play();
             setChannelLayout(channelLayout());
+            // TODO: in load()?
+            m_metaData->setValuesFromStatistics(mpPlayer->statistics());
         }
         break;
     case PausedState:
