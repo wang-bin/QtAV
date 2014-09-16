@@ -337,17 +337,17 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
     }
 }
 
-qreal QmlAVPlayer::speed() const
+qreal QmlAVPlayer::playbackRate() const
 {
     return mpPlayer->speed();
 }
 
-void QmlAVPlayer::setSpeed(qreal s)
+void QmlAVPlayer::setPlaybackRate(qreal s)
 {
     if (mpPlayer->speed() == s)
         return;
     mpPlayer->setSpeed(s);
-    emit speedChanged();
+    emit playbackRateChanged();
 }
 
 AVPlayer* QmlAVPlayer::player()

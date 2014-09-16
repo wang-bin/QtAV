@@ -27,7 +27,11 @@
 #include <QmlAV/QQuickItemRenderer.h>
 
 /*!
- *  Not work: autoPlay, autoLoad
+ *  Qt.Multimedia like api
+ * MISSING:
+ * bufferProgress, error, errorString, metaData
+ * NOT COMPLETE:
+ * seekable
  */
 namespace QtAV {
 class AVPlayer;
@@ -46,7 +50,7 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(PlaybackState playbackState READ playbackState NOTIFY playbackStateChanged)
     Q_PROPERTY(bool autoPlay READ autoPlay WRITE setAutoPlay NOTIFY autoPlayChanged)
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
-    Q_PROPERTY(qreal speed READ speed WRITE setSpeed NOTIFY speedChanged)
+    Q_PROPERTY(qreal playbackRate READ playbackRate WRITE setPlaybackRate NOTIFY playbackRateChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(int loops READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
@@ -92,6 +96,8 @@ public:
     QUrl source() const;
     void setSource(const QUrl& url);
 
+    // 0,1: play once. Loop.Infinite: forever.
+    // >1: play loopCount() - 1 times. different from Qt
     int loopCount() const;
     void setLoopCount(int c);
 
@@ -106,8 +112,8 @@ public:
     bool isSeekable() const;
     PlaybackState playbackState() const;
     void setPlaybackState(PlaybackState playbackState);
-    qreal speed() const;
-    void setSpeed(qreal s);
+    qreal playbackRate() const;
+    void setPlaybackRate(qreal s);
     Q_INVOKABLE void play(const QUrl& url);
     AVPlayer *player();
 
@@ -150,7 +156,7 @@ Q_SIGNALS:
     void videoOutChanged();
     void playbackStateChanged();
     void autoPlayChanged();
-    void speedChanged();
+    void playbackRateChanged();
     void paused();
     void stopped();
     void playing();
