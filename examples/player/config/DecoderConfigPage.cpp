@@ -320,7 +320,7 @@ void DecoderConfigPage::updateDecodersUi()
     QStringList all_names = idsToNames(sDecodersUi);
     //qDebug() << "updateDecodersUi " << this << " " << names << " all: " << all_names;
     int idx = 0;
-    foreach (QString name, all_names) {
+    foreach (const QString& name, all_names) {
         DecoderItemWidget * iw = 0;
         for (int i = idx; i < mDecItems.size(); ++i) {
            if (mDecItems.at(i)->name() != name)

@@ -384,7 +384,7 @@ void VideoDecoderVAAPI::setDisplayPriority(const QStringList &priority)
     d.display_priority.clear();
     int idx = staticMetaObject.indexOfEnumerator("DisplayType");
     const QMetaEnum me = staticMetaObject.enumerator(idx);
-    foreach (QString disp, priority) {
+    foreach (const QString& disp, priority) {
         d.display_priority.push_back((DisplayType)me.keyToValue(disp.toUtf8().constData()));
     }
 }

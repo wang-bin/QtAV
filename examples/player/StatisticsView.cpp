@@ -215,7 +215,7 @@ void StatisticsView::timerEvent(QTimerEvent *e)
 void StatisticsView::initBaseItems(QList<QTreeWidgetItem *> *items)
 {
     QTreeWidgetItem *item = 0;
-    foreach(QString key, getBaseInfoKeys()) {
+    foreach(const QString& key, getBaseInfoKeys()) {
         item = new QTreeWidgetItem(0);
         item->setData(0, Qt::DisplayRole, key);
         items->append(item);
@@ -227,7 +227,7 @@ QTreeWidgetItem* StatisticsView::createNodeWithItems(QTreeWidget *view, const QS
     QTreeWidgetItem *nodeItem = new QTreeWidgetItem(view);
     nodeItem->setData(0, Qt::DisplayRole, name);
     QTreeWidgetItem *item = 0;
-    foreach(QString key, itemNames) {
+    foreach(const QString& key, itemNames) {
         item = new QTreeWidgetItem(nodeItem);
         item->setData(0, Qt::DisplayRole, key);
         nodeItem->addChild(item);

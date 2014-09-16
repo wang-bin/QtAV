@@ -149,7 +149,7 @@ void Subtitle::setEngines(const QStringList &value)
     if (priv->engine_names.isEmpty()) {
         return;
     }
-    foreach (QString e, priv->engine_names) {
+    foreach (const QString& e, priv->engine_names) {
         QList<SubtitleProcessor*>::iterator it = priv->processors.begin();
         while (it != priv->processors.end()) {
             if (!(*it)) {
@@ -298,7 +298,7 @@ void Subtitle::load()
     QStringList paths = priv->find();
     if (paths.isEmpty())
         return;
-    foreach (QString path, paths) {
+    foreach (const QString& path, paths) {
         if (path.isEmpty())
             continue;
         u8 = priv->readFromFile(path);
@@ -443,7 +443,7 @@ QStringList Subtitle::Private::find()
     QFileInfo fi(file_name);
     QString name = fi.fileName();
     QStringList filters;
-    foreach (QString suf, sfx) {
+    foreach (const QString& suf, sfx) {
         filters.append(QString("%1*.%2").arg(name).arg(suf));
     }
     QDir dir(fi.dir());
@@ -452,7 +452,7 @@ QStringList Subtitle::Private::find()
         filters.clear();
         // a.mp4 => a
         name = fi.completeBaseName(); // video suffix has only 1 dot
-        foreach (QString suf, sfx) {
+        foreach (const QString& suf, sfx) {
             filters.append(QString("%1*.%2").arg(name).arg(suf));
         }
         list = dir.entryList(filters, QDir::Files, QDir::Unsorted);
@@ -462,7 +462,7 @@ QStringList Subtitle::Private::find()
     // TODO: sort. get entryList from nameFilters 1 by 1 is slower?
     QStringList sorted;
     // sfx is not empty, sort to the given order (sfx's order)
-    foreach (QString suf, sfx) {
+    foreach (const QString& suf, sfx) {
         if (list.isEmpty())
             break;
         QRegExp rx("*." + suf);
@@ -536,7 +536,7 @@ bool Subtitle::Private::processRawData(const QByteArray &data)
         return false;
     QList<SubtitleFrame> fs(processor->frames());
     std::sort(fs.begin(), fs.end());
-    foreach (SubtitleFrame f, fs) {
+    foreach (const SubtitleFrame& f, fs) {
        frames.push_back(f);
     }
     itf = frames.begin();

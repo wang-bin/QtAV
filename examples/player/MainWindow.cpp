@@ -403,7 +403,7 @@ void MainWindow::setupUi()
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
     csBox->addItem(tr("Auto detect"), "AutoDetect");
     csBox->addItem(tr("System"), "System");
-    foreach (QByteArray cs, QTextCodec::availableCodecs()) {
+    foreach (const QByteArray& cs, QTextCodec::availableCodecs()) {
         csBox->addItem(cs, cs);
     }
     connect(csBox, SIGNAL(activated(QString)), SLOT(setSubtitleCharset(QString)));
@@ -712,7 +712,7 @@ void MainWindow::play(const QString &name)
 void MainWindow::setVideoDecoderNames(const QStringList &vd)
 {
     QStringList vdnames;
-    foreach (QString v, vd) {
+    foreach (const QString& v, vd) {
         vdnames << v.toLower();
     }
     QVector<VideoDecoderId> vidp;

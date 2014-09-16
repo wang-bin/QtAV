@@ -52,7 +52,7 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     formLayout->addRow(tr("Save format"), mpFormat);
     QList<QByteArray> formats;
     formats << "YUV" << QImageWriter::supportedImageFormats();
-    foreach (QByteArray fmt, formats) {
+    foreach (const QByteArray& fmt, formats) {
         mpFormat->addItem(fmt);
     }
     int idx = mpFormat->findText(Config::instance().captureFormat());
