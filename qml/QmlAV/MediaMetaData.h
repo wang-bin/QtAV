@@ -23,9 +23,12 @@
 #ifndef QTAV_QML_MEDIAMETADATA_H
 #define QTAV_QML_MEDIAMETADATA_H
 
+#include <QtCore/QDateTime>
 #include <QtCore/QObject>
 #include <QtCore/QHash>
+#include <QtCore/QUrl>
 #include <QtCore/QVariant>
+#include <QtGui/QImage>
 #include <QmlAV/Export.h>
 
 namespace QtAV {
@@ -156,55 +159,55 @@ public:
     explicit MediaMetaData(QObject *parent = 0);
     void setValuesFromStatistics(const QtAV::Statistics& st);
     void setValue(Key k, const QVariant& v);
-    QVariant value(Key k) const;
+    QVariant value(Key k, const QVariant& defaultValue = QVariant()) const;
     QString name(Key k) const;
 
-    QVariant title() const { return value(Title); }
-    QVariant subTitle() const { return value(SubTitle); }
-    QVariant author() const { return value(Author); }
-    QVariant comment() const { return value(Comment); }
-    QVariant description() const { return value(Description); }
-    QVariant category() const { return value(Category); }
-    QVariant genre() const { return value(Genre); }
-    QVariant year() const { return value(Year); }
-    QVariant date() const { return value(Date); }
-    QVariant userRating() const { return value(UserRating); }
-    QVariant keywords() const { return value(Keywords); }
-    QVariant language() const { return value(Language); }
-    QVariant publisher() const { return value(Publisher); }
-    QVariant copyright() const { return value(Copyright); }
-    QVariant parentalRating() const { return value(ParentalRating); }
-    QVariant ratingOrganization() const { return value(RatingOrganization); }
-    QVariant size() const { return value(Size); }
-    QVariant mediaType() const { return value(MediaType); }
-    QVariant duration() const { return value(Duration); }
-    QVariant audioBitRate() const { return value(AudioBitRate); }
-    QVariant audioCodec() const { return value(AudioCodec); }
-    QVariant averageLevel() const { return value(AverageLevel); }
-    QVariant channelCount() const { return value(ChannelCount); }
-    QVariant peakValue() const { return value(PeakValue); }
-    QVariant sampleRate() const { return value(SampleRate); }
-    QVariant albumTitle() const { return value(AlbumTitle); }
-    QVariant albumArtist() const { return value(AlbumArtist); }
-    QVariant contributingArtist() const { return value(ContributingArtist); }
-    QVariant composer() const { return value(Composer); }
-    QVariant conductor() const { return value(Conductor); }
-    QVariant lyrics() const { return value(Lyrics); }
-    QVariant mood() const { return value(Mood); }
-    QVariant trackNumber() const { return value(TrackNumber); }
-    QVariant trackCount() const { return value(TrackCount); }
-    QVariant coverArtUrlSmall() const { return value(CoverArtUrlSmall); }
-    QVariant coverArtUrlLarge() const { return value(CoverArtUrlLarge); }
-    QVariant resolution() const { return value(Resolution); }
-    QVariant pixelAspectRatio() const { return value(PixelAspectRatio); }
-    QVariant videoFrameRate() const { return value(VideoFrameRate); }
-    QVariant videoBitRate() const { return value(VideoBitRate); }
-    QVariant videoCodec() const { return value(VideoCodec); }
-    QVariant posterUrl() const { return value(PosterUrl); }
-    QVariant chapterNumber() const { return value(ChapterNumber); }
-    QVariant director() const { return value(Director); }
-    QVariant leadPerformer() const { return value(LeadPerformer); }
-    QVariant writer() const { return value(Writer); }
+    QVariant title() const { return value(Title, QString()); }
+    QVariant subTitle() const { return value(SubTitle, QString()); }
+    QVariant author() const { return value(Author, QStringList()); }
+    QVariant comment() const { return value(Comment, QString()); }
+    QVariant description() const { return value(Description, QString()); }
+    QVariant category() const { return value(Category, QStringList()); }
+    QVariant genre() const { return value(Genre, QStringList()); }
+    QVariant year() const { return value(Year, int(0)); }
+    QVariant date() const { return value(Date, QDate()); }
+    QVariant userRating() const { return value(UserRating, int(0)); }
+    QVariant keywords() const { return value(Keywords, QStringList()); }
+    QVariant language() const { return value(Language, QString()); }
+    QVariant publisher() const { return value(Publisher, QString()); }
+    QVariant copyright() const { return value(Copyright, QString()); }
+    QVariant parentalRating() const { return value(ParentalRating, QString()); }
+    QVariant ratingOrganization() const { return value(RatingOrganization, QString()); }
+    QVariant size() const { return value(Size, qint64(0)); }
+    QVariant mediaType() const { return value(MediaType, QString()); }
+    QVariant duration() const { return value(Duration, qint64(0)); }
+    QVariant audioBitRate() const { return value(AudioBitRate, int(0)); }
+    QVariant audioCodec() const { return value(AudioCodec, QString()); }
+    QVariant averageLevel() const { return value(AverageLevel, int(0)); }
+    QVariant channelCount() const { return value(ChannelCount, int(0)); }
+    QVariant peakValue() const { return value(PeakValue, int(0)); }
+    QVariant sampleRate() const { return value(SampleRate, int(0)); }
+    QVariant albumTitle() const { return value(AlbumTitle, QString()); }
+    QVariant albumArtist() const { return value(AlbumArtist, QString()); }
+    QVariant contributingArtist() const { return value(ContributingArtist, QStringList()); }
+    QVariant composer() const { return value(Composer, QStringList()); }
+    QVariant conductor() const { return value(Conductor, QString()); }
+    QVariant lyrics() const { return value(Lyrics, QString()); }
+    QVariant mood() const { return value(Mood, QString()); }
+    QVariant trackNumber() const { return value(TrackNumber, int(0)); }
+    QVariant trackCount() const { return value(TrackCount, int(0)); }
+    QVariant coverArtUrlSmall() const { return value(CoverArtUrlSmall, QUrl()); }
+    QVariant coverArtUrlLarge() const { return value(CoverArtUrlLarge, QUrl()); }
+    QVariant resolution() const { return value(Resolution, QSize()); }
+    QVariant pixelAspectRatio() const { return value(PixelAspectRatio, QSize()); }
+    QVariant videoFrameRate() const { return value(VideoFrameRate, qreal(0.0)); }
+    QVariant videoBitRate() const { return value(VideoBitRate, int(0)); }
+    QVariant videoCodec() const { return value(VideoCodec, QString()); }
+    QVariant posterUrl() const { return value(PosterUrl, QUrl()); }
+    QVariant chapterNumber() const { return value(ChapterNumber, int(0)); }
+    QVariant director() const { return value(Director, QString()); }
+    QVariant leadPerformer() const { return value(LeadPerformer, QStringList()); }
+    QVariant writer() const { return value(Writer, QStringList()); }
 
 Q_SIGNALS:
     void metaDataChanged();

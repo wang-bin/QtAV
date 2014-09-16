@@ -21,9 +21,7 @@
 ******************************************************************************/
 
 #include "QmlAV/MediaMetaData.h"
-#include <QtCore/QDateTime>
 #include <QtCore/QMetaEnum>
-#include <QtCore/QSize>
 #include <QtAV/Statistics.h>
 
 using namespace QtAV;
@@ -65,7 +63,7 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
             setValue(key, it.value());
             continue;
         }
-        if (it.key() == QStringLiteral("track")) {
+        if (it.key().toLower() == QStringLiteral("track")) {
             int slash = it.value().indexOf(QChar('/'));
             if (slash < 0) {
                 setValue(TrackNumber, it.value().toInt());
@@ -75,7 +73,7 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
             setValue(TrackCount, it.value().midRef(slash+1).toInt());
             continue;
         }
-        if (it.key() == QStringLiteral("date")) {
+        if (it.key().toLower() == QStringLiteral("date")) {
             // ISO 8601 is preferred in ffmpeg
             setValue(Date, QDate::fromString(it.value(), Qt::ISODate));
             continue;
@@ -104,7 +102,7 @@ MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
     { (Key)-1, QString() },
     };
     for (int i = 0; (int)key_map[i].key >= 0; ++i) {
-        if (name == key_map[i].name)
+        if (name.toLower() == key_map[i].name)
             return key_map[i].key;
     }
     return (Key)-1;
@@ -118,9 +116,9 @@ void MediaMetaData::setValue(Key k, const QVariant &v)
     emit metaDataChanged();
 }
 
-QVariant MediaMetaData::value(Key k) const
+QVariant MediaMetaData::value(Key k, const QVariant &defaultValue) const
 {
-    return m_metadata.value(k);
+    return m_metadata.value(k, defaultValue);
 }
 
 QString MediaMetaData::name(Key k) const
