@@ -755,6 +755,8 @@ int AVDemuxer::audioStream() const
 {
     if (audio_stream != -2) //-2: not parsed, -1 not found.
         return audio_stream;
+    if (!format_context)
+        return -2;
     audio_stream = -1;
     for (unsigned int i=0; i<format_context->nb_streams; ++i) {
         if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
@@ -786,6 +788,8 @@ int AVDemuxer::videoStream() const
 {
     if (video_stream != -2) //-2: not parsed, -1 not found.
         return video_stream;
+    if (!format_context)
+        return -2;
     video_stream = -1;
     for (unsigned int i=0; i<format_context->nb_streams; ++i) {
         if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
