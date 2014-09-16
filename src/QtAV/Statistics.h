@@ -61,7 +61,7 @@ public:
         QString decoder;
         //common audio/video info that may be used(visualize) by filters
         QTime current_time, total_time, start_time; //TODO: in AVFormatContext and AVStream, what's the difference?
-        qreal bit_rate;
+        int bit_rate;
         qint64 frames; //AVStream.nb_frames. AVCodecContext.frame_number?
         qint64 size; //audio/video stream size. AVCodecContext.frame_size?
 
