@@ -63,7 +63,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
             setValue(key, it.value());
             continue;
         }
-        if (it.key().toLower() == QStringLiteral("track")) {
+        const QString keyName(it.key().toLower());
+        if (keyName == QStringLiteral("track")) {
             int slash = it.value().indexOf(QChar('/'));
             if (slash < 0) {
                 setValue(TrackNumber, it.value().toInt());
@@ -73,9 +74,22 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
             setValue(TrackCount, it.value().midRef(slash+1).toInt());
             continue;
         }
-        if (it.key().toLower() == QStringLiteral("date")) {
+        if (keyName == QStringLiteral("date")
+                || it.key().toLower() == QStringLiteral("creation_time")
+                ) {
             // ISO 8601 is preferred in ffmpeg
+            bool ok = false;
+            int year = it.value().toInt(&ok);
+            if (ok) {
+                //if (year > 1000) //?
+                    setValue(Year, year);
+                    continue;
+            }
             setValue(Date, QDate::fromString(it.value(), Qt::ISODate));
+            continue;
+        }
+        if (keyName.contains(QStringLiteral("genre"))) {
+            setValue(Genre, it.value().split(QChar(','))); // ',' ? not sure
             continue;
         }
     }
@@ -83,10 +97,11 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
 
 MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
 {
-    struct {
+    typedef struct {
         Key key;
         QString name;
-    } key_map[] = {
+    } key_t;
+    key_t key_map[] = {
     { AlbumTitle, QStringLiteral("album") }, //?
     { AlbumArtist, QStringLiteral("album_artist") },
     { Author, QStringLiteral("artist") }, //?
@@ -99,11 +114,28 @@ MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
     { Title, QStringLiteral("title") },
     //{ TrackNumber, QStringLiteral("track") }, // can be "current/total"
     //{ TrackCount, QStringLiteral("track") }, // can be "current/total"
+
+    // below are keys not listed in ffmpeg generic tag names and value is a QString
+    { Description, QStringLiteral("description") }, //dx
     { (Key)-1, QString() },
     };
     for (int i = 0; (int)key_map[i].key >= 0; ++i) {
         if (name.toLower() == key_map[i].name)
             return key_map[i].key;
+    }
+    // below are keys not listed in ffmpeg generic tag names and value is a QString
+    key_t wm_key[] = {
+        { UserRating, QStringLiteral("rating") }, //dx, WM/
+        { ParentalRating, QStringLiteral("parentalrating") }, //dx, WM/
+        //{ RatingOrganization, QStringLiteral("rating_organization") },
+        { Conductor, QStringLiteral("conductor") }, //dx, WM/
+        { Lyrics, QStringLiteral("lyrics") }, //dx, WM/
+        { Mood, QStringLiteral("mood") }, //dx, WM/
+        { (Key)-1, QString() },
+    };
+    for (int i = 0; (int)wm_key[i].key >= 0; ++i) {
+        if (name.toLower().contains(wm_key[i].name))
+            return wm_key[i].key;
     }
     return (Key)-1;
 }

@@ -95,13 +95,13 @@ public:
         SubTitle, // X
         Author,
         Comment,
-        Description, // X
-        Category, // X
+        Description, // ?
+        Category, // X. dx
         Genre, // X
         Year, // X
         Date,
-        UserRating, // X
-        Keywords, // X
+        UserRating, // ?. dx
+        Keywords, // x. dx
         Language,
         Publisher,
         Copyright,
@@ -116,9 +116,9 @@ public:
         // Audio
         AudioBitRate,
         AudioCodec,
-        AverageLevel, // X
+        AverageLevel, // X. dx
         ChannelCount,
-        PeakValue, // X
+        PeakValue, // X. dx
         SampleRate,
 
         // Music
@@ -126,9 +126,9 @@ public:
         AlbumArtist,
         ContributingArtist, // X
         Composer,
-        Conductor, // X
-        Lyrics, // X
-        Mood, // X
+        Conductor, // ?
+        Lyrics, // ?
+        Mood, // ?
         TrackNumber,
         TrackCount,
 
