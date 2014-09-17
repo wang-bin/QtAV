@@ -19,3 +19,41 @@ function scaled(x) {
     return x * scaleRatio;
 }
 
+function htmlEscaped(s) {
+    if (!s) {
+        return '';
+    }
+    var escaped = '';
+    var namedHtml = {
+        '38': '&amp;',
+        '60': '&lt;',
+        '62': '&gt;',
+        '34': '&quot;',
+        '160': '&nbsp;',
+        '162': '&cent;',
+        '163': '&pound;',
+        '164': '&curren;',
+        '169': '&copy;',
+        '174': '&reg;',
+    };
+    var wasNewLine = 0;
+    for (var i = 0, il = s.length; i < il; ++i) {
+        var c = s.charCodeAt(i);
+        var es = namedHtml[c];
+        if (typeof es !== 'undefined') {
+            wasNewLine = 0;
+            escaped += es;
+        } else {
+            if (c === 13 || c === 10) {
+                if (wasNewLine == 0)
+                    escaped += '<br>';
+                wasNewLine++;
+            } else {
+                wasNewLine = 0;
+                escaped += String.fromCharCode(c);
+            }
+        }
+    }
+    return escaped;
+}
+

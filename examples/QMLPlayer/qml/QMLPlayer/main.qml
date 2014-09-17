@@ -139,8 +139,29 @@ Rectangle {
         onVolumeChanged: player.volume = volume
         onOpenFile: fileDialog.open()
         onShowInfo: {
-            help.text = "<p>" + player.source + "</p>"
+            help.text = "<p>" + Utils.htmlEscaped(player.source) + "</p>"
                     + "<p>" + qsTr("Duration: ") + player.metaData.duration + "</p>"
+            if (player.metaData.title.length > 0)
+                help.text += "<p>" + qsTr("Title") + ": " +player.metaData.title + "</p>"
+            if (player.metaData.albumTitle.length > 0)
+                help.text += "<p>" + qsTr("Album") + ": " + Utils.htmlEscaped(player.metaData.albumTitle) + "</p>"
+            if (player.metaData.title.length > 0)
+                help.text += "<p>" + qsTr("Comment") + ": " + Utils.htmlEscaped(player.metaData.comment) + "</p>"
+            if (player.metaData.year > 0)
+                help.text += "<p>" + qsTr("Year") + ": " + player.metaData.year + "</p>"
+            if (player.metaData.date.length > 0)
+                help.text += "<p>" + qsTr("Date") + ": " + player.metaData.date + "</p>"
+            if (player.metaData.author.length > 0)
+                help.text += "<p>" + qsTr("Author") + ": " + Utils.htmlEscaped(player.metaData.author) + "</p>"
+            if (player.metaData.publisher.length > 0)
+                help.text += "<p>" + qsTr("Publisher") + ": " + Utils.htmlEscaped(player.metaData.publisher) + "</p>"
+            if (player.metaData.genre.length > 0)
+                help.text += "<p>" + qsTr("Genre") + ": " + player.metaData.genre + "</p>"
+            if (player.metaData.trackNumber > 0)
+                help.text += "<p>" + qsTr("Track") + ": " + player.metaData.trackNumber + "</p>"
+            if (player.metaData.trackCount > 0)
+                help.text += "<p>" + qsTr("Track count") + ": " + player.metaData.trackCount + "</p>"
+
             if (player.hasVideo) {
                 help.text += "<h4>" + qsTr("Video") + "</h4>"
                         + "<p>" + qsTr("Resolution") + ": " + player.metaData.resolution.width + "x" +  + player.metaData.resolution.height + "</p>"
