@@ -286,8 +286,6 @@ public:
     VideoDecoderDXVAPrivate():
         VideoDecoderFFmpegHWPrivate()
     {
-        va_pixfmt = QTAV_PIX_FMT_C(DXVA2_VLD);
-
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
@@ -333,7 +331,7 @@ public:
 
     bool getBuffer(void **opaque, uint8_t **data);
     void releaseBuffer(void *opaque, uint8_t *data);
-
+    AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(DXVA2_VLD);}
     /* DLL */
     HINSTANCE hd3d9_dll;
     HINSTANCE hdxva2_dll;
@@ -976,9 +974,6 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
 
 bool VideoDecoderDXVAPrivate::open()
 {
-    if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
-        codec_ctx->pix_fmt = va_pixfmt;
-
     if (!D3dCreateDevice()) {
         qWarning("Failed to create Direct3D device");
         goto error;

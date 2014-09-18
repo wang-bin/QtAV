@@ -77,7 +77,6 @@ public:
         , copy_uswc(false)
     {
         description = "VDA";
-        va_pixfmt = QTAV_PIX_FMT_C(VDA_VLD);
         memset(&hw_ctx, 0, sizeof(hw_ctx));
     }
     ~VideoDecoderVDAPrivate() {}
@@ -87,6 +86,7 @@ public:
     virtual bool setup(void **hwctx, int w, int h);
     virtual bool getBuffer(void **opaque, uint8_t **data);
     virtual void releaseBuffer(void *opaque, uint8_t *data);
+    virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VDA_VLD);}
 
     struct vda_context  hw_ctx;
     // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
@@ -302,9 +302,7 @@ bool VideoDecoderVDAPrivate::open()
     if (codec_ctx->codec_id != AV_CODEC_ID_H264) {
         qWarning("input codec (%s) isn't H264, canceling VDA decoding", codec_ctx->codec_name);
         return false;
-    }    
-    if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
-        codec_ctx->pix_fmt = va_pixfmt;
+    }
 #if 0
     if (!codec_ctx->extradata || codec_ctx->extradata_size < 7) {
         qWarning("VDA requires extradata.");

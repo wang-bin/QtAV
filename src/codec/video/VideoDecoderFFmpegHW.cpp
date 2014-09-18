@@ -141,7 +141,7 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
         p_dec->fmt_in.i_level = p_context->level;
 #endif
     for (size_t i = 0; pi_fmt[i] != PIX_FMT_NONE; i++) {
-        if (va_pixfmt != pi_fmt[i])
+        if (vaPixelFormat() != pi_fmt[i])
             continue;
 
         /* We try to call vlc_va_Setup when possible to detect errors when

@@ -120,7 +120,6 @@ public:
         surface_height = 0;
         image.image_id = VA_INVALID_ID;
         supports_derive = false;
-        va_pixfmt = QTAV_PIX_FMT_C(VAAPI_VLD);
         // set by user. don't reset in when call destroy
         surface_auto = true;
         nb_surfaces = 0;
@@ -136,6 +135,7 @@ public:
     virtual bool setup(void **hwctx, int w, int h);
     virtual bool getBuffer(void **opaque, uint8_t **data);
     virtual void releaseBuffer(void *opaque, uint8_t *data);
+    virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VAAPI_VLD); }
 
     bool support_4k;
     VideoDecoderVAAPI::DisplayType display_type;
@@ -402,8 +402,6 @@ QStringList VideoDecoderVAAPI::displayPriority() const
 
 bool VideoDecoderVAAPIPrivate::open()
 {
-    if (va_pixfmt != QTAV_PIX_FMT_C(NONE))
-        codec_ctx->pix_fmt = va_pixfmt;
 #define VAProfileNone ((VAProfile)-1) //maybe not defined for old va
     VAProfile i_profile = VAProfileNone;
     int i_surfaces = 0;

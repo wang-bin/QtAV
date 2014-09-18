@@ -37,14 +37,12 @@ class Q_AV_PRIVATE_EXPORT VideoDecoderFFmpegHWPrivate : public VideoDecoderPriva
 public:
     VideoDecoderFFmpegHWPrivate()
         : VideoDecoderPrivate()
-        , va_pixfmt(QTAV_PIX_FMT_C(NONE))
     {
         get_format = 0;
         get_buffer = 0;
         release_buffer = 0;
         reget_buffer = 0;
         get_buffer2 = 0;
-        // subclass setup va_pixfmt here
     }
 
     virtual ~VideoDecoderFFmpegHWPrivate() {} //ctx is 0 now
@@ -66,8 +64,8 @@ public:
     AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt);
     virtual bool getBuffer(void **opaque, uint8_t **data) = 0;
     virtual void releaseBuffer(void *opaque, uint8_t *data) = 0;
+    virtual AVPixelFormat vaPixelFormat() const = 0;
 
-    AVPixelFormat va_pixfmt;
     AVPixelFormat pixfmt; //store old one
     //store old values because it does not own AVCodecContext
     AVPixelFormat (*get_format)(struct AVCodecContext *s, const AVPixelFormat * fmt);
