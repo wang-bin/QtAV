@@ -113,7 +113,8 @@ public:
 
     qreal timestamp() const;
     // call setTimestamp before getText/Image
-    Q_INVOKABLE QString getText() const; //plain text
+    //plain text. separated by '\n' if more more than 1 text rects found
+    Q_INVOKABLE QString getText() const;
     Q_INVOKABLE QImage getImage(int width, int height);
 
     // if

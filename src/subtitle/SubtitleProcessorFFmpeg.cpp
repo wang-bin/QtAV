@@ -133,11 +133,16 @@ QList<SubtitleFrame> SubtitleProcessorFFmpeg::frames() const
 
 QString SubtitleProcessorFFmpeg::getText(qreal pts) const
 {
+    QString text;
     for (int i = 0; i < m_frames.size(); ++i) {
-        if (m_frames[i].begin <= pts && m_frames[i].end >= pts)
-            return m_frames[i].text;
+        if (m_frames[i].begin <= pts && m_frames[i].end >= pts) {
+            text += m_frames[i].text + "\n";
+            continue;
+        }
+        if (!text.isEmpty())
+            break;
     }
-    return QString();
+    return text.trimmed();
 }
 
 QImage SubtitleProcessorFFmpeg::getImage(qreal pts, int width, int height)

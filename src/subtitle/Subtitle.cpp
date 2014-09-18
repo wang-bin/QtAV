@@ -46,21 +46,25 @@ public:
     Private()
         : loaded(false)
         , fuzzy_match(true)
+        , update_text(true)
         , update_image(true)
         , processor(0)
         , codec("AutoDetect")
         , t(0)
+        , current_count(0)
     {}
     void reset() {
         QMutexLocker lock(&mutex);
         Q_UNUSED(lock);
         loaded = false;
         processor = 0;
+        update_text = true;
         update_image = true;
         t = 0;
         frame = SubtitleFrame();
         frames.clear();
         itf = frames.begin();
+        current_count = 0;
     }
     // width/height == 0: do not create image
     // return true if both frame time and content(currently is text) changed
@@ -84,6 +88,7 @@ public:
 
     bool loaded;
     bool fuzzy_match;
+    bool update_text;
     bool update_image;
     SubtitleProcessor *processor;
     QList<SubtitleProcessor*> processors;
@@ -99,7 +104,13 @@ public:
     // last time image
     qreal t;
     SubtitleFrame frame;
+    QString current_text;
+    QImage current_image;
     QLinkedList<SubtitleFrame>::iterator itf;
+    /* number of subtitle frames at current time.
+     * <0 means itf is the last. >0 means itf is the 1st
+     */
+    int current_count;
     QMutex mutex;
 };
 
@@ -260,6 +271,7 @@ void Subtitle::setTimestamp(qreal t)
             return;
         if (!priv->prepareCurrentFrame())
             return;
+        priv->update_text = true;
         priv->update_image = true;
     }
     emit contentChanged();
@@ -332,7 +344,20 @@ QString Subtitle::getText() const
     Q_UNUSED(lock);
     if (!isLoaded())
         return QString();
-    return priv->frame.text;
+    if (!priv->current_count)
+        return QString();
+    if (!priv->update_text)
+        return priv->current_text;
+    priv->update_text = false;
+    priv->current_text.clear();
+    const int count = qAbs(priv->current_count);
+    QLinkedList<SubtitleFrame>::iterator it = priv->current_count > 0 ? priv->itf : priv->itf + (priv->current_count+1);
+    for (int i = 0; i < count; ++i) {
+        priv->current_text.append(it->text).append("\n");
+        ++it;
+    }
+    priv->current_text = priv->current_text.trimmed();
+    return priv->current_text;
 }
 
 QImage Subtitle::getImage(int width, int height)
@@ -341,16 +366,16 @@ QImage Subtitle::getImage(int width, int height)
     Q_UNUSED(lock);
     if (!isLoaded())
         return QImage();
-    if (!priv->frame || width == 0 || height == 0)
+    if (!priv->current_count || width == 0 || height == 0)
         return QImage();
     if (!priv->update_image
-            && width == priv->frame.image.width() && height == priv->frame.image.height())
-        return priv->frame.image;
+            && width == priv->current_image.width() && height == priv->current_image.height())
+        return priv->current_image;
     priv->update_image = false;
     if (!priv->processor)
         return QImage();
-    priv->frame.image = priv->processor->getImage(priv->t, width, height);
-    return priv->frame.image;
+    priv->current_image = priv->processor->getImage(priv->t, width, height);
+    return priv->current_image;
 }
 
 // DO NOT set frame's image to reduce memory usage
@@ -359,69 +384,65 @@ QImage Subtitle::getImage(int width, int height)
 bool Subtitle::Private::prepareCurrentFrame()
 {
     QLinkedList<SubtitleFrame>::iterator it = itf;
-    bool found = false;
+    int found = 0;
+    const int old_current_count = current_count;
     if (t < it->begin) {
         while (it != frames.begin()) {
             --it;
             if (t > it->end) {
+                if (found > 0)
+                    break;
                 // no subtitle at that time. check previous text
-                if (frame.isValid()) {
-                    frame = SubtitleFrame();
+                if (old_current_count) {
+                    current_count = 0;
                     return true;
                 }
                 return false;
             }
             if (t >= (*it).begin) {
-                found = true;
-                itf = it;
-                break;
+                if (found == 0)
+                    itf = it;
+                found++;
             }
         }
-        if (found) {
+        current_count = -found;
+        if (found > 0) {
             frame = *it;
             return true;
         }
         // no subtitle at that time. it == begin(). check previous text
-        if (frame.isValid()) {
-            frame = SubtitleFrame();
+        if (old_current_count)
             return true;
-        }
         return false;
     }
-    // t >= (*it)->begin, time does not change, frame does not change
-    if (t <= (*it).end) {
-        found = true;
-        if (frame.isValid()) //previous has no subtitle, itf was not changed
-            return false;
-        frame = *it;
-        return true;
-    }
-    // t >= (*it)->end, already t >= (*it)->begin
+    bool it_changed = false;
     while (it != frames.end()) {
-        ++it;
+        if (t > it->end) {
+            ++it;
+            it_changed = true;
+            continue;
+        }
         if (t < it->begin) {
+            if (found > 0)
+                break;
             // no subtitle at that time. check previous text
-            if (frame.isValid()) {
-                frame = SubtitleFrame();
+            if (old_current_count) {
+                current_count = 0;
                 return true;
             }
             return false;
         }
-        if (t <= (*it).end) {
-            found = true;
+        if (found == 0)
             itf = it;
-            break;
-        }
+        ++found;
+        ++it;
     }
-    if (found) {
-        frame = *it;
-        return true;
-    }
+    current_count = found;
+    if (found > 0)
+        return it_changed || current_count != old_current_count;
     // no subtitle at that time, it == end(). check previous text
-    if (frame.isValid()) {
-        frame = SubtitleFrame();
+    if (old_current_count)
         return true;
-    }
     return false;
 }
 
