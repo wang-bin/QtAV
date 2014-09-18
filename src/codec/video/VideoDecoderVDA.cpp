@@ -41,6 +41,12 @@ extern "C" {
 #undef PixelFormat
 #endif
 
+#ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
+#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 1070 //MAC_OS_X_VERSION_10_7
+#define OSX_TARGET_MIN_LION
+#endif // 1070
+#endif //__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
+
 namespace QtAV {
 
 class VideoDecoderVDAPrivate;
@@ -129,11 +135,14 @@ typedef struct {
     VideoFormat::PixelFormat pixfmt;
 } cv_format;
 
+//https://developer.apple.com/library/Mac/releasenotes/General/MacOSXLionAPIDiffs/CoreVideo.html
 static const cv_format cv_formats[] = {
     { kCVPixelFormatType_420YpCbCr8Planar, VideoFormat::Format_YUV420P },
-    { kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, VideoFormat::Format_NV12 },
     { kCVPixelFormatType_422YpCbCr8, VideoFormat::Format_UYVY },
+#ifdef OSX_TARGET_MIN_LION
+    { kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, VideoFormat::Format_NV12 },
     { kCVPixelFormatType_422YpCbCr8_yuvs, VideoFormat::Format_YUYV },
+#endif
     { 0, VideoFormat::Format_Invalid }
 };
 
@@ -250,7 +259,7 @@ bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
     } else {
         memset(&hw_ctx, 0, sizeof(hw_ctx));
         hw_ctx.format = 'avc1';
-        hw_ctx.cv_pix_fmt_type = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;//kCVPixelFormatType_422YpCbCr8;
+        hw_ctx.cv_pix_fmt_type = kCVPixelFormatType_420YpCbCr8Planar;
     }
     /* Setup the libavcodec hardware context */
     *pp_hw_ctx = &hw_ctx;
