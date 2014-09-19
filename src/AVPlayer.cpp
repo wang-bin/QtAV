@@ -973,6 +973,7 @@ void AVPlayer::startNotifyTimer()
 void AVPlayer::stopNotifyTimer()
 {
     killTimer(timer_id);
+    timer_id = -1;
 }
 
 // TODO: doc about when the state will be reset
@@ -1042,16 +1043,17 @@ void AVPlayer::stop()
 void AVPlayer::timerEvent(QTimerEvent *te)
 {
     if (te->timerId() == timer_id) {
-        if (stopPosition() == kInvalidPosition) {
-            // not seekable. network stream
-            return;
-        }
         // killTimer() should be in the same thread as object. kill here?
         if (isPaused()) {
             return;
         }
         // active only when playing
-        qint64 t = clock->value()*1000.0;
+        const qint64 t = clock->value()*1000.0;
+        if (stopPosition() == kInvalidPosition) {
+            // not seekable. network stream
+            emit positionChanged(t);
+            return;
+        }
         if (mSeeking && t >= mSeekTarget + 1000) {
             mSeeking = false;
             mSeekTarget = 0;
