@@ -58,6 +58,7 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(QByteArray codec READ codec WRITE setCodec NOTIFY codecChanged)
     // QList<SubtitleProcessorId>
     Q_PROPERTY(QStringList engines READ engines WRITE setEngines NOTIFY enginesChanged)
+    Q_PROPERTY(QString engine READ engine)
     Q_PROPERTY(bool fuzzyMatch READ fuzzyMatch WRITE setFuzzyMatch NOTIFY fuzzyMatchChanged)
     Q_PROPERTY(QByteArray rawData READ rawData WRITE setRawData NOTIFY rawDataChanged)
     Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
@@ -90,6 +91,11 @@ public:
      */
     void setEngines(const QStringList& value);
     QStringList engines() const;
+    /*!
+     * \brief engine
+     * \return the engine in use
+     */
+    QString engine() const;
     void setFuzzyMatch(bool value);
     bool fuzzyMatch() const;
     void setRawData(const QByteArray& data);
@@ -104,9 +110,16 @@ public:
     QString fileName() const;
     void setDir(const QString& dir);
     QString dir() const;
+
+    /*!
+     * \brief supportedFormats
+     * the suffix names supported by all engines. for example ["ass", "ssa"]
+     * \return
+     */
+    QStringList supportedSuffixes() const;
     /*!
      * \brief setSuffixes
-     * default is using SubtitleProcessor. empty equals default value.
+     * default is using SubtitleProcessor. Empty equals default value. But suffixes() will return empty.
      */
     void setSuffixes(const QStringList& value);
     QStringList suffixes() const;

@@ -189,12 +189,20 @@ void Subtitle::setEngines(const QStringList &value)
     foreach (SubtitleProcessor* sp, sps) {
         priv->supported_suffixes.append(sp->supportedTypes());
     }
-    // TODO: remove duplicates
+    priv->supported_suffixes.removeDuplicates();
+    // DO NOT set priv->suffixes
 }
 
 QStringList Subtitle::engines() const
 {
     return priv->engine_names;
+}
+
+QString Subtitle::engine() const
+{
+    if (!priv->processor)
+        return QString();
+    return priv->processor->name();
 }
 
 void Subtitle::setFuzzyMatch(bool value)
@@ -248,6 +256,11 @@ QString Subtitle::fileName() const
     return priv->file_name;
 }
 
+QStringList Subtitle::supportedSuffixes() const
+{
+    return priv->supported_suffixes;
+}
+
 void Subtitle::setSuffixes(const QStringList &value)
 {
     if (priv->suffixes == value)
@@ -258,6 +271,8 @@ void Subtitle::setSuffixes(const QStringList &value)
 
 QStringList Subtitle::suffixes() const
 {
+    //if (priv->suffixes.isEmpty())
+    //    return supportedSuffixes();
     return priv->suffixes;
 }
 
