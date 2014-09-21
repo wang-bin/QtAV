@@ -147,7 +147,7 @@ unix {
         QMAKE_LFLAGS_SONAME = -Wl,-install_name,$$PROJECT_LIBDIR/
         #QMAKE_LFLAGS += -Wl,-rpath,@loader_path/../,-rpath,@executable_path/../
     } else {
-        RPATHDIR = \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib
+        RPATHDIR = \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib $$[QT_INSTALL_LIBS]
 # $$PROJECT_LIBDIR only for host == target. But QMAKE_TARGET.arch is only available on windows. QT_ARCH is bad, e.g. QT_ARCH=i386 while QMAKE_HOST.arch=i686
 # https://bugreports.qt-project.org/browse/QTBUG-30263
         isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR

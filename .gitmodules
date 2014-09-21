@@ -1,0 +1,3 @@
+[submodule "contrib/libchardet"]
+	path = contrib/libchardet
+	url = https://github.com/wang-bin/libchardet.git

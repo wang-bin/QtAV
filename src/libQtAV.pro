@@ -99,9 +99,10 @@ win32 {
 DEFINES += __STDC_CONSTANT_MACROS
 android: CONFIG += config_opensl
 LIBS += -lavcodec -lavformat -lavutil -lswscale
-config_chardet {
-    DEFINES += QTAV_HAVE_CHARDET=1
-    LIBS += -lchardet
+
+exists($$PROJECTROOT/contrib/libchardet/libchardet.pri) {
+  include($$PROJECTROOT/contrib/libchardet/libchardet.pri)
+  DEFINES += QTAV_HAVE_CHARDET=1
 }
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
