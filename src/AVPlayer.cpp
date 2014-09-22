@@ -233,11 +233,11 @@ void AVPlayer::setRenderer(VideoRenderer *r)
             r->setOutAspectRatio(vo->outAspectRatio());
         }
     }
-    if (r) {
-        r->resizeRenderer(r->rendererSize()); //IMPORTANT: the swscaler will resize
-    }
-    r->setStatistics(&mStatistics);
     clearVideoRenderers();
+    if (!r)
+        return;
+    r->resizeRenderer(r->rendererSize()); //IMPORTANT: the swscaler will resize
+    r->setStatistics(&mStatistics);
     addVideoRenderer(r);
 }
 
@@ -657,6 +657,7 @@ bool AVPlayer::load(bool reload)
         }
     }
     if (!audio_thread && !video_thread) {
+        loaded = false;
         qWarning("load failed");
         return false;
     }

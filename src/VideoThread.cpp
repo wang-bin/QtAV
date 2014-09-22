@@ -150,10 +150,8 @@ void VideoThread::run()
     //not neccesary context is managed by filters.
     d.filter_context = 0;
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
-    if (dec) {
-        //used to initialize the decoder's frame size
-        dec->resizeVideoFrame(0, 0);
-    }
+    //used to initialize the decoder's frame size
+    dec->resizeVideoFrame(0, 0);
     Packet pkt;
     /*!
      * if we skip some frames(e.g. seek, drop frames to speed up), then then first frame to decode must

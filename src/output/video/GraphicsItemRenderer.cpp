@@ -146,7 +146,8 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
     }
     handlePaintEvent();
     d.painter = 0; //painter may be not available outside this function
-    ctx->painter = 0;
+    if (ctx)
+        ctx->painter = 0;
 }
 
 bool GraphicsItemRenderer::needUpdateBackground() const
