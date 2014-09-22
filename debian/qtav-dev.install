@@ -5,16 +5,12 @@ usr/include/*/qt5/QtAV/AudioOutput.h
 usr/include/*/qt5/QtAV/AudioOutputTypes.h
 usr/include/*/qt5/QtAV/AudioResampler.h
 usr/include/*/qt5/QtAV/AudioResamplerTypes.h
-usr/include/*/qt5/QtAV/AudioThread.h
 usr/include/*/qt5/QtAV/AVClock.h
 usr/include/*/qt5/QtAV/AVDecoder.h
 usr/include/*/qt5/QtAV/AVDemuxer.h
-usr/include/*/qt5/QtAV/AVDemuxThread.h
 usr/include/*/qt5/QtAV/AVError.h
 usr/include/*/qt5/QtAV/AVOutput.h
 usr/include/*/qt5/QtAV/AVPlayer.h
-usr/include/*/qt5/QtAV/AVThread.h
-usr/include/*/qt5/QtAV/ColorTransform.h
 usr/include/*/qt5/QtAV/CommonTypes.h
 usr/include/*/qt5/QtAV/dptr.h
 usr/include/*/qt5/QtAV/FactoryDefine.h
@@ -29,8 +25,6 @@ usr/include/*/qt5/QtAV/ImageConverterTypes.h
 usr/include/*/qt5/QtAV/LibAVFilter.h
 usr/include/*/qt5/QtAV/OpenGLRendererBase.h
 usr/include/*/qt5/QtAV/OpenGLVideo.h
-usr/include/*/qt5/QtAV/OpenGLWidgetRenderer.h
-usr/include/*/qt5/QtAV/OpenGLWindowRenderer.h
 usr/include/*/qt5/QtAV/Packet.h
 usr/include/*/qt5/QtAV/prepost.h
 usr/include/*/qt5/QtAV/QPainterRenderer.h
@@ -51,7 +45,6 @@ usr/include/*/qt5/QtAV/VideoOutput.h
 usr/include/*/qt5/QtAV/VideoRenderer.h
 usr/include/*/qt5/QtAV/VideoRendererTypes.h
 usr/include/*/qt5/QtAV/VideoShader.h
-usr/include/*/qt5/QtAV/VideoThread.h
 usr/include/*/qt5/QtAV/WidgetRenderer.h
 usr/lib/*/libQtAV.prl
 usr/lib/*/libQtAV.so
