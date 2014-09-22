@@ -47,6 +47,6 @@ usr/include/*/qt5/QtAV/VideoRendererTypes.h
 usr/include/*/qt5/QtAV/VideoShader.h
 usr/include/*/qt5/QtAV/WidgetRenderer.h
 usr/lib/*/libQtAV.prl
-usr/lib/*/libQtAV.so
+usr/lib/*/libQt*AV.so
 usr/lib/*/qt5/mkspecs/features/av.prf
 usr/lib/*/qt5/mkspecs/modules/qt_lib_av.pri
