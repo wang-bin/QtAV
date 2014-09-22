@@ -18,11 +18,11 @@ QML_FILES = $$PWD/Video.qml
 
 qtav_qml.files = $$PWD/qmldir $$PWD/Video.qml $$PWD/plugins.qmltypes
 !ios: plugin.files = $$DESTDIR/$$qtSharedLib($$NAME)
-plugin.path = $$BUILD_DIR/bin/QtAV/ #TODO: Qt install dir
+plugin.path = $$BUILD_DIR/bin/QtAV/
+mkpath($$plugin.path)
 #plugin.depends = #makefile target
 #windows: copy /y file1+file2+... dir. need '+'
 for(f, plugin.files) {
-  plugin.commands += $$escape_expand(\\n\\t)$$quote(-\$\(MKDIR\) $$shell_path($$plugin.path))
   plugin.commands += $$escape_expand(\\n\\t)$$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$plugin.path))
 }
 #join values seperated by space. so quote is needed
@@ -35,7 +35,6 @@ else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$plugin.comma
 #QMAKE_EXTRA_TARGETS = plugin
 
 #POST_TARGETDEPS = plugin #vs, xcode does not support
-#mkpath($$plugin.path)
 #no write permision. do it in makefile
 #mkpath($$[QT_INSTALL_QML]/QtAV)
 
@@ -44,8 +43,7 @@ else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$plugin.comma
 #custom compiler: auto update if source is newer
 extra_copy.output = $$shell_path($$plugin.path)${QMAKE_FILE_BASE}${QMAKE_FILE_EXT}
 # QMAKE_COPY_FILE, QMAKE_MKDIR_CMD ?
-extra_copy.commands = -\$\(MKDIR\) $$shell_path($$BUILD_DIR/bin/QtAV/)
-extra_copy.commands += $$escape_expand(\\n\\t)-\$\(COPY_FILE\) ${QMAKE_FILE_NAME} $$shell_path($$BUILD_DIR/bin/QtAV/)
+extra_copy.commands = -\$\(COPY_FILE\) ${QMAKE_FILE_NAME} $$shell_path($$plugin.path)
 #extra_copy.depends = $$EXTRA_COPY_FILES #.input is already the depends
 extra_copy.input = EXTRA_COPY_FILES
 extra_copy.CONFIG += no_link
