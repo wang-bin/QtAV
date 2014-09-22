@@ -1,7 +1,13 @@
 #!/usr/bin/make -f
 
+DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
 %:
 	dh $@
 
 override_dh_auto_configure:
 	qmake
+
+override_dh_auto_install:
+	dh_auto_install
+	ln -s libQtAV.so ${CURDIR}/debian/tmp/usr/lib/${DEB_BUILD_GNU_TYPE}/libQt5AV.so
