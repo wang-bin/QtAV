@@ -45,19 +45,6 @@ RESOURCES += QtAV.qrc \
     }
     QMAKE_EXTRA_TARGETS += rc
 }
-# copy runtime libs to qt sdk
-!mac_framework: copy_sdk_libs = $$DESTDIR/$$qtSharedLib($$NAME)
-#plugin.depends = #makefile target
-#windows: copy /y file1+file2+... dir. need '+'
-for(f, copy_sdk_libs) {
-  win32: copy_sdk_libs_cmd += $$quote(-\$\(COPY_FILE\) \"$$system_path($$f)\" \"$$system_path($$[QT_INSTALL_BINS])\")
-  else: copy_sdk_libs_cmd += $$quote(-\$\(COPY_FILE\) \"$$system_path($$f)\" \"$$system_path($$[QT_INSTALL_LIBS])\")
-}
-#join values seperated by space. so quote is needed
-copy_sdk_libs_cmd = $$join(copy_sdk_libs_cmd,$$escape_expand(\\n\\t))
-#just append as a string to $$QMAKE_POST_LINK
-isEmpty(QMAKE_POST_LINK): QMAKE_POST_LINK = $$copy_sdk_libs_cmd
-else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$copy_sdk_libs_cmd
 
 OTHER_FILES += $$RC_FILE QtAV.svg
 TRANSLATIONS = i18n/QtAV_zh_CN.ts
@@ -353,6 +340,7 @@ SDK_HEADERS *= \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoDecoderTypes.h \
+    QtAV/VideoDecoderFFmpegHW.h \
     QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
     QtAV/FactoryDefine.h \
@@ -399,8 +387,7 @@ HEADERS *= \
     QtAV/AVThread.h \
     QtAV/AudioThread.h \
     QtAV/VideoThread.h \
-    QtAV/ColorTransform.h \
-    QtAV/VideoDecoderFFmpegHW.h
+    QtAV/ColorTransform.h
 
 
 # from mkspecs/features/qt_module.prf
@@ -427,5 +414,10 @@ mac {
    }
 }
 
-SDK_INCLUDE_FOLDER = QtAV
+MODULE_INCNAME = QtAV
+MODULE_VERSION = $$VERSION
+#use Qt version. limited by qmake
+# windows: Qt5AV.dll, not Qt1AV.dll
+!mac_framework: MODULE_VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 include($$PROJECTROOT/deploy.pri)
+

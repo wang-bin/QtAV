@@ -19,7 +19,7 @@ RESOURCES += \
 SOURCES += main.cpp
 
 # Installation path
-# target.path =
+target.path = $$[QT_INSTALL_BINS]
 
 # Please do not modify the following two lines. Required for deployment.
 include(qtquick2applicationviewer/qtquick2applicationviewer.pri)

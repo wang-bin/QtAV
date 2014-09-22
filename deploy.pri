@@ -1,7 +1,5 @@
 isEmpty(PROJECTROOT): PROJECTROOT = $$PWD
 INSTALL_PREFIX = /usr/local
-INSTALL_FOLDER = lib
-isEqual(TEMPLATE, app): INSTALL_FOLDER = bin
 
 share.files = $$PROJECTROOT/qtc_packaging/common/changelog \
 			$$PROJECTROOT/qtc_packaging/common/copyright \
@@ -34,23 +32,26 @@ isEqual(TEMPLATE, app) {
 		}
 		INSTALLS += desktopfile icon
 		#debian.path = /DEBIAN
-	}
+            target.path = $${INSTALL_PREFIX}/bin
+        }
 } else {
 	unix:!symbian {
 		sdkheaders.files = $$SDK_HEADERS
+                sdkheaders_private.files = $$SDK_PRIVATE_HEADERS
 		isEmpty(SDK_HEADERS) {
 			sdkheaders.files = $$HEADERS
 		}
-		sdkheaders.path = /usr/local/include/$$SDK_INCLUDE_FOLDER
-		INSTALLS += sdkheaders
+                sdkheaders.path = $$[QT_INSTALL_HEADERS]/$$MODULE_INCNAME
+                sdkheaders_private.path = $$[QT_INSTALL_HEADERS]/$$MODULE_INCNAME/$$MODULE_VERSION/$$MODULE_INCNAME/private
+                !plugin: target.path = $$[QT_INSTALL_LIBS]
+                INSTALLS += sdkheaders sdkheaders_private
 	}
 }
 
-target.path = $${INSTALL_PREFIX}/$${INSTALL_FOLDER}
-INSTALLS += target share
+INSTALLS *= target share
 
 for(bin, BIN_INSTALLS) {
-    eval($${bin}.path = $${INSTALL_PREFIX}/$${INSTALL_FOLDER})
+    eval($${bin}.path = $${INSTALL_PREFIX}/bin)
     message("adding $$bin to bin install targets...")
     INSTALLS += $$bin
 }
