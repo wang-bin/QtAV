@@ -1,0 +1,21 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: QtAV
+Source: https://github.com/wang-bin/QtAV
+
+Files: *
+Copyright: 2012-2014 Wang Bin <wbsecg1@gmail.com>
+License: LGPL-2.1+
+
+Files: examples/*
+Copyright: 2012-2014 Wang Bin <wbsecg1@gmail.com>
+License: GPL-3
+
+Files: debian/*
+Copyright: 2014 Sou Bunnbu <iyzsong@gmail.com>
+License: LGPL-2.1+
+
+License: LGPL-2.1+
+ See /usr/share/common-licenses/LGPL-2.1 for the full text of the LGPL-2.1+.
+
+License: GPL-3
+ See /usr/share/common-licenses/GPL for the full text of the GPL.

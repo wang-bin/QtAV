@@ -1,0 +1,4 @@
+usr/lib/*/qt5/qml/QtAV/Video.qml
+usr/lib/*/qt5/qml/QtAV/libQmlAV.so
+usr/lib/*/qt5/qml/QtAV/plugins.qmltypes
+usr/lib/*/qt5/qml/QtAV/qmldir

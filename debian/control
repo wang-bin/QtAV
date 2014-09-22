@@ -1,0 +1,90 @@
+Source: qtav
+Section: libs
+Priority: extra
+Maintainer: Sou Bunnbu <iyzsong@gmail.com>
+Build-Depends: debhelper (>= 9),
+ qt5-qmake, libqt5opengl5-dev,
+ libavutil-dev,
+ libavresample-dev,
+ libavcodec-dev,
+ libavformat-dev,
+ libswscale-dev,
+ libavfilter-dev,
+ libopenal-dev,
+ libxv-dev,
+ libva-dev,
+Standards-Version: 3.9.5
+Homepage: http://wang-bin.github.io/qtav.org/
+
+Package: qtav-sdk
+Architecture: all
+Section: misc
+Depends: ${misc:Depends}, qtav-dev, qtav-private-dev, qml-module-qtav
+Description: FFmpeg powered multimedia playback SDK for Qt
+ QtAV can help you to write a player with less effort than ever before.
+ .
+ Features include:
+   * Hardware decoding suppprt: DXVA2, VAAPI, VDA, CedarX, CUDA
+   * OpenGL and ES2 support for Hi10P and other 16-bit YUV videos
+   * Video capture in rgb and yuv format
+   * OSD and custom filters
+   * filters in libavfilter, for example stero3d, blur
+   * Subtitle
+   * Transform video using GraphicsItemRenderer. (rotate, shear, etc)
+   * Playing frame by frame (currently support forward playing)
+   * Playback speed control. At any speed.
+   * Variant streams: locale file, http, rtsp, etc.
+   * Choose audio channel
+   * Choose media stream, e.g. play a desired audio track
+   * Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
+   * Dynamically change render engine when playing.
+   * Multiple video outputs for 1 player
+   * Region of interest(ROI), i.e. video cropping
+   * Video eq: brightness, contrast, saturation, hue
+   * QML support as a plugin. Most playback APIs are compatible with QtMultiMedia module
+
+Package: libqtav
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: QtAV library
+ QtAV is a multimedia playback library based on Qt and FFmpeg.
+ It can help you to write a player with less effort than ever before.
+ .
+ This package contains the QtAV library.
+
+Package: qtav-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Depends: ${misc:Depends}
+Description: QtAV development files
+ QtAV is a multimedia playback library based on Qt and FFmpeg.
+ It can help you to write a player with less effort than ever before.
+ .
+ This package contains the header development files for building some
+ QtAV applications using QtAV headers.
+
+Package: qtav-private-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Depends: qtav-dev (= ${binary:Version}), ${misc:Depends}
+Description: QtAV private development files
+ QtAV is a multimedia playback library based on Qt and FFmpeg.
+ It can help you to write a player with less effort than ever before.
+ .
+ This package contains the private header development files for building some
+ QtAV applications using QtAV private headers.
+ .
+ Use at your own risk.
+
+Package: qml-module-qtav
+Architecture: any
+Multi-Arch: same
+Description: QtAV QML module
+ QtAV is a multimedia playback library based on Qt and FFmpeg.
+ It can help you to write a player with less effort than ever before.
+ .
+ This package contains the QtAV QML module for Qt declarative.
