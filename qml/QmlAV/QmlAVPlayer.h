@@ -56,6 +56,7 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(int loops READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
+    Q_PROPERTY(QObject *mediaObject READ mediaObject)
 
     Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
 
@@ -126,6 +127,7 @@ public:
     void setAutoPlay(bool autoplay);
 
     MediaMetaData *metaData() const;
+    QObject *mediaObject() const;
 
     // "FFmpeg", "CUDA", "DXVA", "VAAPI" etc
     QStringList videoCodecs() const;
@@ -167,6 +169,8 @@ Q_SIGNALS:
     void seekableChanged();
     void videoCodecPriorityChanged();
     void channelLayoutChanged();
+
+    void mediaObjectChanged();
 
 private Q_SLOTS:
     // connect to signals from player
