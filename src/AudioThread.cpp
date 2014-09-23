@@ -291,6 +291,7 @@ void AudioThread::run()
 
         d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
     }
+    d.packets.clear();
     qDebug("Audio thread stops running...");
 }
 

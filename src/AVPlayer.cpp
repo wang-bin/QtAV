@@ -116,8 +116,8 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(&demuxer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
     demuxer_thread = new AVDemuxThread(this);
     demuxer_thread->setDemuxer(&demuxer);
-    //use direct connection otherwise replay may stop immediatly because slot stop() is called after play()
-    connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()), Qt::DirectConnection);
+    //direct connection can not sure slot order?
+    connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()));
 
     video_capture = new VideoCapture(this);
 
@@ -951,6 +951,10 @@ void AVPlayer::stopFromDemuxerThread()
 {
     reset_state = false;
     qDebug("demuxer thread emit finished. avplayer emit stopped()");
+    if (demuxer_thread->isRunning()) {
+        qWarning("XXXXXXXXX demuxer thread is running........");
+        return;
+    }
     emit stopped();
 }
 
@@ -1017,27 +1021,11 @@ void AVPlayer::stop()
         return;
     }
 
-    struct avthreads_t {
-        AVThread *thread;
-        const char *name;
-    } threads[] = {
-        { audio_thread, "audio thread" },
-        { video_thread, "video thread" },
-        { 0, 0 }
-    };
-    for (int i = 0; threads[i].name; ++i) {
-        AVThread *thread = threads[i].thread;
-        if (!thread)
-            continue;
-        qDebug("stopping %s...", threads[i].name);
-        thread->stop();
-        // use if instead of while? eventloop in play()
-        while (thread->isRunning()) {
-            thread->wait(500);
-            qDebug("stopping %s...", threads[i].name);
-        }
+    while (demuxer_thread->isRunning()) {
+        qDebug("stopping demuxer thread...");
+        demuxer_thread->stop();
+        demuxer_thread->wait(500);
     }
-    // can not close decoders here since close and open may be in different threads
     qDebug("all audio/video threads  stopped...");
 }
 
