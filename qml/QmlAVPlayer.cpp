@@ -329,12 +329,6 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
         if (mpPlayer->isPaused()) {
             mpPlayer->pause(false);
         } else {
-            QVariantHash vaapi_opt;
-            // GLX in QML is not supported now
-            vaapi_opt["displayPriority"] = QStringList() << "X11" << "DRM";
-            QVariantHash opt;
-            opt["VAAPI"] = vaapi_opt;
-            mpPlayer->setOptionsForVideoCodec(opt);
             mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->play();
             setChannelLayout(channelLayout());
@@ -376,7 +370,6 @@ void QmlAVPlayer::play(const QUrl &url)
     if (mSource == url)
         return;
     setSource(url);
-    setPlaybackState(StoppedState);
     play();
 }
 
@@ -417,6 +410,7 @@ void QmlAVPlayer::seekBackward()
 
 void QmlAVPlayer::_q_paused(bool p)
 {
+    qDebug("*********%s @%d", __FUNCTION__, __LINE__);
     if (p) {
         mPlaybackState = PausedState;
         emit paused();
@@ -429,6 +423,7 @@ void QmlAVPlayer::_q_paused(bool p)
 
 void QmlAVPlayer::_q_started()
 {
+    qDebug("*********%s @%d", __FUNCTION__, __LINE__);
     mPlaybackState = PlayingState;
     emit playing();
     emit playbackStateChanged();
@@ -436,6 +431,7 @@ void QmlAVPlayer::_q_started()
 
 void QmlAVPlayer::_q_stopped()
 {
+    qDebug("*********%s @%d", __FUNCTION__, __LINE__);
     mPlaybackState = StoppedState;
     emit stopped();
     emit playbackStateChanged();
