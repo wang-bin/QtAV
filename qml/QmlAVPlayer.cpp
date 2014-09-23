@@ -64,18 +64,21 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mpPlayer(0)
   , mChannelLayout(ChannelLayoutAuto)
 {
-    mpPlayer = new AVPlayer(this); //in componentComplete()?
+}
+
+void QmlAVPlayer::classBegin()
+{
+    mpPlayer = new AVPlayer(this);
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
 
     mVideoCodecs << "FFmpeg";
-}
 
-void QmlAVPlayer::classBegin()
-{
     m_metaData.reset(new MediaMetaData());
+
+    emit mediaObjectChanged();
 }
 
 void QmlAVPlayer::componentComplete()
@@ -167,6 +170,11 @@ void QmlAVPlayer::setAutoPlay(bool autoplay)
 MediaMetaData* QmlAVPlayer::metaData() const
 {
     return m_metaData.data();
+}
+
+QObject* QmlAVPlayer::mediaObject() const
+{
+    return mpPlayer;
 }
 
 QStringList QmlAVPlayer::videoCodecs() const
