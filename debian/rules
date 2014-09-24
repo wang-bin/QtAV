@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+DEB_BUILD_MULTIARCH ?= $(shell dpkg-architecture -qDEB_BUILD_MULTIARCH)
 
 %:
 	dh $@
@@ -10,4 +10,7 @@ override_dh_auto_configure:
 
 override_dh_auto_install:
 	dh_auto_install
-	ln -s libQtAV.so ${CURDIR}/debian/tmp/usr/lib/${DEB_BUILD_GNU_TYPE}/libQt5AV.so
+	ln -s libQtAV.so ${CURDIR}/debian/tmp/usr/lib/${DEB_BUILD_MULTIARCH}/libQt5AV.so
+	mkdir -p ${CURDIR}/debian/tmp/usr/bin
+	cd ${CURDIR}/debian/tmp/usr/bin && ln -s ../lib/${DEB_BUILD_MULTIARCH}/qt5/bin/player .
+	cd ${CURDIR}/debian/tmp/usr/bin && ln -s ../lib/${DEB_BUILD_MULTIARCH}/qt5/bin/QMLPlayer .

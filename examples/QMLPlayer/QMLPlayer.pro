@@ -2,7 +2,8 @@
 # Add more folders to ship with the application, here
 folder_01.source = qml/QMLPlayer
 folder_01.target = qml
-DEPLOYMENTFOLDERS = folder_01
+#will copy to target path
+#DEPLOYMENTFOLDERS = folder_01
 
 # Additional import path used to resolve QML modules in Creator's code model
 QML_IMPORT_PATH =
@@ -20,6 +21,10 @@ SOURCES += main.cpp
 
 # Installation path
 target.path = $$[QT_INSTALL_BINS]
+
+
+desktopfile.files = $$PWD/../../qtc_packaging/debian_generic/QMLPlayer.desktop
+desktopfile.path = /usr/share/applications
 
 # Please do not modify the following two lines. Required for deployment.
 include(qtquick2applicationviewer/qtquick2applicationviewer.pri)

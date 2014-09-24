@@ -41,3 +41,7 @@ macx:!ios {
 }
 
 include($$PROJECTROOT/deploy.pri)
+
+target.path = $$[QT_INSTALL_BINS]
+INSTALLS += target
+

@@ -3,7 +3,7 @@ Section: libs
 Priority: extra
 Maintainer: Sou Bunnbu <iyzsong@gmail.com>
 Build-Depends: debhelper (>= 9),
- qt5-qmake, libqt5opengl5-dev, qtdeclarative5-dev,
+ qt5-default, qt5-qmake, libqt5opengl5-dev, qtdeclarative5-dev,
  libavutil-dev,
  libavresample-dev,
  libavcodec-dev,
@@ -90,3 +90,15 @@ Description: QtAV QML module
  It can help you to write a player with less effort than ever before.
  .
  This package contains the QtAV QML module for Qt declarative.
+
+Package: qtav-players
+Section: video
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, libqtav, qml-module-qtav
+Multi-Arch: same
+Description: QtAV/QML players
+ QtAV is a multimedia playback framework based on Qt and FFmpeg.
+ High performance. User & developer friendly.
+ .
+ This package contains the QtAV based players

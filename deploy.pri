@@ -32,7 +32,7 @@ isEqual(TEMPLATE, app) {
 		}
 		INSTALLS += desktopfile icon
 		#debian.path = /DEBIAN
-            target.path = $${INSTALL_PREFIX}/bin
+            isEmpty(target.path): target.path = $${INSTALL_PREFIX}/bin
         }
 } else {
 	unix:!symbian {

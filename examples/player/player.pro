@@ -62,7 +62,8 @@ HEADERS += \
     filters/AVFilterSubtitle.h
 
 tv.files = res/tv.ini
-BIN_INSTALLS += tv
+#BIN_INSTALLS += tv
+target.path = $$[QT_INSTALL_BINS]
 include($$PROJECTROOT/deploy.pri)
 
 RESOURCES += \
