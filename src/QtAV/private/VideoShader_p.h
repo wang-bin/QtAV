@@ -118,6 +118,8 @@ public:
     // width is in bytes. different alignments may result in different plane 1 linesize even if plane 0 are the same
     int plane1_linesize;
 
+    // textures.d in initTextures() changed. happens in qml. why?
+    quint8 workaround_vector_crash_on_linux[8];
     QVector<GLuint> textures; //texture ids. size is plane count
     QVector<QSize> texture_size;
     /*
