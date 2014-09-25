@@ -414,6 +414,31 @@ mac {
    }
 }
 
+
+unix:!android:!mac {
+#debian
+DEB_INSTALL_LIST = .$$[QT_INSTALL_LIBS]/libQtAV.so.*
+libqtav.target = libqtav.install
+libqtav.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${libqtav.target}
+QMAKE_EXTRA_TARGETS += libqtav
+target.depends *= $${libqtav.target}
+
+DEB_INSTALL_LIST = $$join(SDK_HEADERS, \\n.$$[QT_INSTALL_HEADERS]/, .$$[QT_INSTALL_HEADERS]/)
+DEB_INSTALL_LIST += .$$[QT_INSTALL_LIBS]/libQtAV.prl .$$[QT_INSTALL_LIBS]/libQt*AV.so
+DEB_INSTALL_LIST += .$$[QT_INSTALL_BINS]/../mkspecs/features/av.prf .$$[QT_INSTALL_BINS]/../mkspecs/modules/qt_lib_av.pri
+qtav_dev.target = qtav-dev.install
+qtav_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${qtav_dev.target}
+QMAKE_EXTRA_TARGETS += qtav_dev
+target.depends *= $${qtav_dev.target}
+
+DEB_INSTALL_LIST = $$join(SDK_PRIVATE_HEADERS, \\n.$$[QT_INSTALL_HEADERS]/QtAV/*/, .$$[QT_INSTALL_HEADERS]/QtAV/*/)
+DEB_INSTALL_LIST += .$$[QT_INSTALL_BINS]/../mkspecs/modules/qt_lib_av_private.pri
+qtav_private_dev.target = qtav-private-dev.install
+qtav_private_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${qtav_private_dev.target}
+QMAKE_EXTRA_TARGETS += qtav_private_dev
+target.depends *= $${qtav_private_dev.target}
+}
+
 MODULE_INCNAME = QtAV
 MODULE_VERSION = $$VERSION
 #use Qt version. limited by qmake

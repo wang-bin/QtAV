@@ -3,7 +3,7 @@
 DEB_BUILD_MULTIARCH ?= $(shell dpkg-architecture -qDEB_BUILD_MULTIARCH)
 
 %:
-	dh $@
+	dh $@ --parallel
 
 override_dh_auto_configure:
 	qmake

@@ -88,6 +88,17 @@ SDK_HEADERS += \
 HEADERS *= \
     $$SDK_HEADERS
 
+
+unix:!android:!mac {
+#debian
+qml_module_files = qmldir Video.qml plugins.qmltypes libQmlAV.so
+DEB_INSTALL_LIST = $$join(qml_module_files, \\n.$$[QT_INSTALL_QML]/QtAV/, .$$[QT_INSTALL_QML]/QtAV/)
+deb_install_list.target = qml-module-qtav.install
+deb_install_list.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${deb_install_list.target}
+QMAKE_EXTRA_TARGETS += deb_install_list
+target.depends += $${deb_install_list.target}
+}
+
 target.path = $$[QT_INSTALL_QML]/QtAV
 qtav_qml.path = $$[QT_INSTALL_QML]/QtAV
 INSTALLS += target qtav_qml

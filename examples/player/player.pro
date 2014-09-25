@@ -61,6 +61,23 @@ HEADERS += \
     config/AVFilterConfigPage.h \
     filters/AVFilterSubtitle.h
 
+
+unix:!android:!mac {
+#debian
+player_bins = libcommon.so.* player QMLPlayer
+DEB_INSTALL_LIST = $$join(player_bins, \\n.$$[QT_INSTALL_BINS]/, .$$[QT_INSTALL_BINS]/)
+DEB_INSTALL_LIST *= \
+            usr/bin/player \
+            usr/bin/QMLPlayer \
+            usr/share/applications/player.desktop \
+            usr/share/applications/QMLPlayer.desktop \
+            usr/share/icons/hicolor/64x64/apps/QtAV.svg
+deb_install_list.target = qtav-players.install
+deb_install_list.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${deb_install_list.target}
+QMAKE_EXTRA_TARGETS += deb_install_list
+target.depends += $${deb_install_list.target}
+}
+
 tv.files = res/tv.ini
 #BIN_INSTALLS += tv
 target.path = $$[QT_INSTALL_BINS]
