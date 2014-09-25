@@ -7,10 +7,3 @@ DEB_BUILD_MULTIARCH ?= $(shell dpkg-architecture -qDEB_BUILD_MULTIARCH)
 
 override_dh_auto_configure:
 	qmake
-
-override_dh_auto_install:
-	dh_auto_install
-	ln -s libQtAV.so ${CURDIR}/debian/tmp/usr/lib/${DEB_BUILD_MULTIARCH}/libQt5AV.so
-	mkdir -p ${CURDIR}/debian/tmp/usr/bin
-	cd ${CURDIR}/debian/tmp/usr/bin && ln -s ../lib/${DEB_BUILD_MULTIARCH}/qt5/bin/player .
-	cd ${CURDIR}/debian/tmp/usr/bin && ln -s ../lib/${DEB_BUILD_MULTIARCH}/qt5/bin/QMLPlayer .

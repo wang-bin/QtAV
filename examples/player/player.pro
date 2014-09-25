@@ -67,15 +67,18 @@ unix:!android:!mac {
 player_bins = libcommon.so.* player QMLPlayer
 DEB_INSTALL_LIST = $$join(player_bins, \\n.$$[QT_INSTALL_BINS]/, .$$[QT_INSTALL_BINS]/)
 DEB_INSTALL_LIST *= \
-            usr/bin/player \
-            usr/bin/QMLPlayer \
             usr/share/applications/player.desktop \
             usr/share/applications/QMLPlayer.desktop \
             usr/share/icons/hicolor/64x64/apps/QtAV.svg
 deb_install_list.target = qtav-players.install
 deb_install_list.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${deb_install_list.target}
 QMAKE_EXTRA_TARGETS += deb_install_list
-target.depends += $${deb_install_list.target}
+target.depends *= $${deb_install_list.target}
+
+qtav_players_links.target = qtav-players.links
+qtav_players_links.commands = echo \"$$[QT_INSTALL_BINS]/player /usr/bin/player\n$$[QT_INSTALL_BINS]/QMLPlayer /usr/bin/QMLPlayer\" >$$PROJECTROOT/debian/$${qtav_players_links.target}
+QMAKE_EXTRA_TARGETS *= qtav_players_links
+target.depends *= $${qtav_players_links.target}
 }
 
 tv.files = res/tv.ini
