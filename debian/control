@@ -95,7 +95,8 @@ Package: qtav-players
 Section: video
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends}, ${shlibs:Depends}, libqtav, qml-module-qtav
+Depends: ${misc:Depends}, ${shlibs:Depends}, libqtav, qml-module-qtav,
+  libqt5svg5, qtdeclarative5-qtquick2-plugin, qtdeclarative5-dialogs-plugin, qtdeclarative5-window-plugin, qtdeclarative5-folderlistmodel-plugin
 Multi-Arch: same
 Description: QtAV/QML players
  QtAV is a multimedia playback framework based on Qt and FFmpeg.
