@@ -60,6 +60,10 @@ public:
         }
     }
     SwrContext *context;
+    // defined in swr<1
+#ifndef SWR_CH_MAX
+#define SWR_CH_MAX 63
+#endif
     int channel_map[SWR_CH_MAX];
 };
 
