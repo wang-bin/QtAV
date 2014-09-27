@@ -166,14 +166,18 @@ QImage SubtitleProcessorFFmpeg::getImage(qreal pts, int width, int height)
 
 SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal pts, qreal duration)
 {
-    if (!codec_ctx) {
+    // AV_CODEC_ID_xxx and srt, subrip are available for ffmpeg >= 1.0. AV_CODEC_ID_xxx
+    // TODO: what about other formats?
+    if (!codec_ctx
+            || codec_ctx->codec_id == AV_CODEC_ID_SRT
+            || codec_ctx->codec_id == AV_CODEC_ID_SUBRIP) {
         SubtitleFrame f;
         f.begin = pts;
         f.end = pts + duration;
-        if (data.startsWith("Dialogue:"))
+        if (data.startsWith("Dialogue:")) // e.g. decoding embedded subtitles
             f.text = PlainText::fromAss(data.constData());
         else
-            f.text = data;
+            f.text = QString::fromUtf8(data.constData(), data.size()); //utf-8 is required
         return f;
     }
     AVPacket packet;
@@ -238,7 +242,7 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
     }
     qDebug("found subtitle decoder '%s'", dec_desc->name);
     // AV_CODEC_PROP_TEXT_SUB: ffmpeg >= 2.0
-#if FFMPEG_MODULE_CHECK(AVCODEC, 55, 18, 100)
+#ifdef AV_CODEC_PROP_TEXT_SUB
     if (dec_desc && !(dec_desc->props & AV_CODEC_PROP_TEXT_SUB)) {
         qWarning("Only text based subtitles are currently supported");
         return false;
