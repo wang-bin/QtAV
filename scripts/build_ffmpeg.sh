@@ -180,6 +180,7 @@ else
     PLATFORM_OPT="$VAAPI $VDPAU"
   elif platform_is Darwin; then
     PLATFORM_OPT="$VDA --cc=clang --cxx=clang++"
+    EXTRA_CFLAGS=-mmacosx-version-min=10.6
   fi
 fi
 
