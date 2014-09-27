@@ -169,8 +169,11 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
     // AV_CODEC_ID_xxx and srt, subrip are available for ffmpeg >= 1.0. AV_CODEC_ID_xxx
     // TODO: what about other formats?
     if (!codec_ctx
+#if QTAV_USE_FFMPEG(LIBAVCODEC)
+            || codec_ctx->codec_id == AV_CODEC_ID_SUBRIP
+#endif
             || codec_ctx->codec_id == AV_CODEC_ID_SRT
-            || codec_ctx->codec_id == AV_CODEC_ID_SUBRIP) {
+            ) {
         SubtitleFrame f;
         f.begin = pts;
         f.end = pts + duration;
