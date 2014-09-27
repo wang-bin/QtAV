@@ -49,7 +49,6 @@ public:
     qreal begin;
     qreal end;
     QString text; //plain text. always valid
-    QImage image; //the whole image. it's invalid unless user set it
 };
 
 class Q_AV_EXPORT Subtitle : public QObject
@@ -66,6 +65,7 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
     Q_PROPERTY(QString text READ getText)
     Q_PROPERTY(bool loaded READ isLoaded)
+    Q_PROPERTY(bool canRender READ canRender)
 public:
     explicit Subtitle(QObject *parent = 0);
     virtual ~Subtitle();
@@ -125,14 +125,21 @@ public:
     QStringList suffixes() const;
 
     qreal timestamp() const;
+    /*!
+     * \brief canRender
+     * wether current processor supports rendering. Check before getImage()
+     * \return
+     */
+    bool canRender() const;
     // call setTimestamp before getText/Image
     //plain text. separated by '\n' if more more than 1 text rects found
     Q_INVOKABLE QString getText() const;
     Q_INVOKABLE QImage getImage(int width, int height);
-
-    // if
-    //bool setHeader(const QByteArray& data);
-    //bool process(const QByteArray& data, qreal pts = -1);
+    // used for embedded subtitles.
+    // used by libass to set style etc.
+    bool processHeader(const QByteArray& data);
+    // ffmpeg decodes subtitle lines and call processLine. if AVPacket contains plain text, no decoding is ok
+    bool processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0);
 
 public slots:
     /*!
@@ -146,6 +153,10 @@ signals:
     void codecChanged();
     void enginesChanged();
     void fuzzyMatchChanged();
+    /*!
+     * \brief contentChanged
+     * emitted when text content changed.
+     */
     void contentChanged();
     void rawDataChanged();
     void fileNameChanged();

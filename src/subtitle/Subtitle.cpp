@@ -119,7 +119,7 @@ Subtitle::Subtitle(QObject *parent) :
   , priv(new Private())
 {
     // TODO: use factory.registedNames() and the order
-    setEngines(QStringList() << "FFmpeg" << "LibAss");
+    setEngines(QStringList() << "FFmpeg" << "LibASS");
 }
 
 Subtitle::~Subtitle()
@@ -353,6 +353,11 @@ void Subtitle::loadAsync()
     QThreadPool::globalInstance()->start(new Loader(this));
 }
 
+bool Subtitle::canRender() const
+{
+    return priv->processor && priv->processor->canRender();
+}
+
 QString Subtitle::getText() const
 {
     QMutexLocker lock(&priv->mutex);
@@ -383,14 +388,44 @@ QImage Subtitle::getImage(int width, int height)
         return QImage();
     if (!priv->current_count || width == 0 || height == 0)
         return QImage();
+    // always render the image to support animations
+#if 0
     if (!priv->update_image
             && width == priv->current_image.width() && height == priv->current_image.height())
         return priv->current_image;
+#endif
     priv->update_image = false;
     if (!priv->processor)
         return QImage();
     priv->current_image = priv->processor->getImage(priv->t, width, height);
     return priv->current_image;
+}
+
+bool Subtitle::processHeader(const QByteArray &data)
+{
+    return priv->processor && priv->processor->processHeader(data);
+}
+
+bool Subtitle::processLine(const QByteArray &data, qreal pts, qreal duration)
+{
+    if (!priv->processor)
+        return false;
+    SubtitleFrame f = priv->processor->processLine(data, pts, duration);
+    if (!f.isValid())
+        return false;
+    if (priv->frames.isEmpty() || priv->frames.last() < f) {
+        priv->frames.append(f);
+        return true;
+    }
+    // usually add to the end. TODO: test
+    QLinkedList<SubtitleFrame>::iterator it = priv->frames.end();
+    if (it != priv->frames.begin())
+        --it;
+    while (it != priv->frames.begin() && f < (*it)) {--it;}
+    if (it != priv->frames.begin()) // found in middle, insert before next
+        ++it;
+    priv->frames.insert(it, f);
+    return true;
 }
 
 // DO NOT set frame's image to reduce memory usage
@@ -545,6 +580,7 @@ QByteArray Subtitle::Private::readFromFile(const QString &path)
             CharsetDetector det;
             if (det.isAvailable()) {
                 QByteArray charset = det.detect(f.readAll());
+                qDebug("charset>>>>>>>>: %s", charset.constData());
                 f.seek(0);
                 if (!charset.isEmpty())
                     ts.setCodec(QTextCodec::codecForName(charset));

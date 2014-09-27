@@ -67,11 +67,11 @@ public:
      * \return
      */
     virtual QList<SubtitleFrame> frames() const = 0;
-    // add to higher level api Subtitle
+    virtual bool canRender() const { return false;}
     // return false if not supported
-    //virtual bool setHeader(const QByteArray& data) = 0;
-    // return timestamp, add to class Subtitle
-    //virtual qreal process(const QByteArray& data, qreal pts = -1) = 0;
+    virtual bool processHeader(const QByteArray& data) {return false;}
+    // return timestamp, insert it to Subtitle's internal linkedlist. can be invalid if only support renderering
+    virtual SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0) = 0;
     virtual QString getText(qreal pts) const = 0;
     virtual QImage getImage(qreal pts, int width, int height) = 0;
 };
