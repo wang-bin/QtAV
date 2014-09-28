@@ -37,8 +37,14 @@ int main(int argc, char *argv[])
     i = a.arguments().indexOf("-t");
     if (i > 0)
         t = a.arguments().at(i+1).toInt();
+    QString engine;
+    i = a.arguments().indexOf("-engine");
+    if (i > 0)
+        engine = a.arguments().at(i+1);
 
     Subtitle sub;
+    if (!engine.isEmpty())
+        sub.setEngines(QStringList() << engine);
     sub.setFileName(file);
     sub.setFuzzyMatch(fuzzy);
     SubtitleObserver sob;

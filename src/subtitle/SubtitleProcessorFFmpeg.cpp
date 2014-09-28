@@ -21,7 +21,6 @@
 
 #include <string>
 #include <QtDebug>
-#include <QtCore/QTime>
 #include <QtGui/QPainter>
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/prepost.h"
@@ -86,8 +85,8 @@ QString SubtitleProcessorFFmpeg::name() const
 QStringList SubtitleProcessorFFmpeg::supportedTypes() const
 {
     // from ffmpeg/tests/fate/subtitles.mak
-    // TODO: mp4
-    static QStringList sSuffixes = QStringList() << "ass" << "ssa" << "sub" << "srt" << "txt" << "vtt" << "smi" << "pjs" << "jss" << "aqt";
+    // TODO: mp4. check avformat classes
+    static const QStringList sSuffixes = QStringList() << "ass" << "ssa" << "sub" << "srt" << "txt" << "vtt" << "smi" << "pjs" << "jss" << "aqt";
     return sSuffixes;
 }
 

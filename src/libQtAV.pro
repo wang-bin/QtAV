@@ -255,6 +255,11 @@ config_openglwindow {
     SOURCES *= output/video/OpenGLWidgetRenderer.cpp
   }
 }
+config_libass {
+#link against libass instead of dynamic load
+  LIBS += -lass
+  SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
+}
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \

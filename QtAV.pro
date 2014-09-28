@@ -46,6 +46,7 @@ OptionalDepends = \
 !no-gdiplus:!no-widgets: OptionalDepends *= gdiplus
 # why win32 is false?
 !no-dxva: OptionalDepends *= dxva
+!no-libass: OptionalDepends *= libass
 unix {
     !no-xv:!no-widgets: OptionalDepends *= xv
     !no-vaapi: OptionalDepends *= vaapi
