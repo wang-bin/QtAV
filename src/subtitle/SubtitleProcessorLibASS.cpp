@@ -60,6 +60,7 @@ private:
     // video frame width, height
     int m_width, m_height;
     QList<SubtitleFrame> m_frames;
+    QImage m_image; //cache the image for the last invocation. return this if image does not change
 };
 
 static const SubtitleProcessorId SubtitleProcessorId_LibASS = "qtav.subtitle.processor.libass";
@@ -235,6 +236,9 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, int width, int height)
     }
     int detect_change = 0;
     ASS_Image *img = ass_render_frame(m_renderer, m_track, (long long)(pts * 1000.0), &detect_change);
+    if (!detect_change) {
+        return m_image;
+    }
     QRect rect(0, 0, 0, 0);
     ASS_Image *i = img;
     while (i) {
@@ -252,6 +256,7 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, int width, int height)
         renderASS32(&image, i, i->dst_x - rect.x(), i->dst_y - rect.y());
         i = i->next;
     }
+    m_image = image;
     return image;
 }
 
