@@ -50,6 +50,9 @@ public:
     virtual bool processHeader(const QByteArray& data);
     virtual SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0);
 private:
+    // render 1 ass image into a 32bit QImage with alpha channel.
+    //use dstX, dstY instead of img->dst_x/y because image size is small then ass renderer size
+    void renderASS32(QImage *image, ASS_Image* img, int dstX, int dstY);
     void processTrack(ASS_Track *track);
     ASS_Library *m_ass;
     ASS_Renderer *m_renderer;
@@ -100,7 +103,8 @@ SubtitleProcessorLibASS::SubtitleProcessorLibASS()
     }
 
     //ass_set_frame_size(m_renderer, frame_w, frame_h);
-    //ass_set_fonts(m_renderer, NULL, "Sans", 1, NULL, 1);
+    //ass_set_fonts(m_renderer, NULL, "Sans", 1, NULL, 1); //must set!
+    ass_set_fonts(m_renderer, NULL, NULL, 1, NULL, 1);
 }
 
 SubtitleProcessorLibASS::~SubtitleProcessorLibASS()
@@ -226,25 +230,26 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, int width, int height)
     if (width != m_width || height != m_height) {
         m_width = width;
         m_height = height;
+        qDebug("ass_set_frame_size %dx%d", width, height);
         ass_set_frame_size(m_renderer, width, height);
     }
     int detect_change = 0;
-    ASS_Image *img = ass_render_frame(m_renderer, m_track, pts * 1000.0, &detect_change);
-    QRect r(0, 0, 0, 0);
+    ASS_Image *img = ass_render_frame(m_renderer, m_track, (long long)(pts * 1000.0), &detect_change);
+    QRect rect(0, 0, 0, 0);
     ASS_Image *i = img;
     while (i) {
-       r |= QRect(i->dst_x, i->dst_y, i->w, i->h);
-       i = i->next;
+        rect |= QRect(i->dst_x, i->dst_y, i->w, i->h);
+        i = i->next;
     }
-    QImage image(r.size(),QImage::Format_ARGB32);
-    QPainter p(&image);
+    QImage image(rect.size(), QImage::Format_ARGB32);
+    image.fill(Qt::transparent);
     i = img;
     while (i) {
-        if (i->w > 0 && i->h > 0) { //w,h==0 means no paint
-            // FIXME: last line maybe not padded to stride, so can not use qpainter?
-            // rrggbbaa always
-            p.drawImage(i->dst_x - r.x(), i->dst_y - r.y(), QImage(i->bitmap, i->w, i->h, i->stride, QImage::Format_RGBA8888));
+        if (i->w <= 0 || i->h <= 0) {
+            i = i->next;
+            continue;
         }
+        renderASS32(&image, i, i->dst_x - rect.x(), i->dst_y - rect.y());
         i = i->next;
     }
     return image;
@@ -261,6 +266,33 @@ void SubtitleProcessorLibASS::processTrack(ASS_Track *track)
         frame.begin = qreal(ae.Start)/1000.0;
         frame.end = frame.begin + qreal(ae.Duration)/1000.0;
         m_frames.append(frame);
+    }
+}
+
+#define _r(c)  ((c)>>24)
+#define _g(c)  (((c)>>16)&0xFF)
+#define _b(c)  (((c)>>8)&0xFF)
+#define _a(c)  ((c)&0xFF)
+
+/*
+ * ASS_Image: 1bit alpha per pixel + 1 rgb per image. less memory usage
+ */
+void SubtitleProcessorLibASS::renderASS32(QImage *image, ASS_Image *img, int dstX, int dstY)
+{
+    const quint8 opacity = 255 - _a(img->color);
+    const quint8 r = _r(img->color);
+    const quint8 g = _g(img->color);
+    const quint8 b = _b(img->color);
+    quint8 *src = img->bitmap;
+    // use QRgb to avoid endian issue
+    QRgb *dst = (QRgb*)image->bits() + dstY * image->width() + dstX;
+    for (int y = 0; y < img->h; ++y) {
+        for (int x = 0; x < img->w; ++x) {
+            const unsigned k = ((unsigned) src[x]) * opacity / 255;
+            dst[x] = qRgba((k*r+(255-k)*qRed(dst[x]))/255, (g*k+(255-k)*qGreen(dst[x]))/255, (b*k+(255-k)*qBlue(dst[x]))/255, (k*k+(255-k)*qAlpha(dst[x]))/255);
+        }
+        src += img->stride;
+        dst += image->width();
     }
 }
 
