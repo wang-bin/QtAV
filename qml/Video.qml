@@ -204,7 +204,7 @@ Item {
     property alias hasVideo:        player.hasVideo
 
     /* documented below due to length of metaData documentation */
-    //property alias metaData:        player.metaData
+    property alias metaData:        player.metaData
 
     /*!
         \qmlproperty bool Video::muted
@@ -219,7 +219,7 @@ Item {
         This property holds the rate at which video is played at as a multiple
         of the normal rate.
     */
-    //property alias playbackRate:    player.playbackRate
+    property alias playbackRate:    player.playbackRate
 
     /*!
         \qmlproperty int Video::position
@@ -230,7 +230,7 @@ Item {
 
         \sa seek()
     */
-    //property alias position:        player.position
+    property alias position:        player.position
 
     /*!
         \qmlproperty bool Video::seekable
