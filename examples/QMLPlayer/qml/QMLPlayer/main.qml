@@ -140,26 +140,27 @@ Rectangle {
         onOpenFile: fileDialog.open()
         onShowInfo: {
             help.text = "<p>" + Utils.htmlEscaped(player.source) + "</p>"
-                    + "<p>" + qsTr("Duration: ") + player.metaData.duration + "</p>"
-            if (player.metaData.title.length > 0)
+            if (typeof player.metaData.duration != "undefined")
+                help.text += "<p>" + qsTr("Duration: ") + player.metaData.duration + "</p>"
+            if (typeof player.metaData.title != "undefined")
                 help.text += "<p>" + qsTr("Title") + ": " +player.metaData.title + "</p>"
-            if (player.metaData.albumTitle.length > 0)
+            if (typeof player.metaData.albumTitle != "undefined")
                 help.text += "<p>" + qsTr("Album") + ": " + Utils.htmlEscaped(player.metaData.albumTitle) + "</p>"
-            if (player.metaData.title.length > 0)
+            if (typeof player.metaData.title != "undefined")
                 help.text += "<p>" + qsTr("Comment") + ": " + Utils.htmlEscaped(player.metaData.comment) + "</p>"
-            if (player.metaData.year > 0)
+            if (typeof player.metaData.year != "undefined")
                 help.text += "<p>" + qsTr("Year") + ": " + player.metaData.year + "</p>"
-            if (player.metaData.date.length > 0)
+            if (typeof player.metaData.date != "undefined")
                 help.text += "<p>" + qsTr("Date") + ": " + player.metaData.date + "</p>"
-            if (player.metaData.author.length > 0)
+            if (typeof player.metaData.author != "undefined")
                 help.text += "<p>" + qsTr("Author") + ": " + Utils.htmlEscaped(player.metaData.author) + "</p>"
-            if (player.metaData.publisher.length > 0)
+            if (typeof player.metaData.publisher != "undefined")
                 help.text += "<p>" + qsTr("Publisher") + ": " + Utils.htmlEscaped(player.metaData.publisher) + "</p>"
-            if (player.metaData.genre.length > 0)
+            if (typeof player.metaData.genre != "undefined")
                 help.text += "<p>" + qsTr("Genre") + ": " + player.metaData.genre + "</p>"
-            if (player.metaData.trackNumber > 0)
+            if (typeof player.metaData.trackNumber != "undefined")
                 help.text += "<p>" + qsTr("Track") + ": " + player.metaData.trackNumber + "</p>"
-            if (player.metaData.trackCount > 0)
+            if (typeof player.metaData.trackCount != "undefined")
                 help.text += "<p>" + qsTr("Track count") + ": " + player.metaData.trackCount + "</p>"
 
             if (player.hasVideo) {
