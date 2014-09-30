@@ -438,6 +438,8 @@ bool Subtitle::processLine(const QByteArray &data, qreal pts, qreal duration)
 // check previous text if now no subtitle
 bool Subtitle::Private::prepareCurrentFrame()
 {
+    if (frames.isEmpty())
+        return false;
     QLinkedList<SubtitleFrame>::iterator it = itf;
     int found = 0;
     const int old_current_count = current_count;
@@ -612,6 +614,8 @@ bool Subtitle::Private::processRawData(const QByteArray &data)
     if (!processor)
         return false;
     QList<SubtitleFrame> fs(processor->frames());
+    if (fs.isEmpty())
+        return false;
     std::sort(fs.begin(), fs.end());
     foreach (const SubtitleFrame& f, fs) {
        frames.push_back(f);
