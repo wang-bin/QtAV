@@ -102,8 +102,9 @@ public:
     QPainterFilterContext();
     virtual ~QPainterFilterContext();
     virtual Type type() const; //QtPainter
-    virtual void drawImage(const QPointF& pos, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
-    virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    // empty source rect equals to the whole source rect
+    virtual void drawImage(const QPointF& pos, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor);
+    virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor);
     virtual void drawPlainText(const QPointF& pos, const QString& text);
     // if rect is null, draw single line text at rect.topLeft(), ignoring flags
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);

@@ -152,7 +152,10 @@ void QPainterFilterContext::drawImage(const QPointF &pos, const QImage &image, c
 {
     if (!prepare())
         return;
-    painter->drawImage(pos, image, source, flags);
+    if (source.isNull())
+        painter->drawImage(pos, image, QRectF(0, 0, image.width(), image.height()), flags);
+    else
+        painter->drawImage(pos, image, source, flags);
     painter->restore();
 }
 
@@ -160,7 +163,10 @@ void QPainterFilterContext::drawImage(const QRectF &target, const QImage &image,
 {
     if (!prepare())
         return;
-    painter->drawImage(target, image, source, flags);
+    if (source.isNull())
+        painter->drawImage(target, image, QRectF(0, 0, image.width(), image.height()), flags);
+    else
+        painter->drawImage(target, image, source, flags);
     painter->restore();
 }
 

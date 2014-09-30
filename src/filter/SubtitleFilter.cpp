@@ -202,6 +202,21 @@ void SubtitleFilter::process(Statistics *statistics, VideoFrame *frame)
         qWarning("no paint device!");
         return;
     }
+    if (d.sub.canRender()) {
+        //d.sub.setTimestamp(); //TODO: set to current display video frame's timestamp
+        QRect rect;
+        /*
+         * image quality maybe to low if use video frame resolution for large display.
+         * The difference is small if use paint_device size and video frame aspect ratio ~ renderer aspect ratio
+         * if use renderer's resolution, we have to map bounding rect from video frame coordinate to renderer's
+         */
+        //QImage img = d.sub.getImage(statistics->video_only.width, statistics->video_only.height, &rect);
+        QImage img = d.sub.getImage(ctx->paint_device->width(), ctx->paint_device->height(), &rect);
+        if (img.isNull())
+            return;
+        ctx->drawImage(rect, img);
+        return;
+    }
     ctx->font = d.font;
     ctx->pen.setColor(d.color);
     ctx->rect = d.realRect(ctx->paint_device->width(), ctx->paint_device->height());
