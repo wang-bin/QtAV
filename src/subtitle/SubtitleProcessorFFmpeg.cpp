@@ -21,7 +21,6 @@
 
 #include <string>
 #include <QtDebug>
-#include <QtGui/QPainter>
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/prepost.h"
 #include "QtAV/AVDemuxer.h"
@@ -45,13 +44,11 @@ public:
     virtual QList<SubtitleFrame> frames() const;
     virtual SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0);
     virtual QString getText(qreal pts) const;
-    virtual QImage getImage(qreal pts, int width, int height);
 private:
     bool processSubtitle();
     AVCodecContext *codec_ctx;
     AVDemuxer m_reader;
     QList<SubtitleFrame> m_frames;
-    QFont m_font;
 };
 
 static const SubtitleProcessorId SubtitleProcessorId_FFmpeg = "qtav.subtitle.processor.ffmpeg";
@@ -68,8 +65,6 @@ void RegisterSubtitleProcessorFFmpeg_Man()
 SubtitleProcessorFFmpeg::SubtitleProcessorFFmpeg()
     : codec_ctx(0)
 {
-    m_font.setBold(true);
-    m_font.setPixelSize(24);
 }
 
 SubtitleProcessorId SubtitleProcessorFFmpeg::id() const
@@ -145,22 +140,6 @@ QString SubtitleProcessorFFmpeg::getText(qreal pts) const
             break;
     }
     return text.trimmed();
-}
-
-QImage SubtitleProcessorFFmpeg::getImage(qreal pts, int width, int height)
-{
-    QString text = getText(pts);
-    if (text.isEmpty())
-        return QImage();
-    QImage img(width, height, QImage::Format_ARGB32);
-    img.fill(Qt::transparent);
-    QPainter p(&img);
-    p.setPen(QColor(Qt::white));
-    p.setFont(m_font);
-    const int flags = Qt::AlignHCenter | Qt::AlignBottom | Qt::TextWordWrap;
-    //QRect box = fm.boundingRect(0, 0, width, height, flags, text);
-    p.drawText(0, 0, width, height, flags, text);
-    return img;
 }
 
 SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal pts, qreal duration)

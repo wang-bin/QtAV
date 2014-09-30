@@ -89,7 +89,7 @@ public:
     bool loaded;
     bool fuzzy_match;
     bool update_text;
-    bool update_image;
+    bool update_image; //TODO: detect image change from engine
     SubtitleProcessor *processor;
     QList<SubtitleProcessor*> processors;
     QByteArray codec;
@@ -119,7 +119,7 @@ Subtitle::Subtitle(QObject *parent) :
   , priv(new Private())
 {
     // TODO: use factory.registedNames() and the order
-    setEngines(QStringList() << "FFmpeg" << "LibASS");
+    setEngines(QStringList() << "LibASS" << "FFmpeg");
 }
 
 Subtitle::~Subtitle()
@@ -278,6 +278,7 @@ QStringList Subtitle::suffixes() const
 
 void Subtitle::setTimestamp(qreal t)
 {
+    // TODO: detect image change?
     {
         QMutexLocker lock(&priv->mutex);
         Q_UNUSED(lock);
@@ -380,24 +381,28 @@ QString Subtitle::getText() const
     return priv->current_text;
 }
 
-QImage Subtitle::getImage(int width, int height)
+QImage Subtitle::getImage(int width, int height, QRect* boundingRect)
 {
     QMutexLocker lock(&priv->mutex);
     Q_UNUSED(lock);
     if (!isLoaded())
         return QImage();
-    if (!priv->current_count || width == 0 || height == 0)
+    if (width == 0 || height == 0)
+        return QImage();
+#if 0
+    if (!priv->current_count) //seems ok to use this code
         return QImage();
     // always render the image to support animations
-#if 0
     if (!priv->update_image
             && width == priv->current_image.width() && height == priv->current_image.height())
         return priv->current_image;
 #endif
     priv->update_image = false;
-    if (!priv->processor)
+    if (!canRender())
         return QImage();
-    priv->current_image = priv->processor->getImage(priv->t, width, height);
+    priv->processor->setFrameSize(width, height);
+    // TODO: store bounding rect here and not in processor
+    priv->current_image = priv->processor->getImage(priv->t, boundingRect);
     return priv->current_image;
 }
 

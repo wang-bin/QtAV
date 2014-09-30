@@ -29,6 +29,11 @@ namespace QtAV {
 
 FACTORY_DEFINE(SubtitleProcessor)
 
+SubtitleProcessor::SubtitleProcessor()
+    : m_width(0)
+    , m_height(0)
+{}
+
 bool SubtitleProcessor::process(const QString &path)
 {
     QFile f(path);
@@ -39,6 +44,33 @@ bool SubtitleProcessor::process(const QString &path)
     bool ok = process(&f);
     f.close();
     return ok;
+}
+
+QImage SubtitleProcessor::getImage(qreal pts, QRect *boundingRect)
+{
+    Q_UNUSED(pts)
+    Q_UNUSED(boundingRect)
+    return QImage();
+}
+
+void SubtitleProcessor::setFrameSize(int width, int height)
+{
+    if (width == m_width && height == m_height)
+        return;
+    m_width = width;
+    m_height = height;
+    onFrameSizeChanged(m_width, m_height);
+}
+
+QSize SubtitleProcessor::frameSize() const
+{
+    return QSize(m_width, m_height);
+}
+
+void SubtitleProcessor::onFrameSizeChanged(int width, int height)
+{
+    Q_UNUSED(width);
+    Q_UNUSED(height);
 }
 
 } //namespace QtAV

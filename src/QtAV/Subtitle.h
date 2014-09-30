@@ -134,7 +134,15 @@ public:
     // call setTimestamp before getText/Image
     //plain text. separated by '\n' if more more than 1 text rects found
     Q_INVOKABLE QString getText() const;
-    Q_INVOKABLE QImage getImage(int width, int height);
+    /*!
+      * \brief getImage
+      * Get a subtitle image with given (video) frame size. The result image size usually smaller than
+      * given frame size because subtitle are lines of text. The boundingRect indicates the actual
+      * image position and size relative to given size.
+      * The result image format is QImage::Format_ARGB32
+      * \return empty image if no image, or subtitle processor does not support renderering
+      */
+    Q_INVOKABLE QImage getImage(int width, int height, QRect* boundingRect = 0);
     // used for embedded subtitles.
     // used by libass to set style etc.
     bool processHeader(const QByteArray& data);

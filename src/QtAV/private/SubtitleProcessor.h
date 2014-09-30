@@ -38,6 +38,7 @@ FACTORY_DECLARE(SubtitleProcessor)
 class Q_AV_PRIVATE_EXPORT SubtitleProcessor
 {
 public:
+    SubtitleProcessor();
     virtual ~SubtitleProcessor() {}
     virtual SubtitleProcessorId id() const = 0;
     virtual QString name() const = 0;
@@ -73,7 +74,15 @@ public:
     // return timestamp, insert it to Subtitle's internal linkedlist. can be invalid if only support renderering
     virtual SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0) = 0;
     virtual QString getText(qreal pts) const = 0;
-    virtual QImage getImage(qreal pts, int width, int height) = 0;
+    // default null image
+    virtual QImage getImage(qreal pts, QRect* boundingRect = 0);
+    void setFrameSize(int width, int height);
+    QSize frameSize() const;
+protected:
+    // default do nothing
+    virtual void onFrameSizeChanged(int width, int height);
+private:
+    int m_width, m_height;
 };
 
 } //namespace QtAV

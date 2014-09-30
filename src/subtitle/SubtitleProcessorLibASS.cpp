@@ -25,7 +25,6 @@ extern "C" {
 #include <ass/ass.h>
 }
 #include <QtDebug>
-#include <QtGui/QPainter>
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/prepost.h"
 #include "QtAV/Packet.h"
@@ -45,10 +44,13 @@ public:
     // supportsFromFile must be true
     virtual bool process(const QString& path);
     virtual QList<SubtitleFrame> frames() const;
+    virtual bool canRender() const { return true;}
     virtual QString getText(qreal pts) const;
-    virtual QImage getImage(qreal pts, int width, int height);
+    virtual QImage getImage(qreal pts, QRect *boundingRect = 0);
     virtual bool processHeader(const QByteArray& data);
     virtual SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0);
+protected:
+    virtual void onFrameSizeChanged(int width, int height);
 private:
     // render 1 ass image into a 32bit QImage with alpha channel.
     //use dstX, dstY instead of img->dst_x/y because image size is small then ass renderer size
@@ -57,10 +59,10 @@ private:
     ASS_Library *m_ass;
     ASS_Renderer *m_renderer;
     ASS_Track *m_track;
-    // video frame width, height
-    int m_width, m_height;
     QList<SubtitleFrame> m_frames;
-    QImage m_image; //cache the image for the last invocation. return this if image does not change
+    //cache the image for the last invocation. return this if image does not change
+    QImage m_image;
+    QRect m_bound;
 };
 
 static const SubtitleProcessorId SubtitleProcessorId_LibASS = "qtav.subtitle.processor.libass";
@@ -88,8 +90,6 @@ SubtitleProcessorLibASS::SubtitleProcessorLibASS()
     : m_ass(0)
     , m_renderer(0)
     , m_track(0)
-    , m_width(0)
-    , m_height(0)
 {
     m_ass = ass_library_init();
     if (!m_ass) {
@@ -214,7 +214,7 @@ QString SubtitleProcessorLibASS::getText(qreal pts) const
     return text.trimmed();
 }
 
-QImage SubtitleProcessorLibASS::getImage(qreal pts, int width, int height)
+QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
 {
     if (!m_ass) {
         qWarning("ass library not available");
@@ -228,15 +228,11 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, int width, int height)
         qWarning("ass track not available");
         return QImage();
     }
-    if (width != m_width || height != m_height) {
-        m_width = width;
-        m_height = height;
-        qDebug("ass_set_frame_size %dx%d", width, height);
-        ass_set_frame_size(m_renderer, width, height);
-    }
     int detect_change = 0;
     ASS_Image *img = ass_render_frame(m_renderer, m_track, (long long)(pts * 1000.0), &detect_change);
     if (!detect_change) {
+        if (boundingRect)
+            *boundingRect = m_bound;
         return m_image;
     }
     QRect rect(0, 0, 0, 0);
@@ -244,6 +240,10 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, int width, int height)
     while (i) {
         rect |= QRect(i->dst_x, i->dst_y, i->w, i->h);
         i = i->next;
+    }
+    m_bound = rect;
+    if (boundingRect) {
+        *boundingRect = m_bound;
     }
     QImage image(rect.size(), QImage::Format_ARGB32);
     image.fill(Qt::transparent);
@@ -258,6 +258,13 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, int width, int height)
     }
     m_image = image;
     return image;
+}
+
+void SubtitleProcessorLibASS::onFrameSizeChanged(int width, int height)
+{
+    if (!m_renderer)
+        return;
+    ass_set_frame_size(m_renderer, width, height);
 }
 
 void SubtitleProcessorLibASS::processTrack(ASS_Track *track)
