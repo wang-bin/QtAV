@@ -68,6 +68,7 @@ public:
     int u_colorMatrix;
     int u_bpp;
     int u_opacity;
+    int u_gammaRGB;
     QVector<int> u_Texture;
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;
