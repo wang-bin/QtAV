@@ -448,7 +448,7 @@ void VideoRenderer::handlePaintEvent()
             if (!vf->isEnabled())
                 continue;
             vf->prepareContext(d.filter_context, d.statistics, 0);
-            vf->apply(d.statistics, 0);
+            vf->apply(d.statistics, &d.video_frame); //painter and paint device are ready, pass video frame is ok.
         }
     } else {
         //warn once

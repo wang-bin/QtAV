@@ -203,7 +203,8 @@ void SubtitleFilter::process(Statistics *statistics, VideoFrame *frame)
         return;
     }
     if (d.sub.canRender()) {
-        //d.sub.setTimestamp(); //TODO: set to current display video frame's timestamp
+        if (frame && frame->timestamp() > 0.0)
+            d.sub.setTimestamp(frame->timestamp()); //TODO: set to current display video frame's timestamp
         QRect rect;
         /*
          * image quality maybe to low if use video frame resolution for large display.
