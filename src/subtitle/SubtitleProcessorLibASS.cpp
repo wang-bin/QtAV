@@ -102,7 +102,9 @@ SubtitleProcessorLibASS::SubtitleProcessorLibASS()
         qWarning("ass_renderer_init failed!");
         return;
     }
-
+#if LIBASS_VERSION >= 0x01000000
+    ass_set_shaper(m_renderer, ASS_SHAPING_SIMPLE);
+#endif
     //ass_set_frame_size(m_renderer, frame_w, frame_h);
     //ass_set_fonts(m_renderer, NULL, "Sans", 1, NULL, 1); //must set!
     ass_set_fonts(m_renderer, NULL, NULL, 1, NULL, 1);
@@ -286,12 +288,50 @@ void SubtitleProcessorLibASS::processTrack(ASS_Track *track)
 #define _b(c)  (((c)>>8)&0xFF)
 #define _a(c)  ((c)&0xFF)
 
+#define qRgba2(r, g, b, a) ((a << 24) | (r << 16) | (g  << 8) | b)
+
 /*
  * ASS_Image: 1bit alpha per pixel + 1 rgb per image. less memory usage
  */
+//0xAARRGGBB
+#if (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+#define ARGB32_SET(C, R, G, B, A) \
+    C[0] = (A); \
+    C[1] = (R); \
+    C[2] = (G); \
+    C[3] = (B);
+#define ARGB32_ADD(C, R, G, B, A) \
+    C[0] += (A); \
+    C[1] += (R); \
+    C[2] += (G); \
+    C[3] += (B);
+#define ARGB32_A(C) (C[0])
+#define ARGB32_R(C) (C[1])
+#define ARGB32_G(C) (C[2])
+#define ARGB32_B(C) (C[3])
+#else
+#define ARGB32_SET(C, R, G, B, A) \
+    C[0] = (B); \
+    C[1] = (G); \
+    C[2] = (R); \
+    C[3] = (A);
+#define ARGB32_ADD(C, R, G, B, A) \
+    C[0] += (B); \
+    C[1] += (G); \
+    C[2] += (R); \
+    C[3] += (A);
+#define ARGB32_A(C) (C[3])
+#define ARGB32_R(C) (C[2])
+#define ARGB32_G(C) (C[1])
+#define ARGB32_B(C) (C[0])
+#endif
+#define USE_QRGBA 0
+// C[i] = C'[i] = (k*c[i]+(255-k)*C[i])/255 = C[i] + k*(c[i]-C[i])/255, min(c[i],C[i]) <= C'[i] <= max(c[i],C[i])
 void SubtitleProcessorLibASS::renderASS32(QImage *image, ASS_Image *img, int dstX, int dstY)
 {
-    const quint8 opacity = 255 - _a(img->color);
+    const quint8 a = 255 - _a(img->color);
+    if (a == 0)
+        return;
     const quint8 r = _r(img->color);
     const quint8 g = _g(img->color);
     const quint8 b = _b(img->color);
@@ -300,8 +340,38 @@ void SubtitleProcessorLibASS::renderASS32(QImage *image, ASS_Image *img, int dst
     QRgb *dst = (QRgb*)image->bits() + dstY * image->width() + dstX;
     for (int y = 0; y < img->h; ++y) {
         for (int x = 0; x < img->w; ++x) {
-            const unsigned k = ((unsigned) src[x]) * opacity / 255;
-            dst[x] = qRgba((k*r+(255-k)*qRed(dst[x]))/255, (g*k+(255-k)*qGreen(dst[x]))/255, (b*k+(255-k)*qBlue(dst[x]))/255, (k*k+(255-k)*qAlpha(dst[x]))/255);
+            const unsigned k = ((unsigned) src[x])*a/255;
+#if USE_QRGBA
+            const unsigned A = qAlpha(dst[x]);
+#else
+            quint8 *c = (quint8*)(&dst[x]);
+            const unsigned A = ARGB32_A(c);
+#endif
+            if (A == 0) { // dst color can be ignored
+#if USE_QRGBA
+                 dst[x] = qRgba(r, g, b, k);
+#else
+                 ARGB32_SET(c, r, g, b, k);
+#endif //USE_QRGBA
+            } else if (k == 0) { //no change
+                //dst[x] = qRgba(qRed(dst[x])), qGreen(dst[x]), qBlue(dst[x]), qAlpha(dst[x])) == dst[x];
+            } else if (k == 255) {
+#if USE_QRGBA
+                dst[x] = qRgba(r, g, b, k);
+#else
+                ARGB32_SET(c, r, g, b, k);
+#endif //USE_QRGBA
+            } else {
+#if USE_QRGBA
+                // no need to &0xff because always be 0~255
+                dst[x] += qRgba2(k*(r-qRed(dst[x]))/255, k*(g-qGreen(dst[x]))/255, k*(b-qBlue(dst[x]))/255, k*(a-A)/255);
+#else
+                const unsigned R = ARGB32_R(c);
+                const unsigned G = ARGB32_G(c);
+                const unsigned B = ARGB32_B(c);
+                ARGB32_ADD(c, r == R ? 0 : k*(r-R)/255, g == G ? 0 : k*(g-G)/255, b == B ? 0 : k*(b-B)/255, a == A ? 0 : k*(a-A)/255);
+#endif
+            }
         }
         src += img->stride;
         dst += image->width();
