@@ -74,6 +74,7 @@ public:
     int colorMatrixLocation() const;
     int bppLocation() const;
     int opacityLocation() const;
+    int gammaRGBLocation() const;
     VideoFormat videoFormat() const;
     void setVideoFormat(const VideoFormat& format);
     QOpenGLShaderProgram* program();

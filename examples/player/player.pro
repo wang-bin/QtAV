@@ -94,6 +94,6 @@ ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
 RC_ICONS = $$PROJECTROOT/src/QtAV.ico
 QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics | wbsecg1@gmail.com"
-QMAKE_TARGET_DESCRIPTION = "Multimedia playback framework based on Qt & FFmpeg. https://github.com/wang-bin/QtAV"
-QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2014 WangBin, wbsecg1@gmail.com"
+QMAKE_TARGET_DESCRIPTION = "Multimedia playback framework based on Qt & FFmpeg. https://github.com/lexxai/QtAV-lexxai"
+QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2014 WangBin, wbsecg1@gmail.com, + lexxai"
 QMAKE_TARGET_PRODUCT = "QtAV player"
