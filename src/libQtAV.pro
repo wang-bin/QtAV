@@ -89,7 +89,7 @@ LIBS += -lavcodec -lavformat -lavutil -lswscale
 
 exists($$PROJECTROOT/contrib/libchardet/libchardet.pri) {
   include($$PROJECTROOT/contrib/libchardet/libchardet.pri)
-  DEFINES += QTAV_HAVE_CHARDET=1
+  DEFINES += QTAV_HAVE_CHARDET=1 BUILD_CHARDET_STATIC
 }
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
