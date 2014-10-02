@@ -1,7 +1,7 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
-
+    + lexxai
 *   This file is part of QtAV
 
     This library is free software; you can redistribute it and/or
@@ -18,7 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #ifdef GL_ES
 // Set default precision to medium
 precision mediump int;
@@ -28,7 +27,6 @@ precision mediump float;
 #define mediump
 #define lowp
 #endif
-
 // u_TextureN: yuv. use array?
 uniform sampler2D u_Texture0;
 uniform sampler2D u_Texture1;
@@ -37,13 +35,16 @@ varying lowp vec2 v_TexCoords;
 uniform float u_opacity;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
-uniform float u_gammaRGB = 4.0;
-uniform float kernel[9]= float[9](
-			  0.,0.,0.,
-			  0.,1.,0.,
-			  0.,0.,0.	
+uniform float u_gammaRGB;
+uniform vec2 u_pixeloffset = vec2(0.00078125,0.0015625); // for test inital value
+uniform float u_filterkernel[9] = float[9](
+			   0.,-1. ,0.,
+			  -1., 5. ,-1.,
+			   0.,-1. ,0.	
 );
-
+vec3 color;
+#define USED_FILTERS 
+//#define USED_GAMMA
 #if defined(LA_16BITS_BE) || defined(LA_16BITS_LE)
 #define LA_16BITS 1
 #else
@@ -72,10 +73,24 @@ const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
                                0, 0, 0, 0,
                                0, -0.5, -0.5, 1);
 #endif
-
 // 10, 16bit: http://msdn.microsoft.com/en-us/library/windows/desktop/bb970578%28v=vs.85%29.aspx
 void main()
 {
+  vec2 pixeloffset[9] = vec2[9](
+	vec2(  -u_pixeloffset.x   , -u_pixeloffset.y  ),
+	vec2(   0.0		  , -u_pixeloffset.y  ),
+	vec2(   u_pixeloffset.x   , -u_pixeloffset.y  ),
+	vec2(  -u_pixeloffset.x   ,  0.0   	      ),
+	vec2(   0.0		  ,  0.0	      ),
+	vec2(   u_pixeloffset.x   ,  0.0	      ),
+	vec2(  -u_pixeloffset.x   ,  u_pixeloffset.y  ),
+	vec2(   0.0		  ,  u_pixeloffset.y  ),
+	vec2(   u_pixeloffset.x   ,  u_pixeloffset.y  )
+);
+
+
+//vec2 pixeloffset[1];
+
     // FFmpeg supports 9, 10, 12, 14, 16 bits
 #if LA_16BITS
     //http://stackoverflow.com/questions/22693169/opengl-es-2-0-glsl-compiling-fails-on-osx-when-using-const
@@ -86,28 +101,38 @@ void main()
     vec2 t = vec2(256.0, 1.0)*255.0/range;
 #endif
 #endif //LA_16BITS
+#if defined(USED_FILTERS)
+ vec3 sum = vec3(0.0);
+ for (int i=0;i<9;i++) {
+#else
+ int i=4;
+#endif //USED_FILTERS
     // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)
     gl_FragColor = clamp(u_colorMatrix
                          * vec4(
 #if LA_16BITS
-                             dot(texture2D(u_Texture0, v_TexCoords).ra, t),
-                             dot(texture2D(u_Texture1, v_TexCoords).ra, t),
-                             dot(texture2D(u_Texture2, v_TexCoords).ra, t),
+                             dot(texture2D(u_Texture0, v_TexCoords+pixeloffset[i]).ra, t),
+                             dot(texture2D(u_Texture1, v_TexCoords+pixeloffset[i]).ra, t),
+                             dot(texture2D(u_Texture2, v_TexCoords+pixeloffset[i]).ra, t),
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
-                             texture2D(u_Texture0, v_TexCoords).r,
-                             texture2D(u_Texture1, v_TexCoords).g,
-                             texture2D(u_Texture2, v_TexCoords).a,
+                             texture2D(u_Texture0, v_TexCoords + pixeloffset[i]).r,
+                             texture2D(u_Texture1, v_TexCoords + pixeloffset[i]).g,
+                             texture2D(u_Texture2, v_TexCoords + pixeloffset[i]).a,
 #endif //LA_16BITS
                              1)
                          , 0.0, 1.0) * u_opacity   ;
-//added GAMMA
- vec3 color = gl_FragColor.rgb;
- gl_FragColor.rgb = pow(color, 1.0 / vec3(u_gammaRGB));
 
-
+#if defined(USED_FILTERS)
 //added sharp
-
-
-
+  color = gl_FragColor.rgb;
+  sum += color * u_filterkernel[i];
+ }
+  gl_FragColor.rgb = sum;
+#endif //USED_FILTERS
+#if defined(USED_GAMMA)
+//added GAMMA
+  color = gl_FragColor.rgb;
+  gl_FragColor.rgb = pow(color, 1.0 / vec3(u_gammaRGB));
+#endif //USED_GAMMA
 }

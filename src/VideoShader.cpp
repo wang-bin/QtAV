@@ -208,6 +208,16 @@ int VideoShader::gammaRGBLocation() const
     return d_func().u_gammaRGB;
 }
 
+int VideoShader::pixeloffsetLocation() const
+{
+    return d_func().u_pixeloffset;
+}
+
+int VideoShader::filterkernelLocation() const
+{
+    return d_func().u_filterkernel;
+}
+
 VideoFormat VideoShader::videoFormat() const
 {
     return d_func().video_format;
@@ -235,6 +245,8 @@ bool VideoShader::update(VideoMaterial *material)
     if (!material->bind())
         return false;
 
+    // material->setGammaRGB(0.2);
+
     const VideoFormat fmt(material->currentFormat());
     //format is out of date because we may use the same shader for different formats
     setVideoFormat(fmt);
@@ -255,7 +267,10 @@ bool VideoShader::update(VideoMaterial *material)
     //qDebug() << "color mat " << material->colorMatrix();
     program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
     program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
-    program()->setUniformValue(gammaRGBLocation(), (GLfloat)0.5);
+    program()->setUniformValue(gammaRGBLocation(), (GLfloat)material->gammaRGB());
+    program()->setUniformValue(pixeloffsetLocation(), material->pixeloffset());
+
+    //qDebug("material->gammaRGB: %f ",(GLfloat)material->gammaRGB());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     // uniform end. attribute begins
     return true;
@@ -480,6 +495,11 @@ int VideoMaterial::bpp() const
     return d_func().bpp;
 }
 
+qreal VideoMaterial::gammaRGB() const
+{
+    return d_func().gammaRGB;
+}
+
 int VideoMaterial::planeCount() const
 {
     return d_func().frame.planeCount();
@@ -503,6 +523,11 @@ void VideoMaterial::setHue(qreal value)
 void VideoMaterial::setSaturation(qreal value)
 {
     d_func().colorTransform.setSaturation(value);
+}
+
+void VideoMaterial::setGammaRGB(qreal value)
+{
+    d_func().gammaRGB=value;
 }
 
 qreal VideoMaterial::validTextureWidth() const
@@ -530,6 +555,14 @@ QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
     if (qAbs(h) > 1)
         h /= (float)d.height;
     return QRectF(x, y, w, h);
+}
+
+QVector2D VideoMaterial::pixeloffset () const
+{
+    DPTR_D(const VideoMaterial);
+    float w=1.f/d.width;
+    float h=1.f/d.height;
+    return QVector2D(w,h);
 }
 
 bool VideoMaterialPrivate::initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height)
