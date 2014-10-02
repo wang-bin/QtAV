@@ -37,6 +37,7 @@ typedef QTime QElapsedTimer;
 #endif
 
 struct AVFormatContext;
+struct AVInputFormat;
 struct AVCodecContext;
 struct AVCodec;
 struct AVFrame;
@@ -224,6 +225,7 @@ private:
     AVCodecContext *a_codec_context, *v_codec_context, *s_codec_contex;
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
+    AVInputFormat *_iformat;
     QAVIOContext* m_pQAVIO;
     QMutex mutex; //for seek and readFrame
     QElapsedTimer seek_timer;

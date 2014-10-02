@@ -154,6 +154,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , v_codec_context(0)
     , s_codec_contex(0)
     , _file_name(fileName)
+    , _iformat(0)
     , m_pQAVIO(0)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AccurateFrame)
@@ -164,6 +165,9 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
         AVInitializer() {
             qDebug("av_register_all, avcodec_register_all, avformat_network_init");
             avcodec_register_all();
+#if QTAV_HAVE(AVDEVICE)
+            avdevice_register_all();
+#endif
             av_register_all();
             avformat_network_init();
         }
@@ -451,6 +455,20 @@ bool AVDemuxer::loadFile(const QString &fileName)
         _file_name.insert(3, 'h');
     else if (_file_name.startsWith("file://"))
         _file_name.remove("file://");
+#if QTAV_HAVE(AVDEVICE)
+    else if (_file_name.startsWith("avdevice:"))
+    {
+        // avdevice:video4linux2:file_name
+        QStringList parts = _file_name.split(":");
+        if (parts.count() != 3)
+        {
+            qDebug("invalid avdevice specification");
+            return false;
+        }
+        _iformat = av_find_input_format(parts[1].toUtf8().constData());
+        _file_name = parts[2];
+    }
+#endif
     if (m_pQAVIO)
         m_pQAVIO->setDevice(0);
     return load();
@@ -491,13 +509,13 @@ bool AVDemuxer::load()
 
         qDebug("avformat_open_input: format_context:'%p'...",format_context);
         mpInterrup->begin(InterruptHandler::Open);
-        ret = avformat_open_input(&format_context, "iodevice", NULL, mOptions.isEmpty() ? NULL : &mpDict);
+        ret = avformat_open_input(&format_context, "iodevice", _iformat, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
         qDebug("avformat_open_input: (with io device) ret:%d", ret);
     } else {
         qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
         mpInterrup->begin(InterruptHandler::Open);
-        ret = avformat_open_input(&format_context, _file_name.toUtf8().constData(), NULL, mOptions.isEmpty() ? NULL : &mpDict);
+        ret = avformat_open_input(&format_context, _file_name.toUtf8().constData(), _iformat, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
         qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
     }
