@@ -70,7 +70,7 @@ public:
     int u_bpp;
     int u_opacity;
     int u_gammaRGB;
-    int u_pixeloffset;
+    int u_pix;
     int u_filterkernel;
     QVector<int> u_Texture;
     VideoFormat video_format;

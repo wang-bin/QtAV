@@ -1,7 +1,7 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
-    + lexxai
+
 *   This file is part of QtAV
 
     This library is free software; you can redistribute it and/or
@@ -35,14 +35,17 @@ varying lowp vec2 v_TexCoords;
 uniform float u_opacity;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
-uniform float u_gammaRGB;
-uniform vec2 u_pixeloffset = vec2(0.00078125,0.0015625); // for test inital value
+uniform float u_gammaRGB = 1.;
+uniform vec2  u_pix;
 uniform float u_filterkernel[9] = float[9](
 			   0.,-1. ,0.,
 			  -1., 5. ,-1.,
 			   0.,-1. ,0.	
 );
+
 vec3 color;
+
+//#define USED_DEBUG
 #define USED_FILTERS 
 //#define USED_GAMMA
 #if defined(LA_16BITS_BE) || defined(LA_16BITS_LE)
@@ -77,15 +80,15 @@ const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
 void main()
 {
   vec2 pixeloffset[9] = vec2[9](
-	vec2(  -u_pixeloffset.x   , -u_pixeloffset.y  ),
-	vec2(   0.0		  , -u_pixeloffset.y  ),
-	vec2(   u_pixeloffset.x   , -u_pixeloffset.y  ),
-	vec2(  -u_pixeloffset.x   ,  0.0   	      ),
-	vec2(   0.0		  ,  0.0	      ),
-	vec2(   u_pixeloffset.x   ,  0.0	      ),
-	vec2(  -u_pixeloffset.x   ,  u_pixeloffset.y  ),
-	vec2(   0.0		  ,  u_pixeloffset.y  ),
-	vec2(   u_pixeloffset.x   ,  u_pixeloffset.y  )
+	vec2(  -u_pix.x   , -u_pix.y  ),
+	vec2(   0.0	  , -u_pix.y  ),
+	vec2(   u_pix.x   , -u_pix.y  ),
+	vec2(  -u_pix.x   ,  0.0      ),
+	vec2(   0.0	  ,  0.0      ),
+	vec2(   u_pix.x   ,  0.0      ),
+	vec2(  -u_pix.x   ,  u_pix.y  ),
+	vec2(   0.0	  ,  u_pix.y  ),
+	vec2(   u_pix.x   ,  u_pix.y  )
 );
 
 
@@ -101,12 +104,16 @@ void main()
     vec2 t = vec2(256.0, 1.0)*255.0/range;
 #endif
 #endif //LA_16BITS
+
+
 #if defined(USED_FILTERS)
  vec3 sum = vec3(0.0);
  for (int i=0;i<9;i++) {
 #else
  int i=4;
 #endif //USED_FILTERS
+
+
     // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)
     gl_FragColor = clamp(u_colorMatrix
                          * vec4(
@@ -124,15 +131,25 @@ void main()
                          , 0.0, 1.0) * u_opacity   ;
 
 #if defined(USED_FILTERS)
-//added sharp
+//added filters
   color = gl_FragColor.rgb;
   sum += color * u_filterkernel[i];
  }
   gl_FragColor.rgb = sum;
 #endif //USED_FILTERS
+
+
 #if defined(USED_GAMMA)
 //added GAMMA
   color = gl_FragColor.rgb;
   gl_FragColor.rgb = pow(color, 1.0 / vec3(u_gammaRGB));
 #endif //USED_GAMMA
+
+
+#if defined(USED_DEBUG)
+if (u_pix.x == 0.00078125) {
+ gl_FragColor.r = 255;
+}
+#endif //USED_DEBUG
+
 }
