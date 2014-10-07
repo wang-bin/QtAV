@@ -35,13 +35,15 @@ varying lowp vec2 v_TexCoords;
 uniform float u_opacity;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
-uniform float u_gammaRGB = 1.;
+uniform float u_gammaRGB;
 uniform vec2  u_pix;
-uniform float u_filterkernel[9] = float[9](
+uniform float u_filterkernel[9];
+
+/*; MOVED INITILIZATION TO C++ CODE FOR COMPATIBILITY /* = float[9](
 			   0.,-1. ,0.,
 			  -1., 5. ,-1.,
 			   0.,-1. ,0.	
-);
+);*/
 
 vec3 color;
 
@@ -97,7 +99,7 @@ void main()
     // FFmpeg supports 9, 10, 12, 14, 16 bits
 #if LA_16BITS
     //http://stackoverflow.com/questions/22693169/opengl-es-2-0-glsl-compiling-fails-on-osx-when-using-const
-    float range = exp2(u_bbp) - 1.0; // why can not be const?
+    float range = exp2(u_bpp) - 1.0; // why can not be const?
 #if defined(LA_16BITS_LE)
     vec2 t = vec2(1.0, 256.0)*255.0/range;
 #else

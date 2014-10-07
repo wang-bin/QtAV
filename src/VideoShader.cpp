@@ -155,6 +155,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     d.u_opacity = shaderProgram->uniformLocation("u_opacity");
     d.u_gammaRGB = shaderProgram->uniformLocation("u_gammaRGB");
     d.u_pix = shaderProgram->uniformLocation("u_pix");
+    d.u_filterkernel = shaderProgram->uniformLocation("u_filterkernel");
     d.u_Texture.resize(textureLocationCount());
     for (int i = 0; i < d.u_Texture.size(); ++i) {
         QString tex_var = QString("u_Texture%1").arg(i);
@@ -167,6 +168,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     qDebug("glGetUniformLocation(\"u_opacity\") = %d", d.u_opacity);
     qDebug("glGetUniformLocation(\"u_gammaRGB\") = %d", d.u_gammaRGB);
     qDebug("glGetUniformLocation(\"u_pix\") = %d", d.u_pix);
+    qDebug("glGetUniformLocation(\"u_filterkernel\") = %d", d.u_filterkernel);
 }
 
 int VideoShader::textureLocationCount() const
@@ -249,6 +251,13 @@ bool VideoShader::update(VideoMaterial *material)
 
     // material->setGammaRGB(0.2);
 
+    GLfloat kernel[9] =  {
+                0.,-1. ,0.,
+               -1., 5. ,-1.,
+                0.,-1. ,0.
+    };
+
+
     const VideoFormat fmt(material->currentFormat());
     //format is out of date because we may use the same shader for different formats
     setVideoFormat(fmt);
@@ -272,6 +281,7 @@ bool VideoShader::update(VideoMaterial *material)
     program()->setUniformValue(gammaRGBLocation(), (GLfloat)material->gammaRGB());
 //    program()->setUniformValue(gammaRGBLocation(), (GLfloat)1280.);
     program()->setUniformValue(pixeloffsetLocation(), material->pixeloffset());
+    program()->setUniformValueArray(filterkernelLocation(),kernel,9,1);
     //qDebug("material->gammaRGB: %f ",(GLfloat)material->gammaRGB());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     // uniform end. attribute begins
