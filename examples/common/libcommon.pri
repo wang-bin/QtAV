@@ -76,17 +76,20 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 !contains(CONFIG, $$lower($$NAME)-buildlib) {
     #The following may not need to change
     CONFIG *= link_prl
-    LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
-	isEqual(STATICLINK, 1) {
-		PRE_TARGETDEPS += $$PROJECT_LIBDIR/$$qtStaticLib($$NAME)
-	} else {
-		win32 {
-			PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME, $$LIB_VERSION)
-		} else {
-			PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
-
-		}
-	}
+    #mac_framework {
+     # LIBS += -F$$PROJECT_LIBDIR -framework $$PROJECT_TARGETNAME
+    #} else {
+      LIBS *= -L$$PROJECT_LIBDIR -l$${PROJECT_TARGETNAME}
+      isEqual(STATICLINK, 1) {
+        PRE_TARGETDEPS += $$PROJECT_LIBDIR/$$qtStaticLib($$NAME)
+      } else {
+        win32 {
+          PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME, $$LIB_VERSION)
+        } else {
+           PRE_TARGETDEPS *= $$PROJECT_LIBDIR/lib$${PROJECT_TARGETNAME}.$${QMAKE_EXTENSION_SHLIB}
+        }
+      }
+    #}
 } else {
 	#Add your additional configuration first. e.g.
 
