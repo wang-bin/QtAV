@@ -21,9 +21,18 @@ isEmpty(COMMON_PRI_INCLUDED): { #begin COMMON_PRI_INCLUDED
 
 mac:contains(QT_CONFIG, qt_framework):!mac_dylib: CONFIG += mac_framework
 
+isEmpty(QMAKE_EXTENSION_SHLIB) {
+  unix {
+    mac|ios: QMAKE_EXTENSION_SHLIB = dylib
+    else: QMAKE_EXTENSION_SHLIB = so #why android is empty?
+  } else:win* {
+    QMAKE_EXTENSION_SHLIB = dll
+  }
+}
+
 CONFIG += profile
 #profiling, -pg is not supported for msvc
-debug:!*msvc*:profile {
+debug:!android:!*msvc*:profile {
 	QMAKE_CXXFLAGS_DEBUG += -pg
 	QMAKE_LFLAGS_DEBUG += -pg
 	QMAKE_CXXFLAGS_DEBUG = $$unique(QMAKE_CXXFLAGS_DEBUG)
@@ -107,19 +116,14 @@ defineReplace(qtLibName) {
 defineReplace(qtStaticLib) {
 	unset(LIB_FULLNAME)
 	LIB_FULLNAME = $$qtLibName($$1, $$2)
-	*msvc*|win32-icc: LIB_FULLNAME = $$member(LIB_FULLNAME, 0).lib
-	else: LIB_FULLNAME = lib$$member(LIB_FULLNAME, 0).a
+        LIB_FULLNAME = $${QMAKE_PREFIX_STATICLIB}$$member(LIB_FULLNAME, 0).$${QMAKE_EXTENSION_STATICLIB}
 	return($$LIB_FULLNAME)
 }
 
 defineReplace(qtSharedLib) {
 	unset(LIB_FULLNAME)
 	LIB_FULLNAME = $$qtLibName($$1, $$2)
-	win32: LIB_FULLNAME = $$member(LIB_FULLNAME, 0).dll
-	else {
-		macx|ios: LIB_FULLNAME = lib$$member(LIB_FULLNAME, 0).$${QMAKE_EXTENSION_SHLIB} #default_post.prf
-		else: LIB_FULLNAME = lib$$member(LIB_FULLNAME, 0).so
-	}
+        LIB_FULLNAME = $${QMAKE_PREFIX_SHLIB}$$member(LIB_FULLNAME, 0).$${QMAKE_EXTENSION_SHLIB} #default_post.prf
 	return($$LIB_FULLNAME)
 }
 

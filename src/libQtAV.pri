@@ -60,6 +60,7 @@ isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/..
 include($${PROJECTROOT}/common.pri)
 preparePaths($$OUT_PWD/../out)
 CONFIG += depend_includepath #?
+mac_framework: PROJECT_TARGETNAME = $$NAME
 
 PROJECT_SRCPATH = $$PWD
 PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
@@ -77,7 +78,7 @@ DEPENDPATH *= $$PROJECT_SRCPATH
     #The following may not need to change
     CONFIG *= link_prl
     mac_framework {
-      LIBS += -F$$PROJECT_LIBDIR -framework $$NAME
+      LIBS += -F$$PROJECT_LIBDIR -framework $$PROJECT_TARGETNAME
     } else {
       LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
       isEqual(STATICLINK, 1) {
