@@ -1319,27 +1319,29 @@ void MainWindow::onSaturationChanged(int s)
 }
 
 
-void MainWindow::onGammaRGBChanged(int s)
+void MainWindow::onGammaRGBChanged(int g)
 {
+    qDebug("MainWindow::onGammaRGBChanged: %d", g);
     VideoRenderer *vo = mpPlayer->renderer();
     if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
-            && vo->setBrightness(mpVideoEQ->gammaRGB())) {
-        mpPlayer->setBrightness(0);
+            && vo->setGammaRGB(g)) {
+        mpPlayer->setGammaRGB(0);
     } else {
-        vo->setBrightness(0);
-        mpPlayer->setBrightness(s);
+        vo->setGammaRGB(0);
+        mpPlayer->setGammaRGB(g);
     }
 }
 
-void MainWindow::onFilterSharpChanged(int s)
+void MainWindow::onFilterSharpChanged(int fs)
 {
+    qDebug("MainWindow::onFilterSharpChanged: %d", fs);
     VideoRenderer *vo = mpPlayer->renderer();
     if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
-            && vo->setBrightness(mpVideoEQ->filterSharp())) {
-        mpPlayer->setBrightness(0);
+            && vo->setSaturation(fs)) {
+        mpPlayer->setSaturation(0);
     } else {
-        vo->setBrightness(0);
-        mpPlayer->setBrightness(s);
+        vo->setSaturation(0);
+        mpPlayer->setSaturation(fs);
     }
 }
 

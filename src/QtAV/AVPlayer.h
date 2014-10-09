@@ -349,7 +349,7 @@ private:
     OutputSet *mpVOSet, *mpAOSet;
     QVector<VideoDecoderId> vcodec_ids;
     QVector<AudioOutputId> audioout_ids;
-    int mBrightness, mContrast, mSaturation;
+    int mBrightness, mContrast, mSaturation, mGammaRGB, mFilterSharp;
 
     QVariantHash audio_codec_opt, video_codec_opt;
 

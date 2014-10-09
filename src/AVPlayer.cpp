@@ -83,6 +83,8 @@ AVPlayer::AVPlayer(QObject *parent) :
   , mBrightness(0)
   , mContrast(0)
   , mSaturation(0)
+  , mGammaRGB(0)
+  , mFilterSharp(0)
   , mSeeking(false)
   , mSeekTarget(0)
 {
@@ -1184,34 +1186,34 @@ void AVPlayer::setSaturation(int val)
 
 int AVPlayer::gammaRGB() const
 {
-    return mSaturation;
-}
-
-int AVPlayer::filterSharp() const
-{
-    return mSaturation;
+    return mGammaRGB;
 }
 
 void AVPlayer::setGammaRGB(int val)
 {
     qWarning("AVPlayer::setGammaRGB");
-    if (mSaturation == val)
+    if (mGammaRGB == val)
         return;
-    mSaturation = val;
-    emit saturationChanged(mSaturation);
+    mGammaRGB = val;
+    emit gammaRGBChanged(mGammaRGB);
     if (video_thread) {
-        video_thread->setSaturation(val);
+        video_thread->setGammaRGB(val);
     }
+}
+
+int AVPlayer::filterSharp() const
+{
+    return mFilterSharp;
 }
 
 void AVPlayer::setFilterSharp(int val)
 {
-    if (mSaturation == val)
+    if (mFilterSharp == val)
         return;
-    mSaturation = val;
-    emit saturationChanged(mSaturation);
+    mFilterSharp = val;
+    emit filterSharpChanged(mFilterSharp);
     if (video_thread) {
-        video_thread->setSaturation(val);
+        video_thread->setFilterSharp(val);
     }
 }
 

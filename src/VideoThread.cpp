@@ -96,6 +96,14 @@ void VideoThread::setSaturation(int val)
     setEQ(101, 101, val);
 }
 
+void VideoThread::setGammaRGB(int val){
+    qDebug("VideoThread::setGammaRGB: %d", val);
+}
+
+void VideoThread::setFilterSharp(int val){
+    qDebug("VideoThread::setFilterSharpRGB: %d", val);
+}
+
 void VideoThread::setEQ(int b, int c, int s)
 {
     class EQTask : public QRunnable {

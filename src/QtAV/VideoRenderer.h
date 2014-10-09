@@ -180,7 +180,7 @@ public:
     qreal saturation() const;
     bool setSaturation(qreal saturation);
     qreal gammaRGB() const;
-    bool setGamaRGB(qreal gammaRGB);
+    bool setGammaRGB(qreal gammaRGB);
     qreal filterSharp() const;
     bool setFilterSharp(qreal filterSharp);
 

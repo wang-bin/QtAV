@@ -154,17 +154,18 @@ qreal VideoEQConfigPage::gammaRGB() const
 {
     qDebug("VideoEQConfigPage::gammaRGB bar: %d", mpGSlider->value());
     //0-2
-    qreal g = ((qreal)mpGSlider->value()/100.0)+1.0;
-    qDebug("VideoEQConfigPage::gammaRGB value: %f", g);
-    return g;
+    //qreal g = ((qreal)mpGSlider->value()/100.0)+1.0;
+    //qDebug("VideoEQConfigPage::gammaRGB value: %f", g);
+    return (qreal)mpGSlider->value()/100.0;
 }
 
 qreal VideoEQConfigPage::filterSharp() const
 {
     qDebug("VideoEQConfigPage::filterSharp bar:  %d", mpFSSlider->value());
-    qreal fs=((qreal)mpFSSlider->value()/100.0)*2.0+3.0;
-    qDebug("VideoEQConfigPage::filterSharp value: %f", fs);
-    return fs;
+    //1-5
+    //qreal fs=((qreal)mpFSSlider->value()/100.0)*2.0+3.0;
+    //qDebug("VideoEQConfigPage::filterSharp value: %f", fs);
+    return (qreal)mpFSSlider->value()/100.0;
 }
 
 void VideoEQConfigPage::onReset()

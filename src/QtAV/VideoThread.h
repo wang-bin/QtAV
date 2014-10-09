@@ -44,6 +44,8 @@ public:
     void setBrightness(int val);
     void setContrast(int val);
     void setSaturation(int val);
+    void setGammaRGB(int val);
+    void setFilterSharp(int val);
     void setEQ(int b, int c, int s);
 
 protected:
