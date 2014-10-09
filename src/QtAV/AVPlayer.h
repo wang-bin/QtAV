@@ -60,6 +60,8 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(int brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
+    Q_PROPERTY(int gammaRGB READ gammaRGB WRITE setGammaRGB NOTIFY gammaRGBChanged)
+    Q_PROPERTY(int filterSharp READ filterSharp WRITE setFilterSharp NOTIFY filterSharpChanged)
 public:
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
@@ -188,6 +190,8 @@ public:
     int contrast() const;
     int hue() const; //not implemented
     int saturation() const;
+    int gammaRGB() const;
+    int filterSharp() const;
     /*
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
      * In addition, av_dict is slow.
@@ -228,6 +232,8 @@ signals:
     void contrastChanged(int val);
     void hueChanged(int val);
     void saturationChanged(int val);
+    void gammaRGBChanged(int val);
+    void filterSharpChanged(int val);
 
 public slots:
     void togglePause();
@@ -282,6 +288,9 @@ public slots:
     void setContrast(int val);
     void setHue(int val);  //not implemented
     void setSaturation(int val);
+    void setGammaRGB(int val);
+    void setFilterSharp(int val);
+
 
 private slots:
     void stopFromDemuxerThread();

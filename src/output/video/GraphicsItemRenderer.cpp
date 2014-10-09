@@ -234,6 +234,24 @@ bool GraphicsItemRenderer::onSetSaturation(qreal s)
     d_func().glv.setSaturation(s);
     return true;
 }
+
+bool GraphicsItemRenderer::onSetGammaRGB(qreal gammaRGB)
+{
+    if (!isOpenGL())
+        return false;
+    d_func().glv.setSaturation(gammaRGB);
+    return true;
+}
+
+bool GraphicsItemRenderer::onSetFilterSharp(qreal filterSharp)
+{
+    if (!isOpenGL())
+        return false;
+    d_func().glv.setSaturation(filterSharp);
+    return true;
+}
+
+
 //GraphicsWidget will lose focus forever if focus out. Why?
 
 #if CONFIG_GRAPHICSWIDGET

@@ -1095,4 +1095,22 @@ bool GLWidgetRenderer::onSetSaturation(qreal s)
     return true;
 }
 
+bool GLWidgetRenderer::onSetGammaRGB(qreal g)
+{
+    DPTR_D(GLWidgetRenderer);
+    if (!d.hasGLSL)
+        return false;
+    d.colorTransform.setSaturation(g);
+    return true;
+}
+
+bool GLWidgetRenderer::onSetFilterSharp(qreal fS)
+{
+    DPTR_D(GLWidgetRenderer);
+    if (!d.hasGLSL)
+        return false;
+    d.colorTransform.setSaturation(fS);
+    return true;
+}
+
 } //namespace QtAV

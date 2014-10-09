@@ -36,6 +36,8 @@ class Q_AV_EXPORT VideoOutput : public QObject, public VideoRenderer
     Q_PROPERTY(qreal contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(qreal hue READ hue WRITE setHue NOTIFY hueChanged)
     Q_PROPERTY(qreal saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
+    Q_PROPERTY(qreal gammaRGB READ gammaRGB WRITE setGammaRGB NOTIFY gammaRGBChanged)
+    Q_PROPERTY(qreal filterSharp READ filterSharp WRITE setFilterSharp NOTIFY filterSharpChanged)
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_PROPERTY(qreal outAspectRatio READ outAspectRatio WRITE setOutAspectRatio NOTIFY outAspectRatioChanged)
     //fillMode
@@ -65,6 +67,9 @@ signals:
     void contrastChanged(qreal value);
     void hueChanged(qreal value);
     void saturationChanged(qreal value);
+    void gammaRGBChanged(qreal value);
+    void filterSharpChanged(qreal value);
+
 
 protected:
     bool receiveFrame(const VideoFrame& frame);
@@ -77,7 +82,8 @@ protected:
     bool onChangingBrightness(qreal b);
     bool onChangingContrast(qreal c);
     bool onChangingHue(qreal h);
-    bool onChangingSaturation(qreal s);
+    bool onChangingGammaRGB(qreal s);
+    bool onChangingFilterSharp(qreal s);
 
 
 private: //for proxy
@@ -95,6 +101,8 @@ private: //for proxy
     virtual bool onSetContrast(qreal contrast);
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
+    virtual bool onSetGammaRGB(qreal gammaRGB);
+    virtual bool onSetFilterSharp(qreal filterSharp);
 
     // from AVOutput
     virtual void setStatistics(Statistics* statistics); //called by friend AVPlayer

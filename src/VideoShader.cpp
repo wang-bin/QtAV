@@ -345,6 +345,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     d.update_texure = true;
     // TODO: move to another function before rendering?
     d.bpp = frame.format().bitsPerPixel(0);
+    qDebug("VideoMaterial::setCurrentFrame bitsPerPixel: %d", d.bpp);
     d.width = frame.width();
     d.height = frame.height();
     const VideoFormat fmt(frame.format());

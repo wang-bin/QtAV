@@ -168,6 +168,7 @@ QString aboutQtAV_HTML()
             "<p>" + QObject::tr("Donate") + ": <a href='http://wang-bin.github.io/QtAV#donate'>http://wang-bin.github.io/QtAV#donate</a></p>\n"
             "<p>" + QObject::tr("Source") + ": <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
             "<p>" + QObject::tr("Web Site") + ": <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>";
+            "<p>" + QObject::tr("Fork project (QtAV-lexxai) of QtAV for add some features with GLSL filters\n") +"</p>";
     return about;
 }
 

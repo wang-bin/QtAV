@@ -81,6 +81,8 @@ private:
     virtual bool onSetContrast(qreal c);
     virtual bool onSetHue(qreal h);
     virtual bool onSetSaturation(qreal s);
+    virtual bool onSetGammaRGB(qreal gammaRGB);
+    virtual bool onSetFilterSharp(qreal filterSharp);
 };
 typedef GraphicsItemRenderer VideoRendererGraphicsItem;
 }

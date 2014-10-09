@@ -69,6 +69,8 @@ private:
     virtual bool onSetContrast(qreal c);
     virtual bool onSetHue(qreal h);
     virtual bool onSetSaturation(qreal s);
+    virtual bool onSetGammaRGB(qreal g);
+    virtual bool onSetFilterSharp(qreal fS);
 
 };
 typedef GLWidgetRenderer VideoRendererGLWidget;

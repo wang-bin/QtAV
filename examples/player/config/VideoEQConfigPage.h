@@ -45,6 +45,8 @@ public:
     qreal contrast() const;
     qreal hue() const;
     qreal saturation() const;
+    qreal gammaRGB() const;
+    qreal filterSharp() const;
 
 signals:
     void engineChanged();
@@ -52,6 +54,8 @@ signals:
     void contrastChanged(int);
     void hueChanegd(int);
     void saturationChanged(int);
+    void gammaRGBChanged(int);
+    void filterSharpChanged(int);
 
 private slots:
     void onGlobalSet(bool);
@@ -61,7 +65,7 @@ private slots:
 private:
     QCheckBox *mpGlobal;
     QComboBox *mpEngine;
-    QSlider *mpBSlider, *mpCSlider, *mpSSlider;
+    QSlider *mpBSlider, *mpCSlider, *mpSSlider, *mpGSlider, *mpFSSlider;
     QSlider *mpHSlider;
     QPushButton *mpResetButton;
     Engine mEngine;

@@ -1182,6 +1182,42 @@ void AVPlayer::setSaturation(int val)
     }
 }
 
+int AVPlayer::gammaRGB() const
+{
+    return mSaturation;
+}
+
+int AVPlayer::filterSharp() const
+{
+    return mSaturation;
+}
+
+void AVPlayer::setGammaRGB(int val)
+{
+    qWarning("AVPlayer::setGammaRGB");
+    if (mSaturation == val)
+        return;
+    mSaturation = val;
+    emit saturationChanged(mSaturation);
+    if (video_thread) {
+        video_thread->setSaturation(val);
+    }
+}
+
+void AVPlayer::setFilterSharp(int val)
+{
+    if (mSaturation == val)
+        return;
+    mSaturation = val;
+    emit saturationChanged(mSaturation);
+    if (video_thread) {
+        video_thread->setSaturation(val);
+    }
+}
+
+
+
+
 //TODO: av_guess_frame_rate in latest ffmpeg
 void AVPlayer::initStatistics()
 {

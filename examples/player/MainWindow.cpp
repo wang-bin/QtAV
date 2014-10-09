@@ -172,6 +172,8 @@ void MainWindow::initPlayer()
     connect(mpVideoEQ, SIGNAL(contrastChanged(int)), this, SLOT(onContrastChanged(int)));
     connect(mpVideoEQ, SIGNAL(hueChanegd(int)), this, SLOT(onHueChanged(int)));
     connect(mpVideoEQ, SIGNAL(saturationChanged(int)), this, SLOT(onSaturationChanged(int)));
+    connect(mpVideoEQ, SIGNAL(gammaRGBChanged(int)),  this, SLOT(onGammaRGBChanged(int)));
+    connect(mpVideoEQ, SIGNAL(filterSharpChanged(int)),  this, SLOT(onFilterSharpChanged(int)));
 
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
 }
@@ -1264,6 +1266,8 @@ void MainWindow::onVideoEQEngineChanged()
     onContrastChanged(mpVideoEQ->contrast()*100.0);
     onHueChanged(mpVideoEQ->hue()*100.0);
     onSaturationChanged(mpVideoEQ->saturation()*100.0);
+    onGammaRGBChanged(mpVideoEQ->gammaRGB()*100.0);
+    onFilterSharpChanged(mpVideoEQ->filterSharp()*100.0);
 }
 
 void MainWindow::onBrightnessChanged(int b)
@@ -1313,6 +1317,36 @@ void MainWindow::onSaturationChanged(int s)
         mpPlayer->setSaturation(s);
     }
 }
+
+
+void MainWindow::onGammaRGBChanged(int s)
+{
+    VideoRenderer *vo = mpPlayer->renderer();
+    if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
+            && vo->setBrightness(mpVideoEQ->gammaRGB())) {
+        mpPlayer->setBrightness(0);
+    } else {
+        vo->setBrightness(0);
+        mpPlayer->setBrightness(s);
+    }
+}
+
+void MainWindow::onFilterSharpChanged(int s)
+{
+    VideoRenderer *vo = mpPlayer->renderer();
+    if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
+            && vo->setBrightness(mpVideoEQ->filterSharp())) {
+        mpPlayer->setBrightness(0);
+    } else {
+        vo->setBrightness(0);
+        mpPlayer->setBrightness(s);
+    }
+}
+
+
+
+
+
 
 void MainWindow::onCaptureConfigChanged()
 {

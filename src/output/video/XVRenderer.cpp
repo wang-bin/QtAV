@@ -82,6 +82,8 @@ private:
     virtual bool onSetContrast(qreal c);
     virtual bool onSetHue(qreal h);
     virtual bool onSetSaturation(qreal s);
+    virtual bool onSetGammaRGB(qreal gammaRGB);
+    virtual bool onSetFilterSharp(qreal filterSharp);
 };
 typedef XVRenderer VideoRendererXV;
 extern VideoRendererId VideoRendererId_XV;
@@ -542,6 +544,18 @@ bool XVRenderer::onSetSaturation(qreal s)
 {
     DPTR_D(XVRenderer);
     return d.XvSetPortAttributeIfExists("XV_SATURATION", s*100);
+}
+
+bool XVRenderer::onSetGammaRGB(qreal gammaRGB)
+{
+    DPTR_D(XVRenderer);
+    return d.XvSetPortAttributeIfExists("XV_SATURATION", gammaRGB*100);
+}
+
+bool XVRenderer::onSetFilterSharp(qreal filterSharp)
+{
+    DPTR_D(XVRenderer);
+    return d.XvSetPortAttributeIfExists("XV_SATURATION", filterSharp*100);
 }
 
 } //namespace QtAV

@@ -49,13 +49,17 @@ VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
     struct {
         QSlider **slider;
         QString text;
+        int init;
     } sliders[] = {
-        { &mpBSlider, tr("Brightness") },
-        { &mpCSlider, tr("Constrast") },
-        { &mpHSlider, tr("Hue") },
-        { &mpSSlider, tr("Saturation") },
-        { 0, "" }
+        { &mpBSlider, tr("Brightness"),0 },
+        { &mpCSlider, tr("Constrast"),0},
+        { &mpHSlider, tr("Hue"),0 },
+        { &mpSSlider, tr("Saturation"),0},
+        { &mpGSlider, tr("GammaRGB"),0},
+        { &mpFSSlider, tr("Filter Sharp"),-100},
+        { 0, "",0 }
     };
+
     for (int i = 0; sliders[i].slider; ++i) {
         QLabel *label = new QLabel(sliders[i].text);
         *sliders[i].slider = new Slider();
@@ -63,7 +67,7 @@ VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
         slider->setOrientation(Qt::Horizontal);
         slider->setTickInterval(2);
         slider->setRange(-100, 100);
-        slider->setValue(0);
+        slider->setValue((sliders[i].init)?sliders[i].init:0);
 
         gl->addWidget(label, r, c);
         gl->addWidget(slider, r, c+1);
@@ -82,6 +86,8 @@ VideoEQConfigPage::VideoEQConfigPage(QWidget *parent) :
     connect(mpCSlider, SIGNAL(valueChanged(int)), SIGNAL(contrastChanged(int)));
     connect(mpHSlider, SIGNAL(valueChanged(int)), SIGNAL(hueChanegd(int)));
     connect(mpSSlider, SIGNAL(valueChanged(int)), SIGNAL(saturationChanged(int)));
+    connect(mpGSlider, SIGNAL(valueChanged(int)), SIGNAL(gammaRGBChanged(int)));
+    connect(mpFSSlider, SIGNAL(valueChanged(int)), SIGNAL(filterSharpChanged(int)));
     connect(mpGlobal, SIGNAL(toggled(bool)), SLOT(onGlobalSet(bool)));
     connect(mpResetButton, SIGNAL(clicked()), SLOT(onReset()));
 }
@@ -144,12 +150,31 @@ qreal VideoEQConfigPage::saturation() const
     return (qreal)mpSSlider->value()/100.0;
 }
 
+qreal VideoEQConfigPage::gammaRGB() const
+{
+    qDebug("VideoEQConfigPage::gammaRGB bar: %d", mpGSlider->value());
+    //0-2
+    qreal g = ((qreal)mpGSlider->value()/100.0)+1.0;
+    qDebug("VideoEQConfigPage::gammaRGB value: %f", g);
+    return g;
+}
+
+qreal VideoEQConfigPage::filterSharp() const
+{
+    qDebug("VideoEQConfigPage::filterSharp bar:  %d", mpFSSlider->value());
+    qreal fs=((qreal)mpFSSlider->value()/100.0)*2.0+3.0;
+    qDebug("VideoEQConfigPage::filterSharp value: %f", fs);
+    return fs;
+}
+
 void VideoEQConfigPage::onReset()
 {
     mpBSlider->setValue(0);
     mpCSlider->setValue(0);
     mpHSlider->setValue(0);
     mpSSlider->setValue(0);
+    mpGSlider->setValue(0);
+    mpFSSlider->setValue(-100);
 }
 
 void VideoEQConfigPage::onEngineChangedByUI()

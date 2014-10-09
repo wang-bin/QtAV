@@ -112,7 +112,9 @@ private slots:
     void onBrightnessChanged(int b);
     void onContrastChanged(int c);
     void onHueChanged(int h);
-    void onSaturationChanged(int s);
+    void onSaturationChanged(int s); 
+    void onGammaRGBChanged(int s);
+    void onFilterSharpChanged(int s);
 
     void onCaptureConfigChanged();
     void onAVFilterConfigChanged();

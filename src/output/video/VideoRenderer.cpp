@@ -550,6 +550,48 @@ bool VideoRenderer::setSaturation(qreal saturation)
     return true;
 }
 
+qreal VideoRenderer::gammaRGB() const
+{
+    return d_func().gammaRGB;
+}
+
+bool VideoRenderer::setGammaRGB(qreal gammaRGB)
+{
+    DPTR_D(VideoRenderer);
+    if (d.gammaRGB == gammaRGB)
+        return false;
+    // may emit signal in onSetXXX. ensure get the new value in slot
+    qreal old = d.gammaRGB;
+    d.gammaRGB = gammaRGB;
+    if (!onSetGammaRGB(gammaRGB)) {
+        d.gammaRGB = old;
+        return false;
+    }
+    updateUi();
+    return true;
+}
+
+qreal VideoRenderer::filterSharp() const
+{
+    return d_func().filterSharp;
+}
+
+bool VideoRenderer::setFilterSharp(qreal filterSharp)
+{
+    DPTR_D(VideoRenderer);
+    if (d.saturation == filterSharp)
+        return false;
+    // may emit signal in onSetXXX. ensure get the new value in slot
+    qreal old = d.saturation;
+    d.saturation = filterSharp;
+    if (!onSetFilterSharp(filterSharp)) {
+        d.saturation = old;
+        return false;
+    }
+    updateUi();
+    return true;
+}
+
 bool VideoRenderer::onSetBrightness(qreal b)
 {
     Q_UNUSED(b);
@@ -571,6 +613,18 @@ bool VideoRenderer::onSetHue(qreal h)
 bool VideoRenderer::onSetSaturation(qreal s)
 {
     Q_UNUSED(s);
+    return false;
+}
+
+bool VideoRenderer::onSetGammaRGB(qreal g)
+{
+    Q_UNUSED(g);
+    return false;
+}
+
+bool VideoRenderer::onSetFilterSharp(qreal fs)
+{
+    Q_UNUSED(fs);
     return false;
 }
 
