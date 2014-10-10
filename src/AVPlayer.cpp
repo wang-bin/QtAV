@@ -625,6 +625,7 @@ bool AVPlayer::load(bool reload)
         if (!demuxer.audioCodecContext()) {
             qWarning("No audio found or audio not supported. Using ExternalClock");
             masterClock()->setClockType(AVClock::ExternalClock);
+            masterClock()->setInitialValue(mediaStartPositionF());
         } else {
             qDebug("Using AudioClock");
             masterClock()->setClockType(AVClock::AudioClock);

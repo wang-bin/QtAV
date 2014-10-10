@@ -68,7 +68,7 @@ OpenGLRendererBase::~OpenGLRendererBase()
 bool OpenGLRendererBase::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     Q_UNUSED(pixfmt);
-    return true;
+    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;
 }
 
 bool OpenGLRendererBase::receiveFrame(const VideoFrame& frame)

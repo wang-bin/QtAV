@@ -54,7 +54,7 @@ bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     if (!isOpenGL())
         return VideoFormat::isRGB(pixfmt);
-    return true;
+    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;
 }
 
 bool QQuickItemRenderer::event(QEvent *e)

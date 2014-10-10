@@ -54,6 +54,12 @@ public:
     void setClockType(ClockType ct);
     ClockType clockType() const;
     bool isActive() const;
+    /*!
+     * \brief setInitialValue
+     * Usually for ExternalClock. For example, media start time is not 0, clock have to set initial value as media start time
+     */
+    void setInitialValue(double v);
+    double initialValue() const;
     /*
      * auto clock: use audio clock if audio stream found, otherwise use external clock
      */
@@ -100,19 +106,20 @@ private:
     double delay_;
     mutable QElapsedTimer timer;
     qreal mSpeed;
+    double value0;
 };
 
 double AVClock::value() const
 {
     if (clock_type == AudioClock) {
-        return pts_ + delay_;
+        return pts_ + delay_ + value0;
     } else {
         if (timer.isValid()) {
             pts_ += double(timer.restart()) * kThousandth;
         } else {//timer is paused
             qDebug("clock is paused. return the last value %f", pts_);
         }
-        return pts_ * speed();
+        return pts_ * speed() + value0;
     }
 }
 

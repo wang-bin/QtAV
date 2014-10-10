@@ -29,6 +29,7 @@ AVClock::AVClock(AVClock::ClockType c, QObject *parent):
   , auto_clock(true)
   , clock_type(c)
   , mSpeed(1.0)
+  , value0(0)
 {
     pts_ = pts_v = delay_ = 0;
 }
@@ -38,6 +39,7 @@ AVClock::AVClock(QObject *parent):
   , auto_clock(true)
   , clock_type(AudioClock)
   , mSpeed(1.0)
+  , value0(0)
 {
     pts_ = pts_v = delay_ = 0;
 }
@@ -55,6 +57,16 @@ AVClock::ClockType AVClock::clockType() const
 bool AVClock::isActive() const
 {
     return clock_type == AudioClock || timer.isValid();
+}
+
+void AVClock::setInitialValue(double v)
+{
+    value0 = v;
+}
+
+double AVClock::initialValue() const
+{
+    return value0;
 }
 
 void AVClock::setClockAuto(bool a)
