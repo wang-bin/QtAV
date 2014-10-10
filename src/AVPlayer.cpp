@@ -1192,7 +1192,7 @@ int AVPlayer::gammaRGB() const
 
 void AVPlayer::setGammaRGB(int val)
 {
-    qWarning("AVPlayer::setGammaRGB");
+    qDebug("AVPlayer::setGammaRGB: %d ", val);
     if (mGammaRGB == val)
         return;
     mGammaRGB = val;
@@ -1209,6 +1209,7 @@ int AVPlayer::filterSharp() const
 
 void AVPlayer::setFilterSharp(int val)
 {
+    qDebug("AVPlayer::setFilterSharp %d", val);
     if (mFilterSharp == val)
         return;
     mFilterSharp = val;
