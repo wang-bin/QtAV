@@ -798,7 +798,7 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
 bool GLWidgetRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     Q_UNUSED(pixfmt);
-    return true; //TODO
+    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;
 }
 
 bool GLWidgetRenderer::receiveFrame(const VideoFrame& frame)

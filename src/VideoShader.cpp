@@ -572,7 +572,8 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
         GLenum data_fmt;
         GLenum data_t;
         if (!OpenGLHelper::videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t)) {
-            qWarning("no opengl format found");
+            qWarning("no opengl format found: internal_fmt=%d, data_fmt=%d, data_t=%d", internal_fmt, data_fmt, data_t);
+            qDebug() << fmt;
             return false;
         }
         internal_format = QVector<GLint>(fmt.planeCount(), internal_fmt);
