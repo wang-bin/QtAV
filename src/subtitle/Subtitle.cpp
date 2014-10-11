@@ -657,4 +657,113 @@ bool Subtitle::Private::processRawData(SubtitleProcessor *sp, const QByteArray &
     return sp->process(w.fileName());
 }
 
+
+SubtitleAPIProxy::SubtitleAPIProxy(QObject* obj)
+    : m_obj(obj)
+    , m_s(0)
+{}
+
+void SubtitleAPIProxy::setSubtitle(Subtitle *sub)
+{
+    m_s = sub;
+
+    QObject::connect(m_s, SIGNAL(contentChanged()), m_obj, SIGNAL(contentChanged()));
+
+    QObject::connect(m_s, SIGNAL(codecChanged()), m_obj, SIGNAL(codecChanged()));
+    QObject::connect(m_s, SIGNAL(enginesChanged()), m_obj, SIGNAL(enginesChanged()));
+    QObject::connect(m_s, SIGNAL(fileNameChanged()), m_obj, SIGNAL(fileNameChanged()));
+    QObject::connect(m_s, SIGNAL(fuzzyMatchChanged()), m_obj, SIGNAL(fuzzyMatchChanged()));
+    QObject::connect(m_s, SIGNAL(suffixesChanged()), m_obj, SIGNAL(suffixesChanged()));
+}
+
+void SubtitleAPIProxy::setCodec(const QByteArray& value)
+{
+    if (!m_s)
+        return;
+    m_s->setCodec(value);
+}
+
+QByteArray SubtitleAPIProxy::codec() const
+{
+    if (!m_s)
+        return QByteArray();
+    return m_s->codec();
+}
+bool SubtitleAPIProxy::isLoaded() const
+{
+    return m_s && m_s->isLoaded();
+}
+
+void SubtitleAPIProxy::setEngines(const QStringList& value)
+{
+    if (!m_s)
+        return;
+    m_s->setEngines(value);
+}
+
+QStringList SubtitleAPIProxy::engines() const
+{
+    if (!m_s)
+        return QStringList();
+    return m_s->engines();
+}
+QString SubtitleAPIProxy::engine() const
+{
+    if (!m_s)
+        return QString();
+    return m_s->engine();
+}
+
+void SubtitleAPIProxy::setFuzzyMatch(bool value)
+{
+    if (!m_s)
+        return;
+    m_s->setFuzzyMatch(value);
+}
+
+bool SubtitleAPIProxy::fuzzyMatch() const
+{
+    return m_s && m_s->fuzzyMatch();
+}
+#if 0
+void SubtitleAPIProxy::setFileName(const QString& name)
+{
+    if (!m_s)
+        return;
+    m_s->setFileName(name);
+}
+
+QString SubtitleAPIProxy::fileName() const
+{
+    if (!m_s)
+        return QString();
+    return m_s->fileName();
+}
+#endif
+QStringList SubtitleAPIProxy::supportedSuffixes() const
+{
+    if (!m_s)
+        return QStringList();
+    return m_s->supportedSuffixes();
+}
+
+void SubtitleAPIProxy::setSuffixes(const QStringList& value)
+{
+    if (!m_s)
+        return;
+    m_s->setSuffixes(value);
+}
+
+QStringList SubtitleAPIProxy::suffixes() const
+{
+    if (!m_s)
+        return QStringList();
+    return m_s->suffixes();
+}
+
+bool SubtitleAPIProxy::canRender() const
+{
+    return m_s && m_s->canRender();
+}
+
 } //namespace QtAV

@@ -108,9 +108,6 @@ public:
      */
     void setFileName(const QString& name);
     QString fileName() const;
-    void setDir(const QString& dir);
-    QString dir() const;
-
     /*!
      * \brief supportedFormats
      * the suffix names supported by all engines. for example ["ass", "ssa"]
@@ -133,7 +130,7 @@ public:
     bool canRender() const;
     // call setTimestamp before getText/Image
     //plain text. separated by '\n' if more more than 1 text rects found
-    Q_INVOKABLE QString getText() const;
+    QString getText() const;
     /*!
       * \brief getImage
       * Get a subtitle image with given (video) frame size. The result image size usually smaller than
@@ -142,7 +139,7 @@ public:
       * The result image format is QImage::Format_ARGB32
       * \return empty image if no image, or subtitle processor does not support renderering
       */
-    Q_INVOKABLE QImage getImage(int width, int height, QRect* boundingRect = 0);
+    QImage getImage(int width, int height, QRect* boundingRect = 0);
     // used for embedded subtitles.
     // used by libass to set style etc.
     bool processHeader(const QByteArray& data);
@@ -172,6 +169,44 @@ signals:
 private:
     class Private;
     Private *priv;
+};
+
+// internal use
+class Q_AV_EXPORT SubtitleAPIProxy {
+public:
+    SubtitleAPIProxy(QObject* obj);
+    void setSubtitle(Subtitle *sub);
+    // API from Subtitle
+    /*!
+     * \brief setCodec
+     * set subtitle encoding that supported by QTextCodec. subtitle will be reloaded
+     * \param value codec name. see QTextCodec.availableCodecs(). Empty value means using the default codec in QTextCodec
+     */
+    void setCodec(const QByteArray& value);
+    QByteArray codec() const;
+    bool isLoaded() const;
+    void setEngines(const QStringList& value);
+    QStringList engines() const;
+    QString engine() const;
+    void setFuzzyMatch(bool value);
+    bool fuzzyMatch() const;
+    //always use exact file path by setFile(). file name is used internally
+    //void setFileName(const QString& name);
+    //QString fileName() const;
+    QStringList supportedSuffixes() const;
+    void setSuffixes(const QStringList& value);
+    QStringList suffixes() const;
+    bool canRender() const;
+    // API from PlayerSubtitle
+    /*
+    void setFile(const QString& file);
+    QString file() const;
+    void setAutoLoad(bool value);
+    bool autoLoad() const;
+    */
+private:
+    QObject *m_obj;
+    Subtitle *m_s;
 };
 
 } //namespace QtAV

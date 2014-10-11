@@ -23,17 +23,29 @@
 #define QTAV_SUBTITLEFILTER_H
 
 #include <QtAV/Filter.h>
+#include <QtAV/Subtitle.h>
 //final class
 
 namespace QtAV {
 
 class AVPlayer;
 class SubtitleFilterPrivate;
-class Q_AV_EXPORT SubtitleFilter : public VideoFilter
+/*!
+ * \brief The SubtitleFilter class
+ * draw text and image subtitles
+ */
+class Q_AV_EXPORT SubtitleFilter : public VideoFilter, public SubtitleAPIProxy
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(SubtitleFilter)
     Q_PROPERTY(QByteArray codec READ codec WRITE setCodec NOTIFY codecChanged)
+    Q_PROPERTY(QStringList engines READ engines WRITE setEngines NOTIFY enginesChanged)
+    Q_PROPERTY(QString engine READ engine)
+    Q_PROPERTY(bool fuzzyMatch READ fuzzyMatch WRITE setFuzzyMatch NOTIFY fuzzyMatchChanged)
+    //Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
+    Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
+    Q_PROPERTY(bool canRender READ canRender)
+
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(QString file READ file WRITE setFile)
     Q_PROPERTY(QRectF rect READ rect WRITE setRect NOTIFY rectChanged)
@@ -54,13 +66,6 @@ public:
     void setFile(const QString& file);
     QString file() const;
     /*!
-     * \brief setCodec
-     * set subtitle encoding that supported by QTextCodec. subtitle will be reloaded
-     * \param value codec name. see QTextCodec.availableCodecs(). Empty value means using the default codec in QTextCodec
-     */
-    void setCodec(const QByteArray& value);
-    QByteArray codec() const;
-    /*!
      * \brief autoLoad
      * auto find a suitable subtitle.
      * if false, load the user selected subtile in setFile() (empty if start a new video)
@@ -78,18 +83,20 @@ public slots:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
 signals:
-    void codecChanged();
     void rectChanged();
     void fontChanged();
     void colorChanged();
     void autoLoadChanged(bool value);
+signals:
+    void codecChanged();
+    void enginesChanged();
+    void fuzzyMatchChanged();
+    void contentChanged();
+    void fileNameChanged();
+    void suffixesChanged();
+
 protected:
-    void process(Statistics* statistics, VideoFrame* frame);
-private slots:
-    void onPlayerSourceChanged();
-    void onPlayerPositionChanged();
-    void onPlayerStart();
-    void onEnableChanged(bool value);
+    virtual void process(Statistics* statistics, VideoFrame* frame);
 };
 
 } //namespace QtAV
