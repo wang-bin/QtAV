@@ -73,10 +73,12 @@ SOURCES += \
     SGVideoNode.cpp \
     QmlAVPlayer.cpp \
     QuickSubtitle.cpp \
-    MediaMetaData.cpp
+    MediaMetaData.cpp \
+    QuickSubtitleItem.cpp
 
 HEADERS += QmlAV/private/QQuickItemRenderer_p.h \
-    QmlAV/QuickSubtitle.h
+    QmlAV/QuickSubtitle.h \
+    QmlAV/QuickSubtitleItem.h
 
 SDK_HEADERS += \
     QmlAV/Export.h \
@@ -101,7 +103,7 @@ target.depends += $${deb_install_list.target}
 
 target.path = $$[QT_INSTALL_QML]/QtAV
 qtav_qml.path = $$[QT_INSTALL_QML]/QtAV
-INSTALLS += target qtav_qml
+INSTALLS *= target qtav_qml
 
 MODULE = QmlAV
 include($$PROJECTROOT/deploy.pri)

@@ -50,6 +50,7 @@ class Q_AV_EXPORT Filter : public QObject
     Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enableChanged)
 public:
     Filter(QObject* parent = 0);
+    // Does nothing. uninstall() manually please
     virtual ~Filter();
     //isEnabled() then setContext
     //TODO: parameter FrameContext

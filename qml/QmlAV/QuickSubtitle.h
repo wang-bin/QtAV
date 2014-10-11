@@ -24,6 +24,12 @@
 #define QTAV_QML_QUICKSUBTITLE_H
 
 #include <QtAV/Subtitle.h>
+#include <QtCore/QMutexLocker>
+
+class Q_AV_EXPORT QuickSubtitleObserver {
+public:
+    virtual void update(const QImage& image, const QRect& r, int width, int height) = 0;
+};
 
 namespace QtAV {
 class PlayerSubtitle;
@@ -54,6 +60,11 @@ class Q_AV_EXPORT QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
 public:
     explicit QuickSubtitle(QObject *parent = 0);
     Q_INVOKABLE QString getText() const;
+    // observer is only for ass image subtitle
+    void addObserver(QuickSubtitleObserver* ob);
+    void removeObserver(QuickSubtitleObserver* ob);
+    // 0: notify all
+    void notifyObservers(const QImage& image, const QRect& r, int width, int height, QuickSubtitleObserver* ob = 0);
     /*!
      * \brief setPlayer
      * if player is set, subtitle will automatically loaded if playing file changed.
@@ -101,6 +112,8 @@ private:
 
     class Filter;
     Filter *m_filter;
+    QMutex m_mutex;
+    QList<QuickSubtitleObserver*> m_observers;
 };
 
 #endif // QTAV_QML_QUICKSUBTITLE_H

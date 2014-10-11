@@ -65,6 +65,12 @@ Rectangle {
         anchors.fill: parent
         source: player
     }
+    SubtitleItem {
+        id: subtitleItem
+        //visible: false
+        source: subtitle
+        anchors.fill: parent //why videoOut gets null rect?
+    }
     MediaPlayer {
         id: player
         objectName: "player"
@@ -85,7 +91,6 @@ Rectangle {
         onPaused: {
             control.setPauseState()
         }
-
     }
     Text {
         id: subtitleLabel
@@ -101,9 +106,12 @@ Rectangle {
         anchors.fill: parent
 
         Subtitle {
+            id: subtitle
             player: player
+            //enabled: false
             onContentChanged: {
-                subtitleLabel.text = text
+                if (!canRender || !enabled || !subtitleItem.visible)
+                    subtitleLabel.text = text
             }
         }
     }

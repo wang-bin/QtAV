@@ -22,9 +22,35 @@
 
 #include "QmlAV/QuickSubtitle.h"
 #include "QmlAV/QmlAVPlayer.h"
+#include <QtAV/Filter.h>
 #include <QtAV/private/PlayerSubtitle.h>
 
 using namespace QtAV;
+
+class QuickSubtitle::Filter : public QtAV::VideoFilter
+{
+public:
+    Filter(Subtitle *sub, QuickSubtitle *parent) :
+        VideoFilter(parent)
+      , m_sub(sub)
+      , m_subject(parent)
+    {}
+protected:
+    virtual void process(Statistics* statistics, VideoFrame* frame) {
+        Q_UNUSED(statistics);
+        if (!m_sub)
+            return;
+        if (frame && frame->timestamp() > 0.0) {
+            m_sub->setTimestamp(frame->timestamp()); //TODO: set to current display video frame's timestamp
+            QRect r;
+            QImage image(m_sub->getImage(frame->width(), frame->height(), &r));
+            m_subject->notifyObservers(image, r, frame->width(), frame->height());
+        }
+    }
+private:
+    Subtitle *m_sub;
+    QuickSubtitle *m_subject;
+};
 
 QuickSubtitle::QuickSubtitle(QObject *parent) :
     QObject(parent)
@@ -32,11 +58,13 @@ QuickSubtitle::QuickSubtitle(QObject *parent) :
   , m_enable(true)
   , m_player(0)
   , m_player_sub(new PlayerSubtitle(this))
+  , m_filter(0)
 {
     QmlAVPlayer *p = qobject_cast<QmlAVPlayer*>(parent);
     if (p)
         setPlayer(p);
 
+    m_filter = new Filter(m_player_sub->subtitle(), this);
     setSubtitle(m_player_sub->subtitle()); //for proxy
     connect(this, SIGNAL(enableChanged(bool)), m_player_sub, SLOT(onEnableChanged(bool))); //////
     connect(this, SIGNAL(codecChanged()), m_player_sub->subtitle(), SLOT(loadAsync()));
@@ -48,12 +76,48 @@ QString QuickSubtitle::getText() const
     return m_player_sub->subtitle()->getText();
 }
 
+void QuickSubtitle::addObserver(QuickSubtitleObserver *ob)
+{
+    if (!m_observers.contains(ob)) {
+        QMutexLocker lock(&m_mutex);
+        Q_UNUSED(lock);
+        m_observers.append(ob);
+    }
+}
+
+void QuickSubtitle::removeObserver(QuickSubtitleObserver *ob)
+{
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
+    m_observers.removeAll(ob);
+}
+
+void QuickSubtitle::notifyObservers(const QImage &image, const QRect &r, int width, int height, QuickSubtitleObserver *ob)
+{
+    if (ob) {
+        ob->update(image, r, width, height);
+        return;
+    }
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
+    if (m_observers.isEmpty())
+        return;
+    foreach (QuickSubtitleObserver* o, m_observers) {
+        o->update(image, r, width, height);
+    }
+}
+
 void QuickSubtitle::setPlayer(QObject *player)
 {
     QmlAVPlayer *p = qobject_cast<QmlAVPlayer*>(player);
     if (m_player == p)
         return;
+    if (m_player)
+        m_filter->uninstall();
     m_player = p;
+    if (p)
+        m_filter->installTo(p->player());
+    // ~Filter() can not call uninstall() unless player is still exists
     // TODO: check AVPlayer null?
     m_player_sub->setPlayer(p->player());
 }
@@ -69,6 +133,10 @@ void QuickSubtitle::setEnabled(bool value)
         return;
     m_enable = value;
     emit enableChanged(value);
+    m_filter->setEnabled(m_enable);
+    if (!m_enable) { //display nothing
+        notifyObservers(QImage(), QRect(), 0, 0);
+    }
 }
 
 bool QuickSubtitle::isEnabled() const
