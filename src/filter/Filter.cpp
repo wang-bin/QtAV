@@ -64,7 +64,7 @@ Filter::Filter(FilterPrivate &d, QObject *parent)
 
 Filter::~Filter()
 {
-    //uninstall();
+    uninstall();
 }
 
 void Filter::setEnabled(bool enabled)

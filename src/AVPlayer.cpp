@@ -151,6 +151,10 @@ AVPlayer::AVPlayer(QObject *parent) :
 AVPlayer::~AVPlayer()
 {
     stop();
+    QList<Filter*> filters(FilterManager::instance().videoFilters(this));
+    foreach (Filter *f, filters) {
+        uninstallFilter(f);
+    }
     if (_audio) {
         delete _audio;
         _audio = 0;
