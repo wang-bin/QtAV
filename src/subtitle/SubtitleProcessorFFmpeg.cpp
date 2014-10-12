@@ -77,11 +77,74 @@ QString SubtitleProcessorFFmpeg::name() const
     return QString(kName.c_str());//SubtitleProcessorFactory::name(id());
 }
 
+QStringList ffmpeg_supported_sub_extensions_by_codec()
+{
+    QStringList exts;
+    AVCodec *c = av_codec_next(NULL);
+    while (c) {
+        if (c->type != AVMEDIA_TYPE_SUBTITLE) {
+            c = av_codec_next(c);
+            continue;
+        }
+        qDebug("sub codec: %s", c->name);
+        AVInputFormat *i = av_iformat_next(NULL);
+        while (i) {
+            if (!strcmp(i->name, c->name)) {
+                qDebug("found iformat");
+                if (i->extensions) {
+                    exts.append(QString(i->extensions).split(QChar(',')));
+                } else {
+                    qDebug("has no exts");
+                    exts.append(i->name);
+                }
+                break;
+            }
+            i = av_iformat_next(i);
+        }
+        if (!i) {
+            //qDebug("codec name '%s' is not found in AVInputFormat, just append codec name", c->name);
+            //exts.append(c->name);
+        }
+        c = av_codec_next(c);
+    }
+    return exts;
+}
+
+QStringList ffmpeg_supported_sub_extensions()
+{
+    QStringList exts;
+    AVInputFormat *i = av_iformat_next(NULL);
+    while (i) {
+        if (strstr(i->long_name, "subtitle")) {
+            if (i->extensions) {
+                exts.append(QString(i->extensions).split(QChar(',')));
+            } else {
+                exts.append(i->name);
+            }
+        }
+        i = av_iformat_next(i);
+    }
+    return exts;
+}
+
 QStringList SubtitleProcessorFFmpeg::supportedTypes() const
 {
-    // from ffmpeg/tests/fate/subtitles.mak
     // TODO: mp4. check avformat classes
+#if 0
+    typedef struct {
+        const char* ext;
+        const char* name;
+    } sub_ext_t;
+    static const sub_ext_t sub_ext[] = {
+        { "ass", "ass" },
+        { "ssa", "ass" },
+        { "sub", "subviewer" },
+        { ""
+    }
+    // from ffmpeg/tests/fate/subtitles.mak
     static const QStringList sSuffixes = QStringList() << "ass" << "ssa" << "sub" << "srt" << "txt" << "vtt" << "smi" << "pjs" << "jss" << "aqt";
+#endif
+    static const QStringList sSuffixes = ffmpeg_supported_sub_extensions();
     return sSuffixes;
 }
 

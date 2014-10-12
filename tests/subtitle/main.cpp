@@ -53,11 +53,14 @@ int main(int argc, char *argv[])
     if (i > 0)
         engine = a.arguments().at(i+1);
 
-    if (file.isEmpty())
-        return 0;
     Subtitle sub;
     if (!engine.isEmpty())
         sub.setEngines(QStringList() << engine);
+    qDebug() << "supported extensions: " << sub.supportedSuffixes();
+
+    if (file.isEmpty())
+        return 0;
+
     sub.setFileName(file);
     sub.setFuzzyMatch(fuzzy);
     SubtitleObserver sob;
