@@ -95,8 +95,8 @@ public Q_SLOTS:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
 Q_SIGNALS:
+    void loaded(const QString& path);
     void enableChanged(bool);
-
     void autoLoadChanged(bool value);
 
     void codecChanged();

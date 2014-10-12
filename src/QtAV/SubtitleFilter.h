@@ -89,6 +89,8 @@ signals:
     void colorChanged();
     void autoLoadChanged(bool value);
 signals:
+    void loaded(const QString& path);
+
     void codecChanged();
     void enginesChanged();
     void fuzzyMatchChanged();

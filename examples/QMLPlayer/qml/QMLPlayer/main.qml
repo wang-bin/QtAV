@@ -77,7 +77,7 @@ Rectangle {
         //loops: MediaPlayer.Infinite
         //autoLoad: true
         autoPlay: true
-        channelLayout: MediaPlayer.ChannelLayoutAuto
+        //channelLayout: MediaPlayer.ChannelLayoutAuto
         onPositionChanged: {
             control.setPlayingProgress(position/duration)
         }
@@ -113,12 +113,41 @@ Rectangle {
                 if (!canRender || !enabled || !subtitleItem.visible)
                     subtitleLabel.text = text
             }
+            onLoaded: {
+                msg.text = qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1)
+            }
         }
     }
     MouseArea {
         anchors.fill: parent
         onPressed: {
             control.toggleVisible()
+        }
+    }
+    Text {
+        id: msg
+        horizontalAlignment: Text.AlignHCenter
+        font.pixelSize: Utils.scaled(20)
+        style: Text.Outline
+        styleColor: "green"
+        color: "white"
+        anchors {
+            top: root.top
+            left: root.left
+            right: root.right
+        }
+        height: root.height / 4
+        onTextChanged: {
+            msg_timer.stop()
+            visible = true
+            msg_timer.start()
+        }
+        Timer {
+            id: msg_timer
+            interval: 2000
+            onTriggered: {
+                msg.visible = false
+            }
         }
     }
     ControlPanel {

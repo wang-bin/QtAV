@@ -325,6 +325,8 @@ void Subtitle::load()
     QByteArray u8 = priv->raw_data;
     if (!u8.isEmpty()) {
         priv->loaded = priv->processRawData(u8);
+        if (priv->loaded)
+            emit loaded("");
         return;
     }
     // read from a url
@@ -349,6 +351,7 @@ void Subtitle::load()
         if (!priv->processRawData(u8))
             continue;
         priv->loaded = true;
+        emit loaded(path);
         return;
     }
 }
@@ -689,6 +692,7 @@ void SubtitleAPIProxy::setSubtitle(Subtitle *sub)
     m_s = sub;
 
     QObject::connect(m_s, SIGNAL(contentChanged()), m_obj, SIGNAL(contentChanged()));
+    QObject::connect(m_s, SIGNAL(loaded(QString)), m_obj, SIGNAL(loaded(QString)));
 
     QObject::connect(m_s, SIGNAL(codecChanged()), m_obj, SIGNAL(codecChanged()));
     QObject::connect(m_s, SIGNAL(enginesChanged()), m_obj, SIGNAL(enginesChanged()));

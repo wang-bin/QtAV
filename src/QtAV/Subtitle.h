@@ -162,6 +162,8 @@ public slots:
     void loadAsync();
     void setTimestamp(qreal t);
 signals:
+    // TODO: also add to AVPlayer?
+    void loaded(const QString& path);
     void codecChanged();
     void enginesChanged();
     void fuzzyMatchChanged();
