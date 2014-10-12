@@ -43,6 +43,7 @@ class Q_AV_EXPORT SubtitleFilter : public VideoFilter, public SubtitleAPIProxy
     Q_PROPERTY(QString engine READ engine)
     Q_PROPERTY(bool fuzzyMatch READ fuzzyMatch WRITE setFuzzyMatch NOTIFY fuzzyMatchChanged)
     //Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
+    Q_PROPERTY(QStringList dirs READ dirs WRITE setDirs NOTIFY dirsChanged)
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
     Q_PROPERTY(bool canRender READ canRender)
 
@@ -92,7 +93,8 @@ signals:
     void enginesChanged();
     void fuzzyMatchChanged();
     void contentChanged();
-    void fileNameChanged();
+    //void fileNameChanged();
+    void dirsChanged();
     void suffixesChanged();
 
 protected:

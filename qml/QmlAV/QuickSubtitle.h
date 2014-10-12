@@ -50,6 +50,7 @@ class Q_AV_EXPORT QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
     Q_PROPERTY(QString engine READ engine)
     Q_PROPERTY(bool fuzzyMatch READ fuzzyMatch WRITE setFuzzyMatch NOTIFY fuzzyMatchChanged)
     //Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
+    Q_PROPERTY(QStringList dirs READ dirs WRITE setDirs NOTIFY dirsChanged)
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
     Q_PROPERTY(bool canRender READ canRender)
     //PlayerSubtitle api
@@ -102,7 +103,8 @@ Q_SIGNALS:
     void enginesChanged();
     void fuzzyMatchChanged();
     void contentChanged();
-    void fileNameChanged();
+    //void fileNameChanged();
+    void dirsChanged();
     void suffixesChanged();
 
 private:

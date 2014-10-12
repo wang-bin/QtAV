@@ -61,6 +61,7 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(bool fuzzyMatch READ fuzzyMatch WRITE setFuzzyMatch NOTIFY fuzzyMatchChanged)
     Q_PROPERTY(QByteArray rawData READ rawData WRITE setRawData NOTIFY rawDataChanged)
     Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
+    Q_PROPERTY(QStringList dirs READ dirs WRITE setDirs NOTIFY dirsChanged)
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
     Q_PROPERTY(QString text READ getText)
@@ -108,6 +109,12 @@ public:
      */
     void setFileName(const QString& name);
     QString fileName() const;
+    /*!
+     * \brief setDirs
+     * Set subtitle search directories. Video's dir will always be added.
+     */
+    void setDirs(const QStringList& value);
+    QStringList dirs() const;
     /*!
      * \brief supportedFormats
      * the suffix names supported by all engines. for example ["ass", "ssa"]
@@ -165,6 +172,7 @@ signals:
     void contentChanged();
     void rawDataChanged();
     void fileNameChanged();
+    void dirsChanged();
     void suffixesChanged();
 private:
     class Private;
@@ -193,6 +201,8 @@ public:
     //always use exact file path by setFile(). file name is used internally
     //void setFileName(const QString& name);
     //QString fileName() const;
+    void setDirs(const QStringList& value);
+    QStringList dirs() const;
     QStringList supportedSuffixes() const;
     void setSuffixes(const QStringList& value);
     QStringList suffixes() const;
