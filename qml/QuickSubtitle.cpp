@@ -32,6 +32,7 @@ class QuickSubtitle::Filter : public QtAV::VideoFilter
 public:
     Filter(Subtitle *sub, QuickSubtitle *parent) :
         VideoFilter(parent)
+      , m_empty_image(false)
       , m_sub(sub)
       , m_subject(parent)
     {}
@@ -44,10 +45,18 @@ protected:
             m_sub->setTimestamp(frame->timestamp()); //TODO: set to current display video frame's timestamp
             QRect r;
             QImage image(m_sub->getImage(frame->width(), frame->height(), &r));
+            if (image.isNull()) {
+                if (m_empty_image)
+                    return;
+                m_empty_image = true;
+            } else {
+                m_empty_image = false;
+            }
             m_subject->notifyObservers(image, r, frame->width(), frame->height());
         }
     }
 private:
+    bool m_empty_image;
     Subtitle *m_sub;
     QuickSubtitle *m_subject;
 };
