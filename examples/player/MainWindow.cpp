@@ -409,7 +409,7 @@ void MainWindow::setupUi()
         csBox->addItem(cs, cs);
     }
     connect(csBox, SIGNAL(activated(QString)), SLOT(setSubtitleCharset(QString)));
-    mpSubtitle->setCodec(csBox->itemData(csBox->currentIndex()).toByteArray());
+    //mpSubtitle->setCodec(csBox->itemData(csBox->currentIndex()).toByteArray());
     csBox->setToolTip(tr("Auto detect requires libchardet"));
 
     subMenu = new ClickableMenu(tr("Audio track"));
@@ -1337,11 +1337,11 @@ void MainWindow::onFilterSharpChanged(int fs)
     qDebug("MainWindow::onFilterSharpChanged: %d", fs);
     VideoRenderer *vo = mpPlayer->renderer();
     if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
-            && vo->setSaturation(fs)) {
-        mpPlayer->setSaturation(0);
+            && vo->setFilterSharp(fs)) {
+        mpPlayer->setFilterSharp(0);
     } else {
-        vo->setSaturation(0);
-        mpPlayer->setSaturation(fs);
+        vo->setFilterSharp(0);
+        mpPlayer->setFilterSharp(fs);
     }
 }
 
@@ -1426,7 +1426,7 @@ void MainWindow::setSubtitleCharset(const QString &charSet)
     QComboBox *box = qobject_cast<QComboBox*>(sender());
     if (!box)
         return;
-    mpSubtitle->setCodec(box->itemData(box->currentIndex()).toByteArray());
+    //mpSubtitle->setCodec(box->itemData(box->currentIndex()).toByteArray());
 }
 
 void MainWindow::workaroundRendererSize()

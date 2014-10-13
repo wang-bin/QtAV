@@ -251,12 +251,22 @@ bool VideoShader::update(VideoMaterial *material)
 
     // material->setGammaRGB(0.2);
 
-    GLfloat kernel[9] =  {
+    GLfloat fs=(GLfloat)material->filterSharp();
+    GLfloat fsa=(GLfloat)-((fs-(qreal)1.0)/(qreal)4.0);
+
+/*
+   GLfloat kernel[9] =  {
                 0.,-1. ,0.,
                -1., 5. ,-1.,
                 0.,-1. ,0.
     };
+*/
 
+    GLfloat kernel[9] =  {
+                 0.,fsa ,0.,
+               fsa, fs ,fsa,
+                 0.,fsa ,0.
+     };
 
     const VideoFormat fmt(material->currentFormat());
     //format is out of date because we may use the same shader for different formats
@@ -345,7 +355,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     d.update_texure = true;
     // TODO: move to another function before rendering?
     d.bpp = frame.format().bitsPerPixel(0);
-    qDebug("VideoMaterial::setCurrentFrame bitsPerPixel: %d", d.bpp);
+    //qDebug("VideoMaterial::setCurrentFrame bitsPerPixel: %d", d.bpp);
     d.width = frame.width();
     d.height = frame.height();
     const VideoFormat fmt(frame.format());
@@ -513,6 +523,11 @@ qreal VideoMaterial::gammaRGB() const
     return d_func().gammaRGB;
 }
 
+qreal VideoMaterial::filterSharp() const
+{
+    return d_func().filterSharp;
+}
+
 int VideoMaterial::planeCount() const
 {
     return d_func().frame.planeCount();
@@ -535,12 +550,26 @@ void VideoMaterial::setHue(qreal value)
 
 void VideoMaterial::setSaturation(qreal value)
 {
+    qDebug("VideoMaterial::setSaturation: %f",value);
     d_func().colorTransform.setSaturation(value);
 }
 
 void VideoMaterial::setGammaRGB(qreal value)
 {
-    d_func().gammaRGB=value;
+    qDebug("VideoShader.cpp VideoMaterial::setGammaRGB: %f",value);
+    //0-2
+    qreal g = ((qreal)value/100.0)+1.0;
+    qDebug("VideoShader.cpp VideoMaterial::setGammaRGB (corr): %f",g);
+    d_func().gammaRGB=g;
+}
+
+void VideoMaterial::setFilterSharp(qreal value)
+{
+    qDebug("VideoShader.cpp VideoMaterial::setFilterSgarp: %f",value);
+    //1-5
+    qreal fs=((qreal)value/100.0)*2.0+3.0;
+    qDebug("VideoShader.cpp VideoMaterial::setFilterSgarp: (corr) %f",fs);
+    d_func().filterSharp=fs;
 }
 
 qreal VideoMaterial::validTextureWidth() const

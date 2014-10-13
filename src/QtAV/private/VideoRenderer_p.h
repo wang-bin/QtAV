@@ -57,6 +57,8 @@ public:
       , contrast(0)
       , hue(0)
       , saturation(0)
+      , gammaRGB(1)
+      , filterSharp(1)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -110,7 +112,7 @@ public:
     VideoFormat::PixelFormat preferred_format;
     bool force_preferred;
 
-    qreal brightness, contrast, hue, saturation;
+    qreal brightness, contrast, hue, saturation, gammaRGB, filterSharp;
 };
 
 } //namespace QtAV

@@ -263,6 +263,8 @@ public:
     ColorTransform colorTransform;
     QMatrix4x4 mpv_matrix;
     VideoMaterialType *material_type;
+//    qreal gammaRGB;
+//    qreal filterSharp;
 };
 
 
@@ -1100,7 +1102,8 @@ bool GLWidgetRenderer::onSetGammaRGB(qreal g)
     DPTR_D(GLWidgetRenderer);
     if (!d.hasGLSL)
         return false;
-    d.colorTransform.setSaturation(g);
+    qDebug("GLWidgetRenderer::onSetGammaRGB :%f",g);
+    //d.gammaRGB(g);
     return true;
 }
 
@@ -1109,7 +1112,8 @@ bool GLWidgetRenderer::onSetFilterSharp(qreal fS)
     DPTR_D(GLWidgetRenderer);
     if (!d.hasGLSL)
         return false;
-    d.colorTransform.setSaturation(fS);
+    qDebug("GLWidgetRenderer::onSetFilterSharp :%f",fS);
+    //d.filterSharp(fS);
     return true;
 }
 

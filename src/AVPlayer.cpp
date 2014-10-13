@@ -1192,7 +1192,7 @@ int AVPlayer::gammaRGB() const
 
 void AVPlayer::setGammaRGB(int val)
 {
-    qWarning("AVPlayer::setGammaRGB");
+    qDebug("AVPlayer::setGammaRGB: %f", val);
     if (mGammaRGB == val)
         return;
     mGammaRGB = val;
@@ -1209,6 +1209,7 @@ int AVPlayer::filterSharp() const
 
 void AVPlayer::setFilterSharp(int val)
 {
+    qDebug("AVPlayer::setFilterSharp: %f", val);
     if (mFilterSharp == val)
         return;
     mFilterSharp = val;
@@ -1454,6 +1455,9 @@ bool AVPlayer::setupVideoThread()
     video_thread->setBrightness(mBrightness);
     video_thread->setContrast(mContrast);
     video_thread->setSaturation(mSaturation);
+    video_thread->setGammaRGB(mGammaRGB);
+    video_thread->setFilterSharp(mFilterSharp);
+
     int queue_min = 0.61803*qMax<qreal>(24.0, mStatistics.video_only.fps_guess);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     video_thread->packetQueue()->setThreshold(queue_min);

@@ -89,7 +89,7 @@ public:
         , video_format(VideoFormat::Format_Invalid)
         , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
-        , gammaRGB(0.3)
+        , gammaRGB(1.0)
     {
         colorTransform.setOutputColorSpace(ColorTransform::RGB);
     }
@@ -146,6 +146,7 @@ public:
     ColorTransform colorTransform;
     QMatrix4x4 matrix;
     qreal gammaRGB;
+    qreal filterSharp;
 };
 
 } //namespace QtAV

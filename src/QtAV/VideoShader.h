@@ -117,6 +117,7 @@ public:
     int bpp() const; //1st plane
     int planeCount() const;
     qreal gammaRGB() const;
+    qreal filterSharp() const;
     /*!
      * \brief validTextureWidth
      * Value is (0, 1]. Normalized valid width of a plane.
@@ -144,6 +145,7 @@ public:
     void setHue(qreal value);
     void setSaturation(qreal value);
     void setGammaRGB(qreal value);
+    void setFilterSharp(qreal value);
 protected:
     VideoMaterial(VideoMaterialPrivate &d);
     DPTR_DECLARE(VideoMaterial)

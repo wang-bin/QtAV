@@ -205,13 +205,15 @@ bool OpenGLRendererBase::onSetSaturation(qreal s)
 
 bool OpenGLRendererBase::onSetGammaRGB(qreal gammaRGB)
 {
-    d_func().glv.setSaturation(gammaRGB);
+    qDebug("OpenGLRendererBase::onSetGammaRGB: %f",gammaRGB);
+    d_func().glv.setGammaRGB(gammaRGB);
     return true;
 }
 
 bool OpenGLRendererBase::onSetFilterSharp(qreal filterSharp)
 {
-    d_func().glv.setSaturation(filterSharp);
+    qDebug("OpenGLRendererBase::onSetFilterSharp: %f",filterSharp);
+    d_func().glv.setFilterSharp(filterSharp);
     return true;
 }
 
