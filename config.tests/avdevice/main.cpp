@@ -18,33 +18,9 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#include <libavdevice/avdevice.h>
 
-#include <QtQml/QQmlExtensionPlugin>
-#include <QtQml/qqml.h>
-#include "QmlAV/QQuickItemRenderer.h"
-#include "QmlAV/QmlAVPlayer.h"
-#include "QmlAV/QuickSubtitle.h"
-#include "QmlAV/QuickSubtitleItem.h"
-#include "QmlAV/MediaMetaData.h"
-namespace QtAV {
-
-class QtAVQmlPlugin : public QQmlExtensionPlugin
+int main()
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
-
-public:
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("QtAV"));
-        qmlRegisterType<QQuickItemRenderer>(uri, 1, 3, "VideoOutput");
-        qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
-        qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
-        qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
-        qmlRegisterType<QuickSubtitleItem>(uri, 1, 4, "SubtitleItem");
-        qmlRegisterType<MediaMetaData>();
-    }
-};
-} //namespace QtAV
-
-#include "plugin.moc"
+	return 0;
+}

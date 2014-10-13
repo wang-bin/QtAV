@@ -43,6 +43,9 @@ void ffmpeg_version_print()
 #if QTAV_HAVE(AVFILTER)
         { "avfilter", LIBAVFILTER_VERSION_INT, avfilter_version() },
 #endif //QTAV_HAVE(AVFILTER)
+#if QTAV_HAVE(AVDEVICE)
+        { "avdevice", LIBAVDEVICE_VERSION_INT, avdevice_version() },
+#endif //QTAV_HAVE(AVDEVICE)
         { 0, 0, 0}
     };
     for (int i = 0; components[i].lib != 0; ++i) {

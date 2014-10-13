@@ -67,7 +67,7 @@ bool QQuickItemRenderer::event(QEvent *e)
 
 void QQuickItemRenderer::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
-    Q_UNUSED(oldGeometry);
+    QQuickItem::geometryChanged(newGeometry, oldGeometry); //geometry will be updated
     DPTR_D(QQuickItemRenderer);
     resizeRenderer(newGeometry.size().toSize());
     if (d.fill_mode == PreserveAspectCrop) {

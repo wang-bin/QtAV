@@ -118,6 +118,9 @@ QString aboutFFmpeg_HTML()
     #if QTAV_HAVE(AVRESAMPLE)
         { FF_COMPONENT(avresample, AVRESAMPLE) },
     #endif //QTAV_HAVE(AVRESAMPLE)
+    #if QTAV_HAVE(AVDEVICE)
+        { FF_COMPONENT(avdevice, AVDEVICE) },
+    #endif //QTAV_HAVE(AVDEVICE)
 #undef FF_COMPONENT
         { 0, 0, 0, 0, 0 }
     };
