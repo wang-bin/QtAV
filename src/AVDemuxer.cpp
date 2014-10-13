@@ -330,6 +330,7 @@ bool AVDemuxer::close()
         qDebug("closing format_context");
         avformat_close_input(&format_context); //libavf > 53.10.0
         format_context = 0;
+        _iformat = 0;
         if (m_pQAVIO)
             m_pQAVIO->release();
     }
@@ -455,20 +456,6 @@ bool AVDemuxer::loadFile(const QString &fileName)
         _file_name.insert(3, 'h');
     else if (_file_name.startsWith("file://"))
         _file_name.remove("file://");
-#if QTAV_HAVE(AVDEVICE)
-    else if (_file_name.startsWith("avdevice:"))
-    {
-        // avdevice:video4linux2:file_name
-        QStringList parts = _file_name.split(":");
-        if (parts.count() != 3)
-        {
-            qDebug("invalid avdevice specification");
-            return false;
-        }
-        _iformat = av_find_input_format(parts[1].toUtf8().constData());
-        _file_name = parts[2];
-    }
-#endif
     if (m_pQAVIO)
         m_pQAVIO->setDevice(0);
     return load();
@@ -493,7 +480,24 @@ bool AVDemuxer::load()
         setMediaStatus(NoMedia);
         return false;
     }
-
+#if QTAV_HAVE(AVDEVICE)
+    static const QString avd_scheme("avdevice:");
+    if (_file_name.startsWith(avd_scheme)) {
+        QStringList parts = _file_name.split(":");
+        if (parts.count() != 3) {
+            qDebug("invalid avdevice specification");
+            return false;
+        }
+        if (_file_name.startsWith(avd_scheme + "//")) {
+            // avdevice://avfoundation:device_name
+            _iformat = av_find_input_format(parts[1].mid(2).toUtf8().constData());
+        } else {
+            // avdevice:video4linux2:file_name
+            _iformat = av_find_input_format(parts[1].toUtf8().constData());
+        }
+        _file_name = parts[2];
+    }
+#endif
     //alloc av format context
     if (!format_context)
         format_context = avformat_alloc_context();
