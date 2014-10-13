@@ -105,6 +105,10 @@ config_avresample {
     SOURCES += AudioResamplerLibav.cpp
     LIBS += -lavresample
 }
+config_avdevice {
+    DEFINES += QTAV_HAVE_AVDEVICE=1
+    LIBS += -lavdevice
+}
 config_ipp {
     DEFINES += QTAV_HAVE_IPP=1
     ICCROOT = $$(IPPROOT)/../compiler
