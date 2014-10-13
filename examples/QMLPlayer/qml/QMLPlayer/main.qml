@@ -68,6 +68,7 @@ Rectangle {
     SubtitleItem {
         id: subtitleItem
         //visible: false
+        fillMode: videoOut.fillMode
         source: subtitle
         anchors.fill: parent //why videoOut gets null rect?
     }

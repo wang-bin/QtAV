@@ -33,25 +33,38 @@ class Q_AV_EXPORT QuickSubtitleItem : public QQuickItem, public QuickSubtitleObs
     Q_OBJECT
     Q_DISABLE_COPY(QuickSubtitleItem)
     Q_PROPERTY(QuickSubtitle* source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(int fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
 public:
     explicit QuickSubtitleItem(QQuickItem *parent = 0);
     ~QuickSubtitleItem();
     //QQuickItemRenderer* target() const;
     void setSource(QuickSubtitle* s);
     QuickSubtitle* source() const;
+    /*!
+     * \brief setFillMode
+     * keep the value the same as VideoOutput:
+     *  fillMode: vo.fillMode
+     */
+    void setFillMode(int value);
+    int fillMode() const;
     virtual void update(const QImage& image, const QRect& r, int width, int height);
 Q_SIGNALS:
     void sourceChanged();
+    void fillModeChanged();
 protected:
-    QRectF mapSubRect(const QRect& r, qreal width, qreal height);
+    QRectF mapSubRect(const QRect& r, qreal w, qreal h);
     virtual QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data);
     virtual bool event(QEvent *e);
+    virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);
 private:
     QuickSubtitle *m_sub;
     QSGTexture* m_texture;
+    bool m_remap;
+    int m_fillMode;
     int m_w_sub, m_h_sub; //subtitle frame width height
     QImage m_image;
     QRect m_rect; // subtitle rect in subtitle frame coorinate
+    QRectF m_rect_mapped;
     QMutex m_mutex;
 };
 

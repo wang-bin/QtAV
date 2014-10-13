@@ -7,6 +7,8 @@ QuickSubtitleItem::QuickSubtitleItem(QQuickItem *parent) :
     QQuickItem(parent)
   , m_sub(0)
   , m_texture(0)
+  , m_remap(false)
+  , m_fillMode(Qt::KeepAspectRatio)
   , m_w_sub(0)
   , m_h_sub(0)
 {
@@ -38,32 +40,63 @@ QuickSubtitle* QuickSubtitleItem::source() const
     return m_sub;
 }
 
+void QuickSubtitleItem::setFillMode(int value)
+{
+    if (m_fillMode == value)
+        return;
+    m_fillMode = value;
+    m_remap = true;
+    emit fillModeChanged();
+}
+
+int QuickSubtitleItem::fillMode() const
+{
+    return m_fillMode;
+}
+
 void QuickSubtitleItem::update(const QImage &image, const QRect &r, int width, int height)
 {
     {
         QMutexLocker lock(&m_mutex);
         Q_UNUSED(lock);
         m_image = image; //lock
-        m_rect = r;
-        m_w_sub = width;
-        m_h_sub = height;
+        if (m_rect != r || m_w_sub != width || m_h_sub != height) {
+            m_remap = true;
+            m_rect = r;
+            m_w_sub = width;
+            m_h_sub = height;
+        }
     }
     QCoreApplication::postEvent(this, new QEvent(QEvent::User));
 }
 
-QRectF QuickSubtitleItem::mapSubRect(const QRect &rect, qreal width, qreal height)
+QRectF QuickSubtitleItem::mapSubRect(const QRect &rect, qreal w, qreal h)
 {
-    if (width == 0 || height == 0)
-        return rect;
-    QRectF r;
-    const qreal w = boundingRect().width();
-    const qreal h = boundingRect().height();
-    r.setX(qreal(rect.x())*w/width);
-    r.setY(qreal(rect.y())*h/height);
-    r.setWidth(qreal(rect.width())*w/width);
-    r.setHeight(qreal(rect.height())*h/height);
+    if (w == 0 || h == 0)
+        return QRectF();
+    if (!m_remap)
+        return m_rect_mapped;
+    m_remap = false;
+    qreal ww = width();
+    qreal hh = height();
+    qreal dx = 0;
+    qreal dy = 0;
+    if (m_fillMode == Qt::KeepAspectRatio) {
+        if (ww*h > w*hh) { //item is too wide
+            ww = hh*w/h;
+            dx = (width() - ww)/2.0;
+        } else {
+            hh = ww*h/w;
+            dy = (height() - hh)/2.0;
+        }
+    }
+    m_rect_mapped.setX(qreal(rect.x())*ww/w);
+    m_rect_mapped.setY(qreal(rect.y())*hh/h);
+    m_rect_mapped.setWidth(qreal(rect.width())*ww/w);
+    m_rect_mapped.setHeight(qreal(rect.height())*hh/h);
+    m_rect_mapped.moveTo(m_rect_mapped.topLeft() + QPointF(dx, dy));
     //qDebug() << boundingRect() << "  " << width <<"x"<<height << "  " << r;
-    return r;
+    return m_rect_mapped;
 }
 
 QSGNode* QuickSubtitleItem::updatePaintNode(QSGNode *node, UpdatePaintNodeData *data)
@@ -97,4 +130,12 @@ bool QuickSubtitleItem::event(QEvent *e)
         return QQuickItem::event(e);
     QQuickItem::update();
     return true;
+}
+
+void QuickSubtitleItem::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+    Q_UNUSED(newGeometry);
+    Q_UNUSED(oldGeometry);
+    m_remap = true;
+    QCoreApplication::postEvent(this, new QEvent(QEvent::User));
 }
