@@ -154,7 +154,6 @@ Module {
         Property { name: "loops"; type: "int" }
         Property { name: "seekable"; type: "bool"; isReadonly: true }
         Property { name: "metaData"; type: "MediaMetaData"; isReadonly: true; isPointer: true }
-        Property { name: "mediaObject"; type: "QObject"; isReadonly: true; isPointer: true }
         Property { name: "channelLayout"; type: "ChannelLayout" }
         Property { name: "videoCodecs"; type: "QStringList"; isReadonly: true }
         Property { name: "videoCodecPriority"; type: "QStringList" }
@@ -203,48 +202,37 @@ Module {
         Signal { name: "openGLChanged" }
     }
     Component {
-        name: "QuickSubtitle"
+        name: "QtAV::Subtitle"
         prototype: "QObject"
-        exports: ["QtAV/Subtitle 1.4"]
-        exportMetaObjectRevisions: [0]
-        Property { name: "enabled"; type: "bool" }
-        Property { name: "player"; type: "QObject"; isPointer: true }
         Property { name: "codec"; type: "QByteArray" }
         Property { name: "engines"; type: "QStringList" }
-        Property { name: "engine"; type: "string"; isReadonly: true }
         Property { name: "fuzzyMatch"; type: "bool" }
-        Property { name: "dirs"; type: "QStringList" }
+        Property { name: "rawData"; type: "QByteArray" }
+        Property { name: "fileName"; type: "string" }
         Property { name: "suffixes"; type: "QStringList" }
-        Property { name: "canRender"; type: "bool"; isReadonly: true }
-        Property { name: "autoLoad"; type: "bool" }
-        Property { name: "file"; type: "string" }
+        Property { name: "timestamp"; type: "double" }
         Property { name: "text"; type: "string"; isReadonly: true }
-        Signal {
-            name: "loaded"
-            Parameter { name: "path"; type: "string" }
-        }
-        Signal {
-            name: "enableChanged"
-            Parameter { type: "bool" }
-        }
-        Signal {
-            name: "autoLoadChanged"
-            Parameter { name: "value"; type: "bool" }
-        }
+        Property { name: "loaded"; type: "bool"; isReadonly: true }
         Signal { name: "contentChanged" }
+        Method { name: "load" }
+        Method { name: "loadAsync" }
         Method {
-            name: "setAutoLoad"
-            Parameter { name: "value"; type: "bool" }
+            name: "setTimestamp"
+            Parameter { name: "t"; type: "double" }
         }
         Method { name: "getText"; type: "string" }
+        Method {
+            name: "getImage"
+            type: "QImage"
+            Parameter { name: "width"; type: "int" }
+            Parameter { name: "height"; type: "int" }
+        }
     }
     Component {
-        name: "QuickSubtitleItem"
-        defaultProperty: "data"
-        prototype: "QQuickItem"
-        exports: ["QtAV/SubtitleItem 1.4"]
+        name: "QuickSubtitle"
+        prototype: "QtAV::Subtitle"
+        exports: ["QtAV/Subtitle 1.4"]
         exportMetaObjectRevisions: [0]
-        Property { name: "source"; type: "QuickSubtitle"; isPointer: true }
-        Property { name: "fillMode"; type: "int" }
+        Property { name: "player"; type: "QObject"; isPointer: true }
     }
 }
