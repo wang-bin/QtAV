@@ -110,7 +110,7 @@ public:
     VideoFormat::PixelFormat preferred_format;
     bool force_preferred;
 
-    qreal brightness, contrast, hue, saturation, gammaRGB, filterSharp;
+    qreal brightness, contrast, hue, saturation;
 };
 
 } //namespace QtAV
