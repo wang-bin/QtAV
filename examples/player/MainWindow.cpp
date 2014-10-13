@@ -1337,11 +1337,11 @@ void MainWindow::onFilterSharpChanged(int fs)
     qDebug("MainWindow::onFilterSharpChanged: %d", fs);
     VideoRenderer *vo = mpPlayer->renderer();
     if (mpVideoEQ->engine() != VideoEQConfigPage::SWScale
-            && vo->setFilterSharp(fs)) {
-        mpPlayer->setFilterSharp(0);
+            && vo->setSaturation(fs)) {
+        mpPlayer->setSaturation(0);
     } else {
-        vo->setFilterSharp(0);
-        mpPlayer->setFilterSharp(fs);
+        vo->setSaturation(0);
+        mpPlayer->setSaturation(fs);
     }
 }
 
