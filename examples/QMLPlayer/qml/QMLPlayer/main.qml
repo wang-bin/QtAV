@@ -64,14 +64,28 @@ Rectangle {
         fillMode: VideoOutput.PreserveAspectFit
         anchors.fill: parent
         source: player
+        SubtitleItem {
+            id: subtitleItem
+            //visible: false
+            fillMode: parent.fillMode
+            source: subtitle
+            anchors.fill: parent
+        }
+        Text {
+            id: subtitleLabel
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignBottom
+            font {
+                pixelSize: Utils.scaled(20)
+                bold: true
+            }
+            style: Text.Outline
+            styleColor: "blue"
+            color: "white"
+            anchors.fill: parent
+        }
     }
-    SubtitleItem {
-        id: subtitleItem
-        //visible: false
-        fillMode: videoOut.fillMode
-        source: subtitle
-        anchors.fill: parent //why videoOut gets null rect?
-    }
+
     MediaPlayer {
         id: player
         objectName: "player"
@@ -93,30 +107,17 @@ Rectangle {
             control.setPauseState()
         }
     }
-    Text {
-        id: subtitleLabel
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignBottom
-        font {
-            pixelSize: Utils.scaled(20)
-            bold: true
-        }
-        style: Text.Outline
-        styleColor: "blue"
-        color: "white"
-        anchors.fill: parent
 
-        Subtitle {
-            id: subtitle
-            player: player
-            //enabled: false
-            onContentChanged: {
-                if (!canRender || !enabled || !subtitleItem.visible)
-                    subtitleLabel.text = text
-            }
-            onLoaded: {
-                msg.text = qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1)
-            }
+    Subtitle {
+        id: subtitle
+        player: player
+        //enabled: false
+        onContentChanged: {
+            if (!canRender || !enabled || !subtitleItem.visible)
+                subtitleLabel.text = text
+        }
+        onLoaded: {
+            msg.text = qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1)
         }
     }
     MouseArea {

@@ -134,8 +134,7 @@ bool QuickSubtitleItem::event(QEvent *e)
 
 void QuickSubtitleItem::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
-    Q_UNUSED(newGeometry);
-    Q_UNUSED(oldGeometry);
+    QQuickItem::geometryChanged(newGeometry, oldGeometry); //geometry will be updated
     m_remap = true;
     QCoreApplication::postEvent(this, new QEvent(QEvent::User));
 }
