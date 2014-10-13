@@ -24,7 +24,6 @@
 #include "QmlAV/QQuickItemRenderer.h"
 #include "QmlAV/QmlAVPlayer.h"
 #include "QmlAV/QuickSubtitle.h"
-#include "QmlAV/QuickSubtitleItem.h"
 #include "QmlAV/MediaMetaData.h"
 namespace QtAV {
 
@@ -41,7 +40,6 @@ public:
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
         qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
-        qmlRegisterType<QuickSubtitleItem>(uri, 1, 4, "SubtitleItem");
         qmlRegisterType<MediaMetaData>();
     }
 };

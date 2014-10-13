@@ -71,10 +71,6 @@ extern "C"
 #endif
 #endif //QTAV_HAVE(AVFILTER)
 
-#if QTAV_HAVE(AVDEVICE)
-#include <libavdevice/avdevice.h>
-#endif
-
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/

@@ -95,7 +95,7 @@ public slots:
     void start();
     /*pause external clock*/
     void pause(bool p);
-    /*reset clock intial value and external clock parameters (and stop timer). keep speed() and isClockAuto()*/
+    /*reset(stop) external clock*/
     void reset();
 
 private:

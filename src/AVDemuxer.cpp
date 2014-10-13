@@ -154,7 +154,6 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , v_codec_context(0)
     , s_codec_contex(0)
     , _file_name(fileName)
-    , _iformat(0)
     , m_pQAVIO(0)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AccurateFrame)
@@ -165,9 +164,6 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
         AVInitializer() {
             qDebug("av_register_all, avcodec_register_all, avformat_network_init");
             avcodec_register_all();
-#if QTAV_HAVE(AVDEVICE)
-            avdevice_register_all();
-#endif
             av_register_all();
             avformat_network_init();
         }
@@ -330,7 +326,6 @@ bool AVDemuxer::close()
         qDebug("closing format_context");
         avformat_close_input(&format_context); //libavf > 53.10.0
         format_context = 0;
-        _iformat = 0;
         if (m_pQAVIO)
             m_pQAVIO->release();
     }
@@ -480,24 +475,7 @@ bool AVDemuxer::load()
         setMediaStatus(NoMedia);
         return false;
     }
-#if QTAV_HAVE(AVDEVICE)
-    static const QString avd_scheme("avdevice:");
-    if (_file_name.startsWith(avd_scheme)) {
-        QStringList parts = _file_name.split(":");
-        if (parts.count() != 3) {
-            qDebug("invalid avdevice specification");
-            return false;
-        }
-        if (_file_name.startsWith(avd_scheme + "//")) {
-            // avdevice://avfoundation:device_name
-            _iformat = av_find_input_format(parts[1].mid(2).toUtf8().constData());
-        } else {
-            // avdevice:video4linux2:file_name
-            _iformat = av_find_input_format(parts[1].toUtf8().constData());
-        }
-        _file_name = parts[2];
-    }
-#endif
+
     //alloc av format context
     if (!format_context)
         format_context = avformat_alloc_context();
@@ -513,13 +491,13 @@ bool AVDemuxer::load()
 
         qDebug("avformat_open_input: format_context:'%p'...",format_context);
         mpInterrup->begin(InterruptHandler::Open);
-        ret = avformat_open_input(&format_context, "iodevice", _iformat, mOptions.isEmpty() ? NULL : &mpDict);
+        ret = avformat_open_input(&format_context, "iodevice", NULL, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
         qDebug("avformat_open_input: (with io device) ret:%d", ret);
     } else {
         qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
         mpInterrup->begin(InterruptHandler::Open);
-        ret = avformat_open_input(&format_context, _file_name.toUtf8().constData(), _iformat, mOptions.isEmpty() ? NULL : &mpDict);
+        ret = avformat_open_input(&format_context, _file_name.toUtf8().constData(), NULL, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
         qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
     }

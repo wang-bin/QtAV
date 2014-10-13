@@ -21,10 +21,10 @@
 
 #include "QtAV/SubtitleFilter.h"
 #include "QtAV/private/Filter_p.h"
-#include "QtAV/private/PlayerSubtitle.h"
+#include "QtAV/AVPlayer.h"
 #include "QtAV/Subtitle.h"
-#include "QtAV/VideoFrame.h"
-#include <QtCore/QScopedPointer>
+#include <QtCore/QFileInfo>
+#include <QtCore/QDir>
 #include <QtDebug>
 
 namespace QtAV {
@@ -33,7 +33,8 @@ class SubtitleFilterPrivate : public VideoFilterPrivate
 {
 public:
     SubtitleFilterPrivate()
-        : player_sub(new PlayerSubtitle(0))
+        : autoLoad(true)
+        , player(0)
         , rect(0.0, 0.0, 1.0, 0.9)
         , color(Qt::white)
     {
@@ -69,7 +70,10 @@ public:
         return r;
     }
 
-    QScopedPointer<PlayerSubtitle> player_sub;
+    bool autoLoad;
+    AVPlayer *player;
+    QString file;
+    Subtitle sub;
     QRectF rect;
     QFont font;
     QColor color;
@@ -77,38 +81,71 @@ public:
 
 SubtitleFilter::SubtitleFilter(QObject *parent) :
     VideoFilter(*new SubtitleFilterPrivate(), parent)
-  , SubtitleAPIProxy(this)
 {
-    DPTR_D(SubtitleFilter);
-    setSubtitle(d.player_sub->subtitle());
-    connect(this, SIGNAL(enableChanged(bool)), d.player_sub.data(), SLOT(onEnableChanged(bool)));
-    connect(this, SIGNAL(codecChanged()), d.player_sub->subtitle(), SLOT(loadAsync()));
-    connect(d.player_sub.data(), SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged(bool)));
+    AVPlayer *player = qobject_cast<AVPlayer*>(parent);
+    if (player)
+        setPlayer(player);
+    connect(this, SIGNAL(enableChanged(bool)), SLOT(onEnableChanged(bool)));
+    connect(this, SIGNAL(codecChanged()), &d_func().sub, SLOT(load()));
 }
 
 void SubtitleFilter::setPlayer(AVPlayer *player)
 {
-    d_func().player_sub->setPlayer(player);
+    DPTR_D(SubtitleFilter);
+    if (d.player == player)
+        return;
+    if (d.player) {
+        disconnect(d.player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
+        disconnect(d.player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
+        disconnect(d.player, SIGNAL(started()), this, SLOT(onPlayerStart()));
+    }
+    d.player = player;
+    connect(d.player, SIGNAL(sourceChanged()), SLOT(onPlayerSourceChanged()));
+    connect(d.player, SIGNAL(positionChanged(qint64)), SLOT(onPlayerPositionChanged()));
+    connect(d.player, SIGNAL(started()), SLOT(onPlayerStart()));
 }
 
 void SubtitleFilter::setFile(const QString &file)
 {
-    d_func().player_sub->setFile(file);
+    DPTR_D(SubtitleFilter);
+    // always load
+    d.file = file;
+    d.sub.setFileName(file);
+    d.sub.setFuzzyMatch(false);
+    d.sub.load();
 }
 
 QString SubtitleFilter::file() const
 {
-    return d_func().player_sub->file();
+    return d_func().file;
+}
+
+void SubtitleFilter::setCodec(const QByteArray &value)
+{
+    DPTR_D(SubtitleFilter);
+    if (d.sub.codec() == value)
+        return;
+    d.sub.setCodec(value);
+    emit codecChanged();
+}
+
+QByteArray SubtitleFilter::codec() const
+{
+    return d_func().sub.codec();
 }
 
 void SubtitleFilter::setAutoLoad(bool value)
 {
-    d_func().player_sub->setAutoLoad(value);
+    DPTR_D(SubtitleFilter);
+    if (d.autoLoad == value)
+        return;
+    d.autoLoad = value;
+    emit autoLoadChanged(value);
 }
 
 bool SubtitleFilter::autoLoad() const
 {
-    return d_func().player_sub->autoLoad();
+    return d_func().autoLoad;
 }
 
 void SubtitleFilter::setRect(const QRectF &r)
@@ -165,17 +202,17 @@ void SubtitleFilter::process(Statistics *statistics, VideoFrame *frame)
         qWarning("no paint device!");
         return;
     }
-    if (d.player_sub->subtitle()->canRender()) {
+    if (d.sub.canRender()) {
         if (frame && frame->timestamp() > 0.0)
-            d.player_sub->subtitle()->setTimestamp(frame->timestamp()); //TODO: set to current display video frame's timestamp
+            d.sub.setTimestamp(frame->timestamp()); //TODO: set to current display video frame's timestamp
         QRect rect;
         /*
          * image quality maybe to low if use video frame resolution for large display.
          * The difference is small if use paint_device size and video frame aspect ratio ~ renderer aspect ratio
          * if use renderer's resolution, we have to map bounding rect from video frame coordinate to renderer's
          */
-        //QImage img = d.player_sub->subtitle()->getImage(statistics->video_only.width, statistics->video_only.height, &rect);
-        QImage img = d.player_sub->subtitle()->getImage(ctx->paint_device->width(), ctx->paint_device->height(), &rect);
+        //QImage img = d.sub.getImage(statistics->video_only.width, statistics->video_only.height, &rect);
+        QImage img = d.sub.getImage(ctx->paint_device->width(), ctx->paint_device->height(), &rect);
         if (img.isNull())
             return;
         ctx->drawImage(rect, img);
@@ -184,7 +221,93 @@ void SubtitleFilter::process(Statistics *statistics, VideoFrame *frame)
     ctx->font = d.font;
     ctx->pen.setColor(d.color);
     ctx->rect = d.realRect(ctx->paint_device->width(), ctx->paint_device->height());
-    ctx->drawPlainText(ctx->rect, Qt::AlignHCenter | Qt::AlignBottom, d.player_sub->subtitle()->getText());
+    ctx->drawPlainText(ctx->rect, Qt::AlignHCenter | Qt::AlignBottom, d.sub.getText());
+}
+
+void SubtitleFilter::onPlayerSourceChanged()
+{
+    DPTR_D(SubtitleFilter);
+    d.file = QString();
+    if (!d.autoLoad) {
+        return;
+    }
+    AVPlayer *p = qobject_cast<AVPlayer*>(sender());
+    if (!p)
+        return;
+    QString path = p->file();
+    //path.remove(p->source().scheme() + "://");
+    QString name = QFileInfo(path).completeBaseName();
+    path = QFileInfo(path).dir().absoluteFilePath(name);
+    d.sub.setFileName(path);
+    d.sub.setFuzzyMatch(true);
+    d.sub.load();
+}
+
+void SubtitleFilter::onPlayerPositionChanged()
+{
+    AVPlayer *p = qobject_cast<AVPlayer*>(sender());
+    if (!p)
+        return;
+    DPTR_D(SubtitleFilter);
+    d.sub.setTimestamp(qreal(p->position())/1000.0);
+}
+
+void SubtitleFilter::onPlayerStart()
+{
+    DPTR_D(SubtitleFilter);
+    if (!autoLoad()) {
+        if (d.file == d.sub.fileName())
+            return;
+        d.sub.setFileName(d.file);
+        d.sub.setFuzzyMatch(false);
+        d.sub.load();
+        return;
+    }
+    if (d.file != d.sub.fileName())
+        return;
+    // autoLoad was false then reload then true then reload
+    // previous loaded is user selected subtitle
+    QString path = d.player->file();
+    //path.remove(p->source().scheme() + "://");
+    QString name = QFileInfo(path).completeBaseName();
+    path = QFileInfo(path).dir().absoluteFilePath(name);
+    d.sub.setFileName(path);
+    d.sub.setFuzzyMatch(true);
+    d.sub.load();
+    return;
+}
+
+void SubtitleFilter::onEnableChanged(bool value)
+{
+    DPTR_D(SubtitleFilter);
+    if (value) {
+        if (d.player) {
+            connect(d.player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
+            connect(d.player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
+            connect(d.player, SIGNAL(started()), this, SLOT(onPlayerStart()));
+        }
+        if (autoLoad()) {
+            if (!d.player)
+                return;
+            QString path = d.player->file();
+            //path.remove(p->source().scheme() + "://");
+            QString name = QFileInfo(path).completeBaseName();
+            path = QFileInfo(path).dir().absoluteFilePath(name);
+            d.sub.setFileName(path);
+            d.sub.setFuzzyMatch(true);
+            d.sub.load();
+        } else {
+            d.sub.setFileName(d.file);
+            d.sub.setFuzzyMatch(false);
+            d.sub.load();
+        }
+    } else {
+        if (d.player) {
+            disconnect(d.player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
+            disconnect(d.player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
+            disconnect(d.player, SIGNAL(started()), this, SLOT(onPlayerStart()));
+        }
+    }
 }
 
 } //namespace QtAV

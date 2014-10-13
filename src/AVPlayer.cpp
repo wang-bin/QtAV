@@ -153,10 +153,6 @@ AVPlayer::AVPlayer(QObject *parent) :
 AVPlayer::~AVPlayer()
 {
     stop();
-    QList<Filter*> filters(FilterManager::instance().videoFilters(this));
-    foreach (Filter *f, filters) {
-        uninstallFilter(f);
-    }
     if (_audio) {
         delete _audio;
         _audio = 0;
@@ -624,6 +620,18 @@ bool AVPlayer::load(bool reload)
     loaded = true;
     formatCtx = demuxer.formatContext();
 
+    if (masterClock()->isClockAuto()) {
+        qDebug("auto select clock: audio > external");
+        if (!demuxer.audioCodecContext()) {
+            qWarning("No audio found or audio not supported. Using ExternalClock");
+            masterClock()->setClockType(AVClock::ExternalClock);
+            masterClock()->setInitialValue(mediaStartPositionF());
+        } else {
+            qDebug("Using AudioClock");
+            masterClock()->setClockType(AVClock::AudioClock);
+        }
+    }
+
     // TODO: what about other proctols? some vob duration() == 0
     if ((path.startsWith("file:") || QFile(path).exists()) && duration() > 0) {
         media_end_pos = mediaStartPosition() + duration();
@@ -925,23 +933,10 @@ void AVPlayer::play()
     }
     demuxer_thread->start();
     if (start_last) {
-        masterClock()->pause(false); //external clock
+        clock->pause(false); //external clock
     } else {
-        masterClock()->reset();
+        clock->reset();
     }
-    if (masterClock()->isClockAuto()) {
-        qDebug("auto select clock: audio > external");
-        if (!demuxer.audioCodecContext()) {
-            qWarning("No audio found or audio not supported. Using ExternalClock");
-            masterClock()->setClockType(AVClock::ExternalClock);
-            masterClock()->setInitialValue(mediaStartPositionF());
-        } else {
-            qDebug("Using AudioClock");
-            masterClock()->setClockType(AVClock::AudioClock);
-            //masterClock()->setInitialValue(0);
-        }
-    }
-
     if (timer_id < 0) {
         //timer_id = startTimer(kPosistionCheckMS); //may fail if not in this thread
         QMetaObject::invokeMethod(this, "startNotifyTimer", Qt::AutoConnection);

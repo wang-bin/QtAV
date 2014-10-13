@@ -129,8 +129,6 @@ void AVClock::pause(bool p)
 
 void AVClock::reset()
 {
-    // keep mSpeed
-    value0 = 0;
     pts_ = pts_v = delay_ = 0;
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
     timer.invalidate();

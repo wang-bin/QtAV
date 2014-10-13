@@ -64,35 +64,14 @@ Rectangle {
         fillMode: VideoOutput.PreserveAspectFit
         anchors.fill: parent
         source: player
-        SubtitleItem {
-            id: subtitleItem
-            //visible: false
-            fillMode: parent.fillMode
-            source: subtitle
-            anchors.fill: parent
-        }
-        Text {
-            id: subtitleLabel
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignBottom
-            font {
-                pixelSize: Utils.scaled(20)
-                bold: true
-            }
-            style: Text.Outline
-            styleColor: "blue"
-            color: "white"
-            anchors.fill: parent
-        }
     }
-
     MediaPlayer {
         id: player
         objectName: "player"
         //loops: MediaPlayer.Infinite
         //autoLoad: true
         autoPlay: true
-        //channelLayout: MediaPlayer.ChannelLayoutAuto
+        channelLayout: MediaPlayer.ChannelLayoutAuto
         onPositionChanged: {
             control.setPlayingProgress(position/duration)
         }
@@ -106,50 +85,32 @@ Rectangle {
         onPaused: {
             control.setPauseState()
         }
-    }
 
-    Subtitle {
-        id: subtitle
-        player: player
-        //enabled: false
-        onContentChanged: {
-            if (!canRender || !enabled || !subtitleItem.visible)
-                subtitleLabel.text = text
+    }
+    Text {
+        id: subtitleLabel
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignBottom
+        font {
+            pixelSize: Utils.scaled(20)
+            bold: true
         }
-        onLoaded: {
-            msg.text = qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1)
+        style: Text.Outline
+        styleColor: "blue"
+        color: "white"
+        anchors.fill: parent
+
+        Subtitle {
+            player: player
+            onContentChanged: {
+                subtitleLabel.text = text
+            }
         }
     }
     MouseArea {
         anchors.fill: parent
         onPressed: {
             control.toggleVisible()
-        }
-    }
-    Text {
-        id: msg
-        horizontalAlignment: Text.AlignHCenter
-        font.pixelSize: Utils.scaled(20)
-        style: Text.Outline
-        styleColor: "green"
-        color: "white"
-        anchors {
-            top: root.top
-            left: root.left
-            right: root.right
-        }
-        height: root.height / 4
-        onTextChanged: {
-            msg_timer.stop()
-            visible = true
-            msg_timer.start()
-        }
-        Timer {
-            id: msg_timer
-            interval: 2000
-            onTriggered: {
-                msg.visible = false
-            }
         }
     }
     ControlPanel {

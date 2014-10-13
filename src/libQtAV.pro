@@ -105,10 +105,6 @@ config_avresample {
     SOURCES += AudioResamplerLibav.cpp
     LIBS += -lavresample
 }
-config_avdevice {
-    DEFINES += QTAV_HAVE_AVDEVICE=1
-    LIBS += -lavdevice
-}
 config_ipp {
     DEFINES += QTAV_HAVE_IPP=1
     ICCROOT = $$(IPPROOT)/../compiler
@@ -269,7 +265,6 @@ SOURCES += \
     QtAV_Global.cpp \
     subtitle/CharsetDetector.cpp \
     subtitle/PlainText.cpp \
-    subtitle/PlayerSubtitle.cpp \
     subtitle/Subtitle.cpp \
     subtitle/SubtitleProcessor.cpp \
     subtitle/SubtitleProcessorFFmpeg.cpp \
@@ -364,7 +359,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/factory.h \
     QtAV/private/mkid.h \
     QtAV/private/singleton.h \
-    QtAV/private/PlayerSubtitle.h \
     QtAV/private/SubtitleProcessor.h \
     QtAV/private/AVCompat.h \
     QtAV/private/AudioOutput_p.h \

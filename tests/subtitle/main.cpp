@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
     qDebug() << "-t1: set subtitle end time";
     qDebug() << "-count: set subtitle frame count from t to t1";
     qDebug() << "-engine: subtitle processing engine, can be 'ffmpeg' and 'libass'";
-    qDebug() << "-dir: add subtitle search directories";
     QString file;
     bool fuzzy = false;
     int t = -1, t1 = -1, count = 1;
@@ -54,23 +53,12 @@ int main(int argc, char *argv[])
     if (i > 0)
         engine = a.arguments().at(i+1);
 
-    QStringList dirs;
-    i = a.arguments().indexOf("-dir");
-    while (i > 0) {
-        dirs += a.arguments().at(i+1).split(QChar(';'));
-        i = a.arguments().indexOf("-dir", i+2);
-    }
-
+    if (file.isEmpty())
+        return 0;
     Subtitle sub;
     if (!engine.isEmpty())
         sub.setEngines(QStringList() << engine);
-    qDebug() << "supported extensions: " << sub.supportedSuffixes();
-
-    if (file.isEmpty())
-        return 0;
-
     sub.setFileName(file);
-    sub.setDirs(dirs);
     sub.setFuzzyMatch(fuzzy);
     SubtitleObserver sob;
     sob.observe(&sub);

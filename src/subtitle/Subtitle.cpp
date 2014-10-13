@@ -98,7 +98,6 @@ public:
     QUrl url;
     QByteArray raw_data;
     QString file_name;
-    QStringList dirs;
     QStringList suffixes;
     QStringList supported_suffixes;
     QIODevice *dev;
@@ -257,19 +256,6 @@ QString Subtitle::fileName() const
     return priv->file_name;
 }
 
-void Subtitle::setDirs(const QStringList &value)
-{
-    if (priv->dirs == value)
-        return;
-    priv->dirs = value;
-    emit dirsChanged();
-}
-
-QStringList Subtitle::dirs() const
-{
-    return priv->dirs;
-}
-
 QStringList Subtitle::supportedSuffixes() const
 {
     return priv->supported_suffixes;
@@ -325,8 +311,6 @@ void Subtitle::load()
     QByteArray u8 = priv->raw_data;
     if (!u8.isEmpty()) {
         priv->loaded = priv->processRawData(u8);
-        if (priv->loaded)
-            emit loaded("");
         return;
     }
     // read from a url
@@ -351,7 +335,6 @@ void Subtitle::load()
         if (!priv->processRawData(u8))
             continue;
         priv->loaded = true;
-        emit loaded(path);
         return;
     }
 }
@@ -528,6 +511,7 @@ QStringList Subtitle::Private::find()
     if (!fuzzy_match) {
         return QStringList() << file_name;
     }
+
     // found files will be sorted by extensions in sfx order
     QStringList sfx(suffixes);
     if (sfx.isEmpty())
@@ -536,28 +520,20 @@ QStringList Subtitle::Private::find()
         return QStringList() << file_name;
     QFileInfo fi(file_name);
     QString name = fi.fileName();
-    QString base_name = fi.completeBaseName(); // a.mp4=>a, video suffix has only 1 dot
-    QStringList filters, fileters_base;
+    QStringList filters;
     foreach (const QString& suf, sfx) {
         filters.append(QString("%1*.%2").arg(name).arg(suf));
-        if (name != base_name)
-            fileters_base.append(QString("%1*.%2").arg(base_name).arg(suf));
     }
-    QStringList search_dirs(dirs);
-    search_dirs.prepend(fi.absolutePath());
-    QFileInfoList list;
-    foreach (const QString& d, search_dirs) {
-        QDir dir(d);
-        //qDebug() << "dir: " << dir;
-        QFileInfoList fis = dir.entryInfoList(filters, QDir::Files, QDir::Unsorted);
-        if (fis.isEmpty()) {
-            if (fileters_base.isEmpty())
-                continue;
-            fis = dir.entryInfoList(fileters_base, QDir::Files, QDir::Unsorted);
+    QDir dir(fi.dir());
+    QStringList list = dir.entryList(filters, QDir::Files, QDir::Unsorted);
+    if (list.isEmpty()) {
+        filters.clear();
+        // a.mp4 => a
+        name = fi.completeBaseName(); // video suffix has only 1 dot
+        foreach (const QString& suf, sfx) {
+            filters.append(QString("%1*.%2").arg(name).arg(suf));
         }
-        if (fis.isEmpty())
-            continue;
-        list.append(fis);
+        list = dir.entryList(filters, QDir::Files, QDir::Unsorted);
     }
     if (list.isEmpty())
         return QStringList();
@@ -569,17 +545,17 @@ QStringList Subtitle::Private::find()
             break;
         QRegExp rx("*." + suf);
         rx.setPatternSyntax(QRegExp::Wildcard);
-        QFileInfoList::iterator it = list.begin();
+        QStringList::iterator it = list.begin();
         while (it != list.end()) {
-            if (!it->fileName().startsWith(name) && !it->fileName().startsWith(base_name)) {// why it happens?
+            if (!it->startsWith(name)) {// why it happens?
                 it = list.erase(it);
                 continue;
             }
-            if (!rx.exactMatch(it->fileName())) {
+            if (!rx.exactMatch(*it)) {
                 ++it;
                 continue;
             }
-            sorted.append(it->absoluteFilePath());
+            sorted.append(dir.absoluteFilePath(*it));
             it = list.erase(it);
         }
     }
@@ -679,132 +655,6 @@ bool Subtitle::Private::processRawData(SubtitleProcessor *sp, const QByteArray &
             return false;
     }
     return sp->process(w.fileName());
-}
-
-
-SubtitleAPIProxy::SubtitleAPIProxy(QObject* obj)
-    : m_obj(obj)
-    , m_s(0)
-{}
-
-void SubtitleAPIProxy::setSubtitle(Subtitle *sub)
-{
-    m_s = sub;
-
-    QObject::connect(m_s, SIGNAL(contentChanged()), m_obj, SIGNAL(contentChanged()));
-    QObject::connect(m_s, SIGNAL(loaded(QString)), m_obj, SIGNAL(loaded(QString)));
-
-    QObject::connect(m_s, SIGNAL(codecChanged()), m_obj, SIGNAL(codecChanged()));
-    QObject::connect(m_s, SIGNAL(enginesChanged()), m_obj, SIGNAL(enginesChanged()));
-//    QObject::connect(m_s, SIGNAL(fileNameChanged()), m_obj, SIGNAL(fileNameChanged()));
-    QObject::connect(m_s, SIGNAL(dirsChanged()), m_obj, SIGNAL(dirsChanged()));
-    QObject::connect(m_s, SIGNAL(fuzzyMatchChanged()), m_obj, SIGNAL(fuzzyMatchChanged()));
-    QObject::connect(m_s, SIGNAL(suffixesChanged()), m_obj, SIGNAL(suffixesChanged()));
-}
-
-void SubtitleAPIProxy::setCodec(const QByteArray& value)
-{
-    if (!m_s)
-        return;
-    m_s->setCodec(value);
-}
-
-QByteArray SubtitleAPIProxy::codec() const
-{
-    if (!m_s)
-        return QByteArray();
-    return m_s->codec();
-}
-bool SubtitleAPIProxy::isLoaded() const
-{
-    return m_s && m_s->isLoaded();
-}
-
-void SubtitleAPIProxy::setEngines(const QStringList& value)
-{
-    if (!m_s)
-        return;
-    m_s->setEngines(value);
-}
-
-QStringList SubtitleAPIProxy::engines() const
-{
-    if (!m_s)
-        return QStringList();
-    return m_s->engines();
-}
-QString SubtitleAPIProxy::engine() const
-{
-    if (!m_s)
-        return QString();
-    return m_s->engine();
-}
-
-void SubtitleAPIProxy::setFuzzyMatch(bool value)
-{
-    if (!m_s)
-        return;
-    m_s->setFuzzyMatch(value);
-}
-
-bool SubtitleAPIProxy::fuzzyMatch() const
-{
-    return m_s && m_s->fuzzyMatch();
-}
-#if 0
-void SubtitleAPIProxy::setFileName(const QString& name)
-{
-    if (!m_s)
-        return;
-    m_s->setFileName(name);
-}
-
-QString SubtitleAPIProxy::fileName() const
-{
-    if (!m_s)
-        return QString();
-    return m_s->fileName();
-}
-#endif
-
-void SubtitleAPIProxy::setDirs(const QStringList &value)
-{
-    if (!m_s)
-        return;
-    m_s->setDirs(value);
-}
-
-QStringList SubtitleAPIProxy::dirs() const
-{
-    if (!m_s)
-        return QStringList();
-    return m_s->dirs();
-}
-
-QStringList SubtitleAPIProxy::supportedSuffixes() const
-{
-    if (!m_s)
-        return QStringList();
-    return m_s->supportedSuffixes();
-}
-
-void SubtitleAPIProxy::setSuffixes(const QStringList& value)
-{
-    if (!m_s)
-        return;
-    m_s->setSuffixes(value);
-}
-
-QStringList SubtitleAPIProxy::suffixes() const
-{
-    if (!m_s)
-        return QStringList();
-    return m_s->suffixes();
-}
-
-bool SubtitleAPIProxy::canRender() const
-{
-    return m_s && m_s->canRender();
 }
 
 } //namespace QtAV
