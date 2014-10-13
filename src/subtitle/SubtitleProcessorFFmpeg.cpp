@@ -115,7 +115,8 @@ QStringList ffmpeg_supported_sub_extensions()
     QStringList exts;
     AVInputFormat *i = av_iformat_next(NULL);
     while (i) {
-        if (strstr(i->long_name, "subtitle")) {
+        // strstr parameters can not be null
+        if (i->long_name && strstr(i->long_name, "subtitle")) {
             if (i->extensions) {
                 exts.append(QString(i->extensions).split(QChar(',')));
             } else {
