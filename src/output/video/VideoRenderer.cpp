@@ -561,6 +561,7 @@ bool VideoRenderer::setGammaRGB(qreal gammaRGB)
     if (d.gammaRGB == gammaRGB)
         return false;
     // may emit signal in onSetXXX. ensure get the new value in slot
+    qDebug("VideoRenderer::setGammaRGB: %f",gammaRGB);
     qreal old = d.gammaRGB;
     d.gammaRGB = gammaRGB;
     if (!onSetGammaRGB(gammaRGB)) {
@@ -582,6 +583,7 @@ bool VideoRenderer::setFilterSharp(qreal filterSharp)
     if (d.saturation == filterSharp)
         return false;
     // may emit signal in onSetXXX. ensure get the new value in slot
+    qDebug("VideoRenderer::setFilterSharp: %f",filterSharp);
     qreal old = d.saturation;
     d.saturation = filterSharp;
     if (!onSetFilterSharp(filterSharp)) {
