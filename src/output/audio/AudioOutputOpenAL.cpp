@@ -107,9 +107,9 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
                 else if (fmt.channels() == 6)
                     format = alGetEnumValue("AL_FORMAT_51CHN8");
                 else if (fmt.channels() == 7)
-                    format = alGetEnumValue("AL_FORMAT_71CHN8");
+                    format = alGetEnumValue("AL_FORMAT_61CHN8");
                 else if (fmt.channels() == 8)
-                    format = alGetEnumValue("AL_FORMAT_81CHN8");
+                    format = alGetEnumValue("AL_FORMAT_71CHN8");
             }
         }
     } else if (fmt.sampleFormat() == AudioFormat::SampleFormat_Signed16) {
