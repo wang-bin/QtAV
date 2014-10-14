@@ -238,6 +238,8 @@ private:
 
     AVDictionary *mpDict;
     QVariantHash mOptions;
+
+    bool m_network;
 };
 
 } //namespace QtAV

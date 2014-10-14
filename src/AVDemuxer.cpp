@@ -160,6 +160,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AccurateFrame)
     , mpDict(0)
+    , m_network(false)
 {
     class AVInitializer {
     public:
@@ -231,12 +232,17 @@ bool AVDemuxer::readFrame()
             //return true;
             return false; //frames after eof are eof frames
         } else if (ret == AVERROR_INVALIDDATA) {
-            emit error(AVError(AVError::ReadError, ret));
-            qWarning("AVERROR_INVALIDDATA");
+            AVError::ErrorCode ec(AVError::ReadError);
+            if (m_network)
+                ec = AVError::NetworkError;
+            emit error(AVError(ec, tr("error reading stream data"), ret));
         } else if (ret == AVERROR(EAGAIN)) {
             return true;
         } else {
-            emit error(AVError(AVError::ReadError, ret));
+            AVError::ErrorCode ec(AVError::ReadError);
+            if (m_network)
+                ec = AVError::NetworkError;
+            emit error(AVError(ec, tr("error reading stream data"), ret));
         }
         qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         return false;
@@ -315,6 +321,7 @@ bool AVDemuxer::atEnd() const
 
 bool AVDemuxer::close()
 {
+    m_network = false;
     has_attached_pic = false;
     eof = false;
     stream_idx = -1;
@@ -417,7 +424,10 @@ bool AVDemuxer::seek(qint64 pos)
     //avformat_seek_file()
 #endif
     if (ret < 0) {
-        qWarning("[AVDemuxer] seek error: %s", av_err2str(ret));
+        AVError::ErrorCode ec(AVError::SeekError);
+        if (m_network)
+            ec = AVError::NetworkError;
+        emit error(AVError(ec, tr("seek error"), ret));
         return false;
     }
     //replay
@@ -481,6 +491,23 @@ bool AVDemuxer::load()
         setMediaStatus(NoMedia);
         return false;
     }
+    // FIXME: is there a good way to check network? now use URLContext.flags == URL_PROTOCOL_FLAG_NETWORK
+    // not network: concat cache pipe avdevice crypto?
+    if (!_file_name.isEmpty()
+            && _file_name.contains(":")
+            && (_file_name.startsWith("http") //http, https, httpproxy
+            || _file_name.startsWith("rtmp") //rtmp{,e,s,te,ts}
+            || _file_name.startsWith("mms") //mms{,h,t}
+            || _file_name.startsWith("ffrtmp") //ffrtmpcrypt, ffrtmphttp
+            || _file_name.startsWith("rtp:")
+            || _file_name.startsWith("sctp:")
+            || _file_name.startsWith("tcp:")
+            || _file_name.startsWith("tls:")
+            || _file_name.startsWith("udp:")
+            || _file_name.startsWith("gopher:")
+            )) {
+        m_network = true;
+    }
 #if QTAV_HAVE(AVDEVICE)
     static const QString avd_scheme("avdevice:");
     if (_file_name.startsWith(avd_scheme)) {
@@ -527,7 +554,10 @@ bool AVDemuxer::load()
 
     if (ret < 0) {
         setMediaStatus(InvalidMedia);
-        AVError err(AVError::OpenError, ret);
+        AVError::ErrorCode ec(AVError::OpenError);
+        if (m_network)
+            ec = AVError::NetworkError;
+        AVError err(ec, tr("failed to open media"), ret);
         emit error(err);
         qWarning("Can't open media: %s", qPrintable(err.string()));
         return false;
@@ -540,7 +570,10 @@ bool AVDemuxer::load()
     mpInterrup->end();
     if (ret < 0) {
         setMediaStatus(InvalidMedia);
-        AVError err(AVError::FindStreamInfoError, ret);
+        AVError::ErrorCode ec(AVError::FindStreamInfoError);
+        if (m_network)
+            ec = AVError::NetworkError;
+        AVError err(ec, tr("failed to find stream info"), ret);
         emit error(err);
         qWarning("Can't find stream info: %s", qPrintable(err.string()));
         return false;

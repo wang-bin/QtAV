@@ -34,16 +34,19 @@ class Q_AV_EXPORT AVError
 public:
     enum ErrorCode {
         NoError,
+
+        //open/read/seek network stream error. value must be less then ResourceError because of correct_error_by_ffmpeg
+        NetworkError, // all above and before NoError are NetworkError
+
         OpenTimedout,
         OpenError,
-
         FindStreamInfoTimedout,
         FindStreamInfoError,
         StreamNotFound, //a,v,s?
         ReadTimedout,
         ReadError,
         SeekError,
-        ResourceError, // all above are ResourceError
+        ResourceError, // all above and before NetworkError are ResourceError
 
         OpenCodecError,
         CloseCodecError,
@@ -53,9 +56,6 @@ public:
         CodecError, // all above and before NoError are CodecError
 
         FormatError, // all above and before CodecError are FormatError
-
-        //open/read/seek network stream error
-        NetworkError, // all above and before FormatError are NetworkError
 
         // decrypt error
         AccessDenied, // all above and before NetworkError are AccessDenied
