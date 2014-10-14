@@ -21,6 +21,7 @@
 
 
 #include <QtAV/AVClock.h>
+#include <QtCore/QTimerEvent>
 
 namespace QtAV {
 
@@ -31,7 +32,7 @@ AVClock::AVClock(AVClock::ClockType c, QObject *parent):
   , mSpeed(1.0)
   , value0(0)
 {
-    pts_ = pts_v = delay_ = 0;
+    last_pts = pts_ = pts_v = delay_ = 0;
 }
 
 AVClock::AVClock(QObject *parent):
@@ -41,7 +42,7 @@ AVClock::AVClock(QObject *parent):
   , mSpeed(1.0)
   , value0(0)
 {
-    pts_ = pts_v = delay_ = 0;
+    last_pts = pts_ = pts_v = delay_ = 0;
 }
 
 void AVClock::setClockType(ClockType ct)
@@ -86,6 +87,9 @@ void AVClock::updateExternalClock(qint64 msecs)
     qDebug("External clock change: %f ==> %f", value(), double(msecs) * kThousandth);
     pts_ = double(msecs) * kThousandth; //can not use msec/1000.
     timer.restart();
+
+    last_pts = pts_;
+    correction_timer.restart();
 }
 
 void AVClock::updateExternalClock(const AVClock &clock)
@@ -95,6 +99,9 @@ void AVClock::updateExternalClock(const AVClock &clock)
     qDebug("External clock change: %f ==> %f", value(), clock.value());
     pts_ = clock.value();
     timer.restart();
+
+    last_pts = pts_;
+    correction_timer.restart();
 }
 
 void AVClock::setSpeed(qreal speed)
@@ -106,6 +113,11 @@ void AVClock::start()
 {
     qDebug("AVClock started!!!!!!!!");
     timer.start();
+    correction_schedule_timer.stop();
+    if (clockType() == ExternalClock) {
+        correction_timer.start();
+        correction_schedule_timer.start(kCorrectionInterval*1000, this);
+    }
     emit started();
 }
 //remember last value because we don't reset  pts_, pts_v, delay_
@@ -114,14 +126,19 @@ void AVClock::pause(bool p)
     if (clock_type != ExternalClock)
         return;
     if (p) {
+        correction_schedule_timer.stop();
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
         timer.invalidate();
+        correction_timer.invalidate();
 #else
         timer.stop();
+        correction_timer.stop();
 #endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
         emit paused();
     } else {
         timer.start();
+        correction_timer.start();
+        correction_schedule_timer.start(kCorrectionInterval*1000, this);
         emit resumed();
     }
     emit paused(p);
@@ -132,13 +149,29 @@ void AVClock::reset()
     // keep mSpeed
     value0 = 0;
     pts_ = pts_v = delay_ = 0;
+    correction_schedule_timer.stop();
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
     timer.invalidate();
+    correction_timer.invalidate();
 #else
     timer.stop();
+    correction_timer.stop();
 #endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
     emit resetted();
 }
 
+void AVClock::timerEvent(QTimerEvent *event)
+{
+    Q_ASSERT_X(clockType() == ExternalClock, "AVClock::timerEvent", "Internal error. Only ExternalClock call this");
+    if (event->timerId() != correction_schedule_timer.timerId())
+        return;
+    const double delta_pts = (value() - last_pts)/speed();
+    const double err = double(correction_timer.restart()) * kThousandth - delta_pts;
+    // avfoundation camera error is large (about -0.6s)
+    if (qAbs(err*10.0) < kCorrectionInterval)
+        pts_ += err;
+    last_pts = pts_;
+    //qDebug("correction timer event. error = %f", err);
+}
 
 } //namespace QtAV
