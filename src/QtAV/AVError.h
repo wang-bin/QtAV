@@ -43,16 +43,36 @@ public:
         ReadTimedout,
         ReadError,
         SeekError,
+        ResourceError, // all above are ResourceError
+
         OpenCodecError,
         CloseCodecError,
-        DecodeError,
-        ResampleError,
+        AudioCodecNotFound,
+        VideoCodecNotFound,
+        SubtitleCodecNotFound,
+        CodecError, // all above and before NoError are CodecError
+
+        FormatError, // all above and before CodecError are FormatError
+
+        //open/read/seek network stream error
+        NetworkError, // all above and before FormatError are NetworkError
+
+        // decrypt error
+        AccessDenied, // all above and before NetworkError are AccessDenied
 
         UnknowError
     };
 
     AVError();
     AVError(ErrorCode code, int ffmpegError = 0);
+    /*!
+     * \brief AVError
+     * string() will be detail. If ffmpeg error not 0, also contains ffmpegErrorString()
+     * \param code ErrorCode value
+     * \param detail ErrorCode string will be overrided by detail.
+     * \param ffmpegError ffmpeg error code. If not 0, string() will contains ffmpeg error string.
+     */
+    AVError(ErrorCode code, const QString& detail, int ffmpegError = 0);
     AVError(const AVError& other);
 
     AVError &operator=(const AVError &other);
@@ -70,6 +90,7 @@ public:
 private:
     ErrorCode mError;
     int mFFmpegError;
+    QString mDetail;
 };
 
 } //namespace QtAV
