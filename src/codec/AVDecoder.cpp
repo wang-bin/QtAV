@@ -22,6 +22,7 @@
 #include <QtAV/AVDecoder.h>
 #include <QtAV/private/AVDecoder_p.h>
 #include <QtAV/version.h>
+#include <QtDebug>
 
 namespace QtAV {
 AVDecoder::AVDecoder()
@@ -71,11 +72,27 @@ bool AVDecoder::open()
         codec = avcodec_find_decoder(d.codec_ctx->codec_id);
     }
     if (!codec) {
+        QString es(tr("No codec could be found for '%1'"));
         if (d.codec_name.isEmpty()) {
-            qWarning("No codec could be found with id %d", d.codec_ctx->codec_id);
+            es = es.arg(avcodec_get_name(d.codec_ctx->codec_id));
         } else {
-            qWarning("No codec could be found with name %s", d.codec_name.toUtf8().constData());
+            es = es.arg(d.codec_name);
         }
+        qWarning() << es;
+        AVError::ErrorCode ec(AVError::CodecError);
+        switch (d.codec_ctx->coder_type) {
+        case AVMEDIA_TYPE_VIDEO:
+            ec = AVError::VideoCodecNotFound;
+            break;
+        case AVMEDIA_TYPE_AUDIO:
+            ec = AVError::AudioCodecNotFound;
+            break;
+        case AVMEDIA_TYPE_SUBTITLE:
+            ec = AVError::SubtitleCodecNotFound;
+        default:
+            break;
+        }
+        emit error(AVError(ec, es));
         return false;
     }
 

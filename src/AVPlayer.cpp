@@ -1283,6 +1283,7 @@ bool AVPlayer::setupAudioThread()
     qDebug("has audio");
     if (!audio_dec) {
         audio_dec = new AudioDecoder();
+        connect(audio_dec, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
     }
     audio_dec->setCodecContext(aCodecCtx);
     audio_dec->setOptions(audio_codec_opt);
@@ -1378,6 +1379,7 @@ bool AVPlayer::setupVideoThread()
     }
     */
     if (video_dec) {
+        video_dec->disconnect();
         delete video_dec;
         video_dec = 0;
     }
@@ -1401,6 +1403,7 @@ bool AVPlayer::setupVideoThread()
         qWarning("No video decoder can be used.");
         return false;
     }
+    connect(video_dec, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
 
     if (!video_thread) {
         video_thread = new VideoThread(this);

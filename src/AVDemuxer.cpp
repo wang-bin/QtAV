@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/AVDemuxer.h"
+#include <QtCore/QStringList>
 #include <QtCore/QThread>
 #include <QtCore/QCoreApplication>
 #include "QtAV/AVError.h"
@@ -931,8 +932,8 @@ QString AVDemuxer::audioCodecName(int stream) const
     AVCodecContext *avctx = audioCodecContext(stream);
     if (!avctx)
         return QString();
+    // AVCodecContext.codec_name is deprecated. use avcodec_get_name. check null avctx->codec?
     return avctx->codec->name;
-    //AVCodecContext.codec_name is empty? codec_id is correct
 }
 
 QString AVDemuxer::audioCodecLongName(int stream) const
@@ -949,7 +950,6 @@ QString AVDemuxer::videoCodecName(int stream) const
     if (!avctx)
         return QString();
     return avctx->codec->name;
-    //AVCodecContext.codec_name is empty? codec_id is correct
 }
 
 QString AVDemuxer::videoCodecLongName(int stream) const
@@ -966,7 +966,6 @@ QString AVDemuxer::subtitleCodecName(int stream) const
     if (!avctx)
         return QString();
     return avctx->codec->name;
-    //AVCodecContext.codec_name is empty? codec_id is correct
 }
 
 QString AVDemuxer::subtitleCodecLongName(int stream) const
