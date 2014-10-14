@@ -106,6 +106,9 @@ Rectangle {
         onPaused: {
             control.setPauseState()
         }
+        onError: {
+            msg.text = errorString
+        }
     }
 
     Subtitle {

@@ -26,6 +26,7 @@
 #include <QtCore/QObject>
 #include <QmlAV/QQuickItemRenderer.h>
 #include <QmlAV/MediaMetaData.h>
+#include <QtAV/AVError.h>
 
 /*!
  *  Qt.Multimedia like api
@@ -57,13 +58,14 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
     Q_PROPERTY(QObject *mediaObject READ mediaObject)
-
-    Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
-
+    Q_PROPERTY(Error error READ error NOTIFY errorChanged)
+    Q_PROPERTY(QString errorString READ errorString NOTIFY errorChanged)
     Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
+    Q_ENUMS(Error)
     Q_ENUMS(ChannelLayout)
     // not supported by QtMultimedia
+    Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
 public:
@@ -78,6 +80,14 @@ public:
         StoppedState
     };
 
+    enum Error {
+        NoError,
+        ResourceError,
+        FormatError,
+        NetworkError,
+        AccessDenied,
+        ServiceMissing
+    };
     // currently supported channels<3.
     enum ChannelLayout {
         ChannelLayoutAuto, //the same as source if channels<=2. otherwise resamples to stero
@@ -113,6 +123,8 @@ public:
     int duration() const;
     int position() const;
     bool isSeekable() const;
+    Error error() const;
+    QString errorString() const;
     PlaybackState playbackState() const;
     void setPlaybackState(PlaybackState playbackState);
     qreal playbackRate() const;
@@ -170,10 +182,14 @@ Q_SIGNALS:
     void videoCodecPriorityChanged();
     void channelLayoutChanged();
 
+    void errorChanged();
+    void error(Error error, const QString &errorString);
+
     void mediaObjectChanged();
 
 private Q_SLOTS:
     // connect to signals from player
+    void _q_error(const QtAV::AVError& e);
     void _q_started();
     void _q_stopped();
     void _q_paused(bool);
@@ -186,6 +202,8 @@ private:
     bool mAutoLoad;
     int mLoopCount;
     PlaybackState mPlaybackState;
+    Error mError;
+    QString mErrorString;
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
     QStringList mVideoCodecs;

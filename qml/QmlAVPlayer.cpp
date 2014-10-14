@@ -61,6 +61,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mAutoLoad(false)
   , mLoopCount(1)
   , mPlaybackState(StoppedState)
+  , mError(NoError)
   , mpPlayer(0)
   , mChannelLayout(ChannelLayoutAuto)
 {
@@ -69,6 +70,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
 void QmlAVPlayer::classBegin()
 {
     mpPlayer = new AVPlayer(this);
+    connect(mpPlayer, SIGNAL(error(QtAV::AVError)), SLOT(_q_error(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
@@ -131,6 +133,9 @@ void QmlAVPlayer::setSource(const QUrl &url)
     emit sourceChanged(); //TODO: emit only when player loaded a new source
     // TODO: in componentComplete()?
     if (m_complete && (mAutoLoad || mAutoPlay)) {
+        mError = NoError;
+        mErrorString = QString();
+        emit errorChanged();
         stop();
         //mpPlayer->load(); //QtAV internal bug: load() or play() results in reload
         if (mAutoPlay) {
@@ -311,6 +316,16 @@ bool QmlAVPlayer::isSeekable() const
     return true;
 }
 
+QmlAVPlayer::Error QmlAVPlayer::error() const
+{
+    return mError;
+}
+
+QString QmlAVPlayer::errorString() const
+{
+    return mErrorString;
+}
+
 QmlAVPlayer::PlaybackState QmlAVPlayer::playbackState() const
 {
     return mPlaybackState;
@@ -406,6 +421,25 @@ void QmlAVPlayer::seekForward()
 void QmlAVPlayer::seekBackward()
 {
     mpPlayer->seekBackward();
+}
+
+void QmlAVPlayer::_q_error(const AVError &e)
+{
+    mError = NoError;
+    mErrorString = e.string();
+    const AVError::ErrorCode ec = e.error();
+    if (ec <= AVError::ResourceError)
+        mError = ResourceError;
+    else if (ec <= AVError::FormatError)
+        mError = FormatError;
+    else if (ec <= AVError::NetworkError)
+        mError = NetworkError;
+    else if (ec <= AVError::AccessDenied)
+        mError = AccessDenied;
+    //else
+      //  err = ServiceMissing;
+    emit error(mError, mErrorString);
+    emit errorChanged();
 }
 
 void QmlAVPlayer::_q_paused(bool p)
