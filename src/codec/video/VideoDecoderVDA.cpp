@@ -309,7 +309,7 @@ bool VideoDecoderVDAPrivate::open()
 {
     qDebug("opening VDA module");
     if (codec_ctx->codec_id != AV_CODEC_ID_H264) {
-        qWarning("input codec (%s) isn't H264, canceling VDA decoding", codec_ctx->codec_name);
+        qWarning("input codec (%s) isn't H264, canceling VDA decoding", codec_ctx->codec->name);
         return false;
     }
 #if 0

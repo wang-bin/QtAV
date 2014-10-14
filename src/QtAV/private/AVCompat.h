@@ -347,6 +347,10 @@ typedef enum CodecID AVCodecID;
 #endif
 #endif
 
+#if QTAV_USE_LIBAV(LIBAVCODEC)
+const char *avcodec_get_name(enum AVCodecID id);
+#endif
+
 #ifndef FF_API_OLD_GRAPH_PARSE
 #define avfilter_graph_parse_ptr(...) avfilter_graph_parse(__VA_ARGS__)
 #endif //FF_API_OLD_GRAPH_PARSE

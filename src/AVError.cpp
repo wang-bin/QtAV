@@ -53,7 +53,9 @@ static AVError::ErrorCode errorFromFFmpeg(int fe)
     } err_entry;
     static const err_entry err_map[] = {
         { AVERROR_BSF_NOT_FOUND, AVError::FormatError },
+#ifdef AVERROR_BUFFER_TOO_SMALL
         { AVERROR_BUFFER_TOO_SMALL, AVError::ResourceError },
+#endif //AVERROR_BUFFER_TOO_SMALL
         { AVERROR_DECODER_NOT_FOUND, AVError::CodecError },
         { AVERROR_ENCODER_NOT_FOUND, AVError::CodecError },
         { AVERROR_DEMUXER_NOT_FOUND, AVError::FormatError },
