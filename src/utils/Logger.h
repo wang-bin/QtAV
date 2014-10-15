@@ -37,14 +37,20 @@
 #ifndef Q_ATTRIBUTE_FORMAT_PRINTF
 #define Q_ATTRIBUTE_FORMAT_PRINTF(...)
 #endif //Q_ATTRIBUTE_FORMAT_PRINTF
-
+#ifndef Q_NORETURN
+#define Q_NORETURN
+#endif
 namespace QtAV {
 namespace Internal {
 
 // internal use when building QtAV library
 class QtAVDebug {
 public:
-    // copy from QMessageLogger or others
+    /*!
+     * \brief QtAVDebug
+     * QDebug can be copied from QMessageLogger or others
+     * \param d nothing will be logged and t is ignored if null
+     */
     QtAVDebug(QtMsgType t = QtDebugMsg, QDebug *d = 0);
     ~QtAVDebug();
     template<typename T> QtAVDebug &operator<<(T t) {
@@ -86,8 +92,7 @@ class Logger {
 public:Q_DECL_CONSTEXPR Logger(const char *file = "unknown", int line = 0, const char *function = "unknown", const char *category = "default")
         : ctx(file, line, function, category) {}
     void debug(const char *msg, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3);
-#if 0
-    void noDebug(const char *, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3)
+    void noDebug(const char *msg, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3)
     {}
     void warning(const char *msg, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3);
     void critical(const char *msg, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3);
@@ -97,13 +102,14 @@ public:Q_DECL_CONSTEXPR Logger(const char *file = "unknown", int line = 0, const
     Q_NORETURN
 #endif
     void fatal(const char *msg, ...) const Q_DECL_NOTHROW Q_ATTRIBUTE_FORMAT_PRINTF(2, 3);
-#endif //0
+
 #ifndef QT_NO_DEBUG_STREAM
     //TODO: QLoggingCategory
-    QtAVDebug debug() const ;/*
+    QtAVDebug debug() const ;
     QtAVDebug warning() const;
-    QtAVDebug critical() const;*/
-    //QNoDebug noDebug() const Q_DECL_NOTHROW;
+    QtAVDebug critical() const;
+    //QtAVDebug fatal() const;
+    QNoDebug noDebug() const Q_DECL_NOTHROW;
 #endif // QT_NO_DEBUG_STREAM
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 public: //public can typedef outside
@@ -112,7 +118,12 @@ public: //public can typedef outside
     public:
         Q_DECL_CONSTEXPR Context(const char *fileName, int lineNumber, const char *functionName, const char *categoryName)
             : version(1), line(lineNumber), file(fileName), function(functionName), category(categoryName) {}
+#ifndef QT_NO_DEBUG_STREAM
         inline QDebug debug() const { return QDebug(QtDebugMsg);}
+        inline QDebug warning() const { return QDebug(QtWarningMsg);}
+        inline QDebug critical() const { return QDebug(QtCriticalMsg);}
+        inline QDebug fatal() const { return QDebug(QtFatalMsg);}
+#endif //QT_NO_DEBUG_STREAM
         int version;
         int line;
         const char *file;
@@ -140,11 +151,18 @@ QNoDebug debug(const char *msg, ...); /* print debug message */
 #endif //QT_NO_DEBUG_STREAM
 #endif //0
 
-// complex way like Qt5
+// complex way like Qt5. can use Qt5's logging context features
 // including qDebug() << ...
 //qDebug() Log(__FILE__, __LINE__, Q_FUNC_INFO).debug
+// DO NOT appear qDebug, qWanring etc in Logger.cpp!  They are undefined and redefined to QtAV:Internal::Logger.xxx
 #undef qDebug //was defined as QMessageLogger...
+#undef qWarning
+#undef qCritical
+#undef qFatal
 #define qDebug QtAV::Internal::Logger(__FILE__, __LINE__, Q_FUNC_INFO).debug
+#define qWarning QtAV::Internal::Logger(__FILE__, __LINE__, Q_FUNC_INFO).warning
+#define qCritical QtAV::Internal::Logger(__FILE__, __LINE__, Q_FUNC_INFO).critical
+#define qFatal QtAV::Internal::Logger(__FILE__, __LINE__, Q_FUNC_INFO).fatal
 
 } // namespace Internal
 } // namespace QtAV
