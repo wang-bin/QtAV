@@ -203,7 +203,7 @@ public:
         , m_height(h)
     {}
     ~surface_t() {
-        qDebug("VAAPI - destroying surface 0x%x", (int)m_id);
+        //qDebug("VAAPI - destroying surface 0x%x", (int)m_id);
         if (m_id != VA_INVALID_SURFACE)
             VAWARN(vaDestroySurfaces(m_display->get(), &m_id, 1))
     }

@@ -21,6 +21,7 @@
 
 #include "QtAV/AudioOutput.h"
 #include "QtAV/private/AudioOutput_p.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 AudioOutput::AudioOutput()

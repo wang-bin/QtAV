@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include <QtAV/Packet.h>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

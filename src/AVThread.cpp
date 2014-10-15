@@ -24,6 +24,7 @@
 #include "QtAV/AVOutput.h"
 #include "QtAV/Filter.h"
 #include "output/OutputSet.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

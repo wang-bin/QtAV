@@ -24,6 +24,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/mkid.h"
 #include "QtAV/prepost.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

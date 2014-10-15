@@ -25,7 +25,7 @@
 #include "QtAV/Subtitle.h"
 #include "QtAV/VideoFrame.h"
 #include <QtCore/QScopedPointer>
-#include <QtDebug>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

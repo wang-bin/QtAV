@@ -30,6 +30,7 @@
 #include "output/OutputSet.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QCoreApplication>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

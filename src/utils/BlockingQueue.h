@@ -89,7 +89,7 @@ BlockingQueue<T, Container>::BlockingQueue()
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::setCapacity(int max)
 {
-    qDebug("queue capacity==>>%d", max);
+    //qDebug("queue capacity==>>%d", max);
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     cap = max;
@@ -98,7 +98,7 @@ void BlockingQueue<T, Container>::setCapacity(int max)
 template <typename T, template <typename> class Container>
 void BlockingQueue<T, Container>::setThreshold(int min)
 {
-    qDebug("queue threshold==>>%d", min);
+    //qDebug("queue threshold==>>%d", min);
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     thres = min;

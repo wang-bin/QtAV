@@ -24,11 +24,11 @@
 extern "C" {
 #include <ass/ass.h>
 }
-#include <QtDebug>
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/prepost.h"
 #include "QtAV/Packet.h"
 #include "PlainText.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -76,14 +76,24 @@ void RegisterSubtitleProcessorLibASS_Man()
     FACTORY_REGISTER_ID_MAN(SubtitleProcessor, LibASS, kName)
 }
 
+// log level from ass_utils.h
+#define MSGL_FATAL 0
+#define MSGL_ERR 1
+#define MSGL_WARN 2
+#define MSGL_INFO 4
+#define MSGL_V 6
+#define MSGL_DBG2 7
+
 static void msg_callback(int level, const char *fmt, va_list va, void *data)
 {
     Q_UNUSED(data)
-    if (level > 6)
-        return;
-    printf("libass: ");
-    vprintf(fmt, va);
-    printf("\n");
+    QString msg("{libass} " + QString().vsprintf(fmt, va));
+    if (level == MSGL_FATAL)
+        qFatal("%s", msg.toUtf8().constData());
+    else if (level <= 2)
+        qWarning() << msg;
+    else if (level <= MSGL_INFO)
+        qDebug() << msg;
 }
 
 SubtitleProcessorLibASS::SubtitleProcessorLibASS()
@@ -180,7 +190,7 @@ bool SubtitleProcessorLibASS::process(const QString &path)
     }
     m_track = ass_read_file(m_ass, (char*)path.toUtf8().constData(), NULL);
     if (!m_track) {
-        qWarning("ass_read_memory error, ass track init failed!");
+        qWarning("ass_read_file error, ass track init failed!");
         return false;
     }
     processTrack(m_track);

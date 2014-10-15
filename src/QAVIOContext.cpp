@@ -23,6 +23,7 @@
 #include "QAVIOContext.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QIODevice>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

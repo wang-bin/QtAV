@@ -44,6 +44,7 @@
 
 #include "QtAV/ColorTransform.h"
 #include "QtAV/FilterContext.h"
+#include "utils/Logger.h"
 
 #define UPLOAD_ROI 0
 #define ROI_TEXCOORDS 1

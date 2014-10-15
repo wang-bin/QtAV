@@ -30,6 +30,7 @@
 #else
 
 #endif
+#include "utils/Logger.h"
 
 namespace QtAV {
 

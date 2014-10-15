@@ -24,6 +24,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/AudioResampler.h"
 #include "QtAV/AudioResamplerTypes.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

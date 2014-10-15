@@ -26,6 +26,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/prepost.h"
 #include "utils/GPUMemCopy.h"
+#include "utils/Logger.h"
 
 // TODO: add to QtAV_Compat.h?
 // FF_API_PIX_FMT

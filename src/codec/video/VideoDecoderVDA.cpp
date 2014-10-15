@@ -34,6 +34,7 @@ extern "C" {
 }
 #endif //__cplusplus
 #include <VideoDecodeAcceleration/VDADecoder.h>
+#include "utils/Logger.h"
 
 // TODO: add to QtAV_Compat.h?
 // FF_API_PIX_FMT

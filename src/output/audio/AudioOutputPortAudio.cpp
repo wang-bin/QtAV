@@ -25,6 +25,7 @@
 #include "QtAV/prepost.h"
 #include <portaudio.h>
 #include <QtCore/QString>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

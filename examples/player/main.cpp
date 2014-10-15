@@ -75,6 +75,8 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 
 int main(int argc, char *argv[])
 {
+    // has no effect if qInstallMessageHandler() called
+    //qSetMessagePattern("%{function} @%{line}: %{message}");
     QApplication a(argc, argv);
     if (a.arguments().contains("-h") || a.arguments().contains("--help")) {
         qDebug("Usage: %s [-vo qt/gl/d2d/gdi] [url/path]filename", a.applicationFilePath().section(QDir::separator(), -1).toUtf8().constData());
@@ -184,10 +186,9 @@ int main(int argc, char *argv[])
     if (!vd.isEmpty())
         window.setVideoDecoderNames(vd);
 
-
     idx = a.arguments().indexOf("--no-ffmpeg-log");
     idxmax = qMax(idx, idxmax);
-    if (idx < 0)
+    if (idx > 0)
         setFFmpegLogHandler(0);
     bool opt_has_file = argc > idxmax+1;
     if (opt_has_file) {

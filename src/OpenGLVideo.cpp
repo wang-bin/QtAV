@@ -34,6 +34,7 @@
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoShader.h"
 #include "ShaderManager.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

@@ -1,4 +1,5 @@
 #include "vaapi_helper.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 namespace vaapi {

@@ -27,10 +27,14 @@
 #include <QWidget>
 #include <QResizeEvent>
 #include <QtCore/qmath.h>
+//#error qtextstream.h must be included before any header file that defines Status. Xlib.h defines Status
+#include <QtCore/QTextStream> //build error
 #include <sys/shm.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xvlib.h>
 #include "QtAV/prepost.h"
+
+#include "utils/Logger.h"
 
 //http://huangbster.i.sohu.com/blog/view/256490057.htm
 

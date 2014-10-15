@@ -28,6 +28,7 @@
 #include <QtCore/QRunnable>
 #include <QtCore/QThreadPool>
 #include <QtGui/QImage>
+#include "utils/Logger.h"
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QDesktopServices>

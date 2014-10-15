@@ -39,6 +39,7 @@ extern "C" {
 #include "QtAV/prepost.h"
 #include "vaapi/vaapi_helper.h"
 #include "vaapi/SurfaceInteropVAAPI.h"
+#include "utils/Logger.h"
 
 // TODO: add to AVCompat.h?
 // FF_API_PIX_FMT

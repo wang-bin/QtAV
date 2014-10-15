@@ -48,6 +48,7 @@
 #include "output/OutputSet.h"
 #include "output/video/VideoOutputEventFilter.h"
 #include "QtAV/private/AVCompat.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -103,7 +104,6 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     mpVOSet = new OutputSet(this);
     mpAOSet = new OutputSet(this);
-    qDebug("%s", aboutQtAV_PlainText().toUtf8().constData());
     /*
      * call stop() before the window(_renderer) closed to stop the waitcondition
      * If close the _renderer widget, the the _renderer may destroy before waking up.

@@ -31,6 +31,7 @@
 #define QOpenGLShaderProgram QGLShaderProgram
 #define initializeOpenGLFunctions() initializeGLFunctions()
 #endif
+#include "utils/Logger.h"
 
 namespace QtAV {
 

@@ -26,6 +26,7 @@
 #include <QtAV/AVThread.h>
 #include <QtCore/QTimer>
 #include <QtCore/QEventLoop>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

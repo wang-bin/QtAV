@@ -27,6 +27,7 @@
 #include "QtAV/Packet.h"
 #include "QAVIOContext.h"
 #include "QtAV/private/AVCompat.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -165,7 +166,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     class AVInitializer {
     public:
         AVInitializer() {
-            qDebug("av_register_all, avcodec_register_all, avformat_network_init");
+            //qDebug("av_register_all, avcodec_register_all, avformat_network_init");
             avcodec_register_all();
 #if QTAV_HAVE(AVDEVICE)
             avdevice_register_all();

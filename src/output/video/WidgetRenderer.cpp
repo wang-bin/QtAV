@@ -26,6 +26,7 @@
 #include <QApplication>
 #include <QResizeEvent>
 #include "QtAV/Filter.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

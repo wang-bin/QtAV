@@ -21,6 +21,7 @@
 #include <QtCore/QThread>
 #include <SLES/OpenSLES.h>
 #include "QtAV/prepost.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

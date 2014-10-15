@@ -29,6 +29,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #endif
+#include "utils/Logger.h"
 
 #define UNQUEUE_QUICK 0
 

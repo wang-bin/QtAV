@@ -23,9 +23,10 @@
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtOpenGL/QGLFunctions>
 #endif
+#include "utils/Logger.h"
+
 namespace QtAV {
 namespace OpenGLHelper {
-
 
 // glActiveTexture in Qt4 on windows release mode crash for me
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)

@@ -24,6 +24,7 @@
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/prepost.h"
+#include "utils/Logger.h"
 
 /*!
  * options (properties) are from libavcodec/options_table.h

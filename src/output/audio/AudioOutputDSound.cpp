@@ -27,6 +27,7 @@
 #define DIRECTSOUND_VERSION 0x0600
 #include <dsound.h>
 #include "QtAV/private/AVCompat.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 class AudioOutputDSoundPrivate;

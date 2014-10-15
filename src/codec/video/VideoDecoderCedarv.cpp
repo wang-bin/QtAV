@@ -24,14 +24,12 @@
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/prepost.h"
-
-#include <QDebug>
-
 #include <libavcodec/avcodec.h>
 extern "C"
 {
 	#include <libcedarv/libcedarv.h>
 }
+#include "utils/Logger.h"
 
 #ifdef NO_NEON_OPT //Don't HAVE_NEON
 static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned int coded_width, unsigned int coded_height)

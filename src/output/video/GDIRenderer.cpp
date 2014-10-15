@@ -26,6 +26,7 @@
 #include <gdiplus.h>
 #include <QResizeEvent>
 #include "QtAV/prepost.h"
+#include "utils/Logger.h"
 
 #define USE_GRAPHICS 0
 

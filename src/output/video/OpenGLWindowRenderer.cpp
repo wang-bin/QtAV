@@ -22,6 +22,7 @@
 #include "QtAV/OpenGLWindowRenderer.h"
 #include "QtAV/private/OpenGLRendererBase_p.h"
 #include <QResizeEvent>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

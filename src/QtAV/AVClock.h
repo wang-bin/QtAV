@@ -136,7 +136,7 @@ double AVClock::value() const
         if (timer.isValid()) {
             pts_ += double(timer.restart()) * kThousandth;
         } else {//timer is paused
-            qDebug("clock is paused. return the last value %f", pts_);
+            //qDebug("clock is paused. return the last value %f", pts_);
         }
         return pts_ * speed() + value0;
     }

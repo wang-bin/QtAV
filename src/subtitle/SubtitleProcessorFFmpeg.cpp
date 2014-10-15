@@ -20,13 +20,13 @@
 ******************************************************************************/
 
 #include <string>
-#include <QtDebug>
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/prepost.h"
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "PlainText.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

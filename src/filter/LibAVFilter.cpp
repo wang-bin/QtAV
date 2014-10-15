@@ -25,6 +25,7 @@
 #include "QtAV/Statistics.h"
 #include "QtAV/VideoFrame.h"
 #include "QtAV/private/AVCompat.h"
+#include "utils/Logger.h"
 
 /*
  * libav10.x, ffmpeg2.x: av_buffersink_read deprecated

@@ -23,7 +23,7 @@
 #include "QtAV/FactoryDefine.h"
 #include "QtAV/private/factory.h"
 #include <QtCore/QFile>
-#include <QtDebug>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

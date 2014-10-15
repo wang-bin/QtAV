@@ -24,6 +24,7 @@
 #include <QtGui/QPainter>
 #include <QtGui/QTextDocument>
 #include "QtAV/VideoFrame.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

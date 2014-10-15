@@ -116,6 +116,7 @@ public:
         qreal pts() const; // last pts
         // compute from pts history
         qreal currentDisplayFPS() const;
+        //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
         //AVStream.avg_frame_rate may be 0, then use AVStream.r_frame_rate
         //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
         qreal fps_guess;

@@ -43,6 +43,7 @@
 //performance: http://msdn.microsoft.com/en-us/library/windows/desktop/dd372260(v=vs.85).aspx
 //vlc is helpful
 //layer(opacity): http://www.cnblogs.com/graphics/archive/2013/04/15/2781969.html
+#include "utils/Logger.h"
 
 namespace QtAV {
 

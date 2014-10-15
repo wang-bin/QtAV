@@ -23,7 +23,7 @@
 #include "QtAV/QtAV_Global.h"
 #include <cassert>
 #include <QtCore/QLibrary>
-#include <QtDebug>
+#include "utils/Logger.h"
 
 #if QTAV_HAVE(CHARDET)
 #include <chardet.h>

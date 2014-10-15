@@ -25,6 +25,7 @@
 #include "QtAV/AVOutput.h"
 #include "QtAV/AVPlayer.h"
 #include "filter/FilterManager.h"
+#include "utils/Logger.h"
 
 /*
  * 1. parent == target (QObject):

@@ -20,9 +20,10 @@
 ******************************************************************************/
 
 #include "QtAV/AudioFormat.h"
-#include <QtCore/QtDebug>
 #include "QtAV/private/AVCompat.h"
-
+#ifndef QT_NO_DEBUG_STREAM
+#include <QtDebug>
+#endif //QT_NO_DEBUG_STREAM
 //FF_API_OLD_SAMPLE_FMT. e.g. FFmpeg 0.9
 #ifdef SampleFormat
 #undef SampleFormat

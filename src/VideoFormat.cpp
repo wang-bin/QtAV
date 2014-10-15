@@ -20,9 +20,10 @@
 ******************************************************************************/
 
 #include "QtAV/VideoFormat.h"
-#include <QtCore/QtDebug>
 #include <QtCore/QVector>
-
+#ifndef QT_NO_DEBUG_STREAM
+#include <QtDebug>
+#endif
 #include "QtAV/private/AVCompat.h"
 extern "C" {
 #include <libavutil/imgutils.h>

@@ -26,6 +26,7 @@
 #include <cmath>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
+#include "utils/Logger.h"
 
 /*
  * TODO: glActiveTexture for Qt4

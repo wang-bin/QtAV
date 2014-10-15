@@ -22,6 +22,7 @@
 
 #include <QtAV/AVClock.h>
 #include <QtCore/QTimerEvent>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

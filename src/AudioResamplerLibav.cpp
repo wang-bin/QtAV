@@ -25,6 +25,7 @@
 #include "QtAV/private/AudioResampler_p.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/prepost.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -257,6 +258,7 @@ bool AudioResamplerLibav::prepare()
     int ret = swr_init(d.context);
     if (ret < 0) {
         qWarning("swr_init failed: %s", av_err2str(ret));
+        swr_free(&d.context);
         return false;
     }
     return true;

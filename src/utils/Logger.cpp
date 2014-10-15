@@ -22,58 +22,78 @@
 /*!
  * DO NOT appear qDebug, qWanring etc in Logger.cpp! They are undefined and redefined to QtAV:Internal::Logger.xxx
  */
-//#include "Logger.h"
 // we need LogLevel so must include QtAV_Global.h
+#include <QtCore/QString>
 #include "QtAV/QtAV_Global.h"
+#include "Logger.h"
 
+#ifdef HACK_QT_LOG
+
+void ffmpeg_version_print();
 namespace QtAV {
 namespace Internal {
+static QString gQtAVLogTag("");
+
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 typedef Logger::Context QMessageLogger;
 #endif
 
 static void log_helper(QtMsgType msgType, const QMessageLogger *qlog, const char* msg, va_list ap) {
-    QString qmsg;
+    QString qmsg(gQtAVLogTag);
     if (msg)
-        qmsg = "<QtAV> " + QString().vsprintf(msg, ap);
+        qmsg += QString().vsprintf(msg, ap);
     // qt_message_output is a public api
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    if (qlog) {
-        qlog->debug() << qmsg;
-    } else {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    qt_message_output(msgType, qmsg.toUtf8().constData());
+    return;
+#else
+    if (!qlog) {
         QMessageLogContext ctx;
         qt_message_output(msgType, ctx, qmsg);
+        return;
     }
+#endif
+#ifndef QT_NO_DEBUG_STREAM
+    if (msgType == QtWarningMsg)
+        qlog->warning() << qmsg;
+    else if (msgType == QtCriticalMsg)
+        qlog->critical() << qmsg;
+    else if (msgType == QtFatalMsg)
+        qlog->fatal("%s", qmsg.toUtf8().constData());
+    else
+        qlog->debug() << qmsg;
 #else
-    qt_message_output(msgType, qPrintable(qmsg));
-#endif //QT_VERSION
+    if (msgType == QtFatalMsg)
+        qlog->fatal("%s", qmsg.toUtf8().constData());
+#endif //
 }
 
 // macro does not support A::##X
 
 void Logger::debug(const char *msg, ...) const
 {
-    QtAVDebug d(QtDebugMsg); // initialize something. e.g. environment check
+    QtAVDebug d; // initialize something. e.g. environment check
     Q_UNUSED(d);
     const int v = (int)logLevel();
-    if (v < (int)LogDebug)
+    if (v <= (int)LogOff)
         return;
-    if (v > (int)LogDebug && v != (int)LogAll)
+    if (v > (int)LogDebug && v < (int)LogAll)
         return;
     va_list ap;
     va_start(ap, msg);
+    // can not use ctx.debug() <<... because QT_NO_DEBUG_STREAM maybe defined
     log_helper(QtDebugMsg, &ctx, msg, ap);
     va_end(ap);
 }
 
 void Logger::warning(const char *msg, ...) const
 {
-    QtAVDebug d(QtWarningMsg); // initialize something. e.g. environment check
+    QtAVDebug d; // initialize something. e.g. environment check
     Q_UNUSED(d);
     const int v = (int)logLevel();
-    if (v < (int)LogWarning)
+    if (v <= (int)LogOff)
         return;
-    if (v > (int)LogWarning && v != (int)LogAll)
+    if (v > (int)LogWarning && v < (int)LogAll)
         return;
     va_list ap;
     va_start(ap, msg);
@@ -83,12 +103,12 @@ void Logger::warning(const char *msg, ...) const
 
 void Logger::critical(const char *msg, ...) const
 {
-    QtAVDebug d(QtCriticalMsg); // initialize something. e.g. environment check
+    QtAVDebug d; // initialize something. e.g. environment check
     Q_UNUSED(d);
     const int v = (int)logLevel();
-    if (v < (int)LogCritical)
+    if (v <= (int)LogOff)
         return;
-    if (v > (int)LogCritical && v != (int)LogAll)
+    if (v > (int)LogCritical && v < (int)LogAll)
         return;
     va_list ap;
     va_start(ap, msg);
@@ -98,62 +118,93 @@ void Logger::critical(const char *msg, ...) const
 
 void Logger::fatal(const char *msg, ...) const
 {
-    QtAVDebug d(QtFatalMsg); // initialize something. e.g. environment check
+    QtAVDebug d; // initialize something. e.g. environment check
     Q_UNUSED(d);
     const int v = (int)logLevel();
-    if (v < (int)LogFatal)
-        return;
-    if (v > (int)LogFatal && v != (int)LogAll)
-        return;
-    va_list ap;
-    va_start(ap, msg);
-    log_helper(QtFatalMsg, &ctx, msg, ap);
-    va_end(ap);
+    /*
+    if (v <= (int)LogOff)
+        abort();
+    if (v > (int)LogFatal && v < (int)LogAll)
+        abort();
+    */
+    if (v > (int)LogOff) {
+        va_list ap;
+        va_start(ap, msg);
+        log_helper(QtFatalMsg, &ctx, msg, ap);
+        va_end(ap);
+    }
+    abort();
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #ifndef QT_NO_DEBUG_STREAM
+// internal used by Logger::fatal(const char*,...) with log level checked, so always do things here
+void Logger::Context::fatal(const char *msg, ...) const
+{
+    va_list ap;
+    va_start(ap, msg);
+    QString qmsg;
+    if (msg)
+        qmsg += QString().vsprintf(msg, ap);
+    qt_message_output(QtFatalMsg, qmsg.toUtf8().constData());
+    va_end(ap);
+    abort();
+}
+#endif //QT_NO_DEBUG_STREAM
+#endif //QT_VERSION
+
+#ifndef QT_NO_DEBUG_STREAM
+// will print message in ~QDebug()
+// can not use QDebug on stack. It must lives in QtAVDebug
 QtAVDebug Logger::debug() const
 {
-    if ((int)logLevel() < (int)LogDebug)
-        return QtAVDebug(QtDebugMsg);
-    // will print message in ~QDebug()
-    // can not use QDebug on stack. It must lives in QtAVDebug
-    return QtAVDebug(QtDebugMsg, new QDebug(ctx.debug()));
+    QtAVDebug d(QtDebugMsg); //// initialize something. e.g. environment check
+    const int v = (int)logLevel();
+    if (v <= (int)LogOff)
+        return d;
+    if (v <= (int)LogDebug || v >= (int)LogAll)
+        d.setQDebug(new QDebug(ctx.debug()));
+    return d;
 }
 
 QtAVDebug Logger::warning() const
 {
-    if ((int)logLevel() < (int)LogWarning)
-        return QtAVDebug(QtWarningMsg);
-    return QtAVDebug(QtWarningMsg, new QDebug(ctx.warning()));
+    QtAVDebug d(QtWarningMsg);
+    const int v = (int)logLevel();
+    if (v <= (int)LogOff)
+        return d;
+    if (v <= (int)LogWarning || v >= (int)LogAll)
+        d.setQDebug(new QDebug(ctx.warning()));
+    return d;
 }
 
 QtAVDebug Logger::critical() const
 {
-    if ((int)logLevel() < (int)LogCritical)
-        return QtAVDebug(QtCriticalMsg);
-    return QtAVDebug(QtCriticalMsg, new QDebug(ctx.critical()));
+    QtAVDebug d(QtCriticalMsg);
+    const int v = (int)logLevel();
+    if (v <= (int)LogOff)
+        return d;
+    if (v <= (int)LogCritical || v >= (int)LogAll)
+        d.setQDebug(new QDebug(ctx.critical()));
+    return d;
 }
 // no QMessageLogger::fatal()
-/*
-QtAVDebug Logger::fatal() const
-{
-    if ((int)logLevel() < (int)LogFatal)
-        return QtAVDebug(QtFatalMsg);
-    return QtAVDebug(QtFatalMsg, new QDebug(ctx.fatal()));
-}*/
 #endif //QT_NO_DEBUG_STREAM
+
+bool isLogLevelSet();
 
 QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
     : type(t)
-    , dbg(d)
+    , dbg(0)
 {
+    setQDebug(d); // call *dbg << gQtAVLogTag
     static bool sFirstRun = true;
     if (!sFirstRun)
         return;
     sFirstRun = false;
     //printf("Qt Logging first run........\n");
     // check environment var and call other functions at first Qt logging call
+    // always override setLogLevel()
     QByteArray env = qgetenv("QTAV_LOG_LEVEL");
     if (!env.isEmpty()) {
         bool ok = false;
@@ -181,13 +232,31 @@ QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
                 setLogLevel(LogAll);
         }
     }
+    env = qgetenv("QTAV_LOG_TAG");
+    if (!env.isEmpty()) {
+        gQtAVLogTag = env;
+    }
+
+    if ((int)logLevel() > (int)LogOff) {
+        ffmpeg_version_print();
+        printf("%s\n", aboutQtAV_PlainText().toUtf8().constData());
+        fflush(0);
+    }
 }
 
 QtAVDebug::~QtAVDebug()
 {
+    setQDebug(0);
+}
+
+void QtAVDebug::setQDebug(QDebug *d)
+{
     if (dbg) {
         delete dbg;
-        dbg = 0;
+    }
+    dbg = d;
+    if (dbg && !gQtAVLogTag.isEmpty()) {
+        *dbg << gQtAVLogTag;
     }
 }
 
@@ -208,3 +277,5 @@ QtAVDebug debug(const char *msg, ...)
 
 } //namespace Internal
 } // namespace QtAV
+
+#endif //HACK_QT_LOG

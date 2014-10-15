@@ -27,8 +27,7 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtQuick/QQuickItem>
 
-namespace QtAV
-{
+namespace QtAV {
 extern QMLAV_EXPORT VideoRendererId VideoRendererId_QQuickItem;
 
 class QQuickItemRendererPrivate;
@@ -85,5 +84,6 @@ private:
 };
 typedef QQuickItemRenderer VideoRendererQQuickItem;
 }
+QML_DECLARE_TYPE(QtAV::QQuickItemRenderer)
 
 #endif // QTAV_QML_QQUICKRENDERER_H

@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/private/AVCompat.h>
+#include "QtAV/private/AVCompat.h"
 #include "QtAV/version.h"
 #include "QtAV/prepost.h"
 
@@ -68,7 +68,7 @@ void ffmpeg_version_print()
     fflush(0);
 }
 
-PRE_FUNC_ADD(ffmpeg_version_print);
+//PRE_FUNC_ADD(ffmpeg_version_print); //move to Internal::Logger
 
 #ifndef av_err2str
 

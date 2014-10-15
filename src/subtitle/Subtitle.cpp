@@ -22,7 +22,6 @@
 #include "QtAV/Subtitle.h"
 #include "QtAV/private/SubtitleProcessor.h"
 #include <algorithm>
-#include <QtDebug>
 #include <QtCore/QBuffer>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -36,6 +35,7 @@
 #include <QtCore/QTextStream>
 #include <QtCore/QMutexLocker>
 #include "subtitle/CharsetDetector.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

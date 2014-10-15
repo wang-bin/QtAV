@@ -21,12 +21,25 @@
 
 /*
  * Qt Logging Hack
+ * in qmacdefines_mac.h, if qDebug is defined, then if will be defined as QT_NO_QDEBUG_MACRO, don't know why
+ * So you have to include this only as the last #include in cpp file!
+ * DO NOT use qDebug in public header!
  */
 
 #ifndef QTAV_LOGGER_H
 #define QTAV_LOGGER_H
 
+/*!
+  Environment var
+  QTAV_LOG_TAG: prefix the value to log message
+  QTAV_LOG_LEVEL: set log level, can be "off", "debug", "warning", "critical", "fatal", "all"
+ */
+
+#define HACK_QT_LOG
+#ifdef HACK_QT_LOG
+
 #include <QtDebug>
+#include <QtAV/QtAV_Global.h>
 
 #ifndef Q_DECL_CONSTEXPR
 #define Q_DECL_CONSTEXPR
@@ -53,34 +66,54 @@ public:
      */
     QtAVDebug(QtMsgType t = QtDebugMsg, QDebug *d = 0);
     ~QtAVDebug();
+    void setQDebug(QDebug* d);
+    // QDebug api
+    inline QtAVDebug &space() {
+        if (dbg)
+            dbg->space();
+        return *this;
+    }
+    inline QtAVDebug &nospace() {
+        if (dbg)
+            dbg->nospace();
+        return *this;
+    }
+    inline QtAVDebug &maybeSpace() {
+        if (dbg)
+            dbg->maybeSpace();
+        return *this;
+    }
+
     template<typename T> QtAVDebug &operator<<(T t) {
         if (!dbg)
             return *this;
-        if ((int)logLevel() < LogDebug)
+        const int l = (int)logLevel();
+        if (l <= (int)LogOff)
             return *this;
-        if ((int)logLevel() >= LogAll) {
+        if (l >= (int)LogAll) {
             *dbg << t;
             return *this;
         }
-        if ((int)logLevel() <= LogDebug) {
+        if (l == (int)LogDebug) {
             *dbg << t;
             return *this;
         }
-        if (logLevel() == LogWarning) {
-            if ((int)type <= (int)QtWarningMsg)
+        if (l == (int)LogWarning) {
+            if ((int)type >= (int)QtWarningMsg)
                 *dbg << t;
             return *this;
         }
-        if (logLevel() == LogCritical) {
-            if ((int)type <= (int)QtCriticalMsg)
+        if (l == (int)LogCritical) {
+            if ((int)type >= (int)QtCriticalMsg)
                 *dbg << t;
             return *this;
         }
-        if (logLevel() == LogFatal) {
-            if ((int)type <= (int)QtFatalMsg)
+        if (l == (int)LogFatal) {
+            if ((int)type >= (int)QtFatalMsg)
                 *dbg << t;
             return *this;
         }
+        return *this;
     }
 private:
     QtMsgType type;
@@ -92,7 +125,7 @@ class Logger {
 public:Q_DECL_CONSTEXPR Logger(const char *file = "unknown", int line = 0, const char *function = "unknown", const char *category = "default")
         : ctx(file, line, function, category) {}
     void debug(const char *msg, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3);
-    void noDebug(const char *msg, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3)
+    void noDebug(const char *, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3)
     {}
     void warning(const char *msg, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3);
     void critical(const char *msg, ...) const Q_ATTRIBUTE_FORMAT_PRINTF(2, 3);
@@ -105,7 +138,7 @@ public:Q_DECL_CONSTEXPR Logger(const char *file = "unknown", int line = 0, const
 
 #ifndef QT_NO_DEBUG_STREAM
     //TODO: QLoggingCategory
-    QtAVDebug debug() const ;
+    QtAVDebug debug() const;
     QtAVDebug warning() const;
     QtAVDebug critical() const;
     //QtAVDebug fatal() const;
@@ -118,6 +151,10 @@ public: //public can typedef outside
     public:
         Q_DECL_CONSTEXPR Context(const char *fileName, int lineNumber, const char *functionName, const char *categoryName)
             : version(1), line(lineNumber), file(fileName), function(functionName), category(categoryName) {}
+#ifndef Q_CC_MSVC
+        Q_NORETURN
+#endif
+        void fatal(const char *msg, ...) const Q_DECL_NOTHROW Q_ATTRIBUTE_FORMAT_PRINTF(2, 3);
 #ifndef QT_NO_DEBUG_STREAM
         inline QDebug debug() const { return QDebug(QtDebugMsg);}
         inline QDebug warning() const { return QDebug(QtWarningMsg);}
@@ -159,12 +196,32 @@ QNoDebug debug(const char *msg, ...); /* print debug message */
 #undef qWarning
 #undef qCritical
 #undef qFatal
+// debug and warning output can be disabled at build time in Qt
+// from qdebug.h
+
+#ifdef QT_NO_DEBUG_OUTPUT
+#define QT_NO_WARNING_OUTPUT ////FIXME. qWarning() => Logger.warning() not declared
+#undef qDebug
+inline QNoDebug qDebug() { return QNoDebug(); }
+#define qDebug QT_NO_QDEBUG_MACRO
+#else
+inline QtAVDebug qDebug() { return QtAVDebug(QtDebugMsg); }
 #define qDebug QtAV::Internal::Logger(__FILE__, __LINE__, Q_FUNC_INFO).debug
+#endif //QT_NO_DEBUG_OUTPUT
+
+#ifdef QT_NO_WARNING_OUTPUT
+#undef qWarning
+inline QNoDebug qWarning() { return QNoDebug(); }
+#define qWarning QT_NO_QWARNING_MACRO
+#else
+inline QtAVDebug qWarning() { return QtAVDebug(QtWarningMsg); }
 #define qWarning QtAV::Internal::Logger(__FILE__, __LINE__, Q_FUNC_INFO).warning
+#endif //QT_NO_WARNING_OUTPUT
 #define qCritical QtAV::Internal::Logger(__FILE__, __LINE__, Q_FUNC_INFO).critical
 #define qFatal QtAV::Internal::Logger(__FILE__, __LINE__, Q_FUNC_INFO).fatal
 
 } // namespace Internal
 } // namespace QtAV
 
+#endif //HACK_QT_LOG
 #endif // QTAV_LOGGER_H

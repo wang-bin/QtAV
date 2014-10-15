@@ -21,6 +21,7 @@
 
 #include "QtAV/VideoDecoderFFmpegHW.h"
 #include "QtAV/private/VideoDecoderFFmpegHW_p.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

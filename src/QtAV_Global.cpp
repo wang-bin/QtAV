@@ -22,7 +22,6 @@
 #include "QtAV/QtAV_Global.h"
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
-#include <QtDebug>
 #if QTAV_HAVE(WIDGETS)
 #include <QBoxLayout>
 #include <QMessageBox>
@@ -32,13 +31,7 @@
 #endif //QTAV_HAVE(WIDGETS)
 #include "QtAV/version.h"
 #include "QtAV/private/AVCompat.h"
-
-// disable logging for release. you can manually enable it.
-#ifdef QT_NO_DEBUG
-static QtAV::LogLevel gLogLevel = QtAV::LogOff;
-#else
-static QtAV::LogLevel gLogLevel = QtAV::LogAll;
-#endif
+#include "utils/Logger.h"
 
 unsigned QtAV_Version()
 {
@@ -56,6 +49,17 @@ QString QtAV_Version_String_Long()
 }
 
 namespace QtAV {
+
+namespace Internal {
+// disable logging for release. you can manually enable it.
+#ifdef QT_NO_DEBUG
+static QtAV::LogLevel gLogLevel = QtAV::LogOff;
+#else
+static QtAV::LogLevel gLogLevel = QtAV::LogAll;
+#endif
+static bool gLogLevelSet = false;
+bool isLogLevelSet() { return gLogLevelSet;}
+} //namespace Internal
 
 //TODO: auto add new depend libraries information
 void about()
@@ -183,12 +187,13 @@ QString aboutQtAV_HTML()
 
 void setLogLevel(LogLevel value)
 {
-    gLogLevel = value;
+    Internal::gLogLevelSet = true;
+    Internal::gLogLevel = value;
 }
 
 LogLevel logLevel()
 {
-    return (LogLevel)gLogLevel;
+    return (LogLevel)Internal::gLogLevel;
 }
 
 void setFFmpegLogHandler(void (*callback)(void *, int, const char *, va_list))
@@ -203,19 +208,14 @@ static void qtav_ffmpeg_log_callback(void* , int level,const char* fmt, va_list 
 {
     QString qmsg = "{FFmpeg} " + QString().vsprintf(fmt, vl);
     qmsg = qmsg.trimmed();
-    QtMsgType mt = QtDebugMsg;
     if (level == AV_LOG_WARNING || level == AV_LOG_ERROR)
-        mt = QtWarningMsg;
+        qWarning() << qmsg;
     else if (level == AV_LOG_FATAL)
-        mt = QtCriticalMsg;
+        qFatal("%s", qmsg.toUtf8().constData());
     else if (level == AV_LOG_PANIC)
-        mt = QtFatalMsg;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    QMessageLogContext ctx;
-    qt_message_output(mt, ctx, qmsg);
-#else
-    qt_message_output(mt, qPrintable(qmsg));
-#endif //QT_VERSION
+        qFatal("%s", qmsg.toUtf8().constData());
+    else
+        qDebug() << qmsg;
 }
 
 // TODO: static link. move all into 1

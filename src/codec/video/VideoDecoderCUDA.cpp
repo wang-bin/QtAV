@@ -41,6 +41,7 @@
 
 #include "cuda/helper_cuda.h"
 #include "cuda/cuda_api.h"
+#include "utils/Logger.h"
 
 //decode error if not floating context
 
@@ -554,7 +555,9 @@ bool VideoDecoderCUDAPrivate::createCUVIDParser()
 {
     cudaVideoCodec cudaCodec = mapCodecFromFFmpeg(codec_ctx->codec_id);
     if (cudaCodec == -1) {
-        qWarning("CUVID does not support the codec");
+        QString es(QObject::tr("Codec %1 is not supported by CUDA").arg(avcodec_get_name(codec_ctx->codec_id)));
+        //emit error(AVError::CodecError, es);
+        qWarning() << es;
         available = false;
         return false;
     }

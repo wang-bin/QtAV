@@ -44,12 +44,11 @@ Q_AV_EXPORT QString QtAV_Version_String_Long();
 namespace QtAV {
 
 enum LogLevel {
-    LogOff = -1,
-    LogDefault = 0,
-    LogDebug,
-    LogWarning,
-    LogCritical,
-    LogFatal,
+    LogOff,
+    LogDebug, // log all
+    LogWarning, // log warning, critical, fatal
+    LogCritical, // log critical, fatal
+    LogFatal, // log fatal
     LogAll
 };
 
@@ -61,6 +60,11 @@ Q_AV_EXPORT void aboutQtAV();
 Q_AV_EXPORT QString aboutQtAV_PlainText();
 Q_AV_EXPORT QString aboutQtAV_HTML();
 
+/*!
+ * The level can also be changed at runtime by setting the QTAV_LOG_LEVEL environment variable;
+ * QTAV_LOG_LEVEL can be: off, debug, warning, critical, fatal, all. Or use their enum values
+ * if both setLogLevel() is called and QTAV_LOG_LEVEL is set, the environment variable takes preceden.
+*/
 Q_AV_EXPORT void setLogLevel(LogLevel value);
 Q_AV_EXPORT LogLevel logLevel();
 
@@ -103,11 +107,6 @@ Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list)
 #ifndef Q_FUNC_INFO
 #define Q_FUNC_INFO __FUNCTION__
 #endif
-
-#if defined(BUILD_QTAV_LIB)
-#include "utils/Logger.h"
-//#undef qDebug()
-#endif //BUILD_QTAV_LIB
 
 #endif // QTAV_GLOBAL_H
 

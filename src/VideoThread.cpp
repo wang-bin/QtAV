@@ -34,6 +34,7 @@
 #include "output/OutputSet.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QFileInfo>
+#include "utils/Logger.h"
 
 namespace QtAV {
 

@@ -22,7 +22,7 @@
 #include <QtAV/AVDecoder.h>
 #include <QtAV/private/AVDecoder_p.h>
 #include <QtAV/version.h>
-#include <QtDebug>
+#include "utils/Logger.h"
 
 namespace QtAV {
 AVDecoder::AVDecoder()
