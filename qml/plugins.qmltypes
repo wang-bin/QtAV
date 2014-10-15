@@ -131,6 +131,17 @@ Module {
             }
         }
         Enum {
+            name: "Error"
+            values: {
+                "NoError": 0,
+                "ResourceError": 1,
+                "FormatError": 2,
+                "NetworkError": 3,
+                "AccessDenied": 4,
+                "ServiceMissing": 5
+            }
+        }
+        Enum {
             name: "ChannelLayout"
             values: {
                 "ChannelLayoutAuto": 0,
@@ -155,6 +166,8 @@ Module {
         Property { name: "seekable"; type: "bool"; isReadonly: true }
         Property { name: "metaData"; type: "MediaMetaData"; isReadonly: true; isPointer: true }
         Property { name: "mediaObject"; type: "QObject"; isReadonly: true; isPointer: true }
+        Property { name: "error"; type: "Error"; isReadonly: true }
+        Property { name: "errorString"; type: "string"; isReadonly: true }
         Property { name: "channelLayout"; type: "ChannelLayout" }
         Property { name: "videoCodecs"; type: "QStringList"; isReadonly: true }
         Property { name: "videoCodecPriority"; type: "QStringList" }
@@ -163,6 +176,11 @@ Module {
         Signal { name: "paused" }
         Signal { name: "stopped" }
         Signal { name: "playing" }
+        Signal {
+            name: "error"
+            Parameter { name: "error"; type: "Error" }
+            Parameter { name: "errorString"; type: "string" }
+        }
         Method { name: "play" }
         Method { name: "pause" }
         Method { name: "stop" }

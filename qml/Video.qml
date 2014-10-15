@@ -158,14 +158,14 @@ Item {
         instantiated.
         \endlist
     */
-    //property alias error:           player.error
+    property alias error:           player.error
 
     /*!
         \qmlproperty string Video::errorString
 
         This property holds a string describing the current error condition in more detail.
     */
-    //property alias errorString:     player.errorString
+    property alias errorString:     player.errorString
 
     /*!
         \qmlproperty enumeration Video::availability
