@@ -16,7 +16,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 CONFIG *= qtav-buildlib
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
-
+#release: DEFINES += QT_NO_DEBUG_OUTPUT
 #var with '_' can not pass to pri?
 STATICLINK = 0
 PROJECTROOT = $$PWD/..
@@ -274,6 +274,7 @@ SOURCES += \
     subtitle/SubtitleProcessor.cpp \
     subtitle/SubtitleProcessorFFmpeg.cpp \
     utils/GPUMemCopy.cpp \
+    utils/Logger.cpp \
     QAVIOContext.cpp \
     AudioThread.cpp \
     AVThread.cpp \
@@ -392,6 +393,7 @@ HEADERS *= \
     subtitle/PlainText.h \
     utils/BlockingQueue.h \
     utils/GPUMemCopy.h \
+    utils/Logger.h \
     utils/SharedPtr.h \
     output/OutputSet.h \
     QtAV/AVDemuxThread.h \

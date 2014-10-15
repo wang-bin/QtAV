@@ -33,6 +33,13 @@
 #include "QtAV/version.h"
 #include "QtAV/private/AVCompat.h"
 
+// disable logging for release. you can manually enable it.
+#ifdef QT_NO_DEBUG
+static QtAV::LogLevel gLogLevel = QtAV::LogOff;
+#else
+static QtAV::LogLevel gLogLevel = QtAV::LogAll;
+#endif
+
 unsigned QtAV_Version()
 {
     return QTAV_VERSION;
@@ -172,6 +179,16 @@ QString aboutQtAV_HTML()
             "<p>" + QObject::tr("Source") + ": <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
             "<p>" + QObject::tr("Web Site") + ": <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>";
     return about;
+}
+
+void setLogLevel(LogLevel value)
+{
+    gLogLevel = value;
+}
+
+LogLevel logLevel()
+{
+    return (LogLevel)gLogLevel;
 }
 
 void setFFmpegLogHandler(void (*callback)(void *, int, const char *, va_list))

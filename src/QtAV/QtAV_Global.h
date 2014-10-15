@@ -36,11 +36,23 @@
 #endif
 #define Q_AV_PRIVATE_EXPORT Q_AV_EXPORT
 
+
 /* runtime version. used to compare with compile time version */
 Q_AV_EXPORT unsigned QtAV_Version();
 Q_AV_EXPORT QString QtAV_Version_String();
 Q_AV_EXPORT QString QtAV_Version_String_Long();
 namespace QtAV {
+
+enum LogLevel {
+    LogOff = -1,
+    LogDefault = 0,
+    LogDebug,
+    LogWarning,
+    LogCritical,
+    LogFatal,
+    LogAll
+};
+
 Q_AV_EXPORT void about(); //popup a dialog
 Q_AV_EXPORT void aboutFFmpeg();
 Q_AV_EXPORT QString aboutFFmpeg_PlainText();
@@ -49,8 +61,12 @@ Q_AV_EXPORT void aboutQtAV();
 Q_AV_EXPORT QString aboutQtAV_PlainText();
 Q_AV_EXPORT QString aboutQtAV_HTML();
 
+Q_AV_EXPORT void setLogLevel(LogLevel value);
+Q_AV_EXPORT LogLevel logLevel();
+
 Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
-}
+
+} //namespace QtAV
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #define QStringLiteral(X) QString::fromUtf8(X)
@@ -76,6 +92,22 @@ Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list)
 #define QTAV_HAVE_WIDGETS 1
 #endif //QTAV_HAVE_WIDGETS
 #endif
+
+#ifndef Q_DECL_OVERRIDE
+#define Q_DECL_OVERRIDE
+#endif
+#ifndef Q_DECL_FINAL
+#define Q_DECL_FINAL
+#endif
+
+#ifndef Q_FUNC_INFO
+#define Q_FUNC_INFO __FUNCTION__
+#endif
+
+#if defined(BUILD_QTAV_LIB)
+#include "utils/Logger.h"
+//#undef qDebug()
+#endif //BUILD_QTAV_LIB
 
 #endif // QTAV_GLOBAL_H
 
