@@ -61,6 +61,7 @@ Q_AV_EXPORT QString aboutQtAV_PlainText();
 Q_AV_EXPORT QString aboutQtAV_HTML();
 
 /*!
+ * Default value: LogOff for release build. LogAll for debug build.
  * The level can also be changed at runtime by setting the QTAV_LOG_LEVEL environment variable;
  * QTAV_LOG_LEVEL can be: off, debug, warning, critical, fatal, all. Or use their enum values
  * if both setLogLevel() is called and QTAV_LOG_LEVEL is set, the environment variable takes preceden.

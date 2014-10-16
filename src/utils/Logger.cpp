@@ -116,7 +116,7 @@ void Logger::critical(const char *msg, ...) const
     va_end(ap);
 }
 
-void Logger::fatal(const char *msg, ...) const
+void Logger::fatal(const char *msg, ...) const Q_DECL_NOTHROW
 {
     QtAVDebug d; // initialize something. e.g. environment check
     Q_UNUSED(d);
@@ -139,7 +139,7 @@ void Logger::fatal(const char *msg, ...) const
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #ifndef QT_NO_DEBUG_STREAM
 // internal used by Logger::fatal(const char*,...) with log level checked, so always do things here
-void Logger::Context::fatal(const char *msg, ...) const
+void Logger::Context::fatal(const char *msg, ...) const Q_DECL_NOTHROW
 {
     va_list ap;
     va_start(ap, msg);
@@ -239,7 +239,7 @@ QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
 
     if ((int)logLevel() > (int)LogOff) {
         ffmpeg_version_print();
-        printf("%s\n", aboutQtAV_PlainText().toUtf8().constData());
+        printf("%s\n", aboutQtAV_PlainText().toLocal8Bit().constData());
         fflush(0);
     }
 }
