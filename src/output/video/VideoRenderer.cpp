@@ -257,6 +257,36 @@ int VideoRenderer::rendererHeight() const
     return d_func().renderer_height;
 }
 
+void VideoRenderer::setOrientation(int value)
+{
+    // currently only supports a multiple of 90
+    if (value % 90)
+        return;
+    DPTR_D(VideoRenderer);
+    if (d.orientation == value)
+        return;
+    int old = orientation();
+    d.orientation = value % 360;
+    if (!onSetOrientation(value)) {
+        d.orientation = old;
+    } else {
+        d.computeOutParameters(d.out_aspect_ratio);
+        resizeFrame(d.out_rect.width(), d.out_rect.height());
+    }
+}
+
+int VideoRenderer::orientation() const
+{
+    return d_func().orientation;
+}
+
+// only qpainter and opengl based renderers support orientation.
+bool VideoRenderer::onSetOrientation(int value)
+{
+    Q_UNUSED(value);
+    return false;
+}
+
 QSize VideoRenderer::frameSize() const
 {
     DPTR_D(const VideoRenderer);
@@ -358,6 +388,7 @@ QPointF VideoRenderer::mapToFrame(const QPointF &p) const
     return onMapToFrame(p);
 }
 
+// TODO: orientation
 QPointF VideoRenderer::onMapToFrame(const QPointF &p) const
 {
     QRectF roi = realROI();

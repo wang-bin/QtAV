@@ -91,7 +91,7 @@ Item {
         The orientation of the \c Video in degrees. Only multiples of 90
         degrees is supported, that is 0, 90, 180, 270, 360, etc.
     */
-    //property alias orientation:         videoOut.orientation
+    property alias orientation:         videoOut.orientation
 
 
     /*** Properties of MediaPlayer ***/

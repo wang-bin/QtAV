@@ -211,6 +211,17 @@ bool VideoOutput::onSetQuality(Quality q)
     return d.impl->quality() == q;
 }
 
+bool VideoOutput::onSetOrientation(int value)
+{
+    DPTR_D(VideoOutput);
+    d.impl->setOrientation(value);
+    if (d.impl->orientation() != value) {
+        return false;
+    }
+    emit orientationChanged(value);
+    return true;
+}
+
 void VideoOutput::onResizeRenderer(int width, int height)
 {
     DPTR_D(VideoOutput);

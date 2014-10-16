@@ -213,6 +213,7 @@ Module {
         Property { name: "opengl"; type: "bool" }
         Property { name: "source"; type: "QObject"; isPointer: true }
         Property { name: "fillMode"; type: "FillMode" }
+        Property { name: "orientation"; type: "int" }
         Property { name: "regionOfInterest"; type: "QRectF" }
         Signal {
             name: "fillModeChanged"

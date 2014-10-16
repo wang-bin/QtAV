@@ -166,7 +166,7 @@ void QQuickItemRenderer::drawFrame()
     if (isOpenGL()) {
         SGVideoNode *sgvn = static_cast<SGVideoNode*>(d.node);
         Q_ASSERT(sgvn);
-        sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), 0);
+        sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), d.orientation);
         if (d.frame_changed)
             sgvn->setCurrentFrame(d.video_frame);
         d.frame_changed = false;
@@ -180,7 +180,12 @@ void QQuickItemRenderer::drawFrame()
 
     if (d.texture)
         delete d.texture;
-    d.texture = this->window()->createTextureFromImage(d.image);
+
+    if (d.orientation == 0) {
+        d.texture = window()->createTextureFromImage(d.image);
+    } else if (d.orientation == 180) {
+        d.texture = window()->createTextureFromImage(d.image.mirrored(true, true));
+    }
     static_cast<QSGSimpleTextureNode*>(d.node)->setTexture(d.texture);
     d.node->markDirty(QSGNode::DirtyGeometry);
 }
@@ -212,6 +217,17 @@ bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)
 {
     Q_UNUSED(roi);
     emit regionOfInterestChanged();
+    return true;
+}
+
+bool QQuickItemRenderer::onSetOrientation(int value)
+{
+    Q_UNUSED(value);
+    if (!isOpenGL()) {
+        if (value == 90 || value == 270)
+            return false;
+    }
+    emit orientationChanged();
     return true;
 }
 

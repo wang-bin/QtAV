@@ -116,6 +116,15 @@ public:
     int rendererHeight() const;
     //geometry size of current video frame
     QSize frameSize() const;
+
+    /*!
+     * \brief orientation
+     * 0, 90, 180, 270. other values are ignored
+     * outAspectRatio() corresponds with orientation == 0. displayed aspect ratio may change if orientation is not 0
+     */
+    int orientation() const;
+    void setOrientation(int value);
+
     //The video frame rect in renderer you shoud paint to. e.g. in RendererAspectRatio mode, the rect equals to renderer's
     QRect videoRect() const;
     /*
@@ -211,6 +220,7 @@ private: //used by VideoOutput class
     virtual void onSetOutAspectRatio(qreal ratio);
     virtual bool onSetQuality(Quality q);
     virtual void onResizeRenderer(int width, int height);
+    virtual bool onSetOrientation(int value);
     virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual QPointF onMapToFrame(const QPointF& p) const;
     virtual QPointF onMapFromFrame(const QPointF& p) const;

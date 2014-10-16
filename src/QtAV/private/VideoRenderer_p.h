@@ -31,6 +31,7 @@
 
 /*TODO:
  * Region of Interest(ROI)
+ * use matrix to compute out rect, mapped point etc
  */
 class QObject;
 class QWidget;
@@ -50,6 +51,7 @@ public:
       , out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
       , quality(VideoRenderer::QualityBest)
+      , orientation(0)
       , default_event_filter(true)
       , preferred_format(VideoFormat::Format_RGB32)
       , force_preferred(false)
@@ -70,16 +72,18 @@ public:
             out_rect = QRect(0, 0, renderer_width, renderer_height);
             return;
         }
+        // dar: displayed aspect ratio in video renderer orientation
+        const qreal dar = (orientation % 180) ? 1.0/outAspectRatio : outAspectRatio;
         //qDebug("out rect: %f %dx%d ==>", out_aspect_ratio, out_rect.width(), out_rect.height());
-        if (rendererAspectRatio >= outAspectRatio) { //equals to original video aspect ratio here, also equals to out ratio
+        if (rendererAspectRatio >= dar) { //equals to original video aspect ratio here, also equals to out ratio
             //renderer is too wide, use renderer's height, horizonal align center
-            int h = renderer_height;
-            int w = outAspectRatio * qreal(h);
+            const int h = renderer_height;
+            const int w = dar * qreal(h);
             out_rect = QRect((renderer_width - w)/2, 0, w, h);
-        } else if (rendererAspectRatio < outAspectRatio) {
+        } else if (rendererAspectRatio < dar) {
             //renderer is too high, use renderer's width
-            int w = renderer_width;
-            int h = qreal(w)/outAspectRatio;
+            const int w = renderer_width;
+            const int h = qreal(w)/dar;
             out_rect = QRect(0, (renderer_height - h)/2, w, h);
         }
         out_aspect_ratio = outAspectRatio;
@@ -104,6 +108,7 @@ public:
     //out_rect: the displayed video frame out_rect in the renderer
     QRect out_rect; //TODO: out_out_rect
     QRectF roi;
+    int orientation;
 
     bool default_event_filter;
     VideoFrame video_frame;

@@ -64,6 +64,7 @@ Rectangle {
         fillMode: VideoOutput.PreserveAspectFit
         anchors.fill: parent
         source: player
+        orientation: 0
         SubtitleItem {
             id: subtitleItem
             //visible: false
@@ -267,6 +268,9 @@ Rectangle {
                 control.toggleFullScreen()
                 break
             case Qt.Key_R:
+                videoOut.orientation += 90
+                break;
+            case Qt.Key_A:
                 if (videoOut.fillMode === VideoOutput.Stretch) {
                     videoOut.fillMode = VideoOutput.PreserveAspectFit
                 } else if (videoOut.fillMode === VideoOutput.PreserveAspectFit) {
@@ -319,7 +323,7 @@ Rectangle {
              + "\n<h3>Shortcut:</h3>"
              + "<p>M: mute</p><p>F: fullscreen</p><p>Up/Down: volume +/-</p><p>Left/Right: Seek backward/forward
                 </p><p>Space: pause/play</p><p>Q: quite</p>"
-             + "<p>R: fill mode(aspect ratio)</p>"
+             + "<p>R: rotate</p><p>A: aspect ratio</p>"
         }
         Button {
             anchors.top: parent.top

@@ -42,6 +42,7 @@ class Q_AV_EXPORT VideoOutput : public QObject, public VideoRenderer
     // TODO: how to use enums in base class as property or Q_ENUM
     Q_PROPERTY(OutAspectRatioMode outAspectRatioMode READ outAspectRatioMode WRITE setOutAspectRatioMode NOTIFY outAspectRatioModeChanged)
     Q_ENUMS(OutAspectRatioMode)
+    Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
     Q_ENUMS(Quality)
 public:
     VideoOutput(VideoRendererId rendererId, QObject *parent = 0);
@@ -65,7 +66,7 @@ signals:
     void contrastChanged(qreal value);
     void hueChanged(qreal value);
     void saturationChanged(qreal value);
-
+    void orientationChanged(int value);
 protected:
     bool receiveFrame(const VideoFrame& frame);
     bool needUpdateBackground() const;
@@ -74,11 +75,6 @@ protected:
     void drawFrame();
     void resizeFrame(int width, int height);
     void handlePaintEvent();
-    bool onChangingBrightness(qreal b);
-    bool onChangingContrast(qreal c);
-    bool onChangingHue(qreal h);
-    bool onChangingSaturation(qreal s);
-
 
 private: //for proxy
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt);
@@ -86,6 +82,7 @@ private: //for proxy
     virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
     virtual void onSetOutAspectRatio(qreal ratio);
     virtual bool onSetQuality(Quality q);
+    virtual bool onSetOrientation(int value);
     virtual void onResizeRenderer(int width, int height);
     virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual QPointF onMapToFrame(const QPointF& p) const;
