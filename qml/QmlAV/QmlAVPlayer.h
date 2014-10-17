@@ -75,9 +75,9 @@ public:
     };
 
     enum PlaybackState {
+        StoppedState,
         PlayingState,
-        PausedState,
-        StoppedState
+        PausedState
     };
 
     enum Error {

@@ -125,9 +125,9 @@ Module {
         Enum {
             name: "PlaybackState"
             values: {
-                "PlayingState": 0,
-                "PausedState": 1,
-                "StoppedState": 2
+                "StoppedState": 0,
+                "PlayingState": 1,
+                "PausedState": 2
             }
         }
         Enum {
