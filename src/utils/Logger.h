@@ -35,12 +35,13 @@
   QTAV_LOG_LEVEL: set log level, can be "off", "debug", "warning", "critical", "fatal", "all"
  */
 
+#include <QtDebug> //always include
+
 #define HACK_QT_LOG
 #ifdef HACK_QT_LOG
 
-#include <QtDebug>
 #include <QtAV/QtAV_Global.h>
-
+#include <QSharedPointer>
 #ifndef Q_DECL_CONSTEXPR
 #define Q_DECL_CONSTEXPR
 #endif //Q_DECL_CONSTEXPR
@@ -61,7 +62,7 @@ class QtAVDebug {
 public:
     /*!
      * \brief QtAVDebug
-     * QDebug can be copied from QMessageLogger or others
+     * QDebug can be copied from QMessageLogger or others. take the ownership of d
      * \param d nothing will be logged and t is ignored if null
      */
     QtAVDebug(QtMsgType t = QtDebugMsg, QDebug *d = 0);
@@ -117,8 +118,8 @@ public:
     }
 private:
     QtMsgType type;
-    // use ptr. ~QDebug() will print message
-    QDebug *dbg;
+    // use ptr. otherwise ~QDebug() will print message.
+    QSharedPointer<QDebug> dbg;
 };
 class Logger {
     Q_DISABLE_COPY(Logger)

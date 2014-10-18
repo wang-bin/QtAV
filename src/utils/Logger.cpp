@@ -164,7 +164,7 @@ QtAVDebug Logger::debug() const
         return d;
     if (v <= (int)LogDebug || v >= (int)LogAll)
         d.setQDebug(new QDebug(ctx.debug()));
-    return d;
+    return d; //ref > 0
 }
 
 QtAVDebug Logger::warning() const
@@ -197,7 +197,8 @@ QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
     : type(t)
     , dbg(0)
 {
-    setQDebug(d); // call *dbg << gQtAVLogTag
+    if (d)
+        setQDebug(d); // call *dbg << gQtAVLogTag
     static bool sFirstRun = true;
     if (!sFirstRun)
         return;
@@ -246,15 +247,11 @@ QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
 
 QtAVDebug::~QtAVDebug()
 {
-    setQDebug(0);
 }
 
 void QtAVDebug::setQDebug(QDebug *d)
 {
-    if (dbg) {
-        delete dbg;
-    }
-    dbg = d;
+    dbg = QSharedPointer<QDebug>(d);
     if (dbg && !gQtAVLogTag.isEmpty()) {
         *dbg << gQtAVLogTag;
     }
