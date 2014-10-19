@@ -159,6 +159,9 @@ static VideoFormat::PixelFormat format_from_cv(int cv)
 VideoDecoderVDA::VideoDecoderVDA()
     : VideoDecoderFFmpegHW(*new VideoDecoderVDAPrivate())
 {
+    // dynamic properties about static property details. used by UI
+    // format: detail_property
+    setProperty("detail_SSE4", tr("Optimized copy decoded data from USWC memory using SSE4.1"));
 }
 
 VideoDecoderVDA::~VideoDecoderVDA()

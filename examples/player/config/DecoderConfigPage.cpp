@@ -74,7 +74,7 @@ public:
     void buildUiFor(QObject *obj) {
         mpEditor->getProperties(obj);
         //mpEditor->set()
-        QWidget *w = mpEditor->buildUi();
+        QWidget *w = mpEditor->buildUi(obj);
         if (!w)
             return;
         mpEditorWidget = w;

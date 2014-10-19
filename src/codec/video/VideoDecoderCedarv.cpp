@@ -31,7 +31,6 @@ extern "C"
 }
 #include "utils/Logger.h"
 
-#ifdef NO_NEON_OPT //Don't HAVE_NEON
 static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned int coded_width, unsigned int coded_height)
 {
 	unsigned int i,j,l,m,n;
@@ -135,9 +134,9 @@ static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned 
 	}
 }
 
-#else
+#ifndef NO_NEON_OPT //Don't HAVE_NEON
 
-static void map32x32_to_yuv_Y(unsigned char* srcY,unsigned char* tarY,unsigned int coded_width,unsigned int coded_height)
+static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsigned int coded_width,unsigned int coded_height)
 {
 	unsigned int i,j,l,m,n;
 	unsigned int mb_width,mb_height,twomb_line;
@@ -206,7 +205,7 @@ static void map32x32_to_yuv_Y(unsigned char* srcY,unsigned char* tarY,unsigned i
 	}
 }
 
-static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
+static void map32x32_to_yuv_C_neon(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
 {
 	unsigned int i,j,l,m,n,k;
 	unsigned int mb_width,mb_height,fourmb_line;
@@ -294,6 +293,9 @@ class VideoDecoderCedarvPrivate;
 class VideoDecoderCedarv : public VideoDecoder
 {
 	DPTR_DECLARE_PRIVATE(VideoDecoderCedarv)
+#ifndef NO_NEON_OPT //Don't HAVE_NEON
+    Q_PROPERTY(bool neon READ neon WRITE setNeon NOTIFY neonChanged)
+#endif
 public:
 	VideoDecoderCedarv();
     virtual VideoDecoderId id() const;
@@ -303,6 +305,10 @@ public:
     bool prepare();
 	bool decode(const QByteArray &encoded);
 	VideoFrame frame();
+
+    //properties
+    void setNeon(bool value);
+    bool neon() const;
 };
 
 extern VideoDecoderId VideoDecoderId_Cedarv;
@@ -318,6 +324,8 @@ class VideoDecoderCedarvPrivate : public VideoDecoderPrivate
 public:
     VideoDecoderCedarvPrivate()
         : VideoDecoderPrivate()
+        , map_y(map32x32_to_yuv_Y)
+        , map_c(map32x32_to_yuv_C)
     {
 	   cedarv = 0;
 	}
@@ -328,6 +336,10 @@ public:
 
 	CEDARV_DECODER *cedarv;
 	cedarv_picture_t cedarPicture;
+    typedef void (*map_y_t)(unsigned char*, unsigned char*, unsigned int, unsigned int);
+    map_y_t map_y;
+    typedef void (*map_c_t)(unsigned char*,unsigned char*, unsigned char*, unsigned int,unsigned int);
+    map_c_t map_c;
 };
 
 VideoDecoderCedarv::VideoDecoderCedarv()
@@ -338,6 +350,26 @@ VideoDecoderCedarv::VideoDecoderCedarv()
 VideoDecoderId VideoDecoderCedarv::id() const
 {
     return VideoDecoderId_Cedarv;
+}
+
+void VideoDecoderCedarv::setNeon(bool value)
+{
+    if (value == neon())
+        return;
+    if (value) {
+#ifndef NO_NEON_OPT //Don't HAVE_NEON
+        map_y = map32x32_to_yuv_Y_neon;
+        map_c = map32x32_to_yuv_C_neon;
+#endif
+    } else {
+        map_y = map32x32_to_yuv_Y;
+        map_c = map32x32_to_yuv_C;
+    }
+}
+
+bool VideoDecoderCedarv::neon() const
+{
+    return map_y != map32x32_to_yuv_Y;
 }
 
 bool VideoDecoderCedarv::prepare()
@@ -460,8 +492,8 @@ VideoFrame VideoDecoderCedarv::frame()
 	int bitsPerLine_Y = d.cedarPicture.size_y / d.cedarPicture.height;
 	int bitsPerRow_Y = d.cedarPicture.size_y / bitsPerLine_Y;
 
-	map32x32_to_yuv_Y(d.cedarPicture.y, dst + offset_y, bitsPerLine_Y, bitsPerRow_Y);
-	map32x32_to_yuv_C(d.cedarPicture.u, dst + offset_u, dst + offset_v, bitsPerLine_Y / 2, bitsPerRow_Y / 2);
+    map_y(d.cedarPicture.y, dst + offset_y, bitsPerLine_Y, bitsPerRow_Y);
+    map_c(d.cedarPicture.u, dst + offset_u, dst + offset_v, bitsPerLine_Y / 2, bitsPerRow_Y / 2);
 
 	uint8_t *pp_plane[3];
 	pp_plane[0] = dst + offset_y;

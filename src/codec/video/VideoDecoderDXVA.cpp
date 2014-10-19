@@ -380,6 +380,10 @@ public:
 VideoDecoderDXVA::VideoDecoderDXVA()
     : VideoDecoderFFmpegHW(*new VideoDecoderDXVAPrivate())
 {
+    // dynamic properties about static property details. used by UI
+    // format: detail_property
+    setProperty("detail_surfaces", tr("Decoding surfaces.") + " " + tr("0: auto"));
+    setProperty("detail_SSE4", tr("Optimized copy decoded data from USWC memory using SSE4.1"));
 }
 
 VideoDecoderId VideoDecoderDXVA::id() const

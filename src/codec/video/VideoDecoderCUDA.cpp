@@ -290,6 +290,10 @@ public:
 VideoDecoderCUDA::VideoDecoderCUDA():
     VideoDecoder(*new VideoDecoderCUDAPrivate())
 {
+    // dynamic properties about static property details. used by UI
+    // format: detail_property
+    setProperty("detail_surfaces", tr("Decoding surfaces."));
+    setProperty("detail_flags", tr("Decoder flags"));
 }
 
 VideoDecoderCUDA::~VideoDecoderCUDA()

@@ -40,13 +40,14 @@ class VideoDecoderFFmpeg : public VideoDecoder
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
     Q_PROPERTY(bool skip_loop_filter READ skipLoopFilter WRITE setSkipLoopFilter)
-    Q_PROPERTY(bool skip_idct READ skipIDCT WRITE setSkipIDCT)
-    Q_PROPERTY(StrictType strict READ strict WRITE setStrict)
+    //Q_PROPERTY(bool skip_idct READ skipIDCT WRITE setSkipIDCT)
+    // Force a strict standard compliance when encoding (accepted values: -2 to 2)
+    //Q_PROPERTY(StrictType strict READ strict WRITE setStrict)
     Q_PROPERTY(SkipFrameType skip_frame READ skipFrameType WRITE setSkipFrameType)
     Q_PROPERTY(int threads READ threads WRITE setThreads) // 0 is auto
     Q_PROPERTY(ThreadFlags thread_type READ threadFlags WRITE setThreadFlags)
     Q_PROPERTY(MotionVectorVisFlags vismv READ motionVectorVisFlags WRITE setMotionVectorVisFlags)
-    Q_PROPERTY(BugFlags bug READ bugFlags WRITE setBugFlags)
+    //Q_PROPERTY(BugFlags bug READ bugFlags WRITE setBugFlags)
     Q_ENUMS(StrictType)
     Q_ENUMS(SkipFrameType)
     Q_ENUMS(ThreadFlag)
@@ -171,6 +172,13 @@ public:
 VideoDecoderFFmpeg::VideoDecoderFFmpeg():
     VideoDecoder(*new VideoDecoderFFmpegPrivate())
 {
+    // dynamic properties about static property details. used by UI
+    // format: detail_property
+    setProperty("detail_skip_loop_filter", tr("Skipping the loop filter (aka deblocking) usually has determinal effect on quality. However it provides a big speedup for hi definition streams"));
+    // like skip_frame
+    setProperty("detail_skip_idct", tr("Force skipping of idct to speed up decoding for frame types (-1=None, "
+                                       "0=Default, 1=B-frames, 2=P-frames, 3=B+P frames, 4=all frames)"));
+    setProperty("detail_skip_frame", tr("Force skipping frames for speed up decoding."));
 }
 
 VideoDecoderId VideoDecoderFFmpeg::id() const

@@ -43,7 +43,7 @@ public:
      * \return command line options
      */
     QString buildOptions();
-    QWidget* buildUi();
+    QWidget* buildUi(QObject* obj = 0); //obj: read dynamic properties("detail_property")
     QVariantHash exportAsHash();
     QString exportAsConfig(); //json like
 
@@ -54,12 +54,12 @@ private:
      * 2. add a widget and set value
      * 3. connect widget value change signal to a slot
      */
-    QWidget* createWidgetForFlags(const QString& name, const QVariant& value, QMetaEnum me, QWidget* parent = 0);
-    QWidget* createWidgetForEnum(const QString& name, const QVariant& value, QMetaEnum me, QWidget* parent = 0);
-    QWidget* createWidgetForInt(const QString& name, int value, QWidget* parent = 0);
-    QWidget* createWidgetForReal(const QString& name, qreal value, QWidget* parent = 0);
-    QWidget* createWidgetForText(const QString& name, const QString& value, QWidget* parent = 0);
-    QWidget* createWidgetForBool(const QString& name, bool value, QWidget* parent = 0);
+    QWidget* createWidgetForFlags(const QString& name, const QVariant& value, QMetaEnum me, const QString& detail = QString(), QWidget* parent = 0);
+    QWidget* createWidgetForEnum(const QString& name, const QVariant& value, QMetaEnum me, const QString& detail = QString(), QWidget* parent = 0);
+    QWidget* createWidgetForInt(const QString& name, int value, const QString& detail = QString(), QWidget* parent = 0);
+    QWidget* createWidgetForReal(const QString& name, qreal value, const QString& detail = QString(), QWidget* parent = 0);
+    QWidget* createWidgetForText(const QString& name, const QString& value, const QString& detail = QString(), QWidget* parent = 0);
+    QWidget* createWidgetForBool(const QString& name, bool value, const QString& detail = QString(), QWidget* parent = 0);
 
     // called if value changed by ui (in onXXXChange)
     void updatePropertyValue(const QString& name, const QVariant& value);
