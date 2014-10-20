@@ -260,13 +260,14 @@ int VideoRenderer::rendererHeight() const
 void VideoRenderer::setOrientation(int value)
 {
     // currently only supports a multiple of 90
+    value = (value + 360) % 360;
     if (value % 90)
         return;
     DPTR_D(VideoRenderer);
     if (d.orientation == value)
         return;
     int old = orientation();
-    d.orientation = value % 360;
+    d.orientation = value;
     if (!onSetOrientation(value)) {
         d.orientation = old;
     } else {
@@ -611,7 +612,8 @@ void VideoRenderer::updateUi()
     // TODO: qwindow() and widget() can both use event?
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     if (qwindow()) {
-        qApp->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
+        // DO NOT use qApp macro inside QtAV because QtAV may not depend QtWidgets module
+        QCoreApplication::instance()->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
     }
 #endif
 #if QTAV_HAVE(WIDGETS)

@@ -213,6 +213,7 @@ bool VideoOutput::onSetQuality(Quality q)
 
 bool VideoOutput::onSetOrientation(int value)
 {
+    value = (value + 360) % 360;
     DPTR_D(VideoOutput);
     d.impl->setOrientation(value);
     if (d.impl->orientation() != value) {
