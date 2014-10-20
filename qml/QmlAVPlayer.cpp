@@ -59,6 +59,8 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , m_complete(false)
   , mAutoPlay(false)
   , mAutoLoad(false)
+  , mHasAudio(false)
+  , mHasVideo(false)
   , mLoopCount(1)
   , mPlaybackState(StoppedState)
   , mError(NoError)
@@ -107,12 +109,16 @@ void QmlAVPlayer::componentComplete()
 
 bool QmlAVPlayer::hasAudio() const
 {
-    return mpPlayer->audioStreamCount() > 0;
+    if (!m_complete)
+        return false;
+    return mHasAudio;
 }
 
 bool QmlAVPlayer::hasVideo() const
 {
-    return mpPlayer->videoStreamCount() > 0;
+    if (!m_complete)
+        return false;
+    return mHasVideo;
 }
 
 QUrl QmlAVPlayer::source() const
@@ -131,6 +137,16 @@ void QmlAVPlayer::setSource(const QUrl &url)
         mpPlayer->setFile(mSource.toString());
     }
     emit sourceChanged(); //TODO: emit only when player loaded a new source
+
+    if (mHasAudio) {
+        mHasAudio = false;
+        emit hasAudioChanged();
+    }
+    if (mHasVideo) {
+        mHasVideo = false;
+        emit hasVideoChanged();
+    }
+
     // TODO: in componentComplete()?
     if (m_complete && (mAutoLoad || mAutoPlay)) {
         mError = NoError;
@@ -349,6 +365,16 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
             setChannelLayout(channelLayout());
             // TODO: in load()?
             m_metaData->setValuesFromStatistics(mpPlayer->statistics());
+            if (!mHasAudio) {
+                mHasAudio = mpPlayer->audioStreamCount() > 0;
+                if (mHasAudio)
+                    emit hasAudioChanged();
+            }
+            if (!mHasVideo) {
+                mHasVideo = mpPlayer->videoStreamCount() > 0;
+                if (mHasVideo)
+                    emit hasVideoChanged();
+            }
         }
         break;
     case PausedState:
@@ -459,7 +485,6 @@ void QmlAVPlayer::_q_paused(bool p)
 
 void QmlAVPlayer::_q_started()
 {
-    qDebug("*********%s @%d", __FUNCTION__, __LINE__);
     mPlaybackState = PlayingState;
     emit playing();
     emit playbackStateChanged();
@@ -467,7 +492,6 @@ void QmlAVPlayer::_q_started()
 
 void QmlAVPlayer::_q_stopped()
 {
-    qDebug("*********%s @%d", __FUNCTION__, __LINE__);
     mPlaybackState = StoppedState;
     emit stopped();
     emit playbackStateChanged();

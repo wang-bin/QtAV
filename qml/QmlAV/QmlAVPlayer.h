@@ -200,6 +200,7 @@ private:
     bool m_complete;
     bool mAutoPlay;
     bool mAutoLoad;
+    bool mHasAudio, mHasVideo;
     int mLoopCount;
     PlaybackState mPlaybackState;
     Error mError;
