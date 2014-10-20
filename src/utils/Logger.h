@@ -37,9 +37,7 @@
 
 #include <QtDebug> //always include
 
-#define HACK_QT_LOG
-#ifdef HACK_QT_LOG
-
+#ifndef QTAV_NO_LOG_LEVEL
 #include <QtAV/QtAV_Global.h>
 #include <QSharedPointer>
 #ifndef Q_DECL_CONSTEXPR
@@ -224,5 +222,5 @@ inline QtAVDebug qWarning() { return QtAVDebug(QtWarningMsg); }
 } // namespace Internal
 } // namespace QtAV
 
-#endif //HACK_QT_LOG
+#endif //QTAV_NO_LOG_LEVEL
 #endif // QTAV_LOGGER_H

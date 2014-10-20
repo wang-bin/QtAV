@@ -179,7 +179,7 @@ VideoDecoderVAAPI::VideoDecoderVAAPI()
     setProperty("detail_surfaces", tr("Decoding surfaces.") + " " + tr("0: auto"));
     setProperty("detail_SSE4", tr("Optimized copy decoded data from USWC memory using SSE4.1"));
     setProperty("detail_derive", tr("Maybe faster if display is not GLX"));
-    setProperty("detail_display", tr("GLX is fastest. No data copyback from gpu."))
+    setProperty("detail_display", tr("GLX is fastest. No data copyback from gpu."));
 }
 
 VideoDecoderId VideoDecoderVAAPI::id() const

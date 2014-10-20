@@ -27,7 +27,7 @@
 #include "QtAV/QtAV_Global.h"
 #include "Logger.h"
 
-#ifdef HACK_QT_LOG
+#ifndef QTAV_NO_LOG_LEVEL
 
 void ffmpeg_version_print();
 namespace QtAV {
@@ -275,4 +275,4 @@ QtAVDebug debug(const char *msg, ...)
 } //namespace Internal
 } // namespace QtAV
 
-#endif //HACK_QT_LOG
+#endif //QTAV_NO_LOG_LEVEL
