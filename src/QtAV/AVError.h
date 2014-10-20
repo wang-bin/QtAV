@@ -57,7 +57,7 @@ public:
 
         FormatError, // all above and before CodecError are FormatError
 
-        // decrypt error
+        // decrypt error. Not implemented
         AccessDenied, // all above and before NetworkError are AccessDenied
 
         UnknowError

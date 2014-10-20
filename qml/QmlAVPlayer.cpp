@@ -150,7 +150,8 @@ void QmlAVPlayer::setSource(const QUrl &url)
     // TODO: in componentComplete()?
     if (m_complete && (mAutoLoad || mAutoPlay)) {
         mError = NoError;
-        mErrorString = QString();
+        mErrorString = tr("No error");
+        emit error(mError, mErrorString);
         emit errorChanged();
         stop();
         //mpPlayer->load(); //QtAV internal bug: load() or play() results in reload
@@ -472,7 +473,6 @@ void QmlAVPlayer::_q_error(const AVError &e)
 
 void QmlAVPlayer::_q_paused(bool p)
 {
-    qDebug("*********%s @%d", __FUNCTION__, __LINE__);
     if (p) {
         mPlaybackState = PausedState;
         emit paused();

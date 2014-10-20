@@ -554,10 +554,16 @@ bool AVDemuxer::load()
     }
 
     if (ret < 0) {
+        // format_context is 0
         setMediaStatus(InvalidMedia);
         AVError::ErrorCode ec(AVError::OpenError);
-        if (m_network)
-            ec = AVError::NetworkError;
+        if (ret == AVERROR_INVALIDDATA) {
+            ec = AVError::FormatError;
+        } else {
+            // Input/output error etc.
+            if (m_network)
+                ec = AVError::NetworkError;
+        }
         AVError err(ec, tr("failed to open media"), ret);
         emit error(err);
         qWarning("Can't open media: %s", qPrintable(err.string()));

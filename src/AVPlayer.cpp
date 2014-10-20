@@ -23,7 +23,7 @@
 
 #include <limits>
 
-#include <QCoreApplication>
+#include <QtCore/QCoreApplication>
 #include <QtCore/QEvent>
 #include <QtCore/QDir>
 #include <QtCore/QIODevice>
@@ -476,14 +476,15 @@ void AVPlayer::setFile(const QString &path)
 {
     reset_state = this->path != path;
     this->path = path;
-    if (reset_state)
+    if (reset_state) {
         emit sourceChanged();
+        //emit error(AVError(AVError::NoError));
+    }
     reset_state = !this->path.isEmpty() && reset_state;
     demuxer.setAutoResetStream(reset_state);
     // TODO: use absoluteFilePath?
     m_pIODevice = 0;
     loaded = false; //
-    //qApp->activeWindow()->setWindowTitle(path); //crash on linux
 }
 
 QString AVPlayer::file() const
@@ -1288,6 +1289,9 @@ bool AVPlayer::setupAudioThread()
     audio_dec->setCodecContext(aCodecCtx);
     audio_dec->setOptions(audio_codec_opt);
     if (!audio_dec->open()) {
+        AVError e(AVError::AudioCodecNotFound);
+        qWarning() << e.string();
+        emit error(e);
         return false;
     }
     //TODO: setAudioOutput() like vo
@@ -1400,7 +1404,10 @@ bool AVPlayer::setupVideoThread()
         delete vd;
     }
     if (!video_dec) {
-        qWarning("No video decoder can be used.");
+        // DO NOT emit error signals in VideoDecoder::open(). 1 signal is enough
+        AVError e(AVError::VideoCodecNotFound);
+        qWarning() << e.string();
+        emit error(e);
         return false;
     }
     connect(video_dec, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
