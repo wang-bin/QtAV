@@ -50,9 +50,12 @@ OpenGLRendererBasePrivate::~OpenGLRendererBasePrivate() {
     }
 }
 
-void OpenGLRendererBasePrivate::setupAspectRatio() {
-    matrix(0, 0) = (GLfloat)out_rect.width()/(GLfloat)renderer_width;
-    matrix(1, 1) = (GLfloat)out_rect.height()/(GLfloat)renderer_height;
+void OpenGLRendererBasePrivate::setupAspectRatio()
+{
+    matrix.setToIdentity();
+    matrix.scale((GLfloat)out_rect.width()/(GLfloat)renderer_width, (GLfloat)out_rect.height()/(GLfloat)renderer_height, 1);
+    if (orientation)
+        matrix.rotate(orientation, 0, 0, 1); // Z axis
 }
 
 OpenGLRendererBase::OpenGLRendererBase(OpenGLRendererBasePrivate &d)
@@ -178,6 +181,13 @@ void OpenGLRendererBase::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     Q_UNUSED(mode);
     DPTR_D(OpenGLRendererBase);
     d.setupAspectRatio();
+}
+
+bool OpenGLRendererBase::onSetOrientation(int value)
+{
+    Q_UNUSED(value)
+    d_func().setupAspectRatio();
+    return true;
 }
 
 bool OpenGLRendererBase::onSetBrightness(qreal b)

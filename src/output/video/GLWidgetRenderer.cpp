@@ -200,8 +200,10 @@ public:
     }
 
     void setupAspectRatio() {
-        mpv_matrix(0, 0) = (float)out_rect.width()/(float)renderer_width;
-        mpv_matrix(1, 1) = (float)out_rect.height()/(float)renderer_height;
+        mpv_matrix.setToIdentity();
+        mpv_matrix.scale((GLfloat)out_rect.width()/(GLfloat)renderer_width, (GLfloat)out_rect.height()/(GLfloat)renderer_height, 1);
+        if (orientation)
+            mpv_matrix.rotate(orientation, 0, 0, 1); // Z axis
     }
 
     class VideoMaterialType {};
@@ -1058,6 +1060,13 @@ void GLWidgetRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 {
     Q_UNUSED(mode);
     d_func().setupAspectRatio();
+}
+
+bool GLWidgetRenderer::onSetOrientation(int value)
+{
+    Q_UNUSED(value);
+    d_func().setupAspectRatio();
+    return true;
 }
 
 bool GLWidgetRenderer::onSetBrightness(qreal b)

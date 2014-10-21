@@ -60,6 +60,7 @@ protected:
 private:
     virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
     virtual void onSetOutAspectRatio(qreal ratio);
+    virtual bool onSetOrientation(int value);
     /*!
      * \brief onSetBrightness
      *  only works for GLSL. otherwise return false, means that do nothing, brightness() does not change.

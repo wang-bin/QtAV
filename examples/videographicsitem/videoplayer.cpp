@@ -30,6 +30,7 @@
 #include <QLayout>
 #include <QPushButton>
 #include <QFileDialog>
+#include <QDial>
 
 using namespace QtAV;
 
@@ -39,7 +40,7 @@ VideoPlayer::VideoPlayer(QWidget *parent)
 {
     videoItem = new GraphicsItemRenderer;
     videoItem->resizeRenderer(640, 360);
-    videoItem->setOutAspectRatioMode(VideoRenderer::RendererAspectRatio);
+    videoItem->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
 
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->addItem(videoItem);
@@ -54,6 +55,11 @@ VideoPlayer::VideoPlayer(QWidget *parent)
     scaleSlider->setRange(0, 200);
     scaleSlider->setValue(100);
 
+    QDial *orientation = new QDial();
+    orientation->setRange(0, 3);
+    orientation->setValue(0);
+
+    connect(orientation, SIGNAL(valueChanged(int)), SLOT(setOrientation(int)));
     connect(rotateSlider, SIGNAL(valueChanged(int)), SLOT(rotateVideo(int)));
     connect(scaleSlider, SIGNAL(valueChanged(int)), SLOT(scaleVideo(int)));
     QPushButton *openBtn = new QPushButton;
@@ -67,6 +73,7 @@ VideoPlayer::VideoPlayer(QWidget *parent)
     QHBoxLayout *hb = new QHBoxLayout;
     hb->addWidget(glBox);
     hb->addWidget(openBtn);
+    hb->addWidget(orientation);
     QBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(view);
     layout->addWidget(rotateSlider);
@@ -99,6 +106,11 @@ void VideoPlayer::setOpenGL(bool o)
     view->setViewport(glw);
     view->setCacheMode(QGraphicsView::CacheNone);
 #endif
+}
+
+void VideoPlayer::setOrientation(int value)
+{
+    videoItem->setOrientation(value*90);
 }
 
 void VideoPlayer::rotateVideo(int angle)

@@ -272,6 +272,7 @@ void VideoRenderer::setOrientation(int value)
         d.orientation = old;
     } else {
         d.computeOutParameters(d.out_aspect_ratio);
+        onSetOutAspectRatio(outAspectRatio());
         resizeFrame(d.out_rect.width(), d.out_rect.height());
     }
 }

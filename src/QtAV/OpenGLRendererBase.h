@@ -60,6 +60,7 @@ protected:
 private:
     virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
     virtual void onSetOutAspectRatio(qreal ratio);
+    virtual bool onSetOrientation(int value);
     virtual bool onSetBrightness(qreal b);
     virtual bool onSetContrast(qreal c);
     virtual bool onSetHue(qreal h);

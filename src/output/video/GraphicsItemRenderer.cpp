@@ -43,8 +43,10 @@ public:
     {}
     virtual ~GraphicsItemRendererPrivate(){}
     void setupAspectRatio() {
-        matrix(0, 0) = (GLfloat)out_rect.width()/(GLfloat)renderer_width;
-        matrix(1, 1) = (GLfloat)out_rect.height()/(GLfloat)renderer_height;
+        matrix.setToIdentity();
+        matrix.scale((GLfloat)out_rect.width()/(GLfloat)renderer_width, (GLfloat)out_rect.height()/(GLfloat)renderer_height, 1);
+        if (orientation)
+            matrix.rotate(orientation, 0, 0, 1); // Z axis
     }
     // return true if opengl is enabled and context is ready. may called by non-rendering thread
     bool checkGL() {
@@ -195,6 +197,13 @@ void GraphicsItemRenderer::onSetOutAspectRatio(qreal ratio)
     Q_UNUSED(ratio);
     DPTR_D(GraphicsItemRenderer);
     d.setupAspectRatio();
+}
+
+bool GraphicsItemRenderer::onSetOrientation(int value)
+{
+    Q_UNUSED(value);
+    d_func().setupAspectRatio();
+    return true;
 }
 
 void GraphicsItemRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)

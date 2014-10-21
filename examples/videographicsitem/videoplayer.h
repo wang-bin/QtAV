@@ -41,6 +41,7 @@ public slots:
     void setOpenGL(bool o = true);
 
 private slots:
+    void setOrientation(int value);
     void rotateVideo(int angle);
     void scaleVideo(int value);
     void open();
