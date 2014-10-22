@@ -187,7 +187,9 @@ Rectangle {
         onShowInfo: {
             help.text = "<p>" + Utils.htmlEscaped(player.source) + "</p>"
             if (typeof player.metaData.duration != "undefined")
-                help.text += "<p>" + qsTr("Duration: ") + player.metaData.duration + "</p>"
+                help.text += "<p>" + qsTr("Duration: ") + player.metaData.duration + " ms</p>"
+            if (typeof player.metaData.size != "undefined")
+                help.text += "<p>" + qsTr("Size: ") + Math.round(player.metaData.size/1024/1024*100)/100 + " M</p>"
             if (typeof player.metaData.title != "undefined")
                 help.text += "<p>" + qsTr("Title") + ": " +player.metaData.title + "</p>"
             if (typeof player.metaData.albumTitle != "undefined")
@@ -213,7 +215,7 @@ Rectangle {
                 help.text += "<h4>" + qsTr("Video") + "</h4>"
                         + "<p>" + qsTr("Resolution") + ": " + player.metaData.resolution.width + "x" +  + player.metaData.resolution.height + "</p>"
                         + "<p>" + qsTr("Codec") + ": " + player.metaData.videoCodec + "</p>"
-                        + "<p>" + qsTr("Frame rate") + ": " + player.metaData.videoFrameRate + "</p>"
+                        + "<p>" + qsTr("Frame rate") + ": " + Math.round(100*player.metaData.videoFrameRate)/100 + "</p>"
                         + "<p>" + qsTr("Bit rate") + ": " + player.metaData.videoBitRate + "</p>"
             }
             if (player.hasAudio) {

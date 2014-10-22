@@ -21,6 +21,7 @@
 ******************************************************************************/
 
 #include "QmlAV/MediaMetaData.h"
+#include <QtCore/QFile>
 #include <QtCore/QMetaEnum>
 #include <QtAV/Statistics.h>
 
@@ -93,6 +94,10 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
             continue;
         }
     }
+    // qtmm read Size from metadata on win
+    QFile f(st.url);
+    if (f.exists())
+        setValue(Size, f.size());
 }
 
 MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const

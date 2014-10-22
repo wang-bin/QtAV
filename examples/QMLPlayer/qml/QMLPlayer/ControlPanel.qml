@@ -350,7 +350,7 @@ Rectangle {
                 Text {
                     color: "white"
                     id: voltext
-                    text: volume
+                    text: Math.round(10*volume)/10
                 }
             }
         }
