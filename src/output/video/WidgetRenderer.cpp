@@ -99,24 +99,6 @@ void WidgetRenderer::drawBackground()
     d.painter->fillRect(rect(), QColor(0, 0, 0));
 }
 
-void WidgetRenderer::drawFrame()
-{
-    DPTR_D(WidgetRenderer);
-    if (d.image.isNull()) {
-        d.image = QImage(rendererSize(), QImage::Format_RGB32);
-        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-    }
-    QRect roi = realROI();
-    //assume that the image data is already scaled to out_size(NOT renderer size!)
-    if (roi.size() == d.out_rect.size()) {
-        d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
-    } else {
-        d.painter->drawImage(d.out_rect, d.image, roi);
-        //what's the difference?
-        //d.painter->drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
-    }
-}
-
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
 {
     DPTR_D(WidgetRenderer);
@@ -132,6 +114,13 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
     handlePaintEvent();
     if (d.painter->isActive())
         d.painter->end();
+}
+
+bool WidgetRenderer::onSetOrientation(int value)
+{
+    Q_UNUSED(value);
+    update();
+    return true;
 }
 
 } //namespace QtAV

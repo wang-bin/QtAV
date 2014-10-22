@@ -176,19 +176,7 @@ void GraphicsItemRenderer::drawFrame()
         d.glv.render(boundingRect(), realROI(), d.matrix*sceneTransform());
         return;
     }
-    //fill background color only when the displayed frame rect not equas to renderer's
-    if (d.image.isNull()) {
-        //TODO: when setInSize()?
-        d.image = QImage(rendererSize(), QImage::Format_RGB32);
-        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-    }
-    const QRect roi = realROI();
-    //assume that the image data is already scaled to out_size(NOT renderer size!)
-    if (roi.size() == d.out_rect.size()) {
-        d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
-    } else {
-        d.painter->drawImage(d.out_rect, d.image, roi);
-    }
+    QPainterRenderer::drawFrame();
 }
 
 
@@ -203,6 +191,7 @@ bool GraphicsItemRenderer::onSetOrientation(int value)
 {
     Q_UNUSED(value);
     d_func().setupAspectRatio();
+    update();
     return true;
 }
 

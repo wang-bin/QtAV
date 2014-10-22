@@ -37,6 +37,9 @@ public:
     //virtual QImage currentFrameImage() const;
 protected:
     bool prepareFrame(const VideoFrame& frame);
+    //draw the current frame using the current paint engine. called by paintEvent()
+    virtual void drawFrame();
+
     QPainterRenderer(QPainterRendererPrivate& d);
 };
 

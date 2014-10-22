@@ -66,4 +66,40 @@ bool QPainterRenderer::prepareFrame(const VideoFrame &frame)
     return true;
 }
 
+void QPainterRenderer::drawFrame()
+{
+    DPTR_D(QPainterRenderer);
+    if (!d.painter)
+        return;
+    if (d.image.isNull()) {
+        d.image = QImage(rendererSize(), QImage::Format_RGB32);
+        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
+    }
+    QRect roi = realROI();
+    if (orientation() == 0) {
+        //assume that the image data is already scaled to out_size(NOT renderer size!)
+        if (roi.size() == d.out_rect.size()) {
+            d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
+        } else {
+            d.painter->drawImage(d.out_rect, d.image, roi);
+            //what's the difference?
+            //d.painter->drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
+        }
+        return;
+    }
+    // render to whole renderer rect in painter's transformed coordinate
+    // scale ratio is different from gl based renderers. gl always fill the whole rect
+    d.painter->save();
+    d.painter->translate(rendererWidth()/2, rendererHeight()/2);
+    // TODO: why rotate then scale gives wrong result?
+    if (orientation() % 180)
+        d.painter->scale((qreal)d.out_rect.width()/(qreal)rendererHeight(), (qreal)d.out_rect.height()/(qreal)rendererWidth());
+    else
+        d.painter->scale((qreal)d.out_rect.width()/(qreal)rendererWidth(), (qreal)d.out_rect.height()/(qreal)rendererHeight());
+    d.painter->rotate(orientation());
+    d.painter->translate(-rendererWidth()/2, -rendererHeight()/2);
+    d.painter->drawImage(QRect(0, 0, rendererWidth(), rendererHeight()), d.image, roi);
+    d.painter->restore();
+}
+
 } //namespace QtAV
