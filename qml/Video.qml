@@ -1,6 +1,6 @@
 
 import QtQuick 2.0
-import QtAV 1.3
+import QtAV 1.4
 
 /*!
     \qmltype Video
@@ -309,6 +309,30 @@ Item {
         id: videoOut
         anchors.fill: video
         source: player
+
+        SubtitleItem {
+            id: ass_sub
+            rotation: -videoOut.orientation
+            visible: subtitle.canRender && subtitle.enableASS
+            fillMode: parent.fillMode
+            source: subtitle
+            anchors.fill: parent
+        }
+        Text {
+            id: text_sub
+            rotation: -videoOut.orientation
+            visible: !ass_sub.visible
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignBottom
+            font {
+                pixelSize: 20
+                bold: true
+            }
+            style: Text.Outline
+            styleColor: "blue"
+            color: "white"
+            anchors.fill: parent
+        }
     }
 
     MediaPlayer {
@@ -360,6 +384,15 @@ Item {
         player.seek(offset);
     }
 
+    Subtitle {
+        id: subtitle
+        player: player
+        property bool enableASS: enabled
+        onContentChanged: {
+            if (!canRender || !enableASS)
+                text_sub.text = text
+        }
+    }
 }
 
 // ***************************************

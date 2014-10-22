@@ -53,7 +53,7 @@ class QMLAV_EXPORT QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
     //Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
     Q_PROPERTY(QStringList dirs READ dirs WRITE setDirs NOTIFY dirsChanged)
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
-    Q_PROPERTY(bool canRender READ canRender)
+    Q_PROPERTY(bool canRender READ canRender NOTIFY canRenderChanged)
     //PlayerSubtitle api
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(QString file READ file WRITE setFile)
@@ -75,6 +75,7 @@ public:
     void setPlayer(QObject* player);
     QObject* player();
 
+    // TODO: enableRenderImage + enabled
     void setEnabled(bool value = true); //AVComponent.enabled
     bool isEnabled() const;
     /*!
@@ -96,6 +97,7 @@ public Q_SLOTS:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
 Q_SIGNALS:
+    void canRenderChanged();
     void loaded(const QString& path);
     void enableChanged(bool);
     void autoLoadChanged(bool value);

@@ -45,7 +45,7 @@ class Q_AV_EXPORT SubtitleFilter : public VideoFilter, public SubtitleAPIProxy
     //Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
     Q_PROPERTY(QStringList dirs READ dirs WRITE setDirs NOTIFY dirsChanged)
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
-    Q_PROPERTY(bool canRender READ canRender)
+    Q_PROPERTY(bool canRender READ canRender NOTIFY canRenderChanged)
 
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(QString file READ file WRITE setFile)
@@ -89,6 +89,7 @@ signals:
     void colorChanged();
     void autoLoadChanged(bool value);
 signals:
+    void canRenderChanged();
     void loaded(const QString& path);
 
     void codecChanged();

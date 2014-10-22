@@ -66,7 +66,7 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
     Q_PROPERTY(QString text READ getText)
     Q_PROPERTY(bool loaded READ isLoaded)
-    Q_PROPERTY(bool canRender READ canRender)
+    Q_PROPERTY(bool canRender READ canRender NOTIFY canRenderChanged)
 public:
     explicit Subtitle(QObject *parent = 0);
     virtual ~Subtitle();
@@ -164,6 +164,7 @@ public slots:
 signals:
     // TODO: also add to AVPlayer?
     void loaded(const QString& path);
+    void canRenderChanged();
     void codecChanged();
     void enginesChanged();
     void fuzzyMatchChanged();
@@ -177,6 +178,7 @@ signals:
     void dirsChanged();
     void suffixesChanged();
 private:
+    void checkCapability();
     class Private;
     Private *priv;
 };
@@ -208,7 +210,7 @@ public:
     QStringList supportedSuffixes() const;
     void setSuffixes(const QStringList& value);
     QStringList suffixes() const;
-    bool canRender() const;
+    bool canRender() const; // TODO: rename to capability()
     // API from PlayerSubtitle
     /*
     void setFile(const QString& file);

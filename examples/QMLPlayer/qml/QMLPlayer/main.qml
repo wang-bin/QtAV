@@ -68,12 +68,14 @@ Rectangle {
         SubtitleItem {
             id: subtitleItem
             //visible: false
-            fillMode: parent.fillMode
+            fillMode: videoOut.fillMode
+            rotation: -videoOut.orientation
             source: subtitle
             anchors.fill: parent
         }
         Text {
             id: subtitleLabel
+            rotation: -videoOut.orientation
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignBottom
             font {
@@ -108,7 +110,8 @@ Rectangle {
             control.setPauseState()
         }
         onError: {
-            msg.text = errorString
+            if (error != MediaPlayer.NoError)
+                msg.text = errorString
         }
     }
 
@@ -269,6 +272,9 @@ Rectangle {
                 break
             case Qt.Key_R:
                 videoOut.orientation += 90
+                break;
+            case Qt.Key_T:
+                videoOut.orientation -= 90
                 break;
             case Qt.Key_A:
                 if (videoOut.fillMode === VideoOutput.Stretch) {

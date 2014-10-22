@@ -48,6 +48,7 @@ public:
         , fuzzy_match(true)
         , update_text(true)
         , update_image(true)
+        , last_can_render(false)
         , processor(0)
         , codec("AutoDetect")
         , t(0)
@@ -90,6 +91,7 @@ public:
     bool fuzzy_match;
     bool update_text;
     bool update_image; //TODO: detect image change from engine
+    bool last_can_render;
     SubtitleProcessor *processor;
     QList<SubtitleProcessor*> processors;
     QByteArray codec;
@@ -327,6 +329,7 @@ void Subtitle::load()
         priv->loaded = priv->processRawData(u8);
         if (priv->loaded)
             emit loaded("");
+        checkCapability();
         return;
     }
     // read from a url
@@ -336,12 +339,17 @@ void Subtitle::load()
         if (u8.isEmpty())
             return;
         priv->loaded = priv->processRawData(u8);
+        if (priv->loaded)
+            emit loaded(priv->url.toString());
+        checkCapability();
         return;
     }
     // read from a file
     QStringList paths = priv->find();
-    if (paths.isEmpty())
+    if (paths.isEmpty()) {
+        checkCapability();
         return;
+    }
     foreach (const QString& path, paths) {
         if (path.isEmpty())
             continue;
@@ -352,8 +360,17 @@ void Subtitle::load()
             continue;
         priv->loaded = true;
         emit loaded(path);
+        checkCapability();
         return;
     }
+}
+
+void Subtitle::checkCapability()
+{
+    if (priv->last_can_render == canRender())
+        return;
+    priv->last_can_render = canRender();
+    emit canRenderChanged();
 }
 
 void Subtitle::loadAsync()
@@ -691,6 +708,7 @@ void SubtitleAPIProxy::setSubtitle(Subtitle *sub)
 {
     m_s = sub;
 
+    QObject::connect(m_s, SIGNAL(canRenderChanged()), m_obj, SIGNAL(canRenderChanged()));
     QObject::connect(m_s, SIGNAL(contentChanged()), m_obj, SIGNAL(contentChanged()));
     QObject::connect(m_s, SIGNAL(loaded(QString)), m_obj, SIGNAL(loaded(QString)));
 
