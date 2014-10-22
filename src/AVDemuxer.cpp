@@ -262,17 +262,21 @@ bool AVDemuxer::readFrame()
     // what about marking packet as invalid and do not use isCorrupt?
     pkt->isCorrupt = !!(packet.flags & AV_PKT_FLAG_CORRUPT);
 #if NO_PADDING_DATA
-    pkt->data = QByteArray((const char*)packet.data, packet.size);
+    pkt->data.clear();
+    if (packet.data)
+        pkt->data = QByteArray((const char*)packet.data, packet.size);
 #else
     /*!
       larger than the actual read bytes because some optimized bitstream readers read 32 or 64 bits at once and could read over the end.
       The end of the input buffer avpkt->data should be set to 0 to ensure that no overreading happens for damaged MPEG streams
      */
-    QByteArray encoded;;
-    encoded.reserve(packet.size + FF_INPUT_BUFFER_PADDING_SIZE);
-    encoded.resize(packet.size);
-    // also copy  padding data(usually 0)
-    memcpy(encoded.data(), packet.data, encoded.capacity());
+    QByteArray encoded;
+    if (packet.data) {
+        encoded.reserve(packet.size + FF_INPUT_BUFFER_PADDING_SIZE);
+        encoded.resize(packet.size);
+        // also copy  padding data(usually 0)
+        memcpy(encoded.data(), packet.data, encoded.capacity()); // encoded.capacity() is always > 0 even if packet.data, so must check packet.data null
+    }
     pkt->data = encoded;
 #endif //NO_PADDING_DATA
     pkt->duration = packet.duration;
