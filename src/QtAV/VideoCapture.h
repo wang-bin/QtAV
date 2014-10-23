@@ -99,7 +99,7 @@ public:
      * You may also want to disable save as file by calling setAutoSave(false).
      * in the slot
      */
-    QImage getImage(QImage::Format format = QImage::Format_RGB32);
+    QImage getImage(QImage::Format format = QImage::Format_ARGB32);
     /*!
      * a cloned frame
      */

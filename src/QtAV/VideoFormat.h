@@ -40,17 +40,27 @@ class VideoFormatPrivate;
 class Q_AV_EXPORT VideoFormat
 {
 public:
+    /*!
+     * \brief The PixelFormat enum
+     * 32 bit rgba format enum name indicates it's channel layout. For example,
+     * Format_ARGB32 layout is AARRGGBB, it's integer value is 0xAARRGGBB on big endian platforms
+     * and 0xBBGGRRAA on little endian platforms
+     * Format_RGB32 and QImage::Format_ARGB32 are the same.
+     * TODO: 0RGB
+     */
     enum PixelFormat {
         Format_Invalid = -1,
-        Format_ARGB32,
-        Format_RGB32,
+        Format_ARGB32, // AARRGGBB
+        Format_BGRA32, //BBGGRRAA
+        Format_ABGR32, // QImage.RGBA8888 le
+        Format_RGBA32, // QImage. no
+        Format_RGB32, // 0xAARRGGBB native endian. same as QImage::Format_ARGB32. be: ARGB32, le: BGRA32
+        Format_BGR32, // 0xAABBGGRR native endian
         Format_RGB24,
-        Format_RGB565,
-        Format_RGB555, //?
-        Format_BGRA32,
-        Format_BGR32,
         Format_BGR24,
+        Format_RGB565,
         Format_BGR565,
+        Format_RGB555,
         Format_BGR555,
 
         //http://www.fourcc.org/yuv.php
@@ -72,10 +82,10 @@ public:
         Format_Y8, //GREY. single 8 bit Y plane
         Format_Y16, //single 16 bit Y plane. LE
 
-        Format_Jpeg,
+        Format_Jpeg, //yuvj
 
-        Format_CameraRaw,
-        Format_AdobeDng,
+        //Format_CameraRaw,
+        //Format_AdobeDng,
 
         Format_YUV420P9LE,
         Format_YUV422P9LE,

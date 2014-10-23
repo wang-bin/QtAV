@@ -35,6 +35,11 @@ extern "C" {
 #endif
 
 #define FF_HAS_YUV12BITS FFMPEG_MODULE_CHECK(LIBAVUTIL, 51, 73, 101)
+#if (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+#define PIXFMT_NE(B, L) VideoFormat::Format_##B
+#else
+#define PIXFMT_NE(B, L) VideoFormat::Format_##L
+#endif
 
 namespace QtAV {
 
@@ -190,10 +195,11 @@ static const struct {
     { VideoFormat::Format_NV12, QTAV_PIX_FMT_C(NV12) },      ///< planar YUV 4:2:0, 12bpp, 1 plane for Y and 1 plane for the UV components, which are interleaved (first byte U and the following byte V)
     { VideoFormat::Format_NV21, QTAV_PIX_FMT_C(NV21) },      ///< as above, but U and V bytes are swapped
     { VideoFormat::Format_ARGB32, QTAV_PIX_FMT_C(ARGB) },      ///< packed ARGB 8:8:8:8, 32bpp, ARGBARGB...
-    { VideoFormat::Format_RGB32, QTAV_PIX_FMT_C(RGB32) }, //auto endian
-    { VideoFormat::Format_RGB32, QTAV_PIX_FMT_C(RGBA) },      ///< packed RGBA 8:8:8:8, 32bpp, RGBARGBA...
-    //QTAV_PIX_FMT_C(ABGR),      ///< packed ABGR 8:8:8:8, 32bpp, ABGRABGR...
+    { VideoFormat::Format_RGBA32, QTAV_PIX_FMT_C(RGBA) },      ///< packed RGBA 8:8:8:8, 32bpp, RGBARGBA...
+    { VideoFormat::Format_ABGR32, QTAV_PIX_FMT_C(ABGR) },      ///< packed ABGR 8:8:8:8, 32bpp, ABGRABGR...
     { VideoFormat::Format_BGRA32, QTAV_PIX_FMT_C(BGRA) },      ///< packed BGRA 8:8:8:8, 32bpp, BGRABGRA...
+    // QTAV_PIX_FMT_C(RGB32) is depends on byte order, ARGB for BE, BGRA for LE
+    { VideoFormat::Format_RGB32, QTAV_PIX_FMT_C(RGB32) }, //auto endian
 
     //QTAV_PIX_FMT_C(GRAY16BE),  ///<        Y        , 16bpp, big-endian
     //QTAV_PIX_FMT_C(GRAY16LE),  ///<        Y        , 16bpp, little-endian
@@ -367,8 +373,11 @@ static const struct {
     VideoFormat::PixelFormat fmt;
     QImage::Format qfmt;
 } qpixfmt_map[] = {
-    { VideoFormat::Format_RGB32,QImage::Format_RGB32 },
-    { VideoFormat::Format_ARGB32, QImage::Format_ARGB32 },
+    // QImage::Format_ARGB32: 0xAARRGGBB, VideoFormat::Format_BGRA32: layout is BBGGRRAA
+    { PIXFMT_NE(ARGB32, BGRA32), QImage::Format_ARGB32 },
+    { VideoFormat::Format_RGB32, QImage::Format_ARGB32 },
+    { VideoFormat::Format_RGB32, QImage::Format_RGB32 },
+    { VideoFormat::Format_RGBA32, QImage::Format_RGBA8888 }, //be 0xRRGGBBAA, le 0xAABBGGRR
     { VideoFormat::Format_RGB565, QImage::Format_RGB16 },
     { VideoFormat::Format_RGB555, QImage::Format_RGB555 },
     { VideoFormat::Format_RGB24, QImage::Format_RGB888 },
@@ -648,6 +657,7 @@ bool VideoFormat::isRGB(PixelFormat pixfmt)
 {
     return pixfmt == Format_RGB32 || pixfmt == Format_ARGB32
         || pixfmt == Format_BGR24 || pixfmt == Format_BGRA32
+        || pixfmt == Format_ABGR32 || pixfmt == Format_RGBA32
         || pixfmt == Format_BGR565 || pixfmt == Format_RGB555 || pixfmt == Format_RGB565
         || pixfmt == Format_BGR24 || pixfmt == Format_BGR32 || pixfmt == Format_BGR555
             ;
