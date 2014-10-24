@@ -51,8 +51,18 @@ int TexturedGeometry::mode() const
 
 void TexturedGeometry::setPoint(int index, const QPointF &p, const QPointF &tp)
 {
+    setGeometryPoint(index, p);
+    setTexturePoint(index, tp);
+}
+
+void TexturedGeometry::setGeometryPoint(int index, const QPointF &p)
+{
     v[index].x = p.x();
     v[index].y = p.y();
+}
+
+void TexturedGeometry::setTexturePoint(int index, const QPointF &tp)
+{
     v[index].tx = tp.x();
     v[index].ty = tp.y();
 }
@@ -248,7 +258,8 @@ bool VideoShader::update(VideoMaterial *material)
     }
     //qDebug() << "color mat " << material->colorMatrix();
     program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
-    program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
+    if (bppLocation() >= 0)
+        program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     // uniform end. attribute begins
     return true;
@@ -448,6 +459,11 @@ int VideoMaterial::compare(const VideoMaterial *other) const
             return diff;
     }
     return d.bpp - other->bpp();
+}
+
+bool VideoMaterial::hasAlpha() const
+{
+    return d_func().video_format.hasAlpha();
 }
 
 void VideoMaterial::unbind()

@@ -82,12 +82,15 @@ public:
     }
 /*
     void updateBlending() {
-        setFlag(Blending, qFuzzyCompare(m_opacity, qreal(1.0)) ? false : true);
+        setFlag(Blending, m_material.hasAlpha() || !qFuzzyCompare(m_opacity, qreal(1.0)));
     }
 */
     void setCurrentFrame(const VideoFrame &frame) {
-        QMutexLocker lock(&m_frameMutex);
-        m_material.setCurrentFrame(frame);
+        {
+            QMutexLocker lock(&m_frameMutex);
+            m_material.setCurrentFrame(frame);
+        }
+        setFlag(Blending, m_material.hasAlpha());
     }
 
     VideoMaterial* videoMaterial() { return &m_material;}
@@ -103,6 +106,7 @@ void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *n
     SGVideoMaterial *mat = static_cast<SGVideoMaterial *>(newMaterial);
     if (!m_shader->update(&mat->m_material)) //material not ready. e.g. video item have not got a frame
         return;
+    //mat->updateBlending();
     if (state.isOpacityDirty()) {
         mat->m_opacity = state.opacity();
         program()->setUniformValue(opacityLocation(), GLfloat(mat->m_opacity));

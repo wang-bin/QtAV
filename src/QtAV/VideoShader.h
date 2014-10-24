@@ -109,6 +109,7 @@ public:
     void bindPlane(int p); // TODO: roi
     int compare(const VideoMaterial* other) const;
 
+    bool hasAlpha() const;
     const QMatrix4x4 &colorMatrix() const;
     const QMatrix4x4& matrix() const;
     int bpp() const; //1st plane
@@ -156,6 +157,8 @@ public:
     int stride() const { return sizeof(Point); }
     int vertexCount() const { return v.size(); }
     void setPoint(int index, const QPointF& p, const QPointF& tp);
+    void setGeometryPoint(int index, const QPointF& p);
+    void setTexturePoint(int index, const QPointF& tp);
     void setRect(const QRectF& r, const QRectF& tr);
     void* data(int idx = 0) { return (char*)v.data() + idx*2*sizeof(float); } //convert to char* float*?
     const void* data(int idx = 0) const { return (char*)v.constData() + idx*2*sizeof(float); }

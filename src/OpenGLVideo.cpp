@@ -181,13 +181,25 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     for (int i = 0; attr[i]; ++i) {
         shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
     }
+    const bool blending = d.material->hasAlpha();
 // for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
 #ifndef QT_OPENGL_DYNAMIC
+    if (blending) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
+    }
     glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
+    if (blending)
+        glDisable(GL_BLEND);
 #else
+    if (blending) {
+        QOpenGLContext::currentContext()->functions()->glEnable(GL_BLEND);
+        QOpenGLContext::currentContext()->functions()->glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
+    }
     QOpenGLContext::currentContext()->functions()->glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
+    if (blending)
+        QOpenGLContext::currentContext()->functions()->glDisable(GL_BLEND);
 #endif
-
     // d.shader->program()->release(); //glUseProgram(0)
     for (int i = 0; attr[i]; ++i) {
         shader->program()->disableAttributeArray(i); //TODO: in setActiveShader

@@ -864,6 +864,10 @@ void GLWidgetRenderer::drawFrame()
             0, 1,
     };
 #endif //ROI_TEXCOORDS
+    if (d.video_format.hasAlpha()) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
+    }
 #ifndef QT_OPENGL_ES_2
     //GL_XXX may not defined in ES2. so macro is required
     if (!d.hasGLSL) {
@@ -884,6 +888,7 @@ void GLWidgetRenderer::drawFrame()
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
         glPopMatrix();
+        glDisable(GL_BLEND);
         for (int i = 0; i < d.textures.size(); ++i) {
             d.video_frame.unmap(&d.textures[i]);
         }
@@ -966,6 +971,7 @@ void GLWidgetRenderer::drawFrame()
    d.shader_program->disableAttributeArray(d.a_TexCoords);
    d.shader_program->disableAttributeArray(d.a_Position);
 #endif
+   glDisable(GL_BLEND);
 
     for (int i = 0; i < d.textures.size(); ++i) {
         d.video_frame.unmap(&d.textures[i]);
