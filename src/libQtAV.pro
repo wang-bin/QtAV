@@ -316,6 +316,7 @@ SOURCES += \
     codec/video/VideoDecoderFFmpeg.cpp \
     codec/video/VideoDecoderFFmpegHW.cpp \
     VideoThread.cpp \
+    VideoFrameExtractor.cpp \
     CommonTypes.cpp
 
 SDK_HEADERS *= \
@@ -354,6 +355,7 @@ SDK_HEADERS *= \
     QtAV/VideoDecoderFFmpegHW.h \
     QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
+    QtAV/VideoFrameExtractor.h \
     QtAV/FactoryDefine.h \
     QtAV/Statistics.h \
     QtAV/Subtitle.h \
