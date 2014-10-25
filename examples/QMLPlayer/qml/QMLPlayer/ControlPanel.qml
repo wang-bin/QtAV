@@ -1,7 +1,7 @@
 import QtQuick 2.0
 import "utils.js" as Utils
 import QtQuick.Window 2.1
-
+import QtAV 1.4
 // TODO: Control.qml
 Rectangle {
     id: control
@@ -128,6 +128,10 @@ Rectangle {
               //  return
             if (playState == "stop")
                 return;
+            if (preview.video.file) {
+                preview.video.timestamp = value*duration
+            }
+
             var v = value * progress.width
             preview.anchors.leftMargin = v - preview.width/2
             previewText.text = Utils.msec2string(value*duration)
@@ -165,13 +169,31 @@ Rectangle {
         opacity: 0.9
         anchors.left: progress.left
         anchors.bottom: progress.top
-        width: Utils.scaled(60)
-        height: Utils.scaled(16)
+        width: Utils.scaled(142)
+        height: Utils.scaled(100)
         color: "black"
         state: "out"
+        property alias video: video
+        Preview {
+            id: video
+            fillMode: VideoOutput.Stretch
+            height: parent.height * 4/5
+            //visible: false
+            //autoPlay: true
+            //source: mediaSource
+            //audioTrack: -1
+            //onPositionChanged: pause()
+            file: mediaSource
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
         Text {
             id: previewText
-            anchors.fill: parent
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: video.bottom
             text: ""
             color: "white"
             font.pixelSize: Utils.scaled(12)

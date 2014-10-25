@@ -26,6 +26,8 @@
 #include "QmlAV/QuickSubtitle.h"
 #include "QmlAV/QuickSubtitleItem.h"
 #include "QmlAV/MediaMetaData.h"
+#include "QmlAV/QuickVideoPreview.h"
+
 namespace QtAV {
 
 class QtAVQmlPlugin : public QQmlExtensionPlugin
@@ -42,6 +44,7 @@ public:
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
         qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
         qmlRegisterType<QuickSubtitleItem>(uri, 1, 4, "SubtitleItem");
+        qmlRegisterType<QuickVideoPreview>(uri, 1, 4, "Preview");
         qmlRegisterType<MediaMetaData>();
     }
 };

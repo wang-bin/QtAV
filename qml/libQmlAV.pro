@@ -74,11 +74,13 @@ SOURCES += \
     QmlAVPlayer.cpp \
     QuickSubtitle.cpp \
     MediaMetaData.cpp \
-    QuickSubtitleItem.cpp
+    QuickSubtitleItem.cpp \
+    QuickVideoPreview.cpp
 
 HEADERS += QmlAV/private/QQuickItemRenderer_p.h \
     QmlAV/QuickSubtitle.h \
-    QmlAV/QuickSubtitleItem.h
+    QmlAV/QuickSubtitleItem.h \
+    QmlAV/QuickVideoPreview.h
 
 SDK_HEADERS += \
     QmlAV/Export.h \

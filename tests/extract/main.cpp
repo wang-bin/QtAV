@@ -1,9 +1,31 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
 #include <QtAV/VideoFrameExtractor.h>
 #include <QApplication>
 #include <QWidget>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/VideoRendererTypes.h>
 #include <QtDebug>
+#include <QtCore/QElapsedTimer>
 
 using namespace QtAV;
 class VideoFrameObserver : public QObject
@@ -18,9 +40,9 @@ public:
     }
 
 public Q_SLOTS:
-    void onVideoFrameExtracted() {
-        VideoFrameExtractor *e = qobject_cast<VideoFrameExtractor*>(sender());
-        VideoFrame frame(e->frame());
+    void onVideoFrameExtracted(const QtAV::VideoFrame& frame) {
+        //VideoFrameExtractor *e = qobject_cast<VideoFrameExtractor*>(sender());
+        //VideoFrame frame(e->frame());
         view->receive(frame);
         qDebug() << frame.format();
         qDebug("frame %dx%d", frame.width(), frame.height());
@@ -42,10 +64,17 @@ int main(int argc, char** argv)
         t = a.arguments().at(idx+1).toInt();
 
     VideoFrameExtractor extractor;
+    extractor.setAsync(true);
     VideoFrameObserver obs;
-    QObject::connect(&extractor, SIGNAL(frameExtracted()), &obs, SLOT(onVideoFrameExtracted()));
+    QObject::connect(&extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), &obs, SLOT(onVideoFrameExtracted(QtAV::VideoFrame)));
     extractor.setSource(file);
-    extractor.setPosition(t);
+
+    QElapsedTimer timer;
+    timer.start();
+    for (int i = 0; i < 30; ++i) {
+        extractor.setPosition(t + 1000*i);
+    }
+    qDebug("elapsed: %lld", timer.elapsed());
     return a.exec();
 }
 
