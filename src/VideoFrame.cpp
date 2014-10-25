@@ -33,6 +33,18 @@
 #undef PixelFormat
 #endif
 
+namespace
+{
+class RegisterMetaTypes
+{
+public:
+    RegisterMetaTypes()
+    {
+        qRegisterMetaType<QtAV::VideoFrame>("QtAV::VideoFrame");
+    }
+} _registerMetaTypes;
+}
+
 namespace QtAV {
 
 class VideoFramePrivate : public FramePrivate

@@ -32,10 +32,17 @@ class Q_AV_EXPORT VideoFrameExtractor : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoFrameExtractor)
+    Q_PROPERTY(QString source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(bool autoExtract READ autoExtract WRITE setAutoExtract NOTIFY autoExtractChanged)
+    Q_PROPERTY(bool async READ async WRITE setAsync NOTIFY asyncChanged)
+    Q_PROPERTY(int precision READ precision WRITE setPrecision NOTIFY precisionChanged)
+    Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
 public:
     explicit VideoFrameExtractor(QObject *parent = 0);
     void setSource(const QString value);
     QString source() const;
+    void setAsync(bool value);
+    bool async() const;
     void setAutoExtract(bool value);
     bool autoExtract() const;
     /*!
@@ -48,15 +55,12 @@ public:
     int precision() const;
     void setPosition(qint64 value);
     qint64 position() const;
-    /*!
-     * \brief frame
-     * \return the last video frame extracted
-     */
-    VideoFrame frame();
 
+    virtual bool event(QEvent *e);
 signals:
-    void frameExtracted(); // parameter: VideoFrame, bool changed?
+    void frameExtracted(const QtAV::VideoFrame& frame); // parameter: VideoFrame, bool changed?
     void sourceChanged();
+    void asyncChanged();
     void error(); // clear preview image in a slot
     void autoExtractChanged();
     /*!
@@ -66,6 +70,8 @@ signals:
     void positionChanged();
     void precisionChanged();
 
+    void aboutToExtract();
+
 public slots:
     /*!
      * \brief extract
@@ -74,9 +80,11 @@ public slots:
      * Otherwise, the given position frame will be extracted.
      */
     void extract();
+private slots:
+    void extractInternal();
 
 protected:
-    VideoFrameExtractor(VideoFrameExtractorPrivate &d, QObject* parent = 0);
+    //VideoFrameExtractor(VideoFrameExtractorPrivate &d, QObject* parent = 0);
     DPTR_DECLARE(VideoFrameExtractor)
 };
 

@@ -117,4 +117,5 @@ private:
 
 } //namespace QtAV
 
+Q_DECLARE_METATYPE(QtAV::VideoFrame)
 #endif // QTAV_VIDEOFRAME_H
