@@ -16,14 +16,42 @@
 #define ASYNC_TASK 1
 namespace QtAV {
 
-class Thread : public QThread {
+class ExtractThread : public QThread {
 public:
+    ExtractThread(QObject *parent = 0)
+        : QThread(parent)
+        , stop(false)
+    {
+        tasks.setCapacity(1); // avoid too frequent
+    }
+    ~ExtractThread() {
+        scheduleStop();
+        wait();
+    }
+
     void addTask(QRunnable* t) {
+        if (tasks.size() >= tasks.capacity()) {
+            QRunnable *task = tasks.take();
+            if (task->autoDelete())
+                delete task;
+        }
         tasks.put(t);
     }
+    void scheduleStop() {
+        class StopTask : public QRunnable {
+        public:
+            StopTask(ExtractThread* t) : thread(t) {}
+            void run() { thread->stop = true;}
+        private:
+            ExtractThread *thread;
+        };
+        addTask(new StopTask(this));
+    }
+
 protected:
     virtual void run() {
-        while (true) {
+#if ASYNC_TASK
+        while (!stop) {
             QRunnable *task = tasks.take();
             if (task) {
                 task->run();
@@ -31,9 +59,13 @@ protected:
                     delete task;
             }
         }
+#else
+        exec();
+#endif //ASYNC_TASK
     }
+public:
+    volatile bool stop;
 private:
-    QMutex mutex;
     BlockingQueue<QRunnable*> tasks;
 };
 
@@ -100,6 +132,10 @@ public:
                 decoder.reset(0);
                 continue;
             }
+            QVariantHash opt, va;
+            va["Display"] = "X11"; // to support swscale
+            opt["vaapi"] = va;
+            decoder->setOptions(opt);
             break;
         }
         return !!decoder;
@@ -161,7 +197,9 @@ public:
                 return frame.isValid();
             }
             if (demuxer.packet()->hasKeyFrame) {
-                qCritical("Internal error. Can not be a key frame!!!!");
+                // FIXME:
+                //qCritical("Internal error. Can not be a key frame!!!!");
+                return false; //??
             }
             // invalid packet?
             if (!decoder->decode(demuxer.packet()->data)) {
@@ -198,7 +236,7 @@ public:
     QScopedPointer<VideoDecoder> decoder;
     VideoFrame frame;
     QStringList codecs;
-    Thread thread;
+    ExtractThread thread;
 };
 
 
@@ -254,8 +292,6 @@ bool VideoFrameExtractor::autoExtract() const
     return d_func().auto_extract;
 }
 
-// what if >= mediaStopPosition()?
-// TODO: avoid too frequent
 void VideoFrameExtractor::setPosition(qint64 value)
 {
     DPTR_D(VideoFrameExtractor);

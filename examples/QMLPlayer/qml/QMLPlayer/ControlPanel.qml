@@ -174,7 +174,7 @@ Rectangle {
         color: "black"
         state: "out"
         property alias video: video
-        Preview {
+        VideoPreview {
             id: video
             fillMode: VideoOutput.Stretch
             height: parent.height * 4/5

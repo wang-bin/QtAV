@@ -44,7 +44,7 @@ public:
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
         qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
         qmlRegisterType<QuickSubtitleItem>(uri, 1, 4, "SubtitleItem");
-        qmlRegisterType<QuickVideoPreview>(uri, 1, 4, "Preview");
+        qmlRegisterType<QuickVideoPreview>(uri, 1, 4, "VideoPreview");
         qmlRegisterType<MediaMetaData>();
     }
 };
