@@ -37,9 +37,11 @@ int main(int argc, char *argv[])
     QElapsedTimer timer;
     timer.start();
     int count = 0;
-    VideoFrame frame;
+    int vstream = demux.videoStream();
     while (!demux.atEnd()) {
         if (!demux.readFrame())
+            continue;
+        if (demux.stream() != vstream)
             continue;
         if (dec->decode(demux.packet()->data)) {
             /*

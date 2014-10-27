@@ -55,6 +55,7 @@
 #include <QtAV/VideoDecoderTypes.h>
 #include <QtAV/VideoFormat.h>
 #include <QtAV/VideoFrame.h>
+#include <QtAV/VideoFrameExtractor.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtAV/VideoRendererTypes.h>
 #include <QtAV/VideoOutput.h>

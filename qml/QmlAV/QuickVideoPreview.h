@@ -1,6 +1,7 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV
 
@@ -19,35 +20,38 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtQml/QQmlExtensionPlugin>
-#include <QtQml/qqml.h>
-#include "QmlAV/QQuickItemRenderer.h"
-#include "QmlAV/QmlAVPlayer.h"
-#include "QmlAV/QuickSubtitle.h"
-#include "QmlAV/QuickSubtitleItem.h"
-#include "QmlAV/MediaMetaData.h"
-#include "QmlAV/QuickVideoPreview.h"
+#ifndef QTAV_QUICKVIDEOPREVIEW_H
+#define QTAV_QUICKVIDEOPREVIEW_H
+
+#include <QmlAV/QQuickItemRenderer.h>
+#include <QtAV/VideoFrameExtractor.h>
 
 namespace QtAV {
-
-class QtAVQmlPlugin : public QQmlExtensionPlugin
+class QMLAV_EXPORT QuickVideoPreview : public QQuickItemRenderer
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
-
+    // position conflicts with QQuickItem.position
+    Q_PROPERTY(int timestamp READ timestamp WRITE setTimestamp NOTIFY timestampChanged)
+    // source is already in VideoOutput
+    Q_PROPERTY(QUrl file READ file WRITE setFile NOTIFY fileChanged)
 public:
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("QtAV"));
-        qmlRegisterType<QQuickItemRenderer>(uri, 1, 3, "VideoOutput");
-        qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
-        qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
-        qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
-        qmlRegisterType<QuickSubtitleItem>(uri, 1, 4, "SubtitleItem");
-        qmlRegisterType<QuickVideoPreview>(uri, 1, 4, "VideoPreview");
-        qmlRegisterType<MediaMetaData>();
-    }
+    explicit QuickVideoPreview(QQuickItem *parent = 0);
+    void setTimestamp(int value);
+    int timestamp() const;
+    void setFile(const QUrl& value);
+    QUrl file() const;
+
+signals:
+    void timestampChanged();
+    void fileChanged();
+
+private slots:
+    void displayFrame(const QtAV::VideoFrame& frame); //parameter VideoFrame
+    void displayNoFrame();
+
+private:
+    QUrl m_file;
+    VideoFrameExtractor m_extractor;
 };
 } //namespace QtAV
-
-#include "plugin.moc"
+#endif // QUICKVIDEOPREVIEW_H

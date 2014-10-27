@@ -159,6 +159,70 @@ Rectangle {
             }
         }
     }
+
+    Rectangle {
+        id: help
+        property alias text: title.text
+        color: "#77222222"
+        anchors {
+            //top: root.top
+            left: root.left
+            right: root.right
+            bottom: control.top
+        }
+        height: Utils.scaled(60)
+        visible: false
+        Text {
+            id: title
+            color: "white"
+            anchors.fill: parent
+            anchors.bottom: parent.bottom
+            anchors.margins: Utils.scaled(8)
+            //horizontalAlignment: Qt.AlignHCenter
+            font {
+                pixelSize: Utils.scaled(12)
+            }
+            onContentHeightChanged: {
+                parent.height = contentHeight + 2*anchors.margins
+            }
+            onLinkActivated: Qt.openUrlExternally(link)
+        }
+        function helpText() {
+            return "<h3>QMLPlayer based on QtAV  1.4.0 </h3>"
+             + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
+             + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
+             + "<p>Shanghai University->S3 Graphics->Deepin, Shanghai, China</p>"
+             + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
+             + "<p>Web Site: <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>"
+             + "\n<h3>Command line:</h3>"
+             + "<p>QMLPlayer [-vd \"DXVA[;VAAPI[;VDA[;FFmpeg[;CUDA]]]]\"] fileName</p>"
+             + "\n<h3>Shortcut:</h3>"
+             + "<p>M: mute</p><p>F: fullscreen</p><p>Up/Down: volume +/-</p><p>Left/Right: Seek backward/forward
+                </p><p>Space: pause/play</p><p>Q: quite</p>"
+             + "<p>R: rotate</p><p>A: aspect ratio</p>"
+        }
+        Button {
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: Utils.scaled(0)
+            width: Utils.scaled(20)
+            height: Utils.scaled(20)
+            icon: resurl("theme/default/close.svg")
+            onClicked: parent.visible = false
+        }
+        Button {
+            id: donateBtn
+            text: qsTr("Donate")
+            bgColor: "#990000ff"
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: Utils.scaled(8)
+            width: Utils.scaled(80)
+            height: Utils.scaled(40)
+            onClicked: Qt.openUrlExternally("http://wang-bin.github.io/QtAV#donate")
+        }
+    }
+
     ControlPanel {
         id: control
         anchors {
@@ -292,69 +356,6 @@ Rectangle {
             }
         }
     }
-    Rectangle {
-        id: help
-        property alias text: title.text
-        color: "#77222222"
-        anchors {
-            //top: root.top
-            left: root.left
-            right: root.right
-            bottom: control.top
-        }
-        height: Utils.scaled(60)
-        visible: false
-        Text {
-            id: title
-            color: "white"
-            anchors.fill: parent
-            anchors.bottom: parent.bottom
-            anchors.margins: Utils.scaled(8)
-            //horizontalAlignment: Qt.AlignHCenter
-            font {
-                pixelSize: Utils.scaled(12)
-            }
-            onContentHeightChanged: {
-                parent.height = contentHeight + 2*anchors.margins
-            }
-            onLinkActivated: Qt.openUrlExternally(link)
-        }
-        function helpText() {
-            return "<h3>QMLPlayer based on QtAV  1.4.0 </h3>"
-             + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
-             + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
-             + "<p>Shanghai University->S3 Graphics, Shanghai, China</p>"
-             + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
-             + "<p>Web Site: <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>"
-             + "\n<h3>Command line:</h3>"
-             + "<p>QMLPlayer [-vd \"DXVA[;VAAPI[;VDA[;FFmpeg[;CUDA]]]]\"] fileName</p>"
-             + "\n<h3>Shortcut:</h3>"
-             + "<p>M: mute</p><p>F: fullscreen</p><p>Up/Down: volume +/-</p><p>Left/Right: Seek backward/forward
-                </p><p>Space: pause/play</p><p>Q: quite</p>"
-             + "<p>R: rotate</p><p>A: aspect ratio</p>"
-        }
-        Button {
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.margins: Utils.scaled(0)
-            width: Utils.scaled(20)
-            height: Utils.scaled(20)
-            icon: resurl("theme/default/close.svg")
-            onClicked: parent.visible = false
-        }
-        Button {
-            id: donateBtn
-            text: qsTr("Donate")
-            bgColor: "#990000ff"
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            anchors.margins: Utils.scaled(8)
-            width: Utils.scaled(80)
-            height: Utils.scaled(40)
-            onClicked: Qt.openUrlExternally("http://wang-bin.github.io/QtAV#donate")
-        }
-    }
-
     FileDialog {
         id: fileDialog
         title: "Please choose a media file"

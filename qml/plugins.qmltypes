@@ -222,6 +222,15 @@ Module {
         Signal { name: "openGLChanged" }
     }
     Component {
+        name: "QtAV::QuickVideoPreview"
+        defaultProperty: "data"
+        prototype: "QtAV::QQuickItemRenderer"
+        exports: ["QtAV/VideoPreview 1.4"]
+        exportMetaObjectRevisions: [0]
+        Property { name: "timestamp"; type: "int" }
+        Property { name: "file"; type: "QUrl" }
+    }
+    Component {
         name: "QuickSubtitle"
         prototype: "QObject"
         exports: ["QtAV/Subtitle 1.4"]
