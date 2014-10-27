@@ -24,8 +24,9 @@
 
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
-#include <QtCore/QWaitCondition>
-#include <QtAV/QtAV_Global.h>
+#include <QtCore/QQueue>
+#include <QtCore/QRunnable>
+#include <utils/BlockingQueue.h>
 
 namespace QtAV {
 
@@ -56,17 +57,28 @@ protected:
      * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)
      * and return true. Otherwise, return false immediatly.
      */
-    bool tryPause();
+    bool tryPause(unsigned long timeout = 100);
 
 private:
     void setAVThread(AVThread *&pOld, AVThread* pNew);
-    bool paused, seeking;
+    void newSeekRequest(QRunnable *r);
+    void processNextSeekTask();
+    void seekInternal(qint64 pos); //must call in AVDemuxThread
+    void pauseInternal(bool value);
+    void processNextPauseTask();
+
+    bool paused;
     volatile bool end;
     AVDemuxer *demuxer;
     AVThread *audio_thread, *video_thread;
     int audio_stream, video_stream;
     QMutex buffer_mutex;
-    QWaitCondition cond, seek_cond;
+    QWaitCondition cond;
+    BlockingQueue<QRunnable*> seek_tasks;
+    // if seeking on pause, schedule a skip pause task and a pause task
+    QQueue<QRunnable*> pause_tasks; // in thread tasks
+
+    friend class SeekTask;
 };
 
 } //namespace QtAV

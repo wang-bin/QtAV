@@ -398,7 +398,7 @@ bool AVDemuxer::seek(qint64 pos)
     //TODO: pkt->pts may be 0, compute manually.
 
     bool backward = mSeekTarget == SeekTarget_AccurateFrame || upos <= (int64_t)(pkt->pts*AV_TIME_BASE);
-    qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", double(upos)/double(durationUs()), pkt->pts, upos, durationUs(), backward);
+    //qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", double(upos)/double(durationUs()), pkt->pts, upos, durationUs(), backward);
     //AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
     // FIXME: back flag is opposite? otherwise seek is bad and may crash?
     /* If stream_index is (-1), a default

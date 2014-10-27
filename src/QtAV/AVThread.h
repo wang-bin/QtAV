@@ -97,7 +97,7 @@ protected:
      * and return true. Otherwise, return false immediatly.
      */
     // has timeout so that the pending tasks can be processed
-    bool tryPause(int timeout = 100);
+    bool tryPause(unsigned long timeout = 100);
     bool processNextTask(); //in AVThread
 
     DPTR_DECLARE(AVThread)

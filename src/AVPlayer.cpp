@@ -760,7 +760,6 @@ void AVPlayer::setPosition(qint64 position)
     if (video_thread) {
         video_thread->skipRenderUntil(s);
     }
-    qDebug("seek to %lld ms (%f%%)", position, double(position)/double(duration())*100.0);
     masterClock()->updateValue(double(position)/1000.0); //what is duration == 0
     masterClock()->updateExternalClock(position); //in msec. ignore usec part using t/1000
     demuxer_thread->seek(position);

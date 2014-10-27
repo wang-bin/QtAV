@@ -250,7 +250,7 @@ void AVThread::resetState()
     d.ready_cond.wakeOne();
 }
 
-bool AVThread::tryPause(int timeout)
+bool AVThread::tryPause(unsigned long timeout)
 {
     DPTR_D(AVThread);
     if (!isPaused())
