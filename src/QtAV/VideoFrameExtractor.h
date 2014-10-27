@@ -41,14 +41,18 @@ public:
     explicit VideoFrameExtractor(QObject *parent = 0);
     void setSource(const QString value);
     QString source() const;
+    /*!
+     * \brief setAsync
+     * Extract video frames in another thread. Default is true.
+     */
     void setAsync(bool value);
     bool async() const;
     void setAutoExtract(bool value);
     bool autoExtract() const;
     /*!
      * \brief setPrecision
-     * if the difference of the next requested position is less than the value, the
-     * last one is used and not positionChanged() signal to emit.
+     * if the difference between the next requested position is less than the value, previous
+     * one is used and no positionChanged() and frameExtracted() signals to emit.
      * Default is 500ms.
      */
     void setPrecision(int value);
@@ -76,8 +80,8 @@ public slots:
     /*!
      * \brief extract
      * If last extracted frame can be use, use it.
-     * If there is a key frame in [position-precision, position+precision], then the nearest key frame will be extracted.
-     * Otherwise, the given position frame will be extracted.
+     * If there is a key frame in [position-precision, position+precision], the nearest key frame
+     * before position+precision will be extracted. Otherwise, the given position frame will be extracted.
      */
     void extract();
 private slots:

@@ -128,6 +128,7 @@ void AVDemuxThread::seek(qint64 pos)
     }
     if (video_thread) {
         video_thread->packetQueue()->clear();
+        // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
         video_thread->packetQueue()->put(Packet());
     }
     //if (subtitle_thread) {

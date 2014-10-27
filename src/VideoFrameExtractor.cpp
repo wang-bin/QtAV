@@ -133,7 +133,7 @@ public:
                 continue;
             }
             QVariantHash opt, va;
-            va["Display"] = "X11"; // to support swscale
+            va["display"] = "X11"; // to support swscale
             opt["vaapi"] = va;
             decoder->setOptions(opt);
             break;
@@ -158,7 +158,7 @@ public:
             if (demuxer.packet()->hasKeyFrame)
                 break;
         }
-        decoder->flush();
+        // decoder->flush(); // TODO: why key frame can't be decoded? also in VideoThread
         const qint64 t_key = qint64(demuxer.packet()->pts * 1000.0);
         //qDebug("delta t = %d, data size: %d", int(value - t_key), demuxer.packet()->data.size());
         // must decode key frame
@@ -183,7 +183,7 @@ public:
         qreal t0 = qreal(value/1000LL);
         while (!demuxer.atEnd()) {
             if (!demuxer.readFrame()) {
-                qDebug("!!!!!!----read frame error!!!!!!");
+                //qDebug("!!!!!!----read frame error!!!!!!");
                 continue;
             }
             if (demuxer.stream() != vstream) {

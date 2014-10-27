@@ -424,7 +424,6 @@ bool AVDemuxer::seek(qint64 pos)
         return false;
     }
     //replay
-    qDebug("startTime: %lld", startTime());
     if (upos <= startTime()) {
         qDebug("************seek to beginning. started = false");
         started_ = false;
