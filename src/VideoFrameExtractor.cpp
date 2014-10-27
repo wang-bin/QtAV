@@ -2,6 +2,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QRunnable>
 #include <QtCore/QScopedPointer>
+#include <QtCore/QStringList>
 #include <QtCore/QThread>
 #include "QtAV/VideoCapture.h"
 #include "QtAV/VideoDecoder.h"
@@ -53,11 +54,11 @@ protected:
 #if ASYNC_TASK
         while (!stop) {
             QRunnable *task = tasks.take();
-            if (task) {
-                task->run();
-                if (task->autoDelete())
-                    delete task;
-            }
+            if (!task)
+                return;
+            task->run();
+            if (task->autoDelete())
+                delete task;
         }
 #else
         exec();
@@ -246,7 +247,7 @@ VideoFrameExtractor::VideoFrameExtractor(QObject *parent) :
     DPTR_D(VideoFrameExtractor);
     moveToThread(&d.thread);
     d.thread.start();
-    connect(this, SIGNAL(aboutToExtract()), SLOT(extractInternal()));
+    connect(this, SIGNAL(aboutToExtract(qint64)), SLOT(extractInternal(qint64)));
 }
 
 void VideoFrameExtractor::setSource(const QString value)
@@ -300,6 +301,7 @@ void VideoFrameExtractor::setPosition(qint64 value)
         //frameExtracted(d.frame);
         return;
     }
+    d.frame = VideoFrame();
     d.extracted = false;
     d.position = value;
     emit positionChanged();
@@ -334,7 +336,7 @@ bool VideoFrameExtractor::event(QEvent *e)
     //qDebug("event: %d", e->type());
     if (e->type() != QEvent::User)
         return QObject::event(e);
-    extractInternal();
+    extractInternal(position()); // FIXME: wrong position
     return true;
 }
 
@@ -342,26 +344,30 @@ void VideoFrameExtractor::extract()
 {
     DPTR_D(VideoFrameExtractor);
     if (!d.async) {
-        extractInternal();
+        extractInternal(position());
         return;
     }
 #if ASYNC_SIGNAL
     else {
-        emit aboutToExtract();
+        emit aboutToExtract(position());
         return;
     }
 #endif
 #if ASYNC_TASK
     class ExtractTask : public QRunnable {
     public:
-        ExtractTask(VideoFrameExtractor *e) : extractor(e) {}
+        ExtractTask(VideoFrameExtractor *e, qint64 t)
+            : extractor(e)
+            , position(t)
+        {}
         void run() {
-            extractor->extractInternal();
+            extractor->extractInternal(position);
         }
     private:
         VideoFrameExtractor *extractor;
+        qint64 position;
     };
-    d.thread.addTask(new ExtractTask(this));
+    d.thread.addTask(new ExtractTask(this, position()));
     return;
 #endif
 #if ASYNC_EVENT
@@ -369,7 +375,7 @@ void VideoFrameExtractor::extract()
 #endif //ASYNC_EVENT
 }
 
-void VideoFrameExtractor::extractInternal()
+void VideoFrameExtractor::extractInternal(qint64 pos)
 {
     DPTR_D(VideoFrameExtractor);
     if (!d.checkAndOpen()) {
@@ -377,7 +383,7 @@ void VideoFrameExtractor::extractInternal()
         //qWarning("can not open decoder....");
         return; // error handling
     }
-    d.extracted = d.extractInPrecision(position(), precision());
+    d.extracted = d.extractInPrecision(pos, precision());
     if (!d.extracted) {
         emit error();
         return;

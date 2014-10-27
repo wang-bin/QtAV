@@ -74,7 +74,7 @@ signals:
     void positionChanged();
     void precisionChanged();
 
-    void aboutToExtract();
+    void aboutToExtract(qint64 pos);
 
 public slots:
     /*!
@@ -85,7 +85,7 @@ public slots:
      */
     void extract();
 private slots:
-    void extractInternal();
+    void extractInternal(qint64 pos);
 
 protected:
     //VideoFrameExtractor(VideoFrameExtractorPrivate &d, QObject* parent = 0);
