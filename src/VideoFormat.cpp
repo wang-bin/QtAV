@@ -377,7 +377,9 @@ static const struct {
     { PIXFMT_NE(ARGB32, BGRA32), QImage::Format_ARGB32 },
     { VideoFormat::Format_RGB32, QImage::Format_ARGB32 },
     { VideoFormat::Format_RGB32, QImage::Format_RGB32 },
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
     { VideoFormat::Format_RGBA32, QImage::Format_RGBA8888 }, //be 0xRRGGBBAA, le 0xAABBGGRR
+#endif
     { VideoFormat::Format_RGB565, QImage::Format_RGB16 },
     { VideoFormat::Format_RGB555, QImage::Format_RGB555 },
     { VideoFormat::Format_RGB24, QImage::Format_RGB888 },
