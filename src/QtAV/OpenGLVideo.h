@@ -25,7 +25,7 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QHash>
-#include <QMatrix4x4>
+#include <QtGui/QMatrix4x4>
 #include <QtCore/QObject>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLContext>

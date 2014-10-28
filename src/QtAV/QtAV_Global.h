@@ -24,7 +24,7 @@
 #define QTAV_GLOBAL_H
 
 #include <stdarg.h>
-#include <qglobal.h>
+#include <QtCore/qglobal.h>
 #include "dptr.h"
 
 #if defined(BUILD_QTAV_LIB)
