@@ -26,6 +26,11 @@ public:
         tasks.setCapacity(1); // avoid too frequent
     }
     ~ExtractThread() {
+        waitStop();
+    }
+    void waitStop() {
+        if (!isRunning())
+            return;
         scheduleStop();
         wait();
     }
@@ -99,6 +104,8 @@ public:
                     << "FFmpeg";
     }
     ~VideoFrameExtractorPrivate() {
+        // stop first before demuxer close to avoid running new seek task after demuxer is closed.
+        thread.waitStop();
         demuxer.close();
     }
 
