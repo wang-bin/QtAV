@@ -97,6 +97,12 @@ Item {
     /*** Properties of MediaPlayer ***/
 
     /*!
+      A list of video codec names in priority order.
+      Example: videoCodecPriority: ["VAAPI", "FFmpeg"]
+      Default is ["FFmpeg"]
+    s*/
+    property alias videoCodecPriority:   player.videoCodecPriority
+    /*!
         \qmlproperty enumeration Video::playbackState
 
         This read only property indicates the playback state of the media.
