@@ -104,8 +104,10 @@ public:
                     << "FFmpeg";
     }
     ~VideoFrameExtractorPrivate() {
-        // stop first before demuxer close to avoid running new seek task after demuxer is closed.
+        // stop first before demuxer and decoder close to avoid running new seek task after demuxer is closed.
         thread.waitStop();
+        // close codec context first.
+        decoder.reset(0);
         demuxer.close();
     }
 
@@ -163,29 +165,36 @@ public:
             if ((qint64)(demuxer.packet()->pts*1000.0) - value > (qint64)range)
                 return false;
             //qDebug("video packet: %f", demuxer.packet()->pts);
+            // TODO: always key frame?
             if (demuxer.packet()->hasKeyFrame)
                 break;
         }
-        // decoder->flush(); // TODO: why key frame can't be decoded? also in VideoThread
+        decoder->flush(); //must flush otherwise old frames will be decoded at the beginning
         const qint64 t_key = qint64(demuxer.packet()->pts * 1000.0);
         //qDebug("delta t = %d, data size: %d", int(value - t_key), demuxer.packet()->data.size());
         // must decode key frame
-        if (!decoder->decode(demuxer.packet()->data)) {
-            //qWarning("!!!!!!!!!decode failed!!!!!!!!");
-            return false;
+        // because current decode() only accept data, no dts pts, so we can't get correct decoded dts pts.
+        // it's a workaround to decode until decoded key frame is valid
+        int k = 0;
+        while (k < 5 && !frame.isValid()) {
+            //qWarning("invalid key frame!!!!! undecoded: %d", decoder->undecodedSize());
+            if (!decoder->decode(demuxer.packet()->data)) {
+                //qWarning("!!!!!!!!!decode failed!!!!!!!!");
+                return false;
+            }
+            frame = decoder->frame();
+            ++k;
         }
+        frame.setTimestamp(demuxer.packet()->pts);
+
         // seek backward, so value >= t
         // decode key frame
         if (int(value - t_key) <= range) {
             //qDebug("!!!!!!!!!use key frame!!!!!!!");
-            frame = decoder->frame();
-            frame.setTimestamp(demuxer.packet()->pts);
             if (frame.isValid()) {
                 //qDebug() << "frame found. format: " <<  frame.format();
                 return true;
             }
-            // TODO: why key frame invalid?
-            //qWarning("invalid key frame!!!!!");
         }
         // decode at the given position
         qreal t0 = qreal(value/1000LL);
@@ -207,7 +216,7 @@ public:
             if (demuxer.packet()->hasKeyFrame) {
                 // FIXME:
                 //qCritical("Internal error. Can not be a key frame!!!!");
-                return false; //??
+                //return false; //??
             }
             // invalid packet?
             if (!decoder->decode(demuxer.packet()->data)) {
@@ -304,8 +313,6 @@ void VideoFrameExtractor::setPosition(qint64 value)
 {
     DPTR_D(VideoFrameExtractor);
     if (qAbs(value - d.position) < precision()) {
-        //qDebug("ingore new position~~~~~~~");
-        //frameExtracted(d.frame);
         return;
     }
     d.frame = VideoFrame();

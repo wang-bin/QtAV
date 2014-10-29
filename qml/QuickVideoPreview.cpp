@@ -30,6 +30,7 @@ QuickVideoPreview::QuickVideoPreview(QQuickItem *parent) :
     connect(&m_extractor, SIGNAL(positionChanged()), this, SIGNAL(timestampChanged()));
     connect(&m_extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), SLOT(displayFrame(QtAV::VideoFrame)));
     connect(&m_extractor, SIGNAL(error()), SLOT(displayNoFrame()));
+    connect(this, SIGNAL(fileChanged()), SLOT(displayNoFrame()));
 }
 
 void QuickVideoPreview::setTimestamp(int value)
@@ -62,6 +63,10 @@ QUrl QuickVideoPreview::file() const
 
 void QuickVideoPreview::displayFrame(const QtAV::VideoFrame &frame)
 {
+    int diff = qAbs(qint64(frame.timestamp()*1000.0) - m_extractor.position());
+    if (diff > m_extractor.precision()) {
+        //qWarning("timestamp difference (%d/%lld) is too large! ignore", diff);
+    }
     receive(frame);
 }
 
