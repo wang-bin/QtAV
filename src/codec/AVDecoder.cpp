@@ -238,7 +238,7 @@ QString AVDecoder::codecName() const
     if (!d.codec_name.isEmpty())
         return d.codec_name;
     if (d.codec_ctx)
-        return d.codec_ctx->codec->name;
+        return avcodec_get_name(d.codec_ctx->codec_id);
     return "";
 }
 

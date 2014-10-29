@@ -1225,7 +1225,7 @@ void AVPlayer::initStatistics()
                , duration(), av_q2d(stream->time_base));
         cs.st->available = true;
         if (cs.ctx->codec) {
-            cs.st->codec = cs.ctx->codec->name;
+            cs.st->codec = avcodec_get_name(cs.ctx->codec_id);
             cs.st->codec_long = cs.ctx->codec->long_name;
         }
         cs.st->total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));

@@ -313,7 +313,7 @@ bool VideoDecoderVDAPrivate::open()
 {
     qDebug("opening VDA module");
     if (codec_ctx->codec_id != AV_CODEC_ID_H264) {
-        qWarning("input codec (%s) isn't H264, canceling VDA decoding", codec_ctx->codec->name);
+        qWarning("input codec (%s) isn't H264, canceling VDA decoding", avcodec_get_name(codec_ctx->codec_id));
         return false;
     }
 #if 0
@@ -329,7 +329,7 @@ void VideoDecoderVDAPrivate::close()
 {
     restore(); //IMPORTANT. can not call restore in dtor because ctx is 0 there
     qDebug("destroying VDA decoder");
-    ff_vda_destroy_decoder(&hw_ctx) ;
+    ff_vda_destroy_decoder(&hw_ctx);
     if (copy_uswc) {
         gpu_mem.cleanCache();
     }

@@ -967,7 +967,7 @@ QString AVDemuxer::audioCodecName(int stream) const
     if (!avctx)
         return QString();
     // AVCodecContext.codec_name is deprecated. use avcodec_get_name. check null avctx->codec?
-    return avctx->codec->name;
+    return avcodec_get_name(avctx->codec_id);
 }
 
 QString AVDemuxer::audioCodecLongName(int stream) const
@@ -983,7 +983,7 @@ QString AVDemuxer::videoCodecName(int stream) const
     AVCodecContext *avctx = videoCodecContext(stream);
     if (!avctx)
         return QString();
-    return avctx->codec->name;
+    return avcodec_get_name(avctx->codec_id);
 }
 
 QString AVDemuxer::videoCodecLongName(int stream) const
@@ -999,7 +999,7 @@ QString AVDemuxer::subtitleCodecName(int stream) const
     AVCodecContext *avctx = subtitleCodecContext(stream);
     if (!avctx)
         return QString();
-    return avctx->codec->name;
+    return avcodec_get_name(avctx->codec_id);
 }
 
 QString AVDemuxer::subtitleCodecLongName(int stream) const
