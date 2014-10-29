@@ -83,6 +83,7 @@ public:
     VideoFrameExtractorPrivate()
         : extracted(false)
         , async(true)
+        , has_video(true)
         , auto_extract(true)
         , position(-2*kDefaultPrecision)
         , precision(kDefaultPrecision)
@@ -124,6 +125,11 @@ public:
             if (!demuxer.loadFile(source)) {
                 return false;
             }
+        }
+        has_video = demuxer.videoStreams().size() > 0;
+        if (!has_video) {
+            demuxer.close();
+            return false;
         }
         if (codecs.isEmpty())
             return false;
@@ -244,6 +250,7 @@ public:
 
     bool extracted;
     bool async;
+    bool has_video;
     bool loading;
     bool auto_extract;
     qint64 position;
@@ -272,6 +279,7 @@ void VideoFrameExtractor::setSource(const QString value)
     if (value == d.source)
         return;
     d.source = value;
+    d.has_video = true;
     emit sourceChanged();
     d.frame = VideoFrame();
 }
@@ -312,6 +320,8 @@ bool VideoFrameExtractor::autoExtract() const
 void VideoFrameExtractor::setPosition(qint64 value)
 {
     DPTR_D(VideoFrameExtractor);
+    if (!d.has_video)
+        return;
     if (qAbs(value - d.position) < precision()) {
         return;
     }
