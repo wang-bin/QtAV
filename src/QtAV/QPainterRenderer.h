@@ -23,7 +23,7 @@
 #define QAV_QPAINTERRENDERER_H
 
 #include <QtAV/VideoRenderer.h>
-#include <qimage.h>
+#include <QtGui/QImage>
 //TODO: not abstract.
 namespace QtAV {
 

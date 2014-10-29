@@ -23,7 +23,11 @@
 #define QAV_GRAPHICSITEMRENDERER_H
 
 #include <QtAV/QPainterRenderer.h>
-#include <QGraphicsWidget>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtWidgets/QGraphicsWidget>
+#else
+#include <QtGui/QGraphicsWidget>
+#endif
 
 //QGraphicsWidget will lose focus forever if TextItem inserted text. Why?
 #define CONFIG_GRAPHICSWIDGET 0
