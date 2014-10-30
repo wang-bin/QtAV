@@ -68,8 +68,6 @@
  * use action's value to set player's parameters when start to play a new file
  */
 
-#define SLIDER_ON_VO 0
-
 #define AVDEBUG() \
     qDebug("%s %s @%d", __FILE__, __FUNCTION__, __LINE__);
 
@@ -196,12 +194,6 @@ void MainWindow::setupUi()
     mpTimeSlider->setTracking(true);
     mpTimeSlider->setOrientation(Qt::Horizontal);
     mpTimeSlider->setMinimum(0);
-#if SLIDER_ON_VO
-    QGraphicsOpacityEffect *oe = new QGraphicsOpacityEffect(this);
-    oe->setOpacity(0.5);
-    mpTimeSlider->setGraphicsEffect(oe);
-#endif //SLIDER_ON_VO
-
     mpCurrent = new QLabel(mpControl);
     mpCurrent->setToolTip(tr("Current time"));
     mpCurrent->setMargin(2);
@@ -566,10 +558,7 @@ void MainWindow::changeVO(QAction *action)
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
     VideoRenderer *vo = VideoRendererFactory::create(vid);
     if (vo && vo->isAvailable()) {
-        if (vo->widget()) {
-            vo->widget()->resize(rect().size()); //TODO: why not mpPlayer->renderer()->rendererSize()?
-            vo->resizeRenderer(mpPlayer->renderer()->rendererSize());
-        }
+
         setRenderer(vo);
     } else {
         action->toggle(); //check state changes if clicked
@@ -613,17 +602,6 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         return;
     mpOSD->uninstall();
     mpSubtitle->uninstall();
-#if SLIDER_ON_VO
-    int old_pos = 0;
-    int old_total = 0;
-
-    if (mpTimeSlider) {
-        old_pos = mpTimeSlider->value();
-        old_total = mpTimeSlider->maximum();
-        mpTimeSlider->hide();
-    } else {
-    }
-#endif //SLIDER_ON_VO    
     renderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
     mpPlayer->setRenderer(renderer);
     QWidget *r = 0;
@@ -643,13 +621,6 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     mpRenderer = renderer;
     //setInSize?
     mpPlayerLayout->addWidget(renderer->widget());
-    resize(renderer->widget()->size());
-#if SLIDER_ON_VO
-    if (mpTimeSlider) {
-        mpTimeSlider->setParent(mpRenderer->widget());
-        mpTimeSlider->show();
-    }
-#endif //SLIDER_ON_VO
     if (mpVOAction) {
         mpVOAction->setChecked(false);
     }
@@ -881,30 +852,11 @@ void MainWindow::closeEvent(QCloseEvent *e)
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e);
-#if 0
-    if (e->size() == qApp->desktop()->size()) {
-        mpControl->hide();
-        mpTimeSlider->hide();
-    } else {
-        if (mpControl->isHidden())
-            mpControl->show();
-        if (mpTimeSlider->isHidden())
-            mpTimeSlider->show();
-    }
-#endif
+    QWidget::resizeEvent(e);
     /*
     if (mpTitle)
         QLabelSetElideText(mpTitle, QFileInfo(mFile).fileName(), e->size().width());
     */
-#if SLIDER_ON_VO
-    int m = 4;
-    QWidget *w = static_cast<QWidget*>(mpTimeSlider->parent());
-    if (w) {
-        mpTimeSlider->resize(w->width() - m*2, 44);
-        qDebug("%d %d %d", m, w->height() - mpTimeSlider->height() - m, w->width() - m*2);
-        mpTimeSlider->move(m, w->height() - mpTimeSlider->height() - m);
-    }
-#endif //SLIDER_ON_VO
 }
 
 void MainWindow::timerEvent(QTimerEvent *e)
@@ -1190,9 +1142,9 @@ void MainWindow::tryHideControlBar()
 void MainWindow::tryShowControlBar()
 {
     unsetCursor();
-    if (mpTimeSlider->isHidden())
+    if (mpTimeSlider && mpTimeSlider->isHidden())
         mpTimeSlider->show();
-    if (mpControl->isHidden())
+    if (mpControl && mpControl->isHidden())
         mpControl->show();
 }
 
@@ -1395,6 +1347,8 @@ void MainWindow::setSubtitleCharset(const QString &charSet)
 
 void MainWindow::workaroundRendererSize()
 {
+    if (!mpRenderer)
+        return;
     QSize s = rect().size();
     //resize(QSize(s.width()-1, s.height()-1));
     //resize(s); //window resize to fullscreen size will create another fullScreenChange event

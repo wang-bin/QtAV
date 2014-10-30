@@ -31,8 +31,12 @@ RESOURCES += \
 *msvc*: LIBS += -lUser32
 
 HEADERS = common.h \
+    qoptions.h \
     ScreenSaver.h
-SOURCES = common.cpp
+
+SOURCES = common.cpp \
+    qoptions.cpp
+
 !macx: SOURCES += ScreenSaver.cpp
 macx:!ios {
 #SOURCE is ok

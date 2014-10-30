@@ -249,7 +249,7 @@ Rectangle {
         onVolumeChanged: player.volume = volume
         onOpenFile: fileDialog.open()
         onShowInfo: {
-            help.text = "<p>" + Utils.htmlEscaped(player.source) + "</p>"
+            help.text = "<p>" + player.source + "</p>"
             if (typeof player.metaData.duration != "undefined")
                 help.text += "<p>" + qsTr("Duration: ") + player.metaData.duration + " ms</p>"
             if (typeof player.metaData.size != "undefined")

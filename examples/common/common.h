@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <qglobal.h>
+#include "qoptions.h"
 
 #if defined(BUILD_COMMON_LIB)
 #  undef COMMON_EXPORT
@@ -14,5 +15,7 @@
 extern "C" {
 COMMON_EXPORT void _link_hack();
 }
+
+QOptions get_common_options();
 
 #endif // COMMON_H

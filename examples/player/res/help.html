@@ -1,6 +1,6 @@
 <h4>Command Line</h4>
 <pre><code>
-player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[;cuda[;vaapi[;vda[;ffmpeg]]]]"] [--ffmpeg-log] [url|path|pipe:]
+player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[;cuda[;vaapi[;vda[;ffmpeg]]]]"] [--ffmpeg-log] [-f url|path|pipe:]
 </code></pre>
 <p>To disable audio output, add <code>-ao null<code></p>
 <p>Choose a render engine with <em>-vo</em> option(default is OpenGL). For example, in windows that support Direct2D, you can run</p>
@@ -16,15 +16,15 @@ will use dxva if dxva can decode, use cuda if dxva failed to decode, and use ffm
 <li>Double click: fullscreen switch</li>
 <li>Ctrl+O: open a file</li>
 <li>Space: pause/continue</li>
+<li>A: aspect ratio</li>
 <li>F: fullscreen on/off</li>
-<li>I: switch display quality</li>
 <li>T: stays on top on/off</li>
 <li>N: show next frame. Continue the playing by pressing "Space"</li>
 <li>O: OSD</li>
 <li>P: replay</li>
 <li>Q/ESC: quit</li>
 <li>S: stop</li>
-<li>R: switch aspect ratio</li>
+<li>R: rotate 90</li>
 <li>M: mute on/off</li>
 <li>Up / Down: volume + / -</li>
 <li>Ctrl+Up/Down: speed + / -</li>
