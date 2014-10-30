@@ -102,6 +102,7 @@ Item {
       Default is ["FFmpeg"]
     s*/
     property alias videoCodecPriority:   player.videoCodecPriority
+    property alias channelLayout:        player.channelLayout
     /*!
         \qmlproperty enumeration Video::playbackState
 

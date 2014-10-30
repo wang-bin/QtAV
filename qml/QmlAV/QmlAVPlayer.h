@@ -194,6 +194,10 @@ private Q_SLOTS:
     void _q_stopped();
     void _q_paused(bool);
 
+private Q_SLOTS:
+    void applyVolume();
+    void applyChannelLayout();
+
 private:
     Q_DISABLE_COPY(QmlAVPlayer)
 
@@ -202,6 +206,7 @@ private:
     bool mAutoLoad;
     bool mHasAudio, mHasVideo;
     int mLoopCount;
+    qreal mVolume;
     PlaybackState mPlaybackState;
     Error mError;
     QString mErrorString;

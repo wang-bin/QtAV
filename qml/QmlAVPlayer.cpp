@@ -62,6 +62,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mHasAudio(false)
   , mHasVideo(false)
   , mLoopCount(1)
+  , mVolume(1.0)
   , mPlaybackState(StoppedState)
   , mError(NoError)
   , mpPlayer(0)
@@ -77,6 +78,8 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
+    connect(this, SIGNAL(volumeChanged()), SLOT(applyVolume()));
+    connect(this, SIGNAL(channelLayoutChanged()), SLOT(applyChannelLayout()));
 
     mVideoCodecs << "FFmpeg";
 
@@ -236,27 +239,10 @@ static AudioFormat::ChannelLayout toAudioFormatChannelLayout(QmlAVPlayer::Channe
 
 void QmlAVPlayer::setChannelLayout(ChannelLayout channel)
 {
-    AudioOutput *ao = mpPlayer->audio();
-    if (ao && ao->isAvailable()) {
-        AudioFormat af = ao->audioFormat();
-        AudioFormat::ChannelLayout ch = toAudioFormatChannelLayout(channel);
-        if (channel == ChannelLayoutAuto || ch == af.channelLayout()) {
-            return;
-        }
-        af.setChannelLayout(ch);
-        if (!ao->close()) {
-            qWarning("close audio failed");
-            return;
-        }
-        ao->setAudioFormat(af);
-        if (!ao->open()) {
-            qWarning("open audio failed");
-            return;
-        }
-    }
+    if (mChannelLayout == channel)
+        return;
     mChannelLayout = channel;
-    if (channel != ChannelLayout())
-        emit channelLayoutChanged();
+    emit channelLayoutChanged();
 }
 
 QmlAVPlayer::ChannelLayout QmlAVPlayer::channelLayout() const
@@ -289,20 +275,19 @@ void QmlAVPlayer::setLoopCount(int c)
 
 qreal QmlAVPlayer::volume() const
 {
-    AudioOutput *ao = mpPlayer->audio();
-    if (ao && ao->isAvailable()) {
-        return ao->volume();
-    }
-    return 0;
+    return mVolume;
 }
 
 void QmlAVPlayer::setVolume(qreal volume)
 {
-    AudioOutput *ao = mpPlayer->audio();
-    if (ao && ao->isAvailable() && ao->volume() != volume) {
-        ao->setVolume(volume);
-        emit volumeChanged();
+    if (mVolume < 0) {
+        qWarning("volume must > 0");
+        return;
     }
+    if (mVolume == volume)
+        return;
+    mVolume = volume;
+    emit volumeChanged();
 }
 
 bool QmlAVPlayer::isMuted() const
@@ -363,7 +348,9 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
         } else {
             mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->play();
-            setChannelLayout(channelLayout());
+            applyChannelLayout();
+            // applyChannelLayout() first because it may reopen audio device
+            applyVolume();
             // TODO: in load()?
             m_metaData->setValuesFromStatistics(mpPlayer->statistics());
             if (!mHasAudio) {
@@ -495,4 +482,35 @@ void QmlAVPlayer::_q_stopped()
     mPlaybackState = StoppedState;
     emit stopped();
     emit playbackStateChanged();
+}
+
+void QmlAVPlayer::applyVolume()
+{
+    AudioOutput *ao = mpPlayer->audio();
+    if (!ao || !ao->isAvailable())
+        return;
+    if (ao->volume() == volume())
+        return;
+    ao->setVolume(volume());
+}
+
+void QmlAVPlayer::applyChannelLayout()
+{
+    AudioOutput *ao = mpPlayer->audio();
+    if (!ao || !ao->isAvailable())
+        return;
+    AudioFormat af = ao->audioFormat();
+    AudioFormat::ChannelLayout ch = toAudioFormatChannelLayout(channelLayout());
+    if (channelLayout() == ChannelLayoutAuto || ch == af.channelLayout())
+        return;
+    af.setChannelLayout(ch);
+    if (!ao->close()) {
+        qWarning("close audio failed");
+        return;
+    }
+    ao->setAudioFormat(af);
+    if (!ao->open()) {
+        qWarning("open audio failed");
+        return;
+    }
 }
