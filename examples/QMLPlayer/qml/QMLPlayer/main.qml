@@ -67,7 +67,7 @@ Rectangle {
         orientation: 0
         SubtitleItem {
             id: subtitleItem
-            //visible: false
+            visible: subtitle.enabled
             fillMode: videoOut.fillMode
             rotation: -videoOut.orientation
             source: subtitle
@@ -75,6 +75,7 @@ Rectangle {
         }
         Text {
             id: subtitleLabel
+            visible: subtitle.enabled
             rotation: -videoOut.orientation
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignBottom
@@ -95,13 +96,22 @@ Rectangle {
         //loops: MediaPlayer.Infinite
         //autoLoad: true
         autoPlay: true
-        //channelLayout: MediaPlayer.ChannelLayoutAuto
         onPositionChanged: {
             control.setPlayingProgress(position/duration)
         }
         onPlaying: {
             control.duration = duration
             control.setPlayingState()
+            if (!pageLoader.item)
+                return
+            if (pageLoader.item.information === "undefined")
+                return
+            pageLoader.item.information = {
+                source: player.source,
+                hasAudio: player.hasAudio,
+                hasVideo: player.hasVideo,
+                metaData: player.metaData
+            }
         }
         onStopped: {
             control.setStopState()
@@ -131,6 +141,12 @@ Rectangle {
         anchors.fill: parent
         onPressed: {
             control.toggleVisible()
+            console.log("mouse: " + mouseX + " mouse.x: " + mouse.x + " w: " + root.width)
+            if (root.width - mouseX < Utils.scaled(60)) {
+                configPanel.state = "show"
+            } else {
+                configPanel.state = "hide"
+            }
         }
     }
     Text {
@@ -188,14 +204,12 @@ Rectangle {
             onLinkActivated: Qt.openUrlExternally(link)
         }
         function helpText() {
-            return "<h3>QMLPlayer based on QtAV  1.4.0 </h3>"
+            return "<h3>QMLPlayer based on QtAV  1.4.1 </h3>"
              + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
              + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
              + "<p>Shanghai University->S3 Graphics->Deepin, Shanghai, China</p>"
              + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
              + "<p>Web Site: <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>"
-             + "\n<h3>Command line:</h3>"
-             + "<p>QMLPlayer [-vd \"DXVA[;VAAPI[;VDA[;FFmpeg[;CUDA]]]]\"] fileName</p>"
              + "\n<h3>Shortcut:</h3>"
              + "<p>M: mute</p><p>F: fullscreen</p><p>Up/Down: volume +/-</p><p>Left/Right: Seek backward/forward
                 </p><p>Space: pause/play</p><p>Q: quite</p>"
@@ -249,48 +263,7 @@ Rectangle {
         onVolumeChanged: player.volume = volume
         onOpenFile: fileDialog.open()
         onShowInfo: {
-            help.text = "<p>" + player.source + "</p>"
-            if (typeof player.metaData.duration != "undefined")
-                help.text += "<p>" + qsTr("Duration: ") + player.metaData.duration + " ms</p>"
-            if (typeof player.metaData.size != "undefined")
-                help.text += "<p>" + qsTr("Size: ") + Math.round(player.metaData.size/1024/1024*100)/100 + " M</p>"
-            if (typeof player.metaData.title != "undefined")
-                help.text += "<p>" + qsTr("Title") + ": " +player.metaData.title + "</p>"
-            if (typeof player.metaData.albumTitle != "undefined")
-                help.text += "<p>" + qsTr("Album") + ": " + Utils.htmlEscaped(player.metaData.albumTitle) + "</p>"
-            if (typeof player.metaData.title != "undefined")
-                help.text += "<p>" + qsTr("Comment") + ": " + Utils.htmlEscaped(player.metaData.comment) + "</p>"
-            if (typeof player.metaData.year != "undefined")
-                help.text += "<p>" + qsTr("Year") + ": " + player.metaData.year + "</p>"
-            if (typeof player.metaData.date != "undefined")
-                help.text += "<p>" + qsTr("Date") + ": " + player.metaData.date + "</p>"
-            if (typeof player.metaData.author != "undefined")
-                help.text += "<p>" + qsTr("Author") + ": " + Utils.htmlEscaped(player.metaData.author) + "</p>"
-            if (typeof player.metaData.publisher != "undefined")
-                help.text += "<p>" + qsTr("Publisher") + ": " + Utils.htmlEscaped(player.metaData.publisher) + "</p>"
-            if (typeof player.metaData.genre != "undefined")
-                help.text += "<p>" + qsTr("Genre") + ": " + player.metaData.genre + "</p>"
-            if (typeof player.metaData.trackNumber != "undefined")
-                help.text += "<p>" + qsTr("Track") + ": " + player.metaData.trackNumber + "</p>"
-            if (typeof player.metaData.trackCount != "undefined")
-                help.text += "<p>" + qsTr("Track count") + ": " + player.metaData.trackCount + "</p>"
-
-            if (player.hasVideo) {
-                help.text += "<h4>" + qsTr("Video") + "</h4>"
-                        + "<p>" + qsTr("Resolution") + ": " + player.metaData.resolution.width + "x" +  + player.metaData.resolution.height + "</p>"
-                        + "<p>" + qsTr("Codec") + ": " + player.metaData.videoCodec + "</p>"
-                        + "<p>" + qsTr("Frame rate") + ": " + Math.round(100*player.metaData.videoFrameRate)/100 + "</p>"
-                        + "<p>" + qsTr("Bit rate") + ": " + player.metaData.videoBitRate + "</p>"
-            }
-            if (player.hasAudio) {
-                help.text += "<h4>" + qsTr("Audio") + "</h4>"
-                        + "<p>" + qsTr("Codec") + ": " + player.metaData.audioCodec + "</p>"
-                        + "<p>" + qsTr("Bit rate") + ": " + player.metaData.audioBitRate + "</p>"
-                        + "<p>" + qsTr("Sample rate") + ": " + player.metaData.sampleRate + "</p>"
-                        + "<p>" + qsTr("Channels") + ": " + player.metaData.channelCount + "</p>"
-            }
-            donateBtn.visible = false
-            help.visible = true
+            pageLoader.source = "MediaInfoPage.qml"
         }
         onShowHelp: {
             help.text = help.helpText()
@@ -355,6 +328,76 @@ Rectangle {
                 Qt.quit()
             }
         }
+    }
+    Item {
+        id: configPage
+        anchors.right: configPanel.left
+        y: configPanel.selectedY
+        width: parent.width - 2*configPanel.width
+        height: Utils.scaled(200)
+        Loader {
+            id: pageLoader
+            anchors.fill: parent
+            focus: true
+            onLoaded: {
+                if (!item || item.information === "undefined")
+                    return
+                item.information = {
+                    source: player.source,
+                    hasAudio: player.hasAudio,
+                    hasVideo: player.hasVideo,
+                    metaData: player.metaData
+                }
+            }
+        }
+        Connections {
+            target: pageLoader.item
+            onClose: pageLoader.source = ""
+            onChannelChanged: player.channelLayout = channel
+            onSubtitleChanged: subtitle.file = file
+            onEngineChanged: subtitle.engines = [ engine ]
+            onEnabledChanged: subtitle.enabled = value
+            onAutoLoadChanged: subtitle.autoLoad = autoLoad
+            onDecoderChanged: player.videoCodecPriority = [ value ]
+        }
+    }
+    ConfigPanel {
+        id: configPanel
+        anchors {
+            top: parent.top
+            right: parent.right
+            bottom: control.top
+        }
+        width: Utils.scaled(140)
+        onSelectedUrlChanged: pageLoader.source = selectedUrl
+        states: [
+            State {
+                name: "show"
+                PropertyChanges {
+                    target: configPanel
+                    opacity: 0.9
+                    anchors.rightMargin: 0
+                }
+            },
+            State {
+                name: "hide"
+                PropertyChanges {
+                    target: configPanel
+                    opacity: 0
+                    anchors.rightMargin: -configPanel.width
+                }
+            }
+        ]
+        transitions: [
+            Transition {
+                from: "*"; to: "*"
+                PropertyAnimation {
+                    properties: "opacity,anchors.rightMargin"
+                    easing.type: Easing.OutQuart
+                    duration: 500
+                }
+            }
+        ]
     }
     FileDialog {
         id: fileDialog

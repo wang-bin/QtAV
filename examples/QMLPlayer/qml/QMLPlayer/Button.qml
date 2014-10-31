@@ -30,7 +30,7 @@ Item {
     property bool checkable: false
     property bool checked: false
     property color bgColor: "#00000000"
-    property color bgColorSelected: "#2000ff00"
+    property color bgColorSelected: "#ee0000ff"
     property color textColor: "white"
     property alias enabled: mouseArea.enabled
 
@@ -38,7 +38,7 @@ Item {
 
     Rectangle {
         anchors { fill: parent; margins: 1 }
-        color: mouseArea.pressed ? bgColorSelected : bgColor
+        color: checked ? bgColorSelected : mouseArea.pressed ? Qt.lighter(bgColorSelected) : bgColor
         border.color: Qt.lighter(color)
         //radius: 0.25 * height
 

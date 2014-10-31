@@ -27,7 +27,7 @@ Rectangle {
     property color fillColor: "red"
     property color lineColor: "#770000ee"
     property color gripColor: "white"
-    property real gripSize: Utils.scaled(10)
+    property real gripSize: Utils.scaled(8)
     property real gripTolerance: Utils.scaled(3.0)
     property real increment: 0.1
     property bool enabled: true

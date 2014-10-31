@@ -1,0 +1,60 @@
+import QtQuick 2.0
+import "utils.js" as Utils
+
+Rectangle {
+    id: root
+    color: "#aa1a2b3a"
+    focus: true
+    property alias title: title.text
+    property alias content: content
+    signal close
+    Text {
+        id: title
+        anchors.top: parent.top
+        width: parent.width
+        height: 40
+        color: "white"
+        font.pixelSize: 20
+        font.bold: true
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+    }
+    Canvas {
+        anchors.fill: parent
+        onPaint: {
+            var ctx = getContext('2d')
+            var g = ctx.createLinearGradient(0, 0, parent.width, 0)
+            g.addColorStop(0, "#00ffffff")
+            g.addColorStop(0.3, "#f0ffffff")
+            g.addColorStop(0.7, "#f0ffffff")
+            g.addColorStop(1, "#00ffffff")
+            ctx.fillStyle = g
+            ctx.fillRect(0, title.height, parent.width, 1)
+        }
+    }
+    MouseArea { // avoid mouse events propagated to parents
+        anchors.fill: parent
+    }
+    Item {
+        id: content
+        anchors {
+            top: title.bottom
+            bottom: parent.bottom
+            left: parent.left
+            right: parent.right
+        }
+        anchors.margins: 8
+    }
+
+    // TODO: why must put here otherwise can't clicked?
+    Button {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        width: Utils.scaled(20)
+        height: Utils.scaled(20)
+        icon: resurl("theme/default/close.svg")
+        onClicked: {
+            root.close()
+        }
+    }
+}
