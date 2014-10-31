@@ -13,7 +13,7 @@ android {
 }
 TARGET = common
 TEMPLATE = lib
-
+DEFINES += BUILD_QOPT_LIB
 CONFIG *= common-buildlib
 
 #var with '_' can not pass to pri?

@@ -16,6 +16,6 @@ extern "C" {
 COMMON_EXPORT void _link_hack();
 }
 
-QOptions get_common_options();
+QOptions COMMON_EXPORT get_common_options();
 
 #endif // COMMON_H
