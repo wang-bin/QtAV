@@ -21,7 +21,7 @@ fix_qtav_framework() {
   local QTAV_FRAMEWORK_IN=${QTAV_FRAMEWORK##*QtAV.framework/}
   echo install_name_tool -id "@executable_path/../Frameworks/QtAV.framework/$QTAV_FRAMEWORK_IN" $QTAV_FRAMEWORK
   install_name_tool -id "@executable_path/../Frameworks/QtAV.framework/$QTAV_FRAMEWORK_IN" $QTAV_FRAMEWORK
-  for ff in libportaudio libavutil libavcodec libavformat libavfilter libavresample libswscale libswresample libpostproc
+  for ff in libportaudio libavutil libavcodec libavformat libavfilter libavdevice libavresample libswscale libswresample libpostproc
   do
     local FFPATH=`otool -L $QTAV_FRAMEWORK |awk '{print $1}' |grep -v : |grep $ff`
     local FFNAME=${FFPATH##*/}
