@@ -175,6 +175,8 @@ class  AudioOutputOpenALPrivate : public AudioOutputPrivate
 public:
     AudioOutputOpenALPrivate()
         : AudioOutputPrivate()
+        , device(0)
+        , context(0)
         , format_al(AL_FORMAT_STEREO16)
         , state(0)
     {
@@ -182,6 +184,8 @@ public:
     ~AudioOutputOpenALPrivate() {
     }
 
+    ALCdevice *device;
+    ALCcontext * context;
     ALenum format_al;
     ALuint buffer[kBufferCount];
     ALuint source;
@@ -232,20 +236,21 @@ bool AudioOutputOpenAL::open()
     }
     const ALCchar *default_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
     qDebug("AudioOutputOpenAL Opening default device: %s", default_device);
-    ALCdevice *dev = alcOpenDevice(NULL); //parameter: NULL or default_device
-    if (!dev) {
+    d.device = alcOpenDevice(NULL); //parameter: NULL or default_device
+    if (!d.device) {
         qWarning("AudioOutputOpenAL Failed to open sound device: %s", alcGetString(0, alcGetError(0)));
         return false;
     }
     qDebug("AudioOutputOpenAL creating context...");
-    ALCcontext *ctx = alcCreateContext(dev, NULL);
-    alcMakeContextCurrent(ctx);
+    d.context = alcCreateContext(d.device, NULL);
+    alcMakeContextCurrent(d.context);
     //alcProcessContext(ctx); //used when dealing witg multiple contexts
-    ALCenum err = alcGetError(dev);
+    ALCenum err = alcGetError(d.device);
     if (err != ALC_NO_ERROR) {
-        qWarning("AudioOutputOpenAL Error: %s", alcGetString(dev, err));
+        qWarning("AudioOutputOpenAL Error: %s", alcGetString(d.device, err));
         return false;
     }
+    qDebug("device: %p, context: %p", d.device, d.context);
     //init params. move to another func?
     d.format_al = audioFormatToAL(audioFormat());
 
@@ -292,8 +297,10 @@ bool AudioOutputOpenAL::open()
     return true;
 fail:
     alcMakeContextCurrent(NULL);
-    alcDestroyContext(ctx);
-    alcCloseDevice(dev);
+    alcDestroyContext(d.context);
+    alcCloseDevice(d.device);
+    d.context = 0;
+    d.device = 0;
     return false;
 }
 
@@ -316,26 +323,22 @@ bool AudioOutputOpenAL::close()
     alDeleteSources(1, &d.source);
     alDeleteBuffers(kBufferCount, d.buffer);
 
-    ALCcontext *ctx = alcGetCurrentContext();
-    ALCdevice *dev = alcGetContextsDevice(ctx);
     alcMakeContextCurrent(NULL);
-    if (ctx) {
-        qDebug("alcDestroyContext(%p)", ctx);
-        alcDestroyContext(ctx);
-        ALCenum err = alcGetError(dev);
+    if (d.context) {
+        qDebug("alcDestroyContext(%p)", d.context);
+        alcDestroyContext(d.context);
+        ALCenum err = alcGetError(d.device);
         if (err != ALC_NO_ERROR) { //ALC_INVALID_CONTEXT
-            qWarning("AudioOutputOpenAL Failed to destroy context: %s", alcGetString(dev, err));
+            qWarning("AudioOutputOpenAL Failed to destroy context: %s", alcGetString(d.device, err));
             return false;
         }
+        d.context = 0;
     }
-    if (dev) {
-        qDebug("alcCloseDevice(%p)", dev);
-        alcCloseDevice(dev);
-        ALCenum err = alcGetError(dev);
-        if (err != ALC_NO_ERROR) { //ALC_INVALID_DEVICE
-            qWarning("AudioOutputOpenAL Failed to close device: %s", alcGetString(dev, err));
-            return false;
-        }
+    if (d.device) {
+        qDebug("alcCloseDevice(%p)", d.device);
+        alcCloseDevice(d.device);
+        // ALC_INVALID_DEVICE now
+        d.device = 0;
     }
     return true;
 }
@@ -367,9 +370,10 @@ AudioFormat::ChannelLayout AudioOutputOpenAL::preferredChannelLayout() const
 
 QString AudioOutputOpenAL::name() const
 {
-    ALCcontext *ctx = alcGetCurrentContext();
-    ALCdevice *dev = alcGetContextsDevice(ctx);
-    const ALCchar *name = alcGetString(dev, ALC_DEVICE_SPECIFIER);
+    DPTR_D(const AudioOutputOpenAL);
+    if (!d.device)
+        return QString();
+    const ALCchar *name = alcGetString(d.device, ALC_DEVICE_SPECIFIER);
     return name;
 }
 
