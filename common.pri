@@ -84,21 +84,40 @@ defineTest(qtRunQuitly) {
     return(true)
 }
 
+defineReplace(platformTargetSuffix) {
+    ios:CONFIG(iphonesimulator, iphonesimulator|iphoneos): \
+        suffix = _iphonesimulator
+    else: \
+        suffix =
+
+    CONFIG(debug, debug|release) {
+        !debug_and_release|build_pass {
+            mac: return($${suffix}_debug)
+            win32: return($${suffix}d)
+        }
+    }
+    return($$suffix)
+}
+
 #Acts like qtLibraryTarget. From qtcreator.pri
 defineReplace(qtLibName) {
 	#TEMPLATE += fakelib
 	#LIB_FULLNAME = $$qtLibraryTarget($$1)
 	#TEMPLATE -= fakelib
-	unset(LIBRARY_NAME)
-	LIBRARY_NAME = $$1
-	CONFIG(debug, debug|release) {
-		!debug_and_release|build_pass {
-                        mac:!mac_framework:RET = $$member(LIBRARY_NAME, 0)_debug
-			else:win32:RET = $$member(LIBRARY_NAME, 0)d
-		}
-	}
-	isEmpty(RET):RET = $$LIBRARY_NAME
-	!win32: return($$RET)
+        unset(RET)
+        RET = $$1
+    greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) {
+        mac:CONFIG(shared, static|shared):contains(QT_CONFIG, qt_framework) {
+          QMAKE_FRAMEWORK_BUNDLE_NAME = $$RET
+          export(QMAKE_FRAMEWORK_BUNDLE_NAME)
+       } else {
+           # insert the major version of Qt in the library name
+           # unless it's a framework build
+           RET ~= s,^Qt,Qt$$QT_MAJOR_VERSION,
+       }
+    }
+        RET = $$RET$$platformTargetSuffix()
+        !win32: return($$RET)
 
 	isEmpty(2): VERSION_EXT = $$VERSION
 	else: VERSION_EXT = $$2
@@ -108,7 +127,7 @@ defineReplace(qtLibName) {
 	}
 	RET = $${RET}$${VERSION_EXT}
 	unset(VERSION_EXT)
-	return($$RET)
+        return($$RET)
 }
 
 
