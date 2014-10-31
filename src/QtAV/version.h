@@ -44,8 +44,6 @@
 
 /* the following are compile time version */
 /* C++11 requires a space between literal and identifier */
-static const char* const qtav_version_string = TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_MINOR) "." TOSTR(QTAV_PATCH) "(" __DATE__ ", " __TIME__ ")";
 #define QTAV_VERSION_STR        TOSTR(QTAV_MAJOR) "." TOSTR(QTAV_MINOR) "." TOSTR(QTAV_PATCH)
-#define QTAV_VERSION_STR_LONG   QTAV_VERSION_STR "(" __DATE__ ", " __TIME__ ")"
 
 #endif // QTAV_VERSION_H

@@ -52,6 +52,11 @@
 #ifndef Q_NORETURN
 #define Q_NORETURN
 #endif
+
+#ifndef Q_FUNC_INFO
+#define Q_FUNC_INFO __FUNCTION__
+#endif
+
 namespace QtAV {
 namespace Internal {
 

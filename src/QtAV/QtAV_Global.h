@@ -73,40 +73,21 @@ Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list)
 
 } //namespace QtAV
 
+// TODO: internal use. move to a private header
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #define QStringLiteral(X) QString::fromUtf8(X)
 #endif //QT_VERSION
 /*
  * msvc sucks! can not deal with (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
  */
+// TODO: internal use. move to a private header
 #define QTAV_HAVE(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
-
-//TODO: always inline
-/* --gnu option of the RVCT compiler also defines __GNUC__ */
-#if defined(Q_CC_GNU) && !defined(Q_CC_RVCT)
-#define GCC_VERSION_AT_LEAST(major, minor, patch) \
-    (__GNUC__ > major || (__GNUC__ == major && (__GNUC_MINOR__ > minor \
-    || (__GNUC_MINOR__ == minor && __GNUC_PATCHLEVEL__ >= patch))))
-#else
-/* Define this for !GCC compilers, just so we can write things like GCC_VERSION_AT_LEAST(4, 1, 0). */
-#define GCC_VERSION_AT_LEAST(major, minor, patch) 0
-#endif
-
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || defined(QT_WIDGETS_LIB)
-#ifndef QTAV_HAVE_WIDGETS
-#define QTAV_HAVE_WIDGETS 1
-#endif //QTAV_HAVE_WIDGETS
-#endif
 
 #ifndef Q_DECL_OVERRIDE
 #define Q_DECL_OVERRIDE
 #endif
 #ifndef Q_DECL_FINAL
 #define Q_DECL_FINAL
-#endif
-
-#ifndef Q_FUNC_INFO
-#define Q_FUNC_INFO __FUNCTION__
 #endif
 
 #endif // QTAV_GLOBAL_H

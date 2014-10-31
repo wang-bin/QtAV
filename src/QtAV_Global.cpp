@@ -20,6 +20,13 @@
 ******************************************************************************/
 
 #include "QtAV/QtAV_Global.h"
+// TODO: move to an internal header
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || defined(QT_WIDGETS_LIB)
+#ifndef QTAV_HAVE_WIDGETS
+#define QTAV_HAVE_WIDGETS 1
+#endif //QTAV_HAVE_WIDGETS
+#endif
+
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
 #if QTAV_HAVE(WIDGETS)
@@ -42,6 +49,8 @@ QString QtAV_Version_String()
 {
     return QTAV_VERSION_STR;
 }
+
+#define QTAV_VERSION_STR_LONG   QTAV_VERSION_STR "(" __DATE__ ", " __TIME__ ")"
 
 QString QtAV_Version_String_Long()
 {
@@ -178,7 +187,7 @@ QString aboutQtAV_HTML()
             "<p>" + QObject::tr("A media playing library base on Qt and FFmpeg.\n") + "</p>"
             "<p>" + QObject::tr("Distributed under the terms of LGPLv2.1 or later.\n") + "</p>"
             "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
-            "<p>" + QObject::tr("Shanghai University->S3 Graphics, Shanghai, China") + "</p>\n"
+            "<p>" + QObject::tr("Shanghai University->S3 Graphics->Deepin, Shanghai, China") + "</p>\n"
             "<p>" + QObject::tr("Donate") + ": <a href='http://wang-bin.github.io/QtAV#donate'>http://wang-bin.github.io/QtAV#donate</a></p>\n"
             "<p>" + QObject::tr("Source") + ": <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
             "<p>" + QObject::tr("Web Site") + ": <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>";

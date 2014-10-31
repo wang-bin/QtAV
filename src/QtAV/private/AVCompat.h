@@ -126,6 +126,18 @@ extern "C"
 
 void ffmpeg_version_print();
 
+
+//TODO: always inline
+/* --gnu option of the RVCT compiler also defines __GNUC__ */
+#if defined(Q_CC_GNU) && !defined(Q_CC_RVCT)
+#define GCC_VERSION_AT_LEAST(major, minor, patch) \
+    (__GNUC__ > major || (__GNUC__ == major && (__GNUC_MINOR__ > minor \
+    || (__GNUC_MINOR__ == minor && __GNUC_PATCHLEVEL__ >= patch))))
+#else
+/* Define this for !GCC compilers, just so we can write things like GCC_VERSION_AT_LEAST(4, 1, 0). */
+#define GCC_VERSION_AT_LEAST(major, minor, patch) 0
+#endif
+
 /*TODO: libav
 avutil: error.h
 */

@@ -23,6 +23,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include "QtAV/prepost.h"
+
+// TODO: move to an internal header
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || defined(QT_WIDGETS_LIB)
+#ifndef QTAV_HAVE_WIDGETS
+#define QTAV_HAVE_WIDGETS 1
+#endif //QTAV_HAVE_WIDGETS
+#endif
+
 #if QTAV_HAVE(WIDGETS)
 #include "QtAV/WidgetRenderer.h"
 #include "QtAV/GraphicsItemRenderer.h"
