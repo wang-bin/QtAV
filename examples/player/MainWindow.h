@@ -125,6 +125,7 @@ private slots:
     void toggleSubtitleAutoLoad(bool value);
     void openSubtitle();
     void setSubtitleCharset(const QString& charSet);
+    void setSubtitleEngine(const QString& value);
 
 protected:
     virtual void closeEvent(QCloseEvent *e);

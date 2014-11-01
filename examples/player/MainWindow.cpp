@@ -362,11 +362,11 @@ void MainWindow::setupUi()
     hb->addWidget(pRepeatLabel);
     hb->addWidget(mpRepeatB);
     vb->addLayout(hb);
-    QWidget *pRepeatWidget = new QWidget;
-    pRepeatWidget->setLayout(vb);
+    QWidget *wgt = new QWidget;
+    wgt->setLayout(vb);
 
     pWA = new QWidgetAction(0);
-    pWA->setDefaultWidget(pRepeatWidget);
+    pWA->setDefaultWidget(wgt);
     pWA->defaultWidget()->setEnabled(false);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
     mpRepeatAction = pWA;
@@ -384,23 +384,39 @@ void MainWindow::setupUi()
     act->setChecked(mpSubtitle->autoLoad());
     connect(act, SIGNAL(toggled(bool)), SLOT(toggleSubtitleAutoLoad(bool)));
     subMenu->addAction(tr("Open"), this, SLOT(openSubtitle()));
-    QWidget *csWidget = new QWidget();
+
+    wgt = new QWidget();
     hb = new QHBoxLayout();
-    csWidget->setLayout(hb);
-    hb->addWidget(new QLabel(tr("Charset")));
-    QComboBox *csBox = new QComboBox();
-    hb->addWidget(csBox);
+    wgt->setLayout(hb);
+    hb->addWidget(new QLabel(tr("Engine")));
+    QComboBox *box = new QComboBox();
+    hb->addWidget(box);
     pWA = new QWidgetAction(0);
-    pWA->setDefaultWidget(csWidget);
+    pWA->setDefaultWidget(wgt);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
-    csBox->addItem(tr("Auto detect"), "AutoDetect");
-    csBox->addItem(tr("System"), "System");
+    box->addItem("FFmpeg", "FFmpeg");
+    box->addItem("LibASS", "LibASS");
+    connect(box, SIGNAL(activated(QString)), SLOT(setSubtitleEngine(QString)));
+    mpSubtitle->setEngines(QStringList() << box->itemData(box->currentIndex()).toString());
+    box->setToolTip(tr("FFmpeg supports more subtitles but only render plain text") + "\n" + tr("LibASS supports ass styles"));
+
+    wgt = new QWidget();
+    hb = new QHBoxLayout();
+    wgt->setLayout(hb);
+    hb->addWidget(new QLabel(tr("Charset")));
+    box = new QComboBox();
+    hb->addWidget(box);
+    pWA = new QWidgetAction(0);
+    pWA->setDefaultWidget(wgt);
+    subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
+    box->addItem(tr("Auto detect"), "AutoDetect");
+    box->addItem(tr("System"), "System");
     foreach (const QByteArray& cs, QTextCodec::availableCodecs()) {
-        csBox->addItem(cs, cs);
+        box->addItem(cs, cs);
     }
-    connect(csBox, SIGNAL(activated(QString)), SLOT(setSubtitleCharset(QString)));
-    mpSubtitle->setCodec(csBox->itemData(csBox->currentIndex()).toByteArray());
-    csBox->setToolTip(tr("Auto detect requires libchardet"));
+    connect(box, SIGNAL(activated(QString)), SLOT(setSubtitleCharset(QString)));
+    mpSubtitle->setCodec(box->itemData(box->currentIndex()).toByteArray());
+    box->setToolTip(tr("Auto detect requires libchardet"));
 
     subMenu = new ClickableMenu(tr("Audio track"));
     mpMenu->addMenu(subMenu);
@@ -1343,6 +1359,15 @@ void MainWindow::setSubtitleCharset(const QString &charSet)
     if (!box)
         return;
     mpSubtitle->setCodec(box->itemData(box->currentIndex()).toByteArray());
+}
+
+void MainWindow::setSubtitleEngine(const QString &value)
+{
+    Q_UNUSED(value)
+    QComboBox *box = qobject_cast<QComboBox*>(sender());
+    if (!box)
+        return;
+    mpSubtitle->setEngines(QStringList() << box->itemData(box->currentIndex()).toString());
 }
 
 void MainWindow::workaroundRendererSize()

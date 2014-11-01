@@ -92,7 +92,6 @@ void EventFilter::help()
                        "<p>" + tr("Shortcut:\n") + "</p>"
                        "<p>" + tr("Space: pause/continue\n") + "</p>"
                        "<p>" + tr("F: fullscreen on/off\n") + "</p>"
-                       "<p>" + tr("I: switch video display quality\n") + "</p>"
                        "<p>" + tr("T: stays on top on/off\n") + "</p>"
                        "<p>" + tr("N: show next frame. Continue the playing by pressing 'Space'\n") + "</p>"
                        "<p>" + tr("Ctrl+O: open a file\n") + "</p>"
