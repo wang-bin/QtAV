@@ -62,12 +62,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Shanghai University-&gt;S3 Graphics, Shanghai, China</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Web Site</source>
-        <translation type="unfinished"></translation>
+        <source>Home page</source>
+        <translation>主页</translation>
     </message>
     <message>
         <source>skip_frame</source>
@@ -99,6 +95,44 @@
     </message>
     <message>
         <source>bug</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shanghai University-&gt;S3 Graphics-&gt;Deepin, Shanghai, China</source>
+        <translation>上海大学-&gt;S3 Graphics-&gt;Deepin, 中国上海</translation>
+    </message>
+    <message>
+        <source>Codec %1 is not supported by CUDA</source>
+        <translation>CUDA不支持 %1 编码</translation>
+    </message>
+</context>
+<context>
+    <name>QtAV::AVDecoder</name>
+    <message>
+        <source>No codec could be found for &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QtAV::AVDemuxer</name>
+    <message>
+        <source>error reading stream data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>seek error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed to open media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed to find stream info</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -250,6 +284,77 @@
     <message>
         <source>About Qt</source>
         <translation type="obsolete">关于 Qt</translation>
+    </message>
+</context>
+<context>
+    <name>QtAV::VideoDecoderCUDA</name>
+    <message>
+        <source>Decoding surfaces.</source>
+        <translation>解码表面</translation>
+    </message>
+    <message>
+        <source>Decoder flags</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QtAV::VideoDecoderDXVA</name>
+    <message>
+        <source>Decoding surfaces.</source>
+        <translation>解码表面</translation>
+    </message>
+    <message>
+        <source>0: auto</source>
+        <translation>0: 自动</translation>
+    </message>
+    <message>
+        <source>Optimized copy decoded data from USWC memory using SSE4.1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QtAV::VideoDecoderFFmpeg</name>
+    <message>
+        <source>Skipping the loop filter (aka deblocking) usually has determinal effect on quality. However it provides a big speedup for hi definition streams</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force skipping of idct to speed up decoding for frame types (-1=None, 0=Default, 1=B-frames, 2=P-frames, 3=B+P frames, 4=all frames)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force skipping frames for speed up decoding.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QtAV::VideoDecoderVAAPI</name>
+    <message>
+        <source>Decoding surfaces.</source>
+        <translation>解码表面</translation>
+    </message>
+    <message>
+        <source>0: auto</source>
+        <translation>0: 自动</translation>
+    </message>
+    <message>
+        <source>Optimized copy decoded data from USWC memory using SSE4.1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maybe faster if display is not GLX</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GLX is fastest. No data copyback from gpu.</source>
+        <translation>GLX 性能最好. 不需要从GPU拷贝数据</translation>
+    </message>
+</context>
+<context>
+    <name>QtAV::VideoDecoderVDA</name>
+    <message>
+        <source>Optimized copy decoded data from USWC memory using SSE4.1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

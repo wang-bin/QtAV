@@ -29,8 +29,8 @@ Item {
     property alias iconChecked: iconChecked.source
     property bool checkable: false
     property bool checked: false
-    property color bgColor: "#00000000"
-    property color bgColorSelected: "#ee0000ff"
+    property color bgColor: "#555555"
+    property color bgColorSelected: "#ee6666dd"
     property color textColor: "white"
     property alias enabled: mouseArea.enabled
 

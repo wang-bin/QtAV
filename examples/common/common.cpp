@@ -1,5 +1,10 @@
 #include "common.h"
 
+#include <QtCore/QLocale>
+#include <QtCore/QTranslator>
+#include <QtCore/QCoreApplication>
+#include <QtDebug>
+
 void _link_hack()
 {
 
@@ -12,7 +17,7 @@ QOptions get_common_options()
             ("help,h", "print this")
             ("x", 0, "")
             ("y", 0, "y")
-            ("--width", 800, "width of player")
+            ("-width", 800, "width of player")
             ("height", 450, "height of player")
             ("fullscreen", "fullscreen")
             ("deocder", "FFmpeg", "use a given decoder")
@@ -20,4 +25,28 @@ QOptions get_common_options()
             ("file,f", "", "file or url to play")
             ;
     return ops;
+}
+
+void load_qm(const QStringList &names)
+{
+    QStringList qms(names);
+    qms << "QtAV" << "qt";
+    foreach(QString qm, qms) {
+        QTranslator *ts = new QTranslator(qApp);
+        QString path = qApp->applicationDirPath() + "/i18n/" + qm + "_" + QLocale::system().name();
+        qDebug() << "loading qm: " << path;
+        if (ts->load(path)) {
+            qApp->installTranslator(ts);
+        } else {
+            path = ":/i18n/" + qm + "_" + QLocale::system().name();
+            qDebug() << "loading qm: " << path;
+            if (ts->load(path))
+                qApp->installTranslator(ts);
+            else
+                delete ts;
+        }
+    }
+    QTranslator qtts;
+    if (qtts.load("qt_" + QLocale::system().name()))
+        qApp->installTranslator(&qtts);
 }

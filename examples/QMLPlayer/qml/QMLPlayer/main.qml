@@ -47,7 +47,6 @@ Rectangle {
             } else {
                 player.videoCodecPriority = ["VAAPI", "DXVA", "CUDA", "FFmpeg"];
             }
-
             // FIXME: source is relative to this qml
             //player.source = a[a.length-1]
             //player.play()
@@ -96,15 +95,11 @@ Rectangle {
         //loops: MediaPlayer.Infinite
         //autoLoad: true
         autoPlay: true
-        onPositionChanged: {
-            control.setPlayingProgress(position/duration)
-        }
+        onPositionChanged: control.setPlayingProgress(position/duration)
         onPlaying: {
             control.duration = duration
             control.setPlayingState()
             if (!pageLoader.item)
-                return
-            if (pageLoader.item.information === "undefined")
                 return
             pageLoader.item.information = {
                 source: player.source,
@@ -113,12 +108,8 @@ Rectangle {
                 metaData: player.metaData
             }
         }
-        onStopped: {
-            control.setStopState()
-        }
-        onPaused: {
-            control.setPauseState()
-        }
+        onStopped: control.setStopState()
+        onPaused: control.setPauseState()
         onError: {
             if (error != MediaPlayer.NoError)
                 msg.text = errorString
@@ -135,6 +126,11 @@ Rectangle {
         }
         onLoaded: {
             msg.text = qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1)
+        }
+        onSupportedSuffixesChanged: {
+            if (!pageLoader.item)
+                return
+            pageLoader.item.supportedFormats = supportedSuffixes
         }
     }
     MouseArea {
@@ -156,11 +152,8 @@ Rectangle {
         style: Text.Outline
         styleColor: "green"
         color: "white"
-        anchors {
-            top: root.top
-            left: root.left
-            right: root.right
-        }
+        anchors.top: root.top
+        width: root.width
         height: root.height / 4
         onTextChanged: {
             msg_timer.stop()
@@ -175,68 +168,6 @@ Rectangle {
             }
         }
     }
-
-    Rectangle {
-        id: help
-        property alias text: title.text
-        color: "#77222222"
-        anchors {
-            //top: root.top
-            left: root.left
-            right: root.right
-            bottom: control.top
-        }
-        height: Utils.scaled(60)
-        visible: false
-        Text {
-            id: title
-            color: "white"
-            anchors.fill: parent
-            anchors.bottom: parent.bottom
-            anchors.margins: Utils.scaled(8)
-            //horizontalAlignment: Qt.AlignHCenter
-            font {
-                pixelSize: Utils.scaled(12)
-            }
-            onContentHeightChanged: {
-                parent.height = contentHeight + 2*anchors.margins
-            }
-            onLinkActivated: Qt.openUrlExternally(link)
-        }
-        function helpText() {
-            return "<h3>QMLPlayer based on QtAV  1.4.1 </h3>"
-             + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
-             + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
-             + "<p>Shanghai University->S3 Graphics->Deepin, Shanghai, China</p>"
-             + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
-             + "<p>Web Site: <a href='http://wang-bin.github.io/QtAV'>http://wang-bin.github.io/QtAV</a></p>"
-             + "\n<h3>Shortcut:</h3>"
-             + "<p>M: mute</p><p>F: fullscreen</p><p>Up/Down: volume +/-</p><p>Left/Right: Seek backward/forward
-                </p><p>Space: pause/play</p><p>Q: quite</p>"
-             + "<p>R: rotate</p><p>A: aspect ratio</p>"
-        }
-        Button {
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.margins: Utils.scaled(0)
-            width: Utils.scaled(20)
-            height: Utils.scaled(20)
-            icon: resurl("theme/default/close.svg")
-            onClicked: parent.visible = false
-        }
-        Button {
-            id: donateBtn
-            text: qsTr("Donate")
-            bgColor: "#990000ff"
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            anchors.margins: Utils.scaled(8)
-            width: Utils.scaled(80)
-            height: Utils.scaled(40)
-            onClicked: Qt.openUrlExternally("http://wang-bin.github.io/QtAV#donate")
-        }
-    }
-
     ControlPanel {
         id: control
         anchors {
@@ -262,14 +193,8 @@ Rectangle {
         }
         onVolumeChanged: player.volume = volume
         onOpenFile: fileDialog.open()
-        onShowInfo: {
-            pageLoader.source = "MediaInfoPage.qml"
-        }
-        onShowHelp: {
-            help.text = help.helpText()
-            donateBtn.visible = true
-            help.visible = true
-        }
+        onShowInfo: pageLoader.source = "MediaInfoPage.qml"
+        onShowHelp: pageLoader.source = "About.qml"
     }
 
     Item {
@@ -332,15 +257,17 @@ Rectangle {
     Item {
         id: configPage
         anchors.right: configPanel.left
-        y: configPanel.selectedY
+        //anchors.bottom: control.top
+        y: Math.max(0, Math.min(configPanel.selectedY, root.height - pageLoader.height - control.height))
         width: parent.width - 2*configPanel.width
         height: Utils.scaled(200)
         Loader {
             id: pageLoader
-            anchors.fill: parent
+            anchors.right: parent.right
+            width: parent.width
             focus: true
             onLoaded: {
-                if (!item || item.information === "undefined")
+                if (!item)
                     return
                 item.information = {
                     source: player.source,
@@ -359,6 +286,7 @@ Rectangle {
             onEnabledChanged: subtitle.enabled = value
             onAutoLoadChanged: subtitle.autoLoad = autoLoad
             onDecoderChanged: player.videoCodecPriority = [ value ]
+            onMuteChanged: player.muted = value
         }
     }
     ConfigPanel {

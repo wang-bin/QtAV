@@ -1,4 +1,10 @@
 
+var kItemWidth = scaled(60)
+var kItemHeight = scaled(30)
+var kMargin = scaled(8)
+var kFontSize = scaled(16)
+var kSpacing = scaled(4)
+
 function msec2string(t) {
     t = Math.floor(t/1000)
     var ss = t%60

@@ -7,14 +7,15 @@ Rectangle {
     focus: true
     property alias title: title.text
     property alias content: content
+    property int titleHeight: title.height + 2*Utils.kMargin
     signal close
     Text {
         id: title
         anchors.top: parent.top
         width: parent.width
-        height: 40
+        height: Utils.scaled(40)
         color: "white"
-        font.pixelSize: 20
+        font.pixelSize: Utils.scaled(20)
         font.bold: true
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
@@ -43,7 +44,7 @@ Rectangle {
             left: parent.left
             right: parent.right
         }
-        anchors.margins: 8
+        anchors.margins: Utils.kMargin
     }
 
     // TODO: why must put here otherwise can't clicked?
@@ -52,6 +53,8 @@ Rectangle {
         anchors.left: parent.left
         width: Utils.scaled(20)
         height: Utils.scaled(20)
+        bgColor: "transparent"
+        bgColorSelected: "transparent"
         icon: resurl("theme/default/close.svg")
         onClicked: {
             root.close()

@@ -24,8 +24,6 @@
 
 #include <QtDebug>
 #include <QtCore/QDir>
-#include <QtCore/QLocale>
-#include <QtCore/QTranslator>
 #include <QMessageBox>
 
 #include <QtAV/AVPlayer.h>
@@ -93,27 +91,7 @@ int main(int argc, char *argv[])
     }
 
     QApplication a(argc, argv);
-
-    QStringList qms;
-    qms << "QtAV" << "player" << "qt";
-    foreach(QString qm, qms) {
-        QTranslator *ts = new QTranslator(qApp);
-        QString path = qApp->applicationDirPath() + "/i18n/" + qm + "_" + QLocale::system().name();
-        qDebug() << "loading qm: " << path;
-        if (ts->load(path)) {
-            a.installTranslator(ts);
-        } else {
-            path = ":/i18n/" + qm + "_" + QLocale::system().name();
-            qDebug() << "loading qm: " << path;
-            if (ts->load(path))
-                a.installTranslator(ts);
-            else
-                delete ts;
-        }
-    }
-    QTranslator qtts;
-    if (qtts.load("qt_" + QLocale::system().name()))
-        a.installTranslator(&qtts);
+    load_qm(QStringList() << "player");
 
     sLogfile = fopen(QString(qApp->applicationDirPath() + "/log.txt").toUtf8().constData(), "w+");
     if (!sLogfile) {

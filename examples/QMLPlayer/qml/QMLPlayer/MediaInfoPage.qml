@@ -9,10 +9,12 @@ Page {
         anchors.fill: content
         Text {
             id: info
+            wrapMode: Text.Wrap
             color: "white"
+            font.pixelSize: Utils.kFontSize
             anchors.fill: parent
             onContentSizeChanged: {
-                root.height = contentHeight + 64
+                root.height = contentHeight + Utils.scaled(64)
             }
         }
     }
@@ -60,6 +62,5 @@ Page {
                     + "<p>" + qsTr("Channels") + ": " + metaData.channelCount + "</p>"
         }
         info.text = text
-        console.log(text)
     }
 }

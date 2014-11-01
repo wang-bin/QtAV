@@ -1,10 +1,11 @@
 import QtQuick 2.0
+import "utils.js" as Utils
 
 Rectangle {
     id: root
-    width: 100
-    height: 30
-    property color selectedColor: "#20ffffff"
+    width: Utils.kItemWidth
+    height: Utils.kItemHeight
+    property color selectedColor: "#66ddaadd"
     property alias text: itemText.text
     property alias textContentWidth: itemText.contentWidth
     property alias textContentHeight: itemText.contentHeight
@@ -13,7 +14,7 @@ Rectangle {
     Text {
         id: itemText
         color: "white"
-        font.pixelSize: 16
+        font.pixelSize: Utils.kFontSize
         anchors.centerIn: parent
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter

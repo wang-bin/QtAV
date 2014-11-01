@@ -1,10 +1,11 @@
 import QtQuick 2.0
+import "utils.js" as Utils
 
 Item {
     id: root
     property alias model: listView.model
-    property int itemWidth: 80
-    property int itemHeight: 30
+    property int itemWidth: Utils.kItemWidth
+    property int itemHeight: Utils.kItemHeight
     property alias listOrientation: listView.orientation
     property alias spacing: listView.spacing
     property alias contentWidth: listView.contentWidth

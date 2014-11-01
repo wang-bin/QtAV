@@ -61,7 +61,7 @@ QString QOption::formatName() const
         return "-" + mShortName;
     if (mShortName.isEmpty())
         return "--" + mLongName;
-    return "-" + mShortName + " [ --" + mLongName + "]";
+    return "-" + mShortName + " [--" + mLongName + "]";
 }
 
 QString QOption::description() const

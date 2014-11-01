@@ -1,14 +1,17 @@
 import QtQuick 2.0
+import "utils.js" as Utils
 
 Page {
     id: root
     title: qsTr("Video Codec")
     property string codecName: "FFmpeg"
     signal decoderChanged(string value)
+    height: Utils.scaled(200)
+
     QtObject {
         id: d
         property Item selectedItem
-        property string detail: ""
+        property string detail: qsTr("Takes effect on the next play")
     }
 
     Item {
@@ -16,10 +19,10 @@ Page {
         Text {
             id: detail
             anchors.fill: parent
-            anchors.bottomMargin: 60
+            anchors.bottomMargin: Utils.scaled(50)
             text: d.detail
             color: "white"
-            font.pixelSize: 18
+            font.pixelSize: Utils.kFontSize
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }
@@ -27,7 +30,7 @@ Page {
             anchors {
                 top: detail.bottom
                 bottom: parent.bottom
-                topMargin: 10
+                topMargin: Utils.kMargin
                 horizontalCenter: parent.horizontalCenter
             }
             onContentWidthChanged: {
@@ -36,7 +39,7 @@ Page {
                 width = parent.width - 2*anchors.leftMargin
             }
             orientation: ListView.Horizontal
-            spacing: 6
+            spacing: Utils.scaled(6)
             focus: true
 
             delegate: contentDelegate
@@ -45,11 +48,11 @@ Page {
 
         ListModel {
             id: contentModel
-            ListElement { name: "VDA"; description: "VDA (OSX) hardware decoding" }
-            ListElement { name: "DXVA"; description: "DXVA (Windows) hardware decoding" }
-            ListElement { name: "VAAPI"; description: "VA-API (Linux) hardware decoding" }
-            ListElement { name: "CUDA"; description: "NVIDIA CUDA (Windows, Linux) hardware decoding" }
-            ListElement { name: "FFmpeg"; description: "FFmpeg software decoding" }
+            ListElement { name: "VDA"; hardware: true; description: "VDA (OSX)" }
+            ListElement { name: "DXVA"; hardware: true; description: "DirectX Video Acceleration (Windows)" }
+            ListElement { name: "VAAPI"; hardware: true; description: "VA-API (Linux) " }
+            ListElement { name: "CUDA"; hardware: true; description: "NVIDIA CUDA (Windows, Linux)"}
+            ListElement { name: "FFmpeg"; hardware: false; description: "FFmpeg/Libav" }
         }
 
         Component {
@@ -57,8 +60,8 @@ Page {
             DelegateItem {
                 id: delegateItem
                 text: name
-                width: textContentWidth + 8
-                height: textContentHeight + 8
+                width: textContentWidth + Utils.scaled(8)
+                height: textContentHeight + Utils.scaled(8)
                 color: "#aa000000"
                 selectedColor: "#aa0000cc"
                 border.color: "white"
@@ -68,7 +71,7 @@ Page {
                     if (d.selectedItem)
                         d.selectedItem.state = "baseState"
                     d.selectedItem = delegateItem
-                    d.detail = description + "\nTakes effect on the next play"
+                    d.detail = description + " " + (hardware ? qsTr("hardware decoding") : qsTr("software decoding"))  + "\n" + qsTr("Takes effect on the next play")
                     root.decoderChanged(name)
                 }
             }

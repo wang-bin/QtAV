@@ -1,4 +1,5 @@
 import QtQuick 2.0
+import "utils.js" as Utils
 
 Rectangle {
     id: root
@@ -13,14 +14,15 @@ Rectangle {
     Menu {
         id: menu
         anchors.fill: parent
-        anchors.topMargin: 40
-        itemWidth: root.width - 2
-        spacing: 1
+        anchors.topMargin: Utils.scaled(40)
+        itemWidth: root.width - Utils.scaled(2)
+        spacing: Utils.scaled(1)
         model: ListModel {
-            ListElement { name: "Media info"; url: "MediaInfoPage.qml" }
-            ListElement { name: "Video codec"; url: "VideoCodec.qml" }
-            ListElement { name: "Subtitle"; url: "SubtitlePage.qml" }
-            ListElement { name: "Audio"; url: "AudioPage.qml" }
+            ListElement { name: qsTr("Media info"); url: "MediaInfoPage.qml" }
+            ListElement { name: qsTr("Video codec"); url: "VideoCodec.qml" }
+            ListElement { name: qsTr("Subtitle"); url: "SubtitlePage.qml" }
+            ListElement { name: qsTr("Audio"); url: "AudioPage.qml" }
+            ListElement { name: qsTr("About"); url: "About.qml" }
         }
         onClicked: {
             selectedX = x

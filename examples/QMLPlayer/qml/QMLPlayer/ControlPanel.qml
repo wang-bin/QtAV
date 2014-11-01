@@ -178,11 +178,6 @@ Rectangle {
             id: video
             fillMode: VideoOutput.Stretch
             height: parent.height * 4/5
-            //visible: false
-            //autoPlay: true
-            //source: mediaSource
-            //audioTrack: -1
-            //onPositionChanged: pause()
             file: mediaSource
             anchors.top: parent.top
             anchors.left: parent.left

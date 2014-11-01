@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
     }
 
     QGuiApplication app(argc, argv);
+    load_qm(QStringList() << "QMLPlayer");
     QtQuick2ApplicationViewer viewer;
     qDebug(">>>>>>>>devicePixelRatio: %f", qApp->devicePixelRatio());
     QScreen *sc = app.primaryScreen();
