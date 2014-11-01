@@ -155,10 +155,11 @@ void Subtitle::setEngines(const QStringList &value)
 {
     if (priv->engine_names == value)
         return;
-    priv->processor = 0;
+    // can not reset processor here, not thread safe.
     priv->supported_suffixes.clear();
     priv->engine_names = value;
     emit enginesChanged();
+    emit supportedSuffixesChanged();
     QList<SubtitleProcessor*> sps;
     if (priv->engine_names.isEmpty()) {
         return;
@@ -194,6 +195,10 @@ void Subtitle::setEngines(const QStringList &value)
     }
     priv->supported_suffixes.removeDuplicates();
     // DO NOT set priv->suffixes
+    emit supportedSuffixesChanged();
+    // it's safe to reload
+    if (isLoaded())
+        loadAsync();
 }
 
 QStringList Subtitle::engines() const
@@ -316,11 +321,14 @@ qreal Subtitle::timestamp() const
 
 void Subtitle::load()
 {
+    SubtitleProcessor *old_processor = priv->processor;
     priv->reset();
     emit contentChanged(); //notify user to update subtitle
     // lock is not needed because it's not loaded now
     if (!priv->url.isEmpty()) {
         // need qt network module network
+        if (old_processor != priv->processor)
+            emit engineChanged();
         return;
     }
     // raw data is set, file name and url are empty
@@ -330,6 +338,8 @@ void Subtitle::load()
         if (priv->loaded)
             emit loaded("");
         checkCapability();
+        if (old_processor != priv->processor)
+            emit engineChanged();
         return;
     }
     // read from a url
@@ -342,12 +352,16 @@ void Subtitle::load()
         if (priv->loaded)
             emit loaded(priv->url.toString());
         checkCapability();
+        if (old_processor != priv->processor)
+            emit engineChanged();
         return;
     }
     // read from a file
     QStringList paths = priv->find();
     if (paths.isEmpty()) {
         checkCapability();
+        if (old_processor != priv->processor)
+            emit engineChanged();
         return;
     }
     foreach (const QString& path, paths) {
@@ -360,9 +374,11 @@ void Subtitle::load()
             continue;
         priv->loaded = true;
         emit loaded(path);
-        checkCapability();
-        return;
+        break;
     }
+    checkCapability();
+    if (old_processor != priv->processor)
+        emit engineChanged();
 }
 
 void Subtitle::checkCapability()
@@ -714,10 +730,12 @@ void SubtitleAPIProxy::setSubtitle(Subtitle *sub)
 
     QObject::connect(m_s, SIGNAL(codecChanged()), m_obj, SIGNAL(codecChanged()));
     QObject::connect(m_s, SIGNAL(enginesChanged()), m_obj, SIGNAL(enginesChanged()));
+    QObject::connect(m_s, SIGNAL(engineChanged()), m_obj, SIGNAL(engineChanged()));
 //    QObject::connect(m_s, SIGNAL(fileNameChanged()), m_obj, SIGNAL(fileNameChanged()));
     QObject::connect(m_s, SIGNAL(dirsChanged()), m_obj, SIGNAL(dirsChanged()));
     QObject::connect(m_s, SIGNAL(fuzzyMatchChanged()), m_obj, SIGNAL(fuzzyMatchChanged()));
     QObject::connect(m_s, SIGNAL(suffixesChanged()), m_obj, SIGNAL(suffixesChanged()));
+    QObject::connect(m_s, SIGNAL(supportedSuffixesChanged()), m_obj, SIGNAL(supportedSuffixesChanged()));
 }
 
 void SubtitleAPIProxy::setCodec(const QByteArray& value)

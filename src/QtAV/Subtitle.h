@@ -57,12 +57,13 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(QByteArray codec READ codec WRITE setCodec NOTIFY codecChanged)
     // QList<SubtitleProcessorId>
     Q_PROPERTY(QStringList engines READ engines WRITE setEngines NOTIFY enginesChanged)
-    Q_PROPERTY(QString engine READ engine)
+    Q_PROPERTY(QString engine READ engine NOTIFY engineChanged)
     Q_PROPERTY(bool fuzzyMatch READ fuzzyMatch WRITE setFuzzyMatch NOTIFY fuzzyMatchChanged)
     Q_PROPERTY(QByteArray rawData READ rawData WRITE setRawData NOTIFY rawDataChanged)
     Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
     Q_PROPERTY(QStringList dirs READ dirs WRITE setDirs NOTIFY dirsChanged)
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
+    Q_PROPERTY(QStringList supportedSuffixes READ supportedSuffixes NOTIFY supportedSuffixesChanged)
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
     Q_PROPERTY(QString text READ getText)
     Q_PROPERTY(bool loaded READ isLoaded)
@@ -87,14 +88,15 @@ public:
     bool isLoaded() const;
     /*!
      * \brief setEngines
-     * set subtitle processor engine names.
+     * Set subtitle processor engine names, in priority order. When loading a subtitle, use the engines
+     * one by one until a usable engine is found.
      * \param value
      */
     void setEngines(const QStringList& value);
     QStringList engines() const;
     /*!
      * \brief engine
-     * \return the engine in use
+     * \return The engine in use for current subtitle
      */
     QString engine() const;
     void setFuzzyMatch(bool value);
@@ -177,6 +179,8 @@ signals:
     void fileNameChanged();
     void dirsChanged();
     void suffixesChanged();
+    void supportedSuffixesChanged();
+    void engineChanged();
 private:
     void checkCapability();
     class Private;
