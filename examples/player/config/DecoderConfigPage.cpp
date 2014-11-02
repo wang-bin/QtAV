@@ -19,7 +19,7 @@
 ******************************************************************************/
 
 #include "DecoderConfigPage.h"
-#include "Config.h"
+#include "common/Config.h"
 #include "PropertyEditor.h"
 
 #include <QListView>

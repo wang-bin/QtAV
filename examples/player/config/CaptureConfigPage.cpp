@@ -19,7 +19,7 @@
 ******************************************************************************/
 
 #include "CaptureConfigPage.h"
-#include "Config.h"
+#include "common/Config.h"
 #include <QLabel>
 #include <QFormLayout>
 #include <QtGui/QImageWriter>

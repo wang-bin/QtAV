@@ -26,7 +26,7 @@
 #include "DecoderConfigPage.h"
 #include "AVFormatConfigPage.h"
 #include "AVFilterConfigPage.h"
-#include "Config.h"
+#include "common/Config.h"
 void ConfigDialog::display()
 {
     static ConfigDialog *dialog = new ConfigDialog();

@@ -6,7 +6,7 @@
 #include <QLineEdit>
 #include <QLabel>
 
-#include "Config.h"
+#include "common/Config.h"
 
 AVFormatConfigPage::AVFormatConfigPage(QWidget *parent) :
     ConfigPageBase(parent)

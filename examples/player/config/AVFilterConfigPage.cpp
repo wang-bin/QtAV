@@ -3,7 +3,7 @@
 #include <QCheckBox>
 #include <QLabel>
 #include <QTextEdit>
-#include "Config.h"
+#include "common/Config.h"
 
 AVFilterConfigPage::AVFilterConfigPage()
 {
