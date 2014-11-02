@@ -50,6 +50,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
+#define EOF_ISSUE_SOLVED 0
 namespace QtAV {
 
 static const int kPosistionCheckMS = 500;
@@ -624,11 +625,7 @@ bool AVPlayer::load(bool reload)
     formatCtx = demuxer.formatContext();
 
     // TODO: what about other proctols? some vob duration() == 0
-    if ((path.startsWith("file:") || QFile(path).exists()) && duration() > 0) {
-        media_end_pos = mediaStartPosition() + duration();
-    } else {
-        media_end_pos = kInvalidPosition;
-    }
+    media_end_pos = mediaStartPosition() + duration();
     // if file changed or stop() called by user, stop_position changes.
     if (stopPosition() > mediaStopPosition() || stopPosition() == 0) {
         stop_position = mediaStopPosition();
@@ -886,8 +883,9 @@ void AVPlayer::play()
      */
     //TODO: no eof if replay by seek(0)
 #if EOF_ISSUE_SOLVED
-    if (!isLoaded()) { //if (!isLoaded() && !load())
-        if (!load(false)) {
+    bool force_reload = position() > 0; //eof issue now
+    if (!isLoaded() || force_reload) { //if (!isLoaded() && !load())
+        if (!load(force_reload)) {
             mStatistics.reset();
             return;
         } else {
