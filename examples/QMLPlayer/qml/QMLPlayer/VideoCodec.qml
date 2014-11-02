@@ -4,8 +4,6 @@ import "utils.js" as Utils
 Page {
     id: root
     title: qsTr("Video Codec")
-    property string codecName: "FFmpeg"
-    signal decoderChanged(string value)
     height: Utils.scaled(200)
 
     QtObject {
@@ -73,7 +71,6 @@ Page {
                         d.selectedItem.state = "baseState"
                     d.selectedItem = delegateItem
                     d.detail = description + " " + (hardware ? qsTr("hardware decoding") : qsTr("software decoding"))  + "\n" + qsTr("Takes effect on the next play")
-                    root.decoderChanged(name)
                     PlayerConfig.decoderPriorityNames = [ name ]
                 }
             }

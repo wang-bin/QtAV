@@ -84,6 +84,14 @@ public:
         subtitle_autoload = settings.value("autoLoad", true).toBool();
         subtitle_enabled = settings.value("enabled", true).toBool();
         subtitle_engines = settings.value("engines", QStringList() << "FFmpeg" << "LibASS").toStringList();
+        QFont f;
+        f.setPointSize(20);
+        f.setBold(true);
+        subtitle_font = settings.value("font", f).value<QFont>();
+        subtitle_color = settings.value("color", QColor("white")).value<QColor>();
+        subtitle_outline_color = settings.value("outline_color", QColor("blue")).value<QColor>();
+        subtitle_outline = settings.value("outline", true).toBool();
+        subtilte_bottom_margin = settings.value("bottom margin", 8).toInt();
         settings.endGroup();
         settings.beginGroup("avformat");
         direct = settings.value("avioflags", 0).toString() == "direct";
@@ -113,6 +121,11 @@ public:
         settings.setValue("enabled", subtitle_enabled);
         settings.setValue("autoLoad", subtitle_autoload);
         settings.setValue("engines", subtitle_engines);
+        settings.setValue("font", subtitle_font);
+        settings.setValue("color", subtitle_color);
+        settings.setValue("outline_color", subtitle_outline_color);
+        settings.setValue("outline", subtitle_outline);
+        settings.setValue("bottom margin", subtilte_bottom_margin);
         settings.endGroup();
         settings.beginGroup("avformat");
         settings.setValue("avioflags", direct ? "direct" : 0);
@@ -145,6 +158,10 @@ public:
     QStringList subtitle_engines;
     bool subtitle_autoload;
     bool subtitle_enabled;
+    QFont subtitle_font;
+    QColor subtitle_color, subtitle_outline_color;
+    bool subtitle_outline;
+    int subtilte_bottom_margin;
 };
 
 Config& Config::instance()
@@ -278,6 +295,73 @@ Config& Config::setSubtitleEnabled(bool value)
         return *this;
     mpData->subtitle_enabled = value;
     emit subtitleEnabledChanged();
+    return *this;
+}
+
+QFont Config::subtitleFont() const
+{
+    return mpData->subtitle_font;
+}
+
+Config& Config::setSubtitleFont(const QFont& value)
+{
+    if (mpData->subtitle_font == value)
+        return *this;
+    mpData->subtitle_font = value;
+    emit subtitleFontChanged();
+    return *this;
+}
+
+bool Config::subtitleOutline() const
+{
+    return mpData->subtitle_outline;
+}
+Config& Config::setSubtitleOutline(bool value)
+{
+    if (mpData->subtitle_outline == value)
+        return *this;
+    mpData->subtitle_outline = value;
+    emit subtitleOutlineChanged();
+    return *this;
+}
+
+QColor Config::subtitleColor() const
+{
+    return mpData->subtitle_color;
+}
+Config& Config::setSubtitleColor(const QColor& value)
+{
+    if (mpData->subtitle_color == value)
+        return *this;
+    mpData->subtitle_color = value;
+    emit subtitleColorChanged();
+    return *this;
+}
+
+QColor Config::subtitleOutlineColor() const
+{
+    return mpData->subtitle_outline_color;
+}
+Config& Config::setSubtitleOutlineColor(const QColor& value)
+{
+    if (mpData->subtitle_outline_color == value)
+        return *this;
+    mpData->subtitle_outline_color = value;
+    emit subtitleOutlineColorChanged();
+    return *this;
+}
+
+int Config::subtitleBottomMargin() const
+{
+    return mpData->subtilte_bottom_margin;
+}
+
+Config& Config::setSubtitleBottomMargin(int value)
+{
+    if (mpData->subtilte_bottom_margin == value)
+        return *this;
+    mpData->subtilte_bottom_margin = value;
+    emit subtitleBottomMarginChanged();
     return *this;
 }
 

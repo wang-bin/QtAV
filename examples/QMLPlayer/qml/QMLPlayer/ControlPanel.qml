@@ -267,8 +267,8 @@ Rectangle {
             bgColorSelected: "transparent"
             width: Utils.scaled(50)
             height: Utils.scaled(50)
-            icon: resurl("theme/default/play.svg")
-            iconChecked: resurl("theme/default/pause.svg")
+            icon: Utils.resurl("theme/default/play.svg")
+            iconChecked: Utils.resurl("theme/default/pause.svg")
 
             onClicked: {
                 if (mediaSource == "")
@@ -297,7 +297,7 @@ Rectangle {
                 bgColorSelected: "transparent"
                 width: Utils.scaled(35)
                 height: Utils.scaled(35)
-                icon: resurl("theme/default/stop.svg")
+                icon: Utils.resurl("theme/default/stop.svg")
                 onClicked: {
                     //player.stop()
                     stop()
@@ -309,7 +309,7 @@ Rectangle {
                 bgColorSelected: "transparent"
                 width: Utils.scaled(35)
                 height: Utils.scaled(35)
-                icon: resurl("theme/default/backward.svg")
+                icon: Utils.resurl("theme/default/backward.svg")
                 onClicked: {
                     //player.seek(player.position-10000)
                     seekBackward(10000)
@@ -326,7 +326,7 @@ Rectangle {
                 bgColorSelected: "transparent"
                 width: Utils.scaled(35)
                 height: Utils.scaled(35)
-                icon: resurl("theme/default/forward.svg")
+                icon: Utils.resurl("theme/default/forward.svg")
                 onClicked: {
                     //player.seek(player.position+10000)
                     seekForward(10000)
@@ -345,8 +345,8 @@ Rectangle {
                 bgColorSelected: "transparent"
                 width: Utils.scaled(25)
                 height: Utils.scaled(25)
-                icon: resurl("theme/default/fullscreen.svg")
-                iconChecked: resurl("theme/default/fullscreen.svg")
+                icon: Utils.resurl("theme/default/fullscreen.svg")
+                iconChecked: Utils.resurl("theme/default/fullscreen.svg")
                 visible: true
                 onCheckedChanged: {
                     if (checked)
@@ -382,7 +382,7 @@ Rectangle {
                 bgColorSelected: "transparent"
                 width: Utils.scaled(25)
                 height: Utils.scaled(25)
-                icon: resurl("theme/default/info.svg")
+                icon: Utils.resurl("theme/default/info.svg")
                 visible: true
                 onClicked: showInfo()
             }
@@ -392,7 +392,7 @@ Rectangle {
                 bgColorSelected: "transparent"
                 width: Utils.scaled(25)
                 height: Utils.scaled(25)
-                icon: resurl("theme/default/open.svg")
+                icon: Utils.resurl("theme/default/open.svg")
                 onClicked: openFile()
             }
             Button {
@@ -401,7 +401,7 @@ Rectangle {
                 bgColorSelected: "transparent"
                 width: Utils.scaled(25)
                 height: Utils.scaled(25)
-                icon: resurl("theme/default/help.svg")
+                icon: Utils.resurl("theme/default/help.svg")
                 onClicked: showHelp()
             }
         }

@@ -8,7 +8,6 @@ Rectangle {
     property alias title: title.text
     property alias content: content
     property int titleHeight: title.height + 2*Utils.kMargin
-    signal close
     Text {
         id: title
         anchors.top: parent.top
@@ -55,9 +54,7 @@ Rectangle {
         height: Utils.scaled(20)
         bgColor: "transparent"
         bgColorSelected: "transparent"
-        icon: resurl("theme/default/close.svg")
-        onClicked: {
-            root.close()
-        }
+        icon: Utils.resurl("theme/default/close.svg")
+        onClicked: root.visible = false
     }
 }

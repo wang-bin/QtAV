@@ -27,12 +27,12 @@ Item {
             width: itemWidth
             height: itemHeight
             onClicked: {
+                root.clicked(index, delegateItem.x, delegateItem.y)
                 if (d.selectedItem == delegateItem)
                     return
                 if (d.selectedItem)
                     d.selectedItem.state = "baseState"
                 d.selectedItem = delegateItem
-                root.clicked(index, delegateItem.x, delegateItem.y)
             }
         }
     }

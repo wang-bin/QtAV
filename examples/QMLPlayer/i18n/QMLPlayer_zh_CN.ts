@@ -69,7 +69,7 @@
         <translation>比例</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="37"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="35"/>
         <source>Donate</source>
         <translation>捐赠</translation>
     </message>
@@ -258,31 +258,61 @@
         <translation>字幕</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="20"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="18"/>
         <source>Enabled</source>
         <translation>启用</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="29"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="27"/>
         <source>Auto load</source>
         <translation>自动加载</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="49"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="47"/>
         <source>Open a subtitle file</source>
         <translation>打开一个字幕文件</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="82"/>
+        <source>Supported formats</source>
+        <translation>支持格式</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="93"/>
+        <source>Style</source>
+        <translation>样式</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="93"/>
+        <source>Only for FFmpeg engine</source>
+        <translation>只对FFmpeg引擎有效</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="98"/>
+        <source>Font</source>
+        <translation>字体</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="113"/>
+        <source>Outline</source>
+        <translation>轮廓</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="131"/>
+        <source>Bottom margin</source>
+        <translation>底部距离</translation>
     </message>
     <message>
         <source>get a subtitle file</source>
         <translation type="vanished">打开字幕文件</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="57"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="55"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="67"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="64"/>
         <source>Engine</source>
         <translation>引擎</translation>
     </message>
@@ -295,20 +325,18 @@
         <translation>视频解码</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="51"/>
-        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="52"/>
-        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="53"/>
-        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="54"/>
+        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="75"/>
         <source>hardware decoding</source>
         <translation>硬解</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="55"/>
+        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="75"/>
         <source>software decoding</source>
         <translation>软解</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="74"/>
+        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="14"/>
+        <location filename="../qml/QMLPlayer/VideoCodec.qml" line="75"/>
         <source>Takes effect on the next play</source>
         <translation>下次播放生效</translation>
     </message>
@@ -316,7 +344,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/QMLPlayer/main.qml" line="128"/>
+        <location filename="../qml/QMLPlayer/main.qml" line="131"/>
         <source>Subtitle</source>
         <translation>字幕</translation>
     </message>

@@ -26,6 +26,8 @@
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <QtCore/QVariant>
+#include <QtGui/QColor>
+#include <QtGui/QFont>
 //TODO: use hash to simplify api
 /*
  * MVC model. signals from Config notify ui update. signals from ui does not change Config unless ui changes applyed by XXXPage.apply()
@@ -43,6 +45,11 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(QStringList subtitleEngines READ subtitleEngines WRITE setSubtitleEngines NOTIFY subtitleEnginesChanged)
     Q_PROPERTY(bool subtitleAutoLoad READ subtitleAutoLoad WRITE setSubtitleAutoLoad NOTIFY subtitleAutoLoadChanged)
     Q_PROPERTY(bool subtitleEnabled READ subtitleEnabled WRITE setSubtitleEnabled NOTIFY subtitleEnabledChanged)
+    Q_PROPERTY(QFont subtitleFont READ subtitleFont WRITE setSubtitleFont NOTIFY subtitleFontChanged)
+    Q_PROPERTY(QColor subtitleColor READ subtitleColor WRITE setSubtitleColor NOTIFY subtitleColorChanged)
+    Q_PROPERTY(QColor subtitleOutlineColor READ subtitleOutlineColor WRITE setSubtitleOutlineColor NOTIFY subtitleOutlineColorChanged)
+    Q_PROPERTY(bool subtitleOutline READ subtitleOutline WRITE setSubtitleOutline NOTIFY subtitleOutlineChanged)
+    Q_PROPERTY(int subtitleBottomMargin READ subtitleBottomMargin WRITE setSubtitleBottomMargin NOTIFY subtitleBottomMarginChanged)
 public:
     static Config& instance();
 
@@ -76,6 +83,17 @@ public:
     bool subtitleEnabled() const;
     Config& setSubtitleEnabled(bool value);
 
+    QFont subtitleFont() const;
+    Config& setSubtitleFont(const QFont& value);
+    bool subtitleOutline() const;
+    Config& setSubtitleOutline(bool value);
+    QColor subtitleColor() const;
+    Config& setSubtitleColor(const QColor& value);
+    QColor subtitleOutlineColor() const;
+    Config& setSubtitleOutlineColor(const QColor& value);
+    int subtitleBottomMargin() const;
+    Config& setSubtitleBottomMargin(int value);
+
     QVariantHash avformatOptions() const;
     int analyzeDuration() const;
     Config& analyzeDuration(int ad);
@@ -105,6 +123,11 @@ public:
     Q_SIGNAL void subtitleEnabledChanged();
     Q_SIGNAL void subtitleAutoLoadChanged();
     Q_SIGNAL void subtitleEnginesChanged();
+    Q_SIGNAL void subtitleFontChanged();
+    Q_SIGNAL void subtitleColorChanged();
+    Q_SIGNAL void subtitleOutlineChanged();
+    Q_SIGNAL void subtitleOutlineColorChanged();
+    Q_SIGNAL void subtitleBottomMarginChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();

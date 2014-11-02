@@ -4,9 +4,7 @@
 #
 #-------------------------------------------------
 # Qt4 need QDesktopServices
-greaterThan(QT_MAJOR_VERSION, 4) {
-QT -= gui
-}
+QT = core gui
 # android apk hack
 android {
   QT += svg

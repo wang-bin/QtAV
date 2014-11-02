@@ -1,5 +1,5 @@
 import QtQuick 2.0
-import QtQuick.Dialogs 1.0
+import QtQuick.Dialogs 1.1
 import "utils.js" as Utils
 
 Page {
@@ -7,7 +7,7 @@ Page {
     title: qsTr("Subtitle")
     signal subtitleChanged(string file)
     property var supportedFormats: ["ass" , "ssa"]
-    height: titleHeight + 5*Utils.kItemHeight + engine.contentHeight
+    height: titleHeight + 7*Utils.kItemHeight + engine.contentHeight
     Column {
         anchors.fill: content
         spacing: Utils.kSpacing
@@ -42,20 +42,12 @@ Page {
                 width: parent.width - open.width
                 height: parent.height
             }
-            FileDialog {
-                id: dialog
-                title: qsTr("Open a subtitle file")
-                onAccepted: {
-                    file.text = fileUrl
-                    root.subtitleChanged(fileUrl.toString())
-                }
-            }
             Button {
                 id: open
                 text: qsTr("Open")
                 width: Utils.scaled(60)
                 height: Utils.kItemHeight
-                onClicked: dialog.open()
+                onClicked: fileDialog.open()
             }
         }
 
@@ -73,9 +65,7 @@ Page {
                 ListElement { name: "FFmpeg" }
                 ListElement { name: "LibASS" }
             }
-            onClicked: {
-                PlayerConfig.subtitleEngines = [ model.get(index).name ]
-            }
+            onClicked: PlayerConfig.subtitleEngines = [ model.get(index).name ]
         }
         Text {
             color: "white"
@@ -88,5 +78,90 @@ Page {
             text: supportedFormats.join(",")
             wrapMode: Text.Wrap
         }
+        Text {
+            color: "white"
+            text: qsTr("Style") + " (" + qsTr("Only for FFmpeg engine") + ")"
+            font.pixelSize: Utils.kFontSize
+        }
+        Row {
+            Text {
+                color: "white"
+                text: qsTr("Bottom margin")
+                font.pixelSize: Utils.kFontSize
+            }
+            TextInput {
+                color: "orange"
+                font.pixelSize: Utils.kFontSize
+                width: Utils.scaled(100)
+                height: parent.height
+                validator: IntValidator{bottom: 0;}
+                text: PlayerConfig.subtitleBottomMargin
+                onTextChanged: PlayerConfig.subtitleBottomMargin = parseInt(text)
+            }
+            Text {
+                text: "QtAV"
+                font: PlayerConfig.subtitleFont
+                style: PlayerConfig.subtitleOutline ? Text.Outline : Text.Normal
+                styleColor: PlayerConfig.subtitleOutlineColor
+                color: PlayerConfig.subtitleColor
+            }
+
+            Button {
+                text: qsTr("Font")
+                width: Utils.scaled(80)
+                height: Utils.kItemHeight
+                onClicked: fontDialog.open()
+            }
+            Rectangle {
+                color: PlayerConfig.subtitleColor
+                width: Utils.kItemHeight
+                height: Utils.kItemHeight
+                MouseArea {
+                    anchors.fill: parent
+                    onPressed: colorDialog.open()
+                }
+            }
+            Button {
+                text: qsTr("Outline")
+                checkable: true
+                checked:  PlayerConfig.subtitleOutline
+                width: Utils.scaled(80)
+                height: Utils.kItemHeight
+                onCheckedChanged: PlayerConfig.subtitleOutline = checked
+            }
+            Rectangle {
+                color: PlayerConfig.subtitleOutlineColor
+                width: Utils.kItemHeight
+                height: Utils.kItemHeight
+                MouseArea {
+                    anchors.fill: parent
+                    onPressed: outlineColorDialog.open()
+                }
+            }
+        }
+    }
+
+    FileDialog {
+        id: fileDialog
+        title: qsTr("Open a subtitle file")
+        onAccepted: {
+            file.text = fileUrl
+            root.subtitleChanged(fileUrl.toString())
+        }
+    }
+    FontDialog {
+        id: fontDialog
+        font: PlayerConfig.subtitleFont
+        onAccepted: PlayerConfig.subtitleFont = font
+    }
+    ColorDialog {
+        id: colorDialog
+        color: PlayerConfig.subtitleColor
+        onAccepted: PlayerConfig.subtitleColor = color
+    }
+    ColorDialog {
+        id: outlineColorDialog
+        color: PlayerConfig.subtitleOutlineColor
+        onAccepted: PlayerConfig.subtitleOutlineColor = color
     }
 }

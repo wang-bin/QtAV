@@ -35,29 +35,8 @@ Rectangle {
     signal requestFullScreen
     signal requestNormalSize
 
-    // "/xxx" will be resolved as qrc:///xxx. while "xxx" is "qrc:///QMLDIR/xxx
-    property string resprefix: Qt.resolvedUrl(" ").substring(0, 4) == "qrc:" ? "/" : ""
     function init(argv) {
         console.log("init>>>>>screen density logical: " + Screen.logicalPixelDensity + " pixel: " + Screen.pixelDensity);
-        /*
-        var a = JSON.parse(argv)
-        if (a.length > 1) {
-            var i = a.indexOf("-vd")
-            if (i >= 0) {
-                player.videoCodecPriority = a[i+1].split(";")
-            } else {
-                player.videoCodecPriority = ["VAAPI", "DXVA", "CUDA", "FFmpeg"];
-            }
-            // FIXME: source is relative to this qml
-            //player.source = a[a.length-1]
-            //player.play()
-        } else {
-            player.videoCodecPriority = ["VAAPI", "DXVA", "CUDA", "FFmpeg"];
-        }
-        */
-    }
-    function resurl(s) { //why called twice if in qrc?
-        return resprefix + s
     }
 
     VideoOutput {
@@ -80,14 +59,12 @@ Rectangle {
             rotation: -videoOut.orientation
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignBottom
-            font {
-                pixelSize: Utils.scaled(20)
-                bold: true
-            }
-            style: Text.Outline
-            styleColor: "blue"
-            color: "white"
+            font: PlayerConfig.subtitleFont
+            style: PlayerConfig.subtitleOutline ? Text.Outline : Text.Normal
+            styleColor: PlayerConfig.subtitleOutlineColor
+            color: PlayerConfig.subtitleColor
             anchors.fill: parent
+            anchors.bottomMargin: PlayerConfig.subtitleBottomMargin
         }
     }
 
@@ -169,9 +146,7 @@ Rectangle {
         Timer {
             id: msg_timer
             interval: 2000
-            onTriggered: {
-                msg.visible = false
-            }
+            onTriggered: msg.visible = false
         }
     }
     ControlPanel {
@@ -285,7 +260,6 @@ Rectangle {
         }
         Connections {
             target: pageLoader.item
-            onClose: pageLoader.source = ""
             onChannelChanged: player.channelLayout = channel
             onSubtitleChanged: subtitle.file = file
             onMuteChanged: player.muted = value
@@ -299,6 +273,7 @@ Rectangle {
             bottom: control.top
         }
         width: Utils.scaled(140)
+        onClicked: pageLoader.item.visible = true
         onSelectedUrlChanged: pageLoader.source = selectedUrl
         states: [
             State {
