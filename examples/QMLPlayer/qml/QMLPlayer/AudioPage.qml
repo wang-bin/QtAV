@@ -24,10 +24,10 @@ Page {
             width: parent.width
             itemWidth: parent.width
             model: ListModel {
-                ListElement { name: qsTr("Stero"); value: MediaPlayer.Stero }
-                ListElement { name: qsTr("Mono"); value: MediaPlayer.Mono }
-                ListElement { name: qsTr("Left"); value: MediaPlayer.Left }
-                ListElement { name: qsTr("Right"); value: MediaPlayer.Right }
+                ListElement { name: QT_TR_NOOP("Stero"); value: MediaPlayer.Stero }
+                ListElement { name: QT_TR_NOOP("Mono"); value: MediaPlayer.Mono }
+                ListElement { name: QT_TR_NOOP("Left"); value: MediaPlayer.Left }
+                ListElement { name: QT_TR_NOOP("Right"); value: MediaPlayer.Right }
             }
             onClicked: {
                 root.channelChanged(model.get(index).value)

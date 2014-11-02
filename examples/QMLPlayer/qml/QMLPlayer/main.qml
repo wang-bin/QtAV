@@ -260,6 +260,10 @@ Rectangle {
         }
         Connections {
             target: pageLoader.item
+            onVisibleChanged: {
+                if (!pageLoader.item.visible)
+                    pageLoader.source = ""
+            }
             onChannelChanged: player.channelLayout = channel
             onSubtitleChanged: subtitle.file = file
             onMuteChanged: player.muted = value

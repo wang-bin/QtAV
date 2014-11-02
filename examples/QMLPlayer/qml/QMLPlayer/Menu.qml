@@ -22,7 +22,7 @@ Item {
         id: itemDelegate
         DelegateItem {
             id: delegateItem
-            text: name
+            text: qsTr(name)
             anchors.horizontalCenter: parent.horizontalCenter
             width: itemWidth
             height: itemHeight
@@ -47,14 +47,12 @@ Item {
     onCurrentIndexChanged: {
         listView.currentIndex = currentIndex
         d.selectedItem = listView.currentItem
-        console.log("current index: " + currentIndex + " item " + listView.currentItem)
         if (d.selectedItem)
             d.selectedItem.state = "selected"
     }*/
     Component.onCompleted: {
         listView.currentIndex = currentIndex
         d.selectedItem = listView.currentItem
-        console.log("current index: " + currentIndex + " item " + listView.currentItem)
         if (d.selectedItem)
             d.selectedItem.state = "selected"
     }

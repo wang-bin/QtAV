@@ -18,11 +18,11 @@ Rectangle {
         itemWidth: root.width - Utils.scaled(2)
         spacing: Utils.scaled(1)
         model: ListModel {
-            ListElement { name: qsTr("Media info"); url: "MediaInfoPage.qml" }
-            ListElement { name: qsTr("Video codec"); url: "VideoCodec.qml" }
-            ListElement { name: qsTr("Subtitle"); url: "SubtitlePage.qml" }
-            ListElement { name: qsTr("Audio"); url: "AudioPage.qml" }
-            ListElement { name: qsTr("About"); url: "About.qml" }
+            ListElement { name: QT_TR_NOOP("Media info"); url: "MediaInfoPage.qml" }
+            ListElement { name: QT_TR_NOOP("Video codec"); url: "VideoCodec.qml" }
+            ListElement { name: QT_TR_NOOP("Subtitle"); url: "SubtitlePage.qml" }
+            ListElement { name: QT_TR_NOOP("Audio"); url: "AudioPage.qml" }
+            ListElement { name: QT_TR_NOOP("About"); url: "About.qml" }
         }
         onClicked: {
             selectedX = x
