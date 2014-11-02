@@ -386,7 +386,7 @@ bool AVDemuxer::seek(qint64 pos)
     }
     //duration: unit is us (10^-6 s, AV_TIME_BASE)
     qint64 upos = pos*1000LL;
-    if (upos > durationUs() || pos < 0LL) {
+    if (upos > startTimeUs() + durationUs() || pos < 0LL) {
         qWarning("Invalid seek position %lld %.2f. valid range [0, %lld]", upos, double(upos)/double(durationUs()), durationUs());
         return false;
     }
