@@ -39,6 +39,7 @@ Rectangle {
     property string resprefix: Qt.resolvedUrl(" ").substring(0, 4) == "qrc:" ? "/" : ""
     function init(argv) {
         console.log("init>>>>>screen density logical: " + Screen.logicalPixelDensity + " pixel: " + Screen.pixelDensity);
+        /*
         var a = JSON.parse(argv)
         if (a.length > 1) {
             var i = a.indexOf("-vd")
@@ -53,6 +54,7 @@ Rectangle {
         } else {
             player.videoCodecPriority = ["VAAPI", "DXVA", "CUDA", "FFmpeg"];
         }
+        */
     }
     function resurl(s) { //why called twice if in qrc?
         return resprefix + s
@@ -95,6 +97,7 @@ Rectangle {
         //loops: MediaPlayer.Infinite
         //autoLoad: true
         autoPlay: true
+        videoCodecPriority: PlayerConfig.decoderPriorityNames
         onPositionChanged: control.setPlayingProgress(position/duration)
         onPlaying: {
             control.duration = duration
@@ -119,7 +122,9 @@ Rectangle {
     Subtitle {
         id: subtitle
         player: player
-        //enabled: false
+        enabled: PlayerConfig.subtitleEnabled
+        autoLoad: PlayerConfig.subtitleAutoLoad
+        engines: PlayerConfig.subtitleEngines
         onContentChanged: {
             if (!canRender || !enabled || !subtitleItem.visible)
                 subtitleLabel.text = text
@@ -133,6 +138,7 @@ Rectangle {
             pageLoader.item.supportedFormats = supportedSuffixes
         }
     }
+
     MouseArea {
         anchors.fill: parent
         onPressed: {
@@ -282,10 +288,6 @@ Rectangle {
             onClose: pageLoader.source = ""
             onChannelChanged: player.channelLayout = channel
             onSubtitleChanged: subtitle.file = file
-            onEngineChanged: subtitle.engines = [ engine ]
-            onEnabledChanged: subtitle.enabled = value
-            onAutoLoadChanged: subtitle.autoLoad = autoLoad
-            onDecoderChanged: player.videoCodecPriority = [ value ]
             onMuteChanged: player.muted = value
         }
     }

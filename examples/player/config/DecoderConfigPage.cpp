@@ -33,10 +33,31 @@
 #include <QtAV/VideoDecoderTypes.h>
 #include <QPainter>
 #include <QtDebug>
-
+using namespace QtAV;
 // shared
 static QVector<QtAV::VideoDecoderId> sDecodersUi;
 static QVector<QtAV::VideoDecoderId> sPriorityUi;
+
+QStringList idsToNames(QVector<VideoDecoderId> ids) {
+    QStringList decs;
+    foreach (int id, ids) {
+        decs.append(VideoDecoderFactory::name(id).c_str());
+    }
+    return decs;
+}
+
+QVector<VideoDecoderId> idsFromNames(const QStringList& names) {
+    QVector<VideoDecoderId> decs;
+    foreach (QString name, names) {
+        if (name.isEmpty())
+            continue;
+        VideoDecoderId id = VideoDecoderFactory::id(name.toStdString(), false);
+        if (id == 0)
+            continue;
+        decs.append(id);
+    }
+    return decs;
+}
 
 using namespace QtAV;
 class DecoderConfigPage::DecoderItemWidget : public QFrame
@@ -147,11 +168,30 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     vb->addWidget(frame);
     vb->addWidget(new QLabel(tr("Decoder") + " " + tr("Priorities")));
 
-    sPriorityUi = Config::instance().decoderPriority();
-    sDecodersUi = Config::instance().registeredDecoders();
+    sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
     QStringList vds = Config::instance().decoderPriorityNames();
-    QVector<QtAV::VideoDecoderId> vds_all = Config::instance().registeredDecoders();
+    QVector<VideoDecoderId> vids = idsFromNames(vds);
+    std::vector<QtAV::VideoDecoderId> vds_all = VideoDecoderFactory::registeredIds();
+    QVector<QtAV::VideoDecoderId> all = vids;
+    foreach (QtAV::VideoDecoderId vid, vds_all) {
+        if (!vids.contains(vid))
+            all.push_back(vid);
+    }
     mpDecLayout = new QVBoxLayout;
+
+    foreach (QtAV::VideoDecoderId vid, all) {
+        VideoDecoder *vd = VideoDecoderFactory::create(vid);
+        DecoderItemWidget *iw = new DecoderItemWidget();
+        iw->buildUiFor(vd);
+        mDecItems.append(iw);
+        iw->setName(vd->name());
+        iw->setDescription(vd->description());
+        iw->setChecked(vids.contains(vid));
+        connect(iw, SIGNAL(enableChanged()), SLOT(videoDecoderEnableChanged()));
+        connect(iw, SIGNAL(selected(DecoderItemWidget*)), SLOT(onDecSelected(DecoderItemWidget*)));
+        mpDecLayout->addWidget(iw);
+        delete vd;
+    }/*
     for (int i = 0; i < vds_all.size(); ++i) {
         VideoDecoder *vd = VideoDecoderFactory::create(vds_all.at(i));
         DecoderItemWidget *iw = new DecoderItemWidget();
@@ -164,7 +204,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
         connect(iw, SIGNAL(selected(DecoderItemWidget*)), SLOT(onDecSelected(DecoderItemWidget*)));
         mpDecLayout->addWidget(iw);
         delete vd;
-    }
+    }*/
     vb->addLayout(mpDecLayout);
     vb->addSpacerItem(new QSpacerItem(width(), 10, QSizePolicy::Ignored, QSizePolicy::Expanding));
 
@@ -180,7 +220,6 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     hb->addWidget(mpDown);
     vb->addLayout(hb);
     connect(&Config::instance(), SIGNAL(decoderPriorityChanged(QVector<QtAV::VideoDecoderId>)), SLOT(onConfigChanged()));
-    connect(&Config::instance(), SIGNAL(registeredDecodersChanged(QVector<QtAV::VideoDecoderId>)), SLOT(onConfigChanged()));
     updateDecodersUi();
 }
 
@@ -212,10 +251,8 @@ void DecoderConfigPage::apply()
         if (w->isChecked())
             decs.append(w->name());
     }
-    sDecodersUi = idsFromNames(decs_all);
     sPriorityUi = idsFromNames(decs);
-    Config::instance().registeredDecoders(sDecodersUi);
-    Config::instance().decoderPriority(sPriorityUi);
+    Config::instance().setDecoderPriorityNames(decs);
 }
 
 void DecoderConfigPage::cancel()
@@ -236,7 +273,7 @@ void DecoderConfigPage::videoDecoderEnableChanged()
     }
     sPriorityUi = idsFromNames(names);
     if (applyOnUiChange()) {
-        Config::instance().decoderPriorityNames(names);
+        Config::instance().setDecoderPriorityNames(names);
     } else {
 //        emit Config::instance().decoderPriorityChanged(sPriorityUi);
     }
@@ -264,11 +301,9 @@ void DecoderConfigPage::priorityUp()
     sDecodersUi = idsFromNames(decs_all);
     sPriorityUi = idsFromNames(decs);
     if (applyOnUiChange()) {
-        Config::instance().decoderPriorityNames(decs);
-        Config::instance().registeredDecoderNames(decs);
+        Config::instance().setDecoderPriorityNames(decs);
     } else {
         //emit Config::instance().decoderPriorityChanged(idsFromNames(decs));
-        //emit Config::instance().registeredDecodersChanged(idsFromNames(decs));
     }
 }
 
@@ -296,8 +331,7 @@ void DecoderConfigPage::priorityDown()
     sDecodersUi = idsFromNames(decs_all);
     sPriorityUi = idsFromNames(decs);
     if (applyOnUiChange()) {
-        Config::instance().decoderPriorityNames(decs);
-        Config::instance().registeredDecoderNames(decs_all);
+        Config::instance().setDecoderPriorityNames(decs);
     } else {
         //emit Config::instance().decoderPriorityChanged(idsFromNames(decs));
         //emit Config::instance().registeredDecodersChanged(idsFromNames(decs));
@@ -347,8 +381,8 @@ void DecoderConfigPage::updateDecodersUi()
 
 void DecoderConfigPage::onConfigChanged()
 {
-    sPriorityUi = Config::instance().decoderPriority();
-    sDecodersUi = Config::instance().registeredDecoders();
+    sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
+    sDecodersUi = QVector<VideoDecoderId>::fromStdVector(VideoDecoderFactory::registeredIds());
     updateDecodersUi();
 }
 

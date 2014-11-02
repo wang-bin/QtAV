@@ -166,11 +166,11 @@ Rectangle {
     }
     Rectangle {
         id: preview
-        opacity: 0.9
+        opacity: 0.8
         anchors.left: progress.left
         anchors.bottom: progress.top
-        width: Utils.scaled(142)
-        height: Utils.scaled(100)
+        width: Utils.scaled(180)
+        height: Utils.scaled(120)
         color: "black"
         state: "out"
         property alias video: video

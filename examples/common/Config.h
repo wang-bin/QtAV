@@ -22,10 +22,10 @@
 #ifndef PLAYER_CONFIG_H
 #define PLAYER_CONFIG_H
 
-#include <QtAV/VideoDecoderTypes.h>
+#include "common_export.h"
 #include <QtCore/QObject>
+#include <QtCore/QStringList>
 #include <QtCore/QVariant>
-
 //TODO: use hash to simplify api
 /*
  * MVC model. signals from Config notify ui update. signals from ui does not change Config unless ui changes applyed by XXXPage.apply()
@@ -33,13 +33,16 @@
  * apply() will change the value in Config
  */
 
-
-QStringList idsToNames(QVector<QtAV::VideoDecoderId> ids);
-QVector<QtAV::VideoDecoderId> idsFromNames(const QStringList& names);
-
-class Config : public QObject
+class COMMON_EXPORT Config : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QStringList decoderPriorityNames READ decoderPriorityNames WRITE setDecoderPriorityNames NOTIFY decoderPriorityNamesChanged)
+    Q_PROPERTY(QString captureDir READ captureDir WRITE setCaptureDir NOTIFY captureDirChanged)
+    Q_PROPERTY(QString captureFormat READ captureFormat WRITE setCaptureFormat NOTIFY captureFormatChanged)
+    Q_PROPERTY(int captureQuality READ captureQuality WRITE setCaptureQuality NOTIFY captureQualityChanged)
+    Q_PROPERTY(QStringList subtitleEngines READ subtitleEngines WRITE setSubtitleEngines NOTIFY subtitleEnginesChanged)
+    Q_PROPERTY(bool subtitleAutoLoad READ subtitleAutoLoad WRITE setSubtitleAutoLoad NOTIFY subtitleAutoLoadChanged)
+    Q_PROPERTY(bool subtitleEnabled READ subtitleEnabled WRITE setSubtitleEnabled NOTIFY subtitleEnabledChanged)
 public:
     static Config& instance();
 
@@ -47,19 +50,12 @@ public:
     QString defaultDir() const;
     //void loadFromFile(const QString& file);
 
-    QVector<QtAV::VideoDecoderId> decoderPriority() const;
-    Config& decoderPriority(const QVector<QtAV::VideoDecoderId>& p);
-    QStringList decoderPriorityNames() const;
-    Config& decoderPriorityNames(const QStringList& names);
-
     // in priority order. the same order as displayed in ui
-    QVector<QtAV::VideoDecoderId> registeredDecoders() const;
-    Config& registeredDecoders(const QVector<QtAV::VideoDecoderId>& all);
-    QStringList registeredDecoderNames() const;
-    Config& registeredDecoderNames(const QStringList& names);
+    QStringList decoderPriorityNames() const;
+    Config& setDecoderPriorityNames(const QStringList& names);
 
     QString captureDir() const;
-    Config& captureDir(const QString& dir);
+    Config& setCaptureDir(const QString& dir);
 
     /*!
      * \brief captureFormat
@@ -67,12 +63,18 @@ public:
      *  or can be "jpg", "png"
      * \return
      */
-    QByteArray captureFormat() const;
-    Config& captureFormat(const QByteArray& format);
+    QString captureFormat() const;
+    Config& setCaptureFormat(const QString& format);
     // only works for non-yuv capture. value: -1~100, -1: default
     int captureQuality() const;
-    Config& captureQuality(int quality);
+    Config& setCaptureQuality(int quality);
 
+    QStringList subtitleEngines() const;
+    Config& setSubtitleEngines(const QStringList& value);
+    bool subtitleAutoLoad() const;
+    Config& setSubtitleAutoLoad(bool value);
+    bool subtitleEnabled() const;
+    Config& setSubtitleEnabled(bool value);
 
     QVariantHash avformatOptions() const;
     int analyzeDuration() const;
@@ -89,17 +91,20 @@ public:
     bool avfilterEnable() const;
     Config& avfilterEnable(bool e);
 
-    QVariant operator ()(const QString& key) const;
-    Config& operator ()(const QString& key, const QVariant& value);
+    Q_INVOKABLE QVariant operator ()(const QString& key) const;
+    Q_INVOKABLE Config& operator ()(const QString& key, const QVariant& value);
 public:
     //keyword 'signals' maybe protected. we need call the signals in other classes. Q_SIGNAL is empty
     Q_SIGNAL void decodingThreadsChanged(int n);
-    Q_SIGNAL void decoderPriorityChanged(const QVector<QtAV::VideoDecoderId>& p);
-    Q_SIGNAL void registeredDecodersChanged(const QVector<QtAV::VideoDecoderId>& r);
+    Q_SIGNAL void decoderPriorityNamesChanged();
+    Q_SIGNAL void registeredDecodersChanged(const QVector<int>& r);
     Q_SIGNAL void captureDirChanged(const QString& dir);
-    Q_SIGNAL void captureFormatChanged(const QByteArray& fmt);
+    Q_SIGNAL void captureFormatChanged(const QString& fmt);
     Q_SIGNAL void captureQualityChanged(int quality);
     Q_SIGNAL void avfilterChanged();
+    Q_SIGNAL void subtitleEnabledChanged();
+    Q_SIGNAL void subtitleAutoLoadChanged();
+    Q_SIGNAL void subtitleEnginesChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();

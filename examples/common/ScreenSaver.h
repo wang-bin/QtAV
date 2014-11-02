@@ -1,7 +1,7 @@
 #ifndef SCREENSAVER_H
 #define SCREENSAVER_H
 
-#include "common.h"
+#include "common_export.h"
 #include <QtCore/QObject>
 
 // TODO: read QtSystemInfo.ScreenSaver

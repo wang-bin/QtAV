@@ -4,6 +4,7 @@ import "utils.js" as Utils
 Item {
     id: root
     property alias model: listView.model
+    property int currentIndex: -1 //listView.currentIndex //wrong value
     property int itemWidth: Utils.kItemWidth
     property int itemHeight: Utils.kItemHeight
     property alias listOrientation: listView.orientation
@@ -40,7 +41,21 @@ Item {
         id: listView
         anchors.fill: parent
         focus: true
-
+        currentIndex: -1
         delegate: itemDelegate
+    }/*
+    onCurrentIndexChanged: {
+        listView.currentIndex = currentIndex
+        d.selectedItem = listView.currentItem
+        console.log("current index: " + currentIndex + " item " + listView.currentItem)
+        if (d.selectedItem)
+            d.selectedItem.state = "selected"
+    }*/
+    Component.onCompleted: {
+        listView.currentIndex = currentIndex
+        d.selectedItem = listView.currentItem
+        console.log("current index: " + currentIndex + " item " + listView.currentItem)
+        if (d.selectedItem)
+            d.selectedItem.state = "selected"
     }
 }

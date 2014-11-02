@@ -49,7 +49,7 @@ private slots:
     void changeDirByUi(const QString& dir);
     void changeFormatByUi(const QString& fmt);
     void changeQualityByUi(int q);
-    void formatChanged(const QByteArray& fmt);
+    void formatChanged(const QString &fmt);
     void selectSaveDir();
     void browseCaptureDir();
 

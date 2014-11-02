@@ -27,6 +27,7 @@ Page {
             verticalAlignment: Text.AlignVCenter
         }
         ListView {
+            id: listView
             anchors {
                 top: detail.bottom
                 bottom: parent.bottom
@@ -73,7 +74,18 @@ Page {
                     d.selectedItem = delegateItem
                     d.detail = description + " " + (hardware ? qsTr("hardware decoding") : qsTr("software decoding"))  + "\n" + qsTr("Takes effect on the next play")
                     root.decoderChanged(name)
+                    PlayerConfig.decoderPriorityNames = [ name ]
                 }
+            }
+        }
+    }
+    Component.onCompleted: {
+        for (var i = 0; i < contentModel.count; ++i) {
+            if (contentModel.get(i).name === PlayerConfig.decoderPriorityNames[0]) {
+                listView.currentIndex = i;
+                d.selectedItem = listView.currentItem
+                listView.currentItem.state = "selected"
+                break
             }
         }
     }

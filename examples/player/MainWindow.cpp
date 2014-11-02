@@ -54,13 +54,12 @@
 #include "StatisticsView.h"
 #include "TVView.h"
 #include "config/DecoderConfigPage.h"
-#include "config/Config.h"
 #include "config/VideoEQConfigPage.h"
 #include "config/ConfigDialog.h"
 #include "filters/OSDFilter.h"
 //#include "filters/AVFilterSubtitle.h"
 #include "playlist/PlayList.h"
-#include "common/ScreenSaver.h"
+#include "../common/common.h"
 
 /*
  *TODO:
@@ -73,6 +72,9 @@
 
 using namespace QtAV;
 const qreal kVolumeInterval = 0.05;
+
+extern QStringList idsToNames(QVector<VideoDecoderId> ids);
+extern QVector<VideoDecoderId> idsFromNames(const QStringList& names);
 
 void QLabelSetElideText(QLabel *label, QString text, int W = 0)
 {
@@ -683,7 +685,7 @@ void MainWindow::play(const QString &name)
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
     mpPlayer->setRepeat(mRepeateMax);
-    mpPlayer->setPriority(Config::instance().decoderPriority());
+    mpPlayer->setPriority(idsFromNames(Config::instance().decoderPriorityNames()));
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
     mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
@@ -702,15 +704,14 @@ void MainWindow::setVideoDecoderNames(const QStringList &vd)
     foreach (const QString& v, vd) {
         vdnames << v.toLower();
     }
-    QVector<VideoDecoderId> vidp;
-    QVector<VideoDecoderId> vids = GetRegistedVideoDecoderIds();
-    foreach (VideoDecoderId vid, vids) {
-        QString v(VideoDecoderFactory::name(vid).c_str());
+    QStringList vidp;
+    QStringList vids = idsToNames(GetRegistedVideoDecoderIds());
+    foreach (const QString& v, vids) {
         if (vdnames.contains(v.toLower())) {
-            vidp.append(vid);
+            vidp.append(v);
         }
     }
-    Config::instance().decoderPriority(vidp);
+    Config::instance().setDecoderPriorityNames(vidp);
 }
 
 void MainWindow::openFile()
@@ -794,11 +795,10 @@ void MainWindow::onStartPlay()
 
 void MainWindow::onStopPlay()
 {
-    mpPlayer->setPriority(Config::instance().decoderPriority());
+    mpPlayer->setPriority(idsFromNames(Config::instance().decoderPriorityNames()));
     if (mpPlayer->currentRepeat() < mpPlayer->repeat())
         return;
     // use shortcut to replay in EventFilter, the options will not be set, so set here
-    mpPlayer->setPriority(Config::instance().decoderPriority());
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
     mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
@@ -1317,7 +1317,7 @@ void MainWindow::onAVFilterConfigChanged()
 void MainWindow::donate()
 {
     //QDesktopServices::openUrl(QUrl("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0/"));
-    QDesktopServices::openUrl(QUrl("http://wang-bin.github.io/QtAV/#donate"));
+    QDesktopServices::openUrl(QUrl("http://qtav.org/#donate"));
 }
 
 void MainWindow::setup()

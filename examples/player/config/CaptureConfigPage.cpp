@@ -68,7 +68,7 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
 
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), mpDir, SLOT(setText(QString)));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), mpQuality, SLOT(setValue(int)));
-    connect(&Config::instance(), SIGNAL(captureFormatChanged(QByteArray)), SLOT(formatChanged(QByteArray)));
+    connect(&Config::instance(), SIGNAL(captureFormatChanged(QString)), SLOT(formatChanged(QString)));
     connect(mpDir, SIGNAL(textChanged(QString)), SLOT(changeDirByUi(QString)));
     connect(mpFormat, SIGNAL(currentIndexChanged(QString)), SLOT(changeFormatByUi(QString)));
     connect(mpQuality, SIGNAL(valueChanged(int)), SLOT(changeQualityByUi(int)));
@@ -76,9 +76,9 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
 
 void CaptureConfigPage::apply()
 {
-    Config::instance().captureDir(mpDir->text())
-            .captureFormat(mpFormat->currentText().toUtf8())
-            .captureQuality(mpQuality->value());
+    Config::instance().setCaptureDir(mpDir->text())
+            .setCaptureFormat(mpFormat->currentText().toUtf8())
+            .setCaptureQuality(mpQuality->value());
 }
 
 QString CaptureConfigPage::name() const
@@ -101,7 +101,7 @@ void CaptureConfigPage::reset()
 void CaptureConfigPage::changeDirByUi(const QString& dir)
 {
     if (applyOnUiChange()) {
-        Config::instance().captureDir(dir);
+        Config::instance().setCaptureDir(dir);
     } else {
         emit Config::instance().captureDirChanged(dir);
     }
@@ -110,22 +110,22 @@ void CaptureConfigPage::changeDirByUi(const QString& dir)
 void CaptureConfigPage::changeFormatByUi(const QString& fmt)
 {
     if (applyOnUiChange()) {
-        Config::instance().captureFormat(mpFormat->currentText().toUtf8());
+        Config::instance().setCaptureFormat(mpFormat->currentText().toUtf8());
     } else{
-        emit Config::instance().captureFormatChanged(fmt.toUtf8());
+        emit Config::instance().captureFormatChanged(fmt);
     }
 }
 
 void CaptureConfigPage::changeQualityByUi(int q)
 {
     if (applyOnUiChange()) {
-        Config::instance().captureQuality(mpQuality->value());
+        Config::instance().setCaptureQuality(mpQuality->value());
     } else {
         emit Config::instance().captureQualityChanged(q);
     }
 }
 
-void CaptureConfigPage::formatChanged(const QByteArray& fmt)
+void CaptureConfigPage::formatChanged(const QString& fmt)
 {
     int idx = mpFormat->findText(fmt);
     if (idx >= 0)

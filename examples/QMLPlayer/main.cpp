@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     load_qm(QStringList() << "QMLPlayer");
     QtQuick2ApplicationViewer viewer;
+    viewer.engine()->rootContext()->setContextProperty("PlayerConfig", &Config::instance());
     qDebug(">>>>>>>>devicePixelRatio: %f", qApp->devicePixelRatio());
     QScreen *sc = app.primaryScreen();
     qDebug() << "dpi phy: " << sc->physicalDotsPerInch() << ", logical: " << sc->logicalDotsPerInch() << ", dpr: " << sc->devicePixelRatio()

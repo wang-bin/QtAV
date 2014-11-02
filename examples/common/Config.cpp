@@ -33,29 +33,7 @@
 #endif
 #include <QtDebug>
 
-using namespace QtAV;
 
-
-QStringList idsToNames(QVector<QtAV::VideoDecoderId> ids) {
-    QStringList decs;
-    foreach (VideoDecoderId id, ids) {
-        decs.append(VideoDecoderFactory::name(id).c_str());
-    }
-    return decs;
-}
-
-QVector<VideoDecoderId> idsFromNames(const QStringList& names) {
-    QVector<VideoDecoderId> decs;
-    foreach (QString name, names) {
-        if (name.isEmpty())
-            continue;
-        VideoDecoderId id = VideoDecoderFactory::id(name.toStdString(), false);
-        if (id == 0)
-            continue;
-        decs.append(id);
-    }
-    return decs;
-}
 
 class Config::Data
 {
@@ -67,7 +45,7 @@ public:
             if (!QDir(dir).exists())
                 QDir().mkpath(dir);
         }
-        file = dir + "/config.ini";
+        file = dir + "/" + qApp->applicationName() + ".ini";
         load();
     }
     ~Data() {
@@ -79,28 +57,16 @@ public:
         settings.beginGroup("decoder");
         settings.beginGroup("video");
         QString decs_default("FFmpeg");
-        QVector<QtAV::VideoDecoderId> all_decs_id = GetRegistedVideoDecoderIds();
-        if (all_decs_id.contains(VideoDecoderId_CUDA))
-            decs_default.append(" CUDA ");
-        if (all_decs_id.contains(VideoDecoderId_DXVA))
-            decs_default.append(" DXVA ");
-        if (all_decs_id.contains(VideoDecoderId_VAAPI))
-            decs_default.append(" VAAPI ");
-        QStringList all_names = idsToNames(all_decs_id);
+        //decs_default.append(" CUDA ").append(" DXVA ").append(" VAAPI ").append(" VDA ");
 #if 0
         QString all_names_string = settings.value("all", QString()).toString();
         if (!all_names_string.isEmpty()) {
             all_names = all_names_string.split(" ", QString::SkipEmptyParts);
         }
 #endif
-        QStringList decs = settings.value("priority", decs_default).toString().split(" ", QString::SkipEmptyParts);
-        if (decs.isEmpty())
-            decs = decs_default.split(" ", QString::SkipEmptyParts);
-        video_decoder_priority = idsFromNames(decs);
-        video_decoder_all = idsFromNames(all_names);
-
-        settings.endGroup();
-        settings.endGroup();
+        video_decoders = settings.value("priority", decs_default).toString().split(" ", QString::SkipEmptyParts);
+        settings.endGroup(); //video
+        settings.endGroup(); //decoder
 
         settings.beginGroup("capture");
         capture_dir = settings.value("dir", QString()).toString();
@@ -114,6 +80,11 @@ public:
         capture_fmt = settings.value("format", "png").toByteArray();
         capture_quality = settings.value("quality", 100).toInt();
         settings.endGroup();
+        settings.beginGroup("subtitle");
+        subtitle_autoload = settings.value("autoLoad", true).toBool();
+        subtitle_enabled = settings.value("enabled", true).toBool();
+        subtitle_engines = settings.value("engines", QStringList() << "FFmpeg" << "LibASS").toStringList();
+        settings.endGroup();
         settings.beginGroup("avformat");
         direct = settings.value("avioflags", 0).toString() == "direct";
         probe_size = settings.value("probesize", 5000000).toUInt();
@@ -126,18 +97,22 @@ public:
         settings.endGroup();
     }
     void save() {
-        qDebug("************save config %s************", qPrintable(dir));
+        qDebug() << "sync config to " << file;
         QSettings settings(file, QSettings::IniFormat);
         settings.beginGroup("decoder");
         settings.beginGroup("video");
-        settings.setValue("priority", idsToNames(video_decoder_priority).join(" "));
-        settings.setValue("all", idsToNames(video_decoder_all).join(" "));
+        settings.setValue("priority", video_decoders.join(" "));
         settings.endGroup();
         settings.endGroup();
         settings.beginGroup("capture");
         settings.setValue("dir", capture_dir);
         settings.setValue("format", capture_fmt);
         settings.setValue("quality", capture_quality);
+        settings.endGroup();
+        settings.beginGroup("subtitle");
+        settings.setValue("enabled", subtitle_enabled);
+        settings.setValue("autoLoad", subtitle_autoload);
+        settings.setValue("engines", subtitle_engines);
         settings.endGroup();
         settings.beginGroup("avformat");
         settings.setValue("avioflags", direct ? "direct" : 0);
@@ -154,11 +129,10 @@ public:
     QString dir;
     QString file;
 
-    QVector<QtAV::VideoDecoderId> video_decoder_priority;
-    QVector<QtAV::VideoDecoderId> video_decoder_all;
+    QStringList video_decoders;
 
     QString capture_dir;
-    QByteArray capture_fmt;
+    QString capture_fmt;
     int capture_quality;
 
     bool direct;
@@ -167,6 +141,10 @@ public:
     QString avformat_extra;
     bool avfilter_on;
     QString avfilter;
+
+    QStringList subtitle_engines;
+    bool subtitle_autoload;
+    bool subtitle_enabled;
 };
 
 Config& Config::instance()
@@ -194,76 +172,36 @@ QString Config::defaultDir() const
 void Config::reload()
 {
     mpData->load();
-    emit decoderPriorityChanged(mpData->video_decoder_priority);
-    emit registeredDecodersChanged(mpData->video_decoder_all);
+    qDebug() << decoderPriorityNames();
+    emit decoderPriorityNamesChanged();
     emit captureDirChanged(mpData->capture_dir);
     emit captureFormatChanged(mpData->capture_fmt);
     emit captureQualityChanged(mpData->capture_quality);
 }
 
-QVector<QtAV::VideoDecoderId> Config::decoderPriority() const
+QStringList Config::decoderPriorityNames() const
 {
-    return mpData->video_decoder_priority;
+    return mpData->video_decoders;
 }
 
-Config& Config::decoderPriority(const QVector<QtAV::VideoDecoderId> &p)
+Config& Config::setDecoderPriorityNames(const QStringList &value)
 {
-    qDebug("=================new decoders: %d", p.size());
-    qDebug("video_decoder_priority.size: %d", mpData->video_decoder_priority.size());
-    if (mpData->video_decoder_priority == p) {
+    if (mpData->video_decoders == value) {
         qDebug("decoderPriority not changed");
         return *this;
     }
-    mpData->video_decoder_priority = p;
+    mpData->video_decoders = value;
+    emit decoderPriorityNamesChanged();
     mpData->save();
-    emit decoderPriorityChanged(p);
     return *this;
 }
-
-QStringList Config::decoderPriorityNames() const
-{
-    return idsToNames(mpData->video_decoder_priority);
-}
-
-Config& Config::decoderPriorityNames(const QStringList &names)
-{
-    return decoderPriority(idsFromNames(names));
-}
-
-QVector<QtAV::VideoDecoderId> Config::registeredDecoders() const
-{
-    return mpData->video_decoder_all;
-}
-
-Config& Config::registeredDecoders(const QVector<QtAV::VideoDecoderId> &all)
-{
-    if (mpData->video_decoder_all == all) {
-        qDebug("registeredDecoders not changed");
-        return *this;
-    }
-    mpData->video_decoder_all = all;
-    mpData->save();
-    emit registeredDecodersChanged(all);
-    return *this;
-}
-
-QStringList Config::registeredDecoderNames() const
-{
-    return idsToNames(mpData->video_decoder_all);
-}
-
-Config& Config::registeredDecoderNames(const QStringList &names)
-{
-    return registeredDecoders(idsFromNames(names));
-}
-
 
 QString Config::captureDir() const
 {
     return mpData->capture_dir;
 }
 
-Config& Config::captureDir(const QString& dir)
+Config& Config::setCaptureDir(const QString& dir)
 {
     if (mpData->capture_dir == dir)
         return *this;
@@ -272,12 +210,12 @@ Config& Config::captureDir(const QString& dir)
     return *this;
 }
 
-QByteArray Config::captureFormat() const
+QString Config::captureFormat() const
 {
     return mpData->capture_fmt;
 }
 
-Config& Config::captureFormat(const QByteArray& format)
+Config& Config::setCaptureFormat(const QString& format)
 {
     if (mpData->capture_fmt == format)
         return *this;
@@ -292,12 +230,54 @@ int Config::captureQuality() const
     return mpData->capture_quality;
 }
 
-Config& Config::captureQuality(int quality)
+Config& Config::setCaptureQuality(int quality)
 {
     if (mpData->capture_quality == quality)
         return *this;
     mpData->capture_quality = quality;
     emit captureQualityChanged(quality);
+    return *this;
+}
+
+QStringList Config::subtitleEngines() const
+{
+    return mpData->subtitle_engines;
+}
+
+Config& Config::setSubtitleEngines(const QStringList &value)
+{
+    if (mpData->subtitle_engines == value)
+        return *this;
+    mpData->subtitle_engines = value;
+    emit subtitleEnginesChanged();
+    return *this;
+}
+
+bool Config::subtitleAutoLoad() const
+{
+    return mpData->subtitle_autoload;
+}
+
+Config& Config::setSubtitleAutoLoad(bool value)
+{
+    if (mpData->subtitle_autoload == value)
+        return *this;
+    mpData->subtitle_autoload = value;
+    emit subtitleAutoLoadChanged();
+    return *this;
+}
+
+bool Config::subtitleEnabled() const
+{
+    return mpData->subtitle_enabled;
+}
+
+Config& Config::setSubtitleEnabled(bool value)
+{
+    if (mpData->subtitle_enabled == value)
+        return *this;
+    mpData->subtitle_enabled = value;
+    emit subtitleEnabledChanged();
     return *this;
 }
 

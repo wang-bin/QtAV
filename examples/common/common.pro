@@ -3,9 +3,10 @@
 # Project created by QtCreator 2014-01-03T11:07:23
 #
 #-------------------------------------------------
-
-QT       -= gui
-
+# Qt4 need QDesktopServices
+greaterThan(QT_MAJOR_VERSION, 4) {
+QT -= gui
+}
 # android apk hack
 android {
   QT += svg
@@ -31,10 +32,13 @@ RESOURCES += \
 *msvc*: LIBS += -lUser32
 
 HEADERS = common.h \
+    Config.h \
     qoptions.h \
-    ScreenSaver.h
+    ScreenSaver.h \
+    common_export.h
 
 SOURCES = common.cpp \
+    Config.cpp \
     qoptions.cpp
 
 !macx: SOURCES += ScreenSaver.cpp

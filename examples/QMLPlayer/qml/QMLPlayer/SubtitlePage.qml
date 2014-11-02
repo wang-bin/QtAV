@@ -6,9 +6,6 @@ Page {
     id: root
     title: qsTr("Subtitle")
     signal subtitleChanged(string file)
-    signal engineChanged(string engine)
-    signal autoLoadChanged(bool autoLoad)
-    signal enabledChanged(bool value)
     property var supportedFormats: ["ass" , "ssa"]
     height: titleHeight + 5*Utils.kItemHeight + engine.contentHeight
     Column {
@@ -20,19 +17,19 @@ Page {
             Button {
                 text: qsTr("Enabled")
                 checkable: true
-                checked: true
+                checked: PlayerConfig.subtitleEnabled
                 width: parent.width/2
                 height: Utils.kItemHeight
-                onCheckedChanged: root.enabledChanged(checked)
+                onCheckedChanged: PlayerConfig.subtitleEnabled = checked
             }
             Button {
                 id: autoLoad
                 text: qsTr("Auto load")
                 checkable: true
-                checked: true
+                checked: PlayerConfig.subtitleAutoLoad
                 width: parent.width/2
                 height: Utils.scaled(30)
-                onCheckedChanged: root.autoLoadChanged(checked)
+                onCheckedChanged: PlayerConfig.subtitleAutoLoad = checked
             }
         }
         Row {
@@ -71,12 +68,13 @@ Page {
             id: engine
             width: parent.width
             itemWidth: parent.width
+            currentIndex: PlayerConfig.subtitleEngines[0] === "FFmpeg" ? 0 : 1
             model: ListModel {
                 ListElement { name: "FFmpeg" }
                 ListElement { name: "LibASS" }
             }
             onClicked: {
-                root.engineChanged(model.get(index).name)
+                PlayerConfig.subtitleEngines = [ model.get(index).name ]
             }
         }
         Text {
@@ -85,7 +83,7 @@ Page {
             font.pixelSize: Utils.kFontSize
         }
         Text {
-            color: "blue"
+            color: "orange"
             font.pixelSize: Utils.kFontSize
             text: supportedFormats.join(",")
             wrapMode: Text.Wrap
