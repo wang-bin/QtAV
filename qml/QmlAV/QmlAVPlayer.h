@@ -68,6 +68,7 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
+    Q_PROPERTY(QVariantMap videoCodecOptions READ videoCodecOptions WRITE setVideoCodecOptions NOTIFY videoCodecOptionsChanged)
 public:
     enum Loop
     {
@@ -145,6 +146,8 @@ public:
     QStringList videoCodecs() const;
     QStringList videoCodecPriority() const;
     void setVideoCodecPriority(const QStringList& p);
+    QVariantMap videoCodecOptions() const;
+    void setVideoCodecOptions(const QVariantMap& value);
 
     void setAudioChannels(int channels);
     int audioChannels() const;
@@ -180,6 +183,7 @@ Q_SIGNALS:
     void playing();
     void seekableChanged();
     void videoCodecPriorityChanged();
+    void videoCodecOptionsChanged();
     void channelLayoutChanged();
 
     void errorChanged();
@@ -216,6 +220,7 @@ private:
     ChannelLayout mChannelLayout;
 
     QScopedPointer<MediaMetaData> m_metaData;
+    QVariantMap vcodec_opt;
 };
 
 #endif // QTAV_QML_AVPLAYER_H

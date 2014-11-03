@@ -218,6 +218,20 @@ void QmlAVPlayer::setVideoCodecPriority(const QStringList &p)
     emit videoCodecPriorityChanged();
 }
 
+QVariantMap QmlAVPlayer::videoCodecOptions() const
+{
+    return vcodec_opt;
+}
+
+void QmlAVPlayer::setVideoCodecOptions(const QVariantMap &value)
+{
+    if (value == vcodec_opt)
+        return;
+    vcodec_opt = value;
+    emit videoCodecOptionsChanged();
+    // player maybe not ready
+}
+
 static AudioFormat::ChannelLayout toAudioFormatChannelLayout(QmlAVPlayer::ChannelLayout ch)
 {
     struct {
@@ -347,6 +361,14 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
             mpPlayer->pause(false);
         } else {
             mpPlayer->setRepeat(mLoopCount - 1);
+            if (!vcodec_opt.isEmpty()) {
+                QVariantHash vcopt;
+                for (QVariantMap::const_iterator cit = vcodec_opt.cbegin(); cit != vcodec_opt.cend(); ++cit) {
+                    vcopt[cit.key()] = cit.value();
+                }
+                if (!vcopt.isEmpty())
+                    mpPlayer->setOptionsForVideoCodec(vcopt);
+            }
             mpPlayer->play();
             applyChannelLayout();
             // applyChannelLayout() first because it may reopen audio device

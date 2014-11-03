@@ -301,44 +301,89 @@ void AVDecoder::setOptions(const QVariantHash &dict)
     }
     if (dict.isEmpty())
         return;
-    QVariantHash avcodec_dict(dict);
+    // TODO: use QVariantMap only
+    QVariant opt;
     if (dict.contains("avcodec"))
-        avcodec_dict = dict.value("avcodec").toHash();
-    // workaround for VideoDecoderFFmpeg. now it does not call av_opt_set_xxx, so set here in dict
-    if (dict.contains("FFmpeg"))
-        avcodec_dict.unite(dict.value("FFmpeg").toHash());
-    QHashIterator<QString, QVariant> i(avcodec_dict);
-    while (i.hasNext()) {
-        i.next();
-        switch (i.value().type()) {
-        case QVariant::Hash: // for example "vaapi": {...}
-            continue;
-        case QVariant::Bool:
-            // QVariant.toByteArray(): "true" or "false", can not recognized by avcodec
-            av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), QByteArray::number(i.value().toBool()), 0);
-            break;
-        default:
-            // avcodec key and value are in lower case
-            av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), i.value().toByteArray().toLower().constData(), 0);
-            break;
+        opt = dict.value("avcodec");
+    if (opt.type() == QVariant::Hash) {
+        QVariantHash avcodec_dict = opt.toHash();
+        // workaround for VideoDecoderFFmpeg. now it does not call av_opt_set_xxx, so set here in dict
+        if (dict.contains("FFmpeg"))
+            avcodec_dict.unite(dict.value("FFmpeg").toHash());
+        QHashIterator<QString, QVariant> i(avcodec_dict);
+        while (i.hasNext()) {
+            i.next();
+            switch (i.value().type()) {
+            case QVariant::Hash: // for example "vaapi": {...}
+                continue;
+            case QVariant::Bool:
+                // QVariant.toByteArray(): "true" or "false", can not recognized by avcodec
+                av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), QByteArray::number(i.value().toBool()), 0);
+                break;
+            default:
+                // avcodec key and value are in lower case
+                av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), i.value().toByteArray().toLower().constData(), 0);
+                break;
+            }
+            qDebug("avcodec option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
         }
-        qDebug("avcodec option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+    } else if (opt.type() == QVariant::Map) {
+        QVariantMap avcodec_dict = opt.toMap();
+        // workaround for VideoDecoderFFmpeg. now it does not call av_opt_set_xxx, so set here in dict
+        if (dict.contains("FFmpeg"))
+            avcodec_dict.unite(dict.value("FFmpeg").toMap());
+        QMapIterator<QString, QVariant> i(avcodec_dict);
+        while (i.hasNext()) {
+            i.next();
+            switch (i.value().type()) {
+            case QVariant::Map: // for example "vaapi": {...}
+                continue;
+            case QVariant::Bool:
+                // QVariant.toByteArray(): "true" or "false", can not recognized by avcodec
+                av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), QByteArray::number(i.value().toBool()), 0);
+                break;
+            default:
+                // avcodec key and value are in lower case
+                av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), i.value().toByteArray().toLower().constData(), 0);
+                break;
+            }
+            qDebug("avcodec option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+        }
     }
     if (name() == "avcodec")
         return;
-    QVariantHash property_dict(dict.value(name()).toHash());
-    if (property_dict.isEmpty())
-        property_dict = dict.value(name().toLower()).toHash();
-    if (property_dict.isEmpty())
+    if (dict.contains(name()))
+        opt = dict.value(name());
+    else if (dict.contains(name().toLower()))
+        opt = dict.value(name().toLower());
+    else
         return;
-    i = QHashIterator<QString, QVariant>(property_dict);
-    while (i.hasNext()) {
-        i.next();
-        if (i.value().type() == QVariant::Hash) // for example "vaapi": {...}
-            continue;
-        setProperty(i.key().toUtf8().constData(), i.value());
-        qDebug("decoder property: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+    if (opt.type() == QVariant::Hash) {
+        QVariantHash property_dict(opt.toHash());
+        if (property_dict.isEmpty())
+            return;
+        QHashIterator<QString, QVariant> i(property_dict);
+        while (i.hasNext()) {
+            i.next();
+            if (i.value().type() == QVariant::Hash) // for example "vaapi": {...}
+                continue;
+            setProperty(i.key().toUtf8().constData(), i.value());
+            qDebug("decoder property: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+        }
+    } else if (opt.type() == QVariant::Map) {
+        QVariantMap property_dict(opt.toMap());
+        if (property_dict.isEmpty())
+            return;
+        QMapIterator<QString, QVariant> i(property_dict);
+        while (i.hasNext()) {
+            i.next();
+            if (i.value().type() == QVariant::Map) // for example "vaapi": {...}
+                continue;
+            setProperty(i.key().toUtf8().constData(), i.value());
+            qDebug("decoder property: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+        }
     }
+
 }
 
 QVariantHash AVDecoder::options() const

@@ -171,6 +171,7 @@ Module {
         Property { name: "channelLayout"; type: "ChannelLayout" }
         Property { name: "videoCodecs"; type: "QStringList"; isReadonly: true }
         Property { name: "videoCodecPriority"; type: "QStringList" }
+        Property { name: "videoCodecOptions"; type: "QVariantMap" }
         Signal { name: "loopCountChanged" }
         Signal { name: "videoOutChanged" }
         Signal { name: "paused" }
@@ -243,6 +244,7 @@ Module {
         Property { name: "fuzzyMatch"; type: "bool" }
         Property { name: "dirs"; type: "QStringList" }
         Property { name: "suffixes"; type: "QStringList" }
+        Property { name: "supportedSuffixes"; type: "QStringList"; isReadonly: true }
         Property { name: "canRender"; type: "bool"; isReadonly: true }
         Property { name: "autoLoad"; type: "bool" }
         Property { name: "file"; type: "string" }

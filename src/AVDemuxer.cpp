@@ -1095,9 +1095,27 @@ void AVDemuxer::setOptions(const QVariantHash &dict)
     }
     if (dict.isEmpty())
         return;
-    QVariantHash avformat_dict(dict);
-    if (dict.contains("avformat"))
-        avformat_dict = dict.value("avformat").toHash();
+    QVariant opt(dict);
+    if (dict.contains("avformat")) {
+        opt = dict.value("avformat");
+        if (opt.type() == QVariant::Map) {
+            QVariantMap avformat_dict(opt.toMap());
+            if (avformat_dict.isEmpty())
+                return;
+            QMapIterator<QString, QVariant> i(avformat_dict);
+            while (i.hasNext()) {
+                i.next();
+                if (i.value().type() == QVariant::Map)
+                    continue;
+                av_dict_set(&mpDict, i.key().toUtf8().constData(), i.value().toByteArray().constData(), 0);
+                qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+            }
+            return;
+        }
+    }
+    QVariantHash avformat_dict(opt.toHash());
+    if (avformat_dict.isEmpty())
+        return;
     QHashIterator<QString, QVariant> i(avformat_dict);
     while (i.hasNext()) {
         i.next();
