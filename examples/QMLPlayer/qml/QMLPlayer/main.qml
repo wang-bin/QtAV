@@ -277,7 +277,11 @@ Rectangle {
             bottom: control.top
         }
         width: Utils.scaled(140)
-        onClicked: pageLoader.item.visible = true
+        onClicked: {
+            pageLoader.source = selectedUrl
+            if (pageLoader.item)
+                pageLoader.item.visible = true
+        }
         onSelectedUrlChanged: pageLoader.source = selectedUrl
         states: [
             State {

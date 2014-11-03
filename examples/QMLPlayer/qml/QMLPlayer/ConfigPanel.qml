@@ -18,11 +18,8 @@ Rectangle {
         itemWidth: root.width - Utils.scaled(2)
         spacing: Utils.scaled(1)
         model: ListModel {
-            ListElement { name: QT_TR_NOOP("Media info"); url: "MediaInfoPage.qml" }
-            ListElement { name: QT_TR_NOOP("Video codec"); url: "VideoCodec.qml" }
-            ListElement { name: QT_TR_NOOP("Subtitle"); url: "SubtitlePage.qml" }
-            ListElement { name: QT_TR_NOOP("Audio"); url: "AudioPage.qml" }
-            ListElement { name: QT_TR_NOOP("About"); url: "About.qml" }
+            id: contentModel
+            // ListElement property value can not be script before Qt5.4. translate here(QT_TR_NOOP) and used in other qml fails
         }
         onClicked: {
             selectedX = x
@@ -31,5 +28,11 @@ Rectangle {
             root.clicked()
         }
     }
-
+    Component.onCompleted: {
+        contentModel.append({name: qsTr("Media info"),  url: "MediaInfoPage.qml" })
+        contentModel.append({name: qsTr("Video codec"), url: "VideoCodec.qml" })
+        contentModel.append({name: qsTr("Subtitle"), url: "SubtitlePage.qml" })
+        contentModel.append({name: qsTr("Audio"), url: "AudioPage.qml" })
+        contentModel.append({name: qsTr("About"), url: "About.qml" })
+    }
 }

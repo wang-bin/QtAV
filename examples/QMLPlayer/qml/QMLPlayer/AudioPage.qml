@@ -24,10 +24,7 @@ Page {
             width: parent.width
             itemWidth: parent.width
             model: ListModel {
-                ListElement { name: QT_TR_NOOP("Stero"); value: MediaPlayer.Stero }
-                ListElement { name: QT_TR_NOOP("Mono"); value: MediaPlayer.Mono }
-                ListElement { name: QT_TR_NOOP("Left"); value: MediaPlayer.Left }
-                ListElement { name: QT_TR_NOOP("Right"); value: MediaPlayer.Right }
+                id: channelModel
             }
             onClicked: {
                 root.channelChanged(model.get(index).value)
@@ -41,5 +38,11 @@ Page {
             height: Utils.kItemHeight
             onCheckedChanged: root.muteChanged(checked)
         }
+    }
+    Component.onCompleted: {
+        channelModel.append({name: qsTr("Stero"), value: MediaPlayer.Stero })
+        channelModel.append({name: qsTr("Mono"), value: MediaPlayer.Mono })
+        channelModel.append({name: qsTr("Left"), value: MediaPlayer.Left })
+        channelModel.append({name: qsTr("Right"), value: MediaPlayer.Right })
     }
 }
