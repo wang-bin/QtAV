@@ -625,7 +625,10 @@ bool AVPlayer::load(bool reload)
     formatCtx = demuxer.formatContext();
 
     // TODO: what about other proctols? some vob duration() == 0
-    media_end_pos = mediaStartPosition() + duration();
+    if (duration() > 0)
+        media_end_pos = mediaStartPosition() + duration();
+    else
+        media_end_pos = kInvalidPosition;
     // if file changed or stop() called by user, stop_position changes.
     if (stopPosition() > mediaStopPosition() || stopPosition() == 0) {
         stop_position = mediaStopPosition();
@@ -1042,7 +1045,7 @@ void AVPlayer::timerEvent(QTimerEvent *te)
         }
         // active only when playing
         const qint64 t = clock->value()*1000.0;
-        if (stopPosition() == kInvalidPosition) {
+        if (stopPosition() == kInvalidPosition) { // or check stopPosition() < 0
             // not seekable. network stream
             emit positionChanged(t);
             return;
