@@ -66,8 +66,14 @@ private Q_SLOTS:
     void onPlayerSourceChanged();
     void onPlayerPositionChanged();
     void onPlayerStart();
+    void tryReload();
+
+private:
+    void connectSignals();
+    void disconnectSignals();
 private:
     bool m_auto;
+    bool m_enabled;
     AVPlayer *m_player;
     Subtitle *m_sub;
     QString m_file;

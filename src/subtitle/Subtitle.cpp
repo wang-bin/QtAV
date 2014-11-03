@@ -158,12 +158,12 @@ void Subtitle::setEngines(const QStringList &value)
     // can not reset processor here, not thread safe.
     priv->supported_suffixes.clear();
     priv->engine_names = value;
-    emit enginesChanged();
-    emit supportedSuffixesChanged();
-    QList<SubtitleProcessor*> sps;
     if (priv->engine_names.isEmpty()) {
+        emit enginesChanged();
+        emit supportedSuffixesChanged();
         return;
     }
+    QList<SubtitleProcessor*> sps;
     foreach (const QString& e, priv->engine_names) {
         QList<SubtitleProcessor*>::iterator it = priv->processors.begin();
         while (it != priv->processors.end()) {
@@ -188,17 +188,19 @@ void Subtitle::setEngines(const QStringList &value)
     // release the processors not wanted
     qDeleteAll(priv->processors);
     priv->processors = sps;
-    if (sps.isEmpty())
+    if (sps.isEmpty()) {
+        emit enginesChanged();
+        emit supportedSuffixesChanged();
         return;
+    }
     foreach (SubtitleProcessor* sp, sps) {
         priv->supported_suffixes.append(sp->supportedTypes());
     }
     priv->supported_suffixes.removeDuplicates();
     // DO NOT set priv->suffixes
+    emit enginesChanged();
     emit supportedSuffixesChanged();
     // it's safe to reload
-    if (isLoaded())
-        loadAsync();
 }
 
 QStringList Subtitle::engines() const

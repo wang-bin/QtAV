@@ -76,7 +76,6 @@ QuickSubtitle::QuickSubtitle(QObject *parent) :
     m_filter = new Filter(m_player_sub->subtitle(), this);
     setSubtitle(m_player_sub->subtitle()); //for proxy
     connect(this, SIGNAL(enableChanged(bool)), m_player_sub, SLOT(onEnableChanged(bool))); //////
-    connect(this, SIGNAL(codecChanged()), m_player_sub->subtitle(), SLOT(loadAsync()));
     connect(m_player_sub, SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged(bool)));
 }
 

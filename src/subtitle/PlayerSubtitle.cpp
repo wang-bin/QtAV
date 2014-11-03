@@ -31,6 +31,7 @@ namespace QtAV {
 PlayerSubtitle::PlayerSubtitle(QObject *parent)
     : QObject(parent)
     , m_auto(true)
+    , m_enabled(true)
     , m_player(0)
     , m_sub(new Subtitle(this))
 {
@@ -46,16 +47,12 @@ void PlayerSubtitle::setPlayer(AVPlayer *player)
     if (m_player == player)
         return;
     if (m_player) {
-        disconnect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
-        disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
-        disconnect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
+        disconnectSignals();
     }
     m_player = player;
     if (!m_player)
         return;
-    connect(m_player, SIGNAL(sourceChanged()), SLOT(onPlayerSourceChanged()));
-    connect(m_player, SIGNAL(positionChanged(qint64)), SLOT(onPlayerPositionChanged()));
-    connect(m_player, SIGNAL(started()), SLOT(onPlayerStart()));
+    connectSignals();
 }
 
 void PlayerSubtitle::setFile(const QString &file)
@@ -138,11 +135,10 @@ void PlayerSubtitle::onPlayerStart()
 
 void PlayerSubtitle::onEnableChanged(bool value)
 {
+    m_enabled = value;
     if (value) {
         if (m_player) {
-            connect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
-            connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
-            connect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
+            connectSignals();
         }
         if (autoLoad()) {
             if (!m_player)
@@ -161,11 +157,38 @@ void PlayerSubtitle::onEnableChanged(bool value)
         }
     } else {
         if (m_player) {
-            disconnect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
-            disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
-            disconnect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
+            disconnectSignals();
         }
     }
+}
+
+void PlayerSubtitle::tryReload()
+{
+    if (!m_enabled)
+        return;
+    if (!m_player)
+        return;
+    if (!m_player->isPlaying())
+        return;
+    m_sub->loadAsync();
+}
+
+void PlayerSubtitle::connectSignals()
+{
+    connect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
+    connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
+    connect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
+    connect(m_sub, SIGNAL(codecChanged()), this, SLOT(tryReload()));
+    connect(m_sub, SIGNAL(enginesChanged()), this, SLOT(tryReload()));
+}
+
+void PlayerSubtitle::disconnectSignals()
+{
+    disconnect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
+    disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
+    disconnect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
+    disconnect(m_sub, SIGNAL(codecChanged()), this, SLOT(tryReload()));
+    disconnect(m_sub, SIGNAL(enginesChanged()), this, SLOT(tryReload()));
 }
 
 } //namespace QtAV

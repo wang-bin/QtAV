@@ -82,7 +82,6 @@ SubtitleFilter::SubtitleFilter(QObject *parent) :
     DPTR_D(SubtitleFilter);
     setSubtitle(d.player_sub->subtitle());
     connect(this, SIGNAL(enableChanged(bool)), d.player_sub.data(), SLOT(onEnableChanged(bool)));
-    connect(this, SIGNAL(codecChanged()), d.player_sub->subtitle(), SLOT(loadAsync()));
     connect(d.player_sub.data(), SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged(bool)));
 }
 
