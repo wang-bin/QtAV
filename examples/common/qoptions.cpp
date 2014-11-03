@@ -221,6 +221,8 @@ bool QOptions::parse(int argc, const char *const*argv)
                         //qDebug("%d %s", __LINE__, qPrintable(it_list->value().toString()));
 					} else {
 						it = args.erase(it);
+                        if (it == args.end())
+                            break;
                         it_list->setValue(*it);
                         //qDebug("%d %s", __LINE__, qPrintable(it_list->value().toString()));
 					}
@@ -248,6 +250,8 @@ bool QOptions::parse(int argc, const char *const*argv)
 					}
                     if (it->length() == sname_len+1) {//-o abco
 						it = args.erase(it);
+                        if (it == args.end())
+                            break;
                         it_list->setValue(*it);
                         //qDebug("%d %s", __LINE__, qPrintable(it_list->value().toString()));
 					} else {
