@@ -5,14 +5,11 @@
 #-------------------------------------------------
 # Qt4 need QDesktopServices
 QT = core gui
-# android apk hack
-android {
-  QT += svg
-  LIBS += -lQtAV #QML app does not link to libQtAV but we need it. why no QmlAV plugin if remove this?
-}
+
 TARGET = common
 TEMPLATE = lib
 DEFINES += BUILD_QOPT_LIB
+
 CONFIG *= common-buildlib
 
 #var with '_' can not pass to pri?
@@ -20,6 +17,18 @@ STATICLINK = 0
 PROJECTROOT = $$PWD/../..
 !include(libcommon.pri): error("could not find libcommon.pri")
 preparePaths($$OUT_PWD/../../out)
+
+
+# android apk hack
+android {
+  QT += svg
+  LIBS += -L$$qtLongName($$BUILD_DIR/lib)
+  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) {
+    LIBS += -lQt5AV
+  } else {
+    LIBS += -lQtAV #QML app does not link to libQtAV but we need it. why no QmlAV plugin if remove this?
+  }
+}
 
 RESOURCES += \
     theme/theme.qrc

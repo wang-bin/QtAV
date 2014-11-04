@@ -63,11 +63,6 @@ CONFIG += depend_includepath #?
 
 PROJECT_SRCPATH = $$PWD
 PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
-#for system include path
-*msvc* {
-} else {
-    QMAKE_CXXFLAGS += -isystem $$PROJECT_SRCPATH -isystem $$PROJECT_SRCPATH/..
-}
 INCLUDEPATH *= $$PROJECT_SRCPATH $$PROJECT_SRCPATH/.. $$PROJECT_SRCPATH/$$NAME
 DEPENDPATH *= $$PROJECT_SRCPATH
 #QMAKE_LFLAGS_RPATH += #will append to rpath dir
