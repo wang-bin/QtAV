@@ -209,7 +209,7 @@ bool QOptions::parse(int argc, const char *const*argv)
         if (it->startsWith("--")) {
             int e = it->indexOf('=');
             for (it_list = mOptions.begin(); it_list != mOptions.end(); ++it_list) {
-                if (it_list->longName().startsWith(it->mid(2,e-2))) {
+                if (it_list->longName() == it->mid(2,e-2)) {
                     if (it_list->type()==QOption::NoToken) {
                         it_list->setValue(true);
                         //qDebug("%d %s", __LINE__, qPrintable(it_list->value().toString()));
@@ -240,11 +240,10 @@ bool QOptions::parse(int argc, const char *const*argv)
             for (it_list = mOptions.begin(); it_list != mOptions.end(); ++it_list) {
                 QString sname = it_list->shortName();
 				int sname_len = sname.length(); //usally is 1
-				//Not endsWith, -oabco
-                if (it->indexOf(sname) == 1) {
+                //TODO: startsWith(-height,-h) Not endsWith, -oabco
+                if (it->midRef(1).compare(sname) == 0) {
                     if (it_list->type() == QOption::NoToken) {
                         it_list->setValue(true);
-                        //qDebug("%d %s", __LINE__, qPrintable(it_list->value().toString()));
 						it = args.erase(it);
 						break;
 					}
@@ -254,10 +253,10 @@ bool QOptions::parse(int argc, const char *const*argv)
                             break;
                         it_list->setValue(*it);
                         //qDebug("%d %s", __LINE__, qPrintable(it_list->value().toString()));
-					} else {
+                    } else {
                         it_list->setValue(it->mid(sname_len+1));
                         //qDebug("%d %s", __LINE__, qPrintable(it_list->value().toString()));
-					}
+                    }
 					it = args.erase(it);
 					break;
 				}

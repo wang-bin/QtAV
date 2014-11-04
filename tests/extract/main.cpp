@@ -62,16 +62,22 @@ int main(int argc, char** argv)
     int t = 0;
     if (idx > 0)
         t = a.arguments().at(idx+1).toInt();
+    int n = 1;
+    idx = a.arguments().indexOf("-n");
+    if (idx > 0)
+        n = a.arguments().at(idx+1).toInt();
+    bool async = a.arguments().contains("-async");
+
 
     VideoFrameExtractor extractor;
-    extractor.setAsync(true);
+    extractor.setAsync(async);
     VideoFrameObserver obs;
     QObject::connect(&extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), &obs, SLOT(onVideoFrameExtracted(QtAV::VideoFrame)));
     extractor.setSource(file);
 
     QElapsedTimer timer;
     timer.start();
-    for (int i = 0; i < 30; ++i) {
+    for (int i = 0; i < n; ++i) {
         extractor.setPosition(t + 1000*i);
     }
     qDebug("elapsed: %lld", timer.elapsed());

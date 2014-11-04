@@ -219,7 +219,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     hb->addWidget(mpUp);
     hb->addWidget(mpDown);
     vb->addLayout(hb);
-    connect(&Config::instance(), SIGNAL(decoderPriorityChanged(QVector<QtAV::VideoDecoderId>)), SLOT(onConfigChanged()));
+    connect(&Config::instance(), SIGNAL(decoderPriorityNamesChanged()), SLOT(onConfigChanged()));
     updateDecodersUi();
 }
 

@@ -151,7 +151,7 @@ void MainWindow::initPlayer()
     onCaptureConfigChanged();
     onAVFilterConfigChanged();
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), SLOT(onCaptureConfigChanged()));
-    connect(&Config::instance(), SIGNAL(captureFormatChanged(QByteArray)), SLOT(onCaptureConfigChanged()));
+    connect(&Config::instance(), SIGNAL(captureFormatChanged(QString)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(avfilterChanged()), SLOT(onAVFilterConfigChanged()));
     connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));

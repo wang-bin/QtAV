@@ -34,12 +34,12 @@ void load_qm(const QStringList &names)
     foreach(QString qm, qms) {
         QTranslator *ts = new QTranslator(qApp);
         QString path = qApp->applicationDirPath() + "/i18n/" + qm + "_" + QLocale::system().name();
-        qDebug() << "loading qm: " << path;
+        //qDebug() << "loading qm: " << path;
         if (ts->load(path)) {
             qApp->installTranslator(ts);
         } else {
             path = ":/i18n/" + qm + "_" + QLocale::system().name();
-            qDebug() << "loading qm: " << path;
+            //qDebug() << "loading qm: " << path;
             if (ts->load(path))
                 qApp->installTranslator(ts);
             else
