@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
         QString file = options.value("file").toString();
         if (player && !file.isEmpty()) {
             if (QFile(file).exists())
-                file.prepend("file://");
+                file.prepend("file:///"); //windows can not be file://
             file.replace("\\", "/"); //qurl
             QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
         }
