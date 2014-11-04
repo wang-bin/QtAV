@@ -415,6 +415,10 @@ mac_framework { # from common.pri
         FRAMEWORK_HEADERS.version = Versions
         FRAMEWORK_HEADERS.files = $$SDK_HEADERS
         FRAMEWORK_HEADERS.path = Headers
+# 5.4(beta) workaround for wrong include path
+# TODO: why <QtCore/qglobal.h> can be found?
+        greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
+        FRAMEWORK_PRIVATE_HEADERS.version = Versions
         FRAMEWORK_PRIVATE_HEADERS.files = $$SDK_PRIVATE_HEADERS
         FRAMEWORK_PRIVATE_HEADERS.path = Headers/$$VERSION/$$MODULE_INCNAME/private
         QMAKE_BUNDLE_DATA += FRAMEWORK_HEADERS FRAMEWORK_PRIVATE_HEADERS
