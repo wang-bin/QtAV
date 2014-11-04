@@ -20,8 +20,8 @@
 ******************************************************************************/
 
 #include "QtAV/private/AVCompat.h"
+#include "QtAV/private/prepost.h"
 #include "QtAV/version.h"
-#include "QtAV/prepost.h"
 
 void ffmpeg_version_print()
 {

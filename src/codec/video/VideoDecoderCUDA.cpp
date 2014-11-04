@@ -21,7 +21,7 @@
 
 #include "QtAV/VideoDecoder.h"
 #include "QtAV/private/VideoDecoder_p.h"
-#include "QtAV/prepost.h"
+#include "QtAV/private/prepost.h"
 #include <QtCore/QQueue>
 #if QTAV_HAVE(DLLAPI_CUDA)
 #include "dllapi.h"

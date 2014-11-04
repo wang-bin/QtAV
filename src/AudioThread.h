@@ -19,37 +19,25 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
+#ifndef QAV_AUDIOTHREAD_H
+#define QAV_AUDIOTHREAD_H
 
-#ifndef QTAV_VIDEOTHREAD_H
-#define QTAV_VIDEOTHREAD_H
-
-#include <QtAV/AVThread.h>
-#include <QtCore/QSize>
+#include "AVThread.h"
 
 namespace QtAV {
 
-class ImageConverter;
-class VideoCapture;
-class VideoThreadPrivate;
-class VideoThread : public AVThread
+class AudioDecoder;
+class AudioThreadPrivate;
+class AudioThread : public AVThread
 {
     Q_OBJECT
-    DPTR_DECLARE_PRIVATE(VideoThread)
+    DPTR_DECLARE_PRIVATE(AudioThread)
 public:
-    explicit VideoThread(QObject *parent = 0);
-    VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
-    //ImageConverter *imageConverter();
-    //virtual bool event(QEvent *event);
-
-    void setBrightness(int val);
-    void setContrast(int val);
-    void setSaturation(int val);
-    void setEQ(int b, int c, int s);
+    explicit AudioThread(QObject *parent = 0);
 
 protected:
     virtual void run();
 };
 
-
 } //namespace QtAV
-#endif // QTAV_VIDEOTHREAD_H
+#endif // QAV_AUDIOTHREAD_H

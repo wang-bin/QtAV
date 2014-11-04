@@ -28,7 +28,7 @@
 #include <QtAV/FactoryDefine.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h> //it declares a factory we need
-#include <QtAV/prepost.h>
+#include "QtAV/private/prepost.h"
 #include "QmlAV/QmlAVPlayer.h"
 #include "QmlAV/SGVideoNode.h"
 

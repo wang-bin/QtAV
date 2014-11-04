@@ -36,7 +36,7 @@ extern "C" {
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
 #include "utils/GPUMemCopy.h"
-#include "QtAV/prepost.h"
+#include "QtAV/private/prepost.h"
 #include "vaapi/vaapi_helper.h"
 #include "vaapi/SurfaceInteropVAAPI.h"
 #include "utils/Logger.h"

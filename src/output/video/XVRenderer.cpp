@@ -32,7 +32,7 @@
 #include <sys/shm.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xvlib.h>
-#include "QtAV/prepost.h"
+#include "QtAV/private/prepost.h"
 
 #include "utils/Logger.h"
 

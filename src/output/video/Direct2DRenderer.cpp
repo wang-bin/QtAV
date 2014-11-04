@@ -24,7 +24,7 @@
 #include <QResizeEvent>
 #include <QtCore/QLibrary>
 #include "QtAV/private/VideoRenderer_p.h"
-#include "QtAV/prepost.h"
+#include "QtAV/private/prepost.h"
 
 //#define CINTERFACE //http://rxlib.ru/faqs/faqc_en/15596.html
 //#include <windows.h>

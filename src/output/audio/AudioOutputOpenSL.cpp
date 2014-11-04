@@ -20,7 +20,7 @@
 #include "QtAV/private/AudioOutput_p.h"
 #include <QtCore/QThread>
 #include <SLES/OpenSLES.h>
-#include "QtAV/prepost.h"
+#include "QtAV/private/prepost.h"
 #include "utils/Logger.h"
 
 namespace QtAV {

@@ -23,7 +23,7 @@
 #include "QtAV/AudioResampler.h"
 #include "QtAV/private/AudioResampler_p.h"
 #include "QtAV/private/AVCompat.h"
-#include "QtAV/prepost.h"
+#include "QtAV/private/prepost.h"
 #include "utils/Logger.h"
 
 namespace QtAV {

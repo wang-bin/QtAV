@@ -22,7 +22,7 @@
 #include "QtAV/VideoRendererTypes.h"
 #include <cstdio>
 #include <cstdlib>
-#include "QtAV/prepost.h"
+#include "QtAV/private/prepost.h"
 
 // TODO: move to an internal header
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || defined(QT_WIDGETS_LIB)

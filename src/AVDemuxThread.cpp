@@ -19,11 +19,11 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AVDemuxThread.h>
-#include <QtAV/AVDemuxer.h>
-#include <QtAV/AVDecoder.h>
-#include <QtAV/Packet.h>
-#include <QtAV/AVThread.h>
+#include "AVDemuxThread.h"
+#include "QtAV/AVDemuxer.h"
+#include "QtAV/AVDecoder.h"
+#include "QtAV/Packet.h"
+#include "AVThread.h"
 #include <QtCore/QTimer>
 #include <QtCore/QEventLoop>
 #include "utils/Logger.h"

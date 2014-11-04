@@ -25,7 +25,7 @@ extern "C" {
 #include <ass/ass.h>
 }
 #include "QtAV/private/SubtitleProcessor.h"
-#include "QtAV/prepost.h"
+#include "QtAV/private/prepost.h"
 #include "QtAV/Packet.h"
 #include "PlainText.h"
 #include "utils/Logger.h"

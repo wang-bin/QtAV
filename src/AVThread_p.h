@@ -25,7 +25,9 @@
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
 #include <QtCore/QWaitCondition>
-#include "QtAV/AVThread.h" //PacketQueue
+#include "QtAV/Packet.h"
+#include "utils/BlockingQueue.h"
+//#include "AVThread.h" //PacketQueue
 
 class QRunnable;
 namespace QtAV {
@@ -62,7 +64,7 @@ public:
     bool demux_end;
     volatile bool stop; //true when packets is empty and demux is end.
     AVClock *clock;
-    PacketQueue packets;
+    BlockingQueue<Packet, QQueue> packets;
     AVDecoder *dec;
     OutputSet *outputSet;
     QMutex mutex;

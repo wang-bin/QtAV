@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/AVThread.h"
-#include "QtAV/private/AVThread_p.h"
+#include "AVThread.h"
+#include "AVThread_p.h"
 #include "QtAV/AVOutput.h"
 #include "QtAV/Filter.h"
 #include "output/OutputSet.h"

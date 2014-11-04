@@ -44,7 +44,7 @@
  *  We define the id in MyClassTypes.cpp because MyClassSubA may not be compiled(e.g. platform dependent features), but the id must be defined.
  * 1. create a source file MyClassSubA.cpp and implement the required members
  * 2. In MyClassSubA.cpp, add the following lines
- *      #include "QtAV/prepost.h" //for PRE_FUNC_ADD()
+ *      #include "QtAV/private/prepost.h" //for PRE_FUNC_ADD()
  *      //we don't want to depend on MyClassTypes.h, so extern
  *      extern MyClassId MyClassId_SubA;
  *      FACTORY_REGISTER_ID_AUTO(MyClass, SubA, "SubA's name")
@@ -66,7 +66,7 @@
  *  just create MyClassSubA.cpp with the content:
  *
  *      #include "MyClass.h"
- *      #include "QtAV/prepost.h" //for PRE_FUNC_ADD()
+ *      #include "QtAV/private/prepost.h" //for PRE_FUNC_ADD()
  *      MyClassId MyClassId_SubA = some_value; //it can be used somewhere else as "extern"
  *      FACTORY_REGISTER_ID_AUTO(MyClass, SubA, "SubA's name")
  *      void RegisterMyClassSubA_Man() //call it when you need as "extern"

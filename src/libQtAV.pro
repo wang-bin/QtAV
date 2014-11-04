@@ -322,7 +322,6 @@ SOURCES += \
 SDK_HEADERS *= \
     QtAV/QtAV.h \
     QtAV/dptr.h \
-    QtAV/prepost.h \
     QtAV/QtAV_Global.h \
     QtAV/AudioResampler.h \
     QtAV/AudioResamplerTypes.h \
@@ -366,13 +365,13 @@ SDK_HEADERS *= \
 SDK_PRIVATE_HEADERS *= \
     QtAV/private/factory.h \
     QtAV/private/mkid.h \
+    QtAV/private/prepost.h \
     QtAV/private/singleton.h \
     QtAV/private/PlayerSubtitle.h \
     QtAV/private/SubtitleProcessor.h \
     QtAV/private/AVCompat.h \
     QtAV/private/AudioOutput_p.h \
     QtAV/private/AudioResampler_p.h \
-    QtAV/private/AVThread_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
@@ -390,6 +389,11 @@ HEADERS *= \
     $$SDK_HEADERS \
     $$SDK_PRIVATE_HEADERS \
     QAVIOContext.h \
+    AVDemuxThread.h \
+    AVThread.h \
+    AVThread_p.h \
+    AudioThread.h \
+    VideoThread.h \
     filter/FilterManager.h \
     subtitle/CharsetDetector.h \
     subtitle/PlainText.h \
@@ -398,10 +402,6 @@ HEADERS *= \
     utils/Logger.h \
     utils/SharedPtr.h \
     output/OutputSet.h \
-    QtAV/AVDemuxThread.h \
-    QtAV/AVThread.h \
-    QtAV/AudioThread.h \
-    QtAV/VideoThread.h \
     QtAV/ColorTransform.h
 
 

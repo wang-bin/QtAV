@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoThread.h"
-#include "QtAV/private/AVThread_p.h"
+#include "VideoThread.h"
+#include "AVThread_p.h"
 #include "QtAV/Packet.h"
 #include "QtAV/AVClock.h"
 #include "QtAV/VideoCapture.h"
