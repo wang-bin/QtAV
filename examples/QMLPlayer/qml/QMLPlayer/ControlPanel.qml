@@ -77,8 +77,8 @@ Rectangle {
                 root.aniShow()
             } else {
                 //if (player.playbackState !== MediaPlayer.StoppedState)
-                if (playState !== "stop")
-                    timer.start()
+                //if (playState !== "stop")
+                   // timer.start()
             }
         }
         onPressed: {

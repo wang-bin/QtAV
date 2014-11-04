@@ -108,6 +108,7 @@ Rectangle {
         }
         onLoaded: {
             msg.text = qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1)
+            console.log(msg.text)
         }
         onSupportedSuffixesChanged: {
             if (!pageLoader.item)
@@ -120,7 +121,6 @@ Rectangle {
         anchors.fill: parent
         onPressed: {
             control.toggleVisible()
-            console.log("mouse: " + mouseX + " mouse.x: " + mouse.x + " w: " + root.width)
             if (root.width - mouseX < Utils.scaled(60)) {
                 configPanel.state = "show"
             } else {
