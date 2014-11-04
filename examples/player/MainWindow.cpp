@@ -1317,7 +1317,7 @@ void MainWindow::onAVFilterConfigChanged()
 void MainWindow::donate()
 {
     //QDesktopServices::openUrl(QUrl("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0/"));
-    QDesktopServices::openUrl(QUrl("http://qtav.org/#donate"));
+    QDesktopServices::openUrl(QUrl("http://www.qtav.org/#donate"));
 }
 
 void MainWindow::setup()

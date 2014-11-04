@@ -1,4 +1,4 @@
-# [QtAV](http://wang-bin.github.io/QtAV)  [![Build Status](https://travis-ci.org/wang-bin/QtAV.svg)](https://travis-ci.org/wang-bin/QtAV)
+# [QtAV](http://www.qtav.org)  [![Build Status](https://travis-ci.org/wang-bin/QtAV.svg)](https://travis-ci.org/wang-bin/QtAV)
 
 QtAV is a multimedia playback library based on Qt and FFmpeg. It can help you to write a player
 with less effort than ever before.
@@ -9,7 +9,7 @@ QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](ht
 you must adhere to the terms of the license in question.**
 
 
-#### [Web site](http://wang-bin.github.io/QtAV), [Download binaries from sourceforge](https://sourceforge.net/projects/qtav) , [Source code on github](https://github.com/wang-bin/QtAV)
+#### [Home page](http://www.qtav.org), [Download binaries from sourceforge](https://sourceforge.net/projects/qtav) , [Source code on github](https://github.com/wang-bin/QtAV)
 
 ### Features
 
@@ -19,22 +19,21 @@ QtAV can meet your most demands
 - OpenGL and ES2 support for Hi10P and other 16-bit YUV videos (The 1st player/library support in ES2? VLC, XBMC, mplayer does not support now)
 - Video capture in rgb and yuv format
 - OSD and custom filters
-- filters in libavfilter, for example stero3d, blur
-- Subtitle
-- Transform video using GraphicsItemRenderer. (rotate, shear, etc)
+- Filters in libavfilter, for example stero3d, blur
+- Subtitle supports ass, srt etc. Dynamic change FFmpeg and libass engine
 - Playing frame by frame (currently support forward playing)
 - Playback speed control. At any speed.
 - Variant streams: locale file, http, rtsp, etc.
 - Choose audio channel
 - Choose media stream, e.g. play a desired audio track
-- Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
+- Renderers: QPainter(QWidget, QGraphicsItem), GDI+, Direct2D, XV and OpenGL(and ES2).
 - Dynamically change render engine when playing.
 - Multiple video outputs for 1 player
 - Region of interest(ROI), i.e. video cropping
-- Video eq: brightness, contrast, saturation, hue
-- QML support as a plugin. Most playback APIs are compatible with QtMultiMedia module
+- Video eq(software and OpenGL): brightness, contrast, saturation, hue
+- QML support. Most playback APIs are compatible with QtMultiMedia module
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
-  both FFmpeg(>=1.0) and [Libav](http://libav.org). Latest FFmpeg release is recommended. 
+  both FFmpeg(>=1.0) and [Libav](http://libav.org) (>=9.0). Latest FFmpeg release is recommended.
 
 
 ### Extensible Framework
@@ -48,10 +47,10 @@ QtAV can meet your most demands
 
 [![Qt](http://qt-project.org/images/qt13a/Qt-logo.png "Qt4.8 or Qt5")](http://qt-project.org)
 [![FFmpeg](http://ffmpeg.org/ffmpeg-logo.png "(>=1.0)Latest version is recommanded")](http://ffmpeg.org)
-![OpenAL](http://upload.wikimedia.org/wikipedia/zh/2/28/OpenAL_logo.png "OpenAL or OpenAL soft") 
+![OpenAL](http://upload.wikimedia.org/wikipedia/zh/2/28/OpenAL_logo.png "OpenAL or OpenAL soft")
 [![Libav](http://libav.org/libav-logo-text.png ">=9.0")](http://libav.org)
 [![PortAudio](http://www.portaudio.com/images/portaudio_logotext.png)](http://www.portaudio.com)
- 
+
 Latest FFmpeg, Qt5 and OpenAL releases are preferred.
 
 **The required development files for MinGW can be found in sourceforge
@@ -66,7 +65,7 @@ See the wiki [Build QtAV](https://github.com/wang-bin/QtAV/wiki/Build-QtAV) and 
 
 Wrtie a media player using QtAV is quite easy.
 
-    GLWidgetRenderer renderer;
+    GLWidgetRenderer2 renderer;
     renderer.show();
     AVPlayer player;
     player.setRenderer(&renderer);
@@ -78,7 +77,7 @@ For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://g
 QtAV can also be used in **Qml**
 
     import QtQuick 2.0
-    import QtAV 1.3
+    import QtAV 1.4
     Item {
         VideoOutput {
             anchors.fill: parent
@@ -103,6 +102,7 @@ QtAV can also be used in **Qml**
 #### Contributors
 
 - Wang Bin(Lucas Wang) <wbsecg1@gmail.com>: creator, maintainer
+- Gianluigi Tiesi: avdevice input support
 - Alexander
 - skaman: aspect ratio from stream
 - Stefan Ladage <sladage@gmail.com>: QIODevice support. Wiki about build QtAV for iOS. Let OpenAL work on OSX and iOS
@@ -139,14 +139,14 @@ will use dxva if dxva can decode, otherwise ffmpeg will be used.
 - Ctrl+O: open a file
 - Space: pause/continue
 - F: fullscreen on/off
-- I: switch display quality
 - T: stays on top on/off
 - N: show next frame. Continue the playing by pressing "Space"
 - O: OSD
 - P: replay
 - Q/ESC: quit
 - S: stop
-- R: switch aspect ratio
+- A: switch aspect ratio
+- R: rotate 90
 - M: mute on/off
 - Up / Down: volume + / -
 - Ctrl+Up/Down: speed + / -
@@ -155,10 +155,6 @@ will use dxva if dxva can decode, otherwise ffmpeg will be used.
 - Drag and drop a media file to player
 
 
-# TODO
-
-Read https://github.com/wang-bin/QtAV/wiki/TODO for detail.
-
 Screenshots
 ----------
 
@@ -166,33 +162,29 @@ Use QtAV in QML with OpenGL shaders(example is from qtmultimedia. But qtmultimed
 
 ![Alt text](https://sourceforge.net/p/qtav/screenshot/QtAV-QML-Shader.jpg "QtAV QML Shaders")
 
-QtAV on Mac OS X
+![Alt text](http://www.qtav.org/screenshots/player-OSX.jpg "player on OSX")
 
-![Alt text](https://sourceforge.net/p/qtav/screenshot/mac.jpg "player on OSX")
-
-QMLPlayer on ubuntu
-
-![QMLPlayer](https://sourceforge.net/p/qtav/screenshot/QMLPlayer%2BQtAV.jpg "QMLPlayer")
+![QMLPlayer](http://www.qtav.org/screenshots/QMLPlayer-preview-ubuntu.jpg "QMLPlayer")
 
 Video Wall
 
-![Alt text](https://sourceforge.net/p/qtav/screenshot/videowall.png "video wall")
+![Alt text](http://www.qtav.org/screenshots/videowall.png "video wall")
 
 
 
 ***
 ### Donate 资助
 
-[PayPal ![Paypal](http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](http://wang-bin.github.io/qtav.org#donate)
+[PayPal ![Paypal](http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](http://www.qtav.org#donate)
 [![Support via Gittip](https://rawgithub.com/twolfson/gittip-badge/0.1.0/dist/gittip.png)](https://www.gittip.com/wang-bin)
 [Gittip ![Gittip](https://www.gittip.com/assets/10.1.51/logo.png)](https://www.gittip.com/wang-bin)
-
+![AliPay](http://www.qtav.org/images/apbihytg7x2iyb8g0f-50x50.png "支付宝")
 - - -
 
 
 
 > Copyright &copy; Wang Bin wbsecg1@gmail.com
 
-> Shanghai University->S3 Graphics, Shanghai, China
+> Shanghai University->S3 Graphics->Deepin, Shanghai, China
 
 > 2013-01-21

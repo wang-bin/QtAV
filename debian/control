@@ -15,7 +15,7 @@ Build-Depends: debhelper (>= 9),
  libxv-dev,
  libva-dev,
 Standards-Version: 3.9.5
-Homepage: http://wang-bin.github.io/qtav.org/
+Homepage: http://www.qtav.org
 
 Package: qtav-sdk
 Architecture: all

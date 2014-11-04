@@ -23,7 +23,7 @@ Page {
                   + "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
                   + "<p>Shanghai University->S3 Graphics->Deepin, Shanghai, China</p>"
                   + "<p>Source code: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>"
-                  + "<p>Home page: <a href='http://qtav.org'>http://qtav.org</a></p>"
+                  + "<p>Home page: <a href='http://www.qtav.org'>http://www.qtav.org</a></p>"
                   + "\n<h3>" + qsTr("Shortcut") + ":</h3>"
                   + "<table><tr><td>M: " + qsTr("Mute") + " . </td><td>F: " + qsTr("Fullscreen") + " . </td></tr><tr><td>" + qsTr("Up/Down") + ": " + qsTr("Volume")
                   + "+/- . </td><td> " + qsTr("Left/Right") +": " + qsTr("Seek backward/forward") + " . </td></tr><tr><td>"
@@ -40,7 +40,7 @@ Page {
             anchors.margins: Utils.kMargin
             width: Utils.scaled(80)
             height: donateHeight
-            onClicked: Qt.openUrlExternally("http://qtav.org#donate")
+            onClicked: Qt.openUrlExternally("http://www.qtav.org#donate")
         }
     }
 }
