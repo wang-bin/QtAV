@@ -57,7 +57,7 @@ QTDIR=${QTDIR%include*}
 QTDIR=${QTDIR//* /}
 echo "QTDIR=$QTDIR"
 
-LIBDIR=`find $BUILD/lib* -name "*QtAV.prl"`
+LIBDIR=`find $BUILD/lib* -name "*Qt*AV.prl"`
 LIBDIR=${LIBDIR%/*}
 mkdir -p $TARGET
 echo "LIBDIR=$LIBDIR"
@@ -85,8 +85,8 @@ done
 cp -af $QTDIR/plugins/{imageformats,platform*} $TARGET/packages/com.qtav.product.runtime/data/bin/plugins
 cp -af $QTDIR/qml/{Qt,QtQml,QtQuick,QtQuick.2} $TARGET/packages/com.qtav.product.runtime/data/bin/qml
 ##ffmpeg
-## QtAV
-LIBQTAV=$LIBDIR/`lib_name QtAV 1`
+## QtAV, Qt5AV
+LIBQTAV=$LIBDIR/`lib_name "Qt*AV" 1`
 echo "LIBQTAV=$LIBQTAV"
 cp -Lf $LIBQTAV $TARGET/packages/com.qtav.product.runtime/data/bin
 
@@ -96,12 +96,9 @@ cp -af ../../src/QtAV $TARGET/packages/com.qtav.product.dev/data/include
 cp -af ../../qml/QmlAV $TARGET/packages/com.qtav.product.dev/data/include
 cp -af ../../{README.md,lgpl-2.1.txt,gpl-3.0.txt,doc} $TARGET/packages/com.qtav.product/data
 
+#mingw: libQt5AV1.a
+cp -af $LIBDIR/*Qt*AV* $TARGET/packages/com.qtav.product.dev/data/lib
 
-if platform_is MinGW || platform_is MSYS; then
-  cp -af $LIBDIR/QtAV* $TARGET/packages/com.qtav.product.dev/data/lib
-else
-  cp -af $LIBDIR/libQtAV* $TARGET/packages/com.qtav.product.dev/data/lib
-fi
 
 
 # player
