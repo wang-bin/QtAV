@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     }
 
     QApplication a(argc, argv);
-    load_qm(QStringList() << "player");
+    load_qm(QStringList() << "player", options.value("language").toString());
 
     sLogfile = fopen(QString(qApp->applicationDirPath() + "/log.txt").toUtf8().constData(), "w+");
     if (!sLogfile) {

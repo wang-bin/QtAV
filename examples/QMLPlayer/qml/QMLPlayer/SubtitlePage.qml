@@ -7,7 +7,7 @@ Page {
     title: qsTr("Subtitle")
     signal subtitleChanged(string file)
     property var supportedFormats: ["ass" , "ssa"]
-    height: titleHeight + 7*Utils.kItemHeight + engine.contentHeight
+    height: titleHeight + 6*Utils.kItemHeight + engine.contentHeight
     Column {
         anchors.fill: content
         spacing: Utils.kSpacing
@@ -67,16 +67,19 @@ Page {
             }
             onClicked: PlayerConfig.subtitleEngines = [ model.get(index).name ]
         }
-        Text {
-            color: "white"
-            text: qsTr("Supported formats") + ": "
-            font.pixelSize: Utils.kFontSize
-        }
-        Text {
-            color: "orange"
-            font.pixelSize: Utils.kFontSize
-            text: supportedFormats.join(",")
-            wrapMode: Text.Wrap
+        Row {
+            Text {
+                color: "white"
+                text: qsTr("Supported formats") + ": "
+                font.pixelSize: Utils.kFontSize
+            }
+            Text {
+                id: formats
+                color: "orange"
+                font.pixelSize: Utils.kFontSize
+                text: supportedFormats.join(",")
+                wrapMode: Text.Wrap
+            }
         }
         Text {
             color: "white"
@@ -92,23 +95,15 @@ Page {
             TextInput {
                 color: "orange"
                 font.pixelSize: Utils.kFontSize
-                width: Utils.scaled(100)
+                width: Utils.scaled(40)
                 height: parent.height
                 validator: IntValidator{bottom: 0;}
                 text: PlayerConfig.subtitleBottomMargin
                 onTextChanged: PlayerConfig.subtitleBottomMargin = parseInt(text)
             }
-            Text {
-                text: "QtAV"
-                font: PlayerConfig.subtitleFont
-                style: PlayerConfig.subtitleOutline ? Text.Outline : Text.Normal
-                styleColor: PlayerConfig.subtitleOutlineColor
-                color: PlayerConfig.subtitleColor
-            }
-
             Button {
                 text: qsTr("Font")
-                width: Utils.scaled(80)
+                width: Utils.scaled(60)
                 height: Utils.kItemHeight
                 onClicked: fontDialog.open()
             }
@@ -125,7 +120,7 @@ Page {
                 text: qsTr("Outline")
                 checkable: true
                 checked:  PlayerConfig.subtitleOutline
-                width: Utils.scaled(80)
+                width: Utils.scaled(60)
                 height: Utils.kItemHeight
                 onCheckedChanged: PlayerConfig.subtitleOutline = checked
             }
@@ -137,6 +132,27 @@ Page {
                     anchors.fill: parent
                     onPressed: outlineColorDialog.open()
                 }
+            }
+            Text {
+                text: qsTr("Preview") + ":"
+                color: "white"
+                font.pointSize: Utils.kFontSize
+            }
+            TextInput {
+                color: "orange"
+                font.pointSize: Utils.kFontSize
+                width: Utils.scaled(50)
+                height: parent.height
+                text: "QtAV"
+                onTextChanged: stylePreview.text = text
+            }
+            Text {
+                id: stylePreview
+                text: "QtAV"
+                font: PlayerConfig.subtitleFont
+                style: PlayerConfig.subtitleOutline ? Text.Outline : Text.Normal
+                styleColor: PlayerConfig.subtitleOutlineColor
+                color: PlayerConfig.subtitleColor
             }
         }
     }

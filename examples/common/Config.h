@@ -50,6 +50,7 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(QColor subtitleOutlineColor READ subtitleOutlineColor WRITE setSubtitleOutlineColor NOTIFY subtitleOutlineColorChanged)
     Q_PROPERTY(bool subtitleOutline READ subtitleOutline WRITE setSubtitleOutline NOTIFY subtitleOutlineChanged)
     Q_PROPERTY(int subtitleBottomMargin READ subtitleBottomMargin WRITE setSubtitleBottomMargin NOTIFY subtitleBottomMarginChanged)
+    Q_PROPERTY(bool previewEnabled READ previewEnabled WRITE setPreviewEnabled NOTIFY previewEnabledChanged)
 public:
     static Config& instance();
 
@@ -94,6 +95,9 @@ public:
     int subtitleBottomMargin() const;
     Config& setSubtitleBottomMargin(int value);
 
+    bool previewEnabled() const;
+    Config& setPreviewEnabled(bool value);
+
     QVariantHash avformatOptions() const;
     int analyzeDuration() const;
     Config& analyzeDuration(int ad);
@@ -128,6 +132,7 @@ public:
     Q_SIGNAL void subtitleOutlineChanged();
     Q_SIGNAL void subtitleOutlineColorChanged();
     Q_SIGNAL void subtitleBottomMarginChanged();
+    Q_SIGNAL void previewEnabledChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();

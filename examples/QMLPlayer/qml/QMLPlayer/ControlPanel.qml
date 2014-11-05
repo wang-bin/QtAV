@@ -128,7 +128,7 @@ Rectangle {
               //  return
             if (playState == "stop")
                 return;
-            if (preview.video.file) {
+            if (PlayerConfig.previewEnabled && preview.video.file) {
                 preview.video.timestamp = value*duration
             }
 
@@ -169,26 +169,25 @@ Rectangle {
         opacity: 0.8
         anchors.left: progress.left
         anchors.bottom: progress.top
-        width: Utils.scaled(180)
-        height: Utils.scaled(120)
+        width: PlayerConfig.previewEnabled ? Utils.scaled(180) : previewText.contentWidth + 2*Utils.kSpacing
+        height: PlayerConfig.previewEnabled ? Utils.scaled(120) : previewText.contentHeight + 2*Utils.kSpacing
         color: "black"
         state: "out"
         property alias video: video
         VideoPreview {
             id: video
+            visible: PlayerConfig.previewEnabled
             fillMode: VideoOutput.Stretch
+            anchors.top: parent.top
+            width: parent.width
             height: parent.height * 4/5
             file: mediaSource
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
         }
         Text {
             id: previewText
+            width: parent.width
             anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: video.bottom
+            anchors.top: PlayerConfig.previewEnabled ? video.bottom : parent.top
             text: ""
             color: "white"
             font.pixelSize: Utils.scaled(12)

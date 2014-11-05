@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     }
 
     QGuiApplication app(argc, argv);
-    load_qm(QStringList() << "QMLPlayer");
+    load_qm(QStringList() << "QMLPlayer", options.value("language").toString());
     QtQuick2ApplicationViewer viewer;
     viewer.engine()->rootContext()->setContextProperty("PlayerConfig", &Config::instance());
     qDebug(">>>>>>>>devicePixelRatio: %f", qApp->devicePixelRatio());

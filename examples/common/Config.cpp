@@ -93,6 +93,9 @@ public:
         subtitle_outline = settings.value("outline", true).toBool();
         subtilte_bottom_margin = settings.value("bottom margin", 8).toInt();
         settings.endGroup();
+        settings.beginGroup("preview");
+        preview_enabled = settings.value("enabled", true).toBool();
+        settings.endGroup();
         settings.beginGroup("avformat");
         direct = settings.value("avioflags", 0).toString() == "direct";
         probe_size = settings.value("probesize", 5000000).toUInt();
@@ -126,6 +129,9 @@ public:
         settings.setValue("outline_color", subtitle_outline_color);
         settings.setValue("outline", subtitle_outline);
         settings.setValue("bottom margin", subtilte_bottom_margin);
+        settings.endGroup();
+        settings.beginGroup("preview");
+        settings.setValue("enabled", preview_enabled);
         settings.endGroup();
         settings.beginGroup("avformat");
         settings.setValue("avioflags", direct ? "direct" : 0);
@@ -162,6 +168,8 @@ public:
     QColor subtitle_color, subtitle_outline_color;
     bool subtitle_outline;
     int subtilte_bottom_margin;
+
+    bool preview_enabled;
 };
 
 Config& Config::instance()
@@ -362,6 +370,20 @@ Config& Config::setSubtitleBottomMargin(int value)
         return *this;
     mpData->subtilte_bottom_margin = value;
     emit subtitleBottomMarginChanged();
+    return *this;
+}
+
+bool Config::previewEnabled() const
+{
+    return mpData->preview_enabled;
+}
+
+Config& Config::setPreviewEnabled(bool value)
+{
+    if (mpData->preview_enabled == value)
+        return *this;
+    mpData->preview_enabled = value;
+    emit previewEnabledChanged();
     return *this;
 }
 

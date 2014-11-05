@@ -11,6 +11,6 @@ COMMON_EXPORT void _link_hack();
 }
 
 QOptions COMMON_EXPORT get_common_options();
-void COMMON_EXPORT load_qm(const QStringList& names);
+void COMMON_EXPORT load_qm(const QStringList& names, const QString &lang = "system");
 
 #endif // COMMON_H
