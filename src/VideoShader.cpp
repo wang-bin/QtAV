@@ -321,10 +321,10 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     DPTR_D(VideoMaterial);
     d.update_texure = true;
     // TODO: move to another function before rendering?
-    d.bpp = frame.format().bitsPerPixel(0);
     d.width = frame.width();
     d.height = frame.height();
     const VideoFormat fmt(frame.format());
+    d.bpp = fmt.bitsPerPixel(0);
     // http://forum.doom9.org/archive/index.php/t-160211.html
     ColorTransform::ColorSpace cs = ColorTransform::RGB;
     if (fmt.isRGB()) {
@@ -354,8 +354,7 @@ VideoShader* VideoMaterial::createShader() const
 {
     DPTR_D(const VideoMaterial);
     VideoShader *shader = new VideoShader();
-    const VideoFormat fmt(d.frame.format());
-    shader->setVideoFormat(fmt);
+    shader->setVideoFormat(d.video_format);
     //resize texture locations to avoid access format later
     return shader;
 }
@@ -368,7 +367,7 @@ MaterialType* VideoMaterial::type() const
     static MaterialType planar16beType;
     static MaterialType yuv8Type;
     static MaterialType invalidType;
-    const VideoFormat &fmt = d_func().frame.format();
+    const VideoFormat &fmt = d_func().video_format;
     if (fmt.isRGB() && !fmt.isPlanar())
         return &rgbType;
     if (!fmt.isPlanar())
@@ -672,7 +671,7 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
 
 bool VideoMaterialPrivate::updateTexturesIfNeeded()
 {
-    const VideoFormat &fmt = frame.format();
+    const VideoFormat &fmt = video_format;
     if (!fmt.isValid())
         return false;
     bool update_textures = false;
@@ -681,7 +680,7 @@ bool VideoMaterialPrivate::updateTexturesIfNeeded()
             || frame.bytesPerLine(0) != plane0Size.width() || frame.height() != plane0Size.height()
             || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
-        //qDebug("---------------------update texture: %dx%d, %s", width, frame.height(), frame.format().name().toUtf8().constData());
+        //qDebug("---------------------update texture: %dx%d, %s", width, frame.height(), video_format.name().toUtf8().constData());
         const int nb_planes = fmt.planeCount();
         texture_size.resize(nb_planes);
         texture_upload_size.resize(nb_planes);

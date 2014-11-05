@@ -24,10 +24,11 @@
 #include "QmlAV/SGVideoNode.h"
 #include "QtAV/VideoShader.h"
 #include "QtAV/VideoFrame.h"
-#include <QtCore/QMutexLocker>
+#include <QtCore/QScopedPointer>
 #include <QtGui/QOpenGLFunctions>
 #include <QtQuick/QSGMaterialShader>
 
+// all in QSGRenderThread
 namespace QtAV {
 
 class SGVideoMaterialShader : public QSGMaterialShader
@@ -37,9 +38,6 @@ public:
         m_shader(s)
     {
         setVideoFormat(s->videoFormat());
-    }
-    ~SGVideoMaterialShader() {
-        delete m_shader;
     }
 
     virtual void updateState(const RenderState &state, QSGMaterial *newMaterial, QSGMaterial *oldMaterial);
@@ -57,21 +55,19 @@ protected:
     int colorMatrixLocation() const { return m_shader->colorMatrixLocation();}
     int opacityLocation() const { return m_shader->opacityLocation();}
 private:
-    VideoShader *m_shader;
+    QScopedPointer<VideoShader> m_shader;
 };
 
 class SGVideoMaterial : public QSGMaterial
 {
 public:
     SGVideoMaterial() : m_opacity(1.0) {}
-    ~SGVideoMaterial() {}
 
     virtual QSGMaterialType *type() const {
         return reinterpret_cast<QSGMaterialType*>(m_material.type());
     }
 
     virtual QSGMaterialShader *createShader() const {
-        //TODO: setVideoFormat?
         return new SGVideoMaterialShader(m_material.createShader());
     }
 
@@ -86,17 +82,13 @@ public:
     }
 */
     void setCurrentFrame(const VideoFrame &frame) {
-        {
-            QMutexLocker lock(&m_frameMutex);
-            m_material.setCurrentFrame(frame);
-        }
+        m_material.setCurrentFrame(frame);
         setFlag(Blending, m_material.hasAlpha());
     }
 
     VideoMaterial* videoMaterial() { return &m_material;}
 
     qreal m_opacity;
-    QMutex m_frameMutex;
     VideoMaterial m_material;
 };
 
