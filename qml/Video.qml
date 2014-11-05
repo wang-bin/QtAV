@@ -62,6 +62,8 @@ import QtAV 1.4
 Item {
     id: video
 
+    property alias subtitle: subtitle
+    property alias subtitleText: text_sub // not for ass.
     /*** Properties of VideoOutput ***/
     /*!
         \qmlproperty enumeration Video::fillMode
@@ -320,7 +322,6 @@ Item {
         SubtitleItem {
             id: ass_sub
             rotation: -videoOut.orientation
-            visible: subtitle.canRender && subtitle.enableASS
             fillMode: parent.fillMode
             source: subtitle
             anchors.fill: parent
@@ -328,11 +329,10 @@ Item {
         Text {
             id: text_sub
             rotation: -videoOut.orientation
-            visible: !ass_sub.visible
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignBottom
             font {
-                pixelSize: 20
+                pointSize: 20
                 bold: true
             }
             style: Text.Outline
@@ -394,10 +394,17 @@ Item {
     Subtitle {
         id: subtitle
         player: player
-        property bool enableASS: enabled
         onContentChanged: {
-            if (!canRender || !enableASS)
+            if (!canRender || !ass_sub.visible)
                 text_sub.text = text
+        }
+        onEngineChanged: { // assume a engine canRender is only used as a renderer
+            ass_sub.visible = canRender
+            text_sub.visible = !canRender
+        }
+        onEnableChanged: {
+            ass_sub.visible = enabled
+            text_sub.visible = enabled
         }
     }
 }

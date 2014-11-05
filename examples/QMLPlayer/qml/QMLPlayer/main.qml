@@ -47,7 +47,6 @@ Rectangle {
         orientation: 0
         SubtitleItem {
             id: subtitleItem
-            visible: subtitle.enabled
             fillMode: videoOut.fillMode
             rotation: -videoOut.orientation
             source: subtitle
@@ -55,7 +54,6 @@ Rectangle {
         }
         Text {
             id: subtitleLabel
-            visible: subtitle.enabled
             rotation: -videoOut.orientation
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignBottom
@@ -102,8 +100,8 @@ Rectangle {
         enabled: PlayerConfig.subtitleEnabled
         autoLoad: PlayerConfig.subtitleAutoLoad
         engines: PlayerConfig.subtitleEngines
-        onContentChanged: {
-            if (!canRender || !enabled || !subtitleItem.visible)
+        onContentChanged: { //already enabled
+            if (!canRender || !subtitleItem.visible)
                 subtitleLabel.text = text
         }
         onLoaded: {
@@ -114,6 +112,14 @@ Rectangle {
             if (!pageLoader.item)
                 return
             pageLoader.item.supportedFormats = supportedSuffixes
+        }
+        onEngineChanged: { // assume a engine canRender is only used as a renderer
+            subtitleItem.visible = canRender
+            subtitleLabel.visible = !canRender
+        }
+        onEnableChanged: {
+            subtitleItem.visible = enabled
+            subtitleLabel.visible = enabled
         }
     }
 
