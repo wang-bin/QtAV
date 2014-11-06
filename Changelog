@@ -1,3 +1,16 @@
+version 1.4.1 2014-11-06
+
+Changelog:
+- More QtMultimedia compatible QML playback API
+- Debian package support. Now you can build on ubuntu>=14.04 using debuild
+- Subtitle: libass renderering support. Dynamically change FFmpeg parser and libass
+- Log level control support without changing any Qt logging functions (qDebug, qWarning etc.)
+- Video orientation support in renderers
+- Bug fix: video frame with alpha value. video stream start time >0. OpenAL can not close correctly...
+- QML only: video preview.
+- players: config UI in QMLPlayer. Video preview on progress bar.
+
+
 version 1.4.0    2014-09-10
 
 Changelog:

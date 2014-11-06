@@ -1,3 +1,12 @@
+qtav (1.4.1) unstable; urgency=low
+
+  * libass support
+  * More QML APIs compatible with QtMultimedia
+  * Log level control
+  * Video preview
+
+ -- Wang Bin <wbsecg1@gmail.com>  Thu, 6 Nov 2014 13:22:33 +0800
+
 qtav (1.4.0) unstable; urgency=low
 
   * Initial release. (Closes: #737016)

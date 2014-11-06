@@ -14,7 +14,7 @@ PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/common.pri)
 preparePaths($$OUT_PWD/../../out)
 
-VERSION = 1.4.0
+VERSION = 1.4.1
 # windows: Qt5AV.dll, not Qt1AV.dll
 !mac_framework: VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 
