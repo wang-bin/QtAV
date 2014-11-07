@@ -345,14 +345,14 @@ void Subtitle::load()
         return;
     }
     // read from a url
-    QFile f(priv->url.toString());//QUrl::FullyDecoded));
+    QFile f(QUrl::fromPercentEncoding(priv->url.toEncoded()));
     if (f.exists()) {
         u8 = priv->readFromFile(f.fileName());
         if (u8.isEmpty())
             return;
         priv->loaded = priv->processRawData(u8);
         if (priv->loaded)
-            emit loaded(priv->url.toString());
+            emit loaded(QUrl::fromPercentEncoding(priv->url.toEncoded()));
         checkCapability();
         if (old_processor != priv->processor)
             emit engineChanged();
@@ -699,7 +699,7 @@ bool Subtitle::Private::processRawData(SubtitleProcessor *sp, const QByteArray &
         qWarning() << "open subtitle qbuffer error: " << buf.errorString();
     }
     qDebug("processing subtitle from a tmp utf8 file...");
-    QString name = url.toLocalFile().section('/', -1);
+    QString name = QUrl::fromPercentEncoding(url.toEncoded()).section('/', -1);
     if (name.isEmpty())
         name = QFileInfo(file_name).fileName(); //priv->name.section('/', -1); // if no seperator?
     if (name.isEmpty())
