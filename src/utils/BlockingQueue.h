@@ -24,6 +24,7 @@
 #define QTAV_BLOCKINGQUEUE_H
 
 #include <QtCore/QReadWriteLock>
+#include <QtCore/QScopedPointer>
 #include <QtCore/QWaitCondition>
 
 //TODO: block full and empty condition separately
@@ -71,7 +72,7 @@ private:
     QReadWriteLock block_change_lock;
     QWaitCondition cond_full, cond_empty;
     //upto_threshold_callback, downto_threshold_callback
-    StateChangeCallback *empty_callback, *threshold_callback, *full_callback;
+    QScopedPointer<StateChangeCallback> empty_callback, threshold_callback, full_callback;
 };
 
 /* cap - thres = 24, about 1s
@@ -247,9 +248,7 @@ void BlockingQueue<T, Container>::setEmptyCallback(StateChangeCallback *call)
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (empty_callback)
-        delete empty_callback;
-    empty_callback = call;
+    empty_callback.reset(call);
 }
 
 template <typename T, template <typename> class Container>
@@ -257,9 +256,7 @@ void BlockingQueue<T, Container>::setThresholdCallback(StateChangeCallback *call
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (threshold_callback)
-        delete threshold_callback;
-    threshold_callback = call;
+    threshold_callback.reset(call);
 }
 
 template <typename T, template <typename> class Container>
@@ -267,9 +264,7 @@ void BlockingQueue<T, Container>::setFullCallback(StateChangeCallback *call)
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (full_callback)
-        delete full_callback;
-    full_callback = call;
+    full_callback.reset(call);
 }
 
 
