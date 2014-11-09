@@ -380,18 +380,18 @@ void AVDemuxThread::run()
                     aqueue->clear();
                     continue;
                 }
-                if (vqueue)
-                    aqueue->blockFull(vqueue->isEnough() || demuxer->hasAttacedPicture());
+                // always block full if no vqueue because empty callback may set false
+                // attached picture is cover for song, 1 frame
+                aqueue->blockFull(!vqueue || (vqueue->isEnough() || demuxer->hasAttacedPicture()));
                 aqueue->put(pkt); //affect video_thread
             }
         } else if (index == video_stream) {
-            if (!video_thread || !video_thread->isRunning()) {
-                vqueue->clear();
-                continue;
-            }
             if (vqueue) {
-                if (aqueue)
-                    vqueue->blockFull(aqueue->isEnough());
+                if (!video_thread || !video_thread->isRunning()) {
+                    vqueue->clear();
+                    continue;
+                }
+                vqueue->blockFull(!aqueue || aqueue->isEnough());
                 vqueue->put(pkt); //affect audio_thread
             }
         } else { //subtitle
