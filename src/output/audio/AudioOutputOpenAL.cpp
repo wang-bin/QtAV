@@ -91,6 +91,11 @@ void RegisterAudioOutputOpenAL_Man()
         } \
     } while(0)
 
+#define SCOPE_LOCK_CONTEXT() \
+    QMutexLocker ctx_lock(&d_func().global_mutex); \
+    Q_UNUSED(ctx_lock); \
+    alcMakeContextCurrent(d_func().context)
+
 // TODO: planar
 static ALenum audioFormatToAL(const AudioFormat& fmt)
 {
@@ -185,14 +190,19 @@ public:
     }
 
     ALCdevice *device;
-    ALCcontext * context;
+    ALCcontext *context;
     ALenum format_al;
     ALuint buffer[kBufferCount];
     ALuint source;
     ALint state;
     QMutex mutex;
     QWaitCondition cond;
+
+    // used for 1 context per instance. lock when makeCurrent
+    static QMutex global_mutex;
 };
+
+QMutex AudioOutputOpenALPrivate::global_mutex;
 
 AudioOutputOpenAL::AudioOutputOpenAL()
     :AudioOutput(*new AudioOutputOpenALPrivate())
@@ -244,6 +254,7 @@ bool AudioOutputOpenAL::open()
     qDebug("AudioOutputOpenAL creating context...");
     d.context = alcCreateContext(d.device, NULL);
     alcMakeContextCurrent(d.context);
+    SCOPE_LOCK_CONTEXT();
     //alcProcessContext(ctx); //used when dealing witg multiple contexts
     ALCenum err = alcGetError(d.device);
     if (err != ALC_NO_ERROR) {
@@ -312,6 +323,7 @@ bool AudioOutputOpenAL::close()
     d.state = 0;
     d.available = false;
     resetStatus();
+    SCOPE_LOCK_CONTEXT();
     alSourceStop(d.source);
     do {
         alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
@@ -345,6 +357,7 @@ bool AudioOutputOpenAL::close()
 
 bool AudioOutputOpenAL::isSupported(const AudioFormat& format) const
 {
+    SCOPE_LOCK_CONTEXT();
     return !!audioFormatToAL(format);
 }
 
@@ -388,6 +401,7 @@ bool AudioOutputOpenAL::write(const QByteArray& data)
     DPTR_D(AudioOutputOpenAL);
     if (data.isEmpty())
         return false;
+    SCOPE_LOCK_CONTEXT();
     ALuint buf;
     //unqueues a set of buffers attached to a source
     AL_RUN_CHECK(alSourceUnqueueBuffers(d.source, 1, &buf));
@@ -398,6 +412,7 @@ bool AudioOutputOpenAL::write(const QByteArray& data)
 
 bool AudioOutputOpenAL::play()
 {
+    SCOPE_LOCK_CONTEXT();
     DPTR_D(AudioOutputOpenAL);
     alGetSourcei(d.source, AL_SOURCE_STATE, &d.state);
     if (d.state != AL_PLAYING) {
@@ -409,6 +424,7 @@ bool AudioOutputOpenAL::play()
 
 int AudioOutputOpenAL::getPlayedCount()
 {
+    SCOPE_LOCK_CONTEXT();
     DPTR_D(AudioOutputOpenAL);
     ALint processed = 0;
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
@@ -417,6 +433,7 @@ int AudioOutputOpenAL::getPlayedCount()
 
 int AudioOutputOpenAL::getQueued()
 {
+    SCOPE_LOCK_CONTEXT();
     ALint queued = 0;
     alGetSourcei(d_func().source, AL_BUFFERS_QUEUED, &queued);
     return queued;
