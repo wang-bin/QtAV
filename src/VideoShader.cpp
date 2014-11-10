@@ -28,6 +28,7 @@
 #include <QtCore/QFile>
 #include "utils/Logger.h"
 
+#define YUVA_DONE 0
 /*
  * TODO: glActiveTexture for Qt4
  * texture target (rectangle for VDA)
@@ -137,6 +138,11 @@ const char* VideoShader::fragmentShader() const
         qWarning("Empty fragment shader!");
         return 0;
     }
+#if YUVA_DONE
+    if (d.video_format.planeCount() == 4) {
+        frag.prepend("#define PLANE_4\n");
+    }
+#endif
     if (d.video_format.isPlanar() && d.video_format.bytesPerPixel(0) == 2) {
         if (d.video_format.isBigEndian())
             frag.prepend("#define LA_16BITS_BE\n");
@@ -366,18 +372,30 @@ MaterialType* VideoMaterial::type() const
     static MaterialType planar16leType;
     static MaterialType planar16beType;
     static MaterialType yuv8Type;
+    static MaterialType planar16le_4plane_Type;
+    static MaterialType planar16be_4plane_Type;
+    static MaterialType yuv8_4plane_Type;
+
     static MaterialType invalidType;
     const VideoFormat &fmt = d_func().video_format;
     if (fmt.isRGB() && !fmt.isPlanar())
         return &rgbType;
     if (!fmt.isPlanar())
         return &packedType;
-    if (fmt.bytesPerPixel(0) == 1)
+    if (fmt.bytesPerPixel(0) == 1) {
+        if (fmt.planeCount() == 4)
+            return &yuv8_4plane_Type;
         return &yuv8Type;
-    if (fmt.isBigEndian())
+    }
+    if (fmt.isBigEndian()) {
+        if (fmt.planeCount() == 4)
+            return &planar16be_4plane_Type;
         return &planar16beType;
-    else
+    } else {
+        if (fmt.planeCount() == 4)
+            return &planar16le_4plane_Type;
         return &planar16leType;
+    }
     return &invalidType;
 }
 
@@ -618,6 +636,8 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
             } else {
                 internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
                 internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
+                if (fmt.planeCount() == 4)
+                    internal_format[3] = data_format[3] = GL_ALPHA; //GL_ALPHA
             }
         }
     }
