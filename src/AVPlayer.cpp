@@ -930,7 +930,7 @@ void AVPlayer::play()
     }
     if (masterClock()->isClockAuto()) {
         qDebug("auto select clock: audio > external");
-        if (!demuxer.audioCodecContext()) {
+        if (!demuxer.audioCodecContext() || !_audio) {
             qWarning("No audio found or audio not supported. Using ExternalClock");
             masterClock()->setClockType(AVClock::ExternalClock);
             masterClock()->setInitialValue(mediaStartPositionF());
@@ -1335,7 +1335,10 @@ bool AVPlayer::setupAudioThread()
         }
         _audio->setAudioFormat(af);
         if (!_audio->open()) {
-            //return; //audio not ready
+            //could not open audio device
+            delete _audio;
+            _audio = 0;
+            return false;
         }
     }
     if (_audio)
