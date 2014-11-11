@@ -298,6 +298,7 @@ SOURCES += \
     Packet.cpp \
     AVError.cpp \
     AVPlayer.cpp \
+    AVPlayerPrivate.cpp \
     AVClock.cpp \
     VideoCapture.cpp \
     VideoFormat.cpp \
@@ -389,6 +390,7 @@ HEADERS *= \
     $$SDK_HEADERS \
     $$SDK_PRIVATE_HEADERS \
     QAVIOContext.h \
+    AVPlayerPrivate.h \
     AVDemuxThread.h \
     AVThread.h \
     AVThread_p.h \
@@ -403,7 +405,6 @@ HEADERS *= \
     utils/SharedPtr.h \
     output/OutputSet.h \
     QtAV/ColorTransform.h
-
 
 # from mkspecs/features/qt_module.prf
 # OS X and iOS frameworks
