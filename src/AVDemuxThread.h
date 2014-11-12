@@ -22,6 +22,7 @@
 #ifndef QAV_DEMUXTHREAD_H
 #define QAV_DEMUXTHREAD_H
 
+#include <QtCore/QAtomicInt>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
 #include <QtCore/QQueue>
@@ -50,12 +51,14 @@ public:
 public slots:
     void stop(); //TODO: remove it?
     void pause(bool p);
+    void nextFrame(); // show next video frame and pause
 
 Q_SIGNALS:
     void requestClockPause(bool value);
 
 private slots:
     void frameDeliveredSeekOnPause();
+    void frameDeliveredNextFrame();
 
 protected:
     virtual void run();
@@ -85,6 +88,7 @@ private:
     // if seeking on pause, schedule a skip pause task and a pause task
     QQueue<QRunnable*> pause_tasks; // in thread tasks
 
+    QAtomicInt nb_next_frame;
     friend class SeekTask;
 };
 

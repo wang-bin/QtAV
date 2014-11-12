@@ -119,7 +119,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     demuxer_thread->setDemuxer(&demuxer);
     //direct connection can not sure slot order?
     connect(demuxer_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()));
-
+    connect(demuxer_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
     video_capture = new VideoCapture(this);
 
     vcodec_ids
@@ -1095,14 +1095,9 @@ void AVPlayer::playNextFrame()
     if (!isPlaying()) {
         play();
     }
-    demuxer_thread->pause(false);
-    clock->pause(false);
-    if (audio_thread)
-        audio_thread->nextAndPause();
-    if (video_thread)
-        video_thread->nextAndPause();
-    clock->pause(true);
-    demuxer_thread->pause(true);
+    // pause clock
+    pause(true); // must pause AVDemuxThread (set user_paused true)
+    demuxer_thread->nextFrame();
 }
 
 void AVPlayer::seek(qreal r)

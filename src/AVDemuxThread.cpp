@@ -64,6 +64,7 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , demuxer(0)
   , audio_thread(0)
   , video_thread(0)
+  , nb_next_frame(0)
 {
     seek_tasks.setCapacity(1);
     seek_tasks.blockFull(false);
@@ -275,6 +276,33 @@ void AVDemuxThread::pause(bool p)
         cond.wakeAll();
 }
 
+void AVDemuxThread::nextFrame()
+{
+    pause(true); // must pause AVDemuxThread (set user_paused true)
+    AVThread *t = video_thread;
+    bool connected = false;
+    if (t) {
+        t->pause(false);
+        t->packetQueue()->blockFull(false);
+        if (!connected) {
+            connect(t, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredNextFrame()), Qt::DirectConnection);
+            connected = true;
+        }
+    }
+    t = audio_thread;
+    if (t) {
+        t->pause(false);
+        t->packetQueue()->blockFull(false);
+        if (!connected) {
+            connect(t, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredNextFrame()), Qt::DirectConnection);
+            connected = true;
+        }
+    }
+    emit requestClockPause(false);
+    nb_next_frame.ref();
+    pauseInternal(false);
+}
+
 void AVDemuxThread::frameDeliveredSeekOnPause()
 {
     AVThread *thread = video_thread ? video_thread : audio_thread;
@@ -285,6 +313,30 @@ void AVDemuxThread::frameDeliveredSeekOnPause()
         emit requestClockPause(true); // need direct connection
     // pause video/audio thread
         thread->pause(true);
+    }
+}
+
+void AVDemuxThread::frameDeliveredNextFrame()
+{
+    AVThread *thread = video_thread ? video_thread : audio_thread;
+    Q_ASSERT(thread);
+    if (nb_next_frame.deref()) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+        Q_ASSERT_X((int)nb_next_frame > 0, "frameDeliveredNextFrame", "internal error. frameDeliveredNextFrame must be > 0");
+#else
+        Q_ASSERT_X((int)nb_next_frame.load() > 0, "frameDeliveredNextFrame", "internal error. frameDeliveredNextFrame must be > 0");
+#endif
+        return;
+    }
+    disconnect(thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredNextFrame()));
+    if (user_paused) {
+        pause(true); // restore pause state
+        emit requestClockPause(true); // need direct connection
+    // pause both video and audio thread
+        if (video_thread)
+            video_thread->pause(true);
+        if (audio_thread)
+            audio_thread->pause(true);
     }
 }
 
