@@ -51,6 +51,12 @@ public slots:
     void stop(); //TODO: remove it?
     void pause(bool p);
 
+Q_SIGNALS:
+    void requestClockPause(bool value);
+
+private slots:
+    void frameDeliveredSeekOnPause();
+
 protected:
     virtual void run();
     /*
@@ -68,6 +74,7 @@ private:
     void processNextPauseTask();
 
     bool paused;
+    bool user_paused;
     volatile bool end;
     AVDemuxer *demuxer;
     AVThread *audio_thread, *video_thread;
