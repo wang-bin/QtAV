@@ -293,7 +293,10 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         }
         ao->setAudioFormat(af);
         if (!ao->open()) {
-            //return; //audio not ready
+            //could not open audio device. use extrenal clock
+            delete ao;
+            ao = 0;
+            return false;
         }
     }
     if (ao)

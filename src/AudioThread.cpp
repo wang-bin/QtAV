@@ -159,6 +159,8 @@ void AudioThread::run()
                     || dec->resampler()->outAudioFormat() != ao->audioFormat()) {
                 //resample later to ensure thread safe. TODO: test
                 if (d.resample) {
+                    qDebug() << "ao.format " << ao->audioFormat();
+                    qDebug() << "swr.format " << dec->resampler()->outAudioFormat();
                     qDebug("decoder set speed: %.2f", ao->speed());
                     dec->resampler()->setOutAudioFormat(ao->audioFormat());
                     dec->resampler()->setSpeed(ao->speed());
@@ -264,6 +266,8 @@ void AudioThread::run()
                 ao->receiveData(decodedChunk, pkt.pts);
                 ao->play();
                 d.clock->updateValue(ao->timestamp());
+
+                emit frameDelivered();
             } else {
                 d.clock->updateDelay(delay += chunk_delay);
 

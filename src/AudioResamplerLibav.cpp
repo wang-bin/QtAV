@@ -77,10 +77,13 @@ bool AudioResamplerLibav::convert(const quint8 **data)
      * swr_get_delay: Especially when downsampling by a large value, the output sample rate may be a poor choice to represent
      * the delay, similarly  upsampling and the input sample rate.
      */
+    qreal osr = d.out_format.sampleRate();
+    if (!qFuzzyCompare(d.speed, 1.0))
+        osr /= d.speed;
     d.out_samples_per_channel = av_rescale_rnd(
                 avresample_get_delay(d.context) +
                 d.in_samples_per_channel //TODO: wanted_samples(ffplay mplayer2)
-                , d.out_format.sampleRate(), d.in_format.sampleRate(), AV_ROUND_UP);
+                , osr, d.in_format.sampleRate(), AV_ROUND_UP);
     //TODO: why crash for swr 0.5?
     //int out_size = av_samples_get_buffer_size(NULL/*out linesize*/, d.out_channels, d.out_samples_per_channel, (AVSampleFormat)d.out_sample_format, 0/*alignment default*/);
     int size_per_sample_with_channels = d.out_format.channels()*d.out_format.bytesPerSample();

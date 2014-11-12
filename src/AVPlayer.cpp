@@ -73,6 +73,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->read_thread->setDemuxer(&d->demuxer);
     //direct connection can not sure slot order?
     connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()));
+    connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
 
     d->vcapture = new VideoCapture(this);
 }
@@ -809,7 +810,7 @@ void AVPlayer::play()
     }
     if (masterClock()->isClockAuto()) {
         qDebug("auto select clock: audio > external");
-        if (!d->demuxer.audioCodecContext()) {
+        if (!d->demuxer.audioCodecContext() || !d->ao) {
             qWarning("No audio found or audio not supported. Using ExternalClock");
             masterClock()->setClockType(AVClock::ExternalClock);
             masterClock()->setInitialValue(mediaStartPositionF());
@@ -979,14 +980,9 @@ void AVPlayer::playNextFrame()
     if (!isPlaying()) {
         play();
     }
-    d->read_thread->pause(false);
-    d->clock->pause(false);
-    if (d->athread)
-        d->athread->nextAndPause();
-    if (d->vthread)
-        d->vthread->nextAndPause();
-    d->clock->pause(true);
-    d->read_thread->pause(true);
+    // pause clock
+    pause(true); // must pause AVDemuxThread (set user_paused true)
+    d->read_thread->nextFrame();
 }
 
 void AVPlayer::seek(qreal r)
