@@ -25,8 +25,42 @@
 #include <QtCore/QFileInfo>
 #include "QtAV/AVPlayer.h"
 #include "QtAV/Subtitle.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
+
+// /xx/oo/a.01.mov => /xx/oo/a.01.
+/*!
+ * \brief getSubtitleBasePath
+ * \param fullPath path of video or without extension
+ * \return absolute path without extension and file://
+ */
+static QString getSubtitleBasePath(const QString fullPath)
+{
+    QString path(fullPath);
+    //path.remove(p->source().scheme() + "://");
+    // QString name = QFileInfo(path).completeBaseName();
+    // why QFileInfo(path).dir() starts with qml app dir?
+    QString name(path);
+    int lastSep = path.lastIndexOf(QChar('/'));
+    if (lastSep >= 0) {
+        name = name.mid(lastSep + 1);
+        path = path.left(lastSep + 1); // endsWidth "/"
+    }
+    int lastDot = name.lastIndexOf(QChar('.')); // not path.lastIndexof("."): xxx.oo/xx
+    if (lastDot > 0)
+        name = name.left(lastDot);
+    if (path.startsWith("file:")) // qrc: is ok. QUrl.toLocalFile will remove file://
+        path = path.mid(5);
+    int slash = path.indexOf(QChar('/'));
+    if (slash == 0) {
+        while (path.at(++slash) == QChar('/')) {}
+        slash--;
+        path = path.mid(slash);
+    }
+    path.append(name);
+    return path;
+}
 
 PlayerSubtitle::PlayerSubtitle(QObject *parent)
     : QObject(parent)
@@ -90,11 +124,7 @@ void PlayerSubtitle::onPlayerSourceChanged()
     AVPlayer *p = qobject_cast<AVPlayer*>(sender());
     if (!p)
         return;
-    QString path = p->file();
-    //path.remove(p->source().scheme() + "://");
-    QString name = QFileInfo(path).completeBaseName();
-    path = QFileInfo(path).dir().absoluteFilePath(name);
-    m_sub->setFileName(path);
+    m_sub->setFileName(getSubtitleBasePath(p->file()));
     m_sub->setFuzzyMatch(true);
     m_sub->loadAsync();
 }
@@ -123,11 +153,7 @@ void PlayerSubtitle::onPlayerStart()
         return;
     // autoLoad was false then reload then true then reload
     // previous loaded is user selected subtitle
-    QString path = m_player->file();
-    //path.remove(p->source().scheme() + "://");
-    QString name = QFileInfo(path).completeBaseName();
-    path = QFileInfo(path).dir().absoluteFilePath(name);
-    m_sub->setFileName(path);
+    m_sub->setFileName(getSubtitleBasePath(m_player->file()));
     m_sub->setFuzzyMatch(true);
     m_sub->loadAsync();
     return;
@@ -143,11 +169,7 @@ void PlayerSubtitle::onEnableChanged(bool value)
         if (autoLoad()) {
             if (!m_player)
                 return;
-            QString path = m_player->file();
-            //path.remove(p->source().scheme() + "://");
-            QString name = QFileInfo(path).completeBaseName();
-            path = QFileInfo(path).dir().absoluteFilePath(name);
-            m_sub->setFileName(path);
+            m_sub->setFileName(getSubtitleBasePath(m_player->file()));
             m_sub->setFuzzyMatch(true);
             m_sub->loadAsync();
         } else {
