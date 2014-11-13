@@ -27,6 +27,7 @@
 #include <QtCore/QEvent>
 #include <QtCore/QDir>
 #include <QtCore/QIODevice>
+#include <QtCore/QThreadPool>
 #if QTAV_HAVE(WIDGETS)
 #include <QWidget>
 #endif //QTAV_HAVE(WIDGETS)
@@ -69,6 +70,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(&d->demuxer, SIGNAL(started()), d->clock, SLOT(start()));
     connect(&d->demuxer, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
     connect(&d->demuxer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
+    connect(&d->demuxer, SIGNAL(loaded()), this, SIGNAL(loaded()));
     d->read_thread = new AVDemuxThread(this);
     d->read_thread->setDemuxer(&d->demuxer);
     //direct connection can not sure slot order?
@@ -479,63 +481,53 @@ bool AVPlayer::load(bool reload)
     }
     qDebug() << "Loading " << d->current_source << " ...";
     if (reload || !d->demuxer.isLoaded(d->current_source.toString())) {
-        //close decoders here to make sure open and close in the same thread
-        if (d->adec && d->adec->isOpen()) {
-            d->adec->close();
+        if (isAsyncLoad()) {
+            class LoadWorker : public QRunnable {
+            public:
+                LoadWorker(AVPlayer *player) : m_player(player) {}
+                virtual void run() {
+                    if (!m_player)
+                        return;
+                    m_player->loadInternal();
+                }
+            private:
+                AVPlayer* m_player;
+            };
+            // TODO: thread pool has a max thread limit
+            QThreadPool::globalInstance()->start(new LoadWorker(this));
+            return true;
         }
-        if (d->vdec && d->vdec->isOpen()) {
-            d->vdec->close();
-        }
-        if (d->current_source.type() == QVariant::String) {
-            if (!d->demuxer.loadFile(d->current_source.toString()))
-                return false;
-        } else {
-            if (!d->demuxer.load(d->current_source.value<QIODevice*>()))
-                return false;
-        }
+        loadInternal();
     } else {
         d->demuxer.prepareStreams();
-    }
-    d->loaded = true;
-    d->fmt_ctx = d->demuxer.formatContext();
-
-    // TODO: what about other proctols? some vob duration() == 0
-    if (duration() > 0)
-        d->media_end = mediaStartPosition() + duration();
-    else
-        d->media_end = kInvalidPosition;
-    // if file changed or stop() called by user, d->stop_position changes.
-    if (stopPosition() > mediaStopPosition() || stopPosition() == 0) {
-        d->stop_position = mediaStopPosition();
-    }
-
-    if (!d->setupAudioThread(this)) {
-        d->read_thread->setAudioThread(0); //set 0 before delete. ptr is used in demux thread when set 0
-        if (d->athread) {
-            qDebug("release audio thread.");
-            delete d->athread;
-            d->athread = 0;//shared ptr?
-        }
-    }
-    if (!d->setupVideoThread(this)) {
-        d->read_thread->setVideoThread(0); //set 0 before delete. ptr is used in demux thread when set 0
-        if (d->vthread) {
-            qDebug("release video thread.");
-            delete d->vthread;
-            d->vthread = 0;//shared ptr?
-        }
-    }
-    if (!d->athread && !d->vthread) {
-        d->loaded = false;
-        qWarning("load failed");
-        return false;
+        d->loaded = true;
     }
     return d->loaded;
 }
 
 void AVPlayer::loadInternal()
 {
-
+    // release codec ctx
+    if (d->adec) {
+        d->adec->setCodecContext(0);
+    }
+    if (d->vdec) {
+        d->vdec->setCodecContext(0);
+    }
+    //close decoders here to make sure open and close in the same thread
+    if (d->adec && d->adec->isOpen()) {
+        d->adec->close();
+    }
+    if (d->vdec && d->vdec->isOpen()) {
+        d->vdec->close();
+    }
+    if (d->current_source.type() == QVariant::String) {
+        d->loaded = d->demuxer.loadFile(d->current_source.toString());
+    } else {
+        d->loaded = d->demuxer.load(d->current_source.value<QIODevice*>());
+    }
+    if (!d->loaded)
+        d->statistics.reset(); //else: can not init here because d->fmt_ctx is not ready
 }
 
 qreal AVPlayer::durationF() const
@@ -759,6 +751,14 @@ void AVPlayer::play()
         if (last_pos < 0)
             d->last_position = -last_pos;
     }
+    if (isAsyncLoad()) {
+        connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
+        load(true);
+        return;
+    }
+    loadInternal();
+    playInternal();
+    return;
     /*
      * avoid load mutiple times when replaying the same seekable file
      * TODO: force load unseekable stream? avio.seekable. currently you
@@ -787,8 +787,52 @@ void AVPlayer::play()
 #endif //EOF_ISSUE_SOLVED
 #if EOF_ISSUE_SOLVED
     }
-#endif //EOF_ISSUE_SOLVED
+#endif //EOF_ISSUE_SOLVED    
+}
 
+void AVPlayer::playInternal()
+{
+    disconnect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
+
+    d->fmt_ctx = d->demuxer.formatContext();
+
+    // TODO: what about other proctols? some vob duration() == 0
+    if (duration() > 0)
+        d->media_end = mediaStartPosition() + duration();
+    else
+        d->media_end = kInvalidPosition;
+    // if file changed or stop() called by user, d->stop_position changes.
+    if (stopPosition() > mediaStopPosition() || stopPosition() == 0) {
+        d->stop_position = mediaStopPosition();
+    }
+
+    d->initStatistics(this);
+
+    if (!d->setupAudioThread(this)) {
+        d->read_thread->setAudioThread(0); //set 0 before delete. ptr is used in demux thread when set 0
+        if (d->athread) {
+            qDebug("release audio thread.");
+            delete d->athread;
+            d->athread = 0;//shared ptr?
+        }
+    }
+    if (!d->setupVideoThread(this)) {
+        d->read_thread->setVideoThread(0); //set 0 before delete. ptr is used in demux thread when set 0
+        if (d->vthread) {
+            qDebug("release video thread.");
+            delete d->vthread;
+            d->vthread = 0;//shared ptr?
+        }
+    }
+    if (!d->athread && !d->vthread) {
+        d->loaded = false;
+        qWarning("load failed");
+        return;
+        //return false;
+    }
+
+
+    // from previous play()
     if (d->demuxer.audioCodecContext() && d->athread) {
         qDebug("Starting audio thread...");
         d->athread->start();
@@ -803,7 +847,7 @@ void AVPlayer::play()
         d->demuxer.seek((qint64)startPosition());
     }
     d->read_thread->start();
-    if (start_last) {
+    if (d->last_position > 0) {//start_last) {
         masterClock()->pause(false); //external clock
     } else {
         masterClock()->reset();
@@ -832,11 +876,6 @@ void AVPlayer::play()
         setPosition(d->last_position); //just use d->demuxer.startTime()/duration()?
 
     emit started(); //we called stop(), so must emit started()
-}
-
-void AVPlayer::playInternal()
-{
-
 }
 
 void AVPlayer::stopFromDemuxerThread()

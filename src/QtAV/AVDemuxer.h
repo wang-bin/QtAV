@@ -191,6 +191,7 @@ public:
     QVariantHash options() const;
 
 signals:
+    void loaded();
     /*emit when the first frame is read*/
     void started();
     void finished(); //end of file

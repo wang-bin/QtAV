@@ -90,7 +90,7 @@ public:
             qDebug("User Interrupt: -> quit!");
             return 1;//interrupt
         }
-        qApp->processEvents();
+        // qApp->processEvents(); //FIXME: qml crash
         switch (handler->mAction) {
         case Open:
         case FindStreamInfo:
@@ -586,6 +586,7 @@ bool AVDemuxer::load()
 
     started_ = false;
     setMediaStatus(LoadedMedia);
+    emit loaded();
     return true;
 }
 
