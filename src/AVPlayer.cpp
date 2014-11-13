@@ -671,7 +671,7 @@ bool AVPlayer::setAudioStream(int n, bool now)
     if (!now)
         return true;
     play();
-    return isPlaying();
+    return true;
 }
 
 bool AVPlayer::setVideoStream(int n, bool now)
@@ -686,7 +686,7 @@ bool AVPlayer::setVideoStream(int n, bool now)
     if (!now)
         return true;
     play();
-    return isPlaying();
+    return true;
 }
 
 bool AVPlayer::setSubtitleStream(int n, bool now)
@@ -1016,9 +1016,6 @@ void AVPlayer::timerEvent(QTimerEvent *te)
 //FIXME: If not playing, it will just play but not play one frame.
 void AVPlayer::playNextFrame()
 {
-    if (!isPlaying()) {
-        play();
-    }
     // pause clock
     pause(true); // must pause AVDemuxThread (set user_paused true)
     d->read_thread->nextFrame();

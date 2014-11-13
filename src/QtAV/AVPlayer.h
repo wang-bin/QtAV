@@ -64,7 +64,7 @@ public:
      * \brief setFile
      * Set current media source if current media is invalid or auto load is enabled.
      * Otherwise set as the pendding media and it becomes the current media if the next
-     * load(), loadAsync() or play() is called
+     * load(), play() is called
      * \param path
      */
     void setFile(const QString& path);
@@ -76,6 +76,7 @@ public:
     QTAV_DEPRECATED bool load(const QString& path, bool reload = true); //deprecated
     QTAV_DEPRECATED bool load(bool reload); //deprecated
     //
+    bool isLoaded() const;
     /*!
      * \brief load
      * Load the current media set by setFile();. If already loaded, does nothing and return true.
@@ -83,12 +84,11 @@ public:
      * or mediaStatusChanged(QtAV::LoadedMedia) to a slot
      * \return true if success or already loaded.
      */
-    bool load();
-    bool isLoaded() const;
-    void unload(); // result in stop()
+    bool load(); //NOT implemented.
+    void unload(); //NOT implemented. result in stop()
     /*!
      * \brief setAsyncLoad
-     * async load is used by default
+     * async load is enabled by default
      */
     void setAsyncLoad(bool value = true);
     bool isAsyncLoad() const;
@@ -99,8 +99,8 @@ public:
      * false:
      * Default is false
      */
-    void setAutoLoad(bool value = true);
-    bool isAutoLoad() const;
+    void setAutoLoad(bool value = true); // NOT implemented
+    bool isAutoLoad() const; // NOT implemented
 
     MediaStatus mediaStatus() const;
 
@@ -245,7 +245,7 @@ public slots:
     void pause(bool p);
     /*!
      * \brief play
-     * If media is not loaded, load() or loadAsync()
+     * If media is not loaded, load()
      */
     void play(); //replay
     void stop();

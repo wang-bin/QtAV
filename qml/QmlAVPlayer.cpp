@@ -362,21 +362,6 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
                     mpPlayer->setOptionsForVideoCodec(vcopt);
             }
             mpPlayer->play();
-            applyChannelLayout();
-            // applyChannelLayout() first because it may reopen audio device
-            applyVolume();
-            // TODO: in load()?
-            m_metaData->setValuesFromStatistics(mpPlayer->statistics());
-            if (!mHasAudio) {
-                mHasAudio = mpPlayer->audioStreamCount() > 0;
-                if (mHasAudio)
-                    emit hasAudioChanged();
-            }
-            if (!mHasVideo) {
-                mHasVideo = mpPlayer->videoStreamCount() > 0;
-                if (mHasVideo)
-                    emit hasVideoChanged();
-            }
         }
         break;
     case PausedState:
@@ -489,6 +474,22 @@ void QmlAVPlayer::_q_started()
     mPlaybackState = PlayingState;
     emit playing();
     emit playbackStateChanged();
+
+    applyChannelLayout();
+    // applyChannelLayout() first because it may reopen audio device
+    applyVolume();
+    // TODO: in load()?
+    m_metaData->setValuesFromStatistics(mpPlayer->statistics());
+    if (!mHasAudio) {
+        mHasAudio = mpPlayer->audioStreamCount() > 0;
+        if (mHasAudio)
+            emit hasAudioChanged();
+    }
+    if (!mHasVideo) {
+        mHasVideo = mpPlayer->videoStreamCount() > 0;
+        if (mHasVideo)
+            emit hasVideoChanged();
+    }
 }
 
 void QmlAVPlayer::_q_stopped()
