@@ -451,9 +451,22 @@ void AVDemuxer::seek(qreal q)
   We need to know current playing packet but not current demuxed packet which
   may blocked for a while
 */
+static const char kFileScheme[] = "file://";
+#define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
 bool AVDemuxer::isLoaded(const QString &fileName) const
 {
-    return (fileName == _file_name || m_pQAVIO) && (a_codec_context || v_codec_context || s_codec_contex);
+    // loadFile() modified the original path
+    bool same_path = fileName == _file_name;
+    if (!same_path) {
+        // file:// was removed in loadFile()
+        if (fileName.startsWith(kFileScheme))
+            same_path = fileName.midRef(CHAR_COUNT(kFileScheme)) == _file_name;
+    }
+    if (!same_path) {
+        if (_file_name.startsWith("mms:")) // compare with mmsh:
+            same_path = _file_name.midRef(5) == fileName.midRef(4);
+    }
+    return (same_path || m_pQAVIO) && (a_codec_context || v_codec_context || s_codec_contex);
 }
 
 bool AVDemuxer::loadFile(const QString &fileName)
@@ -461,12 +474,13 @@ bool AVDemuxer::loadFile(const QString &fileName)
     _file_name = fileName.trimmed();
     if (_file_name.startsWith("mms:"))
         _file_name.insert(3, 'h');
-    else if (_file_name.startsWith("file://"))
-        _file_name.remove("file://");
+    else if (_file_name.startsWith(kFileScheme))
+        _file_name = _file_name.mid(CHAR_COUNT(kFileScheme));
     if (m_pQAVIO)
         m_pQAVIO->setDevice(0);
     return load();
 }
+#undef CHAR_COUNT
 
 bool AVDemuxer::load(QIODevice* device)
 {
