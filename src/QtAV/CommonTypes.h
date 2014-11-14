@@ -31,11 +31,11 @@ enum MediaStatus
 {
     UnknownMediaStatus,
     NoMedia,
-    LoadingMedia,
-    LoadedMedia,
+    LoadingMedia, // when source is set
+    LoadedMedia, // if auto load and source is set. player is stopped state
     StalledMedia,
     BufferingMedia,
-    BufferedMedia,
+    BufferedMedia, // when playing
     EndOfMedia,
     InvalidMedia
 };

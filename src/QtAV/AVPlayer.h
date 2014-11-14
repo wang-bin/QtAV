@@ -22,36 +22,29 @@
 #ifndef QTAV_AVPLAYER_H
 #define QTAV_AVPLAYER_H
 
+#include <QtCore/QHash>
+#include <QtCore/QScopedPointer>
 #include <QtAV/AVClock.h>
-#include <QtAV/AVDemuxer.h> //TODO: remove AVDemuxer dependency. it's not a public class
 #include <QtAV/Statistics.h>
 #include <QtAV/VideoDecoderTypes.h>
 #include <QtAV/AudioOutputTypes.h>
-#include <QtAV/CommonTypes.h>
-#include <QtCore/QHash>
+#include <QtAV/AVError.h>
 
 class QIODevice;
 
 namespace QtAV {
 
-class AVError;
-class AVOutput;
 class AudioOutput;
-class AVThread;
-class AudioThread;
-class VideoThread;
-class AudioDecoder;
-class VideoDecoder;
 class VideoRenderer;
 class AVClock;
-class AVDemuxThread;
 class Filter;
 class VideoCapture;
-class OutputSet;
 
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
+    Q_PROPERTY(bool asyncLoad READ isAsyncLoad WRITE setAsyncLoad NOTIFY asyncLoadChanged)
     Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
     Q_PROPERTY(qint64 startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
     Q_PROPERTY(qint64 stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
@@ -67,15 +60,52 @@ public:
     //NOT const. This is the only way to access the clock.
     AVClock* masterClock();
     // If path is different from previous one, the stream to play will be reset to default.
+    /*!
+     * \brief setFile
+     * TODO: Set current media source if current media is invalid or auto load is enabled.
+     * Otherwise set as the pendding media and it becomes the current media if the next
+     * load(), play() is called
+     * \param path
+     */
     void setFile(const QString& path);
     QString file() const;
     //QIODevice support
     void setIODevice(QIODevice* device);
 
     // force reload even if already loaded. otherwise only reopen codecs if necessary
-    bool load(const QString& path, bool reload = true);
-    bool load(bool reload = true);
+    QTAV_DEPRECATED bool load(const QString& path, bool reload = true); //deprecated
+    QTAV_DEPRECATED bool load(bool reload); //deprecated
+    //
     bool isLoaded() const;
+    /*!
+     * \brief load
+     * Load the current media set by setFile();. If already loaded, does nothing and return true.
+     * If async load, mediaStatus() becomes LoadingMedia and user should connect signal loaded()
+     * or mediaStatusChanged(QtAV::LoadedMedia) to a slot
+     * \return true if success or already loaded.
+     */
+    bool load(); //NOT implemented.
+    /*!
+     * \brief unload
+     * If the media is loading or loaded but not playing, unload it.
+     * Does nothing if isPlaying()
+     */
+    void unload(); //TODO: emit signal?
+    /*!
+     * \brief setAsyncLoad
+     * async load is enabled by default
+     */
+    void setAsyncLoad(bool value = true);
+    bool isAsyncLoad() const;
+    /*!
+     * \brief setAutoLoad
+     * true: current media source changed immediatly and stop current playback if new media source is set.
+     * status becomes LoadingMedia=>LoadedMedia before play( and BufferedMedia when playing?)
+     * false:
+     * Default is false
+     */
+    void setAutoLoad(bool value = true); // NOT implemented
+    bool isAutoLoad() const; // NOT implemented
 
     MediaStatus mediaStatus() const;
 
@@ -85,7 +115,7 @@ public:
     qint64 mediaStartPosition() const;
     qint64 mediaStopPosition() const;
     qreal mediaStartPositionF() const; //unit: s
-
+    qreal mediaStopPositionF() const; //unit: s
     // can set by user. may be not the real media start position.
     qint64 startPosition() const;
     /*!
@@ -94,7 +124,7 @@ public:
      * If media stream is not a local file, stopPosition()==max value of qint64
      */
     qint64 stopPosition() const; //unit: ms
-    Q_DECL_DEPRECATED qreal positionF() const; //unit: s.
+    QTAV_DEPRECATED qreal positionF() const; //unit: s.
     qint64 position() const; //unit: ms
     //0: play once. N: play N+1 times. <0: infinity
     int repeat() const; //or repeatMax()?
@@ -135,9 +165,9 @@ public:
     VideoCapture *videoCapture();
     /*
      * replay without parsing the stream if it's already loaded. (not implemented)
-     * to force reload the stream, close() then play()
-     * If path is different from previous one, the stream to play will be reset to default.
+     * to force reload the stream, unload() then play()
      */
+    //TODO: no replay
     bool play(const QString& path);
     bool isPlaying() const;
     bool isPaused() const;
@@ -166,13 +196,13 @@ public:
     /*!
      * \brief setSpeed set playing speed.
      * \param speed  speed > 0. 1.0: normal speed
+     * TODO: playbackRate
      */
     void setSpeed(qreal speed);
     qreal speed() const;
 
     Statistics& statistics();
     const Statistics& statistics() const;
-
     /*
      * install the filter in AVThread. Filter will apply before rendering data
      * return false if filter is already registered or audio/video thread is not ready(will install when ready)
@@ -183,7 +213,12 @@ public:
 
     void setPriority(const QVector<VideoDecoderId>& ids);
     //void setPriority(const QVector<AudioOutputId>& ids);
-
+    /*!
+     * below APIs are deprecated.
+     * TODO: setValue("key", value) or setOption("key", value) ?
+     * enum OptionKey { Brightness, ... VideoCodec, FilterOptions...}
+     * or use QString as keys?
+     */
     int brightness() const;
     int contrast() const;
     int hue() const; //not implemented
@@ -203,35 +238,20 @@ public:
      * equals
      *  "vismv":"pf", "vaapi":{"display":"DRM"}
      */
+    // QVariantHash deprecated, use QVariantMap to get better js compatibility
     void setOptionsForAudioCodec(const QVariantHash &dict);
     QVariantHash optionsForAudioCodec() const;
     void setOptionsForVideoCodec(const QVariantHash& dict);
     QVariantHash optionsForVideoCodec() const;
     // avfilter_init_dict
-    //void setOptionsForFilter(const QHash<QByteArray, QByteArray>& dict);
-    //QHash<QByteArray, QByteArray> optionsForFilter() const;
-
-signals:
-    void sourceChanged();
-    void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
-    void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
-    void paused(bool p);
-    void started();
-    void stopped();
-    void speedChanged(qreal speed);
-    void repeatChanged(int r);
-    void currentRepeatChanged(int r);
-    void startPositionChanged(qint64 position);
-    void stopPositionChanged(qint64 position);
-    void positionChanged(qint64 position);
-    void brightnessChanged(int val);
-    void contrastChanged(int val);
-    void hueChanged(int val);
-    void saturationChanged(int val);
 
 public slots:
     void togglePause();
     void pause(bool p);
+    /*!
+     * \brief play
+     * If media is not loaded, load()
+     */
     void play(); //replay
     void stop();
     void playNextFrame();
@@ -283,7 +303,31 @@ public slots:
     void setHue(int val);  //not implemented
     void setSaturation(int val);
 
+signals:
+    void autoLoadChanged();
+    void asyncLoadChanged();
+    void sourceChanged();
+    void loaded(); // == mediaStatusChanged(QtAV::LoadedMedia)
+    void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
+    void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
+    void paused(bool p);
+    void started();
+    void stopped();
+    void speedChanged(qreal speed);
+    void repeatChanged(int r);
+    void currentRepeatChanged(int r);
+    void startPositionChanged(qint64 position);
+    void stopPositionChanged(qint64 position);
+    void positionChanged(qint64 position);
+    void brightnessChanged(int val);
+    void contrastChanged(int val);
+    void hueChanged(int val);
+    void saturationChanged(int val);
+
 private slots:
+    void loadInternal(); // simply load
+    void unloadInternal();
+    void playInternal(); // simply play
     void stopFromDemuxerThread();
     void aboutToQuitApp();
     // start/stop notify timer in this thread. use QMetaObject::invokeMethod
@@ -295,57 +339,8 @@ protected:
     virtual void timerEvent(QTimerEvent *);
 
 private:
-    void initStatistics();
-    bool setupAudioThread();
-    bool setupVideoThread();
-    template<class Out>
-    void setAVOutput(Out*& pOut, Out* pNew, AVThread* thread);
-    //TODO: addAVOutput()
-
-
-    // TODO: dptr
-    bool loaded;
-    AVFormatContext	*formatCtx; //changed when reading a packet
-    QString path;
-    qint64 media_end_pos;
-    /*
-     * unit: s. 0~1. stream's start time/duration(). or last position/duration() if change to new stream
-     * auto set to 0 if stop(). to stream start time if load()
-     *
-     * -1: used by play() to get current playing position
-     */
-    qint64 last_position; //last_pos
-    bool reset_state;
-    qint64 start_position, stop_position;
-    int repeat_max, repeat_current;
-    int timer_id; //notify position change and check AB repeat range. active when playing
-
-    QIODevice* m_pIODevice;
-
-    //the following things are required and must be set not null
-    AVDemuxer demuxer;
-    AVDemuxThread *demuxer_thread;
-    AVClock *clock;
-    VideoRenderer *_renderer; //list?
-    AudioOutput *_audio;
-    AudioDecoder *audio_dec;
-    VideoDecoder *video_dec;
-    AudioThread *audio_thread;
-    VideoThread *video_thread;
-
-    VideoCapture *video_capture;
-    Statistics mStatistics;
-    qreal mSpeed;
-    bool ao_enable;
-    OutputSet *mpVOSet, *mpAOSet;
-    QVector<VideoDecoderId> vcodec_ids;
-    QVector<AudioOutputId> audioout_ids;
-    int mBrightness, mContrast, mSaturation;
-
-    QVariantHash audio_codec_opt, video_codec_opt;
-
-    bool mSeeking;
-    qint64 mSeekTarget;
+    class Private;
+    QScopedPointer<Private> d;
 };
 
 } //namespace QtAV

@@ -90,5 +90,10 @@ Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list)
 #define Q_DECL_FINAL
 #endif
 
+#if defined(BUILD_QTAV_LIB)
+#define QTAV_DEPRECATED
+#else
+#define QTAV_DEPRECATED Q_DECL_DEPRECATED
+#endif
 #endif // QTAV_GLOBAL_H
 

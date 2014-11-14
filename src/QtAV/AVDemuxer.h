@@ -63,7 +63,7 @@ public:
     };
 
     enum SeekUnit {
-        SeekByTime,
+        SeekByTime, // only this is supported now
         SeekByByte,
         SeekByFrame
     };
@@ -78,7 +78,7 @@ public:
 
     MediaStatus mediaStatus() const;
     bool atEnd() const;
-    bool close();
+    bool close(); //TODO: rename unload()
     bool loadFile(const QString& fileName);
     bool isLoaded(const QString& fileName) const;
     bool load(QIODevice* iocontext);
@@ -157,27 +157,23 @@ public:
 
     /**
      * @brief getInterruptTimeout return the interrupt timeout
-     * @return
      */
     qint64 getInterruptTimeout() const;
 
     /**
      * @brief setInterruptTimeout set the interrupt timeout
-     * @param timeout
-     * @return
+     * @param timeout in ms
      */
     void setInterruptTimeout(qint64 timeout);
 
     /**
      * @brief getInterruptStatus return the interrupt status
-     * @return
      */
     int getInterruptStatus() const;
 
     /**
      * @brief setInterruptStatus set the interrupt status
-     * @param interrupt
-     * @return
+     * @param interrupt 0: normal. 1: abort current operation like loading and reading packets
      */
     void setInterruptStatus(int interrupt);
 
@@ -191,6 +187,8 @@ public:
     QVariantHash options() const;
 
 signals:
+    void userInterrupted(); //NO direct connection because it's emit before interrupted happens
+    void loaded();
     /*emit when the first frame is read*/
     void started();
     void finished(); //end of file
