@@ -62,7 +62,7 @@ public:
     // If path is different from previous one, the stream to play will be reset to default.
     /*!
      * \brief setFile
-     * Set current media source if current media is invalid or auto load is enabled.
+     * TODO: Set current media source if current media is invalid or auto load is enabled.
      * Otherwise set as the pendding media and it becomes the current media if the next
      * load(), play() is called
      * \param path
@@ -85,7 +85,12 @@ public:
      * \return true if success or already loaded.
      */
     bool load(); //NOT implemented.
-    void unload(); //NOT implemented. result in stop()
+    /*!
+     * \brief unload
+     * If the media is loading or loaded but not playing, unload it.
+     * Does nothing if isPlaying()
+     */
+    void unload(); //TODO: emit signal?
     /*!
      * \brief setAsyncLoad
      * async load is enabled by default
@@ -321,6 +326,7 @@ signals:
 
 private slots:
     void loadInternal(); // simply load
+    void unloadInternal();
     void playInternal(); // simply play
     void stopFromDemuxerThread();
     void aboutToQuitApp();

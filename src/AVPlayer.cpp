@@ -467,6 +467,9 @@ bool AVPlayer::load(const QString &path, bool reload)
 
 bool AVPlayer::load(bool reload)
 {
+    // TODO: call unload if reload?
+    if (mediaStatus() == QtAV::LoadingMedia) //async loading
+        return true;
     d->loaded = false;
     if (!d->current_source.isValid()) {
         qDebug("Invalid media source. No file or IODevice was set.");
@@ -528,6 +531,31 @@ void AVPlayer::loadInternal()
     }
     if (!d->loaded)
         d->statistics.reset(); //else: can not init here because d->fmt_ctx is not ready
+}
+
+void AVPlayer::unload()
+{
+    if (isPlaying()) {
+        qWarning("call unload() after stopped() is emitted!");
+        return;
+    }
+    if (mediaStatus() != LoadingMedia) {
+        unloadInternal();
+        return;
+    }
+    // maybe it is loaded soon
+    connect(&d->demuxer, SIGNAL(loaded()), this, SLOT(unloadInternal()));
+    // user interrupt if still loading
+    connect(&d->demuxer, SIGNAL(userInterrupted()), this, SLOT(unloadInternal()));
+    d->demuxer.setInterruptStatus(1);
+}
+
+void AVPlayer::unloadInternal()
+{
+    disconnect(&d->demuxer, SIGNAL(loaded()), this, SLOT(unloadInternal()));
+    disconnect(&d->demuxer, SIGNAL(userInterrupted()), this, SLOT(unloadInternal()));
+
+    d->demuxer.close();
 }
 
 qreal AVPlayer::durationF() const

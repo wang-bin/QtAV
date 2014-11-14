@@ -88,6 +88,7 @@ public:
         //check manual interruption
         if (handler->getStatus() > 0) {
             qDebug("User Interrupt: -> quit!");
+            emit handler->mpDemuxer->userInterrupted();
             return 1;//interrupt
         }
         // qApp->processEvents(); //FIXME: qml crash
