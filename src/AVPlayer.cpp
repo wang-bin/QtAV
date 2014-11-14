@@ -49,6 +49,8 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
+Q_DECLARE_METATYPE(QIODevice*) // for Qt4
+
 #define EOF_ISSUE_SOLVED 0
 namespace QtAV {
 
