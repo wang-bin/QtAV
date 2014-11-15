@@ -310,7 +310,6 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         qDebug("new audio thread");
         athread = new AudioThread(player);
         athread->setClock(clock);
-        athread->setDecoder(adec);
         athread->setStatistics(&statistics);
         athread->setOutputSet(aos);
         qDebug("demux thread setAudioThread");
@@ -324,6 +323,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
             }
         }
     }
+    athread->setDecoder(adec);
     player->setAudioOutput(ao);
     int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.fps_guess);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second

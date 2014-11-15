@@ -340,6 +340,7 @@ bool AVDemuxer::close()
     if (auto_reset_stream) {
         wanted_audio_stream = wanted_subtitle_stream = wanted_video_stream = -1;
     }
+    a_codec_context = v_codec_context = s_codec_contex = 0;
     audio_stream = video_stream = subtitle_stream = -2;
     audio_streams.clear();
     video_streams.clear();
@@ -1166,7 +1167,6 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     if (interrupted) { // interrupted by callback, so can not determine whether the media is valid
         if (mediaStatus() == LoadingMedia)
             setMediaStatus(UnknownMediaStatus);
-        qDebug("interrupted!!!!!");
         if (getInterruptStatus())
             err_msg += " [" + tr("interrupted by user") + "]";
         else

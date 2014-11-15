@@ -472,18 +472,19 @@ bool AVPlayer::load(bool reload)
     // TODO: call unload if reload?
     if (mediaStatus() == QtAV::LoadingMedia) //async loading
         return true;
+    if (isLoaded()) {
+        // release codec ctx. if not loaded, they are released by avformat. TODO: always let avformat release them?
+        if (d->adec)
+            d->adec->setCodecContext(0);
+        if (d->vdec)
+            d->vdec->setCodecContext(0);
+    }
     d->loaded = false;
     if (!d->current_source.isValid()) {
         qDebug("Invalid media source. No file or IODevice was set.");
         return false;
     }
-    // release codec ctx
-    if (d->adec) {
-        d->adec->setCodecContext(0);
-    }
-    if (d->vdec) {
-        d->vdec->setCodecContext(0);
-    }
+
     qDebug() << "Loading " << d->current_source << " ...";
     if (reload || !d->demuxer.isLoaded(d->current_source.toString())) {
         if (isAsyncLoad()) {
@@ -513,18 +514,12 @@ bool AVPlayer::load(bool reload)
 void AVPlayer::loadInternal()
 {
     // release codec ctx
-    if (d->adec) {
-        d->adec->setCodecContext(0);
-    }
-    if (d->vdec) {
-        d->vdec->setCodecContext(0);
-    }
-    //close decoders here to make sure open and close in the same thread
-    if (d->adec && d->adec->isOpen()) {
-        d->adec->close();
-    }
-    if (d->vdec && d->vdec->isOpen()) {
-        d->vdec->close();
+    //close decoders here to make sure open and close in the same thread if not async load
+    if (isLoaded()) {
+        if (d->adec)
+            d->adec->setCodecContext(0);
+        if (d->vdec)
+            d->vdec->setCodecContext(0);
     }
     if (d->current_source.type() == QVariant::String) {
         d->loaded = d->demuxer.loadFile(d->current_source.toString());
@@ -556,6 +551,18 @@ void AVPlayer::unloadInternal()
 {
     disconnect(&d->demuxer, SIGNAL(loaded()), this, SLOT(unloadInternal()));
     disconnect(&d->demuxer, SIGNAL(userInterrupted()), this, SLOT(unloadInternal()));
+
+    d->loaded = false;
+    if (d->adec) {
+        d->adec->setCodecContext(0);
+        delete d->adec;
+        d->adec = 0;
+    }
+    if (d->vdec) {
+        d->vdec->setCodecContext(0);
+        delete d->vdec;
+        d->vdec = 0;
+    }
 
     d->demuxer.close();
 }
