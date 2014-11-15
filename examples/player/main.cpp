@@ -182,6 +182,9 @@ int main(int argc, char *argv[])
     op = options.option("file");
     if (op.isSet()) {
         window.play(op.value().toString());
+    } else {
+        if (argc > 1 && !a.arguments().last().startsWith('-') && !a.arguments().at(argc-2).startsWith('-'))
+            window.play(a.arguments().last());
     }
     int ret = a.exec();
     return ret;

@@ -78,6 +78,10 @@ int main(int argc, char *argv[])
         qDebug("arguments > 1");
         QObject *player = viewer.rootObject()->findChild<QObject*>("player");
         QString file = options.value("file").toString();
+        if (file.isEmpty()) {
+            if (argc > 1 && !app.arguments().last().startsWith('-') && !app.arguments().at(argc-2).startsWith('-'))
+                file = app.arguments().last();
+        }
         if (player && !file.isEmpty()) {
             if (QFile(file).exists())
                 file.prepend("file:///"); //windows can not be file://
