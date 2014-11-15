@@ -69,6 +69,7 @@ signals:
     void ready();
 
 private slots:
+    void stopUnload();
     void about();
     void help();
     void openUrl();

@@ -154,7 +154,7 @@ void MainWindow::initPlayer()
     connect(&Config::instance(), SIGNAL(captureFormatChanged(QString)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(avfilterChanged()), SLOT(onAVFilterConfigChanged()));
-    connect(mpStopBtn, SIGNAL(clicked()), mpPlayer, SLOT(stop()));
+    connect(mpStopBtn, SIGNAL(clicked()), this, SLOT(stopUnload()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
     connect(mpVolumeBtn, SIGNAL(clicked()), SLOT(showHideVolumeBar()));
@@ -174,6 +174,12 @@ void MainWindow::initPlayer()
     connect(mpVideoEQ, SIGNAL(saturationChanged(int)), this, SLOT(onSaturationChanged(int)));
 
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
+}
+
+void MainWindow::stopUnload()
+{
+    mpPlayer->stop();
+    mpPlayer->unload();
 }
 
 void MainWindow::setupUi()
@@ -1212,10 +1218,11 @@ void MainWindow::onMediaStatusChanged()
         status = "Loaded";
         break;
     default:
+        status = "";
+        onStopPlay();
         break;
     }
-    if (!status.isEmpty())
-        setWindowTitle(status);
+    setWindowTitle(status);
 }
 
 void MainWindow::onVideoEQEngineChanged()
