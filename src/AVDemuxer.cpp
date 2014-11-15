@@ -88,7 +88,13 @@ public:
         //check manual interruption
         if (handler->getStatus() > 0) {
             qDebug("User Interrupt: -> quit!");
+            // If already loaded and now is reading packets, leave the current status.
+            // If it's loading, change the status. Loading will be interrupted later
+            // TODO: what status is better?
+            if (handler->mpDemuxer->mediaStatus() == LoadingMedia)
+                handler->mpDemuxer->setMediaStatus(UnknownMediaStatus);
             emit handler->mpDemuxer->userInterrupted();
+            // 1: blocking operation will be aborted.
             return 1;//interrupt
         }
         // qApp->processEvents(); //FIXME: qml crash
@@ -237,16 +243,14 @@ bool AVDemuxer::readFrame()
             return false; //frames after eof are eof frames
         } else if (ret == AVERROR_INVALIDDATA) {
             AVError::ErrorCode ec(AVError::ReadError);
-            if (m_network)
-                ec = AVError::NetworkError;
-            emit error(AVError(ec, tr("error reading stream data"), ret));
+            QString msg(tr("error reading stream data"));
+            handleError(ret, &ec, msg);
         } else if (ret == AVERROR(EAGAIN)) {
             return true;
         } else {
             AVError::ErrorCode ec(AVError::ReadError);
-            if (m_network)
-                ec = AVError::NetworkError;
-            emit error(AVError(ec, tr("error reading stream data"), ret));
+            QString msg(tr("error reading stream data"));
+            handleError(ret, &ec, msg);
         }
         qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         return false;
@@ -422,9 +426,8 @@ bool AVDemuxer::seek(qint64 pos)
 #endif
     if (ret < 0) {
         AVError::ErrorCode ec(AVError::SeekError);
-        if (m_network)
-            ec = AVError::NetworkError;
-        emit error(AVError(ec, tr("seek error"), ret));
+        QString msg(tr("seek error"));
+        handleError(ret, &ec, msg);
         return false;
     }
     //replay
@@ -564,18 +567,10 @@ bool AVDemuxer::load()
 
     if (ret < 0) {
         // format_context is 0
-        setMediaStatus(InvalidMedia);
-        AVError::ErrorCode ec(AVError::OpenError);
-        if (ret == AVERROR_INVALIDDATA) {
-            ec = AVError::FormatError;
-        } else {
-            // Input/output error etc.
-            if (m_network)
-                ec = AVError::NetworkError;
-        }
-        AVError err(ec, tr("failed to open media"), ret);
-        emit error(err);
-        qWarning("Can't open media: %s", qPrintable(err.string()));
+        AVError::ErrorCode ec = AVError::OpenError;
+        QString msg = tr("failed to open media");
+        handleError(ret, &ec, msg);
+        qWarning() << "Can't open media: " << msg;
         return false;
     }
     //deprecated
@@ -587,11 +582,9 @@ bool AVDemuxer::load()
     if (ret < 0) {
         setMediaStatus(InvalidMedia);
         AVError::ErrorCode ec(AVError::FindStreamInfoError);
-        if (m_network)
-            ec = AVError::NetworkError;
-        AVError err(ec, tr("failed to find stream info"), ret);
-        emit error(err);
-        qWarning("Can't find stream info: %s", qPrintable(err.string()));
+        QString msg(tr("failed to find stream info"));
+        handleError(ret, &ec, msg);
+        qWarning() << "Can't find stream info: " << msg;
         return false;
     }
 
@@ -1089,8 +1082,9 @@ void AVDemuxer::setInterruptTimeout(qint64 timeout)
  * @brief getInterruptStatus return the interrupt status
  * @return
  */
-int AVDemuxer::getInterruptStatus() const{
-    return mpInterrup->getStatus();
+bool AVDemuxer::getInterruptStatus() const
+{
+    return mpInterrup->getStatus() == 1 ? true : false;
 }
 
 /**
@@ -1098,8 +1092,9 @@ int AVDemuxer::getInterruptStatus() const{
  * @param interrupt
  * @return
  */
-void AVDemuxer::setInterruptStatus(int interrupt){
-    mpInterrup->setStatus(interrupt);
+void AVDemuxer::setInterruptStatus(bool interrupt)
+{
+    mpInterrup->setStatus(interrupt ? 1 : 0);
 }
 
 void AVDemuxer::setOptions(const QVariantHash &dict)
@@ -1158,6 +1153,43 @@ void AVDemuxer::setMediaStatus(MediaStatus status)
     mCurrentMediaStatus = status;
 
     emit mediaStatusChanged(mCurrentMediaStatus);
+}
+
+void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &msg)
+{
+    if (averr >= 0)
+        return;
+    // format_context is 0
+    // TODO: why sometimes AVERROR_EXIT does not work?
+    bool interrupted = (averr == AVERROR_EXIT) || getInterruptStatus();
+    QString err_msg(msg);
+    if (interrupted) { // interrupted by callback, so can not determine whether the media is valid
+        if (mediaStatus() == LoadingMedia)
+            setMediaStatus(UnknownMediaStatus);
+        qDebug("interrupted!!!!!");
+        if (getInterruptStatus())
+            err_msg += " [" + tr("interrupted by user") + "]";
+        else
+            err_msg += " [" + tr("timeout") + "]";
+    } else {
+        if (mediaStatus() == LoadingMedia)
+            setMediaStatus(InvalidMedia);
+    }
+    if (!errorCode)
+        return;
+    AVError::ErrorCode ec(AVError::OpenError);
+    if (averr == AVERROR_INVALIDDATA) { // leave it if reading
+        if (*errorCode == AVError::OpenError)
+            ec = AVError::FormatError;
+    } else {
+        // Input/output error etc.
+        if (m_network)
+            ec = AVError::NetworkError;
+    }
+    AVError err(ec, err_msg, averr);
+    emit error(err);
+    msg = err_msg;
+    *errorCode = ec;
 }
 
 } //namespace QtAV

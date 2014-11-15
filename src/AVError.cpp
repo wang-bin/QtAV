@@ -108,6 +108,7 @@ AVError::AVError(ErrorCode code, const QString &detail, int ffmpegError)
 AVError::AVError(const AVError& other)
     : mError(other.mError)
     , mFFmpegError(other.mFFmpegError)
+    , mDetail(other.mDetail)
 {
 }
 
@@ -203,7 +204,7 @@ QString AVError::string() const
         }
     }
     if (mFFmpegError != 0) {
-        errStr += QString(" (FFmpeg %1: %2)").arg(mFFmpegError, 0, 16).arg(ffmpegErrorString());
+        errStr += QString("\n(FFmpeg %1: %2)").arg(mFFmpegError, 0, 16).arg(ffmpegErrorString());
     }
     return errStr;
 }

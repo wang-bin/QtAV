@@ -24,6 +24,7 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/CommonTypes.h>
+#include <QtAV/AVError.h>
 #include <QtCore/QVariant>
 #include <QtCore/QObject>
 #include <QtCore/QSize>
@@ -159,24 +160,20 @@ public:
      * @brief getInterruptTimeout return the interrupt timeout
      */
     qint64 getInterruptTimeout() const;
-
     /**
      * @brief setInterruptTimeout set the interrupt timeout
      * @param timeout in ms
      */
     void setInterruptTimeout(qint64 timeout);
-
     /**
      * @brief getInterruptStatus return the interrupt status
      */
-    int getInterruptStatus() const;
-
+    bool getInterruptStatus() const;
     /**
      * @brief setInterruptStatus set the interrupt status
-     * @param interrupt 0: normal. 1: abort current operation like loading and reading packets
+     * @param interrupt true: abort current operation like loading and reading packets. false: no interrupt
      */
-    void setInterruptStatus(int interrupt);
-
+    void setInterruptStatus(bool interrupt);
     /*
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
      * In addition, av_dict is slow.
@@ -197,6 +194,11 @@ signals:
 
 private:
     void setMediaStatus(MediaStatus status);
+    /*!
+     * \brief handleError
+     * error code (errorCode) and message (msg) may be modified internally
+     */
+    void handleError(int averr, AVError::ErrorCode* errorCode, QString& msg);
 
     MediaStatus mCurrentMediaStatus;
     bool has_attached_pic;
