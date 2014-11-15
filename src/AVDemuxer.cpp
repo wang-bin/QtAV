@@ -88,12 +88,11 @@ public:
         //check manual interruption
         if (handler->getStatus() > 0) {
             qDebug("User Interrupt: -> quit!");
-            // If already loaded and now is reading packets, leave the current status.
-            // If it's loading, change the status. Loading will be interrupted later
-            // TODO: what status is better?
-            if (handler->mpDemuxer->mediaStatus() == LoadingMedia)
-                handler->mpDemuxer->setMediaStatus(UnknownMediaStatus);
-            emit handler->mpDemuxer->userInterrupted();
+            // DO NOT call setMediaStatus() here.
+            /* MUST make sure blocking functions (open, read) return before we change the status
+             * because demuxer may be closed in another thread at the same time if status is not LoadingMedia
+             * use handleError() after blocking functions return is good
+             */
             // 1: blocking operation will be aborted.
             return 1;//interrupt
         }
@@ -355,6 +354,7 @@ bool AVDemuxer::close()
         if (m_pQAVIO)
             m_pQAVIO->release();
     }
+    emit unloaded();
     return true;
 }
 
@@ -520,7 +520,7 @@ bool AVDemuxer::load()
             || _file_name.startsWith("udp:")
             || _file_name.startsWith("gopher:")
             )) {
-        m_network = true;
+        m_network = true; //iformat.flags: AVFMT_NOFILE
     }
 #if QTAV_HAVE(AVDEVICE)
     static const QString avd_scheme("avdevice:");
@@ -552,7 +552,6 @@ bool AVDemuxer::load()
     if (m_pQAVIO && m_pQAVIO->device()) {
         format_context->pb = m_pQAVIO->context();
         format_context->flags |= AVFMT_FLAG_CUSTOM_IO;
-
         qDebug("avformat_open_input: format_context:'%p'...",format_context);
         mpInterrup->begin(InterruptHandler::Open);
         ret = avformat_open_input(&format_context, "iodevice", _iformat, mOptions.isEmpty() ? NULL : &mpDict);
@@ -1165,12 +1164,14 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     bool interrupted = (averr == AVERROR_EXIT) || getInterruptStatus();
     QString err_msg(msg);
     if (interrupted) { // interrupted by callback, so can not determine whether the media is valid
+        // If already loaded and now is reading packets, leave the current status.
         if (mediaStatus() == LoadingMedia)
             setMediaStatus(UnknownMediaStatus);
         if (getInterruptStatus())
             err_msg += " [" + tr("interrupted by user") + "]";
         else
             err_msg += " [" + tr("timeout") + "]";
+        emit userInterrupted();
     } else {
         if (mediaStatus() == LoadingMedia)
             setMediaStatus(InvalidMedia);

@@ -328,6 +328,7 @@ private slots:
     void loadInternal(); // simply load
     void unloadInternal();
     void playInternal(); // simply play
+    void loadAndPlay();
     void stopFromDemuxerThread();
     void aboutToQuitApp();
     // start/stop notify timer in this thread. use QMetaObject::invokeMethod

@@ -28,6 +28,7 @@
 #include <QtCore/QDir>
 #include <QtCore/QIODevice>
 #include <QtCore/QThreadPool>
+#include <QtCore/QTimer>
 #if QTAV_HAVE(WIDGETS)
 #include <QWidget>
 #endif //QTAV_HAVE(WIDGETS)
@@ -532,12 +533,14 @@ void AVPlayer::loadInternal()
 
 void AVPlayer::unload()
 {
+    // what about threads just start and going to use the decoder(thread not start when stop())
     if (isPlaying()) {
         qWarning("call unload() after stopped() is emitted!");
         return;
     }
     if (mediaStatus() != LoadingMedia) {
         unloadInternal();
+        //QTimer::singleShot(0, this, SLOT(unloadInternal()));
         return;
     }
     // maybe it is loaded soon
@@ -553,6 +556,15 @@ void AVPlayer::unloadInternal()
     disconnect(&d->demuxer, SIGNAL(userInterrupted()), this, SLOT(unloadInternal()));
 
     d->loaded = false;
+    /*
+     * FIXME: no a/v/d thread started and in LoadedMedia status when stop(). but now is running (and to using the decoder).
+     * then we must wait the threads finished. or use smart ptr for decoders? demuxer is still unsafe
+     * change to LoadedMedia until all threads started?
+     * will it happen if playInternal() and unloadInternal() in ui thread?(use singleShort())
+     */
+    if (isPlaying())
+        stop();
+
     if (d->adec) {
         d->adec->setCodecContext(0);
         delete d->adec;
@@ -563,7 +575,6 @@ void AVPlayer::unloadInternal()
         delete d->vdec;
         d->vdec = 0;
     }
-
     d->demuxer.close();
 }
 
@@ -788,13 +799,14 @@ void AVPlayer::play()
         if (last_pos < 0)
             d->last_position = -last_pos;
     }
-    if (isAsyncLoad()) {
-        connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
-        load(true);
-        return;
+    if (mediaStatus() == LoadingMedia) {
+        // can not use userInterrupted(), userInterrupted() is connected to unloadInternal()
+        connect(&d->demuxer, SIGNAL(unloaded()), this, SLOT(loadAndPlay()));
+        unload();
+    } else {
+        unload();
+        loadAndPlay();
     }
-    loadInternal();
-    playInternal();
     return;
     /*
      * avoid load mutiple times when replaying the same seekable file
@@ -825,6 +837,19 @@ void AVPlayer::play()
 #if EOF_ISSUE_SOLVED
     }
 #endif //EOF_ISSUE_SOLVED    
+}
+
+void AVPlayer::loadAndPlay()
+{
+    disconnect(&d->demuxer, SIGNAL(unloaded()), this, SLOT(loadAndPlay()));
+    if (isAsyncLoad()) {
+        connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
+        load(true);
+        return;
+    }
+    loadInternal();
+    playInternal();
+    //QTimer::singleShot(0, this, SLOT(playInternal()));
 }
 
 void AVPlayer::playInternal()

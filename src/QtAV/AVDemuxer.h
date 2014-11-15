@@ -184,6 +184,7 @@ public:
     QVariantHash options() const;
 
 signals:
+    void unloaded();
     void userInterrupted(); //NO direct connection because it's emit before interrupted happens
     void loaded();
     /*emit when the first frame is read*/
