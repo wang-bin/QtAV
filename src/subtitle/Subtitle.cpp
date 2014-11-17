@@ -245,6 +245,8 @@ QByteArray Subtitle::rawData() const
     return priv->raw_data;
 }
 
+extern QString getLocalPath(const QString& fullPath);
+
 void Subtitle::setFileName(const QString &name)
 {
     if (priv->file_name == name)
@@ -252,12 +254,8 @@ void Subtitle::setFileName(const QString &name)
     priv->url.clear();
     priv->raw_data.clear();
     priv->file_name = name;
-    // FIXME: "/C:/movies/xxx" => "C:/movies/xxx"
-    if (priv->file_name.startsWith("/") && priv->file_name.contains(":")) {
-        int slash = priv->file_name.indexOf(":");
-        slash = priv->file_name.lastIndexOf("/", slash);
-        priv->file_name = priv->file_name.mid(slash+1);
-    }
+    if (priv->file_name.startsWith("file:"))
+        priv->file_name = getLocalPath(priv->file_name);
     emit fileNameChanged();
 }
 

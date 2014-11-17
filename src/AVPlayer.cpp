@@ -329,15 +329,21 @@ QVariantHash AVPlayer::optionsForVideoCodec() const
  * For replaying, we can avoid load a seekable file again.
  * For playing a new file, load() is required.
  */
+extern QString getLocalPath(const QString& fullPath);
 void AVPlayer::setFile(const QString &path)
 {
-    d->reset_state = d->current_source.type() != QVariant::String || d->current_source.toString() != path;
-    d->current_source = path;
+    // file() is used somewhere else. ensure it is correct
+    QString p(path);
+    // QFile does not support "file:"
+    if (p.startsWith("file:"))
+        p = getLocalPath(p);
+    d->reset_state = d->current_source.type() != QVariant::String || d->current_source.toString() != p;
+    d->current_source = p;
     if (d->reset_state) {
         emit sourceChanged();
         //emit error(AVError(AVError::NoError));
     }
-    d->reset_state = !path.isEmpty() && d->reset_state;
+    d->reset_state = !p.isEmpty() && d->reset_state;
     d->demuxer.setAutoResetStream(d->reset_state);
     // TODO: use absoluteFilePath?
     d->loaded = false; //

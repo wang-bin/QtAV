@@ -28,6 +28,7 @@
 #include "AudioThread.h"
 #include "VideoThread.h"
 #include "AVDemuxThread.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

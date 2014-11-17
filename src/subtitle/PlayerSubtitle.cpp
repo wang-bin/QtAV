@@ -29,6 +29,8 @@
 
 namespace QtAV {
 
+extern QString getLocalPath(const QString& fullPath);
+
 // /xx/oo/a.01.mov => /xx/oo/a.01.
 /*!
  * \brief getSubtitleBasePath
@@ -50,14 +52,8 @@ static QString getSubtitleBasePath(const QString fullPath)
     int lastDot = name.lastIndexOf(QChar('.')); // not path.lastIndexof("."): xxx.oo/xx
     if (lastDot > 0)
         name = name.left(lastDot);
-    if (path.startsWith("file:")) // qrc: is ok. QUrl.toLocalFile will remove file://
-        path = path.mid(5);
-    int slash = path.indexOf(QChar('/'));
-    if (slash == 0) {
-        while (path.at(++slash) == QChar('/')) {}
-        slash--;
-        path = path.mid(slash);
-    }
+    if (path.startsWith("file:")) // can skip convertion here. Subtitle class also convert the path
+        path = getLocalPath(path);
     path.append(name);
     return path;
 }

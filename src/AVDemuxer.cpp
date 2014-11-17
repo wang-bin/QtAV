@@ -31,6 +31,31 @@
 
 namespace QtAV {
 
+static const char kFileScheme[] = "file:";
+#define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
+
+/*!
+ * \brief getLocalPath
+ * get path that works for both ffmpeg and QFile
+ * Windows: ffmpeg does not supports file:///C:/xx.mov, only supports file:C:/xx.mov or C:/xx.mov
+ * QFile: does not support file: scheme
+ * fullPath can be file:///path from QUrl. QUrl.toLocalFile will remove file://
+ */
+QString getLocalPath(const QString& fullPath)
+{
+    int pos = fullPath.indexOf(QChar('/'));
+    if (pos == CHAR_COUNT(kFileScheme)) {
+        while (fullPath.at(pos + 1) == QChar('/')) { ++pos; }
+        // win: ffmpeg does not supports file:///C:/xx.mov, only supports file:C:/xx.mov or C:/xx.mov
+#ifdef Q_OS_WIN // for QUrl
+        ++pos;
+#endif
+    }
+    // always remove "file:" even thought it works for ffmpeg.but fileName() may be used for QFile which does not file:
+    if (pos > 0)
+        return fullPath.mid(pos);
+    return fullPath;
+}
 
 class AVDemuxer::InterruptHandler : public AVIOInterruptCB
 {
@@ -455,16 +480,16 @@ void AVDemuxer::seek(qreal q)
   We need to know current playing packet but not current demuxed packet which
   may blocked for a while
 */
-static const char kFileScheme[] = "file://";
-#define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
 bool AVDemuxer::isLoaded(const QString &fileName) const
 {
     // loadFile() modified the original path
     bool same_path = fileName == _file_name;
     if (!same_path) {
-        // file:// was removed in loadFile()
-        if (fileName.startsWith(kFileScheme))
-            same_path = fileName.midRef(CHAR_COUNT(kFileScheme)) == _file_name;
+        // _file_name is already C:path for windows
+        if (fileName.startsWith(kFileScheme)) { // for QUrl
+            int idx = fileName.indexOf(_file_name);
+            same_path = idx > 0 && fileName.midRef(CHAR_COUNT(kFileScheme), idx - CHAR_COUNT(kFileScheme)).count(QChar('/')) == idx - (int)CHAR_COUNT(kFileScheme);
+        }
     }
     if (!same_path) {
         if (_file_name.startsWith("mms:")) // compare with mmsh:
@@ -479,7 +504,7 @@ bool AVDemuxer::loadFile(const QString &fileName)
     if (_file_name.startsWith("mms:"))
         _file_name.insert(3, 'h');
     else if (_file_name.startsWith(kFileScheme))
-        _file_name = _file_name.mid(CHAR_COUNT(kFileScheme));
+        _file_name = getLocalPath(_file_name);
     if (m_pQAVIO)
         m_pQAVIO->setDevice(0);
     return load();
