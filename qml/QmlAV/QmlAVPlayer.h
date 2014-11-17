@@ -27,6 +27,7 @@
 #include <QmlAV/QQuickItemRenderer.h>
 #include <QmlAV/MediaMetaData.h>
 #include <QtAV/AVError.h>
+#include <QtAV/CommonTypes.h>
 
 /*!
  *  Qt.Multimedia like api
@@ -44,6 +45,8 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_OBJECT
     Q_INTERFACES(QQmlParserStatus)
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    Q_PROPERTY(Error error READ error NOTIFY errorChanged)
     Q_PROPERTY(int duration READ duration NOTIFY durationChanged)
     Q_PROPERTY(int position READ position NOTIFY positionChanged)
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY mutedChanged)
@@ -58,10 +61,10 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
     Q_PROPERTY(QObject *mediaObject READ mediaObject)
-    Q_PROPERTY(Error error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorChanged)
     Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
+    Q_ENUMS(Status)
     Q_ENUMS(Error)
     Q_ENUMS(ChannelLayout)
     // not supported by QtMultimedia
@@ -70,17 +73,23 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
     Q_PROPERTY(QVariantMap videoCodecOptions READ videoCodecOptions WRITE setVideoCodecOptions NOTIFY videoCodecOptionsChanged)
 public:
-    enum Loop
-    {
-        Infinite = -1
-    };
-
+    enum Loop { Infinite = -1 };
     enum PlaybackState {
         StoppedState,
         PlayingState,
         PausedState
     };
-
+    enum Status {
+        UnknownMediaStatus = QtAV::UnknownMediaStatus, // e.g. user status after interrupt
+        NoMedia = QtAV::NoMedia,
+        LoadingMedia = QtAV::LoadingMedia, // when source is set
+        LoadedMedia = QtAV::LoadedMedia, // if auto load and source is set. player is stopped state
+        StalledMedia = QtAV::StalledMedia,
+        BufferingMedia = QtAV::BufferingMedia,
+        BufferedMedia = QtAV::BufferedMedia, // when playing
+        EndOfMedia = QtAV::EndOfMedia,
+        InvalidMedia = QtAV::InvalidMedia
+    };
     enum Error {
         NoError,
         ResourceError,
@@ -124,6 +133,8 @@ public:
     int duration() const;
     int position() const;
     bool isSeekable() const;
+
+    Status status() const;
     Error error() const;
     QString errorString() const;
     PlaybackState playbackState() const;
@@ -188,12 +199,13 @@ Q_SIGNALS:
 
     void errorChanged();
     void error(Error error, const QString &errorString);
-
+    void statusChanged();
     void mediaObjectChanged();
 
 private Q_SLOTS:
     // connect to signals from player
     void _q_error(const QtAV::AVError& e);
+    void _q_statusChanged();
     void _q_started();
     void _q_stopped();
     void _q_paused(bool);
@@ -214,6 +226,7 @@ private:
     PlaybackState mPlaybackState;
     Error mError;
     QString mErrorString;
+    QtAV::MediaStatus m_status;
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
     QStringList mVideoCodecs;

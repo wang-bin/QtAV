@@ -37,7 +37,7 @@ enum MediaStatus
     BufferingMedia,
     BufferedMedia, // when playing
     EndOfMedia,
-    InvalidMedia
+    InvalidMedia // what if loop > 0 or stopPosition() is not mediaStopPosition()?
 };
 
 enum SurfaceType {

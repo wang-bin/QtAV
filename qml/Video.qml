@@ -275,7 +275,7 @@ Item {
         \li MediaPlayer.UnknownStatus - the status of the media cannot be determined.
         \endlist
     */
-    //property alias status:          player.status
+    property alias status:          player.status
 
     /*!
         \qmlproperty real Video::volume

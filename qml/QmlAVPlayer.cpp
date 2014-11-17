@@ -65,6 +65,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mVolume(1.0)
   , mPlaybackState(StoppedState)
   , mError(NoError)
+  , m_status(QtAV::NoMedia)
   , mpPlayer(0)
   , mChannelLayout(ChannelLayoutAuto)
 {
@@ -73,6 +74,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
 void QmlAVPlayer::classBegin()
 {
     mpPlayer = new AVPlayer(this);
+    connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(_q_statusChanged()));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), SLOT(_q_error(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
@@ -130,6 +132,7 @@ void QmlAVPlayer::setSource(const QUrl &url)
     if (mSource == url)
         return;
     mSource = url;
+    qDebug() << url;
     mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
     emit sourceChanged(); //TODO: emit only when player loaded a new source
 
@@ -324,6 +327,11 @@ bool QmlAVPlayer::isSeekable() const
     return true;
 }
 
+QmlAVPlayer::Status QmlAVPlayer::status() const
+{
+    return (Status)m_status;
+}
+
 QmlAVPlayer::Error QmlAVPlayer::error() const
 {
     return mError;
@@ -456,6 +464,12 @@ void QmlAVPlayer::_q_error(const AVError &e)
       //  err = ServiceMissing;
     emit error(mError, mErrorString);
     emit errorChanged();
+}
+
+void QmlAVPlayer::_q_statusChanged()
+{
+    m_status = mpPlayer->mediaStatus();
+    emit statusChanged();
 }
 
 void QmlAVPlayer::_q_paused(bool p)
