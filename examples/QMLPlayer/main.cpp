@@ -83,6 +83,8 @@ int main(int argc, char *argv[])
                 file = app.arguments().last();
         }
         if (player && !file.isEmpty()) {
+            if (QFile(file).exists())
+                file.prepend("file:"); //qml use url and will add qrc: if no scheme
             file.replace("\\", "/"); //qurl
             QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
         }
