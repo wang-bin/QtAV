@@ -45,6 +45,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_OBJECT
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(bool asyncLoad READ isAsyncLoad WRITE setAsyncLoad NOTIFY asyncLoadChanged)
+    Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
     Q_PROPERTY(qint64 startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
     Q_PROPERTY(qint64 stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
@@ -306,6 +307,7 @@ public slots:
 signals:
     void autoLoadChanged();
     void asyncLoadChanged();
+    void muteChanged();
     void sourceChanged();
     void loaded(); // == mediaStatusChanged(QtAV::LoadedMedia)
     void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
@@ -334,6 +336,7 @@ private slots:
     // start/stop notify timer in this thread. use QMetaObject::invokeMethod
     void startNotifyTimer();
     void stopNotifyTimer();
+    void onStarted();
 
 protected:
     // TODO: set position check timer interval

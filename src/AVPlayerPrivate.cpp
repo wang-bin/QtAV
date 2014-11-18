@@ -75,6 +75,7 @@ AVPlayer::Private::Private()
     , saturation(0)
     , seeking(false)
     , seek_target(0)
+    , mute(false)
 {
     /*
      * reset_state = true;

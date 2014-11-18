@@ -64,6 +64,7 @@ AVPlayer::AVPlayer(QObject *parent) :
 {
     d->vos = new OutputSet(this);
     d->aos = new OutputSet(this);
+    connect(this, SIGNAL(started()), this, SLOT(onStarted()));
     /*
      * call stop() before the window(d->vo) closed to stop the waitcondition
      * If close the d->vo widget, the the d->vo may destroy before waking up.
@@ -188,13 +189,20 @@ void AVPlayer::disableAudio(bool disable)
 
 void AVPlayer::setMute(bool mute)
 {
-    if (d->ao)
-        d->ao->setMute(mute);
+    if (d->mute == mute)
+        return;
+    d->mute = mute;
+    emit muteChanged();
+    if (!d->ao)
+        return;
+    if (d->ao->isMute() == isMute())
+        return;
+    d->ao->setMute(mute);
 }
 
 bool AVPlayer::isMute() const
 {
-    return !d->ao || d->ao->isMute();
+    return d->mute;
 }
 
 void AVPlayer::setSpeed(qreal speed)
@@ -361,10 +369,6 @@ void AVPlayer::setIODevice(QIODevice* device)
     if (!device)
         return;
 
-    if (device->isSequential()) {
-        qDebug("No support for sequential devices.");
-        return;
-    }
     d->demuxer.setAutoResetStream(d->reset_state);
     // FIXME: not compare QVariant::String
     d->reset_state = d->current_source.type() == QVariant::String || d->current_source.value<QIODevice*>() != device;
@@ -978,6 +982,20 @@ void AVPlayer::stopNotifyTimer()
 {
     killTimer(d->timer_id);
     d->timer_id = -1;
+}
+
+void AVPlayer::onStarted()
+{
+    //TODO: check clock type?
+    if (d->ao && d->ao->isAvailable()) {
+        d->ao->setSpeed(d->speed);
+    }
+    masterClock()->setSpeed(d->speed);
+
+    if (!d->ao)
+        return;
+    if (d->ao->isMute() != isMute())
+        d->ao->setMute(isMute());
 }
 
 // TODO: doc about when the state will be reset

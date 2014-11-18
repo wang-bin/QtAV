@@ -132,6 +132,8 @@ public:
 
     bool seeking;
     qint64 seek_target;
+
+    bool mute;
 };
 
 } //namespace QtAV

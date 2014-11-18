@@ -218,10 +218,12 @@ private:
     Q_DISABLE_COPY(QmlAVPlayer)
 
     bool m_complete;
+    bool m_mute;
     bool mAutoPlay;
     bool mAutoLoad;
     bool mHasAudio, mHasVideo;
     int mLoopCount;
+    qreal mPlaybackRate;
     qreal mVolume;
     PlaybackState mPlaybackState;
     Error mError;
