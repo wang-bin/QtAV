@@ -1,5 +1,6 @@
 #include "QtAV/VideoFrameExtractor.h"
 #include <QtCore/QCoreApplication>
+#include <QtCore/QQueue>
 #include <QtCore/QRunnable>
 #include <QtCore/QScopedPointer>
 #include <QtCore/QStringList>

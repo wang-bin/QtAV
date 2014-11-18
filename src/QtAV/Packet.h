@@ -22,28 +22,44 @@
 #ifndef QAV_PACKET_H
 #define QAV_PACKET_H
 
-#include <queue>
 #include <QtCore/QByteArray>
-#include <QtCore/QQueue>
-#include <QtCore/QMutex>
 #include <QtAV/QtAV_Global.h>
 
-//TODO: init from AVPacket and store ptr?
+struct AVPacket;
+
 namespace QtAV {
+
 class Q_AV_EXPORT Packet
 {
 public:
+    //const avpkt? if no use ref
+    static Packet fromAVPacket(const AVPacket* avpkt, double time_base);
+    static bool fromAVPacket(Packet *pkt, const AVPacket *avpkt, double time_base);
+
     Packet();
+    Packet(const Packet& other);
+    ~Packet();
+
+    Packet& operator =(const Packet& other);
+
     inline bool isValid() const;
     inline bool isEnd() const;
     void markEnd();
+    /// Packet takes the owner ship. time unit is ms
+    AVPacket* toAVPacket() const;
 
     bool hasKeyFrame;
     bool isCorrupt;
     QByteArray data;
+    // time unit is s.
     qreal pts, duration;
+    qreal dts;
+    qint64 position; // position in source file byte stream
+
 private:
     static const qreal kEndPts;
+    // TODO: implicity shared. can not use QSharedData
+    mutable AVPacket *avpkt;
 };
 
 bool Packet::isValid() const
