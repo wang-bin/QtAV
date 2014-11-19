@@ -24,6 +24,7 @@
 
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
+#include <QtCore/QQueue>
 #include <QtCore/QWaitCondition>
 #include "QtAV/Packet.h"
 #include "utils/BlockingQueue.h"

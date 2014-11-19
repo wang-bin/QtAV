@@ -363,6 +363,15 @@ typedef enum CodecID AVCodecID;
 const char *avcodec_get_name(enum AVCodecID id);
 #endif
 
+// since libav-11, ffmpeg-2.1
+#if !LIBAV_MODULE_CHECK(LIBAVCODEC, 56, 1, 0) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
+int av_packet_copy_props(AVPacket *dst, const AVPacket *src);
+#endif
+// since libav-10, ffmpeg-2.1
+#if !LIBAV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
+void av_packet_free_side_data(AVPacket *pkt);
+#endif
+
 #ifndef FF_API_OLD_GRAPH_PARSE
 #define avfilter_graph_parse_ptr(...) avfilter_graph_parse(__VA_ARGS__)
 #endif //FF_API_OLD_GRAPH_PARSE
