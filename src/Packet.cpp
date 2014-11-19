@@ -27,6 +27,22 @@ namespace QtAV {
 
 const qreal Packet::kEndPts = -0.618;
 
+class PacketPrivate : public QSharedData
+{
+public:
+    PacketPrivate()
+        : initialized(false)
+    {
+        av_init_packet(&avpkt);
+    }
+    ~PacketPrivate() {
+        av_free_packet(&avpkt); // free old side data and ref
+    }
+
+    bool initialized;
+    AVPacket avpkt;
+};
+
 Packet Packet::fromAVPacket(const AVPacket *avpkt, double time_base)
 {
     Packet pkt;
@@ -100,9 +116,9 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
 
     // TODO: pkt->avpkt. data is not necessary now. see mpv new_demux_packet_from_avpacket
     // copy properties and side data. does not touch data, size and ref
-    // libav has no av_copy_packet_side_data() in public api
-    AVPacket *p = new AVPacket();
-    av_init_packet(p);
+    pkt->d = QSharedDataPointer<PacketPrivate>(new PacketPrivate());
+    pkt->d->initialized = true;
+    AVPacket *p = &pkt->d->avpkt;
     av_packet_copy_props(p, avpkt);
     if (!pkt->data.isEmpty()) {
         p->data = (uint8_t*)pkt->data.constData();
@@ -112,7 +128,6 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
     p->pts = pkt->pts * 1000.0;
     p->dts = pkt->dts * 1000.0;
     p->duration = pkt->duration * 1000.0;
-    pkt->avpkt = p;
     return true;
 }
 
@@ -123,30 +138,27 @@ Packet::Packet()
     , duration(0)
     , dts(0)
     , position(0)
-    , avpkt(0)
 {
 }
 
+
 Packet::Packet(const Packet &other)
+    : hasKeyFrame(other.hasKeyFrame)
+    , isCorrupt(other.isCorrupt)
+    , data(other.data)
+    , pts(other.pts)
+    , duration(other.duration)
+    , dts(other.dts)
+    , position(other.position)
+    , d(other.d)
 {
-    if (this == &other)
-        return;
-    hasKeyFrame = other.hasKeyFrame;
-    isCorrupt = other.isCorrupt;
-    pts = other.pts;
-    duration = other.duration;
-    dts = other.dts;
-    position = other.position;
-    data = other.data;
-    avpkt = new AVPacket();
-    av_init_packet(avpkt);
-    av_packet_copy_props(avpkt, other.toAVPacket());
 }
 
 Packet& Packet::operator =(const Packet& other)
 {
     if (this == &other)
         return *this;
+    d = other.d;
     hasKeyFrame = other.hasKeyFrame;
     isCorrupt = other.isCorrupt;
     pts = other.pts;
@@ -154,25 +166,11 @@ Packet& Packet::operator =(const Packet& other)
     dts = other.dts;
     position = other.position;
     data = other.data;
-    if (!avpkt) {
-        avpkt = new AVPacket();
-        av_init_packet(avpkt);
-    } else {
-        av_free_packet(avpkt); // free old side data and ref
-    }
-    av_packet_copy_props(avpkt, other.toAVPacket());
     return *this;
 }
 
 Packet::~Packet()
 {
-    if (avpkt) {
-        // only free side data and ref, does not release data
-        av_free_packet(avpkt);
-
-        delete avpkt;
-        avpkt = 0;
-    }
 }
 
 void Packet::markEnd()
@@ -181,25 +179,30 @@ void Packet::markEnd()
     pts = kEndPts;
 }
 
-AVPacket* Packet::toAVPacket() const
+AVPacket* Packet::toAVPacket()
 {
-    if (avpkt)
-        return avpkt;
-
-    avpkt = new AVPacket();
-    av_init_packet(avpkt);
-    avpkt->pts = pts * 1000.0;
-    avpkt->dts = dts * 1000.0;
-    avpkt->duration = duration * 1000.0;
-    if (isCorrupt)
-        avpkt->flags |= AV_PKT_FLAG_CORRUPT;
-    if (hasKeyFrame)
-        avpkt->flags |= AV_PKT_FLAG_KEY;
-    if (!data.isEmpty()) {
-        avpkt->data = (uint8_t*)data.constData();
-        avpkt->size = data.size();
+    if (d.constData()) {
+        if (d->initialized) //d.data() was 0 if d has not been accessed. now only contains avpkt, check d.constData() is engough
+            return &d->avpkt;
+    } else {
+        d = QSharedDataPointer<PacketPrivate>(new PacketPrivate());
     }
-    return avpkt;
+
+    d->initialized = true;
+    AVPacket *p = &d->avpkt;
+    p->pts = pts * 1000.0;
+    p->dts = dts * 1000.0;
+    p->duration = duration * 1000.0;
+    p->pos = position;
+    if (isCorrupt)
+        p->flags |= AV_PKT_FLAG_CORRUPT;
+    if (hasKeyFrame)
+        p->flags |= AV_PKT_FLAG_KEY;
+    if (!data.isEmpty()) {
+        p->data = (uint8_t*)data.constData();
+        p->size = data.size();
+    }
+    return p;
 }
 
 } //namespace QtAV
