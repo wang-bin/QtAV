@@ -23,30 +23,37 @@
 #define QAV_PACKET_H
 
 #include <QtCore/QByteArray>
+#include <QtCore/QSharedData>
 #include <QtAV/QtAV_Global.h>
 
 struct AVPacket;
 
 namespace QtAV {
 
+class PacketPrivate;
 class Q_AV_EXPORT Packet
 {
 public:
-    //const avpkt? if no use ref
     static Packet fromAVPacket(const AVPacket* avpkt, double time_base);
     static bool fromAVPacket(Packet *pkt, const AVPacket *avpkt, double time_base);
 
     Packet();
-    Packet(const Packet& other);
     ~Packet();
 
+    // required if no defination of PacketPrivate
+    Packet(const Packet& other);
     Packet& operator =(const Packet& other);
 
     inline bool isValid() const;
     inline bool isEnd() const;
     void markEnd();
-    /// Packet takes the owner ship. time unit is ms
-    AVPacket* toAVPacket() const;
+    /*!
+     * \brief asAVPacket
+     * If Packet is constructed from AVPacket, then data and properties are the same as that AVPacket.
+     * Otherwise, Packet's data and properties are used and no side data.
+     * Packet takes the owner ship. time unit is always ms even constructed from AVPacket.
+     */
+    const AVPacket* asAVPacket() const;
 
     bool hasKeyFrame;
     bool isCorrupt;
@@ -59,7 +66,8 @@ public:
 private:
     static const qreal kEndPts;
     // TODO: implicity shared. can not use QSharedData
-    mutable AVPacket *avpkt;
+    // we must define  default/copy ctor, dtor and operator= so that we can provide only forward declaration of PacketPrivate
+    mutable QSharedDataPointer<PacketPrivate> d;
 };
 
 bool Packet::isValid() const
