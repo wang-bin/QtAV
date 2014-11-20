@@ -184,8 +184,8 @@ void AVPlayer::Private::initStatistics(AVPlayer *player)
         qDebug("stream: %d, duration=%lld (%lld ms==%lld), time_base=%f", cs.stream_idx, stream->duration, qint64(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
                , player->duration(), av_q2d(stream->time_base));
         cs.st->available = true;
+        cs.st->codec = avcodec_get_name(cs.ctx->codec_id);
         if (cs.ctx->codec) {
-            cs.st->codec = avcodec_get_name(cs.ctx->codec_id);
             cs.st->codec_long = cs.ctx->codec->long_name;
         }
         cs.st->total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));

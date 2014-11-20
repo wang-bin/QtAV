@@ -878,8 +878,6 @@ void AVPlayer::playInternal()
         d->stop_position = mediaStopPosition();
     }
 
-    d->initStatistics(this);
-
     if (!d->setupAudioThread(this)) {
         d->read_thread->setAudioThread(0); //set 0 before delete. ptr is used in demux thread when set 0
         if (d->athread) {
@@ -902,7 +900,7 @@ void AVPlayer::playInternal()
         return;
         //return false;
     }
-
+    d->initStatistics(this);
 
     // from previous play()
     if (d->demuxer.audioCodecContext() && d->athread) {
