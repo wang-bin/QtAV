@@ -211,3 +211,44 @@ const char *avcodec_get_name(enum AVCodecID id)
     return "unknown_codec";
 }
 #endif
+
+// since libav-11, ffmpeg-2.1
+#if !LIBAV_MODULE_CHECK(LIBAVCODEC, 56, 1, 0) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
+int av_packet_copy_props(AVPacket *dst, const AVPacket *src)
+{
+    dst->pts                  = src->pts;
+    dst->dts                  = src->dts;
+    dst->pos                  = src->pos;
+    dst->duration             = src->duration;
+    dst->convergence_duration = src->convergence_duration;
+    dst->flags                = src->flags;
+    dst->stream_index         = src->stream_index;
+
+    for (int i = 0; i < src->side_data_elems; i++) {
+         enum AVPacketSideDataType type = src->side_data[i].type;
+         int size          = src->side_data[i].size;
+         uint8_t *src_data = src->side_data[i].data;
+         uint8_t *dst_data = av_packet_new_side_data(dst, type, size);
+
+        if (!dst_data) {
+            av_packet_free_side_data(dst);
+            return AVERROR(ENOMEM);
+        }
+        memcpy(dst_data, src_data, size);
+    }
+
+    return 0;
+}
+
+#endif
+// since libav-10, ffmpeg-2.1
+#if !LIBAV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
+void av_packet_free_side_data(AVPacket *pkt)
+{
+    for (int i = 0; i < pkt->side_data_elems; ++i)
+        av_freep(&pkt->side_data[i].data);
+    av_freep(&pkt->side_data);
+    pkt->side_data_elems = 0;
+}
+#endif
+

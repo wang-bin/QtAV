@@ -303,7 +303,8 @@ public:
         return "Allwinner CedarX video hardware acceleration";
     }
     bool prepare();
-	bool decode(const QByteArray &encoded);
+    bool decode(const QByteArray &encoded) Q_DECL_FINAL;
+    bool decode(const Packet& packet) Q_DECL_FINAL;
 	VideoFrame frame();
 
     //properties
@@ -434,30 +435,21 @@ bool VideoDecoderCedarv::decode(const QByteArray &encoded)
 {
 	DPTR_D(VideoDecoderCedarv);
 
+    if (encoded.isEmpty())
+        return true;
 	//d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_JUMP, 0);
-
-	AVPacket packet;
-	av_init_packet(&packet);
-	packet.size = encoded.size();
-	packet.data = (uint8_t*)encoded.constData();
-
-
-	if (packet.size == 0) {
-		return true;
-	}
-
 	u32 bufsize0, bufsize1;
 	u8 *buf0, *buf1;
 
-	if (d.cedarv->request_write(d.cedarv, packet.size, &buf0, &bufsize0, &buf1, &bufsize1) >= 0) {
-		memcpy(buf0, packet.data, bufsize0);
-		if ((u32)packet.size > bufsize0) {
-			memcpy(buf1, packet.data + bufsize0, bufsize1);
+    if (d.cedarv->request_write(d.cedarv, encoded.size(), &buf0, &bufsize0, &buf1, &bufsize1) >= 0) {
+        memcpy(buf0, encoded.constData(), bufsize0);
+        if ((u32)encoded.size() > bufsize0) {
+            memcpy(buf1, encoded.constData() + bufsize0, bufsize1);
 		}
 		cedarv_stream_data_info_t stream_data_info;
 		stream_data_info.type = 0;
-		stream_data_info.lengh = packet.size;
-		stream_data_info.pts = packet.pts;
+        stream_data_info.lengh = encoded.size();
+        stream_data_info.pts = 0; //packet.pts;
 		stream_data_info.flags = CEDARV_FLAG_FIRST_PART | CEDARV_FLAG_LAST_PART | CEDARV_FLAG_PTS_VALID;
 		d.cedarv->update_data(d.cedarv, &stream_data_info);
 		if (d.cedarv->decode(d.cedarv) >= 0 && !d.cedarv->display_request(d.cedarv, &d.cedarPicture)) {
@@ -470,6 +462,39 @@ bool VideoDecoderCedarv::decode(const QByteArray &encoded)
 		}
 	}
 	return true;
+}
+
+bool VideoDecoderCedarv::decode(const Packet &packet)
+{
+    DPTR_D(VideoDecoderCedarv);
+
+    if (packet.data.isEmpty())
+        return true;
+    //d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_JUMP, 0);
+    u32 bufsize0, bufsize1;
+    u8 *buf0, *buf1;
+
+    if (d.cedarv->request_write(d.cedarv, packet.data.size(), &buf0, &bufsize0, &buf1, &bufsize1) >= 0) {
+        memcpy(buf0, packet.data.constData(), bufsize0);
+        if ((u32)packet.data.size() > bufsize0) {
+            memcpy(buf1, packet.data.constData() + bufsize0, bufsize1);
+        }
+        cedarv_stream_data_info_t stream_data_info;
+        stream_data_info.type = 0; // TODO
+        stream_data_info.lengh = packet.data.size();
+        stream_data_info.pts = packet.pts;
+        stream_data_info.flags = CEDARV_FLAG_FIRST_PART | CEDARV_FLAG_LAST_PART | CEDARV_FLAG_PTS_VALID;
+        d.cedarv->update_data(d.cedarv, &stream_data_info);
+        if (d.cedarv->decode(d.cedarv) >= 0 && !d.cedarv->display_request(d.cedarv, &d.cedarPicture)) {
+        }
+        else {
+            if (d.cedarPicture.id) {
+                d.cedarv->display_release(d.cedarv, d.cedarPicture.id);
+                d.cedarPicture.id = 0;
+            }
+        }
+    }
+    return true;
 }
 
 
@@ -505,10 +530,9 @@ VideoFrame VideoDecoderCedarv::frame()
 	pi_pitch[1] = bitsPerLine_Y / 2;
 	pi_pitch[2] = bitsPerLine_Y / 2;
 	VideoFrame frame = VideoFrame(buf, d.cedarPicture.width, d.cedarPicture.height, VideoFormat(VideoFormat::Format_YUV420P));
-
 	frame.setBits(pp_plane);
 	frame.setBytesPerLine(pi_pitch);
-
+    // TODO: timestamp
 	d.cedarv->display_release(d.cedarv, d.cedarPicture.id);
 	d.cedarPicture.id = 0;
 	return frame;

@@ -45,7 +45,8 @@ public:
     virtual QString name() const; //name from factory
     //virtual bool prepare();
     virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
+    QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
+    virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
     virtual VideoFrame frame();
     //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
     //size: the decoded(actually then resized in ImageConverter) frame size
