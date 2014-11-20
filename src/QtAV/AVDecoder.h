@@ -24,6 +24,7 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/AVError.h>
+#include <QtAV/Packet.h>
 #include <QtCore/QVariant>
 #include <QtCore/QObject>
 
@@ -43,9 +44,10 @@ public:
     virtual ~AVDecoder();
     virtual QString name() const;
     virtual QString description() const;
-    /*
+    /*!
      * default is open FFmpeg codec context
      * codec config must be done before open
+     * NOTE: open() and close() are not thread safe. You'd better call them in the same thread.
      */
     virtual bool open();
     virtual bool close();
@@ -67,7 +69,8 @@ public:
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
     virtual bool prepare(); //if resampler or image converter set, call it
-    virtual bool decode(const QByteArray& encoded) = 0; //decode AVPacket?
+    QTAV_DEPRECATED virtual bool decode(const QByteArray& encoded) = 0;
+    virtual bool decode(const Packet& packet) = 0;
     QByteArray data() const; //decoded data
     int undecodedSize() const;
 

@@ -77,6 +77,7 @@ bool VideoDecoder::prepare()
     return AVDecoder::prepare();
 }
 
+// always keep the following code
 //TODO: use ipp, cuda decode and yuv functions. is sws_scale necessary?
 bool VideoDecoder::decode(const QByteArray &encoded)
 {
@@ -97,15 +98,38 @@ bool VideoDecoder::decode(const QByteArray &encoded)
     packet.size = encoded.size();
     packet.data = (uint8_t*)encoded.constData();
 #endif //NO_PADDING_DATA
-//TODO: use AVPacket directly instead of Packet?
-    //AVStream *stream = format_context->streams[stream_idx];
-
     //TODO: some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
     int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
     //qDebug("pic_type=%c", av_get_picture_type_char(d.frame->pict_type));
     d.undecoded_size = qMin(encoded.size() - ret, encoded.size());
     //TODO: decoded format is YUV420P, YUV422P?
     av_free_packet(&packet);
+    if (ret < 0) {
+        qWarning("[VideoDecoder] %s", av_err2str(ret));
+        return false;
+    }
+    if (!d.got_frame_ptr) {
+        qWarning("no frame could be decompressed: %s", av_err2str(ret));
+        return true;
+    }
+    if (!d.codec_ctx->width || !d.codec_ctx->height)
+        return false;
+    //qDebug("codec %dx%d, frame %dx%d", d.codec_ctx->width, d.codec_ctx->height, d.frame->width, d.frame->height);
+    d.width = d.frame->width;
+    d.height = d.frame->height;
+    //avcodec_align_dimensions2(d.codec_ctx, &d.width_align, &d.height_align, aligns);
+    return true;
+}
+
+bool VideoDecoder::decode(const Packet &packet)
+{
+    if (!isAvailable())
+        return false;
+    DPTR_D(VideoDecoder);
+    // some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
+    int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, packet.asAVPacket());
+    //qDebug("pic_type=%c", av_get_picture_type_char(d.frame->pict_type));
+    d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
     if (ret < 0) {
         qWarning("[VideoDecoder] %s", av_err2str(ret));
         return false;
@@ -152,6 +176,10 @@ int VideoDecoder::height() const
 VideoFrame VideoDecoder::frame()
 {
     DPTR_D(VideoDecoder);
+    /*qDebug("color space: %d, range: %d, prim: %d, t: %d"
+           , d.codec_ctx->colorspace, d.codec_ctx->color_range
+           , d.codec_ctx->color_primaries, d.codec_ctx->color_trc);
+           */
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
     //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
@@ -164,6 +192,7 @@ VideoFrame VideoDecoder::frame()
     frame.setDisplayAspectRatio(displayAspectRatio);
     frame.setBits(d.frame->data);
     frame.setBytesPerLine(d.frame->linesize);
+    frame.setTimestamp((double)d.frame->pts/1000.0); // in s
     return frame;
 }
 
