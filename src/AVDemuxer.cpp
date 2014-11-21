@@ -43,12 +43,18 @@ static const char kFileScheme[] = "file:";
  */
 QString getLocalPath(const QString& fullPath)
 {
-    int pos = fullPath.indexOf(QChar('/'));
-    if (pos == CHAR_COUNT(kFileScheme)) {
-        while (fullPath.at(pos + 1) == QChar('/')) { ++pos; }
+    int pos = fullPath.indexOf(kFileScheme);
+    if (pos >= 0) {
+        pos += CHAR_COUNT(kFileScheme);
+        bool has_slash = false;
+        while (fullPath.at(pos) == QChar('/')) {
+            has_slash = true;
+            ++pos;
+        }
         // win: ffmpeg does not supports file:///C:/xx.mov, only supports file:C:/xx.mov or C:/xx.mov
-#ifdef Q_OS_WIN // for QUrl
-        ++pos;
+#ifndef Q_OS_WIN // for QUrl
+        if (has_slash)
+            --pos;
 #endif
     }
     // always remove "file:" even thought it works for ffmpeg.but fileName() may be used for QFile which does not file:
