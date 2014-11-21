@@ -90,6 +90,14 @@ LIBS += -lavcodec -lavformat -lavutil -lswscale
 exists($$PROJECTROOT/contrib/libchardet/libchardet.pri) {
   include($$PROJECTROOT/contrib/libchardet/libchardet.pri)
   DEFINES += QTAV_HAVE_CHARDET=1 BUILD_CHARDET_STATIC
+} else {
+  error("contrib/libchardet is missing. run 'git submodule update --init' first")
+}
+exists($$PROJECTROOT/contrib/capi/capi.pri) {
+  include($$PROJECTROOT/contrib/capi/capi.pri)
+  DEFINES += QTAV_HAVE_CAPI=1 BUILD_CAPI_STATIC
+} else {
+  error("contrib/capi is missing. run 'git submodule update --init' first")
 }
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
@@ -261,9 +269,13 @@ config_openglwindow {
 }
 config_libass {
 #link against libass instead of dynamic load
-  LIBS += -lass
+  #LIBS += -lass
+  #DEFINES += CAPI_LINK_ASS
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
+  HEADERS *= subtitle/ass_api.h
+  SOURCES *= subtitle/ass_api.cpp
 }
+
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \

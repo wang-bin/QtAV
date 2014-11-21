@@ -71,6 +71,34 @@ bool AudioDecoder::prepare()
     return true;
 }
 
+bool AudioDecoder::decode(const Packet &packet)
+{
+    if (!isAvailable())
+        return false;
+    DPTR_D(AudioDecoder);
+    // const AVPacket*: ffmpeg >= 1.0. no libav
+    int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, (AVPacket*)packet.asAVPacket());
+    d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
+    if (ret == AVERROR(EAGAIN)) {
+        return false;
+    }
+    if (ret < 0) {
+        qWarning("[AudioDecoder] %s", av_err2str(ret));
+        return false;
+    }
+    if (!d.got_frame_ptr) {
+        qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d", ret, d.undecoded_size);
+        return true;
+    }
+    d.resampler->setInSampesPerChannel(d.frame->nb_samples);
+    if (!d.resampler->convert((const quint8**)d.frame->extended_data)) {
+        return false;
+    }
+    d.decoded = d.resampler->outData();
+    return true;
+    return !d.decoded.isEmpty();
+}
+
 //
 bool AudioDecoder::decode(const QByteArray &encoded)
 {
@@ -91,7 +119,6 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     packet.size = encoded.size();
     packet.data = (uint8_t*)encoded.constData();
 #endif //NO_PADDING_DATA
-//TODO: use AVPacket directly instead of Packet?
     int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
     d.undecoded_size = qMin(encoded.size() - ret, encoded.size());
     av_free_packet(&packet);

@@ -878,8 +878,6 @@ void AVPlayer::playInternal()
         d->stop_position = mediaStopPosition();
     }
 
-    d->initStatistics(this);
-
     if (!d->setupAudioThread(this)) {
         d->read_thread->setAudioThread(0); //set 0 before delete. ptr is used in demux thread when set 0
         if (d->athread) {
@@ -902,7 +900,7 @@ void AVPlayer::playInternal()
         return;
         //return false;
     }
-
+    d->initStatistics(this);
 
     // from previous play()
     if (d->demuxer.audioCodecContext() && d->athread) {
@@ -952,13 +950,20 @@ void AVPlayer::playInternal()
 
 void AVPlayer::stopFromDemuxerThread()
 {
-    d->reset_state = false;
-    qDebug("demuxer thread emit finished. avplayer emit stopped()");
-    if (d->read_thread->isRunning()) {
-        qWarning("XXXXXXXXX demuxer thread is running........");
-        return;
+    qDebug("demuxer thread emit finished.");
+    if (currentRepeat() >= repeat() && repeat() >= 0) {
+        d->start_position = 0;
+        d->stop_position = 0; // 0 can stop play in timerEvent
+        d->media_end = kInvalidPosition;
+        d->repeat_current = d->repeat_max = 0;
+        qDebug("avplayer emit stopped()");
+        emit stopped();
+    } else {
+        qDebug("stopPosition() == mediaStopPosition() or !seekable. repeate: %d/%d", currentRepeat(), repeat());
+        d->repeat_current++;
+        d->last_position = startPosition(); // for seeking to startPosition() if seekable. already set in stop()
+        play();
     }
-    emit stopped();
 }
 
 void AVPlayer::aboutToQuitApp()
@@ -1083,16 +1088,14 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             stop();
             return;
         }
-        d->repeat_current++;
         // FIXME: now stop instead of seek if reach media's end. otherwise will not get eof again
         if (stopPosition() == mediaStopPosition() || !d->demuxer.isSeekable()) {
             // if not seekable, how it can start to play at specified position?
             qDebug("stopPosition() == mediaStopPosition() or !seekable. d->repeat_current=%d", d->repeat_current);
             d->reset_state = false;
-            stop();
-            d->last_position = startPosition(); // for seeking to startPosition(). already set in stop()
-            play();
+            stop(); // repeat after all threads stopped
         } else {
+            d->repeat_current++;
             qDebug("stopPosition() != mediaStopPosition() and seekable. d->repeat_current=%d", d->repeat_current);
             setPosition(startPosition());
         }
