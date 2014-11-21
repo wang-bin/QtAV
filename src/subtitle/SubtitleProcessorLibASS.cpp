@@ -21,9 +21,13 @@
 
 #include <stdarg.h>
 #include <string>
+#ifdef CAPI_LINK_ASS
 extern "C" {
 #include <ass/ass.h>
 }
+#else
+#include "ass_api.h"
+#endif
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/private/prepost.h"
 #include "QtAV/Packet.h"
@@ -32,7 +36,7 @@ extern "C" {
 
 namespace QtAV {
 
-class SubtitleProcessorLibASS : public SubtitleProcessor
+class SubtitleProcessorLibASS : public SubtitleProcessor, public ass::api
 {
 public:
     SubtitleProcessorLibASS();
@@ -101,6 +105,8 @@ SubtitleProcessorLibASS::SubtitleProcessorLibASS()
     , m_renderer(0)
     , m_track(0)
 {
+    if (!ass::api::loaded())
+        return;
     m_ass = ass_library_init();
     if (!m_ass) {
         qWarning("ass_library_init failed!");
@@ -122,6 +128,8 @@ SubtitleProcessorLibASS::SubtitleProcessorLibASS()
 
 SubtitleProcessorLibASS::~SubtitleProcessorLibASS()
 {
+    if (!ass::api::loaded())
+        return;
     if (m_track) {
         ass_free_track(m_track);
         m_track = 0;
@@ -161,6 +169,8 @@ QList<SubtitleFrame> SubtitleProcessorLibASS::frames() const
 
 bool SubtitleProcessorLibASS::process(QIODevice *dev)
 {
+    if (!ass::api::loaded())
+        return false;
     if (m_track) {
         ass_free_track(m_track);
         m_track = 0;
@@ -184,6 +194,8 @@ bool SubtitleProcessorLibASS::process(QIODevice *dev)
 
 bool SubtitleProcessorLibASS::process(const QString &path)
 {
+    if (!ass::api::loaded())
+        return false;
     if (m_track) {
         ass_free_track(m_track);
         m_track = 0;
@@ -228,6 +240,8 @@ QString SubtitleProcessorLibASS::getText(qreal pts) const
 
 QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
 {
+    if (!ass::api::loaded())
+        return QImage();
     if (!m_ass) {
         qWarning("ass library not available");
         return QImage();
