@@ -76,7 +76,8 @@ bool AudioDecoder::decode(const Packet &packet)
     if (!isAvailable())
         return false;
     DPTR_D(AudioDecoder);
-    int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, packet.asAVPacket());
+    // const AVPacket*: ffmpeg >= 1.0. no libav
+    int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, (AVPacket*)packet.asAVPacket());
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
     if (ret == AVERROR(EAGAIN)) {
         return false;

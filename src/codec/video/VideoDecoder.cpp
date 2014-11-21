@@ -127,7 +127,8 @@ bool VideoDecoder::decode(const Packet &packet)
         return false;
     DPTR_D(VideoDecoder);
     // some decoders might in addition need other fields like flags&AV_PKT_FLAG_KEY
-    int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, packet.asAVPacket());
+    // const AVPacket*: ffmpeg >= 1.0. no libav
+    int ret = avcodec_decode_video2(d.codec_ctx, d.frame, &d.got_frame_ptr, (AVPacket*)packet.asAVPacket());
     //qDebug("pic_type=%c", av_get_picture_type_char(d.frame->pict_type));
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
     if (ret < 0) {
