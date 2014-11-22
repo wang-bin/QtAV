@@ -198,7 +198,7 @@ bool QOptions::parse(int argc, const char *const*argv)
 	bool result = true;
     QStringList args;
     for (int i=1;i<argc;++i) {
-		args.append(argv[i]);
+        args.append(QString::fromLocal8Bit(argv[i]));
 	}
 
 	QStringList::Iterator it = args.begin();
