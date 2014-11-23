@@ -29,13 +29,13 @@ namespace QtAV {
 
 enum MediaStatus
 {
-    UnknownMediaStatus, // e.g. user status after interrupt
+    UnknownMediaStatus,
     NoMedia,
     LoadingMedia, // when source is set
     LoadedMedia, // if auto load and source is set. player is stopped state
-    StalledMedia,
-    BufferingMedia,
-    BufferedMedia, // when playing
+    StalledMedia, // insufficient buffering or other interruptions (timeout, user interrupt)
+    BufferingMedia, // NOT IMPLEMENTED
+    BufferedMedia, // when playing //NOT IMPLEMENTED
     EndOfMedia,
     InvalidMedia // what if loop > 0 or stopPosition() is not mediaStopPosition()?
 };

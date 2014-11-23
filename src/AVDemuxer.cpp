@@ -1195,9 +1195,8 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     bool interrupted = (averr == AVERROR_EXIT) || getInterruptStatus();
     QString err_msg(msg);
     if (interrupted) { // interrupted by callback, so can not determine whether the media is valid
-        // If already loaded and now is reading packets, leave the current status.
-        if (mediaStatus() == LoadingMedia)
-            setMediaStatus(UnknownMediaStatus);
+        // insufficient buffering or other interruptions
+        setMediaStatus(StalledMedia);
         if (getInterruptStatus())
             err_msg += " [" + tr("interrupted by user") + "]";
         else
