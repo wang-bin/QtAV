@@ -107,11 +107,11 @@ void AudioThread::run()
              */
             qreal a_v = pkt.pts - d.clock->videoPts();
 
-            //qDebug("skip audio decode at %f/%f v=%f a-v=%f", pkt.pts, d.render_pts0, d.clock->videoPts(), a_v);
+            //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", pkt.pts, d.render_pts0, d.clock->videoPts(), a_v*1000.0);
             if (a_v > 0)
-                msleep(qMin((ulong)300, ulong(a_v*1000.0)));
-            else
-                msleep(2);
+                msleep(qMin((ulong)20, ulong(a_v*1000.0)));
+            //else
+              //  msleep(1);
             pkt = Packet(); //mark invalid to take next
             continue;
         }
@@ -194,7 +194,7 @@ void AudioThread::run()
             if (dt > 0.618 || dt < 0) {
                 dt = 0;
             }
-            //qDebug("sleep %f", dt);
+            //qDebug("a sleep %f", dt);
             //TODO: avoid acummulative error. External clock?
             msleep((unsigned long)(dt*1000.0));
             pkt = Packet();

@@ -236,7 +236,7 @@ void VideoThread::run()
             }
         }
         //audio packet not cleaned up?
-        if (d.delay < 3 && qFuzzyIsNull(d.render_pts0)) {
+        if (d.delay < 1.0 && qFuzzyIsNull(d.render_pts0)) {
             while (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
                 //qDebug("~~~~~wating for %f msecs", d.delay*1000);
@@ -245,6 +245,8 @@ void VideoThread::run()
                     d.delay = 0;
                 else
                     d.delay -= kSyncThreshold;
+                d.delay = qMax(0.0, qMin(d.delay, pts - d.clock->value()));
+                processNextTask();
             }
             if (d.delay > 0)
                 usleep(d.delay * 1000000UL);
