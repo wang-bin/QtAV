@@ -101,12 +101,13 @@ bool AVDecoder::open()
         qWarning("Use the max value for lowres supported by the decoder (%d)", codec->max_lowres);
         d.low_resolution = codec->max_lowres;
     }
+    //CODEC_FLAG_EMU_EDGE: deprecated in ffmpeg >=? & libav>=10. always set by ffmpeg
     d.codec_ctx->lowres = d.low_resolution;
     if (d.codec_ctx->lowres) {
         d.codec_ctx->flags |= CODEC_FLAG_EMU_EDGE;
     }
     if (d.fast) {
-        d.codec_ctx->flags2 |= CODEC_FLAG2_FAST;
+        d.codec_ctx->flags2 |= CODEC_FLAG2_FAST; // TODO:
     } else {
         //d.codec_ctx->flags2 &= ~CODEC_FLAG2_FAST; //ffplay has no this
     }
@@ -271,7 +272,7 @@ bool AVDecoder::prepare()
         qWarning("call this after AVCodecContext is set!");
         return false;
     }
-    qDebug("Decoding threads count: %d", d.threads);
+    qDebug("Decoding threads count: %d", d.threads); //TODO: remove
     return true;
 }
 
@@ -308,17 +309,30 @@ void AVDecoder::setOptions(const QVariantHash &dict)
     if (opt.type() == QVariant::Hash) {
         QVariantHash avcodec_dict = opt.toHash();
         // workaround for VideoDecoderFFmpeg. now it does not call av_opt_set_xxx, so set here in dict
-        if (dict.contains("FFmpeg"))
-            avcodec_dict.unite(dict.value("FFmpeg").toHash());
+        // TODO: wrong if opt is empty
+        //if (dict.contains("FFmpeg"))
+        //    avcodec_dict.unite(dict.value("FFmpeg").toHash());
         QHashIterator<QString, QVariant> i(avcodec_dict);
         while (i.hasNext()) {
             i.next();
+            const QByteArray key(i.key().toLower().toUtf8());
             switch (i.value().type()) {
             case QVariant::Hash: // for example "vaapi": {...}
                 continue;
             case QVariant::Bool:
+            case QVariant::Int: {
                 // QVariant.toByteArray(): "true" or "false", can not recognized by avcodec
-                av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), QByteArray::number(i.value().toBool()), 0);
+                av_dict_set(&d.dict, key.constData(), QByteArray::number(i.value().toInt()).constData(), 0);
+                if (d.codec_ctx)
+                    av_opt_set_int(d.codec_ctx, key.constData(), i.value().toInt(), 0);
+            }
+                break;
+            case QVariant::ULongLong:
+            case QVariant::LongLong: {
+                av_dict_set(&d.dict, key.constData(), QByteArray::number(i.value().toLongLong()).constData(), 0);
+                if (d.codec_ctx)
+                    av_opt_set_int(d.codec_ctx, key.constData(), i.value().toLongLong(), 0);
+            }
                 break;
             default:
                 // avcodec key and value are in lower case
@@ -330,17 +344,30 @@ void AVDecoder::setOptions(const QVariantHash &dict)
     } else if (opt.type() == QVariant::Map) {
         QVariantMap avcodec_dict = opt.toMap();
         // workaround for VideoDecoderFFmpeg. now it does not call av_opt_set_xxx, so set here in dict
-        if (dict.contains("FFmpeg"))
-            avcodec_dict.unite(dict.value("FFmpeg").toMap());
+        //if (dict.contains("FFmpeg"))
+        //    avcodec_dict.unite(dict.value("FFmpeg").toMap());
         QMapIterator<QString, QVariant> i(avcodec_dict);
         while (i.hasNext()) {
             i.next();
+            const QByteArray key(i.key().toLower().toUtf8());
             switch (i.value().type()) {
             case QVariant::Map: // for example "vaapi": {...}
                 continue;
             case QVariant::Bool:
+            case QVariant::UInt:
+            case QVariant::Int: {
                 // QVariant.toByteArray(): "true" or "false", can not recognized by avcodec
-                av_dict_set(&d.dict, i.key().toLower().toUtf8().constData(), QByteArray::number(i.value().toBool()), 0);
+                av_dict_set(&d.dict, key.constData(), QByteArray::number(i.value().toInt()), 0);
+                if (d.codec_ctx)
+                    av_opt_set_int(d.codec_ctx, key.constData(), i.value().toInt(), 0);
+            }
+                break;
+            case QVariant::ULongLong:
+            case QVariant::LongLong: {
+                av_dict_set(&d.dict, key.constData(), QByteArray::number(i.value().toLongLong()).constData(), 0);
+                if (d.codec_ctx)
+                    av_opt_set_int(d.codec_ctx, key.constData(), i.value().toLongLong(), 0);
+            }
                 break;
             default:
                 // avcodec key and value are in lower case
