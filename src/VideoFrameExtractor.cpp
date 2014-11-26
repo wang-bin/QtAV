@@ -86,19 +86,26 @@ public:
         , async(true)
         , has_video(true)
         , auto_extract(true)
+        , seek_count(0)
         , position(-2*kDefaultPrecision)
         , precision(kDefaultPrecision)
         , decoder(0)
     {
+        QVariantHash opt;
+        opt["skip_frame"] = "NoKey"; // 32 for "avcodec", "NoKey" for "FFmpeg"
+        dec_opt_framedrop["FFmpeg"] = opt;
+        opt["skip_frame"] = "Default"; // 0 for "avcodec", "Default" for "FFmpeg
+        dec_opt_normal["FFmpeg"] = opt; // avcodec need correct string or value in libavcodec
+        // avcodec based hwa may not support frame drop, not sure. so only FFmpeg decoder is used now
         codecs
 #if QTAV_HAVE(DXVA)
-                    << "DXVA"
+                    // << "DXVA"
 #endif //QTAV_HAVE(DXVA)
 #if QTAV_HAVE(VAAPI)
-                    << "VAAPI"
+                    // << "VAAPI"
 #endif //QTAV_HAVE(VAAPI)
 #if QTAV_HAVE(CEDARV)
-                    << "Cedarv"
+                    //<< "Cedarv"
 #endif //QTAV_HAVE(CEDARV)
 #if QTAV_HAVE(VDA)
                     //<< "VDA"
@@ -117,6 +124,7 @@ public:
         const bool loaded = demuxer.isLoaded(source);
         if (loaded && decoder)
             return true;
+        seek_count = 0;
         if (decoder) { // new source
             decoder->close();
             decoder.reset(0);
@@ -160,7 +168,7 @@ public:
 
     // return the key frame position
     bool extractInPrecision(qint64 value, int range) {
-        demuxer.seek(value + range); //
+        demuxer.seek(value);
         const int vstream = demuxer.videoStream();
         while (!demuxer.atEnd()) {
             if (!demuxer.readFrame()) {
@@ -177,6 +185,7 @@ public:
                 break;
         }
         decoder->flush(); //must flush otherwise old frames will be decoded at the beginning
+        decoder->setOptions(dec_opt_normal);
         const qint64 t_key = qint64(demuxer.packet()->pts * 1000.0);
         //qDebug("delta t = %d, data size: %d", int(value - t_key), demuxer.packet()->data.size());
         // must decode key frame
@@ -186,7 +195,7 @@ public:
         while (k < 5 && !frame.isValid()) {
             //qWarning("invalid key frame!!!!! undecoded: %d", decoder->undecodedSize());
             if (!decoder->decode(demuxer.packet()->data)) {
-                //qWarning("!!!!!!!!!decode failed!!!!!!!!");
+                //qWarning("!!!!!!!!!decode key failed!!!!!!!!");
                 return false;
             }
             frame = decoder->frame();
@@ -197,9 +206,9 @@ public:
         // seek backward, so value >= t
         // decode key frame
         if (int(value - t_key) <= range) {
-            //qDebug("!!!!!!!!!use key frame!!!!!!!");
+            qDebug("!!!!!!!!!use key frame!!!!!!!");
             if (frame.isValid()) {
-                //qDebug() << "frame found. format: " <<  frame.format();
+                qDebug() << "frame found. format: " <<  frame.format();
                 return true;
             }
         }
@@ -225,19 +234,25 @@ public:
                 //qCritical("Internal error. Can not be a key frame!!!!");
                 //return false; //??
             }
+            if (seek_count == 0 || value < qint64(t*1000.0)) {
+                decoder->setOptions(dec_opt_normal);
+            } else {
+                decoder->setOptions(dec_opt_framedrop);
+            }
             // invalid packet?
             if (!decoder->decode(demuxer.packet()->data)) {
                 //qWarning("!!!!!!!!!decode failed!!!!");
                 return false;
             }
             // store the last decoded frame because next frame may be out of range
-            frame = decoder->frame();
+            const VideoFrame f = decoder->frame();
             //qDebug() << "frame found. format: " <<  frame.format();
-            frame.setTimestamp(t);
-            if (!frame.isValid()) {
+            if (!f.isValid()) {
                 //qDebug("invalid frame!!!");
                 continue;
             }
+            frame = f;
+            frame.setTimestamp(t);
             // TODO: break if t is in (t0-range, t0+range)
             if (qAbs(value - qint64(t*1000.0)) < range)
                 break;
@@ -245,6 +260,7 @@ public:
                 continue;
             break;
         }
+        ++seek_count;
         // now we get the final frame
         return true;
     }
@@ -254,6 +270,7 @@ public:
     bool has_video;
     bool loading;
     bool auto_extract;
+    int seek_count;
     qint64 position;
     int precision;
     QString source;
@@ -262,6 +279,7 @@ public:
     VideoFrame frame;
     QStringList codecs;
     ExtractThread thread;
+    QVariantHash dec_opt_framedrop, dec_opt_normal;
 };
 
 
