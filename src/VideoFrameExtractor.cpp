@@ -92,23 +92,22 @@ public:
         , decoder(0)
     {
         QVariantHash opt;
-        opt["skip_frame"] = "NoKey"; // 32 for "avcodec", "NoKey" for "FFmpeg"
-        dec_opt_framedrop["FFmpeg"] = opt;
-        opt["skip_frame"] = "Default"; // 0 for "avcodec", "Default" for "FFmpeg
-        dec_opt_normal["FFmpeg"] = opt; // avcodec need correct string or value in libavcodec
-        // avcodec based hwa may not support frame drop, not sure. so only FFmpeg decoder is used now
+        opt["skip_frame"] = 32; // 32 for "avcodec", "NoKey" for "FFmpeg". see AVDiscard
+        dec_opt_framedrop["avcodec"] = opt;
+        opt["skip_frame"] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
+        dec_opt_normal["avcodec"] = opt; // avcodec need correct string or value in libavcodec
         codecs
 #if QTAV_HAVE(DXVA)
-                    // << "DXVA"
+                     << "DXVA"
 #endif //QTAV_HAVE(DXVA)
 #if QTAV_HAVE(VAAPI)
-                    // << "VAAPI"
+                     << "VAAPI"
 #endif //QTAV_HAVE(VAAPI)
 #if QTAV_HAVE(CEDARV)
                     //<< "Cedarv"
 #endif //QTAV_HAVE(CEDARV)
 #if QTAV_HAVE(VDA)
-                    //<< "VDA"
+                    // << "VDA" // only 1 app can use VDA at a given time
 #endif //QTAV_HAVE(VDA)
                     << "FFmpeg";
     }
@@ -279,9 +278,11 @@ public:
     VideoFrame frame;
     QStringList codecs;
     ExtractThread thread;
-    QVariantHash dec_opt_framedrop, dec_opt_normal;
+    static QVariantHash dec_opt_framedrop, dec_opt_normal;
 };
 
+QVariantHash VideoFrameExtractorPrivate::dec_opt_framedrop;
+QVariantHash VideoFrameExtractorPrivate::dec_opt_normal;
 
 VideoFrameExtractor::VideoFrameExtractor(QObject *parent) :
     QObject(parent)
