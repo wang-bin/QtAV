@@ -202,6 +202,36 @@ bool VideoDecoderFFmpeg::prepare()
     av_opt_set_int(d.codec_ctx, "vismv", (int64_t)motionVectorVisFlags(), 0);
     av_opt_set_int(d.codec_ctx, "bug", (int64_t)bugFlags(), 0);
 
+    //CODEC_FLAG_EMU_EDGE: deprecated in ffmpeg >=? & libav>=10. always set by ffmpeg
+#if 0
+    if (d.fast) {
+        d.codec_ctx->flags2 |= CODEC_FLAG2_FAST; // TODO:
+    } else {
+        //d.codec_ctx->flags2 &= ~CODEC_FLAG2_FAST; //ffplay has no this
+    }
+// lavfilter
+    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
+    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
+    d.codec_ctx->thread_safe_callbacks = true;
+    switch (d.codec_ctx->codec_id) {
+        case QTAV_CODEC_ID(MPEG4):
+        case QTAV_CODEC_ID(H263):
+            d.codec_ctx->thread_type = 0;
+            break;
+        case QTAV_CODEC_ID(MPEG1VIDEO):
+        case QTAV_CODEC_ID(MPEG2VIDEO):
+            d.codec_ctx->thread_type &= ~FF_THREAD_SLICE;
+            /* fall through */
+# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
+        case QTAV_CODEC_ID(H264):
+        case QTAV_CODEC_ID(VC1):
+        case QTAV_CODEC_ID(WMV3):
+            d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
+# endif
+        default:
+            break;
+    }
+#endif
     return true;
 }
 

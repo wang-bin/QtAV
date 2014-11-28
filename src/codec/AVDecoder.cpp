@@ -94,70 +94,12 @@ bool AVDecoder::open()
         }
         emit error(AVError(ec, es));
         return false;
-    }
-
-    //setup video codec context
-    if (d.low_resolution > codec->max_lowres) {
-        qWarning("Use the max value for lowres supported by the decoder (%d)", codec->max_lowres);
-        d.low_resolution = codec->max_lowres;
-    }
-    //CODEC_FLAG_EMU_EDGE: deprecated in ffmpeg >=? & libav>=10. always set by ffmpeg
-    d.codec_ctx->lowres = d.low_resolution;
-    if (d.codec_ctx->lowres) {
-        d.codec_ctx->flags |= CODEC_FLAG_EMU_EDGE;
-    }
-    if (d.fast) {
-        d.codec_ctx->flags2 |= CODEC_FLAG2_FAST; // TODO:
-    } else {
-        //d.codec_ctx->flags2 &= ~CODEC_FLAG2_FAST; //ffplay has no this
-    }
-    if (codec->capabilities & CODEC_CAP_DR1) {
-        d.codec_ctx->flags |= CODEC_FLAG_EMU_EDGE;
-    }
-    //set thread
-
-    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
-    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD;
-// lavfilter
-    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
-    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
-
-//from vlc
-    //HAVE_AVCODEC_MT macro?
-    if (d.threads == -1)
-        d.threads = qMax(0, QThread::idealThreadCount());
-    if (d.threads > 0)
-        d.codec_ctx->thread_count = d.threads;
-    d.codec_ctx->thread_safe_callbacks = true;
-    switch (d.codec_ctx->codec_id) {
-        case QTAV_CODEC_ID(MPEG4):
-        case QTAV_CODEC_ID(H263):
-            d.codec_ctx->thread_type = 0;
-            break;
-        case QTAV_CODEC_ID(MPEG1VIDEO):
-        case QTAV_CODEC_ID(MPEG2VIDEO):
-            d.codec_ctx->thread_type &= ~FF_THREAD_SLICE;
-            /* fall through */
-# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
-        case QTAV_CODEC_ID(H264):
-        case QTAV_CODEC_ID(VC1):
-        case QTAV_CODEC_ID(WMV3):
-            d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
-# endif
-        default:
-            break;
-    }
-/*
-    if (d.codec_ctx->thread_type & FF_THREAD_FRAME)
-        p_dec->i_extra_picture_buffers = 2 * p_sys->p_context->thread_count;
-*/
+    }    
     // hwa extra init can be here
     if (!d.open()) {
         d.close();
         return false;
     }
-    //set dict used by avcodec_open2(). see ffplay
-    // AVDictionary *opts;
     int ret = avcodec_open2(d.codec_ctx, codec, d.options.isEmpty() ? NULL : &d.dict);
     if (ret < 0) {
         qWarning("open video codec failed: %s", av_err2str(ret));
@@ -223,11 +165,6 @@ AVCodecContext* AVDecoder::codecContext() const
     return d_func().codec_ctx;
 }
 
-void AVDecoder::setLowResolution(int lowres)
-{
-    d_func().low_resolution = lowres;
-}
-
 void AVDecoder::setCodecName(const QString &name)
 {
     d_func().codec_name = name;
@@ -243,23 +180,6 @@ QString AVDecoder::codecName() const
     return "";
 }
 
-int AVDecoder::lowResolution() const
-{
-    return d_func().low_resolution;
-}
-
-void AVDecoder::setDecodeThreads(int threads)
-{
-    DPTR_D(AVDecoder);
-    d.threads = threads;// threads >= 0 ? threads : qMax(0, QThread::idealThreadCount());
-    d.threads = qMax(d.threads, 0); //check max?
-}
-
-int AVDecoder::decodeThreads() const
-{
-    return d_func().threads;
-}
-
 bool AVDecoder::isAvailable() const
 {
     return d_func().codec_ctx != 0;
@@ -272,7 +192,6 @@ bool AVDecoder::prepare()
         qWarning("call this after AVCodecContext is set!");
         return false;
     }
-    qDebug("Decoding threads count: %d", d.threads); //TODO: remove
     return true;
 }
 
