@@ -33,8 +33,8 @@ class api
 {
 public:
     api();
-    ~api();
-    bool loaded() const;
+    virtual ~api();
+    virtual bool loaded() const; // user may inherits multiple api classes: final::loaded() { return base1::loaded() && base2::loaded();}
 #ifndef CAPI_LINK_ASS
 // mkapi code generation BEGIN
     int ass_library_version();

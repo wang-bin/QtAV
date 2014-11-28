@@ -56,6 +56,15 @@ void VideoDecoder_RegisterAll()
 #endif //QTAV_HAVE(CEDARV)
 }
 
+VideoDecoder* VideoDecoder::create(VideoDecoderId id)
+{
+    return VideoDecoderFactory::create(id);
+}
+
+VideoDecoder* VideoDecoder::create(const QString& name)
+{
+    return VideoDecoderFactory::create(VideoDecoderFactory::id(name.toUtf8().constData(), false));
+}
 
 VideoDecoder::VideoDecoder()
     :AVDecoder(*new VideoDecoderPrivate())

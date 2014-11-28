@@ -207,6 +207,8 @@ QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
     // check environment var and call other functions at first Qt logging call
     // always override setLogLevel()
     QByteArray env = qgetenv("QTAV_LOG_LEVEL");
+    if (env.isEmpty())
+        env = qgetenv("QTAV_LOG");
     if (!env.isEmpty()) {
         bool ok = false;
         const int level = env.toInt(&ok);

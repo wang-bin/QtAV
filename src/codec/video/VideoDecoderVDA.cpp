@@ -41,12 +41,11 @@ extern "C" {
 #ifdef PixelFormat
 #undef PixelFormat
 #endif
-
-#ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
-#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 1070 //MAC_OS_X_VERSION_10_7
+#ifdef MAC_OS_X_VERSION_MIN_REQUIRED
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070 //MAC_OS_X_VERSION_10_7
 #define OSX_TARGET_MIN_LION
 #endif // 1070
-#endif //__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
+#endif //MAC_OS_X_VERSION_MIN_REQUIRED
 
 namespace QtAV {
 
@@ -156,6 +155,15 @@ static VideoFormat::PixelFormat format_from_cv(int cv)
     return VideoFormat::Format_Invalid;
 }
 
+static int format_to_cv(VideoFormat::PixelFormat fmt)
+{
+    for (int i = 0; cv_formats[i].pixfmt != VideoFormat::Format_Invalid; ++i) {
+        if (cv_formats[i].pixfmt == fmt)
+            return cv_formats[i].cv_pixfmt;
+    }
+    return 0;
+}
+
 VideoDecoderVDA::VideoDecoderVDA()
     : VideoDecoderFFmpegHW(*new VideoDecoderVDAPrivate())
 {
@@ -263,7 +271,7 @@ bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
     } else {
         memset(&hw_ctx, 0, sizeof(hw_ctx));
         hw_ctx.format = 'avc1';
-        hw_ctx.cv_pix_fmt_type = kCVPixelFormatType_420YpCbCr8Planar;
+        hw_ctx.cv_pix_fmt_type = format_to_cv(VideoFormat::Format_YUV420P);
     }
     /* Setup the libavcodec hardware context */
     *pp_hw_ctx = &hw_ctx;

@@ -224,6 +224,20 @@ qreal AVPlayer::speed() const
     return d->speed;
 }
 
+void AVPlayer::setInterruptTimeout(qint64 ms)
+{
+    if (d->interrupt_timeout == ms)
+        return;
+    d->interrupt_timeout = ms;
+    emit interruptTimeoutChanged();
+    d->demuxer.setInterruptTimeout(ms);
+}
+
+qint64 AVPlayer::interruptTimeout() const
+{
+    return d->interrupt_timeout;
+}
+
 Statistics& AVPlayer::statistics()
 {
     return d->statistics;

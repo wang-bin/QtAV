@@ -454,6 +454,7 @@ bool AVDemuxer::seek(qint64 pos)
     }
     //bool seek_bytes = !!(format_context->iformat->flags & AVFMT_TS_DISCONT) && strcmp("ogg", format_context->iformat->name);
     int ret = av_seek_frame(format_context, -1, upos, seek_flag);
+    //int ret = avformat_seek_file(format_context, -1, INT64_MIN, upos, upos, seek_flag);
     //avformat_seek_file()
 #endif
     if (ret < 0) {
@@ -1147,10 +1148,19 @@ void AVDemuxer::setOptions(const QVariantHash &dict)
             QMapIterator<QString, QVariant> i(avformat_dict);
             while (i.hasNext()) {
                 i.next();
-                if (i.value().type() == QVariant::Map)
+                const QVariant::Type vt = i.value().type();
+                if (vt == QVariant::Map)
                     continue;
-                av_dict_set(&mpDict, i.key().toUtf8().constData(), i.value().toByteArray().constData(), 0);
+                const QByteArray key(i.key().toLower().toUtf8());
+                av_dict_set(&mpDict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
                 qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+                if (!format_context)
+                    continue;
+                if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
+                    av_opt_set_int(format_context, key.constData(), i.value().toInt(), 0);
+                } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
+                    av_opt_set_int(format_context, key.constData(), i.value().toLongLong(), 0);
+                }
             }
             return;
         }
@@ -1161,10 +1171,19 @@ void AVDemuxer::setOptions(const QVariantHash &dict)
     QHashIterator<QString, QVariant> i(avformat_dict);
     while (i.hasNext()) {
         i.next();
-        if (i.value().type() == QVariant::Hash)
+        const QVariant::Type vt = i.value().type();
+        if (vt == QVariant::Hash)
             continue;
-        av_dict_set(&mpDict, i.key().toUtf8().constData(), i.value().toByteArray().constData(), 0);
+        const QByteArray key(i.key().toLower().toUtf8());
+        av_dict_set(&mpDict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
         qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+        if (!format_context)
+            continue;
+        if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
+            av_opt_set_int(format_context, key.constData(), i.value().toInt(), 0);
+        } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
+            av_opt_set_int(format_context, key.constData(), i.value().toLongLong(), 0);
+        }
     }
 }
 
@@ -1195,9 +1214,8 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     bool interrupted = (averr == AVERROR_EXIT) || getInterruptStatus();
     QString err_msg(msg);
     if (interrupted) { // interrupted by callback, so can not determine whether the media is valid
-        // If already loaded and now is reading packets, leave the current status.
-        if (mediaStatus() == LoadingMedia)
-            setMediaStatus(UnknownMediaStatus);
+        // insufficient buffering or other interruptions
+        setMediaStatus(StalledMedia);
         if (getInterruptStatus())
             err_msg += " [" + tr("interrupted by user") + "]";
         else
