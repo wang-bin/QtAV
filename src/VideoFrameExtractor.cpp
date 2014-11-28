@@ -92,7 +92,7 @@ public:
         , decoder(0)
     {
         QVariantHash opt;
-        opt["skip_frame"] = 32; // 32 for "avcodec", "NoKey" for "FFmpeg". see AVDiscard
+        opt["skip_frame"] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
         dec_opt_framedrop["avcodec"] = opt;
         opt["skip_frame"] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
         dec_opt_normal["avcodec"] = opt; // avcodec need correct string or value in libavcodec
@@ -211,6 +211,10 @@ public:
                 return true;
             }
         }
+        static const int kNoFrameDrop = 0;
+        static const int kFrameDrop = 1;
+        int dec_opt_state = kNoFrameDrop; // 0: default, 1: framedrop
+
         // decode at the given position
         qreal t0 = qreal(value/1000LL);
         while (!demuxer.atEnd()) {
@@ -223,8 +227,9 @@ public:
                 continue;
             }
             const qreal t = demuxer.packet()->pts;
+            const qint64 diff = qint64(t*1000.0) - value;
             //qDebug("video packet: %f, delta=%lld", t, value - qint64(t*1000.0));
-            if (qint64(t*1000.0) - value > range) { // use last decoded frame
+            if (diff > (qint64)range) { // use last decoded frame
                 //qWarning("out of range");
                 return frame.isValid();
             }
@@ -233,10 +238,16 @@ public:
                 //qCritical("Internal error. Can not be a key frame!!!!");
                 //return false; //??
             }
-            if (seek_count == 0 || value < qint64(t*1000.0)) {
-                decoder->setOptions(dec_opt_normal);
+            if (seek_count == 0 || diff >= 0) {
+                if (dec_opt_state == kFrameDrop) {
+                    dec_opt_state = kNoFrameDrop;
+                    decoder->setOptions(dec_opt_normal);
+                }
             } else {
-                decoder->setOptions(dec_opt_framedrop);
+                if (dec_opt_state == kNoFrameDrop) {
+                    dec_opt_state = kFrameDrop;
+                    decoder->setOptions(dec_opt_framedrop);
+                }
             }
             // invalid packet?
             if (!decoder->decode(demuxer.packet()->data)) {
@@ -253,7 +264,7 @@ public:
             frame = f;
             frame.setTimestamp(t);
             // TODO: break if t is in (t0-range, t0+range)
-            if (qAbs(value - qint64(t*1000.0)) < range)
+            if (diff >= 0 || -diff < range)
                 break;
             if (t < t0)
                 continue;

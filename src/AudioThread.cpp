@@ -110,8 +110,8 @@ void AudioThread::run()
             //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", pkt.pts, d.render_pts0, d.clock->videoPts(), a_v*1000.0);
             if (a_v > 0)
                 msleep(qMin((ulong)20, ulong(a_v*1000.0)));
-            //else
-              //  msleep(1);
+            else
+                msleep(1);
             pkt = Packet(); //mark invalid to take next
             continue;
         }

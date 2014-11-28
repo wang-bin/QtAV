@@ -49,6 +49,12 @@ public:
     {
         conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
         conv->setOutFormat(VideoFormat::Format_RGB32); //vo->defaultFormat
+
+        QVariantHash opt;
+        opt["skip_frame"] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
+        dec_opt_framedrop["avcodec"] = opt;
+        opt["skip_frame"] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
+        dec_opt_normal["avcodec"] = opt; // avcodec need correct string or value in libavcodec
     }
     ~VideoThreadPrivate() {
         if (conv) {
@@ -64,7 +70,11 @@ public:
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
     VideoFilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
+    static QVariantHash dec_opt_framedrop, dec_opt_normal;
 };
+
+QVariantHash VideoThreadPrivate::dec_opt_framedrop;
+QVariantHash VideoThreadPrivate::dec_opt_normal;
 
 VideoThread::VideoThread(QObject *parent) :
     AVThread(*new VideoThreadPrivate(), parent)
@@ -154,12 +164,17 @@ void VideoThread::run()
     //used to initialize the decoder's frame size
     dec->resizeVideoFrame(0, 0);
     Packet pkt;
+    static const int kNoFrameDrop = 0;
+    static const int kFrameDrop = 1;
+    int dec_opt_state = kNoFrameDrop; // 0: default, 1: framedrop
+    // int dec_opt_framedrop_old; //TODO: restore old framedrop option after seek
     /*!
      * if we skip some frames(e.g. seek, drop frames to speed up), then then first frame to decode must
      * be a key frame for hardware decoding. otherwise may crash
      */
     bool wait_key_frame = false;
     int nb_dec_slow = 0;
+
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -219,6 +234,18 @@ void VideoThread::run()
             d.clock->updateVideoPts(pts); //here?
             //qDebug("skip video render at %f/%f", pkt.pts, d.render_pts0);
         }
+        if (qAbs(pts < d.render_pts0) < 1.0) { // not seeking
+            if (dec_opt_state == kFrameDrop) {
+                dec_opt_state = kNoFrameDrop;
+                dec->setOptions(d.dec_opt_normal);
+            }
+        } else { // seeking
+            if (dec_opt_state == kNoFrameDrop) {
+                dec_opt_state = kFrameDrop;
+                //dec_opt_old = dec->options();
+                dec->setOptions(d.dec_opt_framedrop);
+            }
+        }
         if (qAbs(d.delay) < 0.5) {
             if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
@@ -236,7 +263,7 @@ void VideoThread::run()
             }
         }
         //audio packet not cleaned up?
-        if (d.delay < 1.0 && qFuzzyIsNull(d.render_pts0)) {
+        if (d.delay < 2.0 && qFuzzyIsNull(d.render_pts0)) {
             while (d.delay > kSyncThreshold) { //Slow down
                 //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
                 //qDebug("~~~~~wating for %f msecs", d.delay*1000);
