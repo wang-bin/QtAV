@@ -51,6 +51,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(qint64 stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
     Q_PROPERTY(qint64 repeat READ repeat WRITE setRepeat NOTIFY repeatChanged)
     Q_PROPERTY(int currentRepeat READ currentRepeat NOTIFY currentRepeatChanged)
+    Q_PROPERTY(qint64 interruptTimeout READ interruptTimeout WRITE setInterruptTimeout NOTIFY interruptTimeoutChanged)
     Q_PROPERTY(int brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
@@ -202,6 +203,14 @@ public:
     void setSpeed(qreal speed);
     qreal speed() const;
 
+    /*!
+     * \brief setInterruptTimeout
+     * Abort current operation(open, read) if it spends too much time.
+     * \param value
+     */
+    void setInterruptTimeout(qint64 ms);
+    qint64 interruptTimeout() const;
+
     Statistics& statistics();
     const Statistics& statistics() const;
     /*
@@ -321,6 +330,7 @@ signals:
     void startPositionChanged(qint64 position);
     void stopPositionChanged(qint64 position);
     void positionChanged(qint64 position);
+    void interruptTimeoutChanged();
     void brightnessChanged(int val);
     void contrastChanged(int val);
     void hueChanged(int val);

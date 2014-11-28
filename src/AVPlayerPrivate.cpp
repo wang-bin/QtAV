@@ -75,8 +75,10 @@ AVPlayer::Private::Private()
     , saturation(0)
     , seeking(false)
     , seek_target(0)
+    , interrupt_timeout(30000)
     , mute(false)
 {
+    demuxer.setInterruptTimeout(interrupt_timeout);
     /*
      * reset_state = true;
      * must be the same value at the end of stop(), and must be different from value in

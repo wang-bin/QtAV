@@ -132,7 +132,7 @@ public:
 
     bool seeking;
     qint64 seek_target;
-
+    qint64 interrupt_timeout;
     bool mute;
 };
 
