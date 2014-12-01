@@ -272,7 +272,7 @@ void VideoThread::run()
                     d.delay = 0;
                 else
                     d.delay -= kSyncThreshold;
-                d.delay = qMax(0.0, qMin(d.delay, pts - d.clock->value()));
+                d.delay = qMax<qreal>(0.0, qMin(d.delay, qreal(pts - d.clock->value())));
                 processNextTask();
             }
             if (d.delay > 0)

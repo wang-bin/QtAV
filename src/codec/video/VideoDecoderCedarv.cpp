@@ -292,7 +292,8 @@ namespace QtAV {
 class VideoDecoderCedarvPrivate;
 class VideoDecoderCedarv : public VideoDecoder
 {
-	DPTR_DECLARE_PRIVATE(VideoDecoderCedarv)
+    Q_OBJECT
+    DPTR_DECLARE_PRIVATE(VideoDecoderCedarv)
 #ifndef NO_NEON_OPT //Don't HAVE_NEON
     Q_PROPERTY(bool neon READ neon WRITE setNeon NOTIFY neonChanged)
 #endif
@@ -300,7 +301,7 @@ public:
 	VideoDecoderCedarv();
     virtual VideoDecoderId id() const;
     virtual QString description() const{
-        return "Allwinner CedarX video hardware acceleration";
+        return "Allwinner A10 CedarX video hardware acceleration";
     }
     bool prepare();
     bool decode(const QByteArray &encoded) Q_DECL_FINAL;
@@ -310,6 +311,8 @@ public:
     //properties
     void setNeon(bool value);
     bool neon() const;
+Q_SIGNALS:
+    void neonChanged();
 };
 
 extern VideoDecoderId VideoDecoderId_Cedarv;
@@ -357,20 +360,22 @@ void VideoDecoderCedarv::setNeon(bool value)
 {
     if (value == neon())
         return;
+    DPTR_D(VideoDecoderCedarv);
     if (value) {
 #ifndef NO_NEON_OPT //Don't HAVE_NEON
-        map_y = map32x32_to_yuv_Y_neon;
-        map_c = map32x32_to_yuv_C_neon;
+        d.map_y = map32x32_to_yuv_Y_neon;
+        d.map_c = map32x32_to_yuv_C_neon;
 #endif
     } else {
-        map_y = map32x32_to_yuv_Y;
-        map_c = map32x32_to_yuv_C;
+        d.map_y = map32x32_to_yuv_Y;
+        d.map_c = map32x32_to_yuv_C;
     }
+    emit neonChanged();
 }
 
 bool VideoDecoderCedarv::neon() const
 {
-    return map_y != map32x32_to_yuv_Y;
+    return d_func().map_y != map32x32_to_yuv_Y;
 }
 
 bool VideoDecoderCedarv::prepare()
@@ -517,8 +522,8 @@ VideoFrame VideoDecoderCedarv::frame()
 	int bitsPerLine_Y = d.cedarPicture.size_y / d.cedarPicture.height;
 	int bitsPerRow_Y = d.cedarPicture.size_y / bitsPerLine_Y;
 
-    map_y(d.cedarPicture.y, dst + offset_y, bitsPerLine_Y, bitsPerRow_Y);
-    map_c(d.cedarPicture.u, dst + offset_u, dst + offset_v, bitsPerLine_Y / 2, bitsPerRow_Y / 2);
+    d.map_y(d.cedarPicture.y, dst + offset_y, bitsPerLine_Y, bitsPerRow_Y);
+    d.map_c(d.cedarPicture.u, dst + offset_u, dst + offset_v, bitsPerLine_Y / 2, bitsPerRow_Y / 2);
 
 	uint8_t *pp_plane[3];
 	pp_plane[0] = dst + offset_y;
@@ -540,3 +545,5 @@ VideoFrame VideoDecoderCedarv::frame()
 
 
 } // namespace QtAV
+
+#include "VideoDecoderCedarv.moc"
