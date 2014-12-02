@@ -416,7 +416,7 @@ bool VideoDecoderCedarv::prepare()
 		default:
 			return false;
 	}
-	cedarStreamInfo.video_width = d.codec_ctx->width;
+    cedarStreamInfo.video_width = d.codec_ctx->width; //coded_width?
 	cedarStreamInfo.video_height = d.codec_ctx->height;
 	if (d.codec_ctx->extradata_size) {
 		cedarStreamInfo.init_data = d.codec_ctx->extradata;
@@ -431,7 +431,8 @@ bool VideoDecoderCedarv::prepare()
 	if (cedarvRet < 0)
 		return false;
 
-	d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_PLAY, 0);
+    d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_RESET, 0);
+    d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_PLAY, 0);
 
 	return true;
 }
@@ -509,21 +510,22 @@ VideoFrame VideoDecoderCedarv::frame()
 	if (!d.cedarPicture.id) {
 		return VideoFrame();
 	}
-	unsigned int size_y = d.cedarPicture.size_y;
-	unsigned int size_u = d.cedarPicture.size_u / 2;
-	unsigned int size_v = d.cedarPicture.size_u / 2;
-	unsigned int offset_y = 0;
-	unsigned int offset_u = offset_y + size_y;
-	unsigned int offset_v = offset_u + size_u;
-	QByteArray buf(size_y + size_u + size_v, '\0');
-	buf.resize(size_y + size_u + size_v);
-	unsigned char *dst = reinterpret_cast<unsigned char *>(buf.data());
-
-	int bitsPerLine_Y = d.cedarPicture.size_y / d.cedarPicture.height;
-	int bitsPerRow_Y = d.cedarPicture.size_y / bitsPerLine_Y;
-
-    d.map_y(d.cedarPicture.y, dst + offset_y, bitsPerLine_Y, bitsPerRow_Y);
-    d.map_c(d.cedarPicture.u, dst + offset_u, dst + offset_v, bitsPerLine_Y / 2, bitsPerRow_Y / 2);
+    d.cedarPicture.display_height = FFALIGN(d.cedarPicture.display_height, 8);
+    const int display_height_align = FFALIGN(d.cedarPicture.display_height, 2); // already aligned to 8!
+    const int display_width_align = FFALIGN(d.cedarPicture.display_width, 16);
+    const int dst_y_stride = display_width_align;
+    const int dst_y_size = dst_y_stride * display_height_align;
+    const int dst_c_stride = FFALIGN(d.cedarPicture.display_width/2, 16);
+    const int dst_c_size = dst_c_stride * (display_height_align/2);
+    const int alloc_size = dst_y_size + dst_c_size * 2;
+    const unsigned int offset_y = 0;
+    const unsigned int offset_u = offset_y + dst_y_size;
+    const unsigned int offset_v = offset_u + dst_c_size;
+    QByteArray buf(alloc_size, 0);
+    buf.reserve(alloc_size);
+    unsigned char *dst = reinterpret_cast<unsigned char *>(buf.data());
+    d.map_y(d.cedarPicture.y, dst + offset_y, display_width_align, display_height_align);
+    d.map_c(d.cedarPicture.u, dst + offset_u, dst + offset_v, display_width_align/2, display_height_align/2);
 
 	uint8_t *pp_plane[3];
 	pp_plane[0] = dst + offset_y;
@@ -531,10 +533,10 @@ VideoFrame VideoDecoderCedarv::frame()
 	pp_plane[2] = dst + offset_v;
 
 	int pi_pitch[3];
-	pi_pitch[0] = d.cedarPicture.size_y / d.cedarPicture.height;
-	pi_pitch[1] = bitsPerLine_Y / 2;
-	pi_pitch[2] = bitsPerLine_Y / 2;
-	VideoFrame frame = VideoFrame(buf, d.cedarPicture.width, d.cedarPicture.height, VideoFormat(VideoFormat::Format_YUV420P));
+    pi_pitch[0] = dst_y_stride;
+    pi_pitch[1] = dst_c_stride;
+    pi_pitch[2] = dst_c_stride;
+    VideoFrame frame = VideoFrame(buf, display_width_align, display_height_align, VideoFormat(VideoFormat::Format_YUV420P));
 	frame.setBits(pp_plane);
 	frame.setBytesPerLine(pi_pitch);
     // TODO: timestamp
