@@ -1,6 +1,7 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Miroslav Bendik <miroslav.bendik@gmail.com>
 
 *   This file is part of QtAV
 
@@ -30,7 +31,7 @@ extern "C" {
 }
 #include "utils/Logger.h"
 
-// TODO: neon+nv12+opengl crash. tiled_deinterleave_to_planar only copys half-left of image
+// TODO: neon+nv12+opengl crash
 
 #ifndef NO_NEON_OPT //Don't HAVE_NEON
 extern "C" {
@@ -122,6 +123,7 @@ static void map32x32_to_yuv_Y(void* srcY, void* tarY, unsigned int dst_pitch, un
 
 static void map32x32_to_yuv_C(void* srcC, void* tarCb, void* tarCr, unsigned int dst_pitch, unsigned int coded_width, unsigned int coded_height)
 {
+    coded_width /= 2; // libvdpau-sunxi compatible
     unsigned char line[32];
     unsigned long offset;
     unsigned char *ptr = (unsigned char *)srcC;
@@ -165,6 +167,7 @@ static void map32x32_to_yuv_C(void* srcC, void* tarCb, void* tarCr, unsigned int
 #if 0
 static void map32x32_to_nv12_UV(void* srcC, void* tarUV, unsigned int dst_pitch, unsigned int coded_width, unsigned int coded_height)
 {
+    coded_width /= 2; // libvdpau-sunxi compatible
     unsigned long offset;
     unsigned char *ptr = (unsigned char *)srcC;
     const unsigned int mb_width = (coded_width+7) >> 3;
@@ -253,6 +256,7 @@ static void map32x32_to_yuv_Y_neon(void* srcY, void* tarY, unsigned int dst_pitc
 // use tiled_deinterleave_to_planar instead
 static void map32x32_to_yuv_C_neon(void* srcC, void* tarCb, void* tarCr, unsigned int dst_pitch, unsigned int coded_width, unsigned int coded_height)
 {
+    coded_width /= 2; // libvdpau-sunxi compatible
     unsigned int j,l,k;
     unsigned long offset;
     unsigned char *dst0_asm,*dst1_asm,*src_asm;
@@ -440,8 +444,7 @@ void VideoDecoderCedarv::setNeon(bool value)
     if (value) {
 #ifndef NO_NEON_OPT //Don't HAVE_NEON
         d.map_y = tiled_to_planar;// map32x32_to_yuv_Y_neon;
-        // tiled_deinterleave_to_planar now only copys half left of picture
-        d.map_c = map32x32_to_yuv_C_neon; //tiled_deinterleave_to_planar;// map32x32_to_yuv_C_neon;
+        d.map_c = tiled_deinterleave_to_planar;// map32x32_to_yuv_C_neon;
 #endif
     } else {
         d.map_y = map32x32_to_yuv_Y;
@@ -637,7 +640,7 @@ VideoFrame VideoDecoderCedarv::frame()
     if (nv12)
         d.map_y(d.cedarPicture.u, plane[1], pitch[1], display_w_align, display_h_align/2);
     else
-        d.map_c(d.cedarPicture.u, plane[1], plane[2], pitch[1], display_w_align/2, display_h_align/2);
+        d.map_c(d.cedarPicture.u, plane[1], plane[2], pitch[1], display_w_align, display_h_align/2); //vdpau use w, h/2
 
     const VideoFormat fmt(nv12 ? VideoFormat::Format_NV12 : VideoFormat::Format_YUV420P);
     VideoFrame frame(buf, display_w_align, display_h_align, fmt);
