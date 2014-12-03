@@ -166,7 +166,8 @@ defineTest(empty_file) {
 
 ##TODO: add defineReplace(getValue): parameter is varname
 lessThan(QT_MAJOR_VERSION, 5): {
-
+#TODO: QMAKE_CFLAGS_XXX, QT_CPU_FEATURES
+*g++*|*qcc*: QMAKE_CFLAGS_NEON = -mfpu=neon
 win32-icc {
   QMAKE_CFLAGS_SSE2 = -arch:SSE2
   QMAKE_CFLAGS_SSE4_1 = -arch:SSE4.1
@@ -183,20 +184,87 @@ win32-icc {
   QMAKE_CFLAGS_SSE2 = -msse2
   QMAKE_CFLAGS_SSE4_1 = -msse4.1
 }
-sse4_1|config_sse4_1 {
-  HEADERS += $$SSE4_1_HEADERS
 
-  sse4_1_compiler.commands = $$QMAKE_CXX -c $(CXXFLAGS)
-  !contains(QT_CPU_FEATURES, sse4_1):sse4_1_compiler.commands += $$QMAKE_CFLAGS_SSE4_1
-  sse4_1_compiler.commands += $(INCPATH) ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
-  sse4_1_compiler.dependency_type = TYPE_C
-  sse4_1_compiler.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_BASE}$${first(QMAKE_EXT_OBJ)}
-  sse4_1_compiler.input = SSE4_1_SOURCES
-  sse4_1_compiler.variable_out = OBJECTS
-  sse4_1_compiler.name = compiling[sse4_1] ${QMAKE_FILE_IN}
-  silent:sse4_1_compiler.commands = @echo compiling[sse4_1] ${QMAKE_FILE_IN} && $$sse4_1_compiler.commands
-  QMAKE_EXTRA_COMPILERS += sse4_1_compiler
+defineTest(addSimdCompiler) { #from qt5 simd.prf
+    name = $$1
+    upname = $$upper($$name)
+    headers_var = $${upname}_HEADERS
+    sources_var = $${upname}_SOURCES
+    asm_var = $${upname}_ASM
+
+    CONFIG($$1) { #TODO: tests/arch may not detect some features
+        cflags = $$eval(QMAKE_CFLAGS_$${upname})
+        contains(QT_CPU_FEATURES, $$name) {
+            # Default compiler settings include this feature, so just add to SOURCES
+            SOURCES += $$eval($$sources_var)
+            export(SOURCES)
+        } else {
+#qt4 always need eval() if var is not const
+            # We need special compiler flags
+            eval($${name}_compiler.commands = $$QMAKE_CXX -c $(CXXFLAGS) $$cflags $(INCPATH) ${QMAKE_FILE_IN})
+            msvc: eval($${name}_compiler.commands += -Fo${QMAKE_FILE_OUT})
+            else: eval($${name}_compiler.commands += -o ${QMAKE_FILE_OUT})
+
+            eval($${name}_compiler.dependency_type = TYPE_C)
+            eval($${name}_compiler.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_BASE}$${first(QMAKE_EXT_OBJ)})
+            eval($${name}_compiler.input = $$sources_var)
+            eval($${name}_compiler.variable_out = OBJECTS)
+            eval($${name}_compiler.name = compiling[$${name}] ${QMAKE_FILE_IN})
+            silent: eval($${name}_compiler.commands = @echo compiling[$${name}] ${QMAKE_FILE_IN} && $$eval($${name}_compiler.commands))
+            QMAKE_EXTRA_COMPILERS += $${name}_compiler
+
+            export($${name}_compiler.commands)
+            export($${name}_compiler.dependency_type)
+            export($${name}_compiler.output)
+            export($${name}_compiler.input)
+            export($${name}_compiler.variable_out)
+            export($${name}_compiler.name)
+        }
+
+        # We always need an assembler (need to run the C compiler and without precompiled headers)
+        msvc {
+            # Don't know how to run MSVC's assembler...
+            !isEmpty($$asm_var): error("Sorry, not implemented: assembling $$upname for MSVC.")
+        } else: false {
+            # This is just for the IDE
+            SOURCES += $$eval($$asm_var)
+            export(SOURCES)
+        } else {
+            eval($${name}_assembler.commands = $$QMAKE_CC -c $(CFLAGS))
+            !contains(QT_CPU_FEATURES, $${name}): eval($${name}_assembler.commands += $$cflags)
+            clang:no_clang_integrated_as: eval($${name}_assembler.commands += -fno-integrated-as)
+            eval($${name}_assembler.commands += $(INCPATH) ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT})
+            eval($${name}_assembler.dependency_type = TYPE_C)
+            eval($${name}_assembler.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_BASE}$${first(QMAKE_EXT_OBJ)})
+            eval($${name}_assembler.input = $$asm_var)
+            eval($${name}_assembler.variable_out = OBJECTS)
+            eval($${name}_assembler.name = assembling[$${name}] ${QMAKE_FILE_IN})
+            silent: eval($${name}_assembler.commands = @echo assembling[$${name}] ${QMAKE_FILE_IN} && $$eval($${name}_assembler.commands))
+            QMAKE_EXTRA_COMPILERS += $${name}_assembler
+
+            export($${name}_assembler.commands)
+            export($${name}_assembler.dependency_type)
+            export($${name}_assembler.output)
+            export($${name}_assembler.input)
+            export($${name}_assembler.variable_out)
+            export($${name}_assembler.name)
+        }
+
+        HEADERS += $$eval($$headers_var)
+        export(HEADERS)
+        export(QMAKE_EXTRA_COMPILERS)
+    }
 }
+addSimdCompiler(sse2)
+addSimdCompiler(sse3)
+addSimdCompiler(ssse3)
+addSimdCompiler(sse4_1)
+addSimdCompiler(sse4_2)
+addSimdCompiler(avx)
+addSimdCompiler(avx2)
+addSimdCompiler(neon)
+addSimdCompiler(mips_dsp)
+addSimdCompiler(mips_dspr2)
 
 defineTest(log){
     system(echo $$system_quote($$1))
