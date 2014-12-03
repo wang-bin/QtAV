@@ -30,48 +30,79 @@ extern "C" {
 }
 #include "utils/Logger.h"
 
+// TODO: neon+nv12+opengl crash
 namespace QtAV {
+
+class VideoDecoderCedarvPrivate;
+class VideoDecoderCedarv : public VideoDecoder
+{
+    Q_OBJECT
+    DPTR_DECLARE_PRIVATE(VideoDecoderCedarv)
+#ifndef NO_NEON_OPT //Don't HAVE_NEON
+    Q_PROPERTY(bool neon READ neon WRITE setNeon NOTIFY neonChanged)
+#endif
+    Q_PROPERTY(PixFmt outputPixelFormat READ outputPixelFormat WRITE setOutputPixelFormat NOTIFY outputPixelFormatChanged)
+    Q_ENUMS(PixFmt)
+public:
+    enum PixFmt {
+        YUV420p,
+        NV12
+    };
+    VideoDecoderCedarv();
+    virtual VideoDecoderId id() const;
+    virtual QString description() const{
+        return "Allwinner A10 CedarX video hardware acceleration";
+    }
+    bool prepare();
+    bool decode(const QByteArray &encoded) Q_DECL_FINAL;
+    bool decode(const Packet& packet) Q_DECL_FINAL;
+    VideoFrame frame();
+
+    //properties
+    void setNeon(bool value);
+    bool neon() const;
+    void setOutputPixelFormat(PixFmt value);
+    PixFmt outputPixelFormat() const;
+Q_SIGNALS:
+    void neonChanged();
+    void outputPixelFormatChanged();
+};
+
+extern VideoDecoderId VideoDecoderId_Cedarv;
+FACTORY_REGISTER_ID_AUTO(VideoDecoder, Cedarv, "Cedarv")
+
+void RegisterVideoDecoderCedarv_Man()
+{
+    FACTORY_REGISTER_ID_MAN(VideoDecoder, Cedarv, "Cedarv")
+}
+
+// source data is colum major. every block is 32x32
 static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned int coded_width, unsigned int coded_height)
 {
-    unsigned int i,j,l,m,n;
-    unsigned int mb_width,mb_height,twomb_line,recon_width;
     unsigned long offset;
-    unsigned char *ptr;
+    unsigned char *ptr = srcY;
+    const unsigned int mb_width = (coded_width+15) >> 4;
+    const unsigned int mb_height = (coded_height+15) >> 4;
+    const unsigned int twomb_line = (mb_height+1) >> 1;
+    const unsigned int recon_width = (mb_width+1) & 0xfffffffe;
 
-    ptr = srcY;
-    mb_width = (coded_width+15)>>4;
-    mb_height = (coded_height+15)>>4;
-    twomb_line = (mb_height+1)>>1;
-    recon_width = (mb_width+1)&0xfffffffe;
-
-    for(i=0;i<twomb_line;i++)
-    {
-        for(j=0;j<recon_width;j+=2)
-        {
-            for(l=0;l<32;l++)
-            {
-                //first mb
-                m=i*32 + l;
-                n= j*16;
-                if(m<coded_height && n<coded_width)
-                {
-                    offset = m*coded_width + n;
-                    memcpy(tarY+offset,ptr,16);
-                    ptr += 16;
+    for (unsigned int i = 0; i < twomb_line; i++) {
+        const unsigned int M = 32*i;
+        for (unsigned int j = 0; j < recon_width; j+=2) {
+            const unsigned int n = j*16;
+            offset = M*coded_width + n;
+            for (unsigned int l = 0; l < 32; l++) {
+                if (M+l < coded_height) {
+                    if (n+16 < coded_width) {
+                        //1st & 2nd mb
+                        memcpy(tarY+offset, ptr, 32);
+                    } else if (n<coded_width) {
+                        // 1st mb
+                        memcpy(tarY+offset, ptr, 16);
+                    }
+                    offset += coded_width;
                 }
-                else
-                    ptr += 16;
-
-                //second mb
-                n= j*16+16;
-                if(m<coded_height && n<coded_width)
-                {
-                    offset = m*coded_width + n;
-                    memcpy(tarY+offset,ptr,16);
-                    ptr += 16;
-                }
-                else
-                    ptr += 16;
+                ptr += 32;
             }
         }
     }
@@ -79,87 +110,96 @@ static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned
 
 static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
 {
-    unsigned int i,j,l,m,n,k;
-    unsigned int mb_width,mb_height,fourmb_line,recon_width;
-    unsigned char line[16];
+    unsigned char line[32];
     unsigned long offset;
-    unsigned char *ptr;
+    unsigned char *ptr = srcC;
+    const unsigned int mb_width = (coded_width+7) >> 3;
+    const unsigned int mb_height = (coded_height+7) >> 3;
+    const unsigned int fourmb_line = (mb_height+3) >> 2;
+    const unsigned int recon_width = (mb_width+1) & 0xfffffffe;
 
-    ptr = srcC;
-    mb_width = (coded_width+7)>>3;
-    mb_height = (coded_height+7)>>3;
-    fourmb_line = (mb_height+3)>>2;
-    recon_width = (mb_width+1)&0xfffffffe;
-
-    for(i=0;i<fourmb_line;i++)
-    {
-        for(j=0;j<recon_width;j+=2)
-        {
-            for(l=0;l<32;l++)
-            {
-                //first mb
-                m=i*32 + l;
-                n= j*8;
-                if(m<coded_height && n<coded_width)
-                {
-                    offset = m*coded_width + n;
-                    memcpy(line,ptr,16);
-                    for(k=0;k<8;k++)
-                    {
-                        *(tarCb + offset + k) = line[2*k];
-                        *(tarCr + offset + k) = line[2*k+1];
+    for (unsigned int i = 0; i < fourmb_line; i++) {
+        const int M = i*32;
+        for (unsigned int j = 0; j < recon_width; j+=2) {
+            const unsigned int n = j*8;
+            offset = M*coded_width + n;
+            for (unsigned int l = 0; l < 32; l++) {
+                if (M+l < coded_height) {
+                    if (n+8 < coded_width) {
+                        // 1st & 2nd mb
+                        memcpy(line, ptr, 32);
+                        //unsigned char *line = ptr;
+                        for (int k = 0; k < 16; k++) {
+                            *(tarCb + offset + k) = line[2*k];
+                            *(tarCr + offset + k) = line[2*k+1];
+                        }
+                    } else if (n < coded_width) {
+                        // 1st mb
+                        memcpy(line, ptr, 16);
+                        //unsigned char *line = ptr;
+                        for (int k = 0; k < 8; k++) {
+                            *(tarCb + offset + k) = line[2*k];
+                            *(tarCr + offset + k) = line[2*k+1];
+                        }
                     }
-                    ptr += 16;
+                    offset += coded_width;
                 }
-                else
-                    ptr += 16;
-
-                //second mb
-                n= j*8+8;
-                if(m<coded_height && n<coded_width)
-                {
-                    offset = m*coded_width + n;
-                    memcpy(line,ptr,16);
-                    for(k=0;k<8;k++)
-                    {
-                        *(tarCb + offset + k) = line[2*k];
-                        *(tarCr + offset + k) = line[2*k+1];
-                    }
-                    ptr += 16;
-                }
-                else
-                    ptr += 16;
+                ptr += 32;
             }
         }
     }
 }
 
+#if 0
+static void map32x32_to_nv12_UV(unsigned char* srcC,unsigned char* tarUV,unsigned int coded_width,unsigned int coded_height)
+{
+    unsigned long offset;
+    unsigned char *ptr = srcC;
+    const unsigned int mb_width = (coded_width+7) >> 3;
+    const unsigned int mb_height = (coded_height+7) >> 3;
+    const unsigned int fourmb_line = (mb_height+3) >> 2;
+    const unsigned int recon_width = (mb_width+1) & 0xfffffffe;
+    const unsigned int uv_width = 2*coded_width;
+    for (unsigned int i = 0; i < fourmb_line; i++) {
+        const int M = i*32;
+        for (unsigned int j = 0; j < recon_width; j+=2) {
+            const unsigned int n = j*16; // 1 logical pixel 2 channel
+            offset = M*uv_width + n;
+            for (unsigned int l = 0; l < 32; l++) { // copy 16 logical pixels every time. 16/2*recon_width ~ coded_width
+                if (M+l < coded_height) {
+                    if (n+8 < coded_width) {
+                        // 1st & 2nd mb
+                        memcpy(tarUV + offset, ptr, 32);
+                    } else if (n < coded_width) {
+                        // 1st mb
+                        memcpy(tarUV + offset, ptr, 16);
+                    }
+                    offset += uv_width;
+                }
+                ptr += 32;
+            }
+        }
+    }
+}
+#endif
 #ifndef NO_NEON_OPT //Don't HAVE_NEON
-
 static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsigned int coded_width,unsigned int coded_height)
 {
-    unsigned int i,j,l,m,n;
-    unsigned int mb_width,mb_height,twomb_line;
     unsigned long offset;
-    unsigned char *ptr;
     unsigned char *dst_asm,*src_asm;
 
-    ptr = srcY;
-    mb_width = (coded_width+15)>>4;
-    mb_height = (coded_height+15)>>4;
-    twomb_line = (mb_height+1)>>1;
-
-    for(i=0;i<twomb_line;i++)
-    {
-        for(j=0;j<mb_width/2;j++)
-        {
-            for(l=0;l<32;l++)
-            {
+    unsigned char *ptr = srcY;
+    const unsigned int mb_width = (coded_width+15) >> 4;
+    const unsigned int mb_height = (coded_height+15) >> 4;
+    const unsigned int twomb_line = (mb_height+1) >> 1;
+    const unsigned int twomb_width = mb_width/2;
+    for (unsigned int i = 0; i < twomb_line; i++) {
+        const int M = i*32;
+        for (unsigned int j = 0; j < twomb_width; j++) {
+            const unsigned int n= j*32;
+            offset = M*coded_width + n;
+            for (unsigned int l=0;l<32;l++) {
                 //first mb
-                m=i*32 + l;
-                n= j*32;
-                offset = m*coded_width + n;
-                //memcpy(tarY+offset,ptr,32);
                 dst_asm = tarY+offset;
                 src_asm = ptr;
                 asm volatile (
@@ -169,25 +209,20 @@ static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsig
                         :  //[srcY] "r" (srcY)
                         : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
                         );
-
+                offset += coded_width;
                 ptr += 32;
             }
         }
 
         //LOGV("mb_width:%d",mb_width);
-        if(mb_width & 1)
-        {
-            j = mb_width-1;
-            for(l=0;l<32;l++)
-            {
+        if(mb_width & 1) {
+            unsigned int j = mb_width-1;
+            const unsigned int n = j*16;
+            offset = M*coded_width + n;
+            for (unsigned int l = 0; l < 32; l++) {
                 //first mb
-                m=i*32 + l;
-                n= j*16;
-                if(m<coded_height && n<coded_width)
-                {
-                    offset = m*coded_width + n;
-                    //memcpy(tarY+offset,ptr,16);
-                    dst_asm = tarY+offset;
+                if (M+l<coded_height && n<coded_width) {
+                    dst_asm = tarY + offset;
                     src_asm = ptr;
                     asm volatile (
                             "vld1.8         {d0 - d1}, [%[src_asm]]              \n\t"
@@ -197,9 +232,8 @@ static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsig
                             : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
                             );
                 }
-
-                ptr += 16;
-                ptr += 16;
+                offset += coded_width;
+                ptr += 32;
             }
         }
     }
@@ -207,34 +241,28 @@ static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsig
 
 static void map32x32_to_yuv_C_neon(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
 {
-    unsigned int i,j,l,m,n,k;
-    unsigned int mb_width,mb_height,fourmb_line;
+    unsigned int j,l,k;
     unsigned long offset;
-    unsigned char *ptr;
     unsigned char *dst0_asm,*dst1_asm,*src_asm;
     unsigned char line[16];
-    int dst_stride = (coded_width + 15) & (~15);
+    int dst_stride = FFALIGN(coded_width, 16);
 
-    ptr = srcC;
-    mb_width = (coded_width+7)>>3;
-    mb_height = (coded_height+7)>>3;
-    fourmb_line = (mb_height+3)>>2;
+    unsigned char *ptr = srcC;
+    const unsigned int mb_width = (coded_width+7)>>3;
+    const unsigned int mb_height = (coded_height+7)>>3;
+    const unsigned int fourmb_line = (mb_height+3)>>2;
+    const unsigned int twomb_width = mb_width/2;
 
-    for(i=0;i<fourmb_line;i++)
-    {
-        for(j=0;j<mb_width/2;j++)
-        {
-            for(l=0;l<32;l++)
-            {
+    for (unsigned int i = 0; i < fourmb_line; i++) {
+        const int M = i*32;
+        for (j = 0; j < twomb_width; j++) {
+            const unsigned int n = j*16;
+            offset = M*dst_stride + n;
+            for (l = 0; l < 32; l++) {
                 //first mb
-                m=i*32 + l;
-                n= j*16;
-                if(m<coded_height && n<coded_width)
-                {
-                    offset = m*dst_stride + n;
-
+                if (M+l<coded_height && n<coded_width) {
                     dst0_asm = tarCb + offset;
-                    dst1_asm = tarCr+offset;
+                    dst1_asm = tarCr + offset;
                     src_asm = ptr;
 //                    for(k=0;k<16;k++)
 //                    {
@@ -254,79 +282,35 @@ static void map32x32_to_yuv_C_neon(unsigned char* srcC,unsigned char* tarCb,unsi
                              : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
                              );
                 }
-
+                offset += coded_width;
                 ptr += 32;
             }
         }
-
-        if(mb_width & 1)
-        {
-            j= mb_width-1;
-            for(l=0;l<32;l++)
-            {
-                m=i*32 + l;
-                n= j*8;
-
-                if(m<coded_height && n<coded_width)
-                {
-                    offset = m*dst_stride + n;
-                    memcpy(line,ptr,16);
-                    for(k=0;k<8;k++)
-                    {
+        if (mb_width & 1) {
+            j = mb_width-1;
+            for (l = 0; l < 32; l++) {
+                const unsigned int n = j*8;
+                offset = M*dst_stride + n;
+                if (M+l<coded_height && n<coded_width) {
+                    memcpy(line, ptr, 16);
+                    for(k = 0; k < 8; k++) {
                         *(tarCb + offset + k) = line[2*k];
                         *(tarCr + offset + k) = line[2*k+1];
                     }
                 }
-
-                ptr += 16;
-                ptr += 16;
+                offset += dst_stride;
+                ptr += 32;
             }
         }
     }
 }
 #endif
-
-class VideoDecoderCedarvPrivate;
-class VideoDecoderCedarv : public VideoDecoder
-{
-    Q_OBJECT
-    DPTR_DECLARE_PRIVATE(VideoDecoderCedarv)
-#ifndef NO_NEON_OPT //Don't HAVE_NEON
-    Q_PROPERTY(bool neon READ neon WRITE setNeon NOTIFY neonChanged)
-#endif
-public:
-    VideoDecoderCedarv();
-    virtual VideoDecoderId id() const;
-    virtual QString description() const{
-        return "Allwinner A10 CedarX video hardware acceleration";
-    }
-    bool prepare();
-    bool decode(const QByteArray &encoded) Q_DECL_FINAL;
-    bool decode(const Packet& packet) Q_DECL_FINAL;
-    VideoFrame frame();
-
-    //properties
-    void setNeon(bool value);
-    bool neon() const;
-Q_SIGNALS:
-    void neonChanged();
-};
-
-extern VideoDecoderId VideoDecoderId_Cedarv;
-FACTORY_REGISTER_ID_AUTO(VideoDecoder, Cedarv, "Cedarv")
-
-void RegisterVideoDecoderCedarv_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoDecoder, Cedarv, "Cedarv")
-}
-
 
 typedef struct {
     enum AVCodecID id;
     cedarv_stream_format_e format;
     cedarv_sub_format_e sub_format;
 } avcodec_cedarv;
-
 
 static const avcodec_cedarv avcodec_cedarv_map[] = {
     { QTAV_CODEC_ID(MPEG1VIDEO), CEDARV_STREAM_FORMAT_MPEG2, CEDARV_MPEG2_SUB_FORMAT_MPEG1 },
@@ -373,7 +357,7 @@ static const ff_cedarv_pixfmt pixel_format_map[] = {
 
 void format_from_avcodec(enum AVCodecID id, cedarv_stream_format_e* format, cedarv_sub_format_e *sub_format)
 {
-    int i = 0;
+    size_t i = 0;
     while (avcodec_cedarv_map[i].id != QTAV_CODEC_ID(NONE)) {
         if (avcodec_cedarv_map[i].id == id) {
             *format = avcodec_cedarv_map[i].format;
@@ -388,7 +372,7 @@ void format_from_avcodec(enum AVCodecID id, cedarv_stream_format_e* format, ceda
 
 enum AVPixelFormat pixel_format_from_cedarv(cedarv_pixel_format_e cpf)
 {
-    int i = 0;
+    size_t i = 0;
     while (i < sizeof(pixel_format_map)/sizeof(pixel_format_map[0])) {
         if (pixel_format_map[i].cpf == cpf)
             return pixel_format_map[i].fpf;
@@ -402,12 +386,11 @@ class VideoDecoderCedarvPrivate : public VideoDecoderPrivate
 public:
     VideoDecoderCedarvPrivate()
         : VideoDecoderPrivate()
+        , cedarv(0)
         , map_y(map32x32_to_yuv_Y)
         , map_c(map32x32_to_yuv_C)
-    {
-       cedarv = 0;
-    }
-
+        , pixfmt(VideoDecoderCedarv::NV12)
+    {}
     ~VideoDecoderCedarvPrivate() {
         if (!cedarv)
             return;
@@ -424,6 +407,7 @@ public:
     map_y_t map_y;
     typedef void (*map_c_t)(unsigned char*,unsigned char*, unsigned char*, unsigned int,unsigned int);
     map_c_t map_c;
+    VideoDecoderCedarv::PixFmt pixfmt;
 };
 
 VideoDecoderCedarv::VideoDecoderCedarv()
@@ -451,6 +435,19 @@ void VideoDecoderCedarv::setNeon(bool value)
         d.map_c = map32x32_to_yuv_C;
     }
     emit neonChanged();
+}
+
+void VideoDecoderCedarv::setOutputPixelFormat(PixFmt value)
+{
+    if (outputPixelFormat() == value)
+        return;
+    d_func().pixfmt = value;
+    emit outputPixelFormatChanged();
+}
+
+VideoDecoderCedarv::PixFmt VideoDecoderCedarv::outputPixelFormat() const
+{
+    return d_func().pixfmt;
 }
 
 bool VideoDecoderCedarv::neon() const
@@ -595,34 +592,44 @@ VideoFrame VideoDecoderCedarv::frame()
     if (!d.cedarPicture.id)
         return VideoFrame();
     d.cedarPicture.display_height = FFALIGN(d.cedarPicture.display_height, 8);
-    const int display_height_align = FFALIGN(d.cedarPicture.display_height, 2); // already aligned to 8!
-    const int display_width_align = FFALIGN(d.cedarPicture.display_width, 16);
-    const int dst_y_stride = display_width_align;
-    const int dst_y_size = dst_y_stride * display_height_align;
+    const int display_h_align = FFALIGN(d.cedarPicture.display_height, 2); // already aligned to 8!
+    const int display_w_align = FFALIGN(d.cedarPicture.display_width, 16);
+    const int dst_y_stride = display_w_align;
+    const int dst_y_size = dst_y_stride * display_h_align;
     const int dst_c_stride = FFALIGN(d.cedarPicture.display_width/2, 16);
-    const int dst_c_size = dst_c_stride * (display_height_align/2);
+    const int dst_c_size = dst_c_stride * (display_h_align/2);
     const int alloc_size = dst_y_size + dst_c_size * 2;
     const unsigned int offset_y = 0;
     const unsigned int offset_u = offset_y + dst_y_size;
     const unsigned int offset_v = offset_u + dst_c_size;
+
+    const bool nv12 = outputPixelFormat() == NV12;
     QByteArray buf(alloc_size, 0);
     buf.reserve(alloc_size);
-    unsigned char *dst = reinterpret_cast<unsigned char *>(buf.data());
-    d.map_y(d.cedarPicture.y, dst + offset_y, display_width_align, display_height_align);
-    d.map_c(d.cedarPicture.u, dst + offset_u, dst + offset_v, display_width_align/2, display_height_align/2);
+    quint8 *dst = reinterpret_cast<quint8*>(buf.data());
+    quint8 *plane[] = {
+        dst + offset_y,
+        dst + offset_u,
+        dst + offset_v
+    };
+    int pitch[] = {
+        dst_y_stride,
+        dst_c_stride,
+        dst_c_stride
+    };
+    if (nv12)
+        pitch[1] = dst_y_stride;
 
-    uint8_t *pp_plane[3];
-    pp_plane[0] = dst + offset_y;
-    pp_plane[1] = dst + offset_u;
-    pp_plane[2] = dst + offset_v;
+    d.map_y(d.cedarPicture.y, plane[0], display_w_align, display_h_align);
+    if (nv12)
+        d.map_y(d.cedarPicture.u, plane[1], display_w_align, display_h_align/2);
+    else
+        d.map_c(d.cedarPicture.u, plane[1], plane[2], display_w_align/2, display_h_align/2);
 
-    int pi_pitch[3];
-    pi_pitch[0] = dst_y_stride;
-    pi_pitch[1] = dst_c_stride;
-    pi_pitch[2] = dst_c_stride;
-    VideoFrame frame = VideoFrame(buf, display_width_align, display_height_align, VideoFormat(VideoFormat::Format_YUV420P));
-    frame.setBits(pp_plane);
-    frame.setBytesPerLine(pi_pitch);
+    const VideoFormat fmt(nv12 ? VideoFormat::Format_NV12 : VideoFormat::Format_YUV420P);
+    VideoFrame frame(buf, display_w_align, display_h_align, fmt);
+    frame.setBits(plane);
+    frame.setBytesPerLine(pitch);
     // TODO: timestamp
     d.cedarv->display_release(d.cedarv, d.cedarPicture.id);
     d.cedarPicture.id = 0;
