@@ -2,6 +2,8 @@ TEMPLATE = lib
 MODULE_INCNAME = QtAV # for mac framework. also used in install_sdk.pro
 TARGET = QtAV
 QT += core gui
+config_libcedarv: CONFIG += neon #need by qt4 addSimdCompiler()
+
 greaterThan(QT_MAJOR_VERSION, 4) {
   qtHaveModule(widgets):!no_widgets {
     QT += widgets
@@ -219,9 +221,14 @@ config_vaapi* {
 }
 config_libcedarv {
     DEFINES *= QTAV_HAVE_CEDARV=1
-    QMAKE_CXXFLAGS *= -march=armv7-a -mfpu=neon 
+    QMAKE_CXXFLAGS *= -march=armv7-a
+    neon: QMAKE_CXXFLAGS *= $$QMAKE_CFLAGS_NEON
     SOURCES += codec/video/VideoDecoderCedarv.cpp
+    CONFIG += simd #addSimdCompiler xxx_ASM
+    CONFIG += no_clang_integrated_as #see qtbase/src/gui/painting/painting.pri. add -fno-integrated-as from simd.prf
+    NEON_ASM += codec/video/tiled_yuv.S #from libvdpau-sunxi
     LIBS += -lvecore -lcedarv
+    OTHER_FILES += $$NEON_ASM
 }
 macx:!ios: CONFIG += config_vda
 config_vda {

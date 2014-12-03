@@ -30,7 +30,19 @@ extern "C" {
 }
 #include "utils/Logger.h"
 
-// TODO: neon+nv12+opengl crash
+// TODO: neon+nv12+opengl crash. tiled_deinterleave_to_planar only copys half-left of image
+
+#ifndef NO_NEON_OPT //Don't HAVE_NEON
+extern "C" {
+// from libvdpau-sunxi
+void tiled_to_planar(void *src, void *dst, unsigned int dst_pitch,
+                     unsigned int width, unsigned int height);
+
+void tiled_deinterleave_to_planar(void *src, void *dst1, void *dst2,
+                                  unsigned int dst_pitch,
+                                  unsigned int width, unsigned int height);
+}
+#endif //NO_NEON_OPT
 namespace QtAV {
 
 class VideoDecoderCedarvPrivate;
@@ -77,10 +89,10 @@ void RegisterVideoDecoderCedarv_Man()
 }
 
 // source data is colum major. every block is 32x32
-static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned int coded_width, unsigned int coded_height)
+static void map32x32_to_yuv_Y(void* srcY, void* tarY, unsigned int dst_pitch, unsigned int coded_width, unsigned int coded_height)
 {
     unsigned long offset;
-    unsigned char *ptr = srcY;
+    unsigned char *ptr = (unsigned char *)srcY;
     const unsigned int mb_width = (coded_width+15) >> 4;
     const unsigned int mb_height = (coded_height+15) >> 4;
     const unsigned int twomb_line = (mb_height+1) >> 1;
@@ -90,17 +102,17 @@ static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned
         const unsigned int M = 32*i;
         for (unsigned int j = 0; j < recon_width; j+=2) {
             const unsigned int n = j*16;
-            offset = M*coded_width + n;
+            offset = M*dst_pitch + n;
             for (unsigned int l = 0; l < 32; l++) {
                 if (M+l < coded_height) {
                     if (n+16 < coded_width) {
                         //1st & 2nd mb
-                        memcpy(tarY+offset, ptr, 32);
+                        memcpy((unsigned char *)tarY+offset, ptr, 32);
                     } else if (n<coded_width) {
                         // 1st mb
-                        memcpy(tarY+offset, ptr, 16);
+                        memcpy((unsigned char *)tarY+offset, ptr, 16);
                     }
-                    offset += coded_width;
+                    offset += dst_pitch;
                 }
                 ptr += 32;
             }
@@ -108,11 +120,11 @@ static void map32x32_to_yuv_Y(unsigned char* srcY, unsigned char* tarY, unsigned
     }
 }
 
-static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
+static void map32x32_to_yuv_C(void* srcC, void* tarCb, void* tarCr, unsigned int dst_pitch, unsigned int coded_width, unsigned int coded_height)
 {
     unsigned char line[32];
     unsigned long offset;
-    unsigned char *ptr = srcC;
+    unsigned char *ptr = (unsigned char *)srcC;
     const unsigned int mb_width = (coded_width+7) >> 3;
     const unsigned int mb_height = (coded_height+7) >> 3;
     const unsigned int fourmb_line = (mb_height+3) >> 2;
@@ -122,7 +134,7 @@ static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned 
         const int M = i*32;
         for (unsigned int j = 0; j < recon_width; j+=2) {
             const unsigned int n = j*8;
-            offset = M*coded_width + n;
+            offset = M*dst_pitch + n;
             for (unsigned int l = 0; l < 32; l++) {
                 if (M+l < coded_height) {
                     if (n+8 < coded_width) {
@@ -130,19 +142,19 @@ static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned 
                         memcpy(line, ptr, 32);
                         //unsigned char *line = ptr;
                         for (int k = 0; k < 16; k++) {
-                            *(tarCb + offset + k) = line[2*k];
-                            *(tarCr + offset + k) = line[2*k+1];
+                            *((unsigned char *)tarCb + offset + k) = line[2*k];
+                            *((unsigned char *)tarCr + offset + k) = line[2*k+1];
                         }
                     } else if (n < coded_width) {
                         // 1st mb
                         memcpy(line, ptr, 16);
                         //unsigned char *line = ptr;
                         for (int k = 0; k < 8; k++) {
-                            *(tarCb + offset + k) = line[2*k];
-                            *(tarCr + offset + k) = line[2*k+1];
+                            *((unsigned char *)tarCb + offset + k) = line[2*k];
+                            *((unsigned char *)tarCr + offset + k) = line[2*k+1];
                         }
                     }
-                    offset += coded_width;
+                    offset += dst_pitch;
                 }
                 ptr += 32;
             }
@@ -151,30 +163,29 @@ static void map32x32_to_yuv_C(unsigned char* srcC,unsigned char* tarCb,unsigned 
 }
 
 #if 0
-static void map32x32_to_nv12_UV(unsigned char* srcC,unsigned char* tarUV,unsigned int coded_width,unsigned int coded_height)
+static void map32x32_to_nv12_UV(void* srcC, void* tarUV, unsigned int dst_pitch, unsigned int coded_width, unsigned int coded_height)
 {
     unsigned long offset;
-    unsigned char *ptr = srcC;
+    unsigned char *ptr = (unsigned char *)srcC;
     const unsigned int mb_width = (coded_width+7) >> 3;
     const unsigned int mb_height = (coded_height+7) >> 3;
     const unsigned int fourmb_line = (mb_height+3) >> 2;
     const unsigned int recon_width = (mb_width+1) & 0xfffffffe;
-    const unsigned int uv_width = 2*coded_width;
     for (unsigned int i = 0; i < fourmb_line; i++) {
         const int M = i*32;
         for (unsigned int j = 0; j < recon_width; j+=2) {
             const unsigned int n = j*16; // 1 logical pixel 2 channel
-            offset = M*uv_width + n;
+            offset = M*dst_pitch + n;
             for (unsigned int l = 0; l < 32; l++) { // copy 16 logical pixels every time. 16/2*recon_width ~ coded_width
                 if (M+l < coded_height) {
                     if (n+8 < coded_width) {
                         // 1st & 2nd mb
-                        memcpy(tarUV + offset, ptr, 32);
+                        memcpy((unsigned char *)tarUV + offset, ptr, 32);
                     } else if (n < coded_width) {
                         // 1st mb
-                        memcpy(tarUV + offset, ptr, 16);
+                        memcpy((unsigned char *)tarUV + offset, ptr, 16);
                     }
-                    offset += uv_width;
+                    offset += dst_pitch;
                 }
                 ptr += 32;
             }
@@ -183,12 +194,13 @@ static void map32x32_to_nv12_UV(unsigned char* srcC,unsigned char* tarUV,unsigne
 }
 #endif
 #ifndef NO_NEON_OPT //Don't HAVE_NEON
-static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsigned int coded_width,unsigned int coded_height)
+// use tiled_to_planar instead
+static void map32x32_to_yuv_Y_neon(void* srcY, void* tarY, unsigned int dst_pitch, unsigned int coded_width,unsigned int coded_height)
 {
     unsigned long offset;
     unsigned char *dst_asm,*src_asm;
 
-    unsigned char *ptr = srcY;
+    unsigned char *ptr = (unsigned char *)srcY;
     const unsigned int mb_width = (coded_width+15) >> 4;
     const unsigned int mb_height = (coded_height+15) >> 4;
     const unsigned int twomb_line = (mb_height+1) >> 1;
@@ -197,10 +209,10 @@ static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsig
         const int M = i*32;
         for (unsigned int j = 0; j < twomb_width; j++) {
             const unsigned int n= j*32;
-            offset = M*coded_width + n;
+            offset = M*dst_pitch + n;
             for (unsigned int l=0;l<32;l++) {
                 //first mb
-                dst_asm = tarY+offset;
+                dst_asm = (unsigned char *)tarY + offset;
                 src_asm = ptr;
                 asm volatile (
                         "vld1.8         {d0 - d3}, [%[src_asm]]              \n\t"
@@ -209,7 +221,7 @@ static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsig
                         :  //[srcY] "r" (srcY)
                         : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
                         );
-                offset += coded_width;
+                offset += dst_pitch;
                 ptr += 32;
             }
         }
@@ -218,11 +230,11 @@ static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsig
         if(mb_width & 1) {
             unsigned int j = mb_width-1;
             const unsigned int n = j*16;
-            offset = M*coded_width + n;
+            offset = M*dst_pitch + n;
             for (unsigned int l = 0; l < 32; l++) {
                 //first mb
                 if (M+l<coded_height && n<coded_width) {
-                    dst_asm = tarY + offset;
+                    dst_asm = (unsigned char *)tarY + offset;
                     src_asm = ptr;
                     asm volatile (
                             "vld1.8         {d0 - d1}, [%[src_asm]]              \n\t"
@@ -232,14 +244,14 @@ static void map32x32_to_yuv_Y_neon(unsigned char* srcY,unsigned char* tarY,unsig
                             : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
                             );
                 }
-                offset += coded_width;
+                offset += dst_pitch;
                 ptr += 32;
             }
         }
     }
 }
-
-static void map32x32_to_yuv_C_neon(unsigned char* srcC,unsigned char* tarCb,unsigned char* tarCr,unsigned int coded_width,unsigned int coded_height)
+// use tiled_deinterleave_to_planar instead
+static void map32x32_to_yuv_C_neon(void* srcC, void* tarCb, void* tarCr, unsigned int dst_pitch, unsigned int coded_width, unsigned int coded_height)
 {
     unsigned int j,l,k;
     unsigned long offset;
@@ -247,7 +259,7 @@ static void map32x32_to_yuv_C_neon(unsigned char* srcC,unsigned char* tarCb,unsi
     unsigned char line[16];
     int dst_stride = FFALIGN(coded_width, 16);
 
-    unsigned char *ptr = srcC;
+    unsigned char *ptr = (unsigned char *)srcC;
     const unsigned int mb_width = (coded_width+7)>>3;
     const unsigned int mb_height = (coded_height+7)>>3;
     const unsigned int fourmb_line = (mb_height+3)>>2;
@@ -261,8 +273,8 @@ static void map32x32_to_yuv_C_neon(unsigned char* srcC,unsigned char* tarCb,unsi
             for (l = 0; l < 32; l++) {
                 //first mb
                 if (M+l<coded_height && n<coded_width) {
-                    dst0_asm = tarCb + offset;
-                    dst1_asm = tarCr + offset;
+                    dst0_asm = (unsigned char *)tarCb + offset;
+                    dst1_asm = (unsigned char *)tarCr + offset;
                     src_asm = ptr;
 //                    for(k=0;k<16;k++)
 //                    {
@@ -282,7 +294,7 @@ static void map32x32_to_yuv_C_neon(unsigned char* srcC,unsigned char* tarCb,unsi
                              : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d28", "d29", "d30", "d31"
                              );
                 }
-                offset += coded_width;
+                offset += dst_pitch;
                 ptr += 32;
             }
         }
@@ -294,8 +306,8 @@ static void map32x32_to_yuv_C_neon(unsigned char* srcC,unsigned char* tarCb,unsi
                 if (M+l<coded_height && n<coded_width) {
                     memcpy(line, ptr, 16);
                     for(k = 0; k < 8; k++) {
-                        *(tarCb + offset + k) = line[2*k];
-                        *(tarCr + offset + k) = line[2*k+1];
+                        *((unsigned char *)tarCb + offset + k) = line[2*k];
+                        *((unsigned char *)tarCr + offset + k) = line[2*k+1];
                     }
                 }
                 offset += dst_stride;
@@ -403,9 +415,9 @@ public:
 
     CEDARV_DECODER *cedarv;
     cedarv_picture_t cedarPicture;
-    typedef void (*map_y_t)(unsigned char*, unsigned char*, unsigned int, unsigned int);
+    typedef void (*map_y_t)(void* src, void* dst, unsigned int dst_pitch, unsigned int w, unsigned int h);
     map_y_t map_y;
-    typedef void (*map_c_t)(unsigned char*,unsigned char*, unsigned char*, unsigned int,unsigned int);
+    typedef void (*map_c_t)(void* src, void* dst1, void* dst2, unsigned int dst_pitch, unsigned int w, unsigned int h);
     map_c_t map_c;
     VideoDecoderCedarv::PixFmt pixfmt;
 };
@@ -427,8 +439,9 @@ void VideoDecoderCedarv::setNeon(bool value)
     DPTR_D(VideoDecoderCedarv);
     if (value) {
 #ifndef NO_NEON_OPT //Don't HAVE_NEON
-        d.map_y = map32x32_to_yuv_Y_neon;
-        d.map_c = map32x32_to_yuv_C_neon;
+        d.map_y = tiled_to_planar;// map32x32_to_yuv_Y_neon;
+        // tiled_deinterleave_to_planar now only copys half left of picture
+        d.map_c = map32x32_to_yuv_C_neon; //tiled_deinterleave_to_planar;// map32x32_to_yuv_C_neon;
 #endif
     } else {
         d.map_y = map32x32_to_yuv_Y;
@@ -620,11 +633,11 @@ VideoFrame VideoDecoderCedarv::frame()
     if (nv12)
         pitch[1] = dst_y_stride;
 
-    d.map_y(d.cedarPicture.y, plane[0], display_w_align, display_h_align);
+    d.map_y(d.cedarPicture.y, plane[0], display_w_align, pitch[0], display_h_align);
     if (nv12)
-        d.map_y(d.cedarPicture.u, plane[1], display_w_align, display_h_align/2);
+        d.map_y(d.cedarPicture.u, plane[1], pitch[1], display_w_align, display_h_align/2);
     else
-        d.map_c(d.cedarPicture.u, plane[1], plane[2], display_w_align/2, display_h_align/2);
+        d.map_c(d.cedarPicture.u, plane[1], plane[2], pitch[1], display_w_align/2, display_h_align/2);
 
     const VideoFormat fmt(nv12 ? VideoFormat::Format_NV12 : VideoFormat::Format_YUV420P);
     VideoFrame frame(buf, display_w_align, display_h_align, fmt);
