@@ -21,13 +21,7 @@
 
 #include <stdarg.h>
 #include <string>
-#ifdef CAPI_LINK_ASS
-extern "C" {
-#include <ass/ass.h>
-}
-#else
 #include "ass_api.h"
-#endif
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/private/prepost.h"
 #include "QtAV/Packet.h"

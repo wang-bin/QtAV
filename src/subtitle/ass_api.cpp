@@ -22,16 +22,20 @@
 #define DEBUG_LOAD
 
 #include "ass_api.h"
+#ifndef CAPI_LINK_ASS
 #include "capi.h"
+#endif //CAPI_LINK_ASS
 
 namespace ass {
+#ifdef CAPI_LINK_ASS
+class api_dll {public: bool isLoaded() const {return true;}};
+#else
 static const char* names[] = {
     "ass",
     NULL
 };
-
 #define CAPI_ASS_VERSION
-#ifdef CAPI_ASS_VERSION
+# ifdef CAPI_ASS_VERSION
 static const int versions[] = {
     capi::NoVersion,
     5,
@@ -39,10 +43,9 @@ static const int versions[] = {
     capi::EndVersion
 };
 CAPI_BEGIN_DLL_VER(names, versions)
-#else
+# else
 CAPI_BEGIN_DLL(names)
-#endif
-#ifndef CAPI_LINK_ASS
+# endif //CAPI_ASS_VERSION
 // CAPI_DEFINE_RESOLVER(argc, return_type, name, argv_no_name)
 // mkapi code generation BEGIN
 CAPI_DEFINE_RESOLVER(0, int, ass_library_version)
@@ -90,22 +93,7 @@ CAPI_DEFINE_RESOLVER(4, void, ass_add_font, ASS_Library *, char *, char *, int)
 CAPI_DEFINE_RESOLVER(1, void, ass_clear_fonts, ASS_Library *)
 CAPI_DEFINE_RESOLVER(3, long long, ass_step_sub, ASS_Track *, long long, int)
 // mkapi code generation END
-#endif //CAPI_LINK_ASS
 CAPI_END_DLL()
-
-api::api() : dll(new api_dll()) {
-    qDebug("capi::version: %s build %s", capi::version::name, capi::version::build());
-}
-api::~api() { delete dll;}
-bool api::loaded() const {
-#ifdef CAPI_LINK_ASS
-    return true;
-#else
-    return dll->isLoaded();
-#endif //CAPI_LINK_ASS
-}
-
-#ifndef CAPI_LINK_ASS
 // CAPI_DEFINE(argc, return_type, name, argv_no_name)
 typedef void (*msg_cb)
                         (int level, const char *fmt, va_list args, void *data);
@@ -155,4 +143,7 @@ CAPI_DEFINE(1, void, ass_clear_fonts, ASS_Library *)
 CAPI_DEFINE(3, long long, ass_step_sub, ASS_Track *, long long, int)
 // mkapi code generation END
 #endif //CAPI_LINK_ASS
+api::api() : dll(new api_dll()) {}
+api::~api() { delete dll;}
+bool api::loaded() const { return dll->isLoaded(); }
 } //namespace ass

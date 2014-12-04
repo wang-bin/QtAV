@@ -93,13 +93,14 @@ exists($$PROJECTROOT/contrib/libchardet/libchardet.pri) {
   include($$PROJECTROOT/contrib/libchardet/libchardet.pri)
   DEFINES += QTAV_HAVE_CHARDET=1 BUILD_CHARDET_STATIC
 } else {
-  error("contrib/libchardet is missing. run 'git submodule update --init' first")
+  warning("contrib/libchardet is missing. run 'git submodule update --init' first")
 }
 exists($$PROJECTROOT/contrib/capi/capi.pri) {
   include($$PROJECTROOT/contrib/capi/capi.pri)
+  CONFIG *= capi
   DEFINES += QTAV_HAVE_CAPI=1 BUILD_CAPI_STATIC
 } else {
-  error("contrib/capi is missing. run 'git submodule update --init' first")
+  warning("contrib/capi is missing. run 'git submodule update --init' first")
 }
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
@@ -222,7 +223,11 @@ config_vaapi* {
 config_libcedarv {
     DEFINES *= QTAV_HAVE_CEDARV=1
     QMAKE_CXXFLAGS *= -march=armv7-a
-    neon: QMAKE_CXXFLAGS *= $$QMAKE_CFLAGS_NEON
+    neon {
+      QMAKE_CXXFLAGS *= $$QMAKE_CFLAGS_NEON
+    } else {
+      DEFINES *= NO_NEON_OPT
+    }
     SOURCES += codec/video/VideoDecoderCedarv.cpp
     CONFIG += simd #addSimdCompiler xxx_ASM
     CONFIG += no_clang_integrated_as #see qtbase/src/gui/painting/painting.pri. add -fno-integrated-as from simd.prf
@@ -276,11 +281,13 @@ config_openglwindow {
 }
 config_libass {
 #link against libass instead of dynamic load
-  #LIBS += -lass
-  #DEFINES += CAPI_LINK_ASS
-  SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
+  !capi {
+    LIBS += -lass
+    DEFINES += CAPI_LINK_ASS
+  }
   HEADERS *= subtitle/ass_api.h
   SOURCES *= subtitle/ass_api.cpp
+  SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
 }
 
 SOURCES += \
