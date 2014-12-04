@@ -167,6 +167,8 @@ public:
 
     // return the key frame position
     bool extractInPrecision(qint64 value, int range) {
+        if (value < demuxer.startTime())
+            value += demuxer.startTime();
         demuxer.seek(value);
         const int vstream = demuxer.videoStream();
         while (!demuxer.atEnd()) {
