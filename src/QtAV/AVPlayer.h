@@ -43,6 +43,7 @@ class VideoCapture;
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool relativeTimeMode READ relativeTimeMode WRITE setRelativeTimeMode NOTIFY relativeTimeModeChanged)
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(bool asyncLoad READ isAsyncLoad WRITE setAsyncLoad NOTIFY asyncLoadChanged)
     Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
@@ -111,10 +112,24 @@ public:
 
     MediaStatus mediaStatus() const;
 
+    /*!
+     * \brief relativeTimeMode
+     * true (default): mediaStartPosition() is always 0. All time related API, for example setPosition(), position() and positionChanged()
+     * use relative time instead of real pts
+     * false: mediaStartPosition() is from media stream itself, same as absoluteMediaStartPosition()
+     * To get real start time, use statistics().start_time. Or setRelativeTimeMode(false) first but may affect playback when playing.
+     */
+    bool relativeTimeMode() const;
+    /// Media stream property. The first timestamp in the media
+    qint64 absoluteMediaStartPosition() const;
     qreal durationF() const; //unit: s, This function may be removed in the future.
     qint64 duration() const; //unit: ms. media duration. network stream may be very small, why?
-    // the media's property.
+    /*!
+     * \brief mediaStartPosition
+     * If relativeTimeMode() is true (default), it's 0. Otherwise is the same as absoluteMediaStartPosition()
+     */
     qint64 mediaStartPosition() const;
+    /// mediaStartPosition() + duration().
     qint64 mediaStopPosition() const;
     qreal mediaStartPositionF() const; //unit: s
     qreal mediaStopPositionF() const; //unit: s
@@ -266,6 +281,7 @@ public slots:
     void stop();
     void playNextFrame();
 
+    void setRelativeTimeMode(bool value);
     /*!
      * \brief setRepeat
      *  repeat max times between startPosition() and endPosition()
@@ -296,7 +312,7 @@ public slots:
     void setStopPosition(qint64 pos);
     /*!
      * \brief setPosition equals to seek(qreal)
-     *  position < 0, position() equals duration()+position
+     *  position < 0: 0
      * \param position in ms
      *
      */
@@ -314,6 +330,7 @@ public slots:
     void setSaturation(int val);
 
 signals:
+    void relativeTimeModeChanged();
     void autoLoadChanged();
     void asyncLoadChanged();
     void muteChanged();

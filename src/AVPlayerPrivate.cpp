@@ -48,7 +48,9 @@ AVPlayer::Private::Private()
     : auto_load(false)
     , async_load(true)
     , loaded(false)
+    , relative_time_mode(true)
     , fmt_ctx(0)
+    , media_start_pts(0)
     , media_end(kInvalidPosition)
     , last_position(0)
     , reset_state(true)
@@ -151,7 +153,7 @@ AVPlayer::Private::~Private() {
 
 
 //TODO: av_guess_frame_rate in latest ffmpeg
-void AVPlayer::Private::initStatistics(AVPlayer *player)
+void AVPlayer::Private::initStatistics()
 {
     statistics.reset();
     statistics.url = current_source.type() == QVariant::String ? current_source.toString() : QString();
@@ -159,8 +161,8 @@ void AVPlayer::Private::initStatistics(AVPlayer *player)
     statistics.format = fmt_ctx->iformat->name;
     //AV_TIME_BASE_Q: msvc error C2143
     //fmt_ctx->duration may be AV_NOPTS_VALUE. AVDemuxer.duration deals with this case
-    statistics.start_time = QTime(0, 0, 0).addMSecs(int(player->mediaStartPosition()));
-    statistics.duration = QTime(0, 0, 0).addMSecs((int)player->duration());
+    statistics.start_time = QTime(0, 0, 0).addMSecs(int(demuxer.startTime()));
+    statistics.duration = QTime(0, 0, 0).addMSecs((int)demuxer.duration());
     if (vdec)
         statistics.video.decoder = VideoDecoderFactory::name(vdec->id()).c_str();
     statistics.metadata.clear();
@@ -184,14 +186,14 @@ void AVPlayer::Private::initStatistics(AVPlayer *player)
             continue;
         AVStream *stream = fmt_ctx->streams[cs.stream_idx];
         qDebug("stream: %d, duration=%lld (%lld ms==%lld), time_base=%f", cs.stream_idx, stream->duration, qint64(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
-               , player->duration(), av_q2d(stream->time_base));
+               , demuxer.duration(), av_q2d(stream->time_base));
         cs.st->available = true;
         cs.st->codec = avcodec_get_name(cs.ctx->codec_id);
         if (cs.ctx->codec) {
             cs.st->codec_long = cs.ctx->codec->long_name;
         }
-        cs.st->total_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
-        cs.st->start_time = QTime(0, 0, 0).addMSecs(int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+        cs.st->total_time = QTime(0, 0, 0).addMSecs(stream->duration == AV_NOPTS_VALUE ? 0 : int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+        cs.st->start_time = QTime(0, 0, 0).addMSecs(stream->start_time == AV_NOPTS_VALUE ? 0 : int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
         qDebug("codec: %s(%s)", qPrintable(cs.st->codec), qPrintable(cs.st->codec_long));
         cs.st->bit_rate = cs.ctx->bit_rate; //fmt_ctx
         cs.st->frames = stream->nb_frames;

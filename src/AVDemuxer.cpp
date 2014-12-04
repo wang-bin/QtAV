@@ -341,7 +341,6 @@ bool AVDemuxer::readFrame()
     //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", pkt->pts, pkt->duration, packet.dts);
     if (pkt->isCorrupt)
         qDebug("currupt packet. pts: %f", pkt->pts);
-
     av_free_packet(&packet); //important!
     return true;
 }
@@ -424,7 +423,7 @@ bool AVDemuxer::seek(qint64 pos)
     //duration: unit is us (10^-6 s, AV_TIME_BASE)
     qint64 upos = pos*1000LL;
     if (upos > startTimeUs() + durationUs() || pos < 0LL) {
-        qWarning("Invalid seek position %lld %.2f. valid range [0, %lld]", upos, double(upos)/double(durationUs()), durationUs());
+        qWarning("Invalid seek position %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
         return false;
     }
     QMutexLocker lock(&mutex);
@@ -770,7 +769,7 @@ qint64 AVDemuxer::duration() const
 qint64 AVDemuxer::startTimeUs() const
 {
     // start time may be not null for network stream
-    if (!format_context)
+    if (!format_context || format_context->start_time == AV_NOPTS_VALUE)
         return 0;
     return format_context->start_time;
 }
