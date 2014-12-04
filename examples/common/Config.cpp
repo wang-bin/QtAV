@@ -48,9 +48,6 @@ public:
         file = dir + "/" + qApp->applicationName() + ".ini";
         load();
     }
-    ~Data() {
-        save();
-    }
 
     void load() {
         QSettings settings(file, QSettings::IniFormat);
@@ -182,6 +179,8 @@ Config::Config(QObject *parent)
     : QObject(parent)
     , mpData(new Data())
 {
+    // DO NOT call save() in dtor because it's a singleton and may be deleted later than qApp, QFont is not valid
+    connect(qApp, SIGNAL(aboutToQuit()), SLOT(save()));
 }
 
 Config::~Config()
@@ -483,4 +482,9 @@ Config& Config::avfilterEnable(bool e)
     mpData->avfilter_on = e;
     emit avfilterChanged();
     return *this;
+}
+
+void Config::save()
+{
+    mpData->save();
 }
