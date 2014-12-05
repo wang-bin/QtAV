@@ -58,14 +58,6 @@ public:
     // force a codec
     void setCodecName(const QString& name);
     QString codecName() const;
-
-    //? low resolution decoding, 0: normal, 1-> 1/2 size, 2->1/4 size
-    void setLowResolution(int lowres);
-    int lowResolution() const;
-    // -1: auto detect by QThread::idealThreadCount(). 0: set by ffmpeg(default)
-    void setDecodeThreads(int threads);
-    int decodeThreads() const;
-    void setThreadSlice(bool s);
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
     virtual bool prepare(); //if resampler or image converter set, call it
