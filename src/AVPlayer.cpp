@@ -58,6 +58,12 @@ namespace QtAV {
 static const int kPosistionCheckMS = 500;
 static const qint64 kSeekMS = 10000;
 
+/// Supported input protocols. A static string list
+const QStringList& AVPlayer::supportedProtocols()
+{
+    return AVDemuxer::supportedProtocols();
+}
+
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent)
   , d(new Private())

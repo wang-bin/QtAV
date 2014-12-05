@@ -237,6 +237,25 @@ AVDemuxer::~AVDemuxer()
         delete m_pQAVIO;
 }
 
+const QStringList &AVDemuxer::supportedProtocols()
+{
+    static QStringList protocols;
+    if (!protocols.isEmpty())
+        return protocols;
+#if QTAV_HAVE(AVDEVICE)
+    protocols << "avdevice";
+#endif
+    av_register_all(); // MUST register all input/output formats
+    void* opq = 0;
+    const char* protocol = avio_enum_protocols(&opq, 0);
+    while (protocol) {
+        // static string, no deep copy needed. but QByteArray::fromRawData(data,size) assumes data is not null terminated and we must give a size
+        protocols.append(protocol);
+        protocol = avio_enum_protocols(&opq, 0);
+    }
+    return protocols;
+}
+
 MediaStatus AVDemuxer::mediaStatus() const
 {
     return mCurrentMediaStatus;

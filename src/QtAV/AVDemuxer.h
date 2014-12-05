@@ -73,6 +73,8 @@ public:
         SeekTarget_AnyFrame,
         SeekTarget_AccurateFrame
     };
+    /// Supported input protocols. A static string list
+    static const QStringList& supportedProtocols();
 
     AVDemuxer(const QString& fileName = QString(), QObject *parent = 0);
     ~AVDemuxer();

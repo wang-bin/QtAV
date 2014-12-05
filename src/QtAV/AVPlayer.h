@@ -57,6 +57,9 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
 public:
+    /// Supported input protocols. A static string list
+    static const QStringList& supportedProtocols();
+
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
 
