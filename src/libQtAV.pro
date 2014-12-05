@@ -427,6 +427,7 @@ HEADERS *= \
     AudioThread.h \
     VideoThread.h \
     filter/FilterManager.h \
+    input/QIODeviceInput.h \
     subtitle/CharsetDetector.h \
     subtitle/PlainText.h \
     utils/BlockingQueue.h \

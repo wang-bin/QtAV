@@ -21,6 +21,7 @@
 
 #include "QtAV/AVInput.h"
 #include "QtAV/private/AVInput_p.h"
+#include <QtCore/QStringList>
 
 namespace QtAV {
 
@@ -62,6 +63,29 @@ AVInput::AVInput(AVInputPrivate &d)
 
 AVInput::~AVInput()
 {
+}
+
+void AVInput::setUrl(const QString &url)
+{
+    DPTR_D(AVInput);
+    if (d.url == url)
+        return;
+    d.url = url;
+    onUrlChanged();
+}
+
+QString AVInput::url() const
+{
+    return d_func().url;
+}
+
+void AVInput::onUrlChanged()
+{}
+
+const QStringList& AVInput::protocols() const
+{
+    static QStringList no_protocols;
+    return no_protocols;
 }
 
 #define IODATA_BUFFER_SIZE 32768 //

@@ -1,0 +1,5 @@
+QT += av av-private
+CONFIG -= app_bundle
+DEFINES += TEST_QTAV_QIODEVICEINPUT
+INCLUDEPATH += $$[QT_INSTALL_HEADERS]
+SOURCES = QIODeviceInput.cpp

@@ -23,6 +23,7 @@
 #define QTAV_AVINPUT_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtCore/QStringList>
 
 namespace QtAV {
 
@@ -34,7 +35,11 @@ class Q_AV_EXPORT AVInput
 public:
     AVInput();
     virtual ~AVInput();
-    virtual bool isSeekable() = 0;
+    virtual void setUrl(const QString& url);
+    QString url() const;
+    /// supported protocols. default is empty
+    virtual const QStringList& protocols() const;
+    virtual bool isSeekable() const = 0;
     virtual qint64 read(char *data, qint64 maxSize) = 0;
     /*!
      * \brief seek
@@ -60,6 +65,7 @@ public:
     void release(); //TODO: how to remove it?
 protected:
     AVInput(AVInputPrivate& d);
+    virtual void onUrlChanged();
     DPTR_DECLARE(AVInput)
 };
 

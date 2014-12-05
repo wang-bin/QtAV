@@ -19,26 +19,39 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_AVINPUT_P_H
-#define QTAV_AVINPUT_P_H
+#ifndef QTAV_QIODEVICEINPUT
+#define QTAV_QIODEVICEINPUT
 
-#include "QtAV/QtAV_Global.h"
-#include "QtAV/private/AVCompat.h"
-#include <QtCore/QString>
+#include <QtAV/AVInput.h>
+#include <QtCore/QIODevice>
 
 namespace QtAV {
 
-class AVInput;
-class Q_AV_PRIVATE_EXPORT AVInputPrivate : public DPtrPrivate<AVInput>
+class QIODeviceInputPrivate;
+class QIODeviceInput : public AVInput
 {
+    DPTR_DECLARE_PRIVATE(QIODeviceInput)
 public:
-    AVInputPrivate()
-        : ctx(0)
-    {}
-    // TODO: how to manage ctx?
-    AVIOContext *ctx;
-    QString url;
+    QIODeviceInput();
+    // MUST open/close outside
+    void setIODevice(QIODevice *dev); // set private in QFileInput etc
+    QIODevice* device() const;
+
+    virtual bool isSeekable() const Q_DECL_OVERRIDE;
+    virtual qint64 read(char *data, qint64 maxSize) Q_DECL_OVERRIDE;
+    virtual bool seek(qint64 offset, int from) Q_DECL_OVERRIDE;
+    virtual qint64 position() const Q_DECL_OVERRIDE;
+    /*!
+     * \brief size
+     * \return <=0 if not support
+     */
+    virtual qint64 size() const Q_DECL_OVERRIDE;
+protected:
+    QIODeviceInput(QIODeviceInputPrivate &d);
 };
 
 } //namespace QtAV
-#endif // QTAV_AVINPUT_P_H
+#include "QtAV/AVInput.h"
+
+#endif // QTAV_QIODEVICEINPUT
+
