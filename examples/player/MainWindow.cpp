@@ -783,7 +783,9 @@ void MainWindow::onStartPlay()
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
     ScreenSaver::instance().disable();
     initAudioTrackMenu();
+    mpRepeatA->setMinimumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStartPosition()));
     mpRepeatA->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
+    mpRepeatB->setMinimumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStartPosition()));
     mpRepeatB->setMaximumTime(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()));
     mpRepeatA->setTime(QTime(0, 0, 0).addMSecs(mpPlayer->startPosition()));
     mpRepeatB->setTime(QTime(0, 0, 0).addMSecs(mpPlayer->stopPosition()));
@@ -813,6 +815,8 @@ void MainWindow::onStopPlay()
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);
+    mpTimeSlider->setMinimum(0);
+    mpTimeSlider->setMaximum(0);
     mpCurrent->setText("00:00:00");
     mpEnd->setText("00:00:00");
     tryShowControlBar();
@@ -906,6 +910,9 @@ void MainWindow::repeatAChanged(const QTime& t)
 void MainWindow::repeatBChanged(const QTime& t)
 {
     if (!mpPlayer)
+        return;
+    // when this slot is called? even if only range is set?
+    if (t <= mpRepeatA->time())
         return;
     mpPlayer->setStopPosition(QTime(0, 0, 0).msecsTo(t));
 }

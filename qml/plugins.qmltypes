@@ -131,6 +131,20 @@ Module {
             }
         }
         Enum {
+            name: "Status"
+            values: {
+                "UnknownMediaStatus": 0,
+                "NoMedia": 1,
+                "LoadingMedia": 2,
+                "LoadedMedia": 3,
+                "StalledMedia": 4,
+                "BufferingMedia": 5,
+                "BufferedMedia": 6,
+                "EndOfMedia": 7,
+                "InvalidMedia": 8
+            }
+        }
+        Enum {
             name: "Error"
             values: {
                 "NoError": 0,
@@ -152,6 +166,8 @@ Module {
             }
         }
         Property { name: "volume"; type: "double" }
+        Property { name: "status"; type: "Status"; isReadonly: true }
+        Property { name: "error"; type: "Error"; isReadonly: true }
         Property { name: "duration"; type: "int"; isReadonly: true }
         Property { name: "position"; type: "int"; isReadonly: true }
         Property { name: "muted"; type: "bool" }
@@ -166,7 +182,6 @@ Module {
         Property { name: "seekable"; type: "bool"; isReadonly: true }
         Property { name: "metaData"; type: "MediaMetaData"; isReadonly: true; isPointer: true }
         Property { name: "mediaObject"; type: "QObject"; isReadonly: true; isPointer: true }
-        Property { name: "error"; type: "Error"; isReadonly: true }
         Property { name: "errorString"; type: "string"; isReadonly: true }
         Property { name: "channelLayout"; type: "ChannelLayout" }
         Property { name: "videoCodecs"; type: "QStringList"; isReadonly: true }

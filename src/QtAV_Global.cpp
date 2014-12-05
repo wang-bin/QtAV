@@ -233,6 +233,13 @@ class InitFFmpegLog {
 public:
     InitFFmpegLog() {
         setFFmpegLogHandler(qtav_ffmpeg_log_callback);
+        const QByteArray env = qgetenv("QTAV_FFMPEG_LOG");
+        if (env.isEmpty())
+            return;
+        bool ok = false;
+        const int level = env.toInt(&ok);
+        if ((ok && level == 0) || env.toLower().endsWith("off"))
+            setFFmpegLogHandler(0);
     }
 };
 InitFFmpegLog fflog;

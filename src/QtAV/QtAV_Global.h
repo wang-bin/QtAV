@@ -62,13 +62,13 @@ Q_AV_EXPORT QString aboutQtAV_HTML();
 
 /*!
  * Default value: LogOff for release build. LogAll for debug build.
- * The level can also be changed at runtime by setting the QTAV_LOG_LEVEL environment variable;
+ * The level can also be changed at runtime by setting the QTAV_LOG_LEVEL or QTAV_LOG environment variable;
  * QTAV_LOG_LEVEL can be: off, debug, warning, critical, fatal, all. Or use their enum values
  * if both setLogLevel() is called and QTAV_LOG_LEVEL is set, the environment variable takes preceden.
 */
 Q_AV_EXPORT void setLogLevel(LogLevel value);
 Q_AV_EXPORT LogLevel logLevel();
-
+/// Default handler is qt message logger. Set environment QTAV_FFMPEG_LOG=0 or setFFmpegLogHandler(0) to disable.
 Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
 
 } //namespace QtAV

@@ -2,6 +2,8 @@ TEMPLATE = lib
 MODULE_INCNAME = QtAV # for mac framework. also used in install_sdk.pro
 TARGET = QtAV
 QT += core gui
+config_libcedarv: CONFIG += neon #need by qt4 addSimdCompiler()
+
 greaterThan(QT_MAJOR_VERSION, 4) {
   qtHaveModule(widgets):!no_widgets {
     QT += widgets
@@ -90,6 +92,15 @@ LIBS += -lavcodec -lavformat -lavutil -lswscale
 exists($$PROJECTROOT/contrib/libchardet/libchardet.pri) {
   include($$PROJECTROOT/contrib/libchardet/libchardet.pri)
   DEFINES += QTAV_HAVE_CHARDET=1 BUILD_CHARDET_STATIC
+} else {
+  warning("contrib/libchardet is missing. run 'git submodule update --init' first")
+}
+exists($$PROJECTROOT/contrib/capi/capi.pri) {
+  include($$PROJECTROOT/contrib/capi/capi.pri)
+  CONFIG *= capi
+  DEFINES += QTAV_HAVE_CAPI=1 BUILD_CAPI_STATIC
+} else {
+  warning("contrib/capi is missing. run 'git submodule update --init' first")
 }
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
@@ -211,9 +222,18 @@ config_vaapi* {
 }
 config_libcedarv {
     DEFINES *= QTAV_HAVE_CEDARV=1
-    QMAKE_CXXFLAGS *= -march=armv7-a -mfpu=neon 
+    QMAKE_CXXFLAGS *= -march=armv7-a
+    neon {
+      QMAKE_CXXFLAGS *= $$QMAKE_CFLAGS_NEON
+    } else {
+      DEFINES *= NO_NEON_OPT
+    }
     SOURCES += codec/video/VideoDecoderCedarv.cpp
+    CONFIG += simd #addSimdCompiler xxx_ASM
+    CONFIG += no_clang_integrated_as #see qtbase/src/gui/painting/painting.pri. add -fno-integrated-as from simd.prf
+    NEON_ASM += codec/video/tiled_yuv.S #from libvdpau-sunxi
     LIBS += -lvecore -lcedarv
+    OTHER_FILES += $$NEON_ASM
 }
 macx:!ios: CONFIG += config_vda
 config_vda {
@@ -261,9 +281,15 @@ config_openglwindow {
 }
 config_libass {
 #link against libass instead of dynamic load
-  LIBS += -lass
+  !capi {
+    LIBS += -lass
+    DEFINES += CAPI_LINK_ASS
+  }
+  HEADERS *= subtitle/ass_api.h
+  SOURCES *= subtitle/ass_api.cpp
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
 }
+
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \

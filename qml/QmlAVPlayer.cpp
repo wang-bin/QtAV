@@ -57,14 +57,17 @@ static inline QVector<VideoDecoderId> VideoDecodersFromNames(const QStringList& 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
   , m_complete(false)
+  , m_mute(false)
   , mAutoPlay(false)
   , mAutoLoad(false)
   , mHasAudio(false)
   , mHasVideo(false)
   , mLoopCount(1)
+  , mPlaybackRate(1.0)
   , mVolume(1.0)
   , mPlaybackState(StoppedState)
   , mError(NoError)
+  , m_status(QtAV::NoMedia)
   , mpPlayer(0)
   , mChannelLayout(ChannelLayoutAuto)
 {
@@ -73,6 +76,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
 void QmlAVPlayer::classBegin()
 {
     mpPlayer = new AVPlayer(this);
+    connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(_q_statusChanged()));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), SLOT(_q_error(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
@@ -130,6 +134,7 @@ void QmlAVPlayer::setSource(const QUrl &url)
     if (mSource == url)
         return;
     mSource = url;
+    qDebug() << url;
     mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
     emit sourceChanged(); //TODO: emit only when player loaded a new source
 
@@ -298,30 +303,37 @@ void QmlAVPlayer::setVolume(qreal volume)
 
 bool QmlAVPlayer::isMuted() const
 {
-    return mpPlayer->isMute();
+    return m_mute;
 }
 
 void QmlAVPlayer::setMuted(bool m)
 {
-    if (mpPlayer->isMute() == m)
+    if (isMuted() == m)
         return;
-    mpPlayer->setMute(m);
+    m_mute = m;
+    if (mpPlayer)
+        mpPlayer->setMute(m);
     emit mutedChanged();
 }
 
 int QmlAVPlayer::duration() const
 {
-    return mpPlayer->duration();
+    return mpPlayer ? mpPlayer->duration() : 0;
 }
 
 int QmlAVPlayer::position() const
 {
-    return mpPlayer->position();
+    return mpPlayer ? mpPlayer->position() : 0;
 }
 
 bool QmlAVPlayer::isSeekable() const
 {
     return true;
+}
+
+QmlAVPlayer::Status QmlAVPlayer::status() const
+{
+    return (Status)m_status;
 }
 
 QmlAVPlayer::Error QmlAVPlayer::error() const
@@ -344,7 +356,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
     if (mPlaybackState == playbackState) {
         return;
     }
-    if (!m_complete)
+    if (!m_complete || !mpPlayer)
         return;
     mPlaybackState = playbackState;
     switch (mPlaybackState) {
@@ -378,14 +390,16 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
 
 qreal QmlAVPlayer::playbackRate() const
 {
-    return mpPlayer->speed();
+    return mPlaybackRate;
 }
 
 void QmlAVPlayer::setPlaybackRate(qreal s)
 {
-    if (mpPlayer->speed() == s)
+    if (playbackRate() == s)
         return;
-    mpPlayer->setSpeed(s);
+    mPlaybackRate = s;
+    if (mpPlayer)
+        mpPlayer->setSpeed(s);
     emit playbackRateChanged();
 }
 
@@ -419,21 +433,29 @@ void QmlAVPlayer::stop()
 
 void QmlAVPlayer::nextFrame()
 {
+    if (!mpPlayer)
+        return;
     mpPlayer->playNextFrame();
 }
 
 void QmlAVPlayer::seek(int offset)
 {
+    if (!mpPlayer)
+        return;
     mpPlayer->seek(qint64(offset));
 }
 
 void QmlAVPlayer::seekForward()
 {
+    if (!mpPlayer)
+        return;
     mpPlayer->seekForward();
 }
 
 void QmlAVPlayer::seekBackward()
 {
+    if (!mpPlayer)
+        return;
     mpPlayer->seekBackward();
 }
 
@@ -458,6 +480,12 @@ void QmlAVPlayer::_q_error(const AVError &e)
     emit errorChanged();
 }
 
+void QmlAVPlayer::_q_statusChanged()
+{
+    m_status = mpPlayer->mediaStatus();
+    emit statusChanged();
+}
+
 void QmlAVPlayer::_q_paused(bool p)
 {
     if (p) {
@@ -479,6 +507,9 @@ void QmlAVPlayer::_q_started()
     applyChannelLayout();
     // applyChannelLayout() first because it may reopen audio device
     applyVolume();
+    mpPlayer->setMute(isMuted());
+    mpPlayer->setSpeed(playbackRate());
+
     // TODO: in load()?
     m_metaData->setValuesFromStatistics(mpPlayer->statistics());
     if (!mHasAudio) {

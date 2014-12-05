@@ -35,7 +35,8 @@ class Q_AV_EXPORT AudioDecoder : public AVDecoder
 public:
     AudioDecoder();
     virtual bool prepare();
-    virtual bool decode(const QByteArray &encoded);
+    QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
+    virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
     AudioResampler *resampler();
 };
 

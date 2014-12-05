@@ -43,13 +43,16 @@ class VideoCapture;
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool relativeTimeMode READ relativeTimeMode WRITE setRelativeTimeMode NOTIFY relativeTimeModeChanged)
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(bool asyncLoad READ isAsyncLoad WRITE setAsyncLoad NOTIFY asyncLoadChanged)
+    Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
     Q_PROPERTY(qint64 startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
     Q_PROPERTY(qint64 stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
     Q_PROPERTY(qint64 repeat READ repeat WRITE setRepeat NOTIFY repeatChanged)
     Q_PROPERTY(int currentRepeat READ currentRepeat NOTIFY currentRepeatChanged)
+    Q_PROPERTY(qint64 interruptTimeout READ interruptTimeout WRITE setInterruptTimeout NOTIFY interruptTimeoutChanged)
     Q_PROPERTY(int brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
@@ -109,10 +112,24 @@ public:
 
     MediaStatus mediaStatus() const;
 
+    /*!
+     * \brief relativeTimeMode
+     * true (default): mediaStartPosition() is always 0. All time related API, for example setPosition(), position() and positionChanged()
+     * use relative time instead of real pts
+     * false: mediaStartPosition() is from media stream itself, same as absoluteMediaStartPosition()
+     * To get real start time, use statistics().start_time. Or setRelativeTimeMode(false) first but may affect playback when playing.
+     */
+    bool relativeTimeMode() const;
+    /// Media stream property. The first timestamp in the media
+    qint64 absoluteMediaStartPosition() const;
     qreal durationF() const; //unit: s, This function may be removed in the future.
     qint64 duration() const; //unit: ms. media duration. network stream may be very small, why?
-    // the media's property.
+    /*!
+     * \brief mediaStartPosition
+     * If relativeTimeMode() is true (default), it's 0. Otherwise is the same as absoluteMediaStartPosition()
+     */
     qint64 mediaStartPosition() const;
+    /// mediaStartPosition() + duration().
     qint64 mediaStopPosition() const;
     qreal mediaStartPositionF() const; //unit: s
     qreal mediaStopPositionF() const; //unit: s
@@ -201,6 +218,14 @@ public:
     void setSpeed(qreal speed);
     qreal speed() const;
 
+    /*!
+     * \brief setInterruptTimeout
+     * Abort current operation(open, read) if it spends too much time.
+     * \param value
+     */
+    void setInterruptTimeout(qint64 ms);
+    qint64 interruptTimeout() const;
+
     Statistics& statistics();
     const Statistics& statistics() const;
     /*
@@ -256,6 +281,7 @@ public slots:
     void stop();
     void playNextFrame();
 
+    void setRelativeTimeMode(bool value);
     /*!
      * \brief setRepeat
      *  repeat max times between startPosition() and endPosition()
@@ -286,7 +312,7 @@ public slots:
     void setStopPosition(qint64 pos);
     /*!
      * \brief setPosition equals to seek(qreal)
-     *  position < 0, position() equals duration()+position
+     *  position < 0: 0
      * \param position in ms
      *
      */
@@ -304,8 +330,10 @@ public slots:
     void setSaturation(int val);
 
 signals:
+    void relativeTimeModeChanged();
     void autoLoadChanged();
     void asyncLoadChanged();
+    void muteChanged();
     void sourceChanged();
     void loaded(); // == mediaStatusChanged(QtAV::LoadedMedia)
     void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
@@ -319,6 +347,7 @@ signals:
     void startPositionChanged(qint64 position);
     void stopPositionChanged(qint64 position);
     void positionChanged(qint64 position);
+    void interruptTimeoutChanged();
     void brightnessChanged(int val);
     void contrastChanged(int val);
     void hueChanged(int val);
@@ -334,6 +363,7 @@ private slots:
     // start/stop notify timer in this thread. use QMetaObject::invokeMethod
     void startNotifyTimer();
     void stopNotifyTimer();
+    void onStarted();
 
 protected:
     // TODO: set position check timer interval

@@ -268,8 +268,8 @@ VideoFrame VideoDecoderVAAPI::frame()
             return VideoFrame();
         }
         ((SurfaceInteropVAAPI*)d.surface_interop.data())->setSurface(p);
-        VideoFrame f(d.surface_width, d.surface_height, VideoFormat::Format_RGB32); //p->width()
-        f.setBytesPerLine(d.surface_width*4); //used by gl to compute texture size
+        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
+        f.setBytesPerLine(d.width*4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
         return f;
     }
@@ -296,9 +296,9 @@ VideoFrame VideoDecoderVAAPI::frame()
             return VideoFrame();
         }
     } else {
-        status = vaGetImage(d.display->get(), surface_id, 0, 0, d.surface_width, d.surface_height, d.image.image_id);
+        status = vaGetImage(d.display->get(), surface_id, 0, 0, d.width, d.height, d.image.image_id);
         if (status != VA_STATUS_SUCCESS) {
-            qWarning("vaGetImage(VADisplay:%p, VASurfaceID:%#x, 0,0, %d, %d, VAImageID:%#x) == %#x", d.display->get(), surface_id, d.surface_width, d.surface_height, d.image.image_id, status);
+            qWarning("vaGetImage(VADisplay:%p, VASurfaceID:%#x, 0,0, %d, %d, VAImageID:%#x) == %#x", d.display->get(), surface_id, d.width, d.height, d.image.image_id, status);
             return VideoFrame();
         }
     }
@@ -599,20 +599,20 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     surface_width = FFALIGN(w, 16);
     surface_height = FFALIGN(h, 16);
     VAStatus status = VA_STATUS_SUCCESS;
-    if ((status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, surface_width, surface_height,  surfaces.data() + old_size, count - old_size, NULL, 0)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateSurfaces(VADisplay:%p, VA_RT_FORMAT_YUV420, %d, %d, VASurfaceID*:%p, surfaces:%d, VASurfaceAttrib:NULL, num_attrib:0) == %#x", display->get(), surface_width, surface_height, surfaces.constData(), surfaces.size(), status);
+    if ((status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, width, height,  surfaces.data() + old_size, count - old_size, NULL, 0)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateSurfaces(VADisplay:%p, VA_RT_FORMAT_YUV420, %d, %d, VASurfaceID*:%p, surfaces:%d, VASurfaceAttrib:NULL, num_attrib:0) == %#x", display->get(), width, height, surfaces.constData(), surfaces.size(), status);
         destroySurfaces(); //?
         return false;
     }
     for (int i = old_size; i < surfaces.size(); ++i) {
-        surfaces_free.push_back(surface_ptr(new surface_t(surface_width, surface_height, surfaces[i], display)));
+        surfaces_free.push_back(surface_ptr(new surface_t(width, height, surfaces[i], display)));
     }
     /* Create a context */
     if (context_id && context_id != VA_INVALID_ID)
         VAWARN(vaDestroyContext(display->get(), context_id));
     context_id = VA_INVALID_ID;
-    if ((status = vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display->get(), config_id, surface_width, surface_height, surfaces.constData(), surfaces.size(), &context_id, status);
+    if ((status = vaCreateContext(display->get(), config_id, width, height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id)) != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display->get(), config_id, width, height, surfaces.constData(), surfaces.size(), &context_id, status);
         context_id = VA_INVALID_ID;
         destroySurfaces();
         return false;
@@ -647,13 +647,13 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
             p_fmt[i].fourcc == VA_FOURCC_IYUV ||
             p_fmt[i].fourcc == VA_FOURCC_NV12) {
             qDebug("vaCreateImage: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
-            if (vaCreateImage(display->get(), &p_fmt[i], surface_width, surface_height, &image)) {
+            if (vaCreateImage(display->get(), &p_fmt[i], width, height, &image)) {
                 image.image_id = VA_INVALID_ID;
                 qDebug("vaCreateImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 continue;
             }
             /* Validate that vaGetImage works with this format */
-            if (vaGetImage(display->get(), surfaces[0], 0, 0, surface_width, surface_height, image.image_id)) {
+            if (vaGetImage(display->get(), surfaces[0], 0, 0, width, height, image.image_id)) {
                 vaDestroyImage(display->get(), image.image_id);
                 qDebug("vaGetImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 image.image_id = VA_INVALID_ID;
