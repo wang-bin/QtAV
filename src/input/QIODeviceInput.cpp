@@ -21,6 +21,8 @@
 
 #include "QIODeviceInput.h"
 #include "QtAV/private/AVInput_p.h"
+#include "QtAV/private/mkid.h"
+#include "QtAV/private/prepost.h"
 #include <QtCore/QIODevice>
 #include <QtCore/QFile>
 #ifndef TEST_QTAV_QIODEVICEINPUT
@@ -29,6 +31,10 @@
 #include <QtDebug>
 #endif
 namespace QtAV {
+
+static const AVInputId AVInputId_QIODevice = mkid32base36_6<'Q','I','O','D','e','v'>::value;
+static const char kQIODevName[] = "QIODevice";
+FACTORY_REGISTER_ID_TYPE(AVInput, AVInputId_QIODevice, QIODeviceInput, kQIODevName)
 
 class QIODeviceInputPrivate : public AVInputPrivate
 {
@@ -42,6 +48,7 @@ public:
 
 QIODeviceInput::QIODeviceInput() : AVInput(*new QIODeviceInputPrivate()) {}
 QIODeviceInput::QIODeviceInput(QIODeviceInputPrivate &d) : AVInput(d) {}
+QString QIODeviceInput::name() const { return kQIODevName;}
 
 void QIODeviceInput::setIODevice(QIODevice *dev)
 {
@@ -96,12 +103,14 @@ qint64 QIODeviceInput::size() const
     return d.dev->size(); // sequential device returns bytesAvailable()
 }
 // qrc support
+static const char kQFileName[] = "QFile";
 class QFileInputPrivate;
 class QFileInput : public QIODeviceInput
 {
     DPTR_DECLARE_PRIVATE(QFileInput)
 public:
     QFileInput();
+    QString name() const Q_DECL_OVERRIDE { return kQFileName;}
     const QStringList& protocols() const Q_DECL_OVERRIDE
     {
         static QStringList p = QStringList() << "" << "qrc";
@@ -112,6 +121,9 @@ protected:
 private:
     using QIODeviceInput::setIODevice;
 };
+
+static const AVInputId AVInputId_QFile = mkid32base36_5<'Q','F','i','l','e'>::value;
+FACTORY_REGISTER_ID_TYPE(AVInput, AVInputId_QFile, QFileInput, kQFileName)
 
 class QFileInputPrivate : public QIODeviceInputPrivate
 {

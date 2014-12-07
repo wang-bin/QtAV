@@ -21,9 +21,42 @@
 
 #include "QtAV/AVInput.h"
 #include "QtAV/private/AVInput_p.h"
+#include "QtAV/private/factory.h"
 #include <QtCore/QStringList>
 
 namespace QtAV {
+
+FACTORY_DEFINE(AVInput)
+
+QStringList AVInput::builtInNames()
+{
+    static QStringList names;
+    if (!names.isEmpty())
+        return names;
+    std::vector<std::string> stdnames(AVInputFactory::registeredNames());
+    foreach (const std::string stdname, stdnames) {
+        names.append(stdname.c_str());
+    }
+    return names;
+}
+
+// TODO: plugin
+AVInput* AVInput::create(const QString &name)
+{
+    return AVInputFactory::create(AVInputFactory::id(name.toStdString()));
+}
+// TODO: plugin use metadata(Qt plugin system) to avoid loading
+AVInput* AVInput::createForProtocol(const QString &protocol)
+{
+    std::vector<AVInputId> ids(AVInputFactory::registeredIds());
+    foreach (AVInputId id, ids) {
+        AVInput *in = AVInputFactory::create(id);
+        if (in->protocols().contains(protocol))
+            return in;
+        delete in;
+    }
+    return 0;
+}
 
 static int av_read(void *opaque, unsigned char *buf, int buf_size)
 {

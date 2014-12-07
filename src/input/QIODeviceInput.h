@@ -33,6 +33,7 @@ class QIODeviceInput : public AVInput
     DPTR_DECLARE_PRIVATE(QIODeviceInput)
 public:
     QIODeviceInput();
+    virtual QString name() const Q_DECL_OVERRIDE;
     // MUST open/close outside
     void setIODevice(QIODevice *dev); // set private in QFileInput etc
     QIODevice* device() const;

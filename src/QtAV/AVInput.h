@@ -23,9 +23,14 @@
 #define QTAV_AVINPUT_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtAV/FactoryDefine.h>
 #include <QtCore/QStringList>
 
 namespace QtAV {
+
+typedef int AVInputId;
+class AVInput;
+FACTORY_DECLARE(AVInput)
 
 class AVInputPrivate;
 class Q_AV_EXPORT AVInput
@@ -33,8 +38,20 @@ class Q_AV_EXPORT AVInput
     DPTR_DECLARE_PRIVATE(AVInput)
     Q_DISABLE_COPY(AVInput)
 public:
+    /// Registered AVInput::name(): "QIODevice", "QFile"
+    static QStringList builtInNames();
+    static AVInput* create(const QString& name);
+    /*!
+     * \brief createForProtocol
+     * If an AVInput subclass SomeInput.protocols() contains the protocol, return it's instance.
+     * "QFile" input has protocols "qrc"(and empty "" means "qrc")
+     * \return Null if none of registered AVInput supports the protocol
+     */
+    static AVInput* createForProtocol(const QString& protocol);
+
     AVInput();
     virtual ~AVInput();
+    virtual QString name() const = 0;
     virtual void setUrl(const QString& url);
     QString url() const;
     /// supported protocols. default is empty
