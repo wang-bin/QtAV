@@ -376,4 +376,7 @@ void av_packet_free_side_data(AVPacket *pkt);
 #define avfilter_graph_parse_ptr(...) avfilter_graph_parse(__VA_ARGS__)
 #endif //FF_API_OLD_GRAPH_PARSE
 
+// helper functions
+const char *get_codec_long_name(AVCodecID id);
+
 #endif //QTAV_COMPAT_H

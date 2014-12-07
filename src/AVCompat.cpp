@@ -252,3 +252,20 @@ void av_packet_free_side_data(AVPacket *pkt)
 }
 #endif
 
+const char *get_codec_long_name(enum AVCodecID id)
+{
+    if (id == AV_CODEC_ID_NONE)
+        return "none";
+    const AVCodecDescriptor *cd = avcodec_descriptor_get(id);
+    if (cd)
+        return cd->long_name;
+    av_log(NULL, AV_LOG_WARNING, "Codec 0x%x is not in the full list.\n", id);
+    AVCodec *codec = avcodec_find_decoder(id);
+    if (codec)
+        return codec->long_name;
+    codec = avcodec_find_encoder(id);
+    if (codec)
+        return codec->long_name;
+    return "unknown_codec";
+}
+

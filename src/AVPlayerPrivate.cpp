@@ -151,7 +151,6 @@ AVPlayer::Private::~Private() {
     }
 }
 
-
 //TODO: av_guess_frame_rate in latest ffmpeg
 void AVPlayer::Private::initStatistics()
 {
@@ -189,9 +188,7 @@ void AVPlayer::Private::initStatistics()
                , demuxer.duration(), av_q2d(stream->time_base));
         cs.st->available = true;
         cs.st->codec = avcodec_get_name(cs.ctx->codec_id);
-        if (cs.ctx->codec) {
-            cs.st->codec_long = cs.ctx->codec->long_name;
-        }
+        cs.st->codec_long = get_codec_long_name(cs.ctx->codec_id);
         cs.st->total_time = QTime(0, 0, 0).addMSecs(stream->duration == AV_NOPTS_VALUE ? 0 : int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
         cs.st->start_time = QTime(0, 0, 0).addMSecs(stream->start_time == AV_NOPTS_VALUE ? 0 : int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
         qDebug("codec: %s(%s)", qPrintable(cs.st->codec), qPrintable(cs.st->codec_long));
