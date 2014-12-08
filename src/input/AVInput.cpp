@@ -96,6 +96,7 @@ AVInput::AVInput(AVInputPrivate &d)
 
 AVInput::~AVInput()
 {
+    release();
 }
 
 void AVInput::setUrl(const QString &url)

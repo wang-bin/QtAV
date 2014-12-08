@@ -34,6 +34,7 @@ class QIODevice;
 
 namespace QtAV {
 
+class AVInput;
 class AudioOutput;
 class VideoRenderer;
 class AVClock;
@@ -77,6 +78,12 @@ public:
     QString file() const;
     //QIODevice support
     void setIODevice(QIODevice* device);
+    /*!
+     * \brief setInput
+     * AVPlayer's demuxer takes the ownership. Call it when player is stopped.
+     */
+    void setInput(AVInput* in);
+    AVInput* input() const;
 
     // force reload even if already loaded. otherwise only reopen codecs if necessary
     QTAV_DEPRECATED bool load(const QString& path, bool reload = true); //deprecated
@@ -239,6 +246,7 @@ public:
     bool installVideoFilter(Filter *filter);
     bool uninstallFilter(Filter *filter);
 
+    // TODO: name list
     void setPriority(const QVector<VideoDecoderId>& ids);
     //void setPriority(const QVector<AudioOutputId>& ids);
     /*!

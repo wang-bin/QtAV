@@ -24,9 +24,11 @@
 #include <QtCore/QThread>
 #include <QtCore/QCoreApplication>
 #include "QtAV/AVError.h"
+#include "QtAV/AVInput.h"
 #include "QtAV/Packet.h"
 #include "QAVIOContext.h"
 #include "QtAV/private/AVCompat.h"
+#include "input/QIODeviceInput.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -193,7 +195,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , s_codec_contex(0)
     , _file_name(fileName)
     , _iformat(0)
-    , m_pQAVIO(0)
+    , m_in(0)
     , mSeekUnit(SeekByTime)
     , mSeekTarget(SeekTarget_AccurateFrame)
     , mpDict(0)
@@ -233,8 +235,8 @@ AVDemuxer::~AVDemuxer()
         av_dict_free(&mpDict);
     }
     delete mpInterrup;
-    if (m_pQAVIO)
-        delete m_pQAVIO;
+    if (m_in)
+        delete m_in;
 }
 
 const QStringList &AVDemuxer::supportedProtocols()
@@ -400,8 +402,9 @@ bool AVDemuxer::close()
         avformat_close_input(&format_context); //libavf > 53.10.0
         format_context = 0;
         _iformat = 0;
-        if (m_pQAVIO)
-            m_pQAVIO->release();
+        // no delete. may be used in next load
+        if (m_in)
+            m_in->release();
     }
     emit unloaded();
     return true;
@@ -520,29 +523,91 @@ bool AVDemuxer::isLoaded(const QString &fileName) const
         if (_file_name.startsWith("mms:")) // compare with mmsh:
             same_path = _file_name.midRef(5) == fileName.midRef(4);
     }
-    return (same_path || m_pQAVIO) && (a_codec_context || v_codec_context || s_codec_contex);
+    return same_path && (a_codec_context || v_codec_context || s_codec_contex);
+}
+
+bool AVDemuxer::isLoaded(QIODevice *dev) const
+{
+    if (!m_in)
+        return false;
+    if (m_in->name() != "QIODevice")
+        return false;
+    QIODeviceInput* qin = static_cast<QIODeviceInput*>(m_in);
+    if (!qin) {
+        qWarning("Internal error.");
+        return false;
+    }
+    if (qin->device() != dev)
+        return false;
+    return a_codec_context || v_codec_context || s_codec_contex;
+}
+
+bool AVDemuxer::isLoaded(AVInput *in) const
+{
+    if (m_in != in)
+        return false;
+    return a_codec_context || v_codec_context || s_codec_contex;
 }
 
 bool AVDemuxer::loadFile(const QString &fileName)
 {
+    if (m_in) {
+        delete m_in;
+        m_in = 0;
+    }
     _file_name = fileName.trimmed();
     if (_file_name.startsWith("mms:"))
         _file_name.insert(3, 'h');
     else if (_file_name.startsWith(kFileScheme))
         _file_name = getLocalPath(_file_name);
-    if (m_pQAVIO)
-        m_pQAVIO->setDevice(0);
+    // use AVInput to support protocols not supported by ffmpeg
+    int colon = _file_name.indexOf(QChar(':'));
+    if (colon >= 0) {
+        const QString scheme = colon == 0 ? "qrc" : _file_name.left(colon);
+        if (!AVDemuxer::supportedProtocols().contains(scheme)) {
+            qDebug("Protocol '%s' is not supported by FFmpeg, try AVInput", scheme.toUtf8().constData());
+            m_in = AVInput::createForProtocol(scheme);
+            if (!m_in) {
+                qWarning() << "Protocol is not supported: " << scheme;
+                return false;
+            }
+            m_in->setUrl(_file_name);
+        }
+    }
     return load();
 }
 #undef CHAR_COUNT
 
 bool AVDemuxer::load(QIODevice* device)
 {
-    if (!m_pQAVIO)
-        m_pQAVIO = new QAVIOContext(device);
-    else
-        m_pQAVIO->setDevice(device);
     _file_name = QString();
+    if (m_in) {
+        if (m_in->name() != "QIODevice") {
+            delete m_in;
+            m_in = 0;
+        }
+    }
+    if (!m_in)
+        m_in = AVInput::create("QIODevice");
+    QIODeviceInput *qin = static_cast<QIODeviceInput*>(m_in);
+    if (!qin) {
+        qWarning("Internal error: can not create AVInput for QIODevice.");
+        return false;
+    }
+    // TODO: use property?
+    qin->setIODevice(device); //open outside?
+    return load();
+}
+
+bool AVDemuxer::load(AVInput *in)
+{
+    _file_name = QString();
+    if (!m_in)
+        m_in = in;
+    if (m_in != in) {
+        delete m_in;
+        m_in = in;
+    }
     return load();
 }
 
@@ -551,7 +616,7 @@ bool AVDemuxer::load()
     close();
     qDebug("all closed and reseted");
 
-    if (_file_name.isEmpty() && ((m_pQAVIO && !m_pQAVIO->device()) || !m_pQAVIO) ) {
+    if (_file_name.isEmpty() && !m_in) {
         setMediaStatus(NoMedia);
         return false;
     }
@@ -599,14 +664,14 @@ bool AVDemuxer::load()
 
     setMediaStatus(LoadingMedia);
     int ret;
-    if (m_pQAVIO && m_pQAVIO->device()) {
-        format_context->pb = m_pQAVIO->context();
+    if (m_in) {
+        format_context->pb = (AVIOContext*)m_in->avioContext();
         format_context->flags |= AVFMT_FLAG_CUSTOM_IO;
-        qDebug("avformat_open_input: format_context:'%p'...",format_context);
+        qDebug("avformat_open_input: format_context:'%p'..., AVInput('%s'): %p", format_context, m_in->name().toUtf8().constData(), m_in);
         mpInterrup->begin(InterruptHandler::Open);
         ret = avformat_open_input(&format_context, "iodevice", _iformat, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
-        qDebug("avformat_open_input: (with io device) ret:%d", ret);
+        qDebug("avformat_open_input: (with AVInput) ret:%d", ret);
     } else {
         qDebug("avformat_open_input: format_context:'%p', url:'%s'...",format_context, qPrintable(_file_name));
         mpInterrup->begin(InterruptHandler::Open);

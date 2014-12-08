@@ -35,6 +35,7 @@
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
 #include "QtAV/AudioDecoder.h"
+#include "QtAV/AVInput.h"
 #include "QtAV/VideoRenderer.h"
 #include "QtAV/AVClock.h"
 #include "QtAV/VideoCapture.h"
@@ -51,6 +52,7 @@
 #include "utils/Logger.h"
 
 Q_DECLARE_METATYPE(QIODevice*) // for Qt4
+Q_DECLARE_METATYPE(QtAV::AVInput*)
 
 #define EOF_ISSUE_SOLVED 0
 namespace QtAV {
@@ -371,7 +373,7 @@ void AVPlayer::setFile(const QString &path)
         emit sourceChanged();
         //emit error(AVError(AVError::NoError));
     }
-    d->reset_state = !p.isEmpty() && d->reset_state;
+    d->reset_state = !p.isEmpty() && d->reset_state; //?
     d->demuxer.setAutoResetStream(d->reset_state);
     // TODO: use absoluteFilePath?
     d->loaded = false; //
@@ -386,16 +388,47 @@ QString AVPlayer::file() const
 
 void AVPlayer::setIODevice(QIODevice* device)
 {
-    if (!device)
-        return;
-
+    if (d->current_source.type() == QVariant::String) {
+        d->reset_state = true;
+    } else {
+        if (d->current_source.canConvert<QIODevice*>()) {
+            d->reset_state = d->current_source.value<QIODevice*>() != device;
+        } else { // AVInput
+            d->reset_state = true;
+        }
+    }
     d->demuxer.setAutoResetStream(d->reset_state);
-    // FIXME: not compare QVariant::String
-    d->reset_state = d->current_source.type() == QVariant::String || d->current_source.value<QIODevice*>() != device;
-    d->current_source = QVariant::fromValue(device);
     d->loaded = false;
+    d->current_source = QVariant::fromValue(device);
     if (d->reset_state)
         emit sourceChanged();
+}
+
+void AVPlayer::setInput(AVInput *in)
+{
+    if (d->current_source.type() == QVariant::String) {
+        d->reset_state = true;
+    } else {
+        if (d->current_source.canConvert<QIODevice*>()) {
+            d->reset_state = true;
+        } else { // AVInput
+            d->reset_state = d->current_source.value<QtAV::AVInput*>() != in;
+        }
+    }
+    d->demuxer.setAutoResetStream(d->reset_state);
+    d->loaded = false;
+    d->current_source = QVariant::fromValue<QtAV::AVInput*>(in);
+    if (d->reset_state)
+        emit sourceChanged();
+}
+
+AVInput* AVPlayer::input() const
+{
+    if (d->current_source.type() == QVariant::String)
+        return 0;
+    if (!d->current_source.canConvert<QtAV::AVInput*>())
+        return 0;
+    return d->current_source.value<QtAV::AVInput*>();
 }
 
 VideoCapture* AVPlayer::videoCapture()
@@ -515,9 +548,18 @@ bool AVPlayer::load(bool reload)
         qDebug("Invalid media source. No file or IODevice was set.");
         return false;
     }
-
-    qDebug() << "Loading " << d->current_source << " ...";
-    if (reload || !d->demuxer.isLoaded(d->current_source.toString())) {
+    if (!reload) {
+        if (d->current_source.type() == QVariant::String) {
+            reload = !d->demuxer.isLoaded(d->current_source.toString());
+        } else {
+            if (d->current_source.canConvert<QIODevice*>()) {
+                reload = !d->demuxer.isLoaded(d->current_source.value<QIODevice*>());
+            } else { // AVInput
+                reload = !d->demuxer.isLoaded(d->current_source.value<QtAV::AVInput*>());
+            }
+        }
+    }
+    if (reload) {
         if (isAsyncLoad()) {
             class LoadWorker : public QRunnable {
             public:
@@ -552,13 +594,19 @@ void AVPlayer::loadInternal()
         if (d->vdec)
             d->vdec->setCodecContext(0);
     }
+    qDebug() << "Loading " << d->current_source << " ...";
     if (d->current_source.type() == QVariant::String) {
         d->loaded = d->demuxer.loadFile(d->current_source.toString());
     } else {
-        d->loaded = d->demuxer.load(d->current_source.value<QIODevice*>());
+        if (d->current_source.canConvert<QIODevice*>()) {
+            d->loaded = d->demuxer.load(d->current_source.value<QIODevice*>());
+        } else { // AVInput
+            d->loaded = d->demuxer.load(d->current_source.value<QtAV::AVInput*>());
+        }
     }
     if (!d->loaded) {
         d->statistics.reset();
+        qWarning("Load failed!");
         return;
     }
     // setup parameters from loaded media
