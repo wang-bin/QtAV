@@ -50,6 +50,7 @@ class QIODevice;
 namespace QtAV {
 
 class AVError;
+class AVInput;
 class Packet;
 class QAVIOContext;
 
@@ -73,6 +74,8 @@ public:
         SeekTarget_AnyFrame,
         SeekTarget_AccurateFrame
     };
+    /// Supported input protocols. A static string list
+    static const QStringList& supportedProtocols();
 
     AVDemuxer(const QString& fileName = QString(), QObject *parent = 0);
     ~AVDemuxer();
@@ -82,7 +85,10 @@ public:
     bool close(); //TODO: rename unload()
     bool loadFile(const QString& fileName);
     bool isLoaded(const QString& fileName) const;
-    bool load(QIODevice* iocontext);
+    bool isLoaded(QIODevice* dev) const;
+    bool isLoaded(AVInput* in) const;
+    bool load(QIODevice* dev);
+    bool load(AVInput* in);
     bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
 
     void putFlushPacket();
@@ -227,7 +233,7 @@ private:
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
     AVInputFormat *_iformat;
-    QAVIOContext* m_pQAVIO;
+    AVInput *m_in;
     QMutex mutex; //for seek and readFrame
     QElapsedTimer seek_timer;
 
