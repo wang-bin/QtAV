@@ -26,7 +26,6 @@
 #include "QtAV/AVError.h"
 #include "QtAV/AVInput.h"
 #include "QtAV/Packet.h"
-#include "QAVIOContext.h"
 #include "QtAV/private/AVCompat.h"
 #include "input/QIODeviceInput.h"
 #include "utils/Logger.h"

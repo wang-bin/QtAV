@@ -301,7 +301,6 @@ SOURCES += \
     subtitle/SubtitleProcessorFFmpeg.cpp \
     utils/GPUMemCopy.cpp \
     utils/Logger.cpp \
-    QAVIOContext.cpp \
     AudioThread.cpp \
     AVThread.cpp \
     AudioFormat.cpp \
@@ -419,7 +418,6 @@ SDK_PRIVATE_HEADERS *= \
 HEADERS *= \
     $$SDK_HEADERS \
     $$SDK_PRIVATE_HEADERS \
-    QAVIOContext.h \
     AVPlayerPrivate.h \
     AVDemuxThread.h \
     AVThread.h \

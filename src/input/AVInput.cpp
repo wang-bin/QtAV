@@ -1,6 +1,7 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Initial QAVIOContext.cpp code is from Stefan Ladage <sladage@gmail.com>
 
 *   This file is part of QtAV
 

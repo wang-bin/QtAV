@@ -69,4 +69,6 @@
 #include <QtAV/Subtitle.h>
 #include <QtAV/SubtitleFilter.h>
 
+#include <QtAV/AVInput.h>
+
 #endif // QTAV_H
