@@ -201,6 +201,20 @@ bool VideoDecoderFFmpegHW::prepare()
             break;
         }
     }
+    //// From vlc begin
+    d.codec_ctx->thread_safe_callbacks = true; //?
+    switch (d.codec_ctx->codec_id) {
+# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
+        /// tested libav-9.x + va-api. If remove this code:  Bug detected, please report the issue. Context scratch buffers could not be allocated due to unknown size
+        case QTAV_CODEC_ID(H264):
+        case QTAV_CODEC_ID(VC1):
+        case QTAV_CODEC_ID(WMV3):
+            d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
+# endif
+        default:
+            break;
+    }
+    //// From vlc end
     //TODO: neccesary?
 #if 0
     if (!d.setup(&d.codec_ctx->hwaccel_context, d.codec_ctx->width, d.codec_ctx->height)) {
