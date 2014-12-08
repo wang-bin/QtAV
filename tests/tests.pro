@@ -6,4 +6,5 @@ SUBDIRS += \
     extract \
     qiodevice \
     subtitle \
+    qrc \
     playerthread
