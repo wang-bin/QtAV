@@ -501,15 +501,11 @@ void QmlAVPlayer::_q_paused(bool p)
 void QmlAVPlayer::_q_started()
 {
     mPlaybackState = PlayingState;
-    emit playing();
-    emit playbackStateChanged();
-
     applyChannelLayout();
     // applyChannelLayout() first because it may reopen audio device
     applyVolume();
     mpPlayer->setMute(isMuted());
     mpPlayer->setSpeed(playbackRate());
-
     // TODO: in load()?
     m_metaData->setValuesFromStatistics(mpPlayer->statistics());
     if (!mHasAudio) {
@@ -522,6 +518,8 @@ void QmlAVPlayer::_q_started()
         if (mHasVideo)
             emit hasVideoChanged();
     }
+    emit playing();
+    emit playbackStateChanged();
 }
 
 void QmlAVPlayer::_q_stopped()
