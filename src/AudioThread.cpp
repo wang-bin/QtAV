@@ -30,6 +30,7 @@
 #include "output/OutputSet.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QCoreApplication>
+#include <QtCore/QDateTime>
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -106,12 +107,13 @@ void AudioThread::run()
              * a frame is about 20ms. sleep time must be << frame time
              */
             qreal a_v = pkt.pts - d.clock->videoPts();
-
             //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", pkt.pts, d.render_pts0, d.clock->videoPts(), a_v*1000.0);
-            if (a_v > 0)
+            if (a_v > 0) {
                 msleep(qMin((ulong)20, ulong(a_v*1000.0)));
-            else
+            } else {
+                // audio maybe too late compared with video packet before seeking backword. so just ignore
                 msleep(1);
+            }
             pkt = Packet(); //mark invalid to take next
             continue;
         }
