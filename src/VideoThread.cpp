@@ -213,11 +213,11 @@ void VideoThread::run()
             // skip decoding
             // TODO: force fit min fps
             if (nb_dec_slow > 10 && !pkt.hasKeyFrame) {
-                //nb_dec_slow = 0;
-                //wait_key_frame = true;
-                //pkt = Packet();
+                nb_dec_slow = 0;
+                wait_key_frame = true;
+                pkt = Packet();
                 // TODO: use discard flag
-                //continue;
+                continue;
             } else {
                 nb_dec_slow++;
             }
@@ -274,9 +274,9 @@ void VideoThread::run()
                     pkt = Packet();
                     continue; // seeking and this v packet is before seeking
                 }
-                const double s = qMin<double>(d.delay/2.0, 0.1);
-                qWarning("video too fast!!! sleep %.2f s", s);
                 d.clock->updateVideoPts(pts); //here?
+                const double s = 0.02;
+                qWarning("video too fast!!! sleep %.2f s", s);
                 usleep(s * 1000000UL);
                 d.delay = qMax<qreal>(0.0, qMin(d.delay, qreal(pts - d.clock->value())));
             }
