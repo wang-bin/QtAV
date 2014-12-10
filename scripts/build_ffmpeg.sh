@@ -180,7 +180,7 @@ else
     PLATFORM_OPT="$VAAPI $VDPAU"
   elif platform_is Darwin; then
     PLATFORM_OPT="$VDA --cc=clang --cxx=clang++"
-    EXTRA_CFLAGS=-mmacosx-version-min=10.6
+    EXTRA_CFLAGS=-mmacosx-version-min=10.7
   fi
 fi
 
@@ -198,7 +198,7 @@ FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
 FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
 [ $FFMAJOR -eq 0 -a $FFMINOR -lt 11 ] && AVR_OPT=
 
-CONFIGURE="./$CONFIGURE --disable-static --enable-shared --enable-gpl --enable-version3 --enable-runtime-cpudetect $AVR_OPT --disable-muxers --disable-encoders --enable-hwaccels $PLATFORM_OPT $TOOLCHAIN_OPT"
+CONFIGURE="./$CONFIGURE --extra-version=QtAV --disable-static --enable-shared --enable-gpl --enable-version3 --enable-runtime-cpudetect $AVR_OPT --disable-muxers --disable-encoders --enable-hwaccels --enable-opengl $PLATFORM_OPT $TOOLCHAIN_OPT"
 
 
 echo $CONFIGURE
