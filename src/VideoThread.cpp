@@ -181,7 +181,7 @@ void VideoThread::run()
     /* kNbSlowSkip: if video frame slow count >= kNbSlowSkip, skip decoding all frames until next keyframe reaches.
      * if slow count > kNbSlowSkip/2, skip rendering every 3 or 6 frames
      */
-    const int kNbSlowSkip = 240; // about 2s for 120fps video
+    const int kNbSlowSkip = 120; // about 1s for 120fps video
     // kNbSlowFrameDrop: if video frame slow count > kNbSlowFrameDrop, skip decoding nonref frames. only some of ffmpeg based decoders support it.
     const int kNbSlowFrameDrop = 10;
     while (!d.stop) {
@@ -216,8 +216,8 @@ void VideoThread::run()
         // TODO: delta ref time
         qreal new_delay = pts - d.clock->value();
         if (d.delay < -0.5 && d.delay > new_delay) {
-            // skip decoding
-            if (nb_dec_slow > kNbSlowSkip && !pkt.hasKeyFrame) {
+            // ensure video will not later than 2s
+            if (new_delay < -2 || (nb_dec_slow > kNbSlowSkip && new_delay < -1.0 && !pkt.hasKeyFrame)) {
                 qDebug("video is too slow. skip decoding until next key frame.");
                 // TODO: when to reset so frame drop flag can reset?
                 nb_dec_slow = 0;
@@ -227,7 +227,7 @@ void VideoThread::run()
                 continue;
             } else {
                 nb_dec_slow++;
-                qDebug("frame slow count: %d", nb_dec_slow);
+                qDebug("frame slow count: %d. a-v: %.3f", nb_dec_slow, new_delay);
             }
         } else {
             if (nb_dec_slow > kNbSlowFrameDrop) {
@@ -290,7 +290,7 @@ void VideoThread::run()
                     if (nb_dec_slow < kNbSlowSkip/2) {
                         skip_render = false;
                     } else if (nb_dec_slow < kNbSlowSkip) {
-                        const int skip_every = kNbSlowSkip >= 200 ? 3 : 6;
+                        const int skip_every = kNbSlowSkip >= 60 ? 2 : 4;
                         skip_render = nb_dec_slow % skip_every; // skip rendering every 3 frames
                     }
                 }
