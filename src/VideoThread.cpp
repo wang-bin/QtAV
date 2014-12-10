@@ -177,6 +177,13 @@ void VideoThread::run()
 
     bool is_pkt_bf_seek = true;
     qint32 seek_count = 0;
+    // TODO: kNbSlowSkip depends on video fps, ensure slow time <= 2s
+    /* kNbSlowSkip: if video frame slow count >= kNbSlowSkip, skip decoding all frames until next keyframe reaches.
+     * if slow count > kNbSlowSkip/2, skip rendering every 3 or 6 frames
+     */
+    const int kNbSlowSkip = 240; // about 2s for 120fps video
+    // kNbSlowFrameDrop: if video frame slow count > kNbSlowFrameDrop, skip decoding nonref frames. only some of ffmpeg based decoders support it.
+    const int kNbSlowFrameDrop = 10;
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -209,10 +216,10 @@ void VideoThread::run()
         // TODO: delta ref time
         qreal new_delay = pts - d.clock->value();
         if (d.delay < -0.5 && d.delay > new_delay) {
-            qDebug("video becomes slower. force reduce video delay");
             // skip decoding
-            // TODO: force fit min fps
-            if (nb_dec_slow > 10 && !pkt.hasKeyFrame) {
+            if (nb_dec_slow > kNbSlowSkip && !pkt.hasKeyFrame) {
+                qDebug("video is too slow. skip decoding until next key frame.");
+                // TODO: when to reset so frame drop flag can reset?
                 nb_dec_slow = 0;
                 wait_key_frame = true;
                 pkt = Packet();
@@ -220,8 +227,13 @@ void VideoThread::run()
                 continue;
             } else {
                 nb_dec_slow++;
+                qDebug("frame slow count: %d", nb_dec_slow);
             }
         } else {
+            if (nb_dec_slow > kNbSlowFrameDrop) {
+                qDebug("decrease 1 slow frame: %d", nb_dec_slow);
+                --nb_dec_slow; // nb_dec_slow < kNbSlowFrameDrop will reset decoder frame drop flag
+            }
             d.delay = new_delay;
         }
         /*
@@ -236,10 +248,19 @@ void VideoThread::run()
             //qDebug("skip video render at %f/%f", pkt.pts, d.render_pts0);
         }
         if (!seeking) { // not seeking
-            if (dec_opt_state == kFrameDrop) {
-                dec_opt_state = kNoFrameDrop;
-                dec->setOptions(d.dec_opt_normal);
+            if (nb_dec_slow < kNbSlowFrameDrop) {
+                if (dec_opt_state == kFrameDrop) {
+                    dec_opt_state = kNoFrameDrop;
+                    dec->setOptions(d.dec_opt_normal);
+                }
+            } else {
+                if (dec_opt_state == kNoFrameDrop) {
+                    dec_opt_state = kFrameDrop;
+                    //dec_opt_old = dec->options();
+                    dec->setOptions(d.dec_opt_framedrop);
+                }
             }
+
         } else { // seeking
             if (seek_count > 0) {
                 if (dec_opt_state == kNoFrameDrop) {
@@ -265,6 +286,14 @@ void VideoThread::run()
                     //continue;
                 }
                 skip_render = !pkt.hasKeyFrame;
+                if (skip_render) {
+                    if (nb_dec_slow < kNbSlowSkip/2) {
+                        skip_render = false;
+                    } else if (nb_dec_slow < kNbSlowSkip) {
+                        const int skip_every = kNbSlowSkip >= 200 ? 3 : 6;
+                        skip_render = nb_dec_slow % skip_every; // skip rendering every 3 frames
+                    }
+                }
             } else {
                 // video too fast if old packet before seek backward compared with new audio packet after seek backward
                 // what about video too late?
