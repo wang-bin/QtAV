@@ -730,6 +730,7 @@ qint64 AVPlayer::startPosition() const
 
 void AVPlayer::setStartPosition(qint64 pos)
 {
+    // default stopPosition() is int64 max, so set start position before media loaded is ok
     if (pos > stopPosition() && stopPosition() > 0) {
         qWarning("start position too large (%lld > %lld). ignore", pos, stopPosition());
         return;
@@ -1163,12 +1164,17 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             emit positionChanged(t);
             return;
         }
+        // FIXME
         if (d->seeking && t >= d->seek_target + 1000) {
             d->seeking = false;
             d->seek_target = 0;
         }
+        if (t < startPosition()) {
+            setPosition(startPosition());
+            return;
+        }
         if (t <= stopPosition()) {
-            if (!d->seeking) {
+            if (!d->seeking) { // FIXME
                 emit positionChanged(t);
             }
             return;
