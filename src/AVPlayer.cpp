@@ -1025,9 +1025,9 @@ void AVPlayer::playInternal()
     if (masterClock()->isClockAuto()) {
         qDebug("auto select clock: audio > external");
         if (!d->demuxer.audioCodecContext() || !d->ao) {
-            qWarning("No audio found or audio not supported. Using ExternalClock");
             masterClock()->setClockType(AVClock::ExternalClock);
-            masterClock()->setInitialValue(mediaStartPositionF());
+            masterClock()->setInitialValue((double)absoluteMediaStartPosition()/1000.0);
+            qWarning("No audio found or audio not supported. Using ExternalClock. initial value: %f", masterClock()->value());
         } else {
             qDebug("Using AudioClock");
             masterClock()->setClockType(AVClock::AudioClock);
