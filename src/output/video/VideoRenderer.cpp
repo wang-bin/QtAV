@@ -23,21 +23,6 @@
 #include <QtAV/private/VideoRenderer_p.h>
 #include <QtAV/Filter.h>
 #include <QtCore/QCoreApplication>
-
-// TODO: move to an internal header
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || defined(QT_WIDGETS_LIB)
-#ifndef QTAV_HAVE_WIDGETS
-#define QTAV_HAVE_WIDGETS 1
-#endif //QTAV_HAVE_WIDGETS
-#endif
-
-#if QTAV_HAVE(WIDGETS)
-#include <QWidget>
-#include <QGraphicsItem>
-#endif //QTAV_HAVE(WIDGETS)
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtGui/QWindow>
-#endif
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -618,20 +603,13 @@ bool VideoRenderer::onSetSaturation(qreal s)
 
 void VideoRenderer::updateUi()
 {
-    // TODO: qwindow() and widget() can both use event?
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    if (qwindow()) {
+    QObject *obj = (QObject*)qwindow();
+    if (!obj)
+        obj = (QObject*)widget();
+    if (obj) {
         // DO NOT use qApp macro inside QtAV because QtAV may not depend QtWidgets module
-        QCoreApplication::instance()->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
+        QCoreApplication::instance()->postEvent(obj, new QEvent(QEvent::UpdateRequest));
     }
-#endif
-#if QTAV_HAVE(WIDGETS)
-    if (widget()) {
-        widget()->update();
-    } else if (graphicsItem()) {
-        graphicsItem()->update();
-    }
-#endif //QTAV_HAVE(WIDGETS)
 }
 
 } //namespace QtAV
