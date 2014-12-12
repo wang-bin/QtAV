@@ -559,6 +559,9 @@ bool AVDemuxer::loadFile(const QString &fileName)
         _file_name.insert(3, 'h');
     else if (_file_name.startsWith(kFileScheme))
         _file_name = getLocalPath(_file_name);
+    // a local file. return here to avoid protocol checking. If path contains ":", protocol checking will fail
+    if (_file_name.startsWith(QChar('/')))
+        return load();
     // use AVInput to support protocols not supported by ffmpeg
     int colon = _file_name.indexOf(QChar(':'));
     if (colon >= 0) {
@@ -675,7 +678,7 @@ bool AVDemuxer::load()
         format_context->flags |= AVFMT_FLAG_CUSTOM_IO;
         qDebug("avformat_open_input: format_context:'%p'..., AVInput('%s'): %p", format_context, m_in->name().toUtf8().constData(), m_in);
         mpInterrup->begin(InterruptHandler::Open);
-        ret = avformat_open_input(&format_context, "iodevice", _iformat, mOptions.isEmpty() ? NULL : &mpDict);
+        ret = avformat_open_input(&format_context, "AVInput", _iformat, mOptions.isEmpty() ? NULL : &mpDict);
         mpInterrup->end();
         qDebug("avformat_open_input: (with AVInput) ret:%d", ret);
     } else {
