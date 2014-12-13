@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,39 +22,22 @@
 #ifndef QAV_DEMUXER_H
 #define QAV_DEMUXER_H
 
-#include <QtAV/QtAV_Global.h>
 #include <QtAV/CommonTypes.h>
 #include <QtAV/AVError.h>
+#include <QtAV/Packet.h>
 #include <QtCore/QVariant>
 #include <QtCore/QObject>
-#include <QtCore/QSize>
-#include <QtCore/QMutex>
-
-#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
-#include <QtCore/QElapsedTimer>
-#else
-#include <QtCore/QTime>
-typedef QTime QElapsedTimer;
-#endif
 
 struct AVFormatContext;
 struct AVInputFormat;
 struct AVCodecContext;
-struct AVCodec;
-struct AVFrame;
-struct AVStream;
 struct AVDictionary;
-
 class QIODevice;
 // TODO: force codec name. clean code
 namespace QtAV {
-
 class AVError;
 class AVInput;
-class Packet;
-class QAVIOContext;
-
-class Q_AV_EXPORT AVDemuxer : public QObject //QIODevice?
+class Q_AV_EXPORT AVDemuxer : public QObject
 {
     Q_OBJECT
 public:
@@ -63,7 +46,6 @@ public:
         VideoStream,
         SubtitleStream,
     };
-
     enum SeekUnit {
         SeekByTime, // only this is supported now
         SeekByByte,
@@ -74,12 +56,11 @@ public:
         SeekTarget_AnyFrame,
         SeekTarget_AccurateFrame
     };
-    /// Supported input protocols. A static string list
+    /// Supported ffmpeg/libav input protocols(not complete). A static string list
     static const QStringList& supportedProtocols();
 
     AVDemuxer(const QString& fileName = QString(), QObject *parent = 0);
     ~AVDemuxer();
-
     MediaStatus mediaStatus() const;
     bool atEnd() const;
     bool close(); //TODO: rename unload()
@@ -89,12 +70,26 @@ public:
     bool isLoaded(AVInput* in) const;
     bool load(QIODevice* dev);
     bool load(AVInput* in);
+    //
     bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
-
-    void putFlushPacket();
+    /*!
+     * \brief readFrame
+     * Read a packet from 1 of the streams. use packet() to get the result packet. packet() returns last valid packet.
+     * So do not use packet() if readFrame() failed.
+     * Call readFrame() and seek() in the same thread.
+     * \return false if error occurs, interrupted by user or time out(getInterruptTimeout())
+     */
     bool readFrame();
-    Packet* packet() const; //current readed packet
-    int stream() const; //current readed stream index
+    /*!
+     * \brief packet
+     * If readFrame() return true, it's current readed packet, otherwise it's last packet().
+     */
+    Packet packet() const;
+    /*!
+     * \brief stream
+     * Current readFrame() readed stream index.
+     */
+    int stream() const;
 
     bool isSeekable() const;
     void setSeekUnit(SeekUnit unit);
@@ -126,7 +121,6 @@ public:
     // if stream is -1, return the current video(or audio if no video) stream.
     // TODO: audio/videoFrames?
     qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames
-    bool isInput() const;
 
     bool hasAttacedPicture() const;
     // true: next load with use the best stream instead of specified stream
@@ -149,7 +143,6 @@ public:
 
     int width() const; //AVCodecContext::width;
     int height() const; //AVCodecContext::height
-    QSize frameSize() const;
 
     //codec. stream < 0: the stream going to play
     AVCodecContext* audioCodecContext(int stream = -1) const;
@@ -180,15 +173,15 @@ public:
      * @param interrupt true: abort current operation like loading and reading packets. false: no interrupt
      */
     void setInterruptStatus(bool interrupt);
-    /*
+    /*!
+     * \brief setOptions
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
      * In addition, av_dict is slow.
-     * empty means default options in ffmpeg
+     * empty means default options in ffmpeg.
+     * used in avformat_open_input()
      */
-    // avformat_open_input
     void setOptions(const QVariantHash &dict);
     QVariantHash options() const;
-
 signals:
     void unloaded();
     void userInterrupted(); //NO direct connection because it's emit before interrupted happens
@@ -198,7 +191,6 @@ signals:
     void finished(); //end of file
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void mediaStatusChanged(QtAV::MediaStatus status);
-
 private:
     void setMediaStatus(MediaStatus status);
     /*!
@@ -212,7 +204,7 @@ private:
     bool started_;
     bool eof;
     bool auto_reset_stream;
-    Packet *pkt;
+    Packet m_pkt;
     qint64 ipts;
     int stream_idx;
     // wanted_xx_stream: -1 auto select by ff
@@ -227,15 +219,12 @@ private:
     bool findStreams();
     QString formatName(AVFormatContext *ctx, bool longName = false) const;
 
-    bool _is_input;
     AVFormatContext *format_context;
     AVCodecContext *a_codec_context, *v_codec_context, *s_codec_contex;
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
     AVInputFormat *_iformat;
     AVInput *m_in;
-    QMutex mutex; //for seek and readFrame
-    QElapsedTimer seek_timer;
 
     SeekUnit mSeekUnit;
     SeekTarget mSeekTarget;

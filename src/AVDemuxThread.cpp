@@ -24,6 +24,7 @@
 #include "QtAV/AVDecoder.h"
 #include "QtAV/Packet.h"
 #include "AVThread.h"
+#include <QtCore/QTime>
 #include <QtCore/QTimer>
 #include <QtCore/QEventLoop>
 #include "utils/Logger.h"
@@ -159,7 +160,7 @@ void AVDemuxThread::seekInternal(qint64 pos)
         video_thread->setDemuxEnded(false);
         video_thread->packetQueue()->clear();
     }
-    qDebug("seek to %lld ms (%f%%)", pos, double(pos)/double(demuxer->duration())*100.0);
+    qDebug("seek to %s %lld ms (%f%%)", QTime(0, 0, 0).addMSecs(pos).toString().toUtf8().constData(), pos, double(pos)/double(demuxer->duration())*100.0);
     demuxer->seek(pos);
     // TODO: why queue may not empty?
     if (audio_thread) {
@@ -390,7 +391,7 @@ void AVDemuxThread::run()
             continue;
         }
         index = demuxer->stream();
-        pkt = *demuxer->packet(); //TODO: how to avoid additional copy?
+        pkt = demuxer->packet(); //TODO: how to avoid additional copy?
         //connect to stop is ok too
         if (pkt.isEnd()) {
             qDebug("read end packet %d A:%d V:%d", index, audio_stream, video_stream);

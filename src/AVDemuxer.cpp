@@ -20,18 +20,19 @@
 ******************************************************************************/
 
 #include "QtAV/AVDemuxer.h"
-#include <QtCore/QStringList>
-#include <QtCore/QThread>
-#include <QtCore/QCoreApplication>
-#include "QtAV/AVError.h"
 #include "QtAV/AVInput.h"
-#include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "input/QIODeviceInput.h"
+#include <QtCore/QStringList>
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+#include <QtCore/QElapsedTimer>
+#else
+#include <QtCore/QTime>
+typedef QTime QElapsedTimer;
+#endif
 #include "utils/Logger.h"
 
 namespace QtAV {
-
 static const char kFileScheme[] = "file:";
 #define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
 
@@ -85,14 +86,22 @@ public:
         opaque = this;
     }
     ~InterruptHandler() {
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
         mTimer.invalidate();
+#else
+        mTimer.stop();
+#endif
     }
     void begin(Action act) {
         mAction = act;
         mTimer.start();
     }
     void end() {
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
         mTimer.invalidate();
+#else
+        mTimer.stop();
+#endif
         switch (mAction) {
         case Read:
             //mpDemuxer->setMediaStatus(BufferedMedia);
@@ -146,9 +155,12 @@ public:
             return 0;
         }
         //use restart
-        if (!handler->mTimer.hasExpired(handler->mTimeout)) {
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+        if (!handler->mTimer.hasExpired(handler->mTimeout))
+#else
+        if (handler->mTimer.elapsed() < handler->mTimeout)
+#endif
             return 0;
-        }
         qDebug("Timeout expired: %lld/%lld -> quit!", handler->mTimer.elapsed(), handler->mTimeout);
         handler->mTimer.invalidate();
         AVError err;
@@ -178,7 +190,6 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , started_(false)
     , eof(false)
     , auto_reset_stream(true)
-    , pkt(new Packet())
     , ipts(0)
     , stream_idx(-1)
     , wanted_audio_stream(-1)
@@ -187,7 +198,6 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , audio_stream(-2)
     , video_stream(-2)
     , subtitle_stream(-2)
-    , _is_input(true)
     , format_context(0)
     , a_codec_context(0)
     , v_codec_context(0)
@@ -226,10 +236,6 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
 AVDemuxer::~AVDemuxer()
 {
     close();
-    if (pkt) {
-        delete pkt;
-        pkt = 0;
-    }
     if (mpDict) {
         av_dict_free(&mpDict);
     }
@@ -266,11 +272,8 @@ bool AVDemuxer::readFrame()
 {
     if (!format_context)
         return false;
-
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+    // no lock required because in AVDemuxThread read and seek are in the same thread
     AVPacket packet;
-
     mpInterrup->begin(InterruptHandler::Read);
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
     mpInterrup->end();
@@ -281,14 +284,14 @@ bool AVDemuxer::readFrame()
             if (!eof) {
                 eof = true;
                 started_ = false;
-                pkt->data = QByteArray(); //flush
-                pkt->markEnd();
+                m_pkt = Packet(); //flush
+                m_pkt.markEnd();
                 setMediaStatus(EndOfMedia);
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
                 return true;
             }
-            //pkt->data = QByteArray(); //flush
+            //m_pkt.data = QByteArray(); //flush
             //return true;
             return false; //frames after eof are eof frames
         } else if (ret == AVERROR_INVALIDDATA) {
@@ -315,13 +318,13 @@ bool AVDemuxer::readFrame()
         //qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
         return false;
     }
-    pkt->hasKeyFrame = !!(packet.flags & AV_PKT_FLAG_KEY);
+    m_pkt.hasKeyFrame = !!(packet.flags & AV_PKT_FLAG_KEY);
     // what about marking packet as invalid and do not use isCorrupt?
-    pkt->isCorrupt = !!(packet.flags & AV_PKT_FLAG_CORRUPT);
+    m_pkt.isCorrupt = !!(packet.flags & AV_PKT_FLAG_CORRUPT);
 #if NO_PADDING_DATA
-    pkt->data.clear();
+    m_pkt.data.clear();
     if (packet.data)
-        pkt->data = QByteArray((const char*)packet.data, packet.size);
+        m_pkt.data = QByteArray((const char*)packet.data, packet.size);
 #else
     /*!
       larger than the actual read bytes because some optimized bitstream readers read 32 or 64 bits at once and could read over the end.
@@ -334,40 +337,40 @@ bool AVDemuxer::readFrame()
         // also copy  padding data(usually 0)
         memcpy(encoded.data(), packet.data, encoded.capacity()); // encoded.capacity() is always > 0 even if packet.data, so must check packet.data null
     }
-    pkt->data = encoded;
+    m_pkt.data = encoded;
 #endif //NO_PADDING_DATA
-    pkt->duration = packet.duration;
+    m_pkt.duration = packet.duration;
     //if (packet.dts == AV_NOPTS_VALUE && )
     if (packet.dts != AV_NOPTS_VALUE) //has B-frames
-        pkt->pts = packet.dts;
+        m_pkt.pts = packet.dts;
     else if (packet.pts != AV_NOPTS_VALUE)
-        pkt->pts = packet.pts;
+        m_pkt.pts = packet.pts;
     else
-        pkt->pts = 0;
+        m_pkt.pts = 0;
     AVStream *stream = format_context->streams[stream_idx];
-    pkt->pts *= av_q2d(stream->time_base);
+    m_pkt.pts *= av_q2d(stream->time_base);
     //TODO: pts must >= 0? look at ffplay
-    pkt->pts = qMax<qreal>(0, pkt->pts);
+    m_pkt.pts = qMax<qreal>(0, m_pkt.pts);
     // TODO: convergence_duration
     // subtitle is always key frame? convergence_duration may be 0
     if (stream->codec->codec_type == AVMEDIA_TYPE_SUBTITLE
             && (packet.flags & AV_PKT_FLAG_KEY)
             &&  packet.convergence_duration > 0 && packet.convergence_duration != AV_NOPTS_VALUE) { //??
-        pkt->duration = packet.convergence_duration * av_q2d(stream->time_base);
+        m_pkt.duration = packet.convergence_duration * av_q2d(stream->time_base);
      } else if (packet.duration > 0)
-        pkt->duration = packet.duration * av_q2d(stream->time_base);
+        m_pkt.duration = packet.duration * av_q2d(stream->time_base);
     else
-        pkt->duration = 0;
-    //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", pkt->pts, pkt->duration, packet.dts);
-    if (pkt->isCorrupt)
-        qDebug("currupt packet. pts: %f", pkt->pts);
+        m_pkt.duration = 0;
+    //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", m_pkt.pts, m_pkt.duration, packet.dts);
+    if (m_pkt.isCorrupt)
+        qDebug("currupt packet. pts: %f", m_pkt.pts);
     av_free_packet(&packet); //important!
     return true;
 }
 
-Packet* AVDemuxer::packet() const
+Packet AVDemuxer::packet() const
 {
-    return pkt;
+    return m_pkt;
 }
 
 int AVDemuxer::stream() const
@@ -447,18 +450,17 @@ bool AVDemuxer::seek(qint64 pos)
         qWarning("Invalid seek position %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
         return false;
     }
-    QMutexLocker lock(&mutex);
-    Q_UNUSED(lock);
+    // no lock required because in AVDemuxThread read and seek are in the same thread
 #if 0
     //t: unit is s
     qreal t = q;// * (double)format_context->duration; //
-    int ret = av_seek_frame(format_context, -1, (int64_t)(t*AV_TIME_BASE), t > pkt->pts ? 0 : AVSEEK_FLAG_BACKWARD);
-    qDebug("[AVDemuxer] seek to %f %f %lld / %lld", q, pkt->pts, (int64_t)(t*AV_TIME_BASE), durationUs());
+    int ret = av_seek_frame(format_context, -1, (int64_t)(t*AV_TIME_BASE), t > m_pkt.pts ? 0 : AVSEEK_FLAG_BACKWARD);
+    qDebug("[AVDemuxer] seek to %f %f %lld / %lld", q, m_pkt.pts, (int64_t)(t*AV_TIME_BASE), durationUs());
 #else
-    //TODO: pkt->pts may be 0, compute manually.
+    //TODO: m_pkt.pts may be 0, compute manually.
 
-    bool backward = mSeekTarget == SeekTarget_AccurateFrame || upos <= (int64_t)(pkt->pts*AV_TIME_BASE);
-    //qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", double(upos)/double(durationUs()), pkt->pts, upos, durationUs(), backward);
+    bool backward = mSeekTarget == SeekTarget_AccurateFrame || upos <= (int64_t)(m_pkt.pts*AV_TIME_BASE);
+    //qDebug("[AVDemuxer] seek to %f %f %lld / %lld backward=%d", double(upos)/double(durationUs()), m_pkt.pts, upos, durationUs(), backward);
     //AVSEEK_FLAG_BACKWARD has no effect? because we know the timestamp
     // FIXME: back flag is opposite? otherwise seek is bad and may crash?
     /* If stream_index is (-1), a default
@@ -907,11 +909,6 @@ qint64 AVDemuxer::frames(int stream) const
     return format_context->streams[stream]->nb_frames;
 }
 
-bool AVDemuxer::isInput() const
-{
-    return _is_input;
-}
-
 int AVDemuxer::currentStream(StreamType st) const
 {
     if (st == AudioStream)
@@ -1041,11 +1038,6 @@ int AVDemuxer::height() const
     return videoCodecContext()->height;
 }
 
-QSize AVDemuxer::frameSize() const
-{
-    return QSize(width(), height());
-}
-
 //codec
 AVCodecContext* AVDemuxer::audioCodecContext(int stream) const
 {
@@ -1170,10 +1162,7 @@ bool AVDemuxer::findStreams()
 
 QString AVDemuxer::formatName(AVFormatContext *ctx, bool longName) const
 {
-    if (isInput())
-        return longName ? ctx->iformat->long_name : ctx->iformat->name;
-    else
-        return longName ? ctx->oformat->long_name : ctx->oformat->name;
+    return longName ? ctx->iformat->long_name : ctx->iformat->name;
 }
 
 /**

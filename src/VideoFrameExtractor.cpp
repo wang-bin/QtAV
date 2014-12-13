@@ -171,6 +171,7 @@ public:
             value += demuxer.startTime();
         demuxer.seek(value);
         const int vstream = demuxer.videoStream();
+        Packet pkt;
         while (!demuxer.atEnd()) {
             if (!demuxer.readFrame()) {
                 //qDebug("!!!!!!read frame error!!!!!!");
@@ -178,41 +179,43 @@ public:
             }
             if (demuxer.stream() != vstream)
                 continue;
-            if ((qint64)(demuxer.packet()->pts*1000.0) - value > (qint64)range)
+            pkt = demuxer.packet();
+            if ((qint64)(pkt.pts*1000.0) - value > (qint64)range)
                 return false;
-            //qDebug("video packet: %f", demuxer.packet()->pts);
+            //qDebug("video packet: %f", pkt.pts);
             // TODO: always key frame?
-            if (demuxer.packet()->hasKeyFrame)
+            if (pkt.hasKeyFrame)
                 break;
         }
         decoder->flush(); //must flush otherwise old frames will be decoded at the beginning
         decoder->setOptions(dec_opt_normal);
-        const qint64 t_key = qint64(demuxer.packet()->pts * 1000.0);
-        //qDebug("delta t = %d, data size: %d", int(value - t_key), demuxer.packet()->data.size());
+        const qint64 t_key = qint64(pkt.pts * 1000.0);
+        //qDebug("delta t = %d, data size: %d", int(value - t_key), pkt.data.size());
         // must decode key frame
         // because current decode() only accept data, no dts pts, so we can't get correct decoded dts pts.
         // it's a workaround to decode until decoded key frame is valid
         int k = 0;
         while (k < 5 && !frame.isValid()) {
             //qWarning("invalid key frame!!!!! undecoded: %d", decoder->undecodedSize());
-            if (!decoder->decode(demuxer.packet()->data)) {
+            if (!decoder->decode(pkt.data)) {
                 //qWarning("!!!!!!!!!decode key failed!!!!!!!!");
                 return false;
             }
             frame = decoder->frame();
             ++k;
         }
-        frame.setTimestamp(demuxer.packet()->pts);
+        frame.setTimestamp(pkt.pts);
 
         // seek backward, so value >= t
         // decode key frame
         if (int(value - t_key) <= range) {
-            qDebug("!!!!!!!!!use key frame!!!!!!!");
+            //qDebug("!!!!!!!!!use key frame!!!!!!!");
             if (frame.isValid()) {
-                qDebug() << "frame found. format: " <<  frame.format();
+                qDebug() << "VideoFrameExtractor: key frame found. format: " <<  frame.format();
                 return true;
             }
         }
+        frame = VideoFrame();
         static const int kNoFrameDrop = 0;
         static const int kFrameDrop = 1;
         int dec_opt_state = kNoFrameDrop; // 0: default, 1: framedrop
@@ -228,14 +231,15 @@ public:
                 //qDebug("not video packet");
                 continue;
             }
-            const qreal t = demuxer.packet()->pts;
+            pkt = demuxer.packet();
+            const qreal t = pkt.pts;
             const qint64 diff = qint64(t*1000.0) - value;
             //qDebug("video packet: %f, delta=%lld", t, value - qint64(t*1000.0));
             if (diff > (qint64)range) { // use last decoded frame
                 //qWarning("out of range");
                 return frame.isValid();
             }
-            if (demuxer.packet()->hasKeyFrame) {
+            if (pkt.hasKeyFrame) {
                 // FIXME:
                 //qCritical("Internal error. Can not be a key frame!!!!");
                 //return false; //??
@@ -252,15 +256,15 @@ public:
                 }
             }
             // invalid packet?
-            if (!decoder->decode(demuxer.packet()->data)) {
+            if (!decoder->decode(pkt.data)) {
                 //qWarning("!!!!!!!!!decode failed!!!!");
                 return false;
             }
             // store the last decoded frame because next frame may be out of range
             const VideoFrame f = decoder->frame();
-            //qDebug() << "frame found. format: " <<  frame.format();
+            //qDebug() << "frame found. format: " <<  f.format();
             if (!f.isValid()) {
-                //qDebug("invalid frame!!!");
+                qDebug("VideoFrameExtractor: invalid frame!!!");
                 continue;
             }
             frame = f;

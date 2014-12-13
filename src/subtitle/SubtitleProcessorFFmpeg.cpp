@@ -244,8 +244,8 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
     SubtitleFrame frame;
     frame.begin = pts + qreal(sub.start_display_time)/1000.0;
     frame.end = pts + qreal(sub.end_display_time)/1000.0;
-   // qDebug() << QTime(0, 0, 0).addMSecs(frame.begin*1000.0) << "-" << QTime(0, 0, 0).addMSecs(frame.end*1000.0) << " fmt: " << sub.format << " pts: " << m_reader.packet()->pts //sub.pts
-    //            << " rects: " << sub.num_rects;
+    //qDebug() << QTime(0, 0, 0).addMSecs(frame.begin*1000.0) << "-" << QTime(0, 0, 0).addMSecs(frame.end*1000.0) << " fmt: " << sub.format << " pts: " << m_reader.packet().pts //sub.pts
+    //         << " rects: " << sub.num_rects << " end: " << sub.end_display_time;
     for (unsigned i = 0; i < sub.num_rects; i++) {
         switch (sub.rects[i]->type) {
         case SUBTITLE_ASS:
@@ -306,12 +306,12 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
             codec_ctx = 0;
             return false;
         }
-        if (!m_reader.packet()->isValid())
-            continue;
         if (m_reader.stream() != ss)
             continue;
-        const Packet *pkt = m_reader.packet();
-        SubtitleFrame frame = processLine(pkt->data, pkt->pts, pkt->duration);
+        const Packet pkt = m_reader.packet();
+        if (!pkt.isValid())
+            continue;
+        SubtitleFrame frame = processLine(pkt.data, pkt.pts, pkt.duration);
         if (frame.isValid())
             m_frames.append(frame);
     }
