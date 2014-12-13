@@ -79,7 +79,7 @@ AVPlayer::AVPlayer(QObject *parent) :
      */
     connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(aboutToQuitApp()));
     //d->clock->setClockType(AVClock::ExternalClock);
-    connect(&d->demuxer, SIGNAL(started()), d->clock, SLOT(start()));
+    connect(&d->demuxer, SIGNAL(started()), masterClock(), SLOT(start()));
     connect(&d->demuxer, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
     connect(&d->demuxer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
     connect(&d->demuxer, SIGNAL(loaded()), this, SIGNAL(loaded()));
@@ -998,7 +998,24 @@ void AVPlayer::playInternal()
         return;
         //return false;
     }
-
+    // setup clock before avthread.start() becuase avthreads use clock. after avthreads setup because of ao check
+    if (d->last_position > 0) {//start_last) {
+        masterClock()->pause(false); //external clock
+    } else {
+        masterClock()->reset();
+    }
+    if (masterClock()->isClockAuto()) {
+        qDebug("auto select clock: audio > external");
+        if (!d->demuxer.audioCodecContext() || !d->ao) {
+            masterClock()->setClockType(AVClock::ExternalClock);
+            masterClock()->setInitialValue((double)absoluteMediaStartPosition()/1000.0);
+            qWarning("No audio found or audio not supported. Using ExternalClock. initial value: %f", masterClock()->value());
+        } else {
+            qDebug("Using AudioClock");
+            masterClock()->setClockType(AVClock::AudioClock);
+            //masterClock()->setInitialValue(0);
+        }
+    }
     // from previous play()
     if (d->demuxer.audioCodecContext() && d->athread) {
         qDebug("Starting audio thread...");
@@ -1017,23 +1034,6 @@ void AVPlayer::playInternal()
             d->demuxer.seek((qint64)(startPosition()));
     }
     d->read_thread->start();
-    if (d->last_position > 0) {//start_last) {
-        masterClock()->pause(false); //external clock
-    } else {
-        masterClock()->reset();
-    }
-    if (masterClock()->isClockAuto()) {
-        qDebug("auto select clock: audio > external");
-        if (!d->demuxer.audioCodecContext() || !d->ao) {
-            masterClock()->setClockType(AVClock::ExternalClock);
-            masterClock()->setInitialValue((double)absoluteMediaStartPosition()/1000.0);
-            qWarning("No audio found or audio not supported. Using ExternalClock. initial value: %f", masterClock()->value());
-        } else {
-            qDebug("Using AudioClock");
-            masterClock()->setClockType(AVClock::AudioClock);
-            //masterClock()->setInitialValue(0);
-        }
-    }
 
     if (d->timer_id < 0) {
         //d->timer_id = startTimer(kPosistionCheckMS); //may fail if not in this thread
