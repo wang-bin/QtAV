@@ -154,7 +154,7 @@ void VideoThread::waitAndCheck(ulong value, qreal pts)
 {
     DPTR_D(VideoThread);
     if (value == 0)
-        return 0;
+        return;
     //qDebug("wating for %lu msecs", value);
     ulong us = value * 1000UL;
     static const ulong kWaitSlice = 20 * 1000UL; //20ms
@@ -171,6 +171,73 @@ void VideoThread::waitAndCheck(ulong value, qreal pts)
         usleep(us);
         processNextTask();
     }
+}
+
+void VideoThread::applyFilters(VideoFrame &frame, qreal pts)
+{
+    DPTR_D(VideoThread);
+    QMutexLocker locker(&d.mutex);
+    Q_UNUSED(locker);
+    if (!d.filters.isEmpty()) {
+        //sort filters by format. vo->defaultFormat() is the last
+        foreach (Filter *filter, d.filters) {
+            if (d.stop) {
+                break;
+            }
+            VideoFilter *vf = static_cast<VideoFilter*>(filter);
+            if (!vf->isEnabled())
+                continue;
+            vf->prepareContext(d.filter_context, d.statistics, &frame);
+            vf->apply(d.statistics, &frame);
+            //frame may be changed
+            frame.setImageConverter(d.conv);
+            frame.setTimestamp(pts);
+        }
+    }
+}
+
+bool VideoThread::deliverVideoFrame(VideoFrame &frame)
+{
+    DPTR_D(VideoThread);
+    /*
+     * TODO: video renderers sorted by preferredPixelFormat() and convert in AVOutputSet.
+     * Convert only once for the renderers has the same preferredPixelFormat().
+     */
+    d.outputSet->lock();
+    QList<AVOutput *> outputs = d.outputSet->outputs();
+    if (outputs.size() > 1) { //FIXME!
+        if (!frame.convertTo(VideoFormat::Format_RGB32)) {
+            /*
+             * use VideoFormat::Format_User to deliver user defined frame
+             * renderer may update background but no frame to graw, so flickers
+             * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
+             */
+            d.outputSet->unlock();
+            return false;
+        }
+    } else {
+        VideoRenderer *vo = 0;
+        if (!outputs.isEmpty())
+            vo = static_cast<VideoRenderer*>(outputs.first());
+        if (vo && (!vo->isSupported(frame.pixelFormat())
+                || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
+                )) {
+            if (!frame.convertTo(vo->preferredPixelFormat())) {
+                /*
+                 * use VideoFormat::Format_User to deliver user defined frame
+                 * renderer may update background but no frame to graw, so flickers
+                 * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
+                 */
+                d.outputSet->unlock();
+                return false;
+            }
+        }
+    }
+    d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
+    d.outputSet->unlock();
+
+    emit frameDelivered();
+    return true;
 }
 
 //TODO: if output is null or dummy, the use duration to wait
@@ -420,32 +487,14 @@ void VideoThread::run()
             seek_count = 1;
         else if (seek_count > 0)
             seek_count++;
-        frame.setTimestamp(pts);
+        frame.setTimestamp(pts); // TODO: pts is wrong
         frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
         //TODO: add current time instead of pts
         d.statistics->video_only.putPts(pts);
-        {
-            QMutexLocker locker(&d.mutex);
-            Q_UNUSED(locker);
-            if (!d.filters.isEmpty()) {
-                //sort filters by format. vo->defaultFormat() is the last
-                foreach (Filter *filter, d.filters) {
-                    if (d.stop) {
-                        break;
-                    }
-                    VideoFilter *vf = static_cast<VideoFilter*>(filter);
-                    if (!vf->isEnabled())
-                        continue;
-                    vf->prepareContext(d.filter_context, d.statistics, &frame);
-                    vf->apply(d.statistics, &frame);
-                    //frame may be changed
-                    frame.setImageConverter(d.conv);
-                    frame.setTimestamp(pts);
-                }
-            }
-        }
+
+        applyFilters(frame, pts);
 
         //while can pause, processNextTask, not call outset.puase which is deperecated
         while (d.outputSet->canPauseThread()) {
@@ -462,44 +511,8 @@ void VideoThread::run()
             break;
         }
 
-        /*
-         * TODO: video renderers sorted by preferredPixelFormat() and convert in AVOutputSet.
-         * Convert only once for the renderers has the same preferredPixelFormat().
-         */
-        d.outputSet->lock();
-        QList<AVOutput *> outputs = d.outputSet->outputs();
-        if (outputs.size() > 1) { //FIXME!
-            if (!frame.convertTo(VideoFormat::Format_RGB32)) {
-                /*
-                 * use VideoFormat::Format_User to deliver user defined frame
-                 * renderer may update background but no frame to graw, so flickers
-                 * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
-                 */
-                d.outputSet->unlock();
-                continue;
-            }
-        } else {
-            VideoRenderer *vo = 0;
-            if (!outputs.isEmpty())
-                vo = static_cast<VideoRenderer*>(outputs.first());
-            if (vo && (!vo->isSupported(frame.pixelFormat())
-                    || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
-                    )) {
-                if (!frame.convertTo(vo->preferredPixelFormat())) {
-                    /*
-                     * use VideoFormat::Format_User to deliver user defined frame
-                     * renderer may update background but no frame to graw, so flickers
-                     * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
-                     */
-                    d.outputSet->unlock();
-                    continue;
-                }
-            }
-        }
-        d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
-        d.outputSet->unlock();
-
-        emit frameDelivered();
+        if (!deliverVideoFrame(frame))
+            continue;
 
         d.capture->setPosition(pts);
         if (d.capture->isRequested()) {

@@ -30,6 +30,7 @@ namespace QtAV {
 
 class ImageConverter;
 class VideoCapture;
+class VideoFrame;
 class VideoThreadPrivate;
 class VideoThread : public AVThread
 {
@@ -47,9 +48,12 @@ public:
     void setEQ(int b, int c, int s);
 
 protected:
+    void waitAndCheck(ulong value, qreal pts);
+    void applyFilters(VideoFrame& frame, qreal pts);
+    // deliver video frame to video renderers. frame may be converted to a suitable format for renderer
+    bool deliverVideoFrame(VideoFrame &frame);
     virtual void run();
     // wait for value msec. every usleep is a small time, then process next task and get new delay
-    void waitAndCheck(ulong value, qreal pts);
 };
 
 
