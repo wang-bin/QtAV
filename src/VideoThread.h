@@ -48,6 +48,8 @@ public:
 
 protected:
     virtual void run();
+    // wait for value msec. every usleep is a small time, then process next task and get new delay
+    void waitAndCheck(ulong value, qreal pts);
 };
 
 
