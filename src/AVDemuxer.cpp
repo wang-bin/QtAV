@@ -570,16 +570,9 @@ bool AVDemuxer::loadFile(const QString &fileName)
             return load();
 #endif
         const QString scheme = colon == 0 ? "qrc" : _file_name.left(colon);
-        if (!AVDemuxer::supportedProtocols().contains(scheme)) {
-            qDebug("Protocol '%s' is not supported by FFmpeg, try AVInput", scheme.toUtf8().constData());
-            m_in = AVInput::createForProtocol(scheme);
-            if (!m_in) {
-                setMediaStatus(InvalidMedia);
-                AVError e(AVError::OpenError, tr("Protocol is not supported") + ": " + scheme);
-                emit error(e);
-                qWarning() << e.string();
-                return false;
-            }
+        // supportedProtocols() is not complete. so try AVInput 1st, if not found, fallback to libavformat
+        m_in = AVInput::createForProtocol(scheme);
+        if (m_in) {
             m_in->setUrl(_file_name);
         }
     }
