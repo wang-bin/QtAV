@@ -491,9 +491,6 @@ void VideoThread::run()
         frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
-        //TODO: add current time instead of pts
-        d.statistics->video_only.putPts(pts);
-
         applyFilters(frame, pts);
 
         //while can pause, processNextTask, not call outset.puase which is deperecated
@@ -513,6 +510,7 @@ void VideoThread::run()
 
         if (!deliverVideoFrame(frame))
             continue;
+        d.statistics->video_only.frameDisplayed(pts);
 
         d.capture->setPosition(pts);
         if (d.capture->isRequested()) {

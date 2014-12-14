@@ -39,7 +39,7 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
     setValue(Duration, (qint64)QTime(0, 0, 0).msecsTo(st.duration));
     if (st.video.available) {
         setValue(MediaType, "video");
-        setValue(VideoFrameRate, st.video_only.fps);
+        setValue(VideoFrameRate, st.video_only.frame_rate);
         setValue(VideoBitRate, st.video.bit_rate);
         setValue(VideoCodec, st.video.codec);
         setValue(Resolution, QSize(st.video_only.width, st.video_only.height));

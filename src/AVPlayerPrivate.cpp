@@ -229,7 +229,6 @@ void AVPlayer::Private::initStatistics()
         av_get_channel_layout_string(cl, sizeof(cl), aCodecCtx->channels, aCodecCtx->channel_layout); //TODO: ff version
         statistics.audio_only.channel_layout = cl;
         statistics.audio_only.sample_fmt = av_get_sample_fmt_name(aCodecCtx->sample_fmt);
-        statistics.audio_only.frame_number = aCodecCtx->frame_number;
         statistics.audio_only.frame_size = aCodecCtx->frame_size;
         statistics.audio_only.sample_rate = aCodecCtx->sample_rate;
     }
@@ -237,14 +236,14 @@ void AVPlayer::Private::initStatistics()
         AVCodecContext *vCodecCtx = demuxer.videoCodecContext();
         AVStream *stream = fmt_ctx->streams[demuxer.videoStream()];
         statistics.video.frames = stream->nb_frames;
-        //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
+        //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
+        //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
+        //FIXME: which 1 should we choose? avg_frame_rate may be nan or 0, then use AVStream.r_frame_rate, r_frame_rate may be wrong(guessed value)
         // TODO: seems that r_frame_rate will be removed libav > 9.10. Use macro to check version?
         //if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
-            statistics.video_only.fps_guess = av_q2d(stream->avg_frame_rate);
+            statistics.video_only.frame_rate = av_q2d(stream->avg_frame_rate);
         //else
-        //    statistics.video_only.fps_guess = av_q2d(stream->r_frame_rate);
-        statistics.video_only.fps = statistics.video_only.fps_guess;
-        statistics.video_only.avg_frame_rate = av_q2d(stream->avg_frame_rate);
+        //    statistics.video_only.frame_rate = av_q2d(stream->r_frame_rate);
         statistics.video_only.coded_height = vCodecCtx->coded_height;
         statistics.video_only.coded_width = vCodecCtx->coded_width;
         statistics.video_only.gop_size = vCodecCtx->gop_size;
@@ -252,7 +251,7 @@ void AVPlayer::Private::initStatistics()
         statistics.video_only.height = vCodecCtx->height;
         statistics.video_only.width = vCodecCtx->width;
     }
-    notify_interval = Internal::computeNotifyPrecision(demuxer.duration(), statistics.video_only.fps);
+    notify_interval = Internal::computeNotifyPrecision(demuxer.duration(), demuxer.frameRate());
     qDebug("notify_interval: %d", notify_interval);
 }
 
@@ -267,6 +266,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         adec = new AudioDecoder();
         connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
     }
+    statistics.audio.decoder = adec->name();
     adec->setCodecContext(aCodecCtx);
     adec->setOptions(ac_opt);
     if (!adec->open()) {
@@ -348,7 +348,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     athread->setDecoder(adec);
     player->setAudioOutput(ao);
-    int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.fps_guess);
+    int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.frame_rate);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     athread->packetQueue()->setThreshold(queue_min);
     athread->packetQueue()->setCapacity(queue_max);
@@ -395,7 +395,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         return false;
     }
     connect(vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
-
+    statistics.video.decoder = vdec->name();
     if (!vthread) {
         vthread = new VideoThread(player);
         vthread->setClock(clock);
@@ -415,7 +415,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
     vthread->setBrightness(brightness);
     vthread->setContrast(contrast);
     vthread->setSaturation(saturation);
-    int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.fps_guess);
+    int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.frame_rate);
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     vthread->packetQueue()->setThreshold(queue_min);
     vthread->packetQueue()->setCapacity(queue_max);

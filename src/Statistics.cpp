@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -28,7 +28,6 @@ Statistics::Common::Common():
   , decoder("FFmpeg")
   , bit_rate(0)
   , frames(0)
-  , size(0)
   , d(new Private())
 {
 }
@@ -37,16 +36,18 @@ Statistics::AudioOnly::AudioOnly():
     sample_rate(0)
   , channels(0)
   , frame_size(0)
-  , frame_number(0)
   , block_align(0)
   , d(new Private())
 {
 }
 
+Statistics::VideoOnly::Private::Private()
+    : pts(0)
+{
+}
+
 Statistics::VideoOnly::VideoOnly():
-    fps_guess(0)
-  , fps(0)
-  , avg_frame_rate(0)
+    frame_rate(0)
   , width(0)
   , height(0)
   , coded_width(0)
@@ -56,31 +57,35 @@ Statistics::VideoOnly::VideoOnly():
 {
 }
 
-void Statistics::VideoOnly::putPts(qreal pts)
-{
-    // may be seeking
-    if (pts < 0 || (!d->ptsHistory.isEmpty() && d->ptsHistory.first() >= pts)) {
-        d->ptsHistory.clear();
-        return;
-    }
-    d->ptsHistory.push_back(pts);
-    if (d->ptsHistory.size() < 2)
-        return;
-    if (pts - d->ptsHistory.at(0) > 1) {
-        d->ptsHistory.pop_front();
-    }
-}
-
 qreal Statistics::VideoOnly::pts() const
 {
-    return d->ptsHistory.last();
+    return d->pts;
+}
+
+void Statistics::VideoOnly::frameDisplayed(qreal pts)
+{
+    d->pts = pts;
+    const qreal t = (double)QDateTime::currentMSecsSinceEpoch()/1000.0;
+    d->history.push_back(t);
+    if (d->history.size() < 2)
+        return;
+    if (d->history.size() > 60) {
+        d->history.pop_front();
+    }
+    if (t - d->history.at(0) > 1.0) {
+        d->history.pop_front();
+    }
 }
 
 qreal Statistics::VideoOnly::currentDisplayFPS() const
 {
-    if (d->ptsHistory.size() < 2)
+    if (d->history.size() < 2)
         return 0;
-    return (qreal)d->ptsHistory.size()/(d->ptsHistory.last() - d->ptsHistory.first());
+    // DO NOT use d->history.last-first
+    const qreal dt = (double)QDateTime::currentMSecsSinceEpoch()/1000.0 - d->history.first();
+    if (qFuzzyIsNull(dt))
+        return 0;
+    return (qreal)d->history.size()/dt;
 }
 
 Statistics::Statistics()
