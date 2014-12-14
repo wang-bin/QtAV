@@ -1008,13 +1008,13 @@ void AVPlayer::playInternal()
         qDebug("auto select clock: audio > external");
         if (!d->demuxer.audioCodecContext() || !d->ao) {
             masterClock()->setClockType(AVClock::ExternalClock);
-            masterClock()->setInitialValue((double)absoluteMediaStartPosition()/1000.0);
-            qWarning("No audio found or audio not supported. Using ExternalClock. initial value: %f", masterClock()->value());
+            qDebug("No audio found or audio not supported. Using ExternalClock.");
         } else {
             qDebug("Using AudioClock");
             masterClock()->setClockType(AVClock::AudioClock);
-            //masterClock()->setInitialValue(0);
         }
+        masterClock()->setInitialValue((double)absoluteMediaStartPosition()/1000.0);
+        qDebug("Clock initial value: %f", masterClock()->value());
     }
     // from previous play()
     if (d->demuxer.audioCodecContext() && d->athread) {
@@ -1052,6 +1052,7 @@ void AVPlayer::stopFromDemuxerThread()
 {
     qDebug("demuxer thread emit finished.");
     if (currentRepeat() >= repeat() && repeat() >= 0) {
+        masterClock()->reset();
         stopNotifyTimer();
         d->start_position = 0;
         d->stop_position = kInvalidPosition; // already stopped. so not 0 but invalid. 0 can stop the playback in timerEvent
@@ -1170,8 +1171,12 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             d->seek_target = 0;
         }
         if (t < startPosition()) {
-            setPosition(startPosition());
-            return;
+            //qDebug("position %lld < startPosition %lld", t, startPosition());
+            // or set clock initial value to get correct t
+            if (startPosition() != mediaStartPosition()) {
+                setPosition(startPosition());
+                return;
+            }
         }
         if (t <= stopPosition()) {
             if (!d->seeking) { // FIXME

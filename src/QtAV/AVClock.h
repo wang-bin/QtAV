@@ -134,7 +134,8 @@ private:
 double AVClock::value() const
 {
     if (clock_type == AudioClock) {
-        return pts_ + delay_ + value0;
+        // timestamp from media stream is >= value0
+        return pts_ == 0 ? value0 : pts_ + delay_;
     } else {
         if (timer.isValid()) {
             ++nb_restarted;
