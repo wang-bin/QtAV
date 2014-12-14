@@ -88,13 +88,13 @@ public:
     void setSpeed(qreal speed);
     inline qreal speed() const;
 
+    bool isPaused() const;
 signals:
     void paused(bool);
     void paused(); //equals to paused(true)
     void resumed();//equals to paused(false)
     void started();
     void resetted();
-
 public slots:
     //these slots are not frequently used. so not inline
     /*start the external clock*/
@@ -108,6 +108,7 @@ protected:
     virtual void timerEvent(QTimerEvent *event);
 private:
     bool auto_clock;
+    bool m_paused;
     ClockType clock_type;
     mutable double pts_;
     double pts_v;
@@ -118,14 +119,16 @@ private:
     /*!
      * \brief correction_schedule_timer
      * accumulative error is too large using QElapsedTimer.restart() frequently.
-     * we periodically correct the pts_ value to keep the error always less
+     * we periodically correct value() to keep the error always less
      * than the error of calling QElapsedTimer.restart() once
      * see github issue 46, 307 etc
      */
     QBasicTimer correction_schedule_timer;
-    QElapsedTimer correction_timer;
+    qint64 t; // absolute time for elapsed timer correction
     static const int kCorrectionInterval = 1; // 1000ms
     double last_pts;
+    double avg_err; // average error of restart()
+    mutable int nb_restarted;
 };
 
 double AVClock::value() const
@@ -134,7 +137,8 @@ double AVClock::value() const
         return pts_ + delay_ + value0;
     } else {
         if (timer.isValid()) {
-            pts_ += double(timer.restart()) * kThousandth;
+            ++nb_restarted;
+            pts_ += double(timer.restart()) * kThousandth + avg_err;
         } else {//timer is paused
             //qDebug("clock is paused. return the last value %f", pts_);
         }

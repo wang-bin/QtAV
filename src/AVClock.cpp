@@ -22,6 +22,7 @@
 
 #include <QtAV/AVClock.h>
 #include <QtCore/QTimerEvent>
+#include <QtCore/QDateTime>
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -29,9 +30,12 @@ namespace QtAV {
 AVClock::AVClock(AVClock::ClockType c, QObject *parent):
     QObject(parent)
   , auto_clock(true)
+  , m_paused(false)
   , clock_type(c)
   , mSpeed(1.0)
   , value0(0)
+  , avg_err(0)
+  , nb_restarted(0)
 {
     last_pts = pts_ = pts_v = delay_ = 0;
 }
@@ -39,9 +43,12 @@ AVClock::AVClock(AVClock::ClockType c, QObject *parent):
 AVClock::AVClock(QObject *parent):
     QObject(parent)
   , auto_clock(true)
+  , m_paused(false)
   , clock_type(AudioClock)
   , mSpeed(1.0)
   , value0(0)
+  , avg_err(0)
+  , nb_restarted(0)
 {
     last_pts = pts_ = pts_v = delay_ = 0;
 }
@@ -90,7 +97,7 @@ void AVClock::updateExternalClock(qint64 msecs)
     timer.restart();
 
     last_pts = pts_;
-    correction_timer.restart();
+    t = QDateTime::currentMSecsSinceEpoch();
 }
 
 void AVClock::updateExternalClock(const AVClock &clock)
@@ -102,12 +109,17 @@ void AVClock::updateExternalClock(const AVClock &clock)
     timer.restart();
 
     last_pts = pts_;
-    correction_timer.restart();
+    t = QDateTime::currentMSecsSinceEpoch();
 }
 
 void AVClock::setSpeed(qreal speed)
 {
     mSpeed = speed;
+}
+
+bool AVClock::isPaused() const
+{
+    return m_paused;
 }
 
 void AVClock::start()
@@ -116,7 +128,7 @@ void AVClock::start()
     timer.start();
     correction_schedule_timer.stop();
     if (clockType() == ExternalClock) {
-        correction_timer.start();
+        t = QDateTime::currentMSecsSinceEpoch();
         correction_schedule_timer.start(kCorrectionInterval*1000, this);
     }
     emit started();
@@ -124,40 +136,41 @@ void AVClock::start()
 //remember last value because we don't reset  pts_, pts_v, delay_
 void AVClock::pause(bool p)
 {
+    if (isPaused() == p)
+        return;
     if (clock_type != ExternalClock)
         return;
+    m_paused = p;
     if (p) {
         correction_schedule_timer.stop();
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
         timer.invalidate();
-        correction_timer.invalidate();
 #else
         timer.stop();
-        correction_timer.stop();
 #endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
         emit paused();
     } else {
         timer.start();
-        correction_timer.start();
         correction_schedule_timer.start(kCorrectionInterval*1000, this);
         emit resumed();
     }
+    t = QDateTime::currentMSecsSinceEpoch();
     emit paused(p);
 }
 
 void AVClock::reset()
 {
     // keep mSpeed
+    m_paused = false;
     value0 = 0;
     pts_ = pts_v = delay_ = 0;
     correction_schedule_timer.stop();
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
     timer.invalidate();
-    correction_timer.invalidate();
 #else
     timer.stop();
-    correction_timer.stop();
 #endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+    t = QDateTime::currentMSecsSinceEpoch();
     emit resetted();
 }
 
@@ -166,13 +179,20 @@ void AVClock::timerEvent(QTimerEvent *event)
     Q_ASSERT_X(clockType() == ExternalClock, "AVClock::timerEvent", "Internal error. Only ExternalClock call this");
     if (event->timerId() != correction_schedule_timer.timerId())
         return;
+    if (isPaused())
+        return;
     const double delta_pts = (value() - last_pts)/speed();
-    const double err = double(correction_timer.restart()) * kThousandth - delta_pts;
+    //const double err = double(correction_timer.restart()) * kThousandth - delta_pts;
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    const double err = double(now - t) * kThousandth - delta_pts;
+    t = now;
     // avfoundation camera error is large (about -0.6s)
-    if (qAbs(err*10.0) < kCorrectionInterval)
-        pts_ += err;
-    last_pts = pts_;
-    //qDebug("correction timer event. error = %f", err);
+    if (qAbs(err*10.0) < kCorrectionInterval) {
+        avg_err += err/(nb_restarted+1);
+    }
+    //qDebug("correction timer event. error = %f, avg_err=%f, nb_restarted=%d", err, avg_err, nb_restarted);
+    last_pts = value();
+    nb_restarted = 0;
 }
 
 } //namespace QtAV
