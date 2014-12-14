@@ -86,6 +86,7 @@ public:
         , async(true)
         , has_video(true)
         , auto_extract(true)
+        , auto_precision(true)
         , seek_count(0)
         , position(-2*kDefaultPrecision)
         , precision(kDefaultPrecision)
@@ -141,6 +142,12 @@ public:
         }
         if (codecs.isEmpty())
             return false;
+        if (auto_precision) {
+            if (demuxer.duration() < 10*1000)
+                precision = kDefaultPrecision/2;
+            else
+                precision = kDefaultPrecision;
+        }
         foreach (const QString& c, codecs) {
             VideoDecoderId cid = VideoDecoderFactory::id(c.toUtf8().constData());
             VideoDecoder *vd = VideoDecoderFactory::create(cid);
@@ -286,6 +293,7 @@ public:
     bool has_video;
     bool loading;
     bool auto_extract;
+    bool auto_precision;
     int seek_count;
     qint64 position;
     int precision;
@@ -381,9 +389,11 @@ void VideoFrameExtractor::setPrecision(int value)
     DPTR_D(VideoFrameExtractor);
     if (d.precision == value)
         return;
+    d.auto_precision = value < 0;
     // explain why value (p0) is used but not the actual decoded position (p)
     // it's key frame finding rule
-    d.precision = value;
+    if (value >= 0)
+        d.precision = value;
     emit precisionChanged();
 }
 
@@ -439,10 +449,14 @@ void VideoFrameExtractor::extract()
 void VideoFrameExtractor::extractInternal(qint64 pos)
 {
     DPTR_D(VideoFrameExtractor);
+    int precision_old = precision();
     if (!d.checkAndOpen()) {
         emit error();
         //qWarning("can not open decoder....");
         return; // error handling
+    }
+    if (precision_old != precision()) {
+        emit precisionChanged();
     }
     d.extracted = d.extractInPrecision(pos, precision());
     if (!d.extracted) {

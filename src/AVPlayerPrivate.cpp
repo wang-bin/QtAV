@@ -31,6 +31,24 @@
 
 namespace QtAV {
 
+namespace Internal {
+
+int computeNotifyPrecision(qint64 duration, qreal fps)
+{
+    if (duration <= 0 || duration > 60*1000) // no duration or 10min
+        return 500;
+    if (duration > 20*1000)
+        return 250;
+    int dt = 500;
+    if (fps > 1) {
+        dt = qMin(250, int(qreal(dt*2)/fps));
+    } else {
+        dt = duration / 80; //<= 250
+    }
+    return qMax(20, dt);
+}
+} // namespace Internal
+
 static bool correct_audio_channels(AVCodecContext *ctx) {
     if (ctx->channels <= 0) {
         if (ctx->channel_layout) {
@@ -79,6 +97,7 @@ AVPlayer::Private::Private()
     , seek_target(0)
     , interrupt_timeout(30000)
     , mute(false)
+    , notify_interval(500)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);
     /*
@@ -233,6 +252,8 @@ void AVPlayer::Private::initStatistics()
         statistics.video_only.height = vCodecCtx->height;
         statistics.video_only.width = vCodecCtx->width;
     }
+    notify_interval = Internal::computeNotifyPrecision(demuxer.duration(), statistics.video_only.fps);
+    qDebug("notify_interval: %d", notify_interval);
 }
 
 bool AVPlayer::Private::setupAudioThread(AVPlayer *player)

@@ -892,6 +892,8 @@ int AVDemuxer::videoBitRate(int stream) const
 
 qreal AVDemuxer::frameRate() const
 {
+    if (videoStream() < 0)
+        return 0;
     AVStream *stream = format_context->streams[videoStream()];
     return av_q2d(stream->avg_frame_rate);
     //codecCtx->time_base.den / codecCtx->time_base.num

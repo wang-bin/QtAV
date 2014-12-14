@@ -53,7 +53,8 @@ public:
      * \brief setPrecision
      * if the difference between the next requested position is less than the value, previous
      * one is used and no positionChanged() and frameExtracted() signals to emit.
-     * Default is 500ms.
+     * \param value < 0: auto. Real value depends on video duration and fps, but always 20 <= value <=500
+     * Default is auto.
      */
     void setPrecision(int value);
     int precision() const;

@@ -136,6 +136,9 @@ public:
     qint64 seek_target; // relative time if relativeTimeMode is true
     qint64 interrupt_timeout;
     bool mute;
+
+    // timerEvent interval in ms. can divide 1000. depends on media duration, fps etc.
+    int notify_interval;
 };
 
 } //namespace QtAV
