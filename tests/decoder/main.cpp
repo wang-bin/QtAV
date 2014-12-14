@@ -43,7 +43,8 @@ int main(int argc, char *argv[])
             continue;
         if (demux.stream() != vstream)
             continue;
-        if (dec->decode(demux.packet()->data)) {
+        const Packet pkt = demux.packet();
+        if (dec->decode(pkt.data)) {
             /*
              * TODO: may contains more than 1 frames
              * map from gpu or not?
