@@ -20,7 +20,7 @@ cd build
 #ffmpeg 2.3 libavutil clock_gettime need -lrt if glibc < 2.17
 FFMPEG=$1
 : ${FFMPEG:=ffmpeg-2.2.5}
-FFVER=(1.0.9 1.1.12 1.2.7 2.0.5 2.1.5 2.2.5)
+FFVER=(1.0.10 1.2.10 2.0.6 2.2.11 2.4.4)
 MKSPEC=(linux-clang)
 
 export QT_PKG=Qt5.3.1-Linux64
