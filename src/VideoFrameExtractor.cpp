@@ -223,9 +223,7 @@ public:
             }
         }
         frame = VideoFrame();
-        static const int kNoFrameDrop = 0;
-        static const int kFrameDrop = 1;
-        int dec_opt_state = kNoFrameDrop; // 0: default, 1: framedrop
+        QVariantHash* dec_opt = &dec_opt_normal; // 0: default, 1: framedrop
 
         // decode at the given position
         qreal t0 = qreal(value/1000LL);
@@ -251,17 +249,13 @@ public:
                 //qCritical("Internal error. Can not be a key frame!!!!");
                 //return false; //??
             }
-            if (seek_count == 0 || diff >= 0) {
-                if (dec_opt_state == kFrameDrop) {
-                    dec_opt_state = kNoFrameDrop;
-                    decoder->setOptions(dec_opt_normal);
-                }
-            } else {
-                if (dec_opt_state == kNoFrameDrop) {
-                    dec_opt_state = kFrameDrop;
-                    decoder->setOptions(dec_opt_framedrop);
-                }
-            }
+            QVariantHash *dec_opt_old = dec_opt;
+            if (seek_count == 0 || diff >= 0)
+                dec_opt = &dec_opt_normal;
+            else
+                dec_opt = &dec_opt_framedrop;
+            if (dec_opt != dec_opt_old)
+                decoder->setOptions(*dec_opt);
             // invalid packet?
             if (!decoder->decode(pkt.data)) {
                 //qWarning("!!!!!!!!!decode failed!!!!");

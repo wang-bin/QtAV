@@ -253,10 +253,7 @@ void VideoThread::run()
     //used to initialize the decoder's frame size
     dec->resizeVideoFrame(0, 0);
     Packet pkt;
-    static const int kNoFrameDrop = 0;
-    static const int kFrameDrop = 1;
-    int dec_opt_state = kNoFrameDrop; // 0: default, 1: framedrop
-    // int dec_opt_framedrop_old; //TODO: restore old framedrop option after seek
+    QVariantHash *dec_opt = &d.dec_opt_normal; //TODO: restore old framedrop option after seek
     /*!
      * if we skip some frames(e.g. seek, drop frames to speed up), then then first frame to decode must
      * be a key frame for hardware decoding. otherwise may crash
@@ -394,7 +391,7 @@ void VideoThread::run()
                     }
                 }
                 d.clock->updateVideoPts(pts); //here?
-                const double s = qMin(0.01*(nb_dec_fast>>1), diff);
+                const double s = qMin<qreal>(0.01*(nb_dec_fast>>1), diff);
                 qWarning("video too fast!!! sleep %.2f s, nb fast: %d", s, nb_dec_fast);
                 waitAndCheck(s*1000UL, pts);
                 diff = 0;
@@ -422,33 +419,31 @@ void VideoThread::run()
             }
         }
         seeking = !qFuzzyIsNull(d.render_pts0);
+        QVariantHash *dec_opt_old = dec_opt;
         if (!seeking) { // MAYBE not seeking
             if (nb_dec_slow < kNbSlowFrameDrop) {
-                if (dec_opt_state == kFrameDrop) {
+                if (dec_opt == &d.dec_opt_framedrop) {
                     qDebug("frame drop normal. nb_dec_slow: %d, line: %d", nb_dec_slow, __LINE__);
-                    dec_opt_state = kNoFrameDrop;
-                    dec->setOptions(d.dec_opt_normal);
+                    dec_opt = &d.dec_opt_normal;
                 }
             } else {
-                if (dec_opt_state == kNoFrameDrop) {
+                if (dec_opt == &d.dec_opt_normal) {
                     qDebug("frame drop noref. nb_dec_slow: %d, line: %d", nb_dec_slow, __LINE__);
-                    dec_opt_state = kFrameDrop;
-                    //dec_opt_old = dec->options();
-                    dec->setOptions(d.dec_opt_framedrop);
+                    dec_opt = &d.dec_opt_framedrop;
                 }
             }
         } else { // seeking
             if (seek_count > 0) {
-                if (dec_opt_state == kNoFrameDrop) {
+                if (dec_opt == &d.dec_opt_normal) {
                     qDebug("seeking... frame drop noref. nb_dec_slow: %d, line: %d", nb_dec_slow, __LINE__);
-                    dec_opt_state = kFrameDrop;
-                    //dec_opt_old = dec->options();
-                    dec->setOptions(d.dec_opt_framedrop);
+                    dec_opt = &d.dec_opt_framedrop;
                 }
             } else {
                 seek_count = -1;
             }
         }
+        if (dec_opt != dec_opt_old)
+            dec->setOptions(*dec_opt);
         if (!dec->decode(pkt.data)) {
             pkt = Packet();
             continue;
