@@ -49,7 +49,7 @@ public:
 
 protected:
     void waitAndCheck(ulong value, qreal pts);
-    void applyFilters(VideoFrame& frame, qreal pts);
+    void applyFilters(VideoFrame& frame);
     // deliver video frame to video renderers. frame may be converted to a suitable format for renderer
     bool deliverVideoFrame(VideoFrame &frame);
     virtual void run();

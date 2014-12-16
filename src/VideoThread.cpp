@@ -173,7 +173,7 @@ void VideoThread::waitAndCheck(ulong value, qreal pts)
     }
 }
 
-void VideoThread::applyFilters(VideoFrame &frame, qreal pts)
+void VideoThread::applyFilters(VideoFrame &frame)
 {
     DPTR_D(VideoThread);
     QMutexLocker locker(&d.mutex);
@@ -191,7 +191,6 @@ void VideoThread::applyFilters(VideoFrame &frame, qreal pts)
             vf->apply(d.statistics, &frame);
             //frame may be changed
             frame.setImageConverter(d.conv);
-            frame.setTimestamp(pts);
         }
     }
 }
@@ -482,11 +481,12 @@ void VideoThread::run()
             seek_count = 1;
         else if (seek_count > 0)
             seek_count++;
-        frame.setTimestamp(pkt.pts); // TODO: pts is wrong
+        if (frame.timestamp() == 0)
+            frame.setTimestamp(pkt.pts); // pkt.pts is wrong. >= real timestamp
         frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
-        applyFilters(frame, pkt.pts);
+        applyFilters(frame);
 
         //while can pause, processNextTask, not call outset.puase which is deperecated
         while (d.outputSet->canPauseThread()) {

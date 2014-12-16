@@ -202,7 +202,7 @@ VideoFrame VideoDecoder::frame()
     frame.setDisplayAspectRatio(displayAspectRatio);
     frame.setBits(d.frame->data);
     frame.setBytesPerLine(d.frame->linesize);
-    frame.setTimestamp((double)d.frame->pkt_pts/1000.0); // in s
+    frame.setTimestamp((double)d.frame->pkt_pts/1000.0); // in s. what about AVFrame.pts?
     return frame;
 }
 

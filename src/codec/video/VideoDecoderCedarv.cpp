@@ -646,7 +646,7 @@ VideoFrame VideoDecoderCedarv::frame()
     VideoFrame frame(buf, display_w_align, display_h_align, fmt);
     frame.setBits(plane);
     frame.setBytesPerLine(pitch);
-    // TODO: timestamp
+    frame.setTimestamp(qreal(d.cedarPicture.pts)/1000.0);
     d.cedarv->display_release(d.cedarv, d.cedarPicture.id);
     d.cedarPicture.id = 0;
     return frame;

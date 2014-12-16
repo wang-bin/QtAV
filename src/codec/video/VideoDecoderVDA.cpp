@@ -252,6 +252,7 @@ VideoFrame VideoDecoderVDA::frame()
         // TODO: buffer pool and create VideoFrame when needed to avoid copy? also for other va
         frame = frame.clone();
     }
+    frame.setTimestamp(d.frame->pkt_dts);
     return frame;
 }
 
@@ -330,6 +331,7 @@ bool VideoDecoderVDAPrivate::open()
         return false;
     }
 #endif
+    // TODO: check whether VDA is in use
     return true;
 }
 

@@ -506,6 +506,7 @@ VideoFrame VideoDecoderDXVA::frame()
         // TODO: why clone is faster()?
         frame = frame.clone();
     }
+    frame.setTimestamp(d.frame->pkt_pts);
     return frame;
 }
 
