@@ -204,7 +204,7 @@ public:
         int k = 0;
         while (k < 5 && !frame.isValid()) {
             //qWarning("invalid key frame!!!!! undecoded: %d", decoder->undecodedSize());
-            if (!decoder->decode(pkt.data)) {
+            if (!decoder->decode(pkt)) {
                 //qWarning("!!!!!!!!!decode key failed!!!!!!!!");
                 return false;
             }
@@ -244,6 +244,10 @@ public:
                 //qWarning("out of range");
                 return frame.isValid();
             }
+            if (!pkt.isValid()) {
+                qWarning("invalid packet. no decode");
+                continue;
+            }
             if (pkt.hasKeyFrame) {
                 // FIXME:
                 //qCritical("Internal error. Can not be a key frame!!!!");
@@ -257,7 +261,7 @@ public:
             if (dec_opt != dec_opt_old)
                 decoder->setOptions(*dec_opt);
             // invalid packet?
-            if (!decoder->decode(pkt.data)) {
+            if (!decoder->decode(pkt)) {
                 //qWarning("!!!!!!!!!decode failed!!!!");
                 return false;
             }

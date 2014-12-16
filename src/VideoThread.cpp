@@ -301,7 +301,7 @@ void VideoThread::run()
             dec->flush();
             continue;
         }
-        qreal pts = pkt.pts;
+        const qreal pts = pkt.dts; //FIXME: pts and dts
         // TODO: delta ref time
         qreal diff = pts - d.clock->value();
         if (diff > kSyncThreshold) {
@@ -444,7 +444,7 @@ void VideoThread::run()
         }
         if (dec_opt != dec_opt_old)
             dec->setOptions(*dec_opt);
-        if (!dec->decode(pkt.data)) {
+        if (!dec->decode(pkt)) {
             pkt = Packet();
             continue;
         } else {
@@ -482,11 +482,11 @@ void VideoThread::run()
             seek_count = 1;
         else if (seek_count > 0)
             seek_count++;
-        frame.setTimestamp(pts); // TODO: pts is wrong
+        frame.setTimestamp(pkt.pts); // TODO: pts is wrong
         frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
-        applyFilters(frame, pts);
+        applyFilters(frame, pkt.pts);
 
         //while can pause, processNextTask, not call outset.puase which is deperecated
         while (d.outputSet->canPauseThread()) {

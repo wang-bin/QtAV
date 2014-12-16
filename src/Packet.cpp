@@ -64,6 +64,7 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
     if (pkt->isCorrupt)
         qDebug("currupt packet. pts: %f", pkt->pts);
 
+    // old code set pts as dts is valid
     if (avpkt->pts != AV_NOPTS_VALUE)
         pkt->pts = avpkt->pts * time_base;
     else if (avpkt->dts != AV_NOPTS_VALUE) // is it ok?
@@ -74,6 +75,7 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
         pkt->dts = avpkt->dts * time_base;
     else
         pkt->dts = pkt->pts;
+    //qDebug("pts %lld, dts: %lld ", avpkt->pts, avpkt->dts);
     //TODO: pts must >= 0? look at ffplay
     pkt->pts = qMax<qreal>(0, pkt->pts);
     pkt->dts = qMax<qreal>(0, pkt->dts);

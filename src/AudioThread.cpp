@@ -98,6 +98,7 @@ void AudioThread::run()
             dec->flush();
             continue;
         }
+        qreal dts = pkt.dts; //FIXME: pts and dts
         bool skip_render = pkt.pts < d.render_pts0;
         // audio has no key frame, skip rendering equals to skip decoding
         if (skip_render) {
@@ -106,8 +107,8 @@ void AudioThread::run()
              * audio may be too fast than video if skip without sleep
              * a frame is about 20ms. sleep time must be << frame time
              */
-            qreal a_v = pkt.pts - d.clock->videoPts();
-            //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", pkt.pts, d.render_pts0, d.clock->videoPts(), a_v*1000.0);
+            qreal a_v = dts - d.clock->videoPts();
+            //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", dts, d.render_pts0, d.clock->videoPts(), a_v*1000.0);
             if (a_v > 0) {
                 msleep(qMin((ulong)20, ulong(a_v*1000.0)));
             } else {
@@ -119,7 +120,7 @@ void AudioThread::run()
         }
         d.render_pts0 = 0;
         if (is_external_clock) {
-            d.delay = pkt.pts - d.clock->value();
+            d.delay = dts - d.clock->value();
             /*
              *after seeking forward, a packet may be the old, v packet may be
              *the new packet, then the d.delay is very large, omit it.
@@ -190,15 +191,15 @@ void AudioThread::run()
         }
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
-        if (!dec->decode(pkt.data)) {
-            qWarning("Decode audio failed");
-            qreal dt = pkt.pts - d.last_pts;
-            if (dt > 0.618 || dt < 0) {
+        if (!dec->decode(pkt)) {
+            qWarning("Decode audio failed. undecoded: %d", dec->undecodedSize());
+            qreal dt = dts - d.last_pts;
+            if (dt > 0.5 || dt < 0) {
                 dt = 0;
             }
-            //qDebug("a sleep %f", dt);
-            //TODO: avoid acummulative error. External clock?
-            msleep((unsigned long)(dt*1000.0));
+            if (!qFuzzyIsNull(dt)) {
+                msleep((unsigned long)(dt*1000.0));
+            }
             pkt = Packet();
             d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
             continue;

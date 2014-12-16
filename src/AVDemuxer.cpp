@@ -318,52 +318,7 @@ bool AVDemuxer::readFrame()
         //qWarning("[AVDemuxer] unknown stream index: %d", stream_idx);
         return false;
     }
-    m_pkt.hasKeyFrame = !!(packet.flags & AV_PKT_FLAG_KEY);
-    // what about marking packet as invalid and do not use isCorrupt?
-    m_pkt.isCorrupt = !!(packet.flags & AV_PKT_FLAG_CORRUPT);
-#if NO_PADDING_DATA
-    m_pkt.data.clear();
-    if (packet.data)
-        m_pkt.data = QByteArray((const char*)packet.data, packet.size);
-#else
-    /*!
-      larger than the actual read bytes because some optimized bitstream readers read 32 or 64 bits at once and could read over the end.
-      The end of the input buffer avpkt->data should be set to 0 to ensure that no overreading happens for damaged MPEG streams
-     */
-    QByteArray encoded;
-    if (packet.data) {
-        encoded.reserve(packet.size + FF_INPUT_BUFFER_PADDING_SIZE);
-        encoded.resize(packet.size);
-        // also copy  padding data(usually 0)
-        memcpy(encoded.data(), packet.data, encoded.capacity()); // encoded.capacity() is always > 0 even if packet.data, so must check packet.data null
-    }
-    m_pkt.data = encoded;
-#endif //NO_PADDING_DATA
-    m_pkt.duration = packet.duration;
-    //if (packet.dts == AV_NOPTS_VALUE && )
-    if (packet.dts != AV_NOPTS_VALUE) //has B-frames
-        m_pkt.pts = packet.dts;
-    else if (packet.pts != AV_NOPTS_VALUE)
-        m_pkt.pts = packet.pts;
-    else
-        m_pkt.pts = 0;
-    AVStream *stream = format_context->streams[stream_idx];
-    m_pkt.pts *= av_q2d(stream->time_base);
-    //TODO: pts must >= 0? look at ffplay
-    m_pkt.pts = qMax<qreal>(0, m_pkt.pts);
-    // TODO: convergence_duration
-    // subtitle is always key frame? convergence_duration may be 0
-    if (stream->codec->codec_type == AVMEDIA_TYPE_SUBTITLE
-            && (packet.flags & AV_PKT_FLAG_KEY)
-            &&  packet.convergence_duration > 0 && packet.convergence_duration != AV_NOPTS_VALUE) { //??
-        m_pkt.duration = packet.convergence_duration * av_q2d(stream->time_base);
-     } else if (packet.duration > 0)
-        m_pkt.duration = packet.duration * av_q2d(stream->time_base);
-    else
-        m_pkt.duration = 0;
-    //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", m_pkt.pts, m_pkt.duration, packet.dts);
-    if (m_pkt.isCorrupt)
-        qDebug("currupt packet. pts: %f", m_pkt.pts);
+    m_pkt = Packet::fromAVPacket(&packet, av_q2d(format_context->streams[stream_idx]->time_base));
     av_free_packet(&packet); //important!
     return true;
 }
