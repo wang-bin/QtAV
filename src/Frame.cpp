@@ -103,8 +103,8 @@ void Frame::setBits(uchar *b, int plane)
 
 void Frame::setBits(const QVector<uchar *> &b)
 {
-    if (b.size() >= planeCount()) {
-        qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
+    if (b.size() > planeCount()) {
+        qWarning("Invalid plane size! Valid range is [0, %d), current is %d", planeCount(), b.size());
         return;
     }
     Q_D(Frame);
@@ -130,8 +130,8 @@ void Frame::setBytesPerLine(int lineSize, int plane)
 
 void Frame::setBytesPerLine(const QVector<int> &lineSize)
 {
-    if (lineSize.size() >= planeCount()) {
-        qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
+    if (lineSize.size() > planeCount()) {
+        qWarning("Invalid plane size! Valid range is [0, %d), current is %d", planeCount(), lineSize.size());
         return;
     }
     Q_D(Frame);
