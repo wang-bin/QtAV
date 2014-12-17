@@ -8,4 +8,8 @@ PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
 preparePaths($$OUT_PWD/../../out)
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    playerwindow.cpp
+
+HEADERS += \
+    playerwindow.h

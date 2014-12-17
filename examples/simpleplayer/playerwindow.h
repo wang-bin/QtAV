@@ -17,14 +17,34 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-#include <QApplication>
-#include "playerwindow.h"
 
-int main(int argc, char *argv[])
+#ifndef PLAYERWINDOW_H
+#define PLAYERWINDOW_H
+
+#include <QWidget>
+#include <QtAV/QtAV.h>
+
+class QSlider;
+class QPushButton;
+class PlayerWindow : public QWidget
 {
-    QApplication a(argc, argv);
-    PlayerWindow player;
-    player.show();
-    player.resize(800, 600);
-    return a.exec();
-}
+    Q_OBJECT
+public:
+    explicit PlayerWindow(QWidget *parent = 0);
+    ~PlayerWindow();
+public Q_SLOTS:
+    void openMedia();
+    void seek(int);
+    void playPause();
+private Q_SLOTS:
+    void updateSlider();
+private:
+    QtAV::VideoOutput *m_vo;
+    QtAV::AVPlayer *m_player;
+    QSlider *m_slider;
+    QPushButton *m_openBtn;
+    QPushButton *m_playBtn;
+    QPushButton *m_stopBtn;
+};
+
+#endif // PLAYERWINDOW_H
