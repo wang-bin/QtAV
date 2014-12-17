@@ -33,6 +33,13 @@
 #ifdef PixelFormat
 #undef PixelFormat
 #endif
+// AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
+#ifndef AV_CODEC_ID_H265
+#warning "HEVC will not be supported. Update your FFmpeg"
+#define AV_CODEC_ID_H265 AV_CODEC_ID_NONE
+#define AV_CODEC_ID_HEVC AV_CODEC_ID_NONE
+#define FF_PROFILE_HEVC_MAIN -1
+#endif
 
 template <class T> void SafeRelease(T **ppT)
 {
@@ -219,7 +226,7 @@ static const dxva2_mode_t dxva2_modes[] = {
     { "MPEG-4 Part 2 variable-length decoder, Simple&Advanced Profile, Avivo",        &DXVA_ModeMPEG4pt2_VLD_AdvSimple_Avivo, 0 },
 
     /* HEVC / H.265 */
-    { "HEVC / H.265 variable-length decoder, main",                                   &DXVA_ModeHEVC_VLD_Main,                0 },
+    { "HEVC / H.265 variable-length decoder, main",                                   &DXVA_ModeHEVC_VLD_Main,                QTAV_CODEC_ID(HEVC) },
     { "HEVC / H.265 variable-length decoder, main10",                                 &DXVA_ModeHEVC_VLD_Main10,              0 },
 
     { NULL, 0, 0 }
@@ -329,6 +336,8 @@ public:
     bool setup(void **hwctx, int w, int h);
     bool open();
     void close();
+    // get aligned value depending on codec
+    int aligned(int x);
 
     bool getBuffer(void **opaque, uint8_t **data);
     void releaseBuffer(void *opaque, uint8_t *data);
@@ -743,8 +752,10 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
     /* Try all supported mode by our priority */
     for (unsigned i = 0; dxva2_modes[i].name; i++) {
         const dxva2_mode_t *mode = &dxva2_modes[i];
-        if (!mode->codec || mode->codec != codec_ctx->codec_id)
+        if (!mode->codec || mode->codec != codec_ctx->codec_id) {
+            qWarning("codec does not match to %s: %s", avcodec_get_name(codec_ctx->codec_id), avcodec_get_name((AVCodecID)mode->codec));
             continue;
+        }
         bool is_suported = false;
         for (unsigned count = 0; !is_suported && count < input_count; count++) {
             const GUID &g = input_list[count];
@@ -753,8 +764,7 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
         if (!is_suported)
             continue;
 
-        qDebug("Trying to use '%s' as input", mode->name);
-        UINT      output_count = 0;
+        UINT output_count = 0;
         D3DFORMAT *output_list = NULL;
         if (FAILED(vs->GetDecoderRenderTargets(*mode->guid, &output_count, &output_list))) {
             qWarning("IDirectXVideoDecoderService_GetDecoderRenderTargets failed");
@@ -803,8 +813,8 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     width = w;
     height = h;
     /* Allocates all surfaces needed for the decoder */
-    surface_width = FFALIGN(width, 16);
-    surface_height = FFALIGN(height, 16);    
+    surface_width = aligned(width);
+    surface_height = aligned(height);
     if (surface_auto) {
         switch (codec_id) {
         case QTAV_CODEC_ID(H264):
@@ -814,14 +824,14 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
         case QTAV_CODEC_ID(MPEG2VIDEO):
             surface_count = 2 + 2;
         default:
-            surface_count = 2 + 1;
+            surface_count = 16 + 4;
             break;
         }
     }
     qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces>>>>>>>>>>>>>>>%d", surface_count);
     if (surface_count == 0) {
         qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
-        surface_count = 17;
+        surface_count = 16 + 4;
     }
 
     IDirect3DSurface9* surface_list[VA_DXVA2_MAX_SURFACE_COUNT];
@@ -851,8 +861,8 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     /* */
     DXVA2_VideoDesc dsc;
     ZeroMemory(&dsc, sizeof(dsc));
-    dsc.SampleWidth     = width;
-    dsc.SampleHeight    = height;
+    dsc.SampleWidth     = codec_ctx->coded_width;
+    dsc.SampleHeight    = codec_ctx->coded_height;
     dsc.Format          = render;
     dsc.InputSampleFreq.Numerator   = 0;
     dsc.InputSampleFreq.Denominator = 0;
@@ -956,7 +966,7 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
 {
     if (w <= 0 || h <= 0)
         return false;
-    if (!decoder || surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16)) {
+    if (!decoder || surface_width != aligned(w) || surface_height != aligned(h)) {
         DxDestroyVideoConversion();
         DxDestroyVideoDecoder();
         *hwctx = NULL;
@@ -980,6 +990,10 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
 
 bool VideoDecoderDXVAPrivate::open()
 {
+    if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC) && codec_ctx->profile > FF_PROFILE_HEVC_MAIN) {
+        qWarning("incompatible hevc profile!");
+        return false;
+    }
     if (!D3dCreateDevice()) {
         qWarning("Failed to create Direct3D device");
         goto error;
@@ -1011,6 +1025,18 @@ void VideoDecoderDXVAPrivate::close() {
     DxDestroyVideoService();
     D3dDestroyDeviceManager();
     D3dDestroyDevice();
+}
+
+int VideoDecoderDXVAPrivate::aligned(int x)
+{
+    // from lavfilters
+    int align = 16;
+    // MPEG-2 needs higher alignment on Intel cards, and it doesn't seem to harm anything to do it for all cards.
+    if (codec_ctx->codec_id == QTAV_CODEC_ID(MPEG2VIDEO))
+      align <<= 1;
+    else if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC))
+      align = 128;
+    return FFALIGN(x, align);
 }
 
 } //namespace QtAV
