@@ -607,7 +607,6 @@ void VideoRenderer::updateUi()
     if (!obj)
         obj = (QObject*)widget();
     if (obj) {
-        // DO NOT use qApp macro inside QtAV because QtAV may not depend QtWidgets module
         QCoreApplication::instance()->postEvent(obj, new QEvent(QEvent::UpdateRequest));
     }
 }
