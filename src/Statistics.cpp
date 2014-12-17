@@ -67,8 +67,6 @@ void Statistics::VideoOnly::frameDisplayed(qreal pts)
     d->pts = pts;
     const qreal t = (double)QDateTime::currentMSecsSinceEpoch()/1000.0;
     d->history.push_back(t);
-    if (d->history.size() < 2)
-        return;
     if (d->history.size() > 60) {
         d->history.pop_front();
     }
@@ -76,10 +74,10 @@ void Statistics::VideoOnly::frameDisplayed(qreal pts)
         d->history.pop_front();
     }
 }
-
+// d->history is not thread safe!
 qreal Statistics::VideoOnly::currentDisplayFPS() const
 {
-    if (d->history.size() < 2)
+    if (d->history.isEmpty())
         return 0;
     // DO NOT use d->history.last-first
     const qreal dt = (double)QDateTime::currentMSecsSinceEpoch()/1000.0 - d->history.first();
