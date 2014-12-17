@@ -91,6 +91,7 @@ public:
     void setMetaData(const QString &key, const QVariant &value);
     void setTimestamp(qreal ts);
     qreal timestamp() const;
+    inline void swap(Frame &other) { qSwap(d_ptr, other.d_ptr); }
 
 protected:
     Frame(FramePrivate &d);

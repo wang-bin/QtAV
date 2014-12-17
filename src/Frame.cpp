@@ -93,12 +93,20 @@ const uchar* Frame::bits(int plane) const
 
 void Frame::setBits(uchar *b, int plane)
 {
+    if (plane < 0 || plane >= planeCount()) {
+        qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
+        return;
+    }
     Q_D(Frame);
     d->planes[plane] = b;
 }
 
 void Frame::setBits(const QVector<uchar *> &b)
 {
+    if (b.size() >= planeCount()) {
+        qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
+        return;
+    }
     Q_D(Frame);
     d->planes = b;
 }
@@ -112,12 +120,20 @@ void Frame::setBits(quint8 *slice[])
 
 void Frame::setBytesPerLine(int lineSize, int plane)
 {
+    if (plane < 0 || plane >= planeCount()) {
+        qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
+        return;
+    }
     Q_D(Frame);
     d->line_sizes[plane] = lineSize;
 }
 
 void Frame::setBytesPerLine(const QVector<int> &lineSize)
 {
+    if (lineSize.size() >= planeCount()) {
+        qWarning("Invalid plane! Valid range is [0, %d)", planeCount());
+        return;
+    }
     Q_D(Frame);
     d->line_sizes = lineSize;
 }
