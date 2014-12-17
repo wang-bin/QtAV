@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
     }
 
     QGuiApplication app(argc, argv);
+    set_opengl_backend(options.option("gl").value().toString(), app.arguments().first());
     load_qm(QStringList() << "QMLPlayer", options.value("language").toString());
     QtQuick2ApplicationViewer viewer;
     viewer.engine()->rootContext()->setContextProperty("PlayerConfig", &Config::instance());
