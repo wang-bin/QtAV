@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoDecoderFFmpegHW.h"
-#include "QtAV/private/VideoDecoderFFmpegHW_p.h"
+#include "VideoDecoderFFmpegHW.h"
+#include "VideoDecoderFFmpegHW_p.h"
 #include "utils/Logger.h"
 
 namespace QtAV {

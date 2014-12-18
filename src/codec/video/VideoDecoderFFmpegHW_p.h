@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -32,7 +32,7 @@
 
 namespace QtAV {
 
-class Q_AV_PRIVATE_EXPORT VideoDecoderFFmpegHWPrivate : public VideoDecoderPrivate
+class VideoDecoderFFmpegHWPrivate : public VideoDecoderPrivate
 {
 public:
     VideoDecoderFFmpegHWPrivate()

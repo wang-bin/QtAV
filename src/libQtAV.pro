@@ -380,7 +380,6 @@ SDK_HEADERS *= \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoDecoderTypes.h \
-    QtAV/VideoDecoderFFmpegHW.h \
     QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
     QtAV/VideoFrameExtractor.h \
@@ -409,7 +408,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/ImageConverter_p.h \
     QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
-    QtAV/private/VideoDecoderFFmpegHW_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h
 
@@ -424,6 +422,8 @@ HEADERS *= \
     AVThread_p.h \
     AudioThread.h \
     VideoThread.h \
+    codec/video/VideoDecoderFFmpegHW.h \
+    codec/video/VideoDecoderFFmpegHW_p.h \
     filter/FilterManager.h \
     input/QIODeviceInput.h \
     subtitle/CharsetDetector.h \
