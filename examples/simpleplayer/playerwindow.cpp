@@ -33,18 +33,7 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
     m_player = new AVPlayer(this);
     QVBoxLayout *vl = new QVBoxLayout();
     setLayout(vl);
-    const VideoRendererId vo_ids[] = {
-        VideoRendererId_OpenGLWidget, // Qt >= 5.4
-        VideoRendererId_GLWidget2,
-        VideoRendererId_GLWidget,
-        VideoRendererId_Widget,
-        0
-    };
-    for (int i = 0; vo_ids[i]; ++i) {
-        m_vo = new VideoOutput(vo_ids[i]);
-        if (m_vo->widget())
-            break;
-    }
+    m_vo = new VideoOutput(this);
     if (!m_vo->widget()) {
         QMessageBox::warning(0, "QtAV error", "Can not create video renderer");
         return;
@@ -69,11 +58,6 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
     connect(m_openBtn, SIGNAL(clicked()), SLOT(openMedia()));
     connect(m_playBtn, SIGNAL(clicked()), SLOT(playPause()));
     connect(m_stopBtn, SIGNAL(clicked()), m_player, SLOT(stop()));
-}
-
-PlayerWindow::~PlayerWindow()
-{
-
 }
 
 void PlayerWindow::openMedia()

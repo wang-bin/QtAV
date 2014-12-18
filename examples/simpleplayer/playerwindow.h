@@ -31,7 +31,6 @@ class PlayerWindow : public QWidget
     Q_OBJECT
 public:
     explicit PlayerWindow(QWidget *parent = 0);
-    ~PlayerWindow();
 public Q_SLOTS:
     void openMedia();
     void seek(int);

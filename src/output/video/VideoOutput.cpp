@@ -32,9 +32,22 @@ namespace QtAV {
 class VideoOutputPrivate : public VideoRendererPrivate
 {
 public:
-    VideoOutputPrivate(VideoRendererId rendererId) {
+    VideoOutputPrivate(VideoRendererId rendererId, bool force) {
         impl = VideoRendererFactory::create(rendererId);
-        // assert not null?
+        if (!impl && !force) {
+            const VideoRendererId vo_ids[] = {
+                VideoRendererId_OpenGLWidget, // Qt >= 5.4
+                VideoRendererId_GLWidget2,
+                VideoRendererId_GLWidget,
+                VideoRendererId_Widget,
+                0
+            };
+            for (int i = 0; vo_ids[i]; ++i) {
+                impl = VideoRendererFactory::create(vo_ids[i]);
+                if (impl && impl->widget())
+                    break;
+            }
+        }
         available = !!impl;
         if (!available)
             return;
@@ -68,9 +81,15 @@ public:
     VideoRenderer *impl;
 };
 
+VideoOutput::VideoOutput(QObject *parent)
+    : QObject(parent)
+    , VideoRenderer(*new VideoOutputPrivate(VideoRendererId_OpenGLWidget, false))
+{
+}
+
 VideoOutput::VideoOutput(VideoRendererId rendererId, QObject *parent)
     : QObject(parent)
-    , VideoRenderer(*new VideoOutputPrivate(rendererId))
+    , VideoRenderer(*new VideoOutputPrivate(rendererId, true))
 {
 }
 
