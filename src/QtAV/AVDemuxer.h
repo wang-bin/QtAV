@@ -176,9 +176,8 @@ public:
     /*!
      * \brief setOptions
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
-     * In addition, av_dict is slow.
-     * empty means default options in ffmpeg.
-     * used in avformat_open_input()
+     * empty value does nothing to current context if it is open, but will change AVDictionary options to null in next open.
+     * AVDictionary is used in avformat_open_input() and will not change unless user call setOptions()
      */
     void setOptions(const QVariantHash &dict);
     QVariantHash options() const;
@@ -192,6 +191,13 @@ signals:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void mediaStatusChanged(QtAV::MediaStatus status);
 private:
+    bool load();
+    // set wanted_xx_stream. call openCodecs() to read new stream frames
+    bool setStream(StreamType st, int stream);
+    bool findStreams();
+    QString formatName(AVFormatContext *ctx, bool longName = false) const;
+    void applyOptionsForDict();
+    void applyOptionsForContext();
     void setMediaStatus(MediaStatus status);
     /*!
      * \brief handleError
@@ -211,13 +217,6 @@ private:
     int wanted_audio_stream, wanted_video_stream, wanted_subtitle_stream;
     mutable int audio_stream, video_stream, subtitle_stream;
     mutable QList<int> audio_streams, video_streams, subtitle_streams;
-
-    bool load();
-
-    // set wanted_xx_stream. call openCodecs() to read new stream frames
-    bool setStream(StreamType st, int stream);
-    bool findStreams();
-    QString formatName(AVFormatContext *ctx, bool longName = false) const;
 
     AVFormatContext *format_context;
     AVCodecContext *a_codec_context, *v_codec_context, *s_codec_contex;

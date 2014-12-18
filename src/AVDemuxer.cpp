@@ -623,6 +623,7 @@ bool AVDemuxer::load()
 
     setMediaStatus(LoadingMedia);
     int ret;
+    applyOptionsForDict();
     if (m_in) {
         format_context->pb = (AVIOContext*)m_in->avioContext();
         format_context->flags |= AVFMT_FLAG_CUSTOM_IO;
@@ -638,7 +639,6 @@ bool AVDemuxer::load()
         mpInterrup->end();
         qDebug("avformat_open_input: url:'%s' ret:%d",qPrintable(_file_name), ret);
     }
-
     if (ret < 0) {
         // format_context is 0
         AVError::ErrorCode ec = AVError::OpenError;
@@ -1163,15 +1163,20 @@ void AVDemuxer::setInterruptStatus(bool interrupt)
 void AVDemuxer::setOptions(const QVariantHash &dict)
 {
     mOptions = dict;
+    applyOptionsForContext(); // apply even if avformat context is open
+}
+
+void AVDemuxer::applyOptionsForDict()
+{
     if (mpDict) {
         av_dict_free(&mpDict);
         mpDict = 0; //aready 0 in av_free
     }
-    if (dict.isEmpty())
+    if (mOptions.isEmpty())
         return;
-    QVariant opt(dict);
-    if (dict.contains("avformat")) {
-        opt = dict.value("avformat");
+    QVariant opt(mOptions);
+    if (mOptions.contains("avformat")) {
+        opt = mOptions.value("avformat");
         if (opt.type() == QVariant::Map) {
             QVariantMap avformat_dict(opt.toMap());
             if (avformat_dict.isEmpty())
@@ -1184,9 +1189,49 @@ void AVDemuxer::setOptions(const QVariantHash &dict)
                     continue;
                 const QByteArray key(i.key().toLower().toUtf8());
                 av_dict_set(&mpDict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
-                qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-                if (!format_context)
+                qDebug("avformat dict: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+            }
+            return;
+        }
+    }
+    QVariantHash avformat_dict(opt.toHash());
+    if (avformat_dict.isEmpty())
+        return;
+    QHashIterator<QString, QVariant> i(avformat_dict);
+    while (i.hasNext()) {
+        i.next();
+        const QVariant::Type vt = i.value().type();
+        if (vt == QVariant::Hash)
+            continue;
+        const QByteArray key(i.key().toLower().toUtf8());
+        av_dict_set(&mpDict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
+        qDebug("avformat dict: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+    }
+}
+
+void AVDemuxer::applyOptionsForContext()
+{
+    if (!format_context)
+        return;
+    if (mOptions.isEmpty()) {
+        //av_opt_set_defaults(format_context);  //can't set default values! result maybe unexpected
+        return;
+    }
+    QVariant opt(mOptions);
+    if (mOptions.contains("avformat")) {
+        opt = mOptions.value("avformat");
+        if (opt.type() == QVariant::Map) {
+            QVariantMap avformat_dict(opt.toMap());
+            if (avformat_dict.isEmpty())
+                return;
+            QMapIterator<QString, QVariant> i(avformat_dict);
+            while (i.hasNext()) {
+                i.next();
+                const QVariant::Type vt = i.value().type();
+                if (vt == QVariant::Map)
                     continue;
+                const QByteArray key(i.key().toLower().toUtf8());
+                qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
                 if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
                     av_opt_set_int(format_context, key.constData(), i.value().toInt(), 0);
                 } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
@@ -1206,10 +1251,7 @@ void AVDemuxer::setOptions(const QVariantHash &dict)
         if (vt == QVariant::Hash)
             continue;
         const QByteArray key(i.key().toLower().toUtf8());
-        av_dict_set(&mpDict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
         qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-        if (!format_context)
-            continue;
         if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
             av_opt_set_int(format_context, key.constData(), i.value().toInt(), 0);
         } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {

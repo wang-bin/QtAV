@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -55,6 +55,8 @@ public:
     }
     virtual bool open() {return true;}
     virtual void close() {}
+    void applyOptionsForDict();
+    void applyOptionsForContext();
 
     AVCodecContext *codec_ctx; //set once and not change
     bool available; //TODO: true only when context(and hw ctx) is ready

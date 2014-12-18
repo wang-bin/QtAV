@@ -259,9 +259,12 @@ public:
     int contrast() const;
     int hue() const; //not implemented
     int saturation() const;
-    /*
-     * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
-     * In addition, av_dict is slow.
+    /*!
+     * \sa AVDemuxer::setOptions()
+     * example:
+     * QVariantHash opt;
+     * opt["rtsp_transport"] = "tcp"
+     * player->setOptionsForFormat(opt);
      */
     // avformat_open_input
     void setOptionsForFormat(const QVariantHash &dict);
@@ -270,9 +273,12 @@ public:
     /*!
      * \sa AVDecoder::setOptions()
      * example:
-     *  "avcodec": {"vismv":"pf"}, "vaapi":{"display":"DRM"}
-     * equals
-     *  "vismv":"pf", "vaapi":{"display":"DRM"}
+     * QVariantHash opt, vaopt, ffopt;
+     * vaopt["display"] = "X11";
+     * opt["vaapi"] = vaopt; // only apply for va-api decoder
+     * ffopt["vismv"] = "pf";
+     * opt["ffmpeg"] = ffopt; // only apply for ffmpeg software decoder
+     * player->setOptionsForVideoCodec(opt);
      */
     // QVariantHash deprecated, use QVariantMap to get better js compatibility
     void setOptionsForAudioCodec(const QVariantHash &dict);
