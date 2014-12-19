@@ -97,6 +97,8 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         {VideoFormat::Format_ABGR32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_BGRA32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
 #endif
+        {VideoFormat::Format_RGBA32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
+        {VideoFormat::Format_ABGR32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
         {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
     #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
         {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
@@ -126,36 +128,59 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
 //https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_format_BGRA8888.txt
 int bytesOfGLFormat(GLenum format, GLenum dataType)
 {
-    switch (format)
-      {
+    int component_size = 0;
+    switch (dataType) {
+#ifdef GL_UNSIGNED_BYTE_3_3_2
+    case GL_UNSIGNED_BYTE_3_3_2:
+        return 1;
+#endif //GL_UNSIGNED_BYTE_3_3_2
+#ifdef GL_UNSIGNED_BYTE_2_3_3_REV
+    case GL_UNSIGNED_BYTE_2_3_3_REV:
+            return 1;
+#endif
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+#ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+#endif //GL_UNSIGNED_SHORT_1_5_5_5_REV
+#ifdef GL_UNSIGNED_SHORT_5_6_5_REV
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+#endif //GL_UNSIGNED_SHORT_5_6_5_REV
+    case GL_UNSIGNED_SHORT_5_6_5: // gles
+#ifdef GL_UNSIGNED_SHORT_4_4_4_4_REV
+    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+#endif //GL_UNSIGNED_SHORT_4_4_4_4_REV
+    case GL_UNSIGNED_SHORT_4_4_4_4:
+        return 2;
+    case GL_UNSIGNED_BYTE:
+        component_size = 1;
+        break;
+    case GL_UNSIGNED_SHORT:
+        component_size = 2;
+        break;
+    }
+    switch (format) {
 #ifdef GL_BGRA //ifndef GL_ES
       case GL_BGRA:
 #endif
       case GL_RGBA:
-        return 4;
+        return 4*component_size;
 #ifdef GL_BGR //ifndef GL_ES
       case GL_BGR:
 #endif
       case GL_RGB:
-        switch (dataType) {
-        case GL_UNSIGNED_SHORT_5_6_5:
-            return 2;
-        default:
-            return 3;
-        }
-        return 3;
+        return 3*component_size;
       case GL_LUMINANCE_ALPHA:
-        return 2;
+        return 2*component_size;
       case GL_LUMINANCE:
       case GL_ALPHA:
-        return 1;
+        return 1*component_size;
 #ifdef GL_LUMINANCE16
     case GL_LUMINANCE16:
-        return 2;
+        return 2*component_size;
 #endif //GL_LUMINANCE16
 #ifdef GL_ALPHA16
     case GL_ALPHA16:
-        return 2;
+        return 2*component_size;
 #endif //GL_ALPHA16
       default:
         qWarning("bytesOfGLFormat - Unknown format %u", format);
