@@ -181,9 +181,6 @@ void VideoThread::applyFilters(VideoFrame &frame)
     if (!d.filters.isEmpty()) {
         //sort filters by format. vo->defaultFormat() is the last
         foreach (Filter *filter, d.filters) {
-            if (d.stop) {
-                break;
-            }
             VideoFilter *vf = static_cast<VideoFilter*>(filter);
             if (!vf->isEnabled())
                 continue;
@@ -285,8 +282,8 @@ void VideoThread::run()
         if (d.packets.isEmpty() && !d.stop) {
             d.stop = d.demux_end;
         }
-        if (d.stop) {
-            qDebug("video thread stop before take packet");
+        if (d.stop && d.packets.isEmpty()) { // must stop here. otherwise thread will be blocked at d.packets.take()
+            qDebug("video thread stop before take packet. packet queue is empty.");
             break;
         }
         if(!pkt.isValid()) {
@@ -403,10 +400,6 @@ void VideoThread::run()
             // can not change d.delay here! we need it to comapre to next loop
             d.clock->updateVideoPts(pts); //here?
             waitAndCheck(diff*1000UL, pts);
-            if (d.stop) {
-                qDebug("video thread stop before decode()");
-                break;
-            }
         }
         if (wait_key_frame) {
             if (pkt.hasKeyFrame)
@@ -458,7 +451,7 @@ void VideoThread::run()
         VideoFrame frame = dec->frame();
         if (!frame.isValid()) {
             pkt = Packet(); //mark invalid to take next
-            qWarning("invalid video frame");
+            qWarning() << "invalid video frame from decoder";
             continue;
         }
         is_pkt_bf_seek = true;
@@ -490,19 +483,12 @@ void VideoThread::run()
 
         //while can pause, processNextTask, not call outset.puase which is deperecated
         while (d.outputSet->canPauseThread()) {
-            if (d.stop) {
-                break;
-            }
             d.outputSet->pauseThread(100);
             //tryPause(100);
             processNextTask();
         }
 
-        if (d.stop) {
-            qDebug("video thread stop before send decoded data");
-            break;
-        }
-
+        // no return even if d.stop is true. ensure frame is displayed. otherwise playing an image may be failed to display
         if (!deliverVideoFrame(frame))
             continue;
         d.statistics->video_only.frameDisplayed(pts);
@@ -525,7 +511,7 @@ void VideoThread::run()
     }
     d.packets.clear();
     d.capture->cancel();
-    d.outputSet->sendVideoFrame(VideoFrame());
+    d.outputSet->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
     qDebug("Video thread stops running...");
 }
 
