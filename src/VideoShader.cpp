@@ -434,7 +434,7 @@ void VideoMaterial::bindPlane(int p)
     DPTR_D(VideoMaterial);
     //setupQuality?
     if (d.frame.map(GLTextureSurface, &d.textures[p])) {
-        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
+        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
 // for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
 #ifndef QT_OPENGL_DYNAMIC
         glBindTexture(GL_TEXTURE_2D, d.textures[p]);
