@@ -439,12 +439,6 @@ bool AVPlayer::captureVideo()
 {
     if (!d->vcapture || !d->vthread)
         return false;
-    if (isPaused()) {
-        QString cap_name = QFileInfo(file()).completeBaseName();
-        d->vcapture->setCaptureName(cap_name + "_" + QString::number(masterClock()->value(), 'f', 3));
-        d->vcapture->start();
-        return true;
-    }
     d->vcapture->request();
     return true;
 }
