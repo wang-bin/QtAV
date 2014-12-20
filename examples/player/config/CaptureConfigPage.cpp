@@ -51,7 +51,7 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     mpFormat = new QComboBox();
     formLayout->addRow(tr("Save format"), mpFormat);
     QList<QByteArray> formats;
-    formats << "YUV" << QImageWriter::supportedImageFormats();
+    formats << "Original" << QImageWriter::supportedImageFormats();
     foreach (const QByteArray& fmt, formats) {
         mpFormat->addItem(fmt);
     }

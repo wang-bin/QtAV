@@ -39,14 +39,17 @@ class VideoThread : public AVThread
 public:
     explicit VideoThread(QObject *parent = 0);
     VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
+    VideoCapture *videoCapture() const;
+    VideoFrame displayedFrame() const;
     //ImageConverter *imageConverter();
     //virtual bool event(QEvent *event);
-
     void setBrightness(int val);
     void setContrast(int val);
     void setSaturation(int val);
     void setEQ(int b, int c, int s);
 
+public Q_SLOTS:
+    void addCaptureTask();
 protected:
     void waitAndCheck(ulong value, qreal pts);
     void applyFilters(VideoFrame& frame);

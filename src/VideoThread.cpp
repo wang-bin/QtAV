@@ -70,6 +70,7 @@ public:
     //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
     VideoFilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
+    VideoFrame displayed_frame;
     static QVariantHash dec_opt_framedrop, dec_opt_normal;
 };
 
@@ -89,7 +90,45 @@ VideoCapture* VideoThread::setVideoCapture(VideoCapture *cap)
     QMutexLocker locker(&d.mutex);
     VideoCapture *old = d.capture;
     d.capture = cap;
+    if (old)
+        disconnect(old, SIGNAL(requested()), this, SLOT(addCaptureTask()));
+    if (cap)
+        connect(cap, SIGNAL(requested()), this, SLOT(addCaptureTask()));
+    if (cap->autoSave() && cap->name.isEmpty()) {
+        // statistics is already set by AVPlayer
+        cap->setCaptureName(QFileInfo(d.statistics->url).completeBaseName());
+    }
     return old;
+}
+
+VideoCapture* VideoThread::videoCapture() const
+{
+    return d_func().capture;
+}
+
+void VideoThread::addCaptureTask()
+{
+    class CaptureTask : public QRunnable {
+    public:
+        CaptureTask(VideoThread *vt) : vthread(vt) {}
+        void run() {
+            VideoCapture *vc = vthread->videoCapture();
+            if (!vc)
+                return;
+            VideoFrame frame(vthread->displayedFrame());
+            //vthread->applyFilters(frame);
+            vc->setVideoFrame(frame);
+            vc->start();
+        }
+    private:
+        VideoThread *vthread;
+    };
+    scheduleTask(new CaptureTask(this));
+}
+
+VideoFrame VideoThread::displayedFrame() const
+{
+    return d_func().displayed_frame;
 }
 
 void VideoThread::setBrightness(int val)
@@ -243,6 +282,9 @@ void VideoThread::run()
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)// || !d.conv)
         return;
     resetState();
+    if (d.capture->autoSave()) {
+        d.capture->setCaptureName(QFileInfo(d.statistics->url).completeBaseName());
+    }
     //not neccesary context is managed by filters.
     d.filter_context = 0;
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
@@ -491,26 +533,11 @@ void VideoThread::run()
         // no return even if d.stop is true. ensure frame is displayed. otherwise playing an image may be failed to display
         if (!deliverVideoFrame(frame))
             continue;
-        d.statistics->video_only.frameDisplayed(pts);
-
-        d.capture->setPosition(pts);
-        if (d.capture->isRequested()) {
-            bool auto_name = d.capture->name.isEmpty() && d.capture->autoSave();
-            if (auto_name) {
-                QString cap_name;
-                if (d.statistics)
-                    cap_name = QFileInfo(d.statistics->url).completeBaseName();
-                d.capture->setCaptureName(cap_name + "_" + QString::number(pts, 'f', 3));
-            }
-            //TODO: what if not rgb32 now? detach the frame
-            d.capture->setVideoFrame(frame);
-            d.capture->start();
-            if (auto_name)
-                d.capture->setCaptureName("");
-        }
+        d.statistics->video_only.frameDisplayed(frame.timestamp());
+        // TODO: store original frame. now the frame is filtered and maybe converted to renderer perferred format
+        d.displayed_frame = frame;
     }
     d.packets.clear();
-    d.capture->cancel();
     d.outputSet->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
     qDebug("Video thread stops running...");
 }

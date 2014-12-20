@@ -186,9 +186,10 @@ public:
      * \brief capture and save current frame to "$HOME/.QtAV/filename_pts.png".
      * To capture with custom configurations, such as name and dir, use
      * VideoCapture api through AVPlayer::videoCapture()
+     * deprecated, use AVPlayer.videoCapture()->request() instead
      * \return
      */
-    bool captureVideo();
+    QTAV_DEPRECATED bool captureVideo();
     VideoCapture *videoCapture();
     /*
      * replay without parsing the stream if it's already loaded. (not implemented)
