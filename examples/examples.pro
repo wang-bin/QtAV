@@ -1,15 +1,15 @@
 TEMPLATE = subdirs
 
+SUBDIRS = common
 SUBDIRS += \
-    common \
     sharedoutput \
     simpleplayer \
     player \
     filters \
+    videocapture \
     videographicsitem \
     videogroup \
     videowall
-
 player.depends += common
 
 greaterThan(QT_MAJOR_VERSION, 4) {
