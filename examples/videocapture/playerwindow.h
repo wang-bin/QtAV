@@ -39,7 +39,7 @@ public Q_SLOTS:
     void capture();
 private Q_SLOTS:
     void updateSlider();
-    void updatePreview(const QtAV::VideoFrame& frame);
+    void updatePreview(const QImage& image);
     void onCaptureSaved(const QString& path);
     void onCaptureError();
 private:

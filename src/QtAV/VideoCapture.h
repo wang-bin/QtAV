@@ -31,7 +31,6 @@
 class QSize;
 namespace QtAV {
 
-class ImageConverter;
 //on capture per thread or all in one thread?
 class Q_AV_EXPORT VideoCapture : public QObject
 {
@@ -93,10 +92,16 @@ Q_SIGNALS:
     void requested();
     /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/
     /*!
-     * \brief ready
-     * Emitted when requested frame is available. To get QImage, you can use ImageConverter. see examples/capture
+     * \brief frameAvailable
+     * Emitted when requested frame is available.
      */
-    void ready(const QtAV::VideoFrame&);
+    void frameAvailable(const QtAV::VideoFrame& frame);
+    /*!
+     * \brief imageCaptured
+     * Emitted when captured video frame is converted to a QImage.
+     * \param image
+     */
+    void imageCaptured(const QImage& image);
     void failed();
     /*!
      * \brief saved
@@ -129,7 +134,6 @@ private:
     QString fmt;
     QString name, dir;
     VideoFrame frame;
-    ImageConverter *conv;
 };
 
 } //namespace QtAV

@@ -60,7 +60,7 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
     hb->addWidget(m_preview);
     connect(m_openBtn, SIGNAL(clicked()), SLOT(openMedia()));
     connect(m_captureBtn, SIGNAL(clicked()), SLOT(capture()));
-    connect(m_player->videoCapture(), SIGNAL(ready(QtAV::VideoFrame)), SLOT(updatePreview(QtAV::VideoFrame)));
+    connect(m_player->videoCapture(), SIGNAL(imageCaptured(QImage)), SLOT(updatePreview(QImage)));
     connect(m_player->videoCapture(), SIGNAL(saved(QString)), SLOT(onCaptureSaved(QString)));
     connect(m_player->videoCapture(), SIGNAL(failed()), SLOT(onCaptureError()));
 }
@@ -86,19 +86,9 @@ void PlayerWindow::updateSlider()
     m_slider->setValue(int(m_player->position()/1000LL));
 }
 
-void PlayerWindow::updatePreview(const VideoFrame &frame)
+void PlayerWindow::updatePreview(const QImage &image)
 {
-    VideoFrame f(frame);
-    ImageConverter *ic = ImageConverterFactory::create(ImageConverterId_FF);
-    f.setImageConverter(ic);
-    if (!f.convertTo(QImage::Format_ARGB32)) {
-        delete ic;
-        return;
-    }
-    delete ic;
-    // this img is constructed from raw data. It does not copy the data. You have to use img = img.copy() before if use img somewhere else
-    QImage img((const uchar*)frame.frameData().constData(), frame.width(), frame.height(), frame.bytesPerLine(), QImage::Format_ARGB32);
-    m_preview->setPixmap(QPixmap::fromImage(img).scaled(m_preview->size()));
+    m_preview->setPixmap(QPixmap::fromImage(image).scaled(m_preview->size()));
 }
 
 void PlayerWindow::capture()

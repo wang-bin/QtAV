@@ -48,6 +48,28 @@ public:
         setAutoDelete(true);
     }
     virtual void run() {
+        ImageConverter *conv = ImageConverterFactory::create(ImageConverterId_FF);
+        const VideoFormat vformat(frame.format());
+        conv->setInFormat(vformat.pixelFormatFFmpeg());
+        conv->setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::pixelFormatFromImageFormat(qfmt)));
+        conv->setInSize(frame.width(), frame.height());
+        conv->setOutSize(frame.width(), frame.height());
+        const int nb_planes = vformat.planeCount();
+        QVector<uchar*> planes(nb_planes);
+        QVector<int> line_sizes(nb_planes);
+        for (int i = 0; i < nb_planes; ++i) {
+            planes[i] = frame.bits(i);
+            line_sizes[i] = frame.bytesPerLine(i);
+        }
+        QImage image;
+        if (conv->convert(planes.constData(), line_sizes.constData())) {
+            image = QImage((const uchar*)conv->outData().constData(), frame.width(), frame.height(), conv->outLineSizes().at(0), qfmt);
+            image = image.copy();
+            QMetaObject::invokeMethod(cap, "imageCaptured", Q_ARG(QImage, image));
+        } else {
+            qWarning("Failed to convert to QImage");
+        }
+        delete conv;
         bool main_thread = QThread::currentThread() == qApp->thread();
         qDebug("capture task running in thread %p [main thread=%d]", QThread::currentThreadId(), main_thread);
         if (!QDir(dir).exists()) {
@@ -80,12 +102,9 @@ public:
             QMetaObject::invokeMethod(cap, "saved", Q_ARG(QString, path));
             return;
         }
-        path.append(format.toLower());
-        if (!frame.convertTo(qfmt)) {
-            qWarning("Failed to convert captured frame");
+        if (image.isNull())
             return;
-        }
-        QImage image((const uchar*)frame.frameData().constData(), frame.width(), frame.height(), frame.bytesPerLine(), qfmt);
+        path.append(format.toLower());
         qDebug("Saving capture to %s", qPrintable(path));
         bool ok = image.save(path, format.toLatin1().constData(), quality);
         if (!ok) {
@@ -119,7 +138,6 @@ VideoCapture::VideoCapture(QObject *parent) :
         dir = qApp->applicationDirPath() + "/capture";
     fmt = "PNG";
     qual = -1;
-    conv = ImageConverterFactory::create(ImageConverterId_FF);
 }
 
 VideoCapture::~VideoCapture()
@@ -173,8 +191,7 @@ void VideoCapture::request()
 
 void VideoCapture::start()
 {
-    VideoFrame vf(frame);
-    emit ready(vf.clone()); //TODO: no copy
+    emit frameAvailable(frame); //TODO: no copy
     if (!auto_save) {
         return;
     }
@@ -257,7 +274,6 @@ void VideoCapture::setVideoFrame(const VideoFrame &frame)
      * modified outside and is not safe.
      */
     this->frame = frame.clone(); // TODO: no clone, use detach()
-    this->frame.setImageConverter(conv);
 }
 
 } //namespace QtAV
