@@ -213,6 +213,16 @@ VideoFrame VideoFrame::clone() const
     Q_D(const VideoFrame);
     if (!d->format.isValid())
         return VideoFrame();
+    // data may be not set (ff decoder)
+    if (d->planes.isEmpty() || !d->planes.at(0)) {//d->data.size() < width()*height()) { // at least width*height
+        // maybe in gpu memory, then bits() is not set
+        qDebug("frame data not valid. size: %d", d->data.size());
+        VideoFrame f(width(), height(), d->format);
+        f.d_ptr->metadata = d->metadata; // need metadata?
+        f.setTimestamp(d->timestamp);
+        f.setDisplayAspectRatio(d->displayAspectRatio);
+        return f;
+    }
     int bytes = 0;
     for (int i = 0; i < d->format.planeCount(); ++i) {
         bytes += bytesPerLine(i)*planeHeight(i);
