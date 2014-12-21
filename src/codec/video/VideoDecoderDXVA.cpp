@@ -332,6 +332,7 @@ public:
     bool DxResetVideoDecoder();
     void DxCreateVideoConversion();
     void DxDestroyVideoConversion();
+    bool isHEVCSupported() const;
 
     bool setup(void **hwctx, int w, int h);
     bool open();
@@ -961,6 +962,24 @@ void VideoDecoderDXVAPrivate::DxDestroyVideoConversion()
         gpu_mem.cleanCache();
 }
 
+static bool check_ffmpeg_hevc_dxva2()
+{
+    avcodec_register_all();
+    AVHWAccel *hwa = av_hwaccel_next(0);
+    while (hwa) {
+        if (strncmp("hevc_dxva2", hwa->name, 10) == 0)
+            return true;
+        hwa = av_hwaccel_next(hwa);
+    }
+    return false;
+}
+
+bool VideoDecoderDXVAPrivate::isHEVCSupported() const
+{
+    static const bool support_hevc = check_ffmpeg_hevc_dxva2();
+    return support_hevc;
+}
+
 // hwaccel_context
 bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
 {
@@ -990,9 +1009,18 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
 
 bool VideoDecoderDXVAPrivate::open()
 {
-    if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC) && codec_ctx->profile > FF_PROFILE_HEVC_MAIN) {
-        qWarning("incompatible hevc profile!");
-        return false;
+    if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC)) {
+        // runtime hevc check
+        if (isHEVCSupported()) {
+            qWarning("HEVC DXVA2 is supported by current FFmpeg runtime.");
+        } else {
+            qWarning("HEVC DXVA2 is not supported by current FFmpeg runtime.");
+            return false;
+        }
+        if (codec_ctx->profile > FF_PROFILE_HEVC_MAIN) {
+            qWarning("incompatible hevc profile!");
+            return false;
+        }
     }
     if (!D3dCreateDevice()) {
         qWarning("Failed to create Direct3D device");
