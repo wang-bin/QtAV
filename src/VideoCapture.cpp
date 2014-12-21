@@ -41,10 +41,14 @@ static bool app_is_dieing = false;
 class CaptureTask : public QRunnable
 {
 public:
-    CaptureTask(VideoCapture* c):cap(c){
-        original_fmt = false;
-        format = "PNG";
-        qfmt = QImage::Format_ARGB32;
+    CaptureTask(VideoCapture* c)
+        : cap(c)
+        , save(true)
+        , original_fmt(false)
+        , quality(-1)
+        , format("PNG")
+        , qfmt(QImage::Format_ARGB32)
+    {
         setAutoDelete(true);
     }
     virtual void run() {
@@ -75,6 +79,8 @@ public:
             qWarning("Failed to convert to QImage");
         }
         delete conv;
+        if (!save)
+            return;
         bool main_thread = QThread::currentThread() == qApp->thread();
         qDebug("capture task running in thread %p [main thread=%d]", QThread::currentThreadId(), main_thread);
         if (!QDir(dir).exists()) {
@@ -84,9 +90,7 @@ public:
                 return;
             }
         }
-        if (cap->autoSave()) {
-            name += QString::number(frame.timestamp(), 'f', 3);
-        }
+        name += QString::number(frame.timestamp(), 'f', 3);
         QString path(dir + "/" + name + ".");
         if (original_fmt) {
             path.append(frame.format().name());
@@ -120,6 +124,7 @@ public:
     }
 
     VideoCapture *cap;
+    bool save;
     bool original_fmt;
     int quality;
     QString format, dir, name;
@@ -205,10 +210,14 @@ void VideoCapture::request()
 void VideoCapture::start()
 {
     emit frameAvailable(frame); //TODO: no copy
-    if (!auto_save) {
+    if (!frame.isValid() || !frame.bits(0)) { // if frame is always cloned, then size is at least width*height
+        qWarning("Captured frame data is invalid.");
+        emit failed();
         return;
     }
     CaptureTask *task = new CaptureTask(this);
+    // copy properties so the task will not be affect even if VideoCapture properties changed
+    task->save = autoSave();
     task->original_fmt = original_fmt;
     task->quality = qual;
     task->dir = dir;
