@@ -20,23 +20,23 @@
 ******************************************************************************/
 
 
-#include <QtAV/VideoCapture.h>
-#include <QtAV/ImageConverterTypes.h>
-#include <QtCore/QThread>
+#include "QtAV/VideoCapture.h"
+#include "QtAV/ImageConverterTypes.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QRunnable>
 #include <QtCore/QThreadPool>
-#include <QtGui/QImage>
-#include "utils/Logger.h"
-
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QDesktopServices>
 #else
 #include <QtCore/QStandardPaths>
 #endif
+#include "utils/Logger.h"
+
 namespace QtAV {
 
+Q_GLOBAL_STATIC(QThreadPool, videoCaptureThreadPool)
+static bool app_is_dieing = false;
 // TODO: cancel if qapp is quit
 class CaptureTask : public QRunnable
 {
@@ -48,6 +48,11 @@ public:
         setAutoDelete(true);
     }
     virtual void run() {
+        if (app_is_dieing) {
+            qDebug("app is dieing. cancel capture task %p", this);
+            return;
+        }
+        // TODO: add VideoFrame::toImage(QImage::Format),toFormat(VideoFormat)...
         ImageConverter *conv = ImageConverterFactory::create(ImageConverterId_FF);
         const VideoFormat vformat(frame.format());
         conv->setInFormat(vformat.pixelFormatFFmpeg());
@@ -138,11 +143,8 @@ VideoCapture::VideoCapture(QObject *parent) :
         dir = qApp->applicationDirPath() + "/capture";
     fmt = "PNG";
     qual = -1;
-}
-
-VideoCapture::~VideoCapture()
-{
-    qDebug("%p %s %s", QThread::currentThreadId(), __FILE__, __FUNCTION__);
+    // seems no direct connection is fine too
+    connect(qApp, SIGNAL(aboutToQuit()), SLOT(handleAppQuit()), Qt::DirectConnection);
 }
 
 void VideoCapture::setAsync(bool value)
@@ -184,6 +186,17 @@ bool VideoCapture::isOriginalFormat() const
     return original_fmt;
 }
 
+void VideoCapture::handleAppQuit()
+{
+    app_is_dieing = true;
+    // TODO: how to cancel? since qt5.2, we can use clear()
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
+    videoCaptureThreadPool()->clear();
+#endif
+    videoCaptureThreadPool()->setExpiryTimeout(0);
+    videoCaptureThreadPool()->waitForDone();
+}
+
 void VideoCapture::request()
 {
     emit requested();
@@ -204,7 +217,7 @@ void VideoCapture::start()
     task->qfmt = qfmt;
     task->frame = frame; //copy here and it's safe in capture thread because start() is called immediatly after setVideoFrame
     if (isAsync()) {
-        QThreadPool::globalInstance()->start(task);
+        videoCaptureThreadPool()->start(task);
     } else {
         task->run();
     }

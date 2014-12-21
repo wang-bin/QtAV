@@ -20,15 +20,14 @@
 ******************************************************************************/
 
 
-#ifndef VIDEOCAPTURE_H
-#define VIDEOCAPTURE_H
+#ifndef QTAV_VIDEOCAPTURE_H
+#define QTAV_VIDEOCAPTURE_H
 
 #include <QtCore/QObject>
 #include <QtGui/QImage>
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/VideoFrame.h>
 
-class QSize;
 namespace QtAV {
 
 //on capture per thread or all in one thread?
@@ -44,7 +43,6 @@ class Q_AV_EXPORT VideoCapture : public QObject
     Q_PROPERTY(QString captureDir READ captureDir WRITE setCaptureDir NOTIFY captureDirChanged)
 public:
     explicit VideoCapture(QObject *parent = 0);
-    ~VideoCapture();
     void setAsync(bool value = true);
     bool isAsync() const;
     /*!
@@ -101,7 +99,7 @@ Q_SIGNALS:
      * Emitted when captured video frame is converted to a QImage.
      * \param image
      */
-    void imageCaptured(const QImage& image);
+    void imageCaptured(const QImage& image); //TODO: emit only if not original format is set?
     void failed();
     /*!
      * \brief saved
@@ -117,6 +115,8 @@ Q_SIGNALS:
     void qualityChanged();
     void captureNameChanged();
     void captureDirChanged();
+private slots:
+    void handleAppQuit();
 private:
     void setVideoFrame(const VideoFrame& frame);
     // It's called by VideoThread after immediatly setVideoFrame(). Will emit ready()
@@ -137,4 +137,4 @@ private:
 };
 
 } //namespace QtAV
-#endif // VIDEOCAPTURE_H
+#endif // QTAV_VIDEOCAPTURE_H
