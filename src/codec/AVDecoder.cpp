@@ -26,7 +26,8 @@
 
 namespace QtAV {
 
-AVDecoder::AVDecoder()
+AVDecoder::AVDecoder(AVDecoderPrivate &d)
+    :DPTR_INIT(&d)
 {
     class AVInitializer {
     public:
@@ -37,11 +38,6 @@ AVDecoder::AVDecoder()
     };
     static AVInitializer sAVInit;
     Q_UNUSED(sAVInit);
-}
-
-AVDecoder::AVDecoder(AVDecoderPrivate &d)
-    :DPTR_INIT(&d)
-{
 }
 
 AVDecoder::~AVDecoder()
@@ -201,11 +197,6 @@ bool AVDecoder::decode(const QByteArray &encoded)
 {
     Q_UNUSED(encoded);
     return true;
-}
-
-QByteArray AVDecoder::data() const
-{
-    return d_func().decoded;
 }
 
 int AVDecoder::undecodedSize() const

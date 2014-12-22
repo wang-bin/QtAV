@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,28 +19,49 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QAV_AUDIODECODER_H
-#define QAV_AUDIODECODER_H
+#ifndef QTAV_VIDEODECODERFFMPEGBASE_H
+#define QTAV_VIDEODECODERFFMPEGBASE_H
 
-#include <QtAV/AVDecoder.h>
+#include "QtAV/VideoDecoder.h"
+#include "QtAV/private/VideoDecoder_p.h"
+#include "QtAV/private/AVCompat.h"
 
-//TODO: decoder.in/outAudioFormat()?
 namespace QtAV {
 
-class AudioResampler;
-class AudioDecoderPrivate;
-class Q_AV_EXPORT AudioDecoder : public AVDecoder
+class VideoDecoderFFmpegBasePrivate;
+class VideoDecoderFFmpegBase : public VideoDecoder
 {
-    Q_DISABLE_COPY(AudioDecoder)
-    DPTR_DECLARE_PRIVATE(AudioDecoder)
+    Q_DISABLE_COPY(VideoDecoderFFmpegBase)
+    DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegBase)
 public:
-    AudioDecoder();
-    virtual bool prepare() Q_DECL_OVERRIDE;
     QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
     virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
-    virtual QByteArray data() const; //decoded data
-    AudioResampler *resampler();
+    virtual VideoFrame frame() Q_DECL_OVERRIDE;
+protected:
+    VideoDecoderFFmpegBase(VideoDecoderFFmpegBasePrivate &d);
+private:
+    VideoDecoderFFmpegBase(); //it's a base class
+};
+
+class VideoDecoderFFmpegBasePrivate : public VideoDecoderPrivate
+{
+public:
+    VideoDecoderFFmpegBasePrivate()
+        : VideoDecoderPrivate()
+        , frame(0)
+    {
+        frame = av_frame_alloc();
+    }
+    virtual ~VideoDecoderFFmpegBasePrivate() {
+        if (frame) {
+            av_frame_free(&frame);
+            frame = 0;
+        }
+    }
+
+    AVFrame *frame; //set once and not change
 };
 
 } //namespace QtAV
-#endif // QAV_AUDIODECODER_H
+
+#endif // QTAV_VIDEODECODERFFMPEGBASE_H

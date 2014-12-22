@@ -172,7 +172,7 @@ end:
 }
 
 VideoDecoderFFmpegHW::VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d):
-    VideoDecoder(d)
+    VideoDecoderFFmpegBase(d)
 {
 }
 

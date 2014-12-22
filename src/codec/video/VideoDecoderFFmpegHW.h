@@ -22,20 +22,21 @@
 #ifndef QTAV_VIDEODECODERFFMPEGHW_H
 #define QTAV_VIDEODECODERFFMPEGHW_H
 
-#include <QtAV/VideoDecoder.h>
+#include "VideoDecoderFFmpegBase.h"
 
 namespace QtAV {
 
 class VideoDecoderFFmpegHWPrivate;
-class VideoDecoderFFmpegHW : public VideoDecoder
+class VideoDecoderFFmpegHW : public VideoDecoderFFmpegBase
 {
+    Q_DISABLE_COPY(VideoDecoderFFmpegHW)
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegHW)
 public:
-    VideoDecoderFFmpegHW();
-    virtual bool prepare();
-
+    virtual bool prepare() Q_DECL_OVERRIDE;
 protected:
     VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d);
+private:
+    VideoDecoderFFmpegHW();
 };
 
 } //namespace QtAV

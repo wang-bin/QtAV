@@ -62,6 +62,7 @@ FACTORY_DECLARE(VideoDecoder)
 class VideoDecoderPrivate;
 class Q_AV_EXPORT VideoDecoder : public AVDecoder
 {
+    Q_DISABLE_COPY(VideoDecoder)
     DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:
     static VideoDecoder* create(VideoDecoderId id);
@@ -72,13 +73,9 @@ public:
      * \return 0 if not registered
      */
     static VideoDecoder* create(const QString& name);
-    VideoDecoder();
     virtual VideoDecoderId id() const = 0;
     virtual QString name() const; //name from factory
-    virtual bool prepare();
-    QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
-    virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
-    virtual VideoFrame frame();
+    virtual VideoFrame frame() = 0;
     //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
     //size: the decoded(actually then resized in ImageConverter) frame size
     void resizeVideoFrame(const QSize& size);
@@ -89,6 +86,8 @@ public:
 
 protected:
     VideoDecoder(VideoDecoderPrivate& d);
+private:
+    VideoDecoder();
 };
 
 } //namespace QtAV

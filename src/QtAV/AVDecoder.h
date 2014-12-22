@@ -40,7 +40,6 @@ class Q_AV_EXPORT AVDecoder : public QObject
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVDecoder)
 public:
-    AVDecoder();
     virtual ~AVDecoder();
     virtual QString name() const;
     virtual QString description() const;
@@ -63,7 +62,6 @@ public:
     virtual bool prepare(); //if resampler or image converter set, call it
     QTAV_DEPRECATED virtual bool decode(const QByteArray& encoded) = 0;
     virtual bool decode(const Packet& packet) = 0;
-    QByteArray data() const; //decoded data
     int undecodedSize() const; //TODO: remove. always decode whole input data completely
 
     // avcodec_open2
@@ -88,8 +86,10 @@ Q_SIGNALS:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
 protected:
     AVDecoder(AVDecoderPrivate& d);
-
     DPTR_DECLARE(AVDecoder)
+private:
+    Q_DISABLE_COPY(AVDecoder)
+    AVDecoder(); // base class, not direct create. only final class has is enough
 };
 
 } //namespace QtAV

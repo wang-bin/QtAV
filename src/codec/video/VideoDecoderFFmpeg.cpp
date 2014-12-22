@@ -19,9 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoDecoder.h"
-#include "QtAV/private/VideoDecoder_p.h"
-#include "QtAV/Packet.h"
+#include "VideoDecoderFFmpegBase.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
 #include "utils/Logger.h"
@@ -35,7 +33,7 @@
 namespace QtAV {
 
 class VideoDecoderFFmpegPrivate;
-class VideoDecoderFFmpeg : public VideoDecoder
+class VideoDecoderFFmpeg : public VideoDecoderFFmpegBase
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
@@ -112,8 +110,8 @@ public:
     Q_DECLARE_FLAGS(BugFlags, BugFlag)
 
     VideoDecoderFFmpeg();
-    virtual VideoDecoderId id() const;
-    virtual bool prepare() Q_DECL_OVERRIDE;
+    virtual VideoDecoderId id() const Q_DECL_FINAL;
+    virtual bool prepare() Q_DECL_FINAL;
 
     // TODO: av_opt_set in setter
     void setSkipLoopFilter(DiscardType value);
@@ -143,11 +141,11 @@ void RegisterVideoDecoderFFmpeg_Man()
 }
 
 
-class VideoDecoderFFmpegPrivate : public VideoDecoderPrivate
+class VideoDecoderFFmpegPrivate : public VideoDecoderFFmpegBasePrivate
 {
 public:
     VideoDecoderFFmpegPrivate():
-        VideoDecoderPrivate()
+        VideoDecoderFFmpegBasePrivate()
       , skip_loop_filter(VideoDecoderFFmpeg::Default)
       , skip_idct(VideoDecoderFFmpeg::Default)
       , strict(VideoDecoderFFmpeg::Normal)
@@ -170,7 +168,7 @@ public:
 
 
 VideoDecoderFFmpeg::VideoDecoderFFmpeg():
-    VideoDecoder(*new VideoDecoderFFmpegPrivate())
+    VideoDecoderFFmpegBase(*new VideoDecoderFFmpegPrivate())
 {
     // dynamic properties about static property details. used by UI
     // format: detail_property
