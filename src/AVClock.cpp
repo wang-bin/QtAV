@@ -55,7 +55,18 @@ AVClock::AVClock(QObject *parent):
 
 void AVClock::setClockType(ClockType ct)
 {
+    if (clock_type == ct)
+        return;
     clock_type = ct;
+    if (clock_type != AudioClock) {// TODO: for all clock
+        nb_restarted = 0;
+        avg_err = 0;
+        // timer is always started in AVClock::start()
+        if (timer.isValid()) {
+            t = QDateTime::currentMSecsSinceEpoch();
+            correction_schedule_timer.start(kCorrectionInterval*1000, this);
+        }
+    }
 }
 
 AVClock::ClockType AVClock::clockType() const
@@ -90,7 +101,7 @@ bool AVClock::isClockAuto() const
 
 void AVClock::updateExternalClock(qint64 msecs)
 {
-    if (clock_type != ExternalClock)
+    if (clock_type == AudioClock)
         return;
     qDebug("External clock change: %f ==> %f", value(), double(msecs) * kThousandth);
     pts_ = double(msecs) * kThousandth; //can not use msec/1000.
@@ -98,6 +109,8 @@ void AVClock::updateExternalClock(qint64 msecs)
 
     last_pts = pts_;
     t = QDateTime::currentMSecsSinceEpoch();
+    if (clockType() == VideoClock)
+        pts_v = pts_;
 }
 
 void AVClock::updateExternalClock(const AVClock &clock)
@@ -127,7 +140,8 @@ void AVClock::start()
     qDebug("AVClock started!!!!!!!!");
     timer.start();
     correction_schedule_timer.stop();
-    if (clockType() == ExternalClock) {
+    // TODO: for all clock type
+    if (clockType() != AudioClock) {
         t = QDateTime::currentMSecsSinceEpoch();
         correction_schedule_timer.start(kCorrectionInterval*1000, this);
     }
@@ -138,7 +152,7 @@ void AVClock::pause(bool p)
 {
     if (isPaused() == p)
         return;
-    if (clock_type != ExternalClock)
+    if (clock_type == AudioClock)
         return;
     m_paused = p;
     if (p) {
@@ -176,7 +190,7 @@ void AVClock::reset()
 
 void AVClock::timerEvent(QTimerEvent *event)
 {
-    Q_ASSERT_X(clockType() == ExternalClock, "AVClock::timerEvent", "Internal error. Only ExternalClock call this");
+    Q_ASSERT_X(clockType() != AudioClock, "AVClock::timerEvent", "Internal error. AudioClock can not call this");
     if (event->timerId() != correction_schedule_timer.timerId())
         return;
     if (isPaused())
@@ -186,8 +200,8 @@ void AVClock::timerEvent(QTimerEvent *event)
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
     const double err = double(now - t) * kThousandth - delta_pts;
     t = now;
-    // avfoundation camera error is large (about -0.6s)
-    if (qAbs(err*10.0) < kCorrectionInterval) {
+    // FIXME: avfoundation camera error is large (about -0.6s)
+    if (qAbs(err*10.0) < kCorrectionInterval || clock_type == VideoClock) {
         avg_err += err/(nb_restarted+1);
     }
     //qDebug("correction timer event. error = %f, avg_err=%f, nb_restarted=%d", err, avg_err, nb_restarted);

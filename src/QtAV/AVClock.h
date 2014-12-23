@@ -47,7 +47,9 @@ class Q_AV_EXPORT AVClock : public QObject
     Q_OBJECT
 public:
     typedef enum {
-        AudioClock, ExternalClock
+        AudioClock,
+        ExternalClock,
+        VideoClock     //sync to video timestamp
     } ClockType;
 
     AVClock(ClockType c, QObject* parent = 0);
@@ -111,7 +113,7 @@ private:
     bool m_paused;
     ClockType clock_type;
     mutable double pts_;
-    double pts_v;
+    mutable double pts_v;
     double delay_;
     mutable QElapsedTimer timer;
     qreal mSpeed;
@@ -134,9 +136,10 @@ private:
 double AVClock::value() const
 {
     if (clock_type == AudioClock) {
+        // TODO: audio clock need a timer too
         // timestamp from media stream is >= value0
         return pts_ == 0 ? value0 : pts_ + delay_;
-    } else {
+    } else if (clock_type == ExternalClock) {
         if (timer.isValid()) {
             ++nb_restarted;
             pts_ += double(timer.restart()) * kThousandth + avg_err;
@@ -144,6 +147,12 @@ double AVClock::value() const
             //qDebug("clock is paused. return the last value %f", pts_);
         }
         return pts_ * speed() + value0;
+    } else {
+        if (timer.isValid()) {
+            ++nb_restarted;
+            pts_v += double(timer.restart()) * kThousandth + avg_err;
+        }
+        return pts_v * speed(); // value0 is 1st video pts_v already
     }
 }
 
@@ -156,6 +165,8 @@ void AVClock::updateValue(double pts)
 void AVClock::updateVideoPts(double pts)
 {
     pts_v = pts;
+    if (clock_type == VideoClock)
+        timer.restart();
 }
 
 double AVClock::videoPts() const

@@ -309,8 +309,9 @@ void VideoThread::run()
     const int kNbSlowSkip = 120; // about 1s for 120fps video
     // kNbSlowFrameDrop: if video frame slow count > kNbSlowFrameDrop, skip decoding nonref frames. only some of ffmpeg based decoders support it.
     const int kNbSlowFrameDrop = 10;
-    const bool is_audio_clock = clock()->clockType() == AVClock::AudioClock;
     int seek_done_count = 0; // seek_done_count > 1 means seeking is really finished. theorically can't be >1 if seeking!
+    bool sync_audio = d.clock->clockType() == AVClock::AudioClock;
+    bool sync_video = d.clock->clockType() == AVClock::VideoClock; // no frame drop
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -339,9 +340,21 @@ void VideoThread::run()
             dec->flush();
             continue;
         }
+        if (d.clock->clockType() == AVClock::AudioClock) {
+            sync_audio = true;
+            sync_video = false;
+        } else if (d.clock->clockType() == AVClock::VideoClock) {
+            sync_audio = false;
+            sync_video = true;
+        } else {
+            sync_audio = false;
+            sync_video = false;
+        }
         const qreal pts = pkt.dts; //FIXME: pts and dts
         // TODO: delta ref time
         qreal diff = pts - d.clock->value();
+        if (diff < 0 && sync_video)
+            diff = 0; // this ensures no frame drop
         if (diff > kSyncThreshold) {
             nb_dec_fast++;
         } else {
@@ -383,15 +396,12 @@ void VideoThread::run()
          *the new packet, then the d.delay is very large, omit it.
         */
         bool skip_render = pts < d.render_pts0;
-        if (skip_render) {
-            d.clock->updateVideoPts(pts); //here?
-            //qDebug("skip video render at %f/%f", pkt.pts, d.render_pts0);
-        }
-        if (!is_audio_clock && diff > 0) {
-            //qDebug("audio clock: %d, diff: %f", is_audio_clock, diff);
+        if (!sync_audio && diff > 0) {
             waitAndCheck(diff*1000UL, pts); // TODO: count decoding and filter time
             diff = 0; // TODO: can not change delay!
         }
+        // update here after wait
+        d.clock->updateVideoPts(pts); // dts or pts?
         seeking = !qFuzzyIsNull(d.render_pts0);
         if (qAbs(diff) < 0.5) {
             if (diff < -kSyncThreshold) { //Speed up. drop frame?
@@ -428,7 +438,6 @@ void VideoThread::run()
                         continue; // seeking and this v packet is before seeking
                     }
                 }
-                d.clock->updateVideoPts(pts); //here?
                 const double s = qMin<qreal>(0.01*(nb_dec_fast>>1), diff);
                 qWarning("video too fast!!! sleep %.2f s, nb fast: %d", s, nb_dec_fast);
                 waitAndCheck(s*1000UL, pts);
@@ -440,7 +449,6 @@ void VideoThread::run()
         //audio packet not cleaned up?
         if (diff > 0 && diff < 1.0 && !seeking) {
             // can not change d.delay here! we need it to comapre to next loop
-            d.clock->updateVideoPts(pts); //here?
             waitAndCheck(diff*1000UL, pts);
         }
         if (wait_key_frame) {
