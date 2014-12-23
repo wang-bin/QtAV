@@ -127,6 +127,7 @@ private slots:
     void setSubtitleCharset(const QString& charSet);
     void setSubtitleEngine(const QString& value);
 
+    void changeClockType(QAction* action);
 protected:
     virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
