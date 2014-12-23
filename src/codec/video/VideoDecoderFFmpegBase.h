@@ -36,7 +36,6 @@ class VideoDecoderFFmpegBase : public VideoDecoder
 public:
     QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
     virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
-    virtual VideoFrame frame() Q_DECL_OVERRIDE;
 protected:
     VideoDecoderFFmpegBase(VideoDecoderFFmpegBasePrivate &d);
 private:

@@ -112,6 +112,7 @@ public:
     VideoDecoderFFmpeg();
     virtual VideoDecoderId id() const Q_DECL_FINAL;
     virtual bool prepare() Q_DECL_FINAL;
+    virtual VideoFrame frame() Q_DECL_FINAL;
 
     // TODO: av_opt_set in setter
     void setSkipLoopFilter(DiscardType value);
@@ -231,6 +232,30 @@ bool VideoDecoderFFmpeg::prepare()
     }
 #endif
     return true;
+}
+
+VideoFrame VideoDecoderFFmpeg::frame()
+{
+    DPTR_D(VideoDecoderFFmpeg);
+    /*qDebug("color space: %d, range: %d, prim: %d, t: %d"
+           , d.codec_ctx->colorspace, d.codec_ctx->color_range
+           , d.codec_ctx->color_primaries, d.codec_ctx->color_trc);
+           */
+    if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
+        return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+    //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
+    float displayAspectRatio = 0;
+    if (d.codec_ctx->sample_aspect_ratio.den > 0)
+        displayAspectRatio = ((float)d.frame->width / (float)d.frame->height) *
+            ((float)d.codec_ctx->sample_aspect_ratio.num / (float)d.codec_ctx->sample_aspect_ratio.den);
+
+    // it's safe if width, height, pixfmt will not change, only data change
+    VideoFrame frame(d.frame->width, d.frame->height, VideoFormat((int)d.codec_ctx->pix_fmt));
+    frame.setDisplayAspectRatio(displayAspectRatio);
+    frame.setBits(d.frame->data);
+    frame.setBytesPerLine(d.frame->linesize);
+    frame.setTimestamp((double)d.frame->pkt_pts/1000.0); // in s. what about AVFrame.pts?
+    return frame;
 }
 
 void VideoDecoderFFmpeg::setSkipLoopFilter(DiscardType value)
