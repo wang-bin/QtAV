@@ -189,29 +189,6 @@ void VideoThread::setEQ(int b, int c, int s)
     }
 }
 
-void VideoThread::waitAndCheck(ulong value, qreal pts)
-{
-    DPTR_D(VideoThread);
-    if (value == 0)
-        return;
-    //qDebug("wating for %lu msecs", value);
-    ulong us = value * 1000UL;
-    static const ulong kWaitSlice = 20 * 1000UL; //20ms
-    while (us > kWaitSlice) {
-        usleep(kWaitSlice);
-        if (d.stop)
-            us = 0;
-        else
-            us -= kWaitSlice;
-        us = qMin(us, ulong((double)(pts - d.clock->value())*1000000.0));
-        processNextTask();
-    }
-    if (us > 0) {
-        usleep(us);
-        processNextTask();
-    }
-}
-
 void VideoThread::applyFilters(VideoFrame &frame)
 {
     DPTR_D(VideoThread);

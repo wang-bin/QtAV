@@ -102,6 +102,7 @@ protected:
     // has timeout so that the pending tasks can be processed
     bool tryPause(unsigned long timeout = 100);
     bool processNextTask(); //in AVThread
+    void waitAndCheck(ulong value, qreal pts);
 
     DPTR_DECLARE(AVThread)
 

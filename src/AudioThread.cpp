@@ -127,21 +127,12 @@ void AudioThread::run()
              *TODO: 1. how to choose the value
              * 2. use last delay when seeking
             */
-            if (qAbs(d.delay) < 2.718) {
+            if (qAbs(d.delay) < 2.0) {
                 if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                     //continue;
                 }
-                while (d.delay > kSyncThreshold) { //Slow down
-                    //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
-                    //qDebug("~~~~~wating for %f msecs", d.delay*1000);
-                    usleep(kSyncThreshold * 1000000UL);
-                    if (d.stop)
-                        d.delay = 0;
-                    else
-                        d.delay -= kSyncThreshold;
-                }
                 if (d.delay > 0)
-                    usleep(d.delay * 1000000UL);
+                    waitAndCheck(d.delay, dts);
             } else { //when to drop off?
                 if (d.delay > 0) {
                     msleep(64);

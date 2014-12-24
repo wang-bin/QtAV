@@ -21,6 +21,7 @@
 
 #include "AVThread.h"
 #include "AVThread_p.h"
+#include "QtAV/AVClock.h"
 #include "QtAV/AVOutput.h"
 #include "QtAV/Filter.h"
 #include "output/OutputSet.h"
@@ -286,6 +287,29 @@ void AVThread::waitForReady()
     QMutexLocker lock(&d_func().ready_mutex);
     while (!d_func().ready) {
         d_func().ready_cond.wait(&d_func().ready_mutex);
+    }
+}
+
+void AVThread::waitAndCheck(ulong value, qreal pts)
+{
+    DPTR_D(AVThread);
+    if (value <= 0)
+        return;
+    //qDebug("wating for %lu msecs", value);
+    ulong us = value * 1000UL;
+    static const ulong kWaitSlice = 20 * 1000UL; //20ms
+    while (us > kWaitSlice) {
+        usleep(kWaitSlice);
+        if (d.stop)
+            us = 0;
+        else
+            us -= kWaitSlice;
+        us = qMin(us, ulong((double)(pts - d.clock->value())*1000000.0));
+        processNextTask();
+    }
+    if (us > 0) {
+        usleep(us);
+        processNextTask();
     }
 }
 
