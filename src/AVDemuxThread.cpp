@@ -20,10 +20,12 @@
 ******************************************************************************/
 
 #include "AVDemuxThread.h"
+#include "QtAV/AVClock.h"
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/AVDecoder.h"
 #include "QtAV/Packet.h"
 #include "AVThread.h"
+#include "VideoThread.h"
 #include <QtCore/QTime>
 #include <QtCore/QTimer>
 #include <QtCore/QEventLoop>
@@ -66,6 +68,7 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , audio_thread(0)
   , video_thread(0)
   , nb_next_frame(0)
+  , clock_type(-1)
 {
     seek_tasks.setCapacity(1);
     seek_tasks.blockFull(false);
@@ -160,7 +163,7 @@ void AVDemuxThread::seekInternal(qint64 pos)
         video_thread->setDemuxEnded(false);
         video_thread->packetQueue()->clear();
     }
-    qDebug("seek to %s %lld ms (%f%%)", QTime(0, 0, 0).addMSecs(pos).toString().toUtf8().constData(), pos, double(pos)/double(demuxer->duration())*100.0);
+    qDebug("seek to %s %lld ms (%f%%)", QTime(0, 0, 0).addMSecs(pos).toString().toUtf8().constData(), pos, double(pos - demuxer->startTime())/double(demuxer->duration())*100.0);
     demuxer->seek(pos);
     // TODO: why queue may not empty?
     if (audio_thread) {
@@ -279,10 +282,18 @@ void AVDemuxThread::pause(bool p)
 
 void AVDemuxThread::nextFrame()
 {
+    // clock type will be wrong if no lock because slot frameDeliveredNextFrame() is in video thread
+    QMutexLocker locker(&next_frame_mutex);
+    Q_UNUSED(locker);
     pause(true); // must pause AVDemuxThread (set user_paused true)
     AVThread *t = video_thread;
     bool connected = false;
     if (t) {
+        // set clock first
+        if (clock_type < 0)
+            clock_type = (int)t->clock()->isClockAuto() + 2*(int)t->clock()->clockType();
+        t->clock()->setClockType(AVClock::VideoClock);
+        ((VideoThread*)t)->scheduleFrameDrop(false);
         t->pause(false);
         t->packetQueue()->blockFull(false);
         if (!connected) {
@@ -292,6 +303,9 @@ void AVDemuxThread::nextFrame()
     }
     t = audio_thread;
     if (t) {
+        if (clock_type < 0)
+            clock_type = (int)t->clock()->isClockAuto() + 2*(int)t->clock()->clockType();
+        t->clock()->setClockType(AVClock::VideoClock);
         t->pause(false);
         t->packetQueue()->blockFull(false);
         if (!connected) {
@@ -329,6 +343,8 @@ void AVDemuxThread::frameDeliveredNextFrame()
 #endif
         return;
     }
+    QMutexLocker locker(&next_frame_mutex);
+    Q_UNUSED(locker);
     disconnect(thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredNextFrame()));
     if (user_paused) {
         pause(true); // restore pause state
@@ -338,6 +354,11 @@ void AVDemuxThread::frameDeliveredNextFrame()
             video_thread->pause(true);
         if (audio_thread)
             audio_thread->pause(true);
+    }
+    if (clock_type >= 0) {
+        thread->clock()->setClockAuto(clock_type & 1);
+        thread->clock()->setClockType(AVClock::ClockType(clock_type/2));
+        clock_type = -1;
     }
 }
 

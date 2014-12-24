@@ -89,6 +89,8 @@ private:
     QQueue<QRunnable*> pause_tasks; // in thread tasks
 
     QAtomicInt nb_next_frame;
+    QMutex next_frame_mutex;
+    int clock_type; // change happens in different threads(direct connection)
     friend class SeekTask;
 };
 

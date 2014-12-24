@@ -189,6 +189,25 @@ void VideoThread::setEQ(int b, int c, int s)
     }
 }
 
+void VideoThread::scheduleFrameDrop(bool value)
+{
+    class FrameDropTask : public QRunnable {
+        AVDecoder *decoder;
+        bool drop;
+    public:
+        FrameDropTask(AVDecoder *dec, bool value) : decoder(dec), drop(value) {}
+        void run() Q_DECL_OVERRIDE {
+            if (!decoder)
+                return;
+            if (drop)
+                decoder->setOptions(VideoThreadPrivate::dec_opt_framedrop);
+            else
+                decoder->setOptions(VideoThreadPrivate::dec_opt_normal);
+        }
+    };
+    scheduleTask(new FrameDropTask(decoder(), value));
+}
+
 void VideoThread::applyFilters(VideoFrame &frame)
 {
     DPTR_D(VideoThread);
