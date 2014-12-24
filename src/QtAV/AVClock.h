@@ -82,8 +82,8 @@ public:
     /*external clock outside still running, so it's more accurate for syncing multiple clocks serially*/
     void updateExternalClock(const AVClock& clock);
 
-    inline void updateVideoPts(double pts);
-    inline double videoPts() const;
+    inline void updateVideoTime(double pts);
+    inline double videoTime() const;
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
 
@@ -162,14 +162,14 @@ void AVClock::updateValue(double pts)
         pts_ = pts;
 }
 
-void AVClock::updateVideoPts(double pts)
+void AVClock::updateVideoTime(double pts)
 {
     pts_v = pts;
     if (clock_type == VideoClock)
         timer.restart();
 }
 
-double AVClock::videoPts() const
+double AVClock::videoTime() const
 {
     return pts_v;
 }

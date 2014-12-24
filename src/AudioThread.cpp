@@ -107,8 +107,8 @@ void AudioThread::run()
              * audio may be too fast than video if skip without sleep
              * a frame is about 20ms. sleep time must be << frame time
              */
-            qreal a_v = dts - d.clock->videoPts();
-            //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", dts, d.render_pts0, d.clock->videoPts(), a_v*1000.0);
+            qreal a_v = dts - d.clock->videoTime();
+            //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", dts, d.render_pts0, d.clock->videoTime(), a_v*1000.0);
             if (a_v > 0) {
                 msleep(qMin((ulong)20, ulong(a_v*1000.0)));
             } else {

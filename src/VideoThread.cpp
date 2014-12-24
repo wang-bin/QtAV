@@ -378,7 +378,7 @@ void VideoThread::run()
             diff = 0; // TODO: can not change delay!
         }
         // update here after wait
-        d.clock->updateVideoPts(pts); // dts or pts?
+        d.clock->updateVideoTime(pts); // dts or pts?
         seeking = !qFuzzyIsNull(d.render_pts0);
         if (qAbs(diff) < 0.5) {
             if (diff < -kSyncThreshold) { //Speed up. drop frame?
