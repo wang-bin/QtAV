@@ -118,8 +118,11 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         {VideoFormat::Format_RGBA32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
         {VideoFormat::Format_ABGR32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
         {VideoFormat::Format_RGB48, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
-        {VideoFormat::Format_R16G16B16, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
-        {VideoFormat::Format_B16G16R16, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_RGB48LE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_RGB48BE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_BGR48, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_BGR48LE, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_BGR48BE, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
         {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
     #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
         {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},

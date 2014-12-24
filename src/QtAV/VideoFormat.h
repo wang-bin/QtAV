@@ -118,9 +118,12 @@ public:
         Format_YUV422P16BE,
         Format_YUV444P16BE,
 
-        Format_RGB48, // native endian, Format_R16G16B16 on BE, Format_B16G16R16 on LE
-        Format_R16G16B16,
-        Format_B16G16R16,
+        Format_RGB48, // native endian
+        Format_RGB48LE,
+        Format_RGB48BE,
+        Format_BGR48,
+        Format_BGR48LE,
+        Format_BGR48BE,
         Format_User
     };
 

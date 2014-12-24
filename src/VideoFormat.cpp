@@ -198,9 +198,6 @@ static const struct {
     { VideoFormat::Format_RGBA32, QTAV_PIX_FMT_C(RGBA) },      ///< packed RGBA 8:8:8:8, 32bpp, RGBARGBA...
     { VideoFormat::Format_ABGR32, QTAV_PIX_FMT_C(ABGR) },      ///< packed ABGR 8:8:8:8, 32bpp, ABGRABGR...
     { VideoFormat::Format_BGRA32, QTAV_PIX_FMT_C(BGRA) },      ///< packed BGRA 8:8:8:8, 32bpp, BGRABGRA...
-    // QTAV_PIX_FMT_C(RGB32) is depends on byte order, ARGB for BE, BGRA for LE
-    { VideoFormat::Format_RGB32, QTAV_PIX_FMT_C(RGB32) }, //auto endian
-
     //QTAV_PIX_FMT_C(GRAY16BE),  ///<        Y        , 16bpp, big-endian
     //QTAV_PIX_FMT_C(GRAY16LE),  ///<        Y        , 16bpp, little-endian
     //QTAV_PIX_FMT_C(YUV440P),   ///< planar YUV 4:4:0 (1 Cr & Cb sample per 1x2 Y samples)
@@ -213,8 +210,8 @@ static const struct {
     QTAV_PIX_FMT_C(VDPAU_WMV3,///< WMV3 HW decoding with VDPAU, data[0] contains a vdpau_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
     QTAV_PIX_FMT_C(VDPAU_VC1, ///< VC-1 HW decoding with VDPAU, data[0] contains a vdpau_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
     */
-    { VideoFormat::Format_R16G16B16, QTAV_PIX_FMT_C(RGB48BE) },   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as big-endian
-    { VideoFormat::Format_B16G16R16, QTAV_PIX_FMT_C(RGB48LE) },   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as little-endian
+    { VideoFormat::Format_RGB48BE, QTAV_PIX_FMT_C(RGB48BE) },   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as big-endian
+    { VideoFormat::Format_RGB48LE, QTAV_PIX_FMT_C(RGB48LE) },   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as little-endian
     { VideoFormat::Format_RGB565, QTAV_PIX_FMT_C(RGB565) },  ///< packed RGB 5:6:5, 16bpp, (msb)   5R 6G 5B(lsb), native-endian
     { VideoFormat::Format_RGB555, QTAV_PIX_FMT_C(RGB555) },  ///< packed RGB 5:5:5, 16bpp, (msb)1A 5R 5G 5B(lsb), native-endian, be: most significant bit to 1
     { VideoFormat::Format_BGR565, QTAV_PIX_FMT_C(BGR565) },  ///< packed BGR 5:6:5, 16bpp, (msb)   5B 6G 5R(lsb), native-endian
@@ -242,8 +239,8 @@ static const struct {
     QTAV_PIX_FMT_C(BGR444BE,  ///< packed BGR 4:4:4, 16bpp, (msb)4A 4B 4G 4R(lsb), big-endian, most significant bits to 1
     QTAV_PIX_FMT_C(GRAY8A,    ///< 8bit gray, 8bit alpha
     */
-    { VideoFormat::Format_B16G16R16, QTAV_PIX_FMT_C(BGR48BE) },   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as big-endian
-    { VideoFormat::Format_R16G16B16, QTAV_PIX_FMT_C(BGR48LE) },   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as little-endian
+    { VideoFormat::Format_BGR48BE, QTAV_PIX_FMT_C(BGR48BE) },   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as big-endian
+    { VideoFormat::Format_BGR48LE, QTAV_PIX_FMT_C(BGR48LE) },   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as little-endian
     //the following 10 formats have the disadvantage of needing 1 format for each bit depth, thus
     //If you want to support multiple bit depths, then using QTAV_PIX_FMT_C(YUV420P16* with the bpp stored separately
     //is better
@@ -340,6 +337,13 @@ static const struct {
     QTAV_PIX_FMT_C(GBRP14BE,    ///< planar GBR 4:4:4 42bpp, big-endian
     QTAV_PIX_FMT_C(GBRP14LE,    ///< planar GBR 4:4:4 42bpp, little-endian
 */
+    // native endian formats
+    // QTAV_PIX_FMT_C(RGB32) is depends on byte order, ARGB for BE, BGRA for LE
+    { VideoFormat::Format_RGB32, QTAV_PIX_FMT_C(RGB32) }, //auto endian
+    { VideoFormat::Format_BGR32, QTAV_PIX_FMT_C(BGR32) }, //auto endian
+    { VideoFormat::Format_RGB48, QTAV_PIX_FMT_C(RGB48) },   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as big-endian
+    { VideoFormat::Format_BGR48, QTAV_PIX_FMT_C(BGR48) },   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as big-endian
+
     { VideoFormat::Format_Invalid, QTAV_PIX_FMT_C(NONE) },
 };
 
@@ -661,7 +665,8 @@ bool VideoFormat::isRGB(PixelFormat pixfmt)
         || pixfmt == Format_ABGR32 || pixfmt == Format_RGBA32
         || pixfmt == Format_BGR565 || pixfmt == Format_RGB555 || pixfmt == Format_RGB565
         || pixfmt == Format_BGR24 || pixfmt == Format_BGR32 || pixfmt == Format_BGR555
-        || pixfmt == Format_RGB48 || pixfmt == Format_R16G16B16 || pixfmt == Format_B16G16R16
+        || pixfmt == Format_RGB48 || pixfmt == Format_RGB48LE || pixfmt == Format_RGB48BE
+        || pixfmt == Format_BGR48 || pixfmt == Format_BGR48LE || pixfmt == Format_BGR48BE
             ;
 }
 
