@@ -126,8 +126,17 @@ void PlayList::insertItemAt(const PlayListItem &item, int row)
         // +1 because new row is to be inserted
         mpModel->removeRows(mMaxRows, mpModel->rowCount() - mMaxRows + 1);
     }
+    int i = mpModel->items().indexOf(item, row+1);
+    if (i > 0) {
+        mpModel->removeRow(i);
+    }
     if (!mpModel->insertRow(row))
         return;
+    if (row > 0) {
+        i = mpModel->items().lastIndexOf(item, row - 1);
+        if (i >= 0)
+            mpModel->removeRow(i);
+    }
     setItemAt(item, row);
 }
 

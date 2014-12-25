@@ -704,6 +704,7 @@ void MainWindow::play(const QString &name)
         mHasPendingPlay = true;
         return;
     }
+    mTitle = mFile;
     if (!mFile.contains("://") || mFile.startsWith("file://")) {
         mTitle = QFileInfo(mFile).fileName();
     }
