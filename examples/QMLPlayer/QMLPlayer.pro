@@ -1,3 +1,4 @@
+VERSION = 1.4.2
 *maemo*: DEFINES += Q_OS_MAEMO
 # Add more folders to ship with the application, here
 folder_01.source = qml/QMLPlayer
@@ -33,7 +34,7 @@ desktopfile.path = /usr/share/applications
 include(qtquick2applicationviewer/qtquick2applicationviewer.pri)
 qtcAddDeployment()
 
-!*msvc*: QMAKE_LFLAGS += -u __link_hack
+#!*msvc*: QMAKE_LFLAGS += -u __link_hack
 isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
 STATICLINK = 0
 include($${PROJECTROOT}/examples/common/libcommon.pri)

@@ -725,6 +725,11 @@ void MainWindow::play(const QString &name)
     mpPlayer->play(name);
 }
 
+void MainWindow::play(const QUrl &url)
+{
+    play(QUrl::fromPercentEncoding(url.toEncoded()));
+}
+
 void MainWindow::setVideoDecoderNames(const QStringList &vd)
 {
     QStringList vdnames;

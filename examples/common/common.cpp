@@ -1,14 +1,10 @@
 #include "common.h"
 
+#include <QFileOpenEvent>
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
 #include <QtCore/QCoreApplication>
 #include <QtDebug>
-
-void _link_hack()
-{
-
-}
 
 QOptions get_common_options()
 {
@@ -77,4 +73,21 @@ void set_opengl_backend(const QString& glopt, const QString &appname)
     else if (gl == "software")
         QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
 #endif
+}
+
+AppEventFilter::AppEventFilter(QObject *player, QObject *parent)
+    : QObject(parent)
+    , m_player(player)
+{}
+
+bool AppEventFilter::eventFilter(QObject *obj, QEvent *ev)
+{
+    if (obj != qApp)
+        return false;
+    if (ev->type() != QEvent::FileOpen)
+        return false;
+    QFileOpenEvent *foe = static_cast<QFileOpenEvent*>(ev);
+    if (m_player)
+        QMetaObject::invokeMethod(m_player, "play", Q_ARG(QUrl, QUrl(foe->url())));
+    return true;
 }
