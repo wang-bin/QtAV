@@ -130,19 +130,22 @@ static const ffmpeg_component_info* get_ffmpeg_component_info(const ffmpeg_compo
     static const ffmpeg_component_info components[] = {
         //TODO: auto check loaded libraries
 #define FF_COMPONENT(name, NAME) #name, LIB##NAME##_VERSION_INT, name##_version(), name##_configuration(), name##_license()
+        { FF_COMPONENT(avutil, AVUTIL) },
         { FF_COMPONENT(avcodec, AVCODEC) },
         { FF_COMPONENT(avformat, AVFORMAT) },
-        { FF_COMPONENT(avutil, AVUTIL) },
-        { FF_COMPONENT(swscale, SWSCALE) },
-#if QTAV_HAVE(SWRESAMPLE)
-        { FF_COMPONENT(swresample, SWRESAMPLE) },
-#endif //QTAV_HAVE(SWRESAMPLE)
-#if QTAV_HAVE(AVRESAMPLE)
-        { FF_COMPONENT(avresample, AVRESAMPLE) },
-#endif //QTAV_HAVE(AVRESAMPLE)
+#if QTAV_HAVE(AVFILTER)
+        { FF_COMPONENT(avfilter, AVFILTER) },
+#endif //QTAV_HAVE(AVFILTER)
 #if QTAV_HAVE(AVDEVICE)
         { FF_COMPONENT(avdevice, AVDEVICE) },
 #endif //QTAV_HAVE(AVDEVICE)
+#if QTAV_HAVE(AVRESAMPLE)
+        { FF_COMPONENT(avresample, AVRESAMPLE) },
+#endif //QTAV_HAVE(AVRESAMPLE)
+#if QTAV_HAVE(SWRESAMPLE)
+        { FF_COMPONENT(swresample, SWRESAMPLE) },
+#endif //QTAV_HAVE(SWRESAMPLE)
+        { FF_COMPONENT(swscale, SWSCALE) },
 #undef FF_COMPONENT
         { 0, 0, 0, 0, 0 }
     };
