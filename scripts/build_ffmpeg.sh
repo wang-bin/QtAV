@@ -6,7 +6,7 @@ echo "This is part of QtAV project. Get the latest script from https://github.co
 # Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
 # To build ffmpeg for android, run "./build_ffmpeg android". default is armv7-a.
 
-PLATFORMS="android|maemo5|maemo6|vc|x86"
+PLATFORMS="ios|android|maemo5|maemo6|vc|x86"
 echo "Put this script in ffmpeg source dir. Make sure your build environment is correct."
 echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
 echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//|/, }"
@@ -26,16 +26,17 @@ fi
 : ${NDK_ROOT:="/devel/android/android-ndk-r8e"}
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
-
+: ${LIB_OPT:="--enable-shared --disable-static"}
+: ${MISC_OPT="--enable-hwaccels"}#--enable-gpl --enable-version3
 CONFIGURE=configure
 
 
-toupper(){ 
-    echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 
-} 
- 
-tolower(){ 
-    echo "$@" | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 
+toupper(){
+    echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
+}
+
+tolower(){
+    echo "$@" | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
 }
 
 #host_is
@@ -59,6 +60,36 @@ VAAPI="--enable-vaapi" # --enable-hwaccel=h263_vaapi --enable-hwaccel=h264_vaapi
 VDPAU="--enable-vdpau" # --enable-hwaccel=h263_vdpau --enable-hwaccel=h264_vdpau --enable-hwaccel=mpeg1_vdpau --enable-hwaccel=mpeg2_vdpau --enable-hwaccel=mpeg4_vdpau --enable-hwaccel=vc1_vdpau --enable-hwaccel=wmv3_vdpau"
 VDA="--enable-vda" # --enable-hwaccel=h264_vda"
 
+
+AVR_OPT=--enable-avresample
+#FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
+#FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
+# n1.2.8, 2.5.1, 2.5
+FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
+FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
+echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
+[ $FFMAJOR -eq 0 -a $FFMINOR -lt 11 ] && AVR_OPT=""
+if [ $FFMAJOR -ge 2 ]; then
+  # auto detect
+  DXVA=""
+  VAAPI=""
+  VDPAU=""
+  if [ $FFMINOR -ge 4 ]; then
+    VDA="" # auto detect
+  fi
+elif [ $FFMAJOR -ge 1 ]; then
+  if [ $FFMINOR -ge 2 ]; then
+    # auto detect
+    DXVA=""
+    VAAPI=""
+    VDPAU=""
+  fi
+else
+  if [ $FFMINOR -lt 11 ]; then
+    AVR_OPT=""
+  fi
+fi
+#MISC_OPT="$AVR_OPT $MISC_OPT"
 
 function setup_vc_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
@@ -90,6 +121,7 @@ function setup_icc_env() {
 function setup_wince_env() {
   WINCEOPT="--enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
   PLATFORM_OPT="$WINCEOPT"
+  MISC_OPT=
   INSTALL_DIR=sdk-wince
 }
 
@@ -97,7 +129,6 @@ function setup_android_env() {
 # flags are from https://github.com/yixia/FFmpeg-Android
   ANDROID_TOOLCHAIN="/tmp/ndk-toolchain" #$NDK_ROOT/toolchains/arm-linux-androideabi-4.7/prebuilt/linux-x86_64/bin
   ANDROID_SYSROOT="$ANDROID_TOOLCHAIN/sysroot" #"$NDK_ROOT/platforms/android-14/arch-arm"
-
 :<<EOC
   ANDROID_CFLAGS="-Wall -mthumb -pipe -fpic -fasm \
   -fstrict-aliasing \
@@ -113,9 +144,9 @@ function setup_android_env() {
   ANDROID_LDFLAGS_ARMV7="-Wl,--fix-cortex-a8"
 EOC
 # --enable-libstagefright-h264
-  ANDROIDOPT="--enable-cross-compile --cross-prefix=arm-linux-androideabi- --target-os=android --arch=arm --sysroot=$ANDROID_SYSROOT --extra-ldflags=\"$ANDROID_LDFLAGS_ARMV7\""
+  ANDROIDOPT="--enable-cross-compile --cross-prefix=arm-linux-androideabi- --target-os=android --arch=armv7-a --sysroot=$ANDROID_SYSROOT --extra-ldflags=\"$ANDROID_LDFLAGS_ARMV7\""
 
-   test -d $ANDROID_TOOLCHAIN || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --toolchain=arm-linux-androideabi-4.6 --install-dir=$ANDROID_TOOLCHAIN --system=linux-x86_64
+   test -d $ANDROID_TOOLCHAIN || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --toolchain=arm-linux-androideabi-4.6 --install-dir=$ANDROID_TOOLCHAIN #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN/bin:$PATH
   rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
   rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
@@ -124,9 +155,17 @@ EOC
   cat configure |sed s,SLIBNAME_WITH_MAJOR=\'$\(SLIBNAME\)\.$\(LIBMAJOR\)\',SLIBNAME_WITH_MAJOR=\'$\(SLIBPREF\)$\(FULLNAME\)\-$\(LIBMAJOR\)$\(SLIBSUF\)\', |sed s,SLIB_INSTALL_NAME=\'\$\(SLIBNAME_WITH_VERSION\)\',SLIB_INSTALL_NAME=\'\$\(SLIBNAME_WITH_MAJOR\)\', |sed s,SLIB_INSTALL_LINKS=\'\$\(SLIBNAME_WITH_MAJOR\)\ \$\(SLIBNAME\)\',SLIB_INSTALL_LINKS=\'\$\(SLIBNAME\)\', >$CONFIGURE
   chmod +x $CONFIGURE
 RM
+  MISC_OPT=--disable-avdevice
   PLATFORM_OPT="$ANDROIDOPT"
   EXTRA_CFLAGS="$ANDROID_CFLAGS $ANDROID_CLFAGS_ARMV7"
   INSTALL_DIR=sdk-android
+}
+
+function setup_ios_env() {
+  PLATFORM_OPT='--enable-cross-compile --arch=arm --target-os=darwin --cc="clang -arch armv7" --sysroot=$(xcrun --sdk iphoneos --show-sdk-path) --cpu=cortex-a8 --enable-pic'
+  LIB_OPT="--enable-static"
+  MISC_OPT=--disable-avdevice
+  INSTALL_DIR=sdk-ios
 }
 
 function setup_maemo5_env() {
@@ -142,6 +181,7 @@ function setup_maemo5_env() {
     MAEMO_OPT="--host-cc=$HOSTCC --cross-prefix=arm-none-linux-gnueabi- --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO5_SYSROOT"
   fi
   PLATFORM_OPT="$MAEMO_OPT"
+  MISC_OPT=--disable-avdevice
   INSTALL_DIR=sdk-maemo5
 }
 function setup_maemo6_env() {
@@ -157,11 +197,14 @@ function setup_maemo6_env() {
     MAEMO_OPT="--host-cc=$HOSTCC --cross-prefix=arm-none-linux-gnueabi- --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO6_SYSROOT"
   fi
   PLATFORM_OPT="$MAEMO_OPT"
+  MISC_OPT=--disable-avdevice
   INSTALL_DIR=sdk-maemo6
 }
 
 if target_is android; then
   setup_android_env
+elif target_is ios; then
+  setup_ios_env
 elif target_is maemo5; then
   setup_maemo5_env
 elif target_is maemo6; then
@@ -175,12 +218,13 @@ elif target_is x86; then
 else
   if platform_is Sailfish; then
     echo "Build in Sailfish SDK"
+    MISC_OPT=--disable-avdevice
     INSTALL_DIR=sdk-sailfish
   elif platform_is Linux; then
     PLATFORM_OPT="$VAAPI $VDPAU"
   elif platform_is Darwin; then
-    PLATFORM_OPT="$VDA --cc=clang --cxx=clang++"
-    EXTRA_CFLAGS=-mmacosx-version-min=10.7
+    PLATFORM_OPT="$VDA"
+    EXTRA_CFLAGS=-mmacosx-version-min=10.6
   fi
 fi
 
@@ -192,14 +236,12 @@ else
   test -n "$ARCH_FLAGS" && platform_is Linux && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"-m32\""
 fi
 
-AVR_OPT=--enable-avresample
+echo $LIB_OPT
+CONFIGURE="./$CONFIGURE --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $MISC_OPT --disable-postproc --disable-muxers --disable-encoders $PLATFORM_OPT $TOOLCHAIN_OPT"
 
-FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
-FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
-[ $FFMAJOR -eq 0 -a $FFMINOR -lt 11 ] && AVR_OPT=
-
-CONFIGURE="./$CONFIGURE --extra-version=QtAV --disable-static --enable-shared --enable-gpl --enable-version3 --enable-runtime-cpudetect $AVR_OPT --disable-muxers --disable-encoders --enable-hwaccels $PLATFORM_OPT $TOOLCHAIN_OPT"
-
+# http://ffmpeg.org/platform.html
+# static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
+# ios: https://github.com/FFmpeg/gas-preprocessor
 
 echo $CONFIGURE
 
@@ -207,9 +249,9 @@ time eval $CONFIGURE
 if [ $? -eq 0 ]; then
   time (make -j8 install prefix="$PWD/$INSTALL_DIR")
 fi
-  
-  
+
+
 
 # --enable-pic is default  --enable-lto
-#http://cmzx3444.iteye.com/blog/1447366
-#--enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
+# http://cmzx3444.iteye.com/blog/1447366
+# --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
