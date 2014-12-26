@@ -41,7 +41,7 @@ protected:
 };
 
 
-ImageConverterId ImageConverterId_FF = mkid32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
+ImageConverterId ImageConverterId_FF = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
 FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
 
 void RegisterImageConverterFF_Man()

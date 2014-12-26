@@ -45,7 +45,7 @@ protected:
     virtual bool prepareData(); //Allocate memory for out data
 };
 
-ImageConverterId ImageConverterId_IPP = mkid32base36_3<'I', 'P', 'P'>::value;
+ImageConverterId ImageConverterId_IPP = mkid::id32base36_3<'I', 'P', 'P'>::value;
 FACTORY_REGISTER_ID_AUTO(ImageConverter, IPP, "IPP")
 
 void RegisterImageConverterIPP_Man()

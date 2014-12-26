@@ -54,15 +54,15 @@ namespace QtAV {
 
 FACTORY_DEFINE(VideoRenderer)
 
-VideoRendererId VideoRendererId_Widget = mkid32base36_6<'W', 'i', 'd', 'g', 'e', 't'>::value;
-VideoRendererId VideoRendererId_GraphicsItem = mkid32base36_6<'Q', 'G', 'r', 'a', 'p', 'h'>::value;
-VideoRendererId VideoRendererId_GLWidget = mkid32base36_6<'Q', 'G', 'L', 'W', 't', '1'>::value;
-VideoRendererId VideoRendererId_GDI = mkid32base36_3<'G', 'D', 'I'>::value;
-VideoRendererId VideoRendererId_Direct2D = mkid32base36_3<'D', '2', 'D'>::value;
-VideoRendererId VideoRendererId_XV = mkid32base36_6<'X', 'V', 'i', 'd', 'e', 'o'>::value;
-VideoRendererId VideoRendererId_GLWidget2 = mkid32base36_6<'Q', 'G', 'L', 'W', 't', '2'>::value;
-VideoRendererId VideoRendererId_OpenGLWindow = mkid32base36_6<'Q', 'O', 'G', 'L', 'W', 'w'>::value;
-VideoRendererId VideoRendererId_OpenGLWidget = mkid32base36_6<'Q', 'O', 'G', 'L', 'W', 't'>::value;
+VideoRendererId VideoRendererId_Widget = mkid::id32base36_6<'W', 'i', 'd', 'g', 'e', 't'>::value;
+VideoRendererId VideoRendererId_GraphicsItem = mkid::id32base36_6<'Q', 'G', 'r', 'a', 'p', 'h'>::value;
+VideoRendererId VideoRendererId_GLWidget = mkid::id32base36_6<'Q', 'G', 'L', 'W', 't', '1'>::value;
+VideoRendererId VideoRendererId_GDI = mkid::id32base36_3<'G', 'D', 'I'>::value;
+VideoRendererId VideoRendererId_Direct2D = mkid::id32base36_3<'D', '2', 'D'>::value;
+VideoRendererId VideoRendererId_XV = mkid::id32base36_6<'X', 'V', 'i', 'd', 'e', 'o'>::value;
+VideoRendererId VideoRendererId_GLWidget2 = mkid::id32base36_6<'Q', 'G', 'L', 'W', 't', '2'>::value;
+VideoRendererId VideoRendererId_OpenGLWindow = mkid::id32base36_6<'Q', 'O', 'G', 'L', 'W', 'w'>::value;
+VideoRendererId VideoRendererId_OpenGLWidget = mkid::id32base36_6<'Q', 'O', 'G', 'L', 'W', 't'>::value;
 
 #if QTAV_HAVE(WIDGETS)
 //QPainterRenderer is abstract. So can not register(operator new will needed)

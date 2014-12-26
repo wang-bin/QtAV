@@ -24,7 +24,7 @@
 
 namespace QtAV {
 
-AudioResamplerId AudioResamplerId_FF = mkid32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
-AudioResamplerId AudioResamplerId_Libav = mkid32base36_5<'L', 'i', 'b', 'a', 'v'>::value;
+AudioResamplerId AudioResamplerId_FF = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
+AudioResamplerId AudioResamplerId_Libav = mkid::id32base36_5<'L', 'i', 'b', 'a', 'v'>::value;
 
 }

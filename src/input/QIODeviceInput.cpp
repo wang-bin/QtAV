@@ -32,7 +32,7 @@
 #endif
 namespace QtAV {
 
-static const AVInputId AVInputId_QIODevice = mkid32base36_6<'Q','I','O','D','e','v'>::value;
+static const AVInputId AVInputId_QIODevice = mkid::id32base36_6<'Q','I','O','D','e','v'>::value;
 static const char kQIODevName[] = "QIODevice";
 FACTORY_REGISTER_ID_TYPE(AVInput, AVInputId_QIODevice, QIODeviceInput, kQIODevName)
 
@@ -122,7 +122,7 @@ private:
     using QIODeviceInput::setIODevice;
 };
 
-static const AVInputId AVInputId_QFile = mkid32base36_5<'Q','F','i','l','e'>::value;
+static const AVInputId AVInputId_QFile = mkid::id32base36_5<'Q','F','i','l','e'>::value;
 FACTORY_REGISTER_ID_TYPE(AVInput, AVInputId_QFile, QFileInput, kQFileName)
 
 class QFileInputPrivate : public QIODeviceInputPrivate
