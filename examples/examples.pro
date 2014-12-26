@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS = common
+!android{
 SUBDIRS += \
     sharedoutput \
     simpleplayer \
@@ -10,6 +11,7 @@ SUBDIRS += \
     videographicsitem \
     videogroup \
     videowall
+}
 player.depends += common
 
 greaterThan(QT_MAJOR_VERSION, 4) {
