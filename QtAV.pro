@@ -17,7 +17,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   SUBDIRS += examples
   examples.depends += libqtav
 }
-!no-tests {
+!android:!no-tests {
   SUBDIRS += tests
   tests.depends += libqtav
 }
@@ -60,8 +60,8 @@ runConfigTests()
 }
 
 
-PACKAGE_VERSION = 1.4.1
+PACKAGE_VERSION = $$QTAV_VERSION
 PACKAGE_NAME= QtAV
 
 include(pack.pri)
-#packageSet(1.4.1, QtAV)
+#packageSet($$QTAV_VERSION, QtAV)

@@ -1,4 +1,4 @@
-VERSION = 1.4.2
+VERSION = $$QTAV_VERSION
 *maemo*: DEFINES += Q_OS_MAEMO
 # Add more folders to ship with the application, here
 folder_01.source = qml/QMLPlayer

@@ -49,6 +49,17 @@ defineTest(qtRunCommandQuitly) {
     return(true)
 }
 
+isEmpty(QTAV_VERSION) {
+  QTAV_MAJOR_VERSION = 1
+  QTAV_MINOR_VERSION = 4
+  QTAV_PATCH_VERSION = 2
+  QTAV_VERSION = $${QTAV_MAJOR_VERSION}.$${QTAV_MINOR_VERSION}.$${QTAV_PATCH_VERSION}
+  message("QTAV_VERSION not set, cache the default $$QTAV_VERSION")
+  cache(QTAV_MAJOR_VERSION, set, QTAV_MAJOR_VERSION)
+  cache(QTAV_MINOR_VERSION, set, QTAV_MINOR_VERSION)
+  cache(QTAV_PATCH_VERSION, set, QTAV_PATCH_VERSION)
+  cache(QTAV_VERSION, set, QTAV_VERSION)
+}
 defineTest(testArch) {
   test_dir = $$_PRO_FILE_PWD_/tests/arch
   test_out_dir = $$shadowed($$test_dir)

@@ -15,8 +15,11 @@ MKSPEC=`grep mkspecs_cached $BUILD/.qmake.cache |cut -d "=" -f 2`
 MKSPEC=`echo $MKSPEC`
 
 TARGET=${MKSPEC}-${ARCH}
-QTAV_VER=`grep PACKAGE_VERSION ../../QtAV.pro |cut -d "=" -f 2`
-QTAV_VER=`echo $QTAV_VER`
+QTAV_VER_MAJOR=`grep -m 1 QTAV_MAJOR_VERSION ../../.qmake.conf |cut -d "=" -f 2 | tr -d ' '`
+QTAV_VER_MINOR=`grep -m 1 QTAV_MINOR_VERSION ../../.qmake.conf |cut -d "=" -f 2 | tr -d ' '`
+QTAV_VER_PATCH=`grep -m 1 QTAV_PATCH_VERSION ../../.qmake.conf |cut -d "=" -f 2 | tr -d ' '`
+QTAV_VER=${QTAV_VER_MAJOR}.${QTAV_VER_MINOR}.${QTAV_VER_PATCH}
+echo "QtAV $QTAV_VER"
 
 function platform_is() {
   local name=$1
@@ -94,12 +97,15 @@ cp -Lf $LIBQTAV $TARGET/packages/com.qtav.product.runtime/data/bin
 echo "coping development files..."
 cp -af ../../src/QtAV $TARGET/packages/com.qtav.product.dev/data/include
 cp -af ../../qml/QmlAV $TARGET/packages/com.qtav.product.dev/data/include
+cp -af $BUILD/tools/install_sdk/mkspecs $TARGET/packages/com.qtav.product.dev/data
 cp -af ../../{README.md,lgpl-2.1.txt,gpl-3.0.txt,doc} $TARGET/packages/com.qtav.product/data
 
 #mingw: libQt5AV1.a
 cp -af $LIBDIR/*Qt*AV* $TARGET/packages/com.qtav.product.dev/data/lib
-
-
+[ -f $LIBDIR/Qt5AV1.lib ] && cp -af $LIBDIR/libQt5AV1.a $TARGET/packages/com.qtav.product.dev/data/lib/Qt5AV.lib
+[ -f $LIBDIR/libQt5AV1.a ] && cp -af $LIBDIR/libQt5AV1.a $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AV.a
+[ -f $LIBDIR/libQt5AV1.so ] && cp -af $LIBDIR/libQt5AV1.a $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AV.so
+rm -f $TARGET/packages/com.qtav.product.dev/data/lib/{*.dll,*.so.*}
 
 # player
 echo "coping player files..."

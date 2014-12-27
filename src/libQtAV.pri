@@ -48,7 +48,7 @@ NAME = QtAV
 }
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
-LIB_VERSION = 1.4.1 #0.x.y may be wrong for dll
+LIB_VERSION = $$QTAV_VERSION #0.x.y may be wrong for dll
 ios: STATICLINK=1
 isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
 
@@ -141,6 +141,7 @@ unix {
 # TODO: for macx. see qtcreator/src/rpath.pri. (-rpath define rpath, @rpath exapand to that path?)
     macx|ios {
         QMAKE_LFLAGS_SONAME = -Wl,-install_name,$$PROJECT_LIBDIR/
+# 5.4
         #QMAKE_LFLAGS += -Wl,-rpath,@loader_path/../,-rpath,@executable_path/../
     } else {
         RPATHDIR = \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib $$[QT_INSTALL_LIBS]
