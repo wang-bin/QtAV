@@ -2,8 +2,8 @@
  <Package>
      <DisplayName>Examples</DisplayName>
      <Description>Install QtAV examples.</Description>
-     <Version>1.4.1-0</Version>
-     <ReleaseDate>2014-11-06</ReleaseDate>
+     <Version>1.4.2-0</Version>
+     <ReleaseDate>2014-12-27</ReleaseDate>
      <Name>com.qtav.product.examples</Name>
      <Default>script</Default>
      <Script>installscript.qs</Script>

@@ -89,8 +89,9 @@ Rectangle {
         onStopped: control.setStopState()
         onPaused: control.setPauseState()
         onError: {
-            if (error != MediaPlayer.NoError)
-                msg.text = errorString
+            if (error != MediaPlayer.NoError) {
+                msg.error(errorString)
+            }
         }
     }
 
@@ -105,7 +106,7 @@ Rectangle {
                 subtitleLabel.text = text
         }
         onLoaded: {
-            msg.text = qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1)
+            msg.info(qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1))
             console.log(msg.text)
         }
         onSupportedSuffixesChanged: {
@@ -153,6 +154,14 @@ Rectangle {
             id: msg_timer
             interval: 2000
             onTriggered: msg.visible = false
+        }
+        function error(txt) {
+            styleColor = "red"
+            text = txt
+        }
+        function info(txt) {
+            styleColor = "green"
+            text = txt
         }
     }
     ControlPanel {

@@ -1,34 +1,76 @@
+## 0. Prerequisites
+
+Get QtAV source code
+
+    git clone https://github.com/wang-bin/QtAV.git
+    git submodule update --init
+
+
+FFmpeg (>=1.0) or Libav (>=9.0) is always required. The latest FFmpeg release is recommended (that's what i use). If you use libav, you vaapi can not work in C++ apps and libavfilter does not work.
+
+You can download precompiled FFmpeg from [QtAV sourceforge page](https://sourceforge.net/projects/qtav/files/depends/FFmpeg), or if you are using Windows you can also download FFmpeg development files from [Zeranoe](http://ffmpeg.zeranoe.com/builds).
+
+Another option is to build FFmpeg yourself. See [FFmpeg compilation guides](http://trac.ffmpeg.org/wiki/CompilationGuide) for some pointers.
+
+Other requirements are:
+
+#### Windows
+
+PortAudio or OpenAL.
+
+#### OS X, iOS
+
+None. System's OpenAL is used
+
+#### Android
+
+OpenAL with OpenSL backend. Currently OpenSL code doesn't work correctly, but OpenAL works fine.
+
+#### Ubuntu
+
+OpenAL. To enable all supported features, you must install XVideo and VA-API dev packages.
+
+    sudo apt-get install libopenal-dev libva-dev libxv-dev
+
+You may have to install VA-API drivers to make VA-API available at runtime. See https://github.com/wang-bin/QtAV/wiki/Enable-Hardware-Decoding
+
+
 ## 1. Setup the environment
 
-QtAV depends on FFmpeg, PortAudio and some other optional libraries such as direct2d and xvideo.
-You can download FFmpeg and PortAudio development files for windows from [QtAV sourceforge page](https://sourceforge.net/projects/qtav/files/depends)
-You can also download FFmpeg development files for windows from  [Zeranoe](http://ffmpeg.zeranoe.com/builds)
-Or you can build them your self [Compile FFmpeg and PortAudio](https://github.com/wang-bin/QtAV/wiki/Compile-FFmpeg-and-PortAudio)
+You **MUST** let your compiler know where FFmpeg headers and libraries are. Otherwise you will get an error when running qmake. If they are already be where they should be, just skip this step.
 
-You *MUST* let your compiler know where FFmpeg headers and libraries are. Otherwise you will get an error when running qmake. If they are already be where they should be, just skip this step.
+Choose one of the following methods.
 
-vc compiler will search headers in __*INCLUDE*__ and search libraries in __*LIB*__, so you can set the environment like below if your compile in command line
+#### (Recommended) Put FFmpeg headers and libs into Qt directories
+
+This is the simplest and best way to let compilers find ffmpeg and other depend libraries. Qt header dir and library dir is always be searched. This should work for all platforms, including android, iOS and meego.
+
+#### Use Environment Vars
+
+On Windows, Visual Studio will search headers in `%INCLUDE%` and search libraries in `%LIB%`, so you can set the environment like below if your compile in command line:
 
     set INCLUDE=ffmpeg_path\include;portaudio_path\include;%INCLUDE%
     set LIB=ffmpeg_path\lib;portaudio_path\lib;%LIB%
 
-GCC will search headers in environment var __*CPATH*__ and libraries in __*LIBRARY_PATH*__. So you can set those vars to include your FFmepg and PortAudio dir.
+GCC will search headers in environment variables `$CPATH` and libraries in `$LIBRARY_PATH`. So you can set those vars to include your FFmepg and PortAudio dir.
 
 gcc in unix shell environment(including mingw with sh.exe):
 
     export CPATH=ffmpeg_path/include:portaudio_path/include:$CPATH
-    export LIBRARY_PATH=ffmpeg_path/include:portaudio_path/lib:$LIBRARY_PATH
+    export LIBRARY_PATH=ffmpeg_path/lib:portaudio_path/lib:$LIBRARY_PATH
 
-The project includes libQtAV.pri will not add linking options about FFmpeg etc., so the linker may find the depended libraries from $LD_LIBRARY_PATH:
+The project includes libQtAV.pri will not add linking options about FFmpeg etc., so the linker may find the dependent libraries from $LD_LIBRARY_PATH:
 
     export LD_LIBRARY_PATH=ffmpeg_path/lib:portaudio_path/lib:$LD_LIBRARY_PATH
 
-gcc in windows cmd environment without sh.exe
+GCC on windows cmd.exe environment without UNIX Shell:
 
     set CPATH=ffmpeg_path\include;portaudio_path\include;%CPATH%
     set LIBRARY_PATH=ffmpeg_path\lib;portaudio_path\lib;%LIBRARY_PATH%
 
 If you are building in QtCreator, goto QtCreator's 'Projects' page and add or append those environment.
+
+![QtCreator Settings](http://wang-bin.github.io/qtav.org/images/qtc-set.jpg "QtCreator Settings")
 
 ## 2. Run qmake
 
@@ -39,29 +81,29 @@ For most platforms, just
 
 It's strongly recommend not to build in source dir.  
 
+    mkdir your_build_dir
     cd your_build_dir
     qmake QtAV_source_dir/QtAV.pro
     make
 
 qmake will run check the required libraries at the first time, so you must make sure those libraries can be found by compiler.
-Then qmake will create a cache file _.qmake.cache_ in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, you can either delete _**.qmake.cache**_ and run qmake again, or run
+
+Then qmake will create a cache file `.qmake.cache` in your build dir. Cache file stores the check results, for example, whether portaudio is available. If you want to recheck, you can either delete `.qmake.cache` and run qmake again, or run
 
     qmake QtAV_source_dir/QtAV.pro  CONFIG+=recheck
 
-
-_WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice. I have not find out the reason!
+_WARNING_: If you are in windows mingw with sh.exe environment, you may need run qmake twice. I have not found out the reason behind this phenomenon.
 
 ## 3. Make
 
 use make, jom, nmake or QtCreator to build it.
 
 
-
-## Build in Windows
+### Build on Windows
 
 You MUST setup the environment before qmake as mention at the beginning.
 
-#### Build In Visual Studio
+#### Build in Visual Studio
 
 I don't put any vs project file in QtAV, because it's easy to create by qmake.  
 
@@ -83,3 +125,12 @@ QtCreator will detect VC compiler if it is installed. So it's easy to build in Q
 I have got VC compiler and win sdk from latest VS2012 Update1. You can download it from http://qtbuild.googlecode.com/files/vs2012-x86.7z
 
 The environment is small but has the almost complete functionality for developing C++. At least it can build Qt.
+
+
+## Build Debian Packages
+
+run
+
+    debuild -us -uc
+
+in QtAV source tree

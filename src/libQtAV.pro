@@ -153,7 +153,7 @@ config_openal {
     blackberry: LIBS += -lOpenAL
     mac: LIBS += -framework OpenAL
     mac: DEFINES += HEADER_OPENAL_PREFIX
-    *linux*: LIBS += -lasound
+    *linux*:!android: LIBS += -lasound
 }
 config_opensl {
     SOURCES += output/audio/AudioOutputOpenSL.cpp

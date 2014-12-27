@@ -2,7 +2,7 @@ TEMPLATE = app
 QT += opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TRANSLATIONS = res/player_zh_CN.ts
-VERSION = 1.4.2
+VERSION = $$QTAV_VERSION
 
 STATICLINK = 0
 PROJECTROOT = $$PWD/../..
