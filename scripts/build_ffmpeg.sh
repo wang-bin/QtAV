@@ -53,48 +53,36 @@ function is_libav() {
   test "${PWD/libav*/}" = "$PWD" && return 1 || return 0
 }
 
+enable_opt() {
+  local OPT=$1
+  # grep -m1
+  grep "\-\-enable\-$OPT" configure && eval ${OPT}_opt="--enable-$OPT" &>/dev/null
+}
 #CPU_FLAGS=-mmmx -msse -mfpmath=sse
-#ffmpeg 2.x autodetect dxva, vaapi, vdpau. manually enable vda
-DXVA="--enable-dxva2" #  --enable-hwaccel=h264_dxva2 --enable-hwaccel=mpeg2_dxva2 --enable-hwaccel=vc1_dxva2 --enable-hwaccel=wmv3_dxva2"
-VAAPI="--enable-vaapi" # --enable-hwaccel=h263_vaapi --enable-hwaccel=h264_vaapi --enable-hwaccel=mpeg2_vaapi --enable-hwaccel=mpeg4_vaapi --enable-hwaccel=vc1_vaapi --enable-hwaccel=wmv3_vaapi"
-VDPAU="--enable-vdpau" # --enable-hwaccel=h263_vdpau --enable-hwaccel=h264_vdpau --enable-hwaccel=mpeg1_vdpau --enable-hwaccel=mpeg2_vdpau --enable-hwaccel=mpeg4_vdpau --enable-hwaccel=vc1_vdpau --enable-hwaccel=wmv3_vdpau"
-VDA="--enable-vda" # --enable-hwaccel=h264_vda"
+#ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
+enable_opt dxva2
+enable_opt vaapi
+enable_opt vdpau
+enable_opt vda
 
-
-AVR_OPT=--enable-avresample
+# clock_gettime in librt instead of glibc>=2.17
+grep "LIBRT" configure &>/dev/null && {
+  # TODO: cc test
+  platform_is Linux && ! target_is android && EXTRALIBS="$EXTRALIBS -lrt"
+}
+#avr >= ffmpeg0.11
 #FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
 #FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
 # n1.2.8, 2.5.1, 2.5
 FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
-[ $FFMAJOR -eq 0 -a $FFMINOR -lt 11 ] && AVR_OPT=""
-if [ $FFMAJOR -ge 2 ]; then
-  # auto detect
-  DXVA=""
-  VAAPI=""
-  VDPAU=""
-  if [ $FFMINOR -ge 4 ]; then
-    VDA="" # auto detect
-  fi
-elif [ $FFMAJOR -ge 1 ]; then
-  if [ $FFMINOR -ge 2 ]; then
-    # auto detect
-    DXVA=""
-    VAAPI=""
-    VDPAU=""
-  fi
-else
-  if [ $FFMINOR -lt 11 ]; then
-    AVR_OPT=""
-  fi
-fi
-#MISC_OPT="$AVR_OPT $MISC_OPT"
 
 function setup_vc_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   #TOOLCHAIN_OPT=
-  PLATFORM_OPT="$DXVA --toolchain=msvc"
+  test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
+  PLATFORM_OPT="$PLATFORM_OPT --toolchain=msvc"
   CL_INFO=`cl 2>&1 |grep -i Microsoft`
   CL_VER=`echo $CL_INFO |sed 's,.* \([0-9]*\)\.[0-9]*\..*,\1,g'`
   echo "cl version: $CL_VER"
@@ -221,9 +209,10 @@ else
     MISC_OPT=--disable-avdevice
     INSTALL_DIR=sdk-sailfish
   elif platform_is Linux; then
-    PLATFORM_OPT="$VAAPI $VDPAU"
+    test -n "$vaapi_opt" && PLATFORM_OPT="$PLATFORM_OPT $vaapi_opt"
+    test -n "$vdpau_opt" && PLATFORM_OPT="$PLATFORM_OPT $vdpau_opt"
   elif platform_is Darwin; then
-    PLATFORM_OPT="$VDA"
+    test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
     EXTRA_CFLAGS=-mmacosx-version-min=10.6
   fi
 fi
@@ -232,13 +221,16 @@ if target_is vc; then
   setup_vc_env
 else
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$ARCH_FLAGS -O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
-  platform_is MinGW || platform_is MSYS && TOOLCHAIN_OPT="$DXVA --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
+  platform_is MinGW || platform_is MSYS && {
+    test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
+    TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
+  }
   test -n "$ARCH_FLAGS" && platform_is Linux && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"-m32\""
 fi
-
+test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
 CONFIGURE="./$CONFIGURE --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $MISC_OPT --disable-postproc --disable-muxers --disable-encoders $PLATFORM_OPT $TOOLCHAIN_OPT"
-
+CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
 # ios: https://github.com/FFmpeg/gas-preprocessor
