@@ -68,6 +68,7 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_ENUMS(Error)
     Q_ENUMS(ChannelLayout)
     // not supported by QtMultimedia
+    Q_PROPERTY(int timeout READ timeout WRITE setTimeout NOTIFY timeoutChanged)
     Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
@@ -165,6 +166,8 @@ public:
     void setChannelLayout(ChannelLayout channel);
     ChannelLayout channelLayout() const;
 
+    void setTimeout(int value); // ms
+    int timeout() const;
 public Q_SLOTS:
     void play();
     void pause();
@@ -196,6 +199,7 @@ Q_SIGNALS:
     void videoCodecPriorityChanged();
     void videoCodecOptionsChanged();
     void channelLayoutChanged();
+    void timeoutChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString);
@@ -233,6 +237,7 @@ private:
     QUrl mSource;
     QStringList mVideoCodecs;
     ChannelLayout mChannelLayout;
+    int m_timeout;
 
     QScopedPointer<MediaMetaData> m_metaData;
     QVariantMap vcodec_opt;
