@@ -109,12 +109,12 @@ config_avresample {
 config_avdevice { #may depends on avfilter
     DEFINES += QTAV_HAVE_AVDEVICE=1
     LIBS *= -lavdevice
-  mac:!ios { # static ffmpeg
-    LIBS += -framework Foundation -framework QTKit -framework CoreMedia -framework QuartzCore -framework CoreGraphics \
-            -framework AVFoundation
+    static_ffmpeg: mac:!ios { # static ffmpeg
+      LIBS += -framework Foundation -framework QTKit -framework CoreMedia -framework QuartzCore -framework CoreGraphics \
+              -framework AVFoundation
     # assume avdevice targets to the same version as Qt and always >= 10.6
-    !isEqual(QMAKE_MACOSX_DEPLOYMENT_TARGET, 10.6): LIBS += -framework AVFoundation
-  }
+      !isEqual(QMAKE_MACOSX_DEPLOYMENT_TARGET, 10.6): LIBS += -framework AVFoundation
+    }
 }
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
@@ -148,12 +148,16 @@ config_portaudio {
 config_openal {
     SOURCES += output/audio/AudioOutputOpenAL.cpp
     DEFINES *= QTAV_HAVE_OPENAL=1
-    win32: LIBS += -lOpenAL32 -lwinmm #winmm for static
+    win32: LIBS += -lOpenAL32
     unix:!mac:!blackberry: LIBS += -lopenal
     blackberry: LIBS += -lOpenAL
     mac: LIBS += -framework OpenAL
     mac: DEFINES += HEADER_OPENAL_PREFIX
-    *linux*:!android: LIBS += -lasound
+    static_openal {
+      DEFINES += AL_LIBTYPE_STATIC
+      *linux*:!android: LIBS += -lasound
+      win32: LIBS += -lwinmm
+    }
 }
 config_opensl {
     SOURCES += output/audio/AudioOutputOpenSL.cpp
@@ -293,19 +297,22 @@ config_libass {
 
 # mac is -FQTDIR we need -LQTDIR
 LIBS *= -L$$[QT_INSTALL_LIBS] -lavcodec -lavformat -lswscale -lavutil
-# libs needed by mac static ffmpeg. corefoundation: vda, avdevice
-mac: LIBS += -liconv -lbz2 -lz -framework CoreFoundation
-*g++*: LIBS += -lz
 win32 {
 #dynamicgl: __impl__GetDC __impl_ReleaseDC __impl_GetDesktopWindow
     LIBS += -luser32 -lgdi32
-    LIBS *= -lws2_32 -lstrmiids -lvfw32 -luuid #ffmpeg
 }
 # compat with old system
 # use old libva.so to link against
 glibc_compat: *linux*: LIBS += -lrt  # do not use clock_gettime in libc, GLIBC_2.17 is not available on old system
-static_ffmpeg: *g++*: QMAKE_LFLAGS += -Wl,-Bsymbolic #link to static lib, see http://ffmpeg.org/platform.html
-
+static_ffmpeg {
+# libs needed by mac static ffmpeg. corefoundation: vda, avdevice
+  mac: LIBS += -liconv -lbz2 -lz -framework CoreFoundation
+  win32: LIBS *= -lws2_32 -lstrmiids -lvfw32 -luuid
+  *g++* {
+    LIBS += -lz
+    QMAKE_LFLAGS += -Wl,-Bsymbolic #link to static lib, see http://ffmpeg.org/platform.html
+  }
+}
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
