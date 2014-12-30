@@ -81,7 +81,7 @@ public slots:
     /*!
      * \brief extract
      * If last extracted frame can be use, use it.
-     * If there is a key frame in [position-precision, position+precision], the nearest key frame
+     * If there is a key frame in [position, position+precision], the nearest key frame
      * before position+precision will be extracted. Otherwise, the given position frame will be extracted.
      */
     void extract();
