@@ -59,6 +59,8 @@ namespace QtAV {
 
 static const qint64 kSeekMS = 10000;
 
+Q_GLOBAL_STATIC(QThreadPool, loaderThreadPool)
+
 /// Supported input protocols. A static string list
 const QStringList& AVPlayer::supportedProtocols()
 {
@@ -566,7 +568,7 @@ bool AVPlayer::load(bool reload)
                 AVPlayer* m_player;
             };
             // TODO: thread pool has a max thread limit
-            QThreadPool::globalInstance()->start(new LoadWorker(this));
+            loaderThreadPool()->start(new LoadWorker(this));
             return true;
         }
         loadInternal();
@@ -1071,6 +1073,8 @@ void AVPlayer::aboutToQuitApp()
         pause(false); // may be paused. then aboutToQuitApp will not finish
         stop();
     }
+    d->demuxer.setInterruptStatus(true);
+    loaderThreadPool()->waitForDone();
 }
 
 void AVPlayer::startNotifyTimer()
