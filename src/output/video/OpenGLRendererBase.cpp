@@ -118,7 +118,6 @@ void OpenGLRendererBase::onInitializeGL()
     bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
     qDebug("OpenGL version: %d.%d  hasGLSL: %d", ctx->format().majorVersion(), ctx->format().minorVersion(), hasGLSL);
     initializeOpenGLFunctions();
-    glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0, 0.0, 0.0, 0.0);
 }

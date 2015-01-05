@@ -85,6 +85,7 @@ public:
         , video_format(VideoFormat::Format_Invalid)
         , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
+        , target(GL_TEXTURE_2D)
     {
         colorTransform.setOutputColorSpace(ColorTransform::RGB);
     }
@@ -133,6 +134,7 @@ public:
 
     QVector<int> effective_tex_width; //without additional width for alignment
     qreal effective_tex_width_ratio;
+    GLenum target;
     QVector<GLint> internal_format;
     QVector<GLenum> data_format;
     QVector<GLenum> data_type;
