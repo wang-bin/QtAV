@@ -695,6 +695,25 @@ bool VideoMaterialPrivate::updateTexturesIfNeeded()
     if (!fmt.isValid())
         return false;
     bool update_textures = false;
+    GLenum new_target = target;
+    QByteArray t = frame.metaData("target").toByteArray().toLower();
+#ifndef GL_TEXTURE_RECTANGLE
+#define GL_TEXTURE_RECTANGLE 0x84F5
+#endif
+    if (t == "rect")
+        new_target = GL_TEXTURE_RECTANGLE;
+#ifdef GL_TEXTURE_3D
+    else if (t == "3d")
+        new_target = GL_TEXTURE_3D;
+#endif //GL_TEXTURE_3D
+#ifdef GL_TEXTURE_1D
+    else if (t == "1d")
+        new_target = GL_TEXTURE_1D;
+#endif //GL_TEXTURE_1D
+    if (new_target != target) {
+        target = new_target;
+        update_textures = true;
+    }
     // effective size may change even if plane size not changed
     if (update_textures
             || frame.bytesPerLine(0) != plane0Size.width() || frame.height() != plane0Size.height()
