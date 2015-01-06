@@ -81,8 +81,6 @@ void QQuickItemRenderer::geometryChanged(const QRectF &newGeometry, const QRectF
 bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
 {
     DPTR_D(QQuickItemRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
     d.video_frame = frame;
     if (!isOpenGL()) {
         d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.bytesPerLine(), frame.imageFormat());

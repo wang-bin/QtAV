@@ -221,8 +221,6 @@ QPaintEngine* GDIRenderer::paintEngine() const
 bool GDIRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GDIRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
     d.video_frame = frame;
 
     update();

@@ -56,8 +56,7 @@ bool QPainterRenderer::prepareFrame(const VideoFrame &frame)
      * But if we use the fixed original frame size, the data address and size always the same, so we can
      * avoid the lock and use the ref data directly and safely
      */
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
+    // already locked in a larger scope of receive()
     //If use d.data.data() it will eat more cpu, deep copy?
     d.video_frame = frame;
     // DO NOT use frameData().data() because it's temp ptr while QImage does not deep copy the data

@@ -78,8 +78,6 @@ bool OpenGLRendererBase::isSupported(VideoFormat::PixelFormat pixfmt) const
 bool OpenGLRendererBase::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(OpenGLRendererBase);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
     d.video_frame = frame;
 
     d.glv.setCurrentFrame(frame);

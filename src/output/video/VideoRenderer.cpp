@@ -44,6 +44,8 @@ VideoRenderer::~VideoRenderer()
 bool VideoRenderer::receive(const VideoFrame &frame)
 {
     DPTR_D(VideoRenderer);
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     d.source_aspect_ratio = frame.displayAspectRatio();
     setInSize(frame.width(), frame.height());
     return receiveFrame(frame);
@@ -465,6 +467,7 @@ void VideoRenderer::handlePaintEvent()
     hanlePendingTasks();
     //TODO: move to AVOutput::applyFilters() //protected?
     if (!d.filters.isEmpty() && d.filter_context && d.statistics) {
+        // vo filter will not modify video frame, no lock required
         foreach(Filter* filter, d.filters) {
             VideoFilter *vf = static_cast<VideoFilter*>(filter);
             if (!vf) {

@@ -311,8 +311,7 @@ bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
         return false;
     HRESULT hr = S_OK;
     //if d2d factory is D2D1_FACTORY_TYPE_SINGLE_THREADED, we need to lock
-    //QMutexLocker locker(&d.img_mutex);
-    //Q_UNUSED(locker);
+    //already locked
     d.video_frame = frame;
     //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
     /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/

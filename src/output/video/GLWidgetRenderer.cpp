@@ -807,8 +807,6 @@ bool GLWidgetRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 bool GLWidgetRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GLWidgetRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
     d.video_frame = frame;
 
     update(); //can not call updateGL() directly because no event and paintGL() will in video thread

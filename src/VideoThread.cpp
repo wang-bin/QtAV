@@ -227,6 +227,7 @@ void VideoThread::applyFilters(VideoFrame &frame)
     }
 }
 
+// filters on vo will not change video frame, so it's safe to protect frame only in every individual vo
 bool VideoThread::deliverVideoFrame(VideoFrame &frame)
 {
     DPTR_D(VideoThread);
