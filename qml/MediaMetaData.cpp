@@ -100,6 +100,7 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
         setValue(Size, f.size());
 }
 
+#if defined(Q_COMPILER_INITIALIZER_LISTS)
 MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
 {
     typedef struct {
@@ -144,6 +145,52 @@ MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
     }
     return (Key)-1;
 }
+#else
+MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
+{
+    typedef QMap<QString, Key> key_t;
+
+    static key_t key_map;
+    if ( key_map.isEmpty() ) {
+        key_map.insert( QStringLiteral("album"), AlbumTitle ); //?
+        key_map.insert( QStringLiteral("album_artist"), AlbumArtist );
+        key_map.insert( QStringLiteral("artist"), Author ); //?
+        key_map.insert( QStringLiteral("comment"), Comment );
+        key_map.insert( QStringLiteral("composer"), Composer );
+        key_map.insert( QStringLiteral("copyright"), Copyright );
+        // key_map.insert( QStringLiteral("date"), Date ); //QDate
+        key_map.insert( QStringLiteral("language"), Language ); //maybe a list in ffmpeg
+        key_map.insert( QStringLiteral("publisher"), Publisher );
+        key_map.insert( QStringLiteral("title"), Title );
+        //key_map.insert( QStringLiteral("track"), TrackNumber ); // can be "current/total"
+        //key_map.insert( QStringLiteral("track"),  TrackCount ); // can be "current/total"
+
+        // below are keys not listed in ffmpeg generic tag names and value is a QString
+        key_map.insert( QStringLiteral("description"), Description ); //dx
+    }
+
+    key_t::const_iterator it = key_map.find( name );
+    if ( it != key_map.constEnd() )
+        return it.value();
+
+    // below are keys not listed in ffmpeg generic tag names and value is a QString
+    static key_t wm_key;
+    if ( wm_key.isEmpty() ) {
+        wm_key.insert( QStringLiteral("rating"), UserRating ); //dx, WM/
+        wm_key.insert( QStringLiteral("parentalrating"), ParentalRating ); //dx, WM/
+        //wm_key.insert( RatingOrganization, QStringLiteral("rating_organization") );
+        wm_key.insert( QStringLiteral("conductor"), Conductor ); //dx, WM/
+        wm_key.insert( QStringLiteral("lyrics"), Lyrics ); //dx, WM/
+        wm_key.insert( QStringLiteral("mood"), Mood ); //dx, WM/
+    }
+
+    it = wm_key.find( name );
+    if ( it != wm_key.constEnd() )
+        return it.value();
+
+    return (Key)-1;
+}
+#endif
 
 void MediaMetaData::setValue(Key k, const QVariant &v)
 {
