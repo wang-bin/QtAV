@@ -81,6 +81,10 @@ protected:
 
     // QQuickItem interface
     virtual QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data);
+private slots:
+    void handleWindowChange(QQuickWindow *win);
+    void beforeRendering();
+    void afterRendering();
 private:
     virtual bool onSetRegionOfInterest(const QRectF& roi);
     virtual bool onSetOrientation(int value);

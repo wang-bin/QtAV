@@ -43,6 +43,7 @@ QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent) :
 {
     Q_UNUSED(parent);
     setFlag(QQuickItem::ItemHasContents, true);
+    connect(this, SIGNAL(windowChanged(QQuickWindow*)), SLOT(handleWindowChange(QQuickWindow*)));
 }
 
 VideoRendererId QQuickItemRenderer::id() const
@@ -209,6 +210,26 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
     handlePaintEvent();
     d.node = 0;
     return node;
+}
+
+void QQuickItemRenderer::handleWindowChange(QQuickWindow *win)
+{
+    disconnect(this, SLOT(beforeRendering()));
+    disconnect(this, SLOT(afterRendering()));
+    if (!win)
+        return;
+    connect(win, SIGNAL(beforeRendering()), this, SLOT(beforeRendering()), Qt::DirectConnection);
+    connect(win, SIGNAL(afterRendering()), this, SLOT(afterRendering()), Qt::DirectConnection);
+}
+
+void QQuickItemRenderer::beforeRendering()
+{
+    d_func().img_mutex.lock();
+}
+
+void QQuickItemRenderer::afterRendering()
+{
+    d_func().img_mutex.unlock();
 }
 
 bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)
