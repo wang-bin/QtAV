@@ -402,15 +402,17 @@ QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRect
     conv->setInFormat(pixelFormatFFmpeg());
     conv->setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::pixelFormatFromImageFormat(fmt)));
     conv->setInSize(width(), height());
-    if (!dstSize.isEmpty())
-        conv->setOutSize(dstSize.width(), dstSize.height());
-    else
-        conv->setOutSize(width(), height());
+    int w = width(), h = height();
+    if (dstSize.width() > 0)
+        w = dstSize.width();
+    if (dstSize.height() > 0)
+        h = dstSize.height();
+    conv->setOutSize(w, h);
     if (!conv->convert(d->planes.constData(), d->line_sizes.constData())) {
         qWarning("VideoFrame::toImage error");
         return QImage();
     }
-    QImage image((const uchar*)conv->outData().constData(), width(), height(), conv->outLineSizes().at(0), fmt);
+    QImage image((const uchar*)conv->outData().constData(), w, h, conv->outLineSizes().at(0), fmt);
     return image.copy();
 }
 
@@ -427,15 +429,17 @@ VideoFrame VideoFrame::toFormat(const VideoFormat &fmt, const QSize& dstSize, co
     conv->setInFormat(pixelFormatFFmpeg());
     conv->setOutFormat(fmt.pixelFormatFFmpeg());
     conv->setInSize(width(), height());
-    if (!dstSize.isEmpty())
-        conv->setOutSize(dstSize.width(), dstSize.height());
-    else
-        conv->setOutSize(width(), height());
+    int w = width(), h = height();
+    if (dstSize.width() > 0)
+        w = dstSize.width();
+    if (dstSize.height() > 0)
+        h = dstSize.height();
+    conv->setOutSize(w, h);
     if (!conv->convert(d->planes.constData(), d->line_sizes.constData())) {
         qWarning() << "VideoFrame::toFormat error: " << format() << "=>" << fmt;
         return VideoFrame();
     }
-    VideoFrame f(conv->outData(), width(), height(), fmt);
+    VideoFrame f(conv->outData(), w, h, fmt);
     f.setBits(conv->outPlanes());
     f.setBytesPerLine(conv->outLineSizes());
     return f;
