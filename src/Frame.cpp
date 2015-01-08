@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -103,12 +103,13 @@ void Frame::setBits(uchar *b, int plane)
 
 void Frame::setBits(const QVector<uchar *> &b)
 {
-    if (b.size() > planeCount()) {
-        qWarning("Invalid plane size! Valid range is [0, %d), current is %d", planeCount(), b.size());
-        return;
-    }
     Q_D(Frame);
+    const int nb_planes = planeCount();
     d->planes = b;
+    if (d->planes.size() > nb_planes) {
+        d->planes.reserve(nb_planes);
+        d->planes.resize(nb_planes);
+    }
 }
 
 void Frame::setBits(quint8 *slice[])
@@ -130,12 +131,13 @@ void Frame::setBytesPerLine(int lineSize, int plane)
 
 void Frame::setBytesPerLine(const QVector<int> &lineSize)
 {
-    if (lineSize.size() > planeCount()) {
-        qWarning("Invalid plane size! Valid range is [0, %d), current is %d", planeCount(), lineSize.size());
-        return;
-    }
     Q_D(Frame);
+    const int nb_planes = planeCount();
     d->line_sizes = lineSize;
+    if (d->line_sizes.size() > nb_planes) {
+        d->line_sizes.reserve(nb_planes);
+        d->line_sizes.resize(nb_planes);
+    }
 }
 
 void Frame::setBytesPerLine(int stride[])
