@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoCapture.cpp: description
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -21,7 +21,6 @@
 
 
 #include "QtAV/VideoCapture.h"
-#include "QtAV/ImageConverterTypes.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QRunnable>
@@ -56,29 +55,12 @@ public:
             qDebug("app is dieing. cancel capture task %p", this);
             return;
         }
-        // TODO: add VideoFrame::toImage(QImage::Format),toFormat(VideoFormat)...
-        ImageConverter *conv = ImageConverterFactory::create(ImageConverterId_FF);
-        const VideoFormat vformat(frame.format());
-        conv->setInFormat(vformat.pixelFormatFFmpeg());
-        conv->setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::pixelFormatFromImageFormat(qfmt)));
-        conv->setInSize(frame.width(), frame.height());
-        conv->setOutSize(frame.width(), frame.height());
-        const int nb_planes = vformat.planeCount();
-        QVector<uchar*> planes(nb_planes);
-        QVector<int> line_sizes(nb_planes);
-        for (int i = 0; i < nb_planes; ++i) {
-            planes[i] = frame.bits(i);
-            line_sizes[i] = frame.bytesPerLine(i);
-        }
-        QImage image;
-        if (conv->convert(planes.constData(), line_sizes.constData())) {
-            image = QImage((const uchar*)conv->outData().constData(), frame.width(), frame.height(), conv->outLineSizes().at(0), qfmt);
-            image = image.copy();
-            QMetaObject::invokeMethod(cap, "imageCaptured", Q_ARG(QImage, image));
-        } else {
+        QImage image(frame.toImage());
+        if (image.isNull()) {
             qWarning("Failed to convert to QImage");
+            return;
         }
-        delete conv;
+        QMetaObject::invokeMethod(cap, "imageCaptured", Q_ARG(QImage, image));
         if (!save)
             return;
         bool main_thread = QThread::currentThread() == qApp->thread();

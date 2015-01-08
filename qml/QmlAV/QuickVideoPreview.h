@@ -27,7 +27,7 @@
 #include <QtAV/VideoFrameExtractor.h>
 
 namespace QtAV {
-class ImageConverter;
+
 class QMLAV_EXPORT QuickVideoPreview : public QQuickItemRenderer
 {
     Q_OBJECT
@@ -53,7 +53,6 @@ private slots:
 private:
     QUrl m_file;
     VideoFrameExtractor m_extractor;
-    ImageConverter *m_conv;
 };
 } //namespace QtAV
 #endif // QUICKVIDEOPREVIEW_H

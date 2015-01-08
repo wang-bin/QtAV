@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverter: Base class for image resizing & color model convertion
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -76,6 +76,7 @@ void ImageConverter::setInSize(int width, int height)
     prepareData();
 }
 
+// TODO: default is in size
 void ImageConverter::setOutSize(int width, int height)
 {
     DPTR_D(ImageConverter);

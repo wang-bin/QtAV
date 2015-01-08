@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -27,6 +27,7 @@
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QSharedPointer>
 #include <QtGui/QImage>
+#include "utils/Logger.h"
 
 // FF_API_PIX_FMT
 #ifdef PixelFormat
@@ -385,6 +386,64 @@ bool VideoFrame::convertTo(int fffmt)
 bool VideoFrame::convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi)
 {
     return d_func()->convertTo(fmt, dstSize, roi);
+}
+
+QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRectF &roi) const
+{
+    Q_UNUSED(dstSize);
+    Q_UNUSED(roi);
+    if (!isValid() || !bits(0)) // only in data in host memory is supported now
+        return QImage();
+    if (imageFormat() == fmt) {
+        return QImage((const uchar*)frameData().constData(), width(), height(), bytesPerLine(0), fmt).copy();
+    }
+    Q_D(const VideoFrame);
+    QScopedPointer<ImageConverter> conv(ImageConverterFactory::create(ImageConverterId_FF));
+    conv->setInFormat(pixelFormatFFmpeg());
+    conv->setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::pixelFormatFromImageFormat(fmt)));
+    conv->setInSize(width(), height());
+    if (!dstSize.isEmpty())
+        conv->setOutSize(dstSize.width(), dstSize.height());
+    else
+        conv->setOutSize(width(), height());
+    if (!conv->convert(d->planes.constData(), d->line_sizes.constData())) {
+        qWarning("VideoFrame::toImage error");
+        return QImage();
+    }
+    QImage image((const uchar*)conv->outData().constData(), width(), height(), conv->outLineSizes().at(0), fmt);
+    return image.copy();
+}
+
+VideoFrame VideoFrame::toFormat(const VideoFormat &fmt, const QSize& dstSize, const QRectF& roi) const
+{
+    Q_UNUSED(dstSize);
+    Q_UNUSED(roi);
+    if (!isValid() || !bits(0)) // only in data in host memory is supported now
+        return VideoFrame();
+    if (fmt.pixelFormatFFmpeg() == pixelFormatFFmpeg())
+        return clone();
+    Q_D(const VideoFrame);
+    QScopedPointer<ImageConverter> conv(ImageConverterFactory::create(ImageConverterId_FF));
+    conv->setInFormat(pixelFormatFFmpeg());
+    conv->setOutFormat(fmt.pixelFormatFFmpeg());
+    conv->setInSize(width(), height());
+    if (!dstSize.isEmpty())
+        conv->setOutSize(dstSize.width(), dstSize.height());
+    else
+        conv->setOutSize(width(), height());
+    if (!conv->convert(d->planes.constData(), d->line_sizes.constData())) {
+        qWarning() << "VideoFrame::toFormat error: " << format() << "=>" << fmt;
+        return VideoFrame();
+    }
+    VideoFrame f(conv->outData(), width(), height(), fmt);
+    f.setBits(conv->outPlanes());
+    f.setBytesPerLine(conv->outLineSizes());
+    return f;
+}
+
+VideoFrame VideoFrame::toFormat(VideoFormat::PixelFormat pixfmt, const QSize& dstSize, const QRectF &roi) const
+{
+    return toFormat(VideoFormat(pixfmt), dstSize, roi);
 }
 
 void *VideoFrame::map(SurfaceType type, void *handle, int plane)

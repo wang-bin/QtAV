@@ -21,13 +21,11 @@
 ******************************************************************************/
 
 #include "QmlAV/QuickVideoPreview.h"
-#include "QtAV/ImageConverterTypes.h"
 
 namespace QtAV {
 
 QuickVideoPreview::QuickVideoPreview(QQuickItem *parent) :
     QQuickItemRenderer(parent)
-  , m_conv(0)
 {
     connect(&m_extractor, SIGNAL(positionChanged()), this, SIGNAL(timestampChanged()));
     connect(&m_extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), SLOT(displayFrame(QtAV::VideoFrame)));
@@ -70,15 +68,9 @@ void QuickVideoPreview::displayFrame(const QtAV::VideoFrame &frame)
         receive(frame);
         return;
     }
-    if (!m_conv) {
-        m_conv = ImageConverterFactory::create(ImageConverterId_FF);
-    }
-    VideoFrame f(frame);
-    f.setImageConverter(m_conv);
-    if (!f.convertTo(VideoFormat::Format_RGB32)) {
-        qWarning("QuickVideoPreview convert frame error");
+    VideoFrame f(frame.toFormat(VideoFormat::Format_RGB32));
+    if (!f.isValid())
         return;
-    }
     receive(f);
 }
 

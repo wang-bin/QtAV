@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -83,11 +83,20 @@ public:
 
     //use ptr instead of ImageConverterId to avoid allocating memory
     // Id can be used in VideoThread
-    void setImageConverter(ImageConverter *conv);
+    void setImageConverter(ImageConverter *conv); // deprecated
     // if use gpu to convert, mapToDevice() first
     /*!
+     * \brief toImage
+     * Return a QImage of current video frame, with given format, image size and region of interest.
+     * \param dstSize result image size
+     * \param roi NOT implemented!
+     */
+    QImage toImage(QImage::Format fmt = QImage::Format_ARGB32, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
+    VideoFrame toFormat(VideoFormat::PixelFormat pixfmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
+    VideoFrame toFormat(const VideoFormat& fmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
+    /*!
      * \brief convertTo
-     * You may clone the frame first because VideoFrame is explicitly shared
+     * deprecated. You may clone the frame first because VideoFrame is explicitly shared
      */
     bool convertTo(const VideoFormat& fmt);
     bool convertTo(VideoFormat::PixelFormat fmt);
