@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV
@@ -21,11 +21,13 @@
 ******************************************************************************/
 
 #include "QmlAV/QuickVideoPreview.h"
+#include "QtAV/ImageConverterTypes.h"
 
 namespace QtAV {
 
 QuickVideoPreview::QuickVideoPreview(QQuickItem *parent) :
     QQuickItemRenderer(parent)
+  , m_conv(0)
 {
     connect(&m_extractor, SIGNAL(positionChanged()), this, SIGNAL(timestampChanged()));
     connect(&m_extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), SLOT(displayFrame(QtAV::VideoFrame)));
@@ -64,7 +66,20 @@ void QuickVideoPreview::displayFrame(const QtAV::VideoFrame &frame)
     if (diff > m_extractor.precision()) {
         //qWarning("timestamp difference (%d/%lld) is too large! ignore", diff);
     }
-    receive(frame);
+    if (isOpenGL() || frame.imageFormat() != QImage::Format_Invalid) {
+        receive(frame);
+        return;
+    }
+    if (!m_conv) {
+        m_conv = ImageConverterFactory::create(ImageConverterId_FF);
+    }
+    VideoFrame f(frame);
+    f.setImageConverter(m_conv);
+    if (!f.convertTo(VideoFormat::Format_RGB32)) {
+        qWarning("QuickVideoPreview convert frame error");
+        return;
+    }
+    receive(f);
 }
 
 void QuickVideoPreview::displayNoFrame()
