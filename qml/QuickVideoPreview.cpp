@@ -21,6 +21,7 @@
 ******************************************************************************/
 
 #include "QmlAV/QuickVideoPreview.h"
+#include <QtCore/QRectF>
 
 namespace QtAV {
 
@@ -68,7 +69,7 @@ void QuickVideoPreview::displayFrame(const QtAV::VideoFrame &frame)
         receive(frame);
         return;
     }
-    VideoFrame f(frame.toFormat(VideoFormat::Format_RGB32));
+    VideoFrame f(frame.toFormat(VideoFormat::Format_RGB32, boundingRect().toRect().size()));
     if (!f.isValid())
         return;
     receive(f);
