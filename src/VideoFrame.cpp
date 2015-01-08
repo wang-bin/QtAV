@@ -112,28 +112,6 @@ public:
         textures.reserve(format.planeCount());
         return true;
     }
-    bool convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi) {
-        if (fmt == format.pixelFormatFFmpeg()
-                && roi == QRectF(0, 0, width, height)
-                && dstSize == roi.size())
-            return true;
-        if (!conv) {
-            format.setPixelFormat(VideoFormat::Format_Invalid);
-            return false;
-        }
-        format = fmt;
-        data = conv->outData();
-        planes = conv->outPlanes();
-        line_sizes = conv->outLineSizes();
-
-        planes.resize(fmt.planeCount());
-        line_sizes.resize(fmt.planeCount());
-        textures.resize(fmt.planeCount());
-        planes.reserve(format.planeCount());
-        line_sizes.reserve(format.planeCount());
-        textures.reserve(format.planeCount());
-        return false;
-    }
 
     int width, height;
     float displayAspectRatio;
@@ -383,11 +361,6 @@ bool VideoFrame::convertTo(int fffmt)
     return d_func()->convertTo(fffmt);
 }
 
-bool VideoFrame::convertTo(const VideoFormat& fmt, const QSizeF &dstSize, const QRectF &roi)
-{
-    return d_func()->convertTo(fmt, dstSize, roi);
-}
-
 QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRectF &roi) const
 {
     Q_UNUSED(dstSize);
@@ -416,7 +389,7 @@ QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRect
     return image.copy();
 }
 
-VideoFrame VideoFrame::toFormat(const VideoFormat &fmt, const QSize& dstSize, const QRectF& roi) const
+VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QRectF& roi) const
 {
     Q_UNUSED(dstSize);
     Q_UNUSED(roi);
@@ -436,7 +409,7 @@ VideoFrame VideoFrame::toFormat(const VideoFormat &fmt, const QSize& dstSize, co
         h = dstSize.height();
     conv->setOutSize(w, h);
     if (!conv->convert(d->planes.constData(), d->line_sizes.constData())) {
-        qWarning() << "VideoFrame::toFormat error: " << format() << "=>" << fmt;
+        qWarning() << "VideoFrame::to error: " << format() << "=>" << fmt;
         return VideoFrame();
     }
     VideoFrame f(conv->outData(), w, h, fmt);
@@ -445,9 +418,9 @@ VideoFrame VideoFrame::toFormat(const VideoFormat &fmt, const QSize& dstSize, co
     return f;
 }
 
-VideoFrame VideoFrame::toFormat(VideoFormat::PixelFormat pixfmt, const QSize& dstSize, const QRectF &roi) const
+VideoFrame VideoFrame::to(VideoFormat::PixelFormat pixfmt, const QSize& dstSize, const QRectF &roi) const
 {
-    return toFormat(VideoFormat(pixfmt), dstSize, roi);
+    return to(VideoFormat(pixfmt), dstSize, roi);
 }
 
 void *VideoFrame::map(SurfaceType type, void *handle, int plane)

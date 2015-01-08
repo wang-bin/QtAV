@@ -92,8 +92,8 @@ public:
      * \param roi NOT implemented!
      */
     QImage toImage(QImage::Format fmt = QImage::Format_ARGB32, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
-    VideoFrame toFormat(VideoFormat::PixelFormat pixfmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
-    VideoFrame toFormat(const VideoFormat& fmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
+    VideoFrame to(VideoFormat::PixelFormat pixfmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
+    VideoFrame to(const VideoFormat& fmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
     /*!
      * \brief convertTo
      * deprecated. You may clone the frame first because VideoFrame is explicitly shared
@@ -102,7 +102,6 @@ public:
     bool convertTo(VideoFormat::PixelFormat fmt);
     bool convertTo(QImage::Format fmt);
     bool convertTo(int fffmt);
-    bool convertTo(const VideoFormat& fmt, const QSizeF& dstSize, const QRectF& roi);
     /*!
      * map a gpu frame to opengl texture or d3d texture or other handle.
      * handle: given handle. can be gl texture (& GLuint), d3d texture, or 0 if create a new handle

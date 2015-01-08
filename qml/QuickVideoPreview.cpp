@@ -69,7 +69,7 @@ void QuickVideoPreview::displayFrame(const QtAV::VideoFrame &frame)
         receive(frame);
         return;
     }
-    VideoFrame f(frame.toFormat(VideoFormat::Format_RGB32, boundingRect().toRect().size()));
+    VideoFrame f(frame.to(VideoFormat::Format_RGB32, boundingRect().toRect().size()));
     if (!f.isValid())
         return;
     receive(f);
