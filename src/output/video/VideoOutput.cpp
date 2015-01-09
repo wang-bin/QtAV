@@ -112,6 +112,8 @@ bool VideoOutput::receive(const VideoFrame& frame)
     d.source_aspect_ratio = frame.displayAspectRatio();
     d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
     setInSize(frame.width(), frame.height());
+    QMutexLocker locker(&d.impl->dptr.pri<VideoRendererPrivate>().img_mutex);
+    Q_UNUSED(locker);
     return d.impl->receiveFrame(frame);
 }
 /*

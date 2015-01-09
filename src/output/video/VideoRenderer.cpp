@@ -44,10 +44,10 @@ VideoRenderer::~VideoRenderer()
 bool VideoRenderer::receive(const VideoFrame &frame)
 {
     DPTR_D(VideoRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
     d.source_aspect_ratio = frame.displayAspectRatio();
     setInSize(frame.width(), frame.height());
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     return receiveFrame(frame);
 }
 
