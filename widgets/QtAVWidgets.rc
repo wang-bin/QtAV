@@ -1,0 +1,35 @@
+#include "winver.h"
+#include "QtAVWidgets/version.h"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION QTAV_MAJOR,QTAV_MINOR,QTAV_PATCH,0
+ PRODUCTVERSION QTAV_MAJOR,QTAV_MINOR,QTAV_PATCH,0
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEFLAGSMASK 0x3fL
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "CompanyName", "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
+            VALUE "FileDescription", "QtAVWidgets module. QtAV Multimedia playback framework. http://www.qtav.org"
+            VALUE "FileVersion", QTAVWIDGETS_VERSION_STR ".0"
+            VALUE "LegalCopyright", "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+            VALUE "InternalName", "QtAV Widgets"
+            VALUE "OriginalFilename", "QtAVWidgets.dll"
+            VALUE "ProductName", "QtAV Widgets"
+            VALUE "ProductVersion", QTAVWIDGETS_VERSION_STR ".0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
