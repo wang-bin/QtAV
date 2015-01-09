@@ -4,6 +4,12 @@ TEMPLATE = subdirs
 CONFIG -= ordered
 SUBDIRS = libqtav tools
 libqtav.file = src/libQtAV.pro
+!no-widgets {
+  SUBDIRS += libqtavwidgets
+  libqtavwidgets.file = widgets/libQtAVWidgets.pro
+  libqtavwidgets.depends = libqtav
+  examples.depends += libqtavwidgets #TODO: enable widgets based examples
+}
 greaterThan(QT_MAJOR_VERSION, 4) {
   # qtHaveModule does not exist in Qt5.0
   isEqual(QT_MINOR_VERSION, 0)|qtHaveModule(quick) {
