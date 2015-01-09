@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -61,10 +61,6 @@
 #include <QtAV/VideoOutput.h>
 //The following renderer headers can be removed
 #include <QtAV/QPainterRenderer.h>
-#include <QtAV/GraphicsItemRenderer.h>
-#include <QtAV/WidgetRenderer.h>
-#include <QtAV/GLWidgetRenderer.h>
-#include <QtAV/GLWidgetRenderer2.h>
 
 #include <QtAV/Subtitle.h>
 #include <QtAV/SubtitleFilter.h>

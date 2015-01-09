@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,6 +22,7 @@
 #ifndef QAV_GRAPHICSITEMRENDERER_H
 #define QAV_GRAPHICSITEMRENDERER_H
 
+#include <QtAVWidgets/global.h>
 #include <QtAV/QPainterRenderer.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtWidgets/QGraphicsWidget>
@@ -40,7 +41,7 @@
 namespace QtAV {
 
 class GraphicsItemRendererPrivate;
-class Q_AV_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRenderer
+class Q_AVWIDGETS_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)

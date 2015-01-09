@@ -49,6 +49,7 @@ OTHER_FILES += $$RC_FILE $$QTAVSRC/QtAV.svg
 #TRANSLATIONS = i18n/QtAV_zh_CN.ts
 
 SDK_HEADERS *= \
+    QtAVWidgets/QtAVWidgets.h \
     QtAVWidgets/global.h \
     QtAVWidgets/version.h \
     $$QTAVSRC/QtAV/GraphicsItemRenderer.h \
@@ -56,6 +57,7 @@ SDK_HEADERS *= \
 
 HEADERS *= $$QTAVSRC/output/video/VideoOutputEventFilter.h
 SOURCES *= \
+    global.cpp \
     $$QTAVSRC/output/video/VideoOutputEventFilter.cpp \
     $$QTAVSRC/output/video/GraphicsItemRenderer.cpp \
     $$QTAVSRC/output/video/WidgetRenderer.cpp

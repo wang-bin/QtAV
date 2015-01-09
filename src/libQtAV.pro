@@ -5,16 +5,12 @@ QT += core gui
 config_libcedarv: CONFIG += neon #need by qt4 addSimdCompiler()
 
 greaterThan(QT_MAJOR_VERSION, 4) {
-  qtHaveModule(widgets):!no_widgets {
-    QT += widgets
-    DEFINES *= QTAV_HAVE_WIDGETS=1
-  } else {
-    CONFIG *= gui_only
-  }
   CONFIG *= config_opengl
   greaterThan(QT_MINOR_VERSION, 3) {
     CONFIG *= config_openglwindow
   }
+} else {
+config_gl: QT += opengl
 }
 CONFIG *= qtav-buildlib
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
@@ -164,33 +160,6 @@ config_opensl {
     DEFINES *= QTAV_HAVE_OPENSL=1
     LIBS += -lOpenSLES
 }
-!gui_only: {
-  SDK_HEADERS *= \
-    QtAV/GraphicsItemRenderer.h \
-    QtAV/WidgetRenderer.h
-  HEADERS *= output/video/VideoOutputEventFilter.h
-  SOURCES *= \
-    output/video/VideoOutputEventFilter.cpp \
-    output/video/GraphicsItemRenderer.cpp \
-    output/video/WidgetRenderer.cpp
-  config_gdiplus {
-    DEFINES *= QTAV_HAVE_GDIPLUS=1
-    SOURCES += output/video/GDIRenderer.cpp
-    LIBS += -lgdiplus -lgdi32
-  }
-  config_direct2d {
-    DEFINES *= QTAV_HAVE_DIRECT2D=1
-    !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
-    SOURCES += output/video/Direct2DRenderer.cpp
-    #LIBS += -lD2d1
-  }
-  config_xv {
-    DEFINES *= QTAV_HAVE_XV=1
-    SOURCES += output/video/XVRenderer.cpp
-    LIBS += -lXv
-  }
-}
-
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link
 config_cuda {
@@ -247,17 +216,6 @@ config_vda {
     LIBS += -framework VideoDecodeAcceleration -framework CoreVideo
 }
 
-config_gl {
-    QT *= opengl
-    DEFINES *= QTAV_HAVE_GL=1
-    SOURCES += output/video/GLWidgetRenderer2.cpp
-    SDK_HEADERS += QtAV/GLWidgetRenderer2.h
-    !contains(QT_CONFIG, dynamicgl) { #dynamicgl does not support old gl1 functions which used in GLWidgetRenderer
-        DEFINES *= QTAV_HAVE_GL1
-        SOURCES += output/video/GLWidgetRenderer.cpp
-        SDK_HEADERS += QtAV/GLWidgetRenderer.h
-    }
-}
 config_gl|config_opengl {
   OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
   SDK_HEADERS *= \
@@ -279,10 +237,6 @@ config_gl|config_opengl {
 config_openglwindow {
   SDK_HEADERS *= QtAV/OpenGLWindowRenderer.h
   SOURCES *= output/video/OpenGLWindowRenderer.cpp
-  !gui_only {
-    SDK_HEADERS *= QtAV/OpenGLWidgetRenderer.h
-    SOURCES *= output/video/OpenGLWidgetRenderer.cpp
-  }
 }
 config_libass {
 #link against libass instead of dynamic load

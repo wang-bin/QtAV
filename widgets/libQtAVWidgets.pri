@@ -60,6 +60,7 @@ isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/..
 include($${PROJECTROOT}/common.pri)
 preparePaths($$OUT_PWD/../out)
 CONFIG += depend_includepath #?
+mac_framework: PROJECT_TARGETNAME = $$NAME
 
 PROJECT_SRCPATH = $$PWD
 PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
@@ -71,17 +72,20 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 !contains(CONFIG, $$lower($$NAME)-buildlib) {
     #The following may not need to change
     CONFIG *= link_prl
-    LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
-	isEqual(STATICLINK, 1) {
-		PRE_TARGETDEPS += $$PROJECT_LIBDIR/$$qtStaticLib($$NAME)
-	} else {
-		win32 {
-			PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME, $$LIB_VERSION)
-		} else {
-			PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
-
-		}
-	}
+    mac_framework {
+      LIBS += -F$$PROJECT_LIBDIR -framework $$PROJECT_TARGETNAME
+    } else {
+      LIBS *= -L$$PROJECT_LIBDIR -l$$qtLibName($$NAME)
+      isEqual(STATICLINK, 1) {
+        PRE_TARGETDEPS += $$PROJECT_LIBDIR/$$qtStaticLib($$NAME)
+      } else {
+        win32 {
+          PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME, $$LIB_VERSION)
+        } else {
+            PRE_TARGETDEPS *= $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
+        }
+      }
+    }
 } else {
 	#Add your additional configuration first. e.g.
 
@@ -90,7 +94,7 @@ DEPENDPATH *= $$PROJECT_SRCPATH
     !CONFIG(plugin) {
         #TEMPLATE = lib
         VERSION = $$LIB_VERSION
-        DESTDIR = $$PROJECT_LIBDIR
+        DESTDIR= $$PROJECT_LIBDIR
     }
         TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
         CONFIG *= create_prl #
@@ -103,11 +107,10 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 	}
 
 	shared {
-        !plugin {
+        !CONFIG(plugin) {
             !isEqual(DESTDIR, $$BUILD_DIR/bin): DLLDESTDIR = $$BUILD_DIR/bin #copy shared lib there
         }
-#QMAKE_POST_LINK+=: just append as a string to previous QMAKE_POST_LINK
-                CONFIG(release, debug|release): !isEmpty(QMAKE_STRIP): QMAKE_POST_LINK = $$quote(-$$QMAKE_STRIP $$shell_path($$DESTDIR/$$qtSharedLib($$NAME)))
+		CONFIG(release, debug|release): !isEmpty(QMAKE_STRIP): QMAKE_POST_LINK = -$$QMAKE_STRIP $$PROJECT_LIBDIR/$$qtSharedLib($$NAME)
 		#copy from the pro creator creates.
 		symbian {
 			MMP_RULES += EXPORTUNFROZEN
@@ -137,10 +140,11 @@ unix {
 # Working dir search: "."
 # TODO: for macx. see qtcreator/src/rpath.pri. (-rpath define rpath, @rpath exapand to that path?)
     macx|ios {
-        QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/Frameworks/
+        QMAKE_LFLAGS_SONAME = -Wl,-install_name,$$PROJECT_LIBDIR/
+# 5.4
         #QMAKE_LFLAGS += -Wl,-rpath,@loader_path/../,-rpath,@executable_path/../
     } else {
-        RPATHDIR = \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib
+        RPATHDIR = \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib $$[QT_INSTALL_LIBS]
 # $$PROJECT_LIBDIR only for host == target. But QMAKE_TARGET.arch is only available on windows. QT_ARCH is bad, e.g. QT_ARCH=i386 while QMAKE_HOST.arch=i686
 # https://bugreports.qt-project.org/browse/QTBUG-30263
         isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR

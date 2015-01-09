@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,28 +19,15 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
+#ifndef QTAVWIDGETS_H
+#define QTAVWIDGETS_H
 
-#ifndef QTAVWIDGETS_GLOBAL_H
-#define QTAVWIDGETS_GLOBAL_H
+#include <QtAV/QtAV.h>
+#include <QtAVWidgets/version.h>
+#include <QtAVWidgets/global.h>
+#include <QtAV/GraphicsItemRenderer.h>
+#include <QtAV/WidgetRenderer.h>
+#include <QtAV/GLWidgetRenderer.h>
+#include <QtAV/GLWidgetRenderer2.h>
 
-#include <QtCore/qglobal.h>
-
-#if defined(BUILD_QTAVWIDGETS_LIB)
-#  undef Q_AVWIDGETS_EXPORT
-#  define Q_AVWIDGETS_EXPORT Q_DECL_EXPORT
-#else
-#  undef Q_AVWIDGETS_EXPORT
-#  define Q_AVWIDGETS_EXPORT Q_DECL_IMPORT //only for vc?
-#endif
-#define Q_AVWIDGETS_PRIVATE_EXPORT Q_AV_EXPORT
-
-namespace QtAV {
-//popup a dialog
-Q_AVWIDGETS_EXPORT void about();
-Q_AVWIDGETS_EXPORT void aboutFFmpeg();
-Q_AVWIDGETS_EXPORT void aboutQtAV();
-namespace Widgets {
-Q_AVWIDGETS_EXPORT void registerRenderers();
-} // namespace Widgets
-} // namespace QtAV
-#endif //QTAVWIDGETS_GLOBAL_H
+#endif // QTAVWIDGETS_H

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,9 +29,6 @@
 #include <QtCore/QIODevice>
 #include <QtCore/QThreadPool>
 #include <QtCore/QTimer>
-#if QTAV_HAVE(WIDGETS)
-#include <QWidget>
-#endif //QTAV_HAVE(WIDGETS)
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
 #include "QtAV/AudioDecoder.h"
@@ -44,7 +41,6 @@
 #include "QtAV/AudioOutputTypes.h"
 #include "filter/FilterManager.h"
 #include "output/OutputSet.h"
-#include "output/video/VideoOutputEventFilter.h"
 #include "AudioThread.h"
 #include "VideoThread.h"
 #include "AVDemuxThread.h"
@@ -114,15 +110,6 @@ void AVPlayer::addVideoRenderer(VideoRenderer *renderer)
         return;
     }
     renderer->setStatistics(&d->statistics);
-#if QTAV_HAVE(WIDGETS)
-    QObject *voo = renderer->widget();
-    if (voo) {
-        //TODO: how to delete filter if no parent?
-        //the filtering object must be in the same thread as this object.
-        if (renderer->widget())
-            voo->installEventFilter(new VideoOutputEventFilter(renderer));
-    }
-#endif //QTAV_HAVE(WIDGETS)
     d->vos->addOutput(renderer);
 }
 

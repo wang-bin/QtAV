@@ -19,6 +19,7 @@
 ******************************************************************************/
 
 #include "EventFilter.h"
+#include <QtAVWidgets/QtAVWidgets.h>
 #include <QApplication>
 #include <QtCore/QUrl>
 #include <QEvent>

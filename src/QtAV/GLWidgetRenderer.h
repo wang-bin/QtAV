@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,6 +22,7 @@
 #ifndef QTAV_GLWIDGETRENDERER_H
 #define QTAV_GLWIDGETRENDERER_H
 
+#include <QtAVWidgets/global.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtOpenGL/QGLWidget>
 // TODO: QGLFunctions is in Qt4.8+. meego is 4.7
@@ -32,7 +33,7 @@
 namespace QtAV {
 
 class GLWidgetRendererPrivate;
-class Q_AV_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
+class Q_AVWIDGETS_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
 #if QTAV_HAVE(QGLFUNCTIONS) //TODO: why use QT_VERSION will result in moc error?
         , public QGLFunctions
 #endif //QTAV_HAVE(QGLFUNCTIONS)

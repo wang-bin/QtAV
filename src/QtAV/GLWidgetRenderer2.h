@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,6 +22,7 @@
 #ifndef QTAV_GLWIDGETRENDERER2_H
 #define QTAV_GLWIDGETRENDERER2_H
 
+#include <QtAVWidgets/global.h>
 #include <QtOpenGL/QGLWidget>
 #include <QtAV/OpenGLRendererBase.h>
 
@@ -33,7 +34,7 @@ class GLWidgetRenderer2Private;
  * Renderering video frames using GLSL. A more generic high level class OpenGLVideo is used internally.
  * TODO: for Qt5, no QtOpenGL, use QWindow instead.
  */
-class Q_AV_EXPORT GLWidgetRenderer2 : public QGLWidget, public OpenGLRendererBase
+class Q_AVWIDGETS_EXPORT GLWidgetRenderer2 : public QGLWidget, public OpenGLRendererBase
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer2)

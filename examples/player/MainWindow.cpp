@@ -19,6 +19,7 @@
 ******************************************************************************/
 #include "MainWindow.h"
 #include "EventFilter.h"
+#include <QtAVWidgets/QtAVWidgets.h>
 #include <QtCore/QtDebug>
 #include <QtCore/QLocale>
 #include <QtCore/QTimer>

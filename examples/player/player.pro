@@ -7,6 +7,7 @@ VERSION = $$QTAV_VERSION
 STATICLINK = 0
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
+include($$PROJECTROOT/widgets/libQtAVWidgets.pri)
 include($$PWD/../common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
 INCLUDEPATH += $$PWD

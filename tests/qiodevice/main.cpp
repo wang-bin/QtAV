@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
-#include <QtAV/QtAV.h>
+#include <QtAVWidgets/QtAVWidgets.h>
 #include <QFile>
 #include <QBuffer>
 

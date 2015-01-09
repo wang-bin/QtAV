@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -49,11 +49,8 @@ enum LogLevel {
     LogFatal, // log fatal
     LogAll
 };
-Q_AV_EXPORT void about(); //popup a dialog
-Q_AV_EXPORT void aboutFFmpeg();
 Q_AV_EXPORT QString aboutFFmpeg_PlainText();
 Q_AV_EXPORT QString aboutFFmpeg_HTML();
-Q_AV_EXPORT void aboutQtAV();
 Q_AV_EXPORT QString aboutQtAV_PlainText();
 Q_AV_EXPORT QString aboutQtAV_HTML();
 /*!

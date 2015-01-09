@@ -25,7 +25,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 !android:!no-tests {
   SUBDIRS += tests
-  tests.depends += libqtav
+  tests.depends += libqtav libqtavwidgets
 }
 OTHER_FILES += README.md TODO.txt Changelog
 OTHER_FILES += templates/vo.h templates/vo.cpp templates/COPYRIGHT.h templates/mkclass.sh
