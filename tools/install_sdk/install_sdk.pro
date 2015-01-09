@@ -294,14 +294,21 @@ MODULE_FWD_PRI = $$mod_work_pfx/qt_lib_$${MODULE_ID}.pri
 CONFIG += qt_install_module
 } #Qt5
 
-qt$${MODULE}_pri.files = $$MODULE_PRI_FILES
-qt$${MODULE}_pri.path = $$MKSPECS_DIR/modules
+eval(qt$${MODULE}_pri.files = $$MODULE_PRI_FILES)
+eval(qt$${MODULE}_pri.path = $$MKSPECS_DIR/modules)
 greaterThan(QT_MAJOR_VERSION, 4): INSTALLS += qt$${MODULE}_pri
-qt$${MODULE}_prf.files = $$MODULE_PRF_FILE
-qt$${MODULE}_prf.path = $$MKSPECS_DIR/features
+eval(qt$${MODULE}_prf.files = $$MODULE_PRF_FILE)
+eval(qt$${MODULE}_prf.path = $$MKSPECS_DIR/features)
 INSTALLS += qt$${MODULE}_prf
 
-return(true)
+# export is required, otherwise INSTALLS is not valid
+  export(qt$${MODULE}_pri.files)
+  export(qt$${MODULE}_pri.path)
+  export(qt$${MODULE}_prf.files)
+  export(qt$${MODULE}_prf.path)
+  export(INSTALLS)
+
+  return(true)
 } #createForModule
 
 write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX)
