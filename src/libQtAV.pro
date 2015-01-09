@@ -105,11 +105,15 @@ config_avresample {
 config_avdevice { #may depends on avfilter
     DEFINES += QTAV_HAVE_AVDEVICE=1
     LIBS *= -lavdevice
-    static_ffmpeg: mac:!ios { # static ffmpeg
-      LIBS += -framework Foundation -framework QTKit -framework CoreMedia -framework QuartzCore -framework CoreGraphics \
-              -framework AVFoundation
-    # assume avdevice targets to the same version as Qt and always >= 10.6
-      !isEqual(QMAKE_MACOSX_DEPLOYMENT_TARGET, 10.6): LIBS += -framework AVFoundation
+    static_ffmpeg {
+      win32 {
+        LIBS *= -lgdi32
+      } else:mac:!ios { # static ffmpeg
+        LIBS += -framework Foundation -framework QTKit -framework CoreMedia -framework QuartzCore -framework CoreGraphics \
+                -framework AVFoundation
+      # assume avdevice targets to the same version as Qt and always >= 10.6
+        !isEqual(QMAKE_MACOSX_DEPLOYMENT_TARGET, 10.6): LIBS += -framework AVFoundation
+      }
     }
 }
 config_avfilter {
@@ -253,7 +257,7 @@ config_libass {
 LIBS *= -L$$[QT_INSTALL_LIBS] -lavcodec -lavformat -lswscale -lavutil
 win32 {
 #dynamicgl: __impl__GetDC __impl_ReleaseDC __impl_GetDesktopWindow
-    LIBS += -luser32 -lgdi32
+    LIBS += -luser32
 }
 # compat with old system
 # use old libva.so to link against

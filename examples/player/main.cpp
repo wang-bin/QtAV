@@ -28,7 +28,7 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h>
 #include <QtAV/VideoOutput.h>
-
+#include <QtAVWidgets/QtAVWidgets.h>
 #include "MainWindow.h"
 #include "../common/common.h"
 

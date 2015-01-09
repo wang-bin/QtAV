@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -55,6 +55,8 @@ public:
      * Create a renderer with given rendererId. MUST check VideoOutput::isAvailable() later!
      */
     VideoOutput(VideoRendererId rendererId, QObject *parent = 0);
+    /// rendererIds: an array ends with 0
+    VideoOutput(VideoRendererId* rendererIds, QObject *parent = 0);
     ~VideoOutput();
     VideoRendererId id() const;
 

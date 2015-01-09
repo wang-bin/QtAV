@@ -36,10 +36,10 @@ public:
         impl = VideoRendererFactory::create(rendererId);
         if (!impl && !force) {
             const VideoRendererId vo_ids[] = {
-                VideoRendererId_OpenGLWidget, // Qt >= 5.4
-                VideoRendererId_GLWidget2,
-                VideoRendererId_GLWidget,
-                VideoRendererId_Widget,
+                //VideoRendererId_OpenGLWidget, // Qt >= 5.4
+                //VideoRendererId_GLWidget2,
+                //VideoRendererId_GLWidget,
+                //VideoRendererId_Widget,
                 0
             };
             for (int i = 0; vo_ids[i]; ++i) {
@@ -83,7 +83,7 @@ public:
 
 VideoOutput::VideoOutput(QObject *parent)
     : QObject(parent)
-    , VideoRenderer(*new VideoOutputPrivate(VideoRendererId_OpenGLWidget, false))
+    , VideoRenderer(*new VideoOutputPrivate(0, false))
 {
 }
 

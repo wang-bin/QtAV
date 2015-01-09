@@ -26,7 +26,7 @@ preparePaths($$OUT_PWD/../out)
 QTAVSRC=$$PROJECTROOT/src
 
 !rc_file {
-    RC_ICONS = QtAV.ico
+    RC_ICONS = $$PROJECTROOT/src/QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
     QMAKE_TARGET_DESCRIPTION = "QtAVWidgets module. QtAV Multimedia playback framework. http://www.qtav.org"
     QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
@@ -48,6 +48,11 @@ QTAVSRC=$$PROJECTROOT/src
 OTHER_FILES += $$RC_FILE $$QTAVSRC/QtAV.svg
 #TRANSLATIONS = i18n/QtAV_zh_CN.ts
 
+win32 {
+#dynamicgl: __impl__GetDC __impl_ReleaseDC
+    LIBS += -luser32
+}
+
 SDK_HEADERS *= \
     QtAVWidgets/QtAVWidgets.h \
     QtAVWidgets/global.h \
@@ -67,9 +72,10 @@ config_gl {
   SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer2.cpp
   SDK_HEADERS += $$QTAVSRC/QtAV/GLWidgetRenderer2.h
   !contains(QT_CONFIG, dynamicgl) { #dynamicgl does not support old gl1 functions which used in GLWidgetRenderer
-    DEFINES *= QTAV_HAVE_GL1
-    SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer.cpp
-    SDK_HEADERS += $$QTAVSRC/QtAV/GLWidgetRenderer.h
+#GLWidgetRenderer depends on internal functions of QtAV
+    #DEFINES *= QTAV_HAVE_GL1
+    #SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer.cpp
+    #SDK_HEADERS += $$QTAVSRC/QtAV/GLWidgetRenderer.h
   }
 }
 config_opengl {

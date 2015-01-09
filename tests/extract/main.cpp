@@ -23,7 +23,7 @@
 #include <QApplication>
 #include <QWidget>
 #include <QtAV/VideoRenderer.h>
-#include <QtAV/VideoRendererTypes.h>
+#include <QtAVWidgets/QtAVWidgets.h>
 #include <QtDebug>
 #include <QtCore/QElapsedTimer>
 

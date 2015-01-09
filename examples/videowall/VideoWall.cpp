@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoWall:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -31,7 +31,7 @@
 #include <QMimeData>
 #include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
-#include <QtAV/VideoRendererTypes.h>
+#include <QtAVWidgets/QtAVWidgets.h>
 
 using namespace QtAV;
 const int kSyncInterval = 2000;
