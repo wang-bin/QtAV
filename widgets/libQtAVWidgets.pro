@@ -143,23 +143,16 @@ QMAKE_EXTRA_TARGETS += libqtavwidgets
 target.depends *= $${libqtavwidgets.target}
 
 DEB_INSTALL_LIST = $$join(SDK_HEADERS, \\n.$$[QT_INSTALL_HEADERS]/, .$$[QT_INSTALL_HEADERS]/)
-DEB_INSTALL_LIST += .$$[QT_INSTALL_LIBS]/libQt*AV.prl .$$[QT_INSTALL_LIBS]/libQt*AV.so
-DEB_INSTALL_LIST += .$$[QT_INSTALL_BINS]/../mkspecs/features/av.prf .$$[QT_INSTALL_BINS]/../mkspecs/modules/qt_lib_av.pri
-qtavwidgets_dev.target = qtavwidgets-dev.install
-qtavwidgets_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${qtavwidgets_dev.target}
+DEB_INSTALL_LIST += .$$[QT_INSTALL_LIBS]/libQt*AVWidgets.prl .$$[QT_INSTALL_LIBS]/libQt*AVWidgets.so
+DEB_INSTALL_LIST += .$$[QT_INSTALL_BINS]/../mkspecs/features/avwidgets.prf .$$[QT_INSTALL_BINS]/../mkspecs/modules/qt_lib_avwidgets.pri
+qtavwidgets_dev.target = qtav-dev.install #like qtmultimedia5-dev, contains widgets headers
+qtavwidgets_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >>$$PROJECTROOT/debian/$${qtavwidgets_dev.target}
 QMAKE_EXTRA_TARGETS += qtavwidgets_dev
 target.depends *= $${qtavwidgets_dev.target}
 
-DEB_INSTALL_LIST = $$join(SDK_PRIVATE_HEADERS, \\n.$$[QT_INSTALL_HEADERS]/QtAV/*/, .$$[QT_INSTALL_HEADERS]/QtAV/*/)
-DEB_INSTALL_LIST += .$$[QT_INSTALL_BINS]/../mkspecs/modules/qt_lib_av_private.pri
-qtavwidgets_private_dev.target = qtavwidgets-private-dev.install
-qtavwidgets_private_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${qtavwidgets_private_dev.target}
-QMAKE_EXTRA_TARGETS += qtavwidgets_private_dev
-target.depends *= $${qtavwidgets_private_dev.target}
-
 greaterThan(QT_MAJOR_VERSION, 4):lessThan(QT_MINOR_VERSION, 4) {
-  qtavwidgets_dev_links.target = qtavwidgets-dev.links
-  qtavwidgets_dev_links.commands = echo \"$$[QT_INSTALL_LIBS]/libQtAVWidgets.so $$[QT_INSTALL_LIBS]/libQt$${QT_MAJOR_VERSION}AVWidgets.so\" >$$PROJECTROOT/debian/$${qtavwidgets_dev_links.target}
+  qtavwidgets_dev_links.target = qtav-dev.links #like qtmultimedia5-dev, contains widgets .so
+  qtavwidgets_dev_links.commands = echo \"$$[QT_INSTALL_LIBS]/libQtAVWidgets.so $$[QT_INSTALL_LIBS]/libQt$${QT_MAJOR_VERSION}AVWidgets.so\" >>$$PROJECTROOT/debian/$${qtavwidgets_dev_links.target}
   QMAKE_EXTRA_TARGETS *= qtavwidgets_dev_links
   target.depends *= $${qtavwidgets_dev_links.target}
 } #Qt<5.4
