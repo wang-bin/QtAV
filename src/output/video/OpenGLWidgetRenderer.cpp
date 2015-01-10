@@ -33,6 +33,11 @@ public:
     {}
 };
 
+VideoRendererId OpenGLWidgetRenderer::id() const
+{
+    return VideoRendererId_OpenGLWidget;
+}
+
 OpenGLWidgetRenderer::OpenGLWidgetRenderer(QWidget *parent, Qt::WindowFlags f):
     QOpenGLWidget(parent, f)
   , OpenGLRendererBase(*new OpenGLWidgetRendererPrivate(this))

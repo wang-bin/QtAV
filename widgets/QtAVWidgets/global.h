@@ -49,6 +49,13 @@ Q_AVWIDGETS_EXPORT void about();
 Q_AVWIDGETS_EXPORT void aboutFFmpeg();
 Q_AVWIDGETS_EXPORT void aboutQtAV();
 namespace Widgets {
+/*!
+ * \brief registerRenderers
+ * register built-in renderers.
+ * If you do not explicitly use any var, function or class in this module in your code,
+ * QtAVWidgets module maybe not linked to your program and renderers will not be available.
+ * Then you have to call registerRenderers() to ensure QtAVWidgets module is linked.
+ */
 Q_AVWIDGETS_EXPORT void registerRenderers();
 } // namespace Widgets
 } // namespace QtAV

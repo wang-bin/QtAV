@@ -69,6 +69,11 @@ public:
     QMatrix4x4 matrix;
 };
 
+VideoRendererId GraphicsItemRenderer::id() const
+{
+    return VideoRendererId_GraphicsItem;
+}
+
 GraphicsItemRenderer::GraphicsItemRenderer(QGraphicsItem * parent)
     :GraphicsWidget(parent),QPainterRenderer(*new GraphicsItemRendererPrivate())
 {

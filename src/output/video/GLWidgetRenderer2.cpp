@@ -33,6 +33,10 @@ public:
     {}
 };
 
+VideoRendererId GLWidgetRenderer2::id() const
+{
+    return VideoRendererId_GLWidget2;
+}
 
 GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
     QGLWidget(parent, shareWidget, f)

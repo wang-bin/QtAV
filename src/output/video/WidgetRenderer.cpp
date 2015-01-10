@@ -35,6 +35,11 @@ public:
     virtual ~WidgetRendererPrivate(){}
 };
 
+VideoRendererId WidgetRenderer::id() const
+{
+    return VideoRendererId_Widget;
+}
+
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     QWidget(parent, f),QPainterRenderer(*new WidgetRendererPrivate())
 {

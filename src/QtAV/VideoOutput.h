@@ -55,8 +55,6 @@ public:
      * Create a renderer with given rendererId. MUST check VideoOutput::isAvailable() later!
      */
     VideoOutput(VideoRendererId rendererId, QObject *parent = 0);
-    /// rendererIds: an array ends with 0
-    VideoOutput(VideoRendererId* rendererIds, QObject *parent = 0);
     ~VideoOutput();
     VideoRendererId id() const;
 

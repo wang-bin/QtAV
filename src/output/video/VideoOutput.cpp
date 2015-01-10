@@ -35,15 +35,8 @@ public:
     VideoOutputPrivate(VideoRendererId rendererId, bool force) {
         impl = VideoRendererFactory::create(rendererId);
         if (!impl && !force) {
-            const VideoRendererId vo_ids[] = {
-                //VideoRendererId_OpenGLWidget, // Qt >= 5.4
-                //VideoRendererId_GLWidget2,
-                //VideoRendererId_GLWidget,
-                //VideoRendererId_Widget,
-                0
-            };
-            for (int i = 0; vo_ids[i]; ++i) {
-                impl = VideoRendererFactory::create(vo_ids[i]);
+            foreach (VideoRendererId vid, VideoRendererFactory::registeredIds()) {
+                impl = VideoRendererFactory::create(vid);
                 if (impl && impl->widget())
                     break;
             }
@@ -112,6 +105,7 @@ bool VideoOutput::receive(const VideoFrame& frame)
     d.source_aspect_ratio = frame.displayAspectRatio();
     d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
     setInSize(frame.width(), frame.height());
+    // or simply call d.impl->receive(frame) to avoid lock here
     QMutexLocker locker(&d.impl->dptr.pri<VideoRendererPrivate>().img_mutex);
     Q_UNUSED(locker);
     return d.impl->receiveFrame(frame);

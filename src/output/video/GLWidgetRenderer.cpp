@@ -797,6 +797,11 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     d.filter_context->painter = d.painter;
 }
 
+VideoRendererId GLWidgetRenderer::id() const
+{
+    return VideoRendererId_GLWidget;
+}
+
 bool GLWidgetRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     Q_UNUSED(pixfmt);
