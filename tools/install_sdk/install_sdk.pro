@@ -114,6 +114,12 @@ AV_PRF_CONT = "android: QMAKE_LFLAGS += -lOpenSLES"
 #config_avresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lavresample"
 #config_swresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lswresample"
 AV_PRF_CONT += "!contains(QT, $${MODULE}): QT *= $${MODULE}"
+mac_framework {
+# mac module with config 'lib_bundle' only include Headers dir. see qtAddModule in qt_functions.prf
+# but will add Qt.$${MODULE}.config to CONFIG
+# $$eval(QT.$${MODULE}.libs) for Qt5
+  AV_PRF_CONT += "INCLUDEPATH *= $$[QT_INSTALL_LIBS]/$${MODULE_FULL_NAME}.framework/Headers/$${MODULE_FULL_NAME}"
+}
 write_file($$MODULE_PRF_FILE, AV_PRF_CONT)
 
 
