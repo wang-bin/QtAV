@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/WidgetRenderer.h"
+#include "QtAVWidgets/WidgetRenderer.h"
 #include "QtAV/private/QPainterRenderer_p.h"
 #include <QtGui/QFont>
 #include <QtGui/QPainter>

@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/OpenGLWidgetRenderer.h"
+#include "QtAVWidgets/OpenGLWidgetRenderer.h"
 #include "QtAV/private/OpenGLRendererBase_p.h"
 #include <QResizeEvent>
 
