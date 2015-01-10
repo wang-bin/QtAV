@@ -1,3 +1,28 @@
+qtav (1.4.2) unstable; urgency=low
+
+  * Async load
+  * Faster seek and preview. Thanks wm4(mpv developer)
+  * Better a/v sync solution. Play high fps video better than ANY other players.
+  * DXVA enable HEVC decoder if libavcodec runtime supports.
+  * Cedarv improvements, nv12 output support, neon code from libvdpau-sunxi
+  * Multiple OpenAL instances support
+  * AVInput class to extend media sources. Support play from qrc resouces.
+  * Display the first frame after seek
+  * Better clock error correction
+  * Fix play frame by frame issues
+  * Fix QML video shake
+  * More details for error signals
+  * Apply user options in the next playback
+  * Dynamic load libass (submodule 'capi' is required)
+  * VA-API fix blurred bottom line issue. works on libav >= 9 now.
+  * Progress is start at 0 by default even if 1st pts is not 0.
+  * Fix capture issues, capture current displayed frame, easier api
+  * RGB48 support. OpenGL only supports RGB48LE.
+  * Link to static ffmpeg support
+  * Fix open error if input url/path contains special charactors
+
+ -- Wang Bin <wbsecg1@gmail.com>  Sat, 10 Jan 2015 23:42:17 +0800
+
 qtav (1.4.1) unstable; urgency=low
 
   * libass support
