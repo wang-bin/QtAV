@@ -55,6 +55,7 @@ qt5lib_name() {
 EXE=
 platform_is MinGW || platform_is MSYS && EXE=.exe
 
+# TODO: QT_INSTALL_LIBS. .qmake.cache stores QT_INSTALL_BINS, run qmake here
 QTDIR=$(grep include $BUILD/sdk_uninstall.* |head -n 1 | sed 's,\\,\/,g')
 QTDIR=${QTDIR%include*}
 QTDIR=${QTDIR//* /}
@@ -87,24 +88,33 @@ for m in ${QTMODULES[@]}; do
 done
 cp -af $QTDIR/plugins/{imageformats,platform*} $TARGET/packages/com.qtav.product.runtime/data/bin/plugins
 cp -af $QTDIR/qml/{Qt,QtQml,QtQuick,QtQuick.2} $TARGET/packages/com.qtav.product.runtime/data/bin/qml
-##ffmpeg
+rm -f $TARGET/packages/com.qtav.product.runtime/data/bin/plugins/platforms/{*mini*,*offscreen*,*eglfs*,*linuxfb*,*kms*}
+rm -f $TARGET/packages/com.qtav.product.runtime/data/bin/plugins/imageformats/{*dds*,*icns*,*tga*,*tiff*,*wbmp*,*webp*}
+##ffmpegs
 ## QtAV, Qt5AV
 LIBQTAV=$LIBDIR/`lib_name "Qt*AV" 1`
 echo "LIBQTAV=$LIBQTAV"
 cp -Lf $LIBQTAV $TARGET/packages/com.qtav.product.runtime/data/bin
+LIBQTAVWIDGETS=$LIBDIR/`lib_name "Qt*AVWidgets" 1`
+echo "LIBQTAVWIDGETS=$LIBQTAVWIDGETS"
+cp -Lf $LIBQTAVWIDGETS $TARGET/packages/com.qtav.product.runtime/data/bin
 
 # dev
 echo "coping development files..."
 cp -af ../../src/QtAV $TARGET/packages/com.qtav.product.dev/data/include
-cp -af ../../qml/QmlAV $TARGET/packages/com.qtav.product.dev/data/include
+cp -af ../../widgets/QtAVWidgets $TARGET/packages/com.qtav.product.dev/data/include
+#cp -af ../../qml/QmlAV $TARGET/packages/com.qtav.product.dev/data/include
 cp -af $BUILD/tools/install_sdk/mkspecs $TARGET/packages/com.qtav.product.dev/data
 cp -af ../../{README.md,lgpl-2.1.txt,gpl-3.0.txt,doc} $TARGET/packages/com.qtav.product/data
 
 #mingw: libQt5AV1.a
 cp -af $LIBDIR/*Qt*AV* $TARGET/packages/com.qtav.product.dev/data/lib
-[ -f $LIBDIR/Qt5AV1.lib ] && cp -af $LIBDIR/libQt5AV1.a $TARGET/packages/com.qtav.product.dev/data/lib/Qt5AV.lib
+[ -f $LIBDIR/Qt5AV1.lib ] && cp -af $LIBDIR/libQt5AV1.lib $TARGET/packages/com.qtav.product.dev/data/lib/Qt5AV.lib
 [ -f $LIBDIR/libQt5AV1.a ] && cp -af $LIBDIR/libQt5AV1.a $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AV.a
-[ -f $LIBDIR/libQt5AV1.so ] && cp -af $LIBDIR/libQt5AV1.a $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AV.so
+[ -f $LIBDIR/libQt5AV1.so ] && cp -af $LIBDIR/libQt5AV1.so $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AV.so
+[ -f $LIBDIR/Qt5AVWidgets1.lib ] && cp -af $LIBDIR/libQt5AVWidgets1.lib $TARGET/packages/com.qtav.product.dev/data/lib/Qt5AVWidgets.lib
+[ -f $LIBDIR/libQt5AVWidgets1.a ] && cp -af $LIBDIR/libQt5AVWidgets1.a $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AVWidgets.a
+[ -f $LIBDIR/libQt5AVWidgets1.so ] && cp -af $LIBDIR/libQt5AVWidgets1.so $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AVWidgets.so
 rm -f $TARGET/packages/com.qtav.product.dev/data/lib/{*.dll,*.so.*}
 
 # player
