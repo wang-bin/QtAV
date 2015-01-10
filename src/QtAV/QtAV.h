@@ -43,6 +43,7 @@
 
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
+#include <QtAV/LibAVFilter.h>
 
 #include <QtAV/ImageConverter.h>
 #include <QtAV/ImageConverterTypes.h>

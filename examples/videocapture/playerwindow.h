@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,7 +22,7 @@
 #define PLAYERWINDOW_H
 
 #include <QWidget>
-#include <QtAV/QtAV.h>
+#include <QtAV>
 
 class QSlider;
 class QPushButton;

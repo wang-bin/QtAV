@@ -330,6 +330,7 @@ SOURCES += \
     CommonTypes.cpp
 
 SDK_HEADERS *= \
+    QtAV/QtAV \
     QtAV/QtAV.h \
     QtAV/dptr.h \
     QtAV/QtAV_Global.h \

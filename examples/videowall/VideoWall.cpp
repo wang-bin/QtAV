@@ -31,7 +31,7 @@
 #include <QMimeData>
 #include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
-#include <QtAVWidgets/QtAVWidgets.h>
+#include <QtAVWidgets>
 
 using namespace QtAV;
 const int kSyncInterval = 2000;

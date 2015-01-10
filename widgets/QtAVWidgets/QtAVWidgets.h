@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,12 +22,11 @@
 #ifndef QTAVWIDGETS_H
 #define QTAVWIDGETS_H
 
-#include <QtAV/QtAV.h>
 #include <QtAVWidgets/version.h>
 #include <QtAVWidgets/global.h>
-#include <QtAV/GraphicsItemRenderer.h>
-#include <QtAV/WidgetRenderer.h>
-#include <QtAV/GLWidgetRenderer.h>
-#include <QtAV/GLWidgetRenderer2.h>
+#include <QtAVWidgets/GraphicsItemRenderer.h>
+#include <QtAVWidgets/WidgetRenderer.h>
+//#include <QtAVWidgets/GLWidgetRenderer.h>
+#include <QtAVWidgets/GLWidgetRenderer2.h>
 
 #endif // QTAVWIDGETS_H

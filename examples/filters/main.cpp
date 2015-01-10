@@ -28,7 +28,7 @@
 #include <QMessageBox>
 
 #include <QtAV/AVPlayer.h>
-#include <QtAVWidgets/QtAVWidgets.h>
+#include <QtAVWidgets>
 #include "SimpleFilter.h"
 
 using namespace QtAV;

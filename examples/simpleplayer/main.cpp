@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,9 +19,11 @@
 ******************************************************************************/
 #include <QApplication>
 #include "playerwindow.h"
+#include <QtAVWidgets>
 
 int main(int argc, char *argv[])
 {
+    QtAV::Widgets::registerRenderers();
     QApplication a(argc, argv);
     PlayerWindow player;
     player.show();

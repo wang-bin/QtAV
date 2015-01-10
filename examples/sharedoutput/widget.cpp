@@ -1,6 +1,6 @@
 /******************************************************************************
     Shared output:  shared renderer test
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,7 +20,7 @@
 
 #include "widget.h"
 #include <QtAV/AVPlayer.h>
-#include <QtAVWidgets/QtAVWidgets.h>
+#include <QtAVWidgets>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFileDialog>

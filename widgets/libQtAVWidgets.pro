@@ -54,11 +54,12 @@ win32 {
 }
 
 SDK_HEADERS *= \
+    QtAVWidgets/QtAVWidgets \
     QtAVWidgets/QtAVWidgets.h \
     QtAVWidgets/global.h \
     QtAVWidgets/version.h \
-    $$QTAVSRC/QtAV/GraphicsItemRenderer.h \
-    $$QTAVSRC/QtAV/WidgetRenderer.h
+    QtAVWidgets/GraphicsItemRenderer.h \
+    QtAVWidgets/WidgetRenderer.h
 
 HEADERS *= $$QTAVSRC/output/video/VideoOutputEventFilter.h
 SOURCES *= \
@@ -70,16 +71,16 @@ SOURCES *= \
 config_gl {
   DEFINES *= QTAV_HAVE_GL=1
   SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer2.cpp
-  SDK_HEADERS += $$QTAVSRC/QtAV/GLWidgetRenderer2.h
+  SDK_HEADERS += QtAVWidgets/GLWidgetRenderer2.h
   !contains(QT_CONFIG, dynamicgl) { #dynamicgl does not support old gl1 functions which used in GLWidgetRenderer
 #GLWidgetRenderer depends on internal functions of QtAV
     #DEFINES *= QTAV_HAVE_GL1
     #SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer.cpp
-    #SDK_HEADERS += $$QTAVSRC/QtAV/GLWidgetRenderer.h
+    #SDK_HEADERS += QtAVWidgets/GLWidgetRenderer.h
   }
 }
 config_opengl {
-  SDK_HEADERS *= $$QTAVSRC/QtAV/OpenGLWidgetRenderer.h
+  SDK_HEADERS *= QtAVWidgets/OpenGLWidgetRenderer.h
   SOURCES *= $$QTAVSRC/output/video/OpenGLWidgetRenderer.cpp
 }
 config_gdiplus {

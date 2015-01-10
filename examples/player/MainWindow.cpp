@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,7 +19,8 @@
 ******************************************************************************/
 #include "MainWindow.h"
 #include "EventFilter.h"
-#include <QtAVWidgets/QtAVWidgets.h>
+#include <QtAV>
+#include <QtAVWidgets>
 #include <QtCore/QtDebug>
 #include <QtCore/QLocale>
 #include <QtCore/QTimer>
@@ -46,9 +47,6 @@
 #include <QToolTip>
 #include <QKeyEvent>
 #include <QWheelEvent>
-#include <QtAV/QtAV.h>
-#include <QtAV/LibAVFilter.h>
-#include <QtAV/SubtitleFilter.h>
 #include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"

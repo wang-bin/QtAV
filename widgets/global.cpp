@@ -29,16 +29,16 @@
 
 #include "QtAV/VideoRendererTypes.h"
 #include "QtAV/private/prepost.h"
-#include "QtAV/WidgetRenderer.h"
-#include "QtAV/GraphicsItemRenderer.h"
+#include "QtAVWidgets/WidgetRenderer.h"
+#include "QtAVWidgets/GraphicsItemRenderer.h"
 #if QTAV_HAVE(GL)
-#include "QtAV/GLWidgetRenderer2.h"
+#include "QtAVWidgets/GLWidgetRenderer2.h"
 #endif //QTAV_HAVE(GL)
 #if QTAV_HAVE(GL1)
-#include "QtAV/GLWidgetRenderer.h"
+#include "QtAVWidgets/GLWidgetRenderer.h"
 #endif //QTAV_HAVE(GL1)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
-#include "QtAV/OpenGLWidgetRenderer.h"
+#include "QtAVWidgets/OpenGLWidgetRenderer.h"
 #endif
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"

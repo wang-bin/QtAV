@@ -26,7 +26,7 @@
 #include <QGridLayout>
 #include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
-#include <QtAVWidgets/QtAVWidgets.h>
+#include <QtAVWidgets>
 
 using namespace QtAV;
 
