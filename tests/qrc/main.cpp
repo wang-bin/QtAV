@@ -20,7 +20,7 @@
 #include <QApplication>
 
 #include <QtAV/AVPlayer.h>
-#include <QtAV/GLWidgetRenderer2.h>
+#include <QtAVWidgets>
 
 int main(int argc, char *argv[])
 {

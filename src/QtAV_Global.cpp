@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,22 +20,8 @@
 ******************************************************************************/
 
 #include "QtAV/QtAV_Global.h"
-// TODO: move to an internal header
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || defined(QT_WIDGETS_LIB)
-#ifndef QTAV_HAVE_WIDGETS
-#define QTAV_HAVE_WIDGETS 1
-#endif //QTAV_HAVE_WIDGETS
-#endif
-
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
-#if QTAV_HAVE(WIDGETS)
-#include <QBoxLayout>
-#include <QMessageBox>
-#include <QPushButton>
-#include <QTableWidget>
-#include <QTextBrowser>
-#endif //QTAV_HAVE(WIDGETS)
 #include "QtAV/version.h"
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
@@ -71,46 +57,6 @@ bool isLogLevelSet() { return gLogLevelSet;}
 } //namespace Internal
 
 //TODO: auto add new depend libraries information
-void about()
-{
-#if QTAV_HAVE(WIDGETS)
-    //we should use new because a qobject will delete it's children
-    QTextBrowser *viewQtAV = new QTextBrowser;
-    QTextBrowser *viewFFmpeg = new QTextBrowser;
-    viewQtAV->setOpenExternalLinks(true);
-    viewFFmpeg->setOpenExternalLinks(true);
-    viewQtAV->setHtml(aboutQtAV_HTML());
-    viewFFmpeg->setHtml(aboutFFmpeg_HTML());
-    QTabWidget *tab = new QTabWidget;
-    tab->addTab(viewQtAV, "QtAV");
-    tab->addTab(viewFFmpeg, "FFmpeg");
-    QPushButton *btn = new QPushButton(QObject::tr("Ok"));
-    QHBoxLayout *btnLayout = new QHBoxLayout;
-    btnLayout->addStretch();
-    btnLayout->addWidget(btn);
-    QDialog dialog;
-    dialog.setWindowTitle(QObject::tr("About") + "  QtAV");
-    QVBoxLayout *layout = new QVBoxLayout;
-    dialog.setLayout(layout);
-    layout->addWidget(tab);
-    layout->addLayout(btnLayout);
-    QObject::connect(btn, SIGNAL(clicked()), &dialog, SLOT(accept()));
-    dialog.exec();
-#else
-    aboutQtAV();
-    aboutFFmpeg();
-#endif //QTAV_HAVE(WIDGETS)
-}
-
-void aboutFFmpeg()
-{
-#if QTAV_HAVE(WIDGETS)
-    QMessageBox::about(0, QObject::tr("About FFmpeg"), aboutFFmpeg_HTML());
-#else
-    qDebug() << aboutFFmpeg_PlainText();
-#endif
-}
-
 QString aboutFFmpeg_PlainText()
 {
     return aboutFFmpeg_HTML().remove(QRegExp("<[^>]*>"));
@@ -212,15 +158,6 @@ QString aboutFFmpeg_HTML()
         info = Internal::get_ffmpeg_component_info(info);
     }
     return text;
-}
-
-void aboutQtAV()
-{
-#if QTAV_HAVE(WIDGETS)
-    QMessageBox::about(0, QObject::tr("About QtAV"), aboutQtAV_HTML());
-#else
-    qDebug() << aboutQtAV_PlainText();
-#endif //QTAV_HAVE(WIDGETS)
 }
 
 QString aboutQtAV_PlainText()

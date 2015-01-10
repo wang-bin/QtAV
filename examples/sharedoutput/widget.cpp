@@ -1,6 +1,6 @@
 /******************************************************************************
     Shared output:  shared renderer test
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,38 +20,11 @@
 
 #include "widget.h"
 #include <QtAV/AVPlayer.h>
-#include <QtAV/WidgetRenderer.h>
+#include <QtAVWidgets>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFileDialog>
 #include <QTimer>
-
-/*
-    rtsp://122.192.35.80:554/live/tv01 江苏城市
-    rtsp://122.192.35.80:554/live/tv02 江苏卫视
-    rtsp://122.192.35.80:554/live/tv03 江苏综艺
-    rtsp://122.192.35.80:554/live/tv07 CCTV4
-    rtsp://122.192.35.80:554/live/tv08 旅游卫视
-    rtsp://122.192.35.80:554/live/tv08 NJTV新闻综合
-    rtsp://122.192.35.80:554/live/tv10 湖南卫视
-    rtsp://122.192.35.80:554/live/tv11 东方卫视
-    rtsp://122.192.35.80:554/live/tv12 档案（北京）
-    rtsp://122.192.35.80:554/live/tv14 CCTV1
-    rtsp://122.192.35.80:554/live/tv16 辽宁卫视
-    rtsp://122.192.35.80:554/live/tv20 MursTv
-    rtsp://122.192.35.80:554/live/tv28 幸福Tv
-    rtsp://122.192.35.80:554/live/tv30 CCTV3
-    rtsp://122.192.35.80:554/live/tv31 CCTV6
-    rtsp://122.192.35.80:554/live/tv50 靓妆
-    rtsp://122.192.35.80:554/live/tv51 江苏公共
-    rtsp://122.192.35.80:554/live/tv60 新闻综合（江苏）
-    rtsp://122.192.35.80:554/live/tv61 新闻
-    rtsp://122.192.35.80:554/live/tv62 盐城
-    rtsp://122.192.35.80:554/live/tv63
-    rtsp://122.192.35.80:554/live/tv73 新闻综合
-
-    rtmp://mirtv.cdnvideo.ru/mirtv-live/mirtv300.sdp
-*/
 
 using namespace QtAV;
 

@@ -4,6 +4,12 @@ TEMPLATE = subdirs
 CONFIG -= ordered
 SUBDIRS = libqtav tools
 libqtav.file = src/libQtAV.pro
+!no-widgets {
+  SUBDIRS += libqtavwidgets
+  libqtavwidgets.file = widgets/libQtAVWidgets.pro
+  libqtavwidgets.depends = libqtav
+  examples.depends += libqtavwidgets #TODO: enable widgets based examples
+}
 greaterThan(QT_MAJOR_VERSION, 4) {
   # qtHaveModule does not exist in Qt5.0
   isEqual(QT_MINOR_VERSION, 0)|qtHaveModule(quick) {
@@ -19,7 +25,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 !android:!no-tests {
   SUBDIRS += tests
-  tests.depends += libqtav
+  tests.depends += libqtav libqtavwidgets
 }
 OTHER_FILES += README.md TODO.txt Changelog
 OTHER_FILES += templates/vo.h templates/vo.cpp templates/COPYRIGHT.h templates/mkclass.sh

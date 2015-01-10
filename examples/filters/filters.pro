@@ -7,6 +7,7 @@ TARGET = filters
 STATICLINK = 0
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
+include($$PROJECTROOT/widgets/libQtAVWidgets.pri)
 preparePaths($$OUT_PWD/../../out)
 
 SOURCES += \

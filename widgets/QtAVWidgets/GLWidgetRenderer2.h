@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,33 +19,40 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_OPENGLWIDGETRENDERER_H
-#define QTAV_OPENGLWIDGETRENDERER_H
+#ifndef QTAV_GLWIDGETRENDERER2_H
+#define QTAV_GLWIDGETRENDERER2_H
 
-#include <QtWidgets/QOpenGLWidget>
+#include <QtAVWidgets/global.h>
+#include <QtOpenGL/QGLWidget>
 #include <QtAV/OpenGLRendererBase.h>
 
 namespace QtAV {
 
-class OpenGLWidgetRendererPrivate;
-class Q_AV_EXPORT OpenGLWidgetRenderer : public QOpenGLWidget, public OpenGLRendererBase
+class GLWidgetRenderer2Private;
+/*!
+ * \brief The GLWidgetRenderer2 class
+ * Renderering video frames using GLSL. A more generic high level class OpenGLVideo is used internally.
+ * TODO: for Qt5, no QtOpenGL, use QWindow instead.
+ */
+class Q_AVWIDGETS_EXPORT GLWidgetRenderer2 : public QGLWidget, public OpenGLRendererBase
 {
-    DPTR_DECLARE_PRIVATE(OpenGLWidgetRenderer)
+    Q_OBJECT
+    DPTR_DECLARE_PRIVATE(GLWidgetRenderer2)
 public:
-    explicit OpenGLWidgetRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual void onUpdate() Q_DECL_OVERRIDE;
+    GLWidgetRenderer2(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
+    virtual void onUpdate();
 
-    virtual VideoRendererId id() const Q_DECL_OVERRIDE;
-    virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
+    virtual VideoRendererId id() const;
+    virtual QWidget* widget() { return this; }
 protected:
-    virtual void initializeGL() Q_DECL_OVERRIDE;
-    virtual void paintGL() Q_DECL_OVERRIDE;
-    virtual void resizeGL(int w, int h) Q_DECL_OVERRIDE;
-    virtual void resizeEvent(QResizeEvent *e) Q_DECL_OVERRIDE;
-    virtual void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
+    virtual void initializeGL();
+    virtual void paintGL();
+    virtual void resizeGL(int w, int h);
+    virtual void resizeEvent(QResizeEvent *);
+    virtual void showEvent(QShowEvent *);
 };
-typedef OpenGLWidgetRenderer VideoRendererOpenGLWidget;
+typedef GLWidgetRenderer2 VideoRendererGLWidget2;
 
 } //namespace QtAV
 
-#endif // QTAV_OPENGLWIDGETRENDERER_H
+#endif // QTAV_GLWIDGETRENDERER2_H

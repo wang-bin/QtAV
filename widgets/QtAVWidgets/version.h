@@ -1,6 +1,6 @@
 /******************************************************************************
-    VideoRendererTypes: type id and manually id register function
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,19 +19,24 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_VIDEORENDERERTYPES_H
-#define QTAV_VIDEORENDERERTYPES_H
+#ifndef QTAVWIDGETS_VERSION_H
+#define QTAVWIDGETS_VERSION_H
 
-#include <QtAV/VideoRenderer.h>
+#include <QtAV/version.h>
 
-namespace QtAV {
+#define QTAVWIDGETS_MAJOR QTAV_MAJOR    //((QTAV_VERSION&0xff0000)>>16)
+#define QTAVWIDGETS_MINOR QTAV_MAJOR    //((QTAV_VERSION&0xff00)>>8)
+#define QTAVWIDGETS_PATCH QTAV_MAJOR    //(QTAV_VERSION&0xff)
 
-//Q_AV_EXPORT(dllexport/import) is needed if used out of the library
-//TODO graphics item?
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWindow;
 
-Q_AV_EXPORT void VideoRenderer_RegisterAll();
+#define QTAVWIDGETS_VERSION_MAJOR(V) ((V & 0xff0000) >> 16)
+#define QTAVWIDGETS_VERSION_MINOR(V) ((V & 0xff00) >> 8)
+#define QTAVWIDGETS_VERSION_PATCH(V) (V & 0xff)
 
-} //namespace QtAV
+#define QTAVWIDGETS_VERSION QTAV_VERSION_CHK(QTAVWIDGETS_MAJOR, QTAVWIDGETS_MINOR, QTAVWIDGETS_PATCH)
 
-#endif // QTAV_VIDEORENDERERTYPES_H
+/* the following are compile time version */
+/* C++11 requires a space between literal and identifier */
+#define QTAVWIDGETS_VERSION_STR        TOSTR(QTAVWIDGETS_MAJOR) "." TOSTR(QTAVWIDGETS_MINOR) "." TOSTR(QTAVWIDGETS_PATCH)
+
+#endif // QTAVWIDGETS_VERSION_H

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/GLWidgetRenderer.h"
+#include "QtAVWidgets/GLWidgetRenderer.h"
 #include "QtAV/private/VideoRenderer_p.h"
 #include "utils/OpenGLHelper.h"
 #include <QtCore/QCoreApplication>
@@ -44,7 +44,6 @@
 
 #include "QtAV/ColorTransform.h"
 #include "QtAV/FilterContext.h"
-#include "utils/Logger.h"
 
 #define UPLOAD_ROI 0
 #define ROI_TEXCOORDS 1
@@ -796,6 +795,11 @@ GLWidgetRenderer::GLWidgetRenderer(QWidget *parent, const QGLWidget* shareWidget
     d.filter_context = VideoFilterContext::create(VideoFilterContext::QtPainter);
     d.filter_context->paint_device = this;
     d.filter_context->painter = d.painter;
+}
+
+VideoRendererId GLWidgetRenderer::id() const
+{
+    return VideoRendererId_GLWidget;
 }
 
 bool GLWidgetRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const

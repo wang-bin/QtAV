@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,10 +19,9 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/OpenGLWidgetRenderer.h"
+#include "QtAVWidgets/OpenGLWidgetRenderer.h"
 #include "QtAV/private/OpenGLRendererBase_p.h"
 #include <QResizeEvent>
-#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -33,6 +32,11 @@ public:
         : OpenGLRendererBasePrivate(pd)
     {}
 };
+
+VideoRendererId OpenGLWidgetRenderer::id() const
+{
+    return VideoRendererId_OpenGLWidget;
+}
 
 OpenGLWidgetRenderer::OpenGLWidgetRenderer(QWidget *parent, Qt::WindowFlags f):
     QOpenGLWidget(parent, f)

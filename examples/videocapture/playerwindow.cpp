@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,7 +25,7 @@
 #include <QLayout>
 #include <QMessageBox>
 #include <QFileDialog>
-
+#include <QtAVWidgets>
 using namespace QtAV;
 
 PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
@@ -34,7 +34,7 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
     m_player = new AVPlayer(this);
     QVBoxLayout *vl = new QVBoxLayout();
     setLayout(vl);
-    m_vo = new VideoOutput(this);
+    m_vo = new VideoOutput(VideoRendererId_GLWidget2, this);
     if (!m_vo->widget()) {
         QMessageBox::warning(0, "QtAV error", "Can not create video renderer");
         return;

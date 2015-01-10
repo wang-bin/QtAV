@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,75 +19,62 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QAV_GRAPHICSITEMRENDERER_H
-#define QAV_GRAPHICSITEMRENDERER_H
+#ifndef QTAV_GLWIDGETRENDERER_H
+#define QTAV_GLWIDGETRENDERER_H
 
-#include <QtAV/QPainterRenderer.h>
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtWidgets/QGraphicsWidget>
-#else
-#include <QtGui/QGraphicsWidget>
+#include <QtAVWidgets/global.h>
+#include <QtAV/VideoRenderer.h>
+#include <QtOpenGL/QGLWidget>
+// TODO: QGLFunctions is in Qt4.8+. meego is 4.7
+#define QTAV_HAVE_QGLFUNCTIONS QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+#if QTAV_HAVE(QGLFUNCTIONS)
+#include <QtOpenGL/QGLFunctions>
 #endif
-
-//QGraphicsWidget will lose focus forever if TextItem inserted text. Why?
-#define CONFIG_GRAPHICSWIDGET 0
-#if CONFIG_GRAPHICSWIDGET
-#define GraphicsWidget QGraphicsWidget
-#else
-#define GraphicsWidget QGraphicsObject
-#endif
-
 namespace QtAV {
 
-class GraphicsItemRendererPrivate;
-class Q_AV_EXPORT GraphicsItemRenderer : public GraphicsWidget, public QPainterRenderer
+class GLWidgetRendererPrivate;
+class Q_AVWIDGETS_EXPORT GLWidgetRenderer : public QGLWidget, public VideoRenderer
+#if QTAV_HAVE(QGLFUNCTIONS) //TODO: why use QT_VERSION will result in moc error?
+        , public QGLFunctions
+#endif //QTAV_HAVE(QGLFUNCTIONS)
 {
     Q_OBJECT
-    DPTR_DECLARE_PRIVATE(GraphicsItemRenderer)
-    Q_PROPERTY(bool opengl READ isOpenGL WRITE setOpenGL NOTIFY openGLChanged)
+    DPTR_DECLARE_PRIVATE(GLWidgetRenderer)
 public:
-    GraphicsItemRenderer(QGraphicsItem * parent = 0);
+    GLWidgetRenderer(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     virtual VideoRendererId id() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    virtual QWidget* widget() { return this; }
 
-    QRectF boundingRect() const;
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-    virtual QGraphicsItem* graphicsItem() { return this; }
-
-    /*!
-     * \brief isOpenGL
-     * true: user set to enabling opengl renderering. if viewport is not GLWidget, nothing will be rendered
-     * false: otherwise. opengl resources in QtAV (e.g. shader manager) will be released later
-     */
-    bool isOpenGL() const;
-    void setOpenGL(bool o);
-signals:
-    void openGLChanged();
 protected:
-    GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
-
     virtual bool receiveFrame(const VideoFrame& frame);
     virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
     //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame();
-#if CONFIG_GRAPHICSWIDGET
-    virtual bool event(QEvent *event);
-#else
-    //virtual bool sceneEvent(QEvent *event);
-#endif //CONFIG_GRAPHICSWIDGET
-
+    virtual void initializeGL();
+    virtual void paintGL();
+    virtual void resizeGL(int w, int h);
+    virtual void resizeEvent(QResizeEvent *);
+    virtual void showEvent(QShowEvent *);
 private:
     virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode);
     virtual void onSetOutAspectRatio(qreal ratio);
     virtual bool onSetOrientation(int value);
+    /*!
+     * \brief onSetBrightness
+     *  only works for GLSL. otherwise return false, means that do nothing, brightness() does not change.
+     * \return
+     */
     virtual bool onSetBrightness(qreal b);
     virtual bool onSetContrast(qreal c);
     virtual bool onSetHue(qreal h);
     virtual bool onSetSaturation(qreal s);
-};
-typedef GraphicsItemRenderer VideoRendererGraphicsItem;
-}
 
-#endif // QAV_GRAPHICSITEMRENDERER_H
+};
+typedef GLWidgetRenderer VideoRendererGLWidget;
+
+} //namespace QtAV
+
+#endif // QTAV_GLWidgetRenderer_H

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,14 +19,13 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/WidgetRenderer.h"
+#include "QtAVWidgets/WidgetRenderer.h"
 #include "QtAV/private/QPainterRenderer_p.h"
 #include <QtGui/QFont>
 #include <QtGui/QPainter>
 #include <QApplication>
 #include <QResizeEvent>
 #include "QtAV/Filter.h"
-#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -35,6 +34,11 @@ class WidgetRendererPrivate : public QPainterRendererPrivate
 public:
     virtual ~WidgetRendererPrivate(){}
 };
+
+VideoRendererId WidgetRenderer::id() const
+{
+    return VideoRendererId_Widget;
+}
 
 WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     QWidget(parent, f),QPainterRenderer(*new WidgetRendererPrivate())
