@@ -1,7 +1,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS = common
-!android{
+!no-widgets:!android {
 SUBDIRS += \
     sharedoutput \
     simpleplayer \
