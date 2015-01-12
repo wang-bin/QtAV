@@ -24,6 +24,23 @@
 
 namespace QtAV {
 
+// TODO: is QOpenGLWidgetPaintDevice required?
+class QOpenGLWidgetPaintDevice : public QOpenGLPaintDevice
+{
+public:
+    QOpenGLWidgetPaintDevice(QOpenGLWidget *widget)
+            : QOpenGLPaintDevice()
+            , w(widget)
+    { }
+    void ensureActiveTarget() Q_DECL_OVERRIDE {
+        if (QOpenGLContext::currentContext() != w->context()) {
+            w->makeCurrent();
+        }
+    }
+private:
+    QOpenGLWidget *w;
+};
+
 QOpenGLWidget::QOpenGLWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
     , m_initialized(false)
@@ -83,6 +100,13 @@ void QOpenGLWidget::doneCurrent()
 QOpenGLContext *QOpenGLWidget::context() const
 {
     return m_context;
+}
+
+QPaintDevice* QOpenGLWidget::redirected(QPoint *offset) const
+{
+    Q_UNUSED(offset);
+    // TODO: check backing store like Qt does
+    return m_paintDevice;
 }
 
 void QOpenGLWidget::initializeGL()
@@ -149,7 +173,7 @@ void QOpenGLWidget::initialize()
         qWarning("QOpenGLWidget: Failed to make context current");
         return;
     }
-    m_paintDevice = new QOpenGLPaintDevice();
+    m_paintDevice = new QOpenGLWidgetPaintDevice(this);
     m_paintDevice->setSize(size() * devicePixelRatio());
     m_paintDevice->setDevicePixelRatio(devicePixelRatio());
     m_initialized = true;
@@ -161,11 +185,12 @@ void QOpenGLWidget::render()
     if (m_fakeHidden || !m_initialized)
         return;
     // QOpenGLContext::swapBuffers() called with non-exposed window, behavior is undefined
-    if (!windowHandle() || !windowHandle()->isExposed())
+    QWindow *win = windowHandle();
+    if (!win || !win->isExposed())
         return;
     makeCurrent();
     invokeUserPaint();
-    m_context->swapBuffers(windowHandle());
+    m_context->swapBuffers(win);
 }
 
 void QOpenGLWidget::invokeUserPaint()

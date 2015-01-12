@@ -51,6 +51,7 @@ public:
     void doneCurrent();
     QOpenGLContext *context() const;
 protected:
+    QPaintDevice* redirected(QPoint *offset) const Q_DECL_OVERRIDE;
     virtual void initializeGL();
     virtual void resizeGL(int w, int h);
     virtual void paintGL();
