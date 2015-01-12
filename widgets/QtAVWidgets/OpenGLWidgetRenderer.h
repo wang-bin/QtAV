@@ -23,11 +23,15 @@
 #define QTAV_OPENGLWIDGETRENDERER_H
 
 #include <QtAVWidgets/global.h>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #include <QtWidgets/QOpenGLWidget>
+#else
+#include <QtAVWidgets/QOpenGLWidget.h>
+#endif //QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #include <QtAV/OpenGLRendererBase.h>
 
 namespace QtAV {
-
+// do not define QOpenGLWidget here with ifdef to avoid moc error
 class OpenGLWidgetRendererPrivate;
 class Q_AVWIDGETS_EXPORT OpenGLWidgetRenderer : public QOpenGLWidget, public OpenGLRendererBase
 {

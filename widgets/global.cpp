@@ -37,7 +37,7 @@
 #if QTAV_HAVE(GL1)
 #include "QtAVWidgets/GLWidgetRenderer.h"
 #endif //QTAV_HAVE(GL1)
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include "QtAVWidgets/OpenGLWidgetRenderer.h"
 #endif
 #include "QtAV/private/factory.h"
@@ -96,7 +96,7 @@ void RegisterVideoRendererGLWidget2_Man()
     FACTORY_REGISTER_ID_MAN(VideoRenderer, GLWidget2, "QGLWidegt2")
 }
 #endif //QTAV_HAVE(GL)
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #if AUTO_REGISTER
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, OpenGLWidget, "OpenGLWidget")
 #else
@@ -119,7 +119,7 @@ void registerRenderers()
     const std::vector<VideoRendererId> ids(VideoRendererFactory::registeredIds());
     if (std::find(ids.begin(), ids.end(), VideoRendererId_Widget) != ids.end())
         return;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     RegisterVideoRendererOpenGLWidget_Man();
 #endif
 #if QTAV_HAVE(GL)

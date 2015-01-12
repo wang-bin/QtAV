@@ -58,6 +58,7 @@ SDK_HEADERS *= \
     QtAVWidgets/QtAVWidgets.h \
     QtAVWidgets/global.h \
     QtAVWidgets/version.h \
+    QtAVWidgets/OpenGLWidgetRenderer.h \
     QtAVWidgets/GraphicsItemRenderer.h \
     QtAVWidgets/WidgetRenderer.h
 
@@ -65,9 +66,14 @@ HEADERS *= $$QTAVSRC/output/video/VideoOutputEventFilter.h
 SOURCES *= \
     global.cpp \
     $$QTAVSRC/output/video/VideoOutputEventFilter.cpp \
+    $$QTAVSRC/output/video/OpenGLWidgetRenderer.cpp \
     $$QTAVSRC/output/video/GraphicsItemRenderer.cpp \
     $$QTAVSRC/output/video/WidgetRenderer.cpp
 
+!config_opengl {
+  SDK_HEADERS *= QtAVWidgets/QOpenGLWidget.h
+  SOURCES *= QOpenGLWidget.cpp
+}
 config_gl {
   DEFINES *= QTAV_HAVE_GL=1
   SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer2.cpp
@@ -78,10 +84,6 @@ config_gl {
     #SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer.cpp
     #SDK_HEADERS += QtAVWidgets/GLWidgetRenderer.h
   }
-}
-config_opengl {
-  SDK_HEADERS *= QtAVWidgets/OpenGLWidgetRenderer.h
-  SOURCES *= $$QTAVSRC/output/video/OpenGLWidgetRenderer.cpp
 }
 config_gdiplus {
   DEFINES *= QTAV_HAVE_GDIPLUS=1
