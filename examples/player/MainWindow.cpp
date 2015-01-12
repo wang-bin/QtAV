@@ -499,8 +499,9 @@ void MainWindow::setupUi()
     //TODO: AVOutput.name,detail(description). check whether it is available
     mpVOAction = subMenu->addAction("QPainter");
     mpVOAction->setData(VideoRendererId_Widget);
-    subMenu->addAction("OpenGL Widget 2")->setData(VideoRendererId_GLWidget2);
-    subMenu->addAction("OpenGL Widget")->setData(VideoRendererId_GLWidget);
+    subMenu->addAction("OpenGLWidget")->setData(VideoRendererId_OpenGLWidget);
+    subMenu->addAction("GLWidget 2")->setData(VideoRendererId_GLWidget2);
+    subMenu->addAction("GLWidget")->setData(VideoRendererId_GLWidget);
     subMenu->addAction("GDI+")->setData(VideoRendererId_GDI);
     subMenu->addAction("Direct2D")->setData(VideoRendererId_Direct2D);
     subMenu->addAction("XV")->setData(VideoRendererId_XV);
@@ -676,13 +677,15 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     }
     mpVOAction->setChecked(true);
     mpTitle->setText(mpVOAction->text());
-    if (mpPlayer->renderer()->id() == VideoRendererId_GLWidget
-            || mpPlayer->renderer()->id() == VideoRendererId_GLWidget2
+    const VideoRendererId vid = mpPlayer->renderer()->id();
+    if (vid == VideoRendererId_GLWidget
+            || vid == VideoRendererId_GLWidget2
+            || vid == VideoRendererId_OpenGLWidget
             ) {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale << VideoEQConfigPage::GLSL);
         mpVideoEQ->setEngine(VideoEQConfigPage::GLSL);
         mpPlayer->renderer()->forcePreferredPixelFormat(true);
-    } else if (mpPlayer->renderer()->id() == VideoRendererId_XV) {
+    } else if (vid == VideoRendererId_XV) {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::XV);
         mpVideoEQ->setEngine(VideoEQConfigPage::XV);
         mpPlayer->renderer()->forcePreferredPixelFormat(true);
