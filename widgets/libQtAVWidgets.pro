@@ -4,7 +4,6 @@ TARGET = QtAVWidgets
 QT += gui
 config_gl: QT += opengl
 greaterThan(QT_MAJOR_VERSION, 4) {
-  greaterThan(QT_MINOR_VERSION, 3): CONFIG += config_opengl
   # qtHaveModule does not exist in Qt5.0
   qtHaveModule(widgets) {
     QT *= widgets
@@ -58,7 +57,6 @@ SDK_HEADERS *= \
     QtAVWidgets/QtAVWidgets.h \
     QtAVWidgets/global.h \
     QtAVWidgets/version.h \
-    QtAVWidgets/OpenGLWidgetRenderer.h \
     QtAVWidgets/GraphicsItemRenderer.h \
     QtAVWidgets/WidgetRenderer.h
 
@@ -66,14 +64,18 @@ HEADERS *= $$QTAVSRC/output/video/VideoOutputEventFilter.h
 SOURCES *= \
     global.cpp \
     $$QTAVSRC/output/video/VideoOutputEventFilter.cpp \
-    $$QTAVSRC/output/video/OpenGLWidgetRenderer.cpp \
     $$QTAVSRC/output/video/GraphicsItemRenderer.cpp \
     $$QTAVSRC/output/video/WidgetRenderer.cpp
 
-!config_opengl {
-  SDK_HEADERS *= QtAVWidgets/QOpenGLWidget.h
-  SOURCES *= QOpenGLWidget.cpp
+greaterThan(QT_MAJOR_VERSION, 4) {
+  SDK_HEADERS *= QtAVWidgets/OpenGLWidgetRenderer.h
+  SOURCES *= $$QTAVSRC/output/video/OpenGLWidgetRenderer.cpp
+  lessThan(QT_MINOR_VERSION, 4) {
+    SDK_HEADERS *= QtAVWidgets/QOpenGLWidget.h
+    SOURCES *= QOpenGLWidget.cpp
+  }
 }
+
 config_gl {
   DEFINES *= QTAV_HAVE_GL=1
   SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer2.cpp
