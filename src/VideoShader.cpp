@@ -414,6 +414,7 @@ bool VideoMaterial::bind()
             bindPlane((i + 1) % nb_planes); // why? i: quick items display wrong textures
         }
         d.update_texure = false;
+        d.frame = VideoFrame();
         return true;
     }
     for (int i = 0; i < nb_planes; ++i) {
@@ -646,8 +647,8 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
         if (fmt.bytesPerPixel(i) == 2 && fmt.planeCount() == 3) {
             //data_type[i] = GL_UNSIGNED_SHORT;
         }
-        int bpp_gl = OpenGLHelper::bytesOfGLFormat(data_format[i], data_type[i]);
-        int pad = std::ceil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
+        const int bpp_gl = OpenGLHelper::bytesOfGLFormat(data_format[i], data_type[i]);
+        const int pad = std::ceil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
         texture_size[i].setWidth(std::ceil((qreal)texture_size[i].width()/(qreal)bpp_gl));
         texture_upload_size[i].setWidth(std::ceil((qreal)texture_upload_size[i].width()/(qreal)bpp_gl));
         effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
@@ -691,6 +692,8 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
 
 bool VideoMaterialPrivate::updateTexturesIfNeeded()
 {
+    if (!update_texure) //video frame is already uploaded and displayed
+        return true;
     const VideoFormat &fmt = video_format;
     if (!fmt.isValid())
         return false;

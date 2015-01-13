@@ -165,10 +165,16 @@ void QQuickItemRenderer::drawFrame()
     if (isOpenGL()) {
         SGVideoNode *sgvn = static_cast<SGVideoNode*>(d.node);
         Q_ASSERT(sgvn);
-        sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), d.orientation);
         if (d.frame_changed)
             sgvn->setCurrentFrame(d.video_frame);
         d.frame_changed = false;
+        d.video_frame = VideoFrame();
+        sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), d.orientation);
+        return;
+    }
+    if (!d.frame_changed) {
+        static_cast<QSGSimpleTextureNode*>(d.node)->setRect(d.out_rect);
+        d.node->markDirty(QSGNode::DirtyGeometry);
         return;
     }
     if (d.image.isNull()) {
@@ -187,6 +193,8 @@ void QQuickItemRenderer::drawFrame()
     }
     static_cast<QSGSimpleTextureNode*>(d.node)->setTexture(d.texture);
     d.node->markDirty(QSGNode::DirtyGeometry);
+    d.frame_changed = false;
+    d.video_frame = VideoFrame();
 }
 
 QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePaintNodeData *data)
