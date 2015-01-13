@@ -62,7 +62,9 @@
 #include <QtAV/VideoOutput.h>
 //The following renderer headers can be removed
 #include <QtAV/QPainterRenderer.h>
-
+#if QT_VERSION >= QT_VERSION_CHECK(5,4,0)
+#include <QtAV/OpenGLWindowRenderer.h>
+#endif
 #include <QtAV/Subtitle.h>
 #include <QtAV/SubtitleFilter.h>
 
