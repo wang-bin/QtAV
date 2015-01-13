@@ -409,39 +409,34 @@ bool VideoMaterial::bind()
         return false;
     if (nb_planes > 4) //why?
         return false;
+    for (int i = 0; i < nb_planes; ++i) {
+        bindPlane((i + 1) % nb_planes, d.update_texure); // why? i: quick items display wrong textures
+    }
     if (d.update_texure) {
-        for (int i = 0; i < nb_planes; ++i) {
-            bindPlane((i + 1) % nb_planes); // why? i: quick items display wrong textures
-        }
         d.update_texure = false;
         d.frame = VideoFrame();
-        return true;
-    }
-    for (int i = 0; i < nb_planes; ++i) {
-        const int p = (i + 1) % nb_planes; // why? i: quick items display wrong textures
-        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
-// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
-#ifndef QT_OPENGL_DYNAMIC
-        glBindTexture(d.target, d.textures[p]);
-#else
-        QOpenGLContext::currentContext()->functions()->glBindTexture(d.target, d.textures[p]);
-#endif
     }
     return true;
 }
 
-void VideoMaterial::bindPlane(int p)
+void VideoMaterial::bindPlane(int p, bool updateTexture)
 {
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifdef QT_OPENGL_DYNAMIC
+#define glBindTextureDY(target, tex) QOpenGLContext::currentContext()->functions()->glBindTexture(target, tex)
+#else
+#define glBindTextureDY(target, tex) glBindTexture(target, tex)
+#endif
     DPTR_D(VideoMaterial);
+    if (!updateTexture) {
+        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
+        glBindTextureDY(d.target, d.textures[p]);
+        return;
+    }
     //setupQuality?
     if (d.frame.map(GLTextureSurface, &d.textures[p])) {
         OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
-// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
-#ifndef QT_OPENGL_DYNAMIC
-        glBindTexture(d.target, d.textures[p]);
-#else
-        QOpenGLContext::currentContext()->functions()->glBindTexture(d.target, d.textures[p]);
-#endif
+        glBindTextureDY(d.target, d.textures[p]);
         return;
     }
     // FIXME: why happens on win?
@@ -449,9 +444,9 @@ void VideoMaterial::bindPlane(int p)
         return;
     OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
     //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
-// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+    glBindTextureDY(d.target, d.textures[p]);
+    // for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
 #ifndef QT_OPENGL_DYNAMIC
-    glBindTexture(d.target, d.textures[p]);
     //d.setupQuality();
     // This is necessary for non-power-of-two textures
     glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -459,7 +454,6 @@ void VideoMaterial::bindPlane(int p)
     glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.frame.bits(p));
 #else
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
-    f->glBindTexture(d.target, d.textures[p]);
     //d.setupQuality();
     // This is necessary for non-power-of-two textures
     f->glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
