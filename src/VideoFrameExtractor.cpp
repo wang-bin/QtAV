@@ -143,14 +143,14 @@ public:
 
     bool checkAndOpen() {
         const bool loaded = demuxer.isLoaded(source);
-        if (loaded && decoder)
+        if (loaded && decoder && !demuxer.atEnd())
             return true;
         seek_count = 0;
         if (decoder) { // new source
             decoder->close();
             decoder.reset(0);
         }
-        if (!loaded) {
+        if (!loaded || demuxer.atEnd()) {
             demuxer.close();
             if (!demuxer.loadFile(source)) {
                 return false;
