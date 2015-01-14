@@ -182,8 +182,11 @@ void Packet::markEnd()
 const AVPacket *Packet::asAVPacket() const
 {
     if (d.constData()) {
-        if (d->initialized) //d.data() was 0 if d has not been accessed. now only contains avpkt, check d.constData() is engough
+        if (d->initialized) {//d.data() was 0 if d has not been accessed. now only contains avpkt, check d.constData() is engough
+            d->avpkt.data = (uint8_t*)data.constData();
+            d->avpkt.size = data.size();
             return &d->avpkt;
+        }
     } else {
         d = QSharedDataPointer<PacketPrivate>(new PacketPrivate());
     }
