@@ -200,7 +200,7 @@ void AudioThread::run()
         int decodedPos = 0;
         qreal delay = 0;
         //AudioFormat.durationForBytes() calculates int type internally. not accurate
-        AudioFormat &af = dec->resampler()->inAudioFormat();
+        AudioFormat &af = dec->resampler()->outAudioFormat();
         qreal byte_rate = af.bytesPerSecond();
         while (decodedSize > 0) {
             if (d.stop) {
@@ -212,6 +212,7 @@ void AudioThread::run()
             //AudioFormat.bytesForDuration
             const qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
             pkt.pts += chunk_delay;
+            pkt.dts += chunk_delay;
             QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
             if (has_ao) {
                 //TODO: volume filter and other filters!!!
