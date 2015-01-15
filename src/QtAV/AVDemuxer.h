@@ -77,12 +77,12 @@ public:
      * Read a packet from 1 of the streams. use packet() to get the result packet. packet() returns last valid packet.
      * So do not use packet() if readFrame() failed.
      * Call readFrame() and seek() in the same thread.
-     * \return false if error occurs, interrupted by user or time out(getInterruptTimeout())
+     * \return false if eof, error occurs, interrupted by user or time out(getInterruptTimeout())
      */
     bool readFrame();
     /*!
      * \brief packet
-     * If readFrame() return true, it's current readed packet, otherwise it's last packet().
+     * return the packet read by demuxer. packet is invalid if readFrame() returns false.
      */
     Packet packet() const;
     /*!

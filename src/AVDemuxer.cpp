@@ -289,12 +289,9 @@ bool AVDemuxer::readFrame()
             if (!eof) {
                 eof = true;
                 started_ = false;
-                m_pkt = Packet(); //flush
-                m_pkt.markEnd();
                 setMediaStatus(EndOfMedia);
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
-                return ret == AVERROR_EOF;
             }
             return false; //frames after eof are eof frames
         }

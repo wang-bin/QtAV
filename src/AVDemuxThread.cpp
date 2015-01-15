@@ -394,6 +394,18 @@ void AVDemuxThread::run()
         vqueue->setBlocking(true);
     }
     while (!end) {
+        if (end || demuxer->atEnd()) {
+            end = true;
+            //connect to stop is ok too
+            //avthread can stop. do not clear queue, make sure all data are played
+            if (audio_thread) {
+                audio_thread->setDemuxEnded(true);
+            }
+            if (video_thread) {
+                video_thread->setDemuxEnded(true);
+            }
+            break;
+        }
         processNextSeekTask();
         if (tryPause()) {
             continue; //the queue is empty and will block
@@ -405,27 +417,12 @@ void AVDemuxThread::run()
         }
         QMutexLocker locker(&buffer_mutex);
         Q_UNUSED(locker);
-        if (end) {
-            break;
-        }
         if (!demuxer->readFrame()) {
             continue;
         }
         index = demuxer->stream();
         pkt = demuxer->packet(); //TODO: how to avoid additional copy?
-        //connect to stop is ok too
-        if (pkt.isEnd()) {
-            qDebug("read end packet %d A:%d V:%d", index, audio_stream, video_stream);
-            end = true;
-            //avthread can stop. do not clear queue, make sure all data are played
-            if (audio_thread) {
-                audio_thread->setDemuxEnded(true);
-            }
-            if (video_thread) {
-                video_thread->setDemuxEnded(true);
-            }
-            break;
-        }
+
         /*1 is empty but another is enough, then do not block to
           ensure the empty one can put packets immediatly.
           But usually it will not happen, why?

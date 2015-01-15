@@ -25,8 +25,6 @@
 
 namespace QtAV {
 
-const qreal Packet::kEndPts = -0.618;
-
 class PacketPrivate : public QSharedData
 {
 public:
@@ -64,6 +62,7 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
     if (pkt->isCorrupt)
         qDebug("currupt packet. pts: %f", pkt->pts);
 
+    // from av_read_frame: pkt->pts can be AV_NOPTS_VALUE if the video format has B-frames, so it is better to rely on pkt->dts if you do not decompress the payload.
     // old code set pts as dts is valid
     if (avpkt->pts != AV_NOPTS_VALUE)
         pkt->pts = avpkt->pts * time_base;
@@ -171,12 +170,6 @@ Packet& Packet::operator =(const Packet& other)
 
 Packet::~Packet()
 {
-}
-
-void Packet::markEnd()
-{
-    qDebug("mark as end packet");
-    pts = kEndPts;
 }
 
 const AVPacket *Packet::asAVPacket() const
