@@ -272,15 +272,20 @@ bool AVDemuxer::readFrame()
 {
     if (!format_context)
         return false;
+    m_pkt = Packet();
     // no lock required because in AVDemuxThread read and seek are in the same thread
     AVPacket packet;
     mpInterrup->begin(InterruptHandler::Read);
     int ret = av_read_frame(format_context, &packet); //0: ok, <0: error/end
     mpInterrup->end();
 
-    if (ret != 0) {
+    if (ret < 0) {
         //ffplay: AVERROR_EOF || url_eof() || avsq.empty()
-        if (ret == AVERROR_EOF) { //end of file. FIXME: why no eof if replaying by seek(0)?
+        //end of file. FIXME: why no eof if replaying by seek(0)?
+        if (ret == AVERROR_EOF
+                // AVFMT_NOFILE(e.g. network streams) stream has no pb
+                // ffplay check pb && pb->error, mpv does not
+                || format_context->pb/* && format_context->pb->error*/) {
             if (!eof) {
                 eof = true;
                 started_ = false;
@@ -289,22 +294,13 @@ bool AVDemuxer::readFrame()
                 setMediaStatus(EndOfMedia);
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
-                return true;
+                return ret == AVERROR_EOF;
             }
-            //m_pkt.data = QByteArray(); //flush
-            //return true;
             return false; //frames after eof are eof frames
-        } else if (ret == AVERROR_INVALIDDATA) {
-            AVError::ErrorCode ec(AVError::ReadError);
-            QString msg(tr("error reading stream data"));
-            handleError(ret, &ec, msg);
-        } else if (ret == AVERROR(EAGAIN)) {
-            return true;
-        } else {
-            AVError::ErrorCode ec(AVError::ReadError);
-            QString msg(tr("error reading stream data"));
-            handleError(ret, &ec, msg);
         }
+        AVError::ErrorCode ec(AVError::ReadError);
+        QString msg(tr("error reading stream data"));
+        handleError(ret, &ec, msg);
         qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         return false;
     }
@@ -342,7 +338,7 @@ bool AVDemuxer::close()
 {
     m_network = false;
     has_attached_pic = false;
-    eof = false;
+    eof = false; // true and set false in load()?
     stream_idx = -1;
     if (auto_reset_stream) {
         wanted_audio_stream = wanted_subtitle_stream = wanted_video_stream = -1;
