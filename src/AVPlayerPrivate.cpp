@@ -130,7 +130,7 @@ AVPlayer::Private::Private()
 #if QTAV_HAVE(OPENSL)
             << AudioOutputId_OpenSL
 #endif
-#if QTAV_HAVE(DSound)
+#if QTAV_HAVE(DSOUND)
             << AudioOutputId_DSound
 #endif
               ;

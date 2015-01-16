@@ -585,7 +585,7 @@ void MainWindow::changeAudioTrack(QAction *action)
     }
     int track = action->data().toInt();
 
-    if (!mpPlayer->setAudioStream(track, true)) {
+    if (!mpPlayer->setAudioStream(track)) {
         action->toggle();
         return;
     }

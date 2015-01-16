@@ -55,7 +55,7 @@ void AudioOutput_RegisterAll()
     RegisterAudioOutputOpenSL_Man();
 #endif //QTAV_HAVE(OPENSL)
 #if QTAV_HAVE(DSOUND)
-    extern void RegisterAudioOutputDSound_Man();
+    RegisterAudioOutputDSound_Man();
 #endif
 }
 
