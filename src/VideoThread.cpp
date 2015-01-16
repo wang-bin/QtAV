@@ -108,6 +108,8 @@ VideoCapture* VideoThread::videoCapture() const
 
 void VideoThread::addCaptureTask()
 {
+    if (!isRunning())
+        return;
     class CaptureTask : public QRunnable {
     public:
         CaptureTask(VideoThread *vt) : vthread(vt) {}
@@ -490,7 +492,9 @@ void VideoThread::run()
             int undecoded = dec->undecodedSize();
             if (undecoded > 0) {
                 qDebug("undecoded size: %d", undecoded);
-                pkt.data.remove(0, pkt.data.size() - undecoded);
+                const int remove = pkt.data.size() - undecoded;
+                if (remove > 0)
+                    pkt.data.remove(0, pkt.data.size() - undecoded);
             } else {
                 pkt = Packet();
             }

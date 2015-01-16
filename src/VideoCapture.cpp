@@ -211,6 +211,7 @@ void VideoCapture::start()
         videoCaptureThreadPool()->start(task);
     } else {
         task->run();
+        delete task;
     }
 }
 
