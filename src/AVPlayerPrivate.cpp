@@ -77,6 +77,9 @@ AVPlayer::Private::Private()
     , repeat_max(0)
     , repeat_current(0)
     , timer_id(-1)
+    , audio_track(0)
+    , video_track(0)
+    , subtitle_track(0)
     , read_thread(0)
     , clock(new AVClock(AVClock::AudioClock))
     , vo(0)
@@ -257,15 +260,27 @@ void AVPlayer::Private::initStatistics()
 
 bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
 {
+    // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
+    // clear packets before stream changed
+    if (athread) {
+        athread->packetQueue()->clear();
+        athread->setDecoder(0);
+        athread->setOutput(0);
+    }
+    demuxer.setStreamIndex(AVDemuxer::AudioStream, audio_track);
     AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
     if (!aCodecCtx) {
         return false;
     }
     qDebug("has audio");
-    if (!adec) {
-        adec = new AudioDecoder();
-        connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
+    // TODO: no delete, just reset avctx and reopen
+    if (adec) {
+        adec->disconnect();
+        delete adec;
+        adec = 0;
     }
+    adec = new AudioDecoder();
+    connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
     statistics.audio.decoder = adec->name();
     adec->setCodecContext(aCodecCtx);
     adec->setOptions(ac_opt);
@@ -291,7 +306,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         //masterClock()->setClockType(AVClock::ExternalClock);
         //return;
     } else {
-        ao->close();
+        ao->close(); // TODO no reopen if format supported and not changed
         correct_audio_channels(aCodecCtx);
         AudioFormat af;
         af.setSampleRate(aCodecCtx->sample_rate);
@@ -357,15 +372,18 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
 
 bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
 {
+    // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
+    // clear packets before stream changed
+    if (vthread) {
+        vthread->packetQueue()->clear();
+        // TODO: wait for next keyframe
+        vthread->setDecoder(0); // TODO: not work now. must dynamic check decoder in every loop in VideoThread.run()
+    }
+    demuxer.setStreamIndex(AVDemuxer::VideoStream, video_track);
     AVCodecContext *vCodecCtx = demuxer.videoCodecContext();
     if (!vCodecCtx) {
         return false;
     }
-    /*
-    if (!vdec) {
-        vdec = VideoDecoderFactory::create(VideoDecoderId_FFmpeg);
-    }
-    */
     if (vdec) {
         vdec->disconnect();
         delete vdec;

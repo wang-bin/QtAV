@@ -201,7 +201,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , format_context(0)
     , a_codec_context(0)
     , v_codec_context(0)
-    , s_codec_contex(0)
+    , s_codec_context(0)
     , _file_name(fileName)
     , _iformat(0)
     , m_in(0)
@@ -340,7 +340,7 @@ bool AVDemuxer::close()
     if (auto_reset_stream) {
         wanted_audio_stream = wanted_subtitle_stream = wanted_video_stream = -1;
     }
-    a_codec_context = v_codec_context = s_codec_contex = 0;
+    a_codec_context = v_codec_context = s_codec_context = 0;
     audio_stream = video_stream = subtitle_stream = -2;
     audio_streams.clear();
     video_streams.clear();
@@ -441,8 +441,8 @@ bool AVDemuxer::seek(qint64 pos)
             a_codec_context->frame_number = 0;
         if (v_codec_context)
             v_codec_context->frame_number = 0; //TODO: why frame_number not changed after seek?
-        if (s_codec_contex)
-            s_codec_contex->frame_number = 0;
+        if (s_codec_context)
+            s_codec_context->frame_number = 0;
     }
     return true;
 }
@@ -472,7 +472,7 @@ bool AVDemuxer::isLoaded(const QString &fileName) const
         if (_file_name.startsWith("mms:")) // compare with mmsh:
             same_path = _file_name.midRef(5) == fileName.midRef(4);
     }
-    return same_path && (a_codec_context || v_codec_context || s_codec_contex);
+    return same_path && (a_codec_context || v_codec_context || s_codec_context);
 }
 
 bool AVDemuxer::isLoaded(QIODevice *dev) const
@@ -488,14 +488,14 @@ bool AVDemuxer::isLoaded(QIODevice *dev) const
     }
     if (qin->device() != dev)
         return false;
-    return a_codec_context || v_codec_context || s_codec_contex;
+    return a_codec_context || v_codec_context || s_codec_context;
 }
 
 bool AVDemuxer::isLoaded(AVInput *in) const
 {
     if (m_in != in)
         return false;
-    return a_codec_context || v_codec_context || s_codec_contex;
+    return a_codec_context || v_codec_context || s_codec_context;
 }
 
 bool AVDemuxer::loadFile(const QString &fileName)
@@ -670,23 +670,9 @@ bool AVDemuxer::prepareStreams()
     has_attached_pic = false;
     if (!findStreams())
         return false;
-    // wanted_xx_stream < nb_streams and +valied is always true because setStream() and setStreamIndex() ensure it correct
-    int stream = wanted_audio_stream < 0 ? audioStream() : wanted_audio_stream;
-    if (stream >= 0) {
-        a_codec_context = format_context->streams[stream]->codec;
-        audio_stream = stream; //audio_stream is the currently opened stream
-    }
-    stream = wanted_video_stream < 0 ? videoStream() : wanted_video_stream;
-    if (stream >= 0) {
-        v_codec_context = format_context->streams[stream]->codec;
-        video_stream = stream; //video_stream is the currently opened stream
-        has_attached_pic = !!(format_context->streams[stream]->disposition & AV_DISPOSITION_ATTACHED_PIC);
-    }
-    stream = wanted_subtitle_stream < 0 ? subtitleStream() : wanted_subtitle_stream;
-    if (stream >= 0) {
-        s_codec_contex = format_context->streams[stream]->codec;;
-        subtitle_stream = stream; //subtitle_stream is the currently opened stream
-    }
+    setStream(AudioStream, -1);
+    setStream(VideoStream, -1);
+    setStream(SubtitleStream, -1);
     return true;
 }
 
@@ -704,27 +690,22 @@ bool AVDemuxer::autoResetStream() const
 {
     return auto_reset_stream;
 }
-//TODO: code like setStream, simplify
+
 bool AVDemuxer::setStreamIndex(StreamType st, int index)
 {
     QList<int> *streams = 0;
     int *wanted_stream = 0;
+    int *wanted_index = 0;
     if (st == AudioStream) {
-        if (audio_stream == -2) {
-            audioStream();
-        }
+        wanted_index = &wanted_audio_index;
         wanted_stream = &wanted_audio_stream;
         streams = &audio_streams;
     } else if (st == VideoStream) {
-        if (video_stream == -2) {
-            videoStream();
-        }
+        wanted_index = &wanted_video_index;
         wanted_stream = &wanted_video_stream;
         streams = &video_streams;
     } else if (st == SubtitleStream) {
-        if (subtitle_stream == -2) {
-            subtitleStream();
-        }
+        wanted_index = &wanted_subtitle_index;
         wanted_stream = &wanted_subtitle_stream;
         streams = &subtitle_streams;
     }
@@ -737,36 +718,72 @@ bool AVDemuxer::setStreamIndex(StreamType st, int index)
         return false;
     }
     if (index >= streams->size() || index < 0) {
-        *wanted_stream = -1;
+        //*wanted_stream = -1;
         qWarning("invalid index %d (valid is 0~%d) for stream type %d.", index, streams->size(), st);
         return false;
     }
-    return setStream(st, streams->at(index));
+    if (!setStream(st, streams->at(index)))
+        return false;
+    *wanted_index = index;
+    return true;
 }
 
-bool AVDemuxer::setStream(StreamType st, int stream)
+bool AVDemuxer::setStream(StreamType st, int streamValue)
 {
     int *wanted_stream = 0;
+    int *wanted_index = 0;
+    int *stream = 0;
+    AVCodecContext **avctx = 0;
     QList<int> *streams = 0;
     if (st == AudioStream) {
+        stream = &audio_stream;
+        avctx = &a_codec_context;
+        wanted_index = &wanted_audio_index;
         wanted_stream = &wanted_audio_stream;
         streams = &audio_streams;
     } else if (st == VideoStream) {
+        stream = &video_stream;
+        avctx = &v_codec_context;
+        wanted_index = &wanted_video_index;
         wanted_stream = &wanted_video_stream;
         streams = &video_streams;
     } else if (st == SubtitleStream) {
+        stream = &subtitle_stream;
+        avctx = &s_codec_context;
+        wanted_index = &wanted_subtitle_index;
         wanted_stream = &wanted_subtitle_stream;
         streams = &subtitle_streams;
     }
-    if (!wanted_stream || *wanted_stream == stream) {
+    if (!wanted_stream/* || *wanted_stream == stream*/) { //init -2
         qWarning("stream type %d not found or stream %d not changed", st, stream);
         return false;
     }
-    if (!streams->contains(stream)) {
-        qWarning("%d is not a valid stream for stream type %d", stream, st);
-        return false;
+    //if (!streams->contains(stream)) {
+      //  qWarning("%d is not a valid stream for stream type %d", stream, st);
+        //return false;
+    //}
+    if (streamValue < -1)
+        streamValue = -1;
+    bool index_valid = *wanted_index >= 0 && *wanted_index < streams->size();
+    int s = AVERROR_STREAM_NOT_FOUND;
+    if (streamValue >= 0 || !index_valid) {
+        // or simply set s to streamValue if value is contained in streams?
+        s = av_find_best_stream(format_context
+                                , st == AudioStream ? AVMEDIA_TYPE_AUDIO
+                                : st == VideoStream ? AVMEDIA_TYPE_VIDEO
+                                : st == SubtitleStream ? AVMEDIA_TYPE_SUBTITLE
+                                : AVMEDIA_TYPE_UNKNOWN
+                                , streamValue, -1, NULL, 0);
+    } else { //index_valid
+        s = streams->at(*wanted_index);
     }
-    *wanted_stream = stream;
+    if (s == AVERROR_STREAM_NOT_FOUND)
+        return false;
+    // don't touch wanted index
+    *stream = s;
+    *wanted_stream = streamValue;
+    *avctx = format_context->streams[*stream]->codec;
+    has_attached_pic = !!(format_context->streams[*stream]->disposition & AV_DISPOSITION_ATTACHED_PIC);
     return true;
 }
 
@@ -883,98 +900,31 @@ QList<int> AVDemuxer::streams(StreamType st) const
 
 int AVDemuxer::audioStream() const
 {
-    if (audio_stream != -2) //-2: not parsed, -1 not found.
-        return audio_stream;
-    if (!format_context)
-        return -2;
-    audio_stream = -1;
-    for (unsigned int i=0; i<format_context->nb_streams; ++i) {
-        if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-            audio_streams.push_back(i);
-        }
-    }
-    if (!audio_streams.isEmpty()) {
-        // ffplay use video stream as related_stream. find order: v-a-s
-        // if ff has no av_find_best_stream, add it and return 0
-        audio_stream = av_find_best_stream(format_context, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
-        //audio_stream = audio_streams.first();
-    }
-    if (audio_stream < 0) {
-        qDebug("audio stream not found: %s", av_err2str(audio_stream));
-        audio_stream = -1;
-    }
     return audio_stream;
 }
 
 QList<int> AVDemuxer::audioStreams() const
 {
-    if (audio_stream == -2) { //not parsed
-        audioStream();
-    }
     return audio_streams;
 }
 
 int AVDemuxer::videoStream() const
 {
-    if (video_stream != -2) //-2: not parsed, -1 not found.
-        return video_stream;
-    if (!format_context)
-        return -2;
-    video_stream = -1;
-    for (unsigned int i=0; i<format_context->nb_streams; ++i) {
-        if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-            video_streams.push_back(i);
-        }
-    }
-    if (!video_streams.isEmpty()) {
-        // ffplay use video stream as related_stream. find order: v-a-s
-        // if ff has no av_find_best_stream, add it and return 0
-        video_stream = av_find_best_stream(format_context, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
-        //audio_stream = audio_streams.first();
-    }
-    if (video_stream < 0) {
-        qDebug("video stream not found: %s", av_err2str(video_stream));
-        video_stream = -1;
-    }
     return video_stream;
 }
 
 QList<int> AVDemuxer::videoStreams() const
 {
-    if (video_stream == -2) { //not parsed
-        videoStream();
-    }
     return video_streams;
 }
 
 int AVDemuxer::subtitleStream() const
 {
-    if (subtitle_stream != -2) //-2: not parsed, -1 not found.
-        return subtitle_stream;
-    subtitle_stream = -1;
-    for (unsigned int i=0; i<format_context->nb_streams; ++i) {
-        if(format_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_SUBTITLE) {
-            subtitle_streams.push_back(i);
-        }
-    }
-    if (!subtitle_streams.isEmpty()) {
-        // ffplay use video stream as related_stream. find order: v-a-s
-        // if ff has no av_find_best_stream, add it and return 0
-        subtitle_stream = av_find_best_stream(format_context, AVMEDIA_TYPE_SUBTITLE, -1, -1, NULL, 0);
-        //audio_stream = audio_streams.first();
-    }
-    if (subtitle_stream < 0) {
-        qDebug("subtitle stream not found: %s", av_err2str(subtitle_stream));
-        subtitle_stream = -1;
-    }
     return subtitle_stream;
 }
 
 QList<int> AVDemuxer::subtitleStreams() const
 {
-    if (subtitle_stream == -2) { //not parsed
-        subtitleStream();
-    }
     return subtitle_streams;
 }
 
@@ -992,10 +942,7 @@ int AVDemuxer::height() const
 AVCodecContext* AVDemuxer::audioCodecContext(int stream) const
 {
     if (stream < 0)
-        stream = audioStream();
-    if (stream < 0) {
-        return 0;
-    }
+        return a_codec_context;
     if (stream > (int)format_context->nb_streams)
         return 0;
     return format_context->streams[stream]->codec;
@@ -1004,10 +951,7 @@ AVCodecContext* AVDemuxer::audioCodecContext(int stream) const
 AVCodecContext* AVDemuxer::videoCodecContext(int stream) const
 {
     if (stream < 0)
-        stream = videoStream();
-    if (stream < 0) {
-        return 0;
-    }
+        return v_codec_context;
     if (stream > (int)format_context->nb_streams)
         return 0;
     return format_context->streams[stream]->codec;
@@ -1016,10 +960,7 @@ AVCodecContext* AVDemuxer::videoCodecContext(int stream) const
 AVCodecContext* AVDemuxer::subtitleCodecContext(int stream) const
 {
     if (stream < 0)
-        stream = subtitleStream();
-    if (stream < 0) {
-        return 0;
-    }
+        return s_codec_context;
     if (stream > (int)format_context->nb_streams)
         return 0;
     return format_context->streams[stream]->codec;
@@ -1092,19 +1033,10 @@ bool AVDemuxer::findStreams()
         type = format_context->streams[i]->codec->codec_type;
         if (type == AVMEDIA_TYPE_VIDEO) {
             video_streams.push_back(i);
-            if (video_stream < 0) {
-                video_stream = i;
-            }
         } else if (type == AVMEDIA_TYPE_AUDIO) {
             audio_streams.push_back(i);
-            if (audio_stream < 0) {
-                audio_stream = i;
-            }
         } else if (type == AVMEDIA_TYPE_SUBTITLE) {
             subtitle_streams.push_back(i);
-            if (subtitle_stream < 0) {
-                subtitle_stream = i;
-            }
         }
     }
     return !audio_streams.isEmpty() || !video_streams.isEmpty() || !subtitle_streams.isEmpty();

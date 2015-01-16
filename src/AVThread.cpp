@@ -197,7 +197,10 @@ PacketQueue* AVThread::packetQueue() const
 
 void AVThread::setDecoder(AVDecoder *decoder)
 {
-    d_func().dec = decoder;
+    DPTR_D(AVThread);
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
+    d.dec = decoder;
 }
 
 AVDecoder* AVThread::decoder() const
@@ -208,9 +211,15 @@ AVDecoder* AVThread::decoder() const
 void AVThread::setOutput(AVOutput *out)
 {
     DPTR_D(AVThread);
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
     if (!d.outputSet)
         return;
-    d_func().outputSet->addOutput(out);
+    if (!out) {
+        d.outputSet->clearOutputs();
+        return;
+    }
+    d.outputSet->addOutput(out);
 }
 
 AVOutput* AVThread::output() const

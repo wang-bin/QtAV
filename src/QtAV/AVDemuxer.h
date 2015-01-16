@@ -70,8 +70,6 @@ public:
     bool isLoaded(AVInput* in) const;
     bool load(QIODevice* dev);
     bool load(AVInput* in);
-    //
-    bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
     /*!
      * \brief readFrame
      * Read a packet from 1 of the streams. use packet() to get the result packet. packet() returns last valid packet.
@@ -126,7 +124,8 @@ public:
     // true: next load with use the best stream instead of specified stream
     void setAutoResetStream(bool reset);
     bool autoResetStream() const;
-    //set stream by index in stream list
+    //set stream by index in stream list. call it after loaded.
+    // index < 0 is invalid
     bool setStreamIndex(StreamType st, int index);
     // current open stream
     int currentStream(StreamType st) const;
@@ -192,7 +191,9 @@ signals:
     void mediaStatusChanged(QtAV::MediaStatus status);
 private:
     bool load();
+    bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
     // set wanted_xx_stream. call openCodecs() to read new stream frames
+    // stream < 0 is choose best
     bool setStream(StreamType st, int stream);
     bool findStreams();
     QString formatName(AVFormatContext *ctx, bool longName = false) const;
@@ -215,11 +216,13 @@ private:
     int stream_idx;
     // wanted_xx_stream: -1 auto select by ff
     int wanted_audio_stream, wanted_video_stream, wanted_subtitle_stream;
-    mutable int audio_stream, video_stream, subtitle_stream;
-    mutable QList<int> audio_streams, video_streams, subtitle_streams;
+    // default is 0
+    int wanted_audio_index, wanted_video_index, wanted_subtitle_index;
+    int audio_stream, video_stream, subtitle_stream;
+    QList<int> audio_streams, video_streams, subtitle_streams;
 
     AVFormatContext *format_context;
-    AVCodecContext *a_codec_context, *v_codec_context, *s_codec_contex;
+    AVCodecContext *a_codec_context, *v_codec_context, *s_codec_context;
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
     AVInputFormat *_iformat;

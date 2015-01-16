@@ -110,6 +110,7 @@ public:
     int repeat_max, repeat_current;
     int timer_id; //notify position change and check AB repeat range. active when playing
 
+    int audio_track, video_track, subtitle_track;
     //the following things are required and must be set not null
     AVDemuxer demuxer;
     AVDemuxThread *read_thread;

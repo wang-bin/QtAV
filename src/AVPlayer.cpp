@@ -560,7 +560,6 @@ bool AVPlayer::load(bool reload)
         }
         loadInternal();
     } else {
-        d->demuxer.prepareStreams();
         d->loaded = true;
     }
     return d->loaded;
@@ -814,41 +813,59 @@ void AVPlayer::setRepeat(int max)
 }
 
 
-bool AVPlayer::setAudioStream(int n, bool now)
+bool AVPlayer::setAudioStream(int n)
 {
-    if (!d->demuxer.setStreamIndex(AVDemuxer::AudioStream, n)) {
-        qWarning("set video stream to %d failed", n);
+    if (n < 0)
+        return false;
+    if (d->audio_track == n)
+        return true;
+    if (isLoaded()) {
+        if (n >= d->demuxer.audioStreams().size())
+            return false;
+    }
+    d->audio_track = n;
+    if (!isPlaying())
+        return true;
+    // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
+    bool p = isPaused();
+    pause(true);
+    if (!d->setupAudioThread(this)) {
+        stop();
         return false;
     }
-    d->loaded = false;
-    d->last_position = -1;
-    d->demuxer.setAutoResetStream(false);
-    if (!now)
-        return true;
-    play();
+    if (!p)
+        pause(false);
     return true;
 }
 
-bool AVPlayer::setVideoStream(int n, bool now)
+bool AVPlayer::setVideoStream(int n)
 {
-    if (!d->demuxer.setStreamIndex(AVDemuxer::VideoStream, n)) {
-        qWarning("set video stream to %d failed", n);
+    if (n < 0)
+        return false;
+    if (d->video_track == n)
+        return true;
+    if (isLoaded()) {
+        if (n >= d->demuxer.videoStreams().size())
+            return false;
+    }
+    d->video_track = n;
+    if (!isPlaying())
+        return true;
+    // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
+    bool p = isPaused();
+    pause(true);
+    if (!d->setupVideoThread(this)) {
+        stop();
         return false;
     }
-    d->loaded = false;
-    d->last_position = -1;
-    d->demuxer.setAutoResetStream(false);
-    if (!now)
-        return true;
-    play();
+    if (!p)
+        pause(false);
     return true;
 }
 
-bool AVPlayer::setSubtitleStream(int n, bool now)
+bool AVPlayer::setSubtitleStream(int n)
 {
     Q_UNUSED(n);
-    Q_UNUSED(now);
-    d->demuxer.setAutoResetStream(false);
     return false;
 }
 
