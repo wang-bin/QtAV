@@ -270,6 +270,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     demuxer.setStreamIndex(AVDemuxer::AudioStream, audio_track);
     AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
     if (!aCodecCtx) {
+        // TODO: close ao?
         return false;
     }
     qDebug("has audio");
@@ -306,7 +307,6 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         //masterClock()->setClockType(AVClock::ExternalClock);
         //return;
     } else {
-        ao->close(); // TODO no reopen if format supported and not changed
         correct_audio_channels(aCodecCtx);
         AudioFormat af;
         af.setSampleRate(aCodecCtx->sample_rate);
@@ -329,12 +329,16 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
                 af.setChannelLayout(ao->preferredChannelLayout());
             }
         }
-        ao->setAudioFormat(af);
-        if (!ao->open()) {
-            //could not open audio device. use extrenal clock
-            delete ao;
-            ao = 0;
-            return false;
+        if (ao->audioFormat() != af) {
+            qDebug("ao audio format is changed. reopen ao");
+            ao->close();
+            ao->setAudioFormat(af);
+            if (!ao->open()) {
+                //could not open audio device. use extrenal clock
+                delete ao;
+                ao = 0;
+                return false;
+            }
         }
     }
     if (ao)
