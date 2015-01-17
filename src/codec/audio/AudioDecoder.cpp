@@ -85,6 +85,7 @@ bool AudioDecoder::decode(const Packet &packet)
     if (!isAvailable())
         return false;
     DPTR_D(AudioDecoder);
+    d.decoded.clear();
     int got_frame_ptr = 0;
     // const AVPacket*: ffmpeg >= 1.0. no libav
     int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &got_frame_ptr, (AVPacket*)packet.asAVPacket());
@@ -115,6 +116,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     if (!isAvailable())
         return false;
     DPTR_D(AudioDecoder);
+    d.decoded.clear();
     AVPacket packet;
 #if NO_PADDING_DATA
     /*!
