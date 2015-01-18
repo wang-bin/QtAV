@@ -77,7 +77,7 @@ public:
      * Call readFrame() and seek() in the same thread.
      * \return false if eof, error occurs, interrupted by user or time out(getInterruptTimeout())
      */
-    bool readFrame();
+    bool readFrame(); // TODO: rename int readPacket(), return stream number
     /*!
      * \brief packet
      * return the packet read by demuxer. packet is invalid if readFrame() returns false.
@@ -96,33 +96,25 @@ public:
     SeekTarget seekTarget() const;
     bool seek(qint64 pos); //pos: ms
     void seek(qreal q); //q: [0,1]. TODO: what if duration() is not valid?
-
     //format
     AVFormatContext* formatContext();
     QString fileName() const; //AVFormatContext::filename
-    QString audioFormatName() const;
-    QString audioFormatLongName() const;
-    QString videoFormatName() const; //AVFormatContext::iformat->name
-    QString videoFormatLongName() const; //AVFormatContext::iformat->long_name
+    QString formatName() const;
+    QString formatLongName() const;
     // TODO: rename startPosition()
     qint64 startTime() const; //ms, AVFormatContext::start_time/1000
     qint64 duration() const; //ms, AVFormatContext::duration/1000
     qint64 startTimeUs() const; //us, AVFormatContext::start_time
     qint64 durationUs() const; //us, AVFormatContext::duration
-
     //total bit rate
     int bitRate() const; //AVFormatContext::bit_rate
-    int audioBitRate(int stream = -1) const;
-    int videoBitRate(int stream = -1) const;
-
-    qreal frameRate() const; //AVStream::avg_frame_rate
+    qreal frameRate() const; //deprecated AVStream::avg_frame_rate
     // if stream is -1, return the current video(or audio if no video) stream.
     // TODO: audio/videoFrames?
     qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames
-
     bool hasAttacedPicture() const;
     // true: next load with use the best stream instead of specified stream
-    void setAutoResetStream(bool reset);
+    void setAutoResetStream(bool reset); //TODO: remove
     bool autoResetStream() const;
     //set stream by index in stream list. call it after loaded.
     // index < 0 is invalid
@@ -139,21 +131,10 @@ public:
     // current open stream
     int subtitleStream() const;
     QList<int> subtitleStreams() const;
-
-    int width() const; //AVCodecContext::width;
-    int height() const; //AVCodecContext::height
-
-    //codec. stream < 0: the stream going to play
+    //codec. stream < 0: the stream going to play (or the stream set by setStreamIndex())
     AVCodecContext* audioCodecContext(int stream = -1) const;
     AVCodecContext* videoCodecContext(int stream = -1) const;
     AVCodecContext* subtitleCodecContext(int stream = -1) const;
-    QString audioCodecName(int stream = -1) const;
-    QString audioCodecLongName(int stream = -1) const;
-    QString videoCodecName(int stream = -1) const;
-    QString videoCodecLongName(int stream = -1) const;
-    QString subtitleCodecName(int stream = -1) const;
-    QString subtitleCodecLongName(int stream = -1) const;
-
     /**
      * @brief getInterruptTimeout return the interrupt timeout
      */
@@ -195,8 +176,6 @@ private:
     // set wanted_xx_stream. call openCodecs() to read new stream frames
     // stream < 0 is choose best
     bool setStream(StreamType st, int stream);
-    bool findStreams();
-    QString formatName(AVFormatContext *ctx, bool longName = false) const;
     void applyOptionsForDict();
     void applyOptionsForContext();
     void setMediaStatus(MediaStatus status);
@@ -212,7 +191,6 @@ private:
     bool eof;
     bool auto_reset_stream;
     Packet m_pkt;
-    qint64 ipts;
     int stream_idx;
     // wanted_xx_stream: -1 auto select by ff
     int wanted_audio_stream, wanted_video_stream, wanted_subtitle_stream;

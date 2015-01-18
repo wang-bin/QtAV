@@ -190,7 +190,6 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , started_(false)
     , eof(false)
     , auto_reset_stream(true)
-    , ipts(0)
     , stream_idx(-1)
     , wanted_audio_stream(-1)
     , wanted_video_stream(-1)
@@ -668,7 +667,24 @@ bool AVDemuxer::load()
 bool AVDemuxer::prepareStreams()
 {
     has_attached_pic = false;
-    if (!findStreams())
+    // close codecs?
+    video_streams.clear();
+    audio_streams.clear();
+    subtitle_streams.clear();
+    if (!format_context)
+        return false;
+    AVMediaType type = AVMEDIA_TYPE_UNKNOWN;
+    for (unsigned int i=0; i<format_context->nb_streams; ++i) {
+        type = format_context->streams[i]->codec->codec_type;
+        if (type == AVMEDIA_TYPE_VIDEO) {
+            video_streams.push_back(i);
+        } else if (type == AVMEDIA_TYPE_AUDIO) {
+            audio_streams.push_back(i);
+        } else if (type == AVMEDIA_TYPE_SUBTITLE) {
+            subtitle_streams.push_back(i);
+        }
+    }
+    if (audio_streams.isEmpty() && video_streams.isEmpty() && subtitle_streams.isEmpty())
         return false;
     setStream(AudioStream, -1);
     setStream(VideoStream, -1);
@@ -797,14 +813,18 @@ QString AVDemuxer::fileName() const
     return format_context->filename;
 }
 
-QString AVDemuxer::videoFormatName() const
+QString AVDemuxer::formatName() const
 {
-    return formatName(format_context, false);
+    if (!format_context)
+        return QString();
+    return format_context->iformat->name;
 }
 
-QString AVDemuxer::videoFormatLongName() const
+QString AVDemuxer::formatLongName() const
 {
-    return formatName(format_context, true);
+    if (!format_context)
+        return QString();
+    return format_context->iformat->long_name;
 }
 
 // convert to s using AV_TIME_BASE then *1000?
@@ -837,22 +857,6 @@ qint64 AVDemuxer::durationUs() const
 int AVDemuxer::bitRate() const
 {
     return format_context->bit_rate;
-}
-
-int AVDemuxer::audioBitRate(int stream) const
-{
-    AVCodecContext *avctx = audioCodecContext(stream);
-    if (!avctx)
-        return 0;
-    return avctx->bit_rate;
-}
-
-int AVDemuxer::videoBitRate(int stream) const
-{
-    AVCodecContext *avctx = videoCodecContext(stream);
-    if (!avctx)
-        return 0;
-    return avctx->bit_rate;
 }
 
 qreal AVDemuxer::frameRate() const
@@ -928,16 +932,6 @@ QList<int> AVDemuxer::subtitleStreams() const
     return subtitle_streams;
 }
 
-int AVDemuxer::width() const
-{
-    return videoCodecContext()->width;
-}
-
-int AVDemuxer::height() const
-{
-    return videoCodecContext()->height;
-}
-
 //codec
 AVCodecContext* AVDemuxer::audioCodecContext(int stream) const
 {
@@ -964,87 +958,6 @@ AVCodecContext* AVDemuxer::subtitleCodecContext(int stream) const
     if (stream > (int)format_context->nb_streams)
         return 0;
     return format_context->streams[stream]->codec;
-}
-
-/*!
-    call avcodec_open2() first!
-    check null ptr?
-*/
-QString AVDemuxer::audioCodecName(int stream) const
-{
-    AVCodecContext *avctx = audioCodecContext(stream);
-    if (!avctx)
-        return QString();
-    // AVCodecContext.codec_name is deprecated. use avcodec_get_name. check null avctx->codec?
-    return avcodec_get_name(avctx->codec_id);
-}
-
-QString AVDemuxer::audioCodecLongName(int stream) const
-{
-    AVCodecContext *avctx = audioCodecContext(stream);
-    if (!avctx)
-        return QString();
-    return avctx->codec->long_name;
-}
-
-QString AVDemuxer::videoCodecName(int stream) const
-{
-    AVCodecContext *avctx = videoCodecContext(stream);
-    if (!avctx)
-        return QString();
-    return avcodec_get_name(avctx->codec_id);
-}
-
-QString AVDemuxer::videoCodecLongName(int stream) const
-{
-    AVCodecContext *avctx = videoCodecContext(stream);
-    if (!avctx)
-        return QString();
-    return avctx->codec->long_name;
-}
-
-QString AVDemuxer::subtitleCodecName(int stream) const
-{
-    AVCodecContext *avctx = subtitleCodecContext(stream);
-    if (!avctx)
-        return QString();
-    return avcodec_get_name(avctx->codec_id);
-}
-
-QString AVDemuxer::subtitleCodecLongName(int stream) const
-{
-    AVCodecContext *avctx = subtitleCodecContext(stream);
-    if (!avctx)
-        return QString();
-    return avctx->codec->long_name;
-}
-
-// TODO: use wanted_xx_stream?
-bool AVDemuxer::findStreams()
-{
-    if (!format_context)
-        return false;
-    // close codecs?
-    video_streams.clear();
-    audio_streams.clear();
-    subtitle_streams.clear();
-    AVMediaType type = AVMEDIA_TYPE_UNKNOWN;
-    for (unsigned int i=0; i<format_context->nb_streams; ++i) {
-        type = format_context->streams[i]->codec->codec_type;
-        if (type == AVMEDIA_TYPE_VIDEO) {
-            video_streams.push_back(i);
-        } else if (type == AVMEDIA_TYPE_AUDIO) {
-            audio_streams.push_back(i);
-        } else if (type == AVMEDIA_TYPE_SUBTITLE) {
-            subtitle_streams.push_back(i);
-        }
-    }
-    return !audio_streams.isEmpty() || !video_streams.isEmpty() || !subtitle_streams.isEmpty();
-}
-
-QString AVDemuxer::formatName(AVFormatContext *ctx, bool longName) const
-{
-    return longName ? ctx->iformat->long_name : ctx->iformat->name;
 }
 
 /**
