@@ -27,11 +27,10 @@
 #include <QtAV/Packet.h>
 #include <QtCore/QVariant>
 #include <QtCore/QObject>
+#include <QtCore/QScopedPointer>
 
 struct AVFormatContext;
-struct AVInputFormat;
 struct AVCodecContext;
-struct AVDictionary;
 class QIODevice;
 // TODO: force codec name. clean code
 namespace QtAV {
@@ -59,7 +58,7 @@ public:
     /// Supported ffmpeg/libav input protocols(not complete). A static string list
     static const QStringList& supportedProtocols();
 
-    AVDemuxer(const QString& fileName = QString(), QObject *parent = 0);
+    AVDemuxer(QObject *parent = 0);
     ~AVDemuxer();
     MediaStatus mediaStatus() const;
     bool atEnd() const;
@@ -103,7 +102,6 @@ public:
     SeekTarget seekTarget() const;
     bool seek(qint64 pos); //pos: ms
     void seek(qreal q); //q: [0,1]. TODO: what if duration() is not valid?
-    //format
     AVFormatContext* formatContext();
     QString formatName() const;
     QString formatLongName() const;
@@ -119,12 +117,11 @@ public:
     // TODO: audio/videoFrames?
     qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames
     bool hasAttacedPicture() const;
-    //
-    // index < 0 is invalid
     /*!
      * \brief setStreamIndex
      * Set stream by index in stream list. call it after loaded.
      * Stream/index will not change in next load() unless media source changed
+     * index < 0 is invalid
      */
     bool setStreamIndex(StreamType st, int index);
     // current open stream
@@ -133,10 +130,8 @@ public:
     // current open stream
     int audioStream() const;
     QList<int> audioStreams() const;
-    // current open stream
     int videoStream() const;
     QList<int> videoStreams() const;
-    // current open stream
     int subtitleStream() const;
     QList<int> subtitleStreams() const;
     //codec. stream < 0: the stream going to play (or the stream set by setStreamIndex())
@@ -186,44 +181,12 @@ private:
     void applyOptionsForDict();
     void applyOptionsForContext();
     void setMediaStatus(MediaStatus status);
-    /*!
-     * \brief handleError
-     * error code (errorCode) and message (msg) may be modified internally
-     */
+    // error code (errorCode) and message (msg) may be modified internally
     void handleError(int averr, AVError::ErrorCode* errorCode, QString& msg);
 
-    MediaStatus mCurrentMediaStatus;
-    bool has_attached_pic;
-    bool started_;
-    bool eof;
-    bool media_changed;
-    Packet m_pkt;
-    int stream_idx;
-    // wanted_xx_stream: -1 auto select by ff
-    int wanted_audio_stream, wanted_video_stream, wanted_subtitle_stream;
-    // default is 0
-    int wanted_audio_index, wanted_video_index, wanted_subtitle_index;
-    int audio_stream, video_stream, subtitle_stream;
-    QList<int> audio_streams, video_streams, subtitle_streams;
-
-    AVFormatContext *format_context;
-    AVCodecContext *a_codec_context, *v_codec_context, *s_codec_context;
-    //copy the info, not parse the file when constructed, then need member vars
-    QString _file_name;
-    QString m_path_orig;
-    AVInputFormat *_iformat;
-    AVInput *m_in;
-
-    SeekUnit mSeekUnit;
-    SeekTarget mSeekTarget;
-
+    class Private;
+    QScopedPointer<Private> d;
     class InterruptHandler;
-    InterruptHandler *mpInterrup;
-
-    AVDictionary *mpDict;
-    QVariantHash mOptions;
-
-    bool m_network;
 };
 
 } //namespace QtAV
