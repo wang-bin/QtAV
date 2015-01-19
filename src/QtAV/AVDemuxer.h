@@ -82,7 +82,7 @@ public:
      * Read a packet from 1 of the streams. use packet() to get the result packet. packet() returns last valid packet.
      * So do not use packet() if readFrame() failed.
      * Call readFrame() and seek() in the same thread.
-     * \return false if eof, error occurs, interrupted by user or time out(getInterruptTimeout())
+     * \return true if no error or eof. false if error occurs, interrupted by user or time out(getInterruptTimeout())
      */
     bool readFrame(); // TODO: rename int readPacket(), return stream number
     /*!

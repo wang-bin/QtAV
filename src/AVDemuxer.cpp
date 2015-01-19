@@ -294,7 +294,8 @@ bool AVDemuxer::readFrame()
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
             }
-            return false; //frames after eof are eof frames
+            // we have to detect false is error or eof
+            return ret == AVERROR_EOF; //frames after eof are eof frames
         }
         AVError::ErrorCode ec(AVError::ReadError);
         QString msg(tr("error reading stream data"));
