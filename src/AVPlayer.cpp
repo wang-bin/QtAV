@@ -357,12 +357,12 @@ void AVPlayer::setFile(const QString &path)
         p = getLocalPath(p);
     d->reset_state = d->current_source.type() != QVariant::String || d->current_source.toString() != p;
     d->current_source = p;
+    // TODO: d->reset_state = d->demuxer2.setMedia(path);
     if (d->reset_state) {
         emit sourceChanged();
         //emit error(AVError(AVError::NoError));
     }
     d->reset_state = !p.isEmpty() && d->reset_state; //?
-    d->demuxer.setAutoResetStream(d->reset_state);
     // TODO: use absoluteFilePath?
     d->loaded = false; //
 }
@@ -376,6 +376,7 @@ QString AVPlayer::file() const
 
 void AVPlayer::setIODevice(QIODevice* device)
 {
+    // TODO: d->reset_state = d->demuxer2.setMedia(device);
     if (d->current_source.type() == QVariant::String) {
         d->reset_state = true;
     } else {
@@ -385,7 +386,6 @@ void AVPlayer::setIODevice(QIODevice* device)
             d->reset_state = true;
         }
     }
-    d->demuxer.setAutoResetStream(d->reset_state);
     d->loaded = false;
     d->current_source = QVariant::fromValue(device);
     if (d->reset_state)
@@ -394,6 +394,7 @@ void AVPlayer::setIODevice(QIODevice* device)
 
 void AVPlayer::setInput(AVInput *in)
 {
+    // TODO: d->reset_state = d->demuxer2.setMedia(in);
     if (d->current_source.type() == QVariant::String) {
         d->reset_state = true;
     } else {
@@ -403,7 +404,6 @@ void AVPlayer::setInput(AVInput *in)
             d->reset_state = d->current_source.value<QtAV::AVInput*>() != in;
         }
     }
-    d->demuxer.setAutoResetStream(d->reset_state);
     d->loaded = false;
     d->current_source = QVariant::fromValue<QtAV::AVInput*>(in);
     if (d->reset_state)
@@ -532,14 +532,15 @@ bool AVPlayer::load(bool reload)
     }
     if (!reload) {
         if (d->current_source.type() == QVariant::String) {
-            reload = !d->demuxer.isLoaded(d->current_source.toString());
+            reload = d->demuxer.fileName() != d->current_source.toString();
         } else {
             if (d->current_source.canConvert<QIODevice*>()) {
-                reload = !d->demuxer.isLoaded(d->current_source.value<QIODevice*>());
+                reload = d->demuxer.ioDevice() != d->current_source.value<QIODevice*>();
             } else { // AVInput
-                reload = !d->demuxer.isLoaded(d->current_source.value<QtAV::AVInput*>());
+                reload = d->demuxer.input() != d->current_source.value<QtAV::AVInput*>();
             }
         }
+        reload = reload || !d->demuxer.isLoaded();
     }
     if (reload) {
         if (isAsyncLoad()) {
@@ -577,14 +578,15 @@ void AVPlayer::loadInternal()
     }
     qDebug() << "Loading " << d->current_source << " ...";
     if (d->current_source.type() == QVariant::String) {
-        d->loaded = d->demuxer.loadFile(d->current_source.toString());
+        d->demuxer.setMedia(d->current_source.toString());
     } else {
         if (d->current_source.canConvert<QIODevice*>()) {
-            d->loaded = d->demuxer.load(d->current_source.value<QIODevice*>());
+            d->demuxer.setMedia(d->current_source.value<QIODevice*>());
         } else { // AVInput
-            d->loaded = d->demuxer.load(d->current_source.value<QtAV::AVInput*>());
+            d->demuxer.setMedia(d->current_source.value<QtAV::AVInput*>());
         }
     }
+    d->loaded = d->demuxer.load();
     if (!d->loaded) {
         d->statistics.reset();
         qWarning("Load failed!");
@@ -650,7 +652,7 @@ void AVPlayer::unloadInternal()
         delete d->vdec;
         d->vdec = 0;
     }
-    d->demuxer.close();
+    d->demuxer.unload();
 }
 
 void AVPlayer::setRelativeTimeMode(bool value)

@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
     }
     VideoDecoder *dec = VideoDecoderFactory::create(cid);
     AVDemuxer demux;
-    if (!demux.loadFile(file)) {
+    demux.setMedia(file);
+    if (!demux.load()) {
         qWarning("Failed to load file: %s", file.toUtf8().constData());
         return 1;
     }

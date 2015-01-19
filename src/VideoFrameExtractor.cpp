@@ -138,11 +138,11 @@ public:
         thread.waitStop();
         // close codec context first.
         decoder.reset(0);
-        demuxer.close();
+        demuxer.unload();
     }
 
     bool checkAndOpen() {
-        const bool loaded = demuxer.isLoaded(source);
+        const bool loaded = demuxer.fileName() == source && demuxer.isLoaded();
         if (loaded && decoder && !demuxer.atEnd())
             return true;
         seek_count = 0;
@@ -151,14 +151,15 @@ public:
             decoder.reset(0);
         }
         if (!loaded || demuxer.atEnd()) {
-            demuxer.close();
-            if (!demuxer.loadFile(source)) {
+            demuxer.unload();
+            demuxer.setMedia(source);
+            if (!demuxer.load()) {
                 return false;
             }
         }
         has_video = demuxer.videoStreams().size() > 0;
         if (!has_video) {
-            demuxer.close();
+            demuxer.unload();
             return false;
         }
         if (codecs.isEmpty())
@@ -278,7 +279,7 @@ public:
             // store the last decoded frame because next frame may be out of range
             const VideoFrame f = decoder->frame();
             if (!f.isValid()) {
-                qDebug("VideoFrameExtractor: invalid frame!!!");
+                //qDebug("VideoFrameExtractor: invalid frame!!!");
                 continue;
             }
             frame = f;

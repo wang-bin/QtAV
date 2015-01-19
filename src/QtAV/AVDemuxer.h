@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -63,13 +63,20 @@ public:
     ~AVDemuxer();
     MediaStatus mediaStatus() const;
     bool atEnd() const;
-    bool close(); //TODO: rename unload()
-    bool loadFile(const QString& fileName);
-    bool isLoaded(const QString& fileName) const;
-    bool isLoaded(QIODevice* dev) const;
-    bool isLoaded(AVInput* in) const;
-    bool load(QIODevice* dev);
-    bool load(AVInput* in);
+    QString fileName() const;
+    QIODevice* ioDevice() const;
+    /// not null for QIODevice, custom protocols
+    AVInput* input() const;
+    /*!
+     * \brief setMedia
+     * \return whether the media source is changed
+     */
+    bool setMedia(const QString& fileName);
+    bool setMedia(QIODevice* dev);
+    bool setMedia(AVInput* in);
+    bool load();
+    bool unload();
+    bool isLoaded() const;
     /*!
      * \brief readFrame
      * Read a packet from 1 of the streams. use packet() to get the result packet. packet() returns last valid packet.
@@ -98,7 +105,6 @@ public:
     void seek(qreal q); //q: [0,1]. TODO: what if duration() is not valid?
     //format
     AVFormatContext* formatContext();
-    QString fileName() const; //AVFormatContext::filename
     QString formatName() const;
     QString formatLongName() const;
     // TODO: rename startPosition()
@@ -113,11 +119,13 @@ public:
     // TODO: audio/videoFrames?
     qint64 frames(int stream = -1) const; //AVFormatContext::nb_frames
     bool hasAttacedPicture() const;
-    // true: next load with use the best stream instead of specified stream
-    void setAutoResetStream(bool reset); //TODO: remove
-    bool autoResetStream() const;
-    //set stream by index in stream list. call it after loaded.
+    //
     // index < 0 is invalid
+    /*!
+     * \brief setStreamIndex
+     * Set stream by index in stream list. call it after loaded.
+     * Stream/index will not change in next load() unless media source changed
+     */
     bool setStreamIndex(StreamType st, int index);
     // current open stream
     int currentStream(StreamType st) const;
@@ -171,7 +179,6 @@ signals:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void mediaStatusChanged(QtAV::MediaStatus status);
 private:
-    bool load();
     bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
     // set wanted_xx_stream. call openCodecs() to read new stream frames
     // stream < 0 is choose best
@@ -189,7 +196,7 @@ private:
     bool has_attached_pic;
     bool started_;
     bool eof;
-    bool auto_reset_stream;
+    bool media_changed;
     Packet m_pkt;
     int stream_idx;
     // wanted_xx_stream: -1 auto select by ff
@@ -203,6 +210,7 @@ private:
     AVCodecContext *a_codec_context, *v_codec_context, *s_codec_context;
     //copy the info, not parse the file when constructed, then need member vars
     QString _file_name;
+    QString m_path_orig;
     AVInputFormat *_iformat;
     AVInput *m_in;
 

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -157,33 +157,35 @@ bool SubtitleProcessorFFmpeg::process(QIODevice *dev)
             return false;
         }
     }
-    if (!m_reader.load(dev))
-            goto error;
+    m_reader.setMedia(dev);
+    if (!m_reader.load())
+        goto error;
     if (m_reader.subtitleStreams().isEmpty())
         goto error;
     qDebug("subtitle format: %s", m_reader.formatContext()->iformat->name);
     if (!processSubtitle())
         goto error;
-    m_reader.close();
+    m_reader.unload();
     return true;
 error:
-    m_reader.close();
+    m_reader.unload();
     return false;
 }
 
 bool SubtitleProcessorFFmpeg::process(const QString &path)
 {
-    if (!m_reader.loadFile(path))
+    m_reader.setMedia(path);
+    if (!m_reader.load())
         goto error;
     if (m_reader.subtitleStreams().isEmpty())
         goto error;
     qDebug("subtitle format: %s", m_reader.formatContext()->iformat->name);
     if (!processSubtitle())
         goto error;
-    m_reader.close();
+    m_reader.unload();
     return true;
 error:
-    m_reader.close();
+    m_reader.unload();
     return false;
 }
 

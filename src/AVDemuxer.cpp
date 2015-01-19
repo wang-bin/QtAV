@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -64,6 +64,7 @@ QString getLocalPath(const QString& fullPath)
         return fullPath.mid(pos);
     return fullPath;
 }
+#undef CHAR_COUNT
 
 class AVDemuxer::InterruptHandler : public AVIOInterruptCB
 {
@@ -73,7 +74,6 @@ public:
         FindStreamInfo,
         Read
     };
-
     //default network timeout: 30000
     InterruptHandler(AVDemuxer* demuxer, int timeout = 30000)
       : mStatus(0)
@@ -189,11 +189,14 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , has_attached_pic(false)
     , started_(false)
     , eof(false)
-    , auto_reset_stream(true)
+    , media_changed(true)
     , stream_idx(-1)
     , wanted_audio_stream(-1)
     , wanted_video_stream(-1)
     , wanted_subtitle_stream(-1)
+    , wanted_audio_index(-1)
+    , wanted_video_index(-1)
+    , wanted_subtitle_index(-1)
     , audio_stream(-2)
     , video_stream(-2)
     , subtitle_stream(-2)
@@ -202,6 +205,7 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     , v_codec_context(0)
     , s_codec_context(0)
     , _file_name(fileName)
+    , m_path_orig(fileName)
     , _iformat(0)
     , m_in(0)
     , mSeekUnit(SeekByTime)
@@ -228,13 +232,11 @@ AVDemuxer::AVDemuxer(const QString& fileName, QObject *parent)
     static AVInitializer sAVInit;
     Q_UNUSED(sAVInit);
     mpInterrup = new InterruptHandler(this);
-    if (!_file_name.isEmpty())
-        loadFile(_file_name);
 }
 
 AVDemuxer::~AVDemuxer()
 {
-    close();
+    unload();
     if (mpDict) {
         av_dict_free(&mpDict);
     }
@@ -330,14 +332,15 @@ bool AVDemuxer::atEnd() const
     return eof;
 }
 
-bool AVDemuxer::close()
+bool AVDemuxer::unload()
 {
     m_network = false;
     has_attached_pic = false;
     eof = false; // true and set false in load()?
     stream_idx = -1;
-    if (auto_reset_stream) {
+    if (media_changed) {
         wanted_audio_stream = wanted_subtitle_stream = wanted_video_stream = -1;
+        wanted_audio_index = wanted_video_index = wanted_subtitle_index = -2;
     }
     a_codec_context = v_codec_context = s_codec_context = 0;
     audio_stream = video_stream = subtitle_stream = -2;
@@ -354,8 +357,8 @@ bool AVDemuxer::close()
         // no delete. may be used in next load
         if (m_in)
             m_in->release();
+        emit unloaded();
     }
-    emit unloaded();
     return true;
 }
 
@@ -432,7 +435,7 @@ bool AVDemuxer::seek(qint64 pos)
         handleError(ret, &ec, msg);
         return false;
     }
-    //replay
+    // TODO: replay
     if (upos <= startTime()) {
         qDebug("************seek to beginning. started = false");
         started_ = false;
@@ -451,72 +454,58 @@ void AVDemuxer::seek(qreal q)
     seek(qint64(q*(double)duration()));
 }
 
-/*
- TODO: seek by byte/frame
-  We need to know current playing packet but not current demuxed packet which
-  may blocked for a while
-*/
-bool AVDemuxer::isLoaded(const QString &fileName) const
+bool AVDemuxer::isLoaded() const
 {
-    // loadFile() modified the original path
-    bool same_path = fileName == _file_name;
-    if (!same_path) {
-        // _file_name is already C:path for windows
-        if (fileName.startsWith(kFileScheme)) { // for QUrl
-            int idx = fileName.indexOf(_file_name);
-            same_path = idx > 0 && fileName.midRef(CHAR_COUNT(kFileScheme), idx - CHAR_COUNT(kFileScheme)).count(QChar('/')) == idx - (int)CHAR_COUNT(kFileScheme);
-        }
-    }
-    if (!same_path) {
-        if (_file_name.startsWith("mms:")) // compare with mmsh:
-            same_path = _file_name.midRef(5) == fileName.midRef(4);
-    }
-    return same_path && (a_codec_context || v_codec_context || s_codec_context);
+    return format_context && (a_codec_context || v_codec_context || s_codec_context);
 }
 
-bool AVDemuxer::isLoaded(QIODevice *dev) const
+QString AVDemuxer::fileName() const
+{
+    return m_path_orig;
+}
+
+QIODevice* AVDemuxer::ioDevice() const
 {
     if (!m_in)
-        return false;
+        return 0;
     if (m_in->name() != "QIODevice")
-        return false;
+        return 0;
     QIODeviceInput* qin = static_cast<QIODeviceInput*>(m_in);
     if (!qin) {
         qWarning("Internal error.");
-        return false;
+        return 0;
     }
-    if (qin->device() != dev)
-        return false;
-    return a_codec_context || v_codec_context || s_codec_context;
+    return qin->device();
 }
 
-bool AVDemuxer::isLoaded(AVInput *in) const
+AVInput* AVDemuxer::input() const
 {
-    if (m_in != in)
-        return false;
-    return a_codec_context || v_codec_context || s_codec_context;
+    return m_in;
 }
 
-bool AVDemuxer::loadFile(const QString &fileName)
+bool AVDemuxer::setMedia(const QString &fileName)
 {
     if (m_in) {
         delete m_in;
         m_in = 0;
     }
+    m_path_orig = fileName;
+    const QString url_old(_file_name);
     _file_name = fileName.trimmed();
     if (_file_name.startsWith("mms:"))
         _file_name.insert(3, 'h');
     else if (_file_name.startsWith(kFileScheme))
         _file_name = getLocalPath(_file_name);
+    media_changed = url_old == _file_name;
     // a local file. return here to avoid protocol checking. If path contains ":", protocol checking will fail
     if (_file_name.startsWith(QChar('/')))
-        return load();
+        return media_changed;
     // use AVInput to support protocols not supported by ffmpeg
     int colon = _file_name.indexOf(QChar(':'));
     if (colon >= 0) {
 #ifdef Q_OS_WIN
         if (colon == 1 && _file_name.at(0).isLetter())
-            return load();
+            return media_changed;
 #endif
         const QString scheme = colon == 0 ? "qrc" : _file_name.left(colon);
         // supportedProtocols() is not complete. so try AVInput 1st, if not found, fallback to libavformat
@@ -525,13 +514,13 @@ bool AVDemuxer::loadFile(const QString &fileName)
             m_in->setUrl(_file_name);
         }
     }
-    return load();
+    return media_changed;
 }
-#undef CHAR_COUNT
 
-bool AVDemuxer::load(QIODevice* device)
+bool AVDemuxer::setMedia(QIODevice* device)
 {
     _file_name = QString();
+    m_path_orig = QString();
     if (m_in) {
         if (m_in->name() != "QIODevice") {
             delete m_in;
@@ -543,28 +532,31 @@ bool AVDemuxer::load(QIODevice* device)
     QIODeviceInput *qin = static_cast<QIODeviceInput*>(m_in);
     if (!qin) {
         qWarning("Internal error: can not create AVInput for QIODevice.");
-        return false;
+        return true;
     }
     // TODO: use property?
+    media_changed = qin->device() == device;
     qin->setIODevice(device); //open outside?
-    return load();
+    return media_changed;
 }
 
-bool AVDemuxer::load(AVInput *in)
+bool AVDemuxer::setMedia(AVInput *in)
 {
+    media_changed = in == m_in;
     _file_name = QString();
+    m_path_orig = QString();
     if (!m_in)
         m_in = in;
     if (m_in != in) {
         delete m_in;
         m_in = in;
     }
-    return load();
+    return media_changed;
 }
 
 bool AVDemuxer::load()
 {
-    close();
+    unload();
     qDebug("all closed and reseted");
 
     if (_file_name.isEmpty() && !m_in) {
@@ -697,16 +689,6 @@ bool AVDemuxer::hasAttacedPicture() const
     return has_attached_pic;
 }
 
-void AVDemuxer::setAutoResetStream(bool reset)
-{
-    auto_reset_stream = reset;
-}
-
-bool AVDemuxer::autoResetStream() const
-{
-    return auto_reset_stream;
-}
-
 bool AVDemuxer::setStreamIndex(StreamType st, int index)
 {
     QList<int> *streams = 0;
@@ -751,7 +733,7 @@ bool AVDemuxer::setStream(StreamType st, int streamValue)
     int *stream = 0;
     AVCodecContext **avctx = 0;
     QList<int> *streams = 0;
-    if (st == AudioStream) {
+    if (st == AudioStream) { // TODO: use a struct
         stream = &audio_stream;
         avctx = &a_codec_context;
         wanted_index = &wanted_audio_index;
@@ -789,7 +771,7 @@ bool AVDemuxer::setStream(StreamType st, int streamValue)
                                 : st == VideoStream ? AVMEDIA_TYPE_VIDEO
                                 : st == SubtitleStream ? AVMEDIA_TYPE_SUBTITLE
                                 : AVMEDIA_TYPE_UNKNOWN
-                                , streamValue, -1, NULL, 0);
+                                , streamValue, -1, NULL, 0); // streamValue -1 is ok
     } else { //index_valid
         s = streams->at(*wanted_index);
     }
@@ -806,11 +788,6 @@ bool AVDemuxer::setStream(StreamType st, int streamValue)
 AVFormatContext* AVDemuxer::formatContext()
 {
     return format_context;
-}
-
-QString AVDemuxer::fileName() const
-{
-    return format_context->filename;
 }
 
 QString AVDemuxer::formatName() const
@@ -939,7 +916,10 @@ AVCodecContext* AVDemuxer::audioCodecContext(int stream) const
         return a_codec_context;
     if (stream > (int)format_context->nb_streams)
         return 0;
-    return format_context->streams[stream]->codec;
+    AVCodecContext *avctx = format_context->streams[stream]->codec;
+    if (avctx->codec_type == AVMEDIA_TYPE_AUDIO)
+        return avctx;
+    return 0;
 }
 
 AVCodecContext* AVDemuxer::videoCodecContext(int stream) const
@@ -948,7 +928,10 @@ AVCodecContext* AVDemuxer::videoCodecContext(int stream) const
         return v_codec_context;
     if (stream > (int)format_context->nb_streams)
         return 0;
-    return format_context->streams[stream]->codec;
+    AVCodecContext *avctx = format_context->streams[stream]->codec;
+    if (avctx->codec_type == AVMEDIA_TYPE_VIDEO)
+        return avctx;
+    return 0;
 }
 
 AVCodecContext* AVDemuxer::subtitleCodecContext(int stream) const
@@ -957,7 +940,10 @@ AVCodecContext* AVDemuxer::subtitleCodecContext(int stream) const
         return s_codec_context;
     if (stream > (int)format_context->nb_streams)
         return 0;
-    return format_context->streams[stream]->codec;
+    AVCodecContext *avctx = format_context->streams[stream]->codec;
+    if (avctx->codec_type == AVMEDIA_TYPE_SUBTITLE)
+        return avctx;
+    return 0;
 }
 
 /**
