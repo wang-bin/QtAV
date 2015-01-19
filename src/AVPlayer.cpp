@@ -359,10 +359,10 @@ void AVPlayer::setFile(const QString &path)
     d->current_source = p;
     // TODO: d->reset_state = d->demuxer2.setMedia(path);
     if (d->reset_state) {
+        d->audio_track = d->video_track = d->subtitle_track = 0;
         emit sourceChanged();
         //emit error(AVError(AVError::NoError));
     }
-    d->reset_state = !p.isEmpty() && d->reset_state; //?
     // TODO: use absoluteFilePath?
     d->loaded = false; //
 }
@@ -388,8 +388,10 @@ void AVPlayer::setIODevice(QIODevice* device)
     }
     d->loaded = false;
     d->current_source = QVariant::fromValue(device);
-    if (d->reset_state)
+    if (d->reset_state) {
+        d->audio_track = d->video_track = d->subtitle_track = 0;
         emit sourceChanged();
+    }
 }
 
 void AVPlayer::setInput(AVInput *in)
@@ -406,8 +408,10 @@ void AVPlayer::setInput(AVInput *in)
     }
     d->loaded = false;
     d->current_source = QVariant::fromValue<QtAV::AVInput*>(in);
-    if (d->reset_state)
+    if (d->reset_state) {
+        d->audio_track = d->video_track = d->subtitle_track = 0;
         emit sourceChanged();
+    }
 }
 
 AVInput* AVPlayer::input() const
