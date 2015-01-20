@@ -80,6 +80,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(&d->demuxer, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
     connect(&d->demuxer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
     connect(&d->demuxer, SIGNAL(loaded()), this, SIGNAL(loaded()));
+    connect(&d->demuxer, SIGNAL(seekableChanged()), this, SIGNAL(seekableChanged()));
     d->read_thread = new AVDemuxThread(this);
     d->read_thread->setDemuxer(&d->demuxer);
     //direct connection can not sure slot order?
@@ -759,6 +760,11 @@ void AVPlayer::setStopPosition(qint64 pos)
     emit stopPositionChanged(d->stop_position);
 }
 
+bool AVPlayer::isSeekable() const
+{
+    return d->demuxer.isSeekable();
+}
+
 qreal AVPlayer::positionF() const
 {
     return d->clock->value();
@@ -1205,7 +1211,7 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             return;
         }
         // FIXME: now stop instead of seek if reach media's end. otherwise will not get eof again
-        if (stopPosition() == mediaStopPosition() || !d->demuxer.isSeekable()) {
+        if (stopPosition() == mediaStopPosition() || !isSeekable()) {
             // if not seekable, how it can start to play at specified position?
             qDebug("stopPosition() == mediaStopPosition() or !seekable. d->repeat_current=%d", d->repeat_current);
             d->reset_state = false;

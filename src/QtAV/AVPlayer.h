@@ -48,6 +48,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(bool asyncLoad READ isAsyncLoad WRITE setAsyncLoad NOTIFY asyncLoadChanged)
     Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
+    Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
     Q_PROPERTY(qint64 startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
     Q_PROPERTY(qint64 stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
@@ -318,6 +319,7 @@ public slots:
      *  pos < 0: duration() + pos
      */
     void setStopPosition(qint64 pos);
+    bool isSeekable() const;
     /*!
      * \brief setPosition equals to seek(qreal)
      *  position < 0: 0
@@ -354,6 +356,7 @@ signals:
     void currentRepeatChanged(int r);
     void startPositionChanged(qint64 position);
     void stopPositionChanged(qint64 position);
+    void seekableChanged();
     void positionChanged(qint64 position);
     void interruptTimeoutChanged();
     void brightnessChanged(int val);

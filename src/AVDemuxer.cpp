@@ -188,6 +188,7 @@ class AVDemuxer::Private
 public:
     Private()
         : media_status(NoMedia)
+        , seekable(false)
         , network(false)
         , has_attached_pic(false)
         , started(false)
@@ -242,8 +243,19 @@ public:
             network = true; //iformat.flags: AVFMT_NOFILE
         }
     }
+    bool checkSeekable() {
+        if (!format_ctx)
+            return false;
+        if (input)
+            return input->isSeekable();
+        if (format_ctx->pb)
+            return format_ctx->pb->seekable;
+        // avio context null. not sure the correct way to detect seekable
+        return format_ctx->iformat->read_seek || format_ctx->iformat->read_seek2;
+    }
 
     MediaStatus media_status;
+    bool seekable;
     bool network;
     bool has_attached_pic;
     bool started;
@@ -401,7 +413,7 @@ bool AVDemuxer::atEnd() const
 
 bool AVDemuxer::isSeekable() const
 {
-    return true;
+    return d->seekable;
 }
 
 void AVDemuxer::setSeekUnit(SeekUnit unit)
@@ -663,15 +675,24 @@ bool AVDemuxer::load()
     if (!prepareStreams()) {
         return false;
     }
-
     d->started = false;
     setMediaStatus(LoadedMedia);
     emit loaded();
+    const bool was_seekable = d->seekable;
+    d->seekable = d->checkSeekable();
+    if (was_seekable != d->seekable)
+        emit seekableChanged();
     return true;
 }
 
 bool AVDemuxer::unload()
 {
+    /*
+    if (d->seekable) {
+        d->seekable = false; //
+        emit seekableChanged();
+    }
+    */
     d->network = false;
     d->has_attached_pic = false;
     d->eof = false; // true and set false in load()?

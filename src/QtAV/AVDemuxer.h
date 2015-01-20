@@ -95,7 +95,7 @@ public:
      */
     int stream() const;
 
-    bool isSeekable() const;
+    bool isSeekable() const; // TODO: change in unload?
     void setSeekUnit(SeekUnit unit);
     SeekUnit seekUnit() const;
     void setSeekTarget(SeekTarget target);
@@ -173,6 +173,7 @@ signals:
     void finished(); //end of file
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void mediaStatusChanged(QtAV::MediaStatus status);
+    void seekableChanged();
 private:
     bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
     // set wanted_xx_stream. call openCodecs() to read new stream frames

@@ -83,6 +83,7 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
+    connect(mpPlayer, SIGNAL(seekableChanged()), SIGNAL(seekableChanged()));
     connect(this, SIGNAL(volumeChanged()), SLOT(applyVolume()));
     connect(this, SIGNAL(channelLayoutChanged()), SLOT(applyChannelLayout()));
 
@@ -344,7 +345,7 @@ int QmlAVPlayer::position() const
 
 bool QmlAVPlayer::isSeekable() const
 {
-    return true;
+    return mpPlayer && mpPlayer->isSeekable();
 }
 
 QmlAVPlayer::Status QmlAVPlayer::status() const

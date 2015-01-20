@@ -807,7 +807,7 @@ void MainWindow::onStartPlay()
     mpTimeSlider->setMinimum(mpPlayer->mediaStartPosition());
     mpTimeSlider->setMaximum(mpPlayer->mediaStopPosition());
     mpTimeSlider->setValue(0);
-    mpTimeSlider->setEnabled(true);
+    mpTimeSlider->setEnabled(mpPlayer->isSeekable());
     mpEnd->setText(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()).toString("HH:mm:ss"));
     setVolume();
     mShowControl = 0;
@@ -922,7 +922,8 @@ void MainWindow::timerEvent(QTimerEvent *e)
 
 void MainWindow::onPositionChange(qint64 pos)
 {
-    mpTimeSlider->setValue(pos);
+    if (mpPlayer->isSeekable())
+        mpTimeSlider->setValue(pos);
     mpCurrent->setText(QTime(0, 0, 0).addMSecs(pos).toString("HH:mm:ss"));
 }
 

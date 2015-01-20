@@ -33,8 +33,6 @@
  *  Qt.Multimedia like api
  * MISSING:
  * bufferProgress, error, errorString, metaData
- * NOT COMPLETE:
- * seekable
  */
 namespace QtAV {
 class AVPlayer;
