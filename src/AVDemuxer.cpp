@@ -538,7 +538,7 @@ bool AVDemuxer::setMedia(const QString &fileName)
         d->file.insert(3, 'h');
     else if (d->file.startsWith(kFileScheme))
         d->file = getLocalPath(d->file);
-    d->media_changed = url_old == d->file;
+    d->media_changed = url_old != d->file;
     // a local file. return here to avoid protocol checking. If path contains ":", protocol checking will fail
     if (d->file.startsWith(QChar('/')))
         return d->media_changed;
@@ -577,14 +577,14 @@ bool AVDemuxer::setMedia(QIODevice* device)
         return true;
     }
     // TODO: use property?
-    d->media_changed = qin->device() == device;
+    d->media_changed = qin->device() != device;
     qin->setIODevice(device); //open outside?
     return d->media_changed;
 }
 
 bool AVDemuxer::setMedia(AVInput *in)
 {
-    d->media_changed = in == d->input;
+    d->media_changed = in != d->input;
     d->file = QString();
     d->file_orig = QString();
     if (!d->input)
