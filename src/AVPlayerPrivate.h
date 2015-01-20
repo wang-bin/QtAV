@@ -40,9 +40,14 @@ public:
     ~Private();
 
     void initStatistics();
+    void initBaseStatistics();
+    void initCommonStatistics(int s, Statistics::Common* st, AVCodecContext* avctx);
+    void initAudioStatistics(int s);
+    void initVideoStatistics(int s);
+    void initSubtitleStatistics(int s);
+
     bool setupAudioThread(AVPlayer *player);
     bool setupVideoThread(AVPlayer *player);
-
 
     //TODO: addAVOutput()
     template<class Out>

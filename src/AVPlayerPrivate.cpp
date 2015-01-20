@@ -173,13 +173,21 @@ AVPlayer::Private::~Private() {
     }
 }
 
-//TODO: av_guess_frame_rate in latest ffmpeg
 void AVPlayer::Private::initStatistics()
+{
+    initBaseStatistics();
+    initAudioStatistics(demuxer.audioStream());
+    initVideoStatistics(demuxer.videoStream());
+    //initSubtitleStatistics(demuxer.subtitleStream());
+}
+
+//TODO: av_guess_frame_rate in latest ffmpeg
+void AVPlayer::Private::initBaseStatistics()
 {
     statistics.reset();
     statistics.url = current_source.type() == QVariant::String ? current_source.toString() : QString();
     statistics.bit_rate = fmt_ctx->bit_rate;
-    statistics.format = fmt_ctx->iformat->name;
+    statistics.format = QString().sprintf("%s - %s", fmt_ctx->iformat->name, fmt_ctx->iformat->long_name);
     //AV_TIME_BASE_Q: msvc error C2143
     //fmt_ctx->duration may be AV_NOPTS_VALUE. AVDemuxer.duration deals with this case
     statistics.start_time = QTime(0, 0, 0).addMSecs(int(demuxer.startTime()));
@@ -191,85 +199,92 @@ void AVPlayer::Private::initStatistics()
     while ((tag = av_dict_get(fmt_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
         statistics.metadata.insert(tag->key, tag->value);
     }
-    struct common_statistics_t {
-        int stream_idx;
-        AVCodecContext *ctx;
-        Statistics::Common *st;
-        const char *name;
-    } common_statistics[] = {
-        { demuxer.videoStream(), demuxer.videoCodecContext(), &statistics.video, "video"},
-        { demuxer.audioStream(), demuxer.audioCodecContext(), &statistics.audio, "audio"},
-        { 0, 0, 0, 0}
-    };
-    for (int i = 0; common_statistics[i].name; ++i) {
-        common_statistics_t cs = common_statistics[i];
-        if (cs.stream_idx < 0)
-            continue;
-        AVStream *stream = fmt_ctx->streams[cs.stream_idx];
-        qDebug("stream: %d, duration=%lld (%lld ms==%lld), time_base=%f", cs.stream_idx, stream->duration, qint64(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0)
-               , demuxer.duration(), av_q2d(stream->time_base));
-        cs.st->available = true;
-        cs.st->codec = avcodec_get_name(cs.ctx->codec_id);
-        cs.st->codec_long = get_codec_long_name(cs.ctx->codec_id);
-        cs.st->total_time = QTime(0, 0, 0).addMSecs(stream->duration == AV_NOPTS_VALUE ? 0 : int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
-        cs.st->start_time = QTime(0, 0, 0).addMSecs(stream->start_time == AV_NOPTS_VALUE ? 0 : int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
-        qDebug("codec: %s(%s)", qPrintable(cs.st->codec), qPrintable(cs.st->codec_long));
-        cs.st->bit_rate = cs.ctx->bit_rate; //fmt_ctx
-        cs.st->frames = stream->nb_frames;
-        //qDebug("time: %f~%f, nb_frames=%lld", cs.st->start_time, cs.st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
-        tag = NULL;
-        while ((tag = av_dict_get(stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
-            cs.st->metadata.insert(tag->key, tag->value);
-        }
-    }
-    if (demuxer.audioStream() >= 0) {
-        AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
-        correct_audio_channels(aCodecCtx);
-        statistics.audio_only.block_align = aCodecCtx->block_align;
-        statistics.audio_only.channels = aCodecCtx->channels;
-        char cl[128]; //
-        // nb_channels -1: will use av_get_channel_layout_nb_channels
-        av_get_channel_layout_string(cl, sizeof(cl), aCodecCtx->channels, aCodecCtx->channel_layout); //TODO: ff version
-        statistics.audio_only.channel_layout = cl;
-        statistics.audio_only.sample_fmt = av_get_sample_fmt_name(aCodecCtx->sample_fmt);
-        statistics.audio_only.frame_size = aCodecCtx->frame_size;
-        statistics.audio_only.sample_rate = aCodecCtx->sample_rate;
-    }
-    if (demuxer.videoStream() >= 0) {
-        AVCodecContext *vCodecCtx = demuxer.videoCodecContext();
-        AVStream *stream = fmt_ctx->streams[demuxer.videoStream()];
-        statistics.video.frames = stream->nb_frames;
-        //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
-        //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
-        //FIXME: which 1 should we choose? avg_frame_rate may be nan or 0, then use AVStream.r_frame_rate, r_frame_rate may be wrong(guessed value)
-        // TODO: seems that r_frame_rate will be removed libav > 9.10. Use macro to check version?
-        //if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
-            statistics.video_only.frame_rate = av_q2d(stream->avg_frame_rate);
-        //else
-        //    statistics.video_only.frame_rate = av_q2d(stream->r_frame_rate);
-        statistics.video_only.coded_height = vCodecCtx->coded_height;
-        statistics.video_only.coded_width = vCodecCtx->coded_width;
-        statistics.video_only.gop_size = vCodecCtx->gop_size;
-        statistics.video_only.pix_fmt = av_get_pix_fmt_name(vCodecCtx->pix_fmt);
-        statistics.video_only.height = vCodecCtx->height;
-        statistics.video_only.width = vCodecCtx->width;
-    }
     notify_interval = Internal::computeNotifyPrecision(demuxer.duration(), demuxer.frameRate());
     qDebug("notify_interval: %d", notify_interval);
 }
 
+void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCodecContext *avctx)
+{
+    AVStream *stream = fmt_ctx->streams[s];
+    qDebug("stream: %d, duration=%lld (%lld ms), time_base=%f", s, stream->duration, qint64(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0), av_q2d(stream->time_base));
+    // AVCodecContext.codec_name is deprecated. use avcodec_get_name. check null avctx->codec?
+    st->codec = avcodec_get_name(avctx->codec_id);
+    st->codec_long = get_codec_long_name(avctx->codec_id);
+    st->total_time = QTime(0, 0, 0).addMSecs(stream->duration == AV_NOPTS_VALUE ? 0 : int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+    st->start_time = QTime(0, 0, 0).addMSecs(stream->start_time == AV_NOPTS_VALUE ? 0 : int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+    qDebug("codec: %s(%s)", qPrintable(st->codec), qPrintable(st->codec_long));
+    st->bit_rate = avctx->bit_rate; //fmt_ctx
+    st->frames = stream->nb_frames;
+    //qDebug("time: %f~%f, nb_frames=%lld", st->start_time, st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
+    AVDictionaryEntry *tag = NULL;
+    while ((tag = av_dict_get(stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+        st->metadata.insert(tag->key, tag->value);
+    }
+}
+
+void AVPlayer::Private::initAudioStatistics(int s)
+{
+    AVCodecContext *avctx = demuxer.audioCodecContext();
+    if (!avctx) {
+        statistics.audio = Statistics::Common();
+        statistics.audio_only = Statistics::AudioOnly();
+        return;
+    }
+    statistics.audio.available = s == demuxer.audioStream();
+    initCommonStatistics(s, &statistics.audio, avctx);
+    correct_audio_channels(avctx);
+    statistics.audio_only.block_align = avctx->block_align;
+    statistics.audio_only.channels = avctx->channels;
+    char cl[128]; //
+    // nb_channels -1: will use av_get_channel_layout_nb_channels
+    av_get_channel_layout_string(cl, sizeof(cl), avctx->channels, avctx->channel_layout); //TODO: ff version
+    statistics.audio_only.channel_layout = cl;
+    statistics.audio_only.sample_fmt = av_get_sample_fmt_name(avctx->sample_fmt);
+    statistics.audio_only.frame_size = avctx->frame_size;
+    statistics.audio_only.sample_rate = avctx->sample_rate;
+}
+
+void AVPlayer::Private::initVideoStatistics(int s)
+{
+    AVCodecContext *avctx = demuxer.videoCodecContext();
+    if (!avctx) {
+        statistics.video = Statistics::Common();
+        statistics.video_only = Statistics::VideoOnly();
+        return;
+    }
+    statistics.video.available = s == demuxer.videoStream();
+    initCommonStatistics(s, &statistics.video, avctx);
+    AVStream *stream = fmt_ctx->streams[s];
+    statistics.video.frames = stream->nb_frames;
+    //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
+    //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
+    //FIXME: which 1 should we choose? avg_frame_rate may be nan or 0, then use AVStream.r_frame_rate, r_frame_rate may be wrong(guessed value)
+    // TODO: seems that r_frame_rate will be removed libav > 9.10. Use macro to check version?
+    //if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
+        statistics.video_only.frame_rate = av_q2d(stream->avg_frame_rate);
+    //else
+    //    statistics.video_only.frame_rate = av_q2d(stream->r_frame_rate);
+    statistics.video_only.coded_height = avctx->coded_height;
+    statistics.video_only.coded_width = avctx->coded_width;
+    statistics.video_only.gop_size = avctx->gop_size;
+    statistics.video_only.pix_fmt = av_get_pix_fmt_name(avctx->pix_fmt);
+    statistics.video_only.height = avctx->height;
+    statistics.video_only.width = avctx->width;
+}
+// notify statistics change after audio/video thread is set
 bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
 {
+    demuxer.setStreamIndex(AVDemuxer::AudioStream, audio_track);
     // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
     // clear packets before stream changed
     if (athread) {
         athread->packetQueue()->clear();
         athread->setDecoder(0);
         athread->setOutput(0);
+        initAudioStatistics(demuxer.audioStream());
     }
-    demuxer.setStreamIndex(AVDemuxer::AudioStream, audio_track);
-    AVCodecContext *aCodecCtx = demuxer.audioCodecContext();
-    if (!aCodecCtx) {
+    AVCodecContext *avctx = demuxer.audioCodecContext();
+    if (!avctx) {
         // TODO: close ao?
         return false;
     }
@@ -282,8 +297,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     adec = new AudioDecoder();
     connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
-    statistics.audio.decoder = adec->name();
-    adec->setCodecContext(aCodecCtx);
+    adec->setCodecContext(avctx);
     adec->setOptions(ac_opt);
     if (!adec->open()) {
         AVError e(AVError::AudioCodecNotFound);
@@ -291,6 +305,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         emit player->error(e);
         return false;
     }
+    statistics.audio.decoder = adec->name();
     //TODO: setAudioOutput() like vo
     if (!ao && ao_enabled) {
         foreach (AudioOutputId aoid, ao_ids) {
@@ -307,16 +322,16 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         //masterClock()->setClockType(AVClock::ExternalClock);
         //return;
     } else {
-        correct_audio_channels(aCodecCtx);
+        correct_audio_channels(avctx);
         AudioFormat af;
-        af.setSampleRate(aCodecCtx->sample_rate);
-        af.setSampleFormatFFmpeg(aCodecCtx->sample_fmt);
+        af.setSampleRate(avctx->sample_rate);
+        af.setSampleFormatFFmpeg(avctx->sample_fmt);
         // 5, 6, 7 channels may not play
-        if (aCodecCtx->channels > 2)
+        if (avctx->channels > 2)
             af.setChannelLayout(ao->preferredChannelLayout());
         else
-            af.setChannelLayoutFFmpeg(aCodecCtx->channel_layout);
-        //af.setChannels(aCodecCtx->channels);
+            af.setChannelLayoutFFmpeg(avctx->channel_layout);
+        //af.setChannels(avctx->channels);
         // FIXME: workaround. planar convertion crash now!
         if (af.isPlanar()) {
             af.setSampleFormat(ao->preferredSampleFormat());
@@ -343,10 +358,10 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     if (ao)
         adec->resampler()->setOutAudioFormat(ao->audioFormat());
-    adec->resampler()->inAudioFormat().setSampleFormatFFmpeg(aCodecCtx->sample_fmt);
-    adec->resampler()->inAudioFormat().setSampleRate(aCodecCtx->sample_rate);
-    adec->resampler()->inAudioFormat().setChannels(aCodecCtx->channels);
-    adec->resampler()->inAudioFormat().setChannelLayoutFFmpeg(aCodecCtx->channel_layout);
+    adec->resampler()->inAudioFormat().setSampleFormatFFmpeg(avctx->sample_fmt);
+    adec->resampler()->inAudioFormat().setSampleRate(avctx->sample_rate);
+    adec->resampler()->inAudioFormat().setChannels(avctx->channels);
+    adec->resampler()->inAudioFormat().setChannelLayoutFFmpeg(avctx->channel_layout);
     adec->prepare();
     if (!athread) {
         qDebug("new audio thread");
@@ -376,16 +391,17 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
 
 bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
 {
+    demuxer.setStreamIndex(AVDemuxer::VideoStream, video_track);
     // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
     // clear packets before stream changed
     if (vthread) {
         vthread->packetQueue()->clear();
         // TODO: wait for next keyframe
         vthread->setDecoder(0); // TODO: not work now. must dynamic check decoder in every loop in VideoThread.run()
+        initVideoStatistics(demuxer.videoStream());
     }
-    demuxer.setStreamIndex(AVDemuxer::VideoStream, video_track);
-    AVCodecContext *vCodecCtx = demuxer.videoCodecContext();
-    if (!vCodecCtx) {
+    AVCodecContext *avctx = demuxer.videoCodecContext();
+    if (!avctx) {
         return false;
     }
     if (vdec) {
@@ -400,7 +416,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
             continue;
         }
         //vd->isAvailable() //TODO: the value is wrong now
-        vd->setCodecContext(vCodecCtx);
+        vd->setCodecContext(avctx);
         vd->setOptions(vc_opt);
         if (vd->prepare() && vd->open()) {
             vdec = vd;

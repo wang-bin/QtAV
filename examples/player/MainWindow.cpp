@@ -592,6 +592,8 @@ void MainWindow::changeAudioTrack(QAction *action)
     mpAudioTrackAction->setChecked(false);
     mpAudioTrackAction = action;
     mpAudioTrackAction->setChecked(true);
+    if (mpStatisticsView && mpStatisticsView->isVisible())
+        mpStatisticsView->setStatistics(mpPlayer->statistics());
 }
 
 void MainWindow::changeVO(QAction *action)
