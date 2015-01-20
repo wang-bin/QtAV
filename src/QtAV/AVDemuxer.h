@@ -175,12 +175,6 @@ signals:
     void mediaStatusChanged(QtAV::MediaStatus status);
     void seekableChanged();
 private:
-    bool prepareStreams(); //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
-    // set wanted_xx_stream. call openCodecs() to read new stream frames
-    // stream < 0 is choose best
-    bool setStream(StreamType st, int stream);
-    void applyOptionsForDict();
-    void applyOptionsForContext();
     void setMediaStatus(MediaStatus status);
     // error code (errorCode) and message (msg) may be modified internally
     void handleError(int averr, AVError::ErrorCode* errorCode, QString& msg);

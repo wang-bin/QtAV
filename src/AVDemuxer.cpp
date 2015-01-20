@@ -214,6 +214,8 @@ public:
             input = 0;
         }
     }
+    void applyOptionsForDict();
+    void applyOptionsForContext();
     void resetStreams() {
         stream = -1;
         if (media_changed)
@@ -253,6 +255,11 @@ public:
         // avio context null. not sure the correct way to detect seekable
         return format_ctx->iformat->read_seek || format_ctx->iformat->read_seek2;
     }
+    // set wanted_xx_stream. call openCodecs() to read new stream frames
+    // stream < 0 is choose best
+    bool setStream(AVDemuxer::StreamType st, int streamValue);
+    //called by loadFile(). if change to a new stream, call it(e.g. in AVPlayer)
+    bool prepareStreams();
 
     MediaStatus media_status;
     bool seekable;
@@ -633,7 +640,7 @@ bool AVDemuxer::load()
 
     setMediaStatus(LoadingMedia);
     int ret;
-    applyOptionsForDict();
+    d->applyOptionsForDict();
     if (d->input) {
         d->format_ctx->pb = (AVIOContext*)d->input->avioContext();
         d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
@@ -672,7 +679,7 @@ bool AVDemuxer::load()
         return false;
     }
 
-    if (!prepareStreams()) {
+    if (!d->prepareStreams()) {
         return false;
     }
     d->started = false;
@@ -717,31 +724,6 @@ bool AVDemuxer::isLoaded() const
     return d->format_ctx && (d->astream.avctx || d->vstream.avctx || d->sstream.avctx);
 }
 
-bool AVDemuxer::prepareStreams()
-{
-    d->has_attached_pic = false;
-    d->resetStreams();
-    if (!d->format_ctx)
-        return false;
-    AVMediaType type = AVMEDIA_TYPE_UNKNOWN;
-    for (unsigned int i = 0; i < d->format_ctx->nb_streams; ++i) {
-        type = d->format_ctx->streams[i]->codec->codec_type;
-        if (type == AVMEDIA_TYPE_VIDEO) {
-            d->video_streams.push_back(i);
-        } else if (type == AVMEDIA_TYPE_AUDIO) {
-            d->audio_streams.push_back(i);
-        } else if (type == AVMEDIA_TYPE_SUBTITLE) {
-            d->subtitle_streams.push_back(i);
-        }
-    }
-    if (d->audio_streams.isEmpty() && d->video_streams.isEmpty() && d->subtitle_streams.isEmpty())
-        return false;
-    setStream(AudioStream, -1);
-    setStream(VideoStream, -1);
-    setStream(SubtitleStream, -1);
-    return true;
-}
-
 bool AVDemuxer::hasAttacedPicture() const
 {
     return d->has_attached_pic;
@@ -770,56 +752,9 @@ bool AVDemuxer::setStreamIndex(StreamType st, int index)
         qWarning("invalid index %d (valid is 0~%d) for stream type %d.", index, streams->size(), st);
         return false;
     }
-    if (!setStream(st, streams->at(index)))
+    if (!d->setStream(st, streams->at(index)))
         return false;
     si->wanted_index = index;
-    return true;
-}
-
-bool AVDemuxer::setStream(StreamType st, int streamValue)
-{
-    if (streamValue < -1)
-        streamValue = -1;
-    QList<int> *streams = 0;
-    Private::StreamInfo *si = 0;
-    if (st == AudioStream) { // TODO: use a struct
-        si = &d->astream;
-        streams = &d->audio_streams;
-    } else if (st == VideoStream) {
-        si = &d->vstream;
-        streams = &d->video_streams;
-    } else if (st == SubtitleStream) {
-        si = &d->sstream;
-        streams = &d->subtitle_streams;
-    }
-    if (!si /*|| si->wanted_stream == streamValue*/) { //init -2
-        qWarning("stream type %d not found", st);
-        return false;
-    }
-    //if (!streams->contains(si->stream)) {
-      //  qWarning("%d is not a valid stream for stream type %d", si->stream, st);
-        //return false;
-    //}
-    bool index_valid = si->wanted_index >= 0 && si->wanted_index < streams->size();
-    int s = AVERROR_STREAM_NOT_FOUND;
-    if (streamValue >= 0 || !index_valid) {
-        // or simply set s to streamValue if value is contained in streams?
-        s = av_find_best_stream(d->format_ctx
-                                , st == AudioStream ? AVMEDIA_TYPE_AUDIO
-                                : st == VideoStream ? AVMEDIA_TYPE_VIDEO
-                                : st == SubtitleStream ? AVMEDIA_TYPE_SUBTITLE
-                                : AVMEDIA_TYPE_UNKNOWN
-                                , streamValue, -1, NULL, 0); // streamValue -1 is ok
-    } else { //index_valid
-        s = streams->at(si->wanted_index);
-    }
-    if (s == AVERROR_STREAM_NOT_FOUND)
-        return false;
-    // don't touch wanted index
-    si->stream = s;
-    si->wanted_stream = streamValue;
-    si->avctx = d->format_ctx->streams[s]->codec;
-    d->has_attached_pic = !!(d->format_ctx->streams[s]->disposition & AV_DISPOSITION_ATTACHED_PIC);
     return true;
 }
 
@@ -1024,101 +959,7 @@ void AVDemuxer::setInterruptStatus(bool interrupt)
 void AVDemuxer::setOptions(const QVariantHash &dict)
 {
     d->options = dict;
-    applyOptionsForContext(); // apply even if avformat context is open
-}
-
-void AVDemuxer::applyOptionsForDict()
-{
-    if (d->dict) {
-        av_dict_free(&d->dict);
-        d->dict = 0; //aready 0 in av_free
-    }
-    if (d->options.isEmpty())
-        return;
-    QVariant opt(d->options);
-    if (d->options.contains("avformat")) {
-        opt = d->options.value("avformat");
-        if (opt.type() == QVariant::Map) {
-            QVariantMap avformat_dict(opt.toMap());
-            if (avformat_dict.isEmpty())
-                return;
-            QMapIterator<QString, QVariant> i(avformat_dict);
-            while (i.hasNext()) {
-                i.next();
-                const QVariant::Type vt = i.value().type();
-                if (vt == QVariant::Map)
-                    continue;
-                const QByteArray key(i.key().toLower().toUtf8());
-                av_dict_set(&d->dict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
-                qDebug("avformat dict: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-            }
-            return;
-        }
-    }
-    QVariantHash avformat_dict(opt.toHash());
-    if (avformat_dict.isEmpty())
-        return;
-    QHashIterator<QString, QVariant> i(avformat_dict);
-    while (i.hasNext()) {
-        i.next();
-        const QVariant::Type vt = i.value().type();
-        if (vt == QVariant::Hash)
-            continue;
-        const QByteArray key(i.key().toLower().toUtf8());
-        av_dict_set(&d->dict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
-        qDebug("avformat dict: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-    }
-}
-
-void AVDemuxer::applyOptionsForContext()
-{
-    if (!d->format_ctx)
-        return;
-    if (d->options.isEmpty()) {
-        //av_opt_set_defaults(d->format_ctx);  //can't set default values! result maybe unexpected
-        return;
-    }
-    QVariant opt(d->options);
-    if (d->options.contains("avformat")) {
-        opt = d->options.value("avformat");
-        if (opt.type() == QVariant::Map) {
-            QVariantMap avformat_dict(opt.toMap());
-            if (avformat_dict.isEmpty())
-                return;
-            QMapIterator<QString, QVariant> i(avformat_dict);
-            while (i.hasNext()) {
-                i.next();
-                const QVariant::Type vt = i.value().type();
-                if (vt == QVariant::Map)
-                    continue;
-                const QByteArray key(i.key().toLower().toUtf8());
-                qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-                if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
-                    av_opt_set_int(d->format_ctx, key.constData(), i.value().toInt(), 0);
-                } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
-                    av_opt_set_int(d->format_ctx, key.constData(), i.value().toLongLong(), 0);
-                }
-            }
-            return;
-        }
-    }
-    QVariantHash avformat_dict(opt.toHash());
-    if (avformat_dict.isEmpty())
-        return;
-    QHashIterator<QString, QVariant> i(avformat_dict);
-    while (i.hasNext()) {
-        i.next();
-        const QVariant::Type vt = i.value().type();
-        if (vt == QVariant::Hash)
-            continue;
-        const QByteArray key(i.key().toLower().toUtf8());
-        qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-        if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
-            av_opt_set_int(d->format_ctx, key.constData(), i.value().toInt(), 0);
-        } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
-            av_opt_set_int(d->format_ctx, key.constData(), i.value().toLongLong(), 0);
-        }
-    }
+    d->applyOptionsForContext(); // apply even if avformat context is open
 }
 
 QVariantHash AVDemuxer::options() const
@@ -1137,6 +978,100 @@ void AVDemuxer::setMediaStatus(MediaStatus status)
     d->media_status = status;
 
     emit mediaStatusChanged(d->media_status);
+}
+
+void AVDemuxer::Private::applyOptionsForDict()
+{
+    if (dict) {
+        av_dict_free(&dict);
+        dict = 0; //aready 0 in av_free
+    }
+    if (options.isEmpty())
+        return;
+    QVariant opt(options);
+    if (options.contains("avformat")) {
+        opt = options.value("avformat");
+        if (opt.type() == QVariant::Map) {
+            QVariantMap avformat_dict(opt.toMap());
+            if (avformat_dict.isEmpty())
+                return;
+            QMapIterator<QString, QVariant> i(avformat_dict);
+            while (i.hasNext()) {
+                i.next();
+                const QVariant::Type vt = i.value().type();
+                if (vt == QVariant::Map)
+                    continue;
+                const QByteArray key(i.key().toLower().toUtf8());
+                av_dict_set(&dict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
+                qDebug("avformat dict: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+            }
+            return;
+        }
+    }
+    QVariantHash avformat_dict(opt.toHash());
+    if (avformat_dict.isEmpty())
+        return;
+    QHashIterator<QString, QVariant> i(avformat_dict);
+    while (i.hasNext()) {
+        i.next();
+        const QVariant::Type vt = i.value().type();
+        if (vt == QVariant::Hash)
+            continue;
+        const QByteArray key(i.key().toLower().toUtf8());
+        av_dict_set(&dict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
+        qDebug("avformat dict: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+    }
+}
+
+void AVDemuxer::Private::applyOptionsForContext()
+{
+    if (!format_ctx)
+        return;
+    if (options.isEmpty()) {
+        //av_opt_set_defaults(format_ctx);  //can't set default values! result maybe unexpected
+        return;
+    }
+    QVariant opt(options);
+    if (options.contains("avformat")) {
+        opt = options.value("avformat");
+        if (opt.type() == QVariant::Map) {
+            QVariantMap avformat_dict(opt.toMap());
+            if (avformat_dict.isEmpty())
+                return;
+            QMapIterator<QString, QVariant> i(avformat_dict);
+            while (i.hasNext()) {
+                i.next();
+                const QVariant::Type vt = i.value().type();
+                if (vt == QVariant::Map)
+                    continue;
+                const QByteArray key(i.key().toLower().toUtf8());
+                qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+                if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
+                    av_opt_set_int(format_ctx, key.constData(), i.value().toInt(), 0);
+                } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
+                    av_opt_set_int(format_ctx, key.constData(), i.value().toLongLong(), 0);
+                }
+            }
+            return;
+        }
+    }
+    QVariantHash avformat_dict(opt.toHash());
+    if (avformat_dict.isEmpty())
+        return;
+    QHashIterator<QString, QVariant> i(avformat_dict);
+    while (i.hasNext()) {
+        i.next();
+        const QVariant::Type vt = i.value().type();
+        if (vt == QVariant::Hash)
+            continue;
+        const QByteArray key(i.key().toLower().toUtf8());
+        qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
+        if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
+            av_opt_set_int(format_ctx, key.constData(), i.value().toInt(), 0);
+        } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
+            av_opt_set_int(format_ctx, key.constData(), i.value().toLongLong(), 0);
+        }
+    }
 }
 
 void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &msg)
@@ -1176,4 +1111,75 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     *errorCode = ec;
 }
 
+bool AVDemuxer::Private::setStream(AVDemuxer::StreamType st, int streamValue)
+{
+    if (streamValue < -1)
+        streamValue = -1;
+    QList<int> *streams = 0;
+    Private::StreamInfo *si = 0;
+    if (st == AudioStream) { // TODO: use a struct
+        si = &astream;
+        streams = &audio_streams;
+    } else if (st == VideoStream) {
+        si = &vstream;
+        streams = &video_streams;
+    } else if (st == SubtitleStream) {
+        si = &sstream;
+        streams = &subtitle_streams;
+    }
+    if (!si /*|| si->wanted_stream == streamValue*/) { //init -2
+        qWarning("stream type %d not found", st);
+        return false;
+    }
+    //if (!streams->contains(si->stream)) {
+      //  qWarning("%d is not a valid stream for stream type %d", si->stream, st);
+        //return false;
+    //}
+    bool index_valid = si->wanted_index >= 0 && si->wanted_index < streams->size();
+    int s = AVERROR_STREAM_NOT_FOUND;
+    if (streamValue >= 0 || !index_valid) {
+        // or simply set s to streamValue if value is contained in streams?
+        s = av_find_best_stream(format_ctx
+                                , st == AudioStream ? AVMEDIA_TYPE_AUDIO
+                                : st == VideoStream ? AVMEDIA_TYPE_VIDEO
+                                : st == SubtitleStream ? AVMEDIA_TYPE_SUBTITLE
+                                : AVMEDIA_TYPE_UNKNOWN
+                                , streamValue, -1, NULL, 0); // streamValue -1 is ok
+    } else { //index_valid
+        s = streams->at(si->wanted_index);
+    }
+    if (s == AVERROR_STREAM_NOT_FOUND)
+        return false;
+    // don't touch wanted index
+    si->stream = s;
+    si->wanted_stream = streamValue;
+    si->avctx = format_ctx->streams[s]->codec;
+    has_attached_pic = !!(format_ctx->streams[s]->disposition & AV_DISPOSITION_ATTACHED_PIC);
+    return true;
+}
+
+bool AVDemuxer::Private::prepareStreams()
+{
+    has_attached_pic = false;
+    resetStreams();
+    if (!format_ctx)
+        return false;
+    AVMediaType type = AVMEDIA_TYPE_UNKNOWN;
+    for (unsigned int i = 0; i < format_ctx->nb_streams; ++i) {
+        type = format_ctx->streams[i]->codec->codec_type;
+        if (type == AVMEDIA_TYPE_VIDEO) {
+            video_streams.push_back(i);
+        } else if (type == AVMEDIA_TYPE_AUDIO) {
+            audio_streams.push_back(i);
+        } else if (type == AVMEDIA_TYPE_SUBTITLE) {
+            subtitle_streams.push_back(i);
+        }
+    }
+    if (audio_streams.isEmpty() && video_streams.isEmpty() && subtitle_streams.isEmpty())
+        return false;
+    setStream(AVDemuxer::AudioStream, -1);
+    setStream(AVDemuxer::VideoStream, -1);
+    setStream(AVDemuxer::SubtitleStream, -1);
+    return true;
+}
 } //namespace QtAV
