@@ -28,18 +28,20 @@
 #include <QtAV/FactoryDefine.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h> //it declares a factory we need
+#include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include "QmlAV/QmlAVPlayer.h"
 #include "QmlAV/SGVideoNode.h"
 
 namespace QtAV
 {
-VideoRendererId VideoRendererId_QQuickItem = 65; //leave some for QtAV
+VideoRendererId VideoRendererId_QQuickItem = mkid::id32base36_6<'Q','Q','I','t','e','m'>::value;
 
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, QQuickItem, "QQuickItem")
 
-QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent) :
-    VideoRenderer(*new QQuickItemRendererPrivate)
+QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent)
+    : QQuickItem(parent)
+    , VideoRenderer(*new QQuickItemRendererPrivate)
 {
     Q_UNUSED(parent);
     setFlag(QQuickItem::ItemHasContents, true);
@@ -168,7 +170,7 @@ void QQuickItemRenderer::drawFrame()
         if (d.frame_changed)
             sgvn->setCurrentFrame(d.video_frame);
         d.frame_changed = false;
-        d.video_frame = VideoFrame();
+        //d.video_frame = VideoFrame();
         sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), d.orientation);
         return;
     }
@@ -233,6 +235,7 @@ void QQuickItemRenderer::handleWindowChange(QQuickWindow *win)
 void QQuickItemRenderer::beforeRendering()
 {
     d_func().img_mutex.lock();
+    // TODO: what if current frame not rendered but new frame comes?
 }
 
 void QQuickItemRenderer::afterRendering()
