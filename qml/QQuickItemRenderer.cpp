@@ -41,7 +41,7 @@ FACTORY_REGISTER_ID_AUTO(VideoRenderer, QQuickItem, "QQuickItem")
 
 QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent)
     : QQuickItem(parent)
-    , VideoRenderer(*new QQuickItemRendererPrivate)
+    , VideoRenderer(*new QQuickItemRendererPrivate())
 {
     Q_UNUSED(parent);
     setFlag(QQuickItem::ItemHasContents, true);
@@ -170,7 +170,7 @@ void QQuickItemRenderer::drawFrame()
         if (d.frame_changed)
             sgvn->setCurrentFrame(d.video_frame);
         d.frame_changed = false;
-        //d.video_frame = VideoFrame();
+        d.video_frame = VideoFrame();
         sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), d.orientation);
         return;
     }

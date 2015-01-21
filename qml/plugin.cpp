@@ -27,6 +27,7 @@
 #include "QmlAV/QuickSubtitleItem.h"
 #include "QmlAV/MediaMetaData.h"
 #include "QmlAV/QuickVideoPreview.h"
+#include "QmlAV/QuickFBORenderer.h"
 
 namespace QtAV {
 
@@ -45,6 +46,7 @@ public:
         qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
         qmlRegisterType<QuickSubtitleItem>(uri, 1, 4, "SubtitleItem");
         qmlRegisterType<QuickVideoPreview>(uri, 1, 4, "VideoPreview");
+        qmlRegisterType<QuickFBORenderer>(uri, 1, 5, "VideoOutput2");
         qmlRegisterType<MediaMetaData>();
     }
 };
