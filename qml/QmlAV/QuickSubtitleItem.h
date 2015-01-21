@@ -1,7 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
-    theoribeiro <theo@fictix.com.br>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
