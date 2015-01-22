@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/OpenGLVideo.h"
+#include <QtGui/QColor>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLFunctions>
@@ -152,6 +153,17 @@ void OpenGLVideo::setHue(qreal value)
 void OpenGLVideo::setSaturation(qreal value)
 {
     d_func().material->setSaturation(value);
+}
+
+void OpenGLVideo::fill(const QColor &color)
+{
+#ifndef QT_OPENGL_DYNAMIC
+    glClearColor(color.red(), color.green(), color.blue(), color.alpha());
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#else
+    QOpenGLContext::currentContext()->functions()->glClearColor(color.red(), color.green(), color.blue(), color.alpha());
+    QOpenGLContext::currentContext()->functions()->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
 }
 
 void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4x4& transform)

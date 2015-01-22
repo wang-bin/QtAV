@@ -35,6 +35,7 @@
 #define QOpenGLContext QGLContext
 #endif //!defined(QT_NO_OPENGL)
 #endif
+class QColor;
 
 namespace QtAV {
 
@@ -61,6 +62,7 @@ public:
     void setOpenGLContext(QOpenGLContext *ctx);
     QOpenGLContext* openGLContext();
     void setCurrentFrame(const VideoFrame& frame);
+    void fill(const QColor& color);
     /*!
      * \brief render
      * all are in Qt's coordinate

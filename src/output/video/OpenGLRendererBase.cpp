@@ -93,8 +93,7 @@ bool OpenGLRendererBase::needUpdateBackground() const
 
 void OpenGLRendererBase::drawBackground()
 {
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    d_func().glv.fill(QColor(Qt::black));
 }
 
 void OpenGLRendererBase::drawFrame()
