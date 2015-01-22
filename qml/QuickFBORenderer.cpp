@@ -68,9 +68,13 @@ public:
     void setupAspectRatio() {
         matrix.setToIdentity();
         matrix.scale((GLfloat)out_rect.width()/(GLfloat)renderer_width, (GLfloat)out_rect.height()/(GLfloat)renderer_height, 1);
-        // FIXME: why must rotate additional 180?
-        //if (orientation)
-            matrix.rotate(orientation+180, 0, 0, 1); // Z axis
+        if (orientation)
+            matrix.rotate(orientation, 0, 0, 1); // Z axis
+        // FIXME: why x/y is mirrored?
+        if (orientation%180)
+            matrix.scale(-1, 1);
+        else
+            matrix.scale(1, -1);
     }
     bool opengl;
     bool frame_changed;
