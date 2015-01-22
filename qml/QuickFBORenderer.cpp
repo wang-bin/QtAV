@@ -28,6 +28,7 @@
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include <QtGui/QOpenGLFramebufferObject>
+#include <QtQuick/QQuickWindow>
 // check glv.ctx and set it in Renderer::render()
 
 namespace QtAV {
@@ -181,6 +182,7 @@ void QuickFBORenderer::fboSizeChanged(const QSize &size)
 void QuickFBORenderer::renderToFbo()
 {
     handlePaintEvent();
+    window()->update();
 }
 
 bool QuickFBORenderer::needUpdateBackground() const
@@ -210,7 +212,6 @@ void QuickFBORenderer::drawFrame()
     d.glv.render(d.out_rect, normalizedROI(), d.matrix);
     d.frame_changed = false;
 }
-
 
 bool QuickFBORenderer::event(QEvent *e)
 {
