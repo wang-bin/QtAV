@@ -48,11 +48,11 @@ public:
         PreserveAspectCrop = Qt::KeepAspectRatioByExpanding
     };
 
-    Renderer *createRenderer() const;
+    Renderer *createRenderer() const Q_DECL_OVERRIDE;
 
     explicit QuickFBORenderer(QQuickItem *parent = 0);
-    virtual VideoRendererId id() const;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    virtual VideoRendererId id() const Q_DECL_OVERRIDE;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
     QObject *source() const;
     void setSource(QObject *source);
@@ -72,15 +72,18 @@ Q_SIGNALS:
     void openGLChanged();
 
 protected:
-    virtual bool event(QEvent *e);
-    virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);
-    virtual bool receiveFrame(const VideoFrame &frame);
-    virtual bool needUpdateBackground() const;
-    virtual bool needDrawFrame() const;
-    virtual void drawFrame();
+    virtual bool event(QEvent *e) Q_DECL_OVERRIDE;
+    virtual bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
+    virtual bool needUpdateBackground() const Q_DECL_OVERRIDE;
+    virtual void drawBackground() Q_DECL_OVERRIDE;
+    virtual bool needDrawFrame() const Q_DECL_OVERRIDE;
+    virtual void drawFrame() Q_DECL_OVERRIDE;
 private:
-    virtual bool onSetRegionOfInterest(const QRectF& roi);
-    virtual bool onSetOrientation(int value);
+    virtual bool onSetRegionOfInterest(const QRectF& roi) Q_DECL_OVERRIDE;
+    virtual bool onSetOrientation(int value) Q_DECL_OVERRIDE;
+    virtual void onSetOutAspectRatio(qreal ratio) Q_DECL_OVERRIDE;
+    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode) Q_DECL_OVERRIDE;
+    void updateRenderRect();
 };
 typedef QuickFBORenderer VideoRendererQuickFBO;
 } //namespace QtAV

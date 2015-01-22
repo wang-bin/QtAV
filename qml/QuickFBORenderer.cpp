@@ -32,7 +32,7 @@
 
 namespace QtAV {
 VideoRendererId VideoRendererId_QuickFBO = mkid::id32base36_4<'Q','F','B','O'>::value;
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, QuickFBO, "QuickFBO");
+FACTORY_REGISTER_ID_AUTO(VideoRenderer, QuickFBO, "QuickFBO")
 
 class FBORenderer : public QQuickFramebufferObject::Renderer
 {
@@ -68,8 +68,9 @@ public:
     void setupAspectRatio() {
         matrix.setToIdentity();
         matrix.scale((GLfloat)out_rect.width()/(GLfloat)renderer_width, (GLfloat)out_rect.height()/(GLfloat)renderer_height, 1);
-        if (orientation)
-            matrix.rotate(orientation, 0, 0, 1); // Z axis
+        // FIXME: why must rotate additional 180?
+        //if (orientation)
+            matrix.rotate(orientation+180, 0, 0, 1); // Z axis
     }
     bool opengl;
     bool frame_changed;
@@ -102,19 +103,6 @@ bool QuickFBORenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
     if (!isOpenGL())
         return VideoFormat::isRGB(pixfmt);
     return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;
-}
-
-void QuickFBORenderer::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
-{
-    QQuickItem::geometryChanged(newGeometry, oldGeometry); //geometry will be updated
-    DPTR_D(QuickFBORenderer);
-    resizeRenderer(newGeometry.size().toSize());
-    if (d.fill_mode == PreserveAspectCrop) {
-        QSizeF scaled = d.out_rect.size();
-        scaled.scale(boundingRect().size(), Qt::KeepAspectRatioByExpanding);
-        d.out_rect = QRect(QPoint(), scaled.toSize());
-        d.out_rect.moveCenter(boundingRect().center().toPoint());
-    }
 }
 
 bool QuickFBORenderer::receiveFrame(const VideoFrame &frame)
@@ -155,13 +143,7 @@ void QuickFBORenderer::setFillMode(FillMode mode)
     if (d.fill_mode == mode)
         return;
     d_func().fill_mode = mode;
-    if (d.fill_mode == Stretch) {
-        setOutAspectRatioMode(RendererAspectRatio);
-    } else {//compute out_rect fits video aspect ratio then compute again if crop
-        setOutAspectRatioMode(VideoAspectRatio);
-    }
-    //m_geometryDirty = true;
-    //update();
+    updateRenderRect();
     emit fillModeChanged(mode);
 }
 
@@ -185,8 +167,11 @@ void QuickFBORenderer::setOpenGL(bool o)
 
 void QuickFBORenderer::fboSizeChanged(const QSize &size)
 {
+    DPTR_D(QuickFBORenderer);
+    d.update_background = true;
     resizeRenderer(size);
-    d_func().glv.setProjectionMatrixToRect(QRectF(0, 0, size.width(), size.height()));
+    d.glv.setProjectionMatrixToRect(QRectF(0, 0, size.width(), size.height()));
+    d.setupAspectRatio();
 }
 
 void QuickFBORenderer::renderToFbo()
@@ -198,6 +183,11 @@ bool QuickFBORenderer::needUpdateBackground() const
 {
     DPTR_D(const QuickFBORenderer);
     return d.out_rect != boundingRect().toRect();
+}
+
+void QuickFBORenderer::drawBackground()
+{
+    d_func().glv.fill(QColor(Qt::black));
 }
 
 bool QuickFBORenderer::needDrawFrame() const
@@ -237,8 +227,33 @@ bool QuickFBORenderer::onSetOrientation(int value)
 {
     Q_UNUSED(value);
     emit orientationChanged();
-    d_func().setupAspectRatio();
     return true;
+}
+
+void QuickFBORenderer::onSetOutAspectRatio(qreal ratio)
+{
+    Q_UNUSED(ratio);
+    DPTR_D(QuickFBORenderer);
+    d.setupAspectRatio();
+}
+
+void QuickFBORenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
+{
+    Q_UNUSED(mode);
+    DPTR_D(QuickFBORenderer);
+    d.setupAspectRatio();
+}
+
+void QuickFBORenderer::updateRenderRect()
+{
+    DPTR_D(QuickFBORenderer);
+    if (d.fill_mode == Stretch) {
+        setOutAspectRatioMode(RendererAspectRatio);
+    } else {//compute out_rect fits video aspect ratio then compute again if crop
+        setOutAspectRatioMode(VideoAspectRatio);
+    }
+    //update();
+    d.setupAspectRatio();
 }
 
 } //namespace QtAV
