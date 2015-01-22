@@ -29,7 +29,6 @@
 #include "QtAV/private/prepost.h"
 #include <QtGui/QOpenGLFramebufferObject>
 #include <QtQuick/QQuickWindow>
-// check glv.ctx and set it in Renderer::render()
 
 namespace QtAV {
 VideoRendererId VideoRendererId_QuickFBO = mkid::id32base36_4<'Q','F','B','O'>::value;
@@ -60,7 +59,6 @@ public:
     QuickFBORendererPrivate():
         VideoRendererPrivate()
       , opengl(true)
-      , frame_changed(false)
       , fill_mode(QuickFBORenderer::PreserveAspectFit)
       , node(0)
       , source(0)
@@ -78,7 +76,6 @@ public:
             matrix.scale(1, -1);
     }
     bool opengl;
-    bool frame_changed;
     QuickFBORenderer::FillMode fill_mode;
     QSGNode *node;
     QObject *source;
@@ -114,7 +111,6 @@ bool QuickFBORenderer::receiveFrame(const VideoFrame &frame)
 {
     DPTR_D(QuickFBORenderer);
     d.video_frame = frame;
-    d.frame_changed = true;
     d.glv.setCurrentFrame(frame);
 //    update();  // why update slow? because of calling in a different thread?
     //QMetaObject::invokeMethod(this, "update"); // slower than directly postEvent
@@ -182,7 +178,6 @@ void QuickFBORenderer::fboSizeChanged(const QSize &size)
 void QuickFBORenderer::renderToFbo()
 {
     handlePaintEvent();
-    window()->update();
 }
 
 bool QuickFBORenderer::needUpdateBackground() const
@@ -210,13 +205,12 @@ void QuickFBORenderer::drawFrame()
     }
     //d.glv.setCurrentFrame(d.video_frame);
     d.glv.render(d.out_rect, normalizedROI(), d.matrix);
-    d.frame_changed = false;
 }
 
 bool QuickFBORenderer::event(QEvent *e)
 {
     if (e->type() != QEvent::User)
-        return QQuickItem::event(e);
+        return QQuickFramebufferObject::event(e);
     update();
     return true;
 }
