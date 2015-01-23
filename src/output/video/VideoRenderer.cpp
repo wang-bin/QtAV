@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -114,7 +114,7 @@ void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
     d.out_aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
         //compute out_rect
-        d.out_rect = QRect(1, 0, d.renderer_width, d.renderer_height); //remove? already in computeOutParameters()
+        d.out_rect = QRect(0, 0, d.renderer_width, d.renderer_height); //remove? already in computeOutParameters()
         setOutAspectRatio(qreal(d.renderer_width)/qreal(d.renderer_height));
         //is that thread safe?
     } else if (mode == VideoAspectRatio) {
