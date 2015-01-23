@@ -521,7 +521,7 @@ void VideoThread::run()
                 d.render_pts0 = 0;
             }
         }
-        if (seek_count == -1)
+        if (seek_count == -1 && seek_done_count > 0)
             seek_count = 1;
         else if (seek_count > 0)
             seek_count++;
