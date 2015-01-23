@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -71,8 +71,7 @@ OpenGLRendererBase::~OpenGLRendererBase()
 
 bool OpenGLRendererBase::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    Q_UNUSED(pixfmt);
-    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;
+    return OpenGLVideo::isSupported(pixfmt);
 }
 
 bool OpenGLRendererBase::receiveFrame(const VideoFrame& frame)
@@ -115,8 +114,6 @@ void OpenGLRendererBase::onInitializeGL()
     bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
     qDebug("OpenGL version: %d.%d  hasGLSL: %d", ctx->format().majorVersion(), ctx->format().minorVersion(), hasGLSL);
     initializeOpenGLFunctions();
-    glDisable(GL_DEPTH_TEST);
-    glClearColor(0.0, 0.0, 0.0, 0.0);
 }
 
 void OpenGLRendererBase::onPaintGL()

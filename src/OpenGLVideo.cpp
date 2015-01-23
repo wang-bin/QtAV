@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -82,6 +82,12 @@ public:
 };
 
 OpenGLVideo::OpenGLVideo() {}
+
+bool OpenGLVideo::isSupported(VideoFormat::PixelFormat pixfmt)
+{
+    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY
+            && pixfmt != VideoFormat::Format_RGB48BE;
+}
 
 // TODO: set surface/device size here (viewport?)
 void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)

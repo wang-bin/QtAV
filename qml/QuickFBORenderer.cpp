@@ -103,9 +103,11 @@ QQuickFramebufferObject::Renderer* QuickFBORenderer::createRenderer() const
 
 bool QuickFBORenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
+    if (pixfmt == VideoFormat::Format_RGB48BE)
+        return false;
     if (!isOpenGL())
         return VideoFormat::isRGB(pixfmt);
-    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;
+    return OpenGLVideo::isSupported(pixfmt);
 }
 
 bool QuickFBORenderer::receiveFrame(const VideoFrame &frame)

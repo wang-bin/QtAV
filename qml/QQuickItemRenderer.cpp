@@ -55,6 +55,8 @@ VideoRendererId QQuickItemRenderer::id() const
 
 bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
+    if (pixfmt == VideoFormat::Format_RGB48BE)
+        return false;
     if (!isOpenGL())
         return VideoFormat::isRGB(pixfmt);
     return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;

@@ -50,6 +50,7 @@ class Q_AV_EXPORT OpenGLVideo : public QObject
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(OpenGLVideo)
 public:
+    static bool isSupported(VideoFormat::PixelFormat pixfmt);
     OpenGLVideo();
     /*!
      * \brief setOpenGLContext
