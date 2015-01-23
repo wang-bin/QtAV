@@ -176,7 +176,7 @@ Rectangle {
         property alias video: video
         VideoPreview {
             id: video
-            opengl: false
+            opengl: true
             visible: PlayerConfig.previewEnabled
             fillMode: VideoOutput.Stretch
             anchors.top: parent.top

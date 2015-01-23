@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,12 +22,13 @@
 import QtQuick 2.1
 import QtQuick.Dialogs 1.0
 //import QtMultimedia 5.0
-import QtAV 1.4
+import QtAV 1.5
 import QtQuick.Window 2.1
 import "utils.js" as Utils
 
 Rectangle {
     id: root
+    layer.enabled: false //VideoOutput2 can not update correctly if layer.enable is true. default is false
     objectName: "root"
     width: Utils.scaled(800)
     height: Utils.scaled(450)
@@ -39,8 +40,9 @@ Rectangle {
         console.log("init>>>>>screen density logical: " + Screen.logicalPixelDensity + " pixel: " + Screen.pixelDensity);
     }
 
-    VideoOutput {
+    VideoOutput2 {
         id: videoOut
+        opengl: true
         fillMode: VideoOutput.PreserveAspectFit
         anchors.fill: parent
         source: player
@@ -245,6 +247,9 @@ Rectangle {
                     videoOut.fillMode = VideoOutput.Stretch
                 }
                 break
+            case Qt.Key_O:
+                fileDialog.open()
+                break;
             case Qt.Key_Q:
                 Qt.quit()
             }
