@@ -95,7 +95,7 @@ public:
     inline void swap(Frame &other) { qSwap(d_ptr, other.d_ptr); }
 
 protected:
-    Frame(FramePrivate &d);
+    Frame(FramePrivate *d);
     QExplicitlySharedDataPointer<FramePrivate> d_ptr;
 };
 

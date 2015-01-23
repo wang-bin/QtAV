@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -65,7 +65,7 @@ public:
 };
 
 AudioFrame::AudioFrame():
-    Frame(*new AudioFramePrivate())
+    Frame(new AudioFramePrivate())
 {
 }
 
@@ -80,7 +80,7 @@ AudioFrame::AudioFrame(const AudioFrame &other)
 }
 
 AudioFrame::AudioFrame(const QByteArray &data, const AudioFormat &format)
-    : Frame(*new AudioFramePrivate())
+    : Frame(new AudioFramePrivate())
 {
     Q_D(AudioFrame);
     d->format = format;

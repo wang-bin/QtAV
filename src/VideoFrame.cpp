@@ -50,6 +50,7 @@ namespace QtAV {
 
 class VideoFramePrivate : public FramePrivate
 {
+    Q_DISABLE_COPY(VideoFramePrivate)
 public:
     VideoFramePrivate()
         : FramePrivate()
@@ -123,31 +124,31 @@ public:
 };
 
 VideoFrame::VideoFrame()
-    : Frame(*new VideoFramePrivate())
+    : Frame(new VideoFramePrivate())
 {
 }
 
 VideoFrame::VideoFrame(int width, int height, const VideoFormat &format)
-    : Frame(*new VideoFramePrivate(width, height, format))
+    : Frame(new VideoFramePrivate(width, height, format))
 {
 }
 
 VideoFrame::VideoFrame(const QByteArray& data, int width, int height, const VideoFormat &format)
-    : Frame(*new VideoFramePrivate(width, height, format))
+    : Frame(new VideoFramePrivate(width, height, format))
 {
     Q_D(VideoFrame);
     d->data = data;
 }
 
 VideoFrame::VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat &format)
-    : Frame(*new VideoFramePrivate(width, height, format))
+    : Frame(new VideoFramePrivate(width, height, format))
 {
     Q_D(VideoFrame);
     d->textures = textures;
 }
 
 VideoFrame::VideoFrame(const QImage& image)
-    : Frame(*new VideoFramePrivate(image.width(), image.height(), VideoFormat(image.format())))
+    : Frame(new VideoFramePrivate(image.width(), image.height(), VideoFormat(image.format())))
 {
     // TODO: call const image.bits()?
     setBits((uchar*)image.bits(), 0);
