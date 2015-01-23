@@ -23,11 +23,12 @@
 #define QTAV_QUICKVIDEOPREVIEW_H
 
 #include <QmlAV/QQuickItemRenderer.h>
+#include <QmlAV/QuickFBORenderer.h>
 #include <QtAV/VideoFrameExtractor.h>
 
 namespace QtAV {
 
-class QMLAV_EXPORT QuickVideoPreview : public QQuickItemRenderer
+class QMLAV_EXPORT QuickVideoPreview : public QuickFBORenderer
 {
     Q_OBJECT
     // position conflicts with QQuickItem.position

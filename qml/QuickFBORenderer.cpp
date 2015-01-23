@@ -88,6 +88,7 @@ QuickFBORenderer::QuickFBORenderer(QQuickItem *parent)
     : QQuickFramebufferObject(parent)
     , VideoRenderer(*new QuickFBORendererPrivate())
 {
+    setPreferredPixelFormat(VideoFormat::Format_YUV420P);
 }
 
 VideoRendererId QuickFBORenderer::id() const
@@ -202,6 +203,10 @@ void QuickFBORenderer::drawFrame()
     if (d.glctx != QOpenGLContext::currentContext()) {
         d.glctx = QOpenGLContext::currentContext();
         d.glv.setOpenGLContext(d.glctx);
+    }
+    if (!d.video_frame.isValid()) {
+        d.glv.fill(QColor(0, 0, 0, 0));
+        return;
     }
     //d.glv.setCurrentFrame(d.video_frame);
     d.glv.render(d.out_rect, normalizedROI(), d.matrix);
