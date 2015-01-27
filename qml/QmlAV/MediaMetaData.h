@@ -28,7 +28,6 @@
 #include <QtCore/QUrl>
 #include <QtCore/QVariant>
 #include <QtGui/QImage>
-#include <QmlAV/Export.h>
 
 namespace QtAV {
 class Statistics;
@@ -37,7 +36,7 @@ class Statistics;
  * \brief The MediaMetaData class
  * TODO: Music, Movie
  */
-class QMLAV_EXPORT MediaMetaData : public QObject
+class MediaMetaData : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QVariant title READ title NOTIFY metaDataChanged)

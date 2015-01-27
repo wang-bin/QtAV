@@ -22,12 +22,10 @@
 #ifndef QTAV_QUICKFBORENDERER_H
 #define QTAV_QUICKFBORENDERER_H
 
-#include <QmlAV/Export.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtQuick/QQuickFramebufferObject>
 
 namespace QtAV {
-extern QMLAV_EXPORT VideoRendererId VideoRendererId_QuickFBO;
 class QuickFBORendererPrivate;
 class QuickFBORenderer : public QQuickFramebufferObject, public VideoRenderer
 {

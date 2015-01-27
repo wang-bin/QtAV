@@ -77,7 +77,7 @@ SOURCES += \
     QuickSubtitleItem.cpp \
     QuickVideoPreview.cpp
 
-HEADERS += QmlAV/private/QQuickItemRenderer_p.h \
+HEADERS += \
     QmlAV/QuickSubtitle.h \
     QmlAV/QuickSubtitleItem.h \
     QmlAV/QuickVideoPreview.h

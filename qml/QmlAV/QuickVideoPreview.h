@@ -23,7 +23,7 @@
 #define QTAV_QUICKVIDEOPREVIEW_H
 
 #include <QtAV/VideoFrameExtractor.h>
-#include <QmlAV/Export.h>
+#define CONFIG_FBO_ITEM (QT_VERSION >= QT_VERSION_CHECK(5, 2, 0))
 #if CONFIG_FBO_ITEM
 #include <QmlAV/QuickFBORenderer.h>
 #else
@@ -31,7 +31,7 @@
 #endif
 namespace QtAV {
 
-class QMLAV_EXPORT QuickVideoPreview
+class QuickVideoPreview
 #if CONFIG_FBO_ITEM
         : public QuickFBORenderer
 #else

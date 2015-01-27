@@ -26,9 +26,8 @@
 #include <QtQuick/QQuickItem>
 #include <QtQuick/QSGTexture>
 #include <QmlAV/QuickSubtitle.h>
-#include <QmlAV/Export.h>
 
-class QMLAV_EXPORT QuickSubtitleItem : public QQuickItem, public QuickSubtitleObserver
+class QuickSubtitleItem : public QQuickItem, public QuickSubtitleObserver
 {
     Q_OBJECT
     Q_DISABLE_COPY(QuickSubtitleItem)

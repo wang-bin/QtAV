@@ -22,11 +22,10 @@
 #ifndef QTAV_QML_QUICKSUBTITLE_H
 #define QTAV_QML_QUICKSUBTITLE_H
 
-#include <QmlAV/Export.h>
 #include <QtAV/Subtitle.h>
 #include <QtCore/QMutexLocker>
 
-class QMLAV_EXPORT QuickSubtitleObserver {
+class QuickSubtitleObserver {
 public:
     virtual void update(const QImage& image, const QRect& r, int width, int height) = 0;
 };
@@ -39,7 +38,7 @@ class QmlAVPlayer;
  * \brief The QuickSubtitle class
  * high level Subtitle processor for QML. No rendering.
  */
-class QMLAV_EXPORT QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
+class QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
 {
     Q_OBJECT
     Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enableChanged)

@@ -22,7 +22,6 @@
 #ifndef QTAV_QML_AVPLAYER_H
 #define QTAV_QML_AVPLAYER_H
 
-#include <QmlAV/Export.h>
 #include <QtCore/QObject>
 #include <QmlAV/QQuickItemRenderer.h>
 #include <QmlAV/MediaMetaData.h>
@@ -38,7 +37,7 @@ namespace QtAV {
 class AVPlayer;
 }
 using namespace QtAV;
-class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
+class QmlAVPlayer : public QObject, public QQmlParserStatus
 {
     Q_OBJECT
     Q_INTERFACES(QQmlParserStatus)

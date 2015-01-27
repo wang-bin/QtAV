@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV
@@ -21,23 +21,63 @@
 ******************************************************************************/
 
 #include "QmlAV/QQuickItemRenderer.h"
-#include "QmlAV/private/QQuickItemRenderer_p.h"
 #include "QtCore/QCoreApplication"
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QSGFlatColorMaterial>
+#include <QtQuick/QSGSimpleTextureNode>
 #include <QtAV/FactoryDefine.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoRendererTypes.h> //it declares a factory we need
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
+#include "QtAV/private/VideoRenderer_p.h"
 #include "QmlAV/QmlAVPlayer.h"
 #include "QmlAV/SGVideoNode.h"
 
 namespace QtAV
 {
-VideoRendererId VideoRendererId_QQuickItem = mkid::id32base36_6<'Q','Q','I','t','e','m'>::value;
+static const VideoRendererId VideoRendererId_QQuickItem = mkid::id32base36_6<'Q','Q','I','t','e','m'>::value;
 
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, QQuickItem, "QQuickItem")
+
+
+class QQuickItemRendererPrivate : public VideoRendererPrivate
+{
+public:
+    QQuickItemRendererPrivate():
+        VideoRendererPrivate()
+      , opengl(true)
+      , frame_changed(false)
+      , fill_mode(QQuickItemRenderer::PreserveAspectFit)
+      , texture(0)
+      , node(0)
+      , source(0)
+    {
+    }
+    virtual ~QQuickItemRendererPrivate() {
+        if (texture) {
+            delete texture;
+            texture = 0;
+        }
+    }
+    virtual void setupQuality() {
+        if (!node)
+            return;
+        if (quality == VideoRenderer::QualityFastest) {
+            ((QSGSimpleTextureNode*)node)->setFiltering(QSGTexture::Nearest);
+        } else {
+            ((QSGSimpleTextureNode*)node)->setFiltering(QSGTexture::Linear);
+        }
+    }
+
+    bool opengl;
+    bool frame_changed;
+    QQuickItemRenderer::FillMode fill_mode;
+    QSGTexture* texture;
+    QSGNode *node;
+    QObject *source;
+    QImage image;
+};
 
 QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent)
     : QQuickItem(parent)

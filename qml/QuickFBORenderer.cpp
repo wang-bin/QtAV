@@ -31,7 +31,7 @@
 #include <QtQuick/QQuickWindow>
 
 namespace QtAV {
-VideoRendererId VideoRendererId_QuickFBO = mkid::id32base36_4<'Q','F','B','O'>::value;
+static const VideoRendererId VideoRendererId_QuickFBO = mkid::id32base36_4<'Q','F','B','O'>::value;
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, QuickFBO, "QuickFBO")
 
 class FBORenderer : public QQuickFramebufferObject::Renderer
