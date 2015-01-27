@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -27,15 +27,15 @@
 #include "QmlAV/QuickSubtitleItem.h"
 #include "QmlAV/MediaMetaData.h"
 #include "QmlAV/QuickVideoPreview.h"
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
 #include "QmlAV/QuickFBORenderer.h"
-
+#endif
 namespace QtAV {
 
 class QtAVQmlPlugin : public QQmlExtensionPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
-
 public:
     void registerTypes(const char *uri)
     {
@@ -46,7 +46,9 @@ public:
         qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
         qmlRegisterType<QuickSubtitleItem>(uri, 1, 4, "SubtitleItem");
         qmlRegisterType<QuickVideoPreview>(uri, 1, 4, "VideoPreview");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
         qmlRegisterType<QuickFBORenderer>(uri, 1, 5, "VideoOutput2");
+#endif
         qmlRegisterType<MediaMetaData>();
     }
 };

@@ -32,4 +32,5 @@
 #  define QMLAV_EXPORT Q_DECL_IMPORT //only for vc?
 #endif
 
+#define CONFIG_FBO_ITEM (QT_VERSION >= QT_VERSION_CHECK(5, 2, 0))
 #endif // QTAV_QML_EXPORT_H

@@ -22,13 +22,21 @@
 #ifndef QTAV_QUICKVIDEOPREVIEW_H
 #define QTAV_QUICKVIDEOPREVIEW_H
 
-#include <QmlAV/QQuickItemRenderer.h>
-#include <QmlAV/QuickFBORenderer.h>
 #include <QtAV/VideoFrameExtractor.h>
-
+#include <QmlAV/Export.h>
+#if CONFIG_FBO_ITEM
+#include <QmlAV/QuickFBORenderer.h>
+#else
+#include <QmlAV/QQuickItemRenderer.h>
+#endif
 namespace QtAV {
 
-class QMLAV_EXPORT QuickVideoPreview : public QuickFBORenderer
+class QMLAV_EXPORT QuickVideoPreview
+#if CONFIG_FBO_ITEM
+        : public QuickFBORenderer
+#else
+        : public QQuickItemRenderer
+#endif
 {
     Q_OBJECT
     // position conflicts with QQuickItem.position

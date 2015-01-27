@@ -25,7 +25,11 @@
 namespace QtAV {
 
 QuickVideoPreview::QuickVideoPreview(QQuickItem *parent) :
+#if CONFIG_FBO_ITEM
     QuickFBORenderer(parent)
+#else
+    QQuickItemRenderer(parent)
+#endif
 {
     connect(&m_extractor, SIGNAL(positionChanged()), this, SIGNAL(timestampChanged()));
     connect(&m_extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), SLOT(displayFrame(QtAV::VideoFrame)));
