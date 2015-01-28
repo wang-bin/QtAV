@@ -103,6 +103,9 @@ isEmpty(mkspecs_cached)|!isEqual(mkspecs_cached, $$mkspecs_build) {
     isEmpty(TARGET_ARCH):testArch()
 }
 
+QT_BIN=$$[QT_HOST_BINS]
+isEmpty(QT_BIN): QT_BIN=$$[QT_INSTALL_BINS]
+cache(QT_BIN, set, QT_BIN)
 cache(BUILD_DIR, set, BUILD_DIR)
 #cache(BUILD_ROOT, set, BUILD_DIR)
 cache(SOURCE_ROOT, set, SOURCE_ROOT)
