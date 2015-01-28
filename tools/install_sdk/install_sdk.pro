@@ -316,7 +316,9 @@ INSTALLS += qt$${MODULE}_prf
 write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX)
 write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX)
 
-for(module, $$list(AV AVWidgets)) {
+avmodules = AV
+!no-widgets: avmodules += AVWidgets
+for(module, $$list($$avmodules)) {
 message("creating script for module Qt$$module ...")
   createForModule($$module)
 }
@@ -325,8 +327,10 @@ message("creating script for module Qt$$module ...")
 !mac_framework {
   sdk_h_install.commands = $$quote($$COPY $$system_path($$PROJECTROOT/src/QtAV/*.h) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
   sdk_h_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/src/QtAV/QtAV) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
-  sdk_h_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/widgets/QtAVWidgets/*.h) $$system_path($$[QT_INSTALL_HEADERS]/QtAVWidgets/))
-  sdk_h_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/widgets/QtAVWidgets/QtAVWidgets) $$system_path($$[QT_INSTALL_HEADERS]/QtAVWidgets/))
+  !no-widgets {
+    sdk_h_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/widgets/QtAVWidgets/*.h) $$system_path($$[QT_INSTALL_HEADERS]/QtAVWidgets/))
+    sdk_h_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/widgets/QtAVWidgets/QtAVWidgets) $$system_path($$[QT_INSTALL_HEADERS]/QtAVWidgets/))
+  }
   sdk_h_install.commands += $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV/$$VERSION/QtAV/))
   win32 {
     sdk_h_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/private))
