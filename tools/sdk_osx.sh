@@ -39,6 +39,7 @@ for av in ${ARGV[@]}; do
   name=${F%\.framework}
   rm -rf $QT_LIBS/$F
   cp -af $av $QT_LIBS
+  find $QT_LIBS/$F -name "*.prl" -delete
   install_name_tool -id $QT_LIBS/$F/Versions/$QTAV_VER_MAJOR/$name $QT_LIBS/$F/Versions/$QTAV_VER_MAJOR/$name
   fix_qt $QT_LIBS/$F/Versions/$QTAV_VER_MAJOR/$name
 done
