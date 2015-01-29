@@ -75,18 +75,16 @@ deploy() {
   for module in $AVMODULES; do
     rm -rf $FRAMEWORK_DIR/${module}.framework
     cp -af lib*/${module}.framework $FRAMEWORK_DIR
-    local MODULE_LIB=`otool -L $EXE |awk '{print $1}' |grep lib${module}`
-    if [ -f "$MODULE_LIB" ]; then
-      cp -aLf $MODULE_LIB $FRAMEWORK_DIR
-      local LIB_PATH=$FRAMEWORK_DIR/${MODULE_LIB/*\//}
-      local MODULE_LIB_SELF=`otool -L $LIB_PATH |awk '{print $1}' |grep -v : |grep lib${module}`
-      install_name_tool -id "@executable_path/../Frameworks/${MODULE_LIB/*\//}" $LIB_PATH
-      install_name_tool -change "$MODULE_LIB_SELF" "@executable_path/../Frameworks/${MODULE_LIB/*\//}" $EXE
-    else
-      MODULE_LIB=$FRAMEWORK_DIR/${module}.framework/Versions/1/${module}
-      install_name_tool -id "@executable_path/../Frameworks/${module}.framework/Versions/1/${module}" $MODULE_LIB
-      install_name_tool -change "$MODULE_FRAMEWORK" "@executable_path/../Frameworks/${module}.framework/Versions/1/${module}" $EXE
+    local MODULE_LIB=`otool -D $FRAMEWORK_DIR/${module}.framework/${module} |grep -v ":"`
+    local MODULE_LIB_REL=${MODULE_LIB/*${module}.framework/${module}.framework}
+    if [ "MODULE_LIB" = "MODULE_LIB_REL" ]; then
+      MODULE_LIB_REL=${MODULE_LIB##*/} #a dylib
     fi
+    echo MODULE_LIB_REL=$MODULE_LIB_REL
+    local LIB_PATH=$FRAMEWORK_DIR/${MODULE_LIB/*\//}
+    install_name_tool -id "@executable_path/../Frameworks/${MODULE_LIB_REL}" $LIB_PATH
+    local EXE_DEP=`otool -L $EXE |awk '{print $1}' |grep -v : |grep "${MODULE_LIB_REL}"`
+    install_name_tool -change "$EXE_DEP" "@executable_path/../Frameworks/${MODULE_LIB_REL}" $EXE
   done
 :<<EOF
   for ff in libportaudio libavutil libavcodec libavformat libavfilter libavdevice libavresample libswscale libswresample libpostproc
