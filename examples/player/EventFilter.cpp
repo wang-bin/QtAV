@@ -337,5 +337,35 @@ bool WindowEventFilter::eventFilter(QObject *watched, QEvent *event)
         }
         return false;
     }
+    if (event->type() ==  QEvent::MouseButtonPress) {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        Qt::MouseButton mbt = me->button();
+        if (mbt == Qt::LeftButton) {
+            gMousePos = me->globalPos();
+            iMousePos = me->pos();
+        }
+        return false;
+    }
+    if (event->type() == QEvent::MouseButtonRelease) {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        Qt::MouseButton mbt = me->button();
+        if (mbt != Qt::LeftButton)
+            return false;
+        iMousePos = QPoint();
+        gMousePos = QPoint();
+        return false;
+    }
+    if (event->type() == QEvent::MouseMove) {
+        if (iMousePos.isNull() || gMousePos.isNull())
+            return false;
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        int x = mpWindow->pos().x();
+        int y = mpWindow->pos().y();
+        int dx = me->globalPos().x() - gMousePos.x();
+        int dy = me->globalPos().y() - gMousePos.y();
+        gMousePos = me->globalPos();
+        mpWindow->move(x + dx, y + dy);
+        return false;
+    }
     return false;
 }
