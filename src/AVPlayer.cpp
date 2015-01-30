@@ -780,6 +780,9 @@ qint64 AVPlayer::position() const
 
 void AVPlayer::setPosition(qint64 position)
 {
+    // FIXME: strange things happen if seek out of eof
+    if (position > stopPosition())
+        return;
     if (!isPlaying())
         return;
     qint64 pos_pts = position;
