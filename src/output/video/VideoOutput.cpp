@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -395,39 +395,6 @@ bool VideoOutput::onUninstallFilter(Filter *filter)
     // only used internally for AVOutput
     //d.pending_uninstall_filters =
     return ret;
-}
-
-void VideoOutput::onAddOutputSet(OutputSet *set)
-{
-    if (!isAvailable())
-        return;
-    DPTR_D(VideoOutput);
-    d.impl->onAddOutputSet(set);
-}
-
-void VideoOutput::onRemoveOutputSet(OutputSet *set)
-{
-    if (!isAvailable())
-        return;
-    DPTR_D(VideoOutput);
-    d.impl->onRemoveOutputSet(set);
-}
-
-void VideoOutput::onAttach(OutputSet *set)
-{
-    if (!isAvailable())
-        return;
-    DPTR_D(VideoOutput);
-    d.impl->onAttach(set);
-}
-
-void VideoOutput::onDetach(OutputSet *set)
-{
-    if (!isAvailable())
-        return;
-    DPTR_D(VideoOutput);
-    d.impl->onDetach(set);
-    //d.output_sets = d.impl->
 }
 
 bool VideoOutput::onHanlePendingTasks()

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -96,40 +96,20 @@ bool AVOutput::tryPause()
 
 void AVOutput::addOutputSet(OutputSet *set)
 {
-    onAddOutputSet(set);
-}
-
-void AVOutput::onAddOutputSet(OutputSet *set)
-{
     d_func().output_sets.append(set);
 }
 
 void AVOutput::removeOutputSet(OutputSet *set)
-{
-    onRemoveOutputSet(set);
-}
-
-void AVOutput::onRemoveOutputSet(OutputSet *set)
 {
     d_func().output_sets.removeAll(set);
 }
 
 void AVOutput::attach(OutputSet *set)
 {
-    onAttach(set);
-}
-
-void AVOutput::onAttach(OutputSet *set)
-{
     set->addOutput(this);
 }
 
 void AVOutput::detach(OutputSet *set)
-{
-    onDetach(set);
-}
-
-void AVOutput::onDetach(OutputSet *set)
 {
     DPTR_D(AVOutput);
     if (set) {

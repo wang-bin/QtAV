@@ -40,7 +40,8 @@ class Q_AV_PRIVATE_EXPORT VideoRendererPrivate : public AVOutputPrivate
 {
 public:
     VideoRendererPrivate():
-        update_background(true)
+        AVOutputPrivate()
+      , update_background(true)
       , renderer_width(480)
       , renderer_height(320)
       , source_aspect_ratio(0)
