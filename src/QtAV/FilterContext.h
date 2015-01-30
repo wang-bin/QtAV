@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -95,6 +95,7 @@ protected:
     friend class VideoFilter;
 };
 
+class VideoFrameConverter;
 //TODO: font, pen, brush etc?
 class Q_AV_EXPORT QPainterFilterContext : public VideoFilterContext
 {
@@ -116,6 +117,7 @@ protected:
     virtual void initializeOnFrame(VideoFrame *vframe);
 
     QTextDocument *doc;
+    VideoFrameConverter *cvt;
 };
 
 } //namespace QtAV

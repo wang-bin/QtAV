@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -134,6 +134,7 @@ void VideoFilterContext::shareFrom(VideoFilterContext *vctx)
 
 QPainterFilterContext::QPainterFilterContext()
     : doc(0)
+    , cvt(0)
 {}
 
 QPainterFilterContext::~QPainterFilterContext()
@@ -141,6 +142,10 @@ QPainterFilterContext::~QPainterFilterContext()
     if (doc) {
         delete doc;
         doc = 0;
+    }
+    if (cvt) {
+        delete cvt;
+        cvt = 0;
     }
 }
 
@@ -253,7 +258,10 @@ void QPainterFilterContext::initializeOnFrame(VideoFrame *vframe)
     }
     if (format.imageFormat() == QImage::Format_Invalid) {
         format.setPixelFormat(VideoFormat::Format_RGB32);
-        vframe->convertTo(format);
+        if (!cvt) {
+            cvt = new VideoFrameConverter();
+        }
+        *vframe = cvt->convert(*vframe, format);
     }
     if (paint_device) {
         if (painter && painter->isActive()) {

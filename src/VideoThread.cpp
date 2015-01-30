@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,11 +26,9 @@
 #include "QtAV/VideoCapture.h"
 #include "QtAV/VideoDecoder.h"
 #include "QtAV/VideoRenderer.h"
-#include "QtAV/ImageConverter.h"
 #include "QtAV/Statistics.h"
 #include "QtAV/Filter.h"
 #include "QtAV/FilterContext.h"
-#include "QtAV/ImageConverterTypes.h"
 #include "output/OutputSet.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QFileInfo>
@@ -43,13 +41,9 @@ class VideoThreadPrivate : public AVThreadPrivate
 public:
     VideoThreadPrivate():
         AVThreadPrivate()
-      , conv(0)
       , capture(0)
       , filter_context(0)
     {
-        conv = ImageConverterFactory::create(ImageConverterId_FF); //TODO: set in AVPlayer
-        conv->setOutFormat(VideoFormat::Format_RGB32); //vo->defaultFormat
-
         QVariantHash opt;
         opt["skip_frame"] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
         dec_opt_framedrop["avcodec"] = opt;
@@ -57,17 +51,12 @@ public:
         dec_opt_normal["avcodec"] = opt; // avcodec need correct string or value in libavcodec
     }
     ~VideoThreadPrivate() {
-        if (conv) {
-            delete conv;
-            conv = 0;
-        }
         //not neccesary context is managed by filters.
         filter_context = 0;
     }
 
-    ImageConverter *conv;
+    VideoFrameConverter conv;
     double pts; //current decoded pts. for capture. TODO: remove
-    //QImage image; //use QByteArray? Then must allocate a picture in ImageConverter, see VideoDecoder
     VideoCapture *capture;
     VideoFilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
     VideoFrame displayed_frame;
@@ -152,7 +141,7 @@ void VideoThread::setEQ(int b, int c, int s)
 {
     class EQTask : public QRunnable {
     public:
-        EQTask(ImageConverter *c)
+        EQTask(VideoFrameConverter *c)
             : brightness(0)
             , contrast(0)
             , saturation(0)
@@ -161,25 +150,14 @@ void VideoThread::setEQ(int b, int c, int s)
             //qDebug("EQTask tid=%p", QThread::currentThread());
         }
         void run() {
-            // check here not in ctor because it may called later in video thread
-            if (brightness < -100 || brightness > 100)
-                brightness = conv->brightness();
-            if (contrast < -100 || contrast > 100)
-                contrast = conv->contrast();
-            if (saturation < -100 || saturation > 100)
-                saturation = conv->saturation();
-            //qDebug("EQTask::run() tid=%p (b: %d, c: %d, s: %d)"
-               //    , QThread::currentThread(), brightness, contrast, saturation);
-            conv->setBrightness(brightness);
-            conv->setContrast(contrast);
-            conv->setSaturation(saturation);
+            conv->setEq(brightness, contrast, saturation);
         }
         int brightness, contrast, saturation;
     private:
-        ImageConverter *conv;
+        VideoFrameConverter *conv;
     };
     DPTR_D(VideoThread);
-    EQTask *task = new EQTask(d.conv);
+    EQTask *task = new EQTask(&d.conv);
     task->brightness = b;
     task->contrast = c;
     task->saturation = s;
@@ -223,8 +201,6 @@ void VideoThread::applyFilters(VideoFrame &frame)
                 continue;
             vf->prepareContext(d.filter_context, d.statistics, &frame);
             vf->apply(d.statistics, &frame);
-            //frame may be changed
-            frame.setImageConverter(d.conv);
         }
     }
 }
@@ -240,7 +216,8 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
     d.outputSet->lock();
     QList<AVOutput *> outputs = d.outputSet->outputs();
     if (outputs.size() > 1) { //FIXME!
-        if (!frame.convertTo(VideoFormat::Format_RGB32)) {
+        VideoFrame outFrame(d.conv.convert(frame, VideoFormat::Format_RGB32));
+        if (!outFrame.isValid()) {
             /*
              * use VideoFormat::Format_User to deliver user defined frame
              * renderer may update background but no frame to graw, so flickers
@@ -249,6 +226,7 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
             d.outputSet->unlock();
             return false;
         }
+        frame = outFrame;
     } else {
         VideoRenderer *vo = 0;
         if (!outputs.isEmpty())
@@ -256,7 +234,8 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
         if (vo && (!vo->isSupported(frame.pixelFormat())
                 || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
                 )) {
-            if (!frame.convertTo(vo->preferredPixelFormat())) {
+            VideoFrame outFrame(d.conv.convert(frame, vo->preferredPixelFormat()));
+            if (!outFrame.isValid()) {
                 /*
                  * use VideoFormat::Format_User to deliver user defined frame
                  * renderer may update background but no frame to graw, so flickers
@@ -265,6 +244,7 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
                 d.outputSet->unlock();
                 return false;
             }
+            frame = outFrame;
         }
     }
     d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
@@ -278,7 +258,7 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
 void VideoThread::run()
 {
     DPTR_D(VideoThread);
-    if (!d.dec || !d.dec->isAvailable() || !d.outputSet)// || !d.conv)
+    if (!d.dec || !d.dec->isAvailable() || !d.outputSet)
         return;
     resetState();
     if (d.capture->autoSave()) {
@@ -527,7 +507,6 @@ void VideoThread::run()
             seek_count++;
         if (frame.timestamp() == 0)
             frame.setTimestamp(pkt.pts); // pkt.pts is wrong. >= real timestamp
-        frame.setImageConverter(d.conv);
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
         applyFilters(frame);

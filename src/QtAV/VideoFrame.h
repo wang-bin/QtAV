@@ -30,7 +30,6 @@
 
 namespace QtAV {
 
-class ImageConverter;
 class VideoFramePrivate;
 class Q_AV_EXPORT VideoFrame : public Frame
 {
@@ -64,6 +63,7 @@ public:
     int pixelFormatFFmpeg() const;
 
     bool isValid() const;
+    operator bool() const { return isValid();}
 
     QSize size() const;
     //int width(int plane = 0) const?
@@ -80,11 +80,6 @@ public:
 
     // no padded bytes
     int effectiveBytesPerLine(int plane) const;
-
-    //use ptr instead of ImageConverterId to avoid allocating memory
-    // Id can be used in VideoThread
-    void setImageConverter(ImageConverter *conv); // deprecated
-    // if use gpu to convert, mapToDevice() first
     /*!
      * \brief toImage
      * Return a QImage of current video frame, with given format, image size and region of interest.
@@ -94,14 +89,6 @@ public:
     QImage toImage(QImage::Format fmt = QImage::Format_ARGB32, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
     VideoFrame to(VideoFormat::PixelFormat pixfmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
     VideoFrame to(const VideoFormat& fmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
-    /*!
-     * \brief convertTo
-     * deprecated. You may clone the frame first because VideoFrame is explicitly shared
-     */
-    bool convertTo(const VideoFormat& fmt);
-    bool convertTo(VideoFormat::PixelFormat fmt);
-    bool convertTo(QImage::Format fmt);
-    bool convertTo(int fffmt);
     /*!
      * map a gpu frame to opengl texture or d3d texture or other handle.
      * handle: given handle. can be gl texture (& GLuint), d3d texture, or 0 if create a new handle
@@ -123,6 +110,26 @@ private:
     void init();
 };
 
+class ImageConverter;
+class Q_AV_EXPORT VideoFrameConverter
+{
+public:
+    VideoFrameConverter();
+    ~VideoFrameConverter();
+    /// value out of [-100, 100] will be ignored
+    void setEq(int brightness, int contrast, int saturation);
+    /*!
+     * \brief convert
+     * return a frame with a given format from a given source frame
+     */
+    VideoFrame convert(const VideoFrame& frame, const VideoFormat& fmt) const;
+    VideoFrame convert(const VideoFrame& frame, VideoFormat::PixelFormat fmt) const;
+    VideoFrame convert(const VideoFrame& frame, QImage::Format fmt) const;
+    VideoFrame convert(const VideoFrame& frame, int fffmt) const;
+private:
+    mutable ImageConverter *m_cvt;
+    int m_eq[3];
+};
 } //namespace QtAV
 
 Q_DECLARE_METATYPE(QtAV::VideoFrame)

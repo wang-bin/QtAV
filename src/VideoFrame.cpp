@@ -22,7 +22,6 @@
 #include "QtAV/VideoFrame.h"
 #include "QtAV/private/Frame_p.h"
 #include "QtAV/ImageConverter.h"
-#include "QtAV/ImageConverterTypes.h"
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QSharedPointer>
@@ -59,7 +58,6 @@ public:
         , displayAspectRatio(0)
         , format(VideoFormat::Format_Invalid)
         , textures(4, 0)
-        , conv(0)
     {}
     VideoFramePrivate(int w, int h, const VideoFormat& fmt)
         : FramePrivate()
@@ -68,7 +66,6 @@ public:
         , displayAspectRatio(0)
         , format(fmt)
         , textures(4, 0)
-        , conv(0)
     {
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
@@ -78,48 +75,11 @@ public:
         textures.reserve(format.planeCount());
     }
     ~VideoFramePrivate() {}
-    bool convertTo(const VideoFormat& fmt) {
-        return convertTo(fmt.pixelFormatFFmpeg());
-    }
-    bool convertTo(VideoFormat::PixelFormat fmt) {
-        return convertTo(VideoFormat::pixelFormatToFFmpeg(fmt));
-    }
-    bool convertTo(QImage::Format fmt) {
-        return convertTo(VideoFormat::pixelFormatFromImageFormat(fmt));
-    }
-    bool convertTo(int fffmt) {
-        if (fffmt == format.pixelFormatFFmpeg())
-            return true;
-        if (!conv)
-            return false;
-        conv->setInFormat(format.pixelFormatFFmpeg());
-        conv->setOutFormat(fffmt);
-        conv->setInSize(width, height);
-        conv->setOutSize(width, height);
-        if (!conv->convert(planes.constData(), line_sizes.constData())) {
-            format.setPixelFormat(VideoFormat::Format_Invalid);
-            return false;
-        }
-        format.setPixelFormatFFmpeg(fffmt);
-        data = conv->outData();
-        planes = conv->outPlanes();
-        line_sizes = conv->outLineSizes();
-
-        planes.resize(format.planeCount());
-        line_sizes.resize(format.planeCount());
-        textures.resize(format.planeCount());
-        planes.reserve(format.planeCount());
-        line_sizes.reserve(format.planeCount());
-        textures.reserve(format.planeCount());
-        return true;
-    }
-
     int width, height;
     float displayAspectRatio;
     VideoFormat format;
     QVector<int> textures;
 
-    ImageConverter *conv;
     VideoSurfaceInteropPtr surface_interop;
 };
 
@@ -220,7 +180,6 @@ VideoFrame VideoFrame::clone() const
     f.d_ptr->metadata = d->metadata; // need metadata?
     f.setTimestamp(d->timestamp);
     f.setDisplayAspectRatio(d->displayAspectRatio);
-    //f.setImageConverter(d->conv);
     return f;
 }
 
@@ -334,34 +293,6 @@ int VideoFrame::effectiveBytesPerLine(int plane) const
     return d->format.bytesPerLine(width(), plane);
 }
 
-void VideoFrame::setImageConverter(ImageConverter *conv)
-{
-    d_func()->conv = conv;
-}
-
-bool VideoFrame::convertTo(const VideoFormat& fmt)
-{
-    Q_D(VideoFrame);
-    if (fmt == d->format) //TODO: check whether own the data
-        return true;
-    return d->convertTo(fmt);
-}
-
-bool VideoFrame::convertTo(VideoFormat::PixelFormat fmt)
-{
-    return d_func()->convertTo(fmt);
-}
-
-bool VideoFrame::convertTo(QImage::Format fmt)
-{
-    return d_func()->convertTo(fmt);
-}
-
-bool VideoFrame::convertTo(int fffmt)
-{
-    return d_func()->convertTo(fffmt);
-}
-
 QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRectF &roi) const
 {
     Q_UNUSED(dstSize);
@@ -372,21 +303,21 @@ QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRect
         return QImage((const uchar*)frameData().constData(), width(), height(), bytesPerLine(0), fmt).copy();
     }
     Q_D(const VideoFrame);
-    QScopedPointer<ImageConverter> conv(ImageConverterFactory::create(ImageConverterId_FF));
-    conv->setInFormat(pixelFormatFFmpeg());
-    conv->setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::pixelFormatFromImageFormat(fmt)));
-    conv->setInSize(width(), height());
+    ImageConverterSWS conv;
+    conv.setInFormat(pixelFormatFFmpeg());
+    conv.setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::pixelFormatFromImageFormat(fmt)));
+    conv.setInSize(width(), height());
     int w = width(), h = height();
     if (dstSize.width() > 0)
         w = dstSize.width();
     if (dstSize.height() > 0)
         h = dstSize.height();
-    conv->setOutSize(w, h);
-    if (!conv->convert(d->planes.constData(), d->line_sizes.constData())) {
+    conv.setOutSize(w, h);
+    if (!conv.convert(d->planes.constData(), d->line_sizes.constData())) {
         qWarning("VideoFrame::toImage error");
         return QImage();
     }
-    QImage image((const uchar*)conv->outData().constData(), w, h, conv->outLineSizes().at(0), fmt);
+    QImage image((const uchar*)conv.outData().constData(), w, h, conv.outLineSizes().at(0), fmt);
     return image.copy();
 }
 
@@ -399,23 +330,23 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
     if (fmt.pixelFormatFFmpeg() == pixelFormatFFmpeg())
         return clone();
     Q_D(const VideoFrame);
-    QScopedPointer<ImageConverter> conv(ImageConverterFactory::create(ImageConverterId_FF));
-    conv->setInFormat(pixelFormatFFmpeg());
-    conv->setOutFormat(fmt.pixelFormatFFmpeg());
-    conv->setInSize(width(), height());
+    ImageConverterSWS conv;
+    conv.setInFormat(pixelFormatFFmpeg());
+    conv.setOutFormat(fmt.pixelFormatFFmpeg());
+    conv.setInSize(width(), height());
     int w = width(), h = height();
     if (dstSize.width() > 0)
         w = dstSize.width();
     if (dstSize.height() > 0)
         h = dstSize.height();
-    conv->setOutSize(w, h);
-    if (!conv->convert(d->planes.constData(), d->line_sizes.constData())) {
+    conv.setOutSize(w, h);
+    if (!conv.convert(d->planes.constData(), d->line_sizes.constData())) {
         qWarning() << "VideoFrame::to error: " << format() << "=>" << fmt;
         return VideoFrame();
     }
-    VideoFrame f(conv->outData(), w, h, fmt);
-    f.setBits(conv->outPlanes());
-    f.setBytesPerLine(conv->outLineSizes());
+    VideoFrame f(conv.outData(), w, h, fmt);
+    f.setBits(conv.outPlanes());
+    f.setBytesPerLine(conv.outLineSizes());
     return f;
 }
 
@@ -464,6 +395,77 @@ void VideoFrame::init()
     avpicture_fill(&picture, (uint8_t*)d->data.constData(), fff, width(), height());
     setBits(picture.data);
     setBytesPerLine(picture.linesize);
+}
+
+VideoFrameConverter::VideoFrameConverter()
+    : m_cvt(0)
+{
+    memset(m_eq, 0, sizeof(m_eq));
+}
+
+VideoFrameConverter::~VideoFrameConverter()
+{
+    if (m_cvt) {
+        delete m_cvt;
+        m_cvt = 0;
+    }
+}
+
+void VideoFrameConverter::setEq(int brightness, int contrast, int saturation)
+{
+    if (brightness >= -100 && brightness <= 100)
+        m_eq[0] = brightness;
+    if (contrast >= -100 && contrast <= 100)
+        m_eq[1] = contrast;
+    if (saturation >= -100 && saturation <= 100)
+        m_eq[2] = saturation;
+}
+
+VideoFrame VideoFrameConverter::convert(const VideoFrame& frame, const VideoFormat &fmt) const
+{
+    return convert(frame, fmt.pixelFormatFFmpeg());
+}
+
+VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, VideoFormat::PixelFormat fmt) const
+{
+    return convert(frame, VideoFormat::pixelFormatToFFmpeg(fmt));
+}
+
+VideoFrame VideoFrameConverter::convert(const VideoFrame& frame, QImage::Format fmt) const
+{
+    return convert(frame, VideoFormat::pixelFormatFromImageFormat(fmt));
+}
+
+VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) const
+{
+    if (!frame.isValid() || fffmt == QTAV_PIX_FMT_C(NONE))
+        return VideoFrame();
+    const VideoFormat format(frame.format());
+    //if (fffmt == format.pixelFormatFFmpeg())
+      //  return *this;
+    if (!m_cvt) {
+        m_cvt = new ImageConverterSWS();
+    }
+    m_cvt->setBrightness(m_eq[0]);
+    m_cvt->setContrast(m_eq[1]);
+    m_cvt->setSaturation(m_eq[2]);
+    m_cvt->setInFormat(format.pixelFormatFFmpeg());
+    m_cvt->setOutFormat(fffmt);
+    m_cvt->setInSize(frame.width(), frame.height());
+    m_cvt->setOutSize(frame.width(), frame.height());
+    QVector<const uchar*> pitch(format.planeCount());
+    QVector<int> stride(format.planeCount());
+    for (int i = 0; i < format.planeCount(); ++i) {
+        pitch[i] = frame.bits(i);
+        stride[i] = frame.bytesPerLine(i);
+    }
+    if (!m_cvt->convert(pitch.constData(), stride.constData())) {
+        return VideoFrame();
+    }
+    VideoFrame f(m_cvt->outData(), frame.width(), frame.height(), VideoFormat(fffmt));
+    f.setBits(m_cvt->outPlanes());
+    f.setBytesPerLine(m_cvt->outLineSizes());
+    return f;
 }
 
 } //namespace QtAV
