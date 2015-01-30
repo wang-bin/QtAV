@@ -45,9 +45,6 @@
 #include <QtAV/FilterContext.h>
 #include <QtAV/LibAVFilter.h>
 
-#include <QtAV/ImageConverter.h>
-#include <QtAV/ImageConverterTypes.h>
-
 #include <QtAV/VideoShader.h>
 #include <QtAV/OpenGLVideo.h>
 

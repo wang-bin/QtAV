@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,7 +23,6 @@
 #define QAV_VIDEORENDERER_P_H
 
 #include <QtAV/private/AVOutput_p.h>
-//#include <QtAV/ImageConverter.h>
 #include <QtAV/VideoRenderer.h>
 #include <QtCore/QMutex>
 #include <QtCore/QRect>
@@ -98,7 +97,6 @@ public:
     int renderer_width, renderer_height;
     qreal source_aspect_ratio;
     int src_width, src_height; //TODO: in_xxx
-    //ImageConverter conv;
     QMutex img_mutex;
     //for both source, out aspect ratio. because source change may result in out change if mode is VideoAspectRatio
     bool aspect_ratio_changed;

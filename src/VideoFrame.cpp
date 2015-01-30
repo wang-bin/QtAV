@@ -21,11 +21,11 @@
 
 #include "QtAV/VideoFrame.h"
 #include "QtAV/private/Frame_p.h"
-#include "QtAV/ImageConverter.h"
 #include "QtAV/SurfaceInterop.h"
-#include "QtAV/private/AVCompat.h"
+#include "ImageConverter.h"
 #include <QtCore/QSharedPointer>
 #include <QtGui/QImage>
+#include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
 // FF_API_PIX_FMT

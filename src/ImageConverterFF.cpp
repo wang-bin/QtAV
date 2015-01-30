@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/ImageConverter.h"
-#include "QtAV/private/ImageConverter_p.h"
+#include "ImageConverter.h"
+#include "ImageConverter_p.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"

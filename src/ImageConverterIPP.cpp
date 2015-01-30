@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverterIPP: Image resizing & color model convertion using Intel IPP
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/ImageConverter.h"
-#include "QtAV/private/ImageConverter_p.h"
+#include "ImageConverter.h"
+#include "ImageConverter_p.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -28,7 +28,6 @@
 
 namespace QtAV {
 
-class ImageConverter;
 class VideoCapture;
 class VideoFrame;
 class VideoThreadPrivate;
@@ -41,7 +40,6 @@ public:
     VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
     VideoCapture *videoCapture() const;
     VideoFrame displayedFrame() const;
-    //ImageConverter *imageConverter();
     //virtual bool event(QEvent *event);
     void setBrightness(int val);
     void setContrast(int val);

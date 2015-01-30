@@ -266,7 +266,7 @@ static_ffmpeg {
 # libs needed by mac static ffmpeg. corefoundation: vda, avdevice
   mac: LIBS += -liconv -lbz2 -lz -framework CoreFoundation
   win32: LIBS *= -lws2_32 -lstrmiids -lvfw32 -luuid
-  *g++* {
+  !mac:*g++* {
     LIBS += -lz
     QMAKE_LFLAGS += -Wl,-Bsymbolic #link to static lib, see http://ffmpeg.org/platform.html
   }
@@ -348,8 +348,6 @@ SDK_HEADERS *= \
     QtAV/FilterContext.h \
     QtAV/LibAVFilter.h \
     QtAV/Frame.h \
-    QtAV/ImageConverter.h \
-    QtAV/ImageConverterTypes.h \
     QtAV/QPainterRenderer.h \
     QtAV/Packet.h \
     QtAV/AVError.h \
@@ -388,7 +386,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
     QtAV/private/Frame_p.h \
-    QtAV/private/ImageConverter_p.h \
     QtAV/private/VideoShader_p.h \
     QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoRenderer_p.h \
@@ -405,6 +402,8 @@ HEADERS *= \
     AVThread_p.h \
     AudioThread.h \
     VideoThread.h \
+    ImageConverter.h \
+    ImageConverter_p.h \
     codec/video/VideoDecoderFFmpegBase.h \
     codec/video/VideoDecoderFFmpegHW.h \
     codec/video/VideoDecoderFFmpegHW_p.h \
