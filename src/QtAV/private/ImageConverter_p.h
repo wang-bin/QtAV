@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -42,6 +42,11 @@ public:
         , contrast(0)
         , saturation(0)
     {}
+    virtual bool setupColorspaceDetails(bool force = true) {
+        Q_UNUSED(force);
+        return true;
+    }
+
     bool interlaced;
     int w_in, h_in, w_out, h_out;
     int fmt_in, fmt_out;

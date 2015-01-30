@@ -137,7 +137,7 @@ void ImageConverter::setBrightness(int value)
     if (d.brightness == value)
         return;
     d.brightness = value;
-    setupColorspaceDetails();
+    d.setupColorspaceDetails();
 }
 
 int ImageConverter::brightness() const
@@ -151,7 +151,7 @@ void ImageConverter::setContrast(int value)
     if (d.contrast == value)
         return;
     d.contrast = value;
-    setupColorspaceDetails();
+    d.setupColorspaceDetails();
 }
 
 int ImageConverter::contrast() const
@@ -165,7 +165,7 @@ void ImageConverter::setSaturation(int value)
     if (d.saturation == value)
         return;
     d.saturation = value;
-    setupColorspaceDetails();
+    d.setupColorspaceDetails();
 }
 
 int ImageConverter::saturation() const
@@ -193,11 +193,6 @@ QVector<int> ImageConverter::outLineSizes() const
     lineSizes[2] = d.picture.linesize[2];
     lineSizes[3] = d.picture.linesize[3];
     return lineSizes;
-}
-
-bool ImageConverter::setupColorspaceDetails()
-{
-    return true;
 }
 
 bool ImageConverter::prepareData()
