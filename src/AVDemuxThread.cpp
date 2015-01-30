@@ -466,10 +466,14 @@ void AVDemuxThread::run()
         vqueue->put(Packet());
     while (audio_thread && audio_thread->isRunning()) {
         qDebug("waiting audio thread.......");
+        aqueue->blockEmpty(false); //FIXME: why need this
+        audio_thread->setDemuxEnded(true); //FIXME: why need this
         audio_thread->wait(500);
     }
     while (video_thread && video_thread->isRunning()) {
         qDebug("waiting video thread.......");
+        vqueue->blockEmpty(false);
+        video_thread->setDemuxEnded(true);
         video_thread->wait(500);
     }
     qDebug("Demux thread stops running....");
