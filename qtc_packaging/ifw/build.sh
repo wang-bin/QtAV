@@ -134,12 +134,22 @@ fi
 
 #examples
 echo "coping examples..."
-mv `find $TARGET/packages/com.qtav.product.runtime/data/bin/* -maxdepth 0 -type f |grep -v "\.so" |grep -v "\.dylib" |grep -v "\.conf" |grep -v "\.dll"` $TARGET/packages/com.qtav.product.examples/data/bin
+EXAMPLE_DIR=$TARGET/packages/com.qtav.product.examples
+mv `find $TARGET/packages/com.qtav.product.runtime/data/bin/* -maxdepth 0 -type f |grep -v "\.so" |grep -v "\.dylib" |grep -v "\.conf" |grep -v "\.dll"` $EXAMPLE_DIR/data/bin
 
 
 find $TARGET -name log.txt -exec rm -f {} \;
 find $TARGET -name "*.manifest" -exec rm -f {} \;
-
+# copy simpleplayer source code
+mkdir -p $EXAMPLE_DIR/data/src
+cp -af ../../examples/simpleplayer $EXAMPLE_DIR/data/src
+cat >$EXAMPLE_DIR/data/src/simpleplayer/simpleplayer.pro<<EOF
+TEMPLATE = app
+CONFIG -= app_bundle
+QT += avwidgets av
+HEADERS = playerwindow.h
+SOURCES = playerwindow.cpp main.cpp
+EOF
 
 echo "creating installer..."
 if platform_is MinGW || platform_is MSYS; then
