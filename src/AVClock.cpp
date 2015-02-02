@@ -21,6 +21,7 @@
 
 
 #include <QtAV/AVClock.h>
+#include <QtCore/QTimer>
 #include <QtCore/QTimerEvent>
 #include <QtCore/QDateTime>
 #include "utils/Logger.h"
@@ -58,15 +59,7 @@ void AVClock::setClockType(ClockType ct)
     if (clock_type == ct)
         return;
     clock_type = ct;
-    if (clock_type != AudioClock) {// TODO: for all clock
-        nb_restarted = 0;
-        avg_err = 0;
-        // timer is always started in AVClock::start()
-        if (timer.isValid()) {
-            t = QDateTime::currentMSecsSinceEpoch();
-            correction_schedule_timer.start(kCorrectionInterval*1000, this);
-        }
-    }
+    QTimer::singleShot(0, this, SLOT(restartCorrectionTimer()));
 }
 
 AVClock::ClockType AVClock::clockType() const
@@ -139,12 +132,7 @@ void AVClock::start()
 {
     qDebug("AVClock started!!!!!!!!");
     timer.start();
-    correction_schedule_timer.stop();
-    // TODO: for all clock type
-    if (clockType() != AudioClock) {
-        t = QDateTime::currentMSecsSinceEpoch();
-        correction_schedule_timer.start(kCorrectionInterval*1000, this);
-    }
+    QTimer::singleShot(0, this, SLOT(restartCorrectionTimer()));
     emit started();
 }
 //remember last value because we don't reset  pts_, pts_v, delay_
@@ -156,7 +144,7 @@ void AVClock::pause(bool p)
         return;
     m_paused = p;
     if (p) {
-        correction_schedule_timer.stop();
+        QTimer::singleShot(0, this, SLOT(stopCorrectionTimer()));
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
         timer.invalidate();
 #else
@@ -165,7 +153,7 @@ void AVClock::pause(bool p)
         emit paused();
     } else {
         timer.start();
-        correction_schedule_timer.start(kCorrectionInterval*1000, this);
+        QTimer::singleShot(0, this, SLOT(restartCorrectionTimer()));
         emit resumed();
     }
     t = QDateTime::currentMSecsSinceEpoch();
@@ -178,7 +166,7 @@ void AVClock::reset()
     m_paused = false;
     value0 = 0;
     pts_ = pts_v = delay_ = 0;
-    correction_schedule_timer.stop();
+    QTimer::singleShot(0, this, SLOT(stopCorrectionTimer()));
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
     timer.invalidate();
 #else
@@ -209,4 +197,25 @@ void AVClock::timerEvent(QTimerEvent *event)
     nb_restarted = 0;
 }
 
+
+void AVClock::restartCorrectionTimer()
+{
+    nb_restarted = 0;
+    avg_err = 0;
+    correction_schedule_timer.stop();
+    if (clockType() == AudioClock) // TODO: for all clock type
+        return;
+    // timer is always started in AVClock::start()
+    if (!timer.isValid())
+        return;
+    t = QDateTime::currentMSecsSinceEpoch();
+    correction_schedule_timer.start(kCorrectionInterval*1000, this);
+}
+
+void AVClock::stopCorrectionTimer()
+{
+    nb_restarted = 0;
+    avg_err = 0;
+    correction_schedule_timer.stop();
+}
 } //namespace QtAV

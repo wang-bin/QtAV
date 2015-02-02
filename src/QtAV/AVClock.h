@@ -108,6 +108,10 @@ public slots:
 
 protected:
     virtual void timerEvent(QTimerEvent *event);
+private Q_SLOTS:
+    /// make sure QBasic timer start/stop in a right thread
+    void restartCorrectionTimer();
+    void stopCorrectionTimer();
 private:
     bool auto_clock;
     bool m_paused;
