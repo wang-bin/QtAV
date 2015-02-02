@@ -85,6 +85,7 @@ public:
     bool update_geo;
     QOpenGLBuffer array_buf; //VertexBuffer
     qreal valiad_tex_width;
+    QSize video_size;
     QRectF target;
     QRectF roi; //including invalid padding width
     TexturedGeometry geometry;
@@ -193,11 +194,12 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     shader->program()->setUniformValue(shader->opacityLocation(), (GLfloat)1.0);
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
     // uniform end. attribute begin
-    // TODO: also check size change for normalizedROI
-    const bool roi_changed = d.roi != roi || d.valiad_tex_width != d.material->validTextureWidth();
+    // also check size change for normalizedROI computation if roi is not normalized
+    const bool roi_changed = d.valiad_tex_width != d.material->validTextureWidth() || d.roi != roi || d.video_size != d.material->frameSize();
     if (roi_changed) {
         d.roi = roi;
         d.valiad_tex_width = d.material->validTextureWidth();
+        d.video_size = d.material->frameSize();
     }
     QRectF& target_rect = d.rect;
     if (d.target.isValid()) {
@@ -232,11 +234,11 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     // normalize?
     if (d.try_vbo && d.array_buf.isCreated()) {
         d.array_buf.bind();
-        shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, 2, d.geometry.stride());
-        shader->program()->setAttributeBuffer(1, GL_FLOAT, 2*sizeof(float), 2, d.geometry.stride());
+        shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, d.geometry.tupleSize(), d.geometry.stride());
+        shader->program()->setAttributeBuffer(1, GL_FLOAT, d.geometry.tupleSize()*sizeof(float), d.geometry.tupleSize(), d.geometry.stride());
     } else {
-        shader->program()->setAttributeArray(0, GL_FLOAT, d.geometry.data(0), 2, d.geometry.stride());
-        shader->program()->setAttributeArray(1, GL_FLOAT, d.geometry.data(1), 2, d.geometry.stride());
+        shader->program()->setAttributeArray(0, GL_FLOAT, d.geometry.data(0), d.geometry.tupleSize(), d.geometry.stride());
+        shader->program()->setAttributeArray(1, GL_FLOAT, d.geometry.data(1), d.geometry.tupleSize(), d.geometry.stride());
     }
     char const *const *attr = shader->attributeNames();
     for (int i = 0; attr[i]; ++i) {

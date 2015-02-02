@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -531,6 +531,11 @@ qreal VideoMaterial::validTextureWidth() const
     return d_func().effective_tex_width_ratio;
 }
 
+QSize VideoMaterial::frameSize() const
+{
+    return QSize(d_func().width, d_func().height);
+}
+
 QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
 {
     DPTR_D(const VideoMaterial);
@@ -538,8 +543,6 @@ QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
         return QRectF(0, 0, 1, 1);
     float x = roi.x();
     float w = roi.width();
-    x *= d.effective_tex_width_ratio;
-    w *= d.effective_tex_width_ratio;
     if (qAbs(x) > 1)
         x /= (float)d.width;
     float y = roi.y();
@@ -550,6 +553,8 @@ QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
     float h = roi.height();
     if (qAbs(h) > 1)
         h /= (float)d.height;
+    x *= d.effective_tex_width_ratio;
+    w *= d.effective_tex_width_ratio;
     return QRectF(x, y, w, h);
 }
 

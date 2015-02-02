@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -127,6 +127,7 @@ public:
      * \return valid width ratio
      */
     qreal validTextureWidth() const;
+    QSize frameSize() const;
     /*!
      * \brief normalizedROI
      * \param roi logical roi of a video frame
@@ -156,6 +157,7 @@ public:
     TexturedGeometry(int count = 4, Triangle t = Strip);
     Triangle triangle() const { return tri;}
     int mode() const;
+    int tupleSize() const { return 2;}
     int stride() const { return sizeof(Point); }
     int vertexCount() const { return v.size(); }
     void setPoint(int index, const QPointF& p, const QPointF& tp);
