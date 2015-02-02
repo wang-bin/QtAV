@@ -73,6 +73,10 @@ public:
 
     void resetGL() {
         ctx = 0;
+        vbo.destroy();
+#if QT_VAO
+        vao.destroy();
+#endif
         if (!manager)
             return;
         manager->setParent(0);
@@ -234,20 +238,19 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
 #if QT_VAO
             if (d.try_vao) {
                 //qDebug("updating vao...");
-                if (d.vao.isCreated())
-                    d.vao.destroy();
-                if (!d.vao.create()) {
-                    d.try_vao = false;
-                    qDebug("VAO is not supported");
+                if (!d.vao.isCreated()) {
+                    if (!d.vao.create()) {
+                        d.try_vao = false;
+                        qDebug("VAO is not supported");
+                    }
                 }
             }
             QOpenGLVertexArrayObject::Binder vao_bind(&d.vao);
             Q_UNUSED(vao_bind);
 #endif
+            if (!d.vbo.isCreated())
+                d.vbo.create();
             if (d.vbo.isCreated()) {
-                d.vbo.destroy();
-            }
-            if (d.vbo.create()) {
                 //qDebug("updating vbo...");
                 d.vbo.bind();
                 d.vbo.allocate(d.geometry.data(), d.geometry.vertexCount()*d.geometry.stride());
