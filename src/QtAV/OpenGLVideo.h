@@ -45,6 +45,7 @@ class OpenGLVideoPrivate;
  * \brief The OpenGLVideo class
  * high level api for renderering a video frame. use VideoShader, VideoMaterial and ShaderManager internally.
  * By default, VBO is used. Set environment var QTAV_NO_VBO=1 or 0 to disable/enable VBO.
+ * VAO will be enabled if supported. Disabling VAO is the same as VBO.
  */
 class Q_AV_EXPORT OpenGLVideo : public QObject
 {
