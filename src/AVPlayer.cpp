@@ -1068,6 +1068,7 @@ void AVPlayer::stopFromDemuxerThread()
     if (currentRepeat() >= repeat() && repeat() >= 0) {
         masterClock()->reset();
         stopNotifyTimer();
+        d->seeking = false;
         d->start_position = 0;
         d->stop_position = kInvalidPosition; // already stopped. so not 0 but invalid. 0 can stop the playback in timerEvent
         d->media_end = kInvalidPosition;
@@ -1151,6 +1152,7 @@ void AVPlayer::stop()
     } else { //called by player
         stopNotifyTimer();
     }
+    d->seeking = false;
     d->reset_state = true;
 
     d->last_position = mediaStopPosition() != kInvalidPosition ? startPosition() : 0;
