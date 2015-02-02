@@ -22,12 +22,15 @@
 #include "QtAV/OpenGLVideo.h"
 #include <QtGui/QColor>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QOpenGLBuffer>
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLFunctions>
 #include <QtGui/QSurface>
 #else
+#include <QtOpenGL/QGLBuffer>
 #include <QtOpenGL/QGLShaderProgram>
 #include <QtOpenGL/QGLFunctions>
+typedef QGLBuffer QOpenGLBuffer;
 #define QOpenGLShaderProgram QGLShaderProgram
 #define QOpenGLShader QGLShader
 #define QOpenGLFunctions QGLFunctions
@@ -47,8 +50,13 @@ public:
         : ctx(0)
         , manager(0)
         , material(new VideoMaterial())
+        , try_vbo(true)
+        , update_geo(true)
         , valiad_tex_width(1.0)
-    {}
+    {
+        static bool disable_vbo = qgetenv("QTAV_NO_VBO").toInt() > 0;
+        try_vbo = !disable_vbo;
+    }
     ~OpenGLVideoPrivate() {
         if (material) {
             delete material;
@@ -73,6 +81,9 @@ public:
     QOpenGLContext *ctx;
     ShaderManager *manager;
     VideoMaterial *material;
+    bool try_vbo; // check environment var and opengl support
+    bool update_geo;
+    QOpenGLBuffer array_buf; //VertexBuffer
     qreal valiad_tex_width;
     QRectF target;
     QRectF roi; //including invalid padding width
@@ -134,6 +145,7 @@ void OpenGLVideo::setProjectionMatrixToRect(const QRectF &v)
     d.matrix.ortho(v);
     // Mirrored relative to the usual Qt coordinate system with origin in the top left corner.
     //mirrored = mat(0, 0) * mat(1, 1) - mat(0, 1) * mat(1, 0) > 0;
+    d.update_geo = true; // even true for target_rect != d.rect
 }
 
 void OpenGLVideo::setProjectionMatrix(const QMatrix4x4 &matrix)
@@ -181,20 +193,51 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     shader->program()->setUniformValue(shader->opacityLocation(), (GLfloat)1.0);
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
     // uniform end. attribute begin
+    // TODO: also check size change for normalizedROI
+    const bool roi_changed = d.roi != roi || d.valiad_tex_width != d.material->validTextureWidth();
+    if (roi_changed) {
+        d.roi = roi;
+        d.valiad_tex_width = d.material->validTextureWidth();
+    }
+    QRectF& target_rect = d.rect;
     if (d.target.isValid()) {
-        if (d.target != target || d.roi != roi || d.valiad_tex_width != d.material->validTextureWidth()) {
+        if (roi_changed || d.target != target) {
             d.target = target;
-            d.roi = roi;
-            d.valiad_tex_width = d.material->validTextureWidth();
-            d.geometry.setRect(target, d.material->normalizedROI(roi));
+            d.rect = d.target;
+            d.update_geo = true;
         }
     } else {
-        d.geometry.setRect(d.rect, d.material->normalizedROI(roi));
+        if (roi_changed || d.update_geo) {
+            d.update_geo = true; // roi_changed
+        }
     }
-
+    if (d.update_geo) {
+        //qDebug("updating geometry...");
+        d.geometry.setRect(target_rect, d.material->normalizedROI(roi));
+        d.update_geo = false;
+        if (d.try_vbo) {
+            if (d.array_buf.isCreated()) {
+                d.array_buf.destroy();
+            }
+            if (d.array_buf.create()) {
+                //qDebug("updating vbo...");
+                d.array_buf.bind();
+                d.array_buf.allocate(d.geometry.data(), d.geometry.vertexCount()*d.geometry.stride());
+            } else {
+                d.try_vbo = false; // not supported by OpenGL
+                qWarning("VBO is not supported");
+            }
+        }
+    }
     // normalize?
-    shader->program()->setAttributeArray(0, GL_FLOAT, d.geometry.data(0), 2, d.geometry.stride());
-    shader->program()->setAttributeArray(1, GL_FLOAT, d.geometry.data(1), 2, d.geometry.stride());
+    if (d.try_vbo && d.array_buf.isCreated()) {
+        d.array_buf.bind();
+        shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, 2, d.geometry.stride());
+        shader->program()->setAttributeBuffer(1, GL_FLOAT, 2*sizeof(float), 2, d.geometry.stride());
+    } else {
+        shader->program()->setAttributeArray(0, GL_FLOAT, d.geometry.data(0), 2, d.geometry.stride());
+        shader->program()->setAttributeArray(1, GL_FLOAT, d.geometry.data(1), 2, d.geometry.stride());
+    }
     char const *const *attr = shader->attributeNames();
     for (int i = 0; attr[i]; ++i) {
         shader->program()->enableAttributeArray(i); //TODO: in setActiveShader

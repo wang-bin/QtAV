@@ -164,6 +164,7 @@ public:
     void setRect(const QRectF& r, const QRectF& tr);
     void* data(int idx = 0) { return (char*)v.data() + idx*2*sizeof(float); } //convert to char* float*?
     const void* data(int idx = 0) const { return (char*)v.constData() + idx*2*sizeof(float); }
+    const void* constData(int idx = 0) const { return (char*)v.constData() + idx*2*sizeof(float); }
 private:
     Triangle tri;
     QVector<Point> v;
