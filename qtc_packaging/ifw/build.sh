@@ -8,6 +8,9 @@
 
 
 BUILD=$1
+QTBIN=`grep -m 1 QT_BIN $BUILD/.qmake.cache |cut -d "=" -f 2 | tr -d ' '`
+export PATH=$QTBIN:$PATH
+
 ARCH=`grep TARGET_ARCH $BUILD/.qmake.cache |grep -v TARGET_ARCH_SUB |cut -d "=" -f 2`
 ARCH=`echo $ARCH` #trim
 echo "$ARCH"
@@ -21,7 +24,7 @@ QTAV_VER_PATCH=`grep -m 1 QTAV_PATCH_VERSION ../../.qmake.conf |cut -d "=" -f 2 
 QTAV_VER=${QTAV_VER_MAJOR}.${QTAV_VER_MINOR}.${QTAV_VER_PATCH}
 echo "QtAV $QTAV_VER"
 
-function platform_is() {
+function host_is() {
   local name=$1
 #TODO: osx=>darwin
   local line=`uname -a |grep -i $name`
@@ -31,11 +34,11 @@ function platform_is() {
 lib_name() {
   local lib_base=$1
   local lib_ver=$2
-    if platform_is Darwin; then
+    if host_is Darwin; then
       echo lib${lib_base}.${lib_ver}.dylib
-    elif platform_is MinGW; then
+    elif host_is MinGW; then
       echo ${lib_base}${lib_ver}.dll
-    elif platform_is MSYS; then
+    elif host_is MSYS; then
       echo ${lib_base}${lib_ver}.dll
     else
       echo lib${lib_base}.so.${lib_ver}
@@ -43,9 +46,9 @@ lib_name() {
 }
 qt5lib_name() {
   local m=$1
-    if platform_is Darwin; then
+    if host_is Darwin; then
       echo libQt5${m}.${lib_ver}.dylib
-    elif platform_is MinGW || platform_is MSYS; then
+    elif host_is MinGW || host_is MSYS; then
       echo Qt5${m}.dll
     else
       echo libQt5${m}.so.5
@@ -53,17 +56,11 @@ qt5lib_name() {
 }
 
 EXE=
-platform_is MinGW || platform_is MSYS && EXE=.exe
+host_is MinGW || host_is MSYS && EXE=.exe
 
-# TODO: QT_INSTALL_LIBS. .qmake.cache stores QT_INSTALL_BINS, run qmake here
-QTDIR=$(grep include $BUILD/sdk_uninstall.* |head -n 1 | sed 's,\\,\/,g')
-QTDIR=${QTDIR%include*}
-QTDIR=${QTDIR//* /}
-echo "QTDIR=$QTDIR"
 
 LIBDIR=`find $BUILD/lib* -name "*Qt*AV.prl"`
 LIBDIR=${LIBDIR%/*}
-mkdir -p $TARGET
 echo "LIBDIR=$LIBDIR"
 
 echo "creating directories..."
@@ -76,30 +73,44 @@ mkdir -p $TARGET/packages/com.qtav.product.dev/data/lib
 mkdir -p $TARGET/packages/com.qtav.product/data/
 
 
-# runtime
+### runtime
 echo "coping runtime files..."
-echo "[Paths]" > $TARGET/packages/com.qtav.product.runtime/data/bin/qt.conf
-echo "Prefix=." >> $TARGET/packages/com.qtav.product.runtime/data/bin/qt.conf
-QTMODULES=(Core Gui OpenGL Widgets Qml Quick Network Svg)
-platform_is Linux && QTMODULES+=(DBus)
-cp -af $BUILD/bin/* $TARGET/packages/com.qtav.product.runtime/data/bin
+RT_DIR=$TARGET/packages/com.qtav.product.runtime
+cat > $RT_DIR/data/bin/qt.conf <<EOF
+[Paths]
+Prefix=.
+EOF
+QTMODULES=(Core Gui OpenGL Widgets Qml Quick Network Svg) #TODO: use readelf, objdump or otool to get depends
+host_is Linux && QTMODULES+=(DBus)
+cp -af $BUILD/bin/* $RT_DIR/data/bin
+QTRT=`qmake -query QT_INSTALL_LIBS`
+host_is MinGW || host_is MSYS && QTRT=`$QTBiN/qmake -query QT_INSTALL_BINS`
 for m in ${QTMODULES[@]}; do
-  test -f $TARGET/packages/com.qtav.product.runtime/data/bin/`qt5lib_name ${m}` || cp -Lf $QTDIR/lib/`qt5lib_name ${m}` $TARGET/packages/com.qtav.product.runtime/data/bin
+  RT_DLL=`qt5lib_name ${m}`
+  test -L $RT_DLL/data/bin/$RT_DLL && rm -rf $RT_DLL/data/bin/$RT_DLL
+  test -f $RT_DLL/data/bin/$RT_DLL || cp -Lf $QTRT/$RT_DLL $RT_DIR/data/bin
 done
-cp -af $QTDIR/plugins/{imageformats,platform*} $TARGET/packages/com.qtav.product.runtime/data/bin/plugins
-cp -af $QTDIR/qml/{Qt,QtQml,QtQuick,QtQuick.2} $TARGET/packages/com.qtav.product.runtime/data/bin/qml
-rm -f $TARGET/packages/com.qtav.product.runtime/data/bin/plugins/platforms/{*mini*,*offscreen*,*eglfs*,*linuxfb*,*kms*}
-rm -f $TARGET/packages/com.qtav.product.runtime/data/bin/plugins/imageformats/{*dds*,*icns*,*tga*,*tiff*,*wbmp*,*webp*}
+
+QTPLUGIN=`qmake -query QT_INSTALL_PLUGINS`
+QTQML=`qmake -query QT_INSTALL_QML`
+cp -af $QTPLUGIN/{imageformats,platform*} $RT_DIR/data/bin/plugins
+cp -af $QTQML/{Qt,QtQml,QtQuick,QtQuick.2} $RT_DIR/data/bin/qml
+rm -f $RT_DIR/data/bin/plugins/platforms/{*mini*,*offscreen*,*eglfs*,*linuxfb*,*kms*}
+rm -f $RT_DIR/data/bin/plugins/imageformats/{*dds*,*icns*,*tga*,*tiff*,*wbmp*,*webp*}
 ##ffmpegs
 ## QtAV, Qt5AV
 LIBQTAV=$LIBDIR/`lib_name "Qt*AV" 1`
 echo "LIBQTAV=$LIBQTAV"
-cp -Lf $LIBQTAV $TARGET/packages/com.qtav.product.runtime/data/bin
+cp -Lf $LIBQTAV $RT_DIR/data/bin
 LIBQTAVWIDGETS=$LIBDIR/`lib_name "Qt*AVWidgets" 1`
 echo "LIBQTAVWIDGETS=$LIBQTAVWIDGETS"
-cp -Lf $LIBQTAVWIDGETS $TARGET/packages/com.qtav.product.runtime/data/bin
+cp -Lf $LIBQTAVWIDGETS $RT_DIR/data/bin
 
-# dev
+# delete prl to avoid link error for sdk user
+find $RT_DIR -name "QtAV*.prl" -exec rm -f {} \;
+
+
+### dev
 echo "coping development files..."
 cp -af ../../src/QtAV $TARGET/packages/com.qtav.product.dev/data/include
 cp -af ../../widgets/QtAVWidgets $TARGET/packages/com.qtav.product.dev/data/include
@@ -117,12 +128,12 @@ cp -af $LIBDIR/*Qt*AV* $TARGET/packages/com.qtav.product.dev/data/lib
 [ -f $LIBDIR/libQt5AVWidgets1.so ] && cp -af $LIBDIR/libQt5AVWidgets1.so $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AVWidgets.so
 rm -f $TARGET/packages/com.qtav.product.dev/data/lib/{*.dll,*.so.*}
 
-# player
+### player
 echo "coping player files..."
 
-mv $TARGET/packages/com.qtav.product.runtime/data/bin/{player${EXE},QMLPlayer${EXE}} $TARGET/packages/com.qtav.product.player/data/bin
+mv $RT_DIR/data/bin/{player${EXE},QMLPlayer${EXE}} $TARGET/packages/com.qtav.product.player/data/bin
 
-LIBCOMMON=$TARGET/packages/com.qtav.product.runtime/data/bin/`lib_name common 1`
+LIBCOMMON=$RT_DIR/data/bin/`lib_name common 1`
 if [ -f $LIBCOMMON ]; then
     echo "moving $LIBCOMMON ..."
   mv $LIBCOMMON $TARGET/packages/com.qtav.product.player/data/bin
@@ -132,10 +143,10 @@ else
   cp -Lf $LIBCOMMON $TARGET/packages/com.qtav.product.player/data/bin
 fi
 
-#examples
+### examples
 echo "coping examples..."
 EXAMPLE_DIR=$TARGET/packages/com.qtav.product.examples
-mv `find $TARGET/packages/com.qtav.product.runtime/data/bin/* -maxdepth 0 -type f |grep -v "\.so" |grep -v "\.dylib" |grep -v "\.conf" |grep -v "\.dll"` $EXAMPLE_DIR/data/bin
+mv `find $RT_DIR/data/bin/* -maxdepth 0 -type f |grep -v "\.so" |grep -v "\.dylib" |grep -v "\.conf" |grep -v "\.dll"` $EXAMPLE_DIR/data/bin
 
 
 find $TARGET -name log.txt -exec rm -f {} \;
@@ -152,7 +163,7 @@ SOURCES = playerwindow.cpp main.cpp
 EOF
 
 echo "creating installer..."
-if platform_is MinGW || platform_is MSYS; then
+if host_is MinGW || host_is MSYS; then
   echo "default install dir is 'C:\QtAV'"
   cp config/config.xml $TARGET
 else
@@ -160,6 +171,10 @@ else
   sed 's,rootDir,homeDir,g' config/config.xml >$TARGET/config.xml
 fi
 
+type -p binarycreator || {
+  echo "Can not create installer. Make sure Qt Installer Framework tools can be found in \$PATH"
+  exit 0
+}
 INSTALLER=QtAV${QTAV_VER}-${TARGET}
 binarycreator -c $TARGET/config.xml -p $TARGET/packages --ignore-translations -v $INSTALLER
 du -h $INSTALLER
