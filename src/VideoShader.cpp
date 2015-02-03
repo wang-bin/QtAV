@@ -716,10 +716,13 @@ bool VideoMaterialPrivate::updateTexturesIfNeeded()
         target = new_target;
         update_textures = true;
     }
+    const int linsize0 = frame.bytesPerLine(0);
+    const int linsize1 = frame.bytesPerLine(1);
     // effective size may change even if plane size not changed
     if (update_textures
-            || frame.bytesPerLine(0) != plane0Size.width() || frame.height() != plane0Size.height()
-            || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
+            || !qFuzzyIsNull(effective_tex_width_ratio*(qreal)linsize0 - (qreal)width*(qreal)fmt.bytesPerPixel(0))
+            || linsize0 != plane0Size.width() || frame.height() != plane0Size.height()
+            || (plane1_linesize > 0 && linsize1 != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
         //qDebug("---------------------update texture: %dx%d, %s", width, frame.height(), video_format.name().toUtf8().constData());
         const int nb_planes = fmt.planeCount();
@@ -741,11 +744,11 @@ bool VideoMaterialPrivate::updateTexturesIfNeeded()
         if (nb_planes > 1) {
             texture_size[0].setWidth(texture_size[1].width() * effective_tex_width[0]/effective_tex_width[1]);
             // height? how about odd?
-            plane1_linesize = frame.bytesPerLine(1);
+            plane1_linesize = linsize1;
         }
         effective_tex_width_ratio = (qreal)frame.effectiveBytesPerLine(nb_planes-1)/(qreal)frame.bytesPerLine(nb_planes-1);
         qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
-        plane0Size.setWidth(frame.bytesPerLine(0));
+        plane0Size.setWidth(linsize0);
         plane0Size.setHeight(frame.height());
     }
     if (update_textures) {
