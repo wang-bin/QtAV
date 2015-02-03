@@ -65,6 +65,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_ENUMS(Error)
     Q_ENUMS(ChannelLayout)
     // not supported by QtMultimedia
+    Q_PROPERTY(bool fastSeek READ isFastSeek WRITE setFastSeek NOTIFY fastSeekChanged)
     Q_PROPERTY(int timeout READ timeout WRITE setTimeout NOTIFY timeoutChanged)
     Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
@@ -131,6 +132,8 @@ public:
     int duration() const;
     int position() const;
     bool isSeekable() const;
+    bool isFastSeek() const;
+    void setFastSeek(bool value);
 
     Status status() const;
     Error error() const;
@@ -193,6 +196,7 @@ Q_SIGNALS:
     void stopped();
     void playing();
     void seekableChanged();
+    void fastSeekChanged();
     void videoCodecPriorityChanged();
     void videoCodecOptionsChanged();
     void channelLayoutChanged();
@@ -223,6 +227,7 @@ private:
     bool mAutoPlay;
     bool mAutoLoad;
     bool mHasAudio, mHasVideo;
+    bool m_fastSeek;
     int mLoopCount;
     qreal mPlaybackRate;
     qreal mVolume;

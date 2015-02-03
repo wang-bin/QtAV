@@ -62,6 +62,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mAutoLoad(false)
   , mHasAudio(false)
   , mHasVideo(false)
+  , m_fastSeek(false)
   , mLoopCount(1)
   , mPlaybackRate(1.0)
   , mVolume(1.0)
@@ -348,6 +349,19 @@ bool QmlAVPlayer::isSeekable() const
     return mpPlayer && mpPlayer->isSeekable();
 }
 
+bool QmlAVPlayer::isFastSeek() const
+{
+    return m_fastSeek;
+}
+
+void QmlAVPlayer::setFastSeek(bool value)
+{
+    if (m_fastSeek == value)
+        return;
+    m_fastSeek = value;
+    emit fastSeekChanged();
+}
+
 QmlAVPlayer::Status QmlAVPlayer::status() const
 {
     return (Status)m_status;
@@ -460,6 +474,7 @@ void QmlAVPlayer::seek(int offset)
 {
     if (!mpPlayer)
         return;
+    mpPlayer->setSeekType(isFastSeek() ? KeyFrameSeek : AccurateSeek);
     mpPlayer->seek(qint64(offset));
 }
 
@@ -467,6 +482,7 @@ void QmlAVPlayer::seekForward()
 {
     if (!mpPlayer)
         return;
+    mpPlayer->setSeekType(isFastSeek() ? KeyFrameSeek : AccurateSeek);
     mpPlayer->seekForward();
 }
 
@@ -474,6 +490,7 @@ void QmlAVPlayer::seekBackward()
 {
     if (!mpPlayer)
         return;
+    mpPlayer->setSeekType(isFastSeek() ? KeyFrameSeek : AccurateSeek);
     mpPlayer->seekBackward();
 }
 

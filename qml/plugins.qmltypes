@@ -193,6 +193,7 @@ Module {
         Property { name: "metaData"; type: "MediaMetaData"; isReadonly: true; isPointer: true }
         Property { name: "mediaObject"; type: "QObject"; isReadonly: true; isPointer: true }
         Property { name: "errorString"; type: "string"; isReadonly: true }
+        Property { name: "fastSeek"; type: "bool" }
         Property { name: "timeout"; type: "int" }
         Property { name: "channelLayout"; type: "ChannelLayout" }
         Property { name: "videoCodecs"; type: "QStringList"; isReadonly: true }
