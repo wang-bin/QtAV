@@ -62,6 +62,7 @@ import QtAV 1.5
 Item {
     id: video
 
+    property alias fastSeek: player.fastSeek
     property alias opengl: videoOut.opengl
     property alias timeout: player.timeout
     property alias subtitle: subtitle
