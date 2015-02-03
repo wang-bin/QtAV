@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -125,7 +125,7 @@ AVThread* AVDemuxThread::audioThread()
     return audio_thread;
 }
 
-void AVDemuxThread::seek(qint64 pos)
+void AVDemuxThread::seek(qint64 pos, SeekType type)
 {
     end = false;
     // queue maybe blocked by put()
@@ -139,21 +139,23 @@ void AVDemuxThread::seek(qint64 pos)
     }
     class SeekTask : public QRunnable {
     public:
-        SeekTask(AVDemuxThread *dt, qint64 t)
+        SeekTask(AVDemuxThread *dt, qint64 t, SeekType st)
             : demux_thread(dt)
+            , type(st)
             , position(t)
         {}
         void run() {
-            demux_thread->seekInternal(position);
+            demux_thread->seekInternal(position, type);
         }
     private:
         AVDemuxThread *demux_thread;
+        SeekType type;
         qint64 position;
     };
-    newSeekRequest(new SeekTask(this, pos));
+    newSeekRequest(new SeekTask(this, pos, type));
 }
 
-void AVDemuxThread::seekInternal(qint64 pos)
+void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
 {
     if (audio_thread) {
         audio_thread->setDemuxEnded(false);
@@ -164,16 +166,19 @@ void AVDemuxThread::seekInternal(qint64 pos)
         video_thread->packetQueue()->clear();
     }
     qDebug("seek to %s %lld ms (%f%%)", QTime(0, 0, 0).addMSecs(pos).toString().toUtf8().constData(), pos, double(pos - demuxer->startTime())/double(demuxer->duration())*100.0);
+    demuxer->setSeekType(type);
     demuxer->seek(pos);
     // TODO: why queue may not empty?
     if (audio_thread) {
         audio_thread->packetQueue()->clear();
-        audio_thread->packetQueue()->put(Packet());
+        if (type == AccurateSeek)
+            audio_thread->packetQueue()->put(Packet());
     }
     if (video_thread) {
         video_thread->packetQueue()->clear();
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
-        video_thread->packetQueue()->put(Packet());
+        if (type == AccurateSeek)
+            video_thread->packetQueue()->put(Packet());
     }
     //if (subtitle_thread) {
     //     subtitle_thread->packetQueue()->clear();

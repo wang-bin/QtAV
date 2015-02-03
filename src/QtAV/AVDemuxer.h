@@ -45,16 +45,6 @@ public:
         VideoStream,
         SubtitleStream,
     };
-    enum SeekUnit {
-        SeekByTime, // only this is supported now
-        SeekByByte,
-        SeekByFrame
-    };
-    enum SeekTarget {
-        SeekTarget_KeyFrame,
-        SeekTarget_AnyFrame,
-        SeekTarget_AccurateFrame
-    };
     /// Supported ffmpeg/libav input protocols(not complete). A static string list
     static const QStringList& supportedProtocols();
 
@@ -98,8 +88,8 @@ public:
     bool isSeekable() const; // TODO: change in unload?
     void setSeekUnit(SeekUnit unit);
     SeekUnit seekUnit() const;
-    void setSeekTarget(SeekTarget target);
-    SeekTarget seekTarget() const;
+    void setSeekType(SeekType target);
+    SeekType seekType() const;
     bool seek(qint64 pos); //pos: ms
     void seek(qreal q); //q: [0,1]. TODO: what if duration() is not valid?
     AVFormatContext* formatContext();

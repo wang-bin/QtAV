@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -97,6 +97,7 @@ AVPlayer::Private::Private()
     , contrast(0)
     , saturation(0)
     , seeking(false)
+    , seek_type(AccurateSeek)
     , seek_target(0)
     , interrupt_timeout(30000)
     , mute(false)

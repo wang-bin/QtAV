@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -139,6 +139,7 @@ public:
     QVariantHash ac_opt, vc_opt;
 
     bool seeking;
+    SeekType seek_type;
     qint64 seek_target; // relative time if relativeTimeMode is true
     qint64 interrupt_timeout;
     bool mute;

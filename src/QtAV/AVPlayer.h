@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -331,8 +331,10 @@ public slots:
     void seek(qint64 pos); //ms. same as setPosition(pos)
     void seekForward();
     void seekBackward();
-    void updateClock(qint64 msecs); //update AVClock's external clock
+    void setSeekType(SeekType type);
+    SeekType seekType() const;
 
+    void updateClock(qint64 msecs); //update AVClock's external clock
     // for all renderers. val: [-100, 100]. other value changes nothing
     void setBrightness(int val);
     void setContrast(int val);
