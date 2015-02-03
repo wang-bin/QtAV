@@ -224,10 +224,12 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             break;
         case Qt::Key_Left:
             qDebug("<-");
+            player->setSeekType(key_event->isAutoRepeat() ? KeyFrameSeek : AccurateSeek);
             player->seekBackward();
             break;
         case Qt::Key_Right:
             qDebug("->");
+            player->setSeekType(key_event->isAutoRepeat() ? KeyFrameSeek : AccurateSeek);
             player->seekForward();
             break;
         case Qt::Key_M:

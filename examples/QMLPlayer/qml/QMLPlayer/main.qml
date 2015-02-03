@@ -96,7 +96,6 @@ Rectangle {
             }
         }
     }
-
     Subtitle {
         id: subtitle
         player: player
@@ -177,9 +176,18 @@ Rectangle {
         mediaSource: player.source
         duration: player.duration
 
-        onSeek: player.seek(ms)
-        onSeekForward: player.seek(player.position + ms)
-        onSeekBackward: player.seek(player.position - ms)
+        onSeek: {
+            player.fastSeek = false
+            player.seek(ms)
+        }
+        onSeekForward: {
+            player.fastSeek = false
+            player.seek(player.position + ms)
+        }
+        onSeekBackward: {
+            player.fastSeek = false
+            player.seek(player.position - ms)
+        }
         onPlay: player.play()
         onStop: player.stop()
         onTogglePause: {
@@ -204,9 +212,11 @@ Rectangle {
                 player.muted = !player.muted
                 break
             case Qt.Key_Right:
+                player.fastSeek = event.isAutoRepeat
                 player.seek(player.position + 10000)
                 break
             case Qt.Key_Left:
+                player.fastSeek = event.isAutoRepeat
                 player.seek(player.position - 10000)
                 break
             case Qt.Key_Up:
@@ -255,6 +265,16 @@ Rectangle {
             }
         }
     }
+    DropArea {
+        anchors.fill: root
+        onEntered: {
+            if (!drag.hasUrls)
+                return;
+            console.log(drag.urls)
+            player.source = drag.urls[0]
+        }
+    }
+
     Item {
         id: configPage
         anchors.right: configPanel.left
