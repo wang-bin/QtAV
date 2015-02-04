@@ -148,46 +148,48 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
     //qDebug("updating geometry...");
     geometry.setRect(target_rect, material->normalizedROI(roi));
     update_geo = false;
-    if (try_vbo) {
+    if (!try_vbo)
+        goto end;
+    { //VAO scope BEGIN
 #if QT_VAO
-        if (try_vao) {
-            //qDebug("updating vao...");
-            if (!vao.isCreated()) {
-                if (!vao.create()) {
-                    try_vao = false;
-                    qDebug("VAO is not supported");
-                }
+    if (try_vao) {
+        //qDebug("updating vao...");
+        if (!vao.isCreated()) {
+            if (!vao.create()) {
+                try_vao = false;
+                qDebug("VAO is not supported");
             }
-        }
-        QOpenGLVertexArrayObject::Binder vao_bind(&vao);
-        Q_UNUSED(vao_bind);
-#endif
-        if (!vbo.isCreated())
-            vbo.create();
-        if (vbo.isCreated()) {
-            //qDebug("updating vbo...");
-            vbo.bind();
-            vbo.allocate(geometry.data(), geometry.vertexCount()*geometry.stride());
-#if QT_VAO
-            if (try_vao) {
-                shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, geometry.tupleSize(), geometry.stride());
-                shader->program()->setAttributeBuffer(1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
-                char const *const *attr = shader->attributeNames();
-                for (int i = 0; attr[i]; ++i) {
-                    shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
-                }
-            }
-#endif
-            vbo.release();
-        } else {
-            try_vbo = false; // not supported by OpenGL
-            qWarning("VBO is not supported");
         }
     }
+    QOpenGLVertexArrayObject::Binder vao_bind(&vao);
+    Q_UNUSED(vao_bind);
+#endif
+    if (!vbo.isCreated()) {
+        if (!vbo.create()) {
+            try_vbo = false; // not supported by OpenGL
+            try_vao = false; // also disable VAO. destroy?
+            qWarning("VBO is not supported");
+            goto end;
+        }
+    }
+    //qDebug("updating vbo...");
+    vbo.bind();
+    vbo.allocate(geometry.data(), geometry.vertexCount()*geometry.stride());
+#if QT_VAO
+    if (try_vao) {
+        shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, geometry.tupleSize(), geometry.stride());
+        shader->program()->setAttributeBuffer(1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
+        char const *const *attr = shader->attributeNames();
+        for (int i = 0; attr[i]; ++i) {
+            shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
+        }
+    }
+#endif
+    vbo.release();
+    } //VAO scope END
 end:
 #if QT_VAO
-    const bool use_vao = try_vao && vao.isCreated();
-    if (use_vao) {
+    if (try_vao && vao.isCreated()) {
         vao.bind();
         return;
     }
