@@ -42,6 +42,7 @@ typedef QGLBuffer QOpenGLBuffer;
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoShader.h"
 #include "ShaderManager.h"
+#include "utils/OpenGLHelper.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -192,13 +193,8 @@ void OpenGLVideo::setSaturation(qreal value)
 
 void OpenGLVideo::fill(const QColor &color)
 {
-#ifndef QT_OPENGL_DYNAMIC
-    glClearColor(color.red(), color.green(), color.blue(), color.alpha());
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#else
-    QOpenGLContext::currentContext()->functions()->glClearColor(color.red(), color.green(), color.blue(), color.alpha());
-    QOpenGLContext::currentContext()->functions()->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#endif
+    DYGL(glClearColor(color.red(), color.green(), color.blue(), color.alpha()));
+    DYGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }
 
 void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4x4& transform)
@@ -293,24 +289,13 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         }
     }
     const bool blending = d.material->hasAlpha();
-// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
-#ifndef QT_OPENGL_DYNAMIC
     if (blending) {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
+        DYGL(glEnable(GL_BLEND));
+        DYGL(glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA));
     }
-    glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
+    DYGL(glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount()));
     if (blending)
-        glDisable(GL_BLEND);
-#else
-    if (blending) {
-        QOpenGLContext::currentContext()->functions()->glEnable(GL_BLEND);
-        QOpenGLContext::currentContext()->functions()->glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
-    }
-    QOpenGLContext::currentContext()->functions()->glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount());
-    if (blending)
-        QOpenGLContext::currentContext()->functions()->glDisable(GL_BLEND);
-#endif
+        DYGL(glDisable(GL_BLEND));
     // d.shader->program()->release(); //glUseProgram(0)
     if (use_vao) {
 #if QT_VAO
