@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -32,6 +32,10 @@
 
 #include "QtAV/private/AVCompat.h"
 
+//__m128i
+#if QTAV_HAVE(SSE2)
+#include <emmintrin.h>
+#endif
 // for mingw gcc
 #if QTAV_HAVE(SSE4_1)
 #include <smmintrin.h> //stream load
@@ -153,6 +157,7 @@ bool GPUMemCopy::initCache(unsigned width)
     return false;
 }
 
+
 void GPUMemCopy::cleanCache()
 {
     mInitialized = false;
@@ -172,7 +177,7 @@ void GPUMemCopy::copyFrame(void *pSrc, void *pDest, unsigned width, unsigned hei
 
 void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT height, UINT pitch)
 {
-#if QTAV_HAVE(SSE4_1)
+#if QTAV_HAVE(SSE2)
     //assert(((intptr_t)pCacheBlock & 0x0f) == 0 && (dst_pitch & 0x0f) == 0);
     __m128i		x0, x1, x2, x3;
     __m128i		*pLoad;
@@ -209,11 +214,17 @@ void CopyGPUFrame_SSE4_1(void *pSrc, void *pDest, void *pCacheBlock, UINT width,
             // COPY A ROW, CACHE LINE AT A TIME
             for (x = 0; x < pitch; x +=64) {
                 // movntdqa
+#if QTAV_HAVE(SSE4_1)
                 x0 = _mm_stream_load_si128(pLoad + 0);
                 x1 = _mm_stream_load_si128(pLoad + 1);
                 x2 = _mm_stream_load_si128(pLoad + 2);
                 x3 = _mm_stream_load_si128(pLoad + 3);
-
+#else
+                x0 = _mm_load_si128(pLoad + 0);
+                x1 = _mm_load_si128(pLoad + 1);
+                x2 = _mm_load_si128(pLoad + 2);
+                x3 = _mm_load_si128(pLoad + 3);
+#endif
                 if (src_unaligned) {
                     // movdqu
                     _mm_storeu_si128(pCache +0, x0);
