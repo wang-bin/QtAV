@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -124,7 +124,7 @@ public:
         // set by user. don't reset in when call destroy
         surface_auto = true;
         nb_surfaces = 0;
-        disable_derive = false;
+        disable_derive = true;
         copy_uswc = true;
     }
     ~VideoDecoderVAAPIPrivate() {}
