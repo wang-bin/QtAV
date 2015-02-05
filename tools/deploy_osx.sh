@@ -36,6 +36,7 @@ deploy() {
   local APP=$1
   local FRAMEWORK_DIR=bin/${APP}.app/Contents/Frameworks
   local EXE=bin/${APP}.app/Contents/MacOS/$APP
+  [ -f sdk_osx.sh ] && cp -Lf sdk_osx.sh bin/${APP}.app/
   mkdir -p $FRAMEWORK_DIR
 
   local LIBCOMMON=`otool -L $EXE |awk '{print $1}' |grep libcommon`

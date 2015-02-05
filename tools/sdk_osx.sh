@@ -1,9 +1,20 @@
+THIS_DIR=`dirname "${BASH_SOURCE[0]}"`
 ARGV=($@)
 ARGC=${#ARGV[@]}
-QT_LIBS=${ARGV[$((ARGC-1))]}
-echo $QT_LIBS/QtCore.framework
+echo $THIS_DIR |grep "\.app" && test -d $THIS_DIR/Contents/Frameworks/QtCore.framework && IS_BOUNDLE=0
+[ $ARGC -gt 0 ] && QT_LIBS=${ARGV[$((ARGC-1))]}
+if [ -n "$IS_BOUNDLE" ]; then
+  if [ ! -e $QT_LIBS/QtCore.framework ]; then
+    QT_VER=`otool -L $THIS_DIR/Contents/Frameworks/QtCore.framework/QtCore | grep -v ":" |grep "QtCore\.framework" |sed 's,.*current version \(.*\)\.[0-9]),\1,'`
+    echo "Input the absolute path of Qt$QT_VER installed lib dir. For example: /Users/xxx/Qt5.4.1/5.4/clang_64/lib"
+    read QT_LIBS
+  fi
+fi
+
+
 test -e $QT_LIBS/QtCore.framework || {
   echo "./${0##*/} paths_of_qtav_frameworks \$QTDIR/lib"
+  echo "foo.app/${0##*/} \$QTDIR/lib"
   exit 0
 }
 # TODO: read from stdin if no arguments
@@ -24,7 +35,14 @@ fix_qt() {
 echo "deploying frameworks..."
 
 unset ARGV[$ARGC-1]
-for av in ${ARGV[@]}; do
+AV_FRAMEWORKS=(${ARGV[@]})
+#which ${BASH_SOURCE[0]}
+echo $THIS_DIR |grep "\.app" && test -d $THIS_DIR/Contents/Frameworks/QtAV.framework && {
+  find . -name "QtAV*.framework"
+  AV_FRAMEWORKS=(`find $THIS_DIR -name "QtAV*.framework"`)
+}
+echo "AV_FRAMEWORKS: ${AV_FRAMEWORKS[@]}"
+for av in ${AV_FRAMEWORKS[@]}; do
   test -f $av/QtAV && {
     QTAV_VER=`otool -L $av/QtAV | grep -v ":" |grep "QtAV\.framework" |sed 's,.*current version \(.*\)),\1,'`
     QTAV_VER_MAJOR=`echo $QTAV_VER |cut -d "." -f 1`
@@ -34,7 +52,7 @@ for av in ${ARGV[@]}; do
   }
 done
 echo QtAV version: $QTAV_VER
-for av in ${ARGV[@]}; do
+for av in ${AV_FRAMEWORKS[@]}; do
   F=${av##*/}
   name=${F%\.framework}
   rm -rf $QT_LIBS/$F
