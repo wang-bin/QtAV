@@ -465,6 +465,7 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
     VideoFrame f(m_cvt->outData(), frame.width(), frame.height(), VideoFormat(fffmt));
     f.setBits(m_cvt->outPlanes());
     f.setBytesPerLine(m_cvt->outLineSizes());
+    f.setTimestamp(frame.timestamp());
     return f;
 }
 
