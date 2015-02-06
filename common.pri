@@ -191,8 +191,8 @@ defineTest(addSimdCompiler) { #from qt5 simd.prf
     headers_var = $${upname}_HEADERS
     sources_var = $${upname}_SOURCES
     asm_var = $${upname}_ASM
-
-    CONFIG($$1) { #TODO: tests/arch may not detect some features
+# config_$$1 is defined by config.tests (tests/arch)
+    CONFIG($$1)|CONFIG(config_$$1) {
         cflags = $$eval(QMAKE_CFLAGS_$${upname})
         contains(QT_CPU_FEATURES, $$name) {
             # Default compiler settings include this feature, so just add to SOURCES
