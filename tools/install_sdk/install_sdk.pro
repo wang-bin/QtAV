@@ -40,8 +40,13 @@ win32 {
   MKDIR = mkdir -p
   RM = rm -f
   RM_DIR = rm -rf
-  macx: LIBSUFFIX = dylib
-  else: LIBSUFFIX = so
+  macx {
+    LIBSUFFIX = dylib
+  } ios {
+    LIBSUFFIX = a
+  } else {
+    LIBSUFFIX = so
+  }
 }
 
 SCRIPT_SUFFIX=sh

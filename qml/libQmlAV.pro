@@ -3,6 +3,11 @@ CONFIG += qt plugin
 TARGET = QmlAV
 QT += quick qml
 CONFIG *= qmlav-buildlib
+#https://github.com/wang-bin/QtAV/issues/368#issuecomment-73246253
+#http://qt-project.org/forums/viewthread/38438
+# mkspecs/features/qml_plugin.prf
+URI = QtAV #uri used in QtAVQmlPlugin::registerTypes(uri)
+QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
 
 #var with '_' can not pass to pri?
 STATICLINK = 0
@@ -41,6 +46,7 @@ else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$plugin.comma
 #http://stackoverflow.com/questions/14260542/qmake-extra-compilers-processing-steps
 #http://danny-pope.com/?p=86
 #custom compiler: auto update if source is newer
+# sa mkspecs/features/qml_plugin.prf
 extra_copy.output = $$shell_path($$plugin.path)${QMAKE_FILE_BASE}${QMAKE_FILE_EXT}
 # QMAKE_COPY_FILE, QMAKE_MKDIR_CMD ?
 extra_copy.commands = -\$\(COPY_FILE\) ${QMAKE_FILE_NAME} $$shell_path($$plugin.path)
