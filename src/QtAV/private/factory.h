@@ -1,6 +1,6 @@
 /******************************************************************************
     Factory: factory template
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -34,8 +34,6 @@
 #include <string>
 #include <vector>
 #include <algorithm> //std::remove
-//#include <qglobal.h> //TODO: no qt
-
 #include "singleton.h"
 #if 0
 #include <loki/Singleton.h>
@@ -56,12 +54,7 @@ class Factory : public Singleton<Class>
     DISABLE_COPY(Factory)
     typedef Id ID;
     typedef T Type;
-#if defined(Q_COMPILER_LAMBDA) && !defined(Q_CC_MSVC)
-#include <functional>
-typedef std::function<Type*()> Creator; //vc does not have std::function?
-#else
-typedef Type* (*Creator)();
-#endif //defined(Q_COMPILER_LAMBDA)
+    typedef Type* (*Creator)();
 public:
     virtual void init() {}
     Type* create(const ID& id);

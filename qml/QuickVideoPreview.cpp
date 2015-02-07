@@ -51,7 +51,6 @@ void QuickVideoPreview::setFile(const QUrl &value)
 {
     if (m_file == value)
         return;
-    qDebug() << value;
     m_file = value;
     emit fileChanged();
     m_extractor.setSource(QUrl::fromPercentEncoding(m_file.toEncoded()));

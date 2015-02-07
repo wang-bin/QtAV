@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,7 +23,8 @@
 #define QTAV_QML_AVPLAYER_H
 
 #include <QtCore/QObject>
-#include <QmlAV/QQuickItemRenderer.h>
+#include <QtCore/QStringList> //5.0
+#include <QtQml/QQmlParserStatus>
 #include <QmlAV/MediaMetaData.h>
 #include <QtAV/AVError.h>
 #include <QtAV/CommonTypes.h>

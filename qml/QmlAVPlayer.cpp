@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -137,7 +137,6 @@ void QmlAVPlayer::setSource(const QUrl &url)
     if (mSource == url)
         return;
     mSource = url;
-    qDebug() << url;
     mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
     emit sourceChanged(); //TODO: emit only when player loaded a new source
 

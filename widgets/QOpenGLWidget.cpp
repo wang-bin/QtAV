@@ -180,8 +180,12 @@ void QOpenGLWidget::initialize()
         return;
     }
     m_paintDevice = new QOpenGLWidgetPaintDevice(this);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 1, 0)
     m_paintDevice->setSize(size() * devicePixelRatio());
     m_paintDevice->setDevicePixelRatio(devicePixelRatio());
+#else
+    m_paintDevice->setSize(size());
+#endif
     m_initialized = true;
     initializeGL();
 }
@@ -201,7 +205,11 @@ void QOpenGLWidget::render()
 
 void QOpenGLWidget::invokeUserPaint()
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 1 , 0)
     DYGL(glViewport(0, 0, width()*devicePixelRatio(), height()*devicePixelRatio()));
+#else
+    DYGL(glViewport(0, 0, width(), height()));
+#endif
     paintGL();
     DYGL(glFlush());
 }

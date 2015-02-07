@@ -22,6 +22,7 @@
 #include "QmlAV/QuickSubtitle.h"
 #include "QmlAV/QmlAVPlayer.h"
 #include <QtAV/Filter.h>
+#include <QtAV/VideoFrame.h>
 #include <QtAV/private/PlayerSubtitle.h>
 
 using namespace QtAV;

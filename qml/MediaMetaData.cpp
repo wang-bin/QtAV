@@ -22,6 +22,7 @@
 #include "QmlAV/MediaMetaData.h"
 #include <QtCore/QFile>
 #include <QtCore/QMetaEnum>
+#include <QtCore/QStringList>
 #include <QtAV/Statistics.h>
 
 using namespace QtAV;
@@ -70,8 +71,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
                 setValue(TrackNumber, it.value().toInt());
                 continue;
             }
-            setValue(TrackNumber, it.value().leftRef(slash).toInt());
-            setValue(TrackCount, it.value().midRef(slash+1).toInt());
+            setValue(TrackNumber, it.value().leftRef(slash).string()->toInt()); //QStringRef.toInt(): Qt5.2
+            setValue(TrackCount, it.value().midRef(slash+1).string()->toInt());
             continue;
         }
         if (keyName == QStringLiteral("date")

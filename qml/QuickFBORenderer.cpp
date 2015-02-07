@@ -27,6 +27,7 @@
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
+#include <QtCore/QCoreApplication>
 #include <QtGui/QOpenGLFramebufferObject>
 #include <QtQuick/QQuickWindow>
 

@@ -7,8 +7,15 @@ CONFIG *= qmlav-buildlib
 #http://qt-project.org/forums/viewthread/38438
 # mkspecs/features/qml_plugin.prf
 URI = QtAV #uri used in QtAVQmlPlugin::registerTypes(uri)
+greaterThan(QT_MAJOR_VERSION, 4) {
+  isEqual(QT_MAJOR_VERSION, 5) {
+    greaterThan(QT_MINOR_VERSION, 2) {
 QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
-
+    }
+  } else {
+QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
+  }
+}
 #var with '_' can not pass to pri?
 STATICLINK = 0
 PROJECTROOT = $$PWD/..
