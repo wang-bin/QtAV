@@ -45,13 +45,22 @@ int main(int argc, char *argv[])
     set_opengl_backend(options.option("gl").value().toString(), app.arguments().first());
     load_qm(QStringList() << "QMLPlayer", options.value("language").toString());
     QtQuick2ApplicationViewer viewer;
-    viewer.engine()->rootContext()->setContextProperty("PlayerConfig", &Config::instance());
+    QString binDir = qApp->applicationDirPath();
+    if (binDir.endsWith(".app/Contents/MacOS")) {
+        binDir.remove(".app/Contents/MacOS");
+        binDir = binDir.left(binDir.lastIndexOf("/"));
+    }
+    QQmlEngine *engine = viewer.engine();
+    if (!engine->importPathList().contains(binDir))
+        engine->addImportPath(binDir);
+    qDebug() << engine->importPathList();
+    engine->rootContext()->setContextProperty("PlayerConfig", &Config::instance());
     qDebug(">>>>>>>>devicePixelRatio: %f", qApp->devicePixelRatio());
     QScreen *sc = app.primaryScreen();
     qDebug() << "dpi phy: " << sc->physicalDotsPerInch() << ", logical: " << sc->logicalDotsPerInch() << ", dpr: " << sc->devicePixelRatio()
                 << "; vis rect:" << sc->virtualGeometry();
     // define a global var for js and qml
-    viewer.engine()->rootContext()->setContextProperty("screenPixelDensity", qApp->primaryScreen()->physicalDotsPerInch()*qApp->primaryScreen()->devicePixelRatio());
+    engine->rootContext()->setContextProperty("screenPixelDensity", qApp->primaryScreen()->physicalDotsPerInch()*qApp->primaryScreen()->devicePixelRatio());
     qreal r = sc->physicalDotsPerInch()/sc->logicalDotsPerInch();
     if (std::isinf(r) || std::isnan(r))
 #if defined(Q_OS_ANDROID)
@@ -65,7 +74,7 @@ int main(int argc, char *argv[])
 #endif
     if (qFuzzyIsNull(sr))
         sr = r;
-    viewer.engine()->rootContext()->setContextProperty("scaleRatio", sr);
+    engine->rootContext()->setContextProperty("scaleRatio", sr);
     QString qml = "qml/QMLPlayer/main.qml";
     if (QFile(qApp->applicationDirPath() + "/" + qml).exists())
         qml.prepend(qApp->applicationDirPath() + "/");
