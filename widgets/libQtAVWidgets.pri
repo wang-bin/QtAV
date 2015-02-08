@@ -1,5 +1,5 @@
 # qmake library building template pri file
-# Copyright (C) 2011-2013 Wang Bin <wbsecg1@gmail.com>
+# Copyright (C) 2011-2015 Wang Bin <wbsecg1@gmail.com>
 # Shanghai, China.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -132,26 +132,10 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 	}
 }
 
-unix {
-    LIBS += -L/usr/local/lib
-# $$[QT_INSTALL_LIBS] and $$DESTDIR and pro dir will be auto added to QMAKE_RPATHDIR if QMAKE_RPATHDIR is not empty
-# Current (sub)project dir is auto added to the first value as prefix. e.g. QMAKE_RPATHDIR = .. ==> -Wl,-rpath,ROOT/..
-# Executable dir search: ld -z origin, g++ -Wl,-R,'$ORIGIN', in makefile -Wl,-R,'$$ORIGIN'
-# Working dir search: "."
-# TODO: for macx. see qtcreator/src/rpath.pri. (-rpath define rpath, @rpath exapand to that path?)
-    macx|ios {
-        QMAKE_LFLAGS_SONAME = -Wl,-install_name,$$PROJECT_LIBDIR/
-# 5.4
-        #QMAKE_LFLAGS += -Wl,-rpath,@loader_path/../,-rpath,@executable_path/../
-    } else {
-        RPATHDIR = \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib $$[QT_INSTALL_LIBS]
-# $$PROJECT_LIBDIR only for host == target. But QMAKE_TARGET.arch is only available on windows. QT_ARCH is bad, e.g. QT_ARCH=i386 while QMAKE_HOST.arch=i686
-# https://bugreports.qt-project.org/browse/QTBUG-30263
-        isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR
-        QMAKE_LFLAGS *= -Wl,-z,origin \'-Wl,-rpath,$$join(RPATHDIR, ":")\'
-    }
-}
+isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR
+set_rpath($$RPATHDIR)
 
+unset(RPATHDIR)
 unset(LIB_VERSION)
 unset(PROJECT_SRCPATH)
 unset(PROJECT_LIBDIR)
