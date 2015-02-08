@@ -164,8 +164,7 @@ defineTest(empty_file) {
     }
 }
 
-##TODO: add defineReplace(getValue): parameter is varname
-lessThan(QT_MAJOR_VERSION, 5): {
+config_simd {
 #TODO: QMAKE_CFLAGS_XXX, QT_CPU_FEATURES
 *g++*|*qcc*: QMAKE_CFLAGS_NEON = -mfpu=neon
 win32-icc {
@@ -185,6 +184,7 @@ win32-icc {
   QMAKE_CFLAGS_SSE4_1 = -msse4.1
 }
 
+#mac: simd will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
 defineTest(addSimdCompiler) { #from qt5 simd.prf
     name = $$1
     upname = $$upper($$name)
@@ -265,7 +265,10 @@ addSimdCompiler(avx2)
 addSimdCompiler(neon)
 addSimdCompiler(mips_dsp)
 addSimdCompiler(mips_dspr2)
+} #config_simd
 
+##TODO: add defineReplace(getValue): parameter is varname
+lessThan(QT_MAJOR_VERSION, 5) {
 defineTest(log){
     system(echo $$system_quote($$1))
 }
