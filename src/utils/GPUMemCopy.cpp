@@ -21,6 +21,7 @@
 
 #include "GPUMemCopy.h"
 #include "QtAV/QtAV_Global.h"
+#include <stdlib.h> //posix_memalign osx
 #ifdef __MINGW32__
 #include <malloc.h> //__mingw_aligned_malloc
 #endif
