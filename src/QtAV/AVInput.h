@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,6 +25,7 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/FactoryDefine.h>
 #include <QtCore/QStringList>
+#include <QtCore/QObject>
 
 namespace QtAV {
 
@@ -33,8 +34,9 @@ class AVInput;
 FACTORY_DECLARE(AVInput)
 
 class AVInputPrivate;
-class Q_AV_EXPORT AVInput
+class Q_AV_EXPORT AVInput : public QObject
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVInput)
     Q_DISABLE_COPY(AVInput)
 public:
@@ -50,6 +52,7 @@ public:
     static AVInput* createForProtocol(const QString& protocol);
 
     AVInput();
+    AVInput(QObject *parent);
     virtual ~AVInput();
     virtual QString name() const = 0;
     virtual void setUrl(const QString& url);
@@ -81,10 +84,11 @@ public:
     void* avioContext(); //const?
     void release(); //TODO: how to remove it?
 protected:
-    AVInput(AVInputPrivate& d);
+    AVInput(AVInputPrivate& d, QObject* parent = 0);
     virtual void onUrlChanged();
     DPTR_DECLARE(AVInput)
 };
-
 } //namespace QtAV
+//#include <QtCore/QMetaType>
+//Q_DECLARE_METATYPE(QtAV::AVInput*)
 #endif // QTAV_AVINPUT_H

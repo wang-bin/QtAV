@@ -3,7 +3,7 @@ MODULE_INCNAME = QtAV # for mac framework. also used in install_sdk.pro
 TARGET = QtAV
 QT += core gui
 config_libcedarv: CONFIG += neon #need by qt4 addSimdCompiler()
-
+#CONFIG *= ltcg
 greaterThan(QT_MAJOR_VERSION, 4) {
   CONFIG *= config_opengl
   greaterThan(QT_MINOR_VERSION, 3) {
@@ -399,7 +399,6 @@ HEADERS *= \
     codec/video/VideoDecoderFFmpegHW.h \
     codec/video/VideoDecoderFFmpegHW_p.h \
     filter/FilterManager.h \
-    input/QIODeviceInput.h \
     subtitle/CharsetDetector.h \
     subtitle/PlainText.h \
     utils/BlockingQueue.h \

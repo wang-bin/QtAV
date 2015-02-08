@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,11 +19,10 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QIODeviceInput.h"
+#include "QtAV/AVInput.h"
 #include "QtAV/private/AVInput_p.h"
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
-#include <QtCore/QIODevice>
 #include <QtCore/QFile>
 #ifndef TEST_QTAV_QIODEVICEINPUT
 #include "utils/Logger.h"
@@ -31,6 +30,34 @@
 #include <QtDebug>
 #endif
 namespace QtAV {
+
+class QIODeviceInputPrivate;
+class QIODeviceInput : public AVInput
+{
+    Q_OBJECT
+    Q_PROPERTY(QIODevice* device READ device WRITE setDevice NOTIFY deviceChanged)
+    DPTR_DECLARE_PRIVATE(QIODeviceInput)
+public:
+    QIODeviceInput();
+    virtual QString name() const Q_DECL_OVERRIDE;
+    // MUST open/close outside
+    void setDevice(QIODevice *dev); // set private in QFileInput etc
+    QIODevice* device() const;
+
+    virtual bool isSeekable() const Q_DECL_OVERRIDE;
+    virtual qint64 read(char *data, qint64 maxSize) Q_DECL_OVERRIDE;
+    virtual bool seek(qint64 offset, int from) Q_DECL_OVERRIDE;
+    virtual qint64 position() const Q_DECL_OVERRIDE;
+    /*!
+     * \brief size
+     * \return <=0 if not support
+     */
+    virtual qint64 size() const Q_DECL_OVERRIDE;
+Q_SIGNALS:
+    void deviceChanged();
+protected:
+    QIODeviceInput(QIODeviceInputPrivate &d);
+};
 
 static const AVInputId AVInputId_QIODevice = mkid::id32base36_6<'Q','I','O','D','e','v'>::value;
 static const char kQIODevName[] = "QIODevice";
@@ -50,9 +77,13 @@ QIODeviceInput::QIODeviceInput() : AVInput(*new QIODeviceInputPrivate()) {}
 QIODeviceInput::QIODeviceInput(QIODeviceInputPrivate &d) : AVInput(d) {}
 QString QIODeviceInput::name() const { return kQIODevName;}
 
-void QIODeviceInput::setIODevice(QIODevice *dev)
+void QIODeviceInput::setDevice(QIODevice *dev)
 {
-    d_func().dev = dev;
+    DPTR_D(QIODeviceInput);
+    if (d.dev == dev)
+        return;
+    d.dev = dev;
+    emit deviceChanged();
 }
 
 QIODevice* QIODeviceInput::device() const
@@ -119,7 +150,7 @@ public:
 protected:
     void onUrlChanged() Q_DECL_OVERRIDE;
 private:
-    using QIODeviceInput::setIODevice;
+    using QIODeviceInput::setDevice;
 };
 
 static const AVInputId AVInputId_QFile = mkid::id32base36_5<'Q','F','i','l','e'>::value;
@@ -139,7 +170,7 @@ public:
 QFileInput::QFileInput()
     : QIODeviceInput(*new QFileInputPrivate())
 {
-    setIODevice(&d_func().file);
+    setDevice(&d_func().file);
 }
 
 void QFileInput::onUrlChanged()
@@ -158,7 +189,7 @@ void QFileInput::onUrlChanged()
 }
 
 } //namespace QtAV
-
+#include "QIODeviceInput.moc"
 #ifdef TEST_QTAV_QIODEVICEINPUT
 int main(int, char**)
 {
