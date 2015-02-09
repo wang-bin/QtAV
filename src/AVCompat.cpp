@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -89,7 +89,7 @@ AVAudioResampleContext *swr_alloc_set_opts(AVAudioResampleContext *s
 }
 #endif
 
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100)
+#if !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
 extern const AVPixFmtDescriptor av_pix_fmt_descriptors[];
 const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
 {
@@ -98,7 +98,7 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
     return &av_pix_fmt_descriptors[pix_fmt];
 }
 
-#endif //AV_VERSION_INT(52, 13, 100)
+#endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
 
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
