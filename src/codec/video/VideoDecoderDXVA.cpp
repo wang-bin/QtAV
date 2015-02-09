@@ -25,6 +25,7 @@
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
+//#include "QtAV/private/mkid.h"
 #include "utils/GPUMemCopy.h"
 #include "utils/Logger.h"
 
@@ -37,9 +38,10 @@
 // AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
 #ifndef AV_CODEC_ID_H265
 #warning "HEVC will not be supported. Update your FFmpeg"
-#define AV_CODEC_ID_H265 AV_CODEC_ID_NONE
+#define AV_CODEC_ID_H265 AV_CODEC_ID_NONE //mkid::fourcc<'H','2','6','5'>::value
 #define AV_CODEC_ID_HEVC AV_CODEC_ID_NONE
 #define FF_PROFILE_HEVC_MAIN -1
+#define FF_PROFILE_HEVC_MAIN_10 -1
 #endif
 
 template <class T> void SafeRelease(T **ppT)
@@ -229,7 +231,7 @@ static const dxva2_mode_t dxva2_modes[] = {
 
     /* HEVC / H.265 */
     { "HEVC / H.265 variable-length decoder, main",                                   &DXVA_ModeHEVC_VLD_Main,                QTAV_CODEC_ID(HEVC) },
-    { "HEVC / H.265 variable-length decoder, main10",                                 &DXVA_ModeHEVC_VLD_Main10,              0 },
+    { "HEVC / H.265 variable-length decoder, main10",                                 &DXVA_ModeHEVC_VLD_Main10,              QTAV_CODEC_ID(HEVC) },
 
     { NULL, 0, 0 }
 };
@@ -246,14 +248,16 @@ static const dxva2_mode_t *Dxva2FindMode(const GUID *guid)
 typedef struct {
     const char    *name;
     D3DFORMAT     format;
-    AVPixelFormat codec;
+    AVPixelFormat avpixfmt;
 } d3d_format_t;
 /* XXX Prefered format must come first */
+//16-bit: https://msdn.microsoft.com/en-us/library/windows/desktop/bb970578(v=vs.85).aspx
 static const d3d_format_t d3d_formats[] = {
     { "YV12",   (D3DFORMAT)MAKEFOURCC('Y','V','1','2'),    QTAV_PIX_FMT_C(YUV420P) },
     { "NV12",   (D3DFORMAT)MAKEFOURCC('N','V','1','2'),    QTAV_PIX_FMT_C(NV12) },
     { "IMC3",   (D3DFORMAT)MAKEFOURCC('I','M','C','3'),    QTAV_PIX_FMT_C(YUV420P) },
-
+    { "P010",   (D3DFORMAT)MAKEFOURCC('P','0','1','0'),    QTAV_PIX_FMT_C(YUV420P10LE) },
+    { "P016",   (D3DFORMAT)MAKEFOURCC('P','0','1','6'),    QTAV_PIX_FMT_C(YUV420P16LE) },
     { NULL, D3DFMT_UNKNOWN, QTAV_PIX_FMT_C(NONE) }
 };
 
@@ -373,7 +377,7 @@ public:
     IDirectXVideoDecoder         *decoder;
 
     /* Option conversion */
-    D3DFORMAT                    output;
+    D3DFORMAT                    output; //TODO: remove?
     struct dxva_context hw;
 
     bool surface_auto;
@@ -422,7 +426,7 @@ VideoFrame VideoDecoderDXVA::frame()
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame();
     Q_ASSERT(d.output == MAKEFOURCC('Y','V','1','2'));
-//    qDebug("...........output: %d yv12=%d, size=%dx%d", d.output, MAKEFOURCC('Y','V','1','2'), d.width, d.height);
+    //qDebug("...........output: %d yv12=%d, size=%dx%d", d.output, MAKEFOURCC('Y','V','1','2'), d.width, d.height);
 
     class ScopedD3DLock {
     public:
@@ -452,64 +456,55 @@ VideoFrame VideoDecoderDXVA::frame()
         return VideoFrame();
     }
 
-    int chroma_pitch = lock.Pitch;
-    VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
-    bool swap_uv = false;
-    switch ((int)d.render) {
-    case MAKEFOURCC('I','M','C','3'):
-        swap_uv = true; //YV12 need swap, not imc3?
-        // imc3 U V pitch == Y pitch, but half of the U/V plane is space. we convert to yuv420p here
-    case MAKEFOURCC('Y','V','1','2'):
-        pixfmt = VideoFormat::Format_YUV420P;
-        chroma_pitch /= 2;
-        break;
-    case MAKEFOURCC('N','V','1','2'):
-        pixfmt = VideoFormat::Format_NV12;
-        break;
-    default:
-        break;
-    }
-    if (pixfmt == VideoFormat::Format_Invalid) {
-        qWarning("unsupported vaapi pixel format: %#x", d.render);
+    const VideoFormat fmt = VideoFormat((int)D3dFindFormat(d.render)->avpixfmt);
+    if (!fmt.isValid()) {
+        qWarning("unsupported dxva pixel format: %#x", d.render);
         return VideoFrame();
     }
+    //YV12 need swap, not imc3?
+    // imc3 U V pitch == Y pitch, but half of the U/V plane is space. we convert to yuv420p here
+    // nv12 bpp(1)==1
+    const int chroma_pitch = fmt.bytesPerLine(lock.Pitch, 1);
     // 3rd plane is not used for nv12
     int pitch[3] = {
         lock.Pitch,
         chroma_pitch,
-        chroma_pitch,
+        chroma_pitch
     };
-    uint8_t *src[3] = {
+    const int h[] = {
+        d.surface_height,
+        fmt.chromaHeight(d.surface_height),
+        fmt.chromaHeight(d.surface_height)
+    };
+    uint8_t *src[] = {
         (uint8_t*)lock.pBits,
-        (uint8_t*)lock.pBits + pitch[0] * d.surface_height,
-        (uint8_t*)lock.pBits + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2,
+        (uint8_t*)lock.pBits + pitch[0] * h[0],
+        (uint8_t*)lock.pBits + pitch[0] * h[0] + pitch[1] * h[1]
     };
+    const bool swap_uv = d.render ==  MAKEFOURCC('I','M','C','3');
     if (swap_uv) {
         std::swap(src[1], src[2]);
         std::swap(pitch[1], pitch[2]);
     }
-    const VideoFormat fmt(pixfmt);
     VideoFrame frame;
     if (d.copy_uswc && d.gpu_mem.isReady()) {
         int yuv_size = 0;
-        if (pixfmt == VideoFormat::Format_NV12)
-            yuv_size = pitch[0]*d.surface_height*3/2;
-        else
-            yuv_size = pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2;
+        const int nb_planes = fmt.planeCount();
+        for (int i = 0; i < nb_planes; ++i) {
+            yuv_size += pitch[i]*h[i];
+        }
         // additional 15 bytes to ensure 16 bytes aligned
         QByteArray buf(15 + yuv_size, 0);
         const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
         // plane 1, 2... is aligned?
         uchar* plane_ptr = (uchar*)buf.data() + offset_16;
-        QVector<uchar*> dst(fmt.planeCount(), 0);
-        for (int i = 0; i < dst.size(); ++i) {
+        QVector<uchar*> dst(nb_planes, 0);
+        for (int i = 0; i < nb_planes; ++i) {
             dst[i] = plane_ptr;
             // TODO: add VideoFormat::planeWidth/Height() ?
-            // pitch instead of surface_width?
-            const int plane_w = pitch[i];//(i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
-            const int plane_h = i == 0 ? d.surface_height : fmt.chromaHeight(d.surface_height);
-            plane_ptr += pitch[i] * plane_h;
-            d.gpu_mem.copyFrame(src[i], dst[i], plane_w, plane_h, pitch[i]);
+            // pitch instead of surface_width
+            plane_ptr += pitch[i] * h[i];
+            d.gpu_mem.copyFrame(src[i], dst[i], pitch[i], h[i], pitch[i]);
         }
         frame = VideoFrame(buf, d.width, d.height, fmt);
         frame.setBits(dst);
@@ -823,7 +818,7 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
         if (mode) {
             qDebug("- '%s' is supported by hardware", mode->name);
         } else {
-            qWarning("- Unknown GUID = %08X-%04x-%04x-XXXX",
+            qDebug("- Unknown GUID = %08X-%04x-%04x-XXXX",
                      (unsigned)g.Data1, g.Data2, g.Data3);
         }
     }
@@ -831,9 +826,14 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
     for (unsigned i = 0; dxva2_modes[i].name; i++) {
         const dxva2_mode_t *mode = &dxva2_modes[i];
         if (!mode->codec || mode->codec != codec_ctx->codec_id) {
-            qWarning("codec does not match to %s: %s", avcodec_get_name(codec_ctx->codec_id), avcodec_get_name((AVCodecID)mode->codec));
+            qDebug("codec does not match to %s: %s", avcodec_get_name(codec_ctx->codec_id), avcodec_get_name((AVCodecID)mode->codec));
             continue;
         }
+        if (codec_ctx->profile == FF_PROFILE_HEVC_MAIN_10 && !IsEqualGUID(*mode->guid, DXVA_ModeHEVC_VLD_Main10)) {
+            qDebug("profile (%s) does not match to HEVC 10-bit", mode->name);
+            continue;
+        }
+        qDebug("DXVA found codec: %s. Check support for the codec.", mode->name);
         bool is_suported = false;
         for (unsigned count = 0; !is_suported && count < input_count; count++) {
             const GUID &g = input_list[count];
@@ -848,6 +848,7 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
             qWarning("IDirectXVideoDecoderService_GetDecoderRenderTargets failed");
             continue;
         }
+        qDebug("supprted output count: %d", output_count);
         for (unsigned j = 0; j < output_count; j++) {
             const D3DFORMAT f = output_list[j];
             const d3d_format_t *format = D3dFindFormat(f);
@@ -1020,7 +1021,7 @@ bool VideoDecoderDXVAPrivate::DxResetVideoDecoder()
 
 void VideoDecoderDXVAPrivate::DxCreateVideoConversion()
 {
-    switch ((int)render) {
+    switch ((int)render) { //remove??
     case MAKEFOURCC('N','V','1','2'):
     case MAKEFOURCC('I','M','C','3'):
         output = (D3DFORMAT)MAKEFOURCC('Y','V','1','2');
@@ -1092,10 +1093,6 @@ bool VideoDecoderDXVAPrivate::open()
             qWarning("HEVC DXVA2 is supported by current FFmpeg runtime.");
         } else {
             qWarning("HEVC DXVA2 is not supported by current FFmpeg runtime.");
-            return false;
-        }
-        if (codec_ctx->profile > FF_PROFILE_HEVC_MAIN) {
-            qWarning("incompatible hevc profile!");
             return false;
         }
     }
