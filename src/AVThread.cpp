@@ -250,6 +250,7 @@ void AVThread::resetState()
 {
     DPTR_D(AVThread);
     pause(false);
+    d.tasks.clear();
     d.render_pts0 = 0;
     d.stop = false;
     d.demux_end = false;
