@@ -395,6 +395,7 @@ void AVDemuxThread::run()
         vqueue->clear();
         vqueue->setBlocking(true);
     }
+    seek_tasks.clear();
     while (!end) {
         if (end || demuxer->atEnd()) {
             end = true;
