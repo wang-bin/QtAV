@@ -19,7 +19,9 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
+#ifdef _MSC_VER
 #pragma comment(lib, "ole32.lib") //CoTaskMemFree. why link failed?
+#endif
 #include "VideoDecoderFFmpegHW.h"
 #include "VideoDecoderFFmpegHW_p.h"
 #include "QtAV/Packet.h"
@@ -307,7 +309,6 @@ public:
         vs = 0;
         render = D3DFMT_UNKNOWN;
         decoder = 0;
-        output = D3DFMT_UNKNOWN;
         surface_order = 0;
         surface_width = surface_height = 0;
         available = loadDll();
@@ -335,8 +336,6 @@ public:
     bool DxCreateVideoDecoder(int codec_id, int w, int h);
     void DxDestroyVideoDecoder();
     bool DxResetVideoDecoder();
-    void DxCreateVideoConversion();
-    void DxDestroyVideoConversion();
     bool isHEVCSupported() const;
 
     bool setup(void **hwctx, int w, int h);
@@ -371,10 +370,7 @@ public:
     DXVA2_ConfigPictureDecode    cfg;
     IDirectXVideoDecoder         *decoder;
 
-    /* Option conversion */
-    D3DFORMAT                    output; //TODO: remove?
     struct dxva_context hw;
-
     bool surface_auto;
     unsigned     surface_count;
     unsigned     surface_order;
@@ -417,8 +413,6 @@ VideoFrame VideoDecoderDXVA::frame()
         return VideoFrame();
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame();
-    Q_ASSERT(d.output == MAKEFOURCC('Y','V','1','2'));
-    //qDebug("...........output: %d yv12=%d, size=%dx%d", d.output, MAKEFOURCC('Y','V','1','2'), d.width, d.height);
 
     class ScopedD3DLock {
     public:
@@ -840,7 +834,7 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
             break;
         }
     }
-    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces>>>>>>>>>>>>>>>%d", surface_count);
+    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces: %d, threads: %d, refs: %d", surface_count, codec_ctx->thread_count, codec_ctx->refs);
     if (surface_count == 0) {
         qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
         surface_count = 16 + 4;
@@ -952,25 +946,6 @@ bool VideoDecoderDXVAPrivate::DxResetVideoDecoder()
     return false;
 }
 
-void VideoDecoderDXVAPrivate::DxCreateVideoConversion()
-{
-    switch ((int)render) { //remove??
-    case MAKEFOURCC('N','V','1','2'):
-    case MAKEFOURCC('I','M','C','3'):
-        output = (D3DFORMAT)MAKEFOURCC('Y','V','1','2');
-        break;
-    default:
-        output = render;
-        break;
-    }
-    initUSWC(surface_width);
-}
-
-void VideoDecoderDXVAPrivate::DxDestroyVideoConversion()
-{
-    releaseUSWC();
-}
-
 static bool check_ffmpeg_hevc_dxva2()
 {
     avcodec_register_all();
@@ -995,7 +970,7 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
     if (w <= 0 || h <= 0)
         return false;
     if (!decoder || surface_width != aligned(w) || surface_height != aligned(h)) {
-        DxDestroyVideoConversion();
+        releaseUSWC();
         DxDestroyVideoDecoder();
         *hwctx = NULL;
         /* FIXME transmit a video_format_t by VaSetup directly */
@@ -1008,7 +983,7 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
         memset(hw_surfaces, 0, sizeof(hw_surfaces));
         for (unsigned i = 0; i < surface_count; i++)
             hw.surface[i] = surfaces[i].d3d;
-        DxCreateVideoConversion();
+        initUSWC(surface_width);
     }
     width = w;
     height = h;
@@ -1055,9 +1030,10 @@ error:
     return false;
 }
 
-void VideoDecoderDXVAPrivate::close() {
+void VideoDecoderDXVAPrivate::close()
+{
     restore();
-    DxDestroyVideoConversion();
+    releaseUSWC();
     DxDestroyVideoDecoder();
     DxDestroyVideoService();
     D3dDestroyDeviceManager();
