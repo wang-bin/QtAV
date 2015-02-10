@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,10 +29,16 @@ namespace QtAV {
 class VideoDecoderFFmpegHWPrivate;
 class VideoDecoderFFmpegHW : public VideoDecoderFFmpegBase
 {
+    Q_OBJECT
     Q_DISABLE_COPY(VideoDecoderFFmpegHW)
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegHW)
+    Q_PROPERTY(bool SSE4 READ isSSE4 WRITE setSSE4)
 public:
     virtual bool prepare() Q_DECL_OVERRIDE;
+    VideoFrame copyToFrame(const VideoFormat& fmt, int surface_h, quint8* src[], int pitch[], bool swapUV);
+    // properties
+    void setSSE4(bool value);
+    bool isSSE4() const;
 protected:
     VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d);
 private:

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,6 +23,7 @@
 #define QTAV_VIDEODECODERFFMPEGHW_P_H
 
 #include "VideoDecoderFFmpegBase.h"
+#include "utils/GPUMemCopy.h"
 
 /*!
    QTAV_VA_REF: use AVCodecContext.get_buffer2 instead of old callbacks. In order to avoid compile warnings, now disable old
@@ -37,6 +38,7 @@ class VideoDecoderFFmpegHWPrivate : public VideoDecoderFFmpegBasePrivate
 public:
     VideoDecoderFFmpegHWPrivate()
         : VideoDecoderFFmpegBasePrivate()
+        , copy_uswc(true)
     {
         get_format = 0;
         get_buffer = 0;
@@ -65,6 +67,9 @@ public:
     virtual void releaseBuffer(void *opaque, uint8_t *data) = 0;
     virtual AVPixelFormat vaPixelFormat() const = 0;
 
+    bool initUSWC(int lineSize);
+    void releaseUSWC();
+
     AVPixelFormat pixfmt; //store old one
     //store old values because it does not own AVCodecContext
     AVPixelFormat (*get_format)(struct AVCodecContext *s, const AVPixelFormat * fmt);
@@ -74,6 +79,10 @@ public:
     int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
 
     QString description;
+    // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
+    // TODO: flag enable, disable, auto
+    bool copy_uswc;
+    GPUMemCopy gpu_mem;
 };
 
 } //namespace QtAV

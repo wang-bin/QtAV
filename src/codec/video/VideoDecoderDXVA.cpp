@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,7 +26,6 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
 //#include "QtAV/private/mkid.h"
-#include "utils/GPUMemCopy.h"
 #include "utils/Logger.h"
 
 // d3d9ex: http://dxr.mozilla.org/mozilla-central/source/dom/media/wmf/DXVA2Manager.cpp
@@ -144,7 +143,6 @@ class VideoDecoderDXVA : public VideoDecoderFFmpegHW
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
-    Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
     Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
 public:
     VideoDecoderDXVA();
@@ -152,8 +150,6 @@ public:
     virtual QString description() const;
     virtual VideoFrame frame();
     // properties
-    void setSSE4(bool y);
-    bool SSE4() const;
     void setSurfaces(int num);
     int surfaces() const;
 };
@@ -318,7 +314,6 @@ public:
         // set by user. don't reset in when call destroy
         surface_auto = true;
         surface_count = 0;
-        copy_uswc = true;
         ZeroMemory(&d3dai, sizeof(d3dai));
     }
     virtual ~VideoDecoderDXVAPrivate()
@@ -391,9 +386,6 @@ public:
     IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
     QString vendor;
-    // true for intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
-    bool copy_uswc;
-    GPUMemCopy gpu_mem;
 };
 
 VideoDecoderDXVA::VideoDecoderDXVA()
@@ -464,70 +456,11 @@ VideoFrame VideoDecoderDXVA::frame()
     //YV12 need swap, not imc3?
     // imc3 U V pitch == Y pitch, but half of the U/V plane is space. we convert to yuv420p here
     // nv12 bpp(1)==1
-    const int chroma_pitch = fmt.bytesPerLine(lock.Pitch, 1);
     // 3rd plane is not used for nv12
-    int pitch[3] = {
-        lock.Pitch,
-        chroma_pitch,
-        chroma_pitch
-    };
-    const int h[] = {
-        d.surface_height,
-        fmt.chromaHeight(d.surface_height),
-        fmt.chromaHeight(d.surface_height)
-    };
-    uint8_t *src[] = {
-        (uint8_t*)lock.pBits,
-        (uint8_t*)lock.pBits + pitch[0] * h[0],
-        (uint8_t*)lock.pBits + pitch[0] * h[0] + pitch[1] * h[1]
-    };
+    int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
+    uint8_t *src[] = { (uint8_t*)lock.pBits, 0, 0}; //compute chroma later
     const bool swap_uv = d.render ==  MAKEFOURCC('I','M','C','3');
-    if (swap_uv) {
-        std::swap(src[1], src[2]);
-        std::swap(pitch[1], pitch[2]);
-    }
-    VideoFrame frame;
-    if (d.copy_uswc && d.gpu_mem.isReady()) {
-        int yuv_size = 0;
-        const int nb_planes = fmt.planeCount();
-        for (int i = 0; i < nb_planes; ++i) {
-            yuv_size += pitch[i]*h[i];
-        }
-        // additional 15 bytes to ensure 16 bytes aligned
-        QByteArray buf(15 + yuv_size, 0);
-        const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
-        // plane 1, 2... is aligned?
-        uchar* plane_ptr = (uchar*)buf.data() + offset_16;
-        QVector<uchar*> dst(nb_planes, 0);
-        for (int i = 0; i < nb_planes; ++i) {
-            dst[i] = plane_ptr;
-            // TODO: add VideoFormat::planeWidth/Height() ?
-            // pitch instead of surface_width
-            plane_ptr += pitch[i] * h[i];
-            d.gpu_mem.copyFrame(src[i], dst[i], pitch[i], h[i], pitch[i]);
-        }
-        frame = VideoFrame(buf, d.width, d.height, fmt);
-        frame.setBits(dst);
-        frame.setBytesPerLine(pitch);
-    } else {
-        frame = VideoFrame(d.width, d.height, fmt);
-        frame.setBits(src);
-        frame.setBytesPerLine(pitch);
-        // TODO: why clone is faster()?
-        frame = frame.clone();
-    }
-    frame.setTimestamp(d.frame->pkt_pts);
-    return frame;
-}
-
-void VideoDecoderDXVA::setSSE4(bool y)
-{
-    d_func().copy_uswc = y;
-}
-
-bool VideoDecoderDXVA::SSE4() const
-{
-    return d_func().copy_uswc;
+    return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
 }
 
 void VideoDecoderDXVA::setSurfaces(int num)
@@ -1030,14 +963,12 @@ void VideoDecoderDXVAPrivate::DxCreateVideoConversion()
         output = render;
         break;
     }
-    if (copy_uswc)
-        gpu_mem.initCache(surface_width);
+    initUSWC(surface_width);
 }
 
 void VideoDecoderDXVAPrivate::DxDestroyVideoConversion()
 {
-    if (copy_uswc)
-        gpu_mem.cleanCache();
+    releaseUSWC();
 }
 
 static bool check_ffmpeg_hevc_dxva2()
