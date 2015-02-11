@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -44,6 +44,8 @@ public:
     /*!
      * \brief setAsync
      * Extract video frames in another thread. Default is true.
+     * In async mode, if current extraction is not finished, new
+     * setPosition() will be ignored.
      */
     void setAsync(bool value);
     bool async() const;

@@ -39,11 +39,9 @@ public:
 
 public Q_SLOTS:
     void onVideoFrameExtracted(const QtAV::VideoFrame& frame) {
-        //VideoFrameExtractor *e = qobject_cast<VideoFrameExtractor*>(sender());
-        //VideoFrame frame(e->frame());
         view->receive(frame);
-        qDebug() << frame.format();
-        qDebug("frame %dx%d", frame.width(), frame.height());
+        qApp->processEvents();
+        qDebug("frame %dx%d @%f", frame.width(), frame.height(), frame.timestamp());
     }
 private:
     VideoRenderer *view;
@@ -53,8 +51,10 @@ int main(int argc, char** argv)
 {
     QApplication a(argc, argv);
     int idx = a.arguments().indexOf("-f");
-    if (idx < 0)
+    if (idx < 0) {
+        qDebug("-f file -t sec -n count -asyc");
         return -1;
+    }
     QString file = a.arguments().at(idx+1);
     idx = a.arguments().indexOf("-t");
     int t = 0;
@@ -76,6 +76,7 @@ int main(int argc, char** argv)
     QElapsedTimer timer;
     timer.start();
     for (int i = 0; i < n; ++i) {
+        // async does not work. you have to set a new position when frameExtracted is emitted
         extractor.setPosition(t + 1000*i);
     }
     qDebug("elapsed: %lld", timer.elapsed());
