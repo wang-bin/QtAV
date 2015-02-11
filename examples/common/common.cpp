@@ -57,11 +57,11 @@ void load_qm(const QStringList &names, const QString& lang)
 void set_opengl_backend(const QString& glopt, const QString &appname)
 {
     QString gl = appname.toLower();
-    if (gl.endsWith("-desktop"))
+    if (gl.indexOf("-desktop") > 0)
         gl = "desktop";
-    else if (gl.endsWith("-es") || gl.endsWith("-angle"))
+    else if (gl.indexOf("-es") > 0 || gl.indexOf("-angle") > 0) //-es.exe
         gl = "es";
-    else if (gl.endsWith("-sw") || gl.endsWith("-software"))
+    else if (gl.indexOf("-sw") > 0 || gl.indexOf("-software") > 0)
         gl = "software";
     else
         gl = glopt.toLower();
