@@ -49,6 +49,7 @@ class VideoEQConfigPage;
 class StatisticsView;
 class OSDFilter;
 class AVFilterSubtitle;
+class Preview;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -194,6 +195,7 @@ private:
 
     OSDFilter *mpOSD;
     QtAV::SubtitleFilter *mpSubtitle;
+    Preview *m_preview;
 };
 
 

@@ -18,6 +18,7 @@ SOURCES += main.cpp \
     MainWindow.cpp \
     Button.cpp \
     ClickableMenu.cpp \
+    Preview.cpp \
     StatisticsView.cpp \
     Slider.cpp \
     TVView.cpp \
@@ -42,6 +43,7 @@ HEADERS += \
     MainWindow.h \
     Button.h \
     ClickableMenu.h \
+    Preview.h \
     StatisticsView.h \
     Slider.h \
     TVView.h \
@@ -61,7 +63,6 @@ HEADERS += \
     config/AVFormatConfigPage.h \
     config/AVFilterConfigPage.h \
     filters/AVFilterSubtitle.h
-
 
 unix:!android:!mac {
 #debian

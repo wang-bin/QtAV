@@ -49,6 +49,7 @@
 #include <QWheelEvent>
 #include "Button.h"
 #include "ClickableMenu.h"
+#include "Preview.h"
 #include "Slider.h"
 #include "StatisticsView.h"
 #include "TVView.h"
@@ -104,6 +105,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpStatisticsView(0)
   , mpOSD(0)
   , mpSubtitle(0)
+  , m_preview(0)
 {
     setWindowIcon(QIcon(":/QtAV.svg"));
     mpOSD = new OSDFilterQPainter(this);
@@ -547,6 +549,7 @@ void MainWindow::setupUi()
     //connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
     connect(mpTimeSlider, SIGNAL(sliderPressed()), SLOT(seek()));
     connect(mpTimeSlider, SIGNAL(sliderReleased()), SLOT(seek()));
+    connect(mpTimeSlider, SIGNAL(onLeave()), SLOT(onTimeSliderLeave()));
     connect(mpTimeSlider, SIGNAL(onHover(int,int)), SLOT(onTimeSliderHover(int,int)));
     QTimer::singleShot(0, this, SLOT(initPlayer()));
 }
@@ -856,6 +859,8 @@ void MainWindow::onStopPlay()
     //mRepeateMax = 0;
     killTimer(mCursorTimer);
     unsetCursor();
+    if (m_preview)
+        m_preview->setFile(QString());
 }
 
 void MainWindow::onSpeedChange(qreal speed)
@@ -1215,12 +1220,24 @@ void MainWindow::showInfo()
 
 void MainWindow::onTimeSliderHover(int pos, int value)
 {
-    QToolTip::showText(mapToGlobal(mpTimeSlider->pos() + QPoint(pos, 0)), QTime(0, 0, 0).addMSecs(value).toString("HH:mm:ss"));
+    QPoint gpos = mapToGlobal(mpTimeSlider->pos() + QPoint(pos, 0));
+    QToolTip::showText(gpos, QTime(0, 0, 0).addMSecs(value).toString("HH:mm:ss"));
+    if (!m_preview)
+        m_preview = new Preview();
+    m_preview->setFile(mpPlayer->file());
+    m_preview->setTimestamp(value);
+    const int w = 160;
+    const int h = 90;
+    m_preview->widget()->setWindowFlags(m_preview->widget()->windowFlags() |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
+    m_preview->widget()->resize(160, 90);
+    m_preview->widget()->move(gpos - QPoint(w/2, h));
+    m_preview->widget()->show();
 }
 
 void MainWindow::onTimeSliderLeave()
 {
-
+    if (m_preview && m_preview->widget())
+        m_preview->widget()->hide();
 }
 
 void MainWindow::handleError(const AVError &e)
