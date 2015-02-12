@@ -77,6 +77,7 @@ Rectangle {
         videoCodecPriority: PlayerConfig.decoderPriorityNames
         onPositionChanged: control.setPlayingProgress(position/duration)
         onPlaying: {
+            control.mediaSource = player.source
             control.duration = duration
             control.setPlayingState()
             if (!pageLoader.item)

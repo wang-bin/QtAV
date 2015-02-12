@@ -39,6 +39,10 @@ class Q_AV_EXPORT VideoFrameExtractor : public QObject
     Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
 public:
     explicit VideoFrameExtractor(QObject *parent = 0);
+    /*!
+     * \brief setSource
+     * Set the video file. If video changes, current loaded video will be unloaded.
+     */
     void setSource(const QString value);
     QString source() const;
     /*!

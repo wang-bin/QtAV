@@ -42,8 +42,10 @@ Rectangle {
         progress.value = 0
         duration = 0
         //now.text = Utils.msec2string(0)
+        video.file = ""
     }
     function setPlayingState() {
+        video.file = mediaSource // why need this?
         playState = "pause"
         playBtn.checked = true
         //life.text = Utils.msec2string(duraion)

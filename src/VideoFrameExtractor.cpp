@@ -303,6 +303,22 @@ public:
         // now we get the final frame
         return true;
     }
+    void releaseResourceInternal() {
+        decoder.reset(0);
+        demuxer.unload();
+    }
+
+    void safeReleaseResource() {
+        class Cleaner : public QRunnable {
+            VideoFrameExtractorPrivate *p;
+        public:
+            Cleaner(VideoFrameExtractorPrivate* pri) : p(pri) {}
+            void run() {
+                p->releaseResourceInternal();
+            }
+        };
+        thread.addTask(new Cleaner(this));
+    }
 
     bool extracted;
     bool async;
@@ -343,6 +359,7 @@ void VideoFrameExtractor::setSource(const QString value)
     d.has_video = true;
     emit sourceChanged();
     d.frame = VideoFrame();
+    d.safeReleaseResource();
 }
 
 QString VideoFrameExtractor::source() const
