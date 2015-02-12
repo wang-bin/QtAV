@@ -17,7 +17,11 @@ QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
   }
 }
 #var with '_' can not pass to pri?
-STATICLINK = 0
+contains(CONFIG,staticlib) {
+  STATICLINK = 1
+} else {
+  STATICLINK = 0
+}
 PROJECTROOT = $$PWD/..
 !include($$PROJECTROOT/src/libQtAV.pri): error("could not find libQtAV.pri")
 !include(libQmlAV.pri): error("could not find libQmlAV.pri")

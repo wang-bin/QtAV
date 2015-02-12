@@ -49,8 +49,11 @@ NAME = QtAVWidgets
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
 LIB_VERSION = $$QTAV_VERSION #0.x.y may be wrong for dll
-ios: STATICLINK=1
-isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
+contains(CONFIG,staticlib) {
+  STATICLINK = 1
+} else {
+  STATICLINK = 0
+}
 
 TEMPLATE += fakelib
 PROJECT_TARGETNAME = $$qtLibraryTarget($$NAME)
