@@ -21,9 +21,90 @@
 
 #include "QtAV/AudioOutput.h"
 #include "QtAV/private/AudioOutput_p.h"
+#include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
+
+/// from libavfilter/af_volume begin
+static inline void scale_samples_u8(quint8 *dst, const quint8 *src, int nb_samples, int volume, float)
+{
+    for (int i = 0; i < nb_samples; i++)
+        dst[i] = av_clip_uint8(((((qint64)src[i] - 128) * volume + 128) >> 8) + 128);
+}
+
+static inline void scale_samples_u8_small(quint8 *dst, const quint8 *src, int nb_samples, int volume, float)
+{
+    for (int i = 0; i < nb_samples; i++)
+        dst[i] = av_clip_uint8((((src[i] - 128) * volume + 128) >> 8) + 128);
+}
+
+static inline void scale_samples_s16(quint8 *dst, const quint8 *src, int nb_samples, int volume, float)
+{
+    int16_t *smp_dst       = (int16_t *)dst;
+    const int16_t *smp_src = (const int16_t *)src;
+    for (int i = 0; i < nb_samples; i++)
+        smp_dst[i] = av_clip_int16(((qint64)smp_src[i] * volume + 128) >> 8);
+}
+
+static inline void scale_samples_s16_small(quint8 *dst, const quint8 *src, int nb_samples, int volume, float)
+{
+    int16_t *smp_dst       = (int16_t *)dst;
+    const int16_t *smp_src = (const int16_t *)src;
+    for (int i = 0; i < nb_samples; i++)
+        smp_dst[i] = av_clip_int16((smp_src[i] * volume + 128) >> 8);
+}
+
+static inline void scale_samples_s32(quint8 *dst, const quint8 *src, int nb_samples, int volume, float)
+{
+    qint32 *smp_dst       = (qint32 *)dst;
+    const qint32 *smp_src = (const qint32 *)src;
+    for (int i = 0; i < nb_samples; i++)
+        smp_dst[i] = av_clipl_int32((((qint64)smp_src[i] * volume + 128) >> 8));
+}
+/// from libavfilter/af_volume end
+
+//TODO: simd
+template<typename T>
+static inline void scale_samples(quint8 *dst, const quint8 *src, int nb_samples, int, float volume)
+{
+    T *smp_dst = (T *)dst;
+    const T *smp_src = (const T *)src;
+    for (int i = 0; i < nb_samples; ++i)
+        smp_dst[i] = smp_src[i] * (T)volume;
+}
+
+scale_samples_func get_scaler(AudioFormat::SampleFormat fmt, qreal vol, int* voli)
+{
+    int v = (int)(vol * 256.0 + 0.5);
+    if (voli)
+        *voli = v;
+    switch (fmt) {
+    case AudioFormat::SampleFormat_Unsigned8:
+    case AudioFormat::SampleFormat_Unsigned8Planar:
+        return v < 0x1000000 ? scale_samples_u8_small : scale_samples_u8;
+    case AudioFormat::SampleFormat_Signed16:
+    case AudioFormat::SampleFormat_Signed16Planar:
+        return v < 0x10000 ? scale_samples_s16_small : scale_samples_s16;
+    case AudioFormat::SampleFormat_Signed32:
+    case AudioFormat::SampleFormat_Signed32Planar:
+        return scale_samples_s32;
+    case AudioFormat::SampleFormat_Float:
+    case AudioFormat::SampleFormat_FloatPlanar:
+        return scale_samples<float>;
+    case AudioFormat::SampleFormat_Double:
+    case AudioFormat::SampleFormat_DoublePlanar:
+        return scale_samples<double>;
+    default:
+        return 0;
+    }
+}
+
+void AudioOutputPrivate::updateSampleScaleFunc()
+{
+    scale_samples = get_scaler(format.sampleFormat(), vol, &volume_i);
+}
+
 AudioOutput::AudioOutput()
     :AVOutput(*new AudioOutputPrivate())
 {
@@ -60,6 +141,21 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
     if (d.paused)
         return false;
     d.data = data;
+    if (isMute()) {
+        //if (!(features() & SetMuted))
+        d.data.fill(0);
+    } else {
+        if (!qFuzzyCompare(volume(), (qreal)1.0)
+                && d.scale_samples
+                // TODO: check backend support. user can disable this feature even if backend supports.
+                //&& !(features() & SetVolume)
+                ) {
+            // TODO: af_volume needs samples_align to get nb_samples
+            const int nb_samples = d.data.size()/d.format.bytesPerSample();
+            quint8 *dst = (quint8*)d.data.constData();
+            d.scale_samples(dst, dst, nb_samples, d.volume_i, volume());
+        }
+    }
     d.nextEnqueueInfo().data_size = data.size();
     d.nextEnqueueInfo().timestamp = pts;
     d.bufferAdded();
@@ -74,6 +170,7 @@ void AudioOutput::setAudioFormat(const AudioFormat& format)
     }
     if (d.format == format)
         return;
+    d.updateSampleScaleFunc();
     d.format = format;
 }
 
@@ -118,6 +215,7 @@ void AudioOutput::setVolume(qreal volume)
         return;
     d.vol = volume;
     emit volumeChanged(d.vol);
+    d.updateSampleScaleFunc();
 }
 
 qreal AudioOutput::volume() const

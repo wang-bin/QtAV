@@ -76,12 +76,12 @@ public:
     Q_DECLARE_FLAGS(BufferControls, BufferControl)
     /*!
      * \brief The Feature enum
-     * features (set when playing) supported by the audio playback api
+     * features supported by the audio playback api
      */
     enum Feature {
-        SetVolume = 1,
-        SetMuted = 1 << 1,
-        SetSampleRate = 1 << 2,
+        SetVolume = 1, /// NOT IMPLEMENTED. Use backend volume control api rather than software scale. Ignore if backend does not support.
+        SetMuted = 1 << 1, /// NOT IMPLEMENTED
+        SetSampleRate = 1 << 2, /// NOT IMPLEMENTED
     };
     Q_DECLARE_FLAGS(Features, Feature)
     /*!
@@ -115,8 +115,8 @@ public:
     int channels() const; //deprecated
     /*!
      * \brief setVolume
-     * If SetVolume feature is not set or not supported, only store the value and you should process the audio data outside to the given volume value.
-     * Otherwise, call this also set the volume by the audio playback api //in slot?
+     * Set volume level.
+     * If SetVolume feature is not set or not supported, software implemention will be used.
      * \param volume linear. 1.0: original volume.
      */
     void setVolume(qreal volume);
@@ -130,6 +130,7 @@ public:
      * audio clock. For example, play a video contains audio without special configurations.
      * To change the playing speed in other cases, use AVPlayer::setSpeed(qreal)
      * \param speed linear. > 0
+     * TODO: resample internally
      */
     void setSpeed(qreal speed);
     qreal speed() const;

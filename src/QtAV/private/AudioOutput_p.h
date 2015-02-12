@@ -42,11 +42,13 @@ namespace QtAV {
 const int kBufferSize = 1024*4;
 const int kBufferCount = 8;
 
+typedef void (*scale_samples_func)(quint8 *dst, const quint8 *src, int nb_samples, int volume, float volumef);
 class Q_AV_PRIVATE_EXPORT AudioOutputPrivate : public AVOutputPrivate
 {
 public:
     AudioOutputPrivate():
         mute(false)
+      , volume_i(256)
       , vol(1)
       , speed(1.0)
       , nb_buffers(8)
@@ -55,6 +57,7 @@ public:
       , features(0)
       , play_pos(0)
       , processed_remain(0)
+      , scale_samples(0)
       , index_enqueue(-1)
       , index_deuqueue(-1)
     {
@@ -127,8 +130,11 @@ public:
         frame_infos.clear();
         frame_infos.resize(nb_buffers);
     }
+    /// call this if sample format or volume is changed
+    void updateSampleScaleFunc();
 
     bool mute;
+    int volume_i;
     qreal vol;
     qreal speed;
     AudioFormat format;
@@ -143,6 +149,7 @@ public:
 #if AO_USE_TIMER
     QElapsedTimer timer;
 #endif
+    scale_samples_func scale_samples;
 private:
     // the index of current enqueue/dequeue
     int index_enqueue, index_deuqueue;
