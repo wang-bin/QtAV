@@ -87,9 +87,7 @@ int main(int argc, char** argv)
             left = (left+1) % kTableSize;
             right = (right+3)% kTableSize;
         }
-        ao->waitForNextBuffer();
-        ao->receiveData(data);
-        ao->play();
+        ao->play(data);
     }
     ao->close();
     return 0;

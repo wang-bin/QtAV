@@ -316,9 +316,7 @@ void AudioThread::run()
                         scale(dst, dst, nb_samples, volume_i, vol);
                     }
                 }
-                ao->waitForNextBuffer();
-                ao->receiveData(decodedChunk, pkt.pts);
-                ao->play();
+                ao->play(decodedChunk, pkt.pts);
                 d.clock->updateValue(ao->timestamp());
                 emit frameDelivered();
             } else {

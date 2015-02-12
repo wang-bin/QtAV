@@ -33,9 +33,7 @@
  * ao->open();
  * while (has_data) {
  *     data = read_data(ao->bufferSize());
- *     ao->waitForNextBuffer();
- *     ao->receiveData(data, pts);
- *     ao->play();
+ *     ao->play(data, pts);
  * }
  * ao->close();
  * See QtAV/tests/ao/main.cpp for detail
@@ -78,7 +76,7 @@ public:
     Q_DECLARE_FLAGS(BufferControls, BufferControl)
     /*!
      * \brief The Feature enum
-     * features (set when playing) supported by the audio playback api.
+     * features (set when playing) supported by the audio playback api
      */
     enum Feature {
         SetVolume = 1,
@@ -94,8 +92,15 @@ public:
     virtual ~AudioOutput();
     virtual bool open() = 0;
     virtual bool close() = 0;
-    // store and fill data to audio buffers
-    bool receiveData(const QByteArray &data, qreal pts = 0.0);
+    /*!
+     * \brief play
+     * Play out the given audio data. It may block current thread until the data can be written to audio device
+     * for async playback backend, or until the data is completely played for blocking playback backend.
+     * \param data Audio data to play
+     * \param pts Timestamp for this data. Useful if need A/V sync. Ignore it if only play audio
+     * \return true if play successfully
+     */
+    bool play(const QByteArray& data, qreal pts = 0.0);
     /*!
      * \brief setAudioFormat
      * Remain the old value if not supported
@@ -177,14 +182,18 @@ public:
     Feature features() const;
     void setFeature(Feature value, bool on = true);
     bool hasFeatures(Feature value) const;
+    qreal timestamp() const;
+    // Internal use since QtAV 1.5
+    virtual bool play() = 0; //MUST
     /*!
      * \brief waitForNextBuffer
      * wait until you can feed more data
+     * Internal use since QtAV 1.5
      */
     virtual void waitForNextBuffer();
+    // Internal use since QtAV 1.5. store and fill data to audio buffers
+    QTAV_DEPRECATED bool receiveData(const QByteArray &data, qreal pts = 0.0);
     // timestamp of current playing data
-    qreal timestamp() const;
-    virtual bool play() = 0; //MUST
 signals:
     void volumeChanged(qreal);
     void muteChanged(bool);

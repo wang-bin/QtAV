@@ -42,6 +42,13 @@ AudioOutput::~AudioOutput()
 {
 }
 
+bool AudioOutput::play(const QByteArray &data, qreal pts)
+{
+    waitForNextBuffer();
+    receiveData(data, pts);
+    return play();
+}
+
 bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
 {
     DPTR_D(AudioOutput);
@@ -65,6 +72,8 @@ void AudioOutput::setAudioFormat(const AudioFormat& format)
     if (!isSupported(format)) {
         return;
     }
+    if (d.format == format)
+        return;
     d.format = format;
 }
 
