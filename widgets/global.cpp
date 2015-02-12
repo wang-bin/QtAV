@@ -119,9 +119,6 @@ void registerRenderers()
     const std::vector<VideoRendererId> ids(VideoRendererFactory::registeredIds());
     if (std::find(ids.begin(), ids.end(), VideoRendererId_Widget) != ids.end())
         return;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    RegisterVideoRendererOpenGLWidget_Man();
-#endif
 #if QTAV_HAVE(GL)
     RegisterVideoRendererGLWidget2_Man();
 #endif //QTAV_HAVE(GL)
@@ -129,6 +126,9 @@ void registerRenderers()
     RegisterVideoRendererGLWidget_Man();
 #endif //QTAV_HAVE(GL1)
     RegisterVideoRendererWidget_Man();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    RegisterVideoRendererOpenGLWidget_Man();
+#endif
 #if QTAV_HAVE(GDIPLUS)
     RegisterVideoRendererGDI_Man();
 #endif //QTAV_HAVE(GDIPLUS)
