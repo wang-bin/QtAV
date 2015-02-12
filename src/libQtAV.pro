@@ -22,7 +22,11 @@ sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2): CONFIG *= sse2 config_simd
 
 #release: DEFINES += QT_NO_DEBUG_OUTPUT
 #var with '_' can not pass to pri?
-STATICLINK = 0
+contains(CONFIG,staticlib) {
+  STATICLINK = 1
+} else {
+  STATICLINK = 0
+}
 PROJECTROOT = $$PWD/..
 !include(libQtAV.pri): error("could not find libQtAV.pri")
 preparePaths($$OUT_PWD/../out)
