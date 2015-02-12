@@ -212,7 +212,6 @@ void AudioThread::run()
         //AudioFormat.durationForBytes() calculates int type internally. not accurate
         const AudioFormat &af = dec->resampler()->outAudioFormat();
         const qreal byte_rate = af.bytesPerSecond();
-        const qreal vol = ao->volume(); //keep const for 1 frame
         while (decodedSize > 0) {
             if (d.stop) {
                 qDebug("audio thread stop after decode()");
