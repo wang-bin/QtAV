@@ -33,6 +33,7 @@ class AVClock;
 class VideoRenderer;
 class LibAVFilter;
 class SubtitleFilter;
+class VideoPreviewWidget;
 }
 class QMenu;
 class QTimeEdit;
@@ -195,7 +196,7 @@ private:
 
     OSDFilter *mpOSD;
     QtAV::SubtitleFilter *mpSubtitle;
-    Preview *m_preview;
+    QtAV::VideoPreviewWidget *m_preview;
 };
 
 

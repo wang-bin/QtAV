@@ -57,12 +57,15 @@ SDK_HEADERS *= \
     QtAVWidgets/QtAVWidgets.h \
     QtAVWidgets/global.h \
     QtAVWidgets/version.h \
+    QtAVWidgets/VideoPreviewWidget.h \
     QtAVWidgets/GraphicsItemRenderer.h \
     QtAVWidgets/WidgetRenderer.h
 
 HEADERS *= $$QTAVSRC/output/video/VideoOutputEventFilter.h
+
 SOURCES *= \
     global.cpp \
+    VideoPreviewWidget.cpp \
     $$QTAVSRC/output/video/VideoOutputEventFilter.cpp \
     $$QTAVSRC/output/video/GraphicsItemRenderer.cpp \
     $$QTAVSRC/output/video/WidgetRenderer.cpp

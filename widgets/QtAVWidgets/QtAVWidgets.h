@@ -28,5 +28,6 @@
 #include <QtAVWidgets/WidgetRenderer.h>
 //#include <QtAVWidgets/GLWidgetRenderer.h>
 #include <QtAVWidgets/GLWidgetRenderer2.h>
+#include <QtAVWidgets/VideoPreviewWidget.h>
 
 #endif // QTAVWIDGETS_H
