@@ -2,7 +2,7 @@ THIS_DIR=`dirname "${BASH_SOURCE[0]}"`
 ARGV=($@)
 ARGC=${#ARGV[@]}
 echo $THIS_DIR |grep "\.app" && test -d $THIS_DIR/Contents/Frameworks/QtCore.framework && IS_BOUNDLE=0
-[ $ARGC -gt 0 ] && QT_LIBS=${ARGV[$((ARGC-1))]}
+[ $ARGC -gt 0 ] && QT_LIBS=${ARGV[ARGC-1]}
 if [ -n "$IS_BOUNDLE" ]; then
   if [ ! -e $QT_LIBS/QtCore.framework ]; then
     QT_VER=`otool -L $THIS_DIR/Contents/Frameworks/QtCore.framework/QtCore | grep -v ":" |grep "QtCore\.framework" |sed 's,.*current version \(.*\)\.[0-9]),\1,'`

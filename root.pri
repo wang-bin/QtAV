@@ -49,10 +49,8 @@ defineTest(qtRunCommandQuitly) {
     return(true)
 }
 
-isEmpty(QTAV_VERSION) {
-  QTAV_MAJOR_VERSION = 1
-  QTAV_MINOR_VERSION = 4
-  QTAV_PATCH_VERSION = 2
+lessThan(QT_MAJOR_VERSION, 5)  {
+  include(.qmake.conf)
   QTAV_VERSION = $${QTAV_MAJOR_VERSION}.$${QTAV_MINOR_VERSION}.$${QTAV_PATCH_VERSION}
   message("QTAV_VERSION not set, cache the default $$QTAV_VERSION")
   cache(QTAV_MAJOR_VERSION, set, QTAV_MAJOR_VERSION)

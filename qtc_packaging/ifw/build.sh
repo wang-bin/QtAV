@@ -18,6 +18,7 @@ MKSPEC=`grep mkspecs_cached $BUILD/.qmake.cache |cut -d "=" -f 2`
 MKSPEC=`echo $MKSPEC`
 
 TARGET=${MKSPEC}-${ARCH}
+mkdir -p $TARGET
 QTAV_VER_MAJOR=`grep -m 1 QTAV_MAJOR_VERSION ../../.qmake.conf |cut -d "=" -f 2 | tr -d ' '`
 QTAV_VER_MINOR=`grep -m 1 QTAV_MINOR_VERSION ../../.qmake.conf |cut -d "=" -f 2 | tr -d ' '`
 QTAV_VER_PATCH=`grep -m 1 QTAV_PATCH_VERSION ../../.qmake.conf |cut -d "=" -f 2 | tr -d ' '`

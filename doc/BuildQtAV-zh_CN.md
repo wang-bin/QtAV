@@ -1,11 +1,45 @@
-﻿## 1. Setup the environment
+## 0. 依赖
 
-QtAV 依赖 FFmpeg, PortAudio，以及一些可选的库如direct2d, xvideo
-可以从这里下载windows下FFmpeg和PortAudio开发用的文件 [QtAV sourceforge page](https://sourceforge.net/projects/qtav/files/depends)
-windows 下的 FFmpeg 也可以从这里下载 [Zeranoe](http://ffmpeg.zeranoe.com/builds)
-Or you can build them your self [Compile FFmpeg and PortAudio](https://github.com/wang-bin/QtAV/wiki/Compile-FFmpeg-and-PortAudio)
+FFmpeg (>=1.0) 或 Libav (>=9.0). 强烈建议使用最新的 FFmpeg release版本，我主要用这个. 使用libav可能会导致dxva, vaapi, vda 和 libavfilter 不能使用。
+
+编译好的FFmpeg可以这里下载 [QtAV sourceforge page](https://sourceforge.net/projects/qtav/files/depends/FFmpeg)
+或者windows版[Zeranoe](http://ffmpeg.zeranoe.com/builds)
+或者自己编译[Build FFmpeg](https://github.com/wang-bin/QtAV/wiki/Build-FFmpeg)
+
+其他依赖
+
+#### Windows
+
+PortAudio 或 OpenAL(建议).
+
+#### OSX, iOS
+
+无. 调用系统 OpenAL
+
+#### Android
+
+OpenAL(OpenSL为后端). 当前 OpenSL 不能正常工作.
+
+#### Ubuntu
+
+OpenAL. 要启用所有功能需要安装 XVideo 和 VAAPI 的开发包.
+
+    sudo apt-get install libopenal-dev libva-dev libxv-dev
+
+运行时可能要安装vaapi driver让vaapi工作
+
+    sudo apt-get install libva-intel-vaapi-driver
+
+
+## 1. Setup the environment
 
 首先你 *必须* 让编译器能找到 FFmpeg 的头文件和库文件.， 否则在 qmake 时会出错。如果你已经把那些文件放到该放的位置了，可以忽略这步。
+
+#### 把头文件和库放到 Qt 头文件和库的目录
+
+这是让编译器找到 ffmpeg 和其他依赖库最简单的方法
+
+#### 使用环境变量
 
 vc 编译器会在环境变量 __*INCLUDE*__ 制定的那些目录搜索头文件， __*LIB*__ 制定的目录搜索库文件，因此如果你使用命令行编译的话可以这样设置环境
 
@@ -29,6 +63,8 @@ windows 无sh.exe的环境下的 gcc
     set LIBRARY_PATH=ffmpeg_path\lib;portaudio_path\lib;%LIBRARY_PATH%
 
 如果使用 QtCreator 进行编译, 打开左边的 '工程' 页面，添加或追加相应的环境变量就行
+
+![QtCreator Settings](http://wang-bin.github.io/qtav.org/images/qtc-set.jpg "QtCreator Settings")
 
 ## 2. qmake
 

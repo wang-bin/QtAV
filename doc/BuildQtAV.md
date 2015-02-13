@@ -6,7 +6,7 @@ Get QtAV source code
     git submodule update --init
 
 
-FFmpeg (>=1.0) or Libav (>=9.0) is always required. The latest FFmpeg release is recommended (that's what i use). If you use libav, you vaapi can not work in C++ apps and libavfilter does not work.
+FFmpeg (>=1.0) or Libav (>=9.0) is always required. The latest FFmpeg release is recommended (that's what i use).
 
 You can download precompiled FFmpeg from [QtAV sourceforge page](https://sourceforge.net/projects/qtav/files/depends/FFmpeg), or if you are using Windows you can also download FFmpeg development files from [Zeranoe](http://ffmpeg.zeranoe.com/builds).
 
@@ -28,9 +28,9 @@ OpenAL with OpenSL backend. Currently OpenSL code doesn't work correctly, but Op
 
 #### Ubuntu
 
-OpenAL. To enable all supported features, you must install XVideo and VA-API dev packages.
+OpenAL. To enable all supported features, you must install libass, XVideo and VA-API dev packages.
 
-    sudo apt-get install libopenal-dev libva-dev libxv-dev
+    sudo apt-get install libopenal-dev libva-dev libxv-dev libass-dev
 
 You may have to install VA-API drivers to make VA-API available at runtime. See https://github.com/wang-bin/QtAV/wiki/Enable-Hardware-Decoding
 
@@ -47,26 +47,22 @@ This is the simplest and best way to let compilers find ffmpeg and other depend 
 
 #### Use Environment Vars
 
-On Windows, Visual Studio will search headers in `%INCLUDE%` and search libraries in `%LIB%`, so you can set the environment like below if your compile in command line:
+On Windows, VC compiler will search headers in `%INCLUDE%` and search libraries in `%LIB%`, so you can set the environment like below if your compile in command line:
 
-    set INCLUDE=ffmpeg_path\include;portaudio_path\include;%INCLUDE%
-    set LIB=ffmpeg_path\lib;portaudio_path\lib;%LIB%
+    set INCLUDE=ffmpeg_path\include;openal_path\include;%INCLUDE%
+    set LIB=ffmpeg_path\lib;openal_path\lib;%LIB%
 
-GCC will search headers in environment variables `$CPATH` and libraries in `$LIBRARY_PATH`. So you can set those vars to include your FFmepg and PortAudio dir.
+GCC will search headers in environment variables `$CPATH` and libraries in `$LIBRARY_PATH`. So you can set those vars to include your FFmpeg and OpenAL dir.
 
 gcc in unix shell environment(including mingw with sh.exe):
 
-    export CPATH=ffmpeg_path/include:portaudio_path/include:$CPATH
-    export LIBRARY_PATH=ffmpeg_path/lib:portaudio_path/lib:$LIBRARY_PATH
-
-The project includes libQtAV.pri will not add linking options about FFmpeg etc., so the linker may find the dependent libraries from $LD_LIBRARY_PATH:
-
-    export LD_LIBRARY_PATH=ffmpeg_path/lib:portaudio_path/lib:$LD_LIBRARY_PATH
+    export CPATH=ffmpeg_path/include:openal_path/include:$CPATH
+    export LIBRARY_PATH=ffmpeg_path/lib:openal_path/lib:$LIBRARY_PATH
 
 GCC on windows cmd.exe environment without UNIX Shell:
 
-    set CPATH=ffmpeg_path\include;portaudio_path\include;%CPATH%
-    set LIBRARY_PATH=ffmpeg_path\lib;portaudio_path\lib;%LIBRARY_PATH%
+    set CPATH=ffmpeg_path\include;openal_path\include;%CPATH%
+    set LIBRARY_PATH=ffmpeg_path\lib;openal_path\lib;%LIBRARY_PATH%
 
 If you are building in QtCreator, goto QtCreator's 'Projects' page and add or append those environment.
 
@@ -134,3 +130,19 @@ run
     debuild -us -uc
 
 in QtAV source tree
+
+## Link to Static FFmpeg and OpenAL
+
+QtAV >=1.4.2 supports linking to static ffmpeg and openal libs. It's disabled by default. To enable it, add
+
+    CONFIG += static_ffmpeg static_openal
+
+in $QtAV/.qmake.conf for Qt5 or $QtAV_BUILD_DIR/.qmake.cache
+
+## Ubuntu 12.04 Support
+
+If QtAV, FFmpeg and OpenAL are built on newer OS, some symbols will not be found on 12.04. For example, clock_gettime is in both librt and glibc2.17, we must force the linker link against librt because 12.04 glibc does not have that symbol. add
+
+    CONFIG += glibc_compat
+
+to .qmake.conf or .qmake.cache
