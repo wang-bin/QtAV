@@ -130,6 +130,7 @@ void print_library_info()
         info = Internal::get_ffmpeg_component_info(info);
     }
 }
+
 } //namespace Internal
 
 QString aboutFFmpeg_HTML()
@@ -170,7 +171,7 @@ QString aboutQtAV_HTML()
     static QString about = "<h3>QtAV " QTAV_VERSION_STR_LONG "</h3>\n"
             "<p>" + QObject::tr("A media playing library base on Qt and FFmpeg.\n") + "</p>"
             "<p>" + QObject::tr("Distributed under the terms of LGPLv2.1 or later.\n") + "</p>"
-            "<p>Copyright (C) 2012-2014 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
+            "<p>Copyright (C) 2012-2015 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
             "<p>" + QObject::tr("Shanghai University->S3 Graphics->Deepin, Shanghai, China") + "</p>\n"
             "<p>" + QObject::tr("Donate") + ": <a href='http://www.qtav.org#donate'>http://www.qtav.org#donate</a></p>\n"
             "<p>" + QObject::tr("Source") + ": <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
@@ -199,6 +200,9 @@ void setFFmpegLogHandler(void (*callback)(void *, int, const char *, va_list))
 
 static void qtav_ffmpeg_log_callback(void* ctx, int level,const char* fmt, va_list vl)
 {
+    // AV_LOG_DEBUG is used by ffmpeg developers
+    if (level > AV_LOG_VERBOSE)
+        return;
     AVClass *c = ctx ? *(AVClass**)ctx : 0;
     QString qmsg = QString().sprintf("[FFmpeg:%s] ", c ? c->item_name(ctx) : "?") + QString().vsprintf(fmt, vl);
     qmsg = qmsg.trimmed();

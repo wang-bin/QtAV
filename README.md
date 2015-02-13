@@ -17,6 +17,7 @@ QtAV can meet your most demands
 
 - Hardware decoding suppprt: DXVA2, VAAPI, VDA, CedarX, CUDA(the 1st player support CUDA on linux?)
 - OpenGL and ES2 support for Hi10P and other 16-bit YUV videos (The 1st player/library support in ES2? VLC, XBMC, mplayer does not support now)
+- Real time preview
 - Video capture in rgb and yuv format
 - OSD and custom filters
 - Filters in libavfilter, for example stero3d, blur
@@ -77,7 +78,7 @@ For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://g
 QtAV can also be used in **Qml**
 
     import QtQuick 2.0
-    import QtAV 1.4
+    import QtAV 1.5
     Item {
         Video {
             id: video
