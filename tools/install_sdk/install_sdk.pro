@@ -8,7 +8,6 @@ config_gl {
 }
 #load(qt_module)
 
-STATICLINK = 0
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/common.pri)
 preparePaths($$OUT_PWD/../../out)
