@@ -16,7 +16,6 @@ CONFIG *= qtavwidgets-buildlib
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 #release: DEFINES += QT_NO_DEBUG_OUTPUT
 #var with '_' can not pass to pri?
-STATICLINK = 0
 PROJECTROOT = $$PWD/..
 !include($$PROJECTROOT/src/libQtAV.pri): error("could not find libQtAV.pri")
 !include(libQtAVWidgets.pri): error("could not find libQtAVWidgets.pri")
