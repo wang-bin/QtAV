@@ -57,6 +57,12 @@ public:
 protected:
     virtual bool write(const QByteArray& data);
     virtual int getPlayedCount();
+    virtual bool onSetFeatures(Feature value, bool set = true) {
+        Q_UNUSED(set)
+        return !(value & ~SetVolume);
+    }
+
+    virtual bool deviceSetVolume(qreal value);
     int getQueued();
 };
 
@@ -208,6 +214,7 @@ AudioOutputOpenAL::AudioOutputOpenAL()
     :AudioOutput(*new AudioOutputOpenALPrivate())
 {
     setBufferControl(PlayedCount); //TODO: AL_BYTE_OFFSET
+    setFeatures(SetVolume);
 }
 
 AudioOutputOpenAL::~AudioOutputOpenAL()
@@ -431,6 +438,13 @@ int AudioOutputOpenAL::getPlayedCount()
     ALint processed = 0;
     alGetSourcei(d.source, AL_BUFFERS_PROCESSED, &processed);
     return processed;
+}
+
+bool AudioOutputOpenAL::deviceSetVolume(qreal value)
+{
+    SCOPE_LOCK_CONTEXT();
+    AL_RUN_CHECK(alListenerf(AL_GAIN, value));
+    return true;
 }
 
 int AudioOutputOpenAL::getQueued()
