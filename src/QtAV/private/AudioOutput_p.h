@@ -48,6 +48,8 @@ class Q_AV_PRIVATE_EXPORT AudioOutputPrivate : public AVOutputPrivate
 public:
     AudioOutputPrivate():
         mute(false)
+      , sw_volume(true)
+      , sw_mute(true)
       , volume_i(256)
       , vol(1)
       , speed(1.0)
@@ -134,6 +136,7 @@ public:
     void updateSampleScaleFunc();
 
     bool mute;
+    bool sw_volume, sw_mute;
     int volume_i;
     qreal vol;
     qreal speed;
