@@ -1,6 +1,6 @@
 
 import QtQuick 2.0
-import QtAV 1.4
+import QtAV 1.5
 
 /*!
     \qmltype Video
@@ -62,6 +62,9 @@ import QtAV 1.4
 Item {
     id: video
 
+    property alias fastSeek: player.fastSeek
+    property alias opengl: videoOut.opengl
+    property alias timeout: player.timeout
     property alias subtitle: subtitle
     property alias subtitleText: text_sub // not for ass.
     /*** Properties of VideoOutput ***/
@@ -314,7 +317,7 @@ Item {
     */
     signal playing
 
-    VideoOutput {
+    VideoOutput2 {
         id: videoOut
         anchors.fill: video
         source: player

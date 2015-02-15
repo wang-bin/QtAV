@@ -1,7 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
-    theoribeiro <theo@fictix.com.br>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -89,6 +88,8 @@ void PlayerSubtitle::setFile(const QString &file)
 {
     // always load
     m_file = file;
+    if (!m_enabled)
+        return;
     m_sub->setFileName(file);
     m_sub->setFuzzyMatch(false);
     m_sub->loadAsync();
@@ -114,7 +115,7 @@ bool PlayerSubtitle::autoLoad() const
 void PlayerSubtitle::onPlayerSourceChanged()
 {
     m_file = QString();
-    if (!m_auto) {
+    if (!m_auto || !m_enabled) {
         return;
     }
     AVPlayer *p = qobject_cast<AVPlayer*>(sender());
@@ -135,6 +136,8 @@ void PlayerSubtitle::onPlayerPositionChanged()
 
 void PlayerSubtitle::onPlayerStart()
 {
+    if (!m_enabled)
+        return;
     if (!autoLoad()) {
         if (m_file == m_sub->fileName())
             return;

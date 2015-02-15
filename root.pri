@@ -49,6 +49,15 @@ defineTest(qtRunCommandQuitly) {
     return(true)
 }
 
+lessThan(QT_MAJOR_VERSION, 5)  {
+  include(.qmake.conf)
+  QTAV_VERSION = $${QTAV_MAJOR_VERSION}.$${QTAV_MINOR_VERSION}.$${QTAV_PATCH_VERSION}
+  message("QTAV_VERSION not set, cache the default $$QTAV_VERSION")
+  cache(QTAV_MAJOR_VERSION, set, QTAV_MAJOR_VERSION)
+  cache(QTAV_MINOR_VERSION, set, QTAV_MINOR_VERSION)
+  cache(QTAV_PATCH_VERSION, set, QTAV_PATCH_VERSION)
+  cache(QTAV_VERSION, set, QTAV_VERSION)
+}
 defineTest(testArch) {
   test_dir = $$_PRO_FILE_PWD_/tests/arch
   test_out_dir = $$shadowed($$test_dir)
@@ -92,6 +101,9 @@ isEmpty(mkspecs_cached)|!isEqual(mkspecs_cached, $$mkspecs_build) {
     isEmpty(TARGET_ARCH):testArch()
 }
 
+QT_BIN=$$[QT_HOST_BINS]
+isEmpty(QT_BIN): QT_BIN=$$[QT_INSTALL_BINS]
+cache(QT_BIN, set, QT_BIN)
 cache(BUILD_DIR, set, BUILD_DIR)
 #cache(BUILD_ROOT, set, BUILD_DIR)
 cache(SOURCE_ROOT, set, SOURCE_ROOT)

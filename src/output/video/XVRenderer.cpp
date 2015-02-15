@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -33,8 +33,6 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xvlib.h>
 #include "QtAV/private/prepost.h"
-
-#include "utils/Logger.h"
 
 //http://huangbster.i.sohu.com/blog/view/256490057.htm
 
@@ -382,8 +380,6 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     DPTR_D(XVRenderer);
     if (!d.prepareImage(d.src_width, d.src_height))
         return false;
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
     d.video_frame = frame;//.clone();
 #if 1
     int nb_planes = d.video_frame.planeCount();

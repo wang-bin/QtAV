@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -30,6 +30,7 @@
 #include "output/OutputSet.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QCoreApplication>
+#include <QtCore/QDateTime>
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -63,11 +64,6 @@ void AudioThread::run()
         return;
     resetState();
     Q_ASSERT(d.clock != 0);
-    AudioDecoder *dec = static_cast<AudioDecoder*>(d.dec);
-    AudioOutput *ao = 0;
-    // first() is not null even if list empty
-    if (!d.outputSet->outputs().isEmpty())
-        ao = static_cast<AudioOutput*>(d.outputSet->outputs().first()); //TODO: not here
     d.init();
     //TODO: bool need_sync in private class
     bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
@@ -94,9 +90,13 @@ void AudioThread::run()
         }
         if (!pkt.isValid()) {
             qDebug("Invalid packet! flush audio codec context!!!!!!!! audio queue size=%d", d.packets.size());
-            dec->flush();
+            QMutexLocker locker(&d.mutex);
+            Q_UNUSED(locker);
+            if (d.dec) //maybe set to null in setDecoder()
+                d.dec->flush();
             continue;
         }
+        qreal dts = pkt.dts; //FIXME: pts and dts
         bool skip_render = pkt.pts < d.render_pts0;
         // audio has no key frame, skip rendering equals to skip decoding
         if (skip_render) {
@@ -105,40 +105,32 @@ void AudioThread::run()
              * audio may be too fast than video if skip without sleep
              * a frame is about 20ms. sleep time must be << frame time
              */
-            qreal a_v = pkt.pts - d.clock->videoPts();
-
-            //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", pkt.pts, d.render_pts0, d.clock->videoPts(), a_v*1000.0);
-            if (a_v > 0)
+            qreal a_v = dts - d.clock->videoTime();
+            //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", dts, d.render_pts0, d.clock->videoTime(), a_v*1000.0);
+            if (a_v > 0) {
                 msleep(qMin((ulong)20, ulong(a_v*1000.0)));
-            else
+            } else {
+                // audio maybe too late compared with video packet before seeking backword. so just ignore
                 msleep(1);
+            }
             pkt = Packet(); //mark invalid to take next
             continue;
         }
         d.render_pts0 = 0;
         if (is_external_clock) {
-            d.delay = pkt.pts - d.clock->value();
+            d.delay = dts - d.clock->value();
             /*
              *after seeking forward, a packet may be the old, v packet may be
              *the new packet, then the d.delay is very large, omit it.
              *TODO: 1. how to choose the value
              * 2. use last delay when seeking
             */
-            if (qAbs(d.delay) < 2.718) {
+            if (qAbs(d.delay) < 2.0) {
                 if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
                     //continue;
                 }
-                while (d.delay > kSyncThreshold) { //Slow down
-                    //d.delay_cond.wait(&d.mutex, d.delay*1000); //replay may fail. why?
-                    //qDebug("~~~~~wating for %f msecs", d.delay*1000);
-                    usleep(kSyncThreshold * 1000000UL);
-                    if (d.stop)
-                        d.delay = 0;
-                    else
-                        d.delay -= kSyncThreshold;
-                }
                 if (d.delay > 0)
-                    usleep(d.delay * 1000000UL);
+                    waitAndCheck(d.delay, dts);
             } else { //when to drop off?
                 if (d.delay > 0) {
                     msleep(64);
@@ -150,6 +142,20 @@ void AudioThread::run()
         } else {
             d.clock->updateValue(pkt.pts);
         }
+
+        /* lock here to ensure decoder and ao can complete current work before they are changed
+         * current packet maybe not supported by new decoder
+         */
+        QMutexLocker locker(&d.mutex);
+        Q_UNUSED(locker);
+        AudioDecoder *dec = static_cast<AudioDecoder*>(d.dec);
+        if (!dec)
+            continue;
+        AudioOutput *ao = 0;
+        // first() is not null even if list empty
+        if (!d.outputSet->outputs().isEmpty())
+            ao = static_cast<AudioOutput*>(d.outputSet->outputs().first());
+
         //DO NOT decode and convert if ao is not available or mute!
         bool has_ao = ao && ao->isAvailable();
         //if (!has_ao) {//do not decode?
@@ -186,17 +192,15 @@ void AudioThread::run()
             qDebug("audio thread stop before decode()");
             break;
         }
-        QMutexLocker locker(&d.mutex);
-        Q_UNUSED(locker);
-        if (!dec->decode(pkt.data)) {
-            qWarning("Decode audio failed");
-            qreal dt = pkt.pts - d.last_pts;
-            if (dt > 0.618 || dt < 0) {
+        if (!dec->decode(pkt)) {
+            qWarning("Decode audio failed. undecoded: %d", dec->undecodedSize());
+            qreal dt = dts - d.last_pts;
+            if (dt > 0.5 || dt < 0) {
                 dt = 0;
             }
-            //qDebug("a sleep %f", dt);
-            //TODO: avoid acummulative error. External clock?
-            msleep((unsigned long)(dt*1000.0));
+            if (!qFuzzyIsNull(dt)) {
+                msleep((unsigned long)(dt*1000.0));
+            }
             pkt = Packet();
             d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
             continue;
@@ -206,8 +210,8 @@ void AudioThread::run()
         int decodedPos = 0;
         qreal delay = 0;
         //AudioFormat.durationForBytes() calculates int type internally. not accurate
-        AudioFormat &af = dec->resampler()->inAudioFormat();
-        qreal byte_rate = af.bytesPerSecond();
+        const AudioFormat &af = dec->resampler()->outAudioFormat();
+        const qreal byte_rate = af.bytesPerSecond();
         while (decodedSize > 0) {
             if (d.stop) {
                 qDebug("audio thread stop after decode()");
@@ -218,59 +222,14 @@ void AudioThread::run()
             //AudioFormat.bytesForDuration
             const qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
             pkt.pts += chunk_delay;
-            QByteArray decodedChunk(chunk, 0); //volume == 0 || mute
+            pkt.dts += chunk_delay;
             if (has_ao) {
-                //TODO: volume filter and other filters!!!
-                if (!ao->isMute()) {
-                    decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
-                    qreal vol = ao->volume();
-                    if (vol != 1.0) {
-                        int len = decodedChunk.size()/ao->audioFormat().bytesPerSample();
-                        switch (ao->audioFormat().sampleFormat()) {
-                        case AudioFormat::SampleFormat_Unsigned8:
-                        case AudioFormat::SampleFormat_Unsigned8Planar: {
-                            quint8 *data = (quint8*)decodedChunk.data(); //TODO: other format?
-                            for (int i = 0; i < len; data[i++] *= vol) {}
-                        }
-                            break;
-                        case AudioFormat::SampleFormat_Signed16:
-                        case AudioFormat::SampleFormat_Signed16Planar: {
-                            qint16 *data = (qint16*)decodedChunk.data(); //TODO: other format?
-                            for (int i = 0; i < len; data[i++] *= vol) {}
-                        }
-                            break;
-                        case AudioFormat::SampleFormat_Signed32:
-                        case AudioFormat::SampleFormat_Signed32Planar: {
-                            qint32 *data = (qint32*)decodedChunk.data(); //TODO: other format?
-                            for (int i = 0; i < len; data[i++] *= vol) {}
-                        }
-                            break;
-                        case AudioFormat::SampleFormat_Float:
-                        case AudioFormat::SampleFormat_FloatPlanar: {
-                            float *data = (float*)decodedChunk.data(); //TODO: other format?
-                            for (int i = 0; i < len; data[i++] *= vol) {}
-                        }
-                            break;
-                        case AudioFormat::SampleFormat_Double:
-                        case AudioFormat::SampleFormat_DoublePlanar: {
-                            double *data = (double*)decodedChunk.data(); //TODO: other format?
-                            for (int i = 0; i < len; data[i++] *= vol) {}
-                        }
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-                }
-                ao->waitForNextBuffer();
-                ao->receiveData(decodedChunk, pkt.pts);
-                ao->play();
+                QByteArray decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
+                ao->play(decodedChunk, pkt.pts);
                 d.clock->updateValue(ao->timestamp());
-
                 emit frameDelivered();
             } else {
                 d.clock->updateDelay(delay += chunk_delay);
-
             /*
              * why need this even if we add delay? and usleep sounds weird
              * the advantage is if no audio device, the play speed is ok too

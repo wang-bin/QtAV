@@ -40,7 +40,6 @@ class Q_AV_EXPORT AVDecoder : public QObject
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVDecoder)
 public:
-    AVDecoder();
     virtual ~AVDecoder();
     virtual QString name() const;
     virtual QString description() const;
@@ -58,30 +57,22 @@ public:
     // force a codec
     void setCodecName(const QString& name);
     QString codecName() const;
-
-    //? low resolution decoding, 0: normal, 1-> 1/2 size, 2->1/4 size
-    void setLowResolution(int lowres);
-    int lowResolution() const;
-    // -1: auto detect by QThread::idealThreadCount(). 0: set by ffmpeg(default)
-    void setDecodeThreads(int threads);
-    int decodeThreads() const;
-    void setThreadSlice(bool s);
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
     virtual bool prepare(); //if resampler or image converter set, call it
     QTAV_DEPRECATED virtual bool decode(const QByteArray& encoded) = 0;
     virtual bool decode(const Packet& packet) = 0;
-    QByteArray data() const; //decoded data
-    int undecodedSize() const;
+    int undecodedSize() const; //TODO: remove. always decode whole input data completely
 
     // avcodec_open2
     /*!
      * \brief setOptions
-     * 1. set options for AVCodecContext. if contains key "avcodec", use it's value as a hash to set. a value of hash type is ignored.
+     * 1. Set options for AVCodecContext. if contains key "avcodec", use it's value as a hash to set. a value of hash type is ignored.
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
      * In addition, av_dict is slow.
-     * empty means default options in ffmpeg
-     * 2. set properties for AVDecoder. use the value of key AVDecoder::name() or it's lower case as a hash to set properties.
+     * empty value does nothing to current context if it is open, but will change AVDictionary options to null in next open.
+     * AVDictionary is used in avcodec_open2() and will not change unless user call setOptions().
+     * 2. Set properties for AVDecoder. Use AVDecoder::name() or lower case as a key to set properties. If key not found, assume key is "avcodec"
      * \param dict
      * example:
      *  "avcodec": {"vismv":"pf"}, "vaapi":{"display":"DRM"}
@@ -95,8 +86,10 @@ Q_SIGNALS:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
 protected:
     AVDecoder(AVDecoderPrivate& d);
-
     DPTR_DECLARE(AVDecoder)
+private:
+    Q_DISABLE_COPY(AVDecoder)
+    AVDecoder(); // base class, not direct create. only final class has is enough
 };
 
 } //namespace QtAV

@@ -111,3 +111,8 @@ QString PlayListItem::durationString() const
 {
     return mDurationS;
 }
+
+bool PlayListItem::operator ==(const PlayListItem& other) const
+{
+    return url() == other.url();
+}

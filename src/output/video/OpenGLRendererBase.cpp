@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -71,15 +71,12 @@ OpenGLRendererBase::~OpenGLRendererBase()
 
 bool OpenGLRendererBase::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    Q_UNUSED(pixfmt);
-    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;
+    return OpenGLVideo::isSupported(pixfmt);
 }
 
 bool OpenGLRendererBase::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(OpenGLRendererBase);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
     d.video_frame = frame;
 
     d.glv.setCurrentFrame(frame);
@@ -95,8 +92,7 @@ bool OpenGLRendererBase::needUpdateBackground() const
 
 void OpenGLRendererBase::drawBackground()
 {
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    d_func().glv.fill(QColor(Qt::black));
 }
 
 void OpenGLRendererBase::drawFrame()
@@ -118,9 +114,6 @@ void OpenGLRendererBase::onInitializeGL()
     bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
     qDebug("OpenGL version: %d.%d  hasGLSL: %d", ctx->format().majorVersion(), ctx->format().minorVersion(), hasGLSL);
     initializeOpenGLFunctions();
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_DEPTH_TEST);
-    glClearColor(0.0, 0.0, 0.0, 0.0);
 }
 
 void OpenGLRendererBase::onPaintGL()

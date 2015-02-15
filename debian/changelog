@@ -1,3 +1,50 @@
+qtav (1.5.0) unstable; urgency=low
+
+  ＊ Add QtAVWidgets module contains widget based renderers, video preview widget
+  ＊ QtAV module only depends on QtCore and QtGui
+  ＊ Improve audio output API
+  ＊ Simplify deployment on OSX. Deploy sdk from release packages without build.
+  ＊ Improve seekable detection
+  ＊ Fix noise audio if volume increased
+  ＊ Fix noise and wrong playback speed for wmv videos
+  ＊ Preview is more accurate
+  ＊ Do not copy AVPacket but use reference count.
+  ＊ Faster audio track switch
+  ＊ Reopen audio output only if audio format changed
+  ＊ VideoFrame: new API for converting to another format or QImage
+  ＊ OpenGL VAO, VBO support.
+  ＊ Fix some crashes in QQuickItemRenderer
+  ＊ Add FBO item renderer and use the same code path as other opengl renderers
+  ＊ player: real time preview on progress bar
+  ＊ Fast seek and display if seek shortcut is pressed and hold
+
+ -- Wang Bin <wbsecg1@gmail.com>  Sat, 13 Feb 2015 20:19:00 +0800
+
+qtav (1.4.2) unstable; urgency=low
+
+  * Async load
+  * Faster seek and preview. Thanks wm4(mpv developer)
+  * Better a/v sync solution. Play high fps video better than ANY other players.
+  * DXVA enable HEVC decoder if libavcodec runtime supports.
+  * Cedarv improvements, nv12 output support, neon code from libvdpau-sunxi
+  * Multiple OpenAL instances support
+  * AVInput class to extend media sources. Support play from qrc resouces.
+  * Display the first frame after seek
+  * Better clock error correction
+  * Fix play frame by frame issues
+  * Fix QML video shake
+  * More details for error signals
+  * Apply user options in the next playback
+  * Dynamic load libass (submodule 'capi' is required)
+  * VA-API fix blurred bottom line issue. works on libav >= 9 now.
+  * Progress is start at 0 by default even if 1st pts is not 0.
+  * Fix capture issues, capture current displayed frame, easier api
+  * RGB48 support. OpenGL only supports RGB48LE.
+  * Link to static ffmpeg support
+  * Fix open error if input url/path contains special charactors
+
+ -- Wang Bin <wbsecg1@gmail.com>  Sat, 10 Jan 2015 23:42:17 +0800
+
 qtav (1.4.1) unstable; urgency=low
 
   * libass support

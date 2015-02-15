@@ -22,6 +22,7 @@
 #ifndef QTAV_OPENGLHELPER_H
 #define QTAV_OPENGLHELPER_H
 
+#include "QtAV/VideoFormat.h"
 #include <qglobal.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLContext>
@@ -29,7 +30,6 @@
 #else
 #include <qgl.h>
 #endif
-
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
 #ifndef GL_BGRA_EXT
@@ -58,8 +58,12 @@
 #ifndef GL_BGR
 #define GL_BGR 0x80E0
 #endif
-
-#include "QtAV/VideoFormat.h"
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifdef QT_OPENGL_DYNAMIC
+#define DYGL(glFunc) QOpenGLContext::currentContext()->functions()->glFunc
+#else
+#define DYGL(glFunc) glFunc
+#endif
 
 namespace QtAV {
 namespace OpenGLHelper {

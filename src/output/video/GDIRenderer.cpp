@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,7 +26,6 @@
 #include <gdiplus.h>
 #include <QResizeEvent>
 #include "QtAV/private/prepost.h"
-#include "utils/Logger.h"
 
 #define USE_GRAPHICS 0
 
@@ -221,8 +220,6 @@ QPaintEngine* GDIRenderer::paintEngine() const
 bool GDIRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GDIRenderer);
-    QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
     d.video_frame = frame;
 
     update();

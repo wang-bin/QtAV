@@ -71,7 +71,7 @@ public:
         return true;
     }
 
-    bool push(Frame *frame, qreal pts);
+    bool push(Frame *frame);
     bool pull(Frame *f);
 
     bool setup() {
@@ -204,7 +204,7 @@ void LibAVFilter::process(Statistics *statistics, VideoFrame *frame)
         return;
     DPTR_D(LibAVFilter);
     Status old = status();
-    bool ok = d.push(frame, statistics->video_only.pts());
+    bool ok = d.push(frame);
     if (old != status())
         emit statusChanged();
     if (!ok)
@@ -213,7 +213,7 @@ void LibAVFilter::process(Statistics *statistics, VideoFrame *frame)
 }
 
 
-bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
+bool LibAVFilterPrivate::push(Frame *frame)
 {
 #if QTAV_HAVE(AVFILTER)
     VideoFrame *vf = static_cast<VideoFrame*>(frame);
@@ -227,7 +227,7 @@ bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
             return false;
         }
     }
-    avframe->pts = pts * 1000000.0; // time_base is 1/1000000
+    avframe->pts = frame->timestamp() * 1000000.0; // time_base is 1/1000000
     avframe->width = vf->width();
     avframe->height = vf->height();
     avframe->format = pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
@@ -250,7 +250,6 @@ bool LibAVFilterPrivate::push(Frame *frame, qreal pts)
     return true;
 #else
     Q_UNUSED(frame);
-    Q_UNUSED(pts);
     enabled = false;
     return false;
 #endif
@@ -306,6 +305,7 @@ bool LibAVFilterPrivate::pull(Frame *f)
     vf.setBits(frame_ref->frame()->data);
     vf.setBytesPerLine(frame_ref->frame()->linesize);
     vf.setMetaData("avframe_hoder_ref", QVariant::fromValue(frame_ref));
+    vf.setTimestamp(frame_ref->frame()->pts);
     *f = vf;
     return true;
 #else

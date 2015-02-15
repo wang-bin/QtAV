@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoDecoderFFmpegHW.h"
-#include "QtAV/private/VideoDecoderFFmpegHW_p.h"
+#include "VideoDecoderFFmpegHW.h"
+#include "VideoDecoderFFmpegHW_p.h"
 #include <algorithm>
 #include <list>
 #include <QtCore/QList>
@@ -60,7 +60,6 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderVAAPI)
-    Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
     Q_PROPERTY(bool derive READ derive WRITE setDerive)
     Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
     //Q_PROPERTY(QStringList displayPriority READ displayPriority WRITE setDisplayPriority)
@@ -78,8 +77,6 @@ public:
     virtual VideoFrame frame();
 
     // QObject properties
-    void setSSE4(bool y);
-    bool SSE4() const;
     void setDerive(bool y);
     bool derive() const;
     void setSurfaces(int num);
@@ -124,8 +121,7 @@ public:
         // set by user. don't reset in when call destroy
         surface_auto = true;
         nb_surfaces = 0;
-        disable_derive = false;
-        copy_uswc = true;
+        disable_derive = true;
     }
     ~VideoDecoderVAAPIPrivate() {}
     virtual bool open();
@@ -163,9 +159,6 @@ public:
     bool supports_derive;
 
     QString vendor;
-    // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
-    bool copy_uswc;
-    GPUMemCopy gpu_mem;
     VideoSurfaceInteropPtr surface_interop; //may be still used in video frames when decoder is destroyed
 };
 
@@ -192,16 +185,6 @@ QString VideoDecoderVAAPI::description() const
     if (!d_func().description.isEmpty())
         return d_func().description;
     return "Video Acceleration API";
-}
-
-void VideoDecoderVAAPI::setSSE4(bool y)
-{
-    d_func().copy_uswc = y;
-}
-
-bool VideoDecoderVAAPI::SSE4() const
-{
-    return d_func().copy_uswc;
 }
 
 void VideoDecoderVAAPI::setDerive(bool y)
@@ -271,6 +254,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
+        f.setTimestamp(d.frame->pkt_pts);
         return f;
     }
 #if VA_CHECK_VERSION(0,31,0)
@@ -337,47 +321,11 @@ VideoFrame VideoDecoderVAAPI::frame()
         src[i] = (uint8_t*)p_base + d.image.offsets[i];
         pitch[i] = d.image.pitches[i];
     }
-    if (swap_uv) {
-        std::swap(src[1], src[2]);
-        std::swap(pitch[1], pitch[2]);
-    }
-    VideoFrame frame;
-    if (d.copy_uswc && d.gpu_mem.isReady()) {
-        int yuv_size = 0;
-        if (pixfmt == VideoFormat::Format_NV12)
-            yuv_size = pitch[0]*d.surface_height*3/2;
-        else
-            yuv_size = pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2;
-        // additional 15 bytes to ensure 16 bytes aligned
-        QByteArray buf(15 + yuv_size, 0);
-        const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
-        // plane 1, 2... is aligned?
-        uchar* plane_ptr = (uchar*)buf.data() + offset_16;
-        QVector<uchar*> dst(fmt.planeCount(), 0);
-        for (int i = 0; i < dst.size(); ++i) {
-            dst[i] = plane_ptr;
-            // TODO: add VideoFormat::planeWidth/Height() ?
-            const int plane_w = pitch[i];//(i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
-            const int plane_h = i == 0 ? d.surface_height : fmt.chromaHeight(d.surface_height);
-            plane_ptr += pitch[i] * plane_h;
-            d.gpu_mem.copyFrame(src[i], dst[i], plane_w, plane_h, pitch[i]);
-        }
-        frame = VideoFrame(buf, d.width, d.height, fmt);
-        frame.setBits(dst);
-        frame.setBytesPerLine(pitch);
-    } else {
-        frame = VideoFrame(d.width, d.height, fmt);
-        frame.setBits(src);
-        frame.setBytesPerLine(pitch);
-        // TODO: why clone is faster()?
-        frame = frame.clone();
-    }
-
+    VideoFrame frame(copyToFrame(fmt, d.surface_height, src, pitch, swap_uv));
     if ((status = vaUnmapBuffer(d.display->get(), d.image.buf)) != VA_STATUS_SUCCESS) {
         qWarning("vaUnmapBuffer(VADisplay:%p, VABufferID:%#x) == %#x", d.display->get(), d.image.buf, status);
         return VideoFrame();
     }
-
     if (!d.disable_derive && d.supports_derive) {
         vaDestroyImage(d.display->get(), d.image.image_id);
         d.image.image_id = VA_INVALID_ID;
@@ -673,13 +621,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
         vaDestroyImage(display->get(), image.image_id);
         image.image_id = VA_INVALID_ID;
     }
-    if (copy_uswc) {
-        if (!gpu_mem.initCache(surface_width)) {
-            // only set by user (except disabling copy_uswc for non-intel gpu)
-            //copy_uswc = false;
-            //disable_derive = true;
-        }
-    }
+    initUSWC(surface_width);
     /* Setup the ffmpeg hardware context */
     *pp_hw_ctx = &hw_ctx;
     memset(&hw_ctx, 0, sizeof(hw_ctx));
@@ -694,9 +636,7 @@ void VideoDecoderVAAPIPrivate::destroySurfaces()
     if (image.image_id != VA_INVALID_ID) {
         VAWARN(vaDestroyImage(display->get(), image.image_id));
     }
-    if (copy_uswc) {
-        gpu_mem.cleanCache();
-    }
+    releaseUSWC();
     if (context_id != VA_INVALID_ID)
         VAWARN(vaDestroyContext(display->get(), context_id));
     nb_surfaces = 0;

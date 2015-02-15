@@ -137,6 +137,9 @@ protected:
     explicit Config(QObject *parent = 0);
     ~Config();
 
+private Q_SLOTS:
+    void save();
+
 private:
     class Data;
     Data *mpData;

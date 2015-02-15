@@ -19,9 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoDecoder.h"
-#include "QtAV/private/VideoDecoder_p.h"
-#include "QtAV/Packet.h"
+#include "VideoDecoderFFmpegBase.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
 #include "utils/Logger.h"
@@ -35,7 +33,7 @@
 namespace QtAV {
 
 class VideoDecoderFFmpegPrivate;
-class VideoDecoderFFmpeg : public VideoDecoder
+class VideoDecoderFFmpeg : public VideoDecoderFFmpegBase
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
@@ -112,8 +110,9 @@ public:
     Q_DECLARE_FLAGS(BugFlags, BugFlag)
 
     VideoDecoderFFmpeg();
-    virtual VideoDecoderId id() const;
-    virtual bool prepare() Q_DECL_OVERRIDE;
+    virtual VideoDecoderId id() const Q_DECL_FINAL;
+    virtual bool prepare() Q_DECL_FINAL;
+    virtual VideoFrame frame() Q_DECL_FINAL;
 
     // TODO: av_opt_set in setter
     void setSkipLoopFilter(DiscardType value);
@@ -143,11 +142,11 @@ void RegisterVideoDecoderFFmpeg_Man()
 }
 
 
-class VideoDecoderFFmpegPrivate : public VideoDecoderPrivate
+class VideoDecoderFFmpegPrivate : public VideoDecoderFFmpegBasePrivate
 {
 public:
     VideoDecoderFFmpegPrivate():
-        VideoDecoderPrivate()
+        VideoDecoderFFmpegBasePrivate()
       , skip_loop_filter(VideoDecoderFFmpeg::Default)
       , skip_idct(VideoDecoderFFmpeg::Default)
       , strict(VideoDecoderFFmpeg::Normal)
@@ -170,7 +169,7 @@ public:
 
 
 VideoDecoderFFmpeg::VideoDecoderFFmpeg():
-    VideoDecoder(*new VideoDecoderFFmpegPrivate())
+    VideoDecoderFFmpegBase(*new VideoDecoderFFmpegPrivate())
 {
     // dynamic properties about static property details. used by UI
     // format: detail_property
@@ -233,6 +232,30 @@ bool VideoDecoderFFmpeg::prepare()
     }
 #endif
     return true;
+}
+
+VideoFrame VideoDecoderFFmpeg::frame()
+{
+    DPTR_D(VideoDecoderFFmpeg);
+    /*qDebug("color space: %d, range: %d, prim: %d, t: %d"
+           , d.codec_ctx->colorspace, d.codec_ctx->color_range
+           , d.codec_ctx->color_primaries, d.codec_ctx->color_trc);
+           */
+    if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
+        return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+    //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
+    float displayAspectRatio = 0;
+    if (d.codec_ctx->sample_aspect_ratio.den > 0)
+        displayAspectRatio = ((float)d.frame->width / (float)d.frame->height) *
+            ((float)d.codec_ctx->sample_aspect_ratio.num / (float)d.codec_ctx->sample_aspect_ratio.den);
+
+    // it's safe if width, height, pixfmt will not change, only data change
+    VideoFrame frame(d.frame->width, d.frame->height, VideoFormat((int)d.codec_ctx->pix_fmt));
+    frame.setDisplayAspectRatio(displayAspectRatio);
+    frame.setBits(d.frame->data);
+    frame.setBytesPerLine(d.frame->linesize);
+    frame.setTimestamp((double)d.frame->pkt_pts/1000.0); // in s. what about AVFrame.pts?
+    return frame;
 }
 
 void VideoDecoderFFmpeg::setSkipLoopFilter(DiscardType value)

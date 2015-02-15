@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -18,21 +18,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 #include <QApplication>
-
-#include <QtAV/AVPlayer.h>
-#include <QtAV/WidgetRenderer.h>
+#include "playerwindow.h"
+#include <QtAVWidgets>
 
 int main(int argc, char *argv[])
 {
+    QtAV::Widgets::registerRenderers();
     QApplication a(argc, argv);
-    QtAV::WidgetRenderer renderer;
-    renderer.show();
-    renderer.setWindowTitle("minimal player--QtAV " + QtAV_Version_String_Long() + " wbsecg1@gmail.com");
-    QtAV::AVPlayer player;
-    player.setRenderer(&renderer);
-
-    if (argc > 1)
-        player.play(a.arguments().last());
-
+    PlayerWindow player;
+    player.show();
+    player.resize(800, 600);
     return a.exec();
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -35,6 +35,7 @@
 #define QOpenGLContext QGLContext
 #endif //!defined(QT_NO_OPENGL)
 #endif
+class QColor;
 
 namespace QtAV {
 
@@ -42,13 +43,16 @@ class VideoFrame;
 class OpenGLVideoPrivate;
 /*!
  * \brief The OpenGLVideo class
- * high level api for renderering a video frame. use VideoShader, VideoMaterial and ShaderManager internally
+ * high level api for renderering a video frame. use VideoShader, VideoMaterial and ShaderManager internally.
+ * By default, VBO is used. Set environment var QTAV_NO_VBO=1 or 0 to disable/enable VBO.
+ * VAO will be enabled if supported. Disabling VAO is the same as VBO.
  */
 class Q_AV_EXPORT OpenGLVideo : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(OpenGLVideo)
 public:
+    static bool isSupported(VideoFormat::PixelFormat pixfmt);
     OpenGLVideo();
     /*!
      * \brief setOpenGLContext
@@ -61,6 +65,7 @@ public:
     void setOpenGLContext(QOpenGLContext *ctx);
     QOpenGLContext* openGLContext();
     void setCurrentFrame(const VideoFrame& frame);
+    void fill(const QColor& color);
     /*!
      * \brief render
      * all are in Qt's coordinate

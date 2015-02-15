@@ -192,6 +192,7 @@ QtAVDebug Logger::critical() const
 #endif //QT_NO_DEBUG_STREAM
 
 bool isLogLevelSet();
+void print_library_info();
 
 QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
     : type(t)
@@ -241,9 +242,7 @@ QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
     }
 
     if ((int)logLevel() > (int)LogOff) {
-        ffmpeg_version_print();
-        printf("%s\n", aboutQtAV_PlainText().toLocal8Bit().constData());
-        fflush(0);
+        print_library_info();
     }
 }
 

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -62,6 +62,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mAutoLoad(false)
   , mHasAudio(false)
   , mHasVideo(false)
+  , m_fastSeek(false)
   , mLoopCount(1)
   , mPlaybackRate(1.0)
   , mVolume(1.0)
@@ -70,6 +71,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , m_status(QtAV::NoMedia)
   , mpPlayer(0)
   , mChannelLayout(ChannelLayoutAuto)
+  , m_timeout(30000)
 {
 }
 
@@ -82,6 +84,7 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
+    connect(mpPlayer, SIGNAL(seekableChanged()), SIGNAL(seekableChanged()));
     connect(this, SIGNAL(volumeChanged()), SLOT(applyVolume()));
     connect(this, SIGNAL(channelLayoutChanged()), SLOT(applyChannelLayout()));
 
@@ -134,7 +137,6 @@ void QmlAVPlayer::setSource(const QUrl &url)
     if (mSource == url)
         return;
     mSource = url;
-    qDebug() << url;
     mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
     emit sourceChanged(); //TODO: emit only when player loaded a new source
 
@@ -261,6 +263,21 @@ QmlAVPlayer::ChannelLayout QmlAVPlayer::channelLayout() const
     return mChannelLayout;
 }
 
+void QmlAVPlayer::setTimeout(int value)
+{
+    if (m_timeout == value)
+        return;
+    m_timeout = value;
+    emit timeoutChanged();
+    if (mpPlayer)
+        mpPlayer->setInterruptTimeout(m_timeout);
+}
+
+int QmlAVPlayer::timeout() const
+{
+    return m_timeout;
+}
+
 QStringList QmlAVPlayer::videoCodecPriority() const
 {
     return mVideoCodecs;
@@ -328,7 +345,20 @@ int QmlAVPlayer::position() const
 
 bool QmlAVPlayer::isSeekable() const
 {
-    return true;
+    return mpPlayer && mpPlayer->isSeekable();
+}
+
+bool QmlAVPlayer::isFastSeek() const
+{
+    return m_fastSeek;
+}
+
+void QmlAVPlayer::setFastSeek(bool value)
+{
+    if (m_fastSeek == value)
+        return;
+    m_fastSeek = value;
+    emit fastSeekChanged();
 }
 
 QmlAVPlayer::Status QmlAVPlayer::status() const
@@ -364,6 +394,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
         if (mpPlayer->isPaused()) {
             mpPlayer->pause(false);
         } else {
+            mpPlayer->setInterruptTimeout(m_timeout);
             mpPlayer->setRepeat(mLoopCount - 1);
             if (!vcodec_opt.isEmpty()) {
                 QVariantHash vcopt;
@@ -442,6 +473,7 @@ void QmlAVPlayer::seek(int offset)
 {
     if (!mpPlayer)
         return;
+    mpPlayer->setSeekType(isFastSeek() ? KeyFrameSeek : AccurateSeek);
     mpPlayer->seek(qint64(offset));
 }
 
@@ -449,6 +481,7 @@ void QmlAVPlayer::seekForward()
 {
     if (!mpPlayer)
         return;
+    mpPlayer->setSeekType(isFastSeek() ? KeyFrameSeek : AccurateSeek);
     mpPlayer->seekForward();
 }
 
@@ -456,6 +489,7 @@ void QmlAVPlayer::seekBackward()
 {
     if (!mpPlayer)
         return;
+    mpPlayer->setSeekType(isFastSeek() ? KeyFrameSeek : AccurateSeek);
     mpPlayer->seekBackward();
 }
 
@@ -501,15 +535,11 @@ void QmlAVPlayer::_q_paused(bool p)
 void QmlAVPlayer::_q_started()
 {
     mPlaybackState = PlayingState;
-    emit playing();
-    emit playbackStateChanged();
-
     applyChannelLayout();
     // applyChannelLayout() first because it may reopen audio device
     applyVolume();
     mpPlayer->setMute(isMuted());
     mpPlayer->setSpeed(playbackRate());
-
     // TODO: in load()?
     m_metaData->setValuesFromStatistics(mpPlayer->statistics());
     if (!mHasAudio) {
@@ -522,6 +552,8 @@ void QmlAVPlayer::_q_started()
         if (mHasVideo)
             emit hasVideoChanged();
     }
+    emit playing();
+    emit playbackStateChanged();
 }
 
 void QmlAVPlayer::_q_stopped()

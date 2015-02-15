@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -38,6 +38,17 @@ enum MediaStatus
     BufferedMedia, // when playing //NOT IMPLEMENTED
     EndOfMedia,
     InvalidMedia // what if loop > 0 or stopPosition() is not mediaStopPosition()?
+};
+
+enum SeekUnit {
+    SeekByTime, // only this is supported now
+    SeekByByte,
+    SeekByFrame
+};
+enum SeekType {
+    AccurateSeek, // slow
+    KeyFrameSeek, // fast
+    AnyFrameSeek
 };
 
 enum SurfaceType {

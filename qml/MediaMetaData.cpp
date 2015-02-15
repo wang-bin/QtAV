@@ -1,7 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
-    theoribeiro <theo@fictix.com.br>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,6 +22,7 @@
 #include "QmlAV/MediaMetaData.h"
 #include <QtCore/QFile>
 #include <QtCore/QMetaEnum>
+#include <QtCore/QStringList>
 #include <QtAV/Statistics.h>
 
 using namespace QtAV;
@@ -39,7 +39,7 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
     setValue(Duration, (qint64)QTime(0, 0, 0).msecsTo(st.duration));
     if (st.video.available) {
         setValue(MediaType, "video");
-        setValue(VideoFrameRate, st.video_only.fps);
+        setValue(VideoFrameRate, st.video_only.frame_rate);
         setValue(VideoBitRate, st.video.bit_rate);
         setValue(VideoCodec, st.video.codec);
         setValue(Resolution, QSize(st.video_only.width, st.video_only.height));
@@ -71,8 +71,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
                 setValue(TrackNumber, it.value().toInt());
                 continue;
             }
-            setValue(TrackNumber, it.value().leftRef(slash).toInt());
-            setValue(TrackCount, it.value().midRef(slash+1).toInt());
+            setValue(TrackNumber, it.value().leftRef(slash).string()->toInt()); //QStringRef.toInt(): Qt5.2
+            setValue(TrackCount, it.value().midRef(slash+1).string()->toInt());
             continue;
         }
         if (keyName == QStringLiteral("date")
@@ -104,25 +104,25 @@ MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
 {
     typedef struct {
         Key key;
-        QString name;
+        const char* name;
     } key_t;
     key_t key_map[] = {
-    { AlbumTitle, QStringLiteral("album") }, //?
-    { AlbumArtist, QStringLiteral("album_artist") },
-    { Author, QStringLiteral("artist") }, //?
-    { Comment, QStringLiteral("comment") },
-    { Composer, QStringLiteral("composer") },
-    { Copyright, QStringLiteral("copyright") },
-    // { Date, QStringLiteral("date") }, //QDate
-    { Language, QStringLiteral("language") }, //maybe a list in ffmpeg
-    { Publisher, QStringLiteral("publisher") },
-    { Title, QStringLiteral("title") },
-    //{ TrackNumber, QStringLiteral("track") }, // can be "current/total"
-    //{ TrackCount, QStringLiteral("track") }, // can be "current/total"
+    { AlbumTitle, "album" }, //?
+    { AlbumArtist, "album_artist" },
+    { Author, "artist" }, //?
+    { Comment, "comment" },
+    { Composer, "composer" },
+    { Copyright, "copyright" },
+    // { Date, "date" }, //QDate
+    { Language, "language" }, //maybe a list in ffmpeg
+    { Publisher, "publisher" },
+    { Title, "title" },
+    //{ TrackNumber, "track" }, // can be "current/total"
+    //{ TrackCount, "track" }, // can be "current/total"
 
     // below are keys not listed in ffmpeg generic tag names and value is a QString
-    { Description, QStringLiteral("description") }, //dx
-    { (Key)-1, QString() },
+    { Description, "description" }, //dx
+    { (Key)-1, 0 },
     };
     for (int i = 0; (int)key_map[i].key >= 0; ++i) {
         if (name.toLower() == key_map[i].name)
@@ -130,13 +130,13 @@ MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
     }
     // below are keys not listed in ffmpeg generic tag names and value is a QString
     key_t wm_key[] = {
-        { UserRating, QStringLiteral("rating") }, //dx, WM/
-        { ParentalRating, QStringLiteral("parentalrating") }, //dx, WM/
-        //{ RatingOrganization, QStringLiteral("rating_organization") },
-        { Conductor, QStringLiteral("conductor") }, //dx, WM/
-        { Lyrics, QStringLiteral("lyrics") }, //dx, WM/
-        { Mood, QStringLiteral("mood") }, //dx, WM/
-        { (Key)-1, QString() },
+        { UserRating, "rating" }, //dx, WM/
+        { ParentalRating, "parentalrating" }, //dx, WM/
+        //{ RatingOrganization, "rating_organization" },
+        { Conductor, "conductor" }, //dx, WM/
+        { Lyrics, "lyrics" }, //dx, WM/
+        { Mood, "mood" }, //dx, WM/
+        { (Key)-1, 0 },
     };
     for (int i = 0; (int)wm_key[i].key >= 0; ++i) {
         if (name.toLower().contains(wm_key[i].name))

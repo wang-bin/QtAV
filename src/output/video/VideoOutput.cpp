@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -32,9 +32,15 @@ namespace QtAV {
 class VideoOutputPrivate : public VideoRendererPrivate
 {
 public:
-    VideoOutputPrivate(VideoRendererId rendererId) {
+    VideoOutputPrivate(VideoRendererId rendererId, bool force) {
         impl = VideoRendererFactory::create(rendererId);
-        // assert not null?
+        if (!impl && !force) {
+            foreach (VideoRendererId vid, VideoRendererFactory::registeredIds()) {
+                impl = VideoRendererFactory::create(vid);
+                if (impl && impl->widget())
+                    break;
+            }
+        }
         available = !!impl;
         if (!available)
             return;
@@ -68,9 +74,15 @@ public:
     VideoRenderer *impl;
 };
 
+VideoOutput::VideoOutput(QObject *parent)
+    : QObject(parent)
+    , VideoRenderer(*new VideoOutputPrivate(0, false))
+{
+}
+
 VideoOutput::VideoOutput(VideoRendererId rendererId, QObject *parent)
     : QObject(parent)
-    , VideoRenderer(*new VideoOutputPrivate(rendererId))
+    , VideoRenderer(*new VideoOutputPrivate(rendererId, true))
 {
 }
 
@@ -80,15 +92,22 @@ VideoOutput::~VideoOutput()
 
 VideoRendererId VideoOutput::id() const
 {
+    if (!isAvailable())
+        return 0;
     return d_func().impl->id();
 }
 
 bool VideoOutput::receive(const VideoFrame& frame)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     d.source_aspect_ratio = frame.displayAspectRatio();
     d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
     setInSize(frame.width(), frame.height());
+    // or simply call d.impl->receive(frame) to avoid lock here
+    QMutexLocker locker(&d.impl->dptr.pri<VideoRendererPrivate>().img_mutex);
+    Q_UNUSED(locker);
     return d.impl->receiveFrame(frame);
 }
 /*
@@ -99,6 +118,8 @@ void VideoOutput::setVideoFormat(const VideoFormat& format)
 */
 bool VideoOutput::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     d.impl->setPreferredPixelFormat(pixfmt);
     return pixfmt == d.impl->preferredPixelFormat();
@@ -107,43 +128,59 @@ bool VideoOutput::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 
 VideoFormat::PixelFormat VideoOutput::preferredPixelFormat() const
 {
+    if (!isAvailable())
+        return VideoFormat::Format_Invalid;
     return d_func().impl->preferredPixelFormat();
 }
 
 bool VideoOutput::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
+    if (!isAvailable())
+        return false;
     return d_func().impl->isSupported(pixfmt);
 }
 
 QWindow* VideoOutput::qwindow()
 {
+    if (!isAvailable())
+        return 0;
     return d_func().impl->qwindow();
 }
 
 QWidget* VideoOutput::widget()
 {
+    if (!isAvailable())
+        return 0;
     return d_func().impl->widget();
 }
 
 QGraphicsItem* VideoOutput::graphicsItem()
 {
+    if (!isAvailable())
+        return 0;
     return d_func().impl->graphicsItem();
 }
 
 bool VideoOutput::receiveFrame(const VideoFrame& frame)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     return d.impl->receiveFrame(frame);
 }
 
 bool VideoOutput::needUpdateBackground() const
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(const VideoOutput);
     return d.impl->needUpdateBackground();
 }
 
 void VideoOutput::drawBackground()
 {
+    if (!isAvailable())
+        return;
     DPTR_D(VideoOutput);
     d.impl->drawBackground();
 }
@@ -156,18 +193,24 @@ bool VideoOutput::needDrawFrame() const
 
 void VideoOutput::drawFrame()
 {
+    if (!isAvailable())
+        return;
     DPTR_D(VideoOutput);
     d.impl->drawFrame();
 }
 
 void VideoOutput::resizeFrame(int width, int height)
 {
+    if (!isAvailable())
+        return;
     DPTR_D(VideoOutput);
     d.impl->resizeFrame(width, height);
 }
 
 void VideoOutput::handlePaintEvent()
 {
+    if (!isAvailable())
+        return;
     DPTR_D(VideoOutput);
     d.impl->handlePaintEvent();
 }
@@ -175,6 +218,8 @@ void VideoOutput::handlePaintEvent()
 
 bool VideoOutput::onForcePreferredPixelFormat(bool force)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     d.impl->forcePreferredPixelFormat(force);
     return d.impl->isPreferredPixelFormatForced() == force;
@@ -182,6 +227,8 @@ bool VideoOutput::onForcePreferredPixelFormat(bool force)
 
 void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 {
+    if (!isAvailable())
+        return;
     DPTR_D(VideoOutput);
     qreal a = d.impl->outAspectRatio();
     OutAspectRatioMode am = d.impl->outAspectRatioMode();
@@ -194,6 +241,8 @@ void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
 
 void VideoOutput::onSetOutAspectRatio(qreal ratio)
 {
+    if (!isAvailable())
+        return;
     DPTR_D(VideoOutput);
     qreal a = d.impl->outAspectRatio();
     OutAspectRatioMode am = d.impl->outAspectRatioMode();
@@ -206,6 +255,8 @@ void VideoOutput::onSetOutAspectRatio(qreal ratio)
 
 bool VideoOutput::onSetQuality(Quality q)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     d.impl->setQuality(q);
     return d.impl->quality() == q;
@@ -213,6 +264,8 @@ bool VideoOutput::onSetQuality(Quality q)
 
 bool VideoOutput::onSetOrientation(int value)
 {
+    if (!isAvailable())
+        return false;
     value = (value + 360) % 360;
     DPTR_D(VideoOutput);
     d.impl->setOrientation(value);
@@ -225,12 +278,16 @@ bool VideoOutput::onSetOrientation(int value)
 
 void VideoOutput::onResizeRenderer(int width, int height)
 {
+    if (!isAvailable())
+        return;
     DPTR_D(VideoOutput);
     d.impl->resizeRenderer(width, height);
 }
 
 bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     d.impl->setRegionOfInterest(roi);
     emit regionOfInterestChanged(roi);
@@ -239,18 +296,24 @@ bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
 
 QPointF VideoOutput::onMapToFrame(const QPointF& p) const
 {
+    if (!isAvailable())
+        return QPointF();
     DPTR_D(const VideoOutput);
     return d.impl->onMapToFrame(p);
 }
 
 QPointF VideoOutput::onMapFromFrame(const QPointF& p) const
 {
+    if (!isAvailable())
+        return QPointF();
     DPTR_D(const VideoOutput);
     return d.impl->onMapFromFrame(p);
 }
 
 bool VideoOutput::onSetBrightness(qreal brightness)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     // not call onSetXXX here, otherwise states in impl will not change
     d.impl->setBrightness(brightness);
@@ -263,6 +326,8 @@ bool VideoOutput::onSetBrightness(qreal brightness)
 
 bool VideoOutput::onSetContrast(qreal contrast)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     // not call onSetXXX here, otherwise states in impl will not change
     d.impl->setContrast(contrast);
@@ -275,6 +340,8 @@ bool VideoOutput::onSetContrast(qreal contrast)
 
 bool VideoOutput::onSetHue(qreal hue)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     // not call onSetXXX here, otherwise states in impl will not change
     d.impl->setHue(hue);
@@ -287,6 +354,8 @@ bool VideoOutput::onSetHue(qreal hue)
 
 bool VideoOutput::onSetSaturation(qreal saturation)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     // not call onSetXXX here, otherwise states in impl will not change
     d.impl->setSaturation(saturation);
@@ -299,6 +368,8 @@ bool VideoOutput::onSetSaturation(qreal saturation)
 
 void VideoOutput::setStatistics(Statistics* statistics)
 {
+    if (!isAvailable())
+        return;
     DPTR_D(VideoOutput);
     d.impl->setStatistics(statistics);
     // only used internally for AVOutput
@@ -307,6 +378,8 @@ void VideoOutput::setStatistics(Statistics* statistics)
 
 bool VideoOutput::onInstallFilter(Filter *filter)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     bool ret = d.impl->onInstallFilter(filter);
     d.filters = d.impl->filters();
@@ -315,6 +388,8 @@ bool VideoOutput::onInstallFilter(Filter *filter)
 
 bool VideoOutput::onUninstallFilter(Filter *filter)
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     bool ret = d.impl->onUninstallFilter(filter);
     // only used internally for AVOutput
@@ -322,33 +397,10 @@ bool VideoOutput::onUninstallFilter(Filter *filter)
     return ret;
 }
 
-void VideoOutput::onAddOutputSet(OutputSet *set)
-{
-    DPTR_D(VideoOutput);
-    d.impl->onAddOutputSet(set);
-}
-
-void VideoOutput::onRemoveOutputSet(OutputSet *set)
-{
-    DPTR_D(VideoOutput);
-    d.impl->onRemoveOutputSet(set);
-}
-
-void VideoOutput::onAttach(OutputSet *set)
-{
-    DPTR_D(VideoOutput);
-    d.impl->onAttach(set);
-}
-
-void VideoOutput::onDetach(OutputSet *set)
-{
-    DPTR_D(VideoOutput);
-    d.impl->onDetach(set);
-    //d.output_sets = d.impl->
-}
-
 bool VideoOutput::onHanlePendingTasks()
 {
+    if (!isAvailable())
+        return false;
     DPTR_D(VideoOutput);
     if (!d.impl->onHanlePendingTasks())
         return false;

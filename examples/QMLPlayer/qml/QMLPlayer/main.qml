@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,15 +19,16 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-import QtQuick 2.1
+import QtQuick 2.0
 import QtQuick.Dialogs 1.0
 //import QtMultimedia 5.0
-import QtAV 1.4
+import QtAV 1.5
 import QtQuick.Window 2.1
 import "utils.js" as Utils
 
 Rectangle {
     id: root
+    layer.enabled: false //VideoOutput2 can not update correctly if layer.enable is true. default is false
     objectName: "root"
     width: Utils.scaled(800)
     height: Utils.scaled(450)
@@ -39,8 +40,9 @@ Rectangle {
         console.log("init>>>>>screen density logical: " + Screen.logicalPixelDensity + " pixel: " + Screen.pixelDensity);
     }
 
-    VideoOutput {
+    VideoOutput2 {
         id: videoOut
+        opengl: true
         fillMode: VideoOutput.PreserveAspectFit
         anchors.fill: parent
         source: player
@@ -75,6 +77,7 @@ Rectangle {
         videoCodecPriority: PlayerConfig.decoderPriorityNames
         onPositionChanged: control.setPlayingProgress(position/duration)
         onPlaying: {
+            control.mediaSource = player.source
             control.duration = duration
             control.setPlayingState()
             if (!pageLoader.item)
@@ -89,11 +92,11 @@ Rectangle {
         onStopped: control.setStopState()
         onPaused: control.setPauseState()
         onError: {
-            if (error != MediaPlayer.NoError)
-                msg.text = errorString
+            if (error != MediaPlayer.NoError) {
+                msg.error(errorString)
+            }
         }
     }
-
     Subtitle {
         id: subtitle
         player: player
@@ -105,7 +108,7 @@ Rectangle {
                 subtitleLabel.text = text
         }
         onLoaded: {
-            msg.text = qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1)
+            msg.info(qsTr("Subtitle") + ": " + path.substring(path.lastIndexOf("/") + 1))
             console.log(msg.text)
         }
         onSupportedSuffixesChanged: {
@@ -154,6 +157,14 @@ Rectangle {
             interval: 2000
             onTriggered: msg.visible = false
         }
+        function error(txt) {
+            styleColor = "red"
+            text = txt
+        }
+        function info(txt) {
+            styleColor = "green"
+            text = txt
+        }
     }
     ControlPanel {
         id: control
@@ -166,9 +177,18 @@ Rectangle {
         mediaSource: player.source
         duration: player.duration
 
-        onSeek: player.seek(ms)
-        onSeekForward: player.seek(player.position + ms)
-        onSeekBackward: player.seek(player.position - ms)
+        onSeek: {
+            player.fastSeek = false
+            player.seek(ms)
+        }
+        onSeekForward: {
+            player.fastSeek = false
+            player.seek(player.position + ms)
+        }
+        onSeekBackward: {
+            player.fastSeek = false
+            player.seek(player.position - ms)
+        }
         onPlay: player.play()
         onStop: player.stop()
         onTogglePause: {
@@ -193,9 +213,11 @@ Rectangle {
                 player.muted = !player.muted
                 break
             case Qt.Key_Right:
+                player.fastSeek = event.isAutoRepeat
                 player.seek(player.position + 10000)
                 break
             case Qt.Key_Left:
+                player.fastSeek = event.isAutoRepeat
                 player.seek(player.position - 10000)
                 break
             case Qt.Key_Up:
@@ -236,11 +258,24 @@ Rectangle {
                     videoOut.fillMode = VideoOutput.Stretch
                 }
                 break
+            case Qt.Key_O:
+                fileDialog.open()
+                break;
             case Qt.Key_Q:
                 Qt.quit()
             }
         }
     }
+    DropArea {
+        anchors.fill: root
+        onEntered: {
+            if (!drag.hasUrls)
+                return;
+            console.log(drag.urls)
+            player.source = drag.urls[0]
+        }
+    }
+
     Item {
         id: configPage
         anchors.right: configPanel.left

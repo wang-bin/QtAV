@@ -1,5 +1,5 @@
 # qmake common template pri file
-# Copyright (C) 2011-2013 Wang Bin <wbsecg1@gmail.com>
+# Copyright (C) 2011-2015 Wang Bin <wbsecg1@gmail.com>
 # Shanghai, China.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,8 @@ unix {
 		*maemo6*:_OS = _maemo6
 	} else:*meego*: _OS = _meego
 	!isEmpty(MEEGO_EDITION): _OS = _$$MEEGO_EDITION
+# QMAKE_RPATHDIR will be ignored if QMAKE_LFLAGS_RPATH is not defined. e.g. qt4.8 unsupported/macx-clang-libc++
+  isEmpty(QMAKE_LFLAGS_RPATH): QMAKE_LFLAGS_RPATH=-Wl,-rpath,
 } else:wince* {
 	_OS = _wince
 } else:win32 { #true for wince
@@ -164,9 +166,9 @@ defineTest(empty_file) {
     }
 }
 
-##TODO: add defineReplace(getValue): parameter is varname
-lessThan(QT_MAJOR_VERSION, 5): {
-
+config_simd {
+#TODO: QMAKE_CFLAGS_XXX, QT_CPU_FEATURES
+*g++*|*qcc*: QMAKE_CFLAGS_NEON = -mfpu=neon
 win32-icc {
   QMAKE_CFLAGS_SSE2 = -arch:SSE2
   QMAKE_CFLAGS_SSE4_1 = -arch:SSE4.1
@@ -183,21 +185,92 @@ win32-icc {
   QMAKE_CFLAGS_SSE2 = -msse2
   QMAKE_CFLAGS_SSE4_1 = -msse4.1
 }
-sse4_1|config_sse4_1 {
-  HEADERS += $$SSE4_1_HEADERS
 
-  sse4_1_compiler.commands = $$QMAKE_CXX -c $(CXXFLAGS)
-  !contains(QT_CPU_FEATURES, sse4_1):sse4_1_compiler.commands += $$QMAKE_CFLAGS_SSE4_1
-  sse4_1_compiler.commands += $(INCPATH) ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
-  sse4_1_compiler.dependency_type = TYPE_C
-  sse4_1_compiler.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_BASE}$${first(QMAKE_EXT_OBJ)}
-  sse4_1_compiler.input = SSE4_1_SOURCES
-  sse4_1_compiler.variable_out = OBJECTS
-  sse4_1_compiler.name = compiling[sse4_1] ${QMAKE_FILE_IN}
-  silent:sse4_1_compiler.commands = @echo compiling[sse4_1] ${QMAKE_FILE_IN} && $$sse4_1_compiler.commands
-  QMAKE_EXTRA_COMPILERS += sse4_1_compiler
+#mac: simd will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
+defineTest(addSimdCompiler) { #from qt5 simd.prf
+    name = $$1
+    upname = $$upper($$name)
+    headers_var = $${upname}_HEADERS
+    sources_var = $${upname}_SOURCES
+    asm_var = $${upname}_ASM
+# config_$$1 is defined by config.tests (tests/arch)
+    CONFIG($$1)|CONFIG(config_$$1) {
+        cflags = $$eval(QMAKE_CFLAGS_$${upname})
+        contains(QT_CPU_FEATURES, $$name) {
+            # Default compiler settings include this feature, so just add to SOURCES
+            SOURCES += $$eval($$sources_var)
+            export(SOURCES)
+        } else {
+#qt4 always need eval() if var is not const
+            # We need special compiler flags
+            eval($${name}_compiler.commands = $$QMAKE_CXX -c $(CXXFLAGS) $$cflags $(INCPATH) ${QMAKE_FILE_IN})
+            msvc: eval($${name}_compiler.commands += -Fo${QMAKE_FILE_OUT})
+            else: eval($${name}_compiler.commands += -o ${QMAKE_FILE_OUT})
+
+            eval($${name}_compiler.dependency_type = TYPE_C)
+            eval($${name}_compiler.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_BASE}$${first(QMAKE_EXT_OBJ)})
+            eval($${name}_compiler.input = $$sources_var)
+            eval($${name}_compiler.variable_out = OBJECTS)
+            eval($${name}_compiler.name = compiling[$${name}] ${QMAKE_FILE_IN})
+            silent: eval($${name}_compiler.commands = @echo compiling[$${name}] ${QMAKE_FILE_IN} && $$eval($${name}_compiler.commands))
+            QMAKE_EXTRA_COMPILERS += $${name}_compiler
+
+            export($${name}_compiler.commands)
+            export($${name}_compiler.dependency_type)
+            export($${name}_compiler.output)
+            export($${name}_compiler.input)
+            export($${name}_compiler.variable_out)
+            export($${name}_compiler.name)
+        }
+
+        # We always need an assembler (need to run the C compiler and without precompiled headers)
+        msvc {
+            # Don't know how to run MSVC's assembler...
+            !isEmpty($$asm_var): error("Sorry, not implemented: assembling $$upname for MSVC.")
+        } else: false {
+            # This is just for the IDE
+            SOURCES += $$eval($$asm_var)
+            export(SOURCES)
+        } else {
+            eval($${name}_assembler.commands = $$QMAKE_CC -c $(CFLAGS))
+            !contains(QT_CPU_FEATURES, $${name}): eval($${name}_assembler.commands += $$cflags)
+            clang:no_clang_integrated_as: eval($${name}_assembler.commands += -fno-integrated-as)
+            eval($${name}_assembler.commands += $(INCPATH) ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT})
+            eval($${name}_assembler.dependency_type = TYPE_C)
+            eval($${name}_assembler.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_BASE}$${first(QMAKE_EXT_OBJ)})
+            eval($${name}_assembler.input = $$asm_var)
+            eval($${name}_assembler.variable_out = OBJECTS)
+            eval($${name}_assembler.name = assembling[$${name}] ${QMAKE_FILE_IN})
+            silent: eval($${name}_assembler.commands = @echo assembling[$${name}] ${QMAKE_FILE_IN} && $$eval($${name}_assembler.commands))
+            QMAKE_EXTRA_COMPILERS += $${name}_assembler
+
+            export($${name}_assembler.commands)
+            export($${name}_assembler.dependency_type)
+            export($${name}_assembler.output)
+            export($${name}_assembler.input)
+            export($${name}_assembler.variable_out)
+            export($${name}_assembler.name)
+        }
+
+        HEADERS += $$eval($$headers_var)
+        export(HEADERS)
+        export(QMAKE_EXTRA_COMPILERS)
+    }
 }
+addSimdCompiler(sse2)
+addSimdCompiler(sse3)
+addSimdCompiler(ssse3)
+addSimdCompiler(sse4_1)
+addSimdCompiler(sse4_2)
+addSimdCompiler(avx)
+addSimdCompiler(avx2)
+addSimdCompiler(neon)
+addSimdCompiler(mips_dsp)
+addSimdCompiler(mips_dspr2)
+} #config_simd
 
+##TODO: add defineReplace(getValue): parameter is varname
+lessThan(QT_MAJOR_VERSION, 5) {
 defineTest(log){
     system(echo $$system_quote($$1))
 }
@@ -310,6 +383,38 @@ defineReplace(system_path) {
     return($$1)
 }
 } #lessThan(QT_MAJOR_VERSION, 5)
+
+# set default rpath and add user defined rpaths
+defineTest(set_rpath) {
+  !unix: return(true)
+  RPATHDIR = $$ARGS #see doc
+  LIBS += -L/usr/local/lib
+# $$[QT_INSTALL_LIBS] and $$DESTDIR and pro dir will be auto added to QMAKE_RPATHDIR if QMAKE_RPATHDIR is not empty
+# Current (sub)project dir is auto added to the first value as prefix. e.g. QMAKE_RPATHDIR = .. ==> -Wl,-rpath,ROOT/..
+# Executable dir search: ld -z origin, g++ -Wl,-R,'$ORIGIN', in makefile -Wl,-R,'$$ORIGIN'
+# Working dir search: "."
+# mac: install_name @rpath will search paths set in rpath link flags
+# QMAKE_RPATHDIR: lflags maybe wrong, paths are modified
+  #isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR
+  macx|ios {
+    RPATHDIR *= @loader_path/../Frameworks @executable_path/../Frameworks
+    QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
+  } else {
+    RPATHDIR *= \$\$ORIGIN \$\$ORIGIN/lib . /usr/local/lib $$[QT_INSTALL_LIBS]
+# $$PROJECT_LIBDIR only for host == target. But QMAKE_TARGET.arch is only available on windows. QT_ARCH is bad, e.g. QT_ARCH=i386 while QMAKE_HOST.arch=i686
+# https://bugreports.qt-project.org/browse/QTBUG-30263
+    QMAKE_LFLAGS *= -Wl,-z,origin #\'-Wl,-rpath,$$join(RPATHDIR, ":")\'
+  }
+  for(R,RPATHDIR) {
+    QMAKE_LFLAGS *= \'$${QMAKE_LFLAGS_RPATH}$$R\'
+  }
+#  QMAKE_RPATHDIR *= $$RPATHDIR
+#export(QMAKE_RPATHDIR)
+  export(QMAKE_LFLAGS_SONAME)
+  export(QMAKE_LFLAGS)
+  return(true)
+}
+
 #argument 1 is default dir if not defined
 defineTest(getBuildRoot) {
     !isEmpty(2): unset(BUILD_DIR)

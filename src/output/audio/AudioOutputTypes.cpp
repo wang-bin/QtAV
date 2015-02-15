@@ -25,10 +25,10 @@
 #include "QtAV/private/mkid.h"
 namespace QtAV {
 
-AudioOutputId AudioOutputId_PortAudio = mkid32base36_5<'P', 'o', 'r', 't', 'A'>::value;
-AudioOutputId AudioOutputId_OpenAL = mkid32base36_6<'O', 'p', 'e', 'n', 'A', 'L'>::value;
-AudioOutputId AudioOutputId_OpenSL = mkid32base36_6<'O', 'p', 'e', 'n', 'S', 'L'>::value;
-AudioOutputId AudioOutputId_DSound = mkid32base36_6<'D', 'S', 'o', 'u', 'n', 'd'>::value;
+AudioOutputId AudioOutputId_PortAudio = mkid::id32base36_5<'P', 'o', 'r', 't', 'A'>::value;
+AudioOutputId AudioOutputId_OpenAL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'A', 'L'>::value;
+AudioOutputId AudioOutputId_OpenSL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'S', 'L'>::value;
+AudioOutputId AudioOutputId_DSound = mkid::id32base36_6<'D', 'S', 'o', 'u', 'n', 'd'>::value;
 
 QVector<AudioOutputId> GetRegistedAudioOutputIds()
 {
@@ -55,7 +55,7 @@ void AudioOutput_RegisterAll()
     RegisterAudioOutputOpenSL_Man();
 #endif //QTAV_HAVE(OPENSL)
 #if QTAV_HAVE(DSOUND)
-    extern void RegisterAudioOutputDSound_Man();
+    RegisterAudioOutputDSound_Man();
 #endif
 }
 

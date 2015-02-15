@@ -17,6 +17,7 @@ QtAV can meet your most demands
 
 - Hardware decoding suppprt: DXVA2, VAAPI, VDA, CedarX, CUDA(the 1st player support CUDA on linux?)
 - OpenGL and ES2 support for Hi10P and other 16-bit YUV videos (The 1st player/library support in ES2? VLC, XBMC, mplayer does not support now)
+- Real time preview
 - Video capture in rgb and yuv format
 - OSD and custom filters
 - Filters in libavfilter, for example stero3d, blur
@@ -31,7 +32,7 @@ QtAV can meet your most demands
 - Multiple video outputs for 1 player
 - Region of interest(ROI), i.e. video cropping
 - Video eq(software and OpenGL): brightness, contrast, saturation, hue
-- QML support. Most playback APIs are compatible with QtMultiMedia module
+- QML support. Most playback APIs are compatible with QtMultimedia module
 - Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
   both FFmpeg(>=1.0) and [Libav](http://libav.org) (>=9.0). Latest FFmpeg release is recommended.
 
@@ -47,10 +48,10 @@ QtAV can meet your most demands
 
 [![Qt](http://qt-project.org/images/qt13a/Qt-logo.png "Qt4.8 or Qt5")](http://qt-project.org)
 [![FFmpeg](http://ffmpeg.org/ffmpeg-logo.png "(>=1.0)Latest version is recommanded")](http://ffmpeg.org)
-![OpenAL](http://upload.wikimedia.org/wikipedia/zh/2/28/OpenAL_logo.png "OpenAL or OpenAL soft")
+![OpenAL](http://upload.wikimedia.org/wikipedia/zh/2/28/OpenAL_logo.png "OpenAL or OpenAL soft") 
 [![Libav](http://libav.org/libav-logo-text.png ">=9.0")](http://libav.org)
 [![PortAudio](http://www.portaudio.com/images/portaudio_logotext.png)](http://www.portaudio.com)
-
+ 
 Latest FFmpeg, Qt5 and OpenAL releases are preferred.
 
 **The required development files for MinGW can be found in sourceforge
@@ -77,19 +78,15 @@ For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://g
 QtAV can also be used in **Qml**
 
     import QtQuick 2.0
-    import QtAV 1.4
+    import QtAV 1.5
     Item {
-        VideoOutput {
-            anchors.fill: parent
-            source: player
-        }
-        AVPlayer { //or MediaPlayer
-            id: player
+        Video {
+            id: video
             source: "test.mp4"
         }
         MouseArea {
             anchors.fill: parent
-            onClicked: player.play()
+            onClicked: video.play()
         }
     }
 
@@ -101,15 +98,13 @@ QtAV can also be used in **Qml**
 
 #### Contributors
 
-- Wang Bin(Lucas Wang) <wbsecg1@gmail.com>: creator, maintainer
-- Gianluigi Tiesi: avdevice input support
-- Alexander
-- skaman: aspect ratio from stream
-- Stefan Ladage <sladage@gmail.com>: QIODevice support. Wiki about build QtAV for iOS. Let OpenAL work on OSX and iOS
-- Miroslav Bendik <miroslav.bendik@gmail.com>: Cedarv support. Better qmlvideofx appearance
-- Dimitri E. Prado <dprado@e3c.com.br>: issue 70
-- theoribeiro <theo@fictix.com.br>: initial QML support
-- Vito Covito <vito.covito@selcomsrl.eu>: interrupt callback
+- Wang Bin(Lucas Wang): creator, maintainer
+- Gianluigi Tiesi(sherpya): avdevice input support
+- Stefan Ladage: QIODevice support. Wiki about build QtAV for iOS. Let OpenAL work on OSX and iOS
+- Miroslav Bendik: Cedarv support. Better qmlvideofx appearance
+- theoribeiro: initial QML support
+- Vito Covito: interrupt callback
+- Alexander, Marius Wachtler, Petar Koretić, Sandro Cavazzoni(skaman), Dimitri E. Prado, karlox ...
 
 For End Users
 -------------
@@ -165,8 +160,6 @@ Use QtAV in QML with OpenGL shaders(example is from qtmultimedia. But qtmultimed
 ![Alt text](http://www.qtav.org/screenshots/player-OSX.jpg "player on OSX")
 
 ![QMLPlayer](http://www.qtav.org/screenshots/QMLPlayer-preview-ubuntu.jpg "QMLPlayer")
-
-Video Wall
 
 ![Alt text](http://www.qtav.org/screenshots/videowall.png "video wall")
 

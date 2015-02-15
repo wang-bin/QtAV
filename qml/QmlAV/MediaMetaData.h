@@ -1,7 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
-    theoribeiro <theo@fictix.com.br>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,7 +28,6 @@
 #include <QtCore/QUrl>
 #include <QtCore/QVariant>
 #include <QtGui/QImage>
-#include <QmlAV/Export.h>
 
 namespace QtAV {
 class Statistics;
@@ -38,7 +36,7 @@ class Statistics;
  * \brief The MediaMetaData class
  * TODO: Music, Movie
  */
-class QMLAV_EXPORT MediaMetaData : public QObject
+class MediaMetaData : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QVariant title READ title NOTIFY metaDataChanged)

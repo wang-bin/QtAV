@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -157,33 +157,35 @@ bool SubtitleProcessorFFmpeg::process(QIODevice *dev)
             return false;
         }
     }
-    if (!m_reader.load(dev))
-            goto error;
+    m_reader.setMedia(dev);
+    if (!m_reader.load())
+        goto error;
     if (m_reader.subtitleStreams().isEmpty())
         goto error;
     qDebug("subtitle format: %s", m_reader.formatContext()->iformat->name);
     if (!processSubtitle())
         goto error;
-    m_reader.close();
+    m_reader.unload();
     return true;
 error:
-    m_reader.close();
+    m_reader.unload();
     return false;
 }
 
 bool SubtitleProcessorFFmpeg::process(const QString &path)
 {
-    if (!m_reader.loadFile(path))
+    m_reader.setMedia(path);
+    if (!m_reader.load())
         goto error;
     if (m_reader.subtitleStreams().isEmpty())
         goto error;
     qDebug("subtitle format: %s", m_reader.formatContext()->iformat->name);
     if (!processSubtitle())
         goto error;
-    m_reader.close();
+    m_reader.unload();
     return true;
 error:
-    m_reader.close();
+    m_reader.unload();
     return false;
 }
 
@@ -230,8 +232,15 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
     av_init_packet(&packet);
     packet.size = data.size();
     packet.data = (uint8_t*)data.constData();
-    packet.pts = pts * 1000.0;
-    packet.duration = duration * 1000.0;
+    /*
+     * ffmpeg <2.5: AVPakcet.data has original text including time info, decoder use that info to get correct time
+     * "Dialogue: 0,0:00:20.21,0:00:22.96,*Default,NTP,0000,0000,0000,blablabla
+     * ffmpeg >=2.5: AVPakcet.data changed, we have to set correct pts & duration for packet to be decoded
+     * 16,0,*Default,NTP,0000,0000,0000,,blablabla
+     */
+    const double unit = 1.0/av_q2d(codec_ctx->time_base); //time_base is deprecated, use framerate since 17085a0, check FF_API_AVCTX_TIMEBASE
+    packet.pts = pts * unit;
+    packet.duration = duration * unit;
     AVSubtitle sub;
     memset(&sub, 0, sizeof(sub));
     int got_subtitle = 0;
@@ -242,10 +251,11 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
         return SubtitleFrame();
     }
     SubtitleFrame frame;
+    // start_display_time and duration are in ms
     frame.begin = pts + qreal(sub.start_display_time)/1000.0;
     frame.end = pts + qreal(sub.end_display_time)/1000.0;
-   // qDebug() << QTime(0, 0, 0).addMSecs(frame.begin*1000.0) << "-" << QTime(0, 0, 0).addMSecs(frame.end*1000.0) << " fmt: " << sub.format << " pts: " << m_reader.packet()->pts //sub.pts
-    //            << " rects: " << sub.num_rects;
+    //qDebug() << QTime(0, 0, 0).addMSecs(frame.begin*1000.0) << "-" << QTime(0, 0, 0).addMSecs(frame.end*1000.0) << " fmt: " << sub.format << " pts: " << m_reader.packet().pts //sub.pts
+      //       << " rects: " << sub.num_rects << " end: " << sub.end_display_time;
     for (unsigned i = 0; i < sub.num_rects; i++) {
         switch (sub.rects[i]->type) {
         case SUBTITLE_ASS:
@@ -306,12 +316,12 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
             codec_ctx = 0;
             return false;
         }
-        if (!m_reader.packet()->isValid())
-            continue;
         if (m_reader.stream() != ss)
             continue;
-        const Packet *pkt = m_reader.packet();
-        SubtitleFrame frame = processLine(pkt->data, pkt->pts, pkt->duration);
+        const Packet pkt = m_reader.packet();
+        if (!pkt.isValid())
+            continue;
+        SubtitleFrame frame = processLine(pkt.data, pkt.pts, pkt.duration);
         if (frame.isValid())
             m_frames.append(frame);
     }

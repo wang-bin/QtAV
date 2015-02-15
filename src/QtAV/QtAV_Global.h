@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -36,13 +36,11 @@
 #endif
 #define Q_AV_PRIVATE_EXPORT Q_AV_EXPORT
 
-
 /* runtime version. used to compare with compile time version */
 Q_AV_EXPORT unsigned QtAV_Version();
 Q_AV_EXPORT QString QtAV_Version_String();
 Q_AV_EXPORT QString QtAV_Version_String_Long();
 namespace QtAV {
-
 enum LogLevel {
     LogOff,
     LogDebug, // log all
@@ -51,15 +49,10 @@ enum LogLevel {
     LogFatal, // log fatal
     LogAll
 };
-
-Q_AV_EXPORT void about(); //popup a dialog
-Q_AV_EXPORT void aboutFFmpeg();
 Q_AV_EXPORT QString aboutFFmpeg_PlainText();
 Q_AV_EXPORT QString aboutFFmpeg_HTML();
-Q_AV_EXPORT void aboutQtAV();
 Q_AV_EXPORT QString aboutQtAV_PlainText();
 Q_AV_EXPORT QString aboutQtAV_HTML();
-
 /*!
  * Default value: LogOff for release build. LogAll for debug build.
  * The level can also be changed at runtime by setting the QTAV_LOG_LEVEL or QTAV_LOG environment variable;
@@ -70,7 +63,6 @@ Q_AV_EXPORT void setLogLevel(LogLevel value);
 Q_AV_EXPORT LogLevel logLevel();
 /// Default handler is qt message logger. Set environment QTAV_FFMPEG_LOG=0 or setFFmpegLogHandler(0) to disable.
 Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
-
 } //namespace QtAV
 
 // TODO: internal use. move to a private header

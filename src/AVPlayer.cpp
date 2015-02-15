@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,12 +29,10 @@
 #include <QtCore/QIODevice>
 #include <QtCore/QThreadPool>
 #include <QtCore/QTimer>
-#if QTAV_HAVE(WIDGETS)
-#include <QWidget>
-#endif //QTAV_HAVE(WIDGETS)
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
 #include "QtAV/AudioDecoder.h"
+#include "QtAV/AVInput.h"
 #include "QtAV/VideoRenderer.h"
 #include "QtAV/AVClock.h"
 #include "QtAV/VideoCapture.h"
@@ -43,20 +41,28 @@
 #include "QtAV/AudioOutputTypes.h"
 #include "filter/FilterManager.h"
 #include "output/OutputSet.h"
-#include "output/video/VideoOutputEventFilter.h"
 #include "AudioThread.h"
 #include "VideoThread.h"
 #include "AVDemuxThread.h"
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
-Q_DECLARE_METATYPE(QIODevice*) // for Qt4
-
+Q_DECLARE_METATYPE(QtAV::AVInput*)
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+Q_DECLARE_METATYPE(QIODevice*)
+#endif
 #define EOF_ISSUE_SOLVED 0
 namespace QtAV {
 
-static const int kPosistionCheckMS = 500;
 static const qint64 kSeekMS = 10000;
+
+Q_GLOBAL_STATIC(QThreadPool, loaderThreadPool)
+
+/// Supported input protocols. A static string list
+const QStringList& AVPlayer::supportedProtocols()
+{
+    return AVDemuxer::supportedProtocols();
+}
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent)
@@ -71,10 +77,11 @@ AVPlayer::AVPlayer(QObject *parent) :
      */
     connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(aboutToQuitApp()));
     //d->clock->setClockType(AVClock::ExternalClock);
-    connect(&d->demuxer, SIGNAL(started()), d->clock, SLOT(start()));
+    connect(&d->demuxer, SIGNAL(started()), masterClock(), SLOT(start()));
     connect(&d->demuxer, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
     connect(&d->demuxer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
     connect(&d->demuxer, SIGNAL(loaded()), this, SIGNAL(loaded()));
+    connect(&d->demuxer, SIGNAL(seekableChanged()), this, SIGNAL(seekableChanged()));
     d->read_thread = new AVDemuxThread(this);
     d->read_thread->setDemuxer(&d->demuxer);
     //direct connection can not sure slot order?
@@ -105,15 +112,6 @@ void AVPlayer::addVideoRenderer(VideoRenderer *renderer)
         return;
     }
     renderer->setStatistics(&d->statistics);
-#if QTAV_HAVE(WIDGETS)
-    QObject *voo = renderer->widget();
-    if (voo) {
-        //TODO: how to delete filter if no parent?
-        //the filtering object must be in the same thread as this object.
-        if (renderer->widget())
-            voo->installEventFilter(new VideoOutputEventFilter(renderer));
-    }
-#endif //QTAV_HAVE(WIDGETS)
     d->vos->addOutput(renderer);
 }
 
@@ -361,12 +359,12 @@ void AVPlayer::setFile(const QString &path)
         p = getLocalPath(p);
     d->reset_state = d->current_source.type() != QVariant::String || d->current_source.toString() != p;
     d->current_source = p;
+    // TODO: d->reset_state = d->demuxer2.setMedia(path);
     if (d->reset_state) {
+        d->audio_track = d->video_track = d->subtitle_track = 0;
         emit sourceChanged();
         //emit error(AVError(AVError::NoError));
     }
-    d->reset_state = !p.isEmpty() && d->reset_state;
-    d->demuxer.setAutoResetStream(d->reset_state);
     // TODO: use absoluteFilePath?
     d->loaded = false; //
 }
@@ -380,16 +378,51 @@ QString AVPlayer::file() const
 
 void AVPlayer::setIODevice(QIODevice* device)
 {
-    if (!device)
-        return;
-
-    d->demuxer.setAutoResetStream(d->reset_state);
-    // FIXME: not compare QVariant::String
-    d->reset_state = d->current_source.type() == QVariant::String || d->current_source.value<QIODevice*>() != device;
-    d->current_source = QVariant::fromValue(device);
+    // TODO: d->reset_state = d->demuxer2.setMedia(device);
+    if (d->current_source.type() == QVariant::String) {
+        d->reset_state = true;
+    } else {
+        if (d->current_source.canConvert<QIODevice*>()) {
+            d->reset_state = d->current_source.value<QIODevice*>() != device;
+        } else { // AVInput
+            d->reset_state = true;
+        }
+    }
     d->loaded = false;
-    if (d->reset_state)
+    d->current_source = QVariant::fromValue(device);
+    if (d->reset_state) {
+        d->audio_track = d->video_track = d->subtitle_track = 0;
         emit sourceChanged();
+    }
+}
+
+void AVPlayer::setInput(AVInput *in)
+{
+    // TODO: d->reset_state = d->demuxer2.setMedia(in);
+    if (d->current_source.type() == QVariant::String) {
+        d->reset_state = true;
+    } else {
+        if (d->current_source.canConvert<QIODevice*>()) {
+            d->reset_state = true;
+        } else { // AVInput
+            d->reset_state = d->current_source.value<QtAV::AVInput*>() != in;
+        }
+    }
+    d->loaded = false;
+    d->current_source = QVariant::fromValue<QtAV::AVInput*>(in);
+    if (d->reset_state) {
+        d->audio_track = d->video_track = d->subtitle_track = 0;
+        emit sourceChanged();
+    }
+}
+
+AVInput* AVPlayer::input() const
+{
+    if (d->current_source.type() == QVariant::String)
+        return 0;
+    if (!d->current_source.canConvert<QtAV::AVInput*>())
+        return 0;
+    return d->current_source.value<QtAV::AVInput*>();
 }
 
 VideoCapture* AVPlayer::videoCapture()
@@ -401,12 +434,6 @@ bool AVPlayer::captureVideo()
 {
     if (!d->vcapture || !d->vthread)
         return false;
-    if (isPaused()) {
-        QString cap_name = QFileInfo(file()).completeBaseName();
-        d->vcapture->setCaptureName(cap_name + "_" + QString::number(masterClock()->value(), 'f', 3));
-        d->vcapture->start();
-        return true;
-    }
     d->vcapture->request();
     return true;
 }
@@ -509,9 +536,19 @@ bool AVPlayer::load(bool reload)
         qDebug("Invalid media source. No file or IODevice was set.");
         return false;
     }
-
-    qDebug() << "Loading " << d->current_source << " ...";
-    if (reload || !d->demuxer.isLoaded(d->current_source.toString())) {
+    if (!reload) {
+        if (d->current_source.type() == QVariant::String) {
+            reload = d->demuxer.fileName() != d->current_source.toString();
+        } else {
+            if (d->current_source.canConvert<QIODevice*>()) {
+                reload = d->demuxer.ioDevice() != d->current_source.value<QIODevice*>();
+            } else { // AVInput
+                reload = d->demuxer.input() != d->current_source.value<QtAV::AVInput*>();
+            }
+        }
+        reload = reload || !d->demuxer.isLoaded();
+    }
+    if (reload) {
         if (isAsyncLoad()) {
             class LoadWorker : public QRunnable {
             public:
@@ -525,12 +562,11 @@ bool AVPlayer::load(bool reload)
                 AVPlayer* m_player;
             };
             // TODO: thread pool has a max thread limit
-            QThreadPool::globalInstance()->start(new LoadWorker(this));
+            loaderThreadPool()->start(new LoadWorker(this));
             return true;
         }
         loadInternal();
     } else {
-        d->demuxer.prepareStreams();
         d->loaded = true;
     }
     return d->loaded;
@@ -546,13 +582,36 @@ void AVPlayer::loadInternal()
         if (d->vdec)
             d->vdec->setCodecContext(0);
     }
+    qDebug() << "Loading " << d->current_source << " ...";
     if (d->current_source.type() == QVariant::String) {
-        d->loaded = d->demuxer.loadFile(d->current_source.toString());
+        d->demuxer.setMedia(d->current_source.toString());
     } else {
-        d->loaded = d->demuxer.load(d->current_source.value<QIODevice*>());
+        if (d->current_source.canConvert<QIODevice*>()) {
+            d->demuxer.setMedia(d->current_source.value<QIODevice*>());
+        } else { // AVInput
+            d->demuxer.setMedia(d->current_source.value<QtAV::AVInput*>());
+        }
     }
-    if (!d->loaded)
-        d->statistics.reset(); //else: can not init here because d->fmt_ctx is not ready
+    d->loaded = d->demuxer.load();
+    if (!d->loaded) {
+        d->statistics.reset();
+        qWarning("Load failed!");
+        return;
+    }
+    // setup parameters from loaded media
+    d->fmt_ctx = d->demuxer.formatContext();
+    d->media_start_pts = d->demuxer.startTime();
+    // TODO: what about other proctols? some vob duration() == 0
+    if (duration() > 0)
+        d->media_end = mediaStartPosition() + duration();
+    else
+        d->media_end = kInvalidPosition;
+    // if file changed or stop() called by user, d->stop_position changes.
+    if (stopPosition() > mediaStopPosition() || stopPosition() <= 0 || stopPosition() == kInvalidPosition) {
+        d->stop_position = mediaStopPosition();
+    }
+
+    d->initStatistics();
 }
 
 void AVPlayer::unload()
@@ -599,7 +658,25 @@ void AVPlayer::unloadInternal()
         delete d->vdec;
         d->vdec = 0;
     }
-    d->demuxer.close();
+    d->demuxer.unload();
+}
+
+void AVPlayer::setRelativeTimeMode(bool value)
+{
+    if (d->relative_time_mode == value)
+        return;
+    d->relative_time_mode = value;
+    emit relativeTimeModeChanged();
+}
+
+bool AVPlayer::relativeTimeMode() const
+{
+    return d->relative_time_mode;
+}
+
+qint64 AVPlayer::absoluteMediaStartPosition() const
+{
+    return d->media_start_pts;
 }
 
 qreal AVPlayer::durationF() const
@@ -614,19 +691,24 @@ qint64 AVPlayer::duration() const
 
 qint64 AVPlayer::mediaStartPosition() const
 {
-    // check stopposition?
-    if (d->demuxer.startTime() >= mediaStopPosition())
+    if (relativeTimeMode())
         return 0;
     return d->demuxer.startTime();
 }
 
 qint64 AVPlayer::mediaStopPosition() const
 {
+    if (d->media_end == kInvalidPosition && duration() > 0) {
+        // called in stop()
+        return mediaStartPosition() + duration();
+    }
     return d->media_end;
 }
 
 qreal AVPlayer::mediaStartPositionF() const
 {
+    if (relativeTimeMode())
+        return 0;
     return double(d->demuxer.startTimeUs())/double(AV_TIME_BASE);
 }
 
@@ -637,6 +719,7 @@ qint64 AVPlayer::startPosition() const
 
 void AVPlayer::setStartPosition(qint64 pos)
 {
+    // default stopPosition() is int64 max, so set start position before media loaded is ok
     if (pos > stopPosition() && stopPosition() > 0) {
         qWarning("start position too large (%lld > %lld). ignore", pos, stopPosition());
         return;
@@ -645,7 +728,7 @@ void AVPlayer::setStartPosition(qint64 pos)
     if (d->start_position < 0)
         d->start_position += mediaStopPosition();
     if (d->start_position < 0)
-        d->start_position = 0;
+        d->start_position = mediaStartPosition();
     emit startPositionChanged(d->start_position);
 }
 
@@ -678,6 +761,11 @@ void AVPlayer::setStopPosition(qint64 pos)
     emit stopPositionChanged(d->stop_position);
 }
 
+bool AVPlayer::isSeekable() const
+{
+    return d->demuxer.isSeekable();
+}
+
 qreal AVPlayer::positionF() const
 {
     return d->clock->value();
@@ -685,30 +773,41 @@ qreal AVPlayer::positionF() const
 
 qint64 AVPlayer::position() const
 {
-    return d->clock->value()*1000.0; //TODO: avoid *1000.0
+    const qint64 pts = d->clock->value()*1000.0; //TODO: avoid *1000.0
+    if (relativeTimeMode())
+        return pts - absoluteMediaStartPosition();
+    return pts;
 }
 
 void AVPlayer::setPosition(qint64 position)
 {
+    // FIXME: strange things happen if seek out of eof
+    if (position > stopPosition())
+        return;
     if (!isPlaying())
         return;
-    if (position < 0)
-        position += mediaStopPosition();
+    qint64 pos_pts = position;
+    if (pos_pts < 0)
+        pos_pts = 0;
+    // position passed in is relative to the start pts in relative time mode
+    if (relativeTimeMode())
+        pos_pts += absoluteMediaStartPosition();
     d->seeking = true;
     d->seek_target = position;
-    qreal s = (qreal)position/1000.0;
-    // TODO: check flag accurate seek
-    if (d->athread) {
-        d->athread->skipRenderUntil(s);
+    qreal s = (qreal)pos_pts/1000.0;
+    if (seekType() == AccurateSeek) {
+        if (d->athread) {
+            d->athread->skipRenderUntil(s);
+        }
+        if (d->vthread) {
+            d->vthread->skipRenderUntil(s);
+        }
     }
-    if (d->vthread) {
-        d->vthread->skipRenderUntil(s);
-    }
-    masterClock()->updateValue(double(position)/1000.0); //what is duration == 0
-    masterClock()->updateExternalClock(position); //in msec. ignore usec part using t/1000
-    d->read_thread->seek(position);
+    masterClock()->updateValue(double(pos_pts)/1000.0); //what is duration == 0
+    masterClock()->updateExternalClock(pos_pts); //in msec. ignore usec part using t/1000
+    d->read_thread->seek(pos_pts, seekType());
 
-    emit positionChanged(position);
+    emit positionChanged(position); //emit relative position
 }
 
 int AVPlayer::repeat() const
@@ -731,41 +830,59 @@ void AVPlayer::setRepeat(int max)
 }
 
 
-bool AVPlayer::setAudioStream(int n, bool now)
+bool AVPlayer::setAudioStream(int n)
 {
-    if (!d->demuxer.setStreamIndex(AVDemuxer::AudioStream, n)) {
-        qWarning("set video stream to %d failed", n);
+    if (n < 0)
+        return false;
+    if (d->audio_track == n)
+        return true;
+    if (isLoaded()) {
+        if (n >= d->demuxer.audioStreams().size())
+            return false;
+    }
+    d->audio_track = n;
+    if (!isPlaying())
+        return true;
+    // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
+    bool p = isPaused();
+    pause(true);
+    if (!d->setupAudioThread(this)) {
+        stop();
         return false;
     }
-    d->loaded = false;
-    d->last_position = -1;
-    d->demuxer.setAutoResetStream(false);
-    if (!now)
-        return true;
-    play();
+    if (!p)
+        pause(false);
     return true;
 }
 
-bool AVPlayer::setVideoStream(int n, bool now)
+bool AVPlayer::setVideoStream(int n)
 {
-    if (!d->demuxer.setStreamIndex(AVDemuxer::VideoStream, n)) {
-        qWarning("set video stream to %d failed", n);
+    if (n < 0)
+        return false;
+    if (d->video_track == n)
+        return true;
+    if (isLoaded()) {
+        if (n >= d->demuxer.videoStreams().size())
+            return false;
+    }
+    d->video_track = n;
+    if (!isPlaying())
+        return true;
+    // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
+    bool p = isPaused();
+    pause(true);
+    if (!d->setupVideoThread(this)) {
+        stop();
         return false;
     }
-    d->loaded = false;
-    d->last_position = -1;
-    d->demuxer.setAutoResetStream(false);
-    if (!now)
-        return true;
-    play();
+    if (!p)
+        pause(false);
     return true;
 }
 
-bool AVPlayer::setSubtitleStream(int n, bool now)
+bool AVPlayer::setSubtitleStream(int n)
 {
     Q_UNUSED(n);
-    Q_UNUSED(now);
-    d->demuxer.setAutoResetStream(false);
     return false;
 }
 
@@ -845,18 +962,14 @@ void AVPlayer::play()
             d->statistics.reset();
             return;
         } else {
-            d->initStatistics(this);
+            d->initStatistics();
         }
     } else {
         qDebug("seek(%f)", d->last_position);
         d->demuxer.seek(d->last_position); //FIXME: now assume it is seekable. for unseekable, setFile() again
 #else
-        if (!load(true)) {
-            d->statistics.reset();
+        if (!load(true))
             return;
-        }
-        d->initStatistics(this);
-
 #endif //EOF_ISSUE_SOLVED
 #if EOF_ISSUE_SOLVED
     }
@@ -879,19 +992,6 @@ void AVPlayer::loadAndPlay()
 void AVPlayer::playInternal()
 {
     disconnect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
-
-    d->fmt_ctx = d->demuxer.formatContext();
-
-    // TODO: what about other proctols? some vob duration() == 0
-    if (duration() > 0)
-        d->media_end = mediaStartPosition() + duration();
-    else
-        d->media_end = kInvalidPosition;
-    // if file changed or stop() called by user, d->stop_position changes.
-    if (stopPosition() > mediaStopPosition() || stopPosition() == 0) {
-        d->stop_position = mediaStopPosition();
-    }
-
     if (!d->setupAudioThread(this)) {
         d->read_thread->setAudioThread(0); //set 0 before delete. ptr is used in demux thread when set 0
         if (d->athread) {
@@ -914,8 +1014,24 @@ void AVPlayer::playInternal()
         return;
         //return false;
     }
-    d->initStatistics(this);
-
+    // setup clock before avthread.start() becuase avthreads use clock. after avthreads setup because of ao check
+    if (d->last_position > 0) {//start_last) {
+        masterClock()->pause(false); //external clock
+    } else {
+        masterClock()->reset();
+    }
+    if (masterClock()->isClockAuto()) {
+        qDebug("auto select clock: audio > external");
+        if (!d->demuxer.audioCodecContext() || !d->ao) {
+            masterClock()->setClockType(AVClock::ExternalClock);
+            qDebug("No audio found or audio not supported. Using ExternalClock.");
+        } else {
+            qDebug("Using AudioClock");
+            masterClock()->setClockType(AVClock::AudioClock);
+        }
+        masterClock()->setInitialValue((double)absoluteMediaStartPosition()/1000.0);
+        qDebug("Clock initial value: %f", masterClock()->value());
+    }
     // from previous play()
     if (d->demuxer.audioCodecContext() && d->athread) {
         qDebug("Starting audio thread...");
@@ -928,29 +1044,15 @@ void AVPlayer::playInternal()
         d->vthread->waitForReady();
     }
     if (startPosition() > 0 && startPosition() < mediaStopPosition() && d->last_position <= 0) {
-        d->demuxer.seek((qint64)startPosition());
+        if (relativeTimeMode())
+            d->demuxer.seek(qint64((startPosition() + absoluteMediaStartPosition())));
+        else
+            d->demuxer.seek((qint64)(startPosition()));
     }
     d->read_thread->start();
-    if (d->last_position > 0) {//start_last) {
-        masterClock()->pause(false); //external clock
-    } else {
-        masterClock()->reset();
-    }
-    if (masterClock()->isClockAuto()) {
-        qDebug("auto select clock: audio > external");
-        if (!d->demuxer.audioCodecContext() || !d->ao) {
-            qWarning("No audio found or audio not supported. Using ExternalClock");
-            masterClock()->setClockType(AVClock::ExternalClock);
-            masterClock()->setInitialValue(mediaStartPositionF());
-        } else {
-            qDebug("Using AudioClock");
-            masterClock()->setClockType(AVClock::AudioClock);
-            //masterClock()->setInitialValue(0);
-        }
-    }
 
     if (d->timer_id < 0) {
-        //d->timer_id = startTimer(kPosistionCheckMS); //may fail if not in this thread
+        //d->timer_id = startNotifyTimer(); //may fail if not in this thread
         QMetaObject::invokeMethod(this, "startNotifyTimer", Qt::AutoConnection);
     }
 // ffplay does not seek to stream's start position. usually it's 0, maybe < 1. seeking will result in a non-key frame position and it's bad.
@@ -966,8 +1068,11 @@ void AVPlayer::stopFromDemuxerThread()
 {
     qDebug("demuxer thread emit finished.");
     if (currentRepeat() >= repeat() && repeat() >= 0) {
+        masterClock()->reset();
+        stopNotifyTimer();
+        d->seeking = false;
         d->start_position = 0;
-        d->stop_position = 0; // 0 can stop play in timerEvent
+        d->stop_position = kInvalidPosition; // already stopped. so not 0 but invalid. 0 can stop the playback in timerEvent
         d->media_end = kInvalidPosition;
         d->repeat_current = d->repeat_max = 0;
         qDebug("avplayer emit stopped()");
@@ -990,15 +1095,19 @@ void AVPlayer::aboutToQuitApp()
         pause(false); // may be paused. then aboutToQuitApp will not finish
         stop();
     }
+    d->demuxer.setInterruptStatus(true);
+    loaderThreadPool()->waitForDone();
 }
 
 void AVPlayer::startNotifyTimer()
 {
-    d->timer_id = startTimer(kPosistionCheckMS);
+    d->timer_id = startTimer(d->notify_interval);
 }
 
 void AVPlayer::stopNotifyTimer()
 {
+    if (d->timer_id < 0)
+        return;
     killTimer(d->timer_id);
     d->timer_id = -1;
 }
@@ -1033,8 +1142,7 @@ void AVPlayer::stop()
         if (d->timer_id >= 0) {
             qDebug("timer: %d, current thread: %p, player thread: %p", d->timer_id, QThread::currentThread(), thread());
             if (QThread::currentThread() == thread()) { //called by user in the same thread as player
-                killTimer(d->timer_id);
-                d->timer_id = -1;
+                stopNotifyTimer();
             } else {
                 //TODO: post event.
             }
@@ -1044,11 +1152,9 @@ void AVPlayer::stop()
         d->media_end = kInvalidPosition;
         d->repeat_current = d->repeat_max = 0;
     } else { //called by player
-        if (d->timer_id >= 0) {
-            killTimer(d->timer_id);
-            d->timer_id = -1;
-        }
+        stopNotifyTimer();
     }
+    d->seeking = false;
     d->reset_state = true;
 
     d->last_position = mediaStopPosition() != kInvalidPosition ? startPosition() : 0;
@@ -1073,18 +1179,27 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             return;
         }
         // active only when playing
-        const qint64 t = d->clock->value()*1000.0;
+        const qint64 t = position();
         if (stopPosition() == kInvalidPosition) { // or check stopPosition() < 0
             // not seekable. network stream
             emit positionChanged(t);
             return;
         }
+        // FIXME: totally wrong if seek_target - keyframe_seek > 1000
         if (d->seeking && t >= d->seek_target + 1000) {
             d->seeking = false;
             d->seek_target = 0;
         }
+        if (t < startPosition()) {
+            //qDebug("position %lld < startPosition %lld", t, startPosition());
+            // or set clock initial value to get correct t
+            if (startPosition() != mediaStartPosition()) {
+                setPosition(startPosition());
+                return;
+            }
+        }
         if (t <= stopPosition()) {
-            if (!d->seeking) {
+            if (!d->seeking) { // FIXME
                 emit positionChanged(t);
             }
             return;
@@ -1098,12 +1213,12 @@ void AVPlayer::timerEvent(QTimerEvent *te)
         // t < d->start_position is ok. d->repeat_max<0 means repeat forever
         if (currentRepeat() >= repeat() && repeat() >= 0) {
             d->reset_state = true; // true is default, can remove here
-            qDebug("stopPosition() reached and no repeat: %d", repeat());
+            qDebug("stopPosition() %lld/%lld reached and no repeat: %d", t, stopPosition(), repeat());
             stop();
             return;
         }
         // FIXME: now stop instead of seek if reach media's end. otherwise will not get eof again
-        if (stopPosition() == mediaStopPosition() || !d->demuxer.isSeekable()) {
+        if (stopPosition() == mediaStopPosition() || !isSeekable()) {
             // if not seekable, how it can start to play at specified position?
             qDebug("stopPosition() == mediaStopPosition() or !seekable. d->repeat_current=%d", d->repeat_current);
             d->reset_state = false;
@@ -1142,6 +1257,16 @@ void AVPlayer::seekForward()
 void AVPlayer::seekBackward()
 {
     seek(position() - kSeekMS);
+}
+
+void AVPlayer::setSeekType(SeekType type)
+{
+    d->seek_type = type;
+}
+
+SeekType AVPlayer::seekType() const
+{
+    return d->seek_type;
 }
 
 void AVPlayer::updateClock(qint64 msecs)

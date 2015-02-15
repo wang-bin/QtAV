@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/GLWidgetRenderer2.h"
+#include "QtAVWidgets/GLWidgetRenderer2.h"
 #include "QtAV/private/OpenGLRendererBase_p.h"
 #include <QResizeEvent>
 
@@ -33,6 +33,10 @@ public:
     {}
 };
 
+VideoRendererId GLWidgetRenderer2::id() const
+{
+    return VideoRendererId_GLWidget2;
+}
 
 GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidget, Qt::WindowFlags f):
     QGLWidget(parent, shareWidget, f)

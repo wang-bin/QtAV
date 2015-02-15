@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,19 +19,30 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
+#ifdef _MSC_VER
 #pragma comment(lib, "ole32.lib") //CoTaskMemFree. why link failed?
-#include "QtAV/VideoDecoderFFmpegHW.h"
-#include "QtAV/private/VideoDecoderFFmpegHW_p.h"
+#endif
+#include "VideoDecoderFFmpegHW.h"
+#include "VideoDecoderFFmpegHW_p.h"
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
-#include "utils/GPUMemCopy.h"
+//#include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
 
+// d3d9ex: http://dxr.mozilla.org/mozilla-central/source/dom/media/wmf/DXVA2Manager.cpp
 // TODO: add to QtAV_Compat.h?
 // FF_API_PIX_FMT
 #ifdef PixelFormat
 #undef PixelFormat
+#endif
+// AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
+#ifndef AV_CODEC_ID_H265
+#warning "HEVC will not be supported. Update your FFmpeg"
+#define AV_CODEC_ID_H265 AV_CODEC_ID_NONE //mkid::fourcc<'H','2','6','5'>::value
+#define AV_CODEC_ID_HEVC AV_CODEC_ID_NONE
+#define FF_PROFILE_HEVC_MAIN -1
+#define FF_PROFILE_HEVC_MAIN_10 -1
 #endif
 
 template <class T> void SafeRelease(T **ppT)
@@ -78,6 +89,7 @@ namespace QtAV {
 // some MS_GUID are defined in mingw but some are not. move to namespace and define all is ok
 MS_GUID(IID_IDirectXVideoDecoderService, 0xfc51a551, 0xd5e7, 0x11d9, 0xaf,0x55,0x00,0x05,0x4e,0x43,0xff,0x02);
 MS_GUID(IID_IDirectXVideoAccelerationService, 0xfc51a550, 0xd5e7, 0x11d9, 0xaf,0x55,0x00,0x05,0x4e,0x43,0xff,0x02);
+MS_GUID(IID_IDirect3DDevice9Ex, 0xb18b10ce, 0x2649, 0x405a, 0x87, 0xf, 0x95, 0xf7, 0x77, 0xd4, 0x31, 0x3a);
 
 MS_GUID    (DXVA_NoEncrypt,                         0x1b81bed0, 0xa0c7, 0x11d3, 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5);
 
@@ -133,7 +145,6 @@ class VideoDecoderDXVA : public VideoDecoderFFmpegHW
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
-    Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
     Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
 public:
     VideoDecoderDXVA();
@@ -141,8 +152,6 @@ public:
     virtual QString description() const;
     virtual VideoFrame frame();
     // properties
-    void setSSE4(bool y);
-    bool SSE4() const;
     void setSurfaces(int num);
     int surfaces() const;
 };
@@ -219,8 +228,8 @@ static const dxva2_mode_t dxva2_modes[] = {
     { "MPEG-4 Part 2 variable-length decoder, Simple&Advanced Profile, Avivo",        &DXVA_ModeMPEG4pt2_VLD_AdvSimple_Avivo, 0 },
 
     /* HEVC / H.265 */
-    { "HEVC / H.265 variable-length decoder, main",                                   &DXVA_ModeHEVC_VLD_Main,                0 },
-    { "HEVC / H.265 variable-length decoder, main10",                                 &DXVA_ModeHEVC_VLD_Main10,              0 },
+    { "HEVC / H.265 variable-length decoder, main",                                   &DXVA_ModeHEVC_VLD_Main,                QTAV_CODEC_ID(HEVC) },
+    { "HEVC / H.265 variable-length decoder, main10",                                 &DXVA_ModeHEVC_VLD_Main10,              QTAV_CODEC_ID(HEVC) },
 
     { NULL, 0, 0 }
 };
@@ -237,14 +246,16 @@ static const dxva2_mode_t *Dxva2FindMode(const GUID *guid)
 typedef struct {
     const char    *name;
     D3DFORMAT     format;
-    AVPixelFormat codec;
+    AVPixelFormat avpixfmt;
 } d3d_format_t;
 /* XXX Prefered format must come first */
+//16-bit: https://msdn.microsoft.com/en-us/library/windows/desktop/bb970578(v=vs.85).aspx
 static const d3d_format_t d3d_formats[] = {
     { "YV12",   (D3DFORMAT)MAKEFOURCC('Y','V','1','2'),    QTAV_PIX_FMT_C(YUV420P) },
     { "NV12",   (D3DFORMAT)MAKEFOURCC('N','V','1','2'),    QTAV_PIX_FMT_C(NV12) },
     { "IMC3",   (D3DFORMAT)MAKEFOURCC('I','M','C','3'),    QTAV_PIX_FMT_C(YUV420P) },
-
+    { "P010",   (D3DFORMAT)MAKEFOURCC('P','0','1','0'),    QTAV_PIX_FMT_C(YUV420P10LE) },
+    { "P016",   (D3DFORMAT)MAKEFOURCC('P','0','1','6'),    QTAV_PIX_FMT_C(YUV420P16LE) },
     { NULL, D3DFMT_UNKNOWN, QTAV_PIX_FMT_C(NONE) }
 };
 
@@ -290,6 +301,7 @@ public:
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
+        d3dobj_ex = 0;
         d3ddev = 0;
         token = 0;
         devmng = 0;
@@ -297,14 +309,13 @@ public:
         vs = 0;
         render = D3DFMT_UNKNOWN;
         decoder = 0;
-        output = D3DFMT_UNKNOWN;
         surface_order = 0;
         surface_width = surface_height = 0;
         available = loadDll();
         // set by user. don't reset in when call destroy
         surface_auto = true;
         surface_count = 0;
-        copy_uswc = true;
+        ZeroMemory(&d3dai, sizeof(d3dai));
     }
     virtual ~VideoDecoderDXVAPrivate()
     {
@@ -314,6 +325,8 @@ public:
     bool loadDll();
     bool unloadDll();
     bool D3dCreateDevice();
+    bool D3dCreateDeviceEx();
+    bool D3dCreateDeviceFallback();
     void D3dDestroyDevice();
     bool D3dCreateDeviceManager();
     void D3dDestroyDeviceManager();
@@ -323,12 +336,13 @@ public:
     bool DxCreateVideoDecoder(int codec_id, int w, int h);
     void DxDestroyVideoDecoder();
     bool DxResetVideoDecoder();
-    void DxCreateVideoConversion();
-    void DxDestroyVideoConversion();
+    bool isHEVCSupported() const;
 
     bool setup(void **hwctx, int w, int h);
     bool open();
     void close();
+    // get aligned value depending on codec
+    int aligned(int x);
 
     bool getBuffer(void **opaque, uint8_t **data);
     void releaseBuffer(void *opaque, uint8_t *data);
@@ -338,11 +352,10 @@ public:
     HINSTANCE hdxva2_dll;
 
     /* Direct3D */
-    D3DPRESENT_PARAMETERS d3dpp;
     IDirect3D9 *d3dobj;
+    IDirect3D9Ex *d3dobj_ex;
     D3DADAPTER_IDENTIFIER9 d3dai;
-    IDirect3DDevice9 *d3ddev;
-
+    IDirect3DDevice9 *d3ddev; // can be Ex
     /* Device manager */
     UINT                     token;
     IDirect3DDeviceManager9  *devmng;
@@ -357,10 +370,7 @@ public:
     DXVA2_ConfigPictureDecode    cfg;
     IDirectXVideoDecoder         *decoder;
 
-    /* Option conversion */
-    D3DFORMAT                    output;
     struct dxva_context hw;
-
     bool surface_auto;
     unsigned     surface_count;
     unsigned     surface_order;
@@ -372,9 +382,6 @@ public:
     IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
     QString vendor;
-    // true for intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
-    bool copy_uswc;
-    GPUMemCopy gpu_mem;
 };
 
 VideoDecoderDXVA::VideoDecoderDXVA()
@@ -406,8 +413,6 @@ VideoFrame VideoDecoderDXVA::frame()
         return VideoFrame();
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame();
-    Q_ASSERT(d.output == MAKEFOURCC('Y','V','1','2'));
-//    qDebug("...........output: %d yv12=%d, size=%dx%d", d.output, MAKEFOURCC('Y','V','1','2'), d.width, d.height);
 
     class ScopedD3DLock {
     public:
@@ -437,86 +442,19 @@ VideoFrame VideoDecoderDXVA::frame()
         return VideoFrame();
     }
 
-    int chroma_pitch = lock.Pitch;
-    VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
-    bool swap_uv = false;
-    switch ((int)d.render) {
-    case MAKEFOURCC('I','M','C','3'):
-        swap_uv = true; //YV12 need swap, not imc3?
-        // imc3 U V pitch == Y pitch, but half of the U/V plane is space. we convert to yuv420p here
-    case MAKEFOURCC('Y','V','1','2'):
-        pixfmt = VideoFormat::Format_YUV420P;
-        chroma_pitch /= 2;
-        break;
-    case MAKEFOURCC('N','V','1','2'):
-        pixfmt = VideoFormat::Format_NV12;
-        break;
-    default:
-        break;
-    }
-    if (pixfmt == VideoFormat::Format_Invalid) {
-        qWarning("unsupported vaapi pixel format: %#x", d.render);
+    const VideoFormat fmt = VideoFormat((int)D3dFindFormat(d.render)->avpixfmt);
+    if (!fmt.isValid()) {
+        qWarning("unsupported dxva pixel format: %#x", d.render);
         return VideoFrame();
     }
+    //YV12 need swap, not imc3?
+    // imc3 U V pitch == Y pitch, but half of the U/V plane is space. we convert to yuv420p here
+    // nv12 bpp(1)==1
     // 3rd plane is not used for nv12
-    int pitch[3] = {
-        lock.Pitch,
-        chroma_pitch,
-        chroma_pitch,
-    };
-    uint8_t *src[3] = {
-        (uint8_t*)lock.pBits,
-        (uint8_t*)lock.pBits + pitch[0] * d.surface_height,
-        (uint8_t*)lock.pBits + pitch[0] * d.surface_height + pitch[1] * d.surface_height / 2,
-    };
-    if (swap_uv) {
-        std::swap(src[1], src[2]);
-        std::swap(pitch[1], pitch[2]);
-    }
-    const VideoFormat fmt(pixfmt);
-    VideoFrame frame;
-    if (d.copy_uswc && d.gpu_mem.isReady()) {
-        int yuv_size = 0;
-        if (pixfmt == VideoFormat::Format_NV12)
-            yuv_size = pitch[0]*d.surface_height*3/2;
-        else
-            yuv_size = pitch[0]*d.surface_height + pitch[1]*d.surface_height/2 + pitch[2]*d.surface_height/2;
-        // additional 15 bytes to ensure 16 bytes aligned
-        QByteArray buf(15 + yuv_size, 0);
-        const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
-        // plane 1, 2... is aligned?
-        uchar* plane_ptr = (uchar*)buf.data() + offset_16;
-        QVector<uchar*> dst(fmt.planeCount(), 0);
-        for (int i = 0; i < dst.size(); ++i) {
-            dst[i] = plane_ptr;
-            // TODO: add VideoFormat::planeWidth/Height() ?
-            // pitch instead of surface_width?
-            const int plane_w = pitch[i];//(i == 0 || pixfmt == VideoFormat::Format_NV12) ? d.surface_width : fmt.chromaWidth(d.surface_width);
-            const int plane_h = i == 0 ? d.surface_height : fmt.chromaHeight(d.surface_height);
-            plane_ptr += pitch[i] * plane_h;
-            d.gpu_mem.copyFrame(src[i], dst[i], plane_w, plane_h, pitch[i]);
-        }
-        frame = VideoFrame(buf, d.width, d.height, fmt);
-        frame.setBits(dst);
-        frame.setBytesPerLine(pitch);
-    } else {
-        frame = VideoFrame(d.width, d.height, fmt);
-        frame.setBits(src);
-        frame.setBytesPerLine(pitch);
-        // TODO: why clone is faster()?
-        frame = frame.clone();
-    }
-    return frame;
-}
-
-void VideoDecoderDXVA::setSSE4(bool y)
-{
-    d_func().copy_uswc = y;
-}
-
-bool VideoDecoderDXVA::SSE4() const
-{
-    return d_func().copy_uswc;
+    int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
+    uint8_t *src[] = { (uint8_t*)lock.pBits, 0, 0}; //compute chroma later
+    const bool swap_uv = d.render ==  MAKEFOURCC('I','M','C','3');
+    return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
 }
 
 void VideoDecoderDXVA::setSurfaces(int num)
@@ -596,6 +534,76 @@ bool VideoDecoderDXVAPrivate::unloadDll() {
 
 bool VideoDecoderDXVAPrivate::D3dCreateDevice()
 {
+    if (D3dCreateDeviceEx())
+        return true;
+    return D3dCreateDeviceFallback();
+}
+
+bool VideoDecoderDXVAPrivate::D3dCreateDeviceEx()
+{
+    //http://msdn.microsoft.com/en-us/library/windows/desktop/bb219676(v=vs.85).aspx
+    typedef HRESULT (WINAPI *Create9ExFunc)(UINT SDKVersion, IDirect3D9Ex **ppD3D); //IDirect3D9Ex: void is ok
+    Create9ExFunc Create9Ex = (Create9ExFunc)GetProcAddress(hd3d9_dll, "Direct3DCreate9Ex");
+    if (!Create9Ex) {
+        qWarning("Does not support Direct3DCreate9Ex");
+        return false;
+    }
+    if (FAILED(Create9Ex(D3D_SDK_VERSION, &d3dobj_ex))) {
+        d3dobj_ex = 0;
+        qWarning("Can not create IDirect3D9Ex");
+        return false;
+    }
+    if (FAILED(d3dobj_ex->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &d3dai))) {
+        qWarning("IDirect3D9Ex->GetAdapterIdentifier failed. Fallback to IDirect3D9->GetAdapterIdentifier");
+        ZeroMemory(&d3dai, sizeof(d3dai));
+        return false;
+    }
+    vendor = getVendorName(&d3dai);
+    description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
+                                    sizeof(d3dai.Description), d3dai.Description,
+                                    d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
+    if (copy_uswc)
+        copy_uswc = vendor.toLower() == "intel";
+    qDebug("DXVA2 description:  %s", description.toUtf8().constData());
+
+    D3DPRESENT_PARAMETERS d3dpp;
+    ZeroMemory(&d3dpp, sizeof(d3dpp));
+    // use mozilla's parameters
+    d3dpp.Flags                  = D3DPRESENTFLAG_VIDEO;
+    d3dpp.Windowed               = TRUE;
+    d3dpp.hDeviceWindow          = ::GetShellWindow(); //NULL;
+    d3dpp.SwapEffect             = D3DSWAPEFFECT_DISCARD;
+    //d3dpp.MultiSampleType        = D3DMULTISAMPLE_NONE;
+    //d3dpp.PresentationInterval   = D3DPRESENT_INTERVAL_DEFAULT;
+    d3dpp.BackBufferCount        = 1; //0;                  /* FIXME what to put here */
+    d3dpp.BackBufferFormat       = D3DFMT_UNKNOWN; //D3DFMT_X8R8G8B8;    /* FIXME what to put here */
+    d3dpp.BackBufferWidth        = 1; //0;
+    d3dpp.BackBufferHeight       = 1; //0;
+    //d3dpp.EnableAutoDepthStencil = FALSE;
+
+    DWORD flags = D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING;
+    // old: D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED
+    // mpv:
+    /* Direct3D needs a HWND to create a device, even without using ::Present
+    this HWND is used to alert Direct3D when there's a change of focus window.
+    For now, use GetDesktopWindow, as it looks harmless */
+    if (FAILED(d3dobj_ex->CreateDeviceEx(D3DADAPTER_DEFAULT,
+                                         D3DDEVTYPE_HAL, GetShellWindow(),// GetDesktopWindow(), //GetShellWindow()?
+                                         flags,
+                                         &d3dpp,
+                                         NULL,
+                                         (IDirect3DDevice9Ex**)(&d3ddev)))) {
+        qWarning("IDirect3D9Ex->CreateDeviceEx failed. Fallback to IDirect3D9->CreateDevice");
+        d3ddev = 0;
+        return false;
+    }
+    qDebug("IDirect3DDevice9Ex created....");
+    return true;
+}
+
+bool VideoDecoderDXVAPrivate::D3dCreateDeviceFallback()
+{
+    qDebug("Fallback to d3d9");
     typedef IDirect3D9* (WINAPI *Create9Func)(UINT SDKVersion);
     Create9Func Create9 = (Create9Func)GetProcAddress(hd3d9_dll, "Direct3DCreate9");
     if (!Create9) {
@@ -608,42 +616,42 @@ bool VideoDecoderDXVAPrivate::D3dCreateDevice()
         return false;
     }
     if (FAILED(d3dobj->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &d3dai))) {
-        qWarning("IDirect3D9_GetAdapterIdentifier failed");
+        qWarning("IDirect3D9->GetAdapterIdentifier failed");
         ZeroMemory(&d3dai, sizeof(d3dai));
-    } else {
-        vendor = getVendorName(&d3dai);
-        description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
-                                        sizeof(d3dai.Description), d3dai.Description,
-                                        d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
-        if (copy_uswc)
-            copy_uswc = vendor.toLower() == "intel";
-        qDebug("DXVA2 description:  %s", description.toUtf8().constData());
-    }
-    ZeroMemory(&d3dpp, sizeof(d3dpp));
-    d3dpp.Flags                  = D3DPRESENTFLAG_VIDEO;
-    d3dpp.Windowed               = TRUE;
-    d3dpp.hDeviceWindow          = NULL;
-    d3dpp.SwapEffect             = D3DSWAPEFFECT_DISCARD;
-    d3dpp.MultiSampleType        = D3DMULTISAMPLE_NONE;
-    d3dpp.PresentationInterval   = D3DPRESENT_INTERVAL_DEFAULT;
-    d3dpp.BackBufferCount        = 0;                  /* FIXME what to put here */
-    d3dpp.BackBufferFormat       = D3DFMT_X8R8G8B8;    /* FIXME what to put here */
-    d3dpp.BackBufferWidth        = 0;
-    d3dpp.BackBufferHeight       = 0;
-    d3dpp.EnableAutoDepthStencil = FALSE;
-
-    /* Direct3D needs a HWND to create a device, even without using ::Present
-    this HWND is used to alert Direct3D when there's a change of focus window.
-    For now, use GetDesktopWindow, as it looks harmless */
-    if (FAILED(d3dobj->CreateDevice(D3DADAPTER_DEFAULT,
-                                   D3DDEVTYPE_HAL, GetDesktopWindow(), //GetShellWindow()?
-                                   D3DCREATE_SOFTWARE_VERTEXPROCESSING |
-                                   D3DCREATE_MULTITHREADED,
-                                   &d3dpp, &d3ddev))) {
-        qWarning("IDirect3D9_CreateDevice failed");
         return false;
     }
+    vendor = getVendorName(&d3dai);
+    description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
+                                    sizeof(d3dai.Description), d3dai.Description,
+                                    d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
+    if (copy_uswc)
+        copy_uswc = vendor.toLower() == "intel";
+    qDebug("DXVA2 description:  %s", description.toUtf8().constData());
 
+    D3DPRESENT_PARAMETERS d3dpp;
+    ZeroMemory(&d3dpp, sizeof(d3dpp));
+    // use mozilla's parameters
+    d3dpp.Flags                  = D3DPRESENTFLAG_VIDEO;
+    d3dpp.Windowed               = TRUE;
+    d3dpp.hDeviceWindow          = ::GetShellWindow(); //NULL;
+    d3dpp.SwapEffect             = D3DSWAPEFFECT_DISCARD;
+    //d3dpp.MultiSampleType        = D3DMULTISAMPLE_NONE;
+    //d3dpp.PresentationInterval   = D3DPRESENT_INTERVAL_DEFAULT;
+    d3dpp.BackBufferCount        = 1; //0;                  /* FIXME what to put here */
+    d3dpp.BackBufferFormat       = D3DFMT_UNKNOWN; //D3DFMT_X8R8G8B8;    /* FIXME what to put here */
+    d3dpp.BackBufferWidth        = 1; //0;
+    d3dpp.BackBufferHeight       = 1; //0;
+    //d3dpp.EnableAutoDepthStencil = FALSE;
+    DWORD flags = D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING;
+    if (FAILED(d3dobj->CreateDevice(D3DADAPTER_DEFAULT,
+                                   D3DDEVTYPE_HAL, GetShellWindow(),// GetDesktopWindow(), //GetShellWindow()?
+                                   flags,
+                                   &d3dpp, &d3ddev))) {
+        qWarning("IDirect3D9->CreateDevice failed");
+        d3ddev = 0;
+        return false;
+    }
+    qDebug("IDirect3DDevice9 created....");
     return true;
 }
 
@@ -654,6 +662,8 @@ void VideoDecoderDXVAPrivate::D3dDestroyDevice()
 {
     SafeRelease(&d3ddev);
     SafeRelease(&d3dobj);
+    SafeRelease(&d3dobj_ex);
+    ZeroMemory(&d3dai, sizeof(d3dai));
 }
 /**
  * It creates a Direct3D device manager
@@ -735,15 +745,22 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
         if (mode) {
             qDebug("- '%s' is supported by hardware", mode->name);
         } else {
-            qWarning("- Unknown GUID = %08X-%04x-%04x-XXXX",
+            qDebug("- Unknown GUID = %08X-%04x-%04x-XXXX",
                      (unsigned)g.Data1, g.Data2, g.Data3);
         }
     }
     /* Try all supported mode by our priority */
     for (unsigned i = 0; dxva2_modes[i].name; i++) {
         const dxva2_mode_t *mode = &dxva2_modes[i];
-        if (!mode->codec || mode->codec != codec_ctx->codec_id)
+        if (!mode->codec || mode->codec != codec_ctx->codec_id) {
+            qDebug("codec does not match to %s: %s", avcodec_get_name(codec_ctx->codec_id), avcodec_get_name((AVCodecID)mode->codec));
             continue;
+        }
+        if (codec_ctx->profile == FF_PROFILE_HEVC_MAIN_10 && !IsEqualGUID(*mode->guid, DXVA_ModeHEVC_VLD_Main10)) {
+            qDebug("profile (%s) does not match to HEVC 10-bit", mode->name);
+            continue;
+        }
+        qDebug("DXVA found codec: %s. Check support for the codec.", mode->name);
         bool is_suported = false;
         for (unsigned count = 0; !is_suported && count < input_count; count++) {
             const GUID &g = input_list[count];
@@ -752,13 +769,13 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
         if (!is_suported)
             continue;
 
-        qDebug("Trying to use '%s' as input", mode->name);
-        UINT      output_count = 0;
+        UINT output_count = 0;
         D3DFORMAT *output_list = NULL;
         if (FAILED(vs->GetDecoderRenderTargets(*mode->guid, &output_count, &output_list))) {
             qWarning("IDirectXVideoDecoderService_GetDecoderRenderTargets failed");
             continue;
         }
+        qDebug("supprted output count: %d", output_count);
         for (unsigned j = 0; j < output_count; j++) {
             const D3DFORMAT f = output_list[j];
             const d3d_format_t *format = D3dFindFormat(f);
@@ -802,8 +819,8 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     width = w;
     height = h;
     /* Allocates all surfaces needed for the decoder */
-    surface_width = FFALIGN(width, 16);
-    surface_height = FFALIGN(height, 16);    
+    surface_width = aligned(width);
+    surface_height = aligned(height);
     if (surface_auto) {
         switch (codec_id) {
         case QTAV_CODEC_ID(H264):
@@ -813,14 +830,14 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
         case QTAV_CODEC_ID(MPEG2VIDEO):
             surface_count = 2 + 2;
         default:
-            surface_count = 2 + 1;
+            surface_count = 16 + 4;
             break;
         }
     }
-    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces>>>>>>>>>>>>>>>%d", surface_count);
+    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces: %d, threads: %d, refs: %d", surface_count, codec_ctx->thread_count, codec_ctx->refs);
     if (surface_count == 0) {
         qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
-        surface_count = 17;
+        surface_count = 16 + 4;
     }
 
     IDirect3DSurface9* surface_list[VA_DXVA2_MAX_SURFACE_COUNT];
@@ -850,8 +867,8 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     /* */
     DXVA2_VideoDesc dsc;
     ZeroMemory(&dsc, sizeof(dsc));
-    dsc.SampleWidth     = width;
-    dsc.SampleHeight    = height;
+    dsc.SampleWidth     = codec_ctx->coded_width;
+    dsc.SampleHeight    = codec_ctx->coded_height;
     dsc.Format          = render;
     dsc.InputSampleFreq.Numerator   = 0;
     dsc.InputSampleFreq.Denominator = 0;
@@ -929,25 +946,22 @@ bool VideoDecoderDXVAPrivate::DxResetVideoDecoder()
     return false;
 }
 
-void VideoDecoderDXVAPrivate::DxCreateVideoConversion()
+static bool check_ffmpeg_hevc_dxva2()
 {
-    switch ((int)render) {
-    case MAKEFOURCC('N','V','1','2'):
-    case MAKEFOURCC('I','M','C','3'):
-        output = (D3DFORMAT)MAKEFOURCC('Y','V','1','2');
-        break;
-    default:
-        output = render;
-        break;
+    avcodec_register_all();
+    AVHWAccel *hwa = av_hwaccel_next(0);
+    while (hwa) {
+        if (strncmp("hevc_dxva2", hwa->name, 10) == 0)
+            return true;
+        hwa = av_hwaccel_next(hwa);
     }
-    if (copy_uswc)
-        gpu_mem.initCache(surface_width);
+    return false;
 }
 
-void VideoDecoderDXVAPrivate::DxDestroyVideoConversion()
+bool VideoDecoderDXVAPrivate::isHEVCSupported() const
 {
-    if (copy_uswc)
-        gpu_mem.cleanCache();
+    static const bool support_hevc = check_ffmpeg_hevc_dxva2();
+    return support_hevc;
 }
 
 // hwaccel_context
@@ -955,8 +969,8 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
 {
     if (w <= 0 || h <= 0)
         return false;
-    if (!decoder || surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16)) {
-        DxDestroyVideoConversion();
+    if (!decoder || surface_width != aligned(w) || surface_height != aligned(h)) {
+        releaseUSWC();
         DxDestroyVideoDecoder();
         *hwctx = NULL;
         /* FIXME transmit a video_format_t by VaSetup directly */
@@ -969,7 +983,7 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
         memset(hw_surfaces, 0, sizeof(hw_surfaces));
         for (unsigned i = 0; i < surface_count; i++)
             hw.surface[i] = surfaces[i].d3d;
-        DxCreateVideoConversion();
+        initUSWC(surface_width);
     }
     width = w;
     height = h;
@@ -979,6 +993,15 @@ bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
 
 bool VideoDecoderDXVAPrivate::open()
 {
+    if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC)) {
+        // runtime hevc check
+        if (isHEVCSupported()) {
+            qWarning("HEVC DXVA2 is supported by current FFmpeg runtime.");
+        } else {
+            qWarning("HEVC DXVA2 is not supported by current FFmpeg runtime.");
+            return false;
+        }
+    }
     if (!D3dCreateDevice()) {
         qWarning("Failed to create Direct3D device");
         goto error;
@@ -996,6 +1019,10 @@ bool VideoDecoderDXVAPrivate::open()
         qWarning("DxFindVideoServiceConversion failed");
         goto error;
     }
+    IDirect3DDevice9Ex *devEx;
+    d3ddev->QueryInterface(IID_IDirect3DDevice9Ex, (void**)&devEx);
+    qDebug("using D3D9Ex: %d", !!devEx);
+    SafeRelease(&devEx);
     /* TODO print the hardware name/vendor for debugging purposes */
     return true;
 error:
@@ -1003,13 +1030,26 @@ error:
     return false;
 }
 
-void VideoDecoderDXVAPrivate::close() {
+void VideoDecoderDXVAPrivate::close()
+{
     restore();
-    DxDestroyVideoConversion();
+    releaseUSWC();
     DxDestroyVideoDecoder();
     DxDestroyVideoService();
     D3dDestroyDeviceManager();
     D3dDestroyDevice();
+}
+
+int VideoDecoderDXVAPrivate::aligned(int x)
+{
+    // from lavfilters
+    int align = 16;
+    // MPEG-2 needs higher alignment on Intel cards, and it doesn't seem to harm anything to do it for all cards.
+    if (codec_ctx->codec_id == QTAV_CODEC_ID(MPEG2VIDEO))
+      align <<= 1;
+    else if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC))
+      align = 128;
+    return FFALIGN(x, align);
 }
 
 } //namespace QtAV

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -27,7 +27,8 @@
 #include <QtCore/QThread>
 #include <QtCore/QQueue>
 #include <QtCore/QRunnable>
-#include <utils/BlockingQueue.h>
+#include "QtAV/CommonTypes.h"
+#include "utils/BlockingQueue.h"
 
 namespace QtAV {
 
@@ -44,7 +45,7 @@ public:
     AVThread* audioThread();
     void setVideoThread(AVThread *thread);
     AVThread* videoThread();
-    void seek(qint64 pos); //ms
+    void seek(qint64 pos, SeekType type); //ms
     //AVDemuxer* demuxer
     bool isPaused() const;
     bool isEnd() const;
@@ -72,7 +73,7 @@ private:
     void setAVThread(AVThread *&pOld, AVThread* pNew);
     void newSeekRequest(QRunnable *r);
     void processNextSeekTask();
-    void seekInternal(qint64 pos); //must call in AVDemuxThread
+    void seekInternal(qint64 pos, SeekType type); //must call in AVDemuxThread
     void pauseInternal(bool value);
     void processNextPauseTask();
 
@@ -89,6 +90,8 @@ private:
     QQueue<QRunnable*> pause_tasks; // in thread tasks
 
     QAtomicInt nb_next_frame;
+    QMutex next_frame_mutex;
+    int clock_type; // change happens in different threads(direct connection)
     friend class SeekTask;
 };
 

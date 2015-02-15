@@ -47,7 +47,9 @@ class Q_AV_EXPORT AVClock : public QObject
     Q_OBJECT
 public:
     typedef enum {
-        AudioClock, ExternalClock
+        AudioClock,
+        ExternalClock,
+        VideoClock     //sync to video timestamp
     } ClockType;
 
     AVClock(ClockType c, QObject* parent = 0);
@@ -80,21 +82,21 @@ public:
     /*external clock outside still running, so it's more accurate for syncing multiple clocks serially*/
     void updateExternalClock(const AVClock& clock);
 
-    inline void updateVideoPts(double pts);
-    inline double videoPts() const;
+    inline void updateVideoTime(double pts);
+    inline double videoTime() const;
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
 
     void setSpeed(qreal speed);
     inline qreal speed() const;
 
+    bool isPaused() const;
 signals:
     void paused(bool);
     void paused(); //equals to paused(true)
     void resumed();//equals to paused(false)
     void started();
     void resetted();
-
 public slots:
     //these slots are not frequently used. so not inline
     /*start the external clock*/
@@ -106,11 +108,16 @@ public slots:
 
 protected:
     virtual void timerEvent(QTimerEvent *event);
+private Q_SLOTS:
+    /// make sure QBasic timer start/stop in a right thread
+    void restartCorrectionTimer();
+    void stopCorrectionTimer();
 private:
     bool auto_clock;
+    bool m_paused;
     ClockType clock_type;
     mutable double pts_;
-    double pts_v;
+    mutable double pts_v;
     double delay_;
     mutable QElapsedTimer timer;
     qreal mSpeed;
@@ -118,27 +125,38 @@ private:
     /*!
      * \brief correction_schedule_timer
      * accumulative error is too large using QElapsedTimer.restart() frequently.
-     * we periodically correct the pts_ value to keep the error always less
+     * we periodically correct value() to keep the error always less
      * than the error of calling QElapsedTimer.restart() once
      * see github issue 46, 307 etc
      */
     QBasicTimer correction_schedule_timer;
-    QElapsedTimer correction_timer;
+    qint64 t; // absolute time for elapsed timer correction
     static const int kCorrectionInterval = 1; // 1000ms
     double last_pts;
+    double avg_err; // average error of restart()
+    mutable int nb_restarted;
 };
 
 double AVClock::value() const
 {
     if (clock_type == AudioClock) {
-        return pts_ + delay_ + value0;
-    } else {
+        // TODO: audio clock need a timer too
+        // timestamp from media stream is >= value0
+        return pts_ == 0 ? value0 : pts_ + delay_;
+    } else if (clock_type == ExternalClock) {
         if (timer.isValid()) {
-            pts_ += double(timer.restart()) * kThousandth;
+            ++nb_restarted;
+            pts_ += double(timer.restart()) * kThousandth + avg_err;
         } else {//timer is paused
             //qDebug("clock is paused. return the last value %f", pts_);
         }
         return pts_ * speed() + value0;
+    } else {
+        if (timer.isValid()) {
+            ++nb_restarted;
+            pts_v += double(timer.restart()) * kThousandth + avg_err;
+        }
+        return pts_v * speed(); // value0 is 1st video pts_v already
     }
 }
 
@@ -148,12 +166,14 @@ void AVClock::updateValue(double pts)
         pts_ = pts;
 }
 
-void AVClock::updateVideoPts(double pts)
+void AVClock::updateVideoTime(double pts)
 {
     pts_v = pts;
+    if (clock_type == VideoClock)
+        timer.restart();
 }
 
-double AVClock::videoPts() const
+double AVClock::videoTime() const
 {
     return pts_v;
 }

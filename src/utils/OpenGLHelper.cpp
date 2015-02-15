@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "OpenGLHelper.h"
+#include <QtCore/QCoreApplication>
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtOpenGL/QGLFunctions>
 #endif
@@ -74,29 +75,54 @@ void glActiveTexture(GLenum texture)
 #endif
 }
 
+
 bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type)
 {
-    struct fmt_entry {
+    typedef struct fmt_entry {
         VideoFormat::PixelFormat pixfmt;
         GLint internal_format;
         GLenum format;
         GLenum type;
-    };
-    // Very special formats, for which OpenGL happens to have direct support
-    static const struct fmt_entry pixfmt_to_gl_formats[] = {
-#ifdef QT_OPENGL_ES_2
+    } fmt_entry;
+    static const fmt_entry pixfmt_to_gles[] = {
         {VideoFormat::Format_ARGB32, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_RGB32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
         // TODO:
         {VideoFormat::Format_BGRA32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_ABGR32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-#else
+        {VideoFormat::Format_Invalid, 0, 0, 0}
+    };
+    Q_UNUSED(pixfmt_to_gles);
+    static const fmt_entry pixfmt_to_gl[] = {
         {VideoFormat::Format_RGB32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_ARGB32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
         // TODO:
         {VideoFormat::Format_ABGR32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_BGRA32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-#endif
+        {VideoFormat::Format_Invalid, 0, 0, 0}
+    };
+    const fmt_entry *pixfmt_gl_entry = pixfmt_to_gl;
+#ifdef QT_OPENGL_DYNAMIC
+    QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    // desktop can create es compatible context
+    const bool isES = qApp->testAttribute(Qt::AA_UseOpenGLES) || (ctx ? ctx->isOpenGLES() : QOpenGLContext::openGLModuleType() != QOpenGLContext::LibGL); //
+    if (isES)
+        pixfmt_gl_entry = pixfmt_to_gles;
+#else
+# ifdef QT_OPENGL_ES_2
+    pixfmt_gl_entry = pixfmt_to_gles;
+# endif //QT_OPENGL_ES_2
+#endif //QT_OPENGL_DYNAMIC
+    // Very special formats, for which OpenGL happens to have direct support
+    static const fmt_entry pixfmt_gl_entry_common[] = {
+        {VideoFormat::Format_RGBA32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
+        {VideoFormat::Format_ABGR32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
+        {VideoFormat::Format_RGB48, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_RGB48LE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_RGB48BE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_BGR48, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_BGR48LE, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_BGR48BE, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
         {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
     #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
         {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
@@ -110,12 +136,20 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     #endif
         {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, // need swap r b?
     };
-
-    for (unsigned int i = 0; i < sizeof(pixfmt_to_gl_formats)/sizeof(pixfmt_to_gl_formats[0]); ++i) {
-        if (pixfmt_to_gl_formats[i].pixfmt == fmt.pixelFormat()) {
-            *internal_format = pixfmt_to_gl_formats[i].internal_format;
-            *data_format = pixfmt_to_gl_formats[i].format;
-            *data_type = pixfmt_to_gl_formats[i].type;
+    const VideoFormat::PixelFormat pixfmt = fmt.pixelFormat();
+    for (unsigned int i = 0; pixfmt_gl_entry[i].pixfmt != VideoFormat::Format_Invalid; ++i) {
+        if (pixfmt_gl_entry[i].pixfmt == pixfmt) {
+            *internal_format = pixfmt_gl_entry[i].internal_format;
+            *data_format = pixfmt_gl_entry[i].format;
+            *data_type = pixfmt_gl_entry[i].type;
+            return true;
+        }
+    }
+    for (unsigned int i = 0; i < sizeof(pixfmt_gl_entry_common)/sizeof(pixfmt_gl_entry_common[0]); ++i) {
+        if (pixfmt_gl_entry_common[i].pixfmt == pixfmt) {
+            *internal_format = pixfmt_gl_entry_common[i].internal_format;
+            *data_format = pixfmt_gl_entry_common[i].format;
+            *data_type = pixfmt_gl_entry_common[i].type;
             return true;
         }
     }
@@ -126,36 +160,59 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
 //https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_format_BGRA8888.txt
 int bytesOfGLFormat(GLenum format, GLenum dataType)
 {
-    switch (format)
-      {
+    int component_size = 0;
+    switch (dataType) {
+#ifdef GL_UNSIGNED_BYTE_3_3_2
+    case GL_UNSIGNED_BYTE_3_3_2:
+        return 1;
+#endif //GL_UNSIGNED_BYTE_3_3_2
+#ifdef GL_UNSIGNED_BYTE_2_3_3_REV
+    case GL_UNSIGNED_BYTE_2_3_3_REV:
+            return 1;
+#endif
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+#ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+#endif //GL_UNSIGNED_SHORT_1_5_5_5_REV
+#ifdef GL_UNSIGNED_SHORT_5_6_5_REV
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+#endif //GL_UNSIGNED_SHORT_5_6_5_REV
+    case GL_UNSIGNED_SHORT_5_6_5: // gles
+#ifdef GL_UNSIGNED_SHORT_4_4_4_4_REV
+    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+#endif //GL_UNSIGNED_SHORT_4_4_4_4_REV
+    case GL_UNSIGNED_SHORT_4_4_4_4:
+        return 2;
+    case GL_UNSIGNED_BYTE:
+        component_size = 1;
+        break;
+    case GL_UNSIGNED_SHORT:
+        component_size = 2;
+        break;
+    }
+    switch (format) {
 #ifdef GL_BGRA //ifndef GL_ES
       case GL_BGRA:
 #endif
       case GL_RGBA:
-        return 4;
+        return 4*component_size;
 #ifdef GL_BGR //ifndef GL_ES
       case GL_BGR:
 #endif
       case GL_RGB:
-        switch (dataType) {
-        case GL_UNSIGNED_SHORT_5_6_5:
-            return 2;
-        default:
-            return 3;
-        }
-        return 3;
+        return 3*component_size;
       case GL_LUMINANCE_ALPHA:
-        return 2;
+        return 2*component_size;
       case GL_LUMINANCE:
       case GL_ALPHA:
-        return 1;
+        return 1*component_size;
 #ifdef GL_LUMINANCE16
     case GL_LUMINANCE16:
-        return 2;
+        return 2*component_size;
 #endif //GL_LUMINANCE16
 #ifdef GL_ALPHA16
     case GL_ALPHA16:
-        return 2;
+        return 2*component_size;
 #endif //GL_ALPHA16
       default:
         qWarning("bytesOfGLFormat - Unknown format %u", format);

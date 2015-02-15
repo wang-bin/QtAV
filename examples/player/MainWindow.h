@@ -22,6 +22,7 @@
 #define MAINWINDOW_H
 
 #include <QWidget>
+#include <QUrl>
 
 class QWidgetAction;
 namespace QtAV {
@@ -32,6 +33,7 @@ class AVClock;
 class VideoRenderer;
 class LibAVFilter;
 class SubtitleFilter;
+class VideoPreviewWidget;
 }
 class QMenu;
 class QTimeEdit;
@@ -48,6 +50,7 @@ class VideoEQConfigPage;
 class StatisticsView;
 class OSDFilter;
 class AVFilterSubtitle;
+class Preview;
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -61,6 +64,7 @@ public:
 
 public slots:
     void play(const QString& name);
+    void play(const QUrl& url);
     void openFile();
     void togglePlayPause();
     void showNextOSD();
@@ -94,7 +98,6 @@ private slots:
     void onSpeedChange(qreal speed);
     void seekToMSec(int msec);
     void seek();
-    void capture();
     void showHideVolumeBar();
     void setVolume();
     void tryHideControlBar();
@@ -128,6 +131,7 @@ private slots:
     void setSubtitleCharset(const QString& charSet);
     void setSubtitleEngine(const QString& value);
 
+    void changeClockType(QAction* action);
 protected:
     virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
@@ -192,6 +196,7 @@ private:
 
     OSDFilter *mpOSD;
     QtAV::SubtitleFilter *mpSubtitle;
+    QtAV::VideoPreviewWidget *m_preview;
 };
 
 

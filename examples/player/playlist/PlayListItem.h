@@ -42,6 +42,7 @@ public:
     qint64 duration() const;
     QString durationString() const;
     //icon
+    bool operator ==(const PlayListItem& other) const;
 private:
     QString mTitle;
     QString mUrl;

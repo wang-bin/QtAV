@@ -1,3 +1,4 @@
+VERSION = $$QTAV_VERSION
 *maemo*: DEFINES += Q_OS_MAEMO
 # Add more folders to ship with the application, here
 folder_01.source = qml/QMLPlayer
@@ -33,15 +34,21 @@ desktopfile.path = /usr/share/applications
 include(qtquick2applicationviewer/qtquick2applicationviewer.pri)
 qtcAddDeployment()
 
-!*msvc*: QMAKE_LFLAGS += -u __link_hack
+#!*msvc*: QMAKE_LFLAGS += -u __link_hack
 isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
 STATICLINK = 0
 include($${PROJECTROOT}/examples/common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
 mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
+genRC($$TARGET)
 
-RC_ICONS = $$PROJECTROOT/src/QtAV.ico
-QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-QMAKE_TARGET_DESCRIPTION = "Multimedia playback framework based on Qt & FFmpeg. http://www.qtav.org"
-QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2014 WangBin, wbsecg1@gmail.com"
-QMAKE_TARGET_PRODUCT = "QtAV QMLlayer"
+DISTFILES += \
+    android/gradle/wrapper/gradle-wrapper.jar \
+    android/AndroidManifest.xml \
+    android/res/values/libs.xml \
+    android/build.gradle \
+    android/gradle/wrapper/gradle-wrapper.properties \
+    android/gradlew \
+    android/gradlew.bat
+
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android

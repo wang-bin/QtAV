@@ -27,6 +27,16 @@ in *QtAV_SRC/user.conf* to disable it then qmake will be faster. But you then mu
 
 in *user.conf*.
 
+Link Against Static FFmpeg
+==========================
+
+It is supported since 1.4.2. You can add `CONFIG += static_ffmpeg` in QTAV_BUILD_DIR/.qmake.cache. Additional link flags will be added. Only ffmpeg build with QtAV/script/build_ffmpeg.sh is tested.
+
+Old GLibc Compatibility
+======================
+
+QtAV built from a newer linux system like ubuntu 14.04 may not work on old system like ubuntu 12.04 because of some symbols is missing. For example, `clock_get_time` is in glibc>=2.17 and librt. An convenience option is added since 1.4.2. Just add `CONFIG += glibc_compat` in QTAV_BUILD_DIR/.qmake.cache
+
 
 TODO
 ====

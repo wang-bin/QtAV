@@ -42,8 +42,10 @@ Rectangle {
         progress.value = 0
         duration = 0
         //now.text = Utils.msec2string(0)
+        video.file = ""
     }
     function setPlayingState() {
+        video.file = mediaSource // why need this?
         playState = "pause"
         playBtn.checked = true
         //life.text = Utils.msec2string(duraion)
@@ -176,6 +178,7 @@ Rectangle {
         property alias video: video
         VideoPreview {
             id: video
+            opengl: true
             visible: PlayerConfig.previewEnabled
             fillMode: VideoOutput.Stretch
             anchors.top: parent.top

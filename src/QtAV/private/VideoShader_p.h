@@ -85,19 +85,11 @@ public:
         , video_format(VideoFormat::Format_Invalid)
         , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
+        , target(GL_TEXTURE_2D)
     {
         colorTransform.setOutputColorSpace(ColorTransform::RGB);
     }
-    ~VideoMaterialPrivate() {
-        if (!textures.isEmpty()) {
-// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
-#ifndef QT_OPENGL_DYNAMIC
-            glDeleteTextures(textures.size(), textures.data());
-#else
-            QOpenGLContext::currentContext()->functions()->glDeleteTextures(textures.size(), textures.data());
-#endif
-        }
-    }
+    ~VideoMaterialPrivate();
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool initTextures(const VideoFormat& fmt);
     bool updateTexturesIfNeeded();
@@ -133,6 +125,7 @@ public:
 
     QVector<int> effective_tex_width; //without additional width for alignment
     qreal effective_tex_width_ratio;
+    GLenum target;
     QVector<GLint> internal_format;
     QVector<GLenum> data_format;
     QVector<GLenum> data_type;

@@ -1,6 +1,6 @@
 /******************************************************************************
     AudioOutputOpenAL.cpp: description
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -255,6 +255,8 @@ bool AudioOutputOpenAL::open()
     d.context = alcCreateContext(d.device, NULL);
     alcMakeContextCurrent(d.context);
     SCOPE_LOCK_CONTEXT();
+    // alGetString: alsoft needs a context. apple does not
+    qDebug("OpenAL %s vendor: %s; renderer: %s", alGetString(AL_VERSION), alGetString(AL_VENDOR), alGetString(AL_RENDERER));
     //alcProcessContext(ctx); //used when dealing witg multiple contexts
     ALCenum err = alcGetError(d.device);
     if (err != ALC_NO_ERROR) {

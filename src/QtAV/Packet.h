@@ -45,8 +45,6 @@ public:
     Packet& operator =(const Packet& other);
 
     inline bool isValid() const;
-    inline bool isEnd() const;
-    void markEnd();
     /*!
      * \brief asAVPacket
      * If Packet is constructed from AVPacket, then data and properties are the same as that AVPacket.
@@ -64,7 +62,6 @@ public:
     qint64 position; // position in source file byte stream
 
 private:
-    static const qreal kEndPts;
     // TODO: implicity shared. can not use QSharedData
     // we must define  default/copy ctor, dtor and operator= so that we can provide only forward declaration of PacketPrivate
     mutable QSharedDataPointer<PacketPrivate> d;
@@ -73,11 +70,6 @@ private:
 bool Packet::isValid() const
 {
     return !isCorrupt && !data.isNull() && pts >= 0 && duration >= 0; //!data.isEmpty()?
-}
-
-bool Packet::isEnd() const
-{
-    return pts == kEndPts;
 }
 
 } //namespace QtAV

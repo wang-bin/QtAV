@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,21 +23,6 @@
 #include <QtAV/private/VideoRenderer_p.h>
 #include <QtAV/Filter.h>
 #include <QtCore/QCoreApplication>
-
-// TODO: move to an internal header
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || defined(QT_WIDGETS_LIB)
-#ifndef QTAV_HAVE_WIDGETS
-#define QTAV_HAVE_WIDGETS 1
-#endif //QTAV_HAVE_WIDGETS
-#endif
-
-#if QTAV_HAVE(WIDGETS)
-#include <QWidget>
-#include <QGraphicsItem>
-#endif //QTAV_HAVE(WIDGETS)
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtGui/QWindow>
-#endif
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -61,6 +46,8 @@ bool VideoRenderer::receive(const VideoFrame &frame)
     DPTR_D(VideoRenderer);
     d.source_aspect_ratio = frame.displayAspectRatio();
     setInSize(frame.width(), frame.height());
+    QMutexLocker locker(&d.img_mutex);
+    Q_UNUSED(locker);
     return receiveFrame(frame);
 }
 
@@ -127,7 +114,7 @@ void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
     d.out_aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
         //compute out_rect
-        d.out_rect = QRect(1, 0, d.renderer_width, d.renderer_height); //remove? already in computeOutParameters()
+        d.out_rect = QRect(0, 0, d.renderer_width, d.renderer_height); //remove? already in computeOutParameters()
         setOutAspectRatio(qreal(d.renderer_width)/qreal(d.renderer_height));
         //is that thread safe?
     } else if (mode == VideoAspectRatio) {
@@ -480,6 +467,7 @@ void VideoRenderer::handlePaintEvent()
     hanlePendingTasks();
     //TODO: move to AVOutput::applyFilters() //protected?
     if (!d.filters.isEmpty() && d.filter_context && d.statistics) {
+        // vo filter will not modify video frame, no lock required
         foreach(Filter* filter, d.filters) {
             VideoFilter *vf = static_cast<VideoFilter*>(filter);
             if (!vf) {
@@ -618,20 +606,12 @@ bool VideoRenderer::onSetSaturation(qreal s)
 
 void VideoRenderer::updateUi()
 {
-    // TODO: qwindow() and widget() can both use event?
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    if (qwindow()) {
-        // DO NOT use qApp macro inside QtAV because QtAV may not depend QtWidgets module
-        QCoreApplication::instance()->postEvent(qwindow(), new QEvent(QEvent::UpdateRequest));
+    QObject *obj = (QObject*)qwindow();
+    if (!obj)
+        obj = (QObject*)widget();
+    if (obj) {
+        QCoreApplication::instance()->postEvent(obj, new QEvent(QEvent::UpdateRequest));
     }
-#endif
-#if QTAV_HAVE(WIDGETS)
-    if (widget()) {
-        widget()->update();
-    } else if (graphicsItem()) {
-        graphicsItem()->update();
-    }
-#endif //QTAV_HAVE(WIDGETS)
 }
 
 } //namespace QtAV

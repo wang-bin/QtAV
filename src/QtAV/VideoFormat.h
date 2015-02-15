@@ -46,7 +46,7 @@ public:
      * Format_ARGB32 layout is AARRGGBB, it's integer value is 0xAARRGGBB on big endian platforms
      * and 0xBBGGRRAA on little endian platforms
      * Format_RGB32 and QImage::Format_ARGB32 are the same.
-     * TODO: 0RGB
+     * TODO: 0RGB, XRGB, not native endia use R8 or R16. ffmpeg does not have native endian format
      */
     enum PixelFormat {
         Format_Invalid = -1,
@@ -117,6 +117,13 @@ public:
         Format_YUV420P16BE,
         Format_YUV422P16BE,
         Format_YUV444P16BE,
+
+        Format_RGB48, // native endian
+        Format_RGB48LE,
+        Format_RGB48BE,
+        Format_BGR48,
+        Format_BGR48LE,
+        Format_BGR48BE,
         Format_User
     };
 

@@ -1,4 +1,24 @@
+/******************************************************************************
+    Simple Player:  this file is part of QtAV examples
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
 #include <cmath>
+#include <QtCore/QtDebug>
 #include <QtCore/QFile>
 #include <QtGui/QGuiApplication>
 #include <QQuickItem>
@@ -22,15 +42,25 @@ int main(int argc, char *argv[])
     }
 
     QGuiApplication app(argc, argv);
+    set_opengl_backend(options.option("gl").value().toString(), app.arguments().first());
     load_qm(QStringList() << "QMLPlayer", options.value("language").toString());
     QtQuick2ApplicationViewer viewer;
-    viewer.engine()->rootContext()->setContextProperty("PlayerConfig", &Config::instance());
+    QString binDir = qApp->applicationDirPath();
+    if (binDir.endsWith(".app/Contents/MacOS")) {
+        binDir.remove(".app/Contents/MacOS");
+        binDir = binDir.left(binDir.lastIndexOf("/"));
+    }
+    QQmlEngine *engine = viewer.engine();
+    if (!engine->importPathList().contains(binDir))
+        engine->addImportPath(binDir);
+    qDebug() << engine->importPathList();
+    engine->rootContext()->setContextProperty("PlayerConfig", &Config::instance());
     qDebug(">>>>>>>>devicePixelRatio: %f", qApp->devicePixelRatio());
     QScreen *sc = app.primaryScreen();
     qDebug() << "dpi phy: " << sc->physicalDotsPerInch() << ", logical: " << sc->logicalDotsPerInch() << ", dpr: " << sc->devicePixelRatio()
                 << "; vis rect:" << sc->virtualGeometry();
     // define a global var for js and qml
-    viewer.engine()->rootContext()->setContextProperty("screenPixelDensity", qApp->primaryScreen()->physicalDotsPerInch()*qApp->primaryScreen()->devicePixelRatio());
+    engine->rootContext()->setContextProperty("screenPixelDensity", qApp->primaryScreen()->physicalDotsPerInch()*qApp->primaryScreen()->devicePixelRatio());
     qreal r = sc->physicalDotsPerInch()/sc->logicalDotsPerInch();
     if (std::isinf(r) || std::isnan(r))
 #if defined(Q_OS_ANDROID)
@@ -39,9 +69,12 @@ int main(int argc, char *argv[])
         r = 1.0;
 #endif
     float sr = options.value("scale").toFloat();
+#if defined(Q_OS_ANDROID)
+    sr = r;
+#endif
     if (qFuzzyIsNull(sr))
         sr = r;
-    viewer.engine()->rootContext()->setContextProperty("scaleRatio", sr);
+    engine->rootContext()->setContextProperty("scaleRatio", sr);
     QString qml = "qml/QMLPlayer/main.qml";
     if (QFile(qApp->applicationDirPath() + "/" + qml).exists())
         qml.prepend(qApp->applicationDirPath() + "/");
@@ -74,9 +107,12 @@ int main(int argc, char *argv[])
     json.replace("\\", "/"); //FIXME
     QMetaObject::invokeMethod(viewer.rootObject(), "init", Q_ARG(QVariant, json));
 //#else
+    QObject *player = viewer.rootObject()->findChild<QObject*>("player");
+    if (player) {
+        AppEventFilter *ae = new AppEventFilter(player, player);
+        qApp->installEventFilter(ae);
+    }
     if (app.arguments().size() > 1) {
-        qDebug("arguments > 1");
-        QObject *player = viewer.rootObject()->findChild<QObject*>("player");
         QString file = options.value("file").toString();
         if (file.isEmpty()) {
             if (argc > 1 && !app.arguments().last().startsWith('-') && !app.arguments().at(argc-2).startsWith('-'))

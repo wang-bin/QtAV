@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -39,10 +39,15 @@ public:
     Private();
     ~Private();
 
-    void initStatistics(AVPlayer *player);
+    void initStatistics();
+    void initBaseStatistics();
+    void initCommonStatistics(int s, Statistics::Common* st, AVCodecContext* avctx);
+    void initAudioStatistics(int s);
+    void initVideoStatistics(int s);
+    void initSubtitleStatistics(int s);
+
     bool setupAudioThread(AVPlayer *player);
     bool setupVideoThread(AVPlayer *player);
-
 
     //TODO: addAVOutput()
     template<class Out>
@@ -94,7 +99,9 @@ public:
     // can be QString, QIODevice*
     QVariant current_source, pendding_source;
     bool loaded; // for current source
+    bool relative_time_mode;
     AVFormatContext	*fmt_ctx; //changed when reading a packet
+    qint64 media_start_pts; // read from media stream
     qint64 media_end;
     /*
      * unit: s. 0~1. stream's start time/duration(). or last position/duration() if change to new stream
@@ -108,6 +115,7 @@ public:
     int repeat_max, repeat_current;
     int timer_id; //notify position change and check AB repeat range. active when playing
 
+    int audio_track, video_track, subtitle_track;
     //the following things are required and must be set not null
     AVDemuxer demuxer;
     AVDemuxThread *read_thread;
@@ -131,9 +139,13 @@ public:
     QVariantHash ac_opt, vc_opt;
 
     bool seeking;
-    qint64 seek_target;
+    SeekType seek_type;
+    qint64 seek_target; // relative time if relativeTimeMode is true
     qint64 interrupt_timeout;
     bool mute;
+
+    // timerEvent interval in ms. can divide 1000. depends on media duration, fps etc.
+    int notify_interval;
 };
 
 } //namespace QtAV

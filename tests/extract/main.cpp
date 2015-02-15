@@ -1,29 +1,27 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    VideoGroup:  this file is part of QtAV examples
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
+    This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
 #include <QtAV/VideoFrameExtractor.h>
 #include <QApplication>
 #include <QWidget>
-#include <QtAV/VideoRenderer.h>
-#include <QtAV/VideoRendererTypes.h>
+#include <QtAVWidgets>
 #include <QtDebug>
 #include <QtCore/QElapsedTimer>
 
@@ -41,11 +39,9 @@ public:
 
 public Q_SLOTS:
     void onVideoFrameExtracted(const QtAV::VideoFrame& frame) {
-        //VideoFrameExtractor *e = qobject_cast<VideoFrameExtractor*>(sender());
-        //VideoFrame frame(e->frame());
         view->receive(frame);
-        qDebug() << frame.format();
-        qDebug("frame %dx%d", frame.width(), frame.height());
+        qApp->processEvents();
+        qDebug("frame %dx%d @%f", frame.width(), frame.height(), frame.timestamp());
     }
 private:
     VideoRenderer *view;
@@ -55,8 +51,10 @@ int main(int argc, char** argv)
 {
     QApplication a(argc, argv);
     int idx = a.arguments().indexOf("-f");
-    if (idx < 0)
+    if (idx < 0) {
+        qDebug("-f file -t sec -n count -asyc");
         return -1;
+    }
     QString file = a.arguments().at(idx+1);
     idx = a.arguments().indexOf("-t");
     int t = 0;
@@ -78,6 +76,7 @@ int main(int argc, char** argv)
     QElapsedTimer timer;
     timer.start();
     for (int i = 0; i < n; ++i) {
+        // async does not work. you have to set a new position when frameExtracted is emitted
         extractor.setPosition(t + 1000*i);
     }
     qDebug("elapsed: %lld", timer.elapsed());

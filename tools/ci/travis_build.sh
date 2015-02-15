@@ -20,52 +20,12 @@ cd build
 #ffmpeg 2.3 libavutil clock_gettime need -lrt if glibc < 2.17
 FFMPEG=$1
 : ${FFMPEG:=ffmpeg-2.2.5}
-FFVER=(1.0.9 1.1.12 1.2.7 2.0.5 2.1.5 2.2.5)
+FFVER=(1.0.10 1.2.10 2.0.6 2.2.11)
+QTVER=(4.8.6 5.0.2 5.1.1 5.2.1)
 MKSPEC=(linux-clang)
 
-export QT_PKG=Qt5.3.1-Linux64
-export FFMPEG_PKG=${FFMPEG}-linux-x86+x64
-
-:<<EOF
-function get_qt() {
-    test -d ${QT_PKG} || {
-      echo "---------get ${QT_PKG}----------"
-      test -f ${QT_PKG}.tar.xz || wget http://sourceforge.net/projects/buildqt/files/release/5.3.1/${QT_PKG}.tar.xz/download -O ${QT_PKG}.tar.xz
-      tar -I xz -xf ${QT_PKG}.tar.xz
-    }
-}
-
-function get_ffmpeg() {
-    test -d ${FFMPEG_PKG} || {
-    echo "---------get ${FFMPEG_PKG}----------"
-      test -f ${FFMPEG_PKG}.tar.xz || wget http://sourceforge.net/projects/qtav/files/depends/FFmpeg/linux/${FFMPEG_PKG}.tar.xz/download -O ${FFMPEG_PKG}.tar.xz
-      tar -I xz -xf ${FFMPEG_PKG}.tar.xz
-    }
-}
-
-export -f get_qt
-export -f get_ffmpeg
-
-#parallel ::: get_qt get_ffmpeg
-get_qt
-get_ffmpeg
-
-
-export CPATH=$PWD/${FFMPEG_PKG}/include
-export LIBRARY_PATH=$PWD/${FFMPEG_PKG}/lib/x64
-export LD_LIBRARY_PATH=$LIBRARY_PATH
-
-echo "CPATH=$CPATH"
-echo "LIBRARY_PATH=$LIBRARY_PATH"
-echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-
-EOF
-
-export PATH=$PWD/${QT_PKG}/bin:$PATH
-echo "PATH=$PATH"
-
 cat > Makefile.download <<EOF
-PKG=\$(addprefix ffmpeg-,${FFVER[@]}) $QT_PKG
+PKG=\$(addprefix ffmpeg-,${FFVER[@]}) \$(addsuffix -Linux64, \$(addprefix Qt,${QTVER[@]}))
 
 all: \$(PKG)
 	echo \$^
@@ -74,8 +34,8 @@ ffmpeg-%:
 	test -f \$@-linux-x86+x64.tar.xz || wget http://sourceforge.net/projects/qtav/files/depends/FFmpeg/linux/\$@-linux-x86+x64.tar.xz/download -O \$@-linux-x86+x64.tar.xz
 	tar Jxf \$@-linux-x86+x64.tar.xz
 
-Qt5%:
-	test -f \$@.tar.xz || wget http://sourceforge.net/projects/buildqt/files/release/5.3.1/\$@.tar.xz/download -O \$@.tar.xz
+Qt%:
+	test -f \$@.tar.xz || wget http://sourceforge.net/projects/buildqt/files/lite/\$@.tar.xz/download -O \$@.tar.xz
 	tar -I xz -xf \$@.tar.xz
 
 EOF
@@ -100,13 +60,16 @@ function build_spec() {
 buildqtav() {
     local FF=$1
     local VER=$2
+    local QT=$3
     local FFSDK=$WORK_DIR/build/$FF-$VER-linux-x86+x64
+    export PATH=$WORK_DIR/build/${QT}-Linux64/bin:$PATH
     export CPATH=$FFSDK/include
     export LIBRARY_PATH=$FFSDK/lib/x64
     export LD_LIBRARY_PATH=$FFSDK/lib/x64
-    echo $CPATH
-    echo "building... with $FFSDK"
-    OUT=qtav_$FF$VER
+    echo "PATH=$PATH"
+    echo "CPATH=$CPATH"
+    echo "building... with $QT $FFSDK"
+    OUT=qtav_${QT}_$FF$VER
     mkdir -p $OUT
     cd $OUT
     for spec in ${MKSPEC[@]}; do
@@ -118,7 +81,7 @@ buildqtav() {
 }
 
 time (
-for V in ${FFVER[@]}; do
-    buildqtav ffmpeg $V
+for (( i=0; i<${#FFVER[@]}; i++ )); do
+    buildqtav ffmpeg "${FFVER[i]}" "Qt${QTVER[i]}"
 done
 )

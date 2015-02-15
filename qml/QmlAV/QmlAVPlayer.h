@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,9 +22,9 @@
 #ifndef QTAV_QML_AVPLAYER_H
 #define QTAV_QML_AVPLAYER_H
 
-#include <QmlAV/Export.h>
 #include <QtCore/QObject>
-#include <QmlAV/QQuickItemRenderer.h>
+#include <QtCore/QStringList> //5.0
+#include <QtQml/QQmlParserStatus>
 #include <QmlAV/MediaMetaData.h>
 #include <QtAV/AVError.h>
 #include <QtAV/CommonTypes.h>
@@ -33,14 +33,12 @@
  *  Qt.Multimedia like api
  * MISSING:
  * bufferProgress, error, errorString, metaData
- * NOT COMPLETE:
- * seekable
  */
 namespace QtAV {
 class AVPlayer;
 }
 using namespace QtAV;
-class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
+class QmlAVPlayer : public QObject, public QQmlParserStatus
 {
     Q_OBJECT
     Q_INTERFACES(QQmlParserStatus)
@@ -68,6 +66,8 @@ class QMLAV_EXPORT QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_ENUMS(Error)
     Q_ENUMS(ChannelLayout)
     // not supported by QtMultimedia
+    Q_PROPERTY(bool fastSeek READ isFastSeek WRITE setFastSeek NOTIFY fastSeekChanged)
+    Q_PROPERTY(int timeout READ timeout WRITE setTimeout NOTIFY timeoutChanged)
     Q_PROPERTY(ChannelLayout channelLayout READ channelLayout WRITE setChannelLayout NOTIFY channelLayoutChanged)
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
@@ -133,6 +133,8 @@ public:
     int duration() const;
     int position() const;
     bool isSeekable() const;
+    bool isFastSeek() const;
+    void setFastSeek(bool value);
 
     Status status() const;
     Error error() const;
@@ -165,6 +167,8 @@ public:
     void setChannelLayout(ChannelLayout channel);
     ChannelLayout channelLayout() const;
 
+    void setTimeout(int value); // ms
+    int timeout() const;
 public Q_SLOTS:
     void play();
     void pause();
@@ -193,9 +197,11 @@ Q_SIGNALS:
     void stopped();
     void playing();
     void seekableChanged();
+    void fastSeekChanged();
     void videoCodecPriorityChanged();
     void videoCodecOptionsChanged();
     void channelLayoutChanged();
+    void timeoutChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString);
@@ -222,6 +228,7 @@ private:
     bool mAutoPlay;
     bool mAutoLoad;
     bool mHasAudio, mHasVideo;
+    bool m_fastSeek;
     int mLoopCount;
     qreal mPlaybackRate;
     qreal mVolume;
@@ -233,6 +240,7 @@ private:
     QUrl mSource;
     QStringList mVideoCodecs;
     ChannelLayout mChannelLayout;
+    int m_timeout;
 
     QScopedPointer<MediaMetaData> m_metaData;
     QVariantMap vcodec_opt;

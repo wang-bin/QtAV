@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,53 +22,6 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
 #include "QtAV/version.h"
-
-void ffmpeg_version_print()
-{
-    struct _component {
-        const char* lib;
-        unsigned build_version;
-        unsigned rt_version;
-    } components[] = {
-        { "avcodec", LIBAVCODEC_VERSION_INT, avcodec_version()},
-        { "avformat", LIBAVFORMAT_VERSION_INT, avformat_version()},
-        { "avutil", LIBAVUTIL_VERSION_INT, avutil_version()},
-        { "swscale", LIBSWSCALE_VERSION_INT, swscale_version()},
-#if QTAV_HAVE(SWRESAMPLE)
-        { "swresample", LIBSWRESAMPLE_VERSION_INT, swresample_version()}, //swresample_version not declared in 0.9
-#endif //QTAV_HAVE(SWRESAMPLE)
-#if QTAV_HAVE(AVRESAMPLE)
-        { "avresample", LIBAVRESAMPLE_VERSION_INT, avresample_version()},
-#endif //QTAV_HAVE(AVRESAMPLE)
-#if QTAV_HAVE(AVFILTER)
-        { "avfilter", LIBAVFILTER_VERSION_INT, avfilter_version() },
-#endif //QTAV_HAVE(AVFILTER)
-#if QTAV_HAVE(AVDEVICE)
-        { "avdevice", LIBAVDEVICE_VERSION_INT, avdevice_version() },
-#endif //QTAV_HAVE(AVDEVICE)
-        { 0, 0, 0}
-    };
-    for (int i = 0; components[i].lib != 0; ++i) {
-        printf("Build with lib%s-%u.%u.%u\n"
-               , components[i].lib
-               , QTAV_VERSION_MAJOR(components[i].build_version)
-               , QTAV_VERSION_MINOR(components[i].build_version)
-               , QTAV_VERSION_PATCH(components[i].build_version)
-               );
-        unsigned rt_version = components[i].rt_version;
-        if (components[i].build_version != rt_version) {
-            fprintf(stderr, "Warning: %s runtime version %u.%u.%u mismatch!\n"
-                    , components[i].lib
-                    , QTAV_VERSION_MAJOR(rt_version)
-                    , QTAV_VERSION_MINOR(rt_version)
-                    , QTAV_VERSION_PATCH(rt_version)
-                    );
-        }
-    }
-    fflush(0);
-}
-
-//PRE_FUNC_ADD(ffmpeg_version_print); //move to Internal::Logger
 
 #ifndef av_err2str
 
@@ -136,7 +89,7 @@ AVAudioResampleContext *swr_alloc_set_opts(AVAudioResampleContext *s
 }
 #endif
 
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 13, 100)
+#if !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
 extern const AVPixFmtDescriptor av_pix_fmt_descriptors[];
 const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
 {
@@ -145,7 +98,7 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
     return &av_pix_fmt_descriptors[pix_fmt];
 }
 
-#endif //AV_VERSION_INT(52, 13, 100)
+#endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
 
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
@@ -251,4 +204,21 @@ void av_packet_free_side_data(AVPacket *pkt)
     pkt->side_data_elems = 0;
 }
 #endif
+
+const char *get_codec_long_name(enum AVCodecID id)
+{
+    if (id == AV_CODEC_ID_NONE)
+        return "none";
+    const AVCodecDescriptor *cd = avcodec_descriptor_get(id);
+    if (cd)
+        return cd->long_name;
+    av_log(NULL, AV_LOG_WARNING, "Codec 0x%x is not in the full list.\n", id);
+    AVCodec *codec = avcodec_find_decoder(id);
+    if (codec)
+        return codec->long_name;
+    codec = avcodec_find_encoder(id);
+    if (codec)
+        return codec->long_name;
+    return "unknown_codec";
+}
 

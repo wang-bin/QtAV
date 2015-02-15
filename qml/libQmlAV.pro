@@ -3,7 +3,19 @@ CONFIG += qt plugin
 TARGET = QmlAV
 QT += quick qml
 CONFIG *= qmlav-buildlib
-
+#https://github.com/wang-bin/QtAV/issues/368#issuecomment-73246253
+#http://qt-project.org/forums/viewthread/38438
+# mkspecs/features/qml_plugin.prf
+URI = QtAV #uri used in QtAVQmlPlugin::registerTypes(uri)
+greaterThan(QT_MAJOR_VERSION, 4) {
+  isEqual(QT_MAJOR_VERSION, 5) {
+    greaterThan(QT_MINOR_VERSION, 2) {
+QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
+    }
+  } else {
+QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
+  }
+}
 #var with '_' can not pass to pri?
 STATICLINK = 0
 PROJECTROOT = $$PWD/..
@@ -41,6 +53,7 @@ else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$plugin.comma
 #http://stackoverflow.com/questions/14260542/qmake-extra-compilers-processing-steps
 #http://danny-pope.com/?p=86
 #custom compiler: auto update if source is newer
+# sa mkspecs/features/qml_plugin.prf
 extra_copy.output = $$shell_path($$plugin.path)${QMAKE_FILE_BASE}${QMAKE_FILE_EXT}
 # QMAKE_COPY_FILE, QMAKE_MKDIR_CMD ?
 extra_copy.commands = -\$\(COPY_FILE\) ${QMAKE_FILE_NAME} $$shell_path($$plugin.path)
@@ -55,9 +68,9 @@ EXTRA_COPY_FILES = $$qtav_qml.files
 
 QMAKE_WRITE_DEFAULT_RC = 1
 QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-QMAKE_TARGET_DESCRIPTION = "Multimedia playback framework based on Qt & FFmpeg. http://www.qtav.org"
-QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2014 WangBin, wbsecg1@gmail.com"
-QMAKE_TARGET_PRODUCT = "QtAV player"
+QMAKE_TARGET_DESCRIPTION = "QtAV QML module. QtAV Multimedia playback framework. http://www.qtav.org"
+QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+QMAKE_TARGET_PRODUCT = "QtAV QML"
 
 *msvc* {
 #link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
@@ -77,7 +90,7 @@ SOURCES += \
     QuickSubtitleItem.cpp \
     QuickVideoPreview.cpp
 
-HEADERS += QmlAV/private/QQuickItemRenderer_p.h \
+HEADERS += \
     QmlAV/QuickSubtitle.h \
     QmlAV/QuickSubtitleItem.h \
     QmlAV/QuickVideoPreview.h
@@ -92,6 +105,10 @@ SDK_HEADERS += \
 HEADERS *= \
     $$SDK_HEADERS
 
+greaterThan(QT_MINOR_VERSION, 1) {
+  HEADERS += QmlAV/QuickFBORenderer.h
+  SOURCES += QuickFBORenderer.cpp
+}
 
 unix:!android:!mac {
 #debian

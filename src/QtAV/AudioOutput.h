@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -33,9 +33,7 @@
  * ao->open();
  * while (has_data) {
  *     data = read_data(ao->bufferSize());
- *     ao->waitForNextBuffer();
- *     ao->receiveData(data, pts);
- *     ao->play();
+ *     ao->play(data, pts);
  * }
  * ao->close();
  * See QtAV/tests/ao/main.cpp for detail
@@ -78,12 +76,12 @@ public:
     Q_DECLARE_FLAGS(BufferControls, BufferControl)
     /*!
      * \brief The Feature enum
-     * features (set when playing) supported by the audio playback api.
+     * features supported by the audio playback api
      */
     enum Feature {
-        SetVolume = 1,
-        SetMuted = 1 << 1,
-        SetSampleRate = 1 << 2,
+        SetVolume = 1, /// NOT IMPLEMENTED. Use backend volume control api rather than software scale. Ignore if backend does not support.
+        SetMuted = 1 << 1, /// NOT IMPLEMENTED
+        SetSampleRate = 1 << 2, /// NOT IMPLEMENTED
     };
     Q_DECLARE_FLAGS(Features, Feature)
     /*!
@@ -94,8 +92,15 @@ public:
     virtual ~AudioOutput();
     virtual bool open() = 0;
     virtual bool close() = 0;
-    // store and fill data to audio buffers
-    bool receiveData(const QByteArray &data, qreal pts = 0.0);
+    /*!
+     * \brief play
+     * Play out the given audio data. It may block current thread until the data can be written to audio device
+     * for async playback backend, or until the data is completely played for blocking playback backend.
+     * \param data Audio data to play
+     * \param pts Timestamp for this data. Useful if need A/V sync. Ignore it if only play audio
+     * \return true if play successfully
+     */
+    bool play(const QByteArray& data, qreal pts = 0.0);
     /*!
      * \brief setAudioFormat
      * Remain the old value if not supported
@@ -110,8 +115,8 @@ public:
     int channels() const; //deprecated
     /*!
      * \brief setVolume
-     * If SetVolume feature is not set or not supported, only store the value and you should process the audio data outside to the given volume value.
-     * Otherwise, call this also set the volume by the audio playback api //in slot?
+     * Set volume level.
+     * If SetVolume feature is not set or not supported, software implemention will be used.
      * \param volume linear. 1.0: original volume.
      */
     void setVolume(qreal volume);
@@ -125,6 +130,7 @@ public:
      * audio clock. For example, play a video contains audio without special configurations.
      * To change the playing speed in other cases, use AVPlayer::setSpeed(qreal)
      * \param speed linear. > 0
+     * TODO: resample internally
      */
     void setSpeed(qreal speed);
     qreal speed() const;
@@ -177,14 +183,18 @@ public:
     Feature features() const;
     void setFeature(Feature value, bool on = true);
     bool hasFeatures(Feature value) const;
+    qreal timestamp() const;
+    // Internal use since QtAV 1.5
+    virtual bool play() = 0; //MUST
     /*!
      * \brief waitForNextBuffer
      * wait until you can feed more data
+     * Internal use since QtAV 1.5
      */
     virtual void waitForNextBuffer();
+    // Internal use since QtAV 1.5. store and fill data to audio buffers
+    QTAV_DEPRECATED bool receiveData(const QByteArray &data, qreal pts = 0.0);
     // timestamp of current playing data
-    qreal timestamp() const;
-    virtual bool play() = 0; //MUST
 signals:
     void volumeChanged(qreal);
     void muteChanged(bool);

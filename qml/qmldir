@@ -1,4 +1,5 @@
 module QtAV
 plugin QmlAV
-classname QMLAVModule
+classname QtAVQmlPlugin
+typeinfo plugins.qmltypes
 Video 1.3 Video.qml

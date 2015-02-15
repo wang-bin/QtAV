@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -106,7 +106,6 @@ public:
 
     bool bind(); // TODO: roi
     void unbind();
-    void bindPlane(int p); // TODO: roi
     int compare(const VideoMaterial* other) const;
 
     bool hasAlpha() const;
@@ -128,6 +127,7 @@ public:
      * \return valid width ratio
      */
     qreal validTextureWidth() const;
+    QSize frameSize() const;
     /*!
      * \brief normalizedROI
      * \param roi logical roi of a video frame
@@ -140,6 +140,9 @@ public:
     void setHue(qreal value);
     void setSaturation(qreal value);
 protected:
+    // TODO: roi
+    // whether to update texture is set internal
+    void bindPlane(int p, bool updateTexture = true);
     VideoMaterial(VideoMaterialPrivate &d);
     DPTR_DECLARE(VideoMaterial)
 };
@@ -154,6 +157,7 @@ public:
     TexturedGeometry(int count = 4, Triangle t = Strip);
     Triangle triangle() const { return tri;}
     int mode() const;
+    int tupleSize() const { return 2;}
     int stride() const { return sizeof(Point); }
     int vertexCount() const { return v.size(); }
     void setPoint(int index, const QPointF& p, const QPointF& tp);
@@ -162,6 +166,7 @@ public:
     void setRect(const QRectF& r, const QRectF& tr);
     void* data(int idx = 0) { return (char*)v.data() + idx*2*sizeof(float); } //convert to char* float*?
     const void* data(int idx = 0) const { return (char*)v.constData() + idx*2*sizeof(float); }
+    const void* constData(int idx = 0) const { return (char*)v.constData() + idx*2*sizeof(float); }
 private:
     Triangle tri;
     QVector<Point> v;

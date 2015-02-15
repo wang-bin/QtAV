@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverterFF: Image resizing & color model convertion using FFmpeg swscale
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/ImageConverter.h"
-#include "QtAV/private/ImageConverter_p.h"
+#include "ImageConverter.h"
+#include "ImageConverter_p.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
@@ -28,20 +28,7 @@
 
 namespace QtAV {
 
-class ImageConverterFFPrivate;
-class ImageConverterFF : public ImageConverter //Q_AV_EXPORT is not needed
-{
-    DPTR_DECLARE_PRIVATE(ImageConverterFF)
-public:
-    ImageConverterFF();
-    virtual bool check() const;
-    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
-protected:
-    virtual bool setupColorspaceDetails();
-};
-
-
-ImageConverterId ImageConverterId_FF = mkid32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
+ImageConverterId ImageConverterId_FF = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
 FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
 
 void RegisterImageConverterFF_Man()
@@ -56,12 +43,13 @@ public:
         : sws_ctx(0)
         , update_eq(true)
     {}
-    ~ImageConverterFFPrivate() {
+    ~ImageConverterFFPrivate() Q_DECL_FINAL {
         if (sws_ctx) {
             sws_freeContext(sws_ctx);
             sws_ctx = 0;
         }
     }
+    virtual bool setupColorspaceDetails(bool force = true) Q_DECL_FINAL;
 
     SwsContext *sws_ctx;
     bool update_eq;
@@ -108,7 +96,7 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     //av_opt_set_int(d.sws_ctx, "sws_flags", flags, 0);
     if (!d.sws_ctx)
         return false;
-    setupColorspaceDetails();
+    d.setupColorspaceDetails(false);
 #if PREPAREDATA_NO_PICTURE //for YUV420 <=> RGB
 #if 0
     struct
@@ -162,29 +150,31 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     return true;
 }
 
-bool ImageConverterFF::setupColorspaceDetails()
+bool ImageConverterFFPrivate::setupColorspaceDetails(bool force)
 {
-    DPTR_D(ImageConverterFF);
-    if (!d.sws_ctx) {
-        d.update_eq = true;
+    if (!sws_ctx) {
+        update_eq = true;
         return false;
     }
-    //if (!d.update_eq)
-    //    return true;
+    if (force)
+        update_eq = true;
+    if (!update_eq) {
+        return true;
+    }
     // FIXME: how to fill the ranges?
     const int srcRange = 1;
     const int dstRange = 0;
     // TODO: SWS_CS_DEFAULT?
-    sws_setColorspaceDetails(d.sws_ctx, sws_getCoefficients(SWS_CS_DEFAULT)
+    sws_setColorspaceDetails(sws_ctx, sws_getCoefficients(SWS_CS_DEFAULT)
                              , srcRange, sws_getCoefficients(SWS_CS_DEFAULT)
                              , dstRange
-                             , ((d.brightness << 16) + 50)/100
-                             , (((d.contrast + 100) << 16) + 50)/100
-                             , (((d.saturation + 100) << 16) + 50)/100
+                             , ((brightness << 16) + 50)/100
+                             , (((contrast + 100) << 16) + 50)/100
+                             , (((saturation + 100) << 16) + 50)/100
                              );
     // TODO: b, c, s map function?
     //sws_init_context(d.sws_ctx, NULL, NULL);
-    d.update_eq = false;
+    update_eq = false;
     return true;
 }
 

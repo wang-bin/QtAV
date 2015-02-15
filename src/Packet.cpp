@@ -23,22 +23,36 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
-namespace QtAV {
+//ffmpeg2.1 libav10
+#define AVPACKET_REF AV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1 ,39, 101)
 
-const qreal Packet::kEndPts = -0.618;
+namespace QtAV {
 
 class PacketPrivate : public QSharedData
 {
 public:
     PacketPrivate()
-        : initialized(false)
+        : QSharedData()
+        , initialized(false)
     {
         av_init_packet(&avpkt);
     }
+#if AVPACKET_REF
+    PacketPrivate(const PacketPrivate& o)
+        : QSharedData(o)
+        , initialized(o.initialized)
+    { //used by QSharedDataPointer.detach()
+        av_init_packet(&avpkt);
+        av_packet_ref(&avpkt, (AVPacket*)&o.avpkt);
+    }
+     ~PacketPrivate() {
+        av_packet_unref(&avpkt);
+    }
+#else
     ~PacketPrivate() {
         av_free_packet(&avpkt); // free old side data and ref
     }
-
+#endif
     bool initialized;
     AVPacket avpkt;
 };
@@ -64,6 +78,8 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
     if (pkt->isCorrupt)
         qDebug("currupt packet. pts: %f", pkt->pts);
 
+    // from av_read_frame: pkt->pts can be AV_NOPTS_VALUE if the video format has B-frames, so it is better to rely on pkt->dts if you do not decompress the payload.
+    // old code set pts as dts is valid
     if (avpkt->pts != AV_NOPTS_VALUE)
         pkt->pts = avpkt->pts * time_base;
     else if (avpkt->dts != AV_NOPTS_VALUE) // is it ok?
@@ -74,6 +90,7 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
         pkt->dts = avpkt->dts * time_base;
     else
         pkt->dts = pkt->pts;
+    //qDebug("pts %lld, dts: %lld ", avpkt->pts, avpkt->dts);
     //TODO: pts must >= 0? look at ffplay
     pkt->pts = qMax<qreal>(0, pkt->pts);
     pkt->dts = qMax<qreal>(0, pkt->dts);
@@ -93,35 +110,39 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
         pkt->duration = 0;
 
     //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", pkt->pts, pkt->duration, packet.dts);
-#if NO_PADDING_DATA
     pkt->data.clear();
-    if (avpkt->data)
+    // TODO: pkt->avpkt. data is not necessary now. see mpv new_demux_packet_from_avpacket
+    // copy properties and side data. does not touch data, size and ref
+    pkt->d = QSharedDataPointer<PacketPrivate>(new PacketPrivate());
+    pkt->d->initialized = true;
+    AVPacket *p = &pkt->d->avpkt;
+#if AVPACKET_REF
+    av_packet_ref(p, (AVPacket*)avpkt);  //properties are copied internally
+    // add ref without copy, bytearray does not copy either. bytearray options linke remove() is safe. omit FF_INPUT_BUFFER_PADDING_SIZE
+    pkt->data =QByteArray::fromRawData((const char*)p->data, p->size);
+#else
+    if (avpkt->data) {
+        // copy packet data. packet will be reset after AVDemuxer.readFrame() and in next av_read_frame
+#if NO_PADDING_DATA
         pkt->data = QByteArray((const char*)avpkt->data, avpkt->size);
 #else
     /*!
       larger than the actual read bytes because some optimized bitstream readers read 32 or 64 bits at once and could read over the end.
       The end of the input buffer avpkt->data should be set to 0 to ensure that no overreading happens for damaged MPEG streams
      */
-    QByteArray encoded;
-    if (avpkt->data) {
-        encoded.reserve(avpkt->size + FF_INPUT_BUFFER_PADDING_SIZE);
-        encoded.resize(avpkt->size);
-        // also copy  padding data(usually 0)
-        memcpy(encoded.data(), avpkt->data, encoded.capacity()); // encoded.capacity() is always > 0 even if packet.data, so must check avpkt->data null
-    }
-    pkt->data = encoded;
+        pkt->data.reserve(avpkt->size + FF_INPUT_BUFFER_PADDING_SIZE);
+        pkt->data.resize(avpkt->size);
+        // code in ffmpe & mpv copy avpkt->size and set padding data to 0
+        memcpy(pkt->data.data(), avpkt->data, avpkt->size);
+        memset((char*)pkt->data.constData() + avpkt->size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
 #endif //NO_PADDING_DATA
-
-    // TODO: pkt->avpkt. data is not necessary now. see mpv new_demux_packet_from_avpacket
-    // copy properties and side data. does not touch data, size and ref
-    pkt->d = QSharedDataPointer<PacketPrivate>(new PacketPrivate());
-    pkt->d->initialized = true;
-    AVPacket *p = &pkt->d->avpkt;
+    }
     av_packet_copy_props(p, avpkt);
     if (!pkt->data.isEmpty()) {
         p->data = (uint8_t*)pkt->data.constData();
         p->size = pkt->data.size();
     }
+#endif //AVPACKET_REF
     // QtAV always use ms (1/1000s) and s. As a result no time_base is required in Packet
     p->pts = pkt->pts * 1000.0;
     p->dts = pkt->dts * 1000.0;
@@ -171,17 +192,14 @@ Packet::~Packet()
 {
 }
 
-void Packet::markEnd()
-{
-    qDebug("mark as end packet");
-    pts = kEndPts;
-}
-
 const AVPacket *Packet::asAVPacket() const
 {
-    if (d.constData()) {
-        if (d->initialized) //d.data() was 0 if d has not been accessed. now only contains avpkt, check d.constData() is engough
+    if (d.constData()) { //why d->initialized (ref==1) result in detach?
+        if (d.constData()->initialized) {//d.data() was 0 if d has not been accessed. now only contains avpkt, check d.constData() is engough
+            d->avpkt.data = (uint8_t*)data.constData();
+            d->avpkt.size = data.size();
             return &d->avpkt;
+        }
     } else {
         d = QSharedDataPointer<PacketPrivate>(new PacketPrivate());
     }

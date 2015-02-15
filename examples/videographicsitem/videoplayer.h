@@ -22,7 +22,7 @@
 #define QTAV_VIDEOPLAYER_H
 
 #include <QtAV/AVPlayer.h>
-#include <QtAV/GraphicsItemRenderer.h>
+#include <QtAVWidgets/GraphicsItemRenderer.h>
 #include <QWidget>
 
 class QGraphicsView;

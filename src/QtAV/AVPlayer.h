@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -34,6 +34,7 @@ class QIODevice;
 
 namespace QtAV {
 
+class AVInput;
 class AudioOutput;
 class VideoRenderer;
 class AVClock;
@@ -43,9 +44,11 @@ class VideoCapture;
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool relativeTimeMode READ relativeTimeMode WRITE setRelativeTimeMode NOTIFY relativeTimeModeChanged)
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(bool asyncLoad READ isAsyncLoad WRITE setAsyncLoad NOTIFY asyncLoadChanged)
     Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
+    Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
     Q_PROPERTY(qint64 startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
     Q_PROPERTY(qint64 stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
@@ -56,6 +59,9 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
 public:
+    /// Supported input protocols. A static string list
+    static const QStringList& supportedProtocols();
+
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
 
@@ -73,6 +79,12 @@ public:
     QString file() const;
     //QIODevice support
     void setIODevice(QIODevice* device);
+    /*!
+     * \brief setInput
+     * AVPlayer's demuxer takes the ownership. Call it when player is stopped.
+     */
+    void setInput(AVInput* in);
+    AVInput* input() const;
 
     // force reload even if already loaded. otherwise only reopen codecs if necessary
     QTAV_DEPRECATED bool load(const QString& path, bool reload = true); //deprecated
@@ -111,10 +123,24 @@ public:
 
     MediaStatus mediaStatus() const;
 
+    /*!
+     * \brief relativeTimeMode
+     * true (default): mediaStartPosition() is always 0. All time related API, for example setPosition(), position() and positionChanged()
+     * use relative time instead of real pts
+     * false: mediaStartPosition() is from media stream itself, same as absoluteMediaStartPosition()
+     * To get real start time, use statistics().start_time. Or setRelativeTimeMode(false) first but may affect playback when playing.
+     */
+    bool relativeTimeMode() const;
+    /// Media stream property. The first timestamp in the media
+    qint64 absoluteMediaStartPosition() const;
     qreal durationF() const; //unit: s, This function may be removed in the future.
     qint64 duration() const; //unit: ms. media duration. network stream may be very small, why?
-    // the media's property.
+    /*!
+     * \brief mediaStartPosition
+     * If relativeTimeMode() is true (default), it's 0. Otherwise is the same as absoluteMediaStartPosition()
+     */
     qint64 mediaStartPosition() const;
+    /// mediaStartPosition() + duration().
     qint64 mediaStopPosition() const;
     qreal mediaStartPositionF() const; //unit: s
     qreal mediaStopPositionF() const; //unit: s
@@ -133,24 +159,14 @@ public:
     int currentRepeat() const;
     /*
      * set audio/video/subtitle stream to n. n=0, 1, 2..., means the 1st, 2nd, 3rd audio/video/subtitle stream
-     * if now==true, player will change to new stream immediatly. otherwise, you should call
-     * play() to change to new stream
      * If a new file is set(except the first time) then a best stream will be selected. If the file not changed,
      * e.g. replay, then the stream not change
      * return: false if stream not changed, not valid
+     * TODO: rename to track instead of stream
      */
-    /*
-     * steps to change stream:
-     *    player.setFile(file); //will reset wanted stream to default
-     *    player.setAudioStream(N, true)
-     * or player.setAudioStream(N) && player.play()
-     * player then will play from previous position. call
-     *    player.seek(player.startPosition())
-     * to play at beginning
-     */
-    bool setAudioStream(int n, bool now = false);
-    bool setVideoStream(int n, bool now = false);
-    bool setSubtitleStream(int n, bool now = false);
+    bool setAudioStream(int n);
+    bool setVideoStream(int n);
+    bool setSubtitleStream(int n);
     int currentAudioStream() const;
     int currentVideoStream() const;
     int currentSubtitleStream() const;
@@ -161,9 +177,10 @@ public:
      * \brief capture and save current frame to "$HOME/.QtAV/filename_pts.png".
      * To capture with custom configurations, such as name and dir, use
      * VideoCapture api through AVPlayer::videoCapture()
+     * deprecated, use AVPlayer.videoCapture()->request() instead
      * \return
      */
-    bool captureVideo();
+    QTAV_DEPRECATED bool captureVideo();
     VideoCapture *videoCapture();
     /*
      * replay without parsing the stream if it's already loaded. (not implemented)
@@ -221,6 +238,7 @@ public:
     bool installVideoFilter(Filter *filter);
     bool uninstallFilter(Filter *filter);
 
+    // TODO: name list
     void setPriority(const QVector<VideoDecoderId>& ids);
     //void setPriority(const QVector<AudioOutputId>& ids);
     /*!
@@ -233,9 +251,12 @@ public:
     int contrast() const;
     int hue() const; //not implemented
     int saturation() const;
-    /*
-     * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
-     * In addition, av_dict is slow.
+    /*!
+     * \sa AVDemuxer::setOptions()
+     * example:
+     * QVariantHash opt;
+     * opt["rtsp_transport"] = "tcp"
+     * player->setOptionsForFormat(opt);
      */
     // avformat_open_input
     void setOptionsForFormat(const QVariantHash &dict);
@@ -244,9 +265,12 @@ public:
     /*!
      * \sa AVDecoder::setOptions()
      * example:
-     *  "avcodec": {"vismv":"pf"}, "vaapi":{"display":"DRM"}
-     * equals
-     *  "vismv":"pf", "vaapi":{"display":"DRM"}
+     * QVariantHash opt, vaopt, ffopt;
+     * vaopt["display"] = "X11";
+     * opt["vaapi"] = vaopt; // only apply for va-api decoder
+     * ffopt["vismv"] = "pf";
+     * opt["ffmpeg"] = ffopt; // only apply for ffmpeg software decoder
+     * player->setOptionsForVideoCodec(opt);
      */
     // QVariantHash deprecated, use QVariantMap to get better js compatibility
     void setOptionsForAudioCodec(const QVariantHash &dict);
@@ -266,6 +290,7 @@ public slots:
     void stop();
     void playNextFrame();
 
+    void setRelativeTimeMode(bool value);
     /*!
      * \brief setRepeat
      *  repeat max times between startPosition() and endPosition()
@@ -294,9 +319,10 @@ public slots:
      *  pos < 0: duration() + pos
      */
     void setStopPosition(qint64 pos);
+    bool isSeekable() const;
     /*!
      * \brief setPosition equals to seek(qreal)
-     *  position < 0, position() equals duration()+position
+     *  position < 0: 0
      * \param position in ms
      *
      */
@@ -305,8 +331,10 @@ public slots:
     void seek(qint64 pos); //ms. same as setPosition(pos)
     void seekForward();
     void seekBackward();
-    void updateClock(qint64 msecs); //update AVClock's external clock
+    void setSeekType(SeekType type);
+    SeekType seekType() const;
 
+    void updateClock(qint64 msecs); //update AVClock's external clock
     // for all renderers. val: [-100, 100]. other value changes nothing
     void setBrightness(int val);
     void setContrast(int val);
@@ -314,6 +342,7 @@ public slots:
     void setSaturation(int val);
 
 signals:
+    void relativeTimeModeChanged();
     void autoLoadChanged();
     void asyncLoadChanged();
     void muteChanged();
@@ -329,6 +358,7 @@ signals:
     void currentRepeatChanged(int r);
     void startPositionChanged(qint64 position);
     void stopPositionChanged(qint64 position);
+    void seekableChanged();
     void positionChanged(qint64 position);
     void interruptTimeoutChanged();
     void brightnessChanged(int val);

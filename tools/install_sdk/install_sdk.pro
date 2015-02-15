@@ -1,12 +1,11 @@
 #load(qt_build_config)
 TEMPLATE = subdirs
-TARGET = QtAV
-MODULE_DEFINES = QT_AV_LIB
-MODULE = av
+av.depends = core gui
+avwidgets.depends = av
 #MODULE_VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
-MODULE_DEPENDS = core gui
-!no_widgets: MODULE_DEPENDS *= widgets
-config_gl: MODULE_DEPENDS *= widgets opengl
+config_gl {
+  avwidgets.depends += opengl
+}
 #load(qt_module)
 
 STATICLINK = 0
@@ -14,7 +13,7 @@ PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/common.pri)
 preparePaths($$OUT_PWD/../../out)
 
-VERSION = 1.4.1
+VERSION = $$QTAV_VERSION
 # windows: Qt5AV.dll, not Qt1AV.dll
 !mac_framework: VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 
@@ -26,6 +25,7 @@ win32 {
   COPY = copy /y
   COPY_DIR = xcopy /s /q /y /i
   MKDIR = mkdir
+  RM = del
   RM_DIR = rd /s /q
   *g++* {
     LIBSUFFIX = a
@@ -38,68 +38,75 @@ win32 {
   COPY = cp -f
   COPY_DIR = $$COPY -R
   MKDIR = mkdir -p
+  RM = rm -f
   RM_DIR = rm -rf
-  macx: LIBSUFFIX = dylib
-  else: LIBSUFFIX = so
+  macx {
+    LIBSUFFIX = dylib
+  } ios {
+    LIBSUFFIX = a
+  } else {
+    LIBSUFFIX = so
+  }
 }
 
-ORIG_LIB = $${LIBPREFIX}$$qtLibName(QtAV, 1).$${LIBSUFFIX}
+SCRIPT_SUFFIX=sh
+win32: SCRIPT_SUFFIX=bat
+
+
+defineTest(createForModule) {
+  MODULE_NAME = $$1
+  MODULE_FULL_NAME = Qt$$MODULE_NAME
+  MODULE = $$lower($$MODULE_NAME)
+  MODULE_DEPENDS = $$eval($${MODULE}.depends)
+  MODULE_DEFINES = QT_$$upper($${MODULE})_LIB
+
+ORIG_LIB = $${LIBPREFIX}$$qtLibName($$MODULE_FULL_NAME, $$QTAV_MAJOR_VERSION).$${LIBSUFFIX}
 greaterThan(QT_MAJOR_VERSION, 4) {
-  MODULE_PRF_FILE = $$OUT_PWD/mkspecs/features/av.prf
-  NEW_LIB = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}AV.$${LIBSUFFIX}
+  MODULE_PRF_FILE = $$OUT_PWD/mkspecs/features/$${MODULE}.prf
+  NEW_LIB = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}$${MODULE_NAME}.$${LIBSUFFIX}
   MKSPECS_DIR = $$[QT_INSTALL_BINS]/../mkspecs
 } else {
-  MODULE_PRF_FILE = $$PWD/qt4/av.prf
+  MODULE_PRF_FILE = $$PWD/qt4/$${MODULE}.prf
   NEW_LIB = $${ORIG_LIB}
   MKSPECS_DIR=$$[QMAKE_MKSPECS]
 }
 
 # copy files to a dir need '/' at the end
 mac_framework {
-  sdk_install.commands = $$quote($$COPY_DIR $$system_path($$PROJECT_LIBDIR/QtAV.framework) $$system_path($$[QT_INSTALL_LIBS]))
+  sdk_install.commands = $$quote($$COPY_DIR $$system_path($$PROJECT_LIBDIR/$${MODULE_FULL_NAME}.framework) $$system_path($$[QT_INSTALL_LIBS]))
 } else {
-  sdk_install.commands = $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
-  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/src/QtAV/*.h) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
-  sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/private))
-  sdk_install.commands += $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV/$$VERSION/QtAV/))
-  sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/$$VERSION/QtAV/private))
+  sdk_install.commands = $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/$${MODULE_FULL_NAME}/))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*Qt*AV*) $$system_path($$[QT_INSTALL_LIBS]/))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
 }
-sdk_install.commands += $$quote($$COPY $$system_path($$MODULE_PRF_FILE) $$system_path($$MKSPECS_DIR/features/av.prf))
+sdk_install.commands += $$quote($$COPY $$system_path($$MODULE_PRF_FILE) $$system_path($$MKSPECS_DIR/features/$${MODULE}.prf))
 greaterThan(QT_MAJOR_VERSION, 4) {
   #sdk_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/qml/QmlAV) $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
-  sdk_install.commands += $$quote($$COPY_DIR $$system_path($$BUILD_DIR/bin/QtAV) $$system_path($$[QT_INSTALL_QML]/QtAV))
-  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/qml/plugins.qmltypes) $$system_path($$[QT_INSTALL_QML]/QtAV/))
-  sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_lib_av*.pri) $$system_path($$MKSPECS_DIR/modules/))
+  sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_lib_$${MODULE}*.pri) $$system_path($$MKSPECS_DIR/modules/))
 }
 win32: sdk_install.commands += $$quote($$MOVE $$system_path($$[QT_INSTALL_LIBS]/Qt*AV*.dll) $$system_path($$[QT_INSTALL_BINS]/))
 ## copy libcommon.so requred by QMLPlayer and player
 android: sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/libcommon.so) $$system_path($$[QT_INSTALL_LIBS]/))
 
 mac_framework {
-  sdk_uninstall.commands = $$quote($$RM_DIR $$system_path($$[QT_INSTALL_LIBS]/QtAV.framework))
+  sdk_uninstall.commands = $$quote($$RM_DIR $$system_path($$[QT_INSTALL_LIBS]/$${MODULE_FULL_NAME}.framework))
 } else {
   sdk_uninstall.commands = $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/*Qt*AV*))
 }
 sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
-sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
-sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$MKSPECS_DIR/features/av.prf))
+sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/$${MODULE_FULL_NAME}))
+sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$MKSPECS_DIR/features/$${MODULE}.prf))
 greaterThan(QT_MAJOR_VERSION, 4) {
 #  sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_HEADERS]/QmlAV))
-  sdk_uninstall.commands += $$quote($$RM_DIR $$system_path($$[QT_INSTALL_QML]/QtAV))
-  sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$MKSPECS_DIR/modules/qt_lib_av*.pri))
+  sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$MKSPECS_DIR/modules/qt_lib_$${MODULE}*.pri))
 }
 win32: sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_BINS]/Qt*AV*.dll))
 android: sdk_uninstall.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/libcommon.so))
 
-SCRIPT_SUFFIX=sh
-win32: SCRIPT_SUFFIX=bat
+write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX, sdk_install.commands, append)
+write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX, sdk_uninstall.commands, append)
 
-write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX, sdk_install.commands)
-write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX, sdk_uninstall.commands)
-
-message(run $$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX to install QtAV as a Qt module)
+message(run $$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX to install $${MODULE_FULL_NAME} as a Qt module)
 
 greaterThan(QT_MAJOR_VERSION, 4) {
 
@@ -107,13 +114,19 @@ AV_PRF_CONT = "android: QMAKE_LFLAGS += -lOpenSLES"
 #AV_PRF_CONT += "QMAKE_LFLAGS += -lavutil -lavcodec -lavformat -lswscale"
 #config_avresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lavresample"
 #config_swresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lswresample"
-AV_PRF_CONT += "!contains(QT, av): QT *= av"
+AV_PRF_CONT += "!contains(QT, $${MODULE}): QT *= $${MODULE}"
+mac_framework {
+# mac module with config 'lib_bundle' only include Headers dir. see qtAddModule in qt_functions.prf
+# but will add Qt.$${MODULE}.config to CONFIG
+# $$eval(QT.$${MODULE}.libs) for Qt5
+  AV_PRF_CONT += "INCLUDEPATH *= $$[QT_INSTALL_LIBS]/$${MODULE_FULL_NAME}.framework/Headers/$${MODULE_FULL_NAME}"
+}
 write_file($$MODULE_PRF_FILE, AV_PRF_CONT)
 
 
 MODULE_QMAKE_OUTDIR = $$OUT_PWD
-MODULE_CONFIG = av
-MODULE_INCNAME = QtAV
+MODULE_CONFIG = $${MODULE}
+MODULE_INCNAME = $${MODULE_FULL_NAME}
 
 ## the following is from mkspecs/features/qt_module_pris.prf
 mod_work_pfx = $$MODULE_QMAKE_OUTDIR/mkspecs/modules
@@ -192,7 +205,7 @@ MODULE_FWD_PRI = $$mod_work_pfx/qt_lib_$${MODULE_ID}.pri
         "QT.$${MODULE_ID}.MINOR_VERSION = $$section(VERSION, ., 1, 1)" \
         "QT.$${MODULE_ID}.PATCH_VERSION = $$section(VERSION, ., 2, 2)" \
         "" \
-        "QT.$${MODULE_ID}.name = $$TARGET" \
+        "QT.$${MODULE_ID}.name = $${MODULE_FULL_NAME}" \
         "QT.$${MODULE_ID}.libs = $$module_libs" \
         $$module_rpath \
         "QT.$${MODULE_ID}.includes = $$MODULE_INCLUDES"
@@ -220,7 +233,7 @@ MODULE_FWD_PRI = $$mod_work_pfx/qt_lib_$${MODULE_ID}.pri
             "QT.$${MODULE}_private.MINOR_VERSION = $$section(VERSION, ., 1, 1)" \
             "QT.$${MODULE}_private.PATCH_VERSION = $$section(VERSION, ., 2, 2)" \
             "" \
-            "QT.$${MODULE}_private.name = $${TARGET}" \   # Same name as base module
+            "QT.$${MODULE}_private.name = $${MODULE_FULL_NAME}" \   # Same name as base module
             "QT.$${MODULE}_private.libs = $$module_libs" \
             "QT.$${MODULE}_private.includes = $$MODULE_PRIVATE_INCLUDES" \
             "QT.$${MODULE}_private.depends = $$replace($$list($$MODULE $$QT_FOR_PRIVATE), -private$, _private)" \
@@ -288,9 +301,63 @@ MODULE_FWD_PRI = $$mod_work_pfx/qt_lib_$${MODULE_ID}.pri
 CONFIG += qt_install_module
 } #Qt5
 
-qtav_pri.files = $$MODULE_PRI_FILES
-qtav_pri.path = $$MKSPECS_DIR/modules
-greaterThan(QT_MAJOR_VERSION, 4): INSTALLS += qtav_pri
-qtav_prf.files = $$MODULE_PRF_FILE
-qtav_prf.path = $$MKSPECS_DIR/features
-INSTALLS += qtav_prf
+eval(qt$${MODULE}_pri.files = $$MODULE_PRI_FILES)
+eval(qt$${MODULE}_pri.path = $$MKSPECS_DIR/modules)
+greaterThan(QT_MAJOR_VERSION, 4): INSTALLS += qt$${MODULE}_pri
+eval(qt$${MODULE}_prf.files = $$MODULE_PRF_FILE)
+eval(qt$${MODULE}_prf.path = $$MKSPECS_DIR/features)
+INSTALLS += qt$${MODULE}_prf
+
+# export is required, otherwise INSTALLS is not valid
+  export(qt$${MODULE}_pri.files)
+  export(qt$${MODULE}_pri.path)
+  export(qt$${MODULE}_prf.files)
+  export(qt$${MODULE}_prf.path)
+  export(INSTALLS)
+
+  return(true)
+} #createForModule
+
+write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX)
+write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX)
+
+avmodules = AV
+!no-widgets: avmodules += AVWidgets
+for(module, $$list($$avmodules)) {
+message("creating script for module Qt$$module ...")
+  createForModule($$module)
+}
+
+#headers
+!mac_framework {
+  sdk_h_install.commands = $$quote($$COPY $$system_path($$PROJECTROOT/src/QtAV/*.h) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
+  sdk_h_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/src/QtAV/QtAV) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/))
+  !no-widgets {
+    sdk_h_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/widgets/QtAVWidgets/*.h) $$system_path($$[QT_INSTALL_HEADERS]/QtAVWidgets/))
+    sdk_h_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/widgets/QtAVWidgets/QtAVWidgets) $$system_path($$[QT_INSTALL_HEADERS]/QtAVWidgets/))
+  }
+  sdk_h_install.commands += $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/QtAV/$$VERSION/QtAV/))
+  win32 {
+    sdk_h_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/private))
+    sdk_h_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/$$VERSION/QtAV/private))
+  } else {
+    sdk_h_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV))
+    sdk_h_install.commands += $$quote($$COPY_DIR $$system_path($$PROJECTROOT/src/QtAV/private) $$system_path($$[QT_INSTALL_HEADERS]/QtAV/$$VERSION/QtAV))
+  }
+  write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX, sdk_h_install.commands, append)
+}
+#qml
+greaterThan(QT_MAJOR_VERSION, 4) {
+  # qtHaveModule does not exist in Qt5.0
+  isEqual(QT_MINOR_VERSION, 0)|qtHaveModule(quick) {
+    win32 {
+      sdk_qml_install.commands = $$quote($$COPY_DIR $$system_path($$BUILD_DIR/bin/QtAV) $$system_path($$[QT_INSTALL_QML]/QtAV))
+    } else {
+      sdk_qml_install.commands = $$quote($$COPY_DIR $$system_path($$BUILD_DIR/bin/QtAV) $$system_path($$[QT_INSTALL_QML]))
+    }
+    sdk_qml_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/qml/plugins.qmltypes) $$system_path($$[QT_INSTALL_QML]/QtAV/))
+    sdk_qml_uninstall.commands = $$quote($$RM_DIR $$system_path($$[QT_INSTALL_QML]/QtAV))
+    write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX, sdk_qml_install.commands, append)
+    write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX, sdk_qml_uninstall.commands, append)
+  }
+}

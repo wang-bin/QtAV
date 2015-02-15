@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoRendererTypes: type id and manually id register function
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -28,15 +28,7 @@ namespace QtAV {
 
 //Q_AV_EXPORT(dllexport/import) is needed if used out of the library
 //TODO graphics item?
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_Widget;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GraphicsItem;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GLWidget;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GDI;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_Direct2D;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_XV;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_GLWidget2;
 extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWindow;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWidget;
 
 Q_AV_EXPORT void VideoRenderer_RegisterAll();
 

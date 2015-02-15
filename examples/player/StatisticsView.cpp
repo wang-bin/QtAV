@@ -87,8 +87,8 @@ QList<QVariant> getVideoInfoValues(const Statistics& s) {
             << s.video.start_time.toString("HH:mm:ss")
             << QString::number(s.video.bit_rate/1000) + " Kb/s"
             << s.video.frames
-            << s.video_only.fps
-            << s.video_only.avg_frame_rate
+            << s.video_only.frame_rate
+            << s.video_only.frame_rate
             << s.video_only.pix_fmt
             << QString::number(s.video_only.width) + "x" + QString::number(s.video_only.height)
             << QString::number(s.video_only.coded_width) + "x" + QString::number(s.video_only.coded_height)

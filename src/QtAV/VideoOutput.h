@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -45,6 +45,15 @@ class Q_AV_EXPORT VideoOutput : public QObject, public VideoRenderer
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
     Q_ENUMS(Quality)
 public:
+    /*!
+     * \brief VideoOutput
+     * Create a QWidget based renderer. Result can be a QOpenGLWidget or QGLWidget based renderer if possible. Otherwise fallback to a software renderer
+     */
+    VideoOutput(QObject *parent = 0);
+    /*!
+     * \brief VideoOutput
+     * Create a renderer with given rendererId. MUST check VideoOutput::isAvailable() later!
+     */
     VideoOutput(VideoRendererId rendererId, QObject *parent = 0);
     ~VideoOutput();
     VideoRendererId id() const;
@@ -97,10 +106,6 @@ private: //for proxy
     virtual void setStatistics(Statistics* statistics); //called by friend AVPlayer
     virtual bool onInstallFilter(Filter *filter);
     virtual bool onUninstallFilter(Filter *filter);
-    virtual void onAddOutputSet(OutputSet *set);
-    virtual void onRemoveOutputSet(OutputSet *set);
-    virtual void onAttach(OutputSet *set); //add this to set
-    virtual void onDetach(OutputSet *set = 0); //detatch from (all, if 0) output set(s)
     virtual bool onHanlePendingTasks();
 };
 

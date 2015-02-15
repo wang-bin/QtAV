@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,6 +19,7 @@
 ******************************************************************************/
 
 #include "EventFilter.h"
+#include <QtAVWidgets>
 #include <QApplication>
 #include <QtCore/QUrl>
 #include <QEvent>
@@ -223,10 +224,12 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             break;
         case Qt::Key_Left:
             qDebug("<-");
+            player->setSeekType(key_event->isAutoRepeat() ? KeyFrameSeek : AccurateSeek);
             player->seekBackward();
             break;
         case Qt::Key_Right:
             qDebug("->");
+            player->setSeekType(key_event->isAutoRepeat() ? KeyFrameSeek : AccurateSeek);
             player->seekForward();
             break;
         case Qt::Key_M:
@@ -334,6 +337,36 @@ bool WindowEventFilter::eventFilter(QObject *watched, QEvent *event)
         if (mpWindow->windowState().testFlag(Qt::WindowFullScreen) || e->oldState().testFlag(Qt::WindowFullScreen)) {
             emit fullscreenChanged();
         }
+        return false;
+    }
+    if (event->type() ==  QEvent::MouseButtonPress) {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        Qt::MouseButton mbt = me->button();
+        if (mbt == Qt::LeftButton) {
+            gMousePos = me->globalPos();
+            iMousePos = me->pos();
+        }
+        return false;
+    }
+    if (event->type() == QEvent::MouseButtonRelease) {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        Qt::MouseButton mbt = me->button();
+        if (mbt != Qt::LeftButton)
+            return false;
+        iMousePos = QPoint();
+        gMousePos = QPoint();
+        return false;
+    }
+    if (event->type() == QEvent::MouseMove) {
+        if (iMousePos.isNull() || gMousePos.isNull())
+            return false;
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        int x = mpWindow->pos().x();
+        int y = mpWindow->pos().y();
+        int dx = me->globalPos().x() - gMousePos.x();
+        int dy = me->globalPos().y() - gMousePos.y();
+        gMousePos = me->globalPos();
+        mpWindow->move(x + dx, y + dy);
         return false;
     }
     return false;

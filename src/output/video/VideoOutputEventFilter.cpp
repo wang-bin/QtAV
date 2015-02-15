@@ -24,7 +24,6 @@
 #include <QtCore/QEvent>
 #include <QKeyEvent>
 #include <QWidget>
-#include "utils/Logger.h"
 
 namespace QtAV {
 

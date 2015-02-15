@@ -33,8 +33,10 @@ class AudioDecoderPrivate : public AVDecoderPrivate
 public:
     AudioDecoderPrivate()
         : AVDecoderPrivate()
-      , resampler(0)
+        , resampler(0)
+        , frame(0)
     {
+        frame = av_frame_alloc();
         resampler = AudioResamplerFactory::create(AudioResamplerId_FF);
         if (!resampler)
             resampler = AudioResamplerFactory::create(AudioResamplerId_Libav);
@@ -42,6 +44,10 @@ public:
             resampler->setOutSampleFormat(AV_SAMPLE_FMT_FLT);
     }
     virtual ~AudioDecoderPrivate() {
+        if (frame) {
+            av_frame_free(&frame);
+            frame = 0;
+        }
         if (resampler) {
             delete resampler;
             resampler = 0;
@@ -49,6 +55,9 @@ public:
     }
 
     AudioResampler *resampler;
+
+    AVFrame *frame; //set once and not change
+    QByteArray decoded;
 };
 
 AudioDecoder::AudioDecoder()
@@ -76,8 +85,10 @@ bool AudioDecoder::decode(const Packet &packet)
     if (!isAvailable())
         return false;
     DPTR_D(AudioDecoder);
+    d.decoded.clear();
+    int got_frame_ptr = 0;
     // const AVPacket*: ffmpeg >= 1.0. no libav
-    int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, (AVPacket*)packet.asAVPacket());
+    int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &got_frame_ptr, (AVPacket*)packet.asAVPacket());
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
     if (ret == AVERROR(EAGAIN)) {
         return false;
@@ -86,7 +97,7 @@ bool AudioDecoder::decode(const Packet &packet)
         qWarning("[AudioDecoder] %s", av_err2str(ret));
         return false;
     }
-    if (!d.got_frame_ptr) {
+    if (!got_frame_ptr) {
         qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d", ret, d.undecoded_size);
         return true;
     }
@@ -105,6 +116,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     if (!isAvailable())
         return false;
     DPTR_D(AudioDecoder);
+    d.decoded.clear();
     AVPacket packet;
 #if NO_PADDING_DATA
     /*!
@@ -119,7 +131,8 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     packet.size = encoded.size();
     packet.data = (uint8_t*)encoded.constData();
 #endif //NO_PADDING_DATA
-    int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &d.got_frame_ptr, &packet);
+    int got_frame_ptr = 0;
+    int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &got_frame_ptr, &packet);
     d.undecoded_size = qMin(encoded.size() - ret, encoded.size());
     av_free_packet(&packet);
     if (ret == AVERROR(EAGAIN)) {
@@ -129,7 +142,7 @@ bool AudioDecoder::decode(const QByteArray &encoded)
         qWarning("[AudioDecoder] %s", av_err2str(ret));
         return false;
     }
-    if (!d.got_frame_ptr) {
+    if (!got_frame_ptr) {
         qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d", ret, d.undecoded_size);
         return true;
     }
@@ -251,6 +264,11 @@ bool AudioDecoder::decode(const QByteArray &encoded)
     return true;
 #endif //!(QTAV_HAVE(SWRESAMPLE) && !QTAV_HAVE(AVRESAMPLE))
     return !d.decoded.isEmpty();
+}
+
+QByteArray AudioDecoder::data() const
+{
+    return d_func().decoded;
 }
 
 AudioResampler* AudioDecoder::resampler()

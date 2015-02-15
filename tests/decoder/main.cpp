@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
     }
     VideoDecoder *dec = VideoDecoderFactory::create(cid);
     AVDemuxer demux;
-    if (!demux.loadFile(file)) {
+    demux.setMedia(file);
+    if (!demux.load()) {
         qWarning("Failed to load file: %s", file.toUtf8().constData());
         return 1;
     }
@@ -43,17 +44,19 @@ int main(int argc, char *argv[])
             continue;
         if (demux.stream() != vstream)
             continue;
-        if (dec->decode(demux.packet()->data)) {
+        const Packet pkt = demux.packet();
+        if (dec->decode(pkt)) {
             /*
              * TODO: may contains more than 1 frames
              * map from gpu or not?
              */
             //frame = dec->frame().clone();
             count++;
+            printf("decode count: %d\r", count);fflush(0);
         }
     }
     qint64 elapsed = timer.elapsed();
-    int msec = elapsed/1000LL;
+    int msec = elapsed/1000LL+1;
     qDebug("decoded frames: %d, time: %d, average speed: %d", count, msec, count/msec);
     return 0;
 }

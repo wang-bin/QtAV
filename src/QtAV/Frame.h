@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -70,7 +70,8 @@ public:
     uchar* bits(int plane = 0);
     const uchar *bits(int plane = 0) const;
     /*!
-     * \brief setBits set slice from FFmpeg
+     * \brief setBits
+     * does nothing if plane is invalid. if given array size is greater than planeCount(), only planeCount() elements is used
      * \param b slice
      * \param plane color/audio channel
      */
@@ -78,9 +79,9 @@ public:
     void setBits(uchar *b, int plane = 0);
     void setBits(const QVector<uchar*>& b);
     void setBits(quint8 *slice[]);
-    /*
-     * It's used now until I complete all pixel formats in QtAV.
-     * set strides from FFmpeg. 4 channels at most for video
+    /*!
+     * \brief setBytesPerLine
+     * does nothing if plane is invalid. if given array size is greater than planeCount(), only planeCount() elements is used
      */
     void setBytesPerLine(int lineSize, int plane = 0);
     void setBytesPerLine(const QVector<int>& lineSize);
@@ -91,9 +92,10 @@ public:
     void setMetaData(const QString &key, const QVariant &value);
     void setTimestamp(qreal ts);
     qreal timestamp() const;
+    inline void swap(Frame &other) { qSwap(d_ptr, other.d_ptr); }
 
 protected:
-    Frame(FramePrivate &d);
+    Frame(FramePrivate *d);
     QExplicitlySharedDataPointer<FramePrivate> d_ptr;
 };
 

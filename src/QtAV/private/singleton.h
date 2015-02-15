@@ -1,6 +1,6 @@
 /******************************************************************************
     singleton.h: singleton template
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
     
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -24,11 +24,9 @@
 #include <cstdlib> //harmattan: atexit
 #include <iostream>
 #include <cassert>
-//#include <qglobal.h> //TODO: no qt
 #ifndef QT_NO_EXCEPTIONS
 #include <stdexcept>
 #endif
-
 #define DEBUG 0
 #if DEBUG
 #define DBG(fmt, ...) \

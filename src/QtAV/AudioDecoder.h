@@ -31,12 +31,14 @@ class AudioResampler;
 class AudioDecoderPrivate;
 class Q_AV_EXPORT AudioDecoder : public AVDecoder
 {
+    Q_DISABLE_COPY(AudioDecoder)
     DPTR_DECLARE_PRIVATE(AudioDecoder)
 public:
     AudioDecoder();
-    virtual bool prepare();
+    virtual bool prepare() Q_DECL_OVERRIDE;
     QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
     virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
+    virtual QByteArray data() const; //decoded data
     AudioResampler *resampler();
 };
 

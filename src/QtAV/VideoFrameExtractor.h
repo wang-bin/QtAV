@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -39,11 +39,17 @@ class Q_AV_EXPORT VideoFrameExtractor : public QObject
     Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
 public:
     explicit VideoFrameExtractor(QObject *parent = 0);
+    /*!
+     * \brief setSource
+     * Set the video file. If video changes, current loaded video will be unloaded.
+     */
     void setSource(const QString value);
     QString source() const;
     /*!
      * \brief setAsync
      * Extract video frames in another thread. Default is true.
+     * In async mode, if current extraction is not finished, new
+     * setPosition() will be ignored.
      */
     void setAsync(bool value);
     bool async() const;
@@ -53,7 +59,8 @@ public:
      * \brief setPrecision
      * if the difference between the next requested position is less than the value, previous
      * one is used and no positionChanged() and frameExtracted() signals to emit.
-     * Default is 500ms.
+     * \param value < 0: auto. Real value depends on video duration and fps, but always 20 <= value <=500
+     * Default is auto.
      */
     void setPrecision(int value);
     int precision() const;
@@ -80,7 +87,7 @@ public slots:
     /*!
      * \brief extract
      * If last extracted frame can be use, use it.
-     * If there is a key frame in [position-precision, position+precision], the nearest key frame
+     * If there is a key frame in [position, position+precision], the nearest key frame
      * before position+precision will be extracted. Otherwise, the given position frame will be extracted.
      */
     void extract();

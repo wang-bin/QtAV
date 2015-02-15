@@ -24,6 +24,7 @@
 
 // no need to include the C header if only functions declared there
 extern "C" {
+// the following line will be replaced by the content of config/ASS/include if exists
 #include "ass/ass.h"
 }
 

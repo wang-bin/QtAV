@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/VideoDecoderFFmpegHW.h"
-#include "QtAV/private/VideoDecoderFFmpegHW_p.h"
+#include "VideoDecoderFFmpegHW.h"
+#include "VideoDecoderFFmpegHW_p.h"
 #include "utils/GPUMemCopy.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
@@ -54,7 +54,6 @@ class VideoDecoderVDA : public VideoDecoderFFmpegHW
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderVDA)
-    Q_PROPERTY(bool SSE4 READ SSE4 WRITE setSSE4)
 public:
     VideoDecoderVDA();
     virtual ~VideoDecoderVDA();
@@ -80,7 +79,6 @@ class VideoDecoderVDAPrivate : public VideoDecoderFFmpegHWPrivate
 public:
     VideoDecoderVDAPrivate()
         : VideoDecoderFFmpegHWPrivate()
-        , copy_uswc(false)
     {
         description = "VDA";
         memset(&hw_ctx, 0, sizeof(hw_ctx));
@@ -95,9 +93,6 @@ public:
     virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VDA_VLD);}
 
     struct vda_context  hw_ctx;
-    // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
-    bool copy_uswc;
-    GPUMemCopy gpu_mem;
 };
 
 typedef struct {
@@ -186,16 +181,6 @@ QString VideoDecoderVDA::description() const
     return "Video Decode Acceleration";
 }
 
-void VideoDecoderVDA::setSSE4(bool y)
-{
-    d_func().copy_uswc = y;
-}
-
-bool VideoDecoderVDA::SSE4() const
-{
-    return d_func().copy_uswc;
-}
-
 VideoFrame VideoDecoderVDA::frame()
 {
     DPTR_D(VideoDecoderVDA);
@@ -216,43 +201,14 @@ VideoFrame VideoDecoderVDA::frame()
     const VideoFormat fmt(pixfmt);
     uint8_t *src[3];
     int pitch[3];
-    int plane_h[3];
-    int yuv_size = 0;
     CVPixelBufferLockBaseAddress(cv_buffer, 0);
     for (int i = 0; i <fmt.planeCount(); ++i) {
         src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(cv_buffer, i);
         pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cv_buffer, i);
-        plane_h[i] = i == 0 ? d.height : fmt.chromaHeight(d.height);
-        yuv_size += pitch[i] * plane_h[i];
     }
     CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
     CVPixelBufferRelease(cv_buffer);
-    VideoFrame frame;
-    if (d.copy_uswc && d.gpu_mem.isReady()) {
-        // additional 15 bytes to ensure 16 bytes aligned
-        QByteArray buf(15 + yuv_size, 0);
-        const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
-        // plane 1, 2... is aligned?
-        uchar* plane_ptr = (uchar*)buf.data() + offset_16;
-        QVector<uchar*> dst(fmt.planeCount(), 0);
-        for (int i = 0; i < dst.size(); ++i) {
-            dst[i] = plane_ptr;
-            // TODO: add VideoFormat::planeWidth/Height() ?
-            plane_ptr += pitch[i] * plane_h[i];
-            d.gpu_mem.copyFrame(src[i], dst[i], pitch[i], plane_h[i], pitch[i]);
-            //memcpy(dst[i], src[i], pitch[i]*plane_h[i]);
-        }
-        frame = VideoFrame(buf, d.width, d.height, fmt);
-        frame.setBits(dst);
-        frame.setBytesPerLine(pitch);
-    } else {
-        frame = VideoFrame(d.width, d.height, fmt); //d.hw_ctx.width
-        frame.setBits(src);
-        frame.setBytesPerLine(pitch);
-        // TODO: buffer pool and create VideoFrame when needed to avoid copy? also for other va
-        frame = frame.clone();
-    }
-    return frame;
+    return copyToFrame(fmt, d.height, src, pitch, false);
 }
 
 bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
@@ -265,9 +221,7 @@ bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
     }
     if (hw_ctx.decoder) {
         ff_vda_destroy_decoder(&hw_ctx);
-        if (copy_uswc) {
-            gpu_mem.cleanCache();
-        }
+        releaseUSWC();
     } else {
         memset(&hw_ctx, 0, sizeof(hw_ctx));
         hw_ctx.format = 'avc1';
@@ -285,14 +239,8 @@ bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
         qWarning("Failed to create decoder (%i): %s", status, vda_err_str(status));
         return false;
     }
+    initUSWC(hw_ctx.width);
     qDebug("VDA decoder created");
-    if (copy_uswc) {
-        if (!gpu_mem.initCache(hw_ctx.width)) {
-            // only set by user (except disabling copy_uswc for non-intel gpu)
-            //copy_uswc = false;
-            //disable_derive = true;
-        }
-    }
     return true;
 }
 
@@ -330,6 +278,7 @@ bool VideoDecoderVDAPrivate::open()
         return false;
     }
 #endif
+    // TODO: check whether VDA is in use
     return true;
 }
 
@@ -338,9 +287,7 @@ void VideoDecoderVDAPrivate::close()
     restore(); //IMPORTANT. can not call restore in dtor because ctx is 0 there
     qDebug("destroying VDA decoder");
     ff_vda_destroy_decoder(&hw_ctx);
-    if (copy_uswc) {
-        gpu_mem.cleanCache();
-    }
+    releaseUSWC();
 }
 
 } //namespace QtAV

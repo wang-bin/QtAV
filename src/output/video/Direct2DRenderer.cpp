@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -43,7 +43,6 @@
 //performance: http://msdn.microsoft.com/en-us/library/windows/desktop/dd372260(v=vs.85).aspx
 //vlc is helpful
 //layer(opacity): http://www.cnblogs.com/graphics/archive/2013/04/15/2781969.html
-#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -311,8 +310,7 @@ bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
         return false;
     HRESULT hr = S_OK;
     //if d2d factory is D2D1_FACTORY_TYPE_SINGLE_THREADED, we need to lock
-    //QMutexLocker locker(&d.img_mutex);
-    //Q_UNUSED(locker);
+    //already locked
     d.video_frame = frame;
     //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
     /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
