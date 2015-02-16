@@ -214,10 +214,15 @@ void AudioOutput::setVolume(qreal volume)
     d.vol = volume;
     emit volumeChanged(d.vol);
     d.updateSampleScaleFunc();
-    if (features() & SetVolume)
+    if (features() & SetVolume) {
         d.sw_volume = !deviceSetVolume(d.vol);
-    else
+        //if (!qFuzzyCompare(deviceGetVolume(), d.vol))
+        //    d.sw_volume = true;
+        if (d.sw_volume)
+            deviceSetVolume(1.0); // TODO: partial software?
+    } else {
         d.sw_volume = true;
+    }
 }
 
 qreal AudioOutput::volume() const
@@ -515,6 +520,11 @@ bool AudioOutput::deviceSetVolume(qreal value)
 {
     Q_UNUSED(value)
     return false;
+}
+
+qreal AudioOutput::deviceGetVolume() const
+{
+    return 1.0;
 }
 
 bool AudioOutput::deviceSetMute(bool value)

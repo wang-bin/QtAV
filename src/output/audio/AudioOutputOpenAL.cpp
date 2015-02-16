@@ -63,6 +63,7 @@ protected:
     }
 
     virtual bool deviceSetVolume(qreal value);
+    virtual qreal deviceGetVolume() const;
     int getQueued();
 };
 
@@ -445,6 +446,18 @@ bool AudioOutputOpenAL::deviceSetVolume(qreal value)
     SCOPE_LOCK_CONTEXT();
     AL_RUN_CHECK(alListenerf(AL_GAIN, value));
     return true;
+}
+
+qreal AudioOutputOpenAL::deviceGetVolume() const
+{
+    SCOPE_LOCK_CONTEXT();
+    ALfloat v = 1.0;
+    alGetListenerf(AL_GAIN, &v);
+    ALenum err = alGetError();
+    if (err != AL_NO_ERROR) {
+        qWarning("AudioOutputOpenAL Error>>> deviceGetVolume (%d) : %s", err, alGetString(err));
+    }
+    return v;
 }
 
 int AudioOutputOpenAL::getQueued()

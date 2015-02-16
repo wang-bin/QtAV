@@ -178,11 +178,13 @@ public:
      * \brief setFeatures
      * do nothing if onSetFeatures() returns false, which means current api does not support the features
      * call this in the ctor of your new backend
+     * TODO: return features set successfully
      */
     void setFeatures(Feature value);
     Feature features() const;
     void setFeature(Feature value, bool on = true);
     bool hasFeatures(Feature value) const;
+    //TODO: virtual Features supportedFeatures() const;
     qreal timestamp() const;
     // Internal use since QtAV 1.5
     virtual bool play() = 0; //MUST
@@ -214,7 +216,8 @@ protected:
     virtual int getOffset();      // OffsetIndex
     virtual int getOffsetByBytes(); // OffsetBytes
     // \return false by default
-    virtual bool onSetFeatures(Feature value, bool set = true);
+    // TODO: bool onSetFeature(Feature f, bool s);
+    virtual bool onSetFeatures(Feature value, bool set = true); // TODO: remove
     /*!
      * \brief deviceSetVolume
      * Set volume by backend api. If backend can not set the given volume, or SetVolume feature is not set, software implemention will be used.
@@ -223,6 +226,7 @@ protected:
      * \return true if success
      */
     virtual bool deviceSetVolume(qreal value);
+    virtual qreal deviceGetVolume() const;
     virtual bool deviceSetMute(bool value = true);
     // reset internal status. MUST call this at the begining of open()
     void resetStatus();
