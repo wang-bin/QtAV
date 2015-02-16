@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,6 +29,9 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/BlockingQueue.h"
 
+/*
+ * TODO: VC1, HEVC bsf
+ */
 #define COPY_ON_DECODE 1
 #define FILTER_ANNEXB_CUVID 0
 /*
@@ -100,30 +103,41 @@ void RegisterVideoDecoderCUDA_Man()
     FACTORY_REGISTER_ID_MAN(VideoDecoder, CUDA, "CUDA")
 }
 
-
+static struct {
+    AVCodecID ffCodec;
+    cudaVideoCodec cudaCodec;
+} const ff_cuda_codecs[] = {
+    { QTAV_CODEC_ID(MPEG1VIDEO), cudaVideoCodec_MPEG1 },
+    { QTAV_CODEC_ID(MPEG2VIDEO), cudaVideoCodec_MPEG2 },
+    { QTAV_CODEC_ID(MPEG4),      cudaVideoCodec_MPEG4 },
+    { QTAV_CODEC_ID(VC1),        cudaVideoCodec_VC1   },
+    { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264  },
+    { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264_SVC},
+    { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264_MVC},
+    // AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
+#if defined(AV_CODEC_ID_H265) && (CUDA_VERSION >= 6050) //TODO: check avcodec
+    { QTAV_CODEC_ID(HEVC),       cudaVideoCodec_HEVC },
+#endif //
+    { QTAV_CODEC_ID(NONE),       cudaVideoCodec_NumCodecs}
+};
 static cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
 {
-    static struct {
-        AVCodecID ffcodec;
-        cudaVideoCodec cudaCodec;
-    } ff_cuda_codecs[] = {
-        // AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
-#if defined(AV_CODEC_ID_H265) && (CUDA_VERSION >= 6050) //TODO: check avcodec
-        { QTAV_CODEC_ID(HEVC),       cudaVideoCodec_HEVC },
-#endif //
-        { QTAV_CODEC_ID(MPEG1VIDEO), cudaVideoCodec_MPEG1 },
-        { QTAV_CODEC_ID(MPEG2VIDEO), cudaVideoCodec_MPEG2 },
-        { QTAV_CODEC_ID(VC1),        cudaVideoCodec_VC1   },
-        { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264  },
-        { QTAV_CODEC_ID(MPEG4),      cudaVideoCodec_MPEG4 },
-        { (AVCodecID)-1, (cudaVideoCodec)-1}
-    };
-    for (int i = 0; ff_cuda_codecs[i].cudaCodec != -1; ++i) {
-        if (ff_cuda_codecs[i].ffcodec == codec) {
+
+    for (int i = 0; ff_cuda_codecs[i].ffCodec != QTAV_CODEC_ID(NONE); ++i) {
+        if (ff_cuda_codecs[i].ffCodec == codec) {
             return ff_cuda_codecs[i].cudaCodec;
         }
     }
-    return (cudaVideoCodec)-1;
+    return cudaVideoCodec_NumCodecs;
+}
+static AVCodecID mapCodecToFFmpeg(cudaVideoCodec cudaCodec)
+{
+    for (int i = 0; ff_cuda_codecs[i].ffCodec != QTAV_CODEC_ID(NONE); ++i) {
+        if (ff_cuda_codecs[i].cudaCodec == cudaCodec) {
+            return ff_cuda_codecs[i].ffCodec;
+        }
+    }
+    return QTAV_CODEC_ID(NONE);
 }
 
 #if NV_CONFIG(DLLAPI_CUDA) || defined(CUDA_LINK)
@@ -228,6 +242,18 @@ public:
             //coded_width or width?
             p->createCUVIDDecoder(cuvidfmt->codec, cuvidfmt->coded_width, cuvidfmt->coded_height);
             // how about parser.ulMaxNumDecodeSurfaces? recreate?
+            AVCodecID codec = mapCodecToFFmpeg(cuvidfmt->codec);
+            if (codec == QTAV_CODEC_ID(H264)) {
+                if (!p->bitstream_filter_ctx) {
+                    p->bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
+                    Q_ASSERT_X(p->bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
+                }
+            } else {
+                if (p->bitstream_filter_ctx) {
+                    av_bitstream_filter_close(p->bitstream_filter_ctx);
+                    p->bitstream_filter_ctx = 0;
+                }
+            }
         }
         //TODO: lavfilter
         return 1;
@@ -246,7 +272,6 @@ public:
             return 0;
         p->surface_in_use[cuviddisp->picture_index] = true;
         //qDebug("mark in use pic_index: %d", cuviddisp->picture_index);
-        //qDebug("%s @%d tid=%p dec=%p", __FUNCTION__, __LINE__, QThread::currentThread(), p->dec);
 #if COPY_ON_DECODE
         return p->processDecodedData(cuviddisp, 0);
 #else
@@ -318,6 +343,7 @@ void VideoDecoderCUDA::flush()
 {
     DPTR_D(VideoDecoderCUDA);
     d.frame_queue.clear();
+    d.surface_in_use.fill(false);
 }
 
 bool VideoDecoderCUDA::prepare()
@@ -337,8 +363,17 @@ bool VideoDecoderCUDA::prepare()
         return false;
     if (!d.cuctx)
         d.initCuda();
-    d.bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
-    Q_ASSERT_X(d.bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
+    if (d.codec_ctx->codec_id == QTAV_CODEC_ID(H264)) {
+        if (!d.bitstream_filter_ctx) {
+            d.bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
+            Q_ASSERT_X(d.bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
+        }
+    } else {
+        if (d.bitstream_filter_ctx) {
+            av_bitstream_filter_close(d.bitstream_filter_ctx);
+            d.bitstream_filter_ctx = 0;
+        }
+    }
     // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
     return d.createCUVIDDecoder(mapCodecFromFFmpeg(d.codec_ctx->codec_id), d.codec_ctx->coded_width, d.codec_ctx->coded_height)
             && d.createCUVIDParser();
@@ -404,14 +439,20 @@ bool VideoDecoderCUDA::decode(const Packet &packet)
     }
     uint8_t *outBuf = 0;
     int outBufSize = 0;
-    // h264_mp4toannexb_filter does not use last parameter 'keyFrame', so just set 0
-    //return: 0: not changed, no outBuf allocated. >0: ok. <0: fail
-    int filtered = av_bitstream_filter_filter(d.bitstream_filter_ctx, d.codec_ctx, NULL, &outBuf, &outBufSize
-                                              , (const uint8_t*)packet.data.constData(), packet.data.size()
-                                              , 0);//d.is_keyframe);
-    //qDebug("%s @%d filtered=%d outBuf=%p, outBufSize=%d", __FUNCTION__, __LINE__, filtered, outBuf, outBufSize);
-    if (filtered < 0) {
-        qDebug("failed to filter: %s", av_err2str(filtered));
+    int filtered = 0;
+    if (d.bitstream_filter_ctx) {
+        // h264_mp4toannexb_filter does not use last parameter 'keyFrame', so just set 0
+        //return: 0: not changed, no outBuf allocated. >0: ok. <0: fail
+        filtered = av_bitstream_filter_filter(d.bitstream_filter_ctx, d.codec_ctx, NULL, &outBuf, &outBufSize
+                                                  , (const uint8_t*)packet.data.constData(), packet.data.size()
+                                                  , 0);//d.is_keyframe);
+        //qDebug("%s @%d filtered=%d outBuf=%p, outBufSize=%d", __FUNCTION__, __LINE__, filtered, outBuf, outBufSize);
+        if (filtered < 0) {
+            qDebug("failed to filter: %s", av_err2str(filtered));
+        }
+    } else {
+        outBuf = (uint8_t*)packet.data.constData();
+        outBufSize = packet.data.size();
     }
 
     CUVIDSOURCEDATAPACKET cuvid_pkt;
@@ -582,7 +623,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w
     // otherwise CUDA_ERROR_OUT_OF_MEMORY on cuMemcpyDtoH
     // if ulNumDecodeSurfaces < ulMaxNumDecodeSurfaces, CurrPicIdx may be > ulNumDecodeSurfaces
     /*
-     * TODO: check video memory, e.g. runtime apu extern __host__ cudaError_t CUDARTAPI cudaMemGetInfo(size_t *free, size_t *total);
+     * TODO: check video memory, e.g. runtime api extern __host__ cudaError_t CUDARTAPI cudaMemGetInfo(size_t *free, size_t *total);
      * 24MB is too small for 4k video, only n2 surfaces can be use so decoding will be too slow
      */
 #if 0
@@ -600,7 +641,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w
 bool VideoDecoderCUDAPrivate::createCUVIDParser()
 {
     cudaVideoCodec cudaCodec = mapCodecFromFFmpeg(codec_ctx->codec_id);
-    if (cudaCodec == -1) {
+    if (cudaCodec == cudaVideoCodec_NumCodecs) {
         QString es(QObject::tr("Codec %1 is not supported by CUDA").arg(avcodec_get_name(codec_ctx->codec_id)));
         //emit error(AVError::CodecError, es);
         qWarning() << es;
@@ -626,6 +667,9 @@ bool VideoDecoderCUDAPrivate::createCUVIDParser()
     parser_params.ulMaxNumDecodeSurfaces = nb_dec_surface;
     //parser_params.ulMaxDisplayDelay = 4; //?
     parser_params.pUserData = this;
+    // Parser callbacks
+    // The parser will call these synchronously from within cuvidParseVideoData(), whenever a picture is ready to
+    // be decoded and/or displayed.
     parser_params.pfnSequenceCallback = VideoDecoderCUDAPrivate::HandleVideoSequence;
     parser_params.pfnDecodePicture = VideoDecoderCUDAPrivate::HandlePictureDecode;
     parser_params.pfnDisplayPicture = VideoDecoderCUDAPrivate::HandlePictureDisplay;
@@ -730,7 +774,6 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         cuvidUnmapVideoFrame(dec, devptr);
         cuvidCtxUnlock(vid_ctx_lock, 0);
         //qDebug("mark not in use pic_index: %d", cuviddisp->picture_index);
-        surface_in_use[cuviddisp->picture_index] = false;
 
         uchar *planes[] = {
             host_data,
@@ -741,13 +784,14 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         frame.setBits(planes);
         frame.setBytesPerLine(pitches);
         frame.setTimestamp((double)cuviddisp->timestamp/1000.0);
-        //TODO: is clone required? may crash on clone, I should review clone()
-        //frame = frame.clone();
+        surface_in_use[cuviddisp->picture_index] = false;
+
+        frame = frame.clone();
         if (outFrame) {
-            *outFrame = frame.clone();
+            *outFrame = frame;
         }
 #if COPY_ON_DECODE
-        frame_queue.put(frame.clone());
+        frame_queue.put(frame);
 #endif
         //qDebug("frame queue size: %d", frame_queue.size());
     }
