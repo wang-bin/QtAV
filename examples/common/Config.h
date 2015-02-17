@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -54,7 +54,12 @@ class COMMON_EXPORT Config : public QObject
 public:
     static Config& instance();
 
+    Q_INVOKABLE bool reset();
     void reload();
+    /*!
+     * \brief defaultDir
+     * Config file dir. File name is $appname.ini
+     */
     QString defaultDir() const;
     //void loadFromFile(const QString& file);
 

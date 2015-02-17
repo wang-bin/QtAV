@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -18,22 +18,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-
 #include "Config.h"
-
 #include <QtCore/QSettings>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
-
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QDesktopServices>
 #else
 #include <QtCore/QStandardPaths>
 #endif
 #include <QtDebug>
-
-
 
 class Config::Data
 {
@@ -191,6 +186,18 @@ Config::~Config()
 QString Config::defaultDir() const
 {
     return mpData->dir;
+}
+
+bool Config::reset()
+{
+    QFile cf(mpData->file);
+    if (!cf.remove()) {
+        qWarning() << "Failed to remove config file: " << cf.errorString();
+        return false;
+    }
+    reload();
+    save();
+    return true;
 }
 
 void Config::reload()
