@@ -101,7 +101,7 @@ AVPlayer::Private::Private()
     , seek_target(0)
     , interrupt_timeout(30000)
     , mute(false)
-    , notify_interval(500)
+    , notify_interval(-500)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);
     /*
@@ -174,6 +174,14 @@ AVPlayer::Private::~Private() {
     }
 }
 
+void AVPlayer::Private::updateNotifyInterval()
+{
+    if (notify_interval <= 0) {
+        notify_interval = -Internal::computeNotifyPrecision(demuxer.duration(), demuxer.frameRate());
+    }
+    qDebug("notify_interval: %d", qAbs(notify_interval));
+}
+
 void AVPlayer::Private::initStatistics()
 {
     initBaseStatistics();
@@ -200,8 +208,7 @@ void AVPlayer::Private::initBaseStatistics()
     while ((tag = av_dict_get(fmt_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
         statistics.metadata.insert(tag->key, tag->value);
     }
-    notify_interval = Internal::computeNotifyPrecision(demuxer.duration(), demuxer.frameRate());
-    qDebug("notify_interval: %d", notify_interval);
+    updateNotifyInterval();
 }
 
 void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCodecContext *avctx)

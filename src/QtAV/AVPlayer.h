@@ -55,6 +55,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(qint64 repeat READ repeat WRITE setRepeat NOTIFY repeatChanged)
     Q_PROPERTY(int currentRepeat READ currentRepeat NOTIFY currentRepeatChanged)
     Q_PROPERTY(qint64 interruptTimeout READ interruptTimeout WRITE setInterruptTimeout NOTIFY interruptTimeoutChanged)
+    Q_PROPERTY(int notifyInterval READ notifyInterval WRITE setNotifyInterval NOTIFY notifyIntervalChanged)
     Q_PROPERTY(int brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
@@ -333,7 +334,14 @@ public slots:
     void seekBackward();
     void setSeekType(SeekType type);
     SeekType seekType() const;
-
+    /*!
+     * \brief setNotifyInterval
+     * The interval at which progress will update
+     * \param msec <=0: auto and compute internally depending on duration and fps
+     */
+    void setNotifyInterval(int msec);
+    /// The real notify interval. Always > 0
+    int notifyInterval() const;
     void updateClock(qint64 msecs); //update AVClock's external clock
     // for all renderers. val: [-100, 100]. other value changes nothing
     void setBrightness(int val);
@@ -361,6 +369,7 @@ signals:
     void seekableChanged();
     void positionChanged(qint64 position);
     void interruptTimeoutChanged();
+    void notifyIntervalChanged();
     void brightnessChanged(int val);
     void contrastChanged(int val);
     void hueChanged(int val);

@@ -39,6 +39,7 @@ public:
     Private();
     ~Private();
 
+    void updateNotifyInterval();
     void initStatistics();
     void initBaseStatistics();
     void initCommonStatistics(int s, Statistics::Common* st, AVCodecContext* avctx);
@@ -145,6 +146,7 @@ public:
     bool mute;
 
     // timerEvent interval in ms. can divide 1000. depends on media duration, fps etc.
+    // <0: auto compute internally, |notify_interval| is the real interval
     int notify_interval;
 };
 
