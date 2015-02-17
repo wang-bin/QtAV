@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <cmath>
 #include <limits>
+#include <QtCore/qmath.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QStringList>
