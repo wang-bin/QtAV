@@ -141,7 +141,7 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 		INSTALLS += target
 	}
 }
-isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR
+!cross_compile: RPATHDIR *= $$PROJECT_LIBDIR
 set_rpath($$RPATHDIR)
 
 *maemo*: QMAKE_LFLAGS += -lasound
