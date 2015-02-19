@@ -395,7 +395,7 @@ defineTest(set_rpath) {
 # Working dir search: "."
 # mac: install_name @rpath will search paths set in rpath link flags
 # QMAKE_RPATHDIR: lflags maybe wrong, paths are modified
-  #isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR
+  #!cross_compile: RPATHDIR *= $$PROJECT_LIBDIR
   macx|ios {
     RPATHDIR *= @loader_path/../Frameworks @executable_path/../Frameworks
     QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
