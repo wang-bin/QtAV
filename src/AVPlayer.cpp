@@ -1106,14 +1106,18 @@ void AVPlayer::setNotifyInterval(int msec)
 {
     if (d->notify_interval == msec)
         return;
-    int old = qAbs(d->notify_interval);
+    if (d->notify_interval < 0 && msec <= 0)
+        return;
+    const int old = qAbs(d->notify_interval);
     d->notify_interval = msec;
     d->updateNotifyInterval();
+    emit notifyIntervalChanged();
+    if (d->timer_id < 0)
+        return;
     if (old != qAbs(d->notify_interval)) {
         stopNotifyTimer();
         startNotifyTimer();
     }
-    emit notifyIntervalChanged();
 }
 
 int AVPlayer::notifyInterval() const
