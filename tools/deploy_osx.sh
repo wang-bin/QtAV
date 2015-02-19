@@ -40,6 +40,7 @@ deploy() {
   mkdir -p $FRAMEWORK_DIR
 
   local LIBCOMMON=`otool -L $EXE |awk '{print $1}' |grep libcommon`
+  [ ! -f $LIBCOMMON ] && LIBCOMMON=lib_*/libcommon.1.dylib
   if [ -f $LIBCOMMON ]; then
     cp -Lf $LIBCOMMON $FRAMEWORK_DIR
 
