@@ -15,7 +15,7 @@ message("BUILD_DIR=$$BUILD_DIR")
 greaterThan(QT_MAJOR_VERSION, 4) {
     mkspecs_build = $$[QMAKE_SPEC]
     #recheck:write_file($$BUILD_DIR/.qmake.cache) #FIXME: empty_file result in no qtCompileTest result in cache
-    load(configure)
+    #load(configure) # why MAKEFILE_GENERATOR is detected as XCODE in qtc before running qmake?
 } else {
     mkspecs_build = $$[QMAKE_MKSPECS]
     _QMAKE_CACHE_QT4_ = $$_QMAKE_CACHE_
@@ -24,6 +24,13 @@ greaterThan(QT_MAJOR_VERSION, 4) {
         _QMAKE_CACHE_QT4_=$$BUILD_DIR/.qmake.cache
     }
     include(common.pri)
+}
+SUPPORTED_MAKEFILE_GENERATOR = UNIX MINGW MSVC.NET MSBUILD
+message(MAKEFILE_GENERATOR=$$MAKEFILE_GENERATOR)
+greaterThan(QT_MAJOR_VERSION, 4):contains(SUPPORTED_MAKEFILE_GENERATOR, $$MAKEFILE_GENERATOR) {
+#configure.prf error if makefile generator is not supported and no display in qtcreator
+    load(configure)
+} else {
     #recheck:write_file($$BUILD_DIR/.qmake.cache) #FIXME: empty_file result in no qtCompileTest result in cache
     #use the following lines when building as a sub-project, write cache to this project src dir.
     #if build this project alone and do not have sub-project depends on this lib, those lines are not necessary

@@ -23,7 +23,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   SUBDIRS += examples
   examples.depends += libqtav
 }
-!android:!no-tests {
+!cross_compile:!no-tests {
   SUBDIRS += tests
   tests.depends += libqtav libqtavwidgets
 }
@@ -42,7 +42,14 @@ OptionalDepends = \
     avresample \
     avdevice
 # QtOpenGL module. In Qt5 we can disable it and still have opengl support
-!no-gl:!no-widgets: OptionalDepends *= gl
+!no-gl:!no-widgets {
+  greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(opengl):!config_gl {
+    GL=config_gl done_config_gl
+    cache(CONFIG, add, GL)
+  } else {
+    OptionalDepends *= gl #ios require code sign
+  }
+}
 !no-avfilter: OptionalDepends *= avfilter
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
 !no-sse4_1:!sse4_1: OptionalDepends *= sse4_1

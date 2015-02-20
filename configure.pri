@@ -11,6 +11,7 @@
 QMAKE_CONFIG_LOG = $$dirname(_QMAKE_CACHE_QT4_)/config.log
 QMAKE_CONFIG_TESTS_DIR = $$_PRO_FILE_PWD_/config.tests
 
+lessThan(QT_MAJOR_VERSION, 5) {
 defineTest(cache) {
     !isEmpty(4): error("cache(var, [set|add|sub] [transient] [super], [srcvar]) requires one to three arguments.")
     !exists($$_QMAKE_CACHE_QT4_) {
@@ -54,8 +55,11 @@ defineTest(cache) {
     }
     write_file($$_QMAKE_CACHE_QT4_, varstr, append)
 }
-
-equals(MAKEFILE_GENERATOR, UNIX) {
+} #Qt4
+QMAKE_MAKE = $$(MAKE)
+!isEmpty(QMAKE_MAKE) {
+    # We were called recursively. Use the right make, as MAKEFLAGS may be set as well.
+} equals(MAKEFILE_GENERATOR, UNIX) {
     QMAKE_MAKE = make
 } else:equals(MAKEFILE_GENERATOR, MINGW) {
     !equals(QMAKE_HOST.os, Windows): \
@@ -65,7 +69,8 @@ equals(MAKEFILE_GENERATOR, UNIX) {
 } else:if(equals(MAKEFILE_GENERATOR, MSVC.NET)|equals(MAKEFILE_GENERATOR, MSBUILD)) {
     QMAKE_MAKE = nmake
 } else {
-    error("Configure tests are not supported with the $$MAKEFILE_GENERATOR Makefile generator.")
+# error: the reset qmake will not work and displays nothing in qtc
+    warning("Configure tests are not supported with the $$MAKEFILE_GENERATOR Makefile generator.")
 }
 
 defineTest(qtRunLoggedCommand) {
