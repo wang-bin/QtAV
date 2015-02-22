@@ -60,13 +60,15 @@ public:
 #endif //QTAV_VA_REF
     }
 
-    virtual bool setup(void **hwctx, int w, int h) = 0;
+    virtual bool setup(AVCodecContext* avctx) = 0;
 
     AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt);
     virtual bool getBuffer(void **opaque, uint8_t **data) = 0;
     virtual void releaseBuffer(void *opaque, uint8_t *data) = 0;
     virtual AVPixelFormat vaPixelFormat() const = 0;
 
+    int codedWidth(AVCodecContext *avctx) const;  //TODO: virtual int surfaceWidth(AVCodecContext*) const;
+    int codedHeight(AVCodecContext *avctx) const;
     bool initUSWC(int lineSize);
     void releaseUSWC();
 

@@ -80,6 +80,7 @@ public:
     VideoDecoderVDAPrivate()
         : VideoDecoderFFmpegHWPrivate()
     {
+        copy_uswc = false;
         description = "VDA";
         memset(&hw_ctx, 0, sizeof(hw_ctx));
     }
@@ -87,7 +88,7 @@ public:
     virtual bool open();
     virtual void close();
 
-    virtual bool setup(void **hwctx, int w, int h);
+    virtual bool setup(AVCodecContext *avctx);
     virtual bool getBuffer(void **opaque, uint8_t **data);
     virtual void releaseBuffer(void *opaque, uint8_t *data);
     virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VDA_VLD);}
@@ -211,12 +212,12 @@ VideoFrame VideoDecoderVDA::frame()
     return copyToFrame(fmt, d.height, src, pitch, false);
 }
 
-bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
+bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
 {
+    const int w = codedWidth(avctx);
+    const int h = codedHeight(avctx);
     if (hw_ctx.width == w && hw_ctx.height == h && hw_ctx.decoder) {
-        width = w;
-        height = h;
-        *pp_hw_ctx = &hw_ctx;
+        avctx->hwaccel_context = &hw_ctx;
         return true;
     }
     if (hw_ctx.decoder) {
@@ -228,17 +229,18 @@ bool VideoDecoderVDAPrivate::setup(void **pp_hw_ctx, int w, int h)
         hw_ctx.cv_pix_fmt_type = format_to_cv(VideoFormat::Format_YUV420P);
     }
     /* Setup the libavcodec hardware context */
-    *pp_hw_ctx = &hw_ctx;
     hw_ctx.width = w;
     hw_ctx.height = h;
-    width = w;
-    height = h;
+    width = avctx->width; // not necessary. set in decode()
+    height = avctx->height;
+    avctx->hwaccel_context = NULL;
     /* create the decoder */
     int status = ff_vda_create_decoder(&hw_ctx, codec_ctx->extradata, codec_ctx->extradata_size);
     if (status) {
         qWarning("Failed to create decoder (%i): %s", status, vda_err_str(status));
         return false;
     }
+    avctx->hwaccel_context = &hw_ctx;
     initUSWC(hw_ctx.width);
     qDebug("VDA decoder created");
     return true;

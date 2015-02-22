@@ -129,7 +129,7 @@ public:
     bool createSurfaces(int count, void **hwctx, int w, int h);
     void destroySurfaces();
 
-    virtual bool setup(void **hwctx, int w, int h);
+    virtual bool setup(AVCodecContext *avctx);
     virtual bool getBuffer(void **opaque, uint8_t **data);
     virtual void releaseBuffer(void *opaque, uint8_t *data);
     virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VAAPI_VLD); }
@@ -542,8 +542,6 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     surfaces.resize(count);
     image.image_id = VA_INVALID_ID;
     context_id = VA_INVALID_ID;
-    width = w;
-    height = h;
     surface_width = FFALIGN(w, 16);
     surface_height = FFALIGN(h, 16);
     VAStatus status = VA_STATUS_SUCCESS;
@@ -589,7 +587,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
             vaDestroyImage(display->get(), test_image.image_id);
         }
     }
-    AVPixelFormat i_chroma = QTAV_PIX_FMT_C(NONE);
+    bool found = false;
     for (int i = 0; i < i_fmt_count; i++) {
         if (p_fmt[i].fourcc == VA_FOURCC_YV12 ||
             p_fmt[i].fourcc == VA_FOURCC_IYUV ||
@@ -607,13 +605,12 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
                 image.image_id = VA_INVALID_ID;
                 continue;
             }
-            //see vlc chroma.c map to AVPixelFormat. Can used by VideoFormat::PixelFormat
-            i_chroma = QTAV_PIX_FMT_C(YUV420P);// VLC_CODEC_YV12; //VideoFormat::PixelFormat
+            found = true;
             break;
         }
     }
     free(p_fmt);
-    if (i_chroma == QTAV_PIX_FMT_C(NONE)) {
+    if (!found) {
         destroySurfaces();
         return false;
     }
@@ -649,21 +646,20 @@ void VideoDecoderVAAPIPrivate::destroySurfaces()
     surface_height = 0;
 }
 
-bool VideoDecoderVAAPIPrivate::setup(void **hwctx, int w, int h)
+bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
 {
+    const int w = codedWidth(avctx);
+    const int h = codedHeight(avctx);
     if (surface_width == FFALIGN(w, 16) && surface_height == FFALIGN(h, 16)) {
-        width = w;
-        height = h;
-        *hwctx = &hw_ctx;
+        avctx->hwaccel_context = &hw_ctx;
         return true;
     }
-    *hwctx = NULL;
-    //*chroma = QTAV_PIX_FMT_C(NONE);
+    avctx->hwaccel_context = NULL;
+    width = avctx->width; // not necessary. set in decode()
+    height = avctx->height;
     if (surface_width || surface_height)
         destroySurfaces();
-    if (w > 0 && h > 0)
-        return createSurfaces(nb_surfaces, hwctx, w, h);
-    return false;
+    return createSurfaces(nb_surfaces, &avctx->hwaccel_context, w, h);
 }
 
 void VideoDecoderVAAPIPrivate::close()

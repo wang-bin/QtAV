@@ -338,7 +338,7 @@ public:
     bool DxResetVideoDecoder();
     bool isHEVCSupported() const;
 
-    bool setup(void **hwctx, int w, int h);
+    bool setup(AVCodecContext *avctx);
     bool open();
     void close();
     // get aligned value depending on codec
@@ -370,7 +370,7 @@ public:
     DXVA2_ConfigPictureDecode    cfg;
     IDirectXVideoDecoder         *decoder;
 
-    struct dxva_context hw;
+    struct dxva_context hw_ctx;
     bool surface_auto;
     unsigned     surface_count;
     unsigned     surface_order;
@@ -811,16 +811,10 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
 
 bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
 {
-    if (!codec_ctx) {
-        qWarning("AVCodecContext not ready!");
-        return false;
-    }
     qDebug("DxCreateVideoDecoder id %d %dx%d, surfaces: %u", codec_id, w, h, surface_count);
-    width = w;
-    height = h;
     /* Allocates all surfaces needed for the decoder */
-    surface_width = aligned(width);
-    surface_height = aligned(height);
+    surface_width = aligned(w);
+    surface_height = aligned(h);
     if (surface_auto) {
         switch (codec_id) {
         case QTAV_CODEC_ID(H264):
@@ -867,8 +861,8 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     /* */
     DXVA2_VideoDesc dsc;
     ZeroMemory(&dsc, sizeof(dsc));
-    dsc.SampleWidth     = codec_ctx->coded_width;
-    dsc.SampleHeight    = codec_ctx->coded_height;
+    dsc.SampleWidth     = w; //coded_width
+    dsc.SampleHeight    = h; //coded_height
     dsc.Format          = render;
     dsc.InputSampleFreq.Numerator   = 0;
     dsc.InputSampleFreq.Denominator = 0;
@@ -965,29 +959,31 @@ bool VideoDecoderDXVAPrivate::isHEVCSupported() const
 }
 
 // hwaccel_context
-bool VideoDecoderDXVAPrivate::setup(void **hwctx, int w, int h)
+bool VideoDecoderDXVAPrivate::setup(AVCodecContext *avctx)
 {
-    if (w <= 0 || h <= 0)
-        return false;
-    if (!decoder || surface_width != aligned(w) || surface_height != aligned(h)) {
-        releaseUSWC();
-        DxDestroyVideoDecoder();
-        *hwctx = NULL;
-        /* FIXME transmit a video_format_t by VaSetup directly */
-        if (!DxCreateVideoDecoder(codec_ctx->codec_id, w, h))
-            return false;
-        hw.decoder = decoder;
-        hw.cfg = &cfg;
-        hw.surface_count = surface_count;
-        hw.surface = hw_surfaces;
-        memset(hw_surfaces, 0, sizeof(hw_surfaces));
-        for (unsigned i = 0; i < surface_count; i++)
-            hw.surface[i] = surfaces[i].d3d;
-        initUSWC(surface_width);
+    const int w = codedWidth(avctx);
+    const int h = codedHeight(avctx);
+    if (decoder && surface_width == aligned(w) && surface_height == aligned(h)) {
+        avctx->hwaccel_context = &hw_ctx;
+        return true;
     }
-    width = w;
-    height = h;
-    *hwctx = &hw;
+    width = avctx->width; // not necessary. set in decode()
+    height = avctx->height;
+    releaseUSWC();
+    DxDestroyVideoDecoder();
+    avctx->hwaccel_context = NULL;
+    /* FIXME transmit a video_format_t by VaSetup directly */
+    if (!DxCreateVideoDecoder(avctx->codec_id, w, h))
+        return false;
+    avctx->hwaccel_context = &hw_ctx;
+    hw_ctx.decoder = decoder;
+    hw_ctx.cfg = &cfg;
+    hw_ctx.surface_count = surface_count;
+    hw_ctx.surface = hw_surfaces;
+    memset(hw_surfaces, 0, sizeof(hw_surfaces));
+    for (unsigned i = 0; i < surface_count; i++)
+        hw_ctx.surface[i] = surfaces[i].d3d;
+    initUSWC(surface_width);
     return true;
 }
 
