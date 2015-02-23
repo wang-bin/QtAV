@@ -202,6 +202,7 @@ void VideoDecoderFFmpegHWPrivate::releaseUSWC()
 VideoDecoderFFmpegHW::VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d):
     VideoDecoderFFmpegBase(d)
 {
+    setProperty("detail_SSE4", tr("Optimized copy decoded data from USWC memory using SSE4.1 if possible"));
 }
 
 void VideoDecoderFFmpegHW::setSSE4(bool y)
