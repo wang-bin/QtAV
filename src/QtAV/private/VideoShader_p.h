@@ -25,11 +25,14 @@
 #include "QtAV/VideoFrame.h"
 #include "QtAV/ColorTransform.h"
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QOpenGLBuffer>
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLFunctions>
 #else
+#include <QtOpenGL/QGLBuffer>
 #include <QtOpenGL/QGLShaderProgram>
 #include <QtOpenGL/QGLFunctions>
+typedef QGLBuffer QOpenGLBuffer;
 #define QOpenGLShaderProgram QGLShaderProgram
 #define QOpenGLShader QGLShader
 #define QOpenGLFunctions QGLFunctions
@@ -86,10 +89,20 @@ public:
         , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
         , target(GL_TEXTURE_2D)
+        , try_pbo(true)
     {
+        static bool enable_pbo = qgetenv("QTAV_PBO").toInt() > 0;
+        if (try_pbo)
+            try_pbo = enable_pbo;
+        pbo.reserve(4);
+        pbo.resize(4);
+        // QOpenGLBuffer is shared, must initialize 1 by 1.
+        for (int i = 0; i < pbo.size(); ++i)
+            pbo[i] = QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer);
         colorTransform.setOutputColorSpace(ColorTransform::RGB);
     }
     ~VideoMaterialPrivate();
+    bool initPBO(int plane, int size);
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool initTextures(const VideoFormat& fmt);
     bool updateTexturesIfNeeded();
@@ -133,6 +146,8 @@ public:
     QVector<GLfloat> texture_coords;
     ColorTransform colorTransform;
     QMatrix4x4 matrix;
+    bool try_pbo;
+    QVector<QOpenGLBuffer> pbo;
 };
 
 } //namespace QtAV
