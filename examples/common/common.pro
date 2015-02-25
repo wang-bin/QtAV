@@ -13,7 +13,6 @@ DEFINES += BUILD_QOPT_LIB
 CONFIG *= common-buildlib
 
 #var with '_' can not pass to pri?
-STATICLINK = 0
 PROJECTROOT = $$PWD/../..
 !include(libcommon.pri): error("could not find libcommon.pri")
 preparePaths($$OUT_PWD/../../out)

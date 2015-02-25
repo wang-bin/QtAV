@@ -611,7 +611,10 @@ void AVPlayer::loadInternal()
         d->stop_position = mediaStopPosition();
     }
 
+    int interval = qAbs(d->notify_interval);
     d->initStatistics();
+    if (interval != qAbs(d->notify_interval))
+        emit notifyIntervalChanged();
 }
 
 void AVPlayer::unload()
@@ -1099,9 +1102,32 @@ void AVPlayer::aboutToQuitApp()
     loaderThreadPool()->waitForDone();
 }
 
+void AVPlayer::setNotifyInterval(int msec)
+{
+    if (d->notify_interval == msec)
+        return;
+    if (d->notify_interval < 0 && msec <= 0)
+        return;
+    const int old = qAbs(d->notify_interval);
+    d->notify_interval = msec;
+    d->updateNotifyInterval();
+    emit notifyIntervalChanged();
+    if (d->timer_id < 0)
+        return;
+    if (old != qAbs(d->notify_interval)) {
+        stopNotifyTimer();
+        startNotifyTimer();
+    }
+}
+
+int AVPlayer::notifyInterval() const
+{
+    return qAbs(d->notify_interval);
+}
+
 void AVPlayer::startNotifyTimer()
 {
-    d->timer_id = startTimer(d->notify_interval);
+    d->timer_id = startTimer(qAbs(d->notify_interval));
 }
 
 void AVPlayer::stopNotifyTimer()

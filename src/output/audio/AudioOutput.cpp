@@ -141,14 +141,12 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
     if (d.paused)
         return false;
     d.data = data;
-    if (isMute()) {
-        //if (!(features() & SetMuted))
+    if (isMute() && d.sw_mute) {
         d.data.fill(0);
     } else {
         if (!qFuzzyCompare(volume(), (qreal)1.0)
+                && d.sw_volume
                 && d.scale_samples
-                // TODO: check backend support. user can disable this feature even if backend supports.
-                //&& !(features() & SetVolume)
                 ) {
             // TODO: af_volume needs samples_align to get nb_samples
             const int nb_samples = d.data.size()/d.format.bytesPerSample();
@@ -216,6 +214,15 @@ void AudioOutput::setVolume(qreal volume)
     d.vol = volume;
     emit volumeChanged(d.vol);
     d.updateSampleScaleFunc();
+    if (features() & SetVolume) {
+        d.sw_volume = !deviceSetVolume(d.vol);
+        //if (!qFuzzyCompare(deviceGetVolume(), d.vol))
+        //    d.sw_volume = true;
+        if (d.sw_volume)
+            deviceSetVolume(1.0); // TODO: partial software?
+    } else {
+        d.sw_volume = true;
+    }
 }
 
 qreal AudioOutput::volume() const
@@ -230,6 +237,10 @@ void AudioOutput::setMute(bool value)
         return;
     d.mute = value;
     emit muteChanged(value);
+    if (features() & SetMute)
+        d.sw_mute = !deviceSetMute(value);
+    else
+        d.sw_mute = true;
 }
 
 bool AudioOutput::isMute() const
@@ -503,6 +514,23 @@ int AudioOutput::getOffset()
 int AudioOutput::getOffsetByBytes()
 {
     return -1;
+}
+
+bool AudioOutput::deviceSetVolume(qreal value)
+{
+    Q_UNUSED(value)
+    return false;
+}
+
+qreal AudioOutput::deviceGetVolume() const
+{
+    return 1.0;
+}
+
+bool AudioOutput::deviceSetMute(bool value)
+{
+    Q_UNUSED(value)
+    return false;
 }
 
 } //namespace QtAV

@@ -332,3 +332,21 @@ public:
 InitFFmpegLog fflog;
 }
 }
+
+// Initialize Qt Resource System when the library is built
+// statically
+
+static void initResources() {
+    Q_INIT_RESOURCE(shaders);
+    Q_INIT_RESOURCE(QtAV);
+}
+
+namespace {
+    class ResourceLoader {
+    public:
+        ResourceLoader() { initResources(); }
+    };
+    
+    ResourceLoader QtAV_QRCLoader;
+}
+

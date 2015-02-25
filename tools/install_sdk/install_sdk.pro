@@ -8,7 +8,6 @@ config_gl {
 }
 #load(qt_module)
 
-STATICLINK = 0
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/common.pri)
 preparePaths($$OUT_PWD/../../out)
@@ -20,38 +19,38 @@ VERSION = $$QTAV_VERSION
 PROJECT_LIBDIR = $$qtLongName($$BUILD_DIR/lib)
 
 LIBPREFIX = lib
-win32 {
+contains(QMAKE_HOST.os,Windows) {
+  SCRIPT_SUFFIX=bat
   MOVE = move /y
   COPY = copy /y
   COPY_DIR = xcopy /s /q /y /i
   MKDIR = mkdir
   RM = del
   RM_DIR = rd /s /q
-  *g++* {
-    LIBSUFFIX = a
-  } else {
-    LIBSUFFIX = lib
-    LIBPREFIX =
-  }
 } else {
+  SCRIPT_SUFFIX=sh
   MOVE = mv
   COPY = cp -f
   COPY_DIR = $$COPY -R
   MKDIR = mkdir -p
   RM = rm -f
   RM_DIR = rm -rf
-  macx {
-    LIBSUFFIX = dylib
-  } ios {
-    LIBSUFFIX = a
-  } else {
-    LIBSUFFIX = so
-  }
 }
 
-SCRIPT_SUFFIX=sh
-win32: SCRIPT_SUFFIX=bat
-
+win32 {
+  *g++* {
+    LIBSUFFIX = a
+  } else {
+    LIBSUFFIX = lib
+    LIBPREFIX =
+  }
+} else:macx {
+  LIBSUFFIX = dylib
+} else:ios {
+  LIBSUFFIX = a
+} else {
+  LIBSUFFIX = so
+}
 
 defineTest(createForModule) {
   MODULE_NAME = $$1

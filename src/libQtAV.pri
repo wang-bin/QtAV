@@ -18,13 +18,13 @@
 #
 ############################## HOW TO ##################################
 # Suppose the library name is XX
-# Usually what you need to change are: staticlink, LIB_VERSION, NAME and DLLDESTDIR.
+# Usually what you need to change are: LIB_VERSION, NAME and DLLDESTDIR.
 # And rename xx-buildlib and LIBXX_PRI_INCLUDED
 # the contents of libXX.pro is:
 #    TEMPLATE = lib
 #    QT -= gui
 #    CONFIG *= xx-buildlib
-#    STATICLINK = 1 #optional. default is 0, i.e. dynamically link
+#    STATICLINK = 1 #optional. default is detected by staticlib in CONFIG
 #    PROJECTROOT = $$PWD/..
 #    include(libXX.pri)
 #    preparePaths($$OUT_PWD/../out)
@@ -34,7 +34,7 @@
 # the content of other pro using this library is:
 #    TEMPLATE = app
 #    PROJECTROOT = $$PWD/..
-#    STATICLINK = 1 #or 0
+#    STATICLINK = 1 #optional. default is detected by staticlib in CONFIG
 #    include(dir_of_XX/libXX.pri)
 #    preparePaths($$OUT_PWD/../out)
 #    HEADERS = ...
@@ -49,8 +49,18 @@ NAME = QtAV
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
 LIB_VERSION = $$QTAV_VERSION #0.x.y may be wrong for dll
-ios: STATICLINK=1
-isEmpty(STATICLINK): STATICLINK = 0  #1 or 0. use static lib or not
+
+# If user haven't supplied STATICLINK, then auto-detect
+isEmpty(STATICLINK) {
+  contains(CONFIG, staticlib) {
+    STATICLINK = 1
+  } else {
+    STATICLINK = 0
+  }
+  # Override for ios. Dynamic link is only supported
+  # in iOS 8.1.
+  ios:STATICLINK = 1
+}
 
 TEMPLATE += fakelib
 PROJECT_TARGETNAME = $$qtLibraryTarget($$NAME)
@@ -131,7 +141,7 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 		INSTALLS += target
 	}
 }
-isEmpty(CROSS_COMPILE): RPATHDIR *= $$PROJECT_LIBDIR
+!cross_compile: RPATHDIR *= $$PROJECT_LIBDIR
 set_rpath($$RPATHDIR)
 
 *maemo*: QMAKE_LFLAGS += -lasound
