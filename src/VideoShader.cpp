@@ -591,6 +591,8 @@ VideoMaterialPrivate::~VideoMaterialPrivate()
     if (!textures.isEmpty()) {
         DYGL(glDeleteTextures(textures.size(), textures.data()));
     }
+    for (int i = 0; i < pbo.size(); ++i)
+        pbo[i].destroy();
 }
 
 bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
