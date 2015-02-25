@@ -68,6 +68,13 @@
 namespace QtAV {
 namespace OpenGLHelper {
 
+/*!
+ * \brief hasExtension
+ * Current OpenGL context must be valid.
+ * \param exts Ends with NULL
+ */
+bool hasExtension(const char* exts[]);
+bool isPBOSupported();
 void glActiveTexture(GLenum texture);
 bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type);
 int bytesOfGLFormat(GLenum format, GLenum dataType = GL_UNSIGNED_BYTE);

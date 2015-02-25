@@ -20,14 +20,59 @@
 ******************************************************************************/
 
 #include "OpenGLHelper.h"
+#include <string.h> //strstr
 #include <QtCore/QCoreApplication>
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtOpenGL/QGLFunctions>
+#define QOpenGLContext QGLContext
 #endif
 #include "utils/Logger.h"
 
 namespace QtAV {
 namespace OpenGLHelper {
+
+bool hasExtension(const char *exts[])
+{
+    const QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    if (!ctx)
+        return false;
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    const char *ext = (const char*)glGetString(GL_EXTENSIONS);
+    if (!ext)
+        return false;
+#endif
+    for (int i = 0; exts[i]; ++i) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+        if (ctx->hasExtension(exts[i]))
+#else
+        if (strstr(ext, exts[i]))
+#endif
+            return true;
+    }
+    return false;
+}
+
+bool isPBOSupported() {
+    // check pbo support
+    static bool support = false;
+    static bool pbo_checked = false;
+    if (pbo_checked)
+        return support;
+    const QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    Q_ASSERT(ctx);
+    if (!ctx)
+        return false;
+    const char* exts[] = {
+        "GL_ARB_pixel_buffer_object",
+        "GL_EXT_pixel_buffer_object",
+        "GL_NV_pixel_buffer_object", //OpenGL ES
+        NULL
+    };
+    support = hasExtension(exts);
+    qDebug() << "PBO: " << support;
+    pbo_checked = true;
+    return support;
+}
 
 // glActiveTexture in Qt4 on windows release mode crash for me
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)

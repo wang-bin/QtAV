@@ -437,6 +437,10 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
         //qDebug("bind PBO %d", p);
         QOpenGLBuffer &pb = d.pbo[p];
         pb.bind();
+        // glMapBuffer() causes sync issue.
+        // Call glBufferData() with NULL pointer before glMapBuffer(), the previous data in PBO will be discarded and
+        // glMapBuffer() returns a new allocated pointer or an unused block immediately even if GPU is still working with the previous data.
+        // https://www.opengl.org/wiki/Buffer_Object_Streaming#Buffer_re-specification
         pb.allocate(pb.size());
         GLubyte* ptr = (GLubyte*)pb.map(QOpenGLBuffer::WriteOnly);
         if (ptr) {
@@ -757,7 +761,8 @@ bool VideoMaterialPrivate::updateTexturesIfNeeded()
     if (update_textures) {
         initTextures(fmt);
         // check pbo support
-        //try_pbo = try_pbo && OpenGLHelper::isPBOSupported();
+        // TODO: complete pbo extension set
+        try_pbo = try_pbo && OpenGLHelper::isPBOSupported();
         // check PBO support with bind() is fine, no need to check extensions
         if (try_pbo) {
             for (int i = 0; i < nb_planes; ++i) {
