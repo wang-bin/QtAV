@@ -201,8 +201,6 @@ void AVPlayer::Private::initBaseStatistics()
     //fmt_ctx->duration may be AV_NOPTS_VALUE. AVDemuxer.duration deals with this case
     statistics.start_time = QTime(0, 0, 0).addMSecs(int(demuxer.startTime()));
     statistics.duration = QTime(0, 0, 0).addMSecs((int)demuxer.duration());
-    if (vdec)
-        statistics.video.decoder = VideoDecoderFactory::name(vdec->id()).c_str();
     statistics.metadata.clear();
     AVDictionaryEntry *tag = NULL;
     while ((tag = av_dict_get(fmt_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
@@ -240,6 +238,10 @@ void AVPlayer::Private::initAudioStatistics(int s)
     }
     statistics.audio.available = s == demuxer.audioStream();
     initCommonStatistics(s, &statistics.audio, avctx);
+    if (adec) {
+        statistics.audio.decoder = adec->name();
+        statistics.audio.decoder_detail = adec->description();
+    }
     correct_audio_channels(avctx);
     statistics.audio_only.block_align = avctx->block_align;
     statistics.audio_only.channels = avctx->channels;
@@ -262,6 +264,10 @@ void AVPlayer::Private::initVideoStatistics(int s)
     }
     statistics.video.available = s == demuxer.videoStream();
     initCommonStatistics(s, &statistics.video, avctx);
+    if (vdec) {
+        statistics.video.decoder = vdec->name();
+        statistics.video.decoder_detail = vdec->description();
+    }
     AVStream *stream = fmt_ctx->streams[s];
     statistics.video.frames = stream->nb_frames;
     //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
@@ -289,7 +295,6 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         athread->packetQueue()->clear();
         athread->setDecoder(0);
         athread->setOutput(0);
-        initAudioStatistics(demuxer.audioStream());
     }
     AVCodecContext *avctx = demuxer.audioCodecContext();
     if (!avctx) {
@@ -313,7 +318,6 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         emit player->error(e);
         return false;
     }
-    statistics.audio.decoder = adec->name();
     //TODO: setAudioOutput() like vo
     if (!ao && ao_enabled) {
         foreach (AudioOutputId aoid, ao_ids) {
@@ -394,6 +398,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     athread->packetQueue()->setThreshold(queue_min);
     athread->packetQueue()->setCapacity(queue_max);
+    initAudioStatistics(demuxer.audioStream());
     return true;
 }
 
@@ -406,7 +411,6 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         vthread->packetQueue()->clear();
         // TODO: wait for next keyframe
         vthread->setDecoder(0); // TODO: not work now. must dynamic check decoder in every loop in VideoThread.run()
-        initVideoStatistics(demuxer.videoStream());
     }
     AVCodecContext *avctx = demuxer.videoCodecContext();
     if (!avctx) {
@@ -441,7 +445,6 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         return false;
     }
     connect(vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
-    statistics.video.decoder = vdec->name();
     if (!vthread) {
         vthread = new VideoThread(player);
         vthread->setClock(clock);
@@ -465,6 +468,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
     int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
     vthread->packetQueue()->setThreshold(queue_min);
     vthread->packetQueue()->setCapacity(queue_max);
+    initVideoStatistics(demuxer.videoStream());
     return true;
 }
 

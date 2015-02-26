@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,7 +25,6 @@ namespace QtAV {
 
 Statistics::Common::Common():
     available(false)
-  , decoder("FFmpeg")
   , bit_rate(0)
   , frames(0)
   , d(new Private())
