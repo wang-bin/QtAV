@@ -34,21 +34,23 @@ public:
     bool applyOnUiChange() const;
 
 public slots:
+    // deprecated. call applyFromUi()
+    void apply();
+    // deprecated. call applyToUi().
+    void cancel();
+    //call applyToUi() after Config::instance().reset();
+    void reset();
+protected:
     /*!
-     * \brief apply
-     * store the values on ui. call Config::xxx(value)
+     * \brief applyToUi
+     * Apply configurations to UI. Call this in your page ctor when ui layout is ready.
      */
-    virtual void apply();
+    virtual void applyToUi() = 0;
     /*!
-     * \brief cancel
-     * cancel the values change on ui and set to values from Config
+     * \brief applyFromUi
+     * Save configuration values from UI. Call Config::xxx(value) in your implemention
      */
-    virtual void cancel();
-    /*!
-     * \brief reset
-     * reset to default
-     */
-    virtual void reset();
+    virtual void applyFromUi() = 0;
 private:
     bool mApplyOnUiChange;
 };

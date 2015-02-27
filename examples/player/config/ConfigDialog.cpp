@@ -94,11 +94,11 @@ void ConfigDialog::onButtonClicked(QAbstractButton *btn)
 
 void ConfigDialog::onReset()
 {
+    Config::instance().reset();
     // TODO: check change
     foreach (ConfigPageBase* page, mPages) {
         page->reset();
     }
-    Config::instance().reset();
 }
 
 void ConfigDialog::onApply()

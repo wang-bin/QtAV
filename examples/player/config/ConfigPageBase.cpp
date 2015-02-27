@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -38,12 +38,16 @@ bool ConfigPageBase::applyOnUiChange() const
 
 void ConfigPageBase::apply()
 {
+    applyFromUi();
 }
 
 void ConfigPageBase::cancel()
 {
+    applyToUi();
 }
 
 void ConfigPageBase::reset()
 {
+    // NOTE: make sure Config::instance().reset() is called before it. It is called i ConfigDialog.reset()
+    applyToUi();
 }

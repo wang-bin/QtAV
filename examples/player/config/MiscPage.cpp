@@ -30,13 +30,12 @@ MiscPage::MiscPage()
     gl->setSizeConstraint(QLayout::SetFixedSize);
     int r = 0;
     m_preview_on = new QCheckBox(tr("Preview"));
-    m_preview_on->setChecked(Config::instance().previewEnabled());
     gl->addWidget(m_preview_on, r++, 0);
     gl->addWidget(new QLabel(tr("Progress update interval") + "(ms)"), r, 0);
     m_notify_interval = new QSpinBox();
     m_notify_interval->setEnabled(false);
-//    m_notify_interval->setValue();
     gl->addWidget(m_notify_interval, r++, 1);
+    applyToUi();
 }
 
 QString MiscPage::name() const
@@ -45,18 +44,14 @@ QString MiscPage::name() const
 }
 
 
-void MiscPage::apply()
+void MiscPage::applyFromUi()
 {
     Config::instance().setPreviewEnabled(m_preview_on->isChecked())
             ;
 }
 
-void MiscPage::cancel()
+void MiscPage::applyToUi()
 {
     m_preview_on->setChecked(Config::instance().previewEnabled());
     //m_notify_interval->setValue(Config::instance().avfilterOptions());
-}
-
-void MiscPage::reset()
-{
 }

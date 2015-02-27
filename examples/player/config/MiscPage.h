@@ -31,10 +31,9 @@ class MiscPage : public ConfigPageBase
 public:
     MiscPage();
     virtual QString name() const;
-public Q_SLOTS:
-    virtual void apply(); //store the values on ui. call Config::xxx
-    virtual void cancel(); //cancel the values on ui. values are from Config
-    virtual void reset(); //reset to default
+protected:
+    virtual void applyToUi();
+    virtual void applyFromUi();
 private:
     QCheckBox *m_preview_on;
     QSpinBox *m_notify_interval;

@@ -40,10 +40,9 @@ public:
     QVariantHash audioDecoderOptions() const;
     QVariantHash videoDecoderOptions() const;
 
-public slots:
-    virtual void apply();
-    virtual void cancel();
-    virtual void reset();
+protected:
+    virtual void applyToUi();
+    virtual void applyFromUi();
 
 private slots:
     void videoDecoderEnableChanged();

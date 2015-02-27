@@ -220,7 +220,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     hb->addWidget(mpDown);
     vb->addLayout(hb);
     connect(&Config::instance(), SIGNAL(decoderPriorityNamesChanged()), SLOT(onConfigChanged()));
-    updateDecodersUi();
+    applyToUi();
 }
 
 QString DecoderConfigPage::name() const
@@ -242,7 +242,7 @@ QVariantHash DecoderConfigPage::videoDecoderOptions() const
     return options;
 }
 
-void DecoderConfigPage::apply()
+void DecoderConfigPage::applyFromUi()
 {
     QStringList decs_all;
     QStringList decs;
@@ -255,13 +255,9 @@ void DecoderConfigPage::apply()
     Config::instance().setDecoderPriorityNames(decs);
 }
 
-void DecoderConfigPage::cancel()
+void DecoderConfigPage::applyToUi()
 {
     updateDecodersUi();
-}
-
-void DecoderConfigPage::reset()
-{
 }
 
 void DecoderConfigPage::videoDecoderEnableChanged()
