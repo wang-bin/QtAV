@@ -26,6 +26,7 @@ SOURCES += main.cpp \
     config/CaptureConfigPage.cpp \
     config/VideoEQConfigPage.cpp \
     config/DecoderConfigPage.cpp \
+    config/MiscPage.cpp \
     filters/OSD.cpp \
     filters/OSDFilter.cpp \
     playlist/PlayListModel.cpp \
@@ -50,6 +51,7 @@ HEADERS += \
     config/CaptureConfigPage.h \
     config/VideoEQConfigPage.h \
     config/DecoderConfigPage.h \
+    config/MiscPage.h \
     filters/OSD.h \
     filters/OSDFilter.h \
     playlist/PlayListModel.h \

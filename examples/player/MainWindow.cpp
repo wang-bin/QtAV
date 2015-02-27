@@ -879,7 +879,7 @@ void MainWindow::seekToMSec(int msec)
 void MainWindow::seek()
 {
     mpPlayer->seek((qint64)mpTimeSlider->value());
-    if (!m_preview)
+    if (!m_preview || !Config::instance().previewEnabled())
         return;
     m_preview->setTimestamp(mpTimeSlider->value());
     m_preview->preview();
@@ -1234,6 +1234,8 @@ void MainWindow::onTimeSliderHover(int pos, int value)
 {
     QPoint gpos = mapToGlobal(mpTimeSlider->pos() + QPoint(pos, 0));
     QToolTip::showText(gpos, QTime(0, 0, 0).addMSecs(value).toString("HH:mm:ss"));
+    if (!Config::instance().previewEnabled())
+        return;
     if (!m_preview)
         m_preview = new VideoPreviewWidget();
     m_preview->setFile(mpPlayer->file());

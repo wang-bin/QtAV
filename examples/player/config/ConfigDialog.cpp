@@ -26,6 +26,7 @@
 #include "DecoderConfigPage.h"
 #include "AVFormatConfigPage.h"
 #include "AVFilterConfigPage.h"
+#include "MiscPage.h"
 #include "common/Config.h"
 void ConfigDialog::display()
 {
@@ -56,7 +57,8 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
     vbl->addWidget(mpContent);
     vbl->addWidget(mpButtonBox);
 
-    mPages << new CaptureConfigPage()
+    mPages << new MiscPage()
+           << new CaptureConfigPage()
            << new DecoderConfigPage()
            << new AVFormatConfigPage()
            << new AVFilterConfigPage()
