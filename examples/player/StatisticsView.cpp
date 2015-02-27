@@ -41,6 +41,7 @@ QStringList getCommonInfoKeys() {
             << QObject::tr("Available")
             << QObject::tr("Codec")
             << QObject::tr("Decoder")
+            << QObject::tr("Decoder detail")
             << QObject::tr("Total time")
             << QObject::tr("Start time")
             << QObject::tr("Bit rate")
@@ -83,6 +84,7 @@ QList<QVariant> getVideoInfoValues(const Statistics& s) {
             << s.video.available
             << s.video.codec + " (" + s.video.codec_long + ")"
             << s.video.decoder
+            << s.video.decoder_detail
             << s.video.total_time.toString("HH:mm:ss")
             << s.video.start_time.toString("HH:mm:ss")
             << QString::number(s.video.bit_rate/1000) + " Kb/s"
@@ -100,6 +102,7 @@ QList<QVariant> getAudioInfoValues(const Statistics& s) {
             << s.audio.available
             << s.audio.codec + " (" + s.audio.codec_long + ")"
             << s.audio.decoder
+            << s.audio.decoder_detail
             << s.audio.total_time.toString("HH:mm:ss")
             << s.audio.start_time.toString("HH:mm:ss")
             << QString::number(s.audio.bit_rate/1000) + " Kb/s"
@@ -135,7 +138,7 @@ StatisticsView::StatisticsView(QWidget *parent) :
     mpMetadata->setText(0, QObject::tr("Metadata"));
     mpView->addTopLevelItem(mpMetadata);
     QTreeWidgetItem *item = createNodeWithItems(mpView, QObject::tr("Video"), getVideoInfoKeys(), &mVideoItems);
-    mpFPS = item->child(7);
+    mpFPS = item->child(8);
     //mpVideoBitRate =
     mpVideoMetadata = new QTreeWidgetItem(item);
     mpVideoMetadata->setText(0, QObject::tr("Metadata"));
