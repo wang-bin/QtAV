@@ -231,11 +231,10 @@ void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCo
 void AVPlayer::Private::initAudioStatistics(int s)
 {
     AVCodecContext *avctx = demuxer.audioCodecContext();
-    if (!avctx) {
-        statistics.audio = Statistics::Common();
-        statistics.audio_only = Statistics::AudioOnly();
+    statistics.audio = Statistics::Common();
+    statistics.audio_only = Statistics::AudioOnly();
+    if (!avctx)
         return;
-    }
     statistics.audio.available = s == demuxer.audioStream();
     initCommonStatistics(s, &statistics.audio, avctx);
     if (adec) {
@@ -257,11 +256,10 @@ void AVPlayer::Private::initAudioStatistics(int s)
 void AVPlayer::Private::initVideoStatistics(int s)
 {
     AVCodecContext *avctx = demuxer.videoCodecContext();
-    if (!avctx) {
-        statistics.video = Statistics::Common();
-        statistics.video_only = Statistics::VideoOnly();
+    statistics.video = Statistics::Common();
+    statistics.video_only = Statistics::VideoOnly();
+    if (!avctx)
         return;
-    }
     statistics.video.available = s == demuxer.videoStream();
     initCommonStatistics(s, &statistics.video, avctx);
     if (vdec) {
