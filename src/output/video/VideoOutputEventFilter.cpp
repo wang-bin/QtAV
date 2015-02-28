@@ -141,10 +141,7 @@ void VideoOutputEventFilter::switchFullScreen()
     if (!mpRenderer || !mpRenderer->widget())
         return;
     QWidget *window = mpRenderer->widget()->window();
-    if (window->isFullScreen())
-        window->showNormal();
-    else
-        window->showFullScreen();
+    window->setWindowState(window->windowState() ^ Qt::WindowFullScreen);
 }
 
 } //namespace QtAV

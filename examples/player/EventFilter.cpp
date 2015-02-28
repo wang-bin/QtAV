@@ -35,6 +35,7 @@
 #include <QtGui/QWindowStateChangeEvent>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
+#include <QtAV/VideoCapture.h>
 #include <QtAV/VideoRenderer.h>
 #include "filters/OSDFilter.h"
 
@@ -131,7 +132,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         Qt::KeyboardModifiers modifiers = key_event->modifiers();
         switch (key) {
         case Qt::Key_C: //capture
-            player->captureVideo();
+            player->videoCapture()->request();
             break;
         case Qt::Key_N: //check playing?
             player->playNextFrame();
@@ -154,11 +155,14 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             QWidget *w = qApp->activeWindow();
             if (!w)
                 return false;
-            if (w->isFullScreen())
-                w->showNormal();
-            else
-                w->showFullScreen();
+            w->setWindowState(w->windowState() ^ Qt::WindowFullScreen);
         }
+            break;
+        case Qt::Key_U:
+            player->setNotifyInterval(player->notifyInterval() + 100);
+            break;
+        case Qt::Key_D:
+            player->setNotifyInterval(player->notifyInterval() - 100);
             break;
         case Qt::Key_Up: {
             AudioOutput *ao = player->audio();
@@ -253,14 +257,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             QWidget *w = qApp->activeWindow();
             if (!w)
                 return false;
-            Qt::WindowFlags wf = w->windowFlags();
-            if (wf & Qt::WindowStaysOnTopHint) {
-                qDebug("Window not stays on top");
-                w->setWindowFlags(wf & ~Qt::WindowStaysOnTopHint);
-            } else {
-                qDebug("Window stays on top");
-                w->setWindowFlags(wf | Qt::WindowStaysOnTopHint);
-            }
+            w->setWindowFlags(w->window()->windowFlags() ^ Qt::WindowStaysOnTopHint);
             //call setParent() when changing the flags, causing the widget to be hidden
             w->show();
         }
