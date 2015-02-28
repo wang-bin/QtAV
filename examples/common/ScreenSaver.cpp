@@ -20,7 +20,7 @@ static fXGetScreenSaver XGetScreenSaver = 0;
 static fXResetScreenSaver XResetScreenSaver = 0;
 static QLibrary xlib;
 #endif //Q_OS_LINUX
-#ifdef Q_OS_MAC
+#if defined(Q_OS_MAC) && !defined(Q_OS_IOS)
 //http://www.cocoachina.com/macdev/cocoa/2010/0201/453.html
 #include <CoreServices/CoreServices.h>
 #endif //Q_OS_MAC
@@ -221,7 +221,7 @@ bool ScreenSaver::enable(bool yes)
     rv = true;
     modified = true;
 #endif //Q_OS_LINUX
-#ifdef Q_OS_MAC
+#if defined(Q_OS_MAC) && !defined(Q_OS_IOS)
     if (!yes) {
         if (ssTimerId <= 0) {
             ssTimerId = startTimer(1000 * 60);
@@ -305,7 +305,7 @@ void ScreenSaver::timerEvent(QTimerEvent *e)
 {
     if (e->timerId() != ssTimerId)
         return;
-#ifdef Q_OS_MAC
+#if defined(Q_OS_MAC) && !defined(Q_OS_IOS)
     UpdateSystemActivity(OverallAct);
     return;
 #endif //Q_OS_MAC
