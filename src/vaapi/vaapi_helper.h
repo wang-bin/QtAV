@@ -42,20 +42,20 @@ namespace QtAV {
     vaCreateSurfaces(d, w, h, f, ns, s)
 #endif
 
-#define VACHECK(a, ret) \
-do { \
-  VAStatus res = a; \
-  if(res != VA_STATUS_SUCCESS) { \
-    qDebug("VAAPI - failed executing "#a" at line %d with error %x:%s", __LINE__, res, vaErrorStr(res)); \
-    return ret; \
-  } \
-} while(0);
+#define VA_ENSURE_TRUE(x, ...) \
+    do { \
+        VAStatus ret = x; \
+        if (ret != VA_STATUS_SUCCESS) { \
+            qWarning("VA-API error@%d. " #x ": %#x %s", __LINE__, ret, vaErrorStr(ret)); \
+            return __VA_ARGS__; \
+        } \
+    } while(0)
 
 #define VAWARN(a) \
 do { \
   VAStatus res = a; \
   if(res != VA_STATUS_SUCCESS) \
-    qWarning("VAAPI - failed executing "#a" at line %d with error %x:%s", __LINE__, res, vaErrorStr(res)); \
+    qWarning("VA-API error@%d. " #a ": %#x %s", __LINE__, res, vaErrorStr(res)); \
 } while(0);
 
 namespace vaapi {
@@ -225,19 +225,19 @@ public:
     void set(const surface_ptr& surface) { m_surface = surface;}
     bool create(GLuint tex) {
         destroy();
-        VACHECK(vaCreateSurfaceGLX(display(), GL_TEXTURE_2D, tex, &m_glx), false);
+        VA_ENSURE_TRUE(vaCreateSurfaceGLX(display(), GL_TEXTURE_2D, tex, &m_glx), false);
         return true;
     }
     bool destroy() {
         if (!m_glx)
             return true;
-        VACHECK(vaDestroySurfaceGLX(display(), m_glx), false);
+        VA_ENSURE_TRUE(vaDestroySurfaceGLX(display(), m_glx), false);
         return true;
     }
     bool copy() {
         if (!m_glx)
             return false;
-        VACHECK(vaCopySurfaceGLX(display(), m_glx, m_surface->get(), VA_FRAME_PICTURE | VA_SRC_BT709), false);
+        VA_ENSURE_TRUE(vaCopySurfaceGLX(display(), m_glx, m_surface->get(), VA_FRAME_PICTURE | VA_SRC_BT709), false);
         return true;
     }
     void sync() {

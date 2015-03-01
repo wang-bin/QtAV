@@ -334,24 +334,13 @@ VideoFrame VideoDecoderVAAPI::frame()
          * TODO: copy from USWC, see vlc and https://github.com/OpenELEC/OpenELEC.tv/pull/2937.diff
          * https://software.intel.com/en-us/articles/increasing-memory-throughput-with-intel-streaming-simd-extensions-4-intel-sse4-streaming-load
          */
-        status = vaDeriveImage(d.display->get(), surface_id, &d.image);
-        if (status != VA_STATUS_SUCCESS) {
-            qWarning("vaDeriveImage(VADisplay:%p, VASurfaceID:%#x, VAImage*:%p) == %#x", d.display->get(), surface_id, &d.image, status);
-            return VideoFrame();
-        }
+        VA_ENSURE_TRUE(vaDeriveImage(d.display->get(), surface_id, &d.image), VideoFrame());
     } else {
-        status = vaGetImage(d.display->get(), surface_id, 0, 0, d.width, d.height, d.image.image_id);
-        if (status != VA_STATUS_SUCCESS) {
-            qWarning("vaGetImage(VADisplay:%p, VASurfaceID:%#x, 0,0, %d, %d, VAImageID:%#x) == %#x", d.display->get(), surface_id, d.width, d.height, d.image.image_id, status);
-            return VideoFrame();
-        }
+        VA_ENSURE_TRUE(vaGetImage(d.display->get(), surface_id, 0, 0, d.width, d.height, d.image.image_id), VideoFrame());
     }
 
     void *p_base;
-    if ((status = vaMapBuffer(d.display->get(), d.image.buf, &p_base)) != VA_STATUS_SUCCESS) {
-        qWarning("vaMapBuffer(VADisplay:%p, VABufferID:%#x, pBuf:%p) == %#x", d.display->get(), d.image.buf, &p_base, status);
-        return VideoFrame();
-    }
+    VA_ENSURE_TRUE(vaMapBuffer(d.display->get(), d.image.buf, &p_base), VideoFrame());
 
     VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
     bool swap_uv = false;
@@ -382,10 +371,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         pitch[i] = d.image.pitches[i];
     }
     VideoFrame frame(copyToFrame(fmt, d.surface_height, src, pitch, swap_uv));
-    if ((status = vaUnmapBuffer(d.display->get(), d.image.buf)) != VA_STATUS_SUCCESS) {
-        qWarning("vaUnmapBuffer(VADisplay:%p, VABufferID:%#x) == %#x", d.display->get(), d.image.buf, status);
-        return VideoFrame();
-    }
+    VAWARN(vaUnmapBuffer(d.display->get(), d.image.buf));
     if (!d.disable_derive && d.supports_derive) {
         vaDestroyImage(d.display->get(), d.image.image_id);
         d.image.image_id = VA_INVALID_ID;
@@ -528,11 +514,7 @@ bool VideoDecoderVAAPIPrivate::open()
         return false;
     }
     QVector<VAProfile> supported_profiles(nb_profiles, VAProfileNone);
-    VAStatus status = vaQueryConfigProfiles(disp, supported_profiles.data(), &nb_profiles);
-    if (status != VA_STATUS_SUCCESS) {
-        qWarning("Failed to query profiles: %#x %s", status, vaErrorStr(status));
-        return false;
-    }
+    VA_ENSURE_TRUE(vaQueryConfigProfiles(disp, supported_profiles.data(), &nb_profiles), false);
     if (!isProfileSupportedByRuntime(supported_profiles.constData(), nb_profiles, pe->va_profile)) {
         qDebug("Codec or profile is not supported by the hardware");
         return false;
@@ -541,19 +523,12 @@ bool VideoDecoderVAAPIPrivate::open()
     VAConfigAttrib attrib;
     memset(&attrib, 0, sizeof(attrib));
     attrib.type = VAConfigAttribRTFormat;
-    if ((status = vaGetConfigAttributes(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1)) != VA_STATUS_SUCCESS) {
-        qWarning("vaGetConfigAttributes(VADisplay:%p, VAProfile:%d, VAEntrypointVLD, VAConfigAttrib*:%p, num_attrib:1) == %#x", disp, pe->va_profile, &attrib, status);
-        return false;
-    }
+    VA_ENSURE_TRUE(vaGetConfigAttributes(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1), false);
     /* Not sure what to do if not, I don't have a way to test */
     if ((attrib.value & VA_RT_FORMAT_YUV420) == 0)
         return false;
     //vaCreateConfig(display, pe->va_profile, VAEntrypointVLD, NULL, 0, &config_id)
-    if ((status = vaCreateConfig(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1, &config_id)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateConfig(VADisplay:%p, VAProfile:%d, VAEntrypointVLD, VAConfigAttrib*:%p, num_attrib:1, VAConfigID*:%p) == %#x", disp, pe->va_profile, &attrib, &config_id, status);
-        config_id = VA_INVALID_ID;
-        return false;
-    }
+    VA_ENSURE_TRUE(vaCreateConfig(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1, &config_id), false);
     supports_derive = false;
     surface_interop = VideoSurfaceInteropPtr(new SurfaceInteropVAAPI());
     return true;
@@ -576,12 +551,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     context_id = VA_INVALID_ID;
     surface_width = FFALIGN(w, 16);
     surface_height = FFALIGN(h, 16);
-    VAStatus status = VA_STATUS_SUCCESS;
-    if ((status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, width, height,  surfaces.data() + old_size, count - old_size, NULL, 0)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateSurfaces(VADisplay:%p, VA_RT_FORMAT_YUV420, %d, %d, VASurfaceID*:%p, surfaces:%d, VASurfaceAttrib:NULL, num_attrib:0) == %#x", display->get(), width, height, surfaces.constData(), surfaces.size(), status);
-        destroySurfaces(); //?
-        return false;
-    }
+    VA_ENSURE_TRUE(vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, width, height,  surfaces.data() + old_size, count - old_size, NULL, 0), false);
     for (int i = old_size; i < surfaces.size(); ++i) {
         surfaces_free.push_back(surface_ptr(new surface_t(width, height, surfaces[i], display)));
     }
@@ -589,6 +559,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     if (context_id && context_id != VA_INVALID_ID)
         VAWARN(vaDestroyContext(display->get(), context_id));
     context_id = VA_INVALID_ID;
+    VAStatus status = VA_STATUS_SUCCESS;
     if ((status = vaCreateContext(display->get(), config_id, width, height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id)) != VA_STATUS_SUCCESS) {
         qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display->get(), config_id, width, height, surfaces.constData(), surfaces.size(), &context_id, status);
         context_id = VA_INVALID_ID;
