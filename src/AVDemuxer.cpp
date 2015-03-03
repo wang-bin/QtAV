@@ -278,6 +278,7 @@ public:
     QString file;
     QString file_orig;
     AVInputFormat *input_format;
+    QString format_forced;
     AVInput *input;
 
     SeekUnit seek_unit;
@@ -543,6 +544,9 @@ bool AVDemuxer::setMedia(const QString &fileName)
     else if (d->file.startsWith(kFileScheme))
         d->file = getLocalPath(d->file);
     d->media_changed = url_old != d->file;
+    if (d->media_changed) {
+        d->format_forced.clear();
+    }
     // a local file. return here to avoid protocol checking. If path contains ":", protocol checking will fail
     if (d->file.startsWith(QChar('/')))
         return d->media_changed;
@@ -577,6 +581,9 @@ bool AVDemuxer::setMedia(QIODevice* device)
         d->input = AVInput::create("QIODevice");
     QIODevice* old_dev = d->input->property("device").value<QIODevice*>();
     d->media_changed = old_dev != device;
+    if (d->media_changed) {
+        d->format_forced.clear();
+    }
     d->input->setProperty("device", QVariant::fromValue(device)); //open outside?
     return d->media_changed;
 }
@@ -584,6 +591,9 @@ bool AVDemuxer::setMedia(QIODevice* device)
 bool AVDemuxer::setMedia(AVInput *in)
 {
     d->media_changed = in != d->input;
+    if (d->media_changed) {
+        d->format_forced.clear();
+    }
     d->file = QString();
     d->file_orig = QString();
     if (!d->input)
@@ -593,6 +603,16 @@ bool AVDemuxer::setMedia(AVInput *in)
         d->input = in;
     }
     return d->media_changed;
+}
+
+void AVDemuxer::setFormat(const QString &fmt)
+{
+    d->format_forced = fmt;
+}
+
+QString AVDemuxer::formatForced() const
+{
+    return d->format_forced;
 }
 
 bool AVDemuxer::load()
@@ -633,6 +653,11 @@ bool AVDemuxer::load()
     setMediaStatus(LoadingMedia);
     int ret;
     d->applyOptionsForDict();
+    // d->format_forced can be set from AVFormatContext.format_whitelist
+    if (!d->format_forced.isEmpty()) {
+        d->input_format = av_find_input_format(d->format_forced.toUtf8().constData());
+        qDebug() << "force format: " << d->format_forced;
+    }
     if (d->input) {
         d->format_ctx->pb = (AVIOContext*)d->input->avioContext();
         d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
@@ -987,6 +1012,12 @@ void AVDemuxer::Private::applyOptionsForDict()
             QVariantMap avformat_dict(opt.toMap());
             if (avformat_dict.isEmpty())
                 return;
+            if (avformat_dict.contains("format_whitelist")) {
+                const QString fmts(avformat_dict["format_whitelist"].toString());
+                if (!fmts.contains(',') && !fmts.isEmpty()) {
+                    format_forced = fmts; // reset when media changed
+                }
+            }
             QMapIterator<QString, QVariant> i(avformat_dict);
             while (i.hasNext()) {
                 i.next();
@@ -1003,6 +1034,12 @@ void AVDemuxer::Private::applyOptionsForDict()
     QVariantHash avformat_dict(opt.toHash());
     if (avformat_dict.isEmpty())
         return;
+    if (avformat_dict.contains("format_whitelist")) {
+        const QString fmts(avformat_dict["format_whitelist"].toString());
+        if (!fmts.contains(',') && !fmts.isEmpty()) {
+            format_forced = fmts; // reset when media changed
+        }
+    }
     QHashIterator<QString, QVariant> i(avformat_dict);
     while (i.hasNext()) {
         i.next();

@@ -63,6 +63,16 @@ public:
     bool setMedia(const QString& fileName);
     bool setMedia(QIODevice* dev);
     bool setMedia(AVInput* in);
+    /*!
+     * \brief setFormat
+     * Force the input format. Useful if input stream is a raw video stream(fmt="rawvideo).
+     * formatForced() is reset if media changed. So you have to call setFormat() for every media
+     * you want to force the format.
+     * If AVFormatContext.format_whitelist contains only 1 format, then that format will be forced.
+     * For example, setOptions({"format_whitelist": "rawvideo"})
+     */
+    void setFormat(const QString& fmt);
+    QString formatForced() const;
     bool load();
     bool unload();
     bool isLoaded() const;
@@ -151,6 +161,7 @@ public:
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
      * empty value does nothing to current context if it is open, but will change AVDictionary options to null in next open.
      * AVDictionary is used in avformat_open_input() and will not change unless user call setOptions()
+     * If an option is not found
      */
     void setOptions(const QVariantHash &dict);
     QVariantHash options() const;
