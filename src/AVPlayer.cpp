@@ -236,9 +236,15 @@ qint64 AVPlayer::interruptTimeout() const
     return d->interrupt_timeout;
 }
 
-Statistics& AVPlayer::statistics()
+void AVPlayer::setFrameRate(qreal value)
 {
-    return d->statistics;
+    d->force_fps = value;
+    // clock set here will be reset in playInternal()
+}
+
+qreal AVPlayer::forcedFrameRate() const
+{
+    return d->force_fps;
 }
 
 const Statistics& AVPlayer::statistics() const
@@ -1022,6 +1028,14 @@ void AVPlayer::playInternal()
         masterClock()->pause(false); //external clock
     } else {
         masterClock()->reset();
+    }
+    // TODO: add isVideo() or hasVideo()?
+    if (d->force_fps > 0 && d->demuxer.videoCodecContext() && d->vthread) {
+        masterClock()->setClockAuto(false);
+        masterClock()->setClockType(AVClock::VideoClock);
+        d->vthread->setFrameRate(d->force_fps);
+    } else {
+        d->vthread->setFrameRate(-1.0);
     }
     if (masterClock()->isClockAuto()) {
         qDebug("auto select clock: audio > external");

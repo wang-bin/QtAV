@@ -40,6 +40,7 @@ public:
     VideoCapture *setVideoCapture(VideoCapture* cap); //ensure thread safe
     VideoCapture *videoCapture() const;
     VideoFrame displayedFrame() const;
+    void setFrameRate(qreal value);
     //virtual bool event(QEvent *event);
     void setBrightness(int val);
     void setContrast(int val);

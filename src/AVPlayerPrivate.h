@@ -145,6 +145,7 @@ public:
     qint64 interrupt_timeout;
     bool mute;
 
+    qreal force_fps;
     // timerEvent interval in ms. can divide 1000. depends on media duration, fps etc.
     // <0: auto compute internally, |notify_interval| is the real interval
     int notify_interval;

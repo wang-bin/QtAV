@@ -130,6 +130,17 @@ VideoFrame VideoThread::displayedFrame() const
     return d_func().displayed_frame;
 }
 
+void VideoThread::setFrameRate(qreal value)
+{
+    DPTR_D(VideoThread);
+    d.force_fps = value;
+    if (d.force_fps > 0.0) {
+        d.force_dt = int(1000.0/d.force_fps);
+    } else {
+        d.force_dt = -1;
+    }
+}
+
 void VideoThread::setBrightness(int val)
 {
     setEQ(val, 101, 101);
@@ -553,7 +564,7 @@ void VideoThread::run()
                 if (d.force_fps * qreal(d.force_dt) <= 1000.0 + kEPS)
                     ++d.force_dt;
             }
-        } else {
+        } else if (false) { //FIXME: may block a while when seeking
             seeking = !qFuzzyIsNull(d.render_pts0);
             const qreal display_wait = pts - clock()->value();
             if (!seeking && display_wait > 0.0) {

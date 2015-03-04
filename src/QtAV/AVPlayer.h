@@ -123,7 +123,7 @@ public:
     bool isAutoLoad() const; // NOT implemented
 
     MediaStatus mediaStatus() const;
-
+    // TODO: add hasAudio, hasVideo, isMusic(has pic)
     /*!
      * \brief relativeTimeMode
      * true (default): mediaStartPosition() is always 0. All time related API, for example setPosition(), position() and positionChanged()
@@ -211,7 +211,7 @@ public:
     AudioOutput* audio();
     void enableAudio(bool enable = true);
     void disableAudio(bool disable = true);
-    void setMute(bool mute);
+    void setMute(bool mute = true);
     bool isMute() const;
     /*!
      * \brief setSpeed set playing speed.
@@ -228,8 +228,15 @@ public:
      */
     void setInterruptTimeout(qint64 ms);
     qint64 interruptTimeout() const;
-
-    Statistics& statistics();
+    /*!
+     * \brief setFrameRate
+     * Force the (video) frame rate to a given value.
+     * Call it before playback start.
+     * \param <=0: ignore and normal playback
+     */
+    void setFrameRate(qreal value);
+    qreal forcedFrameRate() const;
+    //Statistics& statistics();
     const Statistics& statistics() const;
     /*
      * install the filter in AVThread. Filter will apply before rendering data
@@ -282,14 +289,16 @@ public:
 
 public slots:
     void togglePause();
-    void pause(bool p);
+    void pause(bool p = true);
     /*!
      * \brief play
      * If media is not loaded, load()
      */
     void play(); //replay
     void stop();
-    void playNextFrame();
+    void playNextFrame(); //deprecated
+    //void stepForward();
+    //void stepBackward();
 
     void setRelativeTimeMode(bool value);
     /*!
