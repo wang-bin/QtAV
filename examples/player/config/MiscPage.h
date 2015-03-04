@@ -23,7 +23,7 @@
 
 #include "ConfigPageBase.h"
 #include <QCheckBox>
-#include <QSpinBox>
+#include <QDoubleSpinBox>
 
 class MiscPage : public ConfigPageBase
 {
@@ -37,6 +37,7 @@ protected:
 private:
     QCheckBox *m_preview_on;
     QSpinBox *m_notify_interval;
+    QDoubleSpinBox *m_fps;
 };
 
 #endif // MISCPAGE_H

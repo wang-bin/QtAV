@@ -31,6 +31,13 @@ MiscPage::MiscPage()
     int r = 0;
     m_preview_on = new QCheckBox(tr("Preview"));
     gl->addWidget(m_preview_on, r++, 0);
+
+    gl->addWidget(new QLabel(tr("Force fps")), r, 0);
+    m_fps = new QDoubleSpinBox();
+    m_fps->setMinimum(-m_fps->maximum());
+    m_fps->setToolTip("<= 0: " + tr("Ignore"));
+    gl->addWidget(m_fps, r++, 1);
+
     gl->addWidget(new QLabel(tr("Progress update interval") + "(ms)"), r, 0);
     m_notify_interval = new QSpinBox();
     m_notify_interval->setEnabled(false);
@@ -47,11 +54,13 @@ QString MiscPage::name() const
 void MiscPage::applyFromUi()
 {
     Config::instance().setPreviewEnabled(m_preview_on->isChecked())
+            .setForceFrameRate(m_fps->value());
             ;
 }
 
 void MiscPage::applyToUi()
 {
     m_preview_on->setChecked(Config::instance().previewEnabled());
+    m_fps->setValue(Config::instance().forceFrameRate());
     //m_notify_interval->setValue(Config::instance().avfilterOptions());
 }

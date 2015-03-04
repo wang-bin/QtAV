@@ -719,6 +719,7 @@ void MainWindow::play(const QString &name)
         mTitle = QFileInfo(mFile).fileName();
     }
     setWindowTitle(mTitle);
+    mpPlayer->setFrameRate(Config::instance().forceFrameRate());
     mpPlayer->enableAudio(!mNullAO);
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
@@ -844,6 +845,7 @@ void MainWindow::onStopPlay()
     if (mpPlayer->currentRepeat() < mpPlayer->repeat())
         return;
     // use shortcut to replay in EventFilter, the options will not be set, so set here
+    mpPlayer->setFrameRate(Config::instance().forceFrameRate());
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
     mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
