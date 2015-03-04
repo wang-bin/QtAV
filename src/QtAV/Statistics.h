@@ -117,7 +117,8 @@ public:
          */
         int gop_size;
         QString pix_fmt;
-        void frameDisplayed(qreal pts); // used to compute currentDisplayFPS()
+        /// return current absolute time (seconds since epcho
+        qint64 frameDisplayed(qreal pts); // used to compute currentDisplayFPS()
     private:
         class Private : public QSharedData {
         public:

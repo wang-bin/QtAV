@@ -41,6 +41,9 @@ class VideoThreadPrivate : public AVThreadPrivate
 public:
     VideoThreadPrivate():
         AVThreadPrivate()
+      , force_fps(-1)
+      , force_dt(-1)
+      , last_deliver_time(0)
       , capture(0)
       , filter_context(0)
     {
@@ -56,6 +59,11 @@ public:
     }
 
     VideoFrameConverter conv;
+    qreal force_fps; // <=0: ignore
+    // not const.
+    int force_dt; //unit: ms. force_fps = 1/force_dt.  <=0: ignore
+    qint64 last_deliver_time;
+
     double pts; //current decoded pts. for capture. TODO: remove
     VideoCapture *capture;
     VideoFilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
@@ -291,6 +299,7 @@ void VideoThread::run()
     int seek_done_count = 0; // seek_done_count > 1 means seeking is really finished. theorically can't be >1 if seeking!
     bool sync_audio = d.clock->clockType() == AVClock::AudioClock;
     bool sync_video = d.clock->clockType() == AVClock::VideoClock; // no frame drop
+    const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -520,10 +529,44 @@ void VideoThread::run()
             //tryPause(100);
             processNextTask();
         }
+        if (d.force_dt > 0) {
+            const qint64 now = QDateTime::currentMSecsSinceEpoch();
+            const qint64 delta = qint64(d.force_dt) - (now - d.last_deliver_time);
+            if (frame.timestamp() <= 0) {
+                // TODO: what if seek happens during playback?
+                const int msecs_started(now + qMax(0LL, delta) - start_time);
+                frame.setTimestamp(qreal(msecs_started)/1000.0);
+                d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(msecs_started); //TODO: is it expensive?
+                clock()->updateValue(frame.timestamp());
+            }
+            if (delta > 0LL) { // limit up bound?
+                //qDebug() << "wait msecs: " << delta;
+                waitAndCheck((ulong)delta, pts);
+            }
+            const qreal real_dt = 1000.0/d.statistics->video_only.currentDisplayFPS();
+            // assume max is 120fps, 1 frame error. TODO: kEPS depends on video original fps
+            static const qreal kEPS = 120.0; // error msecs per second
+            if (real_dt > qreal(d.force_dt)) { // real fps < wanted fps. reduce wait time
+                if (d.force_fps * qreal(d.force_dt) >= 1000.0 - kEPS)
+                    --d.force_dt;
+            } else { // increase wait time
+                if (d.force_fps * qreal(d.force_dt) <= 1000.0 + kEPS)
+                    ++d.force_dt;
+            }
+        } else {
+            seeking = !qFuzzyIsNull(d.render_pts0);
+            const qreal display_wait = pts - clock()->value();
+            if (!seeking && display_wait > 0.0) {
+                // wait to pts reaches. TODO: count rendering time
+                //qDebug("wait %f to display for pts %f-%f", display_wait, pts, clock()->value());
+                if (display_wait < 1.0)
+                    waitAndCheck(display_wait*1000UL, pts); // TODO: count decoding and filter time
+            }
+        }
         // no return even if d.stop is true. ensure frame is displayed. otherwise playing an image may be failed to display
         if (!deliverVideoFrame(frame))
             continue;
-        d.statistics->video_only.frameDisplayed(frame.timestamp());
+        d.last_deliver_time = d.statistics->video_only.frameDisplayed(frame.timestamp());
         // TODO: store original frame. now the frame is filtered and maybe converted to renderer perferred format
         d.displayed_frame = frame;
     }

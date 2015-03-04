@@ -61,10 +61,11 @@ qreal Statistics::VideoOnly::pts() const
     return d->pts;
 }
 
-void Statistics::VideoOnly::frameDisplayed(qreal pts)
+qint64 Statistics::VideoOnly::frameDisplayed(qreal pts)
 {
     d->pts = pts;
-    const qreal t = (double)QDateTime::currentMSecsSinceEpoch()/1000.0;
+    const qint64 msecs = QDateTime::currentMSecsSinceEpoch();
+    const qreal t = (double)msecs/1000.0;
     d->history.push_back(t);
     if (d->history.size() > 60) {
         d->history.pop_front();
@@ -72,6 +73,7 @@ void Statistics::VideoOnly::frameDisplayed(qreal pts)
     if (t - d->history.at(0) > 1.0) {
         d->history.pop_front();
     }
+    return msecs;
 }
 // d->history is not thread safe!
 qreal Statistics::VideoOnly::currentDisplayFPS() const
