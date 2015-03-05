@@ -38,9 +38,9 @@ public:
     ~AudioOutputPortAudio();
     bool open();
     bool close();
-    virtual BufferControl supportedBufferControl() const;
     virtual bool play() { return true;}
 protected:
+    virtual BufferControl bufferControl() const;
     virtual bool write(const QByteArray& data);
 };
 
@@ -109,7 +109,6 @@ public:
 AudioOutputPortAudio::AudioOutputPortAudio()
     :AudioOutput(*new AudioOutputPortAudioPrivate())
 {
-    setBufferControl(Blocking);
 }
 
 AudioOutputPortAudio::~AudioOutputPortAudio()
@@ -117,7 +116,7 @@ AudioOutputPortAudio::~AudioOutputPortAudio()
     close();
 }
 
-AudioOutput::BufferControl AudioOutputPortAudio::supportedBufferControl() const
+AudioOutput::BufferControl AudioOutputPortAudio::bufferControl() const
 {
     return Blocking;
 }

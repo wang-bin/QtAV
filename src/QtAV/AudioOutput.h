@@ -52,28 +52,12 @@ class Q_AV_EXPORT AudioOutput : public QObject, public AVOutput
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AudioOutput)
-    Q_ENUMS(BufferControl)
-    Q_FLAGS(BufferControls)
     Q_ENUMS(Feature)
     Q_FLAGS(Features)
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(Feature features READ features WRITE setFeatures NOTIFY featuresChanged)
 public:
-    /*!
-     * \brief The BufferControl enum
-     * Used to adapt to different audio playback backend. Usually you don't need this in application level development.
-    */
-    enum BufferControl {
-        User = 0,    // You have to reimplement waitForNextBuffer()
-        Blocking = 1,
-        Callback = 1 << 1,
-        PlayedCount = 1 << 2, //number of buffers played since last buffer dequeued
-        PlayedBytes = 1 << 3,
-        OffsetIndex = 1 << 4, //current playing offset
-        OffsetBytes = 1 << 5, //current playing offset by bytes
-    };
-    Q_DECLARE_FLAGS(BufferControls, BufferControl)
     /*!
      * \brief The Feature enum
      * features supported by the audio playback api
@@ -121,7 +105,7 @@ public:
      */
     void setVolume(qreal volume);
     qreal volume() const;
-    void setMute(bool value);
+    void setMute(bool value = true);
     bool isMute() const;
     /*!
      * \brief setSpeed  set audio playing speed
@@ -166,14 +150,6 @@ public:
     int bufferCount() const;
     void setBufferCount(int value);
     int bufferSizeTotal() const { return bufferCount() * bufferSize();}
-
-    void setBufferControl(BufferControl value);
-    BufferControl bufferControl() const;
-    /*!
-     * \brief supportedBufferControl
-     * \return default is User
-     */
-    virtual BufferControl supportedBufferControl() const;
     /*!
      * \brief setFeatures
      * do nothing if onSetFeatures() returns false, which means current api does not support the features
@@ -203,8 +179,22 @@ signals:
     void featuresChanged();
 protected:
     virtual bool write(const QByteArray& data) = 0; //MUST
+    /*!
+     * \brief The BufferControl enum
+     * Used to adapt to different audio playback backend. Usually you don't need this in application level development.
+    */
+    enum BufferControl {
+        User = 0,    // You have to reimplement waitForNextBuffer()
+        Blocking = 1,
+        Callback = 1 << 1,
+        PlayedCount = 1 << 2, //number of buffers played since last buffer dequeued
+        PlayedBytes = 1 << 3,
+        OffsetIndex = 1 << 4, //current playing offset
+        OffsetBytes = 1 << 5, //current playing offset by bytes
+    };
+    virtual BufferControl bufferControl() const = 0;
     // called by callback with Callback control
-    void onCallback();
+    void onCallback(); // virtual?
     //default return -1. means not the control
     virtual int getPlayedCount(); //PlayedCount
     /*!

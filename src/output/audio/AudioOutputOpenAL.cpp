@@ -51,10 +51,9 @@ public:
     virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
     virtual AudioFormat::SampleFormat preferredSampleFormat() const;
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
-
-    virtual BufferControl supportedBufferControl() const;
     virtual bool play();
 protected:
+    virtual BufferControl bufferControl() const;
     virtual bool write(const QByteArray& data);
     virtual int getPlayedCount();
     virtual bool onSetFeatures(Feature value, bool set = true) {
@@ -214,7 +213,6 @@ QMutex AudioOutputOpenALPrivate::global_mutex;
 AudioOutputOpenAL::AudioOutputOpenAL()
     :AudioOutput(*new AudioOutputOpenALPrivate())
 {
-    setBufferControl(PlayedCount); //TODO: AL_BYTE_OFFSET
     setFeatures(SetVolume);
 }
 
@@ -400,9 +398,9 @@ QString AudioOutputOpenAL::name() const
     return name;
 }
 
-AudioOutput::BufferControl AudioOutputOpenAL::supportedBufferControl() const
+AudioOutput::BufferControl AudioOutputOpenAL::bufferControl() const
 {
-    return PlayedCount;
+    return PlayedCount; //TODO: AL_BYTE_OFFSET
 }
 
 // http://kcat.strangesoft.net/openal-tutorial.html

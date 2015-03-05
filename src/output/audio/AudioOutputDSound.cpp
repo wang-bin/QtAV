@@ -1,6 +1,6 @@
 /******************************************************************************
     AudioOutputDSound.cpp: description
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,9 +40,9 @@ public:
     virtual bool open();
     virtual bool close();
     virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
-    virtual BufferControl supportedBufferControl() const;
     virtual bool play();
 protected:
+    virtual BufferControl bufferControl() const;
     virtual bool write(const QByteArray& data);
     virtual int getOffsetByBytes();
 };
@@ -183,7 +183,6 @@ public:
 AudioOutputDSound::AudioOutputDSound()
     :AudioOutput(*new AudioOutputDSoundPrivate())
 {
-    setBufferControl(OffsetBytes);
 }
 
 bool AudioOutputDSound::open()
@@ -211,7 +210,7 @@ bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) cons
             || sampleFormat == AudioFormat::SampleFormat_Float;
 }
 
-AudioOutput::BufferControl AudioOutputDSound::supportedBufferControl() const
+AudioOutput::BufferControl AudioOutputDSound::bufferControl() const
 {
     return OffsetBytes;
 }

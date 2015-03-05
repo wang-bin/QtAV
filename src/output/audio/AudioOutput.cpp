@@ -306,22 +306,6 @@ void AudioOutput::setBufferCount(int value)
     d_func().nb_buffers = value;
 }
 
-void AudioOutput::setBufferControl(BufferControl value)
-{
-    // check supported? it's virtual, but called in ctor
-    d_func().control = value;
-}
-
-AudioOutput::BufferControl AudioOutput::bufferControl() const
-{
-    return (AudioOutput::BufferControl)d_func().control;
-}
-
-AudioOutput::BufferControl AudioOutput::supportedBufferControl() const
-{
-    return AudioOutput::User;
-}
-
 void AudioOutput::setFeatures(Feature value)
 {
     if (!onSetFeatures(value))
