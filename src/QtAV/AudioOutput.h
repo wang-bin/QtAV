@@ -52,27 +52,28 @@ class Q_AV_EXPORT AudioOutput : public QObject, public AVOutput
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AudioOutput)
-    Q_ENUMS(Feature)
-    Q_FLAGS(Features)
+    Q_ENUMS(DeviceFeature)
+    Q_FLAGS(DeviceFeatures)
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
-    Q_PROPERTY(Feature features READ features WRITE setFeatures NOTIFY featuresChanged)
+    Q_PROPERTY(DeviceFeatures deviceFeatures READ deviceFeatures WRITE setDeviceFeatures NOTIFY deviceFeaturesChanged)
 public:
     /*!
-     * \brief The Feature enum
-     * features supported by the audio playback api
+     * \brief DeviceFeature Feature enum
+     * features supported by the audio playback api (we call device or backend here)
      */
-    enum Feature {
+    enum DeviceFeature {
+        NoFeature = 0,
         SetVolume = 1, /// NOT IMPLEMENTED. Use backend volume control api rather than software scale. Ignore if backend does not support.
         SetMute = 1 << 1, /// NOT IMPLEMENTED
         SetSampleRate = 1 << 2, /// NOT IMPLEMENTED
     };
-    Q_DECLARE_FLAGS(Features, Feature)
+    Q_DECLARE_FLAGS(DeviceFeatures, DeviceFeature)
     /*!
      * \brief AudioOutput
      * Audio format set to preferred sample format and channel layout
      */
-    AudioOutput();
+    AudioOutput(QObject *parent = 0);
     virtual ~AudioOutput();
     virtual bool open() = 0;
     virtual bool close() = 0;
@@ -105,6 +106,10 @@ public:
      */
     void setVolume(qreal volume);
     qreal volume() const;
+    /*!
+     * \brief setMute
+     * If SetMute feature is not set or not supported, software implemention will be used.
+     */
     void setMute(bool value = true);
     bool isMute() const;
     /*!
@@ -118,7 +123,6 @@ public:
      */
     void setSpeed(qreal speed);
     qreal speed() const;
-
     /*!
      * \brief isSupported
      *  check \a isSupported(format.sampleFormat()) and \a isSupported(format.channelLayout())
@@ -150,22 +154,27 @@ public:
     void setBufferCount(int value);
     int bufferSizeTotal() const { return bufferCount() * bufferSize();}
     /*!
-     * \brief setFeatures
-     * do nothing if onSetFeatures() returns false, which means current api does not support the features
-     * call this in the ctor of your new backend
-     * TODO: return features set successfully
+     * \brief setDeviceFeatures
+     * Unsupported features will not be set.
+     * You can call this in a backend ctor.
      */
-    void setFeatures(Feature value);
-    Feature features() const;
-    void setFeature(Feature value, bool on = true);
-    bool hasFeatures(Feature value) const;
-    //TODO: virtual Features supportedFeatures() const;
+    void setDeviceFeatures(DeviceFeatures value);
+    /*!
+     * \brief deviceFeatures
+     * \return features set by setFeatures() excluding unsupported features
+     */
+    DeviceFeatures deviceFeatures() const;
+    /*!
+     * \brief supportedDeviceFeatures
+     * Supported features of the backend, defined by AudioOutput(DeviceFeatures,AudioOutput&,QObject*) in a backend ctor
+     */
+    DeviceFeatures supportedDeviceFeatures() const;
     qreal timestamp() const;
     // timestamp of current playing data
 signals:
     void volumeChanged(qreal);
     void muteChanged(bool);
-    void featuresChanged();
+    void deviceFeaturesChanged();
 protected:
     // Store and fill data to audio buffers
     bool receiveData(const QByteArray &data, qreal pts = 0.0);
@@ -202,9 +211,6 @@ protected:
     virtual int getPlayedBytes(); // PlayedBytes
     virtual int getOffset();      // OffsetIndex
     virtual int getOffsetByBytes(); // OffsetBytes
-    // \return false by default
-    // TODO: bool onSetFeature(Feature f, bool s);
-    virtual bool onSetFeatures(Feature value, bool set = true); // TODO: remove
     /*!
      * \brief deviceSetVolume
      * Set volume by backend api. If backend can not set the given volume, or SetVolume feature is not set, software implemention will be used.
@@ -218,7 +224,11 @@ protected:
     // reset internal status. MUST call this at the begining of open()
     void resetStatus();
 
-    AudioOutput(AudioOutputPrivate& d);
+    /*!
+     * \brief AudioOutput
+     * Specify supported features for the backend. Use this for new backends.
+     */
+    AudioOutput(DeviceFeatures featuresSupported, AudioOutputPrivate& d, QObject *parent = 0);
 };
 
 } //namespace QtAV

@@ -35,15 +35,15 @@ class AudioOutputDSound : public AudioOutput
 {
     DPTR_DECLARE_PRIVATE(AudioOutputDSound)
 public:
-    AudioOutputDSound();
+    AudioOutputDSound(QObject *parent = 0);
     //AudioOutputId id() const
     virtual bool open();
     virtual bool close();
     virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
-    virtual bool play();
 protected:
     virtual BufferControl bufferControl() const;
     virtual bool write(const QByteArray& data);
+    virtual bool play();
     virtual int getOffsetByBytes();
 };
 
@@ -180,8 +180,8 @@ public:
     int write_offset;               ///offset of the write cursor in the direct sound buffer
 };
 
-AudioOutputDSound::AudioOutputDSound()
-    :AudioOutput(*new AudioOutputDSoundPrivate())
+AudioOutputDSound::AudioOutputDSound(QObject *parent)
+    :AudioOutput(NoFeature, *new AudioOutputDSoundPrivate(), parent)
 {
 }
 

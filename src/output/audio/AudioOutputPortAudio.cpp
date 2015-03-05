@@ -34,14 +34,14 @@ class AudioOutputPortAudio : public AudioOutput
 {
     DPTR_DECLARE_PRIVATE(AudioOutputPortAudio)
 public:
-    AudioOutputPortAudio();
+    AudioOutputPortAudio(QObject *parent = 0);
     ~AudioOutputPortAudio();
     bool open();
     bool close();
-    virtual bool play() { return true;}
 protected:
     virtual BufferControl bufferControl() const;
     virtual bool write(const QByteArray& data);
+    virtual bool play() { return true;}
 };
 
 extern AudioOutputId AudioOutputId_PortAudio;
@@ -106,8 +106,8 @@ public:
     double outputLatency;
 };
 
-AudioOutputPortAudio::AudioOutputPortAudio()
-    :AudioOutput(*new AudioOutputPortAudioPrivate())
+AudioOutputPortAudio::AudioOutputPortAudio(QObject *parent)
+    :AudioOutput(NoFeature, *new AudioOutputPortAudioPrivate(), parent)
 {
 }
 

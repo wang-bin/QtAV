@@ -1,5 +1,5 @@
 /******************************************************************************
-    AudioOutputOpenAL.cpp: description
+    QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
     
     This program is free software: you can redistribute it and/or modify
@@ -40,7 +40,7 @@ class AudioOutputOpenAL : public AudioOutput
 {
     DPTR_DECLARE_PRIVATE(AudioOutputOpenAL)
 public:
-    AudioOutputOpenAL();
+    AudioOutputOpenAL(QObject* parent = 0);
     ~AudioOutputOpenAL();
 
     QString name() const;
@@ -51,16 +51,11 @@ public:
     virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
     virtual AudioFormat::SampleFormat preferredSampleFormat() const;
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
-    virtual bool play();
 protected:
     virtual BufferControl bufferControl() const;
     virtual bool write(const QByteArray& data);
+    virtual bool play();
     virtual int getPlayedCount();
-    virtual bool onSetFeatures(Feature value, bool set = true) {
-        Q_UNUSED(set)
-        return !(value & ~SetVolume);
-    }
-
     virtual bool deviceSetVolume(qreal value);
     virtual qreal deviceGetVolume() const;
     int getQueued();
@@ -210,10 +205,10 @@ public:
 
 QMutex AudioOutputOpenALPrivate::global_mutex;
 
-AudioOutputOpenAL::AudioOutputOpenAL()
-    :AudioOutput(*new AudioOutputOpenALPrivate())
+AudioOutputOpenAL::AudioOutputOpenAL(QObject *parent)
+    : AudioOutput(SetVolume, *new AudioOutputOpenALPrivate(), parent)
 {
-    setFeatures(SetVolume);
+    setDeviceFeatures(SetVolume);
 }
 
 AudioOutputOpenAL::~AudioOutputOpenAL()

@@ -56,6 +56,7 @@ public:
       , nb_buffers(8)
       , buffer_size(kBufferSize)
       , features(0)
+      , supported_features(0)
       , play_pos(0)
       , processed_remain(0)
       , scale_samples(0)
@@ -145,6 +146,7 @@ public:
     quint32 nb_buffers;
     qint32 buffer_size;
     int features;
+    int supported_features;
     int play_pos; // index or bytes
     int processed_remain;
 #if AO_USE_TIMER

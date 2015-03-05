@@ -105,18 +105,21 @@ void AudioOutputPrivate::updateSampleScaleFunc()
     scale_samples = get_scaler(format.sampleFormat(), vol, &volume_i);
 }
 
-AudioOutput::AudioOutput()
-    :AVOutput(*new AudioOutputPrivate())
+AudioOutput::AudioOutput(QObject* parent)
+    : QObject(parent)
+    , AVOutput(*new AudioOutputPrivate())
 {
     d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
     d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
 }
 
-AudioOutput::AudioOutput(AudioOutputPrivate &d)
-    :AVOutput(d)
+AudioOutput::AudioOutput(DeviceFeatures featuresSupported, AudioOutputPrivate& d, QObject *parent)
+    : QObject(parent)
+    , AVOutput(d)
 {
     d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
     d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
+    d_func().supported_features = featuresSupported;
 }
 
 AudioOutput::~AudioOutput()
@@ -214,7 +217,7 @@ void AudioOutput::setVolume(qreal volume)
     d.vol = volume;
     emit volumeChanged(d.vol);
     d.updateSampleScaleFunc();
-    if (features() & SetVolume) {
+    if (deviceFeatures() & SetVolume) {
         d.sw_volume = !deviceSetVolume(d.vol);
         //if (!qFuzzyCompare(deviceGetVolume(), d.vol))
         //    d.sw_volume = true;
@@ -237,7 +240,7 @@ void AudioOutput::setMute(bool value)
         return;
     d.mute = value;
     emit muteChanged(value);
-    if (features() & SetMute)
+    if (deviceFeatures() & SetMute)
         d.sw_mute = !deviceSetMute(value);
     else
         d.sw_mute = true;
@@ -306,47 +309,27 @@ void AudioOutput::setBufferCount(int value)
     d_func().nb_buffers = value;
 }
 
-void AudioOutput::setFeatures(Feature value)
+// no virtual functions inside because it can be called in ctor
+void AudioOutput::setDeviceFeatures(DeviceFeatures value)
 {
-    if (!onSetFeatures(value))
+    DPTR_D(AudioOutput);
+    //Qt5: QFlags::Int (int or uint)
+    const int s(supportedDeviceFeatures());
+    const int f(value);
+    if (d.features == (f & s))
         return;
-    if (hasFeatures(value))
-        return;
-    d_func().features = value;
-    emit featuresChanged();
+    d.features = (f & s);
+    emit deviceFeaturesChanged();
 }
 
-AudioOutput::Feature AudioOutput::features() const
+AudioOutput::DeviceFeatures AudioOutput::deviceFeatures() const
 {
-    return (Feature)d_func().features;
+    return (DeviceFeature)d_func().features;
 }
 
-void AudioOutput::setFeature(Feature value, bool on)
+AudioOutput::DeviceFeatures AudioOutput::supportedDeviceFeatures() const
 {
-    if (!onSetFeatures(value, on))
-        return;
-    if (on) {
-        if (hasFeatures(value))
-            return;
-        d_func().features |= value;
-    } else {
-        if (!hasFeatures(value))
-            return;
-        d_func().features &= ~value;
-    }
-    emit featuresChanged();
-}
-
-bool AudioOutput::hasFeatures(Feature value) const
-{
-    return ((Feature)d_func().features & value) == value;
-}
-
-bool AudioOutput::onSetFeatures(Feature value, bool set)
-{
-    Q_UNUSED(value);
-    Q_UNUSED(set);
-    return false;
+    return (DeviceFeature)d_func().supported_features;
 }
 
 void AudioOutput::resetStatus()

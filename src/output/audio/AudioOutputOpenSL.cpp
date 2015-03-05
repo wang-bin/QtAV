@@ -1,5 +1,5 @@
 /******************************************************************************
-    AudioOutputOpenSL.cpp: description
+    QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@ class AudioOutputOpenSL : public AudioOutput
 {
     DPTR_DECLARE_PRIVATE(AudioOutputOpenSL)
 public:
-    AudioOutputOpenSL();
+    AudioOutputOpenSL(QObject *parent = 0);
     ~AudioOutputOpenSL();
 
     virtual bool isSupported(const AudioFormat& format) const;
@@ -40,10 +40,10 @@ public:
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
     virtual bool open();
     virtual bool close();
-    virtual bool play();
 protected:
     virtual BufferControl bufferControl() const;
     virtual bool write(const QByteArray& data);
+    virtual bool play();
     //default return -1. means not the control
     virtual int getPlayedCount();
     static void bufferQueueCallback(SLBufferQueueItf bufferQueue, void *context);
@@ -143,8 +143,8 @@ void AudioOutputOpenSL::playCallback(SLPlayItf player, void *ctx, SLuint32 event
     //qDebug("---------%s  event=%lu", __FUNCTION__, event);
 }
 
-AudioOutputOpenSL::AudioOutputOpenSL()
-    :AudioOutput(*new AudioOutputOpenSLPrivate())
+AudioOutputOpenSL::AudioOutputOpenSL(QObject *parent)
+    :AudioOutput(NoFeature, *new AudioOutputOpenSLPrivate(), parent)
 {
 }
 
