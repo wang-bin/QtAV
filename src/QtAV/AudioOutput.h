@@ -139,7 +139,6 @@ public:
      * \return the preferred channel layout. default is stero
      */
     virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
-
     /*!
      * \brief bufferSize
      * chunk size that audio output accept. feed the audio output this size of data every time
@@ -162,23 +161,21 @@ public:
     bool hasFeatures(Feature value) const;
     //TODO: virtual Features supportedFeatures() const;
     qreal timestamp() const;
-    // Internal use since QtAV 1.5
-    virtual bool play() = 0; //MUST
-    /*!
-     * \brief waitForNextBuffer
-     * wait until you can feed more data
-     * Internal use since QtAV 1.5
-     */
-    virtual void waitForNextBuffer();
-    // Internal use since QtAV 1.5. store and fill data to audio buffers
-    QTAV_DEPRECATED bool receiveData(const QByteArray &data, qreal pts = 0.0);
     // timestamp of current playing data
 signals:
     void volumeChanged(qreal);
     void muteChanged(bool);
     void featuresChanged();
 protected:
+    // Store and fill data to audio buffers
+    bool receiveData(const QByteArray &data, qreal pts = 0.0);
+    /*!
+     * \brief waitForNextBuffer
+     * wait until you can feed more data
+     */
+    virtual void waitForNextBuffer();
     virtual bool write(const QByteArray& data) = 0; //MUST
+    virtual bool play() = 0; //MUST
     /*!
      * \brief The BufferControl enum
      * Used to adapt to different audio playback backend. Usually you don't need this in application level development.
