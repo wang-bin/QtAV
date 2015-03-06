@@ -128,7 +128,6 @@ AudioOutput::~AudioOutput()
 
 bool AudioOutput::play(const QByteArray &data, qreal pts)
 {
-    waitForNextBuffer();
     receiveData(data, pts);
     return play();
 }
@@ -157,6 +156,8 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
             d.scale_samples(dst, dst, nb_samples, d.volume_i, volume());
         }
     }
+    // wait after all data processing finished to reduce time error
+    waitForNextBuffer();
     d.nextEnqueueInfo().data_size = data.size();
     d.nextEnqueueInfo().timestamp = pts;
     d.bufferAdded();
