@@ -123,6 +123,9 @@ AVPlayer::Private::Private()
 #endif //QTAV_HAVE(CEDARV)
             << VideoDecoderId_FFmpeg;
     ao_ids
+ #if QTAV_HAVE(PULSEAUDIO)
+            << AudioOutputId_Pulse
+ #endif
 #if QTAV_HAVE(OPENAL)
             << AudioOutputId_OpenAL
 #endif

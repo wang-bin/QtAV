@@ -55,6 +55,7 @@ OptionalDepends = \
 !no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
 # no-xxx can set in $$PWD/user.conf
 !no-openal: OptionalDepends *= openal
+!no-pulseaudio: OptionalDepends *= pulseaudio
 !no-portaudio: OptionalDepends *= portaudio
 !no-direct2d:!no-widgets: OptionalDepends *= direct2d
 !no-gdiplus:!no-widgets: OptionalDepends *= gdiplus

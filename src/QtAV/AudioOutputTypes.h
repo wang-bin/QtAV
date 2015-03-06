@@ -38,6 +38,7 @@ extern Q_AV_EXPORT AudioOutputId AudioOutputId_PortAudio;
 extern Q_AV_EXPORT AudioOutputId AudioOutputId_OpenAL;
 extern Q_AV_EXPORT AudioOutputId AudioOutputId_OpenSL;
 extern Q_AV_EXPORT AudioOutputId AudioOutputId_DSound;
+extern Q_AV_EXPORT AudioOutputId AudioOutputId_Pulse;
 
 
 Q_AV_EXPORT void AudioOutput_RegisterAll();

@@ -197,6 +197,7 @@ protected:
         PlayedBytes = 1 << 3,
         OffsetIndex = 1 << 4, //current playing offset
         OffsetBytes = 1 << 5, //current playing offset by bytes
+        WritableBytes = 1 << 6,
     };
     virtual BufferControl bufferControl() const = 0;
     // called by callback with Callback control
@@ -211,6 +212,7 @@ protected:
     virtual int getPlayedBytes(); // PlayedBytes
     virtual int getOffset();      // OffsetIndex
     virtual int getOffsetByBytes(); // OffsetBytes
+    virtual int getWritableBytes(); //WritableBytes
     /*!
      * \brief deviceSetVolume
      * Set volume by backend api. If backend can not set the given volume, or SetVolume feature is not set, software implemention will be used.

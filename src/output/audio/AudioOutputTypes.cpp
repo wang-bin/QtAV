@@ -29,6 +29,7 @@ AudioOutputId AudioOutputId_PortAudio = mkid::id32base36_5<'P', 'o', 'r', 't', '
 AudioOutputId AudioOutputId_OpenAL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'A', 'L'>::value;
 AudioOutputId AudioOutputId_OpenSL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'S', 'L'>::value;
 AudioOutputId AudioOutputId_DSound = mkid::id32base36_6<'D', 'S', 'o', 'u', 'n', 'd'>::value;
+AudioOutputId AudioOutputId_Pulse = mkid::id32base36_5<'P', 'u', 'l', 's', 'e'>::value;
 
 QVector<AudioOutputId> GetRegistedAudioOutputIds()
 {
@@ -42,6 +43,7 @@ extern void RegisterAudioOutputPortAudio_Man();
 extern void RegisterAudioOutputOpenAL_Man();
 extern void RegisterAudioOutputOpenSL_Man();
 extern void RegisterAudioOutputDSound_Man();
+extern void RegisterAudioOutputPulse_Man();
 
 void AudioOutput_RegisterAll()
 {
@@ -56,6 +58,9 @@ void AudioOutput_RegisterAll()
 #endif //QTAV_HAVE(OPENSL)
 #if QTAV_HAVE(DSOUND)
     RegisterAudioOutputDSound_Man();
+#endif
+#if QTAV_HAVE(PULSEAUDIO)
+    RegisterAudioOutputPulse_Man();
 #endif
 }
 
