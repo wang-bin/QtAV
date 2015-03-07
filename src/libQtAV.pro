@@ -159,6 +159,11 @@ config_opensl {
     DEFINES *= QTAV_HAVE_OPENSL=1
     LIBS += -lOpenSLES
 }
+config_pulseaudio {
+    SOURCES += output/audio/AudioOutputPulse.cpp
+    DEFINES *= QTAV_HAVE_PULSEAUDIO=1
+    LIBS += -lpulse
+}
 CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link
 config_cuda {

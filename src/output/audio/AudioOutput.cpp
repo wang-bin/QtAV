@@ -349,14 +349,27 @@ void AudioOutput::waitForNextBuffer()
     if (f & Blocking) {
         remove = 1;
     } else if (f & Callback) {
-        QMutexLocker lock(&d.mutex);
-        Q_UNUSED(lock);
-        d.cond.wait(&d.mutex);
-        remove = 1;
+        int processed = d.processed_remain;
+        d.processed_remain = getWritableBytes();
+        const int next = d.nextDequeueInfo().data_size;
+        //qDebug("remain: %d-%d, size: %d, next: %d", processed, d.processed_remain, d.data.size(), next);
+        while (d.processed_remain - processed < next || d.processed_remain < d.data.size()) {
+            const qint64 us = d.format.durationForBytes(next - (d.processed_remain - processed));
+            QMutexLocker lock(&d.mutex);
+            Q_UNUSED(lock);
+            d.cond.wait(&d.mutex, us/1000LL);
+            d.processed_remain = getWritableBytes();
+        }
+        processed = d.processed_remain - processed;
+        //if ()
+        d.processed_remain -= d.data.size(); //ensure d.processed_remain later is greater
+        remove = -processed; // processed_this_period
     } else if (f & PlayedBytes) {
         d.processed_remain = getPlayedBytes();
         const int next = d.nextDequeueInfo().data_size;
         // TODO: avoid always 0
+        // TODO: timer
+        // TODO: compare processed_remain with d.data.size because input chuncks can be in different sizes
         while (!no_wait && d.processed_remain < next) {
             const qint64 us = d.format.durationForBytes(next - d.processed_remain);
             if (us < 1000LL)
@@ -394,14 +407,18 @@ void AudioOutput::waitForNextBuffer()
     } else if (f & OffsetBytes) {
         int s = getOffsetByBytes();
         int processed = s - d.play_pos;
+        qDebug("s: %d, play_pos: %d, processed: %d, bufferSizeTotal: %d", s, d.play_pos, processed, bufferSizeTotal());
         if (processed < 0)
             processed += bufferSizeTotal();
         d.play_pos = s;
         d.processed_remain += processed;
         const int next = d.nextDequeueInfo().data_size;
         // TODO: avoid always 0
-        while (!no_wait && d.processed_remain < next && next > 0) {
+        //qDebug("d.processed_remain: %d", d.processed_remain);
+        int writable_size = d.processed_remain;
+        while (!no_wait && writable_size < next && next > 0) {
             const qint64 us = d.format.durationForBytes(next - d.processed_remain);
+            // TODO: timer
             if (us < 1000LL)
                 d.uwait(10000LL);
             else
@@ -410,10 +427,12 @@ void AudioOutput::waitForNextBuffer()
             processed += s - d.play_pos;
             if (processed < 0)
                 processed += bufferSizeTotal();
+            writable_size = d.processed_remain + processed;
             d.play_pos = s;
-            d.processed_remain += processed;
+            //qDebug("writable_size: %d", writable_size);
         }
-        remove = -d.processed_remain;
+        d.processed_remain += processed;
+        remove = -processed;
     } else if (f & OffsetIndex) {
         int n = getOffset();
         int processed = n - d.play_pos;
@@ -436,18 +455,23 @@ void AudioOutput::waitForNextBuffer()
         return;
     }
     if (remove < 0) {
-        //qDebug("remove bytes < %d", -remove);
         int next = d.nextDequeueInfo().data_size;
-        while (d.processed_remain > next && next > 0) {
-            d.processed_remain -= next;
-            d.bufferRemoved();
+        int free_bytes = -remove;//d.processed_remain;
+        while (free_bytes >= next && next > 0) {
+            free_bytes -= next;
+            if (!d.bufferRemoved()) {//|| d.processed_remain <= 0
+                qWarning("buffer queue empty");
+                break;
+            }
             next = d.nextDequeueInfo().data_size;
         }
+        //qDebug("remove: %d, unremoved bytes < %d, writable_bytes: %d", remove, free_bytes, d.processed_remain);
         return;
     }
     //qDebug("remove count: %d", remove);
     while (remove-- > 0) {
-        d.bufferRemoved();
+        if (!d.bufferRemoved())
+            break;
     }
 }
 
@@ -480,6 +504,11 @@ int AudioOutput::getOffset()
 }
 
 int AudioOutput::getOffsetByBytes()
+{
+    return -1;
+}
+
+int AudioOutput::getWritableBytes()
 {
     return -1;
 }

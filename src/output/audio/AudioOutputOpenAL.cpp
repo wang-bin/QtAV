@@ -294,7 +294,7 @@ bool AudioOutputOpenAL::open()
 
     static char init_data[kBufferSize];
     memset(init_data, 0, sizeof(init_data));
-    for (int i = 1; i < kBufferCount; ++i) {
+    for (int i = 1; i < bufferCount(); ++i) {
         AL_RUN_CHECK(alBufferData(d.buffer[i], d.format_al, init_data, sizeof(init_data), audioFormat().sampleRate()));
         AL_RUN_CHECK(alSourceQueueBuffers(d.source, 1, &d.buffer[i]));
         d.nextEnqueueInfo().data_size = sizeof(init_data);

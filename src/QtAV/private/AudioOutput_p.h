@@ -112,14 +112,14 @@ public:
     bool canRemoveBuffer() {
         return index_enqueue > index_deuqueue;
     }
-    void bufferRemoved() {
+    bool bufferRemoved() {
         if (index_deuqueue == index_enqueue)
-            return;
+            return false;
         if (index_deuqueue < 0 || index_deuqueue == std::numeric_limits<int>::max())
             index_deuqueue = 0;
         else
             ++index_deuqueue;
-        return;
+        return true;
         index_deuqueue = (index_deuqueue + 1) % frame_infos.size();
     }
     void resetStatus() {
