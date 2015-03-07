@@ -314,7 +314,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
-        f.setTimestamp(d.frame->pkt_pts);
+        f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
         return f;
     }
 #if VA_CHECK_VERSION(0,31,0)
