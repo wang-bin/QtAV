@@ -21,7 +21,6 @@
 #include "QtAV/private/AudioOutput_p.h"
 #include "QtAV/private/prepost.h"
 #include <QtCore/QLibrary>
-#include <QtCore/QVector>
 #include <math.h>
 #include <windows.h>
 #define DIRECTSOUND_VERSION 0x0600
@@ -65,6 +64,20 @@ template <class T> void SafeRelease(T **ppT) {
     *ppT = NULL;
   }
 }
+
+#define DX_LOG_COMPONENT "DSound"
+
+#ifndef DX_LOG_COMPONENT
+#define DX_LOG_COMPONENT "DirectX"
+#endif //DX_LOG_COMPONENT
+#define DX_ENSURE_OK(f, ...) \
+    do { \
+        HRESULT hr = f; \
+        if (FAILED(hr)) { \
+            qWarning() << DX_LOG_COMPONENT " error@" << __LINE__ << ". " #f ": " << QString("(0x%1) ").arg(hr, 0, 16) << qt_error_string(hr); \
+            return __VA_ARGS__; \
+        } \
+    } while (0)
 
 // use the definitions from the win32 api headers when they define these
 #define WAVE_FORMAT_IEEE_FLOAT      0x0003
@@ -125,31 +138,6 @@ static int channelLayoutToMS(qint64 av) {
     return channelMaskToMS(av);
 }
 
-static const char* dserr2str(int err) {
-   switch (err) {
-      case DS_OK: return "DS_OK";
-      case DS_NO_VIRTUALIZATION: return "DS_NO_VIRTUALIZATION";
-      case DSERR_ALLOCATED: return "DS_NO_VIRTUALIZATION";
-      case DSERR_CONTROLUNAVAIL: return "DSERR_CONTROLUNAVAIL";
-      case DSERR_INVALIDPARAM: return "DSERR_INVALIDPARAM";
-      case DSERR_INVALIDCALL: return "DSERR_INVALIDCALL";
-      case DSERR_GENERIC: return "DSERR_GENERIC";
-      case DSERR_PRIOLEVELNEEDED: return "DSERR_PRIOLEVELNEEDED";
-      case DSERR_OUTOFMEMORY: return "DSERR_OUTOFMEMORY";
-      case DSERR_BADFORMAT: return "DSERR_BADFORMAT";
-      case DSERR_UNSUPPORTED: return "DSERR_UNSUPPORTED";
-      case DSERR_NODRIVER: return "DSERR_NODRIVER";
-      case DSERR_ALREADYINITIALIZED: return "DSERR_ALREADYINITIALIZED";
-      case DSERR_NOAGGREGATION: return "DSERR_NOAGGREGATION";
-      case DSERR_BUFFERLOST: return "DSERR_BUFFERLOST";
-      case DSERR_OTHERAPPHASPRIO: return "DSERR_OTHERAPPHASPRIO";
-      case DSERR_UNINITIALIZED: return "DSERR_UNINITIALIZED";
-      case DSERR_NOINTERFACE: return "DSERR_NOINTERFACE";
-      case DSERR_ACCESSDENIED: return "DSERR_ACCESSDENIED";
-      default: return "unknown";
-   }
-}
-
 class  AudioOutputDSoundPrivate : public AudioOutputPrivate
 {
 public:
@@ -168,11 +156,12 @@ public:
     bool loadDll();
     bool unloadDll();
     bool init();
-    void destroy() {
+    bool destroy() {
         SafeRelease(&prim_buf);
         SafeRelease(&stream_buf);
         SafeRelease(&dsound);
         unloadDll();
+        return true;
     }
     bool createDSoundBuffers();
 
@@ -192,19 +181,23 @@ AudioOutputDSound::AudioOutputDSound(QObject *parent)
 bool AudioOutputDSound::open()
 {
     DPTR_D(AudioOutputDSound);
+    d.available = false;
     resetStatus();
     if (!d.init())
-        return false;
+        goto error;
     if (!d.createDSoundBuffers())
-        return false;
-/*
+        goto error;
     d.available = true;
+/*
     for (int i = 0; i < bufferCount(); ++i) {
-        QByteArray a(bufferSize(), 0);
-        write(a);
+        write(QByteArray(bufferSize(), 0));
         d.bufferAdded();
     }*/
     return true;
+error:
+    d.unloadDll();
+    SafeRelease(&d.dsound);
+    return false;
 }
 
 bool AudioOutputDSound::close()
@@ -239,7 +232,7 @@ bool AudioOutputDSound::write(const QByteArray &data)
         res = d.stream_buf->Lock(d.write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0);
     }
     if (res != DS_OK) {
-        qWarning("Can not lock secondary buffer (%s)", dserr2str(res));
+        qWarning() << "Can not lock secondary buffer (" << res << "): " << qt_error_string(res);
         return false;
     }
     memcpy(dst1, data.constData(), size1);
@@ -248,11 +241,7 @@ bool AudioOutputDSound::write(const QByteArray &data)
     d.write_offset += size1 + size2;
     if (d.write_offset >= d.bufferSizeTotal())
         d.write_offset = size2;
-    res = d.stream_buf->Unlock(dst1, size1, dst2, size2);
-    if (res != DS_OK) {
-        qWarning("Unloack error (%s)",dserr2str(res));
-        //return false;
-    }
+    DX_ENSURE_OK(d.stream_buf->Unlock(dst1, size1, dst2, size2), false);
     return true;
 }
 
@@ -282,17 +271,15 @@ bool AudioOutputDSound::deviceSetVolume(qreal value)
     // dsound supports [0, 1]
     const LONG vol = value <= 0 ? DSBVOLUME_MIN : LONG(log10(value*100.0) * 5000.0) + DSBVOLUME_MIN;
     // +DSBVOLUME_MIN == -100dB
-    return SUCCEEDED(d.stream_buf->SetVolume(vol));
+    DX_ENSURE_OK(d.stream_buf->SetVolume(vol), false);
+    return true;
 }
 
 qreal AudioOutputDSound::deviceGetVolume() const
 {
     DPTR_D(const AudioOutputDSound);
     LONG vol = 0;
-    if (FAILED(d.stream_buf->GetVolume(&vol))) {
-        qWarning("DSound failed to get device volume");
-        return 1.0;
-    }
+    DX_ENSURE_OK(d.stream_buf->GetVolume(&vol), 1.0);
     return pow(10.0, double(vol - DSBVOLUME_MIN)/5000.0)/100.0;
 }
 
@@ -326,26 +313,15 @@ bool AudioOutputDSoundPrivate::init()
         unloadDll();
         return false;
     }
-    if (FAILED(dsound_create(NULL/*dev guid*/, &dsound, NULL))){
-        unloadDll();
-        return false;
-    }
+    DX_ENSURE_OK(dsound_create(NULL/*dev guid*/, &dsound, NULL), false);
     /*  DSSCL_EXCLUSIVE: can modify the settings of the primary buffer, only the sound of this app will be hearable when it will have the focus.
      */
-    if (FAILED(dsound->SetCooperativeLevel(GetDesktopWindow(), DSSCL_EXCLUSIVE))) {
-        qWarning("Cannot set direct sound cooperative level");
-        SafeRelease(&dsound);
-        return false;
-    }
+    DX_ENSURE_OK(dsound->SetCooperativeLevel(GetDesktopWindow(), DSSCL_EXCLUSIVE), false);
     qDebug("DirectSound initialized.");
     DSCAPS dscaps;
     memset(&dscaps, 0, sizeof(DSCAPS));
     dscaps.dwSize = sizeof(DSCAPS);
-    if (FAILED(dsound->GetCaps(&dscaps))) {
-       qWarning("Cannot get device capabilities.");
-       SafeRelease(&dsound);
-       return false;
-    }
+    DX_ENSURE_OK(dsound->GetCaps(&dscaps), false);
     if (dscaps.dwFlags & DSCAPS_EMULDRIVER)
         qDebug("DirectSound is emulated");
 
@@ -404,15 +380,10 @@ bool AudioOutputDSoundPrivate::createDSoundBuffers()
     dsbpridesc.dwBufferBytes = 0;
     dsbpridesc.lpwfxFormat = NULL;
     // create primary buffer and set its format
-    HRESULT res = dsound->CreateSoundBuffer(&dsbpridesc, &prim_buf, NULL);
+    DX_ENSURE_OK(dsound->CreateSoundBuffer(&dsbpridesc, &prim_buf, NULL), (destroy() && false));
+    HRESULT res = prim_buf->SetFormat((WAVEFORMATEX *)&wformat);
     if (res != DS_OK) {
-        destroy();
-        qWarning("Cannot create primary buffer (%s)", dserr2str(res));
-        return false;
-    }
-    res = prim_buf->SetFormat((WAVEFORMATEX *)&wformat);
-    if (res != DS_OK) {
-        qWarning("Cannot set primary buffer format (%s), using standard setting (bad quality)", dserr2str(res));
+        qWarning() << "Cannot set primary buffer format (" << res << "): " << qt_error_string(res) << ". using standard setting (bad quality)";
     }
     qDebug("primary buffer created");
 
@@ -428,18 +399,13 @@ bool AudioOutputDSoundPrivate::createDSoundBuffers()
     // Needed for 5.1 on emu101k - shit soundblaster
     if (format.channels() > 2)
         dsbdesc.dwFlags |= DSBCAPS_LOCHARDWARE;
-    // now create the stream buffer
+    // now create the stream buffer (secondary buffer)
     res = dsound->CreateSoundBuffer(&dsbdesc, &stream_buf, NULL);
     if (res != DS_OK) {
         if (dsbdesc.dwFlags & DSBCAPS_LOCHARDWARE) {
             // Try without DSBCAPS_LOCHARDWARE
             dsbdesc.dwFlags &= ~DSBCAPS_LOCHARDWARE;
-            res = dsound->CreateSoundBuffer(&dsbdesc, &stream_buf, NULL);
-        }
-        if (res != DS_OK) {
-            destroy();
-            qWarning("Cannot create secondary (stream)buffer (%s)", dserr2str(res));
-            return false;
+            DX_ENSURE_OK(dsound->CreateSoundBuffer(&dsbdesc, &stream_buf, NULL), (destroy() && false));
         }
     }
     qDebug( "Secondary (stream)buffer created");
