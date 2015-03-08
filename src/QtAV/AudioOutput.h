@@ -102,6 +102,7 @@ public:
      * \brief setVolume
      * Set volume level.
      * If SetVolume feature is not set or not supported, software implemention will be used.
+     * Call this after open(), because it will call backend api if SetVolume feature is enabled
      * \param volume linear. 1.0: original volume.
      */
     void setVolume(qreal volume);
@@ -109,6 +110,7 @@ public:
     /*!
      * \brief setMute
      * If SetMute feature is not set or not supported, software implemention will be used.
+     * Call this after open(), because it will call backend api if SetMute feature is enabled
      */
     void setMute(bool value = true);
     bool isMute() const;

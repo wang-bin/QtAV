@@ -22,7 +22,7 @@
 #include "QtAV/private/prepost.h"
 #include <QtCore/QLibrary>
 #include <QtCore/QVector>
-
+#include <math.h>
 #include <windows.h>
 #define DIRECTSOUND_VERSION 0x0600
 #include <dsound.h>
@@ -37,14 +37,17 @@ class AudioOutputDSound : public AudioOutput
 public:
     AudioOutputDSound(QObject *parent = 0);
     //AudioOutputId id() const
-    virtual bool open();
-    virtual bool close();
-    virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
+    bool open() Q_DECL_FINAL;
+    bool close() Q_DECL_FINAL;
+    bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
 protected:
-    virtual BufferControl bufferControl() const;
-    virtual bool write(const QByteArray& data);
-    virtual bool play();
-    virtual int getOffsetByBytes();
+    BufferControl bufferControl() const Q_DECL_FINAL;
+    bool write(const QByteArray& data) Q_DECL_FINAL;
+    bool play() Q_DECL_FINAL;
+    int getOffsetByBytes() Q_DECL_FINAL;
+
+    bool deviceSetVolume(qreal value) Q_DECL_FINAL;
+    qreal deviceGetVolume() const Q_DECL_FINAL;
 };
 
 extern AudioOutputId AudioOutputId_DSound;
@@ -181,8 +184,9 @@ public:
 };
 
 AudioOutputDSound::AudioOutputDSound(QObject *parent)
-    :AudioOutput(NoFeature, *new AudioOutputDSoundPrivate(), parent)
+    :AudioOutput(DeviceFeatures()|SetVolume, *new AudioOutputDSoundPrivate(), parent)
 {
+    setDeviceFeatures(DeviceFeatures()|SetVolume);
 }
 
 bool AudioOutputDSound::open()
@@ -193,6 +197,13 @@ bool AudioOutputDSound::open()
         return false;
     if (!d.createDSoundBuffers())
         return false;
+/*
+    d.available = true;
+    for (int i = 0; i < bufferCount(); ++i) {
+        QByteArray a(bufferSize(), 0);
+        write(a);
+        d.bufferAdded();
+    }*/
     return true;
 }
 
@@ -263,6 +274,26 @@ int AudioOutputDSound::getOffsetByBytes()
     DWORD read_offset = 0;
     d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
     return (int)read_offset;
+}
+
+bool AudioOutputDSound::deviceSetVolume(qreal value)
+{
+    DPTR_D(AudioOutputDSound);
+    // dsound supports [0, 1]
+    const LONG vol = value <= 0 ? DSBVOLUME_MIN : LONG(log10(value*100.0) * 5000.0) + DSBVOLUME_MIN;
+    // +DSBVOLUME_MIN == -100dB
+    return SUCCEEDED(d.stream_buf->SetVolume(vol));
+}
+
+qreal AudioOutputDSound::deviceGetVolume() const
+{
+    DPTR_D(const AudioOutputDSound);
+    LONG vol = 0;
+    if (FAILED(d.stream_buf->GetVolume(&vol))) {
+        qWarning("DSound failed to get device volume");
+        return 1.0;
+    }
+    return pow(10.0, double(vol - DSBVOLUME_MIN)/5000.0)/100.0;
 }
 
 bool AudioOutputDSoundPrivate::loadDll()
