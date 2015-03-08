@@ -361,14 +361,12 @@ void AudioOutput::waitForNextBuffer()
             d.processed_remain = getWritableBytes();
         }
         processed = d.processed_remain - processed;
-        //if ()
         d.processed_remain -= d.data.size(); //ensure d.processed_remain later is greater
         remove = -processed; // processed_this_period
     } else if (f & PlayedBytes) {
         d.processed_remain = getPlayedBytes();
         const int next = d.nextDequeueInfo().data_size;
         // TODO: avoid always 0
-        // TODO: timer
         // TODO: compare processed_remain with d.data.size because input chuncks can be in different sizes
         while (!no_wait && d.processed_remain < next) {
             const qint64 us = d.format.durationForBytes(next - d.processed_remain);
@@ -404,34 +402,27 @@ void AudioOutput::waitForNextBuffer()
         }
         // what if c always 0?
         remove = c;
-    } else if (f & OffsetBytes) {
+    } else if (f & OffsetBytes) { //TODO: similar to Callback+getWritableBytes()
         int s = getOffsetByBytes();
         int processed = s - d.play_pos;
-        qDebug("s: %d, play_pos: %d, processed: %d, bufferSizeTotal: %d", s, d.play_pos, processed, bufferSizeTotal());
+        //qDebug("s: %d, play_pos: %d, processed: %d, bufferSizeTotal: %d", s, d.play_pos, processed, bufferSizeTotal());
         if (processed < 0)
             processed += bufferSizeTotal();
         d.play_pos = s;
-        d.processed_remain += processed;
         const int next = d.nextDequeueInfo().data_size;
-        // TODO: avoid always 0
-        //qDebug("d.processed_remain: %d", d.processed_remain);
-        int writable_size = d.processed_remain;
-        while (!no_wait && writable_size < next && next > 0) {
-            const qint64 us = d.format.durationForBytes(next - d.processed_remain);
-            // TODO: timer
-            if (us < 1000LL)
-                d.uwait(10000LL);
-            else
-                d.uwait(us);
+        int writable_size = d.processed_remain + processed;
+        while (!no_wait && (/*processed < next ||*/ writable_size < d.data.size()) && next > 0) {
+            const qint64 us = d.format.durationForBytes(next - writable_size);
+            d.uwait(us);
             s = getOffsetByBytes();
             processed += s - d.play_pos;
             if (processed < 0)
                 processed += bufferSizeTotal();
             writable_size = d.processed_remain + processed;
             d.play_pos = s;
-            //qDebug("writable_size: %d", writable_size);
         }
         d.processed_remain += processed;
+        d.processed_remain -= d.data.size(); //ensure d.processed_remain later is greater
         remove = -processed;
     } else if (f & OffsetIndex) {
         int n = getOffset();
