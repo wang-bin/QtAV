@@ -15,7 +15,7 @@ CONFIG *= qtav-buildlib
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 
 #mac: simd.prf will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
-config_libcedarv: CONFIG *= config_simd #need by qt4 addSimdCompiler()
+config_libcedarv: CONFIG *= neon config_simd #need by qt4 addSimdCompiler(). neon or config_neon is required because tests/arch can not detect neon
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
 sse4_1|config_sse4_1|contains(TARGET_ARCH_SUB, sse4.1): CONFIG *= sse4_1 config_simd
 sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2): CONFIG *= sse2 config_simd
