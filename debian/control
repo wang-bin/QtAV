@@ -13,6 +13,7 @@ Build-Depends: debhelper (>= 9),
  libswscale-dev,
  libavfilter-dev,
  libopenal-dev,
+ libpulse-dev,
  libxv-dev,
  libva-dev,
 Standards-Version: 3.9.5
