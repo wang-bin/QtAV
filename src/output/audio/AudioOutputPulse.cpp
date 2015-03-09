@@ -150,8 +150,6 @@ void AudioOutputPulsePrivate::contextStateCallback(pa_context *c, void *userdata
     switch (pa_context_get_state(c)) {
     case PA_CONTEXT_FAILED:
     case PA_CONTEXT_TERMINATED:
-        pa_threaded_mainloop_signal(p->loop, 0);
-        break;
     case PA_CONTEXT_READY:
         pa_threaded_mainloop_signal(p->loop, 0);
         break;
@@ -179,11 +177,13 @@ void AudioOutputPulsePrivate::stateCallback(pa_stream *s, void *userdata)
 
 void AudioOutputPulsePrivate::latencyUpdateCallback(pa_stream *s, void *userdata)
 {
-
+    Q_UNUSED(s);
+    Q_UNUSED(userdata);
 }
 
 void AudioOutputPulsePrivate::writeCallback(pa_stream *s, size_t length, void *userdata)
 {
+    Q_UNUSED(s);
     // length: writable bytes. callback is called pirioddically
     AudioOutputPulsePrivate *p = reinterpret_cast<AudioOutputPulsePrivate*>(userdata);
     //qDebug("write callback: %d + %d", p->writable_size, length);
@@ -193,6 +193,7 @@ void AudioOutputPulsePrivate::writeCallback(pa_stream *s, size_t length, void *u
 
 void AudioOutputPulsePrivate::sinkInfoCallback(pa_context *c, const pa_sink_input_info *i, int is_last, void *userdata)
 {
+    Q_UNUSED(c);
     AudioOutputPulsePrivate *p = reinterpret_cast<AudioOutputPulsePrivate*>(userdata);
     if (is_last < 0) {
         qWarning("Failed to get sink input info");
@@ -232,6 +233,7 @@ bool AudioOutputPulse::isSupported(AudioFormat::ChannelLayout channelLayout) con
 bool AudioOutputPulse::open()
 {
     DPTR_D(AudioOutputPulse);
+    resetStatus();
     d.available = false;
     d.writable_size = 0;
     d.loop = pa_threaded_mainloop_new();
@@ -241,19 +243,20 @@ bool AudioOutputPulse::open()
         return false;
     }
 
+#define OPEN_FAIL_RETURN(msg) \
+    do { \
+        qWarning() << msg << ": " << pa_strerror(pa_context_errno(d.ctx)); \
+        pa_threaded_mainloop_unlock(d.loop); \
+        close(); \
+        return false; \
+    } while (0)
+
     pa_threaded_mainloop_lock(d.loop);
     pa_mainloop_api *api = pa_threaded_mainloop_get_api(d.loop);
     d.ctx = pa_context_new(api, qApp->applicationName().append(" (QtAV)").toUtf8().constData());
-    if (!d.ctx) {
-        qWarning("PulseAudio failed to allocate a context");
-        pa_threaded_mainloop_unlock(d.loop);
-        close();
-        return false;
-    }
-    qDebug("PulseAudio %s, protocol: %lu, server protocol: %lu"
-           , pa_get_library_version()
-           , pa_context_get_protocol_version(d.ctx)
-           , pa_context_get_server_protocol_version(d.ctx));
+    if (!d.ctx)
+        OPEN_FAIL_RETURN("PulseAudio failed to allocate a context");
+    qDebug() << QString("PulseAudio %1, protocol: %2, server protocol: %3").arg(pa_get_library_version()).arg(pa_context_get_protocol_version(d.ctx)).arg(pa_context_get_server_protocol_version(d.ctx));
     // TODO: host property
     pa_context_connect(d.ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
     pa_context_set_state_callback(d.ctx, AudioOutputPulsePrivate::contextStateCallback, &d);
@@ -261,12 +264,8 @@ bool AudioOutputPulse::open()
         const pa_context_state_t st = pa_context_get_state(d.ctx);
         if (st == PA_CONTEXT_READY)
             break;
-        if (!PA_CONTEXT_IS_GOOD(st)) {
-            qWarning("PulseAudio context init failed: %s", pa_strerror(pa_context_errno(d.ctx)));
-            pa_threaded_mainloop_unlock(d.loop);
-            close();
-            return false;
-        }
+        if (!PA_CONTEXT_IS_GOOD(st))
+            OPEN_FAIL_RETURN("PulseAudio context init failed");
         pa_threaded_mainloop_wait(d.loop);
     }
 
@@ -278,11 +277,8 @@ bool AudioOutputPulse::open()
     pa_format_info_set_channels(fi, channels());
     pa_format_info_set_rate(fi, sampleRate());
    // pa_format_info_set_channel_map(fi, NULL); // TODO
-    if (!pa_format_info_valid(fi)) {
-        qWarning("PulseAudio: invalid format");
-        close();
-        return false;
-    }
+    if (!pa_format_info_valid(fi))
+        OPEN_FAIL_RETURN("PulseAudio: invalid format");
     pa_proplist *pl = pa_proplist_new();
     if (pl) {
         pa_proplist_sets(pl, PA_PROP_MEDIA_ROLE, "video");
@@ -290,11 +286,9 @@ bool AudioOutputPulse::open()
     }
     d.stream = pa_stream_new_extended(d.ctx, "audio stream", &fi, 1, pl);
     if (!d.stream) {
-        qWarning("PulseAudio: failed to create a stream");
         pa_format_info_free(fi);
         pa_proplist_free(pl);
-        close();
-        return false;
+        OPEN_FAIL_RETURN("PulseAudio: failed to create a stream");
     }
     pa_format_info_free(fi);
     pa_proplist_free(pl);
@@ -310,32 +304,20 @@ bool AudioOutputPulse::open()
     ba.fragsize = (uint32_t)-1;
     // PA_STREAM_NOT_MONOTONIC?
     pa_stream_flags_t flags = pa_stream_flags_t(PA_STREAM_NOT_MONOTONIC|PA_STREAM_INTERPOLATE_TIMING|PA_STREAM_AUTO_TIMING_UPDATE);
-    if (pa_stream_connect_playback(d.stream, NULL /*sink*/, &ba, flags, NULL, NULL) < 0) {
-        qWarning("PulseAudio failed: pa_stream_connect_playback");
-        pa_threaded_mainloop_unlock(d.loop);
-        close();
-        return false;
-    }
+    if (pa_stream_connect_playback(d.stream, NULL /*sink*/, &ba, flags, NULL, NULL) < 0)
+        OPEN_FAIL_RETURN("PulseAudio failed: pa_stream_connect_playback");
 
     while (true) {
         const pa_stream_state_t st = pa_stream_get_state(d.stream);
         if (st == PA_STREAM_READY)
             break;
-        if (!PA_STREAM_IS_GOOD(st)) {
-            qWarning("PulseAudio stream init failed");
-            pa_threaded_mainloop_unlock(d.loop);
-            close();
-            return false;
-        }
+        if (!PA_STREAM_IS_GOOD(st))
+            OPEN_FAIL_RETURN("PulseAudio stream init failed");
         pa_threaded_mainloop_wait(d.loop);
     }
+    if (pa_stream_is_suspended(d.stream))
+        OPEN_FAIL_RETURN("PulseAudio stream is suspended.");
 
-    if (pa_stream_is_suspended(d.stream)) {
-        qWarning("PulseAudio stream is suspended.");
-        pa_threaded_mainloop_unlock(d.loop);
-        close();
-        return false;
-    }
     pa_threaded_mainloop_unlock(d.loop);
     d.available = true;
     for (int i = 0; i < bufferCount(); ++i) {
@@ -344,11 +326,13 @@ bool AudioOutputPulse::open()
         d.bufferAdded();
     }
     return true;
+#undef OPEN_FAIL_RETURN
 }
 
 bool AudioOutputPulse::close()
 {
     DPTR_D(AudioOutputPulse);
+    resetStatus();
     d.available = false;
     if (d.loop) {
         pa_threaded_mainloop_stop(d.loop);

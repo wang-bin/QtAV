@@ -353,7 +353,7 @@ void AudioOutput::waitForNextBuffer()
         d.processed_remain = getWritableBytes();
         const int next = d.nextDequeueInfo().data_size;
         //qDebug("remain: %d-%d, size: %d, next: %d", processed, d.processed_remain, d.data.size(), next);
-        while (d.processed_remain - processed < next || d.processed_remain < d.data.size()) {
+        while (d.processed_remain - processed < next || d.processed_remain < d.data.size()) { //implies next > 0
             const qint64 us = d.format.durationForBytes(next - (d.processed_remain - processed));
             QMutexLocker lock(&d.mutex);
             Q_UNUSED(lock);
