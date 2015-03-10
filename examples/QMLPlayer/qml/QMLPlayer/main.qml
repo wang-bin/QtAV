@@ -96,6 +96,12 @@ Rectangle {
                 msg.error(errorString)
             }
         }
+        onVolumeReported: {
+            if (Math.abs(control.volume - value) >= 0.01) {
+                control.volume = value
+            }
+        }
+
     }
     Subtitle {
         id: subtitle

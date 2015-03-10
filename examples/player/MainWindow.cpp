@@ -70,7 +70,7 @@
     qDebug("%s %s @%d", __FILE__, __FUNCTION__, __LINE__);
 
 using namespace QtAV;
-const qreal kVolumeInterval = 0.05;
+const qreal kVolumeInterval = 0.04;
 
 extern QStringList idsToNames(QVector<VideoDecoderId> ids);
 extern QVector<VideoDecoderId> idsFromNames(const QStringList& names);
@@ -172,6 +172,7 @@ void MainWindow::initPlayer()
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
     connect(mpPlayer, SIGNAL(speedChanged(qreal)), this, SLOT(onSpeedChange(qreal)));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), this, SLOT(onPositionChange(qint64)));
+    connect(mpPlayer, SIGNAL(volumeReported(qreal)), SLOT(syncVolumeUi(qreal)));
     connect(mpVideoEQ, SIGNAL(brightnessChanged(int)), this, SLOT(onBrightnessChanged(int)));
     connect(mpVideoEQ, SIGNAL(contrastChanged(int)), this, SLOT(onContrastChanged(int)));
     connect(mpVideoEQ, SIGNAL(hueChanegd(int)), this, SLOT(onHueChanged(int)));
@@ -906,7 +907,9 @@ void MainWindow::setVolume()
     AudioOutput *ao = mpPlayer ? mpPlayer->audio() : 0;
     qreal v = qreal(mpVolumeSlider->value())*kVolumeInterval;
     if (ao) {
-        ao->setVolume(v);
+        if (qAbs(int(ao->volume()/kVolumeInterval) - mpVolumeSlider->value()) >= int(0.1/kVolumeInterval)) {
+            ao->setVolume(v);
+        }
     }
     mpVolumeSlider->setToolTip(QString::number(v));
     mpVolumeBtn->setToolTip(QString::number(v));
@@ -1456,6 +1459,14 @@ void MainWindow::changeClockType(QAction *action)
     }
     mpPlayer->masterClock()->setClockAuto(false);
     mpPlayer->masterClock()->setClockType(AVClock::ClockType(value));
+}
+
+void MainWindow::syncVolumeUi(qreal value)
+{
+    const int  v(value/kVolumeInterval);
+    if (mpVolumeSlider->value() == v)
+        return;
+    mpVolumeSlider->setValue(v);
 }
 
 void MainWindow::workaroundRendererSize()
