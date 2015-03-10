@@ -19,6 +19,7 @@
 #include "QtAV/AudioOutput.h"
 #include "QtAV/private/AudioOutput_p.h"
 #include <QtCore/QCoreApplication>
+#include <QtCore/QMetaObject>
 #include <QtCore/QThread>
 #include <pulse/pulseaudio.h>
 #include "QtAV/private/prepost.h"
@@ -118,6 +119,7 @@ public:
     {}
 
     static void contextStateCallback(pa_context *c, void *userdata);
+    static void contextSubscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
     static void stateCallback(pa_stream *s, void *userdata);
     static void latencyUpdateCallback(pa_stream *s, void *userdata);
     static void underflowCallback(pa_stream *s, void *userdata);
@@ -152,6 +154,52 @@ void AudioOutputPulsePrivate::contextStateCallback(pa_context *c, void *userdata
     case PA_CONTEXT_TERMINATED:
     case PA_CONTEXT_READY:
         pa_threaded_mainloop_signal(p->loop, 0);
+        break;
+    default:
+        break;
+    }
+}
+
+static void sink_input_info_cb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
+{
+    Q_UNUSED(c);
+    if (eol)
+        return;
+    AudioOutputPulse *ao = reinterpret_cast<AudioOutputPulse*>(userdata);
+    //signal may be protected in Qt4
+    QMetaObject::invokeMethod(ao,  "volumeReported", Q_ARG(qreal, (qreal)pa_cvolume_avg(&i->volume)/qreal(PA_VOLUME_NORM)));
+    QMetaObject::invokeMethod(ao, "muteReported", Q_ARG(bool, i->mute));
+}
+
+static void sink_input_event(pa_context* c, pa_subscription_event_type_t t, uint32_t idx, AudioOutputPulse* ao)
+{
+    switch (t) {
+    case PA_SUBSCRIPTION_EVENT_REMOVE:
+        qWarning("PulseAudio sink killed");
+        break;
+    default:
+        pa_operation *op = pa_context_get_sink_input_info(c, idx, sink_input_info_cb, ao);
+        if (Q_LIKELY(!!op))
+            pa_operation_unref(op);
+        break;
+    }
+}
+
+void AudioOutputPulsePrivate::contextSubscribeCallback(pa_context *c, pa_subscription_event_type_t type, uint32_t idx, void *userdata)
+{
+    AudioOutputPulse *ao = reinterpret_cast<AudioOutputPulse*>(userdata);
+    AudioOutputPulsePrivate *p = &ao->d_func();
+    unsigned facility = type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK;
+    pa_subscription_event_type_t t = pa_subscription_event_type_t(type & PA_SUBSCRIPTION_EVENT_TYPE_MASK);
+    switch (facility) {
+    case PA_SUBSCRIPTION_EVENT_SINK:
+        break;
+    case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
+        if (p->stream && idx == pa_stream_get_index(p->stream))
+            sink_input_event(c, t, idx, ao);
+        break;
+    case  PA_SUBSCRIPTION_EVENT_CARD:
+        qDebug("PA_SUBSCRIPTION_EVENT_CARD");
         break;
     default:
         break;
@@ -227,6 +275,7 @@ bool AudioOutputPulse::isSupported(AudioFormat::SampleFormat spfmt) const
 
 bool AudioOutputPulse::isSupported(AudioFormat::ChannelLayout channelLayout) const
 {
+    Q_UNUSED(channelLayout);
     return true;
 }
 
@@ -269,6 +318,12 @@ bool AudioOutputPulse::open()
         pa_threaded_mainloop_wait(d.loop);
     }
 
+    pa_context_set_subscribe_callback(d.ctx, AudioOutputPulsePrivate::contextSubscribeCallback, this);
+    pa_context_subscribe(d.ctx, pa_subscription_mask_t(
+                                 PA_SUBSCRIPTION_MASK_CARD |
+                                 PA_SUBSCRIPTION_MASK_SINK |
+                                 PA_SUBSCRIPTION_MASK_SINK_INPUT),
+                         NULL, NULL);
     //pa_sample_spec
     // setup format
     pa_format_info *fi = pa_format_info_new();
