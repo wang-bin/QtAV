@@ -220,8 +220,8 @@ void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCo
     // AVCodecContext.codec_name is deprecated. use avcodec_get_name. check null avctx->codec?
     st->codec = avcodec_get_name(avctx->codec_id);
     st->codec_long = get_codec_long_name(avctx->codec_id);
-    st->total_time = QTime(0, 0, 0).addMSecs(stream->duration == AV_NOPTS_VALUE ? 0 : int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
-    st->start_time = QTime(0, 0, 0).addMSecs(stream->start_time == AV_NOPTS_VALUE ? 0 : int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
+    st->total_time = QTime(0, 0, 0).addMSecs(stream->duration == (qint64)AV_NOPTS_VALUE ? 0 : int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
+    st->start_time = QTime(0, 0, 0).addMSecs(stream->start_time == (qint64)AV_NOPTS_VALUE ? 0 : int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
     qDebug("codec: %s(%s)", qPrintable(st->codec), qPrintable(st->codec_long));
     st->bit_rate = avctx->bit_rate; //fmt_ctx
     st->frames = stream->nb_frames;
@@ -311,7 +311,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         adec = 0;
     }
     adec = new AudioDecoder();
-    connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
+    QObject::connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
     adec->setCodecContext(avctx);
     adec->setOptions(ac_opt);
     if (!adec->open()) {
@@ -327,6 +327,8 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
             ao = AudioOutputFactory::create(aoid);
             if (ao) {
                 qDebug("audio output found.");
+                QObject::connect(ao, SIGNAL(volumeReported(qreal)), player, SIGNAL(volumeReported(qreal)));
+                QObject::connect(ao, SIGNAL(muteReported(bool)), player, SIGNAL(muteReported(bool)));
                 break;
             }
         }
@@ -446,7 +448,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         emit player->error(e);
         return false;
     }
-    connect(vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
+    QObject::connect(vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
     if (!vthread) {
         vthread = new VideoThread(player);
         vthread->setClock(clock);

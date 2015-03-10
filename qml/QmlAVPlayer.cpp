@@ -85,6 +85,8 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
     connect(mpPlayer, SIGNAL(seekableChanged()), SIGNAL(seekableChanged()));
+    connect(mpPlayer, SIGNAL(volumeReported(qreal)), SIGNAL(volumeReported(qreal)));
+    connect(mpPlayer, SIGNAL(muteReported(bool)), SIGNAL(muteReported(bool)));
     connect(this, SIGNAL(volumeChanged()), SLOT(applyVolume()));
     connect(this, SIGNAL(channelLayoutChanged()), SLOT(applyChannelLayout()));
 

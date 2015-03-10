@@ -177,6 +177,15 @@ signals:
     void volumeChanged(qreal);
     void muteChanged(bool);
     void deviceFeaturesChanged();
+    /*!
+     * \brief volumeReported
+     * Volume can be changed by per-app volume control from system outside this library. Useful for synchronizing ui to system.
+     * Volume control from QtAV may emit this signal too(pulseaudio).
+     * Only emitted by supported backends, e.g. pulseaudio
+     * NOTE: volumeReported and muteReported can be emitted even if value is not changed. They are emitted at the same time for some backends.
+     */
+    void volumeReported(qreal);
+    void muteReported(bool);
 protected:
     // Store and fill data to audio buffers
     bool receiveData(const QByteArray &data, qreal pts = 0.0);

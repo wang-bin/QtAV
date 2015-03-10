@@ -179,6 +179,15 @@ public Q_SLOTS:
     void seekBackward();
 
 Q_SIGNALS:
+    /*!
+     * \brief volumeReported
+     * Volume can be changed by per-app volume control from system outside this library. Useful for synchronizing ui to system.
+     * Volume control from QtAV may emit this signal too(pulseaudio).
+     * Only emitted by supported backends, e.g. pulseaudio
+     * NOTE: volumeReported and muteReported can be emitted even if value is not changed. They are emitted at the same time for some backends.
+     */
+    void volumeReported(qreal value);
+    void muteReported(bool value);
     void volumeChanged();
     void mutedChanged();
     // TODO: signal from QtAV::AVPlayer
