@@ -212,7 +212,7 @@ macx:!ios: CONFIG += config_vda
 config_vda {
     DEFINES *= QTAV_HAVE_VDA=1
     SOURCES += codec/video/VideoDecoderVDA.cpp
-    LIBS += -framework VideoDecodeAcceleration -framework CoreVideo
+    LIBS += -framework VideoDecodeAcceleration -framework CoreVideo -framework CoreFoundation
 }
 
 config_gl|config_opengl {

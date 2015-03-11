@@ -24,7 +24,6 @@
 #include "utils/GPUMemCopy.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
-#include <QtCore/QSysInfo>
 #include <assert.h>
 
 #ifdef __cplusplus
@@ -138,13 +137,17 @@ typedef struct {
 } cv_format;
 
 //https://developer.apple.com/library/Mac/releasenotes/General/MacOSXLionAPIDiffs/CoreVideo.html
+/* use fourcc '420v', 'yuvs' for NV12 and yuyv to avoid build time version check
+ * qt4 targets 10.6, so those enum values is not valid in build time, while runtime is supported.
+ */
 static const cv_format cv_formats[] = {
-    { kCVPixelFormatType_420YpCbCr8Planar, VideoFormat::Format_YUV420P },
-    { kCVPixelFormatType_422YpCbCr8, VideoFormat::Format_UYVY },
-#ifdef OSX_TARGET_MIN_LION
-    { kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, VideoFormat::Format_NV12 },
-    { kCVPixelFormatType_422YpCbCr8_yuvs, VideoFormat::Format_YUYV },
-#endif
+    { 'y420', VideoFormat::Format_YUV420P }, //kCVPixelFormatType_420YpCbCr8Planar
+    { '2vuy', VideoFormat::Format_UYVY }, //kCVPixelFormatType_422YpCbCr8
+//#ifdef OSX_TARGET_MIN_LION
+    { '420f' , VideoFormat::Format_NV12 }, // kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+    { '420v', VideoFormat::Format_NV12 }, //kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+    { 'yuvs', VideoFormat::Format_YUYV }, //kCVPixelFormatType_422YpCbCr8_yuvs
+//#endif
     { 0, VideoFormat::Format_Invalid }
 };
 
@@ -170,7 +173,10 @@ static int getOutputPixelFormat() {
     static int fmt = 0;
     if (fmt > 0)
         return fmt;
-    if (QSysInfo::macVersion() < QSysInfo::MV_10_7)
+#ifndef kCFCoreFoundationVersionNumber10_7
+#define kCFCoreFoundationVersionNumber10_7      635.00
+#endif
+    if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber10_7)
         fmt = format_to_cv(VideoFormat::Format_YUV420P);
     else
         fmt = format_to_cv(VideoFormat::Format_NV12);
@@ -227,6 +233,13 @@ VideoFrame VideoDecoderVDA::frame()
     }
     CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
     CVPixelBufferRelease(cv_buffer);
+#if 0
+    VideoFrame f(width(), height(), fmt);
+    f.setBits(src);
+    f.setBytesPerLine(pitch);
+    f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
+    return f; // deferred copy. need to manage hw buffers
+#endif
     return copyToFrame(fmt, d.height, src, pitch, false);
 }
 
@@ -257,7 +270,7 @@ bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
         releaseUSWC();
     } else {
         memset(&hw_ctx, 0, sizeof(hw_ctx));
-        hw_ctx.format = 'avc1';
+        hw_ctx.format = 'avc1'; //fourcc
         if (nv12)
             hw_ctx.cv_pix_fmt_type = getOutputPixelFormat();
         else
@@ -298,7 +311,6 @@ void VideoDecoderVDAPrivate::releaseBuffer(void *opaque, uint8_t *data)
     CVPixelBufferRef cv_buffer = (CVPixelBufferRef)data;
     if (!cv_buffer)
         return;
-    qDebug("release buffer");
     CVPixelBufferRelease(cv_buffer);
 }
 
