@@ -285,6 +285,7 @@ SOURCES += \
     AudioResamplerTypes.cpp \
     codec/AVDecoder.cpp \
     codec/audio/AudioDecoder.cpp \
+    codec/audio/AudioDecoderFFmpeg.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
     ColorTransform.cpp \

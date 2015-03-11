@@ -310,7 +310,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         delete adec;
         adec = 0;
     }
-    adec = new AudioDecoder();
+    adec = AudioDecoder::create("FFmpeg");
     QObject::connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
     adec->setCodecContext(avctx);
     adec->setOptions(ac_opt);
