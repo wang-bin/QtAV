@@ -20,7 +20,6 @@
 #include "QtAV/private/AudioOutput_p.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMetaObject>
-#include <QtCore/QThread>
 #include <pulse/pulseaudio.h>
 #include "QtAV/private/prepost.h"
 #include "utils/Logger.h"
@@ -117,7 +116,7 @@ public:
         , stream(0)
         , writable_size(0)
     {}
-
+    bool init(AudioOutputPulse *ao);
     static void contextStateCallback(pa_context *c, void *userdata);
     static void contextSubscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
     static void stateCallback(pa_stream *s, void *userdata);
@@ -253,6 +252,107 @@ void AudioOutputPulsePrivate::sinkInfoCallback(pa_context *c, const pa_sink_inpu
     pa_threaded_mainloop_signal(p->loop, 0);
 }
 
+bool AudioOutputPulsePrivate::init(AudioOutputPulse *ao)
+{
+    resetStatus();
+    available = false;
+    writable_size = 0;
+    loop = pa_threaded_mainloop_new();
+    if (pa_threaded_mainloop_start(loop) < 0) {
+        qWarning("PulseAudio failed to start mainloop");
+        return false;
+    }
+
+    ScopedPALocker lock(loop);
+    Q_UNUSED(lock);
+    pa_mainloop_api *api = pa_threaded_mainloop_get_api(loop);
+    ctx = pa_context_new(api, qApp->applicationName().append(" (QtAV)").toUtf8().constData());
+    if (!ctx) {
+        qWarning("PulseAudio failed to allocate a context");
+        return false;
+    }
+    qDebug() << QString("PulseAudio %1, protocol: %2, server protocol: %3").arg(pa_get_library_version()).arg(pa_context_get_protocol_version(ctx)).arg(pa_context_get_server_protocol_version(ctx));
+    // TODO: host property
+    pa_context_connect(ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
+    pa_context_set_state_callback(ctx, AudioOutputPulsePrivate::contextStateCallback, this);
+    while (true) {
+        const pa_context_state_t st = pa_context_get_state(ctx);
+        if (st == PA_CONTEXT_READY)
+            break;
+        if (!PA_CONTEXT_IS_GOOD(st)) {
+            qWarning("PulseAudio context init failed");
+            return false;
+        }
+        pa_threaded_mainloop_wait(loop);
+    }
+
+    pa_context_set_subscribe_callback(ctx, AudioOutputPulsePrivate::contextSubscribeCallback, ao);
+    pa_context_subscribe(ctx, pa_subscription_mask_t(
+                                 PA_SUBSCRIPTION_MASK_CARD |
+                                 PA_SUBSCRIPTION_MASK_SINK |
+                                 PA_SUBSCRIPTION_MASK_SINK_INPUT),
+                         NULL, NULL);
+    //pa_sample_spec
+    // setup format
+    pa_format_info *fi = pa_format_info_new();
+    fi->encoding = PA_ENCODING_PCM;
+    pa_format_info_set_sample_format(fi, sampleFormatToPulse(format.sampleFormat()));
+    pa_format_info_set_channels(fi, format.channels());
+    pa_format_info_set_rate(fi, format.sampleRate());
+   // pa_format_info_set_channel_map(fi, NULL); // TODO
+    if (!pa_format_info_valid(fi)) {
+        qWarning("PulseAudio: invalid format");
+        return false;
+    }
+    pa_proplist *pl = pa_proplist_new();
+    if (pl) {
+        pa_proplist_sets(pl, PA_PROP_MEDIA_ROLE, "video");
+        pa_proplist_sets(pl, PA_PROP_MEDIA_ICON_NAME, qApp->applicationName().append(" (QtAV)").toUtf8().constData());
+    }
+    stream = pa_stream_new_extended(ctx, "audio stream", &fi, 1, pl);
+    if (!stream) {
+        pa_format_info_free(fi);
+        pa_proplist_free(pl);
+        qWarning("PulseAudio: failed to create a stream");
+        return false;
+    }
+    pa_format_info_free(fi);
+    pa_proplist_free(pl);
+    pa_stream_set_write_callback(stream, AudioOutputPulsePrivate::writeCallback, this);
+    pa_stream_set_state_callback(stream, AudioOutputPulsePrivate::stateCallback, this);
+    pa_stream_set_latency_update_callback(stream, AudioOutputPulsePrivate::latencyUpdateCallback, this);
+
+    pa_buffer_attr ba;
+    ba.maxlength = bufferSizeTotal(); // max buffer size on the server
+    ba.tlength = (uint32_t)-1; // ?
+    ba.prebuf = 1;//(uint32_t)-1; // play as soon as possible
+    ba.minreq = (uint32_t)-1;
+    ba.fragsize = (uint32_t)-1;
+    // PA_STREAM_NOT_MONOTONIC?
+    pa_stream_flags_t flags = pa_stream_flags_t(PA_STREAM_NOT_MONOTONIC|PA_STREAM_INTERPOLATE_TIMING|PA_STREAM_AUTO_TIMING_UPDATE);
+    if (pa_stream_connect_playback(stream, NULL /*sink*/, &ba, flags, NULL, NULL) < 0) {
+        qWarning("PulseAudio failed: pa_stream_connect_playback");
+        return false;
+    }
+
+    while (true) {
+        const pa_stream_state_t st = pa_stream_get_state(stream);
+        if (st == PA_STREAM_READY)
+            break;
+        if (!PA_STREAM_IS_GOOD(st)) {
+            qWarning("PulseAudio stream init failed");
+            return false;
+        }
+        pa_threaded_mainloop_wait(loop);
+    }
+    if (pa_stream_is_suspended(stream)) {
+        qWarning("PulseAudio stream is suspended.");
+        return false;
+    }
+    available = true;
+    return true;
+}
+
 AudioOutputPulse::AudioOutputPulse(QObject *parent)
     : AudioOutput(DeviceFeatures()|SetVolume|SetMute|SetSampleRate, *new AudioOutputPulsePrivate(), parent)
 {
@@ -282,106 +382,17 @@ bool AudioOutputPulse::isSupported(AudioFormat::ChannelLayout channelLayout) con
 bool AudioOutputPulse::open()
 {
     DPTR_D(AudioOutputPulse);
-    resetStatus();
-    d.available = false;
-    d.writable_size = 0;
-    d.loop = pa_threaded_mainloop_new();
-    if (pa_threaded_mainloop_start(d.loop) < 0) {
-        qWarning("PulseAudio failed to start mainloop");
+    if (!d.init(this)) {
+        if (d.ctx)
+            qWarning("%s", pa_strerror(pa_context_errno(d.ctx)));
         close();
         return false;
     }
-
-#define OPEN_FAIL_RETURN(msg) \
-    do { \
-        qWarning() << msg << ": " << pa_strerror(pa_context_errno(d.ctx)); \
-        pa_threaded_mainloop_unlock(d.loop); \
-        close(); \
-        return false; \
-    } while (0)
-
-    pa_threaded_mainloop_lock(d.loop);
-    pa_mainloop_api *api = pa_threaded_mainloop_get_api(d.loop);
-    d.ctx = pa_context_new(api, qApp->applicationName().append(" (QtAV)").toUtf8().constData());
-    if (!d.ctx)
-        OPEN_FAIL_RETURN("PulseAudio failed to allocate a context");
-    qDebug() << QString("PulseAudio %1, protocol: %2, server protocol: %3").arg(pa_get_library_version()).arg(pa_context_get_protocol_version(d.ctx)).arg(pa_context_get_server_protocol_version(d.ctx));
-    // TODO: host property
-    pa_context_connect(d.ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
-    pa_context_set_state_callback(d.ctx, AudioOutputPulsePrivate::contextStateCallback, &d);
-    while (true) {
-        const pa_context_state_t st = pa_context_get_state(d.ctx);
-        if (st == PA_CONTEXT_READY)
-            break;
-        if (!PA_CONTEXT_IS_GOOD(st))
-            OPEN_FAIL_RETURN("PulseAudio context init failed");
-        pa_threaded_mainloop_wait(d.loop);
-    }
-
-    pa_context_set_subscribe_callback(d.ctx, AudioOutputPulsePrivate::contextSubscribeCallback, this);
-    pa_context_subscribe(d.ctx, pa_subscription_mask_t(
-                                 PA_SUBSCRIPTION_MASK_CARD |
-                                 PA_SUBSCRIPTION_MASK_SINK |
-                                 PA_SUBSCRIPTION_MASK_SINK_INPUT),
-                         NULL, NULL);
-    //pa_sample_spec
-    // setup format
-    pa_format_info *fi = pa_format_info_new();
-    fi->encoding = PA_ENCODING_PCM;
-    pa_format_info_set_sample_format(fi, sampleFormatToPulse(audioFormat().sampleFormat()));
-    pa_format_info_set_channels(fi, channels());
-    pa_format_info_set_rate(fi, sampleRate());
-   // pa_format_info_set_channel_map(fi, NULL); // TODO
-    if (!pa_format_info_valid(fi))
-        OPEN_FAIL_RETURN("PulseAudio: invalid format");
-    pa_proplist *pl = pa_proplist_new();
-    if (pl) {
-        pa_proplist_sets(pl, PA_PROP_MEDIA_ROLE, "video");
-        pa_proplist_sets(pl, PA_PROP_MEDIA_ICON_NAME, qApp->applicationName().append(" (QtAV)").toUtf8().constData());
-    }
-    d.stream = pa_stream_new_extended(d.ctx, "audio stream", &fi, 1, pl);
-    if (!d.stream) {
-        pa_format_info_free(fi);
-        pa_proplist_free(pl);
-        OPEN_FAIL_RETURN("PulseAudio: failed to create a stream");
-    }
-    pa_format_info_free(fi);
-    pa_proplist_free(pl);
-    pa_stream_set_write_callback(d.stream, AudioOutputPulsePrivate::writeCallback, &d);
-    pa_stream_set_state_callback(d.stream, AudioOutputPulsePrivate::stateCallback, &d);
-    pa_stream_set_latency_update_callback(d.stream, AudioOutputPulsePrivate::latencyUpdateCallback, &d);
-
-    pa_buffer_attr ba;
-    ba.maxlength = bufferSizeTotal(); // max buffer size on the server
-    ba.tlength = (uint32_t)-1; // ?
-    ba.prebuf = 1;//(uint32_t)-1; // play as soon as possible
-    ba.minreq = (uint32_t)-1;
-    ba.fragsize = (uint32_t)-1;
-    // PA_STREAM_NOT_MONOTONIC?
-    pa_stream_flags_t flags = pa_stream_flags_t(PA_STREAM_NOT_MONOTONIC|PA_STREAM_INTERPOLATE_TIMING|PA_STREAM_AUTO_TIMING_UPDATE);
-    if (pa_stream_connect_playback(d.stream, NULL /*sink*/, &ba, flags, NULL, NULL) < 0)
-        OPEN_FAIL_RETURN("PulseAudio failed: pa_stream_connect_playback");
-
-    while (true) {
-        const pa_stream_state_t st = pa_stream_get_state(d.stream);
-        if (st == PA_STREAM_READY)
-            break;
-        if (!PA_STREAM_IS_GOOD(st))
-            OPEN_FAIL_RETURN("PulseAudio stream init failed");
-        pa_threaded_mainloop_wait(d.loop);
-    }
-    if (pa_stream_is_suspended(d.stream))
-        OPEN_FAIL_RETURN("PulseAudio stream is suspended.");
-
-    pa_threaded_mainloop_unlock(d.loop);
-    d.available = true;
     for (int i = 0; i < bufferCount(); ++i) {
-        QByteArray a(bufferSize(), 0);
-        write(a);
+        write(QByteArray(bufferSize(), 0));
         d.bufferAdded();
     }
     return true;
-#undef OPEN_FAIL_RETURN
 }
 
 bool AudioOutputPulse::close()
