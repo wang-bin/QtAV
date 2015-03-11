@@ -74,7 +74,7 @@ public:
         cond.wait(&mutex, (us+500LL)/1000LL);
     }
 
-    int bufferSizeTotal() { return nb_buffers * kBufferSize; }
+    int bufferSizeTotal() { return nb_buffers * buffer_size; }
     typedef struct {
         qreal timestamp;
         int data_size;
