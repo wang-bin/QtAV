@@ -177,7 +177,7 @@ bool AudioFormat::isPlanar() const
 
 int AudioFormat::planeCount() const
 {
-    return isPlanar() ? 1 : channels();
+    return isPlanar() ? channels() : 1;
 }
 
 /*!
