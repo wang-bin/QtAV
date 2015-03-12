@@ -74,7 +74,7 @@ public:
      */
     static VideoDecoder* create(const QString& name);
     virtual VideoDecoderId id() const = 0;
-    virtual QString name() const; //name from factory
+    QString name() const; //name from factory
     virtual VideoFrame frame() = 0;
     //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
     void resizeVideoFrame(const QSize& size);

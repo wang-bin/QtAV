@@ -72,5 +72,16 @@ public:
     QByteArray decoded;
 };
 
+class Q_AV_PRIVATE_EXPORT VideoDecoderPrivate : public AVDecoderPrivate
+{
+public:
+    VideoDecoderPrivate():
+        AVDecoderPrivate()
+      , width(0)
+      , height(0)
+    {}
+    virtual ~VideoDecoderPrivate() {}
+    int width, height;
+};
 } //namespace QtAV
 #endif // QTAV_AVDECODER_P_H

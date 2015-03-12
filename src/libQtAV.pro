@@ -383,7 +383,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/Filter_p.h \
     QtAV/private/Frame_p.h \
     QtAV/private/VideoShader_p.h \
-    QtAV/private/VideoDecoder_p.h \
     QtAV/private/VideoRenderer_p.h \
     QtAV/private/QPainterRenderer_p.h
 

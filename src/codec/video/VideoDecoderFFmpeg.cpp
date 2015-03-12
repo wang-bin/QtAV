@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,6 +22,7 @@
 #include "VideoDecoderFFmpegBase.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
+#include "QtAV/version.h"
 #include "utils/Logger.h"
 
 /*!
@@ -111,6 +112,10 @@ public:
 
     VideoDecoderFFmpeg();
     virtual VideoDecoderId id() const Q_DECL_FINAL;
+    virtual QString description() const Q_DECL_FINAL {
+        const int patch = QTAV_VERSION_PATCH(avcodec_version());
+        return QString("%1 avcodec %2.%3.%4").arg(patch>=100?"FFmpeg":"Libav").arg(QTAV_VERSION_MAJOR(avcodec_version())).arg(QTAV_VERSION_MINOR(avcodec_version())).arg(patch);
+    }
     virtual bool prepare() Q_DECL_FINAL;
     virtual VideoFrame frame() Q_DECL_FINAL;
 
@@ -242,7 +247,7 @@ VideoFrame VideoDecoderFFmpeg::frame()
            , d.codec_ctx->color_primaries, d.codec_ctx->color_trc);
            */
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
-        return VideoFrame(0, 0, VideoFormat(VideoFormat::Format_Invalid));
+        return VideoFrame();
     //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
     float displayAspectRatio = 0;
     if (d.codec_ctx->sample_aspect_ratio.den > 0)

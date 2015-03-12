@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoder.h"
-#include "QtAV/private/VideoDecoder_p.h"
+#include "QtAV/private/AVDecoder_p.h"
 #include "QtAV/private/prepost.h"
 #include <QtCore/QQueue>
 #if QTAV_HAVE(DLLAPI_CUDA)
@@ -279,7 +279,7 @@ public:
         return 1;
 #endif
     }
-
+    void setBSF(AVCodecID codec) {}
     bool can_load; //if linked to cuvid, it's true. otherwise(use dllapi) equals to whether cuvid can be loaded
     bool flushing;
     uchar *host_data;
@@ -310,7 +310,7 @@ public:
     int nb_dec_surface;
     QString description;
 
-    AVBitStreamFilterContext *bitstream_filter_ctx;
+    AVBitStreamFilterContext *bitstream_filter_ctx; //TODO: rename bsf_ctx
 };
 
 VideoDecoderCUDA::VideoDecoderCUDA():

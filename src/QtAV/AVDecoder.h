@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -39,6 +39,7 @@ class Q_AV_EXPORT AVDecoder : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVDecoder)
+    //Q_PROPERTY(QString description READ description NOTIFY descriptionChanged)
 public:
     virtual ~AVDecoder();
     virtual QString name() const;
@@ -59,6 +60,7 @@ public:
     QString codecName() const;
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
+    // TODO: remove
     virtual bool prepare(); //if resampler or image converter set, call it
     QTAV_DEPRECATED virtual bool decode(const QByteArray& encoded) = 0;
     virtual bool decode(const Packet& packet) = 0;
@@ -84,6 +86,7 @@ public:
 
 Q_SIGNALS:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
+    void descriptionChanged();
 protected:
     AVDecoder(AVDecoderPrivate& d);
     DPTR_DECLARE(AVDecoder)
