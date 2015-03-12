@@ -22,41 +22,28 @@
 #include "QtAV/AudioFrame.h"
 #include "QtAV/private/Frame_p.h"
 #include "QtAV/AudioResampler.h"
+#include "QtAV/AudioResamplerTypes.h"
 #include "QtAV/private/AVCompat.h"
-
+#include "utils/Logger.h"
 
 namespace QtAV {
 
 class AudioFramePrivate : public FramePrivate
 {
 public:
-    AudioFramePrivate()
+    AudioFramePrivate(const AudioFormat& fmt)
         : FramePrivate()
+        , format(fmt)
         , samples_per_ch(0)
         , conv(0)
-    {}
-    ~AudioFramePrivate() {}
-    bool convertTo(const AudioFormat& other) {
-        if (format == other)
-            return true;
-        if (!conv) {
-            qWarning("must call AudioFrame::setAudioResampler");
-            return false;
-        }
-        conv->setInAudioFormat(format);
-        conv->setOutAudioFormat(other);
-        conv->setInSampesPerChannel(samples_per_ch); //TODO
-        if (!conv->convert((const quint8**)planes.constData())) {
-            format = AudioFormat(); //invalid format
-            return false;
-        }
-        format = other;
-        data = conv->outData();
-        samples_per_ch = conv->outSamplesPerChannel();
-        // TODO: setBytesPerLine(), setBits() compute here or from resampler?
-        line_sizes.resize(format.planeCount());
-        planes.resize(format.planeCount());
-        return true;
+    {
+        if (!format.isValid())
+            return;
+        const int nb_planes(format.planeCount());
+        planes.reserve(nb_planes);
+        planes.resize(nb_planes);
+        line_sizes.reserve(nb_planes);
+        line_sizes.resize(nb_planes);
     }
 
     AudioFormat format;
@@ -64,8 +51,8 @@ public:
     AudioResampler *conv;
 };
 
-AudioFrame::AudioFrame():
-    Frame(new AudioFramePrivate())
+AudioFrame::AudioFrame(const AudioFormat &format) :
+    Frame(new AudioFramePrivate(format))
 {
 }
 
@@ -80,13 +67,23 @@ AudioFrame::AudioFrame(const AudioFrame &other)
 }
 
 AudioFrame::AudioFrame(const QByteArray &data, const AudioFormat &format)
-    : Frame(new AudioFramePrivate())
+    : Frame(new AudioFramePrivate(format))
 {
     Q_D(AudioFrame);
     d->format = format;
     d->data = data;
     d->samples_per_ch = data.size() / d->format.channels() / d->format.bytesPerSample();
-    init();
+    if (!d->format.isValid())
+        return;
+    if (d->data.isEmpty())
+        return;
+    const int nb_planes(d->format.planeCount());
+    const int bpl(d->data.size()/nb_planes);
+    for (int i = 0; i < nb_planes; ++i) {
+        setBytesPerLine(bpl, i);
+        setBits((uchar*)d->data.constData() + i*bpl, i);
+    }
+    //init();
 }
 
 /*!
@@ -104,6 +101,24 @@ AudioFrame::~AudioFrame()
 {
 }
 
+bool AudioFrame::isValid() const
+{
+    Q_D(const AudioFrame);
+    return d->samples_per_ch > 0 && d->format.isValid();
+}
+
+QByteArray AudioFrame::data()
+{
+    if (!isValid())
+        return QByteArray();
+    Q_D(AudioFrame);
+    if (d->data.isEmpty()) {
+        AudioFrame a(clone());
+        d->data = a.data();
+    }
+    return d->data;
+}
+
 int AudioFrame::channelCount() const
 {
     Q_D(const AudioFrame);
@@ -115,8 +130,11 @@ int AudioFrame::channelCount() const
 AudioFrame AudioFrame::clone() const
 {
     Q_D(const AudioFrame);
-    if (!d->format.isValid())
+    if (d->format.sampleFormatFFmpeg() == AV_SAMPLE_FMT_NONE
+            || d->format.channels() <= 0)
         return AudioFrame();
+    if (d->samples_per_ch <= 0 || bytesPerLine(0) <= 0)
+        return AudioFrame(format());
     QByteArray buf(bytesPerLine()*planeCount(), 0);
     AudioFrame f(buf, d->format);
     f.setSamplesPerChannel(samplesPerChannel());
@@ -126,6 +144,8 @@ AudioFrame AudioFrame::clone() const
         memcpy(dst, f.bits(i), plane_size);
         dst += plane_size;
     }
+    f.setTimestamp(timestamp());
+    // meta data?
     return f;
 }
 
@@ -147,10 +167,25 @@ AudioFormat AudioFrame::format() const
 void AudioFrame::setSamplesPerChannel(int samples)
 {
     Q_D(AudioFrame);
+    if (!d->format.isValid()) {
+        qWarning() << "can not set spc for an invalid format: " << d->format;
+        return;
+    }
     d->samples_per_ch = samples;
     const int nb_planes = d->format.planeCount();
+    const int bpl(d->line_sizes[0] > 0 ? d->line_sizes[0] : d->samples_per_ch*d->format.bytesPerSample() * (d->format.isPlanar() ? 1 : d->format.channels()));
     for (int i = 0; i < nb_planes; ++i) {
-        setBytesPerLine(d->samples_per_ch*d->format.bytesPerSample());
+        setBytesPerLine(bpl, i);
+    }
+    if (d->data.isEmpty())
+        return;
+    if (!bits(0)) {
+        setBits((quint8*)d->data.constData(), 0);
+    }
+    for (int i = 1; i < nb_planes; ++i) {
+        if (!bits(i)) {
+            setBits(bits(i-1) + bpl, i);
+        }
     }
 }
 
@@ -164,6 +199,39 @@ void AudioFrame::setAudioResampler(AudioResampler *conv)
     d_func()->conv = conv;
 }
 
+AudioFrame AudioFrame::to(const AudioFormat &fmt) const
+{
+    if (!isValid() || !bits(0))
+        return AudioFrame();
+    if (fmt == format())
+        return clone();
+    Q_D(const AudioFrame);
+    // TODO: use a pool
+    AudioResampler *conv = d->conv;
+    QScopedPointer<AudioResampler> c;
+    if (!conv) {
+        conv = AudioResamplerFactory::create(AudioResamplerId_FF);
+        if (!conv)
+            conv = AudioResamplerFactory::create(AudioResamplerId_Libav);
+        if (!conv) {
+            qWarning("no audio resampler is available");
+            return AudioFrame();
+        }
+        c.reset(conv);
+    }
+    conv->setInAudioFormat(format());
+    conv->setOutAudioFormat(fmt);
+    //conv->prepare(); // already called in setIn/OutFormat
+    conv->setInSampesPerChannel(samplesPerChannel()); //TODO
+    if (!conv->convert((const quint8**)d->planes.constData())) {
+        qWarning() << "AudioFrame::to error: " << format() << "=>" << fmt;
+        return AudioFrame();
+    }
+    AudioFrame f(conv->outData(), fmt);
+    f.setSamplesPerChannel(conv->outSamplesPerChannel());
+    return f;
+}
+
 // TODO: alignment. use av_samples_fill_arrays
 void AudioFrame::init()
 {
@@ -173,9 +241,10 @@ void AudioFrame::init()
     d->planes.resize(nb_planes);
     if (d->data.isEmpty())
         return;
+    const int bpl(d->data.size()/nb_planes);
     for (int i = 0; i < nb_planes; ++i) {
-        setBytesPerLine(d->data.size()/nb_planes, i);
-        setBits((uchar*)d->data.constData() + i*bytesPerLine(i), i);
+        setBytesPerLine(bpl, i);
+        setBits((uchar*)d->data.constData() + i*bpl, i);
     }
 }
 

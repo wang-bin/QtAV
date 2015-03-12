@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -33,14 +33,30 @@ class Q_AV_EXPORT AudioFrame : public Frame
 {
     Q_DECLARE_PRIVATE(AudioFrame)
 public:
-    AudioFrame(); //invalid frame
+    /*!
+     * \brief AudioFrame
+     * construct an audio frame for the given format. An invalid format results in invalid frame.
+     */
+    AudioFrame(const AudioFormat& format = AudioFormat());
     //data must be complete
+    /*!
+     * \brief AudioFrame
+     * construct an audio frame from a given buffer and format
+     */
     AudioFrame(const QByteArray& data, const AudioFormat& format);
     AudioFrame(const AudioFrame &other);
     virtual ~AudioFrame();
-
     AudioFrame &operator =(const AudioFrame &other);
 
+    bool isValid() const;
+    operator bool() const { return isValid();}
+
+    /*!
+     * \brief data
+     * Audio data. clone is called if frame is not constructed with a QByteArray.
+     * \return
+     */
+    QByteArray data();
     virtual int channelCount() const;
     /*!
      * Deep copy. If you want to copy data from somewhere, knowing the format, width and height,
@@ -56,21 +72,11 @@ public:
     void setSamplesPerChannel(int samples);
     // may change after resampling
     int samplesPerChannel() const;
+    AudioFrame to(const AudioFormat& fmt) const;
     //AudioResamplerId
-    void setAudioResampler(AudioResampler *conv);
-    /*!
-     * \brief convertTo
-     * \code
-     *   AudioFrame af(data, fmt1);
-     *   af.convertTo(fmt2);
-     * \param fmt
-     * \return
-     */
-    bool convertTo(const AudioFormat& fmt);
+    void setAudioResampler(AudioResampler *conv); //TODO: remove
 private:
-    /*
-     * call this only when setBytesPerLine() and setBits() will not be called
-     */
+    //call this only when setBytesPerLine() and setBits() will not be called
     void init();
 };
 
