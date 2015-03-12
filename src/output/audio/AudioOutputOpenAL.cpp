@@ -95,71 +95,88 @@ void RegisterAudioOutputOpenAL_Man()
 #define SCOPE_LOCK_CONTEXT() \
     QMutexLocker ctx_lock(&d_func().global_mutex); \
     Q_UNUSED(ctx_lock); \
-    alcMakeContextCurrent(d_func().context)
+    if (d_func().context) \
+        alcMakeContextCurrent(d_func().context)
 
 // TODO: planar
 static ALenum audioFormatToAL(const AudioFormat& fmt)
 {
+    typedef union {
+        const char* ext;
+        ALenum fmt;
+    } al_fmt_t;
     ALenum format = 0;
+    // al functions need a context
     ALCcontext *ctx = alcGetCurrentContext(); //a context is required for al functions!
-    if (fmt.sampleFormat() == AudioFormat::SampleFormat_Unsigned8) {
-        if (fmt.channels() == 1)
-            format = AL_FORMAT_MONO8;
-        else if (fmt.channels() == 2)
-            format = AL_FORMAT_STEREO8;
-        else if (ctx) {
-            if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
-                if (fmt.channels() == 4)
-                    format = alGetEnumValue("AL_FORMAT_QUAD8");
-                else if (fmt.channels() == 6)
-                    format = alGetEnumValue("AL_FORMAT_51CHN8");
-                else if (fmt.channels() == 7)
-                    format = alGetEnumValue("AL_FORMAT_61CHN8");
-                else if (fmt.channels() == 8)
-                    format = alGetEnumValue("AL_FORMAT_71CHN8");
-            }
+    const int c = fmt.channels();
+    const AudioFormat::SampleFormat spfmt = fmt.sampleFormat();
+    if (AudioFormat::SampleFormat_Unsigned8 == spfmt) {
+        static const al_fmt_t u8fmt[] = {
+            {(const char*)AL_FORMAT_MONO8},
+            {(const char*)AL_FORMAT_STEREO8},
+            {(const char*)0},
+            {"AL_FORMAT_QUAD8"},
+            {"AL_FORMAT_REAR8"},
+            {"AL_FORMAT_51CHN8"},
+            {"AL_FORMAT_61CHN8"},
+            {"AL_FORMAT_71CHN8"}
+        };
+        if (c < 3) {
+            format = u8fmt[c-1].fmt;
+        } else if (c > 3 && c <= 8 && ctx) {
+            if (alIsExtensionPresent("AL_EXT_MCFORMATS"))
+                format = alGetEnumValue(u8fmt[c-1].ext);
         }
-    } else if (fmt.sampleFormat() == AudioFormat::SampleFormat_Signed16) {
-        if (fmt.channels() == 1)
-            format = AL_FORMAT_MONO16;
-        else if (fmt.channels() == 2)
-            format = AL_FORMAT_STEREO16;
-        else if (ctx) {
-            if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
-                if (fmt.channels() == 4)
-                    format = alGetEnumValue("AL_FORMAT_QUAD16");
-                else if (fmt.channels() == 6)
-                    format = alGetEnumValue("AL_FORMAT_51CHN16");
-                else if (fmt.channels() == 7)
-                    format = alGetEnumValue("AL_FORMAT_61CHN16");
-                else if (fmt.channels() == 8)
-                    format = alGetEnumValue("AL_FORMAT_71CHN16");
-            }
+    } else if (AudioFormat::SampleFormat_Signed16 == spfmt) {
+        static const al_fmt_t s16fmt[] = {
+            {(const char*)AL_FORMAT_MONO16},
+            {(const char*)AL_FORMAT_STEREO16},
+            {(const char*)0},
+            {"AL_FORMAT_QUAD16"},
+            {"AL_FORMAT_REAR16"},
+            {"AL_FORMAT_51CHN16"},
+            {"AL_FORMAT_61CHN16"},
+            {"AL_FORMAT_71CHN16"}
+        };
+        if (c < 3) {
+            format = s16fmt[c-1].fmt;
+        } else if (c > 3 && c <= 8 && ctx) {
+            if (alIsExtensionPresent("AL_EXT_MCFORMATS"))
+                format = alGetEnumValue(s16fmt[c-1].ext);
         }
     } else if (ctx) {
-        if (fmt.sampleFormat() == AudioFormat::SampleFormat_Float) {
-            if (alIsExtensionPresent("AL_EXT_float32")) {
-                if (fmt.channels() == 1)
-                    format = alGetEnumValue("AL_FORMAT_MONO_FLOAT32");
-                else if (fmt.channels() == 2)
-                    format = alGetEnumValue("AL_FORMAT_STEREO_FLOAT32");
-                else if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
-                    if (fmt.channels() == 4)
-                        format = alGetEnumValue("AL_FORMAT_QUAD32");
-                    else if (fmt.channels() == 6)
-                        format = alGetEnumValue("AL_FORMAT_51CHN32");
-                    else if (fmt.channels() == 7)
-                        format = alGetEnumValue("AL_FORMAT_61CHN32");
-                    else if (fmt.channels() == 8)
-                        format = alGetEnumValue("AL_FORMAT_71CHN32");
+        if (AudioFormat::SampleFormat_Signed32 == spfmt) {
+            if (c > 3 && c <= 8) {
+                if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
+                    static const al_fmt_t s32fmt[] = {
+                        {"AL_FORMAT_QUAD32"},
+                        {"AL_FORMAT_REAR32"},
+                        {"AL_FORMAT_51CHN32"},
+                        {"AL_FORMAT_61CHN32"},
+                        {"AL_FORMAT_71CHN32"}
+                    };
+                    format = alGetEnumValue(s32fmt[c-4].ext);
                 }
             }
-        } else if (fmt.sampleFormat() == AudioFormat::SampleFormat_Double) {
-            if (alIsExtensionPresent("AL_EXT_double")) {
-                if (fmt.channels() == 1)
-                    format = alGetEnumValue("AL_FORMAT_MONO_DOUBLE_EXT");
-                else if (fmt.channels() == 2)
-                    format = alGetEnumValue("AL_FORMAT_STEREO_DOUBLE_EXT");
+        } else if (AudioFormat::SampleFormat_Float == spfmt) {
+            if (c < 3) {
+                if (alIsExtensionPresent("AL_EXT_float32")) {
+                    static const al_fmt_t f32fmt[] = {
+                        {"AL_FORMAT_MONO_FLOAT32"},
+                        {"AL_FORMAT_STEREO_FLOAT32"}
+                    };
+                    format = alGetEnumValue(f32fmt[c].ext);
+                }
+            }
+        } else if (AudioFormat::SampleFormat_Double == spfmt) {
+            if (c < 3) {
+                if (alIsExtensionPresent("AL_EXT_double")) {
+                    static const al_fmt_t d64fmt[] = {
+                        {"AL_FORMAT_MONO_DOUBLE_EXT"},
+                        {"AL_FORMAT_STEREO_DOUBLE_EXT"}
+                    };
+                    format = alGetEnumValue(d64fmt[c].ext);
+                }
             }
         }
     }
@@ -219,13 +236,12 @@ AudioOutputOpenAL::~AudioOutputOpenAL()
 bool AudioOutputOpenAL::open()
 {
     DPTR_D(AudioOutputOpenAL);
-    d.available = false; // TODO: d.reset()
     resetStatus();
     QVector<QByteArray> _devices;
     const char *p = NULL;
     // maybe defined in alext.h
 #ifdef ALC_ALL_DEVICES_SPECIFIER
-    p = alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER);
+    p = alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER); // TODO: error Invalid Value
 #else
     if (alcIsExtensionPresent(NULL, "ALC_ENUMERATE_ALL_EXT")) {
         // avoid using enum ALC_ALL_DEVICES_SPECIFIER directly
@@ -242,9 +258,7 @@ bool AudioOutputOpenAL::open()
         p += _devices.last().size() + 1;
     }
     qDebug("OpenAL devices available: %d", _devices.size());
-    for (int i = 0; i < _devices.size(); i++) {
-        qDebug("device %d: %s", i, _devices[i].constData());
-    }
+    qDebug() << _devices;
     const ALCchar *default_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
     qDebug("AudioOutputOpenAL Opening default device: %s", default_device);
     d.device = alcOpenDevice(NULL); //parameter: NULL or default_device
@@ -320,12 +334,11 @@ fail:
 
 bool AudioOutputOpenAL::close()
 {
-    if (!isAvailable())
-        return true;
     DPTR_D(AudioOutputOpenAL);
     d.state = 0;
-    d.available = false;
     resetStatus();
+    if (!d.context)
+        return true;
     SCOPE_LOCK_CONTEXT();
     alSourceStop(d.source);
     do {
@@ -339,16 +352,14 @@ bool AudioOutputOpenAL::close()
     alDeleteBuffers(kBufferCount, d.buffer);
 
     alcMakeContextCurrent(NULL);
-    if (d.context) {
-        qDebug("alcDestroyContext(%p)", d.context);
-        alcDestroyContext(d.context);
-        ALCenum err = alcGetError(d.device);
-        if (err != ALC_NO_ERROR) { //ALC_INVALID_CONTEXT
-            qWarning("AudioOutputOpenAL Failed to destroy context: %s", alcGetString(d.device, err));
-            return false;
-        }
-        d.context = 0;
+    qDebug("alcDestroyContext(%p)", d.context);
+    alcDestroyContext(d.context);
+    ALCenum err = alcGetError(d.device);
+    if (err != ALC_NO_ERROR) { //ALC_INVALID_CONTEXT
+        qWarning("AudioOutputOpenAL Failed to destroy context: %s", alcGetString(d.device, err));
+        return false;
     }
+    d.context = 0;
     if (d.device) {
         qDebug("alcCloseDevice(%p)", d.device);
         alcCloseDevice(d.device);
