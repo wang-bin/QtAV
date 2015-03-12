@@ -123,6 +123,9 @@ bool AudioDecoderFFmpeg::decode(const Packet &packet)
         qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d", ret, d.undecoded_size);
         return true;
     }
+#if USE_AUDIO_FRAME
+    return true;
+#endif
     d.resampler->setInSampesPerChannel(d.frame->nb_samples);
     if (!d.resampler->convert((const quint8**)d.frame->extended_data)) {
         return false;
@@ -168,6 +171,9 @@ bool AudioDecoderFFmpeg::decode(const QByteArray &encoded)
         qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d", ret, d.undecoded_size);
         return true;
     }
+#if USE_AUDIO_FRAME
+    return true;
+#endif
     d.resampler->setInSampesPerChannel(d.frame->nb_samples);
     if (!d.resampler->convert((const quint8**)d.frame->extended_data)) {
         return false;
@@ -179,8 +185,20 @@ bool AudioDecoderFFmpeg::decode(const QByteArray &encoded)
 
 AudioFrame AudioDecoderFFmpeg::frame()
 {
-    qFatal("Not implemented");
-    return AudioFrame();
+    DPTR_D(AudioDecoderFFmpeg);
+    AudioFormat fmt;
+    fmt.setSampleFormatFFmpeg(d.frame->format);
+    fmt.setChannelLayoutFFmpeg(d.frame->channel_layout);
+    fmt.setSampleRate(d.frame->sample_rate);
+    if (!fmt.isValid()) // need more data to decode to get a frame
+        return AudioFrame();
+    AudioFrame f(fmt);
+    f.setBits(d.frame->extended_data); // TODO: ref
+    f.setBytesPerLine(d.frame->linesize[0], 0); // for correct alignment
+    f.setSamplesPerChannel(d.frame->nb_samples);
+    f.setTimestamp((double)d.frame->pkt_pts/1000.0);
+    f.setAudioResampler(d.resampler); // TODO: remove. it's not safe if frame is shared. use a pool or detach if ref >1
+    return f;
 }
 
 } //namespace QtAV

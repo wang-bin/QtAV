@@ -205,7 +205,21 @@ void AudioThread::run()
             d.last_pts = d.clock->value(); //not pkt.pts! the delay is updated!
             continue;
         }
+#if USE_AUDIO_FRAME
+        AudioFrame frame(dec->frame());
+        if (frame) {
+            //TODO: apply filters here
+            if (has_ao) {
+                if (ao->audioFormat() != frame.format()) {
+                    frame = frame.to(ao->audioFormat());
+                }
+            }
+        } // no continue if frame is invalid. decoder may need more data to get a frame
+
+        QByteArray decoded(frame.data());
+#else
         QByteArray decoded(dec->data());
+#endif
         int decodedSize = decoded.size();
         int decodedPos = 0;
         qreal delay = 0;

@@ -26,6 +26,7 @@
 #include <QtAV/AudioFrame.h>
 #include <QtAV/FactoryDefine.h>
 
+#define USE_AUDIO_FRAME 1
 //TODO: decoder.in/outAudioFormat()?
 namespace QtAV {
 typedef int AudioDecoderId;
@@ -51,7 +52,7 @@ public:
     QString name() const; //name from factory
     virtual QByteArray data() const; //decoded data
     virtual AudioFrame frame() = 0;
-    AudioResampler *resampler(); //TODO: remove
+    AudioResampler *resampler(); //TODO: remove. can not share the same resampler for multiple frames
 protected:
     AudioDecoder(AudioDecoderPrivate& d);
 private:

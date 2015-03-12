@@ -26,7 +26,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/QSharedData>
 
-// TODO: plane=>channel
+// TODO: fromAVFrame() asAVFrame()?
 namespace QtAV {
 
 class FramePrivate;
