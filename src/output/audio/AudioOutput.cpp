@@ -144,7 +144,11 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
         return false;
     d.data = data;
     if (isMute() && d.sw_mute) {
-        d.data.fill(0);
+        if (d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8
+                || d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8Planar)
+            d.data.fill(0x80);
+        else
+            d.data.fill(0);
     } else {
         if (!qFuzzyCompare(volume(), (qreal)1.0)
                 && d.sw_volume
