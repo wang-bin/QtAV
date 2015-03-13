@@ -102,7 +102,7 @@ config_avdevice { #may depends on avfilter
     LIBS *= -lavdevice
     static_ffmpeg {
       win32 {
-        LIBS *= -lgdi32
+        LIBS *= -lgdi32 -loleaut32
       } else:mac:!ios { # static ffmpeg
         LIBS += -framework Foundation -framework QTKit -framework CoreMedia -framework QuartzCore -framework CoreGraphics \
                 -framework AVFoundation
