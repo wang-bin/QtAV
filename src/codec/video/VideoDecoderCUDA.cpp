@@ -594,7 +594,7 @@ bool VideoDecoderCUDAPrivate::releaseCuda()
 
 bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int w, int h)
 {
-    if (cudaCodec == -1) {
+    if (cudaCodec == cudaVideoCodec_NumCodecs) {
         return false;
     }
     AutoCtxLock lock(this, vid_ctx_lock);
