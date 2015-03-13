@@ -69,26 +69,13 @@ void RegisterAudioOutputOpenAL_Man()
     FACTORY_REGISTER_ID_MAN(AudioOutput, OpenAL, "OpenAL")
 }
 
-
-#define AL_CHECK_RETURN_VALUE(RET) \
+#define AL_ENSURE_OK(expr, ...) \
     do { \
-        ALenum err = alGetError(); \
+        expr; \
+        const ALenum err = alGetError(); \
         if (err != AL_NO_ERROR) { \
-            qWarning("AudioOutputOpenAL Error @%d  (%d) : %s", __LINE__, err, alGetString(err)); \
-            return RET; \
-        } \
-    } while(0)
-
-#define AL_CHECK_RETURN() AL_CHECK_RETURN_VALUE()
-#define AL_CHECK() AL_CHECK_RETURN_VALUE(false)
-
-#define AL_RUN_CHECK(FUNC) \
-    do { \
-        FUNC; \
-        ALenum err = alGetError(); \
-        if (err != AL_NO_ERROR) { \
-            qWarning("AudioOutputOpenAL Error>>> " #FUNC " (%d) : %s", err, alGetString(err)); \
-            return false; \
+            qWarning("AudioOutputOpenAL Error>>> " #expr " (%d) : %s", err, alGetString(err)); \
+            return __VA_ARGS__; \
         } \
     } while(0)
 
@@ -239,20 +226,12 @@ bool AudioOutputOpenAL::open()
     resetStatus();
     QVector<QByteArray> _devices;
     const char *p = NULL;
-    // maybe defined in alext.h
-#ifdef ALC_ALL_DEVICES_SPECIFIER
-    p = alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER); // TODO: error Invalid Value
-#else
     if (alcIsExtensionPresent(NULL, "ALC_ENUMERATE_ALL_EXT")) {
-        // avoid using enum ALC_ALL_DEVICES_SPECIFIER directly
-        ALenum param = alcGetEnumValue(NULL, "ALC_ALL_DEVICES_SPECIFIER");
-        p = alcGetString(NULL, param);
+        // ALC_ALL_DEVICES_SPECIFIER maybe not defined
+        p = alcGetString(NULL, alcGetEnumValue(NULL, "ALC_ALL_DEVICES_SPECIFIER"));
     } else {
-        //alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT")
-        //ALenum param = alcGetEnumValue(NULL, "ALC_DEVICE_SPECIFIER");
         p = alcGetString(NULL, ALC_DEVICE_SPECIFIER);
     }
-#endif
     while (p && *p) {
         _devices.push_back(p);
         p += _devices.last().size() + 1;
@@ -309,14 +288,14 @@ bool AudioOutputOpenAL::open()
     static char init_data[kBufferSize];
     memset(init_data, 0, sizeof(init_data));
     for (int i = 1; i < bufferCount(); ++i) {
-        AL_RUN_CHECK(alBufferData(d.buffer[i], d.format_al, init_data, sizeof(init_data), audioFormat().sampleRate()));
-        AL_RUN_CHECK(alSourceQueueBuffers(d.source, 1, &d.buffer[i]));
+        AL_ENSURE_OK(alBufferData(d.buffer[i], d.format_al, init_data, sizeof(init_data), audioFormat().sampleRate()), false);
+        AL_ENSURE_OK(alSourceQueueBuffers(d.source, 1, &d.buffer[i]), false);
         d.nextEnqueueInfo().data_size = sizeof(init_data);
         d.nextEnqueueInfo().timestamp = 0;
         d.bufferAdded();
     }
     // FIXME: Invalid Operation
-    //AL_RUN_CHECK(alSourceQueueBuffers(d.source, sizeof(d.buffer)/sizeof(d.buffer[0]), d.buffer));
+    //AL_ENSURE_OK(alSourceQueueBuffers(d.source, sizeof(d.buffer)/sizeof(d.buffer[0]), d.buffer), false);
     alSourcePlay(d.source);
 
     d.state = 0;
@@ -418,9 +397,9 @@ bool AudioOutputOpenAL::write(const QByteArray& data)
     SCOPE_LOCK_CONTEXT();
     ALuint buf;
     //unqueues a set of buffers attached to a source
-    AL_RUN_CHECK(alSourceUnqueueBuffers(d.source, 1, &buf));
-    AL_RUN_CHECK(alBufferData(buf, d.format_al, data.constData(), data.size(), audioFormat().sampleRate()));
-    AL_RUN_CHECK(alSourceQueueBuffers(d.source, 1, &buf));
+    AL_ENSURE_OK(alSourceUnqueueBuffers(d.source, 1, &buf), false);
+    AL_ENSURE_OK(alBufferData(buf, d.format_al, data.constData(), data.size(), audioFormat().sampleRate()), false);
+    AL_ENSURE_OK(alSourceQueueBuffers(d.source, 1, &buf), false);
     return true;
 }
 
@@ -448,7 +427,7 @@ int AudioOutputOpenAL::getPlayedCount()
 bool AudioOutputOpenAL::deviceSetVolume(qreal value)
 {
     SCOPE_LOCK_CONTEXT();
-    AL_RUN_CHECK(alListenerf(AL_GAIN, value));
+    AL_ENSURE_OK(alListenerf(AL_GAIN, value), false);
     return true;
 }
 
