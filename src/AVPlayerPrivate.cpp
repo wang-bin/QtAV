@@ -123,9 +123,9 @@ AVPlayer::Private::Private()
 #endif //QTAV_HAVE(CEDARV)
             << VideoDecoderId_FFmpeg;
     ao_ids
- #if QTAV_HAVE(PULSEAUDIO)
+#if QTAV_HAVE(PULSEAUDIO)
             << AudioOutputId_Pulse
- #endif
+#endif
 #if QTAV_HAVE(OPENAL)
             << AudioOutputId_OpenAL
 #endif
@@ -325,7 +325,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         foreach (AudioOutputId aoid, ao_ids) {
             qDebug("trying audio output '%s'", AudioOutputFactory::name(aoid).c_str());
             ao = AudioOutputFactory::create(aoid);
-            if (ao) {
+            if (ao/* && ao->open()*/) {
                 qDebug("audio output found.");
                 QObject::connect(ao, SIGNAL(volumeReported(qreal)), player, SIGNAL(volumeReported(qreal)));
                 QObject::connect(ao, SIGNAL(muteReported(bool)), player, SIGNAL(muteReported(bool)));
@@ -374,11 +374,14 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     if (ao)
         adec->resampler()->setOutAudioFormat(ao->audioFormat());
+    // no need to set resampler if AudioFrame is used
+#if !USE_AUDIO_FRAME
     adec->resampler()->inAudioFormat().setSampleFormatFFmpeg(avctx->sample_fmt);
     adec->resampler()->inAudioFormat().setSampleRate(avctx->sample_rate);
     adec->resampler()->inAudioFormat().setChannels(avctx->channels);
     adec->resampler()->inAudioFormat().setChannelLayoutFFmpeg(avctx->channel_layout);
     adec->prepare();
+#endif
     if (!athread) {
         qDebug("new audio thread");
         athread = new AudioThread(player);
