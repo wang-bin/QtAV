@@ -63,7 +63,6 @@ public:
         PaError err = paNoError;
         if ((err = Pa_Initialize()) != paNoError) {
             qWarning("Error when init portaudio: %s", Pa_GetErrorText(err));
-            available = false;
             return;
         }
         initialized = true;
@@ -126,8 +125,6 @@ bool AudioOutputPortAudio::write(const QByteArray& data)
     DPTR_D(AudioOutputPortAudio);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
-    if (!d.available)
-        return false;
     if (Pa_IsStreamStopped(d.stream))
         Pa_StartStream(d.stream);
     PaError err = Pa_WriteStream(d.stream, data.constData(), data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
@@ -181,21 +178,17 @@ bool AudioOutputPortAudio::close()
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     resetStatus();
-    bool available_old = d.available;
-    d.available = false;
     PaError err = paNoError;
     if (!d.stream) {
         return true;
     }
     err = Pa_StopStream(d.stream); //may be already stopped: paStreamIsStopped
     if (err != paNoError) {
-        d.available = available_old;
         qWarning("Stop portaudio stream error: %s", Pa_GetErrorText(err));
         //return err == paStreamIsStopped;
     }
     err = Pa_CloseStream(d.stream);
     if (err != paNoError) {
-        d.available = available_old;
         qWarning("Close portaudio stream error: %s", Pa_GetErrorText(err));
         return false;
     }

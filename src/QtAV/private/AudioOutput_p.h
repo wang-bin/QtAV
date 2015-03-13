@@ -24,7 +24,7 @@
 #define QTAV_AUDIOOUTPUT_P_H
 
 #include <QtAV/private/AVOutput_p.h>
-#include <QtAV/AudioFrame.h>
+#include <QtAV/AudioFormat.h>
 #include <QtCore/QQueue>
 #include <QtCore/QVector>
 #include <limits>
@@ -63,6 +63,7 @@ public:
       , index_enqueue(-1)
       , index_deuqueue(-1)
     {
+        available = false;
         frame_infos.resize(nb_buffers);
     }
     virtual ~AudioOutputPrivate(){}
@@ -123,6 +124,7 @@ public:
         index_deuqueue = (index_deuqueue + 1) % frame_infos.size();
     }
     void resetStatus() {
+        available = false;
         play_pos = 0;
         processed_remain = 0;
 #if AO_USE_TIMER
@@ -142,7 +144,7 @@ public:
     qreal speed;
     AudioFormat format;
     QByteArray data;
-    AudioFrame audio_frame;
+    //AudioFrame audio_frame;
     quint32 nb_buffers;
     qint32 buffer_size;
     int features;

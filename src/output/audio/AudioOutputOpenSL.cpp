@@ -106,7 +106,6 @@ public:
         SL_RUN_CHECK(slCreateEngine(&engineObject, 0, 0, 0, 0, 0));
         SL_RUN_CHECK((*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE));
         SL_RUN_CHECK((*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engine));
-        available = false;
     }
     ~AudioOutputOpenSLPrivate() {
         if (engineObject)
@@ -185,7 +184,6 @@ AudioOutput::BufferControl AudioOutputOpenSL::bufferControl() const
 bool AudioOutputOpenSL::open()
 {
     DPTR_D(AudioOutputOpenSL);
-    d.available = false;
     resetStatus();
     SLDataLocator_BufferQueue bufferQueueLocator = { SL_DATALOCATOR_BUFFERQUEUE, (SLuint32)d.nb_buffers };
     SLDataFormat_PCM pcmFormat = audioFormatToSL(audioFormat());
@@ -236,7 +234,6 @@ bool AudioOutputOpenSL::open()
 bool AudioOutputOpenSL::close()
 {
     DPTR_D(AudioOutputOpenSL);
-    d.available = false;
     resetStatus();
     if (d.m_playItf)
         (*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_STOPPED);

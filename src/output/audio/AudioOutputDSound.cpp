@@ -181,7 +181,6 @@ AudioOutputDSound::AudioOutputDSound(QObject *parent)
 bool AudioOutputDSound::open()
 {
     DPTR_D(AudioOutputDSound);
-    d.available = false;
     resetStatus();
     if (!d.init())
         goto error;

@@ -255,7 +255,6 @@ void AudioOutputPulsePrivate::sinkInfoCallback(pa_context *c, const pa_sink_inpu
 bool AudioOutputPulsePrivate::init(AudioOutputPulse *ao)
 {
     resetStatus();
-    available = false;
     writable_size = 0;
     loop = pa_threaded_mainloop_new();
     if (pa_threaded_mainloop_start(loop) < 0) {
@@ -399,7 +398,6 @@ bool AudioOutputPulse::close()
 {
     DPTR_D(AudioOutputPulse);
     resetStatus();
-    d.available = false;
     if (d.loop) {
         pa_threaded_mainloop_stop(d.loop);
     }
