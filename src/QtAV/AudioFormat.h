@@ -62,6 +62,8 @@ public:
     static ChannelLayout channelLayoutFromFFmpeg(qint64 clff);
     static qint64 channelLayoutToFFmpeg(ChannelLayout cl);
     static bool isPlanar(SampleFormat format);
+    static SampleFormat planarSampleFormat(SampleFormat fmt);
+    static SampleFormat packedSampleFormat(SampleFormat fmt);
 
     AudioFormat();
     AudioFormat(const AudioFormat &other);

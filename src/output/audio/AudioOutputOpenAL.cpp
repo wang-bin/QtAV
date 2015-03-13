@@ -85,9 +85,10 @@ void RegisterAudioOutputOpenAL_Man()
     if (d_func().context) \
         alcMakeContextCurrent(d_func().context)
 
-// TODO: planar
 static ALenum audioFormatToAL(const AudioFormat& fmt)
 {
+    if (fmt.isPlanar())
+        return 0;
     typedef union {
         const char* ext;
         ALenum fmt;
@@ -152,7 +153,7 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
                         {"AL_FORMAT_MONO_FLOAT32"},
                         {"AL_FORMAT_STEREO_FLOAT32"}
                     };
-                    format = alGetEnumValue(f32fmt[c].ext);
+                    format = alGetEnumValue(f32fmt[c-1].ext);
                 }
             }
         } else if (AudioFormat::SampleFormat_Double == spfmt) {
@@ -162,7 +163,7 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
                         {"AL_FORMAT_MONO_DOUBLE_EXT"},
                         {"AL_FORMAT_STEREO_DOUBLE_EXT"}
                     };
-                    format = alGetEnumValue(d64fmt[c].ext);
+                    format = alGetEnumValue(d64fmt[c-1].ext);
                 }
             }
         }
@@ -193,6 +194,21 @@ public:
     }
     ~AudioOutputOpenALPrivate() {
     }
+    bool openDevice() {
+        if (context)
+            return true;
+        const ALCchar *default_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
+        qDebug("OpenAL opening default device: %s", default_device);
+        device = alcOpenDevice(NULL); //parameter: NULL or default_device
+        if (!device) {
+            qWarning("OpenAL failed to open sound device: %s", alcGetString(0, alcGetError(0)));
+            return false;
+        }
+        qDebug("AudioOutputOpenAL creating context...");
+        context = alcCreateContext(device, NULL);
+        alcMakeContextCurrent(context);
+        return true;
+    }
 
     ALCdevice *device;
     ALCcontext *context;
@@ -213,17 +229,10 @@ AudioOutputOpenAL::AudioOutputOpenAL(QObject *parent)
     : AudioOutput(SetVolume, *new AudioOutputOpenALPrivate(), parent)
 {
     setDeviceFeatures(SetVolume);
-}
 
-AudioOutputOpenAL::~AudioOutputOpenAL()
-{
-    close();
-}
-
-bool AudioOutputOpenAL::open()
-{
     DPTR_D(AudioOutputOpenAL);
-    resetStatus();
+    // ensure we have a context to check format support
+    // TODO: AudioOutput::getDevices() => ao.setDevice() => ao.open
     QVector<QByteArray> _devices;
     const char *p = NULL;
     if (alcIsExtensionPresent(NULL, "ALC_ENUMERATE_ALL_EXT")) {
@@ -238,16 +247,20 @@ bool AudioOutputOpenAL::open()
     }
     qDebug("OpenAL devices available: %d", _devices.size());
     qDebug() << _devices;
-    const ALCchar *default_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
-    qDebug("AudioOutputOpenAL Opening default device: %s", default_device);
-    d.device = alcOpenDevice(NULL); //parameter: NULL or default_device
-    if (!d.device) {
-        qWarning("AudioOutputOpenAL Failed to open sound device: %s", alcGetString(0, alcGetError(0)));
+    d.openDevice(); //ensure isSupported(AudioFormat) works correctly
+}
+
+AudioOutputOpenAL::~AudioOutputOpenAL()
+{
+    close();
+}
+
+bool AudioOutputOpenAL::open()
+{
+    DPTR_D(AudioOutputOpenAL);
+    resetStatus();
+    if (!d.openDevice())
         return false;
-    }
-    qDebug("AudioOutputOpenAL creating context...");
-    d.context = alcCreateContext(d.device, NULL);
-    alcMakeContextCurrent(d.context);
     SCOPE_LOCK_CONTEXT();
     // alGetString: alsoft needs a context. apple does not
     qDebug("OpenAL %s vendor: %s; renderer: %s", alGetString(AL_VERSION), alGetString(AL_VENDOR), alGetString(AL_RENDERER));
@@ -350,13 +363,29 @@ bool AudioOutputOpenAL::close()
 
 bool AudioOutputOpenAL::isSupported(const AudioFormat& format) const
 {
+    DPTR_D(const AudioOutputOpenAL);
+    //if (!d.context)
+      //  d.openDevice(); //not const
     SCOPE_LOCK_CONTEXT();
     return !!audioFormatToAL(format);
 }
 
 bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
-    return sampleFormat == AudioFormat::SampleFormat_Unsigned8 || sampleFormat == AudioFormat::SampleFormat_Signed16;
+    if (sampleFormat == AudioFormat::SampleFormat_Unsigned8 || sampleFormat == AudioFormat::SampleFormat_Signed16)
+        return true;
+    if (AudioFormat::isPlanar(sampleFormat))
+        return false;
+    DPTR_D(const AudioOutputOpenAL);
+    if (!d.context)
+        return false;
+    SCOPE_LOCK_CONTEXT();
+    if (sampleFormat == AudioFormat::SampleFormat_Float)
+        return alIsExtensionPresent("AL_EXT_float32");
+    if (sampleFormat == AudioFormat::SampleFormat_Double)
+        return alIsExtensionPresent("AL_EXT_double");
+    // because preferredChannelLayout() is stero while s32 only supports >3 channels, so always false
+    return false;
 }
 
 bool AudioOutputOpenAL::isSupported(AudioFormat::ChannelLayout channelLayout) const

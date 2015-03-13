@@ -171,9 +171,7 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
 void AudioOutput::setAudioFormat(const AudioFormat& format)
 {
     DPTR_D(AudioOutput);
-    if (!isSupported(format)) {
-        return;
-    }
+    // no support check because that may require an open device(AL) while this function is called before ao.open()
     if (d.format == format)
         return;
     d.updateSampleScaleFunc();

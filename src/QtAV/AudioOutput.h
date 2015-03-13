@@ -86,10 +86,6 @@ public:
      * \return true if play successfully
      */
     bool play(const QByteArray& data, qreal pts = 0.0);
-    /*!
-     * \brief setAudioFormat
-     * Remain the old value if not supported
-     */
     void setAudioFormat(const AudioFormat& format);
     AudioFormat& audioFormat();
     const AudioFormat& audioFormat() const;

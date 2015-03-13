@@ -325,7 +325,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         foreach (AudioOutputId aoid, ao_ids) {
             qDebug("trying audio output '%s'", AudioOutputFactory::name(aoid).c_str());
             ao = AudioOutputFactory::create(aoid);
-            if (ao/* && ao->open()*/) {
+            if (ao) { //no open. open ao after format is set
                 qDebug("audio output found.");
                 QObject::connect(ao, SIGNAL(volumeReported(qreal)), player, SIGNAL(volumeReported(qreal)));
                 QObject::connect(ao, SIGNAL(muteReported(bool)), player, SIGNAL(muteReported(bool)));
@@ -350,7 +350,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         //af.setChannels(avctx->channels);
         // FIXME: workaround. planar convertion crash now!
         if (af.isPlanar()) {
-            af.setSampleFormat(ao->preferredSampleFormat());
+            af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
         }
         if (!ao->isSupported(af)) {
             if (!ao->isSupported(af.sampleFormat())) {
