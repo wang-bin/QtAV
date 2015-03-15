@@ -327,15 +327,17 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     const VideoFormat fmt(frame.format());
     d.bpp = fmt.bitsPerPixel(0);
     // http://forum.doom9.org/archive/index.php/t-160211.html
-    ColorSpace cs = ColorSpace_RGB;
-    if (fmt.isRGB()) {
-        if (fmt.isPlanar())
-            cs = ColorSpace_GBR;
-    } else {
-        if (frame.width() >= 1280 || frame.height() > 576) //values from mpv
-            cs = ColorSpace_BT709;
-        else
-            cs = ColorSpace_BT601;
+    ColorSpace cs = frame.colorSpace();// ColorSpace_RGB;
+    if (cs == ColorSpace_Unknow) {
+        if (fmt.isRGB()) {
+            if (fmt.isPlanar())
+                cs = ColorSpace_GBR;
+        } else {
+            if (frame.width() >= 1280 || frame.height() > 576) //values from mpv
+                cs = ColorSpace_BT709;
+            else
+                cs = ColorSpace_BT601;
+        }
     }
     d.colorTransform.setInputColorSpace(cs);
     d.frame = frame;

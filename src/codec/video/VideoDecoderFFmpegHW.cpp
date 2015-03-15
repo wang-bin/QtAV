@@ -266,6 +266,7 @@ VideoFrame VideoDecoderFFmpegHW::copyToFrame(const VideoFormat& fmt, int surface
         frame = frame.clone();
     }
     frame.setTimestamp(double(d.frame->pkt_pts)/1000.0);
+    d.updateColorDetails(&frame);
     return frame;
 }
 

@@ -74,9 +74,12 @@ public:
     // plane width with padded bytes for alignment.
     int planeWidth(int plane) const;
     int planeHeight(int plane) const;
-
+    // display attributes
     float displayAspectRatio() const;
     void setDisplayAspectRatio(float displayAspectRatio);
+    // TODO: pixel aspect ratio
+    ColorSpace colorSpace() const;
+    void setColorSpace(ColorSpace value);
 
     // no padded bytes
     int effectiveBytesPerLine(int plane) const;

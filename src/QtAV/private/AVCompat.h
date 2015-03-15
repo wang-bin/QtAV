@@ -44,6 +44,7 @@ extern "C"
 #include <libavutil/cpu.h>
 #include <libavutil/error.h>
 #include <libavutil/opt.h>
+#include <libavutil/parseutils.h>
 #include <libavutil/pixdesc.h>
 
 /* TODO: how to check whether we have swresample or not? how to check avresample?*/
@@ -309,7 +310,9 @@ typedef enum AVPixelFormat AVPixelFormat;
 #if !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
 const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt);
 #endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
-
+#if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 28, 101)
+enum AVColorSpace av_frame_get_colorspace(const AVFrame *frame);
+#endif
 /*
  * lavu 52.9.0 git 2c328a907978b61949fd20f7c991803174337855
  * FFmpeg >= 2.0.

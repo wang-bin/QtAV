@@ -55,6 +55,7 @@ public:
         : FramePrivate()
         , width(0)
         , height(0)
+        , color_space(ColorSpace_Unknow)
         , displayAspectRatio(0)
         , format(VideoFormat::Format_Invalid)
         , textures(4, 0)
@@ -63,10 +64,13 @@ public:
         : FramePrivate()
         , width(w)
         , height(h)
+        , color_space(ColorSpace_Unknow)
         , displayAspectRatio(0)
         , format(fmt)
         , textures(4, 0)
     {
+        if (!format.isValid())
+            return;
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
         textures.resize(format.planeCount());
@@ -76,6 +80,7 @@ public:
     }
     ~VideoFramePrivate() {}
     int width, height;
+    ColorSpace color_space;
     float displayAspectRatio;
     VideoFormat format;
     QVector<int> textures;
@@ -153,6 +158,7 @@ VideoFrame VideoFrame::clone() const
     Q_D(const VideoFrame);
     if (!d->format.isValid())
         return VideoFrame();
+
     // data may be not set (ff decoder)
     if (d->planes.isEmpty() || !d->planes.at(0)) {//d->data.size() < width()*height()) { // at least width*height
         // maybe in gpu memory, then bits() is not set
@@ -167,10 +173,12 @@ VideoFrame VideoFrame::clone() const
     for (int i = 0; i < d->format.planeCount(); ++i) {
         bytes += bytesPerLine(i)*planeHeight(i);
     }
+
     QByteArray buf(bytes, 0);
     char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
     VideoFrame f(buf, width(), height(), d->format);
-    for (int i = 0; i < d->format.planeCount(); ++i) {
+    const int nb_planes = d->format.planeCount();
+    for (int i = 0; i < nb_planes; ++i) {
         f.setBits((quint8*)dst, i);
         f.setBytesPerLine(bytesPerLine(i), i);
         const int plane_size = bytesPerLine(i)*planeHeight(i);
@@ -180,6 +188,7 @@ VideoFrame VideoFrame::clone() const
     f.d_ptr->metadata = d->metadata; // need metadata?
     f.setTimestamp(d->timestamp);
     f.setDisplayAspectRatio(d->displayAspectRatio);
+    f.setColorSpace(d->color_space);
     return f;
 }
 
@@ -285,6 +294,16 @@ float VideoFrame::displayAspectRatio() const
 void VideoFrame::setDisplayAspectRatio(float displayAspectRatio)
 {
     d_func()->displayAspectRatio = displayAspectRatio;
+}
+
+ColorSpace VideoFrame::colorSpace() const
+{
+    return d_func()->color_space;
+}
+
+void VideoFrame::setColorSpace(ColorSpace value)
+{
+    d_func()->color_space = value;
 }
 
 int VideoFrame::effectiveBytesPerLine(int plane) const
@@ -466,6 +485,8 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
     f.setBits(m_cvt->outPlanes());
     f.setBytesPerLine(m_cvt->outLineSizes());
     f.setTimestamp(frame.timestamp());
+    // metadata?
+    // color space etc?
     return f;
 }
 

@@ -57,6 +57,7 @@ public:
             frame = 0;
         }
     }
+    void updateColorDetails(VideoFrame* f);
 
     AVFrame *frame; //set once and not change
 };

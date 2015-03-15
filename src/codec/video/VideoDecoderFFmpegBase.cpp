@@ -23,6 +23,17 @@
 #include "utils/Logger.h"
 
 namespace QtAV {
+
+extern ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs);
+
+void VideoDecoderFFmpegBasePrivate::updateColorDetails(VideoFrame *f)
+{
+    ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(frame));
+    if (cs != ColorSpace_Unknow)
+        cs = colorSpaceFromFFmpeg(codec_ctx->colorspace);
+    f->setColorSpace(cs);
+}
+
 VideoDecoderFFmpegBase::VideoDecoderFFmpegBase(VideoDecoderFFmpegBasePrivate &d):
     VideoDecoder(d)
 {

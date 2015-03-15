@@ -97,9 +97,18 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
         return NULL;
     return &av_pix_fmt_descriptors[pix_fmt];
 }
-
 #endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
-
+#if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 28, 101)
+enum AVColorSpace av_frame_get_colorspace(const AVFrame *frame)
+{
+    if (!frame)
+        return AVCOL_SPC_NB;
+#if LIBAV_MODULE_CHECK(LIBAVUTIL, 54, 3, 0) //has AVFrame.colorspace
+    return frame->colorspace;
+#endif
+    return AVCOL_SPC_NB;
+}
+#endif //!FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 28, 101)
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
 {
