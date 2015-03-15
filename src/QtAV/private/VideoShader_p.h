@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -99,7 +99,7 @@ public:
         // QOpenGLBuffer is shared, must initialize 1 by 1.
         for (int i = 0; i < pbo.size(); ++i)
             pbo[i] = QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer);
-        colorTransform.setOutputColorSpace(ColorTransform::RGB);
+        colorTransform.setOutputColorSpace(ColorSpace_RGB);
     }
     ~VideoMaterialPrivate();
     bool initPBO(int plane, int size);

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -24,6 +24,7 @@
 
 #include <QtCore/QSharedDataPointer>
 #include <QtGui/QMatrix4x4>
+#include <QtAV/CommonTypes.h>
 
 // TODO: kernel QGenericMatrix<M,N>
 //http://www.graficaobscura.com/matrix/index.html
@@ -39,14 +40,6 @@ namespace QtAV {
 class ColorTransform
 {
 public:
-    //http://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-5-200204-I!!PDF-E.pdf
-    // TODO: other color spaces (yuv itu.xxxx, XYZ, ...)
-    enum ColorSpace {
-        RGB,
-        GBR, // for planar gbr format in glsl
-        BT601,
-        BT709
-    };
     //http://msdn.microsoft.com/en-us/library/dd206750.aspx
     // cs: BT601 or BT709
     static const QMatrix4x4& YUV2RGB(ColorSpace cs);

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -21,19 +21,36 @@
 
 
 #include "QtAV/CommonTypes.h"
-
+#include "QtAV/private/AVCompat.h"
+/*
+ * AVColorSpace:
+ * libav11 libavutil54.3.0 pixfmt.h, ffmpeg2.1*libavutil52.48.101 frame.h
+ * ffmpeg2.5 pixfmt.h. AVFrame.colorspace
+ * earlier versions: avcodec.h, avctx.colorspace
+ */
 namespace QtAV {
 
 namespace
 {
-class RegisterMetaTypes
+static const struct RegisterMetaTypes
 {
-public:
     RegisterMetaTypes()
     {
         qRegisterMetaType<QtAV::MediaStatus>("QtAV::MediaStatus");
     }
 } _registerMetaTypes;
+}
+
+ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs)
+{
+    switch (cs) {
+    // from ffmpeg: order of coefficients is actually GBR
+    case AVCOL_SPC_RGB: return ColorSpace_GBR;
+    case AVCOL_SPC_BT709: return ColorSpace_BT709;
+    case AVCOL_SPC_BT470BG: return ColorSpace_BT601;
+    case AVCOL_SPC_SMPTE170M: return ColorSpace_BT601;
+    default: return ColorSpace_Unknow;
+    }
 }
 
 }

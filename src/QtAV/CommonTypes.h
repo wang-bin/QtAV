@@ -51,6 +51,16 @@ enum SeekType {
     AnyFrameSeek
 };
 
+//http://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-5-200204-I!!PDF-E.pdf
+// TODO: other color spaces (yuv itu.xxxx, XYZ, ...)
+enum ColorSpace {
+    ColorSpace_Unknow,
+    ColorSpace_RGB,
+    ColorSpace_GBR, // for planar gbr format(e.g. video from x264) used in glsl
+    ColorSpace_BT601,
+    ColorSpace_BT709
+};
+
 enum SurfaceType {
     HostMemorySurface,
     GLTextureSurface,

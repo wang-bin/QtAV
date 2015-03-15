@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -58,9 +58,9 @@ static const QMatrix4x4 yuv2rgb_bt709 =
 const QMatrix4x4& ColorTransform::YUV2RGB(ColorSpace cs)
 {
     switch (cs) {
-    case BT601:
+    case ColorSpace_BT601:
         return yuv2rgb_bt601;
-    case BT709:
+    case ColorSpace_BT709:
         return yuv2rgb_bt709;
     default:
         return yuv2rgb_bt601;
@@ -73,8 +73,8 @@ class ColorTransform::Private : public QSharedData
 public:
     Private()
         : recompute(true)
-        , in(ColorTransform::RGB)
-        , out(ColorTransform::RGB)
+        , in(ColorSpace_RGB)
+        , out(ColorSpace_RGB)
         , hue(0)
         , saturation(0)
         , contrast(0)
@@ -83,8 +83,8 @@ public:
     Private(const Private& other)
         : QSharedData(other)
         , recompute(true)
-        , in(ColorTransform::RGB)
-        , out(ColorTransform::RGB)
+        , in(ColorSpace_RGB)
+        , out(ColorSpace_RGB)
         , hue(0)
         , saturation(0)
         , contrast(0)
@@ -94,7 +94,7 @@ public:
 
     void reset() {
         recompute = true;
-        //in = out = ColorTransform::RGB; ///
+        //in = out = ColorSpace_RGB; ///
         hue = 0;
         saturation = 0;
         contrast = 0;
@@ -146,9 +146,9 @@ public:
         M = B*C*S*H;
         // TODO: transform to output color space other than RGB
         switch (in) {
-        case ColorTransform::RGB:
+        case ColorSpace_RGB:
             break;
-        case ColorTransform::GBR:
+        case ColorSpace_GBR:
             M *= kGBR2RGB;
             break;
         default:
@@ -156,9 +156,9 @@ public:
             break;
         }
         switch (out) {
-        case ColorTransform::RGB:
+        case ColorSpace_RGB:
             break;
-        case ColorTransform::GBR:
+        case ColorSpace_GBR:
             M = kGBR2RGB.inverted() * M;
             break;
         default:
@@ -168,7 +168,7 @@ public:
     }
 
     mutable bool recompute;
-    ColorTransform::ColorSpace in, out;
+    ColorSpace in, out;
     qreal hue, saturation, contrast, brightness;
     mutable QMatrix4x4 M; // count the transformations between spaces
 };
@@ -182,7 +182,7 @@ ColorTransform::~ColorTransform()
 {
 }
 
-ColorTransform::ColorSpace ColorTransform::inputColorSpace() const
+ColorSpace ColorTransform::inputColorSpace() const
 {
     return d->in;
 }
@@ -195,7 +195,7 @@ void ColorTransform::setInputColorSpace(ColorSpace cs)
     d->recompute = true; //TODO: only recompute color space transform
 }
 
-ColorTransform::ColorSpace ColorTransform::outputColorSpace() const
+ColorSpace ColorTransform::outputColorSpace() const
 {
     return d->out;
 }
