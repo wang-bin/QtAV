@@ -199,14 +199,6 @@ Module {
         Property { name: "videoCodecs"; type: "QStringList"; isReadonly: true }
         Property { name: "videoCodecPriority"; type: "QStringList" }
         Property { name: "videoCodecOptions"; type: "QVariantMap" }
-        Signal {
-            name: "volumeReported"
-            Parameter { name: "value"; type: "double" }
-        }
-        Signal {
-            name: "muteReported"
-            Parameter { name: "value"; type: "bool" }
-        }
         Signal { name: "loopCountChanged" }
         Signal { name: "videoOutChanged" }
         Signal { name: "paused" }

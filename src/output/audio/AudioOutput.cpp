@@ -523,4 +523,25 @@ bool AudioOutput::deviceSetMute(bool value)
     return false;
 }
 
+void AudioOutput::reportVolume(qreal value)
+{
+    if (qFuzzyCompare(value + 1.0, volume() + 1.0))
+        return;
+    DPTR_D(AudioOutput);
+    d.vol = value;
+    Q_EMIT volumeChanged(value);
+    // skip sw sample scale
+    d.sw_volume = false;
+}
+
+void AudioOutput::reportMute(bool value)
+{
+    if (value == isMute())
+        return;
+    DPTR_D(AudioOutput);
+    d.mute = value;
+    Q_EMIT muteChanged(value);
+    // skip sw sample scale
+    d.sw_mute = false;
+}
 } //namespace QtAV

@@ -327,8 +327,6 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
             ao = AudioOutputFactory::create(aoid);
             if (ao) { //no open. open ao after format is set
                 qDebug("audio output found.");
-                QObject::connect(ao, SIGNAL(volumeReported(qreal)), player, SIGNAL(volumeReported(qreal)));
-                QObject::connect(ao, SIGNAL(muteReported(bool)), player, SIGNAL(muteReported(bool)));
                 break;
             }
         }

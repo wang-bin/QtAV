@@ -232,7 +232,10 @@ public:
      * \brief setFrameRate
      * Force the (video) frame rate to a given value.
      * Call it before playback start.
-     * \param <=0: ignore and normal playback
+     * If frame rate is set to a valid value(>0), the clock type will be set to
+     * User configuration of AVClock::ClockType and autoClock will be ignored.
+     * \param value <=0: ignore the value. normal playback ClockType and AVCloc
+     * >0: force to a given (video) frame rate
      */
     void setFrameRate(qreal value);
     qreal forcedFrameRate() const;
@@ -383,15 +386,6 @@ signals:
     void contrastChanged(int val);
     void hueChanged(int val);
     void saturationChanged(int val);
-    /*!
-     * \brief volumeReported
-     * Volume can be changed by per-app volume control from system outside this library. Useful for synchronizing ui to system.
-     * Volume control from QtAV may emit this signal too(pulseaudio).
-     * Only emitted by supported backends, e.g. pulseaudio
-     * NOTE: volumeReported and muteReported can be emitted even if value is not changed. They are emitted at the same time for some backends.
-     */
-    void volumeReported(qreal);
-    void muteReported(bool);
 private slots:
     void loadInternal(); // simply load
     void unloadInternal();

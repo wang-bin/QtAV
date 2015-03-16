@@ -62,15 +62,6 @@ import QtAV 1.5
 Item {
     id: video
 
-    /*!
-     * \brief volumeReported
-     * Volume can be changed by per-app volume control from system outside this library. Useful for synchronizing ui to system.
-     * Volume control from QtAV may emit this signal too(pulseaudio).
-     * Only emitted by supported backends, e.g. pulseaudio
-     * NOTE: volumeReported and muteReported can be emitted even if value is not changed. They are emitted at the same time for some backends.
-     */
-    signal volumeReported(real value)
-    signal muteReported(bool value)
     property alias fastSeek: player.fastSeek
     property alias opengl: videoOut.opengl
     property alias timeout: player.timeout
@@ -359,8 +350,6 @@ Item {
         onPaused:  video.paused()
         onStopped: video.stopped()
         onPlaying: video.playing()
-        onVolumeReported: video.volumeReported(value)
-        onMuteReported: video.muteReported(value)
     }
 
     /*!

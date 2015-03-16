@@ -172,7 +172,7 @@ void MainWindow::initPlayer()
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
     connect(mpPlayer, SIGNAL(speedChanged(qreal)), this, SLOT(onSpeedChange(qreal)));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), this, SLOT(onPositionChange(qint64)));
-    connect(mpPlayer, SIGNAL(volumeReported(qreal)), SLOT(syncVolumeUi(qreal)));
+    //connect(mpPlayer, SIGNAL(volumeChanged(qreal)), SLOT(syncVolumeUi(qreal)));
     connect(mpVideoEQ, SIGNAL(brightnessChanged(int)), this, SLOT(onBrightnessChanged(int)));
     connect(mpVideoEQ, SIGNAL(contrastChanged(int)), this, SLOT(onContrastChanged(int)));
     connect(mpVideoEQ, SIGNAL(hueChanegd(int)), this, SLOT(onHueChanged(int)));
@@ -1256,7 +1256,7 @@ void MainWindow::onTimeSliderHover(int pos, int value)
 
 void MainWindow::onTimeSliderLeave()
 {
-    if (m_preview && m_preview)
+    if (m_preview && m_preview->isVisible())
         m_preview->hide();
 }
 
@@ -1463,7 +1463,7 @@ void MainWindow::changeClockType(QAction *action)
 
 void MainWindow::syncVolumeUi(qreal value)
 {
-    const int  v(value/kVolumeInterval);
+    const int v(value/kVolumeInterval);
     if (mpVolumeSlider->value() == v)
         return;
     mpVolumeSlider->setValue(v);

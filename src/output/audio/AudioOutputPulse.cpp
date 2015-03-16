@@ -165,9 +165,8 @@ static void sink_input_info_cb(pa_context *c, const pa_sink_input_info *i, int e
     if (eol)
         return;
     AudioOutputPulse *ao = reinterpret_cast<AudioOutputPulse*>(userdata);
-    //signal may be protected in Qt4
-    QMetaObject::invokeMethod(ao,  "volumeReported", Q_ARG(qreal, (qreal)pa_cvolume_avg(&i->volume)/qreal(PA_VOLUME_NORM)));
-    QMetaObject::invokeMethod(ao, "muteReported", Q_ARG(bool, i->mute));
+    QMetaObject::invokeMethod(ao,  "reportVolume", Q_ARG(qreal, (qreal)pa_cvolume_avg(&i->volume)/qreal(PA_VOLUME_NORM)));
+    QMetaObject::invokeMethod(ao, "reportMute", Q_ARG(bool, i->mute));
 }
 
 static void sink_input_event(pa_context* c, pa_subscription_event_type_t t, uint32_t idx, AudioOutputPulse* ao)
