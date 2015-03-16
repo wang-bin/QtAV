@@ -314,7 +314,7 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
         if (!m_reader.readFrame()) {
             avcodec_close(codec_ctx);
             codec_ctx = 0;
-            return false;
+            continue;
         }
         if (m_reader.stream() != ss)
             continue;

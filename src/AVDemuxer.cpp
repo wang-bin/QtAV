@@ -286,7 +286,6 @@ public:
 
     AVDictionary *dict;
     QVariantHash options;
-
     typedef struct StreamInfo {
         StreamInfo()
             : stream(-1)
@@ -369,12 +368,11 @@ bool AVDemuxer::readFrame()
     d->interrupt_hanlder->end();
 
     if (ret < 0) {
-        //ffplay: AVERROR_EOF || url_d->eof() || avsq.empty()
         //end of file. FIXME: why no d->eof if replaying by seek(0)?
+        // ffplay also check pb && pb->error and exit read thread
         if (ret == AVERROR_EOF
                 // AVFMT_NOFILE(e.g. network streams) stream has no pb
-                // ffplay check pb && pb->error, mpv does not
-                || d->format_ctx->pb/* && d->format_ctx->pb->error*/) {
+                || avio_feof(d->format_ctx->pb)) {
             if (!d->eof) {
                 d->eof = true;
                 d->started = false;
@@ -382,8 +380,11 @@ bool AVDemuxer::readFrame()
                 qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
             }
-            // we have to detect false is error or d->eof
-            return ret == AVERROR_EOF; //frames after d->eof are d->eof frames
+            return false;
+        }
+        if (ret == AVERROR(EAGAIN)) {
+            qWarning("demuxer EAGAIN :%s", av_err2str(ret));
+            return false;
         }
         AVError::ErrorCode ec(AVError::ReadError);
         QString msg(tr("error reading stream data"));
@@ -653,11 +654,13 @@ bool AVDemuxer::load()
     setMediaStatus(LoadingMedia);
     int ret;
     d->applyOptionsForDict();
+    // check special dict keys
     // d->format_forced can be set from AVFormatContext.format_whitelist
     if (!d->format_forced.isEmpty()) {
         d->input_format = av_find_input_format(d->format_forced.toUtf8().constData());
         qDebug() << "force format: " << d->format_forced;
     }
+    // used dict entries will be removed in avformat_open_input
     if (d->input) {
         d->format_ctx->pb = (AVIOContext*)d->input->avioContext();
         d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
@@ -706,6 +709,12 @@ bool AVDemuxer::load()
     d->seekable = d->checkSeekable();
     if (was_seekable != d->seekable)
         emit seekableChanged();
+    qDebug("avfmtctx.flag: %d", d->format_ctx->flags);
+    qDebug("AVFMT_NOTIMESTAMPS: %d, AVFMT_TS_DISCONT: %d, AVFMT_NO_BYTE_SEEK:%d"
+           , d->format_ctx->flags&AVFMT_NOTIMESTAMPS
+           , d->format_ctx->flags&AVFMT_TS_DISCONT
+           , d->format_ctx->flags&AVFMT_NO_BYTE_SEEK
+           );
     return true;
 }
 

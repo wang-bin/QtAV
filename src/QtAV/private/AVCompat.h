@@ -127,7 +127,9 @@ extern "C"
 
 void ffmpeg_version_print();
 
-
+#if !FFMPEG_MODULE_CHECK(LIBAVFORMAT, 56, 4, 101)
+int avio_feof(AVIOContext *s);
+#endif
 //TODO: always inline
 /* --gnu option of the RVCT compiler also defines __GNUC__ */
 #if defined(Q_CC_GNU) && !defined(Q_CC_RVCT)

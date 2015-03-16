@@ -27,6 +27,16 @@
 
 #endif //av_err2str
 
+#if !FFMPEG_MODULE_CHECK(LIBAVFORMAT, 56, 4, 101)
+int avio_feof(AVIOContext *s)
+{
+#if QTAV_USE_FFMPEG(LIBAVFORMAT)
+    return url_feof(s);
+#else
+    return s && s->eof_reached;
+#endif
+}
+#endif
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 32, 0)
 static const struct {
     const char *name;
