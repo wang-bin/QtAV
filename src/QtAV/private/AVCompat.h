@@ -47,6 +47,7 @@ extern "C"
 #include <libavutil/dict.h>
 #include <libavutil/log.h>
 #include <libavutil/mathematics.h> //AV_ROUND_UP, av_rescale_rnd for libav
+#include <libavutil/channel_layout.h>
 #include <libavutil/cpu.h>
 #include <libavutil/error.h>
 #include <libavutil/opt.h>
