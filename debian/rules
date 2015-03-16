@@ -1,12 +1,10 @@
 #!/usr/bin/make -f
 
 DEB_BUILD_MULTIARCH ?= $(shell dpkg-architecture -qDEB_BUILD_MULTIARCH)
+export QT_SELECT=qt5
 
 %:
 	dh $@ --parallel
-
-override_dh_auto_configure:
-	qmake
 
 override_dh_auto_clean:
 	dh_auto_clean
