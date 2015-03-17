@@ -39,6 +39,11 @@ public:
     virtual ~BlockingQueue() {}
 
     void setCapacity(int max); //enqueue is allowed if less than capacity
+    /*!
+     * \brief setThreshold
+     * do nothing if min >= capacity()
+     * \param min
+     */
     void setThreshold(int min); //wake up and enqueue
 
     void put(const T& t);
@@ -80,7 +85,7 @@ protected:
     virtual void onTake(const T&) {}
 
     bool block_empty, block_full;
-    int cap, thres; //static?
+    int cap, thres;
     Container<T> queue;
 private:
     mutable QReadWriteLock lock; //locker in const func
@@ -109,6 +114,8 @@ void BlockingQueue<T, Container>::setCapacity(int max)
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     cap = max;
+    if (thres > cap)
+        thres = cap;
 }
 
 template <typename T, template <typename> class Container>
@@ -117,6 +124,8 @@ void BlockingQueue<T, Container>::setThreshold(int min)
     //qDebug("queue threshold==>>%d", min);
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
+    if (min > cap)
+        return;
     thres = min;
 }
 
@@ -134,8 +143,13 @@ void BlockingQueue<T, Container>::put(const T& t)
             cond_full.wait(&lock);
     }
     queue.enqueue(t);
-    cond_empty.wakeAll();
-    onPut(t);
+    onPut(t); // emit bufferProgressChanged here if buffering
+    if (checkEnough()) {
+        cond_empty.wakeAll(); //emit buffering finished here
+        //qDebug("queue is enough: %d/%d~%d", queue.size(), thres, cap);
+    } else {
+        //qDebug("buffering: %d/%d~%d", queue.size(), thres, cap);
+    }
 }
 
 template <typename T, template <typename> class Container>
@@ -143,15 +157,16 @@ T BlockingQueue<T, Container>::take()
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (!checkEnough())
+    if (!checkEnough()) {
         cond_full.wakeAll();
-    if (checkEmpty()) {//TODO:always block?
-        //qDebug("queue empty!!");
-        if (empty_callback) {
-            empty_callback->call();
+        if (checkEmpty()) {//TODO:always block?
+            //qDebug("queue empty!!");
+            if (empty_callback) {
+                empty_callback->call();
+            }
+            if (block_empty)
+                cond_empty.wait(&lock); //block when empty only
         }
-        if (block_empty)
-            cond_empty.wait(&lock);
     }
     //TODO: Why still empty?
     if (checkEmpty()) {
@@ -162,7 +177,7 @@ T BlockingQueue<T, Container>::take()
         return T();
     }
     T t(queue.dequeue());
-    onTake(t);
+    onTake(t); // emit start buffering here if empty
     return t;
 }
 
@@ -211,6 +226,7 @@ void BlockingQueue<T, Container>::clear()
     cond_full.wakeAll();
     queue.clear();
     //TODO: assert not empty
+    onTake(T());
 }
 
 template <typename T, template <typename> class Container>
