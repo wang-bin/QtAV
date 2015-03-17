@@ -28,6 +28,12 @@
 
 namespace QtAV {
 
+/*
+ * take empty: start buffering, block at next take if still empty
+ * take enough: start to put more packets
+ * put enough: end buffering, end take block
+ * put full: stop putting more packets
+ */
 class PacketBuffer : BlockingQueue<Packet, QQueue>
 {
 public:
@@ -55,13 +61,15 @@ public:
      * Current buffered value in the queue
      */
     int buffered() const;
+    bool isBuffering() const;
     /*!
      * \brief bufferProgress
      * How much of the data buffer is currently filled, from 0.0 (empty) to 1.0 (enough or full).
-     * bufferProgress() == 1
+     * bufferProgress() can be less than 1 if not isBuffering();
      * \return Percent of buffered time, bytes or packets.
      */
     qreal bufferProgress() const;
+    qreal bufferSpeed() const;
 
 protected:
     bool checkEnough() const Q_DECL_OVERRIDE;
@@ -70,6 +78,7 @@ protected:
     void onPut(const Packet &) Q_DECL_OVERRIDE;
 private:
     BufferMode m_mode;
+    bool m_buffering;
     // bytes or count
     quint32 m_buffer;
     qint32 m_value0, m_value1;

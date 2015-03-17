@@ -25,6 +25,7 @@ namespace QtAV {
 
 PacketBuffer::PacketBuffer()
     : m_mode(BufferTime)
+    , m_buffering(true) // in buffering state at the beginning
     , m_buffer(0)
     , m_value0(0)
     , m_value1(0)
@@ -70,6 +71,11 @@ int PacketBuffer::buffered() const
     return m_value1 - m_value0;
 }
 
+bool PacketBuffer::isBuffering() const
+{
+    return m_buffering;
+}
+
 qreal PacketBuffer::bufferProgress() const
 {
     const qreal p = qreal(buffered())/qreal(bufferValue());
@@ -78,12 +84,12 @@ qreal PacketBuffer::bufferProgress() const
 
 bool PacketBuffer::checkEnough() const
 {
-    return m_value1 - m_value0 >= m_buffer;
+    return buffered() >= bufferValue();
 }
 
 bool PacketBuffer::checkFull() const
 {
-    return m_value1 - m_value0 >= 2*m_buffer;
+    return buffered() >= 2*bufferValue();
 }
 
 void PacketBuffer::onPut(const Packet &p)
@@ -95,10 +101,19 @@ void PacketBuffer::onPut(const Packet &p)
     } else {
         m_value1++;
     }
+    // TODO: compute buffer speed (and auto set the best bufferValue)
+    if (!m_buffering)
+        return;
+    if (checkEnough()) {
+        m_buffering = false;
+    }
 }
 
 void PacketBuffer::onTake(const Packet &p)
 {
+    if (checkEmpty()) {
+        m_buffering = true;
+    }
     if (queue.isEmpty()) {
         m_value0 = 0;
         m_value1 = 0;
