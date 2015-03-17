@@ -76,6 +76,9 @@ protected:
     virtual bool checkEmpty() const;
     virtual bool checkEnough() const;
 
+    virtual void onPut(const T&) {}
+    virtual void onTake(const T&) {}
+
     bool block_empty, block_full;
     int cap, thres; //static?
     Container<T> queue;
@@ -132,6 +135,7 @@ void BlockingQueue<T, Container>::put(const T& t)
     }
     queue.enqueue(t);
     cond_empty.wakeAll();
+    onPut(t);
 }
 
 template <typename T, template <typename> class Container>
@@ -157,7 +161,9 @@ T BlockingQueue<T, Container>::take()
         }
         return T();
     }
-    return queue.dequeue();
+    T t(queue.dequeue());
+    onTake(t);
+    return t;
 }
 
 template <typename T, template <typename> class Container>
