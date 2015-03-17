@@ -24,10 +24,16 @@
 
 /*!
   NOTE: include this at last
-  TODO: runtime symble check use dllapi project? how ffmpeg version defined?
  */
 #define QTAV_USE_FFMPEG(MODULE) (MODULE##_VERSION_MICRO >= 100)
 #define QTAV_USE_LIBAV(MODULE)  !QTAV_USE_FFMPEG(MODULE)
+#define FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) \
+    (QTAV_USE_FFMPEG(MODULE) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO))
+#define LIBAV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) \
+    (QTAV_USE_LIBAV(MODULE) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO))
+#define AV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO, MINOR2, MICRO2) \
+    (LIBAV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) || FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR2, MICRO2))
+
 #include "QtAV_Global.h"
 #ifdef __cplusplus
 extern "C"
@@ -79,22 +85,6 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif /*__cplusplus*/
-
-/* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
- * a is the major version
- * b and c the minor and micro versions of libav
- * d and e the minor and micro versions of FFmpeg */
-#define LIBAVCODEC_VERSION_CHECK( a, b, c, d, e ) \
-    ( (LIBAVCODEC_VERSION_MICRO <  100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, b, c ) ) || \
-      (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( a, d, e ) ) )
-
-#define FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) \
-    ( (MODULE##_VERSION_MICRO >= 100) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO) )
-#define LIBAV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) \
-    ( (MODULE##_VERSION_MICRO < 100) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO) )
-#define AV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO, MINOR2, MICRO2) \
-    ( LIBAV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) || FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR2, MICRO2))
-// TODO: confirm vlc's version check code
 
 /*!
  * Guide to uniform the api for different FFmpeg version(or other libraries)
@@ -343,7 +333,7 @@ int av_samples_copy(uint8_t **dst, uint8_t * const *src, int dst_offset,
 
 // < ffmpeg 1.0
 //#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 59, 100)
-#if LIBAVCODEC_VERSION_CHECK(54, 25, 0, 51, 100)
+#if AV_MODULE_CHECK(LIBAVCODEC, 54, 25, 0, 51, 100)
 #define QTAV_CODEC_ID(X) AV_CODEC_ID_##X
 #else
 typedef enum CodecID AVCodecID;
@@ -355,7 +345,7 @@ typedef enum CodecID AVCodecID;
  * since libav10.0: 10.2 avcodec55.34.1, avutil-53.3.0
  * the same as avcodec_alloc_frame() (deprecated since 2.2). AVFrame was in avcodec.h, now in avutil/frame.h
  */
-#if !LIBAVCODEC_VERSION_CHECK(55, 34, 0, 18, 100)
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 34, 0, 18, 100)
 #define av_frame_alloc() avcodec_alloc_frame()
 #if QTAV_USE_LIBAV(LIBAVCODEC) || FFMPEG_MODULE_CHECK(LIBAVCODEC, 54, 59, 100)
 #define av_frame_free(f) avcodec_free_frame(f)
