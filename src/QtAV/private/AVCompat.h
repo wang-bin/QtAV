@@ -53,6 +53,10 @@ extern "C"
 #include <libavutil/parseutils.h>
 #include <libavutil/pixdesc.h>
 
+#if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 51, 73, 101)
+#include <libavutil/channel_layout.h>
+#endif
+
 /* TODO: how to check whether we have swresample or not? how to check avresample?*/
 #include <libavutil/samplefmt.h>
 #if QTAV_HAVE(SWRESAMPLE)

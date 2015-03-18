@@ -4,12 +4,12 @@ Section: libs
 Priority: extra
 Maintainer: Sou Bunnbu <iyzsong@gmail.com>
 Build-Depends: debhelper (>= 9),
- qt5-default, qt5-qmake, libqt5opengl5-dev, qtdeclarative5-dev,
- libass-dev,
+ qt5-qmake, libqt5opengl5-dev, qtdeclarative5-dev,
  libavutil-dev,
  libavresample-dev,
  libavcodec-dev,
  libavformat-dev,
+ libass-dev,
  libswscale-dev,
  libavfilter-dev,
  libopenal-dev,
