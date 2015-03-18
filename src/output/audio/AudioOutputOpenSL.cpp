@@ -215,19 +215,8 @@ bool AudioOutputOpenSL::open()
 #endif
     // Volume interface
     //SL_RUN_CHECK_FALSE((*d.m_playerObject)->GetInterface(d.m_playerObject, SL_IID_VOLUME, &d.m_volumeItf));
-
-    const int kBufferSize = 1024*4;
-    static char init_data[kBufferSize];
-    memset(init_data, 0, sizeof(init_data));
-    for (quint32 i = 0; i < d.nb_buffers; ++i) {
-        SL_RUN_CHECK_FALSE((*d.m_bufferQueueItf)->Enqueue(d.m_bufferQueueItf, init_data, sizeof(init_data)));
-        d.nextEnqueueInfo().data_size = sizeof(init_data);
-        d.nextEnqueueInfo().timestamp = 0;
-        d.bufferAdded();
-        d.buffers_queued++;
-    }
-    SL_RUN_CHECK_FALSE((*d.m_playItf)->SetPlayState(d.m_playItf, SL_PLAYSTATE_PLAYING));
     d.available = true;
+    playInitialData();
     return true;
 }
 

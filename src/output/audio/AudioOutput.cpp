@@ -132,6 +132,21 @@ bool AudioOutput::play(const QByteArray &data, qreal pts)
     return play();
 }
 
+void AudioOutput::playInitialData()
+{
+    DPTR_D(AudioOutput);
+    const char c = (d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8
+                    || d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8Planar)
+            ? 0x80 : 0;
+    for (int i = 1; i < bufferCount(); ++i) {
+        write(QByteArray(bufferSize(), c)); // fill silence byte, not always 0. AudioFormat.silenceByte
+        d.nextEnqueueInfo().data_size = sizeof(bufferSize());
+        d.nextEnqueueInfo().timestamp = 0;
+        d.bufferAdded();
+    }
+    play();
+}
+
 bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
 {
     DPTR_D(AudioOutput);

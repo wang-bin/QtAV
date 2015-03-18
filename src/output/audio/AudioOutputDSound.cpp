@@ -187,11 +187,7 @@ bool AudioOutputDSound::open()
     if (!d.createDSoundBuffers())
         goto error;
     d.available = true;
-/*
-    for (int i = 0; i < bufferCount(); ++i) {
-        write(QByteArray(bufferSize(), 0));
-        d.bufferAdded();
-    }*/
+    //playInitialData();
     return true;
 error:
     d.unloadDll();

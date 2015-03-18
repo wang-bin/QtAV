@@ -213,7 +213,7 @@ public:
     ALCdevice *device;
     ALCcontext *context;
     ALenum format_al;
-    ALuint buffer[kBufferCount];
+    QVector<ALuint> buffer;
     ALuint source;
     ALint state;
     QMutex mutex;
@@ -261,6 +261,7 @@ bool AudioOutputOpenAL::open()
     resetStatus();
     if (!d.openDevice())
         return false;
+    {
     SCOPE_LOCK_CONTEXT();
     // alGetString: alsoft needs a context. apple does not
     qDebug("OpenAL %s vendor: %s; renderer: %s", alGetString(AL_VERSION), alGetString(AL_VENDOR), alGetString(AL_RENDERER));
@@ -274,7 +275,8 @@ bool AudioOutputOpenAL::open()
     //init params. move to another func?
     d.format_al = audioFormatToAL(audioFormat());
 
-    alGenBuffers(kBufferCount, d.buffer);
+    d.buffer.resize(bufferCount());
+    alGenBuffers(d.buffer.size(), d.buffer.data());
     err = alGetError();
     if (err != AL_NO_ERROR) {
         qWarning("Failed to generate OpenAL buffers: %s", alGetString(err));
@@ -284,7 +286,7 @@ bool AudioOutputOpenAL::open()
     err = alGetError();
     if (err != AL_NO_ERROR) {
         qWarning("Failed to generate OpenAL source: %s", alGetString(err));
-        alDeleteBuffers(kBufferCount, d.buffer);
+        alDeleteBuffers(d.buffer.size(), d.buffer.constData());
         goto fail;
     }
 
@@ -294,26 +296,11 @@ bool AudioOutputOpenAL::open()
     alSource3f(d.source, AL_POSITION, 0.0, 0.0, 0.0);
     alSource3f(d.source, AL_VELOCITY, 0.0, 0.0, 0.0);
     alListener3f(AL_POSITION, 0.0, 0.0, 0.0);
-
-    //// Initial all buffers. TODO: move to open?
-    //alSourcef(d.source, AL_GAIN, d.vol);
-
-    static char init_data[kBufferSize];
-    memset(init_data, 0, sizeof(init_data));
-    for (int i = 1; i < bufferCount(); ++i) {
-        AL_ENSURE_OK(alBufferData(d.buffer[i], d.format_al, init_data, sizeof(init_data), audioFormat().sampleRate()), false);
-        AL_ENSURE_OK(alSourceQueueBuffers(d.source, 1, &d.buffer[i]), false);
-        d.nextEnqueueInfo().data_size = sizeof(init_data);
-        d.nextEnqueueInfo().timestamp = 0;
-        d.bufferAdded();
-    }
-    // FIXME: Invalid Operation
-    //AL_ENSURE_OK(alSourceQueueBuffers(d.source, sizeof(d.buffer)/sizeof(d.buffer[0]), d.buffer), false);
-    alSourcePlay(d.source);
-
     d.state = 0;
     d.available = true;
     qDebug("AudioOutputOpenAL open ok...");
+    }
+    playInitialData();
     return true;
 fail:
     alcMakeContextCurrent(NULL);
@@ -341,7 +328,7 @@ bool AudioOutputOpenAL::close()
     ALuint buf;
     while (processed-- > 0) { alSourceUnqueueBuffers(d.source, 1, &buf); }
     alDeleteSources(1, &d.source);
-    alDeleteBuffers(kBufferCount, d.buffer);
+    alDeleteBuffers(d.buffer.size(), d.buffer.constData());
 
     alcMakeContextCurrent(NULL);
     qDebug("alcDestroyContext(%p)", d.context);
@@ -363,7 +350,7 @@ bool AudioOutputOpenAL::close()
 
 bool AudioOutputOpenAL::isSupported(const AudioFormat& format) const
 {
-    DPTR_D(const AudioOutputOpenAL);
+    //DPTR_D(const AudioOutputOpenAL);
     //if (!d.context)
       //  d.openDevice(); //not const
     SCOPE_LOCK_CONTEXT();
@@ -424,9 +411,13 @@ bool AudioOutputOpenAL::write(const QByteArray& data)
     if (data.isEmpty())
         return false;
     SCOPE_LOCK_CONTEXT();
-    ALuint buf;
-    //unqueues a set of buffers attached to a source
-    AL_ENSURE_OK(alSourceUnqueueBuffers(d.source, 1, &buf), false);
+    ALuint buf = 0;
+    if (d.state <= 0) { //d.state used for filling initial data
+        buf = d.buffer[(-d.state)%bufferCount()];
+        --d.state;
+    } else {
+        AL_ENSURE_OK(alSourceUnqueueBuffers(d.source, 1, &buf), false);
+    }
     AL_ENSURE_OK(alBufferData(buf, d.format_al, data.constData(), data.size(), audioFormat().sampleRate()), false);
     AL_ENSURE_OK(alSourceQueueBuffers(d.source, 1, &buf), false);
     return true;

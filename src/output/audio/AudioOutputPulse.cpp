@@ -386,10 +386,7 @@ bool AudioOutputPulse::open()
         close();
         return false;
     }
-    for (int i = 0; i < bufferCount(); ++i) {
-        write(QByteArray(bufferSize(), 0));
-        d.bufferAdded();
-    }
+    playInitialData();
     return true;
 }
 
