@@ -240,6 +240,7 @@ void AVPlayer::setFrameRate(qreal value)
 {
     d->force_fps = value;
     // clock set here will be reset in playInternal()
+    // also we can't change user's setting of ClockType and autoClock here if force frame rate is disabled.
 }
 
 qreal AVPlayer::forcedFrameRate() const

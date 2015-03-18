@@ -25,10 +25,9 @@
 #include <QtCore/QAtomicInt>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
-#include <QtCore/QQueue>
 #include <QtCore/QRunnable>
 #include "QtAV/CommonTypes.h"
-#include "utils/BlockingQueue.h"
+#include "PacketBuffer.h"
 
 namespace QtAV {
 

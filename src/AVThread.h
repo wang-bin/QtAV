@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,13 +25,10 @@
 #include <QtCore/QRunnable>
 #include <QtCore/QScopedPointer>
 #include <QtCore/QThread>
-#include "QtAV/Packet.h"
-#include "utils/BlockingQueue.h"
+#include "PacketBuffer.h"
 //TODO: pause functions. AVOutput may be null, use AVThread's pause state
 
 namespace QtAV {
-
-typedef BlockingQueue<Packet, QQueue> PacketQueue;
 
 class AVDecoder;
 class AVThreadPrivate;
@@ -55,8 +52,7 @@ public:
     void setClock(AVClock *clock);
     AVClock* clock() const;
 
-    //void setPacketQueue(PacketQueue *queue);
-    PacketQueue* packetQueue() const;
+    PacketBuffer* packetQueue() const;
 
     void setDecoder(AVDecoder *decoder);
     AVDecoder *decoder() const;
@@ -79,7 +75,6 @@ public:
 
     // TODO: resample, resize task etc.
     void scheduleTask(QRunnable *task);
-
     //only decode video without display or skip decode audio until pts reaches
     void skipRenderUntil(qreal pts);
 

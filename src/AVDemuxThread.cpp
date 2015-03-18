@@ -23,19 +23,15 @@
 #include "QtAV/AVClock.h"
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/AVDecoder.h"
-#include "QtAV/Packet.h"
-#include "AVThread.h"
 #include "VideoThread.h"
 #include <QtCore/QTime>
-#include <QtCore/QTimer>
-#include <QtCore/QEventLoop>
 #include "utils/Logger.h"
 
 #define RESUME_ONCE_ON_SEEK 0
 
 namespace QtAV {
 
-class QueueEmptyCall : public PacketQueue::StateChangeCallback
+class QueueEmptyCall : public PacketBuffer::StateChangeCallback
 {
 public:
     QueueEmptyCall(AVDemuxThread* thread):
@@ -385,8 +381,8 @@ void AVDemuxThread::run()
     Packet pkt;
     pause(false);
     qDebug("get av queue a/v thread = %p %p", audio_thread, video_thread);
-    PacketQueue *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
-    PacketQueue *vqueue = video_thread ? video_thread->packetQueue() : 0;
+    PacketBuffer *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
+    PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
     if (aqueue) {
         aqueue->clear();
         aqueue->setBlocking(true);

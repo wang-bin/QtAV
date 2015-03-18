@@ -399,10 +399,9 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     athread->setDecoder(adec);
     player->setAudioOutput(ao);
-    int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.frame_rate);
-    int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
-    athread->packetQueue()->setCapacity(queue_max);
-    athread->packetQueue()->setThreshold(queue_min);
+    const int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.frame_rate);
+    athread->packetQueue()->setBufferMode(PacketBuffer::BufferPackets);
+    athread->packetQueue()->setBufferValue(queue_min);
     initAudioStatistics(demuxer.audioStream());
     return true;
 }
@@ -469,10 +468,9 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
     vthread->setBrightness(brightness);
     vthread->setContrast(contrast);
     vthread->setSaturation(saturation);
-    int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.frame_rate);
-    int queue_max = int(1.61803*(qreal)queue_min); //about 1 second
-    vthread->packetQueue()->setCapacity(queue_max);
-    vthread->packetQueue()->setThreshold(queue_min);
+    const int queue_min = 0.61803*qMax<qreal>(24.0, statistics.video_only.frame_rate);
+    vthread->packetQueue()->setBufferMode(PacketBuffer::BufferPackets);
+    vthread->packetQueue()->setBufferValue(queue_min);
     initVideoStatistics(demuxer.videoStream());
     return true;
 }

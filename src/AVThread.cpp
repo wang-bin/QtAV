@@ -190,9 +190,9 @@ AVClock* AVThread::clock() const
     return d_func().clock;
 }
 
-PacketQueue* AVThread::packetQueue() const
+PacketBuffer* AVThread::packetQueue() const
 {
-    return const_cast<PacketQueue*>(&d_func().packets);
+    return const_cast<PacketBuffer*>(&d_func().packets);
 }
 
 void AVThread::setDecoder(AVDecoder *decoder)
