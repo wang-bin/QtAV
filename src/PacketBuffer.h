@@ -34,7 +34,7 @@ namespace QtAV {
  * put enough: end buffering, end take block
  * put full: stop putting more packets
  */
-class PacketBuffer : BlockingQueue<Packet, QQueue>
+class PacketBuffer : public BlockingQueue<Packet, QQueue>
 {
 public:
     enum BufferMode {
@@ -55,7 +55,13 @@ public:
      */
     void setBufferValue(int value);
     int bufferValue() const;
-    //void setBufferMax(int max);
+    /*!
+     * \brief setBufferMax
+     * stop buffering if max value reached. Real value is bufferValue()*bufferMax()
+     * \param max the ratio to bufferValue(). always >= 1.0
+     */
+    void setBufferMax(qreal max);
+    qreal bufferMax() const;
     /*!
      * \brief buffered
      * Current buffered value in the queue
@@ -76,9 +82,17 @@ protected:
     bool checkFull() const Q_DECL_OVERRIDE;
     void onTake(const Packet &) Q_DECL_OVERRIDE;
     void onPut(const Packet &) Q_DECL_OVERRIDE;
+protected:
+    typedef BlockingQueue<Packet, QQueue> PQ;
+    using PQ::setCapacity;
+    using PQ::setThreshold;
+    using PQ::capacity;
+    using PQ::threshold;
+
 private:
     BufferMode m_mode;
     bool m_buffering;
+    qreal m_max;
     // bytes or count
     quint32 m_buffer;
     qint32 m_value0, m_value1;

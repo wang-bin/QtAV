@@ -26,6 +26,7 @@ namespace QtAV {
 PacketBuffer::PacketBuffer()
     : m_mode(BufferTime)
     , m_buffering(true) // in buffering state at the beginning
+    , m_max(1.5)
     , m_buffer(0)
     , m_value0(0)
     , m_value1(0)
@@ -65,6 +66,20 @@ int PacketBuffer::bufferValue() const
     return m_buffer;
 }
 
+void PacketBuffer::setBufferMax(qreal max)
+{
+    if (max < 1.0) {
+        qWarning("max (%f) must >= 1.0", max);
+        return;
+    }
+    m_max = max;
+}
+
+qreal PacketBuffer::bufferMax() const
+{
+    return m_max;
+}
+
 int PacketBuffer::buffered() const
 {
     Q_ASSERT(m_value1 > m_value0);
@@ -89,13 +104,16 @@ bool PacketBuffer::checkEnough() const
 
 bool PacketBuffer::checkFull() const
 {
-    return buffered() >= 2*bufferValue();
+    return buffered() >= int(qreal(bufferValue())*bufferMax());
 }
 
 void PacketBuffer::onPut(const Packet &p)
 {
     if (m_mode == BufferTime) {
-        m_value1 = int(p.pts*1000.0);
+        m_value1 = int(p.pts*1000.0); // FIXME: what if no pts
+        m_value0 = int(queue[0].pts*1000.0); // must compute here because it is reset to 0 if take from empty
+        //if (isBuffering())
+          //  qDebug("+buffering progress: %.1f%%=%.1f/%.1f~%.1fs %d-%d", bufferProgress()*100.0, (qreal)buffered()/1000.0, (qreal)bufferValue()/1000.0, qreal(bufferValue())*bufferMax()/1000.0, m_value1, m_value0);
     } else if (m_mode == BufferBytes) {
         m_value1 += p.data.size();
     } else {
@@ -121,6 +139,8 @@ void PacketBuffer::onTake(const Packet &p)
     }
     if (m_mode == BufferTime) {
         m_value0 = int(queue[0].pts*1000.0);
+        //if (isBuffering())
+          //  qDebug("-buffering progress: %.1f=%.1f/%.1fs", bufferProgress(), (qreal)buffered()/1000.0, (qreal)bufferValue()/1000.0);
     } else if (m_mode == BufferBytes) {
         m_value1 -= p.data.size();
         m_value1 = qMax(0, m_value1);
