@@ -25,10 +25,9 @@
 #include <QtCore/QAtomicInt>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
-#include <QtCore/QQueue>
 #include <QtCore/QRunnable>
 #include "QtAV/CommonTypes.h"
-#include "utils/BlockingQueue.h"
+#include "PacketBuffer.h"
 
 namespace QtAV {
 
@@ -49,6 +48,8 @@ public:
     //AVDemuxer* demuxer
     bool isPaused() const;
     bool isEnd() const;
+    PacketBuffer* buffer();
+
 public slots:
     void stop(); //TODO: remove it?
     void pause(bool p);
@@ -56,6 +57,8 @@ public slots:
 
 Q_SIGNALS:
     void requestClockPause(bool value);
+    void mediaStatusChanged(QtAV::MediaStatus);
+    void bufferProgressChanged(qreal);
 
 private slots:
     void frameDeliveredSeekOnPause();
@@ -80,6 +83,9 @@ private:
     bool paused;
     bool user_paused;
     volatile bool end;
+    bool m_buffering;
+    int m_buffered;
+    PacketBuffer *m_buffer;
     AVDemuxer *demuxer;
     AVThread *audio_thread, *video_thread;
     int audio_stream, video_stream;

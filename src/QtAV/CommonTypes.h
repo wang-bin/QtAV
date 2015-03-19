@@ -40,6 +40,12 @@ enum MediaStatus
     InvalidMedia // what if loop > 0 or stopPosition() is not mediaStopPosition()?
 };
 
+enum BufferMode {
+    BufferTime,
+    BufferBytes,
+    BufferPackets
+};
+
 enum SeekUnit {
     SeekByTime, // only this is supported now
     SeekByByte,

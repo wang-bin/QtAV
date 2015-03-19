@@ -29,11 +29,6 @@
 #include <QtAV/AVError.h>
 #include <QtAV/CommonTypes.h>
 
-/*!
- *  Qt.Multimedia like api
- * MISSING:
- * bufferProgress
- */
 namespace QtAV {
 class AVPlayer;
 }
@@ -56,6 +51,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(qreal playbackRate READ playbackRate WRITE setPlaybackRate NOTIFY playbackRateChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(int loops READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
+    Q_PROPERTY(qreal bufferProgress READ bufferProgress NOTIFY bufferProgressChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
     Q_PROPERTY(QObject *mediaObject READ mediaObject)
@@ -136,6 +132,8 @@ public:
     bool isFastSeek() const;
     void setFastSeek(bool value);
 
+    qreal bufferProgress() const;
+
     Status status() const;
     Error error() const;
     QString errorString() const;
@@ -198,6 +196,7 @@ Q_SIGNALS:
     void playing();
     void seekableChanged();
     void fastSeekChanged();
+    void bufferProgressChanged();
     void videoCodecPriorityChanged();
     void videoCodecOptionsChanged();
     void channelLayoutChanged();

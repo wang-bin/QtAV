@@ -36,8 +36,14 @@ class BlockingQueue
 {
 public:
     BlockingQueue();
+    virtual ~BlockingQueue() {}
 
     void setCapacity(int max); //enqueue is allowed if less than capacity
+    /*!
+     * \brief setThreshold
+     * do nothing if min >= capacity()
+     * \param min
+     */
     void setThreshold(int min); //wake up and enqueue
 
     void put(const T& t);
@@ -64,10 +70,24 @@ public:
     void setThresholdCallback(StateChangeCallback* call);
     void setFullCallback(StateChangeCallback* call);
 
-private:
+protected:
+    /*!
+     * \brief checkFull
+     * Check whether the queue is full. Default implemention is compare queue size to capacity.
+     * Full is now a more generic notion. You can implement it as checking queued bytes etc.
+     * \return true if queue is full
+     */
+    virtual bool checkFull() const;
+    virtual bool checkEmpty() const;
+    virtual bool checkEnough() const;
+
+    virtual void onPut(const T&) {}
+    virtual void onTake(const T&) {}
+
     bool block_empty, block_full;
-    int cap, thres; //static?
+    int cap, thres;
     Container<T> queue;
+private:
     mutable QReadWriteLock lock; //locker in const func
     QReadWriteLock block_change_lock;
     QWaitCondition cond_full, cond_empty;
@@ -94,6 +114,8 @@ void BlockingQueue<T, Container>::setCapacity(int max)
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     cap = max;
+    if (thres > cap)
+        thres = cap;
 }
 
 template <typename T, template <typename> class Container>
@@ -102,6 +124,8 @@ void BlockingQueue<T, Container>::setThreshold(int min)
     //qDebug("queue threshold==>>%d", min);
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
+    if (min > cap)
+        return;
     thres = min;
 }
 
@@ -110,7 +134,7 @@ void BlockingQueue<T, Container>::put(const T& t)
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (queue.size() >= cap) {
+    if (checkFull()) {
         //qDebug("queue full"); //too frequent
         if (full_callback) {
             full_callback->call();
@@ -119,7 +143,13 @@ void BlockingQueue<T, Container>::put(const T& t)
             cond_full.wait(&lock);
     }
     queue.enqueue(t);
-    cond_empty.wakeAll();
+    onPut(t); // emit bufferProgressChanged here if buffering
+    if (checkEnough()) {
+        cond_empty.wakeAll(); //emit buffering finished here
+        //qDebug("queue is enough: %d/%d~%d", queue.size(), thres, cap);
+    } else {
+        //qDebug("buffering: %d/%d~%d", queue.size(), thres, cap);
+    }
 }
 
 template <typename T, template <typename> class Container>
@@ -127,25 +157,28 @@ T BlockingQueue<T, Container>::take()
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (queue.size() < thres)
+    if (!checkEnough()) {
         cond_full.wakeAll();
-    if (queue.isEmpty()) {//TODO:always block?
-        //qDebug("queue empty!!");
-        if (empty_callback) {
-            empty_callback->call();
+        if (checkEmpty()) {//TODO:always block?
+            //qDebug("queue empty!!");
+            if (empty_callback) {
+                empty_callback->call();
+            }
+            if (block_empty)
+                cond_empty.wait(&lock); //block when empty only
         }
-        if (block_empty)
-            cond_empty.wait(&lock);
     }
     //TODO: Why still empty?
-    if (queue.isEmpty()) {
+    if (checkEmpty()) {
         qWarning("Queue is still empty");
         if (empty_callback) {
             empty_callback->call();
         }
         return T();
     }
-    return queue.dequeue();
+    T t(queue.dequeue());
+    onTake(t); // emit start buffering here if empty
+    return t;
 }
 
 template <typename T, template <typename> class Container>
@@ -193,6 +226,7 @@ void BlockingQueue<T, Container>::clear()
     cond_full.wakeAll();
     queue.clear();
     //TODO: assert not empty
+    onTake(T());
 }
 
 template <typename T, template <typename> class Container>
@@ -267,6 +301,22 @@ void BlockingQueue<T, Container>::setFullCallback(StateChangeCallback *call)
     full_callback.reset(call);
 }
 
+template <typename T, template <typename> class Container>
+bool BlockingQueue<T, Container>::checkFull() const
+{
+    return queue.size() >= cap;
+}
 
+template <typename T, template <typename> class Container>
+bool BlockingQueue<T, Container>::checkEmpty() const
+{
+    return queue.isEmpty();
+}
+
+template <typename T, template <typename> class Container>
+bool BlockingQueue<T, Container>::checkEnough() const
+{
+    return queue.size() >= thres;
+}
 } //namespace QtAV
 #endif // QTAV_BLOCKINGQUEUE_H

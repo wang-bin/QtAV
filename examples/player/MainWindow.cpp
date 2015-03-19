@@ -166,6 +166,7 @@ void MainWindow::initPlayer()
     connect(mpVolumeSlider, SIGNAL(valueChanged(int)), SLOT(setVolume()));
 
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(onMediaStatusChanged()));
+    connect(mpPlayer, SIGNAL(bufferProgressChanged(qreal)), SLOT(onBufferProgress(qreal)));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), this, SLOT(handleError(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
@@ -1293,7 +1294,12 @@ void MainWindow::onMediaStatusChanged()
         onStopPlay();
         break;
     }
-    setWindowTitle(status);
+    setWindowTitle(status + " " + mTitle);
+}
+
+void MainWindow::onBufferProgress(qreal percent)
+{
+    setWindowTitle(QString("Buffering... %1% ").arg(percent*100.0, 0, 'f', 1) + mTitle);
 }
 
 void MainWindow::onVideoEQEngineChanged()

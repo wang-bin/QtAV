@@ -48,6 +48,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(bool asyncLoad READ isAsyncLoad WRITE setAsyncLoad NOTIFY asyncLoadChanged)
     Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
+    Q_PROPERTY(qreal bufferProgress READ bufferProgress NOTIFY bufferProgressChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_PROPERTY(qint64 position READ position WRITE setPosition NOTIFY positionChanged)
     Q_PROPERTY(qint64 startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
@@ -346,6 +347,28 @@ public slots:
     void seekBackward();
     void setSeekType(SeekType type);
     SeekType seekType() const;
+
+    /*!
+     * \brief bufferProgress
+     * How much the data buffer is currently filled. From 0.0 to 1.0.
+     * Playback can start or resume only when the buffer is entirely filled.
+     */
+    qreal bufferProgress() const;
+    /*!
+     * \brief buffered
+     * Current buffered value in msecs, bytes or packet count depending on bufferMode()
+     */
+    int buffered() const;
+    void setBufferMode(BufferMode mode);
+    BufferMode bufferMode() const;
+    /*!
+     * \brief setBufferValue
+     * Ensure the buffered msecs/bytes/packets in queue is at least the given value before playback starts
+     * \param value <0: auto; BufferBytes: bytes, BufferTime: msecs, BufferPackets: packets count
+     */
+    void setBufferValue(int value);
+    int bufferValue() const;
+
     /*!
      * \brief setNotifyInterval
      * The interval at which progress will update
@@ -362,6 +385,7 @@ public slots:
     void setSaturation(int val);
 
 signals:
+    void bufferProgressChanged(qreal);
     void relativeTimeModeChanged();
     void autoLoadChanged();
     void asyncLoadChanged();

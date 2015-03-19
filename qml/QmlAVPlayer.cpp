@@ -85,6 +85,7 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
     connect(mpPlayer, SIGNAL(seekableChanged()), SIGNAL(seekableChanged()));
+    connect(mpPlayer, SIGNAL(bufferProgressChanged(qreal)), SIGNAL(bufferProgressChanged()));
     connect(this, SIGNAL(channelLayoutChanged()), SLOT(applyChannelLayout()));
 
     mVideoCodecs << "FFmpeg";
@@ -358,6 +359,13 @@ void QmlAVPlayer::setFastSeek(bool value)
         return;
     m_fastSeek = value;
     emit fastSeekChanged();
+}
+
+qreal QmlAVPlayer::bufferProgress() const
+{
+    if (!mpPlayer)
+        return 0;
+    return mpPlayer->bufferProgress();
 }
 
 QmlAVPlayer::Status QmlAVPlayer::status() const

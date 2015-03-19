@@ -298,6 +298,7 @@ SOURCES += \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     Packet.cpp \
+    PacketBuffer.cpp \
     AVError.cpp \
     AVPlayer.cpp \
     AVPlayerPrivate.cpp \
@@ -396,6 +397,7 @@ HEADERS *= \
     AVThread.h \
     AVThread_p.h \
     AudioThread.h \
+    PacketBuffer.h \
     VideoThread.h \
     ImageConverter.h \
     ImageConverter_p.h \
