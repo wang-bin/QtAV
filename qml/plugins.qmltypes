@@ -189,6 +189,7 @@ Module {
         Property { name: "playbackRate"; type: "double" }
         Property { name: "source"; type: "QUrl" }
         Property { name: "loops"; type: "int" }
+        Property { name: "bufferProgress"; type: "double"; isReadonly: true }
         Property { name: "seekable"; type: "bool"; isReadonly: true }
         Property { name: "metaData"; type: "MediaMetaData"; isReadonly: true; isPointer: true }
         Property { name: "mediaObject"; type: "QObject"; isReadonly: true; isPointer: true }

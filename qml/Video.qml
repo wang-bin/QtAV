@@ -140,7 +140,7 @@ Item {
         from 0.0 (empty) to 1.0
         (full).
     */
-    //property alias bufferProgress:  player.bufferProgress
+    property alias bufferProgress:  player.bufferProgress
 
     /*!
         \qmlproperty int Video::duration

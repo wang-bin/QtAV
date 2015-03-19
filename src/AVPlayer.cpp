@@ -87,6 +87,8 @@ AVPlayer::AVPlayer(QObject *parent) :
     //direct connection can not sure slot order?
     connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()));
     connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
+    connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
+    connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
 
     d->vcapture = new VideoCapture(this);
 }
@@ -1308,6 +1310,12 @@ void AVPlayer::setSeekType(SeekType type)
 SeekType AVPlayer::seekType() const
 {
     return d->seek_type;
+}
+
+qreal AVPlayer::bufferProgress() const
+{
+    const PacketBuffer* buf = d->read_thread->buffer();
+    return buf ? buf->bufferProgress() : 0;
 }
 
 void AVPlayer::updateClock(qint64 msecs)

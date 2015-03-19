@@ -60,6 +60,9 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , paused(false)
   , user_paused(false)
   , end(true)
+  , m_buffering(false)
+  , m_buffered(0)
+  , m_buffer(0)
   , demuxer(0)
   , audio_thread(0)
   , video_thread(0)
@@ -74,6 +77,9 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
     QThread(parent)
   , paused(false)
   , end(true)
+  , m_buffering(false)
+  , m_buffered(0)
+  , m_buffer(0)
   , audio_thread(0)
   , video_thread(0)
 {
@@ -240,6 +246,11 @@ bool AVDemuxThread::isEnd() const
     return end;
 }
 
+PacketBuffer* AVDemuxThread::buffer()
+{
+    return m_buffer;
+}
+
 //No more data to put. So stop blocking the queue to take the reset elements
 void AVDemuxThread::stop()
 {
@@ -269,6 +280,9 @@ void AVDemuxThread::stop()
     cond.wakeAll();
     qDebug("all avthread finished. try to exit demux thread<<<<<<");
     end = true;
+    m_buffering = false;
+    m_buffered = false;
+    m_buffer = 0;
 }
 
 void AVDemuxThread::pause(bool p)
@@ -365,6 +379,8 @@ void AVDemuxThread::frameDeliveredNextFrame()
 
 void AVDemuxThread::run()
 {
+    m_buffering = false;
+    m_buffered = false;
     end = false;
     if (audio_thread && !audio_thread->isRunning())
         audio_thread->start(QThread::HighPriority);
@@ -383,6 +399,7 @@ void AVDemuxThread::run()
     qDebug("get av queue a/v thread = %p %p", audio_thread, video_thread);
     PacketBuffer *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
     PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
+    m_buffer = vqueue ? vqueue : aqueue;
     if (aqueue) {
         aqueue->clear();
         aqueue->setBlocking(true);
@@ -413,6 +430,10 @@ void AVDemuxThread::run()
         if (!running_threads) {
             qDebug("no running avthreads. exit demuxer thread");
             break;
+        }
+        if (m_buffering != m_buffer->isBuffering()) {
+            m_buffering = m_buffer->isBuffering();
+            Q_EMIT mediaStatusChanged(m_buffering ? QtAV::BufferingMedia : QtAV::BufferedMedia);
         }
         QMutexLocker locker(&buffer_mutex);
         Q_UNUSED(locker);
@@ -459,6 +480,12 @@ void AVDemuxThread::run()
             }
         } else { //subtitle
             continue;
+        }
+        if (m_buffering) {
+            if (m_buffered != m_buffer->buffered()) {
+                m_buffered = m_buffer->buffered();
+                Q_EMIT bufferProgressChanged(m_buffer->bufferProgress());
+            }
         }
     }
     //flush. seeking will be omitted when stopped
