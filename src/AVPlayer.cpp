@@ -1318,6 +1318,32 @@ qreal AVPlayer::bufferProgress() const
     return buf ? buf->bufferProgress() : 0;
 }
 
+int AVPlayer::buffered() const
+{
+    const PacketBuffer* buf = d->read_thread->buffer();
+    return buf ? buf->buffered() : 0;
+}
+
+void AVPlayer::setBufferMode(BufferMode mode)
+{
+    d->buffer_mode = mode;
+}
+
+BufferMode AVPlayer::bufferMode() const
+{
+    return d->buffer_mode;
+}
+
+void AVPlayer::setBufferValue(int value)
+{
+    d->buffer_value = value;
+}
+
+int AVPlayer::bufferValue() const
+{
+    return d->buffer_value;
+}
+
 void AVPlayer::updateClock(qint64 msecs)
 {
     d->clock->updateExternalClock(msecs);

@@ -24,6 +24,7 @@
 
 #include <QtCore/QQueue>
 #include <QtAV/Packet.h>
+#include "QtAV/CommonTypes.h"
 #include "utils/BlockingQueue.h"
 
 namespace QtAV {
@@ -37,12 +38,6 @@ namespace QtAV {
 class PacketBuffer : public BlockingQueue<Packet, QQueue>
 {
 public:
-    enum BufferMode {
-        BufferTime,
-        BufferBytes,
-        BufferPackets
-    };
-
     PacketBuffer();
     ~PacketBuffer();
 

@@ -51,7 +51,7 @@ void PacketBuffer::setBufferMode(BufferMode mode)
     }
 }
 
-PacketBuffer::BufferMode PacketBuffer::bufferMode() const
+BufferMode PacketBuffer::bufferMode() const
 {
     return m_mode;
 }

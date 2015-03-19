@@ -354,6 +354,20 @@ public slots:
      * Playback can start or resume only when the buffer is entirely filled.
      */
     qreal bufferProgress() const;
+    /*!
+     * \brief buffered
+     * Current buffered value in msecs, bytes or packet count depending on bufferMode()
+     */
+    int buffered() const;
+    void setBufferMode(BufferMode mode);
+    BufferMode bufferMode() const;
+    /*!
+     * \brief setBufferValue
+     * Ensure the buffered msecs/bytes/packets in queue is at least the given value before playback starts
+     * \param value <0: auto; BufferBytes: bytes, BufferTime: msecs, BufferPackets: packets count
+     */
+    void setBufferValue(int value);
+    int bufferValue() const;
 
     /*!
      * \brief setNotifyInterval

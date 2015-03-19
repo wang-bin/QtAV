@@ -25,6 +25,7 @@
 #include <limits>
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/AVPlayer.h"
+#include "QtAV/CommonTypes.h"
 #include "AudioThread.h"
 #include "VideoThread.h"
 #include "AVDemuxThread.h"
@@ -117,6 +118,8 @@ public:
     int timer_id; //notify position change and check AB repeat range. active when playing
 
     int audio_track, video_track, subtitle_track;
+    BufferMode buffer_mode;
+    int buffer_value;
     //the following things are required and must be set not null
     AVDemuxer demuxer;
     AVDemuxThread *read_thread;
