@@ -86,7 +86,7 @@ static int ffmpeg_get_va_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)c->opaque;
     //ff->reordered_opaque = c->reordered_opaque; //TODO: dxva?
     ff->opaque = 0;
-#if ! LIBAVCODEC_VERSION_CHECK(54, 34, 0, 79, 101)
+#if !AV_MODULE_CHECK(LIBAVCODEC, 54, 34, 0, 79, 101)
     ff->pkt_pts = c->pkt ? c->pkt->pts : AV_NOPTS_VALUE;
 #endif
 #if LIBAVCODEC_VERSION_MAJOR < 54
