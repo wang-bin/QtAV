@@ -75,8 +75,8 @@ public:
      */
     AudioOutput(QObject *parent = 0);
     virtual ~AudioOutput();
-    virtual bool open() = 0;
-    virtual bool close() = 0;
+    bool open();
+    bool close();
     /*!
      * \brief play
      * Play out the given audio data. It may block current thread until the data can be written to audio device
@@ -127,20 +127,20 @@ public:
      * \param format
      * \return true if \a format is supported. default is true
      */
-    virtual bool isSupported(const AudioFormat& format) const;
-    virtual bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
-    virtual bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
+    bool isSupported(const AudioFormat& format) const;
+    bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
+    bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
     /*!
      * \brief preferredSampleFormat
      * \return the preferred sample format. default is signed16 packed
      *  If the specified format is not supported, resample to preffered format
      */
-    virtual AudioFormat::SampleFormat preferredSampleFormat() const;
+    AudioFormat::SampleFormat preferredSampleFormat() const;
     /*!
      * \brief preferredChannelLayout
      * \return the preferred channel layout. default is stero
      */
-    virtual AudioFormat::ChannelLayout preferredChannelLayout() const;
+    AudioFormat::ChannelLayout preferredChannelLayout() const;
     /*!
      * \brief bufferSize
      * chunk size that audio output accept. feed the audio output this size of data every time
@@ -182,65 +182,13 @@ protected:
      * wait until you can feed more data
      */
     virtual void waitForNextBuffer();
-    virtual bool write(const QByteArray& data) = 0; //MUST
-    virtual bool play() = 0; //MUST
-    /*!
-     * \brief The BufferControl enum
-     * Used to adapt to different audio playback backend. Usually you don't need this in application level development.
-    */
-    enum BufferControl {
-        User = 0,    // You have to reimplement waitForNextBuffer()
-        Blocking = 1,
-        Callback = 1 << 1,
-        PlayedCount = 1 << 2, //number of buffers played since last buffer dequeued
-        PlayedBytes = 1 << 3,
-        OffsetIndex = 1 << 4, //current playing offset
-        OffsetBytes = 1 << 5, //current playing offset by bytes
-        WritableBytes = 1 << 6,
-    };
-    virtual BufferControl bufferControl() const = 0;
-    // called by callback with Callback control
-    void onCallback(); // virtual?
-    //default return -1. means not the control
-    virtual int getPlayedCount(); //PlayedCount
-    /*!
-     * \brief getPlayedBytes
-     * reimplement this if bufferControl() is PlayedBytes.
-     * \return the bytes played since last dequeue the buffer queue
-     */
-    virtual int getPlayedBytes(); // PlayedBytes
-    virtual int getOffset();      // OffsetIndex
-    virtual int getOffsetByBytes(); // OffsetBytes
-    virtual int getWritableBytes(); //WritableBytes
-    /*!
-     * \brief deviceSetVolume
-     * Set volume by backend api. If backend can not set the given volume, or SetVolume feature is not set, software implemention will be used.
-     * Make sure onSetFeatures(SetVolume) returns true.
-     * \param value >=0
-     * \return true if success
-     */
-    virtual bool deviceSetVolume(qreal value);
-    virtual qreal deviceGetVolume() const;
-    virtual bool deviceSetMute(bool value = true);
-    // reset internal status. MUST call this at the begining of open()
-    void resetStatus();
-
-    /*!
-     * \brief AudioOutput
-     * Specify supported features for the backend. Use this for new backends.
-     */
-    AudioOutput(DeviceFeatures featuresSupported, AudioOutputPrivate& d, QObject *parent = 0);
-
+private Q_SLOTS:
+    void reportVolume(qreal value);
+    void reportMute(bool value);
 private:
-    /*
-     * \brief reportVolume
-     * Volume can be changed by per-app volume control from system outside this library. Useful for synchronizing ui to system.
-     * Volume control from QtAV may invoke it too. And it may be invoked even if volume is not changed.
-     * If volume changed, signal volumeChanged() will be emitted and volume() will be updated.
-     * Only supported by some backends, e.g. pulseaudio
-     */
-    Q_INVOKABLE void reportVolume(qreal value);
-    Q_INVOKABLE void reportMute(bool value);
+    void onCallback();
+    friend class AudioOutputBackend;
+    Q_DISABLE_COPY(AudioOutput)
 };
 
 } //namespace QtAV

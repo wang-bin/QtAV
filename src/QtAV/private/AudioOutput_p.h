@@ -42,6 +42,7 @@ namespace QtAV {
 const int kBufferSize = 1024*4;
 const int kBufferCount = 8;
 
+class AudioOutputBackend;
 typedef void (*scale_samples_func)(quint8 *dst, const quint8 *src, int nb_samples, int volume, float volumef);
 class Q_AV_PRIVATE_EXPORT AudioOutputPrivate : public AVOutputPrivate
 {
@@ -56,10 +57,11 @@ public:
       , nb_buffers(8)
       , buffer_size(kBufferSize)
       , features(0)
-      , supported_features(0)
       , play_pos(0)
       , processed_remain(0)
+      , msecs_ahead(0)
       , scale_samples(0)
+      , backend(0)
       , index_enqueue(-1)
       , index_deuqueue(-1)
     {
@@ -127,6 +129,7 @@ public:
         available = false;
         play_pos = 0;
         processed_remain = 0;
+        msecs_ahead = 0;
 #if AO_USE_TIMER
         timer.invalidate();
 #endif
@@ -148,13 +151,14 @@ public:
     quint32 nb_buffers;
     qint32 buffer_size;
     int features;
-    int supported_features;
     int play_pos; // index or bytes
     int processed_remain;
+    int msecs_ahead;
 #if AO_USE_TIMER
     QElapsedTimer timer;
 #endif
     scale_samples_func scale_samples;
+    AudioOutputBackend *backend;
 private:
     // the index of current enqueue/dequeue
     int index_enqueue, index_deuqueue;
