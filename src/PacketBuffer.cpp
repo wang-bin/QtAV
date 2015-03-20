@@ -82,7 +82,7 @@ qreal PacketBuffer::bufferMax() const
 
 int PacketBuffer::buffered() const
 {
-    Q_ASSERT(m_value1 > m_value0);
+    Q_ASSERT(m_value1 >= m_value0);
     return m_value1 - m_value0;
 }
 
