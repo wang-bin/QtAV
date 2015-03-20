@@ -366,6 +366,11 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
     VideoFrame f(conv.outData(), w, h, fmt);
     f.setBits(conv.outPlanes());
     f.setBytesPerLine(conv.outLineSizes());
+    if (fmt.isRGB()) {
+        f.setColorSpace(fmt.isPlanar() ? ColorSpace_GBR : ColorSpace_RGB);
+    } else {
+        f.setColorSpace(ColorSpace_Unknow);
+    }
     return f;
 }
 
@@ -481,12 +486,17 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
     if (!m_cvt->convert(pitch.constData(), stride.constData())) {
         return VideoFrame();
     }
-    VideoFrame f(m_cvt->outData(), frame.width(), frame.height(), VideoFormat(fffmt));
+    const VideoFormat fmt(fffmt);
+    VideoFrame f(m_cvt->outData(), frame.width(), frame.height(), fmt);
     f.setBits(m_cvt->outPlanes());
     f.setBytesPerLine(m_cvt->outLineSizes());
     f.setTimestamp(frame.timestamp());
     // metadata?
-    // color space etc?
+    if (fmt.isRGB()) {
+        f.setColorSpace(fmt.isPlanar() ? ColorSpace_GBR : ColorSpace_RGB);
+    } else {
+        f.setColorSpace(ColorSpace_Unknow);
+    }
     return f;
 }
 
