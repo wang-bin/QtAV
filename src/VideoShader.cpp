@@ -332,6 +332,8 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
         if (fmt.isRGB()) {
             if (fmt.isPlanar())
                 cs = ColorSpace_GBR;
+            else
+                cs = ColorSpace_RGB;
         } else {
             if (frame.width() >= 1280 || frame.height() > 576) //values from mpv
                 cs = ColorSpace_BT709;
