@@ -23,6 +23,7 @@
 #include <QtCore/QSharedPointer>
 #include "QtAV/private/Filter_p.h"
 #include "QtAV/Statistics.h"
+#include "QtAV/AudioFrame.h"
 #include "QtAV/VideoFrame.h"
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
@@ -32,18 +33,47 @@
  * libav9.x: only av_buffersink_read can be used
  * ffmpeg<2.0: av_buffersink_get_buffer_ref and av_buffersink_read
  */
+// TODO: enabled = false if no libavfilter
 #define QTAV_HAVE_av_buffersink_get_frame (LIBAV_MODULE_CHECK(LIBAVFILTER, 4, 2, 0) || FFMPEG_MODULE_CHECK(LIBAVFILTER, 3, 79, 100)) //3.79.101: ff2.0.4
 
 namespace QtAV {
 
-class LibAVFilterPrivate : public VideoFilterPrivate
+#if QTAV_HAVE(AVFILTER)
+// local types can not be used as template parameters
+class AVFrameHolder {
+public:
+    AVFrameHolder() {
+        m_frame = av_frame_alloc();
+#if !QTAV_HAVE_av_buffersink_get_frame
+        picref = 0;
+#endif
+    }
+    ~AVFrameHolder() {
+        av_frame_free(&m_frame);
+#if !QTAV_HAVE_av_buffersink_get_frame
+        avfilter_unref_bufferp(&picref);
+#endif
+    }
+    AVFrame* frame() { return m_frame;}
+#if !QTAV_HAVE_av_buffersink_get_frame
+    AVFilterBufferRef** bufferRef() { return &picref;}
+    void copyBufferToFrame() { avfilter_copy_buf_props(m_frame, picref);}
+#endif
+private:
+    AVFrame *m_frame;
+#if !QTAV_HAVE_av_buffersink_get_frame
+    AVFilterBufferRef *picref;
+#endif
+};
+typedef QSharedPointer<AVFrameHolder> AVFrameHolderRef;
+#endif //QTAV_HAVE(AVFILTER)
+
+
+class LibAVFilter::Private
 {
 public:
-    LibAVFilterPrivate()
-        : pixfmt(QTAV_PIX_FMT_C(NONE))
-        , width(0)
-        , height(0)
-        , avframe(0)
+    Private()
+        : avframe(0)
         , status(LibAVFilter::NotConfigured)
     {
 #if QTAV_HAVE(AVFILTER)
@@ -53,7 +83,7 @@ public:
         avfilter_register_all();
 #endif //QTAV_HAVE(AVFILTER)
     }
-    virtual ~LibAVFilterPrivate() {
+    ~Private() {
 #if QTAV_HAVE(AVFILTER)
         avfilter_graph_free(&filter_graph);
 #endif //QTAV_HAVE(AVFILTER)
@@ -71,10 +101,12 @@ public:
         return true;
     }
 
-    bool push(Frame *frame);
-    bool pull(Frame *f);
+    AVFrameHolderRef pullAVFrame();
 
-    bool setup() {
+    //bool pushAudioFrame(Frame *frame, bool changed, const QString& args);
+    bool pushVideoFrame(Frame *frame, bool changed, const QString& args);
+
+    bool setup(const QString& args) {
         if (avframe) {
             av_frame_free(&avframe);
             avframe = 0;
@@ -84,8 +116,7 @@ public:
         filter_graph = avfilter_graph_alloc();
         //QString sws_flags_str;
         // pixel_aspect==sar, pixel_aspect is more compatible
-        QString buffersrc_args = QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=1")
-                .arg(width).arg(height).arg(pixfmt).arg(1).arg(AV_TIME_BASE);
+        QString buffersrc_args = args;
         qDebug("buffersrc_args=%s", buffersrc_args.toUtf8().constData());
         AVFilter *buffersrc  = avfilter_get_by_name("buffer");
         Q_ASSERT(buffersrc);
@@ -153,76 +184,169 @@ public:
     AVFilterContext *in_filter_ctx;
     AVFilterContext *out_filter_ctx;
 #endif //QTAV_HAVE(AVFILTER)
-    AVPixelFormat pixfmt;
-    int width, height;
     AVFrame *avframe;
 
     QString options;
     LibAVFilter::Status status;
 };
 
-LibAVFilter::LibAVFilter(QObject *parent):
-    VideoFilter(*new LibAVFilterPrivate(), parent)
+AVFrameHolderRef LibAVFilter::Private::pullAVFrame()
+{
+#if QTAV_HAVE(AVFILTER)
+    AVFrameHolderRef frame_ref(new AVFrameHolder());
+#if QTAV_HAVE_av_buffersink_get_frame
+    int ret = av_buffersink_get_frame(out_filter_ctx, frame_ref->frame());
+#else
+    int ret = av_buffersink_read(out_filter_ctx, frame_ref->bufferRef());
+#endif //QTAV_HAVE_av_buffersink_get_frame
+    if (ret < 0) {
+        qWarning("av_buffersink_get_frame error: %s", av_err2str(ret));
+        return AVFrameHolderRef(0);
+    }
+#if !QTAV_HAVE_av_buffersink_get_frame
+    frame_ref->copyBufferToFrame();
+#endif
+    return frame_ref;
+#else
+    return AVFrameHolderRef(0);
+#endif
+}
+
+LibAVFilter::LibAVFilter()
+    : priv(new Private())
 {
 }
 
 LibAVFilter::~LibAVFilter()
 {
+    delete priv;
 }
 
 void LibAVFilter::setOptions(const QString &options)
 {
-    if (!d_func().setOptions(options))
+    if (!priv->setOptions(options))
         return;
-    emit optionsChanged();
-    emit statusChanged();
 }
 
 QString LibAVFilter::options() const
 {
-    return d_func().options;
+    return priv->options;
 }
 
 LibAVFilter::Status LibAVFilter::status() const
 {
-    return d_func().status;
+    return priv->status;
 }
 
-void LibAVFilter::setStatus(Status value)
+bool LibAVFilter::pushVideoFrame(Frame *frame, bool changed)
 {
-    DPTR_D(LibAVFilter);
-    if (d.status == value)
-        return;
-    d.status = value;
-    emit statusChanged();
+    return priv->pushVideoFrame(frame, changed, sourceArguments());
+}
+/*
+bool LibAVFilter::pushAudioFrame(Frame *frame, bool changed)
+{
+    return priv->pushAudioFrame(frame, changed, sourceArguments());
+}
+*/
+void* LibAVFilter::pullFrameHolder()
+{
+#if QTAV_HAVE(AVFILTER)
+    AVFrameHolder *holder = new AVFrameHolder();
+#if QTAV_HAVE_av_buffersink_get_frame
+    int ret = av_buffersink_get_frame(priv->out_filter_ctx, holder->frame());
+#else
+    int ret = av_buffersink_read(priv->out_filter_ctx, holder->bufferRef());
+#endif //QTAV_HAVE_av_buffersink_get_frame
+    if (ret < 0) {
+        qWarning("av_buffersink_get_frame error: %s", av_err2str(ret));
+        delete holder;
+        return 0;
+    }
+#if !QTAV_HAVE_av_buffersink_get_frame
+    holder->copyBufferToFrame();
+#endif
+    return holder;
+#else
+    return 0;
+#endif
 }
 
-void LibAVFilter::process(Statistics *statistics, VideoFrame *frame)
+class LibAVFilterVideoPrivate : public VideoFilterPrivate
 {
+public:
+    LibAVFilterVideoPrivate()
+        : VideoFilterPrivate()
+        , pixfmt(QTAV_PIX_FMT_C(NONE))
+        , width(0)
+        , height(0)
+    {}
+
+    virtual QString sourceArguments() const Q_DECL_FINAL {
+        return QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=1")
+                .arg(width).arg(height).arg(pixfmt).arg(1).arg(AV_TIME_BASE);
+    }
+    AVPixelFormat pixfmt;
+    int width, height;
+};
+
+LibAVFilterVideo::LibAVFilterVideo(QObject *parent)
+    : VideoFilter(parent)
+    , LibAVFilter()
+{}
+
+void LibAVFilterVideo::process(Statistics *statistics, VideoFrame *frame)
+{
+    Q_UNUSED(statistics);
+#if QTAV_HAVE(AVFILTER)
     Q_UNUSED(statistics);
     if (status() == ConfigureFailed)
         return;
-    DPTR_D(LibAVFilter);
-    Status old = status();
-    bool ok = d.push(frame);
-    if (old != status())
-        emit statusChanged();
+    DPTR_D(LibAVFilterVideo);
+    //Status old = status();
+    bool changed = false;
+    if (d.width != frame->width() || d.height != frame->height() || d.pixfmt != frame->pixelFormatFFmpeg()) {
+        changed = true;
+        d.width = frame->width();
+        d.height = frame->height();
+        d.pixfmt = (AVPixelFormat)frame->pixelFormatFFmpeg();
+    }
+    bool ok = pushVideoFrame(frame, changed);
+    //if (old != status())
+      //  emit statusChanged();
     if (!ok)
         return;
-    d.pull(frame);
+
+    AVFrameHolderRef ref((AVFrameHolder*)pullFrameHolder());
+    //d.pull(frame, ref);
+    if (!ref)
+        return;
+    const AVFrame *f = ref->frame();
+    VideoFrame vf(f->width, f->height, VideoFormat(f->format));
+    vf.setBits((quint8**)f->data);
+    vf.setBytesPerLine((int*)f->linesize);
+    vf.setMetaData("avframe_hoder_ref", QVariant::fromValue(ref));
+    vf.setTimestamp(ref->frame()->pts/1000000.0); //pkt_pts?
+    qDebug() << "frame pts: " << vf.timestamp();
+    *frame = vf;
+#else
+    Q_UNUSED(frame);
+#endif //QTAV_HAVE(AVFILTER)
 }
 
+QString LibAVFilterVideo::sourceArguments() const
+{
+    DPTR_D(const LibAVFilterVideo);
+    return QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=1")
+            .arg(d.width).arg(d.height).arg(d.pixfmt).arg(1).arg(AV_TIME_BASE); //time base 1/1?
+}
 
-bool LibAVFilterPrivate::push(Frame *frame)
+bool LibAVFilter::Private::pushVideoFrame(Frame *frame, bool changed, const QString &args)
 {
 #if QTAV_HAVE(AVFILTER)
     VideoFrame *vf = static_cast<VideoFrame*>(frame);
-    if (status == LibAVFilter::NotConfigured || !avframe || width != vf->width() || height != vf->height() || pixfmt != vf->pixelFormatFFmpeg()) {
-        width = vf->width();
-        height = vf->height();
-        pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
-        if (!setup()) {
-            qWarning("setup filter graph error");
+    if (status == LibAVFilter::NotConfigured || !avframe || changed) {
+        if (!setup(args)) {
+            qWarning("setup video filter graph error");
             //enabled = false; // skip this filter and avoid crash
             return false;
         }
@@ -230,7 +354,7 @@ bool LibAVFilterPrivate::push(Frame *frame)
     avframe->pts = frame->timestamp() * 1000000.0; // time_base is 1/1000000
     avframe->width = vf->width();
     avframe->height = vf->height();
-    avframe->format = pixfmt = (AVPixelFormat)vf->pixelFormatFFmpeg();
+    avframe->format = (AVPixelFormat)vf->pixelFormatFFmpeg();
     for (int i = 0; i < vf->planeCount(); ++i) {
         avframe->data[i] =vf->bits(i);
         avframe->linesize[i] = vf->bytesPerLine(i);
@@ -250,68 +374,9 @@ bool LibAVFilterPrivate::push(Frame *frame)
     return true;
 #else
     Q_UNUSED(frame);
-    enabled = false;
+    //enabled = false;
     return false;
 #endif
-}
-
-#if QTAV_HAVE(AVFILTER)
-// local types can not be used as template parameters
-class AVFrameHolder {
-public:
-    AVFrameHolder() {
-        m_frame = av_frame_alloc();
-#if !QTAV_HAVE_av_buffersink_get_frame
-        picref = 0;
-#endif
-    }
-    ~AVFrameHolder() {
-        av_frame_free(&m_frame);
-#if !QTAV_HAVE_av_buffersink_get_frame
-        avfilter_unref_bufferp(&picref);
-#endif
-    }
-    AVFrame* frame() { return m_frame;}
-#if !QTAV_HAVE_av_buffersink_get_frame
-    AVFilterBufferRef** bufferRef() { return &picref;}
-    void copyBufferToFrame() { avfilter_copy_buf_props(m_frame, picref);}
-#endif
-private:
-    AVFrame *m_frame;
-#if !QTAV_HAVE_av_buffersink_get_frame
-    AVFilterBufferRef *picref;
-#endif
-};
-typedef QSharedPointer<AVFrameHolder> AVFrameHolderRef;
-#endif //QTAV_HAVE(AVFILTER)
-
-bool LibAVFilterPrivate::pull(Frame *f)
-{
-#if QTAV_HAVE(AVFILTER)
-    AVFrameHolderRef frame_ref(new AVFrameHolder());
-#if QTAV_HAVE_av_buffersink_get_frame
-    int ret = av_buffersink_get_frame(out_filter_ctx, frame_ref->frame());
-#else
-    int ret = av_buffersink_read(out_filter_ctx, frame_ref->bufferRef());
-#endif //QTAV_HAVE_av_buffersink_get_frame
-    if (ret < 0) {
-        qWarning("av_buffersink_get_frame error: %s", av_err2str(ret));
-        return false;
-    }
-#if !QTAV_HAVE_av_buffersink_get_frame
-    frame_ref->copyBufferToFrame();
-#endif
-    VideoFrame vf(frame_ref->frame()->width, frame_ref->frame()->height, VideoFormat(frame_ref->frame()->format));
-    vf.setBits(frame_ref->frame()->data);
-    vf.setBytesPerLine(frame_ref->frame()->linesize);
-    vf.setMetaData("avframe_hoder_ref", QVariant::fromValue(frame_ref));
-    vf.setTimestamp(frame_ref->frame()->pts);
-    *f = vf;
-    return true;
-#else
-    Q_UNUSED(f);
-    return false;
-#endif //QTAV_HAVE(AVFILTER)
 }
 
 } //namespace QtAV
