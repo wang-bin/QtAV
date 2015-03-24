@@ -1036,9 +1036,11 @@ void AVPlayer::playInternal()
     if (d->force_fps > 0 && d->demuxer.videoCodecContext() && d->vthread) {
         masterClock()->setClockAuto(false);
         masterClock()->setClockType(AVClock::VideoClock);
-        d->vthread->setFrameRate(d->force_fps);
+        if (d->vthread)
+            d->vthread->setFrameRate(d->force_fps);
     } else {
-        d->vthread->setFrameRate(-1.0);
+        if (d->vthread)
+            d->vthread->setFrameRate(-1.0);
     }
     if (masterClock()->isClockAuto()) {
         qDebug("auto select clock: audio > external");
