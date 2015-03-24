@@ -661,7 +661,7 @@ bool VideoFormat::isPlanar(PixelFormat pixfmt)
 bool VideoFormat::isRGB(PixelFormat pixfmt)
 {
     return pixfmt == Format_RGB32 || pixfmt == Format_ARGB32
-        || pixfmt == Format_BGR24 || pixfmt == Format_BGRA32
+        || pixfmt == Format_RGB24 || pixfmt == Format_BGRA32
         || pixfmt == Format_ABGR32 || pixfmt == Format_RGBA32
         || pixfmt == Format_BGR565 || pixfmt == Format_RGB555 || pixfmt == Format_RGB565
         || pixfmt == Format_BGR24 || pixfmt == Format_BGR32 || pixfmt == Format_BGR555
