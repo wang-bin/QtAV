@@ -227,6 +227,19 @@ void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCo
     qDebug("codec: %s(%s)", qPrintable(st->codec), qPrintable(st->codec_long));
     st->bit_rate = avctx->bit_rate; //fmt_ctx
     st->frames = stream->nb_frames;
+    st->frame_rate = av_q2d(stream->avg_frame_rate);
+    //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
+    //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
+#if 0
+    // why audio frame rate computed may close to sample rate
+    if (isnan(st->frame_rate) && st->frames > 0) {
+        if (stream->duration != (qint64)AV_NOPTS_VALUE) {
+            st->frame_rate = double(st->frames)/(qreal(stream->duration)*av_q2d(stream->time_base));
+        } else if (demuxer.duration() > 0) {
+            st->frame_rate = double(st->frames)/double(demuxer.duration())*1000.0;
+        }
+    }
+#endif
     //qDebug("time: %f~%f, nb_frames=%lld", st->start_time, st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
     AVDictionaryEntry *tag = NULL;
     while ((tag = av_dict_get(stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
@@ -272,16 +285,6 @@ void AVPlayer::Private::initVideoStatistics(int s)
         statistics.video.decoder = vdec->name();
         statistics.video.decoder_detail = vdec->description();
     }
-    AVStream *stream = fmt_ctx->streams[s];
-    statistics.video.frames = stream->nb_frames;
-    //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
-    //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
-    //FIXME: which 1 should we choose? avg_frame_rate may be nan or 0, then use AVStream.r_frame_rate, r_frame_rate may be wrong(guessed value)
-    // TODO: seems that r_frame_rate will be removed libav > 9.10. Use macro to check version?
-    //if (stream->avg_frame_rate.num) //avg_frame_rate.num,den may be 0
-        statistics.video_only.frame_rate = av_q2d(stream->avg_frame_rate);
-    //else
-    //    statistics.video_only.frame_rate = av_q2d(stream->r_frame_rate);
     statistics.video_only.coded_height = avctx->coded_height;
     statistics.video_only.coded_width = avctx->coded_width;
     statistics.video_only.gop_size = avctx->gop_size;
@@ -401,7 +404,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     athread->setDecoder(adec);
     player->setAudioOutput(ao);
-    const qreal fps = qMax<qreal>(24.0, statistics.video_only.frame_rate);
+    const qreal fps = qMax<qreal>(24.0, statistics.video.frame_rate);
     int bv = 0.6*fps;
     if (buffer_mode == BufferTime)
         bv = 600; //ms
@@ -475,7 +478,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
     vthread->setBrightness(brightness);
     vthread->setContrast(contrast);
     vthread->setSaturation(saturation);
-    const qreal fps = qMax<qreal>(24.0, statistics.video_only.frame_rate);
+    const qreal fps = qMax<qreal>(24.0, statistics.video.frame_rate);
     int bv = 0.6*fps;
     if (buffer_mode == BufferTime)
         bv = 600; //ms

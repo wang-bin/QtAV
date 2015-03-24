@@ -27,6 +27,7 @@ Statistics::Common::Common():
     available(false)
   , bit_rate(0)
   , frames(0)
+  , frame_rate(0)
   , d(new Private())
 {
 }
@@ -46,8 +47,7 @@ Statistics::VideoOnly::Private::Private()
 }
 
 Statistics::VideoOnly::VideoOnly():
-    frame_rate(0)
-  , width(0)
+    width(0)
   , height(0)
   , coded_width(0)
   , coded_height(0)

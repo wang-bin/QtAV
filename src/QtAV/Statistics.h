@@ -61,6 +61,7 @@ public:
         QTime current_time, total_time, start_time;
         int bit_rate;
         qint64 frames;
+        qreal frame_rate; // average fps stored in media stream information
         //union member with ctor, dtor, copy ctor only works in c++11
         /*union {
             audio_only audio;
@@ -104,7 +105,6 @@ public:
         // compute from pts history
         qreal currentDisplayFPS() const;
         qreal pts() const; // last pts
-        qreal frame_rate; // average fps stored in media stream information
 
         int width, height;
         /**
