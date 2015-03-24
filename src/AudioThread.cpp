@@ -210,9 +210,10 @@ void AudioThread::run()
         if (frame) {
             //TODO: apply filters here
             if (has_ao) {
-                if (ao->audioFormat() != frame.format()) {
+                // FIXME: resample is required for audio frames from ffmpeg
+                //if (ao->audioFormat() != frame.format()) {
                     frame = frame.to(ao->audioFormat());
-                }
+                //}
             }
         } // no continue if frame is invalid. decoder may need more data to get a frame
 

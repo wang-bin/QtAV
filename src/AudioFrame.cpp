@@ -203,8 +203,8 @@ AudioFrame AudioFrame::to(const AudioFormat &fmt) const
 {
     if (!isValid() || !bits(0))
         return AudioFrame();
-    if (fmt == format())
-        return clone();
+    //if (fmt == format())
+      //  return clone(); //FIXME: clone a frame from ffmpeg is not enough?
     Q_D(const AudioFrame);
     // TODO: use a pool
     AudioResampler *conv = d->conv;
