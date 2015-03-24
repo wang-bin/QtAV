@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "AVDemuxThread.h"
+#include <limits>
 #include "QtAV/AVClock.h"
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/AVDecoder.h"
@@ -399,7 +400,9 @@ void AVDemuxThread::run()
     qDebug("get av queue a/v thread = %p %p", audio_thread, video_thread);
     PacketBuffer *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
     PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
-    m_buffer = vqueue ? vqueue : aqueue;
+    // aqueue as a primary buffer: music with/without cover
+    m_buffer = !vqueue || (aqueue && demuxer->hasAttacedPicture()) ? aqueue : vqueue;
+    const int buf2 = aqueue->bufferValue(); // TODO: may be changed by user
     if (aqueue) {
         aqueue->clear();
         aqueue->setBlocking(true);
@@ -464,9 +467,16 @@ void AVDemuxThread::run()
                     aqueue->clear();
                     continue;
                 }
+                if (m_buffer != aqueue) {
+                    if (m_buffer->isBuffering()) {
+                        aqueue->setBufferValue(std::numeric_limits<int>::max());
+                    } else {
+                        aqueue->setBufferValue(buf2);
+                    }
+                }
                 // always block full if no vqueue because empty callback may set false
                 // attached picture is cover for song, 1 frame
-                aqueue->blockFull(!video_thread || !video_thread->isRunning() || !vqueue || (vqueue->isEnough() || demuxer->hasAttacedPicture()));
+                aqueue->blockFull(!video_thread || !video_thread->isRunning() || !vqueue || demuxer->hasAttacedPicture());
                 aqueue->put(pkt); //affect video_thread
             }
         } else if (index == demuxer->videoStream()) {

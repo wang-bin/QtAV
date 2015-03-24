@@ -53,6 +53,7 @@ public:
     void blockFull(bool block);
 //TODO:setMinBlock,MaxBlock
     inline void clear();
+    // TODO: checkEmpty, Enough, Full?
     inline bool isEmpty() const;
     inline bool isEnough() const; //size > thres
     inline bool isFull() const; //size >= cap

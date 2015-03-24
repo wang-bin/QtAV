@@ -404,8 +404,10 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     athread->setDecoder(adec);
     player->setAudioOutput(ao);
-    const qreal fps = qMax<qreal>(24.0, statistics.video.frame_rate);
-    int bv = 0.6*fps;
+    // if has video, then audio buffer should not block the video buffer (bufferValue == 1, modified in AVDemuxThread)
+    // TODO: buf if video stream is only a cover picture, audio buffer should be the primary buffer and BufferTime is preferred(call setBufferMode/Value)
+    int bv = statistics.audio.frame_rate > 0 && statistics.audio.frame_rate < 60 ?
+                statistics.audio.frame_rate : 1;
     if (buffer_mode == BufferTime)
         bv = 600; //ms
     else if (buffer_mode == BufferBytes)
@@ -484,6 +486,9 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         bv = 600; //ms
     else if (buffer_mode == BufferBytes)
         bv = 1024;
+    // no block for music with cover
+    if (demuxer.hasAttacedPicture() || (statistics.video.frames > 0 && statistics.video.frames < bv))
+        bv = qMax<int>(1, statistics.video.frames);
     vthread->packetQueue()->setBufferMode(buffer_mode);
     vthread->packetQueue()->setBufferValue(buffer_value < 0 ? bv : buffer_value);
     initVideoStatistics(demuxer.videoStream());
