@@ -375,10 +375,12 @@ bool AVDemuxer::readFrame()
                 || avio_feof(d->format_ctx->pb)) {
             if (!d->eof) {
                 d->eof = true;
+#if 0 // EndOfMedia when demux thread finished
                 d->started = false;
                 setMediaStatus(EndOfMedia);
-                qDebug("End of file. %s %d", __FUNCTION__, __LINE__);
                 emit finished();
+#endif
+                qDebug("End of file. erreof=%d feof=%d", ret == AVERROR_EOF, avio_feof(d->format_ctx->pb));
             }
             return false;
         }
@@ -458,6 +460,7 @@ bool AVDemuxer::seek(qint64 pos)
         qWarning("Invalid seek position %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
         return false;
     }
+    d->eof = false;
     // no lock required because in AVDemuxThread read and seek are in the same thread
 #if 0
     //t: unit is s
@@ -496,7 +499,7 @@ bool AVDemuxer::seek(qint64 pos)
     // TODO: replay
     if (upos <= startTime()) {
         qDebug("************seek to beginning. started = false");
-        d->started = false;
+        d->started = false; //???
         if (d->astream.avctx)
             d->astream.avctx->frame_number = 0;
         if (d->vstream.avctx)

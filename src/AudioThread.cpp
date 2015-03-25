@@ -78,15 +78,13 @@ void AudioThread::run()
             if (isPaused())
                 continue;
         }
-        if (d.packets.isEmpty() && !d.stop) {
-            d.stop = d.demux_end;
-        }
-        if (d.stop) {
-            qDebug("audio thread stop before take packet");
-            break;
-        }
         if (!pkt.isValid()) {
             pkt = d.packets.take(); //wait to dequeue
+        }
+        if (pkt.isEOF()) {
+            d.stop = true;
+            qDebug("audio thread gets an eof packet. exit.");
+            break;
         }
         if (!pkt.isValid()) {
             qDebug("Invalid packet! flush audio codec context!!!!!!!! audio queue size=%d", d.packets.size());

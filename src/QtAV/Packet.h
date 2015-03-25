@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -36,6 +36,7 @@ class Q_AV_EXPORT Packet
 public:
     static Packet fromAVPacket(const AVPacket* avpkt, double time_base);
     static bool fromAVPacket(Packet *pkt, const AVPacket *avpkt, double time_base);
+    static Packet createEOF();
 
     Packet();
     ~Packet();
@@ -44,6 +45,7 @@ public:
     Packet(const Packet& other);
     Packet& operator =(const Packet& other);
 
+    bool isEOF()const;
     inline bool isValid() const;
     /*!
      * \brief asAVPacket

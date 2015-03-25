@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -56,6 +56,18 @@ public:
     bool initialized;
     AVPacket avpkt;
 };
+
+Packet Packet::createEOF()
+{
+    Packet pkt;
+    pkt.data = QByteArray("eof");
+    return pkt;
+}
+
+bool Packet::isEOF() const
+{
+    return data == "eof";
+}
 
 Packet Packet::fromAVPacket(const AVPacket *avpkt, double time_base)
 {

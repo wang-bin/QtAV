@@ -321,15 +321,13 @@ void VideoThread::run()
             if (isPaused())
                 continue; //timeout. process pending tasks
         }
-        if (d.packets.isEmpty() && !d.stop) {
-            d.stop = d.demux_end;
-        }
-        if (d.stop && d.packets.isEmpty()) { // must stop here. otherwise thread will be blocked at d.packets.take()
-            qDebug("video thread stop before take packet. packet queue is empty.");
-            break;
-        }
         if(!pkt.isValid()) {
             pkt = d.packets.take(); //wait to dequeue
+        }
+        if (pkt.isEOF()) {
+            d.stop = true;
+            qDebug("video thread gets an eof packet. exit.");
+            break;
         }
         //qDebug() << pkt.position << " pts:" <<pkt.pts;
         //Compare to the clock

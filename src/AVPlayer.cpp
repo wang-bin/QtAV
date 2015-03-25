@@ -488,7 +488,7 @@ bool AVPlayer::isPaused() const
 
 MediaStatus AVPlayer::mediaStatus() const
 {
-    return d->demuxer.mediaStatus();
+    return d->demuxer.mediaStatus(); //FIXME: status from read thread. store status value in slot and emit signal
 }
 
 void AVPlayer::setAutoLoad(bool value)

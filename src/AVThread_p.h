@@ -44,7 +44,6 @@ public:
     AVThreadPrivate():
         paused(false)
       , next_pause(false)
-      , demux_end(false)
       , stop(false)
       , clock(0)
       , dec(0)
@@ -59,7 +58,6 @@ public:
     virtual ~AVThreadPrivate();
 
     bool paused, next_pause;
-    bool demux_end;
     volatile bool stop; //true when packets is empty and demux is end.
     AVClock *clock;
     PacketBuffer packets;

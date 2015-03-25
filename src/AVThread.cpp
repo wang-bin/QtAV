@@ -30,7 +30,6 @@
 namespace QtAV {
 
 AVThreadPrivate::~AVThreadPrivate() {
-    demux_end = true;
     stop = true;
     if (!paused) {
         qDebug("~AVThreadPrivate wake up paused thread");
@@ -241,11 +240,6 @@ OutputSet* AVThread::outputSet() const
     return d_func().outputSet;
 }
 
-void AVThread::setDemuxEnded(bool ended)
-{
-    d_func().demux_end = ended;
-}
-
 void AVThread::resetState()
 {
     DPTR_D(AVThread);
@@ -253,7 +247,6 @@ void AVThread::resetState()
     d.tasks.clear();
     d.render_pts0 = 0;
     d.stop = false;
-    d.demux_end = false;
     d.packets.setBlocking(true);
     d.packets.clear();
     QMutexLocker lock(&d.ready_mutex);

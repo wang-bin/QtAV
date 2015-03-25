@@ -63,6 +63,7 @@ Q_SIGNALS:
 private slots:
     void frameDeliveredSeekOnPause();
     void frameDeliveredNextFrame();
+    void onAVThreadQuit();
 
 protected:
     virtual void run();
@@ -78,7 +79,6 @@ private:
     void processNextSeekTask();
     void seekInternal(qint64 pos, SeekType type); //must call in AVDemuxThread
     void pauseInternal(bool value);
-    void processNextPauseTask();
 
     bool paused;
     bool user_paused;
@@ -92,8 +92,6 @@ private:
     QMutex buffer_mutex;
     QWaitCondition cond;
     BlockingQueue<QRunnable*> seek_tasks;
-    // if seeking on pause, schedule a skip pause task and a pause task
-    QQueue<QRunnable*> pause_tasks; // in thread tasks
 
     QAtomicInt nb_next_frame;
     QMutex next_frame_mutex;
