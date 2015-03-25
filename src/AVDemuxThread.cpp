@@ -402,7 +402,7 @@ void AVDemuxThread::run()
     PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
     // aqueue as a primary buffer: music with/without cover
     m_buffer = !vqueue || (aqueue && demuxer->hasAttacedPicture()) ? aqueue : vqueue;
-    const int buf2 = aqueue->bufferValue(); // TODO: may be changed by user
+    const int buf2 = aqueue ? aqueue->bufferValue() : 1; // TODO: may be changed by user
     if (aqueue) {
         aqueue->clear();
         aqueue->setBlocking(true);
