@@ -51,8 +51,8 @@ public:
     bool play() Q_DECL_FINAL;
     int getOffsetByBytes() Q_DECL_FINAL;
 
-    bool deviceSetVolume(qreal value) Q_DECL_FINAL;
-    qreal deviceGetVolume() const Q_DECL_FINAL;
+    bool setVolume(qreal value) Q_DECL_FINAL;
+    qreal getVolume() const Q_DECL_FINAL;
 private:
     bool loadDll();
     bool unloadDll();
@@ -239,7 +239,7 @@ int AudioOutputDSound::getOffsetByBytes()
     return (int)read_offset;
 }
 
-bool AudioOutputDSound::deviceSetVolume(qreal value)
+bool AudioOutputDSound::setVolume(qreal value)
 {
     // dsound supports [0, 1]
     const LONG vol = value <= 0 ? DSBVOLUME_MIN : LONG(log10(value*100.0) * 5000.0) + DSBVOLUME_MIN;
@@ -248,7 +248,7 @@ bool AudioOutputDSound::deviceSetVolume(qreal value)
     return true;
 }
 
-qreal AudioOutputDSound::deviceGetVolume() const
+qreal AudioOutputDSound::getVolume() const
 {
     LONG vol = 0;
     DX_ENSURE_OK(stream_buf->GetVolume(&vol), 1.0);

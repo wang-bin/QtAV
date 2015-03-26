@@ -162,9 +162,9 @@ AudioOutput::~AudioOutput()
     close();
 }
 
+extern void AudioOutput_RegisterAll(); //why vc link error if put in the following a exported class member function?
 QStringList AudioOutput::backendsAvailable()
 {
-    extern void AudioOutput_RegisterAll();
     AudioOutput_RegisterAll();
     static QStringList all;
     if (!all.isEmpty())
@@ -273,7 +273,7 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
     if (isMute() && d.sw_mute) {
         if (d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8
                 || d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8Planar)
-            d.data.fill(0x80);
+            d.data.fill((char)0x80);
         else
             d.data.fill(0);
     } else {
