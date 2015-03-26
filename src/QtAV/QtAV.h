@@ -37,7 +37,6 @@
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/AudioFormat.h>
 #include <QtAV/AudioOutput.h>
-#include <QtAV/AudioOutputTypes.h>
 #include <QtAV/AudioResampler.h>
 #include <QtAV/AudioResamplerTypes.h>
 

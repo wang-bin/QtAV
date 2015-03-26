@@ -43,6 +43,7 @@ public:
      */
     AudioOutputBackend(AudioOutput::DeviceFeatures f, QObject *parent);
     virtual ~AudioOutputBackend() {}
+    virtual QString name() const = 0;
     virtual bool open() = 0;
     virtual bool close() = 0;
     virtual bool write(const QByteArray& data) = 0; //MUST
@@ -117,5 +118,7 @@ private:
     Q_DISABLE_COPY(AudioOutputBackend)
 };
 
+typedef int AudioOutputBackendId;
+FACTORY_DECLARE(AudioOutputBackend)
 } //namespace QtAV
 #endif //QAV_AUDIOOUTPUTBACKEND_H

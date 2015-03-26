@@ -24,10 +24,10 @@
 
 #include <QtCore/QHash>
 #include <QtCore/QScopedPointer>
+#include <QtAV/AudioOutput.h>
 #include <QtAV/AVClock.h>
 #include <QtAV/Statistics.h>
 #include <QtAV/VideoDecoderTypes.h>
-#include <QtAV/AudioOutputTypes.h>
 #include <QtAV/AVError.h>
 
 class QIODevice;

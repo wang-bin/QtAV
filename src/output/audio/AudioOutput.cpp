@@ -106,19 +106,104 @@ void AudioOutputPrivate::updateSampleScaleFunc()
     scale_samples = get_scaler(format.sampleFormat(), vol, &volume_i);
 }
 
+AudioOutputPrivate::~AudioOutputPrivate()
+{
+    if (backend) {
+        backend->close();
+        delete backend;
+    }
+}
+
 AudioOutput::AudioOutput(QObject* parent)
     : QObject(parent)
     , AVOutput(*new AudioOutputPrivate())
 {
+    qDebug() << "Registered audio backends: " << AudioOutput::backendsAvailable(); // call this to register
     d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
     d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
-    // TODO: set all features when backend is ready
-    // connect volumeReported
+    static const QStringList all = QStringList()
+#if QTAV_HAVE(PULSEAUDIO)
+            << "Pulse"
+#endif
+#if QTAV_HAVE(OPENAL)
+            << "OpenAL"
+#endif
+#if QTAV_HAVE(PORTAUDIO)
+            << "PortAudio"
+#endif
+#if QTAV_HAVE(OPENSL)
+            << "OpenSL"
+#endif
+#if QTAV_HAVE(DSOUND)
+            << "DirectSound"
+#endif
+              ;
+    setBackends(all); //ensure a backend is available
 }
 
 AudioOutput::~AudioOutput()
 {
     close();
+}
+
+QStringList AudioOutput::backendsAvailable()
+{
+    extern void AudioOutput_RegisterAll();
+    AudioOutput_RegisterAll();
+    static QStringList all;
+    if (!all.isEmpty())
+        return all;
+    std::vector<std::string> a = AudioOutputBackendFactory::registeredNames();
+    for (size_t i = 0; i < a.size(); ++i) {
+        all.append(QString::fromStdString(a[i]));
+    }
+    return all;
+}
+
+void AudioOutput::setBackends(const QStringList &backendNames)
+{
+    DPTR_D(AudioOutput);
+    if (d.backends == backendNames)
+        return;
+    d.update_backend = true;
+    d.backends = backendNames;
+    // create backend here because we have to check format support before open which needs a backend
+    d.update_backend = false;
+    if (d.backend) {
+        d.backend->close();
+        delete d.backend;
+        d.backend = 0;
+    }
+    // TODO: empty backends use dummy backend
+    if (!d.backends.isEmpty()) {
+        foreach (const QString& b, d.backends) {
+            d.backend = AudioOutputBackendFactory::create(AudioOutputBackendFactory::id(b.toStdString()));
+            if (d.backend)
+                break;
+        }
+    }
+    if (d.backend) {
+        // default: set all features when backend is ready
+        setDeviceFeatures(d.backend->supportedFeatures());
+        // connect volumeReported
+        connect(d.backend, SIGNAL(volumeReported(qreal)), SLOT(reportVolume(qreal)));
+        connect(d.backend, SIGNAL(muteReported(bool)), SLOT(reportMute(bool)));
+    }
+
+    emit backendsChanged();
+}
+
+QStringList AudioOutput::backends() const
+{
+    return d_func().backends;
+}
+
+QString AudioOutput::backend() const
+{
+    DPTR_D(const AudioOutput);
+    if (d.backend)
+        return d.backend->name();
+    return QString();
 }
 
 bool AudioOutput::open()
@@ -131,6 +216,7 @@ bool AudioOutput::open()
     d.backend->buffer_size = bufferSize();
     d.backend->buffer_count = bufferCount();
     d.backend->format = audioFormat();
+    // TODO: open next backend if fail and emit backendChanged()
     if (!d.backend->open())
         return false;
     d.available = true;

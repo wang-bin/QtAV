@@ -26,6 +26,7 @@
 #include <QtAV/private/AVOutput_p.h>
 #include <QtAV/AudioFormat.h>
 #include <QtCore/QQueue>
+#include <QtCore/QStringList>
 #include <QtCore/QVector>
 #include <limits>
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
@@ -62,13 +63,14 @@ public:
       , msecs_ahead(0)
       , scale_samples(0)
       , backend(0)
+      , update_backend(true)
       , index_enqueue(-1)
       , index_deuqueue(-1)
     {
         available = false;
         frame_infos.resize(nb_buffers);
     }
-    virtual ~AudioOutputPrivate(){}
+    virtual ~AudioOutputPrivate();
 
     void onCallback() { cond.wakeAll();}
     virtual void uwait(qint64 us) {
@@ -159,6 +161,8 @@ public:
 #endif
     scale_samples_func scale_samples;
     AudioOutputBackend *backend;
+    bool update_backend;
+    QStringList backends;
 private:
     // the index of current enqueue/dequeue
     int index_enqueue, index_deuqueue;

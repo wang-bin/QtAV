@@ -18,6 +18,7 @@
 
 
 #include "QtAV/private/AudioOutputBackend.h"
+#include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include <QtCore/QLibrary>
 #include <math.h>
@@ -36,11 +37,12 @@ template <class T> void SafeRelease(T **ppT) {
   }
 }
 
+static const char kName[] = "DirectSound";
 class AudioOutputDSound Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputDSound(QObject *parent = 0);
-    //AudioOutputId id() const
+    QString name() const Q_DECL_FINAL { return kName;}
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
@@ -70,15 +72,15 @@ private:
     LPDIRECTSOUNDBUFFER stream_buf;    ///secondary direct sound buffer (stream buffer)
     int write_offset;               ///offset of the write cursor in the direct sound buffer
 };
-/*
-extern AudioOutputId AudioOutputId_DSound;
-FACTORY_REGISTER_ID_AUTO(AudioOutput, DSound, "DirectSound")
+
+typedef AudioOutputDSound AudioOutputBackendDSound;
+static const AudioOutputBackendId AudioOutputBackendId_DSound = mkid::id32base36_6<'D', 'S', 'o', 'u', 'n', 'd'>::value;
+FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, DSound, kName)
 
 void RegisterAudioOutputDSound_Man()
 {
-    FACTORY_REGISTER_ID_MAN(AudioOutput, DSound, "DirectSound")
+    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, DSound, kName)
 }
-*/
 
 #define DX_LOG_COMPONENT "DSound"
 

@@ -23,14 +23,14 @@
 #define QAV_AUDIOOUTPUT_H
 
 #include <QtCore/QObject>
+#include <QtCore/QStringList>
 #include <QtAV/AVOutput.h>
-#include <QtAV/FactoryDefine.h>
 #include <QtAV/AudioFrame.h>
 
 /*!
- * AudioOutput *ao = AudioOutputFactory::create(AudioOutputId_OpenAL);
- * ao->setAudioFormat(fmt);
- * ao->open();
+ * AudioOutput ao;
+ * ao.setAudioFormat(fmt);
+ * ao.open();
  * while (has_data) {
  *     data = read_data(ao->bufferSize());
  *     ao->play(data, pts);
@@ -41,10 +41,6 @@
  * Add A New Backend:
  */
 namespace QtAV {
-
-typedef int AudioOutputId;
-class AudioOutput;
-FACTORY_DECLARE(AudioOutput)
 
 class AudioFormat;
 class AudioOutputPrivate;
@@ -57,6 +53,7 @@ class Q_AV_EXPORT AudioOutput : public QObject, public AVOutput
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(DeviceFeatures deviceFeatures READ deviceFeatures WRITE setDeviceFeatures NOTIFY deviceFeaturesChanged)
+    Q_PROPERTY(QStringList backends READ backends WRITE setBackends NOTIFY backendsChanged)
 public:
     /*!
      * \brief DeviceFeature Feature enum
@@ -70,11 +67,29 @@ public:
     };
     Q_DECLARE_FLAGS(DeviceFeatures, DeviceFeature)
     /*!
+     * \brief backendsAvailable
+     * All registered backends
+     * \return
+     */
+    static QStringList backendsAvailable();
+    /*!
      * \brief AudioOutput
      * Audio format set to preferred sample format and channel layout
      */
     AudioOutput(QObject *parent = 0);
     virtual ~AudioOutput();
+    /*!
+     * \brief setBackends
+     * set the given backends. Old backend instance and backend() is updated soon if backendsChanged.
+     * It is called internally with a default backend names when AudioOutput is created.
+     */
+    void setBackends(const QStringList &backendNames = QStringList());
+    QStringList backends() const;
+    /*!
+     * \brief backend
+     * backend name currently in use
+     */
+    QString backend() const;
     bool open();
     bool close();
     /*!
@@ -173,6 +188,7 @@ signals:
     void volumeChanged(qreal);
     void muteChanged(bool);
     void deviceFeaturesChanged();
+    void backendsChanged();
 protected:
     void playInitialData(); //required by some backends, e.g. openal
     // Store and fill data to audio buffers

@@ -18,6 +18,7 @@
 
 
 #include "QtAV/private/AudioOutputBackend.h"
+#include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include <QtCore/QMutex>
 #include <QtCore/QWaitCondition>
@@ -36,12 +37,13 @@
 
 namespace QtAV {
 
+static const char kName[] = "OpenAL";
 class AudioOutputOpenAL Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputOpenAL(QObject* parent = 0);
-
-    QString name() const;
+    QString name() const Q_DECL_FINAL { return kName;}
+    QString deviceName() const;
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
     bool isSupported(const AudioFormat& format) const Q_DECL_FINAL;
@@ -86,14 +88,15 @@ protected:
     // used for 1 context per instance. lock when makeCurrent
     static QMutex global_mutex;
 };
-/*
-extern AudioOutputId AudioOutputId_OpenAL;
-FACTORY_REGISTER_ID_AUTO(AudioOutput, OpenAL, "OpenAL")
+
+typedef AudioOutputOpenAL AudioOutputBackendOpenAL;
+static const AudioOutputBackendId AudioOutputBackendId_OpenAL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'A', 'L'>::value;
+FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, OpenAL, kName)
 
 void RegisterAudioOutputOpenAL_Man()
 {
-    FACTORY_REGISTER_ID_MAN(AudioOutput, OpenAL, "OpenAL")
-}*/
+    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, OpenAL, kName)
+}
 
 #define AL_ENSURE_OK(expr, ...) \
     do { \
@@ -362,7 +365,7 @@ AudioFormat::ChannelLayout AudioOutputOpenAL::preferredChannelLayout() const
     return AudioFormat::ChannelLayout_Stero;
 }
 
-QString AudioOutputOpenAL::name() const
+QString AudioOutputOpenAL::deviceName() const
 {
     if (!device)
         return QString();

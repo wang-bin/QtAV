@@ -21,17 +21,20 @@
 
 
 #include "QtAV/private/AudioOutputBackend.h"
+#include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include <portaudio.h>
 #include "utils/Logger.h"
 
 namespace QtAV {
 
+static const char kName[] = "PortAudio";
 class AudioOutputPortAudio Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputPortAudio(QObject *parent = 0);
     ~AudioOutputPortAudio();
+    QString name() const Q_DECL_FINAL { return kName;}
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
     virtual BufferControl bufferControl() const Q_DECL_FINAL;
@@ -43,15 +46,16 @@ private:
     PaStream *stream;
     double outputLatency;
 };
-/*
-extern AudioOutputId AudioOutputId_PortAudio;
-FACTORY_REGISTER_ID_AUTO(AudioOutput, PortAudio, "PortAudio")
+
+typedef AudioOutputPortAudio AudioOutputBackendPortAudio;
+static const AudioOutputBackendId AudioOutputBackendId_PortAudio = mkid::id32base36_5<'P', 'o', 'r', 't', 'A'>::value;
+FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, PortAudio, kName)
 
 void RegisterAudioOutputPortAudio_Man()
 {
-    FACTORY_REGISTER_ID_MAN(AudioOutput, PortAudio, "PortAudio")
+    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, PortAudio, kName)
 }
-*/
+
 AudioOutputPortAudio::AudioOutputPortAudio(QObject *parent)
     : AudioOutputBackend(AudioOutput::NoFeature, parent)
     , initialized(false)

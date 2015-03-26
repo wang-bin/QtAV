@@ -19,17 +19,20 @@
 #include "QtAV/private/AudioOutputBackend.h"
 #include <QtCore/QThread>
 #include <SLES/OpenSLES.h>
+#include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
 
+static const char kName[] = "OpenSL";
 class AudioOutputOpenSL Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputOpenSL(QObject *parent = 0);
     ~AudioOutputOpenSL() Q_DECL_FINAL;
 
+    QString name() const Q_DECL_FINAL { return kName;}
     bool isSupported(const AudioFormat& format) const Q_DECL_FINAL;
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
     bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_FINAL;
@@ -55,15 +58,16 @@ private:
     int m_notifyInterval;
     quint32 buffers_queued;
 };
-/*
-extern AudioOutputId AudioOutputId_OpenSL;
-FACTORY_REGISTER_ID_AUTO(AudioOutput, OpenSL, "OpenSL")
+
+typedef AudioOutputOpenSL AudioOutputBackendOpenSL;
+static const AudioOutputBackendId AudioOutputBackendId_OpenSL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'S', 'L'>::value;
+FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, OpenSL, kName)
 
 void RegisterAudioOutputOpenSL_Man()
 {
-    FACTORY_REGISTER_ID_MAN(AudioOutput, OpenSL, "OpenSL")
+    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, OpenSL, kName)
 }
-*/
+
 #define SL_ENSURE_OK(FUNC, ...) \
     do { \
         SLresult ret = FUNC; \

@@ -20,17 +20,19 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMetaObject>
 #include <pulse/pulseaudio.h>
+#include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
 
-class AudioOutputPulse;
+static const char kName[] = "Pulse";
 class AudioOutputPulse Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputPulse(QObject *parent = 0);
 
+    QString name() const Q_DECL_FINAL { return kName;}
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
     bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_FINAL;
     bool open() Q_DECL_FINAL;
@@ -75,14 +77,15 @@ private:
     pa_sink_input_info info;
     size_t writable_size; //has the same effect as pa_stream_writable_size
 };
-/*
-extern AudioOutputId AudioOutputId_Pulse;
-FACTORY_REGISTER_ID_AUTO(AudioOutput, Pulse, "Pulse")
+
+typedef AudioOutputPulse AudioOutputBackendPulse;
+static const AudioOutputBackendId AudioOutputBackendId_Pulse = mkid::id32base36_5<'P', 'u', 'l', 's', 'e'>::value;
+FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, Pulse, kName)
 
 void RegisterAudioOutputPulse_Man()
 {
-    FACTORY_REGISTER_ID_MAN(AudioOutput, Pulse, "Pulse")
-}*/
+    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, Pulse, kName)
+}
 
 #define PA_ENSURE_TRUE(expr, ...) \
     do { \

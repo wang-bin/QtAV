@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/private/AudioOutputBackend.h"
+#include "QtAV/private/factory.h"
 
 namespace QtAV {
 
@@ -37,4 +38,39 @@ void AudioOutputBackend::onCallback()
         return;
     audio->onCallback();
 }
+
+
+FACTORY_DEFINE(AudioOutputBackend)
+
+void AudioOutput_RegisterAll()
+{
+    static bool initialized = false;
+    if (initialized)
+        return;
+    initialized = true;
+    // check whether ids are registered automatically
+    if (!AudioOutputBackendFactory::registeredIds().empty())
+        return;
+#if QTAV_HAVE(PORTAUDIO)
+    extern void RegisterAudioOutputPortAudio_Man();
+    RegisterAudioOutputPortAudio_Man();
+#endif //QTAV_HAVE(PORTAUDIO)
+#if QTAV_HAVE(OPENAL)
+    extern void RegisterAudioOutputOpenAL_Man();
+    RegisterAudioOutputOpenAL_Man();
+#endif //QTAV_HAVE(OPENAL)
+#if QTAV_HAVE(OPENSL)
+    extern void RegisterAudioOutputOpenSL_Man();
+    RegisterAudioOutputOpenSL_Man();
+#endif //QTAV_HAVE(OPENSL)
+#if QTAV_HAVE(DSOUND)
+    extern void RegisterAudioOutputDSound_Man();
+    RegisterAudioOutputDSound_Man();
+#endif
+#if QTAV_HAVE(PULSEAUDIO)
+    extern void RegisterAudioOutputPulse_Man();
+    RegisterAudioOutputPulse_Man();
+#endif
+}
+
 } //namespace QtAV

@@ -85,7 +85,7 @@ AVPlayer::Private::Private()
     , read_thread(0)
     , clock(new AVClock(AVClock::AudioClock))
     , vo(0)
-    , ao(0)
+    , ao(new AudioOutput())
     , adec(0)
     , vdec(0)
     , athread(0)
@@ -124,23 +124,6 @@ AVPlayer::Private::Private()
             << VideoDecoderId_Cedarv
 #endif //QTAV_HAVE(CEDARV)
             << VideoDecoderId_FFmpeg;
-    ao_ids
-#if QTAV_HAVE(PULSEAUDIO)
-            << AudioOutputId_Pulse
-#endif
-#if QTAV_HAVE(OPENAL)
-            << AudioOutputId_OpenAL
-#endif
-#if QTAV_HAVE(PORTAUDIO)
-            << AudioOutputId_PortAudio
-#endif
-#if QTAV_HAVE(OPENSL)
-            << AudioOutputId_OpenSL
-#endif
-#if QTAV_HAVE(DSOUND)
-            << AudioOutputId_DSound
-#endif
-              ;
 }
 AVPlayer::Private::~Private() {
     // TODO: scoped ptr
@@ -322,58 +305,42 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         emit player->error(e);
         return false;
     }
-    //TODO: setAudioOutput() like vo
-    if (!ao && ao_enabled) {
-        foreach (AudioOutputId aoid, ao_ids) {
-            qDebug("trying audio output '%s'", AudioOutputFactory::name(aoid).c_str());
-            ao = AudioOutputFactory::create(aoid);
-            if (ao) { //no open. open ao after format is set
-                qDebug("audio output found.");
-                break;
-            }
-        }
-    }
-    if (!ao) {
+    if (ao_enabled) {
         // TODO: only when no audio stream or user disable audio stream. running an audio thread without sound is waste resource?
         //masterClock()->setClockType(AVClock::ExternalClock);
         //return;
-    } else {
-        correct_audio_channels(avctx);
-        AudioFormat af;
-        af.setSampleRate(avctx->sample_rate);
-        af.setSampleFormatFFmpeg(avctx->sample_fmt);
-        // 5, 6, 7 channels may not play
-        if (avctx->channels > 2)
+    }
+    correct_audio_channels(avctx);
+    AudioFormat af;
+    af.setSampleRate(avctx->sample_rate);
+    af.setSampleFormatFFmpeg(avctx->sample_fmt);
+    // 5, 6, 7 channels may not play
+    if (avctx->channels > 2)
+        af.setChannelLayout(ao->preferredChannelLayout());
+    else
+        af.setChannelLayoutFFmpeg(avctx->channel_layout);
+    //af.setChannels(avctx->channels);
+    // FIXME: workaround. planar convertion crash now!
+    if (af.isPlanar()) {
+        af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
+    }
+    if (!ao->isSupported(af)) {
+        if (!ao->isSupported(af.sampleFormat())) {
+            af.setSampleFormat(ao->preferredSampleFormat());
+        }
+        if (!ao->isSupported(af.channelLayout())) {
             af.setChannelLayout(ao->preferredChannelLayout());
-        else
-            af.setChannelLayoutFFmpeg(avctx->channel_layout);
-        //af.setChannels(avctx->channels);
-        // FIXME: workaround. planar convertion crash now!
-        if (af.isPlanar()) {
-            af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
-        }
-        if (!ao->isSupported(af)) {
-            if (!ao->isSupported(af.sampleFormat())) {
-                af.setSampleFormat(ao->preferredSampleFormat());
-            }
-            if (!ao->isSupported(af.channelLayout())) {
-                af.setChannelLayout(ao->preferredChannelLayout());
-            }
-        }
-        if (ao->audioFormat() != af) {
-            qDebug("ao audio format is changed. reopen ao");
-            ao->close();
-            ao->setAudioFormat(af);
-            if (!ao->open()) {
-                //could not open audio device. use extrenal clock
-                delete ao;
-                ao = 0;
-                return false;
-            }
         }
     }
-    if (ao)
-        adec->resampler()->setOutAudioFormat(ao->audioFormat());
+    if (ao->audioFormat() != af) {
+        qDebug("ao audio format is changed. reopen ao");
+        ao->close();
+        ao->setAudioFormat(af);
+        if (!ao->open()) {
+            return false;
+        }
+    }
+    adec->resampler()->setOutAudioFormat(ao->audioFormat());
     // no need to set resampler if AudioFrame is used
 #if !USE_AUDIO_FRAME
     adec->resampler()->inAudioFormat().setSampleFormatFFmpeg(avctx->sample_fmt);

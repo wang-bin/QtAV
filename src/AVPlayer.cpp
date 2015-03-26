@@ -38,7 +38,6 @@
 #include "QtAV/VideoCapture.h"
 #include "QtAV/VideoDecoderTypes.h"
 #include "QtAV/VideoCapture.h"
-#include "QtAV/AudioOutputTypes.h"
 #include "filter/FilterManager.h"
 #include "output/OutputSet.h"
 #include "AudioThread.h"

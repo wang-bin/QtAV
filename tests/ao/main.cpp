@@ -25,7 +25,6 @@
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QStringList>
 #include <QtAV/AudioOutput.h>
-#include <QtAV/AudioOutputTypes.h>
 #include <QtDebug>
 
 using namespace QtAV;
@@ -34,12 +33,7 @@ const int kFrames = 1024;
 qint16 sin_table[kTableSize];
 
 void help() {
-    QStringList backends;
-    std::vector<std::string> names = AudioOutputFactory::registeredNames();
-    for (int i = 0; i < (int)names.size(); ++i) {
-        backends.append(names[i].c_str());
-    }
-    qDebug() << "parameters: [-ao " << backends.join("|") << "]";
+    qDebug() << "parameters: [-ao " << AudioOutput::backendsAvailable().join("|") << "]";
 }
 
 int main(int argc, char** argv)
@@ -52,27 +46,26 @@ int main(int argc, char** argv)
     }
 
     QCoreApplication app(argc, argv); //only used qapp to get parameter easily
-    AudioOutputId aid = AudioOutputId_OpenAL;
+    AudioOutput ao;
     int idx = app.arguments().indexOf("-ao");
     if (idx > 0)
-        aid = AudioOutputFactory::id(app.arguments().at(idx+1).toUtf8().constData(), false);
-    if (!aid) {
+        ao.setBackends(QStringList() << app.arguments().at(idx+1));
+    if (ao.backend().isEmpty()) {
         qWarning("unknow backend");
         return -1;
     }
-    AudioOutput *ao = AudioOutputFactory::create(aid);
     AudioFormat af;
     af.setChannels(2);
     af.setSampleFormat(AudioFormat::SampleFormat_Signed16);
     af.setSampleRate(44100);
-    if (!ao->isSupported(af)) {
+    if (!ao.isSupported(af)) {
         qDebug() << "does not support format: " << af;
         return -1;
     }
-    ao->setAudioFormat(af);
+    ao.setAudioFormat(af);
     QByteArray data(af.bytesPerFrame()*kFrames, 0); //bytesPerSample*channels*1024
-    ao->setBufferSize(data.size());
-    if (!ao->open()) {
+    ao.setBufferSize(data.size());
+    if (!ao.open()) {
         qWarning("open audio error");
         return -1;
     }
@@ -87,9 +80,9 @@ int main(int argc, char** argv)
             left = (left+1) % kTableSize;
             right = (right+3)% kTableSize;
         }
-        ao->setVolume(2*sin(2.0*M_PI/1000.0*timer.elapsed()));
-        ao->play(data);
+        ao.setVolume(2*sin(2.0*M_PI/1000.0*timer.elapsed()));
+        ao.play(data);
     }
-    ao->close();
+    ao.close();
     return 0;
 }
