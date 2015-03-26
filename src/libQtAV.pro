@@ -309,7 +309,7 @@ SOURCES += \
     input/AVInput.cpp \
     input/QIODeviceInput.cpp \
     output/audio/AudioOutput.cpp \
-    output/audio/AudioOutputTypes.cpp \
+    output/audio/AudioOutputBackend.cpp \
     output/video/VideoRenderer.cpp \
     output/video/VideoRendererTypes.cpp \
     output/video/VideoOutput.cpp \
@@ -337,7 +337,6 @@ SDK_HEADERS *= \
     QtAV/AudioFormat.h \
     QtAV/AudioFrame.h \
     QtAV/AudioOutput.h \
-    QtAV/AudioOutputTypes.h \
     QtAV/AVDecoder.h \
     QtAV/AVDemuxer.h \
     QtAV/CommonTypes.h \
@@ -377,6 +376,7 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/SubtitleProcessor.h \
     QtAV/private/AVCompat.h \
     QtAV/private/AudioOutput_p.h \
+    QtAV/private/AudioOutputBackend.h \
     QtAV/private/AudioResampler_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVInput_p.h \

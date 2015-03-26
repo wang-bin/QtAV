@@ -17,8 +17,8 @@
 ******************************************************************************/
 
 
-#include "QtAV/AudioOutput.h"
-#include "QtAV/private/AudioOutput_p.h"
+#include "QtAV/private/AudioOutputBackend.h"
+#include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include <QtCore/QLibrary>
 #include <math.h>
@@ -29,17 +29,23 @@
 #include "utils/Logger.h"
 
 namespace QtAV {
-class AudioOutputDSoundPrivate;
-class AudioOutputDSound : public AudioOutput
+
+template <class T> void SafeRelease(T **ppT) {
+  if (*ppT) {
+    (*ppT)->Release();
+    *ppT = NULL;
+  }
+}
+
+static const char kName[] = "DirectSound";
+class AudioOutputDSound Q_DECL_FINAL: public AudioOutputBackend
 {
-    DPTR_DECLARE_PRIVATE(AudioOutputDSound)
 public:
     AudioOutputDSound(QObject *parent = 0);
-    //AudioOutputId id() const
+    QString name() const Q_DECL_FINAL { return kName;}
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
-protected:
     BufferControl bufferControl() const Q_DECL_FINAL;
     bool write(const QByteArray& data) Q_DECL_FINAL;
     bool play() Q_DECL_FINAL;
@@ -47,22 +53,33 @@ protected:
 
     bool deviceSetVolume(qreal value) Q_DECL_FINAL;
     qreal deviceGetVolume() const Q_DECL_FINAL;
+private:
+    bool loadDll();
+    bool unloadDll();
+    bool init();
+    bool destroy() {
+        SafeRelease(&prim_buf);
+        SafeRelease(&stream_buf);
+        SafeRelease(&dsound);
+        unloadDll();
+        return true;
+    }
+    bool createDSoundBuffers();
+
+    HINSTANCE dll;
+    LPDIRECTSOUND dsound;              ///direct sound object
+    LPDIRECTSOUNDBUFFER prim_buf;      ///primary direct sound buffer
+    LPDIRECTSOUNDBUFFER stream_buf;    ///secondary direct sound buffer (stream buffer)
+    int write_offset;               ///offset of the write cursor in the direct sound buffer
 };
 
-extern AudioOutputId AudioOutputId_DSound;
-FACTORY_REGISTER_ID_AUTO(AudioOutput, DSound, "DirectSound")
+typedef AudioOutputDSound AudioOutputBackendDSound;
+static const AudioOutputBackendId AudioOutputBackendId_DSound = mkid::id32base36_6<'D', 'S', 'o', 'u', 'n', 'd'>::value;
+FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, DSound, kName)
 
 void RegisterAudioOutputDSound_Man()
 {
-    FACTORY_REGISTER_ID_MAN(AudioOutput, DSound, "DirectSound")
-}
-
-
-template <class T> void SafeRelease(T **ppT) {
-  if (*ppT) {
-    (*ppT)->Release();
-    *ppT = NULL;
-  }
+    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, DSound, kName)
 }
 
 #define DX_LOG_COMPONENT "DSound"
@@ -138,68 +155,34 @@ static int channelLayoutToMS(qint64 av) {
     return channelMaskToMS(av);
 }
 
-class  AudioOutputDSoundPrivate : public AudioOutputPrivate
-{
-public:
-    AudioOutputDSoundPrivate()
-        : AudioOutputPrivate()
-        , dll(NULL)
-        , dsound(NULL)
-        , prim_buf(NULL)
-        , stream_buf(NULL)
-        , write_offset(0)
-    {
-    }
-    ~AudioOutputDSoundPrivate() {
-        destroy();
-    }
-    bool loadDll();
-    bool unloadDll();
-    bool init();
-    bool destroy() {
-        SafeRelease(&prim_buf);
-        SafeRelease(&stream_buf);
-        SafeRelease(&dsound);
-        unloadDll();
-        return true;
-    }
-    bool createDSoundBuffers();
-
-    HINSTANCE dll;
-    LPDIRECTSOUND dsound;              ///direct sound object
-    LPDIRECTSOUNDBUFFER prim_buf;      ///primary direct sound buffer
-    LPDIRECTSOUNDBUFFER stream_buf;    ///secondary direct sound buffer (stream buffer)
-    int write_offset;               ///offset of the write cursor in the direct sound buffer
-};
-
 AudioOutputDSound::AudioOutputDSound(QObject *parent)
-    :AudioOutput(DeviceFeatures()|SetVolume, *new AudioOutputDSoundPrivate(), parent)
+    : AudioOutputBackend(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume, parent)
+    , dll(NULL)
+    , dsound(NULL)
+    , prim_buf(NULL)
+    , stream_buf(NULL)
+    , write_offset(0)
 {
-    setDeviceFeatures(DeviceFeatures()|SetVolume);
+    //setDeviceFeatures(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume);
 }
 
 bool AudioOutputDSound::open()
 {
-    DPTR_D(AudioOutputDSound);
-    resetStatus();
-    if (!d.init())
+    if (!init())
         goto error;
-    if (!d.createDSoundBuffers())
+    if (!createDSoundBuffers())
         goto error;
-    d.available = true;
     //playInitialData();
     return true;
 error:
-    d.unloadDll();
-    SafeRelease(&d.dsound);
+    unloadDll();
+    SafeRelease(&dsound);
     return false;
 }
 
 bool AudioOutputDSound::close()
 {
-    DPTR_D(AudioOutputDSound);
-    resetStatus();
-    d.destroy();
+    destroy();
     return true;
 }
 
@@ -209,22 +192,21 @@ bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) cons
             || sampleFormat == AudioFormat::SampleFormat_Float;
 }
 
-AudioOutput::BufferControl AudioOutputDSound::bufferControl() const
+AudioOutputBackend::BufferControl AudioOutputDSound::bufferControl() const
 {
     return OffsetBytes;
 }
 
 bool AudioOutputDSound::write(const QByteArray &data)
 {
-    DPTR_D(AudioOutputDSound);
     LPVOID dst1= NULL, dst2 = NULL;
     DWORD size1 = 0, size2 = 0;
-    if (d.write_offset >= d.bufferSizeTotal()) ///!!!>=
-        d.write_offset = 0;
-    HRESULT res = d.stream_buf->Lock(d.write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0); //DSBLOCK_ENTIREBUFFER
+    if (write_offset >= buffer_size*buffer_count) ///!!!>=
+        write_offset = 0;
+    HRESULT res = stream_buf->Lock(write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0); //DSBLOCK_ENTIREBUFFER
     if (res == DSERR_BUFFERLOST) {
-        d.stream_buf->Restore();
-        res = d.stream_buf->Lock(d.write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0);
+        stream_buf->Restore();
+        res = stream_buf->Lock(write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0);
     }
     if (res != DS_OK) {
         qWarning() << "Can not lock secondary buffer (" << res << "): " << qt_error_string(res);
@@ -233,52 +215,48 @@ bool AudioOutputDSound::write(const QByteArray &data)
     memcpy(dst1, data.constData(), size1);
     if (dst2)
         memcpy(dst2, data.constData() + size1, size2);
-    d.write_offset += size1 + size2;
-    if (d.write_offset >= d.bufferSizeTotal())
-        d.write_offset = size2;
-    DX_ENSURE_OK(d.stream_buf->Unlock(dst1, size1, dst2, size2), false);
+    write_offset += size1 + size2;
+    if (write_offset >= buffer_size*buffer_count)
+        write_offset = size2;
+    DX_ENSURE_OK(stream_buf->Unlock(dst1, size1, dst2, size2), false);
     return true;
 }
 
 bool AudioOutputDSound::play()
 {
-    DPTR_D(AudioOutputDSound);
     DWORD status;
-    d.stream_buf->GetStatus(&status);
+    stream_buf->GetStatus(&status);
     if (!(status & DSBSTATUS_PLAYING)) {
         // we don't need looping here. otherwise sound is always playing repeatly if no data feeded
-        d.stream_buf->Play(0, 0, 0);// DSBPLAY_LOOPING);
+        stream_buf->Play(0, 0, 0);// DSBPLAY_LOOPING);
     }
     return true;
 }
 
 int AudioOutputDSound::getOffsetByBytes()
 {
-    DPTR_D(AudioOutputDSound);
     DWORD read_offset = 0;
-    d.stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
+    stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
     return (int)read_offset;
 }
 
 bool AudioOutputDSound::deviceSetVolume(qreal value)
 {
-    DPTR_D(AudioOutputDSound);
     // dsound supports [0, 1]
     const LONG vol = value <= 0 ? DSBVOLUME_MIN : LONG(log10(value*100.0) * 5000.0) + DSBVOLUME_MIN;
     // +DSBVOLUME_MIN == -100dB
-    DX_ENSURE_OK(d.stream_buf->SetVolume(vol), false);
+    DX_ENSURE_OK(stream_buf->SetVolume(vol), false);
     return true;
 }
 
 qreal AudioOutputDSound::deviceGetVolume() const
 {
-    DPTR_D(const AudioOutputDSound);
     LONG vol = 0;
-    DX_ENSURE_OK(d.stream_buf->GetVolume(&vol), 1.0);
+    DX_ENSURE_OK(stream_buf->GetVolume(&vol), 1.0);
     return pow(10.0, double(vol - DSBVOLUME_MIN)/5000.0)/100.0;
 }
 
-bool AudioOutputDSoundPrivate::loadDll()
+bool AudioOutputDSound::loadDll()
 {
     dll = LoadLibrary(TEXT("dsound.dll"));
     if (!dll) {
@@ -288,14 +266,14 @@ bool AudioOutputDSoundPrivate::loadDll()
     return true;
 }
 
-bool AudioOutputDSoundPrivate::unloadDll()
+bool AudioOutputDSound::unloadDll()
 {
     if (dll)
         FreeLibrary(dll);
     return true;
 }
 
-bool AudioOutputDSoundPrivate::init()
+bool AudioOutputDSound::init()
 {
     if (!loadDll())
         return false;
@@ -336,7 +314,7 @@ bool AudioOutputDSoundPrivate::init()
  * Once you create a secondary buffer, you cannot change its format anymore so
  * you have to release the current one and create another.
  */
-bool AudioOutputDSoundPrivate::createDSoundBuffers()
+bool AudioOutputDSound::createDSoundBuffers()
 {
     WAVEFORMATEXTENSIBLE wformat;
     // TODO:  Dolby Digital AC3
@@ -389,7 +367,7 @@ bool AudioOutputDSoundPrivate::createDSoundBuffers()
     dsbdesc.dwFlags = DSBCAPS_GETCURRENTPOSITION2 /** Better position accuracy */
                       | DSBCAPS_GLOBALFOCUS       /** Allows background playing */
                       | DSBCAPS_CTRLVOLUME;       /** volume control enabled */
-    dsbdesc.dwBufferBytes = bufferSizeTotal();
+    dsbdesc.dwBufferBytes = buffer_size*buffer_count;
     dsbdesc.lpwfxFormat = (WAVEFORMATEX *)&wformat;
     // Needed for 5.1 on emu101k - shit soundblaster
     if (format.channels() > 2)

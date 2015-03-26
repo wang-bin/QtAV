@@ -137,7 +137,6 @@ public:
     bool ao_enabled;
     OutputSet *vos, *aos;
     QVector<VideoDecoderId> vc_ids;
-    QVector<AudioOutputId> ao_ids;
     int brightness, contrast, saturation;
 
     QVariantHash ac_opt, vc_opt;

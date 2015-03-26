@@ -20,114 +20,96 @@
 ******************************************************************************/
 
 
-#include "QtAV/AudioOutput.h"
-#include "QtAV/private/AudioOutput_p.h"
+#include "QtAV/private/AudioOutputBackend.h"
+#include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include <portaudio.h>
-#include <QtCore/QString>
 #include "utils/Logger.h"
 
 namespace QtAV {
 
-class AudioOutputPortAudioPrivate;
-class AudioOutputPortAudio : public AudioOutput
+static const char kName[] = "PortAudio";
+class AudioOutputPortAudio Q_DECL_FINAL: public AudioOutputBackend
 {
-    DPTR_DECLARE_PRIVATE(AudioOutputPortAudio)
 public:
     AudioOutputPortAudio(QObject *parent = 0);
     ~AudioOutputPortAudio();
-    bool open();
-    bool close();
-protected:
-    virtual BufferControl bufferControl() const;
-    virtual bool write(const QByteArray& data);
-    virtual bool play() { return true;}
-};
-
-extern AudioOutputId AudioOutputId_PortAudio;
-FACTORY_REGISTER_ID_AUTO(AudioOutput, PortAudio, "PortAudio")
-
-void RegisterAudioOutputPortAudio_Man()
-{
-    FACTORY_REGISTER_ID_MAN(AudioOutput, PortAudio, "PortAudio")
-}
-
-class AudioOutputPortAudioPrivate : public AudioOutputPrivate
-{
-public:
-    AudioOutputPortAudioPrivate():
-        initialized(false)
-      ,outputParameters(new PaStreamParameters)
-      ,stream(0)
-    {
-        PaError err = paNoError;
-        if ((err = Pa_Initialize()) != paNoError) {
-            qWarning("Error when init portaudio: %s", Pa_GetErrorText(err));
-            return;
-        }
-        initialized = true;
-
-        int numDevices = Pa_GetDeviceCount();
-        for (int i = 0 ; i < numDevices ; ++i) {
-            const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
-            if (deviceInfo) {
-                const PaHostApiInfo *hostApiInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
-                QString name = QString(hostApiInfo->name) + ": " + QString::fromLocal8Bit(deviceInfo->name);
-                qDebug("audio device %d: %s", i, name.toUtf8().constData());
-                qDebug("max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
-            }
-        }
-        memset(outputParameters, 0, sizeof(PaStreamParameters));
-        outputParameters->device = Pa_GetDefaultOutputDevice();
-        if (outputParameters->device == paNoDevice) {
-            qWarning("PortAudio get device error!");
-            available = false;
-            return;
-        }
-        const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(outputParameters->device);
-        qDebug("DEFAULT max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
-        qDebug("audio device: %s", QString::fromLocal8Bit(Pa_GetDeviceInfo(outputParameters->device)->name).toUtf8().constData());
-        outputParameters->hostApiSpecificStreamInfo = NULL;
-        outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
-    }
-    ~AudioOutputPortAudioPrivate() {
-        if (initialized)
-            Pa_Terminate(); //Do NOT call this if init failed. See document
-        if (outputParameters) {
-            delete outputParameters;
-            outputParameters = 0;
-        }
-    }
-
+    QString name() const Q_DECL_FINAL { return kName;}
+    bool open() Q_DECL_FINAL;
+    bool close() Q_DECL_FINAL;
+    virtual BufferControl bufferControl() const Q_DECL_FINAL;
+    virtual bool write(const QByteArray& data) Q_DECL_FINAL;
+    virtual bool play() Q_DECL_FINAL { return true;}
+private:
     bool initialized;
     PaStreamParameters *outputParameters;
     PaStream *stream;
     double outputLatency;
 };
 
-AudioOutputPortAudio::AudioOutputPortAudio(QObject *parent)
-    :AudioOutput(NoFeature, *new AudioOutputPortAudioPrivate(), parent)
+typedef AudioOutputPortAudio AudioOutputBackendPortAudio;
+static const AudioOutputBackendId AudioOutputBackendId_PortAudio = mkid::id32base36_5<'P', 'o', 'r', 't', 'A'>::value;
+FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, PortAudio, kName)
+
+void RegisterAudioOutputPortAudio_Man()
 {
+    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, PortAudio, kName)
+}
+
+AudioOutputPortAudio::AudioOutputPortAudio(QObject *parent)
+    : AudioOutputBackend(AudioOutput::NoFeature, parent)
+    , initialized(false)
+    , outputParameters(new PaStreamParameters)
+    , stream(0)
+{
+    PaError err = paNoError;
+    if ((err = Pa_Initialize()) != paNoError) {
+        qWarning("Error when init portaudio: %s", Pa_GetErrorText(err));
+        return;
+    }
+    initialized = true;
+
+    int numDevices = Pa_GetDeviceCount();
+    for (int i = 0 ; i < numDevices ; ++i) {
+        const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
+        if (deviceInfo) {
+            const PaHostApiInfo *hostApiInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
+            QString name = QString(hostApiInfo->name) + ": " + QString::fromLocal8Bit(deviceInfo->name);
+            qDebug("audio device %d: %s", i, name.toUtf8().constData());
+            qDebug("max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
+        }
+    }
+    memset(outputParameters, 0, sizeof(PaStreamParameters));
+    outputParameters->device = Pa_GetDefaultOutputDevice();
+    if (outputParameters->device == paNoDevice) {
+        qWarning("PortAudio get device error!");
+        return;
+    }
+    const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(outputParameters->device);
+    qDebug("DEFAULT max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
+    qDebug("audio device: %s", QString::fromLocal8Bit(Pa_GetDeviceInfo(outputParameters->device)->name).toUtf8().constData());
+    outputParameters->hostApiSpecificStreamInfo = NULL;
+    outputParameters->suggestedLatency = Pa_GetDeviceInfo(outputParameters->device)->defaultHighOutputLatency;
 }
 
 AudioOutputPortAudio::~AudioOutputPortAudio()
 {
-    close();
+    if (outputParameters) {
+        delete outputParameters;
+        outputParameters = 0;
+    }
 }
 
-AudioOutput::BufferControl AudioOutputPortAudio::bufferControl() const
+AudioOutputBackend::BufferControl AudioOutputPortAudio::bufferControl() const
 {
     return Blocking;
 }
 
 bool AudioOutputPortAudio::write(const QByteArray& data)
 {
-    DPTR_D(AudioOutputPortAudio);
-    QMutexLocker lock(&d.mutex);
-    Q_UNUSED(lock);
-    if (Pa_IsStreamStopped(d.stream))
-        Pa_StartStream(d.stream);
-    PaError err = Pa_WriteStream(d.stream, data.constData(), data.size()/audioFormat().channels()/audioFormat().bytesPerSample());
+    if (Pa_IsStreamStopped(stream))
+        Pa_StartStream(stream);
+    PaError err = Pa_WriteStream(stream, data.constData(), data.size()/format.channels()/format.bytesPerSample());
     if (err == paUnanticipatedHostError) {
         qWarning("Write portaudio stream error: %s", Pa_GetErrorText(err));
         return   false;
@@ -155,44 +137,35 @@ static int toPaSampleFormat(AudioFormat::SampleFormat format)
 //TODO: call open after audio format changed?
 bool AudioOutputPortAudio::open()
 {
-    DPTR_D(AudioOutputPortAudio);
-    QMutexLocker lock(&d.mutex);
-    Q_UNUSED(lock);
-    resetStatus();
-    d.outputParameters->sampleFormat = toPaSampleFormat(audioFormat().sampleFormat());
-    d.outputParameters->channelCount = audioFormat().channels();
-    PaError err = Pa_OpenStream(&d.stream, NULL, d.outputParameters, audioFormat().sampleRate(), 0, paNoFlag, NULL, NULL);
-    if (err == paNoError) {
-        d.outputLatency = Pa_GetStreamInfo(d.stream)->outputLatency;
-        d.available = true;
-    } else {
+    outputParameters->sampleFormat = toPaSampleFormat(format.sampleFormat());
+    outputParameters->channelCount = format.channels();
+    PaError err = Pa_OpenStream(&stream, NULL, outputParameters, format.sampleRate(), 0, paNoFlag, NULL, NULL);
+    if (err != paNoError) {
         qWarning("Open portaudio stream error: %s", Pa_GetErrorText(err));
-        d.available = false;
+        return false;
     }
-    return err == paNoError;
+    outputLatency = Pa_GetStreamInfo(stream)->outputLatency;
+    return true;
 }
 
 bool AudioOutputPortAudio::close()
 {
-    DPTR_D(AudioOutputPortAudio);
-    QMutexLocker lock(&d.mutex);
-    Q_UNUSED(lock);
-    resetStatus();
-    PaError err = paNoError;
-    if (!d.stream) {
+    if (!stream) {
         return true;
     }
-    err = Pa_StopStream(d.stream); //may be already stopped: paStreamIsStopped
+    PaError err = Pa_StopStream(stream); //may be already stopped: paStreamIsStopped
     if (err != paNoError) {
         qWarning("Stop portaudio stream error: %s", Pa_GetErrorText(err));
         //return err == paStreamIsStopped;
     }
-    err = Pa_CloseStream(d.stream);
+    err = Pa_CloseStream(stream);
     if (err != paNoError) {
         qWarning("Close portaudio stream error: %s", Pa_GetErrorText(err));
         return false;
     }
-    d.stream = NULL;
+    stream = NULL;
+    if (initialized)
+        Pa_Terminate(); //Do NOT call this if init failed. See document
     return true;
 }
 } //namespace QtAV

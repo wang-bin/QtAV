@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,47 +19,56 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/AudioOutputTypes.h"
-#include "QtAV/FactoryDefine.h"
+#include "QtAV/private/AudioOutputBackend.h"
 #include "QtAV/private/factory.h"
-#include "QtAV/private/mkid.h"
+
 namespace QtAV {
 
-AudioOutputId AudioOutputId_PortAudio = mkid::id32base36_5<'P', 'o', 'r', 't', 'A'>::value;
-AudioOutputId AudioOutputId_OpenAL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'A', 'L'>::value;
-AudioOutputId AudioOutputId_OpenSL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'S', 'L'>::value;
-AudioOutputId AudioOutputId_DSound = mkid::id32base36_6<'D', 'S', 'o', 'u', 'n', 'd'>::value;
-AudioOutputId AudioOutputId_Pulse = mkid::id32base36_5<'P', 'u', 'l', 's', 'e'>::value;
+AudioOutputBackend::AudioOutputBackend(AudioOutput::DeviceFeatures f, QObject *parent)
+    : QObject(parent)
+    , audio(0)
+    , buffer_size(0)
+    , buffer_count(0)
+    , m_features(f)
+{}
 
-QVector<AudioOutputId> GetRegistedAudioOutputIds()
+void AudioOutputBackend::onCallback()
 {
-    return QVector<AudioOutputId>::fromStdVector(AudioOutputFactory::registeredIds());
+    if (!audio)
+        return;
+    audio->onCallback();
 }
 
 
-FACTORY_DEFINE(AudioOutput)
-
-extern void RegisterAudioOutputPortAudio_Man();
-extern void RegisterAudioOutputOpenAL_Man();
-extern void RegisterAudioOutputOpenSL_Man();
-extern void RegisterAudioOutputDSound_Man();
-extern void RegisterAudioOutputPulse_Man();
+FACTORY_DEFINE(AudioOutputBackend)
 
 void AudioOutput_RegisterAll()
 {
+    static bool initialized = false;
+    if (initialized)
+        return;
+    initialized = true;
+    // check whether ids are registered automatically
+    if (!AudioOutputBackendFactory::registeredIds().empty())
+        return;
 #if QTAV_HAVE(PORTAUDIO)
+    extern void RegisterAudioOutputPortAudio_Man();
     RegisterAudioOutputPortAudio_Man();
 #endif //QTAV_HAVE(PORTAUDIO)
 #if QTAV_HAVE(OPENAL)
+    extern void RegisterAudioOutputOpenAL_Man();
     RegisterAudioOutputOpenAL_Man();
 #endif //QTAV_HAVE(OPENAL)
 #if QTAV_HAVE(OPENSL)
+    extern void RegisterAudioOutputOpenSL_Man();
     RegisterAudioOutputOpenSL_Man();
 #endif //QTAV_HAVE(OPENSL)
 #if QTAV_HAVE(DSOUND)
+    extern void RegisterAudioOutputDSound_Man();
     RegisterAudioOutputDSound_Man();
 #endif
 #if QTAV_HAVE(PULSEAUDIO)
+    extern void RegisterAudioOutputPulse_Man();
     RegisterAudioOutputPulse_Man();
 #endif
 }
