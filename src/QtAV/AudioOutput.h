@@ -37,8 +37,6 @@
  * }
  * ao->close();
  * See QtAV/tests/ao/main.cpp for detail
- *
- * Add A New Backend:
  */
 namespace QtAV {
 
@@ -190,7 +188,6 @@ signals:
     void deviceFeaturesChanged();
     void backendsChanged();
 protected:
-    void playInitialData(); //required by some backends, e.g. openal
     // Store and fill data to audio buffers
     bool receiveData(const QByteArray &data, qreal pts = 0.0);
     /*!

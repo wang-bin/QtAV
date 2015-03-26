@@ -72,6 +72,7 @@ public:
     }
     virtual ~AudioOutputPrivate();
 
+    void playInitialData(); //required by some backends, e.g. openal
     void onCallback() { cond.wakeAll();}
     virtual void uwait(qint64 us) {
         QMutexLocker lock(&mutex);

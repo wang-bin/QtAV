@@ -172,7 +172,6 @@ bool AudioOutputDSound::open()
         goto error;
     if (!createDSoundBuffers())
         goto error;
-    //playInitialData();
     return true;
 error:
     unloadDll();

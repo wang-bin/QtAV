@@ -114,6 +114,22 @@ AudioOutputPrivate::~AudioOutputPrivate()
     }
 }
 
+void AudioOutputPrivate::playInitialData()
+{
+    if (!backend)
+        return;
+    const char c = (format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8
+                    || format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8Planar)
+            ? 0x80 : 0;
+    for (quint32 i = 1; i < nb_buffers; ++i) {
+        backend->write(QByteArray(buffer_size, c)); // fill silence byte, not always 0. AudioFormat.silenceByte
+        nextEnqueueInfo().data_size = buffer_size;
+        nextEnqueueInfo().timestamp = 0;
+        bufferAdded();
+    }
+    backend->play();
+}
+
 AudioOutput::AudioOutput(QObject* parent)
     : QObject(parent)
     , AVOutput(*new AudioOutputPrivate())
@@ -220,7 +236,7 @@ bool AudioOutput::open()
     if (!d.backend->open())
         return false;
     d.available = true;
-    playInitialData();
+    d.playInitialData();
     return true;
 }
 
@@ -241,23 +257,6 @@ bool AudioOutput::play(const QByteArray &data, qreal pts)
         return false;
     receiveData(data, pts);
     return d.backend->play();
-}
-
-void AudioOutput::playInitialData()
-{
-    DPTR_D(AudioOutput);
-    if (!d.backend)
-        return;
-    const char c = (d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8
-                    || d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8Planar)
-            ? 0x80 : 0;
-    for (int i = 1; i < bufferCount(); ++i) {
-        d.backend->write(QByteArray(bufferSize(), c)); // fill silence byte, not always 0. AudioFormat.silenceByte
-        d.nextEnqueueInfo().data_size = sizeof(bufferSize());
-        d.nextEnqueueInfo().timestamp = 0;
-        d.bufferAdded();
-    }
-    d.backend->play();
 }
 
 bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
