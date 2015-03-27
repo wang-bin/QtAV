@@ -122,10 +122,7 @@ class Q_AV_EXPORT AudioFilter : public Filter
 public:
     AudioFilter(QObject* parent = 0);
     bool installTo(AVPlayer *player);
-    void apply(Statistics* statistics, const QByteArray& data); //TODO: return delay?
-    void setInputFormat(const AudioFormat& af);
-    AudioFormat& inputFormat() const;
-    virtual qreal apply(const QByteArray& data) = 0;
+    void apply(Statistics* statistics, AudioFrame *frame = 0);
 protected:
     AudioFilter(AudioFilterPrivate& d, QObject *parent = 0);
     virtual void process(Statistics* statistics, AudioFrame* frame = 0) = 0;

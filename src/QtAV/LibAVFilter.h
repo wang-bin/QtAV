@@ -57,8 +57,10 @@ public:
 protected:
     virtual QString sourceArguments() const = 0;
     bool pushVideoFrame(Frame* frame, bool changed);
-   // bool pushAudioFrame(Frame* frame, bool changed);
+    bool pushAudioFrame(Frame* frame, bool changed);
     void* pullFrameHolder();
+private:
+    virtual void emitOptionsChanged() {}
     class Private;
     Private *priv;
 };
@@ -74,19 +76,25 @@ Q_SIGNALS:
 protected:
     void process(Statistics *statistics, VideoFrame *frame) Q_DECL_FINAL;
     QString sourceArguments() const Q_DECL_FINAL;
+private:
+    void emitOptionsChanged() Q_DECL_FINAL;
 };
-/*
+
 class Q_AV_EXPORT LibAVFilterAudio : public AudioFilter, public LibAVFilter
 {
     Q_OBJECT
     Q_PROPERTY(QString options READ options WRITE setOptions NOTIFY optionsChanged)
+public:
+    LibAVFilterAudio(QObject *parent = 0);
 Q_SIGNALS:
     void optionsChanged();
 protected:
     void process(Statistics *statistics, AudioFrame *frame) Q_DECL_FINAL;
     QString sourceArguments() const Q_DECL_FINAL;
+private:
+    void emitOptionsChanged() Q_DECL_FINAL;
 };
-*/
+
 } //namespace QtAV
 
 #endif // QTAV_LIBAVFILTER_H
