@@ -477,7 +477,9 @@ bool LibAVFilter::Private::pushAudioFrame(Frame *frame, bool changed, const QStr
     avframe->pts = frame->timestamp() * 1000000.0; // time_base is 1/1000000
     avframe->sample_rate = afmt.sampleRate();
     avframe->channel_layout = afmt.channelLayoutFFmpeg();
+#if QTAV_USE_FFMPEG(LIBAVCODEC) || QTAV_USE_FFMPEG(LIBAVUTIL) //AVFrame was in avcodec
     avframe->channels = afmt.channels(); //MUST set because av_buffersrc_write_frame will compare channels and layout
+#endif
     avframe->format = (AVSampleFormat)afmt.sampleFormatFFmpeg();
     avframe->nb_samples = af->samplesPerChannel();
     for (int i = 0; i < af->planeCount(); ++i) {
