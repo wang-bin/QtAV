@@ -152,6 +152,16 @@ public:
         inputs->pad_idx    = 0;
         inputs->next       = NULL;
 
+        struct delete_helper {
+            AVFilterInOut **x;
+            delete_helper(AVFilterInOut **io) : x(io) {}
+            ~delete_helper() {
+                // libav always free it in avfilter_graph_parse. so we does nothing
+#if QTAV_USE_FFMPEG(LIBAVFILTER)
+                avfilter_inout_free(x);
+#endif
+            }
+        } scoped_in(&inputs), scoped_out(&outputs);
         //avfilter_graph_parse, avfilter_graph_parse2?
 #if QTAV_USE_FFMPEG(LIBAVFILTER)
         if ((ret = avfilter_graph_parse_ptr(filter_graph, options.toUtf8().constData(), &inputs, &outputs, NULL)) < 0) {
@@ -159,20 +169,14 @@ public:
         if ((ret = avfilter_graph_parse(filter_graph, options.toUtf8().constData(), inputs, outputs, NULL))) {
 #endif
             qWarning("avfilter_graph_parse_ptr fail: %s", av_err2str(ret));
-            avfilter_inout_free(&outputs);
-            avfilter_inout_free(&inputs);
             status = LibAVFilter::ConfigureFailed;
             return false;
         }
         if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
             qWarning("avfilter_graph_config fail: %s", av_err2str(ret));
-            avfilter_inout_free(&outputs);
-            avfilter_inout_free(&inputs);
             status = LibAVFilter::ConfigureFailed;
             return false;
         }
-        avfilter_inout_free(&outputs);
-        avfilter_inout_free(&inputs);
         avframe = av_frame_alloc();
         status = LibAVFilter::ConfigreOk;
         return true;
@@ -187,7 +191,6 @@ public:
     AVFilterContext *out_filter_ctx;
 #endif //QTAV_HAVE(AVFILTER)
     AVFrame *avframe;
-
     QString options;
     LibAVFilter::Status status;
 };
@@ -334,8 +337,16 @@ void LibAVFilterVideo::process(Statistics *statistics, VideoFrame *frame)
 QString LibAVFilterVideo::sourceArguments() const
 {
     DPTR_D(const LibAVFilterVideo);
+#if QTAV_USE_LIBAV(LIBAVFILTER)
+    return QString("%1:%2:%3:%4:%5:%6:%7")
+            .arg(d.width).arg(d.height).arg(d.pixfmt)
+            .arg(1).arg(AV_TIME_BASE) //time base 1/1?
+            .arg(1).arg(1) //sar
+            ;
+#else
     return QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=1")
             .arg(d.width).arg(d.height).arg(d.pixfmt).arg(1).arg(AV_TIME_BASE); //time base 1/1?
+#endif
 }
 
 void LibAVFilterVideo::emitOptionsChanged()
