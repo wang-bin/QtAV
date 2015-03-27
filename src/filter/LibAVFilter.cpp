@@ -177,6 +177,7 @@ public:
         status = LibAVFilter::ConfigreOk;
         return true;
 #else
+        status = LibAVFilter::ConfigureFailed;
         return false;
 #endif //QTAV_HAVE(AVFILTER)
     }
@@ -287,7 +288,7 @@ public:
 };
 
 LibAVFilterVideo::LibAVFilterVideo(QObject *parent)
-    : VideoFilter(parent)
+    : VideoFilter(*new LibAVFilterVideoPrivate(), parent)
     , LibAVFilter()
 {}
 
@@ -309,6 +310,9 @@ void LibAVFilterVideo::process(Statistics *statistics, VideoFrame *frame)
     bool ok = pushVideoFrame(frame, changed);
     //if (old != status())
       //  emit statusChanged();
+    if (status() == ConfigureFailed) {
+        setEnabled(false);
+    }
     if (!ok)
         return;
 
@@ -354,7 +358,7 @@ public:
 };
 
 LibAVFilterAudio::LibAVFilterAudio(QObject *parent)
-    : AudioFilter(parent)
+    : AudioFilter(*new LibAVFilterAudioPrivate(), parent)
     , LibAVFilter()
 {}
 
@@ -389,6 +393,9 @@ void LibAVFilterAudio::process(Statistics *statistics, AudioFrame *frame)
     bool ok = pushAudioFrame(frame, changed);
     //if (old != status())
       //  emit statusChanged();
+    if (status() == ConfigureFailed) {
+        setEnabled(false);
+    }
     if (!ok)
         return;
 

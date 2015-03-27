@@ -1385,7 +1385,7 @@ void MainWindow::onAVFilterConfigChanged()
 {
     if (Config::instance().avfilterEnable()) {
         if (!mpAVFilter) {
-            mpAVFilter = new LibAVFilterVideo();
+            mpAVFilter = new LibAVFilterVideo(this);
         }
         mpAVFilter->setEnabled(true);
         mpPlayer->installVideoFilter(mpAVFilter);
