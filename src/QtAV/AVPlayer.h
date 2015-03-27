@@ -421,6 +421,7 @@ private slots:
     void startNotifyTimer();
     void stopNotifyTimer();
     void onStarted();
+    void updateMediaStatus(QtAV::MediaStatus status);
 
 protected:
     // TODO: set position check timer interval

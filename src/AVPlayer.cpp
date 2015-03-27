@@ -78,7 +78,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     //d->clock->setClockType(AVClock::ExternalClock);
     connect(&d->demuxer, SIGNAL(started()), masterClock(), SLOT(start()));
     connect(&d->demuxer, SIGNAL(error(QtAV::AVError)), this, SIGNAL(error(QtAV::AVError)));
-    connect(&d->demuxer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
+    connect(&d->demuxer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(&d->demuxer, SIGNAL(loaded()), this, SIGNAL(loaded()));
     connect(&d->demuxer, SIGNAL(seekableChanged()), this, SIGNAL(seekableChanged()));
     d->read_thread = new AVDemuxThread(this);
@@ -86,7 +86,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     //direct connection can not sure slot order?
     connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()));
     connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
-    connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)));
+    connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
 
     d->vcapture = new VideoCapture(this);
@@ -487,7 +487,7 @@ bool AVPlayer::isPaused() const
 
 MediaStatus AVPlayer::mediaStatus() const
 {
-    return d->demuxer.mediaStatus(); //FIXME: status from read thread. store status value in slot and emit signal
+    return d->status;
 }
 
 void AVPlayer::setAutoLoad(bool value)
@@ -1168,6 +1168,14 @@ void AVPlayer::onStarted()
         return;
     if (d->ao->isMute() != isMute())
         d->ao->setMute(isMute());
+}
+
+void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)
+{
+    if (status == d->status)
+        return;
+    d->status = status;
+    emit mediaStatusChanged(d->status);
 }
 
 // TODO: doc about when the state will be reset

@@ -234,7 +234,6 @@ private:
     PlaybackState mPlaybackState;
     Error mError;
     QString mErrorString;
-    QtAV::MediaStatus m_status;
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
     QStringList mVideoCodecs;

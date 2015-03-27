@@ -151,6 +151,7 @@ public:
     // timerEvent interval in ms. can divide 1000. depends on media duration, fps etc.
     // <0: auto compute internally, |notify_interval| is the real interval
     int notify_interval;
+    MediaStatus status; // status changes can be from demuxer or demux thread
 };
 
 } //namespace QtAV
