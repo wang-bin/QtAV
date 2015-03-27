@@ -31,7 +31,7 @@ class AVError;
 class AVPlayer;
 class AVClock;
 class VideoRenderer;
-class LibAVFilter;
+class LibAVFilterVideo;
 class SubtitleFilter;
 class VideoPreviewWidget;
 }
@@ -180,7 +180,7 @@ private:
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;
     QtAV::VideoRenderer *mpRenderer, *mpTempRenderer;
-    QtAV::LibAVFilter *mpAVFilter;
+    QtAV::LibAVFilterVideo *mpAVFilter;
     QString mFile;
     QString mTitle;
     QPixmap mPlayPixmap;

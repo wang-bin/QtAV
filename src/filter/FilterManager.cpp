@@ -64,7 +64,7 @@ bool FilterManager::registerFilter(Filter *filter, AVOutput *output)
     DPTR_D(FilterManager);
     d.pending_release_filters.removeAll(filter); //erase?
     if (d.filter_out_map.contains(filter)|| d.vfilter_player_map.contains(filter) || d.afilter_player_map.contains(filter)) {
-        qWarning("Filter %p lready registered!", filter);
+        qWarning("Filter %p already registered!", filter);
         return false;
     }
     d.filter_out_map.insert(filter, output);
@@ -82,7 +82,7 @@ bool FilterManager::registerAudioFilter(Filter *filter, AVPlayer *player)
     DPTR_D(FilterManager);
     d.pending_release_filters.removeAll(filter); //erase?
     if (d.filter_out_map.contains(filter) || d.afilter_player_map.contains(filter) || d.vfilter_player_map.contains(filter)) {
-        qWarning("Filter %p lready registered!", filter);
+        qWarning("Filter %p already registered!", filter);
         return false;
     }
     d.afilter_player_map.insert(filter, player);
@@ -100,7 +100,7 @@ bool FilterManager::registerVideoFilter(Filter *filter, AVPlayer *player)
     DPTR_D(FilterManager);
     d.pending_release_filters.removeAll(filter); //erase?
     if (d.filter_out_map.contains(filter) || d.vfilter_player_map.contains(filter) || d.afilter_player_map.contains(filter)) {
-        qWarning("Filter %p lready registered!", filter);
+        qWarning("Filter %p already registered!", filter);
         return false;
     }
     d.vfilter_player_map.insert(filter, player);

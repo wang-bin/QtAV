@@ -6,7 +6,7 @@
 #include <QtAV/LibAVFilter.h>
 #include <QtAV/AVPlayer.h>
 using namespace QtAV;
-class AVFilterSubtitle : public LibAVFilter
+class AVFilterSubtitle : public LibAVFilterVideo
 {
     Q_OBJECT
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)

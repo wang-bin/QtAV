@@ -112,10 +112,9 @@ bool AudioFilter::installTo(AVPlayer *player)
     return player->installAudioFilter(this);
 }
 
-void AudioFilter::apply(Statistics *statistics, const QByteArray &data)
+void AudioFilter::apply(Statistics *statistics, AudioFrame *frame)
 {
-    Q_UNUSED(statistics);
-    Q_UNUSED(data);
+    process(statistics, frame);
 }
 
 VideoFilter::VideoFilter(QObject *parent)
