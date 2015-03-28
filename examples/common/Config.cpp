@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -95,9 +95,13 @@ public:
         analyze_duration = settings.value("analyzeduration", 5000000).toInt();
         avformat_extra = settings.value("extra", "").toString();
         settings.endGroup();
-        settings.beginGroup("avfilter");
-        avfilter_on = settings.value("enable", true).toBool();
-        avfilter = settings.value("options", "").toString();
+        settings.beginGroup("avfilterVideo");
+        avfilterVideo_on = settings.value("enable", true).toBool();
+        avfilterVideo = settings.value("options", "").toString();
+        settings.endGroup();
+        settings.beginGroup("avfilterAudio");
+        avfilterAudio_on = settings.value("enable", true).toBool();
+        avfilterAudio = settings.value("options", "").toString();
         settings.endGroup();
     }
     void save() {
@@ -133,10 +137,15 @@ public:
         settings.setValue("analyzeduration", analyze_duration);
         settings.setValue("extra", avformat_extra);
         settings.endGroup();
-        settings.beginGroup("avfilter");
-        settings.setValue("enable", avfilter_on);
-        settings.setValue("options", avfilter);
+        settings.beginGroup("avfilterVideo");
+        settings.setValue("enable", avfilterVideo_on);
+        settings.setValue("options", avfilterVideo);
         settings.endGroup();
+        settings.beginGroup("avfilterAudio");
+        settings.setValue("enable", avfilterAudio_on);
+        settings.setValue("options", avfilterAudio);
+        settings.endGroup();
+        qDebug() << "sync end";
     }
 
     QString dir;
@@ -153,8 +162,10 @@ public:
     unsigned int probe_size;
     int analyze_duration;
     QString avformat_extra;
-    bool avfilter_on;
-    QString avfilter;
+    bool avfilterVideo_on;
+    QString avfilterVideo;
+    bool avfilterAudio_on;
+    QString avfilterAudio;
 
     QStringList subtitle_engines;
     bool subtitle_autoload;
@@ -480,31 +491,59 @@ Config& Config::avformatExtra(const QString &text)
     return *this;
 }
 
-QString Config::avfilterOptions() const
+QString Config::avfilterVideoOptions() const
 {
-    return mpData->avfilter;
+    return mpData->avfilterVideo;
 }
 
-Config& Config::avfilterOptions(const QString& options)
+Config& Config::avfilterVideoOptions(const QString& options)
 {
-    if (mpData->avfilter == options)
+    if (mpData->avfilterVideo == options)
         return *this;
-    mpData->avfilter = options;
-    emit avfilterChanged();
+    mpData->avfilterVideo = options;
+    emit avfilterVideoChanged();
     return *this;
 }
 
-bool Config::avfilterEnable() const
+bool Config::avfilterVideoEnable() const
 {
-    return mpData->avfilter_on;
+    return mpData->avfilterVideo_on;
 }
 
-Config& Config::avfilterEnable(bool e)
+Config& Config::avfilterVideoEnable(bool e)
 {
-    if (mpData->avfilter_on == e)
+    if (mpData->avfilterVideo_on == e)
         return *this;
-    mpData->avfilter_on = e;
-    emit avfilterChanged();
+    mpData->avfilterVideo_on = e;
+    emit avfilterVideoChanged();
+    return *this;
+}
+
+QString Config::avfilterAudioOptions() const
+{
+    return mpData->avfilterAudio;
+}
+
+Config& Config::avfilterAudioOptions(const QString& options)
+{
+    if (mpData->avfilterAudio == options)
+        return *this;
+    mpData->avfilterAudio = options;
+    emit avfilterAudioChanged();
+    return *this;
+}
+
+bool Config::avfilterAudioEnable() const
+{
+    return mpData->avfilterAudio_on;
+}
+
+Config& Config::avfilterAudioEnable(bool e)
+{
+    if (mpData->avfilterAudio_on == e)
+        return *this;
+    mpData->avfilterAudio_on = e;
+    emit avfilterAudioChanged();
     return *this;
 }
 

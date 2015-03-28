@@ -48,7 +48,7 @@ protected:
     virtual void applyToUi() = 0;
     /*!
      * \brief applyFromUi
-     * Save configuration values from UI. Call Config::xxx(value) in your implemention
+     * Save configuration values from UI. Call Config::xxx(value) in your implementation
      */
     virtual void applyFromUi() = 0;
 private:

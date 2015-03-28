@@ -130,7 +130,7 @@ void AVFilterSubtitle::onPlayerStart()
 
 void AVFilterSubtitle::onStatusChanged()
 {
-    if (status() == ConfigreOk) {
+    if (status() == ConfigureOk) {
         emit loaded();
     } else if (status() == ConfigureFailed) {
         if (options().isEmpty())
