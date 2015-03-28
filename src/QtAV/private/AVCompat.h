@@ -33,6 +33,9 @@
     (QTAV_USE_LIBAV(MODULE) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO))
 #define AV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO, MINOR2, MICRO2) \
     (LIBAV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) || FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR2, MICRO2))
+/// example: AV_ENSURE_OK(avcodec_close(avctx), false) will print error and return false if failed. AV_WARN just prints error.
+#define AV_ENSURE_OK(FUNC, ...) AV_RUN_CHECK(FUNC, return, __VA_ARGS__)
+#define AV_WARN(FUNC) AV_RUN_CHECK(FUNC, void)
 
 #include "QtAV_Global.h"
 #ifdef __cplusplus
@@ -377,5 +380,12 @@ void av_packet_free_side_data(AVPacket *pkt);
 
 // helper functions
 const char *get_codec_long_name(AVCodecID id);
+
+#define AV_RUN_CHECK(FUNC, RETURN, ...) do { \
+    int ret = FUNC; \
+    if (ret < 0) { \
+        av_log(NULL, AV_LOG_WARNING, "Error " #FUNC " @%d " __FILE__ ": (%#x) %s\n", __LINE__, ret, av_err2str(ret)); \
+        RETURN __VA_ARGS__; \
+     } } while(0)
 
 #endif //QTAV_COMPAT_H
