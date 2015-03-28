@@ -22,7 +22,13 @@
 #include "QtAVWidgets/GraphicsItemRenderer.h"
 #include "QtAV/private/QPainterRenderer_p.h"
 #include "QtAV/FilterContext.h"
+#define QTAV_HAVE_OPENGL (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0) || defined(QT_OPENGL_LIB))
+#if QTAV_HAVE(OPENGL)
 #include "QtAV/OpenGLVideo.h"
+#else
+typedef float GLfloat;
+#endif
+#include <QMatrix4x4>
 #include <QGraphicsScene>
 #include <QtGui/QPainter>
 #include <QEvent>
@@ -49,6 +55,7 @@ public:
     }
     // return true if opengl is enabled and context is ready. may called by non-rendering thread
     bool checkGL() {
+#if QTAV_HAVE(OPENGL)
         if (!opengl) {
             glv.setOpenGLContext(0); // it's for Qt4. may not in rendering thread
             return false;
@@ -62,10 +69,14 @@ public:
             glv.setOpenGLContext(ctx);
         }
         return true;
+#endif
+        return false;
     }
 
     bool opengl;
+#if QTAV_HAVE(OPENGL)
     OpenGLVideo glv;
+#endif
     QMatrix4x4 matrix;
 };
 
@@ -104,11 +115,14 @@ bool GraphicsItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GraphicsItemRenderer);
+#if QTAV_HAVE(OPENGL)
     if (isOpenGL()) {
         d.video_frame = frame;
         if (d.checkGL())
             d.glv.setCurrentFrame(frame);
-    } else {
+    } else
+#endif
+    {
         prepareFrame(frame);
     }
     scene()->update(sceneBoundingRect());
@@ -123,7 +137,10 @@ QRectF GraphicsItemRenderer::boundingRect() const
 
 bool GraphicsItemRenderer::isOpenGL() const
 {
+#if QTAV_HAVE(OPENGL)
     return d_func().opengl;
+#endif
+    return false;
 }
 
 void GraphicsItemRenderer::setOpenGL(bool o)
@@ -172,10 +189,12 @@ void GraphicsItemRenderer::drawFrame()
     DPTR_D(GraphicsItemRenderer);
     if (!d.painter)
         return;
+#if QTAV_HAVE(OPENGL)
     if (d.checkGL()) {
         d.glv.render(boundingRect(), realROI(), d.matrix*sceneTransform());
         return;
     }
+#endif
     QPainterRenderer::drawFrame();
 }
 
@@ -206,36 +225,48 @@ bool GraphicsItemRenderer::onSetBrightness(qreal b)
 {
     if (!isOpenGL())
         return false;
+#if QTAV_HAVE(OPENGL)
     d_func().glv.setBrightness(b);
     update();
     return true;
+#endif
+    return false;
 }
 
 bool GraphicsItemRenderer::onSetContrast(qreal c)
 {
     if (!isOpenGL())
         return false;
+#if QTAV_HAVE(OPENGL)
     d_func().glv.setContrast(c);
     update();
     return true;
+#endif
+    return false;
 }
 
 bool GraphicsItemRenderer::onSetHue(qreal h)
 {
     if (!isOpenGL())
         return false;
+#if QTAV_HAVE(OPENGL)
     d_func().glv.setHue(h);
     update();
     return true;
+#endif
+    return false;
 }
 
 bool GraphicsItemRenderer::onSetSaturation(qreal s)
 {
     if (!isOpenGL())
         return false;
+#if QTAV_HAVE(OPENGL)
     d_func().glv.setSaturation(s);
     update();
     return true;
+#endif
+    return false;
 }
 //GraphicsWidget will lose focus forever if focus out. Why?
 
