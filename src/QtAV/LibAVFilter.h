@@ -30,6 +30,9 @@ namespace QtAV {
 class Q_AV_EXPORT LibAVFilter
 {
 public:
+    static QString filterDescription(const QString& filterName);
+    static QStringList videoFilters();
+    static QStringList audioFilters();
     /*!
      * \brief The Status enum
      * Status of filter graph.
@@ -40,7 +43,7 @@ public:
     enum Status {
         NotConfigured,
         ConfigureFailed,
-        ConfigreOk
+        ConfigureOk
     };
 
     LibAVFilter();
@@ -59,6 +62,7 @@ protected:
     bool pushVideoFrame(Frame* frame, bool changed);
     bool pushAudioFrame(Frame* frame, bool changed);
     void* pullFrameHolder();
+    static QStringList registeredFilters(int type); // filters whose input/output type matches
 private:
     virtual void emitOptionsChanged() {}
     class Private;
@@ -69,8 +73,10 @@ class Q_AV_EXPORT LibAVFilterVideo : public VideoFilter, public LibAVFilter
 {
     Q_OBJECT
     Q_PROPERTY(QString options READ options WRITE setOptions NOTIFY optionsChanged)
+    Q_PROPERTY(QStringList filters READ filters)
 public:
     LibAVFilterVideo(QObject *parent = 0);
+    QStringList filters() const; //the same as LibAVFilter::videoFilters
 Q_SIGNALS:
     void optionsChanged();
 protected:
@@ -84,8 +90,10 @@ class Q_AV_EXPORT LibAVFilterAudio : public AudioFilter, public LibAVFilter
 {
     Q_OBJECT
     Q_PROPERTY(QString options READ options WRITE setOptions NOTIFY optionsChanged)
+    Q_PROPERTY(QStringList filters READ filters)
 public:
     LibAVFilterAudio(QObject *parent = 0);
+    QStringList filters() const; //the same as LibAVFilter::audioFilters
 Q_SIGNALS:
     void optionsChanged();
 protected:

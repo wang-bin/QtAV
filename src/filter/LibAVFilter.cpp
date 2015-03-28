@@ -58,6 +58,7 @@ public:
     AVFrame* frame() { return m_frame;}
 #if !QTAV_HAVE_av_buffersink_get_frame
     AVFilterBufferRef** bufferRef() { return &picref;}
+    // copy properties and data ptrs(no deep copy).
     void copyBufferToFrame() { avfilter_copy_buf_props(m_frame, picref);}
 #endif
 private:
@@ -101,9 +102,6 @@ public:
         status = LibAVFilter::NotConfigured;
         return true;
     }
-
-    AVFrameHolderRef pullAVFrame();
-
     bool pushAudioFrame(Frame *frame, bool changed, const QString& args);
     bool pushVideoFrame(Frame *frame, bool changed, const QString& args);
 
@@ -112,6 +110,7 @@ public:
             av_frame_free(&avframe);
             avframe = 0;
         }
+        status = LibAVFilter::ConfigureFailed;
 #if QTAV_HAVE(AVFILTER)
         avfilter_graph_free(&filter_graph);
         filter_graph = avfilter_graph_alloc();
@@ -121,24 +120,17 @@ public:
         qDebug("buffersrc_args=%s", buffersrc_args.toUtf8().constData());
         AVFilter *buffersrc  = avfilter_get_by_name(video ? "buffer" : "abuffer");
         Q_ASSERT(buffersrc);
-        int ret = avfilter_graph_create_filter(&in_filter_ctx,
+        AV_ENSURE_OK(avfilter_graph_create_filter(&in_filter_ctx,
                                                buffersrc,
                                                "in", buffersrc_args.toUtf8().constData(), NULL,
-                                               filter_graph);
-        if (ret < 0) {
-            qWarning("Can not create buffer source: %s", av_err2str(ret));
-            status = LibAVFilter::ConfigureFailed;
-            return false;
-        }
+                                               filter_graph)
+                     , false);
         /* buffer video sink: to terminate the filter chain. */
         AVFilter *buffersink = avfilter_get_by_name(video ? "buffersink" : "abuffersink");
         Q_ASSERT(buffersink);
-        if ((ret = avfilter_graph_create_filter(&out_filter_ctx, buffersink, "out",
-                                           NULL, NULL, filter_graph)) < 0) {
-            qWarning("Can not create buffer sink: %s", av_err2str(ret));
-            status = LibAVFilter::ConfigureFailed;
-            return false;
-        }
+        AV_ENSURE_OK(avfilter_graph_create_filter(&out_filter_ctx, buffersink, "out",
+                                           NULL, NULL, filter_graph)
+                , false);
         /* Endpoints for the filter graph. */
         AVFilterInOut *outputs = avfilter_inout_alloc();
         AVFilterInOut *inputs  = avfilter_inout_alloc();
@@ -164,26 +156,16 @@ public:
         } scoped_in(&inputs), scoped_out(&outputs);
         //avfilter_graph_parse, avfilter_graph_parse2?
 #if QTAV_USE_FFMPEG(LIBAVFILTER)
-        if ((ret = avfilter_graph_parse_ptr(filter_graph, options.toUtf8().constData(), &inputs, &outputs, NULL)) < 0) {
+        AV_ENSURE_OK(avfilter_graph_parse_ptr(filter_graph, options.toUtf8().constData(), &inputs, &outputs, NULL), false);
 #else
-        if ((ret = avfilter_graph_parse(filter_graph, options.toUtf8().constData(), inputs, outputs, NULL))) {
-#endif
-            qWarning("avfilter_graph_parse_ptr fail: %s", av_err2str(ret));
-            status = LibAVFilter::ConfigureFailed;
-            return false;
-        }
-        if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
-            qWarning("avfilter_graph_config fail: %s", av_err2str(ret));
-            status = LibAVFilter::ConfigureFailed;
-            return false;
-        }
+        AV_ENSURE_OK(avfilter_graph_parse(filter_graph, options.toUtf8().constData(), inputs, outputs, NULL), false);
+#endif //QTAV_USE_FFMPEG(LIBAVFILTER)
+        AV_ENSURE_OK(avfilter_graph_config(filter_graph, NULL), false);
         avframe = av_frame_alloc();
-        status = LibAVFilter::ConfigreOk;
+        status = LibAVFilter::ConfigureOk;
         return true;
-#else
-        status = LibAVFilter::ConfigureFailed;
-        return false;
 #endif //QTAV_HAVE(AVFILTER)
+        return false;
     }
 #if QTAV_HAVE(AVFILTER)
     AVFilterGraph *filter_graph;
@@ -195,26 +177,28 @@ public:
     LibAVFilter::Status status;
 };
 
-AVFrameHolderRef LibAVFilter::Private::pullAVFrame()
+QStringList LibAVFilter::videoFilters()
+{
+    QStringList list(LibAVFilter::registeredFilters(AVMEDIA_TYPE_VIDEO));
+    return list;
+}
+
+QStringList LibAVFilter::audioFilters()
+{
+    QStringList list(LibAVFilter::registeredFilters(AVMEDIA_TYPE_AUDIO));
+    return list;
+}
+
+QString LibAVFilter::filterDescription(const QString &filterName)
 {
 #if QTAV_HAVE(AVFILTER)
-    AVFrameHolderRef frame_ref(new AVFrameHolder());
-#if QTAV_HAVE_av_buffersink_get_frame
-    int ret = av_buffersink_get_frame(out_filter_ctx, frame_ref->frame());
-#else
-    int ret = av_buffersink_read(out_filter_ctx, frame_ref->bufferRef());
-#endif //QTAV_HAVE_av_buffersink_get_frame
-    if (ret < 0) {
-        qWarning("av_buffersink_get_frame error: %s", av_err2str(ret));
-        return AVFrameHolderRef(0);
-    }
-#if !QTAV_HAVE_av_buffersink_get_frame
-    frame_ref->copyBufferToFrame();
+    const AVFilter *f = avfilter_get_by_name(filterName.toUtf8().constData());
+    if (!f || !f->description)
+        return QString();
+    return f->description;
 #endif
-    return frame_ref;
-#else
-    return AVFrameHolderRef(0);
-#endif
+    Q_UNUSED(filterName);
+    return QString();
 }
 
 LibAVFilter::LibAVFilter()
@@ -277,6 +261,33 @@ void* LibAVFilter::pullFrameHolder()
 #endif
 }
 
+QStringList LibAVFilter::registeredFilters(int type)
+{
+    QStringList filters;
+#if QTAV_HAVE(AVFILTER)
+    const AVFilter* f = NULL;
+    const AVFilterPad* fp = NULL;
+#if AV_MODULE_CHECK(LIBAVFILTER, 3, 8, 0, 53, 100)
+    while ((f = avfilter_next(f))) {
+#else
+    AVFilter** ff = NULL;
+    while ((ff = av_filter_next(ff)) && *ff) {
+        f = (*ff);
+#endif
+        fp = f->inputs;
+        // only check the 1st pad
+        if (!fp || !fp[0].name || fp[0].type != (AVMediaType)type)
+            continue;
+        fp = f->outputs;
+        // only check the 1st pad
+        if (!fp || !fp[0].name || fp[0].type != (AVMediaType)type)
+            continue;
+        filters.append(f->name);
+    }
+#endif //QTAV_HAVE(AVFILTER)
+    return filters;
+}
+
 class LibAVFilterVideoPrivate : public VideoFilterPrivate
 {
 public:
@@ -293,7 +304,13 @@ public:
 LibAVFilterVideo::LibAVFilterVideo(QObject *parent)
     : VideoFilter(*new LibAVFilterVideoPrivate(), parent)
     , LibAVFilter()
-{}
+{
+}
+
+QStringList LibAVFilterVideo::filters() const
+{
+    return LibAVFilter::videoFilters();
+}
 
 void LibAVFilterVideo::process(Statistics *statistics, VideoFrame *frame)
 {
@@ -313,9 +330,6 @@ void LibAVFilterVideo::process(Statistics *statistics, VideoFrame *frame)
     bool ok = pushVideoFrame(frame, changed);
     //if (old != status())
       //  emit statusChanged();
-    if (status() == ConfigureFailed) {
-        setEnabled(false);
-    }
     if (!ok)
         return;
 
@@ -373,6 +387,11 @@ LibAVFilterAudio::LibAVFilterAudio(QObject *parent)
     , LibAVFilter()
 {}
 
+QStringList LibAVFilterAudio::filters() const
+{
+    return LibAVFilter::audioFilters();
+}
+
 QString LibAVFilterAudio::sourceArguments() const
 {
     DPTR_D(const LibAVFilterAudio);
@@ -404,9 +423,6 @@ void LibAVFilterAudio::process(Statistics *statistics, AudioFrame *frame)
     bool ok = pushAudioFrame(frame, changed);
     //if (old != status())
       //  emit statusChanged();
-    if (status() == ConfigureFailed) {
-        setEnabled(false);
-    }
     if (!ok)
         return;
 
@@ -466,17 +482,11 @@ bool LibAVFilter::Private::pushVideoFrame(Frame *frame, bool changed, const QStr
      * add a ref if frame is ref counted
      * TODO: libav < 10.0 will copy the frame, prefer to use av_buffersrc_buffer
      */
-    int ret = av_buffersrc_write_frame(in_filter_ctx, avframe);
-    if (ret != 0) {
-        qWarning("av_buffersrc_add_frame error: %s", av_err2str(ret));
-        return false;
-    }
+    AV_ENSURE_OK(av_buffersrc_write_frame(in_filter_ctx, avframe), false);
     return true;
-#else
+#endif //QTAV_HAVE(AVFILTER)
     Q_UNUSED(frame);
-    //enabled = false;
     return false;
-#endif
 }
 
 
@@ -505,17 +515,11 @@ bool LibAVFilter::Private::pushAudioFrame(Frame *frame, bool changed, const QStr
         avframe->extended_data[i] = af->bits(i);
         avframe->linesize[i] = af->bytesPerLine(i);
     }
-    int ret = av_buffersrc_write_frame(in_filter_ctx, avframe);
-    if (ret != 0) {
-        qWarning("av_buffersrc_add_frame error: %s", av_err2str(ret));
-        return false;
-    }
+    AV_ENSURE_OK(av_buffersrc_write_frame(in_filter_ctx, avframe), false);
     return true;
-#else
+#endif //QTAV_HAVE(AVFILTER)
     Q_UNUSED(frame);
-    //enabled = false;
     return false;
-#endif
 }
 
 } //namespace QtAV
