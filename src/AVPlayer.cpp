@@ -95,7 +95,9 @@ AVPlayer::AVPlayer(QObject *parent) :
 AVPlayer::~AVPlayer()
 {
     stop();
+    // if not uninstall here, player's qobject children filters will call uninstallFilter too late that player is almost be destroyed
     QList<Filter*> filters(FilterManager::instance().videoFilters(this));
+    filters.append(FilterManager::instance().audioFilters(this));
     foreach (Filter *f, filters) {
         uninstallFilter(f);
     }

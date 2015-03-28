@@ -27,6 +27,7 @@
 #include "QtAV/AudioOutput.h"
 #include "QtAV/AudioResampler.h"
 #include "QtAV/AVClock.h"
+#include "QtAV/Filter.h"
 #include "output/OutputSet.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QCoreApplication>
@@ -52,6 +53,21 @@ AudioThread::AudioThread(QObject *parent)
 {
 }
 
+void AudioThread::applyFilters(AudioFrame &frame)
+{
+    DPTR_D(AudioThread);
+    //QMutexLocker locker(&d.mutex);
+    //Q_UNUSED(locker);
+    if (!d.filters.isEmpty()) {
+        //sort filters by format. vo->defaultFormat() is the last
+        foreach (Filter *filter, d.filters) {
+            AudioFilter *af = static_cast<AudioFilter*>(filter);
+            if (!af->isEnabled())
+                continue;
+            af->apply(d.statistics, &frame);
+        }
+    }
+}
 /*
  *TODO:
  * if output is null or dummy, the use duration to wait
@@ -144,6 +160,7 @@ void AudioThread::run()
         /* lock here to ensure decoder and ao can complete current work before they are changed
          * current packet maybe not supported by new decoder
          */
+        // TODO: smaller scope
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
         AudioDecoder *dec = static_cast<AudioDecoder*>(d.dec);
@@ -208,6 +225,8 @@ void AudioThread::run()
         if (frame) {
             //TODO: apply filters here
             if (has_ao) {
+                applyFilters(frame);
+                frame.setAudioResampler(dec->resampler()); //!!!
                 // FIXME: resample is required for audio frames from ffmpeg
                 //if (ao->audioFormat() != frame.format()) {
                     frame = frame.to(ao->audioFormat());
@@ -240,7 +259,6 @@ void AudioThread::run()
                 QByteArray decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                 ao->play(decodedChunk, pkt.pts);
                 d.clock->updateValue(ao->timestamp());
-                emit frameDelivered();
             } else {
                 d.clock->updateDelay(delay += chunk_delay);
             /*
@@ -259,6 +277,8 @@ void AudioThread::run()
             decodedPos += chunk;
             decodedSize -= chunk;
         }
+        if (has_ao)
+            emit frameDelivered();
         int undecoded = dec->undecodedSize();
         if (undecoded > 0) {
             pkt.data.remove(0, pkt.data.size() - undecoded);

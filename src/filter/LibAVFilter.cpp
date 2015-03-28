@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -399,8 +399,10 @@ QString LibAVFilterAudio::sourceArguments() const
             .arg(1)
             .arg(AV_TIME_BASE)
             .arg(d.sample_rate)
-            .arg(d.sample_fmt)
-            .arg(d.channel_layout, 0, 16)
+            //ffmpeg new: AV_OPT_TYPE_SAMPLE_FMT
+            //libav, ffmpeg old: AV_OPT_TYPE_STRING
+            .arg(av_get_sample_fmt_name(d.sample_fmt))
+            .arg(d.channel_layout, 0, 16) //AV_OPT_TYPE_STRING
             ;
 }
 

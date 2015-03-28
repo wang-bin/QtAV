@@ -27,6 +27,7 @@
 namespace QtAV {
 
 class AudioDecoder;
+class AudioFrame;
 class AudioThreadPrivate;
 class AudioThread : public AVThread
 {
@@ -36,6 +37,7 @@ public:
     explicit AudioThread(QObject *parent = 0);
 
 protected:
+    void applyFilters(AudioFrame& frame);
     virtual void run();
 };
 

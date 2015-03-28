@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -24,7 +24,6 @@
 
 #include <QtAV/Filter.h>
 
-// It works only if build against libavfilter. Currently not does not support libav's libavfilter.
 namespace QtAV {
 
 class Q_AV_EXPORT LibAVFilter
