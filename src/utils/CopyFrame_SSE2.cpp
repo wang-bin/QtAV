@@ -43,8 +43,8 @@ void CopyFrame_SSE2(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT
     __m128i *pLoad  = (__m128i*)pSrc;
     __m128i *pStore = (__m128i*)pDest;
 
-    const bool src_unaligned = ((intptr_t)pSrc) & 0x0f;
-    const bool dst_unaligned = ((intptr_t)pDest & 0x0f);
+    const bool src_unaligned = !!((intptr_t)pSrc & 0x0f);
+    const bool dst_unaligned = !!((intptr_t)pDest & 0x0f);
     //if (src_unaligned || dst_unaligned)
       //  qDebug("===========unaligned: src %d, dst: %d,  extraPitch: %d", src_unaligned, dst_unaligned, extraPitch);
     //  COPY THROUGH 4KB CACHED BUFFER

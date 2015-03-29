@@ -30,7 +30,7 @@ class AudioOutputOpenSL Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputOpenSL(QObject *parent = 0);
-    ~AudioOutputOpenSL() Q_DECL_FINAL;
+    ~AudioOutputOpenSL();
 
     QString name() const Q_DECL_FINAL { return kName;}
     bool isSupported(const AudioFormat& format) const Q_DECL_FINAL;

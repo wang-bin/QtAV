@@ -36,14 +36,14 @@ void RegisterImageConverterFF_Man()
     FACTORY_REGISTER_ID_MAN(ImageConverter, FF, "FFmpeg")
 }
 
-class ImageConverterFFPrivate : public ImageConverterPrivate
+class ImageConverterFFPrivate Q_DECL_FINAL: public ImageConverterPrivate
 {
 public:
     ImageConverterFFPrivate()
         : sws_ctx(0)
         , update_eq(true)
     {}
-    ~ImageConverterFFPrivate() Q_DECL_FINAL {
+    ~ImageConverterFFPrivate() {
         if (sws_ctx) {
             sws_freeContext(sws_ctx);
             sws_ctx = 0;
