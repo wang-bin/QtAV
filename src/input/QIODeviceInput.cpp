@@ -24,13 +24,18 @@
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include <QtCore/QFile>
+#include <QtCore/QMetaType>
 #ifndef TEST_QTAV_QIODEVICEINPUT
 #include "utils/Logger.h"
 #else
 #include <QtDebug>
 #endif
-namespace QtAV {
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+Q_DECLARE_METATYPE(QIODevice*)
+#endif
+
+namespace QtAV {
 class QIODeviceInputPrivate;
 class QIODeviceInput : public AVInput
 {
