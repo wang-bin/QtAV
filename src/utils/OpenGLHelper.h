@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -27,8 +27,27 @@
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLFunctions>
-#else
+#elif defined(QT_OPENGL_LIB)
 #include <qgl.h>
+#else //used by vaapi even qtopengl module is disabled
+#if defined(QT_OPENGL_ES_2)
+# if defined(Q_OS_MAC) // iOS
+#  include <OpenGLES/ES2/gl.h>
+#  include <OpenGLES/ES2/glext.h>
+# else // "uncontrolled" ES2 platforms
+#  include <GLES2/gl2.h>
+# endif // Q_OS_MAC
+#else // non-ES2 platforms
+# if defined(Q_OS_MAC)
+#  include <OpenGL/gl.h>
+#  if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
+#   include <OpenGL/gl3.h>
+#  endif
+#  include <OpenGL/glext.h>
+# else
+#  include <GL/gl.h>
+# endif // Q_OS_MAC
+#endif // QT_OPENGL_ES_2
 #endif
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
@@ -67,7 +86,6 @@
 
 namespace QtAV {
 namespace OpenGLHelper {
-
 /*!
  * \brief hasExtension
  * Current OpenGL context must be valid.

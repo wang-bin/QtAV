@@ -30,8 +30,10 @@
 //TODO: check glx or gles used by Qt. then use va-gl or va-egl
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <qopengl.h>
-#else
+#elif defined(QT_OPENGL_LIB)
 #include <qgl.h>
+#else
+#include <GL/gl.h>
 #endif
 #include "utils/SharedPtr.h"
 

@@ -23,7 +23,9 @@
 #include "VideoDecoderFFmpegHW_p.h"
 #include <algorithm>
 #include "utils/Logger.h"
-
+#ifndef Q_UNLIKELY
+#define Q_UNLIKELY(x) (!!(x))
+#endif
 namespace QtAV {
 
 static AVPixelFormat ffmpeg_get_va_format(struct AVCodecContext *c, const AVPixelFormat * ff)

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,7 +25,7 @@
 #include <QtAV/VideoRenderer.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLFunctions>
-#else
+#elif QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
 #include <QtOpenGL/QGLFunctions>
 #define QOpenGLFunctions QGLFunctions
 #endif
@@ -38,7 +38,10 @@ namespace QtAV {
  * TODO: for Qt5, no QtOpenGL, use QWindow instead.
  */
 class OpenGLRendererBasePrivate;
-class Q_AV_EXPORT OpenGLRendererBase : public VideoRenderer, public QOpenGLFunctions
+class Q_AV_EXPORT OpenGLRendererBase : public VideoRenderer
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+        , public QOpenGLFunctions
+#endif
 {
     DPTR_DECLARE_PRIVATE(OpenGLRendererBase)
 public:

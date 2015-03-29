@@ -112,8 +112,10 @@ void OpenGLRendererBase::onInitializeGL()
     d.glv.setOpenGLContext(ctx);
     //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
     bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
-    qDebug("OpenGL version: %d.%d  hasGLSL: %d", ctx->format().majorVersion(), ctx->format().minorVersion(), hasGLSL);
+    qDebug("OpenGL version: %d.%d  hasGLSL: %d", ctx->format().majorVersion(), ctx->format().minorVersion(), hasGLSL);  
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
     initializeOpenGLFunctions();
+#endif
 }
 
 void OpenGLRendererBase::onPaintGL()

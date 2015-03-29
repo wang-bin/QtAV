@@ -31,9 +31,11 @@
 #include <QtGui/QOpenGLVertexArrayObject>
 #endif //QT_VAO
 #else
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+#include <QtOpenGL/QGLFunctions>
+#endif
 #include <QtOpenGL/QGLBuffer>
 #include <QtOpenGL/QGLShaderProgram>
-#include <QtOpenGL/QGLFunctions>
 typedef QGLBuffer QOpenGLBuffer;
 #define QOpenGLShaderProgram QGLShaderProgram
 #define QOpenGLShader QGLShader
@@ -173,7 +175,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
         }
     }
     //qDebug("updating vbo...");
-    vbo.bind();
+    vbo.bind(); //check here
     vbo.allocate(geometry.data(), geometry.vertexCount()*geometry.stride());
 #if QT_VAO
     if (try_vao) {

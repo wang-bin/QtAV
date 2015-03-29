@@ -29,9 +29,11 @@
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLFunctions>
 #else
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+#include <QtOpenGL/QGLFunctions>
+#endif
 #include <QtOpenGL/QGLBuffer>
 #include <QtOpenGL/QGLShaderProgram>
-#include <QtOpenGL/QGLFunctions>
 typedef QGLBuffer QOpenGLBuffer;
 #define QOpenGLShaderProgram QGLShaderProgram
 #define QOpenGLShader QGLShader

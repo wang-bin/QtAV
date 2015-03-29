@@ -23,7 +23,9 @@
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include "utils/Logger.h"
-
+#ifndef Q_LIKELY
+#define Q_LIKELY(x) (!!(x))
+#endif
 namespace QtAV {
 
 static const char kName[] = "Pulse";
