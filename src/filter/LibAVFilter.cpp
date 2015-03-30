@@ -179,13 +179,13 @@ public:
 
 QStringList LibAVFilter::videoFilters()
 {
-    QStringList list(LibAVFilter::registeredFilters(AVMEDIA_TYPE_VIDEO));
+    static const QStringList list(LibAVFilter::registeredFilters(AVMEDIA_TYPE_VIDEO));
     return list;
 }
 
 QStringList LibAVFilter::audioFilters()
 {
-    QStringList list(LibAVFilter::registeredFilters(AVMEDIA_TYPE_AUDIO));
+    static const QStringList list(LibAVFilter::registeredFilters(AVMEDIA_TYPE_AUDIO));
     return list;
 }
 
@@ -240,8 +240,9 @@ bool LibAVFilter::pushAudioFrame(Frame *frame, bool changed)
 
 void* LibAVFilter::pullFrameHolder()
 {
+     AVFrameHolder *holder = NULL;
 #if QTAV_HAVE(AVFILTER)
-    AVFrameHolder *holder = new AVFrameHolder();
+    holder = new AVFrameHolder();
 #if QTAV_HAVE_av_buffersink_get_frame
     int ret = av_buffersink_get_frame(priv->out_filter_ctx, holder->frame());
 #else
@@ -255,10 +256,8 @@ void* LibAVFilter::pullFrameHolder()
 #if !QTAV_HAVE_av_buffersink_get_frame
     holder->copyBufferToFrame();
 #endif
+#endif //QTAV_HAVE(AVFILTER)
     return holder;
-#else
-    return 0;
-#endif
 }
 
 QStringList LibAVFilter::registeredFilters(int type)
@@ -353,14 +352,13 @@ QString LibAVFilterVideo::sourceArguments() const
     DPTR_D(const LibAVFilterVideo);
 #if QTAV_USE_LIBAV(LIBAVFILTER)
     return QString("%1:%2:%3:%4:%5:%6:%7")
+#else
+    return QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=%6/%7")
+#endif
             .arg(d.width).arg(d.height).arg(d.pixfmt)
             .arg(1).arg(AV_TIME_BASE) //time base 1/1?
             .arg(1).arg(1) //sar
             ;
-#else
-    return QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=1")
-            .arg(d.width).arg(d.height).arg(d.pixfmt).arg(1).arg(AV_TIME_BASE); //time base 1/1?
-#endif
 }
 
 void LibAVFilterVideo::emitOptionsChanged()
