@@ -145,7 +145,6 @@ public:
     SeekType seek_type;
     qint64 seek_target; // relative time if relativeTimeMode is true
     qint64 interrupt_timeout;
-    bool mute;
 
     qreal force_fps;
     // timerEvent interval in ms. can divide 1000. depends on media duration, fps etc.

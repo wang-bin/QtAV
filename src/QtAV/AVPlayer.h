@@ -199,23 +199,19 @@ public:
     void setRenderer(VideoRenderer* renderer);
     VideoRenderer* renderer();
     QList<VideoRenderer*> videoOutputs();
-    void setAudioOutput(AudioOutput* ao);
-    //default has 1 audiooutput
-    //void addAudioOutput(AudioOutput* ao);
-    //void removeAudioOutput(AudioOutput* ao);
-    //QList<AudioOutput*> audioOutputs();
     /*!
-     * To change audio format, you should set both AudioOutput's format and AudioResampler's format
-     * So signals/slots is a better solution.
-     * TODO: AudioOutput.audioFormatChanged (signal)---AudioResampler.setOutAudioFormat (slot)
+     * \brief audio
+     * AVPlayer always has an AudioOutput instance. You can access or control audio output properties through audio().
+     * \return
      */
     AudioOutput* audio();
+    /// enableAudio(false): no audio thread will be started. broken now
     void enableAudio(bool enable = true);
     void disableAudio(bool disable = true);
-    void setMute(bool mute = true);
-    bool isMute() const;
+    Q_DECL_DEPRECATED void setMute(bool mute = true); // use audio()->setMute(bool) instead
+    Q_DECL_DEPRECATED bool isMute() const; // use audio()->isMute() instead
     /*!
-     * \brief setSpeed set playing speed.
+     * \brief setSpeed set playback speed.
      * \param speed  speed > 0. 1.0: normal speed
      * TODO: playbackRate
      */

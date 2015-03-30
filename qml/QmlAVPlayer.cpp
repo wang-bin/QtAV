@@ -305,6 +305,7 @@ qreal QmlAVPlayer::volume() const
     return mVolume;
 }
 
+// mVolume, m_mute are required by qml properties. player.audio()->setXXX is not enought because player maybe not created
 void QmlAVPlayer::setVolume(qreal volume)
 {
     if (mVolume < 0) {
@@ -327,8 +328,6 @@ void QmlAVPlayer::setMuted(bool m)
     if (isMuted() == m)
         return;
     m_mute = m;
-    if (mpPlayer)
-        mpPlayer->setMute(m);
     emit mutedChanged();
 }
 

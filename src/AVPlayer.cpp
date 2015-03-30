@@ -168,11 +168,6 @@ QList<VideoRenderer*> AVPlayer::videoOutputs()
     return vos;
 }
 
-void AVPlayer::setAudioOutput(AudioOutput* ao)
-{
-    d->setAVOutput(d->ao, ao, d->athread);
-}
-
 AudioOutput* AVPlayer::audio()
 {
     return d->ao;
@@ -190,20 +185,12 @@ void AVPlayer::disableAudio(bool disable)
 
 void AVPlayer::setMute(bool mute)
 {
-    if (d->mute == mute)
-        return;
-    d->mute = mute;
-    emit muteChanged();
-    if (!d->ao)
-        return;
-    if (d->ao->isMute() == isMute())
-        return;
     d->ao->setMute(mute);
 }
 
 bool AVPlayer::isMute() const
 {
-    return d->mute;
+    return d->ao->isMute();
 }
 
 void AVPlayer::setSpeed(qreal speed)
@@ -1165,11 +1152,6 @@ void AVPlayer::onStarted()
         d->ao->setSpeed(d->speed);
     }
     masterClock()->setSpeed(d->speed);
-
-    if (!d->ao)
-        return;
-    if (d->ao->isMute() != isMute())
-        d->ao->setMute(isMute());
 }
 
 void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)

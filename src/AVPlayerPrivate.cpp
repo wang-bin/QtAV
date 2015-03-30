@@ -102,7 +102,6 @@ AVPlayer::Private::Private()
     , seek_type(AccurateSeek)
     , seek_target(0)
     , interrupt_timeout(30000)
-    , mute(false)
     , force_fps(0)
     , notify_interval(-500)
     , status(NoMedia)
@@ -371,7 +370,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         }
     }
     athread->setDecoder(adec);
-    player->setAudioOutput(ao);
+    setAVOutput(ao, ao, athread);
     // if has video, then audio buffer should not block the video buffer (bufferValue == 1, modified in AVDemuxThread)
     // TODO: buf if video stream is only a cover picture, audio buffer should be the primary buffer and BufferTime is preferred(call setBufferMode/Value)
     int bv = statistics.audio.frame_rate > 0 && statistics.audio.frame_rate < 60 ?
