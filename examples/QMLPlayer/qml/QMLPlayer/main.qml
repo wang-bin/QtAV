@@ -96,14 +96,23 @@ Rectangle {
                 msg.error(errorString)
             }
         }
-        onVolumeChanged: {
-            if (Math.abs(control.volume - value) >= 0.01) {
-                control.volume = value
+        volume: control.volume
+        onVolumeChanged: { //why need this? control.volume = player.volume is not enough?
+            if (Math.abs(control.volume - volume) >= 0.01) {
+                control.volume = volume
             }
         }
         onStatusChanged: {
             if (status == MediaPlayer.LoadingMedia)
                 msg.info("Loading " + source)
+            else if (status == MediaPlayer.BufferingMedia)
+                msg.info("Buffering")
+            else if (status == MediaPlayer.BufferedMedia)
+                msg.info("Buffered")
+            else if (status == MediaPlayer.EndOfMedia)
+                msg.info("End")
+            else if (status == MediaPlayer.InvalidMedia)
+                msg.info("Invalid")
         }
         onBufferProgressChanged: {
             msg.info("Buffering " + Math.floor(bufferProgress*100) + "%...")
