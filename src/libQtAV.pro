@@ -411,6 +411,7 @@ HEADERS *= \
     utils/GPUMemCopy.h \
     utils/Logger.h \
     utils/SharedPtr.h \
+    utils/ring.h \
     output/OutputSet.h \
     QtAV/ColorTransform.h
 
