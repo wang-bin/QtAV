@@ -35,6 +35,8 @@
 #include <QtCore/QTime>
 typedef QTime QElapsedTimer;
 #endif
+// TODO: move to cpp. AudioOutput_p.h is used internally because ring.h is not public
+#include "utils/ring.h"
 #define AO_USE_TIMER 1
 // TODO:writeChunk(), write(QByteArray) { while writeChunk() }, users define writeChunk()
 namespace QtAV {
@@ -66,9 +68,9 @@ public:
       , update_backend(true)
       , index_enqueue(-1)
       , index_deuqueue(-1)
+      , frame_infos(ring<FrameInfo>(nb_buffers))
     {
         available = false;
-        frame_infos.resize(nb_buffers);
     }
     virtual ~AudioOutputPrivate();
 
@@ -81,53 +83,12 @@ public:
     }
 
     int bufferSizeTotal() { return nb_buffers * buffer_size; }
-    typedef struct {
+    struct FrameInfo {
+        FrameInfo(qreal t = 0, int s = 0) : timestamp(t), data_size(s) {}
         qreal timestamp;
         int data_size;
-    } FrameInfo;
+    };
 
-    FrameInfo& currentEnqueueInfo() {
-        Q_ASSERT(index_enqueue >= 0);
-        return frame_infos[index_enqueue%frame_infos.size()];
-    }
-    FrameInfo& nextEnqueueInfo() { return frame_infos[(index_enqueue + 1)%frame_infos.size()]; }
-    const FrameInfo& nextEnqueueInfo() const { return frame_infos[(index_enqueue + 1)%frame_infos.size()]; }
-    FrameInfo& currentDequeueInfo() {
-        Q_ASSERT(index_deuqueue >= 0);
-        return frame_infos[index_deuqueue%frame_infos.size()];
-    }
-    FrameInfo& nextDequeueInfo() { return frame_infos[(index_deuqueue+1)%frame_infos.size()]; }
-    const FrameInfo& nextDequeueInfo() const { return frame_infos[(index_deuqueue+1)%frame_infos.size()]; }
-    void resetBuffers() {
-        index_enqueue = -1;
-        index_deuqueue = -1;
-    }
-    bool isBufferReseted() const { return index_enqueue == -1 && index_deuqueue == -1; }
-    bool canAddBuffer() {
-        return isBufferReseted() || (index_enqueue - index_deuqueue  < frame_infos.size()&& index_deuqueue >= 0);
-        return isBufferReseted() || (!!((index_enqueue - index_deuqueue + 1) % frame_infos.size()) && index_deuqueue >= 0);
-    }
-    void bufferAdded() {
-        if (index_enqueue < 0 || index_enqueue == std::numeric_limits<int>::max())
-            index_enqueue = 0;
-        else
-            ++index_enqueue;
-        return;
-        index_enqueue = (index_enqueue + 1) % frame_infos.size();
-    }
-    bool canRemoveBuffer() {
-        return index_enqueue > index_deuqueue;
-    }
-    bool bufferRemoved() {
-        if (index_deuqueue == index_enqueue)
-            return false;
-        if (index_deuqueue < 0 || index_deuqueue == std::numeric_limits<int>::max())
-            index_deuqueue = 0;
-        else
-            ++index_deuqueue;
-        return true;
-        index_deuqueue = (index_deuqueue + 1) % frame_infos.size();
-    }
     void resetStatus() {
         available = false;
         play_pos = 0;
@@ -136,9 +97,7 @@ public:
 #if AO_USE_TIMER
         timer.invalidate();
 #endif
-        resetBuffers();
-        frame_infos.clear();
-        frame_infos.resize(nb_buffers);
+        frame_infos = ring<FrameInfo>(nb_buffers);
     }
     /// call this if sample format or volume is changed
     void updateSampleScaleFunc();
@@ -164,10 +123,10 @@ public:
     AudioOutputBackend *backend;
     bool update_backend;
     QStringList backends;
-private:
+//private:
     // the index of current enqueue/dequeue
     int index_enqueue, index_deuqueue;
-    QVector<FrameInfo> frame_infos;
+    ring<FrameInfo> frame_infos;
 };
 
 } //namespace QtAV

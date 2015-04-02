@@ -121,11 +121,9 @@ void AudioOutputPrivate::playInitialData()
     const char c = (format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8
                     || format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8Planar)
             ? 0x80 : 0;
-    for (quint32 i = 1; i < nb_buffers; ++i) {
+    for (quint32 i = 0; i < nb_buffers; ++i) {
         backend->write(QByteArray(buffer_size, c)); // fill silence byte, not always 0. AudioFormat.silenceByte
-        nextEnqueueInfo().data_size = buffer_size;
-        nextEnqueueInfo().timestamp = 0;
-        bufferAdded();
+        frame_infos.push_back(FrameInfo(0, buffer_size));
     }
     backend->play();
 }
@@ -289,9 +287,7 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
     }
     // wait after all data processing finished to reduce time error
     waitForNextBuffer();
-    d.nextEnqueueInfo().data_size = data.size();
-    d.nextEnqueueInfo().timestamp = pts;
-    d.bufferAdded();
+    d.frame_infos.push_back(AudioOutputPrivate::FrameInfo(pts, data.size()));
     if (!d.backend)
         return false;
     return d.backend->write(d.data);
@@ -494,7 +490,7 @@ void AudioOutput::waitForNextBuffer()
     } else if (f & AudioOutputBackend::Callback) {
         int processed = d.processed_remain;
         d.processed_remain = d.backend->getWritableBytes();
-        const int next = d.nextDequeueInfo().data_size;
+        const int next = d.frame_infos.front().data_size;
         //qDebug("remain: %d-%d, size: %d, next: %d", processed, d.processed_remain, d.data.size(), next);
         while (d.processed_remain - processed < next || d.processed_remain < d.data.size()) { //implies next > 0
             const qint64 us = d.format.durationForBytes(next - (d.processed_remain - processed));
@@ -508,7 +504,7 @@ void AudioOutput::waitForNextBuffer()
         remove = -processed; // processed_this_period
     } else if (f & AudioOutputBackend::PlayedBytes) {
         d.processed_remain = d.backend->getPlayedBytes();
-        const int next = d.nextDequeueInfo().data_size;
+        const int next = d.frame_infos.front().data_size;
         // TODO: avoid always 0
         // TODO: compare processed_remain with d.data.size because input chuncks can be in different sizes
         while (!no_wait && d.processed_remain < next) {
@@ -532,7 +528,7 @@ void AudioOutput::waitForNextBuffer()
         qint64 us = 0;
         while (!no_wait && c < 1) {
             if (us <= 0)
-                us = d.format.durationForBytes(d.nextDequeueInfo().data_size);
+                us = d.format.durationForBytes(d.frame_infos.front().data_size);
 #if AO_USE_TIMER
             elapsed = d.timer.restart();
             if (elapsed > 0 && us > elapsed*1000LL)
@@ -552,7 +548,7 @@ void AudioOutput::waitForNextBuffer()
         if (processed < 0)
             processed += bufferSizeTotal();
         d.play_pos = s;
-        const int next = d.nextDequeueInfo().data_size;
+        const int next = d.frame_infos.front().data_size;
         int writable_size = d.processed_remain + processed;
         while (!no_wait && (/*processed < next ||*/ writable_size < d.data.size()) && next > 0) {
             const qint64 us = d.format.durationForBytes(next - writable_size);
@@ -576,7 +572,7 @@ void AudioOutput::waitForNextBuffer()
         // TODO: timer
         // TODO: avoid always 0
         while (!no_wait && processed < 1) {
-            d.uwait(d.format.durationForBytes(d.nextDequeueInfo().data_size));
+            d.uwait(d.format.durationForBytes(d.frame_infos.front().data_size));
             n = d.backend->getOffset();
             processed = n - d.play_pos;
             if (processed < 0)
@@ -589,23 +585,27 @@ void AudioOutput::waitForNextBuffer()
         return;
     }
     if (remove < 0) {
-        int next = d.nextDequeueInfo().data_size;
+        int next = d.frame_infos.front().data_size;
         int free_bytes = -remove;//d.processed_remain;
         while (free_bytes >= next && next > 0) {
             free_bytes -= next;
-            if (!d.bufferRemoved()) {//|| d.processed_remain <= 0
-                qWarning("buffer queue empty");
+            if (d.frame_infos.empty()) {
+//                qWarning("buffer queue empty");
                 break;
             }
-            next = d.nextDequeueInfo().data_size;
+            d.frame_infos.pop_front();
+            next = d.frame_infos.front().data_size;
         }
         //qDebug("remove: %d, unremoved bytes < %d, writable_bytes: %d", remove, free_bytes, d.processed_remain);
         return;
     }
     //qDebug("remove count: %d", remove);
     while (remove-- > 0) {
-        if (!d.bufferRemoved())
+        if (d.frame_infos.empty()) {
+//            qWarning("empty. can not pop!");
             break;
+        }
+        d.frame_infos.pop_front();
     }
 }
 
@@ -613,7 +613,7 @@ void AudioOutput::waitForNextBuffer()
 qreal AudioOutput::timestamp() const
 {
     DPTR_D(const AudioOutput);
-    return d.nextDequeueInfo().timestamp;
+    return d.frame_infos.front().timestamp;
 }
 
 void AudioOutput::reportVolume(qreal value)
