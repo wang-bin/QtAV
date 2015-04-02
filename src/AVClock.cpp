@@ -28,10 +28,15 @@
 
 namespace QtAV {
 
+enum {
+    kRunning,
+    kPaused,
+    kStopped
+};
 AVClock::AVClock(AVClock::ClockType c, QObject *parent):
     QObject(parent)
   , auto_clock(true)
-  , m_paused(false)
+  , m_state(kStopped)
   , clock_type(c)
   , mSpeed(1.0)
   , value0(0)
@@ -44,7 +49,7 @@ AVClock::AVClock(AVClock::ClockType c, QObject *parent):
 AVClock::AVClock(QObject *parent):
     QObject(parent)
   , auto_clock(true)
-  , m_paused(false)
+  , m_state(kStopped)
   , clock_type(AudioClock)
   , mSpeed(1.0)
   , value0(0)
@@ -125,11 +130,12 @@ void AVClock::setSpeed(qreal speed)
 
 bool AVClock::isPaused() const
 {
-    return m_paused;
+    return m_state == kPaused;
 }
 
 void AVClock::start()
 {
+    m_state = kRunning;
     qDebug("AVClock started!!!!!!!!");
     timer.start();
     QTimer::singleShot(0, this, SLOT(restartCorrectionTimer()));
@@ -142,7 +148,7 @@ void AVClock::pause(bool p)
         return;
     if (clock_type == AudioClock)
         return;
-    m_paused = p;
+    m_state = p ? kPaused : kRunning;
     if (p) {
         QTimer::singleShot(0, this, SLOT(stopCorrectionTimer()));
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
@@ -163,7 +169,7 @@ void AVClock::pause(bool p)
 void AVClock::reset()
 {
     // keep mSpeed
-    m_paused = false;
+    m_state = kStopped;
     value0 = 0;
     pts_ = pts_v = delay_ = 0;
     QTimer::singleShot(0, this, SLOT(stopCorrectionTimer()));
@@ -197,13 +203,15 @@ void AVClock::timerEvent(QTimerEvent *event)
     nb_restarted = 0;
 }
 
-
 void AVClock::restartCorrectionTimer()
 {
     nb_restarted = 0;
     avg_err = 0;
     correction_schedule_timer.stop();
     if (clockType() == AudioClock) // TODO: for all clock type
+        return;
+    // parameters are reset. do not start correction timer if not running
+    if (m_state != kRunning)
         return;
     // timer is always started in AVClock::start()
     if (!timer.isValid())

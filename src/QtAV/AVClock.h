@@ -114,7 +114,7 @@ private Q_SLOTS:
     void stopCorrectionTimer();
 private:
     bool auto_clock;
-    bool m_paused;
+    int m_state;
     ClockType clock_type;
     mutable double pts_;
     mutable double pts_v;
