@@ -119,15 +119,35 @@ cp -af ../../widgets/QtAVWidgets $TARGET/packages/com.qtav.product.dev/data/incl
 cp -af $BUILD/tools/install_sdk/mkspecs $TARGET/packages/com.qtav.product.dev/data
 cp -af ../../{README.md,lgpl-2.1.txt,gpl-3.0.txt,doc} $TARGET/packages/com.qtav.product/data
 
+# copy qml files for simplify deployment sdk
+cd $TARGET/packages/com.qtav.product.dev/data
+mkdir -p qml
+if [ -d $RT_DIR/data/bin/QtAV ]; then
+  cp -af $RT_DIR/data/bin/QtAV qml
+elif  [ -d $BUILD/bin/QtAV ]; then
+  cp -af $BUILD/bin/QtAV qml
+elif [ -d $RT_DIR/data/bin/qml/QtAV ]; then
+  cp -af $RT_DIR/data/bin/qml/QtAV qml
+fi
+cd -
+
 #mingw: libQt5AV1.a
-cp -af $LIBDIR/*Qt*AV* $TARGET/packages/com.qtav.product.dev/data/lib
-[ -f $LIBDIR/Qt5AV1.lib ] && cp -af $LIBDIR/libQt5AV1.lib $TARGET/packages/com.qtav.product.dev/data/lib/Qt5AV.lib
-[ -f $LIBDIR/libQt5AV1.a ] && cp -af $LIBDIR/libQt5AV1.a $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AV.a
-[ -f $LIBDIR/libQt5AV1.so ] && cp -af $LIBDIR/libQt5AV1.so $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AV.so
-[ -f $LIBDIR/Qt5AVWidgets1.lib ] && cp -af $LIBDIR/libQt5AVWidgets1.lib $TARGET/packages/com.qtav.product.dev/data/lib/Qt5AVWidgets.lib
-[ -f $LIBDIR/libQt5AVWidgets1.a ] && cp -af $LIBDIR/libQt5AVWidgets1.a $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AVWidgets.a
-[ -f $LIBDIR/libQt5AVWidgets1.so ] && cp -af $LIBDIR/libQt5AVWidgets1.so $TARGET/packages/com.qtav.product.dev/data/lib/libQt5AVWidgets.so
-rm -f $TARGET/packages/com.qtav.product.dev/data/lib/{*.dll,*.so.*}
+cd $TARGET/packages/com.qtav.product.dev/data/lib
+cp -af $LIBDIR/*Qt*AV* .
+[ -f $LIBDIR/Qt5AV${QTAV_VER_MAJOR}.lib ] && cp -af $LIBDIR/libQt5AV${QTAV_VER_MAJOR}.lib Qt5AV.lib
+[ -f $LIBDIR/libQt5AV${QTAV_VER_MAJOR}.a ] && cp -af $LIBDIR/libQt5AV.a libQt5AV.a
+[ -f $LIBDIR/Qt5AVWidgets${QTAV_VER_MAJOR}.lib ] && cp -af $LIBDIR/libQt5AVWidgets${QTAV_VER_MAJOR}.lib Qt5AVWidgets.lib
+[ -f $LIBDIR/libQt5AVWidgets${QTAV_VER_MAJOR}.a ] && cp -af $LIBDIR/libQt5AVWidgets${QTAV_VER_MAJOR}.a libQt5AVWidgets.a
+rm -f {*.dll,*.so.*,*.prl}
+# no copy, just link to real file in bin for linux development
+if [ -f $LIBDIR/libQt5AV.so ]; then
+  ln -sf ../bin/libQt5AV.so.${QTAV_VER_MAJOR} libQt5AV.so
+  ln -sf ../bin/libQt5AVWidgets.so.${QTAV_VER_MAJOR} libQt5AVWidgets.so  
+elif [ -f $LIBDIR/libQtAV.so ]; then
+  ln -sf ../bin/libQtAV.so.${QTAV_VER_MAJOR} libQtAV.so
+  ln -sf ../bin/libQtAVWidgets.so.${QTAV_VER_MAJOR} libQtAVWidgets.so
+fi
+cd -
 
 ### player
 echo "coping player files..."
