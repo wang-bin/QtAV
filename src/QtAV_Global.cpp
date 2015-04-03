@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/QtAV_Global.h"
+#include <QtCore/QLibraryInfo>
 #include <QtCore/QObject>
 #include <QtCore/QRegExp>
 #include "QtAV/version.h"
@@ -63,17 +64,31 @@ QString aboutFFmpeg_PlainText()
 }
 
 namespace Internal {
-typedef struct ff_component {
+typedef struct depend_component {
     const char* lib;
     unsigned build_version;
     unsigned rt_version;
     const char *config;
     const char *license;
-} ffmpeg_component_info;
+} depend_component;
 
-static const ffmpeg_component_info* get_ffmpeg_component_info(const ffmpeg_component_info* info = 0)
+static unsigned get_qt_version() {
+    int major = 0, minor = 0, patch = 0;
+    if (sscanf(qVersion(), "%d.%d.%d", &major, &minor, &patch) != 3)
+        qWarning("Can not recognize Qt runtime version");
+    return QT_VERSION_CHECK(major, minor, patch);
+}
+
+static const depend_component* get_depend_component(const depend_component* info = 0)
 {
-    static const ffmpeg_component_info components[] = {
+    static const QByteArray qt_license(QLibraryInfo::licensee().prepend("Qt-" QT_VERSION_STR " licensee: ").toUtf8());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+    static const char* qt_build_info = get_qt_version() >= QT_VERSION_CHECK(5, 3, 0) ? QLibraryInfo::build() : "";
+#else
+    static const char* qt_build_info = "";
+#endif
+    static const depend_component components[] = {
+        {  "Qt", QT_VERSION, get_qt_version(), qt_build_info, qt_license.constData() },
         //TODO: auto check loaded libraries
 #define FF_COMPONENT(name, NAME) #name, LIB##NAME##_VERSION_INT, name##_version(), name##_configuration(), name##_license()
         { FF_COMPONENT(avutil, AVUTIL) },
@@ -98,9 +113,9 @@ static const ffmpeg_component_info* get_ffmpeg_component_info(const ffmpeg_compo
     if (!info)
         return &components[0];
     // invalid input ptr
-    if (((ptrdiff_t)info - (ptrdiff_t)(&components[0]))%sizeof(ffmpeg_component_info))
+    if (((ptrdiff_t)info - (ptrdiff_t)(&components[0]))%sizeof(depend_component))
         return 0;
-    const ffmpeg_component_info *next = info;
+    const depend_component *next = info;
     next++;
     if (!next->lib)
         return 0;
@@ -110,9 +125,9 @@ static const ffmpeg_component_info* get_ffmpeg_component_info(const ffmpeg_compo
 void print_library_info()
 {
     qDebug() << aboutQtAV_PlainText();
-    const ffmpeg_component_info* info = Internal::get_ffmpeg_component_info(0);
+    const depend_component* info = Internal::get_depend_component(0);
     while (info) {
-        qDebug("Build with lib%s-%u.%u.%u"
+        qDebug("Build with %s-%u.%u.%u"
                , info->lib
                , QTAV_VERSION_MAJOR(info->build_version)
                , QTAV_VERSION_MINOR(info->build_version)
@@ -127,7 +142,7 @@ void print_library_info()
                     , QTAV_VERSION_PATCH(rt_version)
                     );
         }
-        info = Internal::get_ffmpeg_component_info(info);
+        info = Internal::get_depend_component(info);
     }
 }
 
@@ -136,10 +151,10 @@ void print_library_info()
 QString aboutFFmpeg_HTML()
 {
     QString text = "<h3>FFmpeg/Libav</h3>\n";
-    const Internal::ffmpeg_component_info* info = Internal::get_ffmpeg_component_info(0);
+    const Internal::depend_component* info = Internal::get_depend_component(0);
     while (info) {
         text += "<h4>" + QObject::tr("Build version")
-                + QString(": lib%1-%2.%3.%4</h4>\n")
+                + QString(": %1-%2.%3.%4</h4>\n")
                 .arg(info->lib)
                 .arg(QTAV_VERSION_MAJOR(info->build_version))
                 .arg(QTAV_VERSION_MINOR(info->build_version))
@@ -156,7 +171,7 @@ QString aboutFFmpeg_HTML()
         }
         text += "<p>" + QString(info->config) + "</p>\n"
                 "<p>" + QString(info->license) + "</p>\n";
-        info = Internal::get_ffmpeg_component_info(info);
+        info = Internal::get_depend_component(info);
     }
     return text;
 }
