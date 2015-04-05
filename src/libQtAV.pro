@@ -375,7 +375,6 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/PlayerSubtitle.h \
     QtAV/private/SubtitleProcessor.h \
     QtAV/private/AVCompat.h \
-    QtAV/private/AudioOutput_p.h \
     QtAV/private/AudioOutputBackend.h \
     QtAV/private/AudioResampler_p.h \
     QtAV/private/AVDecoder_p.h \

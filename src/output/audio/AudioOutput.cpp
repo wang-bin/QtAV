@@ -20,12 +20,27 @@
 ******************************************************************************/
 
 #include "QtAV/AudioOutput.h"
-#include "QtAV/private/AudioOutput_p.h"
+#include "QtAV/private/AVOutput_p.h"
 #include "QtAV/private/AudioOutputBackend.h"
 #include "QtAV/private/AVCompat.h"
+#if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
+#include <QtCore/QElapsedTimer>
+#else
+#include <QtCore/QTime>
+typedef QTime QElapsedTimer;
+#endif
+#include "utils/ring.h"
 #include "utils/Logger.h"
 
+#define AO_USE_TIMER 1
+
 namespace QtAV {
+
+// chunk
+static const int kBufferSize = 1024*4;
+static const int kBufferCount = 8;
+
+typedef void (*scale_samples_func)(quint8 *dst, const quint8 *src, int nb_samples, int volume, float volumef);
 
 /// from libavfilter/af_volume begin
 static inline void scale_samples_u8(quint8 *dst, const quint8 *src, int nb_samples, int volume, float)
@@ -100,6 +115,88 @@ scale_samples_func get_scaler(AudioFormat::SampleFormat fmt, qreal vol, int* vol
         return 0;
     }
 }
+
+class AudioOutputPrivate : public AVOutputPrivate
+{
+public:
+    AudioOutputPrivate():
+        mute(false)
+      , sw_volume(true)
+      , sw_mute(true)
+      , volume_i(256)
+      , vol(1)
+      , speed(1.0)
+      , nb_buffers(kBufferCount)
+      , buffer_size(kBufferSize)
+      , features(0)
+      , play_pos(0)
+      , processed_remain(0)
+      , msecs_ahead(0)
+      , scale_samples(0)
+      , backend(0)
+      , update_backend(true)
+      , index_enqueue(-1)
+      , index_deuqueue(-1)
+      , frame_infos(ring<FrameInfo>(nb_buffers))
+    {
+        available = false;
+    }
+    virtual ~AudioOutputPrivate();
+
+    void playInitialData(); //required by some backends, e.g. openal
+    void onCallback() { cond.wakeAll();}
+    virtual void uwait(qint64 us) {
+        QMutexLocker lock(&mutex);
+        Q_UNUSED(lock);
+        cond.wait(&mutex, (us+500LL)/1000LL);
+    }
+
+    int bufferSizeTotal() { return nb_buffers * buffer_size; }
+    struct FrameInfo {
+        FrameInfo(qreal t = 0, int s = 0) : timestamp(t), data_size(s) {}
+        qreal timestamp;
+        int data_size;
+    };
+
+    void resetStatus() {
+        available = false;
+        play_pos = 0;
+        processed_remain = 0;
+        msecs_ahead = 0;
+#if AO_USE_TIMER
+        timer.invalidate();
+#endif
+        frame_infos = ring<FrameInfo>(nb_buffers);
+    }
+    /// call this if sample format or volume is changed
+    void updateSampleScaleFunc();
+
+    bool mute;
+    bool sw_volume, sw_mute;
+    int volume_i;
+    qreal vol;
+    qreal speed;
+    AudioFormat format;
+    QByteArray data;
+    //AudioFrame audio_frame;
+    quint32 nb_buffers;
+    qint32 buffer_size;
+    int features;
+    int play_pos; // index or bytes
+    int processed_remain;
+    int msecs_ahead;
+#if AO_USE_TIMER
+    QElapsedTimer timer;
+#endif
+    scale_samples_func scale_samples;
+    AudioOutputBackend *backend;
+    bool update_backend;
+    QStringList backends;
+//private:
+    // the index of current enqueue/dequeue
+    int index_enqueue, index_deuqueue;
+    ring<FrameInfo> frame_infos;
+};
 
 void AudioOutputPrivate::updateSampleScaleFunc()
 {
