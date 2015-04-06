@@ -410,6 +410,9 @@ void AVDemuxThread::run()
         if (m_buffering != m_buffer->isBuffering()) {
             m_buffering = m_buffer->isBuffering();
             Q_EMIT mediaStatusChanged(m_buffering ? QtAV::BufferingMedia : QtAV::BufferedMedia);
+            // state change to buffering, report progress immediatly. otherwise we have to wait to read 1 packet.
+            if (m_buffering)
+                Q_EMIT bufferProgressChanged(m_buffer->bufferProgress());
         }
         QMutexLocker locker(&buffer_mutex);
         Q_UNUSED(locker);
@@ -417,8 +420,7 @@ void AVDemuxThread::run()
             continue;
         }
         index = demuxer->stream();
-        pkt = demuxer->packet(); //TODO: how to avoid additional copy?
-
+        pkt = demuxer->packet();
         /*1 is empty but another is enough, then do not block to
           ensure the empty one can put packets immediatly.
           But usually it will not happen, why?
