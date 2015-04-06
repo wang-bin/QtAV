@@ -22,6 +22,7 @@
 #include "VideoDecoderFFmpegHW.h"
 #include "VideoDecoderFFmpegHW_p.h"
 #include "utils/GPUMemCopy.h"
+#include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
 #include <assert.h>
@@ -55,6 +56,7 @@ class VideoDecoderVDA : public VideoDecoderFFmpegHW
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderVDA)
     Q_PROPERTY(bool NV12 READ isNV12 WRITE setNV12 NOTIFY NV12Changed)
+    Q_PROPERTY(bool zeroCopy READ isZeroCopy WRITE setZeroCopy NOTIFY zeroCopyChanged)
 public:
     VideoDecoderVDA();
     virtual ~VideoDecoderVDA();
@@ -64,8 +66,11 @@ public:
     // QObject properties
     void setNV12(bool value);
     bool isNV12() const;
+    void setZeroCopy(bool value);
+    bool isZeroCopy() const;
 Q_SIGNALS:
     void NV12Changed();
+    void zeroCopyChanged();
 };
 
 extern VideoDecoderId VideoDecoderId_VDA;
@@ -83,6 +88,7 @@ public:
     VideoDecoderVDAPrivate()
         : VideoDecoderFFmpegHWPrivate()
         , nv12(true)
+        , zero_copy(true)
     {
         copy_uswc = false;
         description = "VDA";
@@ -98,6 +104,7 @@ public:
     virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VDA_VLD);}
 
     bool nv12;
+    bool zero_copy;
     struct vda_context  hw_ctx;
 };
 
@@ -223,6 +230,24 @@ VideoFrame VideoDecoderVDA::frame()
         qWarning("unsupported vda pixel format: %#x", d.hw_ctx.cv_pix_fmt_type);
         return VideoFrame();
     }
+    // we can map the cv buffer addresses to video frame in VDASurfaceInterop. (may need VideoSurfaceInterop::mapToTexture()
+    class VDASurfaceInterop : public VideoSurfaceInterop {
+        CVPixelBufferRef cvbuf; // keep ref until video frame is destroyed
+    public:
+        VDASurfaceInterop(CVPixelBufferRef cv) : cvbuf(cv) {}
+        ~VDASurfaceInterop() {
+            CVPixelBufferRelease(cvbuf);
+        }
+        virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle = 0, int plane = 0) {
+            Q_UNUSED(type);
+            Q_UNUSED(fmt);
+            Q_UNUSED(handle);
+            Q_UNUSED(plane);
+            // if (no_gl)
+            return 0;
+        }
+    };
+
     const VideoFormat fmt(pixfmt);
     uint8_t *src[3];
     int pitch[3];
@@ -232,15 +257,18 @@ VideoFrame VideoDecoderVDA::frame()
         pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cv_buffer, i);
     }
     CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
-    CVPixelBufferRelease(cv_buffer);
-#if 0
-    VideoFrame f(width(), height(), fmt);
-    f.setBits(src);
-    f.setBytesPerLine(pitch);
-    f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
-    return f; // deferred copy. need to manage hw buffers
-#endif
-    return copyToFrame(fmt, d.height, src, pitch, false);
+    //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
+    VideoFrame f;
+    if (isZeroCopy()) {
+        f = VideoFrame(width(), height(), fmt);
+        f.setBits(src);
+        f.setBytesPerLine(pitch);
+        f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
+    } else {
+        f = copyToFrame(fmt, d.height, src, pitch, false);
+    }
+    f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(new VDASurfaceInterop(cv_buffer))));
+    return f;
 }
 
 void VideoDecoderVDA::setNV12(bool value)
@@ -249,12 +277,26 @@ void VideoDecoderVDA::setNV12(bool value)
     if (d.nv12 == value)
         return;
     d.nv12 = value;
-    emit NV12Changed();
+    Q_EMIT NV12Changed();
 }
 
 bool VideoDecoderVDA::isNV12() const
 {
     return d_func().nv12;
+}
+
+void VideoDecoderVDA::setZeroCopy(bool value)
+{
+    DPTR_D(VideoDecoderVDA);
+    if (d.zero_copy == value)
+        return;
+    d.zero_copy = value;
+    Q_EMIT zeroCopyChanged();
+}
+
+bool VideoDecoderVDA::isZeroCopy() const
+{
+    return d_func().zero_copy;
 }
 
 bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
@@ -307,11 +349,14 @@ bool VideoDecoderVDAPrivate::getBuffer(void **opaque, uint8_t **data)
 void VideoDecoderVDAPrivate::releaseBuffer(void *opaque, uint8_t *data)
 {
     Q_UNUSED(opaque);
+    Q_UNUSED(data)
+#if 0
     // released in getBuffer?
     CVPixelBufferRef cv_buffer = (CVPixelBufferRef)data;
     if (!cv_buffer)
         return;
     CVPixelBufferRelease(cv_buffer);
+#endif
 }
 
 bool VideoDecoderVDAPrivate::open()
