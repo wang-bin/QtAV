@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,10 +29,46 @@
 #undef SampleFormat
 #endif
 
-
 namespace QtAV {
 
 const qint64 kHz = 1000000LL;
+
+typedef struct {
+    AVSampleFormat avfmt;
+    AudioFormat::SampleFormat fmt;
+    const char* name;
+} sample_fmt_entry;
+static const sample_fmt_entry samplefmts[] = {
+    { AV_SAMPLE_FMT_U8, AudioFormat::SampleFormat_Unsigned8, "u8" },
+    { AV_SAMPLE_FMT_S16, AudioFormat::SampleFormat_Signed16, "s16" },
+    { AV_SAMPLE_FMT_S32, AudioFormat::SampleFormat_Signed32, "s32" },
+    { AV_SAMPLE_FMT_FLT, AudioFormat::SampleFormat_Float, "float" },
+    { AV_SAMPLE_FMT_DBL, AudioFormat::SampleFormat_Double, "double" },
+    { AV_SAMPLE_FMT_U8P, AudioFormat::SampleFormat_Unsigned8Planar, "u8p" },
+    { AV_SAMPLE_FMT_S16P, AudioFormat::SampleFormat_Signed16Planar, "s16p" },
+    { AV_SAMPLE_FMT_S32P, AudioFormat::SampleFormat_Signed32Planar, "s32p" },
+    { AV_SAMPLE_FMT_FLTP, AudioFormat::SampleFormat_FloatPlanar, "floatp" },
+    { AV_SAMPLE_FMT_DBLP, AudioFormat::SampleFormat_DoublePlanar, "doublep" },
+    { AV_SAMPLE_FMT_NONE, AudioFormat::SampleFormat_Unknown, "unknown" }
+};
+
+AudioFormat::SampleFormat AudioFormat::sampleFormatFromFFmpeg(int fffmt)
+{
+    for (int i = 0; samplefmts[i].fmt != AudioFormat::SampleFormat_Unknown; ++i) {
+        if ((int)samplefmts[i].avfmt == fffmt)
+            return samplefmts[i].fmt;
+    }
+    return AudioFormat::SampleFormat_Unknown;
+}
+
+int AudioFormat::sampleFormatToFFmpeg(AudioFormat::SampleFormat fmt)
+{
+    for (int i = 0; samplefmts[i].fmt != AudioFormat::SampleFormat_Unknown; ++i) {
+        if (samplefmts[i].fmt == fmt)
+            return (int)samplefmts[i].avfmt;
+    }
+    return (int)AV_SAMPLE_FMT_NONE;
+}
 
 typedef struct {
     qint64 ff;
@@ -69,9 +105,9 @@ qint64 AudioFormat::channelLayoutToFFmpeg(AudioFormat::ChannelLayout cl)
 class AudioFormatPrivate : public QSharedData
 {
 public:
-    AudioFormatPrivate():
-        planar(false)
-      , sample_format(AudioFormat::SampleFormat_Input)
+    AudioFormatPrivate()
+      : sample_fmt(AudioFormat::SampleFormat_Input)
+      , av_sample_fmt(AV_SAMPLE_FMT_NONE)
       , channels(0)
       , sample_rate(0)
       , channel_layout(AudioFormat::ChannelLayout_Unsupported)
@@ -91,22 +127,17 @@ public:
         }
     }
 
-    bool planar;
-    AudioFormat::SampleFormat sample_format;
+    AudioFormat::SampleFormat sample_fmt;
+    AVSampleFormat av_sample_fmt;
     int channels;
     int sample_rate;
-    int bytes_per_sample;
     AudioFormat::ChannelLayout channel_layout;
     qint64 channel_layout_ff;
 };
 
 bool AudioFormat::isPlanar(SampleFormat format)
 {
-    return format == SampleFormat_Unsigned8Planar
-            || format == SampleFormat_Signed16Planar
-            || format == SampleFormat_Signed32Planar
-            || format == SampleFormat_FloatPlanar
-            || format == SampleFormat_DoublePlanar;
+    return format & kPlanar;
 }
 
 AudioFormat::SampleFormat AudioFormat::packedSampleFormat(SampleFormat fmt)
@@ -173,8 +204,7 @@ bool AudioFormat::operator==(const AudioFormat &other) const
             d->channel_layout_ff == other.d->channel_layout_ff &&
             d->channel_layout == other.d->channel_layout &&
             d->channels == other.d->channels &&
-            //d->sampleSize == other.d->sampleSize &&
-            d->sample_format == other.d->sample_format;
+            d->sample_fmt == other.d->sample_fmt;
 }
 
 /*!
@@ -194,12 +224,22 @@ bool AudioFormat::operator!=(const AudioFormat& other) const
 bool AudioFormat::isValid() const
 {
     return d->sample_rate > 0 && (d->channels > 0 || d->channel_layout > 0) &&
-            d->sample_format != AudioFormat::SampleFormat_Unknown;
+            d->sample_fmt != AudioFormat::SampleFormat_Unknown;
+}
+
+bool AudioFormat::isFloat() const
+{
+    return d->sample_fmt & kFloat;
+}
+
+bool AudioFormat::isUnsigned() const
+{
+    return d->sample_fmt & kUnsigned;
 }
 
 bool AudioFormat::isPlanar() const
 {
-    return d->planar;
+    return d->sample_fmt & kPlanar;
 }
 
 int AudioFormat::planeCount() const
@@ -285,31 +325,8 @@ int AudioFormat::channels() const
 */
 void AudioFormat::setSampleFormat(AudioFormat::SampleFormat sampleFormat)
 {
-    d->sample_format = sampleFormat;
-    d->planar = AudioFormat::isPlanar(sampleFormat);
-    switch (d->sample_format) {
-    case AudioFormat::SampleFormat_Unsigned8:
-    case AudioFormat::SampleFormat_Unsigned8Planar:
-        d->bytes_per_sample = 8 >> 3;
-        break;
-    case AudioFormat::SampleFormat_Signed16:
-    case AudioFormat::SampleFormat_Signed16Planar:
-        d->bytes_per_sample = 16 >> 3;
-        break;
-    case AudioFormat::SampleFormat_Signed32:
-    case AudioFormat::SampleFormat_Signed32Planar:
-    case AudioFormat::SampleFormat_Float:
-    case AudioFormat::SampleFormat_FloatPlanar:
-        d->bytes_per_sample = 32 >> 3;
-        break;
-    case AudioFormat::SampleFormat_Double:
-    case AudioFormat::SampleFormat_DoublePlanar:
-        d->bytes_per_sample = 64 >> 3;
-        break;
-    default:
-        d->bytes_per_sample = 0;
-        break;
-    }
+    d->sample_fmt = sampleFormat;
+    d->av_sample_fmt = (AVSampleFormat)AudioFormat::sampleFormatToFFmpeg(sampleFormat);
 }
 
 /*!
@@ -317,22 +334,28 @@ void AudioFormat::setSampleFormat(AudioFormat::SampleFormat sampleFormat)
 */
 AudioFormat::SampleFormat AudioFormat::sampleFormat() const
 {
-    return d->sample_format;
+    return d->sample_fmt;
 }
 
 void AudioFormat::setSampleFormatFFmpeg(int ffSampleFormat)
 {
-    //currently keep the values the same as latest FFmpeg's
-    setSampleFormat((AudioFormat::SampleFormat)ffSampleFormat);
+    d->sample_fmt = AudioFormat::sampleFormatFromFFmpeg(ffSampleFormat);
+    d->av_sample_fmt = (AVSampleFormat)ffSampleFormat;
 }
 
 int AudioFormat::sampleFormatFFmpeg() const
 {
-    return d->sample_format;
+    return d->av_sample_fmt;
 }
 
 QString AudioFormat::sampleFormatName() const
 {
+    if (d->av_sample_fmt == AV_SAMPLE_FMT_NONE) {
+        for (int i = 0; samplefmts[i].fmt != SampleFormat_Unknown; ++i) {
+            if (samplefmts[i].fmt == d->sample_fmt)
+                return samplefmts[i].name;
+        }
+    }
     return av_get_sample_fmt_name((AVSampleFormat)sampleFormatFFmpeg());
 }
 
@@ -434,9 +457,15 @@ int AudioFormat::bytesPerFrame() const
     return bytesPerSample() * channels();
 }
 
+// kSize: assume 12 bytes(long double) at most
 int AudioFormat::bytesPerSample() const
 {
-    return d->bytes_per_sample;
+    return d->sample_fmt & ((1<<(kSize+1)) - 1);
+}
+
+int AudioFormat::sampleSize() const
+{
+    return bytesPerSample();
 }
 
 int AudioFormat::bitRate() const

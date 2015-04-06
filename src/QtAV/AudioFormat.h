@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -33,21 +33,31 @@ namespace QtAV {
 class AudioFormatPrivate;
 class Q_AV_EXPORT AudioFormat
 {
+    enum { kSize = 12, kFloat = 1<<(kSize+1), kUnsigned = 1<<(kSize+2), kPlanar = 1<<(kSize+3), kByteOrder = 1<<(kSize+4) };
 public:
-    //TODO: what about paInt24
+    /*!
+     * \brief The SampleFormat enum
+     * s8, u16, u24, s24, u32 are not listed in ffmpeg sample format and have not planar format.
+     * pcm_s24le will be decoded as s32-24bit in ffmpeg, it's encoded as 32 bits, but raw sample has 24 bits
+     */
     enum SampleFormat {
-        SampleFormat_Unknown = -1,
+        SampleFormat_Unknown = 0,
         SampleFormat_Input = SampleFormat_Unknown,
-        SampleFormat_Unsigned8,
-        SampleFormat_Signed16,
-        SampleFormat_Signed32,
-        SampleFormat_Float,
-        SampleFormat_Double,
-        SampleFormat_Unsigned8Planar,
-        SampleFormat_Signed16Planar,
-        SampleFormat_Signed32Planar,
-        SampleFormat_FloatPlanar,
-        SampleFormat_DoublePlanar
+        SampleFormat_Unsigned8 = 1 | kUnsigned,
+        SampleFormat_Signed8 = 1,
+        SampleFormat_Unigned16 = 2 | kUnsigned,
+        SampleFormat_Signed16 = 2,
+        SampleFormat_Unsigned24 = 3 | kUnsigned,
+        SampleFormat_Signed24 = 3,
+        SampleFormat_Unsigned32 = 4 | kUnsigned,
+        SampleFormat_Signed32 = 4,
+        SampleFormat_Float = 4 | kFloat,
+        SampleFormat_Double = 8 | kFloat,
+        SampleFormat_Unsigned8Planar = SampleFormat_Unsigned8 | kPlanar,
+        SampleFormat_Signed16Planar = SampleFormat_Signed16 | kPlanar,
+        SampleFormat_Signed32Planar = SampleFormat_Signed32 | kPlanar,
+        SampleFormat_FloatPlanar = SampleFormat_Float | kPlanar,
+        SampleFormat_DoublePlanar = SampleFormat_Double | kPlanar
     };
     enum ChannelLayout {
         ChannelLayout_Left,
@@ -61,6 +71,8 @@ public:
 
     static ChannelLayout channelLayoutFromFFmpeg(qint64 clff);
     static qint64 channelLayoutToFFmpeg(ChannelLayout cl);
+    static SampleFormat sampleFormatFromFFmpeg(int fffmt);
+    static int sampleFormatToFFmpeg(SampleFormat fmt);
     static bool isPlanar(SampleFormat format);
     static SampleFormat planarSampleFormat(SampleFormat fmt);
     static SampleFormat packedSampleFormat(SampleFormat fmt);
@@ -74,6 +86,8 @@ public:
     bool operator!=(const AudioFormat &other) const;
 
     bool isValid() const;
+    bool isFloat() const;
+    bool isUnsigned() const;
     bool isPlanar() const;
     int planeCount() const;
 
@@ -129,6 +143,7 @@ public:
         \sa bytesPerFrame()
     */
     int bytesPerSample() const;
+    int sampleSize() const; // the same as bytesPerSample()
     int bitRate() const; //bits per second
     int bytesPerSecond() const;
 private:

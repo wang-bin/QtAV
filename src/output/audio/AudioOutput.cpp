@@ -357,20 +357,14 @@ bool AudioOutput::play(const QByteArray &data, qreal pts)
 bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
 {
     DPTR_D(AudioOutput);
-    //DPTR_D(AVOutput);
-    //locker(&mutex)
-    //TODO: make sure d.data thread safe. lock around here? for audio and video(main thread problem)?
-    /* you can use d.data directly in AVThread. In other thread, it's not safe, you must do something
-     * to make sure the data is not be modified in AVThread when using it*/
     if (d.paused)
         return false;
     d.data = data;
     if (isMute() && d.sw_mute) {
-        if (d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8
-                || d.format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8Planar)
-            d.data.fill((char)0x80);
-        else
-            d.data.fill(0);
+        char s = 0;
+        if (d.format.isUnsigned() && !d.format.isFloat())
+            s = 1<<((d.format.bytesPerSample() << 3)-1);
+        d.data.fill(s);
     } else {
         if (!qFuzzyCompare(volume(), (qreal)1.0)
                 && d.sw_volume
