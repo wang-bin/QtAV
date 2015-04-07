@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -303,6 +303,11 @@ static const struct {
     QTAV_PIX_FMT_C(YUVA444P16LE, ///< planar YUV 4:4:4 64bpp, (1 Cr & Cb sample per 1x1 Y & A samples, little-endian)
 */
     //QTAV_PIX_FMT_C(VDPAU,     ///< HW acceleration through VDPAU, Picture.data[3] contains a VdpVideoSurface
+// doc/APIChanges: 2014-04-07 - 0a1cc04 / 8b17243 - lavu 52.75.100 / 53.11.0 - pixfmt.h
+    //Add AV_PIX_FMT_YVYU422 pixel format.
+#if (FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 75, 100) || LIBAV_MODULE_CHECK(LIBAVUTIL, 53, 11, 0))
+    { VideoFormat::Format_YVYU, QTAV_PIX_FMT_C(YVYU422) },
+#endif
 /*
 #ifndef QTAV_PIX_FMT_C(ABI_GIT_MASTER
     QTAV_PIX_FMT_C(RGBA64BE=0x123,  ///< packed RGBA 16:16:16:16, 64bpp, 16R, 16G, 16B, 16A, the 2-byte value for each R/G/B/A component is stored as big-endian

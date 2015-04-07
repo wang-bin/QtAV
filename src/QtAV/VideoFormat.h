@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -71,8 +71,10 @@ public:
         Format_YUV411P,
         Format_YUV410P,
         Format_YV12,
-        Format_UYVY,
-        Format_YUYV,
+        Format_UYVY, //422
+        Format_VYUY, //not in ffmpeg. OMX_COLOR_FormatCrYCbY
+        Format_YUYV, //422, aka yuy2
+        Format_YVYU, //422
         Format_NV12,
         Format_NV21,
         Format_IMC1,
