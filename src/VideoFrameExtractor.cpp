@@ -239,8 +239,7 @@ public:
             qWarning("VideoFrameExtractor failed to get a packet at %lld", value);
             return false;
         }
-        // no flush is required because we compare the correct decoded timestamp
-        //decoder->flush(); //must flush otherwise old frames will be decoded at the beginning
+        decoder->flush(); //must flush otherwise old frames will be decoded at the beginning
         decoder->setOptions(dec_opt_normal);
         // must decode key frame
         int k = 0;
