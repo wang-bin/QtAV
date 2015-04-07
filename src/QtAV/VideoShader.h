@@ -23,6 +23,7 @@
 #define QTAV_VIDEOSHADER_H
 
 #include <QtAV/VideoFrame.h>
+#include <QVector4D>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLShaderProgram>
 #else
@@ -111,6 +112,7 @@ public:
     bool hasAlpha() const;
     const QMatrix4x4 &colorMatrix() const;
     const QMatrix4x4& matrix() const;
+    const QVector4D& channelMap(int channel) const;
     int bpp() const; //1st plane
     int planeCount() const;
     /*!

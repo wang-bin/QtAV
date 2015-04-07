@@ -214,8 +214,7 @@ OpenGLVideo::OpenGLVideo() {}
 
 bool OpenGLVideo::isSupported(VideoFormat::PixelFormat pixfmt)
 {
-    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY
-            && pixfmt != VideoFormat::Format_RGB48BE;
+    return pixfmt != VideoFormat::Format_RGB48BE;
 }
 
 // TODO: set surface/device size here (viewport?)

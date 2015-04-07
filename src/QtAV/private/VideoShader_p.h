@@ -24,6 +24,7 @@
 
 #include "QtAV/VideoFrame.h"
 #include "QtAV/ColorTransform.h"
+#include <QVector4D>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLBuffer>
 #include <QtGui/QOpenGLShaderProgram>
@@ -74,6 +75,7 @@ public:
     int u_bpp;
     int u_opacity;
     QVector<int> u_Texture;
+    QVector<int> u_c;
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;
 };
@@ -107,7 +109,8 @@ public:
     bool initPBO(int plane, int size);
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool initTextures(const VideoFormat& fmt);
-    bool updateTexturesIfNeeded();
+    void updateChannelMap(const VideoFormat& fmt);
+    bool ensureResources();
     void setupQuality();
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
@@ -150,6 +153,7 @@ public:
     QMatrix4x4 matrix;
     bool try_pbo;
     QVector<QOpenGLBuffer> pbo;
+    QVector<QVector4D> channel_map;
 };
 
 } //namespace QtAV
