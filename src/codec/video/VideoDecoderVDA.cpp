@@ -51,25 +51,32 @@ extern "C" {
 namespace QtAV {
 
 class VideoDecoderVDAPrivate;
-class VideoDecoderVDA : public VideoDecoderFFmpegHW
+class VideoDecoderVDA Q_DECL_FINAL : public VideoDecoderFFmpegHW
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderVDA)
-    Q_PROPERTY(bool NV12 READ isNV12 WRITE setNV12 NOTIFY NV12Changed)
+    Q_PROPERTY(PixelFormat format READ format WRITE setFormat NOTIFY formatChanged)
     Q_PROPERTY(bool zeroCopy READ isZeroCopy WRITE setZeroCopy NOTIFY zeroCopyChanged)
+    Q_ENUMS(PixelFormat)
 public:
+    enum PixelFormat {
+        NV12 = '420v',
+        //NV12Full = '420f',
+        UYVY = '2vuy',
+        YUV420P = 'y420',
+        YUYV = 'yuvs'
+    };
     VideoDecoderVDA();
-    virtual ~VideoDecoderVDA();
-    virtual VideoDecoderId id() const;
-    virtual QString description() const;
-    virtual VideoFrame frame();
+    VideoDecoderId id() const Q_DECL_OVERRIDE;
+    QString description() const Q_DECL_OVERRIDE;
+    VideoFrame frame() Q_DECL_OVERRIDE;
     // QObject properties
-    void setNV12(bool value);
-    bool isNV12() const;
+    void setFormat(PixelFormat fmt);
+    PixelFormat format() const;
     void setZeroCopy(bool value);
     bool isZeroCopy() const;
 Q_SIGNALS:
-    void NV12Changed();
+    void formatChanged();
     void zeroCopyChanged();
 };
 
@@ -87,8 +94,8 @@ class VideoDecoderVDAPrivate : public VideoDecoderFFmpegHWPrivate
 public:
     VideoDecoderVDAPrivate()
         : VideoDecoderFFmpegHWPrivate()
-        , nv12(true)
         , zero_copy(true)
+        , out_fmt(VideoDecoderVDA::NV12)
     {
         copy_uswc = false;
         description = "VDA";
@@ -103,8 +110,9 @@ public:
     virtual void releaseBuffer(void *opaque, uint8_t *data);
     virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VDA_VLD);}
 
-    bool nv12;
+
     bool zero_copy;
+    VideoDecoderVDA::PixelFormat out_fmt;
     struct vda_context  hw_ctx;
 };
 
@@ -160,34 +168,20 @@ static const cv_format cv_formats[] = {
 
 static VideoFormat::PixelFormat format_from_cv(int cv)
 {
-    for (int i = 0; cv_formats[i].pixfmt != VideoFormat::Format_Invalid; ++i) {
+    for (int i = 0; cv_formats[i].cv_pixfmt; ++i) {
         if (cv_formats[i].cv_pixfmt == cv)
             return cv_formats[i].pixfmt;
     }
     return VideoFormat::Format_Invalid;
 }
 
-static int format_to_cv(VideoFormat::PixelFormat fmt)
+int format_to_cv(VideoFormat::PixelFormat fmt)
 {
-    for (int i = 0; cv_formats[i].pixfmt != VideoFormat::Format_Invalid; ++i) {
+    for (int i = 0; cv_formats[i].cv_pixfmt; ++i) {
         if (cv_formats[i].pixfmt == fmt)
             return cv_formats[i].cv_pixfmt;
     }
     return 0;
-}
-
-static int getOutputPixelFormat() {
-    static int fmt = 0;
-    if (fmt > 0)
-        return fmt;
-#ifndef kCFCoreFoundationVersionNumber10_7
-#define kCFCoreFoundationVersionNumber10_7      635.00
-#endif
-    if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber10_7)
-        fmt = format_to_cv(VideoFormat::Format_YUV420P);
-    else
-        fmt = format_to_cv(VideoFormat::Format_NV12);
-    return fmt;
 }
 
 VideoDecoderVDA::VideoDecoderVDA()
@@ -195,12 +189,9 @@ VideoDecoderVDA::VideoDecoderVDA()
 {
     // dynamic properties about static property details. used by UI
     // format: detail_property
-    setProperty("detail_SSE4", tr("Optimized copy decoded data from USWC memory using SSE4.1 if possible.") + " " + tr("Crash for some videos."));
-    setProperty("detail_NV12", tr("NV12 output pixel format (OSX >= 10.7). Better performance."));
-}
-
-VideoDecoderVDA::~VideoDecoderVDA()
-{
+    const QString note(tr("Reopen to apply"));
+    setProperty("detail_SSE4", tr("Optimized copy decoded data from USWC memory using SSE4.1 if possible.") + " " + tr("Crash for some videos.") + "\n" + note);
+    setProperty("detail_format", tr("Output pixel format from decoder. NV12 and UYVY is fast. Some are available since OSX 10.7, e.g. NV12.") + "\n" + note);
 }
 
 VideoDecoderId VideoDecoderVDA::id() const
@@ -271,18 +262,25 @@ VideoFrame VideoDecoderVDA::frame()
     return f;
 }
 
-void VideoDecoderVDA::setNV12(bool value)
+void VideoDecoderVDA::setFormat(PixelFormat fmt)
 {
     DPTR_D(VideoDecoderVDA);
-    if (d.nv12 == value)
+    if (d.out_fmt == fmt)
         return;
-    d.nv12 = value;
-    Q_EMIT NV12Changed();
+    d.out_fmt = fmt;
+    emit formatChanged();
+#ifndef kCFCoreFoundationVersionNumber10_7
+#define kCFCoreFoundationVersionNumber10_7      635.00
+#endif
+    if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber10_7)
+        return;
+    if (fmt != YUV420P && fmt != UYVY)
+        qWarning("format is not supported on OSX < 10.7");
 }
 
-bool VideoDecoderVDA::isNV12() const
+VideoDecoderVDA::PixelFormat VideoDecoderVDA::format() const
 {
-    return d_func().nv12;
+    return d_func().out_fmt;
 }
 
 void VideoDecoderVDA::setZeroCopy(bool value)
@@ -313,10 +311,7 @@ bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
     } else {
         memset(&hw_ctx, 0, sizeof(hw_ctx));
         hw_ctx.format = 'avc1'; //fourcc
-        if (nv12)
-            hw_ctx.cv_pix_fmt_type = getOutputPixelFormat();
-        else
-            hw_ctx.cv_pix_fmt_type = format_to_cv(VideoFormat::Format_YUV420P);
+        hw_ctx.cv_pix_fmt_type = out_fmt; // has the same value as cv pixel format
     }
     /* Setup the libavcodec hardware context */
     hw_ctx.width = w;
