@@ -86,6 +86,7 @@ class VideoMaterialPrivate : public DPtrPrivate<VideoMaterial>
 public:
     VideoMaterialPrivate()
         : update_texure(true)
+        , init_textures_required(true)
         , bpp(1)
         , width(0)
         , height(0)
@@ -114,6 +115,7 @@ public:
     void setupQuality();
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
+    bool init_textures_required; // e.g. target changed
     int bpp;
     int width, height; //avoid accessing frame(need lock)
     QRect viewport;

@@ -343,6 +343,24 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     // TODO: move to another function before rendering?
     d.width = frame.width();
     d.height = frame.height();
+    GLenum new_target = d.target;
+    QByteArray t = frame.metaData("target").toByteArray().toLower();
+    if (t == "rect")
+        new_target = GL_TEXTURE_RECTANGLE;
+#ifdef GL_TEXTURE_3D
+    else if (t == "3d")
+        new_target = GL_TEXTURE_3D;
+#endif //GL_TEXTURE_3D
+#ifdef GL_TEXTURE_1D
+    else if (t == "1d")
+        new_target = GL_TEXTURE_1D;
+#endif //GL_TEXTURE_1D
+    if (new_target != d.target) {
+        // FIXME: not thread safe (in qml)
+        d.target = new_target;
+        d.init_textures_required = true;
+    }
+
     const VideoFormat fmt(frame.format());
     d.bpp = fmt.bitsPerPixel(0);
     // http://forum.doom9.org/archive/index.php/t-160211.html
@@ -385,21 +403,25 @@ VideoShader* VideoMaterial::createShader() const
 
 MaterialType* VideoMaterial::type() const
 {
+    // TODO: check target
     static MaterialType rgb_packed_Type;
-    static MaterialType yuv_packed_Type; // TODO: uyuy, yuy2
+    static MaterialType yuv_packed_Type;
+    static MaterialType yuv_packed_rect_Type;
     static MaterialType planar16leType;
     static MaterialType planar16beType;
     static MaterialType yuv8Type;
     static MaterialType planar16le_4plane_Type;
     static MaterialType planar16be_4plane_Type;
     static MaterialType yuv8_4plane_Type;
-
     static MaterialType invalidType;
-    const VideoFormat &fmt = d_func().video_format;
+    DPTR_D(const VideoMaterial);
+    const VideoFormat &fmt = d.video_format;
     if (!fmt.isPlanar()) {
         if (fmt.isRGB())
             return &rgb_packed_Type;
-        return &yuv_packed_Type;
+        if (d.target == GL_TEXTURE_2D)
+            return &yuv_packed_Type;
+        return &yuv_packed_rect_Type;
     }
     if (fmt.bytesPerPixel(0) == 1) {
         if (fmt.planeCount() == 4)
@@ -564,24 +586,87 @@ QSize VideoMaterial::frameSize() const
 {
     return QSize(d_func().width, d_func().height);
 }
-
 QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
 {
+    return mapToTexture(roi, 1);
+}
+
+QPointF VideoMaterial::mapToTexture(const QPointF &p, int normalize) const
+{
+    if (p.isNull())
+        return p;
     DPTR_D(const VideoMaterial);
-    if (!roi.isValid())
-        return QRectF(0, 0, 1, 1);
+    float x = p.x();
+    float y = p.y();
+    const qreal texW = d.texture_size[0].width();
+    const qreal s = texW/qreal(d.width); // only apply to unnormalized input roi
+    if (normalize < 0)
+        normalize = d.target != GL_TEXTURE_RECTANGLE;
+    if (normalize) {
+        if (qAbs(x) > 1) {
+            x /= (float)texW;
+            x *= s;
+        }
+        if (qAbs(y) > 1)
+            y /= (float)d.height;
+    } else {
+        if (qAbs(x) <= 1)
+            x *= (float)texW;
+        else
+            x *= s;
+        if (qAbs(y) <= 1)
+            y *= (float)d.height;
+    }
+    // multiply later because we compare with 1 before it
+    x *= d.effective_tex_width_ratio;
+    return QPointF(x, y);
+}
+
+// mapToTexture
+QRectF VideoMaterial::mapToTexture(const QRectF &roi, int normalize) const
+{
+    DPTR_D(const VideoMaterial);
+    const qreal texW = d.texture_size[0].width();
+    const qreal s = texW/qreal(d.width); // only apply to unnormalized input roi
+    if (!roi.isValid()) {
+        if (normalize)
+            return QRectF(0, 0, d.effective_tex_width_ratio, 1); //NOTE: not (0, 0, 1, 1)
+        return QRectF(0, 0, texW, d.height);
+    }
     float x = roi.x();
-    float w = roi.width();
-    if (qAbs(x) > 1)
-        x /= (float)d.width;
+    float w = roi.width(); //TODO: texturewidth
     float y = roi.y();
-    if (qAbs(y) > 1)
-        y /= (float)d.height;
-    if (qAbs(w) > 1)
-        w /= (float)d.width;
     float h = roi.height();
-    if (qAbs(h) > 1)
-        h /= (float)d.height;
+    if (normalize < 0)
+        normalize = d.target != GL_TEXTURE_RECTANGLE;
+    if (normalize) {
+        if (qAbs(x) > 1) {
+            x /= texW;
+            x *= s;
+        }
+        if (qAbs(y) > 1)
+            y /= (float)d.height;
+        if (qAbs(w) > 1) {
+            w /= texW;
+            w *= s;
+        }
+        if (qAbs(h) > 1)
+            h /= (float)d.height;
+    } else { //FIXME: what about ==1?
+        if (qAbs(x) <= 1)
+            x *= texW;
+        else
+            x *= s;
+        if (qAbs(y) <= 1)
+            y *= (float)d.height;
+        if (qAbs(w) <= 1)
+            w *= texW;
+        else
+            w *= s;
+        if (qAbs(h) <= 1)
+            h *= (float)d.height;
+    }
+    // multiply later because we compare with 1 before it
     x *= d.effective_tex_width_ratio;
     w *= d.effective_tex_width_ratio;
     return QRectF(x, y, w, h);
@@ -720,6 +805,7 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
     for (int i = 0; i < textures.size(); ++i) {
         initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
     }
+    init_textures_required = false;
     return true;
 }
 
@@ -762,26 +848,8 @@ bool VideoMaterialPrivate::ensureResources()
     const VideoFormat &fmt = video_format;
     if (!fmt.isValid())
         return false;
-    bool update_textures = false;
-    GLenum new_target = target;
-    QByteArray t = frame.metaData("target").toByteArray().toLower();
-#ifndef GL_TEXTURE_RECTANGLE
-#define GL_TEXTURE_RECTANGLE 0x84F5
-#endif
-    if (t == "rect")
-        new_target = GL_TEXTURE_RECTANGLE;
-#ifdef GL_TEXTURE_3D
-    else if (t == "3d")
-        new_target = GL_TEXTURE_3D;
-#endif //GL_TEXTURE_3D
-#ifdef GL_TEXTURE_1D
-    else if (t == "1d")
-        new_target = GL_TEXTURE_1D;
-#endif //GL_TEXTURE_1D
-    if (new_target != target) {
-        target = new_target;
-        update_textures = true;
-    }
+
+    bool update_textures = init_textures_required;
     const int nb_planes = fmt.planeCount();
     // will this take too much time?
     const qreal wr = (qreal)frame.effectiveBytesPerLine(nb_planes-1)/(qreal)frame.bytesPerLine(nb_planes-1);

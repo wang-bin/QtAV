@@ -132,11 +132,20 @@ public:
     QSize frameSize() const;
     /*!
      * \brief normalizedROI
-     * \param roi logical roi of a video frame
-     * \return
-     * valid and normalized roi. \sa validTextureWidth()
+     * \param roi logical roi of a video frame.
+     * the same as mapToTexture(roi, 1)
      */
     QRectF normalizedROI(const QRectF& roi) const;
+    /*!
+     * \brief mapToFrame
+     * map a point p or a rect r to video texture (of 1st plane) and scaled to valid width.
+     * p or r is in video frame's rect.
+     * \param normalize -1: auto(do not normalize for rectangle texture). 0: no. 1: yes
+     * \return
+     * point or rect in current texture valid coordinates. \sa validTextureWidth()
+     */
+    QPointF mapToTexture(const QPointF& p, int normalize = -1) const;
+    QRectF mapToTexture(const QRectF& r, int normalize = -1) const;
     void setBrightness(qreal value);
     void setContrast(qreal value);
     void setHue(qreal value);

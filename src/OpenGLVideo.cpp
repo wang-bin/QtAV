@@ -148,7 +148,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
     if (!update_geo)
         goto end;
     //qDebug("updating geometry...");
-    geometry.setRect(target_rect, material->normalizedROI(roi));
+    geometry.setRect(target_rect, material->mapToTexture(roi));
     update_geo = false;
     if (!try_vbo)
         goto end;
