@@ -482,7 +482,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     }
     //setupQuality?
     // try_pbo ? pbo_id : 0. 0= > interop.createHandle
-    if (d.frame.map(GLTextureSurface, &d.textures[p])) {
+    if (d.frame.map(GLTextureSurface, &d.textures[p], p)) {
         //TODO: move to map()?
         OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
         DYGL(glBindTexture(d.target, d.textures[p]));
@@ -815,7 +815,8 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
     }
     qDebug("init textures...");
     for (int i = 0; i < textures.size(); ++i) {
-        initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
+        // can not init for vda!
+        //initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
     }
     init_textures_required = false;
     return true;

@@ -27,7 +27,8 @@
 #include "QtAV/private/prepost.h"
 #include "utils/OpenGLHelper.h"
 #include <assert.h>
-
+#include <CGLContext.h>
+#include <CGLIOSurface.h>
 #ifdef __cplusplus
 extern "C" {
 #endif //__cplusplus
@@ -232,7 +233,6 @@ VideoFrame VideoDecoderVDA::frame()
             CVPixelBufferRelease(cvbuf);
         }
         virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle = 0, int plane = 0) {
-            Q_UNUSED(plane);
             Q_UNUSED(fmt);
             if (!glinterop)
                 return 0;
@@ -241,12 +241,33 @@ VideoFrame VideoDecoderVDA::frame()
             }
             if (type != GLTextureSurface)
                 return 0;
+            // https://www.opengl.org/registry/specs/APPLE/rgb_422.txt
+            // drop GL_YCBCR_422_APPLE use RGB: https://github.com/elupus/xbmc/commit/cb8028841c71d833865ba25541733b0032b798a8
             IOSurfaceRef surface  = CVPixelBufferGetIOSurface(cvbuf);
-            //OSType format_type = CVPixelBufferGetPixelFormatType(cvbuf);
-            // TODO: other target. other formats(only 1 surface, so uyvy is the only format supported?)
-            DYGL(glBindTexture(GL_TEXTURE_RECTANGLE, *((GLuint*)handle)));
-            CGLTexImageIOSurface2D(CGLGetCurrentContext(), GL_TEXTURE_RECTANGLE, GL_RGB8, IOSurfaceGetWidth(surface), IOSurfaceGetHeight(surface), GL_YCBCR_422_APPLE, GL_UNSIGNED_SHORT_8_8_APPLE, surface, 0);
-            DYGL(glBindTexture(GL_TEXTURE_RECTANGLE, 0));
+            int w = IOSurfaceGetWidth(surface);
+            int h = IOSurfaceGetHeight(surface);
+            qDebug("plane:%d, iosurface %dx%d, ctx: %p", plane, w, h, CGLGetCurrentContext());
+            OSType pixfmt = IOSurfaceGetPixelFormat(surface); //CVPixelBufferGetPixelFormatType(cvbuf);
+            GLenum iformat = GL_RGBA8;
+            GLenum format = GL_BGRA;
+            GLenum dtype = GL_UNSIGNED_INT_8_8_8_8_REV;
+            const GLenum target = GL_TEXTURE_RECTANGLE;
+            if (pixfmt == NV12) {
+                dtype = GL_UNSIGNED_BYTE;
+                if (plane == 0) {
+                    iformat = format = GL_LUMINANCE;
+                } else {
+                    h /= 2;
+                    iformat = format = GL_LUMINANCE_ALPHA;
+                }
+            } else if (pixfmt == UYVY) {
+                w /= 2; //rgba texture
+            }
+            //https://github.com/xbmc/xbmc/pull/5703
+            //OpenGLHelper::glActiveTexture(GL_TEXTURE0 + plane); //0 must active?
+            DYGL(glBindTexture(target, *((GLuint*)handle)));
+            CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, w, h, format, dtype, surface, plane);
+            DYGL(glBindTexture(target, 0));
             return handle;
         }
     };
@@ -254,9 +275,18 @@ VideoFrame VideoDecoderVDA::frame()
     uint8_t *src[3];
     int pitch[3];
     bool gl = false;
-    if (isZeroCopy() && format() == UYVY) {// TODO: NV12 zero copy test
-       // gl = true;
-        pitch[0] = 2*width();
+    if (isZeroCopy()) {// TODO: NV12 zero copy test
+        gl = true;
+        switch (format()) {
+        case UYVY:
+            pitch[0] = 2*width(); //
+            break;
+        case NV12:
+            pitch[0] = width();
+            pitch[1] = width();
+        default:
+            break;
+        }
     }
     const VideoFormat fmt(pixfmt);
     if (!gl) {
