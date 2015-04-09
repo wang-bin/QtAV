@@ -34,15 +34,11 @@ class SGVideoMaterialShader : public QSGMaterialShader
 {
 public:
     SGVideoMaterialShader(VideoShader* s) :
-        m_shader(s)
-    {
-        setVideoFormat(s->videoFormat());
-    }
-
+        QSGMaterialShader()
+        , m_shader(s)
+    {}
     virtual void updateState(const RenderState &state, QSGMaterial *newMaterial, QSGMaterial *oldMaterial);
     virtual char const *const *attributeNames() const { return m_shader->attributeNames();}
-    void setVideoFormat(const VideoFormat& format) { m_shader->setVideoFormat(format);}
-    //void setColorSpace(ColorTransform::ColorSpace cs) { m_shader->setColorSpace(cs);}
 protected:
     virtual const char *vertexShader() const { return m_shader->vertexShader();}
     virtual const char *fragmentShader() const { return m_shader->fragmentShader();}
@@ -60,7 +56,7 @@ private:
 class SGVideoMaterial : public QSGMaterial
 {
 public:
-    SGVideoMaterial() : m_opacity(1.0) {}
+    SGVideoMaterial() : QSGMaterial(), m_opacity(1.0) {}
 
     virtual QSGMaterialType *type() const {
         return reinterpret_cast<QSGMaterialType*>(m_material.type());
@@ -107,7 +103,8 @@ void SGVideoMaterialShader::updateState(const RenderState &state, QSGMaterial *n
 
 
 SGVideoNode::SGVideoNode()
-    : m_material(new SGVideoMaterial())
+    : QSGGeometryNode()
+    , m_material(new SGVideoMaterial())
     , m_validWidth(1.0)
 {
     setFlag(QSGNode::OwnsGeometry);
