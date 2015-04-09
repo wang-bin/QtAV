@@ -25,6 +25,7 @@
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
+#include "utils/OpenGLHelper.h"
 #include <assert.h>
 
 #ifdef __cplusplus
@@ -221,34 +222,52 @@ VideoFrame VideoDecoderVDA::frame()
         qWarning("unsupported vda pixel format: %#x", d.hw_ctx.cv_pix_fmt_type);
         return VideoFrame();
     }
-    // we can map the cv buffer addresses to video frame in VDASurfaceInterop. (may need VideoSurfaceInterop::mapToTexture()
-    class VDASurfaceInterop : public VideoSurfaceInterop {
+    // we can map the cv buffer addresses to video frame in SurfaceInteropCVBuffer. (may need VideoSurfaceInterop::mapToTexture()
+    class SurfaceInteropCVBuffer : public VideoSurfaceInterop {
+        bool glinterop;
         CVPixelBufferRef cvbuf; // keep ref until video frame is destroyed
     public:
-        VDASurfaceInterop(CVPixelBufferRef cv) : cvbuf(cv) {}
-        ~VDASurfaceInterop() {
+        SurfaceInteropCVBuffer(CVPixelBufferRef cv, bool gl) : glinterop(gl), cvbuf(cv) {}
+        ~SurfaceInteropCVBuffer() {
             CVPixelBufferRelease(cvbuf);
         }
         virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle = 0, int plane = 0) {
-            Q_UNUSED(type);
-            Q_UNUSED(fmt);
-            Q_UNUSED(handle);
             Q_UNUSED(plane);
-            // if (no_gl)
-            return 0;
+            Q_UNUSED(fmt);
+            if (!glinterop)
+                return 0;
+            if (type == HostMemorySurface) {
+
+            }
+            if (type != GLTextureSurface)
+                return 0;
+            IOSurfaceRef surface  = CVPixelBufferGetIOSurface(cvbuf);
+            //OSType format_type = CVPixelBufferGetPixelFormatType(cvbuf);
+            // TODO: other target. other formats(only 1 surface, so uyvy is the only format supported?)
+            DYGL(glBindTexture(GL_TEXTURE_RECTANGLE, *((GLuint*)handle)));
+            CGLTexImageIOSurface2D(CGLGetCurrentContext(), GL_TEXTURE_RECTANGLE, GL_RGB8, IOSurfaceGetWidth(surface), IOSurfaceGetHeight(surface), GL_YCBCR_422_APPLE, GL_UNSIGNED_SHORT_8_8_APPLE, surface, 0);
+            DYGL(glBindTexture(GL_TEXTURE_RECTANGLE, 0));
+            return handle;
         }
     };
 
-    const VideoFormat fmt(pixfmt);
     uint8_t *src[3];
     int pitch[3];
-    CVPixelBufferLockBaseAddress(cv_buffer, 0);
-    for (int i = 0; i <fmt.planeCount(); ++i) {
-        src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(cv_buffer, i);
-        pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cv_buffer, i);
+    bool gl = false;
+    if (isZeroCopy() && format() == UYVY) {// TODO: NV12 zero copy test
+       // gl = true;
+        pitch[0] = 2*width();
     }
-    CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
-    //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
+    const VideoFormat fmt(pixfmt);
+    if (!gl) {
+        CVPixelBufferLockBaseAddress(cv_buffer, 0);
+        for (int i = 0; i <fmt.planeCount(); ++i) {
+            src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(cv_buffer, i);
+            pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cv_buffer, i);
+        }
+        CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
+        //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
+    }
     VideoFrame f;
     if (isZeroCopy()) {
         f = VideoFrame(width(), height(), fmt);
@@ -258,7 +277,9 @@ VideoFrame VideoDecoderVDA::frame()
     } else {
         f = copyToFrame(fmt, d.height, src, pitch, false);
     }
-    f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(new VDASurfaceInterop(cv_buffer))));
+    f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(new SurfaceInteropCVBuffer(cv_buffer, gl))));
+    if (gl)
+        f.setMetaData("target", "rect");
     return f;
 }
 
