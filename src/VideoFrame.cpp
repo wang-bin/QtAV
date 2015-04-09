@@ -401,6 +401,20 @@ void VideoFrame::unmap(void *handle)
     d->surface_interop->unmap(handle);
 }
 
+void* VideoFrame::createInteropHandle(void* handle, SurfaceType type, int plane)
+{
+    Q_D(VideoFrame);
+    const QVariant v = d->metadata.value("surface_interop");
+    if (!v.isValid())
+        return 0;
+    d->surface_interop = v.value<VideoSurfaceInteropPtr>();
+    if (!d->surface_interop)
+        return 0;
+    if (plane > planeCount())
+        return 0;
+    return d->surface_interop->createHandle(handle, type, format(), plane, planeWidth(plane), planeHeight(plane));
+}
+
 int VideoFrame::texture(int plane) const
 {
     Q_D(const VideoFrame);

@@ -99,6 +99,12 @@ public:
      */
     void* map(SurfaceType type, void* handle, int plane = 0);
     void unmap(void* handle);
+    /*!
+     * \brief createInteropHandle
+     * \param handle input/output handle
+     * \return null on error. otherwise return the input handle
+     */
+    void* createInteropHandle(void* handle, SurfaceType type, int plane);
     //copy to host. Used if gpu filter not supported. To avoid copy too frequent, sort the filters first?
     //bool mapToHost();
     /*!

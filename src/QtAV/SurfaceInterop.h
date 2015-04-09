@@ -43,6 +43,19 @@ public:
         return 0;
     }
     virtual void unmap(void* handle) { Q_UNUSED(handle);}
+    /*!
+     * \brief createHandle
+     * \return
+     */
+    virtual void* createHandle(void* handle, SurfaceType type, const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) {
+        Q_UNUSED(handle);
+        Q_UNUSED(type);
+        Q_UNUSED(fmt);
+        Q_UNUSED(plane);
+        Q_UNUSED(planeWidth);
+        Q_UNUSED(planeHeight);
+        return 0;
+    }
 };
 
 typedef QSharedPointer<VideoSurfaceInterop> VideoSurfaceInteropPtr;
