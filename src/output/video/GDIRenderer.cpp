@@ -71,7 +71,11 @@ protected:
 };
 typedef GDIRenderer VideoRendererGDI;
 extern VideoRendererId VideoRendererId_GDI;
+#if 0
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GDI, "GDI")
+#else
+VideoRenderer* __create_VideoRendererGDI() { return new VideoRendererGDI();}
+#endif
 
 void RegisterVideoRendererGDI_Man()
 {

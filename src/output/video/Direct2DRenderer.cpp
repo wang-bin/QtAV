@@ -88,7 +88,11 @@ protected:
 };
 typedef Direct2DRenderer VideoRendererDirect2D;
 extern VideoRendererId VideoRendererId_Direct2D;
+#if 0
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Direct2D, "Direct2D")
+#else
+VideoRenderer* __create_VideoRendererDirect2D() { return new VideoRendererDirect2D();}
+#endif
 
 void RegisterVideoRendererDirect2D_Man()
 {
