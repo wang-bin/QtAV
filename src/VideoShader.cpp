@@ -29,13 +29,9 @@
 #include "utils/Logger.h"
 
 #define YUVA_DONE 0
-/*
- * TODO: glActiveTexture for Qt4
- * texture target (rectangle for VDA)
- */
+#define glsl(x) #x "\n"
 
 namespace QtAV {
-
 
 TexturedGeometry::TexturedGeometry(int count, Triangle t)
     : tri(t)
@@ -112,15 +108,15 @@ char const *const* VideoShader::attributeNames() const
 
 const char* VideoShader::vertexShader() const
 {
-    static const char kVertexShader[] =
-        "attribute vec4 a_Position;\n"
-        "attribute vec2 a_TexCoords;\n"
-        "uniform mat4 u_MVP_matrix;\n"
-        "varying vec2 v_TexCoords;\n"
-        "void main() {\n"
-        "  gl_Position = u_MVP_matrix * a_Position;\n"
-        "  v_TexCoords = a_TexCoords; \n"
-        "}\n";
+    static const char kVertexShader[] = glsl(
+        attribute vec4 a_Position;
+        attribute vec2 a_TexCoords;
+        uniform mat4 u_MVP_matrix;
+        varying vec2 v_TexCoords;
+        void main() {
+          gl_Position = u_MVP_matrix * a_Position;
+          v_TexCoords = a_TexCoords;
+        });
     return kVertexShader;
 }
 
@@ -151,6 +147,11 @@ const char* VideoShader::fragmentShader() const
             frag.prepend("#define LA_16BITS_BE\n");
         else
             frag.prepend("#define LA_16BITS_LE\n");
+    }
+    if (d.texture_target == GL_TEXTURE_RECTANGLE) {
+        frag.prepend("#extension GL_ARB_texture_rectangle : enable\n"
+                     "#define texture2D texture2DRect\n"
+                     "#define sampler2D sampler2DRect\n");
     }
     return frag.constData();
 }
@@ -229,6 +230,16 @@ int VideoShader::bppLocation() const
 int VideoShader::opacityLocation() const
 {
     return d_func().u_opacity;
+}
+
+int VideoShader::textureTarget() const
+{
+    return d_func().texture_target;
+}
+
+void VideoShader::setTextureTarget(int type)
+{
+    d_func().texture_target = type;
 }
 
 VideoFormat VideoShader::videoFormat() const
@@ -397,6 +408,7 @@ VideoShader* VideoMaterial::createShader() const
     DPTR_D(const VideoMaterial);
     VideoShader *shader = new VideoShader();
     shader->setVideoFormat(d.video_format);
+    shader->setTextureTarget(d.target);
     //resize texture locations to avoid access format later
     return shader;
 }

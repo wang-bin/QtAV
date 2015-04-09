@@ -59,6 +59,7 @@ public:
      * \brief initialize
      * \param shaderProgram: 0 means create a shader program internally. if not linked, vertex/fragment shader will be added and linked
      */
+    // initialize(VideoMaterial*, QOpenGLShaderProgram*)
     virtual void initialize(QOpenGLShaderProgram* shaderProgram = 0);
     /*!
      * \brief textureLocationCount
@@ -76,7 +77,8 @@ public:
     int bppLocation() const;
     int opacityLocation() const;
     VideoFormat videoFormat() const;
-    void setVideoFormat(const VideoFormat& format);
+    // defalut is GL_TEXTURE_2D
+    int textureTarget() const;
     QOpenGLShaderProgram* program();
     bool update(VideoMaterial* material);
 protected:
@@ -85,6 +87,10 @@ protected:
 
     VideoShader(VideoShaderPrivate &d);
     DPTR_DECLARE(VideoShader)
+private:
+    void setVideoFormat(const VideoFormat& format);
+    void setTextureTarget(int type);
+    friend class VideoMaterial;
 };
 
 class MaterialType {};

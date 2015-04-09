@@ -55,6 +55,7 @@ public:
         , u_colorMatrix(-1)
         , u_bpp(-1)
         , u_opacity(-1)
+        , texture_target(GL_TEXTURE_2D)
     {}
     virtual ~VideoShaderPrivate() {
         if (owns_program && program) {
@@ -76,6 +77,7 @@ public:
     int u_opacity;
     QVector<int> u_Texture;
     QVector<int> u_c;
+    GLenum texture_target;
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;
 };

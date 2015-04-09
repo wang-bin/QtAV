@@ -83,6 +83,9 @@
 #else
 #define DYGL(glFunc) glFunc
 #endif
+#ifndef GL_TEXTURE_RECTANGLE
+#define GL_TEXTURE_RECTANGLE 0x84F5
+#endif
 
 namespace QtAV {
 namespace OpenGLHelper {
