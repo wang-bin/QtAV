@@ -37,7 +37,7 @@ public:
         if (!impl && !force) {
             foreach (VideoRendererId vid, VideoRendererFactory::registeredIds()) {
                 impl = VideoRendererFactory::create(vid);
-                if (impl && impl->widget())
+                if (impl && impl->isAvailable() && impl->widget())
                     break;
             }
         }
