@@ -97,7 +97,7 @@ public:
     VideoDecoderVDAPrivate()
         : VideoDecoderFFmpegHWPrivate()
         , zero_copy(true)
-        , out_fmt(VideoDecoderVDA::NV12)
+        , out_fmt(VideoDecoderVDA::UYVY)
     {
         copy_uswc = false;
         description = "VDA";
@@ -224,7 +224,7 @@ VideoFrame VideoDecoderVDA::frame()
         return VideoFrame();
     }
     // we can map the cv buffer addresses to video frame in SurfaceInteropCVBuffer. (may need VideoSurfaceInterop::mapToTexture()
-    class SurfaceInteropCVBuffer : public VideoSurfaceInterop {
+    class SurfaceInteropCVBuffer Q_DECL_FINAL: public VideoSurfaceInterop {
         bool glinterop;
         CVPixelBufferRef cvbuf; // keep ref until video frame is destroyed
     public:
@@ -232,13 +232,11 @@ VideoFrame VideoDecoderVDA::frame()
         ~SurfaceInteropCVBuffer() {
             CVPixelBufferRelease(cvbuf);
         }
-        virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle = 0, int plane = 0) {
+        virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle = 0, int plane = 0) Q_DECL_OVERRIDE {
             Q_UNUSED(fmt);
             if (!glinterop)
                 return 0;
-            if (type == HostMemorySurface) {
-
-            }
+            if (type == HostMemorySurface) {}
             if (type != GLTextureSurface)
                 return 0;
             // https://www.opengl.org/registry/specs/APPLE/rgb_422.txt
@@ -246,7 +244,7 @@ VideoFrame VideoDecoderVDA::frame()
             IOSurfaceRef surface  = CVPixelBufferGetIOSurface(cvbuf);
             int w = IOSurfaceGetWidth(surface);
             int h = IOSurfaceGetHeight(surface);
-            qDebug("plane:%d, iosurface %dx%d, ctx: %p", plane, w, h, CGLGetCurrentContext());
+            //qDebug("plane:%d, iosurface %dx%d, ctx: %p", plane, w, h, CGLGetCurrentContext());
             OSType pixfmt = IOSurfaceGetPixelFormat(surface); //CVPixelBufferGetPixelFormatType(cvbuf);
             GLenum iformat = GL_RGBA8;
             GLenum format = GL_BGRA;
@@ -270,6 +268,19 @@ VideoFrame VideoDecoderVDA::frame()
             DYGL(glBindTexture(target, 0));
             return handle;
         }
+        void* createHandle(void* handle, SurfaceType type, const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) Q_DECL_OVERRIDE {
+            Q_UNUSED(type);
+            Q_UNUSED(fmt);
+            Q_UNUSED(plane);
+            Q_UNUSED(planeWidth);
+            Q_UNUSED(planeHeight);
+            if (!glinterop)
+                return 0;
+            GLuint *tex = (GLuint*)handle;
+            DYGL(glGenTextures(1, tex));
+            // no init required
+            return handle;
+        }
     };
 
     uint8_t *src[3];
@@ -280,11 +291,14 @@ VideoFrame VideoDecoderVDA::frame()
         switch (format()) {
         case UYVY:
             pitch[0] = 2*width(); //
+            pixfmt = VideoFormat::Format_VYUY; //FIXME: VideoShader assume uyvy is uploaded as rgba, but apple limits the result to bgra
             break;
         case NV12:
             pitch[0] = width();
             pitch[1] = width();
+            break;
         default:
+            gl = false;
             break;
         }
     }
