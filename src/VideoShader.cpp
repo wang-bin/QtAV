@@ -354,18 +354,10 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     // TODO: move to another function before rendering?
     d.width = frame.width();
     d.height = frame.height();
-    GLenum new_target = d.target;
+    GLenum new_target = GL_TEXTURE_2D; // not d.target. because metadata "target" is not always set
     QByteArray t = frame.metaData("target").toByteArray().toLower();
     if (t == "rect")
         new_target = GL_TEXTURE_RECTANGLE;
-#ifdef GL_TEXTURE_3D
-    else if (t == "3d")
-        new_target = GL_TEXTURE_3D;
-#endif //GL_TEXTURE_3D
-#ifdef GL_TEXTURE_1D
-    else if (t == "1d")
-        new_target = GL_TEXTURE_1D;
-#endif //GL_TEXTURE_1D
     if (new_target != d.target) {
         // FIXME: not thread safe (in qml)
         d.target = new_target;
@@ -475,6 +467,16 @@ bool VideoMaterial::bind()
 void VideoMaterial::bindPlane(int p, bool updateTexture)
 {
     DPTR_D(VideoMaterial);
+    if (!d.textures[p]) {
+        GLuint* handle = (GLuint*)d.frame.createInteropHandle(&d.textures[p], GLTextureSurface, p);
+        if (handle) {
+            d.textures[p] = *handle;
+        } else {
+            DYGL(glGenTextures(1, &d.textures[p]));
+            d.initTexture(d.textures[p], d.internal_format[p], d.data_format[p], d.data_type[p], d.texture_size[p].width(), d.texture_size[p].height());
+        }
+        qDebug("texture for plane %d is created: %u", p, d.textures[p]);
+    }
     if (!updateTexture) {
         OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
         DYGL(glBindTexture(d.target, d.textures[p]));
@@ -524,7 +526,7 @@ int VideoMaterial::compare(const VideoMaterial *other) const
 {
     DPTR_D(const VideoMaterial);
     for (int i = 0; i < d.textures.size(); ++i) {
-        const int diff = d.textures[i] - other->d_func().textures[i];
+        const int diff = d.textures[i] - other->d_func().textures[i]; //TODO
         if (diff)
             return diff;
     }
@@ -811,13 +813,17 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
             textures.clear();
         }
         textures.resize(nb_planes);
-        DYGL(glGenTextures(textures.size(), textures.data()));
+        textures.fill(0);
+        // create later if necessary
+        //DYGL(glGenTextures(textures.size(), textures.data()));
     }
+#if 0
     qDebug("init textures...");
     for (int i = 0; i < textures.size(); ++i) {
         // can not init for vda!
-        //initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
+        initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
     }
+#endif
     init_textures_required = false;
     return true;
 }
