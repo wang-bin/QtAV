@@ -461,33 +461,43 @@ bool VideoMaterial::bind()
         d.update_texure = false;
         d.frame = VideoFrame();
     }
+    d.init_textures_required = false;
     return true;
 }
 
 void VideoMaterial::bindPlane(int p, bool updateTexture)
 {
     DPTR_D(VideoMaterial);
-    if (!d.textures[p]) {
-        GLuint* handle = (GLuint*)d.frame.createInteropHandle(&d.textures[p], GLTextureSurface, p);
-        if (handle) {
-            d.textures[p] = *handle;
-        } else {
-            DYGL(glGenTextures(1, &d.textures[p]));
-            d.initTexture(d.textures[p], d.internal_format[p], d.data_format[p], d.data_type[p], d.texture_size[p].width(), d.texture_size[p].height());
+    GLuint &tex = d.textures[p];
+    if (d.init_textures_required) {
+        if (tex) {
+            qDebug("deleting texture for plane: %d", p);
+            DYGL(glDeleteTextures(1, &tex));
+            tex = 0;
         }
-        qDebug("texture for plane %d is created: %u", p, d.textures[p]);
+    }
+    if (!tex) {
+        qDebug("creating texture for plane: %d", p);
+        GLuint* handle = (GLuint*)d.frame.createInteropHandle(&tex, GLTextureSurface, p);
+        if (handle) {
+            tex = *handle;
+        } else {
+            DYGL(glGenTextures(1, &tex));
+            d.initTexture(tex, d.internal_format[p], d.data_format[p], d.data_type[p], d.texture_size[p].width(), d.texture_size[p].height());
+        }
+        qDebug("texture for plane %d is created: %u", p, tex);
     }
     if (!updateTexture) {
         OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
-        DYGL(glBindTexture(d.target, d.textures[p]));
+        DYGL(glBindTexture(d.target, tex));
         return;
     }
     //setupQuality?
     // try_pbo ? pbo_id : 0. 0= > interop.createHandle
-    if (d.frame.map(GLTextureSurface, &d.textures[p], p)) {
+    if (d.frame.map(GLTextureSurface, &tex, p)) {
         //TODO: move to map()?
         OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
-        DYGL(glBindTexture(d.target, d.textures[p]));
+        DYGL(glBindTexture(d.target, tex));
         return;
     }
     // FIXME: why happens on win?
@@ -510,7 +520,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     }
     OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
     //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
-    DYGL(glBindTexture(d.target, d.textures[p]));
+    DYGL(glBindTexture(d.target, tex));
     //d.setupQuality();
     // This is necessary for non-power-of-two textures
     DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
@@ -806,25 +816,39 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
      * But the number of actural textures we upload is plane count.
      * Which means the number of texture id equals to plane count
      */
-    if (textures.size() != nb_planes) {
-        qDebug("delete %d textures", textures.size());
-        if (!textures.isEmpty()) {
-            DYGL(glDeleteTextures(textures.size(), textures.data()));
-            textures.clear();
+    // always delete old textures otherwise old textures are not initialized with correct parameters
+    // TODO: use a struct for each plane: texid, initialized...
+    // FIXME: texture lazy will cause the first frame display red, seems some planes are not uploaded. why?
+    // currently only vda zero copy(uyvy) needs lazy delete, only 1 plane so no red display issue.
+    if (target == GL_TEXTURE_2D) {
+        if (textures.size() != nb_planes) {
+            const int nb_delete = textures.size();
+            qDebug("delete %d textures", nb_delete);
+            if (!textures.isEmpty()) {
+                DYGL(glDeleteTextures(nb_delete, textures.data()));
+                textures.clear();
+            }
+            textures.resize(nb_planes);
+            textures.fill(0);
+            DYGL(glGenTextures(textures.size(), textures.data()));
+        }
+        qDebug("init textures...");
+        for (int i = 0; i < textures.size(); ++i) {
+            // can not init for vda!
+            initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
+        }
+        init_textures_required = false;
+    } else {
+        if (textures.size() > nb_planes) {
+            const int nb_delete = textures.size() - nb_planes;
+            qDebug("delete %d textures", nb_delete);
+            if (!textures.isEmpty()) {
+                DYGL(glDeleteTextures(nb_delete, textures.data() + nb_planes));
+            }
         }
         textures.resize(nb_planes);
-        textures.fill(0);
-        // create later if necessary
-        //DYGL(glGenTextures(textures.size(), textures.data()));
+        init_textures_required = true;
     }
-#if 0
-    qDebug("init textures...");
-    for (int i = 0; i < textures.size(); ++i) {
-        // can not init for vda!
-        initTexture(textures[i], internal_format[i], data_format[i], data_type[i], texture_size[i].width(), texture_size[i].height());
-    }
-#endif
-    init_textures_required = false;
     return true;
 }
 
