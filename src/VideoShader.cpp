@@ -402,43 +402,32 @@ VideoShader* VideoMaterial::createShader() const
     return shader;
 }
 
-MaterialType* VideoMaterial::type() const
+const char *VideoMaterial::type() const
 {
-    // TODO: check target
-    static MaterialType rgb_packed_Type;
-    static MaterialType yuv_packed_Type;
-    static MaterialType yuv_packed_rect_Type;
-    static MaterialType planar16leType;
-    static MaterialType planar16beType;
-    static MaterialType yuv8Type;
-    static MaterialType planar16le_4plane_Type;
-    static MaterialType planar16be_4plane_Type;
-    static MaterialType yuv8_4plane_Type;
-    static MaterialType invalidType;
     DPTR_D(const VideoMaterial);
     const VideoFormat &fmt = d.video_format;
     if (!fmt.isPlanar()) {
         if (fmt.isRGB())
-            return &rgb_packed_Type;
+            return "packed rgb material";
         if (d.target == GL_TEXTURE_2D)
-            return &yuv_packed_Type;
-        return &yuv_packed_rect_Type;
+            return "packed yuv material";
+        return "packed yuv + rectangle texture material";
     }
     if (fmt.bytesPerPixel(0) == 1) {
         if (fmt.planeCount() == 4)
-            return &yuv8_4plane_Type;
-        return &yuv8Type;
+            return "8bit 4plane yuv material";
+        return "8bit yuv material";
     }
     if (fmt.isBigEndian()) {
         if (fmt.planeCount() == 4)
-            return &planar16be_4plane_Type;
-        return &planar16beType;
+            return "4plane 16bit-be material";
+        return "planar 16bit-be material";
     } else {
         if (fmt.planeCount() == 4)
-            return &planar16le_4plane_Type;
-        return &planar16leType;
+            return "4plane 16bit-le material";
+        return "planar 16bit-le material";
     }
-    return &invalidType;
+    return "invalid material";
 }
 
 bool VideoMaterial::bind()
@@ -731,7 +720,7 @@ VideoMaterialPrivate::~VideoMaterialPrivate()
         pbo[i].destroy();
 }
 
-bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
+bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
 {
     // isSupported(pixfmt)
     if (!fmt.isValid())
@@ -935,7 +924,7 @@ bool VideoMaterialPrivate::ensureResources()
         plane0Size.setHeight(frame.height());
     }
     if (update_textures) {
-        initTextures(fmt);
+        updateTextureParameters(fmt);
         updateChannelMap(fmt);
         // check pbo support
         // TODO: complete pbo extension set

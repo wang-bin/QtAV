@@ -94,7 +94,6 @@ private:
     friend class VideoMaterial;
 };
 
-class MaterialType {};
 class VideoMaterialPrivate;
 /*!
  * \brief The VideoMaterial class
@@ -110,7 +109,7 @@ public:
     void setCurrentFrame(const VideoFrame& frame);
     VideoFormat currentFormat() const;
     VideoShader* createShader() const;
-    virtual MaterialType* type() const;
+    virtual const char* type() const;
 
     bool bind(); // TODO: roi
     void unbind();

@@ -56,7 +56,7 @@ public Q_SLOTS:
 
 private:
     QOpenGLContext *m_ctx;
-    QHash<MaterialType*, VideoShader*> shader_cache;
+    QHash<const char*, VideoShader*> shader_cache;
 };
 } //namespace QtAV
 #endif // QTAV_SHADERMANAGER_H
