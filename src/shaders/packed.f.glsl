@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -30,15 +30,18 @@ precision mediump float;
 #endif
 
 uniform sampler2D u_Texture0;
-varying lowp vec2 v_TexCoords;
-uniform float u_opacity;
+varying vec2 v_TexCoords;
 uniform mat4 u_colorMatrix;
+uniform float u_opacity;
+#ifdef PACKED_YUV
 uniform mat4 u_c;
+#endif //PACKED_YUV
 
-void main(void)
-{
-    vec4 c = u_c * texture2D(u_Texture0, v_TexCoords);
+void main() {
+    vec4 c = texture2D(u_Texture0, v_TexCoords);
+#ifdef PACKED_YUV
+    c = u_c * c;
     c.a = 1.0;
-    gl_FragColor = clamp(u_colorMatrix*c, 0.0, 1.0) * u_opacity;
+#endif //PACKED_YUV
+    gl_FragColor = clamp(u_colorMatrix * c, 0.0, 1.0) * u_opacity;
 }
-

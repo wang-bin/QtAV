@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/shaders">
         <file>planar.f.glsl</file>
-        <file>rgb.f.glsl</file>
-        <file>yuv_packed.frag</file>
+        <file>packed.f.glsl</file>
     </qresource>
 </RCC>

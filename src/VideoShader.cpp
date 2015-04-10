@@ -127,10 +127,7 @@ const char* VideoShader::fragmentShader() const
     if (d.video_format.isPlanar()) {
         d.planar_frag = shaderSourceFromFile("shaders/planar.f.glsl");
     } else {
-        if (d.video_format.isRGB())
-            d.packed_frag = shaderSourceFromFile("shaders/rgb.f.glsl");
-        else
-            d.packed_frag = shaderSourceFromFile("shaders/yuv_packed.frag");
+        d.packed_frag = shaderSourceFromFile("shaders/packed.f.glsl");
     }
     QByteArray& frag = d.video_format.isPlanar() ? d.planar_frag : d.packed_frag;
     if (frag.isEmpty()) {
@@ -142,11 +139,16 @@ const char* VideoShader::fragmentShader() const
         frag.prepend("#define PLANE_4\n");
     }
 #endif
-    if (d.video_format.isPlanar() && d.video_format.bytesPerPixel(0) == 2) {
-        if (d.video_format.isBigEndian())
-            frag.prepend("#define LA_16BITS_BE\n");
-        else
-            frag.prepend("#define LA_16BITS_LE\n");
+    if (d.video_format.isPlanar()) {
+        if (d.video_format.bytesPerPixel(0) == 2) {
+            if (d.video_format.isBigEndian())
+                frag.prepend("#define LA_16BITS_BE\n");
+            else
+                frag.prepend("#define LA_16BITS_LE\n");
+        }
+    } else {
+        if (!d.video_format.isRGB())
+            frag.prepend("#define PACKED_YUV");
     }
     if (d.texture_target == GL_TEXTURE_RECTANGLE) {
         frag.prepend("#extension GL_ARB_texture_rectangle : enable\n"
@@ -174,21 +176,20 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     d.u_colorMatrix = shaderProgram->uniformLocation("u_colorMatrix");
     d.u_bpp = shaderProgram->uniformLocation("u_bpp");
     d.u_opacity = shaderProgram->uniformLocation("u_opacity");
+    d.u_c = shaderProgram->uniformLocation("u_c");
     d.u_Texture.resize(textureLocationCount());
     for (int i = 0; i < d.u_Texture.size(); ++i) {
         const QString tex_var = QString("u_Texture%1").arg(i);
         d.u_Texture[i] = shaderProgram->uniformLocation(tex_var);
         qDebug("glGetUniformLocation(\"%s\") = %d", tex_var.toUtf8().constData(), d.u_Texture[i]);
     }
-    d.u_c = -1;
-    if (!d.video_format.isPlanar() && !d.video_format.isRGB()) {
-        d.u_c = shaderProgram->uniformLocation("u_c");
-        qDebug("glGetUniformLocation(\"u_c\") = %d", d.u_c);
-    }
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d", d.u_MVP_matrix);
     qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d", d.u_colorMatrix);
-    qDebug("glGetUniformLocation(\"u_bpp\") = %d", d.u_bpp);
     qDebug("glGetUniformLocation(\"u_opacity\") = %d", d.u_opacity);
+    if (d.u_c >= 0)
+        qDebug("glGetUniformLocation(\"u_c\") = %d", d.u_c);
+    if (d.u_bpp >= 0)
+        qDebug("glGetUniformLocation(\"u_bpp\") = %d", d.u_bpp);
 }
 
 int VideoShader::textureLocationCount() const
@@ -225,6 +226,11 @@ int VideoShader::bppLocation() const
 int VideoShader::opacityLocation() const
 {
     return d_func().u_opacity;
+}
+
+int VideoShader::channelMapLocation() const
+{
+    return d_func().u_c;
 }
 
 int VideoShader::textureTarget() const
@@ -281,14 +287,12 @@ bool VideoShader::update(VideoMaterial *material)
             program()->setUniformValue(textureLocation(i), (GLint)(nb_planes - 1));
         }
     }
-    DPTR_D(VideoShader);
-    if (d.u_c >= 0) {
-        program()->setUniformValue(d.u_c, material->channelMap());
-    }
     //qDebug() << "color mat " << material->colorMatrix();
     program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
     if (bppLocation() >= 0)
         program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
+    if (channelMapLocation() >= 0)
+        program()->setUniformValue(channelMapLocation(), material->channelMap());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     // uniform end. attribute begins
     return true;

@@ -76,6 +76,7 @@ public:
     int colorMatrixLocation() const;
     int bppLocation() const;
     int opacityLocation() const;
+    int channelMapLocation() const;
     VideoFormat videoFormat() const;
     // defalut is GL_TEXTURE_2D
     int textureTarget() const;
