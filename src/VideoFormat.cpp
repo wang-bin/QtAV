@@ -103,6 +103,11 @@ public:
     }
 
     void init() {
+        // FIXME: hack for invalid ffmpeg formats
+        if (pixfmt == VideoFormat::Format_VYUY) {
+            pixfmt_ff = QTAV_PIX_FMT_C(UYVY422);
+        }
+        // TODO: what if other formats not supported by ffmpeg? give attributes in QtAV?
         if (pixfmt_ff == QTAV_PIX_FMT_C(NONE)) {
             qWarning("Invalid pixel format");
             return;
