@@ -27,8 +27,6 @@
 #include "QtAV/private/prepost.h"
 #include "utils/OpenGLHelper.h"
 #include <assert.h>
-#include <CGLContext.h>
-#include <CGLIOSurface.h>
 #ifdef __cplusplus
 extern "C" {
 #endif //__cplusplus
@@ -53,7 +51,8 @@ extern "C" {
 namespace QtAV {
 
 class VideoDecoderVDAPrivate;
-class VideoDecoderVDA Q_DECL_FINAL : public VideoDecoderFFmpegHW
+// qt4 moc can not correctly process Q_DECL_FINAL here
+class VideoDecoderVDA : public VideoDecoderFFmpegHW
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderVDA)
