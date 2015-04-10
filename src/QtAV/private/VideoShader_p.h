@@ -55,6 +55,7 @@ public:
         , u_colorMatrix(-1)
         , u_bpp(-1)
         , u_opacity(-1)
+        , u_c(-1)
         , texture_target(GL_TEXTURE_2D)
     {}
     virtual ~VideoShaderPrivate() {
@@ -75,8 +76,8 @@ public:
     int u_colorMatrix;
     int u_bpp;
     int u_opacity;
+    int u_c;
     QVector<int> u_Texture;
-    QVector<int> u_c;
     GLenum texture_target;
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;
@@ -157,7 +158,7 @@ public:
     QMatrix4x4 matrix;
     bool try_pbo;
     QVector<QOpenGLBuffer> pbo;
-    QVector<QVector4D> channel_map;
+    QMatrix4x4 channel_map;
 };
 
 } //namespace QtAV

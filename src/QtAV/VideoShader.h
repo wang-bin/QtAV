@@ -118,7 +118,7 @@ public:
     bool hasAlpha() const;
     const QMatrix4x4 &colorMatrix() const;
     const QMatrix4x4& matrix() const;
-    const QVector4D& channelMap(int channel) const;
+    const QMatrix4x4& channelMap() const;
     int bpp() const; //1st plane
     int planeCount() const;
     /*!

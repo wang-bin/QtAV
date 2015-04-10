@@ -180,16 +180,11 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
         d.u_Texture[i] = shaderProgram->uniformLocation(tex_var);
         qDebug("glGetUniformLocation(\"%s\") = %d", tex_var.toUtf8().constData(), d.u_Texture[i]);
     }
-    d.u_c.clear();
+    d.u_c = -1;
     if (!d.video_format.isPlanar() && !d.video_format.isRGB()) {
-        d.u_c.resize(d.video_format.channels());
-        for (int i = 0; i < d.u_c.size(); ++i) {
-            const QString u_c = QString("u_c%1").arg(i);
-            d.u_c[i] = shaderProgram->uniformLocation(u_c);
-            qDebug("glGetUniformLocation(\"%s\") = %d", u_c.toUtf8().constData(), d.u_Texture[i]);
-        }
+        d.u_c = shaderProgram->uniformLocation("u_c");
+        qDebug("glGetUniformLocation(\"u_c\") = %d", d.u_c);
     }
-
     qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d", d.u_MVP_matrix);
     qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d", d.u_colorMatrix);
     qDebug("glGetUniformLocation(\"u_bpp\") = %d", d.u_bpp);
@@ -287,10 +282,8 @@ bool VideoShader::update(VideoMaterial *material)
         }
     }
     DPTR_D(VideoShader);
-    if (!d.u_c.isEmpty()) {
-        for (int i = 0; i < d.u_c.size(); ++i) {
-            program()->setUniformValue(d.u_c[i], material->channelMap(i));
-        }
+    if (d.u_c >= 0) {
+        program()->setUniformValue(d.u_c, material->channelMap());
     }
     //qDebug() << "color mat " << material->colorMatrix();
     program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
@@ -566,9 +559,9 @@ const QMatrix4x4& VideoMaterial::matrix() const
     return d_func().matrix;
 }
 
-const QVector4D& VideoMaterial::channelMap(int channel) const
+const QMatrix4x4 &VideoMaterial::channelMap() const
 {
-    return d_func().channel_map.at(channel);
+    return d_func().channel_map;
 }
 
 int VideoMaterial::bpp() const
@@ -854,30 +847,33 @@ bool VideoMaterialPrivate::initTextures(const VideoFormat& fmt)
 
 void VideoMaterialPrivate::updateChannelMap(const VideoFormat &fmt)
 {
-    channel_map.clear();
+    channel_map = QMatrix4x4();
     if (fmt.isPlanar() || fmt.isRGB())
         return;
-    channel_map.resize(fmt.channels());
     switch (fmt.pixelFormat()) {
     case VideoFormat::Format_UYVY:
-        channel_map[0] = QVector4D(0, 0.5, 0, 0.5);
-        channel_map[1] = QVector4D(1.0, 0, 0, 0);
-        channel_map[2] = QVector4D(0, 0, 1.0, 0);
+        channel_map = QMatrix4x4(0.0f, 0.5f, 0.0f, 0.5f,
+                                 1.0f, 0.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 1.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
         break;
     case VideoFormat::Format_YUYV:
-        channel_map[0] = QVector4D(0.5, 0, 0.5, 0);
-        channel_map[1] = QVector4D(0, 1.0, 0, 0);
-        channel_map[2] = QVector4D(0, 0, 0, 1.0);
+        channel_map = QMatrix4x4(0.5f, 0.0f, 0.5f, 0.0f,
+                                 0.0f, 1.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
         break;
     case VideoFormat::Format_VYUY:
-        channel_map[0] = QVector4D(0, 0.5, 0, 0.5);
-        channel_map[1] = QVector4D(0, 0, 1.0, 0);
-        channel_map[2] = QVector4D(1.0, 0, 0, 0);
+        channel_map = QMatrix4x4(0.0f, 0.5f, 0.0f, 0.5f,
+                                 0.0f, 0.0f, 1.0f, 0.0f,
+                                 1.0f, 0.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
         break;
     case VideoFormat::Format_YVYU:
-        channel_map[0] = QVector4D(0.5, 0, 0.5, 0);
-        channel_map[1] = QVector4D(0, 0, 0, 1.0);
-        channel_map[2] = QVector4D(0, 1.0, 0, 0);
+        channel_map = QMatrix4x4(0.5f, 0.0f, 0.5f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f,
+                                 0.0f, 1.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
         break;
     default:
         break;

@@ -33,18 +33,12 @@ uniform sampler2D u_Texture0;
 varying lowp vec2 v_TexCoords;
 uniform float u_opacity;
 uniform mat4 u_colorMatrix;
-uniform vec4 u_c0; // yuyv: (0.5, 0, 0.5, 0)
-uniform vec4 u_c1; // yuyv: (0, 1, 0, 0)
-uniform vec4 u_c2; // yuyv: (0, 0, 0, 1)
+uniform mat4 u_c;
 
 void main(void)
 {
-    gl_FragColor = clamp(u_colorMatrix
-                         * vec4(
-                             dot(texture2D(u_Texture0, v_TexCoords), u_c0),
-                             dot(texture2D(u_Texture0, v_TexCoords), u_c1),
-                             dot(texture2D(u_Texture0, v_TexCoords), u_c2),
-                             1)
-                         , 0.0, 1.0) * u_opacity;
+    vec4 c = u_c * texture2D(u_Texture0, v_TexCoords);
+    c.a = 1.0;
+    gl_FragColor = clamp(u_colorMatrix*c, 0.0, 1.0) * u_opacity;
 }
 
