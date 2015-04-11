@@ -406,26 +406,45 @@ const char *VideoMaterial::type() const
 {
     DPTR_D(const VideoMaterial);
     const VideoFormat &fmt = d.video_format;
+    const bool tex_2d = d.target == GL_TEXTURE_2D;
     if (!fmt.isPlanar()) {
-        if (fmt.isRGB())
-            return "packed rgb material";
-        if (d.target == GL_TEXTURE_2D)
+        if (fmt.isRGB()) {
+            if (tex_2d)
+                return "packed rgb material";
+            return "packed rgb + rectangle texture material";
+        }
+        if (tex_2d)
             return "packed yuv material";
         return "packed yuv + rectangle texture material";
     }
     if (fmt.bytesPerPixel(0) == 1) {
-        if (fmt.planeCount() == 4)
-            return "8bit 4plane yuv material";
-        return "8bit yuv material";
+        if (fmt.planeCount() == 4) {
+            if (tex_2d)
+                return "8bit 4plane yuv material";
+            return "8bit 4plane yuv + rectangle texture material";
+        }
+        if (tex_2d)
+            return "8bit yuv material";
+        return "8bit yuv + rectangle texture material";
     }
     if (fmt.isBigEndian()) {
-        if (fmt.planeCount() == 4)
-            return "4plane 16bit-be material";
-        return "planar 16bit-be material";
+        if (fmt.planeCount() == 4) {
+            if (tex_2d)
+                return "4plane 16bit-be material";
+            return "4plane 16bit-be + rectangle texture material";
+        }
+        if (tex_2d)
+            return "planar 16bit-be material";
+        return "planar 16bit-be + rectangle texture material";
     } else {
-        if (fmt.planeCount() == 4)
-            return "4plane 16bit-le material";
-        return "planar 16bit-le material";
+        if (fmt.planeCount() == 4) {
+            if (tex_2d)
+                return "4plane 16bit-le material";
+            return "4plane 16bit-le + rectangle texture material";
+        }
+        if (tex_2d)
+            return "planar 16bit-le material";
+        return "planar 16bit-le + rectangle texture material";
     }
     return "invalid material";
 }
