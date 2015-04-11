@@ -461,7 +461,13 @@ bool VideoMaterial::bind()
         return false;
     d.ensureTextures();
     for (int i = 0; i < nb_planes; ++i) {
-        bindPlane((i + 1) % nb_planes, d.update_texure); // why? i: quick items display wrong textures
+        bindPlane(i, d.update_texure); // why? i: quick items display wrong textures
+    }
+    // now bind textures to shader
+    for (int i = 0; i < nb_planes; ++i) {
+        const int p = (i + 1) % nb_planes;
+        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
+        DYGL(glBindTexture(d.target, d.textures[p]));
     }
     if (d.update_texure) {
         d.update_texure = false;
@@ -470,6 +476,7 @@ bool VideoMaterial::bind()
     return true;
 }
 
+// TODO: move bindPlane to d.uploadPlane
 void VideoMaterial::bindPlane(int p, bool updateTexture)
 {
     DPTR_D(VideoMaterial);
@@ -479,14 +486,9 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
         DYGL(glBindTexture(d.target, tex));
         return;
     }
-    //setupQuality?
     // try_pbo ? pbo_id : 0. 0= > interop.createHandle
-    if (d.frame.map(GLTextureSurface, &tex, p)) {
-        //TODO: move to map()?
-        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
-        DYGL(glBindTexture(d.target, tex));
+    if (d.frame.map(GLTextureSurface, &tex, p))
         return;
-    }
     // FIXME: why happens on win?
     if (d.frame.bytesPerLine(p) <= 0)
         return;
@@ -505,7 +507,6 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
             pb.unmap();
         }
     }
-    OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p);
     //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
     DYGL(glBindTexture(d.target, tex));
     //d.setupQuality();
@@ -514,6 +515,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     // TODO: data address use surfaceinterop.map()
     DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.bits(p)));
+    DYGL(glBindTexture(d.target, 0));
     if (d.try_pbo) {
         d.pbo[p].release();
     }
@@ -931,7 +933,7 @@ bool VideoMaterialPrivate::ensureTextures()
     for (int p = 0; p < nb_planes; ++p) {
         GLuint &tex = textures[p];
         if (tex) { // can be 0 if resized to a larger size
-            qDebug("deleting texture for plane %d (id=%p)", p, tex);
+            qDebug("deleting texture for plane %d (id=%u)", p, tex);
             DYGL(glDeleteTextures(1, &tex));
             tex = 0;
         }
@@ -944,7 +946,7 @@ bool VideoMaterialPrivate::ensureTextures()
                 DYGL(glGenTextures(1, &tex));
                 initTexture(tex, internal_format[p], data_format[p], data_type[p], texture_size[p].width(), texture_size[p].height());
             }
-            qDebug("texture for plane %d is created (id=%p)", p, tex);
+            qDebug("texture for plane %d is created (id=%u)", p, tex);
         }
     }
     init_textures_required = false;
