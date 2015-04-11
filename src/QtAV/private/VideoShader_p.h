@@ -115,6 +115,7 @@ public:
     bool updateTextureParameters(const VideoFormat& fmt);
     void updateChannelMap(const VideoFormat& fmt);
     bool ensureResources();
+    bool ensureTextures();
     void setupQuality();
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
