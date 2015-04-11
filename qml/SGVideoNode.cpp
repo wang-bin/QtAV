@@ -59,7 +59,7 @@ public:
     SGVideoMaterial() : QSGMaterial(), m_opacity(1.0) {}
 
     virtual QSGMaterialType *type() const {
-        return reinterpret_cast<QSGMaterialType*>(m_material.type());
+        return reinterpret_cast<QSGMaterialType*>((quintptr)m_material.type());
     }
 
     virtual QSGMaterialShader *createShader() const {

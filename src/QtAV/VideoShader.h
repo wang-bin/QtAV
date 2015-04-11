@@ -23,7 +23,6 @@
 #define QTAV_VIDEOSHADER_H
 
 #include <QtAV/VideoFrame.h>
-#include <QVector4D>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLShaderProgram>
 #else
@@ -76,6 +75,7 @@ public:
     int colorMatrixLocation() const;
     int bppLocation() const;
     int opacityLocation() const;
+    int channelMapLocation() const;
     VideoFormat videoFormat() const;
     // defalut is GL_TEXTURE_2D
     int textureTarget() const;
@@ -93,7 +93,6 @@ private:
     friend class VideoMaterial;
 };
 
-class MaterialType {};
 class VideoMaterialPrivate;
 /*!
  * \brief The VideoMaterial class
@@ -109,7 +108,7 @@ public:
     void setCurrentFrame(const VideoFrame& frame);
     VideoFormat currentFormat() const;
     VideoShader* createShader() const;
-    virtual MaterialType* type() const;
+    virtual const char* type() const;
 
     bool bind(); // TODO: roi
     void unbind();
@@ -118,7 +117,7 @@ public:
     bool hasAlpha() const;
     const QMatrix4x4 &colorMatrix() const;
     const QMatrix4x4& matrix() const;
-    const QVector4D& channelMap(int channel) const;
+    const QMatrix4x4& channelMap() const;
     int bpp() const; //1st plane
     int planeCount() const;
     /*!

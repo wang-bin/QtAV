@@ -238,6 +238,7 @@ public:
                 || file.startsWith("mms") //mms{,h,t}
                 || file.startsWith("ffrtmp") //ffrtmpcrypt, ffrtmphttp
                 || file.startsWith("rtp:")
+                || file.startsWith("rtsp:")
                 || file.startsWith("sctp:")
                 || file.startsWith("tcp:")
                 || file.startsWith("tls:")

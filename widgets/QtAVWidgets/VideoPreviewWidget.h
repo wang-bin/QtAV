@@ -22,8 +22,12 @@
 #ifndef QTAV_VIDEOPREVIEWWIDGET_H
 #define QTAV_VIDEOPREVIEWWIDGET_H
 
-#include <QWidget>
-#include "QtAVWidgets/global.h"
+#include <QtAVWidgets/global.h>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtWidgets/QWidget>
+#else
+#include <QtGui/QWidget>
+#endif
 
 namespace QtAV {
 

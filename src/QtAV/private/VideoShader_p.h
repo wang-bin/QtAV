@@ -55,6 +55,7 @@ public:
         , u_colorMatrix(-1)
         , u_bpp(-1)
         , u_opacity(-1)
+        , u_c(-1)
         , texture_target(GL_TEXTURE_2D)
     {}
     virtual ~VideoShaderPrivate() {
@@ -75,8 +76,8 @@ public:
     int u_colorMatrix;
     int u_bpp;
     int u_opacity;
+    int u_c;
     QVector<int> u_Texture;
-    QVector<int> u_c;
     GLenum texture_target;
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;
@@ -111,9 +112,10 @@ public:
     ~VideoMaterialPrivate();
     bool initPBO(int plane, int size);
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
-    bool initTextures(const VideoFormat& fmt);
+    bool updateTextureParameters(const VideoFormat& fmt);
     void updateChannelMap(const VideoFormat& fmt);
     bool ensureResources();
+    bool ensureTextures();
     void setupQuality();
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
@@ -132,7 +134,7 @@ public:
     // width is in bytes. different alignments may result in different plane 1 linesize even if plane 0 are the same
     int plane1_linesize;
 
-    // textures.d in initTextures() changed. happens in qml. why?
+    // textures.d in updateTextureParameters() changed. happens in qml. why?
     quint8 workaround_vector_crash_on_linux[8];
     QVector<GLuint> textures; //texture ids. size is plane count
     QVector<QSize> texture_size;
@@ -157,7 +159,7 @@ public:
     QMatrix4x4 matrix;
     bool try_pbo;
     QVector<QOpenGLBuffer> pbo;
-    QVector<QVector4D> channel_map;
+    QMatrix4x4 channel_map;
 };
 
 } //namespace QtAV

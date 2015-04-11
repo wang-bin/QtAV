@@ -22,7 +22,7 @@
 #ifndef QTAV_VIDEODECODERFFMPEGHW_P_H
 #define QTAV_VIDEODECODERFFMPEGHW_P_H
 
-#include "VideoDecoderFFmpegBase.h"
+#include "VideoDecoderFFmpegHW.h"
 #include "utils/GPUMemCopy.h"
 
 /*!
@@ -38,7 +38,7 @@ class VideoDecoderFFmpegHWPrivate : public VideoDecoderFFmpegBasePrivate
 public:
     VideoDecoderFFmpegHWPrivate()
         : VideoDecoderFFmpegBasePrivate()
-        , copy_uswc(true)
+        , copy_mode(VideoDecoderFFmpegHW::OptimizedCopy)
     {
         get_format = 0;
         get_buffer = 0;
@@ -83,7 +83,7 @@ public:
     QString description;
     // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
     // TODO: flag enable, disable, auto
-    bool copy_uswc;
+    VideoDecoderFFmpegHW::CopyMode copy_mode;
     GPUMemCopy gpu_mem;
 };
 

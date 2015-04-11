@@ -480,8 +480,8 @@ bool VideoDecoderVAAPIPrivate::open()
         return false;
     }
     vendor = vaQueryVendorString(disp);
-    if (!vendor.toLower().contains("intel"))
-        copy_uswc = false;
+    //if (!vendor.toLower().contains("intel"))
+      //  copy_uswc = false;
 
     //disable_derive = !copy_uswc;
     description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vendor);

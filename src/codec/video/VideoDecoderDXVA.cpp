@@ -223,10 +223,11 @@ static const dxva2_mode_t dxva2_modes[] = {
     { "Windows Media Video 9 post processing",                                        &DXVA2_ModeWMV9_A,                      0 },
 
     /* VC-1 */
-    { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D,                       QTAV_CODEC_ID(VC1) },
-    { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D,                       QTAV_CODEC_ID(WMV3) },
+    //https://github.com/afedchin/xbmc/commit/dd4dd69528e10696f8b1b23367d6630adc01e618
     { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D2010,                   QTAV_CODEC_ID(VC1) },
     { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D2010,                   QTAV_CODEC_ID(WMV3) },
+    { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D,                       QTAV_CODEC_ID(VC1) },
+    { "VC-1 variable-length decoder",                                                 &DXVA2_ModeVC1_D,                       QTAV_CODEC_ID(WMV3) },
     { "VC-1 variable-length decoder 2 (Intel)",                                       &DXVA_Intel_VC1_ClearVideo_2,           0 },
     { "VC-1 variable-length decoder (Intel)",                                         &DXVA_Intel_VC1_ClearVideo,             0 },
 
@@ -575,8 +576,8 @@ bool VideoDecoderDXVAPrivate::D3dCreateDeviceEx()
     description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
                                     sizeof(d3dai.Description), d3dai.Description,
                                     d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
-    if (copy_uswc)
-        copy_uswc = vendor.toLower() == "intel";
+    //if (copy_uswc)
+      //  copy_uswc = vendor.toLower() == "intel";
     qDebug("DXVA2 description:  %s", description.toUtf8().constData());
 
     D3DPRESENT_PARAMETERS d3dpp;
@@ -637,8 +638,8 @@ bool VideoDecoderDXVAPrivate::D3dCreateDeviceFallback()
     description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
                                     sizeof(d3dai.Description), d3dai.Description,
                                     d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
-    if (copy_uswc)
-        copy_uswc = vendor.toLower() == "intel";
+    //if (copy_uswc)
+      //  copy_uswc = vendor.toLower() == "intel";
     qDebug("DXVA2 description:  %s", description.toUtf8().constData());
 
     D3DPRESENT_PARAMETERS d3dpp;
@@ -730,8 +731,10 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
         if (mode) {
             qDebug("- '%s' is supported by hardware", mode->name);
         } else {
-            qDebug("- Unknown GUID = %08X-%04x-%04x-XXXX",
-                     (unsigned)g.Data1, g.Data2, g.Data3);
+            qDebug("- Unknown GUID = %08X-%04x-%04x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x",
+                     (unsigned)g.Data1, g.Data2, g.Data3
+                   , g.Data4[0], g.Data4[1]
+                   , g.Data4[2], g.Data4[3], g.Data4[4], g.Data4[5], g.Data4[6], g.Data4[7]);
         }
     }
     /* Try all supported mode by our priority */
@@ -852,14 +855,14 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     dsc.OutputFrameFreq = dsc.InputSampleFreq;
     dsc.UABProtectionLevel = FALSE;
     dsc.Reserved = 0;
-
+// see xbmc
     /* FIXME I am unsure we can let unknown everywhere */
     DXVA2_ExtendedFormat *ext = &dsc.SampleFormat;
-    ext->SampleFormat = 0;//DXVA2_SampleUnknown;
+    ext->SampleFormat = 0;//DXVA2_SampleProgressiveFrame;//xbmc. DXVA2_SampleUnknown;
     ext->VideoChromaSubsampling = 0;//DXVA2_VideoChromaSubsampling_Unknown;
     ext->NominalRange = 0;//DXVA2_NominalRange_Unknown;
     ext->VideoTransferMatrix = 0;//DXVA2_VideoTransferMatrix_Unknown;
-    ext->VideoLighting = 0;//DXVA2_VideoLighting_Unknown;
+    ext->VideoLighting = 0;//DXVA2_VideoLighting_dim;//xbmc. DXVA2_VideoLighting_Unknown;
     ext->VideoPrimaries = 0;//DXVA2_VideoPrimaries_Unknown;
     ext->VideoTransferFunction = 0;//DXVA2_VideoTransFunc_Unknown;
 
