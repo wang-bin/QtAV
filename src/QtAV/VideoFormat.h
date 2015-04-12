@@ -197,6 +197,19 @@ public:
      */
     int chromaWidth(int lumaWidth) const;
     int chromaHeight(int lumaHeight) const;
+    /*!
+     * \brief width
+     * plane width for given lumaWidth in current format
+     * \return lumaWidth if plane <= 0. otherwise chromaWidth
+     */
+    int width(int lumaWidth, int plane) const;
+    int height(int lumaWidth, int plane) const;
+    /*!
+     * \brief normalizedWidth
+     * \return 1.0 for plane <= 0. otherwise chroma width
+     */
+    qreal normalizedWidth(int plane) const;
+    qreal normalizedHeight(int plane) const;
     //TODO: add planeWidth()/planeHeight()
     // test AV_PIX_FMT_FLAG_XXX
     bool isBigEndian() const;
