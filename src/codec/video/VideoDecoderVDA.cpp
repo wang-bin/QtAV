@@ -57,6 +57,7 @@ class VideoDecoderVDA : public VideoDecoderFFmpegHW
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderVDA)
     Q_PROPERTY(PixelFormat format READ format WRITE setFormat NOTIFY formatChanged)
+    // TODO: try async property
     Q_ENUMS(PixelFormat)
 public:
     enum PixelFormat {
@@ -91,7 +92,7 @@ class VideoDecoderVDAPrivate : public VideoDecoderFFmpegHWPrivate
 public:
     VideoDecoderVDAPrivate()
         : VideoDecoderFFmpegHWPrivate()
-        , out_fmt(VideoDecoderVDA::UYVY)
+        , out_fmt(VideoDecoderVDA::NV12)
     {
         copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         description = "VDA";
@@ -184,7 +185,6 @@ VideoDecoderVDA::VideoDecoderVDA()
     // dynamic properties about static property details. used by UI
     // format: detail_property
     const QString note(tr("Reopen to apply"));
-    setProperty("detail_SSE4", tr("Optimized copy decoded data from USWC memory using SSE4.1 if possible.") + " " + tr("Crash for some videos.") + "\n" + note);
     setProperty("detail_format", tr("Output pixel format from decoder. NV12 and UYVY is fast. Some are available since OSX 10.7, e.g. NV12.") + "\n" + note);
 }
 
@@ -234,20 +234,20 @@ VideoFrame VideoDecoderVDA::frame()
             // https://www.opengl.org/registry/specs/APPLE/rgb_422.txt
             // TODO: check extension GL_APPLE_rgb_422 and rectangle?
             IOSurfaceRef surface  = CVPixelBufferGetIOSurface(cvbuf);
-            int w = IOSurfaceGetWidth(surface);
-            int h = IOSurfaceGetHeight(surface);
+            int w = IOSurfaceGetWidthOfPlane(surface, plane);
+            int h = IOSurfaceGetHeightOfPlane(surface, plane);
             //qDebug("plane:%d, iosurface %dx%d, ctx: %p", plane, w, h, CGLGetCurrentContext());
             OSType pixfmt = IOSurfaceGetPixelFormat(surface); //CVPixelBufferGetPixelFormatType(cvbuf);
             GLenum iformat = GL_RGBA8;
             GLenum format = GL_BGRA;
             GLenum dtype = GL_UNSIGNED_INT_8_8_8_8_REV;
             const GLenum target = GL_TEXTURE_RECTANGLE;
+            // TODO: GL_RED, GL_RG is better for gl >= 3.0
             if (pixfmt == NV12) {
                 dtype = GL_UNSIGNED_BYTE;
                 if (plane == 0) {
                     iformat = format = GL_LUMINANCE;
                 } else {
-                    h /= 2;
                     iformat = format = GL_LUMINANCE_ALPHA;
                 }
             } else if (pixfmt == UYVY || pixfmt == YUYV) {
@@ -255,15 +255,12 @@ VideoFrame VideoDecoderVDA::frame()
             } else if (pixfmt == YUV420P) {
                 dtype = GL_UNSIGNED_BYTE;
                 iformat = format = GL_LUMINANCE;
-                if (plane > 0) {
-                    w /= 2;
-                    h /= 2;
-                }
             }
-            //https://github.com/xbmc/xbmc/pull/5703
-            //OpenGLHelper::glActiveTexture(GL_TEXTURE0 + plane); //0 must active?
             DYGL(glBindTexture(target, *((GLuint*)handle)));
-            CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, w, h, format, dtype, surface, plane);
+            CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, w, h, format, dtype, surface, plane);
+            if (err != kCGLNoError) {
+                qWarning("error creating IOSurface texture at plane %d: %s", plane, CGLErrorString(err));
+            }
             DYGL(glBindTexture(target, 0));
             return handle;
         }
