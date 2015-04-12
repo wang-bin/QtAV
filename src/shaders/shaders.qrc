@@ -2,7 +2,6 @@
     <qresource prefix="/shaders">
         <file>planar.f.glsl</file>
         <file>packed.f.glsl</file>
-        <file>planar.vert</file>
-        <file>packed.vert</file>
+        <file>video.vert</file>
     </qresource>
 </RCC>

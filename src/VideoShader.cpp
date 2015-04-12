@@ -188,23 +188,19 @@ const char* VideoShader::vertexShader() const
 {
     DPTR_D(const VideoShader);
     // because we have to modify the shader, and shader source must be kept, so read the origin
-    if (d.video_format.isPlanar()) {
-        d.planar_vert = shaderSourceFromFile("shaders/planar.vert");
-    } else {
-        d.packed_vert = shaderSourceFromFile("shaders/packed.vert");
-    }
-    QByteArray& vert = d.video_format.isPlanar() ? d.planar_vert : d.packed_vert;
+    d.vert = shaderSourceFromFile("shaders/video.vert");
+    QByteArray& vert = d.vert;
     if (vert.isEmpty()) {
         qWarning("Empty vertex shader!");
         return 0;
     }
-#if YUVA_DONE
-    if (d.video_format.planeCount() == 4) {
-        vert.prepend("#define PLANE_4\n");
-    }
-#endif
-    if (textureTarget() == GL_TEXTURE_RECTANGLE)
+    if (textureTarget() == GL_TEXTURE_RECTANGLE && d.video_format.isPlanar()) {
         vert.prepend("#define MULTI_COORD\n");
+#if YUVA_DONE
+        if (d.video_format.planeCount() == 4)
+            vert.prepend("#define PLANE_4\n");
+#endif
+    }
     return vert.constData();
 }
 
