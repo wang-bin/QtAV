@@ -127,9 +127,10 @@ public:
 
 void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, const QRectF &r)
 {
-    const bool tex_2d = shader->textureTarget() == GL_TEXTURE_2D;
+    const bool tex_rect = shader->textureTarget() == GL_TEXTURE_RECTANGLE;
     // also check size change for normalizedROI computation if roi is not normalized
     const bool roi_changed = valiad_tex_width != material->validTextureWidth() || roi != r || video_size != material->frameSize();
+    const int tc = shader->textureLocationCount();
     if (roi_changed) {
         roi = r;
         valiad_tex_width = material->validTextureWidth();
@@ -149,7 +150,14 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
     if (!update_geo)
         goto end;
     //qDebug("updating geometry...");
-    geometry.setRect(target_rect, material->mapToTexture(roi));
+    geometry.setRect(target_rect, material->mapToTexture(0, roi));
+    if (tex_rect) {
+        geometry.setTextureCount(tc);
+        for (int i = 1; i < tc; ++i) {
+            // tc can > planes, but that will compute chroma plane
+            geometry.setTextureRect(material->mapToTexture(i, roi), i);
+        }
+    }
     update_geo = false;
     if (!try_vbo)
         goto end;
@@ -177,15 +185,14 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
     }
     //qDebug("updating vbo...");
     vbo.bind(); //check here
-    vbo.allocate(geometry.data(), geometry.vertexCount()*geometry.stride());
+    vbo.allocate(geometry.data(), geometry.size());
 #if QT_VAO
     if (try_vao) {
         shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, geometry.tupleSize(), geometry.stride());
         shader->program()->setAttributeBuffer(1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
-        if (tex_2d) {
-            const int tc = shader->textureLocationCount();
+        if (tex_rect) {
             for (int i = 1; i < tc; ++i) {
-                shader->program()->setAttributeBuffer(i + 1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
+                shader->program()->setAttributeBuffer(i + 1, GL_FLOAT, i*geometry.textureSize() + geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
             }
         }
         char const *const *attr = shader->attributeNames();
@@ -207,19 +214,17 @@ end:
         vbo.bind();
         shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, geometry.tupleSize(), geometry.stride());
         shader->program()->setAttributeBuffer(1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
-        if (tex_2d) {
-            const int tc = shader->textureLocationCount();
+        if (tex_rect) {
             for (int i = 1; i < tc; ++i) {
-                shader->program()->setAttributeBuffer(i + 1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
+                shader->program()->setAttributeBuffer(i + 1, GL_FLOAT, i*geometry.textureSize() + geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
             }
         }
     } else {
         shader->program()->setAttributeArray(0, GL_FLOAT, geometry.data(0), geometry.tupleSize(), geometry.stride());
         shader->program()->setAttributeArray(1, GL_FLOAT, geometry.data(1), geometry.tupleSize(), geometry.stride());
-        if (tex_2d) {
-            const int tc = shader->textureLocationCount();
+        if (tex_rect) {
             for (int i = 1; i < tc; ++i) {
-                shader->program()->setAttributeArray(i + 1, GL_FLOAT, geometry.data(1), geometry.tupleSize(), geometry.stride());
+                shader->program()->setAttributeArray(i + 1, GL_FLOAT, geometry.data(1), i*geometry.textureSize() + geometry.tupleSize(), geometry.stride());
             }
         }
     }
@@ -331,7 +336,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         DYGL(glEnable(GL_BLEND));
         DYGL(glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA));
     }
-    DYGL(glDrawArrays(d.geometry.mode(), 0, d.geometry.vertexCount()));
+    DYGL(glDrawArrays(d.geometry.mode(), 0, d.geometry.textureVertexCount()));
     if (blending)
         DYGL(glDisable(GL_BLEND));
     // d.shader->program()->release(); //glUseProgram(0)

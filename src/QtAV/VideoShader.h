@@ -144,13 +144,13 @@ public:
     /*!
      * \brief mapToFrame
      * map a point p or a rect r to video texture (of 1st plane) and scaled to valid width.
-     * p or r is in video frame's rect.
+     * p or r is in video frame's rect, no matter which plane is
      * \param normalize -1: auto(do not normalize for rectangle texture). 0: no. 1: yes
      * \return
      * point or rect in current texture valid coordinates. \sa validTextureWidth()
      */
-    QPointF mapToTexture(const QPointF& p, int normalize = -1) const;
-    QRectF mapToTexture(const QRectF& r, int normalize = -1) const;
+    QPointF mapToTexture(int plane, const QPointF& p, int normalize = -1) const;
+    QRectF mapToTexture(int plane, const QRectF& r, int normalize = -1) const;
     void setBrightness(qreal value);
     void setContrast(qreal value);
     void setHue(qreal value);
@@ -170,23 +170,45 @@ public:
         float tx, ty;
     } Point;
     enum Triangle { Strip, Fan };
-    TexturedGeometry(int count = 4, Triangle t = Strip);
+    TexturedGeometry(int texCount = 1, int count = 4, Triangle t = Strip);
+    /*!
+     * \brief setTextureCount
+     * sometimes we needs more than 1 texture coordinates, for example we have to set rectangle texture
+     * coordinates for each plane.
+     */
+    void setTextureCount(int value);
+    int textureCount() const;
+    /*!
+     * \brief size
+     * totoal data size in bytes
+     */
+    int size() const;
+    /*!
+     * \brief textureSize
+     * data size of 1 texture. equals textureVertexCount()*stride()
+     */
+    int textureSize() const;
     Triangle triangle() const { return tri;}
     int mode() const;
     int tupleSize() const { return 2;}
     int stride() const { return sizeof(Point); }
+    /// vertex count per texture
+    int textureVertexCount() const { return points_per_tex;}
+    /// totoal vertex count
     int vertexCount() const { return v.size(); }
-    void setPoint(int index, const QPointF& p, const QPointF& tp);
-    void setGeometryPoint(int index, const QPointF& p);
-    void setTexturePoint(int index, const QPointF& tp);
-    void setRect(const QRectF& r, const QRectF& tr);
-    void setGeometryRect(const QRectF& r);
-    void setTextureRect(const QRectF& tr);
-    void* data(int idx = 0) { return (char*)v.data() + idx*2*sizeof(float); } //convert to char* float*?
-    const void* data(int idx = 0) const { return (char*)v.constData() + idx*2*sizeof(float); }
-    const void* constData(int idx = 0) const { return (char*)v.constData() + idx*2*sizeof(float); }
+    void setPoint(int index, const QPointF& p, const QPointF& tp, int texIndex = 0);
+    void setGeometryPoint(int index, const QPointF& p, int texIndex = 0);
+    void setTexturePoint(int index, const QPointF& tp, int texIndex = 0);
+    void setRect(const QRectF& r, const QRectF& tr, int texIndex = 0);
+    void setGeometryRect(const QRectF& r, int texIndex = 0);
+    void setTextureRect(const QRectF& tr, int texIndex = 0);
+    void* data(int idx = 0, int texIndex = 0) { return (char*)v.data() + texIndex*textureSize() + idx*2*sizeof(float); } //convert to char* float*?
+    const void* data(int idx = 0, int texIndex = 0) const { return (char*)v.constData() + texIndex*textureSize() + idx*2*sizeof(float); }
+    const void* constData(int idx = 0, int texIndex = 0) const { return (char*)v.constData() + texIndex*textureSize() + idx*2*sizeof(float); }
 private:
     Triangle tri;
+    int points_per_tex;
+    int nb_tex;
     QVector<Point> v;
 };
 

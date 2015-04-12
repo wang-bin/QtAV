@@ -37,8 +37,17 @@ uniform sampler2D u_Texture2;
 uniform sampler2D u_Texture3;
 #endif //PLANE_4
 varying lowp vec2 v_TexCoords0;
+#ifdef MULTI_COORD
 varying lowp vec2 v_TexCoords1;
 varying lowp vec2 v_TexCoords2;
+#ifdef PLANE_4
+varying lowp vec2 v_TexCoords3;
+#endif
+#else
+#define v_TexCoords1 v_TexCoords0
+#define v_TexCoords2 v_TexCoords0
+#define v_TexCoords3 v_TexCoords0
+#endif //MULTI_COORD
 uniform float u_opacity;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;

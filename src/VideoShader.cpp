@@ -33,10 +33,39 @@
 
 namespace QtAV {
 
-TexturedGeometry::TexturedGeometry(int count, Triangle t)
+TexturedGeometry::TexturedGeometry(int texCount, int count, Triangle t)
     : tri(t)
+    , points_per_tex(count)
+    , nb_tex(texCount)
 {
-    v.resize(count);
+    if (texCount < 1)
+        texCount = 1;
+    v.resize(nb_tex*points_per_tex);
+}
+
+void TexturedGeometry::setTextureCount(int value)
+{
+    if (value < 1)
+        value = 1;
+    if (value == nb_tex)
+        return;
+    nb_tex = value;
+    v.resize(nb_tex*points_per_tex);
+}
+
+int TexturedGeometry::textureCount() const
+{
+    return nb_tex;
+}
+
+int TexturedGeometry::size() const
+{
+    return nb_tex * textureSize();
+}
+
+int TexturedGeometry::textureSize() const
+{
+    return textureVertexCount() * stride();
 }
 
 int TexturedGeometry::mode() const
@@ -46,60 +75,60 @@ int TexturedGeometry::mode() const
     return GL_TRIANGLE_FAN;
 }
 
-void TexturedGeometry::setPoint(int index, const QPointF &p, const QPointF &tp)
+void TexturedGeometry::setPoint(int index, const QPointF &p, const QPointF &tp, int texIndex)
 {
-    setGeometryPoint(index, p);
-    setTexturePoint(index, tp);
+    setGeometryPoint(index, p, texIndex);
+    setTexturePoint(index, tp, texIndex);
 }
 
-void TexturedGeometry::setGeometryPoint(int index, const QPointF &p)
+void TexturedGeometry::setGeometryPoint(int index, const QPointF &p, int texIndex)
 {
-    v[index].x = p.x();
-    v[index].y = p.y();
+    v[texIndex*points_per_tex + index].x = p.x();
+    v[texIndex*points_per_tex + index].y = p.y();
 }
 
-void TexturedGeometry::setTexturePoint(int index, const QPointF &tp)
+void TexturedGeometry::setTexturePoint(int index, const QPointF &tp, int texIndex)
 {
-    v[index].tx = tp.x();
-    v[index].ty = tp.y();
+    v[texIndex*points_per_tex + index].tx = tp.x();
+    v[texIndex*points_per_tex + index].ty = tp.y();
 }
 
-void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr)
+void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr, int texIndex)
 {
-    setPoint(0, r.topLeft(), tr.topLeft());
-    setPoint(1, r.bottomLeft(), tr.bottomLeft());
+    setPoint(0, r.topLeft(), tr.topLeft(), texIndex);
+    setPoint(1, r.bottomLeft(), tr.bottomLeft(), texIndex);
     if (tri == Strip) {
-        setPoint(2, r.topRight(), tr.topRight());
-        setPoint(3, r.bottomRight(), tr.bottomRight());
+        setPoint(2, r.topRight(), tr.topRight(), texIndex);
+        setPoint(3, r.bottomRight(), tr.bottomRight(), texIndex);
     } else {
-        setPoint(3, r.topRight(), tr.topRight());
-        setPoint(2, r.bottomRight(), tr.bottomRight());
+        setPoint(3, r.topRight(), tr.topRight(), texIndex);
+        setPoint(2, r.bottomRight(), tr.bottomRight(), texIndex);
     }
 }
 
-void TexturedGeometry::setGeometryRect(const QRectF &r)
+void TexturedGeometry::setGeometryRect(const QRectF &r, int texIndex)
 {
-    setGeometryPoint(0, r.topLeft());
-    setGeometryPoint(1, r.bottomLeft());
+    setGeometryPoint(0, r.topLeft(), texIndex);
+    setGeometryPoint(1, r.bottomLeft(), texIndex);
     if (tri == Strip) {
-        setGeometryPoint(2, r.topRight());
-        setGeometryPoint(3, r.bottomRight());
+        setGeometryPoint(2, r.topRight(), texIndex);
+        setGeometryPoint(3, r.bottomRight(), texIndex);
     } else {
-        setGeometryPoint(3, r.topRight());
-        setGeometryPoint(2, r.bottomRight());
+        setGeometryPoint(3, r.topRight(), texIndex);
+        setGeometryPoint(2, r.bottomRight(), texIndex);
     }
 }
 
-void TexturedGeometry::setTextureRect(const QRectF &tr)
+void TexturedGeometry::setTextureRect(const QRectF &tr, int texIndex)
 {
-    setTexturePoint(0, tr.topLeft());
-    setTexturePoint(1, tr.bottomLeft());
+    setTexturePoint(0, tr.topLeft(), texIndex);
+    setTexturePoint(1, tr.bottomLeft(), texIndex);
     if (tri == Strip) {
-        setTexturePoint(2, tr.topRight());
-        setTexturePoint(3, tr.bottomRight());
+        setTexturePoint(2, tr.topRight(), texIndex);
+        setTexturePoint(3, tr.bottomRight(), texIndex);
     } else {
-        setTexturePoint(3, tr.topRight());
-        setTexturePoint(2, tr.bottomRight());
+        setTexturePoint(3, tr.topRight(), texIndex);
+        setTexturePoint(2, tr.bottomRight(), texIndex);
     }
 }
 
@@ -124,21 +153,35 @@ VideoShader::~VideoShader()
  */
 char const *const* VideoShader::attributeNames() const
 {
-    static const char *names_packed[] = {
+    static const char *names[] = {
         "a_Position",
         "a_TexCoords0",
         0
     };
-    // TODO: 2d, rect are different. 2d needs 1 tex coord
-    static const char *names_planar[] = {
+    if (textureTarget() == GL_TEXTURE_2D)
+        return names;
+    DPTR_D(const VideoShader);
+    static const char *names_multicoord[] = {
         "a_Position",
         "a_TexCoords0",
         "a_TexCoords1",
         "a_TexCoords2",
         0
     };
-    // TODO: names_planar_4planes
-    return d_func().video_format.isPlanar() ? names_planar : names_packed;
+#if YUVA_DONE
+    static const char *names_multicoord_4[] = {
+        "a_Position",
+        "a_TexCoords0",
+        "a_TexCoords1",
+        "a_TexCoords2",
+        "a_TexCoords3",
+        0
+    };
+    if (d_func().video_format.planeCount() == 4)
+        return names_multicoord_4;
+#endif
+    // TODO: names_multicoord_4planes
+    return d.video_format.isPlanar() ? names_multicoord : names;
 }
 
 const char* VideoShader::vertexShader() const
@@ -160,6 +203,8 @@ const char* VideoShader::vertexShader() const
         vert.prepend("#define PLANE_4\n");
     }
 #endif
+    if (textureTarget() == GL_TEXTURE_RECTANGLE)
+        vert.prepend("#define MULTI_COORD\n");
     return vert.constData();
 }
 
@@ -198,6 +243,8 @@ const char* VideoShader::fragmentShader() const
                      "#define texture2D texture2DRect\n"
                      "#define sampler2D sampler2DRect\n");
     }
+    if (textureTarget() == GL_TEXTURE_RECTANGLE)
+        frag.prepend("#define MULTI_COORD\n");
     return frag.constData();
 }
 
@@ -373,8 +420,10 @@ void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
                    maxVertexAttribs, vertexShader(), fragmentShader());
         }
         // why must min location == 0?
-        if (*attr[i])
+        if (*attr[i]) {
             shaderProgram->bindAttributeLocation(attr[i], i);
+            qDebug("bind attribute: %s => %d", attr[i], i);
+        }
     }
 
     if (!shaderProgram->link()) {
@@ -644,30 +693,30 @@ QSize VideoMaterial::frameSize() const
 }
 QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
 {
-    return mapToTexture(roi, 1);
+    return mapToTexture(0, roi, 1);
 }
 
-QPointF VideoMaterial::mapToTexture(const QPointF &p, int normalize) const
+QPointF VideoMaterial::mapToTexture(int plane, const QPointF &p, int normalize) const
 {
     if (p.isNull())
         return p;
     DPTR_D(const VideoMaterial);
     float x = p.x();
     float y = p.y();
-    const qreal texW = d.texture_size[0].width();
-    const qreal s = texW/qreal(d.width); // only apply to unnormalized input roi
+    const qreal tex0W = d.texture_size[0].width();
+    const qreal s = tex0W/qreal(d.width); // only apply to unnormalized input roi
     if (normalize < 0)
         normalize = d.target != GL_TEXTURE_RECTANGLE;
     if (normalize) {
         if (qAbs(x) > 1) {
-            x /= (float)texW;
+            x /= (float)tex0W;
             x *= s;
         }
         if (qAbs(y) > 1)
             y /= (float)d.height;
     } else {
         if (qAbs(x) <= 1)
-            x *= (float)texW;
+            x *= (float)tex0W;
         else
             x *= s;
         if (qAbs(y) <= 1)
@@ -675,19 +724,23 @@ QPointF VideoMaterial::mapToTexture(const QPointF &p, int normalize) const
     }
     // multiply later because we compare with 1 before it
     x *= d.effective_tex_width_ratio;
-    return QPointF(x, y);
+    const qreal pw = d.video_format.normalizedWidth(plane);
+    const qreal ph = d.video_format.normalizedHeight(plane);
+    return QPointF(x*pw, y*ph);
 }
 
 // mapToTexture
-QRectF VideoMaterial::mapToTexture(const QRectF &roi, int normalize) const
+QRectF VideoMaterial::mapToTexture(int plane, const QRectF &roi, int normalize) const
 {
     DPTR_D(const VideoMaterial);
-    const qreal texW = d.texture_size[0].width();
-    const qreal s = texW/qreal(d.width); // only apply to unnormalized input roi
+    const qreal tex0W = d.texture_size[0].width();
+    const qreal s = tex0W/qreal(d.width); // only apply to unnormalized input roi
+    const qreal pw = d.video_format.normalizedWidth(plane);
+    const qreal ph = d.video_format.normalizedHeight(plane);
     if (!roi.isValid()) {
         if (normalize)
             return QRectF(0, 0, d.effective_tex_width_ratio, 1); //NOTE: not (0, 0, 1, 1)
-        return QRectF(0, 0, texW, d.height);
+        return QRectF(0, 0, tex0W*pw, d.height*ph);
     }
     float x = roi.x();
     float w = roi.width(); //TODO: texturewidth
@@ -697,26 +750,26 @@ QRectF VideoMaterial::mapToTexture(const QRectF &roi, int normalize) const
         normalize = d.target != GL_TEXTURE_RECTANGLE;
     if (normalize) {
         if (qAbs(x) > 1) {
-            x /= texW;
+            x /= tex0W;
             x *= s;
         }
         if (qAbs(y) > 1)
             y /= (float)d.height;
         if (qAbs(w) > 1) {
-            w /= texW;
+            w /= tex0W;
             w *= s;
         }
         if (qAbs(h) > 1)
             h /= (float)d.height;
     } else { //FIXME: what about ==1?
         if (qAbs(x) <= 1)
-            x *= texW;
+            x *= tex0W;
         else
             x *= s;
         if (qAbs(y) <= 1)
             y *= (float)d.height;
         if (qAbs(w) <= 1)
-            w *= texW;
+            w *= tex0W;
         else
             w *= s;
         if (qAbs(h) <= 1)
@@ -725,7 +778,7 @@ QRectF VideoMaterial::mapToTexture(const QRectF &roi, int normalize) const
     // multiply later because we compare with 1 before it
     x *= d.effective_tex_width_ratio;
     w *= d.effective_tex_width_ratio;
-    return QRectF(x, y, w, h);
+    return QRectF(x*pw, y*ph, w*pw, h*ph);
 }
 
 bool VideoMaterialPrivate::initPBO(int plane, int size)
