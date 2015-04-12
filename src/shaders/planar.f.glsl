@@ -36,7 +36,9 @@ uniform sampler2D u_Texture2;
 #ifdef PLANE_4
 uniform sampler2D u_Texture3;
 #endif //PLANE_4
-varying lowp vec2 v_TexCoords;
+varying lowp vec2 v_TexCoords0;
+varying lowp vec2 v_TexCoords1;
+varying lowp vec2 v_TexCoords2;
 uniform float u_opacity;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
@@ -87,22 +89,22 @@ void main()
     gl_FragColor = clamp(u_colorMatrix
                          * vec4(
 #if LA_16BITS
-                             dot(texture2D(u_Texture0, v_TexCoords).ra, t),
-                             dot(texture2D(u_Texture1, v_TexCoords).ra, t),
-                             dot(texture2D(u_Texture2, v_TexCoords).ra, t),
+                             dot(texture2D(u_Texture0, v_TexCoords0).ra, t),
+                             dot(texture2D(u_Texture1, v_TexCoords1).ra, t),
+                             dot(texture2D(u_Texture2, v_TexCoords2).ra, t),
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
-                             texture2D(u_Texture0, v_TexCoords).r,
-                             texture2D(u_Texture1, v_TexCoords).g,
-                             texture2D(u_Texture2, v_TexCoords).a,
+                             texture2D(u_Texture0, v_TexCoords0).r,
+                             texture2D(u_Texture1, v_TexCoords1).g,
+                             texture2D(u_Texture2, v_TexCoords2).a,
 #endif //LA_16BITS
                              1)
                          , 0.0, 1.0) * u_opacity;
 #ifdef PLANE_4
 #if LA_16BITS
-    gl_FragColor.a *= dot(texture2D(u_Texture3, v_TexCoords).ra, t); //GL_LUMINANCE_ALPHA
+    gl_FragColor.a *= dot(texture2D(u_Texture3, v_TexCoords3).ra, t); //GL_LUMINANCE_ALPHA
 #else //8bit
-    gl_FragColor.a *= texture2D(u_Texture3, v_TexCoords).a; //GL_ALPHA
+    gl_FragColor.a *= texture2D(u_Texture3, v_TexCoords3).a; //GL_ALPHA
 #endif //LA_16BITS
 #endif //PLANE_4
 }

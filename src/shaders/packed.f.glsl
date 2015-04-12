@@ -30,7 +30,7 @@ precision mediump float;
 #endif
 
 uniform sampler2D u_Texture0;
-varying vec2 v_TexCoords;
+varying vec2 v_TexCoords0;
 uniform mat4 u_colorMatrix;
 uniform float u_opacity;
 #ifdef PACKED_YUV
@@ -38,7 +38,7 @@ uniform mat4 u_c;
 #endif //PACKED_YUV
 
 void main() {
-    vec4 c = texture2D(u_Texture0, v_TexCoords);
+    vec4 c = texture2D(u_Texture0, v_TexCoords0);
 #ifdef PACKED_YUV
     c = u_c * c;
     c.a = 1.0;

@@ -77,6 +77,32 @@ void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr)
     }
 }
 
+void TexturedGeometry::setGeometryRect(const QRectF &r)
+{
+    setGeometryPoint(0, r.topLeft());
+    setGeometryPoint(1, r.bottomLeft());
+    if (tri == Strip) {
+        setGeometryPoint(2, r.topRight());
+        setGeometryPoint(3, r.bottomRight());
+    } else {
+        setGeometryPoint(3, r.topRight());
+        setGeometryPoint(2, r.bottomRight());
+    }
+}
+
+void TexturedGeometry::setTextureRect(const QRectF &tr)
+{
+    setTexturePoint(0, tr.topLeft());
+    setTexturePoint(1, tr.bottomLeft());
+    if (tri == Strip) {
+        setTexturePoint(2, tr.topRight());
+        setTexturePoint(3, tr.bottomRight());
+    } else {
+        setTexturePoint(3, tr.topRight());
+        setTexturePoint(2, tr.bottomRight());
+    }
+}
+
 VideoShader::VideoShader(VideoShaderPrivate &d):
     DPTR_INIT(&d)
 {
@@ -98,26 +124,43 @@ VideoShader::~VideoShader()
  */
 char const *const* VideoShader::attributeNames() const
 {
-    static const char *names[] = {
+    static const char *names_packed[] = {
         "a_Position",
-        "a_TexCoords",
+        "a_TexCoords0",
         0
     };
-    return names;
+    // TODO: 2d, rect are different. 2d needs 1 tex coord
+    static const char *names_planar[] = {
+        "a_Position",
+        "a_TexCoords0",
+        "a_TexCoords1",
+        "a_TexCoords2",
+        0
+    };
+    // TODO: names_planar_4planes
+    return d_func().video_format.isPlanar() ? names_planar : names_packed;
 }
 
 const char* VideoShader::vertexShader() const
 {
-    static const char kVertexShader[] = glsl(
-        attribute vec4 a_Position;
-        attribute vec2 a_TexCoords;
-        uniform mat4 u_MVP_matrix;
-        varying vec2 v_TexCoords;
-        void main() {
-          gl_Position = u_MVP_matrix * a_Position;
-          v_TexCoords = a_TexCoords;
-        });
-    return kVertexShader;
+    DPTR_D(const VideoShader);
+    // because we have to modify the shader, and shader source must be kept, so read the origin
+    if (d.video_format.isPlanar()) {
+        d.planar_vert = shaderSourceFromFile("shaders/planar.vert");
+    } else {
+        d.packed_vert = shaderSourceFromFile("shaders/packed.vert");
+    }
+    QByteArray& vert = d.video_format.isPlanar() ? d.planar_vert : d.packed_vert;
+    if (vert.isEmpty()) {
+        qWarning("Empty vertex shader!");
+        return 0;
+    }
+#if YUVA_DONE
+    if (d.video_format.planeCount() == 4) {
+        vert.prepend("#define PLANE_4\n");
+    }
+#endif
+    return vert.constData();
 }
 
 const char* VideoShader::fragmentShader() const

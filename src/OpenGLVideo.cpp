@@ -127,6 +127,7 @@ public:
 
 void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, const QRectF &r)
 {
+    const bool tex_2d = shader->textureTarget() == GL_TEXTURE_2D;
     // also check size change for normalizedROI computation if roi is not normalized
     const bool roi_changed = valiad_tex_width != material->validTextureWidth() || roi != r || video_size != material->frameSize();
     if (roi_changed) {
@@ -181,6 +182,12 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
     if (try_vao) {
         shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, geometry.tupleSize(), geometry.stride());
         shader->program()->setAttributeBuffer(1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
+        if (tex_2d) {
+            const int tc = shader->textureLocationCount();
+            for (int i = 1; i < tc; ++i) {
+                shader->program()->setAttributeBuffer(i + 1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
+            }
+        }
         char const *const *attr = shader->attributeNames();
         for (int i = 0; attr[i]; ++i) {
             shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
@@ -200,9 +207,21 @@ end:
         vbo.bind();
         shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, geometry.tupleSize(), geometry.stride());
         shader->program()->setAttributeBuffer(1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
+        if (tex_2d) {
+            const int tc = shader->textureLocationCount();
+            for (int i = 1; i < tc; ++i) {
+                shader->program()->setAttributeBuffer(i + 1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
+            }
+        }
     } else {
         shader->program()->setAttributeArray(0, GL_FLOAT, geometry.data(0), geometry.tupleSize(), geometry.stride());
         shader->program()->setAttributeArray(1, GL_FLOAT, geometry.data(1), geometry.tupleSize(), geometry.stride());
+        if (tex_2d) {
+            const int tc = shader->textureLocationCount();
+            for (int i = 1; i < tc; ++i) {
+                shader->program()->setAttributeArray(i + 1, GL_FLOAT, geometry.data(1), geometry.tupleSize(), geometry.stride());
+            }
+        }
     }
     char const *const *attr = shader->attributeNames();
     for (int i = 0; attr[i]; ++i) {
