@@ -47,6 +47,9 @@ extern "C" {
 #define OSX_TARGET_MIN_LION
 #endif // 1070
 #endif //MAC_OS_X_VERSION_MIN_REQUIRED
+#ifndef kCFCoreFoundationVersionNumber10_7
+#define kCFCoreFoundationVersionNumber10_7      635.00
+#endif
 
 namespace QtAV {
 
@@ -94,6 +97,8 @@ public:
         : VideoDecoderFFmpegHWPrivate()
         , out_fmt(VideoDecoderVDA::NV12)
     {
+        if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber10_7)
+            out_fmt = VideoDecoderVDA::UYVY;
         copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         description = "VDA";
         memset(&hw_ctx, 0, sizeof(hw_ctx));
@@ -183,9 +188,7 @@ VideoDecoderVDA::VideoDecoderVDA()
     : VideoDecoderFFmpegHW(*new VideoDecoderVDAPrivate())
 {
     // dynamic properties about static property details. used by UI
-    // format: detail_property
-    const QString note(tr("Reopen to apply"));
-    setProperty("detail_format", tr("Output pixel format from decoder. NV12 and UYVY is fast. Some are available since OSX 10.7, e.g. NV12.") + "\n" + note);
+    setProperty("detail_format", tr("Output pixel format from decoder. Performance NV12 > UYVY > YUV420P > YUYV.\nOSX < 10.7 only supports UYVY and YUV420p"));
 }
 
 VideoDecoderId VideoDecoderVDA::id() const
@@ -338,9 +341,6 @@ void VideoDecoderVDA::setFormat(PixelFormat fmt)
         return;
     d.out_fmt = fmt;
     emit formatChanged();
-#ifndef kCFCoreFoundationVersionNumber10_7
-#define kCFCoreFoundationVersionNumber10_7      635.00
-#endif
     if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber10_7)
         return;
     if (fmt != YUV420P && fmt != UYVY)
@@ -422,7 +422,6 @@ bool VideoDecoderVDAPrivate::open()
         return false;
     }
 #endif
-    // TODO: check whether VDA is in use
     return true;
 }
 
