@@ -36,8 +36,12 @@ protected:
     virtual void applyFromUi();
 private:
     QCheckBox *m_preview_on;
+    QSpinBox *m_preview_w;
+    QSpinBox *m_preview_h;
     QSpinBox *m_notify_interval;
     QDoubleSpinBox *m_fps;
+    QSpinBox *m_buffer_value;
+    QCheckBox *m_angle;
 };
 
 #endif // MISCPAGE_H

@@ -728,11 +728,14 @@ void MainWindow::play(const QString &name)
     mpPlayer->enableAudio(!mNullAO);
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
+    mpPlayer->setBufferMode(QtAV::BufferPackets);
+    mpPlayer->setBufferValue(Config::instance().bufferValue());
     mpPlayer->setRepeat(mRepeateMax);
     mpPlayer->setPriority(idsFromNames(Config::instance().decoderPriorityNames()));
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
-    mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
+    if (Config::instance().avformatOptionsEnabled())
+        mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
     PlayListItem item;
     item.setUrl(mFile);
     item.setTitle(mTitle);
@@ -853,7 +856,8 @@ void MainWindow::onStopPlay()
     mpPlayer->setFrameRate(Config::instance().forceFrameRate());
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
-    mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
+    if (Config::instance().avformatOptionsEnabled())
+        mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
 
     mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
     mpTimeSlider->setValue(0);
@@ -890,10 +894,8 @@ void MainWindow::seek()
         return;
     m_preview->setTimestamp(mpTimeSlider->value());
     m_preview->preview();
-    const int w = 160;
-    const int h = 90;
     m_preview->setWindowFlags(m_preview->windowFlags() |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
-    m_preview->resize(w, h);
+    m_preview->resize(Config::instance().previewWidth(), Config::instance().previewHeight());
     m_preview->show();
 }
 
@@ -1250,8 +1252,8 @@ void MainWindow::onTimeSliderHover(int pos, int value)
     m_preview->setFile(mpPlayer->file());
     m_preview->setTimestamp(value);
     m_preview->preview();
-    const int w = 160;
-    const int h = 90;
+    const int w = Config::instance().previewWidth();
+    const int h = Config::instance().previewHeight();
     m_preview->setWindowFlags(m_preview->windowFlags() |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
     m_preview->resize(w, h);
     m_preview->move(gpos - QPoint(w/2, h));

@@ -35,6 +35,8 @@ AVFormatConfigPage::AVFormatConfigPage(QWidget *parent) :
     setLayout(gl);
     gl->setSizeConstraint(QLayout::SetFixedSize);
     int r = 0;
+    m_on = new QCheckBox(tr("Enable") + " " + "avformat " + tr("options"));
+    gl->addWidget(m_on, r++, 0);
     m_direct = new QCheckBox(tr("Reduce buffering"));
     gl->addWidget(m_direct, r++, 0);
     gl->addWidget(new QLabel(tr("Probe size")), r, 0, Qt::AlignRight);
@@ -63,7 +65,9 @@ QString AVFormatConfigPage::name() const
 
 void AVFormatConfigPage::applyFromUi()
 {
-    Config::instance().probeSize(m_probeSize->value())
+    Config::instance()
+            .setAvformatOptionsEnabled(m_on->isChecked())
+            .probeSize(m_probeSize->value())
             .analyzeDuration(m_analyzeDuration->value())
             .reduceBuffering(m_direct->isChecked())
             .avformatExtra(m_extra->text());
@@ -71,6 +75,7 @@ void AVFormatConfigPage::applyFromUi()
 
 void AVFormatConfigPage::applyToUi()
 {
+    m_on->setChecked(Config::instance().avformatOptionsEnabled());
     m_direct->setChecked(Config::instance().reduceBuffering());
     m_probeSize->setValue(Config::instance().probeSize());
     m_analyzeDuration->setValue(Config::instance().analyzeDuration());

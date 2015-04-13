@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -166,7 +166,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     QFrame *frame = new QFrame();
     frame->setFrameShape(QFrame::HLine);
     vb->addWidget(frame);
-    vb->addWidget(new QLabel(tr("Decoder") + " " + tr("Priorities")));
+    vb->addWidget(new QLabel(tr("Decoder") + " " + tr("Priorities") + " (" + tr("reopen is required") + ")"));
 
     sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
     QStringList vds = Config::instance().decoderPriorityNames();

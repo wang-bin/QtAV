@@ -122,6 +122,8 @@
 				<string>vob</string>
 				<string>webm</string>
 				<string>wmv</string>
+				<string>f4v</string>
+				<string>ts</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string>document.icns</string>

@@ -36,6 +36,7 @@ protected:
     virtual void applyToUi();
     virtual void applyFromUi();
 private:
+    QCheckBox* m_on;
     QCheckBox *m_direct;
     QSpinBox *m_probeSize;
     QSpinBox *m_analyzeDuration;

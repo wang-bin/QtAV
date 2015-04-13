@@ -31,7 +31,16 @@ MiscPage::MiscPage()
     int r = 0;
     m_preview_on = new QCheckBox(tr("Preview"));
     gl->addWidget(m_preview_on, r++, 0);
+    m_preview_w = new QSpinBox();
+    m_preview_w->setRange(1, 1920);
+    m_preview_h = new QSpinBox();
+    m_preview_h->setRange(1, 1080);
+    gl->addWidget(new QLabel(tr("Preview") + " " + tr("size") + ": "), r, 0);
+    gl->addWidget(m_preview_w, r, 1);
+    gl->addWidget(new QLabel("x"), r, 2);
+    gl->addWidget(m_preview_h, r, 3);
 
+    r++;
     gl->addWidget(new QLabel(tr("Force fps")), r, 0);
     m_fps = new QDoubleSpinBox();
     m_fps->setMinimum(-m_fps->maximum());
@@ -42,6 +51,16 @@ MiscPage::MiscPage()
     m_notify_interval = new QSpinBox();
     m_notify_interval->setEnabled(false);
     gl->addWidget(m_notify_interval, r++, 1);
+
+    gl->addWidget(new QLabel(tr("Buffer frames")), r, 0);
+    m_buffer_value = new QSpinBox();
+    m_buffer_value->setRange(-1, 32767);
+    m_buffer_value->setToolTip("-1: auto. Reopen to apply");
+    gl->addWidget(m_buffer_value, r++, 1);
+
+    m_angle = new QCheckBox("Force OpenGL ANGLE (Windows)");
+    gl->addWidget(m_angle, r++, 0);
+
     applyToUi();
 }
 
@@ -54,13 +73,21 @@ QString MiscPage::name() const
 void MiscPage::applyFromUi()
 {
     Config::instance().setPreviewEnabled(m_preview_on->isChecked())
-            .setForceFrameRate(m_fps->value());
+            .setPreviewWidth(m_preview_w->value())
+            .setPreviewHeight(m_preview_h->value())
+            .setANGLE(m_angle->isChecked())
+            .setForceFrameRate(m_fps->value())
+            .setBufferValue(m_buffer_value->value())
             ;
 }
 
 void MiscPage::applyToUi()
 {
     m_preview_on->setChecked(Config::instance().previewEnabled());
+    m_preview_w->setValue(Config::instance().previewWidth());
+    m_preview_h->setValue(Config::instance().previewHeight());
+    m_angle->setChecked(Config::instance().isANGLE());
     m_fps->setValue(Config::instance().forceFrameRate());
     //m_notify_interval->setValue(Config::instance().avfilterOptions());
+    m_buffer_value->setValue(Config::instance().bufferValue());
 }

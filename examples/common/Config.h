@@ -28,6 +28,7 @@
 #include <QtCore/QVariant>
 #include <QtGui/QColor>
 #include <QtGui/QFont>
+
 //TODO: use hash to simplify api
 /*
  * MVC model. signals from Config notify ui update. signals from ui does not change Config unless ui changes applyed by XXXPage.apply()
@@ -52,6 +53,11 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(bool subtitleOutline READ subtitleOutline WRITE setSubtitleOutline NOTIFY subtitleOutlineChanged)
     Q_PROPERTY(int subtitleBottomMargin READ subtitleBottomMargin WRITE setSubtitleBottomMargin NOTIFY subtitleBottomMarginChanged)
     Q_PROPERTY(bool previewEnabled READ previewEnabled WRITE setPreviewEnabled NOTIFY previewEnabledChanged)
+    Q_PROPERTY(int previewWidth READ previewWidth WRITE setPreviewWidth NOTIFY previewWidthChanged)
+    Q_PROPERTY(int previewHeight READ previewHeight WRITE setPreviewHeight NOTIFY previewHeightChanged)
+    Q_PROPERTY(bool ANGLE READ isANGLE WRITE setANGLE NOTIFY ANGLEChanged)
+    Q_PROPERTY(bool avformatOptionsEnabled READ avformatOptionsEnabled WRITE setAvformatOptionsEnabled NOTIFY avformatOptionsEnabledChanged)
+    Q_PROPERTY(int bufferValue READ bufferValue WRITE setBufferValue NOTIFY bufferValueChanged)
 public:
     static Config& instance();
 
@@ -105,8 +111,14 @@ public:
 
     bool previewEnabled() const;
     Config& setPreviewEnabled(bool value);
+    int previewWidth() const;
+    Config& setPreviewWidth(int value);
+    int previewHeight() const;
+    Config& setPreviewHeight(int value);
 
     QVariantHash avformatOptions() const;
+    bool avformatOptionsEnabled() const;
+    Config& setAvformatOptionsEnabled(bool value);
     int analyzeDuration() const;
     Config& analyzeDuration(int ad);
     unsigned int probeSize() const;
@@ -125,6 +137,13 @@ public:
     Config& avfilterAudioOptions(const QString& options);
     bool avfilterAudioEnable() const;
     Config& avfilterAudioEnable(bool e);
+
+    bool isANGLE() const; // false: auto
+    Config& setANGLE(bool value);
+
+    // <0: auto
+    int bufferValue() const;
+    Config& setBufferValue(int value);
 
     Q_INVOKABLE QVariant operator ()(const QString& key) const;
     Q_INVOKABLE Config& operator ()(const QString& key, const QVariant& value);
@@ -148,6 +167,11 @@ public:
     Q_SIGNAL void subtitleOutlineColorChanged();
     Q_SIGNAL void subtitleBottomMarginChanged();
     Q_SIGNAL void previewEnabledChanged();
+    Q_SIGNAL void previewWidthChanged();
+    Q_SIGNAL void previewHeightChanged();
+    Q_SIGNAL void ANGLEChanged();
+    Q_SIGNAL void avformatOptionsEnabledChanged();
+    Q_SIGNAL void bufferValueChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();
