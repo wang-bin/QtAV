@@ -630,7 +630,7 @@ void AVPlayer::unload()
     connect(&d->demuxer, SIGNAL(loaded()), this, SLOT(unloadInternal()));
     // user interrupt if still loading
     connect(&d->demuxer, SIGNAL(userInterrupted()), this, SLOT(unloadInternal()));
-    d->demuxer.setInterruptStatus(1);
+    d->demuxer.setInterruptStatus(-1);
 }
 
 void AVPlayer::unloadInternal()
@@ -1105,7 +1105,7 @@ void AVPlayer::aboutToQuitApp()
         pause(false); // may be paused. then aboutToQuitApp will not finish
         stop();
     }
-    d->demuxer.setInterruptStatus(true);
+    d->demuxer.setInterruptStatus(-1);
     loaderThreadPool()->waitForDone();
 }
 

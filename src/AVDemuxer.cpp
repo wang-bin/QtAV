@@ -129,7 +129,7 @@ public:
             return -1;
         }
         //check manual interruption
-        if (handler->getStatus() > 0) {
+        if (handler->getStatus() < 0) {
             qDebug("User Interrupt: -> quit!");
             // DO NOT call setMediaStatus() here.
             /* MUST make sure blocking functions (open, read) return before we change the status
@@ -165,15 +165,14 @@ public:
             return 0;
         qDebug("Timeout expired: %lld/%lld -> quit!", handler->mTimer.elapsed(), handler->mTimeout);
         handler->mTimer.invalidate();
-        AVError err;
+        handler->mStatus = int(AVError::ReadTimedout);
         if (handler->mAction == Open) {
-            err.setError(AVError::OpenTimedout);
+            handler->mStatus = int(AVError::OpenTimedout);
         } else if (handler->mAction == FindStreamInfo) {
-            err.setError(AVError::FindStreamInfoTimedout);
+            handler->mStatus = int(AVError::FindStreamInfoTimedout);
         } else if (handler->mAction == Read) {
-            err.setError(AVError::ReadTimedout);
+            handler->mStatus = int(AVError::ReadTimedout);
         }
-        QMetaObject::invokeMethod(handler->mpDemuxer, "error", Qt::AutoConnection, Q_ARG(QtAV::AVError, err));
         return 1;
     }
 private:
@@ -967,23 +966,14 @@ void AVDemuxer::setInterruptTimeout(qint64 timeout)
     d->interrupt_hanlder->setTimeout(timeout);
 }
 
-/**
- * @brief getInterruptStatus return the interrupt status
- * @return
- */
-bool AVDemuxer::getInterruptStatus() const
+int AVDemuxer::getInterruptStatus() const
 {
-    return d->interrupt_hanlder->getStatus() == 1 ? true : false;
+    return d->interrupt_hanlder->getStatus();
 }
 
-/**
- * @brief setInterruptStatus set the interrupt status
- * @param interrupt
- * @return
- */
-void AVDemuxer::setInterruptStatus(bool interrupt)
+void AVDemuxer::setInterruptStatus(int interrupt)
 {
-    d->interrupt_hanlder->setStatus(interrupt ? 1 : 0);
+    d->interrupt_hanlder->setStatus(interrupt);
 }
 
 void AVDemuxer::setOptions(const QVariantHash &dict)
@@ -1127,18 +1117,20 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     if (interrupted) { // interrupted by callback, so can not determine whether the media is valid
         // insufficient buffering or other interruptions
         setMediaStatus(StalledMedia);
-        if (getInterruptStatus())
+        if (getInterruptStatus() < 0) {
+            emit userInterrupted();
             err_msg += " [" + tr("interrupted by user") + "]";
-        else
+        } else {
+            // averr is eof for open timeout
             err_msg += " [" + tr("timeout") + "]";
-        emit userInterrupted();
+        }
     } else {
         if (mediaStatus() == LoadingMedia)
             setMediaStatus(InvalidMedia);
     }
     if (!errorCode)
         return;
-    AVError::ErrorCode ec(AVError::OpenError);
+    AVError::ErrorCode ec(*errorCode);
     if (averr == AVERROR_INVALIDDATA) { // leave it if reading
         if (*errorCode == AVError::OpenError)
             ec = AVError::FormatError;

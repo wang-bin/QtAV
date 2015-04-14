@@ -148,14 +148,18 @@ public:
      */
     void setInterruptTimeout(qint64 timeout);
     /**
-     * @brief getInterruptStatus return the interrupt status
+     * @brief getInterruptStatus return the interrupt status.
+     * \return -1: interrupted by user
+     *          0: not interrupted
+     *         >0: timeout value of AVError::ErrorCode
      */
-    bool getInterruptStatus() const;
+    int getInterruptStatus() const;
     /**
      * @brief setInterruptStatus set the interrupt status
-     * @param interrupt true: abort current operation like loading and reading packets. false: no interrupt
+     * @param interrupt <0: abort current operation like loading and reading packets.
+     *                   0: no interrupt
      */
-    void setInterruptStatus(bool interrupt);
+    void setInterruptStatus(int interrupt);
     /*!
      * \brief setOptions
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
