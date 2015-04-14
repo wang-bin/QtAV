@@ -24,6 +24,7 @@
 #include <QtAVWidgets>
 #include <QtDebug>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QTimer>
 
 using namespace QtAV;
 class VideoFrameObserver : public QObject
@@ -31,20 +32,58 @@ class VideoFrameObserver : public QObject
     Q_OBJECT
 public:
     VideoFrameObserver(QObject *parent = 0) : QObject(parent)
+      , pos(0)
+      , nb(1)
+      , extracted(0)
     {
         view = VideoRendererFactory::create(VideoRendererId_GLWidget2);
         view->widget()->resize(400, 300);
         view->widget()->show();
+        connect(&extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), this, SLOT(onVideoFrameExtracted(QtAV::VideoFrame)));
+    }
+    void setParameters(qint64 msec, int count) {
+        pos = msec;
+        nb = count;
+    }
+    void start(const QString& file) {
+        extractor.setAsync(false);
+        extractor.setSource(file);
+        startTimer(20);
+        timer.start();
+        extractor.setPosition(pos);
+    }
+    void startAsync(const QString& file) {
+        extractor.setAsync(true);
+        extractor.setSource(file);
+        startTimer(20);
+        timer.start();
+        extractor.setPosition(pos);
     }
 
 public Q_SLOTS:
     void onVideoFrameExtracted(const QtAV::VideoFrame& frame) {
         view->receive(frame);
         qApp->processEvents();
+        frame.toImage().save(QString::number(frame.timestamp()) + ".png");
         qDebug("frame %dx%d @%f", frame.width(), frame.height(), frame.timestamp());
+        if (++extracted >= nb) {
+            qDebug("elapsed: %lld.", timer.elapsed());
+            return;
+        }
+        extractor.setPosition(pos + extracted*1000);
     }
+protected:
+    void timerEvent(QTimerEvent *) {
+        qApp->processEvents(); // avoid ui blocking if async is not used
+    }
+
 private:
     VideoRenderer *view;
+    qint64 pos;
+    int nb;
+    int extracted;
+    VideoFrameExtractor extractor;
+    QElapsedTimer timer;
 };
 
 int main(int argc, char** argv)
@@ -67,19 +106,12 @@ int main(int argc, char** argv)
     bool async = a.arguments().contains("-async");
 
 
-    VideoFrameExtractor extractor;
-    extractor.setAsync(async);
     VideoFrameObserver obs;
-    QObject::connect(&extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), &obs, SLOT(onVideoFrameExtracted(QtAV::VideoFrame)));
-    extractor.setSource(file);
-
-    QElapsedTimer timer;
-    timer.start();
-    for (int i = 0; i < n; ++i) {
-        // async does not work. you have to set a new position when frameExtracted is emitted
-        extractor.setPosition(t + 1000*i);
-    }
-    qDebug("elapsed: %lld", timer.elapsed());
+    obs.setParameters(t*1000, n);
+    if (async)
+        obs.startAsync(file);
+    else
+        obs.start(file);
     return a.exec();
 }
 

@@ -1,4 +1,5 @@
 #include <QCoreApplication>
+#include <QtDebug>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QStringList>
 #include <QtAV/AVDemuxer.h>
@@ -16,8 +17,26 @@ int main(int argc, char *argv[])
         file = a.arguments().at(idx + 1);
     QString decName("FFmpeg");
     idx = a.arguments().indexOf("-vc");
+    if (idx < 0)
+        idx = a.arguments().indexOf("-vd");
     if (idx > 0)
         decName = a.arguments().at(idx + 1);
+
+    QString opt;
+    QVariantHash decopt;
+    idx = decName.indexOf(":");
+    if (idx > 0) {
+        opt = decName.right(decName.size() - idx -1);
+        decName = decName.left(idx);
+        QStringList opts(opt.split(";"));
+        QVariantHash subopt;
+        foreach (QString o, opts) {
+            idx = o.indexOf(":");
+            subopt[o.left(idx)] = o.right(o.size() - idx - 1);
+        }
+        decopt[decName] = subopt;
+    }
+    qDebug() << decopt;
 
     VideoDecoderId cid = VideoDecoderFactory::id(decName.toStdString());
     if (cid <= 0) {
@@ -25,6 +44,8 @@ int main(int argc, char *argv[])
         return 1;
     }
     VideoDecoder *dec = VideoDecoderFactory::create(cid);
+    if (!decopt.isEmpty())
+        dec->setOptions(decopt);
     AVDemuxer demux;
     demux.setMedia(file);
     if (!demux.load()) {
@@ -46,11 +67,8 @@ int main(int argc, char *argv[])
             continue;
         const Packet pkt = demux.packet();
         if (dec->decode(pkt)) {
-            /*
-             * TODO: may contains more than 1 frames
-             * map from gpu or not?
-             */
-            //frame = dec->frame().clone();
+            VideoFrame frame = dec->frame(); // why is faster to call frame() for hwdec? no frame() is very slow for VDA
+            Q_UNUSED(frame);
             count++;
             printf("decode count: %d\r", count);fflush(0);
         }
