@@ -374,6 +374,11 @@ bool AVDemuxer::readFrame()
                 // AVFMT_NOFILE(e.g. network streams) stream has no pb
                 || avio_feof(d->format_ctx->pb)) {
             if (!d->eof) {
+                if (getInterruptStatus()) { //eof error if interrupted!
+                    AVError::ErrorCode ec(AVError::ReadError);
+                    QString msg(tr("error reading stream data"));
+                    handleError(ret, &ec, msg);
+                }
                 d->eof = true;
 #if 0 // EndOfMedia when demux thread finished
                 d->started = false;
