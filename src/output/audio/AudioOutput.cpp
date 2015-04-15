@@ -579,16 +579,28 @@ void AudioOutput::waitForNextBuffer()
     if (f & AudioOutputBackend::Blocking) {
         remove = 1;
     } else if (f & AudioOutputBackend::Callback) {
+#if AO_USE_TIMER
+        d.timer.restart();
+#endif //AO_USE_TIMER
         int processed = d.processed_remain;
         d.processed_remain = d.backend->getWritableBytes();
         const int next = d.frame_infos.front().data_size;
         //qDebug("remain: %d-%d, size: %d, next: %d", processed, d.processed_remain, d.data.size(), next);
+        qint64 last_wait = 0LL;
         while (d.processed_remain - processed < next || d.processed_remain < d.data.size()) { //implies next > 0
             const qint64 us = d.format.durationForBytes(next - (d.processed_remain - processed));
             QMutexLocker lock(&d.mutex);
             Q_UNUSED(lock);
             d.cond.wait(&d.mutex, us/1000LL);
             d.processed_remain = d.backend->getWritableBytes();
+            if (us == last_wait
+#if AO_USE_TIMER
+                    && d.timer.elapsed() > 1000
+#endif //AO_USE_TIMER
+                    ) {
+                break;
+            }
+            last_wait = us;
         }
         processed = d.processed_remain - processed;
         d.processed_remain -= d.data.size(); //ensure d.processed_remain later is greater
