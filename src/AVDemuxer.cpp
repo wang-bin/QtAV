@@ -692,6 +692,7 @@ bool AVDemuxer::load()
         QString msg = tr("failed to open media");
         handleError(ret, &ec, msg);
         qWarning() << "Can't open media: " << msg;
+        Q_EMIT unloaded(); //context not ready. so will not emit in unload()
         return false;
     }
     //deprecated
@@ -706,6 +707,7 @@ bool AVDemuxer::load()
         QString msg(tr("failed to find stream info"));
         handleError(ret, &ec, msg);
         qWarning() << "Can't find stream info: " << msg;
+        // context is ready. unloaded() will be emitted in unload()
         return false;
     }
 
