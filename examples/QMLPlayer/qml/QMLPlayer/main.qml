@@ -103,11 +103,11 @@ Rectangle {
             }
         }
         onStatusChanged: {
-            if (status == MediaPlayer.LoadingMedia)
+            if (status == MediaPlayer.Loading)
                 msg.info("Loading " + source)
-            else if (status == MediaPlayer.BufferingMedia)
+            else if (status == MediaPlayer.Buffering)
                 msg.info("Buffering")
-            else if (status == MediaPlayer.BufferedMedia)
+            else if (status == MediaPlayer.Buffered)
                 msg.info("Buffered")
             else if (status == MediaPlayer.EndOfMedia)
                 msg.info("End")

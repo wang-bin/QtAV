@@ -143,13 +143,13 @@ Module {
         Enum {
             name: "Status"
             values: {
-                "UnknownMediaStatus": 0,
+                "UnknownStatus": 0,
                 "NoMedia": 1,
-                "LoadingMedia": 2,
-                "LoadedMedia": 3,
-                "StalledMedia": 4,
-                "BufferingMedia": 5,
-                "BufferedMedia": 6,
+                "Loading": 2,
+                "Loaded": 3,
+                "Stalled": 4,
+                "Buffering": 5,
+                "Buffered": 6,
                 "EndOfMedia": 7,
                 "InvalidMedia": 8
             }

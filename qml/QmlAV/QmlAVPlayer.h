@@ -76,13 +76,13 @@ public:
         PausedState
     };
     enum Status {
-        UnknownMediaStatus = QtAV::UnknownMediaStatus, // e.g. user status after interrupt
+        UnknownStatus = QtAV::UnknownMediaStatus, // e.g. user status after interrupt
         NoMedia = QtAV::NoMedia,
-        LoadingMedia = QtAV::LoadingMedia, // when source is set
-        LoadedMedia = QtAV::LoadedMedia, // if auto load and source is set. player is stopped state
-        StalledMedia = QtAV::StalledMedia,
-        BufferingMedia = QtAV::BufferingMedia,
-        BufferedMedia = QtAV::BufferedMedia, // when playing
+        Loading = QtAV::LoadingMedia, // when source is set
+        Loaded = QtAV::LoadedMedia, // if auto load and source is set. player is stopped state
+        Stalled = QtAV::StalledMedia,
+        Buffering = QtAV::BufferingMedia,
+        Buffered = QtAV::BufferedMedia, // when playing
         EndOfMedia = QtAV::EndOfMedia,
         InvalidMedia = QtAV::InvalidMedia
     };
