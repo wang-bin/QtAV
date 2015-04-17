@@ -1331,7 +1331,10 @@ BufferMode AVPlayer::bufferMode() const
 
 void AVPlayer::setBufferValue(int value)
 {
+    if (d->buffer_value == value)
+        return;
     d->buffer_value = value;
+    d->updateBufferValue();
 }
 
 int AVPlayer::bufferValue() const

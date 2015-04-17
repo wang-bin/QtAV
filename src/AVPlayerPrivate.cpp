@@ -288,7 +288,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     AVCodecContext *avctx = demuxer.audioCodecContext();
     if (!avctx) {
-        // TODO: close ao?
+        // TODO: close ao? //TODO: check pulseaudio perapp control if closed
         return false;
     }
     qDebug("has audio");
@@ -371,16 +371,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     }
     athread->setDecoder(adec);
     setAVOutput(ao, ao, athread);
-    // if has video, then audio buffer should not block the video buffer (bufferValue == 1, modified in AVDemuxThread)
-    // TODO: buf if video stream is only a cover picture, audio buffer should be the primary buffer and BufferTime is preferred(call setBufferMode/Value)
-    int bv = statistics.audio.frame_rate > 0 && statistics.audio.frame_rate < 60 ?
-                statistics.audio.frame_rate : 1;
-    if (buffer_mode == BufferTime)
-        bv = 600; //ms
-    else if (buffer_mode == BufferBytes)
-        bv = 1024;
-    athread->packetQueue()->setBufferMode(buffer_mode);
-    athread->packetQueue()->setBufferValue(buffer_value < 0 ? bv : buffer_value);
+    updateBufferValue(athread->packetQueue());
     initAudioStatistics(demuxer.audioStream());
     return true;
 }
@@ -447,19 +438,41 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
     vthread->setBrightness(brightness);
     vthread->setContrast(contrast);
     vthread->setSaturation(saturation);
+    updateBufferValue(vthread->packetQueue());
+    initVideoStatistics(demuxer.videoStream());
+    return true;
+}
+
+// TODO: set to a lower value when buffering
+void AVPlayer::Private::updateBufferValue(PacketBuffer* buf)
+{
+    const bool video = vthread && buf == vthread->packetQueue();
     const qreal fps = qMax<qreal>(24.0, statistics.video.frame_rate);
     int bv = 0.6*fps;
+    if (!video) {
+        // if has video, then audio buffer should not block the video buffer (bufferValue == 1, modified in AVDemuxThread)
+        bv = statistics.audio.frame_rate > 0 && statistics.audio.frame_rate < 60 ?
+                        statistics.audio.frame_rate : 1;
+    }
     if (buffer_mode == BufferTime)
         bv = 600; //ms
     else if (buffer_mode == BufferBytes)
         bv = 1024;
     // no block for music with cover
-    if (demuxer.hasAttacedPicture() || (statistics.video.frames > 0 && statistics.video.frames < bv))
-        bv = qMax<int>(1, statistics.video.frames);
-    vthread->packetQueue()->setBufferMode(buffer_mode);
-    vthread->packetQueue()->setBufferValue(buffer_value < 0 ? bv : buffer_value);
-    initVideoStatistics(demuxer.videoStream());
-    return true;
+    if (video) {
+        if (demuxer.hasAttacedPicture() || (statistics.video.frames > 0 && statistics.video.frames < bv))
+            bv = qMax<int>(1, statistics.video.frames);
+    }
+    buf->setBufferMode(buffer_mode);
+    buf->setBufferValue(buffer_value < 0 ? bv : buffer_value);
+}
+
+void AVPlayer::Private::updateBufferValue()
+{
+    if (athread)
+        updateBufferValue(athread->packetQueue());
+    if (vthread)
+        updateBufferValue(vthread->packetQueue());
 }
 
 } //namespace QtAV

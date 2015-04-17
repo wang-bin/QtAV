@@ -50,7 +50,9 @@ public:
 
     bool setupAudioThread(AVPlayer *player);
     bool setupVideoThread(AVPlayer *player);
-
+    // TODO: what if buffer mode changed during playback?
+    void updateBufferValue(PacketBuffer *buf);
+    void updateBufferValue();
     //TODO: addAVOutput()
     template<class Out>
     void setAVOutput(Out *&pOut, Out *pNew, AVThread *thread) {
@@ -94,7 +96,6 @@ public:
             old = 0;
         }
     }
-
 
     bool auto_load;
     bool async_load;
