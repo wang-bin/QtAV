@@ -55,8 +55,16 @@ MiscPage::MiscPage()
     gl->addWidget(new QLabel(tr("Buffer frames")), r, 0);
     m_buffer_value = new QSpinBox();
     m_buffer_value->setRange(-1, 32767);
-    m_buffer_value->setToolTip("-1: auto. Reopen to apply");
+    m_buffer_value->setToolTip("-1: auto");
     gl->addWidget(m_buffer_value, r++, 1);
+
+    gl->addWidget(new QLabel(tr("Timeout") + "(" + tr("s") +")"), r, 0);
+    m_timeout = new QDoubleSpinBox();
+    m_timeout->setDecimals(3);
+    m_timeout->setSingleStep(1.0);
+    m_timeout->setMinimum(-0.5);
+    m_timeout->setToolTip("<=0: never");
+    gl->addWidget(m_timeout, r++, 1);
 
     m_angle = new QCheckBox("Force OpenGL ANGLE (Windows)");
     gl->addWidget(m_angle, r++, 0);
@@ -78,6 +86,7 @@ void MiscPage::applyFromUi()
             .setANGLE(m_angle->isChecked())
             .setForceFrameRate(m_fps->value())
             .setBufferValue(m_buffer_value->value())
+            .setTimeout(m_timeout->value());
             ;
 }
 
@@ -90,4 +99,5 @@ void MiscPage::applyToUi()
     m_fps->setValue(Config::instance().forceFrameRate());
     //m_notify_interval->setValue(Config::instance().avfilterOptions());
     m_buffer_value->setValue(Config::instance().bufferValue());
+    m_timeout->setValue(Config::instance().timeout());
 }

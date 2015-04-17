@@ -123,6 +123,7 @@ private slots:
     void onCaptureConfigChanged();
     void onAVFilterVideoConfigChanged();
     void onAVFilterAudioConfigChanged();
+    void onBufferValueChanged();
 
     void donate();
     void setup();

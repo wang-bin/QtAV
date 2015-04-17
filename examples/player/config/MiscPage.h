@@ -41,6 +41,7 @@ private:
     QSpinBox *m_notify_interval;
     QDoubleSpinBox *m_fps;
     QSpinBox *m_buffer_value;
+    QDoubleSpinBox *m_timeout;
     QCheckBox *m_angle;
 };
 

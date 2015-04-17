@@ -161,6 +161,7 @@ void MainWindow::initPlayer()
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(avfilterVideoChanged()), SLOT(onAVFilterVideoConfigChanged()));
     connect(&Config::instance(), SIGNAL(avfilterAudioChanged()), SLOT(onAVFilterAudioConfigChanged()));
+    connect(&Config::instance(), SIGNAL(bufferValueChanged()), SLOT(onBufferValueChanged()));
     connect(mpStopBtn, SIGNAL(clicked()), this, SLOT(stopUnload()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
@@ -728,6 +729,7 @@ void MainWindow::play(const QString &name)
     mpPlayer->enableAudio(!mNullAO);
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
+    mpPlayer->setInterruptTimeout(Config::instance().timeout()*1000.0);
     mpPlayer->setBufferMode(QtAV::BufferPackets);
     mpPlayer->setBufferValue(Config::instance().bufferValue());
     mpPlayer->setRepeat(mRepeateMax);
@@ -782,7 +784,10 @@ void MainWindow::togglePlayPause()
     } else {
         if (mFile.isEmpty())
             return;
-        mpPlayer->play();
+        if (!mpPlayer->isPlaying())
+            play(mFile);
+        else
+            mpPlayer->play();
         mpPlayPauseBtn->setIconWithSates(mPausePixmap);
     }
 }
@@ -1424,6 +1429,13 @@ void MainWindow::donate()
 {
     //QDesktopServices::openUrl(QUrl("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0/"));
     QDesktopServices::openUrl(QUrl("http://www.qtav.org/#donate"));
+}
+
+void MainWindow::onBufferValueChanged()
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setBufferValue(Config::instance().bufferValue());
 }
 
 void MainWindow::setup()

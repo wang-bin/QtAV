@@ -17,7 +17,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-
 #include "Config.h"
 #include <QtCore/QSettings>
 #include <QtCore/QCoreApplication>
@@ -46,6 +45,7 @@ public:
 
     void load() {
         QSettings settings(file, QSettings::IniFormat);
+        timeout = settings.value("timeout", 30.0).toReal();
         force_fps = settings.value("force_fps", 0.0).toReal();
         settings.beginGroup("decoder");
         settings.beginGroup("video");
@@ -117,6 +117,8 @@ public:
     void save() {
         qDebug() << "sync config to " << file;
         QSettings settings(file, QSettings::IniFormat);
+        // TODO: why crash on mac qt5.4 if call on aboutToQuit()
+        settings.setValue("timeout", timeout);
         settings.setValue("force_fps", force_fps);
         settings.beginGroup("decoder");
         settings.beginGroup("video");
@@ -199,7 +201,7 @@ public:
     int preview_w, preview_h;
 
     bool angle;
-
+    qreal timeout;
     int buffer_value;
 };
 
@@ -641,6 +643,19 @@ Config& Config::setBufferValue(int value)
     return *this;
 }
 
+qreal Config::timeout() const
+{
+    return mpData->timeout;
+}
+
+Config& Config::setTimeout(qreal value)
+{
+    if (mpData->timeout == value)
+        return *this;
+    mpData->timeout = value;
+    emit timeoutChanged();
+    return *this;
+}
 void Config::save()
 {
     mpData->save();
