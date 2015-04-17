@@ -214,6 +214,8 @@ qreal AVPlayer::speed() const
 
 void AVPlayer::setInterruptTimeout(qint64 ms)
 {
+    if (ms < 0LL)
+        ms = -1LL;
     if (d->interrupt_timeout == ms)
         return;
     d->interrupt_timeout = ms;

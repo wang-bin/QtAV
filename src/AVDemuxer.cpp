@@ -150,6 +150,8 @@ public:
         default:
             break;
         }
+        if (handler->mTimeout < 0)
+            return 0;
         if (!handler->mTimer.isValid()) {
             qDebug("timer is not valid, start it");
             handler->mTimer.start();

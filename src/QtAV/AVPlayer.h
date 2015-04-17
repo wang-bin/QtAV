@@ -220,7 +220,7 @@ public:
     /*!
      * \brief setInterruptTimeout
      * Abort current operation(open, read) if it spends too much time.
-     * \param value
+     * \param ms milliseconds. <0: never interrupt.
      */
     void setInterruptTimeout(qint64 ms);
     qint64 interruptTimeout() const;
@@ -358,7 +358,8 @@ public slots:
     BufferMode bufferMode() const;
     /*!
      * \brief setBufferValue
-     * Ensure the buffered msecs/bytes/packets in queue is at least the given value before playback starts
+     * Ensure the buffered msecs/bytes/packets in queue is at least the given value before playback starts.
+     * Set before playback starts.
      * \param value <0: auto; BufferBytes: bytes, BufferTime: msecs, BufferPackets: packets count
      */
     void setBufferValue(int value);
