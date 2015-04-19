@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
  <Installer>
      <Name>QtAV</Name>
-     <Version>1.3.3</Version>
-     <Title>QtAV Installer</Title>
-     <Publisher>wbsecg1@gmail.com</Publisher>
+     <Version>1.6.0</Version>
+     <Title>QtAV-Multimedia playback framework</Title>
+     <Publisher>WangBin wbsecg1@gmail.com</Publisher>
      <ProductUrl>http://www.qtav.org</ProductUrl>
      <Logo></Logo>
      <Watermark></Watermark>
-     <RunProgram></RunProgram>
-     <RunProgramArguments></RunProgramArguments>
+     <ControlScript>control.js</ControlScript>
      <RunProgramDescription></RunProgramDescription>
      <AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
-     <Icon></Icon>
      <Background></Background>
      <StartMenuDir>QtAV</StartMenuDir>
      <TargetDir>@rootDir@/QtAV</TargetDir>
