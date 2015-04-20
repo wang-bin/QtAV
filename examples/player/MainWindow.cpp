@@ -162,6 +162,7 @@ void MainWindow::initPlayer()
     connect(&Config::instance(), SIGNAL(avfilterVideoChanged()), SLOT(onAVFilterVideoConfigChanged()));
     connect(&Config::instance(), SIGNAL(avfilterAudioChanged()), SLOT(onAVFilterAudioConfigChanged()));
     connect(&Config::instance(), SIGNAL(bufferValueChanged()), SLOT(onBufferValueChanged()));
+    connect(&Config::instance(), SIGNAL(abortOnTimeoutChanged()), SLOT(onAbortOnTimeoutChanged()));
     connect(mpStopBtn, SIGNAL(clicked()), this, SLOT(stopUnload()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
@@ -729,6 +730,7 @@ void MainWindow::play(const QString &name)
     mpPlayer->enableAudio(!mNullAO);
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
+    mpPlayer->setInterruptOnTimeout(Config::instance().abortOnTimeout());
     mpPlayer->setInterruptTimeout(Config::instance().timeout()*1000.0);
     mpPlayer->setBufferMode(QtAV::BufferPackets);
     mpPlayer->setBufferValue(Config::instance().bufferValue());
@@ -1299,11 +1301,15 @@ void MainWindow::onMediaStatusChanged()
     case LoadedMedia:
         status = "Loaded";
         break;
+    case StalledMedia:
+        status = "Stalled";
+        break;
     default:
         status = "";
         onStopPlay();
         break;
     }
+    qDebug() << "status changed " << status;
     setWindowTitle(status + " " + mTitle);
 }
 
@@ -1436,6 +1442,13 @@ void MainWindow::onBufferValueChanged()
     if (!mpPlayer)
         return;
     mpPlayer->setBufferValue(Config::instance().bufferValue());
+}
+
+void MainWindow::onAbortOnTimeoutChanged()
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setInterruptOnTimeout(Config::instance().abortOnTimeout());
 }
 
 void MainWindow::setup()

@@ -124,6 +124,7 @@ private slots:
     void onAVFilterVideoConfigChanged();
     void onAVFilterAudioConfigChanged();
     void onBufferValueChanged();
+    void onAbortOnTimeoutChanged();
 
     void donate();
     void setup();

@@ -145,6 +145,10 @@ public:
     // ms >0. default 30000ms
     qreal timeout() const;
     Config& setTimeout(qreal value);
+
+    bool abortOnTimeout() const;
+    Config& setAbortOnTimeout(bool value);
+
     // <0: auto
     int bufferValue() const;
     Config& setBufferValue(int value);
@@ -177,6 +181,7 @@ public:
     Q_SIGNAL void avformatOptionsEnabledChanged();
     Q_SIGNAL void bufferValueChanged();
     Q_SIGNAL void timeoutChanged();
+    Q_SIGNAL void abortOnTimeoutChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();

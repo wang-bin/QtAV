@@ -36,10 +36,11 @@ MiscPage::MiscPage()
     m_preview_h = new QSpinBox();
     m_preview_h->setRange(1, 1080);
     gl->addWidget(new QLabel(tr("Preview") + " " + tr("size") + ": "), r, 0);
-    gl->addWidget(m_preview_w, r, 1);
-    gl->addWidget(new QLabel("x"), r, 2);
-    gl->addWidget(m_preview_h, r, 3);
-
+    QHBoxLayout *hb = new QHBoxLayout();
+    hb->addWidget(m_preview_w);
+    hb->addWidget(new QLabel("x"));
+    hb->addWidget(m_preview_h);
+    gl->addLayout(hb, r, 1);
     r++;
     gl->addWidget(new QLabel(tr("Force fps")), r, 0);
     m_fps = new QDoubleSpinBox();
@@ -63,8 +64,12 @@ MiscPage::MiscPage()
     m_timeout->setDecimals(3);
     m_timeout->setSingleStep(1.0);
     m_timeout->setMinimum(-0.5);
-    m_timeout->setToolTip("<=0: never");
-    gl->addWidget(m_timeout, r++, 1);
+    m_timeout->setToolTip("<=0: never");    
+    m_timeout_abort = new QCheckBox(tr("Abort"));
+    hb = new QHBoxLayout();
+    hb->addWidget(m_timeout);
+    hb->addWidget(m_timeout_abort);
+    gl->addLayout(hb, r++, 1);
 
     m_angle = new QCheckBox("Force OpenGL ANGLE (Windows)");
     gl->addWidget(m_angle, r++, 0);
@@ -86,7 +91,8 @@ void MiscPage::applyFromUi()
             .setANGLE(m_angle->isChecked())
             .setForceFrameRate(m_fps->value())
             .setBufferValue(m_buffer_value->value())
-            .setTimeout(m_timeout->value());
+            .setTimeout(m_timeout->value())
+            .setAbortOnTimeout(m_timeout_abort->isChecked())
             ;
 }
 
@@ -100,4 +106,5 @@ void MiscPage::applyToUi()
     //m_notify_interval->setValue(Config::instance().avfilterOptions());
     m_buffer_value->setValue(Config::instance().bufferValue());
     m_timeout->setValue(Config::instance().timeout());
+    m_timeout_abort->setChecked(Config::instance().abortOnTimeout());
 }
