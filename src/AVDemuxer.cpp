@@ -80,6 +80,8 @@ public:
     InterruptHandler(AVDemuxer* demuxer, int timeout = 30000)
       : mStatus(0)
       , mTimeout(timeout)
+      , mTimeoutAbort(true)
+      , mEmitError(true)
       //, mLastTime(0)
       , mAction(Open)
       , mpDemuxer(demuxer)
@@ -95,6 +97,7 @@ public:
 #endif
     }
     void begin(Action act) {
+        mEmitError = true;
         mAction = act;
         mTimer.start();
     }
@@ -114,6 +117,16 @@ public:
     }
     qint64 getTimeout() const { return mTimeout; }
     void setTimeout(qint64 timeout) { mTimeout = timeout; }
+    bool setInterruptOnTimeout(bool value) {
+        if (mTimeoutAbort == value)
+            return false;
+        mTimeoutAbort = value;
+        if (mTimeoutAbort) {
+            mEmitError = true;
+        }
+        return true;
+    }
+    bool isInterruptOnTimeout() const {return mTimeoutAbort;}
     int getStatus() const { return mStatus; }
     void setStatus(int status) { mStatus = status; }
     /*
@@ -153,7 +166,7 @@ public:
         if (handler->mTimeout < 0)
             return 0;
         if (!handler->mTimer.isValid()) {
-            qDebug("timer is not valid, start it");
+            //qDebug("timer is not valid, start it");
             handler->mTimer.start();
             //handler->mLastTime = handler->mTimer.elapsed();
             return 0;
@@ -175,11 +188,22 @@ public:
         } else if (handler->mAction == Read) {
             handler->mStatus = int(AVError::ReadTimedout);
         }
-        return 1;
+        if (handler->mTimeoutAbort)
+            return 1;
+        // emit demuxer error, handleerror
+        if (handler->mEmitError) {
+            handler->mEmitError = false;
+            AVError::ErrorCode ec = AVError::ErrorCode(handler->mStatus);
+            QString es;
+            handler->mpDemuxer->handleError(AVERROR_EXIT, &ec, es);
+        }
+        return 0;
     }
 private:
     int mStatus;
     qint64 mTimeout;
+    bool mTimeoutAbort;
+    bool mEmitError;
     //qint64 mLastTime;
     Action mAction;
     AVDemuxer *mpDemuxer;
@@ -975,6 +999,16 @@ void AVDemuxer::setInterruptTimeout(qint64 timeout)
     d->interrupt_hanlder->setTimeout(timeout);
 }
 
+bool AVDemuxer::isInterruptOnTimeout() const
+{
+    return d->interrupt_hanlder->isInterruptOnTimeout();
+}
+
+void AVDemuxer::setInterruptOnTimeout(bool value)
+{
+    d->interrupt_hanlder->setInterruptOnTimeout(value);
+}
+
 int AVDemuxer::getInterruptStatus() const
 {
     return d->interrupt_hanlder->getStatus();
@@ -1125,11 +1159,13 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     QString err_msg(msg);
     if (interrupted) { // interrupted by callback, so can not determine whether the media is valid
         // insufficient buffering or other interruptions
-        setMediaStatus(StalledMedia);
         if (getInterruptStatus() < 0) {
+            setMediaStatus(StalledMedia);
             emit userInterrupted();
             err_msg += " [" + tr("interrupted by user") + "]";
         } else {
+            if (isInterruptOnTimeout())
+                setMediaStatus(StalledMedia);
             // averr is eof for open timeout
             err_msg += " [" + tr("timeout") + "]";
         }

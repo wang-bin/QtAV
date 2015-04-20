@@ -65,6 +65,7 @@ Item {
     property alias fastSeek: player.fastSeek
     property alias opengl: videoOut.opengl
     property alias timeout: player.timeout
+    property alias abortOnTimeout: player.abortOnTimeout
     property alias subtitle: subtitle
     property alias subtitleText: text_sub // not for ass.
     /*** Properties of VideoOutput ***/

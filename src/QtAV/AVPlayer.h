@@ -55,6 +55,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(qint64 repeat READ repeat WRITE setRepeat NOTIFY repeatChanged)
     Q_PROPERTY(int currentRepeat READ currentRepeat NOTIFY currentRepeatChanged)
     Q_PROPERTY(qint64 interruptTimeout READ interruptTimeout WRITE setInterruptTimeout NOTIFY interruptTimeoutChanged)
+    Q_PROPERTY(bool interruptOnTimeout READ isInterruptOnTimeout WRITE setInterruptOnTimeout NOTIFY interruptOnTimeoutChanged)
     Q_PROPERTY(int notifyInterval READ notifyInterval WRITE setNotifyInterval NOTIFY notifyIntervalChanged)
     Q_PROPERTY(int brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
@@ -219,11 +220,19 @@ public:
 
     /*!
      * \brief setInterruptTimeout
-     * Abort current operation(open, read) if it spends too much time.
+     * Emit error(usually network error) if open/read spends too much time.
+     * If isInterruptOnTimeout() is true, abort current operation and stop playback
      * \param ms milliseconds. <0: never interrupt.
      */
+    /// TODO: rename to timeout
     void setInterruptTimeout(qint64 ms);
     qint64 interruptTimeout() const;
+    /*!
+     * \brief setInterruptOnTimeout
+     * \param value
+     */
+    void setInterruptOnTimeout(bool value);
+    bool isInterruptOnTimeout() const;
     /*!
      * \brief setFrameRate
      * Force the (video) frame rate to a given value.
@@ -401,6 +410,7 @@ signals:
     void seekableChanged();
     void positionChanged(qint64 position);
     void interruptTimeoutChanged();
+    void interruptOnTimeoutChanged();
     void notifyIntervalChanged();
     void brightnessChanged(int val);
     void contrastChanged(int val);

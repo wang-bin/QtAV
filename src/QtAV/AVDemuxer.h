@@ -147,6 +147,8 @@ public:
      * @param timeout in ms
      */
     void setInterruptTimeout(qint64 timeout);
+    bool isInterruptOnTimeout() const;
+    void setInterruptOnTimeout(bool value);
     /**
      * @brief getInterruptStatus return the interrupt status.
      * \return -1: interrupted by user
@@ -187,6 +189,7 @@ private:
     class Private;
     QScopedPointer<Private> d;
     class InterruptHandler;
+    friend class InterruptHandler;
 };
 
 } //namespace QtAV

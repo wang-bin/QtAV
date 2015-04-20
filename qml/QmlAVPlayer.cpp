@@ -280,6 +280,21 @@ int QmlAVPlayer::timeout() const
     return m_timeout;
 }
 
+void QmlAVPlayer::setAbortOnTimeout(bool value)
+{
+    if (m_abort_timeout == value)
+        return;
+    m_abort_timeout = value;
+    emit abortOnTimeoutChanged();
+    if (mpPlayer)
+        mpPlayer->setInterruptOnTimeout(value);
+}
+
+bool QmlAVPlayer::abortOnTimeout() const
+{
+    return m_abort_timeout;
+}
+
 QStringList QmlAVPlayer::videoCodecPriority() const
 {
     return mVideoCodecs;
@@ -407,6 +422,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
             mpPlayer->pause(false);
         } else {
             mpPlayer->setInterruptTimeout(m_timeout);
+            mpPlayer->setInterruptOnTimeout(m_abort_timeout);
             mpPlayer->setRepeat(mLoopCount - 1);
             if (!vcodec_opt.isEmpty()) {
                 QVariantHash vcopt;
@@ -550,7 +566,7 @@ void QmlAVPlayer::_q_started()
     // applyChannelLayout() first because it may reopen audio device
     applyVolume(); //sender is AVPlayer
 
-    mpPlayer->setMute(isMuted());
+    mpPlayer->audio()->setMute(isMuted());
     mpPlayer->setSpeed(playbackRate());
     // TODO: in load()?
     m_metaData->setValuesFromStatistics(mpPlayer->statistics());

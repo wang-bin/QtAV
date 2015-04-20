@@ -228,6 +228,19 @@ qint64 AVPlayer::interruptTimeout() const
     return d->interrupt_timeout;
 }
 
+void AVPlayer::setInterruptOnTimeout(bool value)
+{
+    if (isInterruptOnTimeout() == value)
+        return;
+    d->demuxer.setInterruptOnTimeout(value);
+    emit interruptOnTimeoutChanged();
+}
+
+bool AVPlayer::isInterruptOnTimeout() const
+{
+    return d->demuxer.isInterruptOnTimeout();
+}
+
 void AVPlayer::setFrameRate(qreal value)
 {
     d->force_fps = value;
