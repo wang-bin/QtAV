@@ -1,6 +1,6 @@
 #/bin/bash
 #TODO: test both x86 x64. cc test then build with gcc -m32 -m64 or --enable-cross-compile --target-os=linux --arch=x86
-# Author: wbsecg1@gmail.com 2013-2014
+# Author: wbsecg1@gmail.com 2013-2015
 echo "This is part of QtAV project. Get the latest script from https://github.com/wang-bin/QtAV/tree/master/scripts"
 
 # Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
@@ -9,12 +9,13 @@ echo "This is part of QtAV project. Get the latest script from https://github.co
 PLATFORMS="ios|android|maemo5|maemo6|vc|x86"
 echo "Put this script in ffmpeg source dir. Make sure your build environment is correct."
 echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
-echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//|/, }"
+echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }"
 echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
-echo "Author: wbsecg1@gmail.com 2013-2014"
+echo "Author: wbsecg1@gmail.com 2013-2015"
 # TODO: PLATFORM=xxx TARGET=ooo TOOLCHAIN=ttt ./build_ffmpeg.sh
 
 TAGET_FLAG=$1
+TAGET_ARCH_FLAG=$2 #${2:-$1}
 
 if [ -n "$TAGET_FLAG" ]; then
   USER_CONFIG=config-${TAGET_FLAG}.sh
@@ -26,7 +27,7 @@ fi
 : ${NDK_ROOT:="/devel/android/android-ndk-r8e"}
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
-: ${LIB_OPT:="--enable-shared --disable-static"}
+: ${LIB_OPT:="--enable-shared"}
 : ${MISC_OPT="--enable-hwaccels"}#--enable-gpl --enable-version3
 CONFIGURE=configure
 
@@ -40,16 +41,19 @@ tolower(){
 }
 
 #host_is
-function platform_is() {
+platform_is() {
   local name=$1
 #TODO: osx=>darwin
   local line=`uname -a |grep -i $name`
   test -n "$line" && return 0 || return 1
 }
-function target_is() {
+target_is() {
   test "$TAGET_FLAG" = "$1" && return 0 || return 1
 }
-function is_libav() {
+target_arch_is() {
+  test "$TAGET_ARCH_FLAG" = "$1" && return 0 || return 1
+}
+is_libav() {
   test "${PWD/libav*/}" = "$PWD" && return 1 || return 0
 }
 
@@ -78,7 +82,7 @@ FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
-function setup_vc_env() {
+setup_vc_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   #TOOLCHAIN_OPT=
   test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
@@ -101,41 +105,41 @@ function setup_vc_env() {
   fi
 }
 
-function setup_icc_env() {
+setup_icc_env() {
   #TOOLCHAIN_OPT=
   PLATFORM_OPT="--toolchain=icl"
 }
 
-function setup_wince_env() {
+setup_wince_env() {
   WINCEOPT="--enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
   PLATFORM_OPT="$WINCEOPT"
   MISC_OPT=
   INSTALL_DIR=sdk-wince
 }
 
-function setup_android_env() {
-# flags are from https://github.com/yixia/FFmpeg-Android
-  ANDROID_TOOLCHAIN="/tmp/ndk-toolchain" #$NDK_ROOT/toolchains/arm-linux-androideabi-4.7/prebuilt/linux-x86_64/bin
-  ANDROID_SYSROOT="$ANDROID_TOOLCHAIN/sysroot" #"$NDK_ROOT/platforms/android-14/arch-arm"
-:<<EOC
-  ANDROID_CFLAGS="-Wall -mthumb -pipe -fpic -fasm \
-  -fstrict-aliasing \
-  -fmodulo-sched -fmodulo-sched-allow-regmoves \
-  -Wno-psabi -Wa,--noexecstack \
-  -D__ARM_ARCH_5__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5TE__ \
-  -DANDROID -DNDEBUG"
-
-  ANDROID_CLFAGS_NEON="-march=armv7-a -mfpu=neon -mfloat-abi=softfp -mvectorize-with-neon-quad"
-  ANDROID_CFLAGS_ARMV7="-march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp"
-  ANDROID_CFLAGS_VFP="-march=armv6 -mfpu=vfp -mfloat-abi=softfp"
-  ANDROID_CFLAGS_ARMV6="-march=armv6"
-  ANDROID_LDFLAGS_ARMV7="-Wl,--fix-cortex-a8"
-EOC
+setup_android_env() {
+  ANDROID_ARCH=$1
+  test -n "$ANDROID_ARCH" || ANDROID_ARCH=arm
+  ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
+  CROSS_PREFIX=arm-linux-androideabi-
+  FFARCH=$ANDROID_ARCH
+  if [ "$ANDROID_ARCH" = "x86" ]; then
+    #ANDROID_ARCH="i686"
+    ANDROID_TOOLCHAIN_PREFIX="x86"
+    CROSS_PREFIX=i686-linux-android-
+  elif [ "$ANDROID_ARCH" = "mipsel" ]; then
+    ANDROID_TOOLCHAIN_PREFIX="mipsel-linux-android"
+    CROSS_PREFIX=mipsel-linux-android-
+  else
+    FFARCH=armv7-a
+  fi
+  ANDROID_TOOLCHAIN_DIR="/tmp/ndk-toolchain-${ANDROID_ARCH}" #$NDK_ROOT/toolchains/arm-linux-androideabi-4.7/prebuilt/linux-x86_64/bin
+  echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
+  ANDROID_SYSROOT="$ANDROID_TOOLCHAIN_DIR/sysroot" #"$NDK_ROOT/platforms/android-14/arch-arm"
 # --enable-libstagefright-h264
-  ANDROIDOPT="--enable-cross-compile --cross-prefix=arm-linux-androideabi- --target-os=android --arch=armv7-a --sysroot=$ANDROID_SYSROOT --extra-ldflags=\"$ANDROID_LDFLAGS_ARMV7\""
-
-   test -d $ANDROID_TOOLCHAIN || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --toolchain=arm-linux-androideabi-4.6 --install-dir=$ANDROID_TOOLCHAIN #--system=linux-x86_64
-  export PATH=$ANDROID_TOOLCHAIN/bin:$PATH
+  ANDROIDOPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH}"
+  test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-19 --toolchain=${ANDROID_TOOLCHAIN_PREFIX}-4.8 --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
+  export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$PATH
   rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
   rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
 :<<RM
@@ -146,17 +150,26 @@ RM
   MISC_OPT=--disable-avdevice
   PLATFORM_OPT="$ANDROIDOPT"
   EXTRA_CFLAGS="$ANDROID_CFLAGS $ANDROID_CLFAGS_ARMV7"
-  INSTALL_DIR=sdk-android
+  INSTALL_DIR=sdk-android-$ANDROID_ARCH
 }
 
-function setup_ios_env() {
+setup_ios_env() {
+#iphoneos iphonesimulator i386
   PLATFORM_OPT='--enable-cross-compile --arch=arm --target-os=darwin --cc="clang -arch armv7" --sysroot=$(xcrun --sdk iphoneos --show-sdk-path) --cpu=cortex-a8 --enable-pic'
   LIB_OPT="--enable-static"
   MISC_OPT=--disable-avdevice
   INSTALL_DIR=sdk-ios
 }
 
-function setup_maemo5_env() {
+setup_ios_simulator_env() {
+#iphoneos iphonesimulator i386
+  PLATFORM_OPT='--enable-cross-compile --arch=i386 --cpu=i386 --target-os=darwin --cc="clang -arch i386" --sysroot=$(xcrun --sdk iphonesimulator --show-sdk-path) --enable-pic'
+  LIB_OPT="--enable-static"
+  MISC_OPT=--disable-avdevice
+  INSTALL_DIR=sdk-ios-i386
+}
+
+setup_maemo5_env() {
 #--arch=armv7l --cpu=armv7l
 #CLANG=clang
   if [ -n "$CLANG" ]; then
@@ -172,7 +185,7 @@ function setup_maemo5_env() {
   MISC_OPT=--disable-avdevice
   INSTALL_DIR=sdk-maemo5
 }
-function setup_maemo6_env() {
+setup_maemo6_env() {
 #--arch=armv7l --cpu=armv7l
 #CLANG=clang
   if [ -n "$CLANG" ]; then
@@ -190,9 +203,11 @@ function setup_maemo6_env() {
 }
 
 if target_is android; then
-  setup_android_env
+  setup_android_env $TAGET_ARCH_FLAG
 elif target_is ios; then
   setup_ios_env
+elif target_is ios_simulator; then
+  setup_ios_simulator_env
 elif target_is maemo5; then
   setup_maemo5_env
 elif target_is maemo6; then
@@ -229,7 +244,8 @@ else
 fi
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
-CONFIGURE="./$CONFIGURE --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $MISC_OPT --disable-postproc --disable-muxers --disable-encoders $PLATFORM_OPT $TOOLCHAIN_OPT"
+is_libav || MISC_OPT="$MISC_OPT --disable-postproc"
+CONFIGURE="./$CONFIGURE --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $MISC_OPT --disable-muxers --disable-encoders $PLATFORM_OPT $TOOLCHAIN_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
@@ -241,8 +257,6 @@ time eval $CONFIGURE
 if [ $? -eq 0 ]; then
   time (make -j8 install prefix="$PWD/$INSTALL_DIR")
 fi
-
-
 
 # --enable-pic is default  --enable-lto
 # http://cmzx3444.iteye.com/blog/1447366
