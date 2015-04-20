@@ -164,6 +164,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         AVThread *t = av[i];
         if (!t)
             continue;
+        t->packetQueue()->blockEmpty(false); // was buffering
         t->packetQueue()->clear();
     }
     qDebug("seek to %s %lld ms (%f%%)", QTime(0, 0, 0).addMSecs(pos).toString().toUtf8().constData(), pos, double(pos - demuxer->startTime())/double(demuxer->duration())*100.0);
@@ -175,6 +176,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         if (!t)
             continue;
         t->packetQueue()->clear();
+        t->packetQueue()->setBlocking(true); // blockEmpty was false when eof is read.
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
         if (type == AccurateSeek)
             t->packetQueue()->put(Packet());
@@ -408,11 +410,17 @@ void AVDemuxThread::run()
         processNextSeekTask();
         if (demuxer->atEnd()) {
             if (!was_end) {
-                if (aqueue)
+                if (aqueue) {
                     aqueue->put(Packet::createEOF());
-                if (vqueue)
+                    aqueue->blockEmpty(false); // do not block if buffer is not enough. block again on seek
+                }
+                if (vqueue) {
                     vqueue->put(Packet::createEOF());
+                    vqueue->blockEmpty(false);
+                }
             }
+            m_buffering = false;
+            Q_EMIT mediaStatusChanged(QtAV::BufferedMedia);
             was_end = true;
             // wait for a/v thread finished
             msleep(100);
