@@ -448,7 +448,7 @@ void AVPlayer::Private::updateBufferValue(PacketBuffer* buf)
 {
     const bool video = vthread && buf == vthread->packetQueue();
     const qreal fps = qMax<qreal>(24.0, statistics.video.frame_rate);
-    int bv = 0.6*fps;
+    int bv = 0.5*fps;
     if (!video) {
         // if has video, then audio buffer should not block the video buffer (bufferValue == 1, modified in AVDemuxThread)
         bv = statistics.audio.frame_rate > 0 && statistics.audio.frame_rate < 60 ?

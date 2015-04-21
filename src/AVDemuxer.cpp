@@ -97,6 +97,8 @@ public:
 #endif
     }
     void begin(Action act) {
+        if (mStatus > 0)
+            mStatus = 0;
         mEmitError = true;
         mAction = act;
         mTimer.start();
@@ -178,22 +180,27 @@ public:
         if (handler->mTimer.elapsed() < handler->mTimeout)
 #endif
             return 0;
-        qDebug("Timeout expired: %lld/%lld -> quit!", handler->mTimer.elapsed(), handler->mTimeout);
+        qDebug("status: %d, Timeout expired: %lld/%lld -> quit!", (int)handler->mStatus, handler->mTimer.elapsed(), handler->mTimeout);
         handler->mTimer.invalidate();
-        handler->mStatus = int(AVError::ReadTimedout);
-        if (handler->mAction == Open) {
-            handler->mStatus = int(AVError::OpenTimedout);
-        } else if (handler->mAction == FindStreamInfo) {
-            handler->mStatus = int(AVError::FindStreamInfoTimedout);
-        } else if (handler->mAction == Read) {
-            handler->mStatus = int(AVError::ReadTimedout);
+        if (handler->mStatus == 0) {
+            AVError::ErrorCode ec(AVError::ReadTimedout);
+            if (handler->mAction == Open) {
+                ec = AVError::OpenTimedout;
+            } else if (handler->mAction == FindStreamInfo) {
+                ec = AVError::FindStreamInfoTimedout;
+            } else if (handler->mAction == Read) {
+                ec = AVError::ReadTimedout;
+            }
+            handler->mStatus = (int)ec;
+            // maybe changed in other threads
+            //handler->mStatus.testAndSetAcquire(0, ec);
         }
         if (handler->mTimeoutAbort)
             return 1;
         // emit demuxer error, handleerror
         if (handler->mEmitError) {
             handler->mEmitError = false;
-            AVError::ErrorCode ec = AVError::ErrorCode(handler->mStatus);
+            AVError::ErrorCode ec = AVError::ErrorCode(handler->mStatus); //FIXME: maybe changed in other threads
             QString es;
             handler->mpDemuxer->handleError(AVERROR_EXIT, &ec, es);
         }
@@ -392,7 +399,7 @@ bool AVDemuxer::readFrame()
     d->interrupt_hanlder->begin(InterruptHandler::Read);
     int ret = av_read_frame(d->format_ctx, &packet); //0: ok, <0: error/end
     d->interrupt_hanlder->end();
-
+    // TODO: why return 0 if interrupted by user?
     if (ret < 0) {
         //end of file. FIXME: why no d->eof if replaying by seek(0)?
         // ffplay also check pb && pb->error and exit read thread
