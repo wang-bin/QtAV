@@ -25,6 +25,9 @@
 #include <QtQml/QQmlEngine>
 #include <QtQml/QQmlContext>
 #include <QtGui/QScreen>
+#ifdef Q_OS_ANDROID
+#include <QAndroidJniObject>
+#endif
 #include "qtquick2applicationviewer.h"
 #include "../common/ScreenSaver.h"
 #include "../common/common.h"
@@ -42,6 +45,7 @@ int main(int argc, char *argv[])
     }
 
     QGuiApplication app(argc, argv);
+    qDebug() << "arguments======= " << app.arguments();
     set_opengl_backend(options.option("gl").value().toString(), app.arguments().first());
     load_qm(QStringList() << "QMLPlayer", options.value("language").toString());
     QtQuick2ApplicationViewer viewer;
@@ -71,6 +75,8 @@ int main(int argc, char *argv[])
     float sr = options.value("scale").toFloat();
 #if defined(Q_OS_ANDROID)
     sr = r;
+    if (sr > 2.0)
+        sr = 2.0; //FIXME
 #endif
     if (qFuzzyIsNull(sr))
         sr = r;
@@ -81,7 +87,7 @@ int main(int argc, char *argv[])
     else
         qml.prepend("qrc:///");
     viewer.setMainQmlFile(qml);
-    viewer.showExpanded();
+    viewer.show();
     QOption op = options.option("width");
     if (op.isSet())
         viewer.setWidth(op.value().toInt());
@@ -112,18 +118,26 @@ int main(int argc, char *argv[])
         AppEventFilter *ae = new AppEventFilter(player, player);
         qApp->installEventFilter(ae);
     }
+    QString file;
+#ifdef Q_OS_ANDROID
+    file = QAndroidJniObject::callStaticObjectMethod("org.qtav.qmlplayer.QMLPlayerActivity"
+                                                                              , "getUrl"
+                                                                              , "()Ljava/lang/String;")
+            .toString();
+#endif
     if (app.arguments().size() > 1) {
-        QString file = options.value("file").toString();
+        file = options.value("file").toString();
         if (file.isEmpty()) {
             if (argc > 1 && !app.arguments().last().startsWith('-') && !app.arguments().at(argc-2).startsWith('-'))
                 file = app.arguments().last();
         }
-        if (player && !file.isEmpty()) {
-            if (QFile(file).exists())
-                file.prepend("file:"); //qml use url and will add qrc: if no scheme
-            file.replace("\\", "/"); //qurl
-            QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
-        }
+    }
+    qDebug() << "file: " << file;
+    if (player && !file.isEmpty()) {
+        if (!file.startsWith("file:") && QFile(file).exists())
+            file.prepend("file:"); //qml use url and will add qrc: if no scheme
+        file.replace("\\", "/"); //qurl
+        QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
     }
 #endif
     QObject::connect(viewer.rootObject(), SIGNAL(requestFullScreen()), &viewer, SLOT(showFullScreen()));

@@ -1,4 +1,7 @@
 VERSION = $$QTAV_VERSION
+android {
+  QT += androidextras
+}
 *maemo*: DEFINES += Q_OS_MAEMO
 # Add more folders to ship with the application, here
 folder_01.source = qml/QMLPlayer
@@ -42,6 +45,7 @@ mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
 genRC($$TARGET)
 
 DISTFILES += \
+    android/src/org/qtav/qmlplayer/QMLPlayerActivity.java \
     android/gradle/wrapper/gradle-wrapper.jar \
     android/AndroidManifest.xml \
     android/res/values/libs.xml \
