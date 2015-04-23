@@ -13,6 +13,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   }
 }
 CONFIG *= qtavwidgets-buildlib
+staticlib: DEFINES += BUILD_QTAVWIDGETS_STATIC
+
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 #release: DEFINES += QT_NO_DEBUG_OUTPUT
 #var with '_' can not pass to pri?
@@ -94,6 +96,7 @@ config_gdiplus {
   SOURCES += $$QTAVSRC/output/video/GDIRenderer.cpp
   LIBS += -lgdiplus -lgdi32
 }
+
 config_direct2d {
   DEFINES *= QTAV_HAVE_DIRECT2D=1
   !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers

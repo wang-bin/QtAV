@@ -135,8 +135,11 @@ defineReplace(qtLibName) {
 
 #fakelib
 defineReplace(qtStaticLib) {
+# static lib does not have major version flag at the end
 	unset(LIB_FULLNAME)
-	LIB_FULLNAME = $$qtLibName($$1, $$2)
+        TEMPLATE += fakelib
+        LIB_FULLNAME = $$qtLibraryTarget($$1)
+        TEMPLATE -= fakelib
         LIB_FULLNAME = $${QMAKE_PREFIX_STATICLIB}$$member(LIB_FULLNAME, 0).$${QMAKE_EXTENSION_STATICLIB}
 	return($$LIB_FULLNAME)
 }

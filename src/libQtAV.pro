@@ -12,6 +12,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 config_gl: QT += opengl
 }
 CONFIG *= qtav-buildlib
+staticlib: DEFINES += BUILD_QTAV_STATIC
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 
 #mac: simd.prf will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME

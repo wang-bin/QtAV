@@ -25,6 +25,10 @@
 
 #include <QtAV/VideoRendererTypes.h>
 
+
+#ifdef BUILD_QTAVWIDGETS_STATIC
+#define Q_AVWIDGETS_EXPORT
+#else
 #if defined(BUILD_QTAVWIDGETS_LIB)
 #  undef Q_AVWIDGETS_EXPORT
 #  define Q_AVWIDGETS_EXPORT Q_DECL_EXPORT
@@ -32,6 +36,7 @@
 #  undef Q_AVWIDGETS_EXPORT
 #  define Q_AVWIDGETS_EXPORT Q_DECL_IMPORT //only for vc?
 #endif
+#endif //BUILD_QTAVWIDGETS_STATIC
 #define Q_AVWIDGETS_PRIVATE_EXPORT Q_AVWIDGETS_EXPORT
 
 namespace QtAV {

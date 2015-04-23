@@ -11,7 +11,7 @@ TEMPLATE = lib
 DEFINES += BUILD_QOPT_LIB
 
 CONFIG *= common-buildlib staticlib
-
+staticlib: DEFINES += BUILD_COMMON_STATIC
 #var with '_' can not pass to pri?
 PROJECTROOT = $$PWD/../..
 !include(libcommon.pri): error("could not find libcommon.pri")

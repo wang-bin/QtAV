@@ -27,6 +27,9 @@
 #include <QtCore/qglobal.h>
 #include "dptr.h"
 
+#ifdef BUILD_QTAV_STATIC
+#define Q_AV_EXPORT
+#else
 #if defined(BUILD_QTAV_LIB)
 #  undef Q_AV_EXPORT
 #  define Q_AV_EXPORT Q_DECL_EXPORT
@@ -34,6 +37,7 @@
 #  undef Q_AV_EXPORT
 #  define Q_AV_EXPORT Q_DECL_IMPORT //only for vc?
 #endif
+#endif //BUILD_QTAV_STATIC
 #define Q_AV_PRIVATE_EXPORT Q_AV_EXPORT
 
 /* runtime version. used to compare with compile time version */
