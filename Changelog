@@ -1,3 +1,32 @@
+version 1.6.0 2015-04-23
+
+Changlog:
+- VDA: use NV12 as default format. Support 0 copy. Better performance than any other playrs
+- CUDA: fix wrong bitstream filters
+- OpenGL:
+  * PBO support (enable by enviroment var QTAV_PBO=1)
+  * rectangle texture support
+  * packed yuv formats support
+- Support buffer progress, buffer value control
+- Support frame rate setup (AVPlayer::setFrameRate())
+- Support RAW streams, such as h264, yuv
+- Audio filter support
+- Better libavfilter support. Now support libav avfilter, support audio filters from libavfilter
+- Add pulseaudio support
+- Detect volume change by per-app volume control
+- Simplify audio output API
+- Volume and mute control by audio backend API
+- Use float audio sample if possible
+- Fix iOS static link error
+- Fix error handling, EOF detect, Qt4.7 build etc.
+- Deploy: add qml, fix lib name, deploy sdk from installer, mingw deployment on linux.
+- player/QMLPlayer:
+  * decoder detail
+  * more options: preview config, buffer, fps, timeout
+  * unregister context menu(win32) if uninstalled, ifw2.0
+  * QMLPlayer file associate for android
+
+
 version 1.5.0 2015-02-13
 
 Changelog:
@@ -23,7 +52,7 @@ Changelog:
   * Fast seek and display if seek shortcut is pressed and hold
 
 
-version 1.4.2 2015-02-13
+version 1.4.2 2014-12-27
 
 Changelog:
 - Async load

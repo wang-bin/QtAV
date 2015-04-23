@@ -173,7 +173,7 @@
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>player</string>
+	<string>@EXECUTABLE@</string>
 	<key>CFBundleIconFile</key>
 	<string>QtAV.icns</string>
 	<key>CFBundleIdentifier</key>

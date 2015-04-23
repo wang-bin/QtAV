@@ -1,3 +1,29 @@
+qtav (1.6.0) unstable; urgency=low
+
+  * VDA: use NV12 as default format. Support 0 copy. Better performance than any other playrs
+  * CUDA: fix wrong bitstream filters
+  * PBO support (enable by enviroment var QTAV_PBO=1)
+  * Rectangle texture support
+  * Packed yuv formats support
+  * Support buffer progress, buffer value control
+  * Support frame rate setup (AVPlayer::setFrameRate())
+  * Support RAW streams, such as h264, yuv
+  * Audio filter support
+  * Better libavfilter support. Now support libav avfilter, support audio filters from libavfilter
+  * Add pulseaudio support
+  * Detect volume change by per-app volume control
+  * Simplify audio output API
+  * Volume and mute control by audio backend API
+  * Use float audio sample if possible
+  * Fix iOS static link error
+  * Fix error handling, EOF detect, Qt4.7 build etc.
+  * Deploy: add qml, fix lib name, deploy sdk from installer, mingw deployment on linux.
+  * player: decoder detail, more options: preview config, buffer, fps, timeout
+  * Unregister context menu(win32) if uninstalled, ifw2.0
+  * QMLPlayer file associate for android
+
+ -- Wang Bin <wbsecg1@gmail.com>  Sat, 13 Feb 2015 20:19:00 +0800
+
 qtav (1.5.0) unstable; urgency=low
 
   * Add QtAVWidgets module contains widget based renderers, video preview widget
@@ -18,7 +44,7 @@ qtav (1.5.0) unstable; urgency=low
   * player: real time preview on progress bar
   * Fast seek and display if seek shortcut is pressed and hold
 
- -- Wang Bin <wbsecg1@gmail.com>  Sat, 13 Feb 2015 20:19:00 +0800
+ -- Wang Bin <wbsecg1@gmail.com>  Thu, 23 Apr 2015 18:00:00 +0800
 
 qtav (1.4.2) unstable; urgency=low
 

@@ -66,7 +66,7 @@ Component.prototype.createOperations = function()
         component.addOperation("CreateShortcut", "@TargetDir@/bin/QMLPlayer.exe", "@StartMenuDir@/QtAV.Player.QML.lnk",
             "workingDirectory=@TargetDir@/bin", "iconPath=%SystemRoot%/system32/SHELL32.dll",
             "iconId=2");
-        component.addOperation("CreateShortcut", "@TargetDir@/uninstall.exe", "@StartMenuDir@/QtAV.Uninstall.lnk",
+        component.addOperation("CreateShortcut", "@TargetDir@/maintenancetool.exe", "@StartMenuDir@/QtAV.Uninstall.lnk",
             "workingDirectory=@TargetDir@", "iconPath=%SystemRoot%/system32/SHELL32.dll",
             "iconId=2");
 

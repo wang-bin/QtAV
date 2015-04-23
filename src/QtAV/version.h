@@ -23,7 +23,7 @@
 #define QTAV_VERSION_H
 
 #define QTAV_MAJOR 1    //((QTAV_VERSION&0xff0000)>>16)
-#define QTAV_MINOR 5    //((QTAV_VERSION&0xff00)>>8)
+#define QTAV_MINOR 6    //((QTAV_VERSION&0xff00)>>8)
 #define QTAV_PATCH 0    //(QTAV_VERSION&0xff)
 
 
