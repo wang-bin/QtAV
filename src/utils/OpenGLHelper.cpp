@@ -254,8 +254,11 @@ int bytesOfGLFormat(GLenum format, GLenum dataType)
         break;
     }
     switch (format) {
-#ifdef GL_RGB_422_APPLE
+#ifdef GL_YCBCR_422_APPLE
       case GL_YCBCR_422_APPLE:
+        return 2;
+#endif
+#ifdef GL_RGB_422_APPLE
       case GL_RGB_422_APPLE:
         return 2;
 #endif
