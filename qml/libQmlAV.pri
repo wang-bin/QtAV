@@ -136,11 +136,8 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 		INSTALLS += target
 	}
 }
+!no_rpath:!cross_compile:set_rpath($$PROJECT_LIBDIR)
 
-!cross_compile: RPATHDIR *= $$PROJECT_LIBDIR
-set_rpath($$RPATHDIR)
-
-unset(RPATHDIR)
 unset(LIB_VERSION)
 unset(PROJECT_SRCPATH)
 unset(PROJECT_LIBDIR)
