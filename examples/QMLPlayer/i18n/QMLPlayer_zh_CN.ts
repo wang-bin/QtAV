@@ -9,67 +9,77 @@
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="27"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="21"/>
+        <source>based on</source>
+        <translation>基于</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/About.qml" line="22"/>
+        <source>QtAV is a corss-platform, high performace multimedia playback framework</source>
+        <translation>QtAV是跨平台的高性能多媒体播放框架</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/About.qml" line="28"/>
         <source>Shortcut</source>
         <translation>快捷键</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="28"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="29"/>
         <source>Mute</source>
         <translation>静音</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="28"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="29"/>
         <source>Fullscreen</source>
         <translation>全屏</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="28"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="29"/>
         <source>Up/Down</source>
         <translation>上/下</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="28"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="29"/>
         <source>Volume</source>
         <translation>音量</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="29"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="30"/>
         <source>Left/Right</source>
         <translation>左/右</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="29"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="30"/>
         <source>Seek backward/forward</source>
         <translation>快退快进</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="30"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="31"/>
         <source>Space</source>
         <translation>空格</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="30"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="31"/>
         <source>Pause/Resum</source>
         <translation>暂停/恢复</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="30"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="31"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="31"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="32"/>
         <source>Rotate</source>
         <translation>旋转90度</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="31"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="32"/>
         <source>Aspect ratio</source>
         <translation>比例</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="35"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="36"/>
         <source>Donate</source>
         <translation>捐赠</translation>
     </message>
@@ -297,7 +307,7 @@
         <translation>预览</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="163"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="162"/>
         <source>Open a subtitle file</source>
         <translation>打开一个字幕文件</translation>
     </message>
@@ -373,7 +383,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/QMLPlayer/main.qml" line="108"/>
+        <location filename="../qml/QMLPlayer/main.qml" line="132"/>
         <source>Subtitle</source>
         <translation>字幕</translation>
     </message>

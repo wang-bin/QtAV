@@ -5,15 +5,15 @@
     <name>QObject</name>
     <message>
         <source>Ok</source>
-        <translation>确定</translation>
+        <translation type="vanished">确定</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>关于</translation>
+        <translation type="vanished">关于</translation>
     </message>
     <message>
         <source>About FFmpeg</source>
-        <translation>关于 FFmpeg</translation>
+        <translation type="vanished">关于 FFmpeg</translation>
     </message>
     <message>
         <source>Build version</source>
@@ -25,7 +25,7 @@
     </message>
     <message>
         <source>About QtAV</source>
-        <translation>关于 QtAV</translation>
+        <translation type="vanished">关于 QtAV</translation>
     </message>
     <message>
         <source>A media playing library base on Qt and FFmpeg.
@@ -114,26 +114,34 @@
     <name>QtAV::AVDecoder</name>
     <message>
         <source>No codec could be found for &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>无法找到解码器 %1</translation>
     </message>
 </context>
 <context>
     <name>QtAV::AVDemuxer</name>
     <message>
         <source>error reading stream data</source>
-        <translation type="unfinished"></translation>
+        <translation>读取流错误</translation>
     </message>
     <message>
         <source>seek error</source>
-        <translation type="unfinished"></translation>
+        <translation>seek错误</translation>
     </message>
     <message>
         <source>failed to open media</source>
-        <translation type="unfinished"></translation>
+        <translation>打开多媒体失败</translation>
     </message>
     <message>
         <source>failed to find stream info</source>
-        <translation type="unfinished"></translation>
+        <translation>无法找到流信息</translation>
+    </message>
+    <message>
+        <source>interrupted by user</source>
+        <translation>用户中断</translation>
+    </message>
+    <message>
+        <source>timeout</source>
+        <translation>超时</translation>
     </message>
 </context>
 <context>
@@ -307,10 +315,6 @@
         <source>0: auto</source>
         <translation>0: 自动</translation>
     </message>
-    <message>
-        <source>Optimized copy decoded data from USWC memory using SSE4.1</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QtAV::VideoDecoderFFmpeg</name>
@@ -328,6 +332,29 @@
     </message>
 </context>
 <context>
+    <name>QtAV::VideoDecoderFFmpegHW</name>
+    <message>
+        <source>ZeroCopy: fastest. Direct rendering without data copy between CPU and GPU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not implemented for all codecs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LazyCopy: no explicitly additional copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OptimizedCopy: copy from USWC memory optimized by SSE4.1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GenericCopy: slowest. Generic cpu copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QtAV::VideoDecoderVAAPI</name>
     <message>
         <source>Decoding surfaces.</source>
@@ -336,10 +363,6 @@
     <message>
         <source>0: auto</source>
         <translation>0: 自动</translation>
-    </message>
-    <message>
-        <source>Optimized copy decoded data from USWC memory using SSE4.1</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Maybe faster if display is not GLX</source>
@@ -353,8 +376,10 @@
 <context>
     <name>QtAV::VideoDecoderVDA</name>
     <message>
-        <source>Optimized copy decoded data from USWC memory using SSE4.1</source>
-        <translation type="unfinished"></translation>
+        <source>Output pixel format from decoder. Performance NV12 &gt; UYVY &gt; YUV420P &gt; YUYV.
+OSX &lt; 10.7 only supports UYVY and YUV420p</source>
+        <translation>解码器输出格式。新能NV12&gt;UYVY&gt;YUV420P&gt;YUYV
+OSX &lt; 10.7 只支持 UYVY和YUV420P</translation>
     </message>
 </context>
 </TS>

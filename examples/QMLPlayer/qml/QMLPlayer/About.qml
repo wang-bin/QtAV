@@ -18,7 +18,8 @@ Page {
             font.pixelSize: Utils.scaled(14)
             onContentHeightChanged: parent.height = contentHeight + 2*anchors.margins
             onLinkActivated: Qt.openUrlExternally(link)
-            text: "<h3>QMLPlayer based on QtAV  1.5.0 </h3>"
+            text: "<h3>QMLPlayer " + qsTr("based on") + " QtAV 1.6.0 </h3>"
+                  + "<p>" + qsTr("QtAV is a corss-platform, high performace multimedia playback framework") + "</p>"
                   + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
                   + "<p>Copyright (C) 2012-2015 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
                   + "<p>Shanghai University->S3 Graphics->Deepin, Shanghai, China</p>"
