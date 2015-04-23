@@ -241,8 +241,8 @@ bool LibAVFilter::pushAudioFrame(Frame *frame, bool changed)
 
 void* LibAVFilter::pullFrameHolder()
 {
-     AVFrameHolder *holder = NULL;
 #if QTAV_HAVE(AVFILTER)
+    AVFrameHolder *holder = NULL;
     holder = new AVFrameHolder();
 #if QTAV_HAVE_av_buffersink_get_frame
     int ret = av_buffersink_get_frame(priv->out_filter_ctx, holder->frame());
@@ -257,8 +257,9 @@ void* LibAVFilter::pullFrameHolder()
 #if !QTAV_HAVE_av_buffersink_get_frame
     holder->copyBufferToFrame();
 #endif
-#endif //QTAV_HAVE(AVFILTER)
     return holder;
+#endif //QTAV_HAVE(AVFILTER)
+    return 0;
 }
 
 QStringList LibAVFilter::registeredFilters(int type)
