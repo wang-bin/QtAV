@@ -108,6 +108,7 @@ defineReplace(qtLibName) {
 	#TEMPLATE -= fakelib
         unset(RET)
         RET = $$1
+#qt5.4.2 add qt5LibraryTarget to fix qtLibraryTarget break
     greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) {
         mac:CONFIG(shared, static|shared):contains(QT_CONFIG, qt_framework) {
           QMAKE_FRAMEWORK_BUNDLE_NAME = $$RET
@@ -115,7 +116,7 @@ defineReplace(qtLibName) {
        } else {
            # insert the major version of Qt in the library name
            # unless it's a framework build
-           RET ~= s,^Qt,Qt$$QT_MAJOR_VERSION,
+           isEqual(QT_MINOR_VERSION,4):lessThan(QT_PATCH_VERSION, 2):RET ~= s,^Qt,Qt$$QT_MAJOR_VERSION,
        }
     }
         RET = $$RET$$platformTargetSuffix()
