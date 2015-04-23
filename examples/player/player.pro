@@ -7,6 +7,7 @@ VERSION = $$QTAV_VERSION
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/src/libQtAV.pri)
 include($$PROJECTROOT/widgets/libQtAVWidgets.pri)
+STATICLINK=1
 include($$PWD/../common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
 INCLUDEPATH += $$PWD
@@ -65,7 +66,7 @@ HEADERS += \
 
 unix:!android:!mac {
 #debian
-player_bins = libcommon.so.* player QMLPlayer
+player_bins = player QMLPlayer
 DEB_INSTALL_LIST = $$join(player_bins, \\n.$$[QT_INSTALL_BINS]/, .$$[QT_INSTALL_BINS]/)
 DEB_INSTALL_LIST *= \
             usr/share/applications/player.desktop \

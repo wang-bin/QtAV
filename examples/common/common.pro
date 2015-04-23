@@ -10,7 +10,7 @@ TARGET = common
 TEMPLATE = lib
 DEFINES += BUILD_QOPT_LIB
 
-CONFIG *= common-buildlib
+CONFIG *= common-buildlib staticlib
 
 #var with '_' can not pass to pri?
 PROJECTROOT = $$PWD/../..
