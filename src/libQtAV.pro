@@ -14,6 +14,9 @@ config_gl: QT += opengl
 CONFIG *= qtav-buildlib
 staticlib: DEFINES += BUILD_QTAV_STATIC
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
+icon.files = $$PWD/$${TARGET}.svg
+icon.path = /usr/share/icons/hicolor/64x64/apps
+INSTALLS += icon
 
 #mac: simd.prf will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
 config_libcedarv: CONFIG *= neon config_simd #need by qt4 addSimdCompiler(). neon or config_neon is required because tests/arch can not detect neon
@@ -444,7 +447,6 @@ mac {
    }
 }
 
-
 unix:!android:!mac {
 #debian
 DEB_INSTALL_LIST = .$$[QT_INSTALL_LIBS]/libQt*AV.so.*
@@ -482,7 +484,3 @@ MODULE_VERSION = $$VERSION
 # windows: Qt5AV.dll, not Qt1AV.dll
 !mac_framework: MODULE_VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 include($$PROJECTROOT/deploy.pri)
-
-icon.files = $$PWD/$${TARGET}.svg
-icon.path = /usr/share/icons/hicolor/64x64/apps
-INSTALLS += icon
