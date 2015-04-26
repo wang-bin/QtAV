@@ -94,7 +94,7 @@ bool PacketBuffer::isBuffering() const
 qreal PacketBuffer::bufferProgress() const
 {
     const qreal p = qreal(buffered())/qreal(bufferValue());
-    return qMax(qMin(p, 1.0), 0.0);
+    return qMax<qreal>(qMin<qreal>(p, 1.0), 0.0);
 }
 
 bool PacketBuffer::checkEnough() const
