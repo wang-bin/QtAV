@@ -1,20 +1,39 @@
+os:
+  - linux
+  - osx
+# TODO: osx must manually request http://docs.travis-ci.com/user/multi-os/
 language: cpp
 compiler:
   - clang
 cache: apt
 install: true
 env:
-  - FFMPEG=ffmpeg-2.2.5
+  global:
+    - LANG="en_US.UTF-8"
+  matrix:
+    - QT=4.8.6 AV=ffmpeg-1.0.10
+    - QT=5.0.2 AV=ffmpeg-1.2.10
+    - QT=5.1.1 AV=ffmpeg-2.0.6
+    - QT=5.2.1 AV=ffmpeg-2.2.11
+#    - QT=5.3.1 AV=ffmpeg-2.4.4
+    allow_failures:
+      - os: osx
+
 branches:
   only:
     - master
+    - prelease
     - ci
 
-before_script:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq -y portaudio19-dev libopenal-dev libva-dev libass-dev libxv-dev parallel
+git:
+  submodules: true
+
+install: . tools/ci/$TRAVIS_OS_NAME/install.sh
+
 script:
-  - ./tools/ci/travis_build.sh $FFMPEG
+  - ./tools/ci/$TRAVIS_OS_NAME/script.sh
+after_success: ./tools/ci/$TRAVIS_OS_NAME/after_success.sh
+
 notifications:
   irc:
     channels:
@@ -24,7 +43,3 @@ notifications:
       - wbsecg1@gmail.com
     on_success: change
     on_failure: always
-env:
-  - LANG="en_US.UTF-8"
-os:
-  - linux

@@ -104,7 +104,7 @@ Plugins = PlugIns
 Qml2Imports = Resources/qml
 EOF
   cd -
-  test -f ./yoursway-create-dmg/create-dmg && ./yoursway-create-dmg/create-dmg  --window-size 500 300  --icon-size 96 --volname "QtAV $APP"  --app-drop-link 240 200 QtAV-$APP.dmg $BUILD_DIR/bin/${APP}.app &
+  test -f ./create-dmg/create-dmg && ./create-dmg/create-dmg  --window-size 500 300  --icon-size 96 --volname "QtAV $APP"  --app-drop-link 240 200 QtAV-$APP.dmg $BUILD_DIR/bin/${APP}.app &
 }
 
 deploy player
