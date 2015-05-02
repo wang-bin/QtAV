@@ -38,6 +38,7 @@ class VideoDecoderFFmpeg : public VideoDecoderFFmpegBase
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
+    Q_PROPERTY(QString codecName READ codecName WRITE setCodecName NOTIFY codecNameChanged)
     Q_PROPERTY(DiscardType skip_loop_filter READ skipLoopFilter WRITE setSkipLoopFilter)
     Q_PROPERTY(DiscardType skip_idct READ skipIDCT WRITE setSkipIDCT)
     // Force a strict standard compliance when encoding (accepted values: -2 to 2)
@@ -136,6 +137,8 @@ public:
     MotionVectorVisFlags motionVectorVisFlags() const;
     void setBugFlags(BugFlags value);
     BugFlags bugFlags() const;
+Q_SIGNALS:
+    void codecNameChanged();
 };
 
 extern VideoDecoderId VideoDecoderId_FFmpeg;

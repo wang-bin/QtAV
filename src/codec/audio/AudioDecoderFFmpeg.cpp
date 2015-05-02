@@ -36,6 +36,7 @@ class Q_AV_EXPORT AudioDecoderFFmpeg : public AudioDecoder
     Q_OBJECT
     Q_DISABLE_COPY(AudioDecoderFFmpeg)
     DPTR_DECLARE_PRIVATE(AudioDecoderFFmpeg)
+    Q_PROPERTY(QString codecName READ codecName WRITE setCodecName NOTIFY codecNameChanged)
 public:
     AudioDecoderFFmpeg();
     AudioDecoderId id() const Q_DECL_FINAL;
@@ -47,6 +48,8 @@ public:
     bool decode(const QByteArray &encoded) Q_DECL_FINAL;
     bool decode(const Packet& packet) Q_DECL_FINAL;
     AudioFrame frame() Q_DECL_FINAL;
+Q_SIGNALS:
+    void codecNameChanged();
 };
 
 AudioDecoderId AudioDecoderId_FFmpeg = mkid::id32base36_6<'F','F','m','p','e','g'>::value;
@@ -187,8 +190,9 @@ AudioFrame AudioDecoderFFmpeg::frame()
     fmt.setSampleFormatFFmpeg(d.frame->format);
     fmt.setChannelLayoutFFmpeg(d.frame->channel_layout);
     fmt.setSampleRate(d.frame->sample_rate);
-    if (!fmt.isValid()) // need more data to decode to get a frame
+    if (!fmt.isValid()) {// need more data to decode to get a frame
         return AudioFrame();
+    }
     AudioFrame f(fmt);
     f.setBits(d.frame->extended_data); // TODO: ref
     f.setBytesPerLine(d.frame->linesize[0], 0); // for correct alignment
