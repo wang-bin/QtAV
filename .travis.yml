@@ -16,8 +16,8 @@ env:
     - QT=5.1.1 AV=ffmpeg-2.0.6
     - QT=5.2.1 AV=ffmpeg-2.2.11
 #    - QT=5.3.1 AV=ffmpeg-2.4.4
-    allow_failures:
-      - os: osx
+#    allow_failures:
+#      - os: osx
 
 branches:
   only:
