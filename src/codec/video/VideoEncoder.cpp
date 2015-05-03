@@ -1,0 +1,85 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
+#include <QtAV/VideoEncoder.h>
+#include <QtAV/private/AVEncoder_p.h>
+#include "QtAV/private/factory.h"
+#include "utils/Logger.h"
+
+namespace QtAV {
+
+FACTORY_DEFINE(VideoEncoder)
+
+void VideoEncoder_RegisterAll()
+{
+    extern void RegisterVideoEncoderFFmpeg_Man();
+    RegisterVideoEncoderFFmpeg_Man();
+}
+
+VideoEncoder* VideoEncoder::create(VideoEncoderId id)
+{
+    return VideoEncoderFactory::create(id);
+}
+
+VideoEncoder* VideoEncoder::create(const QString& name)
+{
+    return VideoEncoderFactory::create(VideoEncoderFactory::id(name.toUtf8().constData(), false));
+}
+
+VideoEncoder::VideoEncoder(VideoEncoderPrivate &d):
+    AVEncoder(d)
+{
+}
+
+QString VideoEncoder::name() const
+{
+    return QString(VideoEncoderFactory::name(id()).c_str());
+}
+
+void VideoEncoder::setWidth(int value)
+{
+    DPTR_D(VideoEncoder);
+    if (d.width == value)
+        return;
+    d.width = value;
+    emit widthChanged();
+}
+
+int VideoEncoder::width() const
+{
+    return d_func().width;
+}
+
+void VideoEncoder::setHeight(int value)
+{
+    DPTR_D(VideoEncoder);
+    if (d.height == value)
+        return;
+    d.height = value;
+    emit heightChanged();
+}
+
+int VideoEncoder::height() const
+{
+    return d_func().height;
+}
+
+} //namespace QtAV
