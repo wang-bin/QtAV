@@ -22,6 +22,7 @@
 #include "QmlAV/QmlAVPlayer.h"
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
+#include <QtAV/VideoCapture.h>
 
 template<typename ID, typename Factory>
 static QStringList idsToNames(QVector<ID> ids) {
@@ -72,10 +73,13 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mChannelLayout(ChannelLayoutAuto)
   , m_timeout(30000)
 {
+    classBegin();
 }
 
 void QmlAVPlayer::classBegin()
 {
+    if (mpPlayer)
+        return;
     mpPlayer = new AVPlayer(this);
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(_q_statusChanged()));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), SLOT(_q_error(QtAV::AVError)));
@@ -202,6 +206,11 @@ MediaMetaData* QmlAVPlayer::metaData() const
 QObject* QmlAVPlayer::mediaObject() const
 {
     return mpPlayer;
+}
+
+VideoCapture *QmlAVPlayer::videoCapture() const
+{
+    return mpPlayer->videoCapture();
 }
 
 QStringList QmlAVPlayer::videoCodecs() const

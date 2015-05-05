@@ -438,7 +438,7 @@ AVInput* AVPlayer::input() const
     return d->current_source.value<QtAV::AVInput*>();
 }
 
-VideoCapture* AVPlayer::videoCapture()
+VideoCapture* AVPlayer::videoCapture() const
 {
     return d->vcapture;
 }

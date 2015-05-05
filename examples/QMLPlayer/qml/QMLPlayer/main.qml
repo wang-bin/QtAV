@@ -22,7 +22,7 @@
 import QtQuick 2.0
 import QtQuick.Dialogs 1.0
 //import QtMultimedia 5.0
-import QtAV 1.5
+import QtAV 1.6
 import QtQuick.Window 2.1
 import "utils.js" as Utils
 
@@ -76,6 +76,13 @@ Rectangle {
         autoPlay: true
         videoCodecPriority: PlayerConfig.decoderPriorityNames
         onPositionChanged: control.setPlayingProgress(position/duration)
+        videoCapture {
+            autoSave: true
+            onSaved: {
+                msg.info("capture saved at: " + path)
+            }
+        }
+
         onPlaying: {
             control.mediaSource = player.source
             control.duration = duration
@@ -89,6 +96,7 @@ Rectangle {
                 metaData: player.metaData
             }
         }
+
         onStopped: control.setStopState()
         onPaused: control.setPauseState()
         onError: {
@@ -270,6 +278,9 @@ Rectangle {
             case Qt.Key_T:
                 videoOut.orientation -= 90
                 break;
+            case Qt.Key_C:
+                player.videoCapture.capture()
+                break
             case Qt.Key_A:
                 if (videoOut.fillMode === VideoOutput.Stretch) {
                     videoOut.fillMode = VideoOutput.PreserveAspectFit

@@ -28,6 +28,7 @@
 #include <QmlAV/MediaMetaData.h>
 #include <QtAV/AVError.h>
 #include <QtAV/CommonTypes.h>
+#include <QtAV/VideoCapture.h>
 
 namespace QtAV {
 class AVPlayer;
@@ -54,7 +55,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(qreal bufferProgress READ bufferProgress NOTIFY bufferProgressChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
     Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
-    Q_PROPERTY(QObject *mediaObject READ mediaObject)
+    Q_PROPERTY(QObject *mediaObject READ mediaObject  NOTIFY mediaObjectChanged SCRIPTABLE false DESIGNABLE false)
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorChanged)
     Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
@@ -69,6 +70,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
     Q_PROPERTY(QVariantMap videoCodecOptions READ videoCodecOptions WRITE setVideoCodecOptions NOTIFY videoCodecOptionsChanged)
+    Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
 public:
     enum Loop { Infinite = -1 };
     enum PlaybackState {
@@ -153,6 +155,7 @@ public:
 
     MediaMetaData *metaData() const;
     QObject *mediaObject() const;
+    QtAV::VideoCapture *videoCapture() const;
 
     // "FFmpeg", "CUDA", "DXVA", "VAAPI" etc
     QStringList videoCodecs() const;

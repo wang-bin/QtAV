@@ -30,6 +30,7 @@
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
 #include "QmlAV/QuickFBORenderer.h"
 #endif
+
 namespace QtAV {
 
 class QtAVQmlPlugin : public QQmlExtensionPlugin
@@ -49,6 +50,7 @@ public:
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
         qmlRegisterType<QuickFBORenderer>(uri, 1, 5, "VideoOutput2");
 #endif
+        qmlRegisterUncreatableType<VideoCapture>(uri, 1, 6, "VideoCapture", "VideoCapture is provided by MediaPlayer");
         qmlRegisterType<MediaMetaData>();
     }
 };

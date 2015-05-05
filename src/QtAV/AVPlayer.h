@@ -183,7 +183,7 @@ public:
      * \return
      */
     QTAV_DEPRECATED bool captureVideo();
-    VideoCapture *videoCapture();
+    VideoCapture *videoCapture() const;
     /*
      * replay without parsing the stream if it's already loaded. (not implemented)
      * to force reload the stream, unload() then play()

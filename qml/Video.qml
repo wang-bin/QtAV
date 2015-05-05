@@ -68,6 +68,7 @@ Item {
     property alias abortOnTimeout: player.abortOnTimeout
     property alias subtitle: subtitle
     property alias subtitleText: text_sub // not for ass.
+    property alias videoCapture: player.videoCapture
     /*** Properties of VideoOutput ***/
     /*!
         \qmlproperty enumeration Video::fillMode

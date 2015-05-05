@@ -132,7 +132,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         Qt::KeyboardModifiers modifiers = key_event->modifiers();
         switch (key) {
         case Qt::Key_C: //capture
-            player->videoCapture()->request();
+            player->videoCapture()->capture();
             break;
         case Qt::Key_N: //check playing?
             player->playNextFrame();
