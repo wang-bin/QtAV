@@ -206,6 +206,7 @@ Module {
         Signal { name: "paused" }
         Signal { name: "stopped" }
         Signal { name: "playing" }
+        Signal { name: "seekFinished" }
         Signal {
             name: "error"
             Parameter { name: "error"; type: "Error" }

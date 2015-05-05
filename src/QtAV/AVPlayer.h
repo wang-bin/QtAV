@@ -293,7 +293,6 @@ public:
     QVariantHash optionsForAudioCodec() const;
     void setOptionsForVideoCodec(const QVariantHash& dict);
     QVariantHash optionsForVideoCodec() const;
-    // avfilter_init_dict
 
 public slots:
     void togglePause();
@@ -389,7 +388,7 @@ public slots:
     void setHue(int val);  //not implemented
     void setSaturation(int val);
 
-signals:
+Q_SIGNALS:
     void bufferProgressChanged(qreal);
     void relativeTimeModeChanged();
     void autoLoadChanged();
@@ -408,6 +407,7 @@ signals:
     void startPositionChanged(qint64 position);
     void stopPositionChanged(qint64 position);
     void seekableChanged();
+    void seekFinished();
     void positionChanged(qint64 position);
     void interruptTimeoutChanged();
     void interruptOnTimeoutChanged();
@@ -416,7 +416,7 @@ signals:
     void contrastChanged(int val);
     void hueChanged(int val);
     void saturationChanged(int val);
-private slots:
+private Q_SLOTS:
     void loadInternal(); // simply load
     void unloadInternal();
     void playInternal(); // simply play

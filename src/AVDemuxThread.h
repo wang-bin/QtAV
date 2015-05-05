@@ -59,6 +59,7 @@ Q_SIGNALS:
     void requestClockPause(bool value);
     void mediaStatusChanged(QtAV::MediaStatus);
     void bufferProgressChanged(qreal);
+    void seekFinished(qint64 timestamp);
 
 private slots:
     void frameDeliveredSeekOnPause();

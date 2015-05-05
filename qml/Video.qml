@@ -318,6 +318,8 @@ Item {
     */
     signal playing
 
+    signal seekFinished
+
     VideoOutput2 {
         id: videoOut
         anchors.fill: video
@@ -351,6 +353,7 @@ Item {
         onPaused:  video.paused()
         onStopped: video.stopped()
         onPlaying: video.playing()
+        onSeekFinished: video.seekFinished()
     }
 
     /*!

@@ -86,7 +86,11 @@ public slots:
 
 Q_SIGNALS:
     void frameDelivered();
-
+    /*!
+     * \brief seekFinished
+     * \param timestamp the frame pts after seek
+     */
+    void seekFinished(qint64 timestamp);
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
     void resetState();

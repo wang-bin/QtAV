@@ -522,6 +522,7 @@ void VideoThread::run()
             if (seek_done_count > 1) { // theorically can't be >1 if seeking!
                 qDebug("reset render_pts0");
                 d.render_pts0 = 0;
+                Q_EMIT seekFinished(qint64(pts*1000.0));
             }
         }
         if (seek_count == -1 && seek_done_count > 0)

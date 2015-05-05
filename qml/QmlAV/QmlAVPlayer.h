@@ -198,6 +198,7 @@ Q_SIGNALS:
     void stopped();
     void playing();
     void seekableChanged();
+    void seekFinished();
     void fastSeekChanged();
     void bufferProgressChanged();
     void videoCodecPriorityChanged();

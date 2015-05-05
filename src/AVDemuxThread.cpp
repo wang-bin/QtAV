@@ -394,7 +394,8 @@ void AVDemuxThread::run()
     PacketBuffer *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
     PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
     // aqueue as a primary buffer: music with/without cover
-    m_buffer = !vqueue || (aqueue && demuxer->hasAttacedPicture()) ? aqueue : vqueue;
+    AVThread* thread = !video_thread || (audio_thread && demuxer->hasAttacedPicture()) ? audio_thread : video_thread;
+    m_buffer = thread->packetQueue();
     const int buf2 = aqueue ? aqueue->bufferValue() : 1; // TODO: may be changed by user
     if (aqueue) {
         aqueue->clear();
@@ -404,6 +405,7 @@ void AVDemuxThread::run()
         vqueue->clear();
         vqueue->setBlocking(true);
     }
+    connect(thread, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished(qint64)), Qt::DirectConnection);
     seek_tasks.clear();
     bool was_end = false;
     while (!end) {
@@ -496,6 +498,7 @@ void AVDemuxThread::run()
         vqueue->blockEmpty(false);
         video_thread->wait(500);
     }
+    disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
     emit mediaStatusChanged(QtAV::EndOfMedia);
 }
