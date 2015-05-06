@@ -157,13 +157,18 @@ Rectangle {
 
     MouseArea {
         anchors.fill: parent
-        onPressed: {
+        onClicked: {
             control.toggleVisible()
             if (root.width - mouseX < Utils.scaled(60)) {
                 configPanel.state = "show"
             } else {
                 configPanel.state = "hide"
             }
+        }
+        onMouseXChanged: {
+            if (player.playbackState == MediaPlayer.StoppedState || !player.hasVideo)
+                return;
+            control.showPreview(mouseX/parent.width)
         }
     }
     Text {

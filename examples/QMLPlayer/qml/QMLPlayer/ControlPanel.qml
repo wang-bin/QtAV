@@ -130,14 +130,7 @@ Rectangle {
               //  return
             if (playState == "stop")
                 return;
-            if (PlayerConfig.previewEnabled && preview.video.file) {
-                preview.video.timestamp = value*duration
-            }
-
-            var v = value * progress.width
-            preview.anchors.leftMargin = v - preview.width/2
-            previewText.text = Utils.msec2string(value*duration)
-            //console.log("hover: "+value + " duration: " + player.duration)
+            showPreview(value)
         }
     }
     Text {
@@ -175,6 +168,7 @@ Rectangle {
         height: PlayerConfig.previewEnabled ? Utils.scaled(120) : previewText.contentHeight + 2*Utils.kSpacing
         color: "black"
         state: "out"
+        property real timestamp
         property alias video: video
         VideoPreview {
             id: video
@@ -198,6 +192,19 @@ Rectangle {
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
         }
+        MouseArea {
+            anchors.fill: parent
+            propagateComposedEvents: true
+            onClicked: {
+                if (preview.opacity === 0 || root.opacity === 0) {
+                    mouse.accepted = false
+                    return
+                }
+                mouse.accepted = true
+                seek(preview.timestamp)
+            }
+        }
+
         states: [
             State {
                 name: "in"
@@ -451,5 +458,17 @@ Rectangle {
             aniShow()
         else
             aniHide()
+    }
+    function showPreview(value) {
+        preview.visible = true
+        preview.state = "in"
+        if (PlayerConfig.previewEnabled && preview.video.file) {
+            preview.video.timestamp = value*duration
+        }
+        var v = value * progress.width
+        preview.anchors.leftMargin = v - preview.width/2
+        preview.timestamp = value*duration
+        previewText.text = Utils.msec2string(preview.timestamp)
+        //console.log("hover: "+value + " duration: " + player.duration)
     }
 }
