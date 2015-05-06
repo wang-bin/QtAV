@@ -292,6 +292,7 @@ SOURCES += \
     codec/audio/AudioDecoder.cpp \
     codec/audio/AudioDecoderFFmpeg.cpp \
     codec/AVEncoder.cpp \
+    AVMuxer.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
     ColorTransform.cpp \
@@ -348,6 +349,7 @@ SDK_HEADERS *= \
     QtAV/AVDecoder.h \
     QtAV/AVEncoder.h \
     QtAV/AVDemuxer.h \
+    QtAV/AVMuxer.h \
     QtAV/CommonTypes.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
