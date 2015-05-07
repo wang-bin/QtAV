@@ -83,13 +83,13 @@ public:
 Q_SIGNALS:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void descriptionChanged();
+    virtual void codecNameChanged();
 protected:
     AVDecoder(AVDecoderPrivate& d);
     DPTR_DECLARE(AVDecoder)
     // force a codec. only used by avcodec sw decoders
     void setCodecName(const QString& name);
     QString codecName() const;
-    virtual void codecNameChanged() {}
 private:
     Q_DISABLE_COPY(AVDecoder)
     AVDecoder(); // base class, not direct create. only final class has is enough

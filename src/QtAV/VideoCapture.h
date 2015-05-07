@@ -85,7 +85,8 @@ public:
     void setCaptureDir(const QString& value);
     QString captureDir() const;
 public Q_SLOTS:
-    void request();
+    void capture();
+    QTAV_DEPRECATED void request();
 Q_SIGNALS:
     void requested();
     /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/

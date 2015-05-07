@@ -29,15 +29,7 @@ namespace QtAV {
 AVDecoder::AVDecoder(AVDecoderPrivate &d)
     :DPTR_INIT(&d)
 {
-    class AVInitializer {
-    public:
-        AVInitializer() {
-            qDebug("avcodec_register_all");
-            avcodec_register_all();
-        }
-    };
-    static AVInitializer sAVInit;
-    Q_UNUSED(sAVInit);
+    avcodec_register_all(); // avcodec_find_decoder will always be used
 }
 
 AVDecoder::~AVDecoder()
@@ -165,7 +157,11 @@ AVCodecContext* AVDecoder::codecContext() const
 
 void AVDecoder::setCodecName(const QString &name)
 {
-    d_func().codec_name = name;
+    DPTR_D(AVDecoder);
+    if (d.codec_name == name)
+        return;
+    d.codec_name = name;
+    Q_EMIT codecNameChanged();
 }
 
 QString AVDecoder::codecName() const
@@ -224,7 +220,7 @@ void AVDecoder::setOptions(const QVariantHash &dict)
     else if (dict.contains(name().toLower()))
         opt = dict.value(name().toLower());
     else
-        return;
+        return; // TODO: set property if no name() key found?
     if (opt.type() == QVariant::Hash) {
         QVariantHash property_dict(opt.toHash());
         if (property_dict.isEmpty())

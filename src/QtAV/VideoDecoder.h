@@ -27,7 +27,6 @@
 #include <QtAV/VideoFrame.h>
 
 class QSize;
-struct SwsContext;
 namespace QtAV {
 
 typedef int VideoDecoderId;

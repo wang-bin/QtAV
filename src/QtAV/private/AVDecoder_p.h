@@ -24,8 +24,6 @@
 
 #include <QtCore/QByteArray>
 #include <QtCore/QHash>
-#include <QtCore/QMutex>
-#include <QtCore/QThread>
 #include "QtAV/private/AVCompat.h"
 
 namespace QtAV {
@@ -55,7 +53,6 @@ public:
     bool available; //TODO: true only when context(and hw ctx) is ready
     bool is_open;
     int undecoded_size;
-    QMutex mutex;
     QString codec_name;
     QVariantHash options;
     AVDictionary *dict;

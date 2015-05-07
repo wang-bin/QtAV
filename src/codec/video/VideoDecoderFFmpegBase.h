@@ -49,6 +49,7 @@ public:
         : VideoDecoderPrivate()
         , frame(0)
     {
+        avcodec_register_all();
         frame = av_frame_alloc();
     }
     virtual ~VideoDecoderFFmpegBasePrivate() {

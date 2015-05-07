@@ -66,7 +66,9 @@ public:
     AudioDecoderFFmpegPrivate()
         : AudioDecoderPrivate()
         , frame(av_frame_alloc())
-    {}
+    {
+        avcodec_register_all();
+    }
     ~AudioDecoderFFmpegPrivate() {
         if (frame) {
             av_frame_free(&frame);
