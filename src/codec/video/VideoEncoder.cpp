@@ -82,4 +82,18 @@ int VideoEncoder::height() const
     return d_func().height;
 }
 
+void VideoEncoder::setFrameRate(qreal value)
+{
+    DPTR_D(VideoEncoder);
+    if (d.frame_rate == value)
+        return;
+    d.frame_rate = value;
+    emit frameRateChanged();
+}
+
+qreal VideoEncoder::frameRate() const
+{
+    return d_func().frame_rate;
+}
+
 } //namespace QtAV

@@ -85,6 +85,11 @@ bool VideoEncoderFFmpegPrivate::open()
         avctx = 0;
     }
     avctx = avcodec_alloc_context3(codec);
+    avctx->width = width;
+    avctx->height = height;
+    avctx->pix_fmt = QTAV_PIX_FMT_C(YUV420P);
+    avctx->time_base = av_d2q(frame_rate, frame_rate*1001.0+2);
+    avctx->bit_rate = bit_rate;
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
     return true;

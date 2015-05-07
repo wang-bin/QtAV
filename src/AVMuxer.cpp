@@ -21,6 +21,7 @@
 
 #include "QtAV/AVMuxer.h"
 #include "QtAV/private/AVCompat.h"
+#include "QtAV/VideoEncoder.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -41,6 +42,7 @@ public:
         , format(0)
         //, writer(0)
         , dict(0)
+        , venc(0)
     {
         av_register_all();
     }
@@ -78,11 +80,12 @@ public:
     AVDictionary *dict;
     QVariantHash options;
     QList<int> audio_streams, video_streams, subtitle_streams;
+    VideoEncoder *venc; // not owner
 };
 
 AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
 {
-    const AVCodec* codec = avcodec_find_encoder(cid);
+    AVCodec* codec = avcodec_find_encoder(cid);
     if (!codec) {
         qWarning("Can not find encoder for %s", avcodec_get_name(cid));
         return 0;
@@ -96,6 +99,16 @@ AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
     s->id = ctx->nb_streams - 1;
     AVCodecContext *c = s->codec;
     c->codec_id = cid;
+    if (codec->type == AVMEDIA_TYPE_VIDEO) {
+        if (venc) {
+            s->time_base = av_d2q(venc->frameRate(), venc->frameRate()*1001.0+2);
+            c->bit_rate = venc->bitRate();
+            c->width = venc->width();
+            c->height = venc->height();
+            c->pix_fmt = QTAV_PIX_FMT_C(YUV420P);
+            c->time_base = s->time_base;
+        }
+    }
     /* Some formats want stream headers to be separate. */
     if (ctx->oformat->flags & AVFMT_GLOBALHEADER)
         c->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -107,6 +120,7 @@ AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
         video_streams.push_back(s->id);
     else if (codec->type == AVMEDIA_TYPE_SUBTITLE)
         subtitle_streams.push_back(s->id);
+    return codec;
 }
 
 bool AVMuxer::Private::prepareStreams()
@@ -338,6 +352,11 @@ bool AVMuxer::writeVideo(const Packet& packet)
 
     d->started = true;
     return true;
+}
+
+void AVMuxer::copyProperties(VideoEncoder *enc)
+{
+    d->venc = enc;
 }
 
 

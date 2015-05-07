@@ -60,6 +60,20 @@ QString AVEncoder::codecName() const
     return "";
 }
 
+void AVEncoder::setBitRate(int value)
+{
+    DPTR_D(AVEncoder);
+    if (d.bit_rate == value)
+        return;
+    d.bit_rate = value;
+    emit bitRateChanged();
+}
+
+int AVEncoder::bitRate() const
+{
+    return d_func().bit_rate;
+}
+
 bool AVEncoder::open()
 {
     DPTR_D(AVEncoder);

@@ -30,6 +30,7 @@
 
 namespace QtAV {
 
+class VideoEncoder;
 class Q_AV_EXPORT AVMuxer : public QObject
 {
     Q_OBJECT
@@ -69,6 +70,7 @@ public:
     bool writeAudio(const Packet& packet);
     bool writeVideo(const Packet& packet);
 
+    void copyProperties(VideoEncoder* enc);
 private:
     class Private;
     QScopedPointer<Private> d;

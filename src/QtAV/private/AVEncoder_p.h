@@ -35,6 +35,7 @@ public:
         avctx(0)
       , is_open(false)
       , dict(0)
+      , bit_rate(0)
     {
     }
     virtual ~AVEncoderPrivate() {
@@ -50,6 +51,7 @@ public:
 
     AVCodecContext *avctx; // null if not avcodec. allocated in ffmpeg based encoders
     bool is_open;
+    int bit_rate;
     QString codec_name;
     QVariantHash options;
     AVDictionary *dict; // null if not avcodec
@@ -60,7 +62,12 @@ class AudioResampler;
 class AudioEncoderPrivate : public AVEncoderPrivate
 {
 public:
-    AudioEncoderPrivate();
+    AudioEncoderPrivate()
+        : AVEncoderPrivate()
+    {
+        bit_rate = 64000;
+    }
+
     virtual ~AudioEncoderPrivate();
 
     AudioResampler *resampler;
@@ -73,9 +80,13 @@ public:
         AVEncoderPrivate()
       , width(0)
       , height(0)
-    {}
+      , frame_rate(25.0)
+    {
+        bit_rate = 400000;
+    }
     virtual ~VideoEncoderPrivate() {}
     int width, height;
+    qreal frame_rate;
 };
 } //namespace QtAV
 #endif // QTAV_AVENCODER_P_H

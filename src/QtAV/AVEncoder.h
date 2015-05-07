@@ -34,6 +34,7 @@ class Q_AV_EXPORT AVEncoder : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVEncoder)
+    Q_PROPERTY(int bitRate READ bitRate WRITE setBitRate NOTIFY bitRateChanged)
     Q_PROPERTY(QString codecName READ codecName WRITE setCodecName NOTIFY codecNameChanged)
 public:
     virtual ~AVEncoder();
@@ -45,6 +46,8 @@ public:
      */
     void setCodecName(const QString& name);
     QString codecName() const;
+    void setBitRate(int value);
+    int bitRate() const;
     bool open();
     bool close();
     bool isOpen() const;
@@ -55,7 +58,7 @@ public:
      * used by ff muxer. Be sure all parameters are set. (open?)
      */
     virtual void copyAVCodecContext(void* ctx);
-    void* codecContext() const;
+    void* codecContext() const; // TODO: always have a avctx like decoder?
     // avcodec_open2
     /*!
      * \brief setOptions
@@ -72,6 +75,7 @@ public:
 Q_SIGNALS:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void codecNameChanged();
+    void bitRateChanged();
 protected:
     AVEncoder(AVEncoderPrivate& d);
     DPTR_DECLARE(AVEncoder)
