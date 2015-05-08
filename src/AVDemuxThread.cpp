@@ -160,13 +160,6 @@ void AVDemuxThread::seek(qint64 pos, SeekType type)
 void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
 {
     AVThread* av[] = { audio_thread, video_thread};
-    for (size_t i = 0; i < sizeof(av)/sizeof(av[0]); ++i) {
-        AVThread *t = av[i];
-        if (!t)
-            continue;
-        t->packetQueue()->blockEmpty(false); // was buffering
-        t->packetQueue()->clear();
-    }
     qDebug("seek to %s %lld ms (%f%%)", QTime(0, 0, 0).addMSecs(pos).toString().toUtf8().constData(), pos, double(pos - demuxer->startTime())/double(demuxer->duration())*100.0);
     demuxer->setSeekType(type);
     demuxer->seek(pos);
@@ -176,10 +169,15 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         if (!t)
             continue;
         t->packetQueue()->clear();
-        t->packetQueue()->setBlocking(true); // blockEmpty was false when eof is read.
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
-        if (type == AccurateSeek)
-            t->packetQueue()->put(Packet());
+        if (type == AccurateSeek) {
+            Packet pkt;
+            pkt.pts = qreal(pos)/1000.0;
+            //qDebug("put seek packet. %d/%d-%d, progress: %.3f", pb->buffered(), pb->bufferValue(), pb->bufferMax(), pb->bufferProgress());
+            t->packetQueue()->setBlocking(false); // aqueue bufferValue can be small (1), we can not put and take
+            t->packetQueue()->put(pkt);
+        }
+        t->packetQueue()->setBlocking(true); // blockEmpty was false when eof is read.
     }
     if (isPaused() && (video_thread || audio_thread)) {
         AVThread *thread = video_thread ? video_thread : audio_thread;

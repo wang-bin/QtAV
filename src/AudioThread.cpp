@@ -108,9 +108,11 @@ void AudioThread::run()
             Q_UNUSED(locker);
             if (d.dec) //maybe set to null in setDecoder()
                 d.dec->flush();
+            d.render_pts0 = pkt.pts;
             continue;
         }
         qreal dts = pkt.dts; //FIXME: pts and dts
+        // no key frame for audio. so if pts reaches, try decode and skip render if got frame pts does not reach
         bool skip_render = pkt.pts < d.render_pts0;
         // audio has no key frame, skip rendering equals to skip decoding
         if (skip_render) {
@@ -130,7 +132,6 @@ void AudioThread::run()
             pkt = Packet(); //mark invalid to take next
             continue;
         }
-        d.render_pts0 = 0;
         if (is_external_clock) {
             d.delay = dts - d.clock->value();
             /*
@@ -223,7 +224,16 @@ void AudioThread::run()
 #if USE_AUDIO_FRAME
         AudioFrame frame(dec->frame());
         if (frame) {
-            //TODO: apply filters here
+            if (d.render_pts0 >= 0.0) { // seeking
+                if (frame.timestamp() < d.render_pts0) {
+                    qDebug("skip audio rendering: %f-%f", frame.timestamp(), d.render_pts0);
+                    d.clock->updateValue(frame.timestamp());
+                    pkt = Packet();
+                    continue;
+                }
+                d.render_pts0 = -1.0;
+                Q_EMIT seekFinished(qint64(frame.timestamp()*1000.0));
+            }
             if (has_ao) {
                 applyFilters(frame);
                 frame.setAudioResampler(dec->resampler()); //!!!

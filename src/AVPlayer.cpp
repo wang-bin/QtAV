@@ -811,14 +811,6 @@ void AVPlayer::setPosition(qint64 position)
     d->seeking = true;
     d->seek_target = position;
     qreal s = (qreal)pos_pts/1000.0;
-    if (seekType() == AccurateSeek) {
-        if (d->athread) {
-            d->athread->skipRenderUntil(s);
-        }
-        if (d->vthread) {
-            d->vthread->skipRenderUntil(s);
-        }
-    }
     masterClock()->updateValue(double(pos_pts)/1000.0); //what is duration == 0
     masterClock()->updateExternalClock(pos_pts); //in msec. ignore usec part using t/1000
     d->read_thread->seek(pos_pts, seekType());

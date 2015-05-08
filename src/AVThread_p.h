@@ -51,7 +51,7 @@ public:
       , delay(0)
       , statistics(0)
       , ready(false)
-      , render_pts0(0)
+      , render_pts0(-1)
     {
         tasks.blockFull(false);
     }

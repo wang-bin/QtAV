@@ -66,7 +66,7 @@ Packet Packet::createEOF()
 
 bool Packet::isEOF() const
 {
-    return data == "eof";
+    return data == "eof" && pts < 0.0 && dts < 0.0;
 }
 
 Packet Packet::fromAVPacket(const AVPacket *avpkt, double time_base)
@@ -131,7 +131,7 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
 #if AVPACKET_REF
     av_packet_ref(p, (AVPacket*)avpkt);  //properties are copied internally
     // add ref without copy, bytearray does not copy either. bytearray options linke remove() is safe. omit FF_INPUT_BUFFER_PADDING_SIZE
-    pkt->data =QByteArray::fromRawData((const char*)p->data, p->size);
+    pkt->data = QByteArray::fromRawData((const char*)p->data, p->size);
 #else
     if (avpkt->data) {
         // copy packet data. packet will be reset after AVDemuxer.readFrame() and in next av_read_frame
@@ -165,10 +165,10 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
 Packet::Packet()
     : hasKeyFrame(false)
     , isCorrupt(false)
-    , pts(0)
-    , duration(0)
-    , dts(0)
-    , position(0)
+    , pts(-1)
+    , duration(-1)
+    , dts(-1)
+    , position(-1)
 {
 }
 
@@ -232,5 +232,4 @@ const AVPacket *Packet::asAVPacket() const
     }
     return p;
 }
-
 } //namespace QtAV
