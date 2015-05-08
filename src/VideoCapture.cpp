@@ -184,6 +184,11 @@ void VideoCapture::handleAppQuit()
     videoCaptureThreadPool()->waitForDone();
 }
 
+void  VideoCapture::capture()
+{
+    request();
+}
+
 void VideoCapture::request()
 {
     emit requested();
