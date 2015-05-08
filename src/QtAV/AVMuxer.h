@@ -31,6 +31,7 @@
 namespace QtAV {
 
 class VideoEncoder;
+class AudioEncoder;
 class Q_AV_EXPORT AVMuxer : public QObject
 {
     Q_OBJECT
@@ -64,13 +65,12 @@ public:
     bool open();
     bool close();
     bool isOpen() const;
-    void setAudioCodecProperties(void* avctx);
-    void setVideoCodecProperties(void* avctx);
     // TODO: multiple streams. Packet.type,stream
     bool writeAudio(const Packet& packet);
     bool writeVideo(const Packet& packet);
 
     void copyProperties(VideoEncoder* enc);
+    void copyProperties(AudioEncoder* enc);
 private:
     class Private;
     QScopedPointer<Private> d;

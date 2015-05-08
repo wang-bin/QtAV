@@ -101,7 +101,7 @@ AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
     c->codec_id = cid;
     if (codec->type == AVMEDIA_TYPE_VIDEO) {
         if (venc) {
-            s->time_base = av_d2q(venc->frameRate(), venc->frameRate()*1001.0+2);
+            s->time_base = av_d2q(1.0/venc->frameRate(), venc->frameRate()*1001.0+2);
             c->bit_rate = venc->bitRate();
             c->width = venc->width();
             c->height = venc->height();

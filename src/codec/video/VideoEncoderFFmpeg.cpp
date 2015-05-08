@@ -65,6 +65,8 @@ public:
     }
     bool open() Q_DECL_OVERRIDE;
     bool close() Q_DECL_OVERRIDE;
+
+    QByteArray buffer;
 };
 
 bool VideoEncoderFFmpegPrivate::open()
@@ -85,13 +87,33 @@ bool VideoEncoderFFmpegPrivate::open()
         avctx = 0;
     }
     avctx = avcodec_alloc_context3(codec);
-    avctx->width = width;
+    qDebug("tbc: %f", av_q2d(avctx->time_base));
+    avctx->width = width; // coded_width works, why?
     avctx->height = height;
     avctx->pix_fmt = QTAV_PIX_FMT_C(YUV420P);
-    avctx->time_base = av_d2q(frame_rate, frame_rate*1001.0+2);
+    avctx->time_base = av_d2q(1.0/frame_rate, frame_rate*1001.0+2);
+    avctx->max_b_frames = 3;//
+    qDebug("2 tbc: %f", av_q2d(avctx->time_base));
     avctx->bit_rate = bit_rate;
+    // Set Option
+        AVDictionary *param = 0;
+#if 0
+        //H.264
+        if(avctx->codec_id == QTAV_CODEC_ID(H264)) {
+            av_dict_set(&param, "preset", "slow", 0);
+            av_dict_set(&param, "tune", "zerolatency", 0);
+            //av_dict_set(&param, "profile", "main", 0);
+        }
+        //H.265
+        if(avctx->codec_id == AV_CODEC_ID_H265){
+            av_dict_set(&param, "preset", "ultrafast", 0);
+            av_dict_set(&param, "tune", "zero-latency", 0);
+        }
+#endif
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
+    const int buffer_size = qMax<int>(qMax<int>(width*height*6+200, FF_MIN_BUFFER_SIZE), sizeof(AVPicture));//??
+    buffer.resize(buffer_size);
     return true;
 }
 
@@ -119,23 +141,36 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
     f->format = frame.format().pixelFormatFFmpeg();
     f->width = frame.width();
     f->height = frame.height();
+    // TODO: record last pts
+    f->pts = int64_t(frame.timestamp()*frameRate());
     // pts is set in muxer
     const int nb_planes = frame.planeCount();
     for (int i = 0; i < nb_planes; ++i) {
         f->linesize[i] = frame.bytesPerLine(i);
         f->data[i] = (uint8_t*)frame.bits(i);
     }
+    if (d.avctx->width <= 0) {
+        d.avctx->width = frame.width();
+    }
+    if (d.avctx->height <= 0) {
+        d.avctx->height = frame.width();
+    }
     AVPacket pkt;
     av_init_packet(&pkt);
+    pkt.data = (uint8_t*)d.buffer.constData();
+    pkt.size = d.buffer.size();
     int got_packet = 0;
     int ret = avcodec_encode_video2(d.avctx, &pkt, f, &got_packet);
     av_frame_free(&f);
     if (ret < 0) {
+        //qWarning("error avcodec_encode_video2: %s" ,av_err2str(ret));
         return false; //false
     }
     if (!got_packet) {
+        qWarning("no packet got");
         return false; //false
     }
+    qDebug("pkt.pts: %lld, dts: %lld", pkt.pts, pkt.dts);
     d.packet = Packet::fromAVPacket(&pkt, 0);
     return true;
 }

@@ -54,6 +54,10 @@ public:
     virtual VideoEncoderId id() const = 0;
     QString name() const Q_DECL_OVERRIDE; //name from factory
     virtual bool encode(const VideoFrame& frame) = 0;
+    /*!
+     * \brief setWidth
+     * set the encoded video width. The same as input frame size if value <= 0
+     */
     void setWidth(int value);
     int width() const;
     void setHeight(int value);

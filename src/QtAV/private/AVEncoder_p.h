@@ -34,8 +34,8 @@ public:
     AVEncoderPrivate():
         avctx(0)
       , is_open(false)
-      , dict(0)
       , bit_rate(0)
+      , dict(0)
     {
     }
     virtual ~AVEncoderPrivate() {
