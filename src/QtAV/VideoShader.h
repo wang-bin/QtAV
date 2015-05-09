@@ -143,8 +143,8 @@ public:
     QRectF normalizedROI(const QRectF& roi) const;
     /*!
      * \brief mapToFrame
-     * map a point p or a rect r to video texture (of 1st plane) and scaled to valid width.
-     * p or r is in video frame's rect, no matter which plane is
+     * map a point p or a rect r to video texture in a given plane and scaled to valid width.
+     * p or r is in video frame's rect coordinates, no matter which plane is
      * \param normalize -1: auto(do not normalize for rectangle texture). 0: no. 1: yes
      * \return
      * point or rect in current texture valid coordinates. \sa validTextureWidth()

@@ -733,6 +733,8 @@ QRectF VideoMaterial::mapToTexture(int plane, const QRectF &roi, int normalize) 
     const qreal s = tex0W/qreal(d.width); // only apply to unnormalized input roi
     const qreal pw = d.video_format.normalizedWidth(plane);
     const qreal ph = d.video_format.normalizedHeight(plane);
+    if (normalize < 0)
+        normalize = d.target != GL_TEXTURE_RECTANGLE;
     if (!roi.isValid()) {
         if (normalize)
             return QRectF(0, 0, d.effective_tex_width_ratio, 1); //NOTE: not (0, 0, 1, 1)
@@ -742,8 +744,6 @@ QRectF VideoMaterial::mapToTexture(int plane, const QRectF &roi, int normalize) 
     float w = roi.width(); //TODO: texturewidth
     float y = roi.y();
     float h = roi.height();
-    if (normalize < 0)
-        normalize = d.target != GL_TEXTURE_RECTANGLE;
     if (normalize) {
         if (qAbs(x) > 1) {
             x /= tex0W;
