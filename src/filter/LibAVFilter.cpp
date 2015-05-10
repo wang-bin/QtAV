@@ -26,6 +26,7 @@
 #include "QtAV/AudioFrame.h"
 #include "QtAV/VideoFrame.h"
 #include "QtAV/private/AVCompat.h"
+#include "utils/internal.h"
 #include "utils/Logger.h"
 
 /*
@@ -191,15 +192,21 @@ QStringList LibAVFilter::audioFilters()
 
 QString LibAVFilter::filterDescription(const QString &filterName)
 {
+    QString s;
 #if QTAV_HAVE(AVFILTER)
     avfilter_register_all();
     const AVFilter *f = avfilter_get_by_name(filterName.toUtf8().constData());
-    if (!f || !f->description)
-        return QString();
-    return f->description;
+    if (!f)
+        return s;
+    if (f->description)
+        s.append(f->description);
+#if AV_MODULE_CHECK(LIBAVFILTER, 3, 7, 0, 8, 100)
+    return s.append("\n").append(QObject::tr("Options:"))
+            .append(Internal::optionsToString((void*)&f->priv_class));
 #endif
+#endif //QTAV_HAVE(AVFILTER)
     Q_UNUSED(filterName);
-    return QString();
+    return s;
 }
 
 LibAVFilter::LibAVFilter()
@@ -344,6 +351,7 @@ void LibAVFilterVideo::process(Statistics *statistics, VideoFrame *frame)
     vf.setBytesPerLine((int*)f->linesize);
     vf.setMetaData("avframe_hoder_ref", QVariant::fromValue(ref));
     vf.setTimestamp(ref->frame()->pts/1000000.0); //pkt_pts?
+    //vf.setMetaData(frame->availableMetaData());
     *frame = vf;
 #else
     Q_UNUSED(frame);
@@ -448,6 +456,7 @@ void LibAVFilterAudio::process(Statistics *statistics, AudioFrame *frame)
     af.setSamplesPerChannel(f->nb_samples);
     af.setMetaData("avframe_hoder_ref", QVariant::fromValue(ref));
     af.setTimestamp(ref->frame()->pts/1000000.0); //pkt_pts?
+    //af.setMetaData(frame->availableMetaData());
     *frame = af;
 #else
     Q_UNUSED(frame);
