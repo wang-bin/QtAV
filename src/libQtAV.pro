@@ -283,6 +283,7 @@ SOURCES += \
     utils/GPUMemCopy.cpp \
     utils/Logger.cpp \
     AudioThread.cpp \
+    utils/internal.cpp \
     AVThread.cpp \
     AudioFormat.cpp \
     AudioFrame.cpp \
@@ -416,6 +417,7 @@ HEADERS *= \
     utils/Logger.h \
     utils/SharedPtr.h \
     utils/ring.h \
+    utils/internal.h \
     output/OutputSet.h \
     QtAV/ColorTransform.h
 
