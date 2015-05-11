@@ -92,7 +92,7 @@ bool VideoEncoderFFmpegPrivate::open()
     avctx->height = height;
     avctx->pix_fmt = QTAV_PIX_FMT_C(YUV420P);
     avctx->time_base = av_d2q(1.0/frame_rate, frame_rate*1001.0+2);
-    avctx->max_b_frames = 3;//
+    //avctx->max_b_frames = 3;//h264
     qDebug("2 tbc: %f=%d/%d", av_q2d(avctx->time_base), avctx->time_base.num, avctx->time_base.den);
     avctx->bit_rate = bit_rate;
     // Set Option
@@ -173,8 +173,9 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
         qWarning("no packet got");
         return false; //false
     }
-    qDebug("pkt.pts: %lld, dts: %lld", pkt.pts, pkt.dts);
-    d.packet = Packet::fromAVPacket(&pkt, 0);
+    qDebug("enc avpkt.pts: %lld, dts: %lld.", pkt.pts, pkt.dts);
+    d.packet = Packet::fromAVPacket(&pkt, av_q2d(d.avctx->time_base));
+    qDebug("enc packet.pts: %.3f, dts: %.3f.", d.packet.pts, d.packet.dts);
     return true;
 }
 

@@ -99,13 +99,21 @@ AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
     s->id = ctx->nb_streams - 1;
     AVCodecContext *c = s->codec;
     c->codec_id = cid;
+    // Packet::asAVPacket() assumes time base is 0.001
+    /*
+     * TODO: time_base is set in av_write_trailer, how to avoid it or know that value?
+     */
+    AVRational tb;
+    tb.num = 1;
+    tb.den = 1000;
     if (codec->type == AVMEDIA_TYPE_VIDEO) {
         if (venc) {
-            s->time_base = av_d2q(1.0/venc->frameRate(), venc->frameRate()*1001.0+2);
+            s->time_base = tb;//av_d2q(1.0/venc->frameRate(), venc->frameRate()*1001.0+2);
             c->bit_rate = venc->bitRate();
             c->width = venc->width();
             c->height = venc->height();
             c->pix_fmt = QTAV_PIX_FMT_C(YUV420P);
+            // Using codec->time_base is deprecated, but needed for older lavf.
             c->time_base = s->time_base;
         }
     }
@@ -299,7 +307,6 @@ bool AVMuxer::open()
         AV_ENSURE_OK(avio_open(&d->format_ctx->pb, fileName().toUtf8().constData(), AVIO_FLAG_WRITE), false);
     }
     AV_ENSURE_OK(avformat_write_header(d->format_ctx, &d->dict), false);
-
     d->started = false;
 
     return true;
@@ -348,8 +355,14 @@ bool AVMuxer::writeVideo(const Packet& packet)
     //av_write_frame
     AVPacket *pkt = (AVPacket*)packet.asAVPacket();
     pkt->stream_index = d->video_streams[0];
-    av_interleaved_write_frame(d->format_ctx, pkt);
-
+    av_write_frame(d->format_ctx, pkt);
+    qDebug("mux packet.pts: %.3f dts:%.3f duration: %.3f, avpkt.pts: %lld,dts:%lld,duration:%lld"
+           , packet.pts, packet.dts, packet.duration
+           , pkt->pts, pkt->dts, pkt->duration);
+    qDebug("stream: %d duration: %lld, end: %lld. "
+           , pkt->stream_index, d->format_ctx->streams[pkt->stream_index]
+            , av_stream_get_end_pts(d->format_ctx->streams[pkt->stream_index])
+            );
     d->started = true;
     return true;
 }
