@@ -29,6 +29,9 @@ static const char kFileScheme[] = "file:";
 #define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
 extern QString getLocalPath(const QString& fullPath);
 
+// Packet::asAVPacket() assumes time base is 0.001
+static const AVRational kTB = {1, 1000};
+
 class AVMuxer::Private
 {
 public:
@@ -99,16 +102,9 @@ AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
     s->id = ctx->nb_streams - 1;
     AVCodecContext *c = s->codec;
     c->codec_id = cid;
-    // Packet::asAVPacket() assumes time base is 0.001
-    /*
-     * TODO: time_base is set in av_write_trailer, how to avoid it or know that value?
-     */
-    AVRational tb;
-    tb.num = 1;
-    tb.den = 1000;
     if (codec->type == AVMEDIA_TYPE_VIDEO) {
         if (venc) {
-            s->time_base = tb;//av_d2q(1.0/venc->frameRate(), venc->frameRate()*1001.0+2);
+            s->time_base = kTB;//av_d2q(1.0/venc->frameRate(), venc->frameRate()*1001.0+2);
             c->bit_rate = venc->bitRate();
             c->width = venc->width();
             c->height = venc->height();
@@ -340,10 +336,11 @@ bool AVMuxer::isOpen() const
 
 bool AVMuxer::writeAudio(const Packet& packet)
 {
-    //av_write_frame
-
     AVPacket *pkt = (AVPacket*)packet.asAVPacket(); //FIXME
     pkt->stream_index = d->audio_streams[0]; //FIXME
+    AVStream *s = d->format_ctx->streams[pkt->stream_index];
+    // stream.time_base is set in avformat_write_header
+    av_packet_rescale_ts(pkt, kTB, s->time_base);
     av_interleaved_write_frame(d->format_ctx, pkt);
 
     d->started = true;
@@ -352,16 +349,20 @@ bool AVMuxer::writeAudio(const Packet& packet)
 
 bool AVMuxer::writeVideo(const Packet& packet)
 {
-    //av_write_frame
     AVPacket *pkt = (AVPacket*)packet.asAVPacket();
     pkt->stream_index = d->video_streams[0];
-    av_write_frame(d->format_ctx, pkt);
+    AVStream *s = d->format_ctx->streams[pkt->stream_index];
+    // stream.time_base is set in avformat_write_header
+    av_packet_rescale_ts(pkt, kTB, s->time_base);
+    //av_write_frame
+    av_interleaved_write_frame(d->format_ctx, pkt);
     qDebug("mux packet.pts: %.3f dts:%.3f duration: %.3f, avpkt.pts: %lld,dts:%lld,duration:%lld"
            , packet.pts, packet.dts, packet.duration
            , pkt->pts, pkt->dts, pkt->duration);
-    qDebug("stream: %d duration: %lld, end: %lld. "
-           , pkt->stream_index, d->format_ctx->streams[pkt->stream_index]
-            , av_stream_get_end_pts(d->format_ctx->streams[pkt->stream_index])
+    qDebug("stream: %d duration: %lld, end: %lld. tb:{%d/%d}"
+           , pkt->stream_index, s->duration
+            , av_stream_get_end_pts(s)
+           , s->time_base.num, s->time_base.den
             );
     d->started = true;
     return true;
