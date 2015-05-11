@@ -42,7 +42,7 @@ class VideoEncoderFFmpeg Q_DECL_FINAL: public VideoEncoder
 public:
     VideoEncoderFFmpeg();
     VideoEncoderId id() const Q_DECL_OVERRIDE;
-    bool encode(const VideoFrame &frame) Q_DECL_OVERRIDE;
+    bool encode(const VideoFrame &frame = VideoFrame()) Q_DECL_OVERRIDE;
 };
 
 static const VideoEncoderId VideoEncoderId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
@@ -93,7 +93,7 @@ bool VideoEncoderFFmpegPrivate::open()
     avctx->pix_fmt = QTAV_PIX_FMT_C(YUV420P);
     avctx->time_base = av_d2q(1.0/frame_rate, frame_rate*1001.0+2);
     avctx->max_b_frames = 3;//
-    qDebug("2 tbc: %f", av_q2d(avctx->time_base));
+    qDebug("2 tbc: %f=%d/%d", av_q2d(avctx->time_base), avctx->time_base.num, avctx->time_base.den);
     avctx->bit_rate = bit_rate;
     // Set Option
         AVDictionary *param = 0;
@@ -137,23 +137,26 @@ VideoEncoderId VideoEncoderFFmpeg::id() const
 bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
 {
     DPTR_D(VideoEncoderFFmpeg);
-    AVFrame *f = av_frame_alloc();
-    f->format = frame.format().pixelFormatFFmpeg();
-    f->width = frame.width();
-    f->height = frame.height();
-    // TODO: record last pts
-    f->pts = int64_t(frame.timestamp()*frameRate());
-    // pts is set in muxer
-    const int nb_planes = frame.planeCount();
-    for (int i = 0; i < nb_planes; ++i) {
-        f->linesize[i] = frame.bytesPerLine(i);
-        f->data[i] = (uint8_t*)frame.bits(i);
-    }
-    if (d.avctx->width <= 0) {
-        d.avctx->width = frame.width();
-    }
-    if (d.avctx->height <= 0) {
-        d.avctx->height = frame.width();
+    AVFrame *f = NULL;
+    if (frame.isValid()) {
+        f = av_frame_alloc();
+        f->format = frame.format().pixelFormatFFmpeg();
+        f->width = frame.width();
+        f->height = frame.height();
+        // TODO: record last pts
+        f->pts = int64_t(frame.timestamp()*frameRate());
+        // pts is set in muxer
+        const int nb_planes = frame.planeCount();
+        for (int i = 0; i < nb_planes; ++i) {
+            f->linesize[i] = frame.bytesPerLine(i);
+            f->data[i] = (uint8_t*)frame.bits(i);
+        }
+        if (d.avctx->width <= 0) {
+            d.avctx->width = frame.width();
+        }
+        if (d.avctx->height <= 0) {
+            d.avctx->height = frame.width();
+        }
     }
     AVPacket pkt;
     av_init_packet(&pkt);

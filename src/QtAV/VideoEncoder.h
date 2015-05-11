@@ -53,7 +53,13 @@ public:
     static VideoEncoder* create(const QString& name);
     virtual VideoEncoderId id() const = 0;
     QString name() const Q_DECL_OVERRIDE; //name from factory
-    virtual bool encode(const VideoFrame& frame) = 0;
+    /*!
+     * \brief encode
+     * encode a video frame to a Packet
+     * \param frame pass an invalid frame to get delayed frames
+     * \return
+     */
+    virtual bool encode(const VideoFrame& frame = VideoFrame()) = 0;
     /*!
      * \brief setWidth
      * set the encoded video width. The same as input frame size if value <= 0
