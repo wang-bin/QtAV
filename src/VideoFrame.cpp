@@ -371,6 +371,9 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
     } else {
         f.setColorSpace(ColorSpace_Unknow);
     }
+    f.setTimestamp(timestamp());
+    f.setDisplayAspectRatio(displayAspectRatio());
+    f.d_ptr->metadata = d->metadata; // need metadata?
     return f;
 }
 
