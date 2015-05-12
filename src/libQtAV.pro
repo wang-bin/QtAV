@@ -292,6 +292,8 @@ SOURCES += \
     codec/AVDecoder.cpp \
     codec/audio/AudioDecoder.cpp \
     codec/audio/AudioDecoderFFmpeg.cpp \
+    codec/AVEncoder.cpp \
+    AVMuxer.cpp \
     AVDemuxer.cpp \
     AVDemuxThread.cpp \
     ColorTransform.cpp \
@@ -328,6 +330,8 @@ SOURCES += \
     codec/video/VideoDecoderFFmpegBase.cpp \
     codec/video/VideoDecoderFFmpeg.cpp \
     codec/video/VideoDecoderFFmpegHW.cpp \
+    codec/video/VideoEncoder.cpp \
+    codec/video/VideoEncoderFFmpeg.cpp \
     VideoThread.cpp \
     VideoFrameExtractor.cpp \
     CommonTypes.cpp
@@ -344,7 +348,9 @@ SDK_HEADERS *= \
     QtAV/AudioFrame.h \
     QtAV/AudioOutput.h \
     QtAV/AVDecoder.h \
+    QtAV/AVEncoder.h \
     QtAV/AVDemuxer.h \
+    QtAV/AVMuxer.h \
     QtAV/CommonTypes.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
@@ -363,6 +369,7 @@ SDK_HEADERS *= \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
     QtAV/VideoDecoderTypes.h \
+    QtAV/VideoEncoder.h \
     QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
     QtAV/VideoFrameExtractor.h \
@@ -384,6 +391,7 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/AudioOutputBackend.h \
     QtAV/private/AudioResampler_p.h \
     QtAV/private/AVDecoder_p.h \
+    QtAV/private/AVEncoder_p.h \
     QtAV/private/AVInput_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
