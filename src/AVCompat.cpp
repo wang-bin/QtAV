@@ -37,6 +37,59 @@ int avio_feof(AVIOContext *s)
 #endif
 }
 #endif
+#if QTAV_USE_LIBAV(LIBAVFORMAT)
+int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat, const char *format, const char *filename)
+{
+    AVFormatContext *s = avformat_alloc_context();
+    int ret = 0;
+
+    *avctx = NULL;
+    if (!s)
+        goto nomem;
+
+    if (!oformat) {
+        if (format) {
+            oformat = av_guess_format(format, NULL, NULL);
+            if (!oformat) {
+                av_log(s, AV_LOG_ERROR, "Requested output format '%s' is not a suitable output format\n", format);
+                ret = AVERROR(EINVAL);
+                goto error;
+            }
+        } else {
+            oformat = av_guess_format(NULL, filename, NULL);
+            if (!oformat) {
+                ret = AVERROR(EINVAL);
+                av_log(s, AV_LOG_ERROR, "Unable to find a suitable output format for '%s'\n",
+                       filename);
+                goto error;
+            }
+        }
+    }
+
+    s->oformat = oformat;
+    if (s->oformat->priv_data_size > 0) {
+        s->priv_data = av_mallocz(s->oformat->priv_data_size);
+        if (!s->priv_data)
+            goto nomem;
+        if (s->oformat->priv_class) {
+            *(const AVClass**)s->priv_data= s->oformat->priv_class;
+            av_opt_set_defaults(s->priv_data);
+        }
+    } else
+        s->priv_data = NULL;
+
+    if (filename)
+        av_strlcpy(s->filename, filename, sizeof(s->filename));
+    *avctx = s;
+    return 0;
+nomem:
+    av_log(s, AV_LOG_ERROR, "Out of memory\n");
+    ret = AVERROR(ENOMEM);
+error:
+    avformat_free_context(s);
+    return ret;
+}
+#endif //QTAV_USE_LIBAV(LIBAVFORMAT)
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 32, 0)
 static const struct {
     const char *name;
@@ -184,6 +237,19 @@ const char *avcodec_get_name(enum AVCodecID id)
 }
 #endif
 
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 55, 0, 68, 100)
+void av_packet_rescale_ts(AVPacket *pkt, AVRational src_tb, AVRational dst_tb)
+{
+    if (pkt->pts != (int64_t)AV_NOPTS_VALUE)
+        pkt->pts = av_rescale_q(pkt->pts, src_tb, dst_tb);
+    if (pkt->dts != (int64_t)AV_NOPTS_VALUE)
+        pkt->dts = av_rescale_q(pkt->dts, src_tb, dst_tb);
+    if (pkt->duration > 0)
+        pkt->duration = av_rescale_q(pkt->duration, src_tb, dst_tb);
+    if (pkt->convergence_duration > 0)
+        pkt->convergence_duration = av_rescale_q(pkt->convergence_duration, src_tb, dst_tb);
+}
+#endif
 // since libav-11, ffmpeg-2.1
 #if !LIBAV_MODULE_CHECK(LIBAVCODEC, 56, 1, 0) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
 int av_packet_copy_props(AVPacket *dst, const AVPacket *src)
@@ -221,6 +287,13 @@ void av_packet_free_side_data(AVPacket *pkt)
         av_freep(&pkt->side_data[i].data);
     av_freep(&pkt->side_data);
     pkt->side_data_elems = 0;
+}
+#endif
+
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 52, 0, 63, 100)
+void avcodec_free_context(AVCodecContext **avctx)
+{
+    av_freep(avctx);
 }
 #endif
 

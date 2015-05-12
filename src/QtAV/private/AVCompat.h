@@ -47,6 +47,7 @@ extern "C"
 #include <libswscale/swscale.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#include <libavutil/avstring.h>
 #include <libavutil/dict.h>
 #include <libavutil/log.h>
 #include <libavutil/mathematics.h> //AV_ROUND_UP, av_rescale_rnd for libav
@@ -55,6 +56,7 @@ extern "C"
 #include <libavutil/opt.h>
 #include <libavutil/parseutils.h>
 #include <libavutil/pixdesc.h>
+#include <libavutil/avstring.h>
 
 #if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 51, 73, 101)
 #include <libavutil/channel_layout.h>
@@ -126,6 +128,9 @@ void ffmpeg_version_print();
 
 #if !FFMPEG_MODULE_CHECK(LIBAVFORMAT, 56, 4, 101)
 int avio_feof(AVIOContext *s);
+#endif
+#if QTAV_USE_LIBAV(LIBAVFORMAT)
+int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat, const char *format, const char *filename);
 #endif
 //TODO: always inline
 /* --gnu option of the RVCT compiler also defines __GNUC__ */
@@ -364,7 +369,9 @@ typedef enum CodecID AVCodecID;
 #if QTAV_USE_LIBAV(LIBAVCODEC)
 const char *avcodec_get_name(enum AVCodecID id);
 #endif
-
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 55, 0, 68, 100)
+void av_packet_rescale_ts(AVPacket *pkt, AVRational src_tb, AVRational dst_tb);
+#endif
 // since libav-11, ffmpeg-2.1
 #if !LIBAV_MODULE_CHECK(LIBAVCODEC, 56, 1, 0) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
 int av_packet_copy_props(AVPacket *dst, const AVPacket *src);
@@ -372,6 +379,10 @@ int av_packet_copy_props(AVPacket *dst, const AVPacket *src);
 // since libav-10, ffmpeg-2.1
 #if !LIBAV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
 void av_packet_free_side_data(AVPacket *pkt);
+#endif
+
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 52, 0, 63, 100)
+void avcodec_free_context(AVCodecContext **avctx);
 #endif
 
 #ifndef FF_API_OLD_GRAPH_PARSE
