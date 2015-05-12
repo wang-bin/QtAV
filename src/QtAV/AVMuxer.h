@@ -71,6 +71,9 @@ public:
 
     void copyProperties(VideoEncoder* enc);
     void copyProperties(AudioEncoder* enc);
+
+    void setOptions(const QVariantHash &dict);
+    QVariantHash options() const;
 private:
     class Private;
     QScopedPointer<Private> d;

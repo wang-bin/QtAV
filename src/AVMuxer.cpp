@@ -133,7 +133,10 @@ bool AVMuxer::Private::prepareStreams()
     video_streams.clear();
     subtitle_streams.clear();
     AVOutputFormat* fmt = format_ctx->oformat;
-    if (fmt->video_codec != QTAV_CODEC_ID(NONE)) {
+    if (venc && !venc->codecName().isEmpty()) {
+        AVCodec *codec = avcodec_find_encoder_by_name(venc->codecName().toUtf8().constData());
+        addStream(format_ctx, codec->id);
+    } else if (fmt->video_codec != QTAV_CODEC_ID(NONE)) {
         addStream(format_ctx, fmt->video_codec);
     }
     return true;
@@ -282,7 +285,6 @@ bool AVMuxer::open()
     // d->format_forced can be set from AVFormatContext.format_whitelist
     if (!d->format_forced.isEmpty()) {
         d->format = av_guess_format(d->format_forced.toUtf8().constData(), NULL, NULL);
-        qDebug() << "force format: " << d->format_forced;
     }
 
     //d->interrupt_hanlder->begin(InterruptHandler::Open);
@@ -356,6 +358,7 @@ bool AVMuxer::writeVideo(const Packet& packet)
     av_packet_rescale_ts(pkt, kTB, s->time_base);
     //av_write_frame
     av_interleaved_write_frame(d->format_ctx, pkt);
+#if 0
     qDebug("mux packet.pts: %.3f dts:%.3f duration: %.3f, avpkt.pts: %lld,dts:%lld,duration:%lld"
            , packet.pts, packet.dts, packet.duration
            , pkt->pts, pkt->dts, pkt->duration);
@@ -364,6 +367,7 @@ bool AVMuxer::writeVideo(const Packet& packet)
             , av_stream_get_end_pts(s)
            , s->time_base.num, s->time_base.den
             );
+#endif
     d->started = true;
     return true;
 }
@@ -373,6 +377,16 @@ void AVMuxer::copyProperties(VideoEncoder *enc)
     d->venc = enc;
 }
 
+void AVMuxer::setOptions(const QVariantHash &dict)
+{
+    d->options = dict;
+    d->applyOptionsForContext(); // apply even if avformat context is open
+}
+
+QVariantHash AVMuxer::options() const
+{
+    return d->options;
+}
 
 void AVMuxer::Private::applyOptionsForDict()
 {
