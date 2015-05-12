@@ -87,28 +87,27 @@ bool VideoEncoderFFmpegPrivate::open()
         avctx = 0;
     }
     avctx = avcodec_alloc_context3(codec);
-    qDebug("tbc: %f", av_q2d(avctx->time_base));
     avctx->width = width; // coded_width works, why?
     avctx->height = height;
-    avctx->pix_fmt = QTAV_PIX_FMT_C(YUV420P);
+    avctx->pix_fmt = QTAV_PIX_FMT_C(YUV420P); //
     avctx->time_base = av_d2q(1.0/frame_rate, frame_rate*1001.0+2);
-    //avctx->max_b_frames = 3;//h264
-    qDebug("2 tbc: %f=%d/%d", av_q2d(avctx->time_base), avctx->time_base.num, avctx->time_base.den);
+    qDebug("size: %dx%d tbc: %f=%d/%d", width, height, av_q2d(avctx->time_base), avctx->time_base.num, avctx->time_base.den);
     avctx->bit_rate = bit_rate;
-    // Set Option
-        AVDictionary *param = 0;
-#if 0
-        //H.264
-        if(avctx->codec_id == QTAV_CODEC_ID(H264)) {
-            av_dict_set(&param, "preset", "slow", 0);
-            av_dict_set(&param, "tune", "zerolatency", 0);
-            //av_dict_set(&param, "profile", "main", 0);
-        }
-        //H.265
-        if(avctx->codec_id == AV_CODEC_ID_H265){
-            av_dict_set(&param, "preset", "ultrafast", 0);
-            av_dict_set(&param, "tune", "zero-latency", 0);
-        }
+#if 1
+    //AVDictionary *dict = 0;
+    if(avctx->codec_id == QTAV_CODEC_ID(H264)) {
+        avctx->gop_size = 10;
+        //avctx->max_b_frames = 3;//h264
+        av_dict_set(&dict, "preset", "fast", 0);
+        av_dict_set(&dict, "tune", "zerolatency", 0);
+        av_dict_set(&dict, "profile", "main", 0);
+    }
+#ifdef AV_CODEC_ID_H265
+    if(avctx->codec_id == AV_CODEC_ID_H265){
+        av_dict_set(&dict, "preset", "ultrafast", 0);
+        av_dict_set(&dict, "tune", "zero-latency", 0);
+    }
+#endif //AV_CODEC_ID_H265
 #endif
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
@@ -173,9 +172,9 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
         qWarning("no packet got");
         return false; //false
     }
-    qDebug("enc avpkt.pts: %lld, dts: %lld.", pkt.pts, pkt.dts);
+   // qDebug("enc avpkt.pts: %lld, dts: %lld.", pkt.pts, pkt.dts);
     d.packet = Packet::fromAVPacket(&pkt, av_q2d(d.avctx->time_base));
-    qDebug("enc packet.pts: %.3f, dts: %.3f.", d.packet.pts, d.packet.dts);
+   // qDebug("enc packet.pts: %.3f, dts: %.3f.", d.packet.pts, d.packet.dts);
     return true;
 }
 

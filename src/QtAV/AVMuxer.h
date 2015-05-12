@@ -27,6 +27,8 @@
 #include <QtCore/QObject>
 #include <QtCore/QIODevice>
 #include <QtCore/QScopedPointer>
+#include <QtCore/QStringList>
+#include <QtCore/QVariant>
 
 namespace QtAV {
 

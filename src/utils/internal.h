@@ -23,12 +23,18 @@
 #define QTAV_INTERNAL_H
 
 #include <QtCore/QString>
+#include <QtCore/QVariant>
+#include <QtCore/QObject>
+#include "QtAV/private/AVCompat.h"
 
 namespace QtAV {
 namespace Internal {
 
 QString optionsToString(void* obj);
-
+void setOptionsToFFmpegObj(const QVariant& opt, void* obj);
+void setOptionsToDict(const QVariant& opt, AVDictionary** dict);
+// set qobject meta properties
+void setOptionsForQObject(const QVariant& opt, QObject* obj);
 } //namespace Internal
 } //namespace QtAV
 #endif //QTAV_INTERNAL_H

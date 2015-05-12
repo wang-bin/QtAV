@@ -22,6 +22,7 @@
 #include "QtAV/AVMuxer.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/VideoEncoder.h"
+#include "utils/internal.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -285,6 +286,7 @@ bool AVMuxer::open()
     // d->format_forced can be set from AVFormatContext.format_whitelist
     if (!d->format_forced.isEmpty()) {
         d->format = av_guess_format(d->format_forced.toUtf8().constData(), NULL, NULL);
+        qDebug() << "force format: " << d->format_forced;
     }
 
     //d->interrupt_hanlder->begin(InterruptHandler::Open);
@@ -397,49 +399,24 @@ void AVMuxer::Private::applyOptionsForDict()
     if (options.isEmpty())
         return;
     QVariant opt(options);
-    if (options.contains("avformat")) {
+    if (options.contains("avformat"))
         opt = options.value("avformat");
-        if (opt.type() == QVariant::Map) {
-            QVariantMap avformat_dict(opt.toMap());
-            if (avformat_dict.isEmpty())
-                return;
-            if (avformat_dict.contains("format_whitelist")) {
-                const QString fmts(avformat_dict["format_whitelist"].toString());
-                if (!fmts.contains(',') && !fmts.isEmpty()) {
-                    format_forced = fmts; // reset when media changed
-                }
-            }
-            QMapIterator<QString, QVariant> i(avformat_dict);
-            while (i.hasNext()) {
-                i.next();
-                const QVariant::Type vt = i.value().type();
-                if (vt == QVariant::Map)
-                    continue;
-                const QByteArray key(i.key().toLower().toUtf8());
-                av_dict_set(&dict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
-                qDebug("avformat dict: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-            }
-            return;
+    Internal::setOptionsToDict(opt, &dict);
+
+    if (opt.type() == QVariant::Map) {
+        QVariantMap avformat_dict(opt.toMap());
+        if (avformat_dict.contains("format_whitelist")) {
+            const QString fmts(avformat_dict["format_whitelist"].toString());
+            if (!fmts.contains(',') && !fmts.isEmpty())
+                format_forced = fmts; // reset when media changed
         }
-    }
-    QVariantHash avformat_dict(opt.toHash());
-    if (avformat_dict.isEmpty())
-        return;
-    if (avformat_dict.contains("format_whitelist")) {
-        const QString fmts(avformat_dict["format_whitelist"].toString());
-        if (!fmts.contains(',') && !fmts.isEmpty()) {
-            format_forced = fmts; // reset when media changed
+    } else if (opt.type() == QVariant::Hash) {
+        QVariantMap avformat_dict(opt.toMap());
+        if (avformat_dict.contains("format_whitelist")) {
+            const QString fmts(avformat_dict["format_whitelist"].toString());
+            if (!fmts.contains(',') && !fmts.isEmpty())
+                format_forced = fmts; // reset when media changed
         }
-    }
-    QHashIterator<QString, QVariant> i(avformat_dict);
-    while (i.hasNext()) {
-        i.next();
-        const QVariant::Type vt = i.value().type();
-        if (vt == QVariant::Hash)
-            continue;
-        const QByteArray key(i.key().toLower().toUtf8());
-        av_dict_set(&dict, key.constData(), i.value().toByteArray().constData(), 0); // toByteArray: bool is "true" "false"
-        qDebug("avformat dict: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
     }
 }
 
@@ -452,45 +429,8 @@ void AVMuxer::Private::applyOptionsForContext()
         return;
     }
     QVariant opt(options);
-    if (options.contains("avformat")) {
+    if (options.contains("avformat"))
         opt = options.value("avformat");
-        if (opt.type() == QVariant::Map) {
-            QVariantMap avformat_dict(opt.toMap());
-            if (avformat_dict.isEmpty())
-                return;
-            QMapIterator<QString, QVariant> i(avformat_dict);
-            while (i.hasNext()) {
-                i.next();
-                const QVariant::Type vt = i.value().type();
-                if (vt == QVariant::Map)
-                    continue;
-                const QByteArray key(i.key().toLower().toUtf8());
-                qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-                if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
-                    av_opt_set_int(format_ctx, key.constData(), i.value().toInt(), 0);
-                } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
-                    av_opt_set_int(format_ctx, key.constData(), i.value().toLongLong(), 0);
-                }
-            }
-            return;
-        }
-    }
-    QVariantHash avformat_dict(opt.toHash());
-    if (avformat_dict.isEmpty())
-        return;
-    QHashIterator<QString, QVariant> i(avformat_dict);
-    while (i.hasNext()) {
-        i.next();
-        const QVariant::Type vt = i.value().type();
-        if (vt == QVariant::Hash)
-            continue;
-        const QByteArray key(i.key().toLower().toUtf8());
-        qDebug("avformat option: %s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
-        if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
-            av_opt_set_int(format_ctx, key.constData(), i.value().toInt(), 0);
-        } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
-            av_opt_set_int(format_ctx, key.constData(), i.value().toLongLong(), 0);
-        }
-    }
+    Internal::setOptionsToFFmpegObj(opt, format_ctx);
 }
 } //namespace QtAV
