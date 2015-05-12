@@ -229,6 +229,8 @@ AudioFrame AudioFrame::to(const AudioFormat &fmt) const
     }
     AudioFrame f(conv->outData(), fmt);
     f.setSamplesPerChannel(conv->outSamplesPerChannel());
+    f.setTimestamp(timestamp());
+    f.d_ptr->metadata = d->metadata; // need metadata?
     return f;
 }
 
