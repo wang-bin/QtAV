@@ -119,6 +119,8 @@ public:
     int timer_id; //notify position change and check AB repeat range. active when playing
 
     int audio_track, video_track, subtitle_track;
+    QString external_audio;
+    AVDemuxer audio_demuxer;
     BufferMode buffer_mode;
     int buffer_value;
     //the following things are required and must be set not null

@@ -159,12 +159,37 @@ public:
     //0: play once. N: play N+1 times. <0: infinity
     int repeat() const; //or repeatMax()?
     int currentRepeat() const;
-    /*
+    /*!
+     * \brief setExternalAudio
+     * set audio track from an external audio stream. this will try to load the external audio and
+     * select the 1st audio stream. If no error happens, the external audio stream will be set to
+     * current audio track.
+     * If external audio stream <0 before play, stream is auto selected
+     * You have to manually empty value to unload the external audio!
+     * \param file external audio file path. Set empty to use internal audio tracks. TODO: reset stream number if switch to internal
+     * \return true if no error happens
+     */
+    bool setExternalAudio(const QString& file);
+    QString externalAudio() const;
+    /*!
+     * \brief setAudioStream
+     * set an external audio file and stream number as audio track
+     * \param file external audio file. set empty to use internal audio tracks
+     * \param n audio stream number n=0, 1, ....
+     * TODO: if internal audio stream <0, disable audio
+     * \return false if fail
+     */
+    bool setAudioStream(const QString& file, int n = 0);
+    /*!
      * set audio/video/subtitle stream to n. n=0, 1, 2..., means the 1st, 2nd, 3rd audio/video/subtitle stream
      * If a new file is set(except the first time) then a best stream will be selected. If the file not changed,
      * e.g. replay, then the stream not change
      * return: false if stream not changed, not valid
      * TODO: rename to track instead of stream
+     */
+    /*!
+     * \brief setAudioStream
+     * Set audio stream number in current media or external audio file
      */
     bool setAudioStream(int n);
     bool setVideoStream(int n);

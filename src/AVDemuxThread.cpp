@@ -65,6 +65,7 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , m_buffering(false)
   , m_buffer(0)
   , demuxer(0)
+  , ademuxer(0)
   , audio_thread(0)
   , video_thread(0)
   , nb_next_frame(0)
@@ -91,6 +92,13 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
 void AVDemuxThread::setDemuxer(AVDemuxer *dmx)
 {
     demuxer = dmx;
+}
+
+void AVDemuxThread::setAudioDemuxer(AVDemuxer *demuxer)
+{
+    //QMutexLocker locker(&buffer_mutex);
+    //Q_UNUSED(locker);
+    ademuxer = demuxer;
 }
 
 void AVDemuxThread::setAVThread(AVThread*& pOld, AVThread *pNew)
@@ -163,6 +171,10 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
     qDebug("seek to %s %lld ms (%f%%)", QTime(0, 0, 0).addMSecs(pos).toString().toUtf8().constData(), pos, double(pos - demuxer->startTime())/double(demuxer->duration())*100.0);
     demuxer->setSeekType(type);
     demuxer->seek(pos);
+    if (ademuxer) {
+        ademuxer->setSeekType(type);
+        ademuxer->seek(pos);
+    }
     // TODO: why queue may not empty?
     for (size_t i = 0; i < sizeof(av)/sizeof(av[0]); ++i) {
         AVThread *t = av[i];
@@ -272,7 +284,7 @@ void AVDemuxThread::stop()
     end = true;
 }
 
-void AVDemuxThread::pause(bool p)
+void AVDemuxThread::pause(bool p, bool wait)
 {
     if (paused == p)
         return;
@@ -280,6 +292,13 @@ void AVDemuxThread::pause(bool p)
     user_paused = paused;
     if (!paused)
         cond.wakeAll();
+    else {
+        if (wait) {
+            // block until current loop finished
+            buffer_mutex.lock();
+            buffer_mutex.unlock();
+        }
+    }
 }
 
 void AVDemuxThread::nextFrame()
@@ -394,7 +413,7 @@ void AVDemuxThread::run()
     // aqueue as a primary buffer: music with/without cover
     AVThread* thread = !video_thread || (audio_thread && demuxer->hasAttacedPicture()) ? audio_thread : video_thread;
     m_buffer = thread->packetQueue();
-    const int buf2 = aqueue ? aqueue->bufferValue() : 1; // TODO: may be changed by user
+    const int buf2 = aqueue ? aqueue->bufferValue() : 1; // TODO: may be changed by user. Deal with audio track change
     if (aqueue) {
         aqueue->clear();
         aqueue->setBlocking(true);
@@ -406,6 +425,9 @@ void AVDemuxThread::run()
     connect(thread, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished(qint64)), Qt::DirectConnection);
     seek_tasks.clear();
     bool was_end = false;
+    if (ademuxer) {
+        ademuxer->seek(0LL);
+    }
     while (!end) {
         processNextSeekTask();
         if (demuxer->atEnd()) {
@@ -431,13 +453,38 @@ void AVDemuxThread::run()
             continue; //the queue is empty and will block
         }
         updateBufferState();
-        QMutexLocker locker(&buffer_mutex);
-        Q_UNUSED(locker);
         if (!demuxer->readFrame()) {
             continue;
         }
         index = demuxer->stream();
         pkt = demuxer->packet();
+        Packet apkt;
+        bool audio_has_pic = demuxer->hasAttacedPicture();
+        int a_ext = 0;
+        if (ademuxer) {
+            QMutexLocker locker(&buffer_mutex);
+            Q_UNUSED(locker);
+            if (ademuxer) {
+                a_ext = -1;
+                audio_has_pic = ademuxer->hasAttacedPicture();
+                // FIXME: buffer full but buffering!!!
+                // avoid read external track everytime. aqueue may not block full
+                // vqueue will not block if aqueue is not enough
+                if (!aqueue->isFull() || aqueue->isBuffering()) {
+                    if (ademuxer->readFrame()) {
+                        if (ademuxer->stream() == ademuxer->audioStream()) {
+                            a_ext = 1;
+                            apkt = ademuxer->packet();
+                        }
+                    }
+                    // no continue otherwise. ademuxer finished earlier than demuxer
+                }
+            }
+        }
+        //qDebug("vqueue: %d, aqueue: %d/isbuffering %d isfull: %d, buffer: %d/%d", vqueue->size(), aqueue->size(), aqueue->isBuffering(), aqueue->isFull(), aqueue->buffered(), aqueue->bufferValue());
+
+        //QMutexLocker locker(&buffer_mutex); //TODO: seems we do not need to lock
+        //Q_UNUSED(locker);
         /*1 is empty but another is enough, then do not block to
           ensure the empty one can put packets immediatly.
           But usually it will not happen, why?
@@ -450,7 +497,10 @@ void AVDemuxThread::run()
          * stream data: aavavvavvavavavavavavavavvvaavavavava, it's ok
          */
         //TODO: use cache queue, take from cache queue if not empty?
-        if (index == demuxer->audioStream()) {
+        const bool a_internal = index == demuxer->audioStream();
+        if (a_internal || a_ext > 0) {//apkt.isValid()) {
+            if (a_internal && !a_ext) // internal is always read even if external audio used
+                apkt = demuxer->packet();
             /* if vqueue if not blocked and full, and aqueue is empty, then put to
              * vqueue will block demuex thread
              */
@@ -459,19 +509,19 @@ void AVDemuxThread::run()
                     aqueue->clear();
                     continue;
                 }
-                if (m_buffer != aqueue) {
-                    if (m_buffer->isBuffering()) {
-                        aqueue->setBufferValue(std::numeric_limits<int>::max());
-                    } else {
-                        aqueue->setBufferValue(buf2);
-                    }
-                }
+                // must ensure bufferValue set correctly before continue
+                if (m_buffer != aqueue)
+                    aqueue->setBufferValue(m_buffer->isBuffering() ? std::numeric_limits<int>::max() : buf2);
                 // always block full if no vqueue because empty callback may set false
                 // attached picture is cover for song, 1 frame
-                aqueue->blockFull(!video_thread || !video_thread->isRunning() || !vqueue || demuxer->hasAttacedPicture());
-                aqueue->put(pkt); //affect video_thread
+                aqueue->blockFull(!video_thread || !video_thread->isRunning() || !vqueue || audio_has_pic);
+                // external audio: a_ext < 0, index = audio_idx=>put invalid packet
+                if (a_ext >= 0)
+                    aqueue->put(apkt); //affect video_thread
             }
-        } else if (index == demuxer->videoStream()) {
+        }
+        // always check video stream if use external audio
+        if (index == demuxer->videoStream()) {
             if (vqueue) {
                 if (!video_thread || !video_thread->isRunning()) {
                     vqueue->clear();

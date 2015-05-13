@@ -664,7 +664,7 @@ void AVPlayer::unloadInternal()
     if (isPlaying())
         stop();
 
-    if (d->adec) {
+    if (d->adec) { // FIXME: crash if audio external=>internal then replay
         d->adec->setCodecContext(0);
         delete d->adec;
         d->adec = 0;
@@ -837,30 +837,95 @@ void AVPlayer::setRepeat(int max)
     emit repeatChanged(d->repeat_max);
 }
 
-
-bool AVPlayer::setAudioStream(int n)
+bool AVPlayer::setExternalAudio(const QString &file)
 {
-    if (n < 0)
+    // TODO: update statistics
+    int stream = currentAudioStream();
+    if (!isLoaded() && stream < 0)
+        stream = 0;
+    return setAudioStream(file, stream);
+}
+
+QString AVPlayer::externalAudio() const
+{
+    return d->external_audio;
+}
+
+bool AVPlayer::setAudioStream(const QString &file, int n)
+{
+    if (n < 0) // TODO: disable audio
         return false;
-    if (d->audio_track == n)
+    if (d->audio_track == n && d->external_audio == file)
         return true;
-    if (isLoaded()) {
-        if (n >= d->demuxer.audioStreams().size())
-            return false;
+    if (file.isEmpty()) {
+        if (isLoaded()) {
+            if (n >= d->demuxer.audioStreams().size()) {
+                qWarning("Invalid audio stream number %d/%d", n, d->demuxer.audioStreams().size()-1);
+                return false;
+            }
+        }
+    } else {
+        if (d->audio_demuxer.fileName() == file && d->audio_demuxer.isLoaded()) {
+            if (n >= d->audio_demuxer.audioStreams().size()) {
+                qWarning("Invalid external audio stream number %d/%d", n, d->audio_demuxer.audioStreams().size()-1);
+                return false;
+            }
+        }
     }
     d->audio_track = n;
-    if (!isPlaying())
+    d->external_audio = file;
+    d->audio_demuxer.setMedia(d->external_audio);
+    if (!isPlaying()) {
+        qDebug("set audio track when not playing");
+        if (d->external_audio.isEmpty()) {
+            d->read_thread->setAudioDemuxer(0);
+            d->audio_demuxer.unload();
+        } else {
+            qDebug("set external audio track when not playing");
+            d->audio_demuxer.load();
+            d->read_thread->setAudioDemuxer(&d->audio_demuxer);
+            if (d->audio_track < 0) {
+                d->audio_track = d->audio_demuxer.audioStream();
+            }
+        }
         return true;
+    }
     // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
     bool p = isPaused();
+    if (!d->external_audio.isEmpty())
+        d->read_thread->pause(true, true); // wait to safe set ademuxer
     pause(true);
-    if (!d->setupAudioThread(this)) {
+
+    if (!d->external_audio.isEmpty()) {
+        if (!d->audio_demuxer.isLoaded()) {
+            if (!d->audio_demuxer.load()) {
+                qWarning("Failed to load audio track %d@%s", d->audio_track, d->external_audio.toUtf8().constData());
+                if (!p)
+                    pause(false);
+                return false;
+            }
+        }
+        d->read_thread->setAudioDemuxer(&d->audio_demuxer);
+    }
+
+    if (!d->setupAudioThread(this)) { // adec will be deleted. so audio_demuxer must unload later
         stop();
         return false;
+    }
+    if (d->external_audio.isEmpty()) {
+        d->read_thread->setAudioDemuxer(0);
+        d->audio_demuxer.unload();
+    } else {
+        d->audio_demuxer.seek(position());
     }
     if (!p)
         pause(false);
     return true;
+}
+
+bool AVPlayer::setAudioStream(int n)
+{
+    return setAudioStream(externalAudio(), n);
 }
 
 bool AVPlayer::setVideoStream(int n)

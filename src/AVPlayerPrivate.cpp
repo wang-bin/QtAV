@@ -278,7 +278,10 @@ void AVPlayer::Private::initVideoStatistics(int s)
 // notify statistics change after audio/video thread is set
 bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
 {
-    demuxer.setStreamIndex(AVDemuxer::AudioStream, audio_track);
+    AVDemuxer *ademuxer = &demuxer;
+    if (!external_audio.isEmpty())
+        ademuxer = &audio_demuxer;
+    ademuxer->setStreamIndex(AVDemuxer::AudioStream, audio_track);
     // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
     // clear packets before stream changed
     if (athread) {
@@ -286,7 +289,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         athread->setDecoder(0);
         athread->setOutput(0);
     }
-    AVCodecContext *avctx = demuxer.audioCodecContext();
+    AVCodecContext *avctx = ademuxer->audioCodecContext();
     if (!avctx) {
         // TODO: close ao? //TODO: check pulseaudio perapp control if closed
         return false;
@@ -372,7 +375,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     athread->setDecoder(adec);
     setAVOutput(ao, ao, athread);
     updateBufferValue(athread->packetQueue());
-    initAudioStatistics(demuxer.audioStream());
+    initAudioStatistics(ademuxer->audioStream());
     return true;
 }
 

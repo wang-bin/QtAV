@@ -40,6 +40,7 @@ public:
     explicit AVDemuxThread(QObject *parent = 0);
     explicit AVDemuxThread(AVDemuxer *dmx, QObject *parent = 0);
     void setDemuxer(AVDemuxer *dmx);
+    void setAudioDemuxer(AVDemuxer *demuxer); //not thread safe
     void setAudioThread(AVThread *thread);
     AVThread* audioThread();
     void setVideoThread(AVThread *thread);
@@ -52,7 +53,7 @@ public:
     void updateBufferState();
 public slots:
     void stop(); //TODO: remove it?
-    void pause(bool p);
+    void pause(bool p, bool wait = false);
     void nextFrame(); // show next video frame and pause
 
 Q_SIGNALS:
@@ -87,6 +88,7 @@ private:
     bool m_buffering;
     PacketBuffer *m_buffer;
     AVDemuxer *demuxer;
+    AVDemuxer *ademuxer;
     AVThread *audio_thread, *video_thread;
     int audio_stream, video_stream;
     QMutex buffer_mutex;

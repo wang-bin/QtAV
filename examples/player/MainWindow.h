@@ -120,6 +120,7 @@ private slots:
     void onHueChanged(int h);
     void onSaturationChanged(int s);
 
+    void onSeekFinished();
     void onCaptureConfigChanged();
     void onAVFilterVideoConfigChanged();
     void onAVFilterAudioConfigChanged();

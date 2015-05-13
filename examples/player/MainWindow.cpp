@@ -170,6 +170,7 @@ void MainWindow::initPlayer()
     connect(mpVolumeSlider, SIGNAL(sliderPressed()), SLOT(setVolume()));
     connect(mpVolumeSlider, SIGNAL(valueChanged(int)), SLOT(setVolume()));
 
+    connect(mpPlayer, SIGNAL(seekFinished()), SLOT(onSeekFinished()));
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(onMediaStatusChanged()));
     connect(mpPlayer, SIGNAL(bufferProgressChanged(qreal)), SLOT(onBufferProgress(qreal)));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), this, SLOT(handleError(QtAV::AVError)));
@@ -187,6 +188,11 @@ void MainWindow::initPlayer()
     connect(mpCaptureBtn, SIGNAL(clicked()), mpPlayer->videoCapture(), SLOT(request()));
 
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
+}
+
+void MainWindow::onSeekFinished()
+{
+    qDebug("seek finished at %lld", mpPlayer->position());
 }
 
 void MainWindow::stopUnload()
@@ -459,6 +465,7 @@ void MainWindow::setupUi()
     mpMenu->addMenu(subMenu);
     mpAudioTrackMenu = subMenu;
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeAudioTrack(QAction*)));
+    initAudioTrackMenu();
 
     subMenu = new ClickableMenu(tr("Channel"));
     mpMenu->addMenu(subMenu);
@@ -592,17 +599,28 @@ void MainWindow::changeChannel(QAction *action)
 
 void MainWindow::changeAudioTrack(QAction *action)
 {
-    if (mpAudioTrackAction == action) {
-        action->toggle();
-        return;
-    }
     int track = action->data().toInt();
-
-    if (!mpPlayer->setAudioStream(track)) {
+    if (mpAudioTrackAction == action && track >= 0) { // external action is always clickable
         action->toggle();
         return;
     }
-    mpAudioTrackAction->setChecked(false);
+    if (track < 0) {
+        QString f = QFileDialog::getOpenFileName(0, tr("Open an external audio track"));
+        if (f.isEmpty()) {
+            action->toggle();
+            return;
+        }
+        mpPlayer->setExternalAudio(f);
+    } else {
+        mpPlayer->setExternalAudio(QString());
+        if (!mpPlayer->setAudioStream(track)) {
+            action->toggle();
+            return;
+        }
+    }
+
+    if (mpAudioTrackAction)
+        mpAudioTrackAction->setChecked(false);
     mpAudioTrackAction = action;
     mpAudioTrackAction->setChecked(true);
     if (mpStatisticsView && mpStatisticsView->isVisible())
@@ -1120,37 +1138,61 @@ void MainWindow::updateChannelMenu()
 
 void MainWindow::initAudioTrackMenu()
 {
-    int track = mpPlayer->currentAudioStream();
-    QList<QAction*> as = mpAudioTrackMenu->actions();
-    int tracks = mpPlayer->audioStreamCount();
-    if (mpAudioTrackAction && tracks == as.size() && mpAudioTrackAction->data().toInt() == track)
+    int track = -2;
+    QAction *a = 0;
+    QList<QAction*> as;
+    int tracks = 0;
+    if (!mpPlayer) {
+        a = mpAudioTrackMenu->addAction(tr("External"));
+        a->setData(-1);
+        a->setCheckable(true);
+        a->setChecked(false);
+        as.push_back(a);
+        mpAudioTrackAction = 0;
+        goto end;
+    }
+    track = mpPlayer->currentAudioStream();
+    as = mpAudioTrackMenu->actions();
+    tracks = mpPlayer->audioStreamCount();
+    if (mpAudioTrackAction && tracks == as.size()-1 && mpAudioTrackAction->data().toInt() == track)
         return;
-    while (tracks < as.size()) {
-        QAction *a = as.takeLast();
+    while (tracks + 1 < as.size()) {
+        a = as.takeLast();
         mpAudioTrackMenu->removeAction(a);
         delete a;
     }
-    while (tracks > as.size()) {
-        QAction *a = mpAudioTrackMenu->addAction(QString::number(as.size()));
-        a->setData(as.size());
+    if (as.isEmpty()) {
+        a = mpAudioTrackMenu->addAction(tr("External"));
+        a->setData(-1);
+        a->setCheckable(true);
+        a->setChecked(false);
+        as.push_back(a);
+        mpAudioTrackAction = 0;
+    }
+    while (tracks + 1 > as.size()) {
+        a = mpAudioTrackMenu->addAction(QString::number(as.size()-1));
+        a->setData(as.size()-1);
         a->setCheckable(true);
         a->setChecked(false);
         as.push_back(a);
     }
-    if (as.isEmpty()) {
-        mpAudioTrackAction = 0;
-        return;
-    }
-    foreach(QAction *a, as) {
-        if (a->data().toInt() == track) {
-            qDebug("track found!!!!!");
-            mpAudioTrackAction = a;
-            a->setChecked(true);
+end:
+    foreach(QAction *ac, as) {
+        if (ac->data().toInt() == track && track >= 0) {
+            if (mpPlayer && mpPlayer->externalAudio().isEmpty()) {
+                qDebug("track found!!!!!");
+                mpAudioTrackAction = ac;
+                ac->setChecked(true);
+            }
         } else {
-            a->setChecked(false);
+            ac->setChecked(false);
         }
     }
-    mpAudioTrackAction->setChecked(true);
+    if (mpPlayer && !mpPlayer->externalAudio().isEmpty()) {
+        mpAudioTrackAction = as.first();
+    }
+    if (mpAudioTrackAction)
+        mpAudioTrackAction->setChecked(true);
 }
 
 void MainWindow::switchAspectRatio(QAction *action)
