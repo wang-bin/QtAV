@@ -171,6 +171,7 @@ public:
      */
     bool setExternalAudio(const QString& file);
     QString externalAudio() const;
+    int externalAudioStreamCount() const;
     /*!
      * \brief setAudioStream
      * set an external audio file and stream number as audio track

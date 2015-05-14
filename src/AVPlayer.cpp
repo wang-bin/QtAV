@@ -851,13 +851,24 @@ QString AVPlayer::externalAudio() const
     return d->external_audio;
 }
 
+int AVPlayer::externalAudioStreamCount() const
+{
+    if (d->external_audio.isEmpty())
+        return 0;
+    return d->audio_demuxer.audioStreams().size();
+}
+
 bool AVPlayer::setAudioStream(const QString &file, int n)
 {
     if (n < 0) // TODO: disable audio
         return false;
-    if (d->audio_track == n && d->external_audio == file)
+    QString path(file);
+    // QFile does not support "file:"
+    if (path.startsWith("file:"))
+        path = getLocalPath(path);
+    if (d->audio_track == n && d->external_audio == path)
         return true;
-    if (file.isEmpty()) {
+    if (path.isEmpty()) {
         if (isLoaded()) {
             if (n >= d->demuxer.audioStreams().size()) {
                 qWarning("Invalid audio stream number %d/%d", n, d->demuxer.audioStreams().size()-1);
@@ -865,7 +876,7 @@ bool AVPlayer::setAudioStream(const QString &file, int n)
             }
         }
     } else {
-        if (d->audio_demuxer.fileName() == file && d->audio_demuxer.isLoaded()) {
+        if (d->audio_demuxer.fileName() == path && d->audio_demuxer.isLoaded()) {
             if (n >= d->audio_demuxer.audioStreams().size()) {
                 qWarning("Invalid external audio stream number %d/%d", n, d->audio_demuxer.audioStreams().size()-1);
                 return false;
@@ -873,7 +884,7 @@ bool AVPlayer::setAudioStream(const QString &file, int n)
         }
     }
     d->audio_track = n;
-    d->external_audio = file;
+    d->external_audio = path;
     d->audio_demuxer.setMedia(d->external_audio);
     if (!isPlaying()) {
         qDebug("set audio track when not playing");
