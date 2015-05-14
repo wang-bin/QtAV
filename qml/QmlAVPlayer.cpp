@@ -85,6 +85,7 @@ void QmlAVPlayer::classBegin()
     if (mpPlayer)
         return;
     mpPlayer = new AVPlayer(this);
+    connect(mpPlayer, SIGNAL(durationChanged(qint64)), SIGNAL(durationChanged()));
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(_q_statusChanged()));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), SLOT(_q_error(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));

@@ -611,6 +611,7 @@ void AVPlayer::loadInternal()
         qWarning("Load failed!");
         return;
     }
+    Q_EMIT durationChanged(duration());
     // setup parameters from loaded media
     d->fmt_ctx = d->demuxer.formatContext();
     d->media_start_pts = d->demuxer.startTime();
@@ -675,6 +676,7 @@ void AVPlayer::unloadInternal()
         d->vdec = 0;
     }
     d->demuxer.unload();
+    Q_EMIT durationChanged(0LL);
 }
 
 void AVPlayer::setRelativeTimeMode(bool value)
