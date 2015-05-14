@@ -24,7 +24,13 @@
 
 #include <QtCore/QVariant>
 #include "QtAV/Packet.h"
+#include "QtAV/VideoFormat.h"
 #include "QtAV/private/AVCompat.h"
+
+// FF_API_PIX_FMT
+#ifdef PixelFormat
+#undef PixelFormat
+#endif
 
 namespace QtAV {
 
@@ -81,12 +87,16 @@ public:
       , width(0)
       , height(0)
       , frame_rate(25.0)
+      , format_used(VideoFormat::Format_Invalid)
+      , format(format_used)
     {
         bit_rate = 400000;
     }
     virtual ~VideoEncoderPrivate() {}
     int width, height;
     qreal frame_rate;
+    VideoFormat::PixelFormat format_used;
+    VideoFormat format;
 };
 } //namespace QtAV
 #endif // QTAV_AVENCODER_P_H

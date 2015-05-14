@@ -109,7 +109,7 @@ AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
             c->bit_rate = venc->bitRate();
             c->width = venc->width();
             c->height = venc->height();
-            c->pix_fmt = QTAV_PIX_FMT_C(YUV420P);
+            c->pix_fmt = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(venc->pixelFormat());
             // Using codec->time_base is deprecated, but needed for older lavf.
             c->time_base = s->time_base;
         }

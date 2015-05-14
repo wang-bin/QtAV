@@ -40,6 +40,7 @@ class Q_AV_EXPORT VideoEncoder : public AVEncoder
     Q_PROPERTY(int width READ width WRITE setWidth NOTIFY widthChanged)
     Q_PROPERTY(int height READ height WRITE setHeight NOTIFY heightChanged)
     Q_PROPERTY(qreal frameRate READ frameRate WRITE setFrameRate NOTIFY frameRateChanged)
+    Q_PROPERTY(QtAV::VideoFormat::PixelFormat pixelFormat READ pixelFormat WRITE setPixelFormat NOTIFY pixelFormatChanged)
     Q_DISABLE_COPY(VideoEncoder)
     DPTR_DECLARE_PRIVATE(VideoEncoder)
 public:
@@ -70,11 +71,18 @@ public:
     int height() const;
     void setFrameRate(qreal value);
     qreal frameRate() const;
-    // pixel format...
+    /*!
+     * \brief setPixelFormat
+     * set Format_Invalid (default) to auto
+     * \param format
+     */
+    void setPixelFormat(const VideoFormat::PixelFormat format);
+    VideoFormat::PixelFormat pixelFormat() const;
 Q_SIGNALS:
     void widthChanged();
     void heightChanged();
     void frameRateChanged();
+    void pixelFormatChanged();
 protected:
     VideoEncoder(VideoEncoderPrivate& d);
 private:

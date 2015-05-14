@@ -89,7 +89,14 @@ bool VideoEncoderFFmpegPrivate::open()
     avctx = avcodec_alloc_context3(codec);
     avctx->width = width; // coded_width works, why?
     avctx->height = height;
-    avctx->pix_fmt = QTAV_PIX_FMT_C(YUV420P); //
+    if (format.pixelFormat() == VideoFormat::Format_Invalid) {
+        if (codec->pix_fmts) {
+            avctx->pix_fmt = codec->pix_fmts[0];
+        }
+    } else {
+        avctx->pix_fmt = (AVPixelFormat)format.pixelFormatFFmpeg();
+    }
+    format_used = VideoFormat::pixelFormatFromFFmpeg(avctx->pix_fmt);
     avctx->time_base = av_d2q(1.0/frame_rate, frame_rate*1001.0+2);
     qDebug("size: %dx%d tbc: %f=%d/%d", width, height, av_q2d(avctx->time_base), avctx->time_base.num, avctx->time_base.den);
     avctx->bit_rate = bit_rate;
