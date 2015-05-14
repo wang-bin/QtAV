@@ -48,8 +48,8 @@ public:
      * Ensure the buffered msecs/bytes/packets in queue is at least the given value
      * \param value BufferBytes: bytes, BufferTime: msecs, BufferPackets: packets count
      */
-    void setBufferValue(int value);
-    int bufferValue() const;
+    void setBufferValue(qint64 value);
+    qint64 bufferValue() const;
     /*!
      * \brief setBufferMax
      * stop buffering if max value reached. Real value is bufferValue()*bufferMax()
@@ -61,7 +61,7 @@ public:
      * \brief buffered
      * Current buffered value in the queue
      */
-    int buffered() const;
+    qint64 buffered() const;
     bool isBuffering() const;
     /*!
      * \brief bufferProgress
@@ -89,8 +89,8 @@ private:
     bool m_buffering;
     qreal m_max;
     // bytes or count
-    quint32 m_buffer;
-    qint32 m_value0, m_value1;
+    qint64 m_buffer;
+    qint64 m_value0, m_value1;
 };
 
 } //namespace QtAV

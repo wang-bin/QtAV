@@ -1400,10 +1400,10 @@ qreal AVPlayer::bufferProgress() const
     return buf ? buf->bufferProgress() : 0;
 }
 
-int AVPlayer::buffered() const
+qint64 AVPlayer::buffered() const
 {
     const PacketBuffer* buf = d->read_thread->buffer();
-    return buf ? buf->buffered() : 0;
+    return buf ? buf->buffered() : 0LL;
 }
 
 void AVPlayer::setBufferMode(BufferMode mode)
@@ -1416,7 +1416,7 @@ BufferMode AVPlayer::bufferMode() const
     return d->buffer_mode;
 }
 
-void AVPlayer::setBufferValue(int value)
+void AVPlayer::setBufferValue(qint64 value)
 {
     if (d->buffer_value == value)
         return;

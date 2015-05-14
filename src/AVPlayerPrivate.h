@@ -122,7 +122,7 @@ public:
     QString external_audio;
     AVDemuxer audio_demuxer;
     BufferMode buffer_mode;
-    int buffer_value;
+    qint64 buffer_value;
     //the following things are required and must be set not null
     AVDemuxer demuxer;
     AVDemuxThread *read_thread;

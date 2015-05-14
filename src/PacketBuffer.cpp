@@ -45,7 +45,7 @@ void PacketBuffer::setBufferMode(BufferMode mode)
         return;
     }
     if (m_mode == BufferTime) {
-        m_value0 = int(queue[0].pts*1000.0);
+        m_value0 = qint64(queue[0].pts*1000.0);
     } else {
         m_value0 = 0;
     }
@@ -56,12 +56,12 @@ BufferMode PacketBuffer::bufferMode() const
     return m_mode;
 }
 
-void PacketBuffer::setBufferValue(int value)
+void PacketBuffer::setBufferValue(qint64 value)
 {
     m_buffer = value;
 }
 
-int PacketBuffer::bufferValue() const
+qint64 PacketBuffer::bufferValue() const
 {
     return m_buffer;
 }
@@ -80,7 +80,7 @@ qreal PacketBuffer::bufferMax() const
     return m_max;
 }
 
-int PacketBuffer::buffered() const
+qint64 PacketBuffer::buffered() const
 {
     Q_ASSERT(m_value1 >= m_value0);
     return m_value1 - m_value0;
@@ -104,14 +104,14 @@ bool PacketBuffer::checkEnough() const
 
 bool PacketBuffer::checkFull() const
 {
-    return buffered() >= int(qreal(bufferValue())*bufferMax());
+    return buffered() >= qint64(qreal(bufferValue())*bufferMax());
 }
 
 void PacketBuffer::onPut(const Packet &p)
 {
     if (m_mode == BufferTime) {
-        m_value1 = int(p.pts*1000.0); // FIXME: what if no pts
-        m_value0 = int(queue[0].pts*1000.0); // must compute here because it is reset to 0 if take from empty
+        m_value1 = qint64(p.pts*1000.0); // FIXME: what if no pts
+        m_value0 = qint64(queue[0].pts*1000.0); // must compute here because it is reset to 0 if take from empty
         //if (isBuffering())
           //  qDebug("+buffering progress: %.1f%%=%.1f/%.1f~%.1fs %d-%d", bufferProgress()*100.0, (qreal)buffered()/1000.0, (qreal)bufferValue()/1000.0, qreal(bufferValue())*bufferMax()/1000.0, m_value1, m_value0);
     } else if (m_mode == BufferBytes) {
@@ -138,12 +138,12 @@ void PacketBuffer::onTake(const Packet &p)
         return;
     }
     if (m_mode == BufferTime) {
-        m_value0 = int(queue[0].pts*1000.0);
+        m_value0 = qint64(queue[0].pts*1000.0);
         //if (isBuffering())
           //  qDebug("-buffering progress: %.1f=%.1f/%.1fs", bufferProgress(), (qreal)buffered()/1000.0, (qreal)bufferValue()/1000.0);
     } else if (m_mode == BufferBytes) {
         m_value1 -= p.data.size();
-        m_value1 = qMax(0, m_value1);
+        m_value1 = qMax<qint64>(0LL, m_value1);
     } else {
         m_value1--;
     }

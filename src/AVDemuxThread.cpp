@@ -413,7 +413,7 @@ void AVDemuxThread::run()
     // aqueue as a primary buffer: music with/without cover
     AVThread* thread = !video_thread || (audio_thread && demuxer->hasAttacedPicture()) ? audio_thread : video_thread;
     m_buffer = thread->packetQueue();
-    const int buf2 = aqueue ? aqueue->bufferValue() : 1; // TODO: may be changed by user. Deal with audio track change
+    const qint64 buf2 = aqueue ? aqueue->bufferValue() : 1; // TODO: may be changed by user. Deal with audio track change
     if (aqueue) {
         aqueue->clear();
         aqueue->setBlocking(true);
@@ -511,7 +511,7 @@ void AVDemuxThread::run()
                 }
                 // must ensure bufferValue set correctly before continue
                 if (m_buffer != aqueue)
-                    aqueue->setBufferValue(m_buffer->isBuffering() ? std::numeric_limits<int>::max() : buf2);
+                    aqueue->setBufferValue(m_buffer->isBuffering() ? std::numeric_limits<qint64>::max() : buf2);
                 // always block full if no vqueue because empty callback may set false
                 // attached picture is cover for song, 1 frame
                 aqueue->blockFull(!video_thread || !video_thread->isRunning() || !vqueue || audio_has_pic);

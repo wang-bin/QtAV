@@ -388,7 +388,7 @@ public slots:
      * \brief buffered
      * Current buffered value in msecs, bytes or packet count depending on bufferMode()
      */
-    int buffered() const;
+    qint64 buffered() const;
     void setBufferMode(BufferMode mode);
     BufferMode bufferMode() const;
     /*!
@@ -397,7 +397,7 @@ public slots:
      * Set before playback starts.
      * \param value <0: auto; BufferBytes: bytes, BufferTime: msecs, BufferPackets: packets count
      */
-    void setBufferValue(int value);
+    void setBufferValue(qint64 value);
     int bufferValue() const;
 
     /*!
