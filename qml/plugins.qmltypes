@@ -202,6 +202,10 @@ Module {
         Property { name: "videoCodecPriority"; type: "QStringList" }
         Property { name: "videoCodecOptions"; type: "QVariantMap" }
         Property { name: "videoCapture"; type: "QtAV::VideoCapture"; isReadonly: true; isPointer: true }
+        Property { name: "internalAudioTracks"; type: "int"; isReadonly: true }
+        Property { name: "audioTrack"; type: "int" }
+        Property { name: "externalAudio"; type: "QUrl" }
+        Property { name: "externalAudioTracks"; type: "int"; isReadonly: true }
         Signal { name: "loopCountChanged" }
         Signal { name: "videoOutChanged" }
         Signal { name: "paused" }

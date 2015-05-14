@@ -71,6 +71,10 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
     Q_PROPERTY(QVariantMap videoCodecOptions READ videoCodecOptions WRITE setVideoCodecOptions NOTIFY videoCodecOptionsChanged)
     Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
+    Q_PROPERTY(int internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
+    Q_PROPERTY(int audioTrack READ audioTrack WRITE setAudioTrack NOTIFY audioTrackChanged)
+    Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
+    Q_PROPERTY(int externalAudioTracks READ externalAudioTracks NOTIFY externalAudioTracksChanged)
 public:
     enum Loop { Infinite = -1 };
     enum PlaybackState {
@@ -173,6 +177,25 @@ public:
     int timeout() const;
     void setAbortOnTimeout(bool value);
     bool abortOnTimeout() const;
+
+    /*!
+     * \brief audioTrack
+     * The audio stream number in current media or external audio.
+     * Value can be: 0, 1, 2.... 0 means the 1st audio stream in current media or external audio
+     */
+    int audioTrack() const;
+    void setAudioTrack(int value);
+    int internalAudioTracks() const;
+    /*!
+     * \brief externalAudio
+     * If externalAudio url is valid, player will use audioTrack of external audio as audio source.
+     * Set an invalid url to disable external audio
+     * \return external audio url or an invalid url if use internal audio tracks
+     */
+    QUrl externalAudio() const;
+    void setExternalAudio(const QUrl& url);
+    int externalAudioTracks() const;
+
 public Q_SLOTS:
     void play();
     void pause();
@@ -209,6 +232,10 @@ Q_SIGNALS:
     void channelLayoutChanged();
     void timeoutChanged();
     void abortOnTimeoutChanged();
+    void audioTrackChanged();
+    void internalAudioTracksChanged();
+    void externalAudioChanged();
+    void externalAudioTracksChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString);
@@ -248,6 +275,9 @@ private:
     ChannelLayout mChannelLayout;
     int m_timeout;
     bool m_abort_timeout;
+    int m_audio_streams, m_external_audio_streams;
+    int m_audio_track;
+    QUrl m_audio;
 
     QScopedPointer<MediaMetaData> m_metaData;
     QVariantMap vcodec_opt;

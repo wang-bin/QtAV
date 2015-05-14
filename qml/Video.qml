@@ -69,6 +69,9 @@ Item {
     property alias subtitle: subtitle
     property alias subtitleText: text_sub // not for ass.
     property alias videoCapture: player.videoCapture
+    property alias externalAudio: player.externalAudio
+    property alias internalAudioTracks: player.internalAudioTracks
+    property alias externalAudioTracks: player.externalAudioTracks
     /*** Properties of VideoOutput ***/
     /*!
         \qmlproperty enumeration Video::fillMode
