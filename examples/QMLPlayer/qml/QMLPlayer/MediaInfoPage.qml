@@ -4,7 +4,7 @@ import "utils.js" as Utils
 Page {
     id: root
     title: qsTr("Media Information")
-    property var information
+    property var information: "unknow" //let it be defined
     Item {
         anchors.fill: content
         Text {
