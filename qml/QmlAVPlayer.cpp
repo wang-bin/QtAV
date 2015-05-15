@@ -73,8 +73,6 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mChannelLayout(ChannelLayoutAuto)
   , m_timeout(30000)
   , m_abort_timeout(true)
-  , m_audio_streams(0)
-  , m_external_audio_streams(0)
   , m_audio_track(0)
 {
     classBegin();
@@ -85,6 +83,8 @@ void QmlAVPlayer::classBegin()
     if (mpPlayer)
         return;
     mpPlayer = new AVPlayer(this);
+    connect(mpPlayer, SIGNAL(internalAudioTracksChanged(QVariantList)), SIGNAL(internalAudioTracksChanged()));
+    connect(mpPlayer, SIGNAL(externalAudioTracksChanged(QVariantList)), SIGNAL(externalAudioTracksChanged()));
     connect(mpPlayer, SIGNAL(durationChanged(qint64)), SIGNAL(durationChanged()));
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(_q_statusChanged()));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), SLOT(_q_error(QtAV::AVError)));
@@ -330,11 +330,6 @@ QUrl QmlAVPlayer::externalAudio() const
     return m_audio;
 }
 
-int QmlAVPlayer::internalAudioTracks() const
-{
-    return m_audio_streams;
-}
-
 void QmlAVPlayer::setExternalAudio(const QUrl &url)
 {
     if (m_audio == url)
@@ -342,15 +337,16 @@ void QmlAVPlayer::setExternalAudio(const QUrl &url)
     m_audio = url;
     mpPlayer->setExternalAudio(QUrl::fromPercentEncoding(m_audio.toEncoded()));
     emit externalAudioChanged();
-    if (m_external_audio_streams != mpPlayer->externalAudioStreamCount()) {
-        m_external_audio_streams = mpPlayer->externalAudioStreamCount();
-        Q_EMIT externalAudioTracksChanged();
-    }
 }
 
-int QmlAVPlayer::externalAudioTracks() const
+QVariantList QmlAVPlayer::externalAudioTracks() const
 {
-    return m_external_audio_streams;
+    return mpPlayer ? mpPlayer->externalAudioTracks() : QVariantList();
+}
+
+QVariantList QmlAVPlayer::internalAudioTracks() const
+{
+    return mpPlayer ? mpPlayer->internalAudioTracks() : QVariantList();
 }
 
 QStringList QmlAVPlayer::videoCodecPriority() const
@@ -621,14 +617,6 @@ void QmlAVPlayer::_q_paused(bool p)
 void QmlAVPlayer::_q_started()
 {
     mPlaybackState = PlayingState;
-    if (m_audio_streams != mpPlayer->audioStreamCount()) {
-        m_audio_streams = mpPlayer->audioStreamCount();
-        Q_EMIT internalAudioTracksChanged();
-    }
-    if (m_external_audio_streams != mpPlayer->externalAudioStreamCount()) {
-        m_external_audio_streams = mpPlayer->externalAudioStreamCount();
-        Q_EMIT externalAudioTracksChanged();
-    }
     applyChannelLayout();
     // applyChannelLayout() first because it may reopen audio device
     applyVolume(); //sender is AVPlayer
@@ -638,7 +626,7 @@ void QmlAVPlayer::_q_started()
     // TODO: in load()?
     m_metaData->setValuesFromStatistics(mpPlayer->statistics());
     if (!mHasAudio) {
-        mHasAudio = m_audio_streams > 0 || m_external_audio_streams > 0;
+        mHasAudio = mpPlayer->audioStreamCount() > 0;
         if (mHasAudio)
             emit hasAudioChanged();
     }

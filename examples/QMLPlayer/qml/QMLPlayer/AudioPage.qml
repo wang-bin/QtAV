@@ -10,8 +10,8 @@ Page {
     signal muteChanged(bool value)
     signal externalAudioChanged(string file)
     signal audioTrackChanged(int track)
-    property int internalTracks: 0
-    property int externalTracks: 0
+    property var internalTracks : "unkown"
+    property var externalTracks : "unkown"
     property alias isExternal: externalCheck.checked
     height: titleHeight + channelLabel.height + channels.contentHeight
             + Utils.kItemHeight*2 + trackLabel.height + tracksMenu.contentHeight + Utils.kSpacing*6
@@ -109,8 +109,13 @@ Page {
         if (isExternal) {
             c = externalTracks
         }
-        for (var i = 0; i < c; ++i) {
-            tracksModel.append({name: i + " #", value: i})
+        for (var i = 0; i < c.length; ++i) {
+            var label = "#" + c[i].id
+            if (c[i].language)
+                label += " (" + c[i].language + ")"
+            if (c[i].title)
+                label += ": " + c[i].title
+            tracksModel.append({name: label, value: c[i].id})
         }
     }
 

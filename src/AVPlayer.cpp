@@ -609,8 +609,12 @@ void AVPlayer::loadInternal()
     if (!d->loaded) {
         d->statistics.reset();
         qWarning("Load failed!");
+        d->audio_tracks = d->getAudioTracksInfo(&d->demuxer);
+        Q_EMIT internalAudioTracksChanged(d->audio_tracks);
         return;
     }
+    d->audio_tracks = d->getAudioTracksInfo(&d->demuxer);
+    Q_EMIT internalAudioTracksChanged(d->audio_tracks);
     Q_EMIT durationChanged(duration());
     // setup parameters from loaded media
     d->fmt_ctx = d->demuxer.formatContext();
@@ -677,6 +681,8 @@ void AVPlayer::unloadInternal()
     }
     d->demuxer.unload();
     Q_EMIT durationChanged(0LL);
+    d->audio_tracks = d->getAudioTracksInfo(&d->demuxer);
+    Q_EMIT internalAudioTracksChanged(d->audio_tracks);
 }
 
 void AVPlayer::setRelativeTimeMode(bool value)
@@ -853,11 +859,14 @@ QString AVPlayer::externalAudio() const
     return d->external_audio;
 }
 
-int AVPlayer::externalAudioStreamCount() const
+QVariantList AVPlayer::externalAudioTracks() const
 {
-    if (d->external_audio.isEmpty())
-        return 0;
-    return d->audio_demuxer.audioStreams().size();
+    return d->external_audio_tracks;
+}
+
+QVariantList AVPlayer::internalAudioTracks() const
+{
+    return d->audio_tracks;
 }
 
 bool AVPlayer::setAudioStream(const QString &file, int n)
@@ -878,6 +887,10 @@ bool AVPlayer::setAudioStream(const QString &file, int n)
                 return false;
             }
         }
+        if (audio_changed) {
+            d->external_audio_tracks = QVariantList();
+            Q_EMIT externalAudioTracksChanged(d->external_audio_tracks);
+        }
     } else {
         if (!audio_changed && d->audio_demuxer.isLoaded()) {
             if (n >= d->audio_demuxer.audioStreams().size()) {
@@ -889,51 +902,72 @@ bool AVPlayer::setAudioStream(const QString &file, int n)
     d->audio_track = n;
     d->external_audio = path;
     d->audio_demuxer.setMedia(d->external_audio);
-    if (!isPlaying()) {
-        qDebug("set audio track when not playing");
-        if (d->external_audio.isEmpty()) {
-            d->read_thread->setAudioDemuxer(0);
-            d->audio_demuxer.unload();
-        } else {
-            qDebug("set external audio track when not playing");
-            d->audio_demuxer.load();
-            d->read_thread->setAudioDemuxer(&d->audio_demuxer);
-            if (d->audio_track < 0) {
-                d->audio_track = d->audio_demuxer.audioStream();
+    struct scoped_pause {
+        scoped_pause() : was_paused(false), player(0) {}
+        void set(bool old, AVPlayer* p) {
+            was_paused = old;
+            player = p;
+            if (player)
+                player->pause(true);
+        }
+        ~scoped_pause() {
+            if (player && !was_paused) {
+                player->pause(false);
             }
         }
-        return true;
+        bool was_paused;
+        AVPlayer* player;
+    };
+    scoped_pause sp;
+    if (!isPlaying()) {
+        qDebug("set audio track when not playing");
+        goto update_demuxer;
     }
     // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
-    bool p = isPaused();
+    sp.set(isPaused(), this); //before read_thread->pause(true, true)
     if (!d->external_audio.isEmpty())
         d->read_thread->pause(true, true); // wait to safe set ademuxer
-    pause(true);
 
-    if (!d->external_audio.isEmpty()) {
+update_demuxer:
+     if (!d->external_audio.isEmpty()) {
         if (audio_changed || !d->audio_demuxer.isLoaded()) {
             if (!d->audio_demuxer.load()) {
                 qWarning("Failed to load audio track %d@%s", d->audio_track, d->external_audio.toUtf8().constData());
-                if (!p)
-                    pause(false);
+                d->external_audio_tracks = QVariantList();
+                Q_EMIT externalAudioTracksChanged(d->external_audio_tracks);
                 return false;
             }
+            d->external_audio_tracks = d->getAudioTracksInfo(&d->audio_demuxer);
+            Q_EMIT externalAudioTracksChanged(d->external_audio_tracks);
+            d->read_thread->setAudioDemuxer(&d->audio_demuxer);
         }
-        d->read_thread->setAudioDemuxer(&d->audio_demuxer);
+        if (d->audio_track < 0) {
+            d->audio_track = d->audio_demuxer.audioStream();
+        }
+    }
+    if (!isPlaying()) {
+        if (d->external_audio.isEmpty()) {
+            if (audio_changed) {
+                d->read_thread->setAudioDemuxer(0);
+                d->audio_demuxer.unload();
+            }
+        }
+        return true;
     }
 
     if (!d->setupAudioThread(this)) { // adec will be deleted. so audio_demuxer must unload later
         stop();
         return false;
     }
+
     if (d->external_audio.isEmpty()) {
-        d->read_thread->setAudioDemuxer(0);
-        d->audio_demuxer.unload();
+        if (audio_changed) {
+            d->read_thread->setAudioDemuxer(0);
+            d->audio_demuxer.unload();
+        }
     } else {
         d->audio_demuxer.seek(position());
     }
-    if (!p)
-        pause(false);
     return true;
 }
 

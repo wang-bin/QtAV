@@ -379,6 +379,31 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     return true;
 }
 
+QVariantList AVPlayer::Private::getAudioTracksInfo(AVDemuxer *demuxer)
+{
+    QVariantList info;
+    if (!demuxer)
+        return info;
+    foreach (int s, demuxer->audioStreams()) {
+        QVariantMap t;
+        t["id"] = info.size();
+        t["file"] = demuxer->fileName();
+        AVStream *stream = demuxer->formatContext()->streams[s];
+        AVDictionaryEntry *tag = av_dict_get(stream->metadata, "language", NULL, 0);
+        if (!tag)
+            tag = av_dict_get(stream->metadata, "lang", NULL, 0);
+        if (tag) {
+            t["language"] = tag->value;
+        }
+        tag = av_dict_get(stream->metadata, "title", NULL, 0);
+        if (tag) {
+            t["title"] = tag->value;
+        }
+        info.push_back(t);
+    }
+    return info;
+}
+
 bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
 {
     demuxer.setStreamIndex(AVDemuxer::VideoStream, video_track);

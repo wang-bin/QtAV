@@ -71,10 +71,10 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
     Q_PROPERTY(QVariantMap videoCodecOptions READ videoCodecOptions WRITE setVideoCodecOptions NOTIFY videoCodecOptionsChanged)
     Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
-    Q_PROPERTY(int internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
     Q_PROPERTY(int audioTrack READ audioTrack WRITE setAudioTrack NOTIFY audioTrackChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
-    Q_PROPERTY(int externalAudioTracks READ externalAudioTracks NOTIFY externalAudioTracksChanged)
+    Q_PROPERTY(QVariantList internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
+    Q_PROPERTY(QVariantList externalAudioTracks READ externalAudioTracks NOTIFY externalAudioTracksChanged)
 public:
     enum Loop { Infinite = -1 };
     enum PlaybackState {
@@ -185,7 +185,7 @@ public:
      */
     int audioTrack() const;
     void setAudioTrack(int value);
-    int internalAudioTracks() const;
+    QVariantList internalAudioTracks() const;
     /*!
      * \brief externalAudio
      * If externalAudio url is valid, player will use audioTrack of external audio as audio source.
@@ -194,7 +194,7 @@ public:
      */
     QUrl externalAudio() const;
     void setExternalAudio(const QUrl& url);
-    int externalAudioTracks() const;
+    QVariantList externalAudioTracks() const;
 
 public Q_SLOTS:
     void play();
@@ -275,7 +275,7 @@ private:
     ChannelLayout mChannelLayout;
     int m_timeout;
     bool m_abort_timeout;
-    int m_audio_streams, m_external_audio_streams;
+    QVariantList m_audio_streams, m_external_audio_streams;
     int m_audio_track;
     QUrl m_audio;
 

@@ -83,9 +83,9 @@ Rectangle {
             }
         }
 
+        onDurationChanged: control.duration = duration
         onPlaying: {
             control.mediaSource = player.source
-            control.duration = duration
             control.setPlayingState()
             if (!pageLoader.item)
                 return
@@ -97,17 +97,12 @@ Rectangle {
                     metaData: player.metaData
                 }
             }
-            if (typeof(pageLoader.item.internalTracks) != "undefined")
-                pageLoader.item.internalTracks = player.internalAudioTracks
-            if (typeof(pageLoader.item.externalTracks) != "undefined")
-                pageLoader.item.externalTracks = player.externalAudioTracks
         }
         onInternalAudioTracksChanged: {
             if (typeof(pageLoader.item.internalTracks) != "undefined")
                 pageLoader.item.internalTracks = player.internalAudioTracks
         }
         onExternalAudioTracksChanged: {
-            console.log("onExternalAudioTracksChanged")
             if (typeof(pageLoader.item.externalTracks) != "undefined")
                 pageLoader.item.externalTracks = player.externalAudioTracks
         }
@@ -352,6 +347,7 @@ Rectangle {
                         metaData: player.metaData
                     }
                 }
+                console.log("onXXXternalAudioTracksChanged...")
                 if (typeof(item.internalTracks) != "undefined")
                     item.internalTracks = player.internalAudioTracks
                 if (typeof(item.externalTracks) != "undefined")

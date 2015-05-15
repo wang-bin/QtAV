@@ -172,7 +172,13 @@ public:
      */
     bool setExternalAudio(const QString& file);
     QString externalAudio() const;
-    int externalAudioStreamCount() const;
+    /*!
+     * \brief externalAudioTracks
+     * [ {id: 0, file: abc.dts, language: eng, title: xyz}, ...]
+     * id: used for setAudioStream(id)
+     */
+    QVariantList externalAudioTracks() const;
+    QVariantList internalAudioTracks() const;
     /*!
      * \brief setAudioStream
      * set an external audio file and stream number as audio track
@@ -447,6 +453,8 @@ Q_SIGNALS:
     void contrastChanged(int val);
     void hueChanged(int val);
     void saturationChanged(int val);
+    void internalAudioTracksChanged(const QVariantList& tracks);
+    void externalAudioTracksChanged(const QVariantList& tracks);
 private Q_SLOTS:
     void loadInternal(); // simply load
     void unloadInternal();
