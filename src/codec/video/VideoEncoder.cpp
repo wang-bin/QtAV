@@ -24,6 +24,11 @@
 #include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
+// FF_API_PIX_FMT
+#ifdef PixelFormat
+#undef PixelFormat
+#endif
+
 namespace QtAV {
 
 FACTORY_DEFINE(VideoEncoder)
@@ -94,6 +99,21 @@ void VideoEncoder::setFrameRate(qreal value)
 qreal VideoEncoder::frameRate() const
 {
     return d_func().frame_rate;
+}
+
+void VideoEncoder::setPixelFormat(const VideoFormat::PixelFormat format)
+{
+    DPTR_D(VideoEncoder);
+    if (d.format.pixelFormat() == format)
+        return;
+    d.format.setPixelFormat(format);
+    d.format_used = format;
+    Q_EMIT pixelFormatChanged();
+}
+
+VideoFormat::PixelFormat VideoEncoder::pixelFormat() const
+{
+    return d_func().format_used;
 }
 
 } //namespace QtAV
