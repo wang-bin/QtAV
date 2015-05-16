@@ -170,6 +170,8 @@ public:
     }
     /// call this if sample format or volume is changed
     void updateSampleScaleFunc();
+    void tryVolume(qreal value);
+    void tryMute(bool value);
 
     bool mute;
     bool sw_volume, sw_mute;
@@ -225,6 +227,33 @@ void AudioOutputPrivate::playInitialData()
     backend->play();
 }
 
+void AudioOutputPrivate::tryVolume(qreal value)
+{
+    // if not open, try later
+    if (!available)
+        return;
+    if (features & AudioOutput::SetVolume) {
+        sw_volume = !backend->setVolume(value);
+        //if (!qFuzzyCompare(backend->volume(), value))
+        //    sw_volume = true;
+        if (sw_volume)
+            backend->setVolume(1.0); // TODO: partial software?
+    } else {
+        sw_volume = true;
+    }
+}
+
+void AudioOutputPrivate::tryMute(bool value)
+{
+    // if not open, try later
+    if (!available)
+        return;
+    if ((features & AudioOutput::SetMute) && backend)
+        sw_mute = !backend->setMute(value);
+    else
+        sw_mute = true;
+}
+
 AudioOutput::AudioOutput(QObject* parent)
     : QObject(parent)
     , AVOutput(*new AudioOutputPrivate())
@@ -233,7 +262,7 @@ AudioOutput::AudioOutput(QObject* parent)
     d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
     d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
     static const QStringList all = QStringList()
-#if QTAV_HAVE(PULSEAUDIO)
+#if QTAV_HAVE(PULSEAUDIO)&& !defined(Q_OS_MAC)
             << "Pulse"
 #endif
 #if QTAV_HAVE(OPENAL)
@@ -331,6 +360,8 @@ bool AudioOutput::open()
     if (!d.backend->open())
         return false;
     d.available = true;
+    d.tryVolume(volume());
+    d.tryMute(isMute());
     d.playInitialData();
     return true;
 }
@@ -343,6 +374,11 @@ bool AudioOutput::close()
         return false;
     d.backend->audio = 0;
     return d.backend->close();
+}
+
+bool AudioOutput::isOpen() const
+{
+    return d_func().available;
 }
 
 bool AudioOutput::play(const QByteArray &data, qreal pts)
@@ -426,25 +462,17 @@ int AudioOutput::channels() const
     return d_func().format.channels();
 }
 
-void AudioOutput::setVolume(qreal volume)
+void AudioOutput::setVolume(qreal value)
 {
     DPTR_D(AudioOutput);
-    if (volume < 0.0)
+    if (value < 0.0)
         return;
-    if (d.vol == volume) //fuzzy compare?
+    if (d.vol == value) //fuzzy compare?
         return;
-    d.vol = volume;
-    emit volumeChanged(d.vol);
+    d.vol = value;
+    Q_EMIT volumeChanged(value);
     d.updateSampleScaleFunc();
-    if (deviceFeatures() & SetVolume) {
-        d.sw_volume = !d.backend->setVolume(d.vol);
-        //if (!qFuzzyCompare(deviceGetVolume(), d.vol))
-        //    d.sw_volume = true;
-        if (d.sw_volume)
-            d.backend->setVolume(1.0); // TODO: partial software?
-    } else {
-        d.sw_volume = true;
-    }
+    d.tryVolume(value);
 }
 
 qreal AudioOutput::volume() const
@@ -458,11 +486,8 @@ void AudioOutput::setMute(bool value)
     if (d.mute == value)
         return;
     d.mute = value;
-    emit muteChanged(value);
-    if ((deviceFeatures() & SetMute) && d.backend)
-        d.sw_mute = !d.backend->setMute(value);
-    else
-        d.sw_mute = true;
+    Q_EMIT muteChanged(value);
+    d.tryMute(value);
 }
 
 bool AudioOutput::isMute() const
