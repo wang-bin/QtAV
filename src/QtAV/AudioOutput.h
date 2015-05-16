@@ -90,6 +90,7 @@ public:
     QString backend() const;
     bool open();
     bool close();
+    bool isOpen() const;
     /*!
      * \brief play
      * Play out the given audio data. It may block current thread until the data can be written to audio device
@@ -114,7 +115,7 @@ public:
      * Call this after open(), because it will call backend api if SetVolume feature is enabled
      * \param volume linear. 1.0: original volume.
      */
-    void setVolume(qreal volume);
+    void setVolume(qreal value);
     qreal volume() const;
     /*!
      * \brief setMute
