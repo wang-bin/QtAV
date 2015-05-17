@@ -91,11 +91,7 @@ bool AVDecoder::open()
         return false;
     }
     d.applyOptionsForDict();
-    int ret = avcodec_open2(d.codec_ctx, codec, d.options.isEmpty() ? NULL : &d.dict);
-    if (ret < 0) {
-        qWarning("open video codec failed: %s", av_err2str(ret));
-        return false;
-    }
+    AV_ENSURE_OK(avcodec_open2(d.codec_ctx, codec, d.options.isEmpty() ? NULL : &d.dict), false);
     d.is_open = true;
     return true;
 }
@@ -110,14 +106,8 @@ bool AVDecoder::close()
     // hwa extra finalize can be here
     d.close();
     // TODO: reset config?
-    if (!d.codec_ctx) {
-        qWarning("FFmpeg codec context not ready");
-        return false;
-    }
-    int ret = avcodec_close(d.codec_ctx);
-    if (ret < 0) {
-        qWarning("failed to close decoder: %s", av_err2str(ret));
-        return false;
+    if (d.codec_ctx) {
+        AV_ENSURE_OK(avcodec_close(d.codec_ctx), false);
     }
     return true;
 }
@@ -145,9 +135,23 @@ void AVDecoder::setCodecContext(AVCodecContext *codecCtx)
     DPTR_D(AVDecoder);
     if (d.codec_ctx == codecCtx)
         return;
-    close(); //
+    if (isOpen()) {
+        qWarning("Can not copy codec properties when it's open");
+        close(); //
+    }
     d.is_open = false;
-    d.codec_ctx = codecCtx;
+    if (!codecCtx) {
+        avcodec_free_context(&d.codec_ctx);
+        d.codec_ctx = 0;
+        return;
+    }
+    if (!d.codec_ctx)
+        d.codec_ctx = avcodec_alloc_context3(NULL);
+    if (!d.codec_ctx) {
+        qWarning("avcodec_alloc_context3 failed");
+        return;
+    }
+    AV_ENSURE_OK(avcodec_copy_context(d.codec_ctx, codecCtx));
 }
 
 //TODO: reset other parameters?
@@ -168,11 +172,7 @@ void AVDecoder::setCodecName(const QString &name)
 QString AVDecoder::codecName() const
 {
     DPTR_D(const AVDecoder);
-    if (!d.codec_name.isEmpty())
-        return d.codec_name;
-    if (d.codec_ctx)
-        return avcodec_get_name(d.codec_ctx->codec_id);
-    return "";
+    return d.codec_name;
 }
 
 bool AVDecoder::isAvailable() const

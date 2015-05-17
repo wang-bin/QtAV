@@ -38,10 +38,14 @@ public:
       , undecoded_size(0)
       , dict(0)
     {
+        codec_ctx = avcodec_alloc_context3(NULL);
     }
     virtual ~AVDecoderPrivate() {
         if (dict) {
             av_dict_free(&dict);
+        }
+        if (codec_ctx) {
+            avcodec_free_context(&codec_ctx);
         }
     }
     virtual bool open() {return true;}
