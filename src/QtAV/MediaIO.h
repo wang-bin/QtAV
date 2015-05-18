@@ -60,7 +60,9 @@ public:
     /// supported protocols. default is empty
     virtual const QStringList& protocols() const;
     virtual bool isSeekable() const = 0;
+    virtual bool isWritable() const = 0;
     virtual qint64 read(char *data, qint64 maxSize) = 0;
+    virtual qint64 write(const char* data, qint64 maxSize) = 0;
     /*!
      * \brief seek
      * \param from
