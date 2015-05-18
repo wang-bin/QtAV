@@ -32,6 +32,7 @@
 
 namespace QtAV {
 
+class MediaIO;
 class VideoEncoder;
 class AudioEncoder;
 class Q_AV_EXPORT AVMuxer : public QObject
@@ -53,7 +54,7 @@ public:
      */
     bool setMedia(const QString& fileName);
     bool setMedia(QIODevice* dev);
-    //bool setMedia(AVWriter* writer);
+    bool setMedia(MediaIO* io);
     /*!
      * \brief setFormat
      * Force the output format.

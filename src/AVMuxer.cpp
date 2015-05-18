@@ -21,6 +21,7 @@
 
 #include "QtAV/AVMuxer.h"
 #include "QtAV/private/AVCompat.h"
+#include "QtAV/MediaIO.h"
 #include "QtAV/VideoEncoder.h"
 #include "utils/internal.h"
 #include "utils/Logger.h"
@@ -44,7 +45,7 @@ public:
         , media_changed(true)
         , format_ctx(0)
         , format(0)
-        //, writer(0)
+        , io(0)
         , dict(0)
         , venc(0)
     {
@@ -56,12 +57,10 @@ public:
             av_dict_free(&dict);
             dict = 0;
         }
-#if 0
-        if (writer) {
-            delete writer;
-            writer = 0;
+        if (io) {
+            delete io;
+            io = 0;
         }
-#endif
     }
     AVCodec* addStream(AVFormatContext* ctx, AVCodecID cid);
     bool prepareStreams();
@@ -79,7 +78,7 @@ public:
     QString file_orig;
     AVOutputFormat *format;
     QString format_forced;
-    //AVWriter *writer;
+    MediaIO *io;
 
     AVDictionary *dict;
     QVariantHash options;
@@ -185,12 +184,10 @@ QString AVMuxer::fileName() const
 
 bool AVMuxer::setMedia(const QString &fileName)
 {
-#if 0
-    if (d->writer) {
-        delete d->writer;
-        d->writer = 0;
+    if (d->io) {
+        delete d->io;
+        d->io = 0;
     }
-#endif
     d->file_orig = fileName;
     const QString url_old(d->file);
     d->file = fileName.trimmed();
@@ -212,56 +209,54 @@ bool AVMuxer::setMedia(const QString &fileName)
         if (colon == 1 && d->file.at(0).isLetter())
             return d->media_changed;
 #endif
-#if 0
         const QString scheme = colon == 0 ? "qrc" : d->file.left(colon);
         // supportedProtocols() is not complete. so try MediaIO 1st, if not found, fallback to libavformat
-        d->writer = MediaIO::createForProtocol(scheme);
-        if (d->writer) {
-            d->writer->setUrl(d->file);
+        d->io = MediaIO::createForProtocol(scheme);
+        if (d->io) {
+            d->io->setUrl(d->file);
         }
-#endif
     }
     return d->media_changed;
 }
-#if 0
+
 bool AVMuxer::setMedia(QIODevice* device)
 {
     d->file = QString();
     d->file_orig = QString();
-    if (d->writer) {
-        if (d->writer->name() != "QIODevice") {
-            delete d->writer;
-            d->writer = 0;
+    if (d->io) {
+        if (d->io->name() != "QIODevice") {
+            delete d->io;
+            d->io = 0;
         }
     }
-    if (!d->writer)
-        d->writer = MediaIO::create("QIODevice");
-    QIODevice* old_dev = d->writer->property("device").value<QIODevice*>();
+    if (!d->io)
+        d->io = MediaIO::create("QIODevice");
+    QIODevice* old_dev = d->io->property("device").value<QIODevice*>();
     d->media_changed = old_dev != device;
     if (d->media_changed) {
         d->format_forced.clear();
     }
-    d->writer->setProperty("device", QVariant::fromValue(device)); //open outside?
+    d->io->setProperty("device", QVariant::fromValue(device)); //open outside?
     return d->media_changed;
 }
 
 bool AVMuxer::setMedia(MediaIO *in)
 {
-    d->media_changed = in != d->writer;
+    d->media_changed = in != d->io;
     if (d->media_changed) {
         d->format_forced.clear();
     }
     d->file = QString();
     d->file_orig = QString();
-    if (!d->writer)
-        d->writer = in;
-    if (d->writer != in) {
-        delete d->writer;
-        d->writer = in;
+    if (!d->io)
+        d->io = in;
+    if (d->io != in) {
+        delete d->io;
+        d->io = in;
     }
     return d->media_changed;
 }
-#endif
+
 void AVMuxer::setFormat(const QString &fmt)
 {
     d->format_forced = fmt;
@@ -274,11 +269,7 @@ QString AVMuxer::formatForced() const
 
 bool AVMuxer::open()
 {
-    //alloc av format context
-    if (!d->format_ctx)
-        d->format_ctx = avformat_alloc_context();
-    d->format_ctx->flags |= AVFMT_FLAG_GENPTS;
-    //install interrupt callback
+    // avformatcontext will be allocated in avformat_alloc_output_context2()
     //d->format_ctx->interrupt_callback = *d->interrupt_hanlder;
 
     d->applyOptionsForDict();
@@ -290,10 +281,12 @@ bool AVMuxer::open()
     }
 
     //d->interrupt_hanlder->begin(InterruptHandler::Open);
-    if (false) {//d->writer) {
-        //d->format_ctx->pb = (AVIOContext*)d->writer->avioContext();
-        d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
+    if (d->io) {
         AV_ENSURE_OK(avformat_alloc_output_context2(&d->format_ctx, d->format, d->format_forced.isEmpty() ? 0 : d->format_forced.toUtf8().constData(), ""), false);
+        d->format_ctx->pb = (AVIOContext*)d->io->avioContext();
+        d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
+        d->format_ctx->flags |= AVFMT_FLAG_GENPTS;
+        d->format_ctx->oformat->flags |= AVFMT_NOFILE;
     } else {
         AV_ENSURE_OK(avformat_alloc_output_context2(&d->format_ctx, d->format, d->format_forced.isEmpty() ? 0 : d->format_forced.toUtf8().constData(), fileName().toUtf8().constData()), false);
     }
