@@ -314,8 +314,8 @@ SOURCES += \
     VideoCapture.cpp \
     VideoFormat.cpp \
     VideoFrame.cpp \
-    input/AVInput.cpp \
-    input/QIODeviceInput.cpp \
+    io/MediaIO.cpp \
+    io/QIODeviceIO.cpp \
     output/audio/AudioOutput.cpp \
     output/audio/AudioOutputBackend.cpp \
     output/video/VideoRenderer.cpp \
@@ -364,7 +364,7 @@ SDK_HEADERS *= \
     QtAV/VideoRenderer.h \
     QtAV/VideoRendererTypes.h \
     QtAV/VideoOutput.h \
-    QtAV/AVInput.h \
+    QtAV/MediaIO.h \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
@@ -392,7 +392,7 @@ SDK_PRIVATE_HEADERS *= \
     QtAV/private/AudioResampler_p.h \
     QtAV/private/AVDecoder_p.h \
     QtAV/private/AVEncoder_p.h \
-    QtAV/private/AVInput_p.h \
+    QtAV/private/MediaIO_p.h \
     QtAV/private/AVOutput_p.h \
     QtAV/private/Filter_p.h \
     QtAV/private/Frame_p.h \

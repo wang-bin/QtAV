@@ -32,7 +32,7 @@
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
 #include "QtAV/AudioDecoder.h"
-#include "QtAV/AVInput.h"
+#include "QtAV/MediaIO.h"
 #include "QtAV/VideoRenderer.h"
 #include "QtAV/AVClock.h"
 #include "QtAV/VideoCapture.h"
@@ -46,7 +46,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
-Q_DECLARE_METATYPE(QtAV::AVInput*)
+Q_DECLARE_METATYPE(QtAV::MediaIO*)
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 Q_DECLARE_METATYPE(QIODevice*)
 #endif
@@ -397,7 +397,7 @@ void AVPlayer::setIODevice(QIODevice* device)
     } else {
         if (d->current_source.canConvert<QIODevice*>()) {
             d->reset_state = d->current_source.value<QIODevice*>() != device;
-        } else { // AVInput
+        } else { // MediaIO
             d->reset_state = true;
         }
     }
@@ -409,7 +409,7 @@ void AVPlayer::setIODevice(QIODevice* device)
     }
 }
 
-void AVPlayer::setInput(AVInput *in)
+void AVPlayer::setInput(MediaIO *in)
 {
     // TODO: d->reset_state = d->demuxer2.setMedia(in);
     if (d->current_source.type() == QVariant::String) {
@@ -417,25 +417,25 @@ void AVPlayer::setInput(AVInput *in)
     } else {
         if (d->current_source.canConvert<QIODevice*>()) {
             d->reset_state = true;
-        } else { // AVInput
-            d->reset_state = d->current_source.value<QtAV::AVInput*>() != in;
+        } else { // MediaIO
+            d->reset_state = d->current_source.value<QtAV::MediaIO*>() != in;
         }
     }
     d->loaded = false;
-    d->current_source = QVariant::fromValue<QtAV::AVInput*>(in);
+    d->current_source = QVariant::fromValue<QtAV::MediaIO*>(in);
     if (d->reset_state) {
         d->audio_track = d->video_track = d->subtitle_track = 0;
         emit sourceChanged();
     }
 }
 
-AVInput* AVPlayer::input() const
+MediaIO* AVPlayer::input() const
 {
     if (d->current_source.type() == QVariant::String)
         return 0;
-    if (!d->current_source.canConvert<QtAV::AVInput*>())
+    if (!d->current_source.canConvert<QtAV::MediaIO*>())
         return 0;
-    return d->current_source.value<QtAV::AVInput*>();
+    return d->current_source.value<QtAV::MediaIO*>();
 }
 
 VideoCapture* AVPlayer::videoCapture() const
@@ -555,8 +555,8 @@ bool AVPlayer::load(bool reload)
         } else {
             if (d->current_source.canConvert<QIODevice*>()) {
                 reload = d->demuxer.ioDevice() != d->current_source.value<QIODevice*>();
-            } else { // AVInput
-                reload = d->demuxer.input() != d->current_source.value<QtAV::AVInput*>();
+            } else { // MediaIO
+                reload = d->demuxer.input() != d->current_source.value<QtAV::MediaIO*>();
             }
         }
         reload = reload || !d->demuxer.isLoaded();
@@ -601,8 +601,8 @@ void AVPlayer::loadInternal()
     } else {
         if (d->current_source.canConvert<QIODevice*>()) {
             d->demuxer.setMedia(d->current_source.value<QIODevice*>());
-        } else { // AVInput
-            d->demuxer.setMedia(d->current_source.value<QtAV::AVInput*>());
+        } else { // MediaIO
+            d->demuxer.setMedia(d->current_source.value<QtAV::MediaIO*>());
         }
     }
     d->loaded = d->demuxer.load();

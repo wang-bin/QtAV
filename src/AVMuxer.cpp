@@ -205,7 +205,7 @@ bool AVMuxer::setMedia(const QString &fileName)
     // a local file. return here to avoid protocol checking. If path contains ":", protocol checking will fail
     if (d->file.startsWith(QChar('/')))
         return d->media_changed;
-    // use AVInput to support protocols not supported by ffmpeg
+    // use MediaIO to support protocols not supported by ffmpeg
     int colon = d->file.indexOf(QChar(':'));
     if (colon >= 0) {
 #ifdef Q_OS_WIN
@@ -214,8 +214,8 @@ bool AVMuxer::setMedia(const QString &fileName)
 #endif
 #if 0
         const QString scheme = colon == 0 ? "qrc" : d->file.left(colon);
-        // supportedProtocols() is not complete. so try AVInput 1st, if not found, fallback to libavformat
-        d->writer = AVInput::createForProtocol(scheme);
+        // supportedProtocols() is not complete. so try MediaIO 1st, if not found, fallback to libavformat
+        d->writer = MediaIO::createForProtocol(scheme);
         if (d->writer) {
             d->writer->setUrl(d->file);
         }
@@ -235,7 +235,7 @@ bool AVMuxer::setMedia(QIODevice* device)
         }
     }
     if (!d->writer)
-        d->writer = AVInput::create("QIODevice");
+        d->writer = MediaIO::create("QIODevice");
     QIODevice* old_dev = d->writer->property("device").value<QIODevice*>();
     d->media_changed = old_dev != device;
     if (d->media_changed) {
@@ -245,7 +245,7 @@ bool AVMuxer::setMedia(QIODevice* device)
     return d->media_changed;
 }
 
-bool AVMuxer::setMedia(AVInput *in)
+bool AVMuxer::setMedia(MediaIO *in)
 {
     d->media_changed = in != d->writer;
     if (d->media_changed) {

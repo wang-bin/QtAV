@@ -48,6 +48,9 @@ public:
         if (dict) {
             av_dict_free(&dict);
         }
+        if (avctx) {
+            avcodec_free_context(&avctx);
+        }
     }
     virtual bool open() {return true;}
     virtual bool close() {return true;}

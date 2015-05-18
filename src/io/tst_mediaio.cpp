@@ -1,8 +1,8 @@
-#include <QtAV/AVInput.h>
+#include <QtAV/MediaIO.h>
 #include <QtDebug>
 #include <QtTest/QTest>
 using namespace QtAV;
-class tst_AVInput : public QObject
+class tst_MediaIO : public QObject
 {
     Q_OBJECT
 private slots:
@@ -11,30 +11,30 @@ private slots:
     void read();
 };
 
-void tst_AVInput::create() {
-    AVInput *in = AVInput::create("QFile");
+void tst_MediaIO::create() {
+    MediaIO *in = MediaIO::create("QFile");
     QVERIFY(in);
     delete in;
-    in = AVInput::create("Other");
+    in = MediaIO::create("Other");
     QVERIFY(!in);
     delete in;
 }
-void tst_AVInput::createForProtocol() {
-    AVInput *in = AVInput::createForProtocol("qrc");
+void tst_MediaIO::createForProtocol() {
+    MediaIO *in = MediaIO::createForProtocol("qrc");
     QVERIFY(in);
     delete in;
-    in = AVInput::createForProtocol("");
+    in = MediaIO::createForProtocol("");
     QVERIFY(in);
     QCOMPARE(in->name(), QString("QFile"));
     QVERIFY(in->protocols().contains("qrc"));
     delete in;
-    in = AVInput::createForProtocol("xyz");
+    in = MediaIO::createForProtocol("xyz");
     QVERIFY(!in);
     delete in;
 }
-void tst_AVInput::read() {
+void tst_MediaIO::read() {
     const QString path(":/QtAV.svg");
-    AVInput *in = AVInput::createForProtocol(path.left(path.indexOf(QChar(':'))));
+    MediaIO *in = MediaIO::createForProtocol(path.left(path.indexOf(QChar(':'))));
     QVERIFY(in);
     QVERIFY(in->isSeekable());
     in->setUrl(path);
@@ -49,5 +49,5 @@ void tst_AVInput::read() {
     delete in;
 }
 
-QTEST_MAIN(tst_AVInput)
+QTEST_MAIN(tst_MediaIO)
 #include "tst_avinput.moc"

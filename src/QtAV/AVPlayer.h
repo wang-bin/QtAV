@@ -34,7 +34,7 @@ class QIODevice;
 
 namespace QtAV {
 
-class AVInput;
+class MediaIO;
 class AudioOutput;
 class VideoRenderer;
 class AVClock;
@@ -86,8 +86,8 @@ public:
      * \brief setInput
      * AVPlayer's demuxer takes the ownership. Call it when player is stopped.
      */
-    void setInput(AVInput* in);
-    AVInput* input() const;
+    void setInput(MediaIO* in);
+    MediaIO* input() const;
 
     // force reload even if already loaded. otherwise only reopen codecs if necessary
     QTAV_DEPRECATED bool load(const QString& path, bool reload = true); //deprecated

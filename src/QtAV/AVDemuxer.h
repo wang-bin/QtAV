@@ -35,12 +35,12 @@ class QIODevice;
 // TODO: force codec name. clean code
 namespace QtAV {
 class AVError;
-class AVInput;
+class MediaIO;
 class Q_AV_EXPORT AVDemuxer : public QObject
 {
     Q_OBJECT
 public:
-    enum StreamType {
+    enum StreamType { //TODO: move to common MediaType
         AudioStream,
         VideoStream,
         SubtitleStream,
@@ -55,14 +55,14 @@ public:
     QString fileName() const;
     QIODevice* ioDevice() const;
     /// not null for QIODevice, custom protocols
-    AVInput* input() const;
+    MediaIO* input() const;
     /*!
      * \brief setMedia
      * \return whether the media source is changed
      */
     bool setMedia(const QString& fileName);
     bool setMedia(QIODevice* dev);
-    bool setMedia(AVInput* in);
+    bool setMedia(MediaIO* in);
     /*!
      * \brief setFormat
      * Force the input format. Useful if input stream is a raw video stream(fmt="rawvideo).

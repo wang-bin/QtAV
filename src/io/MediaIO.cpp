@@ -20,21 +20,21 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/AVInput.h"
-#include "QtAV/private/AVInput_p.h"
+#include "QtAV/MediaIO.h"
+#include "QtAV/private/MediaIO_p.h"
 #include "QtAV/private/factory.h"
 #include <QtCore/QStringList>
 
 namespace QtAV {
 
-FACTORY_DEFINE(AVInput)
+FACTORY_DEFINE(MediaIO)
 
-QStringList AVInput::builtInNames()
+QStringList MediaIO::builtInNames()
 {
     static QStringList names;
     if (!names.isEmpty())
         return names;
-    std::vector<std::string> stdnames(AVInputFactory::registeredNames());
+    std::vector<std::string> stdnames(MediaIOFactory::registeredNames());
     foreach (const std::string stdname, stdnames) {
         names.append(stdname.c_str());
     }
@@ -42,16 +42,16 @@ QStringList AVInput::builtInNames()
 }
 
 // TODO: plugin
-AVInput* AVInput::create(const QString &name)
+MediaIO* MediaIO::create(const QString &name)
 {
-    return AVInputFactory::create(AVInputFactory::id(name.toStdString()));
+    return MediaIOFactory::create(MediaIOFactory::id(name.toStdString()));
 }
 // TODO: plugin use metadata(Qt plugin system) to avoid loading
-AVInput* AVInput::createForProtocol(const QString &protocol)
+MediaIO* MediaIO::createForProtocol(const QString &protocol)
 {
-    std::vector<AVInputId> ids(AVInputFactory::registeredIds());
-    foreach (AVInputId id, ids) {
-        AVInput *in = AVInputFactory::create(id);
+    std::vector<MediaIOId> ids(MediaIOFactory::registeredIds());
+    foreach (MediaIOId id, ids) {
+        MediaIO *in = MediaIOFactory::create(id);
         if (in->protocols().contains(protocol))
             return in;
         delete in;
@@ -61,7 +61,7 @@ AVInput* AVInput::createForProtocol(const QString &protocol)
 
 static int av_read(void *opaque, unsigned char *buf, int buf_size)
 {
-    AVInput* input = static_cast<AVInput*>(opaque);
+    MediaIO* input = static_cast<MediaIO*>(opaque);
     return input->read((char*)buf, buf_size);
 }
 
@@ -69,7 +69,7 @@ static int64_t av_seek(void *opaque, int64_t offset, int whence)
 {
     if (whence == SEEK_SET && offset < 0)
         return -1;
-    AVInput* input = static_cast<AVInput*>(opaque);
+    MediaIO* input = static_cast<MediaIO*>(opaque);
     if (!input->isSeekable())
         return -1;
     if (whence == AVSEEK_SIZE) {
@@ -88,42 +88,42 @@ static int64_t av_seek(void *opaque, int64_t offset, int whence)
     return input->position();
 }
 
-AVInput::AVInput()
+MediaIO::MediaIO()
     : QObject(0)
 {}
 
-AVInput::AVInput(QObject *parent)
+MediaIO::MediaIO(QObject *parent)
     : QObject(parent)
 {}
 
-AVInput::AVInput(AVInputPrivate &d, QObject *parent)
+MediaIO::MediaIO(MediaIOPrivate &d, QObject *parent)
     : QObject(parent)
     , DPTR_INIT(&d)
 {}
 
-AVInput::~AVInput()
+MediaIO::~MediaIO()
 {
     release();
 }
 
-void AVInput::setUrl(const QString &url)
+void MediaIO::setUrl(const QString &url)
 {
-    DPTR_D(AVInput);
+    DPTR_D(MediaIO);
     if (d.url == url)
         return;
     d.url = url;
     onUrlChanged();
 }
 
-QString AVInput::url() const
+QString MediaIO::url() const
 {
     return d_func().url;
 }
 
-void AVInput::onUrlChanged()
+void MediaIO::onUrlChanged()
 {}
 
-const QStringList& AVInput::protocols() const
+const QStringList& MediaIO::protocols() const
 {
     static QStringList no_protocols;
     return no_protocols;
@@ -131,9 +131,9 @@ const QStringList& AVInput::protocols() const
 
 #define IODATA_BUFFER_SIZE 32768 //
 
-void* AVInput::avioContext()
+void* MediaIO::avioContext()
 {
-    DPTR_D(AVInput);
+    DPTR_D(MediaIO);
     // buffer will be released in av_probe_input_buffer2=>ffio_rewind_with_probe_data. always is? may be another context
     unsigned char* buf = (unsigned char*)av_malloc(IODATA_BUFFER_SIZE);
     d.ctx = avio_alloc_context(buf, IODATA_BUFFER_SIZE, 0, this, &av_read, 0, &av_seek);
@@ -141,9 +141,9 @@ void* AVInput::avioContext()
     return d.ctx;
 }
 
-void AVInput::release()
+void MediaIO::release()
 {
-    DPTR_D(AVInput);
+    DPTR_D(MediaIO);
     if (!d.ctx)
         return;
     d.ctx->opaque = 0; //in avio_close() opaque is URLContext* and will call ffurl_close()

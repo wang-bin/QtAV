@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_AVINPUT_P_H
-#define QTAV_AVINPUT_P_H
+#ifndef QTAV_MediaIO_P_H
+#define QTAV_MediaIO_P_H
 
 #include "QtAV/QtAV_Global.h"
 #include "QtAV/private/AVCompat.h"
@@ -28,11 +28,11 @@
 
 namespace QtAV {
 
-class AVInput;
-class Q_AV_PRIVATE_EXPORT AVInputPrivate : public DPtrPrivate<AVInput>
+class MediaIO;
+class Q_AV_PRIVATE_EXPORT MediaIOPrivate : public DPtrPrivate<MediaIO>
 {
 public:
-    AVInputPrivate()
+    MediaIOPrivate()
         : ctx(0)
     {}
     // TODO: how to manage ctx?
@@ -41,4 +41,4 @@ public:
 };
 
 } //namespace QtAV
-#endif // QTAV_AVINPUT_P_H
+#endif // QTAV_MediaIO_P_H
