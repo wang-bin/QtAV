@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/AVDemuxer.h"
-#include "QtAV/AVInput.h"
+#include "QtAV/MediaIO.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QStringList>
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
@@ -313,7 +313,7 @@ public:
     QString file_orig;
     AVInputFormat *input_format;
     QString format_forced;
-    AVInput *input;
+    MediaIO *input;
 
     SeekUnit seek_unit;
     SeekType seek_type;
@@ -444,7 +444,6 @@ bool AVDemuxer::readFrame()
         //qWarning("[AVDemuxer] unknown stream index: %d", stream);
         return false;
     }
-    AVRational &tb = d->format_ctx->streams[d->stream]->time_base;
     d->pkt = Packet::fromAVPacket(&packet, av_q2d(d->format_ctx->streams[d->stream]->time_base));
     av_free_packet(&packet); //important!
     return true;
@@ -570,7 +569,7 @@ QIODevice* AVDemuxer::ioDevice() const
     return d->input->property("device").value<QIODevice*>();
 }
 
-AVInput* AVDemuxer::input() const
+MediaIO* AVDemuxer::input() const
 {
     return d->input;
 }
@@ -595,7 +594,7 @@ bool AVDemuxer::setMedia(const QString &fileName)
     // a local file. return here to avoid protocol checking. If path contains ":", protocol checking will fail
     if (d->file.startsWith(QChar('/')))
         return d->media_changed;
-    // use AVInput to support protocols not supported by ffmpeg
+    // use MediaIO to support protocols not supported by ffmpeg
     int colon = d->file.indexOf(QChar(':'));
     if (colon >= 0) {
 #ifdef Q_OS_WIN
@@ -603,8 +602,8 @@ bool AVDemuxer::setMedia(const QString &fileName)
             return d->media_changed;
 #endif
         const QString scheme = colon == 0 ? "qrc" : d->file.left(colon);
-        // supportedProtocols() is not complete. so try AVInput 1st, if not found, fallback to libavformat
-        d->input = AVInput::createForProtocol(scheme);
+        // supportedProtocols() is not complete. so try MediaIO 1st, if not found, fallback to libavformat
+        d->input = MediaIO::createForProtocol(scheme);
         if (d->input) {
             d->input->setUrl(d->file);
         }
@@ -623,7 +622,7 @@ bool AVDemuxer::setMedia(QIODevice* device)
         }
     }
     if (!d->input)
-        d->input = AVInput::create("QIODevice");
+        d->input = MediaIO::create("QIODevice");
     QIODevice* old_dev = d->input->property("device").value<QIODevice*>();
     d->media_changed = old_dev != device;
     if (d->media_changed) {
@@ -633,7 +632,7 @@ bool AVDemuxer::setMedia(QIODevice* device)
     return d->media_changed;
 }
 
-bool AVDemuxer::setMedia(AVInput *in)
+bool AVDemuxer::setMedia(MediaIO *in)
 {
     d->media_changed = in != d->input;
     if (d->media_changed) {
@@ -709,9 +708,9 @@ bool AVDemuxer::load()
     if (d->input) {
         d->format_ctx->pb = (AVIOContext*)d->input->avioContext();
         d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
-        qDebug("avformat_open_input: d->format_ctx:'%p'..., AVInput('%s'): %p", d->format_ctx, d->input->name().toUtf8().constData(), d->input);
-        ret = avformat_open_input(&d->format_ctx, "AVInput", d->input_format, d->options.isEmpty() ? NULL : &d->dict);
-        qDebug("avformat_open_input: (with AVInput) ret:%d", ret);
+        qDebug("avformat_open_input: d->format_ctx:'%p'..., MediaIO('%s'): %p", d->format_ctx, d->input->name().toUtf8().constData(), d->input);
+        ret = avformat_open_input(&d->format_ctx, "MediaIO", d->input_format, d->options.isEmpty() ? NULL : &d->dict);
+        qDebug("avformat_open_input: (with MediaIO) ret:%d", ret);
     } else {
         qDebug("avformat_open_input: d->format_ctx:'%p', url:'%s'...",d->format_ctx, qPrintable(d->file));
         ret = avformat_open_input(&d->format_ctx, d->file.toUtf8().constData(), d->input_format, d->options.isEmpty() ? NULL : &d->dict);
