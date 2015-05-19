@@ -288,8 +288,7 @@ bool AVMuxer::open()
         AV_ENSURE_OK(avformat_alloc_output_context2(&d->format_ctx, d->format, d->format_forced.isEmpty() ? 0 : d->format_forced.toUtf8().constData(), ""), false);
         d->format_ctx->pb = (AVIOContext*)d->io->avioContext();
         d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
-        d->format_ctx->flags |= AVFMT_FLAG_GENPTS;
-        d->format_ctx->oformat->flags |= AVFMT_NOFILE;
+        //d->format_ctx->flags |= AVFMT_FLAG_GENPTS;
     } else {
         AV_ENSURE_OK(avformat_alloc_output_context2(&d->format_ctx, d->format, d->format_forced.isEmpty() ? 0 : d->format_forced.toUtf8().constData(), fileName().toUtf8().constData()), false);
     }
@@ -298,7 +297,9 @@ bool AVMuxer::open()
     if (!d->prepareStreams()) {
         return false;
     }
-    if (!(d->format_ctx->oformat->flags & AVFMT_NOFILE)) {
+    // TODO: AVFMT_NOFILE ? examples/muxing.c only check AVFMT_NOFILE
+    // a custome io does not need avio_open. it open resource in it's own way, e.g. QIODevice.open
+    if (!(d->format_ctx->oformat->flags & AVFMT_NOFILE) && !(d->format_ctx->flags & AVFMT_FLAG_CUSTOM_IO)) {
         // avio_open2?
         AV_ENSURE_OK(avio_open(&d->format_ctx->pb, fileName().toUtf8().constData(), AVIO_FLAG_WRITE), false);
     }
@@ -314,7 +315,8 @@ bool AVMuxer::close()
         return true;
     av_write_trailer(d->format_ctx);
     // close AVCodecContext* in encoder
-    if (d->format_ctx->oformat->flags & AVFMT_NOFILE) {
+    // custom io will call avio_close in ~MediaIO()
+    if (!(d->format_ctx->oformat->flags & AVFMT_NOFILE) && !(d->format_ctx->flags & AVFMT_FLAG_CUSTOM_IO)) {
         if (d->format_ctx->pb) {
             avio_close(d->format_ctx->pb);
             d->format_ctx->pb = 0;
