@@ -129,6 +129,24 @@ QString MediaIO::url() const
 void MediaIO::onUrlChanged()
 {}
 
+bool MediaIO::setAccessMode(AccessMode value)
+{
+    DPTR_D(MediaIO);
+    if (d.mode == value)
+        return true;
+    if (value == Write && !isWritable()) {
+        qWarning("Can not set Write access mode to this MediaIO");
+        return false;
+    }
+    d.mode = value;
+    return true;
+}
+
+MediaIO::AccessMode MediaIO::accessMode() const
+{
+    return d_func().mode;
+}
+
 const QStringList& MediaIO::protocols() const
 {
     static QStringList no_protocols;
@@ -142,9 +160,10 @@ void* MediaIO::avioContext()
     DPTR_D(MediaIO);
     // buffer will be released in av_probe_input_buffer2=>ffio_rewind_with_probe_data. always is? may be another context
     unsigned char* buf = (unsigned char*)av_malloc(IODATA_BUFFER_SIZE);
-    d.ctx = avio_alloc_context(buf, IODATA_BUFFER_SIZE, isWritable(), this, &av_read, &av_write, &av_seek);
+    // open for write if 1. SET 0 if open for read otherwise data ptr in av_read(data, ...) does not change
+    const int write_flag = (accessMode() == Write) && isWritable();
+    d.ctx = avio_alloc_context(buf, IODATA_BUFFER_SIZE, write_flag, this, &av_read, &av_write, &av_seek);
     d.ctx->seekable = isSeekable() ? 0 : AVIO_SEEKABLE_NORMAL;
-    d.ctx->write_flag = isWritable(); // open for write. set by user?
     return d.ctx;
 }
 

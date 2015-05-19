@@ -706,6 +706,9 @@ bool AVDemuxer::load()
     // used dict entries will be removed in avformat_open_input
     d->interrupt_hanlder->begin(InterruptHandler::Open);
     if (d->input) {
+        if (d->input->accessMode() == MediaIO::Write) {
+            qWarning("wrong MediaIO accessMode. MUST be Read");
+        }
         d->format_ctx->pb = (AVIOContext*)d->input->avioContext();
         d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
         qDebug("avformat_open_input: d->format_ctx:'%p'..., MediaIO('%s'): %p", d->format_ctx, d->input->name().toUtf8().constData(), d->input);

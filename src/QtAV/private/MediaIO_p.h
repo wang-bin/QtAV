@@ -25,6 +25,7 @@
 #include "QtAV/QtAV_Global.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QString>
+#include "QtAV/MediaIO.h"
 
 namespace QtAV {
 
@@ -34,9 +35,11 @@ class Q_AV_PRIVATE_EXPORT MediaIOPrivate : public DPtrPrivate<MediaIO>
 public:
     MediaIOPrivate()
         : ctx(0)
+        , mode(MediaIO::Read)
     {}
     // TODO: how to manage ctx?
     AVIOContext *ctx;
+    MediaIO::AccessMode mode;
     QString url;
 };
 

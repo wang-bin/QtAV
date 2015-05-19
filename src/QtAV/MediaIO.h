@@ -39,7 +39,13 @@ class Q_AV_EXPORT MediaIO : public QObject
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(MediaIO)
     Q_DISABLE_COPY(MediaIO)
+    Q_ENUMS(AccessMode)
 public:
+    enum AccessMode {
+        Read, // default
+        Write
+    };
+
     /// Registered MediaIO::name(): "QIODevice", "QFile"
     static QStringList builtInNames();
     static MediaIO* create(const QString& name);
@@ -50,6 +56,7 @@ public:
      * \return Null if none of registered MediaIO supports the protocol
      */
     static MediaIO* createForProtocol(const QString& protocol);
+    static MediaIO* createForUrl(const QString& url);
 
     MediaIO();
     MediaIO(QObject *parent);
@@ -57,6 +64,14 @@ public:
     virtual QString name() const = 0;
     virtual void setUrl(const QString& url);
     QString url() const;
+    /*!
+     * \brief setAccessMode
+     * A MediaIO instance can be 1 mode, Read or Write. If !isWritable(), then set to Write will fail and mode does not change
+     * \return false if set failed
+     */
+    bool setAccessMode(AccessMode value);
+    AccessMode accessMode() const;
+
     /// supported protocols. default is empty
     virtual const QStringList& protocols() const;
     virtual bool isSeekable() const = 0;

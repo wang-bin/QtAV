@@ -282,6 +282,9 @@ bool AVMuxer::open()
 
     //d->interrupt_hanlder->begin(InterruptHandler::Open);
     if (d->io) {
+        if (d->io->accessMode() == MediaIO::Read) {
+            qWarning("wrong MediaIO accessMode. MUST be Write");
+        }
         AV_ENSURE_OK(avformat_alloc_output_context2(&d->format_ctx, d->format, d->format_forced.isEmpty() ? 0 : d->format_forced.toUtf8().constData(), ""), false);
         d->format_ctx->pb = (AVIOContext*)d->io->avioContext();
         d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;

@@ -157,7 +157,7 @@ qint64 QIODeviceIO::size() const
 // qrc support
 static const char kQFileName[] = "QFile";
 class QFileIOPrivate;
-class QFileIO : public QIODeviceIO
+class QFileIO Q_DECL_FINAL: public QIODeviceIO
 {
     DPTR_DECLARE_PRIVATE(QFileIO)
 public:
@@ -177,7 +177,7 @@ private:
 static const MediaIOId MediaIOId_QFile = mkid::id32base36_5<'Q','F','i','l','e'>::value;
 FACTORY_REGISTER_ID_TYPE(MediaIO, MediaIOId_QFile, QFileIO, kQFileName)
 
-class QFileIOPrivate : public QIODeviceIOPrivate
+class QFileIOPrivate Q_DECL_FINAL: public QIODeviceIOPrivate
 {
 public:
     QFileIOPrivate() : QIODeviceIOPrivate() {}
