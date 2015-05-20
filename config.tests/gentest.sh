@@ -16,18 +16,19 @@ NAME=$1
 help_post $NAME
 mkdir -p $NAME
 cat >$NAME/${NAME}.pro <<EOF
-CONFIG -= qt
+CONFIG -= qt app_bundle
 CONFIG += console
 
 SOURCES += main.cpp
 
 LIBS += -l$NAME
+include(../paths.pri)
 EOF
 
 YEAR=`date +%Y`
 COPY=../templates/COPYRIGHT.h
 cat $COPY | sed "s/%YEAR%/$YEAR/g" > $NAME/main.cpp
-cat >$NAME/main.cpp <<EOF
+cat >> $NAME/main.cpp <<EOF
 #include <${NAME}.h>
 
 int main()

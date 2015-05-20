@@ -89,7 +89,6 @@ sse2 {
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
 android: CONFIG += config_opensl
-win32: CONFIG += config_dsound
 
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1

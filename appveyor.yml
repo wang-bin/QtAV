@@ -1,0 +1,97 @@
+branches:
+  only:
+    - master
+    - prelease
+    - ci/appveyor
+    - appveyor
+
+environment:
+
+  matrix:
+  - arch: x86
+    cc: VS2013
+    qt: 5.4.0
+    suffix: -xp
+
+#  - arch: 32
+#    cc: MinGW
+#    qt: 5.4.0
+#    suffix: GCC492-dwarf
+
+init:
+  - if not %cc%==MinGW call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" %arch%
+  - C:\MinGW\bin\g++ --version
+  - echo %NUMBER_OF_PROCESSORS% cores
+  - echo %PROCESSOR_IDENTIFIER%
+
+install:
+  - mkdir build
+  - cd build
+  - ps: $qt_url = 'http://sourceforge.net/projects/buildqt/files/release/' + $env:qt + '/Qt' + $env:qt + '-' + $env:cc + $env:arch + $env:suffix + '.7z/download'
+  - ps: Start-FileDownload $qt_url qt.7z
+  - ps: Start-FileDownload http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86%2Bx64-20141216.7z/download av.7z
+  - 7z x qt.7z > NUL
+  - 7z x av.7z > NUL
+  - move Qt%qt%-* Qt                      #Qt%qt%-%cc%%arch%%suffix% Qt
+  - move QtAV-depends* AV
+  - xcopy /syi AV\include Qt\include
+  - xcopy /syi AV\lib Qt\lib
+  - copy /y AV\bin\*.dll Qt\bin
+
+before_build:
+  - set PATH=%CD%\Qt\bin;%PATH%
+  - if %cc%==MinGW set PATH=%CD%\MinGW\bin;C:\MinGW\bin;%PATH%
+
+build_script:
+  - qmake ..
+  - if not %cc%==MinGW (nmake) else (mingw32-make -j%NUMBER_OF_PROCESSORS%)
+
+after_build:
+  - copy /y Qt\bin\av*.dll bin
+  - copy /y Qt\bin\sw*.dll bin
+  - if exist Qt\bin\po*.dll copy /y Qt\bin\po*.dll bin
+  - if exist Qt\bin\msvc*.dll copy /y Qt\bin\msvc*.dll bin
+  - if exist Qt\bin\OpenAL*.dll copy /y Qt\bin\OpenAL*.dll bin
+  - if exist Qt\bin\D3DCompiler_*.dll copy /y Qt\bin\D3DCompiler_*.dll bin
+  - if exist Qt\bin\lib*.dll copy /y Qt\bin\lib*.dll bin          # libEGL, GLESv2, gcc_s_dw2-1, stdc++-6, winpthread-1
+  - echo [Paths] > bin\qt.conf
+  - echo Prefix=. >> bin\qt.conf
+  - copy /y Qt\bin\Qt*Core*.dll bin
+  - copy /y Qt\bin\Qt*Gui*.dll bin
+  - copy /y Qt\bin\Qt*OpenGL*.dll bin
+  - copy /y Qt\bin\Qt*Svg*.dll bin
+  - if exist Qt\bin\Qt*Widgets.dll copy /y Qt\bin\Qt*Widgets.dll bin
+  - if exist Qt\bin\Qt5Network.dll copy /y Qt\bin\Qt5Network.dll bin
+  - if exist Qt\bin\Qt*Qml.dll copy /y Qt\bin\Qt*Qml.dll bin
+  - if exist Qt\bin\Qt*Quick.dll copy /y Qt\bin\Qt*Quick.dll bin
+  - if exist Qt\qml\Qt xcopy /syi Qt\qml\Qt bin\qml\Qt
+  - if exist Qt\qml\QtQml xcopy /syi Qt\qml\QtQml bin\qml\QtQml
+  - if exist Qt\qml\QtQuick xcopy /syi Qt\qml\QtQuick bin\qml\QtQuick
+  - if exist Qt\qml\QtQuick.2 xcopy /syi Qt\qml\QtQuick.2 bin\qml\QtQuick.2
+  - xcopy /syi Qt\plugins\platforms bin\plugins\platforms
+  - xcopy /syi Qt\plugins\imageformats bin\plugins\imageformats
+  - xcopy /syi Qt\plugins\iconengines bin\plugins\iconengines
+  - xcopy /syi tools\install_sdk\mkspecs mkspecs
+  - copy /y ..\qtc_packaging\ifw\packages\com.qtav.product.dev\data\sdk_deploy.bat .
+  - copy /y ..\qtc_packaging\ifw\packages\com.qtav.product.player\data\*.bat .
+  - xcopy /syi ..\src\QtAV include\QtAV
+  - xcopy /syi ..\widgets\QtAVWidgets include\QtAVWidgets
+  - move lib_* lib_
+  - if exist lib_\*AV*.lib xcopy /syi lib_\*AV*.lib lib
+  - if exist lib_\*AV*.a xcopy /syi lib_\*AV*.a lib
+  - 7z a %APPVEYOR_BUILD_FOLDER%\QtAV-Qt%qt%-%cc%%arch%-%APPVEYOR_REPO_COMMIT:~0,7%.7z bin lib include mkspecs sdk_deploy.bat install.bat uninstall.bat
+
+test: off
+
+artifacts:
+  - path: 'QtAV*.7z'  # relative to repo root
+
+deploy:
+  provider: FTP
+  protocol: sftp
+  host: frs.sourceforge.net
+  username: novesky
+  password:
+    secure: 2mQg4oxdX8S7rMJz2TCGGg==
+  folder: /home/frs/project/qtav/ci        # why always relative path even if starts with / ? I have to make a link home/frs/project/qtav/ci => /home/frs/project/qtav/ci
+  active_mode: false
