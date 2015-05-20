@@ -54,6 +54,7 @@ OptionalDepends = \
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
 !no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
 # no-xxx can set in $$PWD/user.conf
+!no-dsound: win32: OptionalDepends *= dsound
 !no-openal: OptionalDepends *= openal
 !no-pulseaudio: OptionalDepends *= pulseaudio
 !no-portaudio: OptionalDepends *= portaudio

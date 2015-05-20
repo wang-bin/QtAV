@@ -15,15 +15,13 @@ env:
     - QT=5.0.2 AV=ffmpeg-1.2.10
     - QT=5.1.1 AV=ffmpeg-2.0.6
     - QT=5.2.1 AV=ffmpeg-2.2.11
-#    - QT=5.3.1 AV=ffmpeg-2.4.4
-#    allow_failures:
-#      - os: osx
 
 branches:
   only:
     - master
     - prelease
-    - ci
+    - ci/travis
+    - travis
 
 git:
   submodules: true
@@ -32,6 +30,7 @@ install: . tools/ci/$TRAVIS_OS_NAME/install.sh
 
 script:
   - ./tools/ci/$TRAVIS_OS_NAME/script.sh
+
 after_success: ./tools/ci/$TRAVIS_OS_NAME/after_success.sh
 
 notifications:
