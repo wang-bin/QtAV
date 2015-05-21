@@ -1,6 +1,6 @@
-# [QtAV](http://www.qtav.org)  [![Build Status](https://travis-ci.org/wang-bin/QtAV.svg)](https://travis-ci.org/wang-bin/QtAV)
+# [QtAV](http://www.qtav.org)  [![Build Status](https://travis-ci.org/wang-bin/QtAV.svg)](https://travis-ci.org/wang-bin/QtAV) [![Appveyor](https://ci.appveyor.com/api/projects/status/github/wang-bin/qtav?svg=true&passingText=windows%20-%20OK)](https://ci.appveyor.com/project/wang-bin/qtav)
 
-QtAV is a multimedia playback library based on Qt and FFmpeg. It can help you to write a player
+QtAV is a multimedia playback library based on Qt and FFmpeg. It can help you to write a play
 with less effort than ever before.
 
 QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](http://ffmpeg.org/projects.html)
@@ -9,32 +9,28 @@ QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](ht
 you must adhere to the terms of the license in question.**
 
 
-#### [Home page](http://www.qtav.org), [Download binaries from sourceforge](https://sourceforge.net/projects/qtav) , [Source code on github](https://github.com/wang-bin/QtAV)
+#### [Home page](http://www.qtav.org), [Download binaries from sourceforge](https://sourceforge.net/projects/qtav/files/release), [Latest build](https://sourceforge.net/projects/qtav/files/ci), [Source code on github](https://github.com/wang-bin/QtAV)
 
 ### Features
 
 QtAV can meet your most demands
 
-- Hardware decoding suppprt: DXVA2, VAAPI, VDA, CedarX, CUDA(the 1st player support CUDA on linux?)
-- OpenGL and ES2 support for Hi10P and other 16-bit YUV videos (The 1st player/library support in ES2? VLC, XBMC, mplayer does not support now)
+- Hardware decoding suppprt: DXVA2, VAAPI, VDA(the most effecient VDA decoder), CedarX, CUDA(the 1st player support CUDA on linux?)
+- OpenGL and ES2 support for almost all formats including Hi10P videos (The 1st player/library support 10bit in ES2? VLC, XBMC, mplayer does not support now)
 - Real time preview
 - Video capture in rgb and yuv format
 - OSD and custom filters
 - Filters in libavfilter, for example stero3d, blur
 - Subtitle supports ass, srt etc. Dynamic change FFmpeg and libass engine
 - Playing frame by frame (currently support forward playing)
-- Playback speed control. At any speed.
-- Variant streams: locale file, http, rtsp, etc.
-- Choose audio channel
-- Choose media stream, e.g. play a desired audio track
-- Renderers: QPainter(QWidget, QGraphicsItem), GDI+, Direct2D, XV and OpenGL(and ES2).
+- Playback speed control
+- Variant streams: locale file, http, rtsp etc. and your custom streams
+- Audio channel, tracks and external audio tracks
 - Dynamically change render engine when playing.
 - Multiple video outputs for 1 player
-- Region of interest(ROI), i.e. video cropping
 - Video eq(software and OpenGL): brightness, contrast, saturation, hue
 - QML support. Most playback APIs are compatible with QtMultimedia module
-- Compatiblity: QtAV can be built with both Qt4 and Qt5. QtAV supports
-  both FFmpeg(>=1.0) and [Libav](http://libav.org) (>=9.0). Latest FFmpeg release is recommended.
+- Compatiblity: QtAV can be built with both Qt4 and Qt5, FFmpeg(>=1.0) and [Libav](http://libav.org) (>=9.0). Latest FFmpeg release is recommended.
 
 
 ### Extensible Framework
@@ -46,15 +42,12 @@ QtAV can meet your most demands
 
 #### Requirements
 
-[![Qt](http://qt-project.org/images/qt13a/Qt-logo.png "Qt4.8 or Qt5")](http://qt-project.org)
+[![Qt](http://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Qt_logo.svg/64px-Qt_logo.svg.png "Qt4.8 or Qt5")](http://www.qt.io)
 [![FFmpeg](http://ffmpeg.org/ffmpeg-logo.png "(>=1.0)Latest version is recommanded")](http://ffmpeg.org)
-![OpenAL](http://upload.wikimedia.org/wikipedia/zh/2/28/OpenAL_logo.png "OpenAL or OpenAL soft") 
 [![Libav](http://libav.org/libav-logo-text.png ">=9.0")](http://libav.org)
-[![PortAudio](http://www.portaudio.com/images/portaudio_logotext.png)](http://www.portaudio.com)
- 
-Latest FFmpeg, Qt5 and OpenAL releases are preferred.
+![OpenAL](http://upload.wikimedia.org/wikipedia/zh/2/28/OpenAL_logo.png "OpenAL or OpenAL soft")
 
-**The required development files for MinGW can be found in sourceforge
+**The required development files to build QtAV can be found in sourceforge
 page: [depends](https://sourceforge.net/projects/qtav/files/depends)**
 
 #### Build
@@ -64,10 +57,10 @@ See the wiki [Build QtAV](https://github.com/wang-bin/QtAV/wiki/Build-QtAV) and 
 
 #### How To Write a Player
 
-Wrtie a media player using QtAV is quite easy.
+Wrtie a media player using QtAV quite easy.
 
     GLWidgetRenderer2 renderer;
-    renderer.show();
+    renderer.s
     AVPlayer player;
     player.setRenderer(&renderer);
     player.play("test.avi");
@@ -109,23 +102,9 @@ QtAV can also be used in **Qml**
 For End Users
 -------------
 
-#### Player Usage
+#### Player Commandline Options
 
-An simple player can be found in examples. The command line options is
-
-    player [-ao null] [-vo qt|gl|d2d|gdi|xv] [-vd "dxva[cuda[;vaapi[;vda[;ffmpeg]]]]"] [--no-ffmpeg-log] [url|path|pipe:]
-
-To disable audio output, add `-ao null`
-
-Choose a render engine with _-vo_ option(default is OpenGL). For example, in windows that support Direct2D, you can run
-
-    player -vo d2d filename
-
-To select decoder, use `-vd` option. Value can be _dxva_, _vaapi_ and _ffmpeg_, or a list separated by `;` in priority order. For example:
-
-    player -vd "dxva;ffmpeg" filename
-
-will use dxva if dxva can decode, otherwise ffmpeg will be used.
+Run `player -h`
 
 
 #### Default Shortcuts
@@ -166,13 +145,8 @@ Use QtAV in QML with OpenGL shaders(example is from qtmultimedia. But qtmultimed
 
 
 ***
-### Donate 资助
+### [Donate 捐赠](http://www.qtav.org/donate.html)
 
-[PayPal ![Paypal](http://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](http://www.qtav.org#donate)
-[![Support via Gittip](https://rawgithub.com/twolfson/gittip-badge/0.1.0/dist/gittip.png)](https://www.gittip.com/wang-bin)
-[Gittip ![Gittip](https://www.gittip.com/assets/10.1.51/logo.png)](https://www.gittip.com/wang-bin)
-![AliPay](http://www.qtav.org/images/apbihytg7x2iyb8g0f-50x50.png "支付宝")
-- - -
 
 
 
