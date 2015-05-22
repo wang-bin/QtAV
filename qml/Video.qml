@@ -109,7 +109,7 @@ Item {
 
     /*!
       A list of video codec names in priority order.
-      Example: videoCodecPriority: ["VAAPI", "FFmpeg"]
+      Example: videoCodecPriority: ["VAAPI", "FFmpeg", "Cedarv"]
       Default is ["FFmpeg"]
     s*/
     property alias videoCodecPriority:   player.videoCodecPriority
