@@ -32,9 +32,14 @@ qtav_qml.files = $$PWD/qmldir $$PWD/Video.qml $$PWD/plugins.qmltypes
 plugin.path = $$BUILD_DIR/bin/QtAV/
 mkpath($$plugin.path)
 #plugin.depends = #makefile target
-#windows: copy /y file1+file2+... dir. need '+'
+#windows: copy /y file1+file2+... dir. need '+'. $(COPY_FILE) is exists in makefile, not in vc projects (MAKEFILE_GENERATOR is MSBUILD or MSVC.NET)
+if(equals(MAKEFILE_GENERATOR, MSVC.NET)|equals(MAKEFILE_GENERATOR, MSBUILD)) {
+  TRY_COPY = $$QMAKE_COPY
+} else {
+  TRY_COPY = -$$QMAKE_COPY #makefile. or -\$\(COPY_FILE\)
+}
 for(f, plugin.files) {
-  plugin.commands += $$escape_expand(\\n\\t)$$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$plugin.path))
+  plugin.commands += $$escape_expand(\\n\\t)$$TRY_COPY $$shell_path($$f) $$shell_path($$plugin.path)
 }
 #join values seperated by space. so quote is needed
 #plugin.commands = $$join(plugin.commands,$$escape_expand(\\n\\t))
@@ -55,7 +60,7 @@ else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$plugin.comma
 # sa mkspecs/features/qml_plugin.prf
 extra_copy.output = $$shell_path($$plugin.path)${QMAKE_FILE_BASE}${QMAKE_FILE_EXT}
 # QMAKE_COPY_FILE, QMAKE_MKDIR_CMD ?
-extra_copy.commands = -\$\(COPY_FILE\) ${QMAKE_FILE_NAME} $$shell_path($$plugin.path)
+extra_copy.commands = $$TRY_COPY ${QMAKE_FILE_NAME} $$shell_path($$plugin.path)
 #extra_copy.depends = $$EXTRA_COPY_FILES #.input is already the depends
 extra_copy.input = EXTRA_COPY_FILES
 extra_copy.CONFIG += no_link
@@ -70,14 +75,6 @@ QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail
 QMAKE_TARGET_DESCRIPTION = "QtAV QML module. QtAV Multimedia playback framework. http://www.qtav.org"
 QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
 QMAKE_TARGET_PRODUCT = "QtAV QML"
-
-*msvc* {
-#link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
-    QMAKE_LFLAGS += /SAFESEH:NO
-    INCLUDEPATH += $$PROJECTROOT/srccompat/msvc
-}
-#UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
-DEFINES += __STDC_CONSTANT_MACROS
 
 SOURCES += \
     plugin.cpp \
