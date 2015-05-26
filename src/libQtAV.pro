@@ -83,7 +83,7 @@ sse2 {
 
 *msvc* {
 #link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
-    #QMAKE_LFLAGS += /SAFESEH:NO
+    debug: QMAKE_LFLAGS += /SAFESEH:NO
     QMAKE_LFLAGS *= /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib #for msbuild vs2013
     INCLUDEPATH += compat/msvc
 }
