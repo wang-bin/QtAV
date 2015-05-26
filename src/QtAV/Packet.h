@@ -23,6 +23,7 @@
 #define QAV_PACKET_H
 
 #include <QtCore/QByteArray>
+#include <QtCore/QMetaType>
 #include <QtCore/QSharedData>
 #include <QtAV/QtAV_Global.h>
 
@@ -75,5 +76,5 @@ bool Packet::isValid() const
 }
 
 } //namespace QtAV
-
+Q_DECLARE_METATYPE(QtAV::Packet)
 #endif // QAV_PACKET_H

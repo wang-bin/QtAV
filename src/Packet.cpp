@@ -27,6 +27,13 @@
 #define AVPACKET_REF AV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1 ,39, 101)
 
 namespace QtAV {
+namespace {
+static const struct RegisterMetaTypes {
+    inline RegisterMetaTypes() {
+        qRegisterMetaType<QtAV::Packet>();
+    }
+} _registerMetaTypes;
+} //namespace
 
 class PacketPrivate : public QSharedData
 {
