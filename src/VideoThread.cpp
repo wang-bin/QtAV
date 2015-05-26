@@ -398,7 +398,8 @@ void VideoThread::run()
             diff = 0; // TODO: here?
         if (!sync_audio && diff > 0) {
             // wait to dts reaches
-            waitAndCheck(diff*1000UL, dts); // TODO: count decoding and filter time
+            if (d.force_fps < 0.0)
+                waitAndCheck(diff*1000UL, dts); // TODO: count decoding and filter time
             diff = 0; // TODO: can not change delay!
         }
         // update here after wait
