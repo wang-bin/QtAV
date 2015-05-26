@@ -303,6 +303,7 @@ SOURCES += \
     filter/FilterManager.cpp \
     filter/LibAVFilter.cpp \
     filter/SubtitleFilter.cpp \
+    filter/EncodeFilter.cpp \
     ImageConverter.cpp \
     ImageConverterFF.cpp \
     Packet.cpp \
@@ -310,6 +311,7 @@ SOURCES += \
     AVError.cpp \
     AVPlayer.cpp \
     AVPlayerPrivate.cpp \
+    AVTranscoder.cpp \
     AVClock.cpp \
     VideoCapture.cpp \
     VideoFormat.cpp \
@@ -355,11 +357,13 @@ SDK_HEADERS *= \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
     QtAV/LibAVFilter.h \
+    QtAV/EncodeFilter.h \
     QtAV/Frame.h \
     QtAV/QPainterRenderer.h \
     QtAV/Packet.h \
     QtAV/AVError.h \
     QtAV/AVPlayer.h \
+    QtAV/AVTranscoder.h \
     QtAV/VideoCapture.h \
     QtAV/VideoRenderer.h \
     QtAV/VideoRendererTypes.h \

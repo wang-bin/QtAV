@@ -26,6 +26,9 @@
 #include "utils/internal.h"
 #include "utils/Logger.h"
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+Q_DECLARE_METATYPE(QIODevice*)
+#endif
 namespace QtAV {
 static const char kFileScheme[] = "file:";
 #define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
@@ -182,6 +185,20 @@ QString AVMuxer::fileName() const
     return d->file_orig;
 }
 
+QIODevice* AVMuxer::ioDevice() const
+{
+    if (!d->io)
+        return 0;
+    if (d->io->name() != "QIODevice")
+        return 0;
+    return d->io->property("device").value<QIODevice*>();
+}
+
+MediaIO* AVMuxer::mediaIO() const
+{
+    return d->io;
+}
+
 bool AVMuxer::setMedia(const QString &fileName)
 {
     if (d->io) {
@@ -303,6 +320,7 @@ bool AVMuxer::open()
         // avio_open2?
         AV_ENSURE_OK(avio_open(&d->format_ctx->pb, fileName().toUtf8().constData(), AVIO_FLAG_WRITE), false);
     }
+    // d->format_ctx->start_time_realtime
     AV_ENSURE_OK(avformat_write_header(d->format_ctx, &d->dict), false);
     d->started = false;
 
@@ -336,7 +354,7 @@ bool AVMuxer::isOpen() const
     return d->format_ctx;
 }
 
-bool AVMuxer::writeAudio(const Packet& packet)
+bool AVMuxer::writeAudio(const QtAV::Packet& packet)
 {
     AVPacket *pkt = (AVPacket*)packet.asAVPacket(); //FIXME
     pkt->stream_index = d->audio_streams[0]; //FIXME
@@ -349,7 +367,7 @@ bool AVMuxer::writeAudio(const Packet& packet)
     return true;
 }
 
-bool AVMuxer::writeVideo(const Packet& packet)
+bool AVMuxer::writeVideo(const QtAV::Packet& packet)
 {
     AVPacket *pkt = (AVPacket*)packet.asAVPacket();
     pkt->stream_index = d->video_streams[0];

@@ -47,7 +47,7 @@ public:
     QString fileName() const;
     QIODevice* ioDevice() const;
     /// not null for QIODevice, custom protocols
-    //AVWriter* writer() const;
+    MediaIO *mediaIO() const;
     /*!
      * \brief setMedia
      * \return whether the media is changed
@@ -68,15 +68,18 @@ public:
     bool open();
     bool close();
     bool isOpen() const;
-    // TODO: multiple streams. Packet.type,stream
-    bool writeAudio(const Packet& packet);
-    bool writeVideo(const Packet& packet);
 
     void copyProperties(VideoEncoder* enc);
     void copyProperties(AudioEncoder* enc);
 
     void setOptions(const QVariantHash &dict);
     QVariantHash options() const;
+
+public Q_SLOTS:
+    // TODO: multiple streams. Packet.type,stream
+    bool writeAudio(const QtAV::Packet& packet);
+    bool writeVideo(const QtAV::Packet& packet);
+
 private:
     class Private;
     QScopedPointer<Private> d;
