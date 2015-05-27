@@ -426,8 +426,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
     }
     if (!m_complete || !mpPlayer)
         return;
-    mPlaybackState = playbackState;
-    switch (mPlaybackState) {
+    switch (playbackState) {
     case PlayingState:
         if (mpPlayer->isPaused()) {
             mpPlayer->pause(false);
