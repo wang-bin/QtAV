@@ -170,6 +170,8 @@ void QmlAVPlayer::setSource(const QUrl &url)
         stop();
         //mpPlayer->load(); //QtAV internal bug: load() or play() results in reload
         if (mAutoPlay) {
+            //mPlaybackState is actually changed in slots. But if set to a new source the state may not change before call play()
+            mPlaybackState = StoppedState;
             play();
         }
     }
@@ -537,6 +539,7 @@ void QmlAVPlayer::play()
 void QmlAVPlayer::pause()
 {
     setPlaybackState(PausedState);
+    mPlaybackState = PausedState;
 }
 
 void QmlAVPlayer::stop()
