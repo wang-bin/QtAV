@@ -55,7 +55,8 @@ public:
     QString fileName() const;
     QIODevice* ioDevice() const;
     /// not null for QIODevice, custom protocols
-    MediaIO* input() const;
+    MediaIO* mediaIO() const;
+    QTAV_DEPRECATED MediaIO* input() const;
     /*!
      * \brief setMedia
      * \return whether the media source is changed

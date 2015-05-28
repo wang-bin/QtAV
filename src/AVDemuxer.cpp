@@ -569,6 +569,11 @@ QIODevice* AVDemuxer::ioDevice() const
     return d->input->property("device").value<QIODevice*>();
 }
 
+MediaIO* AVDemuxer::mediaIO() const
+{
+    return d->input;
+}
+
 MediaIO* AVDemuxer::input() const
 {
     return d->input;
@@ -1074,7 +1079,7 @@ void AVDemuxer::Private::applyOptionsForDict()
                 format_forced = fmts; // reset when media changed
         }
     } else if (opt.type() == QVariant::Hash) {
-        QVariantMap avformat_dict(opt.toMap());
+        QVariantHash avformat_dict(opt.toHash());
         if (avformat_dict.contains("format_whitelist")) {
             const QString fmts(avformat_dict["format_whitelist"].toString());
             if (!fmts.contains(',') && !fmts.isEmpty())
