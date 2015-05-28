@@ -369,9 +369,12 @@ bool AudioOutput::open()
 bool AudioOutput::close()
 {
     DPTR_D(AudioOutput);
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
     d.resetStatus();
     if (!d.backend)
         return false;
+    // TODO: drain() before close
     d.backend->audio = 0;
     return d.backend->close();
 }

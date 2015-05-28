@@ -265,7 +265,7 @@ void AudioThread::run()
             const qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
             pkt.pts += chunk_delay;
             pkt.dts += chunk_delay;
-            if (has_ao) {
+            if (has_ao && ao->isOpen()) {
                 QByteArray decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                 ao->play(decodedChunk, pkt.pts);
                 d.clock->updateValue(ao->timestamp());

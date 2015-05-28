@@ -58,6 +58,7 @@ private:
     static void latencyUpdateCallback(pa_stream *s, void *userdata);
     static void underflowCallback(pa_stream *s, void *userdata);
     static void writeCallback(pa_stream *s, size_t length, void *userdata);
+    static void  successCallback(pa_stream*s, int success, void *userdata);
     static void sinkInfoCallback(struct pa_context *c, const struct pa_sink_input_info *i, int is_last, void *userdata);
 
     bool waitPAOperation(pa_operation *op) const {
@@ -228,6 +229,13 @@ void AudioOutputPulse::writeCallback(pa_stream *s, size_t length, void *userdata
     p->onCallback();
 }
 
+void AudioOutputPulse::successCallback(pa_stream *s, int success, void *userdata)
+{
+    Q_UNUSED(success); //?
+    AudioOutputPulse *p = reinterpret_cast<AudioOutputPulse*>(userdata);
+    pa_threaded_mainloop_signal(p->loop, 0);
+}
+
 void AudioOutputPulse::sinkInfoCallback(pa_context *c, const pa_sink_input_info *i, int is_last, void *userdata)
 {
     Q_UNUSED(c);
@@ -381,6 +389,11 @@ bool AudioOutputPulse::open()
 
 bool AudioOutputPulse::close()
 {
+    if (stream) {
+        ScopedPALocker palock(loop);
+        Q_UNUSED(palock);
+        PA_ENSURE_TRUE(waitPAOperation(pa_stream_drain(stream,  AudioOutputPulse::successCallback, this)), false);
+    }
     if (loop) {
         pa_threaded_mainloop_stop(loop);
     }
@@ -409,6 +422,10 @@ AudioOutputBackend::BufferControl AudioOutputPulse::bufferControl() const
 int AudioOutputPulse::getWritableBytes()
 {
     //return writable_size;
+    if (!loop || !stream) {
+        qWarning("pulseaudio is not open");
+        return 0;
+    }
     ScopedPALocker palock(loop);
     Q_UNUSED(palock);
     return pa_stream_writable_size(stream);
