@@ -52,6 +52,7 @@ class QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
     Q_PROPERTY(QStringList dirs READ dirs WRITE setDirs NOTIFY dirsChanged)
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
     Q_PROPERTY(QStringList supportedSuffixes READ supportedSuffixes NOTIFY supportedSuffixesChanged)
+    Q_PROPERTY(qreal delay READ delay WRITE setDelay NOTIFY delayChanged)
     Q_PROPERTY(bool canRender READ canRender NOTIFY canRenderChanged)
     //PlayerSubtitle api
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
@@ -110,6 +111,7 @@ Q_SIGNALS:
     void suffixesChanged();
     void supportedSuffixesChanged();
     void engineChanged();
+    void delayChanged();
 
 private:
     bool m_enable;

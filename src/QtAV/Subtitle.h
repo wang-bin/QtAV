@@ -65,6 +65,7 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
     Q_PROPERTY(QStringList supportedSuffixes READ supportedSuffixes NOTIFY supportedSuffixesChanged)
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
+    Q_PROPERTY(qreal delay READ delay WRITE setDelay NOTIFY delayChanged)
     Q_PROPERTY(QString text READ getText)
     Q_PROPERTY(bool loaded READ isLoaded)
     Q_PROPERTY(bool canRender READ canRender NOTIFY canRenderChanged)
@@ -132,6 +133,14 @@ public:
 
     qreal timestamp() const;
     /*!
+     * \brief delay
+     * unit: second
+     * The subtitle from getText() and getImage() is at the time: timestamp() + delay()
+     * \return
+     */
+    qreal delay() const;
+    void setDelay(qreal value);
+    /*!
      * \brief canRender
      * wether current processor supports rendering. Check before getImage()
      * \return
@@ -181,6 +190,7 @@ signals:
     void suffixesChanged();
     void supportedSuffixesChanged();
     void engineChanged();
+    void delayChanged();
 private:
     void checkCapability();
     class Private;
@@ -215,6 +225,9 @@ public:
     void setSuffixes(const QStringList& value);
     QStringList suffixes() const;
     bool canRender() const; // TODO: rename to capability()
+    qreal delay() const;
+    void setDelay(qreal value);
+
     // API from PlayerSubtitle
     /*
     void setFile(const QString& file);

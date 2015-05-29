@@ -52,6 +52,7 @@ public:
         , processor(0)
         , codec("AutoDetect")
         , t(0)
+        , delay(0)
         , current_count(0)
     {}
     void reset() {
@@ -106,6 +107,7 @@ public:
     QIODevice *dev;
     // last time image
     qreal t;
+    qreal delay;
     SubtitleFrame frame;
     QString current_text;
     QImage current_image;
@@ -319,6 +321,19 @@ qreal Subtitle::timestamp() const
     return priv->t;
 }
 
+void Subtitle::setDelay(qreal value)
+{
+    if (priv->delay == value)
+        return;
+    priv->delay = value;
+    Q_EMIT delayChanged();
+}
+
+qreal Subtitle::delay() const
+{
+    return priv->delay;
+}
+
 void Subtitle::load()
 {
     SubtitleProcessor *old_processor = priv->processor;
@@ -452,7 +467,7 @@ QImage Subtitle::getImage(int width, int height, QRect* boundingRect)
         return QImage();
     priv->processor->setFrameSize(width, height);
     // TODO: store bounding rect here and not in processor
-    priv->current_image = priv->processor->getImage(priv->t, boundingRect);
+    priv->current_image = priv->processor->getImage(priv->t - priv->delay, boundingRect);
     return priv->current_image;
 }
 
@@ -493,6 +508,7 @@ bool Subtitle::Private::prepareCurrentFrame()
     QLinkedList<SubtitleFrame>::iterator it = itf;
     int found = 0;
     const int old_current_count = current_count;
+    const qreal t = this->t - delay;
     if (t < it->begin) {
         while (it != frames.begin()) {
             --it;
@@ -736,6 +752,7 @@ void SubtitleAPIProxy::setSubtitle(Subtitle *sub)
     QObject::connect(m_s, SIGNAL(fuzzyMatchChanged()), m_obj, SIGNAL(fuzzyMatchChanged()));
     QObject::connect(m_s, SIGNAL(suffixesChanged()), m_obj, SIGNAL(suffixesChanged()));
     QObject::connect(m_s, SIGNAL(supportedSuffixesChanged()), m_obj, SIGNAL(supportedSuffixesChanged()));
+    QObject::connect(m_s, SIGNAL(delayChanged()), m_obj, SLOT(delayChanged()));
 }
 
 void SubtitleAPIProxy::setCodec(const QByteArray& value)
@@ -841,6 +858,18 @@ QStringList SubtitleAPIProxy::suffixes() const
 bool SubtitleAPIProxy::canRender() const
 {
     return m_s && m_s->canRender();
+}
+
+void SubtitleAPIProxy::setDelay(qreal value)
+{
+    if (!m_s)
+        return;
+    m_s->setDelay(value);
+}
+
+qreal SubtitleAPIProxy::delay() const
+{
+    return m_s ? m_s->delay() : 0;
 }
 
 } //namespace QtAV
