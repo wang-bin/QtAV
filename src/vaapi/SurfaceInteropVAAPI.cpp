@@ -8,23 +8,6 @@ SurfaceInteropVAAPI::SurfaceInteropVAAPI()
 {
 }
 
-SurfaceInteropVAAPI::~SurfaceInteropVAAPI()
-{
-    if (tmp_surfaces.isEmpty())
-        return;
-    QMap<GLuint*,surface_glx_ptr>::iterator it(tmp_surfaces.begin());
-    while (it != tmp_surfaces.end()) {
-        delete it.key();
-        it.value()->destroy();
-        it = tmp_surfaces.erase(it);
-    }
-    it = glx_surfaces.begin();
-    while (it != glx_surfaces.end()) {
-        it.value()->destroy();
-        it = tmp_surfaces.erase(it);
-    }
-}
-
 surface_glx_ptr SurfaceInteropVAAPI::createGLXSurface(void *handle)
 {
     GLuint tex = *((GLuint*)handle);

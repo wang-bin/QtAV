@@ -13,7 +13,6 @@ class SurfaceInteropVAAPI : public VideoSurfaceInterop, public VAAPI_GLX
 {
 public:
     SurfaceInteropVAAPI();
-    ~SurfaceInteropVAAPI();
     void setSurface(const surface_ptr& surface) { m_surface = surface; }
     // return glx surface
     surface_glx_ptr createGLXSurface(void* handle);

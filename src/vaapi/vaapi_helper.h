@@ -224,6 +224,7 @@ typedef SharedPtr<surface_t> surface_ptr;
 class surface_glx_t : public VAAPI_GLX {
 public:
     surface_glx_t() : m_glx(0) {}
+    ~surface_glx_t() {destroy();}
     void set(const surface_ptr& surface) { m_surface = surface;}
     bool create(GLuint tex) {
         destroy();
@@ -234,6 +235,7 @@ public:
         if (!m_glx)
             return true;
         VA_ENSURE_TRUE(vaDestroySurfaceGLX(display(), m_glx), false);
+        m_glx = 0;
         return true;
     }
     bool copy() {
