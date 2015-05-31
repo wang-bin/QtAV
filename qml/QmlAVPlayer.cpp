@@ -528,7 +528,8 @@ void QmlAVPlayer::play(const QUrl &url)
     if (mSource == url)
         return;
     setSource(url);
-    play();
+    if (!autoPlay())
+        play();
 }
 
 void QmlAVPlayer::play()
