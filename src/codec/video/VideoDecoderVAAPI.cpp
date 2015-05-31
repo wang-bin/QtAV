@@ -25,7 +25,6 @@
 #include <list>
 #include <QtCore/QList>
 #include <QtCore/QMetaEnum>
-#include <QtCore/QSharedPointer>
 #include <QtCore/QStringList>
 extern "C" {
 #include <libavcodec/vaapi.h>
@@ -33,11 +32,8 @@ extern "C" {
 #include <fcntl.h> //open()
 #include <unistd.h> //close()
 #include "QtAV/Packet.h"
-#include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
-#include "utils/GPUMemCopy.h"
 #include "QtAV/private/prepost.h"
-#include "vaapi/vaapi_helper.h"
 #include "vaapi/SurfaceInteropVAAPI.h"
 #include "utils/Logger.h"
 
@@ -185,7 +181,6 @@ public:
         nb_surfaces = 0;
         disable_derive = true;
     }
-    ~VideoDecoderVAAPIPrivate() {}
     virtual bool open();
     virtual void close();
     bool createSurfaces(int count, void **hwctx, int w, int h);
@@ -311,10 +306,7 @@ VideoFrame VideoDecoderVAAPI::frame()
             qWarning("VAAPI - Unable to find surface");
             return VideoFrame();
         }
-        if (display() == GLX)
-            ((VAAPI_GLX_Interop*)d.surface_interop.data())->setSurface(p);
-        else
-            ((VAAPI_X_GLX_Interop*)d.surface_interop.data())->setSurface(p);
+        ((SurfaceInteropVAAPI*)d.surface_interop.data())->setSurface(p);
 
         VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
