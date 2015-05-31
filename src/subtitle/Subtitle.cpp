@@ -752,7 +752,7 @@ void SubtitleAPIProxy::setSubtitle(Subtitle *sub)
     QObject::connect(m_s, SIGNAL(fuzzyMatchChanged()), m_obj, SIGNAL(fuzzyMatchChanged()));
     QObject::connect(m_s, SIGNAL(suffixesChanged()), m_obj, SIGNAL(suffixesChanged()));
     QObject::connect(m_s, SIGNAL(supportedSuffixesChanged()), m_obj, SIGNAL(supportedSuffixesChanged()));
-    QObject::connect(m_s, SIGNAL(delayChanged()), m_obj, SLOT(delayChanged()));
+    QObject::connect(m_s, SIGNAL(delayChanged()), m_obj, SIGNAL(delayChanged()));
 }
 
 void SubtitleAPIProxy::setCodec(const QByteArray& value)
