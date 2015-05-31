@@ -166,6 +166,7 @@ bool VAAPI_X_GLX_Interop::ensurePixmaps(int w, int h)
     }
 
     pixmap = XCreatePixmap((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), w, h, 24);
+    qDebug("XCreatePixmap: %lu", pixmap);
     if (!pixmap) {
         qWarning("VAAPI_X_GLX_Interop could not create pixmap");
         return false;
@@ -178,6 +179,8 @@ bool VAAPI_X_GLX_Interop::ensurePixmaps(int w, int h)
         None,
     };
     glxpixmap = glXCreatePixmap((::Display*)xdisplay, fbc, pixmap, attribs);
+    width = w;
+    height = h;
     return true;
 }
 
@@ -196,14 +199,15 @@ void* VAAPI_X_GLX_Interop::map(SurfaceType type, const VideoFormat &fmt, void *h
     }
     if (!ensurePixmaps(m_surface->width(), m_surface->height()))
         return 0;
+    VAWARN(vaSyncSurface(m_surface->display(), m_surface->get()));
 
     VA_ENSURE_TRUE(vaPutSurface(m_surface->display(), m_surface->get(), pixmap
                                 , 0, 0, m_surface->width(), m_surface->height()
                                 , 0, 0, m_surface->width(), m_surface->height()
                                 , NULL, 0, VA_FRAME_PICTURE | VA_SRC_BT709)
                    , NULL);
+
     XSync((::Display*)xdisplay, False);
-    VAWARN(vaSyncSurface(m_surface->display(), m_surface->get()));
     DYGL(glBindTexture(GL_TEXTURE_2D, *((GLuint*)handle)));
     glXBindTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT, NULL);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
