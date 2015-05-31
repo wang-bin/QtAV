@@ -28,10 +28,10 @@ namespace vaapi {
 // TODO: move create glx surface to decoder, interop only map/unmap, 1 interop per frame
 // load/resolve symbols only once in decoder and pass a VAAPI_XXX ptr
 // or use pool
-class SurfaceInteropVAAPI : public VideoSurfaceInterop, public VAAPI_GLX
+class VAAPI_GLX_Interop : public VideoSurfaceInterop, public VAAPI_GLX
 {
 public:
-    SurfaceInteropVAAPI();
+    VAAPI_GLX_Interop();
 
     void setSurface(const surface_ptr& surface) {
         QMutexLocker lock(&mutex);
@@ -47,7 +47,7 @@ private:
     surface_ptr m_surface;
     QMutex mutex;
 };
-typedef QSharedPointer<SurfaceInteropVAAPI> SurfaceInteropVAAPIPtr;
+typedef QSharedPointer<VAAPI_GLX_Interop> VAAPI_GLX_InteropPtr;
 
 #ifndef QT_OPENGL_ES_2
 class VAAPI_X_GLX_Interop Q_DECL_FINAL: public VideoSurfaceInterop, public VAAPI_X11
@@ -81,6 +81,6 @@ private:
 #endif //QT_OPENGL_ES_2
 } //namespace QtAV
 } //namespace vaapi
-//Q_DECLARE_METATYPE(QtAV::vaapi::SurfaceInteropVAAPIPtr)
+//Q_DECLARE_METATYPE(QtAV::vaapi::VAAPI_GLX_InteropPtr)
 
 #endif // QTAV_SURFACEINTEROPVAAPI_H

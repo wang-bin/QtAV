@@ -163,12 +163,13 @@ public:
     VideoDecoderVAAPIPrivate()
         : support_4k(true)
     {
-        if (VAAPI_X11::isLoaded())
-            display_type = VideoDecoderVAAPI::X11;
+        copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         if (VAAPI_DRM::isLoaded())
             display_type = VideoDecoderVAAPI::DRM;
         if (VAAPI_GLX::isLoaded())
             display_type = VideoDecoderVAAPI::GLX;
+        if (VAAPI_X11::isLoaded())
+            display_type = VideoDecoderVAAPI::X11;
         drm_fd = -1;
         display_x11 = 0;
         config_id = VA_INVALID_ID;
@@ -227,7 +228,7 @@ public:
 VideoDecoderVAAPI::VideoDecoderVAAPI()
     : VideoDecoderFFmpegHW(*new VideoDecoderVAAPIPrivate())
 {
-    setDisplayPriority(QStringList() << "GLX" << "X11" << "DRM");
+    setDisplayPriority(QStringList() << "X11" << "GLX" <<  "DRM");
     // dynamic properties about static property details. used by UI
     // format: detail_property
     setProperty("detail_surfaces", tr("Decoding surfaces.") + " " + tr("0: auto"));
@@ -289,7 +290,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         return VideoFrame();
     VASurfaceID surface_id = (VASurfaceID)(uintptr_t)d.frame->data[3];
     VAStatus status = VA_STATUS_SUCCESS;
-    if (display() == GLX) {
+    if (display() == GLX || (copyMode() == ZeroCopy && display() == X11)) {
         surface_ptr p;
         std::list<surface_ptr>::iterator it = d.surfaces_used.begin();
         for (; it != d.surfaces_used.end() && !p; ++it) {
@@ -310,7 +311,11 @@ VideoFrame VideoDecoderVAAPI::frame()
             qWarning("VAAPI - Unable to find surface");
             return VideoFrame();
         }
-        ((SurfaceInteropVAAPI*)d.surface_interop.data())->setSurface(p);
+        if (display() == GLX)
+            ((VAAPI_GLX_Interop*)d.surface_interop.data())->setSurface(p);
+        else
+            ((VAAPI_X_GLX_Interop*)d.surface_interop.data())->setSurface(p);
+
         VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
@@ -404,6 +409,8 @@ QStringList VideoDecoderVAAPI::displayPriority() const
 bool VideoDecoderVAAPIPrivate::open()
 {
     const codec_profile_t* pe = findProfileEntry(codec_ctx->codec_id, codec_ctx->profile);
+    // TODO: allow wrong profile
+    // FIXME: sometimes get wrong profile (switch copyMode)
     if (!pe) {
         qWarning("codec(%s) or profile(%s) is not supported", avcodec_get_name(codec_ctx->codec_id), getProfileName(codec_ctx->codec_id, codec_ctx->profile));
         return false;
@@ -530,7 +537,10 @@ bool VideoDecoderVAAPIPrivate::open()
     //vaCreateConfig(display, pe->va_profile, VAEntrypointVLD, NULL, 0, &config_id)
     VA_ENSURE_TRUE(vaCreateConfig(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1, &config_id), false);
     supports_derive = false;
-    surface_interop = VideoSurfaceInteropPtr(new SurfaceInteropVAAPI());
+    if (display_type == VideoDecoderVAAPI::GLX)
+        surface_interop = VideoSurfaceInteropPtr(new VAAPI_GLX_Interop());
+    else if (display_type == VideoDecoderVAAPI::X11)
+        surface_interop = VideoSurfaceInteropPtr(new VAAPI_X_GLX_Interop());
     return true;
 }
 
@@ -551,7 +561,12 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     context_id = VA_INVALID_ID;
     surface_width = FFALIGN(w, 16);
     surface_height = FFALIGN(h, 16);
-    VA_ENSURE_TRUE(vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, width, height,  surfaces.data() + old_size, count - old_size, NULL, 0), false);
+    VAStatus status = VA_STATUS_SUCCESS;
+    status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, width, height,  surfaces.data() + old_size, count - old_size, NULL, 0); //VA_ENSURE_OK: travis-ci macro mismatch
+    if (status != VA_STATUS_SUCCESS) {
+        qWarning("vaCreateSurfaces error (%#x): %s", status, vaErrorStr(status));
+        return false;
+    }
     for (int i = old_size; i < surfaces.size(); ++i) {
         surfaces_free.push_back(surface_ptr(new surface_t(width, height, surfaces[i], display)));
     }
@@ -559,9 +574,8 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     if (context_id && context_id != VA_INVALID_ID)
         VAWARN(vaDestroyContext(display->get(), context_id));
     context_id = VA_INVALID_ID;
-    VAStatus status = VA_STATUS_SUCCESS;
     if ((status = vaCreateContext(display->get(), config_id, width, height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x", display->get(), config_id, width, height, surfaces.constData(), surfaces.size(), &context_id, status);
+        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x: %s", display->get(), config_id, width, height, surfaces.constData(), surfaces.size(), &context_id, status, vaErrorStr(status));
         context_id = VA_INVALID_ID;
         destroySurfaces();
         return false;

@@ -6,11 +6,11 @@
 namespace QtAV {
 namespace vaapi {
 
-SurfaceInteropVAAPI::SurfaceInteropVAAPI()
+VAAPI_GLX_Interop::VAAPI_GLX_Interop()
 {
 }
 
-surface_glx_ptr SurfaceInteropVAAPI::createGLXSurface(void *handle)
+surface_glx_ptr VAAPI_GLX_Interop::createGLXSurface(void *handle)
 {
     GLuint tex = *((GLuint*)handle);
     surface_glx_ptr glx(new surface_glx_t());
@@ -21,7 +21,7 @@ surface_glx_ptr SurfaceInteropVAAPI::createGLXSurface(void *handle)
     return glx;
 }
 
-void* SurfaceInteropVAAPI::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
+void* VAAPI_GLX_Interop::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
 {
     if (!fmt.isRGB())
         return 0;
@@ -51,7 +51,7 @@ void* SurfaceInteropVAAPI::map(SurfaceType type, const VideoFormat &fmt, void *h
     return handle;
 }
 
-void SurfaceInteropVAAPI::unmap(void *handle)
+void VAAPI_GLX_Interop::unmap(void *handle)
 {
     QMap<GLuint*,surface_glx_ptr>::iterator it(tmp_surfaces.find((GLuint*)handle));
     if (it == tmp_surfaces.end())
@@ -61,7 +61,7 @@ void SurfaceInteropVAAPI::unmap(void *handle)
     tmp_surfaces.erase(it);
 }
 
-void* SurfaceInteropVAAPI::createHandle(SurfaceType type, const VideoFormat &fmt, int plane)
+void* VAAPI_GLX_Interop::createHandle(SurfaceType type, const VideoFormat &fmt, int plane)
 {
     Q_UNUSED(plane);
     if (type == GLTextureSurface) {
@@ -165,8 +165,10 @@ bool VAAPI_X_GLX_Interop::ensurePixmaps(int w, int h)
         return false;
     }
 
-    pixmap = XCreatePixmap((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), w, h, 24);
-    qDebug("XCreatePixmap: %lu", pixmap);
+    XWindowAttributes xwa;
+    XGetWindowAttributes((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), &xwa);
+    pixmap = XCreatePixmap((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), w, h, xwa.depth);
+    qDebug("XCreatePixmap: %lu, depth: %d", pixmap, xwa.depth);
     if (!pixmap) {
         qWarning("VAAPI_X_GLX_Interop could not create pixmap");
         return false;
