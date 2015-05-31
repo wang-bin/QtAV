@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -33,7 +33,9 @@
 #elif defined(QT_OPENGL_LIB)
 #include <qgl.h>
 #else
+#if !defined(QT_OPENGL_ES_2)
 #include <GL/gl.h>
+#endif //!defined(QT_OPENGL_ES_2)
 #endif
 #include "utils/SharedPtr.h"
 
@@ -117,16 +119,33 @@ private:
 };
 class VAAPI_X11 : public dll_helper {
 public:
+    typedef unsigned long Drawable;
     typedef VADisplay vaGetDisplay_t(Display *);
+    typedef VAStatus vaPutSurface_t(VADisplay, VASurfaceID,	Drawable,
+                                   short, short, unsigned short,  unsigned short,
+                                   short, short, unsigned short, unsigned short,
+                                   VARectangle *, unsigned int,  unsigned int);
     VAAPI_X11(): dll_helper("va-x11",1) {
         fp_vaGetDisplay = (vaGetDisplay_t*)resolve("vaGetDisplay");
+        fp_vaPutSurface = (vaPutSurface_t*)resolve("vaPutSurface");
     }
     VADisplay vaGetDisplay(Display *dpy) {
         assert(fp_vaGetDisplay);
         return fp_vaGetDisplay(dpy);
     }
+    VAStatus vaPutSurface (VADisplay dpy, VASurfaceID surface,	Drawable draw, /* X Drawable */
+        short srcx, short srcy, unsigned short srcw,  unsigned short srch,
+        short destx, short desty, unsigned short destw, unsigned short desth,
+        VARectangle *cliprects, /* client supplied destination clip list */
+        unsigned int number_cliprects, /* number of clip rects in the clip list */
+        unsigned int flags /* PutSurface flags */
+    ) {
+        assert(fp_vaPutSurface);
+        return fp_vaPutSurface(dpy, surface, draw, srcx, srcy, srcw, srch, destx, desty, destw, desth, cliprects, number_cliprects, flags);
+    }
 private:
     vaGetDisplay_t* fp_vaGetDisplay;
+    vaPutSurface_t* fp_vaPutSurface;
 };
 class VAAPI_GLX : public dll_helper {
 public:
@@ -188,6 +207,7 @@ public:
             return;
         qDebug("vaapi: destroy display %p", m_display);
         VAWARN(vaTerminate(m_display)); //FIXME: what about thread?
+        m_display = 0;
     }
     operator VADisplay() const { return m_display;}
     VADisplay get() const {return m_display;}
@@ -243,9 +263,6 @@ public:
             return false;
         VA_ENSURE_TRUE(vaCopySurfaceGLX(display(), m_glx, m_surface->get(), VA_FRAME_PICTURE | VA_SRC_BT709), false);
         return true;
-    }
-    void sync() {
-        VAWARN(vaSyncSurface(display(), m_surface->get()));
     }
     VADisplay display() const { return m_surface->display();}
     surface_t* surface() { return m_surface.get();}
