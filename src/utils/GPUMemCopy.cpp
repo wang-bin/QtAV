@@ -29,7 +29,7 @@
 extern "C" {
 #include <libavutil/cpu.h>
 }
-
+//https://github.com/gongminmin/KlayGE/blob/master/KFL/include/KFL/AlignedAllocator.hpp
 /* Branch prediction */
 #ifdef __GNUC__
 #   define likely(p)   __builtin_expect(!!(p), 1)
@@ -54,7 +54,8 @@ namespace QtAV {
 #elif defined(_MSC_VER)
 # define Memalign(align, size) (_aligned_malloc(size, align))
 # define Free(base)            (_aligned_free(base))
-#elif defined(__APPLE__) && !defined(MAC_OS_X_VERSION_10_6)
+#elif defined(Q_OS_ANDROID) ||(defined(__APPLE__) && !defined(MAC_OS_X_VERSION_10_6))
+// android x86 has no posix_memalign
 static inline void *Memalign(size_t align, size_t size)
 {
     long diff;
@@ -87,23 +88,6 @@ static inline void *Memalign(size_t align, size_t size)
 #endif //QTAV_HAVE(SSE2)
 
 // from vlc_common.h end
-
-// from https://software.intel.com/en-us/articles/copying-accelerated-video-decode-frame-buffers
-/*
- * 1. Fill a 4K byte cached (WB) memory buffer from the USWC video frame
- * 2. Copy the 4K byte cache contents to the destination WB frame
- * 3. Repeat steps 1 and 2 until the whole frame buffer has been copied.
- *
- * _mm_store_si128 and _mm_load_si128 intrinsics will compile to the MOVDQA instruction, _mm_stream_load_si128 and _mm_stream_si128 intrinsics compile to the MOVNTDQA and MOVNTDQ instructions
- *
- *  using the same pitch (which is assumed to be a multiple of 64 bytes), and expecting 64 byte alignment of every row of the source, cached 4K buffer and destination buffers.
- * The MOVNTDQA streaming load instruction and the MOVNTDQ streaming store instruction require at least 16 byte alignment in their memory addresses.
- */
-//  CopyFrame()
-//
-//  COPIES VIDEO FRAMES FROM USWC MEMORY TO WB SYSTEM MEMORY VIA CACHED BUFFER
-//    ASSUMES PITCH IS A MULTIPLE OF 64B CACHE LINE SIZE, WIDTH MAY NOT BE
-
 
 bool detect_sse4() {
     static bool is_sse4 = !!(av_get_cpu_flags() & AV_CPU_FLAG_SSE4);

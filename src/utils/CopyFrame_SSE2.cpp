@@ -21,6 +21,23 @@
 #include <stdint.h> //intptr_t
 #include <emmintrin.h>
 
+
+// from https://software.intel.com/en-us/articles/copying-accelerated-video-decode-frame-buffers
+// modified by wang-bin to support unaligned src/dest and sse2
+/*
+ * 1. Fill a 4K byte cached (WB) memory buffer from the USWC video frame
+ * 2. Copy the 4K byte cache contents to the destination WB frame
+ * 3. Repeat steps 1 and 2 until the whole frame buffer has been copied.
+ *
+ * _mm_store_si128 and _mm_load_si128 intrinsics will compile to the MOVDQA instruction, _mm_stream_load_si128 and _mm_stream_si128 intrinsics compile to the MOVNTDQA and MOVNTDQ instructions
+ *
+ *  using the same pitch (which is assumed to be a multiple of 64 bytes), and expecting 64 byte alignment of every row of the source, cached 4K buffer and destination buffers.
+ * The MOVNTDQA streaming load instruction and the MOVNTDQ streaming store instruction require at least 16 byte alignment in their memory addresses.
+ */
+//
+//  COPIES VIDEO FRAMES FROM USWC MEMORY TO WB SYSTEM MEMORY VIA CACHED BUFFER
+//    ASSUMES PITCH IS A MULTIPLE OF 64B CACHE LINE SIZE, WIDTH MAY NOT BE
+
 #ifndef STREAM_LOAD_SI128
 #define STREAM_LOAD_SI128(x) _mm_load_si128(x)
 #endif //STREAM_LOAD_SI128
