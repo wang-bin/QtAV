@@ -161,7 +161,7 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
     return &av_pix_fmt_descriptors[pix_fmt];
 }
 #endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
-#if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 28, 101)
+#if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 48, 101)
 enum AVColorSpace av_frame_get_colorspace(const AVFrame *frame)
 {
     if (!frame)
