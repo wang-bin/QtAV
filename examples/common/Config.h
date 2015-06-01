@@ -52,6 +52,7 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(QColor subtitleOutlineColor READ subtitleOutlineColor WRITE setSubtitleOutlineColor NOTIFY subtitleOutlineColorChanged)
     Q_PROPERTY(bool subtitleOutline READ subtitleOutline WRITE setSubtitleOutline NOTIFY subtitleOutlineChanged)
     Q_PROPERTY(int subtitleBottomMargin READ subtitleBottomMargin WRITE setSubtitleBottomMargin NOTIFY subtitleBottomMarginChanged)
+    Q_PROPERTY(qreal subtitleDelay READ subtitleDelay WRITE setSubtitleDelay NOTIFY subtitleDelayChanged)
     Q_PROPERTY(bool previewEnabled READ previewEnabled WRITE setPreviewEnabled NOTIFY previewEnabledChanged)
     Q_PROPERTY(int previewWidth READ previewWidth WRITE setPreviewWidth NOTIFY previewWidthChanged)
     Q_PROPERTY(int previewHeight READ previewHeight WRITE setPreviewHeight NOTIFY previewHeightChanged)
@@ -109,6 +110,9 @@ public:
     Config& setSubtitleOutlineColor(const QColor& value);
     int subtitleBottomMargin() const;
     Config& setSubtitleBottomMargin(int value);
+
+    qreal subtitleDelay() const;
+    Config& setSubtitleDelay(qreal value);
 
     bool previewEnabled() const;
     Config& setPreviewEnabled(bool value);
@@ -174,6 +178,7 @@ public:
     Q_SIGNAL void subtitleOutlineChanged();
     Q_SIGNAL void subtitleOutlineColorChanged();
     Q_SIGNAL void subtitleBottomMarginChanged();
+    Q_SIGNAL void subtitleDelayChanged();
     Q_SIGNAL void previewEnabledChanged();
     Q_SIGNAL void previewWidthChanged();
     Q_SIGNAL void previewHeightChanged();

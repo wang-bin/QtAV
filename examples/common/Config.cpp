@@ -78,6 +78,7 @@ public:
         subtitle_autoload = settings.value("autoLoad", true).toBool();
         subtitle_enabled = settings.value("enabled", true).toBool();
         subtitle_engines = settings.value("engines", QStringList() << "FFmpeg" << "LibASS").toStringList();
+        subtitle_delay = settings.value("delay", 0.0).toInt();
         QFont f;
         f.setPointSize(20);
         f.setBold(true);
@@ -115,6 +116,7 @@ public:
         buffer_value = settings.value("value", -1).toInt();
         settings.endGroup();
     }
+
     void save() {
         qDebug() << "sync config to " << file;
         QSettings settings(file, QSettings::IniFormat);
@@ -136,6 +138,7 @@ public:
         settings.setValue("enabled", subtitle_enabled);
         settings.setValue("autoLoad", subtitle_autoload);
         settings.setValue("engines", subtitle_engines);
+        settings.setValue("delay", subtitle_delay);
         settings.setValue("font", subtitle_font);
         settings.setValue("color", subtitle_color);
         settings.setValue("outline_color", subtitle_outline_color);
@@ -198,6 +201,7 @@ public:
     QColor subtitle_color, subtitle_outline_color;
     bool subtitle_outline;
     int subtilte_bottom_margin;
+    qreal subtitle_delay;
 
     bool preview_enabled;
     int preview_w, preview_h;
@@ -434,6 +438,20 @@ Config& Config::setSubtitleBottomMargin(int value)
         return *this;
     mpData->subtilte_bottom_margin = value;
     emit subtitleBottomMarginChanged();
+    return *this;
+}
+
+qreal Config::subtitleDelay() const
+{
+    return mpData->subtitle_delay;
+}
+
+Config& Config::setSubtitleDelay(qreal value)
+{
+    if (mpData->subtitle_delay == value)
+        return *this;
+    mpData->subtitle_delay = value;
+    Q_EMIT subtitleDelayChanged();
     return *this;
 }
 

@@ -7,7 +7,7 @@ Page {
     title: qsTr("Subtitle")
     signal subtitleChanged(string file)
     property var supportedFormats: ["ass" , "ssa"]
-    height: titleHeight + 6*Utils.kItemHeight + engine.contentHeight
+    height: titleHeight + 7*Utils.kItemHeight + engine.contentHeight
     Column {
         anchors.fill: content
         spacing: Utils.kSpacing
@@ -48,6 +48,30 @@ Page {
                 width: Utils.scaled(60)
                 height: Utils.kItemHeight
                 onClicked: fileDialog.open()
+            }
+        }
+        Row {
+            width: parent.width
+            height: Utils.kItemHeight
+            Text {
+                id: delayLabel
+                color: "white"
+                text: qsTr("Delay")
+                width: Utils.scaled(60)
+                height: Utils.kItemHeight
+            }
+            TextInput {
+                color: "orange"
+                font.pixelSize: Utils.kFontSize
+                anchors.left: delayLabel.right
+                anchors.right: parent.right
+                text: PlayerConfig.subtitleDelay
+                onTextChanged: {
+                    var v = parseFloat(text)
+                    if (isNaN(v))
+                        return
+                    PlayerConfig.subtitleDelay = Math.round(v*1000)/1000
+                }
             }
         }
 

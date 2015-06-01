@@ -143,6 +143,8 @@ Rectangle {
         enabled: PlayerConfig.subtitleEnabled
         autoLoad: PlayerConfig.subtitleAutoLoad
         engines: PlayerConfig.subtitleEngines
+        delay: PlayerConfig.subtitleDelay
+
         onContentChanged: { //already enabled
             if (!canRender || !subtitleItem.visible)
                 subtitleLabel.text = text
