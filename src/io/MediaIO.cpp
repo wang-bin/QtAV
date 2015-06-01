@@ -162,7 +162,7 @@ void* MediaIO::avioContext()
     unsigned char* buf = (unsigned char*)av_malloc(IODATA_BUFFER_SIZE);
     // open for write if 1. SET 0 if open for read otherwise data ptr in av_read(data, ...) does not change
     const int write_flag = (accessMode() == Write) && isWritable();
-    d.ctx = avio_alloc_context(buf, IODATA_BUFFER_SIZE, write_flag, this, &av_read, &av_write, &av_seek);
+    d.ctx = avio_alloc_context(buf, IODATA_BUFFER_SIZE, write_flag, this, &av_read, write_flag ? &av_write : NULL, &av_seek);
     d.ctx->seekable = isSeekable() ? 0 : AVIO_SEEKABLE_NORMAL;
     return d.ctx;
 }

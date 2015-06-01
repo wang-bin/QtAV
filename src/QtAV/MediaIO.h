@@ -66,7 +66,8 @@ public:
     QString url() const;
     /*!
      * \brief setAccessMode
-     * A MediaIO instance can be 1 mode, Read or Write. If !isWritable(), then set to Write will fail and mode does not change
+     * A MediaIO instance can be 1 mode, Read (default) or Write. If !isWritable(), then set to Write will fail and mode does not change
+     * Call it before any function!
      * \return false if set failed
      */
     bool setAccessMode(AccessMode value);
