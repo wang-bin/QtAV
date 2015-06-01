@@ -59,6 +59,7 @@ public:
     bool autoLoad() const;
 Q_SIGNALS:
     void autoLoadChanged(bool value);
+    void fileChanged();
 public Q_SLOTS:
     void onEnableChanged(bool value);
 private Q_SLOTS:

@@ -86,8 +86,11 @@ void PlayerSubtitle::setPlayer(AVPlayer *player)
 
 void PlayerSubtitle::setFile(const QString &file)
 {
+    if (m_file == file)
+        return;
     // always load
     m_file = file;
+    Q_EMIT fileChanged();
     if (!m_enabled)
         return;
     m_sub->setFileName(file);

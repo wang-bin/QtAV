@@ -56,7 +56,7 @@ class QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
     Q_PROPERTY(bool canRender READ canRender NOTIFY canRenderChanged)
     //PlayerSubtitle api
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
-    Q_PROPERTY(QString file READ file WRITE setFile)
+    Q_PROPERTY(QString file READ file WRITE setFile NOTIFY fileChanged)
     //
     Q_PROPERTY(QString text READ getText)
 public:
@@ -97,6 +97,7 @@ public Q_SLOTS:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
 Q_SIGNALS:
+    void fileChanged();
     void canRenderChanged();
     void loaded(const QString& path);
     void enableChanged(bool);

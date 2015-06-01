@@ -77,6 +77,7 @@ QuickSubtitle::QuickSubtitle(QObject *parent) :
     setSubtitle(m_player_sub->subtitle()); //for proxy
     connect(this, SIGNAL(enableChanged(bool)), m_player_sub, SLOT(onEnableChanged(bool))); //////
     connect(m_player_sub, SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged(bool)));
+    connect(m_player_sub, SIGNAL(fileChanged()), this, SIGNAL(fileChanged()));
 }
 
 QString QuickSubtitle::getText() const

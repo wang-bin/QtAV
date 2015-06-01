@@ -83,6 +83,7 @@ SubtitleFilter::SubtitleFilter(QObject *parent) :
     setSubtitle(d.player_sub->subtitle());
     connect(this, SIGNAL(enableChanged(bool)), d.player_sub.data(), SLOT(onEnableChanged(bool)));
     connect(d.player_sub.data(), SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged(bool)));
+    connect(d.player_sub.data(), SIGNAL(fileChanged()), this, SIGNAL(fileChanged()));
 }
 
 void SubtitleFilter::setPlayer(AVPlayer *player)
