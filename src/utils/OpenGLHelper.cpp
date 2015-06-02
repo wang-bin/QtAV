@@ -34,6 +34,19 @@
 namespace QtAV {
 namespace OpenGLHelper {
 
+bool isOpenGLES()
+{
+#ifdef QT_OPENGL_DYNAMIC
+    QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    // desktop can create es compatible context
+    return qApp->testAttribute(Qt::AA_UseOpenGLES) || (ctx ? ctx->isOpenGLES() : QOpenGLContext::openGLModuleType() != QOpenGLContext::LibGL); //
+#endif //QT_OPENGL_DYNAMIC
+#ifdef QT_OPENGL_ES_2
+    return true;
+#endif //QT_OPENGL_ES_2
+    return false;
+}
+
 bool hasExtension(const char *exts[])
 {
     const QOpenGLContext *ctx = QOpenGLContext::currentContext();
@@ -150,17 +163,8 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         {VideoFormat::Format_Invalid, 0, 0, 0}
     };
     const fmt_entry *pixfmt_gl_entry = pixfmt_to_gl;
-#ifdef QT_OPENGL_DYNAMIC
-    QOpenGLContext *ctx = QOpenGLContext::currentContext();
-    // desktop can create es compatible context
-    const bool isES = qApp->testAttribute(Qt::AA_UseOpenGLES) || (ctx ? ctx->isOpenGLES() : QOpenGLContext::openGLModuleType() != QOpenGLContext::LibGL); //
-    if (isES)
+    if (OpenGLHelper::isOpenGLES())
         pixfmt_gl_entry = pixfmt_to_gles;
-#else
-# ifdef QT_OPENGL_ES_2
-    pixfmt_gl_entry = pixfmt_to_gles;
-# endif //QT_OPENGL_ES_2
-#endif //QT_OPENGL_DYNAMIC
     // Very special formats, for which OpenGL happens to have direct support
     static const fmt_entry pixfmt_gl_entry_common[] = {
         // TODO: review rgb formats & yuv packed to upload correct rgba
