@@ -89,6 +89,8 @@
 
 namespace QtAV {
 namespace OpenGLHelper {
+
+bool isOpenGLES();
 /*!
  * \brief hasExtension
  * Current OpenGL context must be valid.
