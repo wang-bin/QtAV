@@ -32,7 +32,7 @@
 #include "QtAV/SurfaceInterop.h"
 #include <utils/OpenGLHelper.h>
 // no need to check qt4 because no ANGLE there
-#if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2)
+#if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
 #define QTAV_HAVE_DXVA_EGL 1
 #endif
 #if QTAV_HAVE(DXVA_EGL)
@@ -43,7 +43,6 @@
 #include <QtGui/QGuiApplication>
 # endif //QTAV_HAVE(GUI_PRIVATE)
 #endif
-
 #include "utils/Logger.h"
 
 // d3d9ex: http://dxr.mozilla.org/mozilla-central/source/dom/media/wmf/DXVA2Manager.cpp
@@ -321,10 +320,6 @@ public:
         _egl = NULL;
         _glTexture = 0;
     }
-    ~SurfaceInteropDXVA()
-    {
-
-    }
     void setSurface(IDirect3DSurface9 * surface)
     {
         _dxvaSurface = surface;
@@ -332,6 +327,7 @@ public:
 
     virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane)
     {
+        Q_UNUSED(plane);
         if (!fmt.isRGB())
             return NULL;
 
@@ -377,8 +373,9 @@ public:
                         break;
                     }
                 }
-                qDebug("egl config: %p", _eglConfig);
 #endif
+                qDebug("egl display:%p config: %p", _eglDisplay, _eglConfig);
+
                 bool hasAlpha = currentContext->format().hasAlpha();
 
                 EGLint attribs[] = {
@@ -437,15 +434,6 @@ public:
 
         return handle;
     }
-    virtual void unmap(void *handle)
-    {
-
-    }
-    virtual void* createHandle(SurfaceType type, const VideoFormat& fmt, int plane = 0)
-    {
-        return NULL;
-    }
-
 private:
     IDirect3DSurface9 * _dxvaSurface;
     IDirect3DDevice9 * _d3device;
@@ -618,6 +606,9 @@ public:
     VideoDecoderDXVAPrivate():
         VideoDecoderFFmpegHWPrivate()
     {
+        // TODO: qt5.4 mingw dygl crash but can work with newer egl+glesv2 dll
+        //if (OpenGLHelper::isOpenGLES())
+          //  copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
@@ -702,7 +693,9 @@ public:
     IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
     QString vendor;
+#if QTAV_HAVE(DXVA_EGL)
     VideoSurfaceInteropPtr surface_interop; //may be still used in video frames when decoder is destroyed
+#endif //QTAV_HAVE(DXVA_EGL)
 };
 
 VideoDecoderDXVA::VideoDecoderDXVA()
@@ -734,33 +727,40 @@ VideoFrame VideoDecoderDXVA::frame()
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
         return VideoFrame();
 
-//    class ScopedD3DLock {
-//    public:
-//        ScopedD3DLock(IDirect3DSurface9* d3d, D3DLOCKED_RECT *rect)
-//            : mpD3D(d3d)
-//        {
-//            if (FAILED(mpD3D->LockRect(rect, NULL, D3DLOCK_READONLY))) {
-//                qWarning("Failed to lock surface");
-//                mpD3D = 0;
-//            }
-//        }
-//        ~ScopedD3DLock() {
-//            if (mpD3D)
-//                mpD3D->UnlockRect();
-//        }
-//    private:
-//        IDirect3DSurface9 *mpD3D;
-//    };
-
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
+#if QTAV_HAVE(DXVA_EGL)
+    if (copyMode() == ZeroCopy) {
+        ((SurfaceInteropDXVA*)d.surface_interop.data())->setSurface(d3d);
+        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
+        f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
+        f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
+        f.setTimestamp(d.frame->pkt_pts);
+        return f;
+    }
+#endif //QTAV_HAVE(DXVA_EGL)
+    class ScopedD3DLock {
+        IDirect3DSurface9 *mpD3D;
+    public:
+        ScopedD3DLock(IDirect3DSurface9* d3d, D3DLOCKED_RECT *rect) : mpD3D(d3d) {
+            if (FAILED(mpD3D->LockRect(rect, NULL, D3DLOCK_READONLY))) {
+                qWarning("Failed to lock surface");
+                mpD3D = 0;
+            }
+        }
+        ~ScopedD3DLock() {
+            if (mpD3D)
+                mpD3D->UnlockRect();
+        }
+    };
+
     //picth >= desc.Width
     //D3DSURFACE_DESC desc;
     //d3d->GetDesc(&desc);
-//    D3DLOCKED_RECT lock;
-//    ScopedD3DLock(d3d, &lock);
-//    if (lock.Pitch == 0) {
-//        return VideoFrame();
-//    }
+    D3DLOCKED_RECT lock;
+    ScopedD3DLock(d3d, &lock);
+    if (lock.Pitch == 0) {
+        return VideoFrame();
+    }
 
     const VideoFormat fmt = VideoFormat((int)D3dFindFormat(d.render)->avpixfmt);
     if (!fmt.isValid()) {
@@ -771,18 +771,10 @@ VideoFrame VideoDecoderDXVA::frame()
     // imc3 U V pitch == Y pitch, but half of the U/V plane is space. we convert to yuv420p here
     // nv12 bpp(1)==1
     // 3rd plane is not used for nv12
-//    int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
-//    uint8_t *src[] = { (uint8_t*)lock.pBits, 0, 0}; //compute chroma later
-//    const bool swap_uv = d.render ==  MAKEFOURCC('I','M','C','3');
-//    return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
-
-    ((SurfaceInteropDXVA*)d.surface_interop.data())->setSurface(d3d);
-    VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
-    f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
-    f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
-    f.setTimestamp(d.frame->pkt_pts);
-
-    return f;
+    int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
+    uint8_t *src[] = { (uint8_t*)lock.pBits, 0, 0}; //compute chroma later
+    const bool swap_uv = d.render ==  MAKEFOURCC('I','M','C','3');
+    return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
 }
 
 void VideoDecoderDXVA::setSurfaces(int num)
@@ -1314,8 +1306,9 @@ bool VideoDecoderDXVAPrivate::open()
     d3ddev->QueryInterface(IID_IDirect3DDevice9Ex, (void**)&devEx);
     qDebug("using D3D9Ex: %d", !!devEx);
     SafeRelease(&devEx);
+#if QTAV_HAVE(DXVA_EGL)
     surface_interop = VideoSurfaceInteropPtr(new SurfaceInteropDXVA(d3ddev));
-    /* TODO print the hardware name/vendor for debugging purposes */
+#endif //QTAV_HAVE(DXVA_EGL)
     return true;
 error:
     close();

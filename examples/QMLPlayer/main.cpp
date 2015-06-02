@@ -34,9 +34,6 @@
 
 int main(int argc, char *argv[])
 {
-#if defined(Q_OS_WIN32)
-    QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
-#endif
     QOptions options(get_common_options());
     options.add("QMLPlayer options")
             ("scale", 1.0, "scale of graphics context. 0: auto")
