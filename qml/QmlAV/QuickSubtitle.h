@@ -100,7 +100,7 @@ Q_SIGNALS:
     void fileChanged();
     void canRenderChanged();
     void loaded(const QString& path);
-    void enabledChanged();
+    void enabledChanged(bool value);
     void autoLoadChanged();
 
     void codecChanged();

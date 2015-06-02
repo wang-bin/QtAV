@@ -141,7 +141,7 @@ void QuickSubtitle::setEnabled(bool value)
     if (m_enable == value)
         return;
     m_enable = value;
-    Q_EMIT enabledChanged();
+    Q_EMIT enabledChanged(value);
     m_filter->setEnabled(m_enable);
     if (!m_enable) { //display nothing
         notifyObservers(QImage(), QRect(), 0, 0);
