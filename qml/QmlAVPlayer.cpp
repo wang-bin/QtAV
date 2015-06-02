@@ -493,10 +493,12 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
         break;
     case PausedState:
         mpPlayer->pause(true);
+        mPlaybackState = PausedState;
         break;
     case StoppedState:
         mpPlayer->stop();
         mpPlayer->unload();
+        mPlaybackState = StoppedState;
         break;
     default:
         break;
@@ -525,7 +527,7 @@ AVPlayer* QmlAVPlayer::player()
 
 void QmlAVPlayer::play(const QUrl &url)
 {
-    if (mSource == url)
+    if (mSource == url && playbackState() != StoppedState)
         return;
     setSource(url);
     if (!autoPlay())
@@ -540,7 +542,6 @@ void QmlAVPlayer::play()
 void QmlAVPlayer::pause()
 {
     setPlaybackState(PausedState);
-    mPlaybackState = PausedState;
 }
 
 void QmlAVPlayer::stop()
