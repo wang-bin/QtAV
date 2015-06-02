@@ -315,138 +315,159 @@ class SurfaceInteropDXVA : public VideoSurfaceInterop
 {
 public:
     SurfaceInteropDXVA(IDirect3DDevice9 * d3device)
+        : _dxvaSurface(NULL)
+        , _d3device(d3device)
+        , _egl(NULL)
+        , _pboSurface(NULL)
+        , _dxTexture(NULL)
+        , _dxSurface(NULL)
+        , _eglDisplay(NULL)
+        , width(0)
+        , height(0)
     {
-        _d3device = d3device;
-        _egl = NULL;
-        _glTexture = 0;
     }
-    void setSurface(IDirect3DSurface9 * surface)
-    {
+    ~SurfaceInteropDXVA() {
+        releaseResource();
+    }
+    void releaseResource() {
+        SafeRelease(&_dxSurface);
+        SafeRelease(&_dxTexture);
+        if (_pboSurface) {
+            // TODO: can not display if destroyed. eglCreatePbufferSurface always return the same address even if attributes changed
+            //_egl->destroySurface(_eglDisplay, _pboSurface);
+        }
+        if (_egl) {
+            delete _egl;
+            _egl = 0;
+        }
+
+    }
+
+    void setSurface(IDirect3DSurface9 * surface) {
         _dxvaSurface = surface;
     }
-
-    virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane)
-    {
-        Q_UNUSED(plane);
-        if (!fmt.isRGB())
-            return NULL;
-
-        if (!handle)
-            return NULL;
-
-        if (type == GLTextureSurface)
-        {
-            HRESULT hr = S_OK;
-
-            if (!_glTexture)
-            {
-                _glTexture = *((GLint*)handle);
-                D3DSURFACE_DESC dxvaDesc;
-                hr = _dxvaSurface->GetDesc(&dxvaDesc);
-
-                QOpenGLContext *currentContext = QOpenGLContext::currentContext();
-                if (!_egl)
-                    _egl = new EGLWrapper;
+    bool ensureSurface(int w, int h) {
+        if (_dxSurface && width == w && height == h)
+            return true;
+        if (!_egl)
+            _egl = new EGLWrapper;
 #if QTAV_HAVE(GUI_PRIVATE)
-                QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
-                _eglDisplay = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", currentContext));
-                _eglConfig = static_cast<EGLConfig>(nativeInterface->nativeResourceForContext("eglConfig", currentContext));
+        QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
+        _eglDisplay = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", QOpenGLContext::currentContext()));
+        EGLConfig egl_cfg = static_cast<EGLConfig>(nativeInterface->nativeResourceForContext("eglConfig", QOpenGLContext::currentContext()));
 #else
-                _eglDisplay = _egl->getCurrentDisplay();
-                EGLint cfg_id = 0;
-                if (_egl->QueryContext(_eglDisplay, _egl->GetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_FALSE) {
-                    EGLint err = _egl->GetError();
-                    qWarning("eglQueryContext error: %d %p %s", err, err, _egl->QueryString(_eglDisplay, err));
-                    return NULL;
-                }
-                qDebug("egl config id: %d", cfg_id);
-                EGLint nb_cfg = 0;
-                _egl->GetConfigs(_eglDisplay, NULL, 0, &nb_cfg);
-                qDebug("eglGetConfigs number: %d", nb_cfg);
-                QVector<EGLConfig> cfgs(nb_cfg); //check > 0
-                _egl->GetConfigs(_eglDisplay, cfgs.data(), cfgs.size(), &nb_cfg);
-                for (int i = 0; i < nb_cfg; ++i) {
-                    EGLint id = 0;
-                    _egl->GetConfigAttrib(_eglDisplay, cfgs[i], EGL_CONFIG_ID, &id);
-                    if (id == cfg_id) {
-                        _eglConfig = cfgs[i];
-                        break;
-                    }
-                }
+        _eglDisplay = _egl->getCurrentDisplay();
+        EGLint cfg_id = 0;
+        if (_egl->QueryContext(_eglDisplay, _egl->GetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_FALSE) {
+            EGLint err = _egl->GetError();
+            qWarning("eglQueryContext error: %d %p %s", err, err, _egl->QueryString(_eglDisplay, err));
+            releaseResource();
+            return false;
+        }
+        qDebug("egl config id: %d", cfg_id);
+        EGLint nb_cfg = 0;
+        _egl->GetConfigs(_eglDisplay, NULL, 0, &nb_cfg);
+        qDebug("eglGetConfigs number: %d", nb_cfg);
+        QVector<EGLConfig> cfgs(nb_cfg); //check > 0
+        _egl->GetConfigs(_eglDisplay, cfgs.data(), cfgs.size(), &nb_cfg);
+        EGLConfig egl_cfg = NULL;
+        for (int i = 0; i < nb_cfg; ++i) {
+            EGLint id = 0;
+            _egl->GetConfigAttrib(_eglDisplay, cfgs[i], EGL_CONFIG_ID, &id);
+            if (id == cfg_id) {
+                egl_cfg = cfgs[i];
+                break;
+            }
+        }
 #endif
-                qDebug("egl display:%p config: %p", _eglDisplay, _eglConfig);
+        qDebug("egl display:%p config: %p", _eglDisplay, egl_cfg);
 
-                bool hasAlpha = currentContext->format().hasAlpha();
-
-                EGLint attribs[] = {
-                    EGL_WIDTH, dxvaDesc.Width,
-                    EGL_HEIGHT, dxvaDesc.Height,
-                    EGL_TEXTURE_FORMAT, hasAlpha ? EGL_TEXTURE_RGBA : EGL_TEXTURE_RGB,
-                    EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
-                    EGL_NONE
-                };
-
-                _pboSurface = _egl->createPbufferSurface( _eglDisplay,
-                                                           _eglConfig,
-                                                           attribs);
-
-                PFNEGLQUERYSURFACEPOINTERANGLEPROC eglQuerySurfacePointerANGLE = reinterpret_cast<PFNEGLQUERYSURFACEPOINTERANGLEPROC>(_egl->getProcAddress("eglQuerySurfacePointerANGLE"));
-                Q_ASSERT(eglQuerySurfacePointerANGLE);
-                HANDLE share_handle = NULL;
-                int ret = eglQuerySurfacePointerANGLE(  _eglDisplay,
-                                                        _pboSurface,
-                                                        EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, &share_handle);
-
-                if (share_handle && ret == EGL_TRUE)
-                {
-                    hr = _d3device->CreateTexture(  dxvaDesc.Width, dxvaDesc.Height, 1,
-                                                    D3DUSAGE_RENDERTARGET,
-                                                    hasAlpha ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
-                                                    D3DPOOL_DEFAULT,
-                                                    &_dxTexture,
-                                                    &share_handle);
-
-                    if (SUCCEEDED(hr))
-                    {
-                        hr = _dxTexture->GetSurfaceLevel(0, &_dxSurface);
-                    }
-                }
-            }
-
-            if (_glTexture > 0)
-            {
-                DYGL(glBindTexture(GL_TEXTURE_2D, _glTexture));
-                hr = _d3device->StretchRect(_dxvaSurface, NULL, _dxSurface, NULL, D3DTEXF_NONE);
-
-                if (SUCCEEDED(hr))
-                    _egl->bindTexImage(_eglDisplay, _pboSurface, EGL_BACK_BUFFER);
-            }
-
-            return handle;
-        }
-        else {
-            if (type == HostMemorySurface) {
-            }
-            else {
-                return 0;
-            }
+        EGLint attribs[] = {
+            EGL_WIDTH, w,
+            EGL_HEIGHT, h,
+            EGL_TEXTURE_FORMAT, QOpenGLContext::currentContext()->format().hasAlpha() ? EGL_TEXTURE_RGBA : EGL_TEXTURE_RGB,
+            EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
+            EGL_NONE
+        };
+        _pboSurface = _egl->createPbufferSurface(_eglDisplay, egl_cfg, attribs);
+        qDebug("pbuffer surface: %p", _eglDisplay);
+        if (!_pboSurface) {
+            EGLint err = _egl->GetError();
+            qWarning("eglCreatePbufferSurface error: (%p) %s", err, _egl->QueryString(_eglDisplay, err));
+            releaseResource();
+            return false;
         }
 
+        // create dx resources
+        SafeRelease(&_dxSurface);
+        SafeRelease(&_dxTexture);
+
+        PFNEGLQUERYSURFACEPOINTERANGLEPROC eglQuerySurfacePointerANGLE = reinterpret_cast<PFNEGLQUERYSURFACEPOINTERANGLEPROC>(_egl->getProcAddress("eglQuerySurfacePointerANGLE"));
+        if (!eglQuerySurfacePointerANGLE) {
+            qWarning("EGL_ANGLE_query_surface_pointer is not supported");
+            return false;
+        }
+        HANDLE share_handle = NULL;
+        EGLBoolean ret = eglQuerySurfacePointerANGLE(_eglDisplay, _pboSurface, EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, &share_handle);
+        if (ret == EGL_FALSE || !share_handle) {
+            const EGLint err = _egl->GetError();
+            qWarning("eglQuerySurfacePointerANGLE error, shared handle %p: (%p) %s", share_handle, err, _egl->QueryString(_eglDisplay, err));
+            releaseResource();
+            return false;
+        }
+        HRESULT hr = _d3device->CreateTexture(w, h, 1,
+                                            D3DUSAGE_RENDERTARGET,
+                                            QOpenGLContext::currentContext()->format().hasAlpha() ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
+                                            D3DPOOL_DEFAULT,
+                                            &_dxTexture,
+                                            &share_handle);
+        if (FAILED(hr)) {
+            qWarning("d3d failed to CreateTexture from shared handle");
+            releaseResource();
+            return false;
+        }
+        if (FAILED(_dxTexture->GetSurfaceLevel(0, &_dxSurface))) {
+            qWarning("GetSurfaceLevel error");
+            releaseResource();
+            return false;
+        }
+        width = w;
+        height = h;
+        return true;
+    }
+
+    virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) {
+        Q_UNUSED(plane);
+        if (!fmt.isRGB() || !handle)
+            return NULL;
+
+        if (type == GLTextureSurface) {
+            D3DSURFACE_DESC dxvaDesc;
+            _dxvaSurface->GetDesc(&dxvaDesc);
+            if (!ensureSurface(dxvaDesc.Width, dxvaDesc.Height))
+                return NULL;
+            DYGL(glBindTexture(GL_TEXTURE_2D, *((GLint*)handle)));
+            if (SUCCEEDED(_d3device->StretchRect(_dxvaSurface, NULL, _dxSurface, NULL, D3DTEXF_NONE)))
+                _egl->bindTexImage(_eglDisplay, _pboSurface, EGL_BACK_BUFFER);
+        } else if (type == HostMemorySurface) {
+        } else {
+            return NULL;
+        }
         return handle;
     }
 private:
-    IDirect3DSurface9 * _dxvaSurface;
-    IDirect3DDevice9 * _d3device;
-    EGLWrapper * _egl;
-    GLint _glTexture;
+    // TODO: move dx, egl resource out
+    IDirect3DSurface9 *_dxvaSurface;
+    IDirect3DDevice9 *_d3device;
+    EGLWrapper *_egl;
     EGLSurface _pboSurface;
-    IDirect3DTexture9 * _dxTexture;
-    IDirect3DSurface9 * _dxSurface;
+    IDirect3DTexture9 *_dxTexture;
+    IDirect3DSurface9 *_dxSurface;
     EGLDisplay _eglDisplay;
-    EGLConfig _eglConfig;
+    int width, height;
 };
-typedef QSharedPointer<SurfaceInteropDXVA> SurfaceInteropDXVAPtr;
 #endif //QTAV_HAVE(DXVA_EGL)
+
 class VideoDecoderDXVAPrivate;
 class VideoDecoderDXVA : public VideoDecoderFFmpegHW
 {
