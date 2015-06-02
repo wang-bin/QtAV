@@ -67,7 +67,6 @@ AVPlayer::Private::Private()
     , async_load(true)
     , loaded(false)
     , relative_time_mode(true)
-    , fmt_ctx(0)
     , media_start_pts(0)
     , media_end(kInvalidPosition)
     , last_position(0)
@@ -184,13 +183,18 @@ void AVPlayer::Private::initBaseStatistics()
 {
     statistics.reset();
     statistics.url = current_source.type() == QVariant::String ? current_source.toString() : QString();
+    statistics.start_time = QTime(0, 0, 0).addMSecs(int(demuxer.startTime()));
+    statistics.duration = QTime(0, 0, 0).addMSecs((int)demuxer.duration());
+    AVFormatContext *fmt_ctx = demuxer.formatContext();
+    if (!fmt_ctx) {
+        qWarning("demuxer.formatContext()==null. internal error");
+        updateNotifyInterval();
+        return;
+    }
     statistics.bit_rate = fmt_ctx->bit_rate;
     statistics.format = QString().sprintf("%s - %s", fmt_ctx->iformat->name, fmt_ctx->iformat->long_name);
     //AV_TIME_BASE_Q: msvc error C2143
     //fmt_ctx->duration may be AV_NOPTS_VALUE. AVDemuxer.duration deals with this case
-    statistics.start_time = QTime(0, 0, 0).addMSecs(int(demuxer.startTime()));
-    statistics.duration = QTime(0, 0, 0).addMSecs((int)demuxer.duration());
-    statistics.metadata.clear();
     AVDictionaryEntry *tag = NULL;
     while ((tag = av_dict_get(fmt_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
         statistics.metadata.insert(tag->key, tag->value);
@@ -200,6 +204,11 @@ void AVPlayer::Private::initBaseStatistics()
 
 void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCodecContext *avctx)
 {
+    AVFormatContext *fmt_ctx = demuxer.formatContext();
+    if (!fmt_ctx) {
+        qWarning("demuxer.formatContext()==null. internal error");
+        return;
+    }
     AVStream *stream = fmt_ctx->streams[s];
     qDebug("stream: %d, duration=%lld (%lld ms), time_base=%f", s, stream->duration, qint64(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0), av_q2d(stream->time_base));
     // AVCodecContext.codec_name is deprecated. use avcodec_get_name. check null avctx->codec?

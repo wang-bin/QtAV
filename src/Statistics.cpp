@@ -126,6 +126,7 @@ void Statistics::reset()
     video = Common();
     audio_only = AudioOnly();
     video_only = VideoOnly();
+    metadata.clear();
 }
 
 } //namespace QtAV

@@ -617,7 +617,6 @@ void AVPlayer::loadInternal()
     Q_EMIT internalAudioTracksChanged(d->audio_tracks);
     Q_EMIT durationChanged(duration());
     // setup parameters from loaded media
-    d->fmt_ctx = d->demuxer.formatContext();
     d->media_start_pts = d->demuxer.startTime();
     // TODO: what about other proctols? some vob duration() == 0
     if (duration() > 0)

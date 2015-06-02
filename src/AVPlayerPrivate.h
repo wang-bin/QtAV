@@ -104,8 +104,6 @@ public:
     QVariant current_source, pendding_source;
     bool loaded; // for current source
     bool relative_time_mode;
-    // TODO: remove
-    AVFormatContext	*fmt_ctx; //changed when reading a packet
     qint64 media_start_pts; // read from media stream
     qint64 media_end;
     /*
