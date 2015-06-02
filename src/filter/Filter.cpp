@@ -74,7 +74,7 @@ void Filter::setEnabled(bool enabled)
     if (d.enabled == enabled)
         return;
     d.enabled = enabled;
-    emit enableChanged(enabled);
+    Q_EMIT enabledChanged(enabled);
 }
 
 bool Filter::isEnabled() const

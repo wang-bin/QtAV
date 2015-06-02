@@ -345,14 +345,6 @@ Module {
             name: "loaded"
             Parameter { name: "path"; type: "string" }
         }
-        Signal {
-            name: "enableChanged"
-            Parameter { type: "bool" }
-        }
-        Signal {
-            name: "autoLoadChanged"
-            Parameter { name: "value"; type: "bool" }
-        }
         Signal { name: "contentChanged" }
         Method {
             name: "setAutoLoad"

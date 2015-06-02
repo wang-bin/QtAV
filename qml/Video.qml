@@ -413,7 +413,7 @@ Item {
             ass_sub.visible = canRender
             text_sub.visible = !canRender
         }
-        onEnableChanged: {
+        onEnabledChanged: {
             ass_sub.visible = enabled
             text_sub.visible = enabled
         }

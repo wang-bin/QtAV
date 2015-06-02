@@ -41,7 +41,7 @@ class QmlAVPlayer;
 class QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
 {
     Q_OBJECT
-    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enableChanged)
+    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enabledChanged)
     Q_PROPERTY(QObject* player READ player WRITE setPlayer)
     // proxy api
     Q_PROPERTY(QByteArray codec READ codec WRITE setCodec NOTIFY codecChanged)
@@ -100,8 +100,8 @@ Q_SIGNALS:
     void fileChanged();
     void canRenderChanged();
     void loaded(const QString& path);
-    void enableChanged(bool);
-    void autoLoadChanged(bool value);
+    void enabledChanged();
+    void autoLoadChanged();
 
     void codecChanged();
     void enginesChanged();

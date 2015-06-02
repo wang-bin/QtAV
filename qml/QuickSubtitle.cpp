@@ -75,8 +75,8 @@ QuickSubtitle::QuickSubtitle(QObject *parent) :
 
     m_filter = new Filter(m_player_sub->subtitle(), this);
     setSubtitle(m_player_sub->subtitle()); //for proxy
-    connect(this, SIGNAL(enableChanged(bool)), m_player_sub, SLOT(onEnableChanged(bool))); //////
-    connect(m_player_sub, SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged(bool)));
+    connect(this, SIGNAL(enabledChanged(bool)), m_player_sub, SLOT(onEnabledChanged(bool))); //////
+    connect(m_player_sub, SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged()));
     connect(m_player_sub, SIGNAL(fileChanged()), this, SIGNAL(fileChanged()));
 }
 
@@ -141,7 +141,7 @@ void QuickSubtitle::setEnabled(bool value)
     if (m_enable == value)
         return;
     m_enable = value;
-    emit enableChanged(value);
+    Q_EMIT enabledChanged();
     m_filter->setEnabled(m_enable);
     if (!m_enable) { //display nothing
         notifyObservers(QImage(), QRect(), 0, 0);

@@ -47,7 +47,7 @@ class Q_AV_EXPORT Filter : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(Filter)
-    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enableChanged)
+    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enabledChanged)
 public:
     Filter(QObject* parent = 0);
     virtual ~Filter();
@@ -73,7 +73,7 @@ public:
     // called in destructor automatically
     bool uninstall();
 signals:
-    void enableChanged(bool);
+    void enabledChanged(bool);
 protected:
     /*
      * If the filter is in AVThread, it's safe to operate on ref.

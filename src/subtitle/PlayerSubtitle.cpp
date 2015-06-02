@@ -161,7 +161,7 @@ void PlayerSubtitle::onPlayerStart()
     return;
 }
 
-void PlayerSubtitle::onEnableChanged(bool value)
+void PlayerSubtitle::onEnabledChanged(bool value)
 {
     m_enabled = value;
     if (value) {
