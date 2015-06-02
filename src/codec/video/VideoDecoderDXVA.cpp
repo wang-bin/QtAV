@@ -18,6 +18,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+/// egl support is added by: Andy Bell <andy.bell@displaynote.com>
 
 #ifdef _MSC_VER
 #pragma comment(lib, "ole32.lib") //CoTaskMemFree. why link failed?
@@ -29,20 +30,21 @@
 #include "QtAV/private/prepost.h"
 //#include "QtAV/private/mkid.h"
 #include "QtAV/SurfaceInterop.h"
+#include <utils/OpenGLHelper.h>
+// no need to check qt4 because no ANGLE there
+#if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2)
+#define QTAV_HAVE_DXVA_EGL 1
+#endif
+#if QTAV_HAVE(DXVA_EGL)
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+# if QTAV_HAVE(GUI_PRIVATE)
+#include <qpa/qplatformnativeinterface.h>
+#include <QtGui/QGuiApplication>
+# endif //QTAV_HAVE(GUI_PRIVATE)
+#endif
+
 #include "utils/Logger.h"
-#define EGL_EGLEXT_PROTOTYPES
-
-#include <QtANGLE/EGL/egl.h>
-#include <QtANGLE/EGL/eglext.h>
-
-#include <QtGui/5.4.1/QtGui/qpa/qplatformnativeinterface.h>
-#include <qtgui/qguiapplication.h>
-// QT += gui-private
-//#include <qpa/qplatformnativeinterface.h>
-#include <qtgui/qopenglcontext.h>
-#include <QOpenGLContext>
-#include <QtPlatformHeaders/QEGLNativeContext>
-#include <qopenglfunctions.h>
 
 // d3d9ex: http://dxr.mozilla.org/mozilla-central/source/dom/media/wmf/DXVA2Manager.cpp
 // TODO: add to QtAV_Compat.h?
@@ -166,6 +168,7 @@ DEFINE_GUID(DXVA_ModeMPEG4pt2_VLD_AdvSimple_Avivo,  0x7C74ADC6, 0xe2ba, 0x4ade, 
 DEFINE_GUID(DXVA_ModeHEVC_VLD_Main,                 0x5b11d51b, 0x2f4c, 0x4452, 0xbc, 0xc3, 0x9, 0xf2, 0xa1, 0x16, 0xc, 0xc0);
 DEFINE_GUID(DXVA_ModeHEVC_VLD_Main10,               0x107af0e0, 0xef1a, 0x4d19, 0xab, 0xa8, 0x67, 0xa1, 0x63, 0x7, 0x3d, 0x13);
 
+#if QTAV_HAVE(DXVA_EGL)
 class EGLWrapper
 {
 public:
@@ -176,6 +179,35 @@ public:
     EGLBoolean destroySurface(EGLDisplay dpy, EGLSurface surface);
     EGLBoolean bindTexImage(EGLDisplay dpy, EGLSurface surface, EGLint buffer);
     EGLBoolean releaseTexImage(EGLDisplay dpy, EGLSurface surface, EGLint buffer);
+    EGLDisplay getCurrentDisplay(void);
+    EGLContext GetCurrentContext(void) {
+        Q_ASSERT(m_eglGetCurrentContext);
+        return m_eglGetCurrentContext();
+    }
+
+    EGLBoolean QueryContext(EGLDisplay dpy, EGLContext ctx, EGLint attribute, EGLint *value) {
+        Q_ASSERT(m_eglQueryContext);
+        return m_eglQueryContext(dpy, ctx, attribute, value);
+    }
+
+    EGLBoolean GetConfigs(EGLDisplay dpy, EGLConfig *configs, EGLint config_size, EGLint *num_config) {
+        Q_ASSERT(m_eglGetConfigs);
+        return m_eglGetConfigs(dpy, configs, config_size, num_config);
+    }
+
+    EGLBoolean GetConfigAttrib(EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value) {
+        Q_ASSERT(m_eglGetConfigAttrib);
+        return m_eglGetConfigAttrib(dpy, config, attribute, value);
+    }
+    EGLint GetError(void) {
+        Q_ASSERT(m_eglGetError);
+        return m_eglGetError();
+    }
+
+    const char *QueryString(EGLDisplay dpy, EGLint name) {
+        Q_ASSERT(m_eglQueryString);
+        return m_eglQueryString(dpy, name);
+    }
 
 private:
     typedef __eglMustCastToProperFunctionPointerType(EGLAPIENTRYP EglGetProcAddress)(const char *procname);
@@ -183,17 +215,31 @@ private:
     typedef EGLBoolean(EGLAPIENTRYP EglDestroySurface)(EGLDisplay dpy, EGLSurface surface);
     typedef EGLBoolean(EGLAPIENTRYP EglBindTexImage)(EGLDisplay dpy, EGLSurface surface, EGLint buffer);
     typedef EGLBoolean(EGLAPIENTRYP EglReleaseTexImage)(EGLDisplay dpy, EGLSurface surface, EGLint buffer);
-
+    typedef EGLDisplay(EGLAPIENTRYP EglGetCurrentDisplay)(void);
+    typedef EGLContext (EGLAPIENTRYP eglGetCurrentContext_t)(void);
+    typedef EGLBoolean (EGLAPIENTRYP eglQueryContext_t)(EGLDisplay dpy, EGLContext ctx, EGLint attribute, EGLint *value);
+    typedef EGLBoolean (EGLAPIENTRYP eglGetConfigs_t) (EGLDisplay dpy, EGLConfig *configs, EGLint config_size, EGLint *num_config);
+    typedef EGLBoolean (EGLAPIENTRYP eglGetConfigAttrib_t) (EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value);
+    typedef EGLint (EGLAPIENTRYP eglGetError_t) (void);
+    typedef const char *(EGLAPIENTRYP eglQueryString_t) (EGLDisplay dpy, EGLint name);
     EglGetProcAddress m_eglGetProcAddress;
     EglCreatePbufferSurface m_eglCreatePbufferSurface;
     EglDestroySurface m_eglDestroySurface;
     EglBindTexImage m_eglBindTexImage;
     EglReleaseTexImage m_eglReleaseTexImage;
+    EglGetCurrentDisplay m_eglGetCurrentDisplay;
+    eglGetCurrentContext_t m_eglGetCurrentContext;
+    eglQueryContext_t m_eglQueryContext;
+    eglGetConfigs_t m_eglGetConfigs;
+    eglGetConfigAttrib_t m_eglGetConfigAttrib;
+    eglGetError_t m_eglGetError;
+    eglQueryString_t m_eglQueryString;
 };
 
 
 EGLWrapper::EGLWrapper()
 {
+    // TODO: check QT_OPENGL_ES2
 #ifndef QT_OPENGL_ES_2_ANGLE_STATIC
     // Resolve the EGL functions we use. When configured for dynamic OpenGL, no
     // component in Qt will link to libEGL.lib and libGLESv2.lib. We know
@@ -207,12 +253,18 @@ EGLWrapper::EGLWrapper()
 
     if (!eglHandle)
         qWarning("No EGL library loaded");
-
+    m_eglGetCurrentDisplay = (EglGetCurrentDisplay)GetProcAddress(eglHandle, "eglGetCurrentDisplay");
     m_eglGetProcAddress = (EglGetProcAddress)GetProcAddress(eglHandle, "eglGetProcAddress");
     m_eglCreatePbufferSurface = (EglCreatePbufferSurface)GetProcAddress(eglHandle, "eglCreatePbufferSurface");
     m_eglDestroySurface = (EglDestroySurface)GetProcAddress(eglHandle, "eglDestroySurface");
     m_eglBindTexImage = (EglBindTexImage)GetProcAddress(eglHandle, "eglBindTexImage");
     m_eglReleaseTexImage = (EglReleaseTexImage)GetProcAddress(eglHandle, "eglReleaseTexImage");
+    m_eglGetCurrentContext = (eglGetCurrentContext_t)GetProcAddress(eglHandle, "eglGetCurrentContext");
+    m_eglQueryContext = (eglQueryContext_t)GetProcAddress(eglHandle, "eglQueryContext");
+    m_eglGetConfigs = (eglGetConfigs_t)GetProcAddress(eglHandle, "eglGetConfigs");
+    m_eglGetConfigAttrib = (eglGetConfigAttrib_t)GetProcAddress(eglHandle, "eglGetConfigAttrib");
+    m_eglGetError = (eglGetError_t)GetProcAddress(eglHandle, "eglGetError");
+    m_eglQueryString = (eglQueryString_t)GetProcAddress(eglHandle, "eglQueryString");
 #else
     // Static ANGLE-only build. There is no libEGL.dll in use.
 
@@ -254,13 +306,19 @@ EGLBoolean EGLWrapper::releaseTexImage(EGLDisplay dpy, EGLSurface surface, EGLin
     return m_eglReleaseTexImage(dpy, surface, buffer);
 }
 
+EGLDisplay EGLWrapper::getCurrentDisplay()
+{
+    Q_ASSERT(m_eglGetCurrentDisplay);
+    return m_eglGetCurrentDisplay();
+}
+
 class SurfaceInteropDXVA : public VideoSurfaceInterop
 {
 public:
     SurfaceInteropDXVA(IDirect3DDevice9 * d3device)
     {
         _d3device = d3device;
-        _egl = nullptr;
+        _egl = NULL;
         _glTexture = 0;
     }
     ~SurfaceInteropDXVA()
@@ -275,7 +333,7 @@ public:
     virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane)
     {
         if (!fmt.isRGB())
-            return 0;
+            return NULL;
 
         if (!handle)
             return NULL;
@@ -293,12 +351,34 @@ public:
                 QOpenGLContext *currentContext = QOpenGLContext::currentContext();
                 if (!_egl)
                     _egl = new EGLWrapper;
-
-                HANDLE share_handle = NULL;
+#if QTAV_HAVE(GUI_PRIVATE)
                 QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
-                _eglDisplay = static_cast<EGLDisplay*>(nativeInterface->nativeResourceForContext("eglDisplay", currentContext));
-                _eglConfig = static_cast<EGLConfig*>(nativeInterface->nativeResourceForContext("eglConfig", currentContext));
-
+                _eglDisplay = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", currentContext));
+                _eglConfig = static_cast<EGLConfig>(nativeInterface->nativeResourceForContext("eglConfig", currentContext));
+#else
+                _eglDisplay = _egl->getCurrentDisplay();
+                EGLint cfg_id = 0;
+                if (_egl->QueryContext(_eglDisplay, _egl->GetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_FALSE) {
+                    EGLint err = _egl->GetError();
+                    qWarning("eglQueryContext error: %d %p %s", err, err, _egl->QueryString(_eglDisplay, err));
+                    return NULL;
+                }
+                qDebug("egl config id: %d", cfg_id);
+                EGLint nb_cfg = 0;
+                _egl->GetConfigs(_eglDisplay, NULL, 0, &nb_cfg);
+                qDebug("eglGetConfigs number: %d", nb_cfg);
+                QVector<EGLConfig> cfgs(nb_cfg); //check > 0
+                _egl->GetConfigs(_eglDisplay, cfgs.data(), cfgs.size(), &nb_cfg);
+                for (int i = 0; i < nb_cfg; ++i) {
+                    EGLint id = 0;
+                    _egl->GetConfigAttrib(_eglDisplay, cfgs[i], EGL_CONFIG_ID, &id);
+                    if (id == cfg_id) {
+                        _eglConfig = cfgs[i];
+                        break;
+                    }
+                }
+                qDebug("egl config: %p", _eglConfig);
+#endif
                 bool hasAlpha = currentContext->format().hasAlpha();
 
                 EGLint attribs[] = {
@@ -315,6 +395,7 @@ public:
 
                 PFNEGLQUERYSURFACEPOINTERANGLEPROC eglQuerySurfacePointerANGLE = reinterpret_cast<PFNEGLQUERYSURFACEPOINTERANGLEPROC>(_egl->getProcAddress("eglQuerySurfacePointerANGLE"));
                 Q_ASSERT(eglQuerySurfacePointerANGLE);
+                HANDLE share_handle = NULL;
                 int ret = eglQuerySurfacePointerANGLE(  _eglDisplay,
                                                         _pboSurface,
                                                         EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, &share_handle);
@@ -337,7 +418,7 @@ public:
 
             if (_glTexture > 0)
             {
-                QOpenGLContext::currentContext()->functions()->glBindTexture(GL_TEXTURE_2D, _glTexture);
+                DYGL(glBindTexture(GL_TEXTURE_2D, _glTexture));
                 hr = _d3device->StretchRect(_dxvaSurface, NULL, _dxSurface, NULL, D3DTEXF_NONE);
 
                 if (SUCCEEDED(hr))
@@ -362,7 +443,7 @@ public:
     }
     virtual void* createHandle(SurfaceType type, const VideoFormat& fmt, int plane = 0)
     {
-        return nullptr;
+        return NULL;
     }
 
 private:
@@ -377,7 +458,7 @@ private:
     EGLConfig _eglConfig;
 };
 typedef QSharedPointer<SurfaceInteropDXVA> SurfaceInteropDXVAPtr;
-
+#endif //QTAV_HAVE(DXVA_EGL)
 class VideoDecoderDXVAPrivate;
 class VideoDecoderDXVA : public VideoDecoderFFmpegHW
 {
@@ -695,7 +776,6 @@ VideoFrame VideoDecoderDXVA::frame()
 //    const bool swap_uv = d.render ==  MAKEFOURCC('I','M','C','3');
 //    return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
 
-    qDebug("%d %d", d.width, d.height);
     ((SurfaceInteropDXVA*)d.surface_interop.data())->setSurface(d3d);
     VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
     f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
