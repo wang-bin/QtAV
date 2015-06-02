@@ -329,28 +329,27 @@ Item {
         id: videoOut
         anchors.fill: video
         source: player
-
-        SubtitleItem {
-            id: ass_sub
-            rotation: -videoOut.orientation
-            fillMode: parent.fillMode
-            source: subtitle
-            anchors.fill: parent
+    }
+    SubtitleItem {
+        id: ass_sub
+        rotation: -videoOut.orientation
+        fillMode: videoOut.fillMode
+        source: subtitle
+        anchors.fill: videoOut
+    }
+    Text {
+        id: text_sub
+        rotation: -videoOut.orientation
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignBottom
+        font {
+            pointSize: 20
+            bold: true
         }
-        Text {
-            id: text_sub
-            rotation: -videoOut.orientation
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignBottom
-            font {
-                pointSize: 20
-                bold: true
-            }
-            style: Text.Outline
-            styleColor: "blue"
-            color: "white"
-            anchors.fill: parent
-        }
+        style: Text.Outline
+        styleColor: "blue"
+        color: "white"
+        anchors.fill: videoOut
     }
 
     MediaPlayer {
