@@ -53,7 +53,11 @@
 #endif
 // AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
 #ifndef AV_CODEC_ID_H265
+#ifdef _MSC_VER
+#pragma message("HEVC will not be supported. Update your FFmpeg")
+#else
 #warning "HEVC will not be supported. Update your FFmpeg"
+#endif
 #define AV_CODEC_ID_H265 AV_CODEC_ID_NONE //mkid::fourcc<'H','2','6','5'>::value
 #define AV_CODEC_ID_HEVC AV_CODEC_ID_NONE
 #define FF_PROFILE_HEVC_MAIN -1
@@ -318,10 +322,10 @@ public:
         : _dxvaSurface(NULL)
         , _d3device(d3device)
         , _egl(NULL)
-        , _pboSurface(NULL)
+        , _pboSurface(EGL_NO_SURFACE)
         , _dxTexture(NULL)
         , _dxSurface(NULL)
-        , _eglDisplay(NULL)
+        , _eglDisplay(EGL_NO_DISPLAY)
         , width(0)
         , height(0)
     {
@@ -332,15 +336,16 @@ public:
     void releaseResource() {
         SafeRelease(&_dxSurface);
         SafeRelease(&_dxTexture);
-        if (_pboSurface) {
-            // TODO: can not display if destroyed. eglCreatePbufferSurface always return the same address even if attributes changed
+        if (_pboSurface != EGL_NO_SURFACE) {
+            // TODO: can not display if destroyed. eglCreatePbufferSurface always return the same address even if attributes changed. because of the same context?
+            //_egl->releaseTexImage(_eglDisplay, _pboSurface, EGL_BACK_BUFFER);
             //_egl->destroySurface(_eglDisplay, _pboSurface);
+            _pboSurface = EGL_NO_SURFACE;
         }
         if (_egl) {
             delete _egl;
             _egl = 0;
         }
-
     }
 
     void setSurface(IDirect3DSurface9 * surface) {
@@ -356,6 +361,15 @@ public:
         _eglDisplay = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", QOpenGLContext::currentContext()));
         EGLConfig egl_cfg = static_cast<EGLConfig>(nativeInterface->nativeResourceForContext("eglConfig", QOpenGLContext::currentContext()));
 #else
+#ifdef Q_OS_WIN
+#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
+#ifdef _MSC_VER
+#pragma message("ANGLE version in Qt<5.5 does not support eglQueryContext. You must upgrade your runtime ANGLE libraries")
+#else
+#warning "ANGLE version in Qt<5.5 does not support eglQueryContext. You must upgrade your runtime ANGLE libraries"
+#endif //_MSC_VER
+#endif
+#endif //Q_OS_WIN
         _eglDisplay = _egl->getCurrentDisplay();
         EGLint cfg_id = 0;
         if (_egl->QueryContext(_eglDisplay, _egl->GetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_FALSE) {
@@ -391,7 +405,7 @@ public:
         };
         _pboSurface = _egl->createPbufferSurface(_eglDisplay, egl_cfg, attribs);
         qDebug("pbuffer surface: %p", _eglDisplay);
-        if (!_pboSurface) {
+        if (_pboSurface == EGL_NO_SURFACE) {
             EGLint err = _egl->GetError();
             qWarning("eglCreatePbufferSurface error: (%p) %s", err, _egl->QueryString(_eglDisplay, err));
             releaseResource();
@@ -449,7 +463,9 @@ public:
             DYGL(glBindTexture(GL_TEXTURE_2D, *((GLint*)handle)));
             if (SUCCEEDED(_d3device->StretchRect(_dxvaSurface, NULL, _dxSurface, NULL, D3DTEXF_NONE)))
                 _egl->bindTexImage(_eglDisplay, _pboSurface, EGL_BACK_BUFFER);
+            DYGL(glBindTexture(GL_TEXTURE_2D, 0));
         } else if (type == HostMemorySurface) {
+            return NULL;
         } else {
             return NULL;
         }
@@ -628,8 +644,10 @@ public:
         VideoDecoderFFmpegHWPrivate()
     {
         // TODO: qt5.4 mingw dygl crash but can work with newer egl+glesv2 dll
-        //if (OpenGLHelper::isOpenGLES())
-          //  copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
+#if defined(_MSC_VER)
+        if (OpenGLHelper::isOpenGLES())
+            copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
+#endif
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
