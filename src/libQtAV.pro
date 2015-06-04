@@ -33,7 +33,7 @@ sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2): CONFIG *= sse2 config_simd
 PROJECTROOT = $$PWD/..
 !include(libQtAV.pri): error("could not find libQtAV.pri")
 preparePaths($$OUT_PWD/../out)
-exists($$PROJECTROOT/contrib/libchardet/libchardet.pri) {
+!no_libchardet:exists($$PROJECTROOT/contrib/libchardet/libchardet.pri) {
   include($$PROJECTROOT/contrib/libchardet/libchardet.pri)
   DEFINES += QTAV_HAVE_CHARDET=1 BUILD_CHARDET_STATIC
 } else {
@@ -256,7 +256,12 @@ config_libass {
   SOURCES *= subtitle/ass_api.cpp
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
 }
-
+capi:win32 { # currently only used for windows
+contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
+  HEADERS *= capi/egl_api.h
+  SOURCES *= capi/egl_api.cpp
+}
+}
 # mac is -FQTDIR we need -LQTDIR
 LIBS *= -L$$[QT_INSTALL_LIBS] -lavcodec -lavformat -lswscale -lavutil
 win32 {
