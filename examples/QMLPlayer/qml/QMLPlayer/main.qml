@@ -162,7 +162,7 @@ Rectangle {
             subtitleItem.visible = canRender
             subtitleLabel.visible = !canRender
         }
-        onEnableChanged: {
+        onEnabledChanged: {
             subtitleItem.visible = enabled
             subtitleLabel.visible = enabled
         }
