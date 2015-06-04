@@ -21,6 +21,9 @@
 
 #include <stdarg.h>
 #include <string>
+//#define ASS_CAPI_NS // do not unload() manually!
+//#define CAPI_LINK_ASS
+
 #include "ass_api.h"
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/private/prepost.h"
