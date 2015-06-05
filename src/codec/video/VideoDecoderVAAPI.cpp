@@ -159,13 +159,17 @@ public:
     VideoDecoderVAAPIPrivate()
         : support_4k(true)
     {
-        copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         if (VAAPI_DRM::isLoaded())
             display_type = VideoDecoderVAAPI::DRM;
         if (VAAPI_GLX::isLoaded())
             display_type = VideoDecoderVAAPI::GLX;
         if (VAAPI_X11::isLoaded())
             display_type = VideoDecoderVAAPI::X11;
+        if (display_type == VideoDecoderVAAPI::DRM)
+            copy_mode = VideoDecoderFFmpegHW::OptimizedCopy;
+        else
+            copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
+
         drm_fd = -1;
         display_x11 = 0;
         config_id = VA_INVALID_ID;
@@ -258,6 +262,11 @@ void VideoDecoderVAAPI::setSurfaces(int num)
     DPTR_D(VideoDecoderVAAPI);
     d.nb_surfaces = num;
     d.surface_auto = num <= 0;
+
+    const int kMaxSurfaces = 32;
+    if (num > kMaxSurfaces) {
+        qWarning("VAAPI- Too many surfaces. requested: %d, maximun: %d", num, kMaxSurfaces);
+    }
 }
 
 int VideoDecoderVAAPI::surfaces() const
@@ -539,11 +548,6 @@ bool VideoDecoderVAAPIPrivate::open()
 bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w, int h)
 {
     Q_ASSERT(w > 0 && h > 0);
-    const int kMaxSurfaces = 32;
-    if (count > kMaxSurfaces) {
-        qWarning("VAAPI- Too many surfaces. requested: %d, maximun: %d", count, kMaxSurfaces);
-        return false;
-    }
     const int old_size = surfaces.size();
     const bool size_changed = (surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16));
     if (count <= old_size && !size_changed)
@@ -574,6 +578,15 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     }
     if (!size_changed)
         return true;
+    /* Setup the ffmpeg hardware context */
+    memset(&hw_ctx, 0, sizeof(hw_ctx));
+    hw_ctx.display = display->get();
+    hw_ctx.config_id = config_id;
+    hw_ctx.context_id = context_id;
+    if (display_type == VideoDecoderVAAPI::GLX || (display_type == VideoDecoderVAAPI::X11 && copy_mode == VideoDecoderFFmpegHW::ZeroCopy)) {
+        *pp_hw_ctx = &hw_ctx;
+        return true;
+    }
     // TODO: move to other place?
     /* Find and create a supported image chroma */
     int i_fmt_count = vaMaxNumImageFormats(display->get());
@@ -630,10 +643,6 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     initUSWC(surface_width);
     /* Setup the ffmpeg hardware context */
     *pp_hw_ctx = &hw_ctx;
-    memset(&hw_ctx, 0, sizeof(hw_ctx));
-    hw_ctx.display = display->get();
-    hw_ctx.config_id = config_id;
-    hw_ctx.context_id = context_id;
     return true;
 }
 
@@ -668,7 +677,12 @@ bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
     height = avctx->height;
     if (surface_width || surface_height)
         destroySurfaces();
-    return createSurfaces(nb_surfaces, &avctx->hwaccel_context, w, h);
+
+    if (!createSurfaces(nb_surfaces, &avctx->hwaccel_context, w, h)) {
+        destroySurfaces();
+        return false;
+    }
+    return true;
 }
 
 void VideoDecoderVAAPIPrivate::close()
@@ -713,8 +727,18 @@ bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
         if (it == surfaces_free.end()) {
             if (!surfaces_free.empty())
                 qWarning("VAAPI - renderer still using all freed up surfaces by decoder. unable to find free surface, trying to allocate a new one");
+
+            const int kMaxSurfaces = 32;
+            if (surfaces.size() + 1 > kMaxSurfaces) {
+                qWarning("VAAPI- Too many surfaces. requested: %d, maximun: %d", surfaces.size() + 1, kMaxSurfaces);
+            }
             // Set itarator position to the newly allocated surface (end-1)
-            createSurfaces(surfaces.size() + 1, &codec_ctx->hwaccel_context, width, height);
+            const int old_size = surfaces.size();
+            if (!createSurfaces(old_size + 1, &codec_ctx->hwaccel_context, width, height)) {
+                // destroy the new created surface. Surfaces can only be destroyed after the context associated has been destroyed?
+                VAWARN(vaDestroySurfaces(display->get(), surfaces.data() + old_size, 1));
+                surfaces.resize(old_size);
+            }
             it = surfaces_free.end();
             --it;
         }

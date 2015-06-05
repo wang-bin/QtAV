@@ -59,7 +59,7 @@ namespace QtAV {
 do { \
   VAStatus res = a; \
   if(res != VA_STATUS_SUCCESS) \
-    qWarning("VA-API error@%d. " #a ": %#x %s", __LINE__, res, vaErrorStr(res)); \
+    qWarning("VA-API error %s@%d. " #a ": %#x %s", __FILE__, __LINE__, res, vaErrorStr(res)); \
 } while(0);
 
 namespace vaapi {
