@@ -198,9 +198,7 @@ void VideoCapture::start()
 {
     emit frameAvailable(frame); //TODO: no copy
     if (!frame.isValid() || !frame.bits(0)) { // if frame is always cloned, then size is at least width*height
-        qWarning("Captured frame data is invalid.");
-        emit failed();
-        return;
+        qDebug("Captured frame from hardware decoder surface.");
     }
     CaptureTask *task = new CaptureTask(this);
     // copy properties so the task will not be affect even if VideoCapture properties changed

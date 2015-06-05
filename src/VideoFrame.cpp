@@ -316,8 +316,21 @@ QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRect
 {
     Q_UNUSED(dstSize);
     Q_UNUSED(roi);
-    if (!isValid() || !bits(0)) // only in data in host memory is supported now
+    if (!isValid() || !bits(0)) {// hw surface. map to host. only supports rgb packed formats now
+        Q_D(const VideoFrame);
+        const QVariant v = d->metadata.value("surface_interop");
+        if (!v.isValid())
+            return QImage();
+        VideoSurfaceInteropPtr si = v.value<VideoSurfaceInteropPtr>();
+        if (!si)
+            return QImage();
+        VideoFrame f;
+        f.setTimestamp(timestamp());
+        if (si->map(HostMemorySurface, VideoFormat(VideoFormat::pixelFormatFromImageFormat(fmt)), &f)) {
+            return f.toImage(fmt, dstSize, roi);
+        }
         return QImage();
+    }
     if (imageFormat() == fmt) {
         return QImage((const uchar*)frameData().constData(), width(), height(), bytesPerLine(0), fmt).copy();
     }
@@ -344,8 +357,23 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
 {
     Q_UNUSED(dstSize);
     Q_UNUSED(roi);
-    if (!isValid() || !bits(0)) // only in data in host memory is supported now
+    if (!isValid() || !bits(0)) {// hw surface. map to host. only supports rgb packed formats now
+        Q_D(const VideoFrame);
+        const QVariant v = d->metadata.value("surface_interop");
+        if (!v.isValid())
+            return VideoFrame();
+        VideoSurfaceInteropPtr si = v.value<VideoSurfaceInteropPtr>();
+        if (!si)
+            return VideoFrame();
+        VideoFrame f;
+        f.setTimestamp(timestamp());
+        if (si->map(HostMemorySurface, fmt, &f)) {
+            if ((!dstSize.isValid() ||dstSize == QSize(width(), height())) && (!roi.isValid() || roi == QRectF(0, 0, width(), height()))) //roi is not supported now
+                return f;
+            return f.to(fmt, dstSize, roi);
+        }
         return VideoFrame();
+    }
     if (fmt.pixelFormatFFmpeg() == pixelFormatFFmpeg())
         return clone();
     Q_D(const VideoFrame);
