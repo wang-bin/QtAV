@@ -42,7 +42,6 @@ preparePaths($$OUT_PWD/../out)
 exists($$PROJECTROOT/contrib/capi/capi.pri) {
   include($$PROJECTROOT/contrib/capi/capi.pri)
   CONFIG *= capi
-  DEFINES += QTAV_HAVE_CAPI=1 BUILD_CAPI_STATIC
 } else {
   warning("contrib/capi is missing. run 'git submodule update --init' first")
 }
