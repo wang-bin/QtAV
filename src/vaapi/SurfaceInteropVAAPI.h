@@ -55,8 +55,13 @@ public:
         QMutexLocker lock(&mutex);
         m_surface = surface;
     }
+    void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE Q_DECL_FINAL;
 protected:
+    void* mapToHost(const VideoFormat &fmt, void *handle, int plane);
+    virtual void* mapToTexture(const VideoFormat &fmt, void *handle, int plane) = 0;
+
     surface_ptr m_surface; //FIXME: why vaTerminate() crash (in ~display_t()) if put m_surface here?
+private:
     QMutex mutex;
 };
 // TODO: move create glx surface to decoder, interop only map/unmap, 1 interop per frame
@@ -68,11 +73,9 @@ public:
     VAAPI_GLX_Interop();
     // return glx surface
     surface_glx_ptr createGLXSurface(void* handle);
-    virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane);
-    virtual void unmap(void *handle);
-    virtual void* createHandle(SurfaceType type, const VideoFormat& fmt, int plane = 0);
+    void* mapToTexture(const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
 private:
-    QMap<GLuint*,surface_glx_ptr> glx_surfaces, tmp_surfaces;
+    QMap<GLuint*,surface_glx_ptr> glx_surfaces;
 };
 
 #ifndef QT_OPENGL_ES_2
@@ -81,7 +84,7 @@ class VAAPI_X_GLX_Interop Q_DECL_FINAL: public SurfaceInteropVAAPI
 public:
     VAAPI_X_GLX_Interop();
     ~VAAPI_X_GLX_Interop();
-    void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
+    void* mapToTexture(const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
     void unmap(void *handle) Q_DECL_OVERRIDE;
 private:
     bool ensureGLX();

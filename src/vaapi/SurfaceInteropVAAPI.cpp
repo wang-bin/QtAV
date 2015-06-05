@@ -27,6 +27,26 @@
 namespace QtAV {
 namespace vaapi {
 
+void* SurfaceInteropVAAPI::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
+{
+    if (!handle)
+        return NULL;
+    QMutexLocker lock(&mutex);
+    if (!m_surface)
+        return 0;
+    if (type == GLTextureSurface) {
+        return mapToTexture(fmt, handle, plane);
+    } else if (type == HostMemorySurface) {
+        return mapToHost(fmt, handle, plane);
+    }
+    return NULL;
+}
+
+void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &fmt, void *handle, int plane)
+{
+    return NULL;
+}
+
 VAAPI_GLX_Interop::VAAPI_GLX_Interop() : SurfaceInteropVAAPI()
 {
 }
@@ -42,65 +62,24 @@ surface_glx_ptr VAAPI_GLX_Interop::createGLXSurface(void *handle)
     return glx;
 }
 
-void* VAAPI_GLX_Interop::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
-{
-    if (!fmt.isRGB())
-        return 0;
-    QMutexLocker lock(&mutex);
-
-    if (!handle)
-        handle = createHandle(type, fmt, plane);
-    if (type == GLTextureSurface) {
-        surface_glx_ptr glx = glx_surfaces[(GLuint*)handle];
-        if (!glx) {
-            glx = createGLXSurface(handle);
-            if (!glx) {
-                qWarning("Fail to create vaapi glx surface");
-                return 0;
-            }
-        }
-        glx->set(m_surface);
-        if (!glx->copy())
-            return 0;
-        VAWARN(vaSyncSurface(m_surface->display(), m_surface->get()));
-        return handle;
-    } else
-    if (type == HostMemorySurface) {
-    } else {
-        return 0;
-    }
-    return handle;
-}
-
-void VAAPI_GLX_Interop::unmap(void *handle)
-{
-    QMap<GLuint*,surface_glx_ptr>::iterator it(tmp_surfaces.find((GLuint*)handle));
-    if (it == tmp_surfaces.end())
-        return;
-    delete it.key();
-    it.value()->destroy();
-    tmp_surfaces.erase(it);
-}
-
-void* VAAPI_GLX_Interop::createHandle(SurfaceType type, const VideoFormat &fmt, int plane)
+void* VAAPI_GLX_Interop::mapToTexture(const VideoFormat &fmt, void *handle, int plane)
 {
     Q_UNUSED(plane);
-    if (type == GLTextureSurface) {
-        if (!fmt.isRGB()) {
+    if (!fmt.isRGB())
+        return 0;
+    surface_glx_ptr glx = glx_surfaces[(GLuint*)handle];
+    if (!glx) {
+        glx = createGLXSurface(handle);
+        if (!glx) {
+            qWarning("Fail to create vaapi glx surface");
             return 0;
         }
-        GLuint *tex = new GLuint;
-        glGenTextures(1, tex);
-        glBindTexture(GL_TEXTURE_2D, *tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_surface->width(), m_surface->height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-        tmp_surfaces[tex] = surface_glx_ptr();
-        return tex;
     }
-    return 0;
+    glx->set(m_surface);
+    if (!glx->copy())
+        return 0;
+    VAWARN(vaSyncSurface(m_surface->display(), m_surface->get()));
+    return handle;
 }
 
 #ifndef QT_OPENGL_ES_2
@@ -208,16 +187,9 @@ bool VAAPI_X_GLX_Interop::ensurePixmaps(int w, int h)
     return true;
 }
 
-void* VAAPI_X_GLX_Interop::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
+void* VAAPI_X_GLX_Interop::mapToTexture(const VideoFormat &fmt, void *handle, int plane)
 {
     Q_UNUSED(plane);
-    if (!handle)
-        return 0;
-    QMutexLocker lock(&mutex);
-    if (!m_surface)
-        return 0;
-    if (type != GLTextureSurface)
-        return 0;
     if (!fmt.isRGB()) {
         return 0;
     }
