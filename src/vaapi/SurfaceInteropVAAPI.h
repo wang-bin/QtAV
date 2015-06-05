@@ -57,7 +57,7 @@ public:
     }
     void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE Q_DECL_FINAL;
 protected:
-    void* mapToHost(const VideoFormat &fmt, void *handle, int plane);
+    void* mapToHost(const VideoFormat &format, void *handle, int plane);
     virtual void* mapToTexture(const VideoFormat &fmt, void *handle, int plane) = 0;
 
     surface_ptr m_surface; //FIXME: why vaTerminate() crash (in ~display_t()) if put m_surface here?

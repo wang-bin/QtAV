@@ -33,8 +33,18 @@ class Q_AV_EXPORT VideoSurfaceInterop
 {
 public:
     virtual ~VideoSurfaceInterop() {}
-    // return 0 if not supported. dxva: to host mem or gl texture
-    // handle: address of real handle. can be address of a given texture. generate a new one and return it if handle is null
+    /*!
+     * \brief map
+     * currently is used to map a frame from hardware decoder to opengl texture, host memory.
+     * \param type currently only support GLTextureSurface and HostMemorySurface for some decoders
+     * \param fmt
+     *   HostMemorySurface: must be a packed rgb format
+     * \param handle address of real handle
+     *   GLTextureSurface: usually opengl texture. maybe other objects for some decoders in the feature
+     *   HostMemorySurface: a VideoFrame ptr
+     * \param plane
+     * \return Null if not supported or failed. handle if success.
+     */
     virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle = 0, int plane = 0) {
         Q_UNUSED(type);
         Q_UNUSED(fmt);
@@ -45,7 +55,8 @@ public:
     virtual void unmap(void* handle) { Q_UNUSED(handle);}
     /*!
      * \brief createHandle
-     * \return
+     * It is used by opengl renderer to create a texture when rendering frame from VDA decoder
+     * \return NULL if not used when for opengl rendering. handle if create here
      */
     virtual void* createHandle(void* handle, SurfaceType type, const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) {
         Q_UNUSED(handle);
