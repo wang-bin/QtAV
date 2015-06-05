@@ -27,7 +27,7 @@
 namespace QtAV {
 namespace vaapi {
 
-VAAPI_GLX_Interop::VAAPI_GLX_Interop()
+VAAPI_GLX_Interop::VAAPI_GLX_Interop() : SurfaceInteropVAAPI()
 {
 }
 
@@ -108,7 +108,8 @@ VAAPI_X_GLX_Interop::glXReleaseTexImage_t VAAPI_X_GLX_Interop::glXReleaseTexImag
 VAAPI_X_GLX_Interop::glXBindTexImage_t VAAPI_X_GLX_Interop::glXBindTexImage = 0;
 
 VAAPI_X_GLX_Interop::VAAPI_X_GLX_Interop()
-    : xdisplay(0)
+    : SurfaceInteropVAAPI()
+    , xdisplay(0)
     , fbc(0)
     , pixmap(0)
     , glxpixmap(0)
