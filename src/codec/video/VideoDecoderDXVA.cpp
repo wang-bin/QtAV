@@ -450,7 +450,6 @@ VideoFrame VideoDecoderDXVA::frame()
         return VideoFrame();
 
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
-#if QTAV_HAVE(DXVA_EGL)
     if (copyMode() == ZeroCopy) {
         dxva::SurfaceInteropDXVA *interop = new dxva::SurfaceInteropDXVA(d.interop_res);
         interop->setSurface(d3d);
@@ -460,7 +459,6 @@ VideoFrame VideoDecoderDXVA::frame()
         f.setTimestamp(d.frame->pkt_pts);
         return f;
     }
-#endif //QTAV_HAVE(DXVA_EGL)
     class ScopedD3DLock {
         IDirect3DSurface9 *mpD3D;
     public:
@@ -623,6 +621,7 @@ bool VideoDecoderDXVAPrivate::D3dCreateDeviceEx()
     d3dpp.BackBufferHeight       = 1; //0;
     //d3dpp.EnableAutoDepthStencil = FALSE;
 
+    // D3DCREATE_MULTITHREADED is required by gl interop. https://www.opengl.org/registry/specs/NV/DX_interop.txt
     DWORD flags = D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING;
     // old: D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED
     // mpv:
@@ -833,6 +832,7 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     surface_height = aligned(h);
     if (surface_auto) {
         switch (codec_id) {
+        case QTAV_CODEC_ID(HEVC):
         case QTAV_CODEC_ID(H264):
             surface_count = 16 + 2 + codec_ctx->thread_count;
             break;
@@ -1028,9 +1028,10 @@ bool VideoDecoderDXVAPrivate::open()
     d3ddev->QueryInterface(IID_IDirect3DDevice9Ex, (void**)&devEx);
     qDebug("using D3D9Ex: %d", !!devEx);
     SafeRelease(&devEx);
-#if QTAV_HAVE(DXVA_EGL)
-    interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
-#endif //QTAV_HAVE(DXVA_EGL)
+    if (OpenGLHelper::isOpenGLES())
+        interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
+    else
+        interop_res = dxva::InteropResourcePtr(new dxva::GLInteropResource(d3ddev));
     return true;
 error:
     close();

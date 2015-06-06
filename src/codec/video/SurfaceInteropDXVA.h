@@ -28,6 +28,9 @@
 #if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
 #define QTAV_HAVE_DXVA_EGL 1
 #endif
+#if defined(QT_OPENGL_DYNAMIC) || !defined(QT_OPENGL_ES_2)
+#define QTAV_HAVE_DXVA_GL 1
+#endif
 #if QTAV_HAVE(DXVA_EGL)
 # ifdef QT_OPENGL_ES_2_ANGLE_STATIC
 #   define CAPI_LINK_EGL
@@ -89,6 +92,30 @@ private:
     int width, height;
 };
 #endif //QTAV_HAVE(DXVA_EGL)
+
+#if QTAV_HAVE(DXVA_GL)
+struct WGL;
+class GLInteropResource Q_DECL_FINAL: public InteropResource
+{
+public:
+    GLInteropResource(IDirect3DDevice9 * d3device);
+    ~GLInteropResource();
+    bool map(IDirect3DSurface9 *surface, GLuint tex, int) Q_DECL_OVERRIDE;
+    bool unmap(GLuint tex) Q_DECL_OVERRIDE;
+private:
+    void releaseResource();
+    bool ensureWGL();
+    bool ensureResource(int w, int h, GLuint tex);
+
+    IDirect3DDevice9 *d3ddev;
+    IDirect3DTexture9 *dx_texture;
+    IDirect3DSurface9 *dx_surface; // convert nv12 to rgb surface
+    HANDLE interop_dev;
+    HANDLE interop_obj;
+    int width, height;
+    WGL *wgl;
+};
+#endif //QTAV_HAVE(DXVA_GL)
 } //namespace dxva
 } //namespace QtAV
 
