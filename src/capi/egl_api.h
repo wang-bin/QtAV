@@ -1,6 +1,6 @@
 /******************************************************************************
     mkapi dynamic load code generation for capi template
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
     https://github.com/wang-bin/mkapi
     https://github.com/wang-bin/capi
 
@@ -51,6 +51,7 @@ public:
     virtual bool loaded() const; // user may inherits multiple api classes: final::loaded() { return base1::loaded() && base2::loaded();}
 #if !defined(CAPI_LINK_EGL) && !defined(EGL_CAPI_NS)
 // mkapi code generation BEGIN
+#ifdef EGL_VERSION_1_0
     EGLBoolean eglChooseConfig(EGLDisplay dpy, const EGLint * attrib_list, EGLConfig * configs, EGLint config_size, EGLint * num_config);
     EGLBoolean eglCopyBuffers(EGLDisplay dpy, EGLSurface surface, EGLNativePixmapType target);
     EGLContext eglCreateContext(EGLDisplay dpy, EGLConfig config, EGLContext share_context, const EGLint * attrib_list);
@@ -75,16 +76,24 @@ public:
     EGLBoolean eglTerminate(EGLDisplay dpy);
     EGLBoolean eglWaitGL();
     EGLBoolean eglWaitNative(EGLint engine);
+#endif //EGL_VERSION_1_0
+#ifdef EGL_VERSION_1_1
     EGLBoolean eglBindTexImage(EGLDisplay dpy, EGLSurface surface, EGLint buffer);
     EGLBoolean eglReleaseTexImage(EGLDisplay dpy, EGLSurface surface, EGLint buffer);
     EGLBoolean eglSurfaceAttrib(EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint value);
     EGLBoolean eglSwapInterval(EGLDisplay dpy, EGLint interval);
+#endif //EGL_VERSION_1_1
+#ifdef EGL_VERSION_1_2
     EGLBoolean eglBindAPI(EGLenum api);
     EGLenum eglQueryAPI();
     EGLSurface eglCreatePbufferFromClientBuffer(EGLDisplay dpy, EGLenum buftype, EGLClientBuffer buffer, EGLConfig config, const EGLint * attrib_list);
     EGLBoolean eglReleaseThread();
     EGLBoolean eglWaitClient();
+#endif //EGL_VERSION_1_2
+#ifdef EGL_VERSION_1_4
     EGLContext eglGetCurrentContext();
+#endif //EGL_VERSION_1_4
+#ifdef EGL_VERSION_1_5
     EGLSync eglCreateSync(EGLDisplay dpy, EGLenum type, const EGLAttrib * attrib_list);
     EGLBoolean eglDestroySync(EGLDisplay dpy, EGLSync sync);
     EGLint eglClientWaitSync(EGLDisplay dpy, EGLSync sync, EGLint flags, EGLTime timeout);
@@ -93,6 +102,7 @@ public:
     EGLSurface eglCreatePlatformWindowSurface(EGLDisplay dpy, EGLConfig config, void * native_window, const EGLAttrib * attrib_list);
     EGLSurface eglCreatePlatformPixmapSurface(EGLDisplay dpy, EGLConfig config, void * native_pixmap, const EGLAttrib * attrib_list);
     EGLBoolean eglWaitSync(EGLDisplay dpy, EGLSync sync, EGLint flags);
+#endif //EGL_VERSION_1_5
 // mkapi code generation END
 #endif // !defined(CAPI_LINK_EGL) && !defined(EGL_CAPI_NS)
 };

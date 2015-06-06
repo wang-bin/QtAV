@@ -29,26 +29,9 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
 //#include "QtAV/private/mkid.h"
-#include "QtAV/SurfaceInterop.h"
-#include <utils/OpenGLHelper.h>
-// no need to check qt4 because no ANGLE there
-#if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
-#define QTAV_HAVE_DXVA_EGL 1
-#endif
-#if QTAV_HAVE(DXVA_EGL)
-#ifdef QT_OPENGL_ES_2_ANGLE_STATIC
-#define CAPI_LINK_EGL
-#else
-#define EGL_CAPI_NS
-#endif
-#include "capi/egl_api.h"
-#include <EGL/eglext.h> //include after egl_capi.h to match types
-# if QTAV_HAVE(GUI_PRIVATE)
-#include <qpa/qplatformnativeinterface.h>
-#include <QtGui/QGuiApplication>
-# endif //QTAV_HAVE(GUI_PRIVATE)
-#endif
 #include "utils/Logger.h"
+#include "SurfaceInteropDXVA.h"
+
 
 // d3d9ex: http://dxr.mozilla.org/mozilla-central/source/dom/media/wmf/DXVA2Manager.cpp
 // TODO: add to QtAV_Compat.h?
@@ -176,156 +159,6 @@ DEFINE_GUID(DXVA_ModeMPEG4pt2_VLD_AdvSimple_Avivo,  0x7C74ADC6, 0xe2ba, 0x4ade, 
 DEFINE_GUID(DXVA_ModeHEVC_VLD_Main,                 0x5b11d51b, 0x2f4c, 0x4452, 0xbc, 0xc3, 0x9, 0xf2, 0xa1, 0x16, 0xc, 0xc0);
 DEFINE_GUID(DXVA_ModeHEVC_VLD_Main10,               0x107af0e0, 0xef1a, 0x4d19, 0xab, 0xa8, 0x67, 0xa1, 0x63, 0x7, 0x3d, 0x13);
 
-#if QTAV_HAVE(DXVA_EGL)
-#define EGL_ENSURE(x, ...) \
-    do { \
-        if (!(x)) { \
-            EGLint err = eglGetError(); \
-            qWarning("EGL error@%d<<%s. " #x ": %#x %s", __LINE__, __FILE__, err, eglQueryString(eglGetCurrentDisplay(), err)); \
-            return __VA_ARGS__; \
-        } \
-    } while(0)
-
-class SurfaceInteropDXVA : public VideoSurfaceInterop
-#ifndef EGL_CAPI_NS
-        , public egl::api
-#endif //EGL_CAPI_NS
-{
-public:
-    SurfaceInteropDXVA(IDirect3DDevice9 * d3device)
-        : _dxvaSurface(NULL)
-        , _d3device(d3device)
-        , _pboSurface(EGL_NO_SURFACE)
-        , _dxTexture(NULL)
-        , _dxSurface(NULL)
-        , _eglDisplay(EGL_NO_DISPLAY)
-        , width(0)
-        , height(0)
-    {
-    }
-    ~SurfaceInteropDXVA() {
-        releaseResource();
-    }
-    void releaseResource() {
-        SafeRelease(&_dxSurface);
-        SafeRelease(&_dxTexture);
-        if (_pboSurface != EGL_NO_SURFACE) {
-            // TODO: can not display if destroyed. eglCreatePbufferSurface always return the same address even if attributes changed. because of the same context?
-            //eglReleaseTexImage(_eglDisplay, _pboSurface, EGL_BACK_BUFFER);
-            //eglDestroySurface(_eglDisplay, _pboSurface);
-            _pboSurface = EGL_NO_SURFACE;
-        }
-    }
-
-    void setSurface(IDirect3DSurface9 * surface) {
-        _dxvaSurface = surface;
-    }
-    bool ensureSurface(int w, int h) {
-        if (_dxSurface && width == w && height == h)
-            return true;
-#if QTAV_HAVE(GUI_PRIVATE)
-        QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
-        _eglDisplay = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", QOpenGLContext::currentContext()));
-        EGLConfig egl_cfg = static_cast<EGLConfig>(nativeInterface->nativeResourceForContext("eglConfig", QOpenGLContext::currentContext()));
-#else
-#ifdef Q_OS_WIN
-#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
-#ifdef _MSC_VER
-#pragma message("ANGLE version in Qt<5.5 does not support eglQueryContext. You must upgrade your runtime ANGLE libraries")
-#else
-#warning "ANGLE version in Qt<5.5 does not support eglQueryContext. You must upgrade your runtime ANGLE libraries"
-#endif //_MSC_VER
-#endif
-#endif //Q_OS_WIN
-        _eglDisplay = eglGetCurrentDisplay();
-        EGLint cfg_id = 0;
-        EGL_ENSURE(eglQueryContext(_eglDisplay, eglGetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_TRUE, false);
-        qDebug("egl config id: %d", cfg_id);
-        EGLint nb_cfg = 0;
-        EGL_ENSURE(eglGetConfigs(_eglDisplay, NULL, 0, &nb_cfg) == EGL_TRUE, false);
-        qDebug("eglGetConfigs number: %d", nb_cfg);
-        QVector<EGLConfig> cfgs(nb_cfg); //check > 0
-        EGL_ENSURE(eglGetConfigs(_eglDisplay, cfgs.data(), cfgs.size(), &nb_cfg) == EGL_TRUE, false);
-        EGLConfig egl_cfg = NULL;
-        for (int i = 0; i < nb_cfg; ++i) {
-            EGLint id = 0;
-            eglGetConfigAttrib(_eglDisplay, cfgs[i], EGL_CONFIG_ID, &id);
-            if (id == cfg_id) {
-                egl_cfg = cfgs[i];
-                break;
-            }
-        }
-#endif
-        qDebug("egl display:%p config: %p", _eglDisplay, egl_cfg);
-
-        EGLint attribs[] = {
-            EGL_WIDTH, w,
-            EGL_HEIGHT, h,
-            EGL_TEXTURE_FORMAT, QOpenGLContext::currentContext()->format().hasAlpha() ? EGL_TEXTURE_RGBA : EGL_TEXTURE_RGB,
-            EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
-            EGL_NONE
-        };
-        EGL_ENSURE((_pboSurface = eglCreatePbufferSurface(_eglDisplay, egl_cfg, attribs)) != EGL_NO_SURFACE, false);
-        qDebug("pbuffer surface: %p", _pboSurface);
-
-        // create dx resources
-        PFNEGLQUERYSURFACEPOINTERANGLEPROC eglQuerySurfacePointerANGLE = reinterpret_cast<PFNEGLQUERYSURFACEPOINTERANGLEPROC>(eglGetProcAddress("eglQuerySurfacePointerANGLE"));
-        if (!eglQuerySurfacePointerANGLE) {
-            qWarning("EGL_ANGLE_query_surface_pointer is not supported");
-            return false;
-        }
-        HANDLE share_handle = NULL;
-        EGL_ENSURE(eglQuerySurfacePointerANGLE(_eglDisplay, _pboSurface, EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, &share_handle), false);
-
-        SafeRelease(&_dxSurface);
-        SafeRelease(&_dxTexture);
-        DX_ENSURE_OK(_d3device->CreateTexture(w, h, 1,
-                                            D3DUSAGE_RENDERTARGET,
-                                            QOpenGLContext::currentContext()->format().hasAlpha() ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
-                                            D3DPOOL_DEFAULT,
-                                            &_dxTexture,
-                                            &share_handle) , false);
-        DX_ENSURE_OK(_dxTexture->GetSurfaceLevel(0, &_dxSurface), false);
-        width = w;
-        height = h;
-        return true;
-    }
-
-    virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) {
-        Q_UNUSED(plane);
-        if (!fmt.isRGB() || !handle)
-            return NULL;
-
-        if (type == GLTextureSurface) {
-            D3DSURFACE_DESC dxvaDesc;
-            _dxvaSurface->GetDesc(&dxvaDesc);
-            if (!ensureSurface(dxvaDesc.Width, dxvaDesc.Height)) {
-                releaseResource();
-                return NULL;
-            }
-            DYGL(glBindTexture(GL_TEXTURE_2D, *((GLint*)handle)));
-            if (SUCCEEDED(_d3device->StretchRect(_dxvaSurface, NULL, _dxSurface, NULL, D3DTEXF_NONE)))
-                eglBindTexImage(_eglDisplay, _pboSurface, EGL_BACK_BUFFER);
-            DYGL(glBindTexture(GL_TEXTURE_2D, 0));
-        } else if (type == HostMemorySurface) {
-            return NULL;
-        } else {
-            return NULL;
-        }
-        return handle;
-    }
-private:
-    // TODO: move dx, egl resource out
-    IDirect3DSurface9 *_dxvaSurface;
-    IDirect3DDevice9 *_d3device;
-    EGLSurface _pboSurface;
-    IDirect3DTexture9 *_dxTexture;
-    IDirect3DSurface9 *_dxSurface;
-    EGLDisplay _eglDisplay;
-    int width, height;
-};
-#endif //QTAV_HAVE(DXVA_EGL)
-
 class VideoDecoderDXVAPrivate;
 class VideoDecoderDXVA : public VideoDecoderFFmpegHW
 {
@@ -433,17 +266,17 @@ static const dxva2_mode_t *Dxva2FindMode(const GUID *guid)
 typedef struct {
     const char    *name;
     D3DFORMAT     format;
-    AVPixelFormat avpixfmt;
+    VideoFormat::PixelFormat pixfmt;
 } d3d_format_t;
 /* XXX Prefered format must come first */
 //16-bit: https://msdn.microsoft.com/en-us/library/windows/desktop/bb970578(v=vs.85).aspx
 static const d3d_format_t d3d_formats[] = {
-    { "YV12",   (D3DFORMAT)MAKEFOURCC('Y','V','1','2'),    QTAV_PIX_FMT_C(YUV420P) },
-    { "NV12",   (D3DFORMAT)MAKEFOURCC('N','V','1','2'),    QTAV_PIX_FMT_C(NV12) },
-    { "IMC3",   (D3DFORMAT)MAKEFOURCC('I','M','C','3'),    QTAV_PIX_FMT_C(YUV420P) },
-    { "P010",   (D3DFORMAT)MAKEFOURCC('P','0','1','0'),    QTAV_PIX_FMT_C(YUV420P10LE) },
-    { "P016",   (D3DFORMAT)MAKEFOURCC('P','0','1','6'),    QTAV_PIX_FMT_C(YUV420P16LE) },
-    { NULL, D3DFMT_UNKNOWN, QTAV_PIX_FMT_C(NONE) }
+    { "YV12",   (D3DFORMAT)MAKEFOURCC('Y','V','1','2'),    VideoFormat::Format_YUV420P },
+    { "NV12",   (D3DFORMAT)MAKEFOURCC('N','V','1','2'),    VideoFormat::Format_NV12 },
+    { "IMC3",   (D3DFORMAT)MAKEFOURCC('I','M','C','3'),    VideoFormat::Format_YUV420P },
+    { "P010",   (D3DFORMAT)MAKEFOURCC('P','0','1','0'),    VideoFormat::Format_YUV420P10LE },
+    { "P016",   (D3DFORMAT)MAKEFOURCC('P','0','1','6'),    VideoFormat::Format_YUV420P16LE },
+    { NULL, D3DFMT_UNKNOWN, VideoFormat::Format_Invalid }
 };
 
 static const d3d_format_t *D3dFindFormat(D3DFORMAT format)
@@ -453,6 +286,14 @@ static const d3d_format_t *D3dFindFormat(D3DFORMAT format)
             return &d3d_formats[i];
     }
     return NULL;
+}
+
+VideoFormat::PixelFormat pixelFormatFromD3D(D3DFORMAT format)
+{
+    const d3d_format_t *fmt = D3dFindFormat(format);
+    if (fmt)
+        return fmt->pixfmt;
+    return VideoFormat::Format_Invalid;
 }
 
 static const char* getVendorName(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
@@ -575,7 +416,7 @@ public:
 
     QString vendor;
 #if QTAV_HAVE(DXVA_EGL)
-    VideoSurfaceInteropPtr surface_interop; //may be still used in video frames when decoder is destroyed
+    dxva::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
 #endif //QTAV_HAVE(DXVA_EGL)
 };
 
@@ -611,10 +452,11 @@ VideoFrame VideoDecoderDXVA::frame()
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
 #if QTAV_HAVE(DXVA_EGL)
     if (copyMode() == ZeroCopy) {
-        ((SurfaceInteropDXVA*)d.surface_interop.data())->setSurface(d3d);
-        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
+        dxva::SurfaceInteropDXVA *interop = new dxva::SurfaceInteropDXVA(d.interop_res);
+        interop->setSurface(d3d);
+        VideoFrame f(width(), height(), VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
-        f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
+        f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(d.frame->pkt_pts);
         return f;
     }
@@ -634,18 +476,17 @@ VideoFrame VideoDecoderDXVA::frame()
         }
     };
 
-    //picth >= desc.Width
-    //D3DSURFACE_DESC desc;
-    //d3d->GetDesc(&desc);
     D3DLOCKED_RECT lock;
     ScopedD3DLock(d3d, &lock);
     if (lock.Pitch == 0) {
         return VideoFrame();
     }
-
-    const VideoFormat fmt = VideoFormat((int)D3dFindFormat(d.render)->avpixfmt);
+    //picth >= desc.Width
+    D3DSURFACE_DESC desc;
+    d3d->GetDesc(&desc);
+    const VideoFormat fmt = VideoFormat(pixelFormatFromD3D(desc.Format));
     if (!fmt.isValid()) {
-        qWarning("unsupported dxva pixel format: %#x", d.render);
+        qWarning("unsupported dxva pixel format: %#x", desc.Format);
         return VideoFrame();
     }
     //YV12 need swap, not imc3?
@@ -654,7 +495,7 @@ VideoFrame VideoDecoderDXVA::frame()
     // 3rd plane is not used for nv12
     int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
     uint8_t *src[] = { (uint8_t*)lock.pBits, 0, 0}; //compute chroma later
-    const bool swap_uv = d.render ==  MAKEFOURCC('I','M','C','3');
+    const bool swap_uv = desc.Format ==  MAKEFOURCC('I','M','C','3');
     return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
 }
 
@@ -1188,7 +1029,7 @@ bool VideoDecoderDXVAPrivate::open()
     qDebug("using D3D9Ex: %d", !!devEx);
     SafeRelease(&devEx);
 #if QTAV_HAVE(DXVA_EGL)
-    surface_interop = VideoSurfaceInteropPtr(new SurfaceInteropDXVA(d3ddev));
+    interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
 #endif //QTAV_HAVE(DXVA_EGL)
     return true;
 error:

@@ -196,7 +196,9 @@ include(../depends/dllapi/src/libdllapi.pri)
 }
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
-    SOURCES += codec/video/VideoDecoderDXVA.cpp
+    HEADERS += codec/video/SurfaceInteropDXVA.h
+    SOURCES += codec/video/VideoDecoderDXVA.cpp \
+               codec/video/SurfaceInteropDXVA.cpp
     LIBS += -lole32
 }
 config_vaapi* {

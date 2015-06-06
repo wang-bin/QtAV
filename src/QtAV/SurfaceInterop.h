@@ -52,6 +52,7 @@ public:
         Q_UNUSED(plane);
         return 0;
     }
+    // TODO: SurfaceType. unmap is currenty used by opengl rendering
     virtual void unmap(void* handle) { Q_UNUSED(handle);}
     /*!
      * \brief createHandle
