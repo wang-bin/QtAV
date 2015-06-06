@@ -220,7 +220,7 @@ public:
     bool supports_derive;
 
     QString vendor;
-    VideoSurfaceInteropPtr surface_interop; //may be still used in video frames when decoder is destroyed
+    InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
 };
 
 
@@ -315,11 +315,12 @@ VideoFrame VideoDecoderVAAPI::frame()
             qWarning("VAAPI - Unable to find surface");
             return VideoFrame();
         }
-        ((SurfaceInteropVAAPI*)d.surface_interop.data())->setSurface(p);
+        SurfaceInteropVAAPI *interop = new SurfaceInteropVAAPI(d.interop_res);
+        interop->setSurface(p);
 
         VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
-        f.setMetaData("surface_interop", QVariant::fromValue(d.surface_interop));
+        f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
         return f;
     }
@@ -539,9 +540,9 @@ bool VideoDecoderVAAPIPrivate::open()
     VA_ENSURE_TRUE(vaCreateConfig(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1, &config_id), false);
     supports_derive = false;
     if (display_type == VideoDecoderVAAPI::GLX)
-        surface_interop = VideoSurfaceInteropPtr(new VAAPI_GLX_Interop());
+        interop_res = InteropResourcePtr(new GLXInteropResource());
     else if (display_type == VideoDecoderVAAPI::X11)
-        surface_interop = VideoSurfaceInteropPtr(new VAAPI_X_GLX_Interop());
+        interop_res = InteropResourcePtr(new X11InteropResource());
     return true;
 }
 

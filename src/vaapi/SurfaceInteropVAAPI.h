@@ -46,46 +46,51 @@
 namespace QtAV {
 namespace vaapi {
 
+
+class InteropResource
+{
+public:
+    // egl supports yuv extension
+    virtual bool map(const surface_ptr& surface, GLuint tex, int plane) = 0;
+    virtual bool unmap(GLuint tex) { Q_UNUSED(tex); return true;}
+};
+typedef QSharedPointer<InteropResource> InteropResourcePtr;
+
 // inherits VAAPI_GLX, VAAPI_X11: unload va lib in dtor, va-xxx is not loaded and may affect surface_t dtor which call vaTerminate()
 // dtor: ~SurfaceInteropVAAPI()=>~surface_t()=>~VAAPI_X11()=>~VAAPI_GLX()=>~VideoSurfaceInterop()
-class SurfaceInteropVAAPI : public VideoSurfaceInterop,  public VAAPI_GLX, public VAAPI_X11
+class SurfaceInteropVAAPI Q_DECL_FINAL: public VideoSurfaceInterop
 {
 public:
-    void setSurface(const surface_ptr& surface) { //in decoding thread. map in rendering thread
-        QMutexLocker lock(&mutex);
-        m_surface = surface;
-    }
-    void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE Q_DECL_FINAL;
+    SurfaceInteropVAAPI(const InteropResourcePtr& res) : m_resource(res) {}
+    void setSurface(const surface_ptr& surface) { m_surface = surface;}
+    void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
+    void unmap(void *handle) Q_DECL_OVERRIDE;
 protected:
     void* mapToHost(const VideoFormat &format, void *handle, int plane);
-    virtual void* mapToTexture(const VideoFormat &fmt, void *handle, int plane) = 0;
-
-    surface_ptr m_surface; //FIXME: why vaTerminate() crash (in ~display_t()) if put m_surface here?
 private:
-    QMutex mutex;
+    surface_ptr m_surface; //FIXME: why vaTerminate() crash (in ~display_t()) if put m_surface here?
+    InteropResourcePtr m_resource;
 };
-// TODO: move create glx surface to decoder, interop only map/unmap, 1 interop per frame
 // load/resolve symbols only once in decoder and pass a VAAPI_XXX ptr
 // or use pool
-class VAAPI_GLX_Interop Q_DECL_FINAL: public SurfaceInteropVAAPI
+
+class GLXInteropResource Q_DECL_FINAL: public InteropResource, public VAAPI_GLX
 {
 public:
-    VAAPI_GLX_Interop();
-    // return glx surface
-    surface_glx_ptr createGLXSurface(void* handle);
-    void* mapToTexture(const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
+    bool map(const surface_ptr &surface, GLuint tex, int) Q_DECL_OVERRIDE;
 private:
-    QMap<GLuint*,surface_glx_ptr> glx_surfaces;
+    surface_glx_ptr surfaceGLX(const display_ptr& dpy, GLuint tex);
+    QMap<GLuint,surface_glx_ptr> glx_surfaces; // render to different texture. surface_glx_ptr is created with texture
 };
 
 #ifndef QT_OPENGL_ES_2
-class VAAPI_X_GLX_Interop Q_DECL_FINAL: public SurfaceInteropVAAPI
+class X11InteropResource Q_DECL_FINAL: public InteropResource, public VAAPI_X11
 {
 public:
-    VAAPI_X_GLX_Interop();
-    ~VAAPI_X_GLX_Interop();
-    void* mapToTexture(const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
-    void unmap(void *handle) Q_DECL_OVERRIDE;
+    X11InteropResource();
+    ~X11InteropResource();
+    bool map(const surface_ptr &surface, GLuint tex, int) Q_DECL_OVERRIDE;
+    bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:
     bool ensureGLX();
     bool ensurePixmaps(int w, int h);
@@ -101,7 +106,8 @@ private:
     static glXReleaseTexImage_t glXReleaseTexImage;
 };
 #endif //QT_OPENGL_ES_2
-} //namespace QtAV
+
 } //namespace vaapi
+} //namespace QtAV
 
 #endif // QTAV_SURFACEINTEROPVAAPI_H

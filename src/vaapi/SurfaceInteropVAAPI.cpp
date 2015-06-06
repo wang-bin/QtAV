@@ -22,9 +22,11 @@
 #include "SurfaceInteropVAAPI.h"
 #include "utils/OpenGLHelper.h"
 #include "QtAV/VideoFrame.h"
+#include "utils/Logger.h"
 #ifndef QT_OPENGL_ES_2
 #include <va/va_x11.h>
 #endif
+
 namespace QtAV {
 namespace vaapi {
 
@@ -34,27 +36,34 @@ void* SurfaceInteropVAAPI::map(SurfaceType type, const VideoFormat &fmt, void *h
         return NULL;
     if (!fmt.isRGB())
         return 0;
-    QMutexLocker lock(&mutex);
+
     if (!m_surface)
         return 0;
     if (type == GLTextureSurface) {
-        return mapToTexture(fmt, handle, plane);
+        if (m_resource->map(m_surface, *((GLuint*)handle), plane))
+            return handle;
+        return NULL;
     } else if (type == HostMemorySurface) {
         return mapToHost(fmt, handle, plane);
     }
     return NULL;
 }
 
+void SurfaceInteropVAAPI::unmap(void *handle)
+{
+    m_resource->unmap(*((GLuint*)handle));
+}
+
 void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
     Q_UNUSED(plane);
-    int nb_fmts = vaMaxNumImageFormats(m_surface->display());
+    int nb_fmts = vaMaxNumImageFormats(m_surface->vadisplay());
     //av_mallocz_array
     VAImageFormat *p_fmt = (VAImageFormat*)calloc(nb_fmts, sizeof(*p_fmt));
     if (!p_fmt) {
         return NULL;
     }
-    if (vaQueryImageFormats(m_surface->display(), p_fmt, &nb_fmts)) {
+    if (vaQueryImageFormats(m_surface->vadisplay(), p_fmt, &nb_fmts)) {
         free(p_fmt);
         return NULL;
     }
@@ -64,14 +73,14 @@ void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, in
             p_fmt[i].fourcc == VA_FOURCC_IYUV ||
             p_fmt[i].fourcc == VA_FOURCC_NV12) {
             qDebug("vaCreateImage: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
-            if (vaCreateImage(m_surface->display(), &p_fmt[i], m_surface->width(), m_surface->height(), &image) != VA_STATUS_SUCCESS) {
+            if (vaCreateImage(m_surface->vadisplay(), &p_fmt[i], m_surface->width(), m_surface->height(), &image) != VA_STATUS_SUCCESS) {
                 image.image_id = VA_INVALID_ID;
                 qDebug("vaCreateImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 continue;
             }
             /* Validate that vaGetImage works with this format */
-            if (vaGetImage(m_surface->display(), m_surface->get(), 0, 0, m_surface->width(), m_surface->height(), image.image_id) != VA_STATUS_SUCCESS) {
-                vaDestroyImage(m_surface->display(), image.image_id);
+            if (vaGetImage(m_surface->vadisplay(), m_surface->get(), 0, 0, m_surface->width(), m_surface->height(), image.image_id) != VA_STATUS_SUCCESS) {
+                vaDestroyImage(m_surface->vadisplay(), image.image_id);
                 qDebug("vaGetImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
                 image.image_id = VA_INVALID_ID;
                 continue;
@@ -83,7 +92,7 @@ void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, in
     if (image.image_id == VA_INVALID_ID)
         return NULL;
     void *p_base;
-    VA_ENSURE_TRUE(vaMapBuffer(m_surface->display(), image.buf, &p_base), NULL);
+    VA_ENSURE_TRUE(vaMapBuffer(m_surface->vadisplay(), image.buf, &p_base), NULL);
 
     VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
     bool swap_uv = image.format.fourcc != VA_FOURCC_NV12;
@@ -100,7 +109,7 @@ void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, in
     }
     if (pixfmt == VideoFormat::Format_Invalid) {
         qWarning("unsupported vaapi pixel format: %#x", image.format.fourcc);
-        vaDestroyImage(m_surface->display(), image.image_id);
+        vaDestroyImage(m_surface->vadisplay(), image.image_id);
         return NULL;
     }
     const VideoFormat fmt(pixfmt);
@@ -119,8 +128,8 @@ void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, in
     frame.setBytesPerLine(pitch);
     frame = frame.to(format);
 
-    VAWARN(vaUnmapBuffer(m_surface->display(), image.buf));
-    vaDestroyImage(m_surface->display(), image.image_id);
+    VAWARN(vaUnmapBuffer(m_surface->vadisplay(), image.buf));
+    vaDestroyImage(m_surface->vadisplay(), image.image_id);
     image.image_id = VA_INVALID_ID;
     VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
     frame.setTimestamp(f->timestamp());
@@ -128,46 +137,38 @@ void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, in
     return f;
 }
 
-VAAPI_GLX_Interop::VAAPI_GLX_Interop() : SurfaceInteropVAAPI()
+surface_glx_ptr GLXInteropResource::surfaceGLX(const display_ptr &dpy, GLuint tex)
 {
-}
-
-surface_glx_ptr VAAPI_GLX_Interop::createGLXSurface(void *handle)
-{
-    GLuint tex = *((GLuint*)handle);
-    surface_glx_ptr glx(new surface_glx_t());
-    glx->set(m_surface);
+    surface_glx_ptr glx = glx_surfaces[tex];
+    if (glx)
+        return glx;
+    glx = surface_glx_ptr(new surface_glx_t(dpy));
     if (!glx->create(tex))
         return surface_glx_ptr();
-    glx_surfaces[(GLuint*)handle] = glx;
+    glx_surfaces[tex] = glx;
     return glx;
 }
 
-void* VAAPI_GLX_Interop::mapToTexture(const VideoFormat &fmt, void *handle, int plane)
+bool GLXInteropResource::map(const surface_ptr& surface, GLuint tex, int)
 {
-    Q_UNUSED(fmt);
-    Q_UNUSED(plane);
-    surface_glx_ptr glx = glx_surfaces[(GLuint*)handle];
+    surface_glx_ptr glx = surfaceGLX(surface->display(), tex);
     if (!glx) {
-        glx = createGLXSurface(handle);
-        if (!glx) {
-            qWarning("Fail to create vaapi glx surface");
-            return 0;
-        }
+        qWarning("Fail to create vaapi glx surface");
+        return false;
     }
-    glx->set(m_surface);
-    if (!glx->copy())
-        return 0;
-    VAWARN(vaSyncSurface(m_surface->display(), m_surface->get()));
-    return handle;
+    if (!glx->copy(surface))
+        return false;
+    VAWARN(vaSyncSurface(surface->vadisplay(), surface->get()));
+    return true;
 }
 
 #ifndef QT_OPENGL_ES_2
-VAAPI_X_GLX_Interop::glXReleaseTexImage_t VAAPI_X_GLX_Interop::glXReleaseTexImage = 0;
-VAAPI_X_GLX_Interop::glXBindTexImage_t VAAPI_X_GLX_Interop::glXBindTexImage = 0;
+X11InteropResource::glXReleaseTexImage_t X11InteropResource::glXReleaseTexImage = 0;
+X11InteropResource::glXBindTexImage_t X11InteropResource::glXBindTexImage = 0;
 
-VAAPI_X_GLX_Interop::VAAPI_X_GLX_Interop()
-    : SurfaceInteropVAAPI()
+X11InteropResource::X11InteropResource()
+    : InteropResource()
+    , VAAPI_X11()
     , xdisplay(0)
     , fbc(0)
     , pixmap(0)
@@ -176,7 +177,7 @@ VAAPI_X_GLX_Interop::VAAPI_X_GLX_Interop()
     , height(0)
 {}
 
-VAAPI_X_GLX_Interop::~VAAPI_X_GLX_Interop()
+X11InteropResource::~X11InteropResource()
 {
     if (glxpixmap) {
         glXReleaseTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT);
@@ -190,7 +191,7 @@ VAAPI_X_GLX_Interop::~VAAPI_X_GLX_Interop()
     pixmap = 0;
 }
 
-bool VAAPI_X_GLX_Interop::ensureGLX()
+bool X11InteropResource::ensureGLX()
 {
     if (fbc)
         return true;
@@ -238,7 +239,7 @@ bool VAAPI_X_GLX_Interop::ensureGLX()
     return true;
 }
 
-bool VAAPI_X_GLX_Interop::ensurePixmaps(int w, int h)
+bool X11InteropResource::ensurePixmaps(int w, int h)
 {
     if (pixmap && width == w && height == h)
         return true;
@@ -267,33 +268,32 @@ bool VAAPI_X_GLX_Interop::ensurePixmaps(int w, int h)
     return true;
 }
 
-void* VAAPI_X_GLX_Interop::mapToTexture(const VideoFormat &fmt, void *handle, int plane)
+bool X11InteropResource::map(const surface_ptr& surface, GLuint tex, int)
 {
-    Q_UNUSED(fmt);
-    Q_UNUSED(plane);
-    if (!ensurePixmaps(m_surface->width(), m_surface->height()))
-        return 0;
-    VAWARN(vaSyncSurface(m_surface->display(), m_surface->get()));
+    if (!ensurePixmaps(surface->width(), surface->height()))
+        return false;
+    VAWARN(vaSyncSurface(surface->vadisplay(), surface->get()));
 
-    VA_ENSURE_TRUE(vaPutSurface(m_surface->display(), m_surface->get(), pixmap
-                                , 0, 0, m_surface->width(), m_surface->height()
-                                , 0, 0, m_surface->width(), m_surface->height()
+    VA_ENSURE_TRUE(vaPutSurface(surface->vadisplay(), surface->get(), pixmap
+                                , 0, 0, surface->width(), surface->height()
+                                , 0, 0, surface->width(), surface->height()
                                 , NULL, 0, VA_FRAME_PICTURE | VA_SRC_BT709)
                    , NULL);
 
     XSync((::Display*)xdisplay, False);
-    DYGL(glBindTexture(GL_TEXTURE_2D, *((GLuint*)handle)));
+    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     glXBindTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT, NULL);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
 
-    return handle;
+    return true;
 }
 
-void VAAPI_X_GLX_Interop::unmap(void *handle)
+bool X11InteropResource::unmap(GLuint tex)
 {
-    DYGL(glBindTexture(GL_TEXTURE_2D, *((GLuint*)handle)));
+    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     glXReleaseTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
+    return true;
 }
 
 #endif //QT_OPENGL_ES_2

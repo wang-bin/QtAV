@@ -233,7 +233,8 @@ public:
     VASurfaceID get() const { return m_id;}
     int width() const { return m_width;}
     int height() const { return m_height;}
-    VADisplay display() const { return m_display->get();}
+    display_ptr display() const { return m_display;}
+    VADisplay vadisplay() const { return m_display->get();}
 private:
     VASurfaceID m_id;
     display_ptr m_display;
@@ -243,32 +244,28 @@ typedef SharedPtr<surface_t> surface_ptr;
 
 class surface_glx_t : public VAAPI_GLX {
 public:
-    surface_glx_t() : m_glx(0) {}
+    surface_glx_t(const display_ptr& dpy) : m_dpy(dpy), m_glx(0) {}
     ~surface_glx_t() {destroy();}
-    void set(const surface_ptr& surface) { m_surface = surface;}
     bool create(GLuint tex) {
         destroy();
-        VA_ENSURE_TRUE(vaCreateSurfaceGLX(display(), GL_TEXTURE_2D, tex, &m_glx), false);
+        VA_ENSURE_TRUE(vaCreateSurfaceGLX(m_dpy->get(), GL_TEXTURE_2D, tex, &m_glx), false);
         return true;
     }
     bool destroy() {
         if (!m_glx)
             return true;
-        VA_ENSURE_TRUE(vaDestroySurfaceGLX(display(), m_glx), false);
+        VA_ENSURE_TRUE(vaDestroySurfaceGLX(m_dpy->get(), m_glx), false);
         m_glx = 0;
         return true;
     }
-    bool copy() {
+    bool copy(const surface_ptr& surface) {
         if (!m_glx)
             return false;
-        VA_ENSURE_TRUE(vaCopySurfaceGLX(display(), m_glx, m_surface->get(), VA_FRAME_PICTURE | VA_SRC_BT709), false);
+        VA_ENSURE_TRUE(vaCopySurfaceGLX(m_dpy->get(), m_glx, surface->get(), VA_FRAME_PICTURE | VA_SRC_BT709), false);
         return true;
     }
-    VADisplay display() const { return m_surface->display();}
-    surface_t* surface() { return m_surface.get();}
-    void* glxSurface() { return m_glx;}
 private:
-    surface_ptr m_surface;
+    display_ptr m_dpy;
     void* m_glx;
 };
 typedef QSharedPointer<surface_glx_t> surface_glx_ptr; //store in a vector
