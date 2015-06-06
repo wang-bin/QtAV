@@ -90,7 +90,7 @@ void RegisterVideoDecoderVDA_Man()
 }
 
 
-class VideoDecoderVDAPrivate : public VideoDecoderFFmpegHWPrivate
+class VideoDecoderVDAPrivate Q_DECL_FINAL: public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderVDAPrivate()
@@ -103,14 +103,14 @@ public:
         description = "VDA";
         memset(&hw_ctx, 0, sizeof(hw_ctx));
     }
-    ~VideoDecoderVDAPrivate() {}
-    virtual bool open();
-    virtual void close();
+    ~VideoDecoderVDAPrivate() {qDebug("~VideoDecoderVDAPrivate");}
+    bool open() Q_DECL_OVERRIDE;
+    void close() Q_DECL_OVERRIDE;
 
-    virtual bool setup(AVCodecContext *avctx);
-    virtual bool getBuffer(void **opaque, uint8_t **data);
-    virtual void releaseBuffer(void *opaque, uint8_t *data);
-    virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VDA_VLD);}
+    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
+    void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
+    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(VDA_VLD);}
 
     VideoDecoderVDA::PixelFormat out_fmt;
     struct vda_context  hw_ctx;
@@ -227,11 +227,43 @@ VideoFrame VideoDecoderVDA::frame()
         ~SurfaceInteropCVBuffer() {
             CVPixelBufferRelease(cvbuf);
         }
+        void* mapToHost(const VideoFormat &format, void *handle, int plane) {
+            Q_UNUSED(plane);
+            if (!format.isRGB())
+                return NULL;
+            CVPixelBufferLockBaseAddress(cvbuf, 0);
+            const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(cvbuf)));
+            if (!fmt.isValid()) {
+                CVPixelBufferUnlockBaseAddress(cvbuf, 0);
+                return NULL;
+            }
+            const int w = CVPixelBufferGetWidth(cvbuf);
+            const int h = CVPixelBufferGetHeight(cvbuf);
+            uint8_t *src[3];
+            int pitch[3];
+            for (int i = 0; i <fmt.planeCount(); ++i) {
+                // get address results in internal copy
+                src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(cvbuf, i);
+                pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cvbuf, i);
+            }
+            CVPixelBufferUnlockBaseAddress(cvbuf, 0);
+            //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
+            VideoFrame frame = VideoFrame(w, h, fmt);
+            frame.setBits(src);
+            frame.setBytesPerLine(pitch);
+            frame = frame.to(format);
+            VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
+            frame.setTimestamp(f->timestamp());
+            *f = frame;
+            return f;
+        }
         virtual void* map(SurfaceType type, const VideoFormat& fmt, void* handle = 0, int plane = 0) Q_DECL_OVERRIDE {
             Q_UNUSED(fmt);
             if (!glinterop)
                 return 0;
-            if (type == HostMemorySurface) {}
+            if (type == HostMemorySurface) {
+                return mapToHost(fmt, handle, plane);
+            }
             if (type != GLTextureSurface)
                 return 0;
             // https://www.opengl.org/registry/specs/APPLE/rgb_422.txt
@@ -322,11 +354,13 @@ VideoFrame VideoDecoderVDA::frame()
     VideoFrame f;
     if (zero_copy || copyMode() == VideoDecoderFFmpegHW::LazyCopy) {
         f = VideoFrame(width(), height(), fmt);
-        f.setBits(src);
         f.setBytesPerLine(pitch);
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
-        if (zero_copy)
+        if (zero_copy) {
             f.setMetaData("target", "rect");
+        } else {
+            f.setBits(src); // only set for copy back mode
+        }
     } else {
         f = copyToFrame(fmt, d.height, src, pitch, false);
     }
@@ -382,7 +416,7 @@ bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
     }
     avctx->hwaccel_context = &hw_ctx;
     initUSWC(hw_ctx.width);
-    qDebug("VDA decoder created");
+    qDebug() << "VDA decoder created. format: " << format_from_cv(out_fmt);
     return true;
 }
 
