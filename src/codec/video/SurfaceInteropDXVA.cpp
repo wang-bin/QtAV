@@ -123,9 +123,8 @@ void EGLInteropResource::releaseResource() {
     SafeRelease(&dx_surface);
     SafeRelease(&dx_texture);
     if (egl_surface != EGL_NO_SURFACE) {
-        // TODO: can not display if destroyed. eglCreatePbufferSurface always return the same address even if attributes changed. because of the same context?
-        //eglReleaseTexImage(egl_dpy, egl_surface, EGL_BACK_BUFFER);
-        //eglDestroySurface(egl_dpy, egl_surface);
+        eglReleaseTexImage(egl_dpy, egl_surface, EGL_BACK_BUFFER);
+        eglDestroySurface(egl_dpy, egl_surface);
         egl_surface = EGL_NO_SURFACE;
     }
 }
