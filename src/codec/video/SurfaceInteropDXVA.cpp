@@ -33,6 +33,8 @@
 #include "SurfaceInteropDXVA.h"
 
 namespace QtAV {
+extern VideoFormat::PixelFormat pixelFormatFromD3D(D3DFORMAT format);
+
 namespace dxva {
 
 template <class T> void SafeRelease(T **ppT)
@@ -88,7 +90,68 @@ void SurfaceInteropDXVA::unmap(void *handle)
 
 void* SurfaceInteropDXVA::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
-    return NULL;
+    Q_UNUSED(plane);
+    class ScopedD3DLock {
+        IDirect3DSurface9 *mpD3D;
+    public:
+        ScopedD3DLock(IDirect3DSurface9* d3d, D3DLOCKED_RECT *rect) : mpD3D(d3d) {
+            if (FAILED(mpD3D->LockRect(rect, NULL, D3DLOCK_READONLY))) {
+                qWarning("Failed to lock surface");
+                mpD3D = 0;
+            }
+        }
+        ~ScopedD3DLock() {
+            if (mpD3D)
+                mpD3D->UnlockRect();
+        }
+    };
+
+    D3DLOCKED_RECT lock;
+    ScopedD3DLock(m_surface, &lock);
+    if (lock.Pitch == 0)
+        return NULL;
+
+    //picth >= desc.Width
+    D3DSURFACE_DESC desc;
+    m_surface->GetDesc(&desc);
+    const VideoFormat fmt = VideoFormat(pixelFormatFromD3D(desc.Format));
+    if (!fmt.isValid()) {
+        qWarning("unsupported dxva pixel format: %#x", desc.Format);
+        return NULL;
+    }
+    //YV12 need swap, not imc3?
+    // imc3 U V pitch == Y pitch, but half of the U/V plane is space. we convert to yuv420p here
+    // nv12 bpp(1)==1
+    // 3rd plane is not used for nv12
+    int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
+    quint8 *src[] = { (quint8*)lock.pBits, 0, 0}; //compute chroma later
+    Q_ASSERT(src[0] && pitch[0] > 0);
+    const int nb_planes = fmt.planeCount();
+    const int chroma_pitch = nb_planes > 1 ? fmt.bytesPerLine(pitch[0], 1) : 0;
+    const int chroma_h = fmt.chromaHeight(desc.Height);
+    int h[] = { (int)desc.Height, 0, 0};
+    for (int i = 1; i < nb_planes; ++i) {
+        h[i] = chroma_h;
+        // set chroma address and pitch if not set
+        if (pitch[i] <= 0)
+            pitch[i] = chroma_pitch;
+        if (!src[i])
+            src[i] = src[i-1] + pitch[i-1]*h[i-1];
+    }
+    const bool swap_uv = desc.Format ==  MAKEFOURCC('I','M','C','3');
+    if (swap_uv) {
+        std::swap(src[1], src[2]);
+        std::swap(pitch[1], pitch[2]);
+    }
+    VideoFrame frame = VideoFrame(desc.Width, desc.Height, fmt); //FIXME: not surface size
+    frame.setBits(src);
+    frame.setBytesPerLine(pitch);
+    frame = frame.to(format);
+
+    VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
+    frame.setTimestamp(f->timestamp());
+    *f = frame;
+    return f;
 }
 
 #if QTAV_HAVE(DXVA_EGL)

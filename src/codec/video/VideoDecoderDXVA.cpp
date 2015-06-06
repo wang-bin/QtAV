@@ -266,17 +266,17 @@ static const dxva2_mode_t *Dxva2FindMode(const GUID *guid)
 typedef struct {
     const char    *name;
     D3DFORMAT     format;
-    AVPixelFormat avpixfmt;
+    VideoFormat::PixelFormat pixfmt;
 } d3d_format_t;
 /* XXX Prefered format must come first */
 //16-bit: https://msdn.microsoft.com/en-us/library/windows/desktop/bb970578(v=vs.85).aspx
 static const d3d_format_t d3d_formats[] = {
-    { "YV12",   (D3DFORMAT)MAKEFOURCC('Y','V','1','2'),    QTAV_PIX_FMT_C(YUV420P) },
-    { "NV12",   (D3DFORMAT)MAKEFOURCC('N','V','1','2'),    QTAV_PIX_FMT_C(NV12) },
-    { "IMC3",   (D3DFORMAT)MAKEFOURCC('I','M','C','3'),    QTAV_PIX_FMT_C(YUV420P) },
-    { "P010",   (D3DFORMAT)MAKEFOURCC('P','0','1','0'),    QTAV_PIX_FMT_C(YUV420P10LE) },
-    { "P016",   (D3DFORMAT)MAKEFOURCC('P','0','1','6'),    QTAV_PIX_FMT_C(YUV420P16LE) },
-    { NULL, D3DFMT_UNKNOWN, QTAV_PIX_FMT_C(NONE) }
+    { "YV12",   (D3DFORMAT)MAKEFOURCC('Y','V','1','2'),    VideoFormat::Format_YUV420P },
+    { "NV12",   (D3DFORMAT)MAKEFOURCC('N','V','1','2'),    VideoFormat::Format_NV12 },
+    { "IMC3",   (D3DFORMAT)MAKEFOURCC('I','M','C','3'),    VideoFormat::Format_YUV420P },
+    { "P010",   (D3DFORMAT)MAKEFOURCC('P','0','1','0'),    VideoFormat::Format_YUV420P10LE },
+    { "P016",   (D3DFORMAT)MAKEFOURCC('P','0','1','6'),    VideoFormat::Format_YUV420P16LE },
+    { NULL, D3DFMT_UNKNOWN, VideoFormat::Format_Invalid }
 };
 
 static const d3d_format_t *D3dFindFormat(D3DFORMAT format)
@@ -286,6 +286,14 @@ static const d3d_format_t *D3dFindFormat(D3DFORMAT format)
             return &d3d_formats[i];
     }
     return NULL;
+}
+
+VideoFormat::PixelFormat pixelFormatFromD3D(D3DFORMAT format)
+{
+    const d3d_format_t *fmt = D3dFindFormat(format);
+    if (fmt)
+        return fmt->pixfmt;
+    return VideoFormat::Format_Invalid;
 }
 
 static const char* getVendorName(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
@@ -446,7 +454,7 @@ VideoFrame VideoDecoderDXVA::frame()
     if (copyMode() == ZeroCopy) {
         dxva::SurfaceInteropDXVA *interop = new dxva::SurfaceInteropDXVA(d.interop_res);
         interop->setSurface(d3d);
-        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
+        VideoFrame f(width(), height(), VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(d.frame->pkt_pts);
@@ -468,18 +476,17 @@ VideoFrame VideoDecoderDXVA::frame()
         }
     };
 
-    //picth >= desc.Width
-    //D3DSURFACE_DESC desc;
-    //d3d->GetDesc(&desc);
     D3DLOCKED_RECT lock;
     ScopedD3DLock(d3d, &lock);
     if (lock.Pitch == 0) {
         return VideoFrame();
     }
-
-    const VideoFormat fmt = VideoFormat((int)D3dFindFormat(d.render)->avpixfmt);
+    //picth >= desc.Width
+    D3DSURFACE_DESC desc;
+    d3d->GetDesc(&desc);
+    const VideoFormat fmt = VideoFormat(pixelFormatFromD3D(desc.Format));
     if (!fmt.isValid()) {
-        qWarning("unsupported dxva pixel format: %#x", d.render);
+        qWarning("unsupported dxva pixel format: %#x", desc.Format);
         return VideoFrame();
     }
     //YV12 need swap, not imc3?
@@ -488,7 +495,7 @@ VideoFrame VideoDecoderDXVA::frame()
     // 3rd plane is not used for nv12
     int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
     uint8_t *src[] = { (uint8_t*)lock.pBits, 0, 0}; //compute chroma later
-    const bool swap_uv = d.render ==  MAKEFOURCC('I','M','C','3');
+    const bool swap_uv = desc.Format ==  MAKEFOURCC('I','M','C','3');
     return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
 }
 
