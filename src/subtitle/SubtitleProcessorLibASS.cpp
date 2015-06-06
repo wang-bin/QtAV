@@ -19,17 +19,17 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-//#define ASS_CAPI_NS // do not unload() manually!
-//#define CAPI_LINK_ASS
-#include "ass_api.h"
-#include <stdarg.h>
-#include <string>  //include after ass_api.h, stdio.h is included there in a different namespace
-
 #include "QtAV/private/SubtitleProcessor.h"
 #include "QtAV/private/prepost.h"
 #include "QtAV/Packet.h"
 #include "PlainText.h"
 #include "utils/Logger.h"
+
+//#define ASS_CAPI_NS // do not unload() manually!
+//#define CAPI_LINK_ASS
+#include "ass_api.h"
+#include <stdarg.h>
+#include <string>  //include after ass_api.h, stdio.h is included there in a different namespace
 
 namespace QtAV {
 
