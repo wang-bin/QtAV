@@ -326,11 +326,8 @@ public:
     VideoDecoderDXVAPrivate():
         VideoDecoderFFmpegHWPrivate()
     {
-        // TODO: qt5.4 mingw dygl can not resolve egl symbols and crash
-#if defined(_MSC_VER)
         if (OpenGLHelper::isOpenGLES())
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
-#endif
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
