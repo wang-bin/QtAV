@@ -290,6 +290,7 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int)
 #endif //QTAV_HAVE(DXVA_EGL)
 
 #if QTAV_HAVE(DXVA_GL)
+
 //dynamic gl or desktop gl
 #define WGL_ENSURE(x, ...) \
     do { \
@@ -346,14 +347,7 @@ GLInteropResource::GLInteropResource(IDirect3DDevice9 *d3device)
 
 GLInteropResource::~GLInteropResource()
 {
-    if (interop_obj) {
-        WGL_WARN(wgl->DXUnregisterObjectNV(interop_dev, interop_obj));
-        interop_obj = NULL;
-    }
-    if (interop_dev) {
-        WGL_WARN(wgl->DXCloseDeviceNV(interop_dev));
-        interop_dev = NULL;
-    }
+    // FIXME: why unregister/close interop obj/dev here will crash(tested on intel driver)? must be in current opengl context?
     if (wgl) {
         delete wgl;
         wgl = NULL;
@@ -367,7 +361,6 @@ void GLInteropResource::releaseResource() {
     SafeRelease(&dx_texture);
 }
 
-#define REGISTER_ON_MAP 1
 bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int)
 {
     D3DSURFACE_DESC dxvaDesc;
@@ -376,12 +369,14 @@ bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int)
         releaseResource();
         return false;
     }
-#if REGISTER_ON_MAP
+    // open/close and register/unregster in every map/unmap to ensure called in current context and avoid crash (tested on intel driver)
+    // interop operations begin
+    WGL_ENSURE((interop_dev = wgl->DXOpenDeviceNV(d3ddev)) != NULL, false);
     // call in ensureResource or in map?
-    // TODO: WGL_ACCESS_READ_ONLY_NV?
     WGL_ENSURE((interop_obj = wgl->DXRegisterObjectNV(interop_dev, dx_surface, tex, GL_TEXTURE_2D, WGL_ACCESS_READ_ONLY_NV)) != NULL, false);
-#endif //REGISTER_ON_MAP
+    // prepare dx resources for gl
     DX_ENSURE_OK(d3ddev->StretchRect(surface, NULL, dx_surface, NULL, D3DTEXF_NONE), false);
+    // lock dx resources
     WGL_ENSURE(wgl->DXLockObjectsNV(interop_dev, 1, &interop_obj), false);
     WGL_ENSURE(wgl->DXObjectAccessNV(interop_obj, WGL_ACCESS_READ_ONLY_NV), false);
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
@@ -391,13 +386,15 @@ bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int)
 bool GLInteropResource::unmap(GLuint tex)
 {
     Q_UNUSED(tex);
-    if (!interop_obj)
+    if (!interop_obj || !interop_dev)
         return false;
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
     WGL_ENSURE(wgl->DXUnlockObjectsNV(interop_dev, 1, &interop_obj), false);
-#if REGISTER_ON_MAP
     WGL_WARN(wgl->DXUnregisterObjectNV(interop_dev, interop_obj));
-#endif //REGISTER_ON_MAP
+    // interop operations end
+    WGL_WARN(wgl->DXCloseDeviceNV(interop_dev));
+    interop_obj = NULL;
+    interop_dev = NULL;
     return true;
 }
 
@@ -437,24 +434,15 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex)
     Q_UNUSED(tex);
     if (!ensureWGL())
         return false;
-    if (interop_obj && interop_dev && dx_surface && width == w && height == h)
+    if (dx_surface && width == w && height == h)
         return true;
     SafeRelease(&dx_surface);
     SafeRelease(&dx_texture);
-#if !REGISTER_ON_MAP
-    if (interop_obj) {
-        WGL_WARN(wgl->DXUnregisterObjectNV(interop_dev, interop_obj));
-        interop_obj = NULL;
-    }
-#endif //!REGISTER_ON_MAP
-    if (interop_dev) {
-        wgl->DXCloseDeviceNV(interop_dev);
-        interop_dev = NULL;
-    }
     HANDLE share_handle = NULL;
     // _A8 for a yuv plane
     DX_ENSURE_OK(d3ddev->CreateTexture(w, h, 1,
                                         D3DUSAGE_RENDERTARGET,
+                                       // FIXME: qt4 QGLFormat does not have hasAlpha()
                                         QOpenGLContext::currentContext()->format().hasAlpha() ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
                                         D3DPOOL_DEFAULT,
                                         &dx_texture,
@@ -462,13 +450,6 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex)
     DX_ENSURE_OK(dx_texture->GetSurfaceLevel(0, &dx_surface), false);
     // required by d3d9 not d3d10&11: https://www.opengl.org/registry/specs/NV/DX_interop2.txt
     WGL_WARN(wgl->DXSetResourceShareHandleNV(dx_surface, share_handle));
-    WGL_ENSURE((interop_dev = wgl->DXOpenDeviceNV(d3ddev)) != NULL, false);
-    // register obj here or map() both works
-#if !REGISTER_ON_MAP
-    // call in ensureResource or in map?
-    // TODO: WGL_ACCESS_READ_ONLY_NV?
-    WGL_ENSURE((interop_obj = wgl->DXRegisterObjectNV(interop_dev, dx_surface, tex, GL_TEXTURE_2D, WGL_ACCESS_READ_ONLY_NV)) != NULL, false);
-#endif //!REGISTER_ON_MAP
     width = w;
     height = h;
     return true;
