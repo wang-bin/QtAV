@@ -415,7 +415,7 @@ public:
     IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
     QString vendor;
-#if QTAV_HAVE(DXVA_EGL)
+#if QTAV_HAVE(DXVA_EGL) || QTAV_HAVE(DXVA_GL)
     dxva::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
 #endif //QTAV_HAVE(DXVA_EGL)
 };
@@ -1028,10 +1028,13 @@ bool VideoDecoderDXVAPrivate::open()
     d3ddev->QueryInterface(IID_IDirect3DDevice9Ex, (void**)&devEx);
     qDebug("using D3D9Ex: %d", !!devEx);
     SafeRelease(&devEx);
+    // runtime check gles for dynamic gl
+#if QTAV_HAVE(DXVA_EGL)
     if (OpenGLHelper::isOpenGLES())
         interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
+#endif
 #if QTAV_HAVE(DXVA_GL)
-    else
+    if (!OpenGLHelper::isOpenGLES())
         interop_res = dxva::InteropResourcePtr(new dxva::GLInteropResource(d3ddev));
 #endif
     return true;
