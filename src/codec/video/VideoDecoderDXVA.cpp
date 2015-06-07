@@ -456,7 +456,7 @@ VideoFrame VideoDecoderDXVA::frame()
         VideoFrame f(width(), height(), VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
-        f.setTimestamp(d.frame->pkt_pts);
+        f.setTimestamp(d.frame->pkt_pts/1000.0);
         return f;
     }
     class ScopedD3DLock {
@@ -1030,8 +1030,10 @@ bool VideoDecoderDXVAPrivate::open()
     SafeRelease(&devEx);
     if (OpenGLHelper::isOpenGLES())
         interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
+#if QTAV_HAVE(DXVA_GL)
     else
         interop_res = dxva::InteropResourcePtr(new dxva::GLInteropResource(d3ddev));
+#endif
     return true;
 error:
     close();
