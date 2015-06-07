@@ -33,10 +33,6 @@
 #define WGL_WGLEXT_PROTOTYPES
 #include "SurfaceInteropDXVA.h"
 
-#if QTAV_HAVE(DXVA_GL)
-#include <GL/wglext.h>
-#endif //QTAV_HAVE(DXVA_GL)
-
 namespace QtAV {
 extern VideoFormat::PixelFormat pixelFormatFromD3D(D3DFORMAT format);
 
@@ -215,6 +211,7 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
 #endif //_MSC_VER
 #endif
 #endif //Q_OS_WIN
+    // eglQueryContext() added (Feb 2015): https://github.com/google/angle/commit/8310797003c44005da4143774293ea69671b0e2a
     egl_dpy = eglGetCurrentDisplay();
     EGLint cfg_id = 0;
     EGL_ENSURE(eglQueryContext(egl_dpy, eglGetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_TRUE, false);
@@ -307,6 +304,20 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int)
     qWarning() << "WGL error " << __FILE__ << "@" << __LINE__ << " " << #x << ": " << qt_error_string(GetLastError()); \
         } \
     } while(0)
+
+//#include <GL/wglext.h> //not found in vs2013
+#define WGL_ACCESS_READ_ONLY_NV           0x00000000
+#define WGL_ACCESS_READ_WRITE_NV          0x00000001
+#define WGL_ACCESS_WRITE_DISCARD_NV       0x00000002
+typedef BOOL (WINAPI * PFNWGLDXSETRESOURCESHAREHANDLENVPROC) (void *dxObject, HANDLE shareHandle);
+typedef HANDLE (WINAPI * PFNWGLDXOPENDEVICENVPROC) (void *dxDevice);
+typedef BOOL (WINAPI * PFNWGLDXCLOSEDEVICENVPROC) (HANDLE hDevice);
+typedef HANDLE (WINAPI * PFNWGLDXREGISTEROBJECTNVPROC) (HANDLE hDevice, void *dxObject, GLuint name, GLenum type, GLenum access);
+typedef BOOL (WINAPI * PFNWGLDXUNREGISTEROBJECTNVPROC) (HANDLE hDevice, HANDLE hObject);
+typedef BOOL (WINAPI * PFNWGLDXOBJECTACCESSNVPROC) (HANDLE hObject, GLenum access);
+typedef BOOL (WINAPI * PFNWGLDXLOCKOBJECTSNVPROC) (HANDLE hDevice, GLint count, HANDLE *hObjects);
+typedef BOOL (WINAPI * PFNWGLDXUNLOCKOBJECTSNVPROC) (HANDLE hDevice, GLint count, HANDLE *hObjects);
+
 //https://www.opengl.org/registry/specs/NV/DX_interop.txt
 struct WGL {
     PFNWGLDXSETRESOURCESHAREHANDLENVPROC DXSetResourceShareHandleNV;
@@ -335,7 +346,6 @@ GLInteropResource::GLInteropResource(IDirect3DDevice9 *d3device)
 
 GLInteropResource::~GLInteropResource()
 {
-    releaseResource();
     if (interop_obj) {
         WGL_WARN(wgl->DXUnregisterObjectNV(interop_dev, interop_obj));
         interop_obj = NULL;
@@ -344,11 +354,12 @@ GLInteropResource::~GLInteropResource()
         WGL_WARN(wgl->DXCloseDeviceNV(interop_dev));
         interop_dev = NULL;
     }
-    SafeRelease(&d3ddev);
     if (wgl) {
         delete wgl;
         wgl = NULL;
     }
+    releaseResource();
+    SafeRelease(&d3ddev);
 }
 
 void GLInteropResource::releaseResource() {
@@ -365,14 +376,15 @@ bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int)
         releaseResource();
         return false;
     }
-    DX_ENSURE_OK(d3ddev->StretchRect(surface, NULL, dx_surface, NULL, D3DTEXF_NONE), false);
 #if REGISTER_ON_MAP
     // call in ensureResource or in map?
     // TODO: WGL_ACCESS_READ_ONLY_NV?
     WGL_ENSURE((interop_obj = wgl->DXRegisterObjectNV(interop_dev, dx_surface, tex, GL_TEXTURE_2D, WGL_ACCESS_READ_ONLY_NV)) != NULL, false);
-#endif
+#endif //REGISTER_ON_MAP
+    DX_ENSURE_OK(d3ddev->StretchRect(surface, NULL, dx_surface, NULL, D3DTEXF_NONE), false);
     WGL_ENSURE(wgl->DXLockObjectsNV(interop_dev, 1, &interop_obj), false);
     WGL_ENSURE(wgl->DXObjectAccessNV(interop_obj, WGL_ACCESS_READ_ONLY_NV), false);
+    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     return true;
 }
 
@@ -381,12 +393,10 @@ bool GLInteropResource::unmap(GLuint tex)
     Q_UNUSED(tex);
     if (!interop_obj)
         return false;
+    DYGL(glBindTexture(GL_TEXTURE_2D, 0));
     WGL_ENSURE(wgl->DXUnlockObjectsNV(interop_dev, 1, &interop_obj), false);
 #if REGISTER_ON_MAP
-    if (interop_obj) {
-        WGL_WARN(wgl->DXUnregisterObjectNV(interop_dev, interop_obj));
-        interop_obj = NULL;
-    }
+    WGL_WARN(wgl->DXUnregisterObjectNV(interop_dev, interop_obj));
 #endif //REGISTER_ON_MAP
     return true;
 }
@@ -405,7 +415,7 @@ bool GLInteropResource::ensureWGL()
     }
     wgl = new WGL();
     memset(wgl, 0, sizeof(*wgl));
-    QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    const QOpenGLContext *ctx = QOpenGLContext::currentContext(); //const for qt4
     wgl->DXSetResourceShareHandleNV = (PFNWGLDXSETRESOURCESHAREHANDLENVPROC)ctx->getProcAddress("wglDXSetResourceShareHandleNV");
     wgl->DXOpenDeviceNV = (PFNWGLDXOPENDEVICENVPROC)ctx->getProcAddress("wglDXOpenDeviceNV");
     wgl->DXCloseDeviceNV = (PFNWGLDXCLOSEDEVICENVPROC)ctx->getProcAddress("wglDXCloseDeviceNV");
@@ -415,6 +425,10 @@ bool GLInteropResource::ensureWGL()
     wgl->DXLockObjectsNV = (PFNWGLDXLOCKOBJECTSNVPROC)ctx->getProcAddress("wglDXLockObjectsNV");
     wgl->DXUnlockObjectsNV = (PFNWGLDXUNLOCKOBJECTSNVPROC)ctx->getProcAddress("wglDXUnlockObjectsNV");
 
+    Q_ASSERT(wgl->DXRegisterObjectNV);
+    Q_ASSERT(wgl->DXSetResourceShareHandleNV);
+    Q_ASSERT(wgl->DXLockObjectsNV);
+    Q_ASSERT(wgl->DXObjectAccessNV);
     return true;
 }
 
