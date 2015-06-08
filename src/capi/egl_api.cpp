@@ -40,6 +40,54 @@ static const char* names[] = {
     "libEGLd",
     NULL
 };
+
+class EGLLib
+{
+    QLibrary m_lib;
+public:
+    explicit EGLLib() : m_lib() {}
+    explicit EGLLib(const QString& fileName) : m_lib(fileName) {}
+    explicit EGLLib(const QString& fileName, int verNum) : m_lib(fileName, verNum) {}
+    void* resolve(const char *symbol) {
+        // from qwindowseglcontext.cpp
+#ifdef __MINGW32__
+        QString baseNameStr = QString::fromLatin1(symbol);
+        QString nameStr;
+        void *proc = 0;
+
+        // Play nice with 32-bit mingw: Try func first, then func@0, func@4,
+        // func@8, func@12, ..., func@64. The def file does not provide any aliases
+        // in libEGL and libGLESv2 in these builds which results in exporting
+        // function names like eglInitialize@12. This cannot be fixed without
+        // breaking binary compatibility. So be flexible here instead.
+
+        int argSize = -1;
+        while (!proc && argSize <= 64) {
+            nameStr = baseNameStr;
+            if (argSize >= 0)
+                nameStr += QLatin1Char('@') + QString::number(argSize);
+            argSize = argSize < 0 ? 0 : argSize + 4;
+            proc = (void*)m_lib.resolve(nameStr.toLatin1().constData());
+        }
+        if (argSize > 0)
+            fprintf(stderr, "%s=>%s\n", symbol, nameStr.toLatin1().constData());
+        return proc;
+#else
+        return (void*)m_lib.resolve(symbol);
+#endif
+    }
+
+    bool load() {return m_lib.load();}
+    bool unload() {return m_lib.unload();}
+    bool isLoaded() const {return m_lib.isLoaded();}
+
+    void setFileName(const QString &fileName) {m_lib.setFileName(fileName);}
+    QString fileName() const {return m_lib.fileName();}
+
+    void setFileNameAndVersion(const QString &fileName, int verNum) {m_lib.setFileNameAndVersion(fileName, verNum);}
+    QString errorString() const {return m_lib.errorString();}
+};
+
 # if CAPI_HAS_EGL_VERSION
 static const int versions[] = {
     ::capi::NoVersion,
@@ -47,9 +95,9 @@ static const int versions[] = {
     %VERSIONS%
     , ::capi::EndVersion
 };
-CAPI_BEGIN_DLL_VER(names, versions, QLibrary)
+CAPI_BEGIN_DLL_VER(names, versions, EGLLib)
 # else
-CAPI_BEGIN_DLL(names, QLibrary)
+CAPI_BEGIN_DLL(names, EGLLib)
 # endif //CAPI_HAS_EGL_VERSION
 // CAPI_DEFINE_RESOLVER(argc, return_type, name, argv_no_name)
 // mkapi code generation BEGIN

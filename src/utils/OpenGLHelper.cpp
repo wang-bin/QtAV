@@ -26,8 +26,6 @@
 #if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
 #include <QtOpenGL/QGLFunctions>
 #endif
-#include <QtOpenGL/QGLContext>
-#define QOpenGLContext QGLContext
 #endif
 #include "utils/Logger.h"
 
@@ -50,8 +48,10 @@ bool isOpenGLES()
 bool hasExtension(const char *exts[])
 {
     const QOpenGLContext *ctx = QOpenGLContext::currentContext();
-    if (!ctx)
+    if (!ctx) {
+        qWarning("no gl context for hasExtension");
         return false;
+    }
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     const char *ext = (const char*)glGetString(GL_EXTENSIONS);
     if (!ext)

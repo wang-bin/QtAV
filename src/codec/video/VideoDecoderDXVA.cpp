@@ -326,11 +326,8 @@ public:
     VideoDecoderDXVAPrivate():
         VideoDecoderFFmpegHWPrivate()
     {
-        // TODO: qt5.4 mingw dygl can not resolve egl symbols and crash
-#if defined(_MSC_VER)
         if (OpenGLHelper::isOpenGLES())
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
-#endif
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
@@ -415,7 +412,7 @@ public:
     IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
     QString vendor;
-#if QTAV_HAVE(DXVA_EGL)
+#if QTAV_HAVE(DXVA_EGL) || QTAV_HAVE(DXVA_GL)
     dxva::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
 #endif //QTAV_HAVE(DXVA_EGL)
 };
@@ -450,17 +447,15 @@ VideoFrame VideoDecoderDXVA::frame()
         return VideoFrame();
 
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
-#if QTAV_HAVE(DXVA_EGL)
     if (copyMode() == ZeroCopy) {
         dxva::SurfaceInteropDXVA *interop = new dxva::SurfaceInteropDXVA(d.interop_res);
         interop->setSurface(d3d);
         VideoFrame f(width(), height(), VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
-        f.setTimestamp(d.frame->pkt_pts);
+        f.setTimestamp(d.frame->pkt_pts/1000.0);
         return f;
     }
-#endif //QTAV_HAVE(DXVA_EGL)
     class ScopedD3DLock {
         IDirect3DSurface9 *mpD3D;
     public:
@@ -623,6 +618,7 @@ bool VideoDecoderDXVAPrivate::D3dCreateDeviceEx()
     d3dpp.BackBufferHeight       = 1; //0;
     //d3dpp.EnableAutoDepthStencil = FALSE;
 
+    // D3DCREATE_MULTITHREADED is required by gl interop. https://www.opengl.org/registry/specs/NV/DX_interop.txt
     DWORD flags = D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING;
     // old: D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED
     // mpv:
@@ -833,6 +829,7 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
     surface_height = aligned(h);
     if (surface_auto) {
         switch (codec_id) {
+        case QTAV_CODEC_ID(HEVC):
         case QTAV_CODEC_ID(H264):
             surface_count = 16 + 2 + codec_ctx->thread_count;
             break;
@@ -1028,9 +1025,15 @@ bool VideoDecoderDXVAPrivate::open()
     d3ddev->QueryInterface(IID_IDirect3DDevice9Ex, (void**)&devEx);
     qDebug("using D3D9Ex: %d", !!devEx);
     SafeRelease(&devEx);
+    // runtime check gles for dynamic gl
 #if QTAV_HAVE(DXVA_EGL)
-    interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
-#endif //QTAV_HAVE(DXVA_EGL)
+    if (OpenGLHelper::isOpenGLES())
+        interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
+#endif
+#if QTAV_HAVE(DXVA_GL)
+    if (!OpenGLHelper::isOpenGLES())
+        interop_res = dxva::InteropResourcePtr(new dxva::GLInteropResource(d3ddev));
+#endif
     return true;
 error:
     close();
