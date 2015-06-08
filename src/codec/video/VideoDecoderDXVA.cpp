@@ -449,7 +449,7 @@ VideoFrame VideoDecoderDXVA::frame()
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
     if (copyMode() == ZeroCopy) {
         dxva::SurfaceInteropDXVA *interop = new dxva::SurfaceInteropDXVA(d.interop_res);
-        interop->setSurface(d3d);
+        interop->setSurface(d3d, width(), height());
         VideoFrame f(width(), height(), VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));

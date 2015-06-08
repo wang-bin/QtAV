@@ -76,6 +76,14 @@ SurfaceInteropDXVA::~SurfaceInteropDXVA()
     SafeRelease(&m_surface);
 }
 
+void SurfaceInteropDXVA::setSurface(IDirect3DSurface9 *surface, int frame_w, int frame_h)
+{
+    m_surface = surface;
+    m_surface->AddRef();
+    frame_width = frame_w;
+    frame_height = frame_h;
+}
+
 void* SurfaceInteropDXVA::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
 {
     if (!handle)
@@ -86,7 +94,7 @@ void* SurfaceInteropDXVA::map(SurfaceType type, const VideoFormat &fmt, void *ha
     if (!m_surface)
         return 0;
     if (type == GLTextureSurface) {
-        if (m_resource->map(m_surface, *((GLuint*)handle), plane))
+        if (m_resource->map(m_surface, *((GLuint*)handle), frame_width, frame_height, plane))
             return handle;
         return NULL;
     } else if (type == HostMemorySurface) {
@@ -155,7 +163,7 @@ void* SurfaceInteropDXVA::mapToHost(const VideoFormat &format, void *handle, int
         std::swap(src[1], src[2]);
         std::swap(pitch[1], pitch[2]);
     }
-    VideoFrame frame = VideoFrame(desc.Width, desc.Height, fmt); //FIXME: not surface size
+    VideoFrame frame = VideoFrame(frame_width, frame_height, fmt);
     frame.setBits(src);
     frame.setBytesPerLine(pitch);
     frame = frame.to(format);
@@ -296,17 +304,18 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
     return true;
 }
 
-bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int)
+bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int h, int)
 {
     D3DSURFACE_DESC dxvaDesc;
     surface->GetDesc(&dxvaDesc);
-    if (!ensureSurface(dxvaDesc.Width, dxvaDesc.Height)) {
+    if (!ensureSurface(w, h)) {
         releaseEGL();
         releaseDX();
         return false;
     }
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
-    if (SUCCEEDED(d3ddev->StretchRect(surface, NULL, dx_surface, NULL, D3DTEXF_NONE)))
+    const RECT src = { 0, 0, w, h};
+    if (SUCCEEDED(d3ddev->StretchRect(surface, &src, dx_surface, NULL, D3DTEXF_NONE)))
         eglBindTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
     // Flush the draw command now, so that by the time we come to draw this
     // image, we're less likely to need to wait for the draw operation to
@@ -382,11 +391,9 @@ GLInteropResource::~GLInteropResource()
     }
 }
 
-bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int)
+bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int w, int h, int)
 {
-    D3DSURFACE_DESC dxvaDesc;
-    surface->GetDesc(&dxvaDesc);
-    if (!ensureResource(dxvaDesc.Width, dxvaDesc.Height, tex)) {
+    if (!ensureResource(w, h, tex)) {
         releaseDX();
         return false;
     }
@@ -396,7 +403,8 @@ bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int)
     // call in ensureResource or in map?
     WGL_ENSURE((interop_obj = wgl->DXRegisterObjectNV(interop_dev, dx_surface, tex, GL_TEXTURE_2D, WGL_ACCESS_READ_ONLY_NV)) != NULL, false);
     // prepare dx resources for gl
-    DX_ENSURE_OK(d3ddev->StretchRect(surface, NULL, dx_surface, NULL, D3DTEXF_NONE), false);
+    const RECT src = { 0, 0, w, h};
+    DX_ENSURE_OK(d3ddev->StretchRect(surface, &src, dx_surface, NULL, D3DTEXF_NONE), false);
     // lock dx resources
     WGL_ENSURE(wgl->DXLockObjectsNV(interop_dev, 1, &interop_obj), false);
     WGL_ENSURE(wgl->DXObjectAccessNV(interop_obj, WGL_ACCESS_READ_ONLY_NV), false);
