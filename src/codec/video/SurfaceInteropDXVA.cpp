@@ -18,20 +18,9 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-#include "QtAV/VideoFrame.h"
-// no need to check qt4 because no ANGLE there
-#if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
-#define QTAV_HAVE_DXVA_EGL 1
-#endif
-#if QTAV_HAVE(DXVA_EGL)
-# if QTAV_HAVE(GUI_PRIVATE)
-#include <qpa/qplatformnativeinterface.h>
-#include <QtGui/QGuiApplication>
-# endif //QTAV_HAVE(GUI_PRIVATE)
-#endif
-#include "utils/Logger.h"
-#define WGL_WGLEXT_PROTOTYPES
 #include "SurfaceInteropDXVA.h"
+#include "QtAV/VideoFrame.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 extern VideoFormat::PixelFormat pixelFormatFromD3D(D3DFORMAT format);
@@ -59,6 +48,28 @@ template <class T> void SafeRelease(T **ppT)
             return __VA_ARGS__; \
         } \
     } while (0)
+
+InteropResource::InteropResource(IDirect3DDevice9 *d3device)
+    : d3ddev(d3device)
+    , dx_texture(NULL)
+    , dx_surface(NULL)
+    , width(0)
+    , height(0)
+{
+    d3ddev->AddRef();
+}
+
+InteropResource::~InteropResource()
+{
+    releaseDX();
+    SafeRelease(&d3ddev);
+}
+
+void InteropResource::releaseDX()
+{
+    SafeRelease(&dx_surface);
+    SafeRelease(&dx_texture);
+}
 
 SurfaceInteropDXVA::~SurfaceInteropDXVA()
 {
@@ -154,6 +165,8 @@ void* SurfaceInteropDXVA::mapToHost(const VideoFormat &format, void *handle, int
     *f = frame;
     return f;
 }
+} //namespace dxva
+} //namespace QtAV
 
 #if QTAV_HAVE(DXVA_EGL)
 #define EGL_ENSURE(x, ...) \
@@ -165,32 +178,47 @@ void* SurfaceInteropDXVA::mapToHost(const VideoFormat &format, void *handle, int
         } \
     } while(0)
 
+#if QTAV_HAVE(GUI_PRIVATE)
+#include <qpa/qplatformnativeinterface.h>
+#include <QtGui/QGuiApplication>
+#endif //QTAV_HAVE(GUI_PRIVATE)
+#ifdef QT_OPENGL_ES_2_ANGLE_STATIC
+#define CAPI_LINK_EGL
+#else
+#define EGL_CAPI_NS
+#endif //QT_OPENGL_ES_2_ANGLE_STATIC
+#include "capi/egl_api.h"
+#include <EGL/eglext.h> //include after egl_capi.h to match types
+
+namespace QtAV {
+namespace dxva {
+class EGL {
+public:
+    EGL() : dpy(EGL_NO_DISPLAY), surface(EGL_NO_SURFACE) {}
+    EGLDisplay dpy;
+    EGLSurface surface;
+};
+
 EGLInteropResource::EGLInteropResource(IDirect3DDevice9 * d3device)
-    : InteropResource()
-    , d3ddev(d3device)
-    , dx_texture(NULL)
-    , dx_surface(NULL)
-    , egl_dpy(EGL_NO_DISPLAY)
-    , egl_surface(EGL_NO_SURFACE)
-    , width(0)
-    , height(0)
+    : InteropResource(d3device)
+    , egl(new EGL())
 {
-    d3ddev->AddRef();
 }
 
 EGLInteropResource::~EGLInteropResource()
 {
-    releaseResource();
-    SafeRelease(&d3ddev);
+    releaseEGL();
+    if (egl) {
+        delete egl;
+        egl = NULL;
+    }
 }
 
-void EGLInteropResource::releaseResource() {
-    SafeRelease(&dx_surface);
-    SafeRelease(&dx_texture);
-    if (egl_surface != EGL_NO_SURFACE) {
-        eglReleaseTexImage(egl_dpy, egl_surface, EGL_BACK_BUFFER);
-        eglDestroySurface(egl_dpy, egl_surface);
-        egl_surface = EGL_NO_SURFACE;
+void EGLInteropResource::releaseEGL() {
+    if (egl->surface != EGL_NO_SURFACE) {
+        eglReleaseTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
+        eglDestroySurface(egl->dpy, egl->surface);
+        egl->surface = EGL_NO_SURFACE;
     }
 }
 
@@ -199,7 +227,7 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
         return true;
 #if QTAV_HAVE(GUI_PRIVATE)
     QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
-    egl_dpy = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", QOpenGLContext::currentContext()));
+    egl->dpy = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", QOpenGLContext::currentContext()));
     EGLConfig egl_cfg = static_cast<EGLConfig>(nativeInterface->nativeResourceForContext("eglConfig", QOpenGLContext::currentContext()));
 #else
 #ifdef Q_OS_WIN
@@ -212,26 +240,26 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
 #endif
 #endif //Q_OS_WIN
     // eglQueryContext() added (Feb 2015): https://github.com/google/angle/commit/8310797003c44005da4143774293ea69671b0e2a
-    egl_dpy = eglGetCurrentDisplay();
+    egl->dpy = eglGetCurrentDisplay();
     EGLint cfg_id = 0;
-    EGL_ENSURE(eglQueryContext(egl_dpy, eglGetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_TRUE, false);
+    EGL_ENSURE(eglQueryContext(egl->dpy, eglGetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_TRUE, false);
     qDebug("egl config id: %d", cfg_id);
     EGLint nb_cfg = 0;
-    EGL_ENSURE(eglGetConfigs(egl_dpy, NULL, 0, &nb_cfg) == EGL_TRUE, false);
+    EGL_ENSURE(eglGetConfigs(egl->dpy, NULL, 0, &nb_cfg) == EGL_TRUE, false);
     qDebug("eglGetConfigs number: %d", nb_cfg);
     QVector<EGLConfig> cfgs(nb_cfg); //check > 0
-    EGL_ENSURE(eglGetConfigs(egl_dpy, cfgs.data(), cfgs.size(), &nb_cfg) == EGL_TRUE, false);
+    EGL_ENSURE(eglGetConfigs(egl->dpy, cfgs.data(), cfgs.size(), &nb_cfg) == EGL_TRUE, false);
     EGLConfig egl_cfg = NULL;
     for (int i = 0; i < nb_cfg; ++i) {
         EGLint id = 0;
-        eglGetConfigAttrib(egl_dpy, cfgs[i], EGL_CONFIG_ID, &id);
+        eglGetConfigAttrib(egl->dpy, cfgs[i], EGL_CONFIG_ID, &id);
         if (id == cfg_id) {
             egl_cfg = cfgs[i];
             break;
         }
     }
 #endif
-    qDebug("egl display:%p config: %p", egl_dpy, egl_cfg);
+    qDebug("egl display:%p config: %p", egl->dpy, egl_cfg);
 
     EGLint attribs[] = {
         EGL_WIDTH, w,
@@ -240,8 +268,8 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
         EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
         EGL_NONE
     };
-    EGL_ENSURE((egl_surface = eglCreatePbufferSurface(egl_dpy, egl_cfg, attribs)) != EGL_NO_SURFACE, false);
-    qDebug("pbuffer surface: %p", egl_surface);
+    EGL_ENSURE((egl->surface = eglCreatePbufferSurface(egl->dpy, egl_cfg, attribs)) != EGL_NO_SURFACE, false);
+    qDebug("pbuffer surface: %p", egl->surface);
 
     // create dx resources
     PFNEGLQUERYSURFACEPOINTERANGLEPROC eglQuerySurfacePointerANGLE = reinterpret_cast<PFNEGLQUERYSURFACEPOINTERANGLEPROC>(eglGetProcAddress("eglQuerySurfacePointerANGLE"));
@@ -250,10 +278,9 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
         return false;
     }
     HANDLE share_handle = NULL;
-    EGL_ENSURE(eglQuerySurfacePointerANGLE(egl_dpy, egl_surface, EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, &share_handle), false);
+    EGL_ENSURE(eglQuerySurfacePointerANGLE(egl->dpy, egl->surface, EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, &share_handle), false);
 
-    SafeRelease(&dx_surface);
-    SafeRelease(&dx_texture);
+    releaseDX();
     // _A8 for a yuv plane
     DX_ENSURE_OK(d3ddev->CreateTexture(w, h, 1,
                                         D3DUSAGE_RENDERTARGET,
@@ -272,21 +299,24 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int)
     D3DSURFACE_DESC dxvaDesc;
     surface->GetDesc(&dxvaDesc);
     if (!ensureSurface(dxvaDesc.Width, dxvaDesc.Height)) {
-        releaseResource();
+        releaseEGL();
+        releaseDX();
         return false;
     }
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     if (SUCCEEDED(d3ddev->StretchRect(surface, NULL, dx_surface, NULL, D3DTEXF_NONE)))
-        eglBindTexImage(egl_dpy, egl_surface, EGL_BACK_BUFFER);
+        eglBindTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
     // Flush the draw command now, so that by the time we come to draw this
-      // image, we're less likely to need to wait for the draw operation to
-      // complete.
-      IDirect3DQuery9 *query = NULL;
-      DX_ENSURE_OK(d3ddev->CreateQuery(D3DQUERYTYPE_EVENT, &query), false);
-      DX_ENSURE_OK(query->Issue(D3DISSUE_END), false);
+    // image, we're less likely to need to wait for the draw operation to
+    // complete.
+    //IDirect3DQuery9 *query = NULL;
+    //DX_ENSURE_OK(d3ddev->CreateQuery(D3DQUERYTYPE_EVENT, &query), false);
+    //DX_ENSURE_OK(query->Issue(D3DISSUE_END), false);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
     return true;
 }
+} //namespace dxva
+} //namespace QtAV
 #endif //QTAV_HAVE(DXVA_EGL)
 
 #if QTAV_HAVE(DXVA_GL)
@@ -307,6 +337,8 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int)
     } while(0)
 
 //#include <GL/wglext.h> //not found in vs2013
+namespace QtAV {
+namespace dxva {
 #define WGL_ACCESS_READ_ONLY_NV           0x00000000
 #define WGL_ACCESS_READ_WRITE_NV          0x00000001
 #define WGL_ACCESS_WRITE_DISCARD_NV       0x00000002
@@ -332,17 +364,11 @@ struct WGL {
 };
 
 GLInteropResource::GLInteropResource(IDirect3DDevice9 *d3device)
-    : InteropResource()
-    , d3ddev(d3device)
-    , dx_texture(NULL)
-    , dx_surface(NULL)
+    : InteropResource(d3device)
     , interop_dev(NULL)
     , interop_obj(NULL)
-    , width(0)
-    , height(0)
     , wgl(0)
 {
-    d3ddev->AddRef();
 }
 
 GLInteropResource::~GLInteropResource()
@@ -352,13 +378,6 @@ GLInteropResource::~GLInteropResource()
         delete wgl;
         wgl = NULL;
     }
-    releaseResource();
-    SafeRelease(&d3ddev);
-}
-
-void GLInteropResource::releaseResource() {
-    SafeRelease(&dx_surface);
-    SafeRelease(&dx_texture);
 }
 
 bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int)
@@ -366,7 +385,7 @@ bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int)
     D3DSURFACE_DESC dxvaDesc;
     surface->GetDesc(&dxvaDesc);
     if (!ensureResource(dxvaDesc.Width, dxvaDesc.Height, tex)) {
-        releaseResource();
+        releaseDX();
         return false;
     }
     // open/close and register/unregster in every map/unmap to ensure called in current context and avoid crash (tested on intel driver)
@@ -423,9 +442,6 @@ bool GLInteropResource::ensureWGL()
     wgl->DXUnlockObjectsNV = (PFNWGLDXUNLOCKOBJECTSNVPROC)ctx->getProcAddress("wglDXUnlockObjectsNV");
 
     Q_ASSERT(wgl->DXRegisterObjectNV);
-    Q_ASSERT(wgl->DXSetResourceShareHandleNV);
-    Q_ASSERT(wgl->DXLockObjectsNV);
-    Q_ASSERT(wgl->DXObjectAccessNV);
     return true;
 }
 
@@ -436,8 +452,7 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex)
         return false;
     if (dx_surface && width == w && height == h)
         return true;
-    SafeRelease(&dx_surface);
-    SafeRelease(&dx_texture);
+    releaseDX();
     HANDLE share_handle = NULL;
     // _A8 for a yuv plane
     DX_ENSURE_OK(d3ddev->CreateTexture(w, h, 1,
@@ -454,6 +469,6 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex)
     height = h;
     return true;
 }
-#endif //QTAV_HAVE(DXVA_GL)
 } //namespace dxva
 } //namespace QtAV
+#endif //QTAV_HAVE(DXVA_GL)

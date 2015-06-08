@@ -50,7 +50,7 @@ public:
     explicit EGLLib(const QString& fileName, int verNum) : m_lib(fileName, verNum) {}
     void* resolve(const char *symbol) {
         // from qwindowseglcontext.cpp
-#ifdef Q_CC_MINGW
+#ifdef __MINGW32__
         QString baseNameStr = QString::fromLatin1(symbol);
         QString nameStr;
         void *proc = 0;
