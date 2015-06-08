@@ -456,15 +456,15 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex)
         return true;
     releaseDX();
     HANDLE share_handle = NULL;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    const bool has_alpha = QOpenGLContext::currentContext()->format().hasAlpha();
+#else
+    const bool has_alpha = QOpenGLContext::currentContext()->format().alpha();
+#endif
     // _A8 for a yuv plane
     DX_ENSURE_OK(d3ddev->CreateTexture(w, h, 1,
                                         D3DUSAGE_RENDERTARGET,
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-                                        QOpenGLContext::currentContext()->format().hasAlpha()
-#else
-                                        QOpenGLContext::currentContext()->format().alpha()
-#endif
-                                       ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
+                                        has_alpha ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
                                         D3DPOOL_DEFAULT,
                                         &dx_texture,
                                         &share_handle) , false);
