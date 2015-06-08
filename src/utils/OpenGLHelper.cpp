@@ -42,6 +42,9 @@ bool isOpenGLES()
 #ifdef QT_OPENGL_ES_2
     return true;
 #endif //QT_OPENGL_ES_2
+#if defined(QT_OPENGL_ES_2_ANGLE_STATIC) || defined(QT_OPENGL_ES_2_ANGLE)
+    return true;
+#endif //QT_OPENGL_ES_2_ANGLE_STATIC
     return false;
 }
 
