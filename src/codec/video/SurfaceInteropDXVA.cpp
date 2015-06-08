@@ -261,10 +261,12 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
 #endif
     qDebug("egl display:%p config: %p", egl->dpy, egl_cfg);
 
+    GLint has_alpha = 1; //QOpenGLContext::currentContext()->format().hasAlpha()
+    eglGetConfigAttrib(egl->dpy, egl_cfg, EGL_BIND_TO_TEXTURE_RGBA, &has_alpha); //EGL_ALPHA_SIZE
     EGLint attribs[] = {
         EGL_WIDTH, w,
         EGL_HEIGHT, h,
-        EGL_TEXTURE_FORMAT, QOpenGLContext::currentContext()->format().hasAlpha() ? EGL_TEXTURE_RGBA : EGL_TEXTURE_RGB,
+        EGL_TEXTURE_FORMAT, has_alpha ? EGL_TEXTURE_RGBA : EGL_TEXTURE_RGB,
         EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
         EGL_NONE
     };
@@ -284,7 +286,7 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
     // _A8 for a yuv plane
     DX_ENSURE_OK(d3ddev->CreateTexture(w, h, 1,
                                         D3DUSAGE_RENDERTARGET,
-                                        QOpenGLContext::currentContext()->format().hasAlpha() ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
+                                        has_alpha ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
                                         D3DPOOL_DEFAULT,
                                         &dx_texture,
                                         &share_handle) , false);
@@ -457,8 +459,12 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex)
     // _A8 for a yuv plane
     DX_ENSURE_OK(d3ddev->CreateTexture(w, h, 1,
                                         D3DUSAGE_RENDERTARGET,
-                                       // FIXME: qt4 QGLFormat does not have hasAlpha()
-                                        QOpenGLContext::currentContext()->format().hasAlpha() ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+                                        QOpenGLContext::currentContext()->format().hasAlpha()
+#else
+                                        QOpenGLContext::currentContext()->format().alpha()
+#endif
+                                       ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
                                         D3DPOOL_DEFAULT,
                                         &dx_texture,
                                         &share_handle) , false);
