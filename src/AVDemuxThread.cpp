@@ -108,7 +108,7 @@ void AVDemuxThread::setAVThread(AVThread*& pOld, AVThread *pNew)
     if (pOld) {
         if (pOld->isRunning())
             pOld->stop();
-        disconnect(this, SLOT(onAVThreadQuit()));
+        pOld->disconnect(this, SLOT(onAVThreadQuit()));
     }
     pOld = pNew;
     if (!pNew)
@@ -183,11 +183,9 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
             continue;
         t->packetQueue()->clear();
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
-        if (type == AccurateSeek) {
-            //PacketBuffer *pb = t->packetQueue();
-            //qDebug("%s put seek packet. %d/%d-%.3f, progress: %.3f", t->metaObject()->className(), pb->buffered(), pb->bufferValue(), pb->bufferMax(), pb->bufferProgress());
-            t->packetQueue()->setBlocking(false); // aqueue bufferValue can be small (1), we can not put and take
-        }
+        //PacketBuffer *pb = t->packetQueue();
+        //qDebug("%s put seek packet. %d/%d-%.3f, progress: %.3f", t->metaObject()->className(), pb->buffered(), pb->bufferValue(), pb->bufferMax(), pb->bufferProgress());
+        t->packetQueue()->setBlocking(false); // aqueue bufferValue can be small (1), we can not put and take
         Packet pkt;
         pkt.pts = qreal(pos)/1000.0;
         t->packetQueue()->put(pkt);
@@ -544,7 +542,7 @@ void AVDemuxThread::run()
         vqueue->blockEmpty(false);
         video_thread->wait(500);
     }
-    disconnect(this, SIGNAL(seekFinished(qint64)));
+    thread->disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
     emit mediaStatusChanged(QtAV::EndOfMedia);
 }
