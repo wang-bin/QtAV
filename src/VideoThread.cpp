@@ -47,11 +47,6 @@ public:
       , capture(0)
       , filter_context(0)
     {
-        QVariantHash opt;
-        opt["skip_frame"] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
-        dec_opt_framedrop["avcodec"] = opt;
-        opt["skip_frame"] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
-        dec_opt_normal["avcodec"] = opt; // avcodec need correct string or value in libavcodec
     }
     ~VideoThreadPrivate() {
         //not neccesary context is managed by filters.
@@ -68,11 +63,7 @@ public:
     VideoCapture *capture;
     VideoFilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
     VideoFrame displayed_frame;
-    static QVariantHash dec_opt_framedrop, dec_opt_normal;
 };
-
-QVariantHash VideoThreadPrivate::dec_opt_framedrop;
-QVariantHash VideoThreadPrivate::dec_opt_normal;
 
 VideoThread::VideoThread(QObject *parent) :
     AVThread(*new VideoThreadPrivate(), parent)
@@ -186,25 +177,6 @@ void VideoThread::setEQ(int b, int c, int s)
         task->run();
         delete task;
     }
-}
-
-void VideoThread::scheduleFrameDrop(bool value)
-{
-    class FrameDropTask : public QRunnable {
-        AVDecoder *decoder;
-        bool drop;
-    public:
-        FrameDropTask(AVDecoder *dec, bool value) : decoder(dec), drop(value) {}
-        void run() Q_DECL_OVERRIDE {
-            if (!decoder)
-                return;
-            if (drop)
-                decoder->setOptions(VideoThreadPrivate::dec_opt_framedrop);
-            else
-                decoder->setOptions(VideoThreadPrivate::dec_opt_normal);
-        }
-    };
-    scheduleTask(new FrameDropTask(decoder(), value));
 }
 
 void VideoThread::applyFilters(VideoFrame &frame)

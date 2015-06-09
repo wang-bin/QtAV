@@ -175,6 +175,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         ademuxer->setSeekType(type);
         ademuxer->seek(pos);
     }
+    AVThread *watch_thread = 0;
     // TODO: why queue may not empty?
     for (size_t i = 0; i < sizeof(av)/sizeof(av[0]); ++i) {
         AVThread *t = av[i];
@@ -183,21 +184,24 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         t->packetQueue()->clear();
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
         if (type == AccurateSeek) {
-            Packet pkt;
-            pkt.pts = qreal(pos)/1000.0;
-            //qDebug("put seek packet. %d/%d-%d, progress: %.3f", pb->buffered(), pb->bufferValue(), pb->bufferMax(), pb->bufferProgress());
+            //PacketBuffer *pb = t->packetQueue();
+            //qDebug("%s put seek packet. %d/%d-%.3f, progress: %.3f", t->metaObject()->className(), pb->buffered(), pb->bufferValue(), pb->bufferMax(), pb->bufferProgress());
             t->packetQueue()->setBlocking(false); // aqueue bufferValue can be small (1), we can not put and take
-            t->packetQueue()->put(pkt);
         }
+        Packet pkt;
+        pkt.pts = qreal(pos)/1000.0;
+        t->packetQueue()->put(pkt);
         t->packetQueue()->setBlocking(true); // blockEmpty was false when eof is read.
+        if (isPaused()) {
+            t->pause(false);
+            watch_thread = t;
+        }
     }
-    if (isPaused() && (video_thread || audio_thread)) {
-        AVThread *thread = video_thread ? video_thread : audio_thread;
-        thread->pause(false);
+    if (watch_thread) {
         pauseInternal(false);
         emit requestClockPause(false); // need direct connection
         // direct connection is fine here
-        connect(thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredSeekOnPause()), Qt::DirectConnection);
+        connect(watch_thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredSeekOnPause()), Qt::DirectConnection);
     }
 }
 
@@ -307,26 +311,17 @@ void AVDemuxThread::nextFrame()
     QMutexLocker locker(&next_frame_mutex);
     Q_UNUSED(locker);
     pause(true); // must pause AVDemuxThread (set user_paused true)
-    AVThread *t = video_thread;
+    AVThread* av[] = {video_thread, audio_thread};
     bool connected = false;
-    if (t) {
+    for (size_t i = 0; i < sizeof(av)/sizeof(av[0]); ++i) {
+        AVThread *t = av[i];
+        if (!t)
+            continue;
         // set clock first
         if (clock_type < 0)
             clock_type = (int)t->clock()->isClockAuto() + 2*(int)t->clock()->clockType();
         t->clock()->setClockType(AVClock::VideoClock);
-        ((VideoThread*)t)->scheduleFrameDrop(false);
-        t->pause(false);
-        t->packetQueue()->blockFull(false);
-        if (!connected) {
-            connect(t, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredNextFrame()), Qt::DirectConnection);
-            connected = true;
-        }
-    }
-    t = audio_thread;
-    if (t) {
-        if (clock_type < 0)
-            clock_type = (int)t->clock()->isClockAuto() + 2*(int)t->clock()->clockType();
-        t->clock()->setClockType(AVClock::VideoClock);
+        t->scheduleFrameDrop(false);
         t->pause(false);
         t->packetQueue()->blockFull(false);
         if (!connected) {
@@ -348,7 +343,10 @@ void AVDemuxThread::frameDeliveredSeekOnPause()
         pause(true); // restore pause state
         emit requestClockPause(true); // need direct connection
     // pause video/audio thread
-        thread->pause(true);
+        if (video_thread)
+            video_thread->pause(true);
+        if (audio_thread)
+            audio_thread->pause(true);
     }
 }
 

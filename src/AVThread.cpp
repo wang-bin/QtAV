@@ -22,12 +22,16 @@
 #include "AVThread.h"
 #include "AVThread_p.h"
 #include "QtAV/AVClock.h"
+#include "QtAV/AVDecoder.h"
 #include "QtAV/AVOutput.h"
 #include "QtAV/Filter.h"
 #include "output/OutputSet.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
+
+QVariantHash AVThreadPrivate::dec_opt_framedrop;
+QVariantHash AVThreadPrivate::dec_opt_normal;
 
 AVThreadPrivate::~AVThreadPrivate() {
     stop = true;
@@ -106,6 +110,25 @@ const QList<Filter*>& AVThread::filters() const
 void AVThread::scheduleTask(QRunnable *task)
 {
     d_func().tasks.put(task);
+}
+
+void AVThread::scheduleFrameDrop(bool value)
+{
+    class FrameDropTask : public QRunnable {
+        AVDecoder *decoder;
+        bool drop;
+    public:
+        FrameDropTask(AVDecoder *dec, bool value) : decoder(dec), drop(value) {}
+        void run() Q_DECL_OVERRIDE {
+            if (!decoder)
+                return;
+            if (drop)
+                decoder->setOptions(AVThreadPrivate::dec_opt_framedrop);
+            else
+                decoder->setOptions(AVThreadPrivate::dec_opt_normal);
+        }
+    };
+    scheduleTask(new FrameDropTask(decoder(), value));
 }
 
 // TODO: shall we close decoder here?

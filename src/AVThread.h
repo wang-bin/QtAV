@@ -75,6 +75,7 @@ public:
 
     // TODO: resample, resize task etc.
     void scheduleTask(QRunnable *task);
+    void scheduleFrameDrop(bool value = true);
 
 public slots:
     virtual void stop();
