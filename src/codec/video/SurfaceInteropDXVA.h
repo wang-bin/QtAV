@@ -25,9 +25,11 @@
 #include "QtAV/SurfaceInterop.h"
 #include "utils/OpenGLHelper.h"
 // no need to check qt4 because no ANGLE there
+#if QTAV_HAVE(EGL_CAPI) // always use dynamic load
 #if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
 #define QTAV_HAVE_DXVA_EGL 1
 #endif
+#endif //QTAV_HAVE(EGL_CAPI)
 #if defined(QT_OPENGL_DYNAMIC) || !defined(QT_OPENGL_ES_2)
 #define QTAV_HAVE_DXVA_GL 1
 #endif

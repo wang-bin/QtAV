@@ -259,6 +259,7 @@ config_libass {
 }
 capi:win32 { # currently only used for windows
 contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
+  DEFINES += QTAV_HAVE_EGL_CAPI=1
   HEADERS *= capi/egl_api.h
   SOURCES *= capi/egl_api.cpp
 }
