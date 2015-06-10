@@ -199,7 +199,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         pauseInternal(false);
         emit requestClockPause(false); // need direct connection
         // direct connection is fine here
-        connect(watch_thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredSeekOnPause()), Qt::DirectConnection);
+        connect(watch_thread, SIGNAL(seekFinished(qint64)), this, SLOT(seekOnPauseFinished()), Qt::DirectConnection);
     }
 }
 
@@ -332,11 +332,11 @@ void AVDemuxThread::nextFrame()
     pauseInternal(false);
 }
 
-void AVDemuxThread::frameDeliveredSeekOnPause()
+void AVDemuxThread::seekOnPauseFinished()
 {
     AVThread *thread = video_thread ? video_thread : audio_thread;
     Q_ASSERT(thread);
-    disconnect(thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredSeekOnPause()));
+    disconnect(thread, SIGNAL(seekFinished(qint64)), this, SLOT(seekOnPauseFinished()));
     if (user_paused) {
         pause(true); // restore pause state
         emit requestClockPause(true); // need direct connection

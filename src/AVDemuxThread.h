@@ -63,7 +63,7 @@ Q_SIGNALS:
     void seekFinished(qint64 timestamp);
 
 private slots:
-    void frameDeliveredSeekOnPause();
+    void seekOnPauseFinished();
     void frameDeliveredNextFrame();
     void onAVThreadQuit();
 
