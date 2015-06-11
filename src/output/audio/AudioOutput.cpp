@@ -159,7 +159,6 @@ public:
     };
 
     void resetStatus() {
-        available = false;
         play_pos = 0;
         processed_remain = 0;
         msecs_ahead = 0;
@@ -349,6 +348,9 @@ QString AudioOutput::backend() const
 bool AudioOutput::open()
 {
     DPTR_D(AudioOutput);
+    QMutexLocker lock(&d.mutex);
+    Q_UNUSED(lock);
+    d.available = false;
     d.resetStatus();
     if (!d.backend)
         return false;
@@ -371,6 +373,7 @@ bool AudioOutput::close()
     DPTR_D(AudioOutput);
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
+    d.available = false;
     d.resetStatus();
     if (!d.backend)
         return false;
@@ -416,9 +419,13 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
         }
     }
     // wait after all data processing finished to reduce time error
-    waitForNextBuffer();
+    if (!waitForNextBuffer()) {
+        qWarning("ao backend maybe not open");
+        d.resetStatus();
+        return false;
+    }
     d.frame_infos.push_back(AudioOutputPrivate::FrameInfo(pts, data.size()));
-    if (!d.backend)
+    if (!d.backend || !isOpen())
         return false;
     return d.backend->write(d.data);
 }
@@ -594,11 +601,11 @@ AudioOutput::DeviceFeatures AudioOutput::supportedDeviceFeatures() const
     return d.backend->supportedFeatures();
 }
 
-void AudioOutput::waitForNextBuffer()
+bool AudioOutput::waitForNextBuffer()
 {
     DPTR_D(AudioOutput);
     if (!d.backend)
-        return;
+        return false;
     //don't return even if we can add buffer because we don't know when a buffer is processed and we have /to update dequeue index
     // openal need enqueue to a dequeued buffer! why sl crash
     bool no_wait = false;//d.canAddBuffer();
@@ -612,6 +619,8 @@ void AudioOutput::waitForNextBuffer()
 #endif //AO_USE_TIMER
         int processed = d.processed_remain;
         d.processed_remain = d.backend->getWritableBytes();
+        if (d.processed_remain < 0)
+            return false;
         const int next = d.frame_infos.front().data_size;
         //qDebug("remain: %d-%d, size: %d, next: %d", processed, d.processed_remain, d.data.size(), next);
         qint64 last_wait = 0LL;
@@ -621,7 +630,13 @@ void AudioOutput::waitForNextBuffer()
             Q_UNUSED(lock);
             d.cond.wait(&d.mutex, us/1000LL);
             d.processed_remain = d.backend->getWritableBytes();
-            if (us == last_wait
+            if (d.processed_remain < 0)
+                return false;
+            if (!d.timer.isValid()) {
+                qWarning("invalid timer. closed in another thread");
+                return false;
+            }
+            if (us >= last_wait
 #if AO_USE_TIMER
                     && d.timer.elapsed() > 1000
 #endif //AO_USE_TIMER
@@ -713,7 +728,7 @@ void AudioOutput::waitForNextBuffer()
         remove = processed;
     } else {
         qFatal("User defined waitForNextBuffer() not implemented!");
-        return;
+        return false;
     }
     if (remove < 0) {
         int next = d.frame_infos.front().data_size;
@@ -728,7 +743,7 @@ void AudioOutput::waitForNextBuffer()
             next = d.frame_infos.front().data_size;
         }
         //qDebug("remove: %d, unremoved bytes < %d, writable_bytes: %d", remove, free_bytes, d.processed_remain);
-        return;
+        return true;
     }
     //qDebug("remove count: %d", remove);
     while (remove-- > 0) {
@@ -738,6 +753,7 @@ void AudioOutput::waitForNextBuffer()
         }
         d.frame_infos.pop_front();
     }
+    return true;
 }
 
 

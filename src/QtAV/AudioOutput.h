@@ -195,7 +195,7 @@ protected:
      * \brief waitForNextBuffer
      * wait until you can feed more data
      */
-    virtual void waitForNextBuffer();
+    virtual bool waitForNextBuffer();
 private Q_SLOTS:
     void reportVolume(qreal value);
     void reportMute(bool value);
