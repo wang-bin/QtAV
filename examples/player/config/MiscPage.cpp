@@ -75,7 +75,7 @@ MiscPage::MiscPage()
     m_angle->setToolTip(tr("Used by DXVA Zero Copy"));
     gl->addWidget(m_angle, r, 0);
     m_angle_platform = new QComboBox();
-    m_angle_platform->setToolTip(tr("Use D3D9 with DXVA2 to get best performance") + "\n" + tr("RESTART REQUIRED"));
+    m_angle_platform->setToolTip(tr("D3D9 has performance if ZeroCopy is disabled or for software decoders") + "\n" + tr("RESTART REQUIRED"));
     m_angle_platform->addItems(QStringList() << "D3D9" << "D3D11" << "AUTO" << "WARP");
     gl->addWidget(m_angle_platform, r++, 1);
 

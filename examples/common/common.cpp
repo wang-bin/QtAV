@@ -76,10 +76,13 @@ void load_qm(const QStringList &names, const QString& lang)
 
 void set_opengl_backend(const QString& glopt, const QString &appname)
 {
-    QString gl = appname.toLower();
-    const int ext = appname.lastIndexOf(".");
-    if (ext > 0)
-        gl = gl.left(ext);
+    QString gl = appname.toLower().replace("\\", "/");
+    int idx = gl.lastIndexOf("/");
+    if (idx >= 0)
+        gl = gl.mid(idx + 1);
+    idx = gl.lastIndexOf(".");
+    if (idx > 0)
+        gl = gl.left(idx);
     if (gl.indexOf("-desktop") > 0)
         gl = "desktop";
     else if (gl.indexOf("-es") > 0 || gl.indexOf("-angle") > 0)
@@ -94,7 +97,7 @@ void set_opengl_backend(const QString& glopt, const QString &appname)
     }
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
     if (gl.startsWith("es")) {
-        qApp->setAttribute(Qt::AA_UseOpenGLES); //5.5.0rc seems broken
+        qApp->setAttribute(Qt::AA_UseOpenGLES);
 #ifdef QT_OPENGL_DYNAMIC
         qputenv("QT_OPENGL", "angle");
 #endif

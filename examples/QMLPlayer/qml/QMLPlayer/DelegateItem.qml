@@ -7,8 +7,6 @@ Rectangle {
     height: Utils.kItemHeight
     property color selectedColor: "#66ddaadd"
     property alias text: itemText.text
-    property alias textContentWidth: itemText.contentWidth
-    property alias textContentHeight: itemText.contentHeight
     color: "#99000000"
     signal clicked
     Text {

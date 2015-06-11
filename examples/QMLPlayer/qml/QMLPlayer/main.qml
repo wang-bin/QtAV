@@ -98,6 +98,10 @@ Rectangle {
                 }
             }
         }
+        onSeekFinished: {
+            console.log("seek finished " + Utils.msec2string(position))
+        }
+
         onInternalAudioTracksChanged: {
             if (typeof(pageLoader.item.internalTracks) != "undefined")
                 pageLoader.item.internalTracks = player.internalAudioTracks
@@ -162,6 +166,7 @@ Rectangle {
             subtitleItem.visible = canRender
             subtitleLabel.visible = !canRender
         }
+
         onEnabledChanged: {
             subtitleItem.visible = enabled
             subtitleLabel.visible = enabled
@@ -367,6 +372,18 @@ Rectangle {
             onMuteChanged: player.muted = value
             onExternalAudioChanged: player.externalAudio = file
             onAudioTrackChanged: player.audioTrack = track
+            onZeroCopyChanged: {
+                var opt = player.videoCodecOptions
+                if (value) {
+                    opt["copyMode"] = "ZeroCopy"
+                } else {
+                    if (Qt.platform.os == "osx")
+                        opt["copyMode"] = "LazyCopy"
+                    else
+                        opt["copyMode"] = "OptimizedCopy"
+                }
+                player.videoCodecOptions = opt
+            }
         }
     }
     ConfigPanel {
