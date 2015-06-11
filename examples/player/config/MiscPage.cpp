@@ -71,8 +71,13 @@ MiscPage::MiscPage()
     hb->addWidget(m_timeout_abort);
     gl->addLayout(hb, r++, 1);
 
-    m_angle = new QCheckBox("Force OpenGL ANGLE (Windows)");
-    gl->addWidget(m_angle, r++, 0);
+    m_angle = new QCheckBox(tr("OpenGLES2 ANGLE on Windows") + "-" + tr("RESTART REQUIRED"));
+    m_angle->setToolTip(tr("Used by DXVA Zero Copy"));
+    gl->addWidget(m_angle, r, 0);
+    m_angle_platform = new QComboBox();
+    m_angle_platform->setToolTip(tr("Use D3D9 with DXVA2 to get best performance") + "\n" + tr("RESTART REQUIRED"));
+    m_angle_platform->addItems(QStringList() << "D3D9" << "D3D11" << "AUTO" << "WARP");
+    gl->addWidget(m_angle_platform, r++, 1);
 
     applyToUi();
 }
@@ -89,6 +94,7 @@ void MiscPage::applyFromUi()
             .setPreviewWidth(m_preview_w->value())
             .setPreviewHeight(m_preview_h->value())
             .setANGLE(m_angle->isChecked())
+            .setANGLEPlatform(m_angle_platform->currentText().toLower())
             .setForceFrameRate(m_fps->value())
             .setBufferValue(m_buffer_value->value())
             .setTimeout(m_timeout->value())
@@ -102,6 +108,7 @@ void MiscPage::applyToUi()
     m_preview_w->setValue(Config::instance().previewWidth());
     m_preview_h->setValue(Config::instance().previewHeight());
     m_angle->setChecked(Config::instance().isANGLE());
+    m_angle_platform->setCurrentIndex(m_angle_platform->findText(Config::instance().getANGLEPlatform().toUpper()));
     m_fps->setValue(Config::instance().forceFrameRate());
     //m_notify_interval->setValue(Config::instance().avfilterOptions());
     m_buffer_value->setValue(Config::instance().bufferValue());

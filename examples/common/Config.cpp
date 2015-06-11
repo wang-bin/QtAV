@@ -109,7 +109,9 @@ public:
         avfilterAudio = settings.value("options", "").toString();
         settings.endGroup();
         settings.beginGroup("opengl");
-        angle = settings.value("angle", false).toBool();
+        angle = settings.value("angle", true).toBool();
+        // d3d11 bad performance (gltexsubimage2d)
+        angle_dx = settings.value("angle_platform", "d3d9").toString();
         settings.endGroup();
 
         settings.beginGroup("buffer");
@@ -167,6 +169,7 @@ public:
         settings.endGroup();
         settings.beginGroup("opengl");
         settings.setValue("angle", angle);
+        settings.setValue("angle_platform", angle_dx);
         settings.endGroup();
         settings.beginGroup("buffer");
         settings.setValue("value", buffer_value);
@@ -207,6 +210,7 @@ public:
     int preview_w, preview_h;
 
     bool angle;
+    QString angle_dx;
     bool abort_timeout;
     qreal timeout;
     int buffer_value;
@@ -647,6 +651,20 @@ Config& Config::setANGLE(bool value)
         return *this;
     mpData->angle = value;
     emit ANGLEChanged();
+    return *this;
+}
+
+QString Config::getANGLEPlatform() const
+{
+    return mpData->angle_dx;
+}
+
+Config& Config::setANGLEPlatform(const QString& value)
+{
+    if (mpData->angle_dx == value)
+        return *this;
+    mpData->angle_dx = value;
+    emit ANGLEPlatformChanged();
     return *this;
 }
 

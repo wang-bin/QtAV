@@ -77,23 +77,40 @@ void load_qm(const QStringList &names, const QString& lang)
 void set_opengl_backend(const QString& glopt, const QString &appname)
 {
     QString gl = appname.toLower();
+    const int ext = appname.lastIndexOf(".");
+    if (ext > 0)
+        gl = gl.left(ext);
     if (gl.indexOf("-desktop") > 0)
         gl = "desktop";
-    else if (gl.indexOf("-es") > 0 || gl.indexOf("-angle") > 0) //-es.exe
-        gl = "es";
+    else if (gl.indexOf("-es") > 0 || gl.indexOf("-angle") > 0)
+        gl = gl.mid(gl.indexOf("-es") + 1);
     else if (gl.indexOf("-sw") > 0 || gl.indexOf("-software") > 0)
         gl = "software";
     else
         gl = glopt.toLower();
-    if (gl == "auto" && Config::instance().isANGLE())
-        gl = "es";
+    if ((gl.isEmpty() || gl == "auto") && Config::instance().isANGLE()) {
+        gl = "es_";
+        gl.append(Config::instance().getANGLEPlatform().toLower());
+    }
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
-    if (gl == "es")
-        QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
-    else if (gl == "desktop")
-        QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-    else if (gl == "software")
-        QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+    if (gl.startsWith("es")) {
+        qApp->setAttribute(Qt::AA_UseOpenGLES); //5.5.0rc seems broken
+#ifdef QT_OPENGL_DYNAMIC
+        qputenv("QT_OPENGL", "angle");
+#endif
+#ifdef Q_OS_WIN
+        if (gl.endsWith("d3d11"))
+            qputenv("QT_ANGLE_PLATFORM", "d3d11");
+        else if (gl.endsWith("d3d9"))
+            qputenv("QT_ANGLE_PLATFORM", "d3d9");
+        else if (gl.endsWith("warp"))
+            qputenv("QT_ANGLE_PLATFORM", "warp");
+#endif
+    } else if (gl == "desktop") {
+        qApp->setAttribute(Qt::AA_UseDesktopOpenGL);
+    } else if (gl == "software") {
+        qApp->setAttribute(Qt::AA_UseSoftwareOpenGL);
+    }
 #endif
 }
 
