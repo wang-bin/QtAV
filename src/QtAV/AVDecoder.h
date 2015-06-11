@@ -65,17 +65,16 @@ public:
     // avcodec_open2
     /*!
      * \brief setOptions
-     * 1. Set options for AVCodecContext. if contains key "avcodec", use it's value as a hash to set. a value of hash type is ignored.
-     * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
-     * In addition, av_dict is slow.
-     * empty value does nothing to current context if it is open, but will change AVDictionary options to null in next open.
+     * 1. If has key "avcodec", it's value (suboption, a hash or map) will be used to set AVCodecContext use av_opt_set and av_dict_set. A value of hash type is ignored.
+     * we can ignore the flags used in av_dict_xxx because we can use hash api.
+     * empty value does nothing to current context if it is open, but will clear AVDictionary in the next open.
      * AVDictionary is used in avcodec_open2() and will not change unless user call setOptions().
-     * 2. Set properties for AVDecoder. Use AVDecoder::name() or lower case as a key to set properties. If key not found, assume key is "avcodec"
+     * 2. Set QObject properties for AVDecoder. Use AVDecoder::name() or lower case as a key to set properties. If key not found, assume key is "avcodec"
+     * 3. If no ket AVDecoder::name() found in the option, set key-value pairs as QObject property-value pairs.
      * \param dict
      * example:
-     *  "avcodec": {"vismv":"pf"}, "vaapi":{"display":"DRM"}
-     * equals
-     *  "vismv":"pf", "vaapi":{"display":"DRM"}
+     *  "avcodec": {"vismv":"pf"}, "vaapi":{"display":"DRM"}, "copyMode": "ZeroCopy"
+     *  means set avcodec context option vismv=>pf, VA-API display (qt property) to DRM when using VA-API, set copyMode (GPU decoders) property to ZeroCopy
      */
     void setOptions(const QVariantHash &dict);
     QVariantHash options() const;
