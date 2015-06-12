@@ -154,8 +154,6 @@ void AudioThread::run()
                     continue;
                 }
             }
-        } else {
-            d.clock->updateValue(pkt.pts);
         }
 
         /* lock here to ensure decoder and ao can complete current work before they are changed

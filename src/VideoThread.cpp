@@ -282,6 +282,7 @@ void VideoThread::run()
     bool sync_video = d.clock->clockType() == AVClock::VideoClock; // no frame drop
     const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
     bool skip_render = false; // keep true if decoded frame does not reach desired time
+    qreal v_a = 0;
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -322,7 +323,7 @@ void VideoThread::run()
         }
         const qreal dts = pkt.dts; //FIXME: pts and dts
         // TODO: delta ref time
-        qreal diff = dts - d.clock->value();
+        qreal diff = dts - d.clock->value() + v_a;
         if (diff < 0 && sync_video)
             diff = 0; // this ensures no frame drop
         if (diff > kSyncThreshold) {
@@ -529,6 +530,7 @@ void VideoThread::run()
         d.last_deliver_time = d.statistics->video_only.frameDisplayed(frame.timestamp());
         // TODO: store original frame. now the frame is filtered and maybe converted to renderer perferred format
         d.displayed_frame = frame;
+        v_a = frame.timestamp() - d.clock->value();
     }
     d.packets.clear();
     d.outputSet->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
