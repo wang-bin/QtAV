@@ -641,7 +641,7 @@ bool AudioOutput::waitForNextBuffer()
                     && d.timer.elapsed() > 1000
 #endif //AO_USE_TIMER
                     ) {
-                break;
+                return false;
             }
             last_wait = us;
         }
