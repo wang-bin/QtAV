@@ -25,14 +25,15 @@
 //#define CAPI_IS_LAZY_RESOLVE 0
 #ifndef CAPI_LINK_EGL
 #include <QtCore/QLibrary>
-#endif //CAPI_LINK_EGL
 #include "capi.h"
+#endif //CAPI_LINK_EGL
 #include "egl_api.h" //include last to avoid covering types later
 
 namespace egl {
 #ifdef CAPI_LINK_EGL
-class api_dll {public: bool isLoaded() const {return true;}};
-CAPI_DEFINE_DLL
+api::api(){dll=0;}
+api::~api(){}
+bool api::loaded() const{return true;}
 #else
 static const char* names[] = {
     "EGL",

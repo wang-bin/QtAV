@@ -30,8 +30,9 @@
 
 namespace ass {
 #ifdef CAPI_LINK_ASS
-class api_dll {public: bool isLoaded() const {return true;}};
-CAPI_DEFINE_DLL
+api::api(){dll=0;}
+api::~api(){}
+bool api::loaded() const{return true;}
 #else
 static const char* names[] = {
     "ass",
