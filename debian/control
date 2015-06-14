@@ -1,6 +1,6 @@
 
 Source: qtav
-Section: libs
+Section: video
 Priority: extra
 Maintainer: Sou Bunnbu <iyzsong@gmail.com>
 Build-Depends: debhelper (>= 9),
@@ -21,7 +21,7 @@ Homepage: http://www.qtav.org
 
 Package: qtav-sdk
 Architecture: all
-Section: misc
+Section: libdevel
 Depends: ${misc:Depends}, qtav-dev, qtav-private-dev, qml-module-qtav
 Description: FFmpeg powered multimedia playback SDK for Qt
  QtAV can help you to write a player with less effort than ever before.
