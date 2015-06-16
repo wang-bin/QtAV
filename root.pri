@@ -28,6 +28,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 SUPPORTED_MAKEFILE_GENERATOR = UNIX MINGW MSVC.NET MSBUILD
 message(MAKEFILE_GENERATOR=$$MAKEFILE_GENERATOR)
 greaterThan(QT_MAJOR_VERSION, 4):contains(SUPPORTED_MAKEFILE_GENERATOR, $$MAKEFILE_GENERATOR) {
+#workaround for android on windows. I don't know how qt deal with it
+  equals(MAKEFILE_GENERATOR, UNIX):equals(QMAKE_HOST.os, Windows):MAKEFILE_GENERATOR=MINGW
 #configure.prf error if makefile generator is not supported and no display in qtcreator
     load(configure)
 } else {
