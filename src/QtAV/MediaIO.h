@@ -128,6 +128,10 @@ protected:
 };
 Q_DECL_DEPRECATED typedef MediaIO AVInput; // for compatibility
 } //namespace QtAV
-//#include <QtCore/QMetaType>
-//Q_DECLARE_METATYPE(QtAV::MediaIO*)
+
+#include <QtCore/QMetaType>
+Q_DECLARE_METATYPE(QtAV::MediaIO*)
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+Q_DECLARE_METATYPE(QIODevice*)
+#endif
 #endif // QTAV_MediaIO_H

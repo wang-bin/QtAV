@@ -26,9 +26,6 @@
 #include "utils/internal.h"
 #include "utils/Logger.h"
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-Q_DECLARE_METATYPE(QIODevice*)
-#endif
 namespace QtAV {
 static const char kFileScheme[] = "file:";
 #define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'

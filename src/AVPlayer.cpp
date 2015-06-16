@@ -46,10 +46,6 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
-Q_DECLARE_METATYPE(QtAV::MediaIO*)
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-Q_DECLARE_METATYPE(QIODevice*)
-#endif
 #define EOF_ISSUE_SOLVED 0
 namespace QtAV {
 
