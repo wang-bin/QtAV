@@ -77,7 +77,15 @@ public:
     virtual const QStringList& protocols() const;
     virtual bool isSeekable() const = 0;
     virtual bool isWritable() const = 0;
+    /*!
+     * \brief read
+     * read at most maxSize bytes to data, and return the bytes were actually read
+     */
     virtual qint64 read(char *data, qint64 maxSize) = 0;
+    /*!
+     * \brief write
+     * write at most maxSize bytes from data, and return the bytes were actually written
+     */
     virtual qint64 write(const char* data, qint64 maxSize) = 0;
     /*!
      * \brief seek
@@ -101,8 +109,20 @@ public:
     //struct AVIOContext; //anonymous struct in FFmpeg1.0.x
     void* avioContext(); //const?
     void release(); //TODO: how to remove it?
+    /*!
+     * \brief isVariableSize
+     * Experiment: A hack for size() changes during playback.
+     * If true, containers that estimate duration from pts(or bit rate) will get an invalid duration. Thus no eof get
+     * when the size of playback start reaches. So playback will not stop.
+     * Demuxer seeking should work for this case.
+     */
+    virtual bool isVariableSize() const { return false;}
 protected:
     MediaIO(MediaIOPrivate& d, QObject* parent = 0);
+    /*!
+     * \brief onUrlChanged
+     * Here you can close old url, parse new url() and open it
+     */
     virtual void onUrlChanged();
     DPTR_DECLARE(MediaIO)
 };

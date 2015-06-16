@@ -497,8 +497,12 @@ bool AVDemuxer::seek(qint64 pos)
     //duration: unit is us (10^-6 s, AV_TIME_BASE)
     qint64 upos = pos*1000LL;
     if (upos > startTimeUs() + durationUs() || pos < 0LL) {
-        qWarning("Invalid seek position %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
-        return false;
+        if (pos >= 0LL && d->input && d->input->isSeekable() && d->input->isVariableSize()) {
+            qWarning("Seek for variable size hack. %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
+        } else {
+            qWarning("Invalid seek position %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
+            return false;
+        }
     }
     d->eof = false;
     // no lock required because in AVDemuxThread read and seek are in the same thread
@@ -550,9 +554,13 @@ bool AVDemuxer::seek(qint64 pos)
     return true;
 }
 
-void AVDemuxer::seek(qreal q)
+bool AVDemuxer::seek(qreal q)
 {
-    seek(qint64(q*(double)duration()));
+    if (duration() <= 0) {
+        qWarning("duration() must be valid for percentage seek");
+        return false;
+    }
+    return seek(qint64(q*(double)duration()));
 }
 
 QString AVDemuxer::fileName() const

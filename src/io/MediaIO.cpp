@@ -76,8 +76,10 @@ static int64_t av_seek(void *opaque, int64_t offset, int whence)
     if (whence == SEEK_SET && offset < 0)
         return -1;
     MediaIO* io = static_cast<MediaIO*>(opaque);
-    if (!io->isSeekable())
+    if (!io->isSeekable()) {
+        qWarning("Can not seek. MediaIO[%s] is not a seekable IO", MediaIO::staticMetaObject.className());
         return -1;
+    }
     if (whence == AVSEEK_SIZE) {
         // return the filesize without seeking anywhere. Supporting this is optional.
         return io->size() > 0 ? io->size() : 0;
@@ -163,7 +165,9 @@ void* MediaIO::avioContext()
     // open for write if 1. SET 0 if open for read otherwise data ptr in av_read(data, ...) does not change
     const int write_flag = (accessMode() == Write) && isWritable();
     d.ctx = avio_alloc_context(buf, IODATA_BUFFER_SIZE, write_flag, this, &av_read, write_flag ? &av_write : NULL, &av_seek);
-    d.ctx->seekable = isSeekable() ? AVIO_SEEKABLE_NORMAL : 0;
+    // if seekable==false, containers that estimate duration from pts(or bit rate) will not seek to the last frame when computing duration
+    // but it's still seekable if call seek outside(e.g. from demuxer)
+    d.ctx->seekable = isSeekable() && !isVariableSize() ? AVIO_SEEKABLE_NORMAL : 0;
     return d.ctx;
 }
 
