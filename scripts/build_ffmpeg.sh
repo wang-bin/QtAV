@@ -8,6 +8,7 @@ echo "This is part of QtAV project. Get the latest script from https://github.co
 
 PLATFORMS="ios|android|maemo5|maemo6|vc|x86"
 echo "Put this script in ffmpeg source dir. Make sure your build environment is correct."
+echo 'Or put this script in other place and set PATH to include ffmpeg source dir, e.g. "export PATH=~/ffmpeg:$PATH"'
 echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
 echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }"
 echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
@@ -29,8 +30,19 @@ fi
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 : ${LIB_OPT:="--enable-shared"}
 : ${MISC_OPT="--enable-hwaccels"}#--enable-gpl --enable-version3
-CONFIGURE=configure
 
+
+FFSRC=$PWD
+[ -f configure ] && {
+  export PATH=$FFSRC:$PATH
+} || {
+  which configure &>/dev/null || {
+    echo 'ffmpeg configure script can not be found in "$PATH"'
+    exit 0
+  }
+  FFSRC=`which configure`
+  FFSRC=${FFSRC%/configure}
+}
 
 toupper(){
     echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
@@ -60,7 +72,7 @@ is_libav() {
 enable_opt() {
   local OPT=$1
   # grep -m1
-  grep "\-\-enable\-$OPT" configure && eval ${OPT}_opt="--enable-$OPT" &>/dev/null
+  grep "\-\-enable\-$OPT" $FFSRC/configure && eval ${OPT}_opt="--enable-$OPT" &>/dev/null
 }
 #CPU_FLAGS=-mmmx -msse -mfpmath=sse
 #ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
@@ -70,7 +82,7 @@ enable_opt vdpau
 enable_opt vda
 
 # clock_gettime in librt instead of glibc>=2.17
-grep "LIBRT" configure &>/dev/null && {
+grep "LIBRT" $FFSRC/configure &>/dev/null && {
   # TODO: cc test
   platform_is Linux && ! target_is android && EXTRALIBS="$EXTRALIBS -lrt"
 }
@@ -78,8 +90,8 @@ grep "LIBRT" configure &>/dev/null && {
 #FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
 #FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
 # n1.2.8, 2.5.1, 2.5
-FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
-FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
+FFMAJOR=`$FFSRC/version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
+FFMINOR=`$FFSRC/version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
 setup_vc_env() {
@@ -138,23 +150,20 @@ setup_android_env() {
   ANDROID_SYSROOT="$ANDROID_TOOLCHAIN_DIR/sysroot" #"$NDK_ROOT/platforms/android-14/arch-arm"
 # --enable-libstagefright-h264
   ANDROIDOPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH}"
-  test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-19 --toolchain=${ANDROID_TOOLCHAIN_PREFIX}-4.8 --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
+  test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-19 --toolchain=${ANDROID_TOOLCHAIN_PREFIX}-4.6 --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$PATH
   rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
   rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
-:<<RM
-  CONFIGURE=configure-android
-  cat configure |sed s,SLIBNAME_WITH_MAJOR=\'$\(SLIBNAME\)\.$\(LIBMAJOR\)\',SLIBNAME_WITH_MAJOR=\'$\(SLIBPREF\)$\(FULLNAME\)\-$\(LIBMAJOR\)$\(SLIBSUF\)\', |sed s,SLIB_INSTALL_NAME=\'\$\(SLIBNAME_WITH_VERSION\)\',SLIB_INSTALL_NAME=\'\$\(SLIBNAME_WITH_MAJOR\)\', |sed s,SLIB_INSTALL_LINKS=\'\$\(SLIBNAME_WITH_MAJOR\)\ \$\(SLIBNAME\)\',SLIB_INSTALL_LINKS=\'\$\(SLIBNAME\)\', >$CONFIGURE
-  chmod +x $CONFIGURE
-RM
   MISC_OPT=--disable-avdevice
   PLATFORM_OPT="$ANDROIDOPT"
   EXTRA_CFLAGS="$ANDROID_CFLAGS $ANDROID_CLFAGS_ARMV7"
   INSTALL_DIR=sdk-android-$ANDROID_ARCH
+  # more flags see: https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_android.sh
 }
 
 setup_ios_env() {
 #iphoneos iphonesimulator i386
+# https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_ios.sh
   PLATFORM_OPT='--enable-cross-compile --arch=arm --target-os=darwin --cc="clang -arch armv7" --sysroot=$(xcrun --sdk iphoneos --show-sdk-path) --cpu=cortex-a8 --enable-pic'
   LIB_OPT="--enable-static"
   MISC_OPT=--disable-avdevice
@@ -245,17 +254,24 @@ fi
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
 is_libav || MISC_OPT="$MISC_OPT --disable-postproc"
-CONFIGURE="./$CONFIGURE --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $MISC_OPT --disable-muxers --disable-encoders $PLATFORM_OPT $TOOLCHAIN_OPT"
+CONFIGURE="configure --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
 # ios: https://github.com/FFmpeg/gas-preprocessor
 
+JOBS=2
+if which nproc >/dev/null; then
+    JOBS=`nproc`
+elif platform_is Darwin && which sysctl >/dev/null; then
+    JOBS=`sysctl -n machdep.cpu.thread_count`
+fi
 echo $CONFIGURE
-
+mkdir -p build_$INSTALL_DIR
+cd build_$INSTALL_DIR
 time eval $CONFIGURE
 if [ $? -eq 0 ]; then
-  time (make -j8 install prefix="$PWD/$INSTALL_DIR")
+  time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR")
 fi
 
 # --enable-pic is default  --enable-lto
