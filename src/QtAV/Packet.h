@@ -72,7 +72,7 @@ private:
 
 bool Packet::isValid() const
 {
-    return !isCorrupt && !data.isNull() && pts >= 0 && duration >= 0; //!data.isEmpty()?
+    return !isCorrupt && !data.isEmpty() && pts >= 0 && duration >= 0; //!data.isEmpty()?
 }
 
 } //namespace QtAV
