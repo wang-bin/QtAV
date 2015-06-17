@@ -29,6 +29,18 @@
 
 namespace QtAV {
 
+/*!
+ * \brief MediaIO
+ * Built-in io (use MediaIO::create(name), example: MediaIO *qio = MediaIO::create("QIODevice"))
+ * "QIODevice":
+ *   properties:
+ *     device - read/write. parameter: QIODevice*. example: io->setDevice(mydev)
+ * "QFile"
+ *   properties:
+ *     device - read only. example: io->device()
+ *   protocols: "", "qrc"
+ */
+
 typedef int MediaIOId;
 class MediaIO;
 FACTORY_DECLARE(MediaIO)
@@ -56,6 +68,12 @@ public:
      * \return Null if none of registered MediaIO supports the protocol
      */
     static MediaIO* createForProtocol(const QString& protocol);
+    /*!
+     * \brief createForUrl
+     * Create a MediaIO and setUrl(url) if protocol of url is supported.
+     * Example: MediaIO *qrc = MediaIO::createForUrl("qrc:/icon/test.mkv");
+     * \return MediaIO instance with url set. Null if protocol is not supported.
+     */
     static MediaIO* createForUrl(const QString& url);
 
     MediaIO();

@@ -59,6 +59,18 @@ MediaIO* MediaIO::createForProtocol(const QString &protocol)
     return 0;
 }
 
+MediaIO* MediaIO::createForUrl(const QString &url)
+{
+    const int p = url.indexOf(":");
+    if (p < 0)
+        return 0;
+    MediaIO *io = MediaIO::createForProtocol(url.left(p));
+    if (!io)
+        return 0;
+    io->setUrl(url);
+    return io;
+}
+
 static int av_read(void *opaque, unsigned char *buf, int buf_size)
 {
     MediaIO* io = static_cast<MediaIO*>(opaque);
