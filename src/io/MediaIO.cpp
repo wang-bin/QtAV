@@ -108,10 +108,6 @@ static int64_t av_seek(void *opaque, int64_t offset, int whence)
     return io->position();
 }
 
-MediaIO::MediaIO()
-    : QObject(0)
-{}
-
 MediaIO::MediaIO(QObject *parent)
     : QObject(parent)
 {}

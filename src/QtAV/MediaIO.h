@@ -76,8 +76,6 @@ public:
      */
     static MediaIO* createForUrl(const QString& url);
 
-    MediaIO();
-    MediaIO(QObject *parent);
     virtual ~MediaIO();
     virtual QString name() const = 0;
     virtual void setUrl(const QString& url);
@@ -124,9 +122,6 @@ public:
      * \return <=0 if not support
      */
     virtual qint64 size() const = 0;
-    //struct AVIOContext; //anonymous struct in FFmpeg1.0.x
-    void* avioContext(); //const?
-    void release(); //TODO: how to remove it?
     /*!
      * \brief isVariableSize
      * Experiment: A hack for size() changes during playback.
@@ -135,6 +130,10 @@ public:
      * Demuxer seeking should work for this case.
      */
     virtual bool isVariableSize() const { return false;}
+    // The followings are for internal use. used by AVDemuxer, AVMuxer
+    //struct AVIOContext; //anonymous struct in FFmpeg1.0.x
+    void* avioContext(); //const?
+    void release(); //TODO: how to remove it?
 protected:
     MediaIO(MediaIOPrivate& d, QObject* parent = 0);
     /*!
@@ -143,13 +142,17 @@ protected:
      */
     virtual void onUrlChanged();
     DPTR_DECLARE(MediaIO)
+//private: // must add QT+=av-private if default ctor is private
+    // base class, not direct create. only final class has public ctor is enough
+    // FIXME: it's required by Q_DECLARE_METATYPE (also copy ctor)
+    MediaIO(QObject* parent = 0);
 };
-Q_DECL_DEPRECATED typedef MediaIO AVInput; // for compatibility
+Q_DECL_DEPRECATED typedef MediaIO AVInput; // for source compatibility
 } //namespace QtAV
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtCore/QMetaType>
 Q_DECLARE_METATYPE(QtAV::MediaIO*)
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 Q_DECLARE_METATYPE(QIODevice*)
 #endif
 #endif // QTAV_MediaIO_H
