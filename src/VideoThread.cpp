@@ -445,26 +445,18 @@ void VideoThread::run()
         if (dec_opt != dec_opt_old)
             dec->setOptions(*dec_opt);
         if (!dec->decode(pkt)) {
+            qWarning("Decode video failed. undecoded: %d", dec->undecodedSize());
             pkt = Packet();
             continue;
-        } else {
-            int undecoded = dec->undecodedSize();
-            if (undecoded > 0) {
-                qDebug("undecoded size: %d", undecoded);
-                const int remove = pkt.data.size() - undecoded;
-                if (remove > 0)
-                    pkt.data.remove(0, pkt.data.size() - undecoded);
-            } else {
-                pkt = Packet();
-            }
         }
+        // reduce here to ensure to decode the rest data in the next loop
+        pkt.data = QByteArray::fromRawData(pkt.data.constData() + pkt.data.size() - dec->undecodedSize(), dec->undecodedSize());
         VideoFrame frame = dec->frame();
         if (!frame.isValid()) {
-            pkt = Packet(); //mark invalid to take next
-            qWarning() << "invalid video frame from decoder";
+            qWarning("invalid video frame from decoder. undecoded data size: %d", pkt.data.size());
             continue;
         }
-        if (frame.timestamp() == 0)
+        if (frame.timestamp() <= 0)
             frame.setTimestamp(pkt.pts); // pkt.pts is wrong. >= real timestamp
         const qreal pts = frame.timestamp();
         // seek finished because we can ensure no packet before seek decoded when render_pts0 is set
