@@ -28,9 +28,6 @@
 #include <QtCore/QVariant>
 #include <QtCore/QObject>
 
-class QByteArray;
-struct AVCodecContext;
-
 namespace QtAV {
 
 class AVDecoderPrivate;
@@ -52,8 +49,8 @@ public:
     virtual bool close();
     bool isOpen() const;
     virtual void flush();
-    void setCodecContext(AVCodecContext* codecCtx); //protected
-    AVCodecContext* codecContext() const;
+    void setCodecContext(void* codecCtx); //protected
+    void* codecContext() const;
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
     // TODO: remove

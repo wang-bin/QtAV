@@ -63,6 +63,7 @@ public:
     virtual bool setup(AVCodecContext* avctx) = 0;
 
     AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt);
+    //TODO: remove opaque
     virtual bool getBuffer(void **opaque, uint8_t **data) = 0;
     virtual void releaseBuffer(void *opaque, uint8_t *data) = 0;
     virtual AVPixelFormat vaPixelFormat() const = 0;
