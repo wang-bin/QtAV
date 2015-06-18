@@ -1,9 +1,10 @@
 TEMPLATE = subdirs
 
 SUBDIRS = common
-
-!no-widgets:!android {
-SUBDIRS += \
+!android {
+  SUBDIRS += audiopipeline
+!no-widgets {
+  SUBDIRS += \
     sharedoutput \
     simpletranscode \
     simpleplayer \
@@ -13,8 +14,10 @@ SUBDIRS += \
     videographicsitem \
     videogroup \
     videowall
+
+  player.depends += common
 }
-player.depends += common
+}
 
 greaterThan(QT_MAJOR_VERSION, 4) {
   greaterThan(QT_MINOR_VERSION, 3) {
