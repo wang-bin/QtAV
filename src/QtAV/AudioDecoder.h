@@ -43,11 +43,11 @@ public:
     static AudioDecoder* create(AudioDecoderId id);
     /*!
      * \brief create
-     * create a decoder from registered name
+     * create a decoder from registered name. FFmpeg decoder will be created for empty name
      * \param name can be "FFmpeg"
      * \return 0 if not registered
      */
-    static AudioDecoder* create(const QString& name);
+    static AudioDecoder* create(const QString& name = "FFmpeg");
     virtual AudioDecoderId id() const = 0;
     QString name() const; //name from factory
     virtual QByteArray data() const; //decoded data

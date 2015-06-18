@@ -67,11 +67,11 @@ public:
     static VideoDecoder* create(VideoDecoderId id);
     /*!
      * \brief create
-     * create a decoder from registered name
+     * create a decoder from registered name. FFmpeg decoder will be created for empty name
      * \param name can be "FFmpeg", "CUDA", "VDA", "VAAPI", "DXVA", "Cedarv"
      * \return 0 if not registered
      */
-    static VideoDecoder* create(const QString& name);
+    static VideoDecoder* create(const QString& name = "FFmpeg");
     virtual VideoDecoderId id() const = 0;
     QString name() const; //name from factory
     virtual VideoFrame frame() = 0;

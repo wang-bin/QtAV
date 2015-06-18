@@ -48,10 +48,10 @@ public:
     /*!
      * \brief create
      * create a decoder from registered name
-     * \param name can be "FFmpeg"
+     * \param name can be "FFmpeg". FFmpeg encoder will be created for empty name
      * \return 0 if not registered
      */
-    static VideoEncoder* create(const QString& name);
+    static VideoEncoder* create(const QString& name = "FFmpeg");
     virtual VideoEncoderId id() const = 0;
     QString name() const Q_DECL_OVERRIDE; //name from factory
     /*!
