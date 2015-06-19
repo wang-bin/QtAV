@@ -23,6 +23,7 @@
 #define QTAV_AVENCODER_P_H
 
 #include <QtCore/QVariant>
+#include "QtAV/AudioFormat.h"
 #include "QtAV/Packet.h"
 #include "QtAV/VideoFormat.h"
 #include "QtAV/private/AVCompat.h"
@@ -77,9 +78,10 @@ public:
         bit_rate = 64000;
     }
 
-    virtual ~AudioEncoderPrivate();
+    virtual ~AudioEncoderPrivate() {}
 
     AudioResampler *resampler;
+    AudioFormat format, format_used;
 };
 
 class Q_AV_PRIVATE_EXPORT VideoEncoderPrivate : public AVEncoderPrivate

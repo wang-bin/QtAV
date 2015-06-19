@@ -275,7 +275,7 @@ win32 {
 glibc_compat: *linux*: LIBS += -lrt  # do not use clock_gettime in libc, GLIBC_2.17 is not available on old system
 static_ffmpeg {
 # libs needed by mac static ffmpeg. corefoundation: vda, avdevice
-  mac: LIBS += -liconv -lbz2 -lz -framework CoreFoundation
+  mac: LIBS += -liconv -lbz2 -lz -framework CoreFoundation  -Wl,-framework,Security
   win32: LIBS *= -lws2_32 -lstrmiids -lvfw32 -luuid
   !mac:*g++* {
     LIBS += -lz
@@ -300,9 +300,11 @@ SOURCES += \
     AudioFrame.cpp \
     AudioResampler.cpp \
     AudioResamplerTypes.cpp \
-    codec/AVDecoder.cpp \
     codec/audio/AudioDecoder.cpp \
     codec/audio/AudioDecoderFFmpeg.cpp \
+    codec/audio/AudioEncoder.cpp \
+    codec/audio/AudioEncoderFFmpeg.cpp \
+    codec/AVDecoder.cpp \
     codec/AVEncoder.cpp \
     AVMuxer.cpp \
     AVDemuxer.cpp \
@@ -357,6 +359,7 @@ SDK_HEADERS *= \
     QtAV/AudioResampler.h \
     QtAV/AudioResamplerTypes.h \
     QtAV/AudioDecoder.h \
+    QtAV/AudioEncoder.h \
     QtAV/AudioFormat.h \
     QtAV/AudioFrame.h \
     QtAV/AudioOutput.h \
