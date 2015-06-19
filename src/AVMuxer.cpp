@@ -23,6 +23,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/MediaIO.h"
 #include "QtAV/VideoEncoder.h"
+#include "QtAV/AudioEncoder.h"
 #include "utils/internal.h"
 #include "utils/Logger.h"
 
@@ -47,6 +48,7 @@ public:
         , format(0)
         , io(0)
         , dict(0)
+        , aenc(0)
         , venc(0)
     {
         av_register_all();
@@ -62,7 +64,7 @@ public:
             io = 0;
         }
     }
-    AVCodec* addStream(AVFormatContext* ctx, AVCodecID cid);
+    AVStream* addStream(AVFormatContext* ctx, AVCodec* codec);
     bool prepareStreams();
     void applyOptionsForDict();
     void applyOptionsForContext();
@@ -83,16 +85,14 @@ public:
     AVDictionary *dict;
     QVariantHash options;
     QList<int> audio_streams, video_streams, subtitle_streams;
+    AudioEncoder *aenc; // not owner
     VideoEncoder *venc; // not owner
 };
 
-AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
+AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodec *codec)
 {
-    AVCodec* codec = avcodec_find_encoder(cid);
-    if (!codec) {
-        qWarning("Can not find encoder for %s", avcodec_get_name(cid));
+    if (!codec)
         return 0;
-    }
     AVStream *s = avformat_new_stream(ctx, codec);
     if (!s) {
         qWarning("Can not allocate stream");
@@ -100,31 +100,17 @@ AVCodec* AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodecID cid)
     }
     // set by avformat if unset
     s->id = ctx->nb_streams - 1;
+    s->time_base = kTB;
     AVCodecContext *c = s->codec;
-    c->codec_id = cid;
-    if (codec->type == AVMEDIA_TYPE_VIDEO) {
-        if (venc) {
-            s->time_base = kTB;//av_d2q(1.0/venc->frameRate(), venc->frameRate()*1001.0+2);
-            c->bit_rate = venc->bitRate();
-            c->width = venc->width();
-            c->height = venc->height();
-            c->pix_fmt = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(venc->pixelFormat());
-            // Using codec->time_base is deprecated, but needed for older lavf.
-            c->time_base = s->time_base;
-        }
-    }
+    c->codec_id = codec->id;
+    // Using codec->time_base is deprecated, but needed for older lavf.
+    c->time_base = s->time_base;
     /* Some formats want stream headers to be separate. */
     if (ctx->oformat->flags & AVFMT_GLOBALHEADER)
         c->flags |= CODEC_FLAG_GLOBAL_HEADER;
     // expose avctx to encoder and set properties in encoder?
     // list codecs for a given format in ui
-    if (codec->type == AVMEDIA_TYPE_AUDIO)
-        audio_streams.push_back(s->id);
-    else if (codec->type == AVMEDIA_TYPE_VIDEO)
-        video_streams.push_back(s->id);
-    else if (codec->type == AVMEDIA_TYPE_SUBTITLE)
-        subtitle_streams.push_back(s->id);
-    return codec;
+    return s;
 }
 
 bool AVMuxer::Private::prepareStreams()
@@ -133,13 +119,52 @@ bool AVMuxer::Private::prepareStreams()
     video_streams.clear();
     subtitle_streams.clear();
     AVOutputFormat* fmt = format_ctx->oformat;
-    if (venc && !venc->codecName().isEmpty()) {
-        AVCodec *codec = avcodec_find_encoder_by_name(venc->codecName().toUtf8().constData());
-        addStream(format_ctx, codec->id);
-    } else if (fmt->video_codec != QTAV_CODEC_ID(NONE)) {
-        addStream(format_ctx, fmt->video_codec);
+    if (venc) {
+        AVCodec *codec = 0;
+        if (!venc->codecName().isEmpty()) {
+            codec = avcodec_find_encoder_by_name(venc->codecName().toUtf8().constData());
+            if (!codec)
+                qWarning("Can not find encoder for %s", venc->codecName().toUtf8().constData());
+        } else if (fmt->video_codec != QTAV_CODEC_ID(NONE)) {
+            codec = avcodec_find_encoder(fmt->video_codec);
+            if (!codec)
+                qWarning("Can not find encoder for %s", avcodec_get_name(fmt->video_codec));
+        }
+        AVStream *s = addStream(format_ctx, codec);
+        if (s) {
+            AVCodecContext *c = s->codec;
+            c->bit_rate = venc->bitRate();
+            c->width = venc->width();
+            c->height = venc->height();
+            /// MUST set after encoder is open to ensure format is valid and the same
+            c->pix_fmt = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(venc->pixelFormat());
+            video_streams.push_back(s->id);
+        }
     }
-    return true;
+    if (aenc) {
+        AVCodec *codec = 0;
+        if (!aenc->codecName().isEmpty()) {
+            codec = avcodec_find_encoder_by_name(aenc->codecName().toUtf8().constData());
+            if (!codec)
+                qWarning("Can not find encoder for %s", aenc->codecName().toUtf8().constData());
+        } else if (fmt->video_codec != QTAV_CODEC_ID(NONE)) {
+            codec = avcodec_find_encoder(fmt->video_codec);
+            if (!codec)
+                qWarning("Can not find encoder for %s", avcodec_get_name(fmt->video_codec));
+        }
+        AVStream *s = addStream(format_ctx, codec);
+        if (s) {
+            AVCodecContext *c = s->codec;
+            c->bit_rate = aenc->bitRate();
+            /// MUST set after encoder is open to ensure format is valid and the same
+            c->sample_fmt = (AVSampleFormat)aenc->audioFormat().sampleFormatFFmpeg();
+            c->channel_layout = aenc->audioFormat().channelLayoutFFmpeg();
+            c->channels = aenc->audioFormat().channels();
+            c->bits_per_raw_sample = aenc->audioFormat().bytesPerSample()*8; // need??
+            audio_streams.push_back(s->id);
+        }
+    }
+    return !(audio_streams.isEmpty() && video_streams.isEmpty() && subtitle_streams.isEmpty());
 }
 
 // TODO: move to QtAV::supportedFormats(bool out). custom protols?
@@ -390,6 +415,11 @@ bool AVMuxer::writeVideo(const QtAV::Packet& packet)
 void AVMuxer::copyProperties(VideoEncoder *enc)
 {
     d->venc = enc;
+}
+
+void AVMuxer::copyProperties(AudioEncoder *enc)
+{
+    d->aenc = enc;
 }
 
 void AVMuxer::setOptions(const QVariantHash &dict)
