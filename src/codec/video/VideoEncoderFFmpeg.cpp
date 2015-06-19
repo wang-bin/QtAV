@@ -72,8 +72,8 @@ public:
 bool VideoEncoderFFmpegPrivate::open()
 {
     if (codec_name.isEmpty()) {
-        // copy ctx from muxer
-        AVCodec *codec = avcodec_find_decoder(avctx->codec_id);
+        // copy ctx from muxer by copyAVCodecContext
+        AVCodec *codec = avcodec_find_encoder(avctx->codec_id);
         AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
         return true;
     }
