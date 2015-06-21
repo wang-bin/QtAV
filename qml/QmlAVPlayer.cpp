@@ -74,6 +74,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , m_timeout(30000)
   , m_abort_timeout(true)
   , m_audio_track(0)
+  , mUseWallclockAsTimestamps(false)
 {
     classBegin();
 }
@@ -248,6 +249,21 @@ void QmlAVPlayer::setVideoCodecOptions(const QVariantMap &value)
     vcodec_opt = value;
     emit videoCodecOptionsChanged();
     // player maybe not ready
+}
+
+void QmlAVPlayer::setWallclockAsTimestamps(bool o)
+{
+    if (mUseWallclockAsTimestamps == o)
+        return;
+    mUseWallclockAsTimestamps = o;
+
+	QVariantHash opt;
+    if (o) {
+	    opt["use_wallclock_as_timestamps"] = 1;
+	}
+    mpPlayer->setBufferValue(1);
+    mpPlayer->setOptionsForFormat(opt);
+    emit useWallclockAsTimestampsChanged();
 }
 
 static AudioFormat::ChannelLayout toAudioFormatChannelLayout(QmlAVPlayer::ChannelLayout ch)
