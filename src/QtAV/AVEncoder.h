@@ -46,8 +46,6 @@ public:
      */
     void setCodecName(const QString& name);
     QString codecName() const;
-    void setBitRate(int value);
-    int bitRate() const;
     bool open();
     bool close();
     bool isOpen() const;
@@ -59,7 +57,13 @@ public:
      */
     virtual void copyAVCodecContext(void* ctx);
     void* codecContext() const; // TODO: always have a avctx like decoder?
-    // avcodec_open2
+    /*!
+     * \brief setBitRate
+     * Higher bit rate result in better quality.
+     * Default for video: 400000, audio: 64000
+     */
+    void setBitRate(int value);
+    int bitRate() const;
     /*!
      * \brief setOptions
      * 1. If has key "avcodec", it's value (suboption, a hash or map) will be used to set AVCodecContext use av_opt_set and av_dict_set. A value of hash type is ignored.

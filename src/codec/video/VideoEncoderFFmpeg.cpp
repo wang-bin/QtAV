@@ -89,14 +89,19 @@ bool VideoEncoderFFmpegPrivate::open()
     avctx = avcodec_alloc_context3(codec);
     avctx->width = width; // coded_width works, why?
     avctx->height = height;
+    // reset format_used to user defined format. important to update default format if format is invalid
+    format_used = format.pixelFormat();
     if (format.pixelFormat() == VideoFormat::Format_Invalid) {
         if (codec->pix_fmts) {
-            avctx->pix_fmt = codec->pix_fmts[0];
+            qDebug("use first supported pixel format: %d", codec->pix_fmts[0]);
+            format_used = VideoFormat::pixelFormatFromFFmpeg((int)codec->pix_fmts[0]);
+        } else {
+            qWarning("pixel format and supported pixel format are not set. use yuv420p");
+            format_used = VideoFormat::Format_YUV420P;
         }
-    } else {
-        avctx->pix_fmt = (AVPixelFormat)format.pixelFormatFFmpeg();
     }
-    format_used = VideoFormat::pixelFormatFromFFmpeg(avctx->pix_fmt);
+    //avctx->sample_aspect_ratio =
+    avctx->pix_fmt = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(format_used);
     avctx->time_base = av_d2q(1.0/frame_rate, frame_rate*1001.0+2);
     qDebug("size: %dx%d tbc: %f=%d/%d", width, height, av_q2d(avctx->time_base), avctx->time_base.num, avctx->time_base.den);
     avctx->bit_rate = bit_rate;
@@ -118,6 +123,7 @@ bool VideoEncoderFFmpegPrivate::open()
 #endif
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
+    // from mpv ao_lavc
     const int buffer_size = qMax<int>(qMax<int>(width*height*6+200, FF_MIN_BUFFER_SIZE), sizeof(AVPicture));//??
     buffer.resize(buffer_size);
     return true;
@@ -149,6 +155,7 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
         f->format = frame.format().pixelFormatFFmpeg();
         f->width = frame.width();
         f->height = frame.height();
+//        f->quality = d.avctx->global_quality;
         // TODO: record last pts
         f->pts = int64_t(frame.timestamp()*frameRate());
         // pts is set in muxer

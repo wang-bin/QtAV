@@ -64,7 +64,7 @@ public:
             io = 0;
         }
     }
-    AVStream* addStream(AVFormatContext* ctx, AVCodec* codec);
+    AVStream* addStream(AVFormatContext* ctx, const QString& codecName, AVCodecID codecId);
     bool prepareStreams();
     void applyOptionsForDict();
     void applyOptionsForContext();
@@ -89,8 +89,18 @@ public:
     VideoEncoder *venc; // not owner
 };
 
-AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, AVCodec *codec)
+AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, const QString &codecName, AVCodecID codecId)
 {
+    AVCodec *codec = NULL;
+    if (!codecName.isEmpty()) {
+        codec = avcodec_find_encoder_by_name(codecName.toUtf8().constData());
+        if (!codec)
+            qWarning("Can not find encoder for %s", codecName.toUtf8().constData());
+    } else if (codecId != QTAV_CODEC_ID(NONE)) {
+        codec = avcodec_find_encoder(codecId);
+        if (!codec)
+            qWarning("Can not find encoder for %s", avcodec_get_name(codecId));
+    }
     if (!codec)
         return 0;
     AVStream *s = avformat_new_stream(ctx, codec);
@@ -120,17 +130,7 @@ bool AVMuxer::Private::prepareStreams()
     subtitle_streams.clear();
     AVOutputFormat* fmt = format_ctx->oformat;
     if (venc) {
-        AVCodec *codec = 0;
-        if (!venc->codecName().isEmpty()) {
-            codec = avcodec_find_encoder_by_name(venc->codecName().toUtf8().constData());
-            if (!codec)
-                qWarning("Can not find encoder for %s", venc->codecName().toUtf8().constData());
-        } else if (fmt->video_codec != QTAV_CODEC_ID(NONE)) {
-            codec = avcodec_find_encoder(fmt->video_codec);
-            if (!codec)
-                qWarning("Can not find encoder for %s", avcodec_get_name(fmt->video_codec));
-        }
-        AVStream *s = addStream(format_ctx, codec);
+        AVStream *s = addStream(format_ctx, venc->codecName(), fmt->video_codec);
         if (s) {
             AVCodecContext *c = s->codec;
             c->bit_rate = venc->bitRate();
@@ -142,21 +142,12 @@ bool AVMuxer::Private::prepareStreams()
         }
     }
     if (aenc) {
-        AVCodec *codec = 0;
-        if (!aenc->codecName().isEmpty()) {
-            codec = avcodec_find_encoder_by_name(aenc->codecName().toUtf8().constData());
-            if (!codec)
-                qWarning("Can not find encoder for %s", aenc->codecName().toUtf8().constData());
-        } else if (fmt->video_codec != QTAV_CODEC_ID(NONE)) {
-            codec = avcodec_find_encoder(fmt->video_codec);
-            if (!codec)
-                qWarning("Can not find encoder for %s", avcodec_get_name(fmt->video_codec));
-        }
-        AVStream *s = addStream(format_ctx, codec);
+        AVStream *s = addStream(format_ctx, aenc->codecName(), fmt->audio_codec);
         if (s) {
             AVCodecContext *c = s->codec;
             c->bit_rate = aenc->bitRate();
             /// MUST set after encoder is open to ensure format is valid and the same
+            c->sample_rate = aenc->audioFormat().sampleRate();
             c->sample_fmt = (AVSampleFormat)aenc->audioFormat().sampleFormatFFmpeg();
             c->channel_layout = aenc->audioFormat().channelLayoutFFmpeg();
             c->channels = aenc->audioFormat().channels();

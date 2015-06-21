@@ -69,7 +69,8 @@ public:
     bool close();
     bool isOpen() const;
 
-    void copyProperties(VideoEncoder* enc);
+    // TODO: copyAudioContext(void* avctx) for copy encoding without decoding
+    void copyProperties(VideoEncoder* enc); //rename to setEncoder
     void copyProperties(AudioEncoder* enc);
 
     void setOptions(const QVariantHash &dict);

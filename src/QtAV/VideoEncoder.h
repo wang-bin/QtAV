@@ -47,7 +47,7 @@ public:
     static VideoEncoder* create(VideoEncoderId id);
     /*!
      * \brief create
-     * create a decoder from registered name
+     * create an encoder from registered names
      * \param name can be "FFmpeg". FFmpeg encoder will be created for empty name
      * \return 0 if not registered
      */
@@ -61,6 +61,7 @@ public:
      * \return
      */
     virtual bool encode(const VideoFrame& frame = VideoFrame()) = 0;
+    /// output parameters
     /*!
      * \brief setWidth
      * set the encoded video width. The same as input frame size if value <= 0
@@ -69,15 +70,17 @@ public:
     int width() const;
     void setHeight(int value);
     int height() const;
+    /// TODO: check avctx->supported_framerates. use frame_rate_used
     void setFrameRate(qreal value);
     qreal frameRate() const;
     /*!
      * \brief setPixelFormat
-     * set Format_Invalid (default) to auto
+     * If not set or set to an invalid format, a supported format will be used and pixelFormat() will be that format after open()
      * \param format
      */
     void setPixelFormat(const VideoFormat::PixelFormat format);
     VideoFormat::PixelFormat pixelFormat() const;
+    // TODO: supportedPixelFormats() const;
 Q_SIGNALS:
     void widthChanged();
     void heightChanged();
