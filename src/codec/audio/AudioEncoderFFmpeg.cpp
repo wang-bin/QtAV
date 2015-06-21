@@ -131,6 +131,8 @@ bool AudioEncoderFFmpegPrivate::open()
 
     avctx->bit_rate = bit_rate;
     qDebug() << format_used;
+
+    av_dict_set(&dict, "strict", "-2", 0); //aac, vorbis
     applyOptionsForContext();
     // avctx->frame_size will be set in avcodec_open2
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
@@ -178,7 +180,7 @@ bool AudioEncoderFFmpeg::encode(const AudioFrame &frame)
         const AudioFormat fmt(frame.format());
         f->format = fmt.sampleFormatFFmpeg();
         f->channel_layout = fmt.channelLayoutFFmpeg();
-        f->channels = fmt.channels(); //remove?
+        // f->channels = fmt.channels(); //remove? not availale in libav9
         // must be (not the last frame) exactly frame_size unless CODEC_CAP_VARIABLE_FRAME_SIZE is set (frame_size==0)
         // TODO: mpv use pcmhack for avctx.frame_size==0. can we use input frame.samplesPerChannel?
         f->nb_samples = d.frame_size;
