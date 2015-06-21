@@ -24,9 +24,49 @@
 
 #include <QtAV/Filter.h>
 #include <QtAV/Packet.h>
+#include <QtAV/AudioFrame.h>
 #include <QtAV/VideoFrame.h>
 
 namespace QtAV {
+
+class AudioEncoder;
+class AudioEncodeFilterPrivate;
+class Q_AV_EXPORT AudioEncodeFilter : public AudioFilter
+{
+    Q_OBJECT
+    DPTR_DECLARE_PRIVATE(AudioEncodeFilter)
+public:
+    AudioEncodeFilter(QObject *parent = 0);
+
+    /*!
+     * \brief createEncoder
+     * Destroy old encoder and create a new one. Filter has the ownership.
+     * Encoder will open when encoding first valid frame, and set width/height as frame's.
+     * \param name registered encoder name, for example "FFmpeg"
+     * \return null if failed
+     */
+    AudioEncoder* createEncoder(const QString& name = "FFmpeg");
+    /*!
+     * \brief encoder
+     * Use this to set encoder properties and options
+     * \return Encoder instance or null if createEncoder failed
+     */
+    AudioEncoder* encoder() const;
+    // TODO: async property
+
+Q_SIGNALS:
+    /*!
+     * \brief readyToEncode
+     * Emitted when encoder is open. All parameters are set and muxer can set codec properties now.
+     * close the encoder() to reset and reopen.
+     */
+    void readyToEncode();
+    void frameEncoded(const QtAV::Packet& packet);
+
+protected:
+    virtual void process(Statistics* statistics, AudioFrame* frame = 0) Q_DECL_OVERRIDE;
+    void encode(const AudioFrame& frame = AudioFrame());
+};
 
 class VideoEncoder;
 class VideoEncodeFilterPrivate;
