@@ -262,7 +262,7 @@ private Q_SLOTS:
 private:
     Q_DISABLE_COPY(QmlAVPlayer)
 
-	bool mUseWallclockAsTimestamps;
+    bool mUseWallclockAsTimestamps;
     bool m_complete;
     bool m_mute;
     bool mAutoPlay;

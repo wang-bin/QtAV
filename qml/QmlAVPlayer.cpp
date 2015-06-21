@@ -57,6 +57,7 @@ static inline QVector<VideoDecoderId> VideoDecodersFromNames(const QStringList& 
 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
+  , mUseWallclockAsTimestamps(false)
   , m_complete(false)
   , m_mute(false)
   , mAutoPlay(false)
@@ -74,7 +75,6 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , m_timeout(30000)
   , m_abort_timeout(true)
   , m_audio_track(0)
-  , mUseWallclockAsTimestamps(false)
 {
     classBegin();
 }
@@ -251,16 +251,21 @@ void QmlAVPlayer::setVideoCodecOptions(const QVariantMap &value)
     // player maybe not ready
 }
 
+bool QmlAVPlayer::useWallclockAsTimestamps() const
+{
+    return mUseWallclockAsTimestamps;
+}
+
 void QmlAVPlayer::setWallclockAsTimestamps(bool o)
 {
     if (mUseWallclockAsTimestamps == o)
         return;
     mUseWallclockAsTimestamps = o;
 
-	QVariantHash opt;
+    QVariantHash opt = mpPlayer->optionsForFormat();
     if (o) {
-	    opt["use_wallclock_as_timestamps"] = 1;
-	}
+        opt["use_wallclock_as_timestamps"] = 1;
+    }
     mpPlayer->setBufferValue(1);
     mpPlayer->setOptionsForFormat(opt);
     emit useWallclockAsTimestampsChanged();
