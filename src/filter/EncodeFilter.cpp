@@ -21,10 +21,75 @@
 
 #include "QtAV/EncodeFilter.h"
 #include "QtAV/private/Filter_p.h"
+#include "QtAV/AudioEncoder.h"
 #include "QtAV/VideoEncoder.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
+
+class AudioEncodeFilterPrivate Q_DECL_FINAL : public AudioFilterPrivate
+{
+public:
+    AudioEncodeFilterPrivate() : enc(0) {}
+    ~AudioEncodeFilterPrivate() {
+        if (enc) {
+            enc->close();
+            delete enc;
+        }
+    }
+
+    AudioEncoder* enc;
+};
+
+AudioEncodeFilter::AudioEncodeFilter(QObject *parent)
+    : AudioFilter(*new AudioEncodeFilterPrivate(), parent)
+{
+}
+
+AudioEncoder* AudioEncodeFilter::createEncoder(const QString &name)
+{
+    DPTR_D(AudioEncodeFilter);
+    if (d.enc) {
+        d.enc->close();
+        delete d.enc;
+    }
+    d.enc = AudioEncoder::create(name);
+    return d.enc;
+}
+
+AudioEncoder* AudioEncodeFilter::encoder() const
+{
+    return d_func().enc;
+}
+
+void AudioEncodeFilter::process(Statistics *statistics, AudioFrame *frame)
+{
+    Q_UNUSED(statistics);
+    encode(*frame);
+}
+
+void AudioEncodeFilter::encode(const AudioFrame& frame)
+{
+    DPTR_D(AudioEncodeFilter);
+    if (!d.enc)
+        return;
+    // encode delayed frames can pass an invalid frame
+    if (!d.enc->isOpen() && frame.isValid()) {
+        if (!d.enc->open()) { // TODO: error()
+            qWarning("Failed to open encoder");
+            return;
+        }
+        Q_EMIT readyToEncode();
+    }
+    // TODO: async
+    AudioFrame f(frame);
+    if (f.format() != d.enc->audioFormat())
+        f = f.to(d.enc->audioFormat());
+    if (!d.enc->encode(f))
+        return;
+    Q_EMIT frameEncoded(d.enc->encoded());
+}
+
 
 class VideoEncodeFilterPrivate Q_DECL_FINAL : public VideoFilterPrivate
 {

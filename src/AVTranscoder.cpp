@@ -23,6 +23,7 @@
 #include "QtAV/AVPlayer.h"
 #include "QtAV/AVMuxer.h"
 #include "QtAV/EncodeFilter.h"
+#include "utils/BlockingQueue.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -34,11 +35,15 @@ public:
         : started(false)
         , encoded_frames(0)
         , source_player(0)
+        , afilter(0)
         , vfilter(0)
     {}
 
     ~Private() {
         muxer.close();
+        if (afilter) {
+            delete afilter;
+        }
         if (vfilter) {
             delete vfilter;
         }
@@ -47,7 +52,9 @@ public:
     bool started;
     int encoded_frames;
     AVPlayer *source_player;
+    AudioEncodeFilter *afilter;
     VideoEncodeFilter *vfilter;
+    //BlockingQueue<Packet> aqueue, vqueue; // TODO: 1 queue if packet.mediaType is enabled
     AVMuxer muxer;
     QString format;
 };
@@ -145,6 +152,24 @@ VideoEncoder* AVTranscoder::videoEncoder() const
     return d->vfilter->encoder();
 }
 
+bool AVTranscoder::createAudioEncoder(const QString &name)
+{
+    if (!d->afilter) {
+        d->afilter = new AudioEncodeFilter();
+        connect(d->afilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
+        // direct: can ensure delayed frames (when stop()) are written at last
+        connect(d->afilter, SIGNAL(frameEncoded(QtAV::Packet)), SLOT(writeAudio(QtAV::Packet)), Qt::DirectConnection);
+    }
+    return !!d->afilter->createEncoder(name);
+}
+
+AudioEncoder* AVTranscoder::audioEncoder() const
+{
+    if (!d->afilter)
+        return 0;
+    return d->afilter->encoder();
+}
+
 bool AVTranscoder::isRunning() const
 {
     return d->started;
@@ -159,7 +184,10 @@ void AVTranscoder::start()
     d->encoded_frames = 0;
     d->started = true;
     if (sourcePlayer()) {
-        sourcePlayer()->installVideoFilter(d->vfilter);
+        if (d->afilter)
+            sourcePlayer()->installAudioFilter(d->afilter);
+        if (d->vfilter)
+            sourcePlayer()->installVideoFilter(d->vfilter);
     }
     Q_EMIT started();
 }
@@ -171,14 +199,21 @@ void AVTranscoder::stop()
     if (!d->muxer.isOpen())
         return;
     // get delayed frames. call VideoEncoder.encode() directly instead of through filter
+    while (audioEncoder()->encode()) {
+        qDebug("encode delayed audio frames...");
+        Packet pkt(audioEncoder()->encoded());
+        d->muxer.writeAudio(pkt);
+    }
     while (videoEncoder()->encode()) {
-        qDebug("encode delayed frames...");
+        qDebug("encode delayed video frames...");
         Packet pkt(videoEncoder()->encoded());
         d->muxer.writeVideo(pkt);
     }
     if (sourcePlayer()) {
+        sourcePlayer()->uninstallFilter(d->afilter);
         sourcePlayer()->uninstallFilter(d->vfilter);
     }
+    audioEncoder()->close();
     videoEncoder()->close();
     d->muxer.close();
     d->started = false;
@@ -187,7 +222,15 @@ void AVTranscoder::stop()
 
 void AVTranscoder::prepareMuxer()
 {
-    d->muxer.copyProperties(videoEncoder());
+    // open muxer only if all encoders are open
+    if (audioEncoder() && videoEncoder()) {
+        if (!audioEncoder()->isOpen() || !videoEncoder()->isOpen())
+            return;
+    }
+    if (audioEncoder())
+        d->muxer.copyProperties(audioEncoder());
+    if (videoEncoder())
+        d->muxer.copyProperties(videoEncoder());
     if (!d->format.isEmpty())
         d->muxer.setFormat(d->format); // clear when media changed
     if (!d->muxer.open()) {
@@ -196,14 +239,35 @@ void AVTranscoder::prepareMuxer()
     }
 }
 
+void AVTranscoder::writeAudio(const QtAV::Packet &packet)
+{
+    // TODO: muxer maybe is not open. queue the packet
+    if (!d->muxer.isOpen()) {
+        //d->aqueue.put(packet);
+        return;
+    }
+    d->muxer.writeAudio(packet);
+    Q_EMIT audioFrameEncoded(packet.pts);
+
+    if (d->vfilter)
+        return;
+    // TODO: startpts, duration, encoded size
+    d->encoded_frames++;
+    qDebug("encoded frames: %d, pos: %lld", d->encoded_frames, packet.position);
+}
+
 void AVTranscoder::writeVideo(const QtAV::Packet &packet)
 {
+    // TODO: muxer maybe is not open. queue the packet
+    if (!d->muxer.isOpen())
+        return;
     d->muxer.writeVideo(packet);
     Q_EMIT videoFrameEncoded(packet.pts);
 
     // TODO: startpts, duration, encoded size
     d->encoded_frames++;
-    qDebug("encoded frames: %d", d->encoded_frames);
+    printf("encoded frames: %d, pos: %lld\r", d->encoded_frames, packet.position);
+    fflush(0);
 }
 
 } //namespace QtAV

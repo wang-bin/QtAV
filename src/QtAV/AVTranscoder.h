@@ -23,6 +23,7 @@
 #define QTAV_AVTRANSCODE_H
 
 #include <QtAV/MediaIO.h>
+#include <QtAV/AudioEncoder.h>
 #include <QtAV/VideoEncoder.h>
 
 namespace QtAV {
@@ -71,7 +72,19 @@ public:
      * \return Encoder instance or null if createVideoEncoder failed
      */
     VideoEncoder* videoEncoder() const;
-
+    /*!
+     * \brief createEncoder
+     * Destroy old encoder and create a new one in filter chain. Filter has the ownership.
+     * \param name registered encoder name, for example "FFmpeg"
+     * \return false if failed
+     */
+    bool createAudioEncoder(const QString& name = "FFmpeg");
+    /*!
+     * \brief encoder
+     * Use this to set encoder properties and options
+     * \return Encoder instance or null if createAudioEncoder failed
+     */
+    AudioEncoder* audioEncoder() const;
     /*!
      * \brief isRunning
      * \return true if encoding started
@@ -100,6 +113,7 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void prepareMuxer();
+    void writeAudio(const QtAV::Packet& packet);
     void writeVideo(const QtAV::Packet& packet);
 
 private:
