@@ -22,72 +22,15 @@
 #include "GPUMemCopy.h"
 #include "QtAV/QtAV_Global.h"
 #include <algorithm>
-#include <stdlib.h> //posix_memalign osx
-#ifdef __MINGW32__
-#include <malloc.h> //__mingw_aligned_malloc
-#endif
 extern "C" {
 #include <libavutil/cpu.h>
 }
-//https://github.com/gongminmin/KlayGE/blob/master/KFL/include/KFL/AlignedAllocator.hpp
-/* Branch prediction */
-#ifdef __GNUC__
-#   define likely(p)   __builtin_expect(!!(p), 1)
-#   define unlikely(p) __builtin_expect(!!(p), 0)
-#else
-#   define likely(p)   (!!(p))
-#   define unlikely(p) (!!(p))
-#endif
-
 // read qsimd_p.h
 #define UINT unsigned int
 void CopyFrame_SSE2(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT height, UINT pitch);
 void CopyFrame_SSE4(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT height, UINT pitch);
 
 namespace QtAV {
-
-#if QTAV_HAVE(SSE2) //FIXME
-// from vlc_common.h begin
-#ifdef __MINGW32__
-# define Memalign(align, size) (__mingw_aligned_malloc(size, align))
-# define Free(base)            (__mingw_aligned_free(base))
-#elif defined(_MSC_VER)
-# define Memalign(align, size) (_aligned_malloc(size, align))
-# define Free(base)            (_aligned_free(base))
-#elif defined(Q_OS_ANDROID) ||(defined(__APPLE__) && !defined(MAC_OS_X_VERSION_10_6))
-// android x86 has no posix_memalign
-static inline void *Memalign(size_t align, size_t size)
-{
-    long diff;
-    void *ptr;
-
-    ptr = malloc(size+align);
-    if(!ptr)
-        return ptr;
-    diff = ((-(long)ptr - 1)&(align-1)) + 1;
-    ptr  = (char*)ptr + diff;
-    ((char*)ptr)[-1]= diff;
-    return ptr;
-}
-
-static void Free(void *ptr)
-{
-    if (ptr)
-        free((char*)ptr - ((char*)ptr)[-1]);
-}
-#else
-static inline void *Memalign(size_t align, size_t size)
-{
-    void *base;
-    if (unlikely(posix_memalign(&base, align, size)))
-        base = NULL;
-    return base;
-}
-# define Free(base) free(base)
-#endif
-#endif //QTAV_HAVE(SSE2)
-
-// from vlc_common.h end
 
 bool detect_sse4() {
     static bool is_sse4 = !!(av_get_cpu_flags() & AV_CPU_FLAG_SSE4);
@@ -136,7 +79,7 @@ bool GPUMemCopy::initCache(unsigned width)
     mInitialized = false;
 #if QTAV_HAVE(SSE2)
     mCache.size = std::max<size_t>((width + 0x0f) & ~ 0x0f, CACHED_BUFFER_SIZE);
-    mCache.buffer = (unsigned char*)Memalign(16, mCache.size);
+    mCache.buffer = (unsigned char*)qMallocAligned(mCache.size, 16);
     mInitialized = !!mCache.buffer;
     return mInitialized;
 #else
@@ -151,7 +94,7 @@ void GPUMemCopy::cleanCache()
     mInitialized = false;
 #if QTAV_HAVE(SSE2)
     if (mCache.buffer) {
-        Free(mCache.buffer);
+        qFreeAligned(mCache.buffer);
     }
     mCache.buffer = 0;
     mCache.size = 0;
