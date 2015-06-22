@@ -70,6 +70,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
     Q_PROPERTY(QVariantMap videoCodecOptions READ videoCodecOptions WRITE setVideoCodecOptions NOTIFY videoCodecOptionsChanged)
+    Q_PROPERTY(bool useWallclockAsTimestamps READ useWallclockAsTimestamps WRITE setWallclockAsTimestamps NOTIFY useWallclockAsTimestampsChanged)
     Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
     Q_PROPERTY(int audioTrack READ audioTrack WRITE setAudioTrack NOTIFY audioTrackChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
@@ -168,6 +169,9 @@ public:
     QVariantMap videoCodecOptions() const;
     void setVideoCodecOptions(const QVariantMap& value);
 
+    bool useWallclockAsTimestamps() const;
+    void setWallclockAsTimestamps(bool use_wallclock_as_timestamps);
+
     void setAudioChannels(int channels);
     int audioChannels() const;
     void setChannelLayout(ChannelLayout channel);
@@ -229,6 +233,7 @@ Q_SIGNALS:
     void bufferProgressChanged();
     void videoCodecPriorityChanged();
     void videoCodecOptionsChanged();
+    void useWallclockAsTimestampsChanged();
     void channelLayoutChanged();
     void timeoutChanged();
     void abortOnTimeoutChanged();
@@ -257,6 +262,7 @@ private Q_SLOTS:
 private:
     Q_DISABLE_COPY(QmlAVPlayer)
 
+    bool mUseWallclockAsTimestamps;
     bool m_complete;
     bool m_mute;
     bool mAutoPlay;
