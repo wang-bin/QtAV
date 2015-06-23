@@ -50,6 +50,10 @@ public:
     bool play() Q_DECL_OVERRIDE;
     //default return -1. means not the control
     int getPlayedCount() Q_DECL_OVERRIDE;
+    bool setVolume(qreal value) Q_DECL_OVERRIDE;
+    qreal getVolume() const Q_DECL_OVERRIDE;
+    bool setMute(bool value = true) Q_DECL_OVERRIDE;
+
 #ifdef Q_OS_ANDROID
     static void bufferQueueCallbackAndroid(SLAndroidSimpleBufferQueueItf bufferQueue, void *context);
 #endif
@@ -142,7 +146,9 @@ void AudioOutputOpenSL::playCallback(SLPlayItf player, void *ctx, SLuint32 event
 }
 
 AudioOutputOpenSL::AudioOutputOpenSL(QObject *parent)
-    :AudioOutputBackend(AudioOutput::NoFeature, parent)
+    : AudioOutputBackend(AudioOutput::DeviceFeatures()
+                         |AudioOutput::SetVolume
+                         |AudioOutput::SetMute, parent)
     , m_outputMixObject(0)
     , m_playerObject(0)
     , m_playItf(0)
@@ -217,8 +223,16 @@ bool AudioOutputOpenSL::open()
     SLDataLocator_OutputMix outputMixLocator = { SL_DATALOCATOR_OUTPUTMIX, m_outputMixObject };
     SLDataSink audioSink = { &outputMixLocator, NULL };
 
-    const SLInterfaceID ids[] = { SL_IID_BUFFERQUEUE};//, SL_IID_VOLUME };
-    const SLboolean req[] = { SL_BOOLEAN_TRUE};//, SL_BOOLEAN_TRUE };
+    const SLInterfaceID ids[] = { SL_IID_BUFFERQUEUE, SL_IID_VOLUME
+  #ifdef Q_OS_ANDROID
+                                  , SL_IID_ANDROIDCONFIGURATION
+  #endif
+                                };
+    const SLboolean req[] = { SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE
+#ifdef Q_OS_ANDROID
+                              , SL_BOOLEAN_TRUE
+#endif
+                            };
     // AudioPlayer
     SL_ENSURE_OK((*engine)->CreateAudioPlayer(engine, &m_playerObject, &audioSrc, &audioSink, sizeof(ids)/sizeof(ids[0]), ids, req), false);
     SL_ENSURE_OK((*m_playerObject)->Realize(m_playerObject, SL_BOOLEAN_FALSE), false);
@@ -238,7 +252,7 @@ bool AudioOutputOpenSL::open()
     SL_ENSURE_OK((*m_playerObject)->GetInterface(m_playerObject, SL_IID_PLAY, &m_playItf), false);
     // call when SL_PLAYSTATE_STOPPED
     SL_ENSURE_OK((*m_playItf)->RegisterCallback(m_playItf, AudioOutputOpenSL::playCallback, this), false);
-
+    SL_ENSURE_OK((*m_playerObject)->GetInterface(m_playerObject, SL_IID_VOLUME, &m_volumeItf), false);
 #if 0
     SLuint32 mask = SL_PLAYEVENT_HEADATEND;
     // TODO: what does this do?
@@ -298,6 +312,38 @@ int AudioOutputOpenSL::getPlayedCount()
     buffers_queued = state.count;
     processed -= state.count;
     return processed;
+}
+
+bool AudioOutputOpenSL::setVolume(qreal value)
+{
+    if (!m_volumeItf)
+        return false;
+    SLmillibel v = 0;
+    if (!qFuzzyCompare(value, 1.0))
+        v = 20*log10(value)*100; // I.e., 20 * LOG10(SL_MILLIBEL_MAX * vol / SL_MILLIBEL_MIN)
+    SLmillibel vmax = SL_MILLIBEL_MAX;
+    SL_ENSURE_OK((*m_volumeItf)->GetMaxVolumeLevel(m_volumeItf, &vmax), false);
+    if (vmax < v)
+        return false;
+    SL_ENSURE_OK((*m_volumeItf)->SetVolumeLevel(m_volumeItf, v), false);
+    return true;
+}
+
+qreal AudioOutputOpenSL::getVolume() const
+{
+    if (!m_volumeItf)
+        return false;
+    SLmillibel v = 0;
+    SL_ENSURE_OK((*m_volumeItf)->GetVolumeLevel(m_volumeItf, &v), 1.0);
+    return pow(10.0, qreal(v)/2000.0);
+}
+
+bool AudioOutputOpenSL::setMute(bool value)
+{
+    if (!m_volumeItf)
+        return false;
+    SL_ENSURE_OK((*m_volumeItf)->SetMute(m_volumeItf, value), false);
+    return true;
 }
 
 } //namespace QtAV
