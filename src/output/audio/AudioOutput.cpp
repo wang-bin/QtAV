@@ -264,11 +264,11 @@ AudioOutput::AudioOutput(QObject* parent)
 #if QTAV_HAVE(PULSEAUDIO)&& !defined(Q_OS_MAC)
             << "Pulse"
 #endif
-#if QTAV_HAVE(OPENAL)
-            << "OpenAL"
-#endif
 #if QTAV_HAVE(OPENSL)
             << "OpenSL"
+#endif
+#if QTAV_HAVE(OPENAL)
+            << "OpenAL"
 #endif
 #if QTAV_HAVE(PORTAUDIO)
             << "PortAudio"
