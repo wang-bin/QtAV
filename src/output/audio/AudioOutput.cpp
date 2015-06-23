@@ -267,11 +267,11 @@ AudioOutput::AudioOutput(QObject* parent)
 #if QTAV_HAVE(OPENAL)
             << "OpenAL"
 #endif
-#if QTAV_HAVE(PORTAUDIO)
-            << "PortAudio"
-#endif
 #if QTAV_HAVE(OPENSL)
             << "OpenSL"
+#endif
+#if QTAV_HAVE(PORTAUDIO)
+            << "PortAudio"
 #endif
 #if QTAV_HAVE(DSOUND)
             << "DirectSound"
@@ -613,7 +613,9 @@ bool AudioOutput::waitForNextBuffer()
     int remove = 0;
     if (f & AudioOutputBackend::Blocking) {
         remove = 1;
-    } else if (f & AudioOutputBackend::Callback) {
+    } else if (f & AudioOutputBackend::CountCallback) {
+        remove = 1;
+    } else if (f & AudioOutputBackend::BytesCallback) {
 #if AO_USE_TIMER
         d.timer.restart();
 #endif //AO_USE_TIMER

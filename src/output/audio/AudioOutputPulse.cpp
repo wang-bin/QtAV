@@ -416,7 +416,7 @@ bool AudioOutputPulse::close()
 
 AudioOutputBackend::BufferControl AudioOutputPulse::bufferControl() const
 {
-    return Callback;
+    return BytesCallback;
 }
 
 int AudioOutputPulse::getWritableBytes()

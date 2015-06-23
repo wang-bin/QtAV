@@ -69,12 +69,13 @@ public:
     enum BufferControl {
         User = 0,    // You have to reimplement waitForNextBuffer()
         Blocking = 1,
-        Callback = 1 << 1,
-        PlayedCount = 1 << 2, //number of buffers played since last buffer dequeued
-        PlayedBytes = 1 << 3,
-        OffsetIndex = 1 << 4, //current playing offset
-        OffsetBytes = 1 << 5, //current playing offset by bytes
-        WritableBytes = 1 << 6,
+        BytesCallback = 1 << 1,
+        CountCallback = 1 << 2,
+        PlayedCount = 1 << 3, //number of buffers played since last buffer dequeued
+        PlayedBytes = 1 << 4,
+        OffsetIndex = 1 << 5, //current playing offset
+        OffsetBytes = 1 << 6, //current playing offset by bytes
+        WritableBytes = 1 << 7,
     };
     virtual BufferControl bufferControl() const = 0;
     // called by callback with Callback control
