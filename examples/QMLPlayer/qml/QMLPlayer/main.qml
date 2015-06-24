@@ -173,20 +173,55 @@ Rectangle {
         }
     }
 
-    MouseArea {
+    MultiPointTouchArea {
+        mouseEnabled: true
         anchors.fill: parent
-        onClicked: {
-            control.toggleVisible()
-            if (root.width - mouseX < Utils.scaled(60)) {
-                configPanel.state = "show"
+        onGestureStarted: {
+            if (player.playbackState == MediaPlayer.StoppedState)
+                return
+            var p = gesture.touchPoints[0]
+            var dx = p.x - p.previousX
+            var dy = p.y - p.previousY
+            var t = dy/dx
+            var ml = Math.abs(dx) + Math.abs(dy)
+            var ML = Math.abs(p.x - p.startX) + Math.abs(p.y - p.startY)
+            //console.log("dx: " + dx + " dy: " + dy + " ml: " + ml + " ML: " + ML)
+            if (ml < 2.0 || 5*ml < ML)
+                return
+            if (t > -1 && t < 1) {
+                if (dx > 0) {
+                    player.seekForward()
+                } else {
+                    player.seekBackward()
+                }
             } else {
-                configPanel.state = "hide"
+                if (dy > 0) {// left hand coord
+                    player.volume = Math.max(0, player.volume-0.05)
+                } else {
+                    player.volume = Math.min(2, player.volume+0.05)
+                }
             }
+
         }
-        onMouseXChanged: {
-            if (player.playbackState == MediaPlayer.StoppedState || !player.hasVideo)
-                return;
-            control.showPreview(mouseX/parent.width)
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                control.toggleVisible()
+                if (root.width - mouseX < Utils.scaled(60)) {
+                    configPanel.state = "show"
+                } else {
+                    configPanel.state = "hide"
+                }
+            }
+            onDoubleClicked: {
+                player.muted = !player.muted
+            }
+
+            onMouseXChanged: {
+                if (player.playbackState == MediaPlayer.StoppedState || !player.hasVideo)
+                    return;
+                control.showPreview(mouseX/parent.width)
+            }
         }
     }
     Text {

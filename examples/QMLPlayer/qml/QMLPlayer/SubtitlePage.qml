@@ -63,8 +63,7 @@ Page {
             TextInput {
                 color: "orange"
                 font.pixelSize: Utils.kFontSize
-                anchors.left: delayLabel.right
-                anchors.right: parent.right
+                height: Utils.kItemHeight
                 text: PlayerConfig.subtitleDelay
                 onTextChanged: {
                     var v = parseFloat(text)
