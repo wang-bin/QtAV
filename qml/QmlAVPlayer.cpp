@@ -23,6 +23,7 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/VideoCapture.h>
+#include <QDebug>
 
 template<typename ID, typename Factory>
 static QStringList idsToNames(QVector<ID> ids) {
@@ -57,6 +58,7 @@ static inline QVector<VideoDecoderId> VideoDecodersFromNames(const QStringList& 
 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     QObject(parent)
+  , mUseWallclockAsTimestamps(false)
   , m_complete(false)
   , m_mute(false)
   , mAutoPlay(false)
@@ -248,6 +250,31 @@ void QmlAVPlayer::setVideoCodecOptions(const QVariantMap &value)
     vcodec_opt = value;
     emit videoCodecOptionsChanged();
     // player maybe not ready
+}
+
+bool QmlAVPlayer::useWallclockAsTimestamps() const
+{
+    return mUseWallclockAsTimestamps;
+}
+
+void QmlAVPlayer::setWallclockAsTimestamps(bool use_wallclock_as_timestamps)
+{
+    if (mUseWallclockAsTimestamps == use_wallclock_as_timestamps)
+        return;
+
+    mUseWallclockAsTimestamps = use_wallclock_as_timestamps;
+
+    QVariantHash opt = mpPlayer->optionsForFormat();
+
+    if (use_wallclock_as_timestamps) {
+        opt["use_wallclock_as_timestamps"] = 1;
+        mpPlayer->setBufferValue(1);
+    } else {
+        opt.remove("use_wallclock_as_timestamps");
+        mpPlayer->setBufferValue(-1);
+    }
+    mpPlayer->setOptionsForFormat(opt);
+    emit useWallclockAsTimestampsChanged();
 }
 
 static AudioFormat::ChannelLayout toAudioFormatChannelLayout(QmlAVPlayer::ChannelLayout ch)
