@@ -213,6 +213,7 @@ void PlayList::addItems()
 void PlayList::onAboutToPlay(const QModelIndex &index)
 {
     emit aboutToPlay(index.data(Qt::DisplayRole).value<PlayListItem>().url());
+    save();
 }
 
 

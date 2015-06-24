@@ -563,7 +563,6 @@ void MainWindow::setupUi()
     connect(mpInfoBtn, SIGNAL(clicked()), SLOT(showInfo()));
     //valueChanged can be triggered by non-mouse event
     //TODO: connect sliderMoved(int) to preview(int)
-    //connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
     connect(mpTimeSlider, SIGNAL(sliderPressed()), SLOT(seek()));
     connect(mpTimeSlider, SIGNAL(sliderReleased()), SLOT(seek()));
     connect(mpTimeSlider, SIGNAL(onLeave()), SLOT(onTimeSliderLeave()));
@@ -907,13 +906,9 @@ void MainWindow::onSpeedChange(qreal speed)
     mpSpeed->setText(QString("%1").arg(speed, 4, 'f', 2, '0'));
 }
 
-void MainWindow::seekToMSec(int msec)
-{
-    mpPlayer->seek(qint64(msec));
-}
-
 void MainWindow::seek()
 {
+    mpPlayer->setSeekType(AccurateSeek);
     mpPlayer->seek((qint64)mpTimeSlider->value());
     if (!m_preview || !Config::instance().previewEnabled())
         return;
