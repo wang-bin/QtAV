@@ -549,13 +549,8 @@ bool VideoMaterial::bind()
         return false;
     d.ensureTextures();
     for (int i = 0; i < nb_planes; ++i) {
-        bindPlane(i, d.update_texure); // why? i: quick items display wrong textures
-    }
-    // now bind textures to shader
-    for (int i = 0; i < nb_planes; ++i) {
-        const int p = (i + 1) % nb_planes;
-        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
-        DYGL(glBindTexture(d.target, d.textures[p]));
+        const int p = (i + 1) % nb_planes; //0 must active at last?
+        bindPlane(p, d.update_texure); // why? i: quick items display wrong textures
     }
     if (d.update_texure) {
         d.update_texure = false;
@@ -569,14 +564,16 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
 {
     DPTR_D(VideoMaterial);
     GLuint &tex = d.textures[p];
+    OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
     if (!updateTexture) {
-        OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
         DYGL(glBindTexture(d.target, tex));
         return;
     }
     // try_pbo ? pbo_id : 0. 0= > interop.createHandle
-    if (d.frame.map(GLTextureSurface, &tex, p))
+    if (d.frame.map(GLTextureSurface, &tex, p)) {
+        DYGL(glBindTexture(d.target, tex)); // glActiveTexture was called, but maybe bind to 0 in map
         return;
+    }
     // FIXME: why happens on win?
     if (d.frame.bytesPerLine(p) <= 0)
         return;
@@ -603,7 +600,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     // TODO: data address use surfaceinterop.map()
     DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.bits(p)));
-    DYGL(glBindTexture(d.target, 0));
+    //DYGL(glBindTexture(d.target, 0)); // no bind 0 because glActiveTexture was called
     if (d.try_pbo) {
         d.pbo[p].release();
     }
