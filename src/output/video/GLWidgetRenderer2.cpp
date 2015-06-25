@@ -50,7 +50,6 @@ GLWidgetRenderer2::GLWidgetRenderer2(QWidget *parent, const QGLWidget* shareWidg
      * widget's background
      */
     setAttribute(Qt::WA_OpaquePaintEvent);
-    setAttribute(Qt::WA_PaintOnScreen);
     setAttribute(Qt::WA_NoSystemBackground);
     //default: swap in qpainter dtor. we should swap before QPainter.endNativePainting()
     setAutoBufferSwap(false);
@@ -64,7 +63,7 @@ void GLWidgetRenderer2::onUpdate()
 
 void GLWidgetRenderer2::initializeGL()
 {
-    makeCurrent();
+    // already current
     onInitializeGL();
 }
 

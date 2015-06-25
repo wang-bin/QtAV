@@ -47,7 +47,6 @@ void OpenGLWindowRenderer::onUpdate()
 
 void OpenGLWindowRenderer::initializeGL()
 {
-    makeCurrent();
     onInitializeGL();
 }
 
