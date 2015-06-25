@@ -33,19 +33,16 @@
 #undef PixelFormat
 #endif
 
-namespace
+namespace QtAV {
+namespace{
+static const struct RegisterMetaTypes
 {
-class RegisterMetaTypes
-{
-public:
-    RegisterMetaTypes()
+    inline RegisterMetaTypes()
     {
         qRegisterMetaType<QtAV::VideoFrame>("QtAV::VideoFrame");
     }
 } _registerMetaTypes;
 }
-
-namespace QtAV {
 
 class VideoFramePrivate : public FramePrivate
 {
@@ -509,6 +506,8 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
 {
     if (!frame.isValid() || fffmt == QTAV_PIX_FMT_C(NONE))
         return VideoFrame();
+    if (!frame.bits(0)) // hw surface
+        return frame.to(VideoFormat::pixelFormatFromFFmpeg(fffmt));
     const VideoFormat format(frame.format());
     //if (fffmt == format.pixelFormatFFmpeg())
       //  return *this;
