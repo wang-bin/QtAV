@@ -27,6 +27,7 @@
 #include <QtQuick/QSGSimpleTextureNode>
 #include <QtAV/FactoryDefine.h>
 #include <QtAV/AVPlayer.h>
+#include <QtAV/OpenGLVideo.h>
 #include <QtAV/VideoRendererTypes.h> //it declares a factory we need
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
@@ -99,7 +100,8 @@ bool QQuickItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
         return false;
     if (!isOpenGL())
         return VideoFormat::isRGB(pixfmt);
-    return pixfmt != VideoFormat::Format_YUYV && pixfmt != VideoFormat::Format_UYVY;
+    // TODO: rectangle texture is not supported (VDA)
+    return OpenGLVideo::isSupported(pixfmt);
 }
 
 bool QQuickItemRenderer::event(QEvent *e)
@@ -266,8 +268,6 @@ QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePa
 
 void QQuickItemRenderer::handleWindowChange(QQuickWindow *win)
 {
-    disconnect(this, SLOT(beforeRendering()));
-    disconnect(this, SLOT(afterRendering()));
     if (!win)
         return;
     connect(win, SIGNAL(beforeRendering()), this, SLOT(beforeRendering()), Qt::DirectConnection);
