@@ -44,7 +44,7 @@ private:
     QSpinBox *m_buffer_value;
     QDoubleSpinBox *m_timeout;
     QCheckBox *m_timeout_abort;
-    QCheckBox *m_angle;
+    QComboBox *m_opengl;
     QComboBox *m_angle_platform;
 };
 

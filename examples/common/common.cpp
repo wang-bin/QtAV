@@ -31,7 +31,7 @@ QOptions get_common_options()
     static QOptions ops = QOptions().addDescription("Options for QtAV players")
             .add("common options")
             ("help,h", "print this")
-            ("-gl", "auto", "OpenGL backend for Qt>=5.4(windows). can be 'auto', 'desktop', 'angle' and 'software'")
+            ("-gl", "OpenGL backend for Qt>=5.4(windows). can be 'desktop', 'opengles' and 'software'")
             ("x", 0, "")
             ("y", 0, "y")
             ("-width", 800, "width of player")
@@ -91,7 +91,22 @@ void set_opengl_backend(const QString& glopt, const QString &appname)
         gl = "software";
     else
         gl = glopt.toLower();
-    if ((gl.isEmpty() || gl == "auto") && Config::instance().isANGLE()) {
+    if (gl.isEmpty()) {
+        switch (Config::instance().openGLType()) {
+        case Config::Desktop:
+            gl = "desktop";
+            break;
+        case Config::OpenGLES:
+            gl = "es";
+            break;
+        case Config::Software:
+            gl = "software";
+            break;
+        default:
+            break;
+        }
+    }
+    if (gl == "es" || gl == "angle" || gl == "opengles") {
         gl = "es_";
         gl.append(Config::instance().getANGLEPlatform().toLower());
     }

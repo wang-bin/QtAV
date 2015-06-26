@@ -71,13 +71,18 @@ MiscPage::MiscPage()
     hb->addWidget(m_timeout_abort);
     gl->addLayout(hb, r++, 1);
 
-    m_angle = new QCheckBox(tr("OpenGLES2 ANGLE on Windows") + "-" + tr("RESTART REQUIRED"));
-    m_angle->setToolTip(tr("Used by DXVA Zero Copy"));
-    gl->addWidget(m_angle, r, 0);
+    gl->addWidget(new QLabel(tr("OpenGL type")), r, 0);
+    m_opengl = new QComboBox();
+    m_opengl->addItem("Auto", Config::Auto);
+    m_opengl->addItem("Desktop", Config::Desktop);
+    m_opengl->addItem("OpenGLES", Config::OpenGLES);
+    m_opengl->addItem("Software", Config::Software);
+    m_opengl->setToolTip(tr("Windows only") + "\n" + tr("OpenGLES is Used by DXVA Zero Copy"));
+    gl->addWidget(m_opengl, r, 1);
     m_angle_platform = new QComboBox();
     m_angle_platform->setToolTip(tr("D3D9 has performance if ZeroCopy is disabled or for software decoders") + "\n" + tr("RESTART REQUIRED"));
     m_angle_platform->addItems(QStringList() << "D3D9" << "D3D11" << "AUTO" << "WARP");
-    gl->addWidget(m_angle_platform, r++, 1);
+    gl->addWidget(m_angle_platform, r++, 2);
 
     applyToUi();
 }
@@ -93,7 +98,7 @@ void MiscPage::applyFromUi()
     Config::instance().setPreviewEnabled(m_preview_on->isChecked())
             .setPreviewWidth(m_preview_w->value())
             .setPreviewHeight(m_preview_h->value())
-            .setANGLE(m_angle->isChecked())
+            .setOpenGLType((Config::OpenGLType)m_opengl->itemData(m_opengl->currentIndex()).toInt())
             .setANGLEPlatform(m_angle_platform->currentText().toLower())
             .setForceFrameRate(m_fps->value())
             .setBufferValue(m_buffer_value->value())
@@ -107,7 +112,7 @@ void MiscPage::applyToUi()
     m_preview_on->setChecked(Config::instance().previewEnabled());
     m_preview_w->setValue(Config::instance().previewWidth());
     m_preview_h->setValue(Config::instance().previewHeight());
-    m_angle->setChecked(Config::instance().isANGLE());
+    m_opengl->setCurrentIndex(m_opengl->findData(Config::instance().openGLType()));
     m_angle_platform->setCurrentIndex(m_angle_platform->findText(Config::instance().getANGLEPlatform().toUpper()));
     m_fps->setValue(Config::instance().forceFrameRate());
     //m_notify_interval->setValue(Config::instance().avfilterOptions());

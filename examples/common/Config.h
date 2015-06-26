@@ -56,12 +56,20 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(bool previewEnabled READ previewEnabled WRITE setPreviewEnabled NOTIFY previewEnabledChanged)
     Q_PROPERTY(int previewWidth READ previewWidth WRITE setPreviewWidth NOTIFY previewWidthChanged)
     Q_PROPERTY(int previewHeight READ previewHeight WRITE setPreviewHeight NOTIFY previewHeightChanged)
-    Q_PROPERTY(bool ANGLE READ isANGLE WRITE setANGLE NOTIFY ANGLEChanged)
+    Q_PROPERTY(OpenGLType openGLType READ openGLType WRITE setOpenGLType NOTIFY openGLTypeChanged)
     Q_PROPERTY(QString ANGLEPlatform READ getANGLEPlatform WRITE setANGLEPlatform NOTIFY ANGLEPlatformChanged)
     Q_PROPERTY(bool avformatOptionsEnabled READ avformatOptionsEnabled WRITE setAvformatOptionsEnabled NOTIFY avformatOptionsEnabledChanged)
     Q_PROPERTY(qreal timeout READ timeout WRITE setTimeout NOTIFY timeoutChanged)
     Q_PROPERTY(int bufferValue READ bufferValue WRITE setBufferValue NOTIFY bufferValueChanged)
+    Q_ENUMS(OpenGLType)
 public:
+    enum OpenGLType { // currently only for windows
+        Auto,
+        Desktop,
+        OpenGLES,
+        Software
+    };
+
     static Config& instance();
 
     Q_INVOKABLE bool reset();
@@ -144,8 +152,9 @@ public:
     bool avfilterAudioEnable() const;
     Config& avfilterAudioEnable(bool e);
 
-    bool isANGLE() const; // false: auto
-    Config& setANGLE(bool value);
+    // can be "Desktop", "OpenGLES", "Software"
+    OpenGLType openGLType() const;
+    Config& setOpenGLType(OpenGLType value);
 
     QString getANGLEPlatform() const;
     Config& setANGLEPlatform(const QString &value);
@@ -186,7 +195,7 @@ public:
     Q_SIGNAL void previewEnabledChanged();
     Q_SIGNAL void previewWidthChanged();
     Q_SIGNAL void previewHeightChanged();
-    Q_SIGNAL void ANGLEChanged();
+    Q_SIGNAL void openGLTypeChanged();
     Q_SIGNAL void ANGLEPlatformChanged();
     Q_SIGNAL void avformatOptionsEnabledChanged();
     Q_SIGNAL void bufferValueChanged();

@@ -22,6 +22,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
+#include <QtCore/QMetaEnum>
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QDesktopServices>
 #else
@@ -109,7 +110,8 @@ public:
         avfilterAudio = settings.value("options", "").toString();
         settings.endGroup();
         settings.beginGroup("opengl");
-        angle = settings.value("angle", true).toBool();
+        const QString glname = settings.value("type", "OpenGLES").toString();
+        opengl = (Config::OpenGLType)Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).keysToValue(glname.toLatin1().constData());
         // d3d11 bad performance (gltexsubimage2d)
         angle_dx = settings.value("angle_platform", "d3d9").toString();
         settings.endGroup();
@@ -168,7 +170,8 @@ public:
         settings.setValue("options", avfilterAudio);
         settings.endGroup();
         settings.beginGroup("opengl");
-        settings.setValue("angle", angle);
+        const char* glname = Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).valueToKey(opengl);
+        settings.setValue("type", glname);
         settings.setValue("angle_platform", angle_dx);
         settings.endGroup();
         settings.beginGroup("buffer");
@@ -209,7 +212,7 @@ public:
     bool preview_enabled;
     int preview_w, preview_h;
 
-    bool angle;
+    Config::OpenGLType opengl;
     QString angle_dx;
     bool abort_timeout;
     qreal timeout;
@@ -640,17 +643,17 @@ Config& Config::avfilterAudioEnable(bool e)
     return *this;
 }
 
-bool Config::isANGLE() const
+Config::OpenGLType Config::openGLType() const
 {
-    return mpData->angle;
+    return mpData->opengl;
 }
 
-Config& Config::setANGLE(bool value)
+Config& Config::setOpenGLType(OpenGLType value)
 {
-    if (mpData->angle == value)
+    if (mpData->opengl == value)
         return *this;
-    mpData->angle = value;
-    emit ANGLEChanged();
+    mpData->opengl = value;
+    emit openGLTypeChanged();
     return *this;
 }
 
