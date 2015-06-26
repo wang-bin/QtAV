@@ -21,6 +21,7 @@
 
 #include "GPUMemCopy.h"
 #include "QtAV/QtAV_Global.h"
+#include <string.h> //memcpy
 #include <algorithm>
 extern "C" {
 #include <libavutil/cpu.h>

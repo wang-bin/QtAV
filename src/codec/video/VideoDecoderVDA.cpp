@@ -229,8 +229,6 @@ VideoFrame VideoDecoderVDA::frame()
         }
         void* mapToHost(const VideoFormat &format, void *handle, int plane) {
             Q_UNUSED(plane);
-            if (!format.isRGB())
-                return NULL;
             CVPixelBufferLockBaseAddress(cvbuf, 0);
             const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(cvbuf)));
             if (!fmt.isValid()) {
@@ -248,10 +246,9 @@ VideoFrame VideoDecoderVDA::frame()
             }
             CVPixelBufferUnlockBaseAddress(cvbuf, 0);
             //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
-            VideoFrame frame = VideoFrame(w, h, fmt);
-            frame.setBits(src);
-            frame.setBytesPerLine(pitch);
-            frame = frame.to(format);
+            VideoFrame frame(VideoFrame::fromGPU(fmt, w, h, h, src, pitch));
+            if (fmt != format)
+                frame = frame.to(format);
             VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
             frame.setTimestamp(f->timestamp());
             *f = frame;

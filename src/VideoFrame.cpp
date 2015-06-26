@@ -66,7 +66,6 @@ VideoFrame VideoFrame::fromGPU(const VideoFormat& fmt, int width, int height, in
     }
     VideoFrame frame;
     if (optimized) {
-        qDebug("simd");
         int yuv_size = 0;
         for (int i = 0; i < nb_planes; ++i) {
             yuv_size += pitch[i]*h[i];
