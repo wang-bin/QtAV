@@ -35,6 +35,20 @@ class Q_AV_EXPORT VideoFrame : public Frame
 {
     Q_DECLARE_PRIVATE(VideoFrame)
 public:
+    /*!
+     * \brief fromGPU
+     * Make a VideoFrame with data on host memory from GPU resource
+     * \param fmt video format of GPU resource
+     * \param width frame width
+     * \param height frame height
+     * \param surface_h surface height. Can be greater than visual frame height because of alignment
+     * \param src CPU accessible address of frame planes on GPU. src[0] must be valid. src[i>0] will be filled depending on pixel format, pitch and surface_h if it's NULL.
+     * \param pitch plane pitch on GPU. pitch[0] must be valid. pitch[i>0] will be filled depending on pixel format, pitch[0] and surface_h if it's NULL.
+     * \param optimized try to use SIMD to copy from GPU. otherwise use memcpy
+     * \param swapUV
+     */
+    static VideoFrame fromGPU(const VideoFormat& fmt, int width, int height, int surface_h, quint8 *src[], int pitch[], bool optimized = true, bool swapUV = false);
+
     VideoFrame();
     //must set planes and linesize manually
     VideoFrame(int width, int height, const VideoFormat& format);
@@ -90,6 +104,13 @@ public:
      * \param roi NOT implemented!
      */
     QImage toImage(QImage::Format fmt = QImage::Format_ARGB32, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
+    /*!
+     * \brief to
+     * The result frame data is always on host memory.
+     * \param pixfmt target pixel format
+     * \param dstSize target frame size
+     * \param roi interested region of source frame
+     */
     VideoFrame to(VideoFormat::PixelFormat pixfmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
     VideoFrame to(const VideoFormat& fmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
     /*!
@@ -129,7 +150,7 @@ public:
     void setEq(int brightness, int contrast, int saturation);
     /*!
      * \brief convert
-     * return a frame with a given format from a given source frame
+     * return a frame with a given format from a given source frame. The result frame data is always on host memory.
      */
     VideoFrame convert(const VideoFrame& frame, const VideoFormat& fmt) const;
     VideoFrame convert(const VideoFrame& frame, VideoFormat::PixelFormat fmt) const;

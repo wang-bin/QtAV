@@ -26,6 +26,7 @@
 #include <QtCore/QSharedPointer>
 #include <QtGui/QImage>
 #include "QtAV/private/AVCompat.h"
+#include "utils/GPUMemCopy.h"
 #include "utils/Logger.h"
 
 // FF_API_PIX_FMT
@@ -42,6 +43,60 @@ static const struct RegisterMetaTypes
         qRegisterMetaType<QtAV::VideoFrame>("QtAV::VideoFrame");
     }
 } _registerMetaTypes;
+}
+
+VideoFrame VideoFrame::fromGPU(const VideoFormat& fmt, int width, int height, int surface_h, quint8 *src[], int pitch[], bool optimized, bool swapUV)
+{
+    Q_ASSERT(src[0] && pitch[0] > 0 && "VideoFrame::fromGPU: src[0] and pitch[0] must be set");
+    const int nb_planes = fmt.planeCount();
+    const int chroma_pitch = nb_planes > 1 ? fmt.bytesPerLine(pitch[0], 1) : 0;
+    const int chroma_h = fmt.chromaHeight(surface_h);
+    int h[] = { surface_h, 0, 0};
+    for (int i = 1; i < nb_planes; ++i) {
+        h[i] = chroma_h;
+        // set chroma address and pitch if not set
+        if (pitch[i] <= 0)
+            pitch[i] = chroma_pitch;
+        if (!src[i])
+            src[i] = src[i-1] + pitch[i-1]*h[i-1];
+    }
+    if (swapUV) {
+        std::swap(src[1], src[2]);
+        std::swap(pitch[1], pitch[2]);
+    }
+    VideoFrame frame;
+    if (optimized) {
+        qDebug("simd");
+        int yuv_size = 0;
+        for (int i = 0; i < nb_planes; ++i) {
+            yuv_size += pitch[i]*h[i];
+        }
+        // additional 15 bytes to ensure 16 bytes aligned
+        QByteArray buf(15 + yuv_size, 0);
+        const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
+        // plane 1, 2... is aligned?
+        uchar* plane_ptr = (uchar*)buf.data() + offset_16;
+        QVector<uchar*> dst(nb_planes, 0);
+        for (int i = 0; i < nb_planes; ++i) {
+            dst[i] = plane_ptr;
+            // TODO: add VideoFormat::planeWidth/Height() ?
+            // pitch instead of surface_width
+            plane_ptr += pitch[i] * h[i];
+            gpu_memcpy(dst[i], src[i], pitch[i]*h[i]);
+
+        }
+        frame = VideoFrame(buf, width, height, fmt);
+        frame.setBits(dst);
+        frame.setBytesPerLine(pitch);
+    } else {
+        frame = VideoFrame(width, height, fmt);
+        frame.setBits(src);
+        frame.setBytesPerLine(pitch);
+        // TODO: why clone is faster()?
+        // TODO: buffer pool and create VideoFrame when needed to avoid copy? also for other va
+        frame = frame.clone();
+    }
+    return frame;
 }
 
 class VideoFramePrivate : public FramePrivate
