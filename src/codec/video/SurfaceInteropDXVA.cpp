@@ -88,15 +88,14 @@ void* SurfaceInteropDXVA::map(SurfaceType type, const VideoFormat &fmt, void *ha
 {
     if (!handle)
         return NULL;
-    if (!fmt.isRGB())
-        return 0;
 
     if (!m_surface)
         return 0;
     if (type == GLTextureSurface) {
+        if (!fmt.isRGB())
+            return NULL;
         if (m_resource->map(m_surface, *((GLuint*)handle), frame_width, frame_height, plane))
             return handle;
-        return NULL;
     } else if (type == HostMemorySurface) {
         return mapToHost(fmt, handle, plane);
     }
@@ -146,28 +145,11 @@ void* SurfaceInteropDXVA::mapToHost(const VideoFormat &format, void *handle, int
     int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
     quint8 *src[] = { (quint8*)lock.pBits, 0, 0}; //compute chroma later
     Q_ASSERT(src[0] && pitch[0] > 0);
-    const int nb_planes = fmt.planeCount();
-    const int chroma_pitch = nb_planes > 1 ? fmt.bytesPerLine(pitch[0], 1) : 0;
-    const int chroma_h = fmt.chromaHeight(desc.Height);
-    int h[] = { (int)desc.Height, 0, 0};
-    for (int i = 1; i < nb_planes; ++i) {
-        h[i] = chroma_h;
-        // set chroma address and pitch if not set
-        if (pitch[i] <= 0)
-            pitch[i] = chroma_pitch;
-        if (!src[i])
-            src[i] = src[i-1] + pitch[i-1]*h[i-1];
-    }
     const bool swap_uv = desc.Format ==  MAKEFOURCC('I','M','C','3');
-    if (swap_uv) {
-        std::swap(src[1], src[2]);
-        std::swap(pitch[1], pitch[2]);
-    }
-    VideoFrame frame = VideoFrame(frame_width, frame_height, fmt);
-    frame.setBits(src);
-    frame.setBytesPerLine(pitch);
-    frame = frame.to(format);
-
+    // try to use SSE. fallback to normal copy if SSE is not supported
+    VideoFrame frame(VideoFrame::fromGPU(fmt, frame_width, frame_height, desc.Height, src, pitch, true, swap_uv));
+    if (format != fmt)
+        frame = frame.to(format);
     VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
     frame.setTimestamp(f->timestamp());
     *f = frame;
