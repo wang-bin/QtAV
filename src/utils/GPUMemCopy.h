@@ -47,6 +47,8 @@ private:
     cache_t mCache;
 };
 
+void* gpu_memcpy(void* dst, const void* src, size_t size);
+
 } //namespace QtAV
 
 #endif // GPUMemCopy_H

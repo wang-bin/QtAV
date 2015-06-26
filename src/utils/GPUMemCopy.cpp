@@ -30,6 +30,9 @@ extern "C" {
 void CopyFrame_SSE2(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT height, UINT pitch);
 void CopyFrame_SSE4(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT height, UINT pitch);
 
+void *memcpy_sse2(void* dst, const void* src, size_t size);
+void *memcpy_sse4(void* dst, const void* src, size_t size);
+
 namespace QtAV {
 
 bool detect_sse4() {
@@ -116,5 +119,17 @@ void GPUMemCopy::copyFrame(void *pSrc, void *pDest, unsigned width, unsigned hei
     Q_UNUSED(height);
     Q_UNUSED(pitch);
 #endif
+}
+
+void* gpu_memcpy(void *dst, const void *src, size_t size)
+{
+#if QTAV_HAVE(SSE4_1)
+    if (detect_sse4())
+        return memcpy_sse4(dst, src, size);
+#elif QTAV_HAVE(SSE2)
+    if (detect_sse2())
+        return memcpy_sse2(dst, src, size);
+#endif
+    return memcpy(dst, src, size);
 }
 } //namespace QtAV

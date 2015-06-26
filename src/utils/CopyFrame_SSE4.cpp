@@ -31,3 +31,8 @@ void CopyFrame_SSE4(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT
 {
     sse4::CopyFrame_SSE2(pSrc, pDest, pCacheBlock, width, height, pitch);
 }
+
+void *memcpy_sse4(void* dst, const void* src, size_t size)
+{
+    return sse4::memcpy_sse2(dst, src, size);
+}
