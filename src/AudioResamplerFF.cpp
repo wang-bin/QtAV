@@ -28,8 +28,20 @@
 
 namespace QtAV {
 
+#if QTAV_HAVE(SWR_AVR_MAP)
+#define AudioResamplerFF AudioResamplerLibav
+#define AudioResamplerFFPrivate AudioResamplerLibavPrivate
+#define AudioResamplerId_FF AudioResamplerId_Libav
+#define RegisterAudioResamplerFF_Man RegisterAudioResamplerLibav_Man
+#define __create_AudioResamplerFF __create_AudioResamplerLibav
+#define FF Libav
+static const char kName[] = "Libav";
+#else
+static const char kName[] = "FFmpeg";
+#endif
+
 class AudioResamplerFFPrivate;
-class AudioResamplerFF : public AudioResampler //Q_AV_EXPORT is not needed
+class AudioResamplerFF : public AudioResampler
 {
     DPTR_DECLARE_PRIVATE(AudioResampler)
 public:
@@ -46,14 +58,10 @@ void RegisterAudioResamplerFF_Man()
     FACTORY_REGISTER_ID_MAN(AudioResampler, FF, "FFmpeg")
 }
 
-
 class AudioResamplerFFPrivate : public AudioResamplerPrivate
 {
 public:
-    AudioResamplerFFPrivate():
-        context(0)
-    {
-    }
+    AudioResamplerFFPrivate(): context(0) {}
     ~AudioResamplerFFPrivate() {
         if (context) {
             swr_free(&context);
@@ -97,7 +105,7 @@ bool AudioResamplerFF::convert(const quint8 **data)
     int out_size = d.out_samples_per_channel*size_per_sample_with_channels;
     if (out_size > d.data_out.size())
         d.data_out.resize(out_size);
-    uint8_t *out[] = {(uint8_t*)d.data_out.constData()};
+    uint8_t *out[] = {(uint8_t*)d.data_out.data()}; // detach if implicitly shared by others
     //number of input/output samples available in one channel
     int converted_samplers_per_channel = swr_convert(d.context, out, d.out_samples_per_channel, data, d.in_samples_per_channel);
     d.out_samples_per_channel = converted_samplers_per_channel;
@@ -165,7 +173,8 @@ bool AudioResamplerFF::prepare()
 
     //d.in_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.in_sample_format) ? d.in_channels : 1;
     //d.out_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.out_sample_format) ? d.out_channels : 1;
-    swr_free(&d.context); //TODO: if no free(of cause free is required), why channel mapping and layout not work if change from left to stero?
+    if (d.context)
+        swr_free(&d.context); //TODO: if no free(of cause free is required), why channel mapping and layout not work if change from left to stero?
     //If use swr_alloc() need to set the parameters (av_opt_set_xxx() manually or with swr_alloc_set_opts()) before calling swr_init()
     d.context = swr_alloc_set_opts(d.context
                                    , d.out_format.channelLayoutFFmpeg()
@@ -196,6 +205,44 @@ bool AudioResamplerFF::prepare()
         qWarning("Allocat swr context failed!");
         return false;
     }
+    //avresample 0.0.2(FFmpeg 0.11)~1.0.1(FFmpeg 1.1) has no channel mapping. but has remix matrix, so does swresample
+//TODO: why crash if use channel mapping for L or R?
+#if QTAV_HAVE(SWR_AVR_MAP) //LIBAVRESAMPLE_VERSION_INT < AV_VERSION_INT(1, 1, 0)
+    bool remix = false;
+    int in_c = d.in_format.channels();
+    int out_c = d.out_format.channels();
+    /*
+     * matrix[i + stride * o] is the weight of input channel i in output channel o.
+     */
+    double *matrix = 0;
+    if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Left) {
+        remix = true;
+        matrix = (double*)calloc(in_c*out_c, sizeof(double));
+        for (int o = 0; o < out_c; ++o) {
+            matrix[0 + in_c * o] = 1;
+        }
+    }
+    if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Right) {
+        remix = true;
+        matrix = (double*)calloc(in_c*out_c, sizeof(double));
+        for (int o = 0; o < out_c; ++o) {
+            matrix[1 + in_c * o] = 1;
+        }
+    }
+    if (!remix && in_c < out_c) {
+        remix = true;
+        //double matrix[in_c*out_c]; //C99, VLA
+        matrix = (double*)calloc(in_c*out_c, sizeof(double));
+        for (int i = 0, o = 0; o < out_c; ++o) {
+            matrix[i + in_c * o] = 1;
+            i = (i + i)%in_c;
+        }
+    }
+    if (remix && matrix) {
+        avresample_set_matrix(d.context, matrix, in_c);
+        free(matrix);
+    }
+#else
     bool use_channel_map = false;
     if (d.out_format.channelLayout() == AudioFormat::ChannelLayout_Left) {
         use_channel_map = true;
@@ -224,6 +271,7 @@ bool AudioResamplerFF::prepare()
         av_opt_set_int(d.context, "uch", d.out_format.channels(), 0);
         swr_set_channel_mapping(d.context, d.channel_map);
     }
+#endif //QTAV_HAVE(SWR_AVR_MAP)
     int ret = swr_init(d.context);
     if (ret < 0) {
         qWarning("swr_init failed: %s", av_err2str(ret));
