@@ -66,6 +66,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mHasAudio(false)
   , mHasVideo(false)
   , m_fastSeek(false)
+  , m_loading(false)
   , mLoopCount(1)
   , mPlaybackRate(1.0)
   , mVolume(1.0)
@@ -515,6 +516,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
                 if (!vcopt.isEmpty())
                     mpPlayer->setOptionsForVideoCodec(vcopt);
             }
+            m_loading = true;
             mpPlayer->play();
         }
         break;
@@ -525,6 +527,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
     case StoppedState:
         mpPlayer->stop();
         mpPlayer->unload();
+        m_loading = false;
         mPlaybackState = StoppedState;
         break;
     default:
@@ -554,7 +557,7 @@ AVPlayer* QmlAVPlayer::player()
 
 void QmlAVPlayer::play(const QUrl &url)
 {
-    if (mSource == url && playbackState() != StoppedState)
+    if (mSource == url && (playbackState() != StoppedState || m_loading))
         return;
     setSource(url);
     if (!autoPlay())
@@ -563,6 +566,8 @@ void QmlAVPlayer::play(const QUrl &url)
 
 void QmlAVPlayer::play()
 {
+    if (playbackState() != StoppedState || m_loading)
+        return;
     setPlaybackState(PlayingState);
 }
 
@@ -624,6 +629,8 @@ void QmlAVPlayer::_q_error(const AVError &e)
         mError = AccessDenied;
     //else
       //  err = ServiceMissing;
+    if (ec != AVError::NoError)
+        m_loading = false;
     emit error(mError, mErrorString);
     emit errorChanged();
 }
@@ -647,6 +654,7 @@ void QmlAVPlayer::_q_paused(bool p)
 
 void QmlAVPlayer::_q_started()
 {
+    m_loading = false;
     mPlaybackState = PlayingState;
     applyChannelLayout();
     // applyChannelLayout() first because it may reopen audio device

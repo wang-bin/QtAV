@@ -269,6 +269,7 @@ private:
     bool mAutoLoad;
     bool mHasAudio, mHasVideo;
     bool m_fastSeek;
+    bool m_loading;
     int mLoopCount;
     qreal mPlaybackRate;
     qreal mVolume;
