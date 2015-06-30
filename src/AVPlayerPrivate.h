@@ -147,7 +147,6 @@ public:
 
     bool seeking;
     SeekType seek_type;
-    qint64 seek_target; // relative time if relativeTimeMode is true
     qint64 interrupt_timeout;
 
     qreal force_fps;

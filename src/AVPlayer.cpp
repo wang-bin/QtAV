@@ -84,7 +84,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
-    connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished()), Qt::DirectConnection);
+    connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SLOT(onSeekFinished()), Qt::DirectConnection);
 
     d->vcapture = new VideoCapture(this);
 }
@@ -812,7 +812,6 @@ void AVPlayer::setPosition(qint64 position)
     if (relativeTimeMode())
         pos_pts += absoluteMediaStartPosition();
     d->seeking = true;
-    d->seek_target = position;
     masterClock()->updateValue(double(pos_pts)/1000.0); //what is duration == 0
     masterClock()->updateExternalClock(pos_pts); //in msec. ignore usec part using t/1000
     d->read_thread->seek(pos_pts, seekType());
@@ -1277,6 +1276,12 @@ void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)
     emit mediaStatusChanged(d->status);
 }
 
+void AVPlayer::onSeekFinished()
+{
+    d->seeking = false;
+    Q_EMIT seekFinished();
+}
+
 // TODO: doc about when the state will be reset
 void AVPlayer::stop()
 {
@@ -1338,11 +1343,6 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             emit positionChanged(t);
             return;
         }
-        // FIXME: totally wrong if seek_target - keyframe_seek > 1000
-        if (d->seeking && t >= d->seek_target + 1000) {
-            d->seeking = false;
-            d->seek_target = 0;
-        }
         if (t < startPosition()) {
             //qDebug("position %lld < startPosition %lld", t, startPosition());
             // or set clock initial value to get correct t
@@ -1352,8 +1352,8 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             }
         }
         if (t <= stopPosition()) {
-            if (!d->seeking) { // FIXME
-                emit positionChanged(t);
+            if (!d->seeking) {
+                Q_EMIT positionChanged(t);
             }
             return;
         }
