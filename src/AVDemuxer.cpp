@@ -225,8 +225,10 @@ public:
         , network(false)
         , has_attached_pic(false)
         , started(false)
+        , max_pts(0.0)
         , eof(false)
         , media_changed(true)
+        , buf_pos(0)
         , stream(-1)
         , format_ctx(0)
         , input_format(0)
@@ -300,8 +302,10 @@ public:
     bool network;
     bool has_attached_pic;
     bool started;
+    qreal max_pts; // max pts read
     bool eof;
     bool media_changed;
+    mutable qptrdiff buf_pos; // detect eof for dynamic size (growing) stream even if detectDynamicStreamInterval() is not set
     Packet pkt;
     int stream;
     QList<int> audio_streams, video_streams, subtitle_streams;
@@ -447,6 +451,10 @@ bool AVDemuxer::readFrame()
     }
     d->pkt = Packet::fromAVPacket(&packet, av_q2d(d->format_ctx->streams[d->stream]->time_base));
     av_free_packet(&packet); //important!
+    d->eof = false;
+    if (d->pkt.pts > qreal(duration())/1000.0) {
+        d->max_pts = d->pkt.pts;
+    }
     return true;
 }
 
@@ -462,6 +470,16 @@ int AVDemuxer::stream() const
 
 bool AVDemuxer::atEnd() const
 {
+    if (!d->format_ctx)
+        return false;
+    if (d->format_ctx->pb)  {
+        AVIOContext *pb = d->format_ctx->pb;
+        //qDebug("pb->error: %#x, eof: %d, pos: %lld, bufptr: %p", pb->error, pb->eof_reached, pb->pos, pb->buf_ptr);
+        if (d->eof && (qptrdiff)pb->buf_ptr == d->buf_pos)
+            return true;
+        d->buf_pos = (qptrdiff)pb->buf_ptr;
+        return false;
+    }
     return d->eof;
 }
 
@@ -499,7 +517,9 @@ bool AVDemuxer::seek(qint64 pos)
     qint64 upos = pos*1000LL;
     if (upos > startTimeUs() + durationUs() || pos < 0LL) {
         if (pos >= 0LL && d->input && d->input->isSeekable() && d->input->isVariableSize()) {
-            qWarning("Seek for variable size hack. %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
+            qDebug("Seek for variable size hack. %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
+        } else if (d->max_pts > qreal(duration())/1000.0) { //FIXME
+            qDebug("Seek (%lld) when video duration is growing %lld=>%lld", pos, duration(), qint64(d->max_pts*1000.0));
         } else {
             qWarning("Invalid seek position %lld %.2f. valid range [%lld, %lld]", upos, double(upos)/double(durationUs()), startTimeUs(), startTimeUs()+durationUs());
             return false;
@@ -793,6 +813,9 @@ bool AVDemuxer::unload()
     d->network = false;
     d->has_attached_pic = false;
     d->eof = false; // true and set false in load()?
+    d->buf_pos = 0;
+    d->started = false;
+    d->max_pts = 0.0;
     d->resetStreams();
     d->interrupt_hanlder->setStatus(0);
     //av_close_input_file(d->format_ctx); //deprecated
