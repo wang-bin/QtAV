@@ -566,7 +566,8 @@ void QmlAVPlayer::play(const QUrl &url)
 
 void QmlAVPlayer::play()
 {
-    if (playbackState() != StoppedState || m_loading)
+    // if not autoPlay, maybe a different source was set and play() was not called
+    if (isAutoLoad() && (playbackState() != StoppedState || m_loading))
         return;
     setPlaybackState(PlayingState);
 }

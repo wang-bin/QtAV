@@ -22,6 +22,7 @@
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/MediaIO.h"
 #include "QtAV/private/AVCompat.h"
+#include <QtCore/QMutex>
 #include <QtCore/QStringList>
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
 #include <QtCore/QElapsedTimer>
@@ -333,6 +334,7 @@ public:
     StreamInfo astream, vstream, sstream;
 
     AVDemuxer::InterruptHandler *interrupt_hanlder;
+    QMutex mutex;
 };
 
 AVDemuxer::AVDemuxer(QObject *parent)
@@ -390,6 +392,8 @@ MediaStatus AVDemuxer::mediaStatus() const
 
 bool AVDemuxer::readFrame()
 {
+    QMutexLocker lock(&d->mutex);
+    Q_UNUSED(lock);
     if (!d->format_ctx)
         return false;
     d->pkt = Packet();
@@ -678,6 +682,9 @@ bool AVDemuxer::load()
         setMediaStatus(NoMedia);
         return false;
     }
+    QMutexLocker lock(&d->mutex);
+    Q_UNUSED(lock);
+    setMediaStatus(LoadingMedia);
     d->checkNetwork();
 #if QTAV_HAVE(AVDEVICE)
     static const QString avd_scheme("avdevice:");
@@ -704,7 +711,6 @@ bool AVDemuxer::load()
     //install interrupt callback
     d->format_ctx->interrupt_callback = *d->interrupt_hanlder;
 
-    setMediaStatus(LoadingMedia);
     d->applyOptionsForDict();
     // check special dict keys
     // d->format_forced can be set from AVFormatContext.format_whitelist
@@ -776,6 +782,8 @@ bool AVDemuxer::load()
 
 bool AVDemuxer::unload()
 {
+    QMutexLocker lock(&d->mutex);
+    Q_UNUSED(lock);
     /*
     if (d->seekable) {
         d->seekable = false; //

@@ -457,7 +457,6 @@ Q_SIGNALS:
     void externalAudioTracksChanged(const QVariantList& tracks);
 private Q_SLOTS:
     void loadInternal(); // simply load
-    void unloadInternal();
     void playInternal(); // simply play
     void loadAndPlay();
     void stopFromDemuxerThread();
@@ -467,7 +466,7 @@ private Q_SLOTS:
     void stopNotifyTimer();
     void onStarted();
     void updateMediaStatus(QtAV::MediaStatus status);
-
+    void onSeekFinished();
 protected:
     // TODO: set position check timer interval
     virtual void timerEvent(QTimerEvent *);
