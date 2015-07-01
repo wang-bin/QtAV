@@ -40,6 +40,7 @@ VideoWall::VideoWall(QObject *parent) :
     QObject(parent),r(3),c(3),view(0),menu(0)
   , vid("qpainter")
 {
+    QtAV::Widgets::registerRenderers();
     clock = new AVClock(this);
     clock->setClockType(AVClock::ExternalClock);
     view = new QWidget;
@@ -128,7 +129,7 @@ void VideoWall::show()
 
     VideoRendererId v = VideoRendererId_Widget;
     if (vid == "gl")
-        v = VideoRendererId_GLWidget;
+        v = VideoRendererId_GLWidget2;
     else if (vid == "d2d")
         v = VideoRendererId_Direct2D;
     else if (vid == "gdi")
@@ -138,12 +139,10 @@ void VideoWall::show()
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
             VideoRenderer* renderer = VideoRendererFactory::create(v);
-            //renderer->widget()->setParent(view);
-            renderer->widget()->setWindowFlags(Qt::FramelessWindowHint);
+            renderer->widget()->setWindowFlags(renderer->widget()->windowFlags()| Qt::FramelessWindowHint);
             renderer->widget()->setAttribute(Qt::WA_DeleteOnClose);
             renderer->widget()->resize(w, h);
             renderer->widget()->move(j*w, i*h);
-            renderer->widget()->show();
             AVPlayer *player = new AVPlayer;
             player->setRenderer(renderer);
             player->masterClock()->setClockAuto(false);
@@ -182,13 +181,11 @@ void VideoWall::openLocalFile()
     if (file.isEmpty())
         return;
     stop();
-    foreach (AVPlayer* player, players) {
-        player->load(file);
-    }
     clock->reset();
     clock->start();
     timer_id = startTimer(kSyncInterval);
     foreach (AVPlayer* player, players) {
+        player->setFile(file); //TODO: load all players before play
         player->play();
     }
 }
@@ -199,14 +196,12 @@ void VideoWall::openUrl()
     if (url.isEmpty())
         return;
     stop();
-    foreach (AVPlayer* player, players) {
-        player->load(url);
-    }
     clock->reset();
     clock->start();
     timer_id = startTimer(kSyncInterval);
     foreach (AVPlayer* player, players) {
-        player->play();
+        player->setFile(url);
+        player->play(); //TODO: load all players before play
     }
 }
 
