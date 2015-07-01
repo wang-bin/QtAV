@@ -10,7 +10,11 @@ if [ -n "$IS_BOUNDLE" ]; then
     read QT_LIBS
   fi
 fi
-
+if [ "$1" = "-uninstall" ]; then
+  rm -rfv $QT_LIBS/QtAV* $QT_LIBS/../qml/QtAV $QT_LIBS/../include/QtAV*
+  rm -fv $QT_LIBS/../mkspecs/modules/qt_lib_av* $QT_LIBS/../mkspecs/features/av*.prf
+  exit 0
+fi
 
 test -e $QT_LIBS/QtCore.framework || {
   echo "./${0##*/} paths_of_qtav_frameworks \$QTDIR/lib"
@@ -61,6 +65,12 @@ for av in ${AV_FRAMEWORKS[@]}; do
   install_name_tool -id $QT_LIBS/$F/Versions/$QTAV_VER_MAJOR/$name $QT_LIBS/$F/Versions/$QTAV_VER_MAJOR/$name
   fix_qt $QT_LIBS/$F/Versions/$QTAV_VER_MAJOR/$name
 done
+
+if [ -d $THIS_DIR/Contents/Resources/qml/QtAV ]; then
+  echo "deploying QtAV qml module..."
+  cp -af $THIS_DIR/Contents/Resources/qml/QtAV $QT_LIBS/../qml
+  install_name_tool -id $QT_LIBS/../qml/QtAV/libQmlAV.dylib $QT_LIBS/../qml/QtAV/libQmlAV.dylib
+fi
 
 echo "deploying mkspecs..."
 tolower(){
