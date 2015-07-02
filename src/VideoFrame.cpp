@@ -365,49 +365,15 @@ int VideoFrame::effectiveBytesPerLine(int plane) const
 
 QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRectF &roi) const
 {
-    Q_UNUSED(dstSize);
-    Q_UNUSED(roi);
-    if (!isValid() || !bits(0)) {// hw surface. map to host. only supports rgb packed formats now
-        Q_D(const VideoFrame);
-        const QVariant v = d->metadata.value("surface_interop");
-        if (!v.isValid())
-            return QImage();
-        VideoSurfaceInteropPtr si = v.value<VideoSurfaceInteropPtr>();
-        if (!si)
-            return QImage();
-        VideoFrame f;
-        f.setTimestamp(timestamp());
-        if (si->map(HostMemorySurface, VideoFormat(VideoFormat::pixelFormatFromImageFormat(fmt)), &f)) {
-            return f.toImage(fmt, dstSize, roi);
-        }
+    VideoFrame f(to(VideoFormat(VideoFormat::pixelFormatFromImageFormat(fmt)), dstSize, roi));
+    if (!f)
         return QImage();
-    }
-    if (imageFormat() == fmt) {
-        return QImage((const uchar*)frameData().constData(), width(), height(), bytesPerLine(0), fmt).copy();
-    }
-    Q_D(const VideoFrame);
-    ImageConverterSWS conv;
-    conv.setInFormat(pixelFormatFFmpeg());
-    conv.setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::pixelFormatFromImageFormat(fmt)));
-    conv.setInSize(width(), height());
-    int w = width(), h = height();
-    if (dstSize.width() > 0)
-        w = dstSize.width();
-    if (dstSize.height() > 0)
-        h = dstSize.height();
-    conv.setOutSize(w, h);
-    if (!conv.convert(d->planes.constData(), d->line_sizes.constData())) {
-        qWarning("VideoFrame::toImage error");
-        return QImage();
-    }
-    QImage image((const uchar*)conv.outData().constData(), w, h, conv.outLineSizes().at(0), fmt);
+    QImage image((const uchar*)f.frameData().constData(), f.width(), f.height(), f.bytesPerLine(0), fmt);
     return image.copy();
 }
 
 VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QRectF& roi) const
 {
-    Q_UNUSED(dstSize);
-    Q_UNUSED(roi);
     if (!isValid() || !bits(0)) {// hw surface. map to host. only supports rgb packed formats now
         Q_D(const VideoFrame);
         const QVariant v = d->metadata.value("surface_interop");
@@ -426,7 +392,7 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
         return VideoFrame();
     }
     if (fmt.pixelFormatFFmpeg() == pixelFormatFFmpeg())
-        return clone();
+        return *this;
     Q_D(const VideoFrame);
     ImageConverterSWS conv;
     conv.setInFormat(pixelFormatFFmpeg());
