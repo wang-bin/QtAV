@@ -346,14 +346,17 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
             af.setChannelLayout(ao->preferredChannelLayout());
         }
     }
-    if (ao->audioFormat() != af) {
-        qDebug("ao audio format is changed. reopen ao");
+    // always reopen to ensure internal buffer queue inside audio backend(openal) is clear. also make it possible to change backend when replay.
+    //if (ao->audioFormat() != af) {
+        //qDebug("ao audio format is changed. reopen ao");
         ao->close();
-        ao->setAudioFormat(af);
+        if (ao->audioFormat() != af)
+            ao->setAudioFormat(af);
+        qDebug() << "AudioOutput format: " <<ao->audioFormat();
         if (!ao->open()) {
             return false;
         }
-    }
+    //}
     adec->resampler()->setOutAudioFormat(ao->audioFormat());
     // no need to set resampler if AudioFrame is used
 #if !USE_AUDIO_FRAME
