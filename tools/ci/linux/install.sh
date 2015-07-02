@@ -15,7 +15,7 @@ export PATH=$PWD/Qt${QT}-Linux64/bin:$PATH
 export CPATH=$FFMPEG_DIR/include
 export LIBRARY_PATH=$FFMPEG_DIR/lib/x64
 export LD_LIBRARY_PATH=$FFMPEG_DIR/lib/x64
-export QTAV_OUT=QtAV-${TRAVIS_OS_NAME}-${TRAVIS_COMMIT:0:7}
+export QTAV_OUT=QtAV-Qt${QT}-${AV}-ubuntu1204-${TRAVIS_COMMIT:0:7}
 mkdir -p $QTAV_OUT
 
 #if [ "$TRAVIS_BRANCH" == "prelease" ]; then

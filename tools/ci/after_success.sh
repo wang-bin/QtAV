@@ -7,7 +7,7 @@ set -ev
 # TRAVIS_TAG
 echo TRAVIS_TAG=$TRAVIS_TAG
 
-PKG=$QTAV_OUT-$TRAVIS_JOB_NUMBER.tar.xz
+PKG=$QTAV_OUT.tar.xz
 tar Jcvf $PKG $QTAV_OUT/{bin,lib*,build.log}
 
 wget http://sourceforge.net/projects/sshpass/files/sshpass/1.05/sshpass-1.05.tar.gz/download -O sshpass.tar.gz
