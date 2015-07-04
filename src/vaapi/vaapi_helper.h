@@ -223,6 +223,7 @@ public:
         , m_display(display)
         , m_width(w)
         , m_height(h)
+        , color_space(VA_SRC_BT709)
     {}
     ~surface_t() {
         //qDebug("VAAPI - destroying surface 0x%x", (int)m_id);
@@ -233,12 +234,15 @@ public:
     VASurfaceID get() const { return m_id;}
     int width() const { return m_width;}
     int height() const { return m_height;}
+    void setColorSpace(int cs = VA_SRC_BT709) { color_space = cs;}
+    int colorSpace() const { return color_space;}
     display_ptr display() const { return m_display;}
     VADisplay vadisplay() const { return m_display->get();}
 private:
     VASurfaceID m_id;
     display_ptr m_display;
     int m_width, m_height;
+    int color_space;
 };
 typedef SharedPtr<surface_t> surface_ptr;
 
@@ -261,7 +265,7 @@ public:
     bool copy(const surface_ptr& surface) {
         if (!m_glx)
             return false;
-        VA_ENSURE_TRUE(vaCopySurfaceGLX(m_dpy->get(), m_glx, surface->get(), VA_FRAME_PICTURE | VA_SRC_BT709), false);
+        VA_ENSURE_TRUE(vaCopySurfaceGLX(m_dpy->get(), m_glx, surface->get(), VA_FRAME_PICTURE | surface->colorSpace()), false);
         return true;
     }
 private:

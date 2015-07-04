@@ -287,6 +287,7 @@ void VideoDecoderVAAPI::setDisplay(DisplayType disp)
     d.display_type = disp;
 }
 
+extern ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs);
 VideoFrame VideoDecoderVAAPI::frame()
 {
     DPTR_D(VideoDecoderVAAPI);
@@ -316,12 +317,20 @@ VideoFrame VideoDecoderVAAPI::frame()
             return VideoFrame();
         }
         SurfaceInteropVAAPI *interop = new SurfaceInteropVAAPI(d.interop_res);
-        interop->setSurface(p);
+        interop->setSurface(p, d.width, d.height);
 
         VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
+
+        ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(d.frame));
+        if (cs != ColorSpace_Unknow)
+            cs = colorSpaceFromFFmpeg(d.codec_ctx->colorspace);
+        if (cs == ColorSpace_BT601)
+            p->setColorSpace(VA_SRC_BT601);
+        else
+            p->setColorSpace(VA_SRC_BT709);
         return f;
     }
 #if VA_CHECK_VERSION(0,31,0)
@@ -559,7 +568,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
     surface_width = FFALIGN(w, 16);
     surface_height = FFALIGN(h, 16);
     VAStatus status = VA_STATUS_SUCCESS;
-    status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, width, height,  surfaces.data() + old_size, count - old_size, NULL, 0); //VA_ENSURE_OK: travis-ci macro mismatch
+    status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, surface_width, surface_height,  surfaces.data() + old_size, count - old_size, NULL, 0); //VA_ENSURE_OK: travis-ci macro mismatch
     if (status != VA_STATUS_SUCCESS) {
         qWarning("vaCreateSurfaces error (%#x): %s", status, vaErrorStr(status));
         return false;

@@ -40,7 +40,7 @@ void* SurfaceInteropVAAPI::map(SurfaceType type, const VideoFormat &fmt, void *h
     if (!m_surface)
         return 0;
     if (type == GLTextureSurface) {
-        if (m_resource->map(m_surface, *((GLuint*)handle), plane))
+        if (m_resource->map(m_surface, *((GLuint*)handle), frame_width, frame_height, plane))
             return handle;
         return NULL;
     } else if (type == HostMemorySurface) {
@@ -119,15 +119,9 @@ void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, in
         src[i] = (uint8_t*)p_base + image.offsets[i];
         pitch[i] = image.pitches[i];
     }
-    if (swap_uv) {
-        std::swap(src[1], src[2]);
-        std::swap(pitch[1], pitch[2]);
-    }
-    VideoFrame frame = VideoFrame(m_surface->width(), m_surface->height(), fmt);
-    frame.setBits(src);
-    frame.setBytesPerLine(pitch);
-    frame = frame.to(format);
-
+    VideoFrame frame = VideoFrame::fromGPU(fmt, frame_width, frame_height, m_surface->height(), src, pitch, true, swap_uv);
+    if (format != fmt)
+        frame = frame.to(format);
     VAWARN(vaUnmapBuffer(m_surface->vadisplay(), image.buf));
     vaDestroyImage(m_surface->vadisplay(), image.image_id);
     image.image_id = VA_INVALID_ID;
@@ -149,8 +143,10 @@ surface_glx_ptr GLXInteropResource::surfaceGLX(const display_ptr &dpy, GLuint te
     return glx;
 }
 
-bool GLXInteropResource::map(const surface_ptr& surface, GLuint tex, int)
+bool GLXInteropResource::map(const surface_ptr& surface, GLuint tex, int w, int h, int)
 {
+    Q_UNUSED(w);
+    Q_UNUSED(h);
     surface_glx_ptr glx = surfaceGLX(surface->display(), tex);
     if (!glx) {
         qWarning("Fail to create vaapi glx surface");
@@ -268,16 +264,16 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
     return true;
 }
 
-bool X11InteropResource::map(const surface_ptr& surface, GLuint tex, int)
+bool X11InteropResource::map(const surface_ptr& surface, GLuint tex, int w, int h, int)
 {
     if (!ensurePixmaps(surface->width(), surface->height()))
         return false;
     VAWARN(vaSyncSurface(surface->vadisplay(), surface->get()));
 
     VA_ENSURE_TRUE(vaPutSurface(surface->vadisplay(), surface->get(), pixmap
-                                , 0, 0, surface->width(), surface->height()
-                                , 0, 0, surface->width(), surface->height()
-                                , NULL, 0, VA_FRAME_PICTURE | VA_SRC_BT709)
+                                , 0, 0, w, h
+                                , 0, 0, w, h
+                                , NULL, 0, VA_FRAME_PICTURE | surface->colorSpace())
                    , NULL);
 
     XSync((::Display*)xdisplay, False);
