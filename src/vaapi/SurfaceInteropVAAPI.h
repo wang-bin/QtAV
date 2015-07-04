@@ -49,7 +49,7 @@ namespace vaapi {
 class InteropResource
 {
 public:
-    //virtual ~InteropResource() {} // FIXME: will delete vadisplay too late and crash at vaTerminate(), why?
+    virtual ~InteropResource() {}
     // egl supports yuv extension
     /*!
      * \brief map
@@ -65,21 +65,21 @@ public:
 };
 typedef QSharedPointer<InteropResource> InteropResourcePtr;
 
-// inherits VAAPI_GLX, VAAPI_X11: unload va lib in dtor, va-xxx is not loaded and may affect surface_t dtor which call vaTerminate()
-// dtor: ~SurfaceInteropVAAPI()=>~surface_t()=>~VAAPI_X11()=>~VAAPI_GLX()=>~VideoSurfaceInterop()
 class SurfaceInteropVAAPI Q_DECL_FINAL: public VideoSurfaceInterop
 {
 public:
-    SurfaceInteropVAAPI(const InteropResourcePtr& res) : m_resource(res) {}
-    void setSurface(const surface_ptr& surface,  int w, int h) { m_surface = surface;frame_width=w;frame_height=h; }
+    SurfaceInteropVAAPI(const InteropResourcePtr& res) : frame_width(0), frame_height(0), m_resource(res) {}
+    void setSurface(const surface_ptr& surface,  int w, int h); // use surface->width/height if w/h is 0
     void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
     void unmap(void *handle) Q_DECL_OVERRIDE;
 protected:
     void* mapToHost(const VideoFormat &format, void *handle, int plane);
 private:
-    surface_ptr m_surface;
-    InteropResourcePtr m_resource;
     int frame_width, frame_height;
+    // NOTE: must ensure va-x11/va-glx is unloaded after all va calls(don't know why, but it's true), for example vaTerminate(), to avoid crash
+    // so declare InteropResourcePtr first then surface_ptr. InteropResource (va-xxx.so) will be destroyed later than surface_t (vaTerminate())
+    InteropResourcePtr m_resource;
+    surface_ptr m_surface;
 };
 // load/resolve symbols only once in decoder and pass a VAAPI_XXX ptr
 // or use pool
@@ -98,7 +98,7 @@ class X11InteropResource Q_DECL_FINAL: public InteropResource, public VAAPI_X11
 {
 public:
     X11InteropResource();
-    ~X11InteropResource();
+    ~X11InteropResource() Q_DECL_OVERRIDE;
     bool map(const surface_ptr &surface, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
     bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:

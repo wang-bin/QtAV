@@ -30,6 +30,12 @@
 namespace QtAV {
 namespace vaapi {
 
+void SurfaceInteropVAAPI::setSurface(const surface_ptr& surface,  int w, int h) {
+    m_surface = surface;
+    frame_width=w ? w : surface->width();
+    frame_height=h ? h : surface->height();
+}
+
 void* SurfaceInteropVAAPI::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
 {
     if (!handle)
