@@ -283,7 +283,7 @@ void VideoThread::run()
     const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
     bool skip_render = false; // keep true if decoded frame does not reach desired time
     qreal v_a = 0;
-    while (!d.stop) {
+    while (true) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
         //processNextTask tryPause(timeout) and  and continue outter loop
@@ -293,23 +293,24 @@ void VideoThread::run()
             if (isPaused())
                 continue; //timeout. process pending tasks
         }
-        if(!pkt.isValid()) {
+        if(!pkt.isValid() && !pkt.isEOF()) { // can't seek back if eof packet is read
             pkt = d.packets.take(); //wait to dequeue
         }
         if (pkt.isEOF()) {
-            d.stop = true;
-            qDebug("video thread gets an eof packet. exit.");
-            break;
-        }
-        //qDebug() << pkt.position << " pts:" <<pkt.pts;
-        //Compare to the clock
-        if (!pkt.isValid()) {
-            // may be we should check other information. invalid packet can come from
-            wait_key_frame = true;
-            qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());
-            dec->flush();
-            d.render_pts0 = pkt.pts;
-            continue;
+            qDebug("video thread gets an eof packet.");
+        } else {
+            if (d.stop) // user stop
+                break;
+            //qDebug() << pkt.position << " pts:" <<pkt.pts;
+            //Compare to the clock
+            if (!pkt.isValid()) {
+                // may be we should check other information. invalid packet can come from
+                wait_key_frame = true;
+                qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());
+                dec->flush();
+                d.render_pts0 = pkt.pts;
+                continue;
+            }
         }
         if (d.clock->clockType() == AVClock::AudioClock) {
             sync_audio = true;
@@ -324,6 +325,8 @@ void VideoThread::run()
         const qreal dts = pkt.dts; //FIXME: pts and dts
         // TODO: delta ref time
         qreal diff = dts - d.clock->value() + v_a;
+        if (pkt.isEOF())
+            diff = qMin<qreal>(1.0, qMax<qreal>(d.delay, 1.0/d.statistics->video_only.currentDisplayFPS()));
         if (diff < 0 && sync_video)
             diff = 0; // this ensures no frame drop
         if (diff > kSyncThreshold) {
@@ -371,7 +374,7 @@ void VideoThread::run()
             diff = 0; // TODO: here?
         if (!sync_audio && diff > 0) {
             // wait to dts reaches
-            if (d.force_fps < 0.0)
+            if (d.force_fps < 0.0 && diff < 2.0)
                 waitAndCheck(diff*1000UL, dts); // TODO: count decoding and filter time
             diff = 0; // TODO: can not change delay!
         }
@@ -446,11 +449,16 @@ void VideoThread::run()
             dec->setOptions(*dec_opt);
         if (!dec->decode(pkt)) {
             qWarning("Decode video failed. undecoded: %d", dec->undecodedSize());
+            if (pkt.isEOF()) {
+                qDebug("decode eof done");
+                break;
+            }
             pkt = Packet();
             continue;
         }
         // reduce here to ensure to decode the rest data in the next loop
-        pkt.data = QByteArray::fromRawData(pkt.data.constData() + pkt.data.size() - dec->undecodedSize(), dec->undecodedSize());
+        if (!pkt.isEOF())
+            pkt.data = QByteArray::fromRawData(pkt.data.constData() + pkt.data.size() - dec->undecodedSize(), dec->undecodedSize());
         VideoFrame frame = dec->frame();
         if (!frame.isValid()) {
             qWarning("invalid video frame from decoder. undecoded data size: %d", pkt.data.size());
@@ -522,7 +530,8 @@ void VideoThread::run()
         d.last_deliver_time = d.statistics->video_only.frameDisplayed(frame.timestamp());
         // TODO: store original frame. now the frame is filtered and maybe converted to renderer perferred format
         d.displayed_frame = frame;
-        v_a = frame.timestamp() - d.clock->value();
+        if (d.clock->clockType() == AVClock::AudioClock)
+            v_a = frame.timestamp() - d.clock->value();
     }
     d.packets.clear();
     d.outputSet->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
