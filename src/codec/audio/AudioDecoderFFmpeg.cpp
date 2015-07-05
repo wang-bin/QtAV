@@ -111,8 +111,17 @@ bool AudioDecoderFFmpeg::decode(const Packet &packet)
     DPTR_D(AudioDecoderFFmpeg);
     d.decoded.clear();
     int got_frame_ptr = 0;
+    int ret = 0;
+    if (packet.isEOF()) {
+        AVPacket eofpkt;
+        av_init_packet(&eofpkt);
+        eofpkt.data = NULL;
+        eofpkt.size = 0;
+        ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &got_frame_ptr, &eofpkt);
+    } else {
     // const AVPacket*: ffmpeg >= 1.0. no libav
-    int ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &got_frame_ptr, (AVPacket*)packet.asAVPacket());
+        ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &got_frame_ptr, (AVPacket*)packet.asAVPacket());
+    }
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
     if (ret == AVERROR(EAGAIN)) {
         return false;
@@ -123,7 +132,7 @@ bool AudioDecoderFFmpeg::decode(const Packet &packet)
     }
     if (!got_frame_ptr) {
         qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d", ret, d.undecoded_size);
-        return true;
+        return !packet.isEOF();
     }
 #if USE_AUDIO_FRAME
     return true;

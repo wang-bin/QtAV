@@ -84,7 +84,7 @@ void AudioThread::run()
     //TODO: bool need_sync in private class
     bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
     Packet pkt;
-    while (!d.stop) {
+    while (true) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -94,23 +94,25 @@ void AudioThread::run()
             if (isPaused())
                 continue;
         }
-        if (!pkt.isValid()) {
+        if (!pkt.isValid() && !pkt.isEOF()) { // can't seek back if eof packet is read
             pkt = d.packets.take(); //wait to dequeue
         }
         if (pkt.isEOF()) {
-            d.stop = true;
-            qDebug("audio thread gets an eof packet. exit.");
-            break;
+            qDebug("audio thread gets an eof packet.");
+        } else {
+            if (d.stop) // user stop
+                break;
+            if (!pkt.isValid()) {
+                qDebug("Invalid packet! flush audio codec context!!!!!!!! audio queue size=%d", d.packets.size());
+                QMutexLocker locker(&d.mutex);
+                Q_UNUSED(locker);
+                if (d.dec) //maybe set to null in setDecoder()
+                    d.dec->flush();
+                d.render_pts0 = pkt.pts;
+                continue;
+            }
         }
-        if (!pkt.isValid()) {
-            qDebug("Invalid packet! flush audio codec context!!!!!!!! audio queue size=%d", d.packets.size());
-            QMutexLocker locker(&d.mutex);
-            Q_UNUSED(locker);
-            if (d.dec) //maybe set to null in setDecoder()
-                d.dec->flush();
-            d.render_pts0 = pkt.pts;
-            continue;
-        }
+
         qreal dts = pkt.dts; //FIXME: pts and dts
         // no key frame for audio. so if pts reaches, try decode and skip render if got frame pts does not reach
         bool skip_render = pkt.pts < d.render_pts0;
@@ -207,6 +209,10 @@ void AudioThread::run()
         }
         if (!dec->decode(pkt)) {
             qWarning("Decode audio failed. undecoded: %d", dec->undecodedSize());
+            if (pkt.isEOF()) {
+                qDebug("audio decode eof done");
+                break;
+            }
             qreal dt = dts - d.last_pts;
             if (dt > 0.5 || dt < 0) {
                 dt = 0;
@@ -219,7 +225,8 @@ void AudioThread::run()
             continue;
         }
         // reduce here to ensure to decode the rest data in the next loop
-        pkt.data = QByteArray::fromRawData(pkt.data.constData() + pkt.data.size() - dec->undecodedSize(), dec->undecodedSize());
+        if (!pkt.isEOF())
+            pkt.data = QByteArray::fromRawData(pkt.data.constData() + pkt.data.size() - dec->undecodedSize(), dec->undecodedSize());
 #if USE_AUDIO_FRAME
         AudioFrame frame(dec->frame());
         if (!frame)
