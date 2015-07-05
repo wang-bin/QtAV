@@ -242,17 +242,7 @@ public:
             p->createCUVIDDecoder(cuvidfmt->codec, cuvidfmt->coded_width, cuvidfmt->coded_height);
             // how about parser.ulMaxNumDecodeSurfaces? recreate?
             AVCodecID codec = mapCodecToFFmpeg(cuvidfmt->codec);
-            if (codec == QTAV_CODEC_ID(H264)) {
-                if (!p->bitstream_filter_ctx) {
-                    p->bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
-                    Q_ASSERT_X(p->bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
-                }
-            } else {
-                if (p->bitstream_filter_ctx) {
-                    av_bitstream_filter_close(p->bitstream_filter_ctx);
-                    p->bitstream_filter_ctx = 0;
-                }
-            }
+            p->setBSF(codec);
         }
         //TODO: lavfilter
         return 1;
@@ -274,7 +264,7 @@ public:
         return 1;
 #endif
     }
-    void setBSF(AVCodecID codec) {}
+    void setBSF(AVCodecID codec);
     bool can_load; //if linked to cuvid, it's true. otherwise(use dllapi) equals to whether cuvid can be loaded
     uchar *host_data;
     int host_data_size;
@@ -357,17 +347,7 @@ bool VideoDecoderCUDA::prepare()
         return false;
     if (!d.cuctx)
         d.initCuda();
-    if (d.codec_ctx->codec_id == QTAV_CODEC_ID(H264)) {
-        if (!d.bitstream_filter_ctx) {
-            d.bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
-            Q_ASSERT_X(d.bitstream_filter_ctx, "av_bitstream_filter_init", "Unknown bitstream filter");
-        }
-    } else {
-        if (d.bitstream_filter_ctx) {
-            av_bitstream_filter_close(d.bitstream_filter_ctx);
-            d.bitstream_filter_ctx = 0;
-        }
-    }
+    d.setBSF(d.codec_ctx->codec_id);
     // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
     return d.createCUVIDDecoder(mapCodecFromFFmpeg(d.codec_ctx->codec_id), d.codec_ctx->coded_width, d.codec_ctx->coded_height)
             && d.createCUVIDParser();
@@ -798,6 +778,21 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         //qDebug("frame queue size: %d", frame_queue.size());
     }
     return true;
+}
+
+void VideoDecoderCUDAPrivate::setBSF(AVCodecID codec)
+{
+    if (codec == QTAV_CODEC_ID(H264)) {
+        if (!bitstream_filter_ctx) {
+            bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
+            Q_ASSERT(bitstream_filter_ctx && "av_bitstream_filter_init error");
+        }
+    } else {
+        if (bitstream_filter_ctx) {
+            av_bitstream_filter_close(bitstream_filter_ctx);
+            bitstream_filter_ctx = 0;
+        }
+    }
 }
 
 } //namespace QtAV
