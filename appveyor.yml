@@ -10,7 +10,7 @@ environment:
   matrix:
   - arch: x86
     cc: VS2013
-    qt: 5.4.0
+    qt: 5.5.0
     suffix: -xp
 
 #  - arch: 32
@@ -30,7 +30,7 @@ install:
   - cd build
   - ps: $qt_url = 'http://sourceforge.net/projects/buildqt/files/release/' + $env:qt + '/Qt' + $env:qt + '-' + $env:cc + $env:arch + $env:suffix + '.7z/download'
   - ps: Start-FileDownload $qt_url qt.7z
-  - ps: Start-FileDownload http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86%2Bx64-20150521.7z/download av.7z
+  - ps: Start-FileDownload http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86%2Bx64-20150706.7z/download av.7z
   - 7z x qt.7z > NUL
   - 7z x av.7z > NUL
   - move Qt%qt%-* Qt                      #Qt%qt%-%cc%%arch%%suffix% Qt
@@ -70,9 +70,9 @@ after_build:
   - if exist Qt\qml\QtQml xcopy /syi Qt\qml\QtQml bin\qml\QtQml > NUL
   - if exist Qt\qml\QtQuick xcopy /syi Qt\qml\QtQuick bin\qml\QtQuick > NUL
   - if exist Qt\qml\QtQuick.2 xcopy /syi Qt\qml\QtQuick.2 bin\qml\QtQuick.2 > NUL
-  - xcopy /syi Qt\plugins\platforms bin\plugins\platforms > NUL
-  - xcopy /syi Qt\plugins\imageformats bin\plugins\imageformats > NUL
-  - xcopy /syi Qt\plugins\iconengines bin\plugins\iconengines > NUL
+  - if exist Qt\plugins\platforms xcopy /syi Qt\plugins\platforms bin\plugins\platforms > NUL
+  - if exist Qt\plugins\imageformats xcopy /syi Qt\plugins\imageformats bin\plugins\imageformats > NUL
+  - if exist Qt\plugins\iconengines xcopy /syi Qt\plugins\iconengines bin\plugins\iconengines > NUL
   - xcopy /syi tools\install_sdk\mkspecs mkspecs
   - copy /y ..\qtc_packaging\ifw\packages\com.qtav.product.dev\data\sdk_deploy.bat .
   - copy /y ..\qtc_packaging\ifw\packages\com.qtav.product.player\data\*.bat .
