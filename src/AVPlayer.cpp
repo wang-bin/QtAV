@@ -1098,6 +1098,7 @@ void AVPlayer::playInternal()
         if (d->vthread)
             d->vthread->setFrameRate(d->force_fps);
     } else {
+        masterClock()->setClockAuto(true);
         if (d->vthread)
             d->vthread->setFrameRate(-1.0);
     }
