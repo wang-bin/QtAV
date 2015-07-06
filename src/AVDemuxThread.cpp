@@ -427,15 +427,14 @@ void AVDemuxThread::run()
     while (!end) {
         processNextSeekTask();
         if (demuxer->atEnd()) {
-            if (!was_end) {
-                if (aqueue) {
-                    aqueue->put(Packet::createEOF());
-                    aqueue->blockEmpty(false); // do not block if buffer is not enough. block again on seek
-                }
-                if (vqueue) {
-                    vqueue->put(Packet::createEOF());
-                    vqueue->blockEmpty(false);
-                }
+            // if avthread may skip 1st eof packet because of a/v sync
+            if (aqueue && (!was_end || aqueue->isEmpty())) {
+                aqueue->put(Packet::createEOF());
+                aqueue->blockEmpty(false); // do not block if buffer is not enough. block again on seek
+            }
+            if (vqueue && (!was_end || vqueue->isEmpty())) {
+                vqueue->put(Packet::createEOF());
+                vqueue->blockEmpty(false);
             }
             m_buffering = false;
             Q_EMIT mediaStatusChanged(QtAV::BufferedMedia);

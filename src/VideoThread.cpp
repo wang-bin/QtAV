@@ -297,6 +297,8 @@ void VideoThread::run()
             pkt = d.packets.take(); //wait to dequeue
         }
         if (pkt.isEOF()) {
+            d.render_pts0 = -1;
+            wait_key_frame = false;
             qDebug("video thread gets an eof packet.");
         } else {
             if (d.stop) // user stop
@@ -471,7 +473,8 @@ void VideoThread::run()
         //qDebug("pts0: %f, pts: %f", d.render_pts0, pts);
         if (d.render_pts0 >= 0.0) {
             if (pts < d.render_pts0) {
-                pkt = Packet();
+                if (!pkt.isEOF())
+                    pkt = Packet();
                 continue;
             }
             d.render_pts0 = -1;
