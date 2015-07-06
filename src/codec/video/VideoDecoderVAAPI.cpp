@@ -557,6 +557,10 @@ bool VideoDecoderVAAPIPrivate::open()
 
 bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w, int h)
 {
+    if (!display) {
+        qWarning("no va display");
+        return false;
+    }
     Q_ASSERT(w > 0 && h > 0);
     const int old_size = surfaces.size();
     const bool size_changed = (surface_width != FFALIGN(w, 16) || surface_height != FFALIGN(h, 16));
@@ -676,6 +680,10 @@ void VideoDecoderVAAPIPrivate::destroySurfaces()
 
 bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
 {
+    if (!display) {
+        qWarning("no va display");
+        return false;
+    }
     const int w = codedWidth(avctx);
     const int h = codedHeight(avctx);
     if (surface_width == FFALIGN(w, 16) && surface_height == FFALIGN(h, 16)) {
