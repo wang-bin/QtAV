@@ -530,8 +530,27 @@ void VideoThread::run()
         d.last_deliver_time = d.statistics->video_only.frameDisplayed(frame.timestamp());
         // TODO: store original frame. now the frame is filtered and maybe converted to renderer perferred format
         d.displayed_frame = frame;
-        if (d.clock->clockType() == AVClock::AudioClock)
-            v_a = frame.timestamp() - d.clock->value();
+        if (d.clock->clockType() == AVClock::AudioClock) {
+            const qreal v_a_ = frame.timestamp() - d.clock->value();
+            if (!qFuzzyIsNull(v_a_)) {
+                if (v_a_ < -0.1) {
+                    if (v_a > v_a_*0.7)
+                        v_a = v_a_*0.7;
+                    else
+                        v_a += -0.01;
+                } else if (v_a_ < -0.001) {
+                    v_a += -0.001;
+                } else if (v_a_ < 0.001) {
+                } else if (v_a_ < 0.1) {
+                    v_a += 0.001;
+                } else {
+                    if (v_a < v_a_*0.7)
+                        v_a = v_a_*0.7;
+                    else
+                        v_a += 0.01;
+                 }
+            }
+        }
     }
     d.packets.clear();
     d.outputSet->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
