@@ -24,7 +24,7 @@ TRANSLATIONS = i18n/QMLPlayer_zh_CN.ts
 # The .cpp file which was generated for your project. Feel free to hack it.
 SOURCES += main.cpp
 lupdate_only{
-SOURCES = qml/QMLPlayer/*.qml
+SOURCES = qml/QMLPlayer/*.qml qml/QMLPlayer/*.js
 }
 # Installation path
 target.path = $$[QT_INSTALL_BINS]

@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 {
     // has no effect if qInstallMessageHandler() called
     //qSetMessagePattern("%{function} @%{line}: %{message}");
+    QApplication a(argc, argv);
 
     QOptions options = get_common_options();
     options.add("player options")
@@ -88,7 +89,6 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    QApplication a(argc, argv);
     set_opengl_backend(options.option("gl").value().toString(), a.arguments().first());
     load_qm(QStringList() << "player", options.value("language").toString());
 
@@ -111,8 +111,12 @@ int main(int argc, char *argv[])
     }
     qDebug("vo: %s", vo.toUtf8().constData());
     vo = vo.toLower();
-    if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv" && vo != "qt")
+    if (vo != "opengl" && vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv" && vo != "qt")
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+        vo = "opengl";
+#else
         vo = "gl";
+#endif
     QString title = "QtAV " /*+ vo + " "*/ + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
 #ifndef QT_NO_OPENGL
     VideoRendererId vid = VideoRendererId_GLWidget2;
@@ -124,6 +128,7 @@ int main(int argc, char *argv[])
         const char* name;
         VideoRendererId id;
     } vid_map[] = {
+    { "opengl", VideoRendererId_OpenGLWidget },
     { "gl", VideoRendererId_GLWidget2 },
     { "d2d", VideoRendererId_Direct2D },
     { "gdi", VideoRendererId_GDI },

@@ -55,7 +55,6 @@ OptionalDepends = \
 !no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
 # no-xxx can set in $$PWD/user.conf
 !no-openal: OptionalDepends *= openal
-!no-pulseaudio: OptionalDepends *= pulseaudio
 !no-portaudio: OptionalDepends *= portaudio
 !no-libass: OptionalDepends *= libass
 win32 {
@@ -65,9 +64,10 @@ win32 {
   !no-dxva: OptionalDepends *= dxva
 }
 unix {
-    !no-xv:!no-widgets: OptionalDepends *= xv
-    !no-vaapi: OptionalDepends *= vaapi
-    !no-cedarv: OptionalDepends *= libcedarv
+  !no-pulseaudio: OptionalDepends *= pulseaudio
+  !no-xv:!no-widgets: OptionalDepends *= xv
+  !no-vaapi: OptionalDepends *= vaapi
+  !no-cedarv: OptionalDepends *= libcedarv
 }
 
 runConfigTests()
