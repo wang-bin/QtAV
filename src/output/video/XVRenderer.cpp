@@ -45,14 +45,14 @@ inline int scaleEQValue(int val, int min, int max)
 }
 
 class XVRendererPrivate;
-class XVRenderer : public QWidget, public VideoRenderer
+class XVRenderer: public QWidget, public VideoRenderer
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(XVRenderer)
 public:
     XVRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual VideoRendererId id() const;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    virtual VideoRendererId id() const Q_DECL_OVERRIDE;
+    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
@@ -60,30 +60,29 @@ public:
      * If paintEngine != 0, the window will flicker when drawing without QPainter.
      * Make sure that paintEngine returns 0 to avoid flicking.
      */
-    virtual QPaintEngine* paintEngine() const;
+    virtual QPaintEngine* paintEngine() const Q_DECL_OVERRIDE;
     /*http://lists.trolltech.com/qt4-preview-feedback/2005-04/thread00609-0.html
      * true: paintEngine is QPainter. Painting with QPainter support double buffer
      * false: no double buffer, should reimplement paintEngine() to return 0 to avoid flicker
      */
-    virtual QWidget* widget() { return this; }
+    virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
 protected:
-    virtual bool receiveFrame(const VideoFrame& frame);
-    virtual bool needUpdateBackground() const;
+    virtual bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
+    virtual bool needUpdateBackground() const Q_DECL_OVERRIDE;
     //called in paintEvent before drawFrame() when required
-    virtual void drawBackground();
-    virtual bool needDrawFrame() const;
+    virtual void drawBackground() Q_DECL_OVERRIDE;
+    virtual bool needDrawFrame() const Q_DECL_OVERRIDE;
     //draw the current frame using the current paint engine. called by paintEvent()
-    virtual void drawFrame();
-    virtual void paintEvent(QPaintEvent *);
-    virtual void resizeEvent(QResizeEvent *);
+    virtual void drawFrame() Q_DECL_OVERRIDE;
+    virtual void paintEvent(QPaintEvent *) Q_DECL_OVERRIDE;
+    virtual void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
     //stay on top will change parent, hide then show(windows). we need GetDC() again
-    virtual void showEvent(QShowEvent *);
-
+    virtual void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
 private:
-    virtual bool onSetBrightness(qreal b);
-    virtual bool onSetContrast(qreal c);
-    virtual bool onSetHue(qreal h);
-    virtual bool onSetSaturation(qreal s);
+    virtual bool onSetBrightness(qreal b) Q_DECL_OVERRIDE;
+    virtual bool onSetContrast(qreal c) Q_DECL_OVERRIDE;
+    virtual bool onSetHue(qreal h) Q_DECL_OVERRIDE;
+    virtual bool onSetSaturation(qreal s) Q_DECL_OVERRIDE;
 };
 typedef XVRenderer VideoRendererXV;
 extern VideoRendererId VideoRendererId_XV;
@@ -109,7 +108,7 @@ public:
     DPTR_DECLARE_PUBLIC(XVRenderer)
 
     XVRendererPrivate():
-        use_shm(false)
+        use_shm(true)
       , num_adaptors(0)
       , xv_image(0)
       , format_id(0x32315659) /*YV12*/
@@ -156,22 +155,7 @@ public:
             XvFreeAdaptorInfo(xv_adaptor_info);
             xv_adaptor_info = 0;
         }
-        if (xv_image) {
-#ifdef _XSHM_H_
-            if (use_shm) {
-                if (shm.shmaddr) {
-                    XShmDetach(display, &shm);
-                    shmctl(shm.shmid, IPC_RMID, 0);
-                    shmdt(shm.shmaddr);
-                }
-            }
-#endif //_XSHM_H_
-            if (!use_shm) {
-                // free if use copy (e.g. shm)
-                free(xv_image->data);
-            }
-            XFree(xv_image);
-        }
+        destroyXVImage();
         if (gc) {
             XFreeGC(display, gc);
             gc = 0;
@@ -181,6 +165,26 @@ public:
             xv_port = 0;
         }
         XCloseDisplay(display);
+    }
+    void destroyXVImage() {
+        if (!xv_image)
+            return;
+#ifdef _XSHM_H_
+        if (use_shm) {
+            if (shm.shmaddr) {
+                XShmDetach(display, &shm);
+                shmctl(shm.shmid, IPC_RMID, 0);
+                shmdt(shm.shmaddr);
+            }
+        } else
+#endif //_XSHM_H_
+        {
+            // free if use copy (e.g. shm)
+            free(xv_image->data);
+        }
+        XFree(xv_image);
+        xv_image_width = 0;
+        xv_image_height = 0;
     }
     bool findYV12Port(XvPortID port) {
         int count = 0;
@@ -212,34 +216,43 @@ public:
     bool prepareImage(int w, int h) {
         if (xv_image_width == w && xv_image_height == h && xv_image)
             return true;
+        destroyXVImage();
         xv_image_width = w;
         xv_image_height = h;
 #ifdef _XSHM_H_
-        if (use_shm) {
-            xv_image = XvShmCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height, &shm);
-            shm.shmid = shmget(IPC_PRIVATE, xv_image->data_size, IPC_CREAT | 0777);
-            if (shm.shmid < 0) {
-                qCritical("get shm failed. try to use none shm");
-                use_shm = false;
-            } else {
-                shm.shmaddr = (char *)shmat(shm.shmid, 0, 0);
-                xv_image->data = shm.shmaddr;
-                shm.readOnly = 0;
-                if (XShmAttach(display, &shm)) {
-                    XSync(display, false);
-                    shmctl(shm.shmid, IPC_RMID, 0);
-                } else {
-                    qCritical("Attach to shm failed! try to use none shm");
-                    use_shm = false;
-                }
-            }
+        use_shm = XShmQueryExtension(display);
+        qDebug("use xv shm: %d", use_shm);
+        if (!use_shm)
+            goto no_shm;
+        xv_image = XvShmCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height, &shm);
+        if (!xv_image)
+            goto no_shm;
+        shm.shmid = shmget(IPC_PRIVATE, xv_image->data_size, IPC_CREAT | 0777);
+        qDebug("shmid: %d xv_image->data_size: %d, %dx%d", shm.shmid, xv_image->data_size, xv_image_width, xv_image_height);
+        if (shm.shmid < 0) {
+            qWarning("get shm failed. try to use none shm");
+            goto no_shm;
         }
+        shm.shmaddr = (char *)shmat(shm.shmid, 0, 0);
+        xv_image->data = shm.shmaddr;
+        shm.readOnly = 0;
+        if (!XShmAttach(display, &shm)) {
+            qWarning("Attach to shm failed! try to use none shm");
+            goto no_shm;
+        }
+        XSync(display, false);
+        shmctl(shm.shmid, IPC_RMID, 0);
+        return true;
 #endif //_XSHM_H_
-        if (!use_shm) {
-            xv_image = XvCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height);
-            // malloc if use copy (e.g. shm)
-            xv_image->data = (char*)malloc(xv_image->data_size);
-        }
+no_shm:
+        xv_image = XvCreateImage(display, xv_port, format_id, 0, xv_image_width, xv_image_height);
+        if (!xv_image)
+            return false;
+        // malloc if use copy (e.g. shm)
+        xv_image->data = (char*)malloc(xv_image->data_size);
+        if (!xv_image->data)
+            return false;
+        XSync(display, False);
         return true;
     }
 
@@ -292,7 +305,7 @@ XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
      */
     setAttribute(Qt::WA_OpaquePaintEvent);
     //setAttribute(Qt::WA_NoSystemBackground);
-    setAutoFillBackground(false);
+    //setAutoFillBackground(false);
     setAttribute(Qt::WA_PaintOnScreen, true);
 }
 
@@ -301,7 +314,7 @@ bool XVRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
     // TODO: NV12
     return pixfmt == VideoFormat::Format_YUV420P || pixfmt == VideoFormat::Format_YV12
-            || pixfmt == VideoFormat::Format_NV12|| pixfmt == VideoFormat::Format_NV21;
+            ;//|| pixfmt == VideoFormat::Format_NV12|| pixfmt == VideoFormat::Format_NV21;
 }
 
 static void CopyPlane(void *dest, const uchar* src, unsigned dst_linesize, unsigned src_linesize, unsigned height )
@@ -339,6 +352,10 @@ static void CopyPlane(quint8 *dst, size_t dst_pitch,
                       const quint8 *src, size_t src_pitch,
                       unsigned width, unsigned height)
 {
+    if (dst_pitch == src_pitch && src_pitch == width) {
+        memcpy(dst, src, width*height);
+        return;
+    }
     for (unsigned y = 0; y < height; y++) {
         memcpy(dst, src, width);
         src += src_pitch;
@@ -382,9 +399,14 @@ void CopyFromYv12(quint8 *dst[], size_t dst_pitch[],
 bool XVRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(XVRenderer);
-    if (!d.prepareImage(d.src_width, d.src_height))
-        return false;
-    d.video_frame = frame;//.clone();
+    if (frame.isValid()) {
+        if (!d.prepareImage(frame.width(), frame.height()))
+            return false;
+    }
+    if (frame.bits(0))
+        d.video_frame = frame;
+    else // FIXME: not work
+        d.video_frame = frame.to(frame.pixelFormat()); // assume frame format is supported
 #if 1
     int nb_planes = d.video_frame.planeCount();
     QVector<size_t> src_linesize(nb_planes);
@@ -460,6 +482,8 @@ bool XVRenderer::needUpdateBackground() const
 
 void XVRenderer::drawBackground()
 {
+    if (autoFillBackground())
+        return;
     DPTR_D(XVRenderer);
     if (d.video_frame.isValid()) {
         if (d.out_rect.width() < width()) {
@@ -487,15 +511,20 @@ void XVRenderer::drawFrame()
 {
     DPTR_D(XVRenderer);
     QRect roi = realROI();
-    if (!d.use_shm)
+#ifdef _XSHM_H_
+        if (d.use_shm) {
+            XvShmPutImage(d.display, d.xv_port, winId(), d.gc, d.xv_image
+                          , roi.x(), roi.y(), roi.width(), roi.height()
+                          , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height()
+                          , false /*true: send event*/);
+            XSync(d.display, False); // update immediately
+            return;
+        }
+#endif
         XvPutImage(d.display, d.xv_port, winId(), d.gc, d.xv_image
                    , roi.x(), roi.y(), roi.width(), roi.height()
                    , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
-    else
-        XvShmPutImage(d.display, d.xv_port, winId(), d.gc, d.xv_image
-                      , roi.x(), roi.y(), roi.width(), roi.height()
-                      , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height()
-                      , false /*true: send event*/);
+        XSync(d.display, False);
 }
 
 void XVRenderer::paintEvent(QPaintEvent *)
