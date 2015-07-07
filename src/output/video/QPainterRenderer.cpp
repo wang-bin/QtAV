@@ -58,9 +58,12 @@ bool QPainterRenderer::prepareFrame(const VideoFrame &frame)
      */
     // already locked in a larger scope of receive()
     //If use d.data.data() it will eat more cpu, deep copy?
-    d.video_frame = frame;
+    if (frame.bits(0))
+        d.video_frame = frame;
+    else
+        d.video_frame = frame.to(frame.pixelFormat()); // assume frame format is supported
     // DO NOT use frameData().data() because it's temp ptr while QImage does not deep copy the data
-    d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.bytesPerLine(), frame.imageFormat());
+    d.image = QImage((uchar*)d.video_frame.bits(), d.video_frame.width(), d.video_frame.height(), d.video_frame.bytesPerLine(), d.video_frame.imageFormat());
     //Format_RGB32 is fast. see document
     return true;
 }
