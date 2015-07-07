@@ -355,7 +355,7 @@ void VideoThread::run()
                     continue;
                 } else {
                     nb_dec_slow++;
-                    qDebug("frame slow count: %d. a-v: %.3f", nb_dec_slow, diff);
+                    qDebug("frame slow count: %d. v-a: %.3f", nb_dec_slow, diff);
                 }
             }
         } else {
@@ -406,7 +406,7 @@ void VideoThread::run()
                 }
             } else {
                 const double s = qMin<qreal>(0.01*(nb_dec_fast>>1), diff);
-                qWarning("video too fast!!! sleep %.2f s, nb fast: %d", s, nb_dec_fast);
+                qWarning("video too fast!!! sleep %.2f s, nb fast: %d, v_a: %.4f", s, nb_dec_fast, v_a);
                 waitAndCheck(s*1000UL, dts);
                 diff = 0;
             }
@@ -537,22 +537,26 @@ void VideoThread::run()
             const qreal v_a_ = frame.timestamp() - d.clock->value();
             if (!qFuzzyIsNull(v_a_)) {
                 if (v_a_ < -0.1) {
-                    if (v_a > v_a_*0.7)
-                        v_a = v_a_*0.7;
-                    else
+                    if (v_a <= v_a_)
                         v_a += -0.01;
-                } else if (v_a_ < -0.001) {
+                    else
+                        v_a = (v_a_ +v_a)*0.5;
+                } else if (v_a_ < -0.002) {
                     v_a += -0.001;
-                } else if (v_a_ < 0.001) {
+                } else if (v_a_ < 0.002) {
                 } else if (v_a_ < 0.1) {
                     v_a += 0.001;
                 } else {
-                    if (v_a < v_a_*0.7)
-                        v_a = v_a_*0.7;
-                    else
+                    if (v_a >= v_a_)
                         v_a += 0.01;
-                 }
+                    else
+                        v_a = (v_a_ +v_a)*0.5;
+                }
+
+                if (v_a < -2 || v_a > 2)
+                   v_a /= 2.0;
             }
+            //qDebug("v_a:%.4f, v_a_: %.4f", v_a, v_a_);
         }
     }
     d.packets.clear();
