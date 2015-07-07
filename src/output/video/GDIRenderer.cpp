@@ -93,7 +93,8 @@ public:
     DPTR_DECLARE_PUBLIC(GDIRenderer)
 
     GDIRendererPrivate():
-        support_bitblt(true)
+        VideoRendererPrivate()
+      , support_bitblt(true)
       , gdiplus_token(0)
       , device_context(0)
   #if USE_GRAPHICS
@@ -224,8 +225,10 @@ QPaintEngine* GDIRenderer::paintEngine() const
 bool GDIRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GDIRenderer);
-    d.video_frame = frame;
-
+    if (frame.bits(0))
+        d.video_frame = frame;
+    else
+        d.video_frame = frame.to(frame.pixelFormat());
     update();
     return true;
 }

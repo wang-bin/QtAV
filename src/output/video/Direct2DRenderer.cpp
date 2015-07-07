@@ -109,7 +109,8 @@ public:
     DPTR_DECLARE_PUBLIC(Direct2DRenderer)
 
     Direct2DRendererPrivate():
-        d2d_factory(0)
+        VideoRendererPrivate()
+      , d2d_factory(0)
       , render_target(0)
       , bitmap(0)
       , bitmap_width(0)
@@ -315,7 +316,10 @@ bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
     HRESULT hr = S_OK;
     //if d2d factory is D2D1_FACTORY_TYPE_SINGLE_THREADED, we need to lock
     //already locked
-    d.video_frame = frame;
+    if (frame.bits(0))
+        d.video_frame = frame;
+    else
+        d.video_frame = frame.to(frame.pixelFormat());
     //TODO: if CopyFromMemory() is deep copy, mutex can be avoided
     /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
     //TODO: d2d often crash, should we always lock? How about other renderer?
