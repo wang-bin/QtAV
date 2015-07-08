@@ -712,6 +712,7 @@ bool AVDemuxer::load()
         QStringList parts = d->file.split(":");
         if (parts.count() != 3) {
             qDebug("invalid avdevice specification");
+            setMediaStatus(InvalidMedia);
             return false;
         }
         if (d->file.startsWith(avd_scheme + "//")) {
@@ -762,6 +763,8 @@ bool AVDemuxer::load()
         QString msg = tr("failed to open media");
         handleError(ret, &ec, msg);
         qWarning() << "Can't open media: " << msg;
+        if (mediaStatus() == LoadingMedia) //workaround for timeout but not interrupted
+            setMediaStatus(InvalidMedia);
         Q_EMIT unloaded(); //context not ready. so will not emit in unload()
         return false;
     }
@@ -778,10 +781,14 @@ bool AVDemuxer::load()
         handleError(ret, &ec, msg);
         qWarning() << "Can't find stream info: " << msg;
         // context is ready. unloaded() will be emitted in unload()
+        if (mediaStatus() == LoadingMedia) //workaround for timeout but not interrupted
+            setMediaStatus(InvalidMedia);
         return false;
     }
 
     if (!d->prepareStreams()) {
+        if (mediaStatus() == LoadingMedia)
+            setMediaStatus(InvalidMedia);
         return false;
     }
     d->started = false;
@@ -1153,6 +1160,7 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
             emit userInterrupted();
             err_msg += " [" + tr("interrupted by user") + "]";
         } else {
+            // FIXME: if not interupt on timeout and ffmpeg exits, still LoadingMedia
             if (isInterruptOnTimeout())
                 setMediaStatus(StalledMedia);
             // averr is eof for open timeout

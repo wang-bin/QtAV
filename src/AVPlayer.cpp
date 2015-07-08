@@ -605,6 +605,7 @@ void AVPlayer::loadInternal()
         }
     }
     d->loaded = d->demuxer.load();
+    d->status = d->demuxer.mediaStatus();
     if (!d->loaded) {
         d->statistics.reset();
         qWarning("Load failed!");
