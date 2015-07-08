@@ -44,10 +44,10 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
+#include <QToolButton>
 #include <QToolTip>
 #include <QKeyEvent>
 #include <QWheelEvent>
-#include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"
 #include "StatisticsView.h"
@@ -210,14 +210,14 @@ void MainWindow::setupUi()
 
     mpPlayerLayout = new QVBoxLayout();
     mpControl = new QWidget(this);
-    mpControl->setMaximumHeight(25);
+    mpControl->setMaximumHeight(30);
 
     //mpPreview = new QLable(this);
 
     mpTimeSlider = new Slider(mpControl);
     mpTimeSlider->setDisabled(true);
     //mpTimeSlider->setFixedHeight(8);
-    mpTimeSlider->setMaximumHeight(8);
+    mpTimeSlider->setMaximumHeight(12);
     mpTimeSlider->setTracking(true);
     mpTimeSlider->setOrientation(Qt::Horizontal);
     mpTimeSlider->setMinimum(0);
@@ -237,50 +237,26 @@ void MainWindow::setupUi()
     mpSpeed->setMargin(1);
     mpSpeed->setToolTip(tr("Speed. Ctrl+Up/Down"));
 
-    mPlayPixmap = QPixmap(":/theme/button-play-pause.png");
-    int w = mPlayPixmap.width(), h = mPlayPixmap.height();
-    mPausePixmap = mPlayPixmap.copy(QRect(w/2, 0, w/2, h));
-    mPlayPixmap = mPlayPixmap.copy(QRect(0, 0, w/2, h));
-    qDebug("%d x %d", mPlayPixmap.width(), mPlayPixmap.height());
-    mpPlayPauseBtn = new Button(mpControl);
-    int a = qMin(w/2, h);
-    const int kMaxButtonIconWidth = 20;
-    const int kMaxButtonIconMargin = kMaxButtonIconWidth/3;
-    a = qMin(a, kMaxButtonIconWidth);
-    mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
-    mpPlayPauseBtn->setIconSize(QSize(a, a));
-    mpPlayPauseBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpStopBtn = new Button(mpControl);
-    mpStopBtn->setIconWithSates(QPixmap(":/theme/button-stop.png"));
-    mpStopBtn->setIconSize(QSize(a, a));
-    mpStopBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpBackwardBtn = new Button(mpControl);
-    mpBackwardBtn->setIconWithSates(QPixmap(":/theme/button-rewind.png"));
-    mpBackwardBtn->setIconSize(QSize(a, a));
-    mpBackwardBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpForwardBtn = new Button(mpControl);
-    mpForwardBtn->setIconWithSates(QPixmap(":/theme/button-fastforward.png"));
-    mpForwardBtn->setIconSize(QSize(a, a));
-    mpForwardBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpOpenBtn = new Button(mpControl);
+    mpPlayPauseBtn = new QToolButton(mpControl);
+    mpPlayPauseBtn->setIcon(QIcon(":/theme/dark/play.svg"));
+    mpStopBtn = new QToolButton(mpControl);
+    mpStopBtn->setIcon(QIcon(":/theme/dark/stop.svg"));
+    mpBackwardBtn = new QToolButton(mpControl);
+    mpBackwardBtn->setIcon(QIcon(":/theme/dark/backward.svg"));
+    mpForwardBtn = new QToolButton(mpControl);
+    mpForwardBtn->setIcon(QIcon(":/theme/dark/forward.svg"));
+    mpOpenBtn = new QToolButton(mpControl);
     mpOpenBtn->setToolTip(tr("Open"));
-    mpOpenBtn->setIconWithSates(QPixmap(":/theme/open_folder.png"));
-    mpOpenBtn->setIconSize(QSize(a, a));
-    mpOpenBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+    mpOpenBtn->setIcon(QIcon(":/theme/dark/open.svg"));
 
-    mpInfoBtn = new Button();
-    mpInfoBtn->setToolTip(QString("Media information. Not implemented."));
-    mpInfoBtn->setIconWithSates(QPixmap(":/theme/info.png"));
-    mpInfoBtn->setIconSize(QSize(a, a));
-    mpInfoBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpCaptureBtn = new Button();
-    mpCaptureBtn->setIconWithSates(QPixmap(":/theme/screenshot.png"));
-    mpCaptureBtn->setIconSize(QSize(a, a));
-    mpCaptureBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpVolumeBtn = new Button();
-    mpVolumeBtn->setIconWithSates(QPixmap(":/theme/button-max-volume.png"));
-    mpVolumeBtn->setIconSize(QSize(a, a));
-    mpVolumeBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+    mpInfoBtn = new QToolButton();
+    mpInfoBtn->setToolTip(QString("Media information"));
+    mpInfoBtn->setIcon(QIcon(":/theme/dark/info.svg"));
+    mpCaptureBtn = new QToolButton();
+    mpCaptureBtn->setToolTip(QString("Capture"));
+    mpCaptureBtn->setIcon(QIcon(":/theme/dark/capture.svg"));
+    mpVolumeBtn = new QToolButton();
+    mpVolumeBtn->setIcon(QIcon(":/theme/dark/sound.svg"));
 
     mpVolumeSlider = new Slider();
     mpVolumeSlider->hide();
@@ -288,20 +264,16 @@ void MainWindow::setupUi()
     mpVolumeSlider->setMinimum(0);
     const int kVolumeSliderMax = 100;
     mpVolumeSlider->setMaximum(kVolumeSliderMax);
-    mpVolumeSlider->setMaximumHeight(8);
+    mpVolumeSlider->setMaximumHeight(12);
     mpVolumeSlider->setMaximumWidth(88);
     mpVolumeSlider->setValue(int(1.0/kVolumeInterval*qreal(kVolumeSliderMax)/100.0));
     setVolume();
 
-    mpMenuBtn = new Button();
+    mpMenuBtn = new QToolButton();
+    mpMenuBtn->setIcon(QIcon(":/theme/dark/menu.svg"));
     mpMenuBtn->setAutoRaise(true);
     mpMenuBtn->setPopupMode(QToolButton::InstantPopup);
 
-/*
-    mpMenuBtn->setIconWithSates(QPixmap(":/theme/search-arrow.png"));
-    mpMenuBtn->setIconSize(QSize(a, a));
-    mpMenuBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-*/
     QMenu *subMenu = 0;
     QWidgetAction *pWA = 0;
     mpMenu = new QMenu(mpMenuBtn);
@@ -807,7 +779,7 @@ void MainWindow::togglePlayPause()
             play(mFile);
         else
             mpPlayer->play();
-        mpPlayPauseBtn->setIconWithSates(mPausePixmap);
+        mpPlayPauseBtn->setIcon(QIcon(":/theme/dark/pause.svg"));
     }
 }
 
@@ -829,10 +801,10 @@ void MainWindow::onPaused(bool p)
 {
     if (p) {
         qDebug("start pausing...");
-        mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
+        mpPlayPauseBtn->setIcon(QIcon(":/theme/dark/play.svg"));
     } else {
         qDebug("stop pausing...");
-        mpPlayPauseBtn->setIconWithSates(mPausePixmap);
+        mpPlayPauseBtn->setIcon(QIcon(":/theme/dark/pause.svg"));
     }
 }
 
@@ -842,7 +814,7 @@ void MainWindow::onStartPlay()
     mFile = mpPlayer->file(); //open from EventFilter's menu
     setWindowTitle(mTitle);
 
-    mpPlayPauseBtn->setIconWithSates(mPausePixmap);
+    mpPlayPauseBtn->setIcon(QIcon(":/theme/dark/pause.svg"));
     mpTimeSlider->setMinimum(mpPlayer->mediaStartPosition());
     mpTimeSlider->setMaximum(mpPlayer->mediaStopPosition());
     mpTimeSlider->setValue(0);
@@ -883,7 +855,7 @@ void MainWindow::onStopPlay()
     if (Config::instance().avformatOptionsEnabled())
         mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
 
-    mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
+    mpPlayPauseBtn->setIcon(QIcon(":/theme/dark/play.svg"));
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);
@@ -1471,7 +1443,7 @@ void MainWindow::onAVFilterAudioConfigChanged()
 void MainWindow::donate()
 {
     //QDesktopServices::openUrl(QUrl("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0/"));
-    QDesktopServices::openUrl(QUrl("http://www.qtav.org/#donate"));
+    QDesktopServices::openUrl(QUrl("http://www.qtav.org/donate.html"));
 }
 
 void MainWindow::onBufferValueChanged()

@@ -112,7 +112,11 @@ int main(int argc, char *argv[])
     qDebug("vo: %s", vo.toUtf8().constData());
     vo = vo.toLower();
     if (vo != "opengl" && vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv" && vo != "qt")
+#ifdef Q_OS_ANDROID
+        vo = "opengl"; // qglwidget is not suitable for android
+#else
         vo = "gl";
+#endif
     QString title = "QtAV " /*+ vo + " "*/ + QtAV_Version_String_Long() + " wbsecg1@gmail.com";
 #ifndef QT_NO_OPENGL
     VideoRendererId vid = VideoRendererId_GLWidget2;

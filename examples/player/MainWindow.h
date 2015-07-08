@@ -25,6 +25,7 @@
 #include <QUrl>
 
 class QWidgetAction;
+class QToolButton;
 namespace QtAV {
 class AudioOutput;
 class AVError;
@@ -165,10 +166,11 @@ private:
     QLabel *mpTitle;
     QLabel *mpSpeed;
     Slider *mpTimeSlider, *mpVolumeSlider;
-    Button *mpVolumeBtn;
-    Button *mpPlayPauseBtn, *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;
-    Button *mpOpenBtn;
-    Button *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
+    QToolButton *mpVolumeBtn;
+    QToolButton *mpPlayPauseBtn;
+    QToolButton *mpStopBtn, *mpForwardBtn, *mpBackwardBtn;
+    QToolButton *mpOpenBtn;
+    QToolButton *mpInfoBtn, *mpMenuBtn, *mpSetupBtn, *mpCaptureBtn;
     QMenu *mpMenu;
     QAction *mpVOAction, *mpARAction; //remove mpVOAction if vo.id() is supported
     QAction *mpRepeatEnableAction;
@@ -188,8 +190,6 @@ private:
     QtAV::LibAVFilterAudio *mpAudioFilter;
     QString mFile;
     QString mTitle;
-    QPixmap mPlayPixmap;
-    QPixmap mPausePixmap;
 
     QLabel *mpPreview;
 
