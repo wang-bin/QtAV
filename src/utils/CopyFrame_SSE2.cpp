@@ -18,10 +18,11 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#ifndef INC_FROM_NAMESPACE
 #include <stdint.h> //intptr_t
 #include <string.h>
 #include <emmintrin.h>
-
+#endif
 
 // from https://software.intel.com/en-us/articles/copying-accelerated-video-decode-frame-buffers
 // modified by wang-bin to support unaligned src/dest and sse2

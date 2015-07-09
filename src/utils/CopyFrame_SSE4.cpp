@@ -21,8 +21,11 @@
 
 // for mingw gcc
 #include <smmintrin.h> //stream load
+#include <stdint.h> //intptr_t
+#include <string.h>
 #define STREAM_LOAD_SI128(x) _mm_stream_load_si128(x)
 namespace sse4 { //avoid name conflict
+#define INC_FROM_NAMESPACE
 #include "CopyFrame_SSE2.cpp"
 } //namespace sse4
 
