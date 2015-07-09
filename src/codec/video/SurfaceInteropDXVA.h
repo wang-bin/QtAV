@@ -101,6 +101,7 @@ private:
     bool ensureSurface(int w, int h);
 
     EGL* egl;
+    IDirect3DQuery9 *dx_query;
 };
 #endif //QTAV_HAVE(DXVA_EGL)
 

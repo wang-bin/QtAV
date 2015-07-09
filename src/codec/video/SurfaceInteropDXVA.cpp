@@ -192,7 +192,10 @@ public:
 EGLInteropResource::EGLInteropResource(IDirect3DDevice9 * d3device)
     : InteropResource(d3device)
     , egl(new EGL())
+    , dx_query(NULL)
 {
+    DX_ENSURE_OK(d3device->CreateQuery(D3DQUERYTYPE_EVENT, &dx_query));
+    dx_query->Issue(D3DISSUE_END);
 }
 
 EGLInteropResource::~EGLInteropResource()
@@ -202,6 +205,7 @@ EGLInteropResource::~EGLInteropResource()
         delete egl;
         egl = NULL;
     }
+    SafeRelease(&dx_query);
 }
 
 void EGLInteropResource::releaseEGL() {
@@ -297,14 +301,25 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int 
     }
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     const RECT src = { 0, 0, w, h};
-    if (SUCCEEDED(d3ddev->StretchRect(surface, &src, dx_surface, NULL, D3DTEXF_NONE)))
+    if (SUCCEEDED(d3ddev->StretchRect(surface, &src, dx_surface, NULL, D3DTEXF_NONE))) {
+        if (dx_query) {
+            // Flush the draw command now. Ideally, this should be done immediately before the draw call that uses the texture. Flush it once here though.
+            dx_query->Issue(D3DISSUE_END);
+            // ensure data is copied to egl surface. Solution and comment is from chromium
+            // The DXVA decoder has its own device which it uses for decoding. ANGLE has its own device which we don't have access to.
+            // The above code attempts to copy the decoded picture into a surface which is owned by ANGLE.
+            // As there are multiple devices involved in this, the StretchRect call above is not synchronous.
+            // We attempt to flush the batched operations to ensure that the picture is copied to the surface owned by ANGLE.
+            // We need to do this in a loop and call flush multiple times.
+            // We have seen the GetData call for flushing the command buffer fail to return success occassionally on multi core machines, leading to an infinite loop.
+            // Workaround is to have an upper limit of 10 on the number of iterations to wait for the Flush to finish.
+            int k = 0;
+            while ((dx_query->GetData(NULL, 0, D3DGETDATA_FLUSH) == FALSE) && ++k < 10) {
+                Sleep(1);
+            }
+        }
         eglBindTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
-    // Flush the draw command now, so that by the time we come to draw this
-    // image, we're less likely to need to wait for the draw operation to
-    // complete.
-    //IDirect3DQuery9 *query = NULL;
-    //DX_ENSURE_OK(d3ddev->CreateQuery(D3DQUERYTYPE_EVENT, &query), false);
-    //DX_ENSURE_OK(query->Issue(D3DISSUE_END), false);
+    }
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
     return true;
 }
