@@ -14,11 +14,11 @@ Page {
             anchors.fill: parent
             anchors.margins: Utils.kMargin
             anchors.bottomMargin: donateHeight
-            //horizontalAlignment: Qt.AlignHCenter
+            //horizontalAlignment: Text.AlignHCenter
             font.pixelSize: Utils.scaled(14)
             onContentHeightChanged: parent.height = contentHeight + 2*anchors.margins
             onLinkActivated: Qt.openUrlExternally(link)
-            text: "<h3>QMLPlayer " + qsTr("based on") + " QtAV 1.6.0 </h3>"
+            text: "<h3>QMLPlayer " + qsTr("based on") + " QtAV 1.7.0 </h3>"
                   + "<p>" + qsTr("QtAV is a corss-platform, high performace multimedia playback framework") + "</p>"
                   + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
                   + "<p>Copyright (C) 2012-2015 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
@@ -27,7 +27,7 @@ Page {
                   + "<p>Home page: <a href='http://www.qtav.org'>http://www.qtav.org</a></p>"
                   + "\n<h3>" + qsTr("Shortcut") + ":</h3>"
                   + "<table><tr><td>M: " + qsTr("Mute") + " . </td><td>F: " + qsTr("Fullscreen") + " . </td></tr><tr><td>" + qsTr("Up/Down") + ": " + qsTr("Volume")
-                  + "+/- . </td><td> " + qsTr("Left/Right") +": " + qsTr("Seek backward/forward") + " . </td></tr><tr><td>"
+                  + "+/- . </td><td> " + qsTr("Left/Right") + "/" + qsTr("Swipe") +": " + qsTr("Seek backward/forward") + " . </td></tr><tr><td>"
                   + qsTr("Space") + ": " + qsTr("Pause/Resum") + " . </td><td>Q: " + qsTr("Quit") + " . </td></tr><tr><td>"
                   + qsTr("Rotate") + "</td><td>A: " + qsTr("Aspect ratio")  + "</td></tr></table>"
         }
@@ -41,7 +41,7 @@ Page {
             anchors.margins: Utils.kMargin
             width: Utils.scaled(80)
             height: donateHeight
-            onClicked: Qt.openUrlExternally("http://www.qtav.org#donate")
+            onClicked: Qt.openUrlExternally("http://www.qtav.org/donate.html")
         }
     }
 }

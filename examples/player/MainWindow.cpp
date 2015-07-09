@@ -216,8 +216,6 @@ void MainWindow::setupUi()
 
     mpTimeSlider = new Slider(mpControl);
     mpTimeSlider->setDisabled(true);
-    //mpTimeSlider->setFixedHeight(8);
-    mpTimeSlider->setMaximumHeight(12);
     mpTimeSlider->setTracking(true);
     mpTimeSlider->setOrientation(Qt::Horizontal);
     mpTimeSlider->setMinimum(0);
@@ -264,7 +262,7 @@ void MainWindow::setupUi()
     mpVolumeSlider->setMinimum(0);
     const int kVolumeSliderMax = 100;
     mpVolumeSlider->setMaximum(kVolumeSliderMax);
-    mpVolumeSlider->setMaximumHeight(12);
+    //mpVolumeSlider->setMaximumHeight(12);
     mpVolumeSlider->setMaximumWidth(88);
     mpVolumeSlider->setValue(int(1.0/kVolumeInterval*qreal(kVolumeSliderMax)/100.0));
     setVolume();
@@ -307,7 +305,6 @@ void MainWindow::setupUi()
     //mpMenu->addAction(tr("Report"))->setEnabled(false); //report bug, suggestions etc. using maillist?
     mpMenu->addAction(tr("About"), this, SLOT(about()));
     mpMenu->addAction(tr("Help"), this, SLOT(help()));
-    mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     mpMenu->addAction(tr("Donate"), this, SLOT(donate()));
     mpMenu->addAction(tr("Setup"), this, SLOT(setup()));
     mpMenu->addSeparator();
@@ -812,6 +809,9 @@ void MainWindow::onStartPlay()
 {
     mpRenderer->setRegionOfInterest(QRectF());
     mFile = mpPlayer->file(); //open from EventFilter's menu
+    mTitle = mFile;
+    if (!mFile.contains("://") || mFile.startsWith("file://"))
+        mTitle = QFileInfo(mFile).fileName();
     setWindowTitle(mTitle);
 
     mpPlayPauseBtn->setIcon(QIcon(":/theme/dark/pause.svg"));

@@ -311,7 +311,6 @@ void EventFilter::showMenu(const QPoint &p)
         menu->addAction(tr("About"), this, SLOT(about()));
         menu->addAction(tr("Help"), this, SLOT(help()));
         menu->addSeparator();
-        menu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     }
     menu->exec(p);
 }

@@ -3,14 +3,10 @@ import "utils.js" as Utils
 
 Page {
     title: qsTr("Preview")
-    height: titleHeight + Utils.kItemHeight
+    height: titleHeight + Utils.kItemHeight + detail.contentHeight
 
     Column {
         anchors.fill: content
-        Text {
-            font.pointSize: Utils.kFontSize
-            color: "white"
-        }
         Button {
             text: qsTr("Enable")
             checkable: true
@@ -18,6 +14,14 @@ Page {
             width: parent.width
             height: Utils.kItemHeight
             onCheckedChanged: PlayerConfig.previewEnabled = checked
+        }
+        Text {
+            id: detail
+            font.pointSize: Utils.kFontSize
+            color: "white"
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
+            text: qsTr("Press on the preview item to seek")
         }
     }
 }

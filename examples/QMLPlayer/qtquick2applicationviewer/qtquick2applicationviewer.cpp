@@ -10,7 +10,7 @@
 
 #include "qtquick2applicationviewer.h"
 
-#include <QtCore/QCoreApplication>
+#include <QtGui/QGuiApplication>
 #include <QtCore/QDir>
 #include <QtQml/QQmlEngine>
 
@@ -90,7 +90,14 @@ void QtQuick2ApplicationViewer::addImportPath(const QString &path)
 
 void QtQuick2ApplicationViewer::showExpanded()
 {
-#if defined(Q_OS_QNX) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS) || defined(Q_OS_MAEMO)
+    if (QGuiApplication::platformName() == QLatin1String("qnx") ||
+          QGuiApplication::platformName() == QLatin1String("eglfs")) {
+        showFullScreen();
+    } else {
+        show();
+    }
+    return;
+#if defined(Q_OS_QNX) //|| defined(Q_OS_ANDROID) || defined(Q_OS_IOS) || defined(Q_OS_MAEMO)
     showFullScreen();
 #else
     show();

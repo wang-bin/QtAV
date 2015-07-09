@@ -196,9 +196,9 @@ Rectangle {
                 }
             } else {
                 if (dy > 0) {// left hand coord
-                    player.volume = Math.max(0, player.volume-0.05)
+//                    player.volume = Math.max(0, player.volume-0.05)
                 } else {
-                    player.volume = Math.min(2, player.volume+0.05)
+//                    player.volume = Math.min(2, player.volume+0.05)
                 }
             }
 
