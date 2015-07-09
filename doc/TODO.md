@@ -16,13 +16,10 @@
 - blu-ray
 
 #### Platform Support
-- Maemo: audio not work now
-- Android: no audio now. Need OpenSL.
 - Raspberry Pi
 - iOS: improve OpenAL
 - Black Berry
 - WinRT. Win8 app
-- debian PPA
 
 #### Subtitle
 - In which thread? 

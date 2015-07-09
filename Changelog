@@ -1,3 +1,29 @@
+version 1.7.0 2015-07-09
+
+Changelog:
+- DXVA GPU zero-copy support
+- DXVA copy back improvement
+- VAAPI zero-copy improvement
+- Fix opengl wrong display if switch decoder between VDA and FFmpeg
+- Video encoding support. Try examples/simpletranscode. Audio is not supported now
+- External audio track support
+- Pulseaudio improvement, fix crashes and hang
+- OpenGL: disable VBO for ANGLE to workaround qpainter filters have no effect. Less GL calls. Fix OpenGLWindowRenderer can not update correctly
+- Fix capture video when a zero-copy HW decoder is used.
+- Fix wrong audio data is played at the beginning of playback
+- Enable XV shm
+- Improve a/v sync
+- Build android on windows
+- Fix msvc debug build
+- Use OpenSL ES as for android. It works correctly now. No OpenAL required any more. Add volume control for OpenSL ES.
+- Fix crashes
+- Add ubuntu PPA
+- CI: appveyor for windows
+- AVInput=>MediaIO. You can use it to support custom output when encoding video
+- Add seekFinished, durationChanged, QML MediaPlayer.videoCapture, Subtitle delay etc
+- QMLPlayer: swipe to seek
+
+
 version 1.6.0 2015-04-23
 
 Changlog:

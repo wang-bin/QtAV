@@ -1,3 +1,29 @@
+qtav (1.7.0) unstable; urgency=low
+
+  * DXVA GPU zero-copy support
+  * DXVA copy back improvement
+  * VAAPI zero-copy improvement
+  * External audio track support
+  * Fix opengl wrong display if switch decoder between VDA and FFmpeg
+  * Video encoding support
+  * Pulseaudio improvement, fix crashes and hang
+  * OpenGL: disable VBO for ANGLE to workaround qpainter filters
+  * Fix capture video when a zero-copy HW decoder is used.
+  * Fix wrong audio data is played at the beginning of playback
+  * Enable XV shm
+  * Improve a/v sync
+  * Build android on windows
+  * Fix msvc debug build
+  * Use OpenSL ES as for android. Add volume control
+  * Fix crashes
+  * Add ubuntu PPA
+  * CI: appveyor for windows
+  * AVInput=>MediaIO
+  * seekFinished, durationChanged, MediaPlayer.videoCapture, Subtitle delay etc.
+  * QMLPlayer: swipe to seek
+
+ -- Wang Bin (Lucas) <wbsecg1@gmail.com>  Fri, 10 Jul 2015 01:26:04 +0800
+
 qtav (1.6.0) unstable; urgency=low
 
   * VDA: use NV12 as default format. Support 0 copy. Better performance than any other playrs

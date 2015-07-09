@@ -10,7 +10,7 @@ BUILD=$1
 QTBIN=`grep QT_BIN $BUILD/.qmake.cache |head -n 1 |cut -d "=" -f 2 | tr -d ' '` 
 # for windows
 QTBIN=`echo /$QTBIN|sed 's,:,,'`
-export PATH=$QTBIN:$PATH
+export PATH=$QTBIN:$PWD/../../tools:$PATH
 echo "QTBIN=$QTBIN"
 ARCH=`grep TARGET_ARCH $BUILD/.qmake.cache |grep -v TARGET_ARCH_SUB |cut -d "=" -f 2`
 ARCH=`echo $ARCH` #trim
@@ -171,6 +171,10 @@ echo "coping examples..."
 EXAMPLE_DIR=$TARGET/packages/com.qtav.product.examples
 mv `find $RT_DIR/data/bin/* -maxdepth 0 -type f |grep -v "\.so" |grep -v "\.dylib" |grep -v "\.conf" |grep -v "\.dll"` $EXAMPLE_DIR/data/bin
 
+echo "patch elf runpath..."
+patchelf.sh $TARGET/packages/com.qtav.product.runtime/data/bin
+patchelf.sh $TARGET/packages/com.qtav.product.player/data/bin
+patchelf.sh $TARGET/packages/com.qtav.product.examples/data/bin
 
 find $TARGET -name log.txt -exec rm -f {} \;
 find $TARGET -name "*.manifest" -exec rm -f {} \;

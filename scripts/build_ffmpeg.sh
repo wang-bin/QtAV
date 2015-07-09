@@ -12,7 +12,12 @@ echo 'Or put this script in other place and set PATH to include ffmpeg source di
 echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
 echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }"
 echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
+
+echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
+echo "       pacman -Sy --needed diffutils pkg-config"
+echo 'export PATH=$PATH:$MINGW_BIN:$PWD # make.exe in mingw_builds can not deal with windows driver dir. use msys2 make instead' 
 echo "Author: wbsecg1@gmail.com 2013-2015"
+
 # TODO: PLATFORM=xxx TARGET=ooo TOOLCHAIN=ttt ./build_ffmpeg.sh
 
 TAGET_FLAG=$1
@@ -28,9 +33,8 @@ fi
 : ${NDK_ROOT:="/devel/android/android-ndk-r8e"}
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
-: ${LIB_OPT:="--enable-shared"}
+: ${LIB_OPT:="--enable-shared --disable-static"}
 : ${MISC_OPT="--enable-hwaccels"}#--enable-gpl --enable-version3
-
 
 FFSRC=$PWD
 [ -f configure ] && {
@@ -52,8 +56,7 @@ tolower(){
     echo "$@" | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
 }
 
-#host_is
-platform_is() {
+host_is() {
   local name=$1
 #TODO: osx=>darwin
   local line=`uname -a |grep -i $name`
@@ -84,14 +87,16 @@ enable_opt vda
 # clock_gettime in librt instead of glibc>=2.17
 grep "LIBRT" $FFSRC/configure &>/dev/null && {
   # TODO: cc test
-  platform_is Linux && ! target_is android && EXTRALIBS="$EXTRALIBS -lrt"
+  host_is Linux && ! target_is android && EXTRALIBS="$EXTRALIBS -lrt"
 }
 #avr >= ffmpeg0.11
 #FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
 #FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
 # n1.2.8, 2.5.1, 2.5
-FFMAJOR=`$FFSRC/version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
-FFMINOR=`$FFSRC/version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
+cd $FFSRC
+FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
+FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
+cd -
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
 setup_vc_env() {
@@ -104,16 +109,32 @@ setup_vc_env() {
   echo "cl version: $CL_VER"
   if [ -n "`echo $CL_INFO |grep -i x86`" ]; then
     echo "vc x86"
+    INSTALL_DIR="${INSTALL_DIR}-vc-x86"
     test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.01\""
   elif [ -n "`echo $CL_INFO |grep -i x64`" ]; then
+    INSTALL_DIR="${INSTALL_DIR}-vc-x66"
     echo "vc x64"
     test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.02\""
   elif [ -n "`echo $CL_INFO |grep -i arm`" ]; then
+    INSTALL_DIR="${INSTALL_DIR}-vc-arm"
     echo "vc arm"
     # http://www.cnblogs.com/zjjcy/p/3384517.html  http://www.cnblogs.com/zjjcy/p/3499848.html
     # armasm: http://www.cnblogs.com/zcmmwbd/p/windows-phone-8-armasm-guide.html#2842650
     # TODO: use a wrapper function to deal with the parameters passed to armasm
     PLATFORM_OPT="--extra-cflags=\"-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE -D_M_ARM -DWINAPI_FAMILY=WINAPI_FAMILY_APP\" --extra-ldflags=\"-MACHINE:ARM\" $PLATFORM_OPT --enable-cross-compile --arch=arm --cpu=armv7 --target-os=win32 --as=armasm --disable-yasm --disable-inline-asm"
+  fi
+}
+
+setup_mingw_env() {
+  echo "TOOLCHAIN_OPT=$TOOLCHAIN_OPT"
+  host_is MinGW || host_is MSYS || return 1
+    test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
+    TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
+  # check host_is mingw64 is not enough
+  if [ -n "`gcc -dumpmachine |grep -i x86_64`" ]; then
+    INSTALL_DIR="${INSTALL_DIR}-mingw64"
+  else
+    INSTALL_DIR="${INSTALL_DIR}-mingw32"
   fi
 }
 
@@ -227,15 +248,15 @@ elif target_is x86; then
     ARCH_FLAGS=-m32
     INSTALL_DIR=sdk-x86
   fi
-else
-  if platform_is Sailfish; then
+elseTOOLCHAIN_OPT
+  if host_is Sailfish; then
     echo "Build in Sailfish SDK"
     MISC_OPT=--disable-avdevice
     INSTALL_DIR=sdk-sailfish
-  elif platform_is Linux; then
+  elif host_is Linux; then
     test -n "$vaapi_opt" && PLATFORM_OPT="$PLATFORM_OPT $vaapi_opt"
     test -n "$vdpau_opt" && PLATFORM_OPT="$PLATFORM_OPT $vdpau_opt"
-  elif platform_is Darwin; then
+  elif host_is Darwin; then
     test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
     EXTRA_CFLAGS=-mmacosx-version-min=10.6
   fi
@@ -245,11 +266,9 @@ if target_is vc; then
   setup_vc_env
 else
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$ARCH_FLAGS -O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
-  platform_is MinGW || platform_is MSYS && {
-    test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
-    TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
-  }
-  test -n "$ARCH_FLAGS" && platform_is Linux && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"-m32\""
+  setup_mingw_env
+  # wrong! detect target!=host
+  test -n "$ARCH_FLAGS" && host_is Linux && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"-m32\""
 fi
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
@@ -263,7 +282,7 @@ CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 JOBS=2
 if which nproc >/dev/null; then
     JOBS=`nproc`
-elif platform_is Darwin && which sysctl >/dev/null; then
+elif host_is Darwin && which sysctl >/dev/null; then
     JOBS=`sysctl -n machdep.cpu.thread_count`
 fi
 echo $CONFIGURE

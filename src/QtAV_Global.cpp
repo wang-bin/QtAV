@@ -48,7 +48,7 @@ namespace QtAV {
 
 namespace Internal {
 // disable logging for release. you can manually enable it.
-#ifdef QT_NO_DEBUG
+#if defined(QT_NO_DEBUG)// && !defined(Q_OS_ANDROID)
 static QtAV::LogLevel gLogLevel = QtAV::LogOff;
 #else
 static QtAV::LogLevel gLogLevel = QtAV::LogAll;
@@ -188,7 +188,7 @@ QString aboutQtAV_HTML()
             "<p>" + QObject::tr("Distributed under the terms of LGPLv2.1 or later.\n") + "</p>"
             "<p>Copyright (C) 2012-2015 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
             "<p>" + QObject::tr("Shanghai University->S3 Graphics->Deepin, Shanghai, China") + "</p>\n"
-            "<p>" + QObject::tr("Donate") + ": <a href='http://www.qtav.org#donate'>http://www.qtav.org#donate</a></p>\n"
+            "<p>" + QObject::tr("Donate") + ": <a href='http://www.qtav.org/donate.html'>http://www.qtav.org/donate.html</a></p>\n"
             "<p>" + QObject::tr("Source") + ": <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
             "<p>" + QObject::tr("Home page") + ": <a href='http://www.qtav.org'>http://www.qtav.org</a></p>";
     return about;

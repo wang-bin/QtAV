@@ -21,6 +21,7 @@
 
 #include "QtAVWidgets/global.h"
 #include <algorithm> //std::find
+#include <QApplication>
 #include <QBoxLayout>
 #include <QMessageBox>
 #include <QPushButton>
@@ -113,9 +114,15 @@ extern void RegisterVideoRendererDirect2D_Man();
 extern void RegisterVideoRendererXV_Man();
 
 namespace Widgets {
+
 void registerRenderers()
 {
-    // check whether it is called. factory.h does not check whether an id is registered
+    // check whether it is called
+    static bool initialized = false;
+    if (initialized)
+        return;
+    initialized = true;
+    // factory.h does not check whether an id is registered
     const std::vector<VideoRendererId> ids(VideoRendererFactory::registeredIds());
     if (std::find(ids.begin(), ids.end(), VideoRendererId_Widget) != ids.end())
         return;
@@ -154,16 +161,20 @@ void about() {
     QTabWidget *tab = new QTabWidget;
     tab->addTab(viewQtAV, "QtAV");
     tab->addTab(viewFFmpeg, "FFmpeg");
+    QPushButton *qbtn = new QPushButton(QObject::tr("About Qt"));
     QPushButton *btn = new QPushButton(QObject::tr("Ok"));
     QHBoxLayout *btnLayout = new QHBoxLayout;
-    btnLayout->addStretch();
     btnLayout->addWidget(btn);
+    btnLayout->addStretch();
+    btnLayout->addWidget(qbtn);
+    btn->setFocus();
     QDialog dialog;
     dialog.setWindowTitle(QObject::tr("About") + "  QtAV");
     QVBoxLayout *layout = new QVBoxLayout;
     dialog.setLayout(layout);
     layout->addWidget(tab);
     layout->addLayout(btnLayout);
+    QObject::connect(qbtn, SIGNAL(clicked()), qApp, SLOT(aboutQt()));
     QObject::connect(btn, SIGNAL(clicked()), &dialog, SLOT(accept()));
     dialog.exec();
 }
