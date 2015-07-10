@@ -165,11 +165,15 @@ public:
             display_type = VideoDecoderVAAPI::GLX;
         if (VAAPI_X11::isLoaded())
             display_type = VideoDecoderVAAPI::X11;
-        if (display_type == VideoDecoderVAAPI::DRM)
+        if (display_type == VideoDecoderVAAPI::DRM) {
             copy_mode = VideoDecoderFFmpegHW::OptimizedCopy;
-        else
+        } else {
+#if VA_X11_INTEROP
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
-
+#else
+            copy_mode = VideoDecoderFFmpegHW::OptimizedCopy;
+#endif //VA_X11_INTEROP
+        }
         drm_fd = -1;
         display_x11 = 0;
         config_id = VA_INVALID_ID;
@@ -550,8 +554,10 @@ bool VideoDecoderVAAPIPrivate::open()
     supports_derive = false;
     if (display_type == VideoDecoderVAAPI::GLX)
         interop_res = InteropResourcePtr(new GLXInteropResource());
+#if VA_X11_INTEROP
     else if (display_type == VideoDecoderVAAPI::X11)
         interop_res = InteropResourcePtr(new X11InteropResource());
+#endif //VA_X11_INTEROP
     return true;
 }
 

@@ -23,7 +23,7 @@
 #include "utils/OpenGLHelper.h"
 #include "QtAV/VideoFrame.h"
 #include "utils/Logger.h"
-#ifndef QT_OPENGL_ES_2
+#if VA_X11_INTEROP
 #include <va/va_x11.h>
 #endif
 
@@ -164,7 +164,7 @@ bool GLXInteropResource::map(const surface_ptr& surface, GLuint tex, int w, int 
     return true;
 }
 
-#ifndef QT_OPENGL_ES_2
+#if VA_X11_INTEROP
 X11InteropResource::glXReleaseTexImage_t X11InteropResource::glXReleaseTexImage = 0;
 X11InteropResource::glXBindTexImage_t X11InteropResource::glXBindTexImage = 0;
 
@@ -298,7 +298,7 @@ bool X11InteropResource::unmap(GLuint tex)
     return true;
 }
 
-#endif //QT_OPENGL_ES_2
+#endif //VA_X11_INTEROP
 } //namespace QtAV
 } //namespace vaapi
 

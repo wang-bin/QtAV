@@ -28,10 +28,14 @@
 #include "QtAV/SurfaceInterop.h"
 #include "vaapi_helper.h"
 
+#define VA_X11_INTEROP !defined(QT_OPENGL_ES_2)
 #if defined(QT_OPENGL_ES_2)
 #include <EGL/egl.h>
-#else
+#endif
+#if VA_X11_INTEROP
 #include <GL/glx.h>
+#endif
+// both egl.h and glx.h include x11 headers, must undef macros conflict with qtextstream
 #ifdef Bool
 #undef Bool
 #endif //Bool
@@ -41,7 +45,6 @@
 #ifdef Status
 #undef Status // qtextstream
 #endif //Status
-#endif //defined(QT_OPENGL_ES_2)
 
 namespace QtAV {
 namespace vaapi {
@@ -93,7 +96,7 @@ private:
     QMap<GLuint,surface_glx_ptr> glx_surfaces; // render to different texture. surface_glx_ptr is created with texture
 };
 
-#ifndef QT_OPENGL_ES_2
+#if VA_X11_INTEROP
 class X11InteropResource Q_DECL_FINAL: public InteropResource, public VAAPI_X11
 {
 public:
@@ -115,7 +118,7 @@ private:
     static glXBindTexImage_t glXBindTexImage;
     static glXReleaseTexImage_t glXReleaseTexImage;
 };
-#endif //QT_OPENGL_ES_2
+#endif //VA_X11_INTEROP
 
 } //namespace vaapi
 } //namespace QtAV
