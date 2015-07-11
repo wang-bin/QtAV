@@ -28,8 +28,6 @@ namespace QtAV {
 extern Q_AV_EXPORT AudioResamplerId AudioResamplerId_FF;
 extern Q_AV_EXPORT AudioResamplerId AudioResamplerId_Libav;
 
-Q_AV_EXPORT void AudioResampler_RegisterAll();
-
 } //namespace QtAV
 
 #endif // QTAV_AUDIORESAMPLERTYPES_H

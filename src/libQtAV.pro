@@ -110,6 +110,8 @@ config_avdevice { #may depends on avfilter
     static_ffmpeg {
       win32 {
         LIBS *= -lgdi32 -loleaut32 -lshlwapi #shlwapi: desktop >= xp only
+      } else:linux {
+        LIBS *= -lXv #-lX11 -lxcb -lxcb-shm -lxcb-xfixes -lxcb-render -lxcb-shape
       } else:mac:!ios { # static ffmpeg
         LIBS += -framework Foundation -framework QTKit -framework CoreMedia -framework QuartzCore -framework CoreGraphics \
                 -framework AVFoundation
@@ -150,15 +152,17 @@ config_portaudio {
 config_openal {
     SOURCES += output/audio/AudioOutputOpenAL.cpp
     DEFINES *= QTAV_HAVE_OPENAL=1
-    win32: LIBS += -lOpenAL32
-    unix:!mac:!blackberry: LIBS += -lopenal
-    blackberry: LIBS += -lOpenAL
-    mac: LIBS += -framework OpenAL
-    mac: DEFINES += HEADER_OPENAL_PREFIX
-    static_openal {
-      DEFINES += AL_LIBTYPE_STATIC
-      *linux*:!android: LIBS += -lasound
-      win32: LIBS += -lwinmm
+    static_openal: DEFINES += AL_LIBTYPE_STATIC
+    win32 {
+      LIBS += -lOpenAL32 -lwinmm
+    } else:mac {
+      LIBS += -framework OpenAL
+      DEFINES += HEADER_OPENAL_PREFIX
+    } else:blackberry {
+      LIBS += -lOpenAL
+    } else {
+      LIBS += -lopenal
+      !android: LIBS += -lasound
     }
 }
 config_opensl {
@@ -299,6 +303,7 @@ SOURCES += \
     AudioFormat.cpp \
     AudioFrame.cpp \
     AudioResampler.cpp \
+    AudioResamplerTemplate.cpp \
     AudioResamplerTypes.cpp \
     codec/audio/AudioDecoder.cpp \
     codec/audio/AudioDecoderFFmpeg.cpp \
