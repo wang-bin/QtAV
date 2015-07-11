@@ -101,10 +101,16 @@
     BASE##Factory::registerCreator(ID, __create_##TYPE); \
     BASE##Factory::registerIdName(ID, NAME);
 
+/*
+ *  FIXME: __init_##TYPE (only if static) and xxx_Man() has the same content, and are both defined, construtor functions will not be called for gcc5.
+ * maybe also happens for ios
+ * Remove xxx_Man() is also a workaround
+ */
 #define FACTORY_REGISTER_ID_TYPE_AUTO(BASE, ID, TYPE, NAME) \
-    BASE* __create_##TYPE() { return new TYPE();} \
-    static void __init_##TYPE() { \
+    static BASE* __create_##TYPE() { return new TYPE();} \
+    static int __init_##TYPE() { \
         FACTORY_REGISTER_ID_TYPE_MAN(BASE, ID, TYPE, NAME) \
+        return 0; \
     } \
     PRE_FUNC_ADD(__init_##TYPE)
 
