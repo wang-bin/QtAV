@@ -30,7 +30,7 @@ namespace QtAV {
 
 extern QString getLocalPath(const QString& fullPath);
 
-// /xx/oo/a.01.mov => /xx/oo/a.01.
+// /xx/oo/a.01.mov => /xx/oo/a.01. native dir separator => /
 /*!
  * \brief getSubtitleBasePath
  * \param fullPath path of video or without extension
@@ -38,7 +38,7 @@ extern QString getLocalPath(const QString& fullPath);
  */
 static QString getSubtitleBasePath(const QString fullPath)
 {
-    QString path(fullPath);
+    QString path(QDir::fromNativeSeparators(fullPath));
     //path.remove(p->source().scheme() + "://");
     // QString name = QFileInfo(path).completeBaseName();
     // why QFileInfo(path).dir() starts with qml app dir?
