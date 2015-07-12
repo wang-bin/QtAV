@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     // has no effect if qInstallMessageHandler() called
     //qSetMessagePattern("%{function} @%{line}: %{message}");
     QApplication a(argc, argv);
-
+    QDir::setCurrent(qApp->applicationDirPath());
     QOptions options = get_common_options();
     options.add("player options")
             ("-vo", "gl", "video renderer engine. can be gl, qt, d2d, gdi, xv.")

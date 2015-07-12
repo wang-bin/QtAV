@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and LibASS
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,6 +20,9 @@
 ******************************************************************************/
 
 #include "QtAV/private/SubtitleProcessor.h"
+#include <QtCore/QCoreApplication>
+#include <QtCore/QEventLoop>
+#include <QtCore/QThread>
 #include "QtAV/private/prepost.h"
 #include "QtAV/Packet.h"
 #include "PlainText.h"
@@ -38,6 +41,7 @@ class SubtitleProcessorLibASS : public SubtitleProcessor, public ass::api
 public:
     SubtitleProcessorLibASS();
     virtual ~SubtitleProcessorLibASS();
+    void updateFontCache();
     virtual SubtitleProcessorId id() const;
     virtual QString name() const;
     virtual QStringList supportedTypes() const;
@@ -53,10 +57,13 @@ public:
 protected:
     virtual void onFrameSizeChanged(int width, int height);
 private:
+    bool initRenderer();
+    void updateFontCacheAsync();
     // render 1 ass image into a 32bit QImage with alpha channel.
     //use dstX, dstY instead of img->dst_x/y because image size is small then ass renderer size
     void renderASS32(QImage *image, ASS_Image* img, int dstX, int dstY);
     void processTrack(ASS_Track *track);
+    bool m_update_cache;
     ASS_Library *m_ass;
     ASS_Renderer *m_renderer;
     ASS_Track *m_track;
@@ -98,7 +105,8 @@ static void msg_callback(int level, const char *fmt, va_list va, void *data)
 }
 
 SubtitleProcessorLibASS::SubtitleProcessorLibASS()
-    : m_ass(0)
+    : m_update_cache(true)
+    , m_ass(0)
     , m_renderer(0)
     , m_track(0)
 {
@@ -110,29 +118,16 @@ SubtitleProcessorLibASS::SubtitleProcessorLibASS()
         return;
     }
     ass_set_message_cb(m_ass, msg_callback, NULL);
-    m_renderer = ass_renderer_init(m_ass);
-    if (!m_renderer) {
-        qWarning("ass_renderer_init failed!");
-        return;
-    }
-#if LIBASS_VERSION >= 0x01000000
-    ass_set_shaper(m_renderer, ASS_SHAPING_SIMPLE);
-#endif
-    //ass_set_frame_size(m_renderer, frame_w, frame_h);
-    //ass_set_fonts(m_renderer, NULL, "Sans", 1, NULL, 1); //must set!
-    ass_set_fonts(m_renderer, NULL, NULL, 1, NULL, 1);
 }
 
 SubtitleProcessorLibASS::~SubtitleProcessorLibASS()
-{
-    if (!ass::api::loaded())
-        return;
+{ // ass dll is loaded if ass objects are available
     if (m_track) {
         ass_free_track(m_track);
         m_track = 0;
     }
     if (m_renderer) {
-        ass_renderer_done(m_renderer);
+        ass_renderer_done(m_renderer); // check async update cache!!
         m_renderer = 0;
     }
     if (m_ass) {
@@ -236,21 +231,25 @@ QString SubtitleProcessorLibASS::getText(qreal pts) const
 }
 
 QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
-{
-    if (!ass::api::loaded())
-        return QImage();
+{ // ass dll is loaded if ass library is available
     if (!m_ass) {
         qWarning("ass library not available");
-        return QImage();
-    }
-    if (!m_renderer) {
-        qWarning("ass renderer not available");
         return QImage();
     }
     if (!m_track) {
         qWarning("ass track not available");
         return QImage();
     }
+    if (!m_renderer) {
+        initRenderer();
+        if (!m_renderer) {
+            qWarning("ass renderer not available");
+            return QImage();
+        }
+    }
+    if (m_update_cache)
+        updateFontCacheAsync();
+
     int detect_change = 0;
     ASS_Image *img = ass_render_frame(m_renderer, m_track, (long long)(pts * 1000.0), &detect_change);
     if (!detect_change) {
@@ -285,9 +284,79 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
 
 void SubtitleProcessorLibASS::onFrameSizeChanged(int width, int height)
 {
+    if (!m_renderer) {
+        initRenderer();
+        if (!m_renderer)
+            return;
+    }
+    ass_set_frame_size(m_renderer, width, height);
+}
+
+bool SubtitleProcessorLibASS::initRenderer()
+{
+    m_renderer = ass_renderer_init(m_ass);
+    if (!m_renderer) {
+        qWarning("ass_renderer_init failed!");
+        return false;
+    }
+#if LIBASS_VERSION >= 0x01000000
+    ass_set_shaper(m_renderer, ASS_SHAPING_SIMPLE);
+#endif
+    return true;
+}
+// TODO: set font cache dir. default is working dir which may be not writable on some platforms
+void SubtitleProcessorLibASS::updateFontCache()
+{ // ass dll is loaded if renderer is valid
     if (!m_renderer)
         return;
-    ass_set_frame_size(m_renderer, width, height);
+    static QByteArray conf; //FC_CONFIG_FILE?
+    if (conf.isEmpty()) {
+        conf = qgetenv("QTAV_FC_FILE");
+        if (conf.isEmpty())
+            conf = qApp->applicationDirPath().append("/fonts/fonts.conf").toUtf8();
+    }
+    static QByteArray font_dir; //FC_CONFIG_DIR?
+    if (font_dir.isEmpty()) {
+        font_dir = qgetenv("QTAV_SUB_FONT_DIR");
+        if (font_dir.isEmpty())
+            font_dir = qApp->applicationDirPath().append("/fonts").toUtf8();
+    }
+    static QByteArray font;
+    if (font.isEmpty()) {
+        font = qgetenv("QTAV_SUB_FONT_FILE_DEFAULT");
+    }
+    static QByteArray family;
+    if (family.isEmpty()) {
+        family = qgetenv("QTAV_SUB_FONT_FAMILY_DEFAULT");
+    }
+    ass_set_fonts_dir(m_ass, font_dir.constData());
+    // update cache later (maybe async update in the future)
+    ass_set_fonts(m_renderer, font.isEmpty() ? NULL : font.constData(), family.isEmpty() ? NULL : family.constData(), 1, conf.constData(), 0);
+    ass_fonts_update(m_renderer);
+    m_update_cache = false;
+}
+
+void SubtitleProcessorLibASS::updateFontCacheAsync()
+{
+    class FontCacheUpdater : public QThread {
+        SubtitleProcessorLibASS *sp;
+    public:
+        FontCacheUpdater(SubtitleProcessorLibASS *p) : sp(p) {}
+        void run() {
+            if (!sp)
+                return;
+            sp->updateFontCache();
+        }
+    };
+    FontCacheUpdater updater(this);
+    QEventLoop loop;
+    //QObject::connect(&updater, SIGNAL(finished()), &loop, SLOT(quit()));
+    updater.start();
+    while (updater.isRunning()) {
+        loop.processEvents();
+    }
+    //loop.exec(); // what if updater is finished before exec()?
+    //updater.wait();
 }
 
 void SubtitleProcessorLibASS::processTrack(ASS_Track *track)

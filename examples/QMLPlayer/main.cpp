@@ -19,6 +19,7 @@
 ******************************************************************************/
 #include <cmath>
 #include <QtCore/QtDebug>
+#include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtGui/QGuiApplication>
 #include <QQuickItem>
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
     }
 
     QGuiApplication app(argc, argv);
+    QDir::setCurrent(qApp->applicationDirPath());
     qDebug() << "arguments======= " << app.arguments();
     set_opengl_backend(options.option("gl").value().toString(), app.arguments().first());
     load_qm(QStringList() << "QMLPlayer", options.value("language").toString());
