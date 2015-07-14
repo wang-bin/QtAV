@@ -26,6 +26,7 @@ namespace QtAV {
 
 AudioOutputBackend::AudioOutputBackend(AudioOutput::DeviceFeatures f, QObject *parent)
     : QObject(parent)
+    , available(true)
     , audio(0)
     , buffer_size(0)
     , buffer_count(0)

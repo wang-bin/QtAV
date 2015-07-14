@@ -78,8 +78,8 @@ private:
     QSemaphore sem;
 
     // Enqueue does not copy data. We MUST keep the data until it is played out
-    int sl_data_write;
-    QByteArray sl_data;
+    int queue_data_write;
+    QByteArray queue_data;
 };
 
 typedef AudioOutputOpenSL AudioOutputBackendOpenSL;
@@ -169,11 +169,13 @@ AudioOutputOpenSL::AudioOutputOpenSL(QObject *parent)
     , m_streamType(-1)
     , m_notifyInterval(1000)
     , buffers_queued(0)
-    , sl_data_write(0)
+    , queue_data_write(0)
 {
+    available = false;
     SL_ENSURE_OK(slCreateEngine(&engineObject, 0, 0, 0, 0, 0));
     SL_ENSURE_OK((*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE));
     SL_ENSURE_OK((*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engine));
+    available = true;
 }
 
 AudioOutputOpenSL::~AudioOutputOpenSL()
@@ -220,7 +222,7 @@ void AudioOutputOpenSL::onCallback()
 
 bool AudioOutputOpenSL::open()
 {
-    sl_data.resize(buffer_size*buffer_count);
+    queue_data.resize(buffer_size*buffer_count);
     SLDataLocator_BufferQueue bufferQueueLocator = { SL_DATALOCATOR_BUFFERQUEUE, (SLuint32)buffer_count };
     SLDataFormat_PCM pcmFormat = audioFormatToSL(format);
     SLDataSource audioSrc = { &bufferQueueLocator, &pcmFormat };
@@ -315,8 +317,8 @@ bool AudioOutputOpenSL::close()
     m_playItf = NULL;
     m_volumeItf = NULL;
     m_bufferQueueItf = NULL;
-    sl_data.clear();
-    sl_data_write = 0;
+    queue_data.clear();
+    queue_data_write = 0;
     return true;
 }
 
@@ -324,24 +326,24 @@ bool AudioOutputOpenSL::write(const QByteArray& data)
 {
     if (bufferControl() & CountCallback)
         sem.acquire();
-    const int s = qMin(sl_data.size() - sl_data_write, data.size());
+    const int s = qMin(queue_data.size() - queue_data_write, data.size());
     // assume data.size() <= buffer_size. It's true in QtAV
     if (s < data.size())
-        sl_data_write = 0;
-    memcpy((char*)sl_data.constData() + sl_data_write, data.constData(), data.size());
-    //qDebug("enqueue %p, sl_data_write: %d", data.constData(), sl_data_write);
+        queue_data_write = 0;
+    memcpy((char*)queue_data.constData() + queue_data_write, data.constData(), data.size());
+    //qDebug("enqueue %p, queue_data_write: %d", data.constData(), queue_data_write);
 #ifdef Q_OS_ANDROID
     if (m_android)
-        SL_ENSURE_OK((*m_bufferQueueItf_android)->Enqueue(m_bufferQueueItf_android, sl_data.constData() + sl_data_write, data.size()), false);
+        SL_ENSURE_OK((*m_bufferQueueItf_android)->Enqueue(m_bufferQueueItf_android, queue_data.constData() + queue_data_write, data.size()), false);
     else
-        SL_ENSURE_OK((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, sl_data.constData() + sl_data_write, data.size()), false);
+        SL_ENSURE_OK((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, queue_data.constData() + queue_data_write, data.size()), false);
 #else
-    SL_ENSURE_OK((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, sl_data.constData() + sl_data_write, data.size()), false);
+    SL_ENSURE_OK((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, queue_data.constData() + queue_data_write, data.size()), false);
 #endif
     buffers_queued++;
-    sl_data_write += data.size();
-    if (sl_data_write == sl_data.size())
-        sl_data_write = 0;
+    queue_data_write += data.size();
+    if (queue_data_write == queue_data.size())
+        queue_data_write = 0;
     return true;
 }
 

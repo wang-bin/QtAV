@@ -261,6 +261,9 @@ AudioOutput::AudioOutput(QObject* parent)
     d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
     d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
     static const QStringList all = QStringList()
+#if QTAV_HAVE(XAUDIO2)
+            << "XAudio2"
+#endif
 #if QTAV_HAVE(PULSEAUDIO)&& !defined(Q_OS_MAC)
             << "Pulse"
 #endif
@@ -317,8 +320,12 @@ void AudioOutput::setBackends(const QStringList &backendNames)
     if (!d.backends.isEmpty()) {
         foreach (const QString& b, d.backends) {
             d.backend = AudioOutputBackendFactory::create(AudioOutputBackendFactory::id(b.toStdString()));
-            if (d.backend)
+            if (!d.backend)
+                continue;
+            if (d.backend->available)
                 break;
+            delete d.backend;
+            d.backend = NULL;
         }
     }
     if (d.backend) {

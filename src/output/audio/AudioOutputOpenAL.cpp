@@ -235,7 +235,7 @@ AudioOutputOpenAL::AudioOutputOpenAL(QObject *parent)
         p += _devices.last().size() + 1;
     }
     qDebug() << _devices;
-    openDevice(); //ensure isSupported(AudioFormat) works correctly
+    available = openDevice(); //ensure isSupported(AudioFormat) works correctly
 }
 
 bool AudioOutputOpenAL::open()
