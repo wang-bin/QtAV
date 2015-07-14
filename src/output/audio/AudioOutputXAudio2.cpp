@@ -23,12 +23,30 @@
 #include <QtCore/QLibrary>
 #include <QtCore/QSemaphore>
 #include <windows.h>
-#include <xaudio2.h> //TODO: check _DXSDK_BUILD_MAJOR, win8sdk, dxsdk. use compatible header and no link?
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
-// ref: DirectXTK, SDL
+#ifdef __GNUC__
+#define __in
+#define __in_ecount(size)
+#define __in_bcount(size)
+#define __out
+#define __out_ecount(size)
+#define __out_bcount(size)
+#define __inout
+#define __deref_out
+#define __in_opt
+#define __reserved
+//TODO: check _DXSDK_BUILD_MAJOR, win8sdk, dxsdk. use compatible header and no link?
+// currently you can use dxsdk 2010 header for mingw
+#include <xaudio2.h>
+#endif
 
+#ifndef _WIN32_WINNT_WIN8
+#define _WIN32_WINNT_WIN8 0x0602
+#endif
+// ref: DirectXTK, SDL
+// TODO: some API delarations in windows sdk and dxsdk are different, how to support different runtime (for win8sdk)?
 namespace QtAV {
 
 template <class T> void SafeRelease(T **ppT) {
@@ -86,6 +104,8 @@ private:
     QSemaphore sem;
     int queue_data_write;
     QByteArray queue_data;
+
+    QLibrary dll;
 };
 
 typedef AudioOutputXAudio2 AudioOutputBackendXAudio2;
@@ -120,10 +140,33 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
 {
     //setDeviceFeatures(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume);
 
-    // TODO: load dll. <win8: XAudio2_7.DLL, <win10: XAudio2_8.DLL, win10: XAudio2_9.DLL. also defined by XAUDIO2_DLL_A in xaudio2.h
     //required by XAudio2. This simply starts up the COM library on this thread
     // TODO: not required by winrt
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    // load dll. <win8: XAudio2_7.DLL, <win10: XAudio2_8.DLL, win10: XAudio2_9.DLL. also defined by XAUDIO2_DLL_A in xaudio2.h
+    int ver = 9;
+#if (_WIN32_WINNT < _WIN32_WINNT_WIN8)
+    ver = 7;
+#endif
+    while (!dll.isLoaded() && ver >= 0) {
+        dll.setFileName(QString("XAudio2_%1").arg(ver));
+        qDebug() << dll.fileName();
+        if (!dll.load())
+            qWarning() << dll.errorString();
+        --ver;
+    }
+    if (!dll.isLoaded()) {
+        qWarning("XAudio2 runtime dll is not found");
+        return;
+    }
+#if (_WIN32_WINNT < _WIN32_WINNT_WIN8) && !defined(_XBOX)
+    // defined as an inline function
+#else
+    typedef HRESULT (__stdcall *XAudio2Create_t)(IXAudio2** ppXAudio2, UINT32 Flags, XAUDIO2_PROCESSOR XAudio2Processor);
+    XAudio2Create_t XAudio2Create = (XAudio2Create_t)dll.resolve("XAudio2Create");
+    if (!XAudio2Create)
+        return;
+#endif
     //create the engine
     DX_ENSURE_OK(XAudio2Create(&xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR));
 }
@@ -143,7 +186,7 @@ bool AudioOutputXAudio2::open()
     // TODO: device Id property
     // TODO: parameters now default.
     DX_ENSURE_OK(xaudio->CreateMasteringVoice(&master_voice, XAUDIO2_DEFAULT_CHANNELS, XAUDIO2_DEFAULT_SAMPLERATE), false);
-#if (_WIN32_WINNT < _WIN32_WINNT_WIN8)
+#if (_WIN32_WINNT < _WIN32_WINNT_WIN8) // TODO: also check runtime version before call
     XAUDIO2_DEVICE_DETAILS details;
 #endif
 
