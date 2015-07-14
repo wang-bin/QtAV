@@ -27,6 +27,7 @@
 #include "utils/Logger.h"
 
 #ifdef __GNUC__
+// macros used by XAudio 2.7 (June 2010 SDK)
 #define __in
 #define __in_ecount(size)
 #define __in_bcount(size)
@@ -37,14 +38,259 @@
 #define __deref_out
 #define __in_opt
 #define __reserved
-//TODO: check _DXSDK_BUILD_MAJOR, win8sdk, dxsdk. use compatible header and no link?
+#endif
+//TODO: check _DXSDK_BUILD_MAJOR, win8sdk, dxsdk
+// do not add dxsdk xaudio2.h dir to INCLUDE for other file build with winsdk to avoid runtime crash
 // currently you can use dxsdk 2010 header for mingw
 #include <xaudio2.h>
-#endif
 
 #ifndef _WIN32_WINNT_WIN8
 #define _WIN32_WINNT_WIN8 0x0602
 #endif
+/* sdk check
+ * winsdk: defines XAUDIO2_DLL
+ * dxsdk: defines XAUDIO2_DEBUG_ENGINE
+ */
+#define XA2_WINSDK (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+namespace DXSDK {
+#if defined(__WINRT__)
+typedef ::IXAudio2 IXAudio2;
+#elif XA2_WINSDK
+// Used in XAUDIO2_DEVICE_DETAILS below to describe the types of applications
+// that the user has specified each device as a default for.  0 means that the
+// device isn't the default for any role.
+typedef enum XAUDIO2_DEVICE_ROLE
+{
+    NotDefaultDevice            = 0x0,
+    DefaultConsoleDevice        = 0x1,
+    DefaultMultimediaDevice     = 0x2,
+    DefaultCommunicationsDevice = 0x4,
+    DefaultGameDevice           = 0x8,
+    GlobalDefaultDevice         = 0xf,
+    InvalidDeviceRole = ~GlobalDefaultDevice
+} XAUDIO2_DEVICE_ROLE;
+// Returned by IXAudio2::GetDeviceDetails
+typedef struct XAUDIO2_DEVICE_DETAILS
+{
+    WCHAR DeviceID[256];                // String identifier for the audio device.
+    WCHAR DisplayName[256];             // Friendly name suitable for display to a human.
+    XAUDIO2_DEVICE_ROLE Role;           // Roles that the device should be used for.
+    WAVEFORMATEXTENSIBLE OutputFormat;  // The device's native PCM audio output format.
+} XAUDIO2_DEVICE_DETAILS;
+
+// from wine idl. If use code from dx header. TODO: why crash if use code from dx header?
+interface IXAudio2MasteringVoice : public IXAudio2Voice
+{
+    virtual void STDMETHODCALLTYPE GetChannelMask(
+        DWORD *pChannelMask) = 0;
+
+};
+DEFINE_GUID(IID_IXAudio27, 0x8bcf1f58, 0x9fe7, 0x4583, 0x8a,0xc6, 0xe2,0xad,0xc4,0x65,0xc8,0xbb);
+MIDL_INTERFACE("8bcf1f58-9fe7-4583-8ac6-e2adc465c8bb")
+IXAudio2 : public IUnknown
+{
+    virtual HRESULT STDMETHODCALLTYPE GetDeviceCount(
+        UINT32 *pCount) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE GetDeviceDetails(
+        UINT32 Index,
+        XAUDIO2_DEVICE_DETAILS *pDeviceDetails) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE Initialize(
+        UINT32 Flags = 0,
+        XAUDIO2_PROCESSOR XAudio2Processor = XAUDIO2_DEFAULT_PROCESSOR) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE RegisterForCallbacks(
+        IXAudio2EngineCallback *pCallback) = 0;
+
+    virtual void STDMETHODCALLTYPE UnregisterForCallbacks(
+        IXAudio2EngineCallback *pCallback) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE CreateSourceVoice(
+        IXAudio2SourceVoice **ppSourceVoice,
+        const WAVEFORMATEX *pSourceFormat,
+        UINT32 Flags = 0,
+        float MaxFrequencyRatio = XAUDIO2_DEFAULT_FREQ_RATIO,
+        IXAudio2VoiceCallback *pCallback = 0,
+        const XAUDIO2_VOICE_SENDS *pSendList = 0,
+        const XAUDIO2_EFFECT_CHAIN *pEffectChain = 0) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE CreateSubmixVoice(
+        IXAudio2SubmixVoice **ppSubmixVoice,
+        UINT32 InputChannels,
+        UINT32 InputSampleRate,
+        UINT32 Flags = 0,
+        UINT32 ProcessingStage = 0,
+        const XAUDIO2_VOICE_SENDS *pSendList = 0,
+        const XAUDIO2_EFFECT_CHAIN *pEffectChain = 0) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE CreateMasteringVoice(
+        IXAudio2MasteringVoice **ppMasteringVoice,
+        UINT32 InputChannels = XAUDIO2_DEFAULT_CHANNELS,
+        UINT32 InputSampleRate = XAUDIO2_DEFAULT_SAMPLERATE,
+        UINT32 Flags = 0,
+        UINT32 DeviceIndex = 0,
+        const XAUDIO2_EFFECT_CHAIN *pEffectChain = 0) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE StartEngine(
+        ) = 0;
+
+    virtual void STDMETHODCALLTYPE StopEngine(
+        ) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE CommitChanges(
+        UINT32 OperationSet) = 0;
+
+    virtual void STDMETHODCALLTYPE GetPerformanceData(
+        XAUDIO2_PERFORMANCE_DATA *pPerfData) = 0;
+
+    virtual void STDMETHODCALLTYPE SetDebugConfiguration(
+        const XAUDIO2_DEBUG_CONFIGURATION *pDebugConfiguration,
+        void *pReserved = 0) = 0;
+
+};
+
+#ifndef GUID_SECT
+    #define GUID_SECT
+#endif
+#define __DEFINE_CLSID(n,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) static const CLSID n GUID_SECT = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
+#define __DEFINE_IID(n,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) static const IID n GUID_SECT = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
+
+#define DEFINE_CLSID(className, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+    __DEFINE_CLSID(CLSID_##className, 0x##l, 0x##w1, 0x##w2, 0x##b1, 0x##b2, 0x##b3, 0x##b4, 0x##b5, 0x##b6, 0x##b7, 0x##b8)
+
+#define DEFINE_IID(interfaceName, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+    __DEFINE_IID(IID_##interfaceName, 0x##l, 0x##w1, 0x##w2, 0x##b1, 0x##b2, 0x##b3, 0x##b4, 0x##b5, 0x##b6, 0x##b7, 0x##b8)
+
+// XAudio 2.7 (June 2010 SDK)
+DEFINE_CLSID(XAudio2, 5a508685, a254, 4fba, 9b, 82, 9a, 24, b0, 03, 06, af);
+DEFINE_CLSID(XAudio2_Debug, db05ea35, 0329, 4d4b, a5, 3a, 6d, ea, d0, 3d, 38, 52);
+DEFINE_IID(IXAudio2, 8bcf1f58, 9fe7, 4583, 8a, c6, e2, ad, c4, 65, c8, bb);
+
+// Flags
+// NOTE: XAUDIO2_DEBUG_ENGINE is NOT defined in winsdk!!!
+#define XAUDIO2_DEBUG_ENGINE            0x0001        // Used in XAudio2Create on Windows only
+HRESULT XAudio2Create(__deref_out IXAudio2** ppXAudio2, UINT32 Flags X2DEFAULT(0),
+                               XAUDIO2_PROCESSOR XAudio2Processor X2DEFAULT(XAUDIO2_DEFAULT_PROCESSOR))
+{
+    // Instantiate the appropriate XAudio2 engine
+    IXAudio2* pXAudio2;
+    HRESULT hr = CoCreateInstance((Flags & XAUDIO2_DEBUG_ENGINE) ? CLSID_XAudio2_Debug : CLSID_XAudio2,
+                                  NULL, CLSCTX_INPROC_SERVER, IID_IXAudio2, (void**)&pXAudio2);
+    if (SUCCEEDED(hr))
+    {
+        hr = pXAudio2->Initialize(Flags, XAudio2Processor);
+
+        if (SUCCEEDED(hr))
+        {
+            *ppXAudio2 = pXAudio2;
+        }
+        else
+        {
+            pXAudio2->Release();
+        }
+    }
+    return hr;
+}
+#else
+#ifndef _XBOX
+HRESULT XAudio2Create(__deref_out IXAudio2** ppXAudio2, UINT32 Flags X2DEFAULT(0),
+                               XAUDIO2_PROCESSOR XAudio2Processor X2DEFAULT(XAUDIO2_DEFAULT_PROCESSOR))
+{
+    return ::XAudio2Create(ppXAudio2, Flags, XAudio2Processor);
+}
+#endif //_XBOX
+typedef ::IXAudio2 IXAudio2;
+typedef ::IXAudio2MasteringVoice IXAudio2MasteringVoice;
+#endif
+// At last, define the same types. MUST BE AT LAST to avoid ambigous, for example IXAudio2MasteringVoice is a ::IXAudio2Voice but we can use IXAudio2Voice
+typedef ::IXAudio2Voice IXAudio2Voice;
+typedef ::IXAudio2SourceVoice IXAudio2SourceVoice;
+}
+namespace WINSDK {
+#if defined(__WINRT__)
+typedef ::IXAudio2 IXAudio2;
+#elif XA2_WINSDK
+typedef ::IXAudio2 IXAudio2;
+typedef ::IXAudio2MasteringVoice IXAudio2MasteringVoice;
+#else
+typedef enum _AUDIO_STREAM_CATEGORY
+{
+    AudioCategory_Other = 0,
+    AudioCategory_ForegroundOnlyMedia,
+    AudioCategory_BackgroundCapableMedia,
+    AudioCategory_Communications,
+    AudioCategory_Alerts,
+    AudioCategory_SoundEffects,
+    AudioCategory_GameEffects,
+    AudioCategory_GameMedia,
+} AUDIO_STREAM_CATEGORY;
+// from wine idl. If use code from dx header. TODO: why crash if use code from dx header?
+interface IXAudio2MasteringVoice : public IXAudio2Voice
+{
+    virtual void STDMETHODCALLTYPE GetChannelMask(
+        DWORD *pChannelMask) = 0;
+
+};
+DEFINE_GUID(IID_IXAudio2, 0x60d8dac8, 0x5aa1, 0x4e8e, 0xb5,0x97, 0x2f,0x5e,0x28,0x83,0xd4,0x84);
+MIDL_INTERFACE("60d8dac8-5aa1-4e8e-b597-2f5e2883d484")
+IXAudio2 : public IUnknown
+{
+    virtual HRESULT STDMETHODCALLTYPE RegisterForCallbacks(
+        IXAudio2EngineCallback *pCallback) = 0;
+
+    virtual void STDMETHODCALLTYPE UnregisterForCallbacks(
+        IXAudio2EngineCallback *pCallback) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE CreateSourceVoice(
+        IXAudio2SourceVoice **ppSourceVoice,
+        const WAVEFORMATEX *pSourceFormat,
+        UINT32 Flags = 0,
+        float MaxFrequencyRatio = XAUDIO2_DEFAULT_FREQ_RATIO,
+        IXAudio2VoiceCallback *pCallback = 0,
+        const XAUDIO2_VOICE_SENDS *pSendList = 0,
+        const XAUDIO2_EFFECT_CHAIN *pEffectChain = 0) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE CreateSubmixVoice(
+        IXAudio2SubmixVoice **ppSubmixVoice,
+        UINT32 InputChannels,
+        UINT32 InputSampleRate,
+        UINT32 Flags = 0,
+        UINT32 ProcessingStage = 0,
+        const XAUDIO2_VOICE_SENDS *pSendList = 0,
+        const XAUDIO2_EFFECT_CHAIN *pEffectChain = 0) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE CreateMasteringVoice(
+        IXAudio2MasteringVoice **ppMasteringVoice,
+        UINT32 InputChannels = XAUDIO2_DEFAULT_CHANNELS,
+        UINT32 InputSampleRate = XAUDIO2_DEFAULT_SAMPLERATE,
+        UINT32 Flags = 0,
+        LPCWSTR DeviceId = 0,
+        const XAUDIO2_EFFECT_CHAIN *pEffectChain = 0,
+        AUDIO_STREAM_CATEGORY StreamCategory = AudioCategory_GameEffects) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE StartEngine(
+        ) = 0;
+
+    virtual void STDMETHODCALLTYPE StopEngine(
+        ) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE CommitChanges(
+        UINT32 OperationSet) = 0;
+
+    virtual void STDMETHODCALLTYPE GetPerformanceData(
+        XAUDIO2_PERFORMANCE_DATA *pPerfData) = 0;
+
+    virtual void STDMETHODCALLTYPE SetDebugConfiguration(
+        const XAUDIO2_DEBUG_CONFIGURATION *pDebugConfiguration,
+        void *pReserved = 0) = 0;
+
+};
+#endif
+// At last, define the same types. MUST BE AT LAST to avoid ambigous, for example IXAudio2MasteringVoice is a ::IXAudio2Voice but we can use IXAudio2Voice
+typedef ::IXAudio2Voice IXAudio2Voice;
+typedef ::IXAudio2SourceVoice IXAudio2SourceVoice;
+}
 // ref: DirectXTK, SDL
 // TODO: some API delarations in windows sdk and dxsdk are different, how to support different runtime (for win8sdk)?
 namespace QtAV {
@@ -55,6 +301,7 @@ template <class T> void SafeRelease(T **ppT) {
     *ppT = NULL;
   }
 }
+
 
 static const char kName[] = "XAudio2";
 class AudioOutputXAudio2 Q_DECL_FINAL: public AudioOutputBackend, public IXAudio2VoiceCallback
@@ -97,10 +344,14 @@ public:
 
 private:
     // TODO: com ptr
-    IXAudio2* xaudio;
-    IXAudio2MasteringVoice* master_voice;
-    IXAudio2SourceVoice* source_voice;
+    DXSDK::IXAudio2* xaudio;
+    DXSDK::IXAudio2MasteringVoice* master_voice;
+    DXSDK::IXAudio2SourceVoice* source_voice;
 
+    union {
+        DXSDK::IXAudio2 *xa_dx;
+        WINSDK::IXAudio2 *xa_win;
+    };
     QSemaphore sem;
     int queue_data_write;
     QByteArray queue_data;
@@ -138,37 +389,53 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
     , source_voice(NULL)
     , queue_data_write(0)
 {
+    available = false;
     //setDeviceFeatures(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume);
-
     //required by XAudio2. This simply starts up the COM library on this thread
     // TODO: not required by winrt
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
     // load dll. <win8: XAudio2_7.DLL, <win10: XAudio2_8.DLL, win10: XAudio2_9.DLL. also defined by XAUDIO2_DLL_A in xaudio2.h
     int ver = 9;
-#if (_WIN32_WINNT < _WIN32_WINNT_WIN8)
-    ver = 7;
-#endif
-    while (!dll.isLoaded() && ver >= 0) {
+    for (; ver >= 0; ver--) {
         dll.setFileName(QString("XAudio2_%1").arg(ver));
         qDebug() << dll.fileName();
-        if (!dll.load())
+        if (!dll.load()) {
             qWarning() << dll.errorString();
-        --ver;
-    }
-    if (!dll.isLoaded()) {
-        qWarning("XAudio2 runtime dll is not found");
-        return;
-    }
-#if (_WIN32_WINNT < _WIN32_WINNT_WIN8) && !defined(_XBOX)
-    // defined as an inline function
+            continue;
+        }
+#if (_WIN32_WINNT < _WIN32_WINNT_WIN8)
+        // defined as an inline function
+        qDebug("Build with XAudio2 from DXSDK");
 #else
-    typedef HRESULT (__stdcall *XAudio2Create_t)(IXAudio2** ppXAudio2, UINT32 Flags, XAUDIO2_PROCESSOR XAudio2Processor);
-    XAudio2Create_t XAudio2Create = (XAudio2Create_t)dll.resolve("XAudio2Create");
-    if (!XAudio2Create)
-        return;
+        qDebug("Build with XAudio2 from Win8 or later SDK");
 #endif
-    //create the engine
-    DX_ENSURE_OK(XAudio2Create(&xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR));
+        bool ready = false;
+        if (!ready && ver >= 8) {
+            qDebug("try xaudio2 symbol from winsdk");
+            typedef HRESULT (__stdcall *XAudio2Create_t)(WINSDK::IXAudio2** ppXAudio2, UINT32 Flags, XAUDIO2_PROCESSOR XAudio2Processor);
+            XAudio2Create_t XAudio2Create = (XAudio2Create_t)dll.resolve("XAudio2Create");
+            //if (XAudio2Create)
+                //ready = SUCCEEDED(XAudio2Create(&xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR));
+        }
+        if (!ready && ver < 8) {
+#ifdef _XBOX // xbox < win8 is inline XAudio2Create
+            qDebug("try xaudio2 symbol from dxsdk (XBOX)");
+            typedef HRESULT (__stdcall *XAudio2Create_t)(DXSDK::IXAudio2** ppXAudio2, UINT32 Flags, XAUDIO2_PROCESSOR XAudio2Processor);
+            XAudio2Create_t XAudio2Create = (XAudio2Create_t)dll.resolve("XAudio2Create");
+            if (XAudio2Create)
+                ready = SUCCEEDED(XAudio2Create(&xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR));
+#else
+            // try xaudio2 from dxsdk without symbol
+            qDebug("try xaudio2 symbol from dxsdk");
+            ready = SUCCEEDED(DXSDK::XAudio2Create(&xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR));
+#endif
+        }
+        if (ready)
+            break;
+        dll.unload();
+    }
+    qDebug("xaudio2: %p", xaudio);
+    available = !!xaudio;
 }
 
 AudioOutputXAudio2::~AudioOutputXAudio2()
@@ -272,7 +539,8 @@ bool AudioOutputXAudio2::write(const QByteArray &data)
     if (s < data.size())
         queue_data_write = 0;
     memcpy((char*)queue_data.constData() + queue_data_write, data.constData(), data.size());
-    XAUDIO2_BUFFER xb = { 0 }; //IMPORTANT! wrong value(playbegin/length, loopbegin/length) will result in commit sourcebuffer fail
+    XAUDIO2_BUFFER xb; //IMPORTANT! wrong value(playbegin/length, loopbegin/length) will result in commit sourcebuffer fail
+    memset(&xb, 0, sizeof(XAUDIO2_BUFFER));
     xb.AudioBytes = data.size();
     //xb.Flags = XAUDIO2_END_OF_STREAM; // TODO: not set in sdl
     xb.pContext = this;
