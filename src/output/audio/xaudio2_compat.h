@@ -23,7 +23,7 @@
 #define QTAV_XAUDIO2_COMPAT_H
 
 /*!
-  IXAudio2 and IXAudio2MasteringVoice are different defined in DXSDK(2010 Jun) and WINSDK(>=win8).
+  IXAudio2 and IXAudio2MasteringVoice are different defined in DXSDK(2010 June) and WINSDK(>=win8).
   You MUST explicitly prefix with namespace DXSDK or WinSDK for IXAudio2MasteringVoice, IXAudio2,
 */
 
