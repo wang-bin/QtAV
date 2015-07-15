@@ -34,6 +34,7 @@ class Q_AV_PRIVATE_EXPORT AudioOutputBackend : public QObject
     Q_OBJECT
 public:
     AudioOutput *audio;
+    bool available; // default is true. set to false when failed to create backend
     int buffer_size;
     int buffer_count;
     AudioFormat format;

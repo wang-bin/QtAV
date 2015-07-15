@@ -58,7 +58,8 @@ OptionalDepends = \
 !no-portaudio: OptionalDepends *= portaudio
 !no-libass: OptionalDepends *= libass
 win32 {
-  !no-dsound: win32: OptionalDepends *= dsound
+  !no-xaudio2: OptionalDepends *= xaudio2
+  !no-dsound: OptionalDepends *= dsound
   !no-direct2d:!no-widgets: OptionalDepends *= direct2d
   !no-gdiplus:!no-widgets: OptionalDepends *= gdiplus
   !no-dxva: OptionalDepends *= dxva

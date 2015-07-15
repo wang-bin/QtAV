@@ -139,6 +139,18 @@ config_ipp {
             -L$$(IPPROOT)/../compiler/lib/$$IPPARCH -lsvml -limf
     #omp for static link. _t is multi-thread static link
 }
+win32: {
+  HEADERS += output/audio/xaudio2_compat.h
+  SOURCES += output/audio/AudioOutputXAudio2.cpp
+  DEFINES *= QTAV_HAVE_XAUDIO2=1
+  !config_xaudio2 { #winsdk has no xaudio2.h, use June 2010 DXSDK
+## TODO: build xaudio2 code as a seperate static lib so wen can safely add contrib/dxsdk to INCLUDEPATH for that lib build
+    win32-icc|win32-g++|win32-msvc2010|win32-msvc2008|win32-msvc2005: \
+        INCLUDEPATH *= $$PROJECTROOT/contrib/dxsdk
+  }
+  !winrt: LIBS += -lole32 #CoInitializeEx for vs2008, but can not find the symbol at runtime
+  #LIBS += -lxaudio2 #only for xbox or >=win8
+}
 config_dsound {
     SOURCES += output/audio/AudioOutputDSound.cpp
     DEFINES *= QTAV_HAVE_DSOUND=1
@@ -253,8 +265,8 @@ config_openglwindow {
 }
 config_libass {
 #link against libass instead of dynamic load
-  !capi {
-    LIBS += -lass
+  !capi|*g++* {
+    LIBS += -lass #-lfribidi -lfontconfig -lxml2 -lfreetype -lharfbuzz -lz
     DEFINES += CAPI_LINK_ASS
   }
   HEADERS *= subtitle/ass_api.h
