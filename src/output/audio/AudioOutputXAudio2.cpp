@@ -56,8 +56,8 @@ public:
     bool write(const QByteArray& data) Q_DECL_OVERRIDE;
     bool play() Q_DECL_OVERRIDE;
 
-   // bool setVolume(qreal value) Q_DECL_OVERRIDE;
-    //qreal getVolume() const Q_DECL_OVERRIDE;
+    bool setVolume(qreal value) Q_DECL_OVERRIDE;
+    qreal getVolume() const Q_DECL_OVERRIDE;
 public:
     STDMETHOD_(void, OnVoiceProcessingPassStart)(THIS_ UINT32 bytesRequired) Q_DECL_OVERRIDE {Q_UNUSED(bytesRequired);}
     STDMETHOD_(void, OnVoiceProcessingPassEnd)(THIS) Q_DECL_OVERRIDE {}
@@ -120,7 +120,7 @@ void RegisterAudioOutputXAudio2_Man()
     } while (0)
 
 AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
-    : AudioOutputBackend(AudioOutput::DeviceFeatures()/*|AudioOutput::SetVolume*/, parent)
+    : AudioOutputBackend(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume, parent)
     , xaudio2_winsdk(true)
     , source_voice(NULL)
     , queue_data_write(0)
@@ -317,18 +317,19 @@ bool AudioOutputXAudio2::play()
 {
     return true;
 }
-/*
+
 bool AudioOutputXAudio2::setVolume(qreal value)
 {
     // master or source?
-   // source_voice->SetVolume()
-    return false;
+    DX_ENSURE_OK(source_voice->SetVolume(value), false);
+    return true;
 }
 
 qreal AudioOutputXAudio2::getVolume() const
 {
-
-    return pow(10.0, double(vol - DSBVOLUME_MIN)/5000.0)/100.0;
+    FLOAT value;
+    source_voice->GetVolume(&value);
+    return value;
 }
-*/
+
 } // namespace QtAV
