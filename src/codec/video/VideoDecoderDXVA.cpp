@@ -32,6 +32,8 @@
 #include "utils/Logger.h"
 #include "SurfaceInteropDXVA.h"
 
+#define DX_LOG_COMPONENT "DXVA2"
+#include "utils/DirectXHelper.h"
 
 // d3d9ex: http://dxr.mozilla.org/mozilla-central/source/dom/media/wmf/DXVA2Manager.cpp
 // TODO: add to QtAV_Compat.h?
@@ -51,28 +53,6 @@
 #define FF_PROFILE_HEVC_MAIN -1
 #define FF_PROFILE_HEVC_MAIN_10 -1
 #endif
-
-template <class T> void SafeRelease(T **ppT)
-{
-  if (*ppT) {
-    (*ppT)->Release();
-    *ppT = NULL;
-  }
-}
-
-#define DX_LOG_COMPONENT "DXVA2"
-
-#ifndef DX_LOG_COMPONENT
-#define DX_LOG_COMPONENT "DirectX"
-#endif //DX_LOG_COMPONENT
-#define DX_ENSURE_OK(f, ...) \
-    do { \
-        HRESULT hr = f; \
-        if (FAILED(hr)) { \
-            qWarning() << DX_LOG_COMPONENT " error@" << __LINE__ << ". " #f ": " << QString("(0x%1) ").arg(hr, 0, 16) << qt_error_string(hr); \
-            return __VA_ARGS__; \
-        } \
-    } while (0)
 
 // to use c api, add define COBJMACROS and CINTERFACE
 #define DXVA2API_USE_BITFIELDS
@@ -441,6 +421,7 @@ QString VideoDecoderDXVA::description() const
 VideoFrame VideoDecoderDXVA::frame()
 {
     DPTR_D(VideoDecoderDXVA);
+    //qDebug("frame size: %dx%d", d.frame->width, d.frame->height);
     if (!d.frame->opaque || !d.frame->data[0])
         return VideoFrame();
     if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)

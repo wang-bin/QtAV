@@ -25,20 +25,14 @@
 #include "QtAV/private/prepost.h"
 #include <QtCore/QLibrary>
 #include <math.h>
-#include <windows.h>
 #define DIRECTSOUND_VERSION 0x0600
 #include <dsound.h>
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
+#define DX_LOG_COMPONENT "DSound"
+#include "utils/DirectXHelper.h"
 
 namespace QtAV {
-
-template <class T> void SafeRelease(T **ppT) {
-  if (*ppT) {
-    (*ppT)->Release();
-    *ppT = NULL;
-  }
-}
 
 static const char kName[] = "DirectSound";
 class AudioOutputDSound Q_DECL_FINAL: public AudioOutputBackend
@@ -84,20 +78,6 @@ void RegisterAudioOutputDSound_Man()
 {
     FACTORY_REGISTER_ID_MAN(AudioOutputBackend, DSound, kName)
 }
-
-#define DX_LOG_COMPONENT "DSound"
-
-#ifndef DX_LOG_COMPONENT
-#define DX_LOG_COMPONENT "DirectX"
-#endif //DX_LOG_COMPONENT
-#define DX_ENSURE_OK(f, ...) \
-    do { \
-        HRESULT hr = f; \
-        if (FAILED(hr)) { \
-            qWarning() << DX_LOG_COMPONENT " error@" << __LINE__ << ". " #f ": " << QString("(0x%1) ").arg(hr, 0, 16) << qt_error_string(hr); \
-            return __VA_ARGS__; \
-        } \
-    } while (0)
 
 // use the definitions from the win32 api headers when they define these
 #define WAVE_FORMAT_IEEE_FLOAT      0x0003

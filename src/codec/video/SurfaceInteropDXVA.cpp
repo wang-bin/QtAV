@@ -21,33 +21,13 @@
 #include "SurfaceInteropDXVA.h"
 #include "QtAV/VideoFrame.h"
 #include "utils/Logger.h"
+#define DX_LOG_COMPONENT "DXVA2"
+#include "utils/DirectXHelper.h"
 
 namespace QtAV {
 extern VideoFormat::PixelFormat pixelFormatFromD3D(D3DFORMAT format);
 
 namespace dxva {
-
-template <class T> void SafeRelease(T **ppT)
-{
-  if (*ppT) {
-    (*ppT)->Release();
-    *ppT = NULL;
-  }
-}
-
-#define DX_LOG_COMPONENT "DXVA2"
-
-#ifndef DX_LOG_COMPONENT
-#define DX_LOG_COMPONENT "DirectX"
-#endif //DX_LOG_COMPONENT
-#define DX_ENSURE_OK(f, ...) \
-    do { \
-        HRESULT hr = f; \
-        if (FAILED(hr)) { \
-            qWarning() << DX_LOG_COMPONENT " error@" << __LINE__ << ". " #f ": " << QString("(0x%1) ").arg(hr, 0, 16) << qt_error_string(hr); \
-            return __VA_ARGS__; \
-        } \
-    } while (0)
 
 InteropResource::InteropResource(IDirect3DDevice9 *d3device)
     : d3ddev(d3device)

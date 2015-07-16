@@ -27,16 +27,12 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
+#define DX_LOG_COMPONENT "XAudio2"
+#include "utils/DirectXHelper.h"
 #include "xaudio2_compat.h"
 
 // ref: DirectXTK, SDL, wine
 namespace QtAV {
-template <class T> void SafeRelease(T **ppT) {
-  if (*ppT) {
-    (*ppT)->Release();
-    *ppT = NULL;
-  }
-}
 
 static const char kName[] = "XAudio2";
 class AudioOutputXAudio2 Q_DECL_FINAL: public AudioOutputBackend, public IXAudio2VoiceCallback
@@ -105,20 +101,6 @@ void RegisterAudioOutputXAudio2_Man()
     FACTORY_REGISTER_ID_MAN(AudioOutputBackend, XAudio2, kName)
 }
 
-#define DX_LOG_COMPONENT "XAudio2"
-
-#ifndef DX_LOG_COMPONENT
-#define DX_LOG_COMPONENT "DirectX"
-#endif //DX_LOG_COMPONENT
-#define DX_ENSURE_OK(f, ...) \
-    do { \
-        HRESULT hr = f; \
-        if (FAILED(hr)) { \
-            qWarning() << DX_LOG_COMPONENT " error@" << __LINE__ << ". " #f ": " << QString("(0x%1) ").arg(hr, 0, 16) << qt_error_string(hr); \
-            return __VA_ARGS__; \
-        } \
-    } while (0)
-
 AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
     : AudioOutputBackend(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume, parent)
     , xaudio2_winsdk(true)
@@ -128,11 +110,13 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
     memset(&dxsdk, 0, sizeof(dxsdk));
     available = false;
     //setDeviceFeatures(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume);
-#ifndef __WINRT__
+#ifdef Q_OS_WINRT
+    qDebug("XAudio2 for WinRT");
+#else
     //required by XAudio2. This simply starts up the COM library on this thread
-    // TODO: not required by winrt
+    // TODO: in my tests, it's not required by xp, win7, win8.1, winrt
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
-#endif //__WINRT__
+#endif //Q_OS_WINRT
     // load dll. <win8: XAudio2_7.DLL, <win10: XAudio2_8.DLL, win10: XAudio2_9.DLL. also defined by XAUDIO2_DLL_A in xaudio2.h
     int ver = 9;
     for (; ver >= 0; ver--) {
@@ -167,7 +151,7 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
                 ready = SUCCEEDED(XAudio2Create(&dxsdk.xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR));
 #else
             // try xaudio2 from dxsdk without symbol
-            qDebug("Try symbol 'XAudio2Create' from DXSDK dll");
+            qDebug("Try inline function 'XAudio2Create' from DXSDK");
             ready = SUCCEEDED(DXSDK::XAudio2Create(&dxsdk.xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR));
 #endif
         }
@@ -175,8 +159,8 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
             break;
         dll.unload();
     }
-    qDebug("xaudio2 winsdk: %p, dxsdk: %p", winsdk.xaudio, dxsdk.xaudio);
-    available = !!(winsdk.xaudio || dxsdk.xaudio);
+    qDebug("xaudio2: %p", winsdk.xaudio);
+    available = !!(winsdk.xaudio);
 }
 
 AudioOutputXAudio2::~AudioOutputXAudio2()
@@ -186,10 +170,10 @@ AudioOutputXAudio2::~AudioOutputXAudio2()
         SafeRelease(&winsdk.xaudio);
     else
         SafeRelease(&dxsdk.xaudio);
-#ifndef __WINRT__
+#ifndef Q_OS_WINRT
     //again, for COM. not for winrt
     CoUninitialize();
-#endif //__WINRT__
+#endif //Q_OS_WINRT
 }
 
 bool AudioOutputXAudio2::open()
