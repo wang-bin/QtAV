@@ -38,6 +38,7 @@ class QuickFBORenderer : public QQuickFramebufferObject, public VideoRenderer
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
     // regionOfInterest > sourceRect
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
+    Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
     Q_ENUMS(FillMode)
 public:
     enum FillMode {
@@ -67,8 +68,8 @@ Q_SIGNALS:
     void fillModeChanged(QuickFBORenderer::FillMode);
     void orientationChanged();
     void regionOfInterestChanged();
-    void openGLChanged();
-
+    void openGLChanged();    
+    void sourceAspectRatioChanged(qreal value);
 protected:
     virtual bool event(QEvent *e) Q_DECL_OVERRIDE;
     virtual bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;

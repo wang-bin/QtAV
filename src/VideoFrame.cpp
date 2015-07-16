@@ -339,7 +339,7 @@ float VideoFrame::displayAspectRatio() const
     if (d->width > 0 && d->height > 0)
         return (float)d->width / (float)d->height;
 
-    return 1;
+    return 0;
 }
 
 void VideoFrame::setDisplayAspectRatio(float displayAspectRatio)

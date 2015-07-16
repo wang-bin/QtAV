@@ -44,7 +44,10 @@ VideoRenderer::~VideoRenderer()
 bool VideoRenderer::receive(const VideoFrame &frame)
 {
     DPTR_D(VideoRenderer);
+    const qreal dar_old = d.source_aspect_ratio;
     d.source_aspect_ratio = frame.displayAspectRatio();
+    if (dar_old != d.source_aspect_ratio)
+        sourceAspectRatioChanged(d.source_aspect_ratio);
     setInSize(frame.width(), frame.height());
     QMutexLocker locker(&d.img_mutex);
     Q_UNUSED(locker);
@@ -103,6 +106,16 @@ bool VideoRenderer::onForcePreferredPixelFormat(bool force)
 bool VideoRenderer::isPreferredPixelFormatForced() const
 {
     return d_func().force_preferred;
+}
+
+qreal VideoRenderer::sourceAspectRatio() const
+{
+    return d_func().source_aspect_ratio;
+}
+
+void VideoRenderer::sourceAspectRatioChanged(qreal value)
+{
+    Q_UNUSED(value);
 }
 
 void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)

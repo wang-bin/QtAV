@@ -102,7 +102,10 @@ bool VideoOutput::receive(const VideoFrame& frame)
     if (!isAvailable())
         return false;
     DPTR_D(VideoOutput);
+    const qreal dar_old = d.source_aspect_ratio;
     d.source_aspect_ratio = frame.displayAspectRatio();
+    if (dar_old != d.source_aspect_ratio)
+        Q_EMIT sourceAspectRatioChanged(d.source_aspect_ratio);
     d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
     setInSize(frame.width(), frame.height());
     // or simply call d.impl->receive(frame) to avoid lock here

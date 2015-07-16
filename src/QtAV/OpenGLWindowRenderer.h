@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -30,13 +30,17 @@ namespace QtAV {
 class OpenGLWindowRendererPrivate;
 class Q_AV_EXPORT OpenGLWindowRenderer : public QOpenGLWindow, public OpenGLRendererBase
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(OpenGLWindowRenderer)
+    Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
 public:
     explicit OpenGLWindowRenderer(UpdateBehavior updateBehavior = NoPartialUpdate, QWindow *parent = 0);
     virtual void onUpdate() Q_DECL_OVERRIDE;
 
     virtual VideoRendererId id() const Q_DECL_OVERRIDE;
-    virtual QWindow* qwindow() Q_DECL_OVERRIDE { return this; }
+    QWindow* qwindow() Q_DECL_OVERRIDE Q_DECL_FINAL { return this; }
+Q_SIGNALS:
+    void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE Q_DECL_FINAL;
 protected:
     virtual void initializeGL() Q_DECL_OVERRIDE;
     virtual void paintGL() Q_DECL_OVERRIDE;
