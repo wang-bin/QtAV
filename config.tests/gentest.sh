@@ -30,11 +30,6 @@ COPY=../templates/COPYRIGHT.h
 cat $COPY | sed "s/%YEAR%/$YEAR/g" > $NAME/main.cpp
 cat >> $NAME/main.cpp <<EOF
 #include <${NAME}.h>
-
-int main()
-{
-	return 0;
-}
 EOF
 
 echo "test for $NAME created"
