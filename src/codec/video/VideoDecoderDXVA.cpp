@@ -1035,6 +1035,16 @@ bool VideoDecoderDXVAPrivate::setup(AVCodecContext *avctx)
     if (!DxCreateVideoDecoder(avctx->codec_id, w, h))
         return false;
     avctx->hwaccel_context = &hw_ctx;
+    // TODO: FF_DXVA2_WORKAROUND_SCALING_LIST_ZIGZAG
+    if (IsEqualGUID(input, DXVA_Intel_H264_NoFGT_ClearVideo)) {
+#ifdef FF_DXVA2_WORKAROUND_INTEL_CLEARVIDEO //2014-03-07 - 8b2a130 - lavc 55.50.0 / 55.53.100 - dxva2.h
+        qDebug("FF_DXVA2_WORKAROUND_INTEL_CLEARVIDEO");
+        hw_ctx.workaround |= FF_DXVA2_WORKAROUND_INTEL_CLEARVIDEO;
+#endif
+    } else {
+        hw_ctx.workaround = 0;
+    }
+
     hw_ctx.decoder = decoder;
     hw_ctx.cfg = &cfg;
     hw_ctx.surface_count = surface_count;
