@@ -31,6 +31,18 @@ namespace QtAV {
 class Q_AV_PRIVATE_EXPORT AVDecoderPrivate : public DPtrPrivate<AVDecoder>
 {
 public:
+    static const char* getProfileName(AVCodecID id, int profile) {
+        AVCodec *c = avcodec_find_decoder(id);
+        if (!c)
+            return "Unknow";
+        return av_get_profile_name(c, profile);
+    }
+    static const char* getProfileName(AVCodecContext* ctx) {
+        if (ctx->codec)
+            return av_get_profile_name(ctx->codec, ctx->profile);
+        return getProfileName(ctx->codec_id, ctx->profile);
+    }
+
     AVDecoderPrivate():
         codec_ctx(0)
       , available(true)
