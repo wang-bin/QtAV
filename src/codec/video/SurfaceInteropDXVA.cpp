@@ -215,6 +215,8 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
 #endif //Q_OS_WIN
     // eglQueryContext() added (Feb 2015): https://github.com/google/angle/commit/8310797003c44005da4143774293ea69671b0e2a
     egl->dpy = eglGetCurrentDisplay();
+    qDebug("EGL version: %s, client api: %s", eglQueryString(egl->dpy, EGL_VERSION), eglQueryString(egl->dpy, EGL_CLIENT_APIS));
+    // TODO: check runtime egl>=1.4 for eglGetCurrentContext()
     EGLint cfg_id = 0;
     EGL_ENSURE(eglQueryContext(egl->dpy, eglGetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_TRUE, false);
     qDebug("egl config id: %d", cfg_id);
@@ -234,7 +236,15 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
     }
 #endif
     qDebug("egl display:%p config: %p", egl->dpy, egl_cfg);
-
+    // check extensions
+    QList<QByteArray> extensions = QByteArray(eglQueryString(egl->dpy, EGL_EXTENSIONS)).split(' ');
+    // ANGLE_d3d_share_handle_client_buffer will be used if possible
+    const bool kEGL_ANGLE_d3d_share_handle_client_buffer = extensions.contains("EGL_ANGLE_d3d_share_handle_client_buffer");
+    const bool kEGL_ANGLE_query_surface_pointer = extensions.contains("EGL_ANGLE_query_surface_pointer");
+    if (!kEGL_ANGLE_d3d_share_handle_client_buffer && !kEGL_ANGLE_query_surface_pointer) {
+        qWarning("EGL extension 'kEGL_ANGLE_query_surface_pointer' or 'ANGLE_d3d_share_handle_client_buffer' is required!");
+        return false;
+    }
     GLint has_alpha = 1; //QOpenGLContext::currentContext()->format().hasAlpha()
     eglGetConfigAttrib(egl->dpy, egl_cfg, EGL_BIND_TO_TEXTURE_RGBA, &has_alpha); //EGL_ALPHA_SIZE
     EGLint attribs[] = {
@@ -244,20 +254,27 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
         EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
         EGL_NONE
     };
-    EGL_ENSURE((egl->surface = eglCreatePbufferSurface(egl->dpy, egl_cfg, attribs)) != EGL_NO_SURFACE, false);
-    qDebug("pbuffer surface: %p", egl->surface);
 
-    // create dx resources
-    PFNEGLQUERYSURFACEPOINTERANGLEPROC eglQuerySurfacePointerANGLE = reinterpret_cast<PFNEGLQUERYSURFACEPOINTERANGLEPROC>(eglGetProcAddress("eglQuerySurfacePointerANGLE"));
-    if (!eglQuerySurfacePointerANGLE) {
-        qWarning("EGL_ANGLE_query_surface_pointer is not supported");
-        return false;
-    }
     HANDLE share_handle = NULL;
-    EGL_ENSURE(eglQuerySurfacePointerANGLE(egl->dpy, egl->surface, EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, &share_handle), false);
+    if (!kEGL_ANGLE_d3d_share_handle_client_buffer && kEGL_ANGLE_query_surface_pointer) {
+        EGL_ENSURE((egl->surface = eglCreatePbufferSurface(egl->dpy, egl_cfg, attribs)) != EGL_NO_SURFACE, false);
+        qDebug("pbuffer surface: %p", egl->surface);
+        PFNEGLQUERYSURFACEPOINTERANGLEPROC eglQuerySurfacePointerANGLE = reinterpret_cast<PFNEGLQUERYSURFACEPOINTERANGLEPROC>(eglGetProcAddress("eglQuerySurfacePointerANGLE"));
+        if (!eglQuerySurfacePointerANGLE) {
+            qWarning("EGL_ANGLE_query_surface_pointer is not supported");
+            return false;
+        }
+        EGL_ENSURE(eglQuerySurfacePointerANGLE(egl->dpy, egl->surface, EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, &share_handle), false);
+    }
 
     releaseDX();
     // _A8 for a yuv plane
+    /*
+     * d3d resource share requires windows >= vista: https://msdn.microsoft.com/en-us/library/windows/desktop/bb219800(v=vs.85).aspx
+     * from extension files:
+     * d3d9: level must be 1, dimensions must match EGL surface's
+     * d3d9ex or d3d10:
+     */
     DX_ENSURE_OK(d3ddev->CreateTexture(w, h, 1,
                                         D3DUSAGE_RENDERTARGET,
                                         has_alpha ? D3DFMT_A8R8G8B8 : D3DFMT_X8R8G8B8,
@@ -265,6 +282,14 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
                                         &dx_texture,
                                         &share_handle) , false);
     DX_ENSURE_OK(dx_texture->GetSurfaceLevel(0, &dx_surface), false);
+
+    if (kEGL_ANGLE_d3d_share_handle_client_buffer) {
+        // requires extension EGL_ANGLE_d3d_share_handle_client_buffer
+        // egl surface size must match d3d texture's
+        // d3d9ex or d3d10 is required
+        EGL_ENSURE((egl->surface = eglCreatePbufferFromClientBuffer(egl->dpy, EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, share_handle, egl_cfg, attribs)), false);
+        qDebug("pbuffer surface from client buffer: %p", egl->surface);
+    }
     width = w;
     height = h;
     return true;
@@ -404,6 +429,7 @@ bool GLInteropResource::unmap(GLuint tex)
     return true;
 }
 
+// IDirect3DDevice9 can not be used on WDDM OSes(>=vista)
 bool GLInteropResource::ensureWGL()
 {
     if (wgl)
