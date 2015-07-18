@@ -810,7 +810,7 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
             qDebug("codec does not match to %s: %s", avcodec_get_name(codec_ctx->codec_id), avcodec_get_name((AVCodecID)mode->codec));
             continue;
         }
-        qDebug("DXVA found codec: %s. Check support for the codec.", mode->name);
+        qDebug("DXVA found codec: %s. Check runtime support for the codec.", mode->name);
         bool is_supported = false;
         for (const GUID *g = &input_list[0]; !is_supported && g < &input_list[input_count]; g++) {
             is_supported = IsEqualGUID(*mode->guid, *g);
@@ -870,6 +870,10 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
 
 bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
 {
+    if (!vs || !d3ddev) {
+        qWarning("d3d is not ready. IDirectXVideoService: %p, IDirect3DDevice9: %p", vs, d3ddev);
+        return false;
+    }
     qDebug("DxCreateVideoDecoder id %d %dx%d, surfaces: %u", codec_id, w, h, surface_count);
     /* Allocates all surfaces needed for the decoder */
     surface_width = aligned(w);
@@ -887,9 +891,9 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
             surface_count = 2 + 4;
             break;
         }
+        if (codec_ctx->active_thread_type & FF_THREAD_FRAME)
+            surface_count += codec_ctx->thread_count;
     }
-    if (codec_ctx->active_thread_type & FF_THREAD_FRAME)
-        surface_count += codec_ctx->thread_count;
     qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces: %d, active_thread_type: %d, threads: %d, refs: %d", surface_count, codec_ctx->active_thread_type, codec_ctx->thread_count, codec_ctx->refs);
     if (surface_count == 0) {
         qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
