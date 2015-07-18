@@ -31,7 +31,7 @@
 //#include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
 #include "SurfaceInteropDXVA.h"
-
+#include <QtCore/QSysInfo>
 #define DX_LOG_COMPONENT "DXVA2"
 #include "utils/DirectXHelper.h"
 
@@ -367,7 +367,7 @@ public:
     VideoDecoderDXVAPrivate():
         VideoDecoderFFmpegHWPrivate()
     {
-        if (OpenGLHelper::isOpenGLES())
+        if (OpenGLHelper::isOpenGLES() && QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         hd3d9_dll = 0;
         hdxva2_dll = 0;
@@ -489,7 +489,7 @@ VideoFrame VideoDecoderDXVA::frame()
         return VideoFrame();
 
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
-    if (copyMode() == ZeroCopy) {
+    if (copyMode() == ZeroCopy && d.interop_res) {
         dxva::SurfaceInteropDXVA *interop = new dxva::SurfaceInteropDXVA(d.interop_res);
         interop->setSurface(d3d, width(), height());
         VideoFrame f(width(), height(), VideoFormat::Format_RGB32); //p->width()
@@ -878,17 +878,19 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
         switch (codec_id) {
         case QTAV_CODEC_ID(HEVC):
         case QTAV_CODEC_ID(H264):
-            surface_count = 16 + 2 + codec_ctx->thread_count;
+            surface_count = 16 + 4;
             break;
         case QTAV_CODEC_ID(MPEG1VIDEO):
         case QTAV_CODEC_ID(MPEG2VIDEO):
-            surface_count = 2 + 2;
+            surface_count = 2 + 4;
         default:
-            surface_count = 16 + 4;
+            surface_count = 2 + 4;
             break;
         }
     }
-    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces: %d, threads: %d, refs: %d", surface_count, codec_ctx->thread_count, codec_ctx->refs);
+    if (codec_ctx->active_thread_type & FF_THREAD_FRAME)
+        surface_count += codec_ctx->thread_count;
+    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces: %d, active_thread_type: %d, threads: %d, refs: %d", surface_count, codec_ctx->active_thread_type, codec_ctx->thread_count, codec_ctx->refs);
     if (surface_count == 0) {
         qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
         surface_count = 16 + 4;
@@ -1071,12 +1073,17 @@ bool VideoDecoderDXVAPrivate::open()
     IDirect3DDevice9Ex *devEx;
     d3ddev->QueryInterface(IID_IDirect3DDevice9Ex, (void**)&devEx);
     qDebug("using D3D9Ex: %d", !!devEx);
-    SafeRelease(&devEx);
     // runtime check gles for dynamic gl
 #if QTAV_HAVE(DXVA_EGL)
-    if (OpenGLHelper::isOpenGLES())
-        interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
+    if (OpenGLHelper::isOpenGLES()) {
+        // d3d9ex is required to share d3d resource. It's available in vista and later. d3d9 can not CreateTexture with shared handle
+        if (devEx)
+            interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
+        else
+            qDebug("D3D9Ex is not available. Disable 0-copy.");
+    }
 #endif
+    SafeRelease(&devEx);
 #if QTAV_HAVE(DXVA_GL)
     if (!OpenGLHelper::isOpenGLES())
         interop_res = dxva::InteropResourcePtr(new dxva::GLInteropResource(d3ddev));
