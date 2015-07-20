@@ -76,13 +76,12 @@ public:
     };
 
     VideoDecoderCUDA();
-    virtual ~VideoDecoderCUDA();
-    virtual VideoDecoderId id() const;
-    virtual QString description() const;
-    virtual void flush();
-    virtual bool prepare();
+    ~VideoDecoderCUDA();
+    VideoDecoderId id() const Q_DECL_OVERRIDE;
+    QString description() const Q_DECL_OVERRIDE;
+    void flush() Q_DECL_OVERRIDE;
     QTAV_DEPRECATED bool decode(const QByteArray &encoded) Q_DECL_FINAL;
-    bool decode(const Packet &packet) Q_DECL_FINAL;
+    bool decode(const Packet &packet) Q_DECL_OVERRIDE Q_DECL_FINAL;
     virtual VideoFrame frame();
 
     // properties
@@ -150,7 +149,7 @@ public:
     ~AutoCtxLock() { cuvidCtxUnlock(m_lock, 0); }
 };
 #endif //NV_CONFIG(DLLAPI_CUDA) || defined(CUDA_LINK)
-class VideoDecoderCUDAPrivate : public VideoDecoderPrivate
+class VideoDecoderCUDAPrivate Q_DECL_FINAL: public VideoDecoderPrivate
                 , public cuda_api
 {
 public:
@@ -193,6 +192,7 @@ public:
             return;
         releaseCuda();
     }
+    bool open() Q_DECL_OVERRIDE;
     bool initCuda();
     bool releaseCuda();
     bool createCUVIDDecoder(cudaVideoCodec cudaCodec, int cw, int ch);
@@ -330,29 +330,6 @@ void VideoDecoderCUDA::flush()
     d.surface_in_use.fill(false);
 }
 
-bool VideoDecoderCUDA::prepare()
-{
-    //TODO: destroy decoder
-    DPTR_D(VideoDecoderCUDA);
-    if (!d.codec_ctx) {
-        qWarning("AVCodecContext not ready");
-        return false;
-    }
-    // d.available is true if cuda decoder is ready
-    if (!d.can_load) {
-        qWarning("VideoDecoderCUDA::prepare(): CUVID library not available");
-        return false;
-    }
-    if (!d.isLoaded()) //cuda_api
-        return false;
-    if (!d.cuctx)
-        d.initCuda();
-    d.setBSF(d.codec_ctx->codec_id);
-    // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
-    return d.createCUVIDDecoder(mapCodecFromFFmpeg(d.codec_ctx->codec_id), d.codec_ctx->coded_width, d.codec_ctx->coded_height)
-            && d.createCUVIDParser();
-}
-
 bool VideoDecoderCUDA::decode(const QByteArray &encoded)
 {
     if (!isAvailable())
@@ -468,6 +445,59 @@ VideoFrame VideoDecoderCUDA::frame()
 #endif
 }
 
+int VideoDecoderCUDA::surfaces() const
+{
+    return d_func().nb_dec_surface;
+}
+
+void VideoDecoderCUDA::setSurfaces(int n)
+{
+    if (n <= 0)
+        n = kMaxDecodeSurfaces;
+    DPTR_D(VideoDecoderCUDA);
+    d.nb_dec_surface = n;
+    d.surface_in_use.resize(n);
+    d.surface_in_use.fill(false);
+}
+
+VideoDecoderCUDA::Flags VideoDecoderCUDA::flags() const
+{
+    return (Flags)d_func().create_flags;
+}
+
+void VideoDecoderCUDA::setFlags(Flags f)
+{
+    d_func().create_flags = (cudaVideoCreateFlags)f;
+}
+
+VideoDecoderCUDA::Deinterlace VideoDecoderCUDA::deinterlace() const
+{
+    return (Deinterlace)d_func().deinterlace;
+}
+
+void VideoDecoderCUDA::setDeinterlace(Deinterlace di)
+{
+    d_func().deinterlace = (cudaVideoDeinterlaceMode)di;
+}
+
+bool VideoDecoderCUDAPrivate::open()
+{
+    //TODO: destroy decoder
+    // d.available is true if cuda decoder is ready
+    if (!can_load) {
+        qWarning("VideoDecoderCUDAPrivate::open(): CUVID library not available");
+        return false;
+    }
+    if (!isLoaded()) //cuda_api
+        return false;
+    if (!cuctx)
+        initCuda();
+    setBSF(codec_ctx->codec_id);
+    // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
+    return createCUVIDDecoder(mapCodecFromFFmpeg(codec_ctx->codec_id), codec_ctx->coded_width, codec_ctx->coded_height)
+            && createCUVIDParser();
+}
+
 bool VideoDecoderCUDAPrivate::initCuda()
 {
     CUresult result = cuInit(0);
@@ -505,41 +535,6 @@ bool VideoDecoderCUDAPrivate::initCuda()
         //cuStreamAddCallback(stream, CUstreamCallback, this, 0);
     }
     return true;
-}
-
-int VideoDecoderCUDA::surfaces() const
-{
-    return d_func().nb_dec_surface;
-}
-
-void VideoDecoderCUDA::setSurfaces(int n)
-{
-    if (n <= 0)
-        n = kMaxDecodeSurfaces;
-    DPTR_D(VideoDecoderCUDA);
-    d.nb_dec_surface = n;
-    d.surface_in_use.resize(n);
-    d.surface_in_use.fill(false);
-}
-
-VideoDecoderCUDA::Flags VideoDecoderCUDA::flags() const
-{
-    return (Flags)d_func().create_flags;
-}
-
-void VideoDecoderCUDA::setFlags(Flags f)
-{
-    d_func().create_flags = (cudaVideoCreateFlags)f;
-}
-
-VideoDecoderCUDA::Deinterlace VideoDecoderCUDA::deinterlace() const
-{
-    return (Deinterlace)d_func().deinterlace;
-}
-
-void VideoDecoderCUDA::setDeinterlace(Deinterlace di)
-{
-    d_func().deinterlace = (cudaVideoDeinterlaceMode)di;
 }
 
 bool VideoDecoderCUDAPrivate::releaseCuda()

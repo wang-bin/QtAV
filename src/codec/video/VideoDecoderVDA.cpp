@@ -442,6 +442,8 @@ void VideoDecoderVDAPrivate::releaseBuffer(void *opaque, uint8_t *data)
 
 bool VideoDecoderVDAPrivate::open()
 {
+    if (!prepare())
+        return false;
     qDebug("opening VDA module");
     if (codec_ctx->codec_id != AV_CODEC_ID_H264) {
         qWarning("input codec (%s) isn't H264, canceling VDA decoding", avcodec_get_name(codec_ctx->codec_id));

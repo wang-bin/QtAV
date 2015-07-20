@@ -115,8 +115,11 @@ public:
     {
         QVariantHash opt;
         opt["skip_frame"] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
+        opt["skip_loop_filter"] = 8; //skip all?
+        //skip_dict is slower
         dec_opt_framedrop["avcodec"] = opt;
         opt["skip_frame"] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
+        opt["skip_loop_filter"] = 0;
         dec_opt_normal["avcodec"] = opt; // avcodec need correct string or value in libavcodec
         codecs
 #if QTAV_HAVE(DXVA)
@@ -177,10 +180,6 @@ public:
                 continue;
             decoder.reset(vd);
             decoder->setCodecContext(demuxer.videoCodecContext());
-            if (!decoder->prepare()) {
-                decoder.reset(0);
-                continue;
-            }
             if (!decoder->open()) {
                 decoder.reset(0);
                 continue;

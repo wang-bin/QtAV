@@ -62,14 +62,13 @@ public:
         NV12
     };
     VideoDecoderCedarv();
-    virtual VideoDecoderId id() const;
-    virtual QString description() const{
+    VideoDecoderId id() const Q_DECL_OVERRIDE Q_DECL_FINAL;
+    QString description() const Q_DECL_OVERRIDE Q_DECL_FINAL{
         return "Allwinner A10 CedarX video hardware acceleration";
     }
-    bool prepare();
-    bool decode(const QByteArray &encoded) Q_DECL_FINAL;
-    bool decode(const Packet& packet) Q_DECL_FINAL;
-    VideoFrame frame();
+    bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE Q_DECL_FINAL;
+    bool decode(const Packet& packet) Q_DECL_OVERRIDE Q_DECL_FINAL;
+    VideoFrame frame() Q_DECL_OVERRIDE Q_DECL_FINAL;
 
     //properties
     void setNeon(bool value);
@@ -397,7 +396,7 @@ enum AVPixelFormat pixel_format_from_cedarv(cedarv_pixel_format_e cpf)
     return QTAV_PIX_FMT_C(NONE);
 }
 
-class VideoDecoderCedarvPrivate : public VideoDecoderPrivate
+class VideoDecoderCedarvPrivate Q_DECL_FINAL: public VideoDecoderPrivate
 {
 public:
     VideoDecoderCedarvPrivate()
@@ -416,6 +415,7 @@ public:
         //libcedarv_exit(cedarv);
         cedarv = NULL;
     }
+    bool open()  Q_DECL_OVERRIDE;
 
     CEDARV_DECODER *cedarv;
     cedarv_picture_t cedarPicture;
@@ -471,50 +471,47 @@ bool VideoDecoderCedarv::neon() const
     return d_func().map_y != map32x32_to_yuv_Y;
 }
 
-bool VideoDecoderCedarv::prepare()
+bool VideoDecoderCedarvPrivate::open()
 {
-    DPTR_D(VideoDecoderCedarv);
     cedarv_stream_format_e format;
     cedarv_sub_format_e sub_format;
     /* format check */
-    format_from_avcodec(d.codec_ctx->codec_id, &format, &sub_format);
+    format_from_avcodec(codec_ctx->codec_id, &format, &sub_format);
     if (format == CEDARV_STREAM_FORMAT_UNKNOW) {
-        qWarning("CedarV: codec not supported '%s'", avcodec_get_name(d.codec_ctx->codec_id));
+        qWarning("CedarV: codec not supported '%s'", avcodec_get_name(codec_ctx->codec_id));
         return false;
     }
-    if (!d.cedarv) {
+    if (!cedarv) {
         int ret;
-        d.cedarv = libcedarv_init(&ret);
-        if (ret < 0 || d.cedarv == NULL)
+        cedarv = libcedarv_init(&ret);
+        if (ret < 0 || cedarv == NULL)
             return false;
     }
-
-    d.codec_ctx->opaque = &d; //is it ok?
 
     cedarv_stream_info_t cedarStreamInfo;
     memset(&cedarStreamInfo, 0, sizeof cedarStreamInfo);
     cedarStreamInfo.format = format;
     cedarStreamInfo.sub_format = sub_format;
-    cedarStreamInfo.video_width = d.codec_ctx->coded_width; //coded_width?
-    cedarStreamInfo.video_height = d.codec_ctx->coded_height;
-    if (d.codec_ctx->extradata_size) {
-        cedarStreamInfo.init_data = d.codec_ctx->extradata;
-        cedarStreamInfo.init_data_len = d.codec_ctx->extradata_size;
+    cedarStreamInfo.video_width = codec_ctx->coded_width; //coded_width?
+    cedarStreamInfo.video_height = codec_ctx->coded_height;
+    if (codec_ctx->extradata_size) {
+        cedarStreamInfo.init_data = codec_ctx->extradata;
+        cedarStreamInfo.init_data_len = codec_ctx->extradata_size;
     }
 
     int cedarvRet;
-    cedarvRet = d.cedarv->set_vstream_info(d.cedarv, &cedarStreamInfo);
+    cedarvRet = cedarv->set_vstream_info(cedarv, &cedarStreamInfo);
     if (cedarvRet < 0) {
         qWarning("CedarV: set_vstream_info error: %d", cedarvRet);
         return false;
     }
-    cedarvRet = d.cedarv->open(d.cedarv);
+    cedarvRet = cedarv->open(cedarv);
     if (cedarvRet < 0) {
         qWarning("CedarV: set_vstream_info error: %d", cedarvRet);
         return false;
     }
-    d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_RESET, 0);
-    d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_PLAY, 0);
+    cedarv->ioctrl(cedarv, CEDARV_COMMAND_RESET, 0);
+    cedarv->ioctrl(cedarv, CEDARV_COMMAND_PLAY, 0);
 
     return true;
 }

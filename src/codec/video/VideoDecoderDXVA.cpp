@@ -1058,6 +1058,8 @@ bool VideoDecoderDXVAPrivate::setup(AVCodecContext *avctx)
 
 bool VideoDecoderDXVAPrivate::open()
 {
+    if (!prepare())
+        return false;
     if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC)) {
         // runtime hevc check
         if (isHEVCSupported()) {

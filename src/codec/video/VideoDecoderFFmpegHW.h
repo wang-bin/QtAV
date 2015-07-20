@@ -41,7 +41,6 @@ public:
         OptimizedCopy,
         GenericCopy
     };
-    virtual bool prepare() Q_DECL_OVERRIDE;
     VideoFrame copyToFrame(const VideoFormat& fmt, int surface_h, quint8* src[], int pitch[], bool swapUV);
     // properties
     void setCopyMode(CopyMode value);

@@ -364,7 +364,6 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     adec->resampler()->inAudioFormat().setSampleRate(avctx->sample_rate);
     adec->resampler()->inAudioFormat().setChannels(avctx->channels);
     adec->resampler()->inAudioFormat().setChannelLayoutFFmpeg(avctx->channel_layout);
-    adec->prepare();
 #endif
     if (!athread) {
         qDebug("new audio thread");
@@ -443,7 +442,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         //vd->isAvailable() //TODO: the value is wrong now
         vd->setCodecContext(avctx);
         vd->setOptions(vc_opt);
-        if (vd->prepare() && vd->open()) {
+        if (vd->open()) {
             vdec = vd;
             qDebug("**************Video decoder found");
             break;

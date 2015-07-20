@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
                 af.setSampleFormat(ao->preferredSampleFormat());
                 af.setChannelLayout(ao->preferredChannelLayout());
                 dec->resampler()->setOutAudioFormat(af);
-                dec->prepare();
+                dec->resampler()->prepare();
             }
             // now af is supported by audio renderer. it's safe to open
             ao->setAudioFormat(af);

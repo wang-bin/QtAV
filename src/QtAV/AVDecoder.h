@@ -53,8 +53,6 @@ public:
     void* codecContext() const;
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
-    // TODO: remove
-    virtual bool prepare(); //if resampler or image converter set, call it
     QTAV_DEPRECATED virtual bool decode(const QByteArray& encoded) = 0;
     virtual bool decode(const Packet& packet) = 0;
     int undecodedSize() const; //TODO: remove. always decode whole input data completely

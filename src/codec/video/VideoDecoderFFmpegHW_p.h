@@ -47,6 +47,7 @@ public:
         get_buffer2 = 0;
     }
     virtual ~VideoDecoderFFmpegHWPrivate() {} //ctx is 0 now
+    bool prepare();
     void restore() {
         codec_ctx->pix_fmt = pixfmt;
         codec_ctx->opaque = 0;

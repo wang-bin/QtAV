@@ -112,13 +112,12 @@ public:
     Q_DECLARE_FLAGS(BugFlags, BugFlag)
 
     VideoDecoderFFmpeg();
-    virtual VideoDecoderId id() const Q_DECL_FINAL;
-    virtual QString description() const Q_DECL_FINAL {
+    VideoDecoderId id() const Q_DECL_OVERRIDE Q_DECL_FINAL;
+    QString description() const Q_DECL_OVERRIDE Q_DECL_FINAL {
         const int patch = QTAV_VERSION_PATCH(avcodec_version());
         return QString("%1 avcodec %2.%3.%4").arg(patch>=100?"FFmpeg":"Libav").arg(QTAV_VERSION_MAJOR(avcodec_version())).arg(QTAV_VERSION_MINOR(avcodec_version())).arg(patch);
     }
-    virtual bool prepare() Q_DECL_FINAL;
-    virtual VideoFrame frame() Q_DECL_FINAL;
+    virtual VideoFrame frame() Q_DECL_OVERRIDE Q_DECL_FINAL;
 
     // TODO: av_opt_set in setter
     void setSkipLoopFilter(DiscardType value);
@@ -150,7 +149,7 @@ void RegisterVideoDecoderFFmpeg_Man()
 }
 
 
-class VideoDecoderFFmpegPrivate : public VideoDecoderFFmpegBasePrivate
+class VideoDecoderFFmpegPrivate Q_DECL_FINAL: public VideoDecoderFFmpegBasePrivate
 {
 public:
     VideoDecoderFFmpegPrivate():
@@ -164,6 +163,47 @@ public:
       , debug_mv(VideoDecoderFFmpeg::No)
       , bug(VideoDecoderFFmpeg::autodetect)
     {}
+    bool open() Q_DECL_OVERRIDE {
+        av_opt_set_int(codec_ctx, "skip_loop_filter", (int64_t)skip_loop_filter, 0);
+        av_opt_set_int(codec_ctx, "skip_idct", (int64_t)skip_idct, 0);
+        av_opt_set_int(codec_ctx, "strict", (int64_t)strict, 0);
+        av_opt_set_int(codec_ctx, "skip_frame", (int64_t)skip_frame, 0);
+        av_opt_set_int(codec_ctx, "threads", (int64_t)threads, 0);
+        av_opt_set_int(codec_ctx, "thread_type", (int64_t)thread_type, 0);
+        av_opt_set_int(codec_ctx, "vismv", (int64_t)debug_mv, 0);
+        av_opt_set_int(codec_ctx, "bug", (int64_t)bug, 0);
+        //CODEC_FLAG_EMU_EDGE: deprecated in ffmpeg >=? & libav>=10. always set by ffmpeg
+#if 0
+        if (fast) {
+            codec_ctx->flags2 |= CODEC_FLAG2_FAST; // TODO:
+        } else {
+            //codec_ctx->flags2 &= ~CODEC_FLAG2_FAST; //ffplay has no this
+        }
+    // lavfilter
+        //codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
+        //codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
+        codec_ctx->thread_safe_callbacks = true;
+        switch (codec_ctx->codec_id) {
+            case QTAV_CODEC_ID(MPEG4):
+            case QTAV_CODEC_ID(H263):
+                codec_ctx->thread_type = 0;
+                break;
+            case QTAV_CODEC_ID(MPEG1VIDEO):
+            case QTAV_CODEC_ID(MPEG2VIDEO):
+                codec_ctx->thread_type &= ~FF_THREAD_SLICE;
+                /* fall through */
+# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
+            case QTAV_CODEC_ID(H264):
+            case QTAV_CODEC_ID(VC1):
+            case QTAV_CODEC_ID(WMV3):
+                codec_ctx->thread_type &= ~FF_THREAD_FRAME;
+# endif
+            default:
+                break;
+        }
+#endif
+        return true;
+    }
 
     int skip_loop_filter;
     int skip_idct;
@@ -174,7 +214,6 @@ public:
     int debug_mv;
     int bug;
 };
-
 
 VideoDecoderFFmpeg::VideoDecoderFFmpeg():
     VideoDecoderFFmpegBase(*new VideoDecoderFFmpegPrivate())
@@ -191,55 +230,6 @@ VideoDecoderFFmpeg::VideoDecoderFFmpeg():
 VideoDecoderId VideoDecoderFFmpeg::id() const
 {
     return VideoDecoderId_FFmpeg;
-}
-
-bool VideoDecoderFFmpeg::prepare()
-{
-    DPTR_D(VideoDecoderFFmpeg);
-    if (!d.codec_ctx) {
-        qWarning("call this after AVCodecContext is set!");
-        return false;
-    }
-    av_opt_set_int(d.codec_ctx, "skip_loop_filter", (int64_t)skipLoopFilter(), 0);
-    av_opt_set_int(d.codec_ctx, "skip_idct", (int64_t)skipIDCT(), 0);
-    av_opt_set_int(d.codec_ctx, "strict", (int64_t)strict(), 0);
-    av_opt_set_int(d.codec_ctx, "skip_frame", (int64_t)skipFrame(), 0);
-    av_opt_set_int(d.codec_ctx, "threads", (int64_t)threads(), 0);
-    av_opt_set_int(d.codec_ctx, "thread_type", (int64_t)threadFlags(), 0);
-    av_opt_set_int(d.codec_ctx, "vismv", (int64_t)motionVectorVisFlags(), 0);
-    av_opt_set_int(d.codec_ctx, "bug", (int64_t)bugFlags(), 0);
-
-    //CODEC_FLAG_EMU_EDGE: deprecated in ffmpeg >=? & libav>=10. always set by ffmpeg
-#if 0
-    if (d.fast) {
-        d.codec_ctx->flags2 |= CODEC_FLAG2_FAST; // TODO:
-    } else {
-        //d.codec_ctx->flags2 &= ~CODEC_FLAG2_FAST; //ffplay has no this
-    }
-// lavfilter
-    //d.codec_ctx->slice_flags |= SLICE_FLAG_ALLOW_FIELD; //lavfilter
-    //d.codec_ctx->strict_std_compliance = FF_COMPLIANCE_STRICT;
-    d.codec_ctx->thread_safe_callbacks = true;
-    switch (d.codec_ctx->codec_id) {
-        case QTAV_CODEC_ID(MPEG4):
-        case QTAV_CODEC_ID(H263):
-            d.codec_ctx->thread_type = 0;
-            break;
-        case QTAV_CODEC_ID(MPEG1VIDEO):
-        case QTAV_CODEC_ID(MPEG2VIDEO):
-            d.codec_ctx->thread_type &= ~FF_THREAD_SLICE;
-            /* fall through */
-# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
-        case QTAV_CODEC_ID(H264):
-        case QTAV_CODEC_ID(VC1):
-        case QTAV_CODEC_ID(WMV3):
-            d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
-# endif
-        default:
-            break;
-    }
-#endif
-    return true;
 }
 
 VideoFrame VideoDecoderFFmpeg::frame()

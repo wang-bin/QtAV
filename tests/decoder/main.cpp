@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
     }
 
     dec->setCodecContext(demux.videoCodecContext());
-    dec->prepare();
     dec->open();
     QElapsedTimer timer;
     timer.start();

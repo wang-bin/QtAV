@@ -423,6 +423,8 @@ QStringList VideoDecoderVAAPI::displayPriority() const
 
 bool VideoDecoderVAAPIPrivate::open()
 {
+    if (!prepare())
+        return false;
     const codec_profile_t* pe = findProfileEntry(codec_ctx->codec_id, codec_ctx->profile);
     // TODO: allow wrong profile
     // FIXME: sometimes get wrong profile (switch copyMode)

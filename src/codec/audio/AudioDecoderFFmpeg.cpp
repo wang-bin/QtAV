@@ -44,7 +44,6 @@ public:
         const int patch = QTAV_VERSION_PATCH(avcodec_version());
         return QString("%1 avcodec %2.%3.%4").arg(patch>=100?"FFmpeg":"Libav").arg(QTAV_VERSION_MAJOR(avcodec_version())).arg(QTAV_VERSION_MINOR(avcodec_version())).arg(patch);
     }
-    bool prepare() Q_DECL_FINAL;
     bool decode(const QByteArray &encoded) Q_DECL_FINAL;
     bool decode(const Packet& packet) Q_DECL_FINAL;
     AudioFrame frame() Q_DECL_FINAL;
@@ -60,7 +59,7 @@ void RegisterAudioDecoderFFmpeg_Man()
     FACTORY_REGISTER_ID_MAN(AudioDecoder, FFmpeg, "FFmpeg")
 }
 
-class AudioDecoderFFmpegPrivate : public AudioDecoderPrivate
+class AudioDecoderFFmpegPrivate Q_DECL_FINAL: public AudioDecoderPrivate
 {
 public:
     AudioDecoderFFmpegPrivate()
@@ -82,21 +81,6 @@ public:
 AudioDecoderId AudioDecoderFFmpeg::id() const
 {
     return AudioDecoderId_FFmpeg;
-}
-
-bool AudioDecoderFFmpeg::prepare()
-{
-    DPTR_D(AudioDecoder);
-    if (!d.codec_ctx)
-        return false;
-    if (!d.resampler)
-        return true;
-    d.resampler->setInChannelLayout(d.codec_ctx->channel_layout);
-    d.resampler->setInChannels(d.codec_ctx->channels);
-    d.resampler->setInSampleFormat(d.codec_ctx->sample_fmt);
-    d.resampler->setInSampleRate(d.codec_ctx->sample_rate);
-    d.resampler->prepare();
-    return true;
 }
 
 AudioDecoderFFmpeg::AudioDecoderFFmpeg()
