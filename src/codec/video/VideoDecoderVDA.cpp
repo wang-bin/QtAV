@@ -37,11 +37,6 @@ extern "C" {
 #include <VideoDecodeAcceleration/VDADecoder.h>
 #include "utils/Logger.h"
 
-// TODO: add to QtAV_Compat.h?
-// FF_API_PIX_FMT
-#ifdef PixelFormat
-#undef PixelFormat
-#endif
 #ifdef MAC_OS_X_VERSION_MIN_REQUIRED
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070 //MAC_OS_X_VERSION_10_7
 #define OSX_TARGET_MIN_LION

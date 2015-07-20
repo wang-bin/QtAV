@@ -30,11 +30,6 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 
-// FF_API_PIX_FMT
-#ifdef PixelFormat
-#undef PixelFormat
-#endif
-
 #define FF_HAS_YUV12BITS FFMPEG_MODULE_CHECK(LIBAVUTIL, 51, 73, 101)
 #if (Q_BYTE_ORDER == Q_BIG_ENDIAN)
 #define PIXFMT_NE(B, L) VideoFormat::Format_##B

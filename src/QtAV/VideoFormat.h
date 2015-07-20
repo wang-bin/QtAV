@@ -28,14 +28,8 @@
 #include <QtGui/QImage>
 #include <QtAV/QtAV_Global.h>
 
-// FF_API_PIX_FMT
-#ifdef PixelFormat
-#undef PixelFormat
-#endif
-
 class QDebug;
 namespace QtAV {
-
 class VideoFormatPrivate;
 class Q_AV_EXPORT VideoFormat
 {

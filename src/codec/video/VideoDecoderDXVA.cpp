@@ -36,11 +36,6 @@
 #include "utils/DirectXHelper.h"
 
 // d3d9ex: http://dxr.mozilla.org/mozilla-central/source/dom/media/wmf/DXVA2Manager.cpp
-// TODO: add to QtAV_Compat.h?
-// FF_API_PIX_FMT
-#ifdef PixelFormat
-#undef PixelFormat
-#endif
 // AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
 #ifndef AV_CODEC_ID_H265
 #ifdef _MSC_VER

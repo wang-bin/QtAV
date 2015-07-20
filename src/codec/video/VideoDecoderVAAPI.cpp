@@ -37,12 +37,6 @@ extern "C" {
 #include "vaapi/SurfaceInteropVAAPI.h"
 #include "utils/Logger.h"
 
-// TODO: add to AVCompat.h?
-// FF_API_PIX_FMT
-#ifdef PixelFormat
-#undef PixelFormat
-#endif
-
 #define VERSION_CHK(major, minor, patch) \
     (((major&0xff)<<16) | ((minor&0xff)<<8) | (patch&0xff))
 

@@ -28,11 +28,6 @@
 #include "QtAV/VideoFormat.h"
 #include "QtAV/private/AVCompat.h"
 
-// FF_API_PIX_FMT
-#ifdef PixelFormat
-#undef PixelFormat
-#endif
-
 namespace QtAV {
 
 class Q_AV_PRIVATE_EXPORT AVEncoderPrivate : public DPtrPrivate<AVEncoder>

@@ -215,7 +215,7 @@ int64_t av_get_default_channel_layout(int nb_channels);
 #ifdef AVRESAMPLE_MAX_CHANNELS
 #define SWR_CH_MAX AVRESAMPLE_MAX_CHANNELS
 #else
-#define SWR_CH_MAX 32
+#define SWR_CH_MAX 64
 #endif //AVRESAMPLE_MAX_CHANNELS
 #endif //SWR_CH_MAX
 #define SwrContext AVAudioResampleContext
@@ -264,6 +264,10 @@ typedef enum PixelFormat AVPixelFormat; // so we must avoid using  enum AVPixelF
 typedef enum AVPixelFormat AVPixelFormat;
 #define QTAV_PIX_FMT_C(X) AV_PIX_FMT_##X
 #endif //AV_VERSION_INT(51, 42, 0)
+// FF_API_PIX_FMT
+#ifdef PixelFormat
+#undef PixelFormat
+#endif
 
 // AV_PIX_FMT_FLAG_XXX was PIX_FMT_XXX before FFmpeg 2.0
 // AV_PIX_FMT_FLAG_ALPHA was added at 52.2.0. but version.h not changed

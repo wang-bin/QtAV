@@ -29,11 +29,6 @@
 #include "utils/GPUMemCopy.h"
 #include "utils/Logger.h"
 
-// FF_API_PIX_FMT
-#ifdef PixelFormat
-#undef PixelFormat
-#endif
-
 namespace QtAV {
 namespace{
 static const struct RegisterMetaTypes
