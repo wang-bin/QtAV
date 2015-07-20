@@ -286,24 +286,6 @@ bool VideoDecoderFFmpegHW::prepare()
         qWarning("call this after AVCodecContext is set!");
         return false;
     }
-    //TODO: setup profile in open. vlc/modules/hw/vdpau/avcodec.c, xbmc/xbmc/cores/dvdplayer/DVDCodecs/Video/VDPAU.cpp
-    if (d.codec_ctx->codec_id == QTAV_CODEC_ID(H264)) {
-        // check Hi10p. NO HW support now
-        switch (d.codec_ctx->profile) {
-        //case FF_PROFILE_H264_HIGH: //VDP_DECODER_PROFILE_H264_HIGH
-        case FF_PROFILE_H264_HIGH_10:
-        case FF_PROFILE_H264_HIGH_10_INTRA:
-        case FF_PROFILE_H264_HIGH_422:
-        case FF_PROFILE_H264_HIGH_422_INTRA:
-        //case FF_PROFILE_H264_HIGH_444: //ignored by xbmc
-        case FF_PROFILE_H264_HIGH_444_PREDICTIVE:
-        case FF_PROFILE_H264_HIGH_444_INTRA:
-        case FF_PROFILE_H264_CAVLC_444:
-            return false;
-        default:
-            break;
-        }
-    }
     //// From vlc begin
     d.codec_ctx->thread_safe_callbacks = true; //?
 #pragma warning(disable:4065) //vc: switch has default but no case

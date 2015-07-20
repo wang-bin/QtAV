@@ -447,6 +447,18 @@ bool VideoDecoderVDAPrivate::open()
         qWarning("input codec (%s) isn't H264, canceling VDA decoding", avcodec_get_name(codec_ctx->codec_id));
         return false;
     }
+    switch (codec_ctx->profile) { //profile check code is from xbmc
+    case FF_PROFILE_H264_HIGH_10:
+    case FF_PROFILE_H264_HIGH_10_INTRA:
+    case FF_PROFILE_H264_HIGH_422:
+    case FF_PROFILE_H264_HIGH_422_INTRA:
+    case FF_PROFILE_H264_HIGH_444_PREDICTIVE:
+    case FF_PROFILE_H264_HIGH_444_INTRA:
+    case FF_PROFILE_H264_CAVLC_444:
+        return false;
+    default:
+        break;
+    }
 #if 0
     if (!codec_ctx->extradata || codec_ctx->extradata_size < 7) {
         qWarning("VDA requires extradata.");
