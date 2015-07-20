@@ -226,7 +226,8 @@ config_vaapi* {
 config_libcedarv {
     DEFINES *= QTAV_HAVE_CEDARV=1
     QMAKE_CXXFLAGS *= -march=armv7-a
-    NEON_SOURCES += codec/video/VideoDecoderCedarv.cpp
+# Can not use NEON_SOURCE because it can not work with moc
+    SOURCES += codec/video/VideoDecoderCedarv.cpp
     !config_simd: CONFIG *= simd #addSimdCompiler xxx_ASM
     CONFIG += no_clang_integrated_as #see qtbase/src/gui/painting/painting.pri. add -fno-integrated-as from simd.prf
     NEON_ASM += codec/video/tiled_yuv.S #from libvdpau-sunxi
