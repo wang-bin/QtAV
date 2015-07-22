@@ -235,14 +235,10 @@ public:
     /*!
      * \brief audio
      * AVPlayer always has an AudioOutput instance. You can access or control audio output properties through audio().
+     * To disable audio output, set audio()->setBackends(QStringList() << "null") before starting playback
      * \return
      */
     AudioOutput* audio();
-    /// enableAudio(false): no audio thread will be started. broken now
-    void enableAudio(bool enable = true);
-    void disableAudio(bool disable = true);
-    Q_DECL_DEPRECATED void setMute(bool mute = true); // use audio()->setMute(bool) instead
-    Q_DECL_DEPRECATED bool isMute() const; // use audio()->isMute() instead
     /*!
      * \brief setSpeed set playback speed.
      * \param speed  speed > 0. 1.0: normal speed

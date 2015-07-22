@@ -59,8 +59,7 @@ class MainWindow : public QWidget
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void enableAudio(bool yes = true);
-    void setAudioOutput(QtAV::AudioOutput* ao);
+    void setAudioBackends(const QStringList& backends);
     void setRenderer(QtAV::VideoRenderer* renderer);
     void setVideoDecoderNames(const QStringList& vd);
 
@@ -154,11 +153,11 @@ private:
 
 private:
     bool mIsReady, mHasPendingPlay;
-    bool mNullAO;
     bool mControlOn;
     int mCursorTimer;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
     int mRepeateMax;
+    QStringList mAudioBackends;
     QVBoxLayout *mpPlayerLayout;
 
     QWidget *mpControl;

@@ -93,7 +93,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent)
   , mIsReady(false)
   , mHasPendingPlay(false)
-  , mNullAO(false)
   , mControlOn(false)
   , mShowControl(2)
   , mRepeateMax(0)
@@ -625,17 +624,9 @@ void MainWindow::processPendingActions()
     }
 }
 
-void MainWindow::enableAudio(bool yes)
+void MainWindow::setAudioBackends(const QStringList& backends)
 {
-    mNullAO = !yes;
-    if (!mpPlayer)
-        return;
-    mpPlayer->enableAudio(yes);
-}
-
-void MainWindow::setAudioOutput(AudioOutput *ao)
-{
-    Q_UNUSED(ao);
+    mAudioBackends = backends;
 }
 
 void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
@@ -713,7 +704,8 @@ void MainWindow::play(const QString &name)
     }
     setWindowTitle(mTitle);
     mpPlayer->setFrameRate(Config::instance().forceFrameRate());
-    mpPlayer->enableAudio(!mNullAO);
+    if (!mAudioBackends.isEmpty())
+        mpPlayer->audio()->setBackends(mAudioBackends);
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
     mpPlayer->setInterruptOnTimeout(Config::instance().abortOnTimeout());

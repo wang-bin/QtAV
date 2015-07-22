@@ -170,26 +170,6 @@ AudioOutput* AVPlayer::audio()
     return d->ao;
 }
 
-void AVPlayer::enableAudio(bool enable)
-{
-    d->ao_enabled = enable;
-}
-
-void AVPlayer::disableAudio(bool disable)
-{
-    d->ao_enabled = !disable;
-}
-
-void AVPlayer::setMute(bool mute)
-{
-    d->ao->setMute(mute);
-}
-
-bool AVPlayer::isMute() const
-{
-    return d->ao->isMute();
-}
-
 void AVPlayer::setSpeed(qreal speed)
 {
     if (speed == d->speed)

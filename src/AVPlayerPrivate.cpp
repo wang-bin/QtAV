@@ -91,7 +91,6 @@ AVPlayer::Private::Private()
     , vthread(0)
     , vcapture(0)
     , speed(1.0)
-    , ao_enabled(true)
     , vos(0)
     , aos(0)
     , brightness(0)
@@ -318,11 +317,6 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         qWarning() << e.string();
         emit player->error(e);
         return false;
-    }
-    if (ao_enabled) {
-        // TODO: only when no audio stream or user disable audio stream. running an audio thread without sound is waste resource?
-        //masterClock()->setClockType(AVClock::ExternalClock);
-        //return;
     }
     correct_audio_channels(avctx);
     AudioFormat af;

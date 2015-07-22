@@ -284,6 +284,7 @@ contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
 # mac is -FQTDIR we need -LQTDIR
 LIBS *= -L$$[QT_INSTALL_LIBS] -lavcodec -lavformat -lswscale -lavutil
 win32 {
+  HEADERS *= utils/DirectXHelper.h
 #dynamicgl: __impl__GetDC __impl_ReleaseDC __impl_GetDesktopWindow
     LIBS += -luser32
 }
@@ -351,6 +352,7 @@ SOURCES += \
     io/QIODeviceIO.cpp \
     output/audio/AudioOutput.cpp \
     output/audio/AudioOutputBackend.cpp \
+    output/audio/AudioOutputNull.cpp \
     output/video/VideoRenderer.cpp \
     output/video/VideoRendererTypes.cpp \
     output/video/VideoOutput.cpp \

@@ -116,13 +116,6 @@ int main(int argc, char *argv[])
         filter->prepare();
         player.installVideoFilter(filter);
     }
-    QString ao = "portaudio";
-    idx = a.arguments().indexOf("-ao");
-    if (idx > 0) {
-        ao = a.arguments().at(idx+1);
-    }
-    ao = ao.toLower();
-    player.enableAudio(ao != "null" && ao != "0");
     opt_has_file &= argc > idx + 2;
     if (opt_has_file) {
         player.play(a.arguments().last());

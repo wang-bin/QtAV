@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     AVPlayer player;
     player.setFile(file);
     player.setFrameRate(1000.0); // as fast as possible
-    player.audio()->setMute(true);
+    player.audio()->setBackends(QStringList() << "null");
     AVTranscoder avt;
     avt.setMediaSource(&player);
     avt.setOutputMedia(outFile);

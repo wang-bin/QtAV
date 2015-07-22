@@ -79,8 +79,8 @@ int main(int argc, char *argv[])
     QOptions options = get_common_options();
     options.add("player options")
             ("-vo", "gl", "video renderer engine. can be gl, qt, d2d, gdi, xv.")
-            ("ao", "", "audio output. can be 'null'")
             ("no-ffmpeg-log", "disable ffmpeg log")
+            ("logfile", "log.txt", "log to file. Set empty to disable log file (-logfile '')")
             ;
     options.parse(argc, argv);
     if (options.value("help").toBool()) {
@@ -92,12 +92,15 @@ int main(int argc, char *argv[])
     set_opengl_backend(options.option("gl").value().toString(), a.arguments().first());
     load_qm(QStringList() << "player", options.value("language").toString());
 
-    sLogfile = fopen(QString(qApp->applicationDirPath() + "/log.txt").toUtf8().constData(), "w+");
-    if (!sLogfile) {
-        qWarning("Failed to open log file");
-        sLogfile = stdout;
+    QString logfile(options.option("logfile").value().toString());
+    if (!logfile.isEmpty()) {
+        sLogfile = fopen(logfile.toUtf8().constData(), "w+");
+        if (!sLogfile) {
+            qWarning("Failed to open log file");
+            sLogfile = stdout;
+        }
+        qInstallMessageHandler(Logger);
     }
-    qInstallMessageHandler(Logger);
 
     qDebug() <<a.arguments();
     QOption op = options.option("vo");
@@ -176,7 +179,16 @@ int main(int argc, char *argv[])
     if (options.value("fullscreen").toBool())
         window.showFullScreen();
 
-    window.enableAudio(options.value("ao").toString() != "null");
+    op = options.option("ao");
+    if (op.isSet()) {
+        QString aos(op.value().toString());
+        QStringList ao;
+        if (aos.contains(";"))
+            ao = aos.split(";", QString::SkipEmptyParts);
+        else
+            ao = aos.split(",", QString::SkipEmptyParts);
+        window.setAudioBackends(ao);
+    }
 
     op = options.option("vd");
     if (op.isSet()) {
