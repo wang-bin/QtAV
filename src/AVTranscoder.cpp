@@ -199,22 +199,26 @@ void AVTranscoder::stop()
     if (!d->muxer.isOpen())
         return;
     // get delayed frames. call VideoEncoder.encode() directly instead of through filter
-    while (audioEncoder()->encode()) {
-        qDebug("encode delayed audio frames...");
-        Packet pkt(audioEncoder()->encoded());
-        d->muxer.writeAudio(pkt);
+    if (audioEncoder()) {
+        while (audioEncoder()->encode()) {
+            qDebug("encode delayed audio frames...");
+            Packet pkt(audioEncoder()->encoded());
+            d->muxer.writeAudio(pkt);
+        }
+        audioEncoder()->close();
     }
-    while (videoEncoder()->encode()) {
-        qDebug("encode delayed video frames...");
-        Packet pkt(videoEncoder()->encoded());
-        d->muxer.writeVideo(pkt);
+    if (videoEncoder()) {
+        while (videoEncoder()->encode()) {
+            qDebug("encode delayed video frames...");
+            Packet pkt(videoEncoder()->encoded());
+            d->muxer.writeVideo(pkt);
+        }
+        videoEncoder()->close();
     }
     if (sourcePlayer()) {
         sourcePlayer()->uninstallFilter(d->afilter);
         sourcePlayer()->uninstallFilter(d->vfilter);
     }
-    audioEncoder()->close();
-    videoEncoder()->close();
     d->muxer.close();
     d->started = false;
     Q_EMIT stopped();
@@ -253,7 +257,7 @@ void AVTranscoder::writeAudio(const QtAV::Packet &packet)
         return;
     // TODO: startpts, duration, encoded size
     d->encoded_frames++;
-    qDebug("encoded frames: %d, pos: %lld", d->encoded_frames, packet.position);
+    //qDebug("encoded frames: %d, pos: %lld", d->encoded_frames, packet.position);
 }
 
 void AVTranscoder::writeVideo(const QtAV::Packet &packet)
@@ -266,8 +270,8 @@ void AVTranscoder::writeVideo(const QtAV::Packet &packet)
 
     // TODO: startpts, duration, encoded size
     d->encoded_frames++;
-    printf("encoded frames: %d, pos: %lld\r", d->encoded_frames, packet.position);
-    fflush(0);
+    //printf("encoded frames: %d, pos: %lld\r", d->encoded_frames, packet.position);
+    //fflush(0);
 }
 
 } //namespace QtAV
