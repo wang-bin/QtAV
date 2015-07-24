@@ -525,7 +525,9 @@ void AVDemuxThread::run()
                 vqueue->blockFull(!audio_thread || !audio_thread->isRunning() || !aqueue || aqueue->isEnough());
                 vqueue->put(pkt); //affect audio_thread
             }
-        } else { //subtitle
+        } else if (index == demuxer->subtitleStream()) { //subtitle
+            Q_EMIT internalSubtitlePacketRead(pkt);
+        } else {
             continue;
         }
     }

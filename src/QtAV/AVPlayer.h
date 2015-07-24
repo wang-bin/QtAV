@@ -451,6 +451,8 @@ Q_SIGNALS:
     void saturationChanged(int val);
     void internalAudioTracksChanged(const QVariantList& tracks);
     void externalAudioTracksChanged(const QVariantList& tracks);
+    void internalSubtitleHeaderRead(const QByteArray& data);
+    void internalSubtitlePacketRead(const QtAV::Packet& packet);
 private Q_SLOTS:
     void loadInternal(); // simply load
     void playInternal(); // simply play

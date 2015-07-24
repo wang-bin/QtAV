@@ -28,6 +28,7 @@
 namespace QtAV {
 
 class AVPlayer;
+class Packet;
 class Subtitle;
 /*!
  * \brief The PlayerSubtitle class
@@ -67,7 +68,8 @@ private Q_SLOTS:
     void onPlayerPositionChanged();
     void onPlayerStart();
     void tryReload();
-
+    void processInternalSubtitlePacket(const QtAV::Packet& packet);
+    void processInternalSubtitleHeader(const QByteArray& data);
 private:
     void connectSignals();
     void disconnectSignals();

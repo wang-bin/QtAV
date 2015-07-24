@@ -85,7 +85,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
     connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SLOT(onSeekFinished()), Qt::DirectConnection);
-
+    connect(d->read_thread, SIGNAL(internalSubtitlePacketRead(QtAV::Packet)), this, SIGNAL(internalSubtitlePacketRead(QtAV::Packet)), Qt::DirectConnection);
     d->vcapture = new VideoCapture(this);
 }
 
@@ -593,6 +593,11 @@ void AVPlayer::loadInternal()
         Q_EMIT internalAudioTracksChanged(d->audio_tracks);
         return;
     }
+    d->demuxer.setStreamIndex(AVDemuxer::SubtitleStream, d->subtitle_track);
+    AVCodecContext *sub = d->demuxer.subtitleCodecContext();
+    if (sub && sub->extradata) {
+        Q_EMIT internalSubtitleHeaderRead(QByteArray((const char*)sub->extradata, sub->extradata_size));
+    }
     d->audio_tracks = d->getAudioTracksInfo(&d->demuxer);
     Q_EMIT internalAudioTracksChanged(d->audio_tracks);
     Q_EMIT durationChanged(duration());
@@ -961,8 +966,19 @@ bool AVPlayer::setVideoStream(int n)
 
 bool AVPlayer::setSubtitleStream(int n)
 {
-    Q_UNUSED(n);
-    return false;
+    if (d->subtitle_track == n)
+        return true;
+    // TODO: xxxchanged signal
+    d->subtitle_track = n;
+    if (!d->demuxer.isLoaded())
+        return true;
+    d->demuxer.setStreamIndex(AVDemuxer::SubtitleStream, n);
+    AVCodecContext *ctx = d->demuxer.subtitleCodecContext();
+    if (ctx && ctx->extradata) {
+        // TODO: notify subtitle codec/format change
+        Q_EMIT internalSubtitleHeaderRead(QByteArray((const char*)ctx->extradata, ctx->extradata_size));
+    }
+    return true;
 }
 
 int AVPlayer::currentAudioStream() const
