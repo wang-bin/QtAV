@@ -37,7 +37,6 @@ namespace QtAV {
 class MediaIO;
 class AudioOutput;
 class VideoRenderer;
-class AVClock;
 class Filter;
 class VideoCapture;
 
@@ -174,11 +173,13 @@ public:
     QString externalAudio() const;
     /*!
      * \brief externalAudioTracks
+     * A list of QVariantMap. Using QVariantMap and QVariantList is mainly for QML support.
      * [ {id: 0, file: abc.dts, language: eng, title: xyz}, ...]
      * id: used for setAudioStream(id)
+     * \sa externalAudioTracksChanged
      */
-    QVariantList externalAudioTracks() const;
-    QVariantList internalAudioTracks() const;
+    const QVariantList& externalAudioTracks() const;
+    const QVariantList& internalAudioTracks() const;
     /*!
      * \brief setAudioStream
      * set an external audio file and stream number as audio track
@@ -201,13 +202,22 @@ public:
      */
     bool setAudioStream(int n);
     bool setVideoStream(int n);
+    /*!
+     * \brief internalAudioTracks
+     * A list of QVariantMap. Using QVariantMap and QVariantList is mainly for QML support.
+     * [ {id: 0, file: abc.dts, language: eng, title: xyz}, ...]
+     * id: used for setSubtitleStream(id)
+     * \sa internalSubtitleTracksChanged;
+     * Different with external audio tracks, the external subtitle is supported by class Subtitle.
+     */
+    const QVariantList& internalSubtitleTracks() const;
     bool setSubtitleStream(int n);
     int currentAudioStream() const;
     int currentVideoStream() const;
     int currentSubtitleStream() const;
-    int audioStreamCount() const;
-    int videoStreamCount() const;
-    int subtitleStreamCount() const;
+    QTAV_DEPRECATED int audioStreamCount() const;
+    QTAV_DEPRECATED int videoStreamCount() const;
+    QTAV_DEPRECATED int subtitleStreamCount() const;
     /*!
      * \brief capture and save current frame to "$HOME/.QtAV/filename_pts.png".
      * To capture with custom configurations, such as name and dir, use
@@ -449,9 +459,19 @@ Q_SIGNALS:
     void contrastChanged(int val);
     void hueChanged(int val);
     void saturationChanged(int val);
+    /*!
+     * \brief internalAudioTracksChanged
+     * Emitted when media is loaded. \sa internalAudioTracks
+     */
     void internalAudioTracksChanged(const QVariantList& tracks);
     void externalAudioTracksChanged(const QVariantList& tracks);
-    void internalSubtitleHeaderRead(const QByteArray& data);
+    void internalSubtitleTracksChanged(const QVariantList& tracks);
+    /*!
+     * \brief internalSubtitleHeaderRead
+     * Emitted when internal subtitle is loaded. Empty data if no data.
+     * codec is used by subtitle processors
+     */
+    void internalSubtitleHeaderRead(const QByteArray& codec, const QByteArray& data);
     void internalSubtitlePacketRead(const QtAV::Packet& packet);
 private Q_SLOTS:
     void loadInternal(); // simply load

@@ -159,8 +159,12 @@ public:
       */
     QImage getImage(int width, int height, QRect* boundingRect = 0);
     // used for embedded subtitles.
-    // used by libass to set style etc.
-    bool processHeader(const QByteArray& data);
+    /*!
+     * \brief processHeader
+     * Always called if switch to a new internal subtitle stream. But header data can be empty
+     * Used by libass to set style etc.
+     */
+    bool processHeader(const QByteArray &codec, const QByteArray& data);
     // ffmpeg decodes subtitle lines and call processLine. if AVPacket contains plain text, no decoding is ok
     bool processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0);
 

@@ -589,16 +589,16 @@ void AVPlayer::loadInternal()
     if (!d->loaded) {
         d->statistics.reset();
         qWarning("Load failed!");
-        d->audio_tracks = d->getAudioTracksInfo(&d->demuxer);
+        d->audio_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::AudioStream);
         Q_EMIT internalAudioTracksChanged(d->audio_tracks);
+        d->subtitle_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::SubtitleStream);
+        Q_EMIT internalSubtitleTracksChanged(d->subtitle_tracks);
         return;
     }
-    d->demuxer.setStreamIndex(AVDemuxer::SubtitleStream, d->subtitle_track);
-    AVCodecContext *sub = d->demuxer.subtitleCodecContext();
-    if (sub && sub->extradata) {
-        Q_EMIT internalSubtitleHeaderRead(QByteArray((const char*)sub->extradata, sub->extradata_size));
-    }
-    d->audio_tracks = d->getAudioTracksInfo(&d->demuxer);
+    d->subtitle_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::SubtitleStream);
+    Q_EMIT internalSubtitleTracksChanged(d->subtitle_tracks);
+    d->applySubtitleStream(d->subtitle_track, this);
+    d->audio_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::AudioStream);
     Q_EMIT internalAudioTracksChanged(d->audio_tracks);
     Q_EMIT durationChanged(duration());
     // setup parameters from loaded media
@@ -646,7 +646,8 @@ void AVPlayer::unload()
     }
     d->demuxer.unload();
     Q_EMIT durationChanged(0LL);
-    d->audio_tracks = d->getAudioTracksInfo(&d->demuxer);
+    // ??
+    d->audio_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::AudioStream);
     Q_EMIT internalAudioTracksChanged(d->audio_tracks);
 }
 
@@ -822,12 +823,12 @@ QString AVPlayer::externalAudio() const
     return d->external_audio;
 }
 
-QVariantList AVPlayer::externalAudioTracks() const
+const QVariantList& AVPlayer::externalAudioTracks() const
 {
     return d->external_audio_tracks;
 }
 
-QVariantList AVPlayer::internalAudioTracks() const
+const QVariantList &AVPlayer::internalAudioTracks() const
 {
     return d->audio_tracks;
 }
@@ -900,7 +901,7 @@ update_demuxer:
                 Q_EMIT externalAudioTracksChanged(d->external_audio_tracks);
                 return false;
             }
-            d->external_audio_tracks = d->getAudioTracksInfo(&d->audio_demuxer);
+            d->external_audio_tracks = d->getTracksInfo(&d->audio_demuxer, AVDemuxer::AudioStream);
             Q_EMIT externalAudioTracksChanged(d->external_audio_tracks);
             d->read_thread->setAudioDemuxer(&d->audio_demuxer);
         }
@@ -964,6 +965,11 @@ bool AVPlayer::setVideoStream(int n)
     return true;
 }
 
+const QVariantList& AVPlayer::internalSubtitleTracks() const
+{
+    return d->subtitle_tracks;
+}
+
 bool AVPlayer::setSubtitleStream(int n)
 {
     if (d->subtitle_track == n)
@@ -972,13 +978,7 @@ bool AVPlayer::setSubtitleStream(int n)
     d->subtitle_track = n;
     if (!d->demuxer.isLoaded())
         return true;
-    d->demuxer.setStreamIndex(AVDemuxer::SubtitleStream, n);
-    AVCodecContext *ctx = d->demuxer.subtitleCodecContext();
-    if (ctx && ctx->extradata) {
-        // TODO: notify subtitle codec/format change
-        Q_EMIT internalSubtitleHeaderRead(QByteArray((const char*)ctx->extradata, ctx->extradata_size));
-    }
-    return true;
+    return d->applySubtitleStream(n, this);
 }
 
 int AVPlayer::currentAudioStream() const

@@ -47,8 +47,9 @@ public:
     void initAudioStatistics(int s);
     void initVideoStatistics(int s);
     void initSubtitleStatistics(int s);
-    QVariantList getAudioTracksInfo(AVDemuxer* demuxer);
+    QVariantList getTracksInfo(AVDemuxer* demuxer, AVDemuxer::StreamType st);
 
+    bool applySubtitleStream(int n, AVPlayer *player);
     bool setupAudioThread(AVPlayer *player);
     bool setupVideoThread(AVPlayer *player);
     // TODO: what if buffer mode changed during playback?
@@ -119,6 +120,7 @@ public:
     int timer_id; //notify position change and check AB repeat range. active when playing
 
     int audio_track, video_track, subtitle_track;
+    QVariantList subtitle_tracks;
     QString external_audio;
     AVDemuxer audio_demuxer;
     QVariantList audio_tracks, external_audio_tracks;

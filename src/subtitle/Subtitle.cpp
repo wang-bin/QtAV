@@ -167,6 +167,7 @@ void Subtitle::setEngines(const QStringList &value)
     }
     QList<SubtitleProcessor*> sps;
     foreach (const QString& e, priv->engine_names) {
+        qDebug() << "engine:" << e;
         QList<SubtitleProcessor*>::iterator it = priv->processors.begin();
         while (it != priv->processors.end()) {
             if (!(*it)) {
@@ -471,9 +472,28 @@ QImage Subtitle::getImage(int width, int height, QRect* boundingRect)
     return priv->current_image;
 }
 
-bool Subtitle::processHeader(const QByteArray &data)
+bool Subtitle::processHeader(const QByteArray& codec, const QByteArray &data)
 {
-    return priv->processor && priv->processor->processHeader(data);
+    qDebug() << "codec: " << codec;
+    qDebug() << "header: " << data;
+    priv->reset(); // reset for the new subtitle stream (internal)
+    if (priv->processors.isEmpty())
+        return false;
+    foreach (SubtitleProcessor *sp, priv->processors) {
+        if (sp->supportedTypes().contains(codec)) {
+            priv->processor = sp;
+            qDebug() << "current subtitle processor: " << sp->name();
+            break;
+        }
+    }
+    if (!priv->processor) {
+        qWarning("No subtitle processor supports the codec '%s'", codec.constData());
+        return false;
+    }
+    if (!priv->processor->processHeader(codec, data))
+        return false;
+    priv->loaded = true;
+    return true;
 }
 
 bool Subtitle::processLine(const QByteArray &data, qreal pts, qreal duration)
@@ -482,9 +502,10 @@ bool Subtitle::processLine(const QByteArray &data, qreal pts, qreal duration)
         return false;
     SubtitleFrame f = priv->processor->processLine(data, pts, duration);
     if (!f.isValid())
-        return false;
+        return false; // TODO: if seek to previous position, an invalid frame is returned.
     if (priv->frames.isEmpty() || priv->frames.last() < f) {
         priv->frames.append(f);
+        priv->itf = priv->frames.begin();
         return true;
     }
     // usually add to the end. TODO: test
@@ -495,6 +516,7 @@ bool Subtitle::processLine(const QByteArray &data, qreal pts, qreal duration)
     if (it != priv->frames.begin()) // found in middle, insert before next
         ++it;
     priv->frames.insert(it, f);
+    priv->itf = it;
     return true;
 }
 

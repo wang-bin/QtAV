@@ -383,12 +383,27 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     return true;
 }
 
-QVariantList AVPlayer::Private::getAudioTracksInfo(AVDemuxer *demuxer)
+QVariantList AVPlayer::Private::getTracksInfo(AVDemuxer *demuxer, AVDemuxer::StreamType st)
 {
     QVariantList info;
     if (!demuxer)
         return info;
-    foreach (int s, demuxer->audioStreams()) {
+    QList<int> streams;
+    switch (st) {
+    case AVDemuxer::AudioStream:
+        streams = demuxer->audioStreams();
+        break;
+    case AVDemuxer::SubtitleStream:
+        streams = demuxer->subtitleStreams();
+        break;
+    case AVDemuxer::VideoStream:
+        streams = demuxer->videoStreams();
+    default:
+        break;
+    }
+    if (streams.isEmpty())
+        return info;
+    foreach (int s, streams) {
         QVariantMap t;
         t["id"] = info.size();
         t["file"] = demuxer->fileName();
@@ -406,6 +421,22 @@ QVariantList AVPlayer::Private::getAudioTracksInfo(AVDemuxer *demuxer)
         info.push_back(t);
     }
     return info;
+}
+
+bool AVPlayer::Private::applySubtitleStream(int n, AVPlayer *player)
+{
+    if (!demuxer.setStreamIndex(AVDemuxer::SubtitleStream, n))
+        return false;
+    AVCodecContext *ctx = demuxer.subtitleCodecContext();
+    if (!ctx)
+        return false;
+    const AVCodecDescriptor *codec_desc = avcodec_descriptor_get(ctx->codec_id);
+    QByteArray codec(codec_desc->name);
+    if (ctx->extradata)
+        Q_EMIT player->internalSubtitleHeaderRead(codec, QByteArray((const char*)ctx->extradata, ctx->extradata_size));
+    else
+        Q_EMIT player->internalSubtitleHeaderRead(codec, QByteArray());
+    return true;
 }
 
 bool AVPlayer::Private::setupVideoThread(AVPlayer *player)

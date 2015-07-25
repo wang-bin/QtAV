@@ -36,26 +36,26 @@
 
 namespace QtAV {
 
-class SubtitleProcessorLibASS : public SubtitleProcessor, public ass::api
+class SubtitleProcessorLibASS Q_DECL_FINAL: public SubtitleProcessor, public ass::api
 {
 public:
     SubtitleProcessorLibASS();
-    virtual ~SubtitleProcessorLibASS();
+    ~SubtitleProcessorLibASS();
     void updateFontCache();
-    virtual SubtitleProcessorId id() const;
-    virtual QString name() const;
-    virtual QStringList supportedTypes() const;
-    virtual bool process(QIODevice* dev);
+    SubtitleProcessorId id() const Q_DECL_OVERRIDE;
+    QString name() const Q_DECL_OVERRIDE;
+    QStringList supportedTypes() const Q_DECL_OVERRIDE;
+    bool process(QIODevice* dev) Q_DECL_OVERRIDE;
     // supportsFromFile must be true
-    virtual bool process(const QString& path);
-    virtual QList<SubtitleFrame> frames() const;
-    virtual bool canRender() const { return true;}
-    virtual QString getText(qreal pts) const;
-    virtual QImage getImage(qreal pts, QRect *boundingRect = 0);
-    virtual bool processHeader(const QByteArray& data);
-    virtual SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0);
+    bool process(const QString& path) Q_DECL_OVERRIDE;
+    QList<SubtitleFrame> frames() const Q_DECL_OVERRIDE;
+    bool canRender() const Q_DECL_OVERRIDE { return true;}
+    QString getText(qreal pts) const Q_DECL_OVERRIDE;
+    QImage getImage(qreal pts, QRect *boundingRect = 0) Q_DECL_OVERRIDE;
+    bool processHeader(const QByteArray& codec, const QByteArray& data) Q_DECL_OVERRIDE;
+    SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0) Q_DECL_OVERRIDE;
 protected:
-    virtual void onFrameSizeChanged(int width, int height);
+    void onFrameSizeChanged(int width, int height) Q_DECL_OVERRIDE;
 private:
     bool initRenderer();
     void updateFontCacheAsync();
@@ -64,6 +64,7 @@ private:
     void renderASS32(QImage *image, ASS_Image* img, int dstX, int dstY);
     void processTrack(ASS_Track *track);
     bool m_update_cache;
+    QByteArray m_codec;
     ASS_Library *m_ass;
     ASS_Renderer *m_renderer;
     ASS_Track *m_track;
@@ -201,18 +202,53 @@ bool SubtitleProcessorLibASS::process(const QString &path)
     return true;
 }
 
-bool SubtitleProcessorLibASS::processHeader(const QByteArray &data)
+bool SubtitleProcessorLibASS::processHeader(const QByteArray& codec, const QByteArray &data)
 {
-    // new track, ass_process_codec_private
-    return false;
+    if (!ass::api::loaded())
+        return false;
+    m_codec = codec;
+    m_frames.clear();
+    if (m_track) {
+        ass_free_track(m_track);
+        m_track = 0;
+    }
+    m_track = ass_new_track(m_ass);
+    if (!m_track) {
+        qWarning("failed to create an ass track");
+        return false;
+    }
+    ass_process_codec_private(m_track, (char*)data.constData(), data.size());
+    return true;
 }
 
 SubtitleFrame SubtitleProcessorLibASS::processLine(const QByteArray &data, qreal pts, qreal duration)
 {
-    //ass_process_data(track,...)
-    SubtitleFrame frame;
-    frame.begin = pts;
-    frame.end = frame.begin + duration;
+    if (!ass::api::loaded())
+        return SubtitleFrame();
+    if (!m_track)
+        return SubtitleFrame();
+    const int nb_tracks = m_track->n_events;
+    // TODO: confirm. ass/ssa path from mpv
+    if (m_codec == QByteArrayLiteral("ass")) {
+        ass_process_chunk(m_track, (char*)data.constData(), data.size(), pts*1000.0, duration*1000.0);
+    } else { //ssa
+        //ssa. mpv: flush_on_seek, broken ffmpeg ASS packet format
+        ass_process_data(m_track, (char*)data.constData(), data.size());
+    }
+    if (nb_tracks == m_track->n_events)
+        return SubtitleFrame();
+    //qDebug("events: %d", m_track->n_events);
+    for (int i = m_track->n_events-1; i >= 0; --i) {
+        const ASS_Event& ae = m_track->events[i];
+      //  qDebug("ass_event[%d] %lld+%lld: %s", i, ae.Start, ae.Duration, ae.Text);
+        if (ae.Start == (long long)(pts*1000.0) && ae.Duration == (long long)(duration*1000.0)) {
+            SubtitleFrame frame;
+            frame.text = PlainText::fromAss(ae.Text);
+            frame.begin = qreal(ae.Start)/1000.0;
+            frame.end = frame.begin + qreal(ae.Duration)/1000.0;
+            return frame;
+        }
+    }
     return SubtitleFrame();
 }
 

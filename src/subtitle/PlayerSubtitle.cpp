@@ -202,9 +202,9 @@ void PlayerSubtitle::processInternalSubtitlePacket(const QtAV::Packet &packet)
     m_sub->processLine(packet.data, packet.pts, packet.duration);
 }
 
-void PlayerSubtitle::processInternalSubtitleHeader(const QByteArray &data)
+void PlayerSubtitle::processInternalSubtitleHeader(const QByteArray& codec, const QByteArray &data)
 {
-    m_sub->processHeader(data);
+    m_sub->processHeader(codec, data);
 }
 
 void PlayerSubtitle::connectSignals()
@@ -213,7 +213,7 @@ void PlayerSubtitle::connectSignals()
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
     connect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
     connect(m_player, SIGNAL(internalSubtitlePacketRead(QtAV::Packet)), this, SLOT(processInternalSubtitlePacket(QtAV::Packet)));
-    connect(m_player, SIGNAL(internalSubtitleHeaderRead(QByteArray)), this, SLOT(processInternalSubtitleHeader(QByteArray)));
+    connect(m_player, SIGNAL(internalSubtitleHeaderRead(QByteArray,QByteArray)), this, SLOT(processInternalSubtitleHeader(QByteArray,QByteArray)));
     connect(m_sub, SIGNAL(codecChanged()), this, SLOT(tryReload()));
     connect(m_sub, SIGNAL(enginesChanged()), this, SLOT(tryReload()));
 }
@@ -224,7 +224,7 @@ void PlayerSubtitle::disconnectSignals()
     disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
     disconnect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
     disconnect(m_player, SIGNAL(internalSubtitlePacketRead(QtAV::Packet)), this, SLOT(processInternalSubtitlePacket(QtAV::Packet)));
-    disconnect(m_player, SIGNAL(internalSubtitleHeaderRead(QByteArray)), this, SLOT(processInternalSubtitleHeader(QByteArray)));
+    disconnect(m_player, SIGNAL(internalSubtitleHeaderRead(QByteArray,QByteArray)), this, SLOT(processInternalSubtitleHeader(QByteArray,QByteArray)));
     disconnect(m_sub, SIGNAL(codecChanged()), this, SLOT(tryReload()));
     disconnect(m_sub, SIGNAL(enginesChanged()), this, SLOT(tryReload()));
 }

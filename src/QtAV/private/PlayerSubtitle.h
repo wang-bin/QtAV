@@ -69,7 +69,7 @@ private Q_SLOTS:
     void onPlayerStart();
     void tryReload();
     void processInternalSubtitlePacket(const QtAV::Packet& packet);
-    void processInternalSubtitleHeader(const QByteArray& data);
+    void processInternalSubtitleHeader(const QByteArray &codec, const QByteArray& data);
 private:
     void connectSignals();
     void disconnectSignals();
