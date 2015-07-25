@@ -284,7 +284,7 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
         }
     }
     if (m_update_cache)
-        updateFontCacheAsync();
+        updateFontCache();
 
     int detect_change = 0;
     ASS_Image *img = ass_render_frame(m_renderer, m_track, (long long)(pts * 1000.0), &detect_change);
