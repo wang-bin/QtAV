@@ -379,12 +379,12 @@ void VideoOutput::setStatistics(Statistics* statistics)
     //d.statistics =
 }
 
-bool VideoOutput::onInstallFilter(Filter *filter)
+bool VideoOutput::onInstallFilter(Filter *filter, int index)
 {
     if (!isAvailable())
         return false;
     DPTR_D(VideoOutput);
-    bool ret = d.impl->onInstallFilter(filter);
+    bool ret = d.impl->onInstallFilter(filter, index);
     d.filters = d.impl->filters();
     return ret;
 }

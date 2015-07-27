@@ -94,9 +94,12 @@ AVPlayer::~AVPlayer()
     stop();
     // if not uninstall here, player's qobject children filters will call uninstallFilter too late that player is almost be destroyed
     QList<Filter*> filters(FilterManager::instance().videoFilters(this));
-    filters.append(FilterManager::instance().audioFilters(this));
-    foreach (Filter *f, filters) {
-        uninstallFilter(f);
+    foreach (Filter* f, filters) {
+        uninstallFilter(reinterpret_cast<VideoFilter*>(f));
+    }
+    filters = FilterManager::instance().audioFilters(this);
+    foreach (Filter* f, filters) {
+        uninstallFilter(reinterpret_cast<AudioFilter*>(f));
     }
 }
 
@@ -255,11 +258,50 @@ bool AVPlayer::installVideoFilter(Filter *filter)
     return d->vthread->installFilter(filter);
 }
 
+bool AVPlayer::installFilter(AudioFilter *filter, int index)
+{
+    if (!FilterManager::instance().registerAudioFilter((Filter*)filter, this, index))
+        return false;
+    if (!d->athread)
+        return false; //install later when avthread created
+    return d->athread->installFilter((Filter*)filter, index);
+}
+
+bool AVPlayer::installFilter(VideoFilter *filter, int index)
+{
+    if (!FilterManager::instance().registerVideoFilter((Filter*)filter, this, index))
+        return false;
+    if (!d->vthread)
+        return false; //install later when avthread created
+    return d->vthread->installFilter((Filter*)filter, index);
+}
+
+bool AVPlayer::uninstallFilter(AudioFilter *filter)
+{
+    FilterManager::instance().unregisterAudioFilter(filter, this);
+    AVThread *avthread = d->athread;
+    if (!avthread)
+        return false;
+    if (!avthread->filters().contains(filter))
+        return false;
+    return avthread->uninstallFilter(filter, true);
+}
+
+bool AVPlayer::uninstallFilter(VideoFilter *filter)
+{
+    FilterManager::instance().unregisterVideoFilter(filter, this);
+    AVThread *avthread = d->vthread;
+    if (!avthread)
+        return false;
+    if (!avthread->filters().contains(filter))
+        return false;
+    return avthread->uninstallFilter(filter, true);
+}
+
 bool AVPlayer::uninstallFilter(Filter *filter)
 {
-    if (!FilterManager::instance().unregisterFilter(filter)) {
-        qWarning("unregister filter %p failed", filter);
-        //return false;
+    if (!FilterManager::instance().unregisterVideoFilter(filter, this)) {
+        FilterManager::instance().unregisterAudioFilter(filter, this);
     }
     AVThread *avthread = d->vthread;
     if (!avthread || !avthread->filters().contains(filter)) {
@@ -270,32 +312,16 @@ bool AVPlayer::uninstallFilter(Filter *filter)
     }
     avthread->uninstallFilter(filter, true);
     return true;
-    /*
-     * TODO: send FilterUninstallTask(this, filter){this.mFilters.remove} to
-     * active player's AVThread
-     *
-     */
-    class UninstallFilterTask : public QRunnable {
-    public:
-        UninstallFilterTask(AVThread *thread, Filter *filter):
-            QRunnable()
-          , mpThread(thread)
-          , mpFilter(filter)
-        {
-            setAutoDelete(true);
-        }
+}
 
-        virtual void run() {
-            mpThread->uninstallFilter(mpFilter, false);
-            //QMetaObject::invokeMethod(FilterManager::instance(), "onUninstallInTargetDone", Qt::AutoConnection, Q_ARG(Filter*, filter));
-            FilterManager::instance().emitOnUninstallInTargetDone(mpFilter);
-        }
-    private:
-        AVThread *mpThread;
-        Filter *mpFilter;
-    };
-    avthread->scheduleTask(new UninstallFilterTask(avthread, filter));
-    return true;
+QList<Filter*> AVPlayer::audioFilters() const
+{
+    return FilterManager::instance().audioFilters((AVPlayer*)this);
+}
+
+QList<Filter*> AVPlayer::videoFilters() const
+{
+    return FilterManager::instance().videoFilters((AVPlayer*)this);
 }
 
 void AVPlayer::setPriority(const QVector<VideoDecoderId> &ids)

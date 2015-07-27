@@ -69,7 +69,7 @@ public:
 
     void waitForReady();
 
-    bool installFilter(Filter *filter, bool lock = true);
+    bool installFilter(Filter *filter, int index = 0x7FFFFFFF, bool lock = true);
     bool uninstallFilter(Filter *filter, bool lock = true);
     const QList<Filter *> &filters() const;
 

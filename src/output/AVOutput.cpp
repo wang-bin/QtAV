@@ -31,22 +31,6 @@ namespace QtAV {
 
 AVOutputPrivate::~AVOutputPrivate() {
     cond.wakeAll(); //WHY: failed to wake up
-    if (filter_context) {
-        delete filter_context;
-        filter_context = 0;
-    }
-    foreach (Filter *f, pending_uninstall_filters) {
-        filters.removeAll(f);
-    }
-    QList<Filter*>::iterator it = filters.begin();
-    while (it != filters.end()) {
-        // 1 filter has 1 target. so if has output filter in manager, the output is this output
-        /*FilterManager::instance().hasOutputFilter(*it) && */
-        if ((*it)->isOwnedByTarget() && !(*it)->parent())
-            delete *it;
-        ++it;
-    }
-    filters.clear();
 }
 
 AVOutput::AVOutput()
@@ -62,6 +46,27 @@ AVOutput::~AVOutput()
 {
     pause(false); //Does not work. cond may still waiting when destroyed
     detach();
+    DPTR_D(AVOutput);
+    if (d.filter_context) {
+        delete d.filter_context;
+        d.filter_context = 0;
+    }
+    foreach (Filter *f, d.pending_uninstall_filters) {
+        d.filters.removeAll(f);
+    }
+    QList<Filter*>::iterator it = d.filters.begin();
+    while (it != d.filters.end()) {
+        // if not uninstall here, if AVOutput is also an QObject (for example, widget based renderers)
+        // then qobject children filters will be deleted when parent is destroying and call FilterManager::uninstallFilter()
+        // and FilterManager::instance().unregisterFilter(filter, this) too late that AVOutput is almost be destroyed
+        uninstallFilter(*it);
+        // 1 filter has 1 target. so if has output filter in manager, the output is this output
+        /*FilterManager::instance().hasOutputFilter(*it) && */
+        if ((*it)->isOwnedByTarget() && !(*it)->parent())
+            delete *it;
+        ++it;
+    }
+    d.filters.clear();
 }
 
 bool AVOutput::isAvailable() const
@@ -132,18 +137,18 @@ void AVOutput::setStatistics(Statistics *statistics)
     d.statistics = statistics;
 }
 
-bool AVOutput::installFilter(Filter *filter)
+bool AVOutput::installFilter(Filter *filter, int index)
 {
-    return onInstallFilter(filter);
+    return onInstallFilter(filter, index);
 }
 
-bool AVOutput::onInstallFilter(Filter *filter)
+bool AVOutput::onInstallFilter(Filter *filter, int index)
 {
-    if (!FilterManager::instance().registerFilter(filter, this)) {
+    if (!FilterManager::instance().registerFilter(filter, this, index)) {
         return false;
     }
     DPTR_D(AVOutput);
-    d.filters.push_back(filter);
+    d.filters = FilterManager::instance().outputFilters(this);
     return true;
 }
 
@@ -158,11 +163,8 @@ bool AVOutput::uninstallFilter(Filter *filter)
 
 bool AVOutput::onUninstallFilter(Filter *filter)
 {
-    if (!FilterManager::instance().unregisterFilter(filter)) {
-        qWarning("unregister filter %p failed", filter);
-        //return false; //already removed in FilterManager::uninstallFilter()
-    }
     DPTR_D(AVOutput);
+    FilterManager::instance().unregisterFilter(filter, this);
     d.pending_uninstall_filters.push_back(filter);
     return true;
 }
@@ -179,8 +181,6 @@ bool AVOutput::onHanlePendingTasks()
         return false;
     foreach (Filter *filter, d.pending_uninstall_filters) {
         d.filters.removeAll(filter);
-        //QMetaObject::invokeMethod(FilterManager::instance(), "onUninstallInTargetDone", Qt::AutoConnection, Q_ARG(Filter*, filter));
-        FilterManager::instance().emitOnUninstallInTargetDone(filter);
     }
     d.pending_uninstall_filters.clear();
     return true;

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -75,18 +75,29 @@ bool AVThread::isPaused() const
     return d.paused || d.next_pause;
 }
 
-bool AVThread::installFilter(Filter *filter, bool lock)
+bool AVThread::installFilter(Filter *filter, int index, bool lock)
 {
     DPTR_D(AVThread);
+    int p = index;
+    if (p < 0)
+        p += d.filters.size();
+    if (p < 0)
+        p = 0;
+    if (p > d.filters.size())
+        p = d.filters.size();
+    const int old = d.filters.indexOf(filter);
+    // already installed at desired position
+    if (p == old)
+        return true;
     if (lock) {
         QMutexLocker locker(&d.mutex);
-        if (d.filters.contains(filter))
-            return false;
-        d.filters.push_back(filter);
+        if (p >= 0)
+            d.filters.removeAt(p);
+        d.filters.insert(p, filter);
     } else {
-        if (d.filters.contains(filter))
-            return false;
-        d.filters.push_back(filter);
+        if (p >= 0)
+            d.filters.removeAt(p);
+        d.filters.insert(p, filter);
     }
     return true;
 }
@@ -97,9 +108,8 @@ bool AVThread::uninstallFilter(Filter *filter, bool lock)
     if (lock) {
         QMutexLocker locker(&d.mutex);
         return d.filters.removeOne(filter);
-    } else {
-        return d.filters.removeOne(filter);
     }
+    return d.filters.removeOne(filter);
 }
 
 const QList<Filter*>& AVThread::filters() const

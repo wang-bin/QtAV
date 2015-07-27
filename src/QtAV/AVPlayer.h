@@ -38,6 +38,8 @@ class MediaIO;
 class AudioOutput;
 class VideoRenderer;
 class Filter;
+class AudioFilter;
+class VideoFilter;
 class VideoCapture;
 
 class Q_AV_EXPORT AVPlayer : public QObject
@@ -289,10 +291,23 @@ public:
      * install the filter in AVThread. Filter will apply before rendering data
      * return false if filter is already registered or audio/video thread is not ready(will install when ready)
      */
-    bool installAudioFilter(Filter *filter);
-    bool installVideoFilter(Filter *filter);
-    bool uninstallFilter(Filter *filter);
-
+    QTAV_DEPRECATED bool installAudioFilter(Filter *filter);
+    QTAV_DEPRECATED bool installVideoFilter(Filter *filter);
+    QTAV_DEPRECATED bool uninstallFilter(Filter *filter);
+    /*!
+     * \brief installFilter
+     * Insert a filter at position 'index' of current filter list.
+     * If the filter is already installed, it will move to the correct index.
+     * \param index A nagative index == size() + index. If index >= size(), append at last
+     * \return false if audio/video thread is not ready. But the filter will be installed when thread is ready.
+     * false if already installed.
+     */
+    bool installFilter(AudioFilter* filter, int index = 0x7FFFFFFF);
+    bool installFilter(VideoFilter* filter, int index = 0x7FFFFFFF);
+    bool uninstallFilter(AudioFilter* filter);
+    bool uninstallFilter(VideoFilter* filter);
+    QList<Filter*> audioFilters() const;
+    QList<Filter*> videoFilters() const;
     // TODO: name list
     void setPriority(const QVector<VideoDecoderId>& ids);
     //void setPriority(const QVector<AudioOutputId>& ids);

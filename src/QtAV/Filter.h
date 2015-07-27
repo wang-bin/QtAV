@@ -28,14 +28,6 @@
 
 namespace QtAV {
 
-class Filter;
-/*
- * convenient function to release a filter
- * DO NOT delete a filter call safeReleaseFilter(&filter) instead
- * It will uninstall internally and filter to null
- */
-Q_AV_EXPORT void safeReleaseFilter(Filter** ppFilter);
-
 class AudioFormat;
 class AVOutput;
 class AVPlayer;
@@ -49,7 +41,6 @@ class Q_AV_EXPORT Filter : public QObject
     DPTR_DECLARE_PRIVATE(Filter)
     Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enabledChanged)
 public:
-    Filter(QObject* parent = 0);
     virtual ~Filter();
     //isEnabled() then setContext
     //TODO: parameter FrameContext
@@ -59,7 +50,7 @@ public:
     /*!
      * \brief setOwnedByTarget
      * If a filter is owned by target, it's not safe to access the filter after it's installed to a target.
-     * QtAV will delete the filter internally if filter is owned by target AND it's parent (QObject) is null.
+     * QtAV will delete the installed filter internally if filter is owned by target AND it's parent (QObject) is null.
      * \param value
      */
     void setOwnedByTarget(bool value = true);

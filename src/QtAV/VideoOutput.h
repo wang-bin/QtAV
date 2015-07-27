@@ -106,7 +106,7 @@ private: //for proxy
 
     // from AVOutput
     virtual void setStatistics(Statistics* statistics) Q_DECL_OVERRIDE; //called by friend AVPlayer
-    virtual bool onInstallFilter(Filter *filter) Q_DECL_OVERRIDE;
+    virtual bool onInstallFilter(Filter *filter, int index) Q_DECL_OVERRIDE;
     virtual bool onUninstallFilter(Filter *filter) Q_DECL_OVERRIDE;
     virtual bool onHanlePendingTasks() Q_DECL_OVERRIDE;
 };

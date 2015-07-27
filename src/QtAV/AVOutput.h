@@ -51,9 +51,15 @@ public:
     //TODO: what about audio's pause api?
     void pause(bool p); //processEvents when waiting?
     bool isPaused() const;
-    //No filters() api, they are used internally?
     QList<Filter*>& filters();
-    bool installFilter(Filter *filter);
+    /*!
+     * \brief installFilter
+     * Insert a filter at position 'index' of current filter list.
+     * If the filter is already installed, it will move to the correct index.
+     * \param index A nagative index == size() + index. If index >= size(), append at last
+     * \return false if already installed
+     */
+    bool installFilter(Filter *filter, int index = 0x7fffffff);
     bool uninstallFilter(Filter *filter);
 protected:
     AVOutput(AVOutputPrivate& d);
@@ -75,7 +81,7 @@ protected:
 private:
     // for proxy VideoOutput
     virtual void setStatistics(Statistics* statistics); //called by friend AVPlayer
-    virtual bool onInstallFilter(Filter *filter);
+    virtual bool onInstallFilter(Filter *filter, int index);
     virtual bool onUninstallFilter(Filter *filter);
     // only called in handlePaintEvent. But filters may change. so required by proxy to update it's filters
     virtual bool onHanlePendingTasks(); //return true: proxy update filters
