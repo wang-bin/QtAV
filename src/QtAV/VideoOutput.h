@@ -56,7 +56,7 @@ public:
      * Create a renderer with given rendererId. MUST check VideoOutput::isAvailable() later!
      */
     VideoOutput(VideoRendererId rendererId, QObject *parent = 0);
-    ~VideoOutput() Q_DECL_OVERRIDE;
+    ~VideoOutput();
     VideoRendererId id() const Q_DECL_OVERRIDE;
 
     virtual bool receive(const VideoFrame& frame) Q_DECL_OVERRIDE; //has default
