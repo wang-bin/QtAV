@@ -24,6 +24,7 @@
 #define QTAV_GLOBAL_H
 
 #include <stdarg.h>
+#include <QtCore/QByteArray> //QByteArrayLiteral check
 #include <QtCore/qglobal.h>
 #include "dptr.h"
 
