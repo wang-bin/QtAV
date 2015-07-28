@@ -59,6 +59,7 @@ public:
         }
     }
     void updateColorDetails(VideoFrame* f);
+    qreal getDAR(AVFrame *f);
 
     AVFrame *frame; //set once and not change
 };

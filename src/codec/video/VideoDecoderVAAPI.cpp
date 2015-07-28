@@ -321,6 +321,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
+        f.setDisplayAspectRatio(d.getDAR(d.frame));
 
         ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(d.frame));
         if (cs != ColorSpace_Unknow)

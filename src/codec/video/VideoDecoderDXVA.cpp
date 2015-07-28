@@ -480,7 +480,7 @@ VideoFrame VideoDecoderDXVA::frame()
     //qDebug("frame size: %dx%d", d.frame->width, d.frame->height);
     if (!d.frame->opaque || !d.frame->data[0])
         return VideoFrame();
-    if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
+    if (d.frame->width <= 0 || d.frame->height <= 0 || !d.codec_ctx)
         return VideoFrame();
 
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
@@ -491,6 +491,7 @@ VideoFrame VideoDecoderDXVA::frame()
         f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
         f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(d.frame->pkt_pts/1000.0);
+        f.setDisplayAspectRatio(d.getDAR(d.frame));
         return f;
     }
     class ScopedD3DLock {

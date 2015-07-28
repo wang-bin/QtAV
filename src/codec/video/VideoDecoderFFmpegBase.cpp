@@ -34,6 +34,20 @@ void VideoDecoderFFmpegBasePrivate::updateColorDetails(VideoFrame *f)
     f->setColorSpace(cs);
 }
 
+qreal VideoDecoderFFmpegBasePrivate::getDAR(AVFrame *f)
+{
+    // lavf 54.5.100 av_guess_sample_aspect_ratio: stream.sar > frame.sar
+    qreal dar = 0;
+    if (f->height > 0)
+        dar = (qreal)f->width/(qreal)f->height;
+    // prefer sar from AVFrame if sar != 1/1
+    if (f->sample_aspect_ratio.num > 1)
+        dar *= av_q2d(f->sample_aspect_ratio);
+    else if (codec_ctx && codec_ctx->sample_aspect_ratio.num > 1) // skip 1/1
+        dar *= av_q2d(codec_ctx->sample_aspect_ratio);
+    return dar;
+}
+
 VideoDecoderFFmpegBase::VideoDecoderFFmpegBase(VideoDecoderFFmpegBasePrivate &d):
     VideoDecoder(d)
 {

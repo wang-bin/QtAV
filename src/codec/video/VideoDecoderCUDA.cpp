@@ -761,6 +761,9 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         frame.setBits(planes);
         frame.setBytesPerLine(pitches);
         frame.setTimestamp((double)cuviddisp->timestamp/1000.0);
+        if (codec_ctx && codec_ctx->sample_aspect_ratio.num > 1) //skip 1/1 because is the default value
+            frame.setDisplayAspectRatio(frame.displayAspectRatio()*av_q2d(codec_ctx->sample_aspect_ratio));
+
         surface_in_use[cuviddisp->picture_index] = false;
 
         frame = frame.clone();

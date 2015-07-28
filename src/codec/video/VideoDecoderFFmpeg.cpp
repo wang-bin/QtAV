@@ -239,17 +239,11 @@ VideoFrame VideoDecoderFFmpeg::frame()
            , d.codec_ctx->colorspace, d.codec_ctx->color_range
            , d.codec_ctx->color_primaries, d.codec_ctx->color_trc);
            */
-    if (d.width <= 0 || d.height <= 0 || !d.codec_ctx)
+    if (d.frame->width <= 0 || d.frame->height <= 0 || !d.codec_ctx)
         return VideoFrame();
-    //DO NOT make frame as a memeber, because VideoFrame is explictly shared!
-    float displayAspectRatio = 0;
-    if (d.codec_ctx->sample_aspect_ratio.den > 0)
-        displayAspectRatio = ((float)d.frame->width / (float)d.frame->height) *
-            ((float)d.codec_ctx->sample_aspect_ratio.num / (float)d.codec_ctx->sample_aspect_ratio.den);
-
     // it's safe if width, height, pixfmt will not change, only data change
     VideoFrame frame(d.frame->width, d.frame->height, VideoFormat((int)d.codec_ctx->pix_fmt));
-    frame.setDisplayAspectRatio(displayAspectRatio);
+    frame.setDisplayAspectRatio(d.getDAR(d.frame));
     frame.setBits(d.frame->data);
     frame.setBytesPerLine(d.frame->linesize);
     frame.setTimestamp((double)d.frame->pkt_pts/1000.0); // in s. what about AVFrame.pts?

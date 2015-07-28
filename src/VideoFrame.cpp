@@ -378,6 +378,7 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
         if (!si)
             return VideoFrame();
         VideoFrame f;
+        f.setDisplayAspectRatio(displayAspectRatio());
         f.setTimestamp(timestamp());
         if (si->map(HostMemorySurface, fmt, &f)) {
             if ((!dstSize.isValid() ||dstSize == QSize(width(), height())) && (!roi.isValid() || roi == QRectF(0, 0, width(), height()))) //roi is not supported now
@@ -550,6 +551,7 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
     f.setBits(m_cvt->outPlanes());
     f.setBytesPerLine(m_cvt->outLineSizes());
     f.setTimestamp(frame.timestamp());
+    f.setDisplayAspectRatio(frame.displayAspectRatio());
     // metadata?
     if (fmt.isRGB()) {
         f.setColorSpace(fmt.isPlanar() ? ColorSpace_GBR : ColorSpace_RGB);

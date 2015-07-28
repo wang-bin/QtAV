@@ -246,6 +246,7 @@ VideoFrame VideoDecoderVDA::frame()
                 frame = frame.to(format);
             VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
             frame.setTimestamp(f->timestamp());
+            frame.setDisplayAspectRatio(f->displayAspectRatio());
             *f = frame;
             return f;
         }
@@ -348,6 +349,7 @@ VideoFrame VideoDecoderVDA::frame()
         f = VideoFrame(width(), height(), fmt);
         f.setBytesPerLine(pitch);
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
+        f.setDisplayAspectRatio(d.getDAR(d.frame));
         if (zero_copy) {
             f.setMetaData("target", "rect");
         } else {
