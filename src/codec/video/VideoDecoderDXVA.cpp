@@ -362,8 +362,10 @@ public:
     VideoDecoderDXVAPrivate():
         VideoDecoderFFmpegHWPrivate()
     {
+#if QTAV_HAVE(DXVA_EGL)
         if (OpenGLHelper::isOpenGLES() && QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
+#endif
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
@@ -448,9 +450,7 @@ public:
     IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
     QString vendor;
-#if QTAV_HAVE(DXVA_EGL) || QTAV_HAVE(DXVA_GL)
     dxva::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
-#endif //QTAV_HAVE(DXVA_EGL)
 };
 
 VideoDecoderDXVA::VideoDecoderDXVA()
