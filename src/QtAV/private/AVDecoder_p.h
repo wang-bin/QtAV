@@ -24,9 +24,56 @@
 
 #include <QtCore/QByteArray>
 #include <QtCore/QHash>
+#include <QtCore/QMetaType>
+#include <QtCore/QSharedPointer>
+#include <QtCore/QVector>
 #include "QtAV/private/AVCompat.h"
 
 namespace QtAV {
+
+// always define the class to avoid macro check when using it
+class AVFrameBuffers {
+#if QTAV_HAVE(AVBUFREF)
+    QVector<AVBufferRef*> buf;
+#endif
+public:
+    AVFrameBuffers(AVFrame* frame) {
+        Q_UNUSED(frame);
+#if QTAV_HAVE(AVBUFREF)
+        if (!frame->buf[0]) { //not ref counted. duplicate data?
+            return;
+        }
+
+        buf.reserve(frame->nb_extended_buf + FF_ARRAY_ELEMS(frame->buf));
+        buf.resize(frame->nb_extended_buf + FF_ARRAY_ELEMS(frame->buf));
+        for (int i = 0; i < (int)FF_ARRAY_ELEMS(frame->buf); ++i) {
+            if (!frame->buf[i]) //so not use planes + nb_extended_buf!
+                continue;
+            buf[i] = av_buffer_ref(frame->buf[i]);
+            if (!buf[i]) {
+                qWarning("av_buffer_ref(frame->buf[%d]) error", i);
+            }
+        }
+        if (!frame->extended_buf)
+            return;
+        for (int i = 0; i < frame->nb_extended_buf; ++i) {
+            const int k = buf.size() + i - frame->nb_extended_buf;
+            buf[k] = av_buffer_ref(frame->extended_buf[i]);
+            if (!buf[k]) {
+                qWarning("av_buffer_ref(frame->extended_buf[%d]) error", i);
+            }
+        }
+#endif //QTAV_HAVE(AVBUFREF)
+    }
+    ~AVFrameBuffers() {
+#if QTAV_HAVE(AVBUFREF)
+        foreach (AVBufferRef* b, buf) {
+            av_buffer_unref(&b);
+        }
+#endif //QTAV_HAVE(AVBUFREF)
+    }
+};
+typedef QSharedPointer<AVFrameBuffers> AVFrameBuffersRef;
 
 class Q_AV_PRIVATE_EXPORT AVDecoderPrivate : public DPtrPrivate<AVDecoder>
 {
@@ -62,6 +109,7 @@ public:
     }
     virtual bool open() {return true;}
     virtual void close() {}
+    virtual bool enableFrameRef() const { return true;}
     void applyOptionsForDict();
     void applyOptionsForContext();
 
@@ -97,4 +145,7 @@ public:
     int width, height;
 };
 } //namespace QtAV
+
+Q_DECLARE_METATYPE(QtAV::AVFrameBuffersRef)
+
 #endif // QTAV_AVDECODER_P_H

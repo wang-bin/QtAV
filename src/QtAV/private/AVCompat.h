@@ -143,6 +143,9 @@ int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *ofor
 #define GCC_VERSION_AT_LEAST(major, minor, patch) 0
 #endif
 
+//FFmpeg2.0, Libav10 2013-03-08 - Reference counted buffers - lavu 52.19.100/52.8.0, lavc 55.0.100 / 55.0.0, lavf 55.0.100 / 55.0.0, lavd 54.4.100 / 54.0.0, lavfi 3.5.0
+#define QTAV_HAVE_AVBUFREF AV_MODULE_CHECK(LIBAVUTIL, 52, 8, 0, 19, 100)
+
 /*TODO: libav
 avutil: error.h
 */

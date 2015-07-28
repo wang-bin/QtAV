@@ -34,7 +34,7 @@ static AVPixelFormat ffmpeg_get_va_format(struct AVCodecContext *c, const AVPixe
     return va->getFormat(c, ff);
 }
 
-#if QTAV_VA_REF
+#if QTAV_HAVE(AVBUFREF)
 
 typedef struct ffmpeg_va_ref_t {
     VideoDecoderFFmpegHWPrivate *va;
@@ -116,7 +116,7 @@ static void ffmpeg_release_va_buffer(struct AVCodecContext *c, AVFrame *ff)
     memset(ff->data, 0, sizeof(ff->data));
     memset(ff->linesize, 0, sizeof(ff->linesize));
 }
-#endif //QTAV_VA_REF
+#endif //QTAV_HAVE(AVBUFREF)
 
 
 bool VideoDecoderFFmpegHWPrivate::prepare()
@@ -147,22 +147,22 @@ bool VideoDecoderFFmpegHWPrivate::prepare()
 
     pixfmt = codec_ctx->pix_fmt;
     get_format = codec_ctx->get_format;
-#if QTAV_VA_REF
+#if QTAV_HAVE(AVBUFREF)
     get_buffer2 = codec_ctx->get_buffer2;
 #else
     get_buffer = codec_ctx->get_buffer;
     reget_buffer = codec_ctx->reget_buffer;
     release_buffer = codec_ctx->release_buffer;
-#endif //QTAV_VA_REF
+#endif //QTAV_HAVE(AVBUFREF)
     codec_ctx->get_format = ffmpeg_get_va_format;
-#if QTAV_VA_REF
+#if QTAV_HAVE(AVBUFREF)
     codec_ctx->get_buffer2 = ffmpeg_get_va_buffer2;
 #else
     // TODO: FF_API_GET_BUFFER
     codec_ctx->get_buffer = ffmpeg_get_va_buffer;//ffmpeg_GetFrameBuf;
     codec_ctx->reget_buffer = avcodec_default_reget_buffer;
     codec_ctx->release_buffer = ffmpeg_release_va_buffer;//ffmpeg_ReleaseFrameBuf;
-#endif //QTAV_VA_REF
+#endif //QTAV_HAVE(AVBUFREF)
     return true;
 }
 
