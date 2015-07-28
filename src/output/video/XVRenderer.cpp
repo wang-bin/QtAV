@@ -403,7 +403,7 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
         if (!d.prepareImage(frame.width(), frame.height()))
             return false;
     }
-    if (frame.bits(0))
+    if (frame.constBits(0))
         d.video_frame = frame;
     else // FIXME: not work
         d.video_frame = frame.to(frame.pixelFormat()); // assume frame format is supported
@@ -412,7 +412,7 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     QVector<size_t> src_linesize(nb_planes);
     QVector<const quint8*> src(nb_planes);
     for (int i = 0; i < nb_planes; ++i) {
-        src[i] = d.video_frame.bits(i);
+        src[i] = d.video_frame.constBits(i);
         src_linesize[i] = d.video_frame.bytesPerLine(i);
     }
 #endif
@@ -434,9 +434,9 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
         CopyFromYv12(dst, dst_linesize, src.data(), src_linesize.data(), dst_linesize[0], d.xv_image->height);
 #else
         const uchar *src[] = {
-            d.video_frame.bits(0),
-            d.video_frame.bits(1),
-            d.video_frame.bits(2)
+            d.video_frame.constBits(0),
+            d.video_frame.constBits(1),
+            d.video_frame.constBits(2)
         };
         unsigned src_linesize[] = {
             (unsigned)d.video_frame.bytesPerLine(0),

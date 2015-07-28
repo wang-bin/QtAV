@@ -463,7 +463,7 @@ void SubtitleProcessorLibASS::renderASS32(QImage *image, ASS_Image *img, int dst
     const quint8 b = _b(img->color);
     quint8 *src = img->bitmap;
     // use QRgb to avoid endian issue
-    QRgb *dst = (QRgb*)image->bits() + dstY * image->width() + dstX;
+    QRgb *dst = (QRgb*)image->constBits() + dstY * image->width() + dstX;
     for (int y = 0; y < img->h; ++y) {
         for (int x = 0; x < img->w; ++x) {
             const unsigned k = ((unsigned) src[x])*a/255;

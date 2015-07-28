@@ -225,7 +225,7 @@ QPaintEngine* GDIRenderer::paintEngine() const
 bool GDIRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(GDIRenderer);
-    if (frame.bits(0))
+    if (frame.constBits(0))
         d.video_frame = frame;
     else
         d.video_frame = frame.to(frame.pixelFormat());
@@ -257,7 +257,7 @@ void GDIRenderer::drawFrame()
      */
     //steps to use BitBlt: http://bbs.csdn.net/topics/60183502
     Bitmap bitmap(d.video_frame.width(), d.video_frame.height(), d.video_frame.bytesPerLine(0)
-                  , PixelFormat32bppRGB, (BYTE*)d.video_frame.bits(0));
+                  , PixelFormat32bppRGB, (BYTE*)d.video_frame.constBits(0));
 #if USE_GRAPHICS
     if (d.graphics)
         d.graphics->DrawImage(&bitmap, d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());

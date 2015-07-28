@@ -271,8 +271,8 @@ void QPainterFilterContext::initializeOnFrame(VideoFrame *vframe)
         paint_device = 0;
     }
     Q_ASSERT(video_width > 0 && video_height > 0);
-    // direct draw on frame data, so use VideoFrame::bits()
-    paint_device = new QImage((uchar*)vframe->bits(0), video_width, video_height, vframe->bytesPerLine(0), format.imageFormat());
+    // direct draw on frame data, so use VideoFrame::constBits()
+    paint_device = new QImage((uchar*)vframe->constBits(0), video_width, video_height, vframe->bytesPerLine(0), format.imageFormat());
     if (!painter)
         painter = new QPainter();
     own_painter = true;

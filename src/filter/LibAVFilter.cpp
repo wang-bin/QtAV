@@ -484,7 +484,7 @@ bool LibAVFilter::Private::pushVideoFrame(Frame *frame, bool changed, const QStr
     avframe->height = vf->height();
     avframe->format = (AVPixelFormat)vf->pixelFormatFFmpeg();
     for (int i = 0; i < vf->planeCount(); ++i) {
-        avframe->data[i] =vf->bits(i);
+        avframe->data[i] = (uint8_t*)vf->constBits(i);
         avframe->linesize[i] = vf->bytesPerLine(i);
     }
     //int ret = av_buffersrc_add_frame_flags(in_filter_ctx, avframe, AV_BUFFERSRC_FLAG_KEEP_REF);
@@ -523,8 +523,8 @@ bool LibAVFilter::Private::pushAudioFrame(Frame *frame, bool changed, const QStr
     avframe->format = (AVSampleFormat)afmt.sampleFormatFFmpeg();
     avframe->nb_samples = af->samplesPerChannel();
     for (int i = 0; i < af->planeCount(); ++i) {
-        //avframe->data[i] = af->bits(i);
-        avframe->extended_data[i] = af->bits(i);
+        //avframe->data[i] = (uint8_t*)af->constBits(i);
+        avframe->extended_data[i] = (uint8_t*)af->constBits(i);
         avframe->linesize[i] = af->bytesPerLine(i);
     }
     AV_ENSURE_OK(av_buffersrc_write_frame(in_filter_ctx, avframe), false);

@@ -193,7 +193,7 @@ bool AudioEncoderFFmpeg::encode(const AudioFrame &frame)
         const int sample_stride = fmt.isPlanar() ? fmt.bytesPerSample() : fmt.bytesPerSample()*fmt.channels();
         for (int i = 0; i < nb_planes; ++i) {
             f->linesize[i] = f->nb_samples * sample_stride;// frame.bytesPerLine(i); //
-            f->extended_data[i] = (uint8_t*)frame.bits(i);
+            f->extended_data[i] = (uint8_t*)frame.constBits(i);
         }
     }
     AVPacket pkt;

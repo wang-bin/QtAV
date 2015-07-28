@@ -55,7 +55,7 @@ public:
     //set planes and linesize manually or call init
     VideoFrame(const QByteArray& data, int width, int height, const VideoFormat& format);
     VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat& format);
-    VideoFrame(const QImage& image);
+    VideoFrame(const QImage& image); // does not copy the image data
     VideoFrame(const VideoFrame &other);
     virtual ~VideoFrame();
 

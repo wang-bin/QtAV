@@ -588,7 +588,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
         pb.allocate(pb.size());
         GLubyte* ptr = (GLubyte*)pb.map(QOpenGLBuffer::WriteOnly);
         if (ptr) {
-            memcpy(ptr, d.frame.bits(p), pb.size());
+            memcpy(ptr, d.frame.constBits(p), pb.size());
             pb.unmap();
         }
     }
@@ -599,7 +599,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     // TODO: data address use surfaceinterop.map()
-    DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.bits(p)));
+    DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)));
     //DYGL(glBindTexture(d.target, 0)); // no bind 0 because glActiveTexture was called
     if (d.try_pbo) {
         d.pbo[p].release();

@@ -316,7 +316,7 @@ bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
     HRESULT hr = S_OK;
     //if d2d factory is D2D1_FACTORY_TYPE_SINGLE_THREADED, we need to lock
     //already locked
-    if (frame.bits(0))
+    if (frame.constBits(0))
         d.video_frame = frame;
     else
         d.video_frame = frame.to(frame.pixelFormat());
@@ -324,7 +324,7 @@ bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
     /*if lock is required, do not use locker in if() scope, it will unlock outside the scope*/
     //TODO: d2d often crash, should we always lock? How about other renderer?
     hr = d.bitmap->CopyFromMemory(NULL //&D2D1::RectU(0, 0, image.width(), image.height()) /*&dstRect, NULL?*/,
-                                  , frame.bits(0) //data.constData() //msdn: const void*
+                                  , frame.constBits(0) //data.constData() //msdn: const void*
                                   , frame.bytesPerLine(0));
     if (hr != S_OK) {
         qWarning("Failed to copy from memory to bitmap (%ld)", hr);

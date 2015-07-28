@@ -130,7 +130,7 @@ bool QQuickItemRenderer::receiveFrame(const VideoFrame &frame)
     DPTR_D(QQuickItemRenderer);
     d.video_frame = frame;
     if (!isOpenGL()) {
-        d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.bytesPerLine(), frame.imageFormat());
+        d.image = QImage((uchar*)frame.constBits(), frame.width(), frame.height(), frame.bytesPerLine(), frame.imageFormat());
         QRect r = realROI();
         if (r != QRect(0, 0, frame.width(), frame.height()))
             d.image = d.image.copy(r);

@@ -141,7 +141,7 @@ AudioFrame AudioFrame::clone() const
     char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
     for (int i = 0; i < f.planeCount(); ++i) {
         const int plane_size = f.bytesPerLine(i);
-        memcpy(dst, f.bits(i), plane_size);
+        memcpy(dst, f.constBits(i), plane_size);
         dst += plane_size;
     }
     f.setTimestamp(timestamp());
@@ -179,12 +179,12 @@ void AudioFrame::setSamplesPerChannel(int samples)
     }
     if (d->data.isEmpty())
         return;
-    if (!bits(0)) {
+    if (!constBits(0)) {
         setBits((quint8*)d->data.constData(), 0);
     }
     for (int i = 1; i < nb_planes; ++i) {
-        if (!bits(i)) {
-            setBits(bits(i-1) + bpl, i);
+        if (!constBits(i)) {
+            setBits((uchar*)constBits(i-1) + bpl, i);
         }
     }
 }
@@ -201,7 +201,7 @@ void AudioFrame::setAudioResampler(AudioResampler *conv)
 
 AudioFrame AudioFrame::to(const AudioFormat &fmt) const
 {
-    if (!isValid() || !bits(0))
+    if (!isValid() || !constBits(0))
         return AudioFrame();
     //if (fmt == format())
       //  return clone(); //FIXME: clone a frame from ffmpeg is not enough?

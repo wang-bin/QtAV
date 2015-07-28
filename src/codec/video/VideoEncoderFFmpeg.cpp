@@ -162,7 +162,7 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
         const int nb_planes = frame.planeCount();
         for (int i = 0; i < nb_planes; ++i) {
             f->linesize[i] = frame.bytesPerLine(i);
-            f->data[i] = (uint8_t*)frame.bits(i);
+            f->data[i] = (uint8_t*)frame.constBits(i);
         }
         if (d.avctx->width <= 0) {
             d.avctx->width = frame.width();

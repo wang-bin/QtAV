@@ -68,7 +68,8 @@ public:
     // deep copy 1 plane data
     QByteArray data(int plane = 0) const;
     uchar* bits(int plane = 0);
-    const uchar *bits(int plane = 0) const;
+    const uchar *bits(int plane = 0) const { return constBits(plane);}
+    const uchar* constBits(int plane = 0) const;
     /*!
      * \brief setBits
      * does nothing if plane is invalid. if given array size is greater than planeCount(), only planeCount() elements is used

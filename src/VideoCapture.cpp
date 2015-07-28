@@ -18,8 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-
 #include "QtAV/VideoCapture.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
@@ -197,7 +195,7 @@ void VideoCapture::request()
 void VideoCapture::start()
 {
     emit frameAvailable(frame); //TODO: no copy
-    if (!frame.isValid() || !frame.bits(0)) { // if frame is always cloned, then size is at least width*height
+    if (!frame.isValid() || !frame.constBits(0)) { // if frame is always cloned, then size is at least width*height
         qDebug("Captured frame from hardware decoder surface.");
     }
     CaptureTask *task = new CaptureTask(this);
