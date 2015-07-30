@@ -198,6 +198,11 @@ void AVTranscoder::stop()
         return;
     if (!d->muxer.isOpen())
         return;
+    // uninstall encoder filters first then encoders can be closed safely
+    if (sourcePlayer()) {
+        sourcePlayer()->uninstallFilter(d->afilter);
+        sourcePlayer()->uninstallFilter(d->vfilter);
+    }
     // get delayed frames. call VideoEncoder.encode() directly instead of through filter
     if (audioEncoder()) {
         while (audioEncoder()->encode()) {
@@ -214,10 +219,6 @@ void AVTranscoder::stop()
             d->muxer.writeVideo(pkt);
         }
         videoEncoder()->close();
-    }
-    if (sourcePlayer()) {
-        sourcePlayer()->uninstallFilter(d->afilter);
-        sourcePlayer()->uninstallFilter(d->vfilter);
     }
     d->muxer.close();
     d->started = false;
