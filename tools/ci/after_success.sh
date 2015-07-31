@@ -1,3 +1,4 @@
+exit 0
 set -ev
 
 # download ifw for linux, mingw
