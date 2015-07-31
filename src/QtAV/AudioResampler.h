@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -42,7 +42,12 @@ public:
 
     QByteArray outData() const;
     /* check whether the parameters are supported. If not, you should use ff*/
-    virtual bool prepare(); //call after all parameters are setted
+    /*!
+     * \brief prepare
+     * Check whether the parameters are supported and setup the resampler
+     * setIn/OutXXX will call prepare() if format is changed
+     */
+    virtual bool prepare();
     virtual bool convert(const quint8** data);
     //speed: >0, default is 1
     void setSpeed(qreal speed); //out_sample_rate = out_sample_rate/speed
