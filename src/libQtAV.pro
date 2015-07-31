@@ -174,7 +174,7 @@ config_openal {
       LIBS += -lOpenAL
     } else {
       LIBS += -lopenal
-      !android: LIBS += -lasound
+      static_openal:!android: LIBS += -lasound
     }
 }
 config_opensl {
