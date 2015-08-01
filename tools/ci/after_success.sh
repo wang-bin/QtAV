@@ -21,6 +21,6 @@ export PATH=$PWD:$PATH
 cd $TRAVIS_BUILD_DIR
 type -a sshpass
 # ignore known hosts: -o StrictHostKeyChecking=no
-sshpass -p $SF_PWD scp -o StrictHostKeyChecking=no $PKG $SF_USER@frs.sourceforge.net:/home/frs/project/qtav/ci
+sshpass -p $SF_PWD scp -o StrictHostKeyChecking=no $PKG $SF_USER,qtav@frs.sourceforge.net:/home/frs/project/q/qt/qtav
 #rsync --password-file=$PWF -avP -e ssh $PKG $SF_USER@frs.sourceforge.net:/home/frs/project/qtav/ci/
 #curl -H "Accept: application/json" -X PUT -d "default=linux&default=bsd&default=solaris" -d "api_key=$SF_API_KEY" https://sourceforge.net/projects/qtav/files/ci/$PKG

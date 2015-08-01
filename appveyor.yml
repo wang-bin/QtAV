@@ -92,8 +92,8 @@ deploy:
   provider: FTP
   protocol: sftp
   host: frs.sourceforge.net
-  username: novesky
+  username: novesky,qtav
   password:
     secure: 2mQg4oxdX8S7rMJz2TCGGg==
-  folder: /home/frs/project/qtav/ci        # why always relative path even if starts with / ? I have to make a link home/frs/project/qtav/ci => /home/frs/project/qtav/ci
+  folder: /home/frs/project/q/qt/qtav/ci # why always relative path even if starts with / ? I have to make a link home/frs/project/q/qt/qtav/ci => /home/frs/project/q/qt/qtav/ci
   active_mode: false
