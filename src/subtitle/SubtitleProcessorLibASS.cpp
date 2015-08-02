@@ -351,12 +351,6 @@ void SubtitleProcessorLibASS::updateFontCache()
         if (conf.isEmpty())
             conf = qApp->applicationDirPath().append("/fonts/fonts.conf").toUtf8();
     }
-    static QByteArray font_dir; //FC_CONFIG_DIR?
-    if (font_dir.isEmpty()) {
-        font_dir = qgetenv("QTAV_SUB_FONT_DIR");
-        if (font_dir.isEmpty())
-            font_dir = qApp->applicationDirPath().append("/fonts").toUtf8();
-    }
     static QByteArray font;
     if (font.isEmpty()) {
         font = qgetenv("QTAV_SUB_FONT_FILE_DEFAULT");
@@ -365,7 +359,7 @@ void SubtitleProcessorLibASS::updateFontCache()
     if (family.isEmpty()) {
         family = qgetenv("QTAV_SUB_FONT_FAMILY_DEFAULT");
     }
-    ass_set_fonts_dir(m_ass, font_dir.constData());
+    //ass_set_fonts_dir(m_ass, font_dir.constData()); // we can set it in fonts.conf <dir></dir>
     // update cache later (maybe async update in the future)
     ass_set_fonts(m_renderer, font.isEmpty() ? NULL : font.constData(), family.isEmpty() ? NULL : family.constData(), 1, conf.constData(), 0);
     ass_fonts_update(m_renderer);
