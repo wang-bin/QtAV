@@ -400,7 +400,7 @@ void AVDemuxThread::run()
     if (video_thread && !video_thread->isRunning())
         video_thread->start();
 
-    int index = 0;
+    int stream = 0;
     Packet pkt;
     pause(false);
     qDebug("get av queue a/v thread = %p %p", audio_thread, video_thread);
@@ -451,7 +451,7 @@ void AVDemuxThread::run()
         if (!demuxer->readFrame()) {
             continue;
         }
-        index = demuxer->stream();
+        stream = demuxer->stream();
         pkt = demuxer->packet();
         Packet apkt;
         bool audio_has_pic = demuxer->hasAttacedPicture();
@@ -492,7 +492,7 @@ void AVDemuxThread::run()
          * stream data: aavavvavvavavavavavavavavvvaavavavava, it's ok
          */
         //TODO: use cache queue, take from cache queue if not empty?
-        const bool a_internal = index == demuxer->audioStream();
+        const bool a_internal = stream == demuxer->audioStream();
         if (a_internal || a_ext > 0) {//apkt.isValid()) {
             if (a_internal && !a_ext) // internal is always read even if external audio used
                 apkt = demuxer->packet();
@@ -510,13 +510,13 @@ void AVDemuxThread::run()
                 // always block full if no vqueue because empty callback may set false
                 // attached picture is cover for song, 1 frame
                 aqueue->blockFull(!video_thread || !video_thread->isRunning() || !vqueue || audio_has_pic);
-                // external audio: a_ext < 0, index = audio_idx=>put invalid packet
+                // external audio: a_ext < 0, stream = audio_idx=>put invalid packet
                 if (a_ext >= 0)
                     aqueue->put(apkt); //affect video_thread
             }
         }
         // always check video stream if use external audio
-        if (index == demuxer->videoStream()) {
+        if (stream == demuxer->videoStream()) {
             if (vqueue) {
                 if (!video_thread || !video_thread->isRunning()) {
                     vqueue->clear();
@@ -525,8 +525,8 @@ void AVDemuxThread::run()
                 vqueue->blockFull(!audio_thread || !audio_thread->isRunning() || !aqueue || aqueue->isEnough());
                 vqueue->put(pkt); //affect audio_thread
             }
-        } else if (index == demuxer->subtitleStream()) { //subtitle
-            Q_EMIT internalSubtitlePacketRead(pkt);
+        } else if (demuxer->subtitleStreams().contains(stream)) { //subtitle
+            Q_EMIT internalSubtitlePacketRead(demuxer->subtitleStreams().indexOf(stream), pkt);
         } else {
             continue;
         }

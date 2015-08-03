@@ -245,17 +245,22 @@ void PlayerSubtitle::tryReload(int flag)
     QByteArray codec(track.value("codec").toByteArray());
     QByteArray data(track.value("extra").toByteArray());
     m_sub->processHeader(codec, data);
-    // TODO: call processData with subtitle at current time current track
+    Packet pkt(m_current_pkt[n]);
+    if (pkt.isValid()) {
+        processInternalSubtitlePacket(n, pkt);
+    }
 }
 
 void  PlayerSubtitle::updateInternalSubtitleTracks(const QVariantList &tracks)
 {
     m_tracks = tracks;
+    m_current_pkt.resize(tracks.size());
 }
 
-void PlayerSubtitle::processInternalSubtitlePacket(const QtAV::Packet &packet)
+void PlayerSubtitle::processInternalSubtitlePacket(int track, const QtAV::Packet &packet)
 {
     m_sub->processLine(packet.data, packet.pts, packet.duration);
+    m_current_pkt[track] = packet;
 }
 
 void PlayerSubtitle::processInternalSubtitleHeader(const QByteArray& codec, const QByteArray &data)
@@ -268,7 +273,7 @@ void PlayerSubtitle::connectSignals()
     connect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
     connect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
-    connect(m_player, SIGNAL(internalSubtitlePacketRead(QtAV::Packet)), this, SLOT(processInternalSubtitlePacket(QtAV::Packet)));
+    connect(m_player, SIGNAL(internalSubtitlePacketRead(int,QtAV::Packet)), this, SLOT(processInternalSubtitlePacket(int,QtAV::Packet)));
     connect(m_player, SIGNAL(internalSubtitleHeaderRead(QByteArray,QByteArray)), this, SLOT(processInternalSubtitleHeader(QByteArray,QByteArray)));
     connect(m_player, SIGNAL(internalSubtitleTracksChanged(QVariantList)), this, SLOT(updateInternalSubtitleTracks(QVariantList)));
     // try to reload internal subtitle track. if failed and external subtitle is enabled, fallback to external
@@ -282,7 +287,7 @@ void PlayerSubtitle::disconnectSignals()
     disconnect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
     disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
     disconnect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
-    disconnect(m_player, SIGNAL(internalSubtitlePacketRead(QtAV::Packet)), this, SLOT(processInternalSubtitlePacket(QtAV::Packet)));
+    disconnect(m_player, SIGNAL(internalSubtitlePacketRead(int,QtAV::Packet)), this, SLOT(processInternalSubtitlePacket(int,QtAV::Packet)));
     disconnect(m_player, SIGNAL(internalSubtitleHeaderRead(QByteArray,QByteArray)), this, SLOT(processInternalSubtitleHeader(QByteArray,QByteArray)));
     disconnect(m_player, SIGNAL(internalSubtitleTracksChanged(QVariantList)), this, SLOT(updateInternalSubtitleTracks(QVariantList)));
     disconnect(m_sub, SIGNAL(codecChanged()), this, SLOT(tryReload()));

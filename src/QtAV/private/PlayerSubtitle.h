@@ -24,12 +24,13 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QVariant>
+#include <QtCore/QVector>
 #include <QtAV/QtAV_Global.h>
+#include <QtAV/Packet.h>
 
 namespace QtAV {
 
 class AVPlayer;
-class Packet;
 class Subtitle;
 /*!
  * \brief The PlayerSubtitle class
@@ -71,8 +72,8 @@ private Q_SLOTS:
     void tryReload();
     void tryReloadInternalSub();
     void updateInternalSubtitleTracks(const QVariantList& tracks);
-    void processInternalSubtitlePacket(const QtAV::Packet& packet);
-    void processInternalSubtitleHeader(const QByteArray &codec, const QByteArray& data);
+    void processInternalSubtitlePacket(int track, const QtAV::Packet& packet);
+    void processInternalSubtitleHeader(const QByteArray &codec, const QByteArray& data); //TODO: remove
 private:
     void connectSignals();
     void disconnectSignals();
@@ -84,6 +85,7 @@ private:
     Subtitle *m_sub;
     QString m_file;
     QVariantList m_tracks;
+    QVector<Packet> m_current_pkt;
 };
 
 }

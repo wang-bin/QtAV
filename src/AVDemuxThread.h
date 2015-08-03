@@ -61,7 +61,7 @@ Q_SIGNALS:
     void mediaStatusChanged(QtAV::MediaStatus);
     void bufferProgressChanged(qreal);
     void seekFinished(qint64 timestamp);
-    void internalSubtitlePacketRead(const QtAV::Packet& packet);
+    void internalSubtitlePacketRead(int index, const QtAV::Packet& packet);
 private slots:
     void seekOnPauseFinished();
     void frameDeliveredNextFrame();

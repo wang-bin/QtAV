@@ -488,7 +488,7 @@ Q_SIGNALS:
      * codec is used by subtitle processors
      */
     void internalSubtitleHeaderRead(const QByteArray& codec, const QByteArray& data);
-    void internalSubtitlePacketRead(const QtAV::Packet& packet);
+    void internalSubtitlePacketRead(int track, const QtAV::Packet& packet);
 private Q_SLOTS:
     void loadInternal(); // simply load
     void playInternal(); // simply play
