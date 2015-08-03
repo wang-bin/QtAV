@@ -17,7 +17,7 @@ Page {
         }
         Text {
             id: detail
-            font.pointSize: Utils.kFontSize
+            font.pixelSize: Utils.kFontSize
             color: "white"
             width: parent.width
             horizontalAlignment: Text.AlignHCenter

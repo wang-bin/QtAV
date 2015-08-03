@@ -103,12 +103,16 @@ Rectangle {
         }
 
         onInternalAudioTracksChanged: {
-            if (typeof(pageLoader.item.internalTracks) != "undefined")
-                pageLoader.item.internalTracks = player.internalAudioTracks
+            if (typeof(pageLoader.item.internalAudioTracks) != "undefined")
+                pageLoader.item.internalAudioTracks = player.internalAudioTracks
         }
         onExternalAudioTracksChanged: {
-            if (typeof(pageLoader.item.externalTracks) != "undefined")
-                pageLoader.item.externalTracks = player.externalAudioTracks
+            if (typeof(pageLoader.item.externalAudioTracks) != "undefined")
+                pageLoader.item.externalAudioTracks = player.externalAudioTracks
+        }
+        onInternalSubtitleTracksChanged: {
+            if (typeof(pageLoader.item.internalSubtitleTracks) != "undefined")
+                pageLoader.item.internalSubtitleTracks = player.internalSubtitleTracks
         }
 
         onStopped: control.setStopState()
@@ -389,11 +393,12 @@ Rectangle {
                         metaData: player.metaData
                     }
                 }
-                console.log("onXXXternalAudioTracksChanged...")
-                if (typeof(item.internalTracks) != "undefined")
-                    item.internalTracks = player.internalAudioTracks
-                if (typeof(item.externalTracks) != "undefined")
-                    item.externalTracks = player.externalAudioTracks
+                if (typeof(item.internalAudioTracks) != "undefined")
+                    item.internalAudioTracks = player.internalAudioTracks
+                if (typeof(item.externalAudioTracks) != "undefined")
+                    item.externalAudioTracks = player.externalAudioTracks
+                if (typeof(item.internalSubtitleTracks) != "undefined")
+                    item.internalSubtitleTracks = player.internalSubtitleTracks
             }
         }
         Connections {
@@ -407,6 +412,7 @@ Rectangle {
             onMuteChanged: player.muted = value
             onExternalAudioChanged: player.externalAudio = file
             onAudioTrackChanged: player.audioTrack = track
+            onSubtitleTrackChanged: player.internalSubtitleTrack = track
             onZeroCopyChanged: {
                 var opt = player.videoCodecOptions
                 if (value) {

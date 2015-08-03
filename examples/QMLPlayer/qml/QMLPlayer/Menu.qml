@@ -7,6 +7,7 @@ Item {
     property int currentIndex: -1 //listView.currentIndex //wrong value
     property int itemWidth: Utils.kItemWidth
     property int itemHeight: Utils.kItemHeight
+    property alias header: listView.header
     property alias listOrientation: listView.orientation
     property alias spacing: listView.spacing
     property alias contentWidth: listView.contentWidth

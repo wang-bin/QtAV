@@ -6,56 +6,20 @@ Page {
     id: root
     title: qsTr("Subtitle")
     signal subtitleChanged(string file)
+    signal subtitleTrackChanged(int track)
     property var supportedFormats: ["ass" , "ssa"]
-    height: titleHeight + 7*Utils.kItemHeight + engine.contentHeight
+    height: titleHeight + tracksMenu.height + 8*Utils.kItemHeight + engine.contentHeight + Utils.kSpacing*7
+    property var internalSubtitleTracks : "unkown"
     Column {
         anchors.fill: content
         spacing: Utils.kSpacing
         Row {
             width: parent.width
             height: Utils.kItemHeight
-            Button {
-                text: qsTr("Enabled")
-                checkable: true
-                checked: PlayerConfig.subtitleEnabled
-                width: parent.width/2
-                height: Utils.kItemHeight
-                onCheckedChanged: PlayerConfig.subtitleEnabled = checked
-            }
-            Button {
-                id: autoLoad
-                text: qsTr("Auto load")
-                checkable: true
-                checked: PlayerConfig.subtitleAutoLoad
-                width: parent.width/2
-                height: Utils.scaled(30)
-                onCheckedChanged: PlayerConfig.subtitleAutoLoad = checked
-            }
-        }
-        Row {
-            width: parent.width
-            height: Utils.kItemHeight
-            TextEdit {
-                id: file
-                color: "orange"
-                font.pixelSize: Utils.kFontSize
-                width: parent.width - open.width
-                height: parent.height
-            }
-            Button {
-                id: open
-                text: qsTr("Open")
-                width: Utils.scaled(60)
-                height: Utils.kItemHeight
-                onClicked: fileDialog.open()
-            }
-        }
-        Row {
-            width: parent.width
-            height: Utils.kItemHeight
             Text {
                 id: delayLabel
                 color: "white"
+                font.pixelSize: Utils.kFontSize
                 text: qsTr("Delay")
                 width: Utils.scaled(60)
                 height: Utils.kItemHeight
@@ -159,7 +123,7 @@ Page {
             Text {
                 text: qsTr("Preview") + ":"
                 color: "white"
-                font.pointSize: Utils.kFontSize
+                font.pixelSize: Utils.kFontSize
             }
             TextInput {
                 color: "orange"
@@ -178,8 +142,87 @@ Page {
                 color: PlayerConfig.subtitleColor
             }
         }
+        Text {
+            color: "white"
+            text: qsTr("Embedded Subtitles") + ": " + internalSubtitleTracks.length
+            font.pixelSize: Utils.kFontSize
+            font.bold: true
+        }
+        Menu {
+            id: tracksMenu
+            width: parent.width
+            itemWidth: parent.width
+            model: ListModel {
+                id: tracksModel
+            }
+            onClicked: {
+                console.log("subtitle track clikced: " + tracksModel.get(index).value)
+                root.subtitleTrackChanged(tracksModel.get(index).value)
+            }
+        }
+        Text {
+            color: "white"
+            text: qsTr("External Subtitle")
+            font.pixelSize: Utils.kFontSize
+            font.bold: true
+        }
+        Row {
+            width: parent.width
+            height: Utils.kItemHeight
+            Button {
+                text: qsTr("Enabled")
+                checkable: true
+                checked: PlayerConfig.subtitleEnabled
+                width: parent.width/2
+                height: Utils.kItemHeight
+                onCheckedChanged: PlayerConfig.subtitleEnabled = checked
+            }
+            Button {
+                id: autoLoad
+                text: qsTr("Auto load")
+                checkable: true
+                checked: PlayerConfig.subtitleAutoLoad
+                width: parent.width/2
+                height: Utils.scaled(30)
+                onCheckedChanged: PlayerConfig.subtitleAutoLoad = checked
+            }
+        }
+        Row {
+            width: parent.width
+            height: Utils.kItemHeight
+            TextEdit {
+                id: file
+                color: "orange"
+                font.pixelSize: Utils.kFontSize
+                width: parent.width - open.width
+                height: parent.height
+            }
+            Button {
+                id: open
+                text: qsTr("Open")
+                width: Utils.scaled(60)
+                height: Utils.kItemHeight
+                onClicked: fileDialog.open()
+            }
+        }
     }
 
+    onInternalSubtitleTracksChanged: updateTracksMenu()
+    function updateTracksMenu() {
+        tracksModel.clear()
+        tracksMenu.height = Math.min(internalSubtitleTracks.length, 2)*tracksMenu.itemHeight
+        for (var i = 0; i < internalSubtitleTracks.length; ++i) {
+            var t = internalSubtitleTracks[i]
+            var label = "#" + t.id
+            if (t.codec)
+                label += " '" + t.codec + "'"
+            if (t.language)
+                label += " (" + t.language + ")"
+            if (t.title)
+                label += ": " + t.title
+            tracksModel.append({name: label, value: t.id})
+        }
+    }
     FileDialog {
         id: fileDialog
         title: qsTr("Open a subtitle file")
