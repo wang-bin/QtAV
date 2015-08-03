@@ -1002,6 +1002,7 @@ bool AVPlayer::setSubtitleStream(int n)
         return true;
     // TODO: xxxchanged signal
     d->subtitle_track = n;
+    Q_EMIT subtitleStreamChanged(n);
     if (!d->demuxer.isLoaded())
         return true;
     return d->applySubtitleStream(n, this);

@@ -408,6 +408,12 @@ QVariantList AVPlayer::Private::getTracksInfo(AVDemuxer *demuxer, AVDemuxer::Str
         t["id"] = info.size();
         t["file"] = demuxer->fileName();
         AVStream *stream = demuxer->formatContext()->streams[s];
+        AVCodecContext *ctx = stream->codec;
+        if (ctx) {
+            t["codec"] = QByteArray(avcodec_descriptor_get(ctx->codec_id)->name);
+            if (ctx->extradata)
+                t["extra"] = QByteArray((const char*)ctx->extradata, ctx->extradata_size);
+        }
         AVDictionaryEntry *tag = av_dict_get(stream->metadata, "language", NULL, 0);
         if (!tag)
             tag = av_dict_get(stream->metadata, "lang", NULL, 0);

@@ -77,6 +77,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , m_timeout(30000)
   , m_abort_timeout(true)
   , m_audio_track(0)
+  , m_sub_track(0)
 {
     classBegin();
 }
@@ -86,6 +87,7 @@ void QmlAVPlayer::classBegin()
     if (mpPlayer)
         return;
     mpPlayer = new AVPlayer(this);
+    connect(mpPlayer, SIGNAL(internalSubtitleTracksChanged(QVariantList)), SIGNAL(internalSubtitleTracksChanged()));
     connect(mpPlayer, SIGNAL(internalAudioTracksChanged(QVariantList)), SIGNAL(internalAudioTracksChanged()));
     connect(mpPlayer, SIGNAL(externalAudioTracksChanged(QVariantList)), SIGNAL(externalAudioTracksChanged()));
     connect(mpPlayer, SIGNAL(durationChanged(qint64)), SIGNAL(durationChanged()));
@@ -379,6 +381,26 @@ QVariantList QmlAVPlayer::internalAudioTracks() const
     return mpPlayer ? mpPlayer->internalAudioTracks() : QVariantList();
 }
 
+int QmlAVPlayer::internalSubtitleTrack() const
+{
+    return m_sub_track;
+}
+
+void QmlAVPlayer::setInternalSubtitleTrack(int value)
+{
+    if (m_sub_track == value)
+        return;
+    m_sub_track = value;
+    Q_EMIT internalSubtitleTrackChanged();
+    if (mpPlayer)
+        mpPlayer->setSubtitleStream(value);
+}
+
+QVariantList QmlAVPlayer::internalSubtitleTracks() const
+{
+    return mpPlayer ? mpPlayer->internalSubtitleTracks() : QVariantList();
+}
+
 QStringList QmlAVPlayer::videoCodecPriority() const
 {
     return mVideoCodecs;
@@ -508,6 +530,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
             mpPlayer->setInterruptOnTimeout(m_abort_timeout);
             mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->setAudioStream(m_audio_track);
+            mpPlayer->setSubtitleStream(m_sub_track);
             if (!vcodec_opt.isEmpty()) {
                 QVariantHash vcopt;
                 for (QVariantMap::const_iterator cit = vcodec_opt.cbegin(); cit != vcodec_opt.cend(); ++cit) {
@@ -666,7 +689,7 @@ void QmlAVPlayer::_q_started()
     // TODO: in load()?
     m_metaData->setValuesFromStatistics(mpPlayer->statistics());
     if (!mHasAudio) {
-        mHasAudio = mpPlayer->audioStreamCount() > 0;
+        mHasAudio = !mpPlayer->internalAudioTracks().isEmpty();
         if (mHasAudio)
             emit hasAudioChanged();
     }

@@ -76,6 +76,9 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
     Q_PROPERTY(QVariantList internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
     Q_PROPERTY(QVariantList externalAudioTracks READ externalAudioTracks NOTIFY externalAudioTracksChanged)
+    Q_PROPERTY(QVariantList internalSubtitleTracks READ internalSubtitleTracks NOTIFY internalSubtitleTracksChanged)
+    // internal subtitle, e.g. mkv embedded subtitles
+    Q_PROPERTY(int internalSubtitleTrack READ internalSubtitleTrack WRITE setInternalSubtitleTrack NOTIFY internalSubtitleTrackChanged)
 public:
     enum Loop { Infinite = -1 };
     enum PlaybackState {
@@ -200,6 +203,9 @@ public:
     void setExternalAudio(const QUrl& url);
     QVariantList externalAudioTracks() const;
 
+    int internalSubtitleTrack() const;
+    void setInternalSubtitleTrack(int value);
+    QVariantList internalSubtitleTracks() const;
 public Q_SLOTS:
     void play();
     void pause();
@@ -241,6 +247,8 @@ Q_SIGNALS:
     void internalAudioTracksChanged();
     void externalAudioChanged();
     void externalAudioTracksChanged();
+    void internalSubtitleTrackChanged();
+    void internalSubtitleTracksChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString);
@@ -282,9 +290,9 @@ private:
     ChannelLayout mChannelLayout;
     int m_timeout;
     bool m_abort_timeout;
-    QVariantList m_audio_streams, m_external_audio_streams;
     int m_audio_track;
     QUrl m_audio;
+    int m_sub_track;
 
     QScopedPointer<MediaMetaData> m_metaData;
     QVariantMap vcodec_opt;

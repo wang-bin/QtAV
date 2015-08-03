@@ -146,7 +146,19 @@ void PlayerSubtitle::onPlayerStart()
             return;
         m_sub->setFileName(m_file);
         m_sub->setFuzzyMatch(false);
-        m_sub->loadAsync();
+        if (m_file.isEmpty()) {
+            const int n = m_player->currentSubtitleStream();
+            if (n >= 0 && !m_tracks.isEmpty() && m_tracks.size() <= n) {
+                m_sub->processHeader(QByteArray(), QByteArray()); // reset
+                return;
+            }
+            QVariantMap track = m_tracks[n].toMap();
+            QByteArray codec(track.value("codec").toByteArray());
+            QByteArray data(track.value("extra").toByteArray());
+            m_sub->processHeader(codec, data);
+        } else {
+            m_sub->loadAsync();
+        }
         return;
     }
     if (m_file != m_sub->fileName())
@@ -188,13 +200,57 @@ void PlayerSubtitle::onEnabledChanged(bool value)
 
 void PlayerSubtitle::tryReload()
 {
-    if (!m_enabled)
-        return;
+    tryReload(3);
+}
+
+void PlayerSubtitle::tryReloadInternalSub()
+{
+    tryReload(1);
+}
+
+void PlayerSubtitle::tryReload(int flag)
+{
     if (!m_player)
         return;
     if (!m_player->isPlaying())
         return;
-    m_sub->loadAsync();
+    const int kReloadInternal = 1;
+    const int kReloadExternal = 1<<1;
+    if (flag & kReloadExternal) {
+        if (!m_file.isEmpty() && m_enabled) { //engine changed
+            m_sub->processHeader(QByteArray(), QByteArray()); // reset
+            m_sub->loadAsync();
+            return;
+        }
+    }
+    if (!(flag & kReloadInternal)) { // if internal flag is set, try internal first, then fallback to external if internal is failed
+        if (!m_enabled)
+            return;
+        if (flag & kReloadExternal) {
+            m_sub->processHeader(QByteArray(), QByteArray()); // reset
+            m_sub->loadAsync();
+        }
+        return;
+    }
+
+    const int n = m_player->currentSubtitleStream();
+    if (n < 0 || m_tracks.isEmpty() || m_tracks.size() <= n) {
+        m_sub->processHeader(QByteArray(), QByteArray()); // reset, null processor
+        //try to fallback to external sub if an invalid internal sub track is set
+        if ((flag & kReloadExternal) && m_enabled)
+            m_sub->loadAsync();
+        return;
+    }
+    QVariantMap track = m_tracks[n].toMap();
+    QByteArray codec(track.value("codec").toByteArray());
+    QByteArray data(track.value("extra").toByteArray());
+    m_sub->processHeader(codec, data);
+    // TODO: call processData with subtitle at current time current track
+}
+
+void  PlayerSubtitle::updateInternalSubtitleTracks(const QVariantList &tracks)
+{
+    m_tracks = tracks;
 }
 
 void PlayerSubtitle::processInternalSubtitlePacket(const QtAV::Packet &packet)
@@ -214,6 +270,9 @@ void PlayerSubtitle::connectSignals()
     connect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
     connect(m_player, SIGNAL(internalSubtitlePacketRead(QtAV::Packet)), this, SLOT(processInternalSubtitlePacket(QtAV::Packet)));
     connect(m_player, SIGNAL(internalSubtitleHeaderRead(QByteArray,QByteArray)), this, SLOT(processInternalSubtitleHeader(QByteArray,QByteArray)));
+    connect(m_player, SIGNAL(internalSubtitleTracksChanged(QVariantList)), this, SLOT(updateInternalSubtitleTracks(QVariantList)));
+    // try to reload internal subtitle track. if failed and external subtitle is enabled, fallback to external
+    connect(m_player, SIGNAL(subtitleStreamChanged(int)), this, SLOT(tryReloadInternalSub()));
     connect(m_sub, SIGNAL(codecChanged()), this, SLOT(tryReload()));
     connect(m_sub, SIGNAL(enginesChanged()), this, SLOT(tryReload()));
 }
@@ -225,6 +284,7 @@ void PlayerSubtitle::disconnectSignals()
     disconnect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
     disconnect(m_player, SIGNAL(internalSubtitlePacketRead(QtAV::Packet)), this, SLOT(processInternalSubtitlePacket(QtAV::Packet)));
     disconnect(m_player, SIGNAL(internalSubtitleHeaderRead(QByteArray,QByteArray)), this, SLOT(processInternalSubtitleHeader(QByteArray,QByteArray)));
+    disconnect(m_player, SIGNAL(internalSubtitleTracksChanged(QVariantList)), this, SLOT(updateInternalSubtitleTracks(QVariantList)));
     disconnect(m_sub, SIGNAL(codecChanged()), this, SLOT(tryReload()));
     disconnect(m_sub, SIGNAL(enginesChanged()), this, SLOT(tryReload()));
 }

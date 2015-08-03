@@ -217,9 +217,9 @@ public:
     int currentAudioStream() const;
     int currentVideoStream() const;
     int currentSubtitleStream() const;
-    QTAV_DEPRECATED int audioStreamCount() const;
-    QTAV_DEPRECATED int videoStreamCount() const;
-    QTAV_DEPRECATED int subtitleStreamCount() const;
+    int audioStreamCount() const;
+    int videoStreamCount() const;
+    int subtitleStreamCount() const;
     /*!
      * \brief capture and save current frame to "$HOME/.QtAV/filename_pts.png".
      * To capture with custom configurations, such as name and dir, use
@@ -474,6 +474,7 @@ Q_SIGNALS:
     void contrastChanged(int val);
     void hueChanged(int val);
     void saturationChanged(int val);
+    void subtitleStreamChanged(int value);
     /*!
      * \brief internalAudioTracksChanged
      * Emitted when media is loaded. \sa internalAudioTracks

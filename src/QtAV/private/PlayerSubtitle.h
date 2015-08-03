@@ -23,6 +23,7 @@
 #define QTAV_PLAYERSUBTITLE_H
 
 #include <QtCore/QObject>
+#include <QtCore/QVariant>
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
@@ -68,17 +69,21 @@ private Q_SLOTS:
     void onPlayerPositionChanged();
     void onPlayerStart();
     void tryReload();
+    void tryReloadInternalSub();
+    void updateInternalSubtitleTracks(const QVariantList& tracks);
     void processInternalSubtitlePacket(const QtAV::Packet& packet);
     void processInternalSubtitleHeader(const QByteArray &codec, const QByteArray& data);
 private:
     void connectSignals();
     void disconnectSignals();
+    void tryReload(int flag); //1: internal, 2: external, 3: internal+external
 private:
     bool m_auto;
-    bool m_enabled;
+    bool m_enabled; // TODO: m_enable_external
     AVPlayer *m_player;
     Subtitle *m_sub;
     QString m_file;
+    QVariantList m_tracks;
 };
 
 }
