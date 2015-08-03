@@ -22,6 +22,7 @@
 #include "QtAV/private/SubtitleProcessor.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QEventLoop>
+#include <QtCore/QMutex>
 #include <QtCore/QThread>
 #include "QtAV/private/prepost.h"
 #include "QtAV/Packet.h"
@@ -72,6 +73,7 @@ private:
     //cache the image for the last invocation. return this if image does not change
     QImage m_image;
     QRect m_bound;
+    mutable QMutex m_mutex;
 };
 
 static const SubtitleProcessorId SubtitleProcessorId_LibASS = "qtav.subtitle.processor.libass";
@@ -93,7 +95,7 @@ void RegisterSubtitleProcessorLibASS_Man()
 #define MSGL_V 6
 #define MSGL_DBG2 7
 
-static void msg_callback(int level, const char *fmt, va_list va, void *data)
+static void ass_msg_cb(int level, const char *fmt, va_list va, void *data)
 {
     Q_UNUSED(data)
     QString msg("{libass} " + QString().vsprintf(fmt, va));
@@ -118,7 +120,7 @@ SubtitleProcessorLibASS::SubtitleProcessorLibASS()
         qWarning("ass_library_init failed!");
         return;
     }
-    ass_set_message_cb(m_ass, msg_callback, NULL);
+    ass_set_message_cb(m_ass, ass_msg_cb, NULL);
 }
 
 SubtitleProcessorLibASS::~SubtitleProcessorLibASS()
@@ -128,6 +130,8 @@ SubtitleProcessorLibASS::~SubtitleProcessorLibASS()
         m_track = 0;
     }
     if (m_renderer) {
+        QMutexLocker lock(&m_mutex);
+        Q_UNUSED(lock);
         ass_renderer_done(m_renderer); // check async update cache!!
         m_renderer = 0;
     }
@@ -164,6 +168,8 @@ bool SubtitleProcessorLibASS::process(QIODevice *dev)
 {
     if (!ass::api::loaded())
         return false;
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
     if (m_track) {
         ass_free_track(m_track);
         m_track = 0;
@@ -189,6 +195,8 @@ bool SubtitleProcessorLibASS::process(const QString &path)
 {
     if (!ass::api::loaded())
         return false;
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
     if (m_track) {
         ass_free_track(m_track);
         m_track = 0;
@@ -206,8 +214,11 @@ bool SubtitleProcessorLibASS::processHeader(const QByteArray& codec, const QByte
 {
     if (!ass::api::loaded())
         return false;
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
     m_codec = codec;
     m_frames.clear();
+    setFrameSize(0, 0);
     if (m_track) {
         ass_free_track(m_track);
         m_track = 0;
@@ -225,6 +236,8 @@ SubtitleFrame SubtitleProcessorLibASS::processLine(const QByteArray &data, qreal
 {
     if (!ass::api::loaded())
         return SubtitleFrame();
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
     if (!m_track)
         return SubtitleFrame();
     const int nb_tracks = m_track->n_events;
@@ -240,8 +253,9 @@ SubtitleFrame SubtitleProcessorLibASS::processLine(const QByteArray &data, qreal
     //qDebug("events: %d", m_track->n_events);
     for (int i = m_track->n_events-1; i >= 0; --i) {
         const ASS_Event& ae = m_track->events[i];
-      //  qDebug("ass_event[%d] %lld+%lld: %s", i, ae.Start, ae.Duration, ae.Text);
-        if (ae.Start == (long long)(pts*1000.0) && ae.Duration == (long long)(duration*1000.0)) {
+        //qDebug("ass_event[%d] %lld+%lld/%lld+%lld: %s", i, ae.Start, ae.Duration, (long long)(pts*1000.0),  (long long)(duration*1000.0), ae.Text);
+        //packet.duration can be 0
+        if (ae.Start == (long long)(pts*1000.0)) {// && ae.Duration == (long long)(duration*1000.0)) {
             SubtitleFrame frame;
             frame.text = PlainText::fromAss(ae.Text);
             frame.begin = qreal(ae.Start)/1000.0;
@@ -254,6 +268,8 @@ SubtitleFrame SubtitleProcessorLibASS::processLine(const QByteArray &data, qreal
 
 QString SubtitleProcessorLibASS::getText(qreal pts) const
 {
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
     QString text;
     for (int i = 0; i < m_frames.size(); ++i) {
         if (m_frames[i].begin <= pts && m_frames[i].end >= pts) {
@@ -268,6 +284,9 @@ QString SubtitleProcessorLibASS::getText(qreal pts) const
 
 QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
 { // ass dll is loaded if ass library is available
+    {
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
     if (!m_ass) {
         qWarning("ass library not available");
         return QImage();
@@ -283,9 +302,12 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
             return QImage();
         }
     }
+    }
     if (m_update_cache)
         updateFontCache();
 
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
     int detect_change = 0;
     ASS_Image *img = ass_render_frame(m_renderer, m_track, (long long)(pts * 1000.0), &detect_change);
     if (!detect_change) {
@@ -343,6 +365,8 @@ bool SubtitleProcessorLibASS::initRenderer()
 // TODO: set font cache dir. default is working dir which may be not writable on some platforms
 void SubtitleProcessorLibASS::updateFontCache()
 { // ass dll is loaded if renderer is valid
+    QMutexLocker lock(&m_mutex);
+    Q_UNUSED(lock);
     if (!m_renderer)
         return;
     static QByteArray conf; //FC_CONFIG_FILE?

@@ -44,7 +44,7 @@ public:
     bool isValid() const { return begin < end;}
     operator bool() const { return isValid();}
     bool operator !() const { return !isValid();}
-    inline bool operator <(const SubtitleFrame& f) const { return begin < f.begin;}
+    inline bool operator <(const SubtitleFrame& f) const { return end < f.end;}
     inline bool operator <(qreal t) const { return end < t;}
     qreal begin;
     qreal end;
