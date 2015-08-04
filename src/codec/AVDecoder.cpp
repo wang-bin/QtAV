@@ -93,6 +93,7 @@ bool AVDecoder::open()
     }
     // TODO: skip for none-ffmpeg based decoders
     d.applyOptionsForDict();
+    av_opt_set_int(d.codec_ctx, "refcounted_frames", d.enableFrameRef(), 0); // why dict may have no effect?
     AV_ENSURE_OK(avcodec_open2(d.codec_ctx, codec, d.options.isEmpty() ? NULL : &d.dict), false);
     d.is_open = true;
     return true;
