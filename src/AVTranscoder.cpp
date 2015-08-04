@@ -225,6 +225,15 @@ void AVTranscoder::stop()
     Q_EMIT stopped();
 }
 
+void AVTranscoder::pause(bool value)
+{
+    if (d->vfilter)
+        d->vfilter->setEnabled(!value);
+    if (d->afilter)
+        d->afilter->setEnabled(!value);
+    Q_EMIT paused(value);
+}
+
 void AVTranscoder::prepareMuxer()
 {
     // open muxer only if all encoders are open

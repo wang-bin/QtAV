@@ -99,7 +99,7 @@ Q_SIGNALS:
     void audioFrameEncoded(qreal timestamp);
     void started();
     void stopped();
-    //void paused(bool value);
+    void paused(bool value);
 
 public Q_SLOTS:
     void start();
@@ -109,7 +109,12 @@ public Q_SLOTS:
      * It's called internally when sourcePlayer() is stopped
      */
     void stop();
-    //void pause(bool value);
+    /*!
+     * \brief pause
+     * pause the encoders
+     * \param value
+     */
+    void pause(bool value);
 
 private Q_SLOTS:
     void prepareMuxer();
