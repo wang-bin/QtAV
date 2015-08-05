@@ -1116,11 +1116,16 @@ void AVPlayer::playInternal()
         masterClock()->reset();
     }
     // TODO: add isVideo() or hasVideo()?
-    if (d->force_fps > 0 && d->demuxer.videoCodecContext() && d->vthread) {
+    if ((d->force_fps > 0 && d->demuxer.videoCodecContext() && d->vthread)
+            || (!d->athread && d->statistics.video.frame_rate > 0)) {
         masterClock()->setClockAuto(false);
         masterClock()->setClockType(AVClock::VideoClock);
-        if (d->vthread)
-            d->vthread->setFrameRate(d->force_fps);
+        if (d->vthread) {
+            if (d->force_fps > 0)
+                d->vthread->setFrameRate(d->force_fps);
+            else
+                d->vthread->setFrameRate(d->statistics.video.frame_rate);
+        }
     } else {
         masterClock()->setClockAuto(true);
         if (d->vthread)
