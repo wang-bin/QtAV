@@ -75,6 +75,20 @@ int AVEncoder::bitRate() const
     return d_func().bit_rate;
 }
 
+AVEncoder::TimestampMode AVEncoder::timestampMode() const
+{
+    return TimestampMode(d_func().timestamp_mode);
+}
+
+void AVEncoder::setTimestampMode(TimestampMode value)
+{
+    DPTR_D(AVEncoder);
+    if (d.timestamp_mode == (int)value)
+        return;
+    d.timestamp_mode = (int)value;
+    Q_EMIT timestampModeChanged(value);
+}
+
 bool AVEncoder::open()
 {
     DPTR_D(AVEncoder);

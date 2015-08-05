@@ -36,7 +36,14 @@ class Q_AV_EXPORT AVEncoder : public QObject
     DPTR_DECLARE_PRIVATE(AVEncoder)
     Q_PROPERTY(int bitRate READ bitRate WRITE setBitRate NOTIFY bitRateChanged)
     Q_PROPERTY(QString codecName READ codecName WRITE setCodecName NOTIFY codecNameChanged)
+    Q_PROPERTY(TimestampMode timestampMode READ timestampMode WRITE setTimestampMode NOTIFY timestampModeChanged)
+    Q_ENUMS(TimestampMode)
 public:
+    enum TimestampMode {
+        TimestampMonotonic,
+        TimestampCopy,
+    };
+
     virtual ~AVEncoder();
     virtual QString name() const = 0;
     virtual QString description() const;
@@ -64,6 +71,9 @@ public:
      */
     void setBitRate(int value);
     int bitRate() const;
+
+    TimestampMode timestampMode() const;
+    void setTimestampMode(TimestampMode value);
     /*!
      * \brief setOptions
      * 1. If has key "avcodec", it's value (suboption, a hash or map) will be used to set AVCodecContext use av_opt_set and av_dict_set. A value of hash type is ignored.
@@ -80,6 +90,7 @@ Q_SIGNALS:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void codecNameChanged();
     void bitRateChanged();
+    void timestampModeChanged(TimestampMode mode);
 protected:
     AVEncoder(AVEncoderPrivate& d);
     DPTR_DECLARE(AVEncoder)

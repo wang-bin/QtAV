@@ -58,6 +58,7 @@ class VideoEncoderFFmpegPrivate Q_DECL_FINAL: public VideoEncoderPrivate
 public:
     VideoEncoderFFmpegPrivate()
         : VideoEncoderPrivate()
+        , nb_encoded(0)
     {
         avcodec_register_all();
         // NULL: codec-specific defaults won't be initialized, which may result in suboptimal default settings (this is important mainly for encoders, e.g. libx264).
@@ -66,11 +67,13 @@ public:
     bool open() Q_DECL_OVERRIDE;
     bool close() Q_DECL_OVERRIDE;
 
+    qint64 nb_encoded;
     QByteArray buffer;
 };
 
 bool VideoEncoderFFmpegPrivate::open()
 {
+    nb_encoded = 0LL;
     if (codec_name.isEmpty()) {
         // copy ctx from muxer by copyAVCodecContext
         AVCodec *codec = avcodec_find_encoder(avctx->codec_id);
@@ -156,8 +159,16 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
         f->width = frame.width();
         f->height = frame.height();
 //        f->quality = d.avctx->global_quality;
-        // TODO: record last pts
-        f->pts = int64_t(frame.timestamp()*frameRate());
+        switch (timestampMode()) {
+        case TimestampCopy:
+            f->pts = int64_t(frame.timestamp()*frameRate()); // TODO: check monotically increase and fix if not. or another mode?
+            break;
+        case TimestampMonotonic:
+            f->pts = d.nb_encoded+1;
+            break;
+        default:
+            break;
+        }
         // pts is set in muxer
         const int nb_planes = frame.planeCount();
         for (int i = 0; i < nb_planes; ++i) {
@@ -179,9 +190,10 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
     int ret = avcodec_encode_video2(d.avctx, &pkt, f, &got_packet);
     av_frame_free(&f);
     if (ret < 0) {
-        //qWarning("error avcodec_encode_video2: %s" ,av_err2str(ret));
+        qWarning("error avcodec_encode_video2: %s" ,av_err2str(ret));
         return false; //false
     }
+    d.nb_encoded++;
     if (!got_packet) {
         qWarning("no packet got");
         return false; //false
