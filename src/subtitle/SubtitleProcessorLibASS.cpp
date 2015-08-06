@@ -37,7 +37,7 @@
 
 namespace QtAV {
 
-class SubtitleProcessorLibASS Q_DECL_FINAL: public SubtitleProcessor, public ass::api
+class SubtitleProcessorLibASS Q_DECL_FINAL: public SubtitleProcessor, protected ass::api
 {
 public:
     SubtitleProcessorLibASS();

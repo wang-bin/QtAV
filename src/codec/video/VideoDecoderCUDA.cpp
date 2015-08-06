@@ -150,7 +150,7 @@ public:
 };
 #endif //NV_CONFIG(DLLAPI_CUDA) || defined(CUDA_LINK)
 class VideoDecoderCUDAPrivate Q_DECL_FINAL: public VideoDecoderPrivate
-                , public cuda_api
+                , protected cuda_api
 {
 public:
     VideoDecoderCUDAPrivate():

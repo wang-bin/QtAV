@@ -62,9 +62,9 @@ public:
         DRM
     };
     VideoDecoderVAAPI();
-    virtual VideoDecoderId id() const;
-    virtual QString description() const;
-    virtual VideoFrame frame();
+    VideoDecoderId id() const Q_DECL_OVERRIDE;
+    QString description() const Q_DECL_OVERRIDE;
+    VideoFrame frame() Q_DECL_OVERRIDE;
 
     // QObject properties
     void setDerive(bool y);
@@ -145,8 +145,8 @@ const codec_profile_t* findProfileEntry(AVCodecID codec, int profile)
     return 0;
 }
 
-class VideoDecoderVAAPIPrivate : public VideoDecoderFFmpegHWPrivate, public VAAPI_DRM, public VAAPI_X11, public VAAPI_GLX
-        , public X11_API
+class VideoDecoderVAAPIPrivate Q_DECL_FINAL: public VideoDecoderFFmpegHWPrivate, protected VAAPI_DRM, protected VAAPI_X11, protected VAAPI_GLX
+        , protected X11_API
 {
     DPTR_DECLARE_PUBLIC(VideoDecoderVAAPI)
 public:
@@ -183,15 +183,15 @@ public:
         nb_surfaces = 0;
         disable_derive = true;
     }
-    virtual bool open();
-    virtual void close();
+    bool open() Q_DECL_OVERRIDE;
+    void close() Q_DECL_OVERRIDE;
     bool createSurfaces(int count, void **hwctx, int w, int h);
     void destroySurfaces();
 
-    virtual bool setup(AVCodecContext *avctx);
-    virtual bool getBuffer(void **opaque, uint8_t **data);
-    virtual void releaseBuffer(void *opaque, uint8_t *data);
-    virtual AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(VAAPI_VLD); }
+    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
+    void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
+    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(VAAPI_VLD); }
 
     bool support_4k;
     VideoDecoderVAAPI::DisplayType display_type;

@@ -165,9 +165,9 @@ class VideoDecoderDXVA : public VideoDecoderFFmpegHW
     Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
 public:
     VideoDecoderDXVA();
-    virtual VideoDecoderId id() const;
-    virtual QString description() const;
-    virtual VideoFrame frame();
+    VideoDecoderId id() const Q_DECL_OVERRIDE;
+    QString description() const Q_DECL_OVERRIDE;
+    VideoFrame frame() Q_DECL_OVERRIDE;
     // properties
     void setSurfaces(int num);
     int surfaces() const;
@@ -356,7 +356,7 @@ static const char* getVendorName(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *v
 }
 
 
-class VideoDecoderDXVAPrivate : public VideoDecoderFFmpegHWPrivate
+class VideoDecoderDXVAPrivate Q_DECL_FINAL: public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderDXVAPrivate():
@@ -406,15 +406,15 @@ public:
     bool DxResetVideoDecoder();
     bool isHEVCSupported() const;
 
-    bool setup(AVCodecContext *avctx);
-    bool open();
-    void close();
+    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    bool open() Q_DECL_OVERRIDE;
+    void close() Q_DECL_OVERRIDE;
     // get aligned value depending on codec
     int aligned(int x);
 
-    bool getBuffer(void **opaque, uint8_t **data);
-    void releaseBuffer(void *opaque, uint8_t *data);
-    AVPixelFormat vaPixelFormat() const { return QTAV_PIX_FMT_C(DXVA2_VLD);}
+    bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
+    void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
+    AVPixelFormat vaPixelFormat() Q_DECL_OVERRIDE const { return QTAV_PIX_FMT_C(DXVA2_VLD);}
     /* DLL */
     HINSTANCE hd3d9_dll;
     HINSTANCE hdxva2_dll;

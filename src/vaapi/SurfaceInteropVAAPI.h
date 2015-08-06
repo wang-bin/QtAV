@@ -87,7 +87,7 @@ private:
 // load/resolve symbols only once in decoder and pass a VAAPI_XXX ptr
 // or use pool
 
-class GLXInteropResource Q_DECL_FINAL: public InteropResource, public VAAPI_GLX
+class GLXInteropResource Q_DECL_FINAL: public InteropResource, protected VAAPI_GLX
 {
 public:
     bool map(const surface_ptr &surface, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
@@ -97,7 +97,7 @@ private:
 };
 
 #if VA_X11_INTEROP
-class X11InteropResource Q_DECL_FINAL: public InteropResource, public VAAPI_X11
+class X11InteropResource Q_DECL_FINAL: public InteropResource, protected VAAPI_X11
 {
 public:
     X11InteropResource();
