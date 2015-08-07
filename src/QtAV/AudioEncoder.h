@@ -48,7 +48,7 @@ public:
      * \param name can be "FFmpeg". FFmpeg encoder will be created for empty name
      * \return 0 if not registered
      */
-    static AudioEncoder* create(const QString& name = "FFmpeg");
+    static AudioEncoder* create(const QString& name = QStringLiteral("FFmpeg"));
     virtual AudioEncoderId id() const = 0;
     QString name() const Q_DECL_OVERRIDE; //name from factory
     /*!

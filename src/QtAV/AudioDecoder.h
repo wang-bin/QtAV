@@ -47,7 +47,7 @@ public:
      * \param name can be "FFmpeg"
      * \return 0 if not registered
      */
-    static AudioDecoder* create(const QString& name = "FFmpeg");
+    static AudioDecoder* create(const QString& name = QStringLiteral("FFmpeg"));
     virtual AudioDecoderId id() const = 0;
     QString name() const; //name from factory
     virtual QByteArray data() const; //decoded data

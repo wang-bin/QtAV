@@ -71,7 +71,7 @@ public:
      * \param name can be "FFmpeg", "CUDA", "VDA", "VAAPI", "DXVA", "Cedarv"
      * \return 0 if not registered
      */
-    static VideoDecoder* create(const QString& name = "FFmpeg");
+    static VideoDecoder* create(const QString& name = QStringLiteral("FFmpeg"));
     virtual VideoDecoderId id() const = 0;
     QString name() const; //name from factory
     virtual VideoFrame frame() = 0;
