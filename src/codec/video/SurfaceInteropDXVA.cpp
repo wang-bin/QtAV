@@ -445,15 +445,21 @@ bool GLInteropResource::ensureWGL()
     wgl = new WGL();
     memset(wgl, 0, sizeof(*wgl));
     const QOpenGLContext *ctx = QOpenGLContext::currentContext(); //const for qt4
-    wgl->DXSetResourceShareHandleNV = (PFNWGLDXSETRESOURCESHAREHANDLENVPROC)ctx->getProcAddress("wglDXSetResourceShareHandleNV");
-    wgl->DXOpenDeviceNV = (PFNWGLDXOPENDEVICENVPROC)ctx->getProcAddress("wglDXOpenDeviceNV");
-    wgl->DXCloseDeviceNV = (PFNWGLDXCLOSEDEVICENVPROC)ctx->getProcAddress("wglDXCloseDeviceNV");
-    wgl->DXRegisterObjectNV = (PFNWGLDXREGISTEROBJECTNVPROC)ctx->getProcAddress("wglDXRegisterObjectNV");
-    wgl->DXUnregisterObjectNV = (PFNWGLDXUNREGISTEROBJECTNVPROC)ctx->getProcAddress("wglDXUnregisterObjectNV");
-    wgl->DXObjectAccessNV = (PFNWGLDXOBJECTACCESSNVPROC)ctx->getProcAddress("wglDXObjectAccessNV");
-    wgl->DXLockObjectsNV = (PFNWGLDXLOCKOBJECTSNVPROC)ctx->getProcAddress("wglDXLockObjectsNV");
-    wgl->DXUnlockObjectsNV = (PFNWGLDXUNLOCKOBJECTSNVPROC)ctx->getProcAddress("wglDXUnlockObjectsNV");
-
+    // QGLContext::getProcAddress(const QByteArray&), QOpenGLContext::getProcAddress(const QString&). So to work with QT_NO_CAST_FROM_ASCII we need a wrapper
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#define QB(x) x
+#else
+#define QB(x) QString::fromLatin1(x)
+#endif
+    wgl->DXSetResourceShareHandleNV = (PFNWGLDXSETRESOURCESHAREHANDLENVPROC)ctx->getProcAddress(QB("wglDXSetResourceShareHandleNV"));
+    wgl->DXOpenDeviceNV = (PFNWGLDXOPENDEVICENVPROC)ctx->getProcAddress(QB("wglDXOpenDeviceNV"));
+    wgl->DXCloseDeviceNV = (PFNWGLDXCLOSEDEVICENVPROC)ctx->getProcAddress(QB("wglDXCloseDeviceNV"));
+    wgl->DXRegisterObjectNV = (PFNWGLDXREGISTEROBJECTNVPROC)ctx->getProcAddress(QB("wglDXRegisterObjectNV"));
+    wgl->DXUnregisterObjectNV = (PFNWGLDXUNREGISTEROBJECTNVPROC)ctx->getProcAddress(QB("wglDXUnregisterObjectNV"));
+    wgl->DXObjectAccessNV = (PFNWGLDXOBJECTACCESSNVPROC)ctx->getProcAddress(QB("wglDXObjectAccessNV"));
+    wgl->DXLockObjectsNV = (PFNWGLDXLOCKOBJECTSNVPROC)ctx->getProcAddress(QB("wglDXLockObjectsNV"));
+    wgl->DXUnlockObjectsNV = (PFNWGLDXUNLOCKOBJECTSNVPROC)ctx->getProcAddress(QB("wglDXUnlockObjectsNV"));
+#undef QB
     Q_ASSERT(wgl->DXRegisterObjectNV);
     return true;
 }

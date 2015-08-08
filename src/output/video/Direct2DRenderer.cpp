@@ -117,7 +117,7 @@ public:
       , bitmap_height(0)
       , interpolation(D2D1_BITMAP_INTERPOLATION_MODE_LINEAR)
     {
-        dll.setFileName("d2d1");
+        dll.setFileName(QStringLiteral("d2d1"));
         if (!dll.load()) {
             available = false;
             qWarning("Direct2D is disabled. Failed to load 'd2d1.dll': %s", dll.errorString().toUtf8().constData());

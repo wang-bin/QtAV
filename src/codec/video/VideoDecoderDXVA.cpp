@@ -414,7 +414,7 @@ public:
 
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
-    AVPixelFormat vaPixelFormat() Q_DECL_OVERRIDE const { return QTAV_PIX_FMT_C(DXVA2_VLD);}
+    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(DXVA2_VLD);}
     /* DLL */
     HINSTANCE hd3d9_dll;
     HINSTANCE hdxva2_dll;
@@ -458,7 +458,7 @@ VideoDecoderDXVA::VideoDecoderDXVA()
 {
     // dynamic properties about static property details. used by UI
     // format: detail_property
-    setProperty("detail_surfaces", tr("Decoding surfaces.") + QStringListIterator(" ") + tr("0: auto"));
+    setProperty("detail_surfaces", tr("Decoding surfaces.") + QStringLiteral(" ") + tr("0: auto"));
 }
 
 VideoDecoderId VideoDecoderDXVA::id() const

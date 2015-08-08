@@ -34,14 +34,15 @@ unsigned QtAV_Version()
 
 QString QtAV_Version_String()
 {
-    return QStringLiteral(QTAV_VERSION_STR);
+    // vs<2015: C2308: concatenating mismatched strings for QStringLiteral("a" "b")
+    return QString::fromLatin1(QTAV_VERSION_STR);
 }
 
 #define QTAV_VERSION_STR_LONG   QTAV_VERSION_STR "(" __DATE__ ", " __TIME__ ")"
 
 QString QtAV_Version_String_Long()
 {
-    return QStringLiteral(QTAV_VERSION_STR_LONG);
+    return QString::fromLatin1(QTAV_VERSION_STR_LONG);
 }
 
 namespace QtAV {
@@ -154,8 +155,8 @@ QString aboutFFmpeg_HTML()
     QString text = QStringLiteral("<h3>FFmpeg/Libav</h3>\n");
     const Internal::depend_component* info = Internal::get_depend_component(0);
     while (info) {
-        text += QStringLiteral("<h4>") + QObject::tr("Build version")
-                + QStringLiteral(": %1-%2.%3.%4</h4>\n")
+        text += QStringLiteral("<h4>%1: %2-%3.%4.%5</h4>\n")
+                .arg(QObject::tr("Build version"))
                 .arg(QLatin1String(info->lib))
                 .arg(QTAV_VERSION_MAJOR(info->build_version))
                 .arg(QTAV_VERSION_MINOR(info->build_version))
@@ -163,15 +164,14 @@ QString aboutFFmpeg_HTML()
                 ;
         unsigned rt_version = info->rt_version;
         if (info->build_version != rt_version) {
-            text += QStringLiteral("<h4 style='color:#ff0000;'>") + QObject::tr("Runtime version")
-                    + QStringLiteral(": %1.%2.%3</h4>\n")
+            text += QStringLiteral("<h4 style='color:#ff0000;'>%1: %2.%3.%4</h4>\n")
+                    .arg(QObject::tr("Runtime version"))
                     .arg(QTAV_VERSION_MAJOR(rt_version))
                     .arg(QTAV_VERSION_MINOR(rt_version))
                     .arg(QTAV_VERSION_PATCH(rt_version))
                     ;
         }
-        text += QStringLiteral("<p>") + QString::fromUtf8(info->config) + QStringLiteral("</p>\n"
-                "<p>") + QString::fromUtf8(info->license) + QStringLiteral("</p>\n");
+        text += QStringLiteral("<p>%1</p>\n<p>%2</p>\n").arg(QString::fromUtf8(info->config)).arg(QString::fromUtf8(info->license));
         info = Internal::get_depend_component(info);
     }
     return text;
@@ -184,14 +184,18 @@ QString aboutQtAV_PlainText()
 
 QString aboutQtAV_HTML()
 {
-    static QString about = QStringLiteral("<h3>QtAV " QTAV_VERSION_STR_LONG "</h3>\n"
-            "<p>") + QObject::tr("A media playing library base on Qt and FFmpeg.\n") + QStringLiteral("</p>"
-            "<p>") + QObject::tr("Distributed under the terms of LGPLv2.1 or later.\n") + QStringLiteral("</p>"
+    static QString about = QString::fromLatin1("<h3>QtAV " QTAV_VERSION_STR_LONG "</h3>\n"
+            "<p>%1</p><p>%2</p><p>%3</p>"
             "<p>Copyright (C) 2012-2015 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
-            "<p>") + QObject::tr("Shanghai University->S3 Graphics->Deepin, Shanghai, China") + QStringLiteral("</p>\n"
-            "<p>") + QObject::tr("Donate") + QStringLiteral(": <a href='http://www.qtav.org/donate.html'>http://www.qtav.org/donate.html</a></p>\n"
-            "<p>") + QObject::tr("Source") + QStringLiteral(": <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
-            "<p>") + QObject::tr("Home page") + QStringLiteral(": <a href='http://www.qtav.org'>http://www.qtav.org</a></p>");
+            "<p>%4: <a href='http://www.qtav.org/donate.html'>http://www.qtav.org/donate.html</a></p>\n"
+            "<p>%5: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
+            "<p>%6: <a href='http://www.qtav.org'>http://www.qtav.org</a></p>"
+           ).arg(QObject::tr("A media playing library base on Qt and FFmpeg.\n"))
+            .arg(QObject::tr("Distributed under the terms of LGPLv2.1 or later.\n"))
+            .arg(QObject::tr("Shanghai University->S3 Graphics->Deepin, Shanghai, China"))
+            .arg(QObject::tr("Donate"))
+            .arg(QObject::tr("Source"))
+            .arg(QObject::tr("Home page"));
     return about;
 }
 

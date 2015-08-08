@@ -57,10 +57,10 @@ public:
         tasks.blockFull(false);
 
         QVariantHash opt;
-        opt[QStringLiteral("skip_frame")] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
-        dec_opt_framedrop[QStringLiteral("avcodec")] = opt;
-        opt[QStringLiteral("skip_frame")] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
-        dec_opt_normal[QStringLiteral("avcodec")] = opt; // avcodec need correct string or value in libavcodec
+        opt[QString::fromLatin1("skip_frame")] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
+        dec_opt_framedrop[QString::fromLatin1("avcodec")] = opt;
+        opt[QString::fromLatin1("skip_frame")] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
+        dec_opt_normal[QString::fromLatin1("avcodec")] = opt; // avcodec need correct string or value in libavcodec
     }
     virtual ~AVThreadPrivate();
 

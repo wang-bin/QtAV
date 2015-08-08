@@ -31,7 +31,7 @@ namespace QtAV {
     do { \
         HRESULT hr = f; \
         if (FAILED(hr)) { \
-            qWarning() << QStringLiteral(DX_LOG_COMPONENT " error@") << __LINE__ << QStringLiteral(". " #f ": ") << QStringLiteral("(0x%1) ").arg(hr, 0, 16) << qt_error_string(hr); \
+            qWarning() << QString::fromLatin1(DX_LOG_COMPONENT " error@%1. " #f ": (0x%2) %3").arg(__LINE__).arg(hr, 0, 16).arg(qt_error_string(hr)); \
             return __VA_ARGS__; \
         } \
     } while (0)

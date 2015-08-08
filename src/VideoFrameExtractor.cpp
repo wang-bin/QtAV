@@ -114,13 +114,13 @@ public:
         , decoder(0)
     {
         QVariantHash opt;
-        opt[QStringLiteral("skip_frame")] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
-        opt[QStringLiteral("skip_loop_filter")] = 8; //skip all?
+        opt[QString::fromLatin1("skip_frame")] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
+        opt[QString::fromLatin1("skip_loop_filter")] = 8; //skip all?
         //skip_dict is slower
-        dec_opt_framedrop[QStringLiteral("avcodec")] = opt;
-        opt[QStringLiteral("skip_frame")] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
-        opt[QStringLiteral("skip_loop_filter")] = 0;
-        dec_opt_normal[QStringLiteral("avcodec")] = opt; // avcodec need correct string or value in libavcodec
+        dec_opt_framedrop[QString::fromLatin1("avcodec")] = opt;
+        opt[QString::fromLatin1("skip_frame")] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
+        opt[QString::fromLatin1("skip_loop_filter")] = 0;
+        dec_opt_normal[QString::fromLatin1("avcodec")] = opt; // avcodec need correct string or value in libavcodec
         codecs
 #if QTAV_HAVE(DXVA)
                     // << QStringLiteral("DXVA")
@@ -185,8 +185,9 @@ public:
                 continue;
             }
             QVariantHash opt, va;
-            va[QStringLiteral("display")] = QStringLiteral("X11"); // to support swscale
-            opt[QStringLiteral("vaapi")] = va;
+            // FIXME: why QStringLiteral can't be used as key for vs<2015 but somewhere else it can?  error C2958: the left bracket '[' found at qstringliteral
+            va[QString::fromLatin1("display")] = QString::fromLatin1("X11"); // to support swscale
+            opt[QString::fromLatin1("vaapi")] = va;
             decoder->setOptions(opt);
             break;
         }
