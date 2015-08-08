@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -74,7 +74,7 @@ AudioOutputPortAudio::AudioOutputPortAudio(QObject *parent)
         const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
         if (deviceInfo) {
             const PaHostApiInfo *hostApiInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
-            QString name = QString(hostApiInfo->name) + ": " + QString::fromLocal8Bit(deviceInfo->name);
+            QString name = QString::fromUtf8(hostApiInfo->name) + QStringLiteral(": ") + QString::fromLocal8Bit(deviceInfo->name);
             qDebug("audio device %d: %s", i, name.toUtf8().constData());
             qDebug("max in/out channels: %d/%d", deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
         }

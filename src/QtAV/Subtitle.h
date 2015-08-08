@@ -178,7 +178,8 @@ public slots:
     void setTimestamp(qreal t);
 signals:
     // TODO: also add to AVPlayer?
-    void loaded(const QString& path);
+    /// empty path if load from raw data
+    void loaded(const QString& path = QString());
     void canRenderChanged();
     void codecChanged();
     void enginesChanged();

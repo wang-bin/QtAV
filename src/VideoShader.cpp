@@ -188,7 +188,7 @@ const char* VideoShader::vertexShader() const
 {
     DPTR_D(const VideoShader);
     // because we have to modify the shader, and shader source must be kept, so read the origin
-    d.vert = shaderSourceFromFile("shaders/video.vert");
+    d.vert = shaderSourceFromFile(QStringLiteral("shaders/video.vert"));
     QByteArray& vert = d.vert;
     if (vert.isEmpty()) {
         qWarning("Empty vertex shader!");
@@ -209,9 +209,9 @@ const char* VideoShader::fragmentShader() const
     DPTR_D(const VideoShader);
     // because we have to modify the shader, and shader source must be kept, so read the origin
     if (d.video_format.isPlanar()) {
-        d.planar_frag = shaderSourceFromFile("shaders/planar.f.glsl");
+        d.planar_frag = shaderSourceFromFile(QStringLiteral("shaders/planar.f.glsl"));
     } else {
-        d.packed_frag = shaderSourceFromFile("shaders/packed.f.glsl");
+        d.packed_frag = shaderSourceFromFile(QStringLiteral("shaders/packed.f.glsl"));
     }
     QByteArray& frag = d.video_format.isPlanar() ? d.planar_frag : d.packed_frag;
     if (frag.isEmpty()) {
@@ -265,7 +265,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     d.u_c = shaderProgram->uniformLocation("u_c");
     d.u_Texture.resize(textureLocationCount());
     for (int i = 0; i < d.u_Texture.size(); ++i) {
-        const QString tex_var = QString("u_Texture%1").arg(i);
+        const QString tex_var = QStringLiteral("u_Texture%1").arg(i);
         d.u_Texture[i] = shaderProgram->uniformLocation(tex_var);
         qDebug("glGetUniformLocation(\"%s\") = %d", tex_var.toUtf8().constData(), d.u_Texture[i]);
     }
@@ -386,9 +386,9 @@ bool VideoShader::update(VideoMaterial *material)
 
 QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
 {
-    QFile f(qApp->applicationDirPath() + "/" + fileName);
+    QFile f(qApp->applicationDirPath() + QStringLiteral("/") + fileName);
     if (!f.exists()) {
-        f.setFileName(":/" + fileName);
+        f.setFileName(QStringLiteral(":/") + fileName);
     }
     if (!f.open(QIODevice::ReadOnly)) {
         qWarning("Can not load shader %s: %s", f.fileName().toUtf8().constData(), f.errorString().toUtf8().constData());
@@ -440,8 +440,8 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     d.width = frame.width();
     d.height = frame.height();
     GLenum new_target = GL_TEXTURE_2D; // not d.target. because metadata "target" is not always set
-    QByteArray t = frame.metaData("target").toByteArray().toLower();
-    if (t == "rect")
+    QByteArray t = frame.metaData(QStringLiteral("target")).toByteArray().toLower();
+    if (t == QByteArrayLiteral("rect"))
         new_target = GL_TEXTURE_RECTANGLE;
     if (new_target != d.target) {
         // FIXME: not thread safe (in qml)
@@ -1002,7 +1002,7 @@ bool VideoMaterialPrivate::ensureResources()
         // check PBO support with bind() is fine, no need to check extensions
         if (try_pbo) {
             for (int i = 0; i < nb_planes; ++i) {
-                //qDebug("Init PBO for plane %d", i);
+                qDebug("Init PBO for plane %d", i);
                 if (!initPBO(i, frame.bytesPerLine(i)*frame.planeHeight(i))) {
                     qWarning("Failed to init PBO for plane %d", i);
                     break;

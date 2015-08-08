@@ -36,7 +36,7 @@ QStringList MediaIO::builtInNames()
         return names;
     std::vector<std::string> stdnames(MediaIOFactory::registeredNames());
     foreach (const std::string stdname, stdnames) {
-        names.append(stdname.c_str());
+        names.append(QLatin1String(stdname.c_str()));
     }
     return names;
 }
@@ -61,7 +61,7 @@ MediaIO* MediaIO::createForProtocol(const QString &protocol)
 
 MediaIO* MediaIO::createForUrl(const QString &url)
 {
-    const int p = url.indexOf(":");
+    const int p = url.indexOf(QLatin1String(":"));
     if (p < 0)
         return 0;
     MediaIO *io = MediaIO::createForProtocol(url.left(p));

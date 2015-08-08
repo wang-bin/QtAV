@@ -121,7 +121,7 @@ Statistics::~Statistics()
 
 void Statistics::reset()
 {
-    url = "";
+    url = QString();
     audio = Common();
     video = Common();
     audio_only = AudioOnly();

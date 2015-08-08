@@ -38,7 +38,7 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
     //setValue(Size, st.);
     setValue(Duration, (qint64)QTime(0, 0, 0).msecsTo(st.duration));
     if (st.video.available) {
-        setValue(MediaType, "video");
+        setValue(MediaType, QStringLiteral("video"));
         setValue(VideoFrameRate, st.video.frame_rate);
         setValue(VideoBitRate, st.video.bit_rate);
         setValue(VideoCodec, st.video.codec);
@@ -47,7 +47,7 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
     if (st.audio.available) {
         // TODO: what if thumbnail?
         if (!st.video.available)
-            setValue(MediaType, "audio");
+            setValue(MediaType, QStringLiteral("audio"));
         setValue(AudioBitRate, st.audio.bit_rate);
         setValue(AudioCodec, st.audio.codec);
         setValue(ChannelCount, st.audio_only.channels);
@@ -65,8 +65,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
             continue;
         }
         const QString keyName(it.key().toLower());
-        if (keyName == QStringLiteral("track")) {
-            int slash = it.value().indexOf(QChar('/'));
+        if (keyName == QLatin1String("track")) {
+            int slash = it.value().indexOf(QLatin1Char('/'));
             if (slash < 0) {
                 setValue(TrackNumber, it.value().toInt());
                 continue;
@@ -75,8 +75,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
             setValue(TrackCount, it.value().midRef(slash+1).string()->toInt());
             continue;
         }
-        if (keyName == QStringLiteral("date")
-                || it.key().toLower() == QStringLiteral("creation_time")
+        if (keyName == QLatin1String("date")
+                || it.key().toLower() == QLatin1String("creation_time")
                 ) {
             // ISO 8601 is preferred in ffmpeg
             bool ok = false;
@@ -89,8 +89,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
             setValue(Date, QDate::fromString(it.value(), Qt::ISODate));
             continue;
         }
-        if (keyName.contains(QStringLiteral("genre"))) {
-            setValue(Genre, it.value().split(QChar(','))); // ',' ? not sure
+        if (keyName.contains(QLatin1String("genre"))) {
+            setValue(Genre, it.value().split(QLatin1Char(','))); // ',' ? not sure
             continue;
         }
     }
@@ -115,6 +115,7 @@ MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
     { Copyright, "copyright" },
     // { Date, "date" }, //QDate
     { Language, "language" }, //maybe a list in ffmpeg
+    { Language, "lang" },
     { Publisher, "publisher" },
     { Title, "title" },
     //{ TrackNumber, "track" }, // can be "current/total"
@@ -125,7 +126,7 @@ MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
     { (Key)-1, 0 },
     };
     for (int i = 0; (int)key_map[i].key >= 0; ++i) {
-        if (name.toLower() == key_map[i].name)
+        if (name.toLower() == QLatin1String(key_map[i].name))
             return key_map[i].key;
     }
     // below are keys not listed in ffmpeg generic tag names and value is a QString
@@ -139,7 +140,7 @@ MediaMetaData::Key MediaMetaData::fromFFmpegName(const QString &name) const
         { (Key)-1, 0 },
     };
     for (int i = 0; (int)wm_key[i].key >= 0; ++i) {
-        if (name.toLower().contains(wm_key[i].name))
+        if (name.toLower().contains(QLatin1String(wm_key[i].name)))
             return wm_key[i].key;
     }
     return (Key)-1;
@@ -162,5 +163,5 @@ QString MediaMetaData::name(Key k) const
 {
     int idx = staticMetaObject.indexOfEnumerator("Key");
     const QMetaEnum me = staticMetaObject.enumerator(idx);
-    return me.valueToKey(k);
+    return QString::fromLatin1(me.valueToKey(k));
 }

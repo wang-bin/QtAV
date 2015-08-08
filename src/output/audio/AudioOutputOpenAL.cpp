@@ -45,7 +45,7 @@ class AudioOutputOpenAL Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputOpenAL(QObject* parent = 0);
-    QString name() const Q_DECL_FINAL { return kName;}
+    QString name() const Q_DECL_FINAL { return QLatin1String(kName);}
     QString deviceName() const;
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
@@ -373,7 +373,7 @@ QString AudioOutputOpenAL::deviceName() const
     if (!device)
         return QString();
     const ALCchar *name = alcGetString(device, ALC_DEVICE_SPECIFIER);
-    return name;
+    return QString::fromUtf8(name);
 }
 
 AudioOutputBackend::BufferControl AudioOutputOpenAL::bufferControl() const

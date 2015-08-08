@@ -114,27 +114,27 @@ public:
         , decoder(0)
     {
         QVariantHash opt;
-        opt["skip_frame"] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
-        opt["skip_loop_filter"] = 8; //skip all?
+        opt[QStringLiteral("skip_frame")] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
+        opt[QStringLiteral("skip_loop_filter")] = 8; //skip all?
         //skip_dict is slower
-        dec_opt_framedrop["avcodec"] = opt;
-        opt["skip_frame"] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
-        opt["skip_loop_filter"] = 0;
-        dec_opt_normal["avcodec"] = opt; // avcodec need correct string or value in libavcodec
+        dec_opt_framedrop[QStringLiteral("avcodec")] = opt;
+        opt[QStringLiteral("skip_frame")] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
+        opt[QStringLiteral("skip_loop_filter")] = 0;
+        dec_opt_normal[QStringLiteral("avcodec")] = opt; // avcodec need correct string or value in libavcodec
         codecs
 #if QTAV_HAVE(DXVA)
-                    // << "DXVA"
+                    // << QStringLiteral("DXVA")
 #endif //QTAV_HAVE(DXVA)
 #if QTAV_HAVE(VAAPI)
-                    // << "VAAPI"
+                    // << QStringLiteral("VAAPI")
 #endif //QTAV_HAVE(VAAPI)
 #if QTAV_HAVE(CEDARV)
-                    //<< "Cedarv"
+                    //<< QStringLiteral("Cedarv")
 #endif //QTAV_HAVE(CEDARV)
 #if QTAV_HAVE(VDA)
-                    // << "VDA" // only 1 app can use VDA at a given time
+                    // << QStringLiteral("VDA") // only 1 app can use VDA at a given time
 #endif //QTAV_HAVE(VDA)
-                    << "FFmpeg";
+                    << QStringLiteral("FFmpeg");
     }
     ~VideoFrameExtractorPrivate() {
         // stop first before demuxer and decoder close to avoid running new seek task after demuxer is closed.
@@ -185,8 +185,8 @@ public:
                 continue;
             }
             QVariantHash opt, va;
-            va["display"] = "X11"; // to support swscale
-            opt["vaapi"] = va;
+            va[QStringLiteral("display")] = QStringLiteral("X11"); // to support swscale
+            opt[QStringLiteral("vaapi")] = va;
             decoder->setOptions(opt);
             break;
         }

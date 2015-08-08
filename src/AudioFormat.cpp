@@ -299,7 +299,7 @@ QString AudioFormat::channelLayoutName() const
 {
     char cl[128];
     av_get_channel_layout_string(cl, sizeof(cl), -1, channelLayoutFFmpeg()); //TODO: ff version
-    return cl;
+    return QLatin1String(cl);
 }
 
 /*!
@@ -353,10 +353,10 @@ QString AudioFormat::sampleFormatName() const
     if (d->av_sample_fmt == AV_SAMPLE_FMT_NONE) {
         for (int i = 0; samplefmts[i].fmt != SampleFormat_Unknown; ++i) {
             if (samplefmts[i].fmt == d->sample_fmt)
-                return samplefmts[i].name;
+                return QLatin1String(samplefmts[i].name);
         }
     }
-    return av_get_sample_fmt_name((AVSampleFormat)sampleFormatFFmpeg());
+    return QLatin1String(av_get_sample_fmt_name((AVSampleFormat)sampleFormatFFmpeg()));
 }
 
 

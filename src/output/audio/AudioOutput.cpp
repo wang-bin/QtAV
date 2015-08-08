@@ -262,22 +262,22 @@ AudioOutput::AudioOutput(QObject* parent)
     d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
     static const QStringList all = QStringList()
 #if QTAV_HAVE(XAUDIO2)
-            << "XAudio2"
+            << QStringLiteral("XAudio2")
 #endif
 #if QTAV_HAVE(PULSEAUDIO)&& !defined(Q_OS_MAC)
-            << "Pulse"
+            << QStringLiteral("Pulse")
 #endif
 #if QTAV_HAVE(OPENSL)
-            << "OpenSL"
+            << QStringLiteral("OpenSL")
 #endif
 #if QTAV_HAVE(OPENAL)
-            << "OpenAL"
+            << QStringLiteral("OpenAL")
 #endif
 #if QTAV_HAVE(PORTAUDIO)
-            << "PortAudio"
+            << QStringLiteral("PortAudio")
 #endif
 #if QTAV_HAVE(DSOUND)
-            << "DirectSound"
+            << QStringLiteral("DirectSound")
 #endif
               ;
     setBackends(all); //ensure a backend is available

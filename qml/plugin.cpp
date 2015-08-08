@@ -40,7 +40,7 @@ class QtAVQmlPlugin : public QQmlExtensionPlugin
 public:
     void registerTypes(const char *uri)
     {
-        Q_ASSERT(uri == QLatin1String("QtAV"));
+        Q_ASSERT(QLatin1String(uri) == QLatin1String("QtAV"));
         qmlRegisterType<QQuickItemRenderer>(uri, 1, 3, "VideoOutput");
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
@@ -50,7 +50,7 @@ public:
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
         qmlRegisterType<QuickFBORenderer>(uri, 1, 5, "VideoOutput2");
 #endif
-        qmlRegisterUncreatableType<VideoCapture>(uri, 1, 6, "VideoCapture", "VideoCapture is provided by MediaPlayer");
+        qmlRegisterUncreatableType<VideoCapture>(uri, 1, 6, "VideoCapture", trUtf8("VideoCapture is provided by MediaPlayer"));
         qmlRegisterType<MediaMetaData>();
     }
 };

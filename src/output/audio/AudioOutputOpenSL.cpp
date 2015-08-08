@@ -40,7 +40,7 @@ public:
     AudioOutputOpenSL(QObject *parent = 0);
     ~AudioOutputOpenSL();
 
-    QString name() const Q_DECL_OVERRIDE { return kName;}
+    QString name() const Q_DECL_OVERRIDE { return QLatin1String(kName);}
     bool isSupported(const AudioFormat& format) const Q_DECL_OVERRIDE;
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_OVERRIDE;
     bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_OVERRIDE;

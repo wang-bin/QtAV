@@ -252,10 +252,13 @@ void VideoDecoderFFmpegHWPrivate::releaseUSWC()
 VideoDecoderFFmpegHW::VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d):
     VideoDecoderFFmpegBase(d)
 {
-    setProperty("detail_copyMode", tr("ZeroCopy: fastest. Direct rendering without data copy between CPU and GPU") + ". " + tr("Not implemented for all codecs")
-                          + "\n" + tr("LazyCopy: no explicitly additional copy") + ". " + tr("Not implemented for all codecs")
-                          + "\n" + tr("OptimizedCopy: copy from USWC memory optimized by SSE4.1")
-                          + "\n" + tr("GenericCopy: slowest. Generic cpu copy"));
+    setProperty("detail_copyMode", QStringLiteral("%1. %2\n%3. %4\n%5\n%6")
+                .arg(tr("ZeroCopy: fastest. Direct rendering without data copy between CPU and GPU"))
+                .arg(tr("Not implemented for all codecs"))
+                .arg(tr("LazyCopy: no explicitly additional copy"))
+                .arg(tr("Not implemented for all codecs"))
+                .arg(tr("OptimizedCopy: copy from USWC memory optimized by SSE4.1"))
+                .arg(tr("GenericCopy: slowest. Generic cpu copy")));
 }
 
 void VideoDecoderFFmpegHW::setCopyMode(CopyMode value)

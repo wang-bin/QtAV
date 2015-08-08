@@ -458,7 +458,7 @@ VideoDecoderDXVA::VideoDecoderDXVA()
 {
     // dynamic properties about static property details. used by UI
     // format: detail_property
-    setProperty("detail_surfaces", tr("Decoding surfaces.") + " " + tr("0: auto"));
+    setProperty("detail_surfaces", tr("Decoding surfaces.") + QStringListIterator(" ") + tr("0: auto"));
 }
 
 VideoDecoderId VideoDecoderDXVA::id() const
@@ -471,7 +471,7 @@ QString VideoDecoderDXVA::description() const
     DPTR_D(const VideoDecoderDXVA);
     if (!d.description.isEmpty())
         return d.description;
-    return "DirectX Video Acceleration";
+    return QStringLiteral("DirectX Video Acceleration");
 }
 
 VideoFrame VideoDecoderDXVA::frame()
@@ -489,7 +489,7 @@ VideoFrame VideoDecoderDXVA::frame()
         interop->setSurface(d3d, width(), height());
         VideoFrame f(width(), height(), VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
-        f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
+        f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(d.frame->pkt_pts/1000.0);
         f.setDisplayAspectRatio(d.getDAR(d.frame));
         return f;
@@ -633,7 +633,7 @@ bool VideoDecoderDXVAPrivate::D3dCreateDeviceEx()
         ZeroMemory(&d3dai, sizeof(d3dai));
         return false;
     }
-    vendor = getVendorName(&d3dai);
+    vendor = QString::fromLatin1(getVendorName(&d3dai));
     description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
                                     sizeof(d3dai.Description), d3dai.Description,
                                     d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
@@ -696,7 +696,7 @@ bool VideoDecoderDXVAPrivate::D3dCreateDeviceFallback()
         ZeroMemory(&d3dai, sizeof(d3dai));
         return false;
     }
-    vendor = getVendorName(&d3dai);
+    vendor = QString::fromLatin1(getVendorName(&d3dai));
     description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
                                     sizeof(d3dai.Description), d3dai.Description,
                                     d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);

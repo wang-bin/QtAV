@@ -228,7 +228,7 @@ VideoDecoderVAAPI::VideoDecoderVAAPI()
     setDisplayPriority(QStringList() << "X11" << "GLX" <<  "DRM");
     // dynamic properties about static property details. used by UI
     // format: detail_property
-    setProperty("detail_surfaces", tr("Decoding surfaces.") + " " + tr("0: auto"));
+    setProperty("detail_surfaces", tr("Decoding surfaces.") + QStringLiteral(" ") + tr("0: auto"));
     setProperty("detail_derive", tr("Maybe faster if display is not GLX"));
     setProperty("detail_display", tr("GLX is fastest. No data copyback from gpu."));
 }
@@ -242,7 +242,7 @@ QString VideoDecoderVAAPI::description() const
 {
     if (!d_func().description.isEmpty())
         return d_func().description;
-    return "Video Acceleration API";
+    return QStringLiteral("Video Acceleration API");
 }
 
 void VideoDecoderVAAPI::setDerive(bool y)
@@ -319,7 +319,7 @@ VideoFrame VideoDecoderVAAPI::frame()
 
         VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
-        f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
+        f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
         f.setDisplayAspectRatio(d.getDAR(d.frame));
 
@@ -411,8 +411,8 @@ QStringList VideoDecoderVAAPI::displayPriority() const
     int idx = staticMetaObject.indexOfEnumerator("DisplayType");
     const QMetaEnum me = staticMetaObject.enumerator(idx);
     foreach (DisplayType disp, d_func().display_priority) {
-        names.append(me.valueToKey(disp));
-    }    
+        names.append(QString::fromLatin1(me.valueToKey(disp)));
+    }
     return names;
 }
 
@@ -498,16 +498,16 @@ bool VideoDecoderVAAPIPrivate::open()
         qWarning("Failed to initialize the VAAPI device");
         return false;
     }
-    vendor = vaQueryVendorString(disp);
-    //if (!vendor.toLower().contains("intel"))
+    vendor = QString::fromLatin1(vaQueryVendorString(disp));
+    //if (!vendor.toLower().contains(QLatin1Strin("intel")))
       //  copy_uswc = false;
 
     //disable_derive = !copy_uswc;
-    description = QString("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vendor);
+    description = QObject::tr("VA API version %1.%2; Vendor: %3;").arg(version_major).arg(version_minor).arg(vendor);
     DPTR_P(VideoDecoderVAAPI);
     int idx = p.staticMetaObject.indexOfEnumerator("DisplayType");
     const QMetaEnum me = p.staticMetaObject.enumerator(idx);
-    description += " Display: " + QString(me.valueToKey(display_type));
+    description += QStringLiteral(" Display: ") + QString::fromLatin1(me.valueToKey(display_type));
     // check 4k support. from xbmc
     int major, minor, micro;
     if (sscanf(vendor.toUtf8().constData(), "Intel i965 driver - %d.%d.%d", &major, &minor, &micro) == 3) {

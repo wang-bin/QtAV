@@ -370,7 +370,7 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
 {
     if (!isValid() || !constBits(0)) {// hw surface. map to host. only supports rgb packed formats now
         Q_D(const VideoFrame);
-        const QVariant v = d->metadata.value("surface_interop");
+        const QVariant v = d->metadata.value(QStringLiteral("surface_interop"));
         if (!v.isValid())
             return VideoFrame();
         VideoSurfaceInteropPtr si = v.value<VideoSurfaceInteropPtr>();
@@ -425,7 +425,7 @@ VideoFrame VideoFrame::to(VideoFormat::PixelFormat pixfmt, const QSize& dstSize,
 void *VideoFrame::map(SurfaceType type, void *handle, int plane)
 {
     Q_D(VideoFrame);
-    const QVariant v = d->metadata.value("surface_interop");
+    const QVariant v = d->metadata.value(QStringLiteral("surface_interop"));
     if (!v.isValid())
         return 0;
     d->surface_interop = v.value<VideoSurfaceInteropPtr>();
@@ -447,7 +447,7 @@ void VideoFrame::unmap(void *handle)
 void* VideoFrame::createInteropHandle(void* handle, SurfaceType type, int plane)
 {
     Q_D(VideoFrame);
-    const QVariant v = d->metadata.value("surface_interop");
+    const QVariant v = d->metadata.value(QStringLiteral("surface_interop"));
     if (!v.isValid())
         return 0;
     d->surface_interop = v.value<VideoSurfaceInteropPtr>();

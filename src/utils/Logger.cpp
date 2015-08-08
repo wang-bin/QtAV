@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -32,7 +32,7 @@
 void ffmpeg_version_print();
 namespace QtAV {
 namespace Internal {
-static QString gQtAVLogTag("");
+static QString gQtAVLogTag = QString();
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 typedef Logger::Context QMessageLogger;
@@ -238,7 +238,7 @@ QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
     }
     env = qgetenv("QTAV_LOG_TAG");
     if (!env.isEmpty()) {
-        gQtAVLogTag = env;
+        gQtAVLogTag = QString::fromUtf8(env);
     }
 
     if ((int)logLevel() > (int)LogOff) {

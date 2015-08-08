@@ -195,7 +195,7 @@ void AVPlayer::Private::initBaseStatistics()
     //fmt_ctx->duration may be AV_NOPTS_VALUE. AVDemuxer.duration deals with this case
     AVDictionaryEntry *tag = NULL;
     while ((tag = av_dict_get(fmt_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
-        statistics.metadata.insert(tag->key, tag->value);
+        statistics.metadata.insert(QString::fromUtf8(tag->key), QString::fromUtf8(tag->value));
     }
     updateNotifyInterval();
 }
@@ -210,8 +210,8 @@ void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCo
     AVStream *stream = fmt_ctx->streams[s];
     qDebug("stream: %d, duration=%lld (%lld ms), time_base=%f", s, stream->duration, qint64(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0), av_q2d(stream->time_base));
     // AVCodecContext.codec_name is deprecated. use avcodec_get_name. check null avctx->codec?
-    st->codec = avcodec_get_name(avctx->codec_id);
-    st->codec_long = get_codec_long_name(avctx->codec_id);
+    st->codec = QLatin1String(avcodec_get_name(avctx->codec_id));
+    st->codec_long = QLatin1String(get_codec_long_name(avctx->codec_id));
     st->total_time = QTime(0, 0, 0).addMSecs(stream->duration == (qint64)AV_NOPTS_VALUE ? 0 : int(qreal(stream->duration)*av_q2d(stream->time_base)*1000.0));
     st->start_time = QTime(0, 0, 0).addMSecs(stream->start_time == (qint64)AV_NOPTS_VALUE ? 0 : int(qreal(stream->start_time)*av_q2d(stream->time_base)*1000.0));
     qDebug("codec: %s(%s)", qPrintable(st->codec), qPrintable(st->codec_long));
@@ -233,7 +233,7 @@ void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCo
     //qDebug("time: %f~%f, nb_frames=%lld", st->start_time, st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
     AVDictionaryEntry *tag = NULL;
     while ((tag = av_dict_get(stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
-        st->metadata.insert(tag->key, tag->value);
+        st->metadata.insert(QString::fromUtf8(tag->key), QString::fromUtf8(tag->value));
     }
 }
 
@@ -256,8 +256,8 @@ void AVPlayer::Private::initAudioStatistics(int s)
     char cl[128]; //
     // nb_channels -1: will use av_get_channel_layout_nb_channels
     av_get_channel_layout_string(cl, sizeof(cl), avctx->channels, avctx->channel_layout); //TODO: ff version
-    statistics.audio_only.channel_layout = cl;
-    statistics.audio_only.sample_fmt = av_get_sample_fmt_name(avctx->sample_fmt);
+    statistics.audio_only.channel_layout = QLatin1String(cl);
+    statistics.audio_only.sample_fmt = QLatin1String(av_get_sample_fmt_name(avctx->sample_fmt));
     statistics.audio_only.frame_size = avctx->frame_size;
     statistics.audio_only.sample_rate = avctx->sample_rate;
 }
@@ -278,7 +278,7 @@ void AVPlayer::Private::initVideoStatistics(int s)
     statistics.video_only.coded_height = avctx->coded_height;
     statistics.video_only.coded_width = avctx->coded_width;
     statistics.video_only.gop_size = avctx->gop_size;
-    statistics.video_only.pix_fmt = av_get_pix_fmt_name(avctx->pix_fmt);
+    statistics.video_only.pix_fmt = QLatin1String(av_get_pix_fmt_name(avctx->pix_fmt));
     statistics.video_only.height = avctx->height;
     statistics.video_only.width = avctx->width;
 }
@@ -308,7 +308,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         delete adec;
         adec = 0;
     }
-    adec = AudioDecoder::create("FFmpeg");
+    adec = AudioDecoder::create();
     QObject::connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
     adec->setCodecContext(avctx);
     adec->setOptions(ac_opt);
@@ -405,24 +405,24 @@ QVariantList AVPlayer::Private::getTracksInfo(AVDemuxer *demuxer, AVDemuxer::Str
         return info;
     foreach (int s, streams) {
         QVariantMap t;
-        t["id"] = info.size();
-        t["file"] = demuxer->fileName();
+        t[QStringLiteral("id")] = info.size();
+        t[QStringLiteral("file")] = demuxer->fileName();
         AVStream *stream = demuxer->formatContext()->streams[s];
         AVCodecContext *ctx = stream->codec;
         if (ctx) {
-            t["codec"] = QByteArray(avcodec_descriptor_get(ctx->codec_id)->name);
+            t[QStringLiteral("codec")] = QByteArray(avcodec_descriptor_get(ctx->codec_id)->name);
             if (ctx->extradata)
-                t["extra"] = QByteArray((const char*)ctx->extradata, ctx->extradata_size);
+                t[QStringLiteral("extra")] = QByteArray((const char*)ctx->extradata, ctx->extradata_size);
         }
         AVDictionaryEntry *tag = av_dict_get(stream->metadata, "language", NULL, 0);
         if (!tag)
             tag = av_dict_get(stream->metadata, "lang", NULL, 0);
         if (tag) {
-            t["language"] = tag->value;
+            t[QStringLiteral("language")] = QString::fromUtf8(tag->value);
         }
         tag = av_dict_get(stream->metadata, "title", NULL, 0);
         if (tag) {
-            t["title"] = tag->value;
+            t[QStringLiteral("title")] = QString::fromUtf8(tag->value);
         }
         info.push_back(t);
     }

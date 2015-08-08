@@ -73,7 +73,7 @@ VideoDecoder::VideoDecoder(VideoDecoderPrivate &d):
 
 QString VideoDecoder::name() const
 {
-    return QString(VideoDecoderFactory::name(id()).c_str());
+    return QLatin1String(VideoDecoderFactory::name(id()).c_str());
 }
 
 void VideoDecoder::resizeVideoFrame(const QSize &size)

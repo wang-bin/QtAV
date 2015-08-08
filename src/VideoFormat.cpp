@@ -117,7 +117,7 @@ public:
         initBpp();
     }
     QString name() const {
-        return av_get_pix_fmt_name(pixfmt_ff);
+        return QLatin1String(av_get_pix_fmt_name(pixfmt_ff));
     }
     int flags() const {
         if (!pixdesc)

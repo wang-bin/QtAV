@@ -115,7 +115,9 @@ public:
     VideoDecoderId id() const Q_DECL_OVERRIDE Q_DECL_FINAL;
     QString description() const Q_DECL_OVERRIDE Q_DECL_FINAL {
         const int patch = QTAV_VERSION_PATCH(avcodec_version());
-        return QString("%1 avcodec %2.%3.%4").arg(patch>=100?"FFmpeg":"Libav").arg(QTAV_VERSION_MAJOR(avcodec_version())).arg(QTAV_VERSION_MINOR(avcodec_version())).arg(patch);
+        return QStringLiteral("%1 avcodec %2.%3.%4")
+                .arg(patch>=100?QStringLiteral("FFmpeg"):QStringLiteral("Libav"))
+                .arg(QTAV_VERSION_MAJOR(avcodec_version())).arg(QTAV_VERSION_MINOR(avcodec_version())).arg(patch);
     }
     virtual VideoFrame frame() Q_DECL_OVERRIDE Q_DECL_FINAL;
 
@@ -247,7 +249,7 @@ VideoFrame VideoDecoderFFmpeg::frame()
     frame.setBits(d.frame->data);
     frame.setBytesPerLine(d.frame->linesize);
     frame.setTimestamp((double)d.frame->pkt_pts/1000.0); // in s. what about AVFrame.pts?
-    frame.setMetaData("avbuf", QVariant::fromValue(AVFrameBuffersRef(new AVFrameBuffers(d.frame))));
+    frame.setMetaData(QStringLiteral("avbuf"), QVariant::fromValue(AVFrameBuffersRef(new AVFrameBuffers(d.frame))));
     d.updateColorDetails(&frame);
     return frame;
 }

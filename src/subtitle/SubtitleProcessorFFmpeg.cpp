@@ -51,7 +51,7 @@ private:
     QList<SubtitleFrame> m_frames;
 };
 
-static const SubtitleProcessorId SubtitleProcessorId_FFmpeg = "qtav.subtitle.processor.ffmpeg";
+static const SubtitleProcessorId SubtitleProcessorId_FFmpeg = QStringLiteral("qtav.subtitle.processor.ffmpeg");
 namespace {
 static const std::string kName("FFmpeg");
 }
@@ -74,7 +74,7 @@ SubtitleProcessorId SubtitleProcessorFFmpeg::id() const
 
 QString SubtitleProcessorFFmpeg::name() const
 {
-    return QString(kName.c_str());//SubtitleProcessorFactory::name(id());
+    return QLatin1String(kName.c_str());//SubtitleProcessorFactory::name(id());
 }
 
 QStringList ffmpeg_supported_sub_extensions_by_codec()
@@ -92,10 +92,10 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
             if (!strcmp(i->name, c->name)) {
                 qDebug("found iformat");
                 if (i->extensions) {
-                    exts.append(QString(i->extensions).split(QChar(',')));
+                    exts.append(QString::fromLatin1(i->extensions).split(QLatin1Char(',')));
                 } else {
                     qDebug("has no exts");
-                    exts.append(i->name);
+                    exts.append(QString::fromLatin1(i->name));
                 }
                 break;
             }
@@ -118,9 +118,9 @@ QStringList ffmpeg_supported_sub_extensions()
         // strstr parameters can not be null
         if (i->long_name && strstr(i->long_name, "subtitle")) {
             if (i->extensions) {
-                exts.append(QString(i->extensions).split(QChar(',')));
+                exts.append(QString::fromLatin1(i->extensions).split(QLatin1Char(',')));
             } else {
-                exts.append(i->name);
+                exts.append(QString::fromLatin1(i->name));
             }
         }
         i = av_iformat_next(i);
@@ -199,7 +199,7 @@ QString SubtitleProcessorFFmpeg::getText(qreal pts) const
     QString text;
     for (int i = 0; i < m_frames.size(); ++i) {
         if (m_frames[i].begin <= pts && m_frames[i].end >= pts) {
-            text += m_frames[i].text + "\n";
+            text += m_frames[i].text + QStringLiteral("\n");
             continue;
         }
         if (!text.isEmpty())
@@ -260,11 +260,11 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
         switch (sub.rects[i]->type) {
         case SUBTITLE_ASS:
             //qDebug("frame: %s", sub.rects[i]->ass);
-            frame.text.append(PlainText::fromAss(sub.rects[i]->ass)).append('\n');
+            frame.text.append(PlainText::fromAss(sub.rects[i]->ass)).append(ushort('\n'));
             break;
         case SUBTITLE_TEXT:
             //qDebug("frame: %s", sub.rects[i]->text);
-            frame.text.append(sub.rects[i]->text).append('\n');
+            frame.text.append(QString::fromUtf8(sub.rects[i]->text)).append(ushort('\n'));
             break;
         case SUBTITLE_BITMAP:
             break;

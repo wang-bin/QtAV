@@ -37,7 +37,7 @@ class AudioOutputPulse Q_DECL_FINAL: public AudioOutputBackend
 public:
     AudioOutputPulse(QObject *parent = 0);
 
-    QString name() const Q_DECL_FINAL { return kName;}
+    QString name() const Q_DECL_FINAL { return QString::fromLatin1(kName);}
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
     bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_FINAL;
     bool open() Q_DECL_FINAL;
@@ -270,7 +270,7 @@ bool AudioOutputPulse::init(const AudioFormat &format)
         qWarning("PulseAudio failed to allocate a context");
         return false;
     }
-    qDebug() << QString("PulseAudio %1, protocol: %2, server protocol: %3").arg(pa_get_library_version()).arg(pa_context_get_protocol_version(ctx)).arg(pa_context_get_server_protocol_version(ctx));
+    qDebug() << tr("PulseAudio %1, protocol: %2, server protocol: %3").arg(pa_get_library_version()).arg(pa_context_get_protocol_version(ctx)).arg(pa_context_get_server_protocol_version(ctx));
     // TODO: host property
     pa_context_connect(ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
     pa_context_set_state_callback(ctx, AudioOutputPulse::contextStateCallback, this);

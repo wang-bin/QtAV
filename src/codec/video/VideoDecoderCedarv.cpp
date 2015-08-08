@@ -63,7 +63,7 @@ public:
     VideoDecoderCedarv();
     VideoDecoderId id() const Q_DECL_OVERRIDE Q_DECL_FINAL;
     QString description() const Q_DECL_OVERRIDE Q_DECL_FINAL{
-        return "Allwinner A10 CedarX video hardware acceleration";
+        return QStringLiteral("Allwinner A10 CedarX video hardware acceleration");
     }
     bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE Q_DECL_FINAL;
     bool decode(const Packet& packet) Q_DECL_OVERRIDE Q_DECL_FINAL;

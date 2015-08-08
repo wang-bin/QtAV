@@ -40,7 +40,7 @@ class AudioOutputXAudio2 Q_DECL_FINAL: public AudioOutputBackend, public IXAudio
 public:
     AudioOutputXAudio2(QObject *parent = 0);
     ~AudioOutputXAudio2();
-    QString name() const Q_DECL_OVERRIDE { return kName;}
+    QString name() const Q_DECL_OVERRIDE { return QString::fromLatin1(kName);}
     bool open() Q_DECL_OVERRIDE;
     bool close() Q_DECL_OVERRIDE;
     // TODO: check channel layout. xaudio2 supports channels>2
@@ -120,7 +120,7 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
     // load dll. <win8: XAudio2_7.DLL, <win10: XAudio2_8.DLL, win10: XAudio2_9.DLL. also defined by XAUDIO2_DLL_A in xaudio2.h
     int ver = 9;
     for (; ver >= 0; ver--) {
-        dll.setFileName(QString("XAudio2_%1").arg(ver));
+        dll.setFileName(QStringLiteral("XAudio2_%1").arg(ver));
         qDebug() << dll.fileName();
         if (!dll.load()) {
             qWarning() << dll.errorString();

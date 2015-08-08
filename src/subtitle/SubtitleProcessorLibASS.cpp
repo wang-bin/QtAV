@@ -76,7 +76,7 @@ private:
     mutable QMutex m_mutex;
 };
 
-static const SubtitleProcessorId SubtitleProcessorId_LibASS = "qtav.subtitle.processor.libass";
+static const SubtitleProcessorId SubtitleProcessorId_LibASS = QStringLiteral("qtav.subtitle.processor.libass");
 namespace {
 static const std::string kName("LibASS");
 }
@@ -98,7 +98,7 @@ void RegisterSubtitleProcessorLibASS_Man()
 static void ass_msg_cb(int level, const char *fmt, va_list va, void *data)
 {
     Q_UNUSED(data)
-    QString msg("{libass} " + QString().vsprintf(fmt, va));
+    QString msg(QStringLiteral("{libass} ") + QString().vsprintf(fmt, va));
     if (level == MSGL_FATAL)
         qFatal("%s", msg.toUtf8().constData());
     else if (level <= 2)
@@ -148,14 +148,14 @@ SubtitleProcessorId SubtitleProcessorLibASS::id() const
 
 QString SubtitleProcessorLibASS::name() const
 {
-    return QString(kName.c_str());//SubtitleProcessorFactory::name(id());
+    return QLatin1String(kName.c_str());//SubtitleProcessorFactory::name(id());
 }
 
 QStringList SubtitleProcessorLibASS::supportedTypes() const
 {
     // from LibASS/tests/fate/subtitles.mak
     // TODO: mp4
-    static const QStringList sSuffixes = QStringList() << "ass" << "ssa";
+    static const QStringList sSuffixes = QStringList() << QStringLiteral("ass") << QStringLiteral("ssa");
     return sSuffixes;
 }
 
@@ -273,7 +273,7 @@ QString SubtitleProcessorLibASS::getText(qreal pts) const
     QString text;
     for (int i = 0; i < m_frames.size(); ++i) {
         if (m_frames[i].begin <= pts && m_frames[i].end >= pts) {
-            text += m_frames[i].text + "\n";
+            text += m_frames[i].text + QStringLiteral("\n");
             continue;
         }
         if (!text.isEmpty())
@@ -373,7 +373,7 @@ void SubtitleProcessorLibASS::updateFontCache()
     if (conf.isEmpty()) {
         conf = qgetenv("QTAV_FC_FILE");
         if (conf.isEmpty())
-            conf = qApp->applicationDirPath().append("/fonts/fonts.conf").toUtf8();
+            conf = qApp->applicationDirPath().append(QLatin1String("/fonts/fonts.conf")).toUtf8();
     }
     static QByteArray font;
     if (font.isEmpty()) {

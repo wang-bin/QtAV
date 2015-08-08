@@ -43,7 +43,7 @@ public:
         , save(true)
         , original_fmt(false)
         , quality(-1)
-        , format("PNG")
+        , format(QStringLiteral("PNG"))
         , qfmt(QImage::Format_ARGB32)
     {
         setAutoDelete(true);
@@ -71,7 +71,7 @@ public:
             }
         }
         name += QString::number(frame.timestamp(), 'f', 3);
-        QString path(dir + "/" + name + ".");
+        QString path(dir + QStringLiteral("/") + name + QStringLiteral("."));
         if (original_fmt) {
             path.append(frame.format().name());
             qDebug("Saving capture to %s", qPrintable(path));
@@ -125,8 +125,8 @@ VideoCapture::VideoCapture(QObject *parent) :
     dir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
 #endif
     if (dir.isEmpty())
-        dir = qApp->applicationDirPath() + "/capture";
-    fmt = "PNG";
+        dir = qApp->applicationDirPath() + QStringLiteral("/capture");
+    fmt = QStringLiteral("PNG");
     qual = -1;
     // seems no direct connection is fine too
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(handleAppQuit()), Qt::DirectConnection);

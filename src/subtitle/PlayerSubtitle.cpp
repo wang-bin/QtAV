@@ -43,15 +43,15 @@ static QString getSubtitleBasePath(const QString fullPath)
     // QString name = QFileInfo(path).completeBaseName();
     // why QFileInfo(path).dir() starts with qml app dir?
     QString name(path);
-    int lastSep = path.lastIndexOf(QChar('/'));
+    int lastSep = path.lastIndexOf(QLatin1Char('/'));
     if (lastSep >= 0) {
         name = name.mid(lastSep + 1);
         path = path.left(lastSep + 1); // endsWidth "/"
     }
-    int lastDot = name.lastIndexOf(QChar('.')); // not path.lastIndexof("."): xxx.oo/xx
+    int lastDot = name.lastIndexOf(QLatin1Char('.')); // not path.lastIndexof("."): xxx.oo/xx
     if (lastDot > 0)
         name = name.left(lastDot);
-    if (path.startsWith("file:")) // can skip convertion here. Subtitle class also convert the path
+    if (path.startsWith(QLatin1String("file:"))) // can skip convertion here. Subtitle class also convert the path
         path = getLocalPath(path);
     path.append(name);
     return path;
@@ -153,8 +153,8 @@ void PlayerSubtitle::onPlayerStart()
                 return;
             }
             QVariantMap track = m_tracks[n].toMap();
-            QByteArray codec(track.value("codec").toByteArray());
-            QByteArray data(track.value("extra").toByteArray());
+            QByteArray codec(track.value(QStringLiteral("codec")).toByteArray());
+            QByteArray data(track.value(QStringLiteral("extra")).toByteArray());
             m_sub->processHeader(codec, data);
         } else {
             m_sub->loadAsync();
@@ -242,8 +242,8 @@ void PlayerSubtitle::tryReload(int flag)
         return;
     }
     QVariantMap track = m_tracks[n].toMap();
-    QByteArray codec(track.value("codec").toByteArray());
-    QByteArray data(track.value("extra").toByteArray());
+    QByteArray codec(track.value(QStringLiteral("codec")).toByteArray());
+    QByteArray data(track.value(QStringLiteral("extra")).toByteArray());
     m_sub->processHeader(codec, data);
     Packet pkt(m_current_pkt[n]);
     if (pkt.isValid()) {

@@ -39,7 +39,7 @@ class AudioOutputDSound Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputDSound(QObject *parent = 0);
-    QString name() const Q_DECL_FINAL { return kName;}
+    QString name() const Q_DECL_FINAL { return QString::fromLatin1(kName);}
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;

@@ -29,7 +29,7 @@ template<typename ID, typename Factory>
 static QStringList idsToNames(QVector<ID> ids) {
     QStringList decs;
     foreach (ID id, ids) {
-        decs.append(Factory::name(id).c_str());
+        decs.append(QString::fromUtf8(Factory::name(id).c_str()));
     }
     return decs;
 }
@@ -105,7 +105,7 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer->audio(), SIGNAL(volumeChanged(qreal)), SLOT(applyVolume()), Qt::DirectConnection);
     connect(mpPlayer->audio(), SIGNAL(muteChanged(bool)), SLOT(applyVolume()), Qt::DirectConnection);
 
-    mVideoCodecs << "FFmpeg";
+    mVideoCodecs << QStringLiteral("FFmpeg");
 
     m_metaData.reset(new MediaMetaData());
 
@@ -270,10 +270,10 @@ void QmlAVPlayer::setWallclockAsTimestamps(bool use_wallclock_as_timestamps)
     QVariantHash opt = mpPlayer->optionsForFormat();
 
     if (use_wallclock_as_timestamps) {
-        opt["use_wallclock_as_timestamps"] = 1;
+        opt[QStringLiteral("use_wallclock_as_timestamps")] = 1;
         mpPlayer->setBufferValue(1);
     } else {
-        opt.remove("use_wallclock_as_timestamps");
+        opt.remove(QStringLiteral("use_wallclock_as_timestamps"));
         mpPlayer->setBufferValue(-1);
     }
     mpPlayer->setOptionsForFormat(opt);

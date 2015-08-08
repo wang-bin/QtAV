@@ -159,8 +159,8 @@ void about() {
     viewQtAV->setHtml(aboutQtAV_HTML());
     viewFFmpeg->setHtml(aboutFFmpeg_HTML());
     QTabWidget *tab = new QTabWidget;
-    tab->addTab(viewQtAV, "QtAV");
-    tab->addTab(viewFFmpeg, "FFmpeg");
+    tab->addTab(viewQtAV, QStringLiteral("QtAV"));
+    tab->addTab(viewFFmpeg, QStringLiteral("FFmpeg"));
     QPushButton *qbtn = new QPushButton(QObject::tr("About Qt"));
     QPushButton *btn = new QPushButton(QObject::tr("Ok"));
     QHBoxLayout *btnLayout = new QHBoxLayout;
@@ -169,7 +169,7 @@ void about() {
     btnLayout->addWidget(qbtn);
     btn->setFocus();
     QDialog dialog;
-    dialog.setWindowTitle(QObject::tr("About") + "  QtAV");
+    dialog.setWindowTitle(QObject::tr("About") + QStringLiteral("  QtAV"));
     QVBoxLayout *layout = new QVBoxLayout;
     dialog.setLayout(layout);
     layout->addWidget(tab);

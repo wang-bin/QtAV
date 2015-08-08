@@ -51,7 +51,7 @@ AudioEncoder::AudioEncoder(AudioEncoderPrivate &d):
 
 QString AudioEncoder::name() const
 {
-    return QString(AudioEncoderFactory::name(id()).c_str());
+    return QLatin1String(AudioEncoderFactory::name(id()).c_str());
 }
 
 void AudioEncoder::setAudioFormat(const AudioFormat& format)

@@ -51,7 +51,7 @@ VideoEncoder::VideoEncoder(VideoEncoderPrivate &d):
 
 QString VideoEncoder::name() const
 {
-    return QString(VideoEncoderFactory::name(id()).c_str());
+    return QLatin1String(VideoEncoderFactory::name(id()).c_str());
 }
 
 void VideoEncoder::setWidth(int value)

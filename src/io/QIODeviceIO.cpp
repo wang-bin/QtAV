@@ -78,7 +78,7 @@ public:
 
 QIODeviceIO::QIODeviceIO() : MediaIO(*new QIODeviceIOPrivate()) {}
 QIODeviceIO::QIODeviceIO(QIODeviceIOPrivate &d) : MediaIO(d) {}
-QString QIODeviceIO::name() const { return kQIODevName;}
+QString QIODeviceIO::name() const { return QLatin1String(kQIODevName);}
 
 void QIODeviceIO::setDevice(QIODevice *dev)
 {
@@ -158,10 +158,10 @@ class QFileIO Q_DECL_FINAL: public QIODeviceIO
     DPTR_DECLARE_PRIVATE(QFileIO)
 public:
     QFileIO();
-    QString name() const Q_DECL_OVERRIDE { return kQFileName;}
+    QString name() const Q_DECL_OVERRIDE { return QLatin1String(kQFileName);}
     const QStringList& protocols() const Q_DECL_OVERRIDE
     {
-        static QStringList p = QStringList() << "" << "qrc";
+        static QStringList p = QStringList() << QStringLiteral("") << QStringLiteral("qrc");
         return p;
     }
 protected:
@@ -196,7 +196,7 @@ void QFileIO::onUrlChanged()
     if (d.file.isOpen())
         d.file.close();
     QString path(url());
-    if (path.startsWith("qrc:"))
+    if (path.startsWith(QLatin1String("qrc:")))
         path = path.mid(3);
     d.file.setFileName(path);
     if (path.isEmpty())

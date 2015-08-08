@@ -95,7 +95,7 @@ public:
         if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber10_7)
             out_fmt = VideoDecoderVDA::UYVY;
         copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
-        description = "VDA";
+        description = QStringLiteral("VDA");
         memset(&hw_ctx, 0, sizeof(hw_ctx));
     }
     ~VideoDecoderVDAPrivate() {qDebug("~VideoDecoderVDAPrivate");}
@@ -193,7 +193,7 @@ VideoDecoderId VideoDecoderVDA::id() const
 
 QString VideoDecoderVDA::description() const
 {
-    return "Video Decode Acceleration";
+    return QStringLiteral("Video Decode Acceleration");
 }
 
 VideoFrame VideoDecoderVDA::frame()
@@ -351,14 +351,14 @@ VideoFrame VideoDecoderVDA::frame()
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
         f.setDisplayAspectRatio(d.getDAR(d.frame));
         if (zero_copy) {
-            f.setMetaData("target", "rect");
+            f.setMetaData(QStringLiteral("target"), QByteArrayLiteral("rect"));
         } else {
             f.setBits(src); // only set for copy back mode
         }
     } else {
         f = copyToFrame(fmt, d.height, src, pitch, false);
     }
-    f.setMetaData("surface_interop", QVariant::fromValue(VideoSurfaceInteropPtr(new SurfaceInteropCVBuffer(cv_buffer, zero_copy))));
+    f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(new SurfaceInteropCVBuffer(cv_buffer, zero_copy))));
     return f;
 }
 

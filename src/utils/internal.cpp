@@ -35,37 +35,37 @@ QString options2StringHelper(void* obj, const char* unit)
             if (!unit)
                 continue;
             if (!qstrcmp(unit, opt->unit))
-                s.append(QString(" %1=%2").arg(opt->name).arg(opt->default_val.i64));
+                s.append(QStringLiteral(" %1=%2").arg(QLatin1String(opt->name)).arg(opt->default_val.i64));
             continue;
         } else {
             if (unit)
                 continue;
         }
-        s.append(QString("\n%1: ").arg(opt->name));
+        s.append(QStringLiteral("\n%1: ").arg(QLatin1String(opt->name)));
         switch (opt->type) {
         case AV_OPT_TYPE_FLAGS:
         case AV_OPT_TYPE_INT:
         case AV_OPT_TYPE_INT64:
-            s.append(QString("(%1)").arg(opt->default_val.i64));
+            s.append(QStringLiteral("(%1)").arg(opt->default_val.i64));
             break;
         case AV_OPT_TYPE_DOUBLE:
         case AV_OPT_TYPE_FLOAT:
-            s.append(QString("(%1)").arg(opt->default_val.dbl, 0, 'f'));
+            s.append(QStringLiteral("(%1)").arg(opt->default_val.dbl, 0, 'f'));
             break;
         case AV_OPT_TYPE_STRING:
             if (opt->default_val.str)
-                s.append(QString("(%1)").arg(opt->default_val.str));
+                s.append(QStringLiteral("(%1)").arg(QString::fromUtf8(opt->default_val.str)));
             break;
         case AV_OPT_TYPE_RATIONAL:
-            s.append(QString("(%1/%2)").arg(opt->default_val.q.num).arg(opt->default_val.q.den));
+            s.append(QStringLiteral("(%1/%2)").arg(opt->default_val.q.num).arg(opt->default_val.q.den));
             break;
         default:
             break;
         }
         if (opt->help)
-            s.append(" ").append(opt->help);
+            s.append(QLatin1String(" ")).append(QString::fromUtf8(opt->help));
         if (opt->unit && opt->type != AV_OPT_TYPE_CONST)
-            s.append("\n ").append(options2StringHelper(obj, opt->unit));
+            s.append(QLatin1String("\n ")).append(options2StringHelper(obj, opt->unit));
     }
     return s;
 }
@@ -80,7 +80,7 @@ void setOptionsToFFmpegObj(const QVariant& opt, void* obj)
         return;
     AVClass *c = obj ? *(AVClass**)obj : 0;
     if (c)
-        qDebug() << QString("%1.%2 options:").arg(c->class_name).arg(c->item_name(obj));
+        qDebug() << QStringLiteral("%1.%2 options:").arg(QLatin1String(c->class_name)).arg(QLatin1String(c->item_name(obj)));
     else
         qDebug() << "options:";
     if (opt.type() == QVariant::Map) {
@@ -184,7 +184,7 @@ void setOptionsForQObject(const QVariant& opt, QObject *obj)
 {
     if (!opt.isValid())
         return;
-    qDebug() << QString("set %1(%2) meta properties:").arg(obj->metaObject()->className()).arg(obj->objectName());
+    qDebug() << QStringLiteral("set %1(%2) meta properties:").arg(QLatin1String(obj->metaObject()->className())).arg(obj->objectName());
     if (opt.type() == QVariant::Hash) {
         QVariantHash options(opt.toHash());
         if (options.isEmpty())

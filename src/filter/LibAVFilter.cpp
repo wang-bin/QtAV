@@ -199,9 +199,9 @@ QString LibAVFilter::filterDescription(const QString &filterName)
     if (!f)
         return s;
     if (f->description)
-        s.append(f->description);
+        s.append(QString::fromUtf8(f->description));
 #if AV_MODULE_CHECK(LIBAVFILTER, 3, 7, 0, 8, 100)
-    return s.append("\n").append(QObject::tr("Options:"))
+    return s.append(QLatin1String("\n")).append(QObject::tr("Options:"))
             .append(Internal::optionsToString((void*)&f->priv_class));
 #endif
 #endif //QTAV_HAVE(AVFILTER)
@@ -291,7 +291,7 @@ QStringList LibAVFilter::registeredFilters(int type)
         // only check the 1st pad
         if (!fp || !fp[0].name || fp[0].type != (AVMediaType)type)
             continue;
-        filters.append(f->name);
+        filters.append(QLatin1String(f->name));
     }
 #endif //QTAV_HAVE(AVFILTER)
     return filters;
@@ -349,7 +349,7 @@ void LibAVFilterVideo::process(Statistics *statistics, VideoFrame *frame)
     VideoFrame vf(f->width, f->height, VideoFormat(f->format));
     vf.setBits((quint8**)f->data);
     vf.setBytesPerLine((int*)f->linesize);
-    vf.setMetaData("avframe_hoder_ref", QVariant::fromValue(ref));
+    vf.setMetaData(QStringLiteral("avframe_hoder_ref"), QVariant::fromValue(ref));
     vf.setTimestamp(ref->frame()->pts/1000000.0); //pkt_pts?
     //vf.setMetaData(frame->availableMetaData());
     *frame = vf;
@@ -362,9 +362,9 @@ QString LibAVFilterVideo::sourceArguments() const
 {
     DPTR_D(const LibAVFilterVideo);
 #if QTAV_USE_LIBAV(LIBAVFILTER)
-    return QString("%1:%2:%3:%4:%5:%6:%7")
+    return QStringLiteral("%1:%2:%3:%4:%5:%6:%7")
 #else
-    return QString("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=%6/%7")
+    return QStringLiteral("video_size=%1x%2:pix_fmt=%3:time_base=%4/%5:pixel_aspect=%6/%7")
 #endif
             .arg(d.width).arg(d.height).arg(d.pixfmt)
             .arg(1).arg(AV_TIME_BASE) //time base 1/1?
@@ -404,13 +404,13 @@ QStringList LibAVFilterAudio::filters() const
 QString LibAVFilterAudio::sourceArguments() const
 {
     DPTR_D(const LibAVFilterAudio);
-    return QString("time_base=%1/%2:sample_rate=%3:sample_fmt=%4:channel_layout=0x%5")
+    return QStringLiteral("time_base=%1/%2:sample_rate=%3:sample_fmt=%4:channel_layout=0x%5")
             .arg(1)
             .arg(AV_TIME_BASE)
             .arg(d.sample_rate)
             //ffmpeg new: AV_OPT_TYPE_SAMPLE_FMT
             //libav, ffmpeg old: AV_OPT_TYPE_STRING
-            .arg(av_get_sample_fmt_name(d.sample_fmt))
+            .arg(QLatin1String(av_get_sample_fmt_name(d.sample_fmt)))
             .arg(d.channel_layout, 0, 16) //AV_OPT_TYPE_STRING
             ;
 }
@@ -454,7 +454,7 @@ void LibAVFilterAudio::process(Statistics *statistics, AudioFrame *frame)
     af.setBits(f->extended_data); // TODO: ref
     af.setBytesPerLine(f->linesize[0], 0); // for correct alignment
     af.setSamplesPerChannel(f->nb_samples);
-    af.setMetaData("avframe_hoder_ref", QVariant::fromValue(ref));
+    af.setMetaData(QStringLiteral("avframe_hoder_ref"), QVariant::fromValue(ref));
     af.setTimestamp(ref->frame()->pts/1000000.0); //pkt_pts?
     //af.setMetaData(frame->availableMetaData());
     *frame = af;

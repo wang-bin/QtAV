@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -65,7 +65,7 @@ AudioDecoder::AudioDecoder(AudioDecoderPrivate &d):
 
 QString AudioDecoder::name() const
 {
-    return QString(AudioDecoderFactory::name(id()).c_str());
+    return QLatin1String(AudioDecoderFactory::name(id()).c_str());
 }
 
 QByteArray AudioDecoder::data() const

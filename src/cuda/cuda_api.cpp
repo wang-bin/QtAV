@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -56,18 +56,18 @@ public:
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
         loaded = false;
         memset(&api, 0, sizeof(api));
-        cuda_dll.setFileName("cuda");
+        cuda_dll.setFileName(QStringLiteral("cuda"));
         if (!cuda_dll.isLoaded())
             cuda_dll.load();
         if (!cuda_dll.isLoaded()) {
-            cuda_dll.setFileName("nvcuda");
+            cuda_dll.setFileName(QStringLiteral("nvcuda"));
             cuda_dll.load();
         }
         if (!cuda_dll.isLoaded()) {
             qWarning("can not load cuda!");
             return;
         }
-        cuvid_dll.setFileName("nvcuvid");
+        cuvid_dll.setFileName(QStringLiteral("nvcuvid"));
         cuvid_dll.load();
         if (!cuvid_dll.isLoaded()) {
             qWarning("can not load nvcuvid!");

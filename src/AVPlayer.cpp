@@ -370,7 +370,7 @@ void AVPlayer::setFile(const QString &path)
     // file() is used somewhere else. ensure it is correct
     QString p(path);
     // QFile does not support "file:"
-    if (p.startsWith("file:"))
+    if (p.startsWith(QLatin1String("file:")))
         p = getLocalPath(p);
     d->reset_state = d->current_source.type() != QVariant::String || d->current_source.toString() != p;
     d->current_source = p;
@@ -865,7 +865,7 @@ bool AVPlayer::setAudioStream(const QString &file, int n)
         return false;
     QString path(file);
     // QFile does not support "file:"
-    if (path.startsWith("file:"))
+    if (path.startsWith(QLatin1String("file:")))
         path = getLocalPath(path);
     if (d->audio_track == n && d->external_audio == path)
         return true;

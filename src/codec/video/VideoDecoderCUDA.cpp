@@ -320,7 +320,7 @@ QString VideoDecoderCUDA::description() const
     DPTR_D(const VideoDecoderCUDA);
     if (!d.description.isEmpty())
         return d.description;
-    return "NVIDIA CUVID";
+    return QStringLiteral("NVIDIA CUVID");
 }
 
 void VideoDecoderCUDA::flush()
@@ -514,7 +514,7 @@ bool VideoDecoderCUDAPrivate::initCuda()
     cuDeviceComputeCapability(&major, &minor, cudev);
     char devname[256];
     cuDeviceGetName(devname, 256, cudev);
-    description = QString("CUDA device: %1 %2.%3 %4 MHz").arg(devname).arg(major).arg(minor).arg(clockRate/1000);
+    description = QStringLiteral("CUDA device: %1 %2.%3 %4 MHz").arg(QLatin1String((const char*)devname)).arg(major).arg(minor).arg(clockRate/1000);
 
     //TODO: cuD3DCtxCreate > cuGLCtxCreate > cuCtxCreate
     checkCudaErrors(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev)); //CU_CTX_SCHED_AUTO?
@@ -620,7 +620,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDParser()
 {
     cudaVideoCodec cudaCodec = mapCodecFromFFmpeg(codec_ctx->codec_id);
     if (cudaCodec == cudaVideoCodec_NumCodecs) {
-        QString es(QObject::tr("Codec %1 is not supported by CUDA").arg(avcodec_get_name(codec_ctx->codec_id)));
+        QString es(QObject::tr("Codec %1 is not supported by CUDA").arg(QLatin1String(avcodec_get_name(codec_ctx->codec_id))));
         //emit error(AVError::CodecError, es);
         qWarning() << es;
         available = false;

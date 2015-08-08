@@ -169,14 +169,14 @@ const QStringList &AVMuxer::supportedProtocols()
     if (!protocols.isEmpty())
         return protocols;
 #if QTAV_HAVE(AVDEVICE)
-    protocols << "avdevice";
+    protocols << QStringLiteral("avdevice");
 #endif
     av_register_all(); // MUST register all input/output formats
     void* opq = 0;
     const char* protocol = avio_enum_protocols(&opq, 1);
     while (protocol) {
         // static string, no deep copy needed. but QByteArray::fromRawData(data,size) assumes data is not null terminated and we must give a size
-        protocols.append(protocol);
+        protocols.append(QString::fromUtf8(protocol));
         protocol = avio_enum_protocols(&opq, 1);
     }
     return protocols;
@@ -202,7 +202,7 @@ QIODevice* AVMuxer::ioDevice() const
 {
     if (!d->io)
         return 0;
-    if (d->io->name() != "QIODevice")
+    if (d->io->name() != QLatin1String("QIODevice"))
         return 0;
     return d->io->property("device").value<QIODevice*>();
 }
@@ -221,25 +221,25 @@ bool AVMuxer::setMedia(const QString &fileName)
     d->file_orig = fileName;
     const QString url_old(d->file);
     d->file = fileName.trimmed();
-    if (d->file.startsWith("mms:"))
-        d->file.insert(3, 'h');
-    else if (d->file.startsWith(kFileScheme))
+    if (d->file.startsWith(QLatin1String("mms:")))
+        d->file.insert(3, QLatin1Char('h'));
+    else if (d->file.startsWith(QLatin1String(kFileScheme)))
         d->file = getLocalPath(d->file);
     d->media_changed = url_old != d->file;
     if (d->media_changed) {
         d->format_forced.clear();
     }
     // a local file. return here to avoid protocol checking. If path contains ":", protocol checking will fail
-    if (d->file.startsWith(QChar('/')))
+    if (d->file.startsWith(QLatin1Char('/')))
         return d->media_changed;
     // use MediaIO to support protocols not supported by ffmpeg
-    int colon = d->file.indexOf(QChar(':'));
+    int colon = d->file.indexOf(QLatin1Char(':'));
     if (colon >= 0) {
 #ifdef Q_OS_WIN
         if (colon == 1 && d->file.at(0).isLetter())
             return d->media_changed;
 #endif
-        const QString scheme = colon == 0 ? "qrc" : d->file.left(colon);
+        const QString scheme = colon == 0 ? QStringLiteral("qrc") : d->file.left(colon);
         // supportedProtocols() is not complete. so try MediaIO 1st, if not found, fallback to libavformat
         d->io = MediaIO::createForProtocol(scheme);
         if (d->io) {
@@ -254,13 +254,13 @@ bool AVMuxer::setMedia(QIODevice* device)
     d->file = QString();
     d->file_orig = QString();
     if (d->io) {
-        if (d->io->name() != "QIODevice") {
+        if (d->io->name() != QLatin1String("QIODevice")) {
             delete d->io;
             d->io = 0;
         }
     }
     if (!d->io)
-        d->io = MediaIO::create("QIODevice");
+        d->io = MediaIO::create(QStringLiteral("QIODevice"));
     QIODevice* old_dev = d->io->property("device").value<QIODevice*>();
     d->media_changed = old_dev != device;
     if (d->media_changed) {
@@ -433,22 +433,22 @@ void AVMuxer::Private::applyOptionsForDict()
     if (options.isEmpty())
         return;
     QVariant opt(options);
-    if (options.contains("avformat"))
-        opt = options.value("avformat");
+    if (options.contains(QStringLiteral("avformat")))
+        opt = options.value(QStringLiteral("avformat"));
     Internal::setOptionsToDict(opt, &dict);
 
     if (opt.type() == QVariant::Map) {
         QVariantMap avformat_dict(opt.toMap());
-        if (avformat_dict.contains("format_whitelist")) {
-            const QString fmts(avformat_dict["format_whitelist"].toString());
-            if (!fmts.contains(',') && !fmts.isEmpty())
+        if (avformat_dict.contains(QStringLiteral("format_whitelist"))) {
+            const QString fmts(avformat_dict[QStringLiteral("format_whitelist")].toString());
+            if (!fmts.contains(QLatin1Char(',')) && !fmts.isEmpty())
                 format_forced = fmts; // reset when media changed
         }
     } else if (opt.type() == QVariant::Hash) {
         QVariantHash avformat_dict(opt.toHash());
-        if (avformat_dict.contains("format_whitelist")) {
-            const QString fmts(avformat_dict["format_whitelist"].toString());
-            if (!fmts.contains(',') && !fmts.isEmpty())
+        if (avformat_dict.contains(QStringLiteral("format_whitelist"))) {
+            const QString fmts(avformat_dict[QStringLiteral("format_whitelist")].toString());
+            if (!fmts.contains(QLatin1Char(',')) && !fmts.isEmpty())
                 format_forced = fmts; // reset when media changed
         }
     }
@@ -463,8 +463,8 @@ void AVMuxer::Private::applyOptionsForContext()
         return;
     }
     QVariant opt(options);
-    if (options.contains("avformat"))
-        opt = options.value("avformat");
+    if (options.contains(QStringLiteral("avformat")))
+        opt = options.value(QStringLiteral("avformat"));
     Internal::setOptionsToFFmpegObj(opt, format_ctx);
 }
 } //namespace QtAV
