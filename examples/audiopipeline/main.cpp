@@ -28,7 +28,7 @@ static const int kBufferSize = 1024;
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    qDebug() << "usage: " << a.applicationFilePath().split("/").last().append(" url");
+    qDebug() << QLatin1String("usage: ") << a.applicationFilePath().split(QLatin1String("/")).last().append(QLatin1String(" url"));
     if (a.arguments().size() < 2)
         return 0;
     QScopedPointer<AudioOutput> ao(new AudioOutput());

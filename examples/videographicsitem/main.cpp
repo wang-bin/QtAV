@@ -9,10 +9,10 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     QTranslator ts;
-    if (ts.load(qApp->applicationDirPath() + "/i18n/QtAV_" + QLocale::system().name()))
+    if (ts.load(qApp->applicationDirPath().append(QLatin1String("/i18n/QtAV_")).append(QLocale::system().name())))
         a.installTranslator(&ts);
     QTranslator qtts;
-    if (qtts.load("qt_" + QLocale::system().name()))
+    if (qtts.load(QString::fromLatin1("qt_") + QLocale::system().name()))
         a.installTranslator(&qtts);
 
     VideoPlayer w;

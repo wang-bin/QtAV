@@ -1,6 +1,6 @@
 /******************************************************************************
     this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -63,10 +63,10 @@ VideoPlayer::VideoPlayer(QWidget *parent)
     connect(rotateSlider, SIGNAL(valueChanged(int)), SLOT(rotateVideo(int)));
     connect(scaleSlider, SIGNAL(valueChanged(int)), SLOT(scaleVideo(int)));
     QPushButton *openBtn = new QPushButton;
-    openBtn->setText("Open");
+    openBtn->setText(tr("Open"));
     connect(openBtn, SIGNAL(clicked()), SLOT(open()));
     QCheckBox *glBox = new QCheckBox();
-    glBox->setText("OpenGL");
+    glBox->setText(QString::fromLatin1("OpenGL"));
     glBox->setChecked(false);
     connect(glBox, SIGNAL(toggled(bool)), SLOT(setOpenGL(bool)));
 
@@ -129,7 +129,7 @@ void VideoPlayer::scaleVideo(int value)
 
 void VideoPlayer::open()
 {
-    QString f = QFileDialog::getOpenFileName(0, "Open a video");
+    QString f = QFileDialog::getOpenFileName(0, tr("Open a video"));
     if (f.isEmpty())
         return;
     play(f);

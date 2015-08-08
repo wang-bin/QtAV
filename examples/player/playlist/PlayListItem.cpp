@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -83,7 +83,7 @@ int PlayListItem::stars() const
 void PlayListItem::setLastTime(qint64 ms)
 {
     mLastTime = ms;
-    mLastTimeS = QTime(0, 0, 0, 0).addMSecs(ms).toString("HH:mm:ss");
+    mLastTimeS = QTime(0, 0, 0, 0).addMSecs(ms).toString(QString::fromLatin1("HH:mm:ss"));
 }
 
 qint64 PlayListItem::lastTime() const
@@ -99,7 +99,7 @@ QString PlayListItem::lastTimeString() const
 void PlayListItem::setDuration(qint64 ms)
 {
     mDuration = ms;
-    mDurationS = QTime(0, 0, 0, 0).addMSecs(ms).toString("HH:mm:ss");
+    mDurationS = QTime(0, 0, 0, 0).addMSecs(ms).toString(QString::fromLatin1("HH:mm:ss"));
 }
 
 qint64 PlayListItem::duration() const

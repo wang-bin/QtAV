@@ -1,6 +1,6 @@
 /******************************************************************************
     QOptions: make command line options easy. https://github.com/wang-bin/qoptions
-    Copyright (C) 2011-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2011-2015 Wang Bin <wbsecg1@gmail.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -113,11 +113,11 @@ public:
 	QOptions& add(const QString& group_description);
 	QOptions& addDescription(const QString& description);
 
-	QOptions& operator ()(const char* name, const QString& description = "");
-	QOptions& operator ()(const char* name, QOption::Type type, const QString& description = "");
+    QOptions& operator ()(const char* name, const QString& description = QString());
+    QOptions& operator ()(const char* name, QOption::Type type, const QString& description = QString());
     QOptions& operator ()(const char* name, const QVariant& defaultValue, const QString& description);
-	QOptions& operator ()(const char* name, const QVariant& defaultValue, QOption::Type type, const QString& description = "");
-	//QOptions& operator ()(const char* name, QVariant* value, QOption::Type type, const QString& description = "");
+    QOptions& operator ()(const char* name, const QVariant& defaultValue, QOption::Type type, const QString& description = QString());
+    //QOptions& operator ()(const char* name, QVariant* value, QOption::Type type, const QString& description = QString());
 
     QOption option(const QString& name) const;
     QVariant value(const QString& name) const;

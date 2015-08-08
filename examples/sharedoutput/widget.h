@@ -25,7 +25,7 @@
 #include <QPushButton>
 
 namespace QtAV {
-class WidgetRenderer;
+class GLWidgetRenderer2;
 class AVPlayer;
 }
 class Widget : public QWidget
@@ -43,7 +43,7 @@ public slots:
 
 private:
     class
-    QtAV::WidgetRenderer *renderer;
+    QtAV::GLWidgetRenderer2 *renderer;
     QtAV::AVPlayer *player[2];
     QPushButton *play_btn[2];
     QPushButton *file_btn[2];

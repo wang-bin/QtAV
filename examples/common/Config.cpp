@@ -34,37 +34,37 @@ class Config::Data
 {
 public:
     Data() {
-        dir = qApp->applicationDirPath() + "/data";
+        dir = qApp->applicationDirPath() + QString::fromLatin1("/data");
         if (!QDir(dir).exists()) {
-            dir = QDir::homePath() + "/.QtAV";
+            dir = QDir::homePath() + QString::fromLatin1("/.QtAV");
             if (!QDir(dir).exists())
                 QDir().mkpath(dir);
         }
-        file = dir + "/" + qApp->applicationName() + ".ini";
+        file = dir + QString::fromLatin1("/") + qApp->applicationName() + QString::fromLatin1(".ini");
         load();
     }
 
     void load() {
         QSettings settings(file, QSettings::IniFormat);
-        timeout = settings.value("timeout", 30.0).toReal();
-        abort_timeout = settings.value("abort_timeout", true).toBool();
-        force_fps = settings.value("force_fps", 0.0).toReal();
-        settings.beginGroup("decoder");
-        settings.beginGroup("video");
-        QString decs_default("FFmpeg");
-        //decs_default.append(" CUDA ").append(" DXVA ").append(" VAAPI ").append(" VDA ");
+        timeout = settings.value(QString::fromLatin1("timeout"), 30.0).toReal();
+        abort_timeout = settings.value(QString::fromLatin1("abort_timeout"), true).toBool();
+        force_fps = settings.value(QString::fromLatin1("force_fps"), 0.0).toReal();
+        settings.beginGroup(QString::fromLatin1("decoder"));
+        settings.beginGroup(QString::fromLatin1("video"));
+        QString decs_default(QString::fromLatin1("FFmpeg"));
+        //decs_default.append(QString::fromLatin1(" CUDA ")).append(QString::fromLatin1(" DXVA ")).append(QString::fromLatin1(" VAAPI ")).append(QString::fromLatin1(" VDA "));
 #if 0
         QString all_names_string = settings.value("all", QString()).toString();
         if (!all_names_string.isEmpty()) {
             all_names = all_names_string.split(" ", QString::SkipEmptyParts);
         }
 #endif
-        video_decoders = settings.value("priority", decs_default).toString().split(" ", QString::SkipEmptyParts);
+        video_decoders = settings.value(QString::fromLatin1("priority"), decs_default).toString().split(QString::fromLatin1(" "), QString::SkipEmptyParts);
         settings.endGroup(); //video
         settings.endGroup(); //decoder
 
-        settings.beginGroup("capture");
-        capture_dir = settings.value("dir", QString()).toString();
+        settings.beginGroup(QString::fromLatin1("capture"));
+        capture_dir = settings.value(QString::fromLatin1("dir"), QString()).toString();
         if (capture_dir.isEmpty()) {
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
             capture_dir = QDesktopServices::storageLocation(QDesktopServices::PicturesLocation);
@@ -72,52 +72,52 @@ public:
             capture_dir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
 #endif
         }
-        capture_fmt = settings.value("format", "png").toByteArray();
-        capture_quality = settings.value("quality", 100).toInt();
+        capture_fmt = settings.value(QString::fromLatin1("format"), QString::fromLatin1("png")).toString();
+        capture_quality = settings.value(QString::fromLatin1("quality"), 100).toInt();
         settings.endGroup();
-        settings.beginGroup("subtitle");
-        subtitle_autoload = settings.value("autoLoad", true).toBool();
-        subtitle_enabled = settings.value("enabled", true).toBool();
-        subtitle_engines = settings.value("engines", QStringList() << "FFmpeg" << "LibASS").toStringList();
-        subtitle_delay = settings.value("delay", 0.0).toInt();
+        settings.beginGroup(QString::fromLatin1("subtitle"));
+        subtitle_autoload = settings.value(QString::fromLatin1("autoLoad"), true).toBool();
+        subtitle_enabled = settings.value(QString::fromLatin1("enabled"), true).toBool();
+        subtitle_engines = settings.value(QString::fromLatin1("engines"), QStringList() << QString::fromLatin1("FFmpeg") << QString::fromLatin1("LibASS")).toStringList();
+        subtitle_delay = settings.value(QString::fromLatin1("delay"), 0.0).toInt();
         QFont f;
         f.setPointSize(20);
         f.setBold(true);
-        subtitle_font = settings.value("font", f).value<QFont>();
-        subtitle_color = settings.value("color", QColor("white")).value<QColor>();
-        subtitle_outline_color = settings.value("outline_color", QColor("blue")).value<QColor>();
-        subtitle_outline = settings.value("outline", true).toBool();
-        subtilte_bottom_margin = settings.value("bottom margin", 8).toInt();
+        subtitle_font = settings.value(QString::fromLatin1("font"), f).value<QFont>();
+        subtitle_color = settings.value(QString::fromLatin1("color"), QColor("white")).value<QColor>();
+        subtitle_outline_color = settings.value(QString::fromLatin1("outline_color"), QColor("blue")).value<QColor>();
+        subtitle_outline = settings.value(QString::fromLatin1("outline"), true).toBool();
+        subtilte_bottom_margin = settings.value(QString::fromLatin1("bottom margin"), 8).toInt();
         settings.endGroup();
-        settings.beginGroup("preview");
-        preview_enabled = settings.value("enabled", true).toBool();
-        preview_w = settings.value("width", 160).toInt();
-        preview_h = settings.value("height", 90).toInt();
+        settings.beginGroup(QString::fromLatin1("preview"));
+        preview_enabled = settings.value(QString::fromLatin1("enabled"), true).toBool();
+        preview_w = settings.value(QString::fromLatin1("width"), 160).toInt();
+        preview_h = settings.value(QString::fromLatin1("height"), 90).toInt();
         settings.endGroup();
-        settings.beginGroup("avformat");
-        avformat_on = settings.value("enable", false).toBool();
-        direct = settings.value("avioflags", 0).toString() == "direct";
-        probe_size = settings.value("probesize", 5000000).toUInt();
-        analyze_duration = settings.value("analyzeduration", 5000000).toInt();
-        avformat_extra = settings.value("extra", "").toString();
+        settings.beginGroup(QString::fromLatin1("avformat"));
+        avformat_on = settings.value(QString::fromLatin1("enable"), false).toBool();
+        direct = settings.value(QString::fromLatin1("avioflags"), 0).toString() == QLatin1String("direct");
+        probe_size = settings.value(QString::fromLatin1("probesize"), 5000000).toUInt();
+        analyze_duration = settings.value(QString::fromLatin1("analyzeduration"), 5000000).toInt();
+        avformat_extra = settings.value(QString::fromLatin1("extra"), QString()).toString();
         settings.endGroup();
-        settings.beginGroup("avfilterVideo");
-        avfilterVideo_on = settings.value("enable", true).toBool();
-        avfilterVideo = settings.value("options", "").toString();
+        settings.beginGroup(QString::fromLatin1("avfilterVideo"));
+        avfilterVideo_on = settings.value(QString::fromLatin1("enable"), true).toBool();
+        avfilterVideo = settings.value(QString::fromLatin1("options"), QString()).toString();
         settings.endGroup();
-        settings.beginGroup("avfilterAudio");
-        avfilterAudio_on = settings.value("enable", true).toBool();
-        avfilterAudio = settings.value("options", "").toString();
+        settings.beginGroup(QString::fromLatin1("avfilterAudio"));
+        avfilterAudio_on = settings.value(QString::fromLatin1("enable"), true).toBool();
+        avfilterAudio = settings.value(QString::fromLatin1("options"), QString()).toString();
         settings.endGroup();
-        settings.beginGroup("opengl");
-        const QString glname = settings.value("type", "OpenGLES").toString();
+        settings.beginGroup(QString::fromLatin1("opengl"));
+        const QString glname = settings.value(QString::fromLatin1("type"), QString::fromLatin1("OpenGLES")).toString();
         opengl = (Config::OpenGLType)Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).keysToValue(glname.toLatin1().constData());
         // d3d11 bad performance (gltexsubimage2d)
-        angle_dx = settings.value("angle_platform", "d3d9").toString();
+        angle_dx = settings.value(QString::fromLatin1("angle_platform"), QString::fromLatin1("d3d9")).toString();
         settings.endGroup();
 
-        settings.beginGroup("buffer");
-        buffer_value = settings.value("value", -1).toInt();
+        settings.beginGroup(QString::fromLatin1("buffer"));
+        buffer_value = settings.value(QString::fromLatin1("value"), -1).toInt();
         settings.endGroup();
     }
 
@@ -125,57 +125,57 @@ public:
         qDebug() << "sync config to " << file;
         QSettings settings(file, QSettings::IniFormat);
         // TODO: why crash on mac qt5.4 if call on aboutToQuit()
-        settings.setValue("timeout", timeout);
-        settings.setValue("abort_timeout", abort_timeout);
-        settings.setValue("force_fps", force_fps);
-        settings.beginGroup("decoder");
-        settings.beginGroup("video");
-        settings.setValue("priority", video_decoders.join(" "));
+        settings.setValue(QString::fromLatin1("timeout"), timeout);
+        settings.setValue(QString::fromLatin1("abort_timeout"), abort_timeout);
+        settings.setValue(QString::fromLatin1("force_fps"), force_fps);
+        settings.beginGroup(QString::fromLatin1("decoder"));
+        settings.beginGroup(QString::fromLatin1("video"));
+        settings.setValue(QString::fromLatin1("priority"), video_decoders.join(QString::fromLatin1(" ")));
         settings.endGroup();
         settings.endGroup();
-        settings.beginGroup("capture");
-        settings.setValue("dir", capture_dir);
-        settings.setValue("format", capture_fmt);
-        settings.setValue("quality", capture_quality);
+        settings.beginGroup(QString::fromLatin1("capture"));
+        settings.setValue(QString::fromLatin1("dir"), capture_dir);
+        settings.setValue(QString::fromLatin1("format"), capture_fmt);
+        settings.setValue(QString::fromLatin1("quality"), capture_quality);
         settings.endGroup();
-        settings.beginGroup("subtitle");
-        settings.setValue("enabled", subtitle_enabled);
-        settings.setValue("autoLoad", subtitle_autoload);
-        settings.setValue("engines", subtitle_engines);
-        settings.setValue("delay", subtitle_delay);
-        settings.setValue("font", subtitle_font);
-        settings.setValue("color", subtitle_color);
-        settings.setValue("outline_color", subtitle_outline_color);
-        settings.setValue("outline", subtitle_outline);
-        settings.setValue("bottom margin", subtilte_bottom_margin);
+        settings.beginGroup(QString::fromLatin1("subtitle"));
+        settings.setValue(QString::fromLatin1("enabled"), subtitle_enabled);
+        settings.setValue(QString::fromLatin1("autoLoad"), subtitle_autoload);
+        settings.setValue(QString::fromLatin1("engines"), subtitle_engines);
+        settings.setValue(QString::fromLatin1("delay"), subtitle_delay);
+        settings.setValue(QString::fromLatin1("font"), subtitle_font);
+        settings.setValue(QString::fromLatin1("color"), subtitle_color);
+        settings.setValue(QString::fromLatin1("outline_color"), subtitle_outline_color);
+        settings.setValue(QString::fromLatin1("outline"), subtitle_outline);
+        settings.setValue(QString::fromLatin1("bottom margin"), subtilte_bottom_margin);
         settings.endGroup();
-        settings.beginGroup("preview");
-        settings.setValue("enabled", preview_enabled);
-        settings.setValue("width", preview_w);
-        settings.setValue("height", preview_h);
+        settings.beginGroup(QString::fromLatin1("preview"));
+        settings.setValue(QString::fromLatin1("enabled"), preview_enabled);
+        settings.setValue(QString::fromLatin1("width"), preview_w);
+        settings.setValue(QString::fromLatin1("height"), preview_h);
         settings.endGroup();
-        settings.beginGroup("avformat");
-        settings.setValue("enable", avformat_on);
-        settings.setValue("avioflags", direct ? "direct" : 0);
-        settings.setValue("probesize", probe_size);
-        settings.setValue("analyzeduration", analyze_duration);
-        settings.setValue("extra", avformat_extra);
+        settings.beginGroup(QString::fromLatin1("avformat"));
+        settings.setValue(QString::fromLatin1("enable"), avformat_on);
+        settings.setValue(QString::fromLatin1("avioflags"), direct ? QString::fromLatin1("direct") : QString::fromLatin1("0"));
+        settings.setValue(QString::fromLatin1("probesize"), probe_size);
+        settings.setValue(QString::fromLatin1("analyzeduration"), analyze_duration);
+        settings.setValue(QString::fromLatin1("extra"), avformat_extra);
         settings.endGroup();
-        settings.beginGroup("avfilterVideo");
-        settings.setValue("enable", avfilterVideo_on);
-        settings.setValue("options", avfilterVideo);
+        settings.beginGroup(QString::fromLatin1("avfilterVideo"));
+        settings.setValue(QString::fromLatin1("enable"), avfilterVideo_on);
+        settings.setValue(QString::fromLatin1("options"), avfilterVideo);
         settings.endGroup();
-        settings.beginGroup("avfilterAudio");
-        settings.setValue("enable", avfilterAudio_on);
-        settings.setValue("options", avfilterAudio);
+        settings.beginGroup(QString::fromLatin1("avfilterAudio"));
+        settings.setValue(QString::fromLatin1("enable"), avfilterAudio_on);
+        settings.setValue(QString::fromLatin1("options"), avfilterAudio);
         settings.endGroup();
-        settings.beginGroup("opengl");
+        settings.beginGroup(QString::fromLatin1("opengl"));
         const char* glname = Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).valueToKey(opengl);
-        settings.setValue("type", glname);
-        settings.setValue("angle_platform", angle_dx);
+        settings.setValue(QString::fromLatin1("type"), QString::fromLatin1(glname));
+        settings.setValue(QString::fromLatin1("angle_platform"), angle_dx);
         settings.endGroup();
-        settings.beginGroup("buffer");
-        settings.setValue("value", buffer_value);
+        settings.beginGroup(QString::fromLatin1("buffer"));
+        settings.setValue(QString::fromLatin1("value"), buffer_value);
         settings.endGroup();
         qDebug() << "sync end";
     }
@@ -507,9 +507,9 @@ QVariantHash Config::avformatOptions() const
 {
     QVariantHash vh;
     if (!mpData->avformat_extra.isEmpty()) {
-        QStringList s(mpData->avformat_extra.split(" "));
+        QStringList s(mpData->avformat_extra.split(QString::fromLatin1(" ")));
         for (int i = 0; i < s.size(); ++i) {
-            int eq = s[i].indexOf("=");
+            int eq = s[i].indexOf(QLatin1String("="));
             if (eq < 0) {
                 continue;
             } else {
@@ -518,13 +518,13 @@ QVariantHash Config::avformatOptions() const
         }
     }
     if (mpData->probe_size > 0) {
-        vh["probesize"] = mpData->probe_size;
+        vh[QString::fromLatin1("probesize")] = mpData->probe_size;
     }
     if (mpData->analyze_duration) {
-        vh["analyzeduration"] = mpData->analyze_duration;
+        vh[QString::fromLatin1("analyzeduration")] = mpData->analyze_duration;
     }
     if (mpData->direct) {
-        vh["avioflags"] = "direct";
+        vh[QString::fromLatin1("avioflags")] = QString::fromLatin1("direct");
     };
     return vh;
 }

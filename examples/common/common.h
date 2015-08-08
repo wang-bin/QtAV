@@ -20,7 +20,6 @@
 
 #ifndef COMMON_H
 #define COMMON_H
-
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <QtCore/QUrl>
@@ -29,9 +28,9 @@
 #include "ScreenSaver.h"
 
 QOptions COMMON_EXPORT get_common_options();
-void COMMON_EXPORT load_qm(const QStringList& names, const QString &lang = "system");
+void COMMON_EXPORT load_qm(const QStringList& names, const QString &lang = QLatin1String("system"));
 // if appname ends with 'desktop', 'es', 'angle', software', 'sw', set by appname. otherwise set by command line option glopt, or Config file
-void COMMON_EXPORT set_opengl_backend(const QString& glopt = "auto", const QString& appname = QString());
+void COMMON_EXPORT set_opengl_backend(const QString& glopt = QString::fromLatin1("auto"), const QString& appname = QString());
 
 class COMMON_EXPORT AppEventFilter : public QObject
 {

@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include <QtDebug>
-#include <QtCore/QElapsedTimer>
+#include <QtCore/QDateTime>
+#include <QtCore/QQueue>
 #include <QtCore/QStringList>
 #include <QtAV/AVDemuxer.h>
 #include <QtAV/VideoDecoder.h>
@@ -11,39 +12,38 @@ using namespace QtAV;
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    QString file = "test.avi";
-    int idx = a.arguments().indexOf("-f");
+    QString file = QString::fromLatin1("test.avi");
+    int idx = a.arguments().indexOf(QLatin1String("-f"));
     if (idx > 0)
         file = a.arguments().at(idx + 1);
-    QString decName("FFmpeg");
-    idx = a.arguments().indexOf("-vc");
+    QString decName = QString::fromLatin1("FFmpeg");
+    idx = a.arguments().indexOf(QLatin1String("-vc"));
     if (idx < 0)
-        idx = a.arguments().indexOf("-vd");
+        idx = a.arguments().indexOf(QLatin1String("-vd"));
     if (idx > 0)
         decName = a.arguments().at(idx + 1);
 
     QString opt;
     QVariantHash decopt;
-    idx = decName.indexOf(":");
+    idx = decName.indexOf(QLatin1String(":"));
     if (idx > 0) {
         opt = decName.right(decName.size() - idx -1);
         decName = decName.left(idx);
-        QStringList opts(opt.split(";"));
+        QStringList opts(opt.split(QString::fromLatin1(";")));
         QVariantHash subopt;
         foreach (QString o, opts) {
-            idx = o.indexOf(":");
+            idx = o.indexOf(QLatin1String(":"));
             subopt[o.left(idx)] = o.right(o.size() - idx - 1);
         }
         decopt[decName] = subopt;
     }
     qDebug() << decopt;
 
-    VideoDecoderId cid = VideoDecoderFactory::id(decName.toStdString());
-    if (cid <= 0) {
-        qWarning("Can not find decoder: %s", decName.toUtf8().constData());
+    VideoDecoder *dec = VideoDecoder::create(decName);
+    if (!dec) {
+        fprintf(stderr, "Can not find decoder: %s\n", decName.toUtf8().constData());
         return 1;
     }
-    VideoDecoder *dec = VideoDecoderFactory::create(cid);
     if (!decopt.isEmpty())
         dec->setOptions(decopt);
     AVDemuxer demux;
@@ -55,10 +55,10 @@ int main(int argc, char *argv[])
 
     dec->setCodecContext(demux.videoCodecContext());
     dec->open();
-    QElapsedTimer timer;
-    timer.start();
     int count = 0;
     int vstream = demux.videoStream();
+    QQueue<qint64> t;
+    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
     while (!demux.atEnd()) {
         if (!demux.readFrame())
             continue;
@@ -69,11 +69,13 @@ int main(int argc, char *argv[])
             VideoFrame frame = dec->frame(); // why is faster to call frame() for hwdec? no frame() is very slow for VDA
             Q_UNUSED(frame);
             count++;
-            printf("decode count: %d\r", count);fflush(0);
+            const qint64 now = QDateTime::currentMSecsSinceEpoch();
+            const qint64 dt = now - t0;
+            t.enqueue(now);
+            printf("decode count: %d, elapsed: %lld, fps: %.1f/%.1f\r", count, dt, count*1000.0/dt, t.size()*1000.0/(now - t.first()));fflush(0);
+            if (t.size() > 10)
+                t.dequeue();
         }
     }
-    qint64 elapsed = timer.elapsed();
-    int msec = elapsed/1000LL+1;
-    qDebug("decoded frames: %d, time: %d, average speed: %d", count, msec, count/msec);
     return 0;
 }

@@ -35,20 +35,20 @@ MiscPage::MiscPage()
     m_preview_w->setRange(1, 1920);
     m_preview_h = new QSpinBox();
     m_preview_h->setRange(1, 1080);
-    gl->addWidget(new QLabel(tr("Preview") + " " + tr("size") + ": "), r, 0);
+    gl->addWidget(new QLabel(QString::fromLatin1("%1 %2: ").arg(tr("Preview")).arg(tr("size"))), r, 0);
     QHBoxLayout *hb = new QHBoxLayout();
     hb->addWidget(m_preview_w);
-    hb->addWidget(new QLabel("x"));
+    hb->addWidget(new QLabel(QString::fromLatin1("x")));
     hb->addWidget(m_preview_h);
     gl->addLayout(hb, r, 1);
     r++;
     gl->addWidget(new QLabel(tr("Force fps")), r, 0);
     m_fps = new QDoubleSpinBox();
     m_fps->setMinimum(-m_fps->maximum());
-    m_fps->setToolTip("<= 0: " + tr("Ignore"));
+    m_fps->setToolTip(QString::fromLatin1("<= 0: ") + tr("Ignore"));
     gl->addWidget(m_fps, r++, 1);
 
-    gl->addWidget(new QLabel(tr("Progress update interval") + "(ms)"), r, 0);
+    gl->addWidget(new QLabel(tr("Progress update interval") + QString::fromLatin1("(ms)")), r, 0);
     m_notify_interval = new QSpinBox();
     m_notify_interval->setEnabled(false);
     gl->addWidget(m_notify_interval, r++, 1);
@@ -56,15 +56,15 @@ MiscPage::MiscPage()
     gl->addWidget(new QLabel(tr("Buffer frames")), r, 0);
     m_buffer_value = new QSpinBox();
     m_buffer_value->setRange(-1, 32767);
-    m_buffer_value->setToolTip("-1: auto");
+    m_buffer_value->setToolTip(QString::fromLatin1("-1: auto"));
     gl->addWidget(m_buffer_value, r++, 1);
 
-    gl->addWidget(new QLabel(tr("Timeout") + "(" + tr("s") +")"), r, 0);
+    gl->addWidget(new QLabel(QString::fromLatin1("%1(%2)").arg(tr("Timeout")).arg(tr("s"))), r, 0);
     m_timeout = new QDoubleSpinBox();
     m_timeout->setDecimals(3);
     m_timeout->setSingleStep(1.0);
     m_timeout->setMinimum(-0.5);
-    m_timeout->setToolTip("<=0: never");    
+    m_timeout->setToolTip(QString::fromLatin1("<=0: never"));
     m_timeout_abort = new QCheckBox(tr("Abort"));
     hb = new QHBoxLayout();
     hb->addWidget(m_timeout);
@@ -73,15 +73,15 @@ MiscPage::MiscPage()
 
     gl->addWidget(new QLabel(tr("OpenGL type")), r, 0);
     m_opengl = new QComboBox();
-    m_opengl->addItem("Auto", Config::Auto);
-    m_opengl->addItem("Desktop", Config::Desktop);
-    m_opengl->addItem("OpenGLES", Config::OpenGLES);
-    m_opengl->addItem("Software", Config::Software);
-    m_opengl->setToolTip(tr("Windows only") + "\n" + tr("OpenGLES is Used by DXVA Zero Copy"));
+    m_opengl->addItem(QString::fromLatin1("Auto"), Config::Auto);
+    m_opengl->addItem(QString::fromLatin1("Desktop"), Config::Desktop);
+    m_opengl->addItem(QString::fromLatin1("OpenGLES"), Config::OpenGLES);
+    m_opengl->addItem(QString::fromLatin1("Software"), Config::Software);
+    m_opengl->setToolTip(tr("Windows only") + QString::fromLatin1("\n") + tr("OpenGLES is Used by DXVA Zero Copy"));
     gl->addWidget(m_opengl, r, 1);
     m_angle_platform = new QComboBox();
-    m_angle_platform->setToolTip(tr("D3D9 has performance if ZeroCopy is disabled or for software decoders") + "\n" + tr("RESTART REQUIRED"));
-    m_angle_platform->addItems(QStringList() << "D3D9" << "D3D11" << "AUTO" << "WARP");
+    m_angle_platform->setToolTip(tr("D3D9 has performance if ZeroCopy is disabled or for software decoders") + QString::fromLatin1("\n") + tr("RESTART REQUIRED"));
+    m_angle_platform->addItems(QStringList() << QString::fromLatin1("D3D9") << QString::fromLatin1("D3D11") << QString::fromLatin1("AUTO") << QString::fromLatin1("WARP"));
     gl->addWidget(m_angle_platform, r++, 2);
 
     applyToUi();

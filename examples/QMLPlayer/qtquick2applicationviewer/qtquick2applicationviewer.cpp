@@ -23,7 +23,7 @@ class QtQuick2ApplicationViewerPrivate
 
 QString QtQuick2ApplicationViewerPrivate::adjustPath(const QString &path)
 {
-    if (path.startsWith("qrc:"))
+    if (path.startsWith(QLatin1String("qrc:")))
         return path;
 #if defined(Q_OS_IOS)
     if (!QDir::isAbsolutePath(path))
@@ -66,9 +66,9 @@ QtQuick2ApplicationViewer::~QtQuick2ApplicationViewer()
 
 void QtQuick2ApplicationViewer::setMainQmlFile(const QString &file)
 {
-    if (file.startsWith("qrc:")) {
+    if (file.startsWith(QLatin1String("qrc:"))) {
         d->mainQmlFile = file;
-        setSource(d->mainQmlFile);
+        setSource(QUrl(d->mainQmlFile));
         return;
     }
     d->mainQmlFile = QtQuick2ApplicationViewerPrivate::adjustPath(file);
@@ -77,7 +77,7 @@ void QtQuick2ApplicationViewer::setMainQmlFile(const QString &file)
 #else
     QUrl qmlUrl(QUrl::fromLocalFile(d->mainQmlFile));
 #endif
-    if (d->mainQmlFile.startsWith("qrc:/")) {
+    if (d->mainQmlFile.startsWith(QLatin1String("qrc:/"))) {
         qmlUrl = QUrl(d->mainQmlFile);
     }
     setSource(qmlUrl);

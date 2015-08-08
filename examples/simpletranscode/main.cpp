@@ -34,39 +34,42 @@ int main(int argc, char *argv[])
              << "./simpletranscode -i test.mp4 -o /tmp/bbb%04d.ts -f segment\n"
              << "./simpletranscode -i test.mp4 -o /tmp/test.mkv\n"
              ;
-    if (a.arguments().contains("-h")) {
+    if (a.arguments().contains(QString::fromLatin1("-h"))) {
         return 0;
     }
-    QString file = "test.avi";
-    int idx = a.arguments().indexOf("-i");
+    QString file = QString::fromLatin1("test.avi");
+    int idx = a.arguments().indexOf(QLatin1String("-i"));
     if (idx > 0)
         file = a.arguments().at(idx + 1);
-    QString outFile("/tmp/out.mp4");
-    idx = a.arguments().indexOf("-o");
+    QString outFile = QString::fromLatin1("/tmp/out.mp4");
+    idx = a.arguments().indexOf(QLatin1String("-o"));
     if (idx > 0)
         outFile = a.arguments().at(idx + 1);
-    QDir().mkpath(outFile.left(outFile.lastIndexOf('/')+1));
+    QDir().mkpath(outFile.left(outFile.lastIndexOf(QLatin1Char('/'))+1));
 
-    QString cv("libx264");
-    idx = a.arguments().indexOf("-c:v");
+    QString cv = QString::fromLatin1("libx264");
+    idx = a.arguments().indexOf(QLatin1String("-c:v"));
     if (idx > 0)
         cv = a.arguments().at(idx + 1);
-
+    QString ca = QString::fromLatin1("aac");
+    idx = a.arguments().indexOf(QLatin1String("-c:a"));
+    if (idx > 0)
+        ca = a.arguments().at(idx + 1);
     QString fmt;
-    idx = a.arguments().indexOf("-f");
+    idx = a.arguments().indexOf(QLatin1String("-f"));
     if (idx > 0)
         fmt = a.arguments().at(idx + 1);
     QVariantHash muxopt, avfopt;
-    avfopt["segment_time"] = 4;
-    avfopt["segment_list_size"] = 0;
-    avfopt["segment_list"] = outFile.left(outFile.lastIndexOf('/')+1) + "index.m3u8";// "//Users/wangbin/Movies/m3u8/bbb.m3u8";
-    avfopt["segment_format"] = "mpegts";
-    muxopt["avformat"] = avfopt;
+    avfopt[QString::fromLatin1("segment_time")] = 4;
+    avfopt[QString::fromLatin1("segment_list_size")] = 0;
+    avfopt[QString::fromLatin1("segment_list")] = outFile.left(outFile.lastIndexOf(QLatin1Char('/'))+1).arg(QString::fromLatin1("index.m3u8"));
+    avfopt[QString::fromLatin1("segment_format")] = QString::fromLatin1("mpegts");
+    muxopt[QString::fromLatin1("avformat")] = avfopt;
 
     AVPlayer player;
     player.setFile(file);
     player.setFrameRate(1000.0); // as fast as possible
-    player.audio()->setBackends(QStringList() << "null");
+    player.audio()->setBackends(QStringList() << QString::fromLatin1("null"));
     AVTranscoder avt;
     avt.setMediaSource(&player);
     avt.setOutputMedia(outFile);
@@ -80,7 +83,7 @@ int main(int argc, char *argv[])
     VideoEncoder *venc = avt.videoEncoder();
     venc->setCodecName(cv); // "png"
     venc->setBitRate(1024*1024);
-    if (fmt == "image2")
+    if (fmt == QLatin1String("image2"))
         venc->setPixelFormat(VideoFormat::Format_RGBA32);
 
     QObject::connect(&avt, SIGNAL(stopped()), qApp, SLOT(quit()));

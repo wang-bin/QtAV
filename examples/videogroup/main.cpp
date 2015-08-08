@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoWall:  this file is part of QtAV examples
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -30,26 +30,26 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     int r = 3, c = 3;
     int idx = 0;
-    if ((idx = a.arguments().indexOf("-r")) > 0)
+    if ((idx = a.arguments().indexOf(QLatin1String("-r"))) > 0)
         r = a.arguments().at(idx + 1).toInt();
-    if ((idx = a.arguments().indexOf("-c")) > 0)
+    if ((idx = a.arguments().indexOf(QLatin1String("-c"))) > 0)
         c = a.arguments().at(idx + 1).toInt();
     QString vo;
-    idx = a.arguments().indexOf("-vo");
+    idx = a.arguments().indexOf(QLatin1String("-vo"));
     if (idx > 0) {
         vo = a.arguments().at(idx+1);
     } else {
         QString exe(a.arguments().at(0));
         qDebug("exe: %s", exe.toUtf8().constData());
-        int i = exe.lastIndexOf('-');
+        int i = exe.lastIndexOf(QLatin1Char('-'));
         if (i > 0) {
-            vo = exe.mid(i+1, exe.indexOf('.') - i - 1);
+            vo = exe.mid(i+1, exe.indexOf(QLatin1Char('.')) - i - 1);
         }
     }
     qDebug("vo: %s", vo.toUtf8().constData());
     vo = vo.toLower();
-    if (vo != "gl" && vo != "d2d" && vo != "gdi" && vo != "xv")
-        vo = "qpainter";
+    if (vo != QLatin1String("gl") && vo != QLatin1String("d2d") && vo != QLatin1String("gdi") && vo != QLatin1String("xv"))
+        vo = QString::fromLatin1("qpainter");
     VideoGroup wall;
     wall.setVideoRendererTypeString(vo);
     wall.setRows(r);

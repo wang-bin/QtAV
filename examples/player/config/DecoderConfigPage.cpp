@@ -43,7 +43,7 @@ static QVector<QtAV::VideoDecoderId> sPriorityUi;
 QStringList idsToNames(QVector<VideoDecoderId> ids) {
     QStringList decs;
     foreach (int id, ids) {
-        decs.append(VideoDecoderFactory::name(id).c_str());
+        decs.append(QString::fromLatin1(VideoDecoderFactory::name(id).c_str()));
     }
     return decs;
 }
@@ -85,7 +85,7 @@ public:
         QHBoxLayout *hb = new QHBoxLayout();
         hb->addWidget(mpCheck);
         QToolButton *expandBtn = new QToolButton();
-        expandBtn->setText("+");
+        expandBtn->setText(QString::fromLatin1("+"));
         hb->addWidget(expandBtn);
         connect(expandBtn, SIGNAL(clicked()), SLOT(toggleEditorVisible()));
         mpDesc = new QLabel();
@@ -135,7 +135,7 @@ private slots:
         mpEditorWidget->setVisible(!mpEditorWidget->isVisible());
         QToolButton *b = qobject_cast<QToolButton*>(sender());
         if (b) {
-            b->setText(mpEditorWidget->isVisible()?"-":"+");
+            b->setText(mpEditorWidget->isVisible()?QString::fromLatin1("-"):QString::fromLatin1("+"));
         }
         parentWidget()->adjustSize();
     }
@@ -165,7 +165,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     ConfigPageBase(parent)
 {
     mpSelectedDec = 0;
-    setWindowTitle("Video decoder config page");
+    setWindowTitle(tr("Video decoder config page"));
     QVBoxLayout *vbs = new QVBoxLayout(this);
     QSpacerItem *horizontalSpacer = new QSpacerItem(320, 0, QSizePolicy::Minimum, QSizePolicy::Minimum);
     vbs->addItem(horizontalSpacer);
@@ -177,7 +177,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     QVBoxLayout *vb = new QVBoxLayout;
     vb->setSpacing(0);
 
-    vb->addWidget(new QLabel(tr("Decoder") + " " + tr("Priorities") + " (" + tr("reopen is required") + ")"));
+    vb->addWidget(new QLabel(QString::fromLatin1("%1 %2 (%3)").arg(tr("Decoder")).arg(tr("Priorities")).arg(tr("reopen is required"))));
 
     sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
     QStringList vds = Config::instance().decoderPriorityNames();
@@ -220,10 +220,10 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     vb->addSpacerItem(new QSpacerItem(width(), 10, QSizePolicy::Ignored, QSizePolicy::Expanding));
 
     mpUp = new QToolButton(scrollAreaWidgetContents);
-    mpUp->setText("Up");
+    mpUp->setText(tr("Up"));
     connect(mpUp, SIGNAL(clicked()), SLOT(priorityUp()));
     mpDown = new QToolButton(scrollAreaWidgetContents);
-    mpDown->setText("Down");
+    mpDown->setText(tr("Down"));
     connect(mpDown, SIGNAL(clicked()), SLOT(priorityDown()));
 
     QHBoxLayout *hb = new QHBoxLayout;

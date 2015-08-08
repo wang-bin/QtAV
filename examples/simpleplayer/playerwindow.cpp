@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,13 +29,13 @@ using namespace QtAV;
 
 PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
 {
-    setWindowTitle("QtAV simple player example");
+    setWindowTitle(QString::fromLatin1("QtAV simple player example"));
     m_player = new AVPlayer(this);
     QVBoxLayout *vl = new QVBoxLayout();
     setLayout(vl);
     m_vo = new VideoOutput(this);
     if (!m_vo->widget()) {
-        QMessageBox::warning(0, "QtAV error", "Can not create video renderer");
+        QMessageBox::warning(0, QString::fromLatin1("QtAV error"), tr("Can not create video renderer"));
         return;
     }
     m_player->setRenderer(m_vo);
@@ -49,9 +49,9 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
     vl->addWidget(m_slider);
     QHBoxLayout *hb = new QHBoxLayout();
     vl->addLayout(hb);
-    m_openBtn = new QPushButton("Open");
-    m_playBtn = new QPushButton("Play/Pause");
-    m_stopBtn = new QPushButton("Stop");
+    m_openBtn = new QPushButton(tr("Open"));
+    m_playBtn = new QPushButton(tr("Play/Pause"));
+    m_stopBtn = new QPushButton(tr("Stop"));
     hb->addWidget(m_openBtn);
     hb->addWidget(m_playBtn);
     hb->addWidget(m_stopBtn);
@@ -62,7 +62,7 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
 
 void PlayerWindow::openMedia()
 {
-    QString file = QFileDialog::getOpenFileName(0, "Open a video");
+    QString file = QFileDialog::getOpenFileName(0, tr("Open a video"));
     if (file.isEmpty())
         return;
     m_player->play(file);

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -42,7 +42,7 @@ PlayList::PlayList(QWidget *parent) :
     mpListView->setItemDelegate(mpDelegate);
     mpListView->setSelectionMode(QAbstractItemView::ExtendedSelection); //ctrl,shift
     mpListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    mpListView->setToolTip("Ctrl/Shift + " + tr("Click to select multiple"));
+    mpListView->setToolTip(QString::fromLatin1("Ctrl/Shift + ") + tr("Click to select multiple"));
     QVBoxLayout *vbl = new QVBoxLayout;
     setLayout(vbl);
     vbl->addWidget(mpListView);
@@ -51,10 +51,10 @@ PlayList::PlayList(QWidget *parent) :
     mpClear = new QToolButton(0);
     mpClear->setText(tr("Clear"));
     mpRemove = new QToolButton(0);
-    mpRemove->setText("-");
+    mpRemove->setText(QString::fromLatin1("-"));
     mpRemove->setToolTip(tr("Remove selected items"));
     mpAdd = new QToolButton(0);
-    mpAdd->setText("+");
+    mpAdd->setText(QString::fromLatin1("+"));
 
     hbl->addWidget(mpClear);
     hbl->addSpacing(width());
@@ -152,7 +152,7 @@ void PlayList::insert(const QString &url, int row)
     item.setDuration(0);
     item.setLastTime(0);
     QString title = url;
-    if (!url.contains("://") || url.startsWith("file://")) {
+    if (!url.contains(QLatin1String("://")) || url.startsWith(QLatin1String("file://"))) {
         title = QFileInfo(url).fileName();
     }
     item.setTitle(title);

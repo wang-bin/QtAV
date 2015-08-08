@@ -25,7 +25,6 @@
 #include <QtAV/Filter.h>
 #include <QtCore/QTime>
 #include <QtGui/QMatrix4x4>
-#include <QWidget>
 
 namespace QtAV {
 
@@ -33,7 +32,7 @@ class SimpleFilter : public VideoFilter
 {
     Q_OBJECT
 public:
-    SimpleFilter(QWidget *parent = 0);
+    SimpleFilter(QObject *parent = 0);
     virtual ~SimpleFilter();
     void enableRotate(bool r);
     void enableWaveEffect(bool w);

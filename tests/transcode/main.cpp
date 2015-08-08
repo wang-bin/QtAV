@@ -32,41 +32,41 @@ using namespace QtAV;
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    QString file = "test.avi";
-    int idx = a.arguments().indexOf("-i");
+    QString file = QString::fromLatin1("test.avi");
+    int idx = a.arguments().indexOf(QLatin1String("-i"));
     if (idx > 0)
         file = a.arguments().at(idx + 1);
-    QString decName("FFmpeg");
-    idx = a.arguments().indexOf("-d:v");
+    QString decName = QString::fromLatin1("FFmpeg");
+    idx = a.arguments().indexOf(QLatin1String("-d:v"));
     if (idx > 0)
         decName = a.arguments().at(idx + 1);
-    QString outFile("/tmp/out.mp4");
-    idx = a.arguments().indexOf("-o");
+    QString outFile = QString::fromLatin1("/tmp/out.mp4");
+    idx = a.arguments().indexOf(QLatin1String("-o"));
     if (idx > 0)
         outFile = a.arguments().at(idx + 1);
-    QDir().mkpath(outFile.left(outFile.lastIndexOf('/')+1));
+    QDir().mkpath(outFile.left(outFile.lastIndexOf(QLatin1Char('/'))+1));
 
-    QString cv("libx264");
-    idx = a.arguments().indexOf("-c:v");
+    QString cv = QString::fromLatin1("libx264");
+    idx = a.arguments().indexOf(QLatin1String("-c:v"));
     if (idx > 0)
         cv = a.arguments().at(idx + 1);
 
     QString fmt;
-    idx = a.arguments().indexOf("-f");
+    idx = a.arguments().indexOf(QLatin1String("-f"));
     if (idx > 0)
         fmt = a.arguments().at(idx + 1);
 
 
     QString opt;
     QVariantHash decopt;
-    idx = decName.indexOf(":");
+    idx = decName.indexOf(QLatin1String(":"));
     if (idx > 0) {
         opt = decName.right(decName.size() - idx -1);
         decName = decName.left(idx);
-        QStringList opts(opt.split(";"));
+        QStringList opts(opt.split(QString::fromLatin1(";")));
         QVariantHash subopt;
         foreach (QString o, opts) {
-            idx = o.indexOf(":");
+            idx = o.indexOf(QLatin1String(":"));
             subopt[o.left(idx)] = o.right(o.size() - idx - 1);
         }
         decopt[decName] = subopt;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     timer.start();
     int count = 0;
     int vstream = demux.videoStream();
-    VideoEncoder *venc = VideoEncoder::create("FFmpeg");
+    VideoEncoder *venc = VideoEncoder::create(QString::fromUtf8("FFmpeg"));
     venc->setCodecName(cv);
     //venc->setCodecName("png");
     venc->setBitRate(1024*1024);
@@ -104,11 +104,11 @@ int main(int argc, char *argv[])
     //mux.setMedia("/Users/wangbin/Movies/img2/bbb%05d.png");
     mux.setMedia(outFile);
     QVariantHash muxopt, avfopt;
-    avfopt["segment_time"] = 4;
-    avfopt["segment_list_size"] = 0;
-    avfopt["segment_list"] = outFile.left(outFile.lastIndexOf('/')+1) + "index.m3u8";// "//Users/wangbin/Movies/m3u8/bbb.m3u8";
-    avfopt["segment_format"] = "mpegts";
-    muxopt["avformat"] = avfopt;
+    avfopt[QString::fromLatin1("segment_time")] = 4;
+    avfopt[QString::fromLatin1("segment_list_size")] = 0;
+    avfopt[QString::fromLatin1("segment_list")] = outFile.left(outFile.lastIndexOf(QLatin1Char('/'))+1).append(QString::fromLatin1("index.m3u8"));
+    avfopt[QString::fromLatin1("segment_format")] = QString::fromLatin1("mpegts");
+    muxopt[QString::fromLatin1("avformat")] = avfopt;
     qreal fps = 0;
     while (!demux.atEnd()) {
         if (!demux.readFrame())

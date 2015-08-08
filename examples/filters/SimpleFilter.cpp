@@ -20,12 +20,12 @@
 ******************************************************************************/
 
 #include "SimpleFilter.h"
-#include "QtAV/private/Filter_p.h"
+#include <QWidget>
 #include <math.h>
 
 namespace QtAV {
 
-SimpleFilter::SimpleFilter(QWidget *parent):
+SimpleFilter::SimpleFilter(QObject *parent):
     VideoFilter(parent)
   , mCanRot(true)
   , mWave(true)
@@ -86,7 +86,7 @@ void SimpleFilter::prepare()
 
 void SimpleFilter::timerEvent(QTimerEvent *)
 {
-    if (parent())
+    if (qobject_cast<QWidget*>(parent()))
         ((QWidget*)parent())->update();
 }
 

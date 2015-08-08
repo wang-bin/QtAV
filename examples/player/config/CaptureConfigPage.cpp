@@ -38,7 +38,7 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     mpDir = new QLineEdit();
     hb->addWidget(mpDir);
     QToolButton *bt = new QToolButton();
-    bt->setText("...");
+    bt->setText(QString::fromLatin1("..."));
     hb->addWidget(bt);
     connect(bt, SIGNAL(clicked()), SLOT(selectSaveDir()));
     bt = new QToolButton();
@@ -52,7 +52,7 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     QList<QByteArray> formats;
     formats << "Original" << QImageWriter::supportedImageFormats();
     foreach (const QByteArray& fmt, formats) {
-        mpFormat->addItem(fmt);
+        mpFormat->addItem(QString::fromLatin1(fmt));
     }
     mpQuality = new Slider();
     formLayout->addRow(tr("Quality"), mpQuality);
@@ -79,7 +79,7 @@ QString CaptureConfigPage::name() const
 void CaptureConfigPage::applyFromUi()
 {
     Config::instance().setCaptureDir(mpDir->text())
-            .setCaptureFormat(mpFormat->currentText().toUtf8())
+            .setCaptureFormat(mpFormat->currentText())
             .setCaptureQuality(mpQuality->value());
 }
 
@@ -102,7 +102,7 @@ void CaptureConfigPage::changeDirByUi(const QString& dir)
 void CaptureConfigPage::changeFormatByUi(const QString& fmt)
 {
     if (applyOnUiChange()) {
-        Config::instance().setCaptureFormat(mpFormat->currentText().toUtf8());
+        Config::instance().setCaptureFormat(mpFormat->currentText());
     } else{
         emit Config::instance().captureFormatChanged(fmt);
     }
@@ -135,5 +135,5 @@ void CaptureConfigPage::selectSaveDir()
 void CaptureConfigPage::browseCaptureDir()
 {
     qDebug("browse capture dir");
-    QDesktopServices::openUrl(QUrl("file:///" + mpDir->text()));
+    QDesktopServices::openUrl(QUrl(QString::fromLatin1("file:///") + mpDir->text()));
 }

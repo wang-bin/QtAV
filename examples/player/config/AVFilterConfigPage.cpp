@@ -30,7 +30,7 @@
 AVFilterConfigPage::AVFilterConfigPage(QWidget *parent)
     : ConfigPageBase(parent)
 {
-    setObjectName("avfilter");
+    setObjectName(QString::fromLatin1("avfilter"));
     QGridLayout *gl = new QGridLayout();
     setLayout(gl);
     gl->setSizeConstraint(QLayout::SetFixedSize);
@@ -39,10 +39,10 @@ AVFilterConfigPage::AVFilterConfigPage(QWidget *parent)
     m_ui[1].type = tr("Audio");
     const int mw = 300;
     for (size_t i = 0; i < sizeof(m_ui)/sizeof(m_ui[0]); ++i) {
-        m_ui[i].enable = new QCheckBox(tr("Enable") + " " + m_ui[i].type);
+        m_ui[i].enable = new QCheckBox(tr("Enable") + QString::fromLatin1(" ") + m_ui[i].type);
         gl->addWidget(m_ui[i].enable, r++, 0);
         m_ui[i].name = new QComboBox();
-        m_ui[i].name->setToolTip(tr("Registered") + " " + m_ui[i].type + " " + tr("filters"));
+        m_ui[i].name->setToolTip(QString::fromLatin1("%1 %2 %3").arg(tr("Registered")).arg(m_ui[i].type).arg(tr("filters")));
         gl->addWidget(m_ui[i].name, r++, 0);
         m_ui[i].description = new QLabel();
         m_ui[i].description->setMaximumWidth(mw);
@@ -54,8 +54,8 @@ AVFilterConfigPage::AVFilterConfigPage(QWidget *parent)
         gl->addWidget(m_ui[i].options, r++, 0);
     }
     applyToUi();
-    m_ui[0].options->setToolTip("example: negate");
-    m_ui[1].options->setToolTip("example: volume=volume=2.0");
+    m_ui[0].options->setToolTip(QString::fromLatin1("example: negate"));
+    m_ui[1].options->setToolTip(QString::fromLatin1("example: volume=volume=2.0"));
     connect(m_ui[0].name, SIGNAL(currentIndexChanged(QString)), SLOT(videoFilterChanged(QString)));
     m_ui[0].name->addItems(QtAV::LibAVFilter::videoFilters());
     connect(m_ui[1].name, SIGNAL(currentIndexChanged(QString)), SLOT(audioFilterChanged(QString)));
@@ -64,7 +64,7 @@ AVFilterConfigPage::AVFilterConfigPage(QWidget *parent)
 
 QString AVFilterConfigPage::name() const
 {
-    return "AVFilter";
+    return QString::fromLatin1("AVFilter");
 }
 
 

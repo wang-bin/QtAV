@@ -31,10 +31,10 @@ using namespace QtAV;
 Widget::Widget(QWidget *parent) :
     QWidget(parent)
 {
-    setWindowTitle("A test for shared video renderer. QtAV" + QtAV_Version_String_Long() + " wbsecg1@gmail.com");
+    setWindowTitle(QString::fromLatin1("A test for shared video renderer. QtAV%1 wbsecg1@gmail.com").arg(QtAV_Version_String_Long()));
     QVBoxLayout *main_layout = new QVBoxLayout;
     QHBoxLayout *btn_layout = new QHBoxLayout;
-    renderer = new WidgetRenderer;
+    renderer = new GLWidgetRenderer2;
     renderer->setFocusPolicy(Qt::StrongFocus);
     renderer->resizeRenderer(640, 480);
     for (int i = 0; i < 2; ++i) {
@@ -42,9 +42,9 @@ Widget::Widget(QWidget *parent) :
         player[i]->setRenderer(renderer);
         QVBoxLayout *vb = new QVBoxLayout;
         play_btn[i] = new QPushButton(this);
-        play_btn[i]->setText(QString("Play-%1").arg(i));
+        play_btn[i]->setText(QString::fromLatin1("Play-%1").arg(i));
         file_btn[i] = new QPushButton(this);
-        file_btn[i]->setText(QString("Choose video-%1").arg(i));
+        file_btn[i]->setText(QString::fromLatin1("Choose video-%1").arg(i));
         connect(play_btn[i], SIGNAL(clicked()), SLOT(playVideo()));
         connect(file_btn[i], SIGNAL(clicked()), SLOT(setVideo()));
         vb->addWidget(play_btn[i]);
@@ -69,18 +69,18 @@ void Widget::playVideo()
     for (int i = 0; i < 2; ++i)
         player[i]->pause(true);
     QPushButton *btn = qobject_cast<QPushButton*>(sender());
-    int idx = btn->text().section('-', 1).toInt();
+    int idx = btn->text().section(QLatin1Char('-'), 1).toInt();
     player[idx]->pause(false);
 }
 
 void Widget::setVideo()
 {
-    QString v = QFileDialog::getOpenFileName(0, "Select a video");
+    QString v = QFileDialog::getOpenFileName(0, QString::fromLatin1("Select a video"));
     if (v.isEmpty())
         return;
 
     QPushButton *btn = qobject_cast<QPushButton*>(sender());
-    int idx = btn->text().section('-', 1).toInt();
+    int idx = btn->text().section(QLatin1Char('-'), 1).toInt();
     QString oldv = player[idx]->file();
     if (v == oldv)
         return;
@@ -95,8 +95,8 @@ void Widget::testRTSP()
 {
     for (int i = 0; i < 2; ++i)
         player[i]->stop();
-    player[0]->play("rtsp://122.192.35.80:554/live/tv11");
+    player[0]->play(QString::fromLatin1("rtsp://122.192.35.80:554/live/tv11"));
     player[0]->pause(true);
 
-    player[1]->play("rtsp://122.192.35.80:554/live/tv10");
+    player[1]->play(QString::fromLatin1("rtsp://122.192.35.80:554/live/tv10"));
 }

@@ -58,7 +58,7 @@ private:
     QWidget* createWidgetForEnum(const QString& name, const QVariant& value, QMetaEnum me, const QString& detail = QString(), QWidget* parent = 0);
     QWidget* createWidgetForInt(const QString& name, int value, const QString& detail = QString(), QWidget* parent = 0);
     QWidget* createWidgetForReal(const QString& name, qreal value, const QString& detail = QString(), QWidget* parent = 0);
-    QWidget* createWidgetForText(const QString& name, const QString& value, const QString& detail = QString(), QWidget* parent = 0);
+    QWidget* createWidgetForText(const QString& name, const QString& value, bool readOnly, const QString& detail = QString(), QWidget* parent = 0);
     QWidget* createWidgetForBool(const QString& name, bool value, const QString& detail = QString(), QWidget* parent = 0);
 
     // called if value changed by ui (in onXXXChange)

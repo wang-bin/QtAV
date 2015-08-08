@@ -33,7 +33,7 @@ const int kFrames = 1024;
 qint16 sin_table[kTableSize];
 
 void help() {
-    qDebug() << "parameters: [-ao " << AudioOutput::backendsAvailable().join("|") << "]";
+    qDebug() << QLatin1String("parameters: [-ao ") << AudioOutput::backendsAvailable().join(QLatin1String("|")) << QLatin1String("]");
 }
 
 int main(int argc, char** argv)
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 
     QCoreApplication app(argc, argv); //only used qapp to get parameter easily
     AudioOutput ao;
-    int idx = app.arguments().indexOf("-ao");
+    int idx = app.arguments().indexOf(QLatin1String("-ao"));
     if (idx > 0)
         ao.setBackends(QStringList() << app.arguments().at(idx+1));
     if (ao.backend().isEmpty()) {

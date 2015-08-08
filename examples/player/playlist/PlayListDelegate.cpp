@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -84,7 +84,7 @@ void PlayListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
         ft.setBold(false);
         ft.setPixelSize(8);//(kHeightMax - kHeightMin - 2*kMarginTop));
         painter->setFont(ft);
-        painter->drawText(0, 0, pli.lastTimeString() + "/" + pli.durationString());
+        painter->drawText(0, 0, pli.lastTimeString() + QString::fromLatin1("/") + pli.durationString());
         painter->restore();
     }
     painter->restore();

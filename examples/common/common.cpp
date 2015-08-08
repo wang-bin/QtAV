@@ -28,41 +28,41 @@
 
 QOptions get_common_options()
 {
-    static QOptions ops = QOptions().addDescription("Options for QtAV players")
-            .add("common options")
-            ("help,h", "print this")
-            ("ao", "", "audio output. Can be ordered combination of available backends (-ao help). Leave empty to use the default setting. Set 'null' to disable audio.")
-            ("-gl", "OpenGL backend for Qt>=5.4(windows). can be 'desktop', 'opengles' and 'software'")
-            ("x", 0, "")
-            ("y", 0, "y")
-            ("-width", 800, "width of player")
-            ("height", 450, "height of player")
-            ("fullscreen", "fullscreen")
-            ("decoder", "FFmpeg", "use a given decoder")
-            ("decoders,-vd", "cuda;vaapi;vda;dxva;cedarv;ffmpeg", "decoder name list in priority order seperated by ';'")
-            ("file,f", "", "file or url to play")
-            ("language", "system", "language on UI. can be 'system', 'none' and locale name e.g. zh_CN")
+    static QOptions ops = QOptions().addDescription(QString::fromLatin1("Options for QtAV players"))
+            .add(QString::fromLatin1("common options"))
+            ("help,h", QLatin1String("print this"))
+            ("ao", QString(), QLatin1String("audio output. Can be ordered combination of available backends (-ao help). Leave empty to use the default setting. Set 'null' to disable audio."))
+            ("-gl", QLatin1String("OpenGL backend for Qt>=5.4(windows). can be 'desktop', 'opengles' and 'software'"))
+            ("x", 0, QString())
+            ("y", 0, QLatin1String("y"))
+            ("-width", 800, QLatin1String("width of player"))
+            ("height", 450, QLatin1String("height of player"))
+            ("fullscreen", QLatin1String("fullscreen"))
+            ("decoder", QLatin1String("FFmpeg"), QLatin1String("use a given decoder"))
+            ("decoders,-vd", QLatin1String("cuda;vaapi;vda;dxva;cedarv;ffmpeg"), QLatin1String("decoder name list in priority order seperated by ';'"))
+            ("file,f", QString(), QLatin1String("file or url to play"))
+            ("language", QLatin1String("system"), QLatin1String("language on UI. can be 'system', 'none' and locale name e.g. zh_CN"))
             ;
     return ops;
 }
 
 void load_qm(const QStringList &names, const QString& lang)
 {
-    if (lang.isEmpty() || lang.toLower() == "none")
+    if (lang.isEmpty() || lang.toLower() == QLatin1String("none"))
         return;
     QString l(lang);
-    if (l.toLower() == "system")
+    if (l.toLower() == QLatin1String("system"))
         l = QLocale::system().name();
     QStringList qms(names);
-    qms << "QtAV" << "qt";
+    qms << QLatin1String("QtAV") << QLatin1String("qt");
     foreach(QString qm, qms) {
         QTranslator *ts = new QTranslator(qApp);
-        QString path = qApp->applicationDirPath() + "/i18n/" + qm + "_" + l;
+        QString path = qApp->applicationDirPath() + QLatin1String("/i18n/") + qm + QLatin1String("_") + l;
         //qDebug() << "loading qm: " << path;
         if (ts->load(path)) {
             qApp->installTranslator(ts);
         } else {
-            path = ":/i18n/" + qm + "_" + l;
+            path = QString::fromUtf8(":/i18n/%1_%2").arg(qm).arg(l);
             //qDebug() << "loading qm: " << path;
             if (ts->load(path))
                 qApp->installTranslator(ts);
@@ -71,63 +71,63 @@ void load_qm(const QStringList &names, const QString& lang)
         }
     }
     QTranslator qtts;
-    if (qtts.load("qt_" + QLocale::system().name()))
+    if (qtts.load(QLatin1String("qt_") + QLocale::system().name()))
         qApp->installTranslator(&qtts);
 }
 
 void set_opengl_backend(const QString& glopt, const QString &appname)
 {
-    QString gl = appname.toLower().replace("\\", "/");
-    int idx = gl.lastIndexOf("/");
+    QString gl = appname.toLower().replace(QLatin1String("\\"), QLatin1String("/"));
+    int idx = gl.lastIndexOf(QLatin1String("/"));
     if (idx >= 0)
         gl = gl.mid(idx + 1);
-    idx = gl.lastIndexOf(".");
+    idx = gl.lastIndexOf(QLatin1String("."));
     if (idx > 0)
         gl = gl.left(idx);
-    if (gl.indexOf("-desktop") > 0)
-        gl = "desktop";
-    else if (gl.indexOf("-es") > 0 || gl.indexOf("-angle") > 0)
-        gl = gl.mid(gl.indexOf("-es") + 1);
-    else if (gl.indexOf("-sw") > 0 || gl.indexOf("-software") > 0)
-        gl = "software";
+    if (gl.indexOf(QLatin1String("-desktop")) > 0)
+        gl = QLatin1String("desktop");
+    else if (gl.indexOf(QLatin1String("-es")) > 0 || gl.indexOf(QLatin1String("-angle")) > 0)
+        gl = gl.mid(gl.indexOf(QLatin1String("-es")) + 1);
+    else if (gl.indexOf(QLatin1String("-sw")) > 0 || gl.indexOf(QLatin1String("-software")) > 0)
+        gl = QLatin1String("software");
     else
         gl = glopt.toLower();
     if (gl.isEmpty()) {
         switch (Config::instance().openGLType()) {
         case Config::Desktop:
-            gl = "desktop";
+            gl = QLatin1String("desktop");
             break;
         case Config::OpenGLES:
-            gl = "es";
+            gl = QLatin1String("es");
             break;
         case Config::Software:
-            gl = "software";
+            gl = QLatin1String("software");
             break;
         default:
             break;
         }
     }
-    if (gl == "es" || gl == "angle" || gl == "opengles") {
-        gl = "es_";
+    if (gl == QLatin1String("es") || gl == QLatin1String("angle") || gl == QLatin1String("opengles")) {
+        gl = QLatin1String("es_");
         gl.append(Config::instance().getANGLEPlatform().toLower());
     }
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
-    if (gl.startsWith("es")) {
+    if (gl.startsWith(QLatin1String("es"))) {
         qApp->setAttribute(Qt::AA_UseOpenGLES);
 #ifdef QT_OPENGL_DYNAMIC
         qputenv("QT_OPENGL", "angle");
 #endif
 #ifdef Q_OS_WIN
-        if (gl.endsWith("d3d11"))
+        if (gl.endsWith(QLatin1String("d3d11")))
             qputenv("QT_ANGLE_PLATFORM", "d3d11");
-        else if (gl.endsWith("d3d9"))
+        else if (gl.endsWith(QLatin1String("d3d9")))
             qputenv("QT_ANGLE_PLATFORM", "d3d9");
-        else if (gl.endsWith("warp"))
+        else if (gl.endsWith(QLatin1String("warp")))
             qputenv("QT_ANGLE_PLATFORM", "warp");
 #endif
-    } else if (gl == "desktop") {
+    } else if (gl == QLatin1String("desktop")) {
         qApp->setAttribute(Qt::AA_UseDesktopOpenGL);
-    } else if (gl == "software") {
+    } else if (gl == QLatin1String("software")) {
         qApp->setAttribute(Qt::AA_UseSoftwareOpenGL);
     }
 #endif

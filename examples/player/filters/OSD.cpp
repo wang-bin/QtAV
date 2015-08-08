@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -69,7 +69,7 @@ QString OSD::text(Statistics *statistics)
     if (!av->available)
         av = &statistics->audio;
     if (hasShowType(ShowCurrentTime) || hasShowType(ShowCurrentAndTotalTime)) {
-        text = av->current_time.toString("HH:mm:ss");
+        text = av->current_time.toString(QString::fromLatin1("HH:mm:ss"));
     }
     //how to compute mSecsTotal only once?
     if (hasShowType(ShowCurrentAndTotalTime) || hasShowType(ShowPercent) /*mSecsTotal < 0*/) {
@@ -79,22 +79,22 @@ QString OSD::text(Statistics *statistics)
     }
     if (hasShowType(ShowCurrentAndTotalTime)) {
         if (mSecsTotal > 0)
-            text += "/" + statistics->duration.toString("HH:mm:ss");
+            text += QString::fromLatin1("/").append(statistics->duration.toString(QString::fromLatin1("HH:mm:ss")));
         else
-            text += "/--:--:--";
+            text += QString::fromLatin1("/--:--:--");
     }
     if (hasShowType(ShowRemainTime)) {
         if (mSecsTotal > 0)
-            text += "-" + QTime(0, 0, 0).addSecs(av->current_time.secsTo(statistics->duration)).toString("HH:mm:ss");
+            text += QString::fromLatin1("-").append(QTime(0, 0, 0).addSecs(av->current_time.secsTo(statistics->duration)).toString(QString::fromLatin1("HH:mm:ss")));
         else
-            text += "--:--:--";
+            text += QString::fromLatin1("--:--:--");
     }
     if (hasShowType(ShowPercent)) {
         if (mSecsTotal > 0)
             text += QString::number(qreal(QTime(0, 0, 0).secsTo(av->current_time))
-                                /qreal(mSecsTotal)*100.0, 'f', 1) + "%";
+                                /qreal(mSecsTotal)*100.0, 'f', 1).append(QString::fromLatin1("%"));
         else
-            text += "--.-%";
+            text += QString::fromLatin1("--.-%");
     }
     return text;
 }

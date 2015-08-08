@@ -38,7 +38,7 @@ const int kSyncInterval = 2000;
 
 VideoWall::VideoWall(QObject *parent) :
     QObject(parent),r(3),c(3),view(0),menu(0)
-  , vid("qpainter")
+  , vid(QString::fromLatin1("qpainter"))
 {
     QtAV::Widgets::registerRenderers();
     clock = new AVClock(this);
@@ -128,13 +128,13 @@ void VideoWall::show()
     }
 
     VideoRendererId v = VideoRendererId_Widget;
-    if (vid == "gl")
+    if (vid == QLatin1String("gl"))
         v = VideoRendererId_GLWidget2;
-    else if (vid == "d2d")
+    else if (vid == QLatin1String("d2d"))
         v = VideoRendererId_Direct2D;
-    else if (vid == "gdi")
+    else if (vid == QLatin1String("gdi"))
         v = VideoRendererId_GDI;
-    else if (vid == "xv")
+    else if (vid == QLatin1String("xv"))
         v = VideoRendererId_XV;
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
@@ -207,9 +207,9 @@ void VideoWall::openUrl()
 
 void VideoWall::about()
 {
-    QMessageBox::about(0, tr("About QtAV"), "<h3>" + tr("This is a demo for playing and synchronising multiple players") + "</h3>"
-                       + "\n\n"
-                       + aboutQtAV_HTML());
+    QMessageBox::about(0, tr("About QtAV"), QString::fromLatin1("<h3>%1</h3>\n\n%2")
+                       .arg(tr("This is a demo for playing and synchronising multiple players"))
+                       .arg(aboutQtAV_HTML()));
 }
 
 void VideoWall::help()

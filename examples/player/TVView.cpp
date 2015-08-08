@@ -54,30 +54,30 @@ void TVView::load()
             subMenu->addAction(key)->setData(tv.value(key).toString());
         }
     */
-    QFile tv_file(qApp->applicationDirPath() + "/tv.ini");
+    QFile tv_file(qApp->applicationDirPath() + QString::fromLatin1("/tv.ini"));
     if (!tv_file.exists())
-        tv_file.setFileName(":/tv.ini");
+        tv_file.setFileName(QString::fromLatin1(":/tv.ini"));
     if (!tv_file.open(QIODevice::ReadOnly))
         return;
     QTextStream ts(&tv_file);
     ts.setCodec("UTF-8");
     QTreeWidgetItem *nodeItem = new QTreeWidgetItem(mpView);
-    nodeItem->setData(0, Qt::DisplayRole, "");
+    nodeItem->setData(0, Qt::DisplayRole, QString());
     mpView->addTopLevelItem(nodeItem);
     nodeItem->setExpanded(true);
     QString line;
     while (!ts.atEnd()) {
         line = ts.readLine();
-        if (line.isEmpty() || line.startsWith("#"))
+        if (line.isEmpty() || line.startsWith(QLatin1String("#")))
             continue;
-        if (!line.contains("=")) {
+        if (!line.contains(QLatin1String("="))) {
             nodeItem = new QTreeWidgetItem(mpView);
             nodeItem->setData(0, Qt::DisplayRole, line);
             mpView->addTopLevelItem(nodeItem);
             continue;
         }
-        QString key = line.section('=', 0, 0);
-        QString value = line.section('=', 1);
+        QString key = line.section(QLatin1Char('='), 0, 0);
+        QString value = line.section(QLatin1Char('='), 1);
         QTreeWidgetItem *item = new QTreeWidgetItem(nodeItem);
         item->setData(0, Qt::DisplayRole, key);
         item->setData(1, Qt::EditRole, value);
