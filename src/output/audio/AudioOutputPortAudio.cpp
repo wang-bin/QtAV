@@ -34,7 +34,7 @@ class AudioOutputPortAudio Q_DECL_FINAL: public AudioOutputBackend
 public:
     AudioOutputPortAudio(QObject *parent = 0);
     ~AudioOutputPortAudio();
-    QString name() const Q_DECL_FINAL { return kName;}
+    QString name() const Q_DECL_FINAL { return QString::fromLatin1(kName);}
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
     virtual BufferControl bufferControl() const Q_DECL_FINAL;
