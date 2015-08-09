@@ -98,7 +98,13 @@ void RegisterSubtitleProcessorLibASS_Man()
 static void ass_msg_cb(int level, const char *fmt, va_list va, void *data)
 {
     Q_UNUSED(data)
-    QString msg(QStringLiteral("{libass} ") + QString().vsprintf(fmt, va));
+    if (level > MSGL_INFO)
+        return;
+    printf("[libass]: ");
+    vprintf(fmt, va);
+    printf("\n");
+    return;
+    QString msg(QStringLiteral("{libass} ") + QString().vsprintf(fmt, va)); //QString.vsprintf() may crash at strlen().
     if (level == MSGL_FATAL)
         qFatal("%s", msg.toUtf8().constData());
     else if (level <= 2)
@@ -235,6 +241,8 @@ bool SubtitleProcessorLibASS::processHeader(const QByteArray& codec, const QByte
 SubtitleFrame SubtitleProcessorLibASS::processLine(const QByteArray &data, qreal pts, qreal duration)
 {
     if (!ass::api::loaded())
+        return SubtitleFrame();
+    if (data.isEmpty() || data.at(0) == 0)
         return SubtitleFrame();
     QMutexLocker lock(&m_mutex);
     Q_UNUSED(lock);
