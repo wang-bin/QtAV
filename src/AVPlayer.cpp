@@ -327,6 +327,17 @@ QList<Filter*> AVPlayer::videoFilters() const
 void AVPlayer::setPriority(const QVector<VideoDecoderId> &ids)
 {
     d->vc_ids = ids;
+    if (!d->vthread || !d->vthread->isRunning())
+        return;
+    class ChangeDecoderTask : public QRunnable {
+        AVPlayer* player;
+    public:
+        ChangeDecoderTask(AVPlayer *p) : player(p) {}
+        void run() {
+            player->d->tryApplyDecoderPriority(player);
+        }
+    };
+    d->vthread->scheduleTask(new ChangeDecoderTask(this)); 
 }
 
 void AVPlayer::setOptionsForFormat(const QVariantHash &dict)

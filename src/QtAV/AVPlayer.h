@@ -308,6 +308,12 @@ public:
     bool uninstallFilter(VideoFilter* filter);
     QList<Filter*> audioFilters() const;
     QList<Filter*> videoFilters() const;
+    /*!
+     * \brief setPriority
+     * A suitable decoder will be applied when video is playing. The decoder does not change in current playback if no decoder is found.
+     * If not playing or no decoder found, the decoder will be changed at the next playback
+     * \param ids
+     */
     // TODO: name list
     void setPriority(const QVector<VideoDecoderId>& ids);
     //void setPriority(const QVector<AudioOutputId>& ids);

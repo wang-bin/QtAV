@@ -445,6 +445,43 @@ bool AVPlayer::Private::applySubtitleStream(int n, AVPlayer *player)
     return true;
 }
 
+bool AVPlayer::Private::tryApplyDecoderPriority(AVPlayer *player)
+{
+    qint64 pos = player->position();
+    VideoDecoder *vd = NULL;
+    AVCodecContext *avctx = demuxer.videoCodecContext();
+    foreach(VideoDecoderId vid, vc_ids) {
+        qDebug("**********trying video decoder: %s...", VideoDecoderFactory::name(vid).c_str());
+        vd = VideoDecoder::create(vid);
+        if (!vd)
+            continue;
+        vd->setCodecContext(avctx);
+        vd->setOptions(vc_opt);
+        if (vd->open()) {
+            qDebug("**************Video decoder found:%p", vd);
+            break;
+        }
+        delete vd;
+        vd = 0;
+    }
+    qDebug("**************set new decoder:%p -> %p", vdec, vd);
+    if (!vd) {
+        Q_EMIT player->error(AVError(AVError::VideoCodecNotFound));
+        return false;
+    }
+    vthread->packetQueue()->clear();
+    vthread->setDecoder(vd);
+    // MUST delete decoder after video thread set the decoder to ensure the deleted vdec will not be used in vthread!
+    if (vdec)
+        delete vdec;
+    vdec = vd;
+    QObject::connect(vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
+    initVideoStatistics(demuxer.videoStream());
+    // If no seek, drop packets until a key frame packet is found. But we may drop too many packets, and also a/v sync is a problem.
+    player->setPosition(pos);
+    return true;
+}
+
 bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
 {
     demuxer.setStreamIndex(AVDemuxer::VideoStream, video_track);
@@ -475,7 +512,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         vd->setOptions(vc_opt);
         if (vd->open()) {
             vdec = vd;
-            qDebug("**************Video decoder found");
+            qDebug("**************Video decoder found:%p", vdec);
             break;
         }
         delete vd;
@@ -504,11 +541,13 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         }
     }
     vthread->setDecoder(vdec);
+
     vthread->setBrightness(brightness);
     vthread->setContrast(contrast);
     vthread->setSaturation(saturation);
     updateBufferValue(vthread->packetQueue());
     initVideoStatistics(demuxer.videoStream());
+
     return true;
 }
 

@@ -52,6 +52,7 @@ public:
     bool applySubtitleStream(int n, AVPlayer *player);
     bool setupAudioThread(AVPlayer *player);
     bool setupVideoThread(AVPlayer *player);
+    bool tryApplyDecoderPriority(AVPlayer *player);
     // TODO: what if buffer mode changed during playback?
     void updateBufferValue(PacketBuffer *buf);
     void updateBufferValue();

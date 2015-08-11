@@ -447,6 +447,13 @@ void VideoThread::run()
                 seek_count = -1;
             }
         }
+
+        if (dec != static_cast<VideoDecoder*>(d.dec)) {
+            dec = static_cast<VideoDecoder*>(d.dec);
+            wait_key_frame = true;
+            continue;
+        }
+
         if (dec_opt != dec_opt_old)
             dec->setOptions(*dec_opt);
         if (!dec->decode(pkt)) {
