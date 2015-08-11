@@ -447,6 +447,7 @@ bool AVPlayer::Private::applySubtitleStream(int n, AVPlayer *player)
 
 bool AVPlayer::Private::tryApplyDecoderPriority(AVPlayer *player)
 {
+    // TODO: add an option to apply the new decoder even if not available
     qint64 pos = player->position();
     VideoDecoder *vd = NULL;
     AVCodecContext *avctx = demuxer.videoCodecContext();
@@ -455,7 +456,7 @@ bool AVPlayer::Private::tryApplyDecoderPriority(AVPlayer *player)
         vd = VideoDecoder::create(vid);
         if (!vd)
             continue;
-        vd->setCodecContext(avctx);
+        vd->setCodecContext(avctx); // It's fine because AVDecoder copy the avctx properties
         vd->setOptions(vc_opt);
         if (vd->open()) {
             qDebug("**************Video decoder found:%p", vd);
@@ -468,6 +469,11 @@ bool AVPlayer::Private::tryApplyDecoderPriority(AVPlayer *player)
     if (!vd) {
         Q_EMIT player->error(AVError(AVError::VideoCodecNotFound));
         return false;
+    }
+    if (vd->id() == vdec->id()) {
+        qDebug("Video decoder does not change");
+        delete vd;
+        return true;
     }
     vthread->packetQueue()->clear();
     vthread->setDecoder(vd);
