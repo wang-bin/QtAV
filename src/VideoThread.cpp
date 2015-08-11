@@ -310,7 +310,7 @@ void VideoThread::run()
                 // may be we should check other information. invalid packet can come from
                 wait_key_frame = true;
                 qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());  
-                dec->flush();
+                d.dec->flush(); //d.dec instead of dec because d.dec maybe changed in processNextTask() but dec is not
                 d.render_pts0 = pkt.pts;
                 continue;
             }
@@ -449,6 +449,7 @@ void VideoThread::run()
             }
         }
 
+        // decoder maybe changed in processNextTask(). code above MUST use d.dec but not dec
         if (dec != static_cast<VideoDecoder*>(d.dec)) {
             dec = static_cast<VideoDecoder*>(d.dec);
             wait_key_frame = true;
