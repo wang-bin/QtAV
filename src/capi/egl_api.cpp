@@ -37,8 +37,17 @@ bool api::loaded() const{return true;}
 #else
 static const char* names[] = {
     "EGL",
+#ifdef Q_OS_WIN
+#ifndef QT_NO_DEBUG
+    "libEGLd",
+    "libEGL",
+#else
     "libEGL",
     "libEGLd",
+#endif //QT_NO_DEBUG
+#else
+    "libEGL",
+#endif
     NULL
 };
 
