@@ -452,8 +452,11 @@ void VideoThread::run()
         // decoder maybe changed in processNextTask(). code above MUST use d.dec but not dec
         if (dec != static_cast<VideoDecoder*>(d.dec)) {
             dec = static_cast<VideoDecoder*>(d.dec);
-            wait_key_frame = true;
-            continue;
+            if (!pkt.hasKeyFrame) {
+                wait_key_frame = true;
+                continue;
+            }
+            qDebug("decoder changed. decoding key frame");
         }
         if (dec_opt != dec_opt_old)
             dec->setOptions(*dec_opt);
