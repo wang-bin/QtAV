@@ -90,6 +90,7 @@ public:
      * \return true if encoding started
      */
     bool isRunning() const;
+    bool isPaused() const;
     qint64 encodedSize() const;
     qreal startTimestamp() const;
     qreal encodedDuration() const;

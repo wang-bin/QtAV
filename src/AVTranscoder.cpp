@@ -175,6 +175,21 @@ bool AVTranscoder::isRunning() const
     return d->started;
 }
 
+bool AVTranscoder::isPaused() const
+{
+    if (d->vfilter) {
+        if (d->vfilter->isEnabled())
+            return false;
+        return true;
+    }
+    if (d->afilter) {
+        if (d->afilter->isEnabled())
+            return false;
+        return true;
+    }
+    return false; //stopped
+}
+
 void AVTranscoder::start()
 {
     if (!videoEncoder())
