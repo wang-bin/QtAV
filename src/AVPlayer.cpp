@@ -327,17 +327,85 @@ QList<Filter*> AVPlayer::videoFilters() const
 void AVPlayer::setPriority(const QVector<VideoDecoderId> &ids)
 {
     d->vc_ids = ids;
-    if (!d->vthread || !d->vthread->isRunning())
+    if (!isPlaying())
         return;
+    // TODO: add an option to apply immediatly?
+    if (!d->vthread || !d->vthread->isRunning()) {
+        qint64 pos = position();
+        d->setupVideoThread(this);
+        if (d->vdec) {
+            d->vthread->start();
+            setPosition(pos);
+        }
+        return;
+    }
+#ifndef ASYNC_DECODER_OPEN
     class ChangeDecoderTask : public QRunnable {
         AVPlayer* player;
     public:
         ChangeDecoderTask(AVPlayer *p) : player(p) {}
-        void run() {
+        void run() Q_DECL_OVERRIDE {
             player->d->tryApplyDecoderPriority(player);
         }
     };
-    d->vthread->scheduleTask(new ChangeDecoderTask(this)); 
+    d->vthread->scheduleTask(new ChangeDecoderTask(this));
+#else
+    // maybe better experience
+    class NewDecoderTask : public QRunnable {
+        AVPlayer *player;
+    public:
+        NewDecoderTask(AVPlayer *p) : player(p) {}
+        void run() Q_DECL_OVERRIDE {
+            VideoDecoder *vd = NULL;
+            AVCodecContext *avctx = player->d->demuxer.videoCodecContext();
+            foreach(VideoDecoderId vid, player->d->vc_ids) {
+                qDebug("**********trying video decoder: %s...", VideoDecoderFactory::name(vid).c_str());
+                vd = VideoDecoder::create(vid);
+                if (!vd)
+                    continue;
+                vd->setCodecContext(avctx); // It's fine because AVDecoder copy the avctx properties
+                vd->setOptions(player->d->vc_opt);
+                if (vd->open()) {
+                    qDebug("**************Video decoder found:%p", vd);
+                    break;
+                }
+                delete vd;
+                vd = 0;
+            }
+            if (!vd) {
+                Q_EMIT player->error(AVError(AVError::VideoCodecNotFound));
+                return;
+            }
+            if (vd->id() == player->d->vdec->id()) {
+                qDebug("Video decoder does not change");
+                delete vd;
+                return;
+            }
+            class ApplyNewDecoderTask : public QRunnable  {
+                AVPlayer *player;
+                VideoDecoder *dec;
+            public:
+                ApplyNewDecoderTask(AVPlayer *p, VideoDecoder *d) : player(p), dec(d) {}
+                void run() Q_DECL_OVERRIDE {
+                    qint64 pos = player->position();
+                    VideoThread *vthread = player->d->vthread;
+                    vthread->packetQueue()->clear();
+                    vthread->setDecoder(dec);
+                    // MUST delete decoder after video thread set the decoder to ensure the deleted vdec will not be used in vthread!
+                    if (player->d->vdec)
+                        delete player->d->vdec;
+                    player->d->vdec = dec;
+                    QObject::connect(player->d->vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
+                    player->d->initVideoStatistics(player->d->demuxer.videoStream());
+                    // If no seek, drop packets until a key frame packet is found. But we may drop too many packets, and also a/v sync is a problem.
+                    player->setPosition(pos);
+                }
+            };
+            player->d->vthread->scheduleTask(new ApplyNewDecoderTask(player, vd));
+        }
+    };
+    QThreadPool::globalInstance()->start(new NewDecoderTask(this));
+#endif
 }
 
 void AVPlayer::setOptionsForFormat(const QVariantHash &dict)

@@ -426,6 +426,8 @@ void AVDemuxThread::run()
     }
     while (!end) {
         processNextSeekTask();
+        //vthread maybe changed by AVPlayer.setPriority() from no dec case
+        vqueue = video_thread ? video_thread->packetQueue() : 0;
         if (demuxer->atEnd()) {
             // if avthread may skip 1st eof packet because of a/v sync
             if (aqueue && (!was_end || aqueue->isEmpty())) {
