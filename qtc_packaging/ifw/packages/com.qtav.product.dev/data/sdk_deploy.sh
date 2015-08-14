@@ -26,7 +26,7 @@ check_qmake() {
   echo QT_BUILD_VER=$QT_BUILD_VER
   #install: skip version check if QT_BUILD_VER is empty
   if [ -n "$QT_BUILD_VER" -a "${QT_BUILD_VER:0:4}" != "${QT_INSTALL_VER:0:4}" ]; then
-    echo "Qt runtime version ($QT_INSTALL_VER) mismatches. QtAV is built with $QT_INSTALL_VER"
+    echo "Qt runtime version ($QT_INSTALL_VER) mismatches. QtAV is built with $QT_BUILD_VER"
     echo "Major and minor version MUST be the same"
     help
   fi
