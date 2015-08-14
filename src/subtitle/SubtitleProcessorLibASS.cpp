@@ -103,6 +103,7 @@ static void ass_msg_cb(int level, const char *fmt, va_list va, void *data)
     printf("[libass]: ");
     vprintf(fmt, va);
     printf("\n");
+    fflush(0);
     return;
     QString msg(QStringLiteral("{libass} ") + QString().vsprintf(fmt, va)); //QString.vsprintf() may crash at strlen().
     if (level == MSGL_FATAL)
@@ -391,10 +392,13 @@ void SubtitleProcessorLibASS::updateFontCache()
     if (family.isEmpty()) {
         family = qgetenv("QTAV_SUB_FONT_FAMILY_DEFAULT");
     }
-    //ass_set_fonts_dir(m_ass, font_dir.constData()); // we can set it in fonts.conf <dir></dir>
+#ifdef Q_OS_ANDROID
+    ass_set_fonts_dir(m_ass, "/system/fonts"); // we can set it in fonts.conf <dir></dir>
+#endif
     // update cache later (maybe async update in the future)
-    ass_set_fonts(m_renderer, font.isEmpty() ? NULL : font.constData(), family.isEmpty() ? NULL : family.constData(), 1, conf.constData(), 0);
-    ass_fonts_update(m_renderer);
+    // fontconfig can be false(0) and conf can be NULL if font is overrided by font var
+    ass_set_fonts(m_renderer, font.isEmpty() ? NULL : font.constData(), family.isEmpty() ? NULL : family.constData(), 1, conf.constData(), 1);
+    //ass_fonts_update(m_renderer); // update in ass_set_fonts(....,1)
     m_update_cache = false;
 }
 

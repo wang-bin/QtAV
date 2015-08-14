@@ -87,6 +87,7 @@ sse2 {
 *msvc* {
 #link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
     debug: QMAKE_LFLAGS += /SAFESEH:NO
+#CXXFLAGS debug: /MTd
     QMAKE_LFLAGS *= /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib #for msbuild vs2013
     INCLUDEPATH += compat/msvc
 }
@@ -266,7 +267,7 @@ config_openglwindow {
 }
 config_libass {
 #link against libass instead of dynamic load
-  !capi|*g++* {
+  !capi|android|ios|winrt {
     LIBS += -lass #-lfribidi -lfontconfig -lxml2 -lfreetype -lharfbuzz -lz
     DEFINES += CAPI_LINK_ASS
   }
@@ -296,8 +297,8 @@ static_ffmpeg {
   mac: LIBS += -liconv -lbz2 -lz -framework CoreFoundation  -Wl,-framework,Security
   win32: LIBS *= -lws2_32 -lstrmiids -lvfw32 -luuid
   !mac:*g++* {
-    LIBS += -lz
-    QMAKE_LFLAGS += -Wl,-Bsymbolic #link to static lib, see http://ffmpeg.org/platform.html
+    LIBS *= -lz
+    QMAKE_LFLAGS *= -Wl,-Bsymbolic #link to static lib, see http://ffmpeg.org/platform.html
   }
 }
 SOURCES += \
