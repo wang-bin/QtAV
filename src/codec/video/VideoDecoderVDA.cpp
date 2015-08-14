@@ -208,9 +208,9 @@ VideoFrame VideoDecoderVDA::frame()
         qDebug("Empty frame buffer");
         return VideoFrame();
     }
-    VideoFormat::PixelFormat pixfmt = format_from_cv(d.hw_ctx.cv_pix_fmt_type);
+    VideoFormat::PixelFormat pixfmt = format_from_cv(CVPixelBufferGetPixelFormatType(cv_buffer));
     if (pixfmt == VideoFormat::Format_Invalid) {
-        qWarning("unsupported vda pixel format: %#x", d.hw_ctx.cv_pix_fmt_type);
+        qWarning("unsupported vda pixel format: %#x", CVPixelBufferGetPixelFormatType(cv_buffer));
         return VideoFrame();
     }
     // we can map the cv buffer addresses to video frame in SurfaceInteropCVBuffer. (may need VideoSurfaceInterop::mapToTexture()
@@ -464,7 +464,7 @@ bool VideoDecoderVDAPrivate::open()
         return false;
     }
 #endif
-    return true;
+    return setup(codec_ctx);
 }
 
 void VideoDecoderVDAPrivate::close()
