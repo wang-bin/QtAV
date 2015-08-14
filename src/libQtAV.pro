@@ -242,6 +242,12 @@ config_vda {
     LIBS += -framework VideoDecodeAcceleration -framework CoreVideo -framework CoreFoundation \
             -framework IOSurface
 }
+config_videotoolbox {
+  DEFINES *= QTAV_HAVE_VIDEOTOOLBOX=1
+  SOURCES += codec/video/VideoDecoderVideoToolbox.cpp
+  LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia \
+          -framework IOSurface
+}
 
 config_gl|config_opengl {
   OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
