@@ -104,6 +104,8 @@ public:
         tcuMemcpyDtoH* cuMemcpyDtoH;
         typedef CUresult CUDAAPI tcuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream);
         tcuMemcpyDtoHAsync* cuMemcpyDtoHAsync;
+        typedef CUresult CUDAAPI tcuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream);
+        tcuMemcpy2DAsync* cuMemcpy2DAsync;
         typedef CUresult CUDAAPI tcuStreamCreate(CUstream *phStream, unsigned int Flags);
         tcuStreamCreate* cuStreamCreate;
         typedef CUresult CUDAAPI tcuStreamDestroy(CUstream hStream);
@@ -130,6 +132,18 @@ public:
         tcuvidCtxUnlock* cuvidCtxUnlock;
         typedef CUresult CUDAAPI tcuCtxSynchronize();
         tcuCtxSynchronize* cuCtxSynchronize;
+
+        typedef CUresult CUDAAPI tcuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags);
+        tcuGraphicsGLRegisterImage* cuGraphicsGLRegisterImage;
+        typedef CUresult CUDAAPI tcuGraphicsUnregisterResource(CUgraphicsResource resource);
+        tcuGraphicsUnregisterResource* cuGraphicsUnregisterResource;
+        typedef CUresult CUDAAPI tcuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
+        tcuGraphicsMapResources* cuGraphicsMapResources;
+        typedef CUresult CUDAAPI tcuGraphicsSubResourceGetMappedArray(CUarray *pArray, CUgraphicsResource resource, unsigned int arrayIndex, unsigned int mipLevel);
+        tcuGraphicsSubResourceGetMappedArray* cuGraphicsSubResourceGetMappedArray;
+        typedef CUresult CUDAAPI tcuGraphicsUnmapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
+        tcuGraphicsUnmapResources* cuGraphicsUnmapResources;
+
         typedef CUresult CUDAAPI tcuvidCreateVideoParser(CUvideoparser *pObj, CUVIDPARSERPARAMS *pParams);
         tcuvidCreateVideoParser* cuvidCreateVideoParser;
         typedef CUresult CUDAAPI tcuvidParseVideoData(CUvideoparser obj, CUVIDSOURCEDATAPACKET *pPacket);
@@ -243,6 +257,14 @@ CUresult cuda_api::cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsig
     return ctx->api.cuMemcpyDtoHAsync(dstHost, srcDevice, ByteCount, hStream);
 }
 
+CUresult cuda_api::cuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream)
+{
+    if (!ctx->api.cuMemcpy2DAsync)
+        ctx->api.cuMemcpy2DAsync = (context::api_t::tcuMemcpy2DAsync*)ctx->cuda_dll.resolve("cuMemcpy2DAsync");
+    assert(ctx->api.cuMemcpy2DAsync);
+    return ctx->api.cuMemcpy2DAsync(pCopy, hStream);
+}
+
 CUresult cuda_api::cuStreamCreate(CUstream *phStream, unsigned int Flags)
 {
     if (!ctx->api.cuStreamCreate)
@@ -307,6 +329,45 @@ CUresult cuda_api::cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUde
     return ctx->api.cuDeviceGetAttribute(pi, attrib, dev);
 }
 
+CUresult cuda_api::cuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags)
+{
+    if (!ctx->api.cuGraphicsGLRegisterImage)
+        ctx->api.cuGraphicsGLRegisterImage = (context::api_t::tcuGraphicsGLRegisterImage*)ctx->cuda_dll.resolve("cuGraphicsGLRegisterImage");
+    assert(ctx->api.cuGraphicsGLRegisterImage);
+    return ctx->api.cuGraphicsGLRegisterImage(pCudaResource, image, target, Flags);
+}
+
+CUresult cuda_api::cuGraphicsUnregisterResource(CUgraphicsResource resource)
+{
+    if (!ctx->api.cuGraphicsUnregisterResource)
+        ctx->api.cuGraphicsUnregisterResource = (context::api_t::tcuGraphicsUnregisterResource*)ctx->cuda_dll.resolve("cuGraphicsUnregisterResource");
+    assert(ctx->api.cuGraphicsUnregisterResource);
+    return ctx->api.cuGraphicsUnregisterResource(resource);
+}
+
+CUresult cuda_api::cuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream)
+{
+    if (!ctx->api.cuGraphicsMapResources)
+        ctx->api.cuGraphicsMapResources = (context::api_t::tcuGraphicsMapResources*)ctx->cuda_dll.resolve("cuGraphicsMapResources");
+    assert(ctx->api.cuGraphicsMapResources);
+    return ctx->api.cuGraphicsMapResources(count, resources, hStream);
+}
+
+CUresult cuda_api::cuGraphicsSubResourceGetMappedArray(CUarray *pArray, CUgraphicsResource resource, unsigned int arrayIndex, unsigned int mipLevel)
+{
+    if (!ctx->api.cuGraphicsSubResourceGetMappedArray)
+        ctx->api.cuGraphicsSubResourceGetMappedArray = (context::api_t::tcuGraphicsSubResourceGetMappedArray*)ctx->cuda_dll.resolve("cuGraphicsSubResourceGetMappedArray");
+    assert(ctx->api.cuGraphicsSubResourceGetMappedArray);
+    return ctx->api.cuGraphicsSubResourceGetMappedArray(pArray, resource, arrayIndex, mipLevel);
+}
+
+CUresult cuda_api::cuGraphicsUnmapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream)
+{
+    if (!ctx->api.cuGraphicsUnmapResources)
+        ctx->api.cuGraphicsUnmapResources = (context::api_t::tcuGraphicsUnmapResources*)ctx->cuda_dll.resolve("cuGraphicsUnmapResources");
+    assert(ctx->api.cuGraphicsUnmapResources);
+    return ctx->api.cuGraphicsUnmapResources(count, resources, hStream);
+}
 
 ////////////////////////////////////////////////////
 /// D3D Interop

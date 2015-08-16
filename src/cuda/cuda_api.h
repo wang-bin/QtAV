@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -46,8 +46,12 @@
     if (!check ( (val), #val, __FILE__, __LINE__ )) \
         return false;
 
+// TODO: cuda_driveapi_dylink.c/h
+
 class cuda_api {
 public:
+    typedef unsigned int GLuint;
+    typedef unsigned int GLenum;
     cuda_api();
     virtual ~cuda_api();
     bool isLoaded() const;
@@ -65,6 +69,7 @@ public:
     CUresult cuMemFreeHost(void *p);
     CUresult cuMemcpyDtoH (void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );
     CUresult cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream);
+    CUresult cuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream);
     CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags);
     CUresult cuStreamDestroy(CUstream hStream);
     CUresult cuStreamQuery(CUstream hStream);
@@ -73,6 +78,12 @@ public:
     CUresult cuDeviceGetName(char *name, int len, CUdevice dev);
     CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev);
     CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev);
+
+    CUresult cuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags);
+    CUresult cuGraphicsUnregisterResource(CUgraphicsResource resource);
+    CUresult cuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
+    CUresult cuGraphicsSubResourceGetMappedArray(CUarray *pArray, CUgraphicsResource resource, unsigned int arrayIndex, unsigned int mipLevel);
+    CUresult cuGraphicsUnmapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
 
     ////////////////////////////////////////////////////
     /// D3D Interop
