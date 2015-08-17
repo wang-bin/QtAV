@@ -55,6 +55,15 @@
             return __VA_ARGS__; \
         } \
     } while (0)
+
+#define CUDA_WARN(f, ...) \
+    do { \
+        CUresult cuR = f; \
+        if (cuR != CUDA_SUCCESS) { \
+            qWarning("CUDA error %s@%d. " #f ": %d %s", __FILE__, __LINE__, cuR, _cudaGetErrorEnum(cuR)); \
+        } \
+    } while (0)
+
 // TODO: cuda_driveapi_dylink.c/h
 
 class cuda_api {
@@ -127,15 +136,11 @@ public:
     CUresult cuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int DevPtr);
 
 
-    class AutoCtxLock
-    {
-    private:
-        CUvideoctxlock m_lock;
+    class AutoCtxLock {
         cuda_api *m_api;
+        CUvideoctxlock m_lock;
     public:
-        AutoCtxLock(cuda_api *api, CUvideoctxlock lck) {
-            m_api = api;
-            m_lock=lck;
+        AutoCtxLock(cuda_api *api, CUvideoctxlock lck) : m_api(api), m_lock(lck) {
             m_api->cuvidCtxLock(m_lock, 0);
         }
         ~AutoCtxLock() { m_api->cuvidCtxUnlock(m_lock, 0); }

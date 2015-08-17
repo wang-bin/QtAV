@@ -110,7 +110,7 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
     public:
         AutoUnmapper(cuda_api *a, CUvideodecoder d, CUdeviceptr p) : api(a), dec(d), devptr(p) {}
         ~AutoUnmapper() {
-            api->cuvidUnmapVideoFrame(dec, devptr);
+            CUDA_WARN(api->cuvidUnmapVideoFrame(dec, devptr));
         }
     };
     AutoUnmapper unmapper(this, dec, devptr);

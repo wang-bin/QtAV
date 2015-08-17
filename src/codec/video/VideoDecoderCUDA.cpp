@@ -218,18 +218,14 @@ public:
         //CUDA_ENSURE(cuCtxPushCurrent(cuctx), false);
         AutoCtxLock lock(this, vid_ctx_lock);
         Q_UNUSED(lock);
-        CUresult cuStatus = cuvidParseVideoData(parser, pPkt);
-        if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuvidParseVideoData failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
-            return false;
-        }
+        CUDA_ENSURE(cuvidParseVideoData(parser, pPkt), false);
         return true;
     }
 
     bool doDecodePicture(CUVIDPICPARAMS *cuvidpic) {
         AutoCtxLock lock(this, vid_ctx_lock);
         Q_UNUSED(lock);
-        checkCudaErrors(cuvidDecodePicture(dec, cuvidpic));
+        CUDA_ENSURE(cuvidDecodePicture(dec, cuvidpic), false);
         return true;
     }
 
@@ -529,7 +525,7 @@ bool VideoDecoderCUDAPrivate::open()
     if (!isLoaded()) //cuda_api
         return false;
     if (!cuctx)
-        initCuda();
+        available = initCuda();
     setBSF(codec_ctx->codec_id);
     // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
     return createCUVIDDecoder(mapCodecFromFFmpeg(codec_ctx->codec_id), codec_ctx->coded_width, codec_ctx->coded_height)
@@ -538,35 +534,26 @@ bool VideoDecoderCUDAPrivate::open()
 
 bool VideoDecoderCUDAPrivate::initCuda()
 {
-    CUresult result = cuInit(0);
-    if (result != CUDA_SUCCESS) {
-        available = false;
-        qWarning("cuInit(0) faile (%d)", result);
-        return false;
-    }
+    CUDA_ENSURE(cuInit(0), false);
     cudev = GetMaxGflopsGraphicsDeviceId();
 
     int clockRate;
     cuDeviceGetAttribute(&clockRate, CU_DEVICE_ATTRIBUTE_CLOCK_RATE, cudev);
     int major, minor;
-    cuDeviceComputeCapability(&major, &minor, cudev);
+    CUDA_WARN(cuDeviceComputeCapability(&major, &minor, cudev));
     char devname[256];
-    cuDeviceGetName(devname, 256, cudev);
+    CUDA_WARN(cuDeviceGetName(devname, 256, cudev));
     description = QStringLiteral("CUDA device: %1 %2.%3 %4 MHz @%5").arg(QLatin1String((const char*)devname)).arg(major).arg(minor).arg(clockRate/1000).arg(cudev);
 
-    // cuD3DCtxCreate(deprecated) > cuGLCtxCreate(deprecated) > cuCtxCreate (fallback if d3d and gl return status is failed)
+    // cuD3DCtxCreate > cuGLCtxCreate(deprecated) > cuCtxCreate (fallback if d3d and gl return status is failed)
     CUDA_ENSURE(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev), false); //CU_CTX_SCHED_AUTO?
-    result = cuCtxPopCurrent(&cuctx);
-    if (result != CUDA_SUCCESS) {
-        qWarning("cuCtxPopCurrent: %d\n", result);
-        return false;
-    }
-    checkCudaErrors(cuvidCtxLockCreate(&vid_ctx_lock, cuctx));
+    CUDA_ENSURE(cuCtxPopCurrent(&cuctx), false);
+    CUDA_ENSURE(cuvidCtxLockCreate(&vid_ctx_lock, cuctx), 0);
     {
         AutoCtxLock lock(this, vid_ctx_lock);
         Q_UNUSED(lock);
         //Flags- Parameters for stream creation (must be 0 (CU_STREAM_DEFAULT=0 in cuda5) in cuda 4.2, no CU_STREAM_NON_BLOCKING)
-        checkCudaErrors(cuStreamCreate(&stream, 0));//CU_STREAM_NON_BLOCKING)); //CU_STREAM_DEFAULT
+        CUDA_ENSURE(cuStreamCreate(&stream, 0), false);//CU_STREAM_NON_BLOCKING)); //CU_STREAM_DEFAULT
         //require compute capability >= 1.1
         //flag: Reserved for future use, must be 0
         //cuStreamAddCallback(stream, CUstreamCallback, this, 0);
@@ -577,33 +564,35 @@ bool VideoDecoderCUDAPrivate::initCuda()
 bool VideoDecoderCUDAPrivate::releaseCuda()
 {
     available = false;
+    if (cuctx)
+        CUDA_WARN(cuCtxPushCurrent(cuctx)); //cuMemFreeHost need the context
     if (!can_load)
         return true;
     if (dec) {
-        cuvidDestroyDecoder(dec);
+        CUDA_WARN(cuvidDestroyDecoder(dec));
         dec = 0;
     }
     if (parser) {
-        cuvidDestroyVideoParser(parser);
+        CUDA_WARN(cuvidDestroyVideoParser(parser));
         parser = 0;
     }
     if (stream) {
-        cuStreamDestroy(stream);
+        CUDA_WARN(cuStreamDestroy(stream));
         stream = 0;
     }
     if (host_data) {
-        cuMemFreeHost(host_data);
+        CUDA_WARN(cuMemFreeHost(host_data)); //CUDA_ERROR_INVALID_CONTEXT
         host_data = 0;
         host_data_size = 0;
     }
     if (vid_ctx_lock) {
-        cuvidCtxLockDestroy(vid_ctx_lock);
+        CUDA_WARN(cuvidCtxLockDestroy(vid_ctx_lock));
         vid_ctx_lock = 0;
     }
     if (cuctx) {
-        checkCudaErrors(cuCtxDestroy(cuctx));
+        CUDA_ENSURE(cuCtxDestroy(cuctx), false);
+        cuctx = 0;
     }
-    // TODO: dllapi unload
     return true;
 }
 
@@ -615,7 +604,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
     AutoCtxLock lock(this, vid_ctx_lock);
     Q_UNUSED(lock);
     if (dec) {
-        checkCudaErrors(cuvidDestroyDecoder(dec));
+        CUDA_ENSURE(cuvidDestroyDecoder(dec), false);
     }
     memset(&dec_create_info, 0, sizeof(CUVIDDECODECREATEINFO));
     dec_create_info.ulWidth = cw; // Coded Sequence Width
@@ -648,7 +637,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
 #endif
     // create the decoder
     available = false;
-    checkCudaErrors(cuvidCreateDecoder(&dec, &dec_create_info));
+    CUDA_ENSURE(cuvidCreateDecoder(&dec, &dec_create_info), false);
     available = true;
     if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
         interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, dec, vid_ctx_lock));
@@ -667,7 +656,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDParser()
         return false;
     }
     if (parser) {
-        cuvidDestroyVideoParser(parser);
+        CUDA_WARN(cuvidDestroyVideoParser(parser));
         parser = 0;
     }
     //lavfilter check level C
@@ -715,7 +704,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDParser()
     }
     parser_params.pExtVideoInfo = &extra_parser_info;
 #endif
-    checkCudaErrors(cuvidCreateVideoParser(&parser, &parser_params));
+    CUDA_ENSURE(cuvidCreateVideoParser(&parser, &parser_params), false);
     //lavfilter: cuStreamCreate
     force_sequence_update = true;
     //DecodeSequenceData()
@@ -748,15 +737,21 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         unsigned int pitch;
         {
         AutoCtxLock lock(this, vid_ctx_lock);
-        //cuvidCtxLock(vid_ctx_lock, 0);
+        Q_UNUSED(lock);
         //CUDA_ENSURE(cuCtxPushCurrent(cuctx), false);
-        CUresult cuStatus = cuvidMapVideoFrame(dec, cuviddisp->picture_index, &devptr, &pitch, &proc_params);
-        if (cuStatus != CUDA_SUCCESS) {
-            qWarning("cuvidMapVideoFrame failed on index %d (%#x, %s)", cuviddisp->picture_index, cuStatus, _cudaGetErrorEnum(cuStatus));
-            cuvidUnmapVideoFrame(dec, devptr); //?
-            //cuvidCtxUnlock(vid_ctx_lock, 0);
-            return false;
-        }
+        CUDA_ENSURE(cuvidMapVideoFrame(dec, cuviddisp->picture_index, &devptr, &pitch, &proc_params), false);
+        class AutoUnmapper {
+            cuda_api *api;
+            CUvideodecoder dec;
+            CUdeviceptr devptr;
+        public:
+            AutoUnmapper(cuda_api *a, CUvideodecoder d, CUdeviceptr p) : api(a), dec(d), devptr(p) {}
+            ~AutoUnmapper() {
+                CUDA_WARN(api->cuvidUnmapVideoFrame(dec, devptr));
+            }
+        };
+        AutoUnmapper unmapper(this, dec, devptr);
+        Q_UNUSED(unmapper);
         if (copy_mode != VideoDecoderCUDA::ZeroCopy) {
             int size = pitch*h*3/2;
             if (size > host_data_size && host_data) {
@@ -765,41 +760,20 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
                 host_data_size = 0;
             }
             if (!host_data) {
-                cuStatus = cuMemAllocHost((void**)&host_data, size);
-                if (cuStatus != CUDA_SUCCESS) {
-                    qWarning("cuMemAllocHost failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
-                    cuvidUnmapVideoFrame(dec, devptr);
-                    //cuvidCtxUnlock(vid_ctx_lock, 0);
-                    return false;
-                }
+                CUDA_ENSURE(cuMemAllocHost((void**)&host_data, size), false);
                 host_data_size = size;
             }
             if (!host_data) {
                 qWarning("No valid staging memory!");
-                cuvidUnmapVideoFrame(dec, devptr);
-                cuvidCtxUnlock(vid_ctx_lock, 0);
                 return false;
             }
             // copy to the memory not allocated by cuda is possible but much slower
-            cuStatus = cuMemcpyDtoHAsync(host_data, devptr, size, stream);
-            if (cuStatus != CUDA_SUCCESS) {
-                qWarning("cuMemcpyDtoHAsync failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
-                cuvidUnmapVideoFrame(dec, devptr);
-                //cuvidCtxUnlock(vid_ctx_lock, 0);
-                return false;
-            }
-            cuStatus = cuCtxSynchronize();
-            if (cuStatus != CUDA_SUCCESS) {
-                qWarning("cuCtxSynchronize failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
-            }
+            CUDA_ENSURE(cuMemcpyDtoHAsync(host_data, devptr, size, stream), false);
+            CUDA_WARN(cuCtxSynchronize());
         }
-
-        cuvidUnmapVideoFrame(dec, devptr);
-        //cuvidCtxUnlock(vid_ctx_lock, 0);
-        //qDebug("mark not in use pic_index: %d", cuviddisp->picture_index);
+        } // lock end
         //CUDA_ENSURE(cuCtxPopCurrent(&cuctx), false);
         //qDebug("cuCtxPopCurrent %p", cuctx);
-        } // lock end
 
         VideoFrame frame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
         if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
@@ -818,9 +792,6 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         frame.setTimestamp((double)cuviddisp->timestamp/1000.0);
         if (codec_ctx && codec_ctx->sample_aspect_ratio.num > 1) //skip 1/1 because is the default value
             frame.setDisplayAspectRatio(frame.displayAspectRatio()*av_q2d(codec_ctx->sample_aspect_ratio));
-
-        surface_in_use[cuviddisp->picture_index] = false; //TODO: 0-copy
-
         if (copy_mode == VideoDecoderCUDA::GenericCopy)
             frame = frame.clone();
         if (outFrame) {
@@ -830,6 +801,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         frame_queue.put(frame);
 #endif
         //qDebug("frame queue size: %d", frame_queue.size());
+        surface_in_use[cuviddisp->picture_index] = false; // FIXME: 0-copy still use the index
     }
     return true;
 }
