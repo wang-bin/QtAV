@@ -24,6 +24,7 @@
 
 #include "cuda_api.h"
 #include <d3d9.h>
+#include <QtCore/QWeakPointer>
 #include "QtAV/SurfaceInterop.h"
 #include "utils/OpenGLHelper.h"
 // no need to check qt4 because no ANGLE there
@@ -42,7 +43,7 @@ namespace cuda {
 class InteropResource : protected cuda_api
 {
 public:
-    InteropResource(CUdevice d, CUvideodecoder* decoder, CUvideoctxlock *declock);
+    InteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock);
     ~InteropResource();
     /// copy from gpu (optimized if possible) and convert to target format if necessary
     // mapToHost
@@ -58,11 +59,10 @@ public:
     virtual bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int plane) = 0;
     virtual bool unmap(GLuint tex) { Q_UNUSED(tex); return true;}
 protected:
-    int width, height; // video frame width and dx_surface width without alignment, not cuda decoded surface width
     CUdevice dev;
     CUcontext ctx;
-    CUvideodecoder *dec; //store the ptr to check null *dec before use, e.g. decoder is deleted but frame is still alive. or use weak_ptr
-    CUvideoctxlock *lock;
+    CUvideodecoder dec;
+    CUvideoctxlock lock;
 
     typedef struct {
        GLuint texture;
@@ -77,7 +77,7 @@ typedef QSharedPointer<InteropResource> InteropResourcePtr;
 class SurfaceInteropCUDA Q_DECL_FINAL: public VideoSurfaceInterop
 {
 public:
-    SurfaceInteropCUDA(const InteropResourcePtr& res) : m_index(-1), m_resource(res), frame_width(0), frame_height(0) {}
+    SurfaceInteropCUDA(const QWeakPointer<InteropResource>& res) : m_index(-1), m_resource(res), frame_width(0), frame_height(0) {}
     ~SurfaceInteropCUDA() {}
     /*!
      * \brief setSurface
@@ -96,7 +96,8 @@ private:
     //CUdeviceptr m_surface;
     int m_index;
     CUVIDPROCPARAMS m_param;
-    InteropResourcePtr m_resource; //TODO: weak_ptr
+    // decoder is deleted but interop is still alive
+    QWeakPointer<InteropResource> m_resource;
     int frame_width, frame_height;
 };
 
@@ -121,8 +122,7 @@ private:
 class GLInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:
-    GLInteropResource(CUdevice d, CUvideodecoder* decoder, CUvideoctxlock* lk);
-    //~GLInteropResource();
+    GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk);
     bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int frame_w, int frame_h, int plane) Q_DECL_OVERRIDE;
     bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:

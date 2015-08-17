@@ -173,7 +173,7 @@ public:
       , create_flags(cudaVideoCreate_Default)
       , deinterlace(cudaVideoDeinterlaceMode_Adaptive)
       , nb_dec_surface(kMaxDecodeSurfaces)
-      , copy_mode(VideoDecoderCUDA::DirectCopy)
+      , copy_mode(VideoDecoderCUDA::DirectCopy) //TODO: check whether intel driver is used
     {
 #if QTAV_HAVE(DLLAPI_CUDA)
         can_load = dllapi::testLoad("nvcuvid");
@@ -203,7 +203,8 @@ public:
             return;
         if (!isLoaded()) //cuda_api
             return;
-        //interop_res.reset(); //why cause crash in releaseCuda()?
+        // if not reset here, CUDA_ERROR_CONTEXT_IS_DESTROYED in ~cuda::InteropResource()
+        interop_res.reset(); // in interop object it's weak ptr. It's safe to reset here before cuda resouce is released.
         releaseCuda();
     }
     bool open() Q_DECL_OVERRIDE;
@@ -553,14 +554,13 @@ bool VideoDecoderCUDAPrivate::initCuda()
     cuDeviceGetName(devname, 256, cudev);
     description = QStringLiteral("CUDA device: %1 %2.%3 %4 MHz @%5").arg(QLatin1String((const char*)devname)).arg(major).arg(minor).arg(clockRate/1000).arg(cudev);
 
-    //TODO: cuD3DCtxCreate > cuGLCtxCreate > cuCtxCreate (fallback if d3d and gl return status is failed)
+    // cuD3DCtxCreate(deprecated) > cuGLCtxCreate(deprecated) > cuCtxCreate (fallback if d3d and gl return status is failed)
     CUDA_ENSURE(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev), false); //CU_CTX_SCHED_AUTO?
     result = cuCtxPopCurrent(&cuctx);
     if (result != CUDA_SUCCESS) {
         qWarning("cuCtxPopCurrent: %d\n", result);
         return false;
     }
-    qDebug("cuCtxPopCurrent: %p", cuctx);
     checkCudaErrors(cuvidCtxLockCreate(&vid_ctx_lock, cuctx));
     {
         AutoCtxLock lock(this, vid_ctx_lock);
@@ -651,7 +651,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
     checkCudaErrors(cuvidCreateDecoder(&dec, &dec_create_info));
     available = true;
     if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
-        interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, &dec, &vid_ctx_lock));
+        interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, dec, vid_ctx_lock));
     }
     return true;
 }

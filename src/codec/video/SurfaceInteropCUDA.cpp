@@ -31,10 +31,8 @@
 namespace QtAV {
 namespace cuda {
 
-InteropResource::InteropResource(CUdevice d, CUvideodecoder *decoder, CUvideoctxlock *declock)
+InteropResource::InteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock)
     : cuda_api()
-    , width(0)
-    , height(0)
     , dev(d)
     , ctx(NULL)
     , dec(decoder)
@@ -45,13 +43,13 @@ InteropResource::InteropResource(CUdevice d, CUvideodecoder *decoder, CUvideoctx
 
 InteropResource::~InteropResource()
 {
-    if (!dec || !*dec)
-        return;
-    //CUDA_ENSURE(cuCtxPushCurrent(ctx));
+    //CUDA_WARN(cuCtxPushCurrent(ctx)); //error invalid value
     if (res[0].cuRes)
-        cuGraphicsUnregisterResource(res[0].cuRes);
+        CUDA_WARN(cuGraphicsUnregisterResource(res[0].cuRes));
     if (res[1].cuRes)
-        cuGraphicsUnregisterResource(res[1].cuRes);
+        CUDA_WARN(cuGraphicsUnregisterResource(res[1].cuRes));
+    // FIXME: we own the context. But why crash to destroy ctx? CUDA_ERROR_INVALID_VALUE
+    //CUDA_ENSURE(cuCtxDestroy(ctx));
 }
 
 void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int frame_w, int frame_h)
@@ -64,13 +62,17 @@ void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int fra
 
 void* SurfaceInteropCUDA::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
 {
+    Q_UNUSED(fmt);
+    if (m_resource.isNull())
+        return NULL;
     if (!handle)
         return NULL;
 
     if (m_index < 0)
         return 0;
     if (type == GLTextureSurface) {
-        if (m_resource->map(m_index, m_param, *((GLuint*)handle), frame_width, frame_height, plane))
+        // FIXME: to strong ref may delay the delete and cuda resource maybe already destoryed after strong ref is finished
+        if (m_resource.toStrongRef()->map(m_index, m_param, *((GLuint*)handle), frame_width, frame_height, plane))
             return handle;
     } else if (type == HostMemorySurface) {
         return NULL;//mapToHost(fmt, handle, plane);
@@ -80,20 +82,19 @@ void* SurfaceInteropCUDA::map(SurfaceType type, const VideoFormat &fmt, void *ha
 
 void SurfaceInteropCUDA::unmap(void *handle)
 {
-    m_resource->unmap(*((GLuint*)handle));
+    if (m_resource.isNull())
+        return;
+    // FIXME: to strong ref may delay the delete and cuda resource maybe already destoryed after strong ref is finished
+    m_resource.toStrongRef()->unmap(*((GLuint*)handle));
 }
 
-GLInteropResource::GLInteropResource(CUdevice d, CUvideodecoder *decoder, CUvideoctxlock *lk)
+GLInteropResource::GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk)
     : InteropResource(d, decoder, lk)
 {}
 
 bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int frame_w, int frame_h, int plane)
 {
-    // TODO: check dec/lock before use
-    if (!dec || !*dec || !lock || !*lock)
-        return false;
-
-    AutoCtxLock locker((cuda_api*)this, *lock);
+    AutoCtxLock locker((cuda_api*)this, lock);
     Q_UNUSED(locker);
     if (!ensureResource(frame_w, frame_h, tex, plane)) // TODO surface size instead of frame size because we copy the device data
         return false;
@@ -101,7 +102,7 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
     CUdeviceptr devptr;
     unsigned int pitch;
 
-    CUDA_ENSURE(cuvidMapVideoFrame(*dec, picIndex, &devptr, &pitch, const_cast<CUVIDPROCPARAMS*>(&param)), false);
+    CUDA_ENSURE(cuvidMapVideoFrame(dec, picIndex, &devptr, &pitch, const_cast<CUVIDPROCPARAMS*>(&param)), false);
     class AutoUnmapper {
         cuda_api *api;
         CUvideodecoder dec;
@@ -112,7 +113,7 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
             api->cuvidUnmapVideoFrame(dec, devptr);
         }
     };
-    AutoUnmapper unmapper(this, *dec, devptr);
+    AutoUnmapper unmapper(this, dec, devptr);
     Q_UNUSED(unmapper);
     CUDA_ENSURE(cuGraphicsMapResources(1, &res[plane].cuRes, 0), false);
     CUarray array;
@@ -126,8 +127,6 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
     cu2d.dstArray = array;
     cu2d.dstMemoryType = CU_MEMORYTYPE_ARRAY;
     cu2d.dstPitch = pitch;
-    cu2d.dstXInBytes = 0;
-    cu2d.dstY = 0;
     // the whole size or copy size?
     cu2d.WidthInBytes = pitch;
     cu2d.Height = frame_h;
@@ -136,8 +135,8 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
         cu2d.srcY = frame_h;
         cu2d.Height /= 2;
     }
-    CUDA_ENSURE(cuMemcpy2DAsync(&cu2d, 0), false);
-    CUDA_ENSURE(cuCtxSynchronize(), false);
+    CUDA_ENSURE(cuMemcpy2D(&cu2d), false);
+    CUDA_ENSURE(cuCtxSynchronize(), false); //wait too long time? use cuStreamQuery?
     //TODO: delay cuCtxSynchronize && unmap. do it in unmap(tex)?
     // map to an already mapped resource will crash. sometimes I can not unmap the resource in unmap(tex) because if context switch error
     // so I simply unmap the resource here
@@ -151,6 +150,7 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
 
 bool GLInteropResource::unmap(GLuint tex)
 {
+    Q_UNUSED(tex);
 #if !WORKAROUND_UNMAP_CONTEXT_SWITCH
     int plane = -1;
     if (res[0].texture == tex)
@@ -186,9 +186,7 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex, int plane)
         CUDA_ENSURE(cuGraphicsUnregisterResource(r.cuRes), false);
         r.cuRes = NULL;
     }
-    // TODO: CUDA_ENSURE
     CUDA_ENSURE(cuGraphicsGLRegisterImage(&r.cuRes, tex, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_NONE), false);
-    qDebug("cuGraphicsGLRegisterImage done");
     r.texture = tex;
     r.width = w;
     r.height = h;
