@@ -27,6 +27,7 @@
 #define NV_CONFIG(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
 
 // high version will define cuXXX macro, so functions here will be not they look like
+// TODO: resolve correct symbol name for high version apis
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 #define CUDA_FORCE_API_VERSION 3010
 #endif
@@ -46,6 +47,14 @@
     if (!check ( (val), #val, __FILE__, __LINE__ )) \
         return false;
 
+#define CUDA_ENSURE(f, ...) \
+    do { \
+        CUresult cuR = f; \
+        if (cuR != CUDA_SUCCESS) { \
+            qWarning("CUDA error %s@%d. " #f ": %d %s", __FILE__, __LINE__, cuR, _cudaGetErrorEnum(cuR)); \
+            return __VA_ARGS__; \
+        } \
+    } while (0)
 // TODO: cuda_driveapi_dylink.c/h
 
 class cuda_api {
@@ -60,15 +69,17 @@ public:
     /// CUDA functions
     ////////////////////////////////////////////////////
     CUresult cuInit(unsigned int Flags);
-    CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev );
+    CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev);
     CUresult cuCtxDestroy(CUcontext cuctx );
-    CUresult cuCtxPushCurrent(CUcontext cuctx );
-    CUresult cuCtxPopCurrent( CUcontext *pctx );
+    CUresult cuCtxPushCurrent(CUcontext cuctx);
+    CUresult cuCtxPopCurrent( CUcontext *pctx);
+    CUresult cuCtxGetCurrent(CUcontext *pctx);
     CUresult cuCtxSynchronize();
     CUresult cuMemAllocHost(void **pp, unsigned int bytesize);
     CUresult cuMemFreeHost(void *p);
     CUresult cuMemcpyDtoH (void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );
     CUresult cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream);
+    CUresult cuMemcpy2D(const CUDA_MEMCPY2D *pCopy);
     CUresult cuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream);
     CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags);
     CUresult cuStreamDestroy(CUstream hStream);
@@ -79,6 +90,7 @@ public:
     CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev);
     CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev);
 
+    CUresult cuGLCtxCreate(CUcontext *pCtx, unsigned int Flags, CUdevice device );
     CUresult cuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags);
     CUresult cuGraphicsUnregisterResource(CUgraphicsResource resource);
     CUresult cuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
@@ -131,6 +143,7 @@ public:
 
 #endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 
+    // This function returns the best Graphics GPU based on performance
     int GetMaxGflopsGraphicsDeviceId();
 
     template< typename T >

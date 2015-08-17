@@ -96,6 +96,8 @@ public:
         tcuCtxPushCurrent* cuCtxPushCurrent;
         typedef CUresult CUDAAPI tcuCtxPopCurrent(CUcontext *);
         tcuCtxPopCurrent* cuCtxPopCurrent;
+        typedef CUresult CUDAAPI tcuCtxGetCurrent(CUcontext *pctx);
+        tcuCtxGetCurrent* cuCtxGetCurrent;
         typedef CUresult CUDAAPI tcuMemAllocHost(void **pp, unsigned int bytesize);
         tcuMemAllocHost* cuMemAllocHost;
         typedef CUresult CUDAAPI tcuMemFreeHost(void *p);
@@ -106,6 +108,8 @@ public:
         tcuMemcpyDtoHAsync* cuMemcpyDtoHAsync;
         typedef CUresult CUDAAPI tcuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream);
         tcuMemcpy2DAsync* cuMemcpy2DAsync;
+        typedef CUresult CUDAAPI tcuMemcpy2D(const CUDA_MEMCPY2D *pCopy);
+        tcuMemcpy2D* cuMemcpy2D;
         typedef CUresult CUDAAPI tcuStreamCreate(CUstream *phStream, unsigned int Flags);
         tcuStreamCreate* cuStreamCreate;
         typedef CUresult CUDAAPI tcuStreamDestroy(CUstream hStream);
@@ -133,6 +137,8 @@ public:
         typedef CUresult CUDAAPI tcuCtxSynchronize();
         tcuCtxSynchronize* cuCtxSynchronize;
 
+        typedef CUresult CUDAAPI tcuGLCtxCreate(CUcontext *pCtx, unsigned int Flags, CUdevice device );
+        tcuGLCtxCreate* cuGLCtxCreate;
         typedef CUresult CUDAAPI tcuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags);
         tcuGraphicsGLRegisterImage* cuGraphicsGLRegisterImage;
         typedef CUresult CUDAAPI tcuGraphicsUnregisterResource(CUgraphicsResource resource);
@@ -193,12 +199,20 @@ CUresult cuda_api::cuInit(unsigned int Flags)
     return ctx->api.cuInit(Flags);
 }
 
-CUresult cuda_api::cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev )
+CUresult cuda_api::cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 {
     if (!ctx->api.cuCtxCreate)
         ctx->api.cuCtxCreate = (context::api_t::tcuCtxCreate*)ctx->cuda_dll.resolve("cuCtxCreate");
     assert(ctx->api.cuCtxCreate);
     return ctx->api.cuCtxCreate(pctx, flags, dev);
+}
+
+CUresult cuda_api::cuGLCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
+{
+    if (!ctx->api.cuGLCtxCreate)
+        ctx->api.cuGLCtxCreate = (context::api_t::tcuGLCtxCreate*)ctx->cuda_dll.resolve("cuGLCtxCreate");
+    assert(ctx->api.cuGLCtxCreate);
+    return ctx->api.cuGLCtxCreate(pctx, flags, dev);
 }
 
 CUresult cuda_api::cuCtxDestroy(CUcontext cuctx)
@@ -223,6 +237,14 @@ CUresult cuda_api::cuCtxPopCurrent(CUcontext *pctx)
         ctx->api.cuCtxPopCurrent = (context::api_t::tcuCtxPopCurrent*)this->ctx->cuda_dll.resolve("cuCtxPopCurrent");
     assert(ctx->api.cuCtxPopCurrent);
     return ctx->api.cuCtxPopCurrent(pctx);
+}
+
+CUresult cuda_api::cuCtxGetCurrent(CUcontext *pctx)
+{
+    if (!ctx->api.cuCtxGetCurrent)
+        ctx->api.cuCtxGetCurrent = (context::api_t::tcuCtxGetCurrent*)this->ctx->cuda_dll.resolve("cuCtxGetCurrent");
+    assert(ctx->api.cuCtxGetCurrent);
+    return ctx->api.cuCtxGetCurrent(pctx);
 }
 
 CUresult cuda_api::cuMemAllocHost(void **pp, unsigned int bytesize)
@@ -263,6 +285,14 @@ CUresult cuda_api::cuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream)
         ctx->api.cuMemcpy2DAsync = (context::api_t::tcuMemcpy2DAsync*)ctx->cuda_dll.resolve("cuMemcpy2DAsync");
     assert(ctx->api.cuMemcpy2DAsync);
     return ctx->api.cuMemcpy2DAsync(pCopy, hStream);
+}
+
+CUresult cuda_api::cuMemcpy2D(const CUDA_MEMCPY2D *pCopy)
+{
+    if (!ctx->api.cuMemcpy2D)
+        ctx->api.cuMemcpy2D = (context::api_t::tcuMemcpy2D*)ctx->cuda_dll.resolve("cuMemcpy2D");
+    assert(ctx->api.cuMemcpy2D);
+    return ctx->api.cuMemcpy2D(pCopy);
 }
 
 CUresult cuda_api::cuStreamCreate(CUstream *phStream, unsigned int Flags)
@@ -492,6 +522,7 @@ int cuda_api::GetMaxGflopsGraphicsDeviceId() {
     int max_compute_perf = 0, best_SM_arch     = 0;
     int major = 0, minor = 0, multiProcessorCount, clockRate;
     int bTCC = 0, version;
+    int devices_prohibited = 0;
     char deviceName[256];
 
     cuDeviceGetCount(&device_count);
@@ -510,13 +541,27 @@ int cuda_api::GetMaxGflopsGraphicsDeviceId() {
             if (deviceName[0] == 'T')
                 bTCC = 1;
         }
-        if (!bTCC) {
-            if (major > 0 && major < 9999) {
-                best_SM_arch = std::max(best_SM_arch, major);
+
+        int computeMode;
+        cuDeviceGetAttribute(&computeMode, CU_DEVICE_ATTRIBUTE_COMPUTE_MODE, current_device);
+        if (computeMode != CU_COMPUTEMODE_PROHIBITED) {
+            if (!bTCC) {
+                if (major > 0 && major < 9999) {
+                    best_SM_arch = std::max(best_SM_arch, major);
+                }
             }
+        } else {
+            devices_prohibited++;
         }
+
         current_device++;
     }
+
+    if (devices_prohibited == device_count) {
+        fprintf(stderr, "GetMaxGflopsGraphicsDeviceId error: all devices have compute mode prohibited.\n");
+        return -1;
+    }
+
     // Find the best CUDA capable GPU device
     current_device = 0;
     while (current_device < device_count) {
@@ -530,31 +575,37 @@ int cuda_api::GetMaxGflopsGraphicsDeviceId() {
             if (deviceName[0] == 'T')
                 bTCC = 1;
         }
-        if (major == 9999 && minor == 9999) {
-            sm_per_multiproc = 1;
-        } else {
-            sm_per_multiproc = _ConvertSMVer2Cores(major, minor);
-        }
-        // If this is a Tesla based GPU and SM 2.0, and TCC is disabled, this is a contendor
-        if (!bTCC) {// Is this GPU running the TCC driver?  If so we pass on this
-            int compute_perf = multiProcessorCount * sm_per_multiproc * clockRate;
-            printf("%s @%d compute_perf=%d max_compute_perf=%d\n", __FUNCTION__, __LINE__, compute_perf, max_compute_perf);
-            if (compute_perf > max_compute_perf) {
-                // If we find GPU with SM major > 2, search only these
-                if (best_SM_arch > 2) {
-                    printf("%s @%d best_SM_arch=%d\n", __FUNCTION__, __LINE__, best_SM_arch);
-                    // If our device = dest_SM_arch, then we pick this one
-                    if (major == best_SM_arch) {
+
+        int computeMode;
+        cuDeviceGetAttribute(&computeMode, CU_DEVICE_ATTRIBUTE_COMPUTE_MODE, current_device);
+
+        if (computeMode != CU_COMPUTEMODE_PROHIBITED) {
+            if (major == 9999 && minor == 9999) {
+                sm_per_multiproc = 1;
+            } else {
+                sm_per_multiproc = _ConvertSMVer2Cores(major, minor);
+            }
+            // If this is a Tesla based GPU and SM 2.0, and TCC is disabled, this is a contendor
+            if (!bTCC) {// Is this GPU running the TCC driver?  If so we pass on this
+                int compute_perf = multiProcessorCount * sm_per_multiproc * clockRate;
+                printf("%s @%d compute_perf=%d max_compute_perf=%d\n", __FUNCTION__, __LINE__, compute_perf, max_compute_perf);
+                if (compute_perf > max_compute_perf) {
+                    // If we find GPU with SM major > 2, search only these
+                    if (best_SM_arch > 2) {
+                        printf("%s @%d best_SM_arch=%d\n", __FUNCTION__, __LINE__, best_SM_arch);
+                        // If our device = dest_SM_arch, then we pick this one
+                        if (major == best_SM_arch) {
+                            max_compute_perf = compute_perf;
+                            max_perf_device = current_device;
+                        }
+                    } else {
                         max_compute_perf = compute_perf;
                         max_perf_device = current_device;
                     }
-                } else {
-                    max_compute_perf = compute_perf;
-                    max_perf_device = current_device;
                 }
+                cuDeviceGetName(deviceName, 256, current_device);
+                printf("CUDA Device: %s, Compute: %d.%d, CUDA Cores: %d, Clock: %d MHz\n", deviceName, major, minor, multiProcessorCount * sm_per_multiproc, clockRate / 1000);
             }
-            cuDeviceGetName(deviceName, 256, current_device);
-            printf("CUDA Device: %s, Compute: %d.%d, CUDA Cores: %d, Clock: %d MHz\n", deviceName, major, minor, multiProcessorCount * sm_per_multiproc, clockRate / 1000);
         }
         ++current_device;
     }
