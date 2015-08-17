@@ -57,12 +57,14 @@ class VideoDecoderCUDA : public VideoDecoder
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderCUDA)
+    Q_PROPERTY(CopyMode copyMode READ copyMode WRITE setCopyMode NOTIFY copyModeChanged)
     Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
     Q_PROPERTY(Flags flags READ flags WRITE setFlags)
     Q_PROPERTY(Deinterlace deinterlace READ deinterlace WRITE setDeinterlace)
     Q_FLAGS(Flags)
     Q_ENUMS(Flags)
     Q_ENUMS(Deinterlace)
+    Q_ENUMS(CopyMode)
 public:
     enum Flags {
         Default = cudaVideoCreate_Default,   // Default operation mode: use dedicated video engines
@@ -74,6 +76,11 @@ public:
         Bob = cudaVideoDeinterlaceMode_Bob,           // Drop one field
         Weave = cudaVideoDeinterlaceMode_Weave,       // Weave both fields (no deinterlacing)
         Adaptive = cudaVideoDeinterlaceMode_Adaptive  // Adaptive deinterlacing
+    };
+    enum CopyMode {
+        ZeroCopy,
+        DirectCopy, // use the same host address without additional copy to frame. If address does not change, it should be safe
+        GenericCopy
     };
 
     VideoDecoderCUDA();
@@ -92,6 +99,10 @@ public:
     void setFlags(Flags f);
     Deinterlace deinterlace() const;
     void setDeinterlace(Deinterlace di);
+    CopyMode copyMode() const;
+    void setCopyMode(CopyMode value);
+Q_SIGNALS:
+    void copyModeChanged(CopyMode value);
 };
 
 
@@ -162,6 +173,7 @@ public:
       , create_flags(cudaVideoCreate_Default)
       , deinterlace(cudaVideoDeinterlaceMode_Adaptive)
       , nb_dec_surface(kMaxDecodeSurfaces)
+      , copy_mode(VideoDecoderCUDA::DirectCopy)
     {
 #if QTAV_HAVE(DLLAPI_CUDA)
         can_load = dllapi::testLoad("nvcuvid");
@@ -191,6 +203,7 @@ public:
             return;
         if (!isLoaded()) //cuda_api
             return;
+        //interop_res.reset(); //why cause crash in releaseCuda()?
         releaseCuda();
     }
     bool open() Q_DECL_OVERRIDE;
@@ -298,6 +311,7 @@ public:
 
     AVBitStreamFilterContext *bitstream_filter_ctx; //TODO: rename bsf_ctx
 
+    VideoDecoderCUDA::CopyMode copy_mode;
     cuda::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
 };
 
@@ -308,6 +322,11 @@ VideoDecoderCUDA::VideoDecoderCUDA():
     // format: detail_property
     setProperty("detail_surfaces", tr("Decoding surfaces."));
     setProperty("detail_flags", tr("Decoder flags"));
+    setProperty("detail_copyMode", tr("Performace: ZeroCopy > DirectCopy > GenericCopy"
+                                      "ZeroCopy: no copy back from GPU to System memory. Directly render the decoded data on GPU.\n"
+                                      "DirectCopy: copy back to host memory but video frames use the same host memory address and maybe not safe.\n"
+                                      "GenericCopy: copy back to host memory and each video frame."
+                                      ));
 }
 
 VideoDecoderCUDA::~VideoDecoderCUDA()
@@ -484,6 +503,20 @@ void VideoDecoderCUDA::setDeinterlace(Deinterlace di)
     d_func().deinterlace = (cudaVideoDeinterlaceMode)di;
 }
 
+VideoDecoderCUDA::CopyMode VideoDecoderCUDA::copyMode() const
+{
+    return d_func().copy_mode;
+}
+
+void VideoDecoderCUDA::setCopyMode(CopyMode value)
+{
+    DPTR_D(VideoDecoderCUDA);
+    if (d.copy_mode == value)
+        return;
+    d.copy_mode = value;
+    Q_EMIT copyModeChanged(value);
+}
+
 bool VideoDecoderCUDAPrivate::open()
 {
     //TODO: destroy decoder
@@ -617,7 +650,9 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
     available = false;
     checkCudaErrors(cuvidCreateDecoder(&dec, &dec_create_info));
     available = true;
-    interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, &dec, &vid_ctx_lock));
+    if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
+        interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, &dec, &vid_ctx_lock));
+    }
     return true;
 }
 
@@ -709,8 +744,6 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         uint w = dec_create_info.ulWidth;//PAD_ALIGN(dec_create_info.ulWidth, 0x3F);
         uint h = dec_create_info.ulHeight;//PAD_ALIGN(dec_create_info.ulHeight, 0x0F); //?
 #undef PAD_ALIGN
-
-        const bool k0Copy = true;
         CUdeviceptr devptr;
         unsigned int pitch;
         {
@@ -724,7 +757,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
             //cuvidCtxUnlock(vid_ctx_lock, 0);
             return false;
         }
-        if (!k0Copy) {
+        if (copy_mode != VideoDecoderCUDA::ZeroCopy) {
             int size = pitch*h*3/2;
             if (size > host_data_size && host_data) {
                 cuMemFreeHost(host_data);
@@ -747,6 +780,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
                 cuvidCtxUnlock(vid_ctx_lock, 0);
                 return false;
             }
+            // copy to the memory not allocated by cuda is possible but much slower
             cuStatus = cuMemcpyDtoHAsync(host_data, devptr, size, stream);
             if (cuStatus != CUDA_SUCCESS) {
                 qWarning("cuMemcpyDtoHAsync failed (%#x, %s)", cuStatus, _cudaGetErrorEnum(cuStatus));
@@ -766,19 +800,20 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         //CUDA_ENSURE(cuCtxPopCurrent(&cuctx), false);
         //qDebug("cuCtxPopCurrent %p", cuctx);
         } // lock end
-        uchar *planes[] = {
-            host_data,
-            host_data + pitch * h
-        };
-        int pitches[] = { (int)pitch, (int)pitch };
+
         VideoFrame frame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
-        if (!k0Copy) {
-            frame.setBits(planes);
-        } else {
+        if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
             cuda::SurfaceInteropCUDA *interop = new cuda::SurfaceInteropCUDA(interop_res);
             interop->setSurface(cuviddisp->picture_index, proc_params, w, h); //TODO: both surface size(for copy 2d) and frame size(for map host)
             frame.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
+        } else {
+            uchar *planes[] = {
+                host_data,
+                host_data + pitch * h
+            };
+            frame.setBits(planes);
         }
+        int pitches[] = { (int)pitch, (int)pitch };
         frame.setBytesPerLine(pitches);
         frame.setTimestamp((double)cuviddisp->timestamp/1000.0);
         if (codec_ctx && codec_ctx->sample_aspect_ratio.num > 1) //skip 1/1 because is the default value
@@ -786,7 +821,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
 
         surface_in_use[cuviddisp->picture_index] = false; //TODO: 0-copy
 
-        if (!k0Copy)
+        if (copy_mode == VideoDecoderCUDA::GenericCopy)
             frame = frame.clone();
         if (outFrame) {
             *outFrame = frame;
