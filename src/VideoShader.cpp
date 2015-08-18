@@ -552,10 +552,12 @@ bool VideoMaterial::bind()
         const int p = (i + 1) % nb_planes; //0 must active at last?
         bindPlane(p, d.update_texure); // why? i: quick items display wrong textures
     }
+#if 0 //move to unbind should be fine
     if (d.update_texure) {
         d.update_texure = false;
-        d.frame = VideoFrame();
+        d.frame = VideoFrame(); //FIXME: why need this? we must unmap correctly before frame is reset.
     }
+#endif
     return true;
 }
 
@@ -625,8 +627,15 @@ bool VideoMaterial::hasAlpha() const
 void VideoMaterial::unbind()
 {
     DPTR_D(VideoMaterial);
-    for (int i = 0; i < d.textures.size(); ++i) {
-        d.frame.unmap(&d.textures[i]);
+    const int nb_planes = d.textures.size(); //number of texture id
+    for (int i = 0; i < nb_planes; ++i) {
+        // unbind planes in the same order as bind. GPU frame's unmap() can be async works, assume the work finished earlier if it started in map() earlier, thus unbind order matter
+        const int p = (i + 1) % nb_planes; //0 must active at last?
+        d.frame.unmap(&d.textures[p]);
+    }
+    if (d.update_texure) {
+        d.update_texure = false;
+        d.frame = VideoFrame(); //FIXME: why need this? we must unmap correctly before frame is reset.
     }
 }
 
