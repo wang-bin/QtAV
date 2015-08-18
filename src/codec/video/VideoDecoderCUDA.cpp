@@ -173,7 +173,7 @@ public:
       , create_flags(cudaVideoCreate_Default)
       , deinterlace(cudaVideoDeinterlaceMode_Adaptive)
       , nb_dec_surface(kMaxDecodeSurfaces)
-      , copy_mode(VideoDecoderCUDA::DirectCopy) //TODO: check whether intel driver is used
+      , copy_mode(VideoDecoderCUDA::GenericCopy) //TODO: check whether intel driver is used
     {
 #if QTAV_HAVE(DLLAPI_CUDA)
         can_load = dllapi::testLoad("nvcuvid");
