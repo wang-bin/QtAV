@@ -369,7 +369,6 @@ public:
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
-        d3dobj_ex = 0;
         d3ddev = 0;
         token = 0;
         devmng = 0;
@@ -383,7 +382,6 @@ public:
         // set by user. don't reset in when call destroy
         surface_auto = true;
         surface_count = 0;
-        ZeroMemory(&d3dai, sizeof(d3dai));
     }
     virtual ~VideoDecoderDXVAPrivate()
     {
@@ -393,8 +391,6 @@ public:
     bool loadDll();
     bool unloadDll();
     bool D3dCreateDevice();
-    bool D3dCreateDeviceEx();
-    bool D3dCreateDeviceFallback();
     void D3dDestroyDevice();
     bool D3dCreateDeviceManager();
     void D3dDestroyDeviceManager();
@@ -421,8 +417,6 @@ public:
 
     /* Direct3D */
     IDirect3D9 *d3dobj;
-    IDirect3D9Ex *d3dobj_ex;
-    D3DADAPTER_IDENTIFIER9 d3dai;
     IDirect3DDevice9 *d3ddev; // can be Ex
     /* Device manager */
     UINT                     token;
@@ -609,126 +603,25 @@ bool VideoDecoderDXVAPrivate::unloadDll() {
 
 bool VideoDecoderDXVAPrivate::D3dCreateDevice()
 {
-    if (D3dCreateDeviceEx())
-        return true;
-    return D3dCreateDeviceFallback();
-}
-
-bool VideoDecoderDXVAPrivate::D3dCreateDeviceEx()
-{
-    //http://msdn.microsoft.com/en-us/library/windows/desktop/bb219676(v=vs.85).aspx
-    typedef HRESULT (WINAPI *Create9ExFunc)(UINT SDKVersion, IDirect3D9Ex **ppD3D); //IDirect3D9Ex: void is ok
-    Create9ExFunc Create9Ex = (Create9ExFunc)GetProcAddress(hd3d9_dll, "Direct3DCreate9Ex");
-    if (!Create9Ex) {
-        qWarning("Does not support Direct3DCreate9Ex");
-        return false;
+    D3DADAPTER_IDENTIFIER9 d3dai;
+    ZeroMemory(&d3dai, sizeof(d3dai));
+    d3ddev = DXHelper::CreateDevice9Ex(hd3d9_dll, (IDirect3D9Ex**)(&d3dobj), &d3dai);
+    if (!d3ddev) {
+        qWarning("Failed to create d3d9 device ex, fallback to d3d9 device");
+        d3ddev = DXHelper::CreateDevice9(hd3d9_dll, &d3dobj, &d3dai);
     }
-    if (FAILED(Create9Ex(D3D_SDK_VERSION, &d3dobj_ex))) {
-        d3dobj_ex = 0;
-        qWarning("Can not create IDirect3D9Ex");
+    if (!d3ddev)
         return false;
-    }
-    if (FAILED(d3dobj_ex->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &d3dai))) {
-        qWarning("IDirect3D9Ex->GetAdapterIdentifier failed. Fallback to IDirect3D9->GetAdapterIdentifier");
-        ZeroMemory(&d3dai, sizeof(d3dai));
-        return false;
-    }
     vendor = QString::fromLatin1(getVendorName(&d3dai));
     description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
                                     sizeof(d3dai.Description), d3dai.Description,
                                     d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
+
     //if (copy_uswc)
       //  copy_uswc = vendor.toLower() == "intel";
     qDebug("DXVA2 description:  %s", description.toUtf8().constData());
 
-    D3DPRESENT_PARAMETERS d3dpp;
-    ZeroMemory(&d3dpp, sizeof(d3dpp));
-    // use mozilla's parameters
-    d3dpp.Flags                  = D3DPRESENTFLAG_VIDEO;
-    d3dpp.Windowed               = TRUE;
-    d3dpp.hDeviceWindow          = ::GetShellWindow(); //NULL;
-    d3dpp.SwapEffect             = D3DSWAPEFFECT_DISCARD;
-    //d3dpp.MultiSampleType        = D3DMULTISAMPLE_NONE;
-    //d3dpp.PresentationInterval   = D3DPRESENT_INTERVAL_DEFAULT;
-    d3dpp.BackBufferCount        = 1; //0;                  /* FIXME what to put here */
-    d3dpp.BackBufferFormat       = D3DFMT_UNKNOWN; //D3DFMT_X8R8G8B8;    /* FIXME what to put here */
-    d3dpp.BackBufferWidth        = 1; //0;
-    d3dpp.BackBufferHeight       = 1; //0;
-    //d3dpp.EnableAutoDepthStencil = FALSE;
-
-    // D3DCREATE_MULTITHREADED is required by gl interop. https://www.opengl.org/registry/specs/NV/DX_interop.txt
-    DWORD flags = D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING;
-    // old: D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED
-    // mpv:
-    /* Direct3D needs a HWND to create a device, even without using ::Present
-    this HWND is used to alert Direct3D when there's a change of focus window.
-    For now, use GetDesktopWindow, as it looks harmless */
-    if (FAILED(d3dobj_ex->CreateDeviceEx(D3DADAPTER_DEFAULT,
-                                         D3DDEVTYPE_HAL, GetShellWindow(),// GetDesktopWindow(), //GetShellWindow()?
-                                         flags,
-                                         &d3dpp,
-                                         NULL,
-                                         (IDirect3DDevice9Ex**)(&d3ddev)))) {
-        qWarning("IDirect3D9Ex->CreateDeviceEx failed. Fallback to IDirect3D9->CreateDevice");
-        d3ddev = 0;
-        return false;
-    }
-    qDebug("IDirect3DDevice9Ex created....");
-    return true;
-}
-
-bool VideoDecoderDXVAPrivate::D3dCreateDeviceFallback()
-{
-    qDebug("Fallback to d3d9");
-    typedef IDirect3D9* (WINAPI *Create9Func)(UINT SDKVersion);
-    Create9Func Create9 = (Create9Func)GetProcAddress(hd3d9_dll, "Direct3DCreate9");
-    if (!Create9) {
-        qWarning("Cannot locate reference to Direct3DCreate9 ABI in DLL");
-        return false;
-    }
-    d3dobj = Create9(D3D_SDK_VERSION);
-    if (!d3dobj) {
-        qWarning("Direct3DCreate9 failed");
-        return false;
-    }
-    if (FAILED(d3dobj->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &d3dai))) {
-        qWarning("IDirect3D9->GetAdapterIdentifier failed");
-        ZeroMemory(&d3dai, sizeof(d3dai));
-        return false;
-    }
-    vendor = QString::fromLatin1(getVendorName(&d3dai));
-    description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
-                                    sizeof(d3dai.Description), d3dai.Description,
-                                    d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
-    //if (copy_uswc)
-      //  copy_uswc = vendor.toLower() == "intel";
-    qDebug("DXVA2 description:  %s", description.toUtf8().constData());
-
-    D3DPRESENT_PARAMETERS d3dpp;
-    ZeroMemory(&d3dpp, sizeof(d3dpp));
-    // use mozilla's parameters
-    d3dpp.Flags                  = D3DPRESENTFLAG_VIDEO;
-    d3dpp.Windowed               = TRUE;
-    d3dpp.hDeviceWindow          = ::GetShellWindow(); //NULL;
-    d3dpp.SwapEffect             = D3DSWAPEFFECT_DISCARD;
-    //d3dpp.MultiSampleType        = D3DMULTISAMPLE_NONE;
-    //d3dpp.PresentationInterval   = D3DPRESENT_INTERVAL_DEFAULT;
-    d3dpp.BackBufferCount        = 1; //0;                  /* FIXME what to put here */
-    d3dpp.BackBufferFormat       = D3DFMT_UNKNOWN; //D3DFMT_X8R8G8B8;    /* FIXME what to put here */
-    d3dpp.BackBufferWidth        = 1; //0;
-    d3dpp.BackBufferHeight       = 1; //0;
-    //d3dpp.EnableAutoDepthStencil = FALSE;
-    DWORD flags = D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING;
-    if (FAILED(d3dobj->CreateDevice(D3DADAPTER_DEFAULT,
-                                   D3DDEVTYPE_HAL, GetShellWindow(),// GetDesktopWindow(), //GetShellWindow()?
-                                   flags,
-                                   &d3dpp, &d3ddev))) {
-        qWarning("IDirect3D9->CreateDevice failed");
-        d3ddev = 0;
-        return false;
-    }
-    qDebug("IDirect3DDevice9 created....");
-    return true;
+    return !!d3ddev;
 }
 
 /**
@@ -738,8 +631,6 @@ void VideoDecoderDXVAPrivate::D3dDestroyDevice()
 {
     SafeRelease(&d3ddev);
     SafeRelease(&d3dobj);
-    SafeRelease(&d3dobj_ex);
-    ZeroMemory(&d3dai, sizeof(d3dai));
 }
 /**
  * It creates a Direct3D device manager

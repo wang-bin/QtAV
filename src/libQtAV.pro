@@ -294,6 +294,7 @@ contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
 LIBS *= -L$$[QT_INSTALL_LIBS] -lavcodec -lavformat -lswscale -lavutil
 win32 {
   HEADERS *= utils/DirectXHelper.h
+  SOURCES *= utils/DirectXHelper.cpp
 #dynamicgl: __impl__GetDC __impl_ReleaseDC __impl_GetDesktopWindow
     LIBS += -luser32
 }

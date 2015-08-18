@@ -22,17 +22,22 @@
 #ifndef QTAV_DIRECTXHELPER_H
 #define QTAV_DIRECTXHELPER_H
 
+#include <d3d9.h>
+
 namespace QtAV {
 
 #ifndef DX_LOG_COMPONENT
 #define DX_LOG_COMPONENT "DirectX"
 #endif //DX_LOG_COMPONENT
-#define DX_ENSURE_OK(f, ...) \
+#define DX_ENSURE(f, ...) DX_CHECK(f, return __VA_ARGS__;)
+#define DX_WARN(f) DX_CHECK(f)
+#define DX_ENSURE_OK(...) DX_ENSURE(__VA_ARGS__)
+#define DX_CHECK(f, ...) \
     do { \
         HRESULT hr = f; \
         if (FAILED(hr)) { \
             qWarning() << QString::fromLatin1(DX_LOG_COMPONENT " error@%1. " #f ": (0x%2) %3").arg(__LINE__).arg(hr, 0, 16).arg(qt_error_string(hr)); \
-            return __VA_ARGS__; \
+            __VA_ARGS__ \
         } \
     } while (0)
 
@@ -43,6 +48,11 @@ template <class T> void SafeRelease(T **ppT) {
     *ppT = NULL;
   }
 }
+
+namespace DXHelper {
+IDirect3DDevice9* CreateDevice9Ex(HINSTANCE dll, IDirect3D9Ex **d3d9ex, D3DADAPTER_IDENTIFIER9* d3dai = NULL);
+IDirect3DDevice9* CreateDevice9(HINSTANCE dll, IDirect3D9 **d3d9, D3DADAPTER_IDENTIFIER9* d3dai = NULL);
+} //namespace DXHelper
 
 } //namespace QtAV
 #endif //QTAV_DIRECTXHELPER_H
