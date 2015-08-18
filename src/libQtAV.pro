@@ -192,8 +192,10 @@ CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
-    HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h
-    SOURCES += codec/video/VideoDecoderCUDA.cpp
+    HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h \
+               codec/video/SurfaceInteropCUDA.h
+    SOURCES += codec/video/VideoDecoderCUDA.cpp \
+               codec/video/SurfaceInteropCUDA.cpp
     INCLUDEPATH += $$PWD/cuda cuda/dllapi
     config_dllapi:config_dllapi_cuda {
         DEFINES += QTAV_HAVE_DLLAPI_CUDA=1

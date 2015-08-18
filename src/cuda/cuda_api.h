@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -27,24 +27,19 @@
 #define NV_CONFIG(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
 
 // high version will define cuXXX macro, so functions here will be not they look like
+// TODO: resolve correct symbol name for high version apis
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
 #define CUDA_FORCE_API_VERSION 3010
 #endif
 #include "dllapi/nv_inc.h"
 
-#ifdef __DRIVER_TYPES_H__
-#ifndef DEVICE_RESET
-#define DEVICE_RESET cudaDeviceReset();
-#endif //DEVICE_RESET
-#else
-#ifndef DEVICE_RESET
-#define DEVICE_RESET
-#endif //DEVICE_RESET
-#endif //__DRIVER_TYPES_H__
+#define CUDA_ENSURE(f, ...) CUDA_CHECK(f, return __VA_ARGS__;) //call cuda_api.cuGetErrorXXX
+#define CUDA_WARN(f) CUDA_CHECK(f) //call cuda_api.cuGetErrorXXX
+#define CUDA_ENSURE2(f, ...) CUDA_CHECK2(f, return __VA_ARGS__;)
+#define CUDA_WARN2(f) CUDA_CHECK2(f)
 
-#define checkCudaErrors(val) \
-    if (!check ( (val), #val, __FILE__, __LINE__ )) \
-        return false;
+
+// TODO: cuda_drvapi_dylink.c/h
 
 class cuda_api {
 public:
@@ -52,27 +47,42 @@ public:
     virtual ~cuda_api();
     bool isLoaded() const;
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
+    typedef unsigned int GLuint;
+    typedef unsigned int GLenum;
     ////////////////////////////////////////////////////
     /// CUDA functions
     ////////////////////////////////////////////////////
+    CUresult cuGetErrorName(CUresult error, const char **pStr); // since 6.0. fallback to _cudaGetErrorEnum defined in helper_cuda.h if symbol not found
+    CUresult cuGetErrorString(CUresult error, const char **pStr); // since 6.0. fallback to a empty string if symbol not found
     CUresult cuInit(unsigned int Flags);
-    CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev );
+    CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev);
     CUresult cuCtxDestroy(CUcontext cuctx );
-    CUresult cuCtxPushCurrent(CUcontext cuctx );
-    CUresult cuCtxPopCurrent( CUcontext *pctx );
+    CUresult cuCtxPushCurrent(CUcontext cuctx);
+    CUresult cuCtxPopCurrent( CUcontext *pctx);
+    CUresult cuCtxGetCurrent(CUcontext *pctx);
     CUresult cuCtxSynchronize();
     CUresult cuMemAllocHost(void **pp, unsigned int bytesize);
     CUresult cuMemFreeHost(void *p);
     CUresult cuMemcpyDtoH (void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );
     CUresult cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream);
+    CUresult cuMemcpy2D(const CUDA_MEMCPY2D *pCopy);
+    CUresult cuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream);
     CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags);
     CUresult cuStreamDestroy(CUstream hStream);
     CUresult cuStreamQuery(CUstream hStream);
+    CUresult cuStreamSynchronize(CUstream hStream);
     CUresult cuDeviceGetCount(int *count);
     CUresult cuDriverGetVersion(int *driverVersion);
     CUresult cuDeviceGetName(char *name, int len, CUdevice dev);
     CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev);
     CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev);
+
+    CUresult cuGLCtxCreate(CUcontext *pCtx, unsigned int Flags, CUdevice device );
+    CUresult cuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags);
+    CUresult cuGraphicsUnregisterResource(CUgraphicsResource resource);
+    CUresult cuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
+    CUresult cuGraphicsSubResourceGetMappedArray(CUarray *pArray, CUgraphicsResource resource, unsigned int arrayIndex, unsigned int mipLevel);
+    CUresult cuGraphicsUnmapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
 
     ////////////////////////////////////////////////////
     /// D3D Interop
@@ -104,41 +114,45 @@ public:
     CUresult cuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int DevPtr);
 
 
-    class AutoCtxLock
-    {
-    private:
-        CUvideoctxlock m_lock;
+    class AutoCtxLock {
         cuda_api *m_api;
+        CUvideoctxlock m_lock;
     public:
-        AutoCtxLock(cuda_api *api, CUvideoctxlock lck) {
-            m_api = api;
-            m_lock=lck;
+        AutoCtxLock(cuda_api *api, CUvideoctxlock lck) : m_api(api), m_lock(lck) {
             m_api->cuvidCtxLock(m_lock, 0);
         }
         ~AutoCtxLock() { m_api->cuvidCtxUnlock(m_lock, 0); }
     };
 
 #endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
-
+    // This function returns the best Graphics GPU based on performance
     int GetMaxGflopsGraphicsDeviceId();
-
-    template< typename T >
-    bool check(T result, char const *const func, const char *const file, int const line)
-    {
-        if (result != CUDA_SUCCESS) {
-            qWarning("CUDA error at %s:%d code=%d(%s) \"%s\"",
-                    file, line, static_cast<unsigned int>(result), _cudaGetErrorEnum(result), func);
-            DEVICE_RESET
-            // Make sure we call CUDA Device Reset before exiting
-            //exit(EXIT_FAILURE);
-        }
-        return result == CUDA_SUCCESS;
-    }
-
 private:
     class context;
     context *ctx;
 };
 
+
+#define CUDA_CHECK(f, ...) \
+    do { \
+        CUresult cuR = f; \
+        if (cuR != CUDA_SUCCESS) { \
+            const char* errName = NULL; \
+            const char* errDetail = NULL; \
+            cuGetErrorName(cuR, &errName); \
+            cuGetErrorString(cuR, &errDetail); \
+            qWarning("CUDA error %s@%d. " #f ": %d %s - %s", __FILE__, __LINE__, cuR, errName, errDetail); \
+            __VA_ARGS__ \
+        } \
+    } while (0)
+
+#define CUDA_CHECK2(f, ...) \
+    do { \
+        CUresult cuR = f; \
+        if (cuR != CUDA_SUCCESS) { \
+            qWarning("CUDA error %s@%d. " #f ": %d %s", __FILE__, __LINE__, cuR, _cudaGetErrorEnum(cuR)); \
+            __VA_ARGS__ \
+        } \
+    } while (0)
 
 #endif // CUDA_API_H
