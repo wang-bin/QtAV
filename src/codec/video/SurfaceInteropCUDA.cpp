@@ -27,6 +27,7 @@
 #include "helper_cuda.h"
 
 #define WORKAROUND_UNMAP_CONTEXT_SWITCH 1
+#define USE_STREAM 0
 
 namespace QtAV {
 namespace cuda {
@@ -48,6 +49,11 @@ InteropResource::~InteropResource()
         CUDA_WARN(cuGraphicsUnregisterResource(res[0].cuRes));
     if (res[1].cuRes)
         CUDA_WARN(cuGraphicsUnregisterResource(res[1].cuRes));
+    if (res[0].stream)
+        CUDA_WARN(cuStreamDestroy(res[0].stream));
+    if (res[1].stream)
+        CUDA_WARN(cuStreamDestroy(res[1].stream));
+
     // FIXME: we own the context. But why crash to destroy ctx? CUDA_ERROR_INVALID_VALUE
     //CUDA_ENSURE(cuCtxDestroy(ctx));
 }
@@ -110,7 +116,7 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
     public:
         AutoUnmapper(cuda_api *a, CUvideodecoder d, CUdeviceptr p) : api(a), dec(d), devptr(p) {}
         ~AutoUnmapper() {
-            CUDA_WARN(api->cuvidUnmapVideoFrame(dec, devptr));
+            CUDA_WARN2(api->cuvidUnmapVideoFrame(dec, devptr));
         }
     };
     AutoUnmapper unmapper(this, dec, devptr);
@@ -135,14 +141,21 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
         cu2d.srcY = frame_h;
         cu2d.Height /= 2;
     }
+#if USE_STREAM
+    CUDA_ENSURE(cuMemcpy2DAsync(&cu2d, res[plane].stream), false);
+#else
     CUDA_ENSURE(cuMemcpy2D(&cu2d), false);
-    CUDA_ENSURE(cuCtxSynchronize(), false); //wait too long time? use cuStreamQuery?
+#endif
     //TODO: delay cuCtxSynchronize && unmap. do it in unmap(tex)?
     // map to an already mapped resource will crash. sometimes I can not unmap the resource in unmap(tex) because if context switch error
     // so I simply unmap the resource here
-    if (WORKAROUND_UNMAP_CONTEXT_SWITCH)
+    if (WORKAROUND_UNMAP_CONTEXT_SWITCH) {
+#if USE_STREAM
+        //CUDA_WARN(cuCtxSynchronize(), false); //wait too long time? use cuStreamQuery?
+        CUDA_WARN(cuStreamSynchronize(res[plane].stream)); //slower than CtxSynchronize
+#endif
         CUDA_ENSURE(cuGraphicsUnmapResources(1, &res[plane].cuRes, 0), false);
-
+    }
     // call it at last. current context will be used by other cuda calls (unmap() for example)
     CUDA_ENSURE(cuCtxPopCurrent(&ctx), false);
     return true;
@@ -160,7 +173,8 @@ bool GLInteropResource::unmap(GLuint tex)
     else
         return false;
     // FIXME: why cuCtxPushCurrent gives CUDA_ERROR_INVALID_CONTEXT if opengl viewport changed?
-    CUDA_ENSURE(cuCtxPushCurrent(ctx), false);
+    CUDA_WARN(cuCtxPushCurrent(ctx), false);
+    CUDA_WARN(cuStreamSynchronize(res[plane].stream));
     // FIXME: need a correct context. But why we have to push context even though map/unmap are called in the same thread
     // Because the decoder switch the context in another thread so we have to switch the context back?
     // to workaround the context issue, we must pop the context that valid in map() and push it here
@@ -179,8 +193,12 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex, int plane)
     if (!ctx) {
         // TODO: how to use pop/push decoder's context without the context in opengl context
         CUDA_ENSURE(cuCtxCreate(&ctx, CU_CTX_SCHED_BLOCKING_SYNC, dev), false);
-        CUDA_ENSURE(cuCtxPopCurrent(&ctx), false); // TODO: why cuMemcpy2D need this
+#if USE_STREAM
+        CUDA_WARN(cuStreamCreate(&res[0].stream, CU_STREAM_DEFAULT));
+        CUDA_WARN(cuStreamCreate(&res[1].stream, CU_STREAM_DEFAULT));
+#endif //USE_STREAM
         qDebug("cuda contex on gl thread: %p", ctx);
+        CUDA_ENSURE(cuCtxPopCurrent(&ctx), false); // TODO: why cuMemcpy2D need this
     }
     if (r.cuRes) {
         CUDA_ENSURE(cuGraphicsUnregisterResource(r.cuRes), false);

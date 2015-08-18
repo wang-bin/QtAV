@@ -23,7 +23,6 @@
 #define QTAV_SURFACEINTEROPCUDA_H
 
 #include "cuda_api.h"
-#include <d3d9.h>
 #include <QtCore/QWeakPointer>
 #include "QtAV/SurfaceInterop.h"
 #include "utils/OpenGLHelper.h"
@@ -68,6 +67,7 @@ protected:
        GLuint texture;
        int width, height;
        CUgraphicsResource cuRes;
+       CUstream stream; // for async works
     } TexRes;
     TexRes res[2];
 };

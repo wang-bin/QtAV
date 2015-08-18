@@ -553,7 +553,7 @@ bool VideoDecoderCUDAPrivate::initCuda()
         AutoCtxLock lock(this, vid_ctx_lock);
         Q_UNUSED(lock);
         //Flags- Parameters for stream creation (must be 0 (CU_STREAM_DEFAULT=0 in cuda5) in cuda 4.2, no CU_STREAM_NON_BLOCKING)
-        CUDA_ENSURE(cuStreamCreate(&stream, 0), false);//CU_STREAM_NON_BLOCKING)); //CU_STREAM_DEFAULT
+        CUDA_ENSURE(cuStreamCreate(&stream, CU_STREAM_DEFAULT), false);
         //require compute capability >= 1.1
         //flag: Reserved for future use, must be 0
         //cuStreamAddCallback(stream, CUstreamCallback, this, 0);
@@ -747,7 +747,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         public:
             AutoUnmapper(cuda_api *a, CUvideodecoder d, CUdeviceptr p) : api(a), dec(d), devptr(p) {}
             ~AutoUnmapper() {
-                CUDA_WARN(api->cuvidUnmapVideoFrame(dec, devptr));
+                CUDA_WARN2(api->cuvidUnmapVideoFrame(dec, devptr));
             }
         };
         AutoUnmapper unmapper(this, dec, devptr);
@@ -769,7 +769,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
             }
             // copy to the memory not allocated by cuda is possible but much slower
             CUDA_ENSURE(cuMemcpyDtoHAsync(host_data, devptr, size, stream), false);
-            CUDA_WARN(cuCtxSynchronize());
+            CUDA_WARN(cuStreamSynchronize(stream));
         }
         } // lock end
         //CUDA_ENSURE(cuCtxPopCurrent(&cuctx), false);

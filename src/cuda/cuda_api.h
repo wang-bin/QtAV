@@ -33,50 +33,27 @@
 #endif
 #include "dllapi/nv_inc.h"
 
-#ifdef __DRIVER_TYPES_H__
-#ifndef DEVICE_RESET
-#define DEVICE_RESET cudaDeviceReset();
-#endif //DEVICE_RESET
-#else
-#ifndef DEVICE_RESET
-#define DEVICE_RESET
-#endif //DEVICE_RESET
-#endif //__DRIVER_TYPES_H__
+#define CUDA_ENSURE(f, ...) CUDA_CHECK(f, return __VA_ARGS__;) //call cuda_api.cuGetErrorXXX
+#define CUDA_WARN(f) CUDA_CHECK(f) //call cuda_api.cuGetErrorXXX
+#define CUDA_ENSURE2(f, ...) CUDA_CHECK2(f, return __VA_ARGS__;)
+#define CUDA_WARN2(f) CUDA_CHECK2(f)
 
-#define checkCudaErrors(val) \
-    if (!check ( (val), #val, __FILE__, __LINE__ )) \
-        return false;
 
-#define CUDA_ENSURE(f, ...) \
-    do { \
-        CUresult cuR = f; \
-        if (cuR != CUDA_SUCCESS) { \
-            qWarning("CUDA error %s@%d. " #f ": %d %s", __FILE__, __LINE__, cuR, _cudaGetErrorEnum(cuR)); \
-            return __VA_ARGS__; \
-        } \
-    } while (0)
-
-#define CUDA_WARN(f, ...) \
-    do { \
-        CUresult cuR = f; \
-        if (cuR != CUDA_SUCCESS) { \
-            qWarning("CUDA error %s@%d. " #f ": %d %s", __FILE__, __LINE__, cuR, _cudaGetErrorEnum(cuR)); \
-        } \
-    } while (0)
-
-// TODO: cuda_driveapi_dylink.c/h
+// TODO: cuda_drvapi_dylink.c/h
 
 class cuda_api {
 public:
-    typedef unsigned int GLuint;
-    typedef unsigned int GLenum;
     cuda_api();
     virtual ~cuda_api();
     bool isLoaded() const;
 #if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
+    typedef unsigned int GLuint;
+    typedef unsigned int GLenum;
     ////////////////////////////////////////////////////
     /// CUDA functions
     ////////////////////////////////////////////////////
+    CUresult cuGetErrorName(CUresult error, const char **pStr); // since 6.0. fallback to _cudaGetErrorEnum defined in helper_cuda.h if symbol not found
+    CUresult cuGetErrorString(CUresult error, const char **pStr); // since 6.0. fallback to a empty string if symbol not found
     CUresult cuInit(unsigned int Flags);
     CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev);
     CUresult cuCtxDestroy(CUcontext cuctx );
@@ -93,6 +70,7 @@ public:
     CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags);
     CUresult cuStreamDestroy(CUstream hStream);
     CUresult cuStreamQuery(CUstream hStream);
+    CUresult cuStreamSynchronize(CUstream hStream);
     CUresult cuDeviceGetCount(int *count);
     CUresult cuDriverGetVersion(int *driverVersion);
     CUresult cuDeviceGetName(char *name, int len, CUdevice dev);
@@ -147,27 +125,34 @@ public:
     };
 
 #endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
-
     // This function returns the best Graphics GPU based on performance
     int GetMaxGflopsGraphicsDeviceId();
-
-    template< typename T >
-    bool check(T result, char const *const func, const char *const file, int const line)
-    {
-        if (result != CUDA_SUCCESS) {
-            qWarning("CUDA error at %s:%d code=%d(%s) \"%s\"",
-                    file, line, static_cast<unsigned int>(result), _cudaGetErrorEnum(result), func);
-            DEVICE_RESET
-            // Make sure we call CUDA Device Reset before exiting
-            //exit(EXIT_FAILURE);
-        }
-        return result == CUDA_SUCCESS;
-    }
-
 private:
     class context;
     context *ctx;
 };
 
+
+#define CUDA_CHECK(f, ...) \
+    do { \
+        CUresult cuR = f; \
+        if (cuR != CUDA_SUCCESS) { \
+            const char* errName = NULL; \
+            const char* errDetail = NULL; \
+            cuGetErrorName(cuR, &errName); \
+            cuGetErrorString(cuR, &errDetail); \
+            qWarning("CUDA error %s@%d. " #f ": %d %s - %s", __FILE__, __LINE__, cuR, errName, errDetail); \
+            __VA_ARGS__ \
+        } \
+    } while (0)
+
+#define CUDA_CHECK2(f, ...) \
+    do { \
+        CUresult cuR = f; \
+        if (cuR != CUDA_SUCCESS) { \
+            qWarning("CUDA error %s@%d. " #f ": %d %s", __FILE__, __LINE__, cuR, _cudaGetErrorEnum(cuR)); \
+            __VA_ARGS__ \
+        } \
+    } while (0)
 
 #endif // CUDA_API_H

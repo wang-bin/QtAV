@@ -39,7 +39,7 @@ using namespace dllapi::cuda;
 #ifdef __cuda_cuda_h__
 
 // CUDA Driver API errors
-static const char *_cudaGetErrorEnum(CUresult error)
+inline const char *_cudaGetErrorEnum(CUresult error)
 {
     switch (error) {
         case CUDA_SUCCESS: return "CUDA_SUCCESS";

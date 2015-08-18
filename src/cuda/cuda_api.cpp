@@ -86,6 +86,10 @@ public:
     QLibrary cuda_dll;
     QLibrary cuvid_dll;
     typedef struct {
+        typedef CUresult CUDAAPI tcuGetErrorName(CUresult error, const char **pStr);
+        tcuGetErrorName* cuGetErrorName;
+        typedef CUresult CUDAAPI tcuGetErrorString(CUresult error, const char **pStr);
+        tcuGetErrorString* cuGetErrorString;
         typedef CUresult CUDAAPI tcuInit(unsigned int);
         tcuInit* cuInit;
         typedef CUresult CUDAAPI tcuCtxCreate(CUcontext *, unsigned int, CUdevice);
@@ -116,6 +120,9 @@ public:
         tcuStreamDestroy* cuStreamDestroy;
         typedef CUresult CUDAAPI tcuStreamQuery(CUstream hStream);
         tcuStreamQuery* cuStreamQuery;
+        typedef CUresult CUDAAPI tcuStreamSynchronize(CUstream hStream);
+        tcuStreamSynchronize* cuStreamSynchronize;
+
         typedef CUresult CUDAAPI tcuDeviceGetCount(int *count);
         tcuDeviceGetCount* cuDeviceGetCount;
         typedef CUresult CUDAAPI tcuDriverGetVersion(int *driverVersion);
@@ -191,6 +198,41 @@ bool cuda_api::isLoaded() const
 ////////////////////////////////////////////////////
 /// CUDA functions
 ////////////////////////////////////////////////////
+
+CUresult cuda_api::cuGetErrorName(CUresult error, const char **pStr)
+{
+    static bool fallback = false;
+    if (fallback) {
+        *pStr = _cudaGetErrorEnum(error);
+        return CUDA_SUCCESS;
+    }
+    if (!ctx->api.cuGetErrorName) {
+        ctx->api.cuGetErrorName = (context::api_t::tcuGetErrorName*)ctx->cuda_dll.resolve("cuGetErrorName");
+        if (!ctx->api.cuGetErrorName) {
+            fallback = true;
+            return cuGetErrorName(error, pStr);
+        }
+    }
+    return ctx->api.cuGetErrorName(error, pStr);
+}
+
+CUresult cuda_api::cuGetErrorString(CUresult error, const char **pStr)
+{
+    static bool fallback = false;
+    if (fallback) {
+        *pStr = "";
+        return CUDA_SUCCESS;
+    }
+    if (!ctx->api.cuGetErrorString) {
+        ctx->api.cuGetErrorString = (context::api_t::tcuGetErrorString*)ctx->cuda_dll.resolve("cuGetErrorString");
+        if (!ctx->api.cuGetErrorString) {
+            fallback = true;
+            return cuGetErrorString(error, pStr);
+        }
+    }
+    return ctx->api.cuGetErrorString(error, pStr);
+}
+
 CUresult cuda_api::cuInit(unsigned int Flags)
 {
     if (!ctx->api.cuInit)
@@ -317,6 +359,14 @@ CUresult cuda_api::cuStreamQuery(CUstream hStream)
         ctx->api.cuStreamQuery = (context::api_t::tcuStreamQuery*)ctx->cuda_dll.resolve("cuStreamQuery");
     assert(ctx->api.cuStreamQuery);
     return ctx->api.cuStreamQuery(hStream);
+}
+
+CUresult cuda_api::cuStreamSynchronize(CUstream hStream)
+{
+    if (!ctx->api.cuStreamSynchronize)
+        ctx->api.cuStreamSynchronize = (context::api_t::tcuStreamSynchronize*)ctx->cuda_dll.resolve("cuStreamSynchronize");
+    assert(ctx->api.cuStreamSynchronize);
+    return ctx->api.cuStreamSynchronize(hStream);
 }
 
 CUresult cuda_api::cuDeviceGetCount(int *count)
