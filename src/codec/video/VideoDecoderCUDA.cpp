@@ -640,7 +640,9 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
     CUDA_ENSURE(cuvidCreateDecoder(&dec, &dec_create_info), false);
     available = true;
     if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
+#if QTAV_HAVE(CUDA_GL)
         interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, dec, vid_ctx_lock));
+#endif //QTAV_HAVE(CUDA_GL)
     }
     return true;
 }
@@ -776,7 +778,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         //qDebug("cuCtxPopCurrent %p", cuctx);
 
         VideoFrame frame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
-        if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
+        if (copy_mode == VideoDecoderCUDA::ZeroCopy && interop_res) {
             cuda::SurfaceInteropCUDA *interop = new cuda::SurfaceInteropCUDA(interop_res);
             interop->setSurface(cuviddisp->picture_index, proc_params, w, h); //TODO: both surface size(for copy 2d) and frame size(for map host)
             frame.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));

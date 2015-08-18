@@ -26,12 +26,15 @@
 #include <QtCore/QWeakPointer>
 #include "QtAV/SurfaceInterop.h"
 #include "utils/OpenGLHelper.h"
+#ifdef Q_OS_WIN
 // no need to check qt4 because no ANGLE there
 #if QTAV_HAVE(EGL_CAPI) // always use dynamic load
 #if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
 #define QTAV_HAVE_CUDA_EGL 1
+#include <d3d9.h>
 #endif
 #endif //QTAV_HAVE(EGL_CAPI)
+#endif //Q_OS_WIN
 #if defined(QT_OPENGL_DYNAMIC) || !defined(QT_OPENGL_ES_2)
 #define QTAV_HAVE_CUDA_GL 1
 #endif
@@ -101,7 +104,7 @@ private:
     int frame_width, frame_height;
 };
 
-#if 0 //QTAV_HAVE(CUDA_EGL)
+#if QTAV_HAVE(CUDA_EGL)
 class EGL;
 class EGLInteropResource Q_DECL_FINAL: public InteropResource
 {
@@ -115,10 +118,11 @@ private:
     bool ensureSurface(int w, int h);
 
     EGL* egl;
+    IDirect3D9 *d3d9;
 };
 #endif //QTAV_HAVE(CUDA_EGL)
 
-#if 1//QTAV_HAVE(CUDA_GL)
+#if QTAV_HAVE(CUDA_GL)
 class GLInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:

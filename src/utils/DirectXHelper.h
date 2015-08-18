@@ -31,7 +31,7 @@ namespace QtAV {
 #endif //DX_LOG_COMPONENT
 #define DX_ENSURE(f, ...) DX_CHECK(f, return __VA_ARGS__;)
 #define DX_WARN(f) DX_CHECK(f)
-#define DX_ENSURE_OK(...) DX_ENSURE(__VA_ARGS__)
+#define DX_ENSURE_OK(f, ...) DX_CHECK(f, return __VA_ARGS__;)
 #define DX_CHECK(f, ...) \
     do { \
         HRESULT hr = f; \

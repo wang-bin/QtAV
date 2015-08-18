@@ -22,9 +22,11 @@
 #include "SurfaceInteropCUDA.h"
 #include "QtAV/VideoFrame.h"
 #include "utils/Logger.h"
+#include "helper_cuda.h"
+#if QTAV_HAVE(CUDA_EGL)
 #define DX_LOG_COMPONENT "CUDA2"
 #include "utils/DirectXHelper.h"
-#include "helper_cuda.h"
+#endif //QTAV_HAVE(CUDA_EGL)
 
 #define WORKAROUND_UNMAP_CONTEXT_SWITCH 1
 #define USE_STREAM 0
@@ -94,6 +96,7 @@ void SurfaceInteropCUDA::unmap(void *handle)
     m_resource.toStrongRef()->unmap(*((GLuint*)handle));
 }
 
+#if QTAV_HAVE(CUDA_GL)
 GLInteropResource::GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk)
     : InteropResource(d, decoder, lk)
 {}
@@ -121,6 +124,7 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
     };
     AutoUnmapper unmapper(this, dec, devptr);
     Q_UNUSED(unmapper);
+    // TODO: why can not use res[plane].stream? CUDA_ERROR_INVALID_HANDLE
     CUDA_ENSURE(cuGraphicsMapResources(1, &res[plane].cuRes, 0), false);
     CUarray array;
     CUDA_ENSURE(cuGraphicsSubResourceGetMappedArray(&array, res[plane].cuRes, 0, 0), false);
@@ -154,10 +158,19 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
         //CUDA_WARN(cuCtxSynchronize(), false); //wait too long time? use cuStreamQuery?
         CUDA_WARN(cuStreamSynchronize(res[plane].stream)); //slower than CtxSynchronize
 #endif
+        /*
+         * This function provides the synchronization guarantee that any CUDA work issued
+         * in \p stream before ::cuGraphicsUnmapResources() will complete before any
+         * subsequently issued graphics work begins.
+         * The graphics API from which \p resources were registered
+         * should not access any resources while they are mapped by CUDA. If an
+         * application does so, the results are undefined.
+         */
         CUDA_ENSURE(cuGraphicsUnmapResources(1, &res[plane].cuRes, 0), false);
+    } else {
+        // call it at last. current context will be used by other cuda calls (unmap() for example)
+        CUDA_ENSURE(cuCtxPopCurrent(&ctx), false);
     }
-    // call it at last. current context will be used by other cuda calls (unmap() for example)
-    CUDA_ENSURE(cuCtxPopCurrent(&ctx), false);
     return true;
 }
 
@@ -173,7 +186,7 @@ bool GLInteropResource::unmap(GLuint tex)
     else
         return false;
     // FIXME: why cuCtxPushCurrent gives CUDA_ERROR_INVALID_CONTEXT if opengl viewport changed?
-    CUDA_WARN(cuCtxPushCurrent(ctx), false);
+    CUDA_WARN(cuCtxPushCurrent(ctx));
     CUDA_WARN(cuStreamSynchronize(res[plane].stream));
     // FIXME: need a correct context. But why we have to push context even though map/unmap are called in the same thread
     // Because the decoder switch the context in another thread so we have to switch the context back?
@@ -210,6 +223,7 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex, int plane)
     r.height = h;
     return true;
 }
+#endif //QTAV_HAVE(CUDA_GL)
 
 } //namespace cuda
 } //namespace QtAV
