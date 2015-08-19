@@ -198,7 +198,8 @@ public:
         if (!isLoaded()) //cuda_api
             return;
         // if not reset here, CUDA_ERROR_CONTEXT_IS_DESTROYED in ~cuda::InteropResource()
-        interop_res.reset(); // in interop object it's weak ptr. It's safe to reset here before cuda resouce is released.
+        // QSharedPointer.reset() is in qt5
+        interop_res = cuda::InteropResourcePtr(); // in interop object it's weak ptr. It's safe to reset here before cuda resouce is released.
         releaseCuda();
     }
     bool open() Q_DECL_OVERRIDE;
