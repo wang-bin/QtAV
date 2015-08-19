@@ -641,6 +641,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
     available = true;
     if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
 #if QTAV_HAVE(CUDA_GL)
+        // TODO: runtime gles check
         interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, dec, vid_ctx_lock));
 #endif //QTAV_HAVE(CUDA_GL)
     }
@@ -731,10 +732,8 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         proc_params.top_field_first = cuviddisp->top_field_first;
         proc_params.unpaired_field = cuviddisp->progressive_frame == 1;
 
-#define PAD_ALIGN(x,mask) ( (x + mask) & ~mask )
-        uint w = dec_create_info.ulWidth;//PAD_ALIGN(dec_create_info.ulWidth, 0x3F);
-        uint h = dec_create_info.ulHeight;//PAD_ALIGN(dec_create_info.ulHeight, 0x0F); //?
-#undef PAD_ALIGN
+        //const uint cw = dec_create_info.ulWidth;//PAD_ALIGN(dec_create_info.ulWidth, 0x3F);
+        const uint ch = dec_create_info.ulHeight;//PAD_ALIGN(dec_create_info.ulHeight, 0x0F); //?
         CUdeviceptr devptr;
         unsigned int pitch;
         {
@@ -755,7 +754,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         AutoUnmapper unmapper(this, dec, devptr);
         Q_UNUSED(unmapper);
         if (copy_mode != VideoDecoderCUDA::ZeroCopy) {
-            int size = pitch*h*3/2;
+            int size = pitch*ch*3/2;
             if (size > host_data_size && host_data) {
                 cuMemFreeHost(host_data);
                 host_data = 0;
@@ -780,12 +779,12 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         VideoFrame frame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
         if (copy_mode == VideoDecoderCUDA::ZeroCopy && interop_res) {
             cuda::SurfaceInteropCUDA *interop = new cuda::SurfaceInteropCUDA(interop_res);
-            interop->setSurface(cuviddisp->picture_index, proc_params, w, h); //TODO: both surface size(for copy 2d) and frame size(for map host)
+            interop->setSurface(cuviddisp->picture_index, proc_params, codec_ctx->height, ch); //TODO: both surface size(for copy 2d) and frame size(for map host)
             frame.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         } else {
             uchar *planes[] = {
                 host_data,
-                host_data + pitch * h
+                host_data + pitch * ch
             };
             frame.setBits(planes);
         }

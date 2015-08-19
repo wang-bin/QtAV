@@ -23,10 +23,6 @@
 #include "QtAV/VideoFrame.h"
 #include "utils/Logger.h"
 #include "helper_cuda.h"
-#if QTAV_HAVE(CUDA_EGL)
-#define DX_LOG_COMPONENT "CUDA2"
-#include "utils/DirectXHelper.h"
-#endif //QTAV_HAVE(CUDA_EGL)
 
 #define WORKAROUND_UNMAP_CONTEXT_SWITCH 1
 #define USE_STREAM 0
@@ -60,12 +56,12 @@ InteropResource::~InteropResource()
     //CUDA_ENSURE(cuCtxDestroy(ctx));
 }
 
-void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int frame_w, int frame_h)
+void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int height, int coded_height)
 {
     m_index = picIndex;
     m_param = param;
-    frame_width = frame_w;
-    frame_height = frame_h;
+    h = height;
+    H = coded_height;
 }
 
 void* SurfaceInteropCUDA::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
@@ -80,7 +76,7 @@ void* SurfaceInteropCUDA::map(SurfaceType type, const VideoFormat &fmt, void *ha
         return 0;
     if (type == GLTextureSurface) {
         // FIXME: to strong ref may delay the delete and cuda resource maybe already destoryed after strong ref is finished
-        if (m_resource.toStrongRef()->map(m_index, m_param, *((GLuint*)handle), frame_width, frame_height, plane))
+        if (m_resource.toStrongRef()->map(m_index, m_param, *((GLuint*)handle), h, H, plane))
             return handle;
     } else if (type == HostMemorySurface) {
         return NULL;//mapToHost(fmt, handle, plane);
@@ -95,17 +91,91 @@ void SurfaceInteropCUDA::unmap(void *handle)
     // FIXME: to strong ref may delay the delete and cuda resource maybe already destoryed after strong ref is finished
     m_resource.toStrongRef()->unmap(*((GLuint*)handle));
 }
+} //namespace cuda
+} //namespace QtAV
 
+#if QTAV_HAVE(CUDA_EGL)
+#define EGL_ENSURE(x, ...) \
+    do { \
+        if (!(x)) { \
+            EGLint err = eglGetError(); \
+            qWarning("EGL error@%d<<%s. " #x ": %#x %s", __LINE__, __FILE__, err, eglQueryString(eglGetCurrentDisplay(), err)); \
+            return __VA_ARGS__; \
+        } \
+    } while(0)
+
+#if QTAV_HAVE(GUI_PRIVATE)
+#include <qpa/qplatformnativeinterface.h>
+#include <QtGui/QGuiApplication>
+#endif //QTAV_HAVE(GUI_PRIVATE)
+#ifdef QT_OPENGL_ES_2_ANGLE_STATIC
+#define CAPI_LINK_EGL
+#else
+#define EGL_CAPI_NS
+#endif //QT_OPENGL_ES_2_ANGLE_STATIC
+#include "capi/egl_api.h"
+#include <EGL/eglext.h> //include after egl_capi.h to match types
+#define DX_LOG_COMPONENT "CUDA"
+#include "utils/DirectXHelper.h"
+
+namespace QtAV {
+namespace cuda {
+class EGL {
+public:
+    EGL() : dpy(EGL_NO_DISPLAY), surface(EGL_NO_SURFACE) {}
+    EGLDisplay dpy;
+    EGLSurface surface; //only support rgb. then we must use CUDA kernel
+#ifdef EGL_VERSION_1_5
+    // eglCreateImageKHR does not support EGL_NATIVE_PIXMAP_KHR, only 2d, 3d, render buffer
+    //EGLImageKHR image[2];
+    //EGLImage image[2]; //not implemented yet
+#endif //EGL_VERSION_1_5
+};
+
+EGLInteropResource::EGLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock)
+    : InteropResource(d, decoder, declock)
+    , egl(new EGL())
+    , d3d9(NULL)
+    , texture9(NULL)
+    , surface9(NULL)
+{
+}
+
+
+EGLInteropResource::~EGLInteropResource()
+{
+    releaseEGL();
+    if (egl) {
+        delete egl;
+        egl = NULL;
+    }
+    SafeRelease(&surface9);
+    SafeRelease(&texture9);
+    SafeRelease(&d3d9);
+}
+
+void EGLInteropResource::releaseEGL() {
+    if (egl->surface != EGL_NO_SURFACE) {
+        eglReleaseTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
+        eglDestroySurface(egl->dpy, egl->surface);
+        egl->surface = EGL_NO_SURFACE;
+    }
+}
+} //namespace cuda
+} //namespace QtAV
+#endif //QTAV_HAVE(CUDA_EGL)
 #if QTAV_HAVE(CUDA_GL)
+namespace QtAV {
+namespace cuda {
 GLInteropResource::GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk)
     : InteropResource(d, decoder, lk)
 {}
 
-bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int frame_w, int frame_h, int plane)
+bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int h, int ch, int plane)
 {
     AutoCtxLock locker((cuda_api*)this, lock);
     Q_UNUSED(locker);
-    if (!ensureResource(frame_w, frame_h, tex, plane)) // TODO surface size instead of frame size because we copy the device data
+    if (!ensureResource(h, ch, tex, plane)) // TODO surface size instead of frame size because we copy the device data
         return false;
     //CUDA_ENSURE(cuCtxPushCurrent(ctx), false);
     CUdeviceptr devptr;
@@ -139,10 +209,10 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
     cu2d.dstPitch = pitch;
     // the whole size or copy size?
     cu2d.WidthInBytes = pitch;
-    cu2d.Height = frame_h;
+    cu2d.Height = h;
     if (plane == 1) {
-        cu2d.srcXInBytes = 0;// why not pitch*frame_h??
-        cu2d.srcY = frame_h;
+        cu2d.srcXInBytes = 0;// TODO: why not pitch*ch?
+        cu2d.srcY = ch; // skip the padding height
         cu2d.Height /= 2;
     }
 #if USE_STREAM
@@ -197,11 +267,11 @@ bool GLInteropResource::unmap(GLuint tex)
     return true;
 }
 
-bool GLInteropResource::ensureResource(int w, int h, GLuint tex, int plane)
+bool GLInteropResource::ensureResource(int h, int ch, GLuint tex, int plane)
 {
     Q_ASSERT(plane < 2 && "plane number must be 0 or 1 for NV12");
     TexRes &r = res[plane];
-    if (r.texture == tex && r.width == w && r.height == h && r.cuRes)
+    if (r.texture == tex && r.h == h && r.H == ch && r.cuRes)
         return true;
     if (!ctx) {
         // TODO: how to use pop/push decoder's context without the context in opengl context
@@ -219,11 +289,10 @@ bool GLInteropResource::ensureResource(int w, int h, GLuint tex, int plane)
     }
     CUDA_ENSURE(cuGraphicsGLRegisterImage(&r.cuRes, tex, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_NONE), false);
     r.texture = tex;
-    r.width = w;
-    r.height = h;
+    r.h = h;
+    r.H = ch;
     return true;
 }
-#endif //QTAV_HAVE(CUDA_GL)
-
 } //namespace cuda
 } //namespace QtAV
+#endif //QTAV_HAVE(CUDA_GL)
