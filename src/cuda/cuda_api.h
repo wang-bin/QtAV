@@ -38,7 +38,8 @@
 #define CUDA_ENSURE2(f, ...) CUDA_CHECK2(f, return __VA_ARGS__;)
 #define CUDA_WARN2(f) CUDA_CHECK2(f)
 
-
+struct IDirect3DDevice9;
+struct IDirect3DResource9;
 // TODO: cuda_drvapi_dylink.c/h
 
 class cuda_api {
@@ -84,10 +85,8 @@ public:
     CUresult cuGraphicsSubResourceGetMappedArray(CUarray *pArray, CUgraphicsResource resource, unsigned int arrayIndex, unsigned int mipLevel);
     CUresult cuGraphicsUnmapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
 
-    ////////////////////////////////////////////////////
-    /// D3D Interop
-    ////////////////////////////////////////////////////
-    //CUresult cuD3D9CtxCreate(CUcontext *pCtx, CUdevice *pCudaDevice, unsigned int Flags, IDirect3DDevice9 *pD3DDevice);
+    CUresult cuD3D9CtxCreate(CUcontext *pCtx, CUdevice *pCudaDevice, unsigned int Flags, IDirect3DDevice9 *pD3DDevice);
+    CUresult cuGraphicsD3D9RegisterResource(CUgraphicsResource *pCudaResource, IDirect3DResource9 *pD3DResource, unsigned int Flags);
 
     ////////////////////////////////////////////////////
     /// CUVID functions

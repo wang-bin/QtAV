@@ -144,6 +144,11 @@ public:
         typedef CUresult CUDAAPI tcuCtxSynchronize();
         tcuCtxSynchronize* cuCtxSynchronize;
 
+        typedef CUresult CUDAAPI tcuD3D9CtxCreate(CUcontext *pCtx, CUdevice *pCudaDevice, unsigned int Flags, IDirect3DDevice9 *pD3DDevice);
+        tcuD3D9CtxCreate* cuD3D9CtxCreate;
+        typedef CUresult CUDAAPI tcuGraphicsD3D9RegisterResource(CUgraphicsResource *pCudaResource, IDirect3DResource9 *pD3DResource, unsigned int Flags);
+        tcuGraphicsD3D9RegisterResource* cuGraphicsD3D9RegisterResource;
+
         typedef CUresult CUDAAPI tcuGLCtxCreate(CUcontext *pCtx, unsigned int Flags, CUdevice device);
         tcuGLCtxCreate* cuGLCtxCreate;
         typedef CUresult CUDAAPI tcuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags);
@@ -247,6 +252,22 @@ CUresult cuda_api::cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev
         ctx->api.cuCtxCreate = (context::api_t::tcuCtxCreate*)ctx->cuda_dll.resolve("cuCtxCreate");
     assert(ctx->api.cuCtxCreate);
     return ctx->api.cuCtxCreate(pctx, flags, dev);
+}
+
+CUresult cuda_api::cuD3D9CtxCreate(CUcontext *pCtx, CUdevice *pCudaDevice, unsigned int Flags, IDirect3DDevice9 *pD3DDevice)
+{
+    if (!ctx->api.cuD3D9CtxCreate)
+        ctx->api.cuD3D9CtxCreate = (context::api_t::tcuD3D9CtxCreate*)ctx->cuda_dll.resolve("cuD3D9CtxCreate");
+    assert(ctx->api.cuD3D9CtxCreate);
+    return ctx->api.cuD3D9CtxCreate(pCtx, pCudaDevice, Flags, pD3DDevice);
+}
+
+CUresult cuda_api::cuGraphicsD3D9RegisterResource(CUgraphicsResource *pCudaResource, IDirect3DResource9 *pD3DResource, unsigned int Flags)
+{
+    if (!ctx->api.cuGraphicsD3D9RegisterResource)
+        ctx->api.cuGraphicsD3D9RegisterResource = (context::api_t::tcuGraphicsD3D9RegisterResource*)ctx->cuda_dll.resolve("cuGraphicsD3D9RegisterResource");
+    assert(ctx->api.cuGraphicsD3D9RegisterResource);
+    return ctx->api.cuGraphicsD3D9RegisterResource(pCudaResource, pD3DResource, Flags);
 }
 
 CUresult cuda_api::cuGLCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
