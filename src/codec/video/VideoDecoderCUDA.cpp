@@ -46,6 +46,7 @@
 #include "cuda/cuda_api.h"
 #include "utils/Logger.h"
 #include "SurfaceInteropCUDA.h"
+#include "utils/OpenGLHelper.h"
 
 //decode error if not floating context
 
@@ -637,8 +638,15 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
     if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
 #if QTAV_HAVE(CUDA_GL)
         // TODO: runtime gles check
-        interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, dec, vid_ctx_lock));
+        if (!OpenGLHelper::isOpenGLES())
+            interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, dec, vid_ctx_lock));
 #endif //QTAV_HAVE(CUDA_GL)
+#if QTAV_HAVE(CUDA_EGL)
+        // TODO: runtime gles check
+        if (OpenGLHelper::isOpenGLES())
+            interop_res = cuda::InteropResourcePtr(new cuda::EGLInteropResource(cudev, dec, vid_ctx_lock));
+#endif //QTAV_HAVE(CUDA_EGL)
+
     }
     return true;
 }
@@ -757,8 +765,14 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         //CUDA_ENSURE(cuCtxPopCurrent(&cuctx), false);
         //qDebug("cuCtxPopCurrent %p", cuctx);
 
-        VideoFrame frame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
+        VideoFrame frame;
         if (copy_mode == VideoDecoderCUDA::ZeroCopy && interop_res) {
+            if (OpenGLHelper::isOpenGLES()) {
+                frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_RGB32); //p->width()
+                frame.setBytesPerLine(codec_ctx->width * 4); //used by gl to compute texture size
+            } else {
+                frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
+            }
             cuda::SurfaceInteropCUDA *interop = new cuda::SurfaceInteropCUDA(interop_res);
             interop->setSurface(cuviddisp->picture_index, proc_params, codec_ctx->width, codec_ctx->height, ch); //TODO: both surface size(for copy 2d) and frame size(for map host)
             frame.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
@@ -767,10 +781,12 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
                 host_data,
                 host_data + pitch * ch
             };
+            frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
             frame.setBits(planes);
         }
         int pitches[] = { (int)pitch, (int)pitch };
-        frame.setBytesPerLine(pitches);
+        if (!frame.format().isRGB())
+            frame.setBytesPerLine(pitches);
         frame.setTimestamp((double)cuviddisp->timestamp/1000.0);
         if (codec_ctx && codec_ctx->sample_aspect_ratio.num > 1) //skip 1/1 because is the default value
             frame.setDisplayAspectRatio(frame.displayAspectRatio()*av_q2d(codec_ctx->sample_aspect_ratio));
