@@ -56,10 +56,48 @@ InteropResource::~InteropResource()
     //CUDA_ENSURE(cuCtxDestroy(ctx));
 }
 
-void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int height, int coded_height)
+void* InteropResource::mapToHost(const VideoFormat &format, void *handle, int picIndex, const CUVIDPROCPARAMS &param, int width, int height, int coded_height)
+{
+    AutoCtxLock locker((cuda_api*)this, lock);
+    Q_UNUSED(locker);
+    CUdeviceptr devptr;
+    unsigned int pitch;
+
+    CUDA_ENSURE(cuvidMapVideoFrame(dec, picIndex, &devptr, &pitch, const_cast<CUVIDPROCPARAMS*>(&param)), NULL);
+    CUVIDAutoUnmapper unmapper(this, dec, devptr);
+    Q_UNUSED(unmapper);
+    uchar* host_data = NULL;
+    const size_t host_size = pitch*coded_height*3/2;
+    CUDA_ENSURE(cuMemAllocHost((void**)&host_data, host_size), NULL);
+    // copy to the memory not allocated by cuda is possible but much slower
+    CUDA_ENSURE(cuMemcpyDtoH(host_data, devptr, host_size), NULL);
+
+    VideoFrame frame(width, height, VideoFormat::Format_NV12);
+    uchar *planes[] = {
+        host_data,
+        host_data + pitch * coded_height
+    };
+    frame.setBits(planes);
+    int pitches[] = { (int)pitch, (int)pitch };
+    frame.setBytesPerLine(pitches);
+
+    VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
+    frame.setTimestamp(f->timestamp());
+    frame.setDisplayAspectRatio(f->displayAspectRatio());
+    if (format == frame.format())
+        *f = frame.clone();
+    else
+        *f = frame.to(format);
+
+    cuMemFreeHost(host_data);
+    return f;
+}
+
+void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int width, int height, int coded_height)
 {
     m_index = picIndex;
     m_param = param;
+    w = width;
     h = height;
     H = coded_height;
 }
@@ -76,10 +114,10 @@ void* SurfaceInteropCUDA::map(SurfaceType type, const VideoFormat &fmt, void *ha
         return 0;
     if (type == GLTextureSurface) {
         // FIXME: to strong ref may delay the delete and cuda resource maybe already destoryed after strong ref is finished
-        if (m_resource.toStrongRef()->map(m_index, m_param, *((GLuint*)handle), h, H, plane))
+        if (m_resource.toStrongRef()->map(m_index, m_param, *((GLuint*)handle), w, h, H, plane))
             return handle;
     } else if (type == HostMemorySurface) {
-        return NULL;//mapToHost(fmt, handle, plane);
+        return m_resource.toStrongRef()->mapToHost(fmt, handle, m_index, m_param, w, h, H);
     }
     return NULL;
 }
@@ -171,28 +209,18 @@ GLInteropResource::GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideo
     : InteropResource(d, decoder, lk)
 {}
 
-bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int h, int ch, int plane)
+bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int ch, int plane)
 {
     AutoCtxLock locker((cuda_api*)this, lock);
     Q_UNUSED(locker);
-    if (!ensureResource(h, ch, tex, plane)) // TODO surface size instead of frame size because we copy the device data
+    if (!ensureResource(w, h, ch, tex, plane)) // TODO surface size instead of frame size because we copy the device data
         return false;
     //CUDA_ENSURE(cuCtxPushCurrent(ctx), false);
     CUdeviceptr devptr;
     unsigned int pitch;
 
     CUDA_ENSURE(cuvidMapVideoFrame(dec, picIndex, &devptr, &pitch, const_cast<CUVIDPROCPARAMS*>(&param)), false);
-    class AutoUnmapper {
-        cuda_api *api;
-        CUvideodecoder dec;
-        CUdeviceptr devptr;
-    public:
-        AutoUnmapper(cuda_api *a, CUvideodecoder d, CUdeviceptr p) : api(a), dec(d), devptr(p) {}
-        ~AutoUnmapper() {
-            CUDA_WARN2(api->cuvidUnmapVideoFrame(dec, devptr));
-        }
-    };
-    AutoUnmapper unmapper(this, dec, devptr);
+    CUVIDAutoUnmapper unmapper(this, dec, devptr);
     Q_UNUSED(unmapper);
     // TODO: why can not use res[plane].stream? CUDA_ERROR_INVALID_HANDLE
     CUDA_ENSURE(cuGraphicsMapResources(1, &res[plane].cuRes, 0), false);
@@ -267,11 +295,11 @@ bool GLInteropResource::unmap(GLuint tex)
     return true;
 }
 
-bool GLInteropResource::ensureResource(int h, int ch, GLuint tex, int plane)
+bool GLInteropResource::ensureResource(int w, int h, int ch, GLuint tex, int plane)
 {
     Q_ASSERT(plane < 2 && "plane number must be 0 or 1 for NV12");
     TexRes &r = res[plane];
-    if (r.texture == tex && r.h == h && r.H == ch && r.cuRes)
+    if (r.texture == tex && r.w == w && r.h == h && r.H == ch && r.cuRes)
         return true;
     if (!ctx) {
         // TODO: how to use pop/push decoder's context without the context in opengl context
@@ -289,6 +317,7 @@ bool GLInteropResource::ensureResource(int h, int ch, GLuint tex, int plane)
     }
     CUDA_ENSURE(cuGraphicsGLRegisterImage(&r.cuRes, tex, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_NONE), false);
     r.texture = tex;
+    r.w = w;
     r.h = h;
     r.H = ch;
     return true;

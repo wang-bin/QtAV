@@ -151,16 +151,6 @@ static AVCodecID mapCodecToFFmpeg(cudaVideoCodec cudaCodec)
     return QTAV_CODEC_ID(NONE);
 }
 
-#if NV_CONFIG(DLLAPI_CUDA) || defined(CUDA_LINK)
-class AutoCtxLock
-{
-private:
-    CUvideoctxlock m_lock;
-public:
-    AutoCtxLock(cuda_api*, CUvideoctxlock lck) { m_lock=lck; cuvidCtxLock(m_lock, 0); }
-    ~AutoCtxLock() { cuvidCtxUnlock(m_lock, 0); }
-};
-#endif //NV_CONFIG(DLLAPI_CUDA) || defined(CUDA_LINK)
 class VideoDecoderCUDAPrivate Q_DECL_FINAL: public VideoDecoderPrivate
                 , protected cuda_api
 {
@@ -741,20 +731,10 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         Q_UNUSED(lock);
         //CUDA_ENSURE(cuCtxPushCurrent(cuctx), false);
         CUDA_ENSURE(cuvidMapVideoFrame(dec, cuviddisp->picture_index, &devptr, &pitch, &proc_params), false);
-        class AutoUnmapper {
-            cuda_api *api;
-            CUvideodecoder dec;
-            CUdeviceptr devptr;
-        public:
-            AutoUnmapper(cuda_api *a, CUvideodecoder d, CUdeviceptr p) : api(a), dec(d), devptr(p) {}
-            ~AutoUnmapper() {
-                CUDA_WARN2(api->cuvidUnmapVideoFrame(dec, devptr));
-            }
-        };
-        AutoUnmapper unmapper(this, dec, devptr);
+        CUVIDAutoUnmapper unmapper(this, dec, devptr);
         Q_UNUSED(unmapper);
         if (copy_mode != VideoDecoderCUDA::ZeroCopy) {
-            int size = pitch*ch*3/2;
+            const int size = pitch*ch*3/2;
             if (size > host_data_size && host_data) {
                 cuMemFreeHost(host_data);
                 host_data = 0;
@@ -763,10 +743,6 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
             if (!host_data) {
                 CUDA_ENSURE(cuMemAllocHost((void**)&host_data, size), false);
                 host_data_size = size;
-            }
-            if (!host_data) {
-                qWarning("No valid staging memory!");
-                return false;
             }
             // copy to the memory not allocated by cuda is possible but much slower
             CUDA_ENSURE(cuMemcpyDtoHAsync(host_data, devptr, size, stream), false);
@@ -779,7 +755,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         VideoFrame frame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
         if (copy_mode == VideoDecoderCUDA::ZeroCopy && interop_res) {
             cuda::SurfaceInteropCUDA *interop = new cuda::SurfaceInteropCUDA(interop_res);
-            interop->setSurface(cuviddisp->picture_index, proc_params, codec_ctx->height, ch); //TODO: both surface size(for copy 2d) and frame size(for map host)
+            interop->setSurface(cuviddisp->picture_index, proc_params, codec_ctx->width, codec_ctx->height, ch); //TODO: both surface size(for copy 2d) and frame size(for map host)
             frame.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         } else {
             uchar *planes[] = {

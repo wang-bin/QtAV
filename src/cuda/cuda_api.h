@@ -56,18 +56,18 @@ public:
     CUresult cuGetErrorString(CUresult error, const char **pStr); // since 6.0. fallback to a empty string if symbol not found
     CUresult cuInit(unsigned int Flags);
     CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev);
-    CUresult cuCtxDestroy(CUcontext cuctx );
+    CUresult cuCtxDestroy(CUcontext cuctx);
     CUresult cuCtxPushCurrent(CUcontext cuctx);
     CUresult cuCtxPopCurrent( CUcontext *pctx);
     CUresult cuCtxGetCurrent(CUcontext *pctx);
     CUresult cuCtxSynchronize();
-    CUresult cuMemAllocHost(void **pp, unsigned int bytesize);
+    CUresult cuMemAllocHost(void **pp, unsigned int bytesize); //TODO: size_t in new version
     CUresult cuMemFreeHost(void *p);
-    CUresult cuMemcpyDtoH (void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );
-    CUresult cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream);
+    CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount); //TODO: size_t in new version
+    CUresult cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream); //TODO: size_t in new version
     CUresult cuMemcpy2D(const CUDA_MEMCPY2D *pCopy);
     CUresult cuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream);
-    CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags);
+    CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags); //TODO: size_t in new version
     CUresult cuStreamDestroy(CUstream hStream);
     CUresult cuStreamQuery(CUstream hStream);
     CUresult cuStreamSynchronize(CUstream hStream);
@@ -77,7 +77,7 @@ public:
     CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev);
     CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev);
 
-    CUresult cuGLCtxCreate(CUcontext *pCtx, unsigned int Flags, CUdevice device );
+    CUresult cuGLCtxCreate(CUcontext *pCtx, unsigned int Flags, CUdevice device);
     CUresult cuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags);
     CUresult cuGraphicsUnregisterResource(CUgraphicsResource resource);
     CUresult cuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
@@ -87,7 +87,7 @@ public:
     ////////////////////////////////////////////////////
     /// D3D Interop
     ////////////////////////////////////////////////////
-    //CUresult cuD3D9CtxCreate(CUcontext *pCtx, CUdevice *pCudaDevice, unsigned int Flags, IDirect3DDevice9 *pD3DDevice );
+    //CUresult cuD3D9CtxCreate(CUcontext *pCtx, CUdevice *pCudaDevice, unsigned int Flags, IDirect3DDevice9 *pD3DDevice);
 
     ////////////////////////////////////////////////////
     /// CUVID functions
@@ -108,21 +108,10 @@ public:
     // Decode a single picture (field or frame)
     CUresult cuvidDecodePicture(CUvideodecoder hDecoder, CUVIDPICPARAMS *pPicParams);
 
-    // Post-process and map a video frame for use in cuda
+    // Post-process and map a video frame for use in cuda. TODO: unsigned long for x64
     CUresult cuvidMapVideoFrame(CUvideodecoder hDecoder, int nPicIdx, unsigned int *pDevPtr, unsigned int *pPitch, CUVIDPROCPARAMS *pVPP);
     // Unmap a previously mapped video frame
     CUresult cuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int DevPtr);
-
-
-    class AutoCtxLock {
-        cuda_api *m_api;
-        CUvideoctxlock m_lock;
-    public:
-        AutoCtxLock(cuda_api *api, CUvideoctxlock lck) : m_api(api), m_lock(lck) {
-            m_api->cuvidCtxLock(m_lock, 0);
-        }
-        ~AutoCtxLock() { m_api->cuvidCtxUnlock(m_lock, 0); }
-    };
 
 #endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
     // This function returns the best Graphics GPU based on performance
@@ -131,7 +120,6 @@ private:
     class context;
     context *ctx;
 };
-
 
 #define CUDA_CHECK(f, ...) \
     do { \
@@ -154,5 +142,28 @@ private:
             __VA_ARGS__ \
         } \
     } while (0)
+
+
+// TODO: error check
+class AutoCtxLock {
+    cuda_api *m_api;
+    CUvideoctxlock m_lock;
+public:
+    AutoCtxLock(cuda_api *api, CUvideoctxlock lck) : m_api(api), m_lock(lck) {
+        m_api->cuvidCtxLock(m_lock, 0);
+    }
+    ~AutoCtxLock() { m_api->cuvidCtxUnlock(m_lock, 0); }
+};
+
+class CUVIDAutoUnmapper {
+    cuda_api *api;
+    CUvideodecoder dec;
+    CUdeviceptr devptr;
+public:
+    CUVIDAutoUnmapper(cuda_api *a, CUvideodecoder d, CUdeviceptr p) : api(a), dec(d), devptr(p) {}
+    ~CUVIDAutoUnmapper() {
+        api->cuvidUnmapVideoFrame(dec, devptr);
+    }
+};
 
 #endif // CUDA_API_H

@@ -106,7 +106,7 @@ public:
         tcuMemAllocHost* cuMemAllocHost;
         typedef CUresult CUDAAPI tcuMemFreeHost(void *p);
         tcuMemFreeHost* cuMemFreeHost;
-        typedef CUresult CUDAAPI tcuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount );
+        typedef CUresult CUDAAPI tcuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount);
         tcuMemcpyDtoH* cuMemcpyDtoH;
         typedef CUresult CUDAAPI tcuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream);
         tcuMemcpyDtoHAsync* cuMemcpyDtoHAsync;
@@ -144,7 +144,7 @@ public:
         typedef CUresult CUDAAPI tcuCtxSynchronize();
         tcuCtxSynchronize* cuCtxSynchronize;
 
-        typedef CUresult CUDAAPI tcuGLCtxCreate(CUcontext *pCtx, unsigned int Flags, CUdevice device );
+        typedef CUresult CUDAAPI tcuGLCtxCreate(CUcontext *pCtx, unsigned int Flags, CUdevice device);
         tcuGLCtxCreate* cuGLCtxCreate;
         typedef CUresult CUDAAPI tcuGraphicsGLRegisterImage(CUgraphicsResource *pCudaResource, GLuint image, GLenum target, unsigned int Flags);
         tcuGraphicsGLRegisterImage* cuGraphicsGLRegisterImage;
@@ -305,7 +305,7 @@ CUresult cuda_api::cuMemFreeHost(void *p)
     return ctx->api.cuMemFreeHost(p);
 }
 
-CUresult cuda_api::cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount )
+CUresult cuda_api::cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount)
 {
     if (!ctx->api.cuMemcpyDtoH)
         ctx->api.cuMemcpyDtoH = (context::api_t::tcuMemcpyDtoH*)ctx->cuda_dll.resolve("cuMemcpyDtoH");
@@ -452,7 +452,7 @@ CUresult cuda_api::cuGraphicsUnmapResources(unsigned int count, CUgraphicsResour
 ////////////////////////////////////////////////////
 /// D3D Interop
 ////////////////////////////////////////////////////
-//CUresult cuda_api::cuD3D9CtxCreate( CUcontext *pCtx, CUdevice *pCudaDevice, unsigned int Flags, IDirect3DDevice9 *pD3DDevice );
+//CUresult cuda_api::cuD3D9CtxCreate( CUcontext *pCtx, CUdevice *pCudaDevice, unsigned int Flags, IDirect3DDevice9 *pD3DDevice);
 
 ////////////////////////////////////////////////////
 /// CUVID functions

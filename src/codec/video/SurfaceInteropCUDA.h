@@ -58,8 +58,10 @@ public:
      * \param plane useless now
      * \return true if success
      */
-    virtual bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int h, int ch, int plane) = 0;
+    virtual bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int ch, int plane) = 0;
     virtual bool unmap(GLuint tex) { Q_UNUSED(tex); return true;}
+    /// copy from gpu and convert to target format if necessary. used by VideoCapture
+    void* mapToHost(const VideoFormat &format, void *handle, int picIndex, const CUVIDPROCPARAMS &param, int width, int height, int coded_height);
 protected:
     CUdevice dev;
     CUcontext ctx;
@@ -68,7 +70,7 @@ protected:
 
     typedef struct {
        GLuint texture;
-       int h, H;
+       int w, h, H;
        CUgraphicsResource cuRes;
        CUstream stream; // for async works
     } TexRes;
@@ -88,10 +90,11 @@ public:
      * If use CUdeviceptr, we must cuMemAllocPitch() and cuMemcpyDtoD for each plane every time. But we can not know whether
      * the decoded picture the index pointed to is changed when rendering, so the displayed images may out of order.
      * CUdeviceptr is associated with context
+     * \param width frame width(visual width) without alignment, <= cuda decoded surface(picture) width
      * \param height frame height(visual height) without alignment, <= cuda decoded surface(picture) height
      * \param coded_height cuda decoded surface(picture) height
      */
-    void setSurface(int picIndex, CUVIDPROCPARAMS param, int height, int coded_height);
+    void setSurface(int picIndex, CUVIDPROCPARAMS param, int width, int height, int coded_height);
     /// GLTextureSurface only supports rgb32
     void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
     void unmap(void *handle) Q_DECL_OVERRIDE;
@@ -101,17 +104,18 @@ private:
     CUVIDPROCPARAMS m_param;
     // decoder is deleted but interop is still alive
     QWeakPointer<InteropResource> m_resource;
-    int h, H;
+    int w, h, H;
 };
 
 #if QTAV_HAVE(CUDA_EGL)
+// NOT IMPLEMENTED. CUDA kernel to convert nv12 to rgb is required
 class EGL;
 class EGLInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:
     EGLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock);
     ~EGLInteropResource();
-    //bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int h, int ch, int plane) Q_DECL_OVERRIDE { return false;}
+    //bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int ch, int plane) Q_DECL_OVERRIDE { return false;}
 private:
     void releaseEGL();
 
@@ -127,7 +131,7 @@ class GLInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:
     GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk);
-    bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int h, int ch, int plane) Q_DECL_OVERRIDE;
+    bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int ch, int plane) Q_DECL_OVERRIDE;
     bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:
     /*
@@ -135,7 +139,7 @@ private:
      * playing a new stream will recreate the decoder and interop
      * All we need to ensure is register when texture changed. But there's no way to check the texture change.
      */
-    bool ensureResource(int h, int ch, GLuint tex, int plane);
+    bool ensureResource(int w, int h, int ch, GLuint tex, int plane);
 };
 #endif //QTAV_HAVE(CUDA_GL)
 } //namespace cuda
