@@ -108,21 +108,36 @@ private:
 };
 
 #if QTAV_HAVE(CUDA_EGL)
-// NOT IMPLEMENTED. CUDA kernel to convert nv12 to rgb is required
 class EGL;
+/*!
+ * \brief The EGLInteropResource class
+ * Interop with NV12 texture, then convert NV12 to RGB texture like DXVA+EGL does.
+ * The VideoFrame from CUDA decoder is RGB format
+ */
 class EGLInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:
     EGLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock);
     ~EGLInteropResource();
-    //bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int ch, int plane) Q_DECL_OVERRIDE { return false;}
+    bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int ch, int plane) Q_DECL_OVERRIDE;
 private:
+    bool map(IDirect3DSurface9 *surface, GLuint tex, int w, int h, int ch);
+    bool ensureD3DDevice();
     void releaseEGL();
+    bool ensureResource(int w, int h, int ch, GLuint tex);
+    bool ensureD3D9CUDA(int w, int h, int ch); // check/update nv12 texture and register for cuda interoperation
+    bool ensureD3D9EGL(int w, int h);
 
     EGL* egl;
+    HINSTANCE dll9;
     IDirect3D9 *d3d9;
-    IDirect3DTexture9 *texture9;
-    IDirect3DSurface9 *surface9; // size is frame size(visual size) for display
+    IDirect3DDevice9 *device9; // for CUDA
+    IDirect3DTexture9 *texture9; // for EGL.
+    IDirect3DSurface9 *surface9; // for EGL. size is frame size(visual size) for display
+    IDirect3DTexture9 *texture9_nv12;
+    // If size is coded size, crop when StretchRect. If frame size, crop in cuMemcpy2D for each plane
+    IDirect3DSurface9 *surface9_nv12;
+    IDirect3DQuery9 *query9;
 };
 #endif //QTAV_HAVE(CUDA_EGL)
 
