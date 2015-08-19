@@ -22,25 +22,12 @@
 #include "QtAV/OpenGLVideo.h"
 #include <QtGui/QColor>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtGui/QOpenGLBuffer>
-#include <QtGui/QOpenGLShaderProgram>
-#include <QtGui/QOpenGLFunctions>
 #include <QtGui/QSurface>
 #define QT_VAO (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))
 #if QT_VAO
 #include <QtGui/QOpenGLVertexArrayObject>
 #endif //QT_VAO
-#else
-#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
-#include <QtOpenGL/QGLFunctions>
-#endif
-#include <QtOpenGL/QGLBuffer>
-#include <QtOpenGL/QGLShaderProgram>
-typedef QGLBuffer QOpenGLBuffer;
-#define QOpenGLShaderProgram QGLShaderProgram
-#define QOpenGLShader QGLShader
-#define QOpenGLFunctions QGLFunctions
-#endif
+#endif //5.0
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoShader.h"
 #include "ShaderManager.h"

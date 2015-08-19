@@ -25,11 +25,24 @@
 #include "QtAV/VideoFormat.h"
 #include <qglobal.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QOpenGLBuffer>
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLFunctions>
+#include <QtGui/QOpenGLShaderProgram>
 #elif defined(QT_OPENGL_LIB)
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+#include <QtOpenGL/QGLFunctions>
+#endif //4.8
+#include <QtOpenGL/QGLBuffer>
 #include <QtOpenGL/QGLContext>
+#include <QtOpenGL/QGLShaderProgram>
+#define QOpenGLShaderProgram QGLShaderProgram
+typedef QGLBuffer QOpenGLBuffer;
 #define QOpenGLContext QGLContext
+#define QOpenGLShaderProgram QGLShaderProgram
+#define QOpenGLShader QGLShader
+#define QOpenGLFunctions QGLFunctions
+#define initializeOpenGLFunctions() initializeGLFunctions()
 #include <qgl.h>
 #else //used by vaapi even qtopengl module is disabled
 #if defined(QT_OPENGL_ES_2)

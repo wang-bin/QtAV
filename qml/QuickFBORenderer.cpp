@@ -30,6 +30,13 @@
 #include <QtCore/QCoreApplication>
 #include <QtGui/QOpenGLFramebufferObject>
 #include <QtQuick/QQuickWindow>
+// for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
+#ifdef QT_OPENGL_DYNAMIC
+#include <QtGui/QOpenGLFunctions>
+#define DYGL(glFunc) QOpenGLContext::currentContext()->functions()->glFunc
+#else
+#define DYGL(glFunc) glFunc
+#endif
 
 namespace QtAV {
 static const VideoRendererId VideoRendererId_QuickFBO = mkid::id32base36_4<'Q','F','B','O'>::value;
@@ -40,6 +47,15 @@ class FBORenderer : public QQuickFramebufferObject::Renderer
 public:
     FBORenderer(QuickFBORenderer* item) : m_item(item) {}
     QOpenGLFramebufferObject* createFramebufferObject(const QSize &size) {
+        static bool sInfo = true;
+        if (sInfo) {
+            sInfo = false;
+            qDebug("GL_VERSION: %s", DYGL(glGetString(GL_VERSION)));
+            qDebug("GL_VENDOR: %s", DYGL(glGetString(GL_VENDOR)));
+            qDebug("GL_RENDERER: %s", DYGL(glGetString(GL_RENDERER)));
+            qDebug("GL_SHADING_LANGUAGE_VERSION: %s", DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION)));
+        }
+
         m_item->fboSizeChanged(size);
         return QQuickFramebufferObject::Renderer::createFramebufferObject(size);
     }

@@ -355,7 +355,7 @@ bool VideoShader::update(VideoMaterial *material)
         return false;
     if (!material->bind())
         return false;
-
+    //material->unbind();
     const VideoFormat fmt(material->currentFormat());
     //format is out of date because we may use the same shader for different formats
     setVideoFormat(fmt);
