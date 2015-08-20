@@ -102,6 +102,9 @@ void OpenGLRendererBase::onInitializeGL()
 {
     DPTR_D(OpenGLRendererBase);
     //makeCurrent();
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+    initializeOpenGLFunctions();
+#endif
     QOpenGLContext *ctx = const_cast<QOpenGLContext*>(QOpenGLContext::currentContext()); //qt4 returns const
     d.glv.setOpenGLContext(ctx);
     //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
@@ -115,9 +118,6 @@ void OpenGLRendererBase::onInitializeGL()
         qDebug("GL_RENDERER: %s", DYGL(glGetString(GL_RENDERER)));
         qDebug("GL_SHADING_LANGUAGE_VERSION: %s", DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION)));
     }
-#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
-    initializeOpenGLFunctions();
-#endif
 }
 
 void OpenGLRendererBase::onPaintGL()
