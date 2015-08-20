@@ -54,14 +54,14 @@ public:
      * \param surface cuda decoded surface
      * \param tex opengl texture
      * \param h frame height(visual height) without alignment, <= cuda decoded surface(picture) height
-     * \param ch cuda decoded surface(picture) height
+     * \param H cuda decoded surface(picture) height
      * \param plane useless now
      * \return true if success
      */
-    virtual bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int ch, int plane) = 0;
+    virtual bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int H, int plane) = 0;
     virtual bool unmap(GLuint tex) { Q_UNUSED(tex); return true;}
     /// copy from gpu and convert to target format if necessary. used by VideoCapture
-    void* mapToHost(const VideoFormat &format, void *handle, int picIndex, const CUVIDPROCPARAMS &param, int width, int height, int coded_height);
+    void* mapToHost(const VideoFormat &format, void *handle, int picIndex, const CUVIDPROCPARAMS &param, int width, int height, int surface_height);
 protected:
     CUdevice dev;
     CUcontext ctx;
@@ -70,7 +70,7 @@ protected:
 
     typedef struct {
        GLuint texture;
-       int w, h, H;
+       int w, h, W, H;
        CUgraphicsResource cuRes;
        CUstream stream; // for async works
     } TexRes;
@@ -92,9 +92,9 @@ public:
      * CUdeviceptr is associated with context
      * \param width frame width(visual width) without alignment, <= cuda decoded surface(picture) width
      * \param height frame height(visual height) without alignment, <= cuda decoded surface(picture) height
-     * \param coded_height cuda decoded surface(picture) height
+     * \param surface_height cuda decoded surface(picture) height
      */
-    void setSurface(int picIndex, CUVIDPROCPARAMS param, int width, int height, int coded_height);
+    void setSurface(int picIndex, CUVIDPROCPARAMS param, int width, int height, int surface_height);
     /// GLTextureSurface only supports rgb32
     void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
     void unmap(void *handle) Q_DECL_OVERRIDE;
@@ -119,13 +119,13 @@ class EGLInteropResource Q_DECL_FINAL: public InteropResource
 public:
     EGLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock);
     ~EGLInteropResource();
-    bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int ch, int plane) Q_DECL_OVERRIDE;
+    bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int H, int plane) Q_DECL_OVERRIDE;
 private:
-    bool map(IDirect3DSurface9 *surface, GLuint tex, int w, int h, int ch);
+    bool map(IDirect3DSurface9 *surface, GLuint tex, int w, int h, int H);
     bool ensureD3DDevice();
     void releaseEGL();
-    bool ensureResource(int w, int h, int ch, GLuint tex);
-    bool ensureD3D9CUDA(int w, int h, int ch); // check/update nv12 texture and register for cuda interoperation
+    bool ensureResource(int w, int h, int W, int H, GLuint tex);
+    bool ensureD3D9CUDA(int w, int h, int W, int H); // check/update nv12 texture and register for cuda interoperation
     bool ensureD3D9EGL(int w, int h);
 
     EGL* egl;
@@ -146,15 +146,15 @@ class GLInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:
     GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk);
-    bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int ch, int plane) Q_DECL_OVERRIDE;
+    bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int H, int plane) Q_DECL_OVERRIDE;
     bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:
     /*
-     * TODO: do we need to check h, ch etc? interop is created by decoder and frame size does not change in the playback.
+     * TODO: do we need to check h, H etc? interop is created by decoder and frame size does not change in the playback.
      * playing a new stream will recreate the decoder and interop
      * All we need to ensure is register when texture changed. But there's no way to check the texture change.
      */
-    bool ensureResource(int w, int h, int ch, GLuint tex, int plane);
+    bool ensureResource(int w, int h, int H, GLuint tex, int plane);
 };
 #endif //QTAV_HAVE(CUDA_GL)
 } //namespace cuda

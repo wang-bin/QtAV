@@ -768,6 +768,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         VideoFrame frame;
         if (copy_mode == VideoDecoderCUDA::ZeroCopy && interop_res) {
             if (OpenGLHelper::isOpenGLES()) {
+                proc_params.Reserved[0] = pitch; // TODO: pass pitch to setSurface()
                 frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_RGB32); //p->width()
                 frame.setBytesPerLine(codec_ctx->width * 4); //used by gl to compute texture size
             } else {
