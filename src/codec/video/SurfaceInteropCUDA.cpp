@@ -29,6 +29,9 @@
 
 namespace QtAV {
 namespace cuda {
+#define MS_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+    static const GUID name = { l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
+MS_GUID(IID_IDirect3DTexture9,            0x85c31227, 0x3de5, 0x4f00, 0x9b, 0x3a, 0xf1, 0x1a, 0xc3, 0x8c, 0x18, 0xb5);
 
 InteropResource::InteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock)
     : cuda_api()
@@ -290,15 +293,15 @@ bool EGLInteropResource::ensureD3D9CUDA(int w, int h, int ch)
                                          //, h
                                          , h*3/2
                                          , 1
-                                         , 0 // 0 is from NV example. cudaD3D9.h says The primary rendertarget may not be registered with CUDA. So can not be D3DUSAGE_RENDERTARGET?
+                                         , D3DUSAGE_DYNAMIC //D3DUSAGE_DYNAMIC is lockable // 0 is from NV example. cudaD3D9.h says The primary rendertarget may not be registered with CUDA. So can not be D3DUSAGE_RENDERTARGET?
                                          //, D3DUSAGE_RENDERTARGET
                                          , D3DFMT_L8
                                          //, (D3DFORMAT)MAKEFOURCC('N','V','1','2') // can not create nv12. use 2 textures L8+A8L8?
-                                         , D3DPOOL_DEFAULT
+                                         , D3DPOOL_DEFAULT // must be D3DPOOL_DEFAULT for cuda?
                                          , &texture9_nv12
                                          , NULL) // - Resources allocated as shared may not be registered with CUDA.
                   , false);
-        DX_ENSURE(texture9_nv12->GetSurfaceLevel(0, &surface9_nv12), false);
+        DX_ENSURE(device9->CreateOffscreenPlainSurface(w, h, (D3DFORMAT)MAKEFOURCC('N','V','1','2'), D3DPOOL_DEFAULT, &surface9_nv12, NULL), false);
     }
 
     // TODO: cudaD3D9.h says NV12 is not supported
@@ -423,6 +426,7 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
     CUDA_ENSURE(cuGraphicsMapResources(1, &res[plane].cuRes, 0), false);
     CUarray array;
     CUDA_ENSURE(cuGraphicsSubResourceGetMappedArray(&array, res[plane].cuRes, 0, 0), false);
+    CUDA_ENSURE(cuGraphicsUnmapResources(1, &res[plane].cuRes, 0), false); // mapped array still accessible!
 
     CUDA_MEMCPY2D cu2d;
     memset(&cu2d, 0, sizeof(cu2d));
@@ -468,11 +472,23 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
          * should not access any resources while they are mapped by CUDA. If an
          * application does so, the results are undefined.
          */
-        CUDA_ENSURE(cuGraphicsUnmapResources(1, &res[plane].cuRes, 0), false);
+//        CUDA_ENSURE(cuGraphicsUnmapResources(1, &res[plane].cuRes, 0), false);
     } else {
         // call it at last. current context will be used by other cuda calls (unmap() for example)
         CUDA_ENSURE(cuCtxPopCurrent(&ctx), false);
     }
+    D3DLOCKED_RECT rect_src, rect_dst;
+    DX_ENSURE(texture9_nv12->LockRect(0, &rect_src, NULL, D3DLOCK_READONLY), false);
+    DX_ENSURE(surface9_nv12->LockRect(&rect_dst, NULL, D3DLOCK_DISCARD), false);
+    memcpy(rect_dst.pBits, rect_src.pBits, w*h*3/2); // exactly w and h
+    DX_ENSURE(surface9_nv12->UnlockRect(), false);
+    DX_ENSURE(texture9_nv12->UnlockRect(0), false);
+#if 0
+    //IDirect3DSurface9 *raw_surface = NULL;
+    //DX_ENSURE(texture9_nv12->GetSurfaceLevel(0, &raw_surface), false);
+    const RECT src = { 0, 0, w, h*3/2};
+    DX_ENSURE(device9->StretchRect(raw_surface, &src, surface9_nv12, NULL, D3DTEXF_NONE), false);
+#endif
     if (!map(surface9_nv12, tex, w, h, ch))
         return false;
     return true;
@@ -483,7 +499,7 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int 
     D3DSURFACE_DESC dxvaDesc;
     surface->GetDesc(&dxvaDesc);
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
-    const RECT src = { 0, 0, w, h}; // L8: h*3/2?
+    const RECT src = { 0, 0, w, h};
     HRESULT ret = device9->StretchRect(surface, &src, surface9, NULL, D3DTEXF_NONE);
     if (SUCCEEDED(ret)) {
         if (query9) {
