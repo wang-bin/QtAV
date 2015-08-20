@@ -96,13 +96,13 @@ void* InteropResource::mapToHost(const VideoFormat &format, void *handle, int pi
     return f;
 }
 
-void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int width, int height, int coded_height)
+void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int width, int height, int surface_height)
 {
     m_index = picIndex;
     m_param = param;
     w = width;
     h = height;
-    H = coded_height;
+    H = surface_height;
 }
 
 void* SurfaceInteropCUDA::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
@@ -243,14 +243,15 @@ void EGLInteropResource::releaseEGL() {
     }
 }
 
-bool EGLInteropResource::ensureResource(int w, int h, int ch, GLuint tex)
+bool EGLInteropResource::ensureResource(int w, int h, int W, int H, GLuint tex)
 {
     TexRes &r = res[0];// 1 NV12 texture
-    if (ensureD3D9CUDA(w, h, ch) && ensureD3D9EGL(w, h)) {
+    if (ensureD3D9CUDA(w, h, W, H) && ensureD3D9EGL(w, h)) {
         r.texture = tex;
         r.w = w;
         r.h = h;
-        r.H = ch;
+        r.W = W;
+        r.H = H;
         return true;
     }
     releaseEGL();
@@ -263,10 +264,10 @@ bool EGLInteropResource::ensureResource(int w, int h, int ch, GLuint tex)
     return false;
 }
 
-bool EGLInteropResource::ensureD3D9CUDA(int w, int h, int ch)
+bool EGLInteropResource::ensureD3D9CUDA(int w, int h, int W, int H)
 {
     TexRes &r = res[0];// 1 NV12 texture
-    if (r.w == w && r.h == h && r.H == ch && r.cuRes)
+    if (r.w == w && r.h == h && r.W == W && r.H == H && r.cuRes)
         return true;
     if (!ctx) {
         // TODO: how to use pop/push decoder's context without the context in opengl context
@@ -289,9 +290,9 @@ bool EGLInteropResource::ensureD3D9CUDA(int w, int h, int ch)
     // create d3d resource for interop
     if (!surface9_nv12) {
         // TODO: need pitch from cuvid to ensure cuMemcpy2D can copy the whole pitch
-        DX_ENSURE(device9->CreateTexture(w
-                                         //, h
-                                         , h*3/2
+        DX_ENSURE(device9->CreateTexture(W
+                                         //, H
+                                         , H*3/2
                                          , 1
                                          , D3DUSAGE_DYNAMIC //D3DUSAGE_DYNAMIC is lockable // 0 is from NV example. cudaD3D9.h says The primary rendertarget may not be registered with CUDA. So can not be D3DUSAGE_RENDERTARGET?
                                          //, D3DUSAGE_RENDERTARGET
@@ -301,7 +302,7 @@ bool EGLInteropResource::ensureD3D9CUDA(int w, int h, int ch)
                                          , &texture9_nv12
                                          , NULL) // - Resources allocated as shared may not be registered with CUDA.
                   , false);
-        DX_ENSURE(device9->CreateOffscreenPlainSurface(w, h, (D3DFORMAT)MAKEFOURCC('N','V','1','2'), D3DPOOL_DEFAULT, &surface9_nv12, NULL), false);
+        DX_ENSURE(device9->CreateOffscreenPlainSurface(W, H, (D3DFORMAT)MAKEFOURCC('N','V','1','2'), D3DPOOL_DEFAULT, &surface9_nv12, NULL), false);
     }
 
     // TODO: cudaD3D9.h says NV12 is not supported
@@ -408,12 +409,12 @@ bool EGLInteropResource::ensureD3D9EGL(int w, int h) {
     return true;
 }
 
-bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int ch, int plane)
+bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int H, int plane)
 {
     // plane is always 0 because frame is rgb
     AutoCtxLock locker((cuda_api*)this, lock);
     Q_UNUSED(locker);
-    if (!ensureResource(w, h, ch, tex)) // TODO surface size instead of frame size because we copy the device data
+    if (!ensureResource(w, h, param.Reserved[0], H, tex)) // TODO surface size instead of frame size because we copy the device data
         return false;
     //CUDA_ENSURE(cuCtxPushCurrent(ctx), false);
     CUdeviceptr devptr;
@@ -438,8 +439,8 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
     cu2d.dstMemoryType = CU_MEMORYTYPE_ARRAY;
     cu2d.dstPitch = pitch;
     // the whole size or copy size?
-    cu2d.WidthInBytes = w; // the same value as texture9_nv12
-    cu2d.Height = h;
+    cu2d.WidthInBytes = res[plane].W; // the same value as texture9_nv12
+    cu2d.Height = H;
 #if USE_STREAM
     CUDA_ENSURE(cuMemcpy2DAsync(&cu2d, res[plane].stream), false);
 #else
@@ -447,10 +448,10 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
 #endif
     // UV plane
     cu2d.srcXInBytes = 0;// +srcY*srcPitch + srcXInBytes
-    cu2d.srcY = ch; // skip the padding height
+    cu2d.srcY = H; // skip the padding height
     cu2d.Height /= 2;
     cu2d.dstXInBytes = 0;//+dstY*dstPitch + dstXInBytes
-    cu2d.dstY = h;
+    cu2d.dstY = H;
 #if USE_STREAM
     CUDA_WARN(cuMemcpy2DAsync(&cu2d, res[plane].stream));
 #else
@@ -480,7 +481,7 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
     D3DLOCKED_RECT rect_src, rect_dst;
     DX_ENSURE(texture9_nv12->LockRect(0, &rect_src, NULL, D3DLOCK_READONLY), false);
     DX_ENSURE(surface9_nv12->LockRect(&rect_dst, NULL, D3DLOCK_DISCARD), false);
-    memcpy(rect_dst.pBits, rect_src.pBits, w*h*3/2); // exactly w and h
+    memcpy(rect_dst.pBits, rect_src.pBits, res[plane].W*H*3/2); // exactly w and h
     DX_ENSURE(surface9_nv12->UnlockRect(), false);
     DX_ENSURE(texture9_nv12->UnlockRect(0), false);
 #if 0
@@ -489,12 +490,12 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
     const RECT src = { 0, 0, w, h*3/2};
     DX_ENSURE(device9->StretchRect(raw_surface, &src, surface9_nv12, NULL, D3DTEXF_NONE), false);
 #endif
-    if (!map(surface9_nv12, tex, w, h, ch))
+    if (!map(surface9_nv12, tex, w, h, H))
         return false;
     return true;
 }
 
-bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int h, int ch)
+bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int h, int H)
 {
     D3DSURFACE_DESC dxvaDesc;
     surface->GetDesc(&dxvaDesc);
@@ -537,11 +538,11 @@ GLInteropResource::GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideo
     : InteropResource(d, decoder, lk)
 {}
 
-bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int ch, int plane)
+bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int H, int plane)
 {
     AutoCtxLock locker((cuda_api*)this, lock);
     Q_UNUSED(locker);
-    if (!ensureResource(w, h, ch, tex, plane)) // TODO surface size instead of frame size because we copy the device data
+    if (!ensureResource(w, h, H, tex, plane)) // TODO surface size instead of frame size because we copy the device data
         return false;
     //CUDA_ENSURE(cuCtxPushCurrent(ctx), false);
     CUdeviceptr devptr;
@@ -567,8 +568,8 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
     cu2d.WidthInBytes = pitch;
     cu2d.Height = h;
     if (plane == 1) {
-        cu2d.srcXInBytes = 0;// TODO: why not pitch*ch?
-        cu2d.srcY = ch; // skip the padding height
+        cu2d.srcXInBytes = 0;// TODO: why not pitch*H?
+        cu2d.srcY = H; // skip the padding height
         cu2d.Height /= 2;
     }
 #if USE_STREAM
@@ -623,11 +624,11 @@ bool GLInteropResource::unmap(GLuint tex)
     return true;
 }
 
-bool GLInteropResource::ensureResource(int w, int h, int ch, GLuint tex, int plane)
+bool GLInteropResource::ensureResource(int w, int h, int H, GLuint tex, int plane)
 {
     Q_ASSERT(plane < 2 && "plane number must be 0 or 1 for NV12");
     TexRes &r = res[plane];
-    if (r.texture == tex && r.w == w && r.h == h && r.H == ch && r.cuRes)
+    if (r.texture == tex && r.w == w && r.h == h && r.H == H && r.cuRes)
         return true;
     if (!ctx) {
         // TODO: how to use pop/push decoder's context without the context in opengl context
@@ -647,7 +648,7 @@ bool GLInteropResource::ensureResource(int w, int h, int ch, GLuint tex, int pla
     r.texture = tex;
     r.w = w;
     r.h = h;
-    r.H = ch;
+    r.H = H;
     return true;
 }
 } //namespace cuda
