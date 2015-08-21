@@ -303,6 +303,7 @@ bool EGLInteropResource::ensureD3D9CUDA(int w, int h, int W, int H)
 
     // TODO: cudaD3D9.h says NV12 is not supported
     // CUDA_ERROR_INVALID_HANDLE if register D3D9 surface
+    // TODO: why flag CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD is invalid while it's fine for opengl
     CUDA_ENSURE(cuGraphicsD3D9RegisterResource(&r.cuRes, texture9_nv12, CU_GRAPHICS_REGISTER_FLAGS_NONE), false);
     return true;
 }
@@ -436,31 +437,19 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
     cu2d.dstPitch = pitch;
     // the whole size or copy size?
     cu2d.WidthInBytes = res[plane].W; // the same value as texture9_nv12
-    cu2d.Height = H;
-#if USE_STREAM
-    CUDA_ENSURE(cuMemcpy2DAsync(&cu2d, res[plane].stream), false);
-#else
-    CUDA_ENSURE(cuMemcpy2D(&cu2d), false);
-#endif
-    // UV plane
-    cu2d.srcXInBytes = 0;// +srcY*srcPitch + srcXInBytes
-    cu2d.srcY = H; // skip the padding height
-    cu2d.Height /= 2;
-    cu2d.dstXInBytes = 0;//+dstY*dstPitch + dstXInBytes
-    cu2d.dstY = H;
-#if USE_STREAM
-    CUDA_WARN(cuMemcpy2DAsync(&cu2d, res[plane].stream));
-#else
-    CUDA_ENSURE(cuMemcpy2D(&cu2d), false);
-#endif
+    cu2d.Height = H*3/2;
+    if (res[plane].stream)
+        CUDA_ENSURE(cuMemcpy2DAsync(&cu2d, res[plane].stream), false);
+    else
+        CUDA_ENSURE(cuMemcpy2D(&cu2d), false);
     //TODO: delay cuCtxSynchronize && unmap. do it in unmap(tex)?
     // map to an already mapped resource will crash. sometimes I can not unmap the resource in unmap(tex) because if context switch error
     // so I simply unmap the resource here
     if (WORKAROUND_UNMAP_CONTEXT_SWITCH) {
-#if USE_STREAM
-        //CUDA_WARN(cuCtxSynchronize(), false); //wait too long time? use cuStreamQuery?
-        CUDA_WARN(cuStreamSynchronize(res[plane].stream)); //slower than CtxSynchronize
-#endif
+        if (res[plane].stream) {
+            //CUDA_WARN(cuCtxSynchronize(), false); //wait too long time? use cuStreamQuery?
+            CUDA_WARN(cuStreamSynchronize(res[plane].stream)); //slower than CtxSynchronize
+        }
         /*
          * This function provides the synchronization guarantee that any CUDA work issued
          * in \p stream before ::cuGraphicsUnmapResources() will complete before any
@@ -470,9 +459,6 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
          * application does so, the results are undefined.
          */
 //        CUDA_ENSURE(cuGraphicsUnmapResources(1, &res[plane].cuRes, 0), false);
-    } else {
-        // call it at last. current context will be used by other cuda calls (unmap() for example)
-        CUDA_ENSURE(cuCtxPopCurrent(&ctx), false);
     }
     D3DLOCKED_RECT rect_src, rect_dst;
     DX_ENSURE(texture9_nv12->LockRect(0, &rect_src, NULL, D3DLOCK_READONLY), false);
@@ -564,23 +550,22 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
     cu2d.WidthInBytes = pitch;
     cu2d.Height = h;
     if (plane == 1) {
-        cu2d.srcXInBytes = 0;// TODO: why not pitch*H?
+        cu2d.srcXInBytes = 0;// +srcY*srcPitch + srcXInBytes
         cu2d.srcY = H; // skip the padding height
         cu2d.Height /= 2;
     }
-#if USE_STREAM
-    CUDA_ENSURE(cuMemcpy2DAsync(&cu2d, res[plane].stream), false);
-#else
-    CUDA_ENSURE(cuMemcpy2D(&cu2d), false);
-#endif
+    if (res[plane].stream)
+        CUDA_ENSURE(cuMemcpy2DAsync(&cu2d, res[plane].stream), false);
+    else
+        CUDA_ENSURE(cuMemcpy2D(&cu2d), false);
     //TODO: delay cuCtxSynchronize && unmap. do it in unmap(tex)?
     // map to an already mapped resource will crash. sometimes I can not unmap the resource in unmap(tex) because if context switch error
     // so I simply unmap the resource here
     if (WORKAROUND_UNMAP_CONTEXT_SWITCH) {
-#if USE_STREAM
-        //CUDA_WARN(cuCtxSynchronize(), false); //wait too long time? use cuStreamQuery?
-        CUDA_WARN(cuStreamSynchronize(res[plane].stream)); //slower than CtxSynchronize
-#endif
+        if (res[plane].stream) {
+            //CUDA_WARN(cuCtxSynchronize(), false); //wait too long time? use cuStreamQuery?
+            CUDA_WARN(cuStreamSynchronize(res[plane].stream)); //slower than CtxSynchronize
+        }
         /*
          * This function provides the synchronization guarantee that any CUDA work issued
          * in \p stream before ::cuGraphicsUnmapResources() will complete before any
@@ -592,7 +577,7 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
         CUDA_ENSURE(cuGraphicsUnmapResources(1, &res[plane].cuRes, 0), false);
     } else {
         // call it at last. current context will be used by other cuda calls (unmap() for example)
-        CUDA_ENSURE(cuCtxPopCurrent(&ctx), false);
+        CUDA_ENSURE(cuCtxPopCurrent(&ctx), false); // not required
     }
     return true;
 }
@@ -600,7 +585,8 @@ bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint t
 bool GLInteropResource::unmap(GLuint tex)
 {
     Q_UNUSED(tex);
-#if !WORKAROUND_UNMAP_CONTEXT_SWITCH
+    if (WORKAROUND_UNMAP_CONTEXT_SWITCH)
+        return true;
     int plane = -1;
     if (res[0].texture == tex)
         plane = 0;
@@ -616,7 +602,6 @@ bool GLInteropResource::unmap(GLuint tex)
     // to workaround the context issue, we must pop the context that valid in map() and push it here
     CUDA_ENSURE(cuGraphicsUnmapResources(1, &res[plane].cuRes, 0), false);
     CUDA_ENSURE(cuCtxPopCurrent(&ctx), false);
-#endif //WORKAROUND_UNMAP_CONTEXT_SWITCH
     return true;
 }
 
@@ -629,10 +614,10 @@ bool GLInteropResource::ensureResource(int w, int h, int H, GLuint tex, int plan
     if (!ctx) {
         // TODO: how to use pop/push decoder's context without the context in opengl context
         CUDA_ENSURE(cuCtxCreate(&ctx, CU_CTX_SCHED_BLOCKING_SYNC, dev), false);
-#if USE_STREAM
-        CUDA_WARN(cuStreamCreate(&res[0].stream, CU_STREAM_DEFAULT));
-        CUDA_WARN(cuStreamCreate(&res[1].stream, CU_STREAM_DEFAULT));
-#endif //USE_STREAM
+        if (USE_STREAM) {
+            CUDA_WARN(cuStreamCreate(&res[0].stream, CU_STREAM_DEFAULT));
+            CUDA_WARN(cuStreamCreate(&res[1].stream, CU_STREAM_DEFAULT));
+        }
         qDebug("cuda contex on gl thread: %p", ctx);
         CUDA_ENSURE(cuCtxPopCurrent(&ctx), false); // TODO: why cuMemcpy2D need this
     }
@@ -640,6 +625,7 @@ bool GLInteropResource::ensureResource(int w, int h, int H, GLuint tex, int plan
         CUDA_ENSURE(cuGraphicsUnregisterResource(r.cuRes), false);
         r.cuRes = NULL;
     }
+    // CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD works too for opengl, but not d3d
     CUDA_ENSURE(cuGraphicsGLRegisterImage(&r.cuRes, tex, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_NONE), false);
     r.texture = tex;
     r.w = w;

@@ -112,6 +112,7 @@ class EGL;
 /*!
  * \brief The EGLInteropResource class
  * Interop with NV12 texture, then convert NV12 to RGB texture like DXVA+EGL does.
+ * TODO: use pixel shader to convert L8+A8L8 textures to a NV12 texture, or an rgb texture directly on pbuffer surface
  * The VideoFrame from CUDA decoder is RGB format
  */
 class EGLInteropResource Q_DECL_FINAL: public InteropResource
