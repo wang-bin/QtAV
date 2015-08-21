@@ -41,19 +41,18 @@ class AudioOutputDSound Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputDSound(QObject *parent = 0);
-    QString name() const Q_DECL_FINAL { return QString::fromLatin1(kName);}
-    bool open() Q_DECL_FINAL;
-    bool close() Q_DECL_FINAL;
-    bool isSupported(const AudioFormat& format) const Q_DECL_OVERRIDE;
+    QString name() const Q_DECL_OVERRIDE { return QString::fromLatin1(kName);}
+    bool open() Q_DECL_OVERRIDE;
+    bool close() Q_DECL_OVERRIDE;
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_OVERRIDE;
-    bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_OVERRIDE;
-    BufferControl bufferControl() const Q_DECL_FINAL;
-    bool write(const QByteArray& data) Q_DECL_FINAL;
-    bool play() Q_DECL_FINAL;
-    int getOffsetByBytes() Q_DECL_FINAL;
+    BufferControl bufferControl() const Q_DECL_OVERRIDE;
+    bool write(const QByteArray& data) Q_DECL_OVERRIDE;
+    bool play() Q_DECL_OVERRIDE;
+    int getOffsetByBytes() Q_DECL_OVERRIDE;
 
-    bool setVolume(qreal value) Q_DECL_FINAL;
-    qreal getVolume() const Q_DECL_FINAL;
+    bool setVolume(qreal value) Q_DECL_OVERRIDE;
+    qreal getVolume() const Q_DECL_OVERRIDE;
+    void onCallback() Q_DECL_OVERRIDE;
 private:
     bool loadDll();
     bool unloadDll();
@@ -89,7 +88,7 @@ private:
                     //qWarning("WaitForSingleObjectEx for ao->notify_event error: %#lx", dwResult);
                     continue;
                }
-               ao->sem.release();
+               ao->onCallback();
             }
         }
     };
@@ -201,26 +200,29 @@ bool AudioOutputDSound::close()
     CloseHandle(notify_event); // FIXME: is it ok if thread is still waiting?
     return true;
 }
-bool AudioOutputDSound::isSupported(const AudioFormat& format) const
-{
-    return isSupported(format.sampleFormat()) && isSupported(format.channelLayout());
-}
 
 bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
     return !AudioFormat::isPlanar(sampleFormat);
 }
 
-// FIXME:
-bool AudioOutputDSound::isSupported(AudioFormat::ChannelLayout channelLayout) const
-{
-    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stero;
-}
-
 AudioOutputBackend::BufferControl AudioOutputDSound::bufferControl() const
 {
     // Both works. I prefer CountCallback
     return CountCallback;// OffsetBytes;
+}
+
+void AudioOutputDSound::onCallback()
+{
+    if (sem.available() < buffer_count) {
+        sem.release();
+        return;
+    }
+    // sound will loop even if buffer is finished
+    DX_ENSURE(stream_buf->Stop());
+    // reset positions is required!
+    DX_ENSURE(stream_buf->SetCurrentPosition(0));
+    write_offset = 0;
 }
 
 bool AudioOutputDSound::write(const QByteArray &data)
@@ -233,12 +235,9 @@ bool AudioOutputDSound::write(const QByteArray &data)
         write_offset = 0;
     HRESULT res = stream_buf->Lock(write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0); //DSBLOCK_ENTIREBUFFER
     if (res == DSERR_BUFFERLOST) {
-        stream_buf->Restore();
-        res = stream_buf->Lock(write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0);
-    }
-    if (res != DS_OK) {
-        qWarning() << "Can not lock secondary buffer (" << res << "): " << qt_error_string(res);
-        return false;
+        qDebug("buffer lost");
+        DX_ENSURE(stream_buf->Restore(), false);
+        DX_ENSURE(stream_buf->Lock(write_offset, data.size(), &dst1, &size1, &dst2, &size2, 0), false);
     }
     memcpy(dst1, data.constData(), size1);
     if (dst2)
