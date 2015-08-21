@@ -24,6 +24,8 @@
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/prepost.h"
 #include <QtCore/QLibrary>
+#include <QtCore/QSemaphore>
+#include <QtCore/QThread>
 #include <math.h>
 #define DIRECTSOUND_VERSION 0x0600
 #include <dsound.h>
@@ -42,7 +44,9 @@ public:
     QString name() const Q_DECL_FINAL { return QString::fromLatin1(kName);}
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
-    bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
+    bool isSupported(const AudioFormat& format) const Q_DECL_OVERRIDE;
+    bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_OVERRIDE;
+    bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_OVERRIDE;
     BufferControl bufferControl() const Q_DECL_FINAL;
     bool write(const QByteArray& data) Q_DECL_FINAL;
     bool play() Q_DECL_FINAL;
@@ -55,6 +59,7 @@ private:
     bool unloadDll();
     bool init();
     bool destroy() {
+        SafeRelease(&notify);
         SafeRelease(&prim_buf);
         SafeRelease(&stream_buf);
         SafeRelease(&dsound);
@@ -62,12 +67,33 @@ private:
         return true;
     }
     bool createDSoundBuffers();
-
+    static DWORD WINAPI notificationThread(LPVOID lpThreadParameter);
     HINSTANCE dll;
     LPDIRECTSOUND dsound;              ///direct sound object
     LPDIRECTSOUNDBUFFER prim_buf;      ///primary direct sound buffer
     LPDIRECTSOUNDBUFFER stream_buf;    ///secondary direct sound buffer (stream buffer)
+    LPDIRECTSOUNDNOTIFY notify;
+    HANDLE notify_event;
+    QSemaphore sem;
     int write_offset;               ///offset of the write cursor in the direct sound buffer
+
+    class PositionWatcher : public QThread {
+        AudioOutputDSound *ao;
+    public:
+        PositionWatcher(AudioOutputDSound* dsound) : ao(dsound) {}
+        void run() Q_DECL_OVERRIDE {
+            DWORD dwResult = 0;
+            while (ao->available) {
+               dwResult = WaitForSingleObjectEx(ao->notify_event, 2000, FALSE);
+               if (dwResult != WAIT_OBJECT_0) {
+                    //qWarning("WaitForSingleObjectEx for ao->notify_event error: %#lx", dwResult);
+                    continue;
+               }
+               ao->sem.release();
+            }
+        }
+    };
+    PositionWatcher watcher;
 };
 
 typedef AudioOutputDSound AudioOutputBackendDSound;
@@ -92,7 +118,10 @@ DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, WAVE_FORMAT_IEEE_FLOAT, 0x0000, 0x
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_DOLBY_AC3_SPDIF, WAVE_FORMAT_DOLBY_AC3_SPDIF, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 );
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_PCM, WAVE_FORMAT_PCM, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_UNKNOWN, 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-
+#ifndef MS_GUID
+#define MS_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+    static const GUID name = { l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
+#endif //MS_GUID
 #ifndef _WAVEFORMATEXTENSIBLE_
 typedef struct {
    WAVEFORMATEX    Format;
@@ -144,7 +173,10 @@ AudioOutputDSound::AudioOutputDSound(QObject *parent)
     , dsound(NULL)
     , prim_buf(NULL)
     , stream_buf(NULL)
+    , notify(NULL)
+    , notify_event(NULL)
     , write_offset(0)
+    , watcher(this)
 {
     //setDeviceFeatures(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume);
 }
@@ -164,23 +196,37 @@ error:
 
 bool AudioOutputDSound::close()
 {
+    available = false;
     destroy();
+    CloseHandle(notify_event); // FIXME: is it ok if thread is still waiting?
     return true;
+}
+bool AudioOutputDSound::isSupported(const AudioFormat& format) const
+{
+    return isSupported(format.sampleFormat()) && isSupported(format.channelLayout());
 }
 
 bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
-    return sampleFormat == AudioFormat::SampleFormat_Signed16
-            || sampleFormat == AudioFormat::SampleFormat_Float;
+    return !AudioFormat::isPlanar(sampleFormat);
+}
+
+// FIXME:
+bool AudioOutputDSound::isSupported(AudioFormat::ChannelLayout channelLayout) const
+{
+    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stero;
 }
 
 AudioOutputBackend::BufferControl AudioOutputDSound::bufferControl() const
 {
-    return OffsetBytes;
+    // Both works. I prefer CountCallback
+    return CountCallback;// OffsetBytes;
 }
 
 bool AudioOutputDSound::write(const QByteArray &data)
 {
+    if (bufferControl() & CountCallback)
+        sem.acquire();
     LPVOID dst1= NULL, dst2 = NULL;
     DWORD size1 = 0, size2 = 0;
     if (write_offset >= buffer_size*buffer_count) ///!!!>=
@@ -209,8 +255,8 @@ bool AudioOutputDSound::play()
     DWORD status;
     stream_buf->GetStatus(&status);
     if (!(status & DSBSTATUS_PLAYING)) {
-        // we don't need looping here. otherwise sound is always playing repeatly if no data feeded
-        stream_buf->Play(0, 0, 0);// DSBPLAY_LOOPING);
+        //must be DSBPLAY_LOOPING. Sound will be very slow if set to 0. I was fucked for a long time. DAMN!
+        stream_buf->Play(0, 0, DSBPLAY_LOOPING);
     }
     return true;
 }
@@ -301,61 +347,51 @@ bool AudioOutputDSound::createDSoundBuffers()
     WAVEFORMATEXTENSIBLE wformat;
     // TODO:  Dolby Digital AC3
     ZeroMemory(&wformat, sizeof(WAVEFORMATEXTENSIBLE));
-    wformat.Format.cbSize =  0;
-    wformat.Format.nChannels = format.channels();
-    wformat.Format.nSamplesPerSec = format.sampleRate();
-    wformat.Format.wFormatTag = WAVE_FORMAT_PCM;
-    wformat.Format.wBitsPerSample = format.bytesPerSample() * 8;
-    wformat.Samples.wValidBitsPerSample = wformat.Format.wBitsPerSample; //
-    wformat.Format.nBlockAlign = wformat.Format.nChannels * format.bytesPerSample();
-    wformat.Format.nAvgBytesPerSec = wformat.Format.nSamplesPerSec * wformat.Format.nBlockAlign;
+    WAVEFORMATEX wf;
+    wf.cbSize = 0;
+    wf.nChannels = format.channels();
+    wf.nSamplesPerSec = format.sampleRate(); // FIXME: use supported values
+    wf.wFormatTag = format.isFloat() ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM;
+    wf.wBitsPerSample = format.bytesPerSample() * 8;
+    wf.nBlockAlign = wf.nChannels * format.bytesPerSample();
+    wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
     wformat.dwChannelMask = channelLayoutToMS(format.channelLayoutFFmpeg());
     if (format.channels() > 2) {
-        wformat.Format.cbSize =  sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
-        wformat.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+        wf.cbSize =  sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
+        wf.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
         wformat.SubFormat = _KSDATAFORMAT_SUBTYPE_PCM;
-        //wformat.Samples.wValidBitsPerSample = wformat.Format.wBitsPerSample;
+        //wformat.Samples.wValidBitsPerSample = wf.wBitsPerSample;
     }
-    switch (format.sampleFormat()) {
-    case AudioFormat::SampleFormat_Float:
-        wformat.Format.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+    if (format.isFloat())
         wformat.SubFormat = _KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
-        break;
-    case AudioFormat::SampleFormat_Signed16:
+    else
         wformat.SubFormat = _KSDATAFORMAT_SUBTYPE_PCM;
-        break;
-    default:
-        break;
+    wformat.Format = wf;
+    if (format.channels() <= 2 && !format.isFloat()) {
+        // fill in primary sound buffer descriptor
+        DSBUFFERDESC dsbpridesc;
+        memset(&dsbpridesc, 0, sizeof(DSBUFFERDESC));
+        dsbpridesc.dwSize = sizeof(DSBUFFERDESC);
+        dsbpridesc.dwFlags = DSBCAPS_PRIMARYBUFFER;
+        // create primary buffer and set its format
+        DX_ENSURE(dsound->CreateSoundBuffer(&dsbpridesc, &prim_buf, NULL), (destroy() && false));
+        DX_ENSURE(prim_buf->SetFormat((WAVEFORMATEX *)&wf), false);
     }
-    // fill in primary sound buffer descriptor
-    DSBUFFERDESC dsbpridesc;
-    memset(&dsbpridesc, 0, sizeof(DSBUFFERDESC));
-    dsbpridesc.dwSize = sizeof(DSBUFFERDESC);
-    dsbpridesc.dwFlags = DSBCAPS_PRIMARYBUFFER;
-    dsbpridesc.dwBufferBytes = 0;
-    dsbpridesc.lpwfxFormat = NULL;
-    // create primary buffer and set its format
-    DX_ENSURE_OK(dsound->CreateSoundBuffer(&dsbpridesc, &prim_buf, NULL), (destroy() && false));
-    HRESULT res = prim_buf->SetFormat((WAVEFORMATEX *)&wformat);
-    if (res != DS_OK) {
-        qWarning() << "Cannot set primary buffer format (" << res << "): " << qt_error_string(res) << ". using standard setting (bad quality)";
-    }
-    qDebug("primary buffer created");
-
     // fill in the secondary sound buffer (=stream buffer) descriptor
     DSBUFFERDESC dsbdesc;
     memset(&dsbdesc, 0, sizeof(DSBUFFERDESC));
     dsbdesc.dwSize = sizeof(DSBUFFERDESC);
     dsbdesc.dwFlags = DSBCAPS_GETCURRENTPOSITION2 /** Better position accuracy */
                       | DSBCAPS_GLOBALFOCUS       /** Allows background playing */
-                      | DSBCAPS_CTRLVOLUME;       /** volume control enabled */
+                      | DSBCAPS_CTRLVOLUME       /** volume control enabled */
+                      | DSBCAPS_CTRLPOSITIONNOTIFY;
     dsbdesc.dwBufferBytes = buffer_size*buffer_count;
     dsbdesc.lpwfxFormat = (WAVEFORMATEX *)&wformat;
     // Needed for 5.1 on emu101k - shit soundblaster
     if (format.channels() > 2)
         dsbdesc.dwFlags |= DSBCAPS_LOCHARDWARE;
     // now create the stream buffer (secondary buffer)
-    res = dsound->CreateSoundBuffer(&dsbdesc, &stream_buf, NULL);
+    HRESULT res = dsound->CreateSoundBuffer(&dsbdesc, &stream_buf, NULL);
     if (res != DS_OK) {
         if (dsbdesc.dwFlags & DSBCAPS_LOCHARDWARE) {
             // Try without DSBCAPS_LOCHARDWARE
@@ -364,6 +400,19 @@ bool AudioOutputDSound::createDSoundBuffers()
         }
     }
     qDebug( "Secondary (stream)buffer created");
+    MS_GUID(IID_IDirectSoundNotify, 0xb0210783, 0x89cd, 0x11d0, 0xaf, 0x8, 0x0, 0xa0, 0xc9, 0x25, 0xcd, 0x16);
+    DX_ENSURE(stream_buf->QueryInterface(IID_IDirectSoundNotify, (void**)&notify), false);
+    notify_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+    QVector<DSBPOSITIONNOTIFY> notification(buffer_count);
+    for (int i = 0; i < buffer_count; ++i) {
+        notification[i].dwOffset = buffer_size*(i+1)-1;
+        notification[i].hEventNotify = notify_event;
+    }
+    DX_ENSURE(notify->SetNotificationPositions(notification.size(), notification.constData()), false);
+    available = true;
+
+    watcher.start();
+    sem.release(buffer_count - sem.available());
     return true;
 }
 
