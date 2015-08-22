@@ -46,6 +46,8 @@ int main(int argc, char *argv[])
     }
 
     QGuiApplication app(argc, argv);
+    app.setApplicationName(QStringLiteral("QMLPlayer"));
+    app.setApplicationDisplayName(QStringLiteral("QtAV QMLPlayer"));
     QDir::setCurrent(qApp->applicationDirPath());
     qDebug() << "arguments======= " << app.arguments();
     set_opengl_backend(options.option(QStringLiteral("gl")).value().toString(), app.arguments().first());
@@ -142,6 +144,7 @@ int main(int argc, char *argv[])
         QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
     }
 #endif
+    QObject::connect(&Config::instance(), SIGNAL(changed()), &Config::instance(), SLOT(save()));
     QObject::connect(viewer.rootObject(), SIGNAL(requestFullScreen()), &viewer, SLOT(showFullScreen()));
     QObject::connect(viewer.rootObject(), SIGNAL(requestNormalSize()), &viewer, SLOT(showNormal()));
     ScreenSaver::instance().disable(); //restore in dtor

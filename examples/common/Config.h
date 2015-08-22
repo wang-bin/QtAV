@@ -173,6 +173,7 @@ public:
     Q_INVOKABLE QVariant operator ()(const QString& key) const;
     Q_INVOKABLE Config& operator ()(const QString& key, const QVariant& value);
 public:
+    Q_SIGNAL void changed();
     //keyword 'signals' maybe protected. we need call the signals in other classes. Q_SIGNAL is empty
     Q_SIGNAL void forceFrameRateChanged();
     Q_SIGNAL void decodingThreadsChanged(int n);

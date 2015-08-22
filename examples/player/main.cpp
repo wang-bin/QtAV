@@ -84,6 +84,9 @@ int main(int argc, char *argv[])
     // has no effect if qInstallMessageHandler() called
     //qSetMessagePattern("%{function} @%{line}: %{message}");
     QApplication a(argc, argv);
+    a.setApplicationName(QString::fromLatin1("Player"));
+//    a.setApplicationDisplayName(QString::fromLatin1("QtAV Player"));
+
     QDir::setCurrent(qApp->applicationDirPath());
     QOptions options = get_common_options();
     options.add(QString::fromLatin1("player options"))

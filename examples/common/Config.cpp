@@ -29,22 +29,49 @@
 #include <QtCore/QStandardPaths>
 #endif
 #include <QtDebug>
+#include "common.h"
 
 class Config::Data
 {
 public:
     Data() {
-        dir = qApp->applicationDirPath() + QString::fromLatin1("/data");
-        if (!QDir(dir).exists()) {
-            dir = QDir::homePath() + QString::fromLatin1("/.QtAV");
-            if (!QDir(dir).exists())
-                QDir().mkpath(dir);
+        file = appDataDir() + QString::fromLatin1("/") + qApp->applicationName() + QString::fromLatin1(".ini");
+        if (!QDir(appDataDir()).exists()) {
+            if (!QDir().mkpath(appDataDir())) {
+                qWarning() << "Failed to create appDataDir: " << appDataDir();
+            }
         }
-        file = dir + QString::fromLatin1("/") + qApp->applicationName() + QString::fromLatin1(".ini");
         load();
     }
 
     void load() {
+        // for old config data migration
+        QString dir_old = qApp->applicationDirPath() + QString::fromLatin1("/data");
+        if (!QDir(dir_old).exists()) {
+            dir_old = QDir::homePath() + QString::fromLatin1("/.QtAV");
+        }
+        if (QDir(dir_old).exists()) {
+            if (!QFile(file).exists()) {
+                QString old = dir_old + QString::fromLatin1("/") + qApp->applicationName() + QString::fromLatin1(".ini");
+                if (QFile(old).exists()) {
+                    QFile::copy(old, file);
+                    QFile::remove(old);
+                }
+                old = dir_old + QString::fromLatin1("/playlist.qds");
+                if (QFile(old).exists()) {
+                    if (!QFile::copy(old, appDataDir() + QString::fromLatin1("/playlist.qds")))
+                        qWarning("error to move old playlist data");
+                    QFile::remove(old);
+                }
+                old = dir_old + QString::fromLatin1("/history.qds");
+                if (QFile(old).exists()) {
+                    if (!QFile::copy(old, appDataDir() + QString::fromLatin1("/history.qds")))
+                        qWarning("error to move old history data");
+                    QFile::remove(old);
+                }
+            }
+        }
+
         QSettings settings(file, QSettings::IniFormat);
         timeout = settings.value(QString::fromLatin1("timeout"), 30.0).toReal();
         abort_timeout = settings.value(QString::fromLatin1("abort_timeout"), true).toBool();
@@ -180,7 +207,6 @@ public:
         qDebug() << "sync end";
     }
 
-    QString dir;
     QString file;
 
     qreal force_fps;
@@ -240,7 +266,7 @@ Config::~Config()
 
 QString Config::defaultDir() const
 {
-    return mpData->dir;
+    return appDataDir();
 }
 
 bool Config::reset()
@@ -251,6 +277,7 @@ bool Config::reset()
         return false;
     }
     reload();
+    Q_EMIT changed();
     save();
     return true;
 }
@@ -276,6 +303,7 @@ Config& Config::setForceFrameRate(qreal value)
         return *this;
     mpData->force_fps = value;
     emit forceFrameRateChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -292,6 +320,7 @@ Config& Config::setDecoderPriorityNames(const QStringList &value)
     }
     mpData->video_decoders = value;
     emit decoderPriorityNamesChanged();
+    Q_EMIT changed();
     mpData->save();
     return *this;
 }
@@ -307,6 +336,7 @@ Config& Config::setCaptureDir(const QString& dir)
         return *this;
     mpData->capture_dir = dir;
     emit captureDirChanged(dir);
+    Q_EMIT changed();
     return *this;
 }
 
@@ -321,6 +351,7 @@ Config& Config::setCaptureFormat(const QString& format)
         return *this;
     mpData->capture_fmt = format;
     emit captureFormatChanged(format);
+    Q_EMIT changed();
     return *this;
 }
 
@@ -336,6 +367,7 @@ Config& Config::setCaptureQuality(int quality)
         return *this;
     mpData->capture_quality = quality;
     emit captureQualityChanged(quality);
+    Q_EMIT changed();
     return *this;
 }
 
@@ -350,6 +382,7 @@ Config& Config::setSubtitleEngines(const QStringList &value)
         return *this;
     mpData->subtitle_engines = value;
     emit subtitleEnginesChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -364,6 +397,7 @@ Config& Config::setSubtitleAutoLoad(bool value)
         return *this;
     mpData->subtitle_autoload = value;
     emit subtitleAutoLoadChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -378,6 +412,7 @@ Config& Config::setSubtitleEnabled(bool value)
         return *this;
     mpData->subtitle_enabled = value;
     emit subtitleEnabledChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -392,6 +427,7 @@ Config& Config::setSubtitleFont(const QFont& value)
         return *this;
     mpData->subtitle_font = value;
     emit subtitleFontChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -405,6 +441,7 @@ Config& Config::setSubtitleOutline(bool value)
         return *this;
     mpData->subtitle_outline = value;
     emit subtitleOutlineChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -412,12 +449,14 @@ QColor Config::subtitleColor() const
 {
     return mpData->subtitle_color;
 }
+
 Config& Config::setSubtitleColor(const QColor& value)
 {
     if (mpData->subtitle_color == value)
         return *this;
     mpData->subtitle_color = value;
     emit subtitleColorChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -431,6 +470,7 @@ Config& Config::setSubtitleOutlineColor(const QColor& value)
         return *this;
     mpData->subtitle_outline_color = value;
     emit subtitleOutlineColorChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -445,6 +485,7 @@ Config& Config::setSubtitleBottomMargin(int value)
         return *this;
     mpData->subtilte_bottom_margin = value;
     emit subtitleBottomMarginChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -473,6 +514,7 @@ Config& Config::setPreviewEnabled(bool value)
         return *this;
     mpData->preview_enabled = value;
     emit previewEnabledChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -487,6 +529,7 @@ Config& Config::setPreviewWidth(int value)
         return *this;
     mpData->preview_w = value;
     emit previewWidthChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -501,6 +544,7 @@ Config& Config::setPreviewHeight(int value)
         return *this;
     mpData->preview_h = value;
     emit previewHeightChanged();
+    Q_EMIT changed();
     return *this;
 }
 QVariantHash Config::avformatOptions() const
@@ -540,6 +584,7 @@ Config& Config::setAvformatOptionsEnabled(bool value)
         return *this;
     mpData->avformat_on = value;
     emit avformatOptionsEnabledChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -598,6 +643,7 @@ Config& Config::avfilterVideoOptions(const QString& options)
         return *this;
     mpData->avfilterVideo = options;
     emit avfilterVideoChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -612,6 +658,7 @@ Config& Config::avfilterVideoEnable(bool e)
         return *this;
     mpData->avfilterVideo_on = e;
     emit avfilterVideoChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -626,6 +673,7 @@ Config& Config::avfilterAudioOptions(const QString& options)
         return *this;
     mpData->avfilterAudio = options;
     emit avfilterAudioChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -640,6 +688,7 @@ Config& Config::avfilterAudioEnable(bool e)
         return *this;
     mpData->avfilterAudio_on = e;
     emit avfilterAudioChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -654,6 +703,7 @@ Config& Config::setOpenGLType(OpenGLType value)
         return *this;
     mpData->opengl = value;
     emit openGLTypeChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -668,6 +718,7 @@ Config& Config::setANGLEPlatform(const QString& value)
         return *this;
     mpData->angle_dx = value;
     emit ANGLEPlatformChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -682,6 +733,7 @@ Config& Config::setBufferValue(int value)
         return *this;
     mpData->buffer_value = value;
     emit bufferValueChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -696,6 +748,7 @@ Config& Config::setTimeout(qreal value)
         return *this;
     mpData->timeout = value;
     emit timeoutChanged();
+    Q_EMIT changed();
     return *this;
 }
 
@@ -710,6 +763,7 @@ Config& Config::setAbortOnTimeout(bool value)
         return *this;
     mpData->abort_timeout = value;
     emit abortOnTimeoutChanged();
+    Q_EMIT changed();
     return *this;
 }
 

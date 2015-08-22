@@ -32,6 +32,8 @@ void COMMON_EXPORT load_qm(const QStringList& names, const QString &lang = QLati
 // if appname ends with 'desktop', 'es', 'angle', software', 'sw', set by appname. otherwise set by command line option glopt, or Config file
 void COMMON_EXPORT set_opengl_backend(const QString& glopt = QString::fromLatin1("auto"), const QString& appname = QString());
 
+QString COMMON_EXPORT appDataDir();
+
 class COMMON_EXPORT AppEventFilter : public QObject
 {
 public:

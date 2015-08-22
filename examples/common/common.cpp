@@ -24,6 +24,11 @@
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
 #include <QtCore/QCoreApplication>
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QDesktopServices>
+#else
+#include <QtCore/QStandardPaths>
+#endif
 #include <QtDebug>
 
 QOptions get_common_options()
@@ -131,6 +136,20 @@ void set_opengl_backend(const QString& glopt, const QString &appname)
         qApp->setAttribute(Qt::AA_UseSoftwareOpenGL);
     }
 #endif
+}
+
+
+QString appDataDir()
+{
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    return QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+#else
+#if QT_VERSION < QT_VERSION_CHECK(5, 4, 0)
+    return QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+#else
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+#endif //5.4.0
+#endif // 5.0.0
 }
 
 AppEventFilter::AppEventFilter(QObject *player, QObject *parent)
