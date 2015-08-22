@@ -35,37 +35,7 @@ typedef QTime QElapsedTimer;
 
 namespace QtAV {
 static const char kFileScheme[] = "file:";
-#define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
-
-/*!
- * \brief getLocalPath
- * get path that works for both ffmpeg and QFile
- * Windows: ffmpeg does not supports file:///C:/xx.mov, only supports file:C:/xx.mov or C:/xx.mov
- * QFile: does not support file: scheme
- * fullPath can be file:///path from QUrl. QUrl.toLocalFile will remove file://
- */
-QString getLocalPath(const QString& fullPath)
-{
-    int pos = fullPath.indexOf(QLatin1String(kFileScheme));
-    if (pos >= 0) {
-        pos += CHAR_COUNT(kFileScheme);
-        bool has_slash = false;
-        while (fullPath.at(pos) == QLatin1Char('/')) {
-            has_slash = true;
-            ++pos;
-        }
-        // win: ffmpeg does not supports file:///C:/xx.mov, only supports file:C:/xx.mov or C:/xx.mov
-#ifndef Q_OS_WIN // for QUrl
-        if (has_slash)
-            --pos;
-#endif
-    }
-    // always remove "file:" even thought it works for ffmpeg.but fileName() may be used for QFile which does not file:
-    if (pos > 0)
-        return fullPath.mid(pos);
-    return fullPath;
-}
-#undef CHAR_COUNT
+extern QString getLocalPath(const QString& fullPath);
 
 class AVDemuxer::InterruptHandler : public AVIOInterruptCB
 {

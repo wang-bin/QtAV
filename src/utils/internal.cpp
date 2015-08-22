@@ -20,11 +20,92 @@
 ******************************************************************************/
 
 #include "internal.h"
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QDesktopServices>
+#else
+#include <QtCore/QStandardPaths>
+#endif
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
-
 namespace QtAV {
+
+static const char kFileScheme[] = "file:";
+#define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
+
+/*!
+ * \brief getLocalPath
+ * get path that works for both ffmpeg and QFile
+ * Windows: ffmpeg does not supports file:///C:/xx.mov, only supports file:C:/xx.mov or C:/xx.mov
+ * QFile: does not support file: scheme
+ * fullPath can be file:///path from QUrl. QUrl.toLocalFile will remove file://
+ */
+QString getLocalPath(const QString& fullPath)
+{
+    int pos = fullPath.indexOf(QLatin1String(kFileScheme));
+    if (pos >= 0) {
+        pos += CHAR_COUNT(kFileScheme);
+        bool has_slash = false;
+        while (fullPath.at(pos) == QLatin1Char('/')) {
+            has_slash = true;
+            ++pos;
+        }
+        // win: ffmpeg does not supports file:///C:/xx.mov, only supports file:C:/xx.mov or C:/xx.mov
+#ifndef Q_OS_WIN // for QUrl
+        if (has_slash)
+            --pos;
+#endif
+    }
+    // always remove "file:" even thought it works for ffmpeg.but fileName() may be used for QFile which does not file:
+    if (pos > 0)
+        return fullPath.mid(pos);
+    return fullPath;
+}
+#undef CHAR_COUNT
+
 namespace Internal {
+
+
+namespace Path {
+
+QString appDataDir()
+{
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    return QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+#else
+#if QT_VERSION < QT_VERSION_CHECK(5, 4, 0)
+    return QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+#else
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+#endif //5.4.0
+#endif // 5.0.0
+}
+
+QString appFontsDir()
+{
+    // TODO: test writableLocation
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    const QString dir(QStandardPaths::writableLocation(QStandardPaths::FontsLocation));
+    if (!dir.isEmpty())
+        return dir;
+#endif
+    return appDataDir() + QStringLiteral("/fonts");
+}
+
+QString fontsDir()
+{
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    return QDesktopServices::storageLocation(QDesktopServices::FontsLocation);
+#else
+    return QStandardPaths::standardLocations(QStandardPaths::FontsLocation).first();
+#endif
+}
+
+// writable font dir. it's appFontsDir()/fonts
+QString appFontsDir();
+// usually not writable
+QString fontsDir();
+
+}
 
 QString options2StringHelper(void* obj, const char* unit)
 {
