@@ -82,11 +82,12 @@ QString appDataDir()
 
 QString appFontsDir()
 {
-    // TODO: test writableLocation
+#if 0 //qt may return an read only path, for example OSX /System/Library/Fonts
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     const QString dir(QStandardPaths::writableLocation(QStandardPaths::FontsLocation));
     if (!dir.isEmpty())
         return dir;
+#endif
 #endif
     return appDataDir() + QStringLiteral("/fonts");
 }
