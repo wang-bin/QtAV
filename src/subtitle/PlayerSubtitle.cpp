@@ -148,7 +148,7 @@ void PlayerSubtitle::onPlayerStart()
         m_sub->setFuzzyMatch(false);
         if (m_file.isEmpty()) {
             const int n = m_player->currentSubtitleStream();
-            if (n >= 0 && !m_tracks.isEmpty() && m_tracks.size() <= n) {
+            if (n < 0 || m_tracks.isEmpty() || m_tracks.size() <= n) {
                 m_sub->processHeader(QByteArray(), QByteArray()); // reset
                 return;
             }
