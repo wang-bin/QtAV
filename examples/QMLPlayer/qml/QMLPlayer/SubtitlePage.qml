@@ -8,7 +8,7 @@ Page {
     signal subtitleChanged(string file)
     signal subtitleTrackChanged(int track)
     property var supportedFormats: ["ass" , "ssa"]
-    height: titleHeight + tracksMenu.height + 8*Utils.kItemHeight + engine.contentHeight + Utils.kSpacing*7
+    height: titleHeight + tracksMenu.height + 11*Utils.kItemHeight + engine.contentHeight + Utils.kSpacing*7
     property var internalSubtitleTracks : "unkown"
     Column {
         anchors.fill: content
@@ -142,6 +142,81 @@ Page {
                 color: PlayerConfig.subtitleColor
             }
         }
+
+        Text {
+            color: "white"
+            text: qsTr("Style") + " (" + qsTr("Only for LibAss engine") + ")"
+            font.pixelSize: Utils.kFontSize
+        }
+        Item {
+            width: parent.width
+            height: Utils.kItemHeight
+            Text {
+                id: fontFile
+                color: "orange"
+                font.pixelSize: Utils.kFontSize
+                anchors.left: parent.left
+                anchors.right: openFontFile.left
+                height: parent.height
+                text: PlayerConfig.assFontFile
+            }
+            Button {
+                id: openFontFile
+                text: qsTr("Font file")
+                width: Utils.scaled(80)
+                anchors.right: forceFontFile.left
+                height: parent.height
+                onClicked: fontFileDialog.open()
+            }
+            Button {
+                id: forceFontFile
+                text: qsTr("Force")
+                width: Utils.scaled(50)
+                anchors.right: clearFontFile.left
+                height: parent.height
+                checkable: true
+                checked: PlayerConfig.assFontFileForced
+                onCheckedChanged: PlayerConfig.assFontFileForced = checked
+            }
+            Button {
+                id: clearFontFile
+                text: qsTr("Clear")
+                width: Utils.scaled(50)
+                anchors.right: parent.right
+                height: parent.height
+                onClicked: PlayerConfig.assFontFile = ""
+            }
+        }
+        Item {
+            width: parent.width
+            height: Utils.kItemHeight
+            Text {
+                id: fontsDir
+                color: "orange"
+                font.pixelSize: Utils.kFontSize
+                text: PlayerConfig.assFontsDir
+                anchors.left: parent.left
+                anchors.right: openFontsDir.left
+                height: parent.height
+            }
+            Button {
+                id: openFontsDir
+                text: qsTr("Fonts dir")
+                width: Utils.scaled(80)
+                anchors.right: clearFontsDir.left
+                height: parent.height
+                onClicked: fontsDirDialog.open()
+            }
+            Button {
+                id: clearFontsDir
+                text: qsTr("Clear")
+                width: Utils.scaled(50)
+                anchors.right: parent.right
+                height: parent.height
+                onClicked: PlayerConfig.assFontsDir = ""
+            }
+        }
+
         Text {
             color: "white"
             text: qsTr("Embedded Subtitles") + ": " + internalSubtitleTracks.length
@@ -223,6 +298,25 @@ Page {
             tracksModel.append({name: label, value: t.id})
         }
     }
+    FileDialog {
+        id: fontFileDialog
+        title: qsTr("Choose a font file")
+        onAccepted: {
+            fontFile.text = fileUrl
+            PlayerConfig.assFontFile = fileUrl
+        }
+    }
+
+    FileDialog {
+        id: fontsDirDialog
+        title: qsTr("Choose a fonts dir")
+        selectFolder: true
+        onAccepted: {
+            fontsDir.text = folder
+            PlayerConfig.assFontsDir = folder
+        }
+    }
+
     FileDialog {
         id: fileDialog
         title: qsTr("Open a subtitle file")

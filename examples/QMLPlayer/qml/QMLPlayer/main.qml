@@ -152,6 +152,9 @@ Rectangle {
         autoLoad: PlayerConfig.subtitleAutoLoad
         engines: PlayerConfig.subtitleEngines
         delay: PlayerConfig.subtitleDelay
+        fontFile: PlayerConfig.assFontFile
+        fontFileForced: PlayerConfig.assFontFileForced
+        fontsDir: PlayerConfig.assFontsDir
 
         onContentChanged: { //already enabled
             if (!canRender || !subtitleItem.visible)

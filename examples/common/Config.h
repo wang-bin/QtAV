@@ -53,6 +53,11 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(bool subtitleOutline READ subtitleOutline WRITE setSubtitleOutline NOTIFY subtitleOutlineChanged)
     Q_PROPERTY(int subtitleBottomMargin READ subtitleBottomMargin WRITE setSubtitleBottomMargin NOTIFY subtitleBottomMarginChanged)
     Q_PROPERTY(qreal subtitleDelay READ subtitleDelay WRITE setSubtitleDelay NOTIFY subtitleDelayChanged)
+    // font properties for libass engine
+    Q_PROPERTY(QString assFontFile READ assFontFile WRITE setAssFontFile NOTIFY assFontFileChanged)
+    Q_PROPERTY(QString assFontsDir READ assFontsDir WRITE setAssFontsDir NOTIFY assFontsDirChanged)
+    Q_PROPERTY(bool assFontFileForced READ isAssFontFileForced WRITE setAssFontFileForced NOTIFY assFontFileForcedChanged)
+
     Q_PROPERTY(bool previewEnabled READ previewEnabled WRITE setPreviewEnabled NOTIFY previewEnabledChanged)
     Q_PROPERTY(int previewWidth READ previewWidth WRITE setPreviewWidth NOTIFY previewWidthChanged)
     Q_PROPERTY(int previewHeight READ previewHeight WRITE setPreviewHeight NOTIFY previewHeightChanged)
@@ -122,6 +127,13 @@ public:
 
     qreal subtitleDelay() const;
     Config& setSubtitleDelay(qreal value);
+
+    QString assFontFile() const;
+    Config& setAssFontFile(const QString& value);
+    QString assFontsDir() const;
+    Config& setAssFontsDir(const QString& value);
+    bool isAssFontFileForced() const;
+    Config& setAssFontFileForced(bool value);
 
     bool previewEnabled() const;
     Config& setPreviewEnabled(bool value);
@@ -193,6 +205,9 @@ public:
     Q_SIGNAL void subtitleOutlineColorChanged();
     Q_SIGNAL void subtitleBottomMarginChanged();
     Q_SIGNAL void subtitleDelayChanged();
+    Q_SIGNAL void assFontFileChanged();
+    Q_SIGNAL void assFontsDirChanged();
+    Q_SIGNAL void assFontFileForcedChanged();
     Q_SIGNAL void previewEnabledChanged();
     Q_SIGNAL void previewWidthChanged();
     Q_SIGNAL void previewHeightChanged();

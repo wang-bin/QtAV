@@ -115,6 +115,11 @@ public:
         subtitle_outline_color = settings.value(QString::fromLatin1("outline_color"), QColor("blue")).value<QColor>();
         subtitle_outline = settings.value(QString::fromLatin1("outline"), true).toBool();
         subtilte_bottom_margin = settings.value(QString::fromLatin1("bottom margin"), 8).toInt();
+        settings.beginGroup("ass");
+        ass_font_file = settings.value(QString::fromLatin1("font_file"), QString()).toString();
+        ass_force_font_file = settings.value(QString::fromLatin1("force_font_file"), false).toBool();
+        ass_fonts_dir = settings.value(QString::fromLatin1("fonts_dir"), QString()).toString();
+        settings.endGroup();
         settings.endGroup();
         settings.beginGroup(QString::fromLatin1("preview"));
         preview_enabled = settings.value(QString::fromLatin1("enabled"), true).toBool();
@@ -175,6 +180,11 @@ public:
         settings.setValue(QString::fromLatin1("outline_color"), subtitle_outline_color);
         settings.setValue(QString::fromLatin1("outline"), subtitle_outline);
         settings.setValue(QString::fromLatin1("bottom margin"), subtilte_bottom_margin);
+        settings.beginGroup("ass");
+        settings.setValue(QString::fromLatin1("font_file"), ass_font_file);
+        settings.setValue(QString::fromLatin1("force_font_file"), ass_force_font_file);
+        settings.setValue(QString::fromLatin1("fonts_dir"), ass_fonts_dir);
+        settings.endGroup();
         settings.endGroup();
         settings.beginGroup(QString::fromLatin1("preview"));
         settings.setValue(QString::fromLatin1("enabled"), preview_enabled);
@@ -234,6 +244,10 @@ public:
     bool subtitle_outline;
     int subtilte_bottom_margin;
     qreal subtitle_delay;
+
+    bool ass_force_font_file;
+    QString ass_font_file;
+    QString ass_fonts_dir;
 
     bool preview_enabled;
     int preview_w, preview_h;
@@ -500,6 +514,49 @@ Config& Config::setSubtitleDelay(qreal value)
         return *this;
     mpData->subtitle_delay = value;
     Q_EMIT subtitleDelayChanged();
+    return *this;
+}
+
+QString Config::assFontFile() const
+{
+    return mpData->ass_font_file;
+}
+
+Config& Config::setAssFontFile(const QString &value)
+{
+    if (mpData->ass_font_file == value)
+        return *this;
+    mpData->ass_font_file = value;
+    Q_EMIT assFontFileChanged();
+    return *this;
+}
+
+
+QString Config::assFontsDir() const
+{
+    return mpData->ass_fonts_dir;
+}
+
+Config& Config::setAssFontsDir(const QString &value)
+{
+    if (mpData->ass_fonts_dir == value)
+        return *this;
+    mpData->ass_fonts_dir = value;
+    Q_EMIT assFontsDirChanged();
+    return *this;
+}
+
+bool Config::isAssFontFileForced() const
+{
+    return mpData->ass_force_font_file;
+}
+
+Config& Config::setAssFontFileForced(bool value)
+{
+    if (mpData->ass_force_font_file == value)
+        return *this;
+    mpData->ass_force_font_file = value;
+    Q_EMIT assFontFileForcedChanged();
     return *this;
 }
 
