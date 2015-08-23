@@ -59,6 +59,10 @@ class QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
     Q_PROPERTY(QString file READ file WRITE setFile NOTIFY fileChanged)
     //
     Q_PROPERTY(QString text READ getText)
+    // font properties for libass engine
+    Q_PROPERTY(QString fontFile READ fontFile WRITE setFontFile NOTIFY fontFileChanged)
+    Q_PROPERTY(QString fontsDir READ fontsDir WRITE setFontsDir NOTIFY fontsDirChanged)
+    Q_PROPERTY(bool fontFileForced READ isFontFileForced WRITE setFontFileForced NOTIFY fontFileForcedChanged)
 public:
     explicit QuickSubtitle(QObject *parent = 0);
     Q_INVOKABLE QString getText() const;
@@ -93,6 +97,7 @@ public:
      * \return
      */
     bool autoLoad() const;
+    //void setAssFrameSize(int width, int height);
 public Q_SLOTS:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
@@ -113,6 +118,9 @@ Q_SIGNALS:
     void supportedSuffixesChanged();
     void engineChanged();
     void delayChanged();
+    void fontFileChanged();
+    void fontsDirChanged();
+    void fontFileForcedChanged();
 
 private:
     bool m_enable;

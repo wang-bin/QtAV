@@ -82,6 +82,11 @@ public:
     virtual QImage getImage(qreal pts, QRect* boundingRect = 0);
     void setFrameSize(int width, int height);
     QSize frameSize() const;
+
+    // font properties: libass only now
+    virtual void setFontFile(const QString& file) {Q_UNUSED(file);}
+    virtual void setFontsDir(const QString& dir) {Q_UNUSED(dir);}
+    virtual void setFontFileForced(bool force) {Q_UNUSED(force);}
 protected:
     // default do nothing
     virtual void onFrameSizeChanged(int width, int height);

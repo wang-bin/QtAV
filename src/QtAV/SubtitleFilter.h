@@ -54,6 +54,10 @@ class Q_AV_EXPORT SubtitleFilter : public VideoFilter, public SubtitleAPIProxy
     Q_PROPERTY(QRectF rect READ rect WRITE setRect NOTIFY rectChanged)
     Q_PROPERTY(QFont font READ font WRITE setFont NOTIFY fontChanged)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
+    // font properties for libass engine
+    Q_PROPERTY(QString fontFile READ fontFile WRITE setFontFile NOTIFY fontFileChanged)
+    Q_PROPERTY(QString fontsDir READ fontsDir WRITE setFontsDir NOTIFY fontsDirChanged)
+    Q_PROPERTY(bool fontFileForced READ isFontFileForced WRITE setFontFileForced NOTIFY fontFileForcedChanged)
 public:
     explicit SubtitleFilter(QObject *parent = 0);
     void setPlayer(AVPlayer* player);
@@ -105,6 +109,9 @@ signals:
     void supportedSuffixesChanged();
     void engineChanged();
     void delayChanged();
+    void fontFileChanged();
+    void fontsDirChanged();
+    void fontFileForcedChanged();
 
 protected:
     virtual void process(Statistics* statistics, VideoFrame* frame);

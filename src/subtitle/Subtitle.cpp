@@ -54,6 +54,7 @@ public:
         , t(0)
         , delay(0)
         , current_count(0)
+        , force_font_file(false)
     {}
     void reset() {
         QMutexLocker lock(&mutex);
@@ -117,6 +118,10 @@ public:
      */
     int current_count;
     QMutex mutex;
+
+    bool force_font_file;
+    QString font_file;
+    QString fonts_dir;
 };
 
 Subtitle::Subtitle(QObject *parent) :
@@ -335,6 +340,54 @@ qreal Subtitle::delay() const
     return priv->delay;
 }
 
+QString Subtitle::fontFile() const
+{
+    return priv->font_file;
+}
+
+void Subtitle::setFontFile(const QString &value)
+{
+    if (priv->font_file == value)
+        return;
+    priv->font_file = value;
+    Q_EMIT fontFileChanged();
+    if (priv->processor) {
+        priv->processor->setFontFile(value);
+    }
+}
+
+QString Subtitle::fontsDir() const
+{
+    return priv->fonts_dir;
+}
+
+void Subtitle::setFontsDir(const QString &value)
+{
+    if (priv->fonts_dir == value)
+        return;
+    priv->fonts_dir = value;
+    Q_EMIT fontsDirChanged();
+    if (priv->processor) {
+        priv->processor->setFontsDir(value);
+    }
+}
+
+bool Subtitle::isFontFileForced() const
+{
+    return priv->force_font_file;
+}
+
+void Subtitle::setFontFileForced(bool value)
+{
+    if (priv->force_font_file == value)
+        return;
+    priv->force_font_file = value;
+    Q_EMIT fontFileForcedChanged();
+    if (priv->processor) {
+        priv->processor->setFontFileForced(value);
+    }
+}
+
 void Subtitle::load()
 {
     SubtitleProcessor *old_processor = priv->processor;
@@ -395,6 +448,12 @@ void Subtitle::load()
     checkCapability();
     if (old_processor != priv->processor)
         Q_EMIT engineChanged();
+
+    if (priv->processor) {
+        priv->processor->setFontFile(priv->font_file);
+        priv->processor->setFontsDir(priv->fonts_dir);
+        priv->processor->setFontFileForced(priv->force_font_file);
+    }
 }
 
 void Subtitle::checkCapability()
@@ -496,6 +555,10 @@ bool Subtitle::processHeader(const QByteArray& codec, const QByteArray &data)
     if (!priv->processor->processHeader(codec, data))
         return false;
     priv->loaded = true;
+
+    priv->processor->setFontFile(priv->font_file);
+    priv->processor->setFontsDir(priv->fonts_dir);
+    priv->processor->setFontFileForced(priv->force_font_file);
     return true;
 }
 
@@ -778,6 +841,9 @@ void SubtitleAPIProxy::setSubtitle(Subtitle *sub)
     QObject::connect(m_s, SIGNAL(suffixesChanged()), m_obj, SIGNAL(suffixesChanged()));
     QObject::connect(m_s, SIGNAL(supportedSuffixesChanged()), m_obj, SIGNAL(supportedSuffixesChanged()));
     QObject::connect(m_s, SIGNAL(delayChanged()), m_obj, SIGNAL(delayChanged()));
+    QObject::connect(m_s, SIGNAL(fontFileChanged()), m_obj, SIGNAL(fontFileChanged()));
+    QObject::connect(m_s, SIGNAL(fontsDirChanged()), m_obj, SIGNAL(fontsDirChanged()));
+    QObject::connect(m_s, SIGNAL(fontFileForcedChanged()), m_obj, SIGNAL(fontFileForcedChanged()));
 }
 
 void SubtitleAPIProxy::setCodec(const QByteArray& value)
@@ -895,6 +961,42 @@ void SubtitleAPIProxy::setDelay(qreal value)
 qreal SubtitleAPIProxy::delay() const
 {
     return m_s ? m_s->delay() : 0;
+}
+
+QString SubtitleAPIProxy::fontFile() const
+{
+    return m_s ? m_s->fontFile() : QString();
+}
+
+void SubtitleAPIProxy::setFontFile(const QString &value)
+{
+    if (!m_s)
+        return;
+    m_s->setFontFile(value);
+}
+
+QString SubtitleAPIProxy::fontsDir() const
+{
+    return m_s ? m_s->fontsDir() : QString();
+}
+
+void SubtitleAPIProxy::setFontsDir(const QString &value)
+{
+    if (!m_s)
+        return;
+    m_s->setFontsDir(value);
+}
+
+bool SubtitleAPIProxy::isFontFileForced() const
+{
+    return m_s && m_s->isFontFileForced();
+}
+
+void SubtitleAPIProxy::setFontFileForced(bool value)
+{
+    if (!m_s)
+        return;
+    m_s->setFontFileForced(value);
 }
 
 } //namespace QtAV
