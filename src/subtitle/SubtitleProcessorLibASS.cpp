@@ -68,6 +68,9 @@ private:
     void renderASS32(QImage *image, ASS_Image* img, int dstX, int dstY);
     void processTrack(ASS_Track *track);
     bool m_update_cache;
+    bool force_font_file; // works only iff font_file is set
+    QString font_file;
+    QString fonts_dir;
     QByteArray m_codec;
     ASS_Library *m_ass;
     ASS_Renderer *m_renderer;
@@ -124,6 +127,7 @@ static void ass_msg_cb(int level, const char *fmt, va_list va, void *data)
 
 SubtitleProcessorLibASS::SubtitleProcessorLibASS()
     : m_update_cache(true)
+    , force_font_file(true)
     , m_ass(0)
     , m_renderer(0)
     , m_track(0)
@@ -487,17 +491,24 @@ void SubtitleProcessorLibASS::updateFontCache()
         if (family.isEmpty())
             family = QByteArrayLiteral("Arial");
     }
-    bool override_ass_fonts = 0;
-    if (font.isEmpty()) { //use FC or libass font provider
-        qDebug() << "use FC, fonts dir: " << fontsdir;
-        if (!fontsdir.isEmpty())
-            ass_set_fonts_dir(m_ass, fontsdir.toUtf8().constData());
-        ass_set_fonts(m_renderer, NULL, family.constData(), !override_ass_fonts, conf.toUtf8().constData(), 1);
-    } else { // disable FC
-        override_ass_fonts = 1;
-        qDebug() << "disable FC, use font: " << font;
-        // fontconfig can be false(0) and conf can be NULL if font is overrided by font var
-        ass_set_fonts(m_renderer, font.toUtf8().constData(), family.constData(), !override_ass_fonts, NULL, 1);
+    // prefer user settings
+    if (!font_file.isEmpty())
+        font = font_file;
+    if (!fonts_dir.isEmpty())
+        fontsdir = fonts_dir;
+    // setup libass
+    if (!fontsdir.isEmpty())
+        ass_set_fonts_dir(m_ass, fontsdir.toUtf8().constData());
+    /* ass_set_fonts:
+     * fc/dfp=false(auto font provider): Prefer font provider to find a font(FC needs fonts.conf) in font_dir, or provider's configuration. If failed, try the given font
+     * fc/dfp=true(no font provider): only try the given font
+     */
+    // user can prefer font provider(force_font_file=false), or disable font provider to force the given font
+    // if provider is enabled, libass can fallback to the given font if provider can not provide a font
+    if (font.isEmpty()) { // always use font provider if not font file is set
+        ass_set_fonts(m_renderer, NULL, family.constData(), !force_font_file, conf.toUtf8().constData(), 1);
+    } else {
+        ass_set_fonts(m_renderer, font.toUtf8().constData(), family.constData(), !force_font_file, conf.toUtf8().constData(), 1);
     }
     //ass_fonts_update(m_renderer); // update in ass_set_fonts(....,1)
     m_update_cache = false; //TODO: set true if user set a new font or fonts dir
