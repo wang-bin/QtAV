@@ -103,6 +103,11 @@ static void ass_msg_cb(int level, const char *fmt, va_list va, void *data)
     Q_UNUSED(data)
     if (level > MSGL_INFO)
         return;
+#ifdef Q_OS_WIN
+    if (level == MSGL_WARN) {
+       return; //crash at warnings from fontselect
+    }
+#endif
     printf("[libass]: ");
     vprintf(fmt, va);
     printf("\n");
@@ -364,6 +369,8 @@ void SubtitleProcessorLibASS::onFrameSizeChanged(int width, int height)
 
 bool SubtitleProcessorLibASS::initRenderer()
 {
+    //ass_set_extract_fonts(m_ass, 1);
+    //ass_set_style_overrides(m_ass, 0);
     m_renderer = ass_renderer_init(m_ass);
     if (!m_renderer) {
         qWarning("ass_renderer_init failed!");
@@ -480,16 +487,17 @@ void SubtitleProcessorLibASS::updateFontCache()
         if (family.isEmpty())
             family = QByteArrayLiteral("Arial");
     }
+    bool override_ass_fonts = 0;
     if (font.isEmpty()) { //use FC or libass font provider
         qDebug() << "use FC, fonts dir: " << fontsdir;
         if (!fontsdir.isEmpty())
             ass_set_fonts_dir(m_ass, fontsdir.toUtf8().constData());
-        ass_set_fonts(m_renderer, NULL, family.constData(), 1, conf.toUtf8().constData(), 1);
+        ass_set_fonts(m_renderer, NULL, family.constData(), !override_ass_fonts, conf.toUtf8().constData(), 1);
     } else { // disable FC
+        override_ass_fonts = 1;
         qDebug() << "disable FC, use font: " << font;
-        const bool override_ass_fonts = 0; // kodi is false
         // fontconfig can be false(0) and conf can be NULL if font is overrided by font var
-        ass_set_fonts(m_renderer, font.toUtf8().constData(), family.constData(), override_ass_fonts, NULL, 1);
+        ass_set_fonts(m_renderer, font.toUtf8().constData(), family.constData(), !override_ass_fonts, NULL, 1);
     }
     //ass_fonts_update(m_renderer); // update in ass_set_fonts(....,1)
     m_update_cache = false; //TODO: set true if user set a new font or fonts dir
