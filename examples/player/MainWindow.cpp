@@ -750,9 +750,10 @@ void MainWindow::setVideoDecoderNames(const QStringList &vd)
 
 void MainWindow::openFile()
 {
-    QString file = QFileDialog::getOpenFileName(0, tr("Open a media file"));
+    QString file = QFileDialog::getOpenFileName(0, tr("Open a media file"), Config::instance().lastFile());
     if (file.isEmpty())
         return;
+    Config::instance().setLastFile(file);
     play(file);
 }
 

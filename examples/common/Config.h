@@ -39,6 +39,8 @@
 class COMMON_EXPORT Config : public QObject
 {
     Q_OBJECT
+    // last file opened by file dialog
+    Q_PROPERTY(QString lastFile READ lastFile WRITE setLastFile NOTIFY lastFileChanged)
     Q_PROPERTY(qreal forceFrameRate READ forceFrameRate WRITE setForceFrameRate NOTIFY forceFrameRateChanged)
     Q_PROPERTY(QStringList decoderPriorityNames READ decoderPriorityNames WRITE setDecoderPriorityNames NOTIFY decoderPriorityNamesChanged)
     Q_PROPERTY(QString captureDir READ captureDir WRITE setCaptureDir NOTIFY captureDirChanged)
@@ -85,6 +87,9 @@ public:
      */
     QString defaultDir() const;
     //void loadFromFile(const QString& file);
+
+    QString lastFile() const;
+    Config& setLastFile(const QString& value);
 
     qreal forceFrameRate() const;
     Config& setForceFrameRate(qreal value);
@@ -186,6 +191,7 @@ public:
     Q_INVOKABLE Config& operator ()(const QString& key, const QVariant& value);
 public:
     Q_SIGNAL void changed();
+    Q_SIGNAL void lastFileChanged();
     //keyword 'signals' maybe protected. we need call the signals in other classes. Q_SIGNAL is empty
     Q_SIGNAL void forceFrameRateChanged();
     Q_SIGNAL void decodingThreadsChanged(int n);

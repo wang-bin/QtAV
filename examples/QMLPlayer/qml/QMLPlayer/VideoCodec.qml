@@ -44,15 +44,11 @@ Page {
             focus: true
 
             delegate: contentDelegate
-            model: contentModel
+            model: codecMode
         }
 
         ListModel {
-            id: contentModel
-            ListElement { name: "VDA"; hardware: true; zcopy: true; description: "VDA (OSX)" }
-            ListElement { name: "DXVA"; hardware: true; zcopy: true; description: "DirectX Video Acceleration (Windows)\nUse ANGLE D3D to support 0-copy" }
-            ListElement { name: "VAAPI"; hardware: true; zcopy: true; description: "VA-API (Linux) " }
-            ListElement { name: "CUDA"; hardware: true; zcopy: false; description: "NVIDIA CUDA (Windows, Linux)"}
+            id: codecMode
             ListElement { name: "FFmpeg"; hardware: false; zcopy: false; description: "FFmpeg/Libav" }
         }
 
@@ -61,7 +57,7 @@ Page {
             DelegateItem {
                 id: delegateItem
                 text: name
-                width: Utils.kItemWidth
+                //width: Utils.kItemWidth
                 height: Utils.kItemHeight
                 color: "#aa000000"
                 selectedColor: "#aa0000cc"
@@ -77,8 +73,7 @@ Page {
                     if (state != "selected")
                         return
                     d.detail = description + " " + (hardware ? qsTr("hardware decoding") : qsTr("software decoding"))  + "\n"
-                            + qsTr("Zero Copy support") + ":" + zcopy + "\n\n"
-                            + qsTr("Takes effect on the next play")
+                            + qsTr("Zero Copy support") + ":" + zcopy
                     PlayerConfig.decoderPriorityNames = [ name ]
                 }
             }
@@ -94,8 +89,20 @@ Page {
         }
     }
     Component.onCompleted: {
-        for (var i = 0; i < contentModel.count; ++i) {
-            if (contentModel.get(i).name === PlayerConfig.decoderPriorityNames[0]) {
+        if (Qt.platform.os == "windows") {
+            codecMode.append({ name: "DXVA", hardware: true, zcopy: true, description: "DirectX Video Acceleration (Windows)\nUse ANGLE D3D to support 0-copy" })
+            codecMode.append({ name: "CUDA", hardware: true, zcopy: true, description: "NVIDIA CUDA (Windows, Linux)"})
+        } else if (Qt.platform.os == "osx") {
+            codecMode.append({ name: "VDA", hardware: true, zcopy: true, description: "VDA (OSX)" })
+            codecMode.append({ name: "VideoToolbox", hardware: true, zcopy: true, description: "VideoToolbox (OSX)" })
+        } else if (Qt.platform.os == "ios") {
+            codecMode.append({ name: "VideoToolbox", hardware: true, zcopy: true, description: "VideoToolbox (iOS)" })
+        } else if (Qt.platform.os == "linux") {
+            codecMode.append({ name: "VAAPI", hardware: true, zcopy: true, description: "VA-API (Linux) " })
+            codecMode.append({ name: "CUDA", hardware: true, zcopy: true, description: "NVIDIA CUDA (Windows, Linux)"})
+        }
+        for (var i = 0; i < codecMode.count; ++i) {
+            if (codecMode.get(i).name === PlayerConfig.decoderPriorityNames[0]) {
                 listView.currentIndex = i;
                 d.selectedItem = listView.currentItem
                 listView.currentItem.state = "selected"

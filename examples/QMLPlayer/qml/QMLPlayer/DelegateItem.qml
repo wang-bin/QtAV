@@ -3,8 +3,8 @@ import "utils.js" as Utils
 
 Rectangle {
     id: root
-    width: Utils.kItemWidth
-    height: Utils.kItemHeight
+    width: Math.max(Utils.kItemWidth, itemText.contentWidth+8)
+    height: itemText.contentWidth
     property color selectedColor: "#66ddaadd"
     property alias text: itemText.text
     color: "#99000000"
@@ -12,6 +12,8 @@ Rectangle {
     Text {
         id: itemText
         color: "white"
+        anchors.fill: parent
+        anchors.margins: 4
         font.pixelSize: Utils.kFontSize
         anchors.centerIn: parent
         horizontalAlignment: Text.AlignHCenter

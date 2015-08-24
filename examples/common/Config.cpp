@@ -73,6 +73,7 @@ public:
         }
 
         QSettings settings(file, QSettings::IniFormat);
+        last_file = settings.value(QString::fromLatin1("last_file"), QString()).toString();
         timeout = settings.value(QString::fromLatin1("timeout"), 30.0).toReal();
         abort_timeout = settings.value(QString::fromLatin1("abort_timeout"), true).toBool();
         force_fps = settings.value(QString::fromLatin1("force_fps"), 0.0).toReal();
@@ -115,7 +116,7 @@ public:
         subtitle_outline_color = settings.value(QString::fromLatin1("outline_color"), QColor("blue")).value<QColor>();
         subtitle_outline = settings.value(QString::fromLatin1("outline"), true).toBool();
         subtilte_bottom_margin = settings.value(QString::fromLatin1("bottom margin"), 8).toInt();
-        settings.beginGroup("ass");
+        settings.beginGroup(QString::fromLatin1("ass"));
         ass_font_file = settings.value(QString::fromLatin1("font_file"), QString()).toString();
         ass_force_font_file = settings.value(QString::fromLatin1("force_font_file"), false).toBool();
         ass_fonts_dir = settings.value(QString::fromLatin1("fonts_dir"), QString()).toString();
@@ -157,6 +158,7 @@ public:
         qDebug() << "sync config to " << file;
         QSettings settings(file, QSettings::IniFormat);
         // TODO: why crash on mac qt5.4 if call on aboutToQuit()
+        settings.setValue(QString::fromLatin1("last_file"), last_file);
         settings.setValue(QString::fromLatin1("timeout"), timeout);
         settings.setValue(QString::fromLatin1("abort_timeout"), abort_timeout);
         settings.setValue(QString::fromLatin1("force_fps"), force_fps);
@@ -180,7 +182,7 @@ public:
         settings.setValue(QString::fromLatin1("outline_color"), subtitle_outline_color);
         settings.setValue(QString::fromLatin1("outline"), subtitle_outline);
         settings.setValue(QString::fromLatin1("bottom margin"), subtilte_bottom_margin);
-        settings.beginGroup("ass");
+        settings.beginGroup(QString::fromLatin1("ass"));
         settings.setValue(QString::fromLatin1("font_file"), ass_font_file);
         settings.setValue(QString::fromLatin1("force_font_file"), ass_force_font_file);
         settings.setValue(QString::fromLatin1("fonts_dir"), ass_fonts_dir);
@@ -221,6 +223,8 @@ public:
 
     qreal force_fps;
     QStringList video_decoders;
+
+    QString last_file;
 
     QString capture_dir;
     QString capture_fmt;
@@ -820,6 +824,21 @@ Config& Config::setAbortOnTimeout(bool value)
         return *this;
     mpData->abort_timeout = value;
     emit abortOnTimeoutChanged();
+    Q_EMIT changed();
+    return *this;
+}
+
+QString Config::lastFile() const
+{
+    return mpData->last_file;
+}
+
+Config& Config::setLastFile(const QString &value)
+{
+    if (mpData->last_file == value)
+        return *this;
+    mpData->last_file = value;
+    Q_EMIT lastFileChanged();
     Q_EMIT changed();
     return *this;
 }
