@@ -3,5 +3,5 @@ CONFIG += console
 
 SOURCES += main.cpp
 
-LIBS += -lass
+#LIBS += -lass
 include(../paths.pri)
