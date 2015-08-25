@@ -33,7 +33,7 @@ Rectangle {
         contentModel.append({name: qsTr("Video codec"), url: "VideoCodec.qml" })
         contentModel.append({name: qsTr("Subtitle"), url: "SubtitlePage.qml" })
         contentModel.append({name: qsTr("Audio"), url: "AudioPage.qml" })
-        contentModel.append({name: qsTr("Preview"), url: "PreviewPage.qml" })
+        contentModel.append({name: qsTr("Misc"), url: "MiscPage.qml" })
         contentModel.append({name: qsTr("About"), url: "About.qml" })
     }
 }

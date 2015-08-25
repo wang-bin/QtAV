@@ -257,7 +257,7 @@ Page {
                 font.pixelSize: Utils.kFontSize
                 font.bold: true
                 wrapMode: Text.WrapAnywhere
-                width: Utils.scaled(100)
+                width: Utils.scaled(110)
                 height: parent.height
                 visible: height > 0
             }
@@ -284,9 +284,10 @@ Page {
                 id: extSubLabel
                 color: "white"
                 text: qsTr("External Subtitle")
+                wrapMode: Text.WrapAnywhere
                 font.pixelSize: Utils.kFontSize
                 font.bold: true
-                width: Utils.scaled(100)
+                width: Utils.scaled(110)
             }
             Column {
                 width:parent.width - extSubLabel.width

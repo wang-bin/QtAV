@@ -57,4 +57,10 @@ Item {
         if (d.selectedItem)
             d.selectedItem.state = "selected"
     }
+    onCurrentIndexChanged: {
+        listView.currentIndex = currentIndex
+        d.selectedItem = listView.currentItem
+        if (d.selectedItem)
+            d.selectedItem.state = "selected"
+    }
 }
