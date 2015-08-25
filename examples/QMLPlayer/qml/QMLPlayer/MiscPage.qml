@@ -44,7 +44,7 @@ Page {
             width: parent.width
             height: 3*Utils.kItemHeight
             spacing: Utils.kSpacing
-            visible: Qt.platform.os == "windows"
+            visible: Qt.platform.os === "windows"
             Menu {
                 width: parent.width/3
                 itemWidth: width

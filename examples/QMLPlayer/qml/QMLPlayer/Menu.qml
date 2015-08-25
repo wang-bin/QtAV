@@ -44,20 +44,16 @@ Item {
         focus: true
         currentIndex: -1
         delegate: itemDelegate
-    }/*
+    }
     onCurrentIndexChanged: {
-        listView.currentIndex = currentIndex
-        d.selectedItem = listView.currentItem
-        if (d.selectedItem)
-            d.selectedItem.state = "selected"
-    }*/
-    Component.onCompleted: {
+         if (d.selectedItem)
+            d.selectedItem.state = "baseState"
         listView.currentIndex = currentIndex
         d.selectedItem = listView.currentItem
         if (d.selectedItem)
             d.selectedItem.state = "selected"
     }
-    onCurrentIndexChanged: {
+    Component.onCompleted: {
         listView.currentIndex = currentIndex
         d.selectedItem = listView.currentItem
         if (d.selectedItem)
