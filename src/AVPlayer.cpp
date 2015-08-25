@@ -1423,7 +1423,8 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             }
             return;
         }
-        if (!d->demuxer.atEnd()) {
+        // atEnd() supports dynamic changed duration. but we can not break A-B repeat mode, so check stoppos and mediastoppos
+        if (!d->demuxer.atEnd() && stopPosition() >= mediaStopPosition()) {
             if (!d->seeking) {
                 Q_EMIT positionChanged(t);
             }
