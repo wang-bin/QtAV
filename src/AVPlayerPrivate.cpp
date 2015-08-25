@@ -217,19 +217,13 @@ void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCo
     qDebug("codec: %s(%s)", qPrintable(st->codec), qPrintable(st->codec_long));
     st->bit_rate = avctx->bit_rate; //fmt_ctx
     st->frames = stream->nb_frames;
-    st->frame_rate = av_q2d(stream->avg_frame_rate);
+    if (stream->avg_frame_rate.den && stream->avg_frame_rate.num)
+        st->frame_rate = av_q2d(stream->avg_frame_rate);
+    else if (stream->r_frame_rate.den && stream->r_frame_rate.num)
+        st->frame_rate = av_q2d(stream->r_frame_rate);
+
     //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
     //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
-#if 0
-    // why audio frame rate computed may close to sample rate
-    if (isnan(st->frame_rate) && st->frames > 0) {
-        if (stream->duration != (qint64)AV_NOPTS_VALUE) {
-            st->frame_rate = double(st->frames)/(qreal(stream->duration)*av_q2d(stream->time_base));
-        } else if (demuxer.duration() > 0) {
-            st->frame_rate = double(st->frames)/double(demuxer.duration())*1000.0;
-        }
-    }
-#endif
     //qDebug("time: %f~%f, nb_frames=%lld", st->start_time, st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
     AVDictionaryEntry *tag = NULL;
     while ((tag = av_dict_get(stream->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
@@ -426,6 +420,9 @@ QVariantList AVPlayer::Private::getTracksInfo(AVDemuxer *demuxer, AVDemuxer::Str
         }
         info.push_back(t);
     }
+    //QVariantMap t;
+    //t[QStringLiteral("id")] = -1;
+    //info.prepend(t);
     return info;
 }
 
