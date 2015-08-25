@@ -88,7 +88,7 @@ public:
         AVEncoderPrivate()
       , width(0)
       , height(0)
-      , frame_rate(25.0)
+      , frame_rate(-1)
       , format_used(VideoFormat::Format_Invalid)
       , format(format_used)
     {

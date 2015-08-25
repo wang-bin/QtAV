@@ -71,8 +71,14 @@ public:
     void setHeight(int value);
     int height() const;
     /// TODO: check avctx->supported_framerates. use frame_rate_used
+    /*!
+     * \brief setFrameRate
+     * If frame rate is not set, frameRate() returns -1, but internally the default frame rate 25 will be used
+     * \param value
+     */
     void setFrameRate(qreal value);
     qreal frameRate() const;
+    static qreal defaultFrameRate() { return 25;}
     /*!
      * \brief setPixelFormat
      * If not set or set to an invalid format, a supported format will be used and pixelFormat() will be that format after open()

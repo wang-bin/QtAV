@@ -105,7 +105,10 @@ bool VideoEncoderFFmpegPrivate::open()
     }
     //avctx->sample_aspect_ratio =
     avctx->pix_fmt = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(format_used);
-    avctx->time_base = av_d2q(1.0/frame_rate, frame_rate*1001.0+2);
+    if (frame_rate > 0)
+        avctx->time_base = av_d2q(1.0/frame_rate, frame_rate*1001.0+2);
+    else
+        avctx->time_base = av_d2q(1.0/VideoEncoder::defaultFrameRate(), VideoEncoder::defaultFrameRate()*1001.0+2);
     qDebug("size: %dx%d tbc: %f=%d/%d", width, height, av_q2d(avctx->time_base), avctx->time_base.num, avctx->time_base.den);
     avctx->bit_rate = bit_rate;
 #if 1

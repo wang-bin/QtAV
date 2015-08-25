@@ -23,6 +23,7 @@
 #include "QtAV/AVPlayer.h"
 #include "QtAV/AVMuxer.h"
 #include "QtAV/EncodeFilter.h"
+#include "QtAV/Statistics.h"
 #include "utils/BlockingQueue.h"
 #include "utils/Logger.h"
 
@@ -73,9 +74,12 @@ void AVTranscoder::setMediaSource(AVPlayer *player)
 {
     if (d->source_player) {
         disconnect(d->source_player, SIGNAL(stopped()), this, SLOT(stop()));
+        disconnect(d->source_player, SIGNAL(started()), this, SLOT(onSourceStarted()));
     }
     d->source_player = player;
     connect(d->source_player, SIGNAL(stopped()), this, SLOT(stop()));
+    // direct connect to ensure it's called before encoders open in filters
+    connect(d->source_player, SIGNAL(started()), this, SLOT(onSourceStarted()), Qt::DirectConnection);
 }
 
 AVPlayer* AVTranscoder::sourcePlayer() const
@@ -199,10 +203,16 @@ void AVTranscoder::start()
     d->encoded_frames = 0;
     d->started = true;
     if (sourcePlayer()) {
-        if (d->afilter)
+        if (d->afilter) {
             sourcePlayer()->installAudioFilter(d->afilter);
-        if (d->vfilter)
+        }
+        if (d->vfilter) {
+            qDebug("framerate: %.3f/%.3f", videoEncoder()->frameRate(), sourcePlayer()->statistics().video.frame_rate);
+            if (videoEncoder()->frameRate() <= 0) { // use source frame rate. set before install filter (so before open)
+                videoEncoder()->setFrameRate(sourcePlayer()->statistics().video.frame_rate);
+            }
             sourcePlayer()->installVideoFilter(d->vfilter);
+        }
     }
     Q_EMIT started();
 }
@@ -247,6 +257,16 @@ void AVTranscoder::pause(bool value)
     if (d->afilter)
         d->afilter->setEnabled(!value);
     Q_EMIT paused(value);
+}
+
+void AVTranscoder::onSourceStarted()
+{
+    if (d->vfilter) {
+        qDebug("onSourceStarted framerate: %.3f/%.3f", videoEncoder()->frameRate(), sourcePlayer()->statistics().video.frame_rate);
+        if (videoEncoder()->frameRate() <= 0) { // use source frame rate. set before install filter (so before open)
+            videoEncoder()->setFrameRate(sourcePlayer()->statistics().video.frame_rate);
+        }
+    }
 }
 
 void AVTranscoder::prepareMuxer()
