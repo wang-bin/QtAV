@@ -158,12 +158,9 @@ static const gl_fmt_t gl_fmts1[] = { // it's legacy
     { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE},
     { GL_RGB, GL_RGB, GL_UNSIGNED_BYTE},
     { GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE},
-    { GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_SHORT}, //internal format XXX16?
-    { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_SHORT},
-    { GL_RGB, GL_RGB, GL_UNSIGNED_SHORT},
-    { GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT},
+    { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE},
 };
-
+// TODO: new formats GL_RED,...GL_RGB16
 typedef struct {
     VideoFormat::PixelFormat pixfmt;
     quint8 channels[4];
@@ -230,7 +227,7 @@ static QMatrix4x4 channelMap(const VideoFormat& fmt)
     return m;
 }
 
-//template<typename T, size_t N> size_t array_size(const T (&)[N]) { return N;} //does not support local type
+//template<typename T, size_t N> Q_CONSTEXPR size_t array_size(const T (&)[N]) { return N;} //does not support local type if no c++11
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type, QMatrix4x4* mat)
 {
