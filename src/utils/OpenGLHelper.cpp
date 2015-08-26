@@ -152,18 +152,10 @@ static const gl_fmt_t gl_fmts1[] = { // it's legacy
     { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE},
     { GL_RGB, GL_RGB, GL_UNSIGNED_BYTE},
     { GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE},
-    #ifdef GL_LUMINANCE16
-    { GL_LUMINANCE16, GL_LUMINANCE16, GL_UNSIGNED_SHORT},
-    #endif
-    #ifdef GL_LUMINANCE16_ALPHA16
-    { GL_LUMINANCE16_ALPHA16, GL_LUMINANCE16_ALPHA16, GL_UNSIGNED_SHORT},
-    #endif
-    #ifdef GL_RGB16
-    { GL_RGB16, GL_RGB16, GL_UNSIGNED_SHORT},
-    #endif
-    #ifdef GL_RGBA16
-    { GL_RGBA16, GL_RGBA16, GL_UNSIGNED_SHORT},
-    #endif
+    { GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_SHORT}, //internal format XXX16?
+    { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_SHORT},
+    { GL_RGB, GL_RGB, GL_UNSIGNED_SHORT},
+    { GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT},
 };
 
 typedef struct {
@@ -232,6 +224,8 @@ static QMatrix4x4 channelMap(const VideoFormat& fmt)
     return m;
 }
 
+template<typename T, size_t N> size_t array_size(const T (&)[N]) { return N;}
+
 bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type, QMatrix4x4* mat)
 {
     typedef struct fmt_entry {
@@ -242,6 +236,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     } fmt_entry;
     static const fmt_entry pixfmt_to_gles[] = {
         {VideoFormat::Format_RGB32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
+        {VideoFormat::Format_Invalid, 0, 0, 0}
     };
     Q_UNUSED(pixfmt_to_gles);
     static const fmt_entry pixfmt_to_desktop[] = {
@@ -252,11 +247,12 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5_REV}, // es error, use channel map
     #endif
     #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
-        {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV}, //desktop error
+        {VideoFormat::Format_RGB555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1}, //desktop error
     #endif
     #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
         {VideoFormat::Format_BGR555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
     #endif
+        {VideoFormat::Format_Invalid, 0, 0, 0}
     };
     Q_UNUSED(pixfmt_to_desktop);
     const fmt_entry *pixfmt_gl_entry = pixfmt_to_desktop;
@@ -282,19 +278,25 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         {VideoFormat::Format_BGR48BE, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
     };
     const VideoFormat::PixelFormat pixfmt = fmt.pixelFormat();
-    for (unsigned int i = 0; i < sizeof(pixfmt_gl_entry)/sizeof(pixfmt_gl_entry[0]); ++i) {
-        if (pixfmt_gl_entry[i].pixfmt == pixfmt) {
-            *internal_format = pixfmt_gl_entry[i].internal_format;
-            *data_format = pixfmt_gl_entry[i].format;
-            *data_type = pixfmt_gl_entry[i].type;
+    // can not use array size because pixfmt_gl_entry is set on runtime
+    for (const fmt_entry* e = pixfmt_gl_entry; e->pixfmt != VideoFormat::Format_Invalid; ++e) {
+        if (e->pixfmt == pixfmt) {
+            *internal_format = e->internal_format;
+            *data_format = e->format;
+            *data_type = e->type;
+            if (mat)
+                *mat = QMatrix4x4();
             return true;
         }
     }
-    for (unsigned int i = 0; i < sizeof(pixfmt_gl_entry_common)/sizeof(pixfmt_gl_entry_common[0]); ++i) {
-        if (pixfmt_gl_entry_common[i].pixfmt == pixfmt) {
-            *internal_format = pixfmt_gl_entry_common[i].internal_format;
-            *data_format = pixfmt_gl_entry_common[i].format;
-            *data_type = pixfmt_gl_entry_common[i].type;
+    for (size_t i = 0; i < array_size(pixfmt_gl_entry_common); ++i) {
+        const fmt_entry& e = pixfmt_gl_entry_common[i];
+        if (e.pixfmt == pixfmt) {
+            *internal_format = e.internal_format;
+            *data_format = e.format;
+            *data_type = e.type;
+            if (mat)
+                *mat = QMatrix4x4();
             return true;
         }
     }
@@ -303,11 +305,12 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         {VideoFormat::Format_RGB555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1}, //not working
         {VideoFormat::Format_BGR555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1}, //not working
     };
-    for (unsigned int i = 0; i < sizeof(pixfmt_to_gl_swizzele)/sizeof(pixfmt_to_gl_swizzele[0]); ++i) {
-        if (pixfmt_to_gl_swizzele[i].pixfmt == pixfmt) {
-            *internal_format = pixfmt_to_gl_swizzele[i].internal_format;
-            *data_format = pixfmt_to_gl_swizzele[i].format;
-            *data_type = pixfmt_to_gl_swizzele[i].type;
+    for (size_t i = 0; i < array_size(pixfmt_to_gl_swizzele); ++i) {
+        const fmt_entry& e = pixfmt_to_gl_swizzele[i];
+        if (e.pixfmt == pixfmt) {
+            *internal_format = e.internal_format;
+            *data_format = e.format;
+            *data_type = e.type;
             if (mat)
                 *mat = channelMap(fmt);
             return true;
@@ -318,13 +321,12 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     if (fmt.isRGB() && fmt.bytesPerPixel() > c) //FIXME: component size. also check for yuv
         c += (fmt.bytesPerPixel()/c - 1)*4;
     c -= 1;
-    if (c >= (int)(sizeof(gl_fmts1)/sizeof(gl_fmts1[0])))
+    if (c >= (int)array_size(gl_fmts1))
         return false;
     const gl_fmt_t f = gl_fmts1[c];
     *internal_format = f.internal_format;
     *data_format = f.format;
     *data_type = f.type;
-    qDebug("format index: %d, fmt %d", c, f.format);
     if (mat)
         *mat = channelMap(fmt);
     return true;
