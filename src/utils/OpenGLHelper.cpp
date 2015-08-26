@@ -230,8 +230,8 @@ static QMatrix4x4 channelMap(const VideoFormat& fmt)
     return m;
 }
 
-template<typename T, size_t N> size_t array_size(const T (&)[N]) { return N;}
-
+//template<typename T, size_t N> size_t array_size(const T (&)[N]) { return N;} //does not support local type
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type, QMatrix4x4* mat)
 {
     typedef struct fmt_entry {
@@ -291,7 +291,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
             return true;
         }
     }
-    for (size_t i = 0; i < array_size(pixfmt_gl_base); ++i) {
+    for (size_t i = 0; i < ARRAY_SIZE(pixfmt_gl_base); ++i) {
         const fmt_entry& e = pixfmt_gl_base[i];
         if (e.pixfmt == pixfmt) {
             *internal_format = e.internal_format;
@@ -311,7 +311,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         {VideoFormat::Format_RGB555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1}, //not working
         {VideoFormat::Format_BGR555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1}, //not working
     };
-    for (size_t i = 0; i < array_size(pixfmt_to_gl_swizzele); ++i) {
+    for (size_t i = 0; i < ARRAY_SIZE(pixfmt_to_gl_swizzele); ++i) {
         const fmt_entry& e = pixfmt_to_gl_swizzele[i];
         if (e.pixfmt == pixfmt) {
             *internal_format = e.internal_format;
@@ -328,7 +328,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     for (int p = 0; p < fmt.planeCount(); ++p) {
         // for packed rgb(swizzle required) and planar formats
         const int c = (fmt.channels(p)-1) + 4*((fmt.bitsPerComponent() + 7)/8 - 1);
-        if (c >= (int)array_size(gl_fmts1))
+        if (c >= (int)ARRAY_SIZE(gl_fmts1))
             return false;
         const gl_fmt_t f = gl_fmts1[c];
         *(i_f++) = f.internal_format;
