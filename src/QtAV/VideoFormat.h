@@ -163,9 +163,15 @@ public:
 
     /*!
      * \brief channels
-     * \return number of channels(components). e.g. RGBA has 4 channels, NV12 is 3
+     * \return number of channels(components) the the format. e.g. RGBA has 4 channels, NV12 is 3
      */
     int channels() const;
+    /*!
+     * \brief channels
+     * \param plane
+     * \return number of channels in a plane
+     */
+    int channels(int plane) const;
     /*!
      * \brief planeCount
      * \return -1 if not a valid format
@@ -181,6 +187,11 @@ public:
     int bitsPerPixelPadded(int plane) const;
     int bytesPerPixel() const;
     int bytesPerPixel(int plane) const;
+    /*!
+     * \brief bitsPerComponent
+     * \return number of bits per component (0 if uneven)
+     */
+    int bitsPerComponent() const;
 
     // return line size with given width
     int bytesPerLine(int width, int plane) const;

@@ -47,9 +47,6 @@ public:
         : pixfmt(fmt)
         , pixfmt_ff(QTAV_PIX_FMT_C(NONE))
         , qpixfmt(QImage::Format_Invalid)
-        , planes(0)
-        , bpps(4)
-        , bpps_pad(4)
         , pixdesc(0)
     {
         if (fmt == VideoFormat::Format_Invalid) {
@@ -63,8 +60,6 @@ public:
         : pixfmt(VideoFormat::Format_Invalid)
         , pixfmt_ff(fmt)
         , qpixfmt(QImage::Format_Invalid)
-        , bpps(4)
-        , bpps_pad(4)
         , pixdesc(0)
     {
         init(fmt);
@@ -73,8 +68,6 @@ public:
         : pixfmt(VideoFormat::Format_Invalid)
         , pixfmt_ff(QTAV_PIX_FMT_C(NONE))
         , qpixfmt(fmt)
-        , bpps(4)
-        , bpps_pad(4)
         , pixdesc(0)
     {
         init(fmt);
@@ -111,6 +104,7 @@ public:
         planes = qMax(av_pix_fmt_count_planes(pixfmt_ff), 0);
         bpps.resize(planes);
         bpps_pad.resize(planes);
+        channels.resize(planes);
         pixdesc = const_cast<AVPixFmtDescriptor*>(av_pix_fmt_desc_get(pixfmt_ff));
         if (!pixdesc)
             return;
@@ -131,11 +125,13 @@ public:
     VideoFormat::PixelFormat pixfmt;
     AVPixelFormat pixfmt_ff;
     QImage::Format qpixfmt;
-    int planes;
-    int bpp;
-    int bpp_pad;
+    quint8 planes;
+    quint8 bpp;
+    quint8 bpp_pad;
+    quint8 bpc;
     QVector<int> bpps;
     QVector<int> bpps_pad; //TODO: is it needed?
+    QVector<int> channels;
 
     AVPixFmtDescriptor *pixdesc;
 private:
@@ -144,18 +140,22 @@ private:
         //TODO: call later when bpp need
         bpp = 0;
         bpp_pad = 0;
+        bpc = pixdesc->comp[0].depth_minus1+1;
         int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
         for (int c = 0; c < pixdesc->nb_components; c++) {
             const AVComponentDescriptor *comp = &pixdesc->comp[c];
             int s = c == 1 || c == 2 ? 0 : log2_pixels; //?
             bpps[comp->plane] = (comp->depth_minus1 + 1) << s;
             bpps_pad[comp->plane] = (comp->step_minus1 + 1) << s;
+            channels[comp->plane] += 1;
             if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
                 bpps_pad[comp->plane] *= 8;
             bpp += bpps[comp->plane];
             bpp_pad += bpps_pad[comp->plane];
             bpps[comp->plane] >>= s;
             bpps_pad[comp->plane] >>= s;
+            if (comp->depth_minus1+1 != bpc)
+                bpc = 0;
         }
         bpp >>= log2_pixels;
         bpp_pad >>= log2_pixels;
@@ -559,6 +559,13 @@ int VideoFormat::channels() const
     return d->pixdesc->nb_components;
 }
 
+int VideoFormat::channels(int plane) const
+{
+    if (plane > d->channels.size())
+        return 0;
+    return d->channels[plane];
+}
+
 int VideoFormat::planeCount() const
 {
     return d->planes;
@@ -597,6 +604,11 @@ int VideoFormat::bytesPerPixel() const
 int VideoFormat::bytesPerPixel(int plane) const
 {
     return (bitsPerPixel(plane) + 7) >> 3;
+}
+
+int VideoFormat::bitsPerComponent() const
+{
+    return d->bpc;
 }
 
 int VideoFormat::bytesPerLine(int width, int plane) const
