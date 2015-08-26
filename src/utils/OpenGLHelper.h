@@ -24,6 +24,7 @@
 
 #include "QtAV/VideoFormat.h"
 #include <qglobal.h>
+#include <QtGui/QMatrix4x4>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLBuffer>
 #include <QtGui/QOpenGLContext>
@@ -114,7 +115,7 @@ bool isOpenGLES();
 bool hasExtension(const char* exts[]);
 bool isPBOSupported();
 void glActiveTexture(GLenum texture);
-bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type);
+bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type, QMatrix4x4* mat = NULL);
 int bytesOfGLFormat(GLenum format, GLenum dataType = GL_UNSIGNED_BYTE);
 GLint GetGLInternalFormat(GLint data_format, int bpp);
 

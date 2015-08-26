@@ -139,8 +139,100 @@ void glActiveTexture(GLenum texture)
 #endif
 }
 
+typedef struct {
+    GLint internal_format;
+    GLenum format;
+    GLenum type;
+} gl_fmt_t;
 
-bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type)
+// es formats:  ALPHA, RGB, RGBA, LUMINANCE, LUMINANCE_ALPHA
+// es types:  UNSIGNED_BYTE, UNSIGNED_SHORT_5_6_5, UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1
+static const gl_fmt_t gl_fmts1[] = { // it's legacy
+    { GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_BYTE},
+    { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE},
+    { GL_RGB, GL_RGB, GL_UNSIGNED_BYTE},
+    { GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE},
+    #ifdef GL_LUMINANCE16
+    { GL_LUMINANCE16, GL_LUMINANCE16, GL_UNSIGNED_SHORT},
+    #endif
+    #ifdef GL_LUMINANCE16_ALPHA16
+    { GL_LUMINANCE16_ALPHA16, GL_LUMINANCE16_ALPHA16, GL_UNSIGNED_SHORT},
+    #endif
+    #ifdef GL_RGB16
+    { GL_RGB16, GL_RGB16, GL_UNSIGNED_SHORT},
+    #endif
+    #ifdef GL_RGBA16
+    { GL_RGBA16, GL_RGBA16, GL_UNSIGNED_SHORT},
+    #endif
+};
+
+typedef struct {
+    VideoFormat::PixelFormat pixfmt;
+    quint8 channels[4];
+} reorder_t;
+// use with gl_fmts1
+static const reorder_t gl_channel_maps[] = {
+    { VideoFormat::Format_ARGB32, {1, 2, 3, 0}},
+    { VideoFormat::Format_ABGR32, {3, 2, 1, 0}}, // R->gl.?(a)->R
+    { VideoFormat::Format_BGR24,  {2, 1, 0, 3}},
+    { VideoFormat::Format_BGR565, {2, 1, 0, 3}},
+    { VideoFormat::Format_BGRA32, {2, 1, 0, 3}},
+    { VideoFormat::Format_BGR32,  {2, 1, 0, 3}},
+    { VideoFormat::Format_BGR48LE,{2, 1, 0, 3}},
+    { VideoFormat::Format_BGR48BE,{2, 1, 0, 3}},
+    { VideoFormat::Format_BGR48,  {2, 1, 0, 3}},
+    { VideoFormat::Format_BGR555, {2, 1, 0, 3}},
+    { VideoFormat::Format_Invalid,{0, 1, 2, 3}}
+};
+
+static QMatrix4x4 channelMap(const VideoFormat& fmt)
+{
+    if (fmt.isPlanar()) //currently only for planar
+        return QMatrix4x4();
+    switch (fmt.pixelFormat()) {
+    case VideoFormat::Format_UYVY:
+        return QMatrix4x4(0.0f, 0.5f, 0.0f, 0.5f,
+                                 1.0f, 0.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 1.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
+    case VideoFormat::Format_YUYV:
+        return QMatrix4x4(0.5f, 0.0f, 0.5f, 0.0f,
+                                 0.0f, 1.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
+    case VideoFormat::Format_VYUY:
+        return QMatrix4x4(0.0f, 0.5f, 0.0f, 0.5f,
+                                 0.0f, 0.0f, 1.0f, 0.0f,
+                                 1.0f, 0.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
+    case VideoFormat::Format_YVYU:
+        return QMatrix4x4(0.5f, 0.0f, 0.5f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f,
+                                 0.0f, 1.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
+    default:
+        break;
+    }
+
+    const quint8 *channels = NULL;//{ 0, 1, 2, 3};
+    for (int i = 0; gl_channel_maps[i].pixfmt != VideoFormat::Format_Invalid; ++i) {
+        if (gl_channel_maps[i].pixfmt == fmt.pixelFormat()) {
+            channels = gl_channel_maps[i].channels;
+            break;
+        }
+    }
+    QMatrix4x4 m;
+    if (!channels)
+        return m;
+    m.fill(0);
+    for (int i = 0; i < 4; ++i) {
+        m(i, channels[i]) = 1;
+    }
+    qDebug() << m;
+    return m;
+}
+
+bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type, QMatrix4x4* mat)
 {
     typedef struct fmt_entry {
         VideoFormat::PixelFormat pixfmt;
@@ -149,55 +241,48 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         GLenum type;
     } fmt_entry;
     static const fmt_entry pixfmt_to_gles[] = {
-        {VideoFormat::Format_ARGB32, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_RGB32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-        // TODO:
-        {VideoFormat::Format_BGRA32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_ABGR32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_Invalid, 0, 0, 0}
     };
     Q_UNUSED(pixfmt_to_gles);
-    static const fmt_entry pixfmt_to_gl[] = {
-        {VideoFormat::Format_RGB32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_ARGB32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        // TODO:
-        {VideoFormat::Format_ABGR32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_BGRA32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_Invalid, 0, 0, 0}
+    static const fmt_entry pixfmt_to_desktop[] = {
+        {VideoFormat::Format_RGB32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE }, //FIXMEL endian check
+        //{VideoFormat::Format_BGRA32,  GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, //{2,1,0,3}
+        //{VideoFormat::Format_BGR24,   GL_RGB,  GL_BGR,  GL_UNSIGNED_BYTE }, //{0,1,2,3}
+    #ifdef GL_UNSIGNED_SHORT_5_6_5_REV
+        {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5_REV}, // es error, use channel map
+    #endif
+    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
+        {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV}, //desktop error
+    #endif
+    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
+        {VideoFormat::Format_BGR555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
+    #endif
     };
-    const fmt_entry *pixfmt_gl_entry = pixfmt_to_gl;
+    Q_UNUSED(pixfmt_to_desktop);
+    const fmt_entry *pixfmt_gl_entry = pixfmt_to_desktop;
     if (OpenGLHelper::isOpenGLES())
         pixfmt_gl_entry = pixfmt_to_gles;
     // Very special formats, for which OpenGL happens to have direct support
     static const fmt_entry pixfmt_gl_entry_common[] = {
-        // TODO: review rgb formats & yuv packed to upload correct rgba
         {VideoFormat::Format_UYVY, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_YUYV, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_VYUY, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_YVYU, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE },
+        {VideoFormat::Format_BGRA32, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_RGBA32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
-        {VideoFormat::Format_ABGR32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
-        {VideoFormat::Format_RGB48, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
+        {VideoFormat::Format_RGB565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5},
+        {VideoFormat::Format_BGR32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE }, //rgba(tested) or abgr, depending on endian
+        //
+        {VideoFormat::Format_RGB48, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT }, //TODO: rgb16?
         {VideoFormat::Format_RGB48LE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
         {VideoFormat::Format_RGB48BE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
-        {VideoFormat::Format_BGR48, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
+        {VideoFormat::Format_BGR48, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT }, //RGB16?
         {VideoFormat::Format_BGR48LE, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
         {VideoFormat::Format_BGR48BE, GL_BGR, GL_BGR, GL_UNSIGNED_SHORT },
-        {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
-    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
-        {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
-    #endif
-        {VideoFormat::Format_RGB565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, //GL_UNSIGNED_SHORT_5_6_5_REV?
-        //{VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE },
-        //{VideoFormat::Format_BGR32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
-        {VideoFormat::Format_BGR24,  GL_RGB,  GL_BGR,  GL_UNSIGNED_BYTE },
-    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
-        {VideoFormat::Format_BGR555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
-    #endif
-        {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, // need swap r b?
     };
     const VideoFormat::PixelFormat pixfmt = fmt.pixelFormat();
-    for (unsigned int i = 0; pixfmt_gl_entry[i].pixfmt != VideoFormat::Format_Invalid; ++i) {
+    for (unsigned int i = 0; i < sizeof(pixfmt_gl_entry)/sizeof(pixfmt_gl_entry[0]); ++i) {
         if (pixfmt_gl_entry[i].pixfmt == pixfmt) {
             *internal_format = pixfmt_gl_entry[i].internal_format;
             *data_format = pixfmt_gl_entry[i].format;
@@ -213,7 +298,36 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
             return true;
         }
     }
-    return false;
+    static const fmt_entry pixfmt_to_gl_swizzele[] = {
+        {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5}, //swizzle
+        {VideoFormat::Format_RGB555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1}, //not working
+        {VideoFormat::Format_BGR555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1}, //not working
+    };
+    for (unsigned int i = 0; i < sizeof(pixfmt_to_gl_swizzele)/sizeof(pixfmt_to_gl_swizzele[0]); ++i) {
+        if (pixfmt_to_gl_swizzele[i].pixfmt == pixfmt) {
+            *internal_format = pixfmt_to_gl_swizzele[i].internal_format;
+            *data_format = pixfmt_to_gl_swizzele[i].format;
+            *data_type = pixfmt_to_gl_swizzele[i].type;
+            if (mat)
+                *mat = channelMap(fmt);
+            return true;
+        }
+    }
+    int c = fmt.channels();
+    // bgr565 bpp=2, c=3
+    if (fmt.isRGB() && fmt.bytesPerPixel() > c) //FIXME: component size. also check for yuv
+        c += (fmt.bytesPerPixel()/c - 1)*4;
+    c -= 1;
+    if (c >= (int)(sizeof(gl_fmts1)/sizeof(gl_fmts1[0])))
+        return false;
+    const gl_fmt_t f = gl_fmts1[c];
+    *internal_format = f.internal_format;
+    *data_format = f.format;
+    *data_type = f.type;
+    qDebug("format index: %d, fmt %d", c, f.format);
+    if (mat)
+        *mat = channelMap(fmt);
+    return true;
 }
 
 // TODO: format + datatype? internal format == format?

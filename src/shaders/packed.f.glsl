@@ -33,15 +33,13 @@ uniform sampler2D u_Texture0;
 varying vec2 v_TexCoords0;
 uniform mat4 u_colorMatrix;
 uniform float u_opacity;
-#ifdef PACKED_YUV
 uniform mat4 u_c;
-#endif //PACKED_YUV
 
 void main() {
     vec4 c = texture2D(u_Texture0, v_TexCoords0);
-#ifdef PACKED_YUV
     c = u_c * c;
-    c.a = 1.0;
+#ifdef PACKED_YUV
+    c.a = 1.0; // remove this, and in mat last line use 1,1,1,1
 #endif //PACKED_YUV
     gl_FragColor = clamp(u_colorMatrix * c, 0.0, 1.0) * u_opacity;
 }

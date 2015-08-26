@@ -844,7 +844,7 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
         GLint internal_fmt;
         GLenum data_fmt;
         GLenum data_t;
-        if (!OpenGLHelper::videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t)) {
+        if (!OpenGLHelper::videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t, &channel_map)) {
             qWarning("no opengl format found: internal_fmt=%d, data_fmt=%d, data_t=%d", internal_fmt, data_fmt, data_t);
             qDebug() << fmt;
             return false;
@@ -917,41 +917,6 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
     return true;
 }
 
-void VideoMaterialPrivate::updateChannelMap(const VideoFormat &fmt)
-{
-    channel_map = QMatrix4x4();
-    if (fmt.isPlanar() || fmt.isRGB())
-        return;
-    switch (fmt.pixelFormat()) {
-    case VideoFormat::Format_UYVY:
-        channel_map = QMatrix4x4(0.0f, 0.5f, 0.0f, 0.5f,
-                                 1.0f, 0.0f, 0.0f, 0.0f,
-                                 0.0f, 0.0f, 1.0f, 0.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f);
-        break;
-    case VideoFormat::Format_YUYV:
-        channel_map = QMatrix4x4(0.5f, 0.0f, 0.5f, 0.0f,
-                                 0.0f, 1.0f, 0.0f, 0.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f);
-        break;
-    case VideoFormat::Format_VYUY:
-        channel_map = QMatrix4x4(0.0f, 0.5f, 0.0f, 0.5f,
-                                 0.0f, 0.0f, 1.0f, 0.0f,
-                                 1.0f, 0.0f, 0.0f, 0.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f);
-        break;
-    case VideoFormat::Format_YVYU:
-        channel_map = QMatrix4x4(0.5f, 0.0f, 0.5f, 0.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f,
-                                 0.0f, 1.0f, 0.0f, 0.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f);
-        break;
-    default:
-        break;
-    }
-}
-
 bool VideoMaterialPrivate::ensureResources()
 {
     if (!update_texure) //video frame is already uploaded and displayed
@@ -1004,7 +969,6 @@ bool VideoMaterialPrivate::ensureResources()
     }
     if (update_textures) {
         updateTextureParameters(fmt);
-        updateChannelMap(fmt);
         // check pbo support
         // TODO: complete pbo extension set
         try_pbo = try_pbo && OpenGLHelper::isPBOSupported();

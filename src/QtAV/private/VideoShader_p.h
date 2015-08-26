@@ -114,7 +114,6 @@ public:
     bool initPBO(int plane, int size);
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool updateTextureParameters(const VideoFormat& fmt);
-    void updateChannelMap(const VideoFormat& fmt);
     bool ensureResources();
     bool ensureTextures();
     void setupQuality();
