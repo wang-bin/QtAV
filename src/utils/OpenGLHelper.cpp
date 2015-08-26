@@ -22,6 +22,7 @@
 #include "OpenGLHelper.h"
 #include <string.h> //strstr
 #include <QtCore/QCoreApplication>
+#include <QtGui/QMatrix4x4>
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
 #include <QtOpenGL/QGLFunctions>
@@ -147,6 +148,11 @@ typedef struct {
 
 // es formats:  ALPHA, RGB, RGBA, LUMINANCE, LUMINANCE_ALPHA
 // es types:  UNSIGNED_BYTE, UNSIGNED_SHORT_5_6_5, UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1
+/*!
+  c: number of channels(components) in the plane
+  b: componet size
+    result is gl_fmts1[(c-1)+4*(b-1)]
+*/
 static const gl_fmt_t gl_fmts1[] = { // it's legacy
     { GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_BYTE},
     { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE},
@@ -316,17 +322,19 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
             return true;
         }
     }
-    int c = fmt.channels();
-    // bgr565 bpp=2, c=3
-    if (fmt.isRGB() && fmt.bytesPerPixel() > c) //FIXME: component size. also check for yuv
-        c += (fmt.bytesPerPixel()/c - 1)*4;
-    c -= 1;
-    if (c >= (int)array_size(gl_fmts1))
-        return false;
-    const gl_fmt_t f = gl_fmts1[c];
-    *internal_format = f.internal_format;
-    *data_format = f.format;
-    *data_type = f.type;
+    GLint *i_f = internal_format;
+    GLenum *d_f = data_format;
+    GLenum *d_t = data_type;
+    for (int p = 0; p < fmt.planeCount(); ++p) {
+        // for packed rgb(swizzle required) and planar formats
+        const int c = (fmt.channels(p)-1) + 4*((fmt.bitsPerComponent() + 7)/8 - 1);
+        if (c >= (int)array_size(gl_fmts1))
+            return false;
+        const gl_fmt_t f = gl_fmts1[c];
+        *(i_f++) = f.internal_format;
+        *(d_f++) = f.format;
+        *(d_t++) = f.type;
+    }
     if (mat)
         *mat = channelMap(fmt);
     return true;

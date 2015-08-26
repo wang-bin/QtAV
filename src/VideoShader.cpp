@@ -840,45 +840,22 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
      * http://stackoverflow.com/questions/18688057/which-opengl-es-2-0-texture-formats-are-color-depth-or-stencil-renderable
      */
     const int nb_planes = fmt.planeCount();
-    if (!fmt.isPlanar()) {
-        GLint internal_fmt;
-        GLenum data_fmt;
-        GLenum data_t;
-        if (!OpenGLHelper::videoFormatToGL(fmt, &internal_fmt, &data_fmt, &data_t, &channel_map)) {
-            qWarning("no opengl format found: internal_fmt=%d, data_fmt=%d, data_t=%d", internal_fmt, data_fmt, data_t);
-            qDebug() << fmt;
-            return false;
-        }
-        internal_format = QVector<GLint>(nb_planes, internal_fmt);
-        data_format = QVector<GLenum>(nb_planes, data_fmt);
-        data_type = QVector<GLenum>(nb_planes, data_t);
-        //glPixelStorei(GL_UNPACK_ALIGNMENT, fmt.bytesPerPixel());
-        // TODO: if no alpha, data_fmt is not GL_BGRA. align at every upload?
-    } else {
-        internal_format.resize(nb_planes);
-        data_format.resize(nb_planes);
-        data_type = QVector<GLenum>(nb_planes, GL_UNSIGNED_BYTE);
-        /*!
-         * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
-         * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
-         */
-        qDebug("///////////bpp %d", fmt.bytesPerPixel());
-        internal_format[0] = data_format[0] = GL_LUMINANCE; //or GL_RED for GL
-        if (nb_planes == 2) {
-            // NV12/21 semi-planar
-            internal_format[1] = data_format[1] = GL_LUMINANCE_ALPHA;
-        } else {
-            if (fmt.bytesPerPixel(1) == 2) {
-                // read 16 bits and compute the real luminance in shader
-                internal_format.fill(GL_LUMINANCE_ALPHA); //vec4(L,L,L,A)
-                data_format.fill(GL_LUMINANCE_ALPHA);
-            } else {
-                internal_format[1] = data_format[1] = GL_LUMINANCE; //vec4(L,L,L,1)
-                internal_format[2] = data_format[2] = GL_ALPHA;//GL_ALPHA;
-                if (nb_planes == 4)
-                    internal_format[3] = data_format[3] = GL_ALPHA; //GL_ALPHA
-            }
-        }
+    internal_format.resize(nb_planes);
+    data_format.resize(nb_planes);
+    data_type.resize(nb_planes);
+    if (!OpenGLHelper::videoFormatToGL(fmt, (GLint*)internal_format.constData(), (GLenum*)data_format.constData(), (GLenum*)data_type.constData(), &channel_map)) {
+        qWarning() << "No OpenGL support for " << fmt;
+        return false;
+    }
+    qDebug("///////////bpp %d", fmt.bytesPerPixel());
+    /*!
+     * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
+     * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
+     */
+    if (fmt.bytesPerPixel(1) == 1 && nb_planes > 2) { // QtAV uses the same shader for planar and semi-planar yuv format
+        internal_format[2] = data_format[2] = GL_ALPHA;
+        if (nb_planes == 4)
+            internal_format[3] = data_format[3] = GL_ALPHA; // vec4(,,,A)
     }
     for (int i = 0; i < nb_planes; ++i) {
         //qDebug("format: %#x GL_LUMINANCE_ALPHA=%#x", data_format[i], GL_LUMINANCE_ALPHA);
@@ -904,7 +881,6 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
      * Which means the number of texture id equals to plane count
      */
     // always delete old textures otherwise old textures are not initialized with correct parameters
-    // TODO: use a struct for each plane: texid, initialized...
     if (textures.size() > nb_planes) {
         const int nb_delete = textures.size() - nb_planes;
         qDebug("delete %d textures", nb_delete);
