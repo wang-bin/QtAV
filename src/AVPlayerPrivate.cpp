@@ -219,9 +219,11 @@ void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCo
     st->frames = stream->nb_frames;
     if (stream->avg_frame_rate.den && stream->avg_frame_rate.num)
         st->frame_rate = av_q2d(stream->avg_frame_rate);
+#if (defined FF_API_R_FRAME_RATE && FF_API_R_FRAME_RATE) //removed in libav10
+    //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
     else if (stream->r_frame_rate.den && stream->r_frame_rate.num)
         st->frame_rate = av_q2d(stream->r_frame_rate);
-
+#endif //FF_API_R_FRAME_RATE
     //http://ffmpeg.org/faq.html#AVStream_002er_005fframe_005frate-is-wrong_002c-it-is-much-larger-than-the-frame-rate_002e
     //http://libav-users.943685.n4.nabble.com/Libav-user-Reading-correct-frame-rate-fps-of-input-video-td4657666.html
     //qDebug("time: %f~%f, nb_frames=%lld", st->start_time, st->total_time, stream->nb_frames); //why crash on mac? av_q2d({0,0})?
