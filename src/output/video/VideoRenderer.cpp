@@ -162,9 +162,8 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
     //compute the out out_rect
     d.computeOutParameters(ratio);
     if (ratio_changed) {
-        resizeFrame(d.out_rect.width(), d.out_rect.height());
+        onSetOutAspectRatio(ratio);
     }
-    onSetOutAspectRatio(ratio);
 }
 
 void VideoRenderer::onSetOutAspectRatio(qreal ratio)
@@ -233,13 +232,11 @@ void VideoRenderer::resizeRenderer(const QSize &size)
 void VideoRenderer::resizeRenderer(int width, int height)
 {
     DPTR_D(VideoRenderer);
-    if (width == 0 || height == 0)
+    if (width == 0 || height == 0 || d.renderer_width == width || d.renderer_height == height)
         return;
-
     d.renderer_width = width;
     d.renderer_height = height;
     d.computeOutParameters(d.out_aspect_ratio);
-    resizeFrame(d.out_rect.width(), d.out_rect.height());
     onResizeRenderer(width, height);
 }
 
@@ -281,7 +278,6 @@ void VideoRenderer::setOrientation(int value)
     } else {
         d.computeOutParameters(d.out_aspect_ratio);
         onSetOutAspectRatio(outAspectRatio());
-        resizeFrame(d.out_rect.width(), d.out_rect.height());
     }
 }
 
@@ -437,12 +433,6 @@ bool VideoRenderer::needDrawFrame() const
     return d_func().video_frame.isValid();
 }
 
-void VideoRenderer::resizeFrame(int width, int height)
-{
-    Q_UNUSED(width);
-    Q_UNUSED(height);
-}
-
 void VideoRenderer::handlePaintEvent()
 {
     DPTR_D(VideoRenderer);
@@ -497,16 +487,6 @@ void VideoRenderer::handlePaintEvent()
         //warn once
     }
     //end paint. how about QPainter::endNativePainting()?
-}
-
-void VideoRenderer::enableDefaultEventFilter(bool e)
-{
-    d_func().default_event_filter = e;
-}
-
-bool VideoRenderer::isDefaultEventFilterEnabled() const
-{
-    return d_func().default_event_filter;
 }
 
 qreal VideoRenderer::brightness() const

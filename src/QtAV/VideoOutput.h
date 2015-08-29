@@ -59,9 +59,6 @@ public:
     ~VideoOutput();
     VideoRendererId id() const Q_DECL_OVERRIDE;
 
-    virtual bool receive(const VideoFrame& frame) Q_DECL_OVERRIDE; //has default
-    //void setVideoFormat(const VideoFormat& format); //has default
-
     VideoFormat::PixelFormat preferredPixelFormat() const Q_DECL_OVERRIDE;
     bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
     QWindow* qwindow() Q_DECL_OVERRIDE Q_DECL_FINAL;
@@ -84,10 +81,9 @@ protected:
     void drawBackground() Q_DECL_OVERRIDE;
     bool needDrawFrame() const Q_DECL_OVERRIDE; //not important.
     void drawFrame() Q_DECL_OVERRIDE;
-    void resizeFrame(int width, int height) Q_DECL_OVERRIDE;
     void handlePaintEvent() Q_DECL_OVERRIDE;
 
-private: //for proxy
+private:
     virtual bool onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt) Q_DECL_OVERRIDE;
     virtual bool onForcePreferredPixelFormat(bool force = true) Q_DECL_OVERRIDE;
     virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode) Q_DECL_OVERRIDE;

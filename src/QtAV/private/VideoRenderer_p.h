@@ -52,7 +52,6 @@ public:
       , out_aspect_ratio(0)
       , quality(VideoRenderer::QualityBest)
       , orientation(0)
-      , default_event_filter(true)
       , preferred_format(VideoFormat::Format_RGB32)
       , force_preferred(false)
       , brightness(0)
@@ -109,7 +108,6 @@ public:
     QRectF roi;
     int orientation;
 
-    bool default_event_filter;
     VideoFrame video_frame;
     VideoFormat::PixelFormat preferred_format;
     bool force_preferred;

@@ -56,8 +56,6 @@ bool VideoOutputEventFilter::eventFilter(QObject *watched, QEvent *event)
     }
     if (!mpRenderer)
         return false;
-    if (!mpRenderer->isDefaultEventFilterEnabled())
-        return false;
     if (watched != mpRenderer->widget()
             /* && watched != mpRenderer->graphicsWidget()*/ //no showFullScreen() etc.
             )

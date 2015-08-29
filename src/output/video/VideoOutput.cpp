@@ -56,7 +56,6 @@ public:
         quality = impl->quality();
         out_rect = impl->videoRect();
         roi = impl->regionOfInterest();
-        default_event_filter = impl->isDefaultEventFilterEnabled();
         preferred_format = impl->preferredPixelFormat();
         force_preferred = impl->isPreferredPixelFormatForced();
         brightness = impl->brightness();
@@ -97,28 +96,6 @@ VideoRendererId VideoOutput::id() const
     return d_func().impl->id();
 }
 
-bool VideoOutput::receive(const VideoFrame& frame)
-{
-    if (!isAvailable())
-        return false;
-    DPTR_D(VideoOutput);
-    const qreal dar_old = d.source_aspect_ratio;
-    d.source_aspect_ratio = frame.displayAspectRatio();
-    if (dar_old != d.source_aspect_ratio)
-        Q_EMIT sourceAspectRatioChanged(d.source_aspect_ratio);
-    d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
-    setInSize(frame.width(), frame.height());
-    // or simply call d.impl->receive(frame) to avoid lock here
-    QMutexLocker locker(&d.impl->dptr.pri<VideoRendererPrivate>().img_mutex);
-    Q_UNUSED(locker);
-    return d.impl->receiveFrame(frame);
-}
-/*
-void VideoOutput::setVideoFormat(const VideoFormat& format)
-{
-    d_func().impl->setVideoFormat(format);
-}
-*/
 bool VideoOutput::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
     if (!isAvailable())
@@ -169,6 +146,7 @@ bool VideoOutput::receiveFrame(const VideoFrame& frame)
     if (!isAvailable())
         return false;
     DPTR_D(VideoOutput);
+    d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
     return d.impl->receiveFrame(frame);
 }
 
@@ -200,14 +178,6 @@ void VideoOutput::drawFrame()
         return;
     DPTR_D(VideoOutput);
     d.impl->drawFrame();
-}
-
-void VideoOutput::resizeFrame(int width, int height)
-{
-    if (!isAvailable())
-        return;
-    DPTR_D(VideoOutput);
-    d.impl->resizeFrame(width, height);
 }
 
 void VideoOutput::handlePaintEvent()

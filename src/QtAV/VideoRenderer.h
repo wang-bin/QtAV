@@ -34,12 +34,6 @@
  * Every public setter call it's virtual onSetXXX(...) which has default behavior.
  * While VideoOutput.onSetXXX(...) simply calls backend's setXXX(...) and return whether the result is desired.
  */
-struct AVCodecContext;
-struct AVFrame;
-class QImage;
-class QObject;
-class QPaintEvent;
-class QRect;
 class QWidget;
 class QWindow;
 class QGraphicsItem;
@@ -75,10 +69,7 @@ public:
     virtual ~VideoRenderer();
     virtual VideoRendererId id() const = 0;
 
-    virtual bool receive(const VideoFrame& frame); //has default
-    //virtual void setVideoFormat(const VideoFormat& format); //has default
-    //VideoFormat& videoFormat();
-    //const VideoFormat& videoFormat() const;
+    bool receive(const VideoFrame& frame);
     /*!
      * \brief setPreferredPixelFormat
      * \param pixfmt
@@ -177,9 +168,6 @@ public:
      */
     virtual QGraphicsItem* graphicsItem() { return 0; }
 
-    void enableDefaultEventFilter(bool e);
-    bool isDefaultEventFilterEnabled() const;
-
     /*!
      * \brief brightness, contrast, hue, saturation
      *  values range between -1.0 and 1.0, the default is 0.
@@ -207,15 +195,6 @@ protected:
     //draw the current frame using the current paint engine. called by paintEvent()
     // TODO: parameter VideoFrame
     virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
-    /*!
-     * This function is called whenever resizeRenderer() is called or aspect ratio is changed?
-     * You can reimplement it to recreate the offscreen surface.
-     * The default does nothing.
-     * NOTE: usually it is thread safe, because it is called in main thread resizeEvent,
-     * and the surface is only used by painting, which is usually in main thread too.
-     * If you are doing offscreen painting in other threads, pay attention to thread safe
-     */
-    virtual void resizeFrame(int width, int height);
     virtual void handlePaintEvent(); //has default. User don't have to implement it
     void updateUi(); // schedual an UpdateRequest event on ui thread
 
