@@ -41,10 +41,11 @@ public:
      * and 0xBBGGRRAA on little endian platforms
      * Format_RGB32 and QImage::Format_ARGB32 are the same.
      * TODO: 0RGB, XRGB, not native endia use R8 or R16. ffmpeg does not have native endian format
+     * currently 0rgb xrgb use rgba formats and check hasAlpha() is required
      */
     enum PixelFormat {
         Format_Invalid = -1,
-        Format_ARGB32, // AARRGGBB
+        Format_ARGB32, // AARRGGBB or 00RRGGBB, check hasAlpha is required
         Format_BGRA32, //BBGGRRAA
         Format_ABGR32, // QImage.RGBA8888 le
         Format_RGBA32, // QImage. no
@@ -120,6 +121,12 @@ public:
         Format_BGR48,
         Format_BGR48LE,
         Format_BGR48BE,
+        Format_RGBA64, //native endian
+        Format_RGBA64LE,
+        Format_RGBA64BE,
+        Format_BGRA64, //native endian
+        Format_BGRA64LE,
+        Format_BGRA64BE,
         Format_User
     };
 
