@@ -231,8 +231,8 @@ const char* VideoShader::fragmentShader() const
                 frag.prepend("#define LA_16BITS_LE\n");
         }
     } else {
-        if (!d.video_format.isRGB())
-            frag.prepend("#define PACKED_YUV");
+        if (d.video_format.hasAlpha())
+            frag.prepend("#define HAS_ALPHA\n");
     }
     if (d.texture_target == GL_TEXTURE_RECTANGLE) {
         frag.prepend("#extension GL_ARB_texture_rectangle : enable\n"
@@ -469,7 +469,8 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     d.colorTransform.setInputColorSpace(cs);
     d.frame = frame;
     if (fmt != d.video_format) {
-        qDebug("pixel format changed: %s => %s", qPrintable(d.video_format.name()), qPrintable(fmt.name()));
+        qDebug() << fmt;
+        qDebug("pixel format changed: %s => %s %d", qPrintable(d.video_format.name()), qPrintable(fmt.name()), fmt.pixelFormat());
         d.video_format = fmt;
     }
 }
@@ -496,14 +497,14 @@ const char *VideoMaterial::type() const
     const VideoFormat &fmt = d.video_format;
     const bool tex_2d = d.target == GL_TEXTURE_2D;
     if (!fmt.isPlanar()) {
-        if (fmt.isRGB()) {
+        if (fmt.hasAlpha()) {
             if (tex_2d)
-                return "packed rgb material";
-            return "packed rgb + rectangle texture material";
+                return "packed rgb(a) material";
+            return "packed rgb(a) + rectangle texture material";
         }
         if (tex_2d)
-            return "packed yuv material";
-        return "packed yuv + rectangle texture material";
+            return "packed rgb/yuv(no alpha) material";
+        return "packed rgb/yuv(no alpha) + rectangle texture material";
     }
     if (fmt.bytesPerPixel(0) == 1) {
         if (fmt.planeCount() == 4) {

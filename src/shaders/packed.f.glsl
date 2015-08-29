@@ -38,8 +38,8 @@ uniform mat4 u_c;
 void main() {
     vec4 c = texture2D(u_Texture0, v_TexCoords0);
     c = u_c * c;
-#ifdef PACKED_YUV
-    c.a = 1.0; // remove this, and in mat last line use 1,1,1,1
-#endif //PACKED_YUV
+#ifndef HAS_ALPHA
+    c.a = 1.0;
+#endif //HAS_ALPHA
     gl_FragColor = clamp(u_colorMatrix * c, 0.0, 1.0) * u_opacity;
 }
