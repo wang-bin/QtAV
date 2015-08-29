@@ -144,16 +144,16 @@ typedef struct {
     GLint internal_format;
     GLenum format;
     GLenum type;
-} gl_fmt_t;
+} gl_param_t;
 
 // es formats:  ALPHA, RGB, RGBA, LUMINANCE, LUMINANCE_ALPHA
 // es types:  UNSIGNED_BYTE, UNSIGNED_SHORT_5_6_5, UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1
 /*!
   c: number of channels(components) in the plane
   b: componet size
-    result is gl_fmts1[(c-1)+4*(b-1)]
+    result is gl_param_compat[(c-1)+4*(b-1)]
 */
-static const gl_fmt_t gl_fmts1[] = { // it's legacy
+static const gl_param_t gl_param_compat[] = { // it's legacy
     { GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_BYTE},
     { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE},
     { GL_RGB, GL_RGB, GL_UNSIGNED_BYTE},
@@ -165,7 +165,7 @@ typedef struct {
     VideoFormat::PixelFormat pixfmt;
     quint8 channels[4];
 } reorder_t;
-// use with gl_fmts1
+// use with gl_param_compat
 static const reorder_t gl_channel_maps[] = {
     { VideoFormat::Format_ARGB32, {1, 2, 3, 0}},
     { VideoFormat::Format_ABGR32, {3, 2, 1, 0}}, // R->gl.?(a)->R
@@ -238,11 +238,13 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         GLenum type;
     } fmt_entry;
     static const fmt_entry pixfmt_to_gles[] = {
+        {VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE }, //tested for angle
         {VideoFormat::Format_RGB32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_Invalid, 0, 0, 0}
     };
     Q_UNUSED(pixfmt_to_gles);
     static const fmt_entry pixfmt_to_desktop[] = {
+        {VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE }, //bgra bgra works on win but not osx
         {VideoFormat::Format_RGB32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE }, //FIXMEL endian check
         //{VideoFormat::Format_BGRA32,  GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, //{2,1,0,3}
         //{VideoFormat::Format_BGR24,   GL_RGB,  GL_BGR,  GL_UNSIGNED_BYTE }, //{0,1,2,3}
@@ -263,7 +265,6 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         pixfmt_gl_entry = pixfmt_to_gles;
     // Very special formats, for which OpenGL happens to have direct support
     static const fmt_entry pixfmt_gl_base[] = {
-        {VideoFormat::Format_BGRA32, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_RGBA32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
         {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
         {VideoFormat::Format_RGB565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5},
@@ -325,9 +326,9 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     for (int p = 0; p < fmt.planeCount(); ++p) {
         // for packed rgb(swizzle required) and planar formats
         const int c = (fmt.channels(p)-1) + 4*((fmt.bitsPerComponent() + 7)/8 - 1);
-        if (c >= (int)ARRAY_SIZE(gl_fmts1))
+        if (c >= (int)ARRAY_SIZE(gl_param_compat))
             return false;
-        const gl_fmt_t f = gl_fmts1[c];
+        const gl_param_t f = gl_param_compat[c];
         *(i_f++) = f.internal_format;
         *(d_f++) = f.format;
         *(d_t++) = f.type;
