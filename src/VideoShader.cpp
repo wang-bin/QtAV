@@ -853,7 +853,7 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
      * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
      * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
      */
-    if (!fmt.isRGB() && nb_planes > 2 && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
+    if (nb_planes > 2 && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
         internal_format[2] = data_format[2] = GL_ALPHA;
         if (nb_planes == 4)
             internal_format[3] = data_format[3] = GL_ALPHA; // vec4(,,,A)
