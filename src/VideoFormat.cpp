@@ -351,8 +351,10 @@ static const struct {
     { VideoFormat::Format_BGR32, QTAV_PIX_FMT_C(BGR32) }, //auto endian
     { VideoFormat::Format_RGB48, QTAV_PIX_FMT_C(RGB48) },   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as big-endian
     { VideoFormat::Format_BGR48, QTAV_PIX_FMT_C(BGR48) },   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as big-endian
+#if QTAV_USE_FFMPEG(LIBAVUTIL)
     { VideoFormat::Format_RGBA64, QTAV_PIX_FMT_C(RGBA64) },
     { VideoFormat::Format_BGRA64, QTAV_PIX_FMT_C(BGRA64) },
+#endif //QTAV_USE_FFMPEG(LIBAVUTIL)
     { VideoFormat::Format_Invalid, QTAV_PIX_FMT_C(NONE) },
 };
 
