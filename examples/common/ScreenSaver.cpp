@@ -129,11 +129,11 @@ ScreenSaver::ScreenSaver()
     if (qgetenv("DISPLAY").isEmpty()) {
         isX11 = false;
     } else {
-        xlib.setFileName("libX11.so");
+        xlib.setFileName(QString::fromLatin1("libX11.so"));
         isX11 = xlib.load();
         // meego only has libX11.so.6, libX11.so.6.x.x
         if (!isX11) {
-            xlib.setFileName("libX11.so.6");
+            xlib.setFileName(QString::fromLatin1("libX11.so.6"));
             isX11 = xlib.load();
         }
         if (!isX11) {

@@ -123,7 +123,9 @@ bool VideoDecoderFFmpegHWPrivate::prepare()
 {
     //// From vlc begin
     codec_ctx->thread_safe_callbacks = true; //?
+#ifdef _MSC_VER
 #pragma warning(disable:4065) //vc: switch has default but no case
+#endif //_MSC_VER
     switch (codec_ctx->codec_id) {
 # if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
         /// tested libav-9.x + va-api. If remove this code:  Bug detected, please report the issue. Context scratch buffers could not be allocated due to unknown size

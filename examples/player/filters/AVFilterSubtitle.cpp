@@ -23,7 +23,7 @@ void AVFilterSubtitle::setPlayer(AVPlayer *player)
     m_player = player;
     if (!player)
         return;
-    player->installVideoFilter(this);
+    player->installFilter(this);
     if (m_auto) {
 //        connect(player, SIGNAL(fileChanged(QString)), SLOT(findAndSetFile(QString)));
         connect(player, SIGNAL(started()), SLOT(onPlayerStart()));

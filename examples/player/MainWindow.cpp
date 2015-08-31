@@ -1410,7 +1410,7 @@ void MainWindow::onAVFilterVideoConfigChanged()
             mpVideoFilter = new LibAVFilterVideo(this);
         }
         mpVideoFilter->setEnabled(true);
-        mpPlayer->installVideoFilter(mpVideoFilter);
+        mpPlayer->installFilter(mpVideoFilter);
         mpVideoFilter->setOptions(Config::instance().avfilterVideoOptions());
     } else {
         if (mpVideoFilter) {
@@ -1427,7 +1427,7 @@ void MainWindow::onAVFilterAudioConfigChanged()
             mpAudioFilter = new LibAVFilterAudio(this);
         }
         mpAudioFilter->setEnabled(true);
-        mpPlayer->installAudioFilter(mpAudioFilter);
+        mpPlayer->installFilter(mpAudioFilter);
         mpAudioFilter->setOptions(Config::instance().avfilterAudioOptions());
     } else {
         if (mpAudioFilter) {
