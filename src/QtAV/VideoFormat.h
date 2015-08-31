@@ -37,7 +37,7 @@ public:
     /*!
      * \brief The PixelFormat enum
      * 32 bit rgba format enum name indicates it's channel layout. For example,
-     * Format_ARGB32 layout is AARRGGBB, it's integer value is 0xAARRGGBB on big endian platforms
+     * Format_ARGB32 byte layout is AARRGGBB, it's integer value is 0xAARRGGBB on big endian platforms
      * and 0xBBGGRRAA on little endian platforms
      * Format_RGB32 and QImage::Format_ARGB32 are the same.
      * TODO: 0RGB, XRGB, not native endia use R8 or R16. ffmpeg does not have native endian format
@@ -131,6 +131,10 @@ public:
     };
 
     static PixelFormat pixelFormatFromImageFormat(QImage::Format format);
+    /*!
+     * \brief imageFormatFromPixelFormat
+     * If returns a negative value, the QImage format is the positive one but R/G components are swapped because no direct support by QImage. QImage can swap R/G very fast.
+     */
     static QImage::Format imageFormatFromPixelFormat(PixelFormat format);
     static PixelFormat pixelFormatFromFFmpeg(int ff); //AVPixelFormat
     static int pixelFormatToFFmpeg(PixelFormat fmt);

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -40,7 +40,7 @@ QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
 
 bool QPainterRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    return VideoFormat::isRGB(pixfmt);
+    return VideoFormat::imageFormatFromPixelFormat(pixfmt) != QImage::Format_Invalid;
 }
 
 bool QPainterRenderer::prepareFrame(const VideoFrame &frame)
@@ -63,7 +63,14 @@ bool QPainterRenderer::prepareFrame(const VideoFrame &frame)
     else
         d.video_frame = frame.to(frame.pixelFormat()); // assume frame format is supported
     // DO NOT use frameData().data() because it's temp ptr while QImage does not deep copy the data
-    d.image = QImage((uchar*)d.video_frame.constBits(), d.video_frame.width(), d.video_frame.height(), d.video_frame.bytesPerLine(), d.video_frame.imageFormat());
+    QImage::Format imgfmt = d.video_frame.imageFormat();
+    const bool swapRGB = (int)imgfmt < 0;
+    if (swapRGB) {
+        imgfmt = (QImage::Format)(-imgfmt);
+    }
+    d.image = QImage((uchar*)d.video_frame.constBits(), d.video_frame.width(), d.video_frame.height(), d.video_frame.bytesPerLine(), imgfmt);
+    if (swapRGB)
+        d.image = d.image.rgbSwapped();
     //Format_RGB32 is fast. see document
     return true;
 }

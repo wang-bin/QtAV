@@ -395,8 +395,11 @@ static const struct {
     { VideoFormat::Format_RGBA32, QImage::Format_RGBA8888 }, //be 0xRRGGBBAA, le 0xAABBGGRR
 #endif
     { VideoFormat::Format_RGB565, QImage::Format_RGB16 },
+    { VideoFormat::Format_BGR565, (QImage::Format)-QImage::Format_RGB16 },
     { VideoFormat::Format_RGB555, QImage::Format_RGB555 },
+    { VideoFormat::Format_BGR555, (QImage::Format)-QImage::Format_RGB555 },
     { VideoFormat::Format_RGB24, QImage::Format_RGB888 },
+    { VideoFormat::Format_BGR24, (QImage::Format)-QImage::Format_RGB888 },
     { VideoFormat::Format_Invalid, QImage::Format_Invalid }
 };
 
