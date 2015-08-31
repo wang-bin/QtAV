@@ -1,4 +1,4 @@
-import QtQuick.tooling 1.1
+import QtQuick.tooling 1.2
 
 // This file describes the plugin-supplied types contained in the library.
 // It is used for QML tooling purposes only.
@@ -7,6 +7,7 @@ import QtQuick.tooling 1.1
 // 'qmlplugindump -nonrelocatable QtAV 1.6'
 
 Module {
+    dependencies: ["QtQuick 2.0"]
     Component {
         name: "MediaMetaData"
         prototype: "QObject"
@@ -353,6 +354,9 @@ Module {
         Property { name: "autoLoad"; type: "bool" }
         Property { name: "file"; type: "string" }
         Property { name: "text"; type: "string"; isReadonly: true }
+        Property { name: "fontFile"; type: "string" }
+        Property { name: "fontsDir"; type: "string" }
+        Property { name: "fontFileForced"; type: "bool" }
         Signal {
             name: "loaded"
             Parameter { name: "path"; type: "string" }
