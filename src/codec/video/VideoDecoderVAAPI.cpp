@@ -145,7 +145,10 @@ const codec_profile_t* findProfileEntry(AVCodecID codec, int profile)
     return 0;
 }
 
-class VideoDecoderVAAPIPrivate Q_DECL_FINAL: public VideoDecoderFFmpegHWPrivate, protected VAAPI_DRM, protected VAAPI_X11, protected VAAPI_GLX
+class VideoDecoderVAAPIPrivate Q_DECL_FINAL: public VideoDecoderFFmpegHWPrivate, protected VAAPI_DRM, protected VAAPI_X11
+#ifndef QT_NO_OPENGL
+        , protected VAAPI_GLX
+#endif //QT_NO_OPENGL
         , protected X11_API
 {
     DPTR_DECLARE_PUBLIC(VideoDecoderVAAPI)
@@ -155,18 +158,19 @@ public:
     {
         if (VAAPI_DRM::isLoaded())
             display_type = VideoDecoderVAAPI::DRM;
-        if (VAAPI_GLX::isLoaded())
+#ifndef QT_NO_OPENGL
+        if (VAAPI_GLX::isLoaded()) {
             display_type = VideoDecoderVAAPI::GLX;
-        if (VAAPI_X11::isLoaded())
+            copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
+        }
+#endif //QT_NO_OPENGL
+        if (VAAPI_X11::isLoaded()) {
             display_type = VideoDecoderVAAPI::X11;
-        if (display_type == VideoDecoderVAAPI::DRM) {
-            copy_mode = VideoDecoderFFmpegHW::OptimizedCopy;
-        } else {
+#ifndef QT_NO_OPENGL
 #if VA_X11_INTEROP
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
-#else
-            copy_mode = VideoDecoderFFmpegHW::OptimizedCopy;
 #endif //VA_X11_INTEROP
+#endif //QT_NO_OPENGL
         }
         drm_fd = -1;
         display_x11 = 0;
@@ -471,6 +475,7 @@ bool VideoDecoderVAAPIPrivate::open()
             display_type = VideoDecoderVAAPI::X11;
         } else if (dt == VideoDecoderVAAPI::GLX) {
             qDebug("vaGetDisplay GLX...............");
+#ifndef QT_NO_OPENGL
             if (!VAAPI_GLX::isLoaded())
                 continue;
             // TODO: lock
@@ -485,6 +490,9 @@ bool VideoDecoderVAAPIPrivate::open()
             }
             disp = vaGetDisplayGLX(display_x11);
             display_type = VideoDecoderVAAPI::GLX;
+#else
+            qWarning("No OpenGL support in Qt");
+#endif //QT_NO_OPENGL
         }
         if (disp)
             break;
@@ -549,10 +557,12 @@ bool VideoDecoderVAAPIPrivate::open()
     //vaCreateConfig(display, pe->va_profile, VAEntrypointVLD, NULL, 0, &config_id)
     VA_ENSURE_TRUE(vaCreateConfig(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1, &config_id), false);
     supports_derive = false;
+#ifndef QT_NO_OPENGL
     if (display_type == VideoDecoderVAAPI::GLX)
         interop_res = InteropResourcePtr(new GLXInteropResource());
+#endif //QT_NO_OPENGL
 #if VA_X11_INTEROP
-    else if (display_type == VideoDecoderVAAPI::X11)
+    if (display_type == VideoDecoderVAAPI::X11)
         interop_res = InteropResourcePtr(new X11InteropResource());
 #endif //VA_X11_INTEROP
     return true;

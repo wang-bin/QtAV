@@ -136,7 +136,7 @@ void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, in
     *f = frame;
     return f;
 }
-
+#ifndef QT_NO_OPENGL
 surface_glx_ptr GLXInteropResource::surfaceGLX(const display_ptr &dpy, GLuint tex)
 {
     surface_glx_ptr glx = glx_surfaces[tex];
@@ -163,7 +163,7 @@ bool GLXInteropResource::map(const surface_ptr& surface, GLuint tex, int w, int 
     VAWARN(vaSyncSurface(surface->vadisplay(), surface->get()));
     return true;
 }
-
+#endif //QT_NO_OPENGL
 #if VA_X11_INTEROP
 X11InteropResource::glXReleaseTexImage_t X11InteropResource::glXReleaseTexImage = 0;
 X11InteropResource::glXBindTexImage_t X11InteropResource::glXBindTexImage = 0;

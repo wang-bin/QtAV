@@ -21,7 +21,7 @@
 
 #ifndef QTAV_OPENGLWINDOWRENDERER_H
 #define QTAV_OPENGLWINDOWRENDERER_H
-
+#ifndef QT_NO_OPENGL
 #include <QtGui/QOpenGLWindow>
 #include <QtAV/OpenGLRendererBase.h>
 
@@ -51,5 +51,5 @@ protected:
 typedef OpenGLWindowRenderer VideoRendererOpenGLWindow;
 
 } //namespace QtAV
-
+#endif //QT_NO_OPENGL
 #endif // QTAV_OPENGLWINDOWRENDERER_H

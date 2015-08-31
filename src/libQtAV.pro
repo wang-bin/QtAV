@@ -8,9 +8,11 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     QT *= gui-private #dxva+egl
     DEFINES *= QTAV_HAVE_GUI_PRIVATE=1
   }
-  CONFIG *= config_opengl
-  greaterThan(QT_MINOR_VERSION, 3) {
-    CONFIG *= config_openglwindow
+  contains(QT_CONFIG, opengl) {
+      CONFIG *= config_opengl
+      greaterThan(QT_MINOR_VERSION, 3) {
+        CONFIG *= config_openglwindow
+      }
   }
 } else {
 config_gl: QT += opengl
@@ -192,10 +194,12 @@ CONFIG += config_cuda #config_dllapi config_dllapi_cuda
 #CONFIG += config_cuda_link
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
-    HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h \
-               codec/video/SurfaceInteropCUDA.h
-    SOURCES += codec/video/VideoDecoderCUDA.cpp \
-               codec/video/SurfaceInteropCUDA.cpp
+    HEADERS += cuda/dllapi/nv_inc.h cuda/helper_cuda.h
+    SOURCES += codec/video/VideoDecoderCUDA.cpp
+    #contains(QT_CONFIG, opengl) {
+      HEADERS += codec/video/SurfaceInteropCUDA.h
+      SOURCES += codec/video/SurfaceInteropCUDA.cpp
+    #}
     INCLUDEPATH += $$PWD/cuda cuda/dllapi
     config_dllapi:config_dllapi_cuda {
         DEFINES += QTAV_HAVE_DLLAPI_CUDA=1
@@ -215,15 +219,21 @@ include(../depends/dllapi/src/libdllapi.pri)
 }
 config_dxva {
     DEFINES *= QTAV_HAVE_DXVA=1
+    SOURCES += codec/video/VideoDecoderDXVA.cpp
+  contains(QT_CONFIG, opengl) {
     HEADERS += codec/video/SurfaceInteropDXVA.h
-    SOURCES += codec/video/VideoDecoderDXVA.cpp \
-               codec/video/SurfaceInteropDXVA.cpp
+    SOURCES += codec/video/SurfaceInteropDXVA.cpp
+  }
     LIBS += -lole32
 }
 config_vaapi* {
     DEFINES *= QTAV_HAVE_VAAPI=1
-    SOURCES += codec/video/VideoDecoderVAAPI.cpp  vaapi/vaapi_helper.cpp vaapi/SurfaceInteropVAAPI.cpp
-    HEADERS += vaapi/vaapi_helper.h  vaapi/SurfaceInteropVAAPI.h
+    SOURCES += codec/video/VideoDecoderVAAPI.cpp  vaapi/vaapi_helper.cpp
+    HEADERS += vaapi/vaapi_helper.h
+  #contains(QT_CONFIG, opengl) {
+    HEADERS += vaapi/SurfaceInteropVAAPI.h
+    SOURCES += vaapi/SurfaceInteropVAAPI.cpp
+  #}
     LIBS += -lva #dynamic load va-glx va-x11 using dllapi
 }
 config_libcedarv {

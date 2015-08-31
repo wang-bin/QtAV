@@ -147,6 +147,7 @@ private:
     vaGetDisplay_t* fp_vaGetDisplay;
     vaPutSurface_t* fp_vaPutSurface;
 };
+#ifndef QT_NO_OPENGL
 class VAAPI_GLX : public dll_helper {
 public:
     typedef VADisplay vaGetDisplayGLX_t(Display *);
@@ -198,7 +199,7 @@ private:
     vaDestroySurfaceGLX_t* fp_vaDestroySurfaceGLX;
     vaCopySurfaceGLX_t* fp_vaCopySurfaceGLX;
 };
-
+#endif //QT_NO_OPENGL
 class display_t {
 public:
     display_t(VADisplay display = 0) : m_display(display) {}
@@ -245,7 +246,7 @@ private:
     int color_space;
 };
 typedef SharedPtr<surface_t> surface_ptr;
-
+#ifndef QT_NO_OPENGL
 class surface_glx_t : public VAAPI_GLX {
 public:
     surface_glx_t(const display_ptr& dpy) : m_dpy(dpy), m_glx(0) {}
@@ -273,7 +274,7 @@ private:
     void* m_glx;
 };
 typedef QSharedPointer<surface_glx_t> surface_glx_ptr; //store in a vector
-
+#endif //QT_NO_OPENGL
 } //namespace vaapi
 } //namespace QtAV
 #endif // QTAV_VAAPI_HELPER_H

@@ -42,7 +42,7 @@ OptionalDepends = \
     avresample \
     avdevice
 # QtOpenGL module. In Qt5 we can disable it and still have opengl support
-!no-gl:!no-widgets {
+contains(QT_CONFIG, opengl):!no-gl:!no-widgets {
   greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(opengl):!config_gl {
     GL=config_gl done_config_gl
     cache(CONFIG, add, GL)

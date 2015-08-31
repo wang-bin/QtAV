@@ -46,7 +46,6 @@
 #include "cuda/cuda_api.h"
 #include "utils/Logger.h"
 #include "SurfaceInteropCUDA.h"
-#include "utils/OpenGLHelper.h"
 
 //decode error if not floating context
 

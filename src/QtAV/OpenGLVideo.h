@@ -21,7 +21,7 @@
 
 #ifndef QTAV_OPENGLVIDEO_H
 #define QTAV_OPENGLVIDEO_H
-
+#ifndef QT_NO_OPENGL
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QHash>
@@ -30,10 +30,8 @@
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLContext>
 #else
-#if !defined(QT_NO_OPENGL)
 #include <QtOpenGL/QGLContext>
 #define QOpenGLContext QGLContext
-#endif //!defined(QT_NO_OPENGL)
 #endif
 class QColor;
 
@@ -94,5 +92,5 @@ private slots:
 
 
 } //namespace QtAV
-
+#endif //QT_NO_OPENGL
 #endif // QTAV_OPENGLVIDEO_H

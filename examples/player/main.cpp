@@ -126,12 +126,17 @@ int main(int argc, char *argv[])
     }
     qDebug("vo: %s", vo.toUtf8().constData());
     vo = vo.toLower();
-    if (vo != QLatin1String("opengl") && vo != QLatin1String("gl") && vo != QLatin1String("d2d") && vo != QLatin1String("gdi") && vo != QLatin1String("xv") && vo != QLatin1String("qt"))
+    if (vo != QLatin1String("opengl") && vo != QLatin1String("gl") && vo != QLatin1String("d2d") && vo != QLatin1String("gdi") && vo != QLatin1String("xv") && vo != QLatin1String("qt")) {
+#ifndef QT_NO_OPENGL
 #ifdef Q_OS_ANDROID
         vo = "opengl"; // qglwidget is not suitable for android
 #else
         vo = QString::fromLatin1("gl");
 #endif
+#else
+        vo = QString::fromLatin1("qt");
+#endif //QT_NO_OPENGL
+    }
     QString title = QString::fromLatin1("QtAV %1 wbsecg1@gmail.com").arg(QtAV_Version_String_Long());
 #ifndef QT_NO_OPENGL
     VideoRendererId vid = VideoRendererId_GLWidget2;

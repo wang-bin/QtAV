@@ -71,7 +71,7 @@ SOURCES *= \
     $$QTAVSRC/output/video/GraphicsItemRenderer.cpp \
     $$QTAVSRC/output/video/WidgetRenderer.cpp
 
-greaterThan(QT_MAJOR_VERSION, 4) {
+contains(QT_CONFIG, opengl):greaterThan(QT_MAJOR_VERSION, 4) {
   SDK_HEADERS *= QtAVWidgets/OpenGLWidgetRenderer.h
   SOURCES *= $$QTAVSRC/output/video/OpenGLWidgetRenderer.cpp
   lessThan(QT_MINOR_VERSION, 4) {

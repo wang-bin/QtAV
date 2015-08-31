@@ -26,6 +26,7 @@
 #include <QtCore/QWeakPointer>
 #include "QtAV/SurfaceInterop.h"
 #include "utils/OpenGLHelper.h"
+#ifndef QT_NO_OPENGL
 #ifdef Q_OS_WIN
 // no need to check qt4 because no ANGLE there
 #if QTAV_HAVE(EGL_CAPI) // always use dynamic load
@@ -38,7 +39,7 @@
 #if defined(QT_OPENGL_DYNAMIC) || !defined(QT_OPENGL_ES_2)
 #define QTAV_HAVE_CUDA_GL 1
 #endif
-
+#endif //QT_NO_OPENGL
 namespace QtAV {
 namespace cuda {
 

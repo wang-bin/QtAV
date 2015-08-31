@@ -24,7 +24,9 @@
 #include <cstdlib>
 #include "QtAV/private/prepost.h"
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#ifndef QT_NO_OPENGL
 #include "QtAV/OpenGLWindowRenderer.h"
+#endif //QT_NO_OPENGL
 #endif
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
@@ -36,6 +38,7 @@ FACTORY_DEFINE(VideoRenderer)
 VideoRendererId VideoRendererId_OpenGLWindow = mkid::id32base36_6<'Q', 'O', 'G', 'L', 'W', 'w'>::value;
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#ifndef QT_NO_OPENGL
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, OpenGLWindow, "OpenGLWindow")
 
 void RegisterVideoRendererOpenGLWindow_Man()
@@ -47,12 +50,15 @@ VideoRendererId OpenGLWindowRenderer::id() const
 {
     return VideoRendererId_OpenGLWindow;
 }
-#endif
+#endif //QT_NO_OPENGL
+#endif //qt5.4.0
 
 void VideoRenderer_RegisterAll()
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#ifndef QT_NO_OPENGL
     RegisterVideoRendererOpenGLWindow_Man();
+#endif //QT_NO_OPENGL
 #endif
 }
 }//namespace QtAV

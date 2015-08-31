@@ -22,7 +22,7 @@
 #include "QtAVWidgets/GraphicsItemRenderer.h"
 #include "QtAV/private/QPainterRenderer_p.h"
 #include "QtAV/FilterContext.h"
-#define QTAV_HAVE_OPENGL (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0) || defined(QT_OPENGL_LIB))
+#define QTAV_HAVE_OPENGL (!defined QT_NO_OPENGL && (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0) || defined(QT_OPENGL_LIB)))
 #if QTAV_HAVE(OPENGL)
 #include "QtAV/OpenGLVideo.h"
 #else
@@ -114,8 +114,8 @@ bool GraphicsItemRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 
 bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
 {
-    DPTR_D(GraphicsItemRenderer);
 #if QTAV_HAVE(OPENGL)
+    DPTR_D(GraphicsItemRenderer);
     if (isOpenGL()) {
         d.video_frame = frame;
         if (d.checkGL())
@@ -225,6 +225,7 @@ bool GraphicsItemRenderer::onSetBrightness(qreal b)
 {
     if (!isOpenGL())
         return false;
+    Q_UNUSED(b);
 #if QTAV_HAVE(OPENGL)
     d_func().glv.setBrightness(b);
     update();
@@ -237,6 +238,7 @@ bool GraphicsItemRenderer::onSetContrast(qreal c)
 {
     if (!isOpenGL())
         return false;
+    Q_UNUSED(c);
 #if QTAV_HAVE(OPENGL)
     d_func().glv.setContrast(c);
     update();
@@ -249,6 +251,7 @@ bool GraphicsItemRenderer::onSetHue(qreal h)
 {
     if (!isOpenGL())
         return false;
+    Q_UNUSED(h);
 #if QTAV_HAVE(OPENGL)
     d_func().glv.setHue(h);
     update();
@@ -261,6 +264,7 @@ bool GraphicsItemRenderer::onSetSaturation(qreal s)
 {
     if (!isOpenGL())
         return false;
+    Q_UNUSED(s);
 #if QTAV_HAVE(OPENGL)
     d_func().glv.setSaturation(s);
     update();

@@ -113,9 +113,11 @@ void* SurfaceInteropCUDA::map(SurfaceType type, const VideoFormat &fmt, void *ha
     if (m_index < 0)
         return 0;
     if (type == GLTextureSurface) {
+#ifndef QT_NO_OPENGL
         // FIXME: to strong ref may delay the delete and cuda resource maybe already destoryed after strong ref is finished
         if (m_resource.toStrongRef()->map(m_index, m_param, *((GLuint*)handle), w, h, H, plane))
             return handle;
+#endif //QT_NO_OPENGL
     } else if (type == HostMemorySurface) {
         return m_resource.toStrongRef()->mapToHost(fmt, handle, m_index, m_param, w, h, H);
     }
@@ -126,8 +128,10 @@ void SurfaceInteropCUDA::unmap(void *handle)
 {
     if (m_resource.isNull())
         return;
+#ifndef QT_NO_OPENGL
     // FIXME: to strong ref may delay the delete and cuda resource maybe already destoryed after strong ref is finished
     m_resource.toStrongRef()->unmap(*((GLuint*)handle));
+#endif
 }
 } //namespace cuda
 } //namespace QtAV

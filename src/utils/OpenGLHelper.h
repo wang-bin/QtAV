@@ -24,6 +24,7 @@
 
 #include "QtAV/VideoFormat.h"
 #include <qglobal.h>
+#ifndef QT_NO_OPENGL
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLBuffer>
 #include <QtGui/QOpenGLContext>
@@ -130,5 +131,12 @@ GLint GetGLInternalFormat(GLint data_format, int bpp);
 
 } //namespace OpenGLHelper
 } //namespace QtAV
-
+#else
+namespace QtAV {
+namespace OpenGLHelper {
+#define DYGL(f) f
+inline bool isOpenGLES() {return false;}
+} //namespace OpenGLHelper
+} //namespace QtAV
+#endif //QT_NO_OPENGL
 #endif // QTAV_OPENGLHELPER_H
