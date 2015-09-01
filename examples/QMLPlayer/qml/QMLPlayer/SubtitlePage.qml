@@ -203,10 +203,7 @@ Page {
                             width: Utils.scaled(50)
                             anchors.right: parent.right
                             height: parent.height
-                            onClicked: {
-                                PlayerConfig.assFontFile = ""
-                                openFontFile.text = ""
-                            }
+                            onClicked: PlayerConfig.assFontFile = ""
                         }
                     }
                     Item {
@@ -236,10 +233,7 @@ Page {
                             width: Utils.scaled(50)
                             anchors.right: parent.right
                             height: parent.height
-                            onClicked: {
-                                PlayerConfig.assFontsDir = ""
-                                fontsDir.text = "" //why does it not update?
-                            }
+                            onClicked: PlayerConfig.assFontsDir = ""
                         }
                     }
                 }
@@ -356,10 +350,7 @@ Page {
         id: fontFileDialog
         title: qsTr("Choose a font file")
         folder: PlayerConfig.assFontFile
-        onAccepted: {
-            fontFile.text = fileUrl
-            PlayerConfig.assFontFile = fileUrl
-        }
+        onAccepted: PlayerConfig.assFontFile = fileUrl
     }
 
     FileDialog {
@@ -367,10 +358,7 @@ Page {
         title: qsTr("Choose a fonts dir")
         selectFolder: true
         folder: PlayerConfig.assFontsDir
-        onAccepted: {
-            fontsDir.text = folder
-            PlayerConfig.assFontsDir = folder
-        }
+        onAccepted: PlayerConfig.assFontsDir = folder
     }
 
     FileDialog {

@@ -258,7 +258,7 @@ config_videotoolbox {
   DEFINES *= QTAV_HAVE_VIDEOTOOLBOX=1
   SOURCES += codec/video/VideoDecoderVideoToolbox.cpp
   LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia \
-          -framework IOSurface
+          -framework IOSurface -framework VideoToolbox
 }
 
 config_gl|config_opengl {

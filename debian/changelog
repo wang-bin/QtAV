@@ -1,3 +1,23 @@
+qtav (1.8.0) unstable; urgency=low
+
+  * XAudio2 support
+  * VideoToolbox hardware decoder(OSX) support
+  * CUDA 0-copy support
+  * Dynamic video decoder switch when playing (try it in QMLPlayer)
+  * Embedded ass subtitles support
+  * ass subtitle font setup
+  * No OpenGL build fix for linux
+  * Fix qpainter rendering if vbo is used
+  * Fix OpenGL rendering for some rgb formats
+  * DXVA 0-copy improvement, intel clearvideo workaround etc.
+  * AO: add null backend
+  * HW: fix profile check
+  * Ref counted frames from ff decoders. Fix crash uploading textures
+  * Fix audio resampler parameters not set correctly
+  * VS2015 support
+
+ -- Wang Bin (Lucas) <wbsecg1@gmail.com>  Tue, 01 Sep 2015 13:25:13 +0800
+
 qtav (1.7.0) unstable; urgency=low
 
   * DXVA GPU zero-copy support

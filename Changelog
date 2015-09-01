@@ -1,3 +1,23 @@
+version 1.8.0 2015-09-01
+
+Changelog:
+- XAudio2 support
+- VideoToolbox hardware decoder(OSX) support. It can decode h264, h263, mpeg1, mpeg2, mpeg4. Better than VDA
+- CUDA 0-copy support
+- Dynamic video decoder switch when playing (try it in QMLPlayer)
+- Embedded ass subtitles support
+- ass subtitle font setup
+- No OpenGL build fix for linux
+- Fix qpainter rendering if vbo is used
+- Fix OpenGL rendering for some rgb formats
+- DXVA 0-copy improvement, intel clearvideo workaround etc.
+- AO: add null backend
+- HW: fix profile check
+- Ref counted frames from ff decoders. This fix opengl crash when uploading textures
+- Fix audio resampler parameters not set correctly
+- VS2015 support
+
+
 version 1.7.0 2015-07-09
 
 Changelog:
