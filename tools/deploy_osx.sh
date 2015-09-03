@@ -4,7 +4,7 @@ if [ $# -lt 1 ]; then
   echo "${0##*/} QtAV_build_dir"
   exit 1
 fi
-#set -ev
+#set -v
 THIS_DIR=$PWD
 BUILD_DIR=$1
 QTBIN=`grep -m 1 QT_BIN $BUILD_DIR/.qmake.cache |cut -d "=" -f 2 | tr -d ' '`
@@ -53,8 +53,8 @@ deploy() {
   local QT_LIBS=`$QTBIN/qmake -query QT_INSTALL_LIBS`
   local QT_PLUGINS=`$QTBIN/qmake -query QT_INSTALL_PLUGINS`
   local QT_QML=`$QTBIN/qmake -query QT_INSTALL_QML`
-  #cocoa depends on QtPrintSupport, QtSVG & QtPrintSupport depends on QtWidgets
-  QTMODULES="QtCore QtGui QtSvg QtPrintSupport QtWidgets"
+  #cocoa depends on QtPrintSupport and DBus(5.5), QtSVG & QtPrintSupport depends on QtWidgets
+  QTMODULES="QtCore QtGui QtSvg QtPrintSupport QtWidgets QtDBus"
   otool -L $EXE |grep QtOpenGL && QTMODULES+=" QtOpenGL"
   otool -L $EXE |grep QtQuick && QML="Qt QtQml QtQuick QtQuick.2" && QTMODULES+=" QtQuick QtQml QtNetwork"
   for q in $QTMODULES; do
@@ -104,7 +104,11 @@ Plugins = PlugIns
 Qml2Imports = Resources/qml
 EOF
   cd -
-  test -f ./create-dmg/create-dmg && ./create-dmg/create-dmg  --window-size 500 300  --icon-size 96 --volname "QtAV $APP"  --app-drop-link 240 200 QtAV-$APP.dmg $BUILD_DIR/bin/${APP}.app &
+  if [ -n "$TRAVIS_BUILD_DIR" ]; then
+    test -f ./create-dmg/create-dmg && ./create-dmg/create-dmg  --window-size 500 300  --icon-size 96 --volname "QtAV $APP"  --app-drop-link 240 200 QtAV-$APP.dmg $BUILD_DIR/bin/${APP}.app
+  else
+    test -f ./create-dmg/create-dmg && ./create-dmg/create-dmg  --window-size 500 300  --icon-size 96 --volname "QtAV $APP"  --app-drop-link 240 200 QtAV-$APP.dmg $BUILD_DIR/bin/${APP}.app &
+  fi
 }
 
 deploy player

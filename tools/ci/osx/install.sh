@@ -1,14 +1,12 @@
-FFVER=2.6.2
-test -f ffmpeg-${FFVER}-OSX.tar.xz || wget http://sourceforge.net/projects/qtav/files/depends/FFmpeg/OSX/ffmpeg-${FFVER}-OSX.tar.xz/download -O ffmpeg-${FFVER}-OSX.tar.xz
-tar Jxf ffmpeg-${FFVER}-OSX.tar.xz
-
-export FFMPEG_DIR=$PWD/ffmpeg-${FFVER}-OSX
-export CPATH=$FFMPEG_DIR/include
-export LIBRARY_PATH=$FFMPEG_DIR/lib/x64
-export LD_LIBRARY_PATH=$FFMPEG_DIR/lib/x64
-
-# TODO: download qt
+#!/bin/bash
+set -ev
 brew update
-brew install qt5
+brew install ffmpeg qt5
 
-#export QTDIR
+ls /usr/local/bin
+export QTAV_OUT=QtAV-OSX-${TRAVIS_COMMIT:0:7}
+mkdir -p $QTAV_OUT
+export PATH=/usr/local/opt/qt5/bin:$PATH
+## /usr/local/include is fine too
+export CPATH=/usr/local/opt/ffmpeg/include:/usr/local/opt/libass/include
+export LIBRARY_PATH=/usr/local/opt/ffmpeg/lib:/usr/local/opt/libass/lib

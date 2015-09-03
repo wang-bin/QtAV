@@ -1,11 +1,11 @@
 cd tools
 git clone https://github.com/andreyvit/create-dmg.git
 
-./deploy_osx.sh $QTAV_OUT
+./deploy_osx.sh $TRAVIS_BUILD_DIR/$QTAV_OUT
 
 
-PKG=QtAV-QMLPlayer-$TRAVIS_JOB_NUMBER.tar.xz
-mv QMLPlayer.dmg $PKG
+PKG=$TRAVIS_BUILD_DIR/${QTAV_OUT}-QMLPlayer.dmg
+mv QtAV-QMLPlayer.dmg $PKG
 
 wget http://sourceforge.net/projects/sshpass/files/sshpass/1.05/sshpass-1.05.tar.gz/download -O sshpass.tar.gz
 tar zxf sshpass.tar.gz
@@ -17,4 +17,4 @@ export PATH=$PWD:$PATH
 cd $TRAVIS_BUILD_DIR
 type -a sshpass
 # ignore known hosts: -o StrictHostKeyChecking=no
-sshpass -p $SF_PWD scp -o StrictHostKeyChecking=no $PKG $SF_USER@frs.sourceforge.net:/home/frs/project/qtav/ci
+sshpass -p $SF_PWD scp -o StrictHostKeyChecking=no $PKG $SF_USER,qtav@frs.sourceforge.net:/home/frs/project/q/qt/qtav/ci/

@@ -1,27 +1,38 @@
 os:
-  - linux
   - osx
-# TODO: osx must manually request http://docs.travis-ci.com/user/multi-os/
+  - linux
+
 language: cpp
 compiler:
   - clang
 cache: apt
-install: true
 env:
-  global:
-    - LANG="en_US.UTF-8"
-  matrix:
-    - QT=4.8.6 AV=ffmpeg-1.0.10
-    - QT=5.0.2 AV=ffmpeg-1.2.10
-    - QT=5.1.1 AV=ffmpeg-2.0.6
-    - QT=5.2.1 AV=ffmpeg-2.2.11
+  - QT=4.8.6 AV=ffmpeg-1.0.10
+  - QT=5.0.2 AV=ffmpeg-1.2.10
+  - QT=5.1.1 AV=ffmpeg-2.0.6
+  - QT=5.2.1 AV=ffmpeg-2.2.11
+  - QT=brew AV=ffmpeg-brew
+
+
+matrix:
+  exclude:
+    - os: linux
+      env: QT=brew AV=ffmpeg-brew
+    - os: osx
+      env: QT=4.8.6 AV=ffmpeg-1.0.10
+    - os: osx
+      env: QT=5.0.2 AV=ffmpeg-1.2.10
+    - os: osx
+      env: QT=5.1.1 AV=ffmpeg-2.0.6
+    - os: osx
+      env: QT=5.2.1 AV=ffmpeg-2.2.11
 
 branches:
   only:
     - master
     - prelease
     - ci/travis
-    - travis
+    - /^travis-.*$/
 
 git:
   submodules: true

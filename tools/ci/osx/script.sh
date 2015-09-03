@@ -2,20 +2,17 @@ set -ev
 
 echo "$TRAVIS_BUILD_DIR"
 
-tail -n 27 /proc/cpuinfo
+sysctl -b machdep.cpu
+sysctl -n hw.ncpu
 uname -a
-cat /etc/issue
-
-echo "QtAV build script for travis-ci"
 
 jobs=`sysctl -n hw.ncpu`
-
 
 cd $QTAV_OUT
 
 rm -f build.log
 type -a moc
-qmake -r $TRAVIS_BUILD_DIR -spec linux-clang "CONFIG+=recheck"
-make -j$jobs 2>&1 |tee build.log
+qmake -r $TRAVIS_BUILD_DIR "CONFIG+=recheck"
+make -j$jobs
 
 cd $TRAVIS_BUILD_DIR
