@@ -28,7 +28,7 @@ attribute vec2 a_TexCoords1;
 attribute vec2 a_TexCoords2;
 varying vec2 v_TexCoords1;
 varying vec2 v_TexCoords2;
-#ifdef PLANE_4
+#ifdef HAS_ALPHA
 attribute vec2 a_TexCoords3;
 varying vec2 v_TexCoords3;
 #endif
@@ -39,7 +39,7 @@ void main() {
 #ifdef MULTI_COORD
   v_TexCoords1 = a_TexCoords1;
   v_TexCoords2 = a_TexCoords2;
-#ifdef PLANE_4
+#ifdef HAS_ALPHA
   v_TexCoords3 = a_TexCoords3;
 #endif
 #endif //MULTI_COORD

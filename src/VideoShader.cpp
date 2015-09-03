@@ -197,8 +197,8 @@ const char* VideoShader::vertexShader() const
     if (textureTarget() == GL_TEXTURE_RECTANGLE && d.video_format.isPlanar()) {
         vert.prepend("#define MULTI_COORD\n");
 #if YUVA_DONE
-        if (d.video_format.planeCount() == 4)
-            vert.prepend("#define PLANE_4\n");
+        if (d.video_format.hasAlpha())
+            vert.prepend("#define HAS_ALPHA\n");
 #endif
     }
     return vert.constData();
@@ -218,11 +218,7 @@ const char* VideoShader::fragmentShader() const
         qWarning("Empty fragment shader!");
         return 0;
     }
-#if YUVA_DONE
-    if (d.video_format.planeCount() == 4) {
-        frag.prepend("#define PLANE_4\n");
-    }
-#endif
+    const bool has_alpha = d.video_format.hasAlpha();
     if (d.video_format.isPlanar()) {
         if (d.video_format.bytesPerPixel(0) == 2) {
             if (d.video_format.isBigEndian())
@@ -230,10 +226,15 @@ const char* VideoShader::fragmentShader() const
             else
                 frag.prepend("#define LA_16BITS_LE\n");
         }
+#if YUVA_DONE
+        if (has_alpha)
+            frag.prepend("#define HAS_ALPHA\n");
+#endif
     } else {
-        if (d.video_format.hasAlpha())
+        if (has_alpha)
             frag.prepend("#define HAS_ALPHA\n");
     }
+
     if (d.texture_target == GL_TEXTURE_RECTANGLE) {
         frag.prepend("#extension GL_ARB_texture_rectangle : enable\n"
                      "#define texture2D texture2DRect\n"

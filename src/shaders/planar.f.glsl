@@ -33,14 +33,14 @@ precision mediump float;
 uniform sampler2D u_Texture0;
 uniform sampler2D u_Texture1;
 uniform sampler2D u_Texture2;
-#ifdef PLANE_4
+#ifdef HAS_ALPHA
 uniform sampler2D u_Texture3;
-#endif //PLANE_4
+#endif //HAS_ALPHA
 varying lowp vec2 v_TexCoords0;
 #ifdef MULTI_COORD
 varying lowp vec2 v_TexCoords1;
 varying lowp vec2 v_TexCoords2;
-#ifdef PLANE_4
+#ifdef HAS_ALPHA
 varying lowp vec2 v_TexCoords3;
 #endif
 #else
@@ -109,11 +109,11 @@ void main()
 #endif //LA_16BITS
                              1)
                          , 0.0, 1.0) * u_opacity;
-#ifdef PLANE_4
+#ifdef HAS_ALPHA
 #if LA_16BITS
     gl_FragColor.a *= dot(texture2D(u_Texture3, v_TexCoords3).ra, t); //GL_LUMINANCE_ALPHA
 #else //8bit
     gl_FragColor.a *= texture2D(u_Texture3, v_TexCoords3).a; //GL_ALPHA
 #endif //LA_16BITS
-#endif //PLANE_4
+#endif //HAS_ALPHA
 }
