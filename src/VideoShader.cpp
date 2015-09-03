@@ -491,51 +491,23 @@ VideoShader* VideoMaterial::createShader() const
     return shader;
 }
 
-const char *VideoMaterial::type() const
+QString VideoMaterial::typeName(qint64 value)
+{
+    return QString("gl material planar: %1, has alpha: %2, big endian: %3, 2d texture: %4, 8bit channel: %5")
+            .arg(!!(value&(1<<4)))
+            .arg(!!(value&(1<<3)))
+            .arg(!!(value&(1<<2)))
+            .arg(!!(value&(1<<1)))
+            .arg(!!(value&1));
+}
+
+qint64 VideoMaterial::type() const
 {
     DPTR_D(const VideoMaterial);
     const VideoFormat &fmt = d.video_format;
     const bool tex_2d = d.target == GL_TEXTURE_2D;
-    if (!fmt.isPlanar()) {
-        if (fmt.hasAlpha()) {
-            if (tex_2d)
-                return "packed rgb(a) material";
-            return "packed rgb(a) + rectangle texture material";
-        }
-        if (tex_2d)
-            return "packed rgb/yuv(no alpha) material";
-        return "packed rgb/yuv(no alpha) + rectangle texture material";
-    }
-    if (fmt.bytesPerPixel(0) == 1) {
-        if (fmt.planeCount() == 4) {
-            if (tex_2d)
-                return "8bit 4plane yuv material";
-            return "8bit 4plane yuv + rectangle texture material";
-        }
-        if (tex_2d)
-            return "8bit yuv material";
-        return "8bit yuv + rectangle texture material";
-    }
-    if (fmt.isBigEndian()) {
-        if (fmt.planeCount() == 4) {
-            if (tex_2d)
-                return "4plane 16bit-be material";
-            return "4plane 16bit-be + rectangle texture material";
-        }
-        if (tex_2d)
-            return "planar 16bit-be material";
-        return "planar 16bit-be + rectangle texture material";
-    } else {
-        if (fmt.planeCount() == 4) {
-            if (tex_2d)
-                return "4plane 16bit-le material";
-            return "4plane 16bit-le + rectangle texture material";
-        }
-        if (tex_2d)
-            return "planar 16bit-le material";
-        return "planar 16bit-le + rectangle texture material";
-    }
-    return "invalid material";
+    // planar,alpha,be,2d,8bit
+    return (fmt.isPlanar()<<4)|(fmt.hasAlpha()<<3)|(fmt.isBigEndian()<<2)|(tex_2d<<1)|(fmt.bytesPerPixel(0) == 1);
 }
 
 bool VideoMaterial::bind()

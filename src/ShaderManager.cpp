@@ -20,11 +20,11 @@ ShaderManager::~ShaderManager()
 
 VideoShader* ShaderManager::prepareMaterial(VideoMaterial *material)
 {
-    const char* type = material->type();
+    const qint64 type = material->type();
     VideoShader *shader = shader_cache.value(type, 0);
     if (shader)
         return shader;
-    qDebug("[ShaderManager] cache a new shader material type: %s", type);
+    qDebug() << QString("[ShaderManager] cache a new shader material type(%1): %2").arg(type).arg(VideoMaterial::typeName(type));
     shader = material->createShader();
     shader->initialize();
     shader_cache[type] = shader;

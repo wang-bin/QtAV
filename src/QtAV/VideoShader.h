@@ -108,7 +108,8 @@ public:
     void setCurrentFrame(const VideoFrame& frame);
     VideoFormat currentFormat() const;
     VideoShader* createShader() const;
-    virtual const char* type() const;
+    virtual qint64 type() const;
+    static QString typeName(qint64 value);
 
     bool bind(); // TODO: roi
     void unbind();
