@@ -238,7 +238,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         GLenum type;
     } fmt_entry;
     static const fmt_entry pixfmt_to_gles[] = {
-        {VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE }, //tested for angle
+        {VideoFormat::Format_BGRA32, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE }, //tested for angle
         {VideoFormat::Format_RGB32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_Invalid, 0, 0, 0}
     };
