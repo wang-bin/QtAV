@@ -232,7 +232,7 @@ void VideoRenderer::resizeRenderer(const QSize &size)
 void VideoRenderer::resizeRenderer(int width, int height)
 {
     DPTR_D(VideoRenderer);
-    if (width == 0 || height == 0 || d.renderer_width == width || d.renderer_height == height)
+    if (width == 0 || height == 0 || (d.renderer_width == width && d.renderer_height == height))
         return;
     d.renderer_width = width;
     d.renderer_height = height;
