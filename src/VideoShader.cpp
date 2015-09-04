@@ -220,11 +220,8 @@ const char* VideoShader::fragmentShader() const
     }
     const bool has_alpha = d.video_format.hasAlpha();
     if (d.video_format.isPlanar()) {
-        if (d.video_format.bytesPerPixel(0) == 2) {
-            if (d.video_format.isBigEndian())
-                frag.prepend("#define LA_16BITS_BE\n");
-            else
-                frag.prepend("#define LA_16BITS_LE\n");
+        if (d.video_format.bytesPerPixel(0) == 1) {
+            frag.prepend("#define CHANNEL_8BIT\n");
         }
 #if YUVA_DONE
         if (has_alpha)
@@ -261,7 +258,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     d.u_MVP_matrix = shaderProgram->uniformLocation("u_MVP_matrix");
     // fragment shader
     d.u_colorMatrix = shaderProgram->uniformLocation("u_colorMatrix");
-    d.u_bpp = shaderProgram->uniformLocation("u_bpp");
+    d.u_to8 = shaderProgram->uniformLocation("u_to8");
     d.u_opacity = shaderProgram->uniformLocation("u_opacity");
     d.u_c = shaderProgram->uniformLocation("u_c");
     d.u_Texture.resize(textureLocationCount());
@@ -275,8 +272,8 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     qDebug("glGetUniformLocation(\"u_opacity\") = %d", d.u_opacity);
     if (d.u_c >= 0)
         qDebug("glGetUniformLocation(\"u_c\") = %d", d.u_c);
-    if (d.u_bpp >= 0)
-        qDebug("glGetUniformLocation(\"u_bpp\") = %d", d.u_bpp);
+    if (d.u_to8 >= 0)
+        qDebug("glGetUniformLocation(\"u_to8\") = %d", d.u_to8);
 }
 
 int VideoShader::textureLocationCount() const
@@ -303,11 +300,6 @@ int VideoShader::matrixLocation() const
 int VideoShader::colorMatrixLocation() const
 {
     return d_func().u_colorMatrix;
-}
-
-int VideoShader::bppLocation() const
-{
-    return d_func().u_bpp;
 }
 
 int VideoShader::opacityLocation() const
@@ -376,8 +368,8 @@ bool VideoShader::update(VideoMaterial *material)
     }
     //qDebug() << "color mat " << material->colorMatrix();
     program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
-    if (bppLocation() >= 0)
-        program()->setUniformValue(bppLocation(), (GLfloat)material->bpp());
+    if (d_func().u_to8 >= 0)
+        program()->setUniformValue(d_func().u_to8, material->vectorTo8bit());
     if (channelMapLocation() >= 0)
         program()->setUniformValue(channelMapLocation(), material->channelMap());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
@@ -451,7 +443,17 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     }
 
     const VideoFormat fmt(frame.format());
+    const int bpp_old = d.bpp;
     d.bpp = fmt.bitsPerPixel(0);
+    if (d.bpp > 8 && d.bpp != bpp_old) {
+        const int range = (1 << d.bpp) - 1;
+        // FFmpeg supports 9, 10, 12, 14, 16 bits
+        // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)  //(yyyyyyyy, 000000yy)?
+        if (fmt.isBigEndian())
+            d.vec_to8 = QVector2D(256.0, 1.0)*255.0/(float)range;
+        else
+            d.vec_to8 = QVector2D(1.0, 256.0)*255.0/(float)range;
+    }
     // http://forum.doom9.org/archive/index.php/t-160211.html
     ColorSpace cs = frame.colorSpace();// ColorSpace_RGB;
     if (cs == ColorSpace_Unknow) {
@@ -494,12 +496,12 @@ VideoShader* VideoMaterial::createShader() const
 
 QString VideoMaterial::typeName(qint64 value)
 {
-    return QString("gl material planar: %1, has alpha: %2, big endian: %3, 2d texture: %4, 8bit channel: %5")
-            .arg(!!(value&(1<<4)))
-            .arg(!!(value&(1<<3)))
-            .arg(!!(value&(1<<2)))
+    return QString("gl material 8bit channel: %1, planar: %2, has alpha: %3, 2d texture: %4")
+            .arg(!!(value&1))
             .arg(!!(value&(1<<1)))
-            .arg(!!(value&1));
+            .arg(!!(value&(1<<2)))
+            .arg(!!(value&(1<<3)))
+            ;
 }
 
 qint64 VideoMaterial::type() const
@@ -507,8 +509,8 @@ qint64 VideoMaterial::type() const
     DPTR_D(const VideoMaterial);
     const VideoFormat &fmt = d.video_format;
     const bool tex_2d = d.target == GL_TEXTURE_2D;
-    // planar,alpha,be,2d,8bit
-    return (fmt.isPlanar()<<4)|(fmt.hasAlpha()<<3)|(fmt.isBigEndian()<<2)|(tex_2d<<1)|(fmt.bytesPerPixel(0) == 1);
+    // 2d,alpha,planar,8bit
+    return (tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(fmt.bytesPerPixel(0) == 1);
 }
 
 bool VideoMaterial::bind()
@@ -631,6 +633,11 @@ const QMatrix4x4 &VideoMaterial::channelMap() const
 int VideoMaterial::bpp() const
 {
     return d_func().bpp;
+}
+
+QVector2D VideoMaterial::vectorTo8bit() const
+{
+    return d_func().vec_to8;
 }
 
 int VideoMaterial::planeCount() const

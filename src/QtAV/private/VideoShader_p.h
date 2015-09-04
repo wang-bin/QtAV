@@ -53,7 +53,7 @@ public:
         , program(0)
         , u_MVP_matrix(-1)
         , u_colorMatrix(-1)
-        , u_bpp(-1)
+        , u_to8(-1)
         , u_opacity(-1)
         , u_c(-1)
         , texture_target(GL_TEXTURE_2D)
@@ -71,10 +71,9 @@ public:
 
     bool owns_program; // shader program is not created by this. e.g. scene graph create it's own program and we store it here
     QOpenGLShaderProgram *program;
-    // TODO: compare with texture width uniform used in qtmm
     int u_MVP_matrix;
     int u_colorMatrix;
-    int u_bpp;
+    int u_to8;
     int u_opacity;
     int u_c;
     QVector<int> u_Texture;
@@ -167,6 +166,7 @@ public:
     QMatrix4x4 matrix;
     bool try_pbo;
     QVector<QOpenGLBuffer> pbo;
+    QVector2D vec_to8; //TODO: vec3 to support both RG and LA (.rga, vec_to8)
     QMatrix4x4 channel_map;
 };
 

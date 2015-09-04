@@ -51,14 +51,9 @@ varying lowp vec2 v_TexCoords3;
 uniform float u_opacity;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
-
-#if defined(LA_16BITS_BE) || defined(LA_16BITS_LE)
-#define LA_16BITS 1
-#else
-#define LA_16BITS 0
+#ifndef CHANNEL_8BIT
+uniform vec2 u_to8;
 #endif
-//#define LA_16BITS  (defined(LA_16BITS_BE) || defined(LA_16BITS_LE)) // why may error?
-
 #if defined(YUV_MAT_GLSL)
 //http://en.wikipedia.org/wiki/YUV calculation used
 //http://www.fourcc.org/fccyvrgb.php
@@ -84,36 +79,25 @@ const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
 // 10, 16bit: http://msdn.microsoft.com/en-us/library/windows/desktop/bb970578%28v=vs.85%29.aspx
 void main()
 {
-    // FFmpeg supports 9, 10, 12, 14, 16 bits
-#if LA_16BITS
-    //http://stackoverflow.com/questions/22693169/opengl-es-2-0-glsl-compiling-fails-on-osx-when-using-const
-    float range = exp2(u_bpp) - 1.0; // why can not be const?
-#if defined(LA_16BITS_LE)
-    vec2 t = vec2(1.0, 256.0)*255.0/range;
-#else
-    vec2 t = vec2(256.0, 1.0)*255.0/range;
-#endif
-#endif //LA_16BITS
-    // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)
     gl_FragColor = clamp(u_colorMatrix
                          * vec4(
-#if LA_16BITS
-                             dot(texture2D(u_Texture0, v_TexCoords0).ra, t),
-                             dot(texture2D(u_Texture1, v_TexCoords1).ra, t),
-                             dot(texture2D(u_Texture2, v_TexCoords2).ra, t),
+#ifndef CHANNEL_8BIT
+                             dot(texture2D(u_Texture0, v_TexCoords0).ra, u_to8),
+                             dot(texture2D(u_Texture1, v_TexCoords1).ra, u_to8),
+                             dot(texture2D(u_Texture2, v_TexCoords2).ra, u_to8),
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
                              texture2D(u_Texture0, v_TexCoords0).r,
                              texture2D(u_Texture1, v_TexCoords1).g,
                              texture2D(u_Texture2, v_TexCoords2).a,
-#endif //LA_16BITS
+#endif //CHANNEL_8BIT
                              1)
                          , 0.0, 1.0) * u_opacity;
 #ifdef HAS_ALPHA
-#if LA_16BITS
-    gl_FragColor.a *= dot(texture2D(u_Texture3, v_TexCoords3).ra, t); //GL_LUMINANCE_ALPHA
+#ifndef CHANNEL_8BIT
+    gl_FragColor.a *= dot(texture2D(u_Texture3, v_TexCoords3).ra, u_to8); //GL_LUMINANCE_ALPHA
 #else //8bit
     gl_FragColor.a *= texture2D(u_Texture3, v_TexCoords3).a; //GL_ALPHA
-#endif //LA_16BITS
+#endif //CHANNEL_8BIT
 #endif //HAS_ALPHA
 }
