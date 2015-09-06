@@ -59,6 +59,12 @@ bool AVDecoder::open()
     AVCodec *codec = 0;
     if (!d.codec_name.isEmpty()) {
         codec = avcodec_find_decoder_by_name(d.codec_name.toUtf8().constData());
+        if (!codec) {
+            const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(d.codec_name.toUtf8().constData());
+            if (cd) {
+                codec = avcodec_find_decoder(cd->id);
+            }
+        }
     } else {
         codec = avcodec_find_decoder(d.codec_ctx->codec_id);
     }

@@ -81,6 +81,12 @@ bool AudioEncoderFFmpegPrivate::open()
     }
     AVCodec *codec = avcodec_find_encoder_by_name(codec_name.toUtf8().constData());
     if (!codec) {
+        const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(codec_name.toUtf8().constData());
+        if (cd) {
+            codec = avcodec_find_encoder(cd->id);
+        }
+    }
+    if (!codec) {
         qWarning() << "Can not find encoder for codec " << codec_name;
         return false;
     }

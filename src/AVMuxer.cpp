@@ -94,6 +94,12 @@ AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, const QString &codec
     AVCodec *codec = NULL;
     if (!codecName.isEmpty()) {
         codec = avcodec_find_encoder_by_name(codecName.toUtf8().constData());
+        if (!codec) {
+            const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(codecName.toUtf8().constData());
+            if (cd) {
+                codec = avcodec_find_encoder(cd->id);
+            }
+        }
         if (!codec)
             qWarning("Can not find encoder for %s", codecName.toUtf8().constData());
     } else if (codecId != QTAV_CODEC_ID(NONE)) {
