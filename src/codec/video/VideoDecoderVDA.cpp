@@ -218,7 +218,9 @@ VideoFrame VideoDecoderVDA::frame()
         bool glinterop;
         CVPixelBufferRef cvbuf; // keep ref until video frame is destroyed
     public:
-        SurfaceInteropCVBuffer(CVPixelBufferRef cv, bool gl) : glinterop(gl), cvbuf(cv) {}
+        SurfaceInteropCVBuffer(CVPixelBufferRef cv, bool gl) : glinterop(gl), cvbuf(cv) {
+            //CVPixelBufferRetain(cvbuf);
+        }
         ~SurfaceInteropCVBuffer() {
             CVPixelBufferRelease(cvbuf);
         }
@@ -416,10 +418,7 @@ bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
 
 bool VideoDecoderVDAPrivate::getBuffer(void **opaque, uint8_t **data)
 {
-    Q_UNUSED(data);
-    //qDebug("%s @%d data=%p", __PRETTY_FUNCTION__, __LINE__, *data);
-    // FIXME: why *data == 0?
-    //*data = (uint8_t *)1; // dummy
+    *data = (uint8_t *)1; // dummy. it's AVFrame.data[0], must be non null required by ffmpeg
     Q_UNUSED(opaque);
     return true;
 }

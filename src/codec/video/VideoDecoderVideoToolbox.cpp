@@ -394,7 +394,7 @@ bool VideoDecoderVideoToolboxPrivate::setup(AVCodecContext *avctx)
 
 bool VideoDecoderVideoToolboxPrivate::getBuffer(void **opaque, uint8_t **data)
 {
-    Q_UNUSED(data);
+    *data = (uint8_t *)1; // dummy. it's AVFrame.data[0], must be non null required by ffmpeg
     Q_UNUSED(opaque);
     return true;
 }

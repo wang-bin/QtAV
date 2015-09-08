@@ -78,7 +78,7 @@ static int ffmpeg_get_va_buffer2(struct AVCodecContext *ctx, AVFrame *frame, int
         ffmpeg_release_va_buffer2(ref, frame->data[0]);
         return -1;
     }
-    Q_ASSERT(frame->data[0] != NULL); // FIXME: VDA may crash in debug mode
+    Q_ASSERT(frame->data[0] != NULL);
     return 0;
 }
 #else
