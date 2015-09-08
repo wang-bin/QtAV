@@ -225,7 +225,7 @@ bool X11InteropResource::ensureGLX()
         GLX_RED_SIZE, 8,
         GLX_GREEN_SIZE, 8,
         GLX_BLUE_SIZE, 8,
-        GLX_ALPHA_SIZE, 8,
+        GLX_ALPHA_SIZE, 8, //0 for 24 bpp(vdpau)? mpv is 0
         None
     };
 
@@ -252,15 +252,15 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
     XWindowAttributes xwa;
     XGetWindowAttributes((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), &xwa);
     pixmap = XCreatePixmap((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), w, h, xwa.depth);
+    // mpv always use 24 bpp
     qDebug("XCreatePixmap: %lu, depth: %d", pixmap, xwa.depth);
     if (!pixmap) {
-        qWarning("VAAPI_X_GLX_Interop could not create pixmap");
+        qWarning("X11InteropResource could not create pixmap");
         return false;
     }
-
-    int attribs[] = {
+    const int attribs[] = {
         GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
-        GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGBA_EXT,
+        GLX_TEXTURE_FORMAT_EXT, xwa.depth == 32 ? GLX_TEXTURE_FORMAT_RGBA_EXT : GLX_TEXTURE_FORMAT_RGB_EXT,
         GLX_MIPMAP_TEXTURE_EXT, False,
         None,
     };
@@ -275,18 +275,16 @@ bool X11InteropResource::map(const surface_ptr& surface, GLuint tex, int w, int 
     if (!ensurePixmaps(surface->width(), surface->height()))
         return false;
     VAWARN(vaSyncSurface(surface->vadisplay(), surface->get()));
-
-    VA_ENSURE_TRUE(vaPutSurface(surface->vadisplay(), surface->get(), pixmap
+    // FIXME: invalid surface at the first time vaPutSurface is called. If return false, vaPutSurface will always fail, why?
+    VAWARN(vaPutSurface(surface->vadisplay(), surface->get(), pixmap
                                 , 0, 0, w, h
                                 , 0, 0, w, h
                                 , NULL, 0, VA_FRAME_PICTURE | surface->colorSpace())
-                   , NULL);
-
+                   );
     XSync((::Display*)xdisplay, False);
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     glXBindTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT, NULL);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
-
     return true;
 }
 
