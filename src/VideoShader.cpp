@@ -552,6 +552,10 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
         DYGL(glBindTexture(d.target, tex)); // glActiveTexture was called, but maybe bind to 0 in map
         return;
     }
+    if (!d.frame.constBits(0)) {
+        qWarning("map hw surface error");
+        return;
+    }
     // TODO if a hw frame map() failed, do not upload. upload only for host memory surfaces
     // FIXME: why happens on win?
     if (d.frame.bytesPerLine(p) <= 0)
