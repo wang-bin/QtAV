@@ -47,6 +47,10 @@ public:
         : pixfmt(fmt)
         , pixfmt_ff(QTAV_PIX_FMT_C(NONE))
         , qpixfmt(QImage::Format_Invalid)
+        , planes(0)
+        , bpp(0)
+        , bpp_pad(0)
+        , bpc(0)
         , pixdesc(0)
     {
         if (fmt == VideoFormat::Format_Invalid) {
@@ -60,6 +64,10 @@ public:
         : pixfmt(VideoFormat::Format_Invalid)
         , pixfmt_ff(fmt)
         , qpixfmt(QImage::Format_Invalid)
+        , planes(0)
+        , bpp(0)
+        , bpp_pad(0)
+        , bpc(0)
         , pixdesc(0)
     {
         init(fmt);
@@ -68,6 +76,10 @@ public:
         : pixfmt(VideoFormat::Format_Invalid)
         , pixfmt_ff(QTAV_PIX_FMT_C(NONE))
         , qpixfmt(fmt)
+        , planes(0)
+        , bpp(0)
+        , bpp_pad(0)
+        , bpc(0)
         , pixdesc(0)
     {
         init(fmt);
