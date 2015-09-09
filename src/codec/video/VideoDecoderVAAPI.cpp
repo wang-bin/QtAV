@@ -705,7 +705,7 @@ bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
     }
     const int w = codedWidth(avctx);
     const int h = codedHeight(avctx);
-    if (surface_width == FFALIGN(w, 16) && surface_height == FFALIGN(h, 16)) {
+    if (surface_width == w && surface_height == h) {
         avctx->hwaccel_context = &hw_ctx;
         return true;
     }
