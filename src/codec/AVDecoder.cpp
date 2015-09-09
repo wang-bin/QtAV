@@ -103,6 +103,7 @@ bool AVDecoder::open()
     // TODO: only open for ff decoders
     AV_ENSURE_OK(avcodec_open2(d.codec_ctx, codec, d.options.isEmpty() ? NULL : &d.dict), false);
     d.is_open = true;
+    qDebug("thread mode: %d count: %d", d.codec_ctx->active_thread_type, d.codec_ctx->thread_count);
     return true;
 }
 

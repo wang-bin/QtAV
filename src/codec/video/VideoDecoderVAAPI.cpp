@@ -26,6 +26,7 @@
 #include <QtCore/QList>
 #include <QtCore/QMetaEnum>
 #include <QtCore/QStringList>
+#include <QtCore/QThread>
 extern "C" {
 #include <libavcodec/vaapi.h>
 }
@@ -431,9 +432,16 @@ bool VideoDecoderVAAPIPrivate::open()
         qWarning("codec(%s) or profile(%s) is not supported", avcodec_get_name(codec_ctx->codec_id), getProfileName(codec_ctx->codec_id, codec_ctx->profile));
         return false;
     }
-    int surface_count = 2 + 1;
+    int threads = 1;
+    if (codec_ctx->thread_type & FF_THREAD_FRAME) {
+        if (codec_ctx->thread_count <= 0) { // default is 0. auto set by ff
+            threads = QThread::idealThreadCount();//av_cpu_count() is not available in old ffmpeg
+        }
+    }
+    int surface_count =  2 + 1 + threads;//codec_ctx->thread_count;
+    qDebug("before open, surface_count: %d  thread mode: %d, codec_ctx->thread_count:%d, cpu: %d", surface_count, codec_ctx->thread_type, codec_ctx->thread_count, threads);
     if (codec_ctx->codec_id == QTAV_CODEC_ID(H264))
-        surface_count = 16+2 + codec_ctx->thread_count;
+        surface_count = 16+2 + threads;
     if (surface_auto)
         nb_surfaces = surface_count;
     if (nb_surfaces <= 0)
@@ -583,7 +591,7 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
         qWarning("no va display");
         return false;
     }
-    qDebug("createSurfaces %dx%d", w, h);
+    qDebug("createSurfaces %d %dx%d", count, w, h);
     Q_ASSERT(w > 0 && h > 0);
     const int old_size = surfaces.size();
     if (count <= old_size)
@@ -745,6 +753,7 @@ void VideoDecoderVAAPIPrivate::close()
 bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
 {
     VASurfaceID id = (VASurfaceID)(quintptr)*data;
+    // id is always 0?
     std::list<surface_ptr>::iterator it = surfaces_free.begin();
     if (id && id != VA_INVALID_ID) {
         bool found = false;
