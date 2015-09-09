@@ -181,7 +181,7 @@ X11InteropResource::X11InteropResource()
 
 X11InteropResource::~X11InteropResource()
 {
-    if (glxpixmap) {
+    if (glxpixmap) { //TODO: does the thread matters?
         glXReleaseTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT);
         XSync((::Display*)xdisplay, False);
         glXDestroyPixmap((::Display*)xdisplay, glxpixmap);
@@ -290,9 +290,12 @@ bool X11InteropResource::map(const surface_ptr& surface, GLuint tex, int w, int 
 
 bool X11InteropResource::unmap(GLuint tex)
 {
+    // can not call glXReleaseTexImage otherwise the texture will containts no image data
+#if 0
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     glXReleaseTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
+#endif
     return true;
 }
 
