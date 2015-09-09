@@ -305,6 +305,11 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         adec = 0;
     }
     adec = AudioDecoder::create();
+    if (!adec)
+    {
+        qWarning("failed to create audio decoder");
+        return false;
+    }
     QObject::connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
     adec->setCodecContext(avctx);
     adec->setOptions(ac_opt);
