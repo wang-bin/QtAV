@@ -95,7 +95,7 @@ const char* getProfileName(AVCodecID id, int profile)
 typedef struct {
     AVCodecID codec;
     int profile;
-    VAProfile va_profile;
+    VAProfile va_profile; //TODO: use an array like dxva does
 } codec_profile_t;
 #define VAProfileNone ((VAProfile)-1) //maybe not defined for old va
 
@@ -111,6 +111,7 @@ static const  codec_profile_t va_profiles[] = {
     { QTAV_CODEC_ID(H264), FF_PROFILE_H264_MAIN, VAProfileH264Main },
     { QTAV_CODEC_ID(H264), FF_PROFILE_H264_BASELINE, VAProfileH264Baseline },
     { QTAV_CODEC_ID(H264), FF_PROFILE_H264_CONSTRAINED_BASELINE, VAProfileH264ConstrainedBaseline }, //mpv force main
+    { QTAV_CODEC_ID(H264), FF_PROFILE_H264_CONSTRAINED_BASELINE, VAProfileH264Main },
     { QTAV_CODEC_ID(VC1), FF_PROFILE_VC1_ADVANCED, VAProfileVC1Advanced },
     { QTAV_CODEC_ID(VC1), FF_PROFILE_VC1_MAIN, VAProfileVC1Main },
     { QTAV_CODEC_ID(VC1), FF_PROFILE_VC1_SIMPLE, VAProfileVC1Simple },
@@ -129,12 +130,14 @@ static bool isProfileSupportedByRuntime(const VAProfile *profiles, int count, VA
     return false;
 }
 
-const codec_profile_t* findProfileEntry(AVCodecID codec, int profile)
+const codec_profile_t* findProfileEntry(AVCodecID codec, int profile, const codec_profile_t* p0 = NULL)
 {
     if (codec == QTAV_CODEC_ID(NONE))
         return 0;
-    for (int i = 0; va_profiles[i].codec != QTAV_CODEC_ID(NONE); ++i) {
-        const codec_profile_t* p = &va_profiles[i];
+    if (p0 && p0->codec == QTAV_CODEC_ID(NONE)) //search from the end
+        return 0;
+    const codec_profile_t* pe0 = p0 ? ++p0 : va_profiles;
+    for (const codec_profile_t* p = pe0 ; p->codec != QTAV_CODEC_ID(NONE); ++p) {
         if (codec != p->codec || profile != p->profile)
             continue;
         // return the first profile entry if given profile is unknow
@@ -550,8 +553,12 @@ bool VideoDecoderVAAPIPrivate::open()
     }
     QVector<VAProfile> supported_profiles(nb_profiles, VAProfileNone);
     VA_ENSURE_TRUE(vaQueryConfigProfiles(disp, supported_profiles.data(), &nb_profiles), false);
-    if (!isProfileSupportedByRuntime(supported_profiles.constData(), nb_profiles, pe->va_profile)) {
-        qDebug("Codec or profile is not supported by the hardware");
+    while (pe && !isProfileSupportedByRuntime(supported_profiles.constData(), nb_profiles, pe->va_profile)) {
+        qDebug("Codec or profile is not directly supported by the hardware. Checking alternative profiles");
+        pe = findProfileEntry(codec_ctx->codec_id, codec_ctx->profile, pe);
+    }
+    if (!pe) {
+        qDebug("Codec or profile is not directly supported by the hardware.");
         return false;
     }
     /* Create a VA configuration */
