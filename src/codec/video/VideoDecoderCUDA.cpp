@@ -125,8 +125,7 @@ static struct {
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264  },
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264_SVC},
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264_MVC},
-    // AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
-#if defined(AV_CODEC_ID_H265) && (CUDA_VERSION >= 6050)
+#if defined(FF_PROFILE_HEVC_MAIN) && (CUDA_VERSION >= 6050)
     { QTAV_CODEC_ID(HEVC),       cudaVideoCodec_HEVC },
 #endif //
     { QTAV_CODEC_ID(VP8),        cudaVideoCodec_VP8 },

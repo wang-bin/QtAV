@@ -103,7 +103,7 @@ static const  codec_profile_t va_profiles[] = {
     { QTAV_CODEC_ID(MPEG1VIDEO), FF_PROFILE_UNKNOWN, VAProfileMPEG2Main }, //vlc
     { QTAV_CODEC_ID(MPEG2VIDEO), FF_PROFILE_MPEG2_MAIN, VAProfileMPEG2Main },
     { QTAV_CODEC_ID(MPEG2VIDEO),  FF_PROFILE_MPEG2_SIMPLE, VAProfileMPEG2Simple },
-    { QTAV_CODEC_ID(H263), FF_PROFILE_UNKNOWN, VAProfileMPEG4AdvancedSimple }, //xbmc
+    { QTAV_CODEC_ID(H263), FF_PROFILE_UNKNOWN, VAProfileH263Baseline }, //xbmc use mpeg4
     { QTAV_CODEC_ID(MPEG4), FF_PROFILE_MPEG4_ADVANCED_SIMPLE, VAProfileMPEG4AdvancedSimple },
     { QTAV_CODEC_ID(MPEG4), FF_PROFILE_MPEG4_MAIN, VAProfileMPEG4Main },
     { QTAV_CODEC_ID(MPEG4), FF_PROFILE_MPEG4_SIMPLE, VAProfileMPEG4Simple },
@@ -118,6 +118,18 @@ static const  codec_profile_t va_profiles[] = {
     { QTAV_CODEC_ID(WMV3), FF_PROFILE_VC1_ADVANCED, VAProfileVC1Advanced },
     { QTAV_CODEC_ID(WMV3), FF_PROFILE_VC1_MAIN, VAProfileVC1Main },
     { QTAV_CODEC_ID(WMV3), FF_PROFILE_VC1_SIMPLE, VAProfileVC1Simple },
+#if VA_CHECK_VERSION(0, 38, 0)
+#ifdef FF_PROFILE_HEVC_MAIN
+    { QTAV_CODEC_ID(HEVC), FF_PROFILE_HEVC_MAIN, VAProfileHEVCMain},
+#endif
+#ifdef FF_PROFILE_HEVC_MAIN_10
+    { QTAV_CODEC_ID(HEVC), FF_PROFILE_HEVC_MAIN_10, VAProfileHEVCMain10},
+#endif
+#if FFMPEG_MODULE_CHECK(LIBAVCODEC, 54, 92, 100) || LIBAV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1) //ffmpeg1.2 libav10
+    { QTAV_CODEC_ID(VP9), FF_PROFILE_UNKNOWN, VAProfileVP9Profile0},
+#endif
+    { QTAV_CODEC_ID(VP8), FF_PROFILE_UNKNOWN, VAProfileVP8Version0_3}, //defined in 0.37
+#endif //VA_CHECK_VERSION(0, 38, 0)
     { QTAV_CODEC_ID(NONE), FF_PROFILE_UNKNOWN, VAProfileNone }
 };
 
@@ -442,9 +454,14 @@ bool VideoDecoderVAAPIPrivate::open()
         }
     }
     int surface_count =  2 + 1 + threads;//codec_ctx->thread_count;
-    qDebug("before open, surface_count: %d  thread mode: %d, codec_ctx->thread_count:%d, cpu: %d", surface_count, codec_ctx->thread_type, codec_ctx->thread_count, threads);
+    qDebug("before open, default surface_count: %d  thread mode: %d, codec_ctx->thread_count:%d, cpu: %d, ref:%d", surface_count, codec_ctx->thread_type, codec_ctx->thread_count, threads, codec_ctx->refs);
     if (codec_ctx->codec_id == QTAV_CODEC_ID(H264))
         surface_count = 16+2 + threads;
+#ifdef FF_PROFILE_HEVC_MAIN
+    if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC))
+        surface_count = 16+2 + threads;
+#endif
+    // TODO: vp8,9
     if (surface_auto)
         nb_surfaces = surface_count;
     if (nb_surfaces <= 0)
@@ -554,13 +571,14 @@ bool VideoDecoderVAAPIPrivate::open()
     QVector<VAProfile> supported_profiles(nb_profiles, VAProfileNone);
     VA_ENSURE_TRUE(vaQueryConfigProfiles(disp, supported_profiles.data(), &nb_profiles), false);
     while (pe && !isProfileSupportedByRuntime(supported_profiles.constData(), nb_profiles, pe->va_profile)) {
-        qDebug("Codec or profile is not directly supported by the hardware. Checking alternative profiles");
+        qDebug("Codec or profile %d is not directly supported by the hardware. Checking alternative profiles", pe->va_profile);
         pe = findProfileEntry(codec_ctx->codec_id, codec_ctx->profile, pe);
     }
     if (!pe) {
         qDebug("Codec or profile is not directly supported by the hardware.");
         return false;
     }
+    qDebug("using profile %d: %s, %s",  pe->va_profile, avcodec_get_name(codec_ctx->codec_id), getProfileName(pe->codec, pe->profile));
     /* Create a VA configuration */
     VAConfigAttrib attrib;
     memset(&attrib, 0, sizeof(attrib));

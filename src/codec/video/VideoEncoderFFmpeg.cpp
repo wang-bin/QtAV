@@ -126,12 +126,12 @@ bool VideoEncoderFFmpegPrivate::open()
         av_dict_set(&dict, "tune", "zerolatency", 0);
         av_dict_set(&dict, "profile", "main", 0);
     }
-#ifdef AV_CODEC_ID_H265
-    if(avctx->codec_id == AV_CODEC_ID_H265){
+#ifdef FF_PROFILE_HEVC_MAIN
+    if(avctx->codec_id == AV_CODEC_ID_HEVC){
         av_dict_set(&dict, "preset", "ultrafast", 0);
         av_dict_set(&dict, "tune", "zero-latency", 0);
     }
-#endif //AV_CODEC_ID_H265
+#endif //FF_PROFILE_HEVC_MAIN
 #endif
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);

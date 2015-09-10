@@ -36,15 +36,14 @@
 #include "utils/DirectXHelper.h"
 
 // d3d9ex: http://dxr.mozilla.org/mozilla-central/source/dom/media/wmf/DXVA2Manager.cpp
-// AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC. so we can avoid libavcodec version check. (from ffmpeg 2.1)
-#ifndef AV_CODEC_ID_H265
+// AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC in ffmpeg but not in libav. so we can use FF_PROFILE_HEVC_MAIN to avoid libavcodec version check. (from ffmpeg 2.1)
+#ifndef FF_PROFILE_HEVC_MAIN //libav does not define it
 #ifdef _MSC_VER
 #pragma message("HEVC will not be supported. Update your FFmpeg")
 #else
 #warning "HEVC will not be supported. Update your FFmpeg"
 #endif
-#define AV_CODEC_ID_H265 QTAV_CODEC_ID(NONE) //mkid::fourcc<'H','2','6','5'>::value
-#define AV_CODEC_ID_HEVC QTAV_CODEC_ID(NONE)
+#define AV_CODEC_ID_HEVC QTAV_CODEC_ID(NONE) //mkid::fourcc<'H','E','V','C'>::value
 #define FF_PROFILE_HEVC_MAIN -1
 #define FF_PROFILE_HEVC_MAIN_10 -1
 #endif
