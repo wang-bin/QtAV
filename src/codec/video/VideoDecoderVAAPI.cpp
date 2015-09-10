@@ -205,9 +205,8 @@ public:
     }
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
-    bool createSurfaces(int count, void **hwctx, int w, int h);
-    void destroySurfaces();
-
+    bool ensureSurfaces(int count, int w, int h);
+    bool prepareVAImage(int w, int h);
     bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
@@ -448,12 +447,12 @@ bool VideoDecoderVAAPIPrivate::open()
         return false;
     }
     int threads = 1;
-    if (codec_ctx->thread_type & FF_THREAD_FRAME) {
+    if (codec_ctx->thread_type & (FF_THREAD_FRAME|FF_THREAD_SLICE)) {
         if (codec_ctx->thread_count <= 0) { // default is 0. auto set by ff
             threads = QThread::idealThreadCount();//av_cpu_count() is not available in old ffmpeg
         }
     }
-    int surface_count =  2 + 1 + threads;//codec_ctx->thread_count;
+    int surface_count =  2 + 1 + threads;
     qDebug("before open, default surface_count: %d  thread mode: %d, codec_ctx->thread_count:%d, cpu: %d, ref:%d", surface_count, codec_ctx->thread_type, codec_ctx->thread_count, threads, codec_ctx->refs);
     if (codec_ctx->codec_id == QTAV_CODEC_ID(H264))
         surface_count = 16+2 + threads;
@@ -595,9 +594,15 @@ bool VideoDecoderVAAPIPrivate::open()
     surface_width = codedWidth(codec_ctx);
     surface_height = codedHeight(codec_ctx);
     // create surfaces here to avoid creating a surface in threaded getBuffer()
-    if (!createSurfaces(nb_surfaces, &codec_ctx->hwaccel_context, surface_width, surface_height)) {
-        destroySurfaces();
+    if (!ensureSurfaces(nb_surfaces, surface_width, surface_height)) {
         return false;
+    }
+    VA_ENSURE_TRUE(vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id), false);
+    if (display_type != VideoDecoderVAAPI::GLX && (display_type != VideoDecoderVAAPI::X11 || copy_mode != VideoDecoderFFmpegHW::ZeroCopy)) {
+        // copy-back mode
+        if (!prepareVAImage(surface_width, surface_height))
+            return false;
+        initUSWC(surface_width);
     }
 #ifndef QT_NO_OPENGL
     if (display_type == VideoDecoderVAAPI::GLX)
@@ -607,23 +612,27 @@ bool VideoDecoderVAAPIPrivate::open()
     if (display_type == VideoDecoderVAAPI::X11)
         interop_res = InteropResourcePtr(new X11InteropResource());
 #endif //VA_X11_INTEROP
+    /* Setup the ffmpeg hardware context */
+    memset(&hw_ctx, 0, sizeof(hw_ctx));
+    hw_ctx.display = display->get();
+    hw_ctx.config_id = config_id;
+    hw_ctx.context_id = context_id;
+    codec_ctx->hwaccel_context = &hw_ctx;
     return true;
 }
 
-bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w, int h)
+bool VideoDecoderVAAPIPrivate::ensureSurfaces(int count, int w, int h)
 {
     if (!display) {
         qWarning("no va display");
         return false;
     }
-    qDebug("createSurfaces %d %dx%d", count, w, h);
+    qDebug("ensureSurfaces %d %dx%d", count, w, h);
     Q_ASSERT(w > 0 && h > 0);
     const int old_size = surfaces.size();
     if (count <= old_size)
         return true;
     surfaces.resize(count);
-    image.image_id = VA_INVALID_ID;
-    context_id = VA_INVALID_ID;
     VAStatus status = VA_STATUS_SUCCESS;
     status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, w, h,  surfaces.data() + old_size, count - old_size, NULL, 0); //VA_ENSURE_OK: travis-ci macro mismatch
     if (status != VA_STATUS_SUCCESS) {
@@ -631,103 +640,68 @@ bool VideoDecoderVAAPIPrivate::createSurfaces(int count, void **pp_hw_ctx, int w
         return false;
     }
     for (int i = old_size; i < surfaces.size(); ++i) {
-        surfaces_free.push_back(surface_ptr(new surface_t(width, height, surfaces[i], display)));
+        //qDebug("surface id: %p %dx%d", surfaces.at(i), w, height);
+        surfaces_free.push_back(surface_ptr(new surface_t(w, h, surfaces[i], display)));
     }
-    /* Create a context */
-    if (context_id && context_id != VA_INVALID_ID)
-        VAWARN(vaDestroyContext(display->get(), context_id));
-    context_id = VA_INVALID_ID;
-    if ((status = vaCreateContext(display->get(), config_id, w, h, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id)) != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateContext(VADisplay:%p, VAConfigID:%#x, %d, %d, VA_PROGRESSIVE, VASurfaceID*:%p, surfaces:%d, VAContextID*:%p) == %#x: %s", display->get(), config_id, width, height, surfaces.constData(), surfaces.size(), &context_id, status, vaErrorStr(status));
-        context_id = VA_INVALID_ID;
-        destroySurfaces();
-        return false;
-    }
-    /* Setup the ffmpeg hardware context */
-    memset(&hw_ctx, 0, sizeof(hw_ctx));
-    hw_ctx.display = display->get();
-    hw_ctx.config_id = config_id;
-    hw_ctx.context_id = context_id;
-    if (display_type == VideoDecoderVAAPI::GLX || (display_type == VideoDecoderVAAPI::X11 && copy_mode == VideoDecoderFFmpegHW::ZeroCopy)) {
-        *pp_hw_ctx = &hw_ctx;
-        return true;
-    }
-    // TODO: move to other place?
+    return true;
+}
+
+bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
+{
     /* Find and create a supported image chroma */
-    int i_fmt_count = vaMaxNumImageFormats(display->get());
+    int nb_fmts = vaMaxNumImageFormats(display->get());
     //av_mallocz_array
-    VAImageFormat *p_fmt = (VAImageFormat*)calloc(i_fmt_count, sizeof(*p_fmt));
-    if (!p_fmt) {
-        destroySurfaces();
+    VAImageFormat *fmt = (VAImageFormat*)calloc(nb_fmts, sizeof(*fmt));
+    if (!fmt)
+        return false;
+    if (vaQueryImageFormats(display->get(), fmt, &nb_fmts)) {
+        free(fmt);
         return false;
     }
-    if (vaQueryImageFormats(display->get(), p_fmt, &i_fmt_count)) {
-        free(p_fmt);
-        destroySurfaces();
+    bool found = false;
+    for (int i = 0; i < nb_fmts; i++) {
+        qDebug("va image format: %c%c%c%c", fmt[i].fourcc<<24>>24, fmt[i].fourcc<<16>>24, fmt[i].fourcc<<8>>24, fmt[i].fourcc>>24);
+        if (fmt[i].fourcc != VA_FOURCC_YV12 &&
+                fmt[i].fourcc != VA_FOURCC_IYUV &&
+                fmt[i].fourcc != VA_FOURCC_NV12)
+            continue;
+        VAStatus s = VA_STATUS_SUCCESS;
+        if ((s = vaCreateImage(display->get(), &fmt[i], w, h, &image)) != VA_STATUS_SUCCESS) {
+            image.image_id = VA_INVALID_ID;
+            qDebug("vaCreateImage error: %c%c%c%c (%p) %s", fmt[i].fourcc<<24>>24, fmt[i].fourcc<<16>>24, fmt[i].fourcc<<8>>24, fmt[i].fourcc>>24, s, vaErrorStr(s));
+            continue;
+        }
+        /* Validate that vaGetImage works with this format */
+        if ((s = vaGetImage(display->get(), surfaces[0], 0, 0, w, h, image.image_id)) != VA_STATUS_SUCCESS) {
+            vaDestroyImage(display->get(), image.image_id);
+            qDebug("vaGetImage error: %c%c%c%c  (%p) %s", fmt[i].fourcc<<24>>24, fmt[i].fourcc<<16>>24, fmt[i].fourcc<<8>>24, fmt[i].fourcc>>24, s, vaErrorStr(s));
+            image.image_id = VA_INVALID_ID;
+            continue;
+        }
+        found = true;
+        break;
+    }
+    free(fmt);
+    if (!found) {
         return false;
     }
     VAImage test_image;
     if (!disable_derive) {
         if (vaDeriveImage(display->get(), surfaces[0], &test_image) == VA_STATUS_SUCCESS) {
             qDebug("vaDeriveImage supported");
-            supports_derive = true;
+            /* from vlc: Use vaDerive() iif it supports the best selected format */
+            if (image.format.fourcc == test_image.format.fourcc) {
+                qDebug("vaDerive is ok");
+                supports_derive = true;
+            }
             vaDestroyImage(display->get(), test_image.image_id);
         }
-    }
-    bool found = false;
-    for (int i = 0; i < i_fmt_count; i++) {
-        qDebug("va image format: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
-        if (p_fmt[i].fourcc == VA_FOURCC_YV12 ||
-                p_fmt[i].fourcc == VA_FOURCC_IYUV ||
-                p_fmt[i].fourcc == VA_FOURCC_NV12) {
-            VAStatus s = VA_STATUS_SUCCESS;
-            if ((s = vaCreateImage(display->get(), &p_fmt[i], w, h, &image)) != VA_STATUS_SUCCESS) {
-                image.image_id = VA_INVALID_ID;
-                qDebug("vaCreateImage error: %c%c%c%c (%p) %s", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24, s, vaErrorStr(s));
-                continue;
-            }
-            /* Validate that vaGetImage works with this format */
-            if ((s = vaGetImage(display->get(), surfaces[0], 0, 0, w, h, image.image_id)) != VA_STATUS_SUCCESS) {
-                vaDestroyImage(display->get(), image.image_id);
-                qDebug("vaGetImage error: %c%c%c%c  (%p) %s", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24, s, vaErrorStr(s));
-                image.image_id = VA_INVALID_ID;
-                continue;
-            }
-            found = true;
-            break;
+        if (supports_derive) {
+            vaDestroyImage(display->get(), image.image_id);
+            image.image_id = VA_INVALID_ID;
         }
     }
-    free(p_fmt);
-    if (!found) {
-        destroySurfaces();
-        return false;
-    }
-    if (!disable_derive && supports_derive) {
-        vaDestroyImage(display->get(), image.image_id);
-        image.image_id = VA_INVALID_ID;
-    }
-    initUSWC(w);
-    /* Setup the ffmpeg hardware context */
-    *pp_hw_ctx = &hw_ctx;
     return true;
-}
-
-void VideoDecoderVAAPIPrivate::destroySurfaces()
-{
-    if (image.image_id != VA_INVALID_ID) {
-        VAWARN(vaDestroyImage(display->get(), image.image_id));
-    }
-    releaseUSWC();
-    if (context_id != VA_INVALID_ID)
-        VAWARN(vaDestroyContext(display->get(), context_id));
-    nb_surfaces = 0;
-    surfaces.clear();
-    surfaces_free.clear();
-    surfaces_used.clear();
-    image.image_id = VA_INVALID_ID;
-    context_id = VA_INVALID_ID;
-    surface_width = 0;
-    surface_height = 0;
 }
 
 bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
@@ -738,17 +712,8 @@ bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
     }
     const int w = codedWidth(avctx);
     const int h = codedHeight(avctx);
-    if (surface_width == w && surface_height == h) {
-        avctx->hwaccel_context = &hw_ctx;
-        return true;
-    }
-    avctx->hwaccel_context = NULL;
-    width = avctx->width; // not necessary. set in decode()
-    height = avctx->height;
-    if (surface_width || surface_height)
-        destroySurfaces();
-    if (!createSurfaces(nb_surfaces, &avctx->hwaccel_context, w, h)) {
-        destroySurfaces();
+    if (surface_width != w || surface_height != h) {
+        qWarning("surface size changed. does not support");
         return false;
     }
     return true;
@@ -757,9 +722,15 @@ bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
 void VideoDecoderVAAPIPrivate::close()
 {
     restore();
-    if (surface_width || surface_height)
-        destroySurfaces();
-
+    // do not call vaDestroySurfaces here because they are destroyed by surface_t
+    if (image.image_id != VA_INVALID_ID) {
+        VAWARN(vaDestroyImage(display->get(), image.image_id));
+        image.image_id = VA_INVALID_ID;
+    }
+    if (context_id != VA_INVALID_ID) {
+        VAWARN(vaDestroyContext(display->get(), context_id));
+        context_id = VA_INVALID_ID;
+    }
     if (config_id != VA_INVALID_ID) {
         VAWARN(vaDestroyConfig(display->get(), config_id));
         config_id = VA_INVALID_ID;
@@ -773,6 +744,13 @@ void VideoDecoderVAAPIPrivate::close()
         ::close(drm_fd);
         drm_fd = -1;
     }
+    releaseUSWC();
+    nb_surfaces = 0;
+    surfaces.clear();
+    surfaces_free.clear();
+    surfaces_used.clear();
+    surface_width = 0;
+    surface_height = 0;
 }
 
 bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
@@ -804,7 +782,7 @@ bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
             }
             // Set itarator position to the newly allocated surface (end-1)
             const int old_size = surfaces.size();
-            if (!createSurfaces(old_size + 1, &codec_ctx->hwaccel_context, surface_width, surface_height)) {
+            if (!ensureSurfaces(old_size + 1, surface_width, surface_height)) {
                 // destroy the new created surface. Surfaces can only be destroyed after the context associated has been destroyed?
                 VAWARN(vaDestroySurfaces(display->get(), surfaces.data() + old_size, 1));
                 surfaces.resize(old_size);

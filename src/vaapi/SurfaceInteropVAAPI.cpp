@@ -32,8 +32,8 @@ namespace vaapi {
 
 void SurfaceInteropVAAPI::setSurface(const surface_ptr& surface,  int w, int h) {
     m_surface = surface;
-    frame_width=w ? w : surface->width();
-    frame_height=h ? h : surface->height();
+    frame_width = (w ? w : surface->width());
+    frame_height = (h ? h : surface->height());
 }
 
 void* SurfaceInteropVAAPI::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
@@ -248,7 +248,6 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
     if (!ensureGLX()) {
         return false;
     }
-
     XWindowAttributes xwa;
     XGetWindowAttributes((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), &xwa);
     pixmap = XCreatePixmap((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), w, h, xwa.depth);
@@ -272,7 +271,11 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
 
 bool X11InteropResource::map(const surface_ptr& surface, GLuint tex, int w, int h, int)
 {
-    if (!ensurePixmaps(surface->width(), surface->height()))
+    if (surface->width() <= 0 || surface->height() <= 0) {
+        qWarning("invalid surface size");
+        return false;
+    }
+    if (!ensurePixmaps(w, h)) //pixmap with frame size
         return false;
     VAWARN(vaSyncSurface(surface->vadisplay(), surface->get()));
     // FIXME: invalid surface at the first time vaPutSurface is called. If return false, vaPutSurface will always fail, why?
