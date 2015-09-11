@@ -22,14 +22,13 @@
 #ifndef QAV_DECODER_H
 #define QAV_DECODER_H
 
-#include <QtAV/QtAV_Global.h>
 #include <QtAV/AVError.h>
-#include <QtAV/Packet.h>
 #include <QtCore/QVariant>
 #include <QtCore/QObject>
 
 namespace QtAV {
 
+class Packet;
 class AVDecoderPrivate;
 class Q_AV_EXPORT AVDecoder : public QObject
 {

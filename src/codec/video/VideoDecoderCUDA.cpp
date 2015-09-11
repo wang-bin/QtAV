@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoder.h"
+#include "QtAV/Packet.h"
 #include "QtAV/private/AVDecoder_p.h"
 #include "QtAV/private/prepost.h"
 #include <QtCore/QQueue>

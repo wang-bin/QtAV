@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/AudioDecoder.h"
+#include "QtAV/Packet.h"
 #include "QtAV/private/AVDecoder_p.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/AudioResamplerTypes.h"

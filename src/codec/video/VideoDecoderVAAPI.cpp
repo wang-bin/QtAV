@@ -32,7 +32,6 @@ extern "C" {
 }
 #include <fcntl.h> //open()
 #include <unistd.h> //close()
-#include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
 #include "vaapi/SurfaceInteropVAAPI.h"

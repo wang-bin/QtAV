@@ -25,7 +25,6 @@
 #endif
 #include "VideoDecoderFFmpegHW.h"
 #include "VideoDecoderFFmpegHW_p.h"
-#include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/prepost.h"
 //#include "QtAV/private/mkid.h"
