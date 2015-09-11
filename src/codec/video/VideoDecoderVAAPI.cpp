@@ -567,6 +567,13 @@ bool VideoDecoderVAAPIPrivate::open()
     height = codec_ctx->height;
     surface_width = codedWidth(codec_ctx);
     surface_height = codedHeight(codec_ctx);
+    qDebug("checking surface resolution support");
+    VASurfaceID test_surface = VA_INVALID_ID;
+    if (vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, surface_width, surface_height,  &test_surface, 1, NULL, 0) != VA_STATUS_SUCCESS) {
+        qWarning("surface size %dx%d is not supported", surface_width, surface_height);
+        return false;
+    }
+    VAWARN(vaDestroySurfaces(display->get(), &test_surface, 1));
 #ifndef QT_NO_OPENGL
     if (display_type == VideoDecoderVAAPI::GLX)
         interop_res = InteropResourcePtr(new GLXInteropResource());
@@ -649,10 +656,11 @@ bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
     if (!disable_derive) {
         if (vaDeriveImage(display->get(), surfaces[0], &test_image) == VA_STATUS_SUCCESS) {
             qDebug("vaDeriveImage supported");
+            supports_derive = true;
             /* from vlc: Use vaDerive() iif it supports the best selected format */
             if (image.format.fourcc == test_image.format.fourcc) {
                 qDebug("vaDerive is ok");
-                supports_derive = true;
+//                supports_derive = true;
             }
             vaDestroyImage(display->get(), test_image.image_id);
         }
