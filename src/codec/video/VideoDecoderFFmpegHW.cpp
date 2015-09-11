@@ -57,13 +57,8 @@ static int ffmpeg_get_va_buffer2(struct AVCodecContext *ctx, AVFrame *frame, int
         frame->buf[i] = NULL;
     }
     //frame->reordered_opaque = ctx->reordered_opaque; //?? xbmc
+    // va must be available here
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)ctx->opaque;
-    /* hwaccel_context is not present in old ffmpeg version */
-    // not coded_width. assume coded_width is 6 aligned of width. ??
-    if (!va->setup(ctx)) {
-        qWarning("va Setup failed");
-        return -1;
-    }
     if (!va->getBuffer(&frame->opaque, &frame->data[0])) {
         qWarning("va->getBuffer failed");
         return -1;
@@ -95,11 +90,7 @@ static int ffmpeg_get_va_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t
     ff->age = 256*256*256*64;
 #endif
     /* hwaccel_context is not present in old ffmpeg version */
-    // not coded_width. assume coded_width is 6 aligned of width. ??
-    if (!va->setup(c)) {
-        qWarning("va Setup failed");
-        return -1;
-    }
+    // va must be available here
     if (!va->getBuffer(&ff->opaque, &ff->data[0]))
         return -1;
 
@@ -138,13 +129,6 @@ bool VideoDecoderFFmpegHWPrivate::prepare()
             break;
     }
     //// From vlc end
-    //TODO: neccesary?
-#if 0
-    if (!setup(codec_ctx)) {
-        qWarning("Setup va failed.");
-        return false;
-    }
-#endif
     codec_ctx->opaque = this; //is it ok?
 
     pixfmt = codec_ctx->pix_fmt;
@@ -182,44 +166,24 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
         if (hwaccel)
             can_hwaccel = true;
     }
-
     if (!can_hwaccel)
         goto end;
-
-    /* Profile and level information is needed now.
-     * TODO: avoid code duplication with avcodec.c */
-#if 0
-    if (p_context->profile != FF_PROFILE_UNKNOWN)
-        p_dec->fmt_in.i_profile = p_context->profile;
-    if (p_context->level != FF_LEVEL_UNKNOWN)
-        p_dec->fmt_in.i_level = p_context->level;
-#endif
     for (size_t i = 0; pi_fmt[i] != PIX_FMT_NONE; i++) {
         if (vaPixelFormat() != pi_fmt[i])
             continue;
-
-        /* We try to call vlc_va_Setup when possible to detect errors when
-         * possible (later is too late) */
+        /* We try to call setup when possible to detect errors when possible (later is too late) */
         if (p_context->width > 0 && p_context->height > 0
          && !setup(p_context)) {
             qWarning("acceleration setup failure");
             break;
         }
-
         qDebug("Using %s for hardware decoding.", qPrintable(description));
-
-        /* FIXME this will disable direct rendering
-         * even if a new pixel format is renegotiated
-         */
-        //p_sys->b_direct_rendering = false;
-        p_context->draw_horiz_band = NULL;
+        p_context->draw_horiz_band = NULL; //??
         return pi_fmt[i];
     }
-
     close();
-    //vlc_va_Delete(p_va);
 end:
-    qWarning("acceleration not available" );
+    qWarning("hardware acceleration is not available" );
     /* Fallback to default behaviour */
     return avcodec_default_get_format(p_context, pi_fmt);
 }
