@@ -703,6 +703,7 @@ void MainWindow::play(const QString &name)
         mTitle = QFileInfo(mFile).fileName();
     }
     setWindowTitle(mTitle);
+    mpPlayer->stop(); //if no stop, in setPriority decoder will reopen
     mpPlayer->setFrameRate(Config::instance().forceFrameRate());
     if (!mAudioBackends.isEmpty())
         mpPlayer->audio()->setBackends(mAudioBackends);
