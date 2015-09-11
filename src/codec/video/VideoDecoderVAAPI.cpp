@@ -198,13 +198,12 @@ public:
         image.image_id = VA_INVALID_ID;
         supports_derive = false;
         // set by user. don't reset in when call destroy
-        surface_auto = true;
         nb_surfaces = 0;
         disable_derive = true;
     }
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
-    bool ensureSurfaces(int count, int w, int h);
+    bool ensureSurfaces(int count, int w, int h, bool discard_old = false);
     bool prepareVAImage(int w, int h);
     bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
@@ -224,7 +223,6 @@ public:
     struct vaapi_context hw_ctx;
     int version_major;
     int version_minor;
-    bool surface_auto;
     int surface_width;
     int surface_height;
 
@@ -277,8 +275,6 @@ void VideoDecoderVAAPI::setSurfaces(int num)
 {
     DPTR_D(VideoDecoderVAAPI);
     d.nb_surfaces = num;
-    d.surface_auto = num <= 0;
-
     const int kMaxSurfaces = 32;
     if (num > kMaxSurfaces) {
         qWarning("VAAPI- Too many surfaces. requested: %d, maximun: %d", num, kMaxSurfaces);
@@ -445,28 +441,6 @@ bool VideoDecoderVAAPIPrivate::open()
         qWarning("codec(%s) or profile(%s) is not supported", avcodec_get_name(codec_ctx->codec_id), getProfileName(codec_ctx->codec_id, codec_ctx->profile));
         return false;
     }
-    int threads = 1;
-    if (codec_ctx->thread_type & (FF_THREAD_FRAME|FF_THREAD_SLICE)) {
-        if (codec_ctx->thread_count <= 0) { // default is 0. auto set by ff
-            threads = QThread::idealThreadCount();//av_cpu_count() is not available in old ffmpeg
-        }
-    }
-    int surface_count =  2 + 1 + threads;
-    qDebug("before open, default surface_count: %d  thread mode: %d, codec_ctx->thread_count:%d, cpu: %d, ref:%d", surface_count, codec_ctx->thread_type, codec_ctx->thread_count, threads, codec_ctx->refs);
-    if (codec_ctx->codec_id == QTAV_CODEC_ID(H264))
-        surface_count = 16+2 + threads;
-#ifdef FF_PROFILE_HEVC_MAIN
-    if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC))
-        surface_count = 16+2 + threads;
-#endif
-    // TODO: vp8,9
-    if (surface_auto)
-        nb_surfaces = surface_count;
-    if (nb_surfaces <= 0)
-        nb_surfaces = surface_count;
-    config_id  = VA_INVALID_ID;
-    context_id = VA_INVALID_ID;
-    image.image_id = VA_INVALID_ID;
     /* Create a VA display */
     VADisplay disp = 0;
     foreach (VideoDecoderVAAPI::DisplayType dt, display_priority) {
@@ -585,24 +559,14 @@ bool VideoDecoderVAAPIPrivate::open()
     /* Not sure what to do if not, I don't have a way to test */
     if ((attrib.value & VA_RT_FORMAT_YUV420) == 0)
         return false;
-    //vaCreateConfig(display, pe->va_profile, VAEntrypointVLD, NULL, 0, &config_id)
+
+    config_id  = VA_INVALID_ID;
     VA_ENSURE_TRUE(vaCreateConfig(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1, &config_id), false);
     supports_derive = false;
     width = codec_ctx->width;
     height = codec_ctx->height;
     surface_width = codedWidth(codec_ctx);
     surface_height = codedHeight(codec_ctx);
-    // create surfaces here to avoid creating a surface in threaded getBuffer()
-    if (!ensureSurfaces(nb_surfaces, surface_width, surface_height)) {
-        return false;
-    }
-    VA_ENSURE_TRUE(vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id), false);
-    if (display_type != VideoDecoderVAAPI::GLX && (display_type != VideoDecoderVAAPI::X11 || copy_mode != VideoDecoderFFmpegHW::ZeroCopy)) {
-        // copy-back mode
-        if (!prepareVAImage(surface_width, surface_height))
-            return false;
-        initUSWC(surface_width);
-    }
 #ifndef QT_NO_OPENGL
     if (display_type == VideoDecoderVAAPI::GLX)
         interop_res = InteropResourcePtr(new GLXInteropResource());
@@ -611,26 +575,22 @@ bool VideoDecoderVAAPIPrivate::open()
     if (display_type == VideoDecoderVAAPI::X11)
         interop_res = InteropResourcePtr(new X11InteropResource());
 #endif //VA_X11_INTEROP
-    /* Setup the ffmpeg hardware context */
-    memset(&hw_ctx, 0, sizeof(hw_ctx));
-    hw_ctx.display = display->get();
-    hw_ctx.config_id = config_id;
-    hw_ctx.context_id = context_id;
-    codec_ctx->hwaccel_context = &hw_ctx;
+    codec_ctx->hwaccel_context = &hw_ctx; //must set before open
     return true;
 }
 
-bool VideoDecoderVAAPIPrivate::ensureSurfaces(int count, int w, int h)
+bool VideoDecoderVAAPIPrivate::ensureSurfaces(int count, int w, int h, bool discard_old)
 {
     if (!display) {
         qWarning("no va display");
         return false;
     }
-    qDebug("ensureSurfaces %d %dx%d", count, w, h);
+    qDebug("ensureSurfaces %d->%d %dx%d. discard old surfaces: %d", surfaces.size(), count, w, h, discard_old);
     Q_ASSERT(w > 0 && h > 0);
-    const int old_size = surfaces.size();
+    const int old_size = discard_old ? 0 : surfaces.size();
     if (count <= old_size)
         return true;
+    surfaces.resize(old_size); // clear the old surfaces if discard_old. when initializing va-api, we must discard old surfaces (vdpau_video.c:595: vdpau_CreateContext: Assertion `obj_surface->va_context == 0xffffffff' failed.)
     surfaces.resize(count);
     VAStatus status = VA_STATUS_SUCCESS;
     status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, w, h,  surfaces.data() + old_size, count - old_size, NULL, 0); //VA_ENSURE_OK: travis-ci macro mismatch
@@ -657,6 +617,7 @@ bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
         free(fmt);
         return false;
     }
+    image.image_id = VA_INVALID_ID;
     bool found = false;
     for (int i = 0; i < nb_fmts; i++) {
         qDebug("va image format: %c%c%c%c", fmt[i].fourcc<<24>>24, fmt[i].fourcc<<16>>24, fmt[i].fourcc<<8>>24, fmt[i].fourcc>>24);
@@ -705,16 +666,39 @@ bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
 
 bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
 {
-    if (!display) {
-        qWarning("no va display");
+    if (!display || config_id == VA_INVALID_ID) {
+        qWarning("va-api is not initialized. display: %p, config_id: %p", display->get(), config_id);
         return false;
     }
-    const int w = codedWidth(avctx);
-    const int h = codedHeight(avctx);
-    if (surface_width != w || surface_height != h) {
-        qWarning("surface size changed. does not support");
-        return false;
+    int surface_count =  nb_surfaces;
+    if (surface_count <= 0) {
+        surface_count = 2+1;
+        qDebug("guess surface count");
+        if (codec_ctx->codec_id == QTAV_CODEC_ID(H264))
+            surface_count = 16+2;
+    #ifdef FF_PROFILE_HEVC_MAIN
+        if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC))
+            surface_count = 16+2;
+    #endif
+        // TODO: vp8,9
+        if (codec_ctx->active_thread_type & FF_THREAD_FRAME)
+            surface_count += codec_ctx->thread_count;
     }
+    if (!ensureSurfaces(surface_count, surface_width, surface_height, true))
+        return false;
+    if (display_type != VideoDecoderVAAPI::GLX && (display_type != VideoDecoderVAAPI::X11 || copy_mode != VideoDecoderFFmpegHW::ZeroCopy)) {
+        // copy-back mode
+        if (!prepareVAImage(surface_width, surface_height))
+            return false;
+        initUSWC(surface_width);
+    }
+    context_id = VA_INVALID_ID;
+    VA_ENSURE_TRUE(vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id), false);
+    /* Setup the ffmpeg hardware context */
+    memset(&hw_ctx, 0, sizeof(hw_ctx));
+    hw_ctx.display = display->get();
+    hw_ctx.config_id = config_id;
+    hw_ctx.context_id = context_id;
     return true;
 }
 
@@ -781,7 +765,7 @@ bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
             }
             // Set itarator position to the newly allocated surface (end-1)
             const int old_size = surfaces.size();
-            if (!ensureSurfaces(old_size + 1, surface_width, surface_height)) {
+            if (!ensureSurfaces(old_size + 1, surface_width, surface_height, false)) {
                 // destroy the new created surface. Surfaces can only be destroyed after the context associated has been destroyed?
                 VAWARN(vaDestroySurfaces(display->get(), surfaces.data() + old_size, 1));
                 surfaces.resize(old_size);
