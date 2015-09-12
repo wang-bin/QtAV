@@ -603,12 +603,7 @@ bool VideoDecoderVAAPIPrivate::ensureSurfaces(int count, int w, int h, bool disc
         return true;
     surfaces.resize(old_size); // clear the old surfaces if discard_old. when initializing va-api, we must discard old surfaces (vdpau_video.c:595: vdpau_CreateContext: Assertion `obj_surface->va_context == 0xffffffff' failed.)
     surfaces.resize(count);
-    VAStatus status = VA_STATUS_SUCCESS;
-    status = vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, w, h,  surfaces.data() + old_size, count - old_size, NULL, 0); //VA_ENSURE_OK: travis-ci macro mismatch
-    if (status != VA_STATUS_SUCCESS) {
-        qWarning("vaCreateSurfaces error (%#x): %s", status, vaErrorStr(status));
-        return false;
-    }
+    VA_ENSURE_TRUE(vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, w, h,  surfaces.data() + old_size, count - old_size, NULL, 0), false);
     for (int i = old_size; i < surfaces.size(); ++i) {
         //qDebug("surface id: %p %dx%d", surfaces.at(i), w, height);
         surfaces_free.push_back(surface_ptr(new surface_t(w, h, surfaces[i], display)));

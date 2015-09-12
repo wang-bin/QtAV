@@ -40,10 +40,13 @@
 #include "utils/SharedPtr.h"
 
 namespace QtAV {
-
 #ifndef VA_SURFACE_ATTRIB_SETTABLE
-#define vaCreateSurfaces(d, f, w, h, s, ns, a, na) \
-    vaCreateSurfaces(d, w, h, f, ns, s)
+// travis-ci use old vaapi
+struct VASurfaceAttrib;
+inline VAStatus vaCreateSurfaces(VADisplay dpy, unsigned int format, unsigned int width, unsigned int height, VASurfaceID *surfaces, unsigned int num_surfaces, VASurfaceAttrib *attrib_list, unsigned int num_attribs
+) {
+    return ::vaCreateSurfaces(dpy, width, height, format, num_surfaces, surfaces);
+}
 #endif
 
 #define VA_ENSURE_TRUE(x, ...) \
