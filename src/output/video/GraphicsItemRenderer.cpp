@@ -118,8 +118,7 @@ bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
     DPTR_D(GraphicsItemRenderer);
     if (isOpenGL()) {
         d.video_frame = frame;
-        if (d.checkGL())
-            d.glv.setCurrentFrame(frame);
+        d.glv.setCurrentFrame(frame);
     } else
 #endif
     {
