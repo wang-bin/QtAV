@@ -567,13 +567,17 @@ bool VideoDecoderVAAPIPrivate::open()
     height = codec_ctx->height;
     surface_width = codedWidth(codec_ctx);
     surface_height = codedHeight(codec_ctx);
+
     qDebug("checking surface resolution support");
     VASurfaceID test_surface = VA_INVALID_ID;
-    if (vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, surface_width, surface_height,  &test_surface, 1, NULL, 0) != VA_STATUS_SUCCESS) {
-        qWarning("surface size %dx%d is not supported", surface_width, surface_height);
-        return false;
-    }
+    VA_ENSURE_TRUE(vaCreateSurfaces(display->get(), VA_RT_FORMAT_YUV420, surface_width, surface_height,  &test_surface, 1, NULL, 0), false);
+    // context create fail but surface create ok (tested 6k for intel)
+    context_id = VA_INVALID_ID;
+    VA_ENSURE_TRUE(vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id), false);
+    VAWARN(vaDestroyContext(display->get(), context_id));
     VAWARN(vaDestroySurfaces(display->get(), &test_surface, 1));
+    context_id = VA_INVALID_ID;
+
 #ifndef QT_NO_OPENGL
     if (display_type == VideoDecoderVAAPI::GLX)
         interop_res = InteropResourcePtr(new GLXInteropResource());
