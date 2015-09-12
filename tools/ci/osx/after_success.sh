@@ -1,3 +1,4 @@
+exit 0
 cd tools
 git clone https://github.com/andreyvit/create-dmg.git
 
