@@ -25,7 +25,7 @@
 #include <windows.h> //GetDC()
 #include <gdiplus.h>
 #include <QResizeEvent>
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 
 #define USE_GRAPHICS 0
 
@@ -74,13 +74,11 @@ extern VideoRendererId VideoRendererId_GDI;
 #if 0
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, GDI, "GDI")
 #else
-VideoRenderer* __create_VideoRendererGDI() { return new VideoRendererGDI();}
-#endif
-
 void RegisterVideoRendererGDI_Man()
 {
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, GDI, "GDI")
+    VideoRenderer::Register<GDIRenderer>(VideoRendererId_GDI, "GDI");
 }
+#endif
 
 VideoRendererId GDIRenderer::id() const
 {

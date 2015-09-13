@@ -32,7 +32,7 @@
 #include <sys/shm.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xvlib.h>
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 
 //http://huangbster.i.sohu.com/blog/view/256490057.htm
 
@@ -89,13 +89,11 @@ extern VideoRendererId VideoRendererId_XV;
 #if 0
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, XV, "XVideo")
 #else
-VideoRenderer* __create_VideoRendererXV() { return new VideoRendererXV();}
-#endif
-
 void RegisterVideoRendererXV_Man()
 {
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, XV, "XVideo")
+    VideoRenderer::Register<XVRenderer>(VideoRendererId_XV, "XVideo");
 }
+#endif
 
 VideoRendererId XVRenderer::id() const
 {

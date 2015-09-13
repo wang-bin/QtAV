@@ -24,16 +24,12 @@
 #define QTAV_IMAGECONVERTER_H
 
 #include <QtAV/QtAV_Global.h>
-#include <QtAV/FactoryDefine.h>
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QVector>
 
 namespace QtAV {
 
 typedef int ImageConverterId;
-class ImageConverter;
-FACTORY_DECLARE(ImageConverter)
-
 class ImageConverterPrivate;
 class ImageConverter //export is not needed
 {
@@ -70,6 +66,22 @@ public:
     virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]) = 0;
     //virtual bool convertColor(const quint8 *const srcSlice[], const int srcStride[]) = 0;
     //virtual bool resize(const quint8 *const srcSlice[], const int srcStride[]) = 0;
+public:
+    template<class C> static bool Register(ImageConverterId id, const char* name) { return Register(id, create<C>, name);}
+    static ImageConverter* create(ImageConverterId id);
+    static ImageConverter* create(const char* name);
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static ImageConverterId* next(ImageConverterId* id = 0);
+    static const char* name(ImageConverterId id);
+    static ImageConverterId id(const char* name);
+private:
+    template<class C> static ImageConverter* create() { return new C();}
+    typedef ImageConverter* (*ImageConverterCreator)();
+    static bool Register(ImageConverterId id, ImageConverterCreator, const char *name);
 protected:
     ImageConverter(ImageConverterPrivate& d);
     //Allocate memory for out data. Called in setOutFormat()

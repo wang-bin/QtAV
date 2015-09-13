@@ -33,9 +33,9 @@ AudioDecoderPrivate::AudioDecoderPrivate()
     : AVDecoderPrivate()
     , resampler(0)
 {
-    resampler = AudioResamplerFactory::create(AudioResamplerId_FF);
+    resampler = AudioResampler::create(AudioResamplerId_FF);
     if (!resampler)
-        resampler = AudioResamplerFactory::create(AudioResamplerId_Libav);
+        resampler = AudioResampler::create(AudioResamplerId_Libav);
     if (resampler)
         resampler->setOutSampleFormat(AV_SAMPLE_FMT_FLT);
 }
@@ -48,16 +48,6 @@ AudioDecoderPrivate::~AudioDecoderPrivate()
     }
 }
 
-AudioDecoder* AudioDecoder::create(AudioDecoderId id)
-{
-    return AudioDecoderFactory::create(id);
-}
-
-AudioDecoder* AudioDecoder::create(const QString& name)
-{
-    return AudioDecoderFactory::create(AudioDecoderFactory::id(name.toUtf8().constData(), false));
-}
-
 AudioDecoder::AudioDecoder(AudioDecoderPrivate &d):
     AVDecoder(d)
 {
@@ -65,7 +55,7 @@ AudioDecoder::AudioDecoder(AudioDecoderPrivate &d):
 
 QString AudioDecoder::name() const
 {
-    return QLatin1String(AudioDecoderFactory::name(id()).c_str());
+    return QLatin1String(AudioDecoder::name(id()));
 }
 
 QByteArray AudioDecoder::data() const

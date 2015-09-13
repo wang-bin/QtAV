@@ -24,7 +24,7 @@
 #include <QtCore/QMetaObject>
 #include <pulse/pulseaudio.h>
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 #ifndef Q_LIKELY
 #define Q_LIKELY(x) (!!(x))
@@ -86,12 +86,7 @@ private:
 
 typedef AudioOutputPulse AudioOutputBackendPulse;
 static const AudioOutputBackendId AudioOutputBackendId_Pulse = mkid::id32base36_5<'P', 'u', 'l', 's', 'e'>::value;
-FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, Pulse, kName)
-
-void RegisterAudioOutputPulse_Man()
-{
-    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, Pulse, kName)
-}
+FACTORY_REGISTER(AudioOutputBackend, Pulse, kName)
 
 #define PA_ENSURE_TRUE(expr, ...) \
     do { \

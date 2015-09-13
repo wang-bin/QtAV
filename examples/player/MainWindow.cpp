@@ -601,7 +601,7 @@ void MainWindow::changeVO(QAction *action)
         return;
     }
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
-    VideoRenderer *vo = VideoRendererFactory::create(vid);
+    VideoRenderer *vo = VideoRenderer::create(vid);
     if (vo && vo->isAvailable()) {
 
         setRenderer(vo);
@@ -740,7 +740,7 @@ void MainWindow::setVideoDecoderNames(const QStringList &vd)
         vdnames << v.toLower();
     }
     QStringList vidp;
-    QStringList vids = idsToNames(GetRegistedVideoDecoderIds());
+    QStringList vids = idsToNames(VideoDecoder::registered());
     foreach (const QString& v, vids) {
         if (vdnames.contains(v.toLower())) {
             vidp.append(v);
@@ -1284,7 +1284,11 @@ void MainWindow::handleError(const AVError &e)
 void MainWindow::onMediaStatusChanged()
 {
     QString status;
-    AVPlayer *player = qobject_cast<AVPlayer*>(sender());
+    AVPlayer *player = reinterpret_cast<AVPlayer*>(sender());
+    if (!player) { //why it happens? reinterpret_cast  works.
+        qWarning() << "invalid sender() " << sender() << player;
+        return;
+    }
     switch (player->mediaStatus()) {
     case NoMedia:
         status = tr("No media");

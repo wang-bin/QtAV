@@ -22,13 +22,10 @@
 #include "ImageConverter.h"
 #include "ImageConverter_p.h"
 #include "QtAV/private/AVCompat.h"
+#include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
-
 #if QTAV_HAVE(IPP)
 #include <ipp.h>
-#else
-
 #endif
 #include "utils/Logger.h"
 
@@ -46,12 +43,7 @@ protected:
 };
 
 ImageConverterId ImageConverterId_IPP = mkid::id32base36_3<'I', 'P', 'P'>::value;
-FACTORY_REGISTER_ID_AUTO(ImageConverter, IPP, "IPP")
-
-void RegisterImageConverterIPP_Man()
-{
-    FACTORY_REGISTER_ID_MAN(ImageConverter, IPP, "IPP")
-}
+FACTORY_REGISTER(ImageConverter, IPP, "IPP")
 
 class ImageConverterIPPPrivate : public ImageConverterPrivate
 {

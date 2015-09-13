@@ -21,7 +21,7 @@
 
 #include "VideoDecoderFFmpegBase.h"
 #include "QtAV/private/AVCompat.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "QtAV/version.h"
 #include "utils/Logger.h"
 
@@ -143,13 +143,7 @@ Q_SIGNALS:
 };
 
 extern VideoDecoderId VideoDecoderId_FFmpeg;
-FACTORY_REGISTER_ID_AUTO(VideoDecoder, FFmpeg, "FFmpeg")
-
-void RegisterVideoDecoderFFmpeg_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoDecoder, FFmpeg, "FFmpeg")
-}
-
+FACTORY_REGISTER(VideoDecoder, FFmpeg, "FFmpeg")
 
 class VideoDecoderFFmpegPrivate Q_DECL_FINAL: public VideoDecoderFFmpegBasePrivate
 {

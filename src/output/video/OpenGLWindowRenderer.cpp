@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -21,10 +21,14 @@
 
 #include "QtAV/OpenGLWindowRenderer.h"
 #include "QtAV/private/OpenGLRendererBase_p.h"
+#include "QtAV/private/factory.h"
+#include "QtAV/private/mkid.h"
 #include <QResizeEvent>
 #include "utils/Logger.h"
 
 namespace QtAV {
+VideoRendererId VideoRendererId_OpenGLWindow = mkid::id32base36_6<'Q', 'O', 'G', 'L', 'W', 'w'>::value;
+FACTORY_REGISTER(VideoRenderer, OpenGLWindow, "OpenGLWindow")
 
 class OpenGLWindowRendererPrivate : public OpenGLRendererBasePrivate
 {
@@ -38,6 +42,11 @@ OpenGLWindowRenderer::OpenGLWindowRenderer(UpdateBehavior updateBehavior, QWindo
     QOpenGLWindow(updateBehavior, parent)
   , OpenGLRendererBase(*new OpenGLWindowRendererPrivate(this))
 {
+}
+
+VideoRendererId OpenGLWindowRenderer::id() const
+{
+    return VideoRendererId_OpenGLWindow;
 }
 
 void OpenGLWindowRenderer::onUpdate()

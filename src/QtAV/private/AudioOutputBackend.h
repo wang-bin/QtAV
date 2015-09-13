@@ -25,10 +25,10 @@
 #include <QtCore/QObject>
 #include <QtAV/AudioFormat.h>
 #include <QtAV/AudioOutput.h>
-#include <QtAV/FactoryDefine.h>
 
 namespace QtAV {
 
+typedef int AudioOutputBackendId;
 class Q_AV_PRIVATE_EXPORT AudioOutputBackend : public QObject
 {
     Q_OBJECT
@@ -115,12 +115,25 @@ Q_SIGNALS:
      */
     void volumeReported(qreal value);
     void muteReported(bool value);
+public:
+    template<class C> static bool Register(AudioOutputBackendId id, const char* name) { return Register(id, create<C>, name);}
+    static AudioOutputBackend* create(AudioOutputBackendId id);
+    static AudioOutputBackend* create(const char* name);
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static AudioOutputBackendId* next(AudioOutputBackendId* id = 0);
+    static const char* name(AudioOutputBackendId id);
+    static AudioOutputBackendId id(const char* name);
+private:
+    template<class C> static AudioOutputBackend* create() { return new C();}
+    typedef AudioOutputBackend* (*AudioOutputBackendCreator)();
+    static bool Register(AudioOutputBackendId id, AudioOutputBackendCreator, const char *name);
 private:
     AudioOutput::DeviceFeatures m_features;
     Q_DISABLE_COPY(AudioOutputBackend)
 };
-
-typedef int AudioOutputBackendId;
-FACTORY_DECLARE(AudioOutputBackend)
 } //namespace QtAV
 #endif //QAV_AUDIOOUTPUTBACKEND_H

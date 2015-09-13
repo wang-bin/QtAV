@@ -23,7 +23,7 @@
 #include "QtAV/private/AVEncoder_p.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "QtAV/version.h"
 #include "utils/Logger.h"
 
@@ -46,12 +46,7 @@ public:
 };
 
 static const VideoEncoderId VideoEncoderId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
-FACTORY_REGISTER_ID_AUTO(VideoEncoder, FFmpeg, "FFmpeg")
-
-void RegisterVideoEncoderFFmpeg_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoEncoder, FFmpeg, "FFmpeg")
-}
+FACTORY_REGISTER(VideoEncoder, FFmpeg, "FFmpeg")
 
 class VideoEncoderFFmpegPrivate Q_DECL_FINAL: public VideoEncoderPrivate
 {

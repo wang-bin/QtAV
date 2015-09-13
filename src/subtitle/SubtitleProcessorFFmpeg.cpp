@@ -19,9 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <string>
 #include "QtAV/private/SubtitleProcessor.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
@@ -54,14 +53,9 @@ private:
 
 static const SubtitleProcessorId SubtitleProcessorId_FFmpeg = QStringLiteral("qtav.subtitle.processor.ffmpeg");
 namespace {
-static const std::string kName("FFmpeg");
+static const char kName[] = "FFmpeg";
 }
-FACTORY_REGISTER_ID_AUTO(SubtitleProcessor, FFmpeg, kName)
-
-void RegisterSubtitleProcessorFFmpeg_Man()
-{
-    FACTORY_REGISTER_ID_MAN(SubtitleProcessor, FFmpeg, kName)
-}
+FACTORY_REGISTER(SubtitleProcessor, FFmpeg, kName)
 
 SubtitleProcessorFFmpeg::SubtitleProcessorFFmpeg()
     : codec_ctx(0)
@@ -80,7 +74,7 @@ SubtitleProcessorId SubtitleProcessorFFmpeg::id() const
 
 QString SubtitleProcessorFFmpeg::name() const
 {
-    return QLatin1String(kName.c_str());//SubtitleProcessorFactory::name(id());
+    return QLatin1String(kName);//SubtitleProcessorFactory::name(id());
 }
 
 QStringList ffmpeg_supported_sub_extensions_by_codec()

@@ -23,9 +23,9 @@
 #include "QtAV/AudioFormat.h"
 #include "QtAV/private/AudioResampler_p.h"
 #include "QtAV/private/factory.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
-
 FACTORY_DEFINE(AudioResampler)
 
 AudioResampler::AudioResampler()

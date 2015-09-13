@@ -33,6 +33,7 @@ branches:
     - prelease
     - ci/travis
     - /^travis-.*$/
+    - dev
 
 git:
   submodules: true

@@ -22,7 +22,7 @@
 
 #include "QtAV/private/AudioOutputBackend.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include <QtCore/QMutex>
 #include <QtCore/QWaitCondition>
 #include <QtCore/QVector>
@@ -94,12 +94,7 @@ protected:
 
 typedef AudioOutputOpenAL AudioOutputBackendOpenAL;
 static const AudioOutputBackendId AudioOutputBackendId_OpenAL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'A', 'L'>::value;
-FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, OpenAL, kName)
-
-void RegisterAudioOutputOpenAL_Man()
-{
-    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, OpenAL, kName)
-}
+FACTORY_REGISTER(AudioOutputBackend, OpenAL, kName)
 
 #define AL_ENSURE_OK(expr, ...) \
     do { \

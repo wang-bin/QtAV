@@ -40,7 +40,7 @@ AVDecoder::~AVDecoder()
 
 QString AVDecoder::name() const
 {
-    return QStringLiteral("avcodec");
+    return QString();
 }
 
 QString AVDecoder::description() const

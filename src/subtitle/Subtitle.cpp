@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -188,7 +188,7 @@ void Subtitle::setEngines(const QStringList &value)
             break;
         }
         if (it == priv->processors.end()) {
-            SubtitleProcessor* sp = SubtitleProcessorFactory::create(SubtitleProcessorFactory::id(e.toStdString(), false));
+            SubtitleProcessor* sp = SubtitleProcessor::create(e.toLatin1().constData());
             if (sp)
                 sps.append(sp);
         }

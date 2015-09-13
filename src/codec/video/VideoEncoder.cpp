@@ -19,29 +19,18 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/VideoEncoder.h>
-#include <QtAV/private/AVEncoder_p.h>
+#include "QtAV/VideoEncoder.h"
+#include "QtAV/private/AVEncoder_p.h"
 #include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
-
 FACTORY_DEFINE(VideoEncoder)
 
 void VideoEncoder_RegisterAll()
 {
     extern void RegisterVideoEncoderFFmpeg_Man();
     RegisterVideoEncoderFFmpeg_Man();
-}
-
-VideoEncoder* VideoEncoder::create(VideoEncoderId id)
-{
-    return VideoEncoderFactory::create(id);
-}
-
-VideoEncoder* VideoEncoder::create(const QString& name)
-{
-    return VideoEncoderFactory::create(VideoEncoderFactory::id(name.toUtf8().constData(), false));
 }
 
 VideoEncoder::VideoEncoder(VideoEncoderPrivate &d):
@@ -51,7 +40,7 @@ VideoEncoder::VideoEncoder(VideoEncoderPrivate &d):
 
 QString VideoEncoder::name() const
 {
-    return QLatin1String(VideoEncoderFactory::name(id()).c_str());
+    return QLatin1String(VideoEncoder::name(id()));
 }
 
 void VideoEncoder::setWidth(int value)

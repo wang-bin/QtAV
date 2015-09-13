@@ -26,7 +26,7 @@
 #include "VideoDecoderFFmpegHW.h"
 #include "VideoDecoderFFmpegHW_p.h"
 #include "QtAV/private/AVCompat.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 //#include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
 #include "SurfaceInteropDXVA.h"
@@ -172,12 +172,7 @@ public:
 };
 
 extern VideoDecoderId VideoDecoderId_DXVA;
-FACTORY_REGISTER_ID_AUTO(VideoDecoder, DXVA, "DXVA")
-
-void RegisterVideoDecoderDXVA_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoDecoder, DXVA, "DXVA")
-}
+FACTORY_REGISTER(VideoDecoder, DXVA, "DXVA")
 
 typedef struct {
     IDirect3DSurface9 *d3d;

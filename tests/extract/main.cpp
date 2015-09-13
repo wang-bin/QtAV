@@ -36,7 +36,7 @@ public:
       , nb(1)
       , extracted(0)
     {
-        view = VideoRendererFactory::create(VideoRendererId_GLWidget2);
+        view = VideoRenderer::create(VideoRendererId_GLWidget2);
         view->widget()->resize(400, 300);
         view->widget()->show();
         connect(&extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), this, SLOT(onVideoFrameExtracted(QtAV::VideoFrame)));

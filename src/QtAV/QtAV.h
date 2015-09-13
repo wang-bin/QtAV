@@ -54,7 +54,6 @@
 #include <QtAV/VideoFrame.h>
 #include <QtAV/VideoFrameExtractor.h>
 #include <QtAV/VideoRenderer.h>
-#include <QtAV/VideoRendererTypes.h>
 #include <QtAV/VideoOutput.h>
 //The following renderer headers can be removed
 #include <QtAV/QPainterRenderer.h>

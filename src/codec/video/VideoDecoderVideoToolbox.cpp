@@ -24,7 +24,7 @@
 #include "utils/GPUMemCopy.h"
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "utils/OpenGLHelper.h"
 #include <assert.h>
 #ifdef __cplusplus
@@ -74,15 +74,8 @@ public:
 Q_SIGNALS:
     void formatChanged();
 };
-
 extern VideoDecoderId VideoDecoderId_VideoToolbox;
-FACTORY_REGISTER_ID_AUTO(VideoDecoder, VideoToolbox, "VideoToolbox")
-
-void RegisterVideoDecoderVideoToolbox_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoDecoder, VideoToolbox, "VideoToolbox")
-}
-
+FACTORY_REGISTER(VideoDecoder, VideoToolbox, "VideoToolbox")
 
 class VideoDecoderVideoToolboxPrivate Q_DECL_FINAL: public VideoDecoderFFmpegHWPrivate
 {

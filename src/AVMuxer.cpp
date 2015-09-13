@@ -266,7 +266,7 @@ bool AVMuxer::setMedia(QIODevice* device)
         }
     }
     if (!d->io)
-        d->io = MediaIO::create(QStringLiteral("QIODevice"));
+        d->io = MediaIO::create("QIODevice");
     QIODevice* old_dev = d->io->property("device").value<QIODevice*>();
     d->media_changed = old_dev != device;
     if (d->media_changed) {

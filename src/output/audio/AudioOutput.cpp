@@ -295,9 +295,9 @@ QStringList AudioOutput::backendsAvailable()
     static QStringList all;
     if (!all.isEmpty())
         return all;
-    std::vector<std::string> a = AudioOutputBackendFactory::registeredNames();
-    for (size_t i = 0; i < a.size(); ++i) {
-        all.append(QString::fromStdString(a[i]));
+    AudioOutputBackendId* i = NULL;
+    while ((i = AudioOutputBackend::next(i)) != NULL) {
+        all.append(AudioOutputBackend::name(*i));
     }
     return all;
 }
@@ -319,7 +319,7 @@ void AudioOutput::setBackends(const QStringList &backendNames)
     // TODO: empty backends use dummy backend
     if (!d.backends.isEmpty()) {
         foreach (const QString& b, d.backends) {
-            d.backend = AudioOutputBackendFactory::create(AudioOutputBackendFactory::id(b.toStdString()));
+            d.backend = AudioOutputBackend::create(b.toLatin1().constData());
             if (!d.backend)
                 continue;
             if (d.backend->available)

@@ -23,16 +23,12 @@
 #define QTAV_VIDEODECODER_H
 
 #include <QtAV/AVDecoder.h>
-#include <QtAV/FactoryDefine.h>
 #include <QtAV/VideoFrame.h>
 
 class QSize;
 namespace QtAV {
 
 typedef int VideoDecoderId;
-class VideoDecoder;
-FACTORY_DECLARE(VideoDecoder)
-
 /*!
     Useful properties.
     A key is a string, a value can be int, bool or string. Both int and string are valid for enumerate
@@ -71,7 +67,7 @@ public:
      * \param name can be "FFmpeg", "CUDA", "VDA", "VAAPI", "DXVA", "Cedarv"
      * \return 0 if not registered
      */
-    static VideoDecoder* create(const QString& name = QStringLiteral("FFmpeg"));
+    static VideoDecoder* create(const char* name = "FFmpeg");
     virtual VideoDecoderId id() const = 0;
     QString name() const; //name from factory
     virtual VideoFrame frame() = 0;
@@ -82,6 +78,21 @@ public:
     int width() const;
     int height() const;
 
+public:
+    static QVector<VideoDecoderId> registered();
+    template<class C> static bool Register(VideoDecoderId id, const char* name) { return Register(id, create<C>, name);}
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static VideoDecoderId* next(VideoDecoderId* id = 0);
+    static const char* name(VideoDecoderId id);
+    static VideoDecoderId id(const char* name);
+private:
+    template<class C> static VideoDecoder* create() { return new C();}
+    typedef VideoDecoder* (*VideoDecoderCreator)();
+    static bool Register(VideoDecoderId id, VideoDecoderCreator, const char *name);
 protected:
     VideoDecoder(VideoDecoderPrivate& d);
 private:

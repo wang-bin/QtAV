@@ -23,24 +23,23 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/VideoCapture.h>
-#include <QDebug>
 
-template<typename ID, typename Factory>
+template<typename ID, typename T>
 static QStringList idsToNames(QVector<ID> ids) {
     QStringList decs;
     foreach (ID id, ids) {
-        decs.append(QString::fromUtf8(Factory::name(id).c_str()));
+        decs.append(QString::fromLatin1(T::name(id)));
     }
     return decs;
 }
 
-template<typename ID, typename Factory>
+template<typename ID, typename T>
 static QVector<ID> idsFromNames(const QStringList& names) {
     QVector<ID> decs;
     foreach (const QString& name, names) {
         if (name.isEmpty())
             continue;
-        ID id = Factory::id(name.toStdString(), false);
+        ID id = T::id(name.toLatin1().constData());
         if (id == 0)
             continue;
         decs.append(id);
@@ -49,11 +48,11 @@ static QVector<ID> idsFromNames(const QStringList& names) {
 }
 
 static inline QStringList VideoDecodersToNames(QVector<QtAV::VideoDecoderId> ids) {
-    return idsToNames<QtAV::VideoDecoderId, VideoDecoderFactory>(ids);
+    return idsToNames<QtAV::VideoDecoderId, VideoDecoder>(ids);
 }
 
 static inline QVector<VideoDecoderId> VideoDecodersFromNames(const QStringList& names) {
-    return idsFromNames<QtAV::VideoDecoderId, VideoDecoderFactory>(names);
+    return idsFromNames<QtAV::VideoDecoderId, VideoDecoder>(names);
 }
 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
@@ -227,7 +226,7 @@ VideoCapture *QmlAVPlayer::videoCapture() const
 
 QStringList QmlAVPlayer::videoCodecs() const
 {
-    return VideoDecodersToNames(QtAV::GetRegistedVideoDecoderIds());
+    return VideoDecodersToNames(VideoDecoder::registered());
 }
 
 void QmlAVPlayer::setVideoCodecPriority(const QStringList &p)

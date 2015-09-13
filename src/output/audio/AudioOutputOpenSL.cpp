@@ -28,7 +28,7 @@
 #include <SLES/OpenSLES_AndroidConfiguration.h>
 #endif
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -87,12 +87,7 @@ private:
 
 typedef AudioOutputOpenSL AudioOutputBackendOpenSL;
 static const AudioOutputBackendId AudioOutputBackendId_OpenSL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'S', 'L'>::value;
-FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, OpenSL, kName)
-
-void RegisterAudioOutputOpenSL_Man()
-{
-    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, OpenSL, kName)
-}
+FACTORY_REGISTER(AudioOutputBackend, OpenSL, kName)
 
 #define SL_ENSURE_OK(FUNC, ...) \
     do { \

@@ -33,7 +33,7 @@ extern "C" {
 #include <fcntl.h> //open()
 #include <unistd.h> //close()
 #include "QtAV/private/AVCompat.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "vaapi/SurfaceInteropVAAPI.h"
 #include "utils/Logger.h"
 
@@ -77,12 +77,8 @@ public:
     void setDisplay(DisplayType disp);
 };
 extern VideoDecoderId VideoDecoderId_VAAPI;
-FACTORY_REGISTER_ID_AUTO(VideoDecoder, VAAPI, "VAAPI")
+FACTORY_REGISTER(VideoDecoder, VAAPI, "VAAPI")
 
-void RegisterVideoDecoderVAAPI_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoDecoder, VAAPI, "VAAPI")
-}
 const char* getProfileName(AVCodecID id, int profile)
 {
     AVCodec *c = avcodec_find_decoder(id);

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,7 +20,6 @@
 ******************************************************************************/
 
 #include "QtAV/private/SubtitleProcessor.h"
-#include "QtAV/FactoryDefine.h"
 #include "QtAV/private/factory.h"
 #include <QtCore/QFile>
 #include "utils/Logger.h"

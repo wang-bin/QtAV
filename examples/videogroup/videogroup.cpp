@@ -216,7 +216,7 @@ void VideoGroup::addRenderer()
         v = VideoRendererId_GDI;
     else if (vid == QLatin1String("xv"))
         v = VideoRendererId_XV;
-    VideoRenderer* renderer = VideoRendererFactory::create(v);
+    VideoRenderer* renderer = VideoRenderer::create(v);
     mRenderers = mpPlayer->videoOutputs();
     mRenderers.append(renderer);
     renderer->widget()->setAttribute(Qt::WA_DeleteOnClose);

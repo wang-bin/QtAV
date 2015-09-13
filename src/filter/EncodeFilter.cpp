@@ -53,7 +53,7 @@ AudioEncoder* AudioEncodeFilter::createEncoder(const QString &name)
         d.enc->close();
         delete d.enc;
     }
-    d.enc = AudioEncoder::create(name);
+    d.enc = AudioEncoder::create(name.toLatin1().constData());
     return d.enc;
 }
 
@@ -117,7 +117,7 @@ VideoEncoder* VideoEncodeFilter::createEncoder(const QString &name)
         d.enc->close();
         delete d.enc;
     }
-    d.enc = VideoEncoder::create(name);
+    d.enc = VideoEncoder::create(name.toLatin1().constData());
     return d.enc;
 }
 

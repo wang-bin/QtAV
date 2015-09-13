@@ -21,6 +21,7 @@
 
 #include "QtAV/private/AudioOutputBackend.h"
 #include "QtAV/private/factory.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -50,27 +51,27 @@ void AudioOutput_RegisterAll()
         return;
     initialized = true;
     // check whether ids are registered automatically
-    if (!AudioOutputBackendFactory::registeredIds().empty())
+    if (!AudioOutputBackendFactory::Instance().registeredIds().empty())
         return;
 #if QTAV_HAVE(PORTAUDIO)
-    extern void RegisterAudioOutputPortAudio_Man();
-    RegisterAudioOutputPortAudio_Man();
+    extern void RegisterAudioOutputBackendPortAudio_Man();
+    RegisterAudioOutputBackendPortAudio_Man();
 #endif //QTAV_HAVE(PORTAUDIO)
 #if QTAV_HAVE(OPENAL)
-    extern void RegisterAudioOutputOpenAL_Man();
-    RegisterAudioOutputOpenAL_Man();
+    extern void RegisterAudioOutputBackendOpenAL_Man();
+    RegisterAudioOutputBackendOpenAL_Man();
 #endif //QTAV_HAVE(OPENAL)
 #if QTAV_HAVE(OPENSL)
-    extern void RegisterAudioOutputOpenSL_Man();
-    RegisterAudioOutputOpenSL_Man();
+    extern void RegisterAudioOutputBackendOpenSL_Man();
+    RegisterAudioOutputBackendOpenSL_Man();
 #endif //QTAV_HAVE(OPENSL)
 #if QTAV_HAVE(DSOUND)
-    extern void RegisterAudioOutputDSound_Man();
-    RegisterAudioOutputDSound_Man();
+    extern void RegisterAudioOutputBackendDSound_Man();
+    RegisterAudioOutputBackendDSound_Man();
 #endif
 #if QTAV_HAVE(PULSEAUDIO)
-    extern void RegisterAudioOutputPulse_Man();
-    RegisterAudioOutputPulse_Man();
+    extern void RegisterAudioOutputBackendPulse_Man();
+    RegisterAudioOutputBackendPulse_Man();
 #endif
 }
 

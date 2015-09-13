@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,7 +23,7 @@
 #include "QtAV/AudioResampler.h"
 #include "QtAV/private/AudioResampler_p.h"
 #include "QtAV/private/AVCompat.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -32,7 +32,7 @@ namespace QtAV {
 #define AudioResamplerFF AudioResamplerLibav
 #define AudioResamplerFFPrivate AudioResamplerLibavPrivate
 #define AudioResamplerId_FF AudioResamplerId_Libav
-#define __create_AudioResamplerFF __create_AudioResamplerLibav
+#define RegisterAudioResamplerFF_Man RegisterAudioResamplerLibav_Man
 #define FF Libav
 static const char kName[] = "Libav";
 #else
@@ -49,15 +49,7 @@ public:
     virtual bool prepare();
 };
 extern AudioResamplerId AudioResamplerId_FF;
-namespace {
-static const struct init {
-    static AudioResampler* __create_AudioResamplerFF() { return new AudioResamplerFF();}
-    inline init() {
-        AudioResamplerFactory::registerCreator(AudioResamplerId_FF, __create_AudioResamplerFF);
-        AudioResamplerFactory::registerIdName(AudioResamplerId_FF, kName);
-    }
-} _init;
-}
+FACTORY_REGISTER(AudioResampler, FF, kName)
 
 class AudioResamplerFFPrivate : public AudioResamplerPrivate
 {
@@ -72,7 +64,7 @@ public:
     SwrContext *context;
     // defined in swr<1
 #ifndef SWR_CH_MAX
-#define SWR_CH_MAX 63
+#define SWR_CH_MAX 64
 #endif
     int channel_map[SWR_CH_MAX];
 };

@@ -210,9 +210,9 @@ AudioFrame AudioFrame::to(const AudioFormat &fmt) const
     AudioResampler *conv = d->conv;
     QScopedPointer<AudioResampler> c;
     if (!conv) {
-        conv = AudioResamplerFactory::create(AudioResamplerId_FF);
+        conv = AudioResampler::create(AudioResamplerId_FF);
         if (!conv)
-            conv = AudioResamplerFactory::create(AudioResamplerId_Libav);
+            conv = AudioResampler::create(AudioResamplerId_Libav);
         if (!conv) {
             qWarning("no audio resampler is available");
             return AudioFrame();

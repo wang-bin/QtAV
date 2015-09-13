@@ -23,16 +23,12 @@
 #define QTAV_AUDIOENCODER_H
 
 #include <QtAV/AVEncoder.h>
-#include <QtAV/FactoryDefine.h>
 #include <QtAV/AudioFrame.h>
 
 class QSize;
 namespace QtAV {
 
 typedef int AudioEncoderId;
-class AudioEncoder;
-FACTORY_DECLARE(AudioEncoder)
-
 class AudioEncoderPrivate;
 class Q_AV_EXPORT AudioEncoder : public AVEncoder
 {
@@ -48,7 +44,7 @@ public:
      * \param name can be "FFmpeg". FFmpeg encoder will be created for empty name
      * \return 0 if not registered
      */
-    static AudioEncoder* create(const QString& name = QStringLiteral("FFmpeg"));
+    static AudioEncoder* create(const char* name = "FFmpeg");
     virtual AudioEncoderId id() const = 0;
     QString name() const Q_DECL_OVERRIDE; //name from factory
     /*!
@@ -70,6 +66,20 @@ public:
     void setAudioFormat(const AudioFormat& format);
 Q_SIGNALS:
     void audioFormatChanged();
+public:
+    template<class C> static bool Register(AudioEncoderId id, const char* name) { return Register(id, create<C>, name);}
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static AudioEncoderId* next(AudioEncoderId* id = 0);
+    static const char* name(AudioEncoderId id);
+    static AudioEncoderId id(const char* name);
+private:
+    template<class C> static AudioEncoder* create() { return new C();}
+    typedef AudioEncoder* (*AudioEncoderCreator)();
+    static bool Register(AudioEncoderId id, AudioEncoderCreator, const char *name);
 protected:
     AudioEncoder(AudioEncoderPrivate& d);
 private:

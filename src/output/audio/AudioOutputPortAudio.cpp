@@ -22,7 +22,7 @@
 
 #include "QtAV/private/AudioOutputBackend.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include <portaudio.h>
 #include "utils/Logger.h"
 
@@ -49,12 +49,7 @@ private:
 
 typedef AudioOutputPortAudio AudioOutputBackendPortAudio;
 static const AudioOutputBackendId AudioOutputBackendId_PortAudio = mkid::id32base36_5<'P', 'o', 'r', 't', 'A'>::value;
-FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, PortAudio, kName)
-
-void RegisterAudioOutputPortAudio_Man()
-{
-    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, PortAudio, kName)
-}
+FACTORY_REGISTER(AudioOutputBackend, PortAudio, kName)
 
 AudioOutputPortAudio::AudioOutputPortAudio(QObject *parent)
     : AudioOutputBackend(AudioOutput::NoFeature, parent)

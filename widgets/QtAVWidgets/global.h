@@ -18,14 +18,10 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-
 #ifndef QTAVWIDGETS_GLOBAL_H
 #define QTAVWIDGETS_GLOBAL_H
 
-#include <QtAV/VideoRendererTypes.h>
-
-
+#include <QtAV/VideoRenderer.h>
 #ifdef BUILD_QTAVWIDGETS_STATIC
 #define Q_AVWIDGETS_EXPORT
 #else

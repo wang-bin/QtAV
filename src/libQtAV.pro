@@ -374,7 +374,6 @@ SOURCES += \
     output/audio/AudioOutputBackend.cpp \
     output/audio/AudioOutputNull.cpp \
     output/video/VideoRenderer.cpp \
-    output/video/VideoRendererTypes.cpp \
     output/video/VideoOutput.cpp \
     output/video/QPainterRenderer.cpp \
     output/AVOutput.cpp \
@@ -420,7 +419,6 @@ SDK_HEADERS *= \
     QtAV/AVTranscoder.h \
     QtAV/VideoCapture.h \
     QtAV/VideoRenderer.h \
-    QtAV/VideoRendererTypes.h \
     QtAV/VideoOutput.h \
     QtAV/MediaIO.h \
     QtAV/AVOutput.h \
