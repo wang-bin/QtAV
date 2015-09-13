@@ -234,7 +234,7 @@ config_vaapi* {
     HEADERS += vaapi/SurfaceInteropVAAPI.h
     SOURCES += vaapi/SurfaceInteropVAAPI.cpp
   #}
-    LIBS += -lva #dynamic load va-glx va-x11 using dllapi
+    LIBS *= -lva -lX11 #dynamic load va-glx va-x11 using dllapi. -lX11: used by tfp
 }
 config_libcedarv {
     DEFINES *= QTAV_HAVE_CEDARV=1

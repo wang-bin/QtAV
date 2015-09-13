@@ -106,7 +106,7 @@ config_direct2d {
 config_xv {
   DEFINES *= QTAV_HAVE_XV=1
   SOURCES += $$QTAVSRC/output/video/XVRenderer.cpp
-  LIBS += -lXv
+  LIBS += -lXv -lX11 -lXext
 }
 # QtAV/private/* may be used by developers to extend QtAV features without changing QtAV library
 # headers not in QtAV/ and it's subdirs are used only by QtAV internally
