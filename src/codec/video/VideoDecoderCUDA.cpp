@@ -22,7 +22,7 @@
 #include "QtAV/VideoDecoder.h"
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVDecoder_p.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include <QtCore/QQueue>
 #if QTAV_HAVE(DLLAPI_CUDA)
 #include "dllapi.h"
@@ -105,15 +105,8 @@ public:
 Q_SIGNALS:
     void copyModeChanged(CopyMode value);
 };
-
-
 extern VideoDecoderId VideoDecoderId_CUDA;
-FACTORY_REGISTER_ID_AUTO(VideoDecoder, CUDA, "CUDA")
-
-void RegisterVideoDecoderCUDA_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoDecoder, CUDA, "CUDA")
-}
+FACTORY_REGISTER(VideoDecoder, CUDA, "CUDA")
 
 static struct {
     AVCodecID ffCodec;

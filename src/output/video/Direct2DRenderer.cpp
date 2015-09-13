@@ -24,7 +24,7 @@
 #include <QResizeEvent>
 #include <QtCore/QLibrary>
 #include "QtAV/private/VideoRenderer_p.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 
 //#define CINTERFACE //http://rxlib.ru/faqs/faqc_en/15596.html
 //#include <windows.h>
@@ -91,14 +91,11 @@ extern VideoRendererId VideoRendererId_Direct2D;
 #if 0
 FACTORY_REGISTER_ID_AUTO(VideoRenderer, Direct2D, "Direct2D")
 #else
-VideoRenderer* __create_VideoRendererDirect2D() { return new VideoRendererDirect2D();}
-#endif
-
 void RegisterVideoRendererDirect2D_Man()
 {
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, Direct2D, "Direct2D")
+    VideoRenderer::Register<Direct2DRenderer>(VideoRendererId_Direct2D, "Direct2D");
 }
-
+#endif
 VideoRendererId Direct2DRenderer::id() const
 {
     return VideoRendererId_Direct2D;

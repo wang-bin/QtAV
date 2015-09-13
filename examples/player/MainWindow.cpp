@@ -601,7 +601,7 @@ void MainWindow::changeVO(QAction *action)
         return;
     }
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
-    VideoRenderer *vo = VideoRendererFactory::create(vid);
+    VideoRenderer *vo = VideoRenderer::create(vid);
     if (vo && vo->isAvailable()) {
 
         setRenderer(vo);
@@ -740,7 +740,7 @@ void MainWindow::setVideoDecoderNames(const QStringList &vd)
         vdnames << v.toLower();
     }
     QStringList vidp;
-    QStringList vids = idsToNames(GetRegistedVideoDecoderIds());
+    QStringList vids = idsToNames(VideoDecoder::registered());
     foreach (const QString& v, vids) {
         if (vdnames.contains(v.toLower())) {
             vidp.append(v);

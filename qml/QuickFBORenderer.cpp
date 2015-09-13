@@ -22,11 +22,10 @@
 #include "QmlAV/QuickFBORenderer.h"
 #include "QmlAV/QmlAVPlayer.h"
 #include "QtAV/AVPlayer.h"
-#include "QtAV/FactoryDefine.h"
 #include "QtAV/OpenGLVideo.h"
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include <QtCore/QCoreApplication>
 #include <QtGui/QOpenGLFramebufferObject>
 #include <QtQuick/QQuickWindow>
@@ -40,7 +39,7 @@
 
 namespace QtAV {
 static const VideoRendererId VideoRendererId_QuickFBO = mkid::id32base36_4<'Q','F','B','O'>::value;
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, QuickFBO, "QuickFBO")
+FACTORY_REGISTER(VideoRenderer, QuickFBO, "QuickFBO")
 
 class FBORenderer : public QQuickFramebufferObject::Renderer
 {

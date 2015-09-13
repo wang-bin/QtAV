@@ -43,7 +43,7 @@ static QVector<QtAV::VideoDecoderId> sPriorityUi;
 QStringList idsToNames(QVector<VideoDecoderId> ids) {
     QStringList decs;
     foreach (int id, ids) {
-        decs.append(QString::fromLatin1(VideoDecoderFactory::name(id).c_str()));
+        decs.append(QString::fromLatin1(VideoDecoder::name(id)));
     }
     return decs;
 }
@@ -53,7 +53,7 @@ QVector<VideoDecoderId> idsFromNames(const QStringList& names) {
     foreach (QString name, names) {
         if (name.isEmpty())
             continue;
-        VideoDecoderId id = VideoDecoderFactory::id(name.toStdString(), false);
+        VideoDecoderId id = VideoDecoder::id(name.toLatin1().constData());
         if (id == 0)
             continue;
         decs.append(id);
@@ -182,7 +182,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
     QStringList vds = Config::instance().decoderPriorityNames();
     QVector<VideoDecoderId> vids = idsFromNames(vds);
-    std::vector<QtAV::VideoDecoderId> vds_all = VideoDecoderFactory::registeredIds();
+    QVector<QtAV::VideoDecoderId> vds_all = VideoDecoder::registered();
     QVector<QtAV::VideoDecoderId> all = vids;
     foreach (QtAV::VideoDecoderId vid, vds_all) {
         if (!vids.contains(vid))
@@ -191,7 +191,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     mpDecLayout = new QVBoxLayout;
 
     foreach (QtAV::VideoDecoderId vid, all) {
-        VideoDecoder *vd = VideoDecoderFactory::create(vid);
+        VideoDecoder *vd = VideoDecoder::create(vid);
         DecoderItemWidget *iw = new DecoderItemWidget(scrollAreaWidgetContents);
         iw->buildUiFor(vd);
         mDecItems.append(iw);
@@ -204,7 +204,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
         delete vd;
     }/*
     for (int i = 0; i < vds_all.size(); ++i) {
-        VideoDecoder *vd = VideoDecoderFactory::create(vds_all.at(i));
+        VideoDecoder *vd = VideoDecoder::create(vds_all.at(i));
         DecoderItemWidget *iw = new DecoderItemWidget();
         iw->buildUiFor(vd);
         mDecItems.append(iw);
@@ -393,7 +393,7 @@ void DecoderConfigPage::updateDecodersUi()
 void DecoderConfigPage::onConfigChanged()
 {
     sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
-    sDecodersUi = QVector<VideoDecoderId>::fromStdVector(VideoDecoderFactory::registeredIds());
+    sDecodersUi = VideoDecoder::registered();
     updateDecodersUi();
 }
 

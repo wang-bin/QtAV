@@ -21,7 +21,7 @@
 
 #include "QtAV/private/AudioOutputBackend.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include <QtCore/QLibrary>
 #include <QtCore/QSemaphore>
 #include "QtAV/private/AVCompat.h"
@@ -94,12 +94,7 @@ private:
 
 typedef AudioOutputXAudio2 AudioOutputBackendXAudio2;
 static const AudioOutputBackendId AudioOutputBackendId_XAudio2 = mkid::id32base36_6<'X', 'A', 'u', 'd', 'i', 'o'>::value;
-FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, XAudio2, kName)
-
-void RegisterAudioOutputXAudio2_Man()
-{
-    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, XAudio2, kName)
-}
+FACTORY_REGISTER(AudioOutputBackend, XAudio2, kName)
 
 AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
     : AudioOutputBackend(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume, parent)

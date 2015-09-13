@@ -25,22 +25,17 @@
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QSGFlatColorMaterial>
 #include <QtQuick/QSGSimpleTextureNode>
-#include <QtAV/FactoryDefine.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/OpenGLVideo.h>
-#include <QtAV/VideoRendererTypes.h> //it declares a factory we need
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QmlAV/QmlAVPlayer.h"
 #include "QmlAV/SGVideoNode.h"
 
-namespace QtAV
-{
+namespace QtAV {
 static const VideoRendererId VideoRendererId_QQuickItem = mkid::id32base36_6<'Q','Q','I','t','e','m'>::value;
-
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, QQuickItem, "QQuickItem")
-
+FACTORY_REGISTER(VideoRenderer, QQuickItem, "QQuickItem")
 
 class QQuickItemRendererPrivate : public VideoRendererPrivate
 {

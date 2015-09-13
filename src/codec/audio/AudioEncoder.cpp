@@ -19,29 +19,18 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/AudioEncoder.h>
-#include <QtAV/private/AVEncoder_p.h>
+#include "QtAV/AudioEncoder.h"
+#include "QtAV/private/AVEncoder_p.h"
 #include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
-
 FACTORY_DEFINE(AudioEncoder)
 
 void AudioEncoder_RegisterAll()
 {
     extern void RegisterAudioEncoderFFmpeg_Man();
     RegisterAudioEncoderFFmpeg_Man();
-}
-
-AudioEncoder* AudioEncoder::create(AudioEncoderId id)
-{
-    return AudioEncoderFactory::create(id);
-}
-
-AudioEncoder* AudioEncoder::create(const QString& name)
-{
-    return AudioEncoderFactory::create(AudioEncoderFactory::id(name.toUtf8().constData(), false));
 }
 
 AudioEncoder::AudioEncoder(AudioEncoderPrivate &d):
@@ -51,7 +40,7 @@ AudioEncoder::AudioEncoder(AudioEncoderPrivate &d):
 
 QString AudioEncoder::name() const
 {
-    return QLatin1String(AudioEncoderFactory::name(id()).c_str());
+    return QLatin1String(AudioEncoder::name(id()));
 }
 
 void AudioEncoder::setAudioFormat(const AudioFormat& format)

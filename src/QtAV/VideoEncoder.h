@@ -23,16 +23,12 @@
 #define QTAV_VIDEOENCODER_H
 
 #include <QtAV/AVEncoder.h>
-#include <QtAV/FactoryDefine.h>
 #include <QtAV/VideoFrame.h>
 
 class QSize;
 namespace QtAV {
 
 typedef int VideoEncoderId;
-class VideoEncoder;
-FACTORY_DECLARE(VideoEncoder)
-
 class VideoEncoderPrivate;
 class Q_AV_EXPORT VideoEncoder : public AVEncoder
 {
@@ -51,7 +47,7 @@ public:
      * \param name can be "FFmpeg". FFmpeg encoder will be created for empty name
      * \return 0 if not registered
      */
-    static VideoEncoder* create(const QString& name = QStringLiteral("FFmpeg"));
+    static VideoEncoder* create(const char* name = "FFmpeg");
     virtual VideoEncoderId id() const = 0;
     QString name() const Q_DECL_OVERRIDE; //name from factory
     /*!
@@ -92,6 +88,21 @@ Q_SIGNALS:
     void heightChanged();
     void frameRateChanged();
     void pixelFormatChanged();
+
+public:
+    template<class C> static bool Register(VideoEncoderId id, const char* name) { return Register(id, create<C>, name);}
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static VideoEncoderId* next(VideoEncoderId* id = 0);
+    static const char* name(VideoEncoderId id);
+    static VideoEncoderId id(const char* name);
+private:
+    template<class C> static VideoEncoder* create() { return new C();}
+    typedef VideoEncoder* (*VideoEncoderCreator)();
+    static bool Register(VideoEncoderId id, VideoEncoderCreator, const char *name);
 protected:
     VideoEncoder(VideoEncoderPrivate& d);
 private:

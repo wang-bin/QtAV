@@ -21,7 +21,6 @@
 
 #include "QtAV/VideoOutput.h"
 #include "QtAV/private/VideoRenderer_p.h"
-#include "QtAV/VideoRendererTypes.h"
 
 /*!
  * onSetXXX(...): impl->onSetXXX(...); set value as impl; return ;
@@ -33,10 +32,12 @@ class VideoOutputPrivate : public VideoRendererPrivate
 {
 public:
     VideoOutputPrivate(VideoRendererId rendererId, bool force) {
-        impl = VideoRendererFactory::create(rendererId);
+        impl = VideoRenderer::create(rendererId);
         if (!impl && !force) {
-            foreach (VideoRendererId vid, VideoRendererFactory::registeredIds()) {
-                impl = VideoRendererFactory::create(vid);
+            VideoRendererId *vid = NULL;
+            while ((vid = VideoRenderer::next(vid))) {
+                qDebug("next id: %d, name: %s", *vid, VideoRenderer::name(*vid));
+                impl = VideoRenderer::create(*vid);
                 if (impl && impl->isAvailable() && impl->widget())
                     break;
             }

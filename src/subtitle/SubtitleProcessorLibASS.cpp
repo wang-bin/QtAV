@@ -26,8 +26,8 @@
 #include <QtCore/QFile>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
-#include "QtAV/private/prepost.h"
 #include "QtAV/Packet.h"
+#include "QtAV/private/factory.h"
 #include "PlainText.h"
 #include "utils/internal.h"
 #include "utils/Logger.h"
@@ -36,7 +36,7 @@
 //#define CAPI_LINK_ASS
 #include "ass_api.h"
 #include <stdarg.h>
-#include <string>  //include after ass_api.h, stdio.h is included there in a different namespace
+//#include <string>  //include after ass_api.h, stdio.h is included there in a different namespace
 
 namespace QtAV {
 
@@ -87,14 +87,9 @@ private:
 
 static const SubtitleProcessorId SubtitleProcessorId_LibASS = QStringLiteral("qtav.subtitle.processor.libass");
 namespace {
-static const std::string kName("LibASS");
+static const char kName[] = "LibASS";
 }
-FACTORY_REGISTER_ID_AUTO(SubtitleProcessor, LibASS, kName)
-
-void RegisterSubtitleProcessorLibASS_Man()
-{
-    FACTORY_REGISTER_ID_MAN(SubtitleProcessor, LibASS, kName)
-}
+FACTORY_REGISTER(SubtitleProcessor, LibASS, kName)
 
 // log level from ass_utils.h
 #define MSGL_FATAL 0
@@ -170,7 +165,7 @@ SubtitleProcessorId SubtitleProcessorLibASS::id() const
 
 QString SubtitleProcessorLibASS::name() const
 {
-    return QLatin1String(kName.c_str());//SubtitleProcessorFactory::name(id());
+    return QLatin1String(kName);//SubtitleProcessorFactory::name(id());
 }
 
 QStringList SubtitleProcessorLibASS::supportedTypes() const

@@ -27,7 +27,6 @@
 #include <QtCore/QRectF>
 #include <QtAV/AVOutput.h>
 #include <QtAV/VideoFrame.h>
-#include <QtAV/FactoryDefine.h>
 
 /*!
  * A bridge for VideoOutput(QObject based) and video renderer backend classes
@@ -41,9 +40,7 @@ class QGraphicsItem;
 namespace QtAV {
 
 typedef int VideoRendererId;
-class VideoRenderer;
-FACTORY_DECLARE(VideoRenderer)
-
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWindow;
 class Filter;
 class VideoFormat;
 class VideoRendererPrivate;
@@ -64,6 +61,19 @@ public:
         QualityBest,
         QualityFastest
     };
+
+    template<class C>
+    static bool Register(VideoRendererId id, const char* name) { return Register(id, create<C>, name);}
+    static VideoRenderer* create(VideoRendererId id);
+    static VideoRenderer* create(const char* name);
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static VideoRendererId* next(VideoRendererId* id = 0);
+    static const char* name(VideoRendererId id);
+    static VideoRendererId id(const char* name);
 
     VideoRenderer();
     virtual ~VideoRenderer();
@@ -226,6 +236,12 @@ private: //used by VideoOutput class
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
 private:
+    template<class C>
+    static VideoRenderer* create() {
+        return new C();
+    }
+    typedef VideoRenderer* (*VideoRendererCreator)();
+    static bool Register(VideoRendererId id, VideoRendererCreator, const char *name);
     friend class VideoOutput;
     //the size of decoded frame. get called in receiveFrame(). internal use only
     void setInSize(const QSize& s);

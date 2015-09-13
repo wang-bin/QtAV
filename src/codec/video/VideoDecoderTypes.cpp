@@ -20,7 +20,6 @@
 ******************************************************************************/
 
 #include "QtAV/VideoDecoderTypes.h"
-#include "QtAV/FactoryDefine.h"
 #include "QtAV/private/mkid.h"
 
 namespace QtAV {
@@ -32,10 +31,5 @@ VideoDecoderId VideoDecoderId_VAAPI = mkid::id32base36_5<'V', 'A', 'A', 'P', 'I'
 VideoDecoderId VideoDecoderId_Cedarv = mkid::id32base36_6<'C', 'e', 'd', 'a', 'r', 'V'>::value;
 VideoDecoderId VideoDecoderId_VDA = mkid::id32base36_3<'V', 'D', 'A'>::value;
 VideoDecoderId VideoDecoderId_VideoToolbox = mkid::id32base36_5<'V', 'T', 'B', 'o', 'x'>::value;
-
-QVector<VideoDecoderId> GetRegistedVideoDecoderIds()
-{
-    return QVector<VideoDecoderId>::fromStdVector(VideoDecoderFactory::registeredIds());
-}
 
 } //namespace QtAV

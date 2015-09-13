@@ -63,16 +63,16 @@ int main(int argc, char *argv[])
     VideoRenderer *renderer = 0;
     bool textfilter = false;
     if (vo == QLatin1String("gl")) {
-        renderer = VideoRendererFactory::create(VideoRendererId_GLWidget);
+        renderer = VideoRenderer::create(VideoRendererId_GLWidget);
         textfilter = true;
     } else if (vo == QLatin1String("d2d")) {
-        renderer = VideoRendererFactory::create(VideoRendererId_Direct2D);
+        renderer = VideoRenderer::create(VideoRendererId_Direct2D);
     } else if (vo == QLatin1String("gdi")) {
-        renderer = VideoRendererFactory::create(VideoRendererId_GDI);
+        renderer = VideoRenderer::create(VideoRendererId_GDI);
     } else if (vo == QLatin1String("xv")) {
-        renderer = VideoRendererFactory::create(VideoRendererId_XV);
+        renderer = VideoRenderer::create(VideoRendererId_XV);
     } else {
-        renderer = VideoRendererFactory::create(VideoRendererId_Widget);
+        renderer = VideoRenderer::create(VideoRendererId_Widget);
         textfilter = true;
     }
     if (!renderer) {

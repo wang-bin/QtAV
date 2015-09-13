@@ -138,7 +138,7 @@ void VideoWall::show()
         v = VideoRendererId_XV;
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
-            VideoRenderer* renderer = VideoRendererFactory::create(v);
+            VideoRenderer* renderer = VideoRenderer::create(v);
             renderer->widget()->setWindowFlags(renderer->widget()->windowFlags()| Qt::FramelessWindowHint);
             renderer->widget()->setAttribute(Qt::WA_DeleteOnClose);
             renderer->widget()->resize(w, h);

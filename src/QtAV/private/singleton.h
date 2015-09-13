@@ -24,10 +24,11 @@
 #include <cstdlib> //harmattan: atexit
 #include <iostream>
 #include <cassert>
-#ifndef QT_NO_EXCEPTIONS
-#include <stdexcept>
+#define USE_EXCEPTION 0
+#if USE_EXCEPTION
+#include <stdexcept> // std::string breaks abi
 #endif
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #define DBG(fmt, ...) \
     printf(fmt, ##__VA_ARGS__); \
@@ -87,7 +88,7 @@ void Singleton<T>::MakeInstance()
     if (!pInstance_) {
         if (destroyed_) {
             destroyed_ = false;
-#ifndef QT_NO_EXCEPTIONS
+#if USE_EXCEPTION
             throw std::logic_error("Dead Reference Detected");
 #else
             std::cerr << "Dead Reference Detected" << std::endl;

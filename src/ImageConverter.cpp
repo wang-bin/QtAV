@@ -24,6 +24,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
 #include "ImageConverter.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 

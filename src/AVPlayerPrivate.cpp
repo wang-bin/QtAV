@@ -456,7 +456,7 @@ bool AVPlayer::Private::tryApplyDecoderPriority(AVPlayer *player)
     VideoDecoder *vd = NULL;
     AVCodecContext *avctx = demuxer.videoCodecContext();
     foreach(VideoDecoderId vid, vc_ids) {
-        qDebug("**********trying video decoder: %s...", VideoDecoderFactory::name(vid).c_str());
+        qDebug("**********trying video decoder: %s...", VideoDecoder::name(vid));
         vd = VideoDecoder::create(vid);
         if (!vd)
             continue;
@@ -512,8 +512,8 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         vdec = 0;
     }
     foreach(VideoDecoderId vid, vc_ids) {
-        qDebug("**********trying video decoder: %s...", VideoDecoderFactory::name(vid).c_str());
-        VideoDecoder *vd = VideoDecoderFactory::create(vid);
+        qDebug("**********trying video decoder: %s...", VideoDecoder::name(vid));
+        VideoDecoder *vd = VideoDecoder::create(vid);
         if (!vd) {
             continue;
         }

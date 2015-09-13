@@ -23,14 +23,10 @@
 #define QTAV_AUDIORESAMPLER_H
 
 #include <QtAV/QtAV_Global.h>
-#include <QtAV/FactoryDefine.h>
 
 namespace QtAV {
 
 typedef int AudioResamplerId;
-class AudioResampler;
-FACTORY_DECLARE(AudioResampler)
-
 class AudioFormat;
 class AudioResamplerPrivate;
 class Q_AV_EXPORT AudioResampler //export is required for users who want add their own subclass outside QtAV
@@ -39,6 +35,18 @@ class Q_AV_EXPORT AudioResampler //export is required for users who want add the
 public:
     AudioResampler();
     virtual ~AudioResampler();
+    template<class C>
+    static bool Register(AudioResamplerId id, const char* name) { return Register(id, create<C>, name);}
+    static AudioResampler* create(AudioResamplerId id);
+    static AudioResampler* create(const char* name);
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static AudioResamplerId* next(AudioResamplerId* id = 0);
+    static const char* name(AudioResamplerId id);
+    static AudioResamplerId id(const char* name);
 
     QByteArray outData() const;
     /* check whether the parameters are supported. If not, you should use ff*/
@@ -77,6 +85,14 @@ public:
     void setInChannels(int channels);
     void setOutChannels(int channels);
     //Are getter functions required?
+private:
+    template<class C>
+    static AudioResampler* create() {
+        return new C();
+    }
+    typedef AudioResampler* (*AudioResamplerCreator)();
+    static bool Register(AudioResamplerId id, AudioResamplerCreator, const char *name);
+
 protected:
     AudioResampler(AudioResamplerPrivate& d);
     DPTR_DECLARE(AudioResampler)

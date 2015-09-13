@@ -19,13 +19,15 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/VideoRenderer.h>
-#include <QtAV/private/VideoRenderer_p.h>
-#include <QtAV/Filter.h>
+#include "QtAV/VideoRenderer.h"
+#include "QtAV/private/VideoRenderer_p.h"
+#include "QtAV/Filter.h"
 #include <QtCore/QCoreApplication>
+#include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
+FACTORY_DEFINE(VideoRenderer)
 
 VideoRenderer::VideoRenderer()
     :AVOutput(*new VideoRendererPrivate)

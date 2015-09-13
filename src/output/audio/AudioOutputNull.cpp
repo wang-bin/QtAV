@@ -21,7 +21,7 @@
 
 #include "QtAV/private/AudioOutputBackend.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 
 namespace QtAV {
 
@@ -42,12 +42,7 @@ public:
 
 typedef AudioOutputNull AudioOutputBackendNull;
 static const AudioOutputBackendId AudioOutputBackendId_Null = mkid::id32base36_4<'n', 'u', 'l', 'l'>::value;
-FACTORY_REGISTER_ID_AUTO(AudioOutputBackend, Null, kName)
-
-void RegisterAudioOutputNull_Man()
-{
-    FACTORY_REGISTER_ID_MAN(AudioOutputBackend, Null, kName)
-}
+FACTORY_REGISTER(AudioOutputBackend, Null, kName)
 
 AudioOutputNull::AudioOutputNull(QObject *parent)
     : AudioOutputBackend(AudioOutput::DeviceFeatures(), parent)

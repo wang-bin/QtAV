@@ -26,44 +26,40 @@
 #include "utils/Logger.h"
 
 namespace QtAV {
-
 FACTORY_DEFINE(VideoDecoder)
-
-extern void RegisterVideoDecoderFFmpeg_Man();
-extern void RegisterVideoDecoderDXVA_Man();
-extern void RegisterVideoDecoderCUDA_Man();
-extern void RegisterVideoDecoderVAAPI_Man();
-extern void RegisterVideoDecoderVDA_Man();
-extern void RegisterVideoDecoderCedarv_Man();
 
 void VideoDecoder_RegisterAll()
 {
+    extern void RegisterVideoDecoderFFmpeg_Man();
     RegisterVideoDecoderFFmpeg_Man();
 #if QTAV_HAVE(DXVA)
+    extern void RegisterVideoDecoderDXVA_Man();
     RegisterVideoDecoderDXVA_Man();
 #endif //QTAV_HAVE(DXVA)
 #if QTAV_HAVE(CUDA)
+    extern void RegisterVideoDecoderCUDA_Man();
     RegisterVideoDecoderCUDA_Man();
 #endif //QTAV_HAVE(CUDA)
 #if QTAV_HAVE(VAAPI)
+    extern void RegisterVideoDecoderVAAPI_Man();
     RegisterVideoDecoderVAAPI_Man();
 #endif //QTAV_HAVE(VAAPI)
+#if QTAV_HAVE(VIDEOTOOLBOX)
+    extern void RegisterVideoDecoderVideoToolbox_Man();
+    RegisterVideoDecoderVideoToolbox_Man();
+#endif //QTAV_HAVE(VIDEOTOOLBOX)
 #if QTAV_HAVE(VDA)
+    extern void RegisterVideoDecoderVDA_Man();
     RegisterVideoDecoderVDA_Man();
 #endif //QTAV_HAVE(VDA)
 #if QTAV_HAVE(CEDARV)
+    extern void RegisterVideoDecoderCedarv_Man();
     RegisterVideoDecoderCedarv_Man();
 #endif //QTAV_HAVE(CEDARV)
 }
-
-VideoDecoder* VideoDecoder::create(VideoDecoderId id)
+QVector<VideoDecoderId> VideoDecoder::registered()
 {
-    return VideoDecoderFactory::create(id);
-}
-
-VideoDecoder* VideoDecoder::create(const QString& name)
-{
-    return VideoDecoderFactory::create(VideoDecoderFactory::id(name.toUtf8().constData(), false));
+    return QVector<VideoDecoderId>::fromStdVector(VideoDecoderFactory::Instance().registeredIds());
 }
 
 VideoDecoder::VideoDecoder(VideoDecoderPrivate &d):
@@ -73,7 +69,7 @@ VideoDecoder::VideoDecoder(VideoDecoderPrivate &d):
 
 QString VideoDecoder::name() const
 {
-    return QLatin1String(VideoDecoderFactory::name(id()).c_str());
+    return QLatin1String(VideoDecoder::name(id()));
 }
 
 void VideoDecoder::resizeVideoFrame(const QSize &size)

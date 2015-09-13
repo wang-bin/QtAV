@@ -20,7 +20,6 @@
 ******************************************************************************/
 
 #include "QtAV/private/AVCompat.h"
-#include "QtAV/private/prepost.h"
 #include "QtAV/version.h"
 
 #ifndef av_err2str

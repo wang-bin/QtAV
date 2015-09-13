@@ -23,18 +23,12 @@
 #include "ImageConverter_p.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
-
 ImageConverterId ImageConverterId_FF = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
-FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
-
-void RegisterImageConverterFF_Man()
-{
-    FACTORY_REGISTER_ID_MAN(ImageConverter, FF, "FFmpeg")
-}
+FACTORY_REGISTER(ImageConverter, FF, "FFmpeg")
 
 class ImageConverterFFPrivate Q_DECL_FINAL: public ImageConverterPrivate
 {
@@ -172,7 +166,6 @@ bool ImageConverterFFPrivate::setupColorspaceDetails(bool force)
                              , (((contrast + 100) << 16) + 50)/100
                              , (((saturation + 100) << 16) + 50)/100
                              ) >= 0;
-    // TODO: b, c, s map function?
     //sws_init_context(d.sws_ctx, NULL, NULL);
     update_eq = false;
     return supported;

@@ -30,6 +30,7 @@ using namespace QtAV;
 
 PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
 {
+    QtAV::Widgets::registerRenderers();
     setWindowTitle(QString::fromLatin1("QtAV simple player example"));
     m_player = new AVPlayer(this);
     QVBoxLayout *vl = new QVBoxLayout();

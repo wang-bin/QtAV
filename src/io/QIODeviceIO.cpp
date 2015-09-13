@@ -22,7 +22,7 @@
 #include "QtAV/MediaIO.h"
 #include "QtAV/private/MediaIO_p.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include <QtCore/QFile>
 #include <QtCore/QMetaType>
 #ifndef TEST_QTAV_QIODeviceIO
@@ -61,10 +61,10 @@ Q_SIGNALS:
 protected:
     QIODeviceIO(QIODeviceIOPrivate &d);
 };
-
+typedef QIODeviceIO MediaIOQIODevice;
 static const MediaIOId MediaIOId_QIODevice = mkid::id32base36_6<'Q','I','O','D','e','v'>::value;
 static const char kQIODevName[] = "QIODevice";
-FACTORY_REGISTER_ID_TYPE(MediaIO, MediaIOId_QIODevice, QIODeviceIO, kQIODevName)
+FACTORY_REGISTER(MediaIO, QIODevice, kQIODevName)
 
 class QIODeviceIOPrivate : public MediaIOPrivate
 {
@@ -169,9 +169,9 @@ protected:
 private:
     using QIODeviceIO::setDevice;
 };
-
+typedef QFileIO MediaIOQFile;
 static const MediaIOId MediaIOId_QFile = mkid::id32base36_5<'Q','F','i','l','e'>::value;
-FACTORY_REGISTER_ID_TYPE(MediaIO, MediaIOId_QFile, QFileIO, kQFileName)
+FACTORY_REGISTER(MediaIO, QFile, kQFileName)
 
 class QFileIOPrivate Q_DECL_FINAL: public QIODeviceIOPrivate
 {

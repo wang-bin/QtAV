@@ -20,7 +20,6 @@
 ******************************************************************************/
 
 #include "QtAVWidgets/global.h"
-#include <algorithm> //std::find
 #include <QApplication>
 #include <QBoxLayout>
 #include <QMessageBox>
@@ -28,8 +27,6 @@
 #include <QTableWidget>
 #include <QTextBrowser>
 
-#include "QtAV/VideoRendererTypes.h"
-#include "QtAV/private/prepost.h"
 #include "QtAVWidgets/WidgetRenderer.h"
 #include "QtAVWidgets/GraphicsItemRenderer.h"
 #if QTAV_HAVE(GL)
@@ -59,58 +56,19 @@ VideoRendererId VideoRendererId_XV = mkid::id32base36_6<'X', 'V', 'i', 'd', 'e',
 
 //QPainterRenderer is abstract. So can not register(operator new will needed)
 #if AUTO_REGISTER
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, Widget, "QWidegt")
-#else
-VideoRenderer* __create_VideoRendererWidget() { return new VideoRendererWidget();}
-#endif
-void RegisterVideoRendererWidget_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, Widget, "QWidegt")
-}
-
-#if AUTO_REGISTER
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, GraphicsItem, "QGraphicsItem")
-#else
-VideoRenderer* __create_VideoRendererGraphicsItem() { return new VideoRendererGraphicsItem();}
-#endif
-void RegisterVideoRendererGraphicsItem_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, GraphicsItem, "QGraphicsItem")
-}
+FACTORY_REGISTER(VideoRenderer, Widget, "QWidegt")
+FACTORY_REGISTER(VideoRenderer, GraphicsItem, "QGraphicsItem")
 #if QTAV_HAVE(GL)
 #if QTAV_HAVE(GL1)
-#if AUTO_REGISTER
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget, "QGLWidegt")
-#else
-VideoRenderer* __create_VideoRendererGLWidget() { return new VideoRendererGLWidget();}
-#endif
-void RegisterVideoRendererGLWidget_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, GLWidget, "QGLWidegt")
-}
+FACTORY_REGISTER(VideoRenderer, GLWidget, "QGLWidegt")
 #endif //QTAV_HAVE(GL1)
-#if AUTO_REGISTER
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, GLWidget2, "QGLWidegt2")
-#else
-VideoRenderer* __create_VideoRendererGLWidget2() { return new VideoRendererGLWidget2();}
-#endif
-void RegisterVideoRendererGLWidget2_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, GLWidget2, "QGLWidegt2")
-}
+FACTORY_REGISTER(VideoRenderer, GLWidget2, "QGLWidegt2")
 #endif //QTAV_HAVE(GL)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #ifndef QT_NO_OPENGL
-#if AUTO_REGISTER
-FACTORY_REGISTER_ID_AUTO(VideoRenderer, OpenGLWidget, "OpenGLWidget")
-#else
-VideoRenderer* __create_VideoRendererOpenGLWidget() { return new VideoRendererOpenGLWidget();}
-#endif
-void RegisterVideoRendererOpenGLWidget_Man()
-{
-    FACTORY_REGISTER_ID_MAN(VideoRenderer, OpenGLWidget, "OpenGLWidget")
-}
+FACTORY_REGISTER(VideoRenderer, OpenGLWidget, "OpenGLWidget")
 #endif //QT_NO_OPENGL
+#endif
 #endif
 
 extern void RegisterVideoRendererGDI_Man();
@@ -121,27 +79,27 @@ namespace Widgets {
 
 void registerRenderers()
 {
+    qDebug("registerRenderers...........");
     // check whether it is called
     static bool initialized = false;
     if (initialized)
         return;
     initialized = true;
     // factory.h does not check whether an id is registered
-    const std::vector<VideoRendererId> ids(VideoRendererFactory::registeredIds());
-    if (std::find(ids.begin(), ids.end(), VideoRendererId_Widget) != ids.end())
+    if (VideoRenderer::name(VideoRendererId_Widget))
         return;
-#if QTAV_HAVE(GL)
-    RegisterVideoRendererGLWidget2_Man();
-#endif //QTAV_HAVE(GL)
-#if QTAV_HAVE(GL1)
-    RegisterVideoRendererGLWidget_Man();
-#endif //QTAV_HAVE(GL1)
-    RegisterVideoRendererWidget_Man();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #ifndef QT_NO_OPENGL
-    RegisterVideoRendererOpenGLWidget_Man();
+    VideoRenderer::Register<OpenGLWidgetRenderer>(VideoRendererId_OpenGLWidget, "OpenGLWidget");
 #endif //QT_NO_OPENGL
 #endif
+#if QTAV_HAVE(GL)
+    VideoRenderer::Register<GLWidgetRenderer2>(VideoRendererId_GLWidget2, "QGLWidget2");
+#endif //QTAV_HAVE(GL)
+#if QTAV_HAVE(GL1)
+    VideoRenderer::Register<GLWidgetRenderer>(VideoRendererId_GLWidget, "QGLWidget");
+#endif //QTAV_HAVE(GL1)
+    VideoRenderer::Register<WidgetRenderer>(VideoRendererId_Widget, "Widget");
 #if QTAV_HAVE(GDIPLUS)
     RegisterVideoRendererGDI_Man();
 #endif //QTAV_HAVE(GDIPLUS)
@@ -151,10 +109,18 @@ void registerRenderers()
 #if QTAV_HAVE(XV)
     RegisterVideoRendererXV_Man();
 #endif //QTAV_HAVE(XV)
-    RegisterVideoRendererGraphicsItem_Man();
+    qDebug("GraphicsItemRenderer");
+    VideoRenderer::Register<GraphicsItemRenderer>(VideoRendererId_GraphicsItem, "GraphicsItem");
 }
-PRE_FUNC_ADD(registerRenderers)
 } //namespace Widgets
+
+namespace {
+    static const struct register_renderers {
+        inline register_renderers() {
+            QtAV::Widgets::registerRenderers();
+        }
+    } sRegisterVO;
+}
 
 void about() {
     //we should use new because a qobject will delete it's children

@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     }
     qDebug() << decopt;
 
-    VideoDecoder *dec = VideoDecoder::create(decName);
+    VideoDecoder *dec = VideoDecoder::create(decName.toLatin1().constData());
     if (!dec) {
         fprintf(stderr, "Can not find decoder: %s\n", decName.toUtf8().constData());
         return 1;

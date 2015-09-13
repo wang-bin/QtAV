@@ -174,8 +174,7 @@ public:
                 precision = kDefaultPrecision;
         }
         foreach (const QString& c, codecs) {
-            VideoDecoderId cid = VideoDecoderFactory::id(c.toUtf8().constData());
-            VideoDecoder *vd = VideoDecoderFactory::create(cid);
+            VideoDecoder *vd = VideoDecoder::create(c.toUtf8().constData());
             if (!vd)
                 continue;
             decoder.reset(vd);
