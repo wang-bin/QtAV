@@ -225,6 +225,31 @@ VideoDecoderFFmpegHW::VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d):
                 .arg(tr("Not implemented for all codecs"))
                 .arg(tr("OptimizedCopy: copy from USWC memory optimized by SSE4.1"))
                 .arg(tr("GenericCopy: slowest. Generic cpu copy")));
+    setProperty("detail_threads", QString("%1\n%2\n%3")
+                .arg(tr("Number of decoding threads. Set before open. Maybe no effect for some decoders"))
+                .arg(tr("0: auto"))
+                .arg(tr("1: single thread decoding")));
+    Q_UNUSED(QObject::tr("ZeroCopy"));
+    Q_UNUSED(QObject::tr("OptimizedCopy"));
+    Q_UNUSED(QObject::tr("LazyCopy"));
+    Q_UNUSED(QObject::tr("GenericCopy"));
+    Q_UNUSED(QObject::tr("copyMode"));
+}
+
+void VideoDecoderFFmpegHW::setThreads(int value)
+{
+    DPTR_D(VideoDecoderFFmpegHW);
+    if (d.threads == value)
+        return;
+    d.threads = value;
+    if (d.codec_ctx)
+        av_opt_set_int(d.codec_ctx, "threads", (int64_t)value, 0);
+    Q_EMIT threadsChanged();
+}
+
+int VideoDecoderFFmpegHW::threads() const
+{
+    return d_func().threads;
 }
 
 void VideoDecoderFFmpegHW::setCopyMode(CopyMode value)

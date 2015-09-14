@@ -37,14 +37,14 @@ class VideoDecoderFFmpegHWPrivate : public VideoDecoderFFmpegBasePrivate
 public:
     VideoDecoderFFmpegHWPrivate()
         : VideoDecoderFFmpegBasePrivate()
+        , get_format(NULL)
+        , get_buffer(NULL)
+        , release_buffer(NULL)
+        , reget_buffer(NULL)
+        , get_buffer2(NULL)
+        , threads(0)
         , copy_mode(VideoDecoderFFmpegHW::OptimizedCopy)
-    {
-        get_format = 0;
-        get_buffer = 0;
-        release_buffer = 0;
-        reget_buffer = 0;
-        get_buffer2 = 0;
-    }
+    {}
     virtual ~VideoDecoderFFmpegHWPrivate() {} //ctx is 0 now
     bool enableFrameRef() const Q_DECL_OVERRIDE { return false;} //because of ffmpeg_get_va_buffer2?
     bool prepare();
@@ -83,6 +83,7 @@ public:
     int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
 
     QString description;
+    int threads;
     // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
     // TODO: flag enable, disable, auto
     VideoDecoderFFmpegHW::CopyMode copy_mode;
