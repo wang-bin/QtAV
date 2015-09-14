@@ -356,32 +356,32 @@
     </message>
     <message>
         <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="202"/>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="235"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="232"/>
         <source>Clear</source>
         <translation>清除</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="227"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="224"/>
         <source>Fonts dir</source>
         <translation>字体目录</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="256"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="250"/>
         <source>Embedded Subtitles</source>
         <translation>内嵌字幕</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="286"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="280"/>
         <source>External Subtitle</source>
         <translation>外挂字幕</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="299"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="293"/>
         <source>Enabled</source>
         <translation>启用</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="308"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="302"/>
         <source>Auto load</source>
         <translation>自动加载</translation>
     </message>
@@ -401,17 +401,17 @@
         <translation>预览</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="357"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="351"/>
         <source>Choose a font file</source>
         <translation>选择一个字体文件</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="367"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="358"/>
         <source>Choose a fonts dir</source>
         <translation>选择一个字体目录</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="378"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="366"/>
         <source>Open a subtitle file</source>
         <translation>打开一个字幕文件</translation>
     </message>
@@ -448,7 +448,7 @@
         <translation type="vanished">打开字幕文件</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="329"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="323"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>

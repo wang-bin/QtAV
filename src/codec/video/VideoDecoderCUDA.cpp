@@ -305,13 +305,18 @@ VideoDecoderCUDA::VideoDecoderCUDA():
 {
     // dynamic properties about static property details. used by UI
     // format: detail_property
-    setProperty("detail_surfaces", tr("Decoding surfaces."));
+    setProperty("detail_surfaces", tr("Decoding surfaces"));
     setProperty("detail_flags", tr("Decoder flags"));
-    setProperty("detail_copyMode", tr("Performace: ZeroCopy > DirectCopy > GenericCopy"
-                                      "ZeroCopy: no copy back from GPU to System memory. Directly render the decoded data on GPU.\n"
-                                      "DirectCopy: copy back to host memory but video frames use the same host memory address and maybe not safe.\n"
-                                      "GenericCopy: copy back to host memory and each video frame."
-                                      ));
+    setProperty("detail_copyMode", QString("%1\n%2\n%3\%4")
+                .arg(tr("Performace: ZeroCopy > DirectCopy > GenericCopy"))
+                .arg(tr("ZeroCopy: no copy back from GPU to System memory. Directly render the decoded data on GPU"))
+                .arg(tr("DirectCopy: copy back to host memory but video frames use the same host memory address and maybe not safe"))
+                .arg(tr("GenericCopy: copy back to host memory and each video frame"))
+                );
+    Q_UNUSED(QObject::tr("ZeroCopy"));
+    Q_UNUSED(QObject::tr("DirectCopy"));
+    Q_UNUSED(QObject::tr("GenericCopy"));
+    Q_UNUSED(QObject::tr("copyMode"));
 }
 
 VideoDecoderCUDA::~VideoDecoderCUDA()

@@ -240,9 +240,13 @@ VideoDecoderVAAPI::VideoDecoderVAAPI()
     setDisplayPriority(QStringList() << QStringLiteral("X11") << QStringLiteral("GLX") <<  QStringLiteral("DRM"));
     // dynamic properties about static property details. used by UI
     // format: detail_property
-    setProperty("detail_surfaces", tr("Decoding surfaces.") + QStringLiteral(" ") + tr("0: auto"));
-    setProperty("detail_derive", tr("Maybe faster if display is not GLX"));
-    setProperty("detail_display", tr("GLX is fastest. No data copyback from gpu."));
+    setProperty("detail_surfaces", tr("Decoding surfaces") + QStringLiteral(" ") + tr("0: auto"));
+    setProperty("detail_derive", tr("Maybe faster"));
+    setProperty("detail_display", QString("%1\n%2\n%3")
+                .arg("X11: support all copy modes")
+                .arg("GLX: support 0-copy only")
+                .arg("DRM: does not support 0-copy")
+                );
 }
 
 VideoDecoderId VideoDecoderVAAPI::id() const

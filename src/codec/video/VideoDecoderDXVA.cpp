@@ -445,7 +445,7 @@ VideoDecoderDXVA::VideoDecoderDXVA()
 {
     // dynamic properties about static property details. used by UI
     // format: detail_property
-    setProperty("detail_surfaces", tr("Decoding surfaces.") + QStringLiteral(" ") + tr("0: auto"));
+    setProperty("detail_surfaces", tr("Decoding surfaces") + QStringLiteral(" ") + tr("0: auto"));
 }
 
 VideoDecoderId VideoDecoderDXVA::id() const

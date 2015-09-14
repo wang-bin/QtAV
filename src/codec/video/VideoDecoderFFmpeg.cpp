@@ -221,6 +221,10 @@ VideoDecoderFFmpeg::VideoDecoderFFmpeg():
     setProperty("detail_skip_idct", tr("Force skipping of idct to speed up decoding for frame types (-1=None, "
                                        "0=Default, 1=B-frames, 2=P-frames, 3=B+P frames, 4=all frames)"));
     setProperty("detail_skip_frame", tr("Force skipping frames for speed up decoding."));
+    setProperty("detail_threads", QString("%1\n%2\n%3")
+                .arg(tr("Number of decoding threads. Set before open. Maybe no effect for some decoders"))
+                .arg(tr("0: auto"))
+                .arg(tr("1: single thread decoding")));
 }
 
 VideoDecoderId VideoDecoderFFmpeg::id() const
@@ -354,14 +358,15 @@ VideoDecoderFFmpeg::BugFlags VideoDecoderFFmpeg::bugFlags() const
 
 namespace {
 void i18n() {
-    QObject::tr("skip_loop_filter");
-    QObject::tr("skip_idct");
-    QObject::tr("strict");
-    QObject::tr("skip_frame");
-    QObject::tr("threads");
-    QObject::tr("thread_type");
-    QObject::tr("vismv");
-    QObject::tr("bug");
+    Q_UNUSED(QObject::tr("codecName"));
+    Q_UNUSED(QObject::tr("skip_loop_filter"));
+    Q_UNUSED(QObject::tr("skip_idct"));
+    Q_UNUSED(QObject::tr("strict"));
+    Q_UNUSED(QObject::tr("skip_frame"));
+    Q_UNUSED(QObject::tr("threads"));
+    Q_UNUSED(QObject::tr("thread_type"));
+    Q_UNUSED(QObject::tr("vismv"));
+    Q_UNUSED(QObject::tr("bug"));
 }
 }
 } //namespace QtAV
