@@ -21,3 +21,7 @@
 extern "C" {
 #include <ass/ass.h>
 }
+
+void test() {
+    ass_library_init();
+}

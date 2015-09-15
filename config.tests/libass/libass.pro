@@ -1,7 +1,7 @@
-CONFIG -= qt
-CONFIG += console
+include(../paths.pri)
+CONFIG = staticlib
 
 SOURCES += main.cpp
 
 #LIBS += -lass
-include(../paths.pri)
+
