@@ -148,8 +148,10 @@ void QuickFBORenderer::setSource(QObject *source)
     if (d.source == source)
         return;
     d.source = source;
+    Q_EMIT sourceChanged();
+    if (!source)
+        return;
     ((QmlAVPlayer*)source)->player()->addVideoRenderer(this);
-    emit sourceChanged();
 }
 
 QuickFBORenderer::FillMode QuickFBORenderer::fillMode() const

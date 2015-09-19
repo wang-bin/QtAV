@@ -124,8 +124,9 @@ void QuickSubtitle::setPlayer(QObject *player)
     if (m_player)
         m_filter->uninstall();
     m_player = p;
-    if (p)
-        m_filter->installTo(p->player());
+    if (!p)
+        return;
+    m_filter->installTo(p->player());
     // ~Filter() can not call uninstall() unless player is still exists
     // TODO: check AVPlayer null?
     m_player_sub->setPlayer(p->player());
