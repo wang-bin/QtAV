@@ -75,7 +75,7 @@ public:
         manager = 0;
         if (material) {
             delete material;
-            material = new VideoMaterial();
+            material = 0;
         }
     }
     // update geometry(vertex array) set attributes or bind VAO/VBO.
@@ -241,18 +241,22 @@ bool OpenGLVideo::isSupported(VideoFormat::PixelFormat pixfmt)
 void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
 {
     DPTR_D(OpenGLVideo);
+    if (d.ctx == ctx)
+        return;
+    d.resetGL(); //TODO: is it ok to destroygl resources in another context?
+    d.ctx = ctx; // Qt4: set to null in resetGL()
     if (!ctx) {
-        d.resetGL();
         return;
     }
+    if (d.material)
+        delete d.material;
+    d.material = new VideoMaterial();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     d.manager = ctx->findChild<ShaderManager*>(QStringLiteral("__qtav_shader_manager"));
     QSizeF surfaceSize = QOpenGLContext::currentContext()->surface()->size();
 #else
-    d.resetGL();
     QSizeF surfaceSize = QSizeF(ctx->device()->width(), ctx->device()->height());
 #endif
-    d.ctx = ctx; // Qt4: set to null in resetGL()
     setProjectionMatrixToRect(QRectF(QPointF(), surfaceSize));
     if (d.manager)
         return;

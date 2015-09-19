@@ -349,7 +349,7 @@ bool VideoShader::update(VideoMaterial *material)
     if (!material->bind())
         return false;
     //material->unbind();
-    const VideoFormat fmt(material->currentFormat());
+    const VideoFormat fmt(material->currentFormat()); //FIXME: maybe changed in setCurrentFrame(
     //format is out of date because we may use the same shader for different formats
     setVideoFormat(fmt);
     // uniforms begin
@@ -689,6 +689,10 @@ QPointF VideoMaterial::mapToTexture(int plane, const QPointF &p, int normalize) 
     if (p.isNull())
         return p;
     DPTR_D(const VideoMaterial);
+    if (d.texture_size.isEmpty()) { //It should not happen if it's called in QtAV
+        qWarning("textures not ready");
+        return p;
+    }
     float x = p.x();
     float y = p.y();
     const qreal tex0W = d.texture_size[0].width();
@@ -721,6 +725,10 @@ QPointF VideoMaterial::mapToTexture(int plane, const QPointF &p, int normalize) 
 QRectF VideoMaterial::mapToTexture(int plane, const QRectF &roi, int normalize) const
 {
     DPTR_D(const VideoMaterial);
+    if (d.texture_size.isEmpty()) { //It should not happen if it's called in QtAV
+        qWarning("textures not ready");
+        return QRectF();
+    }
     const qreal tex0W = d.texture_size[0].width();
     const qreal s = tex0W/qreal(d.width); // only apply to unnormalized input roi
     const qreal pw = d.video_format.normalizedWidth(plane);
@@ -800,6 +808,11 @@ bool VideoMaterialPrivate::initTexture(GLuint tex, GLint internal_format, GLenum
 
 VideoMaterialPrivate::~VideoMaterialPrivate()
 {
+    // FIXME: when to delete
+    if (!QOpenGLContext::currentContext()) {
+        qWarning("No gl context");
+        return;
+    }
     if (!textures.isEmpty()) {
         DYGL(glDeleteTextures(textures.size(), textures.data()));
     }
