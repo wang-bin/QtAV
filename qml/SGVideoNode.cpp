@@ -138,12 +138,13 @@ void SGVideoNode::setTexturedRectGeometry(const QRectF &rect, const QRectF &text
     if (m_validWidth == m_material->videoMaterial()->validTextureWidth()
             && rect == m_rect && textureRect == m_textureRect && orientation == m_orientation)
         return;
-
-    m_validWidth = m_material->videoMaterial()->validTextureWidth();
-    m_rect = rect;
-    m_textureRect = textureRect;
-    m_orientation = orientation;
     QRectF validTexRect = m_material->videoMaterial()->normalizedROI(textureRect);
+    if (!validTexRect.isEmpty()) {
+        m_validWidth = m_material->videoMaterial()->validTextureWidth();
+        m_rect = rect;
+        m_textureRect = textureRect;
+        m_orientation = orientation;
+    }
     //qDebug() << ">>>>>>>valid: " << m_validWidth << "  roi: " << validTexRect;
     QSGGeometry *g = geometry();
 
