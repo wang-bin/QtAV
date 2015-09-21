@@ -156,11 +156,7 @@ public:
             }
         } scoped_in(&inputs), scoped_out(&outputs);
         //avfilter_graph_parse, avfilter_graph_parse2?
-#if QTAV_USE_FFMPEG(LIBAVFILTER)
         AV_ENSURE_OK(avfilter_graph_parse_ptr(filter_graph, options.toUtf8().constData(), &inputs, &outputs, NULL), false);
-#else
-        AV_ENSURE_OK(avfilter_graph_parse(filter_graph, options.toUtf8().constData(), inputs, outputs, NULL), false);
-#endif //QTAV_USE_FFMPEG(LIBAVFILTER)
         AV_ENSURE_OK(avfilter_graph_config(filter_graph, NULL), false);
         avframe = av_frame_alloc();
         status = LibAVFilter::ConfigureOk;
@@ -275,7 +271,7 @@ QStringList LibAVFilter::registeredFilters(int type)
 #if QTAV_HAVE(AVFILTER)
     avfilter_register_all();
     const AVFilter* f = NULL;
-    const AVFilterPad* fp = NULL;
+    AVFilterPad* fp = NULL; // no const in avfilter_pad_get_name() for ffmpeg<=1.2 libav<=9
 #if AV_MODULE_CHECK(LIBAVFILTER, 3, 8, 0, 53, 100)
     while ((f = avfilter_next(f))) {
 #else
@@ -283,13 +279,13 @@ QStringList LibAVFilter::registeredFilters(int type)
     while ((ff = av_filter_next(ff)) && *ff) {
         f = (*ff);
 #endif
-        fp = f->inputs;
+        fp = (AVFilterPad*)f->inputs;
         // only check the 1st pad
-        if (!fp || !fp[0].name || fp[0].type != (AVMediaType)type)
+        if (!fp || !avfilter_pad_get_name(fp, 0) || avfilter_pad_get_type(fp, 0) != (AVMediaType)type)
             continue;
-        fp = f->outputs;
+        fp = (AVFilterPad*)f->outputs;
         // only check the 1st pad
-        if (!fp || !fp[0].name || fp[0].type != (AVMediaType)type)
+        if (!fp || !avfilter_pad_get_name(fp, 0) || avfilter_pad_get_type(fp, 0) != (AVMediaType)type)
             continue;
         filters.append(QLatin1String(f->name));
     }

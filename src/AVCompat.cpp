@@ -313,3 +313,14 @@ const char *get_codec_long_name(enum AVCodecID id)
     return "unknown_codec";
 }
 
+#if !AV_MODULE_CHECK(LIBAVFILTER, 2, 22, 0, 79, 100) //FF_API_AVFILTERPAD_PUBLIC
+const char *avfilter_pad_get_name(const AVFilterPad *pads, int pad_idx)
+{
+    return pads[pad_idx].name;
+}
+
+enum AVMediaType avfilter_pad_get_type(const AVFilterPad *pads, int pad_idx)
+{
+    return pads[pad_idx].type;
+}
+#endif

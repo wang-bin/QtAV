@@ -168,7 +168,7 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
     }
     if (!can_hwaccel)
         goto end;
-    for (size_t i = 0; pi_fmt[i] != PIX_FMT_NONE; i++) {
+    for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
         if (vaPixelFormat() != pi_fmt[i])
             continue;
         /* We try to call setup when possible to detect errors when possible (later is too late) */
