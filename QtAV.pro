@@ -34,8 +34,6 @@ OTHER_FILES += \
 	templates/derived.h templates/derived.cpp templates/derived_p.h \
 	templates/final.h templates/final.cpp
 #OTHER_FILES += config.test/mktest.sh
-
-
 EssentialDepends = avutil avcodec avformat swscale
 OptionalDepends = \
     swresample \
@@ -66,6 +64,7 @@ win32 {
 }
 unix {
   !no-pulseaudio: OptionalDepends *= pulseaudio
+  !no-x11:!no-widgets: OptionalDepends *= x11
   !no-xv:!no-widgets: OptionalDepends *= xv
   !no-vaapi: OptionalDepends *= vaapi
   !no-cedarv: OptionalDepends *= libcedarv
@@ -77,10 +76,7 @@ runConfigTests()
 !config_avresample:!config_swresample {
   error("libavresample or libswresample is required. Setup your environment correctly then delete $$BUILD_DIR/.qmake.conf and run qmake again")
 }
-
-
 PACKAGE_VERSION = $$QTAV_VERSION
 PACKAGE_NAME= QtAV
-
 include(pack.pri)
 #packageSet($$QTAV_VERSION, QtAV)

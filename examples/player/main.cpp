@@ -126,7 +126,8 @@ int main(int argc, char *argv[])
     }
     qDebug("vo: %s", vo.toUtf8().constData());
     vo = vo.toLower();
-    if (vo != QLatin1String("opengl") && vo != QLatin1String("gl") && vo != QLatin1String("d2d") && vo != QLatin1String("gdi") && vo != QLatin1String("xv") && vo != QLatin1String("qt")) {
+    if (vo != QLatin1String("opengl") && vo != QLatin1String("gl") && vo != QLatin1String("d2d") && vo != QLatin1String("gdi")
+            && vo != QLatin1String("xv") && vo != QLatin1String("x11") && vo != QLatin1String("qt")) {
 #ifndef QT_NO_OPENGL
 #ifdef Q_OS_ANDROID
         vo = "opengl"; // qglwidget is not suitable for android
@@ -153,6 +154,7 @@ int main(int argc, char *argv[])
     { "d2d", VideoRendererId_Direct2D },
     { "gdi", VideoRendererId_GDI },
     { "xv", VideoRendererId_XV },
+    { "x11", VideoRendererId_X11 },
     { "qt", VideoRendererId_Widget },
     { 0, 0 }
     };
@@ -162,29 +164,19 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    VideoOutput *renderer = new VideoOutput(vid); //or VideoRenderer
-    if (!renderer) {
-        QMessageBox::critical(0, QString::fromLatin1("QtAV"), QString::fromLatin1("vo '%1' not supported").arg(vo));
-        return 1;
-    }
-    //renderer->scaleInRenderer(false);
-    renderer->setOutAspectRatioMode(VideoRenderer::VideoAspectRatio);
-
     MainWindow window;
+    window.setProperty("rendererId", vid);
+    window.show();
+    window.setWindowTitle(title);
     AppEventFilter ae(&window);
     qApp->installEventFilter(&ae);
 
-    window.show();
-    window.setWindowTitle(title);
-    window.setRenderer(renderer);
-    int w = renderer->widget()->width();
-    int h = renderer->widget()->width()*9/16;
     int x = window.x();
     int y = window.y();
     op = options.option(QString::fromLatin1("width"));
-    w = op.value().toInt();
+    int w = op.value().toInt();
     op = options.option(QString::fromLatin1("height"));
-    h = op.value().toInt();
+    int h = op.value().toInt();
     op = options.option(QString::fromLatin1("x"));
     if (op.isSet())
         x = op.value().toInt();

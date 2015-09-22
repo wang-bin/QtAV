@@ -50,7 +50,7 @@ OTHER_FILES += $$RC_FILE $$QTAVSRC/QtAV.svg
 
 win32 {
 #dynamicgl: __impl__GetDC __impl_ReleaseDC
-    LIBS += -luser32
+    LIBS *= -luser32
 }
 
 SDK_HEADERS *= \
@@ -94,9 +94,8 @@ config_gl {
 config_gdiplus {
   DEFINES *= QTAV_HAVE_GDIPLUS=1
   SOURCES += $$QTAVSRC/output/video/GDIRenderer.cpp
-  LIBS += -lgdiplus -lgdi32
+  LIBS *= -lgdiplus -lgdi32
 }
-
 config_direct2d {
   DEFINES *= QTAV_HAVE_DIRECT2D=1
   !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
@@ -106,7 +105,12 @@ config_direct2d {
 config_xv {
   DEFINES *= QTAV_HAVE_XV=1
   SOURCES += $$QTAVSRC/output/video/XVRenderer.cpp
-  LIBS += -lXv -lX11 -lXext
+  LIBS *= -lXv -lX11 -lXext
+}
+config_x11 {
+  DEFINES *= QTAV_HAVE_X11=1
+  SOURCES *= X11Renderer.cpp
+  LIBS *= -lX11
 }
 # QtAV/private/* may be used by developers to extend QtAV features without changing QtAV library
 # headers not in QtAV/ and it's subdirs are used only by QtAV internally
@@ -141,7 +145,6 @@ mac {
        QMAKE_CXXFLAGS += -fconstant-cfstrings
    }
 }
-
 
 unix:!android:!mac {
 #debian

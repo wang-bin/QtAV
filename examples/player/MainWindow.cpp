@@ -98,7 +98,6 @@ MainWindow::MainWindow(QWidget *parent) :
   , mRepeateMax(0)
   , mpPlayer(0)
   , mpRenderer(0)
-  , mpTempRenderer(0)
   , mpVideoFilter(0)
   , mpAudioFilter(0)
   , mpStatisticsView(0)
@@ -145,6 +144,11 @@ void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
+    VideoRenderer *vo = VideoRenderer::create((VideoRendererId)property("rendererId").toInt());
+    if (!vo || !vo->isAvailable() || !vo->widget()) {
+        QMessageBox::critical(0, QString::fromLatin1("QtAV"), tr("Video renderer is ") + tr("not availabe on your platform!"));
+    }
+    setRenderer(vo);
     //mpSubtitle->installTo(mpPlayer); //filter on frame
     mpSubtitle->setPlayer(mpPlayer);
     //mpPlayer->setAudioOutput(AudioOutputFactory::create(AudioOutputId_OpenAL));
@@ -492,6 +496,7 @@ void MainWindow::setupUi()
     subMenu->addAction(QString::fromLatin1("GDI+"))->setData(VideoRendererId_GDI);
     subMenu->addAction(QString::fromLatin1("Direct2D"))->setData(VideoRendererId_Direct2D);
     subMenu->addAction(QString::fromLatin1("XV"))->setData(VideoRendererId_XV);
+    subMenu->addAction(QString::fromLatin1("X11"))->setData(VideoRendererId_X11);
     mVOActions = subMenu->actions();
     foreach(QAction* action, subMenu->actions()) {
         action->setCheckable(true);
@@ -603,7 +608,6 @@ void MainWindow::changeVO(QAction *action)
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
     VideoRenderer *vo = VideoRenderer::create(vid);
     if (vo && vo->isAvailable()) {
-
         setRenderer(vo);
     } else {
         action->toggle(); //check state changes if clicked
@@ -614,10 +618,6 @@ void MainWindow::changeVO(QAction *action)
 
 void MainWindow::processPendingActions()
 {
-    if (!mpTempRenderer)
-        return;
-    setRenderer(mpTempRenderer);
-    mpTempRenderer = 0;
     if (mHasPendingPlay) {
         mHasPendingPlay = false;
         play(mFile);
@@ -631,10 +631,6 @@ void MainWindow::setAudioBackends(const QStringList& backends)
 
 void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 {
-    if (!mIsReady) {
-        mpTempRenderer = renderer;
-        return;
-    }
     if (!renderer)
         return;
     mpOSD->uninstall();

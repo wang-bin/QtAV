@@ -53,6 +53,7 @@ extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_GLWidget;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_GDI;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_Direct2D;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_XV;
+extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_X11;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_GLWidget2;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_OpenGLWidget;
 //popup a dialog

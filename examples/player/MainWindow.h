@@ -184,7 +184,7 @@ private:
 
     QtAV::AVClock *mpClock;
     QtAV::AVPlayer *mpPlayer;
-    QtAV::VideoRenderer *mpRenderer, *mpTempRenderer;
+    QtAV::VideoRenderer *mpRenderer;
     QtAV::LibAVFilterVideo *mpVideoFilter;
     QtAV::LibAVFilterAudio *mpAudioFilter;
     QString mFile;

@@ -16,13 +16,11 @@ NAME=$1
 help_post $NAME
 mkdir -p $NAME
 cat >$NAME/${NAME}.pro <<EOF
-CONFIG -= qt app_bundle
-CONFIG += console
-
-SOURCES += main.cpp
-
-LIBS += -l$NAME
 include(../paths.pri)
+
+TARGET = ${NAME}_test
+SOURCES += main.cpp
+LIBS += -l$NAME
 EOF
 
 YEAR=`date +%Y`
@@ -30,6 +28,9 @@ COPY=../templates/COPYRIGHT.h
 cat $COPY | sed "s/%YEAR%/$YEAR/g" > $NAME/main.cpp
 cat >> $NAME/main.cpp <<EOF
 #include <${NAME}.h>
+
+void test() {
+}
 EOF
 
 echo "test for $NAME created"
