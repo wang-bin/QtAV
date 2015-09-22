@@ -448,9 +448,19 @@ bool VideoDecoderVAAPIPrivate::open()
             if (!VAAPI_DRM::isLoaded())
                 continue;
             qDebug("vaGetDisplay DRM...............");
-// get drm use udev: https://gitorious.org/hwdecode-demos/hwdecode-demos/commit/d591cf14b83bedc8a5fa9f2fcb53d279e2f76d7f?diffmode=sidebyside
             // try drmOpen()?
-            drm_fd = ::open("/dev/dri/card0", O_RDWR);
+            static const char* drm_dev[] = {
+                "/dev/dri/renderD128", // DRM Render-Nodes
+                "/dev/dri/card0",
+                NULL
+            };
+            for (int i = 0; drm_dev[i]; ++i) {
+                drm_fd = ::open(drm_dev[i], O_RDWR);
+                if (drm_fd < 0)
+                    continue;
+                qDebug("using drm device: %s", drm_dev[i]); //drmGetDeviceNameFromFd
+                break;
+            }
             if(drm_fd == -1) {
                 qWarning("Could not access rendering device");
                 continue;
