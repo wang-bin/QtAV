@@ -353,14 +353,14 @@ XVRenderer::XVRenderer(QWidget *parent, Qt::WindowFlags f):
 
 bool XVRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    // TODO: rgb
+    // TODO: rgb use copyplane
     return pixfmt == VideoFormat::Format_YUV420P || pixfmt == VideoFormat::Format_YV12
             || pixfmt == VideoFormat::Format_NV12|| pixfmt == VideoFormat::Format_NV21
             || pixfmt == VideoFormat::Format_UYVY || pixfmt == VideoFormat::Format_YUYV
             ;
 }
 
-static void CopyPlane(quint8 *dst, size_t dst_pitch,
+void CopyPlane(quint8 *dst, size_t dst_pitch,
                       const quint8 *src, size_t src_pitch,
                       unsigned width, unsigned height)
 {
@@ -441,7 +441,6 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
         d.video_frame = frame;
     else // FIXME: not work
         d.video_frame = frame.to(frame.pixelFormat()); // assume frame format is supported
-#if 1
     int nb_planes = d.video_frame.planeCount();
     QVector<size_t> src_linesize(nb_planes);
     QVector<const quint8*> src(nb_planes);
@@ -449,7 +448,6 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
         src[i] = d.video_frame.constBits(i);
         src_linesize[i] = d.video_frame.bytesPerLine(i);
     }
-#endif
     //swap UV
     quint8* dst[] = {
         (quint8*)(d.xv_image->data + d.xv_image->offsets[0]),
@@ -461,6 +459,7 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
         (size_t)d.xv_image->pitches[2],
         (size_t)d.xv_image->pitches[1]
     };
+    // TODO: if not using shm and linesizes match, no copy is required. but seems no benefit
     switch (d.video_frame.pixelFormat()) {
     case VideoFormat::Format_YUV420P:
     case VideoFormat::Format_YV12:

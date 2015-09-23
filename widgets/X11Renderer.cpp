@@ -18,7 +18,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
+//TODO: ROI
 /*
  * X11 headers define 'Bool' type which is used in qmetatype.h. we must include X11 files at last, i.e. X11Renderer_p.h. otherwise compile error
 */
@@ -44,8 +44,8 @@ class X11Renderer: public QWidget, public VideoRenderer
     DPTR_DECLARE_PRIVATE(X11Renderer)
 public:
     X11Renderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual VideoRendererId id() const Q_DECL_OVERRIDE;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
+    VideoRendererId id() const Q_DECL_OVERRIDE;
+    bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
@@ -53,24 +53,24 @@ public:
      * If paintEngine != 0, the window will flicker when drawing without QPainter.
      * Make sure that paintEngine returns 0 to avoid flicking.
      */
-    virtual QPaintEngine* paintEngine() const Q_DECL_OVERRIDE;
+    QPaintEngine* paintEngine() const Q_DECL_OVERRIDE;
     /*http://lists.trolltech.com/qt4-preview-feedback/2005-04/thread00609-0.html
      * true: paintEngine is QPainter. Painting with QPainter support double buffer
      * false: no double buffer, should reimplement paintEngine() to return 0 to avoid flicker
      */
-    virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
+    QWidget* widget() Q_DECL_OVERRIDE { return this; }
 protected:
-    virtual bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
-    virtual bool needUpdateBackground() const Q_DECL_OVERRIDE;
+    bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
+    bool needUpdateBackground() const Q_DECL_OVERRIDE;
     //called in paintEvent before drawFrame() when required
-    virtual void drawBackground() Q_DECL_OVERRIDE;
-    virtual bool needDrawFrame() const Q_DECL_OVERRIDE;
+    void drawBackground() Q_DECL_OVERRIDE;
+    bool needDrawFrame() const Q_DECL_OVERRIDE;
     //draw the current frame using the current paint engine. called by paintEvent()
-    virtual void drawFrame() Q_DECL_OVERRIDE;
-    virtual void paintEvent(QPaintEvent *) Q_DECL_OVERRIDE;
-    virtual void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
+    void drawFrame() Q_DECL_OVERRIDE;
+    void paintEvent(QPaintEvent *) Q_DECL_OVERRIDE;
+    void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
     //stay on top will change parent, hide then show(windows). we need GetDC() again
-    virtual void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
+    void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
 };
 typedef X11Renderer VideoRendererX11;
 extern VideoRendererId VideoRendererId_X11;
@@ -151,8 +151,6 @@ public:
         use_shm(true)
       , num_adaptors(0)
       , ximage(NULL)
-      , ximage_width(0)
-      , ximage_height(0)
       , gc(NULL)
       , pixfmt(VideoFormat::Format_Invalid)
     {
@@ -184,7 +182,7 @@ public:
         } else {
             ximg = XGetImage(display, DefaultRootWindow(display), 0, 0, 1, 1, AllPlanes, ZPixmap);
         }
-        ximage_depth = depth;
+        int ximage_depth = depth;
         unsigned int mask = 0;
         if (ximg) {
             bpp = ximg->bits_per_pixel;
@@ -213,11 +211,12 @@ public:
                 shmdt(shm.shmaddr);
             }
         }
-        if (ximage)
+        if (ximage) {
+            if (!use_shm)
+                ximage->data = NULL; // we point it to our own data
             XDestroyImage(ximage);
+        }
         ximage = NULL;
-        ximage_width = 0;
-        ximage_height = 0;
     }
     bool prepareDeviceResource() {
         if (gc) {
@@ -235,16 +234,14 @@ public:
     }
 
     bool ensureImage(int w, int h) {
-        if (ximage_width == w && ximage_height == h && ximage)
+        if (ximage && ximage->width == w && ximage->height == h)
             return true;
         destroyX11Image();
-        ximage_width = w;
-        ximage_height = h;
         use_shm = XShmQueryExtension(display);
-        qDebug("use xv shm: %d", use_shm);
+        qDebug("use x11 shm: %d", use_shm);
         if (!use_shm)
             goto no_shm;
-        ximage = XShmCreateImage(display, vinfo.visual, depth, ZPixmap, NULL, &shm, ximage_width, ximage_height);
+        ximage = XShmCreateImage(display, vinfo.visual, depth, ZPixmap, NULL, &shm, w, h);
         if (!ximage) {
             qWarning("XShmCreateImage error");
             goto no_shm;
@@ -272,16 +269,14 @@ public:
         pixfmt = pixelFormat(ximage);
         return true;
 no_shm:
-        ximage = XCreateImage(display, vinfo.visual, depth, ZPixmap, 0, NULL, ximage_width, ximage_height, 8, 0);
+        ximage = XCreateImage(display, vinfo.visual, depth, ZPixmap, 0, NULL, w, h, 8, 0);
         if (!ximage)
             return false;
-        // malloc if use copy (e.g. shm)
-        // TODO: align 16?
-        ximage->data = NULL;// (char*)calloc(1, ximage->bytes_per_line*ximage->height);
-        if (!ximage->data)
-            return false;
-        XSync(display, False);
         pixfmt = pixelFormat(ximage);
+        ximage->data = NULL;
+        XSync(display, False);
+        // TODO: align 16 or?
+        ximage_data.resize(ximage->bytes_per_line*ximage->height);
         return true;
     }
 
@@ -292,12 +287,11 @@ no_shm:
     XVisualInfo vinfo;
     Display *display;
     XImage *ximage;
-    int current_buf;
-    int ximage_depth;
-    int ximage_width, ximage_height;
     GC gc;
     XShmSegmentInfo shm;
     VideoFormat::PixelFormat pixfmt;
+    // if the incoming image pitchs are different from ximage ones, use ximage pitchs and copy data in ximage_data
+    QByteArray ximage_data;
 };
 
 X11Renderer::X11Renderer(QWidget *parent, Qt::WindowFlags f):
@@ -324,33 +318,45 @@ bool X11Renderer::isSupported(VideoFormat::PixelFormat pixfmt) const
     // if always return true, then convert to x11 format and scale in receiveFrame() only once. no need to convert format first then scale
     return true;//pixfmt == d_func().pixfmt && d_func().pixfmt != VideoFormat::Format_Invalid;
 }
-
+extern void CopyPlane(quint8 *dst, size_t dst_pitch, const quint8 *src, size_t src_pitch, unsigned width, unsigned height);
 bool X11Renderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(X11Renderer);
     if (frame.isValid()) {
-        if (!d.ensureImage(frame.width(), frame.height()))
+        if (!d.ensureImage(videoRect().width(), videoRect().height())) // we can also call it in onResizeRenderer, onSetOutAspectXXX
             return false;
         if (preferredPixelFormat() != d.pixfmt) {
             qDebug() << "x11 preferred pixel format: " << d.pixfmt;
             setPreferredPixelFormat(d.pixfmt);
         }
     }
+    bool bad_pitch = false;
     if (frame.constBits(0)) {
-        if (frame.pixelFormat() != d.pixfmt)
-            d.video_frame = frame.to(d.pixfmt);
+        if (frame.pixelFormat() != d.pixfmt || frame.width() != d.ximage->width || frame.height() != d.ximage->height)
+            d.video_frame = frame.to(d.pixfmt, QSize(d.ximage->width, d.ximage->height));
         else
             d.video_frame = frame;
-        if (d.use_shm) {
-            memcpy(d.ximage->data, d.video_frame.constBits(0), d.ximage->bytes_per_line*d.ximage->height);
-        } else {
-            d.ximage->data = (char*)d.video_frame.constBits(0);
+        bad_pitch = d.video_frame.bytesPerLine(0) != d.ximage->bytes_per_line;
+        // TODO: check pitch. or set alignment in sws?
+        if (!bad_pitch) {
+            if (d.use_shm) {
+                memcpy(d.ximage->data, d.video_frame.constBits(0), d.ximage->bytes_per_line*d.ximage->height);
+            } else {
+                d.ximage->data = (char*)d.video_frame.constBits(0);
+            }
         }
     } else {
         if (!d.video_frame.map(HostMemorySurface, d.ximage)) { //check pixel format and scale to ximage size&line_size
-            d.video_frame = frame.to(d.pixfmt);
-            d.ximage->data = (char*)d.video_frame.constBits(0);
+            d.video_frame = frame.to(d.pixfmt, QSize(d.ximage->width, d.ximage->height));
+            bad_pitch = d.video_frame.bytesPerLine(0) != d.ximage->bytes_per_line;
+            if (!bad_pitch)
+                d.ximage->data = (char*)d.video_frame.constBits(0);
         }
+    }
+    if (bad_pitch) {
+        qDebug("bad pitch: %d - %d", d.ximage->bytes_per_line, d.video_frame.bytesPerLine(0));
+        CopyPlane((quint8*)d.ximage_data.constData(), d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
+        d.ximage->data = (char*)d.ximage_data.constData();
     }
     update();
     return true;
