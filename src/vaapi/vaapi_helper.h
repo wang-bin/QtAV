@@ -24,7 +24,6 @@
 
 #include <assert.h>
 #include <va/va.h>
-
 #include <QtCore/QLibrary>
 #include <QtCore/QSharedPointer>
 //TODO: check glx or gles used by Qt. then use va-gl or va-egl
@@ -66,6 +65,8 @@ do { \
 } while(0);
 
 namespace vaapi {
+const char *profileName(VAProfile profile);
+
 class dll_helper {
 public:
     dll_helper(const QString& soname, int version = -1);

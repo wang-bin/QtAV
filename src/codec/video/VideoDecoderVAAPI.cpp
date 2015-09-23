@@ -105,7 +105,10 @@ static const  codec_profile_t va_profiles[] = {
     { QTAV_CODEC_ID(H264), FF_PROFILE_H264_HIGH, VAProfileH264High },
     { QTAV_CODEC_ID(H264), FF_PROFILE_H264_MAIN, VAProfileH264Main },
     { QTAV_CODEC_ID(H264), FF_PROFILE_H264_BASELINE, VAProfileH264Baseline },
+    { QTAV_CODEC_ID(H264), FF_PROFILE_H264_BASELINE, VAProfileH264ConstrainedBaseline },
+    { QTAV_CODEC_ID(H264), FF_PROFILE_H264_BASELINE, VAProfileH264Main },
     { QTAV_CODEC_ID(H264), FF_PROFILE_H264_CONSTRAINED_BASELINE, VAProfileH264ConstrainedBaseline }, //mpv force main
+    { QTAV_CODEC_ID(H264), FF_PROFILE_H264_CONSTRAINED_BASELINE, VAProfileH264Baseline }, //yami
     { QTAV_CODEC_ID(H264), FF_PROFILE_H264_CONSTRAINED_BASELINE, VAProfileH264Main },
     { QTAV_CODEC_ID(VC1), FF_PROFILE_VC1_ADVANCED, VAProfileVC1Advanced },
     { QTAV_CODEC_ID(VC1), FF_PROFILE_VC1_MAIN, VAProfileVC1Main },
@@ -471,7 +474,6 @@ bool VideoDecoderVAAPIPrivate::open()
             qDebug("vaGetDisplay X11...............");
             if (!VAAPI_X11::isLoaded())
                 continue;
-            // TODO: lock
             if (!XInitThreads()) {
                 qWarning("XInitThreads failed!");
                 continue;
@@ -488,7 +490,6 @@ bool VideoDecoderVAAPIPrivate::open()
 #ifndef QT_NO_OPENGL
             if (!VAAPI_GLX::isLoaded())
                 continue;
-            // TODO: lock
             if (!XInitThreads()) {
                 qWarning("XInitThreads failed!");
                 continue;
@@ -553,14 +554,14 @@ bool VideoDecoderVAAPIPrivate::open()
     QVector<VAProfile> supported_profiles(nb_profiles, VAProfileNone);
     VA_ENSURE_TRUE(vaQueryConfigProfiles(disp, supported_profiles.data(), &nb_profiles), false);
     while (pe && !isProfileSupportedByRuntime(supported_profiles.constData(), nb_profiles, pe->va_profile)) {
-        qDebug("Codec or profile %d is not directly supported by the hardware. Checking alternative profiles", pe->va_profile);
+        qDebug("Codec or profile %s %d is not directly supported by the hardware. Checking alternative profiles", vaapi::profileName(pe->va_profile), pe->va_profile);
         pe = findProfileEntry(codec_ctx->codec_id, codec_ctx->profile, pe);
     }
     if (!pe) {
-        qDebug("Codec or profile is not directly supported by the hardware.");
+        qDebug("Codec or profile is not supported by the hardware.");
         return false;
     }
-    qDebug("using profile %d: %s, %s",  pe->va_profile, avcodec_get_name(codec_ctx->codec_id), getProfileName(pe->codec, pe->profile));
+    qDebug("using profile %s (%d)", vaapi::profileName(pe->va_profile), pe->va_profile);
     /* Create a VA configuration */
     VAConfigAttrib attrib;
     memset(&attrib, 0, sizeof(attrib));
@@ -797,7 +798,6 @@ bool VideoDecoderVAAPIPrivate::getBuffer(void **opaque, uint8_t **data)
     surfaces_used.push_back(*it);
     // TODO: why QList may erase an invalid iterator(first iterator)at the same position?
     surfaces_free.erase(it); //ref not increased, but can not be used.
-//FIXME: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
     *data = (uint8_t*)(quintptr)id;
     *opaque = s;
     return true;
