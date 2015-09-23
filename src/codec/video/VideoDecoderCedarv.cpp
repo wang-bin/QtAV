@@ -508,7 +508,7 @@ VideoFrame VideoDecoderCedarv::frame()
         d.map_c(d.cedarPicture.u, plane[1], plane[2], pitch[1], display_w_align, display_h_align/2); //vdpau use w, h/2
 
     const VideoFormat fmt(nv12 ? VideoFormat::Format_NV12 : VideoFormat::Format_YUV420P);
-    VideoFrame frame(buf, display_w_align, display_h_align, fmt);
+    VideoFrame frame(display_w_align, display_h_align, fmt, buf);
     frame.setBits(plane);
     frame.setBytesPerLine(pitch);
     frame.setTimestamp(qreal(d.cedarPicture.pts)/1000.0);

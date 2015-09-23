@@ -129,7 +129,7 @@ bool VideoDecoderFFmpegHWPrivate::prepare()
             break;
     }
     //// From vlc end
-    codec_ctx->opaque = this; //is it ok?
+    codec_ctx->opaque = this;
 
     pixfmt = codec_ctx->pix_fmt;
     get_format = codec_ctx->get_format;
@@ -305,7 +305,7 @@ VideoFrame VideoDecoderFFmpegHW::copyToFrame(const VideoFormat& fmt, int surface
             plane_ptr += pitch[i] * h[i];
             d.gpu_mem.copyFrame(src[i], dst[i], pitch[i], h[i], pitch[i]);
         }
-        frame = VideoFrame(buf, width(), height(), fmt);
+        frame = VideoFrame(width(), height(), fmt, buf);
         frame.setBits(dst);
         frame.setBytesPerLine(pitch);
     } else {

@@ -79,7 +79,7 @@ VideoFrame VideoFrame::fromGPU(const VideoFormat& fmt, int width, int height, in
             gpu_memcpy(dst[i], src[i], pitch[i]*h[i]);
 
         }
-        frame = VideoFrame(buf, width, height, fmt);
+        frame = VideoFrame(width, height, fmt, buf);
         frame.setBits(dst);
         frame.setBytesPerLine(pitch);
     } else {
@@ -139,9 +139,11 @@ VideoFrame::VideoFrame()
 {
 }
 
-VideoFrame::VideoFrame(int width, int height, const VideoFormat &format)
+VideoFrame::VideoFrame(int width, int height, const VideoFormat &format, const QByteArray& data)
     : Frame(new VideoFramePrivate(width, height, format))
 {
+    Q_D(VideoFrame);
+    d->data = data;
 }
 
 VideoFrame::VideoFrame(const QByteArray& data, int width, int height, const VideoFormat &format)
@@ -221,7 +223,7 @@ VideoFrame VideoFrame::clone() const
 
     QByteArray buf(bytes, 0);
     char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
-    VideoFrame f(buf, width(), height(), d->format);
+    VideoFrame f(width(), height(), d->format, buf);
     const int nb_planes = d->format.planeCount();
     for (int i = 0; i < nb_planes; ++i) {
         f.setBits((quint8*)dst, i);
@@ -386,24 +388,24 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
         }
         return VideoFrame();
     }
-    if (fmt.pixelFormatFFmpeg() == pixelFormatFFmpeg())
+    const int w = dstSize.width() > 0 ? dstSize.width() : width();
+    const int h = dstSize.height() > 0 ? dstSize.height() : height();
+    if (fmt.pixelFormatFFmpeg() == pixelFormatFFmpeg()
+            && w == width() && h == height()
+            // TODO: roi check.
+            )
         return *this;
     Q_D(const VideoFrame);
     ImageConverterSWS conv;
     conv.setInFormat(pixelFormatFFmpeg());
     conv.setOutFormat(fmt.pixelFormatFFmpeg());
     conv.setInSize(width(), height());
-    int w = width(), h = height();
-    if (dstSize.width() > 0)
-        w = dstSize.width();
-    if (dstSize.height() > 0)
-        h = dstSize.height();
     conv.setOutSize(w, h);
     if (!conv.convert(d->planes.constData(), d->line_sizes.constData())) {
         qWarning() << "VideoFrame::to error: " << format() << "=>" << fmt;
         return VideoFrame();
     }
-    VideoFrame f(conv.outData(), w, h, fmt);
+    VideoFrame f(w, h, fmt, conv.outData());
     f.setBits(conv.outPlanes());
     f.setBytesPerLine(conv.outLineSizes());
     if (fmt.isRGB()) {
@@ -546,7 +548,7 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
         return VideoFrame();
     }
     const VideoFormat fmt(fffmt);
-    VideoFrame f(m_cvt->outData(), frame.width(), frame.height(), fmt);
+    VideoFrame f(frame.width(), frame.height(), fmt, m_cvt->outData());
     f.setBits(m_cvt->outPlanes());
     f.setBytesPerLine(m_cvt->outLineSizes());
     f.setTimestamp(frame.timestamp());

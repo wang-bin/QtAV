@@ -45,15 +45,15 @@ public:
      * \param src CPU accessible address of frame planes on GPU. src[0] must be valid. src[i>0] will be filled depending on pixel format, pitch and surface_h if it's NULL.
      * \param pitch plane pitch on GPU. pitch[0] must be valid. pitch[i>0] will be filled depending on pixel format, pitch[0] and surface_h if it's NULL.
      * \param optimized try to use SIMD to copy from GPU. otherwise use memcpy
-     * \param swapUV
+     * \param swapUV it's required if u/v src are null
      */
     static VideoFrame fromGPU(const VideoFormat& fmt, int width, int height, int surface_h, quint8 *src[], int pitch[], bool optimized = true, bool swapUV = false);
 
     VideoFrame();
-    //must set planes and linesize manually
-    VideoFrame(int width, int height, const VideoFormat& format);
+    //must set planes and linesize manually if data is empty
+    VideoFrame(int width, int height, const VideoFormat& format, const QByteArray& data = QByteArray());
     //set planes and linesize manually or call init
-    VideoFrame(const QByteArray& data, int width, int height, const VideoFormat& format);
+    QTAV_DEPRECATED VideoFrame(const QByteArray& data, int width, int height, const VideoFormat& format);
     VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat& format);
     VideoFrame(const QImage& image); // does not copy the image data
     VideoFrame(const VideoFrame &other);
