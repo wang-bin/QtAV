@@ -115,11 +115,15 @@ config_avdevice { #may depends on avfilter
         LIBS *= -lgdi32 -loleaut32 -lshlwapi #shlwapi: desktop >= xp only
       } else:linux {
         LIBS *= -lXv #-lX11 -lxcb -lxcb-shm -lxcb-xfixes -lxcb-render -lxcb-shape
-      } else:mac:!ios { # static ffmpeg
-        LIBS += -framework Foundation -framework QTKit -framework CoreMedia -framework QuartzCore -framework CoreGraphics \
-                -framework AVFoundation
+      } else:mac { # static ffmpeg
+        LIBS += -framework Foundation -framework CoreMedia -framework QuartzCore -framework CoreGraphics -framework CoreVideo
+        ios {
+          LIBS += -framework AVFoundation
+        } else {
+          LIBS += -framework QTKit
       # assume avdevice targets to the same version as Qt and always >= 10.6
-        !isEqual(QMAKE_MACOSX_DEPLOYMENT_TARGET, 10.6): LIBS += -framework AVFoundation
+         !isEqual(QMAKE_MACOSX_DEPLOYMENT_TARGET, 10.6): LIBS += -framework AVFoundation
+        }
       }
     }
 }
@@ -254,7 +258,7 @@ config_vda {
     LIBS += -framework VideoDecodeAcceleration -framework CoreVideo -framework CoreFoundation \
             -framework IOSurface
 }
-config_videotoolbox {
+config_videotoolbox:!ios {
   DEFINES *= QTAV_HAVE_VIDEOTOOLBOX=1
   SOURCES += codec/video/VideoDecoderVideoToolbox.cpp
   LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia \
