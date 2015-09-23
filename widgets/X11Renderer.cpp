@@ -18,7 +18,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-//TODO: ROI
+//TODO: ROI, rotation. slow scale because of alignment? no xsync for shm
 /*
  * X11 headers define 'Bool' type which is used in qmetatype.h. we must include X11 files at last, i.e. X11Renderer_p.h. otherwise compile error
 */
@@ -322,13 +322,17 @@ extern void CopyPlane(quint8 *dst, size_t dst_pitch, const quint8 *src, size_t s
 bool X11Renderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(X11Renderer);
-    if (frame.isValid()) {
-        if (!d.ensureImage(videoRect().width(), videoRect().height())) // we can also call it in onResizeRenderer, onSetOutAspectXXX
-            return false;
-        if (preferredPixelFormat() != d.pixfmt) {
-            qDebug() << "x11 preferred pixel format: " << d.pixfmt;
-            setPreferredPixelFormat(d.pixfmt);
-        }
+    if (!frame.isValid()) {
+        d.update_background = true;
+        d.video_frame = VideoFrame(); // fill background
+        update();
+        return true;
+    }
+    if (!d.ensureImage(videoRect().width(), videoRect().height())) // we can also call it in onResizeRenderer, onSetOutAspectXXX
+        return false;
+    if (preferredPixelFormat() != d.pixfmt) {
+        qDebug() << "x11 preferred pixel format: " << d.pixfmt;
+        setPreferredPixelFormat(d.pixfmt);
     }
     bool bad_pitch = false;
     if (frame.constBits(0)) {

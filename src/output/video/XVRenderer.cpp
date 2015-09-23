@@ -433,10 +433,14 @@ void CopyFromYv12_2(quint8 *dst[], size_t dst_pitch[],
 bool XVRenderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(XVRenderer);
-    if (frame.isValid()) {
-        if (!d.ensureImage(frame.width(), frame.height(), frame.format().pixelFormat()))
-            return false;
+    if (!frame.isValid()) {
+        d.update_background = true;
+        d.video_frame = VideoFrame(); // fill background
+        update();
+        return true;
     }
+    if (!d.ensureImage(frame.width(), frame.height(), frame.format().pixelFormat()))
+        return false;
     if (frame.constBits(0))
         d.video_frame = frame;
     else // FIXME: not work
