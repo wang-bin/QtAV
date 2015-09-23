@@ -56,6 +56,7 @@ static QtAV::LogLevel gLogLevel = QtAV::LogAll;
 #endif
 static bool gLogLevelSet = false;
 bool isLogLevelSet() { return gLogLevelSet;}
+static int gAVLogLevel = AV_LOG_INFO;
 } //namespace Internal
 
 //TODO: auto add new depend libraries information
@@ -221,7 +222,7 @@ void setFFmpegLogHandler(void (*callback)(void *, int, const char *, va_list))
 static void qtav_ffmpeg_log_callback(void* ctx, int level,const char* fmt, va_list vl)
 {
     // AV_LOG_DEBUG is used by ffmpeg developers
-    if (level > AV_LOG_VERBOSE)
+    if (level > Internal::gAVLogLevel)
         return;
     AVClass *c = ctx ? *(AVClass**)ctx : 0;
     QString qmsg = QString().sprintf("[FFmpeg:%s] ", c ? c->item_name(ctx) : "?") + QString().vsprintf(fmt, vl);
@@ -330,23 +331,26 @@ public:
         bool ok = false;
         const int level = env.toInt(&ok);
         if ((ok && level == 0) || env == "off" || env == "quiet") {
-            av_log_set_level(AV_LOG_QUIET);
+            Internal::gAVLogLevel = AV_LOG_QUIET;
             setFFmpegLogHandler(0);
         }
         else if (env == "panic")
-            av_log_set_level(AV_LOG_PANIC);
+            Internal::gAVLogLevel = AV_LOG_PANIC;
         else if (env == "fatal")
-            av_log_set_level(AV_LOG_FATAL);
+            Internal::gAVLogLevel = AV_LOG_FATAL;
         else if (env == "error")
-            av_log_set_level(AV_LOG_ERROR);
+            Internal::gAVLogLevel = AV_LOG_ERROR;
         else if (env.startsWith("warn"))
-            av_log_set_level(AV_LOG_WARNING);
+            Internal::gAVLogLevel = AV_LOG_WARNING;
         else if (env == "info")
-            av_log_set_level(AV_LOG_INFO);
+            Internal::gAVLogLevel = AV_LOG_INFO;
         else if (env == "verbose")
-            av_log_set_level(AV_LOG_VERBOSE);
+            Internal::gAVLogLevel = AV_LOG_VERBOSE;
         else if (env == "debug")
-            av_log_set_level(AV_LOG_DEBUG);
+            Internal::gAVLogLevel = AV_LOG_DEBUG;
+        else
+            Internal::gAVLogLevel = AV_LOG_INFO;
+        av_log_set_level(Internal::gAVLogLevel);
     }
 };
 InitFFmpegLog fflog;
