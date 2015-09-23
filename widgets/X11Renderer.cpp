@@ -35,7 +35,7 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
 //#include "QtAV/private/factory.h"
-
+//scale: http://www.opensource.apple.com/source/X11apps/X11apps-14/xmag/xmag-X11R7.0-1.0.1/Scale.c
 namespace QtAV {
 class X11RendererPrivate;
 class X11Renderer: public QWidget, public VideoRenderer
@@ -153,6 +153,7 @@ public:
       , ximage(NULL)
       , ximage_width(0)
       , ximage_height(0)
+      , gc(NULL)
       , pixfmt(VideoFormat::Format_Invalid)
     {
         XInitThreads();
@@ -219,6 +220,10 @@ public:
         ximage_height = 0;
     }
     bool prepareDeviceResource() {
+        if (gc) {
+            XFreeGC(display, gc);
+            gc = 0;
+        }
         gc = XCreateGC(display, q_func().winId(), 0, 0); //DefaultRootWindow
         if (!gc) {
             available = false;
@@ -229,7 +234,7 @@ public:
         return true;
     }
 
-    bool prepareImage(int w, int h) {
+    bool ensureImage(int w, int h) {
         if (ximage_width == w && ximage_height == h && ximage)
             return true;
         destroyX11Image();
@@ -324,7 +329,7 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(X11Renderer);
     if (frame.isValid()) {
-        if (!d.prepareImage(frame.width(), frame.height()))
+        if (!d.ensureImage(frame.width(), frame.height()))
             return false;
         if (preferredPixelFormat() != d.pixfmt) {
             qDebug() << "x11 preferred pixel format: " << d.pixfmt;
@@ -380,8 +385,7 @@ void X11Renderer::drawBackground()
     } else {
         XFillRectangle(d.display, winId(), d.gc, 0, 0, width(), height());
     }
-    //FIXME: xv should always draw the background.
-    d.update_background = true;
+    XFlush(d.display); // apply the color
 }
 
 bool X11Renderer::needDrawFrame() const
@@ -418,7 +422,7 @@ void X11Renderer::resizeEvent(QResizeEvent *e)
     DPTR_D(X11Renderer);
     d.update_background = true;
     resizeRenderer(e->size());
-    update();
+    update(); //update background
 }
 
 void X11Renderer::showEvent(QShowEvent *event)
