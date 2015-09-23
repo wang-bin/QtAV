@@ -190,12 +190,13 @@ public:
     int planeCount() const;
     /*!
      * https://wiki.videolan.org/YUV
-     *  YUV420P: 1pix = 4Y+U+V
+     *  YUV420P: 1pix = 4Y+U+V, (4*8+8+8)/4 = 12
      */
     int bitsPerPixel() const;
+    /// nv12: 16 for uv plane
     int bitsPerPixel(int plane) const;
+    /// bgr24 is 24 not 32
     int bitsPerPixelPadded() const;
-    int bitsPerPixelPadded(int plane) const;
     int bytesPerPixel() const;
     int bytesPerPixel(int plane) const;
     /*!

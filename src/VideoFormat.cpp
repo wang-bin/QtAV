@@ -114,8 +114,9 @@ public:
             return;
         }
         planes = qMax(av_pix_fmt_count_planes(pixfmt_ff), 0);
+        bpps.reserve(planes);
+        channels.reserve(planes);
         bpps.resize(planes);
-        bpps_pad.resize(planes);
         channels.resize(planes);
         pixdesc = const_cast<AVPixFmtDescriptor*>(av_pix_fmt_desc_get(pixfmt_ff));
         if (!pixdesc)
@@ -142,7 +143,6 @@ public:
     quint8 bpp_pad;
     quint8 bpc;
     QVector<int> bpps;
-    QVector<int> bpps_pad; //TODO: is it needed?
     QVector<int> channels;
 
     AVPixFmtDescriptor *pixdesc;
@@ -153,22 +153,24 @@ private:
         bpp = 0;
         bpp_pad = 0;
         bpc = pixdesc->comp[0].depth_minus1+1;
-        int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
+        const int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
+        int steps[4];
+        memset(steps, 0, sizeof(steps));
         for (int c = 0; c < pixdesc->nb_components; c++) {
             const AVComponentDescriptor *comp = &pixdesc->comp[c];
             int s = c == 1 || c == 2 ? 0 : log2_pixels; //?
-            bpps[comp->plane] = (comp->depth_minus1 + 1) << s;
-            bpps_pad[comp->plane] = (comp->step_minus1 + 1) << s;
+            bpps[comp->plane] += (comp->depth_minus1 + 1);
+            steps[comp->plane] = (comp->step_minus1 + 1) << s;
             channels[comp->plane] += 1;
-            if(!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
-                bpps_pad[comp->plane] *= 8;
-            bpp += bpps[comp->plane];
-            bpp_pad += bpps_pad[comp->plane];
-            bpps[comp->plane] >>= s;
-            bpps_pad[comp->plane] >>= s;
+            bpp += (comp->depth_minus1 + 1) << s;
             if (comp->depth_minus1+1 != bpc)
                 bpc = 0;
         }
+        for (int i = 0; i < planes; ++i) {
+            bpp_pad += steps[i];
+        }
+        if (!(pixdesc->flags & AV_PIX_FMT_FLAG_BITSTREAM))
+            bpp_pad *= 8;
         bpp >>= log2_pixels;
         bpp_pad >>= log2_pixels;
     }
@@ -360,6 +362,7 @@ static const struct {
     // native endian formats
     // QTAV_PIX_FMT_C(RGB32) is depends on byte order, ARGB for BE, BGRA for LE
     { VideoFormat::Format_RGB32, QTAV_PIX_FMT_C(RGB32) }, //auto endian
+    // AV_PIX_FMT_BGR32_1: bgra, argb
     { VideoFormat::Format_BGR32, QTAV_PIX_FMT_C(BGR32) }, //auto endian
     { VideoFormat::Format_RGB48, QTAV_PIX_FMT_C(RGB48) },   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as big-endian
     { VideoFormat::Format_BGR48, QTAV_PIX_FMT_C(BGR48) },   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as big-endian
@@ -601,13 +604,6 @@ int VideoFormat::bitsPerPixelPadded() const
     return d->bpp_pad;
 }
 
-int VideoFormat::bitsPerPixelPadded(int plane) const
-{
-    if (plane >= d->bpps.size())
-        return 0;
-    return d->bpps_pad[plane];
-}
-
 int VideoFormat::bitsPerPixel(int plane) const
 {
     //must be a valid index position in the vector
@@ -749,10 +745,13 @@ bool VideoFormat::hasAlpha(PixelFormat pixfmt)
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug dbg, const VideoFormat &fmt)
 {
-    dbg.nospace() << "QtAV::VideoFormat(pixelFormat: " << (int)fmt.pixelFormat() << " " << fmt.name() << " has alpha: " << fmt.hasAlpha();
+    dbg.nospace() << "QtAV::VideoFormat(pixelFormat: " << (int)fmt.pixelFormat() << " " << fmt.name() << " alpha: " << fmt.hasAlpha();
     dbg.nospace() << ", channels: " << fmt.channels();
     dbg.nospace() << ", planes: " << fmt.planeCount();
-    dbg.nospace() << ", bitsPerPixel: " << fmt.bitsPerPixel();
+    dbg.nospace() << ", bpp: " << fmt.bitsPerPixel() << "/" << fmt.bitsPerPixelPadded() << " ";
+    for (int i = 0; i < fmt.planeCount(); ++i) {
+        dbg.nospace() << "-" << fmt.bitsPerPixel(i);
+    }
     dbg.nospace() << ")";
     return dbg.space();
 }
