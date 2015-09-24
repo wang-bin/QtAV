@@ -91,45 +91,7 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     if (!d.sws_ctx)
         return false;
     d.setupColorspaceDetails(false);
-#if PREPAREDATA_NO_PICTURE //for YUV420 <=> RGB
-#if 0
-    struct
-    {
-        uint8_t *data[4]; //AV_NUM_DATA_POINTERS
-        int linesize[4];  //AV_NUM_DATA_POINTERS
-    }
-#else
-    AVPicture
-#endif
-            pic_in, pic_out;
-
-    if ((AVPixelFormat)fmt_in == PIX_FMT_YUV420P) {
-        pic_in.data[0] = (uint8_t*)in;
-        pic_in.data[2] = (uint8_t*)pic_in.data[0] + (w_in * h_in);
-        pic_in.data[1] = (uint8_t*)pic_in.data[2] + (w_in * h_in) / 4;
-        pic_in.linesize[0] = w_in;
-        pic_in.linesize[1] = w_in / 2;
-        pic_in.linesize[2] = w_in / 2;
-        //pic_in.linesize[3] = 0; //not used
-    } else {
-        pic_in.data[0] = (uint8_t*)in;
-        pic_in.linesize[0] = w_in * 4; //TODO: not 0
-    }
-    if ((AVPixelFormat)fmt_out == PIX_FMT_YUV420P) {
-        pic_out.data[0] = (uint8_t*)out;
-        pic_out.data[2] = (uint8_t*)pic_out.data[0] + (w_out * h_in);
-        pic_out.data[1] = (uint8_t*)pic_out.data[2] + (w_out * h_in) / 4;
-        //pic_out.data[3] = (uint8_t*)pic_out.data[0] - 1;
-        pic_out.linesize[0] = w_out;
-        pic_out.linesize[1] = w_out / 2;
-        pic_out.linesize[2] = w_out / 2;
-        //3 not used
-    } else {
-        pic_out.data[0] = (uint8_t*)out;
-        pic_out.linesize[0] = w_out * 4;
-    }
-#endif //PREPAREDATA_NO_PICTURE
-    int result_h = sws_scale(d.sws_ctx, srcSlice, srcStride, 0, d.h_in, d.picture.data, d.picture.linesize);
+    int result_h = sws_scale(d.sws_ctx, srcSlice, srcStride, 0, d.h_in, (uint8_t**)outPlanes().constData(), outLineSizes().constData());
     if (result_h != d.h_out) {
         qDebug("convert failed: %d, %d", result_h, d.h_out);
         return false;

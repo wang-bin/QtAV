@@ -33,8 +33,9 @@
     (QTAV_USE_LIBAV(MODULE) && MODULE##_VERSION_INT >= AV_VERSION_INT(MAJOR, MINOR, MICRO))
 #define AV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO, MINOR2, MICRO2) \
     (LIBAV_MODULE_CHECK(MODULE, MAJOR, MINOR, MICRO) || FFMPEG_MODULE_CHECK(MODULE, MAJOR, MINOR2, MICRO2))
-/// example: AV_ENSURE_OK(avcodec_close(avctx), false) will print error and return false if failed. AV_WARN just prints error.
+/// example: AV_ENSURE(avcodec_close(avctx), false) will print error and return false if failed. AV_WARN just prints error.
 #define AV_ENSURE_OK(FUNC, ...) AV_RUN_CHECK(FUNC, return, __VA_ARGS__)
+#define AV_ENSURE(FUNC, ...) AV_RUN_CHECK(FUNC, return, __VA_ARGS__)
 #define AV_WARN(FUNC) AV_RUN_CHECK(FUNC, void)
 
 #include "QtAV_Global.h"
@@ -49,6 +50,7 @@ extern "C"
 #include <libavutil/avutil.h>
 #include <libavutil/avstring.h>
 #include <libavutil/dict.h>
+#include <libavutil/imgutils.h>
 #include <libavutil/log.h>
 #include <libavutil/mathematics.h> //AV_ROUND_UP, av_rescale_rnd for libav
 #include <libavutil/cpu.h>

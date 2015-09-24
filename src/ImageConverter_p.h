@@ -23,8 +23,8 @@
 #ifndef QTAV_IMAGECONVERTER_P_H
 #define QTAV_IMAGECONVERTER_P_H
 
-#include "QtAV/private/AVCompat.h"
-#include <QtCore/QByteArray>
+#include <QtAV/private/AVCompat.h>
+#include <QtCore/QVector>
 
 namespace QtAV {
 
@@ -41,7 +41,10 @@ public:
         , brightness(0)
         , contrast(0)
         , saturation(0)
-    {}
+    {
+        bits.reserve(8);
+        pitchs.reserve(8);
+    }
     virtual bool setupColorspaceDetails(bool force = true) {
         Q_UNUSED(force);
         return true;
@@ -49,10 +52,11 @@ public:
 
     bool interlaced;
     int w_in, h_in, w_out, h_out;
-    int fmt_in, fmt_out;
+    AVPixelFormat fmt_in, fmt_out;
     int brightness, contrast, saturation;
     QByteArray data_out;
-    AVPicture picture;
+    QVector<quint8*> bits;
+    QVector<int> pitchs;
 };
 
 } //namespace QtAV
