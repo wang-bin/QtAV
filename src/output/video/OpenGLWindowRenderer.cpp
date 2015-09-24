@@ -22,12 +22,10 @@
 #include "QtAV/OpenGLWindowRenderer.h"
 #include "QtAV/private/OpenGLRendererBase_p.h"
 #include "QtAV/private/factory.h"
-#include "QtAV/private/mkid.h"
 #include <QResizeEvent>
 #include "utils/Logger.h"
 
 namespace QtAV {
-VideoRendererId VideoRendererId_OpenGLWindow = mkid::id32base36_6<'Q', 'O', 'G', 'L', 'W', 'w'>::value;
 FACTORY_REGISTER(VideoRenderer, OpenGLWindow, "OpenGLWindow")
 
 class OpenGLWindowRendererPrivate : public OpenGLRendererBasePrivate

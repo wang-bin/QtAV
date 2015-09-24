@@ -24,10 +24,12 @@
 #include "QtAV/Filter.h"
 #include <QtCore/QCoreApplication>
 #include "QtAV/private/factory.h"
+#include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
 FACTORY_DEFINE(VideoRenderer)
+VideoRendererId VideoRendererId_OpenGLWindow = mkid::id32base36_6<'Q', 'O', 'G', 'L', 'W', 'w'>::value;
 
 VideoRenderer::VideoRenderer()
     :AVOutput(*new VideoRendererPrivate)
@@ -52,7 +54,7 @@ bool VideoRenderer::receive(const VideoFrame &frame)
         sourceAspectRatioChanged(d.source_aspect_ratio);
     setInSize(frame.width(), frame.height());
     QMutexLocker locker(&d.img_mutex);
-    Q_UNUSED(locker);
+    Q_UNUSED(locker); //TODO: double buffer for display/dec frame to avoid mutex
     return receiveFrame(frame);
 }
 
