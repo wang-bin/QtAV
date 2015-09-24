@@ -19,7 +19,8 @@
 ******************************************************************************/
 
 #include "common.h"
-
+#include <cstdio>
+#include <cstdlib>
 #include <QFileOpenEvent>
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
@@ -30,6 +31,51 @@
 #include <QtCore/QStandardPaths>
 #endif
 #include <QtDebug>
+
+static FILE *sLogfile = 0; //'log' is a function in msvc math.h
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+class QMessageLogContext {};
+typedef void (*QtMessageHandler)(QtMsgType, const QMessageLogContext &, const QString &);
+QtMsgHandler qInstallMessageHandler(QtMessageHandler h) {
+    static QtMessageHandler hh;
+    hh = h;
+    struct MsgHandlerWrapper {
+        static void handler(QtMsgType type, const char *msg) {
+            static QMessageLogContext ctx;
+            hh(type, ctx, msg);
+        }
+    };
+    return qInstallMsgHandler(MsgHandlerWrapper::handler);
+}
+#endif
+void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
+{
+    const QByteArray msgArray = qmsg.toLocal8Bit();
+    const char* msg = msgArray.constData();
+     switch (type) {
+     case QtDebugMsg:
+         fprintf(stdout, "Debug: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Debug: %s\n", msg);
+         break;
+     case QtWarningMsg:
+         fprintf(stdout, "Warning: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Warning: %s\n", msg);
+         break;
+     case QtCriticalMsg:
+         fprintf(stderr, "Critical: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Critical: %s\n", msg);
+         break;
+     case QtFatalMsg:
+         fprintf(stderr, "Fatal: %s\n", msg);
+         if (sLogfile)
+            fprintf(sLogfile, "Fatal: %s\n", msg);
+         abort();
+     }
+     fflush(0);
+}
 
 QOptions get_common_options()
 {
@@ -47,8 +93,32 @@ QOptions get_common_options()
             ("decoders,-vd", QLatin1String("cuda;vaapi;vda;dxva;cedarv;ffmpeg"), QLatin1String("decoder name list in priority order seperated by ';'"))
             ("file,f", QString(), QLatin1String("file or url to play"))
             ("language", QLatin1String("system"), QLatin1String("language on UI. can be 'system', 'none' and locale name e.g. zh_CN"))
+            ("logfile", QString::fromLatin1("log-%1.txt"), QString::fromLatin1("log to file. Set empty to disable log file (-logfile '')"))
             ;
     return ops;
+}
+
+void do_common_options(const QOptions &options, const QString& appName)
+{
+    if (options.value(QString::fromLatin1("help")).toBool()) {
+        options.print();
+        exit(0);
+    }
+    // has no effect if qInstallMessageHandler() called
+    //qSetMessagePattern("%{function} @%{line}: %{message}");
+    QString app(appName);
+    if (app.isEmpty() && qApp)
+        app = qApp->applicationName();
+    QString logfile(options.option(QString::fromLatin1("logfile")).value().toString().arg(app));
+    if (!logfile.isEmpty()) {
+        sLogfile = fopen(logfile.toUtf8().constData(), "w+");
+        if (!sLogfile) {
+            qWarning("Failed to open log file");
+            sLogfile = stdout;
+        }
+        qInstallMessageHandler(Logger);
+    }
+    // TODO: ffmpeg level depends on libQtAV
 }
 
 void load_qm(const QStringList &names, const QString& lang)

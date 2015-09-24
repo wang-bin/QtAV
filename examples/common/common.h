@@ -28,6 +28,8 @@
 #include "ScreenSaver.h"
 
 QOptions COMMON_EXPORT get_common_options();
+/// help, log file, ffmpeg log level
+void COMMON_EXPORT do_common_options(const QOptions& options, const QString& appName = QString());
 void COMMON_EXPORT load_qm(const QStringList& names, const QString &lang = QLatin1String("system"));
 // if appname ends with 'desktop', 'es', 'angle', software', 'sw', set by appname. otherwise set by command line option glopt, or Config file
 void COMMON_EXPORT set_opengl_backend(const QString& glopt = QString::fromLatin1("auto"), const QString& appname = QString());

@@ -96,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mControlOn(false)
   , mShowControl(2)
   , mRepeateMax(0)
+  , mpVOAction(0)
   , mpPlayer(0)
   , mpRenderer(0)
   , mpVideoFilter(0)
@@ -488,21 +489,19 @@ void MainWindow::setupUi()
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeVO(QAction*)));
     //TODO: AVOutput.name,detail(description). check whether it is available
-    mpVOAction = subMenu->addAction(QString::fromLatin1("QPainter"));
-    mpVOAction->setData(VideoRendererId_Widget);
-    subMenu->addAction(QString::fromLatin1("OpenGLWidget"))->setData(VideoRendererId_OpenGLWidget);
-    subMenu->addAction(QString::fromLatin1("GLWidget 2"))->setData(VideoRendererId_GLWidget2);
-    subMenu->addAction(QString::fromLatin1("GLWidget"))->setData(VideoRendererId_GLWidget);
-    subMenu->addAction(QString::fromLatin1("GDI+"))->setData(VideoRendererId_GDI);
-    subMenu->addAction(QString::fromLatin1("Direct2D"))->setData(VideoRendererId_Direct2D);
-    subMenu->addAction(QString::fromLatin1("XV"))->setData(VideoRendererId_XV);
-    subMenu->addAction(QString::fromLatin1("X11"))->setData(VideoRendererId_X11);
-    mVOActions = subMenu->actions();
-    foreach(QAction* action, subMenu->actions()) {
-        action->setCheckable(true);
+    VideoRendererId *vo = NULL;
+    while ((vo = VideoRenderer::next(vo))) {
+        // skip non-widget renderers
+        if (*vo == VideoRendererId_OpenGLWindow || *vo == VideoRendererId_GraphicsItem)
+            continue;
+        QAction *voa = subMenu->addAction(QString::fromLatin1(VideoRenderer::name(*vo)));
+        voa->setData(*vo);
+        voa->setCheckable(true);
+        if (!mpVOAction)
+            mpVOAction = voa;
     }
     mpVOAction->setChecked(true);
-
+    mVOActions = subMenu->actions();
 
     mainLayout->addLayout(mpPlayerLayout);
     mainLayout->addWidget(mpTimeSlider);
@@ -608,7 +607,8 @@ void MainWindow::changeVO(QAction *action)
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
     VideoRenderer *vo = VideoRenderer::create(vid);
     if (vo && vo->isAvailable()) {
-        setRenderer(vo);
+        if (!setRenderer(vo))
+            action->toggle();
     } else {
         action->toggle(); //check state changes if clicked
         QMessageBox::critical(0, QString::fromLatin1("QtAV"), tr("not availabe on your platform!"));
@@ -629,10 +629,14 @@ void MainWindow::setAudioBackends(const QStringList& backends)
     mAudioBackends = backends;
 }
 
-void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
+bool MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 {
     if (!renderer)
-        return;
+        return false;
+    if (!renderer->widget()) {
+        QMessageBox::warning(0, QString::fromLatin1("QtAV"), tr("Can not use this renderer"));
+        return false;
+    }
     mpOSD->uninstall();
     mpSubtitle->uninstall();
     renderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
@@ -685,6 +689,7 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     onVideoEQEngineChanged();
     mpOSD->installTo(mpRenderer);
     mpSubtitle->installTo(mpRenderer);
+    return true;
 }
 
 void MainWindow::play(const QString &name)

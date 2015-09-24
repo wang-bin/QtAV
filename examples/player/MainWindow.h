@@ -60,7 +60,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void setAudioBackends(const QStringList& backends);
-    void setRenderer(QtAV::VideoRenderer* renderer);
+    bool setRenderer(QtAV::VideoRenderer* renderer);
     void setVideoDecoderNames(const QStringList& vd);
 
 public slots:

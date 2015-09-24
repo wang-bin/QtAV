@@ -374,5 +374,5 @@ QString QOptions::help() const
 
 void QOptions::print() const
 {
-    qDebug() << help();
+    qDebug("%s", help().toUtf8().constData());
 }
