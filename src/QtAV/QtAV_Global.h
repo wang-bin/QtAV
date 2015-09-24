@@ -68,6 +68,11 @@ Q_AV_EXPORT void setLogLevel(LogLevel value);
 Q_AV_EXPORT LogLevel logLevel();
 /// Default handler is qt message logger. Set environment QTAV_FFMPEG_LOG=0 or setFFmpegLogHandler(0) to disable.
 Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
+/*!
+ * \brief setFFmpegLogLevel
+ * \param level can be: quiet, panic, fatal, error, warn, info, verbose, debug
+ */
+Q_AV_EXPORT void setFFmpegLogLevel(const QByteArray& level);
 } //namespace QtAV
 
 // TODO: internal use. move to a private header

@@ -219,6 +219,33 @@ void setFFmpegLogHandler(void (*callback)(void *, int, const char *, va_list))
     av_log_set_callback(callback);
 }
 
+void setFFmpegLogLevel(const QByteArray &level)
+{
+    if (level.isEmpty())
+        return;
+    bool ok = false;
+    const int value = level.toInt(&ok);
+    if ((ok && value == 0) || level == "off" || level == "quiet")
+        Internal::gAVLogLevel = AV_LOG_QUIET;
+    else if (level == "panic")
+        Internal::gAVLogLevel = AV_LOG_PANIC;
+    else if (level == "fatal")
+        Internal::gAVLogLevel = AV_LOG_FATAL;
+    else if (level == "error")
+        Internal::gAVLogLevel = AV_LOG_ERROR;
+    else if (level.startsWith("warn"))
+        Internal::gAVLogLevel = AV_LOG_WARNING;
+    else if (level == "info")
+        Internal::gAVLogLevel = AV_LOG_INFO;
+    else if (level == "verbose")
+        Internal::gAVLogLevel = AV_LOG_VERBOSE;
+    else if (level == "debug")
+        Internal::gAVLogLevel = AV_LOG_DEBUG;
+    else
+        Internal::gAVLogLevel = AV_LOG_INFO;
+    av_log_set_level(Internal::gAVLogLevel);
+}
+
 static void qtav_ffmpeg_log_callback(void* ctx, int level,const char* fmt, va_list vl)
 {
     // AV_LOG_DEBUG is used by ffmpeg developers
@@ -325,32 +352,7 @@ class InitFFmpegLog {
 public:
     InitFFmpegLog() {
         setFFmpegLogHandler(qtav_ffmpeg_log_callback);
-        const QByteArray env = qgetenv("QTAV_FFMPEG_LOG").toLower();
-        if (env.isEmpty())
-            return;
-        bool ok = false;
-        const int level = env.toInt(&ok);
-        if ((ok && level == 0) || env == "off" || env == "quiet") {
-            Internal::gAVLogLevel = AV_LOG_QUIET;
-            setFFmpegLogHandler(0);
-        }
-        else if (env == "panic")
-            Internal::gAVLogLevel = AV_LOG_PANIC;
-        else if (env == "fatal")
-            Internal::gAVLogLevel = AV_LOG_FATAL;
-        else if (env == "error")
-            Internal::gAVLogLevel = AV_LOG_ERROR;
-        else if (env.startsWith("warn"))
-            Internal::gAVLogLevel = AV_LOG_WARNING;
-        else if (env == "info")
-            Internal::gAVLogLevel = AV_LOG_INFO;
-        else if (env == "verbose")
-            Internal::gAVLogLevel = AV_LOG_VERBOSE;
-        else if (env == "debug")
-            Internal::gAVLogLevel = AV_LOG_DEBUG;
-        else
-            Internal::gAVLogLevel = AV_LOG_INFO;
-        av_log_set_level(Internal::gAVLogLevel);
+        QtAV::setFFmpegLogLevel(qgetenv("QTAV_FFMPEG_LOG").toLower());
     }
 };
 InitFFmpegLog fflog;
