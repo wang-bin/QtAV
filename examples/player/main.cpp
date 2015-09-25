@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 {
     qDebug() << aboutQtAV_PlainText();
     QApplication a(argc, argv);
+    a.setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
     qDebug() <<a.arguments();
     a.setApplicationName(QString::fromLatin1("Player"));
 //    a.setApplicationDisplayName(QString::fromLatin1("QtAV Player"));
