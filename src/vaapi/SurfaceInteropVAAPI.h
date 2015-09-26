@@ -24,27 +24,9 @@
 
 #include <QtCore/QMap>
 #include <QtCore/QSharedPointer>
-#include <QtCore/QMutex>
 #include "QtAV/SurfaceInterop.h"
 #include "vaapi_helper.h"
-
-#define VA_X11_INTEROP 1//!defined(QT_OPENGL_ES_2)
-#if VA_X11_INTEROP
-#include <X11/Xlib.h>
-#ifndef QT_OPENGL_ES_2
-#include <GL/glx.h>
-#endif //QT_OPENGL_ES_2
-#endif
-// both egl.h and glx.h include x11 headers, must undef macros conflict with qtextstream
-#ifdef Bool
-#undef Bool
-#endif //Bool
-#ifdef CursorShape
-#undef CursorShape //used in qvariant and x11
-#endif //CursorShape
-#ifdef Status
-#undef Status // qtextstream
-#endif //Status
+#define VA_X11_INTEROP 1
 
 namespace QtAV {
 namespace vaapi {
@@ -96,7 +78,7 @@ private:
 };
 #endif //QT_NO_OPENGL
 
-class EGL;
+class X11;
 class X11InteropResource Q_DECL_FINAL: public InteropResource, protected VAAPI_X11
 {
 public:
@@ -105,24 +87,11 @@ public:
     bool map(const surface_ptr &surface, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
     bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:
-    bool ensureGL();
     bool ensurePixmaps(int w, int h);
     Display *xdisplay;
-    Pixmap pixmap;
     int width, height;
-#if defined(QT_OPENGL_ES_2)
-    EGL *egl;
-#else
-    GLXFBConfig fbc;
-    GLXPixmap glxpixmap;
-    typedef void (*glXBindTexImageEXT_t)(Display *dpy, GLXDrawable draw, int buffer, int *a);
-    typedef void (*glXReleaseTexImageEXT_t)(Display *dpy, GLXDrawable draw, int buffer);
-    static glXBindTexImageEXT_t glXBindTexImageEXT;
-    static glXReleaseTexImageEXT_t glXReleaseTexImageEXT;
-#endif
+    X11 *x11;
 };
-
 } //namespace vaapi
 } //namespace QtAV
-
 #endif // QTAV_SURFACEINTEROPVAAPI_H
