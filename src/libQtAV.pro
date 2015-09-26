@@ -4,9 +4,12 @@ TARGET = QtAV
 QT += core gui
 #CONFIG *= ltcg
 greaterThan(QT_MAJOR_VERSION, 4) {
-  lessThan(QT_MINOR_VERSION, 5):!no_gui_private:win32 {
+  lessThan(QT_MINOR_VERSION, 5):!no_gui_private {
+    contains(QT_CONFIG, opengles2)|contains(QT_CONFIG, dynamicgl) {
     QT *= gui-private #dxva+egl
     DEFINES *= QTAV_HAVE_GUI_PRIVATE=1
+    qtHaveModule(x11extras): QT *= x11extras
+  }
   }
   contains(QT_CONFIG, opengl) {
       CONFIG *= config_opengl
@@ -142,8 +145,8 @@ config_ipp {
     } else {
         IPPARCH=ia32
     }
-    LIBS *= -L$$(IPPROOT)/lib/$$IPPARCH -lippcc -lippcore -lippi \
-            -L$$(IPPROOT)/../compiler/lib/$$IPPARCH -lsvml -limf
+    LIBS *= -L$$(IPPROOT)/lib/$$IPPARCH -lippcc -lippcore -lippi
+    LIBS *= -L$$(IPPROOT)/../compiler/lib/$$IPPARCH -lsvml -limf
     #omp for static link. _t is multi-thread static link
 }
 win32: {
@@ -297,7 +300,7 @@ config_libass {
   SOURCES *= subtitle/ass_api.cpp
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
 }
-capi:win32 { # currently only used for windows
+capi {
 contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
   DEFINES += QTAV_HAVE_EGL_CAPI=1
   HEADERS *= capi/egl_api.h

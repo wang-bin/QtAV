@@ -18,18 +18,24 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-#include "SurfaceInteropVAAPI.h"
 #include "utils/OpenGLHelper.h"
+#if defined(QT_OPENGL_ES_2)
+#define EGL_CAPI_NS
+#include "capi/egl_api.h"
+#include <EGL/eglext.h>
+#endif
+#include "SurfaceInteropVAAPI.h"
 #include "QtAV/VideoFrame.h"
 #include "utils/Logger.h"
+#ifdef QT_X11EXTRAS_LIB
+#include <QtX11Extras/QX11Info>
+#endif //QT_X11EXTRAS_LIB
 #if VA_X11_INTEROP
 #include <va/va_x11.h>
 #endif
 
 namespace QtAV {
 namespace vaapi {
-
 void SurfaceInteropVAAPI::setSurface(const surface_ptr& surface,  int w, int h) {
     m_surface = surface;
     frame_width = (w ? w : surface->width());
@@ -165,55 +171,107 @@ bool GLXInteropResource::map(const surface_ptr& surface, GLuint tex, int w, int 
 }
 #endif //QT_NO_OPENGL
 #if VA_X11_INTEROP
-X11InteropResource::glXReleaseTexImage_t X11InteropResource::glXReleaseTexImage = 0;
-X11InteropResource::glXBindTexImage_t X11InteropResource::glXBindTexImage = 0;
-
+#if defined(QT_OPENGL_ES_2)
+//static PFNEGLQUERYNATIVEDISPLAYNVPROC eglQueryNativeDisplayNV = NULL;
+static PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;
+static PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR = NULL;
+static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = NULL;
+class EGL {
+public:
+    EGL() : dpy(EGL_NO_DISPLAY) {
+        for (unsigned i = 0; i < sizeof(image)/sizeof(image[0]); ++i)
+            image[i] = EGL_NO_IMAGE_KHR;
+    }
+    ~EGL() {
+        for (unsigned i = 0; i < sizeof(image)/sizeof(image[0]); ++i) {
+            if (image[i] != EGL_NO_IMAGE_KHR) {
+                eglDestroyImageKHR(dpy, image[i]);
+            }
+        }
+    }
+    EGLDisplay dpy;
+    EGLImageKHR image[4];
+};
+#else
+X11InteropResource::glXReleaseTexImageEXT_t X11InteropResource::glXReleaseTexImageEXT = 0;
+X11InteropResource::glXBindTexImageEXT_t X11InteropResource::glXBindTexImageEXT = 0;
+#endif
 X11InteropResource::X11InteropResource()
     : InteropResource()
     , VAAPI_X11()
-    , xdisplay(0)
-    , fbc(0)
+    , xdisplay(NULL)
     , pixmap(0)
-    , glxpixmap(0)
     , width(0)
     , height(0)
+#if defined(QT_OPENGL_ES_2)
+    , egl(new EGL())
+#else
+    , fbc(0)
+    , glxpixmap(0)
+#endif
 {}
 
 X11InteropResource::~X11InteropResource()
 {
+#if defined(QT_OPENGL_ES_2)
+    delete egl;
+#else
     if (glxpixmap) { //TODO: does the thread matters?
-        glXReleaseTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT);
+        glXReleaseTexImageEXT(xdisplay, glxpixmap, GLX_FRONT_EXT);
         XSync((::Display*)xdisplay, False);
         glXDestroyPixmap((::Display*)xdisplay, glxpixmap);
     }
     glxpixmap = 0;
-
+#endif
     if (pixmap)
         XFreePixmap((::Display*)xdisplay, pixmap);
     pixmap = 0;
 }
 
-bool X11InteropResource::ensureGLX()
+#define RESOLVE_FUNC(func, resolver, st) do {\
+    if (!func) { \
+        typedef void (*ft)(void); \
+        ft f = resolver((st)#func); \
+        if (!f) { \
+            qWarning(#func " is not available"); \
+            return false; \
+        } \
+        ft *fp = (ft*)(&func); \
+        *fp = f; \
+    }} while(0)
+
+#define RESOLVE_EGL(func) RESOLVE_FUNC(func, eglGetProcAddress, const char*)
+#define RESOLVE_GLX(func) RESOLVE_FUNC(func, glXGetProcAddressARB, const GLubyte*)
+
+bool X11InteropResource::ensureGL()
 {
+#if defined(QT_OPENGL_ES_2)
+    // we must use the native display egl used, otherwise eglCreateImageKHR will fail.
+    if (!xdisplay)
+        xdisplay = (Display*)QX11Info::display();
+    if (egl->dpy == EGL_NO_DISPLAY) {
+        qDebug("eglGetCurrentDisplay");
+        egl->dpy = eglGetCurrentDisplay();
+    }
+    //RESOLVE_EGL(eglQueryNativeDisplayNV);
+    RESOLVE_EGL(glEGLImageTargetTexture2DOES);
+    RESOLVE_EGL(eglCreateImageKHR);
+    RESOLVE_EGL(eglDestroyImageKHR);
+#else
     if (fbc)
         return true;
-    xdisplay = (Display*)glXGetCurrentDisplay();
-    if (!xdisplay)
-        return false;
+    if (!xdisplay) {
+        qDebug("glXGetCurrentDisplay");
+        xdisplay = (Display*)glXGetCurrentDisplay();
+        if (!xdisplay)
+            return false;
+    }
     int xscr = DefaultScreen(xdisplay);
     const char *glxext = glXQueryExtensionsString((::Display*)xdisplay, xscr);
     if (!glxext || !strstr(glxext, "GLX_EXT_texture_from_pixmap"))
         return false;
-    glXBindTexImage = (glXBindTexImage_t)glXGetProcAddressARB((const GLubyte*)"glXBindTexImageEXT");
-    if (!glXBindTexImage) {
-        qWarning("glXBindTexImage not found");
-        return false;
-    }
-    glXReleaseTexImage = (glXReleaseTexImage_t)glXGetProcAddressARB((const GLubyte*)"glXReleaseTexImageEXT");
-    if (!glXReleaseTexImage) {
-        qWarning("glXReleaseTexImage not found");
-        return false;
-    }
+    RESOLVE_GLX(glXBindTexImageEXT);
+    RESOLVE_GLX(glXReleaseTexImageEXT);
     int attribs[] = {
         GLX_RENDER_TYPE, GLX_RGBA_BIT, //xbmc
         GLX_X_RENDERABLE, True, //xbmc
@@ -228,7 +286,6 @@ bool X11InteropResource::ensureGLX()
         GLX_ALPHA_SIZE, 8, //0 for 24 bpp(vdpau)? mpv is 0
         None
     };
-
     int fbcount;
     GLXFBConfig *fbcs = glXChooseFBConfig((::Display*)xdisplay, xscr, attribs, &fbcount);
     if (!fbcount) {
@@ -238,6 +295,7 @@ bool X11InteropResource::ensureGLX()
     if (fbcount)
         fbc = fbcs[0];
     XFree(fbcs);
+#endif
     return true;
 }
 
@@ -245,18 +303,29 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
 {
     if (pixmap && width == w && height == h)
         return true;
-    if (!ensureGLX()) {
+    if (!ensureGL())
         return false;
+    if (pixmap) {
+        qDebug("XFreePixmap");
+        XFreePixmap((::Display*)xdisplay, pixmap);
+        pixmap = 0;
     }
     XWindowAttributes xwa;
     XGetWindowAttributes((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), &xwa);
     pixmap = XCreatePixmap((::Display*)xdisplay, RootWindow((::Display*)xdisplay, DefaultScreen((::Display*)xdisplay)), w, h, xwa.depth);
     // mpv always use 24 bpp
-    qDebug("XCreatePixmap: %lu, depth: %d", pixmap, xwa.depth);
+    qDebug("XCreatePixmap %lu: %dx%d, depth: %d", pixmap, w, h, xwa.depth);
     if (!pixmap) {
         qWarning("X11InteropResource could not create pixmap");
         return false;
     }
+#if defined(QT_OPENGL_ES_2)
+    egl->image[0] =  eglCreateImageKHR(egl->dpy, EGL_NO_CONTEXT, EGL_NATIVE_PIXMAP_KHR, (EGLClientBuffer)pixmap, NULL);
+    if (!egl->image[0]) {
+        qWarning("eglCreateImageKHR error %X", eglGetError());
+        return false;
+    }
+#else
     const int attribs[] = {
         GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
         GLX_TEXTURE_FORMAT_EXT, xwa.depth == 32 ? GLX_TEXTURE_FORMAT_RGBA_EXT : GLX_TEXTURE_FORMAT_RGB_EXT,
@@ -264,6 +333,7 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
         None,
     };
     glxpixmap = glXCreatePixmap((::Display*)xdisplay, fbc, pixmap, attribs);
+#endif
     width = w;
     height = h;
     return true;
@@ -286,19 +356,19 @@ bool X11InteropResource::map(const surface_ptr& surface, GLuint tex, int w, int 
                    );
     XSync((::Display*)xdisplay, False);
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
-    glXBindTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT, NULL);
+#if defined(QT_OPENGL_ES_2)
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, egl->image[0]);
+#else
+    glXBindTexImageEXT(xdisplay, glxpixmap, GLX_FRONT_EXT, NULL);
+#endif
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
     return true;
 }
 
 bool X11InteropResource::unmap(GLuint tex)
 {
-    // can not call glXReleaseTexImage otherwise the texture will containts no image data
-#if 0
-    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
-    glXReleaseTexImage(xdisplay, glxpixmap, GLX_FRONT_EXT);
-    DYGL(glBindTexture(GL_TEXTURE_2D, 0));
-#endif
+    Q_UNUSED(tex);
+    // can not call glXReleaseTexImageEXT otherwise the texture will containts no image data
     return true;
 }
 

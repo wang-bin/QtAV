@@ -28,12 +28,12 @@
 #include "QtAV/SurfaceInterop.h"
 #include "vaapi_helper.h"
 
-#define VA_X11_INTEROP !defined(QT_OPENGL_ES_2)
-#if defined(QT_OPENGL_ES_2)
-#include <EGL/egl.h>
-#endif
+#define VA_X11_INTEROP 1//!defined(QT_OPENGL_ES_2)
 #if VA_X11_INTEROP
+#include <X11/Xlib.h>
+#ifndef QT_OPENGL_ES_2
 #include <GL/glx.h>
+#endif //QT_OPENGL_ES_2
 #endif
 // both egl.h and glx.h include x11 headers, must undef macros conflict with qtextstream
 #ifdef Bool
@@ -48,7 +48,6 @@
 
 namespace QtAV {
 namespace vaapi {
-
 class InteropResource
 {
 public:
@@ -96,7 +95,8 @@ private:
     QMap<GLuint,surface_glx_ptr> glx_surfaces; // render to different texture. surface_glx_ptr is created with texture
 };
 #endif //QT_NO_OPENGL
-#if VA_X11_INTEROP
+
+class EGL;
 class X11InteropResource Q_DECL_FINAL: public InteropResource, protected VAAPI_X11
 {
 public:
@@ -105,20 +105,22 @@ public:
     bool map(const surface_ptr &surface, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
     bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:
-    bool ensureGLX();
+    bool ensureGL();
     bool ensurePixmaps(int w, int h);
     Display *xdisplay;
-    GLXFBConfig fbc;
     Pixmap pixmap;
-    GLXPixmap glxpixmap;
     int width, height;
-
-    typedef void (*glXBindTexImage_t)(Display *dpy, GLXDrawable draw, int buffer, int *a);
-    typedef void (*glXReleaseTexImage_t)(Display *dpy, GLXDrawable draw, int buffer);
-    static glXBindTexImage_t glXBindTexImage;
-    static glXReleaseTexImage_t glXReleaseTexImage;
+#if defined(QT_OPENGL_ES_2)
+    EGL *egl;
+#else
+    GLXFBConfig fbc;
+    GLXPixmap glxpixmap;
+    typedef void (*glXBindTexImageEXT_t)(Display *dpy, GLXDrawable draw, int buffer, int *a);
+    typedef void (*glXReleaseTexImageEXT_t)(Display *dpy, GLXDrawable draw, int buffer);
+    static glXBindTexImageEXT_t glXBindTexImageEXT;
+    static glXReleaseTexImageEXT_t glXReleaseTexImageEXT;
+#endif
 };
-#endif //VA_X11_INTEROP
 
 } //namespace vaapi
 } //namespace QtAV
