@@ -5,10 +5,9 @@ QT += core gui
 #CONFIG *= ltcg
 greaterThan(QT_MAJOR_VERSION, 4) {
   lessThan(QT_MINOR_VERSION, 5):!no_gui_private {
-    contains(QT_CONFIG, opengles2)|contains(QT_CONFIG, dynamicgl) {
+  contains(QT_CONFIG, opengles2)|contains(QT_CONFIG, dynamicgl) {
     QT *= gui-private #dxva+egl
     DEFINES *= QTAV_HAVE_GUI_PRIVATE=1
-    qtHaveModule(x11extras): QT *= x11extras
   }
   }
   contains(QT_CONFIG, opengl) {
@@ -301,7 +300,8 @@ config_libass {
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
 }
 capi {
-contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
+contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
+  qtHaveModule(x11extras): QT *= x11extras
   DEFINES += QTAV_HAVE_EGL_CAPI=1
   HEADERS *= capi/egl_api.h
   SOURCES *= capi/egl_api.cpp

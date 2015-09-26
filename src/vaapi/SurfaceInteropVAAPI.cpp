@@ -27,13 +27,14 @@
 #include <QtX11Extras/QX11Info>
 #endif //QT_X11EXTRAS_LIB
 #include <va/va_x11.h>
-#if defined(QT_OPENGL_ES_2)
+#if QTAV_HAVE(EGL_CAPI)
 #define EGL_CAPI_NS
 #include "capi/egl_api.h"
 #include <EGL/eglext.h>
-#else
+#endif //QTAV_HAVE(EGL_CAPI)
+#if !defined(QT_OPENGL_ES_2)
 #include <GL/glx.h>
-#endif //QT_OPENGL_ES_2
+#endif //!defined(QT_OPENGL_ES_2)
 #endif //VA_X11_INTEROP
 
 namespace QtAV {
@@ -195,8 +196,8 @@ protected:
             pixmap = 0;
         }
         XWindowAttributes xwa;
-        XGetWindowAttributes((::Display*)display, RootWindow((::Display*)display, DefaultScreen((::Display*)display)), &xwa);
-        pixmap = XCreatePixmap((::Display*)display, RootWindow((::Display*)display, DefaultScreen((::Display*)display)), w, h, xwa.depth);
+        XGetWindowAttributes((::Display*)display, DefaultRootWindow((::Display*)display), &xwa);
+        pixmap = XCreatePixmap((::Display*)display, DefaultRootWindow((::Display*)display), w, h, xwa.depth);
         // mpv always use 24 bpp
         qDebug("XCreatePixmap %lu: %dx%d, depth: %d", pixmap, w, h, xwa.depth);
         if (!pixmap) {
@@ -221,7 +222,7 @@ protected:
 #define RESOLVE_EGL(func) RESOLVE_FUNC(func, eglGetProcAddress, const char*)
 #define RESOLVE_GLX(func) RESOLVE_FUNC(func, glXGetProcAddressARB, const GLubyte*)
 
-#if defined(QT_OPENGL_ES_2)
+#if QTAV_HAVE(EGL_CAPI)
 //static PFNEGLQUERYNATIVEDISPLAYNVPROC eglQueryNativeDisplayNV = NULL;
 static PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;
 static PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR = NULL;
@@ -259,7 +260,7 @@ public:
         }
         image[0] =  eglCreateImageKHR(dpy, EGL_NO_CONTEXT, EGL_NATIVE_PIXMAP_KHR, (EGLClientBuffer)pixmap, NULL);
         if (!image[0]) {
-            qWarning("eglCreateImageKHR error %X", eglGetError());
+            qWarning("eglCreateImageKHR error %#X, image: %p", eglGetError(), image[0]);
             return false;
         }
         return true;
@@ -270,7 +271,8 @@ public:
     EGLDisplay dpy;
     EGLImageKHR image[4];
 };
-#else
+#endif //QTAV_HAVE(EGL_CAPI)
+#if !defined(QT_OPENGL_ES_2)
 typedef void (*glXBindTexImageEXT_t)(Display *dpy, GLXDrawable draw, int buffer, int *a);
 typedef void (*glXReleaseTexImageEXT_t)(Display *dpy, GLXDrawable draw, int buffer);
 static glXReleaseTexImageEXT_t glXReleaseTexImageEXT = 0;
@@ -346,7 +348,8 @@ public:
     GLXFBConfig fbc;
     GLXPixmap glxpixmap;
 };
-#endif
+#endif // !defined(QT_OPENGL_ES_2)
+
 X11InteropResource::X11InteropResource()
     : InteropResource()
     , VAAPI_X11()
@@ -365,12 +368,28 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
 {
     if (width == w && height == h)
         return true;
-    if (!x11)
+    if (!x11) {
+#if QTAV_HAVE(EGL_CAPI)
 #if defined(QT_OPENGL_ES_2)
-        x11 = new EGL();
+        static const bool use_egl = true;
 #else
-        x11 = new GLX();
-#endif
+        // FIXME: may fallback to xcb_glx(default)
+        static const bool use_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
+#endif //defined(QT_OPENGL_ES_2)
+        if (use_egl) {
+            x11 = new EGL();
+        } else
+#endif //QTAV_HAVE(EGL_CAPI)
+        {
+#if !defined(QT_OPENGL_ES_2)
+            x11 = new GLX();
+#endif // defined(QT_OPENGL_ES_2)
+        }
+    }
+    if (!x11) {
+        qWarning("no EGL and GLX interop (TFP) support");
+        return false;
+    }
     xdisplay  = x11->ensureGL();
     if (!xdisplay)
         return false;
