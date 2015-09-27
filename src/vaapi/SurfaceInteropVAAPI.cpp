@@ -244,7 +244,9 @@ public:
         if (display && eglCreateImageKHR && glEGLImageTargetTexture2DOES)
             return display;
         // we must use the native display egl used, otherwise eglCreateImageKHR will fail.
+#ifdef QT_X11EXTRAS_LIB
         display = (Display*)QX11Info::display();
+#endif //QT_X11EXTRAS_LIB
         //RESOLVE_EGL(eglQueryNativeDisplayNV);
         RESOLVE_EGL(glEGLImageTargetTexture2DOES);
         RESOLVE_EGL(eglCreateImageKHR);
