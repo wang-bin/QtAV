@@ -16,6 +16,7 @@ Build-Depends: debhelper (>= 9),
  libpulse-dev,
  libxv-dev,
  libva-dev,
+ libegl1-mesa-dev,
 Standards-Version: 3.9.5
 Homepage: http://www.qtav.org
 
@@ -28,19 +29,16 @@ Description: FFmpeg powered multimedia playback SDK for Qt
  .
  Features include:
    * Hardware decoding suppprt: DXVA2, VAAPI, VDA, CedarX, CUDA
+   * Realtime preview
    * OpenGL and ES2 support for Hi10P and other 16-bit YUV videos
    * Video capture in rgb and yuv format
    * OSD and custom filters
    * filters in libavfilter, for example stero3d, blur
-   * Subtitle
-   * Transform video using GraphicsItemRenderer. (rotate, shear, etc)
-   * Playing frame by frame (currently support forward playing)
-   * Playback speed control. At any speed.
+   * Subtitles
+   * Playback speed control
    * Variant streams: locale file, http, rtsp, etc.
-   * Choose audio channel
-   * Choose media stream, e.g. play a desired audio track
    * Multiple render engine support. Currently supports QPainter, GDI+, Direct2D, XV and OpenGL(and ES2).
-   * Dynamically change render engine when playing.
+   * Dynamically change render engine and decoder when playing.
    * Multiple video outputs for 1 player
    * Region of interest(ROI), i.e. video cropping
    * Video eq: brightness, contrast, saturation, hue

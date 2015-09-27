@@ -1,6 +1,6 @@
 set -ev
 sudo apt-get update -qq
-sudo apt-get install -qq -y portaudio19-dev libpulse-dev libopenal-dev libva-dev libass-dev libxv-dev parallel
+sudo apt-get install -qq -y libegl1-mesa-dev portaudio19-dev libpulse-dev libopenal-dev libva-dev libass-dev libxv-dev parallel
 # TODO: do not use apt, use the latest code instead
 
 wget http://sourceforge.net/projects/qtav/files/depends/FFmpeg/linux/${AV}-linux-x86+x64.tar.xz/download -O ${AV}-linux-x86+x64.tar.xz
