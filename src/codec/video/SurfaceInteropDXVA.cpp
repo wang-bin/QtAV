@@ -139,15 +139,6 @@ void* SurfaceInteropDXVA::mapToHost(const VideoFormat &format, void *handle, int
 } //namespace QtAV
 
 #if QTAV_HAVE(DXVA_EGL)
-#define EGL_ENSURE(x, ...) \
-    do { \
-        if (!(x)) { \
-            EGLint err = eglGetError(); \
-            qWarning("EGL error@%d<<%s. " #x ": %#x %s", __LINE__, __FILE__, err, eglQueryString(eglGetCurrentDisplay(), err)); \
-            return __VA_ARGS__; \
-        } \
-    } while(0)
-
 #if QTAV_HAVE(GUI_PRIVATE)
 #include <qpa/qplatformnativeinterface.h>
 #include <QtGui/QGuiApplication>
@@ -239,6 +230,7 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
     // check extensions
     QList<QByteArray> extensions = QByteArray(eglQueryString(egl->dpy, EGL_EXTENSIONS)).split(' ');
     // ANGLE_d3d_share_handle_client_buffer will be used if possible
+    // TODO: strstr is enough
     const bool kEGL_ANGLE_d3d_share_handle_client_buffer = extensions.contains("EGL_ANGLE_d3d_share_handle_client_buffer");
     const bool kEGL_ANGLE_query_surface_pointer = extensions.contains("EGL_ANGLE_query_surface_pointer");
     if (!kEGL_ANGLE_d3d_share_handle_client_buffer && !kEGL_ANGLE_query_surface_pointer) {

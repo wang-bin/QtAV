@@ -137,15 +137,6 @@ void SurfaceInteropCUDA::unmap(void *handle)
 } //namespace QtAV
 
 #if QTAV_HAVE(CUDA_EGL)
-#define EGL_ENSURE(x, ...) \
-    do { \
-        if (!(x)) { \
-            EGLint err = eglGetError(); \
-            qWarning("EGL error@%d<<%s. " #x ": %#x %s", __LINE__, __FILE__, err, eglQueryString(eglGetCurrentDisplay(), err)); \
-            return __VA_ARGS__; \
-        } \
-    } while(0)
-
 #if QTAV_HAVE(GUI_PRIVATE)
 #include <qpa/qplatformnativeinterface.h>
 #include <QtGui/QGuiApplication>

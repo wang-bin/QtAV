@@ -236,7 +236,7 @@ public:
     ~EGL() {
         for (unsigned i = 0; i < sizeof(image)/sizeof(image[0]); ++i) {
             if (image[i] != EGL_NO_IMAGE_KHR) {
-                eglDestroyImageKHR(dpy, image[i]);
+                EGL_WARN(eglDestroyImageKHR(dpy, image[i]));
             }
         }
     }
@@ -258,7 +258,7 @@ public:
             qDebug("eglGetCurrentDisplay");
             dpy = eglGetCurrentDisplay();
         }
-        image[0] =  eglCreateImageKHR(dpy, EGL_NO_CONTEXT, EGL_NATIVE_PIXMAP_KHR, (EGLClientBuffer)pixmap, NULL);
+        EGL_ENSURE(image[0] =  eglCreateImageKHR(dpy, EGL_NO_CONTEXT, EGL_NATIVE_PIXMAP_KHR, (EGLClientBuffer)pixmap, NULL), false);
         if (!image[0]) {
             qWarning("eglCreateImageKHR error %#X, image: %p", eglGetError(), image[0]);
             return false;
@@ -428,7 +428,6 @@ bool X11InteropResource::unmap(GLuint tex)
     // can not call glXReleaseTexImageEXT otherwise the texture will containts no image data
     return true;
 }
-
 #endif //VA_X11_INTEROP
 } //namespace QtAV
 } //namespace vaapi

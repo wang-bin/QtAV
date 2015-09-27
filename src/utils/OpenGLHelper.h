@@ -103,6 +103,22 @@ typedef QGLBuffer QOpenGLBuffer;
 #define GL_TEXTURE_RECTANGLE 0x84F5
 #endif
 
+#define EGL_ENSURE(x, ...) \
+    do { \
+        if (!(x)) { \
+            EGLint err = eglGetError(); \
+            qWarning("EGL error@%d<<%s. " #x ": %#x %s", __LINE__, __FILE__, err, eglQueryString(eglGetCurrentDisplay(), err)); \
+            return __VA_ARGS__; \
+        } \
+    } while(0)
+#define EGL_WARN(x, ...) \
+    do { \
+        if (!(x)) { \
+            EGLint err = eglGetError(); \
+            qWarning("EGL error@%d<<%s. " #x ": %#x %s", __LINE__, __FILE__, err, eglQueryString(eglGetCurrentDisplay(), err)); \
+        } \
+    } while(0)
+
 class QMatrix4x4;
 namespace QtAV {
 namespace OpenGLHelper {
