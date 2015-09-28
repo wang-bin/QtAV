@@ -1,7 +1,9 @@
 include(../paths.pri)
-CONFIG = staticlib
 
 SOURCES += main.cpp
 
-#LIBS += -lass
-
+exists(../../contrib/capi/capi.pri) {
+  CONFIG = staticlib
+} else {
+  LIBS += -lass
+}
