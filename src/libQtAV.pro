@@ -90,10 +90,11 @@ sse2 {
 
 *msvc* {
 #link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
+win32-msvc2010|win32-msvc2008: QMAKE_LFLAGS *= /DEBUG #workaround for CoInitializeEx() and other symbols not found at runtime
     debug: QMAKE_LFLAGS += /SAFESEH:NO
 #CXXFLAGS debug: /MTd
     QMAKE_LFLAGS *= /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib #for msbuild vs2013
-    INCLUDEPATH += compat/msvc
+    INCLUDEPATH *= compat/msvc
 }
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
@@ -157,10 +158,13 @@ win32: {
     win32-icc|win32-g++|win32-msvc2010|win32-msvc2008|win32-msvc2005: \
         INCLUDEPATH *= $$PROJECTROOT/contrib/dxsdk
   }
-  !winrt: LIBS += -lole32 #CoInitializeEx for vs2008, but can not find the symbol at runtime
-  #LIBS += -lxaudio2 #only for xbox or >=win8
+  winrt {
+    LIBS += -lxaudio2 #only for xbox or >=win8
+  } else {
+    LIBS += -lole32 #CoInitializeEx for vs2008, but can not find the symbol at runtime
+  }
 }
-config_dsound {
+config_dsound:!winrt {
     SOURCES += output/audio/AudioOutputDSound.cpp
     DEFINES *= QTAV_HAVE_DSOUND=1
 }
@@ -196,7 +200,7 @@ config_pulseaudio {
     DEFINES *= QTAV_HAVE_PULSEAUDIO=1
     LIBS += -lpulse
 }
-CONFIG += config_cuda #config_dllapi config_dllapi_cuda
+CONFIG += config_cuda
 #CONFIG += config_cuda_link
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
@@ -300,7 +304,7 @@ config_libass {
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
 }
 capi {
-contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
+contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2):!ios {
   qtHaveModule(x11extras): QT *= x11extras
   DEFINES += QTAV_HAVE_EGL_CAPI=1
   HEADERS *= capi/egl_api.h

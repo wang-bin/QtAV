@@ -48,9 +48,9 @@ _EXTRA =
 unix {
     _OS = _unix
     android {
-        _OS = android
+        _OS = _android
     } else:ios {
-        _OS = ios
+        _OS = _ios
     } else:macx {
         _OS = _osx
     } else:*maemo* {
@@ -68,7 +68,7 @@ unix {
 } else:wince* {
     _OS = _wince
 } else:winrt {
-    _OS = winrt
+    _OS = _winrt
 } else:win32 { #true for wince
     _OS = _win
 }

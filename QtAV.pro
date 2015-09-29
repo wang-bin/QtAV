@@ -35,38 +35,40 @@ OTHER_FILES += \
 	templates/final.h templates/final.cpp
 #OTHER_FILES += config.test/mktest.sh
 EssentialDepends = avutil avcodec avformat swscale
-OptionalDepends = \
-    swresample \
-    avresample \
-    avdevice
+OptionalDepends = swresample avresample
+!no-avfilter: OptionalDepends *= avfilter
+!winrt:!android:!no-avdevice: OptionalDepends *= avdevice
 # QtOpenGL module. In Qt5 we can disable it and still have opengl support
 contains(QT_CONFIG, opengl):!no-gl:!no-widgets {
   greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(opengl):!config_gl {
     GL=config_gl done_config_gl
     cache(CONFIG, add, GL)
   } else {
-    OptionalDepends *= gl #ios require code sign
+    OptionalDepends *= gl
   }
 }
-!no-avfilter: OptionalDepends *= avfilter
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
-!no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
+!ios:!no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
 # no-xxx can set in $$PWD/user.conf
 !no-openal: OptionalDepends *= openal
-!no-portaudio: OptionalDepends *= portaudio
 !no-libass: OptionalDepends *= libass
+win32:macx:!android:!winrt:!no-portaudio: OptionalDepends *= portaudio
 win32 {
   !no-xaudio2: OptionalDepends *= xaudio2
-  !no-dsound: OptionalDepends *= dsound
   !no-direct2d:!no-widgets: OptionalDepends *= direct2d
-  !no-gdiplus:!no-widgets: OptionalDepends *= gdiplus
   !no-dxva: OptionalDepends *= dxva
+  !winrt: {
+    !no-dsound: OptionalDepends *= dsound
+    !no-gdiplus:!no-widgets: OptionalDepends *= gdiplus
+  }
 }
-unix {
-  !no-pulseaudio: OptionalDepends *= pulseaudio
-  !no-x11:!no-widgets: OptionalDepends *= x11
-  !no-xv:!no-widgets: OptionalDepends *= xv
-  !no-vaapi: OptionalDepends *= vaapi
+unix:!mac {
+  !android {
+    !no-pulseaudio: OptionalDepends *= pulseaudio
+    !no-x11:!no-widgets: OptionalDepends *= x11
+    !no-xv:!no-widgets: OptionalDepends *= xv
+    !no-vaapi: OptionalDepends *= vaapi
+  }
   !no-cedarv: OptionalDepends *= libcedarv
 }
 mac|ios {
