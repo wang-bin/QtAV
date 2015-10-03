@@ -56,7 +56,7 @@ inline VAStatus vaCreateSurfaces(VADisplay dpy, unsigned int format, unsigned in
             return __VA_ARGS__; \
         } \
     } while(0)
-
+#define VA_ENSURE(...) VA_ENSURE_TRUE(__VA_ARGS__)
 #define VAWARN(a) \
 do { \
   VAStatus res = a; \
@@ -85,7 +85,7 @@ public:
     typedef Display* XOpenDisplay_t(const char* name);
     typedef int XCloseDisplay_t(Display* dpy);
     typedef int XInitThreads_t();
-    X11_API(): dll_helper(QString::fromLatin1("X11")) {
+    X11_API(): dll_helper(QString::fromLatin1("X11"),6) {
         fp_XOpenDisplay = (XOpenDisplay_t*)resolve("XOpenDisplay");
         fp_XCloseDisplay = (XCloseDisplay_t*)resolve("XCloseDisplay");
         fp_XInitThreads = (XInitThreads_t*)resolve("XInitThreads");
@@ -108,7 +108,7 @@ private:
     XInitThreads_t* fp_XInitThreads;
 };
 
-class VAAPI_DRM : public dll_helper {
+class VAAPI_DRM : protected dll_helper {
 public:
     typedef VADisplay vaGetDisplayDRM_t(int fd);
     VAAPI_DRM(): dll_helper(QString::fromLatin1("va-drm"),1) {
@@ -121,7 +121,7 @@ public:
 private:
     vaGetDisplayDRM_t* fp_vaGetDisplayDRM;
 };
-class VAAPI_X11 : public dll_helper {
+class VAAPI_X11 : protected dll_helper {
 public:
     typedef unsigned long Drawable;
     typedef VADisplay vaGetDisplay_t(Display *);
@@ -151,8 +151,22 @@ private:
     vaGetDisplay_t* fp_vaGetDisplay;
     vaPutSurface_t* fp_vaPutSurface;
 };
+
+typedef void*   EGLClientBuffer;
+class VAAPI_EGL : protected dll_helper { //not implemented
+    typedef VAStatus vaGetEGLClientBufferFromSurface_t(VADisplay dpy, VASurfaceID surface, EGLClientBuffer *buffer/* out*/);
+    vaGetEGLClientBufferFromSurface_t* fp_vaGetEGLClientBufferFromSurface;
+public:
+    VAAPI_EGL(): dll_helper(QString::fromLatin1("va-egl"),1) {
+        fp_vaGetEGLClientBufferFromSurface = (vaGetEGLClientBufferFromSurface_t*)resolve("vaGetEGLClientBufferFromSurface");
+    }
+    VAStatus vaGetEGLClientBufferFromSurface(VADisplay dpy, VASurfaceID surface, EGLClientBuffer *buffer/* out*/) {
+        assert(fp_vaGetEGLClientBufferFromSurface);
+        return fp_vaGetEGLClientBufferFromSurface(dpy, surface, buffer);
+    }
+};
 #ifndef QT_NO_OPENGL
-class VAAPI_GLX : public dll_helper {
+class VAAPI_GLX : protected dll_helper {
 public:
     typedef VADisplay vaGetDisplayGLX_t(Display *);
     typedef VAStatus vaCreateSurfaceGLX_t(VADisplay, GLenum, GLuint, void **);

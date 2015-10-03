@@ -181,7 +181,7 @@ Rectangle {
     }
 
     MultiPointTouchArea {
-        mouseEnabled: true
+        //mouseEnabled: true //not available on qt5.2(ubuntu14.04)
         anchors.fill: parent
         onGestureStarted: {
             if (player.playbackState == MediaPlayer.StoppedState)
@@ -396,11 +396,11 @@ Rectangle {
                         metaData: player.metaData
                     }
                 }
-                if (typeof(item.internalAudioTracks) != "undefined")
+                if (item.hasOwnProperty("internalAudioTracks"))
                     item.internalAudioTracks = player.internalAudioTracks
                 if (typeof(item.externalAudioTracks) != "undefined")
                     item.externalAudioTracks = player.externalAudioTracks
-                if (typeof(item.internalSubtitleTracks) != "undefined")
+                if ("internalSubtitleTracks" in item)
                     item.internalSubtitleTracks = player.internalSubtitleTracks
             }
         }
