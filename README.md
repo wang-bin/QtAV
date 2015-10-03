@@ -20,7 +20,7 @@ QtAV can meet your most demands
 - Real time preview
 - Video capture in rgb and yuv format
 - OSD and custom filters
-- Filters in libavfilter, for example stero3d, blur
+- Filters in libavfilter, for example stereo3d, blur
 - Subtitle supports ass, srt etc. Dynamic change FFmpeg and libass engine
 - Playing frame by frame (currently support forward playing)
 - Playback speed control

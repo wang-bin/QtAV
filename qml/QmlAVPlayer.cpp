@@ -288,7 +288,7 @@ static AudioFormat::ChannelLayout toAudioFormatChannelLayout(QmlAVPlayer::Channe
     { QmlAVPlayer::Left, AudioFormat::ChannelLayout_Left },
     { QmlAVPlayer::Right, AudioFormat::ChannelLayout_Right },
     { QmlAVPlayer::Mono, AudioFormat::ChannelLayout_Mono },
-    { QmlAVPlayer::Stero, AudioFormat::ChannelLayout_Stero },
+    { QmlAVPlayer::Stereo, AudioFormat::ChannelLayout_Stereo },
     };
     for (uint i = 0; i < sizeof(map)/sizeof(map[0]); ++i) {
         if (map[i].ch == ch)

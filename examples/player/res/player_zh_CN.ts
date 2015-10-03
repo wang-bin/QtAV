@@ -599,7 +599,7 @@
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="443"/>
-        <source>Stero</source>
+        <source>Stereo</source>
         <translation>立体声</translation>
     </message>
     <message>

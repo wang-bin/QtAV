@@ -34,7 +34,7 @@ Description: FFmpeg powered multimedia playback SDK for Qt
    * OpenGL and ES2 support for Hi10P and other 16-bit YUV videos
    * Video capture in rgb and yuv format
    * OSD and custom filters
-   * filters in libavfilter, for example stero3d, blur
+   * filters in libavfilter, for example stereo3d, blur
    * Subtitles
    * Playback speed control
    * Variant streams: locale file, http, rtsp, etc.

@@ -116,8 +116,8 @@ bool AudioEncoderFFmpegPrivate::open()
             qDebug("use first supported channel layout: %lld", codec->channel_layouts[0]);
             format_used.setChannelLayoutFFmpeg((qint64)codec->channel_layouts[0]);
         } else {
-            qWarning("channel layout and supported channel layout are not set. use stero");
-            format_used.setChannelLayout(AudioFormat::ChannelLayout_Stero);
+            qWarning("channel layout and supported channel layout are not set. use stereo");
+            format_used.setChannelLayout(AudioFormat::ChannelLayout_Stereo);
         }
     }
     avctx->sample_fmt = (AVSampleFormat)format_used.sampleFormatFFmpeg();

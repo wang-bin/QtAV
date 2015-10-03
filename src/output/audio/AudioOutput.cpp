@@ -259,7 +259,7 @@ AudioOutput::AudioOutput(QObject* parent)
 {
     qDebug() << "Registered audio backends: " << AudioOutput::backendsAvailable(); // call this to register
     d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
-    d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stero);
+    d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stereo);
     static const QStringList all = QStringList()
 #if QTAV_HAVE(XAUDIO2)
             << QStringLiteral("XAudio2")
@@ -558,7 +558,7 @@ AudioFormat::ChannelLayout AudioOutput::preferredChannelLayout() const
 {
     DPTR_D(const AudioOutput);
     if (!d.backend)
-        return AudioFormat::ChannelLayout_Stero;
+        return AudioFormat::ChannelLayout_Stereo;
     return d.backend->preferredChannelLayout();
 }
 

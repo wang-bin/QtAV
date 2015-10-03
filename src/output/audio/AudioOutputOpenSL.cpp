@@ -194,7 +194,7 @@ bool AudioOutputOpenSL::isSupported(AudioFormat::SampleFormat sampleFormat) cons
 
 bool AudioOutputOpenSL::isSupported(AudioFormat::ChannelLayout channelLayout) const
 {
-    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stero;
+    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stereo;
 }
 
 AudioFormat::SampleFormat AudioOutputOpenSL::preferredSampleFormat() const
@@ -204,7 +204,7 @@ AudioFormat::SampleFormat AudioOutputOpenSL::preferredSampleFormat() const
 
 AudioFormat::ChannelLayout AudioOutputOpenSL::preferredChannelLayout() const
 {
-    return AudioFormat::ChannelLayout_Stero;
+    return AudioFormat::ChannelLayout_Stereo;
 }
 
 AudioOutputBackend::BufferControl AudioOutputOpenSL::bufferControl() const
