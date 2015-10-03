@@ -253,7 +253,7 @@ bool AudioOutputXAudio2::isSupported(AudioFormat::SampleFormat sampleFormat) con
 // FIXME:
 bool AudioOutputXAudio2::isSupported(AudioFormat::ChannelLayout channelLayout) const
 {
-    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stero;
+    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stereo;
 }
 
 

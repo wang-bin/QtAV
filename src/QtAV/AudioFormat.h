@@ -64,7 +64,7 @@ public:
         ChannelLayout_Right,
         ChannelLayout_Center,
         ChannelLayout_Mono = ChannelLayout_Center,
-        ChannelLayout_Stero,
+        ChannelLayout_Stereo,
         ChannelLayout_Unsupported //ok. now it's not complete
     };
     //typedef qint64 ChannelLayout; //currently use latest FFmpeg's

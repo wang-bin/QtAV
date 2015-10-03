@@ -80,7 +80,7 @@ static const ChannelLayoutMap kChannelLayoutMap[] = {
     { AV_CH_FRONT_RIGHT, AudioFormat::ChannelLayout_Right },
     { AV_CH_FRONT_CENTER, AudioFormat::ChannelLayout_Center },
     { AV_CH_LAYOUT_MONO, AudioFormat::ChannelLayout_Mono },
-    { AV_CH_LAYOUT_STEREO, AudioFormat::ChannelLayout_Stero },
+    { AV_CH_LAYOUT_STEREO, AudioFormat::ChannelLayout_Stereo },
     { 0, AudioFormat::ChannelLayout_Unsupported}
 };
 

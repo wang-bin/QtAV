@@ -60,9 +60,9 @@ public:
     virtual AudioFormat::SampleFormat preferredSampleFormat() const { return AudioFormat::SampleFormat_Signed16;}
     /*!
      * \brief preferredChannelLayout
-     * \return the preferred channel layout. default is stero
+     * \return the preferred channel layout. default is stereo
      */
-    virtual AudioFormat::ChannelLayout preferredChannelLayout() const { return AudioFormat::ChannelLayout_Stero;}
+    virtual AudioFormat::ChannelLayout preferredChannelLayout() const { return AudioFormat::ChannelLayout_Stereo;}
     /*!
      * \brief The BufferControl enum
      * Used to adapt to different audio playback backend. Usually you don't need this in application level development.

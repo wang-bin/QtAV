@@ -445,7 +445,7 @@ void MainWindow::setupUi()
     mpChannelMenu = subMenu;
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeChannel(QAction*)));
     subMenu->addAction(tr("As input"))->setData(AudioFormat::ChannelLayout_Unsupported); //will set to input in resampler if not supported.
-    subMenu->addAction(tr("Stero"))->setData(AudioFormat::ChannelLayout_Stero);
+    subMenu->addAction(tr("Stereo"))->setData(AudioFormat::ChannelLayout_Stereo);
     subMenu->addAction(tr("Mono (center)"))->setData(AudioFormat::ChannelLayout_Center);
     subMenu->addAction(tr("Left"))->setData(AudioFormat::ChannelLayout_Left);
     subMenu->addAction(tr("Right"))->setData(AudioFormat::ChannelLayout_Right);

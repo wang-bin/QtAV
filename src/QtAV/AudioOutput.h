@@ -152,7 +152,7 @@ public:
     AudioFormat::SampleFormat preferredSampleFormat() const;
     /*!
      * \brief preferredChannelLayout
-     * \return the preferred channel layout. default is stero
+     * \return the preferred channel layout. default is stereo
      */
     AudioFormat::ChannelLayout preferredChannelLayout() const;
     /*!

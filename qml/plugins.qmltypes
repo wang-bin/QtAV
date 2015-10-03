@@ -173,7 +173,7 @@ Module {
                 "Left": 1,
                 "Right": 2,
                 "Mono": 3,
-                "Stero": 4
+                "Stereo": 4
             }
         }
         Property { name: "volume"; type: "double" }

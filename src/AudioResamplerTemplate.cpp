@@ -167,7 +167,7 @@ bool AudioResamplerFF::prepare()
     //d.in_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.in_sample_format) ? d.in_channels : 1;
     //d.out_planes = av_sample_fmt_is_planar((enum AVSampleFormat)d.out_sample_format) ? d.out_channels : 1;
     if (d.context)
-        swr_free(&d.context); //TODO: if no free(of cause free is required), why channel mapping and layout not work if change from left to stero?
+        swr_free(&d.context); //TODO: if no free(of cause free is required), why channel mapping and layout not work if change from left to stereo?
     //If use swr_alloc() need to set the parameters (av_opt_set_xxx() manually or with swr_alloc_set_opts()) before calling swr_init()
     d.context = swr_alloc_set_opts(d.context
                                    , d.out_format.channelLayoutFFmpeg()

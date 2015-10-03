@@ -113,7 +113,7 @@
     </message>
     <message>
         <location filename="../qml/QMLPlayer/AudioPage.qml" line="99"/>
-        <source>Stero</source>
+        <source>Stereo</source>
         <translation>立体声</translation>
     </message>
     <message>

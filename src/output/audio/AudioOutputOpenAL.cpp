@@ -344,13 +344,13 @@ bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) cons
         return alIsExtensionPresent("AL_EXT_float32");
     if (sampleFormat == AudioFormat::SampleFormat_Double)
         return alIsExtensionPresent("AL_EXT_double");
-    // because preferredChannelLayout() is stero while s32 only supports >3 channels, so always false
+    // because preferredChannelLayout() is stereo while s32 only supports >3 channels, so always false
     return false;
 }
 
 bool AudioOutputOpenAL::isSupported(AudioFormat::ChannelLayout channelLayout) const
 {
-    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stero;
+    return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stereo;
 }
 
 AudioFormat::SampleFormat AudioOutputOpenAL::preferredSampleFormat() const
@@ -360,7 +360,7 @@ AudioFormat::SampleFormat AudioOutputOpenAL::preferredSampleFormat() const
 
 AudioFormat::ChannelLayout AudioOutputOpenAL::preferredChannelLayout() const
 {
-    return AudioFormat::ChannelLayout_Stero;
+    return AudioFormat::ChannelLayout_Stereo;
 }
 
 QString AudioOutputOpenAL::deviceName() const

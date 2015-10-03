@@ -96,7 +96,7 @@ Page {
         }
     }
     Component.onCompleted: {
-        channelModel.append({name: qsTr("Stero"), value: MediaPlayer.Stero })
+        channelModel.append({name: qsTr("Stereo"), value: MediaPlayer.Stereo })
         channelModel.append({name: qsTr("Mono"), value: MediaPlayer.Mono })
         channelModel.append({name: qsTr("Left"), value: MediaPlayer.Left })
         channelModel.append({name: qsTr("Right"), value: MediaPlayer.Right })
