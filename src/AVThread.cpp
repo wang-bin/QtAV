@@ -141,6 +141,18 @@ void AVThread::scheduleFrameDrop(bool value)
     scheduleTask(new FrameDropTask(decoder(), value));
 }
 
+qreal AVThread::previousHistoryPts() const
+{
+    DPTR_D(const AVThread);
+    if (d.pts_history.empty()) {
+        qDebug("pts history is EMPTY");
+        return 0;
+    }
+    if (d.pts_history.size() == 1)
+        return -d.pts_history.back();
+    return d.pts_history.at(d.pts_history.size() - 2);
+}
+
 // TODO: shall we close decoder here?
 void AVThread::stop()
 {

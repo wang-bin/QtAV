@@ -256,7 +256,7 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
             break;
         case Qt::Key_N: //check playing?
             foreach (AVPlayer* player, players) {
-                player->playNextFrame();
+                player->stepForward();
             }
             break;
 

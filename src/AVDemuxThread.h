@@ -45,6 +45,7 @@ public:
     AVThread* audioThread();
     void setVideoThread(AVThread *thread);
     AVThread* videoThread();
+    void stepBackward();
     void seek(qint64 pos, SeekType type); //ms
     //AVDemuxer* demuxer
     bool isPaused() const;
@@ -99,6 +100,7 @@ private:
     QMutex next_frame_mutex;
     int clock_type; // change happens in different threads(direct connection)
     friend class SeekTask;
+    friend class stepBackwardTask;
 };
 
 } //namespace QtAV

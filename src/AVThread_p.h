@@ -27,6 +27,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/QWaitCondition>
 #include "PacketBuffer.h"
+#include "utils/ring.h"
 
 class QRunnable;
 namespace QtAV {
@@ -53,6 +54,7 @@ public:
       , statistics(0)
       , ready(false)
       , render_pts0(-1)
+      , pts_history(30, -1)
     {
         tasks.blockFull(false);
 
@@ -83,6 +85,7 @@ public:
     qreal render_pts0;
 
     static QVariantHash dec_opt_framedrop, dec_opt_normal;
+    ring<qreal> pts_history;
 };
 
 } //namespace QtAV

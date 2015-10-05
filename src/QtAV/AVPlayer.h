@@ -363,9 +363,17 @@ public slots:
      */
     void play(); //replay
     void stop();
-    void playNextFrame(); //deprecated
-    //void stepForward();
-    //void stepBackward();
+    QTAV_DEPRECATED void playNextFrame(); //deprecated. use stepForward instead
+    /*!
+     * \brief stepForward
+     * Play the next frame and pause
+     */
+    void stepForward();
+    /*!
+     * \brief stepBackward
+     * Play the previous frame and pause. Currently only support the previous decoded frames
+     */
+    void stepBackward();
 
     void setRelativeTimeMode(bool value);
     /*!

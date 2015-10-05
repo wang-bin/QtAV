@@ -135,7 +135,10 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             player->videoCapture()->capture();
             break;
         case Qt::Key_N: //check playing?
-            player->playNextFrame();
+            player->stepForward();
+            break;
+        case Qt::Key_B:
+            player->stepBackward();
             break;
         case Qt::Key_P:
             player->play();

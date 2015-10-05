@@ -608,7 +608,7 @@ void QmlAVPlayer::nextFrame()
 {
     if (!mpPlayer)
         return;
-    mpPlayer->playNextFrame();
+    mpPlayer->stepForward();
 }
 
 void QmlAVPlayer::seek(int offset)

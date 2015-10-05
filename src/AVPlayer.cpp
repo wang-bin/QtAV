@@ -128,7 +128,6 @@ void AVPlayer::clearVideoRenderers()
     d->vos->clearOutputs();
 }
 
-//TODO: check components compatiblity(also when change the filter chain)
 void AVPlayer::setRenderer(VideoRenderer *r)
 {
     VideoRenderer *vo = renderer();
@@ -539,7 +538,6 @@ bool AVPlayer::play(const QString& path)
     return true;//isPlaying();
 }
 
-// TODO: check repeat status?
 bool AVPlayer::isPlaying() const
 {
     return (d->read_thread &&d->read_thread->isRunning())
@@ -868,7 +866,7 @@ qreal AVPlayer::positionF() const
 
 qint64 AVPlayer::position() const
 {
-    const qint64 pts = d->clock->value()*1000.0; //TODO: avoid *1000.0
+    const qint64 pts = d->clock->value()*1000.0;
     if (relativeTimeMode())
         return pts - absoluteMediaStartPosition();
     return pts;
@@ -1079,7 +1077,6 @@ bool AVPlayer::setSubtitleStream(int n)
 {
     if (d->subtitle_track == n)
         return true;
-    // TODO: xxxchanged signal
     d->subtitle_track = n;
     Q_EMIT subtitleStreamChanged(n);
     if (!d->demuxer.isLoaded())
@@ -1457,12 +1454,22 @@ void AVPlayer::timerEvent(QTimerEvent *te)
     }
 }
 
-//FIXME: If not playing, it will just play but not play one frame.
 void AVPlayer::playNextFrame()
+{
+    stepForward();
+}
+
+//FIXME: If not playing, it will just play but not play one frame.
+void AVPlayer::stepForward()
 {
     // pause clock
     pause(true); // must pause AVDemuxThread (set user_paused true)
     d->read_thread->nextFrame();
+}
+
+void AVPlayer::stepBackward()
+{
+    d->read_thread->stepBackward();
 }
 
 void AVPlayer::seek(qreal r)

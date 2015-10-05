@@ -137,6 +137,67 @@ AVThread* AVDemuxThread::audioThread()
     return audio_thread;
 }
 
+void AVDemuxThread::stepBackward()
+{
+    if (!video_thread)
+        return;
+    AVThread *t = video_thread;
+    const qreal pre_pts = video_thread->previousHistoryPts();
+    if (pre_pts == 0.0) {
+        qWarning("can not get previous pts");
+        return;
+    }
+    end = false;
+    // queue maybe blocked by put()
+    if (audio_thread) {
+        audio_thread->packetQueue()->clear(); // will put new packets before task run
+    }
+
+    class stepBackwardTask : public QRunnable {
+    public:
+        stepBackwardTask(AVDemuxThread *dt, qreal t)
+            : demux_thread(dt)
+            , pts(t)
+        {}
+        void run() {
+            AVThread *avt = demux_thread->videoThread();
+            avt->packetQueue()->clear(); // clear here
+            if (pts <= 0) {
+                demux_thread->demuxer->seek(qint64(-pts*1000.0) - 1000LL);
+                QVector<qreal> ts;
+                qreal t = -1.0;
+                while (t < -pts) {
+                    demux_thread->demuxer->readFrame();
+                    if (demux_thread->demuxer->stream() != demux_thread->demuxer->videoStream())
+                        continue;
+                    t = demux_thread->demuxer->packet().pts;
+                    ts.push_back(t);
+                }
+                ts.pop_back();
+                pts = ts.back();
+            }
+            qDebug("step backward: %lld, %f", qint64(pts*1000.0), pts);
+            demux_thread->seekInternal(qint64(pts*1000.0), AccurateSeek);
+        }
+    private:
+        AVDemuxThread *demux_thread;
+        qreal pts;
+    };
+
+    pause(true);
+    // set clock first
+    if (clock_type < 0)
+        clock_type = (int)video_thread->clock()->isClockAuto() + 2*(int)video_thread->clock()->clockType();
+    video_thread->clock()->setClockType(AVClock::VideoClock);
+    t->packetQueue()->clear(); // will put new packets before task run
+    t->packetQueue();
+    Packet pkt;
+    pkt.pts = qreal(pre_pts)/1000.0;
+    t->packetQueue()->put(pkt); // clear and put a seek packet to ensure not frames other than previous frame will be decoded and rendered
+    video_thread->pause(false);
+    newSeekRequest(new stepBackwardTask(this, pre_pts));
+}
+
 void AVDemuxThread::seek(qint64 pos, SeekType type)
 {
     end = false;
@@ -345,6 +406,11 @@ void AVDemuxThread::seekOnPauseFinished()
             video_thread->pause(true);
         if (audio_thread)
             audio_thread->pause(true);
+    }
+    if (clock_type >= 0) {
+        thread->clock()->setClockAuto(clock_type & 1);
+        thread->clock()->setClockType(AVClock::ClockType(clock_type/2));
+        clock_type = -1;
     }
 }
 

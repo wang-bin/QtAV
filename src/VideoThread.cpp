@@ -286,9 +286,9 @@ void VideoThread::run()
     const char* pkt_data = NULL; // workaround for libav9 decode fail but error code >= 0
     while (true) {
         processNextTask();
-        //TODO: why put it at the end of loop then playNextFrame() not work?
+        //TODO: why put it at the end of loop then stepForward() not work?
         //processNextTask tryPause(timeout) and  and continue outter loop
-        if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
+        if (tryPause()) { //DO NOT continue, or stepForward() will fail
 
         } else {
             if (isPaused())
@@ -312,6 +312,7 @@ void VideoThread::run()
                 qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());  
                 d.dec->flush(); //d.dec instead of dec because d.dec maybe changed in processNextTask() but dec is not
                 d.render_pts0 = pkt.pts;
+                d.pts_history = ring<qreal>(d.pts_history.capacity(), -1);
                 continue;
             }
         }
@@ -487,6 +488,8 @@ void VideoThread::run()
         const qreal pts = frame.timestamp();
         // seek finished because we can ensure no packet before seek decoded when render_pts0 is set
         //qDebug("pts0: %f, pts: %f", d.render_pts0, pts);
+        d.pts_history.push_back(pts);
+
         if (d.render_pts0 >= 0.0) {
             if (pts < d.render_pts0) {
                 if (!pkt.isEOF())
@@ -494,6 +497,7 @@ void VideoThread::run()
                 continue;
             }
             d.render_pts0 = -1;
+            qDebug("seek finished @%f", pts);
             Q_EMIT seekFinished(qint64(pts*1000.0));
             if (seek_count == -1)
                 seek_count = 1;
