@@ -210,7 +210,8 @@ public Q_SLOTS:
     void play();
     void pause();
     void stop();
-    void nextFrame();
+    void stepForward();
+    void stepBackward();
     void seek(int offset);
     void seekForward();
     void seekBackward();

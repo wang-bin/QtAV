@@ -224,7 +224,8 @@ Module {
         Method { name: "play" }
         Method { name: "pause" }
         Method { name: "stop" }
-        Method { name: "nextFrame" }
+        Method { name: "stepForward" }
+        Method { name: "stepBackward" }
         Method {
             name: "seek"
             Parameter { name: "offset"; type: "int" }

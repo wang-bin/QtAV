@@ -361,6 +361,14 @@ Item {
         onSeekFinished: video.seekFinished()
     }
 
+    function stepForward() {
+        player.stepForward()
+    }
+
+    function stepBackward() {
+        player.stepBackward()
+    }
+
     /*!
         \qmlmethod Video::play()
 

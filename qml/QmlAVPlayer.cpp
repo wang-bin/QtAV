@@ -604,11 +604,18 @@ void QmlAVPlayer::stop()
     setPlaybackState(StoppedState);
 }
 
-void QmlAVPlayer::nextFrame()
+void QmlAVPlayer::stepForward()
 {
     if (!mpPlayer)
         return;
     mpPlayer->stepForward();
+}
+
+void QmlAVPlayer::stepBackward()
+{
+    if (!mpPlayer)
+        return;
+    return mpPlayer->stepBackward();
 }
 
 void QmlAVPlayer::seek(int offset)

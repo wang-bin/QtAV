@@ -358,8 +358,15 @@ Rectangle {
             case Qt.Key_O:
                 fileDialog.open()
                 break;
+            case Qt.Key_N:
+                player.stepForward()
+                break
+            case Qt.Key_B:
+                player.stepBackward()
+                break;
             case Qt.Key_Q:
                 Qt.quit()
+                break
             }
         }
     }
