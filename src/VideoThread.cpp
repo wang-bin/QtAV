@@ -296,6 +296,7 @@ void VideoThread::run()
         }
         if(!pkt.isValid() && !pkt.isEOF()) { // can't seek back if eof packet is read
             pkt = d.packets.take(); //wait to dequeue
+           // TODO: push pts history here and reorder
         }
         if (pkt.isEOF()) {
             d.render_pts0 = -1;
@@ -427,27 +428,31 @@ void VideoThread::run()
             wait_key_frame = false;
         }
         QVariantHash *dec_opt_old = dec_opt;
-        if (!seeking) { // MAYBE not seeking
-            if (nb_dec_slow < kNbSlowFrameDrop) {
-                if (dec_opt == &d.dec_opt_framedrop) {
-                    qDebug("frame drop normal. nb_dec_slow: %d, line: %d", nb_dec_slow, __LINE__);
-                    dec_opt = &d.dec_opt_normal;
+        if (d.drop_frame_seek) {
+            if (!seeking) { // MAYBE not seeking
+                if (nb_dec_slow < kNbSlowFrameDrop) {
+                    if (dec_opt == &d.dec_opt_framedrop) {
+                        qDebug("frame drop normal. nb_dec_slow: %d. not seeking", nb_dec_slow);
+                        dec_opt = &d.dec_opt_normal;
+                    }
+                } else {
+                    if (dec_opt == &d.dec_opt_normal) {
+                        qDebug("frame drop noref. nb_dec_slow: %d too slow. not seeking", nb_dec_slow);
+                        dec_opt = &d.dec_opt_framedrop;
+                    }
                 }
-            } else {
-                if (dec_opt == &d.dec_opt_normal) {
-                    qDebug("frame drop noref. nb_dec_slow: %d, line: %d", nb_dec_slow, __LINE__);
-                    dec_opt = &d.dec_opt_framedrop;
+            } else { // seeking
+                if (seek_count > 0) {
+                    if (dec_opt == &d.dec_opt_normal) {
+                        qDebug("seeking... frame drop noref. nb_dec_slow: %d", nb_dec_slow);
+                        dec_opt = &d.dec_opt_framedrop;
+                    }
+                } else {
+                    seek_count = -1;
                 }
             }
-        } else { // seeking
-            if (seek_count > 0) {
-                if (dec_opt == &d.dec_opt_normal) {
-                    qDebug("seeking... frame drop noref. nb_dec_slow: %d, line: %d", nb_dec_slow, __LINE__);
-                    dec_opt = &d.dec_opt_framedrop;
-                }
-            } else {
-                seek_count = -1;
-            }
+        } else {
+            dec_opt = &d.dec_opt_normal;
         }
 
         // decoder maybe changed in processNextTask(). code above MUST use d.dec but not dec
@@ -486,10 +491,9 @@ void VideoThread::run()
         if (frame.timestamp() <= 0)
             frame.setTimestamp(pkt.pts); // pkt.pts is wrong. >= real timestamp
         const qreal pts = frame.timestamp();
+        d.pts_history.push_back(pts);
         // seek finished because we can ensure no packet before seek decoded when render_pts0 is set
         //qDebug("pts0: %f, pts: %f", d.render_pts0, pts);
-        d.pts_history.push_back(pts);
-
         if (d.render_pts0 >= 0.0) {
             if (pts < d.render_pts0) {
                 if (!pkt.isEOF())

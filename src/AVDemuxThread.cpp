@@ -177,6 +177,7 @@ void AVDemuxThread::stepBackward()
                 pts = ts.back();
             }
             qDebug("step backward: %lld, %f", qint64(pts*1000.0), pts);
+            demux_thread->video_thread->setDropFrameOnSeek(false);
             demux_thread->seekInternal(qint64(pts*1000.0), AccurateSeek);
         }
     private:
@@ -216,6 +217,8 @@ void AVDemuxThread::seek(qint64 pos, SeekType type)
             , position(t)
         {}
         void run() {
+            if (demux_thread->video_thread)
+                demux_thread->video_thread->setDropFrameOnSeek(true);
             demux_thread->seekInternal(position, type);
         }
     private:

@@ -77,6 +77,7 @@ public:
     void scheduleTask(QRunnable *task);
     void scheduleFrameDrop(bool value = true);
     qreal previousHistoryPts() const;
+    void setDropFrameOnSeek(bool value);
 
 public slots:
     virtual void stop();

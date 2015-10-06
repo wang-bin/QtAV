@@ -1469,6 +1469,8 @@ void AVPlayer::stepForward()
 
 void AVPlayer::stepBackward()
 {
+    d->clock->pause(true);
+    Q_EMIT paused(true);
     d->read_thread->stepBackward();
 }
 

@@ -153,6 +153,11 @@ qreal AVThread::previousHistoryPts() const
     return d.pts_history.at(d.pts_history.size() - 2);
 }
 
+void AVThread::setDropFrameOnSeek(bool value)
+{
+    d_func().drop_frame_seek = value;
+}
+
 // TODO: shall we close decoder here?
 void AVThread::stop()
 {

@@ -54,6 +54,7 @@ public:
       , statistics(0)
       , ready(false)
       , render_pts0(-1)
+      , drop_frame_seek(true)
       , pts_history(30, -1)
     {
         tasks.blockFull(false);
@@ -85,6 +86,7 @@ public:
     qreal render_pts0;
 
     static QVariantHash dec_opt_framedrop, dec_opt_normal;
+    bool drop_frame_seek;
     ring<qreal> pts_history;
 };
 
