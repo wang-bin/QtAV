@@ -7,8 +7,10 @@ if exist %QTDIR%\bin\msvc*.dll copy /y %QTDIR%\bin\msvc*.dll bin
 if exist %QTDIR%\bin\OpenAL32*.dll copy /y %QTDIR%\bin\OpenAL32*.dll bin
 if exist %QTDIR%\bin\OpenAL32-%cc%.dll copy /y %QTDIR%\bin\OpenAL32-%cc%.dll bin\OpenAL32.dll
 if exist %QTDIR%\bin\D3DCompiler_*.dll copy /y %QTDIR%\bin\D3DCompiler_*.dll bin
-if exist %QTDIR%\bin\lib*.dll copy /y %QTDIR%\bin\lib*.dll bin          # libEGL, GLESv2, gcc_s_dw2-1, stdc++-6, winpthread-1
+:: libEGL, GLESv2, gcc_s_dw2-1, stdc++-6, winpthread-1
+if exist %QTDIR%\bin\lib*.dll copy /y %QTDIR%\bin\lib*.dll bin
 if exist %QTDIR%\bin\icu*.dll xcopy /syi %QTDIR%\bin\icu*.dll bin
+
 echo [Paths] > bin\qt.conf
 echo Prefix=. >> bin\qt.conf
 
