@@ -39,11 +39,8 @@ if "%mode%" == "debug" (
   if exist %QTDIR%\bin\Qt5Quick.dll copy /y %QTDIR%\bin\Qt5Quick.dll bin
   echo deleting debug files
   if exist bin\lib*GL*d.dll del bin\lib*GL*d.dll
-:: delete debug dlls
-  dir /S /B bin\plugins
-  if exist bin\qml (
-    dir /S /B bin\qml
-  )
+:: delete debug dlls. assume no *dd.dll
+  forfiles /S /M *d.dll /P bin /C "cmd /C del @path"
 )
 dir bin
 xcopy /syi tools\install_sdk\mkspecs mkspecs
