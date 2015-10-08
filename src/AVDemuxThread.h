@@ -22,7 +22,6 @@
 #ifndef QAV_DEMUXTHREAD_H
 #define QAV_DEMUXTHREAD_H
 
-#include <QtCore/QAtomicInt>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
 #include <QtCore/QRunnable>
@@ -96,7 +95,6 @@ private:
     QWaitCondition cond;
     BlockingQueue<QRunnable*> seek_tasks;
 
-    QAtomicInt nb_next_frame;
     QMutex next_frame_mutex;
     int clock_type; // change happens in different threads(direct connection)
     friend class SeekTask;

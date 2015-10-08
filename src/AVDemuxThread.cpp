@@ -68,7 +68,6 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , ademuxer(0)
   , audio_thread(0)
   , video_thread(0)
-  , nb_next_frame(0)
   , clock_type(-1)
 {
     seek_tasks.setCapacity(1);
@@ -188,7 +187,6 @@ void AVDemuxThread::stepBackward()
 
     pause(true);
     // set clock first
-    // FIXME: clockType() is AVClock::VideoClock if seek is not finished
     if (clock_type < 0)
         clock_type = (int)video_thread->clock()->isClockAuto() + 2*(int)video_thread->clock()->clockType();
     video_thread->clock()->setClockType(AVClock::VideoClock);
@@ -273,7 +271,7 @@ void AVDemuxThread::newSeekRequest(QRunnable *r)
 {
     if (seek_tasks.size() >= seek_tasks.capacity()) {
         QRunnable *r = seek_tasks.take();
-        if (r->autoDelete())
+        if (r && r->autoDelete())
             delete r;
     }
     seek_tasks.put(r);
@@ -382,7 +380,6 @@ void AVDemuxThread::nextFrame()
         if (!t)
             continue;
         // set clock first
-        // FIXME: clockType() is AVClock::VideoClock if seek is not finished
         if (clock_type < 0)
             clock_type = (int)t->clock()->isClockAuto() + 2*(int)t->clock()->clockType();
         t->clock()->setClockType(AVClock::VideoClock);
@@ -395,7 +392,6 @@ void AVDemuxThread::nextFrame()
         }
     }
     emit requestClockPause(false);
-    nb_next_frame.ref();
     pauseInternal(false);
 }
 
@@ -424,14 +420,6 @@ void AVDemuxThread::frameDeliveredNextFrame()
 {
     AVThread *thread = video_thread ? video_thread : audio_thread;
     Q_ASSERT(thread);
-    if (nb_next_frame.deref()) {
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
-        Q_ASSERT_X((int)nb_next_frame > 0, "frameDeliveredNextFrame", "internal error. frameDeliveredNextFrame must be > 0");
-#else
-        Q_ASSERT_X((int)nb_next_frame.load() > 0, "frameDeliveredNextFrame", "internal error. frameDeliveredNextFrame must be > 0");
-#endif
-        return;
-    }
     QMutexLocker locker(&next_frame_mutex);
     Q_UNUSED(locker);
     disconnect(thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredNextFrame()));
