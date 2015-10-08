@@ -8,8 +8,4 @@ include($$PROJECTROOT/src/libQtAV.pri)
 include($$PROJECTROOT/widgets/libQtAVWidgets.pri)
 preparePaths($$OUT_PWD/../../out)
 
-SOURCES += main.cpp \
-    playerwindow.cpp
-
-HEADERS += \
-    playerwindow.h
+include(src.pri)

@@ -1,7 +1,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS = common
-!android {
+!android:!ios:!winrt {
   SUBDIRS += audiopipeline
 !no-widgets {
   SUBDIRS += \
@@ -16,6 +16,12 @@ SUBDIRS = common
     videowall
 
   player.depends += common
+
+  sdk_build {
+    SUBDIRS *= \
+        simpleplayer/simpleplayer_sdk.pro \
+        player/player_sdk.pro
+  }
 }
 }
 
