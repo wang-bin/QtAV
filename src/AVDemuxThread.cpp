@@ -175,6 +175,7 @@ void AVDemuxThread::stepBackward()
                 }
                 ts.pop_back();
                 pts = ts.back();
+                // FIXME: sometimes can not seek to the previous pts, the result pts is always current pts
             }
             qDebug("step backward: %lld, %f", qint64(pts*1000.0), pts);
             demux_thread->video_thread->setDropFrameOnSeek(false);
@@ -187,13 +188,14 @@ void AVDemuxThread::stepBackward()
 
     pause(true);
     // set clock first
+    // FIXME: clockType() is AVClock::VideoClock if seek is not finished
     if (clock_type < 0)
         clock_type = (int)video_thread->clock()->isClockAuto() + 2*(int)video_thread->clock()->clockType();
     video_thread->clock()->setClockType(AVClock::VideoClock);
     t->packetQueue()->clear(); // will put new packets before task run
     t->packetQueue();
     Packet pkt;
-    pkt.pts = qreal(pre_pts)/1000.0;
+    pkt.pts = pre_pts;
     t->packetQueue()->put(pkt); // clear and put a seek packet to ensure not frames other than previous frame will be decoded and rendered
     video_thread->pause(false);
     newSeekRequest(new stepBackwardTask(this, pre_pts));
@@ -380,6 +382,7 @@ void AVDemuxThread::nextFrame()
         if (!t)
             continue;
         // set clock first
+        // FIXME: clockType() is AVClock::VideoClock if seek is not finished
         if (clock_type < 0)
             clock_type = (int)t->clock()->isClockAuto() + 2*(int)t->clock()->clockType();
         t->clock()->setClockType(AVClock::VideoClock);
