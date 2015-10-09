@@ -326,7 +326,9 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
             frame.text.append(QString::fromUtf8(sub.rects[i]->text)).append(ushort('\n'));
             break;
         case SUBTITLE_BITMAP:
+            //sub.rects[i]->w > 0 && sub.rects[i]->h > 0
             //qDebug("bmp sub");
+            frame = SubtitleFrame(); // not support bmp subtitle now
             break;
         default:
             break;
