@@ -314,6 +314,7 @@ void VideoThread::run()
                 d.dec->flush(); //d.dec instead of dec because d.dec maybe changed in processNextTask() but dec is not
                 d.render_pts0 = pkt.pts;
                 d.pts_history = ring<qreal>(d.pts_history.capacity(), -1);
+                v_a = 0;
                 continue;
             }
         }
@@ -329,7 +330,8 @@ void VideoThread::run()
         }
         const qreal dts = pkt.dts; //FIXME: pts and dts
         // TODO: delta ref time
-        qreal diff = dts - d.clock->value() + v_a;
+        // if dts is invalid, diff can be very small (<0) and video will be decoded and rendered(display_wait is disabled for now) immediately
+        qreal diff = dts > 0 ? dts - d.clock->value() + v_a : v_a;
         if (pkt.isEOF())
             diff = qMin<qreal>(1.0, qMax<qreal>(d.delay, 1.0/d.statistics->video_only.currentDisplayFPS()));
         if (diff < 0 && sync_video)
@@ -383,7 +385,7 @@ void VideoThread::run()
                 waitAndCheck(diff*1000UL, dts); // TODO: count decoding and filter time
             diff = 0; // TODO: can not change delay!
         }
-        // update here after wait
+        // update here after wait. TODO: use decoded timestamp/guessed next pts?
         d.clock->updateVideoTime(dts); // FIXME: dts or pts?
         if (qAbs(diff) < 0.5) {
             if (diff < -kSyncThreshold) { //Speed up. drop frame?
@@ -493,7 +495,7 @@ void VideoThread::run()
         const qreal pts = frame.timestamp();
         d.pts_history.push_back(pts);
         // seek finished because we can ensure no packet before seek decoded when render_pts0 is set
-        //qDebug("pts0: %f, pts: %f", d.render_pts0, pts);
+        //qDebug("pts0: %f, pts: %f, clock: %d", d.render_pts0, pts, d.clock->clockType());
         if (d.render_pts0 >= 0.0) {
             if (pts < d.render_pts0) {
                 if (!pkt.isEOF())

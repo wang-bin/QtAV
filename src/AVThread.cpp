@@ -333,7 +333,7 @@ void AVThread::waitAndCheck(ulong value, qreal pts)
             us = 0;
         else
             us -= kWaitSlice;
-        us = qMin(us, ulong((double)(pts - d.clock->value())*1000000.0));
+        us = qMin(us, ulong((double)(qMax<qreal>(0, pts - d.clock->value()))*1000000.0));
         processNextTask();
     }
     if (us > 0) {
