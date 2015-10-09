@@ -360,7 +360,7 @@ bool XVRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
             ;
 }
 
-void CopyPlane(quint8 *dst, size_t dst_pitch,
+static void CopyPlane(quint8 *dst, size_t dst_pitch,
                       const quint8 *src, size_t src_pitch,
                       unsigned width, unsigned height)
 {

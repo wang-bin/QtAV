@@ -318,7 +318,22 @@ bool X11Renderer::isSupported(VideoFormat::PixelFormat pixfmt) const
     // if always return true, then convert to x11 format and scale in receiveFrame() only once. no need to convert format first then scale
     return true;//pixfmt == d_func().pixfmt && d_func().pixfmt != VideoFormat::Format_Invalid;
 }
-extern void CopyPlane(quint8 *dst, size_t dst_pitch, const quint8 *src, size_t src_pitch, unsigned width, unsigned height);
+
+static void CopyPlane(quint8 *dst, size_t dst_pitch,
+                      const quint8 *src, size_t src_pitch,
+                      unsigned width, unsigned height)
+{
+    if (dst_pitch == src_pitch && src_pitch == width) {
+        memcpy(dst, src, width*height);
+        return;
+    }
+    for (unsigned y = 0; y < height; y++) {
+        memcpy(dst, src, width);
+        src += src_pitch;
+        dst += dst_pitch;
+    }
+}
+
 bool X11Renderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(X11Renderer);
