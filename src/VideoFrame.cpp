@@ -93,6 +93,21 @@ VideoFrame VideoFrame::fromGPU(const VideoFormat& fmt, int width, int height, in
     return frame;
 }
 
+void VideoFrame::copyPlane(quint8 *dst, size_t dst_stride, const quint8 *src, size_t src_stride, unsigned byteWidth, unsigned height)
+{
+    if (!dst || !src)
+        return;
+    if (dst_stride == src_stride && src_stride == byteWidth && height) {
+        memcpy(dst, src, byteWidth*height);
+        return;
+    }
+    for (; height > 0; --height) {
+        memcpy(dst, src, byteWidth);
+        src += src_stride;
+        dst += dst_stride;
+    }
+}
+
 class VideoFramePrivate : public FramePrivate
 {
     Q_DISABLE_COPY(VideoFramePrivate)

@@ -360,21 +360,6 @@ bool XVRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
             ;
 }
 
-static void CopyPlane(quint8 *dst, size_t dst_pitch,
-                      const quint8 *src, size_t src_pitch,
-                      unsigned width, unsigned height)
-{
-    if (dst_pitch == src_pitch && src_pitch == width) {
-        memcpy(dst, src, width*height);
-        return;
-    }
-    for (unsigned y = 0; y < height; y++) {
-        memcpy(dst, src, width);
-        src += src_pitch;
-        dst += dst_pitch;
-    }
-}
-
 static void SplitPlanes(quint8 *dstu, size_t dstu_pitch,
                         quint8 *dstv, size_t dstv_pitch,
                         const quint8 *src, size_t src_pitch,
@@ -395,7 +380,7 @@ void CopyFromNv12(quint8 *dst[], size_t dst_pitch[],
                   const quint8 *src[2], size_t src_pitch[2],
                   unsigned width, unsigned height)
 {
-    CopyPlane(dst[0], dst_pitch[0], src[0], src_pitch[0], width, height);
+    VideoFrame::copyPlane(dst[0], dst_pitch[0], src[0], src_pitch[0], width, height);
     SplitPlanes(dst[2], dst_pitch[2], dst[1], dst_pitch[1], src[1], src_pitch[1], width/2, height/2);
 }
 
@@ -403,21 +388,21 @@ void CopyFromYv12(quint8 *dst[], size_t dst_pitch[],
                   const quint8 *src[3], size_t src_pitch[3],
                   unsigned width, unsigned height)
 {
-     CopyPlane(dst[0], dst_pitch[0], src[0], src_pitch[0], width, height);
-     CopyPlane(dst[1], dst_pitch[1], src[1], src_pitch[1], width/2, height/2);
-     CopyPlane(dst[2], dst_pitch[2], src[2], src_pitch[2], width/2, height/2);
+     VideoFrame::copyPlane(dst[0], dst_pitch[0], src[0], src_pitch[0], width, height);
+     VideoFrame::copyPlane(dst[1], dst_pitch[1], src[1], src_pitch[1], width/2, height/2);
+     VideoFrame::copyPlane(dst[2], dst_pitch[2], src[2], src_pitch[2], width/2, height/2);
 }
 
 void CopyFromYv12_2(quint8 *dst[], size_t dst_pitch[],
                   const quint8 *src[3], size_t src_pitch[3],
                   unsigned width, unsigned height)
 {
-     CopyPlane(dst[0], dst_pitch[0], src[0], src_pitch[0], width, height);
+     VideoFrame::copyPlane(dst[0], dst_pitch[0], src[0], src_pitch[0], width, height);
      width /= 2;
      height /= 2;
      if (width == dst_pitch[1] && dst_pitch[1] == src_pitch[1]) {
-         CopyPlane(dst[1], dst_pitch[1], src[1], src_pitch[1], width, height);
-         CopyPlane(dst[2], dst_pitch[2], src[2], src_pitch[2], width, height);
+         VideoFrame::copyPlane(dst[1], dst_pitch[1], src[1], src_pitch[1], width, height);
+         VideoFrame::copyPlane(dst[2], dst_pitch[2], src[2], src_pitch[2], width, height);
      } else {
          for (unsigned i = 0; i < height; ++i) {
              memcpy(dst[2], src[2], width);
@@ -479,7 +464,7 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
         break;
     case VideoFormat::Format_UYVY:
     case VideoFormat::Format_YUYV:
-        CopyPlane(dst[0], dst_linesize[0], src[0], src_linesize[0], dst_linesize[0], d.xv_image->height);
+        VideoFrame::copyPlane(dst[0], dst_linesize[0], src[0], src_linesize[0], dst_linesize[0], d.xv_image->height);
         break;
     case VideoFormat::Format_BGR24:
         break;

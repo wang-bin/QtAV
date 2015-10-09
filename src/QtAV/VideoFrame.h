@@ -48,6 +48,7 @@ public:
      * \param swapUV it's required if u/v src are null
      */
     static VideoFrame fromGPU(const VideoFormat& fmt, int width, int height, int surface_h, quint8 *src[], int pitch[], bool optimized = true, bool swapUV = false);
+    static void copyPlane(quint8 *dst, size_t dst_stride, const quint8 *src, size_t src_stride, unsigned byteWidth, unsigned height);
 
     VideoFrame();
     //must set planes and linesize manually if data is empty

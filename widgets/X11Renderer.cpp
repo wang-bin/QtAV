@@ -319,21 +319,6 @@ bool X11Renderer::isSupported(VideoFormat::PixelFormat pixfmt) const
     return true;//pixfmt == d_func().pixfmt && d_func().pixfmt != VideoFormat::Format_Invalid;
 }
 
-static void CopyPlane(quint8 *dst, size_t dst_pitch,
-                      const quint8 *src, size_t src_pitch,
-                      unsigned width, unsigned height)
-{
-    if (dst_pitch == src_pitch && src_pitch == width) {
-        memcpy(dst, src, width*height);
-        return;
-    }
-    for (unsigned y = 0; y < height; y++) {
-        memcpy(dst, src, width);
-        src += src_pitch;
-        dst += dst_pitch;
-    }
-}
-
 bool X11Renderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(X11Renderer);
@@ -374,7 +359,7 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
     }
     if (bad_pitch) {
         qDebug("bad pitch: %d - %d", d.ximage->bytes_per_line, d.video_frame.bytesPerLine(0));
-        CopyPlane((quint8*)d.ximage_data.constData(), d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
+        VideoFrame::copyPlane((quint8*)d.ximage_data.constData(), d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
         d.ximage->data = (char*)d.ximage_data.constData();
     }
     update();
