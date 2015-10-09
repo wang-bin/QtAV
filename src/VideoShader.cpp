@@ -475,6 +475,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
         qDebug() << fmt;
         qDebug("pixel format changed: %s => %s %d", qPrintable(d.video_format.name()), qPrintable(fmt.name()), fmt.pixelFormat());
         d.video_format = fmt;
+        d.init_textures_required = true;
     }
 }
 
@@ -900,6 +901,7 @@ bool VideoMaterialPrivate::ensureResources()
     if (!fmt.isValid())
         return false;
 
+    // update textures if format, texture target, valid texture width(normalized), plane 0 size or plane 1 line size changed
     bool update_textures = init_textures_required;
     const int nb_planes = fmt.planeCount();
     // will this take too much time?
