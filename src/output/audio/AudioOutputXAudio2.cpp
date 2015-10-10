@@ -73,6 +73,7 @@ public:
 
 private:
     bool xaudio2_winsdk;
+    bool uninit_com;
     // TODO: com ptr
     IXAudio2SourceVoice* source_voice;
     union {
@@ -99,6 +100,7 @@ FACTORY_REGISTER(AudioOutputBackend, XAudio2, kName)
 AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
     : AudioOutputBackend(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume, parent)
     , xaudio2_winsdk(true)
+    , uninit_com(false)
     , source_voice(NULL)
     , queue_data_write(0)
 {
@@ -108,9 +110,9 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
 #ifdef Q_OS_WINRT
     qDebug("XAudio2 for WinRT");
 #else
-    //required by XAudio2. This simply starts up the COM library on this thread
-    // TODO: in my tests, it's not required by xp, win7, win8.1, winrt
-    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    // https://github.com/wang-bin/QtAV/issues/518
+    // already initialized in qtcore for main thread. If RPC_E_CHANGED_MODE no ref is added, CoUninitialize can lead to crash
+    uninit_com = CoInitializeEx(NULL, COINIT_MULTITHREADED) != RPC_E_CHANGED_MODE;
 #endif //Q_OS_WINRT
     // load dll. <win8: XAudio2_7.DLL, <win10: XAudio2_8.DLL, win10: XAudio2_9.DLL. also defined by XAUDIO2_DLL_A in xaudio2.h
     int ver = 9;
@@ -167,7 +169,8 @@ AudioOutputXAudio2::~AudioOutputXAudio2()
         SafeRelease(&dxsdk.xaudio);
 #ifndef Q_OS_WINRT
     //again, for COM. not for winrt
-    CoUninitialize();
+    if (uninit_com)
+        CoUninitialize();
 #endif //Q_OS_WINRT
 }
 
