@@ -130,7 +130,8 @@ config_avdevice { #may depends on avfilter
       } else:linux {
         LIBS *= -lXv #-lX11 -lxcb -lxcb-shm -lxcb-xfixes -lxcb-render -lxcb-shape
       } else:mac { # static ffmpeg
-        LIBS += -framework Foundation -framework CoreMedia -framework QuartzCore -framework CoreGraphics -framework CoreVideo
+#osx: >=10.8 if link to CoreGraphics http://stackoverflow.com/questions/13715229/cannot-set-deployment-target-below-osx-10-8-error-dyld-library-not-loaded
+        LIBS += -framework Foundation -framework CoreMedia -framework QuartzCore #-framework CoreGraphics -framework CoreVideo
         ios {
           LIBS += -framework AVFoundation
         } else {
@@ -280,6 +281,13 @@ config_videotoolbox:!ios {
   SOURCES += codec/video/VideoDecoderVideoToolbox.cpp
   LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia \
           -framework IOSurface -framework VideoToolbox
+}
+#CONFIG*=config_vpu
+config_vpu {
+  DEFINES *= QTAV_HAVE_VPU=1
+  INCLUDEPATH *= codec/video/coda
+  HEADERS *= codec/video/coda/include/*.h codec/video/coda/vpuapi/*.h codec/video/coda/vdi/*.h
+  SOURCES *= codec/video/VideoDecoderVPU.cpp
 }
 
 config_gl|config_opengl {
