@@ -63,9 +63,8 @@ public:
     int saturation() const;
     QVector<quint8*> outPlanes() const;
     QVector<int> outLineSizes() const;
-    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]) = 0;
-    //virtual bool convertColor(const quint8 *const srcSlice[], const int srcStride[]) = 0;
-    //virtual bool resize(const quint8 *const srcSlice[], const int srcStride[]) = 0;
+    virtual bool convert(const quint8 *const src[], const int srcStride[]);
+    virtual bool convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[]) = 0;
 public:
     template<class C> static bool Register(ImageConverterId id, const char* name) { return Register(id, create<C>, name);}
     static ImageConverter* create(ImageConverterId id);
@@ -94,13 +93,15 @@ class ImageConverterFFPrivate;
  * \brief The ImageConverterFF class
  * based on libswscale
  */
-class ImageConverterFF : public ImageConverter //Q_AV_EXPORT is not needed
+class ImageConverterFF Q_DECL_FINAL: public ImageConverter //Q_AV_EXPORT is not needed
 {
     DPTR_DECLARE_PRIVATE(ImageConverterFF)
 public:
     ImageConverterFF();
-    virtual bool check() const;
-    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
+    bool check() const Q_DECL_OVERRIDE;
+    // FIXME: why match to the pure virtual one if not declare here?
+    bool convert(const quint8 *const src[], const int srcStride[]) Q_DECL_OVERRIDE { return ImageConverter::convert(src, srcStride);}
+    bool convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[]) Q_DECL_OVERRIDE;
 };
 typedef ImageConverterFF ImageConverterSWS;
 

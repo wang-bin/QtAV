@@ -62,7 +62,6 @@ void ImageConverter::setInSize(int width, int height)
         return;
     d.w_in = width;
     d.h_in = height;
-    prepareData();
 }
 
 // TODO: default is in size
@@ -73,6 +72,7 @@ void ImageConverter::setOutSize(int width, int height)
         return;
     d.w_out = width;
     d.h_out = height;
+    d.update_data = true;
     prepareData();
 }
 
@@ -107,6 +107,7 @@ void ImageConverter::setOutFormat(int format)
     if (d.fmt_out == format)
         return;
     d.fmt_out = (AVPixelFormat)format;
+    d.update_data = true;
     prepareData();
 }
 
@@ -172,6 +173,16 @@ QVector<int> ImageConverter::outLineSizes() const
     return d_func().pitchs;
 }
 
+bool ImageConverter::convert(const quint8 * const src[], const int srcStride[])
+{
+    DPTR_D(ImageConverter);
+    if (d.update_data && !prepareData()) {
+        qWarning("prepair output data error");
+        return false;
+    }
+    return convert(src, srcStride, (uint8_t**)d.bits.constData(), d.pitchs.constData());
+}
+
 bool ImageConverter::prepareData()
 {
     DPTR_D(ImageConverter);
@@ -186,14 +197,15 @@ bool ImageConverter::prepareData()
     AV_ENSURE(av_image_fill_linesizes((int*)d.pitchs.constData(), d.fmt_out, kAlign > 7 ? FFALIGN(d.w_out, 8) : d.w_out), false);
     for (int i = 0; i < d.pitchs.size(); ++i)
         d.pitchs[i] = FFALIGN(d.pitchs[i], kAlign);
-    int s = av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_in, d.h_out, NULL, d.pitchs.constData());
+    int s = av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_out, d.h_out, NULL, d.pitchs.constData());
     if (s < 0)
         return false;
     d.data_out.resize(s + kAlign);
-    AV_ENSURE(av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_in, d.h_out, (uint8_t*)d.data_out.constData(), d.pitchs.constData()), false);
+    AV_ENSURE(av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_out, d.h_out, (uint8_t*)d.data_out.constData(), d.pitchs.constData()), false);
     // TODO: special formats
     //if (desc->flags & AV_PIX_FMT_FLAG_PAL || desc->flags & AV_PIX_FMT_FLAG_PSEUDOPAL)
        //    avpriv_set_systematic_pal2((uint32_t*)pointers[1], pix_fmt);
+    d.update_data = false;
     return true;
 }
 

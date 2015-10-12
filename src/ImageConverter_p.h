@@ -41,6 +41,7 @@ public:
         , brightness(0)
         , contrast(0)
         , saturation(0)
+        , update_data(true)
     {
         bits.reserve(8);
         pitchs.reserve(8);
@@ -54,6 +55,7 @@ public:
     int w_in, h_in, w_out, h_out;
     AVPixelFormat fmt_in, fmt_out;
     int brightness, contrast, saturation;
+    bool update_data;
     QByteArray data_out;
     QVector<quint8*> bits;
     QVector<int> pitchs;

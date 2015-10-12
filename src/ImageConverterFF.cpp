@@ -70,7 +70,7 @@ bool ImageConverterFF::check() const
     return true;
 }
 
-bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStride[])
+bool ImageConverterFF::convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[])
 {
     DPTR_D(ImageConverterFF);
     //Check out dimension. equals to in dimension if not setted. TODO: move to another common func
@@ -91,7 +91,7 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     if (!d.sws_ctx)
         return false;
     d.setupColorspaceDetails(false);
-    int result_h = sws_scale(d.sws_ctx, srcSlice, srcStride, 0, d.h_in, (uint8_t**)outPlanes().constData(), outLineSizes().constData());
+    int result_h = sws_scale(d.sws_ctx, src, srcStride, 0, d.h_in, dst, dstStride);
     if (result_h != d.h_out) {
         qDebug("convert failed: %d, %d", result_h, d.h_out);
         return false;
@@ -103,6 +103,10 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     }
 #endif //0
     Q_UNUSED(result_h);
+    for (int i = 0; i < d.pitchs.size(); ++i) {
+        d.bits[i] = dst[i];
+        d.pitchs[i] = dstStride[i];
+    }
     return true;
 }
 
