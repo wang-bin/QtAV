@@ -18,7 +18,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-//TODO: ROI, rotation. slow scale because of alignment? no xsync for shm
+//TODO: ROI (xsubimage?), rotation. slow scale because of alignment? no xsync for shm
 /*
  * X11 headers define 'Bool' type which is used in qmetatype.h. we must include X11 files at last, i.e. X11Renderer_p.h. otherwise compile error
 */
@@ -149,6 +149,7 @@ public:
     DPTR_DECLARE_PUBLIC(X11Renderer)
     X11RendererPrivate():
         use_shm(true)
+      , warn_bad_pitch(true)
       , num_adaptors(0)
       , ximage(NULL)
       , gc(NULL)
@@ -212,11 +213,12 @@ public:
             }
         }
         if (ximage) {
-            if (!use_shm)
-                ximage->data = NULL; // we point it to our own data
+            if (!ximage_data.isEmpty())
+                ximage->data = NULL; // we point it to our own data if shm is not used
             XDestroyImage(ximage);
         }
         ximage = NULL;
+        ximage_data.clear();
     }
     bool prepareDeviceResource() {
         if (gc) {
@@ -236,6 +238,7 @@ public:
     bool ensureImage(int w, int h) {
         if (ximage && ximage->width == w && ximage->height == h)
             return true;
+        warn_bad_pitch = true;
         destroyX11Image();
         use_shm = XShmQueryExtension(display);
         qDebug("use x11 shm: %d", use_shm);
@@ -253,8 +256,11 @@ public:
         }
         shm.shmaddr = (char *)shmat(shm.shmid, 0, 0);
         if (shm.shmaddr == (char*)-1) {
+            if (!ximage_data.isEmpty())
+                   ximage->data = NULL;
             XDestroyImage(ximage);
             ximage = NULL;
+            ximage_data.clear();
             qWarning("Shared memory error,disabling ( seg id error )");
             goto no_shm;
         }
@@ -281,6 +287,7 @@ no_shm:
     }
 
     bool use_shm; //TODO: set by user
+    bool warn_bad_pitch;
     unsigned int num_adaptors;
     int bpp;
     int depth;
@@ -334,33 +341,32 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
         qDebug() << "x11 preferred pixel format: " << d.pixfmt;
         setPreferredPixelFormat(d.pixfmt);
     }
-    bool bad_pitch = false;
-    if (frame.constBits(0)) {
-        if (frame.pixelFormat() != d.pixfmt || frame.width() != d.ximage->width || frame.height() != d.ximage->height)
+    if (frame.constBits(0)
+            || !d.video_frame.map(HostMemorySurface, d.ximage) //check pixel format and scale to ximage size&line_size
+            ) {
+        if (!frame.constBits(0) //always convert hw frames
+                || frame.pixelFormat() != d.pixfmt || frame.width() != d.ximage->width || frame.height() != d.ximage->height)
             d.video_frame = frame.to(d.pixfmt, QSize(d.ximage->width, d.ximage->height));
         else
             d.video_frame = frame;
-        bad_pitch = d.video_frame.bytesPerLine(0) != d.ximage->bytes_per_line;
-        // TODO: check pitch. or set alignment in sws?
-        if (!bad_pitch) {
+        if (d.video_frame.bytesPerLine(0) == d.ximage->bytes_per_line) {
             if (d.use_shm) {
                 memcpy(d.ximage->data, d.video_frame.constBits(0), d.ximage->bytes_per_line*d.ximage->height);
             } else {
                 d.ximage->data = (char*)d.video_frame.constBits(0);
             }
+        } else { //copy line by line
+            if (d.warn_bad_pitch) {
+                d.warn_bad_pitch = false;
+                qDebug("bad pitch: %d - %d. ximage_data.size: %d", d.ximage->bytes_per_line, d.video_frame.bytesPerLine(0), d.ximage_data.size());
+            }
+            quint8* dst = (quint8*)d.ximage->data;
+            if (!d.use_shm) {
+                dst = (quint8*)d.ximage_data.constData();
+                d.ximage->data = (char*)d.ximage_data.constData();
+            }
+            VideoFrame::copyPlane(dst, d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
         }
-    } else {
-        if (!d.video_frame.map(HostMemorySurface, d.ximage)) { //check pixel format and scale to ximage size&line_size
-            d.video_frame = frame.to(d.pixfmt, QSize(d.ximage->width, d.ximage->height));
-            bad_pitch = d.video_frame.bytesPerLine(0) != d.ximage->bytes_per_line;
-            if (!bad_pitch)
-                d.ximage->data = (char*)d.video_frame.constBits(0);
-        }
-    }
-    if (bad_pitch) {
-        qDebug("bad pitch: %d - %d", d.ximage->bytes_per_line, d.video_frame.bytesPerLine(0));
-        VideoFrame::copyPlane((quint8*)d.ximage_data.constData(), d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
-        d.ximage->data = (char*)d.ximage_data.constData();
     }
     update();
     return true;
