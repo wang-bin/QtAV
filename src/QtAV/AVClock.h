@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -146,17 +146,17 @@ double AVClock::value() const
     } else if (clock_type == ExternalClock) {
         if (timer.isValid()) {
             ++nb_restarted;
-            pts_ += double(timer.restart()) * kThousandth + avg_err;
+            pts_ += (double(timer.restart()) * kThousandth + avg_err)* speed();
         } else {//timer is paused
             //qDebug("clock is paused. return the last value %f", pts_);
         }
-        return pts_ * speed() + value0;
+        return pts_ + value0;
     } else {
         if (timer.isValid()) {
             ++nb_restarted;
-            pts_v += double(timer.restart()) * kThousandth + avg_err;
+            pts_v += (double(timer.restart()) * kThousandth + avg_err)* speed();
         }
-        return pts_v * speed(); // value0 is 1st video pts_v already
+        return pts_v; // value0 is 1st video pts_v already
     }
 }
 
