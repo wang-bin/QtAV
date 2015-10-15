@@ -36,6 +36,8 @@
 #include <X11/extensions/XShm.h>
 //#include "QtAV/private/factory.h"
 //scale: http://www.opensource.apple.com/source/X11apps/X11apps-14/xmag/xmag-X11R7.0-1.0.1/Scale.c
+#define FFALIGN(x, a) (((x)+(a)-1)&~((a)-1))
+
 namespace QtAV {
 class X11RendererPrivate;
 class X11Renderer: public QWidget, public VideoRenderer
@@ -234,7 +236,6 @@ public:
         XSetBackground(display, gc, BlackPixel(display, DefaultScreen(display)));
         return true;
     }
-
     bool ensureImage(int w, int h) {
         if (ximage && ximage->width == w && ximage->height == h)
             return true;
@@ -244,6 +245,7 @@ public:
         qDebug("use x11 shm: %d", use_shm);
         if (!use_shm)
             goto no_shm;
+        // data seems not aligned
         ximage = XShmCreateImage(display, vinfo.visual, depth, ZPixmap, NULL, &shm, w, h);
         if (!ximage) {
             qWarning("XShmCreateImage error");
@@ -282,7 +284,7 @@ no_shm:
         ximage->data = NULL;
         XSync(display, False);
         // TODO: align 16 or?
-        ximage_data.resize(ximage->bytes_per_line*ximage->height);
+        ximage_data.resize(ximage->bytes_per_line*ximage->height + 32);
         return true;
     }
 
@@ -335,7 +337,8 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
         update();
         return true;
     }
-    if (!d.ensureImage(videoRect().width(), videoRect().height())) // we can also call it in onResizeRenderer, onSetOutAspectXXX
+    // force align to 8(16?) because xcreateimage will not do alignment
+    if (!d.ensureImage(FFALIGN(videoRect().width(), 8), FFALIGN(videoRect().height(), 8))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
         return false;
     if (preferredPixelFormat() != d.pixfmt) {
         qDebug() << "x11 preferred pixel format: " << d.pixfmt;
