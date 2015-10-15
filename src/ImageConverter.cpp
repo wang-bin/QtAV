@@ -200,12 +200,17 @@ bool ImageConverter::prepareData()
     int s = av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_out, d.h_out, NULL, d.pitchs.constData());
     if (s < 0)
         return false;
-    d.data_out.resize(s + kAlign);
-    AV_ENSURE(av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_out, d.h_out, (uint8_t*)d.data_out.constData(), d.pitchs.constData()), false);
+    d.data_out.resize(s + kAlign-1);
+    const int offset = (kAlign - ((uintptr_t)d.data_out.constData() & (kAlign-1))) & (kAlign-1);
+    AV_ENSURE(av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_out, d.h_out, (uint8_t*)d.data_out.constData()+offset, d.pitchs.constData()), false);
     // TODO: special formats
     //if (desc->flags & AV_PIX_FMT_FLAG_PAL || desc->flags & AV_PIX_FMT_FLAG_PSEUDOPAL)
        //    avpriv_set_systematic_pal2((uint32_t*)pointers[1], pix_fmt);
     d.update_data = false;
+    for (int i = 0; i < d.pitchs.size(); ++i) {
+        Q_ASSERT(d.pitchs[i]%kAlign == 0);
+        Q_ASSERT(qintptr(d.bits[i])%kAlign == 0);
+    }
     return true;
 }
 
