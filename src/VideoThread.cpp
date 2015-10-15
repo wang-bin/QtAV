@@ -41,8 +41,8 @@ class VideoThreadPrivate : public AVThreadPrivate
 public:
     VideoThreadPrivate():
         AVThreadPrivate()
-      , force_fps(-1)
-      , force_dt(-1)
+      , force_fps(0)
+      , force_dt(0)
       , last_deliver_time(0)
       , capture(0)
       , filter_context(0)
@@ -54,9 +54,9 @@ public:
     }
 
     VideoFrameConverter conv;
-    qreal force_fps; // <=0: ignore
+    qreal force_fps; // <=0: try to use pts. if no pts in stream(guessed by 5 packets), use |force_fps|
     // not const.
-    int force_dt; //unit: ms. force_fps = 1/force_dt.  <=0: ignore
+    int force_dt; //unit: ms. force_fps = 1/force_dt.
     qint64 last_deliver_time;
 
     double pts; //current decoded pts. for capture. TODO: remove
@@ -125,10 +125,10 @@ void VideoThread::setFrameRate(qreal value)
 {
     DPTR_D(VideoThread);
     d.force_fps = value;
-    if (d.force_fps > 0.0) {
+    if (d.force_fps != 0.0) {
         d.force_dt = int(1000.0/d.force_fps);
     } else {
-        d.force_dt = -1;
+        d.force_dt = 0;
     }
 }
 
@@ -283,6 +283,7 @@ void VideoThread::run()
     const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
     bool skip_render = false; // keep true if decoded frame does not reach desired time
     qreal v_a = 0;
+    int nb_no_pts = 0;
     const char* pkt_data = NULL; // workaround for libav9 decode fail but error code >= 0
     while (true) {
         processNextTask();
@@ -318,6 +319,21 @@ void VideoThread::run()
                 continue;
             }
         }
+        if (pkt.pts <= 0) {
+            nb_no_pts++;
+        } else {
+            nb_no_pts = 0;
+        }
+        if (nb_no_pts > 5) {
+            qDebug("the stream may have no pts. force fps to: %f", d.force_fps < 0 ? -d.force_fps : 24);
+            d.clock->setClockAuto(false);
+            d.clock->setClockType(AVClock::VideoClock);
+            if (d.force_fps < 0)
+                setFrameRate(-d.force_fps);
+            else if (d.force_fps == 0)
+                setFrameRate(24);
+        }
+
         if (d.clock->clockType() == AVClock::AudioClock) {
             sync_audio = true;
             sync_video = false;
@@ -346,7 +362,7 @@ void VideoThread::run()
             nb_dec_slow = 0;
             nb_dec_fast = 0;
         }
-        //qDebug("nb_fast: %d. diff: %f, dts: %f, clock: %f", nb_dec_fast, diff, dts, clock()->value());
+        //qDebug("nb_fast/slow: %d/%d. diff: %f, delay: %f, dts: %f, clock: %f", nb_dec_fast, nb_dec_slow, diff, d.delay, dts, clock()->value());
         if (d.delay < -0.5 && d.delay > diff) {
             if (!seeking) {
                 // ensure video will not later than 2s
@@ -381,8 +397,9 @@ void VideoThread::run()
             diff = 0; // TODO: here?
         if (!sync_audio && diff > 0) {
             // wait to dts reaches
-            if (d.force_fps < 0.0 && diff < 2.0)
-                waitAndCheck(diff*1000UL, dts); // TODO: count decoding and filter time
+            // d.force_fps>0: wait after decoded before deliver
+            if (d.force_fps <= 0)// || !qFuzzyCompare(d.clock->speed(), 1.0))
+                waitAndCheck(diff*1000UL, dts); // TODO: count decoding and filter time, or decode immediately but wait for display
             diff = 0; // TODO: can not change delay!
         }
         // update here after wait. TODO: use decoded timestamp/guessed next pts?
@@ -469,6 +486,7 @@ void VideoThread::run()
         if (dec_opt != dec_opt_old)
             dec->setOptions(*dec_opt);
         if (!dec->decode(pkt)) {
+            d.pts_history.push_back(d.pts_history.back());
             qWarning("Decode video failed. undecoded: %d", dec->undecodedSize());
             if (pkt.isEOF()) {
                 qDebug("decode eof done");
@@ -520,7 +538,8 @@ void VideoThread::run()
             //tryPause(100);
             processNextTask();
         }
-        if (d.force_dt > 0) {
+        //qDebug("force fps: %f dt: %d", d.force_fps, d.force_dt);
+        if (d.force_dt > 0) {// && qFuzzyCompare(d.clock->speed(), 1.0)) {
             const qint64 now = QDateTime::currentMSecsSinceEpoch();
             const qint64 delta = qint64(d.force_dt) - (now - d.last_deliver_time);
             if (frame.timestamp() <= 0) {
@@ -531,18 +550,7 @@ void VideoThread::run()
                 clock()->updateValue(frame.timestamp());
             }
             if (delta > 0LL) { // limit up bound?
-                //qDebug() << "wait msecs: " << delta;
-                waitAndCheck((ulong)delta, pts);
-            }
-            const qreal real_dt = 1000.0/d.statistics->video_only.currentDisplayFPS();
-            // assume max is 120fps, 1 frame error. TODO: kEPS depends on video original fps
-            static const qreal kEPS = 120.0; // error msecs per second
-            if (real_dt > qreal(d.force_dt)) { // real fps < wanted fps. reduce wait time
-                if (d.force_fps * qreal(d.force_dt) >= 1000.0 - kEPS)
-                    --d.force_dt;
-            } else { // increase wait time
-                if (d.force_fps * qreal(d.force_dt) <= 1000.0 + kEPS)
-                    ++d.force_dt;
+                waitAndCheck((ulong)delta, -1); // wait and not compare pts-clock
             }
         } else if (false) { //FIXME: may block a while when seeking
             const qreal display_wait = pts - clock()->value();

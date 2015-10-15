@@ -150,7 +150,23 @@ qreal AVThread::previousHistoryPts() const
     }
     if (d.pts_history.size() == 1)
         return -d.pts_history.back();
-    return d.pts_history.at(d.pts_history.size() - 2);
+    const qreal current_pts = d.pts_history.back();
+    for (int i = d.pts_history.size() - 2; i > 0; --i) {
+        if (d.pts_history.at(i) < current_pts)
+            return d.pts_history.at(i);
+    }
+    return -d.pts_history.front();
+}
+
+qreal AVThread::decodeFrameRate() const
+{
+    DPTR_D(const AVThread);
+    if (d.pts_history.size() <= 1)
+        return 0;
+    const qreal dt = d.pts_history.back() - d.pts_history.front();
+    if (dt <= 0)
+        return 0;
+    return d.pts_history.size()/dt;
 }
 
 void AVThread::setDropFrameOnSeek(bool value)
@@ -333,7 +349,9 @@ void AVThread::waitAndCheck(ulong value, qreal pts)
             us = 0;
         else
             us -= kWaitSlice;
-        us = qMin(us, ulong((double)(qMax<qreal>(0, pts - d.clock->value()))*1000000.0));
+        if (pts > 0)
+            us = qMin(us, ulong((double)(qMax<qreal>(0, pts - d.clock->value()))*1000000.0));
+        //qDebug("us: %ul, pts: %f, clock: %f", us, pts, d.clock->value());
         processNextTask();
     }
     if (us > 0) {

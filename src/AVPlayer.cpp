@@ -1192,20 +1192,25 @@ void AVPlayer::playInternal()
         masterClock()->reset();
     }
     // TODO: add isVideo() or hasVideo()?
-    if ((d->force_fps > 0 && d->demuxer.videoCodecContext() && d->vthread)
-            || (!d->athread && d->statistics.video.frame_rate > 0)) {
+    qreal vfps = d->force_fps;
+    bool force_fps = vfps > 0;
+    if (d->athread) {
+        force_fps = vfps > 0 && !!d->vthread;
+    } else if (!force_fps) {
+        force_fps = !!d->vthread;
+        vfps = d->statistics.video.frame_rate > 0 ? d->statistics.video.frame_rate : 25;
+        // vfps<0: try to use pts (ExternalClock). if no pts (raw codec), try the default fps(VideoClock)
+        vfps = -vfps;
+    }
+    if (force_fps) {
         masterClock()->setClockAuto(false);
-        masterClock()->setClockType(AVClock::VideoClock);
-        if (d->vthread) {
-            if (d->force_fps > 0)
-                d->vthread->setFrameRate(d->force_fps);
-            else
-                d->vthread->setFrameRate(d->statistics.video.frame_rate);
-        }
+        // vfps>0: force video fps to vfps. clock must be external
+        masterClock()->setClockType(vfps > 0 ? AVClock::VideoClock : AVClock::ExternalClock);
+        d->vthread->setFrameRate(vfps);
     } else {
         masterClock()->setClockAuto(true);
         if (d->vthread)
-            d->vthread->setFrameRate(-1.0);
+            d->vthread->setFrameRate(0.0);
     }
     if (masterClock()->isClockAuto()) {
         qDebug("auto select clock: audio > external");

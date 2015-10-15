@@ -76,7 +76,8 @@ public:
     // TODO: resample, resize task etc.
     void scheduleTask(QRunnable *task);
     void scheduleFrameDrop(bool value = true);
-    qreal previousHistoryPts() const;
+    qreal previousHistoryPts() const; //move to statistics?
+    qreal decodeFrameRate() const; //move to statistics?
     void setDropFrameOnSeek(bool value);
 
 public slots:
@@ -102,6 +103,7 @@ protected:
     // has timeout so that the pending tasks can be processed
     bool tryPause(unsigned long timeout = 100);
     bool processNextTask(); //in AVThread
+    // pts > 0: compare pts and clock when waiting
     void waitAndCheck(ulong value, qreal pts);
 
     DPTR_DECLARE(AVThread)
