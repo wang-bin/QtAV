@@ -63,6 +63,8 @@ public:
     static const char* name(AudioDecoderId id);
     static AudioDecoderId id(const char* name);
 private:
+    // if QtAV is static linked (ios for example), components may be not automatically registered. Add registerAll() to workaround
+    static void registerAll();
     template<class C> static AudioDecoder* create() { return new C();}
     typedef AudioDecoder* (*AudioDecoderCreator)();
     static bool Register(AudioDecoderId id, AudioDecoderCreator, const char *name);

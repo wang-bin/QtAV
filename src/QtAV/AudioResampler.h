@@ -35,6 +35,8 @@ class Q_AV_EXPORT AudioResampler //export is required for users who want add the
 public:
     AudioResampler();
     virtual ~AudioResampler();
+    // if QtAV is static linked (ios for example), components may be not automatically registered. Add registerAll() to workaround
+    static void registerAll();
     template<class C>
     static bool Register(AudioResamplerId id, const char* name) { return Register(id, create<C>, name);}
     static AudioResampler* create(AudioResamplerId id);

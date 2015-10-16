@@ -29,6 +29,15 @@
 namespace QtAV {
 FACTORY_DEFINE(AudioDecoder)
 
+void AudioDecoder::registerAll() {
+    static bool done = false;
+    if (done)
+        return;
+    done = true;
+    extern void RegisterAudioDecoderFFmpeg_Man();
+    RegisterAudioDecoderFFmpeg_Man();
+}
+
 AudioDecoderPrivate::AudioDecoderPrivate()
     : AVDecoderPrivate()
     , resampler(0)

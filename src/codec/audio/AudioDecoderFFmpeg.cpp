@@ -32,7 +32,7 @@
 namespace QtAV {
 
 class AudioDecoderFFmpegPrivate;
-class Q_AV_EXPORT AudioDecoderFFmpeg : public AudioDecoder
+class AudioDecoderFFmpeg : public AudioDecoder
 {
     Q_OBJECT
     Q_DISABLE_COPY(AudioDecoderFFmpeg)
@@ -190,6 +190,7 @@ AudioFrame AudioDecoderFFmpeg::frame()
     f.setBits(d.frame->extended_data); // TODO: ref
     f.setBytesPerLine(d.frame->linesize[0], 0); // for correct alignment
     f.setSamplesPerChannel(d.frame->nb_samples);
+    // TODO: ffplay check AVFrame.pts, pkt_pts, last_pts+nb_samples. move to AudioFrame::from(AVFrame*)
     f.setTimestamp((double)d.frame->pkt_pts/1000.0);
     f.setAudioResampler(d.resampler); // TODO: remove. it's not safe if frame is shared. use a pool or detach if ref >1
     return f;
