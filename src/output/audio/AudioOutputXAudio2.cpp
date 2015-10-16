@@ -26,7 +26,6 @@
 #include <QtCore/QSemaphore>
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
-
 #define DX_LOG_COMPONENT "XAudio2"
 #include "utils/DirectXHelper.h"
 #include "xaudio2_compat.h"
@@ -250,7 +249,7 @@ bool AudioOutputXAudio2::isSupported(const AudioFormat& format) const
 
 bool AudioOutputXAudio2::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
-    return !AudioFormat::isPlanar(sampleFormat);
+    return !AudioFormat::isPlanar(sampleFormat) && sampleFormat != AudioFormat::SampleFormat_Double;
 }
 
 // FIXME:
@@ -258,7 +257,6 @@ bool AudioOutputXAudio2::isSupported(AudioFormat::ChannelLayout channelLayout) c
 {
     return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stereo;
 }
-
 
 AudioOutputBackend::BufferControl AudioOutputXAudio2::bufferControl() const
 {
