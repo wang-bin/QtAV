@@ -125,6 +125,7 @@ public:
     bool flush();
     bool flushBuffer(); // do decode
     bool initSeq();
+    bool processHeaders(QByteArray* chunkData, int* seqHeaderSize, int* picHeaderSize);
     // user config
     int instIdx, coreIdx; //0
     bool useRot; //false
@@ -635,6 +636,70 @@ bool VideoDecoderVPUPrivate::initSeq()
     seqInited = true;
 }
 
+bool VideoDecoderVPUPrivate::processHeaders(QByteArray *chunkData, int *seqHeaderSize, int *picHeaderSize)
+{
+    if (!seqInited && !seqFilled) {
+        // FIXME: copy from omx or vpuhelper
+        *seqHeaderSize = BuildSeqHeader((BYTE*)seqHeader.constData(), decOP.bitstreamFormat, ic->streams[idxVideo]);	// make sequence data as reference file header to support VPU decoder.
+        if (headerSize < 0) {// indicate the stream dose not support in VPU.
+            qWarning("BuildSeqHeader the stream does not support in VPU");
+            return false;
+        }
+        // TODO: vpurun check STD_THO, STD_VP3
+        if (*seqHeaderSize > 0) { //write to vbStream
+            const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, seqHeader, *seqHeaderSize, decOP.streamEndian);
+            if (size < 0) {
+                qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
+                return false;
+            }
+            bsfillSize += size;
+        }
+        seqFilled = true;
+    }
+    // Build and Fill picture Header data which is dedicated for VPU
+    //picHeaderSize is also used in FLUSH_BUFFER
+    *picHeaderSize = BuildPicHeader((BYTE*)picHeader.constData(), decOP.bitstreamFormat, ic->streams[idxVideo], pkt); //FIXME
+    if (*picHeaderSize > 0) { // TODO: no check in vpurun
+        switch(decOP.bitstreamFormat) {
+        case STD_THO:
+        case STD_VP3:
+            break;
+        default: // write to vbStream
+            const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, picHeader.constData(), *picHeaderSize, decOP.streamEndian);
+            if (size < 0) {
+                qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
+                return false;
+            }
+            bsfillSize += size; // TODO: not in omx
+            break;
+        }
+    }
+    // Fill VCL data
+    switch(decOP.bitstreamFormat) {
+    case STD_VP3:
+    case STD_THO:
+        //const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, picHeader, picHeaderSize, decOP.streamEndian);
+        break;
+    default: {
+        if (decOP.bitstreamFormat == STD_RV) {
+            chunkData->remove(0, 1+(cSlice*8));
+        }
+        const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, chunkData->constData(), chunkData->size(), decOP.streamEndian);
+        if (size <0) {
+            qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
+            return false;
+        }
+        bsfillSize += size;
+    }
+    break;
+    }
+
+    chunkIdx++;
+    if (!initSeq())
+        return false;
+    return true;
+}
+
 bool VideoDecoderVPU::decode(const Packet &packet)
 {
     DPTR_D(VideoDecoderVPU);
@@ -654,78 +719,19 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     QByteArray chunkData(packet.data);
     DecOpenParam &decOP = d.decOP;
     if (decOP.bitstreamMode == BS_MODE_PIC_END) { //TODO: no check in omx. it's always true here
-        if (d.chunkReuseRequired) {
-            d.chunkReuseRequired = false;
-            goto FLUSH_BUFFER;
+        if (!d.chunkReuseRequired) {
+            VPU_DecSetRdPtr(handle, decOP.bitstreamBuffer, 1);
         }
-        VPU_DecSetRdPtr(handle, decOP.bitstreamBuffer, 1);
     }
     int seqHeaderSize = 0; //also used in FLUSH_BUFFER
-    if (!d.seqInited && !d.seqFilled) {
-        // FIXME: copy from omx or vpuhelper
-        seqHeaderSize = BuildSeqHeader((BYTE*)d.seqHeader.constData(), decOP.bitstreamFormat, ic->streams[idxVideo]);	// make sequence data as reference file header to support VPU decoder.
-        if (headerSize < 0) {// indicate the stream dose not support in VPU.
-            qWarning("BuildSeqHeader the stream does not support in VPU");
+    int picHeaderSize = 0;
+    if (!d.chunkReuseRequired) {
+        if (!d.processHeaders(&chunkData, &seqHeaderSize, &picHeaderSize))
             return false;
-        }
-        // TODO: vpurun check STD_THO, STD_VP3
-        if (seqHeaderSize > 0) { //write to vbStream
-            const int size = WriteBsBufFromBufHelper(d.coreIdx, d.handle, &d.vbStream, seqHeader, seqHeaderSize, decOP.streamEndian);
-            if (size < 0) {
-                qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
-                return false;
-            }
-            d.bsfillSize += size;
-        }
-        d.seqFilled = 1;
     }
-    // Build and Fill picture Header data which is dedicated for VPU
-    //picHeaderSize is also used in FLUSH_BUFFER
-    int picHeaderSize = BuildPicHeader((BYTE*)d.picHeader.constData(), decOP.bitstreamFormat, ic->streams[idxVideo], pkt); //FIXME
-    if (picHeaderSize > 0) { // TODO: no check in vpurun
-        switch(decOP.bitstreamFormat) {
-        case STD_THO:
-        case STD_VP3:
-            break;
-        default: // write to vbStream
-            const int size = WriteBsBufFromBufHelper(coreIdx, handle, &d.vbStream, d.picHeader.constData(), picHeaderSize, decOP.streamEndian);
-            if (size < 0) {
-                qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
-                return false;
-            }
-            d.bsfillSize += size; // TODO: not in omx
-            break;
-        }
-    }
-    // Fill VCL data
-    switch(decOP.bitstreamFormat) {
-    case STD_VP3:
-    case STD_THO:
-        //const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, picHeader, picHeaderSize, decOP.streamEndian);
-        break;
-    default: {
-        if (decOP.bitstreamFormat == STD_RV) {
-            chunkData.remove(0, 1+(cSlice*8));
-        }
-        const int size = WriteBsBufFromBufHelper(d.coreIdx, d.handle, &d.vbStream, chunkData.constData(), chunkData.size(), decOP.streamEndian);
-        if (size <0) {
-            qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
-            return false;
-        }
-        d.bsfillSize += size;
-    }
-    break;
-    }
-    chunkIdx++;
-    if (!d.initSeq())
-        return false;
+    d.chunkReuseRequired = false;
 
-
-    PhysicalAddress rdPtr, wrPtr;
-    int room;
-    DecParam decParam = {0};
-    RetCode ret = RETCODE_SUCCESS; //can not use VPU_ENSURE() below because it needs a local var
-FLUSH_BUFFER:
+//FLUSH_BUFFER:
     if(!(int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) && !(int_reason & (1<<INT_BIT_DEC_FIELD))) {
         if (ppuEnable) {
 #if 0
@@ -741,11 +747,8 @@ FLUSH_BUFFER:
 
         ConfigDecReport(d.coreIdx, d.handle, decOP.bitstreamFormat);
         // Start decoding a frame.
-        ret = VPU_DecStartOneFrame(handle, &decParam);
-        if (ret !=  RETCODE_SUCCESS) {
-            qWarning("VPU_DecStartOneFrame failed Error code is 0x%x", ret);
-            return false;
-        }
+        DecParam decParam = {0};
+        VPU_ENSURE(VPU_DecStartOneFrame(handle, &decParam), false);
     } else { // TODO: omx always run here
         if(int_reason & (1<<INT_BIT_DEC_FIELD)) {
             d.int_reason = 0;
@@ -772,8 +775,8 @@ FLUSH_BUFFER:
         CheckUserDataInterrupt(d.coreIdx, d.handle, d.outputInfo.indexFrameDecoded, decOP.bitstreamFormat, d.int_reason);
         if (d.int_reason & (1<<INT_BIT_DEC_FIELD)) {
             if (decOP.bitstreamMode == BS_MODE_PIC_END) {
-                //PhysicalAddress rdPtr, wrPtr;
-                //int room;
+                PhysicalAddress rdPtr, wrPtr;
+                int room;
                 VPU_DecGetBitstreamBuffer(d.handle, &rdPtr, &wrPtr, &room);
                 // TODO: omx
                 if (rdPtr-decOP.bitstreamBuffer <
@@ -805,7 +808,7 @@ FLUSH_BUFFER:
     }
     // ---NOT IN OMX END
 
-    ret = VPU_DecGetOutputInfo(d.handle, &d.outputInfo);
+    RetCode ret = VPU_DecGetOutputInfo(d.handle, &d.outputInfo);
     if (ret != RETCODE_SUCCESS) {
         VLOG(ERR,  "VPU_DecGetOutputInfo failed Error code is 0x%x \n", ret);
         if (ret == RETCODE_MEMORY_ACCESS_VIOLATION)
