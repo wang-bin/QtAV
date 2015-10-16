@@ -40,11 +40,11 @@ public:
   size_t size() const { return m_s;}
   bool empty() const { return size() == 0;}
   // need at() []?
-  const T &at(int i) const { assert(i >=0 && i < m_s); return m_data[index(m_0+i)];}
-  const T &operator[](int i) const { return at(i);}
-  T &operator[](int i) {assert(i >=0 && i < m_s); return m_data[index(m_0+i)];}
+  const T &at(size_t i) const { assert(i >=0 && i < m_s); return m_data[index(m_0+i)];}
+  const T &operator[](size_t i) const { return at(i);}
+  T &operator[](size_t i) {assert(i >=0 && i < m_s); return m_data[index(m_0+i)];}
 protected:
-  size_t index(int i) const { return (size_t)i < capacity() ? i : i - capacity();} // i always [0,capacity())
+  size_t index(size_t i) const { return (size_t)i < capacity() ? i : i - capacity();} // i always [0,capacity())
   size_t m_0, m_1;
   size_t m_s;
   C m_data;
@@ -54,7 +54,7 @@ template<typename T>
 class ring : public ring_api<T, std::vector<T> > {
   using ring_api<T, std::vector<T> >::m_data; // why need this?
 public:
-  ring(int capacity, const T& t = T()) : ring_api<T, std::vector<T> >() { m_data = std::vector<T>(capacity, t); }
+  ring(size_t capacity, const T& t = T()) : ring_api<T, std::vector<T> >() { m_data = std::vector<T>(capacity, t); }
   size_t capacity() const {return m_data.size();}
 };
 template<typename T, int N>
@@ -68,9 +68,9 @@ public:
 template<typename T, typename C>
 void ring_api<T,C>::push_back(const T &t) {
     if (m_s == capacity()) {
-      m_data[m_0] = t;
-      m_0 = index(++m_0);
-      m_1 = index(++m_1);
+        m_data[m_0] = t;
+        m_0 = index(++m_0);
+        m_1 = index(++m_1);
     } else if (empty()) {
         m_s = 1;
         m_0 = m_1 = 0;
