@@ -71,7 +71,7 @@ extern "C" {
     do { \
         RetCode ret = x; \
         if (ret != RETCODE_SUCCESS) { \
-            qWarning("Coda VPU error@%d. " #x ": %#x", __LINE__, ret,); \
+            qWarning("Coda VPU error@%d. " #x ": %#x", __LINE__, ret); \
             return __VA_ARGS__; \
         } \
     } while(0)
@@ -79,7 +79,7 @@ extern "C" {
 do { \
   RetCode res = a; \
   if(res != RETCODE_SUCCESS) \
-    qWarning("Coda VPU error@%d. " #x ": %#x", __LINE__, ret,); \
+    qWarning("Coda VPU error@%d. " #x ": %#x", __LINE__, ret); \
 } while(0);
 
 namespace QtAV {
