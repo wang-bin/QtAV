@@ -277,6 +277,9 @@ config_vpu {
   INCLUDEPATH *= codec/video/coda
   HEADERS *= codec/video/coda/include/*.h codec/video/coda/vpuapi/*.h codec/video/coda/vdi/*.h
   SOURCES *= codec/video/VideoDecoderVPU.cpp
+  INCLUDEPATH *= codec/video/viv/include
+  HEADERS *= codec/video/viv/gcScaler.h codec/video/viv/include/*.h
+  SOURCES *= codec/video/viv/gcScaler.cpp codec/video/viv/hw_mixer.c
 }
 
 config_gl|config_opengl {
