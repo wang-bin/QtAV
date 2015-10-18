@@ -26,7 +26,7 @@ QtAV can meet your most demands
 - Playback speed control
 - Variant streams: locale file, http, rtsp etc. and your custom streams
 - Audio channel, tracks and external audio tracks
-- Dynamically change render engine when playing.
+- Dynamically change render engines and decoders when playing.
 - Multiple video outputs for 1 player
 - Video eq(software and OpenGL): brightness, contrast, saturation, hue
 - QML support. Most playback APIs are compatible with QtMultimedia module
