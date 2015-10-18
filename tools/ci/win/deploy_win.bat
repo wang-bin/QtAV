@@ -6,6 +6,7 @@ if exist %QTDIR%\bin\po*.dll copy /y %QTDIR%\bin\po*.dll bin
 if exist %QTDIR%\bin\msvc*.dll copy /y %QTDIR%\bin\msvc*.dll bin
 if exist %QTDIR%\bin\OpenAL32*.dll copy /y %QTDIR%\bin\OpenAL32*.dll bin
 if exist %QTDIR%\bin\OpenAL32-%cc%.dll copy /y %QTDIR%\bin\OpenAL32-%cc%.dll bin\OpenAL32.dll
+if exist bin\OpenAL32-*.dll del bin\OpenAL32-*.dll
 if exist %QTDIR%\bin\D3DCompiler_*.dll copy /y %QTDIR%\bin\D3DCompiler_*.dll bin
 :: libEGL, GLESv2, gcc_s_dw2-1, stdc++-6, winpthread-1
 if exist %QTDIR%\bin\lib*.dll copy /y %QTDIR%\bin\lib*.dll bin
@@ -30,6 +31,8 @@ if "%mode%" == "debug" (
   if exist %QTDIR%\bin\Qt5Networkd.dll copy /y %QTDIR%\bin\Qt5Networkd.dll bin
   if exist %QTDIR%\bin\Qt5Qmld.dll copy /y %QTDIR%\bin\Qt5Qmld.dll bin
   if exist %QTDIR%\bin\Qt5Quickd.dll copy /y %QTDIR%\bin\Qt5Quickd.dll bin
+  if exist bin\libEGL.dll del bin\libEGL.dll
+  if exist bin\libGLESv2.dll del bin\libGLESv2.dll
 ) else (
   if exist %QTDIR%\bin\Qt5Core.dll copy /y %QTDIR%\bin\Qt5Core.dll bin
   if exist %QTDIR%\bin\Qt5Gui.dll copy /y %QTDIR%\bin\Qt5Gui.dll bin
