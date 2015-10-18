@@ -1,6 +1,6 @@
 /******************************************************************************
     mkapi dynamic load code generation for capi template
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
     https://github.com/wang-bin/mkapi
     https://github.com/wang-bin/capi
 
