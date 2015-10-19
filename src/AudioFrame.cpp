@@ -149,16 +149,6 @@ AudioFrame AudioFrame::clone() const
     return f;
 }
 
-int AudioFrame::allocate()
-{
-    Q_D(AudioFrame);
-    int line_size;
-    int size = av_samples_get_buffer_size(&line_size, d->format.channels(), d->samples_per_ch, (AVSampleFormat)d->format.sampleFormatFFmpeg(), 0);
-    d->data.resize(size);
-    init();
-    return size;
-}
-
 AudioFormat AudioFrame::format() const
 {
     return d_func()->format;
@@ -233,21 +223,4 @@ AudioFrame AudioFrame::to(const AudioFormat &fmt) const
     f.d_ptr->metadata = d->metadata; // need metadata?
     return f;
 }
-
-// TODO: alignment. use av_samples_fill_arrays
-void AudioFrame::init()
-{
-    Q_D(AudioFrame);
-    const int nb_planes = d->format.planeCount();
-    d->line_sizes.resize(nb_planes);
-    d->planes.resize(nb_planes);
-    if (d->data.isEmpty())
-        return;
-    const int bpl(d->data.size()/nb_planes);
-    for (int i = 0; i < nb_planes; ++i) {
-        setBytesPerLine(bpl, i);
-        setBits((uchar*)d->data.constData() + i*bpl, i);
-    }
-}
-
 } //namespace QtAV

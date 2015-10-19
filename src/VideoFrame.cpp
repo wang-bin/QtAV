@@ -254,31 +254,6 @@ VideoFrame VideoFrame::clone() const
     return f;
 }
 
-int VideoFrame::allocate()
-{
-    Q_D(VideoFrame);
-    if (pixelFormatFFmpeg() == QTAV_PIX_FMT_C(NONE) || width() <=0 || height() <= 0) {
-        qWarning("Not valid format(%s) or size(%dx%d)", qPrintable(format().name()), width(), height());
-        return 0;
-    }
-#if 0
-    const int align = 16;
-    int bytes = av_image_get_buffer_size((AVPixelFormat)d->format.pixelFormatFFmpeg(), width(), height(), align);
-    d->data.resize(bytes);
-    av_image_fill_arrays(d->planes.data(), d->line_sizes.data()
-                         , (const uint8_t*)d->data.constData()
-                         , (AVPixelFormat)d->format.pixelFormatFFmpeg()
-                         , width(), height(), align);
-    return bytes;
-#endif
-    int bytes = avpicture_get_size((AVPixelFormat)pixelFormatFFmpeg(), width(), height());
-    if (d->data.size() < bytes) {
-        d->data = QByteArray(bytes, 0);
-    }
-    init();
-    return bytes;
-}
-
 VideoFormat VideoFrame::format() const
 {
     return d_func()->format;
@@ -481,18 +456,6 @@ int VideoFrame::texture(int plane) const
     if (d->textures.size() <= plane)
         return -1;
     return d->textures[plane];
-}
-
-void VideoFrame::init()
-{
-    Q_D(VideoFrame);
-    AVPicture picture;
-    AVPixelFormat fff = (AVPixelFormat)d->format.pixelFormatFFmpeg();
-    //int bytes = avpicture_get_size(fff, width(), height());
-    //d->data.resize(bytes);
-    avpicture_fill(&picture, (uint8_t*)d->data.constData(), fff, width(), height());
-    setBits(picture.data);
-    setBytesPerLine(picture.linesize);
 }
 
 VideoFrameConverter::VideoFrameConverter()

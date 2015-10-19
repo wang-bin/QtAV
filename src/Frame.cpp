@@ -45,11 +45,6 @@ Frame &Frame::operator =(const Frame &other)
     return *this;
 }
 
-int Frame::allocate()
-{
-    return 0;
-}
-
 int Frame::bytesPerLine(int plane) const
 {
     if (plane < 0 || plane >= planeCount()) {

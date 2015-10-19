@@ -63,11 +63,6 @@ public:
      * then you can use clone().
      */
     AudioFrame clone() const;
-    /*!
-     * Allocate memory with given format, width and height. planes and bytesPerLine will be set.
-     * The memory can be initialized by user
-     */
-    virtual int allocate();
     AudioFormat format() const;
     void setSamplesPerChannel(int samples);
     // may change after resampling
@@ -75,9 +70,6 @@ public:
     AudioFrame to(const AudioFormat& fmt) const;
     //AudioResamplerId
     void setAudioResampler(AudioResampler *conv); //TODO: remove
-private:
-    //call this only when setBytesPerLine() and setBits() will not be called
-    void init();
 };
 
 } //namespace QtAV
