@@ -25,6 +25,7 @@
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
+#include "utils/ring.h"
 #include <libavcodec/avcodec.h>
 #define SUPPORT_FFMPEG_DEMUX 1
 extern "C" {
@@ -40,6 +41,7 @@ extern "C" {
 //avformat ctx: flag CODEC_FLAG_TRUNCATED
 // PPU disabled
 // frame queue use FrameBuffer
+// clear_VSYNC_flag & VPU_DecClrDispFlag after rendering?
 
 //#define ENC_SOURCE_FRAME_DISPLAY
 #define ENC_RECON_FRAME_DISPLAY
@@ -103,7 +105,15 @@ public:
 extern VideoDecoderId VideoDecoderId_VPU;
 FACTORY_REGISTER(VideoDecoder, VPU, "VPU")
 
-int x;
+struct DisplayInfo {
+    DisplayInfo() : index(0) {
+        memset(&fb, 0, sizeof(fb));
+    }
+    int index;
+    FrameBuffer fb;
+};
+typedef QSharedPointer<DisplayInfo> DisplayInfoPtr;
+
 class VideoDecoderVPUPrivate Q_DECL_FINAL: public VideoDecoderPrivate
 {
 public:
@@ -158,7 +168,7 @@ public:
     FrameBuffer fbPPU[MAX_PPU_SRC_NUM];
 
     int frameIdx;
-    frame_queue_item_t *display_queue; //TODO: FrameBuffer queue
+    ring<DisplayInfo> display_queue;
 
     QByteArray seqHeader;
     QByteArray picHeader;
@@ -440,7 +450,7 @@ bool VideoDecoderVPUPrivate::open()
     picHeader = QByteArray(MAX_CHUNK_HEADER_SIZE);
 
     VPU_ENSURE(VPU_DecOpen(&handle, &decOP), false);
-    display_queue = frame_queue_init(MAX_REG_FRAME);
+    display_queue = ring<DisplayInfo>(MAX_REG_FRAME);
     init_VSYNC_flag();
 
     // TODO: omx GET_DRAM_CONFIG is not in open
@@ -467,10 +477,7 @@ void VideoDecoderVPUPrivate::close()
         vdi_free_dma_memory(coreIdx, &vbStream);
     seqHeader.clear();
     picHeader.clear();
-    if (display_queue) {
-        frame_queue_dequeue_all(display_queue);
-        frame_queue_deinit(display_queue);
-    }
+    display_queue = ring<DisplayInfo>();
 }
 
 bool VideoDecoderVPUPrivate::flush()
@@ -850,8 +857,13 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     {
         if (check_VSYNC_flag()) {
             clear_VSYNC_flag();
-            if (frame_queue_dequeue(display_queue, &dispDoneIdx) == 0)
-                VPU_DecClrDispFlag(handle, dispDoneIdx);
+            if (!d.display_queue.empty()) {
+                DisplayInfo di = d.display_queue.front();
+                d.display_queue.pop_front();
+                VPU_DecClrDispFlag(handle, di.index);
+            }
+            //if (frame_queue_dequeue(display_queue, &dispDoneIdx) == 0)
+              //  VPU_DecClrDispFlag(handle, dispDoneIdx);
         }
 #if defined(CNM_FPGA_PLATFORM) && defined(FPGA_LX_330)
 #else
@@ -860,7 +872,7 @@ bool VideoDecoderVPU::decode(const Packet &packet)
             // TODO: doc says VPU_DecClrDispFlag() + VPU_DecStartOneFrame()
             // if you can't get VSYN interrupt on your sw layer. this point is reasonable line to set VSYN flag.
             // but you need fine tune EXTRA_FRAME_BUFFER_NUM value not decoder to write being display buffer.
-            if (frame_queue_count(display_queue) > 0)
+            if (!d.display_queue.empty())
                 set_VSYNC_flag();
         }
 #endif
@@ -881,30 +893,16 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     }
     decodeIdx++;
 #endif
-    if (d.outputInfo.indexFrameDisplay >= 0)
-        frame_queue_enqueue(d.display_queue, d.outputInfo.indexFrameDisplay);
+    if (d.outputInfo.indexFrameDisplay >= 0) {
+        DisplayInfo di;
+        di.index = d.outputInfo.indexFrameDisplay;
+        di.fb = d.outputInfo.dispFrame;
+        d.display_queue.push_back(di);
+    }
 
 // TODO: to be continue here
-    if (!saveImage) {
-        if (!ppuEnable) { // TODO: fill out buffer. used by VideoFrame and XImage (GPU scale)
-            vdi_read_memory(coreIdx, d.outputInfo.dispFrame.bufY, (BYTE *)dst,  (stride*picHeight*3/2), endian);
-            //OmxSaveYuvImageBurstFormat(d.coreIdx, &d.outputInfo.dispFrame, framebufStride, framebufHeight);
-        } else {
-            ppIdx = (ppIdx+1)%MAX_ROT_BUF_NUM;
-            OmxSaveYuvImageBurstFormat(&d.outputInfo.dispFrame, rotStride, rotbufHeight);
-        }
-#ifdef FORCE_SET_VSYNC_FLAG
-        set_VSYNC_flag();
-#endif
-    }
-
-    if (check_VSYNC_flag()) {
-        clear_VSYNC_flag();
-        if (frame_queue_dequeue(display_queue, &dispDoneIdx) == 0) // omx: != -1
-            VPU_DecClrDispFlag(d.handle, dispDoneIdx);
-    }
     // save rotated dec width, height to display next decoding time.
-    rcPrevDisp = d.outputInfo.rcDisplay;
+    //rcPrevDisp = d.outputInfo.rcDisplay;
 
     if (d.outputInfo.numOfErrMBs) {
         d.totalNumofErrMbs += d.outputInfo.numOfErrMBs;
@@ -912,7 +910,6 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     }
 
     frameIdx++;
-
     return true;
 }
 
@@ -926,13 +923,15 @@ VideoFrame VideoDecoderVPU::frame()
     DPTR_D(VideoDecoderVPU);
     int dispIdx = -1;
     // 0 on success
-    if (frame_queue_dequeue(d.display_queue, &dispIdx) < 0) {
+    if (d.display_queue.empty()) {
         qDebug("VPU has no frame decoded");
         return VideoFrame();
     }
+    DisplayInfo di(d.display_queue.front());
+    d.display_queue.pop_front();
     // TODO: timestamp is packet pts in OMX!
     VideoFrame frame;
-    frame.setMetaData(QStringLiteral("vpu_disp"), dispIdx);
+    frame.setMetaData(QStringLiteral("vpu_disp"), QVariant::fromValue(di));
     return frame;
 }
 
@@ -1233,4 +1232,6 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
     return size;
 }
 } // namespace QtAV
+Q_DECLARE_METATYPE(QtAV::DisplayInfo)
+
 #include "VideoDecoderVPU.moc"
