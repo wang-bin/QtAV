@@ -65,6 +65,7 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
 
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
     :QWidget(parent, f),QPainterRenderer(d)
+,   m_bgColor(QColor(0, 0, 0))
 {
     d.painter = new QPainter();
     setAcceptDrops(true);
@@ -100,7 +101,7 @@ bool WidgetRenderer::needUpdateBackground() const
 void WidgetRenderer::drawBackground()
 {
     DPTR_D(WidgetRenderer);
-    d.painter->fillRect(rect(), QColor(0, 0, 0));
+    d.painter->fillRect(rect(), m_bgColor);
 }
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
