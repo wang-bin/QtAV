@@ -39,6 +39,7 @@ extern "C" {
 
 //avformat ctx: flag CODEC_FLAG_TRUNCATED
 // PPU disabled
+// frame queue use FrameBuffer
 
 //#define ENC_SOURCE_FRAME_DISPLAY
 #define ENC_RECON_FRAME_DISPLAY
@@ -83,6 +84,8 @@ do { \
 } while(0);
 
 namespace QtAV {
+static int BuildSeqHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, int fps_num, int fps_den, int nb_index_entries);
+static int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, const Packet& pkt);
 
 class VideoDecoderVPUPrivate;
 class VideoDecoderVPU : public VideoDecoder
@@ -125,7 +128,7 @@ public:
     bool flush();
     bool flushBuffer(); // do decode
     bool initSeq();
-    bool processHeaders(QByteArray* chunkData, int* seqHeaderSize, int* picHeaderSize);
+    bool processHeaders(int* seqHeaderSize, int* picHeaderSize, const Packet& pkt, int fps_num, int fps_den, int nb_index_entries);
     // user config
     int instIdx, coreIdx; //0
     bool useRot; //false
@@ -154,6 +157,7 @@ public:
  #define MAX_PPU_SRC_NUM 2
     FrameBuffer fbPPU[MAX_PPU_SRC_NUM];
 
+    int frameIdx;
     frame_queue_item_t *display_queue; //TODO: FrameBuffer queue
 
     QByteArray seqHeader;
@@ -446,7 +450,7 @@ bool VideoDecoderVPUPrivate::open()
     seqFilled = false;
     bsfillSize = 0;
     chunkReuseRequired = false;
-
+    frameIdx = 0;
     return true;
 }
 
@@ -636,11 +640,11 @@ bool VideoDecoderVPUPrivate::initSeq()
     seqInited = true;
 }
 
-bool VideoDecoderVPUPrivate::processHeaders(QByteArray *chunkData, int *seqHeaderSize, int *picHeaderSize)
+bool VideoDecoderVPUPrivate::processHeaders(int *seqHeaderSize, int *picHeaderSize, const Packet &pkt, int fps_num, int fps_den, int nb_index_entries)
 {
     if (!seqInited && !seqFilled) {
         // FIXME: copy from omx or vpuhelper
-        *seqHeaderSize = BuildSeqHeader((BYTE*)seqHeader.constData(), decOP.bitstreamFormat, ic->streams[idxVideo]);	// make sequence data as reference file header to support VPU decoder.
+        *seqHeaderSize = BuildSeqHeader((BYTE*)seqHeader.constData(), decOP.bitstreamFormat, codec_ctx, fps_num, fps_den, nb_index_entries);	// make sequence data as reference file header to support VPU decoder.
         if (headerSize < 0) {// indicate the stream dose not support in VPU.
             qWarning("BuildSeqHeader the stream does not support in VPU");
             return false;
@@ -658,7 +662,7 @@ bool VideoDecoderVPUPrivate::processHeaders(QByteArray *chunkData, int *seqHeade
     }
     // Build and Fill picture Header data which is dedicated for VPU
     //picHeaderSize is also used in FLUSH_BUFFER
-    *picHeaderSize = BuildPicHeader((BYTE*)picHeader.constData(), decOP.bitstreamFormat, ic->streams[idxVideo], pkt); //FIXME
+    *picHeaderSize = BuildPicHeader((BYTE*)picHeader.constData(), decOP.bitstreamFormat, codec_ctx, pkt); //FIXME
     if (*picHeaderSize > 0) { // TODO: no check in vpurun
         switch(decOP.bitstreamFormat) {
         case STD_THO:
@@ -674,29 +678,7 @@ bool VideoDecoderVPUPrivate::processHeaders(QByteArray *chunkData, int *seqHeade
             break;
         }
     }
-    // Fill VCL data
-    switch(decOP.bitstreamFormat) {
-    case STD_VP3:
-    case STD_THO:
-        //const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, picHeader, picHeaderSize, decOP.streamEndian);
-        break;
-    default: {
-        if (decOP.bitstreamFormat == STD_RV) {
-            chunkData->remove(0, 1+(cSlice*8));
-        }
-        const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, chunkData->constData(), chunkData->size(), decOP.streamEndian);
-        if (size <0) {
-            qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
-            return false;
-        }
-        bsfillSize += size;
-    }
-    break;
-    }
 
-    chunkIdx++;
-    if (!initSeq())
-        return false;
     return true;
 }
 
@@ -726,9 +708,33 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     int seqHeaderSize = 0; //also used in FLUSH_BUFFER
     int picHeaderSize = 0;
     if (!d.chunkReuseRequired) {
-        if (!d.processHeaders(&chunkData, &seqHeaderSize, &picHeaderSize))
+        if (!d.processHeaders(&chunkData, &seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt()));
             return false;
     }
+    // Fill VCL data
+    switch(decOP.bitstreamFormat) {
+    case STD_VP3:
+    case STD_THO:
+        //const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, picHeader, picHeaderSize, decOP.streamEndian);
+        break;
+    default: {
+        if (decOP.bitstreamFormat == STD_RV) {
+            chunkData.remove(0, 1+(cSlice*8));
+        }
+        const int size = WriteBsBufFromBufHelper(d.coreIdx, d.handle, &d.vbStream, chunkData.constData(), chunkData.size(), decOP.streamEndian);
+        if (size <0) {
+            qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
+            return false;
+        }
+        d.bsfillSize += size;
+    }
+    break;
+    }
+
+    //chunkIdx++;
+    if (!d.initSeq())
+        return false;
+
     d.chunkReuseRequired = false;
 
 //FLUSH_BUFFER:
@@ -840,7 +846,7 @@ bool VideoDecoderVPU::decode(const Packet &packet)
             return !packet.isEOF(); // EOS
     }
     if (d.outputInfo.indexFrameDisplay == -3 ||
-        d.outputInfo.indexFrameDisplay == -2 ) // BIT doesn't have picture to be displayed
+        d.outputInfo.indexFrameDisplay == -2 ) // BIT doesn't have picture to be displayed, or frame drop
     {
         if (check_VSYNC_flag()) {
             clear_VSYNC_flag();
@@ -851,6 +857,7 @@ bool VideoDecoderVPU::decode(const Packet &packet)
 #else
         if (d.outputInfo.indexFrameDecoded == -1)	// VPU did not decode a picture because there is not enough frame buffer to continue decoding
         {
+            // TODO: doc says VPU_DecClrDispFlag() + VPU_DecStartOneFrame()
             // if you can't get VSYN interrupt on your sw layer. this point is reasonable line to set VSYN flag.
             // but you need fine tune EXTRA_FRAME_BUFFER_NUM value not decoder to write being display buffer.
             if (frame_queue_count(display_queue) > 0)
@@ -929,5 +936,301 @@ VideoFrame VideoDecoderVPU::frame()
     return frame;
 }
 
+int BuildSeqHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, int fps_num, int fps_den, int nb_index_entries)
+{
+    BYTE *pbMetaData = avctx->extradata;
+    int nMetaData = avctx->extradata_size;
+    BYTE* p = pbMetaData;
+    BYTE *a = p + 4 - ((long) p & 3);
+    BYTE* t = pbHeader;
+    int sps, pps, i, nal;
+
+    int fourcc = avctx->codec_tag;
+    if (!fourcc)
+        fourcc = codecIdToFourcc(avctx->codec_id);
+    int size = 0;
+    if (codStd == STD_AVC || codStd == STD_AVS) {
+        // check mov/mo4 file format stream
+        if (nMetaData > 1 && pbMetaData && pbMetaData[0] == 0x01) {
+            p += 5;
+            sps = (*p & 0x1f); // Number of sps
+            p++;
+            for (i = 0; i < sps; i++) {
+                nal = (*p << 8) + *(p + 1) + 2;
+                PUT_BYTE(t, 0x00);
+                PUT_BYTE(t, 0x00);
+                PUT_BYTE(t, 0x00);
+                PUT_BYTE(t, 0x01);
+                PUT_BUFFER(t, p+2, nal-2);
+                p += nal;
+                size += (nal - 2 + 4); // 4 => length of start code to be inserted
+            }
+            pps = *(p++); // number of pps
+            for (i = 0; i < pps; i++) {
+                nal = (*p << 8) + *(p + 1) + 2;
+                PUT_BYTE(t, 0x00);
+                PUT_BYTE(t, 0x00);
+                PUT_BYTE(t, 0x00);
+                PUT_BYTE(t, 0x01);
+                PUT_BUFFER(t, p+2, nal-2);
+                p += nal;
+                size += (nal - 2 + 4); // 4 => length of start code to be inserted
+            }
+        } else if (nMetaData > 3) {
+            size = -1;// return to meaning of invalid stream data;
+            for (; p < a; p++) {
+                if (p[0] == 0 && p[1] == 0 && p[2] == 1) {// find startcode
+                    size = avctx->extradata_size;
+                    PUT_BUFFER(pbHeader, pbMetaData, size);
+                    break;
+                }
+            }
+        }
+    } else if (codStd == STD_VC1) {
+        if (!fourcc)
+            return -1;
+        //VC AP
+        if (fourcc == MKTAG('W', 'V', 'C', '1') || fourcc == MKTAG('W', 'M', 'V', 'A'))	{
+            size = nMetaData;
+            PUT_BUFFER(pbHeader, pbMetaData, size);
+            //if there is no seq startcode in pbMetatData. VPU will be failed at seq_init stage.
+        } else {
+#ifdef RCV_V2
+            PUT_LE32(pbHeader, ((0xC5 << 24)|0));
+            size += 4; //version
+            PUT_LE32(pbHeader, nMetaData);
+            size += 4;
+            PUT_BUFFER(pbHeader, pbMetaData, nMetaData);
+            size += nMetaData;
+            PUT_LE32(pbHeader, avctx->height);
+            size += 4;
+            PUT_LE32(pbHeader, avctx->width);
+            size += 4;
+            PUT_LE32(pbHeader, 12);
+            size += 4;
+            PUT_LE32(pbHeader, 2 << 29 | 1 << 28 | 0x80 << 24 | 1 << 0);
+            size += 4; // STRUCT_B_FRIST (LEVEL:3|CBR:1:RESERVE:4:HRD_BUFFER|24)
+            PUT_LE32(pbHeader, avctx->bit_rate);
+            size += 4; // hrd_rate
+            PUT_LE32(pbHeader, (int)((double)fps_num/(double)fps_den));
+            size += 4; // frameRate
+#else	//RCV_V1
+            PUT_LE32(pbHeader, (0x85 << 24) | 0x00);
+            size += 4; //frames count will be here
+            PUT_LE32(pbHeader, nMetaData);
+            size += 4;
+            PUT_BUFFER(pbHeader, pbMetaData, nMetaData);
+            size += nMetaData;
+            PUT_LE32(pbHeader, avctx->height);
+            size += 4;
+            PUT_LE32(pbHeader, avctx->width);
+            size += 4;
+#endif
+        }
+    } else if (codStd == STD_RV) {
+        int st_size =0;
+        if (!fourcc)
+            return -1;
+        if (fourcc != MKTAG('R','V','3','0') && fourcc != MKTAG('R','V','4','0'))
+            return -1;
+        size = 26 + nMetaData;
+        PUT_BE32(pbHeader, size); //Length
+        PUT_LE32(pbHeader, MKTAG('V', 'I', 'D', 'O')); //MOFTag
+        PUT_LE32(pbHeader, fourcc); //SubMOFTagl
+        PUT_BE16(pbHeader, avctx->width);
+        PUT_BE16(pbHeader, avctx->height);
+        PUT_BE16(pbHeader, 0x0c); //BitCount;
+        PUT_BE16(pbHeader, 0x00); //PadWidth;
+        PUT_BE16(pbHeader, 0x00); //PadHeight;
+
+        PUT_LE32(pbHeader, (int)((double)fps_num/(double)fps_den));
+        PUT_BUFFER(pbHeader, pbMetaData, nMetaData); //OpaqueDatata
+        size += st_size; //add for startcode pattern.
+    } else if (codStd == STD_DIV3) {
+        // not implemented yet
+        if (!nMetaData) {
+            PUT_LE32(pbHeader, MKTAG('C', 'N', 'M', 'V')); //signature 'CNMV'
+            PUT_LE16(pbHeader, 0x00);                      //version
+            PUT_LE16(pbHeader, 0x20);                      //length of header in bytes
+            PUT_LE32(pbHeader, MKTAG('D', 'I', 'V', '3')); //codec FourCC
+            PUT_LE16(pbHeader, avctx->width);                //width
+            PUT_LE16(pbHeader, avctx->height);               //height
+            PUT_LE32(pbHeader, fps_num);      //frame rate
+            PUT_LE32(pbHeader, fps_den);      //time scale(?)
+            PUT_LE32(pbHeader, nb_index_entries);      //number of frames in file
+            PUT_LE32(pbHeader, 0); //unused
+            size += 32;
+            return size;
+        }
+        PUT_BE32(pbHeader, nMetaData);
+        size += 4;
+        PUT_BUFFER(pbHeader, pbMetaData, nMetaData);
+        size += nMetaData;
+    } else if (codStd == STD_VP8) { ///FIXME
+        PUT_LE32(pbHeader, MKTAG('D', 'K', 'I', 'F')); //signature 'DKIF'
+        PUT_LE16(pbHeader, 0x00);                      //version
+        PUT_LE16(pbHeader, 0x20);                      //length of header in bytes
+        PUT_LE32(pbHeader, MKTAG('V', 'P', '8', '0')); //codec FourCC
+        PUT_LE16(pbHeader, avctx->width);                //width
+        PUT_LE16(pbHeader, avctx->height);               //height
+        PUT_LE32(pbHeader, fps_num);      //frame rate
+        PUT_LE32(pbHeader, fps_den);      //time scale(?)
+        PUT_LE32(pbHeader, nb_index_entries);      //number of frames in file
+        PUT_LE32(pbHeader, 0); //unused
+        size += 32;
+    } else {
+        PUT_BUFFER(pbHeader, pbMetaData, nMetaData);
+        size = nMetaData;
+    }
+    return size;
+}
+
+int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, const Packet& pkt)
+{
+    int size = 0;
+    int fourcc = avctx->codec_tag;
+    if (!fourcc)
+        fourcc = codecIdToFourcc(avctx->codec_id);
+    BYTE *pbChunk = pkt.data.constData();
+    if (codStd == STD_VC1) {
+        if (!fourcc)
+            return -1;
+        if (fourcc == MKTAG('W', 'V', 'C', '1') || fourcc == MKTAG('W', 'M', 'V', 'A'))	{//VC AP
+            if (pbChunk[0] != 0 || pbChunk[1] != 0 || pbChunk[2] != 1) {// check start code as prefix (0x00, 0x00, 0x01)
+                pbHeader[0] = 0x00;
+                pbHeader[1] = 0x00;
+                pbHeader[2] = 0x01;
+                pbHeader[3] = 0x0D;	// replace to the correct picture header to indicate as frame
+                size += 4;
+            }
+        } else {
+            PUT_LE32(pbHeader, pkt.data.size() | (pkt.hasKeyFrame ? 0x80000000 : 0));
+            size += 4;
+#ifdef RCV_V2
+            if (pkt.pts == 0) { //NO_PTS
+                PUT_LE32(pbHeader, 0);
+            } else {
+                PUT_LE32(pbHeader, (int)((double)(pkt->pts*1000.0))); // milli_sec
+            }
+            size += 4;
+#endif
+        }
+    } else if (codStd == STD_RV) {
+        int st_size = 0;
+        if (!fourcc)
+            return -1;
+        if (fourcc != MKTAG('R','V','3','0') && fourcc != MKTAG('R','V','4','0')) // RV version 8, 9 , 10
+            return -1;
+        int cSlice = pbChunk[0] + 1;
+        int nSlice =  pkt.data.size() - 1 - (cSlice * 8);
+        size = 20 + (cSlice*8);
+        PUT_BE32(pbHeader, nSlice);
+        if (pkt.pts == 0) {
+            PUT_LE32(pbHeader, 0);
+        } else {
+            PUT_LE32(pbHeader, (int)((double)(pkt.pts*1000.0))); // milli_sec
+        }
+        PUT_BE16(pbHeader, avctx->frame_number);
+        PUT_BE16(pbHeader, 0x02); //Flags
+        PUT_BE32(pbHeader, 0x00); //LastPacket
+        PUT_BE32(pbHeader, cSlice); //NumSegments
+        int offset = 1;
+        for (int i = 0; i < (int) cSlice; i++) {
+            int val = (pbChunk[offset+3] << 24) | (pbChunk[offset+2] << 16) | (pbChunk[offset+1] << 8) | pbChunk[offset];
+            PUT_BE32(pbHeader, val); //isValid
+            offset += 4;
+            val = (pbChunk[offset+3] << 24) | (pbChunk[offset+2] << 16) | (pbChunk[offset+1] << 8) | pbChunk[offset];
+            PUT_BE32(pbHeader, val); //Offset
+            offset += 4;
+        }
+        size += st_size;
+#if 0
+        PUT_BUFFER(pbChunk, pkt->data+(1+(cSlice*8)), nSlice);
+        size += nSlice;
+#endif
+    } else if (codStd == STD_AVC) {
+        if(pkt.data.size() < 5)
+            return 0;
+        int has_st_code = 0;
+        if (!(avctx->extradata_size > 1 && avctx->extradata && avctx->extradata[0] == 0x01)) {
+            const Uint8 *pbEnd = pbChunk + 4 - ((intptr_t)pbChunk & 3);
+            for (; pbChunk < pbEnd ; pbChunk++) {
+                if (pbChunk[0] == 0 && pbChunk[1] == 0 && pbChunk[2] == 1) {
+                    has_st_code = 1;
+                    break;
+                }
+            }
+        }
+        // check sequence metadata if the stream is mov/mo4 file format.
+        if ((!has_st_code && avctx->extradata[0] == 0x01) || (avctx->extradata_size > 1 && avctx->extradata && avctx->extradata[0] == 0x01)) {
+            pbChunk = pkt.data.constData();
+            int offset = 0;
+            while (offset < pkt.data.size()) {
+                int nSlice = pbChunk[offset] << 24 | pbChunk[offset+1] << 16 | pbChunk[offset+2] << 8 | pbChunk[offset+3];
+                pbChunk[offset] = 0x00;
+                pbChunk[offset+1] = 0x00;
+                pbChunk[offset+2] = 0x00;
+                pbChunk[offset+3] = 0x01;		//replace size to startcode
+                offset += 4;
+                switch (pbChunk[offset]&0x1f) /* NAL unit */
+                {
+                case 6: /* SEI */
+                case 7: /* SPS */
+                case 8: /* PPS */
+                case 9: /* AU */
+                    /* check next */
+                    break;
+                }
+                offset += nSlice;
+            }
+        }
+    } else if(codStd == STD_AVS) {
+        const Uint8 *pbEnd;
+        if(pkt.data.size() < 5)
+            return 0;
+        pbEnd = pbChunk + 4 - ((intptr_t)pbChunk & 3);
+        int has_st_code = 0;
+        for (; pbChunk < pbEnd ; pbChunk++) {
+            if (pbChunk[0] == 0 && pbChunk[1] == 0 && pbChunk[2] == 1) {
+                has_st_code = 1;
+                break;
+            }
+        }
+        if(has_st_code == 0) {
+            pbChunk = pkt.data.constData();
+            int offset = 0;
+            while (offset < pkt.data.size()) {
+                int nSlice = pbChunk[offset] << 24 | pbChunk[offset+1] << 16 | pbChunk[offset+2] << 8 | pbChunk[offset+3];
+                pbChunk[offset] = 0x00;
+                pbChunk[offset+1] = 0x00;
+                pbChunk[offset+2] = 0x00;
+                pbChunk[offset+3] = 0x00;		//replace size to startcode
+                pbChunk[offset+4] = 0x01;
+                offset += 4;
+                switch (pbChunk[offset]&0x1f) /* NAL unit */
+                {
+                case 6: /* SEI */
+                case 7: /* SPS */
+                case 8: /* PPS */
+                case 9: /* AU */
+                    /* check next */
+                    break;
+                }
+                offset += nSlice;
+            }
+        }
+    } else if (codStd == STD_DIV3) {
+        PUT_LE32(pbHeader,pkt.data.size());
+        PUT_LE32(pbHeader,0);
+        PUT_LE32(pbHeader,0);
+        size += 12;
+    } else if (codStd == STD_VP8) {
+        PUT_LE32(pbHeader,pkt.data.size());
+        PUT_LE32(pbHeader,0);
+        PUT_LE32(pbHeader,0);
+        size += 12;
+    }
+    return size;
+}
 } // namespace QtAV
 #include "VideoDecoderVPU.moc"
