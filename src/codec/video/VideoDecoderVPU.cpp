@@ -41,7 +41,7 @@ extern "C" {
 //avformat ctx: flag CODEC_FLAG_TRUNCATED
 // PPU disabled
 // frame queue use FrameBuffer
-// clear_VSYNC_flag & VPU_DecClrDispFlag after rendering?
+// clear_VSYNC_flag & VPU_DecClrDispFlag(index) after rendering? like destroy surface?
 
 //#define ENC_SOURCE_FRAME_DISPLAY
 #define ENC_RECON_FRAME_DISPLAY
@@ -105,15 +105,6 @@ public:
 extern VideoDecoderId VideoDecoderId_VPU;
 FACTORY_REGISTER(VideoDecoder, VPU, "VPU")
 
-struct DisplayInfo {
-    DisplayInfo() : index(0) {
-        memset(&fb, 0, sizeof(fb));
-    }
-    int index;
-    FrameBuffer fb;
-};
-typedef QSharedPointer<DisplayInfo> DisplayInfoPtr;
-
 class VideoDecoderVPUPrivate Q_DECL_FINAL: public VideoDecoderPrivate
 {
 public:
@@ -168,7 +159,7 @@ public:
     FrameBuffer fbPPU[MAX_PPU_SRC_NUM];
 
     int frameIdx;
-    ring<DisplayInfo> display_queue;
+    ring<FBSurfacePtr> display_queue;
 
     QByteArray seqHeader;
     QByteArray picHeader;
@@ -450,7 +441,7 @@ bool VideoDecoderVPUPrivate::open()
     picHeader = QByteArray(MAX_CHUNK_HEADER_SIZE);
 
     VPU_ENSURE(VPU_DecOpen(&handle, &decOP), false);
-    display_queue = ring<DisplayInfo>(MAX_REG_FRAME);
+    display_queue = ring<FBSurfacePtr>(MAX_REG_FRAME);
     init_VSYNC_flag();
 
     // TODO: omx GET_DRAM_CONFIG is not in open
@@ -477,7 +468,7 @@ void VideoDecoderVPUPrivate::close()
         vdi_free_dma_memory(coreIdx, &vbStream);
     seqHeader.clear();
     picHeader.clear();
-    display_queue = ring<DisplayInfo>();
+    display_queue = ring<FBSurfacePtr>();
 }
 
 bool VideoDecoderVPUPrivate::flush()
@@ -855,16 +846,16 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     if (d.outputInfo.indexFrameDisplay == -3 ||
         d.outputInfo.indexFrameDisplay == -2 ) // BIT doesn't have picture to be displayed, or frame drop
     {
+        if (!d.display_queue.empty()) { //?
+            d.display_queue.pop_front();
+        }
+#if 0
         if (check_VSYNC_flag()) {
             clear_VSYNC_flag();
-            if (!d.display_queue.empty()) {
-                DisplayInfo di = d.display_queue.front();
-                d.display_queue.pop_front();
-                VPU_DecClrDispFlag(handle, di.index);
-            }
-            //if (frame_queue_dequeue(display_queue, &dispDoneIdx) == 0)
-              //  VPU_DecClrDispFlag(handle, dispDoneIdx);
+            if (frame_queue_dequeue(display_queue, &dispDoneIdx) == 0)
+                VPU_DecClrDispFlag(handle, dispDoneIdx);
         }
+#endif
 #if defined(CNM_FPGA_PLATFORM) && defined(FPGA_LX_330)
 #else
         if (d.outputInfo.indexFrameDecoded == -1)	// VPU did not decode a picture because there is not enough frame buffer to continue decoding
@@ -894,10 +885,10 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     decodeIdx++;
 #endif
     if (d.outputInfo.indexFrameDisplay >= 0) {
-        DisplayInfo di;
-        di.index = d.outputInfo.indexFrameDisplay;
-        di.fb = d.outputInfo.dispFrame;
-        d.display_queue.push_back(di);
+        FBSurfacePtr surf(new FBSurface(d.handle));
+        surf->index = d.outputInfo.indexFrameDisplay;
+        surf->fb = d.outputInfo.dispFrame;
+        d.display_queue.push_back(surf);
     }
 
 // TODO: to be continue here
@@ -927,11 +918,12 @@ VideoFrame VideoDecoderVPU::frame()
         qDebug("VPU has no frame decoded");
         return VideoFrame();
     }
-    DisplayInfo di(d.display_queue.front());
+    FBSurfacePtr surf(d.display_queue.front());
     d.display_queue.pop_front();
     // TODO: timestamp is packet pts in OMX!
-    VideoFrame frame;
-    frame.setMetaData(QStringLiteral("vpu_disp"), QVariant::fromValue(di));
+    VideoFrame frame(width(), height(), VideoFormat(VideoFormat::Format_YUV420P));
+    //frame.setTimestamp();
+    frame.setMetaData(QStringLiteral("vpu_surf"), QVariant::fromValue(surf));
     return frame;
 }
 
@@ -1232,6 +1224,5 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
     return size;
 }
 } // namespace QtAV
-Q_DECLARE_METATYPE(QtAV::DisplayInfo)
 
 #include "VideoDecoderVPU.moc"

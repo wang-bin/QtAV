@@ -102,7 +102,7 @@ bool gcScaler::check() const
     return VideoFormat(VideoFormat::pixelFormatFromFFmpeg(d.fmt_out)).isRGB();
 }
 
-bool gcScaler::convert(const quint8 * const src[], const int srcStride[], quint8 * const dst[], const int dstStride[])
+bool gcScaler::convert(const quint8 * const src[], const int srcStride[])
 {
     DPTR_D(gcScaler);
     const gceSURF_FORMAT srcFmt = pixelFormatToGC(VideoFormat::pixelFormatToFFmpeg(d.fmt_in));
@@ -124,10 +124,11 @@ bool gcScaler::convert(const quint8 * const src[], const int srcStride[], quint8
     gctPOINTER memory[3]; 	//解码后的yuv文件的逻辑地址
     GC_WARN(gcoSURF_Lock(d.test2D.srcSurf, address, memory));
 
-    dma_copy_in_vmem(address[0], (gctUINT32)src[0], d.w_in*d.h_in);
-    dma_copy_in_vmem(address[1], (gctUINT32)src[1], d.w_in*d.h_in/4);
-    dma_copy_in_vmem(address[2], (gctUINT32)src[2], d.w_in*d.h_in/4);
-
+    const VideoFormat fmt(d.fmt_in);
+    // d.w_in*d.h_in, 1/4, 1/4
+    for (int i = 0; i < fmt.planeCount(); ++i) {
+        dma_copy_in_vmem(address[i], (gctUINT32)src[i], srcStride[i]*fmt.height(d.h_in, i));
+    }
     // TODO: setup gco2D only if parameters changed
     gco2D egn2D = d.test2D.runtime.engine2d;
     // set clippint rect
