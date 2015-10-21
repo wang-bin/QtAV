@@ -21,6 +21,8 @@
 //------------------------------------------------------------------------------
 // REGISTER BASE
 //------------------------------------------------------------------------------
+#define BIT_REG_SIZE                    0x4000  // include GDI and MJPEG register range
+
 #define BIT_BASE            0x0000
 #define GDMA_BASE          	0x1000
 #define MBC_BASE            0x0400
@@ -73,10 +75,10 @@
 #define BIT_RUN_AUX_STD             (BIT_BASE + 0x178)
 
 // MSG REGISTER ADDRESS changed
-#define BIT_MSG_0                   (BIT_BASE + 0x130)
-#define BIT_MSG_1                   (BIT_BASE + 0x134)
-#define BIT_MSG_2                   (BIT_BASE + 0x138)
-#define BIT_MSG_3                   (BIT_BASE + 0x13C)
+#define BIT_MSG_0                   (BIT_BASE + 0x1F0)
+#define BIT_MSG_1                   (BIT_BASE + 0x1F4)
+#define BIT_MSG_2                   (BIT_BASE + 0x1F8)
+#define BIT_MSG_3                   (BIT_BASE + 0x1FC)
 
 #define MBC_BUSY                	(MBC_BASE + 0x040)
 #define MC_BUSY                 	(MC_BASE + 0x004)
