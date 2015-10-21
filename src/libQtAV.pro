@@ -287,11 +287,17 @@ config_vpu {
   DEFINES *= QTAV_HAVE_VPU=1
   CODA_DIR= codec/video/coda
   INCLUDEPATH *= $$CODA_DIR codec/video/viv/include
-  HEADERS *= codec/video/coda/*.h $$CODA_DIR/include/*.h $$CODA_DIR/vpuapi/*.h $$CODA_DIR/vdi/*.h
+  HEADERS *= $$CODA_DIR/config.h $$CODA_DIR/Magellan.h \
+        $$CODA_DIR/include/vpuio.h $$CODA_DIR/include/vpuhelper.h \
+        $$CODA_DIR/vpuapi/regdefine.h $$CODA_DIR/vpuapi/vpuapi.h $$CODA_DIR/vpuapi/vpuapifunc.h $$CODA_DIR/vpuapi/vputypes.h $$CODA_DIR/vpuapi/vpuconfig.h \
+        $$CODA_DIR/vdi/vdi.h $$CODA_DIR/vdi/mm.h $$CODA_DIR/vdi/vdi_osal.h
+  SOURCES *= $$CODA_DIR/vpuapi/vpuapi.c $$CODA_DIR/vpuapi/vpuapifunc.c \
+            $$CODA_DIR/src/vpuio.c $$CODA_DIR/src/vpuhelper.c\
+            $$CODA_DIR/vdi/linux/vdi.c $$CODA_DIR/vdi/linux/vdi_osal.c
+  HEADERS *= codec/video/viv/include/galUtil.h
   SOURCES *= codec/video/VideoDecoderVPU.cpp
-  HEADERS *= codec/video/viv/GALScaler.h codec/video/viv/include/*.h codec/video/SurfaceInteropGAL.h
+  HEADERS *= codec/video/viv/GALScaler.h codec/video/SurfaceInteropGAL.h
   SOURCES *= codec/video/viv/GALScaler.cpp codec/video/SurfaceInteropGAL.cpp
-  SOURCES *= $$CODA_DIR/vpuapi/*.c $$CODA_DIR/src/cdb.c $$CODA_DIR/src/hw_mixer.c $$CODA_DIR/src/mixer.c $$CODA_DIR/src/vpuhelper.c $$CODA_DIR/src/vpuio.c
   LIBS *= -lGAL
 }
 
