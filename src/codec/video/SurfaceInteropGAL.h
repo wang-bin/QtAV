@@ -56,7 +56,6 @@ class SurfaceInteropGAL Q_DECL_FINAL: public VideoSurfaceInterop
 {
 public:
     SurfaceInteropGAL(const InteropResourcePtr& res) : m_surface(0), m_resource(res), frame_width(0), frame_height(0) {}
-    ~SurfaceInteropGAL();
     /*!
      * \brief setSurface
      * \param surface vpu decoded surface
@@ -66,7 +65,7 @@ public:
     void setSurface(const FBSurfacePtr& surface, int frame_w, int frame_h);
     /// GLTextureSurface only supports rgb32
     void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
-    void unmap(void *handle) Q_DECL_OVERRIDE;
+    void unmap(void *) Q_DECL_OVERRIDE {}
 protected:
     /// copy from gpu (optimized if possible) and convert to target format if necessary
     void* mapToHost(const VideoFormat &format, void *handle, int plane);
@@ -75,5 +74,6 @@ private:
     FBSurfacePtr m_surface;
     int frame_width, frame_height;
 };
+} //namespace vpu
 } //namespace QtAV
 #endif //QTAV_SURFACEINTEROPGAL_H
