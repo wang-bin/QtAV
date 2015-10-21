@@ -17,6 +17,12 @@
 #include "vpuapifunc.h"
 #include "vpuapi.h"
 
+#define DEBUG
+#ifdef DEBUG
+#define debug(format, args...)  printf("%s,%s:%d" format "\n", __FILE__, __func__, __LINE__, ##args)
+#else
+#define debug(format, args...)
+#endif
 
 
 #ifdef BIT_CODE_FILE_PATH
@@ -57,9 +63,9 @@ Uint32	VPU_WaitInterrupt(Uint32 coreIdx, int timeout)
 
 	SetClockGate(coreIdx, 1);
 
-	if (reason != (Uint32)-1)
+	if (reason != (Uint32)-1){
 		reason = VpuReadReg(coreIdx, BIT_INT_REASON);
-
+	}
 	if (reason != (Uint32)-1) {
 		VpuWriteReg(coreIdx, BIT_INT_CLEAR, 1);		// clear HW signal				
 	}
@@ -278,7 +284,7 @@ static RetCode InitializeVPU(Uint32 coreIdx, const Uint16* code, Uint32 size)
 	
 	if (vdi_init(coreIdx) < 0)
 		return RETCODE_FAILURE;
-
+	
 	InitCodecInstancePool(coreIdx);
 
 	EnterLock(coreIdx);	
@@ -288,30 +294,33 @@ static RetCode InitializeVPU(Uint32 coreIdx, const Uint16* code, Uint32 size)
 	codeBuffer = vb.phys_addr;
 	workBuffer = codeBuffer + CODE_BUF_SIZE;
 	paraBuffer = workBuffer + WORK_BUF_SIZE;
-
+printf("codeBuffer:%#x\nworkBuffer:%#x\nparaBuffer:%#x\n", codeBuffer,workBuffer,paraBuffer);
 	if (VPU_IsInit(coreIdx) != 0) {
 		LeaveLock(coreIdx);
 		return RETCODE_CALLED_BEFORE;
 	}
 
-	VPU_SWReset(coreIdx, SW_RESET_ON_BOOT, NULL);
-
+	VPU_SWReset(coreIdx, SW_RESET_ON_BOOT, NULL);  
+	
 	BitLoadFirmware(coreIdx, codeBuffer, code, size);
 
+	VpuWriteReg(coreIdx, BIT_WORK_BUF_ADDR, workBuffer);
 	VpuWriteReg(coreIdx, BIT_PARA_BUF_ADDR, paraBuffer);
 	VpuWriteReg(coreIdx, BIT_CODE_BUF_ADDR, codeBuffer);
-	VpuWriteReg(coreIdx, BIT_WORK_BUF_ADDR, workBuffer);
 
-	VpuWriteReg(coreIdx, BIT_BIT_STREAM_CTRL, VPU_STREAM_ENDIAN);
+        data = STREAM_FULL_EMPTY_CHECK_DISABLE << 2;
+        data |= VPU_STREAM_ENDIAN;
+	VpuWriteReg(coreIdx, BIT_BIT_STREAM_CTRL, data);
+
 	VpuWriteReg(coreIdx, BIT_FRAME_MEM_CTRL, CBCR_INTERLEAVE<<2|VPU_FRAME_ENDIAN);
-	VpuWriteReg(coreIdx, BIT_BIT_STREAM_PARAM, 0);
 
+	VpuWriteReg(coreIdx, BIT_BIT_STREAM_PARAM, 0);
 	VpuWriteReg(coreIdx, BIT_AXI_SRAM_USE, 0);
 	VpuWriteReg(coreIdx, BIT_INT_ENABLE, 0);
 
  	data = (1<<INT_BIT_BIT_BUF_FULL);
- 	data |= (1<<INT_BIT_BIT_BUF_EMPTY);
  	data |= (1<<INT_BIT_SEQ_INIT);
+	data |= (1<<INT_BIT_BIT_BUF_EMPTY);
  	data |= (1<<INT_BIT_PIC_RUN);	
 
 	VpuWriteReg(coreIdx, BIT_INT_ENABLE, data);
@@ -377,19 +386,23 @@ RetCode VPU_GetVersionInfo(Uint32 coreIdx, Uint32 *versionInfo, Uint32 *revision
 	Uint32 rev;
 	Uint32 pid;
 
+        if (VPU_IsInit(coreIdx) == 0) {
+	        return RETCODE_NOT_INITIALIZED;
+        }
+        if (GetPendingInst(coreIdx)) {
+                return RETCODE_FRAME_NOT_COMPLETE;
+	}
+
 	EnterLock(coreIdx);
 
 	if (versionInfo && revision) {
-
 		if (VPU_IsInit(coreIdx) == 0) {
 			return RETCODE_NOT_INITIALIZED;
 		}
-
 		if (GetPendingInst(coreIdx)) {
 			LeaveLock(coreIdx);
 			return RETCODE_FRAME_NOT_COMPLETE;
 		}
-
 		VpuWriteReg(coreIdx, RET_FW_VER_NUM , 0);
 
 		BitIssueCommand(coreIdx, NULL, FIRMWARE_GET);
@@ -398,10 +411,9 @@ RetCode VPU_GetVersionInfo(Uint32 coreIdx, Uint32 *versionInfo, Uint32 *revision
 			return RETCODE_VPU_RESPONSE_TIMEOUT;
 		}	
 
-
 		ver = VpuReadReg(coreIdx, RET_FW_VER_NUM);
 		rev = VpuReadReg(coreIdx, RET_FW_CODE_REV);
-
+		
 		if (ver == 0) {
 			LeaveLock(coreIdx);
 			return RETCODE_FAILURE;
@@ -568,6 +580,8 @@ RetCode VPU_DecOpen(DecHandle * pHandle, DecOpenParam * pop)
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->streamRdPtrRegAddr, pDecInfo->streamBufStartAddr);
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->streamWrPtrRegAddr, pDecInfo->streamWrPtr);
 
+//	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->frameDisplayFlagRegAddr, 0); //aicl
+
 	pDecInfo->frameDisplayFlag = 0;
 	pDecInfo->clearDisplayIndexes   = 0;
 
@@ -663,11 +677,28 @@ RetCode VPU_DecSetEscSeqInit(DecHandle handle, int escape)
 	pCodecInst = handle;
 	pDecInfo = &pCodecInst->CodecInfo.decInfo;
 
-	if (pDecInfo->openParam.bitstreamMode != BS_MODE_INTERRUPT)
+	if (pDecInfo->openParam.bitstreamMode != BS_MODE_INTERRUPT){
 		return RETCODE_INVALID_PARAM;
-
+	}
 	pDecInfo->seqInitEscape = escape;
+#if 0
+        int val;
+	SetClockGate(pCodecInst->coreIdx, 1);        
+                                
+        val = VpuReadReg(pCodecInst->coreIdx, CMD_DEC_SEQ_INIT_ESCAPE);
+        printf("VPU_DecSetEscSeqInit 1 val=%#lx\n",val);
+	if (escape == 0) {
+                val &= ~( 0x01 );
+        }               
+        else {          
+                val |= ( 0x01 ); 
+        }                       
+        VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_INIT_ESCAPE, val);
+        printf("VPU_DecSetEscSeqInit 2 val=%#lx\n",val);
+	pDecInfo->streamEndflag = val;
 
+        SetClockGate(pCodecInst->coreIdx, 0);
+#endif
 	return RETCODE_SUCCESS;
 }
 
@@ -682,31 +713,29 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
 	ret = CheckDecInstanceValidity(handle);
 	if (ret != RETCODE_SUCCESS)
 		return ret;
-
 	if (info == 0) {
 		return RETCODE_INVALID_PARAM;
 	}
 
-
 	pCodecInst = handle;
-	pDecInfo = &pCodecInst->CodecInfo.decInfo;
-	EnterLock(pCodecInst->coreIdx);
+        pDecInfo = &pCodecInst->CodecInfo.decInfo;
 
-	if (GetPendingInst(pCodecInst->coreIdx)) {
-		LeaveLock(pCodecInst->coreIdx);
-		return RETCODE_FRAME_NOT_COMPLETE;
-	}
+        EnterLock(pCodecInst->coreIdx);
+
+        if (GetPendingInst(pCodecInst->coreIdx)) {
+                return RETCODE_FRAME_NOT_COMPLETE;
+        }
+	
 
 	if (DecBitstreamBufEmpty(pDecInfo)) {
 		LeaveLock(pCodecInst->coreIdx);
 		return RETCODE_WRONG_CALL_SEQUENCE;
 	}
 
-
 	VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_BB_START, pDecInfo->streamBufStartAddr);
 	VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_BB_SIZE, pDecInfo->streamBufSize / 1024); // size in KBytes
-
-
+	
+//	VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_START_BYTE, 0); //aicl
 	if(pDecInfo->userDataEnable) {
 		val  = 0;
 		val |= (pDecInfo->userDataReportMode << 10);
@@ -716,6 +745,7 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_USER_DATA_BUF_SIZE, pDecInfo->userDataBufSize);
 	}
 	else {
+
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_USER_DATA_OPTION, 0);
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_USER_DATA_BASE_ADDR, 0);
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_USER_DATA_BUF_SIZE, 0);
@@ -724,15 +754,13 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
 	val  = 0;
 
 	if (pDecInfo->openParam.bitstreamMode == BS_MODE_PIC_END) {
+		printf("pDecInfo->openParam.bitstreamMode == BS_MODE_PIC_END\n");
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_START_BYTE, 0);	
 		val |= (1 << 3) & 0x8;
 		val |= (1 << 2) & 0x4;
 	}	
-
 	val |= (pDecInfo->reorderEnable<<1) & 0x2;
-	
 	val |= (pDecInfo->openParam.mp4DeblkEnable & 0x1);	
-
 	VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_OPTION, val);					
 
 	switch(pCodecInst->codecMode) {
@@ -744,6 +772,7 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
 		break;
 	case AVC_DEC:
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_X264_MV_EN, VPU_AVC_X264_SUPPORT);
+//		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_X264_MV_EN, 0);
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_PS_BB_START, pDecInfo->vbPs.phys_addr);
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_PS_BB_SIZE, (pDecInfo->vbPs.size/1024) );
 		break;	
@@ -751,6 +780,10 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
 
 	if( pCodecInst->codecMode == AVC_DEC )
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_SPP_CHUNK_SIZE, VPU_GBU_SIZE);
+
+
+//	VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_SRC_SIZE, 0); //aicl
+//        VpuWriteReg(pCodecInst->coreIdx, BIT_RUN_AUX_STD, pCodecInst->codecModeAux);  //added by aicl
 
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->streamWrPtrRegAddr, pDecInfo->streamWrPtr);
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->streamRdPtrRegAddr, pDecInfo->streamRdPtr);
@@ -761,17 +794,20 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
 
 	val = pDecInfo->openParam.streamEndian;
 	VpuWriteReg(pCodecInst->coreIdx, BIT_BIT_STREAM_CTRL, val);
-
+#if 1
+//coda960
 	val = 0;
 	val |= (pDecInfo->wtlEnable<<17) |(pDecInfo->openParam.bwbEnable<<12);
 	val |= ((pDecInfo->openParam.cbcrInterleave)<<2); 
 	val |= pDecInfo->openParam.frameEndian;
+printf("BIT_FRAME_MEM_CTRL=%#x\n",val);
 	VpuWriteReg(pCodecInst->coreIdx, BIT_FRAME_MEM_CTRL, val);
-	
+#endif	
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->frameDisplayFlagRegAddr, 0);
 
 	SetPendingInst(pCodecInst->coreIdx, pCodecInst);
 	BitIssueCommand(pCodecInst->coreIdx, pCodecInst, SEQ_INIT);
+#if 1
 	if (vdi_wait_vpu_busy(pCodecInst->coreIdx, VPU_BUSY_CHECK_TIMEOUT, BIT_BUSY_FLAG) == -1) {
 		if (pCodecInst->loggingEnable)
 			vdi_log(pCodecInst->coreIdx, SEQ_INIT, 2);
@@ -779,6 +815,9 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
 		LeaveLock(pCodecInst->coreIdx);
 		return RETCODE_VPU_RESPONSE_TIMEOUT;
 	}
+#endif
+        debug("VPU_DecGetInitialInfo Command Execute Over\n");
+//	while(1);//aicl
 
 	if (pCodecInst->loggingEnable)
 		vdi_log(pCodecInst->coreIdx, SEQ_INIT, 0);
@@ -798,7 +837,7 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
     val = VpuReadReg(pCodecInst->coreIdx, RET_DEC_SEQ_SRC_SIZE);
     info->picWidth = ( (val >> 16) & 0xffff );
     info->picHeight = ( val & 0xffff );
-
+printf("picWidth=%d,picHeight=%d\n",info->picWidth,info->picHeight);
 	val = VpuReadReg(pCodecInst->coreIdx, RET_DEC_SEQ_SUCCESS);
 	info->seqInitErrReason = 0;
 	if (val & (1<<31)) {
@@ -816,8 +855,9 @@ RetCode VPU_DecGetInitialInfo(DecHandle handle,
 	}
 
 	if (val == 0) {
+	printf("DEC_SEQ_INIT command executed with error,val=%d\n",val);	
 		info->seqInitErrReason = VpuReadReg(pCodecInst->coreIdx, RET_DEC_SEQ_SEQ_ERR_REASON);
-        SetPendingInst(pCodecInst->coreIdx, 0);
+        	SetPendingInst(pCodecInst->coreIdx, 0);
 		LeaveLock(pCodecInst->coreIdx);
 		return RETCODE_FAILURE;
 	}
@@ -992,12 +1032,10 @@ RetCode VPU_DecIssueSeqInit(DecHandle handle)
 		LeaveLock(pCodecInst->coreIdx);
 		return RETCODE_FRAME_NOT_COMPLETE;
 	}
-
 	if (DecBitstreamBufEmpty(pDecInfo)) {
 		LeaveLock(pCodecInst->coreIdx);
 		return RETCODE_WRONG_CALL_SEQUENCE;
 	}
-
 
 	VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_BB_START, pDecInfo->streamBufStartAddr);
 	VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_BB_SIZE, pDecInfo->streamBufSize / 1024); // size in KBytes
@@ -1035,7 +1073,6 @@ RetCode VPU_DecIssueSeqInit(DecHandle handle)
 		VpuWriteReg(pCodecInst->coreIdx, CMD_DEC_SEQ_PS_BB_SIZE, (pDecInfo->vbPs.size/1024) );
 		break;	
 	}
-
 
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->streamWrPtrRegAddr, pDecInfo->streamWrPtr);
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->streamRdPtrRegAddr, pDecInfo->streamRdPtr);
@@ -1361,7 +1398,7 @@ RetCode VPU_DecRegisterFrameBuffer(DecHandle handle, FrameBuffer *bufArray, int 
 		LeaveLock(pCodecInst->coreIdx);
 		return ret;
 	}
-
+printf("pDecInfo->frameBufPool[0].bufY=%#x\n",pDecInfo->frameBufPool[0].bufY);
 	
 	
 
@@ -1560,6 +1597,7 @@ RetCode VPU_DecRegisterFrameBuffer(DecHandle handle, FrameBuffer *bufArray, int 
 #endif
 
 	SetPendingInst(pCodecInst->coreIdx, pCodecInst);
+        VpuWriteReg(pCodecInst->coreIdx, BIT_RUN_AUX_STD, pCodecInst->codecModeAux);//added by aicl
 	BitIssueCommand(pCodecInst->coreIdx, pCodecInst, SET_FRAME_BUF);
 	if (vdi_wait_vpu_busy(pCodecInst->coreIdx, VPU_BUSY_CHECK_TIMEOUT, BIT_BUSY_FLAG) == -1) {
 		if (pCodecInst->loggingEnable)
@@ -1655,9 +1693,13 @@ RetCode VPU_DecGetBitstreamBuffer( DecHandle handle,
 
 	if (wrPtr < rdPtr) {
 		room = rdPtr - wrPtr - VPU_GBU_SIZE*2 - 1;		
+//		room = rdPtr - wrPtr - 1;
 	}
 	else {
+//printf("VPU_DecGetBitstreamBuffer,pDecInfo->streamBufEndAddr=%#lx,pDecInfo->streamBufStartAddr=%#lx,wrPtr=%#lx,rdPtr=%#lx\n",pDecInfo->streamBufEndAddr,pDecInfo->streamBufStartAddr,wrPtr,rdPtr);
 		room = ( pDecInfo->streamBufEndAddr - wrPtr ) + ( rdPtr - pDecInfo->streamBufStartAddr ) - VPU_GBU_SIZE*2 - 1;			
+//		room = ( pDecInfo->streamBufEndAddr - wrPtr ) + ( rdPtr - pDecInfo->streamBufStartAddr ) - 1;
+//printf("room=%#lx\n",room);
 	}
 
 
@@ -2114,7 +2156,8 @@ RetCode VPU_DecStartOneFrame(DecHandle handle, DecParam *param)
 		(pDecInfo->secAxiInfo.useBtpEnable&0x01)<<11 );
 
 	VpuWriteReg(pCodecInst->coreIdx, BIT_AXI_SRAM_USE, val);
-
+       
+//	VpuWriteReg(pCodecInst->coreIdx, BIT_RUN_AUX_STD, pCodecInst->codecModeAux);//added by aicl
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->streamWrPtrRegAddr, pDecInfo->streamWrPtr);
 	VpuWriteReg(pCodecInst->coreIdx, pDecInfo->streamRdPtrRegAddr, pDecInfo->streamRdPtr);
 
@@ -2188,8 +2231,8 @@ RetCode VPU_DecGetOutputInfo(
 		return RETCODE_WRONG_CALL_SEQUENCE;
 	}
 
-	if (pCodecInst->loggingEnable)
-		vdi_log(pCodecInst->coreIdx, PIC_RUN, 0);
+//     if (pCodecInst->loggingEnable)
+//             vdi_log(pCodecInst->coreIdx, PIC_RUN, 0);
 
 	val = VpuReadReg(pCodecInst->coreIdx, RET_DEC_PIC_SUCCESS);
 	if (val & (1<<31)) {

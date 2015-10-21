@@ -40,7 +40,8 @@
 #	define MAX_DEC_PIC_HEIGHT  1088
 
 // MAX_NUM_INSTANCE can set any value as many as memory size of system. the bellow setting is dedicated for C&M FPGA board.
-#define MAX_NUM_INSTANCE 4
+//#define MAX_NUM_INSTANCE 4
+#define MAX_NUM_INSTANCE 16
 #define MAX_NUM_VPU_CORE 1
 
 #if MAX_DEC_PIC_WIDTH > 1920		// 4K		
@@ -101,12 +102,14 @@
 #endif
 #define VPU_USER_DATA_ENDIAN  VDI_LITTLE_ENDIAN
 
-#define CBCR_INTERLEAVE			1 //[default 1 for BW checking with CnMViedo Conformance] 0 (chroma separate mode), 1 (chroma interleave mode) // if the type of tiledmap uses the kind of MB_RASTER_MAP. must set to enable CBCR_INTERLEAVE
+//#define CBCR_INTERLEAVE			1 //[default 1 for BW checking with CnMViedo Conformance] 0 (chroma separate mode), 1 (chroma interleave mode) // if the type of tiledmap uses the kind of MB_RASTER_MAP. must set to enable CBCR_INTERLEAVE
+#define CBCR_INTERLEAVE                       0
 #define VPU_ENABLE_BWB			1 
+//#define VPU_ENABLE_BWB                        0
 #define VPU_REPORT_USERDATA		0
+//#define VPU_REPORT_USERDATA             1
 
-
-
+#if 0
 #define USE_BIT_INTERNAL_BUF	1
 #define USE_IP_INTERNAL_BUF		1
 #define USE_DBKY_INTERNAL_BUF	1
@@ -114,7 +117,16 @@
 #define USE_OVL_INTERNAL_BUF	1
 #define USE_BTP_INTERNAL_BUF	1
 #define USE_ME_INTERNAL_BUF		1
+#endif
+#define USE_BIT_INTERNAL_BUF    0 
+#define USE_IP_INTERNAL_BUF             0
+#define USE_DBKY_INTERNAL_BUF   0 
+#define USE_DBKC_INTERNAL_BUF   0 
+#define USE_OVL_INTERNAL_BUF    0 
+#define USE_BTP_INTERNAL_BUF    0
+#define USE_ME_INTERNAL_BUF             0
 
+#define STREAM_FULL_EMPTY_CHECK_DISABLE 0
 
 #define VPU_GBU_SIZE    1024	//No modification required
 #define JPU_GBU_SIZE	512		//No modification required
@@ -130,8 +142,9 @@
 
 
 #define PARA_BUF_SIZE     ( 10 * 1024 )
-
-
+//#define CODE_BUF_SIZE                   (152*1024)
+//#define WORK_BUF_SIZE                   (512*1024) + (MAX_NUM_INSTANCE*41*1024)
+                
 //=====1. VPU COMMON MEMORY ======================//
 #define SIZE_COMMON                     (CODE_BUF_SIZE + WORK_BUF_SIZE + PARA_BUF_SIZE)
 

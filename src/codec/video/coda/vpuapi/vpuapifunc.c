@@ -141,6 +141,7 @@ RetCode BitLoadFirmware(Uint32 coreIdx, PhysicalAddress codeBase, const Uint16 *
 
 	BYTE code[8];
 
+	printf("ENTER %s\n", __func__);
 
 	for (i=0; i<codeSize; i+=4) {
 		// 2byte little endian variable to 1byte big endian buffer
@@ -154,7 +155,8 @@ RetCode BitLoadFirmware(Uint32 coreIdx, PhysicalAddress codeBase, const Uint16 *
 		code[7] = (BYTE)codeWord[i+3];
 		VpuWriteMem(coreIdx, codeBase+i*2, (BYTE *)code, 8, VDI_BIG_ENDIAN);
 	}
-
+ 
+printf("VpuWriteMem end\n");
 	VpuWriteReg(coreIdx, BIT_INT_ENABLE, 0);
 	VpuWriteReg(coreIdx, BIT_CODE_RUN, 0);
 
@@ -162,9 +164,10 @@ RetCode BitLoadFirmware(Uint32 coreIdx, PhysicalAddress codeBase, const Uint16 *
 		data = codeWord[i];
 		VpuWriteReg(coreIdx, BIT_CODE_DOWN, (i << 16) | data);
 	}
-
+printf("VpuWriteReg end\n");
 	vdi_set_bit_firmware_to_pm(coreIdx, codeWord); 
 
+	printf("LEAVE %s\n", __func__);
 	return RETCODE_SUCCESS;
 }
 
@@ -186,20 +189,19 @@ void BitIssueCommand(Uint32 coreIdx, CodecInst *inst, int cmd)
 	}
 
 
-
 	if (inst) {
 		if (inst->codecMode < AVC_ENC)	{
 		}
 		else {
 		}
 	}	
-
 	VpuWriteReg(coreIdx, BIT_BUSY_FLAG, 1);
 	VpuWriteReg(coreIdx, BIT_RUN_INDEX, instIdx);
 	VpuWriteReg(coreIdx, BIT_RUN_COD_STD, cdcMode);
 	VpuWriteReg(coreIdx, BIT_RUN_AUX_STD, auxMode);
-	if (inst && inst->loggingEnable)
+	if (inst && inst->loggingEnable){
 		vdi_log(coreIdx, cmd, 1);
+	}
 	VpuWriteReg(coreIdx, BIT_RUN_COMMAND, cmd);
 }
 
@@ -341,6 +343,7 @@ void ConfigEncWPROTRegion(int coreIdx, EncInfo * pEncInfo, WriteMemProtectCfg *p
 
 int DecBitstreamBufEmpty(DecInfo * pDecInfo)
 {
+//printf("pDecInfo->streamRdPtr=%#lx,pDecInfo->streamWrPtr=%#lx\n",pDecInfo->streamRdPtr,pDecInfo->streamWrPtr);
 	return (pDecInfo->streamRdPtr == pDecInfo->streamWrPtr);	
 }
 
@@ -1087,9 +1090,10 @@ CodecInst *GetPendingInst(Uint32 coreIdx)
 	vpu_instance_pool_t *vip;
 
 	vip = (vpu_instance_pool_t *)vdi_get_instance_pool(coreIdx);
-	if (!vip)
-		return NULL;
-
+	if (!vip) {
+		return NULL; 
+	}
+	
 	return (CodecInst *)vip->pendingInst;
 }
 
