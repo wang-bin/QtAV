@@ -111,6 +111,8 @@ public:
     VideoDecoderVPUPrivate()
         : VideoDecoderPrivate()
 	, display_queue(ring<FBSurfacePtr>(0))
+    , instIdx(0)
+
     {
     }
     ~VideoDecoderVPUPrivate() {
@@ -714,7 +716,7 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     int seqHeaderSize = 0; //also used in FLUSH_BUFFER
     int picHeaderSize = 0;
     if (!d.chunkReuseRequired) {
-        if (!d.processHeaders(&seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt()));
+        if (!d.processHeaders(&seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt()))
             return false;
     }
     // Fill VCL data
