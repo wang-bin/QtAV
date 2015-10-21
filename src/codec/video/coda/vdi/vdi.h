@@ -12,7 +12,7 @@
 #include "mm.h"
 
 
-#define SUPPORT_MULTI_CORE_IN_ONE_DRIVER
+//#define SUPPORT_MULTI_CORE_IN_ONE_DRIVER
 #define MAX_VPU_CORE_NUM MAX_NUM_VPU_CORE
 #define MAX_VPU_BUFFER_POOL (64*MAX_NUM_INSTANCE)
 
@@ -21,6 +21,7 @@
 #define VpuWriteMem( CORE, ADDR, DATA, LEN, ENDIAN )	vdi_write_memory( CORE, ADDR, DATA, LEN, ENDIAN )		// system memory write
 #define VpuReadMem( CORE, ADDR, DATA, LEN, ENDIAN )		vdi_read_memory( CORE, ADDR, DATA, LEN, ENDIAN )		// system memory write
 
+#define virt_to_phys(x) ((x << 24) >> 24)               //去掉KERNEL_OFFSET
 
 
 typedef struct vpu_buffer_t {
@@ -37,6 +38,29 @@ typedef enum {
 	VDI_32BIT_BIG_ENDIAN,
 } EndianMode;
 
+#define USE_DMA
+
+/* DMA Related Definition */
+/*--------------------------------------*/
+/* 传输方向 */
+        
+enum direction
+{
+        DMAR            = 0x00,         /* 主存 --> 显存 */       
+        DMAW            = 0x01,         /* 显存 --> 主存 */
+        DMAV            = 0x10,         /* 显存 --> 显存*/
+};      
+        
+struct dma_info
+{       
+        unsigned long vsrc;     
+        unsigned long vdst;     
+        unsigned long size;     
+        unsigned int direction;
+};
+
+#define DMA_TRANSFER 0x5060
+/*--------------------------------------*/
 
 
 typedef enum {

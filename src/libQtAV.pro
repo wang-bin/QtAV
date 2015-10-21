@@ -282,11 +282,11 @@ config_videotoolbox:!ios {
   LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia \
           -framework IOSurface -framework VideoToolbox
 }
-#CONFIG*=config_vpu
+CONFIG*=config_vpu
 config_vpu {
   DEFINES *= QTAV_HAVE_VPU=1
   CODA_DIR= codec/video/coda
-  INCLUDEPATH *= $$CODA_DIR codec/video/viv/include
+  INCLUDEPATH *= $$CODA_DIR $$CODA_DIR/vpuapi $$CODA_DIR/include codec/video/viv/include
   HEADERS *= $$CODA_DIR/config.h $$CODA_DIR/Magellan.h \
         $$CODA_DIR/include/vpuio.h $$CODA_DIR/include/vpuhelper.h \
         $$CODA_DIR/vpuapi/regdefine.h $$CODA_DIR/vpuapi/vpuapi.h $$CODA_DIR/vpuapi/vpuapifunc.h $$CODA_DIR/vpuapi/vputypes.h $$CODA_DIR/vpuapi/vpuconfig.h \

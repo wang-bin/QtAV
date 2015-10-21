@@ -10,7 +10,7 @@
 #include "vpuapi.h"
 
 #include "vpuio.h"
-#include "vpurun.h"
+//#include "vpurun.h"
 #ifdef SUPPORT_FFMPEG_DEMUX
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
@@ -23,7 +23,7 @@
 #define FN_SEQ_USER_DATA "dec_seq_user_data.log"
 
 #define	USER_DATA_INFO_OFFSET			(8*17)
-
+#define MAX_PIC_SKIP_NUM 5
 
 
 typedef struct VpuReportContext_t VpuReportContext_t;
@@ -200,19 +200,6 @@ extern "C"{
     	
 
 	
-	// Encoder helper function
-	void changeRcParaTest(Uint32 core_idx, 
-		EncHandle handle, 
-		osal_file_t bsFp, 
-		EncParam *pEncParam, 
-		EncHeaderParam *pEncHeaderParam,
-		EncConfigParam *pEncConfig,
-		EncOpenParam	*pEncOP);
-	int getEncOpenParam(EncOpenParam *pEncOP, EncConfigParam *pEncConfig, ENC_CFG *pEncCfg);
-	int getEncOpenParamDefault(EncOpenParam *pEncOP, EncConfigParam *pEncConfig);
-	void getAvcEncPPS(EncOpenParam *pEncOP);
-	int parseMp4CfgFile(ENC_CFG *pEncCfg, char *FileName);
-	int parseAvcCfgFile(ENC_CFG *pEncCfg, char *FileName);
 	// Bitstream Buffer Control
 	RetCode WriteBsBufHelper(Uint32 core_idx, 
 		DecHandle handle,

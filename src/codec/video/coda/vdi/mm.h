@@ -96,3 +96,4 @@ vmem_get_info(
 }
 #endif       
 #endif /* __CNM_VIDEO_MEMORY_ALLOCATOR_H__ */
+
