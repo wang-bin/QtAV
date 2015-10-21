@@ -26,16 +26,16 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
 #include "utils/ring.h"
-#include <libavcodec/avcodec.h>
 #define SUPPORT_FFMPEG_DEMUX 1
-extern "C" {
+//extern "C" {
 #include "coda/vpuapi/vpuapi.h"
 #include "coda/vpuapi/regdefine.h"
 #include "coda/include/mixer.h"
 #include "coda/include/vpuio.h"
 #include "coda/include/vpuhelper.h"
 #include "coda/vpuapi/vpuapifunc.h"
-}
+//}
+#include "SurfaceInteropGAL.h"
 #include "utils/Logger.h"
 
 //avformat ctx: flag CODEC_FLAG_TRUNCATED
@@ -154,7 +154,9 @@ public:
     int framebufStride; // align 16
     FrameBufferFormat framebufFormat;
     SecAxiUse secAxiUse;
-
+#if defined(SUPPORT_DEC_SLICE_BUFFER) || defined(SUPPORT_DEC_RESOLUTION_CHANGE)
+    DecBufInfo decBufInfo;
+#endif
  #define MAX_PPU_SRC_NUM 2
     FrameBuffer fbPPU[MAX_PPU_SRC_NUM];
 

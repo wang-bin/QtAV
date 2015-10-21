@@ -286,13 +286,11 @@ config_videotoolbox:!ios {
 config_vpu {
   DEFINES *= QTAV_HAVE_VPU=1
   CODA_DIR= codec/video/coda
-  INCLUDEPATH *= $$CODA_DIR
+  INCLUDEPATH *= $$CODA_DIR codec/video/viv/include
   HEADERS *= codec/video/coda/*.h $$CODA_DIR/include/*.h $$CODA_DIR/vpuapi/*.h $$CODA_DIR/vdi/*.h
   SOURCES *= codec/video/VideoDecoderVPU.cpp
-  INCLUDEPATH *= codec/video/viv/include
-  HEADERS *= codec/video/viv/gcScaler.h codec/video/viv/include/*.h
-  HEADERS *= codec/video/SurfaceInteropVPU.h
-  SOURCES *= codec/video/SurfaceInteropVPU.cpp
+  HEADERS *= codec/video/viv/GALScaler.h codec/video/viv/include/*.h codec/video/SurfaceInteropGAL.h
+  SOURCES *= codec/video/viv/GALScaler.cpp codec/video/SurfaceInteropGAL.cpp
   SOURCES *= $$CODA_DIR/vpuapi/*.c $$CODA_DIR/src/cdb.c $$CODA_DIR/src/hw_mixer.c $$CODA_DIR/src/mixer.c $$CODA_DIR/src/vpuhelper.c $$CODA_DIR/src/vpuio.c
   LIBS *= -lGAL
 }

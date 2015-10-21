@@ -17,16 +17,16 @@ InteropResource::~InteropResource()
     }
 }
 
-bool InteropResource::map(const QSharedPointer<FBSurface> &surface, XImage *ximg, int plane)
+bool InteropResource::map(const QSharedPointer<FBSurface> &surface, ImageDesc *img, int plane)
 {
     if (!scaler) {
         scaler = new gcScaler();
         scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
     }
-    //scaler->setOutFormat(VideoFormat::pixelFormatToFFmpeg(ximg.));
+    //scaler->setOutFormat(VideoFormat::pixelFormatToFFmpeg(img.));
     scaler->setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_RGB32));
     scaler->setInSize(surface->fb.stride, surface->fb.height);
-    scaler->setOutSize(ximg->width, ximg->height);
+    scaler->setOutSize(img->width, img->height);
     const quint8* src[] = {
         (quint8*)surface->fb.bufY,
         (quint8*)surface->fb.bufCb,
@@ -39,28 +39,30 @@ bool InteropResource::map(const QSharedPointer<FBSurface> &surface, XImage *ximg
     };
     if (!scaler->convert(src, srcStride))
         return false;
-    // dma copy. check ximg->bytes_per_line
-    if (ximg->bytes_per_line == scaler->outLineSizes().at(0)) {
-        // qMin(scaler->outHeight(), ximg->height)
-        dma_copy_from_vmem(ximg->data, scaler->outPlanes().at(0), ximg->bytes_per_line*ximg->height);
+    // dma copy. check img->stride
+    if (img->stride == scaler->outLineSizes().at(0)) {
+        // qMin(scaler->outHeight(), img->height)
+        dma_copy_from_vmem(img->data, scaler->outPlanes().at(0), img->stride*img->height);
     } else {
         qWarning("different gpu/host_mem stride");
-        for (int i = 0; i < ximg->height; ++i)
-            dma_copy_from_vmem(ximg->data + i*ximg->bytes_per_line, scaler->outPlanes().at(0) + i*scaler->outLineSizes().at(0), ximg->bytes_per_line);
+        for (int i = 0; i < img->height; ++i)
+            dma_copy_from_vmem(img->data + i*img->stride, scaler->outPlanes().at(0) + i*scaler->outLineSizes().at(0), img->stride);
     }
     return true;
 }
 
-bool SurfaceInteropVIV::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
+bool SurfaceInteropGAL::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
 {
     if (type == HostMemorySurface) {
         return mapToHost(fmt, handle, plane);
     }
 }
 
-bool SurfaceInteropVIV::mapToHost(const VideoFormat &format, void *handle, int plane)
+bool SurfaceInteropGAL::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
-    return m_resource->map(m_surface, (XImage*)handle, plane);
+    if (!format.isRGB())
+        return false;
+    return m_resource->map(m_surface, (ImageDesc*)handle, plane);
 }
 
 }

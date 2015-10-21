@@ -1,13 +1,16 @@
 
-#ifndef QTAV_SURFACEINTEROPVPU_H
-#define QTAV_SURFACEINTEROPVPU_H
+#ifndef QTAV_SURFACEINTEROPGAL_H
+#define QTAV_SURFACEINTEROPGAL_H
 #include <QtAV/SurfaceInterop.h>
 #include "coda/vpuapi/vpuapi.h"
-struct XImage;
-
 namespace QtAV {
-class gcScaler;
-
+class GALScaler;
+struct ImageDesc {
+    quint8 *data;
+    int width;
+    int height;
+    int stride;
+};
 class FBSurface {
     DecHandle handle;
 public:
@@ -28,7 +31,6 @@ public:
 typedef QSharedPointer<FBSurface> FBSurfacePtr;
 
 namespace vpu {
-
 class InteropResource
 {
 public:
@@ -37,24 +39,24 @@ public:
     /*!
      * \brief map
      * \param surface vpu decoded surface
-     * \param tex opengl texture
+     * \param info [width, height, linesize]
      * \param w frame width(visual width) without alignment, <= vpu surface width
      * \param h frame height(visual height)
      * \param plane useless now
      * \return true if success
      */
-    bool map(const FBSurfacePtr& surface, XImage* ximg, int plane);
-    bool unmap(XImage *) { return true;}
+    bool map(const FBSurfacePtr& surface, ImageDesc* img, int plane);
+    bool unmap(ImageDesc *) { return true;}
 protected:
-    gcScaler *scaler;
+    GALScaler *scaler;
 };
 typedef QSharedPointer<InteropResource> InteropResourcePtr;
 
-class SurfaceInteropVIV Q_DECL_FINAL: public VideoSurfaceInterop
+class SurfaceInteropGAL Q_DECL_FINAL: public VideoSurfaceInterop
 {
 public:
-    SurfaceInteropVIV(const InteropResourcePtr& res) : m_surface(0), m_resource(res), frame_width(0), frame_height(0) {}
-    ~SurfaceInteropVIV();
+    SurfaceInteropGAL(const InteropResourcePtr& res) : m_surface(0), m_resource(res), frame_width(0), frame_height(0) {}
+    ~SurfaceInteropGAL();
     /*!
      * \brief setSurface
      * \param surface vpu decoded surface
@@ -73,3 +75,5 @@ private:
     FBSurfacePtr m_surface;
     int frame_width, frame_height;
 };
+} //namespace QtAV
+#endif //QTAV_SURFACEINTEROPGAL_H
