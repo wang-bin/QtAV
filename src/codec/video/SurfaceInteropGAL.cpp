@@ -1,6 +1,6 @@
 
-#include "SurfaceInteropVPU.h"
-#include "viv/gcScaler.h"
+#include "SurfaceInteropGAL.h"
+#include "viv/GALScaler.h"
 
 namespace QtAV {
 namespace vpu {
@@ -17,10 +17,10 @@ InteropResource::~InteropResource()
     }
 }
 
-bool InteropResource::map(const QSharedPointer<FBSurface> &surface, ImageDesc *img, int plane)
+bool InteropResource::map(const FBSurfacePtr &surface, ImageDesc *img, int)
 {
     if (!scaler) {
-        scaler = new gcScaler();
+        scaler = new GALScaler();
         scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
     }
     //scaler->setOutFormat(VideoFormat::pixelFormatToFFmpeg(img.));
@@ -51,20 +51,29 @@ bool InteropResource::map(const QSharedPointer<FBSurface> &surface, ImageDesc *i
     return true;
 }
 
-bool SurfaceInteropGAL::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
+void SurfaceInteropGAL::setSurface(const FBSurfacePtr &surface, int frame_w, int frame_h)
+{
+    m_surface = surface;
+    frame_width = frame_w;
+    frame_height = frame_h;
+}
+
+void* SurfaceInteropGAL::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
 {
     if (type == HostMemorySurface) {
         return mapToHost(fmt, handle, plane);
     }
 }
 
-bool SurfaceInteropGAL::mapToHost(const VideoFormat &format, void *handle, int plane)
+void* SurfaceInteropGAL::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
     if (!format.isRGB())
         return false;
-    return m_resource->map(m_surface, (ImageDesc*)handle, plane);
+    if (m_resource->map(m_surface, (ImageDesc*)handle, plane))
+        return handle;
+    return NULL;
 }
 
-}
-}
+} //namespace vpu
+} //namespace QtAV
 Q_DECLARE_METATYPE(QtAV::FBSurface)
