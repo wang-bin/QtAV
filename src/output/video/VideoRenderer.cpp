@@ -213,11 +213,12 @@ void VideoRenderer::setInSize(int width, int height)
     DPTR_D(VideoRenderer);
     if (d.src_width != width || d.src_height != height) {
         d.aspect_ratio_changed = true; //?? for VideoAspectRatio mode
+        d.src_width = width;
+        d.src_height = height;
+        onFrameSizeChanged(QSize(width, height));
     }
     if (!d.aspect_ratio_changed)// && (d.src_width == width && d.src_height == height))
         return;
-    d.src_width = width;
-    d.src_height = height;
     //d.source_aspect_ratio = qreal(d.src_width)/qreal(d.src_height);
     qDebug("%s => calculating aspect ratio from converted input data(%f)", __FUNCTION__, d.source_aspect_ratio);
     //see setOutAspectRatioMode
@@ -599,6 +600,11 @@ bool VideoRenderer::onSetSaturation(qreal s)
 {
     Q_UNUSED(s);
     return false;
+}
+
+void VideoRenderer::onFrameSizeChanged(const QSize &size)
+{
+    Q_UNUSED(size);
 }
 
 void VideoRenderer::updateUi()

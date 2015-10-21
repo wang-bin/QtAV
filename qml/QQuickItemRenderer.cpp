@@ -300,4 +300,10 @@ bool QQuickItemRenderer::onSetOrientation(int value)
     return true;
 }
 
+void QQuickItemRenderer::onFrameSizeChanged(const QSize &size)
+{
+    Q_UNUSED(size);
+    Q_EMIT frameSizeChanged();
+}
+
 } // namespace QtAV

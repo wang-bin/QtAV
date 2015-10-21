@@ -44,6 +44,7 @@ class Q_AV_EXPORT VideoOutput : public QObject, public VideoRenderer
     Q_PROPERTY(OutAspectRatioMode outAspectRatioMode READ outAspectRatioMode WRITE setOutAspectRatioMode NOTIFY outAspectRatioModeChanged)
     Q_ENUMS(OutAspectRatioMode)
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
+    Q_PROPERTY(QSize frameSize READ frameSize NOTIFY frameSizeChanged)
     Q_ENUMS(Quality)
 public:
     /*!
@@ -75,6 +76,7 @@ Q_SIGNALS:
     void hueChanged(qreal value);
     void saturationChanged(qreal value);
     void orientationChanged(int value);
+    void frameSizeChanged(const QSize& size);
 protected:
     bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
     bool needUpdateBackground() const Q_DECL_OVERRIDE;
@@ -99,7 +101,7 @@ private:
     virtual bool onSetContrast(qreal contrast) Q_DECL_OVERRIDE;
     virtual bool onSetHue(qreal hue) Q_DECL_OVERRIDE;
     virtual bool onSetSaturation(qreal saturation) Q_DECL_OVERRIDE;
-
+    virtual void onFrameSizeChanged(const QSize& size) Q_DECL_OVERRIDE;
     // from AVOutput
     virtual void setStatistics(Statistics* statistics) Q_DECL_OVERRIDE; //called by friend AVPlayer
     virtual bool onInstallFilter(Filter *filter, int index) Q_DECL_OVERRIDE;
