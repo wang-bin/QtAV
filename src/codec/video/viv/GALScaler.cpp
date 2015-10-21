@@ -8,7 +8,7 @@
     do { \
         gceSTATUS ret = x; \
         if (ret < 0) { \
-            qWarning("VIV error@%d. " #x "(%d): %s", __LINE__, ret, gckOS_DebugStatus2Name(ret)); \
+            qWarning("VIV error@%d. " #x "(%d): %s", __LINE__, ret, gcoOS_DebugStatus2Name(ret)); \
             return __VA_ARGS__; \
         } \
     } while(0);
@@ -16,7 +16,7 @@
 do { \
   gceSTATUS ret = x; \
   if(ret < 0) \
-    qWarning("VIV error@%d. " #x "(%d): %s", __LINE__, ret, gckOS_DebugStatus2Name(ret)); \
+    qWarning("VIV error@%d. " #x "(%d): %s", __LINE__, ret, gcoOS_DebugStatus2Name(ret)); \
 } while(0);
 
 extern "C" {
