@@ -2,17 +2,17 @@
 
 namespace QtAV {
 
-class gcScalerPrivate;
-class gcScaler Q_DECL_FINAL : public ImageConverter
+class GALScalerPrivate;
+class GALScaler Q_DECL_FINAL : public ImageConverter
 {
 public:
     bool check() const Q_DECL_OVERRIDE;
     // FIXME: why match to the pure virtual one if not declare here?
     bool convert(const quint8 *const src[], const int srcStride[]) Q_DECL_OVERRIDE;
     // dst is allocated by gpu. if convert to given dst(host), use dma copy
-    //bool convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[]) Q_DECL_OVERRIDE;
+    bool convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[]) Q_DECL_OVERRIDE;
 protected:
     bool prepareData() Q_DECL_OVERRIDE;
 };
-typedef gcScaler ImageConverterVIV;
+typedef GALScaler ImageConverterVIV;
 } //namespace QtAV

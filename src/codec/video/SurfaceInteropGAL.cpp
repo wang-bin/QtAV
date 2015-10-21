@@ -2,6 +2,10 @@
 #include "SurfaceInteropGAL.h"
 #include "viv/GALScaler.h"
 
+extern "C" {
+void dma_copy_in_vmem(unsigned int dst, unsigned int src, int len);
+void dma_copy_from_vmem(unsigned char* dst, unsigned int src, int len);
+}
 namespace QtAV {
 namespace vpu {
 
@@ -42,11 +46,11 @@ bool InteropResource::map(const FBSurfacePtr &surface, ImageDesc *img, int)
     // dma copy. check img->stride
     if (img->stride == scaler->outLineSizes().at(0)) {
         // qMin(scaler->outHeight(), img->height)
-        dma_copy_from_vmem(img->data, scaler->outPlanes().at(0), img->stride*img->height);
+        dma_copy_from_vmem(img->data, (unsigned int)(quintptr)scaler->outPlanes().at(0), img->stride*img->height);
     } else {
         qWarning("different gpu/host_mem stride");
         for (int i = 0; i < img->height; ++i)
-            dma_copy_from_vmem(img->data + i*img->stride, scaler->outPlanes().at(0) + i*scaler->outLineSizes().at(0), img->stride);
+            dma_copy_from_vmem(img->data + i*img->stride, (unsigned int)(quintptr)scaler->outPlanes().at(0) + i*scaler->outLineSizes().at(0), img->stride);
     }
     return true;
 }
@@ -63,6 +67,7 @@ void* SurfaceInteropGAL::map(SurfaceType type, const VideoFormat &fmt, void *han
     if (type == HostMemorySurface) {
         return mapToHost(fmt, handle, plane);
     }
+    return NULL;
 }
 
 void* SurfaceInteropGAL::mapToHost(const VideoFormat &format, void *handle, int plane)
@@ -76,4 +81,3 @@ void* SurfaceInteropGAL::mapToHost(const VideoFormat &format, void *handle, int 
 
 } //namespace vpu
 } //namespace QtAV
-Q_DECLARE_METATYPE(QtAV::FBSurface)

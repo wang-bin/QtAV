@@ -1,6 +1,6 @@
 // COPYRIGHT Deepin Inc.
 
-#include "gcScaler.h"
+#include "GALScaler.h"
 #include "ImageConverter_p.h"
 #include <galUtil.h>
 
@@ -11,14 +11,18 @@
             qWarning("VIV error@%d. " #x "(%d): %s", __LINE__, ret, gckOS_DebugStatus2Name(ret)); \
             return __VA_ARGS__; \
         } \
-    } while(0)
-#define GC_WARN(a) \
+    } while(0);
+#define GC_WARN(x) \
 do { \
-  gceSTATUS res = a; \
-  if(res < 0) \
-    qWarning("VIV error@%d. " #x "(%d): %s", __LINE__, ret, gckOS_DebugStatus2Name(res)); \
+  gceSTATUS ret = x; \
+  if(ret < 0) \
+    qWarning("VIV error@%d. " #x "(%d): %s", __LINE__, ret, gckOS_DebugStatus2Name(ret)); \
 } while(0);
 
+extern "C" {
+void dma_copy_in_vmem(unsigned int dst, unsigned int src, int len);
+void dma_copy_from_vmem(unsigned char* dst, unsigned int src, int len);
+}
 namespace QtAV {
 
 typedef struct Test2D {
@@ -44,16 +48,15 @@ typedef struct Test2D {
     gctPOINTER              srcLgcAddr;//TODO: not set
 } Test2D;
 
-class gcScalerPrivate Q_DECL_FINAL: ImageConverterPrivate
+class GALScalerPrivate Q_DECL_FINAL: public ImageConverterPrivate
 {
 public:
-    gcScalerPrivate() : ImageConverterPrivate()
+    GALScalerPrivate() : ImageConverterPrivate()
       , gc_os(gcvNULL)
       , gc_hal(gcvNULL)
       , gc_2d(gcvNULL)
-      , gc_surf(gcvNULL)
     {}
-    ~gcScalerPrivate() {
+    ~GALScalerPrivate() {
         close();
     }
     bool open(int w, int h, gceSURF_FORMAT fmt); // must reset test2d if false
@@ -80,7 +83,7 @@ static const gc_fmt_entry gc_fmts[] = {
 };
 gceSURF_FORMAT pixelFormatToGC(VideoFormat::PixelFormat pixfmt)
 {
-    for (gc_fmt_entry* e = gc_fmts; e < gc_fmts + sizeof(gc_fmts)/sizeof(gc_fmts[0]); ++e)
+    for (const gc_fmt_entry* e = gc_fmts; e < gc_fmts + sizeof(gc_fmts)/sizeof(gc_fmts[0]); ++e)
         if (e->pixfmt == pixfmt)
             return e->gc;
     return gcvSURF_UNKNOWN;
@@ -88,33 +91,33 @@ gceSURF_FORMAT pixelFormatToGC(VideoFormat::PixelFormat pixfmt)
 
 VideoFormat::PixelFormat pixelFormatFromGC(gceSURF_FORMAT gc)
 {
-    for (gc_fmt_entry* e = gc_fmts; e < gc_fmts + sizeof(gc_fmts)/sizeof(gc_fmts[0]); ++e)
+    for (const gc_fmt_entry* e = gc_fmts; e < gc_fmts + sizeof(gc_fmts)/sizeof(gc_fmts[0]); ++e)
         if (e->gc == gc)
             return e->pixfmt;
     return VideoFormat::Format_Invalid;
 }
 
-bool gcScaler::check() const
+bool GALScaler::check() const
 {
     if (!ImageConverter::check())
         return false;
-    DPTR_D(gcScaler);
+    DPTR_D(const GALScaler);
     return VideoFormat(VideoFormat::pixelFormatFromFFmpeg(d.fmt_out)).isRGB();
 }
 
-bool gcScaler::convert(const quint8 * const src[], const int srcStride[])
+bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
 {
-    DPTR_D(gcScaler);
-    const gceSURF_FORMAT srcFmt = pixelFormatToGC(VideoFormat::pixelFormatToFFmpeg(d.fmt_in));
+    DPTR_D(GALScaler);
+    const gceSURF_FORMAT srcFmt = pixelFormatToGC(VideoFormat::pixelFormatFromFFmpeg(d.fmt_in));
     if (!d.test2D.srcSurf
             || d.test2D.srcWidth != d.w_in || d.test2D.srcHeight != d.h_in
             || d.test2D.srcFormat != srcFmt) {
-        if (test2D.srcSurf != gcvNULL) {
-            if (test2D.srcLgcAddr)
-                GC_WARN(gcoSURF_Unlock(test2D.srcSurf, test2D.srcLgcAddr));
-            GC_WARN(gcoSURF_Destroy(test2D.srcSurf));
-            test2D.srcLgcAddr = 0;
-            test2D.srcSurf = gcvNULL;
+        if (d.test2D.srcSurf != gcvNULL) {
+            if (d.test2D.srcLgcAddr)
+                GC_WARN(gcoSURF_Unlock(d.test2D.srcSurf, d.test2D.srcLgcAddr));
+            GC_WARN(gcoSURF_Destroy(d.test2D.srcSurf));
+            d.test2D.srcLgcAddr = 0;
+            d.test2D.srcSurf = gcvNULL;
         }
         if (!d.createSourceSurface(d.w_in, d.h_in, srcFmt)) {
             return false;
@@ -127,7 +130,7 @@ bool gcScaler::convert(const quint8 * const src[], const int srcStride[])
     const VideoFormat fmt(d.fmt_in);
     // d.w_in*d.h_in, 1/4, 1/4
     for (int i = 0; i < fmt.planeCount(); ++i) {
-        dma_copy_in_vmem(address[i], (gctUINT32)src[i], srcStride[i]*fmt.height(d.h_in, i));
+        dma_copy_in_vmem(address[i], (gctUINT32)(quintptr)src[i], srcStride[i]*fmt.height(d.h_in, i));
     }
     // TODO: setup gco2D only if parameters changed
     gco2D egn2D = d.test2D.runtime.engine2d;
@@ -152,9 +155,14 @@ bool gcScaler::convert(const quint8 * const src[], const int srcStride[])
     return true;
 }
 
-bool gcScaler::prepareData()
+bool GALScaler::convert(const quint8 *const src[], const int srcStride[],     quint8 *const dst[], const int dstStride[])
 {
-    DPTR_D(gcScaler);
+    return false;
+}
+
+bool GALScaler::prepareData()
+{
+    DPTR_D(GALScaler);
     if (!check())
         return false;
     const int nb_planes = qMax(av_pix_fmt_count_planes(d.fmt_out), 0);
@@ -162,14 +170,14 @@ bool gcScaler::prepareData()
     d.pitchs.resize(nb_planes);
 
     d.close();
-    if (!d.open(d.w_out, d.h_out, pixelFormatToGC(VideoFormat::pixelFormatToFFmpeg(d.fmt_out))))
+    if (!d.open(d.w_out, d.h_out, pixelFormatToGC(VideoFormat::pixelFormatFromFFmpeg(d.fmt_out))))
         return false;
-    d.bits[0] = d.test2D.dstLgcAddr;
+    d.bits[0] = (quint8*)d.test2D.dstPhyAddr;
     d.pitchs[0] = d.test2D.dstStride;
     return true;
 }
 
-bool gcScalerPrivate::open(int w, int h, gceSURF_FORMAT fmt)
+bool GALScalerPrivate::open(int w, int h, gceSURF_FORMAT fmt)
 {
     /* Construct the gcoOS object. */
     GC_ENSURE(gcoOS_Construct(gcvNULL, &gc_os), false);
@@ -217,7 +225,7 @@ bool gcScalerPrivate::open(int w, int h, gceSURF_FORMAT fmt)
     return true;
 }
 
-void gcScalerPrivate::close()
+bool GALScalerPrivate::close()
 {
     // destroy source surface
     if (test2D.srcSurf != gcvNULL) {
@@ -251,12 +259,13 @@ void gcScalerPrivate::close()
         GC_WARN(gcoOS_Destroy(gc_os));
         gc_os = NULL;
     }
+    return true;
 }
 
-bool gcScalerPrivate::createSourceSurface(int w, int h, gceSURF_FORMAT fmt)
+bool GALScalerPrivate::createSourceSurface(int w, int h, gceSURF_FORMAT fmt)
 {
     gcoSURF srcsurf = NULL;
-    gceSTATUS status = gcoSURF_Construct(test2D.runtime.hal, w, h, 1, gcvSURF_BITMAP,format, gcvPOOL_DEFAULT, &srcsurf);
+    gceSTATUS status = gcoSURF_Construct(test2D.runtime.hal, w, h, 1, gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &srcsurf);
     if (status != gcvSTATUS_OK) {
         qWarning("surface construct error!");
         gcoSURF_Destroy(srcsurf);

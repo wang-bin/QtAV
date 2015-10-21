@@ -288,33 +288,6 @@ extern "C"{
 	int frame_queue_count(frame_queue_item_t* queue);
 	int frame_queue_check_in_queue(frame_queue_item_t* queue, int val);
 /* make container */
-#ifdef SUPPORT_FFMPEG_DEMUX
-#define MAX_HEADER_CNT 3
-#define CONTAINER_HEADER_SIZE (50*MAX_HEADER_CNT)
-int container_init(EncConfigParam encConfig,
-    AVOutputFormat **fmt,
-    AVFormatContext **oc,
-    AVStream **video_st,
-    int gopSize);
-int container_copy_header_from_bitstream_buffer(const Uint32 core_idx,
-    const PhysicalAddress bitstream,
-    const int size,
-    const int endian,
-    char *buf,
-    int *pos);
-int container_save_header_from_buffer(char *dst, BYTE *src, const int size, int *pos);
-int container_write_es(const Uint32 core_idx,
-    const PhysicalAddress bitstream,
-    const int size,
-    const int endian,
-    AVFormatContext *oc, 
-    AVStream *st,
-    char *header_buffer,
-    int *header_pos,
-    int format,
-    int picType);
-int container_deinit(AVFormatContext *oc);
-#endif /* SUPPORT_FFMPEG_DEMUX */
 #if defined (__cplusplus)
 }
 #endif 

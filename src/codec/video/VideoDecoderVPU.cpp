@@ -25,17 +25,16 @@
 #include "QtAV/Packet.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
+#include "QtAV/private/mkid.h"
 #include "utils/ring.h"
 #define SUPPORT_FFMPEG_DEMUX 1
 //extern "C" {
 #include "coda/vpuapi/vpuapi.h"
-#include "coda/vpuapi/regdefine.h"
-#include "coda/include/mixer.h"
-#include "coda/include/vpuio.h"
 #include "coda/include/vpuhelper.h"
 #include "coda/vpuapi/vpuapifunc.h"
 //}
 #include "SurfaceInteropGAL.h"
+#include <QtCore/QMetaType>
 #include "utils/Logger.h"
 
 //avformat ctx: flag CODEC_FLAG_TRUNCATED
@@ -78,9 +77,9 @@
             return __VA_ARGS__; \
         } \
     } while(0)
-#define VPU_WARN(a) \
+#define VPU_WARN(x) \
 do { \
-  RetCode res = a; \
+  RetCode res = x; \
   if(res != RETCODE_SUCCESS) \
     qWarning("Coda VPU error@%d. " #x ": %#x", __LINE__, ret); \
 } while(0);
@@ -98,11 +97,12 @@ public:
     VideoDecoderVPU();
     VideoDecoderId id() const Q_DECL_OVERRIDE;
     QString description() const Q_DECL_OVERRIDE;
+    bool decode(const QByteArray&) Q_DECL_OVERRIDE {return false;}
     bool decode(const Packet& packet) Q_DECL_OVERRIDE;
     void flush() Q_DECL_OVERRIDE;
     VideoFrame frame() Q_DECL_OVERRIDE;
 };
-extern VideoDecoderId VideoDecoderId_VPU;
+static const VideoDecoderId VideoDecoderId_VPU = mkid::id32base36_3<'V', 'P', 'U'>::value;
 FACTORY_REGISTER(VideoDecoder, VPU, "VPU")
 
 class VideoDecoderVPUPrivate Q_DECL_FINAL: public VideoDecoderPrivate
@@ -110,7 +110,9 @@ class VideoDecoderVPUPrivate Q_DECL_FINAL: public VideoDecoderPrivate
 public:
     VideoDecoderVPUPrivate()
         : VideoDecoderPrivate()
-    {}
+	, display_queue(ring<FBSurfacePtr>(0))
+    {
+    }
     ~VideoDecoderVPUPrivate() {
     }
     QString getVPUInfo(quint32 core_idx) {
@@ -135,7 +137,7 @@ public:
     bool useRot; //false
     bool useDering; //false
     bool tiled2LinearEnable;
-    TiledMapConfig mapType;
+    TiledMapType mapType;
 
     // vpu status
     bool chunkReuseRequired; //false
@@ -154,6 +156,7 @@ public:
     int framebufStride; // align 16
     FrameBufferFormat framebufFormat;
     SecAxiUse secAxiUse;
+    DecInitialInfo initialInfo;
 #if defined(SUPPORT_DEC_SLICE_BUFFER) || defined(SUPPORT_DEC_RESOLUTION_CHANGE)
     DecBufInfo decBufInfo;
 #endif
@@ -296,7 +299,7 @@ int fourCCToMp4Class(unsigned int fourcc)
     return -1;
 }
 
-int fourCCToCodStd(unsigned int fourcc)
+CodStd fourCCToCodStd(unsigned int fourcc)
 {
     char str[5];
     str[0] = toupper((char)fourcc);
@@ -307,7 +310,7 @@ int fourCCToCodStd(unsigned int fourcc)
     for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
         if (codstd_tab[i].fourcc == (unsigned int)MKTAG(str[0], str[1], str[2], str[3]))
             return codstd_tab[i].codStd;
-    return -1;
+    return (CodStd)-1;
 }
 
 int codecIdToMp4Class(int codec_id)
@@ -318,12 +321,12 @@ int codecIdToMp4Class(int codec_id)
     return -1;
 
 }
-int codecIdToCodStd(int codec_id)
+CodStd codecIdToCodStd(int codec_id)
 {
     for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
         if (codstd_tab[i].codec_id == codec_id)
             return codstd_tab[i].codStd;
-    return -1;
+    return (CodStd)-1;
 }
 
 int codecIdToFourcc(int codec_id)
@@ -351,7 +354,7 @@ QString VideoDecoderVPU::description() const
 
 bool VideoDecoderVPUPrivate::open()
 {
-    if (codecIdToCodStd(codec_ctx->codec_id) < 0) {
+    if (QtAV::codecIdToCodStd(codec_ctx->codec_id) < 0) {
         qWarning("Unsupported codec");
         return false;
     }
@@ -369,7 +372,7 @@ bool VideoDecoderVPUPrivate::open()
     totalNumofErrMbs = 0;
     description = getVPUInfo(coreIdx);
 
-    instIdx = VPU_GetOpenInstanceNum(pVpu->coreIdx); //omx use it. vpurun set from other
+    instIdx = VPU_GetOpenInstanceNum(coreIdx); //omx use it. vpurun set from other
     if (instIdx > MAX_NUM_INSTANCE) {
         qDebug("exceed the opened instance num than %d num", MAX_NUM_INSTANCE);
         return false;
@@ -377,16 +380,16 @@ bool VideoDecoderVPUPrivate::open()
     //omx_vpudec_component_vpuLibInit
     memset(&outputInfo, 0, sizeof(outputInfo));
     memset(&decOP, 0, sizeof(decOP));
-    decOP.bitstreamFormat = fourCCToCodStd(codec_ctx->codec_tag);
+    decOP.bitstreamFormat = QtAV::fourCCToCodStd(codec_ctx->codec_tag);
     if (decOP.bitstreamFormat < 0)
-        decOP.bitstreamFormat = codecIdToCodStd(codec_ctx->codec_id);
+        decOP.bitstreamFormat = QtAV::codecIdToCodStd(codec_ctx->codec_id);
     if (decOP.bitstreamFormat < 0) {
-        qWarning("can not support video format in VPU tag=%c%c%c%c, codec_id=0x%x \n", ctxVideo->codec_tag>>0, ctxVideo->codec_tag>>8, ctxVideo->codec_tag>>16, ctxVideo->codec_tag>>24, ctxVideo->codec_id );
+        qWarning("can not support video format in VPU tag=%c%c%c%c, codec_id=0x%x \n", codec_ctx->codec_tag>>0, codec_ctx->codec_tag>>8, codec_ctx->codec_tag>>16, codec_ctx->codec_tag>>24, codec_ctx->codec_id );
         return false;
     }
-    decOP.mp4Class = fourCCToMp4Class(codec_ctx->codec_tag);
+    decOP.mp4Class = QtAV::fourCCToMp4Class(codec_ctx->codec_tag);
     if (decOP.mp4Class < 0)
-        decOP.mp4Class = codecIdToMp4Class(codec_ctx->codec_id);
+        decOP.mp4Class = QtAV::codecIdToMp4Class(codec_ctx->codec_id);
 //!USE_OMX_HEADER_BUFFER_AS_DECODER_BITSTREAM_BUFFER
     memset(&vbStream, 0, sizeof(vbStream));
     vbStream.size = STREAM_BUF_SIZE;
@@ -439,8 +442,8 @@ bool VideoDecoderVPUPrivate::open()
     decOP.bitstreamMode = BS_MODE_PIC_END; //omx
 
     ppuEnable = (useRot || useDering || decOP.tiled2LinearEnable);
-    seqHeader = QByteArray(codec_ctx->extradata_size + MAX_CHUNK_HEADER_SIZE);	// allocate more buffer to fill the vpu specific header.
-    picHeader = QByteArray(MAX_CHUNK_HEADER_SIZE);
+    seqHeader = QByteArray(codec_ctx->extradata_size + MAX_CHUNK_HEADER_SIZE, 0);	// allocate more buffer to fill the vpu specific header.
+    picHeader = QByteArray(MAX_CHUNK_HEADER_SIZE, 0);
 
     VPU_ENSURE(VPU_DecOpen(&handle, &decOP), false);
     display_queue = ring<FBSurfacePtr>(MAX_REG_FRAME);
@@ -470,12 +473,13 @@ void VideoDecoderVPUPrivate::close()
         vdi_free_dma_memory(coreIdx, &vbStream);
     seqHeader.clear();
     picHeader.clear();
-    display_queue = ring<FBSurfacePtr>();
+    display_queue = ring<FBSurfacePtr>(0);
 }
 
 bool VideoDecoderVPUPrivate::flush()
 {
     VPU_DecUpdateBitstreamBuffer(handle, STREAM_END_SIZE);	//tell VPU to reach the end of stream. starting flush decoded output in VPU
+    return true;
 }
 
 bool VideoDecoderVPUPrivate::initSeq()
@@ -483,9 +487,9 @@ bool VideoDecoderVPUPrivate::initSeq()
     if (seqInited)
         return true;
     ConfigSeqReport(coreIdx, handle, decOP.bitstreamFormat); // TODO: remove
-    DecInitialInfo initialInfo = {0};
+    initialInfo = {0};
     if (decOP.bitstreamMode == BS_MODE_PIC_END) { //TODO: no check in omx (always BS_MODE_PIC_END)
-        ret = VPU_DecGetInitialInfo(handle, &initialInfo);
+        RetCode ret = VPU_DecGetInitialInfo(handle, &initialInfo);
         if (ret != RETCODE_SUCCESS) {
             if (ret == RETCODE_MEMORY_ACCESS_VIOLATION)
                 PrintMemoryAccessViolationReason(coreIdx, NULL);
@@ -503,12 +507,12 @@ bool VideoDecoderVPUPrivate::initSeq()
                 return true;
         }
         while (osal_kbhit() == 0) {
-            int_reason = VPU_WaitInterrupt(d.coreIdx, VPU_DEC_TIMEOUT);
+            int_reason = VPU_WaitInterrupt(coreIdx, VPU_DEC_TIMEOUT);
             if (int_reason)
                 VPU_ClearInterrupt(coreIdx);
             if(int_reason & (1<<INT_BIT_BIT_BUF_EMPTY))
                 break;
-            CheckUserDataInterrupt(d.coreIdx, d.handle, 1, decOP.bitstreamFormat, int_reason);
+            CheckUserDataInterrupt(coreIdx, handle, 1, decOP.bitstreamFormat, int_reason);
             if (int_reason && (int_reason & (1<<INT_BIT_SEQ_INIT))) {
                 seqInited = 1;
                 break;
@@ -519,18 +523,18 @@ bool VideoDecoderVPUPrivate::initSeq()
             return true; // go to take next chunk.
         }
         if (seqInited) {
-            ret = VPU_DecCompleteSeqInit(handle, &initialInfo);
+            RetCode ret = VPU_DecCompleteSeqInit(handle, &initialInfo);
             if (ret != RETCODE_SUCCESS) {
                 if (ret == RETCODE_MEMORY_ACCESS_VIOLATION)
                     PrintMemoryAccessViolationReason(coreIdx, NULL);
                 if (initialInfo.seqInitErrReason & (1<<31)) // this case happened only ROLLBACK mode
                     VLOG(ERR, "Not enough header : Parser has to feed right size of a sequence header  \n");
                 VLOG(ERR, "VPU_DecCompleteSeqInit failed Error code is 0x%x \n", ret );
-                goto ERR_DEC_OPEN;
+                return false;
             }
         } else {
-            VLOG(ERR, "VPU_DecGetInitialInfo failed Error code is 0x%x \n", ret);
-            goto ERR_DEC_OPEN;
+            //VLOG(ERR, "VPU_DecGetInitialInfo failed Error code is 0x%x \n", ret);
+            return false;
         }
     }
     SaveSeqReport(coreIdx, handle, &initialInfo, decOP.bitstreamFormat);
@@ -606,8 +610,9 @@ bool VideoDecoderVPUPrivate::initSeq()
     // Register frame buffers requested by the decoder.
     VPU_ENSURE(VPU_DecRegisterFrameBuffer(handle, fbUserFrame, regFrameBufCount, framebufStride, framebufHeight, mapType), false); // frame map type (can be changed before register frame buffer)
 #endif
-    //omx check PrintMemoryAccessViolationReason(pVpu->coreIdx, NULL);
-    TiledMapConfig mapCfg = {{0}};
+    //omx check PrintMemoryAccessViolationReason(coreIdx, NULL);
+    TiledMapConfig mapCfg;
+    memset(&mapCfg, 0, sizeof(mapCfg));
     VPU_ENSURE(VPU_DecGiveCommand(handle, GET_TILEDMAP_CONFIG, &mapCfg), false);
     if (ppuEnable) {
 #if 0
@@ -638,6 +643,7 @@ bool VideoDecoderVPUPrivate::initSeq()
 #endif
     }
     seqInited = true;
+    return true;
 }
 
 bool VideoDecoderVPUPrivate::processHeaders(int *seqHeaderSize, int *picHeaderSize, const Packet &pkt, int fps_num, int fps_den, int nb_index_entries)
@@ -645,13 +651,13 @@ bool VideoDecoderVPUPrivate::processHeaders(int *seqHeaderSize, int *picHeaderSi
     if (!seqInited && !seqFilled) {
         // FIXME: copy from omx or vpuhelper
         *seqHeaderSize = BuildSeqHeader((BYTE*)seqHeader.constData(), decOP.bitstreamFormat, codec_ctx, fps_num, fps_den, nb_index_entries);	// make sequence data as reference file header to support VPU decoder.
-        if (headerSize < 0) {// indicate the stream dose not support in VPU.
+        if (*seqHeaderSize < 0) {// indicate the stream dose not support in VPU.
             qWarning("BuildSeqHeader the stream does not support in VPU");
             return false;
         }
         // TODO: vpurun check STD_THO, STD_VP3
         if (*seqHeaderSize > 0) { //write to vbStream
-            const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, seqHeader, *seqHeaderSize, decOP.streamEndian);
+            const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, (BYTE*)seqHeader.constData(), *seqHeaderSize, decOP.streamEndian);
             if (size < 0) {
                 qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
                 return false;
@@ -669,7 +675,7 @@ bool VideoDecoderVPUPrivate::processHeaders(int *seqHeaderSize, int *picHeaderSi
         case STD_VP3:
             break;
         default: // write to vbStream
-            const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, picHeader.constData(), *picHeaderSize, decOP.streamEndian);
+            const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, (BYTE*)picHeader.constData(), *picHeaderSize, decOP.streamEndian);
             if (size < 0) {
                 qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
                 return false;
@@ -696,19 +702,19 @@ bool VideoDecoderVPU::decode(const Packet &packet)
             qDebug("Error decode EOS"); // when?
             return false;
         }
-        goto FLUSH_BUFFER;
+        //goto FLUSH_BUFFER; //TODO: decode trailing frames
     }
     QByteArray chunkData(packet.data);
     DecOpenParam &decOP = d.decOP;
     if (decOP.bitstreamMode == BS_MODE_PIC_END) { //TODO: no check in omx. it's always true here
         if (!d.chunkReuseRequired) {
-            VPU_DecSetRdPtr(handle, decOP.bitstreamBuffer, 1);
+            VPU_DecSetRdPtr(d.handle, decOP.bitstreamBuffer, 1);
         }
     }
     int seqHeaderSize = 0; //also used in FLUSH_BUFFER
     int picHeaderSize = 0;
     if (!d.chunkReuseRequired) {
-        if (!d.processHeaders(&chunkData, &seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt()));
+        if (!d.processHeaders(&seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt()));
             return false;
     }
     // Fill VCL data
@@ -719,9 +725,10 @@ bool VideoDecoderVPU::decode(const Packet &packet)
         break;
     default: {
         if (decOP.bitstreamFormat == STD_RV) {
+	    const int cSlice = chunkData.at(0) + 1;
             chunkData.remove(0, 1+(cSlice*8));
         }
-        const int size = WriteBsBufFromBufHelper(d.coreIdx, d.handle, &d.vbStream, chunkData.constData(), chunkData.size(), decOP.streamEndian);
+        const int size = WriteBsBufFromBufHelper(d.coreIdx, d.handle, &d.vbStream, (BYTE*)chunkData.constData(), chunkData.size(), decOP.streamEndian);
         if (size <0) {
             qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
             return false;
@@ -738,8 +745,8 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     d.chunkReuseRequired = false;
 
 //FLUSH_BUFFER:
-    if(!(int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) && !(int_reason & (1<<INT_BIT_DEC_FIELD))) {
-        if (ppuEnable) {
+    if(!(d.int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) && !(d.int_reason & (1<<INT_BIT_DEC_FIELD))) {
+        if (false) {//ppuEnable) {
 #if 0
             VPU_DecGiveCommand(handle, SET_ROTATOR_OUTPUT, &fbPPU[ppIdx]);
             if (decConfig.useRot) {
@@ -754,9 +761,9 @@ bool VideoDecoderVPU::decode(const Packet &packet)
         ConfigDecReport(d.coreIdx, d.handle, decOP.bitstreamFormat);
         // Start decoding a frame.
         DecParam decParam = {0};
-        VPU_ENSURE(VPU_DecStartOneFrame(handle, &decParam), false);
+        VPU_ENSURE(VPU_DecStartOneFrame(d.handle, &decParam), false);
     } else { // TODO: omx always run here
-        if(int_reason & (1<<INT_BIT_DEC_FIELD)) {
+        if(d.int_reason & (1<<INT_BIT_DEC_FIELD)) {
             d.int_reason = 0;
             VPU_ClearInterrupt(d.coreIdx);
         }
@@ -819,17 +826,17 @@ bool VideoDecoderVPU::decode(const Packet &packet)
         VLOG(ERR,  "VPU_DecGetOutputInfo failed Error code is 0x%x \n", ret);
         if (ret == RETCODE_MEMORY_ACCESS_VIOLATION)
             PrintMemoryAccessViolationReason(d.coreIdx, &d.outputInfo);
-        goto ERR_DEC_OPEN;
+        return false;
     }
     if ((d.outputInfo.decodingSuccess & 0x01) == 0) { //OMX no 0x01
-        VLOG(ERR, "VPU_DecGetOutputInfo decode fail framdIdx %d \n", frameIdx);
-        VLOG(TRACE, "#%d, indexFrameDisplay %d || picType %d || indexFrameDecoded %d\n",
-            frameIdx, d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded );
+        VLOG(ERR, "VPU_DecGetOutputInfo decode fail \n");
+        VLOG(TRACE, "indexFrameDisplay %d || picType %d || indexFrameDecoded %d\n",
+             d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded );
     }
-    VLOG(TRACE, "#%d:%d, indexDisplay %d || picType %d || indexDecoded %d || rdPtr=0x%x || wrPtr=0x%x || chunkSize = %d, consume=%d\n",
-        d.instIdx, frameIdx, d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded, d.outputInfo.rdPtr, d.outputInfo.wrPtr, chunkData.size()+picHeaderSize, d.outputInfo.consumedByte);
+    VLOG(TRACE, "#%d, indexDisplay %d || picType %d || indexDecoded %d || rdPtr=0x%x || wrPtr=0x%x || chunkSize = %d, consume=%d\n",
+        d.instIdx, d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded, d.outputInfo.rdPtr, d.outputInfo.wrPtr, chunkData.size()+picHeaderSize, d.outputInfo.consumedByte);
 
-    SaveDecReport(d.coreIdx, d.handle, &d.outputInfo, decOP.bitstreamFormat, ((initialInfo.picWidth+15)&~15)/16); ///TODO:
+    SaveDecReport(d.coreIdx, d.handle, &d.outputInfo, decOP.bitstreamFormat, ((d.initialInfo.picWidth+15)&~15)/16); ///TODO:
     if (d.outputInfo.chunkReuseRequired) {// reuse previous chunk. that would be true once framebuffer is full.
         d.chunkReuseRequired = true;
         d.undecoded_size = chunkData.size(); // decode previous chunk again!!
@@ -842,7 +849,7 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     if (d.outputInfo.indexFrameDisplay == -1)
         d.decodefinish = true;
     if (d.decodefinish) {
-        if (!ppuEnable || decodeIdx == 0)
+        if (true)///*!ppuEnable*/ || decodeIdx == 0)
             return !packet.isEOF(); // EOS
     }
     if (d.outputInfo.indexFrameDisplay == -3 ||
@@ -899,16 +906,17 @@ bool VideoDecoderVPU::decode(const Packet &packet)
 
     if (d.outputInfo.numOfErrMBs) {
         d.totalNumofErrMbs += d.outputInfo.numOfErrMBs;
-        VLOG(ERR, "Num of Error Mbs : %d, in Frame : %d \n", d.outputInfo.numOfErrMBs, frameIdx);
+        VLOG(ERR, "Num of Error Mbs : %d\n", d.outputInfo.numOfErrMBs);
     }
 
-    frameIdx++;
+//    frameIdx++;
     return true;
 }
 
 void VideoDecoderVPU::flush()
 {
-    VPU_DecFrameBufferFlush(handle);
+    DPTR_D(VideoDecoderVPU);
+    VPU_DecFrameBufferFlush(d.handle);
 }
 
 VideoFrame VideoDecoderVPU::frame()
@@ -929,6 +937,28 @@ VideoFrame VideoDecoderVPU::frame()
     return frame;
 }
 
+
+
+#define PUT_BYTE(_p, _b) *_p++ = (unsigned char)_b; 
+#define PUT_BUFFER(_p, _buf, _len) \
+  memcpy(_p, _buf, _len); \
+   _p += _len;
+#define PUT_LE32(_p, _var) \
+*_p++ = (unsigned char)((_var)>>0);  \
+*_p++ = (unsigned char)((_var)>>8);  \
+*_p++ = (unsigned char)((_var)>>16); \
+*_p++ = (unsigned char)((_var)>>24); 
+#define PUT_BE32(_p, _var) \
+*_p++ = (unsigned char)((_var)>>24);  \
+*_p++ = (unsigned char)((_var)>>16);  \
+*_p++ = (unsigned char)((_var)>>8); \
+*_p++ = (unsigned char)((_var)>>0); 
+#define PUT_LE16(_p, _var) \
+*_p++ = (unsigned char)((_var)>>0);  \
+*_p++ = (unsigned char)((_var)>>8);  
+#define PUT_BE16(_p, _var) *_p++ = (unsigned char)((_var)>>8);  \
+ *_p++ = (unsigned char)((_var)>>0);  
+
 int BuildSeqHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, int fps_num, int fps_den, int nb_index_entries)
 {
     BYTE *pbMetaData = avctx->extradata;
@@ -940,7 +970,7 @@ int BuildSeqHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
 
     int fourcc = avctx->codec_tag;
     if (!fourcc)
-        fourcc = codecIdToFourcc(avctx->codec_id);
+        fourcc = QtAV::codecIdToFourcc(avctx->codec_id);
     int size = 0;
     if (codStd == STD_AVC || codStd == STD_AVS) {
         // check mov/mo4 file format stream
@@ -1083,8 +1113,8 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
     int size = 0;
     int fourcc = avctx->codec_tag;
     if (!fourcc)
-        fourcc = codecIdToFourcc(avctx->codec_id);
-    BYTE *pbChunk = pkt.data.constData();
+        fourcc = QtAV::codecIdToFourcc(avctx->codec_id);
+    BYTE *pbChunk = (BYTE*)pkt.data.constData();
     if (codStd == STD_VC1) {
         if (!fourcc)
             return -1;
@@ -1156,7 +1186,7 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
         }
         // check sequence metadata if the stream is mov/mo4 file format.
         if ((!has_st_code && avctx->extradata[0] == 0x01) || (avctx->extradata_size > 1 && avctx->extradata && avctx->extradata[0] == 0x01)) {
-            pbChunk = pkt.data.constData();
+            pbChunk = (BYTE*)pkt.data.constData();
             int offset = 0;
             while (offset < pkt.data.size()) {
                 int nSlice = pbChunk[offset] << 24 | pbChunk[offset+1] << 16 | pbChunk[offset+2] << 8 | pbChunk[offset+3];
@@ -1190,7 +1220,7 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
             }
         }
         if(has_st_code == 0) {
-            pbChunk = pkt.data.constData();
+            pbChunk = (BYTE*)pkt.data.constData();
             int offset = 0;
             while (offset < pkt.data.size()) {
                 int nSlice = pbChunk[offset] << 24 | pbChunk[offset+1] << 16 | pbChunk[offset+2] << 8 | pbChunk[offset+3];
@@ -1226,5 +1256,5 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
     return size;
 }
 } // namespace QtAV
-
+Q_DECLARE_METATYPE(QtAV::FBSurfacePtr)
 #include "VideoDecoderVPU.moc"
