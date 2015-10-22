@@ -24,12 +24,15 @@ InteropResource::~InteropResource()
 bool InteropResource::map(const FBSurfacePtr &surface, ImageDesc *img, int)
 {
     if (!scaler) {
+        qDebug("create GALScaler");
         scaler = new GALScaler();
-        scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
     }
+    qDebug("map in surface->fb.stride:%d fmt:%d; out: %d-%dx%d ", surface->fb.stride, VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P), img->stride, img->width, img->height);
+    scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
+    scaler->setInSize(surface->fb.stride, surface->fb.height);
     //scaler->setOutFormat(VideoFormat::pixelFormatToFFmpeg(img.));
     scaler->setOutFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_RGB32));
-    scaler->setInSize(surface->fb.stride, surface->fb.height);
+    qDebug("set fmt: %d", VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_RGB32));
     scaler->setOutSize(img->width, img->height);
     const quint8* src[] = {
         (quint8*)surface->fb.bufY,
@@ -45,6 +48,7 @@ bool InteropResource::map(const FBSurfacePtr &surface, ImageDesc *img, int)
         return false;
     // dma copy. check img->stride
     if (img->stride == scaler->outLineSizes().at(0)) {
+        qWarning("same gpu/host_mem stride. dma_copy_from_vmem");
         // qMin(scaler->outHeight(), img->height)
         dma_copy_from_vmem(img->data, (unsigned int)(quintptr)scaler->outPlanes().at(0), img->stride*img->height);
     } else {
@@ -65,18 +69,19 @@ void SurfaceInteropGAL::setSurface(const FBSurfacePtr &surface, int frame_w, int
 void* SurfaceInteropGAL::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
 {
     if (type == HostMemorySurface) {
+        qDebug("HostMemorySurface");
         return mapToHost(fmt, handle, plane);
     }
-    return NULL;
+    return 0;
 }
 
 void* SurfaceInteropGAL::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
     if (!format.isRGB())
-        return false;
+        return 0;
     if (m_resource->map(m_surface, (ImageDesc*)handle, plane))
         return handle;
-    return NULL;
+    return 0;
 }
 
 } //namespace vpu

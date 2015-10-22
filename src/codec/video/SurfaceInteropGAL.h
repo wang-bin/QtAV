@@ -6,7 +6,7 @@
 #include "coda/include/vpuhelper.h"
 namespace QtAV {
 class GALScaler;
-struct ImageDesc {
+struct ImageDesc { //TODO: move to SurfaceInterop.h
     quint8 *data;
     int width;
     int height;
