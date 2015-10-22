@@ -45,6 +45,8 @@ public:
         VideoStream,
         SubtitleStream,
     };
+    static const QStringList& supportedFormats();
+    static const QStringList& supportedExtensions();
     /// Supported ffmpeg/libav input protocols(not complete). A static string list
     static const QStringList& supportedProtocols();
 
@@ -140,6 +142,7 @@ public:
     // current open stream
     int currentStream(StreamType st) const;
     QList<int> streams(StreamType st) const;
+    // TODO: stream(StreamType), streams(StreamType)
     // current open stream
     int audioStream() const;
     QList<int> audioStreams() const;

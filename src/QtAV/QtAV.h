@@ -29,6 +29,7 @@
 #include <QtAV/AVClock.h>
 #include <QtAV/AVDecoder.h>
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/AVMuxer.h>
 #include <QtAV/AVOutput.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/Packet.h>
