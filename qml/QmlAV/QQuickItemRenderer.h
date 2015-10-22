@@ -68,7 +68,7 @@ Q_SIGNALS:
     void orientationChanged();
     void regionOfInterestChanged();
     void openGLChanged();
-    void sourceAspectRatioChanged(qreal value);
+    void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE;
     void frameSizeChanged();
 protected:
     bool event(QEvent *e) Q_DECL_OVERRIDE;

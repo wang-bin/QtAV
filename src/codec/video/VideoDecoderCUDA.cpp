@@ -91,7 +91,7 @@ public:
     void flush() Q_DECL_OVERRIDE;
     QTAV_DEPRECATED bool decode(const QByteArray &encoded) Q_DECL_FINAL;
     bool decode(const Packet &packet) Q_DECL_OVERRIDE Q_DECL_FINAL;
-    virtual VideoFrame frame();
+    virtual VideoFrame frame() Q_DECL_OVERRIDE;
 
     // properties
     int surfaces() const;

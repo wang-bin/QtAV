@@ -92,7 +92,7 @@ AudioFilter::AudioFilter(AudioFilterPrivate& d, QObject *parent)
 /*TODO: move to AVPlayer.cpp to reduce dependency?*/
 bool AudioFilter::installTo(AVPlayer *player)
 {
-    return player->installAudioFilter(this);
+    return player->installFilter(this);
 }
 
 void AudioFilter::apply(Statistics *statistics, AudioFrame *frame)
@@ -124,7 +124,7 @@ VideoFilterContext::Type VideoFilter::contextType() const
 
 bool VideoFilter::installTo(AVPlayer *player)
 {
-    return player->installVideoFilter(this);
+    return player->installFilter(this);
 }
 
 /*TODO: move to AVOutput.cpp to reduce dependency?*/

@@ -204,14 +204,14 @@ void AVTranscoder::start()
     d->started = true;
     if (sourcePlayer()) {
         if (d->afilter) {
-            sourcePlayer()->installAudioFilter(d->afilter);
+            sourcePlayer()->installFilter(d->afilter);
         }
         if (d->vfilter) {
             qDebug("framerate: %.3f/%.3f", videoEncoder()->frameRate(), sourcePlayer()->statistics().video.frame_rate);
             if (videoEncoder()->frameRate() <= 0) { // use source frame rate. set before install filter (so before open)
                 videoEncoder()->setFrameRate(sourcePlayer()->statistics().video.frame_rate);
             }
-            sourcePlayer()->installVideoFilter(d->vfilter);
+            sourcePlayer()->installFilter(d->vfilter);
         }
     }
     Q_EMIT started();

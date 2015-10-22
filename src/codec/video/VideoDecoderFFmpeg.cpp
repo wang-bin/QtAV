@@ -139,7 +139,7 @@ public:
     void setBugFlags(BugFlags value);
     BugFlags bugFlags() const;
 Q_SIGNALS:
-    void codecNameChanged();
+    void codecNameChanged() Q_DECL_OVERRIDE;
 };
 
 extern VideoDecoderId VideoDecoderId_FFmpeg;
@@ -246,7 +246,8 @@ VideoFrame VideoDecoderFFmpeg::frame()
     frame.setDisplayAspectRatio(d.getDAR(d.frame));
     frame.setBits(d.frame->data);
     frame.setBytesPerLine(d.frame->linesize);
-    frame.setTimestamp((double)d.frame->pkt_pts/1000.0); // in s. what about AVFrame.pts?
+    // in s. TODO: what about AVFrame.pts? av_frame_get_best_effort_timestamp? move to VideoFrame::from(AVFrame*)
+    frame.setTimestamp((double)d.frame->pkt_pts/1000.0);
     frame.setMetaData(QStringLiteral("avbuf"), QVariant::fromValue(AVFrameBuffersRef(new AVFrameBuffers(d.frame))));
     d.updateColorDetails(&frame);
     return frame;
@@ -356,19 +357,19 @@ VideoDecoderFFmpeg::BugFlags VideoDecoderFFmpeg::bugFlags() const
     return (BugFlags)d_func().bug;
 }
 
-namespace {
+//namespace {
 void i18n() {
-    Q_UNUSED(QObject::tr("codecName"));
-    Q_UNUSED(QObject::tr("skip_loop_filter"));
-    Q_UNUSED(QObject::tr("skip_idct"));
-    Q_UNUSED(QObject::tr("strict"));
-    Q_UNUSED(QObject::tr("skip_frame"));
-    Q_UNUSED(QObject::tr("threads"));
-    Q_UNUSED(QObject::tr("thread_type"));
-    Q_UNUSED(QObject::tr("vismv"));
-    Q_UNUSED(QObject::tr("bug"));
+    QObject::tr("codecName");
+    QObject::tr("skip_loop_filter");
+    QObject::tr("skip_idct");
+    QObject::tr("strict");
+    QObject::tr("skip_frame");
+    QObject::tr("threads");
+    QObject::tr("thread_type");
+    QObject::tr("vismv");
+    QObject::tr("bug");
 }
-}
+//}
 } //namespace QtAV
 
 #include "VideoDecoderFFmpeg.moc"

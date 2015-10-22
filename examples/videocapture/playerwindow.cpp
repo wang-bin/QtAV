@@ -95,7 +95,7 @@ void PlayerWindow::updatePreview(const QImage &image)
 void PlayerWindow::capture()
 {
     //m_player->captureVideo();
-    m_player->videoCapture()->request();
+    m_player->videoCapture()->capture();
 }
 
 void PlayerWindow::onCaptureSaved(const QString &path)
