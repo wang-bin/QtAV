@@ -6,6 +6,7 @@ class GALScalerPrivate;
 class GALScaler Q_DECL_FINAL : public ImageConverter
 {
 public:
+    GALScaler();
     bool check() const Q_DECL_OVERRIDE;
     // FIXME: why match to the pure virtual one if not declare here?
     bool convert(const quint8 *const src[], const int srcStride[]) Q_DECL_OVERRIDE;
