@@ -24,10 +24,10 @@
 
 #include <QtAV/AVDecoder.h>
 #include <QtAV/VideoFrame.h>
+#include <QtCore/QStringList>
 
 class QSize;
 namespace QtAV {
-
 typedef int VideoDecoderId;
 /*!
     Useful properties.
@@ -60,6 +60,7 @@ class Q_AV_EXPORT VideoDecoder : public AVDecoder
     Q_DISABLE_COPY(VideoDecoder)
     DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:
+    static QStringList supportedCodecs();
     static VideoDecoder* create(VideoDecoderId id);
     /*!
      * \brief create

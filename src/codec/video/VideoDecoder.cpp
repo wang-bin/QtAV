@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include <QtAV/VideoDecoder.h>
-#include <QtAV/private/AVDecoder_p.h>
+#include "QtAV/VideoDecoder.h"
+#include "QtAV/private/AVDecoder_p.h"
 #include <QtCore/QSize>
 #include "QtAV/private/factory.h"
 #include "utils/Logger.h"
@@ -60,6 +60,21 @@ void VideoDecoder_RegisterAll()
 QVector<VideoDecoderId> VideoDecoder::registered()
 {
     return QVector<VideoDecoderId>::fromStdVector(VideoDecoderFactory::Instance().registeredIds());
+}
+
+QStringList VideoDecoder::supportedCodecs()
+{
+    static QStringList codecs;
+    if (!codecs.isEmpty())
+        return codecs;
+    avcodec_register_all();
+    AVCodec* c = NULL;
+    while ((c=av_codec_next(c))) {
+        if (!av_codec_is_decoder(c) || c->type != AVMEDIA_TYPE_VIDEO)
+            continue;
+        codecs.append(QString::fromLatin1(c->name));
+    }
+    return codecs;
 }
 
 VideoDecoder::VideoDecoder(VideoDecoderPrivate &d):

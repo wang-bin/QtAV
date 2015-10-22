@@ -33,6 +33,21 @@ void AudioEncoder_RegisterAll()
     RegisterAudioEncoderFFmpeg_Man();
 }
 
+QStringList AudioEncoder::supportedCodecs()
+{
+    static QStringList codecs;
+    if (!codecs.isEmpty())
+        return codecs;
+    avcodec_register_all();
+    AVCodec* c = NULL;
+    while ((c=av_codec_next(c))) {
+        if (!av_codec_is_encoder(c) || c->type != AVMEDIA_TYPE_AUDIO)
+            continue;
+        codecs.append(QString::fromLatin1(c->name));
+    }
+    return codecs;
+}
+
 AudioEncoder::AudioEncoder(AudioEncoderPrivate &d):
     AVEncoder(d)
 {
