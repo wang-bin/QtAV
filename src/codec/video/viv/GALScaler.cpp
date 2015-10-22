@@ -122,7 +122,6 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
 {
     DPTR_D(GALScaler);
     const gceSURF_FORMAT srcFmt = pixelFormatToGC(VideoFormat::pixelFormatFromFFmpeg(d.fmt_in));
-    qDebug("srcFmt: %d", srcFmt);
     if (!d.test2D.srcSurf
             || d.test2D.srcWidth != d.w_in || d.test2D.srcHeight != d.h_in
             || d.test2D.srcFormat != srcFmt) {
@@ -144,10 +143,11 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
     const VideoFormat fmt(d.fmt_in);
     // d.w_in*d.h_in, 1/4, 1/4
     for (int i = 0; i < fmt.planeCount(); ++i) {
-        qDebug("dma_copy_in_vmem: %p=>%p len:%d", src[i], address[i], srcStride[i]*fmt.height(d.h_in, i));
+        // src[2] is 0x0!
+        //qDebug("dma_copy_in_vmem %d: %p=>%p len:%d", i, src[i], address[i], srcStride[i]*fmt.height(d.h_in, i));
         dma_copy_in_vmem(address[i], (gctUINT32)(quintptr)src[i], srcStride[i]*fmt.height(d.h_in, i));
     }
-    GC_WARN(gcoSURF_Unlock(d.test2D.srcSurf, memory));
+//    GC_WARN(gcoSURF_Unlock(d.test2D.srcSurf, memory)); // crash if unlock. so strange usage
     // TODO: setup gco2D only if parameters changed
     gco2D egn2D = d.test2D.runtime.engine2d;
     // set clippint rect
