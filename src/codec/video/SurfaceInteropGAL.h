@@ -6,12 +6,7 @@
 #include "coda/include/vpuhelper.h"
 namespace QtAV {
 class GALScaler;
-struct ImageDesc { //TODO: move to SurfaceInterop.h
-    quint8 *data;
-    int width;
-    int height;
-    int stride;
-};
+class VideoFrame;
 class FBSurface {
     DecHandle handle;
 public:
@@ -46,8 +41,7 @@ public:
      * \param plane useless now
      * \return true if success
      */
-    bool map(const FBSurfacePtr& surface, ImageDesc* img, int plane);
-    bool unmap(ImageDesc *) { return true;}
+    bool map(const FBSurfacePtr& surface, VideoFrame* img, int plane);
 protected:
     GALScaler *scaler;
 };
