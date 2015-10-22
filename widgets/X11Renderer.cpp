@@ -344,8 +344,15 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
         qDebug() << "x11 preferred pixel format: " << d.pixfmt;
         setPreferredPixelFormat(d.pixfmt);
     }
+    d.video_frame = frame; // set before map!
+    VideoFrame interopFrame;
+    if (frame.constBits(0)) {
+        interopFrame = VideoFrame(d.ximage->width, d.ximage->height, pixelFormat(d.ximage));
+        interopFrame.setBits(d.ximage->data);
+        interopFrame.setBytesPerLine(d.ximage->bytes_per_line);
+    }
     if (frame.constBits(0)
-            || !d.video_frame.map(HostMemorySurface, d.ximage) //check pixel format and scale to ximage size&line_size
+            || !d.video_frame.map(HostMemorySurface, &interopFrame) //check pixel format and scale to ximage size&line_size
             ) {
         if (!frame.constBits(0) //always convert hw frames
                 || frame.pixelFormat() != d.pixfmt || frame.width() != d.ximage->width || frame.height() != d.ximage->height)
