@@ -29,7 +29,7 @@ FACTORY_DEFINE(AudioEncoder)
 
 void AudioEncoder_RegisterAll()
 {
-    extern void RegisterAudioEncoderFFmpeg_Man();
+    extern bool RegisterAudioEncoderFFmpeg_Man();
     RegisterAudioEncoderFFmpeg_Man();
 }
 

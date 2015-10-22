@@ -43,8 +43,8 @@ Class& Loki::Singleton<Class>::Instance()
 #define FACTORY_REGISTER(BASE, _ID, NAME) FACTORY_REGISTER_ID_TYPE(BASE, BASE##Id_##_ID, BASE##_ID, NAME)
 #define FACTORY_REGISTER_ID_TYPE(BASE, ID, TYPE, NAME) \
     FACTORY_REGISTER_ID_TYPE_AUTO(BASE, ID, TYPE, NAME) \
-    void Register##TYPE##_Man() { \
-        BASE::Register<TYPE>(ID, NAME); \
+    bool Register##TYPE##_Man() { \
+        return BASE::Register<TYPE>(ID, NAME); \
     }
 
 #define FACTORY_REGISTER_ID_TYPE_AUTO(BASE, ID, TYPE, NAME) \

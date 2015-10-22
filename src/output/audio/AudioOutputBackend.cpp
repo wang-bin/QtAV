@@ -54,23 +54,27 @@ void AudioOutput_RegisterAll()
     if (!AudioOutputBackendFactory::Instance().registeredIds().empty())
         return;
 #if QTAV_HAVE(PORTAUDIO)
-    extern void RegisterAudioOutputBackendPortAudio_Man();
+    extern bool RegisterAudioOutputBackendPortAudio_Man();
     RegisterAudioOutputBackendPortAudio_Man();
 #endif //QTAV_HAVE(PORTAUDIO)
 #if QTAV_HAVE(OPENAL)
-    extern void RegisterAudioOutputBackendOpenAL_Man();
+    extern bool RegisterAudioOutputBackendOpenAL_Man();
     RegisterAudioOutputBackendOpenAL_Man();
 #endif //QTAV_HAVE(OPENAL)
 #if QTAV_HAVE(OPENSL)
-    extern void RegisterAudioOutputBackendOpenSL_Man();
+    extern bool RegisterAudioOutputBackendOpenSL_Man();
     RegisterAudioOutputBackendOpenSL_Man();
 #endif //QTAV_HAVE(OPENSL)
 #if QTAV_HAVE(DSOUND)
-    extern void RegisterAudioOutputBackendDSound_Man();
+    extern bool RegisterAudioOutputBackendDSound_Man();
     RegisterAudioOutputBackendDSound_Man();
 #endif
+#if QTAV_HAVE(XAUDIO2)
+    extern bool RegisterAudioOutputBackendXAudio2_Man();
+    RegisterAudioOutputBackendXAudio2_Man();
+#endif
 #if QTAV_HAVE(PULSEAUDIO)
-    extern void RegisterAudioOutputBackendPulse_Man();
+    extern bool RegisterAudioOutputBackendPulse_Man();
     RegisterAudioOutputBackendPulse_Man();
 #endif
 }

@@ -29,7 +29,7 @@ FACTORY_DEFINE(VideoEncoder)
 
 void VideoEncoder_RegisterAll()
 {
-    extern void RegisterVideoEncoderFFmpeg_Man();
+    extern bool RegisterVideoEncoderFFmpeg_Man();
     RegisterVideoEncoderFFmpeg_Man();
 }
 
