@@ -346,9 +346,9 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
     }
     d.video_frame = frame; // set before map!
     VideoFrame interopFrame;
-    if (frame.constBits(0)) {
+    if (!frame.constBits(0)) {
         interopFrame = VideoFrame(d.ximage->width, d.ximage->height, pixelFormat(d.ximage));
-        interopFrame.setBits(d.ximage->data);
+        interopFrame.setBits((quint8*)d.ximage->data);
         interopFrame.setBytesPerLine(d.ximage->bytes_per_line);
     }
     if (frame.constBits(0)
