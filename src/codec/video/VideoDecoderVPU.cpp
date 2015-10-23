@@ -419,7 +419,7 @@ bool VideoDecoderVPUPrivate::open()
             decOP.cbcrInterleave = 1;
     }
     decOP.cbcrOrder = CBCR_ORDER_NORMAL;
-    if (true) { //output nv12
+    if (false) { //output nv12
         decOP.cbcrInterleave = 1;
         decOP.cbcrOrder = CBCR_ORDER_NORMAL;
     } else { //output yuv420p
