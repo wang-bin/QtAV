@@ -27,7 +27,6 @@
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
 #include "utils/ring.h"
-#define SUPPORT_FFMPEG_DEMUX 1
 //extern "C" {
 #include "coda/vpuapi/vpuapi.h"
 #include "coda/vpuapi/vpuapifunc.h"
@@ -37,8 +36,6 @@
 #include "utils/Logger.h"
 
 //avformat ctx: flag CODEC_FLAG_TRUNCATED
-// PPU disabled
-// frame queue use FrameBuffer
 // VPU_DecClrDispFlag(index) after rendering? like destroy surface?
 
 #define VPU_DEC_TIMEOUT       5000
@@ -85,7 +82,7 @@ class VideoDecoderVPU : public VideoDecoder
     DPTR_DECLARE_PRIVATE(VideoDecoderVPU)
 public:
     VideoDecoderVPU();
-    VideoDecoderId id() const Q_DECL_OVERRIDE;
+    VideoDecoderId id() const Q_DECL_OVERRIDE {return VideoDecoderId_VPU;}
     QString description() const Q_DECL_OVERRIDE;
     bool decode(const Packet& packet) Q_DECL_OVERRIDE;
     void flush() Q_DECL_OVERRIDE;
@@ -274,32 +271,24 @@ const CodStdTab codstd_tab[] = {
     // 	{ STD_VP6,		0, AV_CODEC_ID_VP6,		MKTAG('V', 'P', '6', '2') },
     // 	{ STD_VP6,		0, AV_CODEC_ID_VP6F,		MKTAG('V', 'P', '6', 'F') },
     // 	{ STD_VP6,		0, AV_CODEC_ID_VP6F,		MKTAG('F', 'L', 'V', '4') },
-
 };
+
+static inline unsigned int mktag(unsigned int fourcc)
+{
+    return (unsigned int)MKTAG(toupper((char)fourcc), toupper((char)(fourcc>>8)), toupper((char)(fourcc>>16)), toupper((char)(fourcc>>24)));
+}
 
 int fourCCToMp4Class(unsigned int fourcc)
 {
-    char str[5];
-    str[0] = toupper((char)fourcc);
-    str[1] = toupper((char)(fourcc>>8));
-    str[2] = toupper((char)(fourcc>>16));
-    str[3] = toupper((char)(fourcc>>24));
-    str[4] = '\0';
     for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
-        if (codstd_tab[i].fourcc == (unsigned int)MKTAG(str[0], str[1], str[2], str[3]))
+        if (codstd_tab[i].fourcc == mktag(fourcc))
             return codstd_tab[i].mp4Class;
     return -1;
 }
 CodStd fourCCToCodStd(unsigned int fourcc)
 {
-    char str[5];
-    str[0] = toupper((char)fourcc);
-    str[1] = toupper((char)(fourcc>>8));
-    str[2] = toupper((char)(fourcc>>16));
-    str[3] = toupper((char)(fourcc>>24));
-    str[4] = '\0';
     for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
-        if (codstd_tab[i].fourcc == (unsigned int)MKTAG(str[0], str[1], str[2], str[3]))
+        if (codstd_tab[i].fourcc == mktag(fourcc))
             return codstd_tab[i].codStd;
     return (CodStd)-1;
 }
@@ -318,7 +307,6 @@ CodStd codecIdToCodStd(int codec_id)
             return codstd_tab[i].codStd;
     return (CodStd)-1;
 }
-
 int codecIdToFourcc(int codec_id)
 {
     for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
@@ -330,11 +318,6 @@ int codecIdToFourcc(int codec_id)
 VideoDecoderVPU::VideoDecoderVPU()
     : VideoDecoder(*new VideoDecoderVPUPrivate())
 {
-}
-
-VideoDecoderId VideoDecoderVPU::id() const
-{
-    return VideoDecoderId_VPU;
 }
 
 QString VideoDecoderVPU::description() const
@@ -400,26 +383,13 @@ bool VideoDecoderVPUPrivate::open()
     if(decOP.bitstreamFormat == STD_THO || decOP.bitstreamFormat == STD_VP3) {
     }
     decOP.tiled2LinearEnable = tiled2LinearEnable;
-#if 0 //not in omx
-    if (mapType) {
-        //decOP.wtlEnable = decConfig.wtlEnable; //TODO:
-        if (decOP.wtlEnable) {
-            //decConfig.rotAngle;
-            //decConfig.mirDir;
-            //useRot = false;
-            //useDering = false;
-            decOP.mp4DeblkEnable = 0;
-            decOP.tiled2LinearEnable = 0;
-        }
-    }
-#endif
-    decOP.cbcrInterleave = CBCR_INTERLEAVE;
+    decOP.cbcrInterleave = CBCR_INTERLEAVE; //0
     if (mapType == TILED_FRAME_MB_RASTER_MAP ||
         mapType == TILED_FIELD_MB_RASTER_MAP) {
             decOP.cbcrInterleave = 1;
     }
     decOP.cbcrOrder = CBCR_ORDER_NORMAL;
-    if (false) { //output nv12
+    if (false) { //output nv12. viv gal api does not support nv12
         decOP.cbcrInterleave = 1;
         decOP.cbcrOrder = CBCR_ORDER_NORMAL;
     } else { //output yuv420p
@@ -588,13 +558,6 @@ qDebug("initSeq: %d", seqInited);
     framebufFormat = FORMAT_420;
     // vpurun: allocate out buffer of size framebufSize for rendering. we do not need it
     //framebufSize = VPU_GetFrameBufSize(framebufStride, framebufHeight, mapType, framebufFormat, &dramCfg);
-/*
-    sw_mixer_close((coreIdx*MAX_NUM_VPU_CORE)+instIdx);
-    if (!ppuEnable)
-        sw_mixer_open((coreIdx*MAX_NUM_VPU_CORE)+instIdx, framebufStride, framebufHeight);
-    else
-        sw_mixer_open((coreIdx*MAX_NUM_VPU_CORE)+instIdx, rotStride, rotbufHeight);
-*/
     // the size of pYuv should be aligned 8 byte. because of C&M HPI bus system constraint.
 
     secAxiUse.useBitEnable  = USE_BIT_INTERNAL_BUF;
@@ -623,34 +586,7 @@ qDebug("initSeq: %d", seqInited);
     TiledMapConfig mapCfg;
     memset(&mapCfg, 0, sizeof(mapCfg));
     VPU_ENSURE(VPU_DecGiveCommand(handle, GET_TILEDMAP_CONFIG, &mapCfg), false);
-    if (ppuEnable) {
-#if 0
-        ppIdx = 0;
-        fbAllocInfo.format = framebufFormat;
-        fbAllocInfo.cbcrInterleave = decOP.cbcrInterleave;
-        if (decOP.tiled2LinearEnable)
-            fbAllocInfo.mapType = LINEAR_FRAME_MAP;
-        else
-            fbAllocInfo.mapType = mapType;
-
-        fbAllocInfo.stride  = rotStride;
-        fbAllocInfo.height  = rotbufHeight;
-        fbAllocInfo.num     = MAX_ROT_BUF_NUM;
-        fbAllocInfo.endian  = decOP.frameEndian;
-        fbAllocInfo.type    = FB_TYPE_PPU;
-        VPU_ENSURE(VPU_DecAllocateFrameBuffer(handle, fbAllocInfo, fbPPU), false);
-
-        ppIdx = 0;
-
-        if (decConfig.useRot) {
-            VPU_DecGiveCommand(handle, SET_ROTATION_ANGLE, &(decConfig.rotAngle));
-            VPU_DecGiveCommand(handle, SET_MIRROR_DIRECTION, &(decConfig.mirDir));
-        }
-        if (decConfig.useDering)
-            VPU_DecGiveCommand(handle, ENABLE_DERING, 0);
-        VPU_DecGiveCommand(handle, SET_ROTATOR_STRIDE, &rotStride);
-#endif
-    }
+    // ppu here
 qDebug("framebufStride: %d h: %d, initialInfo.picWidth/Height:%dx%d", framebufStride, framebufWidth, initialInfo.picWidth, initialInfo.picHeight);
     seqInited = true;
     return true;
@@ -727,7 +663,6 @@ qDebug("!chunkReuseRequired VPU_DecSetRdPtr");
     int seqHeaderSize = 0; //also used in FLUSH_BUFFER
     int picHeaderSize = 0;
     if (!d.chunkReuseRequired) {
-qDebug("xxx");
         if (!d.processHeaders(&seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt())) {
 	qWarning("procesHeader error");
             return false;
@@ -762,18 +697,7 @@ qDebug("bsfillSize: %d", d.bsfillSize);
 
 //FLUSH_BUFFER:
     if(!(d.int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) && !(d.int_reason & (1<<INT_BIT_DEC_FIELD))) {
-qDebug("xxx");
-        if (false) {//ppuEnable) {
-#if 0
-            VPU_DecGiveCommand(handle, SET_ROTATOR_OUTPUT, &fbPPU[ppIdx]);
-            if (decConfig.useRot) {
-                VPU_DecGiveCommand(handle, ENABLE_ROTATION, 0);
-                VPU_DecGiveCommand(handle, ENABLE_MIRRORING, 0);
-            }
-            if (decConfig.useDering)
-                VPU_DecGiveCommand(handle, ENABLE_DERING, 0);
-#endif
-        }
+        // ppu here
 #ifdef HAVE_REPORT
         ConfigDecReport(d.coreIdx, d.handle, decOP.bitstreamFormat);
 #endif
@@ -799,9 +723,7 @@ qDebug("!BS_MODE_PIC_END");
     //VPU_DecSetRdPtr(d.handle, d.vbStream.phys_addr, 0);	// CODA851 can't support a exact rdptr. so after SEQ_INIT, RdPtr should be rewinded.
     // Start decoding a frame.
     //VPU_ENSURE(VPU_DecStartOneFrame(handle, &decParam), false);
-
     while (osal_kbhit() == 0) { //TODO: omx while(1)
-qDebug("osal_kbhit");
         d.int_reason = VPU_WaitInterrupt(d.coreIdx, VPU_DEC_TIMEOUT);
         if (d.int_reason == (Uint32)-1 ) {// timeout
             VPU_SWReset(d.coreIdx, SW_RESET_SAFETY, d.handle);
@@ -841,18 +763,14 @@ qDebug("VPU_ClearInterrupt");
         if (d.int_reason & (1<<INT_BIT_PIC_RUN))
             break;
     }
-
     // TODO: omx no this code ---NOT IN OMX BEGIN
     if ((d.int_reason & (1<<INT_BIT_BIT_BUF_EMPTY))
             || (d.int_reason & (1<<INT_BIT_DEC_FIELD))) {
         d.bsfillSize = 0;
-	        qDebug("bsfillSize = 0 INT_BIT_BIT_BUF_EMPTY|INT_BIT_DEC_FIELD");
-
+        qDebug("bsfillSize = 0 INT_BIT_BIT_BUF_EMPTY|INT_BIT_DEC_FIELD");
         return true;//continue; // go to take next chunk.
     }
     // ---NOT IN OMX END
-
-qDebug("VPU_DecGetOutputInfo");
     RetCode ret = VPU_DecGetOutputInfo(d.handle, &d.outputInfo);
     if (ret != RETCODE_SUCCESS) {
         qWarning( "VPU_DecGetOutputInfo failed Error code is 0x%x", ret);
@@ -865,7 +783,7 @@ qDebug("VPU_DecGetOutputInfo");
         qWarning("indexFrameDisplay %d || picType %d || indexFrameDecoded %d",
              d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded );
     }
-    qDebug("#%d:%d, indexDisplay %d || picType %d || indexDecoded %d || rdPtr=0x%x || wrPtr=0x%x || chunkSize = %d, consume=%d",
+    //qDebug("#%d:%d, indexDisplay %d || picType %d || indexDecoded %d || rdPtr=0x%x || wrPtr=0x%x || chunkSize = %d, consume=%d",
         d.instIdx, d.frameIdx, d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded, d.outputInfo.rdPtr, d.outputInfo.wrPtr, chunkData.size()+picHeaderSize, d.outputInfo.consumedByte);
 #ifdef HAVE_REPORT
     SaveDecReport(d.coreIdx, d.handle, &d.outputInfo, decOP.bitstreamFormat, ((d.initialInfo.picWidth+15)&~15)/16); ///TODO:
@@ -904,21 +822,7 @@ qDebug("VPU_DecGetOutputInfo");
         }
         return !packet.isEOF();// more packet required
     }
-#if 0
-    if (ppuEnable) {
-        if (decodeIdx == 0) // if PP has been enabled, the first picture is saved at next time.
-        {
-            // save rotated dec width, height to display next decoding time.
-            if (d.outputInfo.indexFrameDisplay >= 0)
-                frame_queue_enqueue(display_queue, outputInfo.indexFrameDisplay);
-            rcPrevDisp = outputInfo.rcDisplay;
-            decodeIdx++;
-            continue;
-
-        }
-    }
-    decodeIdx++;
-#endif
+    // ppu here
     if (d.outputInfo.indexFrameDisplay >= 0) {
         FBSurfacePtr surf(new FBSurface(d.handle));
         surf->index = d.outputInfo.indexFrameDisplay;
@@ -926,16 +830,10 @@ qDebug("VPU_DecGetOutputInfo");
         d.display_queue.push_back(surf);
         qDebug("push_back FBSurfacePtr. queue.size: %d", d.display_queue.size());
     }
-
-// TODO: to be continue here
-    // save rotated dec width, height to display next decoding time.
-    //rcPrevDisp = d.outputInfo.rcDisplay;
-
     if (d.outputInfo.numOfErrMBs) {
         d.totalNumofErrMbs += d.outputInfo.numOfErrMBs;
         qWarning("Num of Error Mbs : %d", d.outputInfo.numOfErrMBs);
     }
-
     d.frameIdx++;
     return true;
 }
@@ -956,8 +854,9 @@ VideoFrame VideoDecoderVPU::frame()
     }
     FBSurfacePtr surf(d.display_queue.front());
     d.display_queue.pop_front();
+    // FIXME: width()/height() 0
     // TODO: timestamp is packet pts in OMX!
-    qDebug("frame size: %dx%d %dx%d", width(), height(), d.codec_ctx->width, d.codec_ctx->height);
+    //qDebug("frame size: %dx%d %dx%d", width(), height(), d.codec_ctx->width, d.codec_ctx->height);
     VideoFrame frame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat::Format_RGB32);
     //frame.setTimestamp();
     vpu::SurfaceInteropGAL *interop = new vpu::SurfaceInteropGAL(d.interop_res);
