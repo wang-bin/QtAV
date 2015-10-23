@@ -30,7 +30,6 @@
 #define SUPPORT_FFMPEG_DEMUX 1
 //extern "C" {
 #include "coda/vpuapi/vpuapi.h"
-#include "coda/include/vpuhelper.h"
 #include "coda/vpuapi/vpuapifunc.h"
 //}
 #include "SurfaceInteropGAL.h"
@@ -40,8 +39,7 @@
 //avformat ctx: flag CODEC_FLAG_TRUNCATED
 // PPU disabled
 // frame queue use FrameBuffer
-// clear_VSYNC_flag & VPU_DecClrDispFlag(index) after rendering? like destroy surface?
-// no clear_VSYNC_flag VPU_DecClrDispFlag because we use x11?
+// VPU_DecClrDispFlag(index) after rendering? like destroy surface?
 
 #define VPU_DEC_TIMEOUT       5000
 #define VPU_WAIT_TIME_OUT	10		//should be less than normal decoding time to give a chance to fill stream. if this value happens some problem. we should fix VPU_WaitInterrupt function
@@ -75,6 +73,9 @@ do { \
 namespace QtAV {
 static int BuildSeqHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, int fps_num, int fps_den, int nb_index_entries);
 static int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, const Packet& pkt);
+static bool IsSupportInterlaceMode(CodStd bitstreamFormat, DecInitialInfo *pSeqInfo);
+static int WriteBsBufFromBufHelper(Uint32 core_idx, DecHandle handle, vpu_buffer_t *pVbStream, BYTE *pChunk,  int chunkSize, int endian);
+static void PrintMemoryAccessViolationReason(Uint32 core_idx, DecOutputInfo *out);
 
 static const VideoDecoderId VideoDecoderId_VPU = mkid::id32base36_3<'V', 'P', 'U'>::value;
 class VideoDecoderVPUPrivate;
@@ -86,7 +87,6 @@ public:
     VideoDecoderVPU();
     VideoDecoderId id() const Q_DECL_OVERRIDE;
     QString description() const Q_DECL_OVERRIDE;
-    bool decode(const QByteArray&) Q_DECL_OVERRIDE {return false;}
     bool decode(const Packet& packet) Q_DECL_OVERRIDE;
     void flush() Q_DECL_OVERRIDE;
     VideoFrame frame() Q_DECL_OVERRIDE;
@@ -348,12 +348,13 @@ bool VideoDecoderVPUPrivate::open()
         qWarning("Unsupported codec");
         return false;
     }
+#ifdef HAVE_REPORT
     VpuReportConfig_t reportCfg;
     memset(&reportCfg, 0x00, sizeof(reportCfg));
     reportCfg.userDataEnable = VPU_REPORT_USERDATA;
     reportCfg.userDataReportMode = 0;
     OpenDecReport(coreIdx, &reportCfg);
-
+#endif //HAVE_REPORT
     RetCode ret = VPU_Init(coreIdx);
 #ifndef BIT_CODE_FILE_PATH
 #endif
@@ -440,10 +441,9 @@ bool VideoDecoderVPUPrivate::open()
 
     VPU_ENSURE(VPU_DecOpen(&handle, &decOP), false);
     display_queue = ring<FBSurfacePtr>(MAX_REG_FRAME);
-    init_VSYNC_flag();
 
     // TODO: omx GET_DRAM_CONFIG is not in open
-    DRAMConfig dramCfg = {0};
+    DRAMConfig dramCfg;
     VPU_ENSURE(VPU_DecGiveCommand(handle, GET_DRAM_CONFIG, &dramCfg), false);
     seqInited = false;
     seqFilled = false;
@@ -472,7 +472,9 @@ qDebug("RETCODE_FRAME_NOT_COMPLETE");
     seqHeader.clear();
     picHeader.clear();
     display_queue = ring<FBSurfacePtr>(0);
+#ifdef HAVE_REPORT
     CloseDecReport(coreIdx);
+#endif
 }
 
 bool VideoDecoderVPUPrivate::flush()
@@ -486,7 +488,9 @@ bool VideoDecoderVPUPrivate::initSeq()
 qDebug("initSeq: %d", seqInited);
     if (seqInited)
         return true;
+#ifdef HAVE_REPORT
     ConfigSeqReport(coreIdx, handle, decOP.bitstreamFormat); // TODO: remove
+#endif
     memset(&initialInfo, 0, sizeof(initialInfo));
     if (decOP.bitstreamMode == BS_MODE_PIC_END) { //TODO: no check in omx (always BS_MODE_PIC_END)
         RetCode ret = VPU_DecGetInitialInfo(handle, &initialInfo);
@@ -513,7 +517,7 @@ qDebug("initSeq: %d", seqInited);
                 VPU_ClearInterrupt(coreIdx);
             if(int_reason & (1<<INT_BIT_BIT_BUF_EMPTY))
                 break;
-            CheckUserDataInterrupt(coreIdx, handle, 1, decOP.bitstreamFormat, int_reason);
+            //CheckUserDataInterrupt(coreIdx, handle, 1, decOP.bitstreamFormat, int_reason);
             if (int_reason && (int_reason & (1<<INT_BIT_SEQ_INIT))) {
                 seqInited = 1;
                 break;
@@ -540,7 +544,9 @@ qDebug("initSeq: %d", seqInited);
             return false;
         }
     }
+#ifdef HAVE_REPORT
     SaveSeqReport(coreIdx, handle, &initialInfo, decOP.bitstreamFormat);
+#endif
     if (decOP.bitstreamFormat == STD_VP8) {
         // For VP8 frame upsampling infomration
         static const int scale_factor_mul[4] = {1, 5, 5, 2};
@@ -768,8 +774,9 @@ qDebug("xxx");
                 VPU_DecGiveCommand(handle, ENABLE_DERING, 0);
 #endif
         }
-
+#ifdef HAVE_REPORT
         ConfigDecReport(d.coreIdx, d.handle, decOP.bitstreamFormat);
+#endif
         // Start decoding a frame.
         DecParam decParam; //TODO: can set frame drop here
         memset(&decParam, 0, sizeof(decParam));
@@ -801,7 +808,7 @@ qDebug("osal_kbhit");
             qWarning("VPU_WaitInterrupt timeout");
             break;
         }
-        CheckUserDataInterrupt(d.coreIdx, d.handle, d.outputInfo.indexFrameDecoded, decOP.bitstreamFormat, d.int_reason);
+        //CheckUserDataInterrupt(d.coreIdx, d.handle, d.outputInfo.indexFrameDecoded, decOP.bitstreamFormat, d.int_reason);
         if (d.int_reason & (1<<INT_BIT_DEC_FIELD)) {
             qDebug("INT_BIT_DEC_FIELD");
             if (decOP.bitstreamMode == BS_MODE_PIC_END) {
@@ -860,8 +867,9 @@ qDebug("VPU_DecGetOutputInfo");
     }
     qDebug("#%d:%d, indexDisplay %d || picType %d || indexDecoded %d || rdPtr=0x%x || wrPtr=0x%x || chunkSize = %d, consume=%d",
         d.instIdx, d.frameIdx, d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded, d.outputInfo.rdPtr, d.outputInfo.wrPtr, chunkData.size()+picHeaderSize, d.outputInfo.consumedByte);
-
+#ifdef HAVE_REPORT
     SaveDecReport(d.coreIdx, d.handle, &d.outputInfo, decOP.bitstreamFormat, ((d.initialInfo.picWidth+15)&~15)/16); ///TODO:
+#endif
     if (d.outputInfo.chunkReuseRequired) {// reuse previous chunk. that would be true once framebuffer is full.
         d.chunkReuseRequired = true;
         d.undecoded_size = chunkData.size(); // decode previous chunk again!!
@@ -886,25 +894,14 @@ qDebug("VPU_DecGetOutputInfo");
         if (!d.display_queue.empty()) { //?
             d.display_queue.pop_front();
         }
-#if 0
-        if (check_VSYNC_flag()) {
-            clear_VSYNC_flag();
-            if (frame_queue_dequeue(display_queue, &dispDoneIdx) == 0)
-                VPU_DecClrDispFlag(handle, dispDoneIdx);
-        }
-#endif
-#if defined(CNM_FPGA_PLATFORM) && defined(FPGA_LX_330)
-#else
         if (d.outputInfo.indexFrameDecoded == -1)	// VPU did not decode a picture because there is not enough frame buffer to continue decoding
         {
             qDebug("VPU did not decode a picture because there is not enough frame buffer to continue decoding");
             // TODO: doc says VPU_DecClrDispFlag() + VPU_DecStartOneFrame()
             // if you can't get VSYN interrupt on your sw layer. this point is reasonable line to set VSYN flag.
             // but you need fine tune EXTRA_FRAME_BUFFER_NUM value not decoder to write being display buffer.
-            if (!d.display_queue.empty())
-                set_VSYNC_flag();
+
         }
-#endif
         return !packet.isEOF();// more packet required
     }
 #if 0
@@ -1284,6 +1281,150 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
         size += 12;
     }
     return size;
+}
+
+bool IsSupportInterlaceMode(CodStd bitstreamFormat, DecInitialInfo *pSeqInfo)
+{
+    bool bSupport = false;
+    int profile = pSeqInfo->profile;
+    switch(bitstreamFormat) {
+    case STD_AVC:
+        profile = (pSeqInfo->profile==66) ? 0 : (pSeqInfo->profile==77) ? 1 : (pSeqInfo->profile==88) ? 2 : (pSeqInfo->profile==100) ? 3 : 4;
+        bSupport = !!profile; // BP: profile==0
+        break;
+    case STD_MPEG4:
+        if (pSeqInfo->level & 0x80) {
+            pSeqInfo->level &= 0x7F;
+            if (pSeqInfo->level == 8 && pSeqInfo->profile == 0) {
+                profile = 0; // Simple
+            } else {
+                switch (pSeqInfo->profile) {
+                case 0xB:	profile = 2; break;
+                case 0xF:
+                    if ((pSeqInfo->level&8) == 0)
+                        profile = 1;
+                    else
+                        profile = 5;
+                    break;
+                case 0x0:	profile = 0; break;
+                default :	profile = 5; break;
+                }
+            }
+        } else {// Vol Header Only
+            switch(pSeqInfo->profile) {
+            case  0x1: profile = 0; break; // simple object
+            case  0xC: profile = 2; break; // advanced coding efficiency object
+            case 0x11: profile = 1; break; // advanced simple object
+            default  : profile = 5; break; // reserved
+            }
+        }
+        bSupport = !!profile; //SP: profile == 0
+        break;
+    case STD_VC1:
+        profile = pSeqInfo->profile;
+        bSupport = !(profile == 0 || profile == 1);	// SP	// MP
+        break;
+    case STD_RV:
+        profile = pSeqInfo->profile - 8;
+        bSupport = !!profile;
+        break;
+    case STD_MPEG2:
+    case STD_AVS:
+        bSupport = true;
+        break;
+    case STD_H263:
+    case STD_DIV3:
+        bSupport = false;
+        break;
+    case STD_THO:
+    case STD_VP3:
+    case STD_VP8:
+        bSupport = false;
+        break;
+    }
+    return bSupport;
+}
+
+int WriteBsBufFromBufHelper(Uint32 core_idx, DecHandle handle, vpu_buffer_t *pVbStream, BYTE *pChunk, int chunkSize, int endian)
+{
+    if (chunkSize < 1)
+        return 0;
+    if (chunkSize > pVbStream->size)
+        return -1;
+    int size = 0;
+    PhysicalAddress paRdPtr, paWrPtr, targetAddr;
+    VPU_ENSURE(VPU_DecGetBitstreamBuffer(handle, &paRdPtr, &paWrPtr, &size), -1);
+    if(size < chunkSize)
+        return 0; // no room for feeding bitstream. it will take a change to fill stream
+    targetAddr = paWrPtr;
+    if ((targetAddr+chunkSize) >  (pVbStream->phys_addr+pVbStream->size)) {
+        int room = (pVbStream->phys_addr+pVbStream->size) - targetAddr;
+        //write to physical address
+        vdi_write_memory(core_idx, targetAddr, pChunk, room, endian);
+        vdi_write_memory(core_idx, pVbStream->phys_addr, pChunk+room, chunkSize-room, endian);
+    } else {
+        //write to physical address
+        vdi_write_memory(core_idx, targetAddr, pChunk, chunkSize, endian);
+    }
+    VPU_ENSURE(VPU_DecUpdateBitstreamBuffer(handle, chunkSize), -1);
+    return chunkSize;
+}
+
+void PrintMemoryAccessViolationReason(Uint32 core_idx, DecOutputInfo *out)
+{
+    Uint32 err_reason;
+    Uint32 err_addr;
+    Uint32 err_size;
+    Uint32 err_size1;
+    Uint32 err_size2;
+    Uint32 err_size3;
+    if (out) {
+        err_reason = out->wprotErrReason;
+        err_addr = out->wprotErrAddress;
+        err_size = VpuReadReg(core_idx, GDI_SIZE_ERR_FLAG);
+    } else {
+        err_reason = VpuReadReg(core_idx, GDI_WPROT_ERR_RSN);
+        err_addr = VpuReadReg(core_idx, GDI_WPROT_ERR_ADR);
+        err_size = VpuReadReg(core_idx, GDI_SIZE_ERR_FLAG);
+    }
+    //vdi_log(core_idx, 0x10, 1);
+    if (err_size) {
+        VLOG(ERR, "~~~~~~~ GDI rd/wr zero request size violation ~~~~~~~ \n");
+        VLOG(ERR, "err_size = %0x%x\n",   err_size);
+        err_size1 = VpuReadReg(core_idx, GDI_ADR_RQ_SIZE_ERR_PRI0);
+        err_size2 = VpuReadReg(core_idx, GDI_ADR_RQ_SIZE_ERR_PRI1);
+        err_size3 = VpuReadReg(core_idx, GDI_ADR_RQ_SIZE_ERR_PRI2);
+        VLOG(ERR, "err_size1 = 0x%x || err_size2 = 0x%x || err_size3 = 0x%x \n", err_size1, err_size2, err_size3);
+    } else {
+        VLOG(ERR, "~~~~~~~ Memory write access violation ~~~~~~~ \n");
+        VLOG(ERR, "pri/sec = %d\n",   (err_reason>>8) & 1);
+        VLOG(ERR, "awid    = %d\n",   (err_reason>>4) & 0xF);
+        VLOG(ERR, "awlen   = %d\n",   (err_reason>>0) & 0xF);
+        VLOG(ERR, "awaddr  = 0x%X\n", err_addr);
+        VLOG(ERR, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n");
+    }
+    //---------------------------------------------+
+    //| Primary AXI interface (A)WID               |
+    //+----+----------------------------+----------+
+    //| ID |                            | sec use  |
+    //+----+----------------------------+----------+
+    //| 00 |  BPU MIB primary           | NA       |
+    //| 01 |  Overlap filter primary    | NA       |
+    //| 02 |  Deblock write-back        | NA       |
+    //| 03 |  PPU                       | NA       |
+    //| 04 |  Deblock sub-sampling      | NA       |
+    //| 05 |  Reconstruction            | possible |
+    //| 06 |  BPU MIB secondary         | possible |
+    //| 07 |  BPU SPP primary           | NA       |
+    //| 08 |  Spatial prediction        | possible |
+    //| 09 |  Overlap filter secondary  | possible |
+    //| 10 |  Deblock Y secondary       | possible |
+    //| 11 |  Deblock C secondary       | possible |
+    //| 12 |  JPEG write-back or Stream | NA       |
+    //| 13 |  JPEG secondary            | possible |
+    //| 14 |  DMAC write                | NA       |
+    //| 15 |  BPU SPP secondary         | possible |
+    //+----+----------------------------+----------
 }
 
 FACTORY_REGISTER(VideoDecoder, VPU, "VPU")
