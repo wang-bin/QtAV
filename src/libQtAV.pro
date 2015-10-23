@@ -271,7 +271,7 @@ config_videotoolbox:!ios {
   LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia \
           -framework IOSurface -framework VideoToolbox
 }
-CONFIG*=config_vpu
+config_gal: CONFIG *= config_vpu
 config_vpu {
   DEFINES *= QTAV_HAVE_VPU=1
   CODA_DIR= codec/video/coda
@@ -322,7 +322,8 @@ config_libass {
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
 }
 capi {
-contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2):!ios {
+# sw alpha does not support egl?
+contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2):!ios:!config_gal {
   qtHaveModule(x11extras): QT *= x11extras
   DEFINES += QTAV_HAVE_EGL_CAPI=1
   HEADERS *= capi/egl_api.h

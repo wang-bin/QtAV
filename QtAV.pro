@@ -70,6 +70,7 @@ unix:!mac {
     !no-vaapi: OptionalDepends *= vaapi
   }
   !no-cedarv: OptionalDepends *= libcedarv
+  exists(src/codec/video/viv/include/galUtil.h): OptionalDepends *= gal
 }
 mac|ios {
   !no-videotoolbox: OptionalDepends *= videotoolbox
