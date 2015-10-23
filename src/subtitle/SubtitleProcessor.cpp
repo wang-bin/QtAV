@@ -28,10 +28,26 @@ namespace QtAV {
 
 FACTORY_DEFINE(SubtitleProcessor)
 
+// can not declare in class member
+extern bool RegisterSubtitleProcessorFFmpeg_Man();
+extern bool RegisterSubtitleProcessorLibASS_Man();
+void SubtitleProcessor::registerAll()
+{
+    static bool done = false;
+    if (done)
+        return;
+    done = true;
+    RegisterSubtitleProcessorFFmpeg_Man();
+#if QTAV_HAVE(LIBASS)
+    RegisterSubtitleProcessorLibASS_Man();
+#endif
+}
+
 SubtitleProcessor::SubtitleProcessor()
     : m_width(0)
     , m_height(0)
-{}
+{
+}
 
 bool SubtitleProcessor::process(const QString &path)
 {

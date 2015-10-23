@@ -472,14 +472,14 @@ void SubtitleProcessorLibASS::updateFontCache()
 
     // TODO: let user choose default font or FC
     /*
-     * appdir/fonts has fonts
+     * appdir/fonts has fonts: set as fontsdir
      * - has default.ttf: use default.ttf and disable FC.
      * - no default.ttf: appdir/fonts as FC fonts dir
      * appFontsDir (appdir/fonts has no fonts)
      * - no fonts:
      *      - has qrc:/fonts/default.ttf: disable FC, save to appFontsDir and use the font
-     * - has fonts:
-     *      - has default.ttf and size>0: disable FC, save to appFontsDir and use the font
+     * - has fonts: set as fontsdir
+     *      - has default.ttf and size>0: disable FC, save to appFontsDir, use the font
      *      - no default.ttf: appFontsDir as FC fonts dir
      * fontsDir if it has font files (appFontsDir has no fonts and qrc has no default.ttf): as FC fonts dir
      * Skip setting fonts dir
@@ -683,6 +683,7 @@ void SubtitleProcessorLibASS::renderASS32(QImage *image, ASS_Image *img, int dst
                 ARGB32_SET(c, r, g, b, k);
 #endif //USE_QRGBA
             } else {
+                // c=k*dc/255=k*dc/256 * (1-1/256), -1<err(c) = k*dc/256^2<1, -1 is bad!
 #if USE_QRGBA
                 // no need to &0xff because always be 0~255
                 dst[x] += qRgba2(k*(r-qRed(dst[x]))/255, k*(g-qGreen(dst[x]))/255, k*(b-qBlue(dst[x]))/255, k*(a-A)/255);
