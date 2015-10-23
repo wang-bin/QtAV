@@ -3,7 +3,6 @@
 #define QTAV_SURFACEINTEROPGAL_H
 #include <QtAV/SurfaceInterop.h>
 #include "coda/vpuapi/vpuapi.h"
-#include "coda/include/vpuhelper.h"
 namespace QtAV {
 class GALScaler;
 class VideoFrame;
@@ -17,8 +16,6 @@ public:
         memset(&fb, 0, sizeof(fb));
     }
     ~FBSurface() {
-        if (check_VSYNC_flag())
-            clear_VSYNC_flag();
         VPU_DecClrDispFlag(handle, index);
     }
     int index;

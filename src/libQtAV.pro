@@ -286,13 +286,11 @@ CONFIG*=config_vpu
 config_vpu {
   DEFINES *= QTAV_HAVE_VPU=1
   CODA_DIR= codec/video/coda
-  INCLUDEPATH *= $$CODA_DIR $$CODA_DIR/vpuapi $$CODA_DIR/include codec/video/viv/include
+  INCLUDEPATH *= $$CODA_DIR $$CODA_DIR/vpuapi codec/video/viv/include
   HEADERS *= $$CODA_DIR/config.h $$CODA_DIR/Magellan.h \
-        $$CODA_DIR/include/vpuio.h $$CODA_DIR/include/vpuhelper.h \
         $$CODA_DIR/vpuapi/regdefine.h $$CODA_DIR/vpuapi/vpuapi.h $$CODA_DIR/vpuapi/vpuapifunc.h $$CODA_DIR/vpuapi/vputypes.h $$CODA_DIR/vpuapi/vpuconfig.h \
         $$CODA_DIR/vdi/vdi.h $$CODA_DIR/vdi/mm.h $$CODA_DIR/vdi/vdi_osal.h
   SOURCES *= $$CODA_DIR/vpuapi/vpuapi.c $$CODA_DIR/vpuapi/vpuapifunc.c \
-            $$CODA_DIR/src/vpuio.c $$CODA_DIR/src/vpuhelper.c\
             $$CODA_DIR/vdi/linux/vdi.c $$CODA_DIR/vdi/linux/vdi_osal.c
   HEADERS *= codec/video/viv/include/galUtil.h
   SOURCES *= codec/video/VideoDecoderVPU.cpp
