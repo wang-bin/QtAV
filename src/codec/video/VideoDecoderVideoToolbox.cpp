@@ -295,19 +295,19 @@ VideoFrame VideoDecoderVideoToolbox::frame()
         // make sure VideoMaterial can correctly setup parameters
         switch (format()) {
         case UYVY:
-            pitch[0] = 2*width(); //
+            pitch[0] = 2*d.width; //
             pixfmt = VideoFormat::Format_VYUY; //FIXME: VideoShader assume uyvy is uploaded as rgba, but apple limits the result to bgra
             break;
         case NV12:
-            pitch[0] = width();
-            pitch[1] = width();
+            pitch[0] = d.width;
+            pitch[1] = d.width;
             break;
         case YUV420P:
-            pitch[0] = width();
-            pitch[1] = pitch[2] = width()/2;
+            pitch[0] = d.width;
+            pitch[1] = pitch[2] = d.width/2;
             break;
         case YUYV:
-            pitch[0] = 2*width(); //
+            pitch[0] = 2*d.width; //
             //pixfmt = VideoFormat::Format_YVYU; //
             break;
         default:
@@ -327,7 +327,7 @@ VideoFrame VideoDecoderVideoToolbox::frame()
     }
     VideoFrame f;
     if (zero_copy || copyMode() == VideoDecoderFFmpegHW::LazyCopy) {
-        f = VideoFrame(width(), height(), fmt);
+        f = VideoFrame(d.width, d.height, fmt);
         f.setBytesPerLine(pitch);
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
         f.setDisplayAspectRatio(d.getDAR(d.frame));

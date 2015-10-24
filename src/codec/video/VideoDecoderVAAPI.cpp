@@ -334,7 +334,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         SurfaceInteropVAAPI *interop = new SurfaceInteropVAAPI(d.interop_res);
         interop->setSurface(p, d.width, d.height);
 
-        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32); //p->width()
+        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32);
         f.setBytesPerLine(d.width*4); //used by gl to compute texture size
         f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);

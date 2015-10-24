@@ -26,7 +26,6 @@
 #include <QtAV/VideoFrame.h>
 #include <QtCore/QStringList>
 
-class QSize;
 namespace QtAV {
 typedef int VideoDecoderId;
 /*!
@@ -72,13 +71,6 @@ public:
     virtual VideoDecoderId id() const = 0;
     QString name() const; //name from factory
     virtual VideoFrame frame() = 0;
-    //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
-    void resizeVideoFrame(const QSize& size);
-    virtual void resizeVideoFrame(int width, int height);
-    //TODO: decodedSize()
-    int width() const;
-    int height() const;
-
 public:
     static QVector<VideoDecoderId> registered();
     template<class C> static bool Register(VideoDecoderId id, const char* name) { return Register(id, create<C>, name);}

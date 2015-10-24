@@ -142,7 +142,7 @@ public:
       , height(0)
     {}
     virtual ~VideoDecoderPrivate() {}
-    int width, height;
+    int width, height; //The current decoded frame size. You MUST set it before use if the decoder is not an ffmpeg sw/hw decoder
 };
 } //namespace QtAV
 

@@ -21,7 +21,6 @@
 
 #include "QtAV/VideoDecoder.h"
 #include "QtAV/private/AVDecoder_p.h"
-#include <QtCore/QSize>
 #include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
@@ -86,31 +85,4 @@ QString VideoDecoder::name() const
 {
     return QLatin1String(VideoDecoder::name(id()));
 }
-
-void VideoDecoder::resizeVideoFrame(const QSize &size)
-{
-    resizeVideoFrame(size.width(), size.height());
-}
-
-/*
- * width, height: the decoded frame size
- * 0, 0 to reset to original video frame size
- */
-void VideoDecoder::resizeVideoFrame(int width, int height)
-{
-    DPTR_D(VideoDecoder);
-    d.width = width;
-    d.height = height;
-}
-
-int VideoDecoder::width() const
-{
-    return d_func().width;
-}
-
-int VideoDecoder::height() const
-{
-    return d_func().height;
-}
-
 } //namespace QtAV
