@@ -167,7 +167,6 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
     GC_ENSURE(gco2D_EnableDither(egn2D, gcvFALSE), false)
     GC_ENSURE(gco2D_Flush(egn2D), false);
     GC_ENSURE(gcoHAL_Commit(d.test2D.runtime.hal, gcvTRUE), false);
-
     return true;
 }
 

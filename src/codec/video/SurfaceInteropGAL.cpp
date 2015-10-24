@@ -9,7 +9,6 @@ void dma_copy_from_vmem(unsigned char* dst, unsigned int src, int len);
 }
 namespace QtAV {
 namespace vpu {
-
 InteropResource::InteropResource()
     : scaler(0)
 {}
@@ -48,7 +47,7 @@ bool InteropResource::map(const FBSurfacePtr &surface, VideoFrame *img, int)
         // qMin(scaler->outHeight(), img->height)
         dma_copy_from_vmem(img->bits(0), (unsigned int)(quintptr)scaler->outPlanes().at(0), img->bytesPerLine(0)*img->height());
     } else {
-        qWarning("different gpu/host_mem stride");
+        qWarning("different stride. vmem: %d, host: %d", img->bytesPerLine(0), scaler->outLineSizes().at(0));
         for (int i = 0; i < img->height(); ++i)
             dma_copy_from_vmem(img->bits(0) + i*img->bytesPerLine(0), (unsigned int)(quintptr)scaler->outPlanes().at(0) + i*scaler->outLineSizes().at(0), img->bytesPerLine(0));
     }

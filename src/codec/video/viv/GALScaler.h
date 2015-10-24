@@ -1,7 +1,6 @@
 #include <ImageConverter.h>
 
 namespace QtAV {
-
 class GALScalerPrivate;
 class GALScaler Q_DECL_FINAL : public ImageConverter
 {

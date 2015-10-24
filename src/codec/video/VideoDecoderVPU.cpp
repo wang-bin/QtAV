@@ -1,23 +1,4 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
-    Miroslav Bendik <miroslav.bendik@gmail.com>
-
-*   This file is part of QtAV
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
 #include "QtAV/VideoDecoder.h"
@@ -94,9 +75,10 @@ class VideoDecoderVPUPrivate Q_DECL_FINAL: public VideoDecoderPrivate
 public:
     VideoDecoderVPUPrivate()
         : VideoDecoderPrivate()
-        , instIdx(0), coreIdx(0)
+        , coreIdx(0)
         , tiled2LinearEnable(false) //?
         , mapType(LINEAR_FRAME_MAP) //?
+        , instIdx(0)
         , chunkReuseRequired(false)
         , seqInited(false), seqFilled(false)
         , bsfillSize(0)
@@ -125,11 +107,12 @@ public:
     bool initSeq();
     bool processHeaders(int* seqHeaderSize, int* picHeaderSize, const Packet& pkt, int fps_num, int fps_den, int nb_index_entries);
     // user config
-    int instIdx, coreIdx; //0
+    int coreIdx; // MAX_NUM_VPU_CORE = 1
     bool useRot, useDering; //false
     bool tiled2LinearEnable;
     TiledMapType mapType;
     // vpu status
+    int instIdx;
     bool chunkReuseRequired; //false
     bool seqInited, seqFilled; //false
     int bsfillSize; //0
@@ -420,9 +403,6 @@ bool VideoDecoderVPUPrivate::open()
     bsfillSize = 0;
     chunkReuseRequired = false;
     frameIdx = 0;
-    width = codec_ctx->width;
-    height = codec_ctx->height;
-    qDebug("open ok. size: %dx%d", width, height);
     interop_res = vpu::InteropResourcePtr(new vpu::InteropResource());
     return true;
 }
@@ -530,30 +510,14 @@ qDebug("initSeq: %d", seqInited);
             framebufHeight = FFALIGN(scaledHeight, 32); // framebufheight must be aligned by 31 because of the number of MB height would be odd in each filed picture.
         else
             framebufHeight = FFALIGN(scaledHeight, 16);
-#ifdef SUPPORT_USE_VPU_ROTATOR
-        rotbufWidth = (decConfig.rotAngle == 90 || decConfig.rotAngle == 270) ?
-            FFALIGN(scaledHeight, 16) : FFALIGN(scaledWidth, 16);
-        rotbufHeight = (decConfig.rotAngle == 90 || decConfig.rotAngle == 270) ?
-            FFALIGN(scaledWidth, 16) : FFALIGN(scaledHeight, 16);
-#endif
     } else {
         framebufWidth = FFALIGN(initialInfo.picWidth, 16);
-        // TODO: vpurun decConfig.maxHeight
         // TODO: omx fbHeight align 16
         if (IsSupportInterlaceMode(decOP.bitstreamFormat, &initialInfo))
             framebufHeight = FFALIGN(initialInfo.picHeight, 32); // framebufheight must be aligned by 31 because of the number of MB height would be odd in each filed picture.
         else
             framebufHeight = FFALIGN(initialInfo.picHeight, 16);
-#ifdef SUPPORT_USE_VPU_ROTATOR
-        rotbufWidth = (decConfig.rotAngle == 90 || decConfig.rotAngle == 270) ?
-            FFALIGN(initialInfo.picHeight, 16) : FFALIGN(initialInfo.picWidth, 16);
-        rotbufHeight = (decConfig.rotAngle == 90 || decConfig.rotAngle == 270) ?
-            FFALIGN(initialInfo.picWidth, 16) : FFALIGN(initialInfo.picHeight, 16);
-#endif
     }
-#ifdef SUPPORT_USE_VPU_ROTATOR
-    rotStride = rotbufWidth;
-#endif
     framebufStride = framebufWidth;
     framebufFormat = FORMAT_420;
     // vpurun: allocate out buffer of size framebufSize for rendering. we do not need it
@@ -642,59 +606,57 @@ bool VideoDecoderVPU::decode(const Packet &packet)
         qWarning("decode finished");
         return false;
     }
-    if (packet.data.isEmpty())
-        return true;
-    if (packet.isEOF()) { //decode the trailing frames
+    QByteArray chunkData(packet.data);
+    DecOpenParam &decOP = d.decOP;
+    int seqHeaderSize = 0; //also used in FLUSH_BUFFER
+    int picHeaderSize = 0;
+    if (packet.isEOF()) {
         if (!d.flush()) {
             qDebug("Error decode EOS"); // when?
             return false;
         }
+        chunkData = QByteArray(); //decode the trailing frames
 qDebug("eof packet");
-        //goto FLUSH_BUFFER; //TODO: decode trailing frames
-    }
-    QByteArray chunkData(packet.data);
-    DecOpenParam &decOP = d.decOP;
-    if (decOP.bitstreamMode == BS_MODE_PIC_END) { //TODO: no check in omx. it's always true here
+    } else {
+        if (decOP.bitstreamMode == BS_MODE_PIC_END) { //TODO: no check in omx. it's always true here
+            if (!d.chunkReuseRequired) {
+    qDebug("!chunkReuseRequired VPU_DecSetRdPtr");
+                VPU_DecSetRdPtr(d.handle, decOP.bitstreamBuffer, 1);
+            }
+        }
         if (!d.chunkReuseRequired) {
-qDebug("!chunkReuseRequired VPU_DecSetRdPtr");
-            VPU_DecSetRdPtr(d.handle, decOP.bitstreamBuffer, 1);
+            if (!d.processHeaders(&seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt())) {
+        qWarning("procesHeader error");
+                return false;
+            }
         }
-    }
-    int seqHeaderSize = 0; //also used in FLUSH_BUFFER
-    int picHeaderSize = 0;
-    if (!d.chunkReuseRequired) {
-        if (!d.processHeaders(&seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt())) {
-	qWarning("procesHeader error");
-            return false;
-	    }
-    }
-    // Fill VCL data
-    switch(decOP.bitstreamFormat) {
-    case STD_VP3:
-    case STD_THO:
-        //const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, picHeader, picHeaderSize, decOP.streamEndian);
+        // Fill VCL data
+        switch(decOP.bitstreamFormat) {
+        case STD_VP3:
+        case STD_THO:
+            //const int size = WriteBsBufFromBufHelper(coreIdx, handle, &vbStream, picHeader, picHeaderSize, decOP.streamEndian);
+            break;
+        default: {
+            if (decOP.bitstreamFormat == STD_RV) {
+            const int cSlice = chunkData.at(0) + 1;
+                chunkData.remove(0, 1+(cSlice*8));
+            }
+            const int size = WriteBsBufFromBufHelper(d.coreIdx, d.handle, &d.vbStream, (BYTE*)chunkData.constData(), chunkData.size(), decOP.streamEndian);
+            if (size <0) {
+                qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
+                return false;
+            }
+            d.bsfillSize += size;
+        }
         break;
-    default: {
-        if (decOP.bitstreamFormat == STD_RV) {
-	    const int cSlice = chunkData.at(0) + 1;
-            chunkData.remove(0, 1+(cSlice*8));
         }
-        const int size = WriteBsBufFromBufHelper(d.coreIdx, d.handle, &d.vbStream, (BYTE*)chunkData.constData(), chunkData.size(), decOP.streamEndian);
-        if (size <0) {
-            qWarning("WriteBsBufFromBufHelper failed Error code is 0x%x", size);
+
+    qDebug("bsfillSize: %d", d.bsfillSize);
+        //chunkIdx++;
+        if (!d.initSeq())
             return false;
-        }
-        d.bsfillSize += size;
+        d.chunkReuseRequired = false;
     }
-    break;
-    }
-
-qDebug("bsfillSize: %d", d.bsfillSize);
-    //chunkIdx++;
-    if (!d.initSeq())
-        return false;
-    d.chunkReuseRequired = false;
-
 //FLUSH_BUFFER:
     if(!(d.int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) && !(d.int_reason & (1<<INT_BIT_DEC_FIELD))) {
         // ppu here
@@ -801,9 +763,8 @@ qDebug("VPU_ClearInterrupt");
         qDebug("decodefinish. indexFrameDisplay==-1");
         d.decodefinish = true;
     }
-    if (d.decodefinish) {
-        if (true)///*!ppuEnable*/ || decodeIdx == 0)
-            return !packet.isEOF(); // EOS
+    if (d.decodefinish) { //ppu here
+        return false;
     }
     if (d.outputInfo.indexFrameDisplay == -3 ||
         d.outputInfo.indexFrameDisplay == -2 ) // BIT doesn't have picture to be displayed, or frame drop
@@ -842,25 +803,23 @@ void VideoDecoderVPU::flush()
 {
     DPTR_D(VideoDecoderVPU);
     VPU_DecFrameBufferFlush(d.handle);
+    d.display_queue = ring<FBSurfacePtr>(0);
 }
 
 VideoFrame VideoDecoderVPU::frame()
 {
     DPTR_D(VideoDecoderVPU);
-    // 0 on success
     if (d.display_queue.empty()) {
         qDebug("VPU has no frame decoded");
         return VideoFrame();
     }
     FBSurfacePtr surf(d.display_queue.front());
     d.display_queue.pop_front();
-    // FIXME: width()/height() 0
     // TODO: timestamp is packet pts in OMX!
-    //qDebug("frame size: %dx%d %dx%d", width(), height(), d.codec_ctx->width, d.codec_ctx->height);
     VideoFrame frame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat::Format_RGB32);
     //frame.setTimestamp();
     vpu::SurfaceInteropGAL *interop = new vpu::SurfaceInteropGAL(d.interop_res);
-    interop->setSurface(surf, width(), height()); //width() valid?
+    interop->setSurface(surf, d.codec_ctx->width, d.codec_ctx->height);
     frame.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
     return frame;
 }
