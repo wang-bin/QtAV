@@ -138,11 +138,8 @@ class Q_AV_PRIVATE_EXPORT VideoDecoderPrivate : public AVDecoderPrivate
 public:
     VideoDecoderPrivate():
         AVDecoderPrivate()
-      , width(0)
-      , height(0)
     {}
     virtual ~VideoDecoderPrivate() {}
-    int width, height; //The current decoded frame size. You MUST set it before use if the decoder is not an ffmpeg sw/hw decoder
 };
 } //namespace QtAV
 
