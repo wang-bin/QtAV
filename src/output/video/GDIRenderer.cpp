@@ -227,7 +227,7 @@ bool GDIRenderer::receiveFrame(const VideoFrame& frame)
         d.video_frame = frame;
     else
         d.video_frame = frame.to(frame.pixelFormat());
-    update();
+    updateUi();
     return true;
 }
 

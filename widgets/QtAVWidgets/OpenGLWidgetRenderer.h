@@ -35,14 +35,16 @@ namespace QtAV {
 class OpenGLWidgetRendererPrivate;
 class Q_AVWIDGETS_EXPORT OpenGLWidgetRenderer : public QOpenGLWidget, public OpenGLRendererBase
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(OpenGLWidgetRenderer)
 public:
     explicit OpenGLWidgetRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual void onUpdate() Q_DECL_OVERRIDE;
-
     virtual VideoRendererId id() const Q_DECL_OVERRIDE;
     virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
+Q_SIGNALS:
+    void frameReady();
 protected:
+    virtual void updateUi() Q_DECL_OVERRIDE;
     virtual void initializeGL() Q_DECL_OVERRIDE;
     virtual void paintGL() Q_DECL_OVERRIDE;
     virtual void resizeGL(int w, int h) Q_DECL_OVERRIDE;

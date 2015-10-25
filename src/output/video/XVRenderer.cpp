@@ -421,7 +421,7 @@ bool XVRenderer::receiveFrame(const VideoFrame& frame)
     if (!frame.isValid()) {
         d.update_background = true;
         d.video_frame = VideoFrame(); // fill background
-        update();
+        updateUi();
         return true;
     }
     if (!d.ensureImage(frame.width(), frame.height(), frame.format().pixelFormat()))

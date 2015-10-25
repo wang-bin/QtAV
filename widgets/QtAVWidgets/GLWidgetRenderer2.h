@@ -41,8 +41,6 @@ class Q_AVWIDGETS_EXPORT GLWidgetRenderer2 : public QGLWidget, public OpenGLRend
     DPTR_DECLARE_PRIVATE(GLWidgetRenderer2)
 public:
     GLWidgetRenderer2(QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
-    virtual void onUpdate();
-
     virtual VideoRendererId id() const;
     virtual QWidget* widget() { return this; }
 protected:

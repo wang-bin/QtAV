@@ -34,6 +34,7 @@ VideoRendererId VideoRendererId_OpenGLWindow = mkid::id32base36_6<'Q', 'O', 'G',
 VideoRenderer::VideoRenderer()
     :AVOutput(*new VideoRendererPrivate)
 {
+    // can not do 'if (widget()) connect to update()' because widget() is virtual
 }
 
 VideoRenderer::VideoRenderer(VideoRendererPrivate &d)

@@ -47,7 +47,6 @@ class Q_AV_EXPORT OpenGLRendererBase : public VideoRenderer
 public:
     virtual ~OpenGLRendererBase();
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
-    virtual void onUpdate() = 0;
 protected:
     virtual bool receiveFrame(const VideoFrame& frame);
     virtual bool needUpdateBackground() const;

@@ -140,8 +140,6 @@ VideoFormat::PixelFormat pixelFormat(XImage* xi) {
         //qDebug() << fmte->fmt;
         fmte++;
     }
-    qDebug("XImage format: bpp %d, endian: %d, R %X, G %X, B %X", xi->bits_per_pixel, xi->byte_order, xi->red_mask, xi->green_mask, xi->blue_mask);
-    qDebug() << "PixelFormat: " << fmte->fmt;
     return fmte->fmt;
 }
 
@@ -378,7 +376,7 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
             VideoFrame::copyPlane(dst, d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
         }
     }
-    update();
+    updateUi();
     return true;
 }
 

@@ -46,13 +46,7 @@ VideoRendererId OpenGLWindowRenderer::id() const
 {
     return VideoRendererId_OpenGLWindow;
 }
-
-void OpenGLWindowRenderer::onUpdate()
-{
-    // MUST call update() on gui(main) thread that the window belongs to because update() will finally call startTimer
-    updateUi();
-}
-
+// MUST call update() on gui(main) thread that the window belongs to because update() will finally call startTimer
 void OpenGLWindowRenderer::initializeGL()
 {
     onInitializeGL();

@@ -35,8 +35,6 @@ class Q_AV_EXPORT OpenGLWindowRenderer : public QOpenGLWindow, public OpenGLRend
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
 public:
     explicit OpenGLWindowRenderer(UpdateBehavior updateBehavior = NoPartialUpdate, QWindow *parent = 0);
-    virtual void onUpdate() Q_DECL_OVERRIDE;
-
     virtual VideoRendererId id() const Q_DECL_OVERRIDE;
     QWindow* qwindow() Q_DECL_OVERRIDE Q_DECL_FINAL { return this; }
 Q_SIGNALS:

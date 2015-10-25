@@ -124,7 +124,7 @@ bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
     {
         prepareFrame(frame);
     }
-    scene()->update(sceneBoundingRect());
+    scene()->update(sceneBoundingRect()); //TODO: thread?
     //update(); //does not cause an immediate paint. my not redraw.
     return true;
 }
@@ -209,7 +209,7 @@ bool GraphicsItemRenderer::onSetOrientation(int value)
 {
     Q_UNUSED(value);
     d_func().setupAspectRatio();
-    update();
+    update(); //TODO: thread?
     return true;
 }
 

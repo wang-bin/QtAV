@@ -206,7 +206,7 @@ protected:
     // TODO: parameter VideoFrame
     virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
     virtual void handlePaintEvent(); //has default. User don't have to implement it
-    void updateUi(); // schedual an UpdateRequest event on ui thread
+    virtual void updateUi(); // by default schedual an UpdateRequest event on ui thread
 
 private: //used by VideoOutput class
     // property change

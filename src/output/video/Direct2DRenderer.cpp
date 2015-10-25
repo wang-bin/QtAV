@@ -326,7 +326,7 @@ bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
     if (hr != S_OK) {
         qWarning("Failed to copy from memory to bitmap (%ld)", hr);
     }
-    update();
+    updateUi();
     return true;
 }
 
