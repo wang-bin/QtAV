@@ -44,12 +44,6 @@ OpenGLWidgetRenderer::OpenGLWidgetRenderer(QWidget *parent, Qt::WindowFlags f):
 {
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
-    connect(this, SIGNAL(frameReady()), SLOT(update()));
-}
-
-void OpenGLWidgetRenderer::updateUi()
-{
-    Q_EMIT frameReady();
 }
 
 void OpenGLWidgetRenderer::initializeGL()

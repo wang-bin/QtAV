@@ -23,6 +23,7 @@
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/Filter.h"
 #include <QtCore/QCoreApplication>
+#include <QtCore/QEvent>
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
@@ -610,12 +611,26 @@ void VideoRenderer::onFrameSizeChanged(const QSize &size)
 
 void VideoRenderer::updateUi()
 {
-    QObject *obj = (QObject*)qwindow();
-    if (!obj)
-        obj = (QObject*)widget();
+    QObject *obj = (QObject*)widget();
     if (obj) {
-        QCoreApplication::instance()->postEvent(obj, new QEvent(QEvent::UpdateRequest));
+        // UpdateRequest only sync backing store but do not shedule repainting. UpdateLater does
+        // Copy from qwidget_p.h. QWidget::event() will convert UpdateLater to QUpdateLaterEvent and get it's region()
+        class QUpdateLaterEvent : public QEvent
+        {
+        public:
+            explicit QUpdateLaterEvent(const QRegion& paintRegion)
+                : QEvent(UpdateLater), m_region(paintRegion)
+            {}
+            ~QUpdateLaterEvent() {}
+            inline const QRegion &region() const { return m_region; }
+        protected:
+            QRegion m_region;
+        };
+        QCoreApplication::instance()->postEvent(obj, new QUpdateLaterEvent(QRegion(0, 0, rendererWidth(), rendererHeight())));
+    } else {
+        obj = (QObject*)qwindow();
+        if (obj)
+            QCoreApplication::instance()->postEvent(obj, new QEvent(QEvent::UpdateRequest));
     }
 }
-
 } //namespace QtAV
