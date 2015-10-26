@@ -285,6 +285,7 @@ no_shm:
         ximage_data.resize(ximage->bytes_per_line*ximage->height + 32);
         return true;
     }
+    bool resizeXImage();
 
     bool use_shm; //TODO: set by user
     bool warn_bad_pitch;
@@ -299,6 +300,7 @@ no_shm:
     VideoFormat::PixelFormat pixfmt;
     // if the incoming image pitchs are different from ximage ones, use ximage pitchs and copy data in ximage_data
     QByteArray ximage_data;
+    VideoFrame frame_orig; // if renderer is resized, scale the original frame
 };
 
 X11Renderer::X11Renderer(QWidget *parent, Qt::WindowFlags f):
@@ -335,52 +337,61 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
         update();
         return true;
     }
-    // force align to 8(16?) because xcreateimage will not do alignment
-    // GAL vmem is 16 aligned
-    if (!d.ensureImage(FFALIGN(videoRect().width(), 16), FFALIGN(videoRect().height(), 16))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
-        return false;
     if (preferredPixelFormat() != d.pixfmt) {
         qDebug() << "x11 preferred pixel format: " << d.pixfmt;
         setPreferredPixelFormat(d.pixfmt);
     }
-    d.video_frame = frame; // set before map!
+    d.frame_orig = frame;
+    d.video_frame = frame; // must be set because it will be check isValid() somewhere else
+    updateUi();
+    return true;
+}
+
+bool X11RendererPrivate::resizeXImage()
+{
+    if (!frame_orig.isValid())
+        return false;
+    // force align to 8(16?) because xcreateimage will not do alignment
+    // GAL vmem is 16 aligned
+    if (!ensureImage(FFALIGN(out_rect.width(), 16), FFALIGN(out_rect.height(), 16))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
+        return false;
+    video_frame = frame_orig; // set before map!
     VideoFrame interopFrame;
-    if (!frame.constBits(0)) {
-        interopFrame = VideoFrame(d.ximage->width, d.ximage->height, pixelFormat(d.ximage));
-        interopFrame.setBits(d.use_shm ? (quint8*)d.ximage->data : (quint8*)d.ximage_data.constData());
-        interopFrame.setBytesPerLine(d.ximage->bytes_per_line);
+    if (!frame_orig.constBits(0)) {
+        interopFrame = VideoFrame(ximage->width, ximage->height, pixelFormat(ximage));
+        interopFrame.setBits(use_shm ? (quint8*)ximage->data : (quint8*)ximage_data.constData());
+        interopFrame.setBytesPerLine(ximage->bytes_per_line);
     }
-    if (frame.constBits(0)
-            || !d.video_frame.map(HostMemorySurface, &interopFrame) //check pixel format and scale to ximage size&line_size
+    if (frame_orig.constBits(0)
+            || !video_frame.map(HostMemorySurface, &interopFrame) //check pixel format and scale to ximage size&line_size
             ) {
-        if (!frame.constBits(0) //always convert hw frames
-                || frame.pixelFormat() != d.pixfmt || frame.width() != d.ximage->width || frame.height() != d.ximage->height)
-            d.video_frame = frame.to(d.pixfmt, QSize(d.ximage->width, d.ximage->height));
+        if (!frame_orig.constBits(0) //always convert hw frames
+                || frame_orig.pixelFormat() != pixfmt || frame_orig.width() != ximage->width || frame_orig.height() != ximage->height)
+            video_frame = frame_orig.to(pixfmt, QSize(ximage->width, ximage->height));
         else
-            d.video_frame = frame;
-        if (d.video_frame.bytesPerLine(0) == d.ximage->bytes_per_line) {
-            if (d.use_shm) {
-                memcpy(d.ximage->data, d.video_frame.constBits(0), d.ximage->bytes_per_line*d.ximage->height);
+            video_frame = frame_orig;
+        if (video_frame.bytesPerLine(0) == ximage->bytes_per_line) {
+            if (use_shm) {
+                memcpy(ximage->data, video_frame.constBits(0), ximage->bytes_per_line*ximage->height);
             } else {
-                d.ximage->data = (char*)d.video_frame.constBits(0);
+                ximage->data = (char*)video_frame.constBits(0);
             }
         } else { //copy line by line
-            if (d.warn_bad_pitch) {
-                d.warn_bad_pitch = false;
-                qDebug("bad pitch: %d - %d. ximage_data.size: %d", d.ximage->bytes_per_line, d.video_frame.bytesPerLine(0), d.ximage_data.size());
+            if (warn_bad_pitch) {
+                warn_bad_pitch = false;
+                qDebug("bad pitch: %d - % ximage_data.size: %d", ximage->bytes_per_line, video_frame.bytesPerLine(0), ximage_data.size());
             }
-            quint8* dst = (quint8*)d.ximage->data;
-            if (!d.use_shm) {
-                dst = (quint8*)d.ximage_data.constData();
-                d.ximage->data = (char*)d.ximage_data.constData();
+            quint8* dst = (quint8*)ximage->data;
+            if (!use_shm) {
+                dst = (quint8*)ximage_data.constData();
+                ximage->data = (char*)ximage_data.constData();
             }
-            VideoFrame::copyPlane(dst, d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
+            VideoFrame::copyPlane(dst, ximage->bytes_per_line, (const quint8*)video_frame.constBits(0), video_frame.bytesPerLine(0), ximage->bytes_per_line, ximage->height);
         }
     } else {
-        if (!d.use_shm)
-            d.ximage->data = (char*)d.ximage_data.constData();
+        if (!use_shm)
+            ximage->data = (char*)ximage_data.constData();
     }
-    updateUi();
     return true;
 }
 
@@ -426,6 +437,8 @@ void X11Renderer::drawFrame()
 {
     // TODO: interop
     DPTR_D(X11Renderer);
+    if (!d.resizeXImage())
+        return;
     QRect roi = realROI();
     if (d.use_shm) {
         XShmPutImage(d.display, winId(), d.gc, d.ximage
