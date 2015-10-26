@@ -26,11 +26,10 @@ InteropResource::~InteropResource()
 
 bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format, VideoFrame *img, int)
 {
+    // TODO: use mutex to avoid VideoCapture(async mode)/VideoRenderer scale the same frame at the same time
     if (!scaler) {
         scaler = new GALScaler();
     }
-    scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
-    scaler->setInSize(surface->fb.stride, surface->fb.height);
     const VideoFormat fmt(img->pixelFormat() == VideoFormat::Format_Invalid ? format.pixelFormat() : img->pixelFormat());
     int w = img->width(), h = img->height();
     // If out size not set, use gal out size which is aligned to 16
@@ -38,8 +37,6 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
         w = FFALIGN(surface->fb.stride, 16); // TODO: use frame width?
     if (h <= 0)
         h = FFALIGN(surface->fb.height, 16);
-    scaler->setOutFormat(fmt.pixelFormatFFmpeg());
-    scaler->setOutSize(w, h);
     const quint8* src[] = {
         (quint8*)(quintptr)surface->fb.bufY,
         (quint8*)(quintptr)surface->fb.bufCb,
@@ -50,35 +47,51 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
         surface->fb.stride/2,
         surface->fb.stride/2,
     };
-    if (!scaler->convert(src, srcStride))
-        return false;
+    QVector<quint8*> dma_bits(fmt.planeCount());
+    QVector<int> dma_pitch(fmt.planeCount());
+    // if in/out parameters are the same, no scale is required
+    if (w == surface->fb.stride && h == surface->fb.height && fmt.pixelFormat() == VideoFormat::Format_YUV420P) {
+        for (int i = 0; i < fmt.planeCount(); ++i) {
+            dma_bits[i] = (quint8*)src[i];
+            dma_pitch[i] = srcStride[i];
+        }
+    } else {
+        scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
+        scaler->setInSize(surface->fb.stride, surface->fb.height);
+        scaler->setOutFormat(fmt.pixelFormatFFmpeg());
+        scaler->setOutSize(w, h);
+        if (!scaler->convert(src, srcStride))
+            return false;
+        dma_bits = scaler->outPlanes();
+        dma_pitch = scaler->outLineSizes();
+    }
     QVector<int> out_pitch(fmt.planeCount());
     if (!img->constBits(0)) { //interop in VideoFrame.to() and format is set
-        int data_size = 0;
+        int out_size = 0;
         QVector<int> offset(fmt.planeCount());
         for (int i = 0; i < fmt.planeCount(); ++i) {
-            offset[i] = data_size;
-            out_pitch[i] = fmt.width(w*fmt.bytesPerPixel(), i);
-            data_size += out_pitch.at(i) * fmt.height(h, i);
+            offset[i] = out_size;
+            out_pitch[i] = fmt.width(w*fmt.bytesPerPixel(i), i);
+            out_size += out_pitch.at(i) * fmt.height(h, i);
         }
-        QByteArray data(data_size, 0);
-        *img = VideoFrame(w, h, fmt, data);
+        QByteArray host_buf(out_size, 0);
+        *img = VideoFrame(w, h, fmt, host_buf);
         img->setBytesPerLine(out_pitch);
         for (int i = 0; i < fmt.planeCount(); ++i) {
-            img->setBits((quint8*)data.constData() + offset[i], i);
+            img->setBits((quint8*)host_buf.constData() + offset[i], i);
         }
         qDebug() << fmt;
-        qDebug() << "pitch host: " << out_pitch << " vmem: " << scaler->outLineSizes();
+        qDebug() << "pitch host: " << out_pitch << " vmem: " << dma_pitch;
     }
     for (int p = 0; p < fmt.planeCount(); ++p) {
         // dma copy. check img->stride
-        if (img->bytesPerLine(p) == scaler->outLineSizes().at(p)) {
+        if (img->bytesPerLine(p) == dma_pitch.at(p)) {
             // qMin(scaler->outHeight(), img->height)
-            dma_copy_from_vmem(img->bits(p), (unsigned int)(quintptr)scaler->outPlanes().at(p), img->bytesPerLine(p)*img->planeHeight(p));
+            dma_copy_from_vmem(img->bits(p), (unsigned int)(quintptr)dma_bits.at(p), img->bytesPerLine(p)*img->planeHeight(p));
         } else {
-            qWarning("different stride @plane%d. vmem: %d, host: %d", p, scaler->outLineSizes().at(p), img->bytesPerLine(p));
+            qWarning("different stride @plane%d. vmem: %d, host: %d", p, dma_pitch.at(p), img->bytesPerLine(p));
             for (int i = img->planeHeight(p) - 1; i >= 0; --i)
-                dma_copy_from_vmem(img->bits(p) + i*img->bytesPerLine(p), (unsigned int)(quintptr)scaler->outPlanes().at(p) + i*scaler->outLineSizes().at(p), img->bytesPerLine(p));
+                dma_copy_from_vmem(img->bits(p) + i*img->bytesPerLine(p), (unsigned int)(quintptr)dma_bits.at(p) + i*dma_pitch.at(p), img->bytesPerLine(p));
         }
     }
     return true;
