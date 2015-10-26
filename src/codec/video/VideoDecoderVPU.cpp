@@ -263,21 +263,21 @@ static inline unsigned int mktag(unsigned int fourcc)
 
 int fourCCToMp4Class(unsigned int fourcc)
 {
-    for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
+    for (size_t i = 0; i < sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
         if (codstd_tab[i].fourcc == mktag(fourcc))
             return codstd_tab[i].mp4Class;
     return -1;
 }
 CodStd fourCCToCodStd(unsigned int fourcc)
 {
-    for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
+    for (size_t i = 0; i < sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
         if (codstd_tab[i].fourcc == mktag(fourcc))
             return codstd_tab[i].codStd;
     return (CodStd)-1;
 }
 int codecIdToMp4Class(int codec_id)
 {
-    for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
+    for (size_t i = 0; i < sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
         if (codstd_tab[i].codec_id == codec_id)
             return codstd_tab[i].mp4Class;
     return -1;
@@ -285,14 +285,14 @@ int codecIdToMp4Class(int codec_id)
 }
 CodStd codecIdToCodStd(int codec_id)
 {
-    for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
+    for (size_t i = 0; i < sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
         if (codstd_tab[i].codec_id == codec_id)
             return codstd_tab[i].codStd;
     return (CodStd)-1;
 }
 int codecIdToFourcc(int codec_id)
 {
-    for(int i=0; i<sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
+    for (size_t i = 0; i < sizeof(codstd_tab)/sizeof(codstd_tab[0]); i++)
         if (codstd_tab[i].codec_id == codec_id)
             return codstd_tab[i].fourcc;
     return 0;
@@ -687,7 +687,7 @@ qDebug("!BS_MODE_PIC_END");
     //VPU_ENSURE(VPU_DecStartOneFrame(handle, &decParam), false);
     while (osal_kbhit() == 0) { //TODO: omx while(1)
         d.int_reason = VPU_WaitInterrupt(d.coreIdx, VPU_DEC_TIMEOUT);
-        if (d.int_reason == (Uint32)-1 ) {// timeout
+        if (d.int_reason == -1 ) {// timeout
             VPU_SWReset(d.coreIdx, SW_RESET_SAFETY, d.handle);
             qWarning("VPU_WaitInterrupt timeout");
             break;
@@ -746,7 +746,7 @@ qDebug("VPU_ClearInterrupt");
              d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded );
     }
     //qDebug("#%d:%d, indexDisplay %d || picType %d || indexDecoded %d || rdPtr=0x%x || wrPtr=0x%x || chunkSize = %d, consume=%d",
-        d.instIdx, d.frameIdx, d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded, d.outputInfo.rdPtr, d.outputInfo.wrPtr, chunkData.size()+picHeaderSize, d.outputInfo.consumedByte);
+      //  d.instIdx, d.frameIdx, d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded, d.outputInfo.rdPtr, d.outputInfo.wrPtr, chunkData.size()+picHeaderSize, d.outputInfo.consumedByte);
 #ifdef HAVE_REPORT
     SaveDecReport(d.coreIdx, d.handle, &d.outputInfo, decOP.bitstreamFormat, ((d.initialInfo.picWidth+15)&~15)/16); ///TODO:
 #endif
@@ -789,7 +789,7 @@ qDebug("VPU_ClearInterrupt");
         surf->index = d.outputInfo.indexFrameDisplay;
         surf->fb = d.outputInfo.dispFrame;
         d.display_queue.push_back(surf);
-        qDebug("push_back FBSurfacePtr. queue.size: %d", d.display_queue.size());
+        qDebug("push_back FBSurfacePtr. queue.size: %lu", d.display_queue.size());
     }
     if (d.outputInfo.numOfErrMBs) {
         d.totalNumofErrMbs += d.outputInfo.numOfErrMBs;

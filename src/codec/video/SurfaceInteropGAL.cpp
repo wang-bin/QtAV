@@ -31,9 +31,9 @@ bool InteropResource::map(const FBSurfacePtr &surface, VideoFrame *img, int)
     scaler->setOutFormat(VideoFormat::pixelFormatToFFmpeg(img->pixelFormat()));
     scaler->setOutSize(img->width(), img->height());
     const quint8* src[] = {
-        (quint8*)surface->fb.bufY,
-        (quint8*)surface->fb.bufCb,
-        (quint8*)surface->fb.bufCr
+        (quint8*)(quintptr)surface->fb.bufY,
+        (quint8*)(quintptr)surface->fb.bufCb,
+        (quint8*)(quintptr)surface->fb.bufCr
     };
     const int srcStride[] = {
         surface->fb.stride,

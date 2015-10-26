@@ -47,7 +47,7 @@ typedef QSharedPointer<InteropResource> InteropResourcePtr;
 class SurfaceInteropGAL Q_DECL_FINAL: public VideoSurfaceInterop
 {
 public:
-    SurfaceInteropGAL(const InteropResourcePtr& res) : m_surface(0), m_resource(res), frame_width(0), frame_height(0) {}
+    SurfaceInteropGAL(const InteropResourcePtr& res) :  m_resource(res), m_surface(0),frame_width(0), frame_height(0) {}
     /*!
      * \brief setSurface
      * \param surface vpu decoded surface
