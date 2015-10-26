@@ -32,13 +32,12 @@ public:
     /*!
      * \brief map
      * \param surface vpu decoded surface
-     * \param img contains the target frame information
-     * \param w frame width(visual width) without alignment, <= vpu surface width
-     * \param h frame height(visual height)
+     * \param format works only for VideoFormat.to(). VideoFormat.map() use the VideoFrame.format()
+     * \param img contains the target frame information. if the parameter is not valid, use the input value. If plane(0) address is null, create host memory
      * \param plane useless now
      * \return true if success
      */
-    bool map(const FBSurfacePtr& surface, VideoFrame* img, int plane);
+    bool map(const FBSurfacePtr& surface, const VideoFormat& format, VideoFrame* img, int plane);
 protected:
     GALScaler *scaler;
 };
