@@ -96,12 +96,6 @@ bool ImageConverterFF::convert(const quint8 *const src[], const int srcStride[],
         qDebug("convert failed: %d, %d", result_h, d.h_out);
         return false;
     }
-#if 0
-    if (isInterlaced()) {
-        //deprecated
-        avpicture_deinterlace(&d.picture, &d.picture, (AVPixelFormat)d.fmt_out, d.w_out, d.h_out);
-    }
-#endif //0
     Q_UNUSED(result_h);
     for (int i = 0; i < d.pitchs.size(); ++i) {
         d.bits[i] = dst[i];

@@ -38,8 +38,6 @@ class Q_AVWIDGETS_EXPORT OpenGLWidgetRenderer : public QOpenGLWidget, public Ope
     DPTR_DECLARE_PRIVATE(OpenGLWidgetRenderer)
 public:
     explicit OpenGLWidgetRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual void onUpdate() Q_DECL_OVERRIDE;
-
     virtual VideoRendererId id() const Q_DECL_OVERRIDE;
     virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
 protected:

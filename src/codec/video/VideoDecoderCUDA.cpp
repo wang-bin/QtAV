@@ -91,7 +91,7 @@ public:
     void flush() Q_DECL_OVERRIDE;
     QTAV_DEPRECATED bool decode(const QByteArray &encoded) Q_DECL_FINAL;
     bool decode(const Packet &packet) Q_DECL_OVERRIDE Q_DECL_FINAL;
-    virtual VideoFrame frame();
+    virtual VideoFrame frame() Q_DECL_OVERRIDE;
 
     // properties
     int surfaces() const;
@@ -766,7 +766,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         if (copy_mode == VideoDecoderCUDA::ZeroCopy && interop_res) {
             if (OpenGLHelper::isOpenGLES()) {
                 proc_params.Reserved[0] = pitch; // TODO: pass pitch to setSurface()
-                frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_RGB32); //p->width()
+                frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_RGB32);
                 frame.setBytesPerLine(codec_ctx->width * 4); //used by gl to compute texture size
             } else {
                 frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -83,6 +83,7 @@ public:
     virtual void setFontsDir(const QString& dir) {Q_UNUSED(dir);}
     virtual void setFontFileForced(bool force) {Q_UNUSED(force);}
 public:
+    static void registerAll();
     template<class C> static bool Register(SubtitleProcessorId id, const char* name) { return Register(id, create<C>, name);}
     static SubtitleProcessor* create(SubtitleProcessorId id);
     static SubtitleProcessor* create(const char* name = "FFmpeg");

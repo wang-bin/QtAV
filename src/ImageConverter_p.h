@@ -33,8 +33,7 @@ class ImageConverterPrivate : public DPtrPrivate<ImageConverter>
 {
 public:
     ImageConverterPrivate()
-        : interlaced(false)
-        , w_in(0),h_in(0)
+        : w_in(0),h_in(0)
         , w_out(0),h_out(0)
         , fmt_in(QTAV_PIX_FMT_C(YUV420P))
         , fmt_out(QTAV_PIX_FMT_C(RGB32))
@@ -51,7 +50,6 @@ public:
         return true;
     }
 
-    bool interlaced;
     int w_in, h_in, w_out, h_out;
     AVPixelFormat fmt_in, fmt_out;
     int brightness, contrast, saturation;

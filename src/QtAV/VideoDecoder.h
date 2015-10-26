@@ -24,10 +24,9 @@
 
 #include <QtAV/AVDecoder.h>
 #include <QtAV/VideoFrame.h>
+#include <QtCore/QStringList>
 
-class QSize;
 namespace QtAV {
-
 typedef int VideoDecoderId;
 /*!
     Useful properties.
@@ -60,6 +59,7 @@ class Q_AV_EXPORT VideoDecoder : public AVDecoder
     Q_DISABLE_COPY(VideoDecoder)
     DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:
+    static QStringList supportedCodecs();
     static VideoDecoder* create(VideoDecoderId id);
     /*!
      * \brief create
@@ -71,13 +71,6 @@ public:
     virtual VideoDecoderId id() const = 0;
     QString name() const; //name from factory
     virtual VideoFrame frame() = 0;
-    //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
-    void resizeVideoFrame(const QSize& size);
-    virtual void resizeVideoFrame(int width, int height);
-    //TODO: decodedSize()
-    int width() const;
-    int height() const;
-
 public:
     static QVector<VideoDecoderId> registered();
     template<class C> static bool Register(VideoDecoderId id, const char* name) { return Register(id, create<C>, name);}

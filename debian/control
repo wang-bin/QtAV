@@ -1,7 +1,7 @@
 
 Source: qtav
 Section: video
-Priority: extra
+Priority: optional
 Maintainer: Wang Bin <wbsecg1@gmail.com>, Sou Bunnbu <iyzsong@gmail.com>
 Build-Depends: debhelper (>= 9),
  qt5-qmake, libqt5opengl5-dev, qtdeclarative5-dev,

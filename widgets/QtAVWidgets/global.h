@@ -34,7 +34,11 @@
 #endif
 #endif //BUILD_QTAVWIDGETS_STATIC
 #define Q_AVWIDGETS_PRIVATE_EXPORT Q_AVWIDGETS_EXPORT
-
+#if defined(BUILD_QTAVWIDGETS_LIB)
+#define QTAVWIDGETS_DEPRECATED
+#else
+#define QTAVWIDGETS_DEPRECATED Q_DECL_DEPRECATED
+#endif
 namespace QtAV {
 namespace Widgets {
 /*!

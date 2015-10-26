@@ -29,13 +29,28 @@
 namespace QtAV {
 FACTORY_DEFINE(AudioDecoder)
 // TODO: why vc can not declare extern func in a class member? resolved as &func@@YAXXZ
-extern void RegisterAudioDecoderFFmpeg_Man();
+extern bool RegisterAudioDecoderFFmpeg_Man();
 void AudioDecoder::registerAll() {
     static bool done = false;
     if (done)
         return;
     done = true;
     RegisterAudioDecoderFFmpeg_Man();
+}
+
+QStringList AudioDecoder::supportedCodecs()
+{
+    static QStringList codecs;
+    if (!codecs.isEmpty())
+        return codecs;
+    avcodec_register_all();
+    AVCodec* c = NULL;
+    while ((c=av_codec_next(c))) {
+        if (!av_codec_is_decoder(c) || c->type != AVMEDIA_TYPE_AUDIO)
+            continue;
+        codecs.append(QString::fromLatin1(c->name));
+    }
+    return codecs;
 }
 
 AudioDecoderPrivate::AudioDecoderPrivate()

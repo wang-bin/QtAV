@@ -193,12 +193,6 @@ bool AVDecoder::isAvailable() const
     return d_func().codec_ctx != 0;
 }
 
-bool AVDecoder::decode(const QByteArray &encoded)
-{
-    Q_UNUSED(encoded);
-    return true;
-}
-
 int AVDecoder::undecodedSize() const
 {
     return d_func().undecoded_size;

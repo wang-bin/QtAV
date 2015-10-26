@@ -257,6 +257,7 @@ Module {
         Property { name: "orientation"; type: "int" }
         Property { name: "regionOfInterest"; type: "QRectF" }
         Property { name: "sourceAspectRatio"; type: "double"; isReadonly: true }
+        Property { name: "frameSize"; type: "QSize"; isReadonly: true }
         Signal {
             name: "fillModeChanged"
             Parameter { type: "QQuickItemRenderer::FillMode" }
@@ -287,6 +288,7 @@ Module {
         Property { name: "orientation"; type: "int" }
         Property { name: "regionOfInterest"; type: "QRectF" }
         Property { name: "sourceAspectRatio"; type: "double"; isReadonly: true }
+        Property { name: "frameSize"; type: "QSize"; isReadonly: true }
         Signal {
             name: "fillModeChanged"
             Parameter { type: "QuickFBORenderer::FillMode" }

@@ -258,8 +258,6 @@ void VideoThread::run()
     //not neccesary context is managed by filters.
     d.filter_context = 0;
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
-    //used to initialize the decoder's frame size
-    dec->resizeVideoFrame(0, 0);
     Packet pkt;
     QVariantHash *dec_opt = &d.dec_opt_normal; //TODO: restore old framedrop option after seek
     /*!

@@ -24,10 +24,9 @@
 
 #include <QtAV/AVEncoder.h>
 #include <QtAV/AudioFrame.h>
+#include <QtCore/QStringList>
 
-class QSize;
 namespace QtAV {
-
 typedef int AudioEncoderId;
 class AudioEncoderPrivate;
 class Q_AV_EXPORT AudioEncoder : public AVEncoder
@@ -37,6 +36,7 @@ class Q_AV_EXPORT AudioEncoder : public AVEncoder
     Q_DISABLE_COPY(AudioEncoder)
     DPTR_DECLARE_PRIVATE(AudioEncoder)
 public:
+    static QStringList supportedCodecs();
     static AudioEncoder* create(AudioEncoderId id);
     /*!
      * \brief create

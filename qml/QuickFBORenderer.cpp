@@ -268,6 +268,12 @@ void QuickFBORenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     d.setupAspectRatio();
 }
 
+void QuickFBORenderer::onFrameSizeChanged(const QSize &size)
+{
+    Q_UNUSED(size);
+    Q_EMIT frameSizeChanged();
+}
+
 void QuickFBORenderer::updateRenderRect()
 {
     DPTR_D(QuickFBORenderer);

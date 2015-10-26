@@ -299,6 +299,7 @@ config_libass {
     LIBS += -lass #-lfribidi -lfontconfig -lxml2 -lfreetype -lharfbuzz -lz
     DEFINES += CAPI_LINK_ASS
   }
+  DEFINES *= QTAV_HAVE_LIBASS=1
   HEADERS *= subtitle/ass_api.h
   SOURCES *= subtitle/ass_api.cpp
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp

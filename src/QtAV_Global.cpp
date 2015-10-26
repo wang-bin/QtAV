@@ -49,7 +49,7 @@ namespace QtAV {
 
 namespace Internal {
 // disable logging for release. you can manually enable it.
-#if defined(QT_NO_DEBUG)// && !defined(Q_OS_ANDROID)
+#if defined(QT_NO_DEBUG)// && !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(Q_OS_WINRT)
 static QtAV::LogLevel gLogLevel = QtAV::LogOff;
 #else
 static QtAV::LogLevel gLogLevel = QtAV::LogAll;
@@ -327,24 +327,6 @@ const QStringList& supportedSubtitleMimeTypes()
         init_supported_codec_info();
     return s_subtitle_mimes;
 }
-const QStringList& supportedInputExtensions()
-{
-    static QStringList exts;
-    if (!exts.isEmpty())
-        return exts;
-    av_register_all(); // MUST register all input/output formats
-    AVInputFormat *i = av_iformat_next(NULL);
-    QStringList list;
-    while (i) {
-        list << QString(i->extensions).split(QLatin1Char(','), QString::SkipEmptyParts);
-        i = av_iformat_next(i);
-    }
-    foreach (const QString& v, list) {
-        exts.append(v.trimmed());
-    }
-    exts.removeDuplicates();
-    return exts;
-}
 #endif
 // TODO: static link. move all into 1
 namespace {
@@ -361,7 +343,6 @@ InitFFmpegLog fflog;
 
 // Initialize Qt Resource System when the library is built
 // statically
-
 static void initResources() {
     Q_INIT_RESOURCE(shaders);
     Q_INIT_RESOURCE(QtAV);
@@ -375,4 +356,3 @@ namespace {
     
     ResourceLoader QtAV_QRCLoader;
 }
-

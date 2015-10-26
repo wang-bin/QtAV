@@ -29,11 +29,13 @@
 #include <QtAV/AVClock.h>
 #include <QtAV/AVDecoder.h>
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/AVMuxer.h>
 #include <QtAV/AVOutput.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/Packet.h>
 #include <QtAV/Statistics.h>
 
+#include <QtAV/AudioEncoder.h>
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/AudioFormat.h>
 #include <QtAV/AudioOutput.h>
@@ -48,6 +50,7 @@
 #include <QtAV/OpenGLVideo.h>
 
 #include <QtAV/VideoCapture.h>
+#include <QtAV/VideoEncoder.h>
 #include <QtAV/VideoDecoder.h>
 #include <QtAV/VideoDecoderTypes.h>
 #include <QtAV/VideoFormat.h>

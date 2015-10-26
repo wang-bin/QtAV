@@ -40,6 +40,7 @@ public:
 
     QByteArray outData() const;
     // return false if i/o format not supported, or size is not valid.
+    // TODO: use isSupported(i/o format);
     virtual bool check() const;
     void setInSize(int width, int height);
     void setOutSize(int width, int height);
@@ -49,8 +50,6 @@ public:
     void setOutFormat(const VideoFormat& format);
     void setOutFormat(VideoFormat::PixelFormat format);
     void setOutFormat(int formate);
-    void setInterlaced(bool interlaced);
-    bool isInterlaced() const;
     /*!
      * brightness, contrast, saturation: -100~100
      * If value changes, setup sws

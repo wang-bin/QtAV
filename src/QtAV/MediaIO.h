@@ -130,6 +130,7 @@ public:
     void* avioContext(); //const?
     void release(); //TODO: how to remove it?
 public:
+    static void registerAll();
     template<class C> static bool Register(MediaIOId id, const char* name) { return Register(id, create<C>, name);}
     static MediaIO* create(MediaIOId id);
     static MediaIO* create(const char* name);

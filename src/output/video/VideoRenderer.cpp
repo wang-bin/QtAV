@@ -23,6 +23,7 @@
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/Filter.h"
 #include <QtCore/QCoreApplication>
+#include <QtCore/QEvent>
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
@@ -34,6 +35,7 @@ VideoRendererId VideoRendererId_OpenGLWindow = mkid::id32base36_6<'Q', 'O', 'G',
 VideoRenderer::VideoRenderer()
     :AVOutput(*new VideoRendererPrivate)
 {
+    // can not do 'if (widget()) connect to update()' because widget() is virtual
 }
 
 VideoRenderer::VideoRenderer(VideoRendererPrivate &d)
@@ -213,11 +215,12 @@ void VideoRenderer::setInSize(int width, int height)
     DPTR_D(VideoRenderer);
     if (d.src_width != width || d.src_height != height) {
         d.aspect_ratio_changed = true; //?? for VideoAspectRatio mode
+        d.src_width = width;
+        d.src_height = height;
+        onFrameSizeChanged(QSize(width, height));
     }
     if (!d.aspect_ratio_changed)// && (d.src_width == width && d.src_height == height))
         return;
-    d.src_width = width;
-    d.src_height = height;
     //d.source_aspect_ratio = qreal(d.src_width)/qreal(d.src_height);
     qDebug("%s => calculating aspect ratio from converted input data(%f)", __FUNCTION__, d.source_aspect_ratio);
     //see setOutAspectRatioMode
@@ -601,14 +604,33 @@ bool VideoRenderer::onSetSaturation(qreal s)
     return false;
 }
 
-void VideoRenderer::updateUi()
+void VideoRenderer::onFrameSizeChanged(const QSize &size)
 {
-    QObject *obj = (QObject*)qwindow();
-    if (!obj)
-        obj = (QObject*)widget();
-    if (obj) {
-        QCoreApplication::instance()->postEvent(obj, new QEvent(QEvent::UpdateRequest));
-    }
+    Q_UNUSED(size);
 }
 
+void VideoRenderer::updateUi()
+{
+    QObject *obj = (QObject*)widget();
+    if (obj) {
+        // UpdateRequest only sync backing store but do not shedule repainting. UpdateLater does
+        // Copy from qwidget_p.h. QWidget::event() will convert UpdateLater to QUpdateLaterEvent and get it's region()
+        class QUpdateLaterEvent : public QEvent
+        {
+        public:
+            explicit QUpdateLaterEvent(const QRegion& paintRegion)
+                : QEvent(UpdateLater), m_region(paintRegion)
+            {}
+            ~QUpdateLaterEvent() {}
+            inline const QRegion &region() const { return m_region; }
+        protected:
+            QRegion m_region;
+        };
+        QCoreApplication::instance()->postEvent(obj, new QUpdateLaterEvent(QRegion(0, 0, rendererWidth(), rendererHeight())));
+    } else {
+        obj = (QObject*)qwindow();
+        if (obj)
+            QCoreApplication::instance()->postEvent(obj, new QEvent(QEvent::UpdateRequest));
+    }
+}
 } //namespace QtAV

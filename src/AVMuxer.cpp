@@ -164,6 +164,51 @@ bool AVMuxer::Private::prepareStreams()
     return !(audio_streams.isEmpty() && video_streams.isEmpty() && subtitle_streams.isEmpty());
 }
 
+static void getFFmpegOutputFormats(QStringList* formats, QStringList* extensions)
+{
+    static QStringList exts;
+    static QStringList fmts;
+    if (exts.isEmpty() && fmts.isEmpty()) {
+        av_register_all(); // MUST register all input/output formats
+        AVOutputFormat *o = NULL;
+        QStringList e, f;
+        while ((o = av_oformat_next(o))) {
+            if (o->extensions)
+                e << QString::fromLatin1(o->extensions).split(QLatin1Char(','), QString::SkipEmptyParts);
+            if (o->name)
+                f << QString::fromLatin1(o->name).split(QLatin1Char(','), QString::SkipEmptyParts);
+        }
+        foreach (const QString& v, e) {
+            exts.append(v.trimmed());
+        }
+        foreach (const QString& v, f) {
+            fmts.append(v.trimmed());
+        }
+        exts.removeDuplicates();
+        fmts.removeDuplicates();
+    }
+    if (formats)
+        *formats = fmts;
+    if (extensions)
+        *extensions = exts;
+}
+
+const QStringList& AVMuxer::supportedFormats()
+{
+    static QStringList fmts;
+    if (fmts.isEmpty())
+        getFFmpegOutputFormats(&fmts, NULL);
+    return fmts;
+}
+
+const QStringList& AVMuxer::supportedExtensions()
+{
+    static QStringList exts;
+    if (exts.isEmpty())
+        getFFmpegOutputFormats(NULL, &exts);
+    return exts;
+}
+
 // TODO: move to QtAV::supportedFormats(bool out). custom protols?
 const QStringList &AVMuxer::supportedProtocols()
 {

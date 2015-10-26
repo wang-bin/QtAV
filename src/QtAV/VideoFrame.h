@@ -27,7 +27,7 @@
 #include <QtAV/Frame.h>
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QSize>
-
+/// TODO: fromAVFrame(const AVFrame* f);
 namespace QtAV {
 
 class VideoFramePrivate;
@@ -67,11 +67,6 @@ public:
      * Deep copy. Given the format, width and height, plane addresses and line sizes.
      */
     VideoFrame clone() const;
-    /*!
-     * Allocate memory with given format, width and height. planes and bytesPerLine will be set internally.
-     * The memory can be initialized by user
-     */
-    virtual int allocate();
     VideoFormat format() const;
     VideoFormat::PixelFormat pixelFormat() const;
     QImage::Format imageFormat() const;
@@ -114,6 +109,8 @@ public:
      */
     VideoFrame to(VideoFormat::PixelFormat pixfmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
     VideoFrame to(const VideoFormat& fmt, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
+    bool to(VideoFormat::PixelFormat pixfmt, quint8 *const dst[], const int dstStride[], const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
+    bool to(const VideoFormat& fmt, quint8 *const dst[], const int dstStride[], const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
     /*!
      * map a gpu frame to opengl texture or d3d texture or other handle.
      * handle: given handle. can be gl texture (& GLuint), d3d texture, or 0 if create a new handle
@@ -134,11 +131,6 @@ public:
        return -1 if no texture, not uploaded
      */
     int texture(int plane = 0) const; //TODO: remove
-private:
-    /*
-     * call this only when setBytesPerLine() and setBits() will not be called
-     */
-    void init();
 };
 
 class ImageConverter;

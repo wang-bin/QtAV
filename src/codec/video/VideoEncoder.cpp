@@ -29,8 +29,23 @@ FACTORY_DEFINE(VideoEncoder)
 
 void VideoEncoder_RegisterAll()
 {
-    extern void RegisterVideoEncoderFFmpeg_Man();
+    extern bool RegisterVideoEncoderFFmpeg_Man();
     RegisterVideoEncoderFFmpeg_Man();
+}
+
+QStringList VideoEncoder::supportedCodecs()
+{
+    static QStringList codecs;
+    if (!codecs.isEmpty())
+        return codecs;
+    avcodec_register_all();
+    AVCodec* c = NULL;
+    while ((c=av_codec_next(c))) {
+        if (!av_codec_is_encoder(c) || c->type != AVMEDIA_TYPE_VIDEO)
+            continue;
+        codecs.append(QString::fromLatin1(c->name));
+    }
+    return codecs;
 }
 
 VideoEncoder::VideoEncoder(VideoEncoderPrivate &d):

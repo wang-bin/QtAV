@@ -74,6 +74,7 @@ void ImageConverter::setOutSize(int width, int height)
     d.h_out = height;
     d.update_data = true;
     prepareData();
+    d.update_data = false;
 }
 
 void ImageConverter::setInFormat(const VideoFormat& format)
@@ -109,16 +110,7 @@ void ImageConverter::setOutFormat(int format)
     d.fmt_out = (AVPixelFormat)format;
     d.update_data = true;
     prepareData();
-}
-
-void ImageConverter::setInterlaced(bool interlaced)
-{
-    d_func().interlaced = interlaced;
-}
-
-bool ImageConverter::isInterlaced() const
-{
-    return d_func().interlaced;
+    d.update_data = false;
 }
 
 void ImageConverter::setBrightness(int value)
@@ -179,6 +171,8 @@ bool ImageConverter::convert(const quint8 * const src[], const int srcStride[])
     if (d.update_data && !prepareData()) {
         qWarning("prepair output data error");
         return false;
+    } else {
+        d.update_data = false;
     }
     return convert(src, srcStride, (uint8_t**)d.bits.constData(), d.pitchs.constData());
 }
@@ -206,7 +200,6 @@ bool ImageConverter::prepareData()
     // TODO: special formats
     //if (desc->flags & AV_PIX_FMT_FLAG_PAL || desc->flags & AV_PIX_FMT_FLAG_PSEUDOPAL)
        //    avpriv_set_systematic_pal2((uint32_t*)pointers[1], pix_fmt);
-    d.update_data = false;
     for (int i = 0; i < d.pitchs.size(); ++i) {
         Q_ASSERT(d.pitchs[i]%kAlign == 0);
         Q_ASSERT(qintptr(d.bits[i])%kAlign == 0);

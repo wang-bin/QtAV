@@ -30,6 +30,18 @@ namespace QtAV {
 
 FACTORY_DEFINE(MediaIO)
 
+extern bool RegisterMediaIOQIODevice_Man();
+extern bool RegisterMediaIOQFile_Man();
+void MediaIO::registerAll()
+{
+    static bool done = false;
+    if (done)
+        return;
+    done = true;
+    RegisterMediaIOQIODevice_Man();
+    RegisterMediaIOQFile_Man();
+}
+
 QStringList MediaIO::builtInNames()
 {
     static QStringList names;

@@ -24,6 +24,7 @@
 
 #include <QtAV/AVDecoder.h>
 #include <QtAV/AudioFrame.h>
+#include <QtCore/QStringList>
 
 #define USE_AUDIO_FRAME 1
 //TODO: decoder.in/outAudioFormat()?
@@ -39,6 +40,7 @@ class Q_AV_EXPORT AudioDecoder : public AVDecoder
     Q_DISABLE_COPY(AudioDecoder)
     DPTR_DECLARE_PRIVATE(AudioDecoder)
 public:
+    static QStringList supportedCodecs();
     static AudioDecoder* create(AudioDecoderId id);
     /*!
      * \brief create

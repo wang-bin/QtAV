@@ -46,11 +46,6 @@ OpenGLWidgetRenderer::OpenGLWidgetRenderer(QWidget *parent, Qt::WindowFlags f):
     setFocusPolicy(Qt::StrongFocus);
 }
 
-void OpenGLWidgetRenderer::onUpdate()
-{
-    update();
-}
-
 void OpenGLWidgetRenderer::initializeGL()
 {
     onInitializeGL();

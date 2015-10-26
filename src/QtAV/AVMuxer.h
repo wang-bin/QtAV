@@ -39,6 +39,8 @@ class Q_AV_EXPORT AVMuxer : public QObject
 {
     Q_OBJECT
 public:
+    static const QStringList& supportedFormats();
+    static const QStringList& supportedExtensions();
     /// Supported ffmpeg/libav input protocols(not complete). A static string list
     static const QStringList& supportedProtocols();
 

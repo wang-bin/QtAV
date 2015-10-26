@@ -340,6 +340,11 @@ bool VideoOutput::onSetSaturation(qreal saturation)
     return true;
 }
 
+void VideoOutput::onFrameSizeChanged(const QSize &size)
+{
+    Q_EMIT frameSizeChanged(size);
+}
+
 void VideoOutput::setStatistics(Statistics* statistics)
 {
     if (!isAvailable())

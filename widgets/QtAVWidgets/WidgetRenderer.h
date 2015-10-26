@@ -41,14 +41,8 @@ public:
     explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
     virtual VideoRendererId id() const;
     virtual QWidget* widget() { return this; }
-
-    inline void
-    setBackgroundColor(const QColor& bgColor) { m_bgColor = bgColor; }
-    inline const QColor&
-    backgroundColor(void) const { return m_bgColor; }
-
-signals:
-    void imageReady();
+Q_SIGNALS:
+    QTAVWIDGETS_DEPRECATED void imageReady(); // add frameReady() in the future?
 protected:
     virtual bool receiveFrame(const VideoFrame& frame);
     virtual bool needUpdateBackground() const;
@@ -62,9 +56,6 @@ protected:
     virtual bool onSetOrientation(int value);
 protected:
     WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent, Qt::WindowFlags f);
-
-private:
-    QColor m_bgColor;
 };
 
 typedef WidgetRenderer VideoRendererWidget;

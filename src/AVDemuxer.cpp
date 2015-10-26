@@ -340,6 +340,51 @@ AVDemuxer::~AVDemuxer()
     unload();
 }
 
+static void getFFmpegInputFormats(QStringList* formats, QStringList* extensions)
+{
+    static QStringList exts;
+    static QStringList fmts;
+    if (exts.isEmpty() && fmts.isEmpty()) {
+        av_register_all(); // MUST register all input/output formats
+        AVInputFormat *i = NULL;
+        QStringList e, f;
+        while ((i = av_iformat_next(i))) {
+            if (i->extensions)
+                e << QString::fromLatin1(i->extensions).split(QLatin1Char(','), QString::SkipEmptyParts);
+            if (i->name)
+                f << QString::fromLatin1(i->name).split(QLatin1Char(','), QString::SkipEmptyParts);
+        }
+        foreach (const QString& v, e) {
+            exts.append(v.trimmed());
+        }
+        foreach (const QString& v, f) {
+            fmts.append(v.trimmed());
+        }
+        exts.removeDuplicates();
+        fmts.removeDuplicates();
+    }
+    if (formats)
+        *formats = fmts;
+    if (extensions)
+        *extensions = exts;
+}
+
+const QStringList& AVDemuxer::supportedFormats()
+{
+    static QStringList fmts;
+    if (fmts.isEmpty())
+        getFFmpegInputFormats(&fmts, NULL);
+    return fmts;
+}
+
+const QStringList& AVDemuxer::supportedExtensions()
+{
+    static QStringList exts;
+    if (exts.isEmpty())
+        getFFmpegInputFormats(NULL, &exts);
+    return exts;
+}
+
 const QStringList &AVDemuxer::supportedProtocols()
 {
     static QStringList protocols;
@@ -518,12 +563,20 @@ bool AVDemuxer::seek(qint64 pos)
         seek_flag = AVSEEK_FLAG_BACKWARD;
     }
     if (d->seek_type == AnyFrameSeek) {
-        seek_flag = AVSEEK_FLAG_ANY;
+        seek_flag |= AVSEEK_FLAG_ANY;
     }
+    //qDebug("seek flag: %d", seek_flag);
     //bool seek_bytes = !!(d->format_ctx->iformat->flags & AVFMT_TS_DISCONT) && strcmp("ogg", d->format_ctx->iformat->name);
     int ret = av_seek_frame(d->format_ctx, -1, upos, seek_flag);
     //int ret = avformat_seek_file(d->format_ctx, -1, INT64_MIN, upos, upos, seek_flag);
     //avformat_seek_file()
+    if (ret < 0 && (seek_flag & AVSEEK_FLAG_BACKWARD)) {
+        // seek to 0?
+        qDebug("av_seek_frame error with flag AVSEEK_FLAG_BACKWARD: %s. try to seek without the flag", av_err2str(ret));
+        seek_flag &= ~AVSEEK_FLAG_BACKWARD;
+        ret = av_seek_frame(d->format_ctx, -1, upos, seek_flag);
+    }
+    //qDebug("av_seek_frame ret: %d", ret);
 #endif
     if (ret < 0) {
         AVError::ErrorCode ec(AVError::SeekError);

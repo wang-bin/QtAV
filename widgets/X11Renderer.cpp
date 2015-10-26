@@ -140,8 +140,6 @@ VideoFormat::PixelFormat pixelFormat(XImage* xi) {
         //qDebug() << fmte->fmt;
         fmte++;
     }
-    qDebug("XImage format: bpp %d, endian: %d, R %X, G %X, B %X", xi->bits_per_pixel, xi->byte_order, xi->red_mask, xi->green_mask, xi->blue_mask);
-    qDebug() << "PixelFormat: " << fmte->fmt;
     return fmte->fmt;
 }
 
@@ -338,14 +336,22 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
         return true;
     }
     // force align to 8(16?) because xcreateimage will not do alignment
-    if (!d.ensureImage(FFALIGN(videoRect().width(), 8), FFALIGN(videoRect().height(), 8))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
+    // GAL vmem is 16 aligned
+    if (!d.ensureImage(FFALIGN(videoRect().width(), 16), FFALIGN(videoRect().height(), 16))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
         return false;
     if (preferredPixelFormat() != d.pixfmt) {
         qDebug() << "x11 preferred pixel format: " << d.pixfmt;
         setPreferredPixelFormat(d.pixfmt);
     }
+    d.video_frame = frame; // set before map!
+    VideoFrame interopFrame;
+    if (!frame.constBits(0)) {
+        interopFrame = VideoFrame(d.ximage->width, d.ximage->height, pixelFormat(d.ximage));
+        interopFrame.setBits(d.use_shm ? (quint8*)d.ximage->data : (quint8*)d.ximage_data.constData());
+        interopFrame.setBytesPerLine(d.ximage->bytes_per_line);
+    }
     if (frame.constBits(0)
-            || !d.video_frame.map(HostMemorySurface, d.ximage) //check pixel format and scale to ximage size&line_size
+            || !d.video_frame.map(HostMemorySurface, &interopFrame) //check pixel format and scale to ximage size&line_size
             ) {
         if (!frame.constBits(0) //always convert hw frames
                 || frame.pixelFormat() != d.pixfmt || frame.width() != d.ximage->width || frame.height() != d.ximage->height)
@@ -370,8 +376,11 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
             }
             VideoFrame::copyPlane(dst, d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
         }
+    } else {
+        if (!d.use_shm)
+            d.ximage->data = (char*)d.ximage_data.constData();
     }
-    update();
+    updateUi();
     return true;
 }
 

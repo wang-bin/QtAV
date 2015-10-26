@@ -305,11 +305,11 @@ VideoFrame VideoDecoderFFmpegHW::copyToFrame(const VideoFormat& fmt, int surface
             plane_ptr += pitch[i] * h[i];
             d.gpu_mem.copyFrame(src[i], dst[i], pitch[i], h[i], pitch[i]);
         }
-        frame = VideoFrame(width(), height(), fmt, buf);
+        frame = VideoFrame(d.width, d.height, fmt, buf);
         frame.setBits(dst);
         frame.setBytesPerLine(pitch);
     } else {
-        frame = VideoFrame(width(), height(), fmt);
+        frame = VideoFrame(d.width, d.height, fmt);
         frame.setBits(src);
         frame.setBytesPerLine(pitch);
         // TODO: why clone is faster()?

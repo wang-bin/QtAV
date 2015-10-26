@@ -52,7 +52,7 @@ public:
     void* codecContext() const;
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
-    QTAV_DEPRECATED virtual bool decode(const QByteArray& encoded) = 0;
+    QTAV_DEPRECATED virtual bool decode(const QByteArray&) { return false;}
     virtual bool decode(const Packet& packet) = 0;
     int undecodedSize() const; //TODO: remove. always decode whole input data completely
 
@@ -80,7 +80,7 @@ Q_SIGNALS:
 protected:
     AVDecoder(AVDecoderPrivate& d);
     DPTR_DECLARE(AVDecoder)
-    // force a codec. only used by avcodec sw decoders
+    // force a codec. only used by avcodec sw decoders. TODO: move to public? profile set?
     void setCodecName(const QString& name);
     QString codecName() const;
 private:

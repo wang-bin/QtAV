@@ -40,6 +40,7 @@ class QQuickItemRenderer : public QQuickItem, public VideoRenderer
     // regionOfInterest > sourceRect
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
+    Q_PROPERTY(QSize frameSize READ frameSize NOTIFY frameSizeChanged)
     Q_ENUMS(FillMode)
 public:
     enum FillMode {
@@ -49,8 +50,8 @@ public:
     };
 
     explicit QQuickItemRenderer(QQuickItem *parent = 0);
-    virtual VideoRendererId id() const;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    VideoRendererId id() const Q_DECL_OVERRIDE;
+    bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
     QObject *source() const;
     void setSource(QObject *source);
@@ -67,26 +68,27 @@ Q_SIGNALS:
     void orientationChanged();
     void regionOfInterestChanged();
     void openGLChanged();
-    void sourceAspectRatioChanged(qreal value);
-
+    void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE;
+    void frameSizeChanged();
 protected:
-    virtual bool event(QEvent *e);
-    virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);
+    bool event(QEvent *e) Q_DECL_OVERRIDE;
+    void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) Q_DECL_OVERRIDE;
 
-    virtual bool receiveFrame(const VideoFrame &frame);
-    virtual bool needUpdateBackground() const;
-    virtual bool needDrawFrame() const;
-    virtual void drawFrame();
+    bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
+    bool needUpdateBackground() const Q_DECL_OVERRIDE;
+    bool needDrawFrame() const Q_DECL_OVERRIDE;
+    void drawFrame() Q_DECL_OVERRIDE;
 
     // QQuickItem interface
-    virtual QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data);
+    QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data) Q_DECL_OVERRIDE;
 private slots:
     void handleWindowChange(QQuickWindow *win);
     void beforeRendering();
     void afterRendering();
 private:
-    virtual bool onSetRegionOfInterest(const QRectF& roi);
-    virtual bool onSetOrientation(int value);
+    bool onSetRegionOfInterest(const QRectF& roi) Q_DECL_OVERRIDE;
+    bool onSetOrientation(int value) Q_DECL_OVERRIDE;
+    void onFrameSizeChanged(const QSize& size) Q_DECL_OVERRIDE;
 };
 typedef QQuickItemRenderer VideoRendererQQuickItem;
 }

@@ -99,17 +99,17 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
 
     // from av_read_frame: pkt->pts can be AV_NOPTS_VALUE if the video format has B-frames, so it is better to rely on pkt->dts if you do not decompress the payload.
     // old code set pts as dts is valid
-    if (avpkt->pts != AV_NOPTS_VALUE)
+    if (avpkt->pts != (qint64)AV_NOPTS_VALUE)
         pkt->pts = avpkt->pts * time_base;
-    else if (avpkt->dts != AV_NOPTS_VALUE) // is it ok?
+    else if (avpkt->dts != (qint64)AV_NOPTS_VALUE) // is it ok?
         pkt->pts = avpkt->dts * time_base;
     else
         pkt->pts = 0; // TODO: init value
-    if (avpkt->dts != AV_NOPTS_VALUE) //has B-frames
+    if (avpkt->dts != (qint64)AV_NOPTS_VALUE) //has B-frames
         pkt->dts = avpkt->dts * time_base;
     else
         pkt->dts = pkt->pts;
-    //qDebug("pts %lld, dts: %lld ", avpkt->pts, avpkt->dts);
+    //qDebug("avpacket pts %lld, dts: %lld ", avpkt->pts, avpkt->dts);
     //TODO: pts must >= 0? look at ffplay
     pkt->pts = qMax<qreal>(0, pkt->pts);
     pkt->dts = qMax<qreal>(0, pkt->dts);

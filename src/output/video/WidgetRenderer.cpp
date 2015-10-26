@@ -60,7 +60,6 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
     } else {
         qWarning("FilterContext not available!");
     }
-    connect(this, SIGNAL(imageReady()), SLOT(update()));
 }
 
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
@@ -77,18 +76,18 @@ WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::Wi
     } else {
         qWarning("FilterContext not available!");
     }
-    connect(this, SIGNAL(imageReady()), SLOT(update()));
 }
 
 bool WidgetRenderer::receiveFrame(const VideoFrame &frame)
 {
     prepareFrame(frame);
-    //update();
+    updateUi();
     /*
      * workaround for the widget not updated if has parent. don't know why it works and why update() can't
      * Thanks to Vito Covito and Carlo Scarpato
+     * Now it's fixed by posting a QUpdateLaterEvent
      */
-    emit imageReady();
+    Q_EMIT imageReady();
     return true;
 }
 
