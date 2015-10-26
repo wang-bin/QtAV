@@ -336,7 +336,8 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
         return true;
     }
     // force align to 8(16?) because xcreateimage will not do alignment
-    if (!d.ensureImage(FFALIGN(videoRect().width(), 8), FFALIGN(videoRect().height(), 8))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
+    // GAL vmem is 16 aligned
+    if (!d.ensureImage(FFALIGN(videoRect().width(), 16), FFALIGN(videoRect().height(), 16))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
         return false;
     if (preferredPixelFormat() != d.pixfmt) {
         qDebug() << "x11 preferred pixel format: " << d.pixfmt;
@@ -346,7 +347,7 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
     VideoFrame interopFrame;
     if (!frame.constBits(0)) {
         interopFrame = VideoFrame(d.ximage->width, d.ximage->height, pixelFormat(d.ximage));
-        interopFrame.setBits((quint8*)d.ximage->data);
+        interopFrame.setBits(d.use_shm ? (quint8*)d.ximage->data : (quint8*)d.ximage_data.constData());
         interopFrame.setBytesPerLine(d.ximage->bytes_per_line);
     }
     if (frame.constBits(0)
@@ -375,6 +376,9 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
             }
             VideoFrame::copyPlane(dst, d.ximage->bytes_per_line, (const quint8*)d.video_frame.constBits(0), d.video_frame.bytesPerLine(0), d.ximage->bytes_per_line, d.ximage->height);
         }
+    } else {
+        if (!d.use_shm)
+            d.ximage->data = (char*)d.ximage_data.constData();
     }
     updateUi();
     return true;
