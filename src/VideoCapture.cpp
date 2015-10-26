@@ -73,6 +73,9 @@ public:
         name += QString::number(frame.timestamp(), 'f', 3);
         QString path(dir + QStringLiteral("/") + name + QStringLiteral("."));
         if (original_fmt) {
+            if (!frame.constBits(0)) {
+                frame = frame.to(frame.format());
+            }
             path.append(frame.format().name());
             qDebug("Saving capture to %s", qPrintable(path));
             QFile file(path);
@@ -194,7 +197,7 @@ void VideoCapture::request()
 
 void VideoCapture::start()
 {
-    emit frameAvailable(frame); //TODO: no copy
+    Q_EMIT frameAvailable(frame);
     if (!frame.isValid() || !frame.constBits(0)) { // if frame is always cloned, then size is at least width*height
         qDebug("Captured frame from hardware decoder surface.");
     }
