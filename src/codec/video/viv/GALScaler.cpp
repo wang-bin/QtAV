@@ -25,6 +25,23 @@ void dma_copy_in_vmem(unsigned int dst, unsigned int src, int len);
 void dma_copy_from_vmem(unsigned char* dst, unsigned int src, int len);
 }
 namespace QtAV {
+class AutoLock {
+    gcoSURF surf;
+public:
+    AutoLock(gcoSURF s) : surf(s) {
+        memset(phy, 0, sizeof(phy));
+        memset(lgc, 0, sizeof(lgc));
+        if (surf)
+            GC_WARN(gcoSURF_Lock(surf, phy, lgc));
+    }
+    ~AutoLock() {
+        if (surf) {
+            GC_WARN(gcoSURF_Unlock(surf, lgc[0])); //unlock for every plane?
+        }
+    }
+    gctUINT32 phy[3];
+    gctPOINTER lgc[3];
+};
 
 typedef struct Test2D {
 //      GalTest     base;
@@ -126,43 +143,31 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
             || d.test2D.srcWidth != d.w_in || d.test2D.srcHeight != d.h_in
             || d.test2D.srcFormat != srcFmt) {
         if (d.test2D.srcSurf != gcvNULL) {
-            if (d.test2D.srcLgcAddr)
-                GC_WARN(gcoSURF_Unlock(d.test2D.srcSurf, d.test2D.srcLgcAddr));
             GC_WARN(gcoSURF_Destroy(d.test2D.srcSurf));
-            d.test2D.srcLgcAddr = 0;
             d.test2D.srcSurf = gcvNULL;
         }
         if (!d.createSourceSurface(d.w_in, d.h_in, srcFmt)) {
             return false;
         }
     }
-    gctUINT32 address[3];  //解码后的yuv文件的物理地址
-    gctPOINTER memory[3]; 	//解码后的yuv文件的逻辑地址
-    GC_WARN(gcoSURF_Lock(d.test2D.srcSurf, address, memory));
-
+    AutoLock lock(d.test2D.srcSurf);
     const VideoFormat fmt(d.fmt_in);
     // d.w_in*d.h_in, 1/4, 1/4
+    // TODO: use gcoSURF api to get stride, height etc
     for (int i = 0; i < fmt.planeCount(); ++i) {
         // src[2] is 0x0!
-        //qDebug("dma_copy_in_vmem %d: %p=>%p len:%d", i, src[i], address[i], srcStride[i]*fmt.height(d.h_in, i));
-        dma_copy_in_vmem(address[i], (gctUINT32)(quintptr)src[i], srcStride[i]*fmt.height(d.h_in, i));
+        //qDebug("dma_copy_in_vmem %d: %p=>%p len:%d", i, src[i], lock.phy[i], srcStride[i]*fmt.height(d.h_in, i));
+        dma_copy_in_vmem(lock.phy[i], (gctUINT32)(quintptr)src[i], srcStride[i]*fmt.height(d.h_in, i));
     }
-//    GC_WARN(gcoSURF_Unlock(d.test2D.srcSurf, memory)); // crash if unlock. so strange usage
     // TODO: setup gco2D only if parameters changed
     gco2D egn2D = d.test2D.runtime.engine2d;
-    // set clippint rect
     gcsRECT dstRect = {0, 0, d.test2D.dstWidth, d.test2D.dstHeight};
     GC_ENSURE(gco2D_SetClipping(egn2D, &dstRect), false);
     GC_ENSURE(gcoSURF_SetDither(d.test2D.dstSurf, gcvTRUE), false);
-    // set kernel size
     gctUINT8 horKernel = 1, verKernel = 1;
     GC_ENSURE(gco2D_SetKernelSize(egn2D, horKernel, verKernel), false); //TODO: check ok not < 0?
     GC_ENSURE(gco2D_EnableDither(egn2D, gcvTRUE), false);
-    gcsRECT srcRect;
-    srcRect.left = 0;
-    srcRect.top = 0;
-    srcRect.right = d.w_in;
-    srcRect.bottom = d.h_in;
+    gcsRECT srcRect = { 0, 0, d.w_in, d.h_in};
     GC_ENSURE(gcoSURF_FilterBlit(d.test2D.srcSurf, d.test2D.dstSurf, &srcRect, &dstRect, &dstRect), false)
     GC_ENSURE(gco2D_EnableDither(egn2D, gcvFALSE), false)
     GC_ENSURE(gco2D_Flush(egn2D), false);
@@ -170,9 +175,12 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
     return true;
 }
 
-bool GALScaler::convert(const quint8 *const src[], const int srcStride[],     quint8 *const dst[], const int dstStride[])
+bool GALScaler::convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[])
 {
-    return false;
+    if (!convert(src, srcStride))
+        return false;
+    // lock dstSurf, copy from dstSurf, unlock dstSurf
+    return true;
 }
 
 bool GALScaler::prepareData()
@@ -188,6 +196,7 @@ bool GALScaler::prepareData()
     d.close();
     if (!d.open(d.w_out, d.h_out, pixelFormatToGC(VideoFormat::pixelFormatFromFFmpeg(d.fmt_out))))
         return false;
+    // TODO: more planes
     d.bits[0] = (quint8*)d.test2D.dstPhyAddr;
     d.pitchs[0] = d.test2D.dstStride;
     qDebug() << "bits/pitch:" << d.bits << d.pitchs;
