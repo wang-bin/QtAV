@@ -102,8 +102,6 @@ public:
     }
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
-    bool flush();
-    bool flushBuffer(); // do decode
     bool initSeq();
     bool processHeaders(int* seqHeaderSize, int* picHeaderSize, const Packet& pkt, int fps_num, int fps_den, int nb_index_entries);
     // user config
@@ -427,12 +425,6 @@ qDebug("RETCODE_FRAME_NOT_COMPLETE");
 #endif
 }
 
-bool VideoDecoderVPUPrivate::flush()
-{
-    VPU_DecUpdateBitstreamBuffer(handle, STREAM_END_SIZE);	//tell VPU to reach the end of stream. starting flush decoded output in VPU
-    return true;
-}
-
 bool VideoDecoderVPUPrivate::initSeq()
 {
 qDebug("initSeq: %d", seqInited);
@@ -611,10 +603,7 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     int seqHeaderSize = 0; //also used in FLUSH_BUFFER
     int picHeaderSize = 0;
     if (packet.isEOF()) {
-        if (!d.flush()) {
-            qDebug("Error decode EOS"); // when?
-            return false;
-        }
+        VPU_ENSURE(VPU_DecUpdateBitstreamBuffer(d.handle, STREAM_END_SIZE), false);	//tell VPU to reach the end of stream. starting flush decoded output in VPU
         chunkData = QByteArray(); //decode the trailing frames
 qDebug("eof packet");
     } else {
@@ -764,7 +753,7 @@ qDebug("VPU_ClearInterrupt");
         d.decodefinish = true;
     }
     if (d.decodefinish) { //ppu here
-        return false;
+        return !packet.isEOF();
     }
     if (d.outputInfo.indexFrameDisplay == -3 ||
         d.outputInfo.indexFrameDisplay == -2 ) // BIT doesn't have picture to be displayed, or frame drop
@@ -803,7 +792,7 @@ void VideoDecoderVPU::flush()
 {
     DPTR_D(VideoDecoderVPU);
     VPU_DecFrameBufferFlush(d.handle);
-    d.display_queue = ring<FBSurfacePtr>(0);
+    //d.display_queue = ring<FBSurfacePtr>(0); //FIXME: why decode error and block (framebuffer space not enough)?
 }
 
 VideoFrame VideoDecoderVPU::frame()
