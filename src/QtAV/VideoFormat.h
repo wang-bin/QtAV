@@ -220,7 +220,7 @@ public:
      * \return lumaWidth if plane <= 0. otherwise chromaWidth
      */
     int width(int lumaWidth, int plane) const;
-    int height(int lumaWidth, int plane) const;
+    int height(int lumaHeight, int plane) const;
     /*!
      * \brief normalizedWidth
      * \return 1.0 for plane <= 0. otherwise chroma width
