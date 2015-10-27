@@ -427,7 +427,6 @@ qDebug("RETCODE_FRAME_NOT_COMPLETE");
 
 bool VideoDecoderVPUPrivate::initSeq()
 {
-qDebug("initSeq: %d", seqInited);
     if (seqInited)
         return true;
 #ifdef HAVE_REPORT
