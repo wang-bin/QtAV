@@ -7,7 +7,6 @@ config_gl {
   avwidgets.depends += opengl
 }
 #load(qt_module)
-
 PROJECTROOT = $$PWD/../..
 include($$PROJECTROOT/common.pri)
 preparePaths($$OUT_PWD/../../out)
@@ -54,19 +53,20 @@ win32 {
 DEBUG_SUF=
 mac: DEBUG_SUF=_debug
 win32: DEBUG_SUF=d
+NAME_SUF=
+iphonesimulator: NAME_SUF=_iphonesimulator
 defineTest(createForModule) {
   MODULE_NAME = $$1
   MODULE_FULL_NAME = Qt$$MODULE_NAME
   MODULE = $$lower($$MODULE_NAME)
   MODULE_DEPENDS = $$eval($${MODULE}.depends)
   MODULE_DEFINES = QT_$$upper($${MODULE})_LIB
-
 ORIG_LIB = $${LIBPREFIX}$$qtLibName($$MODULE_FULL_NAME, $$QTAV_MAJOR_VERSION).$${LIBSUFFIX}
 ORIG_LIB_D = $${LIBPREFIX}$$qtLibName($$MODULE_FULL_NAME$${DEBUG_SUF}, $$QTAV_MAJOR_VERSION).$${LIBSUFFIX}
 greaterThan(QT_MAJOR_VERSION, 4) {
   MODULE_PRF_FILE = $$OUT_PWD/mkspecs/features/$${MODULE}.prf
-  NEW_LIB = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}$${MODULE_NAME}.$${LIBSUFFIX}
-  NEW_LIB_D = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}$${MODULE_NAME}$${DEBUG_SUF}.$${LIBSUFFIX}
+  NEW_LIB = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}$${MODULE_NAME}$${NAME_SUF}.$${LIBSUFFIX}
+  NEW_LIB_D = $${LIBPREFIX}Qt$${QT_MAJOR_VERSION}$${MODULE_NAME}$${NAME_SUF}$${DEBUG_SUF}.$${LIBSUFFIX}
   MKSPECS_DIR = $$[QT_INSTALL_BINS]/../mkspecs
 } else {
   MODULE_PRF_FILE = $$PWD/qt4/$${MODULE}.prf
@@ -78,13 +78,14 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 # copy files to a dir need '/' at the end
 mac_framework {
   sdk_install.commands = $$quote($$COPY_DIR $$system_path($$PROJECT_LIBDIR/$${MODULE_FULL_NAME}.framework) $$system_path($$[QT_INSTALL_LIBS]))
-  sdk_install.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/$${MODULE_FULL_NAME}.framework/*.prl))
 } else {
   sdk_install.commands = $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/$${MODULE_FULL_NAME}/))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*Qt*AV*) $$system_path($$[QT_INSTALL_LIBS]/))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB_D) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB_D))
-  sdk_install.commands += $$quote($$QMAKE_DEL_FILE $$system_path($$[QT_INSTALL_LIBS]/*Qt*AV*.prl))
+  static {
+    sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$replace(ORIG_LIB, .$$LIBSUFFIX$, .prl)) $$system_path($$[QT_INSTALL_LIBS]/$$replace(NEW_LIB, .$$LIBSUFFIX$, .prl)))
+  }
 }
 sdk_install.commands += $$quote($$COPY $$system_path($$MODULE_PRF_FILE) $$system_path($$MKSPECS_DIR/features/$${MODULE}.prf))
 greaterThan(QT_MAJOR_VERSION, 4) {
