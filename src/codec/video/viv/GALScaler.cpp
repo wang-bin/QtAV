@@ -82,7 +82,7 @@ public:
       , gc_2d(gcvNULL)
       , contiguous_size(0)
       , contiguous(gcvNULL)
-      , contiguous_physical(gcvNULL)
+      , contiguous_phys(gcvNULL)
     {}
     ~GALScalerPrivate() {
         close();
@@ -95,7 +95,7 @@ public:
     gco2D gc_2d;
     gctSIZE_T contiguous_size;
     gctPOINTER contiguous;
-    gctPHYS_ADDR contiguous_physical;
+    gctPHYS_ADDR contiguous_phys;
 
     GALSurface surf_in;
     GALSurface surf_out;
@@ -210,59 +210,48 @@ bool GALScalerPrivate::open(int w, int h, gceSURF_FORMAT fmt)
     qDebug("gcoOS_Construct, gc_os:%p", gc_os);
     /* Construct the gcoHAL object. */
     GC_ENSURE(gcoHAL_Construct(gcvNULL, gc_os, &gc_hal), false);
-    GC_ENSURE(gcoHAL_QueryVideoMemory(gc_hal,
-                                      NULL, NULL, NULL, NULL,
-                                      &contiguous_physical, &contiguous_size)
-              , false);
-    /* Map the contiguous memory. */
-    if (contiguous_size > 0) {
-        qDebug("gcoHAL_MapMemory");
-        GC_ENSURE(gcoHAL_MapMemory(gc_hal, contiguous_physical, contiguous_size, &contiguous), false);
+    // gcvFEATURE_YUV420_TILER for tiled map?
+    if (!gcoHAL_IsFeatureAvailable(gc_hal, gcvFEATURE_YUV420_SCALER)) {
+        qWarning("VIV: I420 scaler is not supported.");
+        return false;
     }
+    GC_ENSURE(gcoHAL_QueryVideoMemory(gc_hal, NULL, NULL, NULL, NULL, &contiguous_phys, &contiguous_size), false);
+    if (contiguous_size <= 0) {
+        qWarning("invalid contiguous_size: %lu", contiguous_size);
+        return false;
+    }
+    /* Map the contiguous memory. */
+    GC_ENSURE(gcoHAL_MapMemory(gc_hal, contiguous_phys, contiguous_size, &contiguous), false);
     GC_ENSURE(gcoHAL_Get2DEngine(gc_hal, &gc_2d), false);
     GC_ENSURE(gcoSURF_Construct(gc_hal, w, h,
                     1, //TODO: depth. why 1?
-                    gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &surf_out.surf)
-              , false);
+                    gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &surf_out.surf), false);
     GC_ENSURE(gcoSURF_GetAlignedSize(surf_out.surf, &surf_out.width, &surf_out.height, &surf_out.stride), false);
     qDebug("aligned surf_out: %dx%d, stride:%d", surf_out.width, surf_out.height, surf_out.stride);
-    // TODO: when to unlock? is it safe to lock twice?
     GC_ENSURE(gcoSURF_Lock(surf_out.surf, surf_out.phyAddr, surf_out.lgcAddr), false);
     qDebug("lock surf_out.surf: %p, phy:%p, lgc:%p", surf_out.surf, surf_out.phyAddr[0], surf_out.lgcAddr[0]);
-    // TODO: gcvFEATURE_YUV420_TILER for tiled map?
-    if (!gcoHAL_IsFeatureAvailable(gc_hal, gcvFEATURE_YUV420_SCALER)) {
-        qWarning("VIV: YUV420 scaler is not supported.");
-        // TODO: unlock?
-        return false;
-    }
-    // TODO: unlock?
     // if unlock here, we must lock again to copy from gal
     return true;
 }
 
 bool GALScalerPrivate::close()
 {
-    // destroy source surface and hal/os/contiguous requred?
+    // destroy source surface and hal/os/contiguous?
     surf_in.destroy();
-    // destroy after gcoHAL_Commit?
     surf_out.destroy();
-    ///if (gc_hal != gcvNULL) // TODO: twice?
-      ///  GC_WARN(gcoHAL_Commit(gc_hal, gcvTRUE));
     if (contiguous != gcvNULL) {
-        qDebug("unmap contiguous:%p", contiguous);
+        qDebug("unmap contiguous:%p, phy: %p, size: %lu", contiguous, contiguous_phys, contiguous_size);
         /* Unmap the contiguous memory. */
-        GC_WARN(gcoHAL_UnmapMemory(gc_hal, contiguous_physical, contiguous_size, contiguous));
+        GC_WARN(gcoHAL_UnmapMemory(gc_hal, contiguous_phys, contiguous_size, contiguous));
     }
     if (gc_hal != gcvNULL) {
-        qDebug("gc_hal: %p", gc_hal);
         GC_WARN(gcoHAL_Commit(gc_hal, gcvTRUE));
         GC_WARN(gcoHAL_Destroy(gc_hal));
-        gc_hal = NULL;
+        gc_hal = gcvNULL;
     }
     if (gc_os != gcvNULL) {
-        qDebug("gc_os: %p", gc_os);
         GC_WARN(gcoOS_Destroy(gc_os));
-        gc_os = NULL;
+        gc_os = gcvNULL;
     }
     return true;
 }
@@ -273,22 +262,19 @@ bool GALScalerPrivate::createSourceSurface(int w, int h, gceSURF_FORMAT fmt)
     GC_ENSURE(gcoSURF_Construct(gc_hal, w, h, 1, gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &srcsurf), false);
     gctUINT aw, ah;
     gctINT astride;
-    // alignment is 16
+    // alignment is 16. already aligned because the source if from frame buffer
     gcmVERIFY_OK(gcoSURF_GetAlignedSize(srcsurf, &aw, &ah, &astride));
     qDebug("srcsurf:%p, %dx%d=>%dx%d, alignedStride:%d", srcsurf, w, h, aw, ah, astride);
-    // already aligned because the source if from frame buffer
-    if ((gctUINT)w != aw || (gctUINT)h != ah) { // TODO: what if ignore?
+    if ((gctUINT)w != aw || (gctUINT)h != ah) { // We can ignore it!
         qWarning("gcoSURF width and height is not aligned!");
         GC_ENSURE(gcoSURF_Destroy(srcsurf), false);
         return false;
     }
     surf_in.surf = srcsurf;
     GC_ENSURE(gcoSURF_GetAlignedSize(surf_in.surf, gcvNULL, gcvNULL, &surf_in.stride), false);
-    qDebug("gcoSURF_GetAlignedSize src(stride): %d", surf_in.stride);
     GC_ENSURE(gcoSURF_GetSize(surf_in.surf, &surf_in.width, &surf_in.height, gcvNULL), false);
     GC_ENSURE(gcoSURF_GetFormat(surf_in.surf, gcvNULL, &surf_in.format), false);
-    qDebug("surf_in: %dx%d, fomrat:%d", surf_in.width, surf_in.height, surf_in.format);
+    qDebug("surf_in: %dx%d, stride: %d, fomrat:%d", surf_in.width, surf_in.height, surf_in.stride, surf_in.format);
     return true;
 }
-
 } //namespace QtAV
