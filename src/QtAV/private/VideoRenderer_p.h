@@ -26,6 +26,7 @@
 #include <QtAV/VideoRenderer.h>
 #include <QtCore/QMutex>
 #include <QtCore/QRect>
+#include <QtGui/QColor>
 #include <QtAV/VideoFrame.h>
 
 /*TODO:
@@ -58,6 +59,7 @@ public:
       , contrast(0)
       , hue(0)
       , saturation(0)
+      , background_color(QColor(0,0,0))
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -113,6 +115,8 @@ public:
     bool force_preferred;
 
     qreal brightness, contrast, hue, saturation;
+    // background color
+    QColor background_color;
 };
 
 } //namespace QtAV

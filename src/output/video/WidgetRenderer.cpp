@@ -64,7 +64,6 @@ WidgetRenderer::WidgetRenderer(QWidget *parent, Qt::WindowFlags f) :
 
 WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::WindowFlags f)
     :QWidget(parent, f),QPainterRenderer(d)
-,   m_bgColor(QColor(0, 0, 0))
 {
     d.painter = new QPainter();
     setAcceptDrops(true);
@@ -100,7 +99,7 @@ bool WidgetRenderer::needUpdateBackground() const
 void WidgetRenderer::drawBackground()
 {
     DPTR_D(WidgetRenderer);
-    d.painter->fillRect(rect(), m_bgColor);
+    d.painter->fillRect(rect(), backgroundColor());
 }
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
@@ -123,6 +122,13 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
 bool WidgetRenderer::onSetOrientation(int value)
 {
     Q_UNUSED(value);
+    update();
+    return true;
+}
+
+bool WidgetRenderer::onSetBackgroundColor(const QColor& color)
+{
+    Q_UNUSED(color);
     update();
     return true;
 }

@@ -345,6 +345,22 @@ void VideoOutput::onFrameSizeChanged(const QSize &size)
     Q_EMIT frameSizeChanged(size);
 }
 
+
+bool VideoOutput::onSetBackgroundColor(const QColor& color)
+{
+    if (!isAvailable())
+        return false;
+    DPTR_D(VideoOutput);
+    // not call onSetXXX here, otherwise states in impl will not change
+    d.impl->setBackgroundColor(color);
+    if (color != d.impl->backgroundColor()) {
+        return false;
+    }
+    emit backgroundColorChanged(color);
+    return true;
+}
+
+
 void VideoOutput::setStatistics(Statistics* statistics)
 {
     if (!isAvailable())

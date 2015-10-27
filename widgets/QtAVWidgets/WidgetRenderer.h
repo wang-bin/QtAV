@@ -54,6 +54,7 @@ protected:
     virtual void paintEvent(QPaintEvent *);
 
     virtual bool onSetOrientation(int value);
+    virtual bool onSetBackgroundColor(const QColor& color);
 protected:
     WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent, Qt::WindowFlags f);
 };
