@@ -337,10 +337,6 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
         update();
         return true;
     }
-    if (preferredPixelFormat() != d.pixfmt) {
-        qDebug() << "x11 preferred pixel format: " << d.pixfmt;
-        setPreferredPixelFormat(d.pixfmt);
-    }
     d.frame_orig = frame;
     d.video_frame = frame; // must be set because it will be check isValid() somewhere else
     updateUi();
@@ -439,6 +435,10 @@ void X11Renderer::drawFrame()
     DPTR_D(X11Renderer);
     if (!d.resizeXImage())
         return;
+    if (preferredPixelFormat() != d.pixfmt) {
+        qDebug() << "x11 preferred pixel format: " << d.pixfmt;
+        setPreferredPixelFormat(d.pixfmt);
+    }
     QRect roi = realROI();
     if (d.use_shm) {
         XShmPutImage(d.display, winId(), d.gc, d.ximage
