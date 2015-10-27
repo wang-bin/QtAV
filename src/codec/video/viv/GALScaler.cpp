@@ -173,9 +173,24 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
 
 bool GALScaler::convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[])
 {
+    DPTR_D(GALScaler);
+    AutoLock lock(&d.surf_out);
+    Q_UNUSED(lock);
     // lock dstSurf, copy from dstSurf, unlock dstSurf
     if (!convert(src, srcStride))
         return false;
+    const VideoFormat fmt(d.fmt_out);
+    for (int p = 0; p < fmt.planeCount(); ++p) {
+        // dma copy. check img->stride
+        if (d.pitchs.at(p) == dstStride[p]) {
+            // qMin(scaler->outHeight(), img->height)
+            dma_copy_from_vmem(dst[p], (unsigned int)(quintptr)d.bits.at(p), dstStride[p]*fmt.height(d.h_out, p));
+        } else {
+            qWarning("different stride @plane%d. vmem: %d, host: %d", p, d.pitchs.at(p), dstStride[p]);
+            for (int i = fmt.height(d.h_out, p) - 1; i >= 0; --i)
+                dma_copy_from_vmem(dst[p] + i*dstStride[p], (unsigned int)(quintptr)d.bits.at(p) + i*d.pitchs.at(p), dstStride[p]);
+        }
+    }
     return true;
 }
 
@@ -185,7 +200,6 @@ bool GALScaler::prepareData() // only for output
     if (!check())
         return false;
     const int nb_planes = qMax(av_pix_fmt_count_planes(d.fmt_out), 0);
-    qDebug() << VideoFormat::pixelFormatFromFFmpeg(d.fmt_out);
     qDebug("prepare GAL resource.%dx%d=>%dx%d nb_planes: %d. gcfmt: %d", d.w_in, d.h_in, d.w_out, d.h_out, nb_planes, pixelFormatToGAL(VideoFormat::pixelFormatFromFFmpeg(d.fmt_out)));
     d.bits.resize(nb_planes);
     d.pitchs.resize(nb_planes);
@@ -194,12 +208,15 @@ bool GALScaler::prepareData() // only for output
     const VideoFormat fmt(d.fmt_out);
     if (!d.open(d.w_out, d.h_out, pixelFormatToGAL(fmt.pixelFormat())))
         return false;
-    // TODO: more planes
+    if (d.surf_out.lock())
+        d.surf_out.unlock();
+    // if unlock here, we must lock again to when copying from gal
+    qDebug("lock surf_out.surf: %p, phy:%p, lgc:%p", d.surf_out.surf, (quintptr)d.surf_out.phyAddr[0], d.surf_out.lgcAddr[0]);
     for (int i = 0; i < nb_planes; ++i) {
-        d.bits[i] = (quint8*)d.surf_out.phyAddr[i];
+        d.bits[i] = (quint8*)(quintptr)d.surf_out.phyAddr[i];
         d.pitchs[i] = fmt.width(d.surf_out.stride, i);
     }
-    qDebug() << "prepareData out bits/pitch:" << d.bits << d.pitchs;
+    qDebug() << "surf_out bits/pitch:" << d.bits << d.pitchs;
     return true;
 }
 
@@ -228,9 +245,6 @@ bool GALScalerPrivate::open(int w, int h, gceSURF_FORMAT fmt)
                     gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &surf_out.surf), false);
     GC_ENSURE(gcoSURF_GetAlignedSize(surf_out.surf, &surf_out.width, &surf_out.height, &surf_out.stride), false);
     qDebug("aligned surf_out: %dx%d, stride:%d", surf_out.width, surf_out.height, surf_out.stride);
-    GC_ENSURE(gcoSURF_Lock(surf_out.surf, surf_out.phyAddr, surf_out.lgcAddr), false);
-    qDebug("lock surf_out.surf: %p, phy:%p, lgc:%p", surf_out.surf, surf_out.phyAddr[0], surf_out.lgcAddr[0]);
-    // if unlock here, we must lock again to copy from gal
     return true;
 }
 

@@ -47,29 +47,12 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
         surface->fb.stride/2,
         surface->fb.stride/2,
     };
-    QVector<quint8*> dma_bits(fmt.planeCount());
-    QVector<int> dma_pitch(fmt.planeCount());
-    // if in/out parameters are the same, no scale is required
-    if (w == surface->fb.stride && h == surface->fb.height && fmt.pixelFormat() == VideoFormat::Format_YUV420P) {
-        for (int i = 0; i < fmt.planeCount(); ++i) {
-            dma_bits[i] = (quint8*)src[i];
-            dma_pitch[i] = srcStride[i];
-        }
-    } else {
-        scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
-        scaler->setInSize(surface->fb.stride, surface->fb.height);
-        scaler->setOutFormat(fmt.pixelFormatFFmpeg());
-        scaler->setOutSize(w, h);
-        if (!scaler->convert(src, srcStride))
-            return false;
-        dma_bits = scaler->outPlanes();
-        dma_pitch = scaler->outLineSizes();
-    }
-    QVector<int> out_pitch(fmt.planeCount());
+    const int planes_out = fmt.planeCount();
     if (!img->constBits(0)) { //interop in VideoFrame.to() and format is set
         int out_size = 0;
-        QVector<int> offset(fmt.planeCount());
-        for (int i = 0; i < fmt.planeCount(); ++i) {
+        QVector<int> offset(planes_out);
+        QVector<int> out_pitch(planes_out);
+        for (int i = 0; i < planes_out; ++i) {
             offset[i] = out_size;
             out_pitch[i] = fmt.width(w*fmt.bytesPerPixel(i), i);
             out_size += out_pitch.at(i) * fmt.height(h, i);
@@ -77,22 +60,37 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
         QByteArray host_buf(out_size, 0);
         *img = VideoFrame(w, h, fmt, host_buf);
         img->setBytesPerLine(out_pitch);
-        for (int i = 0; i < fmt.planeCount(); ++i) {
+        for (int i = 0; i < planes_out; ++i) {
             img->setBits((quint8*)host_buf.constData() + offset[i], i);
         }
-        qDebug() << fmt;
-        qDebug() << "pitch host: " << out_pitch << " vmem: " << dma_pitch;
+        qDebug() << fmt << " pitch host: " << out_pitch;
     }
-    for (int p = 0; p < fmt.planeCount(); ++p) {
-        // dma copy. check img->stride
-        if (img->bytesPerLine(p) == dma_pitch.at(p)) {
-            // qMin(scaler->outHeight(), img->height)
-            dma_copy_from_vmem(img->bits(p), (unsigned int)(quintptr)dma_bits.at(p), img->bytesPerLine(p)*img->planeHeight(p));
-        } else {
-            qWarning("different stride @plane%d. vmem: %d, host: %d", p, dma_pitch.at(p), img->bytesPerLine(p));
-            for (int i = img->planeHeight(p) - 1; i >= 0; --i)
-                dma_copy_from_vmem(img->bits(p) + i*img->bytesPerLine(p), (unsigned int)(quintptr)dma_bits.at(p) + i*dma_pitch.at(p), img->bytesPerLine(p));
+    if (w == surface->fb.stride && h == surface->fb.height && fmt.pixelFormat() == VideoFormat::Format_YUV420P) {
+        // if in/out parameters are the same, no scale is required
+        for (int p = 0; p < planes_out; ++p) {
+            // dma copy. check img->stride
+            if (img->bytesPerLine(p) == srcStride[p]) {
+                // qMin(scaler->outHeight(), img->height)
+                dma_copy_from_vmem(img->bits(p), (unsigned int)(quintptr)src[p], img->bytesPerLine(p)*img->planeHeight(p));
+            } else {
+                qWarning("different stride @plane%d. vmem: %d, host: %d", p, srcStride[p], img->bytesPerLine(p));
+                for (int i = img->planeHeight(p) - 1; i >= 0; --i)
+                    dma_copy_from_vmem(img->bits(p) + i*img->bytesPerLine(p), (unsigned int)(quintptr)src[p] + i*srcStride[p], img->bytesPerLine(p));
+            }
         }
+    } else {
+        scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
+        scaler->setInSize(surface->fb.stride, surface->fb.height);
+        scaler->setOutFormat(fmt.pixelFormatFFmpeg());
+        scaler->setOutSize(w, h);
+        QVector<quint8*> dst(planes_out);
+        QVector<int> dstStride(planes_out);
+        for (int i = 0; i < planes_out; ++i) {
+            dst[i] = img->bits(i);
+            dstStride[i] = img->bytesPerLine(i);
+        }
+        if (!scaler->convert(src, srcStride, dst.data(), dstStride.data()))
+            return false;
     }
     return true;
 }
