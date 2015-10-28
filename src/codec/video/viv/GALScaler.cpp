@@ -26,6 +26,7 @@ void dma_copy_from_vmem(unsigned char* dst, unsigned int src, int len);
 }
 namespace QtAV {
 struct GALSurface {
+    // read only properties
     gcoSURF surf;
     gceSURF_FORMAT format;
     gctUINT width, height;
@@ -39,13 +40,26 @@ struct GALSurface {
         memset(lgcAddr, 0, sizeof(lgcAddr));
     }
     ~GALSurface() { destroy();}
-    void destroy() {
-        unlock();
-        if (surf != gcvNULL) {
-            GC_ENSURE(gcoSURF_Destroy(surf));
-            surf = gcvNULL;
+    bool reset(gcoSURF s) {
+        if (surf == s)
+            return true;
+        if (surf) {
+            destroy();
         }
+        surf = s;
+        if (surf) {
+            GC_ENSURE(gcoSURF_GetAlignedSize(surf, gcvNULL, gcvNULL, &stride), false);
+            GC_ENSURE(gcoSURF_GetSize(surf, &width, &height, gcvNULL), false);
+            GC_ENSURE(gcoSURF_GetFormat(surf, gcvNULL, &format), false);
+            qDebug("gcoSURF: %dx%d, stride: %d, fomrat:%d", width, height, stride, format);
+        } else {
+            format = gcvSURF_UNKNOWN;
+            width = height = 0;
+            stride = 0;
+        }
+        return true;
     }
+    bool isNull() const {return surf == gcvNULL;}
     bool lock() {
         if (surf)
             GC_ENSURE(gcoSURF_Lock(surf, phyAddr, lgcAddr), false);
@@ -57,6 +71,14 @@ struct GALSurface {
             memset(lgcAddr, 0, sizeof(lgcAddr));
         }
         return true;
+    }
+private:
+    void destroy() {
+        unlock();
+        if (surf != gcvNULL) {
+            GC_ENSURE(gcoSURF_Destroy(surf));
+            surf = gcvNULL;
+        }
     }
 };
 class AutoLock {
@@ -85,11 +107,11 @@ public:
       , contiguous_phys(gcvNULL)
     {}
     ~GALScalerPrivate() {
-        close();
+        destroyGAL();
     }
-    bool open(int w, int h, gceSURF_FORMAT fmt); // must reset surfaces if false
-    bool close();
-    bool createSourceSurface(int w, int h, gceSURF_FORMAT fmt);
+    bool ensureGAL();
+    bool destroyGAL();
+    bool ensureSurface(GALSurface* surf, int w, int h, gceSURF_FORMAT fmt);
     gcoOS gc_os;
     gcoHAL gc_hal;
     gco2D gc_2d;
@@ -137,14 +159,8 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
 {
     DPTR_D(GALScaler);
     const gceSURF_FORMAT srcFmt = pixelFormatToGAL(VideoFormat::pixelFormatFromFFmpeg(d.fmt_in));
-    if (!d.surf_in.surf
-            || d.surf_in.width != (gctUINT)FFALIGN(d.w_in,16)
-            || d.surf_in.height != (gctUINT)FFALIGN(d.h_in,16)
-            || d.surf_in.format != srcFmt) {
-        d.surf_in.destroy();
-        if (!d.createSourceSurface(d.w_in, d.h_in, srcFmt)) {
-            return false;
-        }
+    if (!d.ensureSurface(&d.surf_in, d.w_in, d.h_in, srcFmt)) {
+        return false;
     }
     AutoLock lock(&d.surf_in);
     Q_UNUSED(lock);
@@ -203,15 +219,14 @@ bool GALScaler::prepareData() // only for output
     qDebug("prepare GAL resource.%dx%d=>%dx%d nb_planes: %d. gcfmt: %d", d.w_in, d.h_in, d.w_out, d.h_out, nb_planes, pixelFormatToGAL(VideoFormat::pixelFormatFromFFmpeg(d.fmt_out)));
     d.bits.resize(nb_planes);
     d.pitchs.resize(nb_planes);
-    d.close();
     //d.surf_out.destroy(); // destroy out surface is enough?
     const VideoFormat fmt(d.fmt_out);
-    if (!d.open(d.w_out, d.h_out, pixelFormatToGAL(fmt.pixelFormat())))
+    if (!d.ensureSurface(&d.surf_out, d.w_out, d.h_out, pixelFormatToGAL(fmt.pixelFormat())))
         return false;
     if (d.surf_out.lock())
         d.surf_out.unlock();
     // if unlock here, we must lock again to when copying from gal
-    qDebug("lock surf_out.surf: %p, phy:%p, lgc:%p", d.surf_out.surf, (quintptr)d.surf_out.phyAddr[0], d.surf_out.lgcAddr[0]);
+    qDebug("lock surf_out.surf: %p, phy:%p, lgc:%p", d.surf_out.surf, d.surf_out.phyAddr[0], d.surf_out.lgcAddr[0]);
     for (int i = 0; i < nb_planes; ++i) {
         d.bits[i] = (quint8*)(quintptr)d.surf_out.phyAddr[i];
         d.pitchs[i] = fmt.width(d.surf_out.stride, i);
@@ -220,16 +235,22 @@ bool GALScaler::prepareData() // only for output
     return true;
 }
 
-bool GALScalerPrivate::open(int w, int h, gceSURF_FORMAT fmt)
+bool GALScalerPrivate::ensureGAL()
 {
+    if (gc_hal && contiguous)
+        return true;
     /* Construct the gcoOS object. */
     GC_ENSURE(gcoOS_Construct(gcvNULL, &gc_os), false);
     qDebug("gcoOS_Construct, gc_os:%p", gc_os);
     /* Construct the gcoHAL object. */
     GC_ENSURE(gcoHAL_Construct(gcvNULL, gc_os, &gc_hal), false);
+    gceCHIPMODEL model;
+    gctUINT32 revision, features, minor_features;
+    GC_ENSURE(gcoHAL_QueryChipIdentity(gc_hal, &model, &revision, &features, &minor_features), false);
+    qDebug("GAL model: %#x, revision: %u, features: %u:%u", model, revision, features, minor_features);
     // gcvFEATURE_YUV420_TILER for tiled map?
     if (!gcoHAL_IsFeatureAvailable(gc_hal, gcvFEATURE_YUV420_SCALER)) {
-        qWarning("VIV: I420 scaler is not supported.");
+        qWarning("GAL: I420 scaler is not supported.");
         return false;
     }
     GC_ENSURE(gcoHAL_QueryVideoMemory(gc_hal, NULL, NULL, NULL, NULL, &contiguous_phys, &contiguous_size), false);
@@ -240,19 +261,14 @@ bool GALScalerPrivate::open(int w, int h, gceSURF_FORMAT fmt)
     /* Map the contiguous memory. */
     GC_ENSURE(gcoHAL_MapMemory(gc_hal, contiguous_phys, contiguous_size, &contiguous), false);
     GC_ENSURE(gcoHAL_Get2DEngine(gc_hal, &gc_2d), false);
-    GC_ENSURE(gcoSURF_Construct(gc_hal, w, h,
-                    1, //TODO: depth. why 1?
-                    gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &surf_out.surf), false);
-    GC_ENSURE(gcoSURF_GetAlignedSize(surf_out.surf, &surf_out.width, &surf_out.height, &surf_out.stride), false);
-    qDebug("aligned surf_out: %dx%d, stride:%d", surf_out.width, surf_out.height, surf_out.stride);
     return true;
 }
 
-bool GALScalerPrivate::close()
+bool GALScalerPrivate::destroyGAL()
 {
     // destroy source surface and hal/os/contiguous?
-    surf_in.destroy();
-    surf_out.destroy();
+    surf_in.reset(gcvNULL);
+    surf_out.reset(gcvNULL);
     if (contiguous != gcvNULL) {
         qDebug("unmap contiguous:%p, phy: %p, size: %lu", contiguous, contiguous_phys, contiguous_size);
         /* Unmap the contiguous memory. */
@@ -260,6 +276,8 @@ bool GALScalerPrivate::close()
     }
     if (gc_hal != gcvNULL) {
         GC_WARN(gcoHAL_Commit(gc_hal, gcvTRUE));
+    }
+    if (gc_hal != gcvNULL) {
         GC_WARN(gcoHAL_Destroy(gc_hal));
         gc_hal = gcvNULL;
     }
@@ -270,25 +288,16 @@ bool GALScalerPrivate::close()
     return true;
 }
 
-bool GALScalerPrivate::createSourceSurface(int w, int h, gceSURF_FORMAT fmt)
+bool GALScalerPrivate::ensureSurface(GALSurface *surf, int w, int h, gceSURF_FORMAT fmt)
 {
-    gcoSURF srcsurf = NULL;
-    GC_ENSURE(gcoSURF_Construct(gc_hal, w, h, 1, gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &srcsurf), false);
-    gctUINT aw, ah;
-    gctINT astride;
-    // alignment is 16. already aligned because the source if from frame buffer
-    gcmVERIFY_OK(gcoSURF_GetAlignedSize(srcsurf, &aw, &ah, &astride));
-    qDebug("srcsurf:%p, %dx%d=>%dx%d, alignedStride:%d", srcsurf, w, h, aw, ah, astride);
-    if ((gctUINT)w != aw || (gctUINT)h != ah) { // We can ignore it!
-        qWarning("gcoSURF width and height is not aligned!");
-        GC_ENSURE(gcoSURF_Destroy(srcsurf), false);
+    if (!ensureGAL())
         return false;
-    }
-    surf_in.surf = srcsurf;
-    GC_ENSURE(gcoSURF_GetAlignedSize(surf_in.surf, gcvNULL, gcvNULL, &surf_in.stride), false);
-    GC_ENSURE(gcoSURF_GetSize(surf_in.surf, &surf_in.width, &surf_in.height, gcvNULL), false);
-    GC_ENSURE(gcoSURF_GetFormat(surf_in.surf, gcvNULL, &surf_in.format), false);
-    qDebug("surf_in: %dx%d, stride: %d, fomrat:%d", surf_in.width, surf_in.height, surf_in.stride, surf_in.format);
-    return true;
+    if (!surf)
+        return false;
+    if (!surf->isNull() && surf->format == fmt && surf->width == (gctUINT)FFALIGN(w, 16) && surf->height == (gctUINT)FFALIGN(h, 16))
+        return true;
+    gcoSURF s = gcvNULL;
+    GC_ENSURE(gcoSURF_Construct(gc_hal, w, h, 1, gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &s), false);
+    return surf->reset(s);
 }
 } //namespace QtAV
