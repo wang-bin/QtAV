@@ -5,7 +5,6 @@
 #include "QtAV/private/AVCompat.h"
 #include <QtDebug>
 
-#define FFALIGN(x, a) (((x)+(a)-1)&~((a)-1))
 extern "C" {
 void dma_copy_in_vmem(unsigned int dst, unsigned int src, int len);
 void dma_copy_from_vmem(unsigned char* dst, unsigned int src, int len);
@@ -54,7 +53,7 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
         QVector<int> out_pitch(planes_out);
         for (int i = 0; i < planes_out; ++i) {
             offset[i] = out_size;
-            out_pitch[i] = fmt.width(w*fmt.bytesPerPixel(i), i);
+            out_pitch[i] = fmt.width(FFALIGN(w*fmt.bytesPerPixel(i), 16), i);
             out_size += out_pitch.at(i) * fmt.height(h, i);
         }
         QByteArray host_buf(out_size, 0);
@@ -65,12 +64,13 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
         }
         qDebug() << fmt << " pitch host: " << out_pitch;
     }
-    if (w == surface->fb.stride && h == surface->fb.height && fmt.pixelFormat() == VideoFormat::Format_YUV420P) {
+    // must be the same stride. height can be smaller than algined value and use the smaller one
+    if (img->bytesPerLine(0) == srcStride[0] && FFALIGN(h, 16) == surface->fb.height
+            && fmt.pixelFormat() == VideoFormat::Format_YUV420P) {
         // if in/out parameters are the same, no scale is required
         for (int p = 0; p < planes_out; ++p) {
             // dma copy. check img->stride
             if (img->bytesPerLine(p) == srcStride[p]) {
-                // qMin(scaler->outHeight(), img->height)
                 dma_copy_from_vmem(img->bits(p), (unsigned int)(quintptr)src[p], img->bytesPerLine(p)*img->planeHeight(p));
             } else {
                 qWarning("different stride @plane%d. vmem: %d, host: %d", p, srcStride[p], img->bytesPerLine(p));

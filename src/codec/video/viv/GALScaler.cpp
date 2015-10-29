@@ -166,7 +166,7 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
     Q_UNUSED(lock);
     const VideoFormat fmt(d.fmt_in);
     // d.w_in*d.h_in, 1/4, 1/4
-    // TODO: use gcoSURF api to get stride, height etc
+    // TODO: check stride
     for (int i = 0; i < fmt.planeCount(); ++i) {
         // src[2] is 0x0!
         //qDebug("dma_copy_in_vmem %d: %p=>%p len:%d", i, src[i], d.surf_in.phyAddr[i], srcStride[i]*fmt.height(d.h_in, i));
