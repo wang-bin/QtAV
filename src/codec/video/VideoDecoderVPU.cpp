@@ -412,8 +412,8 @@ void VideoDecoderVPUPrivate::close()
     RetCode ret = VPU_DecClose(handle);
     if (ret == RETCODE_FRAME_NOT_COMPLETE) {
 qDebug("RETCODE_FRAME_NOT_COMPLETE");
-        VPU_DecGetOutputInfo(handle, &outputInfo);
-        VPU_DecClose(handle);
+        VPU_WARN(VPU_DecGetOutputInfo(handle, &outputInfo));
+        VPU_WARN(VPU_DecClose(handle));
     }
     if (vbStream.size)
         vdi_free_dma_memory(coreIdx, &vbStream);
@@ -423,6 +423,7 @@ qDebug("RETCODE_FRAME_NOT_COMPLETE");
 #ifdef HAVE_REPORT
     CloseDecReport(coreIdx);
 #endif
+    VPU_DeInit(coreIdx);
 }
 
 bool VideoDecoderVPUPrivate::initSeq()
