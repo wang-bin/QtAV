@@ -11,7 +11,7 @@ qtav ($1) $2; urgency=low
 EOF
 }
 
-DISTRIBUTIONS=(trusty utopic vivid)
+DISTRIBUTIONS=(trusty utopic vivid wily)
 DATE=`date -d @$(git log -n1 --format="%at") +%Y%m%d`
 for D in ${DISTRIBUTIONS[@]}; do
   git checkout -- debian/changelog
