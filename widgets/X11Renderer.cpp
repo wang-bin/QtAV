@@ -34,10 +34,11 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
+#include <unistd.h> //usleep
 //#include "QtAV/private/factory.h"
 //scale: http://www.opensource.apple.com/source/X11apps/X11apps-14/xmag/xmag-X11R7.0-1.0.1/Scale.c
 #define FFALIGN(x, a) (((x)+(a)-1)&~((a)-1))
-
+static const int kPoolSize = 2;
 namespace QtAV {
 class X11RendererPrivate;
 class X11Renderer: public QWidget, public VideoRenderer
@@ -151,11 +152,14 @@ public:
         use_shm(true)
       , warn_bad_pitch(true)
       , num_adaptors(0)
-      , ximage(NULL)
+      , ShmCompletionEvent(0)
+      , ShmCompletionWaitCount(0)
+      , current_index(0)
       , gc(NULL)
       , pixfmt(VideoFormat::Format_Invalid)
     {
         XInitThreads();
+        memset(ximage_pool, 0, sizeof(ximage_pool));
 #ifndef _XSHM_H_
         use_shm = false;
 #endif //_XSHM_H_
@@ -201,24 +205,27 @@ public:
         }
     }
     ~X11RendererPrivate() {
-        destroyX11Image();
+        for (int i = 0; i < kPoolSize; ++i)
+            destroyX11Image(i);
         XCloseDisplay(display);
     }
-    void destroyX11Image() {
+    void destroyX11Image(int index) {
         if (use_shm) {
+            XShmSegmentInfo &shm = shm_pool[index];
             if (shm.shmaddr) {
                 XShmDetach(display, &shm);
                 shmctl(shm.shmid, IPC_RMID, 0);
                 shmdt(shm.shmaddr);
             }
         }
+        XImage* ximage = ximage_pool[index];
         if (ximage) {
-            if (!ximage_data.isEmpty())
+            if (!ximage_data[index].isEmpty())
                 ximage->data = NULL; // we point it to our own data if shm is not used
             XDestroyImage(ximage);
         }
-        ximage = NULL;
-        ximage_data.clear();
+        ximage_pool[index] = NULL;
+        ximage_data[index].clear();
     }
     bool prepareDeviceResource() {
         if (gc) {
@@ -235,14 +242,24 @@ public:
         return true;
     }
     bool ensureImage(int w, int h) {
+        for (int i = 0; i < kPoolSize; ++i) {
+            if (!ensureImage(i, w, h))
+                return false;
+        }
+        return true;
+    }
+    bool ensureImage(int index, int w, int h) {
+        XImage* &ximage = ximage_pool[index];
         if (ximage && ximage->width == w && ximage->height == h)
             return true;
         warn_bad_pitch = true;
-        destroyX11Image();
+        destroyX11Image(index);
         use_shm = XShmQueryExtension(display);
+        XShmSegmentInfo &shm = shm_pool[index];
         qDebug("use x11 shm: %d", use_shm);
         if (!use_shm)
             goto no_shm;
+        ShmCompletionEvent = XShmGetEventBase(display) + ShmCompletion;
         // data seems not aligned
         ximage = XShmCreateImage(display, vinfo.visual, depth, ZPixmap, NULL, &shm, w, h);
         if (!ximage) {
@@ -256,11 +273,11 @@ public:
         }
         shm.shmaddr = (char *)shmat(shm.shmid, 0, 0);
         if (shm.shmaddr == (char*)-1) {
-            if (!ximage_data.isEmpty())
+            if (!ximage_data[index].isEmpty())
                    ximage->data = NULL;
             XDestroyImage(ximage);
             ximage = NULL;
-            ximage_data.clear();
+            ximage_data[index].clear();
             qWarning("Shared memory error,disabling ( seg id error )");
             goto no_shm;
         }
@@ -275,6 +292,7 @@ public:
         pixfmt = pixelFormat(ximage);
         return true;
 no_shm:
+        ShmCompletionEvent = 0;
         ximage = XCreateImage(display, vinfo.visual, depth, ZPixmap, 0, NULL, w, h, 8, 0);
         if (!ximage)
             return false;
@@ -282,24 +300,27 @@ no_shm:
         ximage->data = NULL;
         XSync(display, False);
         // TODO: align 16 or?
-        ximage_data.resize(ximage->bytes_per_line*ximage->height + 32);
+        ximage_data[index].resize(ximage->bytes_per_line*ximage->height + 32);
         return true;
     }
-    bool resizeXImage();
+    bool resizeXImage(int index);
 
     bool use_shm; //TODO: set by user
     bool warn_bad_pitch;
     unsigned int num_adaptors;
     int bpp;
     int depth;
+    int ShmCompletionEvent;
+    int ShmCompletionWaitCount;
     XVisualInfo vinfo;
     Display *display;
-    XImage *ximage;
+    int current_index;
+    XImage *ximage_pool[kPoolSize];
     GC gc;
-    XShmSegmentInfo shm;
+    XShmSegmentInfo shm_pool[kPoolSize];
     VideoFormat::PixelFormat pixfmt;
     // if the incoming image pitchs are different from ximage ones, use ximage pitchs and copy data in ximage_data
-    QByteArray ximage_data;
+    QByteArray ximage_data[kPoolSize];
     VideoFrame frame_orig; // if renderer is resized, scale the original frame
 };
 
@@ -339,23 +360,25 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
     }
     d.frame_orig = frame;
     d.video_frame = frame; // must be set because it will be check isValid() somewhere else
+    d.current_index = (d.current_index+1)%kPoolSize;
     updateUi();
     return true;
 }
 
-bool X11RendererPrivate::resizeXImage()
+bool X11RendererPrivate::resizeXImage(int index)
 {
     if (!frame_orig.isValid())
         return false;
     // force align to 8(16?) because xcreateimage will not do alignment
     // GAL vmem is 16 aligned
-    if (!ensureImage(FFALIGN(out_rect.width(), 16), FFALIGN(out_rect.height(), 16))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
+    if (!ensureImage(index, FFALIGN(out_rect.width(), 16), FFALIGN(out_rect.height(), 16))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
         return false;
+    XImage* &ximage = ximage_pool[index];
     video_frame = frame_orig; // set before map!
     VideoFrame interopFrame;
     if (!frame_orig.constBits(0)) {
         interopFrame = VideoFrame(ximage->width, ximage->height, pixelFormat(ximage));
-        interopFrame.setBits(use_shm ? (quint8*)ximage->data : (quint8*)ximage_data.constData());
+        interopFrame.setBits(use_shm ? (quint8*)ximage->data : (quint8*)ximage_data[index].constData());
         interopFrame.setBytesPerLine(ximage->bytes_per_line);
     }
     if (frame_orig.constBits(0)
@@ -375,18 +398,18 @@ bool X11RendererPrivate::resizeXImage()
         } else { //copy line by line
             if (warn_bad_pitch) {
                 warn_bad_pitch = false;
-                qDebug("bad pitch: %d - % ximage_data.size: %d", ximage->bytes_per_line, video_frame.bytesPerLine(0), ximage_data.size());
+                qDebug("bad pitch: %d - % ximage_data[%d].size: %d", ximage->bytes_per_line, video_frame.bytesPerLine(0), index, ximage_data[index].size());
             }
             quint8* dst = (quint8*)ximage->data;
             if (!use_shm) {
-                dst = (quint8*)ximage_data.constData();
-                ximage->data = (char*)ximage_data.constData();
+                dst = (quint8*)ximage_data[index].constData();
+                ximage->data = (char*)ximage_data[index].constData();
             }
             VideoFrame::copyPlane(dst, ximage->bytes_per_line, (const quint8*)video_frame.constBits(0), video_frame.bytesPerLine(0), ximage->bytes_per_line, ximage->height);
         }
     } else {
         if (!use_shm)
-            ximage->data = (char*)ximage_data.constData();
+            ximage->data = (char*)ximage_data[index].constData();
     }
     return true;
 }
@@ -426,31 +449,47 @@ void X11Renderer::drawBackground()
 bool X11Renderer::needDrawFrame() const
 {
     DPTR_D(const X11Renderer);
-    return  d.ximage || d.video_frame.isValid();
+    return  d.ximage_pool[0] || d.video_frame.isValid();
 }
 
 void X11Renderer::drawFrame()
 {
     // TODO: interop
     DPTR_D(X11Renderer);
-    if (!d.resizeXImage())
+    if (d.use_shm) {
+        while (d.ShmCompletionWaitCount >= kPoolSize) {
+            while (XPending(d.display)) {
+                XEvent ev;
+                XNextEvent(d.display, &ev);
+                if (ev.type == d.ShmCompletionEvent) {
+                    if (d.ShmCompletionWaitCount > 0)
+                        d.ShmCompletionWaitCount--;
+                }
+            }
+            usleep(1000);
+        }
+    }
+
+    if (!d.resizeXImage(d.current_index))
         return;
     if (preferredPixelFormat() != d.pixfmt) {
         qDebug() << "x11 preferred pixel format: " << d.pixfmt;
         setPreferredPixelFormat(d.pixfmt);
     }
     QRect roi = realROI();
+    XImage* ximage = d.ximage_pool[d.current_index];
     if (d.use_shm) {
-        XShmPutImage(d.display, winId(), d.gc, d.ximage
+        XShmPutImage(d.display, winId(), d.gc, ximage
                       , roi.x(), roi.y()//, roi.width(), roi.height()
                       , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height()
-                      , false /*true: send event*/);
+                      , True /*true: send event*/);
+        d.ShmCompletionWaitCount++;
     } else {
-        XPutImage(d.display, winId(), d.gc, d.ximage
+        XPutImage(d.display, winId(), d.gc, ximage
                    , roi.x(), roi.y()//, roi.width(), roi.height()
                    , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
+        XSync(d.display, False); // update immediately
     }
-    XSync(d.display, False); // update immediately
 }
 
 void X11Renderer::paintEvent(QPaintEvent *)
