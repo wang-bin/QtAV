@@ -1330,7 +1330,9 @@ void MainWindow::onVideoEQEngineChanged()
 {
     VideoRenderer *vo = mpPlayer->renderer();
     VideoEQConfigPage::Engine e = mpVideoEQ->engine();
-    if (e == VideoEQConfigPage::SWScale) {
+    if (e == VideoEQConfigPage::SWScale
+            && vo->id() != VideoRendererId_X11 // X11 scales in the renderer
+            ) {
         vo->forcePreferredPixelFormat(true);
         vo->setPreferredPixelFormat(VideoFormat::Format_RGB32);
     } else {
