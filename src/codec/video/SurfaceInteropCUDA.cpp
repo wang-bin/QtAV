@@ -474,6 +474,7 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
 
 bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int h, int H)
 {
+    Q_UNUSED(H);
     D3DSURFACE_DESC dxvaDesc;
     surface->GetDesc(&dxvaDesc);
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));

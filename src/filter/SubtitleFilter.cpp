@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -58,7 +58,7 @@ public:
         // nomalized width, height <= 1. If 1 is normalized value iff |x|<1 || |y| < 1
         if (qAbs(rect.width()) < 1)
             r.setWidth(rect.width()*qreal(width));
-        if (qAbs(rect.height() < 1))
+        if (qAbs(rect.height()) < 1)
             r.setHeight(rect.height()*qreal(height));
         if (rect.width() == 1.0 && normalized) {
             r.setWidth(width);

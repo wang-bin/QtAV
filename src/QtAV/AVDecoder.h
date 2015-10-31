@@ -76,7 +76,8 @@ public:
 Q_SIGNALS:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void descriptionChanged();
-    virtual void codecNameChanged();
+    virtual void codecNameChanged();//signal can not be decared virtual (winrt)
+
 protected:
     AVDecoder(AVDecoderPrivate& d);
     DPTR_DECLARE(AVDecoder)

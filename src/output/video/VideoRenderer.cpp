@@ -360,7 +360,7 @@ QRect VideoRenderer::realROI() const
     // nomalized width, height <= 1. If 1 is normalized value iff |x|<1 || |y| < 1
     if (qAbs(d.roi.width()) < 1)
         r.setWidth(d.roi.width()*qreal(d.src_width));
-    if (qAbs(d.roi.height() < 1))
+    if (qAbs(d.roi.height()) < 1)
         r.setHeight(d.roi.height()*qreal(d.src_height));
     if (d.roi.width() == 1.0 && normalized) {
         r.setWidth(d.src_width);
