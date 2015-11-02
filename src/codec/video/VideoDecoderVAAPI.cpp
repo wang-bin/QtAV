@@ -173,6 +173,12 @@ static const struct fmtentry va_to_imgfmt[] = {
     {VA_FOURCC_UYVY, VideoFormat::Format_UYVY},
     {VA_FOURCC_YUY2, VideoFormat::Format_YUYV},
     // Note: not sure about endian issues
+#ifndef VA_FOURCC_RGBX
+#define VA_FOURCC_RGBX		0x58424752
+#endif
+#ifndef VA_FOURCC_BGRX
+    #define VA_FOURCC_BGRX		0x58524742
+#endif
     {VA_FOURCC_RGBA, VideoFormat::Format_RGB32},
     {VA_FOURCC_RGBX, VideoFormat::Format_RGB32},
     {VA_FOURCC_BGRA, VideoFormat::Format_RGB32},
