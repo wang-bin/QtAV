@@ -480,21 +480,21 @@ VideoFormat& VideoFormat::operator=(const VideoFormat &other)
 VideoFormat& VideoFormat::operator =(VideoFormat::PixelFormat fmt)
 {
     d->pixfmt = fmt;
-    d->init();
+    d->init(fmt);
     return *this;
 }
 
 VideoFormat& VideoFormat::operator =(QImage::Format qpixfmt)
 {
     d->qpixfmt = qpixfmt;
-    d->init();
+    d->init(qpixfmt);
     return *this;
 }
 
 VideoFormat& VideoFormat::operator =(int fffmt)
 {
     d->pixfmt_ff = (AVPixelFormat)fffmt;
-    d->init();
+    d->init(d->pixfmt_ff);
     return *this;
 }
 
