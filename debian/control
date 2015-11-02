@@ -18,6 +18,7 @@ Build-Depends: debhelper (>= 9),
  libxv-dev,
  libva-dev,
  libegl1-mesa-dev,
+ libuchardet-dev,
 Standards-Version: 3.9.5
 Homepage: http://www.qtav.org
 

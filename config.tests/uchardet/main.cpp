@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -18,27 +18,8 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#include <uchardet.h>
 
-#ifndef QTAV_UCHARDET_H
-#define QTAV_UCHARDET_H
-
-#include <QtCore/QByteArray>
-
-class CharsetDetector
-{
-public:
-    CharsetDetector();
-    ~CharsetDetector();
-    bool isAvailable() const;
-    /*!
-     * \brief detect
-     * \param data text to parse
-     * \return charset name
-     */
-    QByteArray detect(const QByteArray& data);
-private:
-    class Private;
-    Private *priv;
-};
-
-#endif // QTAV_UCHARDET_H
+void test() {
+  uchardet_new();
+}

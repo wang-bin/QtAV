@@ -52,6 +52,7 @@ contains(QT_CONFIG, opengl):!no-gl:!no-widgets {
 # no-xxx can set in $$PWD/user.conf
 !no-openal: OptionalDepends *= openal
 !no-libass: OptionalDepends *= libass
+!no-uchardet: OptionalDepends *= uchardet
 win32:macx:!android:!winrt:!no-portaudio: OptionalDepends *= portaudio
 win32 {
   !no-xaudio2: OptionalDepends *= xaudio2

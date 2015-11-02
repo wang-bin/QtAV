@@ -37,11 +37,12 @@ sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2): CONFIG *= sse2 config_simd
 PROJECTROOT = $$PWD/..
 !include(libQtAV.pri): error("could not find libQtAV.pri")
 preparePaths($$OUT_PWD/../out)
-!no_libchardet:exists($$PROJECTROOT/contrib/libchardet/libchardet.pri) {
-  include($$PROJECTROOT/contrib/libchardet/libchardet.pri)
-  DEFINES += QTAV_HAVE_CHARDET=1 BUILD_CHARDET_STATIC
-} else {
-  warning("contrib/libchardet is missing. run 'git submodule update --init' first")
+config_uchardet {
+  DEFINES += LINK_UCHARDET
+  LIBS *= -luchardet
+} else:exists($$PROJECTROOT/contrib/uchardet/src/uchardet.h) {
+  include($$PROJECTROOT/contrib/uchardet.pri)
+  DEFINES += BUILD_UCHARDET
 }
 exists($$PROJECTROOT/contrib/capi/capi.pri) {
   include($$PROJECTROOT/contrib/capi/capi.pri)

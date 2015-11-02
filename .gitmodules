@@ -1,9 +1,9 @@
-[submodule "contrib/libchardet"]
-	path = contrib/libchardet
-	url = https://github.com/wang-bin/libchardet.git
 [submodule "contrib/capi"]
 	path = contrib/capi
 	url = https://github.com/wang-bin/capi.git
 [submodule "tools/build_ffmpeg"]
 	path = tools/build_ffmpeg
 	url = https://github.com/wang-bin/build_ffmpeg.git
+[submodule "contrib/uchardet"]
+	path = contrib/uchardet
+	url = https://github.com/BYVoid/uchardet.git
