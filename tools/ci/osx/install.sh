@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ev
 brew update
-brew install ffmpeg qt5
+brew install ffmpeg qt5 uchardet
 
 ls /usr/local/bin
 export QTAV_OUT=QtAV-OSX-${TRAVIS_COMMIT:0:7}
