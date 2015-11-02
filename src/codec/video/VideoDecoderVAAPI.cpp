@@ -56,10 +56,12 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
     Q_PROPERTY(DisplayType display READ display WRITE setDisplay)
     Q_ENUMS(DisplayType)
 public:
+        // TODO: interopType: GLX, X11, DMA, DRM
     enum DisplayType {
         X11,
         GLX,
-        DRM
+        DRM,
+        EGL
     };
     VideoDecoderVAAPI();
     VideoDecoderId id() const Q_DECL_OVERRIDE;
@@ -159,6 +161,33 @@ const codec_profile_t* findProfileEntry(AVCodecID codec, int profile, const code
     return 0;
 }
 
+
+struct fmtentry {
+    uint32_t va;
+    VideoFormat::PixelFormat fmt;
+};
+static const struct fmtentry va_to_imgfmt[] = {
+    {VA_FOURCC_NV12, VideoFormat::Format_NV12},
+    {VA_FOURCC_YV12,  VideoFormat::Format_YUV420P},
+    {VA_FOURCC_IYUV, VideoFormat::Format_YUV420P},
+    {VA_FOURCC_UYVY, VideoFormat::Format_UYVY},
+    {VA_FOURCC_YUY2, VideoFormat::Format_YUYV},
+    // Note: not sure about endian issues
+    {VA_FOURCC_RGBA, VideoFormat::Format_RGB32},
+    {VA_FOURCC_RGBX, VideoFormat::Format_RGB32},
+    {VA_FOURCC_BGRA, VideoFormat::Format_RGB32},
+    {VA_FOURCC_BGRX, VideoFormat::Format_RGB32},
+    {0             , VideoFormat::Format_Invalid}
+};
+VideoFormat::PixelFormat pixelFormatFromVA(uint32_t fourcc)
+{
+    for (const struct fmtentry *entry = va_to_imgfmt; entry->va; ++entry) {
+        if (entry->va == fourcc)
+            return entry->fmt;
+    }
+    return VideoFormat::Format_Invalid;
+}
+
 class VideoDecoderVAAPIPrivate Q_DECL_FINAL: public VideoDecoderFFmpegHWPrivate, protected VAAPI_DRM, protected VAAPI_X11
 #ifndef QT_NO_OPENGL
         , protected VAAPI_GLX
@@ -180,6 +209,19 @@ public:
 #endif //QT_NO_OPENGL
         if (VAAPI_X11::isLoaded()) {
             display_type = VideoDecoderVAAPI::X11;
+        //TODO: OpenGLHelper::isEGL()
+/*
+#if QTAV_HAVE(EGL_CAPI)
+#if defined(QT_OPENGL_ES_2)
+        display_type = VideoDecoderVAAPI::EGL;
+#else
+        // FIXME: may fallback to xcb_glx(default)
+        static const bool use_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
+        if (use_egl)
+            display_type = VideoDecoderVAAPI::EGL;
+#endif //defined(QT_OPENGL_ES_2)
+#endif //QTAV_HAVE(EGL_CAPI)
+*/
 #ifndef QT_NO_OPENGL
 #if VA_X11_INTEROP
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
@@ -199,6 +241,7 @@ public:
         // set by user. don't reset in when call destroy
         nb_surfaces = 0;
         disable_derive = true;
+        image_fmt = VideoFormat::Format_Invalid;
     }
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
@@ -231,6 +274,7 @@ public:
     VAImage image;
     bool disable_derive;
     bool supports_derive;
+    VideoFormat::PixelFormat image_fmt;
 
     QString vendor;
     InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
@@ -240,15 +284,16 @@ public:
 VideoDecoderVAAPI::VideoDecoderVAAPI()
     : VideoDecoderFFmpegHW(*new VideoDecoderVAAPIPrivate())
 {
-    setDisplayPriority(QStringList() << QStringLiteral("X11") << QStringLiteral("GLX") <<  QStringLiteral("DRM"));
+    setDisplayPriority(QStringList() << QStringLiteral("X11") << QStringLiteral("GLX") <<  QStringLiteral("DRM") << QStringLiteral("EGL"));
     // dynamic properties about static property details. used by UI
     // format: detail_property
     setProperty("detail_surfaces", tr("Decoding surfaces") + QStringLiteral(" ") + tr("0: auto"));
     setProperty("detail_derive", tr("Maybe faster"));
     setProperty("detail_display", QString("%1\n%2\n%3")
-                .arg("X11: support all copy modes")
-                .arg("GLX: support 0-copy only")
-                .arg("DRM: does not support 0-copy")
+                .arg("X11: support all copy modes. libva-x11.so is required")
+                .arg("GLX: support 0-copy only. libva-glx.so is required")
+                .arg("DRM: does not support 0-copy. libva-egl.so is required")
+                .arg("EGL: support all copy modes")
                 );
 }
 
@@ -310,7 +355,8 @@ VideoFrame VideoDecoderVAAPI::frame()
         return VideoFrame();
     VASurfaceID surface_id = (VASurfaceID)(uintptr_t)d.frame->data[3];
     VAStatus status = VA_STATUS_SUCCESS;
-    if (display() == GLX || (copyMode() == ZeroCopy && display() == X11)) {
+    if ( (copyMode() == ZeroCopy && (display() == X11 || display() == EGL))
+         ||display() == GLX) {
         surface_ptr p;
         std::list<surface_ptr>::iterator it = d.surfaces_used.begin();
         for (; it != d.surfaces_used.end() && !p; ++it) {
@@ -334,8 +380,24 @@ VideoFrame VideoDecoderVAAPI::frame()
         SurfaceInteropVAAPI *interop = new SurfaceInteropVAAPI(d.interop_res);
         interop->setSurface(p, d.width, d.height);
 
-        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32);
-        f.setBytesPerLine(d.width*4); //used by gl to compute texture size
+        VideoFormat fmt(VideoFormat::Format_RGB32);
+        VAImage img;
+        if (display() == EGL) {
+            vaDeriveImage(d.display->get(), p->get(), &img);
+            fmt = pixelFormatFromVA(img.format.fourcc);
+            qDebug() << pixelFormatFromVA(img.format.fourcc);
+        }
+        VideoFrame f(d.width, d.height, fmt);//d.image_fmt);
+        f.setBytesPerLine(d.width*fmt.bytesPerPixel(0), 0); //used by gl to compute texture size
+        //qDebug("bpl0: %d", f.bytesPerLine(0));
+        //qDebug() << fmt; //nv12 bpl[1] = bpl[0]?
+        if (display() == EGL) {
+            for (int i = 0; i < fmt.planeCount(); ++i) {
+                f.setBytesPerLine(img.pitches[i], i);// f.bytesPerLine(0), i);//fmt.width(f.bytesPerLine(0), i), i); //used by gl to compute texture size
+                //qDebug("bpl%d: %d/%d", i, fmt.width(f.bytesPerLine(0), i), f.bytesPerLine(i));
+            }
+            vaDestroyImage(d.display->get(), img.image_id);
+        }
         f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
         f.setDisplayAspectRatio(d.getDAR(d.frame));
@@ -374,23 +436,8 @@ VideoFrame VideoDecoderVAAPI::frame()
     void *p_base;
     VA_ENSURE_TRUE(vaMapBuffer(d.display->get(), d.image.buf, &p_base), VideoFrame());
 
-    VideoFormat::PixelFormat pixfmt = VideoFormat::Format_Invalid;
-    bool swap_uv = false;
-    switch (d.image.format.fourcc) {
-    case VA_FOURCC_YV12:
-        swap_uv |= d.disable_derive || !d.supports_derive;
-        pixfmt = VideoFormat::Format_YUV420P;
-        break;
-    case VA_FOURCC_IYUV:
-        swap_uv = true;
-        pixfmt = VideoFormat::Format_YUV420P;
-        break;
-    case VA_FOURCC_NV12:
-        pixfmt = VideoFormat::Format_NV12;
-        break;
-    default:
-        break;
-    }
+    VideoFormat::PixelFormat pixfmt = pixelFormatFromVA(d.image.format.fourcc);
+    bool swap_uv = d.disable_derive || !d.supports_derive || d.image.format.fourcc == VA_FOURCC_IYUV;
     if (pixfmt == VideoFormat::Format_Invalid) {
         qWarning("unsupported vaapi pixel format: %#x", d.image.format.fourcc);
         return VideoFrame();
@@ -504,6 +551,21 @@ bool VideoDecoderVAAPIPrivate::open()
 #else
             qWarning("No OpenGL support in Qt");
 #endif //QT_NO_OPENGL
+        } else if (dt == VideoDecoderVAAPI::EGL
+                   ) {
+            qDebug("vaGetDisplay X11 EGL...............");
+            if (!XInitThreads()) {
+                qWarning("XInitThreads failed!");
+                continue;
+            }
+            // TODO: vaGetDisplayWl
+            display_x11 =  XOpenDisplay(NULL);;
+            if (!display_x11) {
+                qWarning("Could not connect to X server");
+                continue;
+            }
+            disp = vaGetDisplay(display_x11);
+            display_type = VideoDecoderVAAPI::EGL;
         }
         if (disp)
             break;
@@ -597,6 +659,10 @@ bool VideoDecoderVAAPIPrivate::open()
     if (display_type == VideoDecoderVAAPI::X11)
         interop_res = InteropResourcePtr(new X11InteropResource());
 #endif //VA_X11_INTEROP
+#if QTAV_HAVE(EGL_CAPI) && VA_CHECK_VERSION(0, 38, 0)
+    if (display_type == VideoDecoderVAAPI::EGL)
+        interop_res = InteropResourcePtr(new EGLInteropResource());
+#endif
     codec_ctx->hwaccel_context = &hw_ctx; //must set before open
     return true;
 }
@@ -655,6 +721,7 @@ bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
             image.image_id = VA_INVALID_ID;
             continue;
         }
+        image_fmt = pixelFormatFromVA(image.format.fourcc);
         found = true;
         break;
     }
@@ -663,10 +730,11 @@ bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
         return false;
     }
     VAImage test_image;
-    if (!disable_derive) {
+    if (!disable_derive || display_type == VideoDecoderVAAPI::EGL) {
         if (vaDeriveImage(display->get(), surfaces[0], &test_image) == VA_STATUS_SUCCESS) {
             qDebug("vaDeriveImage supported");
             supports_derive = true;
+            image_fmt = pixelFormatFromVA(image.format.fourcc);
             /* from vlc: Use vaDerive() iif it supports the best selected format */
             if (image.format.fourcc == test_image.format.fourcc) {
                 qDebug("vaDerive is ok");
@@ -704,11 +772,15 @@ bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
     }
     if (!ensureSurfaces(surface_count, surface_width, surface_height, true))
         return false;
-    if (display_type != VideoDecoderVAAPI::GLX && (display_type != VideoDecoderVAAPI::X11 || copy_mode != VideoDecoderFFmpegHW::ZeroCopy)) {
-        // copy-back mode
+    if (display_type == VideoDecoderVAAPI::DRM
+            || (display_type == VideoDecoderVAAPI::X11 && copy_mode != VideoDecoderFFmpegHW::ZeroCopy)
+            || (display_type == VideoDecoderVAAPI::EGL)) {
+        // egl needs VAImage too
         if (!prepareVAImage(surface_width, surface_height))
             return false;
-        initUSWC(surface_width);
+        // copy-back mode
+        if (display_type != VideoDecoderVAAPI::EGL || copy_mode != VideoDecoderFFmpegHW::ZeroCopy)
+            initUSWC(surface_width);
     }
     context_id = VA_INVALID_ID;
     VA_ENSURE_TRUE(vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id), false);

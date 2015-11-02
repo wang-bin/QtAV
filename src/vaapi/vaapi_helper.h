@@ -47,6 +47,15 @@ inline VAStatus vaCreateSurfaces(VADisplay dpy, unsigned int format, unsigned in
     return ::vaCreateSurfaces(dpy, width, height, format, num_surfaces, surfaces);
 }
 #endif
+#if !VA_CHECK_VERSION(0, 38, 0)
+/** \brief VA buffer information */
+typedef struct {
+    uintptr_t           handle;
+    uint32_t            type;
+    uint32_t            mem_type;
+    size_t              mem_size;
+} VABufferInfo;
+#endif //!VA_CHECK_VERSION(0, 38, 0)
 
 #define VA_ENSURE_TRUE(x, ...) \
     do { \

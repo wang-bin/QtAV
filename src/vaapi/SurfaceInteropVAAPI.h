@@ -83,7 +83,7 @@ class X11InteropResource Q_DECL_FINAL: public InteropResource, protected VAAPI_X
 {
 public:
     X11InteropResource();
-    ~X11InteropResource() Q_DECL_OVERRIDE;
+    ~X11InteropResource();
     bool map(const surface_ptr &surface, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
     bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:
@@ -92,6 +92,28 @@ private:
     int width, height;
     X11 *x11;
 };
+#if QTAV_HAVE(EGL_CAPI)
+#if VA_CHECK_VERSION(0, 38, 0)
+// libva-egl is dead and not complete. here we use dma
+class EGL;
+class EGLInteropResource Q_DECL_FINAL : public InteropResource
+{
+public:
+    EGLInteropResource();
+    ~EGLInteropResource();
+    bool map(const surface_ptr &surface, GLuint tex, int w, int h, int plane) Q_DECL_OVERRIDE;
+    bool unmap(GLuint tex) Q_DECL_OVERRIDE;
+private:
+    bool ensure();
+    void destroy();
+    uintptr_t vabuf_handle;
+    display_ptr va_dpy;
+    VAImage va_image;
+    QMap<GLuint, int> mapped;
+    EGL *egl;
+};
+#endif //VA_CHECK_VERSION(0, 38, 0)
+#endif //QTAV_HAVE(EGL_CAPI)
 } //namespace vaapi
 } //namespace QtAV
 #endif // QTAV_SURFACEINTEROPVAAPI_H
