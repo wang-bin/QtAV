@@ -276,6 +276,12 @@ bool AVMuxer::setMedia(const QString &fileName)
         d->file.insert(3, QLatin1Char('h'));
     else if (d->file.startsWith(QLatin1String(kFileScheme)))
         d->file = getLocalPath(d->file);
+    int colon = d->file.indexOf(QLatin1Char(':'));
+    if (colon == 1) {
+#ifdef Q_OS_WINRT
+        d->file.prepend(QStringLiteral("qfile:"));
+#endif
+    }
     d->media_changed = url_old != d->file;
     if (d->media_changed) {
         d->format_forced.clear();
@@ -284,7 +290,7 @@ bool AVMuxer::setMedia(const QString &fileName)
     if (d->file.startsWith(QLatin1Char('/')))
         return d->media_changed;
     // use MediaIO to support protocols not supported by ffmpeg
-    int colon = d->file.indexOf(QLatin1Char(':'));
+    colon = d->file.indexOf(QLatin1Char(':'));
     if (colon >= 0) {
 #ifdef Q_OS_WIN
         if (colon == 1 && d->file.at(0).isLetter())
