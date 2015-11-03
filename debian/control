@@ -50,7 +50,7 @@ Package: libqtav
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, libegl1-mesa, libva-x11-1, libva-drm1, libva-glx1, i965-va-driver, vdpau-va-driver
 Description: QtAV library
  QtAV is a multimedia playback library based on Qt and FFmpeg.
  It can help you to write a player with less effort than ever before.
@@ -109,7 +109,7 @@ Package: qtav-players
 Section: video
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends}, ${shlibs:Depends}, libqtav, libqtavwidgets, qml-module-qtav, libqt5svg5, qml-module-qtquick-dialogs | qtdeclarative5-dialogs-plugin, qml-module-qt-labs-folderlistmodel | qtdeclarative5-folderlistmodel-plugin, libva-x11-1, libva-drm1, libva-glx1
+Depends: ${misc:Depends}, ${shlibs:Depends}, libqtav, libqtavwidgets, qml-module-qtav, libqt5svg5, qml-module-qtquick-dialogs | qtdeclarative5-dialogs-plugin, qml-module-qt-labs-folderlistmodel | qtdeclarative5-folderlistmodel-plugin
 Multi-Arch: same
 Description: QtAV/QML players
  QtAV is a multimedia playback framework based on Qt and FFmpeg.
