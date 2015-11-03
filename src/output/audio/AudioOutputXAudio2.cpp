@@ -108,11 +108,12 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
     //setDeviceFeatures(AudioOutput::DeviceFeatures()|AudioOutput::SetVolume);
 #ifdef Q_OS_WINRT
     qDebug("XAudio2 for WinRT");
+    // winrt can only load package dlls
+    DX_ENSURE(XAudio2Create(&winsdk.xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR));
 #else
     // https://github.com/wang-bin/QtAV/issues/518
     // already initialized in qtcore for main thread. If RPC_E_CHANGED_MODE no ref is added, CoUninitialize can lead to crash
     uninit_com = CoInitializeEx(NULL, COINIT_MULTITHREADED) != RPC_E_CHANGED_MODE;
-#endif //Q_OS_WINRT
     // load dll. <win8: XAudio2_7.DLL, <win10: XAudio2_8.DLL, win10: XAudio2_9.DLL. also defined by XAUDIO2_DLL_A in xaudio2.h
     int ver = 9;
     for (; ver >= 0; ver--) {
@@ -155,6 +156,7 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
             break;
         dll.unload();
     }
+#endif //Q_OS_WINRT
     qDebug("xaudio2: %p", winsdk.xaudio);
     available = !!(winsdk.xaudio);
 }
