@@ -30,7 +30,7 @@
 #ifdef Q_OS_WIN
 // no need to check qt4 because no ANGLE there
 #if QTAV_HAVE(EGL_CAPI) // always use dynamic load
-#if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
+#if (defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)) && !defined(Q_OS_WINRT)
 #define QTAV_HAVE_CUDA_EGL 1
 #include <d3d9.h>
 #endif

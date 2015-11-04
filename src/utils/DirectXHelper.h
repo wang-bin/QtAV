@@ -22,7 +22,10 @@
 #ifndef QTAV_DIRECTXHELPER_H
 #define QTAV_DIRECTXHELPER_H
 
+#include <QtCore/qglobal.h>
+#ifndef Q_OS_WINRT
 #include <d3d9.h>
+#endif
 
 namespace QtAV {
 
@@ -50,8 +53,10 @@ template <class T> void SafeRelease(T **ppT) {
 }
 
 namespace DXHelper {
+#ifndef Q_OS_WINRT
 IDirect3DDevice9* CreateDevice9Ex(HINSTANCE dll, IDirect3D9Ex **d3d9ex, D3DADAPTER_IDENTIFIER9* d3dai = NULL);
 IDirect3DDevice9* CreateDevice9(HINSTANCE dll, IDirect3D9 **d3d9, D3DADAPTER_IDENTIFIER9* d3dai = NULL);
+#endif //Q_OS_WINRT
 } //namespace DXHelper
 
 } //namespace QtAV

@@ -171,7 +171,7 @@ ScreenSaver::~ScreenSaver()
 bool ScreenSaver::enable(bool yes)
 {
     bool rv = false;
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) && !defined(Q_OS_WINRT)
 #if USE_NATIVE_EVENT
     ScreenSaverEventFilter::instance().enable(yes);
     modified = true;
@@ -197,7 +197,7 @@ bool ScreenSaver::enable(bool yes)
     rv = sLastState != 0;
     modified = true;
 #endif //USE_NATIVE_EVENT
-#endif //Q_OS_WIN
+#endif //defined(Q_OS_WIN) && !defined(Q_OS_WINRT)
 #ifdef Q_OS_LINUX
     if (isX11) {
         Display *display = XOpenDisplay(0);
@@ -282,14 +282,14 @@ bool ScreenSaver::restoreState() {
         return true;
     }
     if (state_saved) {
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) && !defined(Q_OS_WINRT)
 #if USE_NATIVE_EVENT
         ScreenSaverEventFilter::instance().enable();
         rv = true;
 #else
         SetThreadExecutionState(ES_CONTINUOUS);
 #endif //USE_NATIVE_EVENT
-#endif //Q_OS_WIN
+#endif //defined(Q_OS_WIN) && !defined(Q_OS_WINRT)
 #ifdef Q_OS_LINUX
         if (isX11) {
             Display *display = XOpenDisplay(0);

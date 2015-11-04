@@ -50,7 +50,7 @@ OTHER_FILES += $$RC_FILE $$QTAVSRC/QtAV.svg
 
 win32 {
 #dynamicgl: __impl__GetDC __impl_ReleaseDC
-    LIBS *= -luser32
+  !winrt:LIBS *= -luser32
 }
 
 SDK_HEADERS *= \

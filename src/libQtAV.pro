@@ -319,7 +319,7 @@ win32 {
   HEADERS *= utils/DirectXHelper.h
   SOURCES *= utils/DirectXHelper.cpp
 #dynamicgl: __impl__GetDC __impl_ReleaseDC __impl_GetDesktopWindow
-    LIBS += -luser32
+  !winrt:LIBS += -luser32
 }
 # compat with old system
 # use old libva.so to link against

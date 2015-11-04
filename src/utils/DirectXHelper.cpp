@@ -25,6 +25,7 @@
 namespace QtAV {
 namespace DXHelper {
 
+#ifndef Q_OS_WINRT
 static void InitParameters(D3DPRESENT_PARAMETERS* d3dpp)
 {
     ZeroMemory(d3dpp, sizeof(*d3dpp));
@@ -106,5 +107,6 @@ IDirect3DDevice9* CreateDevice9(HINSTANCE dll, IDirect3D9** d3d9, D3DADAPTER_IDE
     qDebug("IDirect3DDevice9 created");
     return d3d9dev;
 }
+#endif //Q_OS_WINRT
 } // namespace DXHelper
 } //namespace QtAV
