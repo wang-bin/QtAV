@@ -1221,9 +1221,8 @@ void AVPlayer::playInternal()
             qDebug("Using AudioClock");
             masterClock()->setClockType(AVClock::AudioClock);
         }
-        masterClock()->setInitialValue((double)absoluteMediaStartPosition()/1000.0);
-        qDebug("Clock initial value: %f", masterClock()->value());
     }
+    masterClock()->setInitialValue((double)absoluteMediaStartPosition()/1000.0);
     // from previous play()
     if (d->demuxer.audioCodecContext() && d->athread) {
         qDebug("Starting audio thread...");
