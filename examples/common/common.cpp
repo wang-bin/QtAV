@@ -93,6 +93,7 @@ QOptions get_common_options()
             ("decoders,-vd", QLatin1String("cuda;vaapi;vda;dxva;cedarv;ffmpeg"), QLatin1String("decoder name list in priority order seperated by ';'"))
             ("file,f", QString(), QLatin1String("file or url to play"))
             ("language", QLatin1String("system"), QLatin1String("language on UI. can be 'system', 'none' and locale name e.g. zh_CN"))
+            ("log", QLatin1String("off"), QLatin1String("log level. can be 'off', 'fatal', 'critical', 'warning', 'debug', 'all'"))
             ("logfile", QString::fromLatin1("log-%1.txt"), QString::fromLatin1("log to file. Set empty to disable log file (-logfile '')"))
             ;
     return ops;
@@ -118,7 +119,7 @@ void do_common_options(const QOptions &options, const QString& appName)
         }
         qInstallMessageHandler(Logger);
     }
-    // TODO: ffmpeg level depends on libQtAV
+    qputenv("QTAV_LOG", options.value(QString::fromLatin1("log")).toByteArray());
 }
 
 void load_qm(const QStringList &names, const QString& lang)

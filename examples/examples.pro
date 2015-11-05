@@ -33,6 +33,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   isEqual(QT_MINOR_VERSION, 0)|qtHaveModule(quick) {
     SUBDIRS += QMLPlayer
     QMLPlayer.depends += common
+    sdk_build: SUBDIRS *= QMLPlayer/QMLPlayer_sdk.pro
   }
 }
 

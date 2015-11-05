@@ -50,7 +50,7 @@ VideoRendererId rendererId_from_opt_name(const QString& name) {
             return vid_map[i].id;
     }
 #ifndef QT_NO_OPENGL
-#ifdef Q_OS_ANDROID
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
     return VideoRendererId_OpenGLWidget; // qglwidget is not suitable for android
 #endif
     return VideoRendererId_GLWidget2;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
             ("ffmpeg-log",  QString(), QString::fromLatin1("ffmpeg log level. can be: quiet, panic, fatal, error, warn, info, verbose, debug. this can override env 'QTAV_FFMPEG_LOG'"))
             ("-vo",
 #ifndef QT_NO_OPENGL
-#ifdef Q_OS_ANDROID
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
              QString::fromLatin1("opengl")
 #else
              QString::fromLatin1("gl")
