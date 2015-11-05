@@ -1,6 +1,6 @@
 TARGET = QMLPlayer
 VERSION = $$QTAV_VERSION
-QT += av avwidgets svg qml quick
+QT += av svg qml quick
 android {
   QT += androidextras
 }
@@ -80,8 +80,8 @@ macx:!ios {
     LIBS += -framework CoreServices #-framework ScreenSaver
 }
 SOURCES *= main.cpp
-
-DISTFILES += \
+android {
+  DISTFILES += \
     android/src/org/qtav/qmlplayer/QMLPlayerActivity.java \
     android/gradle/wrapper/gradle-wrapper.jar \
     android/AndroidManifest.xml \
@@ -91,4 +91,20 @@ DISTFILES += \
     android/gradlew \
     android/gradlew.bat
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+  ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+}
+winrt|wince {
+  QT *= opengl #qtav is build with opengl module
+  DISTFILES *=  # will be listed in "Distribution Files" in vs but not deployed. not sure what's the usage
+# If a file does not exist, it will not be added to vs project
+  depend_dll.files = \
+    $$[QT_INSTALL_BINS]/QtAV$${QTAV_MAJOR_VERSION}.dll \
+    $$[QT_INSTALL_BINS]/libass.dll \
+    $$[QT_INSTALL_BINS]/avcodec-*.dll \
+    $$[QT_INSTALL_BINS]/avformat-*.dll \
+    $$[QT_INSTALL_BINS]/avutil-*.dll \
+    $$[QT_INSTALL_BINS]/avfilter-*.dll \
+    $$[QT_INSTALL_BINS]/swresample-*.dll \
+    $$[QT_INSTALL_BINS]/swscale-*.dll
+  DEPLOYMENT += depend_dll
+}
