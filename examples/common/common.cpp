@@ -25,6 +25,8 @@
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QFile>
+#include <QtCore/QTextStream>
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QDesktopServices>
 #else
@@ -32,7 +34,7 @@
 #endif
 #include <QtDebug>
 
-static FILE *sLogfile = 0; //'log' is a function in msvc math.h
+Q_GLOBAL_STATIC(QFile, fileLogger)
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 class QMessageLogContext {};
 typedef void (*QtMessageHandler)(QtMsgType, const QMessageLogContext &, const QString &);
@@ -42,7 +44,7 @@ QtMsgHandler qInstallMessageHandler(QtMessageHandler h) {
     struct MsgHandlerWrapper {
         static void handler(QtMsgType type, const char *msg) {
             static QMessageLogContext ctx;
-            hh(type, ctx, msg);
+            hh(type, ctx, QString::fromUtf8(msg));
         }
     };
     return qInstallMsgHandler(MsgHandlerWrapper::handler);
@@ -50,31 +52,29 @@ QtMsgHandler qInstallMessageHandler(QtMessageHandler h) {
 #endif
 void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 {
-    const QByteArray msgArray = qmsg.toLocal8Bit();
+    const QByteArray msgArray = qmsg.toUtf8();
     const char* msg = msgArray.constData();
      switch (type) {
      case QtDebugMsg:
-         fprintf(stdout, "Debug: %s\n", msg);
-         if (sLogfile)
-            fprintf(sLogfile, "Debug: %s\n", msg);
+         printf("Debug: %s\n", msg);
+         fileLogger->write(QByteArray("Debug: "));
          break;
      case QtWarningMsg:
-         fprintf(stdout, "Warning: %s\n", msg);
-         if (sLogfile)
-            fprintf(sLogfile, "Warning: %s\n", msg);
+         printf("Warning: %s\n", msg);
+         fileLogger->write(QByteArray("Warning: "));
          break;
      case QtCriticalMsg:
          fprintf(stderr, "Critical: %s\n", msg);
-         if (sLogfile)
-            fprintf(sLogfile, "Critical: %s\n", msg);
+         fileLogger->write(QByteArray("Critical: "));
          break;
      case QtFatalMsg:
          fprintf(stderr, "Fatal: %s\n", msg);
-         if (sLogfile)
-            fprintf(sLogfile, "Fatal: %s\n", msg);
+         fileLogger->write(QByteArray("Fatal: "));
          abort();
      }
-     fflush(0);
+     fileLogger->write(msgArray);
+     fileLogger->write(QByteArray("\n"));
+     fileLogger->flush();
 }
 
 QOptions get_common_options()
@@ -93,8 +93,14 @@ QOptions get_common_options()
             ("decoders,-vd", QLatin1String("cuda;vaapi;vda;dxva;cedarv;ffmpeg"), QLatin1String("decoder name list in priority order seperated by ';'"))
             ("file,f", QString(), QLatin1String("file or url to play"))
             ("language", QLatin1String("system"), QLatin1String("language on UI. can be 'system', 'none' and locale name e.g. zh_CN"))
-            ("log", QLatin1String("off"), QLatin1String("log level. can be 'off', 'fatal', 'critical', 'warning', 'debug', 'all'"))
-            ("logfile", QString::fromLatin1("log-%1.txt"), QString::fromLatin1("log to file. Set empty to disable log file (-logfile '')"))
+            ("log", QString(), QLatin1String("log level. can be 'off', 'fatal', 'critical', 'warning', 'debug', 'all'"))
+            ("logfile"
+#if defined(Q_OS_WINRT) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+             , appDataDir().append(QString::fromLatin1("/log-%1.txt"))
+#else
+             , QString::fromLatin1("log-%1.txt")
+#endif
+             , QString::fromLatin1("log to file. Set empty to disable log file (-logfile '')"))
             ;
     return ops;
 }
@@ -112,14 +118,18 @@ void do_common_options(const QOptions &options, const QString& appName)
         app = qApp->applicationName();
     QString logfile(options.option(QString::fromLatin1("logfile")).value().toString().arg(app));
     if (!logfile.isEmpty()) {
-        sLogfile = fopen(logfile.toUtf8().constData(), "w+");
-        if (!sLogfile) {
-            qWarning("Failed to open log file");
-            sLogfile = stdout;
+        qDebug("set log file");
+        fileLogger->setFileName(logfile);
+        if (fileLogger->open(QIODevice::WriteOnly)) {
+            qDebug() << "Logger";
+            qInstallMessageHandler(Logger);
+        } else {
+            qWarning() << "Failed to open log file '" << fileLogger->fileName() << "': " << fileLogger->errorString();
         }
-        qInstallMessageHandler(Logger);
     }
-    qputenv("QTAV_LOG", options.value(QString::fromLatin1("log")).toByteArray());
+    const QByteArray level(options.value(QString::fromLatin1("log")).toByteArray());
+    if (!level.isEmpty())
+        qputenv("QTAV_LOG", level);
 }
 
 void load_qm(const QStringList &names, const QString& lang)
@@ -232,6 +242,9 @@ bool AppEventFilter::eventFilter(QObject *obj, QEvent *ev)
 {
     if (obj != qApp)
         return false;
+    if (ev->type() == QEvent::WinEventAct) {
+        // winrt file open/pick. since qt5.6
+    }
     if (ev->type() != QEvent::FileOpen)
         return false;
     QFileOpenEvent *foe = static_cast<QFileOpenEvent*>(ev);
