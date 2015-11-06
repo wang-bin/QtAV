@@ -202,7 +202,7 @@ bool ImageConverter::prepareData()
        //    avpriv_set_systematic_pal2((uint32_t*)pointers[1], pix_fmt);
     for (int i = 0; i < d.pitchs.size(); ++i) {
         Q_ASSERT(d.pitchs[i]%kAlign == 0);
-        Q_ASSERT(qintptr(d.bits[i])%kAlign == 0);
+        Q_ASSERT(qptrdiff(d.bits[i])%kAlign == 0);
     }
     return true;
 }

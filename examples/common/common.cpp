@@ -57,24 +57,24 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
      switch (type) {
      case QtDebugMsg:
          printf("Debug: %s\n", msg);
-         fileLogger->write(QByteArray("Debug: "));
+         fileLogger()->write(QByteArray("Debug: "));
          break;
      case QtWarningMsg:
          printf("Warning: %s\n", msg);
-         fileLogger->write(QByteArray("Warning: "));
+         fileLogger()->write(QByteArray("Warning: "));
          break;
      case QtCriticalMsg:
          fprintf(stderr, "Critical: %s\n", msg);
-         fileLogger->write(QByteArray("Critical: "));
+         fileLogger()->write(QByteArray("Critical: "));
          break;
      case QtFatalMsg:
          fprintf(stderr, "Fatal: %s\n", msg);
-         fileLogger->write(QByteArray("Fatal: "));
+         fileLogger()->write(QByteArray("Fatal: "));
          abort();
      }
-     fileLogger->write(msgArray);
-     fileLogger->write(QByteArray("\n"));
-     fileLogger->flush();
+     fileLogger()->write(msgArray);
+     fileLogger()->write(QByteArray("\n"));
+     fileLogger()->flush();
 }
 
 QOptions get_common_options()
@@ -119,12 +119,12 @@ void do_common_options(const QOptions &options, const QString& appName)
     QString logfile(options.option(QString::fromLatin1("logfile")).value().toString().arg(app));
     if (!logfile.isEmpty()) {
         qDebug("set log file");
-        fileLogger->setFileName(logfile);
-        if (fileLogger->open(QIODevice::WriteOnly)) {
+        fileLogger()->setFileName(logfile);
+        if (fileLogger()->open(QIODevice::WriteOnly)) {
             qDebug() << "Logger";
             qInstallMessageHandler(Logger);
         } else {
-            qWarning() << "Failed to open log file '" << fileLogger->fileName() << "': " << fileLogger->errorString();
+            qWarning() << "Failed to open log file '" << fileLogger()->fileName() << "': " << fileLogger()->errorString();
         }
     }
     const QByteArray level(options.value(QString::fromLatin1("log")).toByteArray());
