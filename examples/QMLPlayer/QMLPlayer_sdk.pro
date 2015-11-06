@@ -94,9 +94,13 @@ android {
   ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 }
 winrt|wince {
+# vs project: qmake -tp vc "CONFIG+=windeployqt"
   QT *= opengl #qtav is build with opengl module
+  CONFIG *= windeployqt
+  WINDEPLOYQT_OPTIONS = -qmldir $$shell_quote($$system_path($$_PRO_FILE_PWD_/qml/QMLPlayer))
   DISTFILES *=  # will be listed in "Distribution Files" in vs but not deployed. not sure what's the usage
 # If a file does not exist, it will not be added to vs project
+# If not using vs, edit AppxManifest.map for Qt5.5
   depend_dll.files = \
     $$[QT_INSTALL_BINS]/QtAV$${QTAV_MAJOR_VERSION}.dll \
     $$[QT_INSTALL_BINS]/libass.dll \
@@ -107,4 +111,11 @@ winrt|wince {
     $$[QT_INSTALL_BINS]/swresample-*.dll \
     $$[QT_INSTALL_BINS]/swscale-*.dll
   DEPLOYMENT += depend_dll
+# WINRT_MANIFEST file: "=>\"
+  winphone {
+    WINRT_MANIFEST = WinPhone8.Package.appxmanifest
+  } else {
+    WINRT_MANIFEST = WinRT8.Package.appxmanifest
+  }
+  OTHER_FILES *= *Package.appxmanifest
 }
