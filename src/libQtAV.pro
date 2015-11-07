@@ -321,6 +321,10 @@ win32 {
 #dynamicgl: __impl__GetDC __impl_ReleaseDC __impl_GetDesktopWindow
   !winrt:LIBS += -luser32
 }
+winrt {
+  SOURCES *= io/WinRTIO.cpp
+  LIBS *= -lshcore
+}
 # compat with old system
 # use old libva.so to link against
 glibc_compat: *linux*: LIBS += -lrt  # do not use clock_gettime in libc, GLIBC_2.17 is not available on old system

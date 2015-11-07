@@ -32,6 +32,7 @@ FACTORY_DEFINE(MediaIO)
 
 extern bool RegisterMediaIOQIODevice_Man();
 extern bool RegisterMediaIOQFile_Man();
+extern bool RegisterMediaIOWinRT_Man();
 void MediaIO::registerAll()
 {
     static bool done = false;
@@ -40,6 +41,9 @@ void MediaIO::registerAll()
     done = true;
     RegisterMediaIOQIODevice_Man();
     RegisterMediaIOQFile_Man();
+#ifdef Q_OS_WINRT
+    RegisterMediaIOWinRT_Man();
+#endif
 }
 
 QStringList MediaIO::builtInNames()
@@ -185,6 +189,7 @@ void* MediaIO::avioContext()
     d.ctx = avio_alloc_context(buf, IODATA_BUFFER_SIZE, write_flag, this, &av_read, write_flag ? &av_write : NULL, &av_seek);
     // if seekable==false, containers that estimate duration from pts(or bit rate) will not seek to the last frame when computing duration
     // but it's still seekable if call seek outside(e.g. from demuxer)
+    // TODO: isVariableSize: size = -real_size
     d.ctx->seekable = isSeekable() && !isVariableSize() ? AVIO_SEEKABLE_NORMAL : 0;
     return d.ctx;
 }

@@ -110,6 +110,7 @@ public:
     /*!
      * \brief position
      * MUST implement this. Used in seek
+     * TODO: implement internally by default
      */
     virtual qint64 position() const = 0;
     /*!
