@@ -24,7 +24,6 @@
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/factory.h"
 #include <QtCore/QFile>
-#include <QtCore/QMetaType>
 #ifndef TEST_QTAV_QIODeviceIO
 #include "utils/Logger.h"
 #else
@@ -161,7 +160,7 @@ public:
     QString name() const Q_DECL_OVERRIDE { return QLatin1String(kQFileName);}
     const QStringList& protocols() const Q_DECL_OVERRIDE
     {
-        static QStringList p = QStringList() << QStringLiteral("") << QStringLiteral("qrc");
+        static QStringList p = QStringList() << QStringLiteral("") << QStringLiteral("qrc") << QStringLiteral("qfile");
         return p;
     }
 protected:
@@ -196,8 +195,36 @@ void QFileIO::onUrlChanged()
     if (d.file.isOpen())
         d.file.close();
     QString path(url());
-    if (path.startsWith(QLatin1String("qrc:")))
+    if (path.startsWith(QLatin1String("qrc:"))) {
         path = path.mid(3);
+    } else if (path.startsWith(QLatin1String("qfile:"))) {
+        path = path.mid(6);
+#ifdef Q_OS_WIN
+        int p = path.indexOf(QLatin1Char(':'));
+        if (p < 1) {
+            qWarning("invalid path. ':' wrong position");
+            return;
+        }
+        p -= 1;
+        QChar c = path.at(p).toUpper();
+        if (c < QLatin1Char('A') || c > QLatin1Char('Z')) {
+            qWarning("invalid path. wrong driver");
+            return;
+        }
+        const QString path_maybe = path.mid(p);
+        qDebug() << path_maybe;
+        --p;
+        while (p > 0) {
+            c = path.at(p);
+            if (c != QLatin1Char('\\') && c != QLatin1Char('/')) {
+                qWarning("invalid path. wrong dir seperator");
+                return;
+            }
+            --p;
+        }
+        path = path_maybe;
+#endif
+    }
     d.file.setFileName(path);
     if (path.isEmpty())
         return;
