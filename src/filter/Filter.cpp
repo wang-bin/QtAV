@@ -136,7 +136,7 @@ bool VideoFilter::installTo(AVOutput *output)
 //copy qpainter if context nut null
 void VideoFilter::prepareContext(VideoFilterContext *&context, Statistics *statistics, VideoFrame* frame)
 {
-    if (contextType() == VideoFilterContext::None)
+    if (contextType() != VideoFilterContext::QtPainter)
         return;
     DPTR_D(VideoFilter);
     if (!d.context) {

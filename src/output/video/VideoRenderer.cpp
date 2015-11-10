@@ -449,6 +449,25 @@ void VideoRenderer::handlePaintEvent()
         //lock is required only when drawing the frame
         QMutexLocker locker(&d.img_mutex);
         Q_UNUSED(locker);
+        if (!d.filters.isEmpty() && d.statistics) {
+            // vo filter will not modify video frame, no lock required
+            foreach(Filter* filter, d.filters) {
+                VideoFilter *vf = static_cast<VideoFilter*>(filter);
+                if (!vf) {
+                    qWarning("a null filter!");
+                    //d.filters.removeOne(filter);
+                    continue;
+                }
+                if (!vf->isEnabled())
+                    continue;
+                // qpainter on video frame always runs on video thread. qpainter on renderer's paint device can work on rendering thread
+                // Here apply filters on frame on video thread, for example, GPU filters
+                if (vf->contextType() == VideoFilterContext::QtPainter)
+                    continue;
+                //vf->prepareContext(d.filter_context, d.statistics, 0);
+                vf->apply(d.statistics, &d.video_frame); //painter and paint device are ready, pass video frame is ok.
+            }
+        }
         /* begin paint. how about QPainter::beginNativePainting()?
          * fill background color when necessary, e.g. renderer is resized, image is null
          * if we access d.data which will be modified in AVThread, the following must be
@@ -487,11 +506,12 @@ void VideoRenderer::handlePaintEvent()
             }
             if (!vf->isEnabled())
                 continue;
+            // qpainter rendering on renderer's paint device. only supported by none-null paint engine
+            if (vf->contextType() != VideoFilterContext::QtPainter)
+                continue;
             vf->prepareContext(d.filter_context, d.statistics, 0);
             vf->apply(d.statistics, &d.video_frame); //painter and paint device are ready, pass video frame is ok.
         }
-    } else {
-        //warn once
     }
     //end paint. how about QPainter::endNativePainting()?
 }
