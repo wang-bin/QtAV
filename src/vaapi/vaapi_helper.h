@@ -23,6 +23,7 @@
 #define QTAV_VAAPI_HELPER_H
 
 #include <assert.h>
+#include <unistd.h> //close()
 #include <va/va.h>
 #include <QtCore/QLibrary>
 #include <QtCore/QSharedPointer>
@@ -227,20 +228,30 @@ private:
     vaCopySurfaceGLX_t* fp_vaCopySurfaceGLX;
 };
 #endif //QT_NO_OPENGL
-class display_t {
+class display_t : protected X11_API {
 public:
     display_t(VADisplay display = 0) : m_display(display) {}
+    void setX11Display(Display* x11) { m_x11 = x11;}
+    void setDrmFd(int fd) { m_fd = fd;}
     ~display_t() {
         if (!m_display)
             return;
         qDebug("vaapi: destroy display %p", m_display);
         VAWARN(vaTerminate(m_display)); //FIXME: what about thread?
         m_display = 0;
+        if (m_x11) {
+            XCloseDisplay(m_x11);
+        }
+        if (m_fd >= 0) {
+            ::close(m_fd);
+        }
     }
     operator VADisplay() const { return m_display;}
     VADisplay get() const {return m_display;}
 private:
     VADisplay m_display;
+    Display* m_x11;
+    int m_fd;
 };
 typedef QSharedPointer<display_t> display_ptr;
 

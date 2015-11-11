@@ -295,7 +295,7 @@ VideoDecoderVAAPI::VideoDecoderVAAPI()
     // format: detail_property
     setProperty("detail_surfaces", tr("Decoding surfaces") + QStringLiteral(" ") + tr("0: auto"));
     setProperty("detail_derive", tr("Maybe faster"));
-    setProperty("detail_display", QString("%1\n%2\n%3")
+    setProperty("detail_display", QString("%1\n%2\n%3\n%4")
                 .arg("X11: support all copy modes. libva-x11.so is required")
                 .arg("GLX: support 0-copy only. libva-glx.so is required")
                 .arg("DRM: does not support 0-copy. libva-egl.so is required")
@@ -581,6 +581,8 @@ bool VideoDecoderVAAPIPrivate::open()
         return false;
     }
     display = display_ptr(new display_t(disp));
+    display->setX11Display(display_x11);
+    display->setDrmFd(drm_fd);
     if (vaInitialize(disp, &version_major, &version_minor)) {
         qWarning("Failed to initialize the VAAPI device");
         return false;
@@ -717,13 +719,13 @@ bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
         VAStatus s = VA_STATUS_SUCCESS;
         if ((s = vaCreateImage(display->get(), &fmt[i], w, h, &image)) != VA_STATUS_SUCCESS) {
             image.image_id = VA_INVALID_ID;
-            qDebug("vaCreateImage error: %c%c%c%c (%p) %s", fmt[i].fourcc<<24>>24, fmt[i].fourcc<<16>>24, fmt[i].fourcc<<8>>24, fmt[i].fourcc>>24, s, vaErrorStr(s));
+            qDebug("vaCreateImage error: %c%c%c%c (%#x) %s", fmt[i].fourcc<<24>>24, fmt[i].fourcc<<16>>24, fmt[i].fourcc<<8>>24, fmt[i].fourcc>>24, s, vaErrorStr(s));
             continue;
         }
         /* Validate that vaGetImage works with this format */
         if ((s = vaGetImage(display->get(), surfaces[0], 0, 0, w, h, image.image_id)) != VA_STATUS_SUCCESS) {
             vaDestroyImage(display->get(), image.image_id);
-            qDebug("vaGetImage error: %c%c%c%c  (%p) %s", fmt[i].fourcc<<24>>24, fmt[i].fourcc<<16>>24, fmt[i].fourcc<<8>>24, fmt[i].fourcc>>24, s, vaErrorStr(s));
+            qDebug("vaGetImage error: %c%c%c%c  (%#x) %s", fmt[i].fourcc<<24>>24, fmt[i].fourcc<<16>>24, fmt[i].fourcc<<8>>24, fmt[i].fourcc>>24, s, vaErrorStr(s));
             image.image_id = VA_INVALID_ID;
             continue;
         }
@@ -815,14 +817,8 @@ void VideoDecoderVAAPIPrivate::close()
         config_id = VA_INVALID_ID;
     }
     display.clear();
-    if (display_x11) {
-        //XCloseDisplay(display_x11); //FIXME: why crash?
-        display_x11 = 0;
-    }
-    if (drm_fd >= 0) {
-        ::close(drm_fd);
-        drm_fd = -1;
-    }
+    display_x11 = 0;
+    drm_fd = -1;
     releaseUSWC();
     nb_surfaces = 0;
     surfaces.clear();
