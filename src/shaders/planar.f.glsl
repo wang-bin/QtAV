@@ -75,6 +75,14 @@ const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
                                0, 0, 1, 0,
                                0, -0.5, -0.5, 1);
 #endif
+// matrixCompMult for convolution
+/***User Sampler code here***%1***/
+#ifndef USER_SAMPLER
+vec4 sample(sampler2D tex, vec2 pos)
+{
+    return texture2D(tex, pos);
+}
+#endif
 
 // 10, 16bit: http://msdn.microsoft.com/en-us/library/windows/desktop/bb970578%28v=vs.85%29.aspx
 void main()
@@ -82,22 +90,22 @@ void main()
     gl_FragColor = clamp(u_colorMatrix
                          * vec4(
 #ifndef CHANNEL_8BIT
-                             dot(texture2D(u_Texture0, v_TexCoords0).ra, u_to8),
-                             dot(texture2D(u_Texture1, v_TexCoords1).ra, u_to8),
-                             dot(texture2D(u_Texture2, v_TexCoords2).ra, u_to8),
+                             dot(sample(u_Texture0, v_TexCoords0).ra, u_to8),
+                             dot(sample(u_Texture1, v_TexCoords1).ra, u_to8),
+                             dot(sample(u_Texture2, v_TexCoords2).ra, u_to8),
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
-                             texture2D(u_Texture0, v_TexCoords0).r,
-                             texture2D(u_Texture1, v_TexCoords1).g,
-                             texture2D(u_Texture2, v_TexCoords2).a,
+                             sample(u_Texture0, v_TexCoords0).r,
+                             sample(u_Texture1, v_TexCoords1).g,
+                             sample(u_Texture2, v_TexCoords2).a,
 #endif //CHANNEL_8BIT
                              1)
                          , 0.0, 1.0) * u_opacity;
 #ifdef HAS_ALPHA
 #ifndef CHANNEL_8BIT
-    gl_FragColor.a *= dot(texture2D(u_Texture3, v_TexCoords3).ra, u_to8); //GL_LUMINANCE_ALPHA
+    gl_FragColor.a *= dot(sample(u_Texture3, v_TexCoords3).ra, u_to8); //GL_LUMINANCE_ALPHA
 #else //8bit
-    gl_FragColor.a *= texture2D(u_Texture3, v_TexCoords3).a; //GL_ALPHA
+    gl_FragColor.a *= sample(u_Texture3, v_TexCoords3).a; //GL_ALPHA
 #endif //CHANNEL_8BIT
 #endif //HAS_ALPHA
 }

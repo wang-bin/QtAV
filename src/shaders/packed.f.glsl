@@ -35,8 +35,16 @@ uniform mat4 u_colorMatrix;
 uniform float u_opacity;
 uniform mat4 u_c;
 
+/***User Sampler code here***%1***/
+#ifndef USER_SAMPLER
+vec4 sample(sampler2D tex, vec2 pos)
+{
+    return texture2D(tex, pos);
+}
+#endif
+
 void main() {
-    vec4 c = texture2D(u_Texture0, v_TexCoords0);
+    vec4 c = sample(u_Texture0, v_TexCoords0);
     c = u_c * c;
 #ifndef HAS_ALPHA
     c.a = 1.0;
