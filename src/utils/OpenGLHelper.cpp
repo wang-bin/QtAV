@@ -33,6 +33,26 @@
 namespace QtAV {
 namespace OpenGLHelper {
 
+int GLSLVersion()
+{
+    static int v = -1;
+    if (v >= 0)
+        return v;
+    QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    if (!ctx) {
+        qWarning("GLSLVersion(): current context is null");
+        return 0;
+    }
+    const char* vs = (const char*)DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION));
+    int major = 0, minor = 0;
+    if (sscanf(vs, "%d.%d", &major, &minor) == 2)
+        v = major * 100 + minor;
+    else
+        v = 0;
+    qDebug("GLSL version: %s/%d", vs, v);
+    return v;
+}
+
 bool isOpenGLES()
 {
 #ifdef QT_OPENGL_DYNAMIC

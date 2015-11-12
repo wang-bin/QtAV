@@ -28,6 +28,12 @@ precision mediump float;
 #define mediump
 #define lowp
 #endif
+// >=1.40: texture(sampler2DRect,...). 'texture' is define in header
+#if __VERSION__ < 130
+#ifndef texture
+#define texture texture2D
+#endif
+#endif
 
 // u_TextureN: yuv. use array?
 uniform sampler2D u_Texture0;
@@ -80,7 +86,7 @@ const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
 #ifndef USER_SAMPLER
 vec4 sample(sampler2D tex, vec2 pos)
 {
-    return texture2D(tex, pos);
+    return texture(tex, pos);
 }
 #endif
 

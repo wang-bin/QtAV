@@ -123,6 +123,7 @@ class QMatrix4x4;
 namespace QtAV {
 namespace OpenGLHelper {
 
+int GLSLVersion();
 bool isOpenGLES();
 /*!
  * \brief hasExtension

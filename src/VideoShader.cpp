@@ -234,8 +234,9 @@ const char* VideoShader::fragmentShader() const
 
     if (d.texture_target == GL_TEXTURE_RECTANGLE) {
         frag.prepend("#extension GL_ARB_texture_rectangle : enable\n"
-                     "#define texture2D texture2DRect\n"
                      "#define sampler2D sampler2DRect\n");
+        if (OpenGLHelper::GLSLVersion() < 140)
+            frag.prepend("#define texture texture2DRect\n");
     }
     if (textureTarget() == GL_TEXTURE_RECTANGLE)
         frag.prepend("#define MULTI_COORD\n");
