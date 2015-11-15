@@ -503,7 +503,7 @@ VideoShader* VideoMaterial::createShader() const
 
 QString VideoMaterial::typeName(qint64 value)
 {
-    return QString("gl material 8bit channel: %1, planar: %2, has alpha: %3, 2d texture: %4, 2nd plane rg: %5")
+    return QString("gl material 16to8bit: %1, planar: %2, has alpha: %3, 2d texture: %4, 2nd plane rg: %5")
             .arg(!!(value&1))
             .arg(!!(value&(1<<1)))
             .arg(!!(value&(1<<2)))
@@ -519,7 +519,8 @@ qint64 VideoMaterial::type() const
     const bool tex_2d = d.target == GL_TEXTURE_2D;
     // 2d,alpha,planar,8bit
     const int rg_biplane = fmt.planeCount()==2 && OpenGLHelper::hasRG();
-    return (rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(fmt.bytesPerPixel(0) == 1);
+    const int channel16_to8 = fmt.bytesPerPixel(0) > 1 && (!OpenGLHelper::has16BitTexture() || OpenGLHelper::depth16BitTexture() < 16);
+    return (rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(channel16_to8);
 }
 
 bool VideoMaterial::bind()
