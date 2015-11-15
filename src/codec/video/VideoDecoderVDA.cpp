@@ -278,6 +278,8 @@ VideoFrame VideoDecoderVDA::frame()
             } else if (pixfmt == YUV420P) {
                 dtype = GL_UNSIGNED_BYTE;
                 iformat = format = OpenGLHelper::useDeprecatedFormats() ? GL_LUMINANCE : GL_RED;
+                if (plane > 1 && format == GL_LUMINANCE)
+                    iformat = format = GL_ALPHA;
             }
             DYGL(glBindTexture(target, *((GLuint*)handle)));
             CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, w, h, format, dtype, surface, plane);
