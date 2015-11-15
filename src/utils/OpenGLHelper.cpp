@@ -69,13 +69,15 @@ static void glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, G
         return;
     f->glGetTexLevelParameteriv(target, level, pname, params);
 #else
-#ifdef GL_ES_VERSION_3_1
+#if defined(GL_ES_VERSION_3_1)
     ::glGetTexLevelParameteriv(target, level, pname, params);
-#else
+#elif defined(GL_ES_VERSION_2_0)
     Q_UNUSED(target);
     Q_UNUSED(level);
     Q_UNUSED(pname);
     Q_UNUSED(params);
+#elif !defined(QT_OPENGL_ES)
+    ::glGetTexLevelParameteriv(target, level, pname, params);
 #endif //GL_ES_VERSION_3_1
 #endif
 }
