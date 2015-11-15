@@ -255,15 +255,15 @@ VideoFrame VideoDecoderVideoToolbox::frame()
             if (pixfmt == NV12) {
                 dtype = GL_UNSIGNED_BYTE;
                 if (plane == 0) {
-                    iformat = format = GL_LUMINANCE;
+                    iformat = format = GL_RED;
                 } else {
-                    iformat = format = GL_LUMINANCE_ALPHA;
+                    iformat = format = GL_RG;
                 }
             } else if (pixfmt == UYVY || pixfmt == YUYV) {
                 w /= 2; //rgba texture
             } else if (pixfmt == YUV420P) {
                 dtype = GL_UNSIGNED_BYTE;
-                iformat = format = GL_LUMINANCE;
+                iformat = format = GL_RED;
             }
             DYGL(glBindTexture(target, *((GLuint*)handle)));
             CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, w, h, format, dtype, surface, plane);

@@ -93,6 +93,36 @@ typedef QGLBuffer QOpenGLBuffer;
 #ifndef GL_BGR
 #define GL_BGR 0x80E0
 #endif
+#ifndef GL_RED
+#define GL_RED 0x1903
+#endif
+#ifndef GL_RG
+#define GL_RG 0x8227
+#endif
+#ifndef GL_R8
+#define GL_R8 0x8229
+#endif
+#ifndef GL_R16
+#define GL_R16 0x822A
+#endif
+#ifndef GL_RG8
+#define GL_RG8 0x822B
+#endif
+#ifndef GL_RG16
+#define GL_RG16 0x822C
+#endif
+#ifndef GL_RGB8
+#define GL_RGB8 0x8051
+#endif
+#ifndef GL_RGB16
+#define GL_RGB16 0x8054
+#endif
+#ifndef GL_RGBA8
+#define GL_RGBA8 0x8058
+#endif
+#ifndef GL_RGBA16
+#define GL_RGBA16 0x805B
+#endif
 // for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
 #ifdef QT_OPENGL_DYNAMIC
 #define DYGL(glFunc) QOpenGLContext::currentContext()->functions()->glFunc
@@ -125,6 +155,10 @@ namespace OpenGLHelper {
 
 int GLSLVersion();
 bool isOpenGLES();
+bool hasRG();
+bool has16BitTexture();
+// set by user (environment var "QTAV_TEXTURE16_DEPTH=8")
+int depth16BitTexture();
 /*!
  * \brief hasExtension
  * Current OpenGL context must be valid.
@@ -144,8 +178,6 @@ void glActiveTexture(GLenum texture);
  */
 bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* data_format, GLenum* data_type, QMatrix4x4* mat = NULL);
 int bytesOfGLFormat(GLenum format, GLenum dataType = GL_UNSIGNED_BYTE);
-GLint GetGLInternalFormat(GLint data_format, int bpp);
-
 } //namespace OpenGLHelper
 } //namespace QtAV
 #else

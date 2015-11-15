@@ -33,14 +33,19 @@
 namespace QtAV {
 namespace OpenGLHelper {
 
+int depth16BitTexture()
+{
+    static int depth = qgetenv("QTAV_TEXTURE16_DEPTH").toInt() == 8 ? 8 : 16;
+    return depth;
+}
+
 int GLSLVersion()
 {
     static int v = -1;
     if (v >= 0)
         return v;
-    QOpenGLContext *ctx = QOpenGLContext::currentContext();
-    if (!ctx) {
-        qWarning("GLSLVersion(): current context is null");
+    if (!QOpenGLContext::currentContext()) {
+        qWarning("%s: current context is null", __FUNCTION__);
         return 0;
     }
     const char* vs = (const char*)DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION));
@@ -178,9 +183,144 @@ static const gl_param_t gl_param_compat[] = { // it's legacy
     { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE},
     { GL_RGB, GL_RGB, GL_UNSIGNED_BYTE},
     { GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE},
-    { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE},
+    { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE}, //2 x 8 fallback to ra
+    {0,0,0},
 };
-// TODO: new formats GL_RED,...GL_RGB16
+static const gl_param_t gl_param_desktop[] = {
+    {GL_RED,     GL_RED,     GL_UNSIGNED_BYTE},      // 1 x 8
+    {GL_RG,      GL_RG,      GL_UNSIGNED_BYTE},      // 2 x 8
+    {GL_RGB,     GL_RGB,     GL_UNSIGNED_BYTE},      // 3 x 8
+    {GL_RGBA,    GL_RGBA,    GL_UNSIGNED_BYTE},      // 4 x 8
+    {GL_R16,     GL_RED,     GL_UNSIGNED_SHORT},     // 1 x 16
+    {GL_RG16,    GL_RG,      GL_UNSIGNED_SHORT},     // 2 x 16
+    {GL_RGB16,   GL_RGB,     GL_UNSIGNED_SHORT},     // 3 x 16
+    {GL_RGBA16,  GL_RGBA,    GL_UNSIGNED_SHORT},     // 4 x 16
+    {0,0,0},
+};
+static const gl_param_t gl_param_desktop_fallback[] = {
+    {GL_RED,     GL_RED,     GL_UNSIGNED_BYTE},      // 1 x 8
+    {GL_RG,      GL_RG,      GL_UNSIGNED_BYTE},      // 2 x 8
+    {GL_RGB,     GL_RGB,     GL_UNSIGNED_BYTE},      // 3 x 8
+    {GL_RGBA,    GL_RGBA,    GL_UNSIGNED_BYTE},      // 4 x 8
+    {GL_RG,      GL_RG,      GL_UNSIGNED_BYTE},     // 2 x 8
+    {0,0,0},
+};
+static const gl_param_t gl_param_es3[] = {
+    {GL_R8,       GL_RED,    GL_UNSIGNED_BYTE},      // 1 x 8
+    {GL_RG8,      GL_RG,     GL_UNSIGNED_BYTE},      // 2 x 8
+    {GL_RGB8,     GL_RGB,    GL_UNSIGNED_BYTE},      // 3 x 8
+    {GL_RGBA8,    GL_RGBA,   GL_UNSIGNED_BYTE},      // 4 x 8
+    {GL_RG8,      GL_RG,     GL_UNSIGNED_BYTE},      // 2 x 8 fallback to rg
+    {0,0,0},
+};
+
+bool test_gl_param(const gl_param_t& gp, bool* has_16 = 0)
+{
+    if (!QOpenGLContext::currentContext()) {
+        qWarning("%s: current context is null", __FUNCTION__);
+        return false;
+    }
+    GLuint tex;
+    DYGL(glGenTextures(1, &tex));
+    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
+    DYGL(glTexImage2D(GL_TEXTURE_2D, 0, gp.internal_format, 64, 64, 0, gp.format, gp.type, NULL));
+    GLint param = 0;
+    //GL_PROXY_TEXTURE_2D and no glGenTextures?
+    DYGL(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &param));
+    // TODO: check glGetError()?
+    if (param != gp.internal_format) {
+        qDebug("Do not support texture internal format: %#x", gp.internal_format);
+        DYGL(glDeleteTextures(1, &tex));
+        return false;
+    }
+    if (!has_16) {
+        DYGL(glDeleteTextures(1, &tex));
+        return true;
+    }
+    *has_16 = false;
+    GLenum pname = 0;
+#ifndef GL_TEXTURE_RED_SIZE
+#define GL_TEXTURE_RED_SIZE 0x805C
+#endif
+#ifndef GL_TEXTURE_LUMINANCE_SIZE
+#define GL_TEXTURE_LUMINANCE_SIZE 0x8060
+#endif
+    switch (gp.format) {
+    case GL_RED:        pname = GL_TEXTURE_RED_SIZE; break;
+    case GL_LUMINANCE:  pname = GL_TEXTURE_LUMINANCE_SIZE; break;
+    }
+    param = 0;
+    if (pname)
+        DYGL(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, pname, &param));
+    if (param) {
+        qDebug("16 bit texture depth: %d.\n", (int)param);
+        *has_16 = (int)param == 16;
+    }
+    DYGL(glDeleteTextures(1, &tex));
+    return true;
+}
+
+bool hasRG()
+{
+    static int has_rg = -1;
+    if (has_rg >= 0)
+        return !!has_rg;
+    if (test_gl_param(gl_param_desktop[1])) {
+        has_rg = 1;
+        return true;
+    }
+    if (test_gl_param(gl_param_es3[1])) {
+        has_rg = 1;
+        return true;
+    }
+    has_rg = 0;
+    return false;
+}
+
+static int has_16_tex = -1;
+static const gl_param_t* get_gl_param()
+{
+    if (!QOpenGLContext::currentContext()) {
+        qWarning("%s: current context is null", __FUNCTION__);
+        return gl_param_compat;
+    }
+    static gl_param_t* gp = 0;
+    if (gp)
+        return gp;
+    bool has_16 = false;
+    // [4] is always available
+    if (test_gl_param(gl_param_desktop[4], &has_16)) {
+        if (has_16 && depth16BitTexture() == 16)
+            gp = (gl_param_t*)gl_param_desktop;
+        else
+            gp = (gl_param_t*)gl_param_desktop_fallback;
+        has_16_tex = has_16;
+        qDebug("using gl_param_desktop%s", gp == gl_param_desktop? "" : "_fallback");
+        return gp;
+    } else if (test_gl_param(gl_param_es3[4], &has_16)) {
+        qDebug("using gl_param_es3");
+        gp = (gl_param_t*)gl_param_es3;
+        has_16_tex = has_16;
+        return gp;
+    }
+    qDebug("using gl_param_compat");
+    gp = (gl_param_t*)gl_param_compat;
+    has_16_tex = false;
+    return gp;
+}
+
+bool has16BitTexture()
+{
+    if (has_16_tex >= 0)
+        return !!has_16_tex;
+    if (!QOpenGLContext::currentContext()) {
+        qWarning("%s: current context is null", __FUNCTION__);
+        return false;
+    }
+    get_gl_param();
+    return !!has_16_tex;
+}
+
 typedef struct {
     VideoFormat::PixelFormat pixfmt;
     quint8 channels[4];
@@ -197,7 +337,7 @@ static const reorder_t gl_channel_maps[] = {
     { VideoFormat::Format_BGR48BE,{2, 1, 0, 3}},
     { VideoFormat::Format_BGR48,  {2, 1, 0, 3}},
     { VideoFormat::Format_BGR555, {2, 1, 0, 3}},
-    { VideoFormat::Format_Invalid,{0, 1, 2, 3}}
+    { VideoFormat::Format_Invalid,{1, 2, 3}}
 };
 
 static QMatrix4x4 channelMap(const VideoFormat& fmt)
@@ -347,12 +487,17 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     GLint *i_f = internal_format;
     GLenum *d_f = data_format;
     GLenum *d_t = data_type;
+    gl_param_t* gp = (gl_param_t*)get_gl_param();
+    if (gp == gl_param_desktop && fmt.planeCount() == 2) {
+        gp = (gl_param_t*)gl_param_desktop_fallback; // nv12 UV plane is 16bit, but we use rg
+        qDebug("desktop_fallback for bi-plane format");
+    }
     for (int p = 0; p < fmt.planeCount(); ++p) {
         // for packed rgb(swizzle required) and planar formats
         const int c = (fmt.channels(p)-1) + 4*((fmt.bitsPerComponent() + 7)/8 - 1);
-        if (c >= (int)ARRAY_SIZE(gl_param_compat))
+        if (gp[c].format == 0)
             return false;
-        const gl_param_t f = gl_param_compat[c];
+        const gl_param_t& f = gp[c];
         *(i_f++) = f.internal_format;
         *(d_f++) = f.format;
         *(d_t++) = f.type;
@@ -407,6 +552,14 @@ int bytesOfGLFormat(GLenum format, GLenum dataType)
         break;
     }
     switch (format) {
+    case GL_RED:
+    case GL_R8:
+    case GL_R16: //?
+        return component_size;
+    case GL_RG:
+    case GL_RG8:
+    case GL_RG16: //?
+        return 2*component_size;
 #ifdef GL_YCBCR_422_APPLE
       case GL_YCBCR_422_APPLE:
         return 2;
@@ -418,12 +571,16 @@ int bytesOfGLFormat(GLenum format, GLenum dataType)
 #ifdef GL_BGRA //ifndef GL_ES
       case GL_BGRA:
 #endif
-      case GL_RGBA:
+    case GL_RGBA:
+    case GL_RGBA8:
+    case GL_RGBA16:
         return 4*component_size;
 #ifdef GL_BGR //ifndef GL_ES
       case GL_BGR:
 #endif
-      case GL_RGB:
+    case GL_RGB:
+    case GL_RGB8:
+    case GL_RGB16:
         return 3*component_size;
       case GL_LUMINANCE_ALPHA:
         // mpv returns 2
@@ -443,24 +600,6 @@ int bytesOfGLFormat(GLenum format, GLenum dataType)
         qWarning("bytesOfGLFormat - Unknown format %u", format);
         return 1;
       }
-}
-
-GLint GetGLInternalFormat(GLint data_format, int bpp)
-{
-    if (bpp != 2)
-        return data_format;
-    switch (data_format) {
-#ifdef GL_ALPHA16
-    case GL_ALPHA:
-        return GL_ALPHA16;
-#endif //GL_ALPHA16
-#ifdef GL_LUMINANCE16
-    case GL_LUMINANCE:
-        return GL_LUMINANCE16;
-#endif //GL_LUMINANCE16
-    default:
-        return data_format;
-    }
 }
 
 } //namespace OpenGLHelper

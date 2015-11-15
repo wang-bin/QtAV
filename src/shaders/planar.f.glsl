@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -57,7 +57,7 @@ varying lowp vec2 v_TexCoords3;
 uniform float u_opacity;
 uniform float u_bpp;
 uniform mat4 u_colorMatrix;
-#ifndef CHANNEL_8BIT
+#ifdef CHANNEL16_TO8
 uniform vec2 u_to8;
 #endif
 #if defined(YUV_MAT_GLSL)
@@ -95,23 +95,47 @@ void main()
 {
     gl_FragColor = clamp(u_colorMatrix
                          * vec4(
-#ifndef CHANNEL_8BIT
+#ifdef CHANNEL16_TO8
+#ifdef USE_RG
+                             dot(sample(u_Texture0, v_TexCoords0).rg, u_to8),
+                             dot(sample(u_Texture1, v_TexCoords1).rg, u_to8),
+                             dot(sample(u_Texture2, v_TexCoords2).rg, u_to8),
+#else
                              dot(sample(u_Texture0, v_TexCoords0).ra, u_to8),
                              dot(sample(u_Texture1, v_TexCoords1).ra, u_to8),
                              dot(sample(u_Texture2, v_TexCoords2).ra, u_to8),
+#endif //USE_RG
+#else
+#ifdef USE_RG
+                             sample(u_Texture0, v_TexCoords0).r,
+                             sample(u_Texture1, v_TexCoords1).r,
+#ifdef IS_BIPLANE
+                             sample(u_Texture2, v_TexCoords2).g,
+#else
+                             sample(u_Texture2, v_TexCoords2).r,
+#endif //IS_BIPLANE
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
                              sample(u_Texture0, v_TexCoords0).r,
                              sample(u_Texture1, v_TexCoords1).g,
                              sample(u_Texture2, v_TexCoords2).a,
-#endif //CHANNEL_8BIT
+#endif //USE_RG
+#endif //CHANNEL16_TO8
                              1)
                          , 0.0, 1.0) * u_opacity;
 #ifdef HAS_ALPHA
-#ifndef CHANNEL_8BIT
+#ifdef CHANNEL16_TO8
+#ifdef USE_RG
+    gl_FragColor.a *= dot(sample(u_Texture3, v_TexCoords3).rg, u_to8); //GL_RG
+#else
     gl_FragColor.a *= dot(sample(u_Texture3, v_TexCoords3).ra, u_to8); //GL_LUMINANCE_ALPHA
+#endif //USE_RG
 #else //8bit
+#ifdef USE_RG
+    gl_FragColor.a *= sample(u_Texture3, v_TexCoords3).r;
+#else
     gl_FragColor.a *= sample(u_Texture3, v_TexCoords3).a; //GL_ALPHA
-#endif //CHANNEL_8BIT
+#endif //USE_RG
+#endif //CHANNEL16_TO8
 #endif //HAS_ALPHA
 }
