@@ -82,7 +82,7 @@ static void glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, G
 
 int depth16BitTexture()
 {
-    static int depth = qgetenv("QTAV_TEXTURE16_DEPTH").toInt() == 8 ? 8 : 16;
+    static int depth = qgetenv("QTAV_TEXTURE16_DEPTH").toInt() == 16 ? 16 : 8;//8 ? 8 : 16;
     return depth;
 }
 

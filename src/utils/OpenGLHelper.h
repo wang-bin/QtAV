@@ -157,7 +157,7 @@ int GLSLVersion();
 bool isOpenGLES();
 bool hasRG();
 bool has16BitTexture();
-// set by user (environment var "QTAV_TEXTURE16_DEPTH=8")
+// set by user (environment var "QTAV_TEXTURE16_DEPTH=8 or 16", default now is 8)
 int depth16BitTexture();
 // set by user (environment var "QTAV_GL_DEPRECATED=1")
 bool useDeprecatedFormats();
