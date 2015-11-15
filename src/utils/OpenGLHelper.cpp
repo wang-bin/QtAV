@@ -39,6 +39,12 @@ int depth16BitTexture()
     return depth;
 }
 
+bool useDeprecatedFormats()
+{
+    static int v = qgetenv("QTAV_GL_DEPRECATED").toInt() == 1;
+    return v;
+}
+
 int GLSLVersion()
 {
     static int v = -1;
@@ -295,15 +301,19 @@ static const gl_param_t* get_gl_param()
         else
             gp = (gl_param_t*)gl_param_desktop_fallback;
         has_16_tex = has_16;
-        qDebug("using gl_param_desktop%s", gp == gl_param_desktop? "" : "_fallback");
-        return gp;
+        if (!useDeprecatedFormats()) {
+            qDebug("using gl_param_desktop%s", gp == gl_param_desktop? "" : "_fallback");
+            return gp;
+        }
     } else if (test_gl_param(gl_param_es3[4], &has_16)) {
-        qDebug("using gl_param_es3");
         gp = (gl_param_t*)gl_param_es3;
         has_16_tex = has_16;
-        return gp;
+        if (!useDeprecatedFormats()) {
+            qDebug("using gl_param_es3");
+            return gp;
+        }
     }
-    qDebug("using gl_param_compat");
+    qDebug("fallback to gl_param_compat");
     gp = (gl_param_t*)gl_param_compat;
     has_16_tex = false;
     return gp;
