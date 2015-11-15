@@ -28,10 +28,57 @@
 #include <QtOpenGL/QGLFunctions>
 #endif
 #endif
+#ifdef QT_OPENGL_DYNAMIC
+#include <QtGui/QOpenGLFunctions_1_0>
+#endif
 #include "utils/Logger.h"
 
 namespace QtAV {
 namespace OpenGLHelper {
+
+// glGetTexParameteriv is supported by es2 does not support GL_TEXTURE_INTERNAL_FORMAT.
+// glGetTexLevelParameteriv is supported by es3.1
+static void glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, GLint *params)
+{
+#ifdef QT_OPENGL_DYNAMIC
+    QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    if (!ctx)
+        return;
+    if (isOpenGLES()) {
+        typedef void (QOPENGLF_APIENTRYP glGetTexLevelParameteriv_t)(GLenum, GLint, GLenum, GLint*);
+        static glGetTexLevelParameteriv_t GetTexLevelParameteriv = 0;
+        if (!GetTexLevelParameteriv) {
+            GetTexLevelParameteriv = (glGetTexLevelParameteriv_t)ctx->getProcAddress("glGetTexLevelParameteriv");
+#ifdef Q_OS_WIN
+            if (!GetTexLevelParameteriv) {
+                qDebug("resolve glGetTexLevelParameteriv from dso");
+                GetTexLevelParameteriv = (glGetTexLevelParameteriv_t)GetProcAddress((HMODULE)QOpenGLContext::openGLModuleHandle(), "glGetTexLevelParameteriv");
+            }
+#endif
+            if (!GetTexLevelParameteriv) {
+                qWarning("can not resolve glGetTexLevelParameteriv");
+                return;
+            }
+        }
+        GetTexLevelParameteriv(target, level, pname, params);
+        return;
+    }
+    QOpenGLFunctions_1_0* f = 0;
+    f = ctx->versionFunctions<QOpenGLFunctions_1_0>();
+    if (!f)
+        return;
+    f->glGetTexLevelParameteriv(target, level, pname, params);
+#else
+#ifdef GL_ES_VERSION_3_1
+    ::glGetTexLevelParameteriv(target, level, pname, params);
+#else
+    Q_UNUSED(target);
+    Q_UNUSED(level);
+    Q_UNUSED(pname);
+    Q_UNUSED(params);
+#endif //GL_ES_VERSION_3_1
+#endif
+}
 
 int depth16BitTexture()
 {
@@ -193,7 +240,7 @@ static const gl_param_t gl_param_compat[] = { // it's legacy
     {0,0,0},
 };
 static const gl_param_t gl_param_desktop[] = {
-    {GL_RED,     GL_RED,     GL_UNSIGNED_BYTE},      // 1 x 8
+    {GL_R8,     GL_RED,     GL_UNSIGNED_BYTE},      // 1 x 8
     {GL_RG,      GL_RG,      GL_UNSIGNED_BYTE},      // 2 x 8
     {GL_RGB,     GL_RGB,     GL_UNSIGNED_BYTE},      // 3 x 8
     {GL_RGBA,    GL_RGBA,    GL_UNSIGNED_BYTE},      // 4 x 8
@@ -232,7 +279,10 @@ bool test_gl_param(const gl_param_t& gp, bool* has_16 = 0)
     DYGL(glTexImage2D(GL_TEXTURE_2D, 0, gp.internal_format, 64, 64, 0, gp.format, gp.type, NULL));
     GLint param = 0;
     //GL_PROXY_TEXTURE_2D and no glGenTextures?
-    DYGL(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &param));
+#ifndef GL_TEXTURE_INTERNAL_FORMAT //only in desktop
+#define GL_TEXTURE_INTERNAL_FORMAT 0x1003
+#endif
+    OpenGLHelper::glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &param);
     // TODO: check glGetError()?
     if (param != gp.internal_format) {
         qDebug("Do not support texture internal format: %#x", gp.internal_format);
@@ -257,7 +307,7 @@ bool test_gl_param(const gl_param_t& gp, bool* has_16 = 0)
     }
     param = 0;
     if (pname)
-        DYGL(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, pname, &param));
+        OpenGLHelper::glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, pname, &param);
     if (param) {
         qDebug("16 bit texture depth: %d.\n", (int)param);
         *has_16 = (int)param == 16;
