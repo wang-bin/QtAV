@@ -195,16 +195,26 @@ bool GALScaler::convert(const quint8 *const src[], const int srcStride[], quint8
     // lock dstSurf, copy from dstSurf, unlock dstSurf
     if (!convert(src, srcStride))
         return false;
+    static int no_copy = qgetenv("VPU_NO_COPY").toInt();
     const VideoFormat fmt(d.fmt_out);
     for (int p = 0; p < fmt.planeCount(); ++p) {
-        // dma copy. check img->stride
-        if (d.pitchs.at(p) == dstStride[p]) {
-            // qMin(scaler->outHeight(), img->height)
-            dma_copy_from_vmem(dst[p], (unsigned int)(quintptr)d.bits.at(p), dstStride[p]*fmt.height(d.h_out, p));
+        if (no_copy) {
+            qint32 *ptr = (qint32*)dst[p];
+            *(ptr++) = 0x12345678;
+            *(ptr++) = (qint32)(quintptr)d.bits.at(p);
+            *(ptr++) = d.w_out;
+            *(ptr++) = fmt.height(d.h_out, p);
+            *(ptr++) = d.pitchs.at(p);
         } else {
-            qWarning("different stride @plane%d. vmem: %d, host: %d", p, d.pitchs.at(p), dstStride[p]);
-            for (int i = fmt.height(d.h_out, p) - 1; i >= 0; --i)
-                dma_copy_from_vmem(dst[p] + i*dstStride[p], (unsigned int)(quintptr)d.bits.at(p) + i*d.pitchs.at(p), dstStride[p]);
+            // dma copy. check img->stride
+            if (d.pitchs.at(p) == dstStride[p]) {
+                // qMin(scaler->outHeight(), img->height)
+                dma_copy_from_vmem(dst[p], (unsigned int)(quintptr)d.bits.at(p), dstStride[p]*fmt.height(d.h_out, p));
+            } else {
+                qWarning("different stride @plane%d. vmem: %d, host: %d", p, d.pitchs.at(p), dstStride[p]);
+                for (int i = fmt.height(d.h_out, p) - 1; i >= 0; --i)
+                    dma_copy_from_vmem(dst[p] + i*dstStride[p], (unsigned int)(quintptr)d.bits.at(p) + i*d.pitchs.at(p), dstStride[p]);
+            }
         }
     }
     return true;
