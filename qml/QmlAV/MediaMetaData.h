@@ -58,11 +58,14 @@ class MediaMetaData : public QObject
     Q_PROPERTY(QVariant size READ size NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant mediaType READ mediaType NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant duration READ duration NOTIFY metaDataChanged)
+    Q_PROPERTY(QVariant startTime READ startTime NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant audioBitRate READ audioBitRate NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant audioCodec READ audioCodec NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant averageLevel READ averageLevel NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant channelCount READ channelCount NOTIFY metaDataChanged)
+    Q_PROPERTY(QVariant channelLayout READ channelLayout NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant peakValue READ peakValue NOTIFY metaDataChanged)
+    Q_PROPERTY(QVariant sampleFormat READ sampleFormat NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant sampleRate READ sampleRate NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant albumTitle READ albumTitle NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant albumArtist READ albumArtist NOTIFY metaDataChanged)
@@ -80,6 +83,8 @@ class MediaMetaData : public QObject
     Q_PROPERTY(QVariant videoFrameRate READ videoFrameRate NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant videoBitRate READ videoBitRate NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant videoCodec READ videoCodec NOTIFY metaDataChanged)
+    Q_PROPERTY(QVariant pixelFormat READ pixelFormat NOTIFY metaDataChanged)
+    Q_PROPERTY(QVariant videoFrames READ videoFrames NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant posterUrl READ posterUrl NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant chapterNumber READ chapterNumber NOTIFY metaDataChanged)
     Q_PROPERTY(QVariant director READ director NOTIFY metaDataChanged)
@@ -110,6 +115,7 @@ public:
         Size, // X. Qt only implemented in dshow "FileSize"
         MediaType, // ?
         Duration,
+        StartTime,
 
         // Audio
         AudioBitRate,
@@ -118,6 +124,8 @@ public:
         ChannelCount,
         PeakValue, // X. dx
         SampleRate,
+        SampleFormat,
+        ChannelLayout,
 
         // Music
         AlbumTitle, // ?
@@ -141,6 +149,8 @@ public:
         VideoFrameRate,
         VideoBitRate,
         VideoCodec,
+        PixelFormat,
+        VideoFrames,
 
         PosterUrl, // X
 
@@ -179,11 +189,14 @@ public:
     QVariant size() const { return value(Size); }
     QVariant mediaType() const { return value(MediaType); }
     QVariant duration() const { return value(Duration); }
+    QVariant startTime() const { return value(StartTime); }
     QVariant audioBitRate() const { return value(AudioBitRate); }
     QVariant audioCodec() const { return value(AudioCodec); }
     QVariant averageLevel() const { return value(AverageLevel); }
     QVariant channelCount() const { return value(ChannelCount); }
+    QVariant channelLayout() const { return value(ChannelLayout); }
     QVariant peakValue() const { return value(PeakValue); }
+    QVariant sampleFormat() const { return value(SampleFormat); }
     QVariant sampleRate() const { return value(SampleRate); }
     QVariant albumTitle() const { return value(AlbumTitle); }
     QVariant albumArtist() const { return value(AlbumArtist); }
@@ -201,6 +214,8 @@ public:
     QVariant videoFrameRate() const { return value(VideoFrameRate); }
     QVariant videoBitRate() const { return value(VideoBitRate); }
     QVariant videoCodec() const { return value(VideoCodec); }
+    QVariant pixelFormat() const { return value(PixelFormat); }
+    QVariant videoFrames() const { return value(VideoFrames); }
     QVariant posterUrl() const { return value(PosterUrl); }
     QVariant chapterNumber() const { return value(ChapterNumber); }
     QVariant director() const { return value(Director); }

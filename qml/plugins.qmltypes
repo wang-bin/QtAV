@@ -33,35 +33,40 @@ Module {
                 "Size": 16,
                 "MediaType": 17,
                 "Duration": 18,
-                "AudioBitRate": 19,
-                "AudioCodec": 20,
-                "AverageLevel": 21,
-                "ChannelCount": 22,
-                "PeakValue": 23,
-                "SampleRate": 24,
-                "AlbumTitle": 25,
-                "AlbumArtist": 26,
-                "ContributingArtist": 27,
-                "Composer": 28,
-                "Conductor": 29,
-                "Lyrics": 30,
-                "Mood": 31,
-                "TrackNumber": 32,
-                "TrackCount": 33,
-                "CoverArtUrlSmall": 34,
-                "CoverArtUrlLarge": 35,
-                "Resolution": 36,
-                "PixelAspectRatio": 37,
-                "VideoFrameRate": 38,
-                "VideoBitRate": 39,
-                "VideoCodec": 40,
-                "PosterUrl": 41,
-                "ChapterNumber": 42,
-                "Director": 43,
-                "LeadPerformer": 44,
-                "Writer": 45,
-                "PosterImage": 46,
-                "CoverArtImage": 47
+                "StartTime": 19,
+                "AudioBitRate": 20,
+                "AudioCodec": 21,
+                "AverageLevel": 22,
+                "ChannelCount": 23,
+                "PeakValue": 24,
+                "SampleRate": 25,
+                "SampleFormat": 26,
+                "ChannelLayout": 27,
+                "AlbumTitle": 28,
+                "AlbumArtist": 29,
+                "ContributingArtist": 30,
+                "Composer": 31,
+                "Conductor": 32,
+                "Lyrics": 33,
+                "Mood": 34,
+                "TrackNumber": 35,
+                "TrackCount": 36,
+                "CoverArtUrlSmall": 37,
+                "CoverArtUrlLarge": 38,
+                "Resolution": 39,
+                "PixelAspectRatio": 40,
+                "VideoFrameRate": 41,
+                "VideoBitRate": 42,
+                "VideoCodec": 43,
+                "PixelFormat": 44,
+                "VideoFrames": 45,
+                "PosterUrl": 46,
+                "ChapterNumber": 47,
+                "Director": 48,
+                "LeadPerformer": 49,
+                "Writer": 50,
+                "PosterImage": 51,
+                "CoverArtImage": 52
             }
         }
         Property { name: "title"; type: "QVariant"; isReadonly: true }
@@ -83,11 +88,14 @@ Module {
         Property { name: "size"; type: "QVariant"; isReadonly: true }
         Property { name: "mediaType"; type: "QVariant"; isReadonly: true }
         Property { name: "duration"; type: "QVariant"; isReadonly: true }
+        Property { name: "startTime"; type: "QVariant"; isReadonly: true }
         Property { name: "audioBitRate"; type: "QVariant"; isReadonly: true }
         Property { name: "audioCodec"; type: "QVariant"; isReadonly: true }
         Property { name: "averageLevel"; type: "QVariant"; isReadonly: true }
         Property { name: "channelCount"; type: "QVariant"; isReadonly: true }
+        Property { name: "channelLayout"; type: "QVariant"; isReadonly: true }
         Property { name: "peakValue"; type: "QVariant"; isReadonly: true }
+        Property { name: "sampleFormat"; type: "QVariant"; isReadonly: true }
         Property { name: "sampleRate"; type: "QVariant"; isReadonly: true }
         Property { name: "albumTitle"; type: "QVariant"; isReadonly: true }
         Property { name: "albumArtist"; type: "QVariant"; isReadonly: true }
@@ -105,6 +113,8 @@ Module {
         Property { name: "videoFrameRate"; type: "QVariant"; isReadonly: true }
         Property { name: "videoBitRate"; type: "QVariant"; isReadonly: true }
         Property { name: "videoCodec"; type: "QVariant"; isReadonly: true }
+        Property { name: "pixelFormat"; type: "QVariant"; isReadonly: true }
+        Property { name: "videoFrames"; type: "QVariant"; isReadonly: true }
         Property { name: "posterUrl"; type: "QVariant"; isReadonly: true }
         Property { name: "chapterNumber"; type: "QVariant"; isReadonly: true }
         Property { name: "director"; type: "QVariant"; isReadonly: true }

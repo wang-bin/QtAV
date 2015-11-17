@@ -37,12 +37,15 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
     m_metadata.clear();
     //setValue(Size, st.);
     setValue(Duration, (qint64)QTime(0, 0, 0).msecsTo(st.duration));
+    setValue(StartTime, (qint64)QTime(0, 0, 0).msecsTo(st.start_time));
     if (st.video.available) {
         setValue(MediaType, QStringLiteral("video"));
         setValue(VideoFrameRate, st.video.frame_rate);
         setValue(VideoBitRate, st.video.bit_rate);
         setValue(VideoCodec, st.video.codec);
         setValue(Resolution, QSize(st.video_only.width, st.video_only.height));
+        setValue(PixelFormat, st.video_only.pix_fmt);
+        setValue(VideoFrames, st.video.frames);
     }
     if (st.audio.available) {
         // TODO: what if thumbnail?
@@ -52,6 +55,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
         setValue(AudioCodec, st.audio.codec);
         setValue(ChannelCount, st.audio_only.channels);
         setValue(SampleRate, st.audio_only.sample_rate);
+        setValue(ChannelLayout, st.audio_only.channel_layout);
+        setValue(SampleFormat, st.audio_only.sample_fmt);
     }
 
     QHash<QString, QString> md(st.metadata);
