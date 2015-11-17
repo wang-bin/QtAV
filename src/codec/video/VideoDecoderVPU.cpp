@@ -49,6 +49,8 @@ do { \
 } while(0);
 
 namespace QtAV {
+static const int kPoolSize = 2; //the same as XImage pool size
+
 static int BuildSeqHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, int fps_num, int fps_den, int nb_index_entries);
 static int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, const Packet& pkt);
 static bool IsSupportInterlaceMode(CodStd bitstreamFormat, DecInitialInfo *pSeqInfo);
@@ -90,6 +92,7 @@ public:
         , framebufWidth(0), framebufHeight(0), framebufStride(0)
         , framebufFormat(FORMAT_420)
         , display_queue(ring<FBSurfacePtr>(0))
+        , interop_index(0)
     {}
     ~VideoDecoderVPUPrivate() {}
     QString getVPUInfo(quint32 core_idx) {
@@ -138,7 +141,8 @@ public:
     QByteArray seqHeader;
     QByteArray picHeader;
     QString description;
-    vpu::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
+    int interop_index;
+    QVector<vpu::InteropResourcePtr> interop_res; //may be still used in video frames when decoder is destroyed
 };
 
 // codec_id in vpuhelper.c is wrong, so copy it here
@@ -401,7 +405,12 @@ bool VideoDecoderVPUPrivate::open()
     bsfillSize = 0;
     chunkReuseRequired = false;
     frameIdx = 0;
-    interop_res = vpu::InteropResourcePtr(new vpu::InteropResource());
+    interop_index = 0;
+//    interop_res.reserve(kPoolSize);
+    interop_res.resize(kPoolSize);
+    for (int i = 0; i < kPoolSize; ++i) {
+        interop_res[i] = vpu::InteropResourcePtr(new vpu::InteropResource());
+    }
     return true;
 }
 
@@ -415,6 +424,7 @@ qDebug("RETCODE_FRAME_NOT_COMPLETE");
         VPU_WARN(VPU_DecGetOutputInfo(handle, &outputInfo));
         VPU_WARN(VPU_DecClose(handle));
     }
+    handle = 0;
     if (vbStream.size)
         vdi_free_dma_memory(coreIdx, &vbStream);
     seqHeader.clear();
@@ -808,7 +818,8 @@ VideoFrame VideoDecoderVPU::frame()
     // TODO: use Format_YUV420P so that we can capture yuv frame. but we have to change code somewhere else
     VideoFrame frame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat::Format_RGB32);
     //frame.setTimestamp();
-    vpu::SurfaceInteropGAL *interop = new vpu::SurfaceInteropGAL(d.interop_res);
+    vpu::SurfaceInteropGAL *interop = new vpu::SurfaceInteropGAL(d.interop_res.at(d.interop_index));
+    d.interop_index = (d.interop_index+1)%kPoolSize;
     interop->setSurface(surf, d.codec_ctx->width, d.codec_ctx->height);
     frame.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
     return frame;
