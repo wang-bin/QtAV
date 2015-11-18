@@ -166,7 +166,7 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
     Q_UNUSED(lock);
     const VideoFormat fmt(d.fmt_in);
     // d.w_in*d.h_in, 1/4, 1/4
-    // TODO: check stride
+    // TODO: use gcoSURF api to get stride, height etc
     for (int i = 0; i < fmt.planeCount(); ++i) {
         // src[2] is 0x0!
         //qDebug("dma_copy_in_vmem %d: %p=>%p len:%d", i, src[i], d.surf_in.phyAddr[i], srcStride[i]*fmt.height(d.h_in, i));
@@ -182,7 +182,7 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
     gcsRECT srcRect = { 0, 0, d.w_in, d.h_in};
     GC_ENSURE(gcoSURF_FilterBlit(d.surf_in.surf, d.surf_out.surf, &srcRect, &dstRect, &dstRect), false)
     GC_ENSURE(gco2D_EnableDither(d.gc_2d, gcvFALSE), false)
-    GC_ENSURE(gco2D_Flush(d.gc_2d), false);
+    //GC_ENSURE(gco2D_Flush(d.gc_2d), false); //tiled flash the screen?
     GC_ENSURE(gcoHAL_Commit(d.gc_hal, gcvTRUE), false);
     return true;
 }
@@ -195,19 +195,22 @@ bool GALScaler::convert(const quint8 *const src[], const int srcStride[], quint8
     // lock dstSurf, copy from dstSurf, unlock dstSurf
     if (!convert(src, srcStride))
         return false;
-    static int no_copy = qgetenv("VPU_NO_COPY").toInt();
+    static const bool no_copy = !!qgetenv("VPU_NO_COPY").toInt() || !qgetenv("VPU_COPY").toInt();
+    static const bool partial_copy = qgetenv("VPU_PARTIAL_COPY").toInt();
     const VideoFormat fmt(d.fmt_out);
     for (int p = 0; p < fmt.planeCount(); ++p) {
-        // dma copy. check img->stride
-        if (d.pitchs.at(p) == dstStride[p]) {
-            // qMin(scaler->outHeight(), img->height)
-            dma_copy_from_vmem(dst[p], (unsigned int)(quintptr)d.bits.at(p), dstStride[p]*fmt.height(d.h_out, p));
-        } else {
-            qWarning("different stride @plane%d. vmem: %d, host: %d", p, d.pitchs.at(p), dstStride[p]);
-            for (int i = fmt.height(d.h_out, p) - 1; i >= 0; --i)
-                dma_copy_from_vmem(dst[p] + i*dstStride[p], (unsigned int)(quintptr)d.bits.at(p) + i*d.pitchs.at(p), dstStride[p]);
+        if (!no_copy || partial_copy) {
+            // dma copy. check img->stride
+            if (d.pitchs.at(p) == dstStride[p]) {
+                // qMin(scaler->outHeight(), img->height)
+                dma_copy_from_vmem(dst[p], (unsigned int)(quintptr)d.bits.at(p), dstStride[p]*fmt.height(d.h_out, p));
+            } else {
+                qWarning("different stride @plane%d. vmem: %d, host: %d", p, d.pitchs.at(p), dstStride[p]);
+                for (int i = fmt.height(d.h_out, p) - 1; i >= 0; --i)
+                    dma_copy_from_vmem(dst[p] + i*dstStride[p], (unsigned int)(quintptr)d.bits.at(p) + i*d.pitchs.at(p), dstStride[p]);
+            }
         }
-        if (no_copy) {
+        if (no_copy || partial_copy) {
             qint32 *ptr = (qint32*)dst[p];
             *(ptr++) = 0x12345678;
             *(ptr++) = (qint32)(quintptr)d.bits.at(p);
