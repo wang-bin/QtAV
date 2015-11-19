@@ -44,7 +44,9 @@ extern "C" {
 
 namespace QtAV {
 using namespace vaapi;
-
+namespace OpenGLHelper {
+bool isEGL();
+}
 class VideoDecoderVAAPIPrivate;
 class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
 {
@@ -215,19 +217,10 @@ public:
 #endif //QT_NO_OPENGL
         if (VAAPI_X11::isLoaded()) {
             display_type = VideoDecoderVAAPI::X11;
-        //TODO: OpenGLHelper::isEGL()
-/*
 #if QTAV_HAVE(EGL_CAPI)
-#if defined(QT_OPENGL_ES_2)
-        display_type = VideoDecoderVAAPI::EGL;
-#else
-        // FIXME: may fallback to xcb_glx(default)
-        static const bool use_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
-        if (use_egl)
+        if (OpenGLHelper::isEGL())
             display_type = VideoDecoderVAAPI::EGL;
-#endif //defined(QT_OPENGL_ES_2)
 #endif //QTAV_HAVE(EGL_CAPI)
-*/
 #ifndef QT_NO_OPENGL
 #if VA_X11_INTEROP
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;

@@ -368,13 +368,8 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
         return true;
     if (!x11) {
 #if QTAV_HAVE(EGL_CAPI)
-#if defined(QT_OPENGL_ES_2)
-        static const bool use_egl = true;
-#else
         // FIXME: may fallback to xcb_glx(default)
-        static const bool use_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
-#endif //defined(QT_OPENGL_ES_2)
-        if (use_egl) {
+        if (OpenGLHelper::isEGL()) {
             // TODO: check EGL_NOK_texture_from_pixmap
             x11 = new X11_EGL();
         } else
@@ -576,14 +571,11 @@ bool EGLInteropResource::ensure()
     if (egl)
         return true;
 #if QTAV_HAVE(EGL_CAPI)
-#if !defined(QT_OPENGL_ES_2)
     // FIXME: may fallback to xcb_glx(default)
-    static const bool use_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
-    if (!use_egl) {
+    if (!OpenGLHelper::isEGL()) {
         qWarning("Not using EGL");
         return false;
     }
-#endif //defined(QT_OPENGL_ES_2)
 #else
     qWarning("build QtAV with capi is required");
     return false;
