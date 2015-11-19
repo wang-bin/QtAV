@@ -86,14 +86,14 @@ public:
     }
     void init(VideoFormat::PixelFormat fmt) {
         pixfmt = fmt;
-        pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
+        pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(pixfmt);
         qpixfmt = VideoFormat::imageFormatFromPixelFormat(pixfmt);
         init();
     }
     void init(QImage::Format fmt) {
         qpixfmt = fmt;
         pixfmt = VideoFormat::pixelFormatFromImageFormat(fmt);
-        pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg((VideoFormat::PixelFormat)pixfmt);
+        pixfmt_ff = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(pixfmt);
         init();
     }
     void init(AVPixelFormat fffmt) {
@@ -479,22 +479,19 @@ VideoFormat& VideoFormat::operator=(const VideoFormat &other)
 
 VideoFormat& VideoFormat::operator =(VideoFormat::PixelFormat fmt)
 {
-    d->pixfmt = fmt;
-    d->init(fmt);
+    d = new VideoFormatPrivate(fmt);
     return *this;
 }
 
 VideoFormat& VideoFormat::operator =(QImage::Format qpixfmt)
 {
-    d->qpixfmt = qpixfmt;
-    d->init(qpixfmt);
+    d = new VideoFormatPrivate(qpixfmt);
     return *this;
 }
 
 VideoFormat& VideoFormat::operator =(int fffmt)
 {
-    d->pixfmt_ff = (AVPixelFormat)fffmt;
-    d->init(d->pixfmt_ff);
+    d = new VideoFormatPrivate((AVPixelFormat)fffmt);
     return *this;
 }
 
