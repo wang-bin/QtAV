@@ -28,6 +28,9 @@
 #define HAVE_UCHARDET
 #endif
 #endif //LINK_UCHARDET
+#ifndef HAVE_UCHARDET
+typedef struct uchardet* uchardet_t;
+#endif
 
 class CharsetDetector::Private
 {
