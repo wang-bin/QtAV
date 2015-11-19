@@ -186,13 +186,13 @@ public:
      * \brief setAudioStream
      * set an external audio file and stream number as audio track
      * \param file external audio file. set empty to use internal audio tracks
-     * \param n audio stream number n=0, 1, ....
-     * TODO: if internal audio stream <0, disable audio
+     * \param n audio stream number n=0, 1, .... n<0: disable audio thread
      * \return false if fail
      */
     bool setAudioStream(const QString& file, int n = 0);
     /*!
      * set audio/video/subtitle stream to n. n=0, 1, 2..., means the 1st, 2nd, 3rd audio/video/subtitle stream
+     * If n < 0, there will be no audio thread and sound/
      * If a new file is set(except the first time) then a best stream will be selected. If the file not changed,
      * e.g. replay, then the stream not change
      * return: false if stream not changed, not valid
@@ -203,6 +203,7 @@ public:
      * Set audio stream number in current media or external audio file
      */
     bool setAudioStream(int n);
+    //TODO: n<0, no video thread
     bool setVideoStream(int n);
     /*!
      * \brief internalAudioTracks

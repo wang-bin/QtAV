@@ -938,8 +938,6 @@ const QVariantList &AVPlayer::internalAudioTracks() const
 
 bool AVPlayer::setAudioStream(const QString &file, int n)
 {
-    if (n < 0) // TODO: disable audio
-        return false;
     QString path(file);
     // QFile does not support "file:"
     if (path.startsWith(QLatin1String("file:")))
@@ -1007,9 +1005,6 @@ update_demuxer:
             d->external_audio_tracks = d->getTracksInfo(&d->audio_demuxer, AVDemuxer::AudioStream);
             Q_EMIT externalAudioTracksChanged(d->external_audio_tracks);
             d->read_thread->setAudioDemuxer(&d->audio_demuxer);
-        }
-        if (d->audio_track < 0) {
-            d->audio_track = d->audio_demuxer.audioStream();
         }
     }
     if (!isPlaying()) {
@@ -1194,7 +1189,8 @@ void AVPlayer::playInternal()
     // TODO: add isVideo() or hasVideo()?
     qreal vfps = d->force_fps;
     bool force_fps = vfps > 0;
-    if (d->athread) {
+    const bool ao_null = d->ao && d->ao->backend().toLower() == QLatin1String("null");
+    if (d->athread && !ao_null) {
         force_fps = vfps > 0 && !!d->vthread;
     } else if (!force_fps) {
         force_fps = !!d->vthread;

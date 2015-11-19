@@ -362,6 +362,8 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     adec->resampler()->inAudioFormat().setChannels(avctx->channels);
     adec->resampler()->inAudioFormat().setChannelLayoutFFmpeg(avctx->channel_layout);
 #endif
+    if (audio_track < 0)
+        return true;
     if (!athread) {
         qDebug("new audio thread");
         athread = new AudioThread(player);
