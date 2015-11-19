@@ -45,7 +45,11 @@ public:
      * \return true if success
      */
     virtual bool map(const surface_ptr &surface, GLuint tex, int w, int h, int plane) = 0;
-    virtual bool unmap(GLuint tex) { Q_UNUSED(tex); return true;}
+    virtual bool unmap(const surface_ptr &surface, GLuint tex) {
+        Q_UNUSED(surface);
+        Q_UNUSED(tex);
+        return true;
+    }
 };
 typedef QSharedPointer<InteropResource> InteropResourcePtr;
 
@@ -85,7 +89,7 @@ public:
     X11InteropResource();
     ~X11InteropResource();
     bool map(const surface_ptr &surface, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
-    bool unmap(GLuint tex) Q_DECL_OVERRIDE;
+    bool unmap(const surface_ptr &surface, GLuint tex) Q_DECL_OVERRIDE;
 private:
     bool ensurePixmaps(int w, int h);
     Display *xdisplay;
@@ -102,12 +106,11 @@ public:
     EGLInteropResource();
     ~EGLInteropResource();
     bool map(const surface_ptr &surface, GLuint tex, int w, int h, int plane) Q_DECL_OVERRIDE;
-    bool unmap(GLuint tex) Q_DECL_OVERRIDE;
+    bool unmap(const surface_ptr &surface, GLuint tex) Q_DECL_OVERRIDE;
 private:
     bool ensure();
-    void destroy();
+    void destroy(VADisplay va_dpy); //destroy dma buffer and egl images
     uintptr_t vabuf_handle;
-    display_ptr va_dpy;
     VAImage va_image;
     QMap<GLuint, int> mapped;
     EGL *egl;

@@ -75,7 +75,7 @@ void* SurfaceInteropVAAPI::map(SurfaceType type, const VideoFormat &fmt, void *h
 
 void SurfaceInteropVAAPI::unmap(void *handle)
 {
-    m_resource->unmap(*((GLuint*)handle));
+    m_resource->unmap(m_surface, *((GLuint*)handle));
 }
 
 void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, int plane)
@@ -422,8 +422,9 @@ bool X11InteropResource::map(const surface_ptr& surface, GLuint tex, int w, int 
     return true;
 }
 
-bool X11InteropResource::unmap(GLuint tex)
+bool X11InteropResource::unmap(const surface_ptr &surface, GLuint tex)
 {
+    Q_UNUSED(surface);
     Q_UNUSED(tex);
     // can not call glXReleaseTexImageEXT otherwise the texture will containts no image data
     return true;
@@ -482,7 +483,6 @@ public:
 EGLInteropResource::EGLInteropResource()
     : InteropResource()
     , vabuf_handle(0)
-    , va_dpy(0)
     , egl(0)
 {
     va_image.buf = va_image.image_id = VA_INVALID_ID;
@@ -490,7 +490,6 @@ EGLInteropResource::EGLInteropResource()
 
 EGLInteropResource::~EGLInteropResource()
 {
-    destroy();
     delete egl; // TODO: thread
 }
 
@@ -498,15 +497,14 @@ bool EGLInteropResource::map(const surface_ptr &surface, GLuint tex, int w, int 
 {
     if (!ensure())
         return false;
-    va_dpy = surface->display();
     if (va_image.image_id == VA_INVALID_ID) {
-        VA_ENSURE(vaDeriveImage(va_dpy->get(), surface->get(), &va_image), false);
+        VA_ENSURE(vaDeriveImage(surface->vadisplay(), surface->get(), &va_image), false);
     }
     if (!vabuf_handle) {
         VABufferInfo vabuf;
         memset(&vabuf, 0, sizeof(vabuf));
         vabuf.mem_type = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME;
-        VA_ENSURE(vaAcquireBufferHandle(va_dpy->get(), va_image.buf, &vabuf), false);
+        VA_ENSURE(vaAcquireBufferHandle(surface->vadisplay(), va_image.buf, &vabuf), false);
         vabuf_handle = vabuf.handle;
     }
     // (it would be nice if we could use EGL_IMAGE_INTERNAL_FORMAT_EXT)
@@ -538,13 +536,13 @@ bool EGLInteropResource::map(const surface_ptr &surface, GLuint tex, int w, int 
     return true;
 }
 
-bool EGLInteropResource::unmap(GLuint tex)
+bool EGLInteropResource::unmap(const surface_ptr &surface, GLuint tex)
 {
     if (!egl)
         return false;
     if (!mapped.contains(tex)) {
         if (mapped.isEmpty()) {
-            destroy();
+            destroy(surface->vadisplay());
         }
         return false;
     }
@@ -552,21 +550,23 @@ bool EGLInteropResource::unmap(GLuint tex)
     egl->destroyImages(plane);
     mapped.remove(tex);
     if (mapped.isEmpty()) {
-        destroy();
+        destroy(surface->vadisplay());
     }
     return true;
 }
 
-void EGLInteropResource::destroy()
+void EGLInteropResource::destroy(VADisplay va_dpy)
 {
+    if (!va_dpy)
+        return;
     if (va_image.buf != VA_INVALID_ID) {
-        VAWARN(vaReleaseBufferHandle(va_dpy->get(), va_image.buf));
+        VAWARN(vaReleaseBufferHandle(va_dpy, va_image.buf));
         va_image.buf = VA_INVALID_ID;
         vabuf_handle = 0;
         //qDebug("vabuf_handle: %#x", vabuf_handle);
     }
     if (va_image.image_id != VA_INVALID_ID) {
-        VAWARN(vaDestroyImage(va_dpy->get(), va_image.image_id));
+        VAWARN(vaDestroyImage(va_dpy, va_image.image_id));
         va_image.image_id = VA_INVALID_ID;
     }
 }
