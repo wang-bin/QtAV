@@ -496,8 +496,6 @@ EGLInteropResource::~EGLInteropResource()
 
 bool EGLInteropResource::map(const surface_ptr &surface, GLuint tex, int w, int h, int plane)
 {
-    Q_UNUSED(w);
-    Q_UNUSED(h);
     if (!ensure())
         return false;
     va_dpy = surface->display();
@@ -524,8 +522,8 @@ bool EGLInteropResource::map(const surface_ptr &surface, GLuint tex, int w, int 
     const VideoFormat fmt(pixelFormatFromVA(va_image.format.fourcc));
     const EGLint attribs[] = {
         EGL_LINUX_DRM_FOURCC_EXT, drm_fmts[fmt.bytesPerPixel(plane) - 1],
-        EGL_WIDTH, fmt.width(surface->width(), plane),
-        EGL_HEIGHT, fmt.height(surface->height(), plane),
+        EGL_WIDTH, fmt.width(w, plane),
+        EGL_HEIGHT, fmt.height(h, plane),
         EGL_DMA_BUF_PLANE0_FD_EXT, (EGLint)vabuf_handle,
         EGL_DMA_BUF_PLANE0_OFFSET_EXT, (EGLint)va_image.offsets[plane],
         EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint)va_image.pitches[plane],

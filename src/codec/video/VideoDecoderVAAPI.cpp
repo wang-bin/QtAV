@@ -391,16 +391,19 @@ VideoFrame VideoDecoderVAAPI::frame()
         if (display() == EGL) {
             vaDeriveImage(d.display->get(), p->get(), &img);
             fmt = pixelFormatFromVA(img.format.fourcc);
-            qDebug() << pixelFormatFromVA(img.format.fourcc);
+            //qDebug() << fmt;//pixelFormatFromVA(img.format.fourcc);
         }
-        VideoFrame f(d.width, d.height, fmt);//d.image_fmt);
+        VideoFrame f(d.width, d.height, fmt);
+        // img.pitches[i] is 16 aligned
         f.setBytesPerLine(d.width*fmt.bytesPerPixel(0), 0); //used by gl to compute texture size
-        //qDebug("bpl0: %d", f.bytesPerLine(0));
-        //qDebug() << fmt; //nv12 bpl[1] = bpl[0]?
         if (display() == EGL) {
-            for (int i = 0; i < fmt.planeCount(); ++i) {
-                f.setBytesPerLine(img.pitches[i], i);// f.bytesPerLine(0), i);//fmt.width(f.bytesPerLine(0), i), i); //used by gl to compute texture size
-                //qDebug("bpl%d: %d/%d", i, fmt.width(f.bytesPerLine(0), i), f.bytesPerLine(i));
+            if (fmt.planeCount() == 2) { //nv12
+                f.setBytesPerLine(f.bytesPerLine(0), 1);
+            } else {
+                for (int i = 0; i < fmt.planeCount(); ++i) {
+                    //f.setBytesPerLine(img.pitches[i], i);
+                    f.setBytesPerLine(fmt.width(f.bytesPerLine(0), i), i);
+                }
             }
             vaDestroyImage(d.display->get(), img.image_id);
         }
