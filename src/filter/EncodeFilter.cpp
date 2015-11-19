@@ -75,8 +75,16 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
         return;
     // encode delayed frames can pass an invalid frame
     if (!d.enc->isOpen() && frame.isValid()) {
+#if 0 //TODO: if set the input format, check whether it is supported in open()
+        if (!d.enc->audioFormat().isValid()) {
+            AudioFormat af(frame.format());
+            if (af.isPlanar())
+                af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
+            d.enc->setAudioFormat(af);
+        }
+#endif
         if (!d.enc->open()) { // TODO: error()
-            qWarning("Failed to open encoder");
+            qWarning("Failed to open audio encoder");
             return;
         }
         Q_EMIT readyToEncode();
@@ -86,6 +94,8 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
     if (f.format() != d.enc->audioFormat())
         f = f.to(d.enc->audioFormat());
     if (!d.enc->encode(f))
+        return;
+    if (!d.enc->encoded().isValid())
         return;
     Q_EMIT frameEncoded(d.enc->encoded());
 }
@@ -142,7 +152,7 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
         d.enc->setWidth(frame.width());
         d.enc->setHeight(frame.height());
         if (!d.enc->open()) { // TODO: error()
-            qWarning("Failed to open encoder");
+            qWarning("Failed to open video encoder");
             return;
         }
         Q_EMIT readyToEncode();
@@ -156,6 +166,8 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
     if (f.pixelFormat() != d.enc->pixelFormat())
         f = f.to(d.enc->pixelFormat());
     if (!d.enc->encode(f))
+        return;
+    if (!d.enc->encoded().isValid())
         return;
     Q_EMIT frameEncoded(d.enc->encoded());
 }

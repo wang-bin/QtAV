@@ -200,7 +200,9 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
     d.nb_encoded++;
     if (!got_packet) {
         qWarning("no packet got");
-        return false; //false
+        d.packet = Packet();
+        // invalid frame means eof
+        return frame.isValid();
     }
    // qDebug("enc avpkt.pts: %lld, dts: %lld.", pkt.pts, pkt.dts);
     d.packet = Packet::fromAVPacket(&pkt, av_q2d(d.avctx->time_base));
