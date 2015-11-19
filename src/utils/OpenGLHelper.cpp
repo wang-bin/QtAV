@@ -113,6 +113,14 @@ int GLSLVersion()
     return v;
 }
 
+bool isEGL()
+{
+    if (isOpenGLES())
+        return true;
+    static const bool xcb_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
+    return xcb_egl;
+}
+
 bool isOpenGLES()
 {
 #ifdef QT_OPENGL_DYNAMIC

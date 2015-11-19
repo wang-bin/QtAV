@@ -154,6 +154,7 @@ namespace QtAV {
 namespace OpenGLHelper {
 
 int GLSLVersion();
+bool isEGL();
 bool isOpenGLES();
 bool hasRG();
 bool has16BitTexture();
