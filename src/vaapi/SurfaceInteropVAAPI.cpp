@@ -451,7 +451,7 @@ public:
         }
     }
     void destroyImages(int plane) {
-        qDebug("destroyImage %d image:%p, this: %p", plane, image,this);
+        //qDebug("destroyImage %d image:%p, this: %p", plane, image,this);
         if (image[plane] != EGL_NO_IMAGE_KHR) {
             EGL_WARN(eglDestroyImageKHR(dpy, image[plane]));
             image[plane] = EGL_NO_IMAGE_KHR;
@@ -494,21 +494,12 @@ EGLInteropResource::~EGLInteropResource()
     delete egl; // TODO: thread
 }
 
-// return the new entry
-static EGLint* add_egl_attribute(EGLint* a, EGLint key, EGLint value)
-{
-    a[0] = key;
-    a[1] = value;
-    a[2] = EGL_NONE;
-    printf("%d:%d ", key, value);
-    return a+3;
-}
-
 bool EGLInteropResource::map(const surface_ptr &surface, GLuint tex, int w, int h, int plane)
 {
+    Q_UNUSED(w);
+    Q_UNUSED(h);
     if (!ensure())
         return false;
-    qDebug("EGLInteropResource.map %d", plane);
     va_dpy = surface->display();
     if (va_image.image_id == VA_INVALID_ID) {
         VA_ENSURE(vaDeriveImage(va_dpy->get(), surface->get(), &va_image), false);
@@ -524,22 +515,22 @@ bool EGLInteropResource::map(const surface_ptr &surface, GLuint tex, int w, int 
 #define FOURCC(a,b,c,d) ((a) | ((b)<<8) | ((c)<<16) | ((unsigned)(d)<<24))
     static const int drm_fmts[] = {
         FOURCC('R', '8', ' ', ' '),   // DRM_FORMAT_R8
-        FOURCC('G', 'R', '8', '8'),   // DRM_FORMAT_GR88
+        FOURCC('G', 'R', '8', '8'),   // DRM_FORMAT_GR88. RG88 does not work
         FOURCC('R', 'G', '2', '4'),   // DRM_FORMAT_RGB888
         FOURCC('R', 'A', '2', '4')  // DRM_FORMAT_RGBA8888
     };
 #undef FOURCC
-    EGLint attribs[20] = {EGL_NONE};
-    EGLint *a = attribs;
     // TODO: yv12 swap uv
     const VideoFormat fmt(pixelFormatFromVA(va_image.format.fourcc));
-    a = add_egl_attribute(a, EGL_LINUX_DRM_FOURCC_EXT, drm_fmts[fmt.bytesPerPixel(plane) - 1]);
-    a = add_egl_attribute(a, EGL_WIDTH, fmt.width(surface->width(), plane));
-    a = add_egl_attribute(a, EGL_HEIGHT, fmt.height(surface->height(), plane));
-    a = add_egl_attribute(a, EGL_DMA_BUF_PLANE0_FD_EXT, vabuf_handle);
-    a = add_egl_attribute(a, EGL_DMA_BUF_PLANE0_OFFSET_EXT, va_image.offsets[plane]);
-    a = add_egl_attribute(a, EGL_DMA_BUF_PLANE0_PITCH_EXT, va_image.pitches[plane]);
-    printf("---\n");
+    const EGLint attribs[] = {
+        EGL_LINUX_DRM_FOURCC_EXT, drm_fmts[fmt.bytesPerPixel(plane) - 1],
+        EGL_WIDTH, fmt.width(surface->width(), plane),
+        EGL_HEIGHT, fmt.height(surface->height(), plane),
+        EGL_DMA_BUF_PLANE0_FD_EXT, (EGLint)vabuf_handle,
+        EGL_DMA_BUF_PLANE0_OFFSET_EXT, (EGLint)va_image.offsets[plane],
+        EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint)va_image.pitches[plane],
+        EGL_NONE
+    };
     if (!egl->bindImage(plane, attribs))
         return false;
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
@@ -562,7 +553,6 @@ bool EGLInteropResource::unmap(GLuint tex)
     const int plane = mapped.value(tex);
     egl->destroyImages(plane);
     mapped.remove(tex);
-    qDebug("unmap plane %d", plane);
     if (mapped.isEmpty()) {
         destroy();
     }
@@ -575,7 +565,7 @@ void EGLInteropResource::destroy()
         VAWARN(vaReleaseBufferHandle(va_dpy->get(), va_image.buf));
         va_image.buf = VA_INVALID_ID;
         vabuf_handle = 0;
-        qDebug("vabuf_handle: %#x", vabuf_handle);
+        //qDebug("vabuf_handle: %#x", vabuf_handle);
     }
     if (va_image.image_id != VA_INVALID_ID) {
         VAWARN(vaDestroyImage(va_dpy->get(), va_image.image_id));
@@ -587,7 +577,6 @@ bool EGLInteropResource::ensure()
 {
     if (egl)
         return true;
-    qDebug("EGLInteropResource.ensure");
 #if QTAV_HAVE(EGL_CAPI)
 #if !defined(QT_OPENGL_ES_2)
     // FIXME: may fallback to xcb_glx(default)
