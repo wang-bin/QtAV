@@ -856,7 +856,7 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
      * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
      */
     // GL_GREEN as (internal)format is not supported in new versions
-    if (data_format[2] == GL_LUMINANCE && nb_planes > 2 && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
+    if (nb_planes > 2 && data_format[2] == GL_LUMINANCE && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
         internal_format[2] = data_format[2] = GL_ALPHA;
         if (nb_planes == 4)
             internal_format[3] = data_format[3] = data_format[2]; // vec4(,,,A)
