@@ -236,6 +236,12 @@ public:
     ~display_t() {
         if (!m_display)
             return;
+#if defined(QTAV_HAVE_EGL_CAPI) || defined(WORKAROUND_VATERMINATE_CRASH)
+        int mj, mn;
+        // FIXME: for libva-xxx we can unload after vaTerminate to avoid crash. But does not work for egl+dma/drm. I really don't know the reason
+        qDebug("vaInitialize before terminate. (work around for vaTerminate() crash)");
+        VAWARN(vaInitialize(m_display, &mj, &mn));
+#endif
         qDebug("vaapi: destroy display %p", m_display);
         VAWARN(vaTerminate(m_display)); //FIXME: what about thread?
         m_display = 0;
