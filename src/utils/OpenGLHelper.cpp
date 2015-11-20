@@ -115,10 +115,23 @@ int GLSLVersion()
 
 bool isEGL()
 {
-    if (isOpenGLES())
+    static bool is_egl = false;
+    if (is_egl)
         return true;
-    static const bool xcb_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
-    return xcb_egl;
+    if (isOpenGLES())
+        is_egl = true;
+    if (is_egl)
+        return true;
+    // we can use QOpenGLContext::currentContext()->nativeHandle().value<QEGLNativeContext>(). but gl context is required
+#if QTAV_HAVE(XCB_EGL)
+    is_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
+    return is_egl;
+#endif
+#if !defined(QT_OPENGL_DYNAMIC) && QTAV_HAVE(QT_EGL)
+    is_egl = true;
+    return true;
+#endif
+    return false;
 }
 
 bool isOpenGLES()
