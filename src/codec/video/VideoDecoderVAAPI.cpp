@@ -215,15 +215,19 @@ public:
         if (VAAPI_X11::isLoaded()) {
             display_type = VideoDecoderVAAPI::X11;
 #ifndef QT_NO_OPENGL
-#if QTAV_HAVE(EGL_CAPI)
-        if (OpenGLHelper::isEGL())
-            display_type = VideoDecoderVAAPI::EGL;
-#endif //QTAV_HAVE(EGL_CAPI)
 #if VA_X11_INTEROP
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
 #endif //VA_X11_INTEROP
 #endif //QT_NO_OPENGL
         }
+#ifndef QT_NO_OPENGL
+#if QTAV_HAVE(EGL_CAPI)
+        if (OpenGLHelper::isEGL()) {
+            display_type = VideoDecoderVAAPI::EGL;
+            copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
+        }
+#endif //QTAV_HAVE(EGL_CAPI)
+#endif //QT_NO_OPENGL
         config_id = VA_INVALID_ID;
         context_id = VA_INVALID_ID;
         version_major = 0;
@@ -276,7 +280,12 @@ public:
 VideoDecoderVAAPI::VideoDecoderVAAPI()
     : VideoDecoderFFmpegHW(*new VideoDecoderVAAPIPrivate())
 {
-    setDisplayPriority(QStringList() << QStringLiteral("X11") << QStringLiteral("GLX") <<  QStringLiteral("DRM") << QStringLiteral("EGL"));
+    QStringList dp = QStringList() << QStringLiteral("X11") << QStringLiteral("GLX") <<  QStringLiteral("DRM");
+    if (OpenGLHelper::isEGL()) //TODO: drm+egl
+        dp.prepend(QStringLiteral("EGL"));
+    else
+        dp.append(QStringLiteral("EGL"));
+    setDisplayPriority(dp);
     // dynamic properties about static property details. used by UI
     // format: detail_property
     setProperty("detail_surfaces", tr("Decoding surfaces") + QStringLiteral(" ") + tr("0: auto"));

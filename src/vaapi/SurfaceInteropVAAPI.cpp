@@ -493,6 +493,7 @@ bool EGLInteropResource::map(const surface_ptr &surface, GLuint tex, int w, int 
     if (!ensure())
         return false;
     if (va_image.image_id == VA_INVALID_ID) {
+        // TODO: try vaGetImage. it's yuv420p. RG texture is not supported by gles2, so let's use yuv420p, or change the shader
         VA_ENSURE(vaDeriveImage(surface->vadisplay(), surface->get(), &va_image), false);
     }
     if (!vabuf_handle) {
