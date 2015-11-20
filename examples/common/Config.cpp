@@ -73,6 +73,7 @@ public:
         }
 
         QSettings settings(file, QSettings::IniFormat);
+        log = settings.value(QString::fromLatin1("log"), QString()).toString();
         last_file = settings.value(QString::fromLatin1("last_file"), QString()).toString();
         timeout = settings.value(QString::fromLatin1("timeout"), 30.0).toReal();
         abort_timeout = settings.value(QString::fromLatin1("abort_timeout"), true).toBool();
@@ -143,6 +144,7 @@ public:
         avfilterAudio = settings.value(QString::fromLatin1("options"), QString()).toString();
         settings.endGroup();
         settings.beginGroup(QString::fromLatin1("opengl"));
+        egl = settings.value(QString::fromLatin1("egl"), false).toBool();
         const QString glname = settings.value(QString::fromLatin1("type"), QString::fromLatin1("OpenGLES")).toString();
         opengl = (Config::OpenGLType)Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).keysToValue(glname.toLatin1().constData());
         // d3d11 bad performance (gltexsubimage2d)
@@ -158,6 +160,7 @@ public:
         qDebug() << "sync config to " << file;
         QSettings settings(file, QSettings::IniFormat);
         // TODO: why crash on mac qt5.4 if call on aboutToQuit()
+        settings.setValue(QString::fromLatin1("log"), log);
         settings.setValue(QString::fromLatin1("last_file"), last_file);
         settings.setValue(QString::fromLatin1("timeout"), timeout);
         settings.setValue(QString::fromLatin1("abort_timeout"), abort_timeout);
@@ -209,6 +212,7 @@ public:
         settings.setValue(QString::fromLatin1("options"), avfilterAudio);
         settings.endGroup();
         settings.beginGroup(QString::fromLatin1("opengl"));
+        settings.setValue(QString::fromLatin1("egl"), egl);
         const char* glname = Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).valueToKey(opengl);
         settings.setValue(QString::fromLatin1("type"), QString::fromLatin1(glname));
         settings.setValue(QString::fromLatin1("angle_platform"), angle_dx);
@@ -256,11 +260,13 @@ public:
     bool preview_enabled;
     int preview_w, preview_h;
 
+    bool egl;
     Config::OpenGLType opengl;
     QString angle_dx;
     bool abort_timeout;
     qreal timeout;
     int buffer_value;
+    QString log;
 };
 
 Config& Config::instance()
@@ -753,6 +759,21 @@ Config& Config::avfilterAudioEnable(bool e)
     return *this;
 }
 
+bool Config::isEGL() const
+{
+    return mpData->egl;
+}
+
+Config& Config::setEGL(bool value)
+{
+    if (mpData->egl == value)
+        return *this;
+    mpData->egl = value;
+    Q_EMIT EGLChanged();
+    Q_EMIT changed();
+    return *this;
+}
+
 Config::OpenGLType Config::openGLType() const
 {
     return mpData->opengl;
@@ -809,6 +830,21 @@ Config& Config::setTimeout(qreal value)
         return *this;
     mpData->timeout = value;
     emit timeoutChanged();
+    Q_EMIT changed();
+    return *this;
+}
+
+QString Config::logLevel() const
+{
+    return mpData->log;
+}
+
+Config& Config::setLogLevel(const QString& value)
+{
+    if (mpData->log == value.toLower())
+        return *this;
+    mpData->log = value.toLower();
+    Q_EMIT logLevelChanged();
     Q_EMIT changed();
     return *this;
 }

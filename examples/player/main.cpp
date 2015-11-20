@@ -61,13 +61,6 @@ VideoRendererId rendererId_from_opt_name(const QString& name) {
 int main(int argc, char *argv[])
 {
     qDebug() << aboutQtAV_PlainText();
-    QApplication a(argc, argv);
-    a.setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
-    qDebug() <<a.arguments();
-    a.setApplicationName(QString::fromLatin1("Player"));
-//    a.setApplicationDisplayName(QString::fromLatin1("QtAV Player"));
-
-    QDir::setCurrent(qApp->applicationDirPath());
     QOptions options = get_common_options();
     options.add(QString::fromLatin1("player options"))
             ("ffmpeg-log",  QString(), QString::fromLatin1("ffmpeg log level. can be: quiet, panic, fatal, error, warn, info, verbose, debug. this can override env 'QTAV_FFMPEG_LOG'"))
@@ -84,6 +77,15 @@ int main(int argc, char *argv[])
              , QString::fromLatin1("video renderer engine. can be gl, qt, d2d, gdi, xv, x11."))
             ;
     options.parse(argc, argv);
+    do_common_options_before_qapp(options);
+
+    QApplication a(argc, argv);
+    a.setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+    qDebug() <<a.arguments();
+    a.setApplicationName(QString::fromLatin1("Player"));
+//    a.setApplicationDisplayName(QString::fromLatin1("QtAV Player"));
+    QDir::setCurrent(qApp->applicationDirPath());
+
     do_common_options(options);
     set_opengl_backend(options.option(QString::fromLatin1("gl")).value().toString(), a.arguments().first());
     load_qm(QStringList() << QString::fromLatin1("player"), options.value(QString::fromLatin1("language")).toString());

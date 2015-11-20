@@ -83,6 +83,7 @@ QOptions get_common_options()
             .add(QString::fromLatin1("common options"))
             ("help,h", QLatin1String("print this"))
             ("ao", QString(), QLatin1String("audio output. Can be ordered combination of available backends (-ao help). Leave empty to use the default setting. Set 'null' to disable audio."))
+            ("-egl", QLatin1String("Use EGL. Only works for Qt>=5.5+XCB"))
             ("-gl", QLatin1String("OpenGL backend for Qt>=5.4(windows). can be 'desktop', 'opengles' and 'software'"))
             ("x", 0, QString())
             ("y", 0, QLatin1String("y"))
@@ -103,6 +104,18 @@ QOptions get_common_options()
              , QString::fromLatin1("log to file. Set empty to disable log file (-logfile '')"))
             ;
     return ops;
+}
+
+void do_common_options_before_qapp(const QOptions& options)
+{
+    // it's too late if qApp is created. but why ANGLE is not?
+    if (options.value(QString::fromLatin1("egl")).toBool() || Config::instance().isEGL()) {
+        // only apply to current run. no config change
+        qputenv("QT_XCB_GL_INTEGRATION", "xcb_egl");
+    } else {
+        qputenv("QT_XCB_GL_INTEGRATION", "xcb_glx");
+    }
+    qDebug() << "QT_XCB_GL_INTEGRATION: " << qgetenv("QT_XCB_GL_INTEGRATION");
 }
 
 void do_common_options(const QOptions &options, const QString& appName)
@@ -127,7 +140,9 @@ void do_common_options(const QOptions &options, const QString& appName)
             qWarning() << "Failed to open log file '" << fileLogger()->fileName() << "': " << fileLogger()->errorString();
         }
     }
-    const QByteArray level(options.value(QString::fromLatin1("log")).toByteArray());
+    QByteArray level(options.value(QString::fromLatin1("log")).toByteArray());
+    if (level.isEmpty())
+        level = Config::instance().logLevel().toLatin1();
     if (!level.isEmpty())
         qputenv("QTAV_LOG", level);
 }

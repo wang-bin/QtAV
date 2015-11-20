@@ -63,11 +63,13 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(bool previewEnabled READ previewEnabled WRITE setPreviewEnabled NOTIFY previewEnabledChanged)
     Q_PROPERTY(int previewWidth READ previewWidth WRITE setPreviewWidth NOTIFY previewWidthChanged)
     Q_PROPERTY(int previewHeight READ previewHeight WRITE setPreviewHeight NOTIFY previewHeightChanged)
+    Q_PROPERTY(bool EGL READ isEGL WRITE setEGL NOTIFY EGLChanged)
     Q_PROPERTY(OpenGLType openGLType READ openGLType WRITE setOpenGLType NOTIFY openGLTypeChanged)
     Q_PROPERTY(QString ANGLEPlatform READ getANGLEPlatform WRITE setANGLEPlatform NOTIFY ANGLEPlatformChanged)
     Q_PROPERTY(bool avformatOptionsEnabled READ avformatOptionsEnabled WRITE setAvformatOptionsEnabled NOTIFY avformatOptionsEnabledChanged)
     Q_PROPERTY(qreal timeout READ timeout WRITE setTimeout NOTIFY timeoutChanged)
     Q_PROPERTY(int bufferValue READ bufferValue WRITE setBufferValue NOTIFY bufferValueChanged)
+    Q_PROPERTY(QString logLevel READ logLevel WRITE setLogLevel NOTIFY logLevelChanged)
     Q_ENUMS(OpenGLType)
 public:
     enum OpenGLType { // currently only for windows
@@ -169,6 +171,9 @@ public:
     bool avfilterAudioEnable() const;
     Config& avfilterAudioEnable(bool e);
 
+    // currently only for xcb
+    bool isEGL() const;
+    Config& setEGL(bool value);
     // can be "Desktop", "OpenGLES", "Software"
     OpenGLType openGLType() const;
     Config& setOpenGLType(OpenGLType value);
@@ -186,6 +191,10 @@ public:
     // <0: auto
     int bufferValue() const;
     Config& setBufferValue(int value);
+
+    // can be: "", "off", "debug", "warning", "critical", "fatal", "all"
+    QString logLevel() const;
+    Config& setLogLevel(const QString& value);
 
     Q_INVOKABLE QVariant operator ()(const QString& key) const;
     Q_INVOKABLE Config& operator ()(const QString& key, const QVariant& value);
@@ -217,12 +226,14 @@ public:
     Q_SIGNAL void previewEnabledChanged();
     Q_SIGNAL void previewWidthChanged();
     Q_SIGNAL void previewHeightChanged();
+    Q_SIGNAL void EGLChanged();
     Q_SIGNAL void openGLTypeChanged();
     Q_SIGNAL void ANGLEPlatformChanged();
     Q_SIGNAL void avformatOptionsEnabledChanged();
     Q_SIGNAL void bufferValueChanged();
     Q_SIGNAL void timeoutChanged();
     Q_SIGNAL void abortOnTimeoutChanged();
+    Q_SIGNAL void logLevelChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();

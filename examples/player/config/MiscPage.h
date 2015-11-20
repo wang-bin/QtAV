@@ -46,6 +46,8 @@ private:
     QCheckBox *m_timeout_abort;
     QComboBox *m_opengl;
     QComboBox *m_angle_platform;
+    QCheckBox *m_egl;
+    QComboBox *m_log;
 };
 
 #endif // MISCPAGE_H

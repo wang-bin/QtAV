@@ -39,13 +39,15 @@ int main(int argc, char *argv[])
     options.add(QLatin1String("QMLPlayer options"))
             ("scale", 1.0, QLatin1String("scale of graphics context. 0: auto"))
             ;
+    options.parse(argc, argv);
+    do_common_options_before_qapp(options);
+
     QGuiApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("QMLPlayer"));
     app.setApplicationDisplayName(QStringLiteral("QtAV QMLPlayer"));
-    options.parse(argc, argv);
-    do_common_options(options);
-
     QDir::setCurrent(qApp->applicationDirPath());
+
+    do_common_options(options);
     qDebug() << "arguments======= " << app.arguments();
     set_opengl_backend(options.option(QStringLiteral("gl")).value().toString(), app.arguments().first());
     load_qm(QStringList() << QStringLiteral("QMLPlayer"), options.value(QStringLiteral("language")).toString());

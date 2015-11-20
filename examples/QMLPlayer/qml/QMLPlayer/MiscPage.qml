@@ -3,7 +3,7 @@ import "utils.js" as Utils
 
 Page {
     title: qsTr("Misc")
-    height: titleHeight + (1+glSet.visible*4)*Utils.kItemHeight + detail.contentHeight + 3*Utils.kSpacing
+    height: titleHeight + (4+glSet.visible*4)*Utils.kItemHeight + detail.contentHeight + 4*Utils.kSpacing
 
     Column {
         anchors.fill: content
@@ -27,6 +27,27 @@ Page {
                 height: parent.height
                 horizontalAlignment: Text.AlignHCenter
                 text: qsTr("Press on the preview item to seek")
+            }
+        }
+        Row {
+            width: parent.width
+            height: Utils.kItemHeight
+            Button {
+                text: "EGL"
+                visible: Qt.platform.os === "linux"
+                checkable: true
+                checked: PlayerConfig.EGL
+                width: parent.width/3
+                height: Utils.kItemHeight
+                onCheckedChanged: PlayerConfig.EGL = checked
+            }
+            Text {
+                font.pixelSize: Utils.kFontSize
+                color: "white"
+                width: parent.width*2/3
+                height: parent.height
+                horizontalAlignment: Text.AlignHCenter
+                text: qsTr("Requirement") + ": Qt>=5.5+XCB"
             }
         }
         Text {
@@ -104,7 +125,42 @@ Page {
                 }
             }
         }
+        Row {
+            width: parent.width
+            height: 2*Utils.kItemHeight
+            spacing: Utils.kSpacing
+            Text {
+                font.pixelSize: Utils.kFontSize
+                color: "white"
+                width: parent.width/3
+                height: parent.height
+                horizontalAlignment: Text.AlignHCenter
+                text: "Log"
+            }
+            Menu {
+                width: parent.width/2
+                height: parent.height
+                itemWidth: width
+                model: ListModel {
+                    id: logModel
+                    ListElement { name: "off" }
+                    ListElement { name: "warning" }
+                    ListElement { name: "debug" }
+                    ListElement { name: "all" }
+                }
+                onClicked: PlayerConfig.logLevel = logModel.get(index).name
+                Component.onCompleted: {
+                    for (var i = 0; i < logModel.count; ++i) {
+                        if (PlayerConfig.logLevel === logModel.get(i).name) {
+                            currentIndex = i
+                            break
+                        }
+                    }
+                }
+            }
+        }
     }
+
     Component.onCompleted: {
         if (PlayerConfig.openGLType === 2) {
             angle.sourceComponent = angleMenu
