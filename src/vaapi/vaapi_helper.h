@@ -23,7 +23,6 @@
 #define QTAV_VAAPI_HELPER_H
 
 #include <assert.h>
-#include <unistd.h> //close()
 #include <va/va.h>
 #include <QtCore/QLibrary>
 #include <QtCore/QSharedPointer>
@@ -87,37 +86,6 @@ private:
     QLibrary m_lib;
 };
 
-struct _XDisplay;
-typedef struct _XDisplay Display;
-//TODO: use macro template. DEFINE_DL_SYMB(R, NAME, ARG....);
-class X11_API : protected dll_helper {
-public:
-    typedef Display* XOpenDisplay_t(const char* name);
-    typedef int XCloseDisplay_t(Display* dpy);
-    typedef int XInitThreads_t();
-    X11_API(): dll_helper(QString::fromLatin1("X11"),6) {
-        fp_XOpenDisplay = (XOpenDisplay_t*)resolve("XOpenDisplay");
-        fp_XCloseDisplay = (XCloseDisplay_t*)resolve("XCloseDisplay");
-        fp_XInitThreads = (XInitThreads_t*)resolve("XInitThreads");
-    }
-    Display* XOpenDisplay(const char* name) {
-        assert(fp_XOpenDisplay);
-        return fp_XOpenDisplay(name);
-    }
-    int XCloseDisplay(Display* dpy) {
-        assert(fp_XCloseDisplay);
-        return fp_XCloseDisplay(dpy);
-    }
-    int XInitThreads() {
-        assert(fp_XInitThreads);
-        return fp_XInitThreads();
-    }
-private:
-    XOpenDisplay_t* fp_XOpenDisplay;
-    XCloseDisplay_t* fp_XCloseDisplay;
-    XInitThreads_t* fp_XInitThreads;
-};
-
 class VAAPI_DRM : protected dll_helper {
 public:
     typedef VADisplay vaGetDisplayDRM_t(int fd);
@@ -131,6 +99,8 @@ public:
 private:
     vaGetDisplayDRM_t* fp_vaGetDisplayDRM;
 };
+
+typedef struct _XDisplay Display;
 class VAAPI_X11 : protected dll_helper {
 public:
     typedef unsigned long Drawable;
@@ -228,38 +198,39 @@ private:
     vaCopySurfaceGLX_t* fp_vaCopySurfaceGLX;
 };
 #endif //QT_NO_OPENGL
-class display_t : protected X11_API {
+
+class NativeDisplayBase;
+typedef QSharedPointer<NativeDisplayBase> NativeDisplayPtr;
+struct NativeDisplay {
+    enum Type {
+        Auto,
+        X11,
+        GLX, //the same as X11 but use vaGetDisplayGLX()?
+        DRM,
+        Wayland,
+        VA
+    };
+    intptr_t handle;
+    Type type;
+    NativeDisplay() : handle(-1), type(Auto) {}
+};
+class display_t;
+typedef QSharedPointer<display_t> display_ptr;
+class display_t {
 public:
-    display_t(VADisplay display = 0) : m_display(display) {}
-    void setX11Display(Display* x11) { m_x11 = x11;}
-    void setDrmFd(int fd) { m_fd = fd;}
-    ~display_t() {
-        if (!m_display)
-            return;
-#if defined(QTAV_HAVE_EGL_CAPI) || defined(WORKAROUND_VATERMINATE_CRASH)
-        int mj, mn;
-        // FIXME: for libva-xxx we can unload after vaTerminate to avoid crash. But does not work for egl+dma/drm. I really don't know the reason
-        qDebug("vaInitialize before terminate. (work around for vaTerminate() crash)");
-        VAWARN(vaInitialize(m_display, &mj, &mn));
-#endif
-        qDebug("vaapi: destroy display %p", m_display);
-        VAWARN(vaTerminate(m_display)); //FIXME: what about thread?
-        m_display = 0;
-        if (m_x11) {
-            XCloseDisplay(m_x11);
-        }
-        if (m_fd >= 0) {
-            ::close(m_fd);
-        }
-    }
+    // display can have a valid handle (!=-1, 0), then it's an external display. you have to manager the external display handle yourself
+    static display_ptr create(const NativeDisplay& display);
+    ~display_t();
     operator VADisplay() const { return m_display;}
     VADisplay get() const {return m_display;}
+    void getVersion(int* majorV, int* minorV) { *majorV = m_major; *minorV = m_minor;}
+    NativeDisplay::Type nativeDisplayType() const { return m_type;}
 private:
     VADisplay m_display;
-    Display* m_x11;
-    int m_fd;
+    NativeDisplayPtr m_native;
+    NativeDisplay::Type m_type;
+    int m_major, m_minor;
 };
-typedef QSharedPointer<display_t> display_ptr;
 
 class surface_t {
 public:

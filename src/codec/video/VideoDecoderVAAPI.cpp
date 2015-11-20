@@ -30,8 +30,6 @@
 extern "C" {
 #include <libavcodec/vaapi.h>
 }
-#include <fcntl.h> //open()
-#include <unistd.h> //close()
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
 #include "vaapi/SurfaceInteropVAAPI.h"
@@ -200,7 +198,6 @@ class VideoDecoderVAAPIPrivate Q_DECL_FINAL: public VideoDecoderFFmpegHWPrivate,
 #ifndef QT_NO_OPENGL
         , protected VAAPI_GLX
 #endif //QT_NO_OPENGL
-        , protected X11_API
 {
     DPTR_DECLARE_PUBLIC(VideoDecoderVAAPI)
 public:
@@ -217,18 +214,16 @@ public:
 #endif //QT_NO_OPENGL
         if (VAAPI_X11::isLoaded()) {
             display_type = VideoDecoderVAAPI::X11;
+#ifndef QT_NO_OPENGL
 #if QTAV_HAVE(EGL_CAPI)
         if (OpenGLHelper::isEGL())
             display_type = VideoDecoderVAAPI::EGL;
 #endif //QTAV_HAVE(EGL_CAPI)
-#ifndef QT_NO_OPENGL
 #if VA_X11_INTEROP
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
 #endif //VA_X11_INTEROP
 #endif //QT_NO_OPENGL
         }
-        drm_fd = -1;
-        display_x11 = 0;
         config_id = VA_INVALID_ID;
         context_id = VA_INVALID_ID;
         version_major = 0;
@@ -254,8 +249,6 @@ public:
     bool support_4k;
     VideoDecoderVAAPI::DisplayType display_type;
     QList<VideoDecoderVAAPI::DisplayType> display_priority;
-    Display *display_x11;
-    int drm_fd;
     display_ptr display;
 
     VAConfigID    config_id;
@@ -490,96 +483,31 @@ bool VideoDecoderVAAPIPrivate::open()
         return false;
     }
     /* Create a VA display */
-    VADisplay disp = 0;
     foreach (VideoDecoderVAAPI::DisplayType dt, display_priority) {
+        NativeDisplay nd;
         if (dt == VideoDecoderVAAPI::DRM) {
-            if (!VAAPI_DRM::isLoaded())
-                continue;
-            qDebug("vaGetDisplay DRM...............");
-            // try drmOpen()?
-            static const char* drm_dev[] = {
-                "/dev/dri/renderD128", // DRM Render-Nodes
-                "/dev/dri/card0",
-                NULL
-            };
-            for (int i = 0; drm_dev[i]; ++i) {
-                drm_fd = ::open(drm_dev[i], O_RDWR);
-                if (drm_fd < 0)
-                    continue;
-                qDebug("using drm device: %s", drm_dev[i]); //drmGetDeviceNameFromFd
-                break;
-            }
-            if(drm_fd == -1) {
-                qWarning("Could not access rendering device");
-                continue;
-            }
-            disp = vaGetDisplayDRM(drm_fd);
-            display_type = VideoDecoderVAAPI::DRM;
+            nd.type = NativeDisplay::DRM;
         } else if (dt == VideoDecoderVAAPI::X11) {
-            qDebug("vaGetDisplay X11...............");
-            if (!VAAPI_X11::isLoaded())
-                continue;
-            if (!XInitThreads()) {
-                qWarning("XInitThreads failed!");
-                continue;
-            }
-            display_x11 =  XOpenDisplay(NULL);
-            if (!display_x11) {
-                qWarning("Could not connect to X server");
-                continue;
-            }
-            disp = vaGetDisplay(display_x11);
-            display_type = VideoDecoderVAAPI::X11;
+            nd.type = NativeDisplay::X11;
         } else if (dt == VideoDecoderVAAPI::GLX) {
-            qDebug("vaGetDisplay GLX...............");
-#ifndef QT_NO_OPENGL
-            if (!VAAPI_GLX::isLoaded())
-                continue;
-            if (!XInitThreads()) {
-                qWarning("XInitThreads failed!");
-                continue;
-            }
-            display_x11 = XOpenDisplay(NULL);
-            if (!display_x11) {
-                qWarning("Could not connect to X server");
-                continue;
-            }
-            disp = vaGetDisplayGLX(display_x11);
-            display_type = VideoDecoderVAAPI::GLX;
-#else
-            qWarning("No OpenGL support in Qt");
-#endif //QT_NO_OPENGL
-        } else if (dt == VideoDecoderVAAPI::EGL
+            nd.type = NativeDisplay::GLX;
+        } else if (dt == VideoDecoderVAAPI::EGL //TODO: wayland. vaGetDisplayWl
                    ) {
-            qDebug("vaGetDisplay X11 EGL...............");
-            if (!XInitThreads()) {
-                qWarning("XInitThreads failed!");
-                continue;
-            }
-            // TODO: vaGetDisplayWl
-            display_x11 =  XOpenDisplay(NULL);
-            if (!display_x11) {
-                qWarning("Could not connect to X server");
-                continue;
-            }
-            disp = vaGetDisplay(display_x11);
-            display_type = VideoDecoderVAAPI::EGL;
+            qDebug("VA-API + EGL on X11...............");
+            nd.type = NativeDisplay::X11;
         }
-        if (disp)
+        display = display_t::create(nd);
+        if (display) {
+            display_type = dt;
             break;
+        }
     }
-    if (!disp/* || vaDisplayIsValid(display) != 0*/) {
+    if (!display/* || vaDisplayIsValid(display->get()) != 0*/) {
         qWarning("Could not get a VAAPI device");
         return false;
     }
-    display = display_ptr(new display_t(disp));
-    display->setX11Display(display_x11);
-    display->setDrmFd(drm_fd);
-    if (vaInitialize(disp, &version_major, &version_minor)) {
-        qWarning("Failed to initialize the VAAPI device");
-        return false;
-    }
-    vendor = QString::fromLatin1(vaQueryVendorString(disp));
+    display->getVersion(&version_major, &version_minor);
+    vendor = QString::fromLatin1(vaQueryVendorString(display->get()));
     //if (!vendor.toLower().contains(QLatin1Strin("intel")))
       //  copy_uswc = false;
 
@@ -608,13 +536,13 @@ bool VideoDecoderVAAPIPrivate::open()
     }
     /* Check if the selected profile is supported */
     qDebug("checking profile: %s, %s",  avcodec_get_name(codec_ctx->codec_id), getProfileName(pe->codec, pe->profile));
-    int nb_profiles = vaMaxNumProfiles(disp);
+    int nb_profiles = vaMaxNumProfiles(display->get());
     if (nb_profiles <= 0) {
         qWarning("No profile supported");
         return false;
     }
     QVector<VAProfile> supported_profiles(nb_profiles, VAProfileNone);
-    VA_ENSURE_TRUE(vaQueryConfigProfiles(disp, supported_profiles.data(), &nb_profiles), false);
+    VA_ENSURE_TRUE(vaQueryConfigProfiles(display->get(), supported_profiles.data(), &nb_profiles), false);
     while (pe && !isProfileSupportedByRuntime(supported_profiles.constData(), nb_profiles, pe->va_profile)) {
         qDebug("Codec or profile %s %d is not directly supported by the hardware. Checking alternative profiles", vaapi::profileName(pe->va_profile), pe->va_profile);
         pe = findProfileEntry(codec_ctx->codec_id, codec_ctx->profile, pe);
@@ -628,13 +556,13 @@ bool VideoDecoderVAAPIPrivate::open()
     VAConfigAttrib attrib;
     memset(&attrib, 0, sizeof(attrib));
     attrib.type = VAConfigAttribRTFormat;
-    VA_ENSURE_TRUE(vaGetConfigAttributes(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1), false);
+    VA_ENSURE_TRUE(vaGetConfigAttributes(display->get(), pe->va_profile, VAEntrypointVLD, &attrib, 1), false);
     /* Not sure what to do if not, I don't have a way to test */
     if ((attrib.value & VA_RT_FORMAT_YUV420) == 0)
         return false;
 
     config_id  = VA_INVALID_ID;
-    VA_ENSURE_TRUE(vaCreateConfig(disp, pe->va_profile, VAEntrypointVLD, &attrib, 1, &config_id), false);
+    VA_ENSURE_TRUE(vaCreateConfig(display->get(), pe->va_profile, VAEntrypointVLD, &attrib, 1, &config_id), false);
     supports_derive = false;
     width = codec_ctx->width;
     height = codec_ctx->height;
@@ -772,9 +700,9 @@ bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
     }
     if (!ensureSurfaces(surface_count, surface_width, surface_height, true))
         return false;
-    if (display_type == VideoDecoderVAAPI::DRM
+    if (display_type == VideoDecoderVAAPI::DRM //
             || (display_type == VideoDecoderVAAPI::X11 && copy_mode != VideoDecoderFFmpegHW::ZeroCopy)
-            || (display_type == VideoDecoderVAAPI::EGL)) {
+            || (display_type == VideoDecoderVAAPI::EGL && OpenGLHelper::isEGL())) {
         // egl needs VAImage too
         if (!prepareVAImage(surface_width, surface_height))
             return false;
@@ -809,8 +737,6 @@ void VideoDecoderVAAPIPrivate::close()
         config_id = VA_INVALID_ID;
     }
     display.clear();
-    display_x11 = 0;
-    drm_fd = -1;
     releaseUSWC();
     nb_surfaces = 0;
     surfaces.clear();
