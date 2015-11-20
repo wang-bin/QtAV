@@ -390,13 +390,9 @@ VideoFrame VideoDecoderVAAPI::frame()
         // img.pitches[i] is 16 aligned
         f.setBytesPerLine(d.width*fmt.bytesPerPixel(0), 0); //used by gl to compute texture size
         if (display() == EGL) {
-            if (fmt.planeCount() == 2) { //nv12
-                f.setBytesPerLine(f.bytesPerLine(0), 1);
-            } else {
-                for (int i = 0; i < fmt.planeCount(); ++i) {
-                    //f.setBytesPerLine(img.pitches[i], i);
-                    f.setBytesPerLine(fmt.width(f.bytesPerLine(0), i), i);
-                }
+            for (int i = 1; i < fmt.planeCount(); ++i) {
+                // img.pitchs[] are 16 aligned
+                f.setBytesPerLine(f.bytesPerLine(0)/(img.pitches[i-1]/(img.pitches[i]-15)), i);
             }
             vaDestroyImage(d.display->get(), img.image_id);
         }
@@ -527,7 +523,7 @@ bool VideoDecoderVAAPIPrivate::open()
                 qWarning("XInitThreads failed!");
                 continue;
             }
-            display_x11 =  XOpenDisplay(NULL);;
+            display_x11 =  XOpenDisplay(NULL);
             if (!display_x11) {
                 qWarning("Could not connect to X server");
                 continue;
@@ -543,7 +539,7 @@ bool VideoDecoderVAAPIPrivate::open()
                 qWarning("XInitThreads failed!");
                 continue;
             }
-            display_x11 = XOpenDisplay(NULL);;
+            display_x11 = XOpenDisplay(NULL);
             if (!display_x11) {
                 qWarning("Could not connect to X server");
                 continue;
@@ -561,7 +557,7 @@ bool VideoDecoderVAAPIPrivate::open()
                 continue;
             }
             // TODO: vaGetDisplayWl
-            display_x11 =  XOpenDisplay(NULL);;
+            display_x11 =  XOpenDisplay(NULL);
             if (!display_x11) {
                 qWarning("Could not connect to X server");
                 continue;
