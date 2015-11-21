@@ -71,11 +71,12 @@ static void glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, G
 #else
 #if defined(GL_ES_VERSION_3_1)
     ::glGetTexLevelParameteriv(target, level, pname, params);
-#elif defined(GL_ES_VERSION_2_0)
+#elif defined(GL_ES_VERSION_2_0) //also defined in es3.0
     Q_UNUSED(target);
     Q_UNUSED(level);
     Q_UNUSED(pname);
     Q_UNUSED(params);
+    qDebug("OpenGL ES2 and 3.0 does not support glGetTexLevelParameteriv");
 #elif !defined(QT_OPENGL_ES)
     ::glGetTexLevelParameteriv(target, level, pname, params);
 #endif //GL_ES_VERSION_3_1
@@ -126,10 +127,6 @@ bool isEGL()
 #if QTAV_HAVE(XCB_EGL)
     is_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
     return is_egl;
-#endif
-#if !defined(QT_OPENGL_DYNAMIC) && QTAV_HAVE(QT_EGL)
-    is_egl = true;
-    return true;
 #endif
     return false;
 }

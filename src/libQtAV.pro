@@ -274,8 +274,8 @@ config_videotoolbox:!ios {
 
 config_gl|config_opengl {
   contains(QT_CONFIG, egl) {
-    DEFINES *= QTAV_HAVE_QT_EGL=1
-    contains(QT_CONFIG, xcb): DEFINES *= QTAV_HAVE_XCB_EGL=1
+#if a platform plugin depends on egl (for example, eglfs), egl is defined
+    contains(QT_CONFIG, xcb):greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 4): DEFINES *= QTAV_HAVE_XCB_EGL=1
   }
   OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
   SDK_HEADERS *= \
