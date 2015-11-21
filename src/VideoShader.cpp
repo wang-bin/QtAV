@@ -220,7 +220,7 @@ const char* VideoShader::fragmentShader() const
     }
     if (d.video_format.planeCount() == 2) //TODO: nv21 must be swapped
         frag.prepend("#define IS_BIPLANE\n");
-    if (OpenGLHelper::hasRG())
+    if (OpenGLHelper::hasRG() && !OpenGLHelper::useDeprecatedFormats())
         frag.prepend("#define USE_RG\n");
     const bool has_alpha = d.video_format.hasAlpha();
     if (d.video_format.isPlanar()) {
@@ -518,7 +518,7 @@ qint64 VideoMaterial::type() const
     const VideoFormat &fmt = d.video_format;
     const bool tex_2d = d.target == GL_TEXTURE_2D;
     // 2d,alpha,planar,8bit
-    const int rg_biplane = fmt.planeCount()==2 && OpenGLHelper::hasRG();
+    const int rg_biplane = fmt.planeCount()==2 && !OpenGLHelper::useDeprecatedFormats() && OpenGLHelper::hasRG();
     const int channel16_to8 = fmt.bytesPerPixel(0) > 1 && (!OpenGLHelper::has16BitTexture() || OpenGLHelper::depth16BitTexture() < 16);
     return (rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(channel16_to8);
 }
