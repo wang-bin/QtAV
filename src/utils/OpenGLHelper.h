@@ -164,8 +164,9 @@ int depth16BitTexture();
 bool useDeprecatedFormats();
 /*!
  * \brief hasExtension
- * Current OpenGL context must be valid.
+ * Test if any of the given extensions is supported. Current OpenGL context must be valid.
  * \param exts Ends with NULL
+ * \return true if one of extension is supported
  */
 bool hasExtension(const char* exts[]);
 bool isPBOSupported();

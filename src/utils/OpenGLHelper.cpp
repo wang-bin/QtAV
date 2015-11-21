@@ -289,6 +289,16 @@ static const gl_param_t gl_param_es3[] = {
     {GL_RG8,      GL_RG,     GL_UNSIGNED_BYTE},      // 2 x 8 fallback to rg
     {0,0,0},
 };
+//https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_rg.txt
+// supported by ANGLE+D3D11
+static const gl_param_t gl_param_es2rg[] = {
+    {GL_RED,     GL_RED,    GL_UNSIGNED_BYTE},      // 1 x 8 //es2: GL_EXT_texture_rg. R8, RG8 are for render buffer
+    {GL_RG,      GL_RG,     GL_UNSIGNED_BYTE},      // 2 x 8
+    {GL_RGB,     GL_RGB,    GL_UNSIGNED_BYTE},      // 3 x 8
+    {GL_RGBA,    GL_RGBA,   GL_UNSIGNED_BYTE},      // 4 x 8
+    {GL_RG,      GL_RG,     GL_UNSIGNED_BYTE},      // 2 x 8 fallback to rg
+    {0,0,0},
+};
 
 bool test_gl_param(const gl_param_t& gp, bool* has_16 = 0)
 {
@@ -352,7 +362,14 @@ bool hasRG()
         has_rg = 1;
         return true;
     }
-    has_rg = 0;
+    static const char* ext[] = { "GL_EXT_texture_rg", 0}; //RED, RG, R8, RG8
+    if (hasExtension(ext)) {
+        qDebug("has extension GL_EXT_texture_rg");
+        has_rg = 1;
+        return true;
+    }
+    if (QOpenGLContext::currentContext())
+        has_rg = 0;
     return false;
 }
 
@@ -378,11 +395,21 @@ static const gl_param_t* get_gl_param()
             qDebug("using gl_param_desktop%s", gp == gl_param_desktop? "" : "_fallback");
             return gp;
         }
-    } else if (test_gl_param(gl_param_es3[4], &has_16)) {
+    } else if (test_gl_param(gl_param_es3[4], &has_16)) { //3.0 will fail because no glGetTexLevelParameteriv
         gp = (gl_param_t*)gl_param_es3;
         has_16_tex = has_16;
         if (!useDeprecatedFormats()) {
             qDebug("using gl_param_es3");
+            return gp;
+        }
+    } else if (isOpenGLES()) {
+        if (QOpenGLContext::currentContext()->format().majorVersion() > 2)
+            gp = (gl_param_t*)gl_param_es3; //for 3.0
+        else if (hasRG())
+            gp = (gl_param_t*)gl_param_es2rg;
+        has_16_tex = has_16;
+        if (gp && !useDeprecatedFormats()) {
+            qDebug("using gl_param_%s", gp == gl_param_es3 ? "es3" : "es2rg");
             return gp;
         }
     }
