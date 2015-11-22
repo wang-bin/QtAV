@@ -27,10 +27,16 @@
 #if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
 #include <QtOpenGL/QGLFunctions>
 #endif
+#else
+#include <QtGui/QGuiApplication>
 #endif
 #ifdef QT_OPENGL_DYNAMIC
 #include <QtGui/QOpenGLFunctions_1_0>
 #endif
+#if QTAV_HAVE(EGL_CAPI)  && QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
+#define EGL_CAPI_NS
+#include "capi/egl_api.h"
+#endif //QTAV_HAVE(EGL_CAPI)
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -116,18 +122,37 @@ int GLSLVersion()
 
 bool isEGL()
 {
-    static bool is_egl = false;
-    if (is_egl)
+    static int is_egl = -1;
+    if (is_egl >= 0) {
+        qDebug("isEGL=%d",is_egl);
+        return !!is_egl;
+    }
+    if (isOpenGLES()) {
+        is_egl = 1;
         return true;
-    if (isOpenGLES())
-        is_egl = true;
-    if (is_egl)
+    }
+#if QTAV_HAVE(EGL_CAPI) && QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
+    if (eglGetCurrentDisplay() != EGL_NO_DISPLAY) {
+        is_egl = 1;
         return true;
-    // we can use QOpenGLContext::currentContext()->nativeHandle().value<QEGLNativeContext>(). but gl context is required
-#if QTAV_HAVE(XCB_EGL)
-    is_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
-    return is_egl;
+    }
 #endif
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    if (QGuiApplication::platformName().contains(QLatin1String("egl"))) {
+        is_egl = 1;
+        return true;
+    }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
+    if (QGuiApplication::platformName().contains(QLatin1String("xcb"))) {
+        is_egl = qgetenv("QT_XCB_GL_INTEGRATION") == "xcb_egl";
+        qDebug("xcb_egl=%d", is_egl);
+        return !!is_egl;
+    }
+#endif //5.5.0
+#endif
+    // we can use QOpenGLContext::currentContext()->nativeHandle().value<QEGLNativeContext>(). but gl context is required
+    if (QOpenGLContext::currentContext())
+        is_egl = 0;
     return false;
 }
 
