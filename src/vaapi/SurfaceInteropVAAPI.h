@@ -22,11 +22,13 @@
 #ifndef QTAV_SURFACEINTEROPVAAPI_H
 #define QTAV_SURFACEINTEROPVAAPI_H
 
+#include <QtCore/qglobal.h>
+#include "vaapi_helper.h"
+#define VA_X11_INTEROP 1
+#ifndef QT_NO_OPENGL
 #include <QtCore/QMap>
 #include <QtCore/QSharedPointer>
 #include "QtAV/SurfaceInterop.h"
-#include "vaapi_helper.h"
-#define VA_X11_INTEROP 1
 
 namespace QtAV {
 namespace vaapi {
@@ -72,7 +74,6 @@ private:
 };
 // load/resolve symbols only once in decoder and pass a VAAPI_XXX ptr
 // or use pool
-#ifndef QT_NO_OPENGL
 class GLXInteropResource Q_DECL_FINAL: public InteropResource, protected VAAPI_GLX
 {
 public:
@@ -81,7 +82,6 @@ private:
     surface_glx_ptr surfaceGLX(const display_ptr& dpy, GLuint tex);
     QMap<GLuint,surface_glx_ptr> glx_surfaces; // render to different texture. surface_glx_ptr is created with texture
 };
-#endif //QT_NO_OPENGL
 
 class X11;
 class X11InteropResource Q_DECL_FINAL: public InteropResource, protected VAAPI_X11
@@ -120,4 +120,5 @@ private:
 #endif //QTAV_HAVE(EGL_CAPI)
 } //namespace vaapi
 } //namespace QtAV
+#endif //QT_NO_OPENGL
 #endif // QTAV_SURFACEINTEROPVAAPI_H

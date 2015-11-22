@@ -27,6 +27,7 @@
 namespace QtAV {
 class GLWidgetRenderer2;
 class AVPlayer;
+class VideoOutput;
 }
 class Widget : public QWidget
 {
@@ -43,7 +44,7 @@ public slots:
 
 private:
     class
-    QtAV::GLWidgetRenderer2 *renderer;
+    QtAV::VideoOutput *renderer;
     QtAV::AVPlayer *player[2];
     QPushButton *play_btn[2];
     QPushButton *file_btn[2];

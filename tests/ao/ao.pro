@@ -1,4 +1,3 @@
-QT += opengl
 CONFIG -= app_bundle
 
 PROJECTROOT = $$PWD/../..

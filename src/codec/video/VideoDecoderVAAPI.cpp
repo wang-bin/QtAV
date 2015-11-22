@@ -44,6 +44,9 @@ namespace QtAV {
 using namespace vaapi;
 namespace OpenGLHelper {
 bool isEGL();
+#ifdef QT_NO_OPENGL
+bool isEGL() { return false;}
+#endif
 }
 class VideoDecoderVAAPIPrivate;
 class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
@@ -273,7 +276,9 @@ public:
     VideoFormat::PixelFormat image_fmt;
 
     QString vendor;
+#ifndef QT_NO_OPENGL
     InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
+#endif
 };
 
 
@@ -356,6 +361,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         return VideoFrame();
     VASurfaceID surface_id = (VASurfaceID)(uintptr_t)d.frame->data[3];
     VAStatus status = VA_STATUS_SUCCESS;
+#ifndef QT_NO_OPENGL
     if ( (copyMode() == ZeroCopy && (display() == X11 || display() == EGL))
          ||display() == GLX) {
         surface_ptr p;
@@ -411,6 +417,7 @@ VideoFrame VideoDecoderVAAPI::frame()
             p->setColorSpace(VA_SRC_BT709);
         return f;
     }
+#endif //QT_NO_OPENGL
 #if VA_CHECK_VERSION(0,31,0)
     if ((status = vaSyncSurface(d.display->get(), surface_id)) != VA_STATUS_SUCCESS) {
         qWarning("vaSyncSurface(VADisplay:%p, VASurfaceID:%#x) == %#x", d.display->get(), surface_id, status);
@@ -591,7 +598,6 @@ bool VideoDecoderVAAPIPrivate::open()
 #ifndef QT_NO_OPENGL
     if (display_type == VideoDecoderVAAPI::GLX)
         interop_res = InteropResourcePtr(new GLXInteropResource());
-#endif //QT_NO_OPENGL
 #if VA_X11_INTEROP
     if (display_type == VideoDecoderVAAPI::X11)
         interop_res = InteropResourcePtr(new X11InteropResource());
@@ -600,6 +606,7 @@ bool VideoDecoderVAAPIPrivate::open()
     if (display_type == VideoDecoderVAAPI::EGL)
         interop_res = InteropResourcePtr(new EGLInteropResource());
 #endif
+#endif //QT_NO_OPENGL
     codec_ctx->hwaccel_context = &hw_ctx; //must set before open
     return true;
 }

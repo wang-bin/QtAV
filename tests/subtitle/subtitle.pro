@@ -4,7 +4,6 @@
 #
 #-------------------------------------------------
 
-QT += opengl
 
 TARGET = subtitle
 CONFIG -= app_bundle

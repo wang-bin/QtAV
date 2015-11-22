@@ -73,12 +73,11 @@ int main(int argc, char *argv[])
     }
     qDebug() << decopt;
 
-    VideoDecoderId cid = VideoDecoderFactory::id(decName.toStdString());
-    if (cid <= 0) {
+    VideoDecoder *dec = VideoDecoder::create(decName.toLatin1().constData());
+    if (!dec) {
         qWarning("Can not find decoder: %s", decName.toUtf8().constData());
         return 1;
     }
-    VideoDecoder *dec = VideoDecoderFactory::create(cid);
     if (!decopt.isEmpty())
         dec->setOptions(decopt);
     AVDemuxer demux;
@@ -94,7 +93,7 @@ int main(int argc, char *argv[])
     timer.start();
     int count = 0;
     int vstream = demux.videoStream();
-    VideoEncoder *venc = VideoEncoder::create(QString::fromUtf8("FFmpeg"));
+    VideoEncoder *venc = VideoEncoder::create("FFmpeg");
     venc->setCodecName(cv);
     //venc->setCodecName("png");
     venc->setBitRate(1024*1024);

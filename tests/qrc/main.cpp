@@ -19,15 +19,16 @@
 ******************************************************************************/
 #include <QApplication>
 
-#include <QtAV/AVPlayer.h>
+#include <QtAV>
 #include <QtAVWidgets>
 
 int main(int argc, char *argv[])
 {
+    QtAV::Widgets::registerRenderers();
     QApplication a(argc, argv);
-    QtAV::GLWidgetRenderer2 renderer;
-    renderer.show();
-    renderer.setWindowTitle(QString::fromLatin1("Play video from qrc--QtAV %1 wbsecg1@gmail.com").arg(QtAV_Version_String_Long()));
+    QtAV::VideoOutput renderer;
+    renderer.widget()->show();
+    renderer.widget()->setWindowTitle(QString::fromLatin1("Play video from qrc--QtAV %1 wbsecg1@gmail.com").arg(QtAV_Version_String_Long()));
     QtAV::AVPlayer player;
     player.setRenderer(&renderer);
 

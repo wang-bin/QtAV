@@ -22,6 +22,8 @@
 #include <QtCore/QDir>
 #include <QtAV>
 #include <QtAV/AVTranscoder.h>
+#include <QtDebug>
+
 using namespace QtAV;
 
 int main(int argc, char *argv[])

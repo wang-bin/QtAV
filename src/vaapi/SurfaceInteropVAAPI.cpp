@@ -19,6 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 #include "SurfaceInteropVAAPI.h"
+#ifndef QT_NO_OPENGL
 #include "utils/OpenGLHelper.h"
 #include "QtAV/VideoFrame.h"
 #include "utils/Logger.h"
@@ -610,3 +611,4 @@ bool EGLInteropResource::ensure()
 #endif //QTAV_HAVE(EGL_CAPI)
 } //namespace QtAV
 } //namespace vaapi
+#endif //QT_NO_OPENGL

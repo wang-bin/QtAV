@@ -1,4 +1,4 @@
-#include <QApplication>
+#include <QCoreApplication>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QStringList>
 #include <QtDebug>
@@ -22,7 +22,7 @@ private slots:
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    QCoreApplication a(argc, argv);
     qDebug() << "help: ./subtitle [-engine engine] [-f file] [-fuzzy] [-t sec] [-t1 sec] [-count n]";
     qDebug() << "-fuzzy: fuzzy match subtitle name";
     qDebug() << "-t: set subtitle begin time";
