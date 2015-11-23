@@ -360,7 +360,6 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
     }
     d.frame_orig = frame;
     d.video_frame = frame; // must be set because it will be check isValid() somewhere else
-    d.current_index = (d.current_index+1)%kPoolSize;
     updateUi();
     return true;
 }
@@ -457,7 +456,13 @@ void X11Renderer::drawFrame()
     // TODO: interop
     DPTR_D(X11Renderer);
     if (d.use_shm) {
+        int wait_count = 0;
         while (d.ShmCompletionWaitCount >= kPoolSize) {
+            if (wait_count++ > 100) {
+                qDebug("reset ShmCompletionWaitCount");
+                d.ShmCompletionWaitCount = 0;
+                break;
+            }
             while (XPending(d.display)) {
                 XEvent ev;
                 XNextEvent(d.display, &ev);
@@ -490,6 +495,7 @@ void X11Renderer::drawFrame()
                    , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
         XSync(d.display, False); // update immediately
     }
+    d.current_index = (d.current_index+1)%kPoolSize;
 }
 
 void X11Renderer::paintEvent(QPaintEvent *)
