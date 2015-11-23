@@ -47,6 +47,9 @@ dll_helper::dll_helper(const QString &soname, int version)
         qDebug("can not load %s: %s", m_lib.fileName().toUtf8().constData(), m_lib.errorString().toUtf8().constData());
 }
 
+va_0_38::vaAcquireBufferHandle_t va_0_38::f_vaAcquireBufferHandle = 0;
+va_0_38::vaReleaseBufferHandle_t va_0_38::f_vaReleaseBufferHandle = 0;
+
 #define CONCAT(a, b)    CONCAT_(a, b)
 #define CONCAT_(a, b)   a##b
 #define STRINGIFY(x)    STRINGIFY_(x)

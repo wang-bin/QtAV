@@ -26,15 +26,10 @@
 #include <va/va.h>
 #include <QtCore/QLibrary>
 #include <QtCore/QSharedPointer>
-//TODO: check glx or gles used by Qt. then use va-gl or va-egl
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <qopengl.h>
 #elif defined(QT_OPENGL_LIB)
 #include <qgl.h>
-#else
-#if !defined(QT_OPENGL_ES_2)
-#include <GL/gl.h>
-#endif //!defined(QT_OPENGL_ES_2)
 #endif
 #include "utils/SharedPtr.h"
 
@@ -53,15 +48,6 @@ inline VAStatus vaCreateSurfaces(VADisplay dpy, unsigned int format, unsigned in
     return ::vaCreateSurfaces(dpy, width, height, format, num_surfaces, surfaces);
 }
 #endif
-#if !VA_CHECK_VERSION(0, 38, 0)
-/** \brief VA buffer information */
-typedef struct {
-    uintptr_t           handle;
-    uint32_t            type;
-    uint32_t            mem_type;
-    size_t              mem_size;
-} VABufferInfo;
-#endif //!VA_CHECK_VERSION(0, 38, 0)
 
 #define VA_ENSURE_TRUE(x, ...) \
     do { \
@@ -97,6 +83,40 @@ private:
     QLibrary m_lib;
 };
 
+class va_0_38 : protected dll_helper {
+public:
+    typedef struct {
+        uintptr_t           handle;
+        uint32_t            type;
+        uint32_t            mem_type;
+        size_t              mem_size;
+    } VABufferInfo;
+    static va_0_38& instance() {
+        static va_0_38 self;
+        return self;
+    }
+    static bool isValid() { return instance().f_vaAcquireBufferHandle && instance().f_vaReleaseBufferHandle;}
+    static VAStatus vaAcquireBufferHandle(VADisplay dpy, VABufferID buf_id, VABufferInfo *buf_info) {
+        if (!instance().f_vaAcquireBufferHandle)
+            return VA_STATUS_ERROR_UNIMPLEMENTED;
+        return instance().f_vaAcquireBufferHandle(dpy, buf_id, buf_info);
+    }
+    static VAStatus vaReleaseBufferHandle(VADisplay dpy, VABufferID buf_id) {
+        if (!instance().f_vaReleaseBufferHandle)
+            return VA_STATUS_ERROR_UNIMPLEMENTED;
+        return instance().f_vaReleaseBufferHandle(dpy, buf_id);
+    }
+protected:
+    va_0_38() : dll_helper(QString::fromLatin1("va"), 1) {
+        f_vaAcquireBufferHandle = (vaAcquireBufferHandle_t)resolve("vaAcquireBufferHandle");
+        f_vaReleaseBufferHandle = (vaReleaseBufferHandle_t)resolve("vaReleaseBufferHandle");
+    }
+private:
+    typedef VAStatus (*vaAcquireBufferHandle_t)(VADisplay dpy, VABufferID buf_id, VABufferInfo *buf_info);
+    typedef VAStatus (*vaReleaseBufferHandle_t)(VADisplay dpy, VABufferID buf_id);
+    static vaAcquireBufferHandle_t f_vaAcquireBufferHandle;
+    static vaReleaseBufferHandle_t f_vaReleaseBufferHandle;
+};
 class VAAPI_DRM : protected dll_helper {
 public:
     typedef VADisplay vaGetDisplayDRM_t(int fd);

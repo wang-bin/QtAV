@@ -262,7 +262,7 @@ public:
             return display;
         if (!display) {
             qDebug("glXGetCurrentDisplay");
-            display = (Display*)glXGetCurrentDisplay();
+            display = (Display*)glXGetCurrentDisplay(); // use for all and not x11info
             if (!display)
                 return 0;
         }
@@ -399,7 +399,6 @@ bool X11InteropResource::unmap(const surface_ptr &surface, GLuint tex)
 #endif //VA_X11_INTEROP
 
 #if QTAV_HAVE(EGL_CAPI)
-#if VA_CHECK_VERSION(0, 38, 0)
 #ifndef EGL_LINUX_DMA_BUF_EXT
 #define EGL_LINUX_DMA_BUF_EXT 0x3270
 #define EGL_LINUX_DRM_FOURCC_EXT          0x3271
@@ -469,10 +468,10 @@ bool EGLInteropResource::map(const surface_ptr &surface, GLuint tex, int w, int 
         VA_ENSURE(vaDeriveImage(surface->vadisplay(), surface->get(), &va_image), false);
     }
     if (!vabuf_handle) {
-        VABufferInfo vabuf;
+        va_0_38::VABufferInfo vabuf;
         memset(&vabuf, 0, sizeof(vabuf));
         vabuf.mem_type = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME;
-        VA_ENSURE(vaAcquireBufferHandle(surface->vadisplay(), va_image.buf, &vabuf), false);
+        VA_ENSURE(va_0_38::vaAcquireBufferHandle(surface->vadisplay(), va_image.buf, &vabuf), false);
         vabuf_handle = vabuf.handle;
     }
     // (it would be nice if we could use EGL_IMAGE_INTERNAL_FORMAT_EXT)
@@ -528,7 +527,7 @@ void EGLInteropResource::destroy(VADisplay va_dpy)
     if (!va_dpy)
         return;
     if (va_image.buf != VA_INVALID_ID) {
-        VAWARN(vaReleaseBufferHandle(va_dpy, va_image.buf));
+        VAWARN(va_0_38::vaReleaseBufferHandle(va_dpy, va_image.buf));
         va_image.buf = VA_INVALID_ID;
         vabuf_handle = 0;
         //qDebug("vabuf_handle: %#x", vabuf_handle);
@@ -578,7 +577,6 @@ bool EGLInteropResource::ensure()
         return false;
     return true;
 }
-#endif //VA_CHECK_VERSION(0, 38, 0)
 #endif //QTAV_HAVE(EGL_CAPI)
 } //namespace QtAV
 } //namespace vaapi

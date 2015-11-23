@@ -210,8 +210,8 @@ public:
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy; //TFP if va<0.38
 #endif //VA_X11_INTEROP
         }
-#if QTAV_HAVE(EGL_CAPI) && VA_CHECK_VERSION(0, 38, 0)
-        if (OpenGLHelper::isEGL()) {
+#if QTAV_HAVE(EGL_CAPI)
+        if (OpenGLHelper::isEGL() && va_0_38::isValid()) {
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         }
 #endif //QTAV_HAVE(EGL_CAPI)
@@ -369,11 +369,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         VAImage img;
         // TODO: derive/get image only once and pass to interop object
         ///TODO: x11 can use egl tfp and egl dma(va>=0.38). now all display can use 0-copy!
-        const bool test_format = OpenGLHelper::isEGL()
-#if !VA_CHECK_VERSION(0, 38, 0)
-                && display() != X11
-#endif
-                ;
+        const bool test_format = OpenGLHelper::isEGL() && va_0_38::isValid();
         if (test_format) {
             vaDeriveImage(d.display->get(), p->get(), &img);
             fmt = pixelFormatFromVA(img.format.fourcc);
@@ -584,8 +580,8 @@ bool VideoDecoderVAAPIPrivate::open()
     if (display_type == VideoDecoderVAAPI::X11) //if egl and !tfp(va>=0.38), use EGLInteropResource
         interop_res = InteropResourcePtr(new X11InteropResource());
 #endif //VA_X11_INTEROP
-#if QTAV_HAVE(EGL_CAPI) && VA_CHECK_VERSION(0, 38, 0)
-    if (OpenGLHelper::isEGL())
+#if QTAV_HAVE(EGL_CAPI)
+    if (OpenGLHelper::isEGL() && va_0_38::isValid())
         interop_res = InteropResourcePtr(new EGLInteropResource());
 #endif
 #endif //QT_NO_OPENGL

@@ -98,7 +98,6 @@ private:
     X11 *x11;
 };
 #if QTAV_HAVE(EGL_CAPI)
-#if VA_CHECK_VERSION(0, 38, 0)
 // libva-egl is dead and not complete. here we use dma
 class EGL;
 class EGLInteropResource Q_DECL_FINAL : public InteropResource
@@ -116,7 +115,6 @@ private:
     QMap<GLuint, int> mapped;
     EGL *egl;
 };
-#endif //VA_CHECK_VERSION(0, 38, 0)
 #endif //QTAV_HAVE(EGL_CAPI)
 } //namespace vaapi
 } //namespace QtAV
