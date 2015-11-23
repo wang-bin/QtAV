@@ -148,6 +148,9 @@ bool VideoOutput::receiveFrame(const VideoFrame& frame)
         return false;
     DPTR_D(VideoOutput);
     d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
+    d.impl->setInSize(frame.size());
+    QMutexLocker locker(&d.impl->d_func().img_mutex);
+    Q_UNUSED(locker); //TODO: double buffer for display/dec frame to avoid mutex
     return d.impl->receiveFrame(frame);
 }
 
