@@ -82,48 +82,19 @@ void SurfaceInteropVAAPI::unmap(void *handle)
 void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
     Q_UNUSED(plane);
-    int nb_fmts = vaMaxNumImageFormats(m_surface->vadisplay());
-    //av_mallocz_array
-    VAImageFormat *p_fmt = (VAImageFormat*)calloc(nb_fmts, sizeof(*p_fmt));
-    if (!p_fmt) {
-        return NULL;
-    }
-    if (vaQueryImageFormats(m_surface->vadisplay(), p_fmt, &nb_fmts)) {
-        free(p_fmt);
-        return NULL;
-    }
     VAImage image;
-    for (int i = 0; i < nb_fmts; i++) {
-        if (p_fmt[i].fourcc == VA_FOURCC_YV12 ||
-            p_fmt[i].fourcc == VA_FOURCC_IYUV ||
-            p_fmt[i].fourcc == VA_FOURCC_NV12) {
-            qDebug("vaCreateImage: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
-            if (vaCreateImage(m_surface->vadisplay(), &p_fmt[i], m_surface->width(), m_surface->height(), &image) != VA_STATUS_SUCCESS) {
-                image.image_id = VA_INVALID_ID;
-                qDebug("vaCreateImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
-                continue;
-            }
-            /* Validate that vaGetImage works with this format */
-            if (vaGetImage(m_surface->vadisplay(), m_surface->get(), 0, 0, m_surface->width(), m_surface->height(), image.image_id) != VA_STATUS_SUCCESS) {
-                vaDestroyImage(m_surface->vadisplay(), image.image_id);
-                qDebug("vaGetImage error: %c%c%c%c", p_fmt[i].fourcc<<24>>24, p_fmt[i].fourcc<<16>>24, p_fmt[i].fourcc<<8>>24, p_fmt[i].fourcc>>24);
-                image.image_id = VA_INVALID_ID;
-                continue;
-            }
-            break;
-        }
-    }
-    free(p_fmt);
+    static const unsigned int fcc[] = { VA_FOURCC_NV12, VA_FOURCC_YV12, VA_FOURCC_IYUV, 0};
+    va_new_image(m_surface->vadisplay(), fcc, &image, m_surface->width(), m_surface->height());
     if (image.image_id == VA_INVALID_ID)
         return NULL;
     void *p_base;
-    VA_ENSURE_TRUE(vaMapBuffer(m_surface->vadisplay(), image.buf, &p_base), NULL);
-
+    VA_ENSURE(vaGetImage(m_surface->vadisplay(), m_surface->get(), 0, 0, m_surface->width(), m_surface->height(), image.image_id), NULL);
+    VA_ENSURE(vaMapBuffer(m_surface->vadisplay(), image.buf, &p_base), NULL); //TODO: destroy image before return
     VideoFormat::PixelFormat pixfmt = pixelFormatFromVA(image.format.fourcc);
     bool swap_uv = image.format.fourcc != VA_FOURCC_NV12;
     if (pixfmt == VideoFormat::Format_Invalid) {
         qWarning("unsupported vaapi pixel format: %#x", image.format.fourcc);
-        vaDestroyImage(m_surface->vadisplay(), image.image_id);
+        VA_ENSURE(vaDestroyImage(m_surface->vadisplay(), image.image_id), NULL);
         return NULL;
     }
     const VideoFormat fmt(pixfmt);
@@ -137,7 +108,7 @@ void* SurfaceInteropVAAPI::mapToHost(const VideoFormat &format, void *handle, in
     if (format != fmt)
         frame = frame.to(format);
     VAWARN(vaUnmapBuffer(m_surface->vadisplay(), image.buf));
-    vaDestroyImage(m_surface->vadisplay(), image.image_id);
+    VAWARN(vaDestroyImage(m_surface->vadisplay(), image.image_id));
     image.image_id = VA_INVALID_ID;
     VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
     frame.setTimestamp(f->timestamp());

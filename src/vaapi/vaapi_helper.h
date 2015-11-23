@@ -39,6 +39,12 @@
 #include "utils/SharedPtr.h"
 
 namespace QtAV {
+#ifndef VA_FOURCC_RGBX
+#define VA_FOURCC_RGBX		0x58424752
+#endif
+#ifndef VA_FOURCC_BGRX
+    #define VA_FOURCC_BGRX		0x58524742
+#endif
 #ifndef VA_SURFACE_ATTRIB_SETTABLE
 // travis-ci use old vaapi
 struct VASurfaceAttrib;
@@ -75,7 +81,12 @@ do { \
 
 namespace vaapi {
 const char *profileName(VAProfile profile);
-
+/*!
+ * \brief va_new_image
+ * create image (if img is not null)/find format for the first supported fourcc from given fourcc list.
+ * if s is not null, also test vaGetImage for the fourcc
+ */
+VAImageFormat va_new_image(VADisplay display, const unsigned int* fourccs, VAImage* img = 0, int w = 0, int h = 0, VASurfaceID s = VA_INVALID_SURFACE);
 class dll_helper {
 public:
     dll_helper(const QString& soname, int version = -1);
@@ -224,11 +235,11 @@ public:
     operator VADisplay() const { return m_display;}
     VADisplay get() const {return m_display;}
     void getVersion(int* majorV, int* minorV) { *majorV = m_major; *minorV = m_minor;}
-    NativeDisplay::Type nativeDisplayType() const { return m_type;}
+    NativeDisplay::Type nativeDisplayType() const;
+    intptr_t nativeHandle() const;
 private:
     VADisplay m_display;
     NativeDisplayPtr m_native;
-    NativeDisplay::Type m_type;
     int m_major, m_minor;
 };
 

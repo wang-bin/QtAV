@@ -89,6 +89,54 @@ const char *profileName(VAProfile profile)
     return "";
 }
 
+VAImageFormat va_new_image(VADisplay display, const unsigned int *fourccs, VAImage *img, int w, int h, VASurfaceID s)
+{
+    VAImageFormat fmt;
+    memset(&fmt, 0, sizeof(fmt));
+    int nb_fmts = vaMaxNumImageFormats(display);
+    VAImageFormat *p_fmt = (VAImageFormat*)calloc(nb_fmts, sizeof(*p_fmt));
+    if (!p_fmt)
+        return fmt;
+    if (vaQueryImageFormats(display, p_fmt, &nb_fmts)) {
+        free(p_fmt);
+        return fmt;
+    }
+    for (int i = 0; fourccs[i]; i++) { // TODO: loop fourccs
+        for (int j = 0; j < nb_fmts; ++j) {
+            if (p_fmt[j].fourcc == fourccs[i]) {
+                fmt = p_fmt[j];
+                break;
+            }
+        }
+        const unsigned int fcc = fmt.fourcc;
+        if (!fcc)
+            continue;
+        if (img && w > 0 && h > 0) {
+            qDebug("vaCreateImage: %c%c%c%c", fcc<<24>>24, fcc<<16>>24, fcc<<8>>24, fcc>>24);
+            if (vaCreateImage(display, &fmt, w, h, img) != VA_STATUS_SUCCESS) {
+                img->image_id = VA_INVALID_ID;
+                memset(&fmt, 0, sizeof(fmt));
+                qDebug("vaCreateImage error: %c%c%c%c", fcc<<24>>24, fcc<<16>>24, fcc<<8>>24, fcc>>24);
+                continue;
+            }
+            // Validate that vaGetImage works with this format
+            if (s != VA_INVALID_SURFACE) {
+                VAStatus st;
+                if ((st = vaGetImage(display, s, 0, 0, w, h, img->image_id)) != VA_STATUS_SUCCESS) {
+                    VAWARN(vaDestroyImage(display, img->image_id));
+                    qDebug("vaGetImage error: %c%c%c%c  (%#x) %s", fcc<<24>>24, fcc<<16>>24, fcc<<8>>24, fcc>>24, st, vaErrorStr(st));
+                    img->image_id = VA_INVALID_ID;
+                    memset(&fmt, 0, sizeof(fmt));
+                    continue;
+                }
+            }
+        }
+        break;
+    }
+    free(p_fmt);
+    return fmt;
+}
+
 //TODO: use macro template. DEFINE_DL_SYMB(R, NAME, ARG....);
 class X11_API : protected dll_helper {
 public:
@@ -126,6 +174,7 @@ public:
     virtual bool initialize(const NativeDisplay& display) = 0;
     virtual VADisplay getVADisplay() = 0;
     uintptr_t handle() { return m_handle;}
+    virtual NativeDisplay::Type type() const = 0;
 protected:
     virtual bool acceptValidExternalHandle(const NativeDisplay& display) {
         if (display.handle && display.handle != -1) { //drm can be 0?
@@ -139,7 +188,7 @@ protected:
     bool m_selfCreated;
 };
 
-class NativeDisplayX11 Q_DECL_FINAL: public NativeDisplayBase, public VAAPI_X11, public X11_API
+class NativeDisplayX11 Q_DECL_FINAL: public NativeDisplayBase, protected VAAPI_X11, protected X11_API
 {
 public:
     NativeDisplayX11() :NativeDisplayBase() { }
@@ -167,10 +216,11 @@ public:
             return 0;
         return vaGetDisplay((Display*)m_handle);
     }
+    NativeDisplay::Type type() const Q_DECL_OVERRIDE { return NativeDisplay::X11;}
 };
 
 #ifndef QT_NO_OPENGL
-class NativeDisplayGLX Q_DECL_FINAL: public NativeDisplayBase, public VAAPI_GLX, public X11_API
+class NativeDisplayGLX Q_DECL_FINAL: public NativeDisplayBase, protected VAAPI_GLX, protected X11_API
 {
 public:
     NativeDisplayGLX() :NativeDisplayBase() { }
@@ -198,10 +248,11 @@ public:
             return 0;
         return vaGetDisplayGLX((Display*)m_handle);
     }
+    NativeDisplay::Type type() const Q_DECL_OVERRIDE { return NativeDisplay::GLX;}
 };
 #endif //QT_NO_OPENGL
 
-class NativeDisplayDrm Q_DECL_FINAL: public NativeDisplayBase, public VAAPI_DRM {
+class NativeDisplayDrm Q_DECL_FINAL: public NativeDisplayBase, protected VAAPI_DRM {
   public:
     NativeDisplayDrm() :NativeDisplayBase(){ }
     ~NativeDisplayDrm() {
@@ -236,6 +287,7 @@ class NativeDisplayDrm Q_DECL_FINAL: public NativeDisplayBase, public VAAPI_DRM 
             return 0;
         return vaGetDisplayDRM(m_handle);
     }
+    NativeDisplay::Type type() const Q_DECL_OVERRIDE { return NativeDisplay::DRM;}
 };
 
 class NativeDisplayVADisplay Q_DECL_FINAL: public NativeDisplayBase{
@@ -246,6 +298,7 @@ class NativeDisplayVADisplay Q_DECL_FINAL: public NativeDisplayBase{
         return acceptValidExternalHandle(display);
     }
     VADisplay getVADisplay() Q_DECL_OVERRIDE { return (VADisplay)m_handle;}
+    NativeDisplay::Type type() const Q_DECL_OVERRIDE { return NativeDisplay::VA;}
 };
 
 // TODO: use display_ptr cache
@@ -282,7 +335,6 @@ display_ptr display_t::create(const NativeDisplay &display)
     display_ptr d(new display_t());
     d->m_display = va;
     d->m_native = native;
-    d->m_type = display.type;
     d->m_major = majorVersion;
     d->m_minor = minorVersion;
     return d;
@@ -311,6 +363,18 @@ display_t::~display_t()
     m_display = 0;
 }
 
+NativeDisplay::Type display_t::nativeDisplayType() const
+{
+    if (!m_native)
+        return NativeDisplay::Auto;
+    return m_native->type();
+}
+
+intptr_t display_t::nativeHandle() const
+{
+    if (!m_native)
+        return 0;
+    return m_native->handle();
+}
 } //namespace vaapi
 } //namespace QtAV
-
