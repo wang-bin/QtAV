@@ -59,7 +59,6 @@ class VideoDecoderVAAPI : public VideoDecoderFFmpegHW
     Q_PROPERTY(DisplayType display READ display WRITE setDisplay)
     Q_ENUMS(DisplayType)
 public:
-        // TODO: interopType: GLX, X11, DMA, DRM
     enum DisplayType {
         X11,
         GLX,
@@ -276,9 +275,9 @@ VideoDecoderVAAPI::VideoDecoderVAAPI()
     setProperty("detail_surfaces", tr("Decoding surfaces") + QStringLiteral(" ") + tr("0: auto"));
     setProperty("detail_derive", tr("Maybe faster"));
     setProperty("detail_display", QString("%1\n%2\n%3")
-                .arg("X11: Support all copy modes. libva-x11.so is required")
-                .arg("GLX: 0-copy does not work with EGL. libva-glx.so is required")
-                .arg("DRM: Support 0-copy with EGL. May work without X11. libva-drm.so is required")
+                .arg("X11: libva-x11.so is required")
+                .arg("GLX: libva-glx.so is required")
+                .arg("DRM: Support 0-copy only with EGL. May work without X11. libva-drm.so is required")
                 );
 }
 
@@ -368,7 +367,6 @@ VideoFrame VideoDecoderVAAPI::frame()
         VideoFormat fmt(VideoFormat::Format_RGB32);
         VAImage img;
         // TODO: derive/get image only once and pass to interop object
-        ///TODO: x11 can use egl tfp and egl dma(va>=0.38). now all display can use 0-copy!
         const bool test_format = OpenGLHelper::isEGL() && va_0_38::isValid();
         if (test_format) {
             vaDeriveImage(d.display->get(), p->get(), &img);
@@ -581,9 +579,13 @@ bool VideoDecoderVAAPIPrivate::open()
         interop_res = InteropResourcePtr(new X11InteropResource());
 #endif //VA_X11_INTEROP
 #if QTAV_HAVE(EGL_CAPI)
-    if (OpenGLHelper::isEGL() && va_0_38::isValid())
-        interop_res = InteropResourcePtr(new EGLInteropResource());
-#endif
+    if (OpenGLHelper::isEGL()) {
+        if (va_0_38::isValid())
+            interop_res = InteropResourcePtr(new EGLInteropResource());
+        else if (display_type == VideoDecoderVAAPI::GLX)
+            interop_res = InteropResourcePtr(new X11InteropResource());
+    }
+#endif //QTAV_HAVE(EGL_CAPI)
 #endif //QT_NO_OPENGL
     codec_ctx->hwaccel_context = &hw_ctx; //must set before open
     return true;
@@ -619,7 +621,7 @@ bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
         return false;
     image_fmt = pixelFormatFromVA(image.format.fourcc);
     VAImage test_image;
-    if (!disable_derive || copy_mode == VideoDecoderVAAPI::ZeroCopy) { //TODO: check egl?
+    if (!disable_derive || copy_mode == VideoDecoderVAAPI::ZeroCopy) {
         if (vaDeriveImage(display->get(), surfaces[0], &test_image) == VA_STATUS_SUCCESS) {
             qDebug("vaDeriveImage supported");
             supports_derive = true;
