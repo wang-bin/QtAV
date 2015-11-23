@@ -282,7 +282,7 @@ VideoFrame VideoDecoderFFmpegHW::copyToFrame(const VideoFormat& fmt, int surface
         if (!src[i])
             src[i] = src[i-1] + pitch[i-1]*h[i-1];
     }
-    if (swapUV) {
+    if (swapUV && nb_planes > 2) {
         std::swap(src[1], src[2]);
         std::swap(pitch[1], pitch[2]);
     }
