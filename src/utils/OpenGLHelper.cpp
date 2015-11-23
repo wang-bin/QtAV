@@ -123,11 +123,9 @@ int GLSLVersion()
 bool isEGL()
 {
     static int is_egl = -1;
-    if (is_egl >= 0) {
-        qDebug("isEGL=%d",is_egl);
+    if (is_egl >= 0)
         return !!is_egl;
-    }
-    if (isOpenGLES()) {
+    if (isOpenGLES()) { //TODO: ios has no egl
         is_egl = 1;
         return true;
     }

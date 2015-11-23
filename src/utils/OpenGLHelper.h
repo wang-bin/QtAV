@@ -67,27 +67,6 @@ typedef QGLBuffer QOpenGLBuffer;
 #endif
 //GL_BGRA is available in OpenGL >= 1.2
 #ifndef GL_BGRA
-#ifndef GL_BGRA_EXT
-#if defined QT_OPENGL_ES_2
-#include <GLES2/gl2ext.h>
-//#include <GLES/glext.h> //maemo 5 define there
-#elif defined QT_OPENGL_ES
-#include <GLES/glext.h>
-#else
-#include <GL/glext.h> //GL_BGRA_EXT for OpenGL<=1.1 //TODO Apple include <OpenGL/xxx>
-#endif
-#endif //GL_BGRA_EXT
-//TODO: glPixelStorei(GL_PACK_SWAP_BYTES, ) to swap rgba?
-#ifndef GL_BGRA //it may be defined in glext.h
-#ifdef GL_BGRA_EXT
-#define GL_BGRA GL_BGRA_EXT
-#endif //GL_BGRA_EXT
-#ifdef GL_BGR_EXT
-#define GL_BGR GL_BGR_EXT
-#endif //GL_BGR_EXT
-#endif //GL_BGRA
-#endif //GL_BGRA
-#ifndef GL_BGRA
 #define GL_BGRA 0x80E1
 #endif
 #ifndef GL_BGR
