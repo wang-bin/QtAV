@@ -6,8 +6,8 @@ appveyor DownloadFile "http://sourceforge.net/projects/buildqt/files/release/%qt
 move Qt%qt%-* %QTDIR%
 
 :getdep
-echo downloading qtav dep "http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86+x64-20150706.7z/download"
-appveyor DownloadFile "http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86+x64-20150706.7z/download" -FileName av.7z
+echo downloading qtav dep "http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86+x64.7z/download"
+appveyor DownloadFile "http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86+x64.7z/download" -FileName av.7z
 7z x av.7z > NUL
 move QtAV-depends* AV
 xcopy /syi AV\include %QTDIR%\include > NUL

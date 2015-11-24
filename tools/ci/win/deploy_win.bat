@@ -2,6 +2,7 @@
 
 copy /y %QTDIR%\bin\av*.dll bin
 copy /y %QTDIR%\bin\sw*.dll bin
+if exist %QTDIR%\bin\libass.dll copy /y %QTDIR%\bin\libass.dll bin
 if exist %QTDIR%\bin\po*.dll copy /y %QTDIR%\bin\po*.dll bin
 if exist %QTDIR%\bin\msvc*.dll copy /y %QTDIR%\bin\msvc*.dll bin
 if exist %QTDIR%\bin\OpenAL32*.dll copy /y %QTDIR%\bin\OpenAL32*.dll bin
@@ -10,30 +11,25 @@ if exist bin\OpenAL32-*.dll del bin\OpenAL32-*.dll
 if exist %QTDIR%\bin\D3DCompiler_*.dll copy /y %QTDIR%\bin\D3DCompiler_*.dll bin
 :: libEGL, GLESv2, gcc_s_dw2-1, stdc++-6, winpthread-1
 if exist %QTDIR%\bin\lib*.dll copy /y %QTDIR%\bin\lib*.dll bin
-if exist %QTDIR%\bin\icu*.dll xcopy /syi %QTDIR%\bin\icu*.dll bin
 
 echo [Paths] > bin\qt.conf
 echo Prefix=. >> bin\qt.conf
 
-if exist %QTDIR%\qml\QtQuick.2 xcopy /syi %QTDIR%\qml\QtQuick.2 bin\qml\QtQuick.2 > NUL
-if exist %QTDIR%\plugins\platforms xcopy /syi %QTDIR%\plugins\platforms bin\plugins\platforms > NUL
-if exist %QTDIR%\plugins\imageformats xcopy /syi %QTDIR%\plugins\imageformats bin\plugins\imageformats > NUL
-if exist %QTDIR%\plugins\iconengines xcopy /syi %QTDIR%\plugins\iconengines bin\plugins\iconengines > NUL
-if exist %QTDIR%\qml\Qt xcopy /syi %QTDIR%\qml\Qt bin\qml\Qt > NUL
-if exist %QTDIR%\qml\QtQml xcopy /syi %QTDIR%\qml\QtQml bin\qml\QtQml > NUL
-if exist %QTDIR%\qml\QtQuick xcopy /syi %QTDIR%\qml\QtQuick bin\qml\QtQuick > NUL
 if "%mode%" == "debug" (
   if exist %QTDIR%\bin\Qt5Cored.dll copy /y %QTDIR%\bin\Qt5Cored.dll bin
   if exist %QTDIR%\bin\Qt5Guid.dll copy /y %QTDIR%\bin\Qt5Guid.dll bin
   if exist %QTDIR%\bin\Qt5OpenGLd.dll copy /y %QTDIR%\bin\Qt5OpenGLd.dll bin
-  if exist %QTDIR%\bin\Qt5Svgd.dll copy /y %QTDIR%\bin\Qt5Svgd.dll bin
   if exist %QTDIR%\bin\Qt5Widgetsd.dll copy /y %QTDIR%\bin\Qt5Widgetsd.dll bin
-  if exist %QTDIR%\bin\Qt5Networkd.dll copy /y %QTDIR%\bin\Qt5Networkd.dll bin
-  if exist %QTDIR%\bin\Qt5Qmld.dll copy /y %QTDIR%\bin\Qt5Qmld.dll bin
-  if exist %QTDIR%\bin\Qt5Quickd.dll copy /y %QTDIR%\bin\Qt5Quickd.dll bin
   if exist bin\libEGL.dll del bin\libEGL.dll
   if exist bin\libGLESv2.dll del bin\libGLESv2.dll
 ) else (
+  if exist %QTDIR%\qml\QtQuick.2 xcopy /syi %QTDIR%\qml\QtQuick.2 bin\qml\QtQuick.2 > NUL
+  if exist %QTDIR%\plugins\platforms xcopy /syi %QTDIR%\plugins\platforms bin\plugins\platforms > NUL
+  if exist %QTDIR%\plugins\imageformats xcopy /syi %QTDIR%\plugins\imageformats bin\plugins\imageformats > NUL
+  if exist %QTDIR%\plugins\iconengines xcopy /syi %QTDIR%\plugins\iconengines bin\plugins\iconengines > NUL
+  if exist %QTDIR%\qml\Qt xcopy /syi %QTDIR%\qml\Qt bin\qml\Qt > NUL
+  if exist %QTDIR%\qml\QtQml xcopy /syi %QTDIR%\qml\QtQml bin\qml\QtQml > NUL
+  if exist %QTDIR%\qml\QtQuick xcopy /syi %QTDIR%\qml\QtQuick bin\qml\QtQuick > NUL
   if exist %QTDIR%\bin\Qt5Core.dll copy /y %QTDIR%\bin\Qt5Core.dll bin
   if exist %QTDIR%\bin\Qt5Gui.dll copy /y %QTDIR%\bin\Qt5Gui.dll bin
   if exist %QTDIR%\bin\Qt5OpenGL.dll copy /y %QTDIR%\bin\Qt5OpenGL.dll bin
