@@ -14,6 +14,7 @@
 //}
 #include "SurfaceInteropGAL.h"
 #include <QtCore/QMetaType>
+#include <signal.h>
 #include "utils/Logger.h"
 
 //avformat ctx: flag CODEC_FLAG_TRUNCATED
@@ -56,6 +57,26 @@ static int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecCont
 static bool IsSupportInterlaceMode(CodStd bitstreamFormat, DecInitialInfo *pSeqInfo);
 static int WriteBsBufFromBufHelper(Uint32 core_idx, DecHandle handle, vpu_buffer_t *pVbStream, BYTE *pChunk,  int chunkSize, int endian);
 static void PrintMemoryAccessViolationReason(Uint32 core_idx, DecOutputInfo *out);
+
+static int current_coreIdx = -1;
+static void exit_handler(int sig) {
+    if (current_coreIdx < 0)
+        goto stop;
+    VPU_DeInit(current_coreIdx);
+    current_coreIdx = -1;
+stop:
+    signal(sig, 0);
+    ::abort();
+}
+
+static void install_exit_handler() {
+    static const int s[] = {
+        SIGABRT, SIGFPE, SIGILL, SIGSEGV, SIGKILL, SIGINT, 0
+    };
+    for (int i = 0; s[i]; ++i)
+        signal(s[i], exit_handler);
+}
+
 
 static const VideoDecoderId VideoDecoderId_VPU = mkid::id32base36_3<'V', 'P', 'U'>::value;
 class VideoDecoderVPUPrivate;
@@ -331,6 +352,9 @@ bool VideoDecoderVPUPrivate::open()
         qWarning("VPU_Init failed Error code is 0x%x \n", ret );
         return false;
     }
+    current_coreIdx = coreIdx;
+    install_exit_handler();
+
     decodefinish = false;
     int_reason = 0;
     totalNumofErrMbs = 0;
@@ -434,6 +458,7 @@ qDebug("RETCODE_FRAME_NOT_COMPLETE");
     CloseDecReport(coreIdx);
 #endif
     VPU_DeInit(coreIdx);
+    current_coreIdx = -1;
 }
 
 bool VideoDecoderVPUPrivate::initSeq()
