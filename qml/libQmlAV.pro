@@ -118,7 +118,7 @@ target.depends += $${deb_install_list.target}
 
 target.path = $$[QT_INSTALL_QML]/QtAV
 qtav_qml.path = $$[QT_INSTALL_QML]/QtAV
-INSTALLS *= target qtav_qml
+!contains(QMAKE_HOST.os, Windows):INSTALLS *= target qtav_qml
 
 MODULE = QmlAV
-include($$PROJECTROOT/deploy.pri)
+!contains(QMAKE_HOST.os, Windows):include($$PROJECTROOT/deploy.pri)

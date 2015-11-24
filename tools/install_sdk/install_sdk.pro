@@ -317,7 +317,7 @@ INSTALLS += qt$${MODULE}_prf
   export(qt$${MODULE}_pri.path)
   export(qt$${MODULE}_prf.files)
   export(qt$${MODULE}_prf.path)
-  export(INSTALLS)
+  !contains(QMAKE_HOST.os, Windows):export(INSTALLS)
 
   return(true)
 } #createForModule
