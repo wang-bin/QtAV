@@ -34,6 +34,7 @@ extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_Cedarv;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDPAU;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VDA;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VideoToolbox;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VPU;
 
 
 Q_AV_EXPORT void VideoDecoder_RegisterAll();

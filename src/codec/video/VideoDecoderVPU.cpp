@@ -78,7 +78,7 @@ static void install_exit_handler() {
 }
 
 
-static const VideoDecoderId VideoDecoderId_VPU = mkid::id32base36_3<'V', 'P', 'U'>::value;
+extern VideoDecoderId VideoDecoderId_VPU;
 class VideoDecoderVPUPrivate;
 class VideoDecoderVPU : public VideoDecoder
 {
