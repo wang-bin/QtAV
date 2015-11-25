@@ -469,58 +469,14 @@ bool VideoDecoderVPUPrivate::initSeq()
     ConfigSeqReport(coreIdx, handle, decOP.bitstreamFormat); // TODO: remove
 #endif
     memset(&initialInfo, 0, sizeof(initialInfo));
-    if (decOP.bitstreamMode == BS_MODE_PIC_END) { //TODO: no check in omx (always BS_MODE_PIC_END)
-        RetCode ret = VPU_DecGetInitialInfo(handle, &initialInfo);
-        if (ret != RETCODE_SUCCESS) {
-            if (ret == RETCODE_MEMORY_ACCESS_VIOLATION)
-                PrintMemoryAccessViolationReason(coreIdx, NULL);
-            qWarning("VPU_DecGetInitialInfo failed Error code is %#x", ret);
-            return false; //TODO: omx wait for next chunk
-        }
-        VPU_ClearInterrupt(coreIdx);
-    } else {
-        qDebug("!BS_MODE_PIC_END");
-        // d.int_reason
-        if ((int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) != (1<<INT_BIT_BIT_BUF_EMPTY)) {
-            VPU_ENSURE(VPU_DecIssueSeqInit(handle), false);
-        } else {
-            // After VPU generate the BIT_EMPTY interrupt. HOST should feed the bitstream up to 1024 in case of seq_init
-            if (bsfillSize < VPU_GBU_SIZE*2)
-                return true;
-        }
-        while (osal_kbhit() == 0) {
-            int_reason = VPU_WaitInterrupt(coreIdx, VPU_DEC_TIMEOUT);
-            if (int_reason)
-                VPU_ClearInterrupt(coreIdx);
-            if(int_reason & (1<<INT_BIT_BIT_BUF_EMPTY))
-                break;
-            //CheckUserDataInterrupt(coreIdx, handle, 1, decOP.bitstreamFormat, int_reason);
-            if (int_reason && (int_reason & (1<<INT_BIT_SEQ_INIT))) {
-                seqInited = 1;
-                break;
-            }
-        }
-        if (int_reason & (1<<INT_BIT_BIT_BUF_EMPTY) || int_reason == -1) {
-            bsfillSize = 0;
-	                qDebug("bsfillSize = 0 INT_BIT_BIT_BUF_EMPTY|int_reason-1");
-
-            return true; // go to take next chunk.
-        }
-        if (seqInited) {
-            RetCode ret = VPU_DecCompleteSeqInit(handle, &initialInfo);
-            if (ret != RETCODE_SUCCESS) {
-                if (ret == RETCODE_MEMORY_ACCESS_VIOLATION)
-                    PrintMemoryAccessViolationReason(coreIdx, NULL);
-                if (initialInfo.seqInitErrReason & (1<<31)) // this case happened only ROLLBACK mode
-                    qWarning("Not enough header : Parser has to feed right size of a sequence header");
-                qWarning("VPU_DecCompleteSeqInit failed Error code is 0x%x", ret);
-                return false;
-            }
-        } else {
-            //qWarning("VPU_DecGetInitialInfo failed Error code is 0x%x", ret);
-            return false;
-        }
+    RetCode ret = VPU_DecGetInitialInfo(handle, &initialInfo);
+    if (ret != RETCODE_SUCCESS) {
+        if (ret == RETCODE_MEMORY_ACCESS_VIOLATION)
+            PrintMemoryAccessViolationReason(coreIdx, NULL);
+        qWarning("VPU_DecGetInitialInfo failed Error code is %#x", ret);
+        return false; //TODO: omx wait for next chunk
     }
+    VPU_ClearInterrupt(coreIdx);
 #ifdef HAVE_REPORT
     SaveSeqReport(coreIdx, handle, &initialInfo, decOP.bitstreamFormat);
 #endif
@@ -709,7 +665,7 @@ qDebug("!BS_MODE_PIC_END");
     //VPU_DecSetRdPtr(d.handle, d.vbStream.phys_addr, 0);	// CODA851 can't support a exact rdptr. so after SEQ_INIT, RdPtr should be rewinded.
     // Start decoding a frame.
     //VPU_ENSURE(VPU_DecStartOneFrame(handle, &decParam), false);
-    while (osal_kbhit() == 0) { //TODO: omx while(1)
+    while (1) { //TODO: omx while(1)
         d.int_reason = VPU_WaitInterrupt(d.coreIdx, VPU_DEC_TIMEOUT);
         if (d.int_reason == -1 ) {// timeout
             VPU_SWReset(d.coreIdx, SW_RESET_SAFETY, d.handle);
@@ -730,7 +686,7 @@ qDebug("VPU_DecGetBitstreamBuffer");
                         ) {// there is full frame data in chunk data.
 			qDebug("VPU_DecSetRdPtr full frame data in chunk data");
                     VPU_DecSetRdPtr(d.handle, rdPtr, 0);		//set rdPtr to the position of next field data.
-		    }
+                }
                 else // do not clear interrupt until feeding next field picture.
                     break;
             }
