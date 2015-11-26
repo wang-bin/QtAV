@@ -29,7 +29,6 @@
 #define VPU_DEC_TIMEOUT       1000
 #endif
 #define MAX_CHUNK_HEADER_SIZE 1024
-#define MAX_ROT_BUF_NUM			2
 #define EXTRA_FRAME_BUFFER_NUM	1
 #define STREAM_BUF_SIZE		 0x300000  // max bitstream size
 #define STREAM_END_SIZE			0
@@ -50,7 +49,7 @@ do { \
 } while(0);
 
 namespace QtAV {
-static const int kPoolSize = 2; //the same as XImage pool size
+static const int kPoolSize = 2; //TODO: dynamic
 
 static int BuildSeqHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, int fps_num, int fps_den, int nb_index_entries);
 static int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *avctx, const Packet& pkt);
@@ -560,7 +559,7 @@ qDebug("BuildSeqHeader");
         }
         seqFilled = true;
     }
-qDebug("BuildPicHeader");
+//qDebug("BuildPicHeader");
     // Build and Fill picture Header data which is dedicated for VPU
     //picHeaderSize is also used in FLUSH_BUFFER
     *picHeaderSize = BuildPicHeader((BYTE*)picHeader.constData(), decOP.bitstreamFormat, codec_ctx, pkt); //FIXME
@@ -594,21 +593,18 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     int seqHeaderSize = 0; //also used in FLUSH_BUFFER
     int picHeaderSize = 0;
     if (packet.isEOF()) {
+        d.bsfillSize = VPU_GBU_SIZE*2;
         VPU_ENSURE(VPU_DecUpdateBitstreamBuffer(d.handle, STREAM_END_SIZE), false);	//tell VPU to reach the end of stream. starting flush decoded output in VPU
         chunkData = QByteArray(); //decode the trailing frames
-qDebug("eof packet");
+        qDebug("eof packet");
     } else {
-        if (decOP.bitstreamMode == BS_MODE_PIC_END) { //TODO: no check in omx. it's always true here
-            if (!d.chunkReuseRequired) {
-    qDebug("!chunkReuseRequired VPU_DecSetRdPtr");
-                VPU_DecSetRdPtr(d.handle, decOP.bitstreamBuffer, 1);
-            }
-        }
         if (!d.chunkReuseRequired) {
-            if (!d.processHeaders(&seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt())) {
-        qWarning("procesHeader error");
-                return false;
-            }
+            VPU_DecSetRdPtr(d.handle, decOP.bitstreamBuffer, 1);
+        }
+        /// TODO: review processHeaders
+        if (!d.processHeaders(&seqHeaderSize, &picHeaderSize, packet, property("fps_num").toInt(), property("fps_den").toInt(), property("nb_index_entries").toInt())) {
+            qWarning("procesHeader error");
+            return false;
         }
         // Fill VCL data
         switch(decOP.bitstreamFormat) {
@@ -631,7 +627,7 @@ qDebug("eof packet");
         break;
         }
 
-    qDebug("bsfillSize: %d", d.bsfillSize);
+    //qDebug("bsfillSize: %d", d.bsfillSize);
         //chunkIdx++;
         if (!d.initSeq())
             return false;
@@ -639,10 +635,12 @@ qDebug("eof packet");
     }
 //FLUSH_BUFFER:
     if(!(d.int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) && !(d.int_reason & (1<<INT_BIT_DEC_FIELD))) {
+        // TODO: omx always run here
         // ppu here
 #ifdef HAVE_REPORT
         ConfigDecReport(d.coreIdx, d.handle, decOP.bitstreamFormat);
 #endif
+        VPU_DecSetRdPtr(d.handle, d.vbStream.phys_addr, 0); //from omx: CODA851 can't support a exact rdptr. so after SEQ_INIT, RdPtr should be rewinded.
         // Start decoding a frame.
         DecParam decParam; //TODO: can set frame drop here
         memset(&decParam, 0, sizeof(decParam));
@@ -655,17 +653,8 @@ qDebug("INT_BIT_DEC_FIELD");
             VPU_ClearInterrupt(d.coreIdx);
         }
         // After VPU generate the BIT_EMPTY interrupt. HOST should feed the bitstreams than 512 byte.
-        if (decOP.bitstreamMode != BS_MODE_PIC_END) {
-qDebug("!BS_MODE_PIC_END");
-            if (d.bsfillSize < VPU_GBU_SIZE)
-                return true; //continue
-        }
     }
-    // TODO: omx always call the following
-    //VPU_DecSetRdPtr(d.handle, d.vbStream.phys_addr, 0);	// CODA851 can't support a exact rdptr. so after SEQ_INIT, RdPtr should be rewinded.
-    // Start decoding a frame.
-    //VPU_ENSURE(VPU_DecStartOneFrame(handle, &decParam), false);
-    while (1) { //TODO: omx while(1)
+    while (1) {
         d.int_reason = VPU_WaitInterrupt(d.coreIdx, VPU_DEC_TIMEOUT);
         if (d.int_reason == -1 ) {// timeout
             VPU_SWReset(d.coreIdx, SW_RESET_SAFETY, d.handle);
@@ -674,25 +663,23 @@ qDebug("!BS_MODE_PIC_END");
         }
         //CheckUserDataInterrupt(d.coreIdx, d.handle, d.outputInfo.indexFrameDecoded, decOP.bitstreamFormat, d.int_reason);
         if (d.int_reason & (1<<INT_BIT_DEC_FIELD)) {
-            qDebug("INT_BIT_DEC_FIELD");
-            if (decOP.bitstreamMode == BS_MODE_PIC_END) {
-qDebug("VPU_DecGetBitstreamBuffer");
-                PhysicalAddress rdPtr, wrPtr;
-                int room;
-                VPU_DecGetBitstreamBuffer(d.handle, &rdPtr, &wrPtr, &room);
-                // TODO: omx
-                if (rdPtr-decOP.bitstreamBuffer <
-                        (PhysicalAddress)(chunkData.size()+picHeaderSize+seqHeaderSize-8)
-                        ) {// there is full frame data in chunk data.
-			qDebug("VPU_DecSetRdPtr full frame data in chunk data");
-                    VPU_DecSetRdPtr(d.handle, rdPtr, 0);		//set rdPtr to the position of next field data.
-                }
-                else // do not clear interrupt until feeding next field picture.
-                    break;
+            qDebug("INT_BIT_DEC_FIELD VPU_DecGetBitstreamBuffer()");
+            // BS_MODE_PIC_END
+            PhysicalAddress rdPtr, wrPtr;
+            int room;
+            VPU_DecGetBitstreamBuffer(d.handle, &rdPtr, &wrPtr, &room);
+            // TODO: omx
+            if (rdPtr-decOP.bitstreamBuffer <
+                    (PhysicalAddress)(chunkData.size()+picHeaderSize+seqHeaderSize-8)
+                    ) {// there is full frame data in chunk data.
+        qDebug("VPU_DecSetRdPtr full frame data in chunk data");
+                VPU_DecSetRdPtr(d.handle, rdPtr, 0);		//set rdPtr to the position of next field data.
             }
+            else // do not clear interrupt until feeding next field picture.
+                break;
         }
         if (d.int_reason) {
-qDebug("VPU_ClearInterrupt");
+//qDebug("VPU_ClearInterrupt");
             VPU_ClearInterrupt(d.coreIdx);
 	    }
         if (d.int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) { // TODO: omx no check and below
@@ -733,7 +720,7 @@ qDebug("VPU_ClearInterrupt");
     if (d.outputInfo.chunkReuseRequired) {// reuse previous chunk. that would be true once framebuffer is full.
         d.chunkReuseRequired = true;
         d.undecoded_size = chunkData.size(); // decode previous chunk again!!
-        qDebug("chunkReuseRequired");
+        qDebug("chunkReuseRequired. undecoded_size: %d", d.undecoded_size);
     } else {
         // must always set undecoded_size if it was set!!!
         d.undecoded_size = 0;
@@ -746,16 +733,17 @@ qDebug("VPU_ClearInterrupt");
     if (d.decodefinish) { //ppu here
         return !packet.isEOF();
     }
-    if (d.outputInfo.indexFrameDisplay == -3 ||
-        d.outputInfo.indexFrameDisplay == -2 ) // BIT doesn't have picture to be displayed, or frame drop
+    if (d.outputInfo.indexFrameDisplay == -3
+            || d.outputInfo.indexFrameDisplay == -2) // BIT doesn't have picture to be displayed, or frame drop
+            //|| d.outputInfo.indexFrameDecoded == -1)  //omx has this. but will always decode error
     {
-        qDebug("BIT doesn't have picture to be displayed, or frame drop. indexFrameDisplay: %d", d.outputInfo.indexFrameDisplay);
+        qWarning("BIT doesn't have picture to be displayed, or frame drop. indexFrameDisplay: %d", d.outputInfo.indexFrameDisplay);
         if (!d.display_queue.empty()) { //?
             d.display_queue.pop_front();
         }
         if (d.outputInfo.indexFrameDecoded == -1)	// VPU did not decode a picture because there is not enough frame buffer to continue decoding
         {
-            qDebug("VPU did not decode a picture because there is not enough frame buffer to continue decoding");
+            qWarning("VPU did not decode a picture because there is not enough frame buffer to continue decoding");
             // TODO: doc says VPU_DecClrDispFlag() + VPU_DecStartOneFrame()
             // if you can't get VSYN interrupt on your sw layer. this point is reasonable line to set VSYN flag.
             // but you need fine tune EXTRA_FRAME_BUFFER_NUM value not decoder to write being display buffer.
@@ -769,7 +757,7 @@ qDebug("VPU_ClearInterrupt");
         surf->index = d.outputInfo.indexFrameDisplay;
         surf->fb = d.outputInfo.dispFrame;
         d.display_queue.push_back(surf);
-        qDebug("push_back FBSurfacePtr. queue.size: %lu", d.display_queue.size());
+        //qDebug("push_back FBSurfacePtr. queue.size: %lu", d.display_queue.size());
     }
     if (d.outputInfo.numOfErrMBs) {
         d.totalNumofErrMbs += d.outputInfo.numOfErrMBs;
@@ -1193,12 +1181,13 @@ int WriteBsBufFromBufHelper(Uint32 core_idx, DecHandle handle, vpu_buffer_t *pVb
         return -1;
     int size = 0;
     PhysicalAddress paRdPtr, paWrPtr, targetAddr;
+    /// TODO: update vpuapi.c
     VPU_ENSURE(VPU_DecGetBitstreamBuffer(handle, &paRdPtr, &paWrPtr, &size), -1);
     if(size < chunkSize)
         return 0; // no room for feeding bitstream. it will take a change to fill stream
     targetAddr = paWrPtr;
     if ((targetAddr+chunkSize) >  (pVbStream->phys_addr+pVbStream->size)) {
-        int room = (pVbStream->phys_addr+pVbStream->size) - targetAddr;
+        const int room = (pVbStream->phys_addr+pVbStream->size) - targetAddr;
         //write to physical address
         vdi_write_memory(core_idx, targetAddr, pChunk, room, endian);
         vdi_write_memory(core_idx, pVbStream->phys_addr, pChunk+room, chunkSize-room, endian);
