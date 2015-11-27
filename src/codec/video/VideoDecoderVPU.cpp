@@ -336,13 +336,6 @@ bool VideoDecoderVPUPrivate::open()
         qWarning("Unsupported codec");
         return false;
     }
-#ifdef HAVE_REPORT
-    VpuReportConfig_t reportCfg;
-    memset(&reportCfg, 0x00, sizeof(reportCfg));
-    reportCfg.userDataEnable = VPU_REPORT_USERDATA;
-    reportCfg.userDataReportMode = 0;
-    OpenDecReport(coreIdx, &reportCfg);
-#endif //HAVE_REPORT
     RetCode ret = VPU_Init(coreIdx);
 #ifndef BIT_CODE_FILE_PATH
 #endif
@@ -453,9 +446,6 @@ qDebug("RETCODE_FRAME_NOT_COMPLETE");
     seqHeader.clear();
     picHeader.clear();
     display_queue = ring<FBSurfacePtr>(0);
-#ifdef HAVE_REPORT
-    CloseDecReport(coreIdx);
-#endif
     VPU_DeInit(coreIdx);
     current_coreIdx = -1;
 }
@@ -464,9 +454,6 @@ bool VideoDecoderVPUPrivate::initSeq()
 {
     if (seqInited)
         return true;
-#ifdef HAVE_REPORT
-    ConfigSeqReport(coreIdx, handle, decOP.bitstreamFormat); // TODO: remove
-#endif
     memset(&initialInfo, 0, sizeof(initialInfo));
     RetCode ret = VPU_DecGetInitialInfo(handle, &initialInfo);
     if (ret != RETCODE_SUCCESS) {
@@ -476,9 +463,6 @@ bool VideoDecoderVPUPrivate::initSeq()
         return false; //TODO: omx wait for next chunk
     }
     VPU_ClearInterrupt(coreIdx);
-#ifdef HAVE_REPORT
-    SaveSeqReport(coreIdx, handle, &initialInfo, decOP.bitstreamFormat);
-#endif
     if (decOP.bitstreamFormat == STD_VP8) {
         // For VP8 frame upsampling infomration
         static const int scale_factor_mul[4] = {1, 5, 5, 2};
@@ -637,9 +621,6 @@ bool VideoDecoderVPU::decode(const Packet &packet)
     if(!(d.int_reason & (1<<INT_BIT_BIT_BUF_EMPTY)) && !(d.int_reason & (1<<INT_BIT_DEC_FIELD))) {
         // TODO: omx always run here
         // ppu here
-#ifdef HAVE_REPORT
-        ConfigDecReport(d.coreIdx, d.handle, decOP.bitstreamFormat);
-#endif
         VPU_DecSetRdPtr(d.handle, d.vbStream.phys_addr, 0); //from omx: CODA851 can't support a exact rdptr. so after SEQ_INIT, RdPtr should be rewinded.
         // Start decoding a frame.
         DecParam decParam; //TODO: can set frame drop here
@@ -714,9 +695,6 @@ qDebug("INT_BIT_DEC_FIELD");
     }
     //qDebug("#%d:%d, indexDisplay %d || picType %d || indexDecoded %d || rdPtr=0x%x || wrPtr=0x%x || chunkSize = %d, consume=%d",
       //  d.instIdx, d.frameIdx, d.outputInfo.indexFrameDisplay, d.outputInfo.picType, d.outputInfo.indexFrameDecoded, d.outputInfo.rdPtr, d.outputInfo.wrPtr, chunkData.size()+picHeaderSize, d.outputInfo.consumedByte);
-#ifdef HAVE_REPORT
-    SaveDecReport(d.coreIdx, d.handle, &d.outputInfo, decOP.bitstreamFormat, ((d.initialInfo.picWidth+15)&~15)/16); ///TODO:
-#endif
     if (d.outputInfo.chunkReuseRequired) {// reuse previous chunk. that would be true once framebuffer is full.
         d.chunkReuseRequired = true;
         d.undecoded_size = chunkData.size(); // decode previous chunk again!!
