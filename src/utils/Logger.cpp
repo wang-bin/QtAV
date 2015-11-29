@@ -24,6 +24,7 @@
  */
 // we need LogLevel so must include QtAV_Global.h
 #include <QtCore/QString>
+#include <QtCore/QMutex>
 #include "QtAV/QtAV_Global.h"
 #include "Logger.h"
 
@@ -39,9 +40,33 @@ typedef Logger::Context QMessageLogger;
 #endif
 
 static void log_helper(QtMsgType msgType, const QMessageLogger *qlog, const char* msg, va_list ap) {
+    static QMutex m;
+    QMutexLocker lock(&m);
+    Q_UNUSED(lock);
+    static int repeat = 0;
+    static QString last_msg;
+    static QtMsgType last_type = QtDebugMsg;
     QString qmsg(gQtAVLogTag);
-    if (msg)
-        qmsg += QString().vsprintf(msg, ap);
+    QString formated;
+    if (msg) {
+        formated = QString().vsprintf(msg, ap);
+    }
+    // repeate check
+    if (last_type == msgType && last_msg == formated) {
+        repeat++;
+        return;
+    }
+    if (repeat > 0) {
+        // print repeat message and current message
+        qmsg = QStringLiteral("%1(repeat %2)%3\n%4%5")
+                .arg(qmsg).arg(repeat).arg(last_msg).arg(qmsg).arg(formated);
+    } else {
+        qmsg += formated;
+    }
+    repeat = 0;
+    last_type = msgType;
+    last_msg = formated;
+
     // qt_message_output is a public api
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     qt_message_output(msgType, qmsg.toUtf8().constData());
