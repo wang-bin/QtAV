@@ -311,7 +311,7 @@ config_libass {
 }
 capi {
 contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2):!ios {
-  qtHaveModule(x11extras): QT *= x11extras
+  greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(x11extras): QT *= x11extras
   DEFINES += QTAV_HAVE_EGL_CAPI=1
   HEADERS *= capi/egl_api.h
   SOURCES *= capi/egl_api.cpp
