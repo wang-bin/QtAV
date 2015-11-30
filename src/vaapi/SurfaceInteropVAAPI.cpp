@@ -196,6 +196,10 @@ protected:
 //static PFNEGLQUERYNATIVEDISPLAYNVPROC eglQueryNativeDisplayNV = NULL;
 static PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;
 static PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR = NULL;
+#ifndef GL_OES_EGL_image
+typedef void *GLeglImageOES;
+typedef void (EGLAPIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC) (GLenum target, GLeglImageOES image);
+#endif
 static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = NULL;
 class X11_EGL Q_DECL_FINAL: public X11 {
 public:
@@ -213,6 +217,9 @@ public:
     Display* ensureGL() Q_DECL_OVERRIDE {
         if (display && eglCreateImageKHR && glEGLImageTargetTexture2DOES)
             return display;
+        QList<QByteArray> eglexts = QByteArray(eglQueryString(eglGetCurrentDisplay(), EGL_EXTENSIONS)).split(' ');
+        static QVector<QByteArray> eglexts_required= QVector<QByteArray>() << QByteArrayLiteral("EGL_EXT_image_dma_buf_import")
+                                                           << QByteArrayLiteral("EGL_EXT_image_dma_buf_import");
         // we must use the native display egl used, otherwise eglCreateImageKHR will fail.
 #ifdef QT_X11EXTRAS_LIB
         display = (Display*)QX11Info::display();
@@ -340,7 +347,6 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
         return true;
     if (!x11) {
 #if QTAV_HAVE(EGL_CAPI)
-        // FIXME: may fallback to xcb_glx(default)
         if (OpenGLHelper::isEGL()) {
             // TODO: check EGL_NOK_texture_from_pixmap
             x11 = new X11_EGL();
@@ -406,6 +412,8 @@ bool X11InteropResource::unmap(const surface_ptr &surface, GLuint tex)
 #define EGL_DMA_BUF_PLANE0_OFFSET_EXT     0x3273
 #define EGL_DMA_BUF_PLANE0_PITCH_EXT      0x3274
 #endif
+//2010 https://www.khronos.org/registry/egl/extensions/MESA/EGL_MESA_drm_image.txt: only support EGL_DRM_BUFFER_FORMAT_ARGB32_MESA
+//2013 https://www.khronos.org/registry/egl/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
 class EGL {
 public:
     EGL() : dpy(EGL_NO_DISPLAY) {
@@ -543,7 +551,6 @@ bool EGLInteropResource::ensure()
     if (egl)
         return true;
 #if QTAV_HAVE(EGL_CAPI)
-    // FIXME: may fallback to xcb_glx(default)
     if (!OpenGLHelper::isEGL()) {
         qWarning("Not using EGL");
         return false;
