@@ -29,7 +29,6 @@
 #include "utils/Logger.h"
 
 #include <X11/Xlib.h>
-#include <X11/xpm.h>
 #include <X11/Xutil.h>
 
 namespace QtAV {
@@ -72,10 +71,12 @@ void X11FilterContext::destroyX11Resources()
         mask_pix = 0;
     }
     if (mask_img) {
+        ((::XImage*)mask_img)->data = 0; //pointed to qimage data
         XDestroyImage((::XImage*)mask_img);
         mask_img = 0;
     }
     if (text_img) {
+        ((::XImage*)text_img)->data = 0; //pointed to qimage data
         XDestroyImage((::XImage*)text_img);
         text_img = 0;
     }
@@ -96,23 +97,24 @@ void X11FilterContext::renderTextImageX11(QImage *img, const QPointF &pos)
 {
     if (img) {
         destroyX11Resources();
-        QByteArray data;
-        QBuffer buf(&data);
-        if (!buf.open(QIODevice::ReadWrite)) {
-            qWarning("open buffer error");
+        mask_q  = img->createAlphaMask();
+        if (mask_q.isNull()) {
+            qWarning("mask image is null");
             return;
         }
-        if (!img->save(&buf, "xpm")) {
-            qWarning("save to xpm buffer error");
+        XWindowAttributes xwa;
+        XGetWindowAttributes((::Display*)display, (::Window)drawable, &xwa);
+        // force the stride to ensure we can safely set ximage data ptr to qimage data ptr
+        mask_img = (XImage*)XCreateImage((::Display*)display, xwa.visual, 1, ZPixmap, 0, NULL, mask_q.width(), mask_q.height(), 8, mask_q.bytesPerLine());
+        if (!mask_img) {
+            qWarning("error create mask image");
             return;
         }
-        //img->save("/tmp/x.xpm");
-        buf.seek(0);
-        QByteArray xpm(buf.readAll());
-        buf.close();
-        //qDebug() <<xpm;
+        ((::XImage*)mask_img)->data = (char*)mask_q.constBits();
+        // force the stride to ensure we can safely set ximage data ptr to qimage data ptr
+        text_img = (XImage*)XCreateImage((::Display*)display, xwa.visual, xwa.depth, ZPixmap, 0, NULL, img->width(), img->height(), 8, img->bytesPerLine());
+        ((::XImage*)text_img)->data = (char*)img->constBits();
 
-        XpmCreateImageFromBuffer((::Display*)display, (char*)xpm.constData(), (::XImage**)&text_img, (::XImage**)&mask_img, 0);
         mask_pix = XCreatePixmap((::Display*)display, drawable, ((::XImage*)mask_img)->width, ((::XImage*)mask_img)->height, ((::XImage*)mask_img)->depth);
         ::GC mask_gc = XCreateGC((::Display*)display, (::Pixmap)mask_pix, 0, NULL);
         XPutImage((::Display*)display, mask_pix, mask_gc, (::XImage*)mask_img, 0,0,0,0, ((::XImage*)mask_img)->width, ((::XImage*)mask_img)->height);
@@ -183,14 +185,14 @@ void X11FilterContext::drawPlainText(const QPointF &pos, const QString &text)
     this->plain = true;
 
     QFontMetrics fm(font);
-    QImage img(fm.width(text), fm.height(), QImage::Format_ARGB32);
-    img.fill(QColor(0, 0, 0, 0));
-    painter->begin(&img);
+    text_q = QImage(fm.width(text), fm.height(), QImage::Format_ARGB32);
+    text_q.fill(QColor(0, 0, 0, 0));
+    painter->begin(&text_q);
     painter->translate(0, 0);
     prepare();
     painter->drawText(QPoint(0, fm.ascent()), text);
     painter->end();
-    renderTextImageX11(&img, pos);
+    renderTextImageX11(&text_q, pos);
 }
 
 void X11FilterContext::drawPlainText(const QRectF &rect, int flags, const QString &text)
@@ -218,13 +220,13 @@ void X11FilterContext::drawPlainText(const QRectF &rect, int flags, const QStrin
     this->text = text;
     this->plain = true;
 
-    QImage img(br.size().toSize(), QImage::Format_ARGB32);
-    img.fill(QColor(0, 0, 0, 0));
-    painter->begin(&img);
+    text_q = QImage(br.size().toSize(), QImage::Format_ARGB32);
+    text_q.fill(QColor(0, 0, 0, 0));
+    painter->begin(&text_q);
     prepare();
     painter->drawText(0, 0, br.width(), br.height(), Qt::AlignCenter, text);
     painter->end();
-    renderTextImageX11(&img, br.topLeft());
+    renderTextImageX11(&text_q, br.topLeft());
 }
 
 void X11FilterContext::drawRichText(const QRectF &rect, const QString &text, bool wordWrap)
@@ -245,13 +247,13 @@ void X11FilterContext::drawRichText(const QRectF &rect, const QString &text, boo
     if (wordWrap)
         doc->setTextWidth(rect.width());
 
-    QImage img(doc->size().toSize(), QImage::Format_ARGB32);
-    img.fill(QColor(0, 0, 0, 0));
-    painter->begin(&img);
+    text_q = QImage(doc->size().toSize(), QImage::Format_ARGB32);
+    text_q.fill(QColor(0, 0, 0, 0));
+    painter->begin(&text_q);
     prepare();
     doc->drawContents(painter);
     painter->end();
-    renderTextImageX11(&img, rect.topLeft()); //TODO: use boundingRect?
+    renderTextImageX11(&text_q, rect.topLeft()); //TODO: use boundingRect?
 }
 
 } //namespace QtAV

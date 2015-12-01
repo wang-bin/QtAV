@@ -158,6 +158,8 @@ protected:
     XImage *text_img;
     XImage *mask_img;
     Pixmap mask_pix;
+    QImage text_q;
+    QImage mask_q;
 
     bool plain;
     QString text;

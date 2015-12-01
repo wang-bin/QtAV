@@ -126,7 +126,6 @@ VideoFilterContext::Type VideoFilter::contextType() const
 bool VideoFilter::isSupported(VideoFilterContext::Type ct) const
 {
     // TODO: return false
-    qDebug("VideoFilter::isSupported");
     return contextType() == ct;
 }
 

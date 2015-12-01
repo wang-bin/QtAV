@@ -103,7 +103,7 @@ android: CONFIG += config_opensl
 
 config_x11 {
   SOURCES *= filter/X11FilterContext.cpp
-  LIBS *= -lX11 -lXpm
+  LIBS *= -lX11
 }
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
