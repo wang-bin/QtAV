@@ -101,6 +101,10 @@ win32-msvc2010|win32-msvc2008: QMAKE_LFLAGS *= /DEBUG #workaround for CoInitiali
 DEFINES += __STDC_CONSTANT_MACROS
 android: CONFIG += config_opensl
 
+config_x11 {
+  SOURCES *= filter/X11FilterContext.cpp
+  LIBS *= -lX11 -lXpm
+}
 config_swresample {
     DEFINES += QTAV_HAVE_SWRESAMPLE=1
     SOURCES += AudioResamplerFF.cpp

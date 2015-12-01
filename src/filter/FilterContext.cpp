@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/FilterContext.h"
+#include <QtGui/QFontMetrics>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtGui/QTextDocument>
@@ -35,6 +36,8 @@ VideoFilterContext *VideoFilterContext::create(Type t)
     case QtPainter:
         ctx = new QPainterFilterContext();
         break;
+    case X11:
+        ctx = new X11FilterContext();
     default:
         break;
     }
@@ -58,7 +61,7 @@ VideoFilterContext::VideoFilterContext():
     font.setBold(true);
     font.setPixelSize(26);
     pen.setColor(Qt::white);
-    rect = QRect(32, 32, 0, 0); //TODO: why painting will above the visible area if the draw at (0, 0)?
+    rect = QRect(32, 32, 0, 0); //TODO: why painting will above the visible area if the draw at (0, 0)? ascent
 }
 
 VideoFilterContext::~VideoFilterContext()
@@ -132,8 +135,8 @@ void VideoFilterContext::shareFrom(VideoFilterContext *vctx)
     video_height = vctx->video_height;
 }
 
-QPainterFilterContext::QPainterFilterContext()
-    : doc(0)
+QPainterFilterContext::QPainterFilterContext() : VideoFilterContext()
+    , doc(0)
     , cvt(0)
 {}
 
@@ -147,11 +150,6 @@ QPainterFilterContext::~QPainterFilterContext()
         delete cvt;
         cvt = 0;
     }
-}
-
-VideoFilterContext::Type QPainterFilterContext::type() const
-{
-    return VideoFilterContext::QtPainter;
 }
 
 void QPainterFilterContext::drawImage(const QPointF &pos, const QImage &image, const QRectF& source, Qt::ImageConversionFlags flags)
@@ -180,7 +178,8 @@ void QPainterFilterContext::drawPlainText(const QPointF &pos, const QString &tex
 {
     if (!prepare())
         return;
-    painter->drawText(pos, text);
+    QFontMetrics fm(font);
+    painter->drawText(pos + QPoint(0, fm.ascent()), text);
     painter->restore();
 }
 
@@ -279,5 +278,4 @@ void QPainterFilterContext::initializeOnFrame(VideoFrame *vframe)
     own_paint_device = true; //TODO: what about renderer is not a widget?
     painter->begin((QImage*)paint_device);
 }
-
 } //namespace QtAV
