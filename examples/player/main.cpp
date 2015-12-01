@@ -61,6 +61,7 @@ VideoRendererId rendererId_from_opt_name(const QString& name) {
 int main(int argc, char *argv[])
 {
     qDebug() << aboutQtAV_PlainText();
+    Config::setName(QString::fromLatin1("Player"));
     QOptions options = get_common_options();
     options.add(QString::fromLatin1("player options"))
             ("ffmpeg-log",  QString(), QString::fromLatin1("ffmpeg log level. can be: quiet, panic, fatal, error, warn, info, verbose, debug. this can override env 'QTAV_FFMPEG_LOG'"))

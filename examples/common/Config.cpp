@@ -35,7 +35,10 @@ class Config::Data
 {
 public:
     Data() {
-        file = appDataDir() + QString::fromLatin1("/") + qApp->applicationName() + QString::fromLatin1(".ini");
+        if (!Data::name.isEmpty())
+            file = appDataDir() + QString::fromLatin1("/") + Data::name + QString::fromLatin1(".ini");
+        else
+            file = appDataDir() + QString::fromLatin1("/") + qApp->applicationName() + QString::fromLatin1(".ini");
         if (!QDir(appDataDir()).exists()) {
             if (!QDir().mkpath(appDataDir())) {
                 qWarning() << "Failed to create appDataDir: " << appDataDir();
@@ -267,12 +270,21 @@ public:
     qreal timeout;
     int buffer_value;
     QString log;
+
+    static QString name;
 };
+
+QString Config::Data::name;
 
 Config& Config::instance()
 {
     static Config cfg;
     return cfg;
+}
+
+void Config::setName(const QString &name)
+{
+    Config::Data::name = name;
 }
 
 Config::Config(QObject *parent)

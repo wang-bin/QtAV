@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
             ("scale", 1.0, QLatin1String("scale of graphics context. 0: auto"))
             ;
     options.parse(argc, argv);
+    Config::setName(QString::fromLatin1("QMLPlayer"));
     do_common_options_before_qapp(options);
 
     QGuiApplication app(argc, argv);

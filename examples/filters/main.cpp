@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     qDebug("vo: %s", vo.toUtf8().constData());
     bool opt_has_file = argc > idx + 2;
     vo = vo.toLower();
-    if (vo != QLatin1String("gl") && vo != QLatin1String("d2d") && vo != QLatin1String("gdi") && vo != QLatin1String("xv"))
+    if (vo != QLatin1String("gl") && vo != QLatin1String("d2d") && vo != QLatin1String("gdi") && vo != QLatin1String("xv") && vo != QLatin1String("x11"))
         vo = QString::fromLatin1("qpainter");
     QString title = QString::fromLatin1("QtAV %1 wbsecg1@gmail.com").arg(QtAV_Version_String_Long());
     VideoRenderer *renderer = 0;
@@ -71,6 +71,10 @@ int main(int argc, char *argv[])
         renderer = VideoRenderer::create(VideoRendererId_GDI);
     } else if (vo == QLatin1String("xv")) {
         renderer = VideoRenderer::create(VideoRendererId_XV);
+        textfilter = true;
+    } else if (vo == QLatin1String("x11")) {
+        renderer = VideoRenderer::create(VideoRendererId_X11);
+        textfilter = true;
     } else {
         renderer = VideoRenderer::create(VideoRendererId_Widget);
         textfilter = true;

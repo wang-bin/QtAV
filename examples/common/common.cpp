@@ -72,6 +72,7 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
          fileLogger()->write(QByteArray("Fatal: "));
          abort();
      }
+     fflush(0);
      fileLogger()->write(msgArray);
      fileLogger()->write(QByteArray("\n"));
      fileLogger()->flush();

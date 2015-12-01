@@ -80,7 +80,7 @@ public:
     };
 
     static Config& instance();
-
+    static void setName(const QString& name); // config file base name
     Q_INVOKABLE bool reset();
     void reload();
     /*!
