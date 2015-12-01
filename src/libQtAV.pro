@@ -102,6 +102,7 @@ DEFINES += __STDC_CONSTANT_MACROS
 android: CONFIG += config_opensl
 
 config_x11 {
+  DEFINES += QTAV_HAVE_X11=1
   SOURCES *= filter/X11FilterContext.cpp
   LIBS *= -lX11
 }

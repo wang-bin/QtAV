@@ -120,6 +120,7 @@ protected:
     VideoFrameConverter *cvt;
 };
 
+#if QTAV_HAVE(X11)
 class Q_AV_EXPORT X11FilterContext Q_DECL_FINAL: public VideoFilterContext
 {
 public:
@@ -165,7 +166,7 @@ protected:
     QString text;
     QImage test_img; //for computing bounding rect
 };
-
+#endif //QTAV_HAVE(X11)
 } //namespace QtAV
 
 #endif // QTAV_FILTERCONTEXT_H

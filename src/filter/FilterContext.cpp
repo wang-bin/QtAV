@@ -36,8 +36,11 @@ VideoFilterContext *VideoFilterContext::create(Type t)
     case QtPainter:
         ctx = new QPainterFilterContext();
         break;
+#if QTAV_HAVE(X11)
     case X11:
         ctx = new X11FilterContext();
+        break;
+#endif
     default:
         break;
     }
