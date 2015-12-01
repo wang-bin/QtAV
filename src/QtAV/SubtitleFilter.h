@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -61,8 +61,8 @@ class Q_AV_EXPORT SubtitleFilter : public VideoFilter, public SubtitleAPIProxy
 public:
     explicit SubtitleFilter(QObject *parent = 0);
     void setPlayer(AVPlayer* player);
-    VideoFilterContext::Type contextType() const {
-        return VideoFilterContext::QtPainter;
+    bool isSupported(VideoFilterContext::Type ct) const Q_DECL_OVERRIDE {
+        return ct == VideoFilterContext::QtPainter || ct == VideoFilterContext::X11;
     }
     /*!
      * \brief setFile

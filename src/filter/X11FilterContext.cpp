@@ -195,8 +195,12 @@ void X11FilterContext::drawPlainText(const QPointF &pos, const QString &text)
 
 void X11FilterContext::drawPlainText(const QRectF &rect, int flags, const QString &text)
 {
-     if (rect.isEmpty() || text.isEmpty())
+     if (text.isEmpty())
          return;
+     if (rect.isEmpty()) {
+         drawPlainText(rect.topLeft(), text);
+         return;
+     }
      if (test_img.size() != rect.size().toSize()) {
          test_img = QImage(rect.size().toSize(), QImage::Format_ARGB32); //TODO: create once
      }
@@ -204,16 +208,11 @@ void X11FilterContext::drawPlainText(const QRectF &rect, int flags, const QStrin
      prepare();
      QRectF br = painter->boundingRect(rect, flags, text);
      painter->end();
-     //qDebug() << br;
      if (br.isEmpty())
          return;
 
     if (text == this->text && plain && mask_pix) {
         renderTextImageX11(0, br.topLeft());
-        return;
-    }
-    if (rect.isNull()) {
-        drawPlainText(rect.topLeft(), text);
         return;
     }
     this->text = text;

@@ -50,7 +50,10 @@ public:
     }
     ~VideoThreadPrivate() {
         //not neccesary context is managed by filters.
-        filter_context = 0;
+        if (filter_context) {
+            delete filter_context;
+            filter_context = 0;
+        }
     }
 
     VideoFrameConverter conv;
@@ -190,8 +193,8 @@ void VideoThread::applyFilters(VideoFrame &frame)
             VideoFilter *vf = static_cast<VideoFilter*>(filter);
             if (!vf->isEnabled())
                 continue;
-            vf->prepareContext(d.filter_context, d.statistics, &frame);
-            vf->apply(d.statistics, &frame);
+            if (vf->prepareContext(d.filter_context, d.statistics, &frame))
+                vf->apply(d.statistics, &frame);
         }
     }
 }
@@ -256,7 +259,7 @@ void VideoThread::run()
         d.capture->setCaptureName(QFileInfo(d.statistics->url).completeBaseName());
     }
     //not neccesary context is managed by filters.
-    d.filter_context = 0;
+    d.filter_context = VideoFilterContext::create(VideoFilterContext::QtPainter);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     Packet pkt;
     QVariantHash *dec_opt = &d.dec_opt_normal; //TODO: restore old framedrop option after seek
@@ -282,6 +285,7 @@ void VideoThread::run()
     bool skip_render = false; // keep true if decoded frame does not reach desired time
     qreal v_a = 0;
     int nb_no_pts = 0;
+    //bool wait_audio_drain
     const char* pkt_data = NULL; // workaround for libav9 decode fail but error code >= 0
     while (true) {
         processNextTask();

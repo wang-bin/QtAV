@@ -462,7 +462,7 @@ void VideoRenderer::handlePaintEvent()
                     continue;
                 // qpainter on video frame always runs on video thread. qpainter on renderer's paint device can work on rendering thread
                 // Here apply filters on frame on video thread, for example, GPU filters
-                if (vf->contextType() == VideoFilterContext::QtPainter)
+                if (!vf->context() || vf->context()->type() != VideoFilterContext::OpenGL)
                     continue;
                 //vf->prepareContext(d.filter_context, d.statistics, 0);
                 vf->apply(d.statistics, &d.video_frame); //painter and paint device are ready, pass video frame is ok.
@@ -507,10 +507,12 @@ void VideoRenderer::handlePaintEvent()
             if (!vf->isEnabled())
                 continue;
             // qpainter rendering on renderer's paint device. only supported by none-null paint engine
-            if (vf->contextType() != VideoFilterContext::QtPainter)
+            if (!vf->context() || vf->context()->type()  == VideoFilterContext::OpenGL) {
                 continue;
-            vf->prepareContext(d.filter_context, d.statistics, 0);
-            vf->apply(d.statistics, &d.video_frame); //painter and paint device are ready, pass video frame is ok.
+            }
+            if (vf->prepareContext(d.filter_context, d.statistics, 0)) {
+                vf->apply(d.statistics, &d.video_frame); //painter and paint device are ready, pass video frame is ok.
+            }
         }
     }
     //end paint. how about QPainter::endNativePainting()?

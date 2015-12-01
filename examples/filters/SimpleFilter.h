@@ -36,7 +36,9 @@ public:
     virtual ~SimpleFilter();
     void enableRotate(bool r);
     void enableWaveEffect(bool w);
-    virtual VideoFilterContext::Type contextType() const { return VideoFilterContext::QtPainter; }
+    bool isSupported(VideoFilterContext::Type ct) const {
+        return ct == VideoFilterContext::QtPainter || ct == VideoFilterContext::X11;
+    }
     void setText(const QString& text);
     QString text() const;
     //show image if text is null

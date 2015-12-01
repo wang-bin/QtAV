@@ -31,8 +31,8 @@ class OSDFilter : public VideoFilter, public OSD
 {
 public:
     OSDFilter(QObject *parent = 0);
-    VideoFilterContext::Type contextType() const {
-        return VideoFilterContext::QtPainter;
+    bool isSupported(VideoFilterContext::Type ct) const {
+        return ct == VideoFilterContext::QtPainter || ct == VideoFilterContext::X11;
     }
 protected:
     void process(Statistics* statistics, VideoFrame* frame);

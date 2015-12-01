@@ -158,10 +158,7 @@ void SubtitleFilter::process(Statistics *statistics, VideoFrame *frame)
     Q_UNUSED(statistics);
     Q_UNUSED(frame);
     DPTR_D(SubtitleFilter);
-    QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(d.context);
-    if (!ctx)
-        return;
-    if (!ctx->paint_device) {
+    if (!context()->paint_device) {
         qWarning("no paint device!");
         return;
     }
@@ -175,16 +172,16 @@ void SubtitleFilter::process(Statistics *statistics, VideoFrame *frame)
          * if use renderer's resolution, we have to map bounding rect from video frame coordinate to renderer's
          */
         //QImage img = d.player_sub->subtitle()->getImage(statistics->video_only.width, statistics->video_only.height, &rect);
-        QImage img = d.player_sub->subtitle()->getImage(ctx->paint_device->width(), ctx->paint_device->height(), &rect);
+        QImage img = d.player_sub->subtitle()->getImage(context()->paint_device->width(), context()->paint_device->height(), &rect);
         if (img.isNull())
             return;
-        ctx->drawImage(rect, img);
+        context()->drawImage(rect, img);
         return;
     }
-    ctx->font = d.font;
-    ctx->pen.setColor(d.color);
-    ctx->rect = d.realRect(ctx->paint_device->width(), ctx->paint_device->height());
-    ctx->drawPlainText(ctx->rect, Qt::AlignHCenter | Qt::AlignBottom, d.player_sub->subtitle()->getText());
+    context()->font = d.font;
+    context()->pen.setColor(d.color);
+    context()->rect = d.realRect(context()->paint_device->width(), context()->paint_device->height());
+    context()->drawPlainText(context()->rect, Qt::AlignHCenter | Qt::AlignBottom, d.player_sub->subtitle()->getText());
 }
 
 } //namespace QtAV

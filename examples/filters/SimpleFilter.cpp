@@ -96,12 +96,8 @@ void SimpleFilter::process(Statistics *statistics, VideoFrame *frame)
     Q_UNUSED(frame);
     if (!isEnabled())
         return;
-    VideoFilterContext *ctx = static_cast<VideoFilterContext*>(context());
-    if (!ctx->painter)
-        return;
-
     int t = mTime.elapsed()/100;
-
+    VideoFilterContext *ctx = static_cast<VideoFilterContext*>(context());
     if (mCanRot) {
         mMat.rotate(2, 0, 1, -0.1);
         ctx->transform = mMat.toTransform();

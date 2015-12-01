@@ -24,6 +24,7 @@
 */
 #include "QtAV/VideoRenderer.h"
 #include "QtAV/private/VideoRenderer_p.h"
+#include "QtAV/FilterContext.h"
 #include <QWidget>
 #include <QResizeEvent>
 #include <QtCore/qmath.h>
@@ -239,6 +240,8 @@ public:
             return false;
         }
         XSetBackground(display, gc, BlackPixel(display, DefaultScreen(display)));
+        if (filter_context)
+            ((X11FilterContext*)filter_context)->resetX11((X11FilterContext::Display*)display, (X11FilterContext::GC)gc, (X11FilterContext::Drawable)q_func().winId());
         return true;
     }
     bool ensureImage(int w, int h) {
@@ -340,6 +343,12 @@ X11Renderer::X11Renderer(QWidget *parent, Qt::WindowFlags f):
     //setAttribute(Qt::WA_NoSystemBackground);
     //setAutoFillBackground(false);
     setAttribute(Qt::WA_PaintOnScreen, true);
+    d_func().filter_context = VideoFilterContext::create(VideoFilterContext::X11);
+    if (!d_func().filter_context) {
+        qWarning("No filter context for X11");
+    } else {
+        d_func().filter_context->paint_device = this;
+    }
 }
 
 bool X11Renderer::isSupported(VideoFormat::PixelFormat pixfmt) const

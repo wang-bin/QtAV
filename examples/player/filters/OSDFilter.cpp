@@ -33,9 +33,6 @@ void OSDFilter::process(Statistics *statistics, VideoFrame *frame)
     Q_UNUSED(frame);
     if (mShowType == ShowNone)
         return;
-    QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(context());
-    if (!ctx)
-        return;
     //qDebug("ctx=%p tid=%p main tid=%p", ctx, QThread::currentThread(), qApp->thread());
-    ctx->drawPlainText(ctx->rect, Qt::AlignCenter, text(statistics));
+    context()->drawPlainText(context()->rect, Qt::AlignCenter, text(statistics));
 }
