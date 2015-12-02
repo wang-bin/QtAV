@@ -1,5 +1,5 @@
 ﻿<?xml version=\"1.0\" encoding=\"utf-8\"?>
-<Package xmlns=\"http://schemas.microsoft.com/appx/2010/manifest\" xmlns:m2=\"http://schemas.microsoft.com/appx/2014/manifest\" xmlns:mp=\"http://schemas.microsoft.com/appx/2014/phone/manifest\">
+<Package xmlns=\"http://schemas.microsoft.com/appx/2010/manifest\" xmlns:m3=\"http://schemas.microsoft.com/appx/2014/manifest\" xmlns:mp=\"http://schemas.microsoft.com/appx/2014/phone/manifest\">
   <Identity
     Name=\"org.qtav.qmlplayer\"
     ProcessorArchitecture=\"arm\"
@@ -25,32 +25,33 @@
       Id=\"App\"
       Executable=\"QMLPlayer.exe\"
       EntryPoint=\"QMLPlayer.App\">
-      <m2:VisualElements
+      <m3:VisualElements
         DisplayName=\"QtAV Video Player\"
         Description=\"A cross platform multimedia player based on QtAV\"
         BackgroundColor=\"green\"
         ForegroundText=\"light\"
         Square150x150Logo=\"assets/logo_150x150.png\"
         Square44x44Logo=\"assets/logo_44x44.png\">
-        <m2:DefaultTile Square71x71Logo=\"assets/logo_71x71.png\"
+        <m3:DefaultTile Square71x71Logo=\"assets/logo_71x71.png\"
           Wide310x150Logo=\"assets/logo_310x150.png\">
-          <m2:ShowNameOnTiles>
-            <m2:ShowOn Tile=\"square150x150Logo\" />
-            <m2:ShowOn Tile=\"wide310x150Logo\" />
-          </m2:ShowNameOnTiles>
-        </m2:DefaultTile>
-        <m2:SplashScreen Image=\"assets/logo_480x800.png\" />
-        <m2:InitialRotationPreference>
-          <m2:Rotation Preference=\"portrait\" />
-          <m2:Rotation Preference=\"landscape\" />
-          <m2:Rotation Preference=\"portraitFlipped\" />
-          <m2:Rotation Preference=\"landscapeFlipped\" />
-        </m2:InitialRotationPreference>
-      </m2:VisualElements>
+          <m3:ShowNameOnTiles>
+            <m3:ShowOn Tile=\"square150x150Logo\" />
+            <m3:ShowOn Tile=\"wide310x150Logo\" />
+          </m3:ShowNameOnTiles>
+        </m3:DefaultTile>
+        <m3:SplashScreen Image=\"assets/logo_480x800.png\" />
+        <m3:InitialRotationPreference>
+          <m3:Rotation Preference=\"portrait\" />
+          <m3:Rotation Preference=\"landscape\" />
+          <m3:Rotation Preference=\"portraitFlipped\" />
+          <m3:Rotation Preference=\"landscapeFlipped\" />
+        </m3:InitialRotationPreference>
+      </m3:VisualElements>
       <Extensions>
         <Extension Category=\"windows.fileTypeAssociation\">
           <FileTypeAssociation Name=\"qmlplayer\"> <!-- lower case-->
             <DisplayName>QtAV Video Player</DisplayName>
+            <Logo>assets\logo_store.png</Logo>
             <EditFlags AlwaysUnsafe=\"true\" />
             <SupportedFileTypes>
               <FileType>.3gp</FileType>
@@ -99,6 +100,7 @@
               <FileType>.wtv</FileType>
               <FileType>.y4m</FileType>
               <FileType>.aac</FileType>
+              <FileType>.ac3</FileType>
               <FileType>.flac</FileType>
               <FileType>.wma</FileType>
               <FileType>.wav</FileType>

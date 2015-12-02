@@ -116,6 +116,7 @@ winrt|wince {
     $$[QT_INSTALL_BINS]/avfilter-*.dll \
     $$[QT_INSTALL_BINS]/swresample-*.dll \
     $$[QT_INSTALL_BINS]/swscale-*.dll
+  #depend_dll.path = $$OUT_PWD
   DEPLOYMENT += depend_dll
 # WINRT_MANIFEST file: "=>\"
   winphone {
@@ -124,4 +125,5 @@ winrt|wince {
     WINRT_MANIFEST = WinRT8.Package.appxmanifest
   }
   OTHER_FILES *= *Package.appxmanifest
+  #WINRT_ASSETS_PATH = $$PWD/assets-winrt #for qmake generated manifest
 }
