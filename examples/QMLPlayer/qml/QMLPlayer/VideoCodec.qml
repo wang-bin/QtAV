@@ -91,7 +91,7 @@ Page {
     Component.onCompleted: {
         if (Qt.platform.os == "windows") {
             codecMode.append({ name: "DXVA", hardware: true, zcopy: true, description: "DirectX Video Acceleration (Windows)\nUse OpenGLES(ANGLE) + D3D to support 0-copy" })
-            codecMode.append({ name: "CUDA", hardware: true, zcopy: true, description: "NVIDIA CUDA (Windows, Linux)"})
+            codecMode.append({ name: "CUDA", hardware: true, zcopy: true, description: "NVIDIA CUDA (Windows, Linux).\nH264 10bit support."})
         } else if (Qt.platform.os == "osx") {
             codecMode.append({ name: "VDA", hardware: true, zcopy: true, description: "VDA (OSX)" })
             codecMode.append({ name: "VideoToolbox", hardware: true, zcopy: true, description: "VideoToolbox (OSX)" })

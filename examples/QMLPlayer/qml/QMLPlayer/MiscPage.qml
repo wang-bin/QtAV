@@ -32,9 +32,9 @@ Page {
         Row {
             width: parent.width
             height: Utils.kItemHeight
+            visible: Qt.platform.os === "linux"
             Button {
                 text: "EGL"
-                visible: Qt.platform.os === "linux"
                 checkable: true
                 checked: PlayerConfig.EGL
                 width: parent.width/3
@@ -47,27 +47,29 @@ Page {
                 width: parent.width*2/3
                 height: parent.height
                 horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
                 text: qsTr("Requirement") + ": Qt>=5.5+XCB"
             }
-        }
-        Text {
-            width: parent.width
-            height: Utils.kItemHeight
-            color: "white"
-            font.pixelSize: Utils.kFontSize
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            visible: glSet.visible
-            text: "OpenGL (" + qsTr("Restart to apply") + ")"
         }
         Row {
             id: glSet
             width: parent.width
-            height: 3*Utils.kItemHeight
+            height: 5*Utils.kItemHeight
             spacing: Utils.kSpacing
             visible: Qt.platform.os === "windows"
+            Text {
+                width: parent.width/3
+                height: parent.height
+                color: "white"
+                font.pixelSize: Utils.kFontSize
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                visible: glSet.visible
+                text: "OpenGL\n(" + qsTr("Restart to apply") + ")"
+            }
             Menu {
                 width: parent.width/3
+                height: parent.height
                 itemWidth: width
                 model: ListModel {
                     id: glModel
@@ -135,6 +137,7 @@ Page {
                 width: parent.width/3
                 height: parent.height
                 horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
                 text: "Log"
             }
             Menu {

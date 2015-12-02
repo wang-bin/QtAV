@@ -82,6 +82,9 @@ Rectangle {
                 msg.info("capture saved at: " + path)
             }
         }
+        onSourceChanged: {
+            msg.info("url: " + source)
+        }
 
         onDurationChanged: control.duration = duration
         onPlaying: {
@@ -233,6 +236,7 @@ Rectangle {
     }
     Text {
         id: msg
+        objectName: "msg"
         horizontalAlignment: Text.AlignHCenter
         font.pixelSize: Utils.scaled(20)
         style: Text.Outline
@@ -385,7 +389,7 @@ Rectangle {
         anchors.right: configPanel.left
         //anchors.bottom: control.top
         y: Math.max(0, Math.min(configPanel.selectedY, root.height - pageLoader.height - control.height))
-        width: parent.width - 2*configPanel.width
+        width: parent.width < 4*configPanel.width ? parent.width - configPanel.width : parent.width/2 + configPanel.width
         height: Utils.scaled(200)
         Loader {
             id: pageLoader
