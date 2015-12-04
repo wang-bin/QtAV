@@ -368,6 +368,7 @@ Rectangle {
             case Qt.Key_B:
                 player.stepBackward()
                 break;
+            case Qt.Key_Back:
             case Qt.Key_Q:
                 Qt.quit()
                 break
@@ -493,6 +494,21 @@ Rectangle {
             player.source = fileDialog.fileUrl
             //player.stop() //remove this if autoLoad works
             //player.play()
+        }
+    }
+    Connections {
+        target: Qt.application
+        onStateChanged: { //since 5.1
+            console.log("app state " + Qt.application.state)
+            msg.info("app state " + Qt.application.state)
+            switch (Qt.application.state) {
+            case Qt.ApplicationSuspended:
+            case Qt.ApplicationHidden:
+                player.pause()
+                break
+            default:
+                break
+            }
         }
     }
 }
