@@ -3,6 +3,7 @@ import "utils.js" as Utils
 
 Rectangle {
     id: root
+    layer.enabled: true
     color: "#aa1a2b3a"
     focus: true
     property alias title: title.text

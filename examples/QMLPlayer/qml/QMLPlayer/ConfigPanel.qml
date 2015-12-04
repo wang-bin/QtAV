@@ -3,6 +3,7 @@ import "utils.js" as Utils
 
 Rectangle {
     id: root
+    layer.enabled: true
     property string selected: ""
     property string selectedUrl
     property int selectedX: 0

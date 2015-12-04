@@ -133,34 +133,9 @@ Rectangle {
             showPreview(value)
         }
     }
-    Text {
-        id: now
-        text: Utils.msec2string(progress.value*duration)
-        anchors {
-            top: progress.bottom
-            topMargin: Utils.scaled(2)
-            left: progress.left
-        }
-        color: "white"
-        font {
-            pixelSize: Utils.scaled(12) //or point size?
-        }
-    }
-    Text {
-        id: life
-        text: Utils.msec2string(duration)
-        anchors {
-            top: progress.bottom
-            topMargin: Utils.scaled(2)
-            right: progress.right
-        }
-        color: "white"
-        font {
-            pixelSize: Utils.scaled(12)
-        }
-    }
     Rectangle {
         id: preview
+        layer.enabled: true
         opacity: 0.8
         anchors.left: progress.left
         anchors.bottom: progress.top
@@ -261,12 +236,40 @@ Rectangle {
         ]
     }
     Item {
+        layer.enabled: true
         anchors {
             top: progress.bottom
             bottom: parent.bottom
             left: parent.left
             right: parent.right
             margins: Utils.scaled(8)
+        }
+
+        Text {
+            id: now
+            text: Utils.msec2string(progress.value*duration)
+            anchors {
+                top: parent.top
+                topMargin: Utils.scaled(2)
+                left: parent.left
+            }
+            color: "white"
+            font {
+                pixelSize: Utils.scaled(12) //or point size?
+            }
+        }
+        Text {
+            id: life
+            text: Utils.msec2string(duration)
+            anchors {
+                top: parent.top
+                topMargin: Utils.scaled(2)
+                right: parent.right
+            }
+            color: "white"
+            font {
+                pixelSize: Utils.scaled(12)
+            }
         }
         Button {
             id: playBtn
