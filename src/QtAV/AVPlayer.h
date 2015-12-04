@@ -62,7 +62,15 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(int brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
+    Q_PROPERTY(State state READ state WRITE setState NOTIFY stateChanged)
+    Q_ENUMS(State)
 public:
+    enum State {
+        StoppedState,
+        PlayingState, /// Start to play if it was stopped, or resume if it was paused
+        PausedState
+    };
+
     /// Supported input protocols. A static string list
     static const QStringList& supportedProtocols();
 
@@ -238,6 +246,15 @@ public:
     bool play(const QString& path);
     bool isPlaying() const;
     bool isPaused() const;
+    /*!
+     * \brief state
+     * Player's playback state. Default is StoppedState.
+     * setState() is a replacement of play(), stop(), pause(bool)
+     * \return
+     */
+    State state() const;
+    void setState(State value);
+
     // TODO: use id as parameter and return ptr?
     void addVideoRenderer(VideoRenderer *renderer);
     void removeVideoRenderer(VideoRenderer *renderer);
@@ -474,6 +491,7 @@ Q_SIGNALS:
     void paused(bool p);
     void started();
     void stopped();
+    void stateChanged(QtAV::AVPlayer::State state);
     void speedChanged(qreal speed);
     void repeatChanged(int r);
     void currentRepeatChanged(int r);

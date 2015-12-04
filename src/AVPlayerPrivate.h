@@ -156,6 +156,7 @@ public:
     // <0: auto compute internally, |notify_interval| is the real interval
     int notify_interval;
     MediaStatus status; // status changes can be from demuxer or demux thread
+    AVPlayer::State state;
     QMutex load_mutex;
 };
 

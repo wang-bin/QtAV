@@ -102,6 +102,7 @@ AVPlayer::Private::Private()
     , force_fps(0)
     , notify_interval(-500)
     , status(NoMedia)
+    , state(AVPlayer::StoppedState)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);
     /*

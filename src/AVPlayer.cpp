@@ -552,6 +552,10 @@ void AVPlayer::togglePause()
 
 void AVPlayer::pause(bool p)
 {
+    if (!isPlaying())
+        return;
+    if (isPaused() == p)
+        return;
     //pause thread. check pause state?
     d->read_thread->pause(p);
     if (d->athread)
@@ -559,7 +563,10 @@ void AVPlayer::pause(bool p)
     if (d->vthread)
         d->vthread->pause(p);
     d->clock->pause(p);
-    emit paused(p);
+
+    d->state = p ? PausedState : PlayingState;
+    Q_EMIT stateChanged(d->state);
+    Q_EMIT paused(p);
 }
 
 bool AVPlayer::isPaused() const
@@ -1109,6 +1116,35 @@ int AVPlayer::subtitleStreamCount() const
     return d->demuxer.subtitleStreams().size();
 }
 
+AVPlayer::State AVPlayer::state() const
+{
+    return d->state;
+}
+
+void AVPlayer::setState(State value)
+{
+    if (d->state == value)
+        return;
+    if (value == StoppedState) {
+        stop();
+        return;
+    }
+    if (value == PausedState) {
+        pause(true);
+        return;
+    }
+    // value == PlayingState
+    if (d->state == StoppedState) {
+        play();
+        return;
+    }
+    if (d->state == PausedState) {
+        pause(false);
+        return;
+    }
+
+}
+
 //FIXME: why no d->demuxer will not get an eof if replaying by seek(0)?
 void AVPlayer::play()
 {
@@ -1248,7 +1284,9 @@ void AVPlayer::playInternal()
     if (d->last_position > 0)
         setPosition(d->last_position); //just use d->demuxer.startTime()/duration()?
 
-    emit started(); //we called stop(), so must emit started()
+    d->state = PlayingState;
+    Q_EMIT stateChanged(d->state);
+    Q_EMIT started(); //we called stop(), so must emit started()
 }
 
 void AVPlayer::stopFromDemuxerThread()
@@ -1263,7 +1301,9 @@ void AVPlayer::stopFromDemuxerThread()
         d->media_end = kInvalidPosition;
         d->repeat_current = d->repeat_max = 0;
         qDebug("avplayer emit stopped()");
-        emit stopped();
+        d->state = StoppedState;
+        Q_EMIT stateChanged(d->state);
+        Q_EMIT stopped();
     } else {
         qDebug("stopPosition() == mediaStopPosition() or !seekable. repeate: %d/%d", currentRepeat(), repeat());
         d->repeat_current++;
@@ -1470,6 +1510,8 @@ void AVPlayer::stepForward()
 void AVPlayer::stepBackward()
 {
     d->clock->pause(true);
+    d->state = PausedState;
+    Q_EMIT stateChanged(d->state);
     Q_EMIT paused(true);
     d->read_thread->stepBackward();
 }
