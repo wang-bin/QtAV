@@ -99,8 +99,13 @@ win32-msvc2010|win32-msvc2008: QMAKE_LFLAGS *= /DEBUG #workaround for CoInitiali
 }
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
-android: CONFIG += config_opensl
-
+android {
+  CONFIG += config_opensl
+  !no_gui_private:qtHaveModule(androidextras) { #qt5.2 has QAndroidJniObject
+    QT *= androidextras gui-private #QPlatformNativeInterface get "QtActivity"
+    SOURCES *= io/AndroidIO.cpp
+  }
+}
 config_x11 {
   DEFINES += QTAV_HAVE_X11=1
   SOURCES *= filter/X11FilterContext.cpp
@@ -523,7 +528,7 @@ mac_framework { # from common.pri
         FRAMEWORK_HEADERS.path = Headers
 # 5.4(beta) workaround for wrong include path
 # TODO: why <QtCore/qglobal.h> can be found?
-        greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
+        isEqual(QT_MAJOR_VERSION, 5):greaterThan(QT_MINOR_VERSION, 3)|greaterThan(QT_MAJOR_VERSION, 5): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
         FRAMEWORK_PRIVATE_HEADERS.version = Versions
         FRAMEWORK_PRIVATE_HEADERS.files = $$SDK_PRIVATE_HEADERS
         FRAMEWORK_PRIVATE_HEADERS.path = Headers/$$VERSION/$$MODULE_INCNAME/private
