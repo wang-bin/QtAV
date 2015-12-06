@@ -23,7 +23,6 @@
 #include "QtAV/private/MediaIO_p.h"
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/factory.h"
-#include <QtCore/QCoreApplication>
 
 #include <shcore.h>
 #include <wrl.h>
@@ -57,7 +56,6 @@ static const char kName[] = "WinRT";
 class WinRTIOPrivate;
 class WinRTIO : public MediaIO
 {
-    Q_OBJECT
     DPTR_DECLARE_PRIVATE(WinRTIO)
 public:
     WinRTIO();
@@ -164,8 +162,6 @@ bool WinRTIO::seek(qint64 offset, int from)
 qint64 WinRTIO::position() const
 {
     DPTR_D(const WinRTIO);
-    if (!d.stream)
-        return 0;
     return d.pos;
 }
 
@@ -181,6 +177,7 @@ qint64 WinRTIO::size() const
 
 void WinRTIO::onUrlChanged()
 {
+    d_func().pos = 0;
     qDebug() << "onUrlChanged: " << url();
     // winrt:@ptr_address:path
     // winrt:path
@@ -239,5 +236,3 @@ void WinRTIO::open(ComPtr<IStorageFile> &file)
     COM_ENSURE(CreateStreamOverRandomAccessStream(reinterpret_cast<IUnknown*>(stream.Get()), IID_PPV_ARGS(&d_func().stream)));
 }
 } //namespace QtAV
-
-#include "WinRTIO.moc"

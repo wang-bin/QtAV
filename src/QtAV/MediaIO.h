@@ -100,10 +100,7 @@ public:
     virtual qint64 write(const char* data, qint64 maxSize) = 0;
     /*!
      * \brief seek
-     * \param from
-     * 0: seek to offset from beginning position
-     * 1: from current position
-     * 2: from end position
+     * \param from SEEK_SET, SEEK_CUR and SEEK_END from stdio.h
      * \return true if success
      */
     virtual bool seek(qint64 offset, int from) = 0;

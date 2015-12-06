@@ -126,9 +126,9 @@ bool QIODeviceIO::seek(qint64 offset, int from)
     DPTR_D(QIODeviceIO);
     if (!d.dev)
         return false;
-    if (from == 2) {
+    if (from == SEEK_END) {
         offset = d.dev->size() - offset;
-    } else if (from == 1) {
+    } else if (from == SEEK_CUR) {
         offset = d.dev->pos() + offset;
     }
     return d.dev->seek(offset);

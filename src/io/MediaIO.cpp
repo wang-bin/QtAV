@@ -110,14 +110,7 @@ static int64_t av_seek(void *opaque, int64_t offset, int whence)
         // return the filesize without seeking anywhere. Supporting this is optional.
         return io->size() > 0 ? io->size() : 0;
     }
-    int from = whence;
-    if (whence == SEEK_SET)
-        from = 0;
-    else if (whence == SEEK_CUR)
-        from = 1;
-    else if (whence == SEEK_END)
-        from = 2;
-    if (!io->seek(offset, from))
+    if (!io->seek(offset, whence))
         return -1;
     return io->position();
 }
@@ -141,6 +134,7 @@ void MediaIO::setUrl(const QString &url)
     DPTR_D(MediaIO);
     if (d.url == url)
         return;
+    // TODO: check protocol
     d.url = url;
     onUrlChanged();
 }
