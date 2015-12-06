@@ -18,7 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #ifndef QTAV_MediaIO_H
 #define QTAV_MediaIO_H
 
@@ -27,7 +26,6 @@
 #include <QtCore/QObject>
 
 namespace QtAV {
-
 /*!
  * \brief MediaIO
  * Built-in io (use MediaIO::create(name), example: MediaIO *qio = MediaIO::create("QIODevice"))
@@ -39,7 +37,6 @@ namespace QtAV {
  *     device - read only. example: io->device()
  *   protocols: "", "qrc"
  */
-
 typedef int MediaIOId;
 class MediaIOPrivate;
 class Q_AV_EXPORT MediaIO : public QObject
@@ -87,7 +84,7 @@ public:
     /// supported protocols. default is empty
     virtual const QStringList& protocols() const;
     virtual bool isSeekable() const = 0;
-    virtual bool isWritable() const = 0;
+    virtual bool isWritable() const { return false;}
     /*!
      * \brief read
      * read at most maxSize bytes to data, and return the bytes were actually read
@@ -97,7 +94,11 @@ public:
      * \brief write
      * write at most maxSize bytes from data, and return the bytes were actually written
      */
-    virtual qint64 write(const char* data, qint64 maxSize) = 0;
+    virtual qint64 write(const char* data, qint64 maxSize) {
+        Q_UNUSED(data);
+        Q_UNUSED(maxSize);
+        return 0;
+    }
     /*!
      * \brief seek
      * \param from SEEK_SET, SEEK_CUR and SEEK_END from stdio.h

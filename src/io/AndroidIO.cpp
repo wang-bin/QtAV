@@ -49,11 +49,8 @@ public:
         static QStringList p = QStringList() << QStringLiteral("content"); // "file:" is supported too but we use QFile
         return p;
     }
-
     virtual bool isSeekable() const Q_DECL_OVERRIDE;
-    virtual bool isWritable() const Q_DECL_OVERRIDE { return false;}
     virtual qint64 read(char *data, qint64 maxSize) Q_DECL_OVERRIDE;
-    virtual qint64 write(const char *, qint64) Q_DECL_OVERRIDE { return 0;}
     virtual bool seek(qint64 offset, int from) Q_DECL_OVERRIDE;
     virtual qint64 position() const Q_DECL_OVERRIDE;
     /*!
