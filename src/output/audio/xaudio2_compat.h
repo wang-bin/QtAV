@@ -43,7 +43,8 @@
 //TODO: winrt test
 // do not add dxsdk xaudio2.h dir to INCLUDE for other file build with winsdk to avoid runtime crash
 // currently you can use dxsdk 2010 header for mingw
-#include <xaudio2.h>
+// MinGW64 cross: XAudio2.h
+#include <XAudio2.h>
 
 #ifndef _WIN32_WINNT_WIN8
 #define _WIN32_WINNT_WIN8 0x0602
