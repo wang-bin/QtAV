@@ -89,7 +89,6 @@ class Factory : public Singleton<Class>
     typedef T Type;
     typedef Type* (*Creator)();
 public:
-    virtual void init() {}
     Type* create(const ID& id);
     template<class C>
     bool register_(const ID& id) { // register_<C>(id, name)
@@ -171,7 +170,7 @@ template<typename Id, typename T, class Class>
 typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::id(const char* name, bool caseSensitive) const
 {
 #ifdef _MSC_VER
-#define strcasecmp(s1, s2) strcmpi(s1, s2)
+#define strcasecmp(s1, s2) _strcmpi(s1, s2)
 #endif
     //need 'typename'  because 'Factory<Id, T, Class>::NameMap' is a dependent scope
     for (typename NameMap::const_iterator it = name_map.begin(); it!=name_map.end(); ++it) {
