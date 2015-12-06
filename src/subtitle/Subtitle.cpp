@@ -674,11 +674,11 @@ QStringList Subtitle::Private::find()
     QFileInfo fi(file_name);
     QString name = fi.fileName();
     QString base_name = fi.completeBaseName(); // a.mp4=>a, video suffix has only 1 dot
-    QStringList filters, fileters_base;
+    QStringList filters, filters_base;
     foreach (const QString& suf, sfx) {
         filters.append(QStringLiteral("%1*.%2").arg(name).arg(suf));
         if (name != base_name)
-            fileters_base.append(QStringLiteral("%1*.%2").arg(base_name).arg(suf));
+            filters_base.append(QStringLiteral("%1*.%2").arg(base_name).arg(suf));
     }
     QStringList search_dirs(dirs);
     search_dirs.prepend(fi.absolutePath());
@@ -688,9 +688,9 @@ QStringList Subtitle::Private::find()
         //qDebug() << "dir: " << dir;
         QFileInfoList fis = dir.entryInfoList(filters, QDir::Files, QDir::Unsorted);
         if (fis.isEmpty()) {
-            if (fileters_base.isEmpty())
+            if (filters_base.isEmpty())
                 continue;
-            fis = dir.entryInfoList(fileters_base, QDir::Files, QDir::Unsorted);
+            fis = dir.entryInfoList(filters_base, QDir::Files, QDir::Unsorted);
         }
         if (fis.isEmpty())
             continue;
