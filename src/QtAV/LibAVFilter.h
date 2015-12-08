@@ -75,14 +75,15 @@ class Q_AV_EXPORT LibAVFilterVideo : public VideoFilter, public LibAVFilter
     Q_PROPERTY(QStringList filters READ filters)
 public:
     LibAVFilterVideo(QObject *parent = 0);
+    bool isSupported(VideoFilterContext::Type) const Q_DECL_OVERRIDE { return true;}
     QStringList filters() const; //the same as LibAVFilter::videoFilters
 Q_SIGNALS:
     void optionsChanged();
 protected:
-    void process(Statistics *statistics, VideoFrame *frame) Q_DECL_FINAL;
-    QString sourceArguments() const Q_DECL_FINAL;
+    void process(Statistics *statistics, VideoFrame *frame) Q_DECL_OVERRIDE;
+    QString sourceArguments() const Q_DECL_OVERRIDE;
 private:
-    void emitOptionsChanged() Q_DECL_FINAL;
+    void emitOptionsChanged() Q_DECL_OVERRIDE;
 };
 
 class Q_AV_EXPORT LibAVFilterAudio : public AudioFilter, public LibAVFilter
@@ -96,10 +97,10 @@ public:
 Q_SIGNALS:
     void optionsChanged();
 protected:
-    void process(Statistics *statistics, AudioFrame *frame) Q_DECL_FINAL;
-    QString sourceArguments() const Q_DECL_FINAL;
+    void process(Statistics *statistics, AudioFrame *frame) Q_DECL_OVERRIDE;
+    QString sourceArguments() const Q_DECL_OVERRIDE;
 private:
-    void emitOptionsChanged() Q_DECL_FINAL;
+    void emitOptionsChanged() Q_DECL_OVERRIDE;
 };
 
 } //namespace QtAV
