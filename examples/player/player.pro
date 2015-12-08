@@ -28,7 +28,7 @@ QMAKE_EXTRA_TARGETS += deb_install_list
 target.depends *= $${deb_install_list.target}
 
 qtav_players_links.target = qtav-players.links
-qtav_players_links.commands = echo \"$$[QT_INSTALL_BINS]/player /usr/bin/player\n$$[QT_INSTALL_BINS]/QMLPlayer /usr/bin/QMLPlayer\" >$$PROJECTROOT/debian/$${qtav_players_links.target}
+qtav_players_links.commands = echo \"$$[QT_INSTALL_BINS]/player /usr/bin/Player\n$$[QT_INSTALL_BINS]/QMLPlayer /usr/bin/QMLPlayer\" >$$PROJECTROOT/debian/$${qtav_players_links.target}
 QMAKE_EXTRA_TARGETS *= qtav_players_links
 target.depends *= $${qtav_players_links.target}
 }
