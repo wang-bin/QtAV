@@ -76,7 +76,7 @@ class Q_AV_EXPORT VideoEncodeFilter : public VideoFilter
     DPTR_DECLARE_PRIVATE(VideoEncodeFilter)
 public:
     VideoEncodeFilter(QObject* parent = 0);
-    bool isSupported(VideoFilterContext::Type) const Q_DECL_OVERRIDE { return true;}
+    bool isSupported(VideoFilterContext::Type t) const Q_DECL_OVERRIDE { return t == VideoFilterContext::None;}
     /*!
      * \brief createEncoder
      * Destroy old encoder and create a new one. Filter has the ownership.

@@ -145,7 +145,7 @@ bool VideoFilter::prepareContext(VideoFilterContext *&ctx, Statistics *statistic
     DPTR_D(VideoFilter);
     if (!ctx || !isSupported(ctx->type())) {
         //qDebug("no context: %p, or context type %d is not supported", ctx, ctx? ctx->type() : 0);
-        return false;
+        return isSupported(VideoFilterContext::None);
     }
     if (!d.context || d.context->type() != ctx->type()) {
         VideoFilterContext* c = VideoFilterContext::create(ctx->type());//each filter has it's own context instance, but share the common parameters

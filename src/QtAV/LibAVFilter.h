@@ -75,7 +75,7 @@ class Q_AV_EXPORT LibAVFilterVideo : public VideoFilter, public LibAVFilter
     Q_PROPERTY(QStringList filters READ filters)
 public:
     LibAVFilterVideo(QObject *parent = 0);
-    bool isSupported(VideoFilterContext::Type) const Q_DECL_OVERRIDE { return true;}
+    bool isSupported(VideoFilterContext::Type t) const Q_DECL_OVERRIDE { return t == VideoFilterContext::None;}
     QStringList filters() const; //the same as LibAVFilter::videoFilters
 Q_SIGNALS:
     void optionsChanged();
