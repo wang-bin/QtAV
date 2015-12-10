@@ -389,8 +389,8 @@ bool hasRG()
         return true;
     }
     if (QOpenGLContext::currentContext())
-        has_rg = 0;
-    return false;
+        has_rg = isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2;
+    return has_rg;
 }
 
 static int has_16_tex = -1;
