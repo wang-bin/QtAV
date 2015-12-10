@@ -1413,36 +1413,28 @@ void MainWindow::onCaptureConfigChanged()
 
 void MainWindow::onAVFilterVideoConfigChanged()
 {
-    if (Config::instance().avfilterVideoEnable()) {
-        if (!mpVideoFilter) {
-            mpVideoFilter = new LibAVFilterVideo(this);
-        }
-        mpVideoFilter->setEnabled(true);
-        mpPlayer->installFilter(mpVideoFilter);
-        mpVideoFilter->setOptions(Config::instance().avfilterVideoOptions());
-    } else {
-        if (mpVideoFilter) {
-            mpVideoFilter->setEnabled(false);
-        }
-        mpPlayer->uninstallFilter(mpVideoFilter);
+    if (mpVideoFilter) {
+        mpVideoFilter->uninstall();
+        delete mpVideoFilter;
+        mpVideoFilter = 0;
     }
+    mpVideoFilter = new LibAVFilterVideo(this);
+    mpVideoFilter->setEnabled(Config::instance().avfilterVideoEnable());
+    mpPlayer->installFilter(mpVideoFilter);
+    mpVideoFilter->setOptions(Config::instance().avfilterVideoOptions());
 }
 
 void MainWindow::onAVFilterAudioConfigChanged()
 {
-    if (Config::instance().avfilterAudioEnable()) {
-        if (!mpAudioFilter) {
-            mpAudioFilter = new LibAVFilterAudio(this);
-        }
-        mpAudioFilter->setEnabled(true);
-        mpPlayer->installFilter(mpAudioFilter);
-        mpAudioFilter->setOptions(Config::instance().avfilterAudioOptions());
-    } else {
-        if (mpAudioFilter) {
-            mpAudioFilter->setEnabled(false);
-        }
-        mpPlayer->uninstallFilter(mpAudioFilter);
+    if (mpAudioFilter) {
+        mpAudioFilter->uninstall();
+        delete mpAudioFilter;
+        mpAudioFilter = 0;
     }
+    mpAudioFilter = new LibAVFilterAudio(this);
+    mpAudioFilter->setEnabled(Config::instance().avfilterAudioEnable());
+    mpAudioFilter->installTo(mpPlayer);
+    mpAudioFilter->setOptions(Config::instance().avfilterAudioOptions());
 }
 
 void MainWindow::donate()
