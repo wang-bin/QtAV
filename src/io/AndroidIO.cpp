@@ -111,17 +111,12 @@ void AndroidIO::onUrlChanged()
         qWarning("getContentResolver error");
         return;
     }
-    QAndroidJniEnvironment jniEnv;
-    jstring s = jniEnv->NewStringUTF(url().toUtf8().constData());
-    QAndroidJniObject uri = QAndroidJniObject::callStaticObjectMethod("android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;", s);
-    const char* sc = jniEnv->GetStringUTFChars(s, 0);
-    jniEnv->ReleaseStringUTFChars(s, sc);
+    QAndroidJniObject s = QAndroidJniObject::fromString(url());
+    QAndroidJniObject uri = QAndroidJniObject::callStaticObjectMethod("android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;", s.object<jstring>());
     //input_stream = content_resolver.callObjectMethod("openInputStream", "(Landroid.net.Uri;)Ljava.io.InputStream;", uri.object<jobject>()); // TODO: why error?
     //qDebug() << "onUrlChanged InputStream: " << input_stream.toString();
-    jstring mode = jniEnv->NewStringUTF("r");
-    QAndroidJniObject pfd = content_resolver.callObjectMethod("openFileDescriptor", "(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;", uri.object<jobject>(), mode);
-    sc = jniEnv->GetStringUTFChars(mode, 0);
-    jniEnv->ReleaseStringUTFChars(mode, sc);
+    s = QAndroidJniObject::fromString(QStringLiteral("r"));
+    QAndroidJniObject pfd = content_resolver.callObjectMethod("openFileDescriptor", "(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;", uri.object<jobject>(), s.object<jstring>());
     if (!pfd.isValid()) {
         qWarning("openFileDescriptor error");
         return;
