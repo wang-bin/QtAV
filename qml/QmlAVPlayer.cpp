@@ -27,32 +27,17 @@
 template<typename ID, typename T>
 static QStringList idsToNames(QVector<ID> ids) {
     QStringList decs;
-    foreach (ID id, ids) {
-        decs.append(QString::fromLatin1(T::name(id)));
-    }
-    return decs;
-}
-
-template<typename ID, typename T>
-static QVector<ID> idsFromNames(const QStringList& names) {
-    QVector<ID> decs;
-    foreach (const QString& name, names) {
-        if (name.isEmpty())
-            continue;
-        ID id = T::id(name.toLatin1().constData());
-        if (id == 0)
-            continue;
-        decs.append(id);
+    if (!ids.isEmpty()) {
+        decs.reserve(ids.size());
+        foreach (ID id, ids) {
+            decs.append(QString::fromLatin1(T::name(id)));
+        }
     }
     return decs;
 }
 
 static inline QStringList VideoDecodersToNames(QVector<QtAV::VideoDecoderId> ids) {
     return idsToNames<QtAV::VideoDecoderId, VideoDecoder>(ids);
-}
-
-static inline QVector<VideoDecoderId> VideoDecodersFromNames(const QStringList& names) {
-    return idsFromNames<QtAV::VideoDecoderId, VideoDecoder>(names);
 }
 
 QmlAVPlayer::QmlAVPlayer(QObject *parent) :
@@ -235,9 +220,11 @@ void QmlAVPlayer::setVideoCodecPriority(const QStringList &p)
         qWarning("player not ready");
         return;
     }
+    if (mVideoCodecs == p)
+        return;
     mVideoCodecs = p;
-    mpPlayer->setPriority(VideoDecodersFromNames(p));
-    emit videoCodecPriorityChanged();
+    mpPlayer->setVideoDecoderPriority(p);
+    Q_EMIT videoCodecPriorityChanged();
 }
 
 QVariantMap QmlAVPlayer::videoCodecOptions() const

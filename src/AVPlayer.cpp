@@ -407,6 +407,45 @@ void AVPlayer::setPriority(const QVector<VideoDecoderId> &ids)
 #endif
 }
 
+template<typename ID, typename T>
+static QVector<ID> idsFromNames(const QStringList& names) {
+    QVector<ID> decs;
+    if (!names.isEmpty()) {
+        decs.reserve(names.size());
+        foreach (const QString& name, names) {
+            if (name.isEmpty())
+                continue;
+            ID id = T::id(name.toLatin1().constData());
+            if (id == 0)
+                continue;
+            decs.append(id);
+        }
+    }
+    return decs;
+}
+
+void AVPlayer::setVideoDecoderPriority(const QStringList &names)
+{
+    setPriority(idsFromNames<VideoDecoderId, VideoDecoder>(names));
+}
+
+template<typename ID, typename T>
+static QStringList idsToNames(QVector<ID> ids) {
+    QStringList decs;
+    if (!ids.isEmpty()) {
+        decs.reserve(ids.size());
+        foreach (ID id, ids) {
+            decs.append(QString::fromLatin1(T::name(id)));
+        }
+    }
+    return decs;
+}
+
+QStringList AVPlayer::videoDecoderPriority() const
+{
+    return idsToNames<VideoDecoderId, VideoDecoder>(d->vc_ids);
+}
+
 void AVPlayer::setOptionsForFormat(const QVariantHash &dict)
 {
     d->demuxer.setOptions(dict);
@@ -430,6 +469,11 @@ QVariantHash AVPlayer::optionsForAudioCodec() const
 void AVPlayer::setOptionsForVideoCodec(const QVariantHash &dict)
 {
     d->vc_opt = dict;
+    const QVariant p(dict.contains(QStringLiteral("priority")));
+    if (p.type() == QVariant::StringList) {
+        setVideoDecoderPriority(p.toStringList());
+        d->vc_opt.remove(QStringLiteral("priority"));
+    }
 }
 
 QVariantHash AVPlayer::optionsForVideoCodec() const

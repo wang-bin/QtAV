@@ -332,8 +332,14 @@ public:
      * If not playing or no decoder found, the decoder will be changed at the next playback
      * \param ids
      */
-    // TODO: name list
     void setPriority(const QVector<VideoDecoderId>& ids);
+    /*!
+     * \brief setVideoDecoderPriority
+     * also can set in opt.priority
+     * \param names the video decoder name list in priority order. Name can be "FFmpeg", "CUDA", "DXVV", "VAAPI", "VDA", "VideoToolbox", case insensitive
+     */
+    void setVideoDecoderPriority(const QStringList& names);
+    QStringList videoDecoderPriority() const;
     //void setPriority(const QVector<AudioOutputId>& ids);
     /*!
      * below APIs are deprecated.
