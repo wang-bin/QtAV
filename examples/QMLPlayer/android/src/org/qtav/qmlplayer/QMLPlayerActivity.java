@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.util.Log;
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.content.pm.ActivityInfo;
 
 public class QMLPlayerActivity extends QtActivity
 {
@@ -32,5 +33,6 @@ public class QMLPlayerActivity extends QtActivity
         if (intent.ACTION_VIEW.equals(action)) {
             m_request_url = intent.getDataString();
         }
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     }
 }
