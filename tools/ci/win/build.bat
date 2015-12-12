@@ -1,7 +1,7 @@
 echo cc=%cc%
 where qbs
 if "%cc%" == "MinGW" (
-  qmake %APPVEYOR_BUILD_FOLDER%
+  qmake %APPVEYOR_BUILD_FOLDER% "CONFIG+=%mode%"
   mingw32-make -j%NUMBER_OF_PROCESSORS%
 ) else (
   if "%mode%" == "debug" (

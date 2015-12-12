@@ -29,6 +29,13 @@ environment:
     mode: release
     QTDIR: C:\Qt\5.5\mingw492_32
 
+  - arch: 32
+    cc: MinGW
+    qt: 5.5.0
+    suffix: GCC492-dwarf
+    mode: debug
+    QTDIR: C:\Qt\5.5\mingw492_32
+
 matrix:
   fast_finish: false
 
