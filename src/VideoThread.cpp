@@ -43,7 +43,6 @@ public:
         AVThreadPrivate()
       , force_fps(0)
       , force_dt(0)
-      , last_deliver_time(0)
       , capture(0)
       , filter_context(0)
     {
@@ -60,7 +59,6 @@ public:
     qreal force_fps; // <=0: try to use pts. if no pts in stream(guessed by 5 packets), use |force_fps|
     // not const.
     int force_dt; //unit: ms. force_fps = 1/force_dt.
-    qint64 last_deliver_time;
 
     double pts; //current decoded pts. for capture. TODO: remove
     VideoCapture *capture;
@@ -287,6 +285,7 @@ void VideoThread::run()
     int nb_no_pts = 0;
     //bool wait_audio_drain
     const char* pkt_data = NULL; // workaround for libav9 decode fail but error code >= 0
+    qint64 last_deliver_time = 0;
     while (true) {
         processNextTask();
         //TODO: why put it at the end of loop then stepForward() not work?
@@ -546,12 +545,11 @@ void VideoThread::run()
         //qDebug("force fps: %f dt: %d", d.force_fps, d.force_dt);
         if (d.force_dt > 0) {// && qFuzzyCompare(d.clock->speed(), 1.0)) {
             const qint64 now = QDateTime::currentMSecsSinceEpoch();
-            const qint64 delta = qint64(d.force_dt) - (now - d.last_deliver_time);
+            const qint64 delta = qint64(d.force_dt) - (now - last_deliver_time);
             if (frame.timestamp() <= 0) {
                 // TODO: what if seek happens during playback?
                 const int msecs_started(now + qMax(0LL, delta) - start_time);
                 frame.setTimestamp(qreal(msecs_started)/1000.0);
-                d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(msecs_started); //TODO: is it expensive?
                 clock()->updateValue(frame.timestamp());
             }
             if (delta > 0LL) { // limit up bound?
@@ -569,7 +567,8 @@ void VideoThread::run()
         // no return even if d.stop is true. ensure frame is displayed. otherwise playing an image may be failed to display
         if (!deliverVideoFrame(frame))
             continue;
-        d.last_deliver_time = d.statistics->video_only.frameDisplayed(frame.timestamp());
+        if (d.force_dt > 0)
+            last_deliver_time = QDateTime::currentMSecsSinceEpoch();
         // TODO: store original frame. now the frame is filtered and maybe converted to renderer perferred format
         d.displayed_frame = frame;
         if (d.clock->clockType() == AVClock::AudioClock) {
