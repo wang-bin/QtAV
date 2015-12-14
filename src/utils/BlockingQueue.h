@@ -169,7 +169,6 @@ T BlockingQueue<T, Container>::take()
                 cond_empty.wait(&lock); //block when empty only
         }
     }
-    //TODO: Why still empty?
     if (checkEmpty()) {
         qWarning("Queue is still empty");
         if (empty_callback) {
@@ -317,7 +316,7 @@ bool BlockingQueue<T, Container>::checkEmpty() const
 template <typename T, template <typename> class Container>
 bool BlockingQueue<T, Container>::checkEnough() const
 {
-    return queue.size() >= thres;
+    return queue.size() >= thres && !checkEmpty();
 }
 } //namespace QtAV
 #endif // QTAV_BLOCKINGQUEUE_H
