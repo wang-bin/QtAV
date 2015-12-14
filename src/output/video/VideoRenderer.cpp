@@ -492,8 +492,10 @@ void VideoRenderer::handlePaintEvent()
         //DO NOT return if no data. we should draw other things
         if (needDrawFrame()) {
             drawFrame();
-            d.statistics->video_only.frameDisplayed(d.video_frame.timestamp());
-            d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(d.video_frame.timestamp() * 1000.0));
+            if (d.statistics) {
+                d.statistics->video_only.frameDisplayed(d.video_frame.timestamp());
+                d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(d.video_frame.timestamp() * 1000.0));
+            }
         }
     }
     hanlePendingTasks();
