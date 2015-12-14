@@ -393,8 +393,6 @@ void VideoThread::run()
          *after seeking forward, a packet may be the old, v packet may be
          *the new packet, then the d.delay is very large, omit it.
         */
-        if (pkt.pts < d.render_pts0) // skip rendering until decoded frame reaches desired pts
-            skip_render = true;
         if (seeking)
             diff = 0; // TODO: here?
         if (!sync_audio && diff > 0) {
@@ -529,6 +527,11 @@ void VideoThread::run()
                 seek_count = 1;
             else if (seek_count > 0)
                 seek_count++;
+        }
+        if (skip_render) {
+            qDebug("skip rendering @%.3f", pts);
+            pkt = Packet();
+            continue;
         }
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
