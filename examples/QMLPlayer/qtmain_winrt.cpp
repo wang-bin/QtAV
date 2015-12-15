@@ -61,6 +61,9 @@ extern "C" {
     int main(int, char **);
 }
 
+#include <qabstracteventdispatcher.h>
+#include <qcoreapplication.h>
+#include <qevent.h>
 #include <qbytearray.h>
 #include <qstring.h>
 #include <qlist.h>
@@ -104,7 +107,7 @@ static void devMessageHandler(QtMsgType type, const QMessageLogContext &context,
     defaultMessageHandler(type, context, message);
 }
 
-QString HandleFile(void* args);
+QString UrlFromFileArgs(Activation::IFileActivatedEventArgs *fileArgs);
 class AppContainer : public Microsoft::WRL::RuntimeClass<Core::IFrameworkView>
 {
 public:
@@ -184,6 +187,9 @@ private:
     // Activation handler
     HRESULT onActivated(Core::ICoreApplicationView *, Activation::IActivatedEventArgs *args)
     {
+        Activation::ActivationKind activationKind;
+        args->get_Kind(&activationKind);
+        qDebug("activation kind: %d", activationKind);
         Activation::ILaunchActivatedEventArgs *launchArgs;
         if (SUCCEEDED(args->QueryInterface(&launchArgs))) {
             for (int i = m_argc; i < m_argv.size(); ++i)
@@ -198,9 +204,18 @@ private:
                 }
             }
         }
-        else {
-            m_argv.append("-f");
-            m_argv.append(strdup(HandleFile(args).toLocal8Bit().constData()));
+        else if (activationKind == Activation::ActivationKind_File) {
+            Activation::IFileActivatedEventArgs *fileArgs;
+            if (SUCCEEDED(args->QueryInterface(&fileArgs))) {
+                const QString file = UrlFromFileArgs(fileArgs);
+                m_argv.append("-f");
+                m_argv.append(strdup(file.toLocal8Bit().constData()));
+                QAbstractEventDispatcher *dispatcher = QCoreApplication::instance()->eventDispatcher();
+                if (dispatcher)
+                    QCoreApplication::instance()->postEvent(dispatcher, new QFileOpenEvent(file));
+                else
+                    qWarning("null event dispatcher");
+            }
         }
         return S_OK;
     }
@@ -317,19 +332,10 @@ using namespace ABI::Windows::Storage::Pickers;
         } \
     } while (0)
 
-QString HandleFile(void* args)
+QString UrlFromFileArgs(IFileActivatedEventArgs *fileArgs)
 {
-    ComPtr<Activation::IActivatedEventArgs> arguments = reinterpret_cast<Activation::IActivatedEventArgs*>(args);
-    Activation::ActivationKind activationKind;
-    COM_ENSURE(arguments->get_Kind(&activationKind), QString());
-    // Handle only File, file picker(ActivationKind_PickFileContinuation)
-    if (activationKind != ActivationKind_File) {
-        return QString();
-    }
-    ComPtr<Activation::IFileActivatedEventArgs> fileContinuationArgs;
-    COM_ENSURE(arguments.As(&fileContinuationArgs), QString());
     ComPtr<IVectorView<IStorageItem*>> files;
-    COM_ENSURE(fileContinuationArgs->get_Files(&files), QString());
+    COM_ENSURE(fileArgs->get_Files(&files), QString());
     ComPtr<IStorageItem> item;
     COM_ENSURE(files->GetAt(0, &item), QString());
     HString path;
