@@ -56,7 +56,7 @@ Page {
             width: parent.width
             height: 5*Utils.kItemHeight
             spacing: Utils.kSpacing
-            visible: Qt.platform.os === "windows"
+            visible: Qt.platform.os === "windows" || Qt.platform.os === "wince"
             Text {
                 width: parent.width/3
                 height: parent.height
@@ -116,6 +116,8 @@ Page {
                     }
                     onClicked:  PlayerConfig.ANGLEPlatform = angleModel.get(index).name
                     Component.onCompleted: {
+                        if (Qt.platform.os !== "windows" && Qt.platform.os !== "wince")
+                            return
                         for (var i = 0; i < angleModel.count; ++i) {
                             console.log("d3d: " + angleModel.get(i).name)
                             if (PlayerConfig.ANGLEPlatform === angleModel.get(i).name) {
@@ -138,7 +140,8 @@ Page {
                 height: parent.height
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
-                text: "Log"
+                wrapMode: Text.WrapAnywhere
+                text: "Log level\nDeveloper only"
             }
             Menu {
                 width: parent.width/2
@@ -165,6 +168,8 @@ Page {
     }
 
     Component.onCompleted: {
+        if (Qt.platform.os !== "windows" && Qt.platform.os !== "wince")
+            return
         if (PlayerConfig.openGLType === 2) {
             angle.sourceComponent = angleMenu
         }

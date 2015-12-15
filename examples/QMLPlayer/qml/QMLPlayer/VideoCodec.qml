@@ -72,8 +72,13 @@ Page {
                 onStateChanged: {
                     if (state != "selected")
                         return
-                    d.detail = description + " " + (hardware ? qsTr("hardware decoding") : qsTr("software decoding"))  + "\n"
-                            + qsTr("Zero Copy support") + ":" + zcopy
+                    d.detail = description + " " + (hardware ? qsTr("hardware decoding") : qsTr("software decoding"))
+                    if (name === "FFmpeg") {
+                        copyMode.visible = false
+                    } else {
+                        copyMode.visible = true
+                        d.detail += "\n" + qsTr("Zero Copy support") + ":" + zcopy
+                    }
                     PlayerConfig.decoderPriorityNames = [ name ]
                 }
             }

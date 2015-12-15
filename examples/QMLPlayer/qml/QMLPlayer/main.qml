@@ -216,7 +216,6 @@ Rectangle {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                control.toggleVisible()
                 if (root.width - mouseX < Utils.scaled(60)) {
                     configPanel.state = "show"
                 } else {
@@ -224,9 +223,8 @@ Rectangle {
                 }
             }
             onDoubleClicked: {
-                player.muted = !player.muted
+                control.toggleVisible()
             }
-
             onMouseXChanged: {
                 if (player.playbackState == MediaPlayer.StoppedState || !player.hasVideo)
                     return;
@@ -368,7 +366,7 @@ Rectangle {
             case Qt.Key_B:
                 player.stepBackward()
                 break;
-            case Qt.Key_Back:
+            //case Qt.Key_Back:
             case Qt.Key_Q:
                 Qt.quit()
                 break
@@ -499,8 +497,9 @@ Rectangle {
     Connections {
         target: Qt.application
         onStateChanged: { //since 5.1
-            console.log("app state " + Qt.application.state)
-            msg.info("app state " + Qt.application.state)
+            if (Qt.platform.os !== "android")
+                return
+            // winrt is handled by system
             switch (Qt.application.state) {
             case Qt.ApplicationSuspended:
             case Qt.ApplicationHidden:

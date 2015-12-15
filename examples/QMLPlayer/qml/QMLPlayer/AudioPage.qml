@@ -13,7 +13,7 @@ Page {
     property var internalAudioTracks : "unkown"
     property var externalAudioTracks : "unkown"
     property alias isExternal: externalCheck.checked
-    height: titleHeight + channelLabel.height + channels.contentHeight
+    height: titleHeight + channelLabel.height + (channels.visible ? channels.contentHeight : 0)
             + Utils.kItemHeight*2 + trackLabel.height + tracksMenu.contentHeight + Utils.kSpacing*6
     Column {
         anchors.fill: content
@@ -24,8 +24,10 @@ Page {
             text: qsTr("Channel layout")
             font.pixelSize: Utils.kFontSize
             width: parent.width
+            visible: Qt.platform.os !== "winphone" && Qt.platform.os !== "winrt"
         }
         Menu {
+            visible: channelLabel.visible
             id: channels
             width: parent.width
             itemWidth: parent.width
@@ -88,6 +90,8 @@ Page {
                 width: parent.width - externalCheck.width
                 height: parent.height
                 wrapMode: Text.Wrap
+                verticalAlignment: Text.AlignVCenter
+                text: qsTr("Click here to select a file")
                 MouseArea {
                     anchors.fill: parent
                     onClicked: fileDialog.open()

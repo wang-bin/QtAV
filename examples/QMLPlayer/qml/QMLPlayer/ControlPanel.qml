@@ -136,7 +136,7 @@ Rectangle {
     Rectangle {
         id: preview
         layer.enabled: true
-        opacity: 0.8
+        //opacity: 0.8
         anchors.left: progress.left
         anchors.bottom: progress.top
         width: PlayerConfig.previewEnabled ? Utils.scaled(180) : previewText.contentWidth + 2*Utils.kSpacing
@@ -186,7 +186,7 @@ Rectangle {
                 PropertyChanges {
                     target: preview
                     anchors.bottomMargin: 2
-                    opacity: 0.9
+                    opacity: 1.0//0.9
                 }
             },
             State {
