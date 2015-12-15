@@ -25,6 +25,7 @@
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtGui/QTextDocument>
+#include <QMatrix4x4>
 #include "QtAV/VideoFrame.h"
 #include "utils/Logger.h"
 
@@ -49,10 +50,6 @@ X11FilterContext::X11FilterContext() : VideoFilterContext()
 
 X11FilterContext::~X11FilterContext()
 {
-    if (painter) {
-        delete painter;
-        painter = 0;
-    }
     if (doc) {
         delete doc;
         doc = 0;
@@ -140,7 +137,7 @@ bool X11FilterContext::prepare()
     painter->setPen(pen);
     painter->setFont(font);
     painter->setOpacity(opacity);
-#if 0
+#if 1
     if (!clip_path.isEmpty()) {
         painter->setClipPath(clip_path);
     }
@@ -247,13 +244,22 @@ void X11FilterContext::drawRichText(const QRectF &rect, const QString &text, boo
     if (wordWrap)
         doc->setTextWidth(rect.width());
 
-    text_q = QImage(doc->size().toSize(), QImage::Format_ARGB32);
+    QMatrix4x4 m(transform);
+    const QRectF r = m.mapRect(QRectF(rect.x(), rect.y(), doc->size().width(), doc->size().height()));
+    text_q = QImage(r.size().toSize(), QImage::Format_ARGB32);
     text_q.fill(QColor(0, 0, 0, 0));
     painter->begin(&text_q);
     prepare();
+    const QPointF tl = m.map(rect.topLeft());
+    m.setColumn(3, QVector4D(0, 0, 0, 1)); // reset O to let painter draw from 0
+    const QPointF dp =  tl - r.topLeft(); //painter should start from the mapped top left relative to mapped rect's top left
+    //qDebug() << dp << r.;
+    painter->setTransform(m.toTransform());
+    painter->translate(dp);
+
     doc->drawContents(painter);
     painter->end();
-    renderTextImageX11(&text_q, rect.topLeft()); //TODO: use boundingRect?
+    renderTextImageX11(&text_q, r.topLeft()); //TODO: use boundingRect?
 }
 
 } //namespace QtAV
