@@ -210,8 +210,13 @@ public:
 #endif //VA_X11_INTEROP
         }
 #if QTAV_HAVE(EGL_CAPI)
-        if (OpenGLHelper::isEGL() && va_0_38::isValid()) {
-            copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
+        if (OpenGLHelper::isEGL()) {
+            if (vaapi::checkEGL_DMA() && va_0_38::isValid())
+                copy_mode = VideoDecoderFFmpegHW::ZeroCopy; //for x11, drm, glx
+            else if (vaapi::checkEGL_Pixmap() && display_type == VideoDecoderVAAPI::X11)
+                copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
+            else
+                copy_mode = VideoDecoderFFmpegHW::OptimizedCopy;
         }
 #endif //QTAV_HAVE(EGL_CAPI)
 #endif //QT_NO_OPENGL
@@ -367,7 +372,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         VideoFormat fmt(VideoFormat::Format_RGB32);
         VAImage img;
         // TODO: derive/get image only once and pass to interop object
-        const bool test_format = OpenGLHelper::isEGL() && va_0_38::isValid();
+        const bool test_format = OpenGLHelper::isEGL() && vaapi::checkEGL_DMA() && va_0_38::isValid();
         if (test_format) {
             vaDeriveImage(d.display->get(), p->get(), &img);
             fmt = pixelFormatFromVA(img.format.fourcc);
@@ -580,10 +585,8 @@ bool VideoDecoderVAAPIPrivate::open()
 #endif //VA_X11_INTEROP
 #if QTAV_HAVE(EGL_CAPI)
     if (OpenGLHelper::isEGL()) {
-        if (va_0_38::isValid())
+        if (va_0_38::isValid() && vaapi::checkEGL_DMA())
             interop_res = InteropResourcePtr(new EGLInteropResource());
-        else if (display_type == VideoDecoderVAAPI::GLX)
-            interop_res = InteropResourcePtr(new X11InteropResource());
     }
 #endif //QTAV_HAVE(EGL_CAPI)
 #endif //QT_NO_OPENGL
@@ -664,7 +667,7 @@ bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
     }
     if (!ensureSurfaces(surface_count, surface_width, surface_height, true))
         return false;
-    if (copy_mode != VideoDecoderFFmpegHW::ZeroCopy || OpenGLHelper::isEGL()) {
+    if (copy_mode != VideoDecoderFFmpegHW::ZeroCopy || OpenGLHelper::isEGL()) { //egl_dma && va_0_38
         // egl needs VAImage too
         if (!prepareVAImage(surface_width, surface_height))
             return false;

@@ -32,6 +32,10 @@
 
 namespace QtAV {
 namespace vaapi {
+
+bool checkEGL_DMA();
+bool checkEGL_Pixmap();
+
 class InteropResource
 {
 public:

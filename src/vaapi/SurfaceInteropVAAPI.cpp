@@ -49,6 +49,27 @@
 namespace QtAV {
 VideoFormat::PixelFormat pixelFormatFromVA(uint32_t fourcc);
 namespace vaapi {
+
+//2013 https://www.khronos.org/registry/egl/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
+bool checkEGL_DMA()
+{
+#ifndef QT_NO_OPENGL
+    static const char* eglexts[] = { "EGL_EXT_image_dma_buf_import", NULL};
+    return OpenGLHelper::hasExtensionEGL(eglexts);
+#endif
+    return false;
+}
+
+//https://www.khronos.org/registry/egl/extensions/KHR/EGL_KHR_image_pixmap.txt
+bool checkEGL_Pixmap()
+{
+#ifndef QT_NO_OPENGL
+    static const char* eglexts[] = { "EGL_KHR_image_pixmap", NULL};
+    return OpenGLHelper::hasExtensionEGL(eglexts);
+#endif
+    return false;
+}
+
 void SurfaceInteropVAAPI::setSurface(const surface_ptr& surface,  int w, int h) {
     m_surface = surface;
     frame_width = (w ? w : surface->width());
@@ -217,9 +238,6 @@ public:
     Display* ensureGL() Q_DECL_OVERRIDE {
         if (display && eglCreateImageKHR && glEGLImageTargetTexture2DOES)
             return display;
-        QList<QByteArray> eglexts = QByteArray(eglQueryString(eglGetCurrentDisplay(), EGL_EXTENSIONS)).split(' ');
-        static QVector<QByteArray> eglexts_required= QVector<QByteArray>() << QByteArrayLiteral("EGL_EXT_image_dma_buf_import")
-                                                           << QByteArrayLiteral("EGL_EXT_image_dma_buf_import");
         // we must use the native display egl used, otherwise eglCreateImageKHR will fail.
 #ifdef QT_X11EXTRAS_LIB
         display = (Display*)QX11Info::display();
@@ -348,7 +366,6 @@ bool X11InteropResource::ensurePixmaps(int w, int h)
     if (!x11) {
 #if QTAV_HAVE(EGL_CAPI)
         if (OpenGLHelper::isEGL()) {
-            // TODO: check EGL_NOK_texture_from_pixmap
             x11 = new X11_EGL();
         } else
 #endif //QTAV_HAVE(EGL_CAPI)
@@ -413,7 +430,6 @@ bool X11InteropResource::unmap(const surface_ptr &surface, GLuint tex)
 #define EGL_DMA_BUF_PLANE0_PITCH_EXT      0x3274
 #endif
 //2010 https://www.khronos.org/registry/egl/extensions/MESA/EGL_MESA_drm_image.txt: only support EGL_DRM_BUFFER_FORMAT_ARGB32_MESA
-//2013 https://www.khronos.org/registry/egl/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
 class EGL {
 public:
     EGL() : dpy(EGL_NO_DISPLAY) {
@@ -561,16 +577,8 @@ bool EGLInteropResource::ensure()
 #endif //QTAV_HAVE(EGL_CAPI)
     static bool has_ext = false;
     if (!has_ext) {
-        QList<QByteArray> eglexts = QByteArray(eglQueryString(eglGetCurrentDisplay(), EGL_EXTENSIONS)).split(' ');
-        static QVector<QByteArray> eglexts_required= QVector<QByteArray>() << QByteArrayLiteral("EGL_EXT_image_dma_buf_import")
-                                                           << QByteArrayLiteral("EGL_EXT_image_dma_buf_import");
-        qDebug() << eglexts;
-        foreach (const QByteArray& ext, eglexts_required) {
-            if (!eglexts.contains(ext)) {
-                qWarning("missing extension: %s", ext.constData());
-                return false;
-            }
-        }
+        if (!vaapi::checkEGL_DMA())
+            return false;
         static const char* glexts[] = { "GL_OES_EGL_image", 0 };
         if (!OpenGLHelper::hasExtension(glexts)) {
             qWarning("missing extension: GL_OES_EGL_image");
