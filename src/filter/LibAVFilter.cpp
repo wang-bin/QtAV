@@ -475,6 +475,9 @@ bool LibAVFilter::Private::pushVideoFrame(Frame *frame, bool changed, const QStr
             return false;
         }
     }
+    if (!vf->constBits(0)) {
+        *vf = vf->to(vf->format());
+    }
     avframe->pts = frame->timestamp() * 1000000.0; // time_base is 1/1000000
     avframe->width = vf->width();
     avframe->height = vf->height();
