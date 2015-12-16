@@ -228,7 +228,10 @@ Rectangle {
             onMouseXChanged: {
                 if (player.playbackState == MediaPlayer.StoppedState || !player.hasVideo)
                     return;
-                control.showPreview(mouseX/parent.width)
+                if (mouseY < control.y - Utils.scaled(120))
+                    control.hidePreview()
+                else
+                    control.showPreview(mouseX/parent.width)
             }
         }
     }

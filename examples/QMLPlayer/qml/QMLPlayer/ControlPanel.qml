@@ -170,13 +170,29 @@ Rectangle {
         MouseArea {
             anchors.fill: parent
             propagateComposedEvents: true
+            property int gPos: 0
+            property int moved: 0
             onClicked: {
+                if (moved) //why press+move+release is click?
+                    return
                 if (preview.opacity === 0 || root.opacity === 0) {
                     mouse.accepted = false
                     return
                 }
                 mouse.accepted = true
                 seek(preview.timestamp)
+            }
+            onPressed: {
+                gPos = mapToItem(progress, mouseX, 0).x
+                moved = 0
+            }
+            onMouseXChanged: {
+                mouse.accepted = true
+                var x1 = mapToItem(progress, mouseX, 0).x
+                var dx = x1 - gPos
+                gPos = x1
+                moved += dx
+                showPreview(preview.timestamp/duration+dx/progress.width)
             }
         }
 
@@ -463,6 +479,8 @@ Rectangle {
             aniHide()
     }
     function showPreview(value) {
+        if (value < 0)
+            return
         preview.visible = true
         preview.state = "in"
         if (PlayerConfig.previewEnabled && preview.video.file) {
@@ -473,5 +491,8 @@ Rectangle {
         preview.timestamp = value*duration
         previewText.text = Utils.msec2string(preview.timestamp)
         //console.log("hover: "+value + " duration: " + player.duration)
+    }
+    function hidePreview() {
+        preview.state = "out_"
     }
 }
