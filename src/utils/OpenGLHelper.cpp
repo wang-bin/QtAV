@@ -170,6 +170,28 @@ bool isOpenGLES()
     return false;
 }
 
+bool hasExtensionEGL(const char *exts[])
+{
+#if QTAV_HAVE(EGL_CAPI) && QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
+    static QList<QByteArray> supported;
+    if (supported.isEmpty()) {
+        EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        eglInitialize(display, NULL, NULL);
+        supported = QByteArray(eglQueryString(display, EGL_EXTENSIONS)).split(' ');
+    }
+    static bool print_exts = true;
+    if (print_exts) {
+        print_exts = false;
+        qDebug() << "EGL extensions: " << supported;
+    }
+    for (int i = 0; exts[i]; ++i) {
+        if (supported.contains(QByteArray(exts[i])))
+            return true;
+    }
+#endif
+    return false;
+}
+
 bool hasExtension(const char *exts[])
 {
     const QOpenGLContext *ctx = QOpenGLContext::currentContext();

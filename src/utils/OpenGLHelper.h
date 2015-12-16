@@ -135,6 +135,13 @@ namespace OpenGLHelper {
 int GLSLVersion();
 bool isEGL();
 bool isOpenGLES();
+/*!
+ * \brief hasExtensionEGL
+ * Test if any of the given extensions is supported
+ * \param exts Ends with NULL
+ * \return true if one of extension is supported
+ */
+bool hasExtensionEGL(const char* exts[]);
 bool hasRG();
 bool has16BitTexture();
 // set by user (environment var "QTAV_TEXTURE16_DEPTH=8 or 16", default now is 8)
