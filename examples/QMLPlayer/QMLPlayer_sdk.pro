@@ -94,12 +94,13 @@ android {
   ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 }
 winrt|wince {
-  isEqual(QT_MAJOR_VERSION, 5):isEqual(QT_MINOR_VERSION, 5) {
+   winrt:isEqual(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 7) {
 # we need launch from file association support
-    SOURCES *= qtmain_winrt.cpp
+    SOURCES *= qtmain_winrt_5$${QT_MINOR_VERSION}.cpp
     LIBS -= qtmain.lib -lqtmain
     QMAKE_LIBS_QT_ENTRY -= qtmain.lib -lqtmain
   }
+
 # vs project: qmake -tp vc "CONFIG+=windeployqt"
   QT *= opengl #qtav is build with opengl module
   CONFIG *= windeployqt
