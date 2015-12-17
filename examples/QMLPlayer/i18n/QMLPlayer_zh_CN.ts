@@ -15,7 +15,7 @@
     </message>
     <message>
         <location filename="../qml/QMLPlayer/About.qml" line="22"/>
-        <source>QtAV is a corss-platform, high performace multimedia playback framework</source>
+        <source>QtAV is a cross-platform, high performance multimedia playback framework</source>
         <translation>QtAV是跨平台的高性能多媒体播放框架</translation>
     </message>
     <message>
@@ -65,7 +65,7 @@
     </message>
     <message>
         <location filename="../qml/QMLPlayer/About.qml" line="31"/>
-        <source>Pause/Resum</source>
+        <source>Pause/Resume</source>
         <translation>暂停/恢复</translation>
     </message>
     <message>

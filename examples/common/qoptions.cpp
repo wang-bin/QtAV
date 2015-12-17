@@ -231,11 +231,11 @@ bool QOptions::parse(int argc, const char *const*argv)
 				}
 			}
             if (it_list == mOptions.end()) {
-                qWarning() << "unknow option: " << *it;
+                qWarning() << "unknown option: " << *it;
                 result = false;
 				++it;
             }
-			//handle unknow option
+			//handle unknown option
         } else if (it->startsWith(QLatin1Char('-'))) {
             for (it_list = mOptions.begin(); it_list != mOptions.end(); ++it_list) {
                 QString sname = it_list->shortName();
@@ -262,13 +262,13 @@ bool QOptions::parse(int argc, const char *const*argv)
 				}
 			}
             if (it_list==mOptions.end()) {
-                qWarning() << "unknow option: " << *it;
+                qWarning() << "unknown option: " << *it;
                 result = false;
 				++it;
             }
-			//handle unknow option
+			//handle unknown option
         } else {
-            qWarning() << "unknow option: " << *it;
+            qWarning() << "unknown option: " << *it;
             ++it;
         }
 	}
