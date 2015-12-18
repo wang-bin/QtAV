@@ -1,2 +1,5 @@
+QTAV_MAJOR_VERSION=1
+QTAV_MINOR_VERSION=9
+QTAV_PATCH_VERSION=0
 load(qt_functions.prf)
 qtAddLibrary(QtAV)

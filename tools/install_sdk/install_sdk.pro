@@ -113,8 +113,10 @@ write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX, sdk_uninstall.commands, ap
 message(run $$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX to install $${MODULE_FULL_NAME} as a Qt module)
 
 greaterThan(QT_MAJOR_VERSION, 4) {
-
-AV_PRF_CONT = "android: QMAKE_LFLAGS += -lOpenSLES"
+AV_PRF_CONT = "QTAV_MAJOR_VERSION=$$QTAV_MAJOR_VERSION"
+AV_PRF_CONT += "QTAV_MINOR_VERSION=$$QTAV_MINOR_VERSION"
+AV_PRF_CONT += "QTAV_PATCH_VERSION=$$QTAV_PATCH_VERSION"
+AV_PRF_CONT += "android: QMAKE_LFLAGS += -lOpenSLES"
 #AV_PRF_CONT += "QMAKE_LFLAGS += -lavutil -lavcodec -lavformat -lswscale"
 #config_avresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lavresample"
 #config_swresample: AV_PRF_CONT += "QMAKE_LFLAGS += -lswresample"
