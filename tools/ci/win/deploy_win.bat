@@ -16,12 +16,8 @@ echo [Paths] > bin\qt.conf
 echo Prefix=. >> bin\qt.conf
 
 if "%mode%" == "debug" (
-  if exist %QTDIR%\bin\Qt5Cored.dll copy /y %QTDIR%\bin\Qt5Cored.dll bin
-  if exist %QTDIR%\bin\Qt5Guid.dll copy /y %QTDIR%\bin\Qt5Guid.dll bin
-  if exist %QTDIR%\bin\Qt5OpenGLd.dll copy /y %QTDIR%\bin\Qt5OpenGLd.dll bin
-  if exist %QTDIR%\bin\Qt5Widgetsd.dll copy /y %QTDIR%\bin\Qt5Widgetsd.dll bin
-  if exist bin\libEGL.dll del bin\libEGL.dll
-  if exist bin\libGLESv2.dll del bin\libGLESv2.dll
+  if exist bin\libEGL*.dll del bin\libEGL*.dll
+  if exist bin\libGLESv2*.dll del bin\libGLESv2*.dll
 ) else (
   if exist %QTDIR%\qml\QtQuick.2 xcopy /syi %QTDIR%\qml\QtQuick.2 bin\qml\QtQuick.2 > NUL
   if exist %QTDIR%\plugins\platforms xcopy /syi %QTDIR%\plugins\platforms bin\plugins\platforms > NUL
