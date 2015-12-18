@@ -28,6 +28,7 @@
 #include <wrl.h>
 #include <windows.foundation.h>
 #include <Windows.ApplicationModel.activation.h>
+#include <QtCore/QCoreApplication> //required by qfunctions_winrt.h
 #include <qfunctions_winrt.h>
 
 #include "utils/Logger.h"
