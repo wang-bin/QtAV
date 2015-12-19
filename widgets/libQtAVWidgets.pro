@@ -28,7 +28,7 @@ QTAVSRC=$$PROJECTROOT/src
 !rc_file {
     RC_ICONS = $$PROJECTROOT/src/QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-    QMAKE_TARGET_DESCRIPTION = "QtAVWidgets module. QtAV Multimedia playback framework. http://www.qtav.org"
+    QMAKE_TARGET_DESCRIPTION = "QtAVWidgets module. QtAV Multimedia framework. http://qtav.org"
     QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
     QMAKE_TARGET_PRODUCT = "QtAV Widgets"
 } else:win32 {
@@ -130,7 +130,7 @@ mac_framework { # from common.pri
         FRAMEWORK_HEADERS.path = Headers
 # 5.4(beta) workaround for wrong include path
 # TODO: why <QtCore/qglobal.h> can be found?
-        greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
+        isEqual(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3)|greaterThan(QT_MAJOR_VERSION, 5): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
         FRAMEWORK_PRIVATE_HEADERS.version = Versions
         FRAMEWORK_PRIVATE_HEADERS.files = $$SDK_PRIVATE_HEADERS
         FRAMEWORK_PRIVATE_HEADERS.path = Headers/$$VERSION/$$MODULE_INCNAME/private

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
  <Installer>
      <Name>QtAV</Name>
-     <Version>1.8.0</Version>
-     <Title>QtAV-Multimedia playback framework</Title>
+     <Version>1.9.0</Version>
+     <Title>QtAV Multimedia framework</Title>
      <Publisher>WangBin wbsecg1@gmail.com</Publisher>
-     <ProductUrl>http://www.qtav.org</ProductUrl>
+     <ProductUrl>http://qtav.org</ProductUrl>
      <Logo></Logo>
      <Watermark></Watermark>
      <ControlScript>control.js</ControlScript>

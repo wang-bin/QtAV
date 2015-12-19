@@ -2,8 +2,8 @@
  <Package>
      <DisplayName>Development files</DisplayName>
      <Description>Install QtAV headers and lib.</Description>
-     <Version>1.8.0-0</Version>
-     <ReleaseDate>2015-09-01</ReleaseDate>
+     <Version>1.9.0-0</Version>
+     <ReleaseDate>2015-12-19</ReleaseDate>
      <Name>com.qtav.product.dev</Name>
      <Default>script</Default>
      <Script>installscript.qs</Script>

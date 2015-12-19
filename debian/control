@@ -21,7 +21,7 @@ Build-Depends: debhelper (>= 9),
  libegl1-mesa-dev,
  libuchardet-dev,
 Standards-Version: 3.9.5
-Homepage: http://www.qtav.org
+Homepage: http://qtav.org
 
 Package: qtav-sdk
 Architecture: all

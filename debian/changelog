@@ -1,3 +1,50 @@
+qtav (1.9.0) unstable; urgency=low
+
+  * No audio thread if audio stream < 0. null AudioOutput now still create audio thread.
+  * VideoOutput: fix lock error
+  * Filter: add X11 text rendering for X11Renderer/XVRenderer.
+  * LibAVFilter supports HW frames(not recommended)
+  * VideoFrame copy and init issue, bpp compute error
+  * Avoid using some stl APIs that breaks ABI
+  * Add x11 renderer
+  * XV: support NV12 and packed yuv formats
+  * Fix factory initialization for static build(iOS for example)
+  * Fix ffmpeg log level
+  * Remove AVPicture which is deprecated
+  * SWS 16 alignment, output to user defined buffer
+  * Always define the registered id so we can use everywhere
+  * Better iOS support: build, run, deploy(prl)
+  * use libuchardet now, use system one if possible
+  * Fix android build on windows
+  * XAudio2: fix crash. `double` sample format is not supported
+  * Fix clock value if speed changed
+  * VideoRenderer.updateUi
+  * VideoCapture: fix HW frame save
+  * New logo
+  * Android: support protocol 'content'. Now can play from Gallery.
+  * MediaIO is not writable by default
+  * WinRT (Windows Store) support
+  * VA-API: Add hevc, vp9. Not tested
+  * VA-API:Support more profiles
+  * VA-API: Improve nvidia support
+  * VA-API: Interop with egl support. Needs libva 0.38 and Qt>=5.5
+  * VA-API: Check resolution support before open
+  * VA-API: Add thread count option (new ffmpeg >2.8 does not support)
+  * VA-API: Prefer /dev/dri/renderD128 for drm
+  * VA-API: Correctly release X11/drm resource
+  * OpenGL: OpenGL ES3 optimization
+  * OpenGL: use new OpenGL and GLSL APIs if possible
+  * API: add AVPlayer.stepForward, stepBackword, state, videoDecoderPriority
+  * API: addVideoRenderer.frameSize (C++), VideoOutput.frameSize
+  * API: addXXXDecoder/Encoder::supportedCodecs, AV(De)Muxer.supportedFormats/Extensions
+  * QML: more metaData keys: startTime, sampleFormat, channelLayout, pixelFormat, videoFrames
+  * Player: fix OpenGLWidgetRenderer crash
+  * QMLPlayer: Handle Home/Back button for mobile
+  * QMLPlayer: Preview item is movable
+  * ppa: rename /usr/bin/player to /usr/bin/Player
+ 
+  -- Wang Bin (Lucas) <wbsecg1@gmail.com>  Mon, 21 Dec 2015 00:08:38 +0800
+
 qtav (1.8.0) unstable; urgency=low
 
   * XAudio2 support

@@ -9,24 +9,25 @@ QtAV has been added to FFmpeg projects page [http://ffmpeg.org/projects.html](ht
 you must adhere to the terms of the license in question.**
 
 
-#### [Home page](http://www.qtav.org), [Download binaries from sourceforge](https://sourceforge.net/projects/qtav/files/release), [Latest build](https://sourceforge.net/projects/qtav/files/ci), [Source code on github](https://github.com/wang-bin/QtAV)
+#### [Home page](http://www.qtav.org)
 
 ### Features
 
 QtAV can meet your most demands
 
-- Hardware decoding suppprt: DXVA2, VAAPI, VDA(the most effecient VDA decoder), CedarX, CUDA(the 1st player support CUDA on linux?)
+- Hardware decoding suppprt: DXVA2, VAAPI, VDA/VideoToolbox, CedarX, CUDA(the 1st player support CUDA on linux?)
 - OpenGL and ES2 support for almost all formats including Hi10P videos (The 1st player/library support 10bit in ES2? VLC, XBMC, mplayer does not support now)
 - Real time preview
 - Video capture in rgb and yuv format
 - OSD and custom filters
-- Filters in libavfilter, for example stereo3d, blur
-- Subtitle supports ass, srt etc. Dynamic change FFmpeg and libass engine
-- Playing frame by frame (currently support forward playing)
+- Filters in libavfilter, for example stero3d, blur
+- Subtitle track select. Dynamic change FFmpeg and libass engine
+- Play frame by frame
 - Playback speed control
 - Variant streams: locale file, http, rtsp etc. and your custom streams
 - Audio channel, tracks and external audio tracks
-- Dynamically change render engines and decoders when playing.
+- Dynamically change render engine when playing.
+- Dynamically change video decoder
 - Multiple video outputs for 1 player
 - Video eq(software and OpenGL): brightness, contrast, saturation, hue
 - QML support. Most playback APIs are compatible with QtMultimedia module
@@ -71,7 +72,7 @@ For more detail to using QtAV, see the wiki [Use QtAV In Your Project](https://g
 QtAV can also be used in **Qml**
 
     import QtQuick 2.0
-    import QtAV 1.5
+    import QtAV 1.6
     Item {
         Video {
             id: video
@@ -114,7 +115,7 @@ Run `player -h`
 - Space: pause/continue
 - F: fullscreen on/off
 - T: stays on top on/off
-- N: show next frame. Continue the playing by pressing "Space"
+- N/B: show the next/previous frame. Continue the playing by pressing "Space"
 - O: OSD
 - P: replay
 - Q/ESC: quit

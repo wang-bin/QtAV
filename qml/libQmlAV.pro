@@ -3,6 +3,8 @@ CONFIG += qt plugin
 TARGET = QmlAV
 QT += quick qml
 CONFIG *= qmlav-buildlib
+#QMAKE_RPATHLINKDIR
+#CONFIG *= qml_module relative_qt_rpath
 #https://github.com/wang-bin/QtAV/issues/368#issuecomment-73246253
 #http://qt-project.org/forums/viewthread/38438
 # mkspecs/features/qml_plugin.prf
@@ -72,7 +74,7 @@ EXTRA_COPY_FILES = $$qtav_qml.files
 
 QMAKE_WRITE_DEFAULT_RC = 1
 QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-QMAKE_TARGET_DESCRIPTION = "QtAV QML module. QtAV Multimedia playback framework. http://www.qtav.org"
+QMAKE_TARGET_DESCRIPTION = "QtAV QML module. QtAV Multimedia framework. http://qtav.org"
 QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
 QMAKE_TARGET_PRODUCT = "QtAV QML"
 

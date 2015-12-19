@@ -151,7 +151,7 @@ QMAKE_INFO_PLIST = $$PWD/Info.plist
 defineTest(genRC) {
     RC_ICONS = $$PROJECTROOT/src/QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-    QMAKE_TARGET_DESCRIPTION = "QtAV Multimedia playback framework. http://www.qtav.org"
+    QMAKE_TARGET_DESCRIPTION = "QtAV Multimedia framework. http://qtav.org"
     QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
     QMAKE_TARGET_PRODUCT = "QtAV $$1"
     export(RC_ICONS)

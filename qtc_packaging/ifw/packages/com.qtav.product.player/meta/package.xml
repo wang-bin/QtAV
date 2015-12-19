@@ -2,8 +2,8 @@
  <Package>
      <DisplayName>Player</DisplayName>
      <Description>Default player.</Description>
-     <Version>1.8.0-0</Version>
-     <ReleaseDate>2015-09-01</ReleaseDate>
+     <Version>1.9.0-0</Version>
+     <ReleaseDate>2015-12-19</ReleaseDate>
      <Name>com.qtav.product.player</Name>
      <Default>true</Default>
      <ForcedInstallation>true</ForcedInstallation>

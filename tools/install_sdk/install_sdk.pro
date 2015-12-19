@@ -91,7 +91,7 @@ sdk_install.commands += $$quote($$COPY $$system_path($$MODULE_PRF_FILE) $$system
 greaterThan(QT_MAJOR_VERSION, 4) {
   sdk_install.commands += $$quote($$COPY $$system_path($$OUT_PWD/mkspecs/modules/qt_lib_$${MODULE}*.pri) $$system_path($$MKSPECS_DIR/modules/))
 }
-win32: sdk_install.commands += $$quote($$MOVE $$system_path($$[QT_INSTALL_LIBS]/Qt*AV*.dll) $$system_path($$[QT_INSTALL_BINS]/))
+win32:sdk_install.commands += $$quote($$COPY $$system_path($$BUILD_DIR/bin/QtAV*.dll) $$system_path($$[QT_INSTALL_BINS]/))
 
 mac_framework {
   sdk_uninstall.commands = $$quote($$RM_DIR $$system_path($$[QT_INSTALL_LIBS]/$${MODULE_FULL_NAME}.framework))

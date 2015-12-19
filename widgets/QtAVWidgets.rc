@@ -19,7 +19,7 @@ BEGIN
         BLOCK "000004b0"
         BEGIN
             VALUE "CompanyName", "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-            VALUE "FileDescription", "QtAVWidgets module. QtAV Multimedia playback framework. http://www.qtav.org"
+            VALUE "FileDescription", "QtAVWidgets module. QtAV Multimedia framework. http://qtav.org"
             VALUE "FileVersion", QTAVWIDGETS_VERSION_STR ".0"
             VALUE "LegalCopyright", "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
             VALUE "InternalName", "QtAV Widgets"

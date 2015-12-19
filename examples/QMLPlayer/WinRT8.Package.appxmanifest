@@ -4,9 +4,9 @@
     Name=\"org.qtav.qmlplayer\"
     ProcessorArchitecture=\"x64\"
     Publisher=\"CN=930FB10A-C50C-4801-84BA-255229D27D44\"
-    Version=\"1.8.0.0\" />
+    Version=\"1.9.0.0\" />
   <Properties>
-    <DisplayName>QtAV Video Player</DisplayName>
+    <DisplayName>QtAV QMLPlayer</DisplayName>
     <PublisherDisplayName>Lucas Wang</PublisherDisplayName>
     <Logo>assets/logo_store.png</Logo>
   </Properties>
@@ -23,8 +23,8 @@
       Executable=\"QMLPlayer.exe\"
       EntryPoint=\"QMLPlayer.App\">
       <m2:VisualElements
-        DisplayName=\"QtAV Video Player\"
-        Description=\"A cross platform multimedia player based on QtAV\"
+        DisplayName=\"QtAV QMLPlayer\"
+        Description=\"A powerful multimedia player for all platforms\"
         BackgroundColor=\"green\"
         ForegroundText=\"light\"
         Square150x150Logo=\"assets/logo_150x150.png\"
@@ -50,7 +50,7 @@
       <Extensions>
         <Extension Category=\"windows.fileTypeAssociation\">
           <FileTypeAssociation Name=\"qmlplayer\"> <!-- lower case-->
-            <DisplayName>QtAV Video Player</DisplayName>
+            <DisplayName>QtAV QMLPlayer</DisplayName>
             <Logo>assets\logo_store.png</Logo>
             <EditFlags AlwaysUnsafe=\"true\" />
             <SupportedFileTypes>

@@ -47,7 +47,7 @@ function Component()
 Component.prototype.isDefault = function()
 {
     // select the component by default
-    return true;
+    return false;
 }
 
 Component.prototype.createOperations = function()
