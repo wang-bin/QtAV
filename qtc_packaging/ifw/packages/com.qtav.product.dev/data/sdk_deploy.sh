@@ -10,7 +10,7 @@ help() {
 check_qmake() {
   [ -n "$QMAKE" ] || {
     echo "Input your absolute path of qmake. Make sure the major and minor version and target architecture. That path MUST have subdir bin, include, lib, mkspecs etc."
-    echo "example: $HOME/Qt5.4.1/5.4/gcc_64/bin/qmake"
+    echo "example: $HOME/Qt5.6.0/5.6/gcc_64/bin/qmake"
     read QMAKE
   }
   [ ! -d $QMAKE -a -x $QMAKE ] || {

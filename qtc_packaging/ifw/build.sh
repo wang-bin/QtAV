@@ -7,7 +7,7 @@
 
 
 BUILD=$1
-QTBIN=`grep QT_BIN $BUILD/.qmake.cache |head -n 1 |cut -d "=" -f 2 | tr -d ' '` 
+QTBIN=`grep QT_BIN $BUILD/.qmake.cache |head -n 1 |cut -d "=" -f 2 | tr -d ' '`
 # for windows
 QTBIN=`echo /$QTBIN|sed 's,:,,'`
 export PATH=$QTBIN:$PWD/../../tools:$PATH
@@ -79,15 +79,22 @@ mkdir -p $TARGET/packages/com.qtav.product/data/
 ### runtime
 echo "coping runtime files..."
 RT_DIR=$TARGET/packages/com.qtav.product.runtime
+declare -a QTMODULES=(Core Gui OpenGL Widgets Qml Quick Network Svg) #TODO: use readelf, objdump or otool to get depends
+host_is Linux && QTMODULES+=(DBus)
+cp -af $BUILD/bin/* $RT_DIR/data/bin
 cat > $RT_DIR/data/bin/qt.conf <<EOF
 [Paths]
 Prefix=.
 EOF
-declare -a QTMODULES=(Core Gui OpenGL Widgets Qml Quick Network Svg) #TODO: use readelf, objdump or otool to get depends
-host_is Linux && QTMODULES+=(DBus)
-cp -af $BUILD/bin/* $RT_DIR/data/bin
+
 QTRT=`qmake -query QT_INSTALL_LIBS`
-host_is MinGW || host_is MSYS && QTRT=`$QTBIN/qmake -query QT_INSTALL_BINS`
+host_is MinGW || host_is MSYS && {
+  QTRT=`$QTBIN/qmake -query QT_INSTALL_BINS`
+  test -f $QTRT/libEGL.dll && cp -af $QTRT/libEGL.dll $RT_DIR/data/bin
+  test -f $QTRT/libGLESv2.dll && cp -af $QTRT/libGLESv2.dll $RT_DIR/data/bin
+  test -f $QTRT/d3dcompiler_47.dll && cp -af $QTRT/d3dcompiler_47.dll $RT_DIR/data/bin
+}
+
 for m in ${QTMODULES[@]}; do
   RT_DLL=`qt5lib_name ${m}`
   test -L $RT_DLL/data/bin/$RT_DLL && rm -rf $RT_DLL/data/bin/$RT_DLL
@@ -97,15 +104,22 @@ done
 QTPLUGIN=`qmake -query QT_INSTALL_PLUGINS`
 QTQML=`qmake -query QT_INSTALL_QML`
 cp -af $QTPLUGIN/{imageformats,platform*} $RT_DIR/data/bin/plugins
+# find dir -name "*d.dll" -o -name "*.pdb" -delete fail, why?
 cp -af $QTQML/{Qt,QtQml,QtQuick,QtQuick.2} $RT_DIR/data/bin/qml
 rm -f $RT_DIR/data/bin/plugins/platforms/{*mini*,*offscreen*,*eglfs*,*linuxfb*,*kms*}
 rm -f $RT_DIR/data/bin/plugins/imageformats/{*dds*,*icns*,*tga*,*tiff*,*wbmp*,*webp*}
+find $RT_DIR/data/bin -name "*.pdb" -delete
+find $RT_DIR/data/bin/qml -name "*plugind.dll" -delete
+find $RT_DIR/data/bin/plugins -name "*d.dll" -delete #qml: *plugind.dll
+find $RT_DIR/data/bin -name "*.exp" -delete
+find $RT_DIR/data/bin -name "*.lib" -delete
+
 ##ffmpegs
 ## QtAV, Qt5AV
-LIBQTAV=$LIBDIR/`lib_name "Qt*AV" 1`
+LIBQTAV=$LIBDIR/`lib_name "Qt*AV" ${QTAV_VER_MAJOR}`
 echo "LIBQTAV=$LIBQTAV"
 cp -Lf $LIBQTAV $RT_DIR/data/bin
-LIBQTAVWIDGETS=$LIBDIR/`lib_name "Qt*AVWidgets" 1`
+LIBQTAVWIDGETS=$LIBDIR/`lib_name "Qt*AVWidgets" ${QTAV_VER_MAJOR}`
 echo "LIBQTAVWIDGETS=$LIBQTAVWIDGETS"
 cp -Lf $LIBQTAVWIDGETS $RT_DIR/data/bin
 
@@ -132,66 +146,64 @@ elif [ -d $RT_DIR/data/bin/qml/QtAV ]; then
   cp -af $RT_DIR/data/bin/qml/QtAV qml
 fi
 cd -
-
+pwd
+echo "coping libs..."
 #mingw: libQt5AV1.a
 cd $TARGET/packages/com.qtav.product.dev/data/lib
+pwd
 cp -af $LIBDIR/*Qt*AV* .
-[ -f $LIBDIR/Qt5AV${QTAV_VER_MAJOR}.lib ] && cp -af $LIBDIR/libQt5AV${QTAV_VER_MAJOR}.lib Qt5AV.lib
-[ -f $LIBDIR/libQt5AV${QTAV_VER_MAJOR}.a ] && cp -af $LIBDIR/libQt5AV${QTAV_VER_MAJOR}.a libQt5AV.a
-[ -f $LIBDIR/Qt5AVWidgets${QTAV_VER_MAJOR}.lib ] && cp -af $LIBDIR/libQt5AVWidgets${QTAV_VER_MAJOR}.lib Qt5AVWidgets.lib
-[ -f $LIBDIR/libQt5AVWidgets${QTAV_VER_MAJOR}.a ] && cp -af $LIBDIR/libQt5AVWidgets${QTAV_VER_MAJOR}.a libQt5AVWidgets.a
-rm -f {*.dll,*.so.*,*.prl}
-# no copy, just link to real file in bin for linux development
-if [ -f $LIBDIR/libQt5AV.so ]; then
-  ln -sf ../bin/libQt5AV.so.${QTAV_VER_MAJOR} libQt5AV.so
-  ln -sf ../bin/libQt5AVWidgets.so.${QTAV_VER_MAJOR} libQt5AVWidgets.so  
-elif [ -f $LIBDIR/libQtAV.so ]; then
-  ln -sf ../bin/libQtAV.so.${QTAV_VER_MAJOR} libQtAV.so
-  ln -sf ../bin/libQtAVWidgets.so.${QTAV_VER_MAJOR} libQtAVWidgets.so
+[ -f Qt5AV${QTAV_VER_MAJOR}.lib ] && cp -af Qt5AV${QTAV_VER_MAJOR}.lib Qt5AV.lib
+[ -f libQt5AV${QTAV_VER_MAJOR}.a ] && ln -sf libQt5AV${QTAV_VER_MAJOR}.a libQt5AV.a
+[ -f Qt5AVWidgets${QTAV_VER_MAJOR}.lib ] && cp -af Qt5AVWidgets${QTAV_VER_MAJOR}.lib Qt5AVWidgets.lib
+[ -f libQt5AVWidgets${QTAV_VER_MAJOR}.a ] && ln -sf libQt5AVWidgets${QTAV_VER_MAJOR}.a libQt5AVWidgets.a
+[ -f QtAV${QTAV_VER_MAJOR}.lib ] && cp -af QtAV${QTAV_VER_MAJOR}.lib Qt5AV.lib
+[ -f libQtAV${QTAV_VER_MAJOR}.a ] && ln -sf libQtAV${QTAV_VER_MAJOR}.a libQt5AV.a
+[ -f QtAVWidgets${QTAV_VER_MAJOR}.lib ] && cp -af QtAVWidgets${QTAV_VER_MAJOR}.lib Qt5AVWidgets.lib
+[ -f libQtAVWidgets${QTAV_VER_MAJOR}.a ] && ln -sf libQtAVWidgets${QTAV_VER_MAJOR}.a libQt5AVWidgets.a
+rm -f {*.dll,*.prl,*.exp}
+[ -f libQtAV.so ] && ln -sf libQtAV.so libQt5AV.so
+[ -f libQtAVWidgets.so ] && ln -sf libQtAVWidgets.so libQt5AVWidgets.so
+cd -
+
+# link runtime qtav and overwrite the old so
+cd $RT_DIR/data/bin
+if host_is Linux; then
+echo "linking qtav runtime so..."
+  ln -sf ../lib/libQt5AV.so.${QTAV_VER_MAJOR} .
+  ln -sf ../lib/libQt5AVWidgets.so.${QTAV_VER_MAJOR} .
+  ln -sf ../lib/libQtAV.so.${QTAV_VER_MAJOR} .
+  ln -sf ../lib/libQtAVWidgets.so.${QTAV_VER_MAJOR} .
 fi
 cd -
 
 ### player
 echo "coping player files..."
-
 mv $RT_DIR/data/bin/{player${EXE},QMLPlayer${EXE}} $TARGET/packages/com.qtav.product.player/data/bin
-
-LIBCOMMON=$RT_DIR/data/bin/`lib_name common 1`
-if [ -f $LIBCOMMON ]; then
-    echo "moving $LIBCOMMON ..."
-  mv $LIBCOMMON $TARGET/packages/com.qtav.product.player/data/bin
-else
-  LIBCOMMON=$LIBDIR/`lib_name common 1`
-    echo "coping $LIBCOMMON ..."
-  cp -Lf $LIBCOMMON $TARGET/packages/com.qtav.product.player/data/bin
-fi
 
 ### examples
 echo "coping examples..."
 EXAMPLE_DIR=$TARGET/packages/com.qtav.product.examples
 mv `find $RT_DIR/data/bin/* -maxdepth 0 -type f |grep -v "\.so" |grep -v "\.dylib" |grep -v "\.conf" |grep -v "\.dll"` $EXAMPLE_DIR/data/bin
 
+if host_is Linux; then
 echo "patch elf runpath..."
-patchelf.sh $TARGET/packages/com.qtav.product.runtime/data/bin
-patchelf.sh $TARGET/packages/com.qtav.product.player/data/bin
-patchelf.sh $TARGET/packages/com.qtav.product.examples/data/bin
+  patchelf.sh $TARGET/packages/com.qtav.product.runtime/data/bin
+  patchelf.sh $TARGET/packages/com.qtav.product.player/data/bin
+  patchelf.sh $TARGET/packages/com.qtav.product.examples/data/bin
+fi
 
-find $TARGET -name log.txt -exec rm -f {} \;
-find $TARGET -name "*.manifest" -exec rm -f {} \;
+find $TARGET -name "log*.txt" -delete
+find $TARGET -name "*.manifest" -delete
+
 # copy simpleplayer source code
 mkdir -p $EXAMPLE_DIR/data/src
 cp -af ../../examples/simpleplayer $EXAMPLE_DIR/data/src
-cat >$EXAMPLE_DIR/data/src/simpleplayer/simpleplayer.pro<<EOF
-TEMPLATE = app
-CONFIG -= app_bundle
-QT += avwidgets av
-HEADERS = playerwindow.h
-SOURCES = playerwindow.cpp main.cpp
-EOF
+[ -f $EXAMPLE_DIR/data/src/simpleplayer/simpleplayer_sdk.pro ] && rm -rf $EXAMPLE_DIR/data/src/simpleplayer/simpleplayer.pro
 
 echo "creating installer..."
 if host_is MinGW || host_is MSYS; then
   echo "default install dir is 'C:\QtAV'"
+  echo cp config/config.xml $TARGET
   cp config/config.xml $TARGET
 else
   echo "default install dir is '$HOME/QtAV'"
@@ -204,5 +216,5 @@ type -p binarycreator || {
   exit 0
 }
 INSTALLER=QtAV${QTAV_VER}-${TARGET}
-binarycreator -c $TARGET/config.xml -p $TARGET/packages --ignore-translations -v $INSTALLER
+binarycreator --offline-only -c $TARGET/config.xml -p $TARGET/packages --ignore-translations -v $INSTALLER
 du -h $INSTALLER

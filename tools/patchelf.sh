@@ -1,10 +1,26 @@
 BINDIR=$1
 echo $BINDIR
+
+runpath() {
+  local exe=$1
+  test -n "$2" && exe=`echo $1 |sed "s,$2,,"`
+  [ "${exe:0:2}" = "./" ] && exe=${exe:2}
+  local d=`echo $exe |sed 's,[^\/],,g'`
+  d=`echo $d |sed  's,\/,\/..,g'`
+#  echo "$exe => $d"
+  echo "\$ORIGIN:\$ORIGIN$d/lib:\$ORIGIN$d"
+}
+
 [ -d "$BINDIR" ] || BINDIR=$PWD
+qmlso=(`find $BINDIR/qml -name "*.so" -type f`)
+for q in ${qmlso[@]}; do
+echo patching $q
+  patchelf --set-rpath `runpath $q $BINDIR/` $q
+done
 plugins=(`find $BINDIR/plugins -name "*.so" -type f`)
-for plugin in ${plugins[@]}; do
-  echo $plugin
-  patchelf --set-rpath '$ORIGIN/../../lib:$ORIGIN/../..' $plugin
+for p in ${plugins[@]}; do
+echo patching $p
+  patchelf --set-rpath `runpath $p $BINDIR/` $p
 done
 for qt in $BINDIR/libQt5*.so.5; do
 echo patching $qt

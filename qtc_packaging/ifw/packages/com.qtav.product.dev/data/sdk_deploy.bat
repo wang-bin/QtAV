@@ -5,7 +5,7 @@ set ACT=%errorlevel%
 @echo Input your absolute Qt folder contains bin, include, lib etc.
 @echo Or drag Qt folder here
 @echo Then press ENTER
-@echo example: C:\Qt5.4.1\5.4\mingw32_49
+@echo example: C:\Qt5.6.0\5.6\mingw492_32
 
 set /p QTDIR=
 
