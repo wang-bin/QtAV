@@ -106,6 +106,7 @@ protected:
     // pts > 0: compare pts and clock when waiting
     void waitAndCheck(ulong value, qreal pts);
     virtual void onUpdateFilters() {}
+    virtual void onStop() {}
     DPTR_DECLARE(AVThread)
 
 private:

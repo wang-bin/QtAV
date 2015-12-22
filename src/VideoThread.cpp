@@ -190,6 +190,13 @@ void VideoThread::onUpdateFilters()
     d.filter_thread->setFilters(d.filters);
 }
 
+void VideoThread::onStop()
+{
+    DPTR_D(VideoThread);
+    // stop by user. clear frame queue to avoid blocking at put()
+    d.filter_thread->frameQueue()->clear();
+}
+
 //TODO: if output is null or dummy, the use duration to wait
 void VideoThread::run()
 {

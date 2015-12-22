@@ -195,6 +195,7 @@ void AVThread::stop()
     QMutexLocker lock(&d.ready_mutex);
     d.ready = false;
     //terminate();
+    onStop();
 }
 
 //TODO: output set
