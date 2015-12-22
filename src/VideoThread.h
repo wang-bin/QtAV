@@ -51,8 +51,6 @@ public Q_SLOTS:
     void addCaptureTask();
 protected:
     void onUpdateFilters() Q_DECL_OVERRIDE;
-    // deliver video frame to video renderers. frame may be converted to a suitable format for renderer
-    bool deliverVideoFrame(VideoFrame &frame);
     void run() Q_DECL_OVERRIDE;
     // wait for value msec. every usleep is a small time, then process next task and get new delay
 };

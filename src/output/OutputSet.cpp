@@ -27,7 +27,6 @@ namespace QtAV {
 
 OutputSet::OutputSet(AVPlayer *player):
     QObject(player)
-  , mCanPauseThread(false)
   , mpPlayer(player)
   , mPauseCount(0)
 {
@@ -35,7 +34,6 @@ OutputSet::OutputSet(AVPlayer *player):
 
 OutputSet::~OutputSet()
 {
-    mCond.wakeAll();
     //delete? may be deleted by vo's parent
     clearOutputs();
 }
@@ -93,39 +91,4 @@ void OutputSet::removeOutput(AVOutput *output)
     mOutputs.removeAll(output);
     output->removeOutputSet(this);
 }
-
-void OutputSet::notifyPauseChange(AVOutput *output)
-{
-    if (output->isPaused()) {
-        mPauseCount++;
-        if (mPauseCount == mOutputs.size()) {
-            mCanPauseThread = true;
-        }
-        //DO NOT pause here because it must be paused in AVThread
-    } else {
-        mPauseCount--;
-        mCanPauseThread = false;
-        if (mPauseCount == mOutputs.size() - 1) {
-            resumeThread();
-        }
-    }
-}
-
-bool OutputSet::canPauseThread() const
-{
-    return mCanPauseThread;
-}
-
-bool OutputSet::pauseThread(unsigned long timeout)
-{
-    QMutexLocker lock(&mMutex);
-    Q_UNUSED(lock);
-    return mCond.wait(&mMutex, timeout);
-}
-
-void OutputSet::resumeThread()
-{
-    mCond.wakeAll();
-}
-
 } //namespace QtAV

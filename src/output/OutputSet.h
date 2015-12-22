@@ -71,12 +71,10 @@ public slots:
     void removeOutput(AVOutput *output);
 
 private:
-    volatile bool mCanPauseThread;
     AVPlayer *mpPlayer;
     int mPauseCount; //pause AVThread if equals to mOutputs.size()
     QList<AVOutput*> mOutputs;
     QMutex mMutex;
-    QWaitCondition mCond; //pause
 };
 
 } //namespace QtAV

@@ -183,55 +183,6 @@ void VideoThread::prepareSeek()
     }
 }
 
-// filters on vo will not change video frame, so it's safe to protect frame only in every individual vo
-bool VideoThread::deliverVideoFrame(VideoFrame &frame)
-{
-    DPTR_D(VideoThread);
-    /*
-     * TODO: video renderers sorted by preferredPixelFormat() and convert in AVOutputSet.
-     * Convert only once for the renderers has the same preferredPixelFormat().
-     */
-    d.outputSet->lock();
-    QList<AVOutput *> outputs = d.outputSet->outputs();
-    if (outputs.size() > 1) { //FIXME!
-        VideoFrame outFrame(d.conv.convert(frame, VideoFormat::Format_RGB32));
-        if (!outFrame.isValid()) {
-            /*
-             * use VideoFormat::Format_User to deliver user defined frame
-             * renderer may update background but no frame to graw, so flickers
-             * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
-             */
-            d.outputSet->unlock();
-            return false;
-        }
-        frame = outFrame;
-    } else {
-        VideoRenderer *vo = 0;
-        if (!outputs.isEmpty())
-            vo = static_cast<VideoRenderer*>(outputs.first());
-        if (vo && (!vo->isSupported(frame.pixelFormat())
-                || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
-                )) {
-            VideoFrame outFrame(d.conv.convert(frame, vo->preferredPixelFormat()));
-            if (!outFrame.isValid()) {
-                /*
-                 * use VideoFormat::Format_User to deliver user defined frame
-                 * renderer may update background but no frame to graw, so flickers
-                 * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
-                 */
-                d.outputSet->unlock();
-                return false;
-            }
-            frame = outFrame;
-        }
-    }
-    d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
-    d.outputSet->unlock();
-
-    emit frameDelivered();
-    return true;
-}
-
 void VideoThread::onUpdateFilters()
 {
     qDebug("update filters");
@@ -284,12 +235,11 @@ void VideoThread::run()
     //bool wait_audio_drain
     const char* pkt_data = NULL; // workaround for libav9 decode fail but error code >= 0
     qint64 last_deliver_time = 0;
-    while (true) {
+    while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then stepForward() not work?
         //processNextTask tryPause(timeout) and  and continue outter loop
         if (tryPause()) { //DO NOT continue, or stepForward() will fail
-
         } else {
             if (isPaused())
                 continue; //timeout. process pending tasks
@@ -541,19 +491,15 @@ void VideoThread::run()
             pkt = Packet();
         } else {
             // TODO: reorder is required by VT
+            qDebug("frame queue size: %d", d.filter_thread->frameQueue()->size());
             d.filter_thread->frameQueue()->put(frame);
-            //qDebug("frame queue size: %d", d.filter_thread->frameQueue()->size());
+            qDebug("frame queueded");
         }
         continue;
-        Q_ASSERT(d.statistics);
-        d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
+        //Q_ASSERT(d.statistics);
+        // TODO: current_dec_time
+        //d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
 
-        //while can pause, processNextTask, not call outset.puase which is deperecated
-        while (d.outputSet->canPauseThread()) {
-            d.outputSet->pauseThread(100);
-            //tryPause(100);
-            processNextTask();
-        }
         //qDebug("force fps: %f dt: %d", d.force_fps, d.force_dt);
         if (d.force_dt > 0) {// && qFuzzyCompare(d.clock->speed(), 1.0)) {
             const qint64 now = QDateTime::currentMSecsSinceEpoch();
@@ -577,37 +523,12 @@ void VideoThread::run()
             }
         }
         // no return even if d.stop is true. ensure frame is displayed. otherwise playing an image may be failed to display
-        if (!deliverVideoFrame(frame))
-            continue;
+        //if (!deliverVideoFrame(frame))
+          //  continue;
         if (d.force_dt > 0)
             last_deliver_time = QDateTime::currentMSecsSinceEpoch();
         // TODO: store original frame. now the frame is filtered and maybe converted to renderer perferred format
         d.displayed_frame = frame;
-        if (d.clock->clockType() == AVClock::AudioClock) {
-            const qreal v_a_ = frame.timestamp() - d.clock->value();
-            if (!qFuzzyIsNull(v_a_)) {
-                if (v_a_ < -0.1) {
-                    if (v_a <= v_a_)
-                        v_a += -0.01;
-                    else
-                        v_a = (v_a_ +v_a)*0.5;
-                } else if (v_a_ < -0.002) {
-                    v_a += -0.001;
-                } else if (v_a_ < 0.002) {
-                } else if (v_a_ < 0.1) {
-                    v_a += 0.001;
-                } else {
-                    if (v_a >= v_a_)
-                        v_a += 0.01;
-                    else
-                        v_a = (v_a_ +v_a)*0.5;
-                }
-
-                if (v_a < -2 || v_a > 2)
-                   v_a /= 2.0;
-            }
-            //qDebug("v_a:%.4f, v_a_: %.4f", v_a, v_a_);
-        }
     }
     d.packets.clear();
     d.filter_thread->frameQueue()->put(VideoFrame()); //ensure no block in take()

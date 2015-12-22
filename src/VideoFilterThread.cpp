@@ -32,7 +32,7 @@ VideoFilterThread::VideoFilterThread(QObject *parent)
     , m_filter_context(VideoFilterContext::create(VideoFilterContext::QtPainter))
 {
     m_queue.setCapacity(3);
-    m_queue.setThreshold(1);
+    m_queue.setThreshold(2);
 }
 
 VideoFilterThread::~VideoFilterThread()
@@ -139,7 +139,8 @@ void VideoFilterThread::run()
     m_seeking = false;
     while (!m_stop) {
         VideoFrame frame = m_queue.take();
-        if (!frame) //eof frame
+        qDebug("frame queue size after take: %d", m_queue.size());
+        if (!frame) //eof frame. also ensure won't be blocked at the end because
             break;
         applyFilters(frame);
         const qreal pts = frame.timestamp();
@@ -178,7 +179,7 @@ void VideoFilterThread::run()
         }
         deliverVideoFrame(frame);
 
-
+        // TODO: only for audio clock?
         const qreal v_a_ = pts - m_clock->value();
         if (!qFuzzyIsNull(v_a_)) {
             if (v_a_ < -0.1) {

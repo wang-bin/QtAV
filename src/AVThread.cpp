@@ -312,8 +312,6 @@ bool AVThread::tryPause(unsigned long timeout)
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     return d.cond.wait(&d.mutex, timeout);
-    qDebug("paused thread waked up!!!");
-    return true;
 }
 
 bool AVThread::processNextTask()
