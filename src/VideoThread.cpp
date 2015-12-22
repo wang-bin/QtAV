@@ -45,15 +45,7 @@ public:
       , force_fps(0)
       , force_dt(0)
       , capture(0)
-      , filter_context(VideoFilterContext::create(VideoFilterContext::QtPainter))
     {
-    }
-    ~VideoThreadPrivate() {
-        //not neccesary context is managed by filters.
-        if (filter_context) {
-            delete filter_context;
-            filter_context = 0;
-        }
     }
 
     VideoFrameConverter conv;
@@ -63,7 +55,6 @@ public:
 
     double pts; //current decoded pts. for capture. TODO: remove
     VideoCapture *capture;
-    VideoFilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
     VideoFrame displayed_frame;
     VideoFilterThread *filter_thread;
 };
@@ -192,23 +183,6 @@ void VideoThread::prepareSeek()
     }
 }
 
-void VideoThread::applyFilters(VideoFrame &frame)
-{
-    DPTR_D(VideoThread);
-    QMutexLocker locker(&d.mutex);
-    Q_UNUSED(locker);
-    if (!d.filters.isEmpty()) {
-        //sort filters by format. vo->defaultFormat() is the last
-        foreach (Filter *filter, d.filters) {
-            VideoFilter *vf = static_cast<VideoFilter*>(filter);
-            if (!vf->isEnabled())
-                continue;
-            if (vf->prepareContext(d.filter_context, d.statistics, &frame))
-                vf->apply(d.statistics, &frame);
-        }
-    }
-}
-
 // filters on vo will not change video frame, so it's safe to protect frame only in every individual vo
 bool VideoThread::deliverVideoFrame(VideoFrame &frame)
 {
@@ -256,6 +230,13 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
 
     emit frameDelivered();
     return true;
+}
+
+void VideoThread::onUpdateFilters()
+{
+    qDebug("update filters");
+    DPTR_D(VideoThread);
+    d.filter_thread->setFilters(d.filters);
 }
 
 //TODO: if output is null or dummy, the use duration to wait
@@ -566,7 +547,6 @@ void VideoThread::run()
         continue;
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
-        applyFilters(frame);
 
         //while can pause, processNextTask, not call outset.puase which is deperecated
         while (d.outputSet->canPauseThread()) {

@@ -1,7 +1,29 @@
-#ifndef VIDEOFILTERTHREAD_H
-#define VIDEOFILTERTHREAD_H
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
+#ifndef QTAV_VIDEOFILTERTHREAD_H
+#define QTAV_VIDEOFILTERTHREAD_H
 
 #include <QtCore/QQueue>
+#include <QtCore/QMutex>
 #include <QtCore/QThread>
 #include "QtAV/AVClock.h"
 #include "utils/BlockingQueue.h"
@@ -14,11 +36,18 @@ class VideoFilterThread : public QThread
     Q_OBJECT
 public:
     VideoFilterThread(QObject* parent = 0);
+    ~VideoFilterThread();
 
     BlockingQueue<VideoFrame>* frameQueue() { return &m_queue;}
     void setClock(AVClock *c) { m_clock = c;}
     void setStatistics(Statistics* st) { m_statistics = st;}
     void setOutputSet(OutputSet *os) { m_outset = os;}
+    void setFilters(const QList<Filter*>& fs) {
+        QMutexLocker lock(&m_mutex);
+        Q_UNUSED(lock);
+        m_filters = fs;
+    }
+
 Q_SIGNALS:
     void frameDelivered();
 
@@ -42,6 +71,7 @@ private:
     VideoFilterContext *m_filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
     QList<Filter*> m_filters;
     Statistics *m_statistics;
+    QMutex m_mutex;
 };
 }
-#endif // VIDEOFILTERTHREAD_H
+#endif // QTAV_VIDEOFILTERTHREAD_H

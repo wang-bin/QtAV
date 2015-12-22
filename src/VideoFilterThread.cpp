@@ -1,3 +1,24 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
 #include "VideoFilterThread.h"
 #include "QtAV/VideoRenderer.h"
 #include "QtAV/Filter.h"
@@ -14,6 +35,14 @@ VideoFilterThread::VideoFilterThread(QObject *parent)
     m_queue.setThreshold(1);
 }
 
+VideoFilterThread::~VideoFilterThread()
+{
+    //not neccesary context is managed by filters.
+    if (m_filter_context) {
+        delete m_filter_context;
+        m_filter_context = 0;
+    }
+}
 
 void VideoFilterThread::waitAndCheck(ulong value, qreal pts)
 {
@@ -80,15 +109,15 @@ bool VideoFilterThread::deliverVideoFrame(VideoFrame &frame)
     }
     m_outset->sendVideoFrame(frame); //TODO: group by format, convert group by group
     m_outset->unlock();
-
+    //m_clock->updateVideoTime(frame.timestamp());
     Q_EMIT frameDelivered();
     return true;
 }
 
 void VideoFilterThread::applyFilters(VideoFrame &frame)
 {
-    //QMutexLocker locker(&d.mutex);
-    //Q_UNUSED(locker);
+    QMutexLocker locker(&m_mutex); //for capture, and filters update
+    Q_UNUSED(locker);
     if (!m_filters.isEmpty()) {
         //sort filters by format. vo->defaultFormat() is the last
         foreach (Filter *filter, m_filters) {
@@ -97,6 +126,8 @@ void VideoFilterThread::applyFilters(VideoFrame &frame)
                 continue;
             if (vf->prepareContext(m_filter_context, m_statistics, &frame))
                 vf->apply(m_statistics, &frame);
+            else
+                qWarning("prepare context error");
         }
     }
 }
@@ -108,11 +139,10 @@ void VideoFilterThread::run()
     m_seeking = false;
     while (!m_stop) {
         VideoFrame frame = m_queue.take();
-        //applyFilters(frame);
+        applyFilters(frame);
         const qreal pts = frame.timestamp();
         qreal diff = pts > 0? pts - m_clock->value() + v_a : v_a;
-        qDebug("dt=%.3f", diff - v_a);
-        diff /= 2.0;
+        //qDebug("dt=%.3f", diff - v_a);
         if (diff > 1) {
             //check seeking and next frame
             ulong ms = diff*1000.0;
@@ -129,12 +159,12 @@ void VideoFilterThread::run()
                 }
                 //qDebug("pts: %.3f, clock: %.3f", pts, m_clock->value());
                 if (pts <= m_clock->value()) {
-                    qDebug("time to show");
+                    //qDebug("time to show");
                     ms = 0;
                     break;
                 }
-                waitAndCheck(2, pts);
-                ms -= 2;
+                waitAndCheck(10, pts);
+                ms -= 10;
             }
             if (ms > 0) {
                 qDebug("seeking detected");
@@ -168,7 +198,7 @@ void VideoFilterThread::run()
             if (v_a < -2 || v_a > 2)
                v_a /= 2.0;
         }
-        qDebug("diff: %.3f, v_a: %.3f, v_a_:%.3f @%.3f", diff, v_a, v_a_, pts);
+        //qDebug("diff: %.3f, v_a: %.3f, v_a_:%.3f @%.3f", diff, v_a, v_a_, pts);
     }
 }
 

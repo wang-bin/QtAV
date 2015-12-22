@@ -94,10 +94,12 @@ bool AVThread::installFilter(Filter *filter, int index, bool lock)
         if (p >= 0)
             d.filters.removeAt(p);
         d.filters.insert(p, filter);
+        onUpdateFilters();
     } else {
         if (p >= 0)
             d.filters.removeAt(p);
         d.filters.insert(p, filter);
+        onUpdateFilters();
     }
     return true;
 }
@@ -107,9 +109,15 @@ bool AVThread::uninstallFilter(Filter *filter, bool lock)
     DPTR_D(AVThread);
     if (lock) {
         QMutexLocker locker(&d.mutex);
-        return d.filters.removeOne(filter);
+        const bool ok = d.filters.removeOne(filter);
+        if (ok)
+            onUpdateFilters();
+        return ok;
     }
-    return d.filters.removeOne(filter);
+    const bool ok = d.filters.removeOne(filter);
+    if (ok)
+        onUpdateFilters();
+    return ok;
 }
 
 const QList<Filter*>& AVThread::filters() const
