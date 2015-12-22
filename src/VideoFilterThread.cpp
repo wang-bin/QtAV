@@ -139,6 +139,8 @@ void VideoFilterThread::run()
     m_seeking = false;
     while (!m_stop) {
         VideoFrame frame = m_queue.take();
+        if (!frame) //eof frame
+            break;
         applyFilters(frame);
         const qreal pts = frame.timestamp();
         qreal diff = pts > 0? pts - m_clock->value() + v_a : v_a;
@@ -157,8 +159,9 @@ void VideoFilterThread::run()
                     if (qAbs(m_queue.back().timestamp() - pts) > qAbs(diff)) //queue_size*diff
                         break;
                 }
-                //qDebug("pts: %.3f, clock: %.3f", pts, m_clock->value());
-                if (pts <= m_clock->value()) {
+                const qreal t = m_clock->value();
+                //qDebug("pts: %.3f, clock: %.3f", pts, t);
+                if (pts <= t || t <= 0) { //t = 0: player stopped and clock is reset.
                     //qDebug("time to show");
                     ms = 0;
                     break;
@@ -200,6 +203,8 @@ void VideoFilterThread::run()
         }
         //qDebug("diff: %.3f, v_a: %.3f, v_a_:%.3f @%.3f", diff, v_a, v_a_, pts);
     }
+    qDebug("filter thread finished");
+    m_outset->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
 }
 
 } //namespace QtAV

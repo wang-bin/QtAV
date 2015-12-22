@@ -611,8 +611,6 @@ void VideoThread::run()
     }
     d.packets.clear();
     d.filter_thread->frameQueue()->put(VideoFrame()); //ensure no block in take()
-    d.outputSet->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
-    d.filter_thread->stop();
     qDebug("Video thread stops running...");
 }
 
