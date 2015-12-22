@@ -30,6 +30,7 @@
 #include "QtAV/Filter.h"
 #include "QtAV/FilterContext.h"
 #include "output/OutputSet.h"
+#include "VideoFilterThread.h"
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QFileInfo>
 #include "utils/Logger.h"
@@ -44,7 +45,7 @@ public:
       , force_fps(0)
       , force_dt(0)
       , capture(0)
-      , filter_context(0)
+      , filter_context(VideoFilterContext::create(VideoFilterContext::QtPainter))
     {
     }
     ~VideoThreadPrivate() {
@@ -64,11 +65,14 @@ public:
     VideoCapture *capture;
     VideoFilterContext *filter_context;//TODO: use own smart ptr. QSharedPointer "=" is ugly
     VideoFrame displayed_frame;
+    VideoFilterThread *filter_thread;
 };
 
 VideoThread::VideoThread(QObject *parent) :
     AVThread(*new VideoThreadPrivate(), parent)
 {
+    d_func().filter_thread = new VideoFilterThread(this);
+    connect(d_func().filter_thread, SIGNAL(frameDelivered()), this , SIGNAL(frameDelivered()), Qt::DirectConnection);
 }
 
 //it is called in main thread usually, but is being used in video thread,
@@ -180,6 +184,14 @@ void VideoThread::setEQ(int b, int c, int s)
     }
 }
 
+void VideoThread::prepareSeek()
+{
+    DPTR_D(VideoThread);
+    if (d.filter_thread) {
+        d.filter_thread->frameQueue()->clear();
+    }
+}
+
 void VideoThread::applyFilters(VideoFrame &frame)
 {
     DPTR_D(VideoThread);
@@ -252,12 +264,17 @@ void VideoThread::run()
     DPTR_D(VideoThread);
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)
         return;
+    d.filter_thread->setClock(d.clock);
+    d.filter_thread->setStatistics(d.statistics);
+    d.filter_thread->setOutputSet(d.outputSet);
+    d.filter_thread->frameQueue()->clear();
+    d.filter_thread->start();
+
     resetState();
     if (d.capture->autoSave()) {
         d.capture->setCaptureName(QFileInfo(d.statistics->url).completeBaseName());
     }
     //not neccesary context is managed by filters.
-    d.filter_context = VideoFilterContext::create(VideoFilterContext::QtPainter);
     VideoDecoder *dec = static_cast<VideoDecoder*>(d.dec);
     Packet pkt;
     QVariantHash *dec_opt = &d.dec_opt_normal; //TODO: restore old framedrop option after seek
@@ -317,6 +334,7 @@ void VideoThread::run()
                 d.render_pts0 = pkt.pts;
                 d.pts_history = ring<qreal>(d.pts_history.capacity(), -1);
                 v_a = 0;
+                d.filter_thread->frameQueue()->clear();
                 continue;
             }
         }
@@ -353,6 +371,14 @@ void VideoThread::run()
             diff = qMin<qreal>(1.0, qMax<qreal>(d.delay, 1.0/d.statistics->video_only.currentDisplayFPS()));
         if (diff < 0 && sync_video)
             diff = 0; // this ensures no frame drop
+#if 1
+        // can not reset diff to avoid breaking frame drop logic
+         //qDebug("vthread diff: %.3f v-a: %.3f, frame_dec_time: %.3f, frame_filter_time: %.3f", diff, v_a, frame_dec_time, frame_filter_time);
+         //if (d.outputSet->videFrameRequired()) { //|| d.filter_thread->delay() < 0 || d.filter_thread->frameQueue().size() < 2
+              //qDebug("video frame required");
+              //diff = 0;
+          //}
+#endif
         if (diff > kSyncThreshold) {
             nb_dec_fast++;
         } else {
@@ -397,8 +423,8 @@ void VideoThread::run()
         if (!sync_audio && diff > 0) {
             // wait to dts reaches
             // d.force_fps>0: wait after decoded before deliver
-            if (d.force_fps <= 0)// || !qFuzzyCompare(d.clock->speed(), 1.0))
-                waitAndCheck(diff*1000UL, dts); // TODO: count decoding and filter time, or decode immediately but wait for display
+            //if (d.force_fps <= 0)// || !qFuzzyCompare(d.clock->speed(), 1.0))
+              //  waitAndCheck(diff*1000UL, dts); // TODO: count decoding and filter time, or decode immediately but wait for display
             diff = 0; // TODO: can not change delay!
         }
         // update here after wait. TODO: use decoded timestamp/guessed next pts?
@@ -428,14 +454,14 @@ void VideoThread::run()
             } else {
                 const double s = qMin<qreal>(0.01*(nb_dec_fast>>1), diff);
                 qWarning("video too fast!!! sleep %.2f s, nb fast: %d, v_a: %.4f", s, nb_dec_fast, v_a);
-                waitAndCheck(s*1000UL, dts);
+                //waitAndCheck(s*1000UL, dts);
                 diff = 0;
             }
         }
         //audio packet not cleaned up?
         if (diff > 0 && diff < 1.0 && !seeking) {
             // can not change d.delay here! we need it to comapre to next loop
-            waitAndCheck(diff*1000UL, dts);
+            //waitAndCheck(diff*1000UL, dts);
         }
         if (wait_key_frame) {
             if (!pkt.hasKeyFrame) {
@@ -526,12 +552,18 @@ void VideoThread::run()
                 seek_count = 1;
             else if (seek_count > 0)
                 seek_count++;
+            skip_render = false;
+            d.filter_thread->frameQueue()->clear();
         }
         if (skip_render) {
             qDebug("skip rendering @%.3f", pts);
             pkt = Packet();
-            continue;
+        } else {
+            // TODO: reorder is required by VT
+            d.filter_thread->frameQueue()->put(frame);
+            //qDebug("frame queue size: %d", d.filter_thread->frameQueue()->size());
         }
+        continue;
         Q_ASSERT(d.statistics);
         d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(pts * 1000.0)); //TODO: is it expensive?
         applyFilters(frame);
@@ -598,7 +630,9 @@ void VideoThread::run()
         }
     }
     d.packets.clear();
+    d.filter_thread->frameQueue()->put(VideoFrame()); //ensure no block in take()
     d.outputSet->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
+    d.filter_thread->stop();
     qDebug("Video thread stops running...");
 }
 

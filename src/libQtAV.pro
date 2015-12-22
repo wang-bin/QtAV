@@ -417,6 +417,7 @@ SOURCES += \
     codec/video/VideoDecoderFFmpegHW.cpp \
     codec/video/VideoEncoder.cpp \
     codec/video/VideoEncoderFFmpeg.cpp \
+    VideoFilterThread.cpp \
     VideoThread.cpp \
     VideoFrameExtractor.cpp \
     CommonTypes.cpp
@@ -498,6 +499,7 @@ HEADERS *= \
     AVThread_p.h \
     AudioThread.h \
     PacketBuffer.h \
+    VideoFilterThread.h \
     VideoThread.h \
     ImageConverter.h \
     ImageConverter_p.h \

@@ -48,6 +48,8 @@ public:
 
     void put(const T& t);
     T take();
+    const T& front() const;
+    const T& back() const;
     void setBlocking(bool block); //will wake if false. called when no more data can enqueue
     void blockEmpty(bool block);
     void blockFull(bool block);
@@ -191,6 +193,22 @@ void BlockingQueue<T, Container>::setBlocking(bool block)
         cond_empty.wakeAll(); //empty still wait. setBlock=>setCapacity(-1)
         cond_full.wakeAll();
     }
+}
+
+template <typename T, template <typename> class Container>
+const T& BlockingQueue<T, Container>::front() const
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    return queue.front();
+}
+
+template <typename T, template <typename> class Container>
+const T& BlockingQueue<T, Container>::back() const
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    return queue.back();
 }
 
 template <typename T, template <typename> class Container>

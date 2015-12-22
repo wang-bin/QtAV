@@ -208,6 +208,7 @@ void AVDemuxThread::seek(qint64 pos, SeekType type)
     }
     if (video_thread) {
         video_thread->packetQueue()->clear();
+        ((VideoThread*)videoThread())->prepareSeek();
     }
     class SeekTask : public QRunnable {
     public:
