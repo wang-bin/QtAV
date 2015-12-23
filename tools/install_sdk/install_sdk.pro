@@ -80,7 +80,7 @@ mac_framework {
   sdk_install.commands = $$quote($$COPY_DIR $$system_path($$PROJECT_LIBDIR/$${MODULE_FULL_NAME}.framework) $$system_path($$[QT_INSTALL_LIBS]))
 } else {
   sdk_install.commands = $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/$${MODULE_FULL_NAME}/))
-  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*Qt*AV*.$$LIBSUFFIX) $$system_path($$[QT_INSTALL_LIBS]/))
+  sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*Qt*AV*.$$LIBSUFFIX*) $$system_path($$[QT_INSTALL_LIBS]/))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB_D) $$system_path($$[QT_INSTALL_LIBS]/$$NEW_LIB_D))
   static {
