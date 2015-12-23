@@ -21,7 +21,7 @@
 
 #include "QtAV/VideoOutput.h"
 #include "QtAV/private/VideoRenderer_p.h"
-
+#include <QtGui/QResizeEvent>
 /*!
  * onSetXXX(...): impl->onSetXXX(...); set value as impl; return ;
  */
@@ -78,16 +78,25 @@ VideoOutput::VideoOutput(QObject *parent)
     : QObject(parent)
     , VideoRenderer(*new VideoOutputPrivate(0, false))
 {
+    if (d_func().impl && d_func().impl->widget()) {
+        ((QObject*)d_func().impl->widget())->installEventFilter(this);
+    }
 }
 
 VideoOutput::VideoOutput(VideoRendererId rendererId, QObject *parent)
     : QObject(parent)
     , VideoRenderer(*new VideoOutputPrivate(rendererId, true))
 {
+    if (d_func().impl && d_func().impl->widget()) {
+        ((QObject*)d_func().impl->widget())->installEventFilter(this);
+    }
 }
 
 VideoOutput::~VideoOutput()
 {
+    if (d_func().impl && d_func().impl->widget()) {
+        ((QObject*)d_func().impl->widget())->removeEventFilter(this);
+    }
 }
 
 VideoRendererId VideoOutput::id() const
@@ -140,6 +149,19 @@ QGraphicsItem* VideoOutput::graphicsItem()
     if (!isAvailable())
         return 0;
     return d_func().impl->graphicsItem();
+}
+
+bool VideoOutput::eventFilter(QObject *obj, QEvent *event)
+{
+    DPTR_D(VideoOutput);
+    if (!d.impl || (QObject*)d.impl->widget() != obj)
+        return false;
+    if (event->type() == QEvent::Resize) {
+        QResizeEvent *re = static_cast<QResizeEvent*>(event);
+        resizeRenderer(re->size());
+        return false;
+    }
+    return false;
 }
 
 bool VideoOutput::receiveFrame(const VideoFrame& frame)
@@ -211,9 +233,9 @@ void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     OutAspectRatioMode am = d.impl->outAspectRatioMode();
     d.impl->setOutAspectRatioMode(mode);
     if (a != outAspectRatio())
-        emit outAspectRatioChanged(outAspectRatio());
+        Q_EMIT outAspectRatioChanged(outAspectRatio());
     if (am != outAspectRatioMode())
-        emit outAspectRatioModeChanged(mode);
+        Q_EMIT outAspectRatioModeChanged(mode);
 }
 
 void VideoOutput::onSetOutAspectRatio(qreal ratio)
@@ -225,9 +247,9 @@ void VideoOutput::onSetOutAspectRatio(qreal ratio)
     OutAspectRatioMode am = d.impl->outAspectRatioMode();
     d.impl->setOutAspectRatio(ratio);
     if (a != outAspectRatio())
-        emit outAspectRatioChanged(ratio);
+        Q_EMIT outAspectRatioChanged(ratio);
     if (am != outAspectRatioMode())
-        emit outAspectRatioModeChanged(outAspectRatioMode());
+        Q_EMIT outAspectRatioModeChanged(outAspectRatioMode());
 }
 
 bool VideoOutput::onSetQuality(Quality q)
@@ -249,7 +271,7 @@ bool VideoOutput::onSetOrientation(int value)
     if (d.impl->orientation() != value) {
         return false;
     }
-    emit orientationChanged(value);
+    Q_EMIT orientationChanged(value);
     return true;
 }
 
@@ -267,7 +289,7 @@ bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
         return false;
     DPTR_D(VideoOutput);
     d.impl->setRegionOfInterest(roi);
-    emit regionOfInterestChanged(roi);
+    Q_EMIT regionOfInterestChanged(roi);
     return true;
 }
 
@@ -297,7 +319,7 @@ bool VideoOutput::onSetBrightness(qreal brightness)
     if (brightness != d.impl->brightness()) {
         return false;
     }
-    emit brightnessChanged(brightness);
+    Q_EMIT brightnessChanged(brightness);
     return true;
 }
 
@@ -311,7 +333,7 @@ bool VideoOutput::onSetContrast(qreal contrast)
     if (contrast != d.impl->contrast()) {
         return false;
     }
-    emit contrastChanged(contrast);
+    Q_EMIT contrastChanged(contrast);
     return true;
 }
 
@@ -325,7 +347,7 @@ bool VideoOutput::onSetHue(qreal hue)
     if (hue != d.impl->hue()) {
         return false;
     }
-    emit hueChanged(hue);
+    Q_EMIT hueChanged(hue);
     return true;
 }
 
@@ -339,7 +361,7 @@ bool VideoOutput::onSetSaturation(qreal saturation)
     if (saturation != d.impl->saturation()) {
         return false;
     }
-    emit saturationChanged(saturation);
+    Q_EMIT saturationChanged(saturation);
     return true;
 }
 

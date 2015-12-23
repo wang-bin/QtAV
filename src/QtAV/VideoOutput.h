@@ -78,6 +78,7 @@ Q_SIGNALS:
     void orientationChanged(int value);
     void frameSizeChanged(const QSize& size);
 protected:
+    bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
     bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
     bool needUpdateBackground() const Q_DECL_OVERRIDE;
     void drawBackground() Q_DECL_OVERRIDE;
