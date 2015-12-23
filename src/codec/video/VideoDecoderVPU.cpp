@@ -991,13 +991,17 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
         PUT_BE32(pbHeader, 0x00); //LastPacket
         PUT_BE32(pbHeader, cSlice); //NumSegments
         int offset = 1;
-        for (int i = 0; i < (int) cSlice; i++) {
+        for (int i = 0; offset > 0 && i < (int) cSlice; i++) {
             int val = (pbChunk[offset+3] << 24) | (pbChunk[offset+2] << 16) | (pbChunk[offset+1] << 8) | pbChunk[offset];
             PUT_BE32(pbHeader, val); //isValid
             offset += 4;
             val = (pbChunk[offset+3] << 24) | (pbChunk[offset+2] << 16) | (pbChunk[offset+1] << 8) | pbChunk[offset];
             PUT_BE32(pbHeader, val); //Offset
             offset += 4;
+        }
+        if (offset < 0) {
+            qWarning("internal error");
+            return 0;
         }
         size += st_size;
 #if 0
@@ -1021,7 +1025,7 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
         if ((!has_st_code && avctx->extradata[0] == 0x01) || (avctx->extradata_size > 1 && avctx->extradata && avctx->extradata[0] == 0x01)) {
             pbChunk = (BYTE*)pkt.data.constData();
             int offset = 0;
-            while (offset < pkt.data.size()) {
+            while (offset >= 0 && offset < pkt.data.size()) {
                 int nSlice = pbChunk[offset] << 24 | pbChunk[offset+1] << 16 | pbChunk[offset+2] << 8 | pbChunk[offset+3];
                 pbChunk[offset] = 0x00;
                 pbChunk[offset+1] = 0x00;
@@ -1039,6 +1043,10 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
                 }
                 offset += nSlice;
             }
+            if (offset < 0) {
+                qWarning("internal error");
+                return 0;
+            }
         }
     } else if(codStd == STD_AVS) {
         const Uint8 *pbEnd;
@@ -1055,7 +1063,7 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
         if(has_st_code == 0) {
             pbChunk = (BYTE*)pkt.data.constData();
             int offset = 0;
-            while (offset < pkt.data.size()) {
+            while (offset >= 0 && offset < pkt.data.size()) {
                 int nSlice = pbChunk[offset] << 24 | pbChunk[offset+1] << 16 | pbChunk[offset+2] << 8 | pbChunk[offset+3];
                 pbChunk[offset] = 0x00;
                 pbChunk[offset+1] = 0x00;
@@ -1073,6 +1081,10 @@ int BuildPicHeader(BYTE *pbHeader, const CodStd codStd, const AVCodecContext *av
                     break;
                 }
                 offset += nSlice;
+            }
+            if (offset < 0) {
+                qWarning("internal error");
+                return 0;
             }
         }
     } else if (codStd == STD_DIV3) {
