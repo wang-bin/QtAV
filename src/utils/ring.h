@@ -40,11 +40,11 @@ public:
   size_t size() const { return m_s;}
   bool empty() const { return size() == 0;}
   // need at() []?
-  const T &at(size_t i) const { assert(i >=0 && i < m_s); return m_data[index(m_0+i)];}
+  const T &at(size_t i) const { assert(i < m_s); return m_data[index(m_0+i)];}
   const T &operator[](size_t i) const { return at(i);}
-  T &operator[](size_t i) {assert(i >=0 && i < m_s); return m_data[index(m_0+i)];}
+  T &operator[](size_t i) {assert(i < m_s); return m_data[index(m_0+i)];}
 protected:
-  size_t index(size_t i) const { return (size_t)i < capacity() ? i : i - capacity();} // i always [0,capacity())
+  size_t index(size_t i) const { return i < capacity() ? i : i - capacity();} // i always [0,capacity())
   size_t m_0, m_1;
   size_t m_s;
   C m_data;
@@ -87,6 +87,7 @@ void ring_api<T,C>::pop_front() {
     assert(!empty());
     if (empty())
       return;
+    m_data[m_0] = T(); //erase the old data
     m_0 = index(++m_0);
     --m_s;
 }
