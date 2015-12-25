@@ -1,39 +1,31 @@
 /****************************************************************************
 **
-** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
-** Contact: http://www.qt-project.org/legal
+** Copyright (C) 2015 The Qt Company Ltd.
+** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the QtCore module of the Qt Toolkit.
 **
-** $QT_BEGIN_LICENSE:LGPL$
+** $QT_BEGIN_LICENSE:LGPL21$
 ** Commercial License Usage
 ** Licensees holding valid commercial Qt licenses may use this file in
 ** accordance with the commercial license agreement provided with the
 ** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and Digia.  For licensing terms and
-** conditions see http://qt.digia.com/licensing.  For further information
-** use the contact form at http://qt.digia.com/contact-us.
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see http://www.qt.io/terms-conditions. For further
+** information use the contact form at http://www.qt.io/contact-us.
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 2.1 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU Lesser General Public License version 2.1 requirements
-** will be met: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
+** General Public License version 2.1 or version 3 as published by the Free
+** Software Foundation and appearing in the file LICENSE.LGPLv21 and
+** LICENSE.LGPLv3 included in the packaging of this file. Please review the
+** following information to ensure the GNU Lesser General Public License
+** requirements will be met: https://www.gnu.org/licenses/lgpl.html and
+** http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
 **
-** In addition, as a special exception, Digia gives you certain additional
-** rights.  These rights are described in the Digia Qt LGPL Exception
+** As a special exception, The Qt Company gives you certain additional
+** rights. These rights are described in The Qt Company LGPL Exception
 ** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3.0 as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU General Public License version 3.0 requirements will be
-** met: http://www.gnu.org/copyleft/gpl.html.
-**
 **
 ** $QT_END_LICENSE$
 **
@@ -85,19 +77,30 @@
 
     Alpha is bi-endian, use endianness auto-detection implemented below.
 */
-// #elif defined(__alpha__) || defined(_M_ALPHA)
-// #  define Q_PROCESSOR_ALPHA
+#if defined(__alpha__) || defined(_M_ALPHA)
+#  define Q_PROCESSOR_ALPHA
 // Q_BYTE_ORDER not defined, use endianness auto-detection
-
+#endif
 /*
-    ARM family, known revisions: V5, V6, and V7
+    ARM family, known revisions: V5, V6, V7, V8
 
     ARM is bi-endian, detect using __ARMEL__ or __ARMEB__, falling back to
     auto-detection implemented below.
 */
-#if defined(__arm__) || defined(__TARGET_ARCH_ARM) || defined(_M_ARM)
+#if defined(__arm__) || defined(__TARGET_ARCH_ARM) || defined(_M_ARM) || defined(__aarch64__)
 #  define Q_PROCESSOR_ARM
-#  if defined(__ARM_ARCH_7__) \
+#  if defined(__aarch64__)
+#    define Q_PROCESSOR_ARM_64
+#    define Q_PROCESSOR_WORDSIZE 8
+#  else
+#    define Q_PROCESSOR_ARM_32
+#  endif
+#  if defined(__ARM64_ARCH_8__)
+#    define Q_PROCESSOR_ARM_V8
+#    define Q_PROCESSOR_ARM_V7
+#    define Q_PROCESSOR_ARM_V6
+#    define Q_PROCESSOR_ARM_V5
+#  elif defined(__ARM_ARCH_7__) \
       || defined(__ARM_ARCH_7A__) \
       || defined(__ARM_ARCH_7R__) \
       || defined(__ARM_ARCH_7M__) \
@@ -159,6 +162,7 @@
 #elif defined(__i386) || defined(__i386__) || defined(_M_IX86)
 #  define Q_PROCESSOR_X86_32
 #  define Q_BYTE_ORDER Q_LITTLE_ENDIAN
+#  define Q_PROCESSOR_WORDSIZE   4
 
 /*
  * We define Q_PROCESSOR_X86 == 6 for anything above a equivalent or better
@@ -186,6 +190,7 @@
 #  define Q_PROCESSOR_X86       6
 #  define Q_PROCESSOR_X86_64
 #  define Q_BYTE_ORDER Q_LITTLE_ENDIAN
+#  define Q_PROCESSOR_WORDSIZE   8
 
 /*
     Itanium (IA-64) family, no revisions or variants
@@ -194,6 +199,7 @@
 */
 #elif defined(__ia64) || defined(__ia64__) || defined(_M_IA64)
 #  define Q_PROCESSOR_IA64
+#  define Q_PROCESSOR_WORDSIZE   8
 // Q_BYTE_ORDER not defined, use endianness auto-detection
 
 /*
@@ -223,6 +229,7 @@
 #  endif
 #  if defined(_MIPS_ARCH_MIPS64) || defined(__mips64)
 #    define Q_PROCESSOR_MIPS_64
+#    define Q_PROCESSOR_WORDSIZE 8
 #  endif
 #  if defined(__MIPSEL__)
 #    define Q_BYTE_ORDER Q_LITTLE_ENDIAN
@@ -247,6 +254,7 @@
 #  define Q_PROCESSOR_POWER
 #  if defined(__ppc64__) || defined(__powerpc64__) || defined(__64BIT__)
 #    define Q_PROCESSOR_POWER_64
+#    define Q_PROCESSOR_WORDSIZE 8
 #  else
 #    define Q_PROCESSOR_POWER_32
 #  endif
@@ -257,12 +265,12 @@
 
     S390 is big-endian.
 */
-// #elif defined(__s390__)
-// #  define Q_PROCESSOR_S390
-// #  if defined(__s390x__)
-// #    define Q_PROCESSOR_S390_X
-// #  endif
-// #  define Q_BYTE_ORDER Q_BIG_ENDIAN
+#elif defined(__s390__)
+#  define Q_PROCESSOR_S390
+#  if defined(__s390x__)
+#    define Q_PROCESSOR_S390_X
+#  endif
+#  define Q_BYTE_ORDER Q_BIG_ENDIAN
 
 /*
     SuperH family, optional revision: SH-4A
@@ -282,12 +290,15 @@
     SPARC is big-endian only prior to V9, while V9 is bi-endian with big-endian
     as the default byte order. Assume all SPARC systems are big-endian.
 */
-// #elif defined(__sparc__)
-// #  define Q_PROCESSOR_SPARC
-// #  if defined(__sparc_v9__)
-// #    define Q_PROCESSOR_SPARC_V9
-// #  endif
-// #  define Q_BYTE_ORDER Q_BIG_ENDIAN
+#elif defined(__sparc__)
+#  define Q_PROCESSOR_SPARC
+#  if defined(__sparc_v9__)
+#    define Q_PROCESSOR_SPARC_V9
+#  endif
+#  if defined(__sparc64__)
+#    define Q_PROCESSOR_SPARC_64
+#  endif
+#  define Q_BYTE_ORDER Q_BIG_ENDIAN
 
 #endif
 
@@ -307,11 +318,45 @@
 #  elif defined(__BIG_ENDIAN__) || defined(_big_endian__) || defined(_BIG_ENDIAN)
 #    define Q_BYTE_ORDER Q_BIG_ENDIAN
 #  elif defined(__LITTLE_ENDIAN__) || defined(_little_endian__) || defined(_LITTLE_ENDIAN) \
-        || defined(_WIN32_WCE) // Windows CE is always little-endian according to MSDN.
+        || defined(_WIN32_WCE) || defined(WINAPI_FAMILY) // Windows CE is always little-endian according to MSDN.
 #    define Q_BYTE_ORDER Q_LITTLE_ENDIAN
 #  else
 #    error "Unable to determine byte order!"
 #  endif
 #endif
+
+/*
+   Size of a pointer and the machine register size. We detect a 64-bit system by:
+   * GCC and compatible compilers (Clang, ICC on OS X and Windows) always define
+     __SIZEOF_POINTER__. This catches all known cases of ILP32 builds on 64-bit
+     processors.
+   * Most other Unix compilers define __LP64__ or _LP64 on 64-bit mode
+     (Long and Pointer 64-bit)
+   * If Q_PROCESSOR_WORDSIZE was defined above, it's assumed to match the pointer
+     size.
+   Otherwise, we assume to be 32-bit and then check in qglobal.cpp that it is right.
+*/
+
+#if defined __SIZEOF_POINTER__
+#  define QT_POINTER_SIZE           __SIZEOF_POINTER__
+#elif defined(__LP64__) || defined(_LP64)
+#  define QT_POINTER_SIZE           8
+#elif defined(Q_PROCESSOR_WORDSIZE)
+#  define QT_POINTER_SIZE           Q_PROCESSOR_WORDSIZE
+#else
+#  define QT_POINTER_SIZE           4
+#endif
+
+/*
+   Define Q_PROCESSOR_WORDSIZE to be the size of the machine's word (usually,
+   the size of the register). On some architectures where a pointer could be
+   smaller than the register, the macro is defined above.
+
+   Falls back to QT_POINTER_SIZE if not set explicitly for the platform.
+*/
+#ifndef Q_PROCESSOR_WORDSIZE
+#  define Q_PROCESSOR_WORDSIZE        QT_POINTER_SIZE
+#endif
+
 
 #endif // QPROCESSORDETECTION_H

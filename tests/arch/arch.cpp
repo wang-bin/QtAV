@@ -46,6 +46,18 @@
 /* vc: arm, mips, sh, x86, x86_64, ia64*/
 #if defined(Q_PROCESSOR_ALPHA)
 #warning "ARCH=alpha"
+#elif defined(Q_PROCESSOR_ARM_32)
+#ifdef _MSC_VER
+#pragma message ("ARCH=arm")
+#else
+#warning "ARCH=arm"
+#endif /*_MSC_VER*/
+#elif defined(Q_PROCESSOR_ARM_64)
+#ifdef _MSC_VER
+#pragma message ("ARCH=arm64")
+#else
+#warning "ARCH=arm64"
+#endif /*_MSC_VER*/
 #elif defined(Q_PROCESSOR_ARM)
 #ifdef _MSC_VER
 #pragma message ("ARCH=arm")
