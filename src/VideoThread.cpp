@@ -430,6 +430,7 @@ void VideoThread::run()
                 qWarning("video too fast!!! sleep %.2f s, nb fast: %d, v_a: %.4f", s, nb_dec_fast, v_a);
                 waitAndCheck(s*1000UL, dts);
                 diff = 0;
+                skip_render = false;
             }
         }
         //audio packet not cleaned up?
