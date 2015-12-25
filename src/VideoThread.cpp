@@ -315,7 +315,7 @@ void VideoThread::run()
                 qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());  
                 d.dec->flush(); //d.dec instead of dec because d.dec maybe changed in processNextTask() but dec is not
                 d.render_pts0 = pkt.pts;
-                d.pts_history = ring<qreal>(d.pts_history.capacity(), -1);
+                d.pts_history = ring<qreal>(d.pts_history.capacity());
                 v_a = 0;
                 continue;
             }

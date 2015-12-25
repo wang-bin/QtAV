@@ -55,7 +55,7 @@ public:
       , ready(false)
       , render_pts0(-1)
       , drop_frame_seek(true)
-      , pts_history(30, -1)
+      , pts_history(30)
     {
         tasks.blockFull(false);
 

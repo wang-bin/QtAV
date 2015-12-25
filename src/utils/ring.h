@@ -54,14 +54,14 @@ template<typename T>
 class ring : public ring_api<T, std::vector<T> > {
   using ring_api<T, std::vector<T> >::m_data; // why need this?
 public:
-  ring(size_t capacity, const T& t = T()) : ring_api<T, std::vector<T> >() { m_data = std::vector<T>(capacity, t); }
-  size_t capacity() const {return m_data.size();}
+  ring(size_t capacity) : ring_api<T, std::vector<T> >() { m_data.reserve(capacity); }
+  size_t capacity() const {return m_data.capacity();}
 };
 template<typename T, int N>
 class static_ring : public ring_api<T, T[N]> {
   using ring_api<T, T[N]>::m_data; // why need this?
 public:
-  static_ring(const T& t = T()) : ring_api<T, T[N]>() { for (int i = 0; i < N; ++i) {m_data[i] = t;}}
+  static_ring() : ring_api<T, T[N]>() {}
   size_t capacity() const {return N;}
 };
 
@@ -87,7 +87,7 @@ void ring_api<T,C>::pop_front() {
     assert(!empty());
     if (empty())
       return;
-    m_data[m_0] = T(); //erase the old data
+    m_data[m_0].~T(); //erase the old data
     m_0 = index(++m_0);
     --m_s;
 }
