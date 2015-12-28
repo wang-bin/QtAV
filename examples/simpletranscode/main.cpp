@@ -30,7 +30,8 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     qDebug("QtAV simpletranscode");
-    qDebug("./simpletranscode -i infile -o outfile [-c:v video_codec (default: libx264)] [-f format]");
+    qDebug("./simpletranscode -i infile -o outfile [-c:v video_codec (default: libx264)] [-f format] [-an] [-ss HH:mm:ss.z]");
+    qDebug("-an: disable audio");
     qDebug() << "examples:\n"
              << "./simpletranscode -i test.mp4 -o /tmp/test-%05d.png -f image2 -c:v png\n"
              << "./simpletranscode -i test.mp4 -o /tmp/bbb%04d.ts -f segment\n"
@@ -61,6 +62,14 @@ int main(int argc, char *argv[])
     idx = a.arguments().indexOf(QLatin1String("-f"));
     if (idx > 0)
         fmt = a.arguments().at(idx + 1);
+    bool an = false;
+    idx = a.arguments().indexOf(QLatin1String("-an"));
+    if (idx > 0)
+        an = true;
+    qint64 ss = 0;
+    idx = a.arguments().indexOf(QLatin1String("-ss"));
+    if (idx > 0)
+        ss = QTime(0, 0, 0).msecsTo(QTime::fromString(a.arguments().at(idx + 1), QLatin1String("HH:mm:ss.z")));
     QVariantHash muxopt, avfopt;
     avfopt[QString::fromLatin1("segment_time")] = 4;
     avfopt[QString::fromLatin1("segment_list_size")] = 0;
@@ -73,6 +82,8 @@ int main(int argc, char *argv[])
     player.setFrameRate(1000.0); // as fast as possible
     player.audio()->setBackends(QStringList() << QString::fromLatin1("null"));
     AVTranscoder avt;
+    if (ss > 0)
+        avt.setStartTime(ss);
     avt.setMediaSource(&player);
     avt.setOutputMedia(outFile);
     avt.setOutputOptions(muxopt);
@@ -87,6 +98,16 @@ int main(int argc, char *argv[])
     venc->setBitRate(1024*1024);
     if (fmt == QLatin1String("image2"))
         venc->setPixelFormat(VideoFormat::Format_RGBA32);
+    if (an) {
+        avt.sourcePlayer()->setAudioStream(-1);
+    } else {
+        if (!avt.createAudioEncoder()) {
+            qWarning("Failed to create audio encoder");
+            return 1;
+        }
+        AudioEncoder *aenc = avt.audioEncoder();
+        aenc->setCodecName(ca);
+    }
 
     QObject::connect(&avt, SIGNAL(stopped()), qApp, SLOT(quit()));
     avt.start(); //start transcoder first

@@ -54,6 +54,12 @@ public:
     AudioEncoder* encoder() const;
     // TODO: async property
 
+    /*!
+     * \brief startTime
+     * start to encode after startTime()
+     */
+    qint64 startTime() const;
+    void setStartTime(qint64 value);
 Q_SIGNALS:
     /*!
      * \brief readyToEncode
@@ -62,7 +68,7 @@ Q_SIGNALS:
      */
     void readyToEncode();
     void frameEncoded(const QtAV::Packet& packet);
-
+    void startTimeChanged(qint64 value);
 protected:
     virtual void process(Statistics* statistics, AudioFrame* frame = 0) Q_DECL_OVERRIDE;
     void encode(const AudioFrame& frame = AudioFrame());
@@ -93,6 +99,12 @@ public:
     VideoEncoder* encoder() const;
     // TODO: async property
 
+    /*!
+     * \brief startTime
+     * start to encode after startTime()
+     */
+    qint64 startTime() const;
+    void setStartTime(qint64 value);
 Q_SIGNALS:
     /*!
      * \brief readyToEncode
@@ -101,7 +113,7 @@ Q_SIGNALS:
      */
     void readyToEncode();
     void frameEncoded(const QtAV::Packet& packet);
-
+    void startTimeChanged(qint64 value);
 protected:
     virtual void process(Statistics* statistics, VideoFrame* frame = 0) Q_DECL_OVERRIDE;
     void encode(const VideoFrame& frame = VideoFrame());

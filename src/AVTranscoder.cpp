@@ -35,6 +35,7 @@ public:
     Private()
         : started(false)
         , encoded_frames(0)
+        , start_time(0)
         , source_player(0)
         , afilter(0)
         , vfilter(0)
@@ -52,6 +53,7 @@ public:
 
     bool started;
     int encoded_frames;
+    qint64 start_time;
     AVPlayer *source_player;
     AudioEncodeFilter *afilter;
     VideoEncodeFilter *vfilter;
@@ -194,6 +196,23 @@ bool AVTranscoder::isPaused() const
     return false; //stopped
 }
 
+qint64 AVTranscoder::startTime() const
+{
+    return d->start_time;
+}
+
+void AVTranscoder::setStartTime(qint64 ms)
+{
+    if (d->start_time == ms)
+        return;
+    d->start_time = ms;
+    Q_EMIT startTimeChanged(ms);
+    if (d->afilter)
+        d->afilter->setStartTime(startTime());
+    if (d->vfilter)
+        d->vfilter->setStartTime(startTime());
+}
+
 void AVTranscoder::start()
 {
     if (!videoEncoder())
@@ -204,9 +223,11 @@ void AVTranscoder::start()
     d->started = true;
     if (sourcePlayer()) {
         if (d->afilter) {
+            d->afilter->setStartTime(startTime());
             sourcePlayer()->installFilter(d->afilter);
         }
         if (d->vfilter) {
+            d->vfilter->setStartTime(startTime());
             qDebug("framerate: %.3f/%.3f", videoEncoder()->frameRate(), sourcePlayer()->statistics().video.frame_rate);
             if (videoEncoder()->frameRate() <= 0) { // use source frame rate. set before install filter (so before open)
                 videoEncoder()->setFrameRate(sourcePlayer()->statistics().video.frame_rate);
@@ -273,8 +294,10 @@ void AVTranscoder::prepareMuxer()
 {
     // open muxer only if all encoders are open
     if (audioEncoder() && videoEncoder()) {
-        if (!audioEncoder()->isOpen() || !videoEncoder()->isOpen())
+        if (!audioEncoder()->isOpen() || !videoEncoder()->isOpen()) {
+            qDebug("encoders are not readly a:%d v:%d", audioEncoder()->isOpen(), videoEncoder()->isOpen());
             return;
+        }
     }
     if (audioEncoder())
         d->muxer.copyProperties(audioEncoder());
