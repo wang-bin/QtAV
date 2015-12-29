@@ -766,7 +766,7 @@ VideoFrame VideoDecoderVPU::frame()
     d.display_queue.pop_front();
     // TODO: timestamp is packet pts in OMX!
     // TODO: use Format_YUV420P so that we can capture yuv frame. but we have to change code somewhere else
-    VideoFrame frame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat::Format_RGB32);
+    VideoFrame frame(d.codec_ctx->width, d.codec_ctx->height, VideoFormat::Format_YUV420P);
     //frame.setTimestamp();
     vpu::SurfaceInteropGAL *interop = new vpu::SurfaceInteropGAL(d.interop_res.at(d.interop_index));
     d.interop_index = (d.interop_index+1)%kPoolSize;
