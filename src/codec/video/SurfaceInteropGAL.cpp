@@ -29,6 +29,7 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
     if (!scaler) {
         scaler = new GALScaler();
     }
+    scaler->setHostSource(!surface->handle);
     const VideoFormat fmt(img->pixelFormat() == VideoFormat::Format_Invalid ? format.pixelFormat() : img->pixelFormat());
     int w = img->width(), h = img->height();
     // If out size not set, use gal out size which is aligned to 16
@@ -48,6 +49,7 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
     };
     const int planes_out = fmt.planeCount();
     if (!img->constBits(0)) { //interop in VideoFrame.to() and format is set
+        scaler->setHostTarget(true);
         int out_size = 0;
         QVector<int> offset(planes_out);
         QVector<int> out_pitch(planes_out);
@@ -104,18 +106,13 @@ void SurfaceInteropGAL::setSurface(const FBSurfacePtr &surface, int frame_w, int
 
 void* SurfaceInteropGAL::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
 {
-    if (type == HostMemorySurface) {
-        return mapToHost(fmt, handle, plane);
-    }
-    return 0;
-}
-
-void* SurfaceInteropGAL::mapToHost(const VideoFormat &format, void *handle, int plane)
-{
-    if (!format.isRGB() && format.pixelFormat() != VideoFormat::Format_YUV420P)
+    if (!fmt.isRGB() && fmt.pixelFormat() != VideoFormat::Format_YUV420P)
         return 0;
-    if (m_resource->map(m_surface, format, (VideoFrame*)handle, plane))
-        return handle;
+    if (type == HostMemorySurface
+            || type == UserSurface) {
+        if (m_resource->map(m_surface, fmt, (VideoFrame*)handle, plane))
+            return handle;
+    }
     return 0;
 }
 } //namespace vpu

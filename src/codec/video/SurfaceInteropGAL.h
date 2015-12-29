@@ -61,9 +61,6 @@ public:
     void setSurface(const FBSurfacePtr& surface, int frame_w, int frame_h);
     void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
     void unmap(void *) Q_DECL_OVERRIDE {}
-protected:
-    /// copy from gpu (optimized if possible) and convert to target format + scaled to target size if necessary
-    void* mapToHost(const VideoFormat &format, void *handle, int plane);
 private:
     InteropResourcePtr m_resource;
     FBSurfacePtr m_surface;

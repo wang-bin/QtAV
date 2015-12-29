@@ -23,6 +23,7 @@ do { \
 extern "C" {
 void dma_copy_in_vmem(unsigned int dst, unsigned int src, int len);
 void dma_copy_from_vmem(unsigned char* dst, unsigned int src, int len);
+void dma_copy_to_vmem(unsigned int dst, unsigned char* src, int len);
 }
 namespace QtAV {
 struct GALSurface {
@@ -105,6 +106,8 @@ public:
       , contiguous_size(0)
       , contiguous(gcvNULL)
       , contiguous_phys(gcvNULL)
+      , host_in(true)
+      , houst_out(false)
     {}
     ~GALScalerPrivate() {
         destroyGAL();
@@ -121,6 +124,9 @@ public:
 
     GALSurface surf_in;
     GALSurface surf_out;
+
+    bool host_in;
+    bool host_out;
 };
 
 typedef struct {
@@ -155,6 +161,18 @@ bool GALScaler::check() const
     return VideoFormat(VideoFormat::pixelFormatFromFFmpeg(d.fmt_out)).isRGB();
 }
 
+void GALScaler::setHostSource(bool value)
+{
+    DPTR_D(const GALScaler);
+    d.host_in = value;
+}
+
+void GALScaler::setHostTarget(bool value)
+{
+    DPTR_D(const GALScaler);
+    d.host_out = value;
+}
+
 bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
 {
     DPTR_D(GALScaler);
@@ -170,7 +188,10 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
     for (int i = 0; i < fmt.planeCount(); ++i) {
         // src[2] is 0x0!
         //qDebug("dma_copy_in_vmem %d: %p=>%p len:%d", i, src[i], d.surf_in.phyAddr[i], srcStride[i]*fmt.height(d.h_in, i));
-        dma_copy_in_vmem(d.surf_in.phyAddr[i], (gctUINT32)(quintptr)src[i], srcStride[i]*fmt.height(d.h_in, i));
+        if (d.host_in)
+            dma_copy_to_vmem(d.surf_in.phyAddr[i], src[i], srcStride[i]*fmt.height(d.h_in, i));
+        else
+            dma_copy_in_vmem(d.surf_in.phyAddr[i], (gctUINT32)(quintptr)src[i], srcStride[i]*fmt.height(d.h_in, i));
     }
     // TODO: setup d.gc_2d only if parameters changed
     gcsRECT dstRect = {0, 0, (gctINT32)d.surf_out.width, (gctINT32)d.surf_out.height};
@@ -199,7 +220,7 @@ bool GALScaler::convert(const quint8 *const src[], const int srcStride[], quint8
     static const bool partial_copy = qgetenv("VPU_PARTIAL_COPY").toInt();
     const VideoFormat fmt(d.fmt_out);
     for (int p = 0; p < fmt.planeCount(); ++p) {
-        if (!no_copy || partial_copy) { //TODO: capture
+        if (d.host_out || !no_copy || partial_copy) { //TODO: capture
             // dma copy. check img->stride
             if (d.pitchs.at(p) == dstStride[p]) {
                 // qMin(scaler->outHeight(), img->height)
@@ -210,7 +231,7 @@ bool GALScaler::convert(const quint8 *const src[], const int srcStride[], quint8
                     dma_copy_from_vmem(dst[p] + i*dstStride[p], (unsigned int)(quintptr)d.bits.at(p) + i*d.pitchs.at(p), dstStride[p]);
             }
         }
-        if (no_copy || partial_copy) {
+        if (!d.host_out || no_copy || partial_copy) {
             qint32 *ptr = (qint32*)dst[p];
             *(ptr++) = 0x12345678;
             *(ptr++) = (qint32)(quintptr)d.bits.at(p);
