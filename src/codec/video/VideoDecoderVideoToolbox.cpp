@@ -404,6 +404,18 @@ bool VideoDecoderVideoToolboxPrivate::open()
 {
     if (!prepare())
         return false;
+    switch (codec_ctx->profile) { //profile check code is from xbmc
+    case FF_PROFILE_H264_HIGH_10: //Apple A7 SoC
+    case FF_PROFILE_H264_HIGH_10_INTRA:
+    case FF_PROFILE_H264_HIGH_422:
+    case FF_PROFILE_H264_HIGH_422_INTRA:
+    case FF_PROFILE_H264_HIGH_444_PREDICTIVE:
+    case FF_PROFILE_H264_HIGH_444_INTRA:
+    case FF_PROFILE_H264_CAVLC_444:
+        return false;
+    default:
+        break;
+    }
     codec_ctx->thread_count = 1; // to avoid crash at av_videotoolbox_alloc_context/av_videotoolbox_default_free. I have no idea how the are called
     qDebug("opening VideoToolbox module");
     // codec/profile check?
