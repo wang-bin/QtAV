@@ -117,6 +117,7 @@ public:
      * return the result handle or 0 if not supported
      */
     void* map(SurfaceType type, void* handle, int plane = 0);
+    void* map(SurfaceType type, void* handle, const VideoFormat& fmt, int plane = 0);
     void unmap(void* handle);
     /*!
      * \brief createInteropHandle

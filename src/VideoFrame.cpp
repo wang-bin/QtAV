@@ -29,6 +29,7 @@
 #include "utils/GPUMemCopy.h"
 #include "utils/Logger.h"
 
+// TODO: VideoFrame.copyPropertyies(VideoFrame) to avoid missing property copy
 namespace QtAV {
 namespace{
 static const struct RegisterMetaTypes
@@ -416,6 +417,11 @@ VideoFrame VideoFrame::to(VideoFormat::PixelFormat pixfmt, const QSize& dstSize,
 
 void *VideoFrame::map(SurfaceType type, void *handle, int plane)
 {
+    return map(type, handle, format(), plane);
+}
+
+void *VideoFrame::map(SurfaceType type, void *handle, const VideoFormat& fmt, int plane)
+{
     Q_D(VideoFrame);
     const QVariant v = d->metadata.value(QStringLiteral("surface_interop"));
     if (!v.isValid())
@@ -425,7 +431,7 @@ void *VideoFrame::map(SurfaceType type, void *handle, int plane)
         return 0;
     if (plane > planeCount())
         return 0;
-    return d->surface_interop->map(type, format(), handle, plane);
+    return d->surface_interop->map(type, fmt, handle, plane);
 }
 
 void VideoFrame::unmap(void *handle)
