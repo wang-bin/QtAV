@@ -464,6 +464,13 @@ void X11Renderer::drawFrame()
 {
     // TODO: interop
     DPTR_D(X11Renderer);
+    if (!d.resizeXImage(d.current_index))
+        return;
+    if (preferredPixelFormat() != d.pixfmt) {
+        qDebug() << "x11 preferred pixel format: " << d.pixfmt;
+        setPreferredPixelFormat(d.pixfmt);
+    }
+
     if (d.use_shm) {
         int wait_count = 0;
         while (d.ShmCompletionWaitCount >= kPoolSize) {
@@ -482,13 +489,6 @@ void X11Renderer::drawFrame()
             }
             usleep(1000);
         }
-    }
-
-    if (!d.resizeXImage(d.current_index))
-        return;
-    if (preferredPixelFormat() != d.pixfmt) {
-        qDebug() << "x11 preferred pixel format: " << d.pixfmt;
-        setPreferredPixelFormat(d.pixfmt);
     }
     QRect roi = realROI();
     XImage* ximage = d.ximage_pool[d.current_index];
