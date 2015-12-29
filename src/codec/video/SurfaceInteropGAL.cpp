@@ -80,7 +80,7 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
         }
     } else {
         scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
-        scaler->setInSize(surface->fb.stride, surface->fb.height);
+        scaler->setInSize(surface->dispWidth, surface->dispHeight);
         scaler->setOutFormat(fmt.pixelFormatFFmpeg());
         scaler->setOutSize(w, h);
         QVector<quint8*> dst(planes_out);

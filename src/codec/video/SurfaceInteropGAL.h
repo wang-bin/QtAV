@@ -11,15 +11,20 @@ class FBSurface {
 public:
     FBSurface(DecHandle h)
         : handle(h)
-        , index(0)
+        , index(-1)
+        , dispWidth(0)
+        , dispHeight(0)
     {
         memset(&fb, 0, sizeof(fb));
     }
     ~FBSurface() {
-        VPU_DecClrDispFlag(handle, index);
+        if (handle && index >= 0)
+            VPU_DecClrDispFlag(handle, index);
     }
+
     int index;
     FrameBuffer fb;
+    int dispWidth, dispHeight;
 };
 typedef QSharedPointer<FBSurface> FBSurfacePtr;
 

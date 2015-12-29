@@ -734,6 +734,9 @@ qDebug("INT_BIT_DEC_FIELD");
         FBSurfacePtr surf(new FBSurface(d.handle));
         surf->index = d.outputInfo.indexFrameDisplay;
         surf->fb = d.outputInfo.dispFrame;
+        //outputInfo.dispWidth is wrong
+        surf->dispWidth = d.codec_ctx->width;
+        surf->dispHeight = d.codec_ctx->height;
         d.display_queue.push_back(surf);
         //qDebug("push_back FBSurfacePtr. queue.size: %lu", d.display_queue.size());
     }

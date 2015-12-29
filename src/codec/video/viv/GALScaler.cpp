@@ -199,7 +199,7 @@ bool GALScaler::convert(const quint8 *const src[], const int srcStride[], quint8
     static const bool partial_copy = qgetenv("VPU_PARTIAL_COPY").toInt();
     const VideoFormat fmt(d.fmt_out);
     for (int p = 0; p < fmt.planeCount(); ++p) {
-        if (!no_copy || partial_copy) {
+        if (!no_copy || partial_copy) { //TODO: capture
             // dma copy. check img->stride
             if (d.pitchs.at(p) == dstStride[p]) {
                 // qMin(scaler->outHeight(), img->height)
