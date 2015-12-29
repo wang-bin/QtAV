@@ -67,14 +67,23 @@ enum ColorSpace {
     ColorSpace_BT709
 };
 
+/*!
+ * \brief The SurfaceType enum
+ * HostMemorySurface:
+ * Map the decoded frame to host memory
+ * GLTextureSurface:
+ * Map the decoded frame as an OpenGL texture
+ * DecoderSurface:
+ * get the original surface from decoder, for example VASurfaceID for va-api, CUdeviceptr for CUDA and IDirect3DSurface9* for DXVA.
+ * Zero copy mode is required.
+ * UserSurface:
+ * Do your own magic mapping with it
+ */
 enum SurfaceType {
     HostMemorySurface,
     GLTextureSurface,
-    DXTextureSurface,
-    VAAPISurface,
-    DXVASurface,
-    CUDASurface,
-    UnknownSurface
+    DecoderSurface,
+    UserSurface
 };
 
 } //namespace QtAV
