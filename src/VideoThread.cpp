@@ -280,7 +280,6 @@ void VideoThread::run()
     bool sync_audio = d.clock->clockType() == AVClock::AudioClock;
     bool sync_video = d.clock->clockType() == AVClock::VideoClock; // no frame drop
     const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
-    bool skip_render = false; // keep true if decoded frame does not reach desired time
     qreal v_a = 0;
     int nb_no_pts = 0;
     //bool wait_audio_drain
@@ -403,6 +402,7 @@ void VideoThread::run()
         }
         // update here after wait. TODO: use decoded timestamp/guessed next pts?
         d.clock->updateVideoTime(dts); // FIXME: dts or pts?
+        bool skip_render = false;
         if (qAbs(diff) < 0.5) {
             if (diff < -kSyncThreshold) { //Speed up. drop frame?
                 //continue;
