@@ -139,7 +139,15 @@ static const gc_fmt_entry gc_fmts[] = {
     { gcvSURF_A8R8G8B8, VideoFormat::Format_ARGB32},
     { gcvSURF_A8R8G8B8, VideoFormat::Format_BGRA32},
     { gcvSURF_R5G6B5, VideoFormat::Format_RGB565 },
-    { gcvSURF_I420, VideoFormat::Format_YUV420P }
+    { gcvSURF_R5G5B5X1, VideoFormat::Format_RGB555 },
+    { gcvSURF_R5G5B5A1, VideoFormat::Format_RGB555 },
+    { gcvSURF_I420, VideoFormat::Format_YUV420P },
+    { gcvSURF_NV12, VideoFormat::Format_NV12 },
+    { gcvSURF_NV21, VideoFormat::Format_NV21 },
+    { gcvSURF_UYVY, VideoFormat::Format_UYVY },
+    { gcvSURF_YUY2, VideoFormat::Format_YUYV },
+    { gcvSURF_YVYU, VideoFormat::Format_YVYU },
+
 };
 static gceSURF_FORMAT pixelFormatToGAL(VideoFormat::PixelFormat pixfmt)
 {
