@@ -335,7 +335,7 @@ bool GALScalerPrivate::ensureSurface(GALSurface *surf, int w, int h, gceSURF_FOR
         return false;
     if (!surf)
         return false;
-    if (!surf->isNull() && surf->format == fmt && surf->width == (gctUINT)FFALIGN(w, 16) && surf->height == (gctUINT)FFALIGN(h, 16))
+    if (!surf->isNull() && surf->format == fmt && surf->width == w && surf->height == h)
         return true;
     gcoSURF s = gcvNULL;
     GC_ENSURE(gcoSURF_Construct(gc_hal, w, h, 1, gcvSURF_BITMAP, fmt, gcvPOOL_DEFAULT, &s), false);
