@@ -23,7 +23,7 @@ InteropResource::~InteropResource()
     }
 }
 
-bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format, VideoFrame *img, int)
+bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format, VideoFrame *img, int frame_w, int frame_h, int)
 {
     // TODO: use mutex to avoid VideoCapture(async mode)/VideoRenderer scale the same frame at the same time
     if (!scaler) {
@@ -82,7 +82,7 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
         }
     } else {
         scaler->setInFormat(VideoFormat::pixelFormatToFFmpeg(VideoFormat::Format_YUV420P));
-        scaler->setInSize(surface->dispWidth, surface->dispHeight);
+        scaler->setInSize(frame_w, frame_h);
         scaler->setOutFormat(fmt.pixelFormatFFmpeg());
         scaler->setOutSize(w, h);
         QVector<quint8*> dst(planes_out);
@@ -110,7 +110,7 @@ void* SurfaceInteropGAL::map(SurfaceType type, const VideoFormat &fmt, void *han
         return 0;
     if (type == HostMemorySurface
             || type == UserSurface) {
-        if (m_resource->map(m_surface, fmt, (VideoFrame*)handle, plane))
+        if (m_resource->map(m_surface, fmt, (VideoFrame*)handle, frame_width, frame_height, plane))
             return handle;
     }
     return 0;

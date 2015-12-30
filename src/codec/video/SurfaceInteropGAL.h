@@ -12,8 +12,6 @@ public:
     FBSurface(DecHandle h)
         : handle(h)
         , index(-1)
-        , dispWidth(0)
-        , dispHeight(0)
     {
         memset(&fb, 0, sizeof(fb));
     }
@@ -25,7 +23,6 @@ public:
 
     int index;
     FrameBuffer fb;
-    int dispWidth, dispHeight;
 };
 typedef QSharedPointer<FBSurface> FBSurfacePtr;
 
@@ -43,7 +40,7 @@ public:
      * \param plane useless now
      * \return true if success
      */
-    bool map(const FBSurfacePtr& surface, const VideoFormat& format, VideoFrame* img, int plane);
+    bool map(const FBSurfacePtr& surface, const VideoFormat& format, VideoFrame* img, int frame_w, int frame_h, int plane);
 protected:
     GALScaler *scaler;
 };
