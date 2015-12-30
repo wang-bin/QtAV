@@ -18,9 +18,10 @@ public:
         memset(&fb, 0, sizeof(fb));
     }
     ~FBSurface() {
-        if (handle && index >= 0)
+        if (isValid())
             VPU_DecClrDispFlag(handle, index);
     }
+    bool isValid() const { return !!handle && index >= 0;}
 
     int index;
     FrameBuffer fb;

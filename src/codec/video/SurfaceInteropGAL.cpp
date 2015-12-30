@@ -29,7 +29,7 @@ bool InteropResource::map(const FBSurfacePtr &surface, const VideoFormat &format
     if (!scaler) {
         scaler = new GALScaler();
     }
-    scaler->setHostSource(!surface->handle);
+    scaler->setHostSource(!surface->isValid());
     const VideoFormat fmt(img->pixelFormat() == VideoFormat::Format_Invalid ? format.pixelFormat() : img->pixelFormat());
     int w = img->width(), h = img->height();
     // If out size not set, use gal out size which is aligned to 16
