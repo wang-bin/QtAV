@@ -107,7 +107,7 @@ public:
       , contiguous(gcvNULL)
       , contiguous_phys(gcvNULL)
       , host_in(true)
-      , houst_out(false)
+      , host_out(false)
     {}
     ~GALScalerPrivate() {
         destroyGAL();
@@ -163,13 +163,13 @@ bool GALScaler::check() const
 
 void GALScaler::setHostSource(bool value)
 {
-    DPTR_D(const GALScaler);
+    DPTR_D(GALScaler);
     d.host_in = value;
 }
 
 void GALScaler::setHostTarget(bool value)
 {
-    DPTR_D(const GALScaler);
+    DPTR_D(GALScaler);
     d.host_out = value;
 }
 
@@ -189,7 +189,7 @@ bool GALScaler::convert(const quint8 * const src[], const int srcStride[])
         // src[2] is 0x0!
         //qDebug("dma_copy_in_vmem %d: %p=>%p len:%d", i, src[i], d.surf_in.phyAddr[i], srcStride[i]*fmt.height(d.h_in, i));
         if (d.host_in)
-            dma_copy_to_vmem(d.surf_in.phyAddr[i], src[i], srcStride[i]*fmt.height(d.h_in, i));
+            dma_copy_to_vmem(d.surf_in.phyAddr[i], (unsigned char*)src[i], srcStride[i]*fmt.height(d.h_in, i));
         else
             dma_copy_in_vmem(d.surf_in.phyAddr[i], (gctUINT32)(quintptr)src[i], srcStride[i]*fmt.height(d.h_in, i));
     }
