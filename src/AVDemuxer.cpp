@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -41,6 +41,7 @@ class AVDemuxer::InterruptHandler : public AVIOInterruptCB
 {
 public:
     enum Action {
+        Unknown = -1,
         Open,
         FindStreamInfo,
         Read
@@ -52,7 +53,7 @@ public:
       , mTimeoutAbort(true)
       , mEmitError(true)
       //, mLastTime(0)
-      , mAction(Open)
+      , mAction(Unknown)
       , mpDemuxer(demuxer)
     {
         callback = handleTimeout;
@@ -85,6 +86,7 @@ public:
         default:
             break;
         }
+        mAction = Unknown;
     }
     qint64 getTimeout() const { return mTimeout; }
     void setTimeout(qint64 timeout) { mTimeout = timeout; }
@@ -125,8 +127,12 @@ public:
         }
         // qApp->processEvents(); //FIXME: qml crash
         switch (handler->mAction) {
+        case Unknown: //callback is not called between begin()/end()
+            //qWarning("Unknown timeout action");
+            break;
         case Open:
         case FindStreamInfo:
+            //qDebug("set loading media for %d from: %d", handler->mAction, handler->mpDemuxer->mediaStatus());
             handler->mpDemuxer->setMediaStatus(LoadingMedia);
             break;
         case Read:
@@ -803,6 +809,7 @@ bool AVDemuxer::load()
     d->interrupt_hanlder->begin(InterruptHandler::FindStreamInfo);
     ret = avformat_find_stream_info(d->format_ctx, NULL);
     d->interrupt_hanlder->end();
+
     if (ret < 0) {
         setMediaStatus(InvalidMedia);
         AVError::ErrorCode ec(AVError::FindStreamInfoError);
@@ -822,17 +829,24 @@ bool AVDemuxer::load()
     }
     d->started = false;
     setMediaStatus(LoadedMedia);
-    emit loaded();
+    Q_EMIT loaded();
     const bool was_seekable = d->seekable;
     d->seekable = d->checkSeekable();
     if (was_seekable != d->seekable)
-        emit seekableChanged();
+        Q_EMIT seekableChanged();
     qDebug("avfmtctx.flag: %d", d->format_ctx->flags);
     qDebug("AVFMT_NOTIMESTAMPS: %d, AVFMT_TS_DISCONT: %d, AVFMT_NO_BYTE_SEEK:%d"
            , d->format_ctx->flags&AVFMT_NOTIMESTAMPS
            , d->format_ctx->flags&AVFMT_TS_DISCONT
            , d->format_ctx->flags&AVFMT_NO_BYTE_SEEK
            );
+    if (getInterruptStatus() < 0) {
+        QString msg;
+        qDebug("AVERROR_EXIT: %d", AVERROR_EXIT);
+        handleError(AVERROR_EXIT, 0, msg);
+        qWarning() << "User interupted: " << msg;
+        return false;
+    }
     return true;
 }
 
@@ -1206,6 +1220,7 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
         if (mediaStatus() == LoadingMedia)
             setMediaStatus(InvalidMedia);
     }
+    msg = err_msg;
     if (!errorCode)
         return;
     AVError::ErrorCode ec(*errorCode);
@@ -1219,7 +1234,6 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     }
     AVError err(ec, err_msg, averr);
     emit error(err);
-    msg = err_msg;
     *errorCode = ec;
 }
 

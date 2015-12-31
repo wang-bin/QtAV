@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -1420,7 +1420,7 @@ void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)
     if (status == d->status)
         return;
     d->status = status;
-    emit mediaStatusChanged(d->status);
+    Q_EMIT mediaStatusChanged(d->status);
 }
 
 void AVPlayer::onSeekFinished()
@@ -1463,9 +1463,13 @@ void AVPlayer::stop()
     d->last_position = mediaStopPosition() != kInvalidPosition ? startPosition() : 0;
     if (!isPlaying()) {
         qDebug("Not playing~");
+        if (mediaStatus() == LoadingMedia || mediaStatus() == LoadedMedia) {
+            qDebug("loading media: %d", mediaStatus() == LoadingMedia);
+            //unload();
+            d->demuxer.setInterruptStatus(-1);
+        }
         return;
     }
-
     while (d->read_thread->isRunning()) {
         qDebug("stopping demuxer thread...");
         d->read_thread->stop();
