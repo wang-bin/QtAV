@@ -1596,6 +1596,12 @@ qreal AVPlayer::bufferProgress() const
     return buf ? buf->bufferProgress() : 0;
 }
 
+qreal AVPlayer::bufferSpeed() const
+{
+    const PacketBuffer* buf = d->read_thread->buffer();
+    return buf ? buf->bufferSpeedInBytes() : 0;
+}
+
 qint64 AVPlayer::buffered() const
 {
     const PacketBuffer* buf = d->read_thread->buffer();

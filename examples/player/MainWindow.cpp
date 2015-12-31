@@ -209,7 +209,7 @@ void MainWindow::setupUi()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->setSpacing(0);
-    mainLayout->setMargin(0);
+    mainLayout->setContentsMargins(QMargins());
     setLayout(mainLayout);
 
     mpPlayerLayout = new QVBoxLayout();
@@ -225,18 +225,18 @@ void MainWindow::setupUi()
     mpTimeSlider->setMinimum(0);
     mpCurrent = new QLabel(mpControl);
     mpCurrent->setToolTip(tr("Current time"));
-    mpCurrent->setMargin(2);
+    mpCurrent->setContentsMargins(QMargins(2, 2, 2, 2));
     mpCurrent->setText(QString::fromLatin1("00:00:00"));
     mpEnd = new QLabel(mpControl);
     mpEnd->setToolTip(tr("Duration"));
-    mpEnd->setMargin(2);
+    mpEnd->setContentsMargins(QMargins(2, 2, 2, 2));
     mpEnd->setText(QString::fromLatin1("00:00:00"));
     mpTitle = new QLabel(mpControl);
     mpTitle->setToolTip(tr("Render engine"));
     mpTitle->setText(QString::fromLatin1("QPainter"));
     mpTitle->setIndent(8);
     mpSpeed = new QLabel(QString::fromLatin1("1.00"));
-    mpSpeed->setMargin(1);
+    mpSpeed->setContentsMargins(QMargins(1, 1, 1, 1));
     mpSpeed->setToolTip(tr("Speed. Ctrl+Up/Down"));
 
     mpPlayPauseBtn = new QToolButton(mpControl);
@@ -509,7 +509,7 @@ void MainWindow::setupUi()
 
     QHBoxLayout *controlLayout = new QHBoxLayout();
     controlLayout->setSpacing(0);
-    controlLayout->setMargin(1);
+    controlLayout->setContentsMargins(QMargins(1, 1, 1, 1));
     mpControl->setLayout(controlLayout);
     controlLayout->addWidget(mpCurrent);
     controlLayout->addWidget(mpTitle);
@@ -940,6 +940,7 @@ void MainWindow::onPositionChange(qint64 pos)
     if (mpPlayer->isSeekable())
         mpTimeSlider->setValue(pos);
     mpCurrent->setText(QTime(0, 0, 0).addMSecs(pos).toString(QString::fromLatin1("HH:mm:ss")));
+    //setWindowTitle(QString::number(mpPlayer->statistics().video_only.currentDisplayFPS(), 'f', 2).append(" ").append(mTitle));
 }
 
 void MainWindow::repeatAChanged(const QTime& t)
@@ -1323,7 +1324,17 @@ void MainWindow::onMediaStatusChanged()
 
 void MainWindow::onBufferProgress(qreal percent)
 {
-    setWindowTitle(QString::fromLatin1("Buffering... %1% ").arg(percent*100.0, 0, 'f', 1) + mTitle);
+    const qreal bs = mpPlayer->bufferSpeed();
+    QString s;
+    if (bs > 1024*1024*1024)
+        s = QString("%1G/s").arg(bs/1024.0/1024.0/1024.0, 5, 'f', 1);
+    else if (bs > 1024*1024)
+        s = QString("%1M/s").arg(bs/1024.0/1024.0, 5, 'f', 1);
+    else if (bs > 1024)
+        s = QString("%1K/s").arg(bs/1024.0, 5, 'f', 1);
+    else
+        s = QString("%1B/s").arg(bs, 5, 'f', 1);
+    setWindowTitle(QString::fromLatin1("Buffering... %1% @%2 ").arg(percent*100.0, 5, 'f', 1).arg(s) + mTitle);
 }
 
 void MainWindow::onVideoEQEngineChanged()

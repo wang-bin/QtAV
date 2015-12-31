@@ -26,6 +26,7 @@
 #include <QtAV/Packet.h>
 #include "QtAV/CommonTypes.h"
 #include "utils/BlockingQueue.h"
+#include "utils/ring.h"
 
 namespace QtAV {
 
@@ -70,8 +71,13 @@ public:
      * \return Percent of buffered time, bytes or packets.
      */
     qreal bufferProgress() const;
+    /*!
+     * \brief bufferSpeed
+     * Depending on BufferMode, the result is delta_pts/s, packets/s or bytes/s
+     * \return
+     */
     qreal bufferSpeed() const;
-
+    qreal bufferSpeedInBytes() const;
 protected:
     bool checkEnough() const Q_DECL_OVERRIDE;
     bool checkFull() const Q_DECL_OVERRIDE;
@@ -85,12 +91,20 @@ protected:
     using PQ::threshold;
 
 private:
+    qreal calc_speed(bool use_bytes) const;
+
     BufferMode m_mode;
     bool m_buffering;
     qreal m_max;
     // bytes or count
     qint64 m_buffer;
     qint64 m_value0, m_value1;
+    typedef struct {
+        qint64 v; //pts, total packes or total bytes
+        qint64 bytes; //total bytes
+        qint64 t;
+    } BufferInfo;
+    ring<BufferInfo> m_history;
 };
 
 } //namespace QtAV

@@ -77,7 +77,11 @@ public:
     explicit AVPlayer(QObject *parent = 0);
     ~AVPlayer();
 
-    //NOT const. This is the only way to access the clock.
+    /*!
+     * \brief masterClock
+     * setClockType() should call when playback started.
+     * \return
+     */
     AVClock* masterClock();
     // If path is different from previous one, the stream to play will be reset to default.
     /*!
@@ -449,6 +453,12 @@ public slots:
      * Playback can start or resume only when the buffer is entirely filled.
      */
     qreal bufferProgress() const;
+    /*!
+     * \brief bufferSpeed
+     * Bytes/s
+     * \return 0 if not buffering. >= 0 if buffering
+     */
+    qreal bufferSpeed() const;
     /*!
      * \brief buffered
      * Current buffered value in msecs, bytes or packet count depending on bufferMode()
