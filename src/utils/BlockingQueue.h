@@ -158,16 +158,13 @@ T BlockingQueue<T, Container>::take()
 {
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
-    if (!checkEnough()) {
-        cond_full.wakeAll();
-        if (checkEmpty()) {//TODO:always block?
-            //qDebug("queue empty!!");
-            if (empty_callback) {
-                empty_callback->call();
-            }
-            if (block_empty)
-                cond_empty.wait(&lock); //block when empty only
+    if (checkEmpty()) {//TODO:always block?
+        //qDebug("queue empty!!");
+        if (empty_callback) {
+            empty_callback->call();
         }
+        if (block_empty)
+            cond_empty.wait(&lock); //block when empty only
     }
     if (checkEmpty()) {
         qWarning("Queue is still empty");
@@ -177,6 +174,8 @@ T BlockingQueue<T, Container>::take()
         return T();
     }
     T t(queue.dequeue());
+    if (!checkEnough())
+        cond_full.wakeAll();
     onTake(t); // emit start buffering here if empty
     return t;
 }
