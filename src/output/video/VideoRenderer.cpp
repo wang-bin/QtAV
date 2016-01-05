@@ -607,6 +607,31 @@ bool VideoRenderer::setSaturation(qreal saturation)
     return true;
 }
 
+bool VideoRenderer::setBackgroundColor(const QColor& bgColor)
+{
+    DPTR_D(VideoRenderer);
+    if (d.background_color == bgColor) {
+        return false;
+    }
+
+    // may emit signal in onSetXXX. ensure get the new value in slot
+    const QColor old = d.background_color;
+    d.background_color = bgColor;
+
+    if (!onSetBackgroundColor(bgColor)) {
+        d.background_color = old;
+        return false;
+    }
+
+    updateUi();
+    return true;
+}
+
+QColor VideoRenderer::backgroundColor(void) const
+{
+    return d_func().background_color;
+}
+
 bool VideoRenderer::onSetBrightness(qreal b)
 {
     Q_UNUSED(b);
@@ -628,6 +653,12 @@ bool VideoRenderer::onSetHue(qreal h)
 bool VideoRenderer::onSetSaturation(qreal s)
 {
     Q_UNUSED(s);
+    return false;
+}
+
+bool VideoRenderer::onSetBackgroundColor(const QColor& color)
+{
+    Q_UNUSED(color);
     return false;
 }
 

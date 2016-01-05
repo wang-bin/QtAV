@@ -99,7 +99,7 @@ bool WidgetRenderer::needUpdateBackground() const
 void WidgetRenderer::drawBackground()
 {
     DPTR_D(WidgetRenderer);
-    d.painter->fillRect(rect(), QColor(0, 0, 0));
+    d.painter->fillRect(rect(), backgroundColor());
 }
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)
@@ -122,6 +122,13 @@ void WidgetRenderer::paintEvent(QPaintEvent *)
 bool WidgetRenderer::onSetOrientation(int value)
 {
     Q_UNUSED(value);
+    update();
+    return true;
+}
+
+bool WidgetRenderer::onSetBackgroundColor(const QColor& color)
+{
+    Q_UNUSED(color);
     update();
     return true;
 }

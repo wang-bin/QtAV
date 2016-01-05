@@ -194,6 +194,15 @@ public:
     qreal saturation() const;
     bool setSaturation(qreal saturation);
 
+    /*!
+     * \brief setBackgroundColor / backgroundColor
+     * set / get the color to be used as background color.
+     * The logic to paint the bg color should be implemented in the inherited classes
+     * \param bgColor
+     */
+    bool setBackgroundColor(const QColor& bgColor);
+    QColor backgroundColor(void) const;
+
 protected:
     VideoRenderer(VideoRendererPrivate &d);
     virtual bool receiveFrame(const VideoFrame& frame) = 0;
@@ -235,6 +244,7 @@ private: //used by VideoOutput class
     virtual bool onSetContrast(qreal contrast);
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
+    virtual bool onSetBackgroundColor(const QColor& color);
     virtual void onFrameSizeChanged(const QSize& size);
 private:
     template<class C>
